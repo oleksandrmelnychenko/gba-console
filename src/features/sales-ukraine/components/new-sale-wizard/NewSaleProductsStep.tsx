@@ -1,10 +1,11 @@
 import { Box, Group, Select, Stack, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { IconBox, IconSettings } from '@tabler/icons-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { useAuth } from '../../../auth/useAuth'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { realtimeEvents, useRealtimeEvent } from '../../../../shared/realtime/events'
+import type { Client } from '../../../clients/types'
 import { updateProduct } from '../../../products/api/productsApi'
 import type { Product } from '../../../products/types'
 import { getRelatedProductRowColor } from '../../../products/utils'
@@ -48,6 +49,7 @@ import { ShiftOrderItemModal } from './ShiftOrderItemModal'
 import { WizardConfirmModal } from './WizardConfirmModal'
 import { WizardProductCarousel } from './WizardProductCarousel'
 import { WizardRelatedProductRows } from './WizardRelatedProductRows'
+import { WizardClientHeroHeader } from './WizardClientHeroHeader'
 import {
   getWizardAvailabilityChipCount,
   getWizardAvailabilityRows,
@@ -131,14 +133,20 @@ const EMPTY_RESERVATIONS = new Map<string, WizardProductReservation>()
 
 export function NewSaleProductsStep({
   agreementNetId,
+  client,
   clientNetId,
+  headerClose,
+  headerTools,
   sale,
   onBusyChange,
   onCartChanged,
   onRequestClose,
 }: {
   agreementNetId: string | null
+  client?: Client | null
   clientNetId: string | null
+  headerClose?: ReactNode
+  headerTools?: ReactNode
   onBusyChange?: (busy: boolean) => void
   onCartChanged: () => void | Promise<void>
   onRequestClose?: () => void
@@ -2013,8 +2021,9 @@ export function NewSaleProductsStep({
     ) : null
 
   return (
-    <Box ref={containerRef} style={{ position: 'relative' }}>
-      <Group align="stretch" gap="md" wrap="nowrap" style={{ height: 'calc(100dvh - 330px)', minHeight: 440 }}>
+    <Box ref={containerRef} className="new-sale-products-step">
+      <WizardClientHeroHeader client={client} clientNetId={clientNetId} headerClose={headerClose} headerTools={headerTools} />
+      <Group align="stretch" className="new-sale-products-step__body" gap="md" wrap="nowrap">
         {/* LEFT: search controls + vertical product carousel (mirrors the client step layout) */}
         <Box
           style={{

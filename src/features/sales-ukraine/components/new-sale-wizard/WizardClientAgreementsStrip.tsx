@@ -59,8 +59,6 @@ function WizardAgreementCard({
   const currencyCode = agreement?.Currency?.Code || ''
   const overdueDays = Math.max(daysOwed - overdueLimitDays, 0)
   const isInactive = agreement?.IsActive === false
-  const hasDaysControl = Boolean(agreement?.IsControlNumberDaysDebt)
-  const hasDaysInfo = hasDaysControl || agreement?.NumberDaysDebt != null || daysOwed > 0
   const statusLabel = isOverdue ? t('Прострочено') : isInactive ? t('Неактивний') : t('Активний')
 
   return (
@@ -112,14 +110,12 @@ function WizardAgreementCard({
             <span>{t('Баланс')}</span>
             <strong>{formatAgreementAmount(accountBalance)}</strong>
           </Box>
-          {hasDaysInfo && (
-            <Box className={`new-sale-agreement-card__metric ${daysLimitExceeded ? 'is-danger' : ''}`}>
-              <span>{t('Дні')}</span>
-              <strong>
-                {overdueDays} / {overdueLimitDays}
-              </strong>
-            </Box>
-          )}
+          <Box className={`new-sale-agreement-card__metric ${daysLimitExceeded ? 'is-danger' : ''}`}>
+            <span>{t('Дні')}</span>
+            <strong>
+              {overdueDays} / {overdueLimitDays}
+            </strong>
+          </Box>
         </Box>
       </Box>
     </UnstyledButton>

@@ -485,6 +485,34 @@ function NewSaleWizardContent({
     return () => document.removeEventListener('keydown', listener)
   }, [])
 
+  const withVatAccounting = Boolean(state.agreement?.Agreement?.WithVATAccounting ?? state.sale?.ClientAgreement?.Agreement?.WithVATAccounting)
+  const wizardClient = selectedClient ?? state.sale?.ClientAgreement?.Client ?? state.agreement?.Client ?? null
+  const wizardHeaderClose = (
+    <ActionIcon aria-label={t('Закрити')} color="gray" disabled={shellBusy} size="lg" variant="subtle" onClick={requestExit}>
+      <IconX size={20} />
+    </ActionIcon>
+  )
+  const wizardHeaderTools = (
+    <Group gap={6} justify="flex-end" wrap="nowrap">
+      <WizardSaleHeader
+        clientNetId={state.clientNetId}
+        hideAgreementsAction
+        mode="inline"
+        reassignDisabled={shellBusy || productsBusy}
+        sale={state.sale}
+        withVatAccounting={withVatAccounting}
+        onReassignOpenChange={setReassignOpen}
+        onSaleReassigned={(movedSale) => {
+          clearWizardSplitOrderItems()
+          clearWizardMergedSale()
+          setState((current) => ({ ...current, sale: movedSale ?? current.sale }))
+          bumpWizardDebtRefresh()
+          setActive(0)
+        }}
+      />
+    </Group>
+  )
+
   return (
     <Box
       aria-label={t('Майстер нової продажі')}
@@ -492,16 +520,14 @@ function NewSaleWizardContent({
       style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}
       onKeyDown={handleRootKeyDown}
     >
-      {active !== 0 && (
+      {active === 2 && (
         <Group align="flex-start" gap="xs" wrap="nowrap">
           <Box style={{ flex: 1, minWidth: 0 }}>
             <WizardSaleHeader
               clientNetId={state.clientNetId}
               reassignDisabled={shellBusy || productsBusy}
               sale={state.sale}
-              withVatAccounting={Boolean(
-                state.agreement?.Agreement?.WithVATAccounting ?? state.sale?.ClientAgreement?.Agreement?.WithVATAccounting,
-              )}
+              withVatAccounting={withVatAccounting}
               onReassignOpenChange={setReassignOpen}
               onSaleReassigned={(movedSale) => {
                 clearWizardSplitOrderItems()
@@ -524,33 +550,8 @@ function NewSaleWizardContent({
         {active === 0 && (
           <NewSaleClientStep
             clientNetId={state.clientNetId}
-            headerClose={
-              <ActionIcon aria-label={t('Закрити')} color="gray" disabled={shellBusy} size="lg" variant="subtle" onClick={requestExit}>
-                <IconX size={20} />
-              </ActionIcon>
-            }
-            headerTools={
-              <Group gap={6} justify="flex-end" wrap="nowrap">
-                <WizardSaleHeader
-                  clientNetId={state.clientNetId}
-                  hideAgreementsAction
-                  mode="inline"
-                  reassignDisabled={shellBusy || productsBusy}
-                  sale={state.sale}
-                  withVatAccounting={Boolean(
-                    state.agreement?.Agreement?.WithVATAccounting ?? state.sale?.ClientAgreement?.Agreement?.WithVATAccounting,
-                  )}
-                  onReassignOpenChange={setReassignOpen}
-                  onSaleReassigned={(movedSale) => {
-                    clearWizardSplitOrderItems()
-                    clearWizardMergedSale()
-                    setState((current) => ({ ...current, sale: movedSale ?? current.sale }))
-                    bumpWizardDebtRefresh()
-                    setActive(0)
-                  }}
-                />
-              </Group>
-            }
+            headerClose={wizardHeaderClose}
+            headerTools={wizardHeaderTools}
             initialClient={selectedClient}
             onClientResolved={setSelectedClient}
             onAgreementChange={(agreementNetId, agreement) => {
@@ -575,7 +576,10 @@ function NewSaleWizardContent({
         {active === 1 && (
           <NewSaleProductsStep
             agreementNetId={state.agreementNetId}
+            client={wizardClient}
             clientNetId={state.clientNetId}
+            headerClose={wizardHeaderClose}
+            headerTools={wizardHeaderTools}
             sale={productsCart}
             onBusyChange={setProductsBusy}
             onCartChanged={reloadCart}

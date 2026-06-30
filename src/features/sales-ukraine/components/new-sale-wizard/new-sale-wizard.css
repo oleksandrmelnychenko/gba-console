@@ -823,7 +823,7 @@
 .new-sale-agreements-strip {
   display: flex;
   gap: 9px;
-  min-height: 82px;
+  min-height: 108px;
   min-width: 0;
   overflow-x: auto;
   padding: 1px 2px 6px;
@@ -839,7 +839,7 @@
   display: grid;
   flex: 0 0 286px;
   grid-template-columns: 2px minmax(0, 1fr);
-  min-height: 76px;
+  min-height: 100px;
   overflow: hidden;
   position: relative;
   text-align: left;
@@ -889,8 +889,10 @@
 }
 
 .new-sale-agreement-card__content {
+  align-content: space-between;
   display: grid;
   gap: 7px;
+  height: 100%;
   min-width: 0;
   padding: 8px 10px;
 }
@@ -992,6 +994,7 @@
   border-radius: 0;
   display: flex;
   gap: 0;
+  min-height: 24px;
   min-width: 0;
   overflow: hidden;
   padding-top: 6px;
@@ -1011,7 +1014,7 @@
   border: 0;
   border-radius: 0;
   display: flex;
-  flex: 0 1 auto;
+  flex: 1 1 0;
   gap: 5px;
   justify-content: flex-start;
   min-width: 0;
@@ -1039,6 +1042,7 @@
 
 .new-sale-agreement-card__metric span {
   color: var(--mantine-color-gray-5);
+  flex-shrink: 0;
   font-size: 9px;
   font-weight: 650;
   line-height: 1;
@@ -1610,6 +1614,20 @@
   border: 1px dashed var(--mantine-color-gray-3);
   border-radius: 12px;
   min-height: 100%;
+}
+
+.new-sale-products-step {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  min-width: 0;
+  position: relative;
+}
+
+.new-sale-products-step__body {
+  flex: 1;
+  min-height: 440px;
+  min-width: 0;
 }
 
 @media (max-width: 1180px) {
