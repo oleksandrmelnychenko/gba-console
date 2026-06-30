@@ -104,25 +104,10 @@
   padding-top: 8px;
 }
 
-.console-table-page .data-table-row {
-  --data-table-cell-bg: var(--mantine-color-white);
-  outline: none;
-  transition:
-    background 140ms ease,
-    box-shadow 140ms ease,
-    transform 140ms ease;
-}
-
-.console-table-page .data-table-row:hover .data-table-cell {
-  --data-table-cell-bg: var(--mantine-color-gray-1);
-}
-
-.console-table-page .data-table-row:hover {
-  box-shadow: 0 9px 22px rgba(20, 28, 38, 0.06);
-  transform: translateX(3px);
-  z-index: 1;
-}
-
+/* Rows (.data-table-row) intentionally have NO override here. The default
+   DataTable supplies the zebra striping (:nth-child(even) -> gray-0) and the
+   gray-1 hover that ClientsPage uses; a previous '--data-table-cell-bg: white'
+   override killed the zebra and added a translateX hover-slide Clients lacks. */
 .console-table-entity-cell {
   align-items: center;
   display: flex;
