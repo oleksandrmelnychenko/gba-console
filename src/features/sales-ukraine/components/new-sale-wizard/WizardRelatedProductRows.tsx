@@ -1,5 +1,5 @@
 import { ActionIcon, Box, Stack, Text, Tooltip } from '@mantine/core'
-import { IconInfoCircle } from '@tabler/icons-react'
+import { IconInfoCircle, IconStar } from '@tabler/icons-react'
 import type { ReactNode } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import type { WizardSaleProduct } from './wizardSaleProduct'
@@ -15,12 +15,14 @@ export function WizardRelatedProductRows({
   renderExtra,
   onOpenCard,
   onPick,
+  onProductInterest,
 }: {
   active: boolean
   focusedIndex: number
   getItemColor?: (product: WizardSaleProduct) => string | undefined
   onOpenCard?: (productNetId: string) => void
   onPick: (index: number) => void
+  onProductInterest?: (product: WizardSaleProduct) => void
   products: WizardSaleProduct[]
   renderExtra?: (product: WizardSaleProduct) => ReactNode
 }) {
@@ -36,6 +38,7 @@ export function WizardRelatedProductRows({
           renderExtra={renderExtra}
           onOpenCard={onOpenCard}
           onPick={() => onPick(index)}
+          onProductInterest={onProductInterest}
         />
       ))}
     </Stack>
@@ -50,12 +53,14 @@ function WizardRelatedProductRow({
   renderExtra,
   onOpenCard,
   onPick,
+  onProductInterest,
 }: {
   active: boolean
   color?: string
   focused: boolean
   onOpenCard?: (productNetId: string) => void
   onPick: () => void
+  onProductInterest?: (product: WizardSaleProduct) => void
   product: WizardSaleProduct
   renderExtra?: (product: WizardSaleProduct) => ReactNode
 }) {
@@ -91,8 +96,30 @@ function WizardRelatedProductRow({
         <Text c="dimmed" size="xs" title={name} truncate>
           {name}
         </Text>
+        {product.MainOriginalNumber && (
+          <Text c="dimmed" size="xs" truncate>
+            {product.MainOriginalNumber}
+          </Text>
+        )}
       </Box>
       {renderExtra?.(product)}
+      {product.NetUid && onProductInterest && (
+        <Tooltip label={t('Цікавить товар')}>
+          <ActionIcon
+            aria-label={t('Цікавить товар')}
+            color="orange"
+            size="sm"
+            style={{ flexShrink: 0 }}
+            variant="subtle"
+            onClick={(event) => {
+              event.stopPropagation()
+              onProductInterest(product)
+            }}
+          >
+            <IconStar size={15} />
+          </ActionIcon>
+        </Tooltip>
+      )}
       {product.NetUid && onOpenCard && (
         <Tooltip label={t('Картка товару')}>
           <ActionIcon

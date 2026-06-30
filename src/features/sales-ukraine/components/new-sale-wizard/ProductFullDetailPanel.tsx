@@ -1,10 +1,20 @@
-import { ActionIcon, Badge, Box, Group, Image, Paper, ScrollArea, Stack, Text, TextInput } from '@mantine/core'
-import { IconArrowRight, IconCheck, IconPencil } from '@tabler/icons-react'
+import { ActionIcon, Box, Group, Image, Paper, ScrollArea, Stack, Text, TextInput, Tooltip } from '@mantine/core'
+import {
+  IconBarcode,
+  IconBox,
+  IconCheck,
+  IconCurrencyEuro,
+  IconInfoCircle,
+  IconPencil,
+  IconPhoto,
+  IconRulerMeasure,
+  IconTruckDelivery,
+} from '@tabler/icons-react'
 import { formatLocalDate } from '../../../../shared/date/dateTime'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { getProductMainImage, getProductShopImageUrl, getRelatedProductRowColor } from '../../../products/utils'
 import type { WizardCalculatedProductPricing, WizardNearestSupplyOrder } from './newSaleWizardApi'
-import type { WizardSaleProduct } from './wizardSaleProduct'
+import { getWizardProductNumber, type WizardSaleProduct } from './wizardSaleProduct'
 
 const qtyFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 3 })
 const priceFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
@@ -58,238 +68,231 @@ export function ProductFullDetailPanel({
 }) {
   const { t } = useI18n()
   const mainImage = getProductMainImage(product)
-  // The DB image (product.Image / ProductImages) often 404s on the local backend; fall back to the
-  // concord-shop image (what the legacy client always uses) so the photo still loads.
   const shopImageUrl = getProductShopImageUrl(product)
   const titleColor = getRelatedProductRowColor(product)
+  const code = product.VendorCode || product.Articul || '—'
+  const productName = product.NameUA || product.Name || t('Без назви')
+  const originalNumber = product.MainOriginalNumber || ''
+  const size = product.Size || ''
+  const top = product.Top || ''
   const headerQty = displayQty ?? 0
+  const basePrice = pricing?.PriceEUR ?? getWizardProductNumber(product.CurrentPrice)
+  const salePrice = pricing?.DiscountPriceEUR ?? basePrice
+  const retailPrice = pricing?.RetailPriceEUR ?? null
+  const localRetailPrice = pricing?.RetailPriceLocal ?? getWizardProductNumber(product.CurrentPriceEurToUah)
+  const discountRate = pricing?.DiscountRate ?? null
+  const pricingName = pricing?.Pricing?.Name || ''
+  const hasLogistics = Boolean(nearestSupplyOrder)
 
   return (
-    <Paper p="sm" radius="md" style={{ borderLeft: '3px solid var(--mantine-color-violet-4)' }} withBorder>
-      <Group align="flex-start" gap="md" wrap="nowrap">
-        {/* LEFT: availability columns + description + name + size + pricing; large image on the right */}
-        <Stack gap="sm" style={{ flex: 1, minWidth: 0 }}>
-            {nearestSupplyOrder && (
-              <Paper bg="var(--mantine-color-blue-light)" p={6} radius="sm">
-                <Group gap="md" wrap="nowrap">
-                  <Text fw={600} size="sm">
-                    {nearestSupplyOrder.OrderArrivedDate ? formatLocalDate(new Date(nearestSupplyOrder.OrderArrivedDate)) : '—'}
-                  </Text>
-                  <Group gap={4} wrap="nowrap">
-                    <Text fw={700} size="sm">
-                      {qtyFormatter.format(nearestSupplyOrder.Qty ?? 0)}
-                    </Text>
-                    <Text c="dimmed" size="xs">
-                      {t('штук')}
-                    </Text>
-                  </Group>
-                  <Text c="dimmed" size="xs">
-                    {t('Найближча партія товару')}
-                  </Text>
-                </Group>
-              </Paper>
-            )}
+    <Paper className="new-sale-product-card">
+      <Box className="new-sale-product-card__rail" aria-hidden="true" />
 
-            <Box
-              style={{
-                border: '1px solid var(--mantine-color-gray-3)',
-                borderRadius: 'var(--mantine-radius-sm)',
-                display: 'flex',
-                overflow: 'hidden',
-              }}
-            >
-              {chips.map((chip, index) => (
-                <Box
-                  key={chip.key}
-                  role={onSelectChip ? 'button' : undefined}
-                  tabIndex={onSelectChip ? 0 : undefined}
-                  style={{
-                    background: index === selectedChipIndex ? 'var(--mantine-color-violet-light)' : undefined,
-                    borderLeft: index === 0 ? undefined : '1px solid var(--mantine-color-gray-3)',
-                    cursor: onSelectChip ? 'pointer' : undefined,
-                    flex: 1,
-                    minWidth: 0,
-                    padding: '6px 4px',
-                    textAlign: 'center',
-                  }}
-                  onClick={() => onSelectChip?.(index)}
-                  onKeyDown={(event) => {
-                    if (!onSelectChip || (event.key !== 'Enter' && event.key !== ' ')) {
-                      return
-                    }
+      <Box className="new-sale-product-card__media">
+        {mainImage?.ImageUrl ? (
+          <Image
+            alt={code}
+            fallbackSrc={shopImageUrl || undefined}
+            fit="contain"
+            h="100%"
+            src={mainImage.ImageUrl}
+            w="100%"
+          />
+        ) : (
+          <Box className="new-sale-product-card__media-empty">
+            <IconPhoto size={30} stroke={1.6} />
+          </Box>
+        )}
+      </Box>
 
-                    event.preventDefault()
-                    onSelectChip(index)
-                  }}
-                >
-                  <Text fw={700} size="md">
-                    {qtyFormatter.format(chip.count)}
-                  </Text>
-                  <Text c="dimmed" tt="uppercase" style={{ fontSize: 12, lineHeight: 1.2 }}>
-                    {chip.name}
-                  </Text>
-                </Box>
-              ))}
+      <Box className="new-sale-product-card__main">
+        <Group align="flex-start" className="new-sale-product-card__top" justify="space-between" wrap="nowrap">
+          <Box className="new-sale-product-card__identity">
+            <Group gap={7} wrap="nowrap">
+              <span className="new-sale-product-card__code">
+                <IconBarcode size={13} />
+                {code}
+              </span>
+              {originalNumber && <span className="new-sale-product-card__pill">{originalNumber}</span>}
+              {top && <span className="new-sale-product-card__pill is-soft">{top}</span>}
+              {size && (
+                <span className="new-sale-product-card__pill is-soft">
+                  <IconRulerMeasure size={12} />
+                  {size}
+                </span>
+              )}
+            </Group>
+            <Text className="new-sale-product-card__title" style={{ color: titleColor }} title={productName}>
+              {productName}
+            </Text>
+          </Box>
+
+          <Group className="new-sale-product-card__money" gap={8} wrap="nowrap">
+            <MetricBlock label={t('Доступно')} tone={headerQty > 0 ? 'good' : 'bad'} value={qtyFormatter.format(headerQty)} />
+            <MetricBlock label="EUR" tone="strong" value={formatPrice(salePrice)} />
+            {localRetailPrice != null && <MetricBlock label="UAH" value={formatPrice(localRetailPrice)} />}
+          </Group>
+        </Group>
+
+        <Group align="stretch" className="new-sale-product-card__pricing-row" gap={8} wrap="nowrap">
+          <Box className="new-sale-product-card__price-chain">
+            <Box className="new-sale-product-card__mini-icon">
+              <IconCurrencyEuro size={15} />
             </Box>
-
-            {selectedChipIndex !== null && rows.length > 0 && (
-              <ScrollArea.Autosize mah={150} type="auto">
-                <Stack gap={4}>
-                  {rows.map((row, index) => (
-                    <Paper
-                      key={getDetailRowKey(row)}
-                      bg={index === selectedRowIndex ? 'var(--mantine-color-blue-light)' : undefined}
-                      p={6}
-                      radius="sm"
-                      withBorder
-                    >
-                      <Group gap="md" justify="space-between" wrap="nowrap">
-                        <Group gap="md" style={{ minWidth: 0 }} wrap="nowrap">
-                          {showRowDetails && row.regionCode && (
-                            <Badge color="gray" variant="light">
-                              {row.regionCode}
-                            </Badge>
-                          )}
-                          <Text size="sm" style={{ minWidth: 0 }} truncate>
-                            {row.name}
-                          </Text>
-                        </Group>
-                        <Group gap="md" wrap="nowrap">
-                          <Group gap={4} wrap="nowrap">
-                            <Text fw={700} size="sm">
-                              {qtyFormatter.format(row.amount)}
-                            </Text>
-                            <Text c="dimmed" size="xs">
-                              {t('штук')}
-                            </Text>
-                          </Group>
-                          {showRowDetails && row.analyst && (
-                            <Text c="dimmed" size="sm">
-                              {row.analyst}
-                            </Text>
-                          )}
-                        </Group>
-                      </Group>
-                    </Paper>
-                  ))}
-                </Stack>
-              </ScrollArea.Autosize>
+            <Box className="new-sale-product-card__price-copy">
+              <span>{pricingName || t('Прайс')}</span>
+              <strong>{formatPrice(salePrice)} EUR</strong>
+            </Box>
+            {discountRate != null && <span className="new-sale-product-card__discount">-{priceFormatter.format(discountRate)}%</span>}
+            {basePrice != null && basePrice !== salePrice && (
+              <span className="new-sale-product-card__muted-price">{formatPrice(basePrice)} EUR</span>
             )}
-        {/* Description (editable) */}
-        <Group align="flex-start" gap="xs" wrap="nowrap">
-          <Box style={{ flex: 1, minWidth: 0 }}>
+          </Box>
+
+          {retailPrice != null && (
+            <Box className="new-sale-product-card__retail">
+              <span>{t('Роздріб')}</span>
+              <strong>{formatPrice(retailPrice)} EUR</strong>
+            </Box>
+          )}
+
+          {hasLogistics && (
+            <Box className="new-sale-product-card__next">
+              <IconTruckDelivery size={16} />
+              <Box>
+                <span>{t('Найближча партія')}</span>
+                <strong>
+                  {nearestSupplyOrder?.OrderArrivedDate ? formatLocalDate(new Date(nearestSupplyOrder.OrderArrivedDate)) : '—'}
+                  {' · '}
+                  {qtyFormatter.format(nearestSupplyOrder?.Qty ?? 0)} {t('шт')}
+                </strong>
+              </Box>
+            </Box>
+          )}
+        </Group>
+
+        <Box className="new-sale-product-card__availability">
+          {chips.map((chip, index) => {
+            const selected = index === selectedChipIndex
+            const isEmpty = chip.count <= 0
+
+            return (
+              <Box
+                key={chip.key}
+                className={cx('new-sale-product-card__chip', selected && 'is-selected', isEmpty && 'is-empty')}
+                role={onSelectChip ? 'button' : undefined}
+                tabIndex={onSelectChip ? 0 : undefined}
+                onClick={() => onSelectChip?.(index)}
+                onKeyDown={(event) => {
+                  if (!onSelectChip || (event.key !== 'Enter' && event.key !== ' ')) {
+                    return
+                  }
+
+                  event.preventDefault()
+                  onSelectChip(index)
+                }}
+              >
+                <span>{chip.name}</span>
+                <strong>{qtyFormatter.format(chip.count)}</strong>
+              </Box>
+            )
+          })}
+        </Box>
+
+        <Group align="stretch" className="new-sale-product-card__bottom" gap={10} wrap="nowrap">
+          <Box className="new-sale-product-card__description">
+            <Group gap={6} justify="space-between" wrap="nowrap">
+              <span className="new-sale-product-card__section-title">
+                <IconInfoCircle size={13} />
+                {t('Опис')}
+              </span>
+              {canEditDescription && (
+                <Tooltip label={isEditingDescription ? t('Зберегти') : t('Редагувати')}>
+                  <ActionIcon
+                    aria-label={isEditingDescription ? t('Зберегти') : t('Редагувати')}
+                    color={isEditingDescription ? 'teal' : 'gray'}
+                    size="sm"
+                    variant="subtle"
+                    onClick={onToggleDescription}
+                  >
+                    {isEditingDescription ? <IconCheck size={15} /> : <IconPencil size={15} />}
+                  </ActionIcon>
+                </Tooltip>
+              )}
+            </Group>
             {isEditingDescription ? (
               <TextInput
                 autoFocus
+                className="new-sale-product-card__description-input"
                 size="xs"
                 value={descriptionDraft}
                 onChange={(event) => onDescriptionDraftChange(event.currentTarget.value)}
               />
             ) : (
-              <Text c="dimmed" size="sm">
-                {product.Description || ''}
+              <Text className="new-sale-product-card__description-text" lineClamp={2}>
+                {product.Description || t('Опис відсутній')}
               </Text>
             )}
           </Box>
-          {canEditDescription && (
-            <ActionIcon
-              aria-label={isEditingDescription ? t('Зберегти') : t('Редагувати')}
-              color={isEditingDescription ? 'teal' : 'gray'}
-              size="sm"
-              variant="subtle"
-              onClick={onToggleDescription}
-            >
-              {isEditingDescription ? <IconCheck size={15} /> : <IconPencil size={15} />}
-            </ActionIcon>
-          )}
-        </Group>
 
-        {/* Product name + available qty */}
-        <Group gap="md" justify="space-between" wrap="nowrap">
-          <Text c={titleColor} fw={700} size="sm" style={{ minWidth: 0 }} truncate>
-            {product.VendorCode} {product.NameUA || product.Name}
-          </Text>
-          <Group gap={4} wrap="nowrap" style={{ flexShrink: 0 }}>
-            <Text fw={700} size="sm">
-              {qtyFormatter.format(headerQty)}
-            </Text>
-            {product.MeasureUnit?.Name && (
-              <Text c="dimmed" size="xs">
-                {product.MeasureUnit.Name}
-              </Text>
+          <Box className="new-sale-product-card__rows">
+            <Group gap={6} justify="space-between" wrap="nowrap">
+              <span className="new-sale-product-card__section-title">
+                <IconBox size={13} />
+                {t('Деталі')}
+              </span>
+              <span className="new-sale-product-card__rows-count">{rows.length}</span>
+            </Group>
+
+            {rows.length > 0 ? (
+              <ScrollArea.Autosize mah={96} type="auto">
+                <Stack gap={5}>
+                  {rows.map((row, index) => (
+                    <Box
+                      key={getDetailRowKey(row)}
+                      className={cx('new-sale-product-card__row', index === selectedRowIndex && 'is-selected')}
+                    >
+                      <Group gap={6} style={{ minWidth: 0 }} wrap="nowrap">
+                        {showRowDetails && row.regionCode && <span className="new-sale-product-card__region">{row.regionCode}</span>}
+                        <Text className="new-sale-product-card__row-name" title={row.name} truncate>
+                          {row.name || '—'}
+                        </Text>
+                      </Group>
+                      <Group gap={8} wrap="nowrap">
+                        {showRowDetails && row.analyst && <span className="new-sale-product-card__analyst">{row.analyst}</span>}
+                        <strong>{qtyFormatter.format(row.amount)}</strong>
+                      </Group>
+                    </Box>
+                  ))}
+                </Stack>
+              </ScrollArea.Autosize>
+            ) : (
+              <Box className="new-sale-product-card__empty-row">{t('Немає деталізації')}</Box>
             )}
-          </Group>
+          </Box>
         </Group>
-
-        {/* Top / original number / size */}
-        <Group gap="sm" wrap="wrap">
-          {product.Top && (
-            <Badge color="gray" radius="sm" variant="light">
-              {product.Top}
-            </Badge>
-          )}
-          {product.MainOriginalNumber && (
-            <Text c="dimmed" size="sm">
-              {product.MainOriginalNumber}
-            </Text>
-          )}
-          {product.Size && (
-            <Text c="dimmed" size="sm">
-              {product.Size}
-            </Text>
-          )}
-        </Group>
-
-        {/* Pricing line: base → discount% → discounted price, then retail */}
-        {pricing && (
-          <Group gap="lg" justify="space-between" wrap="wrap">
-            <Group gap={6} wrap="nowrap">
-              {pricing.Pricing?.Name && (
-                <Text c={titleColor} fw={700} size="sm">
-                  {pricing.Pricing.Name}
-                </Text>
-              )}
-              <Text size="sm">{priceFormatter.format(pricing.PriceEUR ?? 0)}</Text>
-              <IconArrowRight size={13} style={{ color: 'var(--mantine-color-dimmed)' }} />
-              <Text c="dimmed" size="sm">
-                {pricing.DiscountRate ?? 0}%
-              </Text>
-              <IconArrowRight size={13} style={{ color: 'var(--mantine-color-dimmed)' }} />
-              <Text fw={700} size="sm">
-                {priceFormatter.format(pricing.DiscountPriceEUR ?? 0)}
-              </Text>
-            </Group>
-            <Group gap={6} wrap="nowrap">
-              <Text c="dimmed" size="sm">
-                {t('Роздріб')}
-              </Text>
-              <Text size="sm">EUR: {priceFormatter.format(pricing.RetailPriceEUR ?? 0)}</Text>
-              <Text size="sm">
-                {t('UAH')}: {priceFormatter.format(pricing.RetailPriceLocal ?? 0)}
-              </Text>
-            </Group>
-          </Group>
-        )}
-        </Stack>
-
-        {/* RIGHT: large product image spanning the card height (legacy layout) */}
-        {mainImage?.ImageUrl && (
-          <Image
-            alt={product.VendorCode || ''}
-            fallbackSrc={shopImageUrl || undefined}
-            fit="contain"
-            h={170}
-            radius="sm"
-            src={mainImage.ImageUrl}
-            style={{ alignSelf: 'flex-start', flexShrink: 0 }}
-            w={190}
-          />
-        )}
-      </Group>
+      </Box>
     </Paper>
   )
 }
 
+function MetricBlock({ label, tone, value }: { label: string; tone?: 'bad' | 'good' | 'strong'; value: string }) {
+  return (
+    <Box className={cx('new-sale-product-card__metric', tone && `is-${tone}`)}>
+      <strong>{value}</strong>
+      <span>{label}</span>
+    </Box>
+  )
+}
+
+function formatPrice(value: number | null | undefined): string {
+  return value == null ? '—' : priceFormatter.format(value)
+}
+
 function getDetailRowKey(row: WizardDetailRow): string {
   return row.key || [row.regionCode, row.name, row.analyst, row.amount].filter((value) => value !== undefined && value !== '').join('|')
+}
+
+function cx(...classes: Array<string | false | null | undefined>): string {
+  return classes.filter(Boolean).join(' ')
 }

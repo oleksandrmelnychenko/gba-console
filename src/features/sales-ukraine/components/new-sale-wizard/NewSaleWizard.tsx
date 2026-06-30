@@ -531,7 +531,14 @@ function NewSaleWizardContent({
         />
       )}
 
-      <Box style={{ flex: 1, minHeight: 0, overflowY: active === 0 ? 'visible' : 'auto', paddingRight: 4 }}>
+      <Box
+        style={{
+          flex: 1,
+          minHeight: 0,
+          overflow: active === 0 ? 'visible' : active === 1 ? 'hidden' : 'auto',
+          paddingRight: active === 1 ? 0 : 4,
+        }}
+      >
         {active === 0 && (
           <NewSaleClientStep
             clientNetId={state.clientNetId}

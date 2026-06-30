@@ -1,6 +1,6 @@
 import { ActionIcon, Box, Group, Loader, Stack, Text, Tooltip } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconInfoCircle } from '@tabler/icons-react'
+import { IconInfoCircle, IconStar } from '@tabler/icons-react'
 import type { ReactNode, RefObject } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import type { ProductPickerMeta } from '../../../products/components/ProductPickerCarousel'
@@ -26,6 +26,7 @@ export function WizardProductCarousel({
   getMeta,
   onOpenCard,
   onPick,
+  onProductInterest,
   onSearchChange,
 }: {
   active: boolean
@@ -38,6 +39,7 @@ export function WizardProductCarousel({
   isLoading?: boolean
   onOpenCard?: (productNetId: string) => void
   onPick: (index: number) => void
+  onProductInterest?: (product: WizardSaleProduct) => void
   onSearchChange: (value: string) => void
   products: WizardSaleProduct[]
   searchInputRef: RefObject<HTMLInputElement | null>
@@ -63,6 +65,7 @@ export function WizardProductCarousel({
               product={product}
               onOpenCard={onOpenCard}
               onPick={() => onPick(index)}
+              onProductInterest={onProductInterest}
             />
           ))}
         </Stack>
@@ -119,6 +122,7 @@ export function WizardProductCarousel({
                 product={product}
                 onOpenCard={onOpenCard}
                 onPick={() => onPick(bottomOffset + index)}
+                onProductInterest={onProductInterest}
               />
             ))}
           </Stack>
@@ -153,11 +157,13 @@ function ProductViewerRow({
   product,
   onOpenCard,
   onPick,
+  onProductInterest,
 }: {
   color?: string
   meta?: ProductPickerMeta
   onOpenCard?: (productNetId: string) => void
   onPick: () => void
+  onProductInterest?: (product: WizardSaleProduct) => void
   product: WizardSaleProduct
 }) {
   const { t } = useI18n()
@@ -173,11 +179,29 @@ function ProductViewerRow({
         <Text c="dimmed" size="sm" title={name} truncate>
           {name}
         </Text>
+        {product.MainOriginalNumber && (
+          <Text c="dimmed" size="xs" truncate>
+            {product.MainOriginalNumber}
+          </Text>
+        )}
       </Box>
-      {meta?.available != null && (
-        <Text c={meta.available > 0 ? 'teal' : 'red'} fw={600} size="xs" style={{ flexShrink: 0 }}>
-          {metaNumberFormatter.format(meta.available)}
-        </Text>
+      <ProductMetaDetails meta={meta} />
+      {product.NetUid && onProductInterest && (
+        <Tooltip label={t('Цікавить товар')}>
+          <ActionIcon
+            aria-label={t('Цікавить товар')}
+            color="orange"
+            size="sm"
+            style={{ flexShrink: 0 }}
+            variant="subtle"
+            onClick={(event) => {
+              event.stopPropagation()
+              onProductInterest(product)
+            }}
+          >
+            <IconStar size={15} />
+          </ActionIcon>
+        </Tooltip>
       )}
       {product.NetUid && onOpenCard && (
         <Tooltip label={t('Картка товару')}>
@@ -197,6 +221,46 @@ function ProductViewerRow({
         </Tooltip>
       )}
     </Box>
+  )
+}
+
+function ProductMetaDetails({ meta }: { meta?: ProductPickerMeta }) {
+  const { t } = useI18n()
+  const hasAvailability = meta?.available != null || meta?.price != null
+  const hasResale = meta?.reSaleAvailable != null || meta?.reSalePrice != null
+
+  if (!meta || (!hasAvailability && !hasResale)) {
+    return null
+  }
+
+  return (
+    <Stack gap={1} style={{ flexShrink: 0, minWidth: 96 }}>
+      {hasAvailability && (
+        <Group gap={6} justify="flex-end" wrap="nowrap">
+          {meta.available != null && (
+            <Text c={meta.available > 0 ? 'teal' : 'red'} fw={600} size="xs">
+              {t('Дост.')}: {metaNumberFormatter.format(meta.available)}
+            </Text>
+          )}
+          {meta.price != null && <Text size="xs">{metaNumberFormatter.format(meta.price)}</Text>}
+        </Group>
+      )}
+      {hasResale && (
+        <Group gap={6} justify="flex-end" wrap="nowrap">
+          {meta.reSaleAvailable != null && (
+            <Text c={meta.reSaleAvailable > 0 ? 'teal' : 'red'} fw={600} size="xs">
+              {t('Перепродаж')}: {metaNumberFormatter.format(meta.reSaleAvailable)}
+            </Text>
+          )}
+          {meta.reSalePrice != null && (
+            <Text size="xs">
+              {metaNumberFormatter.format(meta.reSalePrice)}
+              {meta.reSaleCurrency ? ` ${meta.reSaleCurrency}` : ''}
+            </Text>
+          )}
+        </Group>
+      )}
+    </Stack>
   )
 }
 
@@ -254,15 +318,16 @@ function ProductMiniCard({
         <Text c={color ?? 'violet.7'} fw={700} size="sm" title={name} truncate>
           {code}
         </Text>
-        {meta?.available != null && (
-          <Text c={meta.available > 0 ? 'teal' : 'red'} fw={600} size="xs" style={{ flexShrink: 0 }}>
-            {metaNumberFormatter.format(meta.available)}
-          </Text>
-        )}
+        <ProductMetaDetails meta={meta} />
       </Group>
       <Text c="dimmed" size="xs" title={name} truncate>
         {name}
       </Text>
+      {product.MainOriginalNumber && (
+        <Text c="dimmed" size="xs" truncate>
+          {product.MainOriginalNumber}
+        </Text>
+      )}
     </Box>
   )
 }

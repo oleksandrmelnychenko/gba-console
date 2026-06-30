@@ -1317,6 +1317,20 @@ export function NewSaleProductsStep({
     return getWizardAvailabilityRows(totalAvailabilities, key)
   }
 
+  function getMainDetailRows(chipIndex: number | null): WizardDetailRow[] {
+    if (chipIndex == null) {
+      return []
+    }
+
+    return getMainChipRows(chipIndex).map((row) => ({
+      amount: getWizardProductNumber(row.Amount) ?? 0,
+      analyst: row.OrderItem?.User?.LastName ?? '',
+      key: String(row.NetId || row.OrderItem?.NetUid || row.OrderItem?.Id || `${row.Name || ''}|${row.RegionCode || ''}`),
+      name: row.Name ?? '',
+      regionCode: row.RegionCode ?? '',
+    }))
+  }
+
   function getDefaultMainDetailChipIndex(): number {
     return isVatSale ? MAIN_CHIP_INDEX_STORAGE_UKR_VAT : MAIN_CHIP_INDEX_STORAGE_UKR_NOT_VAT
   }
@@ -1952,8 +1966,6 @@ export function NewSaleProductsStep({
   const mainStatesActive = kbState === 'ProductSearch' || kbState === 'ProductSelection' || kbState === 'FullDetail'
   const analogueStatesActive = kbState === 'AnalogueSelection' || kbState === 'AnalogueFullDetail'
   const componentStatesActive = kbState === 'ComponentSelection' || kbState === 'ComponentFullDetail'
-  // Ctrl+Enter on the main product shows its full detail inline in the (widened) search column.
-  const isMainFullDetail = kbState === 'FullDetail' && Boolean(mainProduct)
   const setQtyByNetUid = new Map<string, number>()
 
   componentEntries.entries.forEach((entry) => {
@@ -1987,37 +1999,63 @@ export function NewSaleProductsStep({
     )
   }
 
-  // Full detail (Ctrl+Enter) for the main product — rendered as a floating overlay that overflows
-  // the narrow search column (instead of widening it), replacing the compact selected-product card.
-  const mainDetailPanel =
-    isMainFullDetail && mainProduct ? (
+  // Keep selected product details visible in the work area. Ctrl+Enter now only changes
+  // keyboard navigation inside the same detail block.
+  const selectedMainProduct = mainProduct ? (active?.source === 'main' && activeProduct ? activeProduct : mainProduct) : null
+  const selectedMainChipIndex =
+    selectedMainProduct && active?.source === 'main' && detail?.chipIndex != null
+      ? detail.chipIndex
+      : selectedMainProduct
+        ? getDefaultMainDetailChipIndex()
+        : null
+  const selectedMainProductPanel =
+    selectedMainProduct ? (
       <ProductFullDetailPanel
-        canEditDescription={canEditMainDescription}
+        canEditDescription={canEditMainDescription && active?.source === 'main'}
         chips={getMainChips()}
         descriptionDraft={descriptionDraft}
-        displayQty={getDisplayedSellableQty(active?.source === 'main' && activeProduct ? activeProduct : mainProduct) ?? 0}
+        displayQty={getDisplayedSellableQty(selectedMainProduct) ?? 0}
         isEditingDescription={editingDescription && active?.source === 'main'}
         nearestSupplyOrder={nearestOrder}
-        pricing={detailPricingFor(mainProduct)}
-        product={active?.source === 'main' ? activeProduct ?? mainProduct : mainProduct}
-        rows={
-          detail?.chipIndex != null
-            ? getMainChipRows(detail.chipIndex).map((row) => ({
-                amount: getWizardProductNumber(row.Amount) ?? 0,
-                analyst: row.OrderItem?.User?.LastName ?? '',
-                key: String(row.NetId || row.OrderItem?.NetUid || row.OrderItem?.Id || `${row.Name || ''}|${row.RegionCode || ''}`),
-                name: row.Name ?? '',
-                regionCode: row.RegionCode ?? '',
-              }))
-            : []
-        }
-        selectedChipIndex={detail?.chipIndex ?? null}
-        selectedRowIndex={detail?.rowIndex ?? null}
-        showRowDetails={detail?.chipIndex === 0}
+        pricing={detailPricingFor(selectedMainProduct)}
+        product={selectedMainProduct}
+        rows={getMainDetailRows(selectedMainChipIndex)}
+        selectedChipIndex={selectedMainChipIndex}
+        selectedRowIndex={active?.source === 'main' ? (detail?.rowIndex ?? null) : null}
+        showRowDetails={selectedMainChipIndex === 0}
         onDescriptionDraftChange={setDescriptionDraft}
         onSelectChip={(chipIndex) => setDetail({ chipIndex, rowIndex: null })}
         onToggleDescription={() => void toggleDescriptionEdit()}
       />
+    ) : null
+  const analoguePanel =
+    analogueState.items.length > 0 ? (
+      <Stack className="new-sale-products-step__related-panel" gap={7}>
+        <Group className="new-sale-products-step__related-head" justify="space-between" wrap="nowrap">
+          <Text className="new-sale-products-step__related-title">{t('Аналоги')}</Text>
+          <span>{analogueState.items.length}</span>
+        </Group>
+        <Box className="new-sale-products-step__related-scroll">
+          <WizardRelatedProductRows
+            active={analogueStatesActive}
+            focusedIndex={analogueIndex ?? -1}
+            getItemColor={(product) => getRelatedProductRowColor(product)}
+            products={analogueState.items}
+            renderExtra={(product) => renderPriceExtra(product)}
+            onOpenCard={setProductCardNetId}
+            onProductInterest={agreementNetId ? (product) => openInterest(product) : undefined}
+            onPick={(index) => {
+              focusAnalogue(index)
+
+              if (!analogueStatesActive) {
+                keyboard.setState('AnalogueSelection')
+              }
+
+              focusSearchInput()
+            }}
+          />
+        </Box>
+      </Stack>
     ) : null
 
   return (
@@ -2037,6 +2075,8 @@ export function NewSaleProductsStep({
             display: 'flex',
             flexDirection: 'column',
             flexShrink: 0,
+            minHeight: 0,
+            overflow: 'hidden',
             paddingRight: 12,
             width: 320,
           }}
@@ -2061,7 +2101,6 @@ export function NewSaleProductsStep({
           <Box style={{ flex: 1, minHeight: 0 }}>
             <WizardProductCarousel
               active={mainStatesActive}
-              detailSlot={mainDetailPanel}
               emptyText={query.trim().length < 4 ? t('Введіть мінімум 4 символи') : t('Нічого не знайдено')}
               focusedIndex={mainIndex}
               getItemColor={(product) => getRelatedProductRowColor(product)}
@@ -2076,6 +2115,7 @@ export function NewSaleProductsStep({
               searchMode={kbState === 'ProductSearch'}
               searchValue={query}
               onOpenCard={setProductCardNetId}
+              onProductInterest={agreementNetId ? (product) => openInterest(product) : undefined}
               onPick={(index) => {
                 focusMain(index)
 
@@ -2094,55 +2134,33 @@ export function NewSaleProductsStep({
         </Box>
 
         {/* RIGHT: detail + analogues + components scroll above a pinned cart grid */}
-        <Box style={{ display: 'flex', flex: 1, flexDirection: 'column', minWidth: 0 }}>
-          <Box style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+        <Box style={{ display: 'flex', flex: 1, flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
+          <Box style={{ flex: 1, minHeight: 0, overflowX: 'hidden', overflowY: 'auto' }}>
             <Stack gap="md">
-              {analogueState.items.length > 0 && (
-                <Stack gap={4}>
-                  <Group gap={8}>
-                    <Text fw={600} size="sm">
-                      {t('Аналоги')}
-                    </Text>
-                    <Text c="dimmed" size="sm">
-                      {analogueState.items.length} {t('штук')}
-                    </Text>
-                  </Group>
-                  <WizardRelatedProductRows
-                    active={analogueStatesActive}
-                    focusedIndex={analogueIndex ?? -1}
-                    getItemColor={(product) => getRelatedProductRowColor(product)}
-                    products={analogueState.items}
-                    renderExtra={(product) => renderPriceExtra(product)}
-                    onOpenCard={setProductCardNetId}
-                    onPick={(index) => {
-                      focusAnalogue(index)
+              {(selectedMainProductPanel || analoguePanel) && (
+                <Group align="stretch" className="new-sale-products-step__top-row" gap={10} wrap="nowrap">
+                  {selectedMainProductPanel && <Box className="new-sale-products-step__product-slot">{selectedMainProductPanel}</Box>}
+                  {analoguePanel && <Box className="new-sale-products-step__related-slot">{analoguePanel}</Box>}
+                </Group>
+              )}
 
-                      if (!analogueStatesActive) {
-                        keyboard.setState('AnalogueSelection')
-                      }
-
-                      focusSearchInput()
-                    }}
-                  />
-                  {kbState === 'AnalogueFullDetail' && focusedAnalogue && (
-                    <ProductFullDetailPanel
-                      canEditDescription
-                      chips={getReservationChips(focusedAnalogue)}
-                      descriptionDraft={descriptionDraft}
-                      displayQty={getDisplayedSellableQty(focusedAnalogue) ?? 0}
-                      isEditingDescription={editingDescription && active?.source === 'analogue'}
-                      pricing={detailPricingFor(focusedAnalogue)}
-                      product={focusedAnalogue}
-                      rows={detail?.chipIndex === 4 && detail.rowsOpen ? getReservationDetailRows() : []}
-                      selectedChipIndex={detail?.chipIndex ?? null}
-                      selectedRowIndex={detail?.rowIndex ?? null}
-                      showRowDetails
-                      onDescriptionDraftChange={setDescriptionDraft}
-                      onSelectChip={(chipIndex) => setDetail({ chipIndex, rowIndex: null })}
-                      onToggleDescription={() => void toggleDescriptionEdit()}
-                    />
-                  )}
-                </Stack>
+              {kbState === 'AnalogueFullDetail' && focusedAnalogue && (
+                <ProductFullDetailPanel
+                  canEditDescription
+                  chips={getReservationChips(focusedAnalogue)}
+                  descriptionDraft={descriptionDraft}
+                  displayQty={getDisplayedSellableQty(focusedAnalogue) ?? 0}
+                  isEditingDescription={editingDescription && active?.source === 'analogue'}
+                  pricing={detailPricingFor(focusedAnalogue)}
+                  product={focusedAnalogue}
+                  rows={detail?.chipIndex === 4 && detail.rowsOpen ? getReservationDetailRows() : []}
+                  selectedChipIndex={detail?.chipIndex ?? null}
+                  selectedRowIndex={detail?.rowIndex ?? null}
+                  showRowDetails
+                  onDescriptionDraftChange={setDescriptionDraft}
+                  onSelectChip={(chipIndex) => setDetail({ chipIndex, rowIndex: null })}
+                  onToggleDescription={() => void toggleDescriptionEdit()}
+                />
               )}
 
               {componentEntries.entries.length > 0 && (
@@ -2169,6 +2187,7 @@ export function NewSaleProductsStep({
                       </Group>
                     )}
                     onOpenCard={setProductCardNetId}
+                    onProductInterest={agreementNetId ? (product) => openInterest(product) : undefined}
                     onPick={(index) => {
                       focusComponent(index)
 
