@@ -18,6 +18,7 @@ export type WizardDetailChip = {
 export type WizardDetailRow = {
   amount: number
   analyst?: string
+  key?: string
   name: string
   regionCode?: string
 }
@@ -36,6 +37,7 @@ export function ProductFullDetailPanel({
   selectedRowIndex,
   showRowDetails,
   onDescriptionDraftChange,
+  onSelectChip,
   onToggleDescription,
 }: {
   canEditDescription: boolean
@@ -51,6 +53,7 @@ export function ProductFullDetailPanel({
   selectedRowIndex: number | null
   showRowDetails: boolean
   onDescriptionDraftChange: (value: string) => void
+  onSelectChip?: (index: number) => void
   onToggleDescription: () => void
 }) {
   const { t } = useI18n()
@@ -98,19 +101,31 @@ export function ProductFullDetailPanel({
               {chips.map((chip, index) => (
                 <Box
                   key={chip.key}
+                  role={onSelectChip ? 'button' : undefined}
+                  tabIndex={onSelectChip ? 0 : undefined}
                   style={{
                     background: index === selectedChipIndex ? 'var(--mantine-color-violet-light)' : undefined,
                     borderLeft: index === 0 ? undefined : '1px solid var(--mantine-color-gray-3)',
+                    cursor: onSelectChip ? 'pointer' : undefined,
                     flex: 1,
                     minWidth: 0,
                     padding: '6px 4px',
                     textAlign: 'center',
                   }}
+                  onClick={() => onSelectChip?.(index)}
+                  onKeyDown={(event) => {
+                    if (!onSelectChip || (event.key !== 'Enter' && event.key !== ' ')) {
+                      return
+                    }
+
+                    event.preventDefault()
+                    onSelectChip(index)
+                  }}
                 >
                   <Text fw={700} size="md">
                     {qtyFormatter.format(chip.count)}
                   </Text>
-                  <Text c="dimmed" tt="uppercase" style={{ fontSize: 10, lineHeight: 1.2 }}>
+                  <Text c="dimmed" tt="uppercase" style={{ fontSize: 12, lineHeight: 1.2 }}>
                     {chip.name}
                   </Text>
                 </Box>
@@ -122,7 +137,7 @@ export function ProductFullDetailPanel({
                 <Stack gap={4}>
                   {rows.map((row, index) => (
                     <Paper
-                      key={index}
+                      key={getDetailRowKey(row)}
                       bg={index === selectedRowIndex ? 'var(--mantine-color-blue-light)' : undefined}
                       p={6}
                       radius="sm"
@@ -273,4 +288,8 @@ export function ProductFullDetailPanel({
       </Group>
     </Paper>
   )
+}
+
+function getDetailRowKey(row: WizardDetailRow): string {
+  return row.key || [row.regionCode, row.name, row.analyst, row.amount].filter((value) => value !== undefined && value !== '').join('|')
 }

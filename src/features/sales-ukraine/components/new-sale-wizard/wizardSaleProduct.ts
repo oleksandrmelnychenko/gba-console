@@ -70,9 +70,7 @@ export function getWizardSellableQty(product: WizardSaleProduct, isVatSale: bool
 }
 
 export function getWizardDisplayQty(product: WizardSaleProduct, isVatSale: boolean): number {
-  return isVatSale
-    ? getWizardProductNumber(product.AvailableQtyUkVAT) ?? 0
-    : getWizardProductNumber(product.AvailableQtyUk) ?? 0
+  return getWizardSellableQty(product, isVatSale) ?? 0
 }
 
 export function getOrderItemDiscount(item: SalesUkraineOrderItem): number {

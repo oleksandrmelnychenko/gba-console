@@ -98,6 +98,9 @@ const MAIN_CHIP_DEFS = [
   { index: 5, key: 'OnWayToUkr', label: 'До України' },
 ] as const
 
+const MAIN_CHIP_INDEX_STORAGE_UKR_VAT = 1
+const MAIN_CHIP_INDEX_STORAGE_UKR_NOT_VAT = 2
+
 type ProductPricingSnapshot = {
   calculatedPricings: WizardCalculatedProductPricing[]
   currentPrice: number | null
@@ -437,9 +440,7 @@ export function NewSaleProductsStep({
     (product: WizardSaleProduct) => {
       const reservation = product.NetUid ? reservations.get(product.NetUid) : undefined
       const pricing = product.NetUid ? productPricing.get(product.NetUid) : undefined
-      const available = isVatSale
-        ? getWizardProductNumber(product.AvailableQtyUkVAT) ?? undefined
-        : getWizardProductNumber(product.AvailableQtyUk) ?? undefined
+      const available = getWizardSellableQty(product, isVatSale)
       const price =
         pricing?.currentPrice ?? getReservationPrice(pricing?.reservation) ?? getReservationPrice(reservation) ?? product.CurrentPrice
       const reSaleAvailable = isVatSale ? undefined : getWizardProductNumber(product.AvailableQtyUkReSale) ?? undefined
@@ -1279,7 +1280,7 @@ export function NewSaleProductsStep({
       case 'StorageUkrVat':
         return totalAvailabilities.InStorageUkrVat ?? []
       case 'StorageUkrNotVat':
-        return totalAvailabilities.InStorageUkrNotVat ?? []
+        return [...(totalAvailabilities.InStorageUkrNotVat ?? []), ...(totalAvailabilities.AvailableQtyUkReSale ?? [])]
       case 'StoragePl':
         return totalAvailabilities.InStoragePl ?? []
       case 'OnWayToPl':
@@ -1289,6 +1290,10 @@ export function NewSaleProductsStep({
       default:
         return []
     }
+  }
+
+  function getDefaultMainDetailChipIndex(): number {
+    return isVatSale ? MAIN_CHIP_INDEX_STORAGE_UKR_VAT : MAIN_CHIP_INDEX_STORAGE_UKR_NOT_VAT
   }
 
   function getReservationChips(product: WizardSaleProduct | null): WizardDetailChip[] {
@@ -1307,6 +1312,7 @@ export function NewSaleProductsStep({
     return reservationRows.map((row) => ({
       amount: getWizardProductNumber(row.Qty) ?? 0,
       analyst: row.OrderItem?.User?.LastName ?? '',
+      key: String(row.OrderItem?.NetUid || row.OrderItem?.Id || row.ProductNetUid || row.ProductId || row.RegionCode || ''),
       name: row.OrderItem?.Order?.Sales?.[0]?.SaleNumber?.Value ?? '',
       regionCode: row.RegionCode ?? '',
     }))
@@ -1399,7 +1405,7 @@ export function NewSaleProductsStep({
         return true
       case 'CtrlEnter':
         if (mainProduct) {
-          setDetail({ chipIndex: null, rowIndex: null })
+          setDetail({ chipIndex: getDefaultMainDetailChipIndex(), rowIndex: null })
           keyboard.setState('FullDetail')
         }
 
@@ -1961,6 +1967,7 @@ export function NewSaleProductsStep({
             ? getMainChipRows(detail.chipIndex).map((row) => ({
                 amount: getWizardProductNumber(row.Amount) ?? 0,
                 analyst: row.OrderItem?.User?.LastName ?? '',
+                key: String(row.NetId || row.OrderItem?.NetUid || row.OrderItem?.Id || `${row.Name || ''}|${row.RegionCode || ''}`),
                 name: row.Name ?? '',
                 regionCode: row.RegionCode ?? '',
               }))
@@ -1970,6 +1977,7 @@ export function NewSaleProductsStep({
         selectedRowIndex={detail?.rowIndex ?? null}
         showRowDetails={detail?.chipIndex === 0}
         onDescriptionDraftChange={setDescriptionDraft}
+        onSelectChip={(chipIndex) => setDetail({ chipIndex, rowIndex: null })}
         onToggleDescription={() => void toggleDescriptionEdit()}
       />
     ) : null
@@ -2085,6 +2093,7 @@ export function NewSaleProductsStep({
                       selectedRowIndex={detail?.rowIndex ?? null}
                       showRowDetails
                       onDescriptionDraftChange={setDescriptionDraft}
+                      onSelectChip={(chipIndex) => setDetail({ chipIndex, rowIndex: null })}
                       onToggleDescription={() => void toggleDescriptionEdit()}
                     />
                   )}
@@ -2139,6 +2148,7 @@ export function NewSaleProductsStep({
                       selectedRowIndex={detail?.rowIndex ?? null}
                       showRowDetails
                       onDescriptionDraftChange={setDescriptionDraft}
+                      onSelectChip={(chipIndex) => setDetail({ chipIndex, rowIndex: null })}
                       onToggleDescription={() => void toggleDescriptionEdit()}
                     />
                   )}

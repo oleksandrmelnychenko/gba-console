@@ -598,8 +598,8 @@ export function SalesUkrainePage() {
 
     setConfirmState({
       confirmLabel: t('Підтвердити'),
-      message: t('Позначити, що замовлення не буде відвантажено?'),
-      title: t('Не буде відвантажено'),
+      message: t('Розблокувати продаж для відвантаження?'),
+      title: t('Підтвердження відвантаження'),
       onConfirm: async () => {
         await updateSale({ ...sale, IsAcceptedToPacking: true })
         notifications.show({ color: 'green', message: t('Збережено') })
@@ -1023,7 +1023,15 @@ export function SalesUkrainePage() {
         title={t('Історія редагувань')}
         onClose={closeAudit}
       >
-        <SaleAuditDetail error={auditError} isLoading={auditLoading} statistic={auditStatistic} />
+        <SaleAuditDetail
+          error={auditError}
+          isLoading={auditLoading}
+          statistic={auditStatistic}
+          onConfirmed={() => {
+            closeAudit()
+            reload()
+          }}
+        />
       </AppDrawer>
 
       <NewSaleWizard
@@ -1177,13 +1185,13 @@ function SaleGridRow({
           )}
           {showBang ? (
             <span className="sg-action-slot is-bang">
-              <Tooltip label={t('Замовлення не буде відвантажено')}>
+              <Tooltip label={t('Розблокувати для відвантаження')}>
                 {bangClickable ? (
                   <button
                     className="sg-bang"
                     data-clickable="true"
                     type="button"
-                    aria-label={t('Замовлення не буде відвантажено')}
+                    aria-label={t('Розблокувати для відвантаження')}
                     style={{ opacity: 1 }}
                     onClick={() => onWillNotShip(sale)}
                   >
@@ -1355,7 +1363,7 @@ function SaleGridRow({
                 leftSection={<IconAlertTriangle size={16} />}
                 onClick={() => onWillNotShip(sale)}
               >
-                {t('Не буде відвантажено')}
+                {t('Розблокувати для відвантаження')}
               </Menu.Item>
             )}
             {showUnlock && (

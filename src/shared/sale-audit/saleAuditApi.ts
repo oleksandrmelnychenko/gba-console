@@ -36,6 +36,12 @@ export async function getShiftedSaleHistoryDocument(
   return normalizeDocument(result)
 }
 
+export async function confirmSaleAuditHistory(historyNetId: string): Promise<void> {
+  await apiRequest<unknown>('/protocol/act/invoice/set/edit/act/for/editing', {
+    query: { historyNetId },
+  })
+}
+
 function normalizeDocument(result: unknown): SaleAuditPrintDocument | null {
   return result && typeof result === 'object' && !Array.isArray(result) ? (result as SaleAuditPrintDocument) : null
 }

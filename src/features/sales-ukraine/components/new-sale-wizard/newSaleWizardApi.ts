@@ -53,6 +53,7 @@ export type WizardAvailabilityRow = {
 }
 
 export type WizardTotalProductAvailabilities = {
+  AvailableQtyUkReSale?: WizardAvailabilityRow[]
   AvailabilityInvoiceModel?: WizardAvailabilityRow[]
   InAccounts?: WizardAvailabilityRow[]
   InStoragePl?: WizardAvailabilityRow[]

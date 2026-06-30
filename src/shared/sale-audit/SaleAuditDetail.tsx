@@ -1,4 +1,5 @@
-import { ActionIcon, Alert, Anchor, Box, Card, Divider, Group, Loader, Stack, Text, ThemeIcon, Tooltip } from '@mantine/core'
+import { ActionIcon, Alert, Anchor, Box, Button, Card, Divider, Group, Loader, Stack, Text, ThemeIcon, Tooltip } from '@mantine/core'
+import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
   IconArrowsExchange,
@@ -12,7 +13,7 @@ import { useValueState } from '../hooks/useValueState'
 import { useI18n } from '../i18n/useI18n'
 import { getDocumentHref } from '../url/getDocumentHref'
 import { AppModal } from '../ui/AppModal'
-import { getShiftedSaleDocument, getShiftedSaleHistoryDocument } from './saleAuditApi'
+import { confirmSaleAuditHistory, getShiftedSaleDocument, getShiftedSaleHistoryDocument } from './saleAuditApi'
 import {
   SaleAuditShiftStatusType,
   type SaleAuditLifeCycleLineItem,
@@ -27,10 +28,11 @@ type AuditPrintKind = 'act' | 'invoice'
 type SaleAuditDetailProps = {
   error: string | null
   isLoading: boolean
+  onConfirmed?: () => void
   statistic: SaleAuditStatistic | null
 }
 
-export function SaleAuditDetail({ error, isLoading, statistic }: SaleAuditDetailProps) {
+export function SaleAuditDetail({ error, isLoading, onConfirmed, statistic }: SaleAuditDetailProps) {
   const { t } = useI18n()
   const sale = statistic?.Sale
   const printRequestRef = useRef(0)
@@ -39,6 +41,8 @@ export function SaleAuditDetail({ error, isLoading, statistic }: SaleAuditDetail
   const [printDocument, setPrintDocument] = useValueState<SaleAuditPrintDocument | null>(null)
   const [isPrinting, setPrinting] = useValueState(false)
   const [printError, setPrintError] = useValueState<string | null>(null)
+  const [confirmHistoryNetId, setConfirmHistoryNetId] = useValueState<string | null>(null)
+  const [isConfirmingHistory, setConfirmingHistory] = useValueState(false)
 
   function resolveHistoryNetId(orderItem: SaleAuditOrderItem): string | null {
     const historyInvoiceEditId = (orderItem.ShiftStatuses || [])[0]?.HistoryInvoiceEditId
@@ -71,6 +75,10 @@ export function SaleAuditDetail({ error, isLoading, statistic }: SaleAuditDetail
 
     void (async () => {
       try {
+        if (printRequestRef.current !== requestId) {
+          return
+        }
+
         const document =
           kind === 'invoice'
             ? await getShiftedSaleDocument(netId, historyNetId)
@@ -103,6 +111,27 @@ export function SaleAuditDetail({ error, isLoading, statistic }: SaleAuditDetail
     setPrintError(null)
     setPrinting(false)
   }
+
+  async function confirmProcessing() {
+    if (!confirmHistoryNetId) {
+      return
+    }
+
+    setConfirmingHistory(true)
+
+    try {
+      await confirmSaleAuditHistory(confirmHistoryNetId)
+      notifications.show({ color: 'green', message: t('Підтверджено') })
+      setConfirmHistoryNetId(null)
+      onConfirmed?.()
+    } catch (confirmError) {
+      notifications.show({ color: 'red', message: confirmError instanceof Error ? confirmError.message : t('Не вдалося підтвердити') })
+    } finally {
+      setConfirmingHistory(false)
+    }
+  }
+
+  const firstHistoryNetId = (sale?.HistoryInvoiceEdit || []).find((item) => item.NetUid)?.NetUid || null
 
   return (
     <Stack gap="md">
@@ -141,14 +170,21 @@ export function SaleAuditDetail({ error, isLoading, statistic }: SaleAuditDetail
         <Divider my="sm" />
 
         <Stack gap="xs">
-          {(statistic?.LifeCycleLine || []).map((line, index) => (
-            <LifeCycleRow key={index} line={line} />
+          {(statistic?.LifeCycleLine || []).map((line) => (
+            <LifeCycleRow key={getLifeCycleLineKey(line)} line={line} />
           ))}
         </Stack>
       </Card>
 
       <Card withBorder padding="md" radius="md">
-        <Text fw={600}>{t('Переміщено')}</Text>
+        <Group justify="space-between" align="center">
+          <Text fw={600}>{t('Переміщено')}</Text>
+          {firstHistoryNetId && (
+            <Button size="xs" variant="light" onClick={() => setConfirmHistoryNetId(firstHistoryNetId)}>
+              {t('Підтвердити обробку')}
+            </Button>
+          )}
+        </Group>
         <Divider my="sm" />
         <Stack gap="sm">
           {(sale?.Order?.OrderItems || []).map((orderItem, index) => (
@@ -204,6 +240,26 @@ export function SaleAuditDetail({ error, isLoading, statistic }: SaleAuditDetail
           )}
         </Stack>
       </AppModal>
+
+      <AppModal
+        centered
+        opened={Boolean(confirmHistoryNetId)}
+        size="xs"
+        title={t('Підтвердження')}
+        onClose={() => (isConfirmingHistory ? undefined : setConfirmHistoryNetId(null))}
+      >
+        <Stack gap="md">
+          <Text size="sm">{t('Підтвердити обробку відвантаження?')}</Text>
+          <Group justify="flex-end" gap="xs">
+            <Button color="gray" disabled={isConfirmingHistory} variant="subtle" onClick={() => setConfirmHistoryNetId(null)}>
+              {t('Скасувати')}
+            </Button>
+            <Button loading={isConfirmingHistory} onClick={confirmProcessing}>
+              {t('Підтвердити')}
+            </Button>
+          </Group>
+        </Stack>
+      </AppModal>
     </Stack>
   )
 }
@@ -228,6 +284,10 @@ function LifeCycleRow({ line }: { line: SaleAuditLifeCycleLineItem }) {
       )}
     </Group>
   )
+}
+
+function getLifeCycleLineKey(line: SaleAuditLifeCycleLineItem): string {
+  return [line.Value, line.Updated, line.IsActive ? 'active' : 'inactive'].filter(Boolean).join('|')
 }
 
 function AuditOrderItem({
