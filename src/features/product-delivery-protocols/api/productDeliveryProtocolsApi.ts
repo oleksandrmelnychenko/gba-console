@@ -1,4 +1,5 @@
 import { apiRequest } from '../../../shared/api/apiClient'
+import { normalizeExportDocument as normalizeSharedExportDocument } from '../../../shared/documents/exportDocument'
 import { toDateTimeQuery } from '../../../shared/date/dateTime'
 import type {
   CreateProtocolPayload,
@@ -100,14 +101,8 @@ function normalizeProtocol(result: unknown): DeliveryProductProtocol | null {
 }
 
 function normalizeExportDocument(result: unknown): ProtocolExportDocument {
-  if (result && typeof result === 'object') {
-    const record = result as Record<string, unknown>
-
-    return {
-      DocumentURL: typeof record.DocumentURL === 'string' ? record.DocumentURL : undefined,
-      PdfDocumentURL: typeof record.PdfDocumentURL === 'string' ? record.PdfDocumentURL : undefined,
-    }
-  }
-
-  return {}
+  // Delegate to the shared normalizer so the PDF link is picked up whether the
+  // backend returns it as `PdfDocumentURL` or the `PdfDocument` alias (mirrors
+  // the PZ document download path).
+  return normalizeSharedExportDocument(result)
 }

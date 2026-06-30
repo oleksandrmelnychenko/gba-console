@@ -1472,6 +1472,11 @@ export function NewSaleProductsStep({
 
         return true
       case 'CtrlEnter':
+        // Toggle the detail overlay shut and reset the keyboard state, otherwise it stays parked
+        // in 'FullDetail' (where Ctrl(+Shift)+Enter is a no-op) and the shortcut can't reopen it.
+        resetDetail()
+        keyboard.setState('ProductSelection')
+
         return true
       case 'CtrlI':
         openImage(activeProduct)
@@ -1587,6 +1592,10 @@ export function NewSaleProductsStep({
 
         return true
       case 'CtrlEnter':
+        // Toggle the analogue detail overlay shut and reset the keyboard state so the shortcut reopens.
+        resetDetail()
+        keyboard.setState('AnalogueSelection')
+
         return true
       case 'Space':
         return true
@@ -1720,6 +1729,10 @@ export function NewSaleProductsStep({
 
         return true
       case 'CtrlEnter':
+        // Toggle the component detail overlay shut and reset the keyboard state so the shortcut reopens.
+        resetDetail()
+        keyboard.setState('ComponentSelection')
+
         return true
       case 'Space':
         if (

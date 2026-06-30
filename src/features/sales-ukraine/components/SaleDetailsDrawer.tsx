@@ -17,7 +17,7 @@ import {
   Textarea,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconCheck, IconPencil, IconX } from '@tabler/icons-react'
+import { IconCheck, IconPencil, IconTruckDelivery, IconX } from '@tabler/icons-react'
 import { useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
@@ -353,7 +353,11 @@ function DetailsView({ sale }: { sale: SalesUkraineSale }) {
   return (
     <Stack gap={6}>
       <Group gap="xs">
-        {sale.Transporter?.ImageUrl && <Image alt="" h={20} src={toSecure(sale.Transporter.ImageUrl)} w={20} />}
+        {sale.Transporter?.ImageUrl ? (
+          <Image alt="" h={20} src={toSecure(sale.Transporter.ImageUrl)} w={20} />
+        ) : (
+          <IconTruckDelivery size={20} />
+        )}
         <Text fw={600} c={changed(sale.Transporter?.Name, last?.Transporter?.Name) ? 'orange.7' : undefined}>
           {displayValue(sale.Transporter?.Name || sale.Transporter?.Title)}
         </Text>

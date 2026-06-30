@@ -88,9 +88,7 @@
 }
 
 .console-table-page .data-table-th {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.88)),
-    var(--mantine-color-white);
+  background: var(--mantine-color-white);
   border-bottom: 1px solid var(--mantine-color-gray-2);
   color: var(--mantine-color-gray-7);
   font-size: 13px;
@@ -110,17 +108,8 @@
     color 140ms ease;
 }
 
-.console-table-page .data-table-header-button[data-sortable='true']:hover,
-.console-table-page .data-table-header-button[data-sortable='true']:focus-visible {
-  background: var(--mantine-color-orange-0);
-  color: var(--mantine-color-gray-8);
-}
-
 .console-table-page .data-table-cell {
   background: var(--data-table-cell-bg, var(--mantine-color-white));
-  border-bottom: 1px solid var(--mantine-color-gray-1);
-  color: var(--mantine-color-gray-8);
-  font-weight: 500;
   transition:
     background 140ms ease,
     border-color 140ms ease,
@@ -131,16 +120,6 @@
   font-size: 12px;
   padding-bottom: 8px;
   padding-top: 8px;
-}
-
-.console-table-page .data-table-density-normal .data-table-cell {
-  font-size: 12.5px;
-  padding-bottom: 10px;
-  padding-top: 10px;
-}
-
-.console-table-page .data-table-row .data-table-cell:first-child {
-  padding-left: 11px;
 }
 
 .console-table-page .data-table-row {
