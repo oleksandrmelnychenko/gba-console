@@ -65,6 +65,9 @@ export default defineConfig({
     },
   },
   server: {
+    watch: {
+      ignored: ['**/.vs/**'],
+    },
     proxy: {
       '^/api/v1/[^/]+/history': {
         target: process.env.VITE_DEV_HISTORY_PROXY_TARGET || 'https://gba-analytics-dev.85.17.167.167.nip.io',

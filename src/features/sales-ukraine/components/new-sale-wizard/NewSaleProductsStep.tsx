@@ -1997,17 +1997,17 @@ export function NewSaleProductsStep({
 
   function renderPriceExtra(product: WizardSaleProduct, setQty?: number) {
     return (
-      <Group gap={8} mt={4} wrap="nowrap">
+      <Group className="new-sale-related-row__metrics" gap={6} wrap="nowrap">
         {setQty != null && (
-          <Text c="dimmed" size="xs">
+          <Text className="new-sale-related-row__metric is-muted">
             {t('К-сть')}: {qtyFormatter.format(setQty)}
           </Text>
         )}
-        <Text fw={600} size="xs">
+        <Text className="new-sale-related-row__metric is-qty">
           {qtyFormatter.format(getDisplayedAvailableQty(product) ?? 0)} {product.MeasureUnit?.Name ?? ''}
         </Text>
-        <Text size="xs">{amountFormatter.format(getWizardProductNumber(product.CurrentPrice) ?? 0)} EUR</Text>
-        <Text size="xs">{amountFormatter.format(getWizardProductNumber(product.CurrentPriceEurToUah) ?? 0)} UAH</Text>
+        <Text className="new-sale-related-row__metric">{amountFormatter.format(getWizardProductNumber(product.CurrentPrice) ?? 0)} EUR</Text>
+        <Text className="new-sale-related-row__metric">{amountFormatter.format(getWizardProductNumber(product.CurrentPriceEurToUah) ?? 0)} UAH</Text>
       </Group>
     )
   }
@@ -2092,8 +2092,10 @@ export function NewSaleProductsStep({
             getItemColor={(product) => getRelatedProductRowColor(product)}
             products={componentEntries.entries.map((entry) => entry.product)}
             renderExtra={(product) => (
-              <Group gap={6} wrap="nowrap">
-                {componentEntries.isBaseSet ? <IconBox size={14} /> : <IconSettings size={14} />}
+              <Group className="new-sale-related-row__component-extra" gap={6} wrap="nowrap">
+                <Box className="new-sale-related-row__component-icon">
+                  {componentEntries.isBaseSet ? <IconBox size={13} /> : <IconSettings size={13} />}
+                </Box>
                 {renderPriceExtra(product, product.NetUid ? setQtyByNetUid.get(product.NetUid) : undefined)}
               </Group>
             )}

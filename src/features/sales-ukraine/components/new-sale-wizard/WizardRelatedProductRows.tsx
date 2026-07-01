@@ -4,9 +4,6 @@ import type { ReactNode } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import type { WizardSaleProduct } from './wizardSaleProduct'
 
-// Compact one-line rows for related products (analogues / components) — replaces the bulky card
-// grid so the list takes far less vertical space. The focused row is highlighted like the
-// legacy picker; clicking a row focuses it (Enter adds it to the cart via the keyboard handler).
 export function WizardRelatedProductRows({
   products,
   active,
@@ -27,7 +24,7 @@ export function WizardRelatedProductRows({
   renderExtra?: (product: WizardSaleProduct) => ReactNode
 }) {
   return (
-    <Stack gap={2}>
+    <Stack className="new-sale-related-list" gap={0}>
       {products.map((product, index) => (
         <WizardRelatedProductRow
           key={String(product.NetUid || product.VendorCode || product.Articul || index)}
@@ -65,78 +62,71 @@ function WizardRelatedProductRow({
   renderExtra?: (product: WizardSaleProduct) => ReactNode
 }) {
   const { t } = useI18n()
-  const code = product.VendorCode || product.Articul || '—'
+  const code = product.VendorCode || product.Articul || '-'
   const name = product.NameUA || product.Name || ''
-  const borderColor = focused
-    ? active
-      ? 'var(--mantine-color-violet-5)'
-      : 'var(--mantine-color-gray-4)'
-    : 'transparent'
+  const extra = renderExtra?.(product)
 
   return (
     <Box
-      px={8}
-      py={4}
-      style={{
-        alignItems: 'center',
-        background: focused ? 'var(--mantine-color-violet-light)' : undefined,
-        border: `1px solid ${borderColor}`,
-        borderRadius: 6,
-        cursor: 'pointer',
-        display: 'flex',
-        gap: 10,
-        minWidth: 0,
-      }}
+      className="new-sale-related-row"
+      data-active={active ? 'true' : undefined}
+      data-focused={focused ? 'true' : undefined}
       onClick={onPick}
     >
-      <Box style={{ flex: 1, minWidth: 0 }}>
-        <Text c={color} fw={600} size="sm" truncate>
-          {code}
-        </Text>
-        <Text c="dimmed" size="xs" title={name} truncate>
+      <Box className="new-sale-related-row__content">
+        <Box className="new-sale-related-row__headline">
+          <Text c={color} className="new-sale-related-row__code" truncate>
+            {code}
+          </Text>
+          {product.MainOriginalNumber && (
+            <Text className="new-sale-related-row__number" truncate>
+              {product.MainOriginalNumber}
+            </Text>
+          )}
+        </Box>
+        <Text className="new-sale-related-row__name" title={name}>
           {name}
         </Text>
-        {product.MainOriginalNumber && (
-          <Text c="dimmed" size="xs" truncate>
-            {product.MainOriginalNumber}
-          </Text>
-        )}
       </Box>
-      {renderExtra?.(product)}
-      {product.NetUid && onProductInterest && (
-        <Tooltip label={t('Цікавить товар')}>
-          <ActionIcon
-            aria-label={t('Цікавить товар')}
-            color="orange"
-            size="sm"
-            style={{ flexShrink: 0 }}
-            variant="subtle"
-            onClick={(event) => {
-              event.stopPropagation()
-              onProductInterest(product)
-            }}
-          >
-            <IconStar size={15} />
-          </ActionIcon>
-        </Tooltip>
-      )}
-      {product.NetUid && onOpenCard && (
-        <Tooltip label={t('Картка товару')}>
-          <ActionIcon
-            aria-label={t('Картка товару')}
-            color="gray"
-            size="sm"
-            style={{ flexShrink: 0 }}
-            variant="subtle"
-            onClick={(event) => {
-              event.stopPropagation()
-              onOpenCard(product.NetUid as string)
-            }}
-          >
-            <IconInfoCircle size={15} />
-          </ActionIcon>
-        </Tooltip>
-      )}
+      <Box className="new-sale-related-row__side">
+        {extra && <Box className="new-sale-related-row__extra">{extra}</Box>}
+        <Box className="new-sale-related-row__actions">
+          {product.NetUid && onProductInterest && (
+            <Tooltip label={t('Цікавить товар')}>
+              <ActionIcon
+                aria-label={t('Цікавить товар')}
+                className="new-sale-related-row__action"
+                color="orange"
+                size="sm"
+                variant="subtle"
+                onClick={(event) => {
+                  event.stopPropagation()
+                  onProductInterest(product)
+                }}
+              >
+                <IconStar size={15} />
+              </ActionIcon>
+            </Tooltip>
+          )}
+          {product.NetUid && onOpenCard && (
+            <Tooltip label={t('Картка товару')}>
+              <ActionIcon
+                aria-label={t('Картка товару')}
+                className="new-sale-related-row__action"
+                color="gray"
+                size="sm"
+                variant="subtle"
+                onClick={(event) => {
+                  event.stopPropagation()
+                  onOpenCard(product.NetUid as string)
+                }}
+              >
+                <IconInfoCircle size={15} />
+              </ActionIcon>
+            </Tooltip>
+          )}
+        </Box>
+      </Box>
     </Box>
   )
 }
