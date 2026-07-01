@@ -4,6 +4,7 @@ import {
   getWizardAvailabilityChipCount,
   getWizardAvailabilityRows,
   getWizardDetailedSellableQty,
+  getWizardDetailedStorageQty,
 } from './wizardSaleAvailability'
 import type { WizardSaleProduct } from './wizardSaleProduct'
 
@@ -23,18 +24,17 @@ describe('wizard sale detailed availability', () => {
 
     expect(getWizardAvailabilityChipCount(availabilities, 'StorageUkrNotVat', 2)).toBe(5)
     expect(getWizardAvailabilityChipCount(availabilities, 'AvailableQtyUkReSale', 6)).toBe(4)
+    expect(getWizardDetailedStorageQty({ AvailableQtyUk: 1, AvailableQtyUkReSale: 1 } as WizardSaleProduct, false, availabilities)).toBe(5)
     expect(getWizardDetailedSellableQty({ AvailableQtyUk: 1, AvailableQtyUkReSale: 1 } as WizardSaleProduct, false, availabilities)).toBe(9)
   })
 
-  it('keeps warehouse rows available for the Ukraine storage chip', () => {
+  it('keeps warehouse and resale rows separate', () => {
     const availabilities: WizardTotalProductAvailabilities = {
       AvailableQtyUkReSale: [{ Amount: 2, Name: 'AMG' }],
       InStorageUkrNotVat: [{ Amount: 7, Name: 'Phoenix' }],
     }
 
-    expect([
-      ...getWizardAvailabilityRows(availabilities, 'StorageUkrNotVat'),
-      ...getWizardAvailabilityRows(availabilities, 'AvailableQtyUkReSale'),
-    ].map((row) => row.Name)).toEqual(['Phoenix', 'AMG'])
+    expect(getWizardAvailabilityRows(availabilities, 'StorageUkrNotVat').map((row) => row.Name)).toEqual(['Phoenix'])
+    expect(getWizardAvailabilityRows(availabilities, 'AvailableQtyUkReSale').map((row) => row.Name)).toEqual(['AMG'])
   })
 })

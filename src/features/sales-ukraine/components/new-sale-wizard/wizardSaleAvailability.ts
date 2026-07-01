@@ -1,5 +1,5 @@
 import type { WizardAvailabilityRow, WizardTotalProductAvailabilities } from './newSaleWizardApi'
-import { getWizardProductNumber, getWizardSellableQty, type WizardSaleProduct } from './wizardSaleProduct'
+import { getWizardProductNumber, getWizardSellableQty, getWizardStorageQty, type WizardSaleProduct } from './wizardSaleProduct'
 
 export type WizardAvailabilityKey =
   | 'AvailableQtyUkReSale'
@@ -57,14 +57,31 @@ export function getWizardDetailedSellableQty(
     return getWizardSellableQty(product, isVatSale)
   }
 
+  const storage = getWizardDetailedStorageQty(product, isVatSale, availabilities)
+
   if (isVatSale) {
-    return getWizardAvailabilityValue(availabilities, 'StorageUkrVat', 1) ?? getWizardSellableQty(product, isVatSale)
+    return storage
   }
 
-  const uk = getWizardAvailabilityValue(availabilities, 'StorageUkrNotVat', 2)
   const reSale = getWizardAvailabilityValue(availabilities, 'AvailableQtyUkReSale', 6)
 
-  return uk != null || reSale != null ? (uk ?? 0) + (reSale ?? 0) : getWizardSellableQty(product, isVatSale)
+  return storage != null || reSale != null ? (storage ?? 0) + (reSale ?? 0) : getWizardSellableQty(product, isVatSale)
+}
+
+export function getWizardDetailedStorageQty(
+  product: WizardSaleProduct,
+  isVatSale: boolean,
+  availabilities: WizardTotalProductAvailabilities | null | undefined,
+): number | undefined {
+  if (!availabilities) {
+    return getWizardStorageQty(product, isVatSale)
+  }
+
+  if (isVatSale) {
+    return getWizardAvailabilityValue(availabilities, 'StorageUkrVat', 1) ?? getWizardStorageQty(product, isVatSale)
+  }
+
+  return getWizardAvailabilityValue(availabilities, 'StorageUkrNotVat', 2) ?? getWizardStorageQty(product, isVatSale)
 }
 
 function getWizardAvailabilityValue(

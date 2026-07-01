@@ -54,15 +54,26 @@ export function getWizardProductNumber(value: unknown): number | null {
   return null
 }
 
-export function getWizardSellableQty(product: WizardSaleProduct, isVatSale: boolean): number | undefined {
+export function getWizardStorageQty(product: WizardSaleProduct, isVatSale: boolean): number | undefined {
   if (isVatSale) {
     return getWizardProductNumber(product.AvailableQtyUkVAT) ?? undefined
   }
 
-  const uk = getWizardProductNumber(product.AvailableQtyUk)
+  const warehouse = getWizardProductAvailabilitiesQty(product)
+
+  return warehouse ?? getWizardProductNumber(product.AvailableQtyUk) ?? undefined
+}
+
+export function getWizardSellableQty(product: WizardSaleProduct, isVatSale: boolean): number | undefined {
+  const uk = getWizardStorageQty(product, isVatSale)
+
+  if (isVatSale) {
+    return uk
+  }
+
   const reSale = getWizardProductNumber(product.AvailableQtyUkReSale)
 
-  if (uk === null && reSale === null) {
+  if (uk == null && reSale === null) {
     return undefined
   }
 
@@ -70,7 +81,30 @@ export function getWizardSellableQty(product: WizardSaleProduct, isVatSale: bool
 }
 
 export function getWizardDisplayQty(product: WizardSaleProduct, isVatSale: boolean): number {
-  return getWizardSellableQty(product, isVatSale) ?? 0
+  return getWizardStorageQty(product, isVatSale) ?? 0
+}
+
+function getWizardProductAvailabilitiesQty(product: WizardSaleProduct): number | undefined {
+  const rows = product.ProductAvailabilities
+
+  if (!Array.isArray(rows) || rows.length === 0) {
+    return undefined
+  }
+
+  let hasAmount = false
+  const total = rows.reduce((sum, row) => {
+    const amount = getWizardProductNumber(row.Amount)
+
+    if (amount === null) {
+      return sum
+    }
+
+    hasAmount = true
+
+    return sum + amount
+  }, 0)
+
+  return hasAmount ? total : undefined
 }
 
 export function getOrderItemDiscount(item: SalesUkraineOrderItem): number {
