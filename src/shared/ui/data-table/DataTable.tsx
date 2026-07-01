@@ -41,6 +41,7 @@ import { DataTableHeaderCell } from './DataTableHeaderCell'
 import { getPinnedStyle } from './dataTablePinning'
 import { createRenderedColumnWidths, getFillColumnId } from './dataTableSizing'
 import { DataTableToolbar } from './DataTableToolbar'
+import { createPortal } from 'react-dom'
 import { useElementClientWidth } from './useElementClientWidth'
 import { useI18n } from '../../i18n/useI18n'
 import type { TranslateFunction } from '../../i18n/types'
@@ -74,6 +75,7 @@ export function DataTable<TData>({
   onDensityChange,
   toolbarLeft,
   toolbarRight,
+  toolbarPortalTarget,
   onRowClick,
   rowClassName,
   manualSorting = false,
@@ -348,22 +350,31 @@ export function DataTable<TData>({
     setLayout(createDefaultDataTableLayout(columnIds, defaultLayout))
   }
 
+  const toolbarNode =
+    showLayoutControls || toolbarLeft || toolbarRight ? (
+      <DataTableToolbar
+        columnTitles={columnTitles}
+        density={effectiveDensity}
+        labels={labels}
+        showLayoutControls={showLayoutControls}
+        showDensityToggle={showDensityToggle && controlledDensity === undefined}
+        table={table}
+        toolbarLeft={toolbarLeft}
+        toolbarRight={toolbarRight}
+        onDensityChange={handleDensityChange}
+        onResetLayout={handleResetLayout}
+      />
+    ) : null
+  // When a portal target is provided, render the toolbar there (e.g. lifted into a
+  // page's own toolbar) instead of inline above the table.
+  const portalToolbar = toolbarPortalTarget !== undefined
+
   return (
     <div className={`data-table data-table-density-${effectiveDensity}`}>
-      {showLayoutControls || toolbarLeft || toolbarRight ? (
-        <DataTableToolbar
-          columnTitles={columnTitles}
-          density={effectiveDensity}
-          labels={labels}
-          showLayoutControls={showLayoutControls}
-          showDensityToggle={showDensityToggle && controlledDensity === undefined}
-          table={table}
-          toolbarLeft={toolbarLeft}
-          toolbarRight={toolbarRight}
-          onDensityChange={handleDensityChange}
-          onResetLayout={handleResetLayout}
-        />
-      ) : null}
+      {portalToolbar ? null : toolbarNode}
+      {portalToolbar && toolbarPortalTarget && toolbarNode
+        ? createPortal(toolbarNode, toolbarPortalTarget)
+        : null}
 
       <div ref={setScrollNode} className="data-table-scroll" style={scrollStyle}>
         <DndContext

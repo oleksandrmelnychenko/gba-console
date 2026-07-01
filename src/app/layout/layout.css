@@ -582,7 +582,7 @@
   justify-self: start;
   height: 42px;
   align-items: center;
-  color: var(--mantine-color-gray-7);
+  color: var(--brand-orange);
   font-size: 13px;
   min-width: 0;
   padding-left: 8px;
@@ -590,15 +590,13 @@
   z-index: 1;
 }
 
-.console-header-date svg {
-  color: var(--mantine-color-gray-6);
-  flex: 0 0 auto;
-}
-
 .console-header-date .mantine-Text-root {
   color: inherit;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
   line-height: 1;
-  text-transform: capitalize;
+  text-transform: uppercase;
 }
 
 .console-header-user-panel {
@@ -1380,8 +1378,10 @@
   color: var(--mantine-color-gray-7);
   cursor: pointer;
   font: inherit;
-  font-size: 13px;
-  font-weight: 600;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0;
   position: relative;
   white-space: nowrap;
   transition:
@@ -1390,7 +1390,7 @@
 }
 
 .console-subnav-pill:hover {
-  color: var(--mantine-color-violet-7);
+  color: var(--mantine-color-orange-light-color);
 }
 
 .console-subnav-item:hover {
@@ -1400,7 +1400,7 @@
 .console-subnav-module.is-active,
 .console-subnav-module.is-active:hover {
   background: transparent;
-  color: var(--mantine-color-violet-7);
+  color: var(--mantine-color-orange-light-color);
 }
 
 /* Active indicator sits on the row's bottom border (a line under the pill) */

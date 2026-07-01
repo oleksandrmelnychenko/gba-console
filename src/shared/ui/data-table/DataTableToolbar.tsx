@@ -57,7 +57,7 @@ export function DataTableToolbar<TData>({
                 </ActionIcon>
               </Tooltip>
             </Menu.Target>
-            <Menu.Dropdown>
+            <Menu.Dropdown className="data-table-columns-dropdown" style={{ maxHeight: 'min(62vh, 440px)', overflowY: 'auto' }}>
               <Menu.Label>{labels.columns}</Menu.Label>
               {hideableColumns.map((column) => (
                 <Menu.Item
@@ -66,6 +66,7 @@ export function DataTableToolbar<TData>({
                   leftSection={
                     <Checkbox
                       checked={column.getIsVisible()}
+                      color="orange"
                       onChange={() => undefined}
                       readOnly
                       size="xs"

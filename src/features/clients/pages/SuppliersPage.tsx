@@ -3,7 +3,6 @@ import {
   Alert,
   Anchor,
   Badge,
-  Box,
   Button,
   Divider,
   Loader,
@@ -16,12 +15,11 @@ import {
 } from '@mantine/core'
 import { AppModal } from "../../../shared/ui/AppModal"
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
-import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { notifications } from '@mantine/notifications'
 import { useDebouncedValue } from '@mantine/hooks'
 import {
   IconAlertCircle,
-  IconAddressBook,
   IconBuildingFactory2,
   IconCash,
   IconExternalLink,
@@ -39,7 +37,9 @@ import {
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE, PAGINATOR_PAGE_SIZE_OPTIONS } from '../../../shared/ui/paginator/paginatorPageSize'
-import { type ReactNode, type RefObject, useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
+import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { type RefObject, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { SupplierPassport } from '../components/SupplierPassport'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -63,15 +63,8 @@ const SUPPLIER_SEARCH_SQL = 'RegionCode.Value/Client.FullName'
 const SUPPLIER_SEARCH_DEBOUNCE_MS = 350
 const SUPPLIER_TABLE_PAGE_SIZE_STORAGE_KEY = 'gba-data-table:suppliers:page-size'
 const DEFAULT_SUPPLIER_TABLE_PAGE_SIZE = DEFAULT_PAGINATOR_PAGE_SIZE
-const SHOW_SUPPLIER_ROLE_IN_BALANCE = false
 const SUPPLIERS_FILTER_COMBOBOX_PROPS = {
-  classNames: {
-    dropdown: 'suppliers-filter-dropdown',
-    option: 'suppliers-filter-dropdown-option',
-    options: 'suppliers-filter-dropdown-options',
-  },
   position: 'bottom-start' as const,
-  width: 'max-content',
 }
 const SUPPLIERS_FILTER_SCROLL_AREA_PROPS = {
   offsetScrollbars: false as const,
@@ -85,6 +78,60 @@ const supplierDateFormatter = new Intl.DateTimeFormat('uk-UA', {
   month: '2-digit',
   year: 'numeric',
 })
+const SUPPLIER_TABLE_CELL_STYLE = {
+  display: 'block',
+  lineHeight: '18px',
+  maxWidth: '100%',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+} as const
+const SUPPLIER_TABLE_MONO_STYLE = {
+  fontFamily: 'var(--font-mono)',
+  letterSpacing: 0,
+} as const
+const SUPPLIER_TABLE_MIN_WIDTH = 1600
+const SUPPLIER_TABLE_DEFAULT_LAYOUT = {
+  columnOrder: [
+    'status',
+    'code',
+    'supplier',
+    'role',
+    'resident',
+    'regionCode',
+    'location',
+    'tin',
+    'usreou',
+    'sroi',
+    'phone',
+    'director',
+    'accountant',
+    'fax',
+    'email',
+    'agreement',
+    'currency',
+    'agreementOrg',
+    'agreementPeriod',
+    'payment',
+    'incoterms',
+    'packing',
+    'reserve',
+    'brand',
+    'manufacturer',
+    'contactName',
+    'legalAddress',
+    'actualAddress',
+    'deliveryAddress',
+    'country',
+    'created',
+    'updated',
+    'comment',
+  ],
+  columnPinning: {
+    left: ['status', 'code', 'supplier'],
+  },
+  density: 'normal',
+} satisfies DataTableDefaultLayout
 
 type ActiveFilter = 'all' | 'active' | 'inactive'
 type SupplierAction = 'active' | 'export' | null
@@ -490,6 +537,8 @@ export function SuppliersPage() {
 
 function SuppliersPageView({ model }: { model: ReturnType<typeof useSuppliersPageModel> }) {
   const { t } = useI18n()
+  const columns = useSupplierColumns()
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const {
     activeFilter,
     downloadDocument,
@@ -528,12 +577,6 @@ function SuppliersPageView({ model }: { model: ReturnType<typeof useSuppliersPag
 
   return (
     <Stack className="suppliers-page console-table-page" gap={6}>
-      <PageHeaderActions>
-        <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} onClick={openNewSupplier}>
-          {t('Добавити')}
-        </Button>
-      </PageHeaderActions>
-
       <div className="console-table-shell suppliers-card">
         <div className="app-filter-bar suppliers-filter-bar">
           <SuppliersFilterToolbar
@@ -556,6 +599,16 @@ function SuppliersPageView({ model }: { model: ReturnType<typeof useSuppliersPag
             onSetSearchField={setSearchField}
             onSetSearchValue={setSearchValue}
           />
+          <div ref={setTableToolbarSlot} className="suppliers-table-toolbar-slot" />
+          <Button
+            className="suppliers-create-button"
+            color={CREATE_ACTION_COLOR}
+            size="sm"
+            leftSection={<IconPlus size={16} />}
+            onClick={openNewSupplier}
+          >
+            {t('Добавити')}
+          </Button>
         </div>
 
         {error && (
@@ -565,11 +618,21 @@ function SuppliersPageView({ model }: { model: ReturnType<typeof useSuppliersPag
         )}
 
         <div className="suppliers-page__content console-table-body">
-          <SupplierRegistryList
-            isBusy={isTableBusy}
+          <DataTable
+            columns={columns}
+            data={suppliers}
+            defaultLayout={SUPPLIER_TABLE_DEFAULT_LAYOUT}
+            emptyText={t('Постачальників не знайдено')}
+            getRowId={(supplier, index) => String(supplier.NetUid || supplier.Id || index)}
+            height="100%"
             isLoading={isLoading}
-            suppliers={suppliers}
-            onOpen={setSelectedSupplier}
+            layoutVersion="suppliers-table-3"
+            loadingText={t('Завантаження постачальників')}
+            minWidth={SUPPLIER_TABLE_MIN_WIDTH}
+            showLayoutControls
+            tableId="suppliers"
+            toolbarPortalTarget={tableToolbarSlot}
+            onRowClick={setSelectedSupplier}
           />
         </div>
       </div>
@@ -852,7 +915,7 @@ function SuppliersFilterToolbar({
         className="sales-filter-search suppliers-filter-search-input"
         size="sm"
         leftSection={<IconSearch size={16} />}
-        label={t('Виробник')}
+        label={t('Назва або код')}
         placeholder={t('Назва або код')}
         rightSection={isTableBusy ? <Loader color="violet" size={14} /> : undefined}
         value={searchValue}
@@ -967,207 +1030,335 @@ function SupplierDocumentModal({
   )
 }
 
-function SupplierRegistryList({
-  isBusy,
-  isLoading,
-  suppliers,
-  onOpen,
-}: {
-  isBusy: boolean
-  isLoading: boolean
-  suppliers: Client[]
-  onOpen: (supplier: Client) => void
-}) {
-  const { t } = useI18n()
-
-  if (isLoading) {
-    return <SupplierRegistryState isLoading text={t('Завантаження постачальників')} />
-  }
-
-  if (suppliers.length === 0) {
-    return <SupplierRegistryState text={t('Постачальників не знайдено')} />
-  }
-
+function SupplierTableValue({ fw, mono, value }: { fw?: number; mono?: boolean; value: string }) {
   return (
-    <Box className={`suppliers-registry${isBusy ? ' is-busy' : ''}`} aria-busy={isBusy}>
-      {isBusy && (
-        <div className="suppliers-registry-loading" aria-hidden="true">
-          <Loader color="orange" size="xs" />
-        </div>
-      )}
-      <div className="suppliers-registry-head">
-        <SupplierRegistryHeadLabel label={t('Постачальник')} />
-        <SupplierRegistryHeadLabel label={t('Договір')} />
-        <SupplierRegistryHeadLabel label={t('Контакти')} />
-        <SupplierRegistryHeadLabel align="right" label={t('Обсяг')} />
-        <SupplierRegistryHeadLabel align="right" label={t('Баланс')} />
-      </div>
-      <div className="suppliers-registry-body">
-        {suppliers.map((supplier, index) => (
-          <SupplierRegistryRow
-            key={String(supplier.NetUid || supplier.Id || index)}
-            supplier={supplier}
-            onOpen={onOpen}
-          />
-        ))}
-      </div>
-    </Box>
-  )
-}
-
-function SupplierRegistryHeadLabel({ align, label }: { align?: 'right'; label: string }) {
-  return <span className={`suppliers-registry-head-label${align === 'right' ? ' is-right' : ''}`}>{label}</span>
-}
-
-function SupplierRegistryState({ isLoading = false, text }: { isLoading?: boolean; text: string }) {
-  return (
-    <div className="suppliers-registry-state">
-      {isLoading && <Loader color="orange" size="sm" />}
-      <Text c="dimmed" fw={650} size="sm">{text}</Text>
-    </div>
-  )
-}
-
-function SupplierRegistryRow({ supplier, onOpen }: { supplier: Client; onOpen: (supplier: Client) => void }) {
-  const isActive = supplier.IsActive !== false
-  const balance = supplier.TotalCurrentAmount || 0
-
-  return (
-    <button
-      className={`suppliers-registry-row${isActive ? '' : ' is-inactive'}${supplier.IsNotResident ? ' is-nonresident' : ''}`}
-      type="button"
-      onClick={() => onOpen(supplier)}
-    >
-      <SupplierProfileCell supplier={supplier} />
-      <SupplierAgreementCell supplier={supplier} />
-      <SupplierContactCell supplier={supplier} />
-      <SupplierAmountCell label="EUR" value={formatSupplierAmount(supplier.PurchaseVolumeEur)} />
-      <SupplierAmountCell
-        tone={balance < 0 ? 'danger' : 'muted'}
-        value={formatSupplierAmount(supplier.TotalCurrentAmount)}
-        footer={SHOW_SUPPLIER_ROLE_IN_BALANCE ? <SupplierRoleCell supplier={supplier} /> : undefined}
-      />
-    </button>
-  )
-}
-
-function SupplierProfileCell({ supplier }: { supplier: Client }) {
-  const { t } = useI18n()
-  const name = getSupplierDisplayName(supplier)
-  const isActive = supplier.IsActive !== false
-  const code = displayValue(supplier.SupplierCode)
-  const iconColor = !isActive ? 'gray' : supplier.IsNotResident ? 'orange' : 'teal'
-
-  return (
-    <div className="suppliers-profile-cell">
-      <ThemeIcon className="suppliers-profile-icon" color={iconColor} radius="xl" size={34} variant="light">
-        <IconBuildingFactory2 size={19} stroke={1.8} />
-      </ThemeIcon>
-      <div className="suppliers-profile-copy">
-        <div className="suppliers-profile-title-row">
-          <Tooltip label={name} openDelay={350} withArrow>
-            <span className="suppliers-profile-name">{name}</span>
-          </Tooltip>
-        </div>
-        <div className="suppliers-profile-meta">
-          <span className={`suppliers-profile-status${isActive ? ' is-active' : ' is-inactive'}`}>
-            {isActive ? t('Активний') : t('Неактивний')}
-          </span>
-          <span className={`suppliers-profile-code${code === '-' ? ' is-empty' : ''}`}>{code}</span>
-          {supplier.IsNotResident && <span className="suppliers-profile-resident">{t('Нерезидент')}</span>}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function SupplierRoleCell({ supplier }: { supplier: Client }) {
-  const roleName = supplier.ClientInRole?.ClientTypeRole?.Name?.trim()
-
-  if (!roleName) {
-    return null
-  }
-
-  return (
-    <Tooltip label={roleName} openDelay={350} withArrow>
-      <span className={`suppliers-profile-role is-${roleBadgeColor(roleName)}`}>{roleName}</span>
-    </Tooltip>
-  )
-}
-
-function SupplierAgreementCell({ supplier }: { supplier: Client }) {
-  const agreement = getPrimarySupplierAgreement(supplier)
-  const name = getSupplierAgreementName(agreement)?.trim()
-  const organization = getSupplierAgreementOrganization(agreement)?.trim()
-  const currency = getSupplierAgreementCurrency(agreement)?.trim()
-  const period = getSupplierAgreementPeriod(agreement)?.trim()
-  const payment = getSupplierAgreementPaymentSummary(agreement)?.trim()
-  const hasAgreementInfo = Boolean(name || organization || currency || period || payment)
-  const title = name || organization || translate('Без договору')
-  const meta = name ? organization || period || payment : period || payment
-  const isActive = agreement?.Agreement?.IsActive === true
-  const tooltipDetails = [name, currency, organization, period, payment].filter(Boolean).join(' / ')
-
-  return (
-    <Tooltip disabled={!tooltipDetails} label={tooltipDetails} openDelay={350} withArrow>
-      <div
-        className={`suppliers-agreement-cell${hasAgreementInfo ? '' : ' is-empty'}${isActive ? ' is-active' : ''}`}
+    <Tooltip label={value} openDelay={350} withArrow>
+      <Text
+        component="span"
+        fw={fw}
+        style={mono ? { ...SUPPLIER_TABLE_CELL_STYLE, ...SUPPLIER_TABLE_MONO_STYLE } : SUPPLIER_TABLE_CELL_STYLE}
       >
-        <span className="suppliers-agreement-title-row">
-          {hasAgreementInfo ? <span className="suppliers-agreement-state" aria-hidden /> : null}
-          <span className={`suppliers-agreement-title${hasAgreementInfo ? '' : ' is-empty'}`}>{title}</span>
-        </span>
-        {hasAgreementInfo && (currency || meta) ? (
-          <span className="suppliers-agreement-meta">
-            {currency ? <span className="suppliers-agreement-currency">{currency}</span> : null}
-            {meta ? <span className="suppliers-agreement-meta-text">{meta}</span> : null}
-          </span>
-        ) : null}
-      </div>
+        {value}
+      </Text>
     </Tooltip>
   )
 }
 
-function SupplierContactCell({ supplier }: { supplier: Client }) {
-  const phone = getSupplierPhone(supplier)?.trim()
-  const email = supplier.EmailAddress?.trim()
-  const tooltip = [phone, email].filter(Boolean).join(' / ')
-  const hasContacts = Boolean(tooltip)
-
+function SupplierStatusDot({ isActive, label }: { isActive: boolean; label: string }) {
   return (
-    <Tooltip disabled={!hasContacts} label={tooltip} openDelay={350} withArrow>
-      <span className={`suppliers-contact-cell${hasContacts ? '' : ' is-empty'}`}>
-        <span className="suppliers-contact-icon" aria-hidden>
-          <IconAddressBook size={14} stroke={1.8} />
-        </span>
-        {hasContacts ? (
-          <span className="suppliers-contact-copy">
-            {phone ? <span className="suppliers-contact-text">{phone}</span> : null}
-            {email ? <span className="suppliers-contact-text is-secondary">{email}</span> : null}
-          </span>
-        ) : null}
+    <Tooltip label={label} openDelay={350} withArrow>
+      <span className="suppliers-status-dot-wrap" aria-label={label} role="img">
+        <span className={isActive ? 'suppliers-status-dot is-active' : 'suppliers-status-dot is-inactive'} />
       </span>
     </Tooltip>
   )
 }
 
-function SupplierAmountCell({
-  footer,
-  label,
-  tone,
-  value,
-}: {
-  footer?: ReactNode
-  label?: string
-  tone?: 'danger' | 'muted'
-  value: string
-}) {
-  return (
-    <span className={`suppliers-amount-cell${tone ? ` is-${tone}` : ''}`}>
-      <strong>{value}</strong>
-      {label ? <small>{label}</small> : null}
-      {footer ? <span className="suppliers-amount-footer">{footer}</span> : null}
-    </span>
+function useSupplierColumns() {
+  const { t } = useI18n()
+
+  return useMemo<DataTableColumn<Client>[]>(
+    () => [
+      {
+        id: 'status',
+        header: '',
+        width: 48,
+        minWidth: 44,
+        accessor: (supplier) => (supplier.IsActive === false ? t('Неактивний') : t('Активний')),
+        cell: (supplier) => {
+          const isActive = supplier.IsActive !== false
+          return <SupplierStatusDot isActive={isActive} label={isActive ? t('Активний') : t('Неактивний')} />
+        },
+      },
+      {
+        id: 'code',
+        header: 'Код',
+        width: 110,
+        minWidth: 90,
+        accessor: (supplier) => supplier.SupplierCode,
+        cell: (supplier) => <SupplierTableValue value={displayValue(supplier.SupplierCode)} />,
+      },
+      {
+        id: 'supplier',
+        header: 'Постачальник',
+        width: 360,
+        minWidth: 320,
+        fill: true,
+        accessor: getSupplierDisplayName,
+        cell: (supplier) => <SupplierTableValue fw={600} mono value={getSupplierDisplayName(supplier)} />,
+      },
+      {
+        id: 'role',
+        header: 'Роль',
+        width: 132,
+        minWidth: 110,
+        accessor: (supplier) => supplier.ClientInRole?.ClientTypeRole?.Name || '',
+        cell: (supplier) => {
+          const name = supplier.ClientInRole?.ClientTypeRole?.Name?.trim()
+          return name ? (
+            <Badge color={roleBadgeColor(name)} style={SUPPLIER_TABLE_MONO_STYLE} variant="light">
+              {name}
+            </Badge>
+          ) : (
+            <Text c="dimmed" style={SUPPLIER_TABLE_MONO_STYLE}>
+              —
+            </Text>
+          )
+        },
+      },
+      {
+        id: 'resident',
+        header: 'Резидентність',
+        width: 132,
+        minWidth: 110,
+        accessor: (supplier) => (supplier.IsNotResident ? t('Нерезидент') : t('Резидент')),
+        cell: (supplier) => (
+          <Badge color={supplier.IsNotResident ? 'orange' : 'gray'} variant="light">
+            {supplier.IsNotResident ? t('Нерезидент') : t('Резидент')}
+          </Badge>
+        ),
+      },
+      {
+        id: 'regionCode',
+        header: 'Регіон (код)',
+        width: 120,
+        minWidth: 96,
+        accessor: (supplier) => supplier.RegionCode?.Value,
+        cell: (supplier) => <SupplierTableValue value={displayValue(supplier.RegionCode?.Value)} />,
+      },
+      {
+        id: 'location',
+        header: 'Місто / район',
+        width: 170,
+        minWidth: 140,
+        accessor: (supplier) => [supplier.RegionCode?.City, supplier.RegionCode?.District].filter(Boolean).join(' '),
+        cell: (supplier) => (
+          <SupplierTableValue
+            value={displayValue([supplier.RegionCode?.City, supplier.RegionCode?.District].filter(Boolean).join(' ') || undefined)}
+          />
+        ),
+      },
+      {
+        id: 'tin',
+        header: 'ІПН',
+        width: 118,
+        minWidth: 96,
+        accessor: (supplier) => supplier.TIN,
+        cell: (supplier) => <SupplierTableValue value={displayValue(supplier.TIN)} />,
+      },
+      {
+        id: 'usreou',
+        header: 'ЄДРПОУ',
+        width: 122,
+        minWidth: 100,
+        accessor: (supplier) => supplier.USREOU,
+        cell: (supplier) => <SupplierTableValue value={displayValue(supplier.USREOU)} />,
+      },
+      {
+        id: 'sroi',
+        header: 'SROI',
+        width: 118,
+        minWidth: 96,
+        accessor: (supplier) => supplier.SROI,
+        cell: (supplier) => <SupplierTableValue value={displayValue(supplier.SROI)} />,
+      },
+      {
+        id: 'phone',
+        header: 'Телефон',
+        width: 132,
+        minWidth: 110,
+        accessor: getSupplierPhone,
+        cell: (supplier) => <SupplierTableValue value={displayValue(getSupplierPhone(supplier))} />,
+      },
+      {
+        id: 'director',
+        header: 'Тел. директора',
+        width: 144,
+        minWidth: 116,
+        accessor: (supplier) => supplier.DirectorNumber,
+        cell: (supplier) => <SupplierTableValue value={displayValue(supplier.DirectorNumber)} />,
+      },
+      {
+        id: 'accountant',
+        header: 'Тел. бухгалтера',
+        width: 150,
+        minWidth: 120,
+        accessor: (supplier) => supplier.AccountantNumber,
+        cell: (supplier) => <SupplierTableValue value={displayValue(supplier.AccountantNumber)} />,
+      },
+      {
+        id: 'fax',
+        header: 'Факс',
+        width: 124,
+        minWidth: 100,
+        accessor: (supplier) => supplier.FaxNumber,
+        cell: (supplier) => <SupplierTableValue value={displayValue(supplier.FaxNumber)} />,
+      },
+      {
+        id: 'email',
+        header: 'Email',
+        width: 184,
+        minWidth: 150,
+        accessor: (supplier) => supplier.EmailAddress,
+        cell: (supplier) => <SupplierTableValue value={displayValue(supplier.EmailAddress)} />,
+      },
+      {
+        id: 'agreement',
+        header: 'Договір',
+        width: 190,
+        minWidth: 150,
+        accessor: (supplier) => getSupplierAgreementName(getPrimarySupplierAgreement(supplier)),
+        cell: (supplier) => (
+          <SupplierTableValue value={displayValue(getSupplierAgreementName(getPrimarySupplierAgreement(supplier)))} />
+        ),
+      },
+      {
+        id: 'currency',
+        header: 'Валюта',
+        width: 96,
+        minWidth: 80,
+        accessor: (supplier) => getSupplierAgreementCurrency(getPrimarySupplierAgreement(supplier)),
+        cell: (supplier) => (
+          <SupplierTableValue value={displayValue(getSupplierAgreementCurrency(getPrimarySupplierAgreement(supplier)))} />
+        ),
+      },
+      {
+        id: 'agreementOrg',
+        header: 'Організація (договір)',
+        width: 190,
+        minWidth: 150,
+        accessor: (supplier) => getSupplierAgreementOrganization(getPrimarySupplierAgreement(supplier)),
+        cell: (supplier) => (
+          <SupplierTableValue value={displayValue(getSupplierAgreementOrganization(getPrimarySupplierAgreement(supplier)))} />
+        ),
+      },
+      {
+        id: 'agreementPeriod',
+        header: 'Період договору',
+        width: 170,
+        minWidth: 140,
+        accessor: (supplier) => getSupplierAgreementPeriod(getPrimarySupplierAgreement(supplier)),
+        cell: (supplier) => (
+          <SupplierTableValue value={displayValue(getSupplierAgreementPeriod(getPrimarySupplierAgreement(supplier)))} />
+        ),
+      },
+      {
+        id: 'payment',
+        header: 'Оплата',
+        width: 176,
+        minWidth: 140,
+        accessor: (supplier) => getSupplierAgreementPaymentSummary(getPrimarySupplierAgreement(supplier)),
+        cell: (supplier) => (
+          <SupplierTableValue value={displayValue(getSupplierAgreementPaymentSummary(getPrimarySupplierAgreement(supplier)))} />
+        ),
+      },
+      {
+        id: 'incoterms',
+        header: 'Умови поставки',
+        width: 160,
+        minWidth: 130,
+        accessor: getSupplierDeliveryTerms,
+        cell: (supplier) => <SupplierTableValue value={displayValue(getSupplierDeliveryTerms(supplier))} />,
+      },
+      {
+        id: 'packing',
+        header: 'Пакування',
+        width: 160,
+        minWidth: 130,
+        accessor: getSupplierPackingSummary,
+        cell: (supplier) => <SupplierTableValue value={displayValue(getSupplierPackingSummary(supplier))} />,
+      },
+      {
+        id: 'reserve',
+        header: 'Резерв',
+        width: 98,
+        minWidth: 80,
+        align: 'right',
+        accessor: (supplier) => supplier.OrderExpireDays,
+        cell: (supplier) => <SupplierTableValue value={displayValue(supplier.OrderExpireDays)} />,
+      },
+      {
+        id: 'brand',
+        header: 'Бренд',
+        width: 140,
+        minWidth: 110,
+        accessor: (supplier) => supplier.Brand,
+        cell: (supplier) => <SupplierTableValue value={displayValue(supplier.Brand)} />,
+      },
+      {
+        id: 'manufacturer',
+        header: 'Виробник',
+        width: 160,
+        minWidth: 130,
+        accessor: (supplier) => supplier.Manufacturer,
+        cell: (supplier) => <SupplierTableValue value={displayValue(supplier.Manufacturer)} />,
+      },
+      {
+        id: 'contactName',
+        header: 'Контактна особа',
+        width: 176,
+        minWidth: 140,
+        accessor: (supplier) => supplier.SupplierContactName,
+        cell: (supplier) => <SupplierTableValue value={displayValue(supplier.SupplierContactName)} />,
+      },
+      {
+        id: 'legalAddress',
+        header: 'Юр. адреса',
+        width: 210,
+        minWidth: 150,
+        accessor: (supplier) => supplier.LegalAddress,
+        cell: (supplier) => <SupplierTableValue value={displayValue(supplier.LegalAddress)} />,
+      },
+      {
+        id: 'actualAddress',
+        header: 'Факт. адреса',
+        width: 210,
+        minWidth: 150,
+        accessor: (supplier) => supplier.ActualAddress,
+        cell: (supplier) => <SupplierTableValue value={displayValue(supplier.ActualAddress)} />,
+      },
+      {
+        id: 'deliveryAddress',
+        header: 'Адреса доставки',
+        width: 210,
+        minWidth: 150,
+        accessor: (supplier) => supplier.DeliveryAddress,
+        cell: (supplier) => <SupplierTableValue value={displayValue(supplier.DeliveryAddress)} />,
+      },
+      {
+        id: 'country',
+        header: 'Країна',
+        width: 130,
+        minWidth: 100,
+        accessor: (supplier) => supplier.Country?.Name,
+        cell: (supplier) => <SupplierTableValue value={displayValue(supplier.Country?.Name)} />,
+      },
+      {
+        id: 'created',
+        header: 'Створено',
+        width: 122,
+        minWidth: 100,
+        accessor: (supplier) => (typeof supplier.Created === 'string' ? supplier.Created : undefined),
+        cell: (supplier) => <SupplierTableValue value={formatSupplierDate(supplier.Created) ?? '-'} />,
+      },
+      {
+        id: 'updated',
+        header: 'Оновлено',
+        width: 122,
+        minWidth: 100,
+        accessor: (supplier) => (typeof supplier.Updated === 'string' ? supplier.Updated : undefined),
+        cell: (supplier) => <SupplierTableValue value={formatSupplierDate(supplier.Updated) ?? '-'} />,
+      },
+      {
+        id: 'comment',
+        header: 'Коментар',
+        width: 210,
+        minWidth: 150,
+        accessor: (supplier) => supplier.Comment,
+        cell: (supplier) => <SupplierTableValue value={displayValue(supplier.Comment)} />,
+      },
+    ],
+    [t],
   )
 }
 
@@ -1417,7 +1608,7 @@ function roleBadgeColor(name: string): (typeof ROLE_BADGE_PALETTE)[number] {
   const key = name.trim().toLowerCase()
 
   if (key.includes('постач')) {
-    return 'teal'
+    return 'blue'
   }
 
   if (key.includes('покуп')) {

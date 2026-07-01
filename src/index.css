@@ -2,6 +2,14 @@
 @import '@fontsource/onest/500.css';
 @import '@fontsource/onest/600.css';
 @import '@fontsource/onest/700.css';
+@import '@fontsource/jetbrains-mono/400.css';
+@import '@fontsource/jetbrains-mono/500.css';
+@import '@fontsource/jetbrains-mono/600.css';
+@import '@fontsource/jetbrains-mono/700.css';
+@import '@fontsource/jetbrains-mono/cyrillic-400.css';
+@import '@fontsource/jetbrains-mono/cyrillic-500.css';
+@import '@fontsource/jetbrains-mono/cyrillic-600.css';
+@import '@fontsource/jetbrains-mono/cyrillic-700.css';
 @import '@mantine/core/styles.css';
 @import '@mantine/notifications/styles.css';
 
@@ -13,6 +21,11 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  /* Monospace stack for codes / numbers / IDs. JetBrains Mono is bundled via
+     @fontsource above; falls back to the system monospace where unavailable.
+     Use `font-family: var(--font-mono)` on any element that needs it. */
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
   /* Brand accent (the «Продажі» orange). Use rgba(var(--brand-orange-rgb), a)
      for tints/glows/focus rings, or var(--brand-orange) for the solid color. */
