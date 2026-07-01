@@ -2135,21 +2135,15 @@ export function NewSaleProductsStep({
       />
       <Group align="stretch" className="new-sale-products-step__body" gap="md" wrap="nowrap">
         {/* LEFT: search controls + vertical product carousel (mirrors the client step layout) */}
-        <Box
-          style={{
-            borderRight: '1px solid var(--mantine-color-gray-3)',
-            display: 'flex',
-            flexDirection: 'column',
-            flexShrink: 0,
-            minHeight: 0,
-            overflow: 'hidden',
-            paddingRight: 12,
-            width: 320,
-          }}
-        >
-          <Stack gap="xs" mb="xs">
+        <Box className="new-sale-products-step__picker-rail">
+          <Stack className="new-sale-products-step__search-controls" gap={8}>
             <Select
               allowDeselect={false}
+              classNames={{
+                input: 'new-sale-products-step__search-select-input',
+                label: 'new-sale-products-step__search-select-label',
+                option: 'new-sale-products-step__search-select-option',
+              }}
               data={SEARCH_MODE_OPTIONS.map((option) => ({ label: t(option.label), value: option.value }))}
               label={t('Місце вводу для пошуку')}
               value={searchMode}
@@ -2157,6 +2151,11 @@ export function NewSaleProductsStep({
             />
             <Select
               allowDeselect={false}
+              classNames={{
+                input: 'new-sale-products-step__search-select-input',
+                label: 'new-sale-products-step__search-select-label',
+                option: 'new-sale-products-step__search-select-option',
+              }}
               data={SORT_MODE_OPTIONS.map((option) => ({ label: t(option.label), value: option.value }))}
               label={t('Сортувати За')}
               value={sortMode}
