@@ -5,9 +5,7 @@ import {
   Box,
   Button,
   Card,
-  Checkbox,
   Group,
-  Loader,
   NumberInput,
   Select,
   Stack,
@@ -18,10 +16,8 @@ import {
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
-  IconArrowLeft,
   IconColumnInsertRight,
   IconFileTypePdf,
-  IconHistory,
   IconTrash,
 } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
@@ -30,7 +26,6 @@ import { formatLocalDate, formatLocalInputDateTime } from '../../../shared/date/
 import type { ExportDocument } from '../../../shared/documents/exportDocument'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
@@ -48,10 +43,8 @@ import {
   getPzDocumentBySupplyInvoiceId,
   getProductIncomeByDeliveryProtocolNetId,
   getProductIncomeBySupplyOrderNetId,
-  getSupplyOrderItemAudit,
   getSupplyOrderInvoiceItems,
   markAllItemsReadyToPlace,
-  markOrderItemReadyToPlace,
   recordProductIncomeFromPackingListDynamicHistory,
   updatePackingListInInvoice,
   updateVatOfPackListInvoiceItems,
@@ -59,7 +52,6 @@ import {
 import { NewIncomeDynamicColumnModal } from '../components/NewIncomeDynamicColumnModal'
 import { ProtocolIncomePlacementDrawer } from '../components/ProtocolIncomePlacementDrawer'
 import type {
-  IncomeAuditEntity,
   DynamicProductPlacement,
   DynamicProductPlacementColumn,
   DynamicProductPlacementRow,
@@ -78,7 +70,6 @@ const DEFAULT_VAT_PERCENT = 23
 const PERMISSION_ADD_DYNAMIC_INCOME_COLUMN = 'PRODUCT_INCOME_ordersUkraineAllEdit_NewInvoiceBtn_PKEY'
 const PERMISSION_CAPITALIZE_DYNAMIC_INCOME = 'PRODUCT_INCOME_ordersUkraineAllEdit_CapitalizeBtn_PKEY'
 const PERMISSION_CARRY_OUT_DYNAMIC_INCOME = 'PRODUCT_INCOME_ordersUkraineAllEdit_CarryOutBtn_PKEY'
-const PERMISSION_VIEW_WEIGHT_HISTORY = 'PRODUCT_INCOME_ordersUkraineAllEdit_historyOfChangesInWeight_PKEY'
 
 const dateFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short' })
 
@@ -90,14 +81,6 @@ function formatDate(value?: Date | string): string {
   const date = value instanceof Date ? value : new Date(value)
 
   return Number.isNaN(date.getTime()) ? String(value) : dateFormatter.format(date)
-}
-
-function displayValue(value?: number | string | null): string {
-  if (value === null || typeof value === 'undefined' || value === '') {
-    return '-'
-  }
-
-  return String(value)
 }
 
 function getIncomeUserName(user?: IncomeProductIncome['User']): string {
@@ -462,7 +445,10 @@ function useProtocolIncomeModel(source: ProductIncomeSource) {
           const loadedPackList = await getPackingListSpecificationProducts(firstPackList.NetUid)
 
           if (!cancelled && packingListRequestRef.current === requestId) {
-            applyLoadedPackingList(loadedPackList)
+            applyLoadedPackingList({
+              ...loadedPackList,
+              DynamicProductPlacementColumns: firstPackList.DynamicProductPlacementColumns || [],
+            })
           }
         }
       } catch (loadError) {
@@ -495,7 +481,9 @@ function useProtocolIncomeModel(source: ProductIncomeSource) {
       try {
         const loadedPackList = await getPackingListSpecificationProducts(netId)
         if (packingListRequestRef.current === requestId) {
-          setPackingList(loadedPackList)
+          const columns =
+            invoice?.PackingLists.find((list) => list.NetUid === netId)?.DynamicProductPlacementColumns || []
+          setPackingList({ ...loadedPackList, DynamicProductPlacementColumns: columns })
           setDirty(false)
         }
       } catch (loadError) {
@@ -504,7 +492,7 @@ function useProtocolIncomeModel(source: ProductIncomeSource) {
         }
       }
     },
-    [setDirty, setError, setPackingList, t],
+    [invoice, setDirty, setError, setPackingList, t],
   )
 
   const gridRows = useMemo(() => (packingList ? buildGridRows(packingList) : []), [packingList])
@@ -698,66 +686,6 @@ function useProtocolIncomeModel(source: ProductIncomeSource) {
     [applyColumnRowQty, canUseIncome, invoice, isSaving, packingList, t],
   )
 
-  const handleNetWeightChange = useCallback(
-    (item: PackingListPackageOrderItem, value: number) => {
-      if (!canUseIncome || isSaving || isPlacementLocked(invoice, packingList)) {
-        return
-      }
-
-      setPackingList((current) => {
-        if (!current) {
-          return current
-        }
-
-        return {
-          ...current,
-          PackingListPackageOrderItems: current.PackingListPackageOrderItems.map((entry) =>
-            entry === item ? { ...entry, NetWeight: value } : entry,
-          ),
-        }
-      })
-      setDirty(true)
-    },
-    [canUseIncome, invoice, isSaving, packingList, setDirty, setPackingList],
-  )
-
-  const handleReadyToPlace = useCallback(
-    async (item: PackingListPackageOrderItem) => {
-      if (!canUseIncome || item.IsReadyToPlaced || !item.NetUid || isSaving || isPlacementLocked(invoice, packingList)) {
-        return
-      }
-
-      if (isDirty) {
-        notifications.show({ color: 'red', message: t('Збережіть зміни перед дією') })
-        return
-      }
-
-      setSaving(true)
-      setError(null)
-
-      try {
-        await markOrderItemReadyToPlace(item.NetUid, true)
-        setPackingList((current) => {
-          if (!current) {
-            return current
-          }
-
-          return {
-            ...current,
-            PackingListPackageOrderItems: current.PackingListPackageOrderItems.map((entry) =>
-              entry === item ? { ...entry, IsReadyToPlaced: true } : entry,
-            ),
-          }
-        })
-      } catch (actionError) {
-        setError(actionError instanceof Error ? actionError.message : t('Не вдалося виконати запит'))
-      } finally {
-        setSaving(false)
-      }
-    },
-    [canUseIncome, invoice, isDirty, isSaving, packingList, setError, setPackingList, setSaving, t],
-  )
-
   const handleOpenPlacements = useCallback(
     (gridRow: IncomeGridRow, columnId: string, row: DynamicProductPlacementRow) => {
       if (!canUseIncome || isSaving) {
@@ -826,18 +754,24 @@ function useProtocolIncomeModel(source: ProductIncomeSource) {
             : [...invoice.PackingLists, nextPackingList],
         }
 
-        const savedInvoice = await updatePackingListInInvoice(invoicePayload)
-        setInvoice(savedInvoice)
+        await updatePackingListInInvoice(invoicePayload)
 
-        const savedPackingList =
-          savedInvoice.PackingLists.find((list) => list.NetUid === nextPackingList.NetUid) ||
-          savedInvoice.PackingLists[0] ||
-          null
+        // The update response omits DynamicProductPlacementColumns (the backend doesn't
+        // re-hydrate them), so re-fetch: the invoice endpoint returns the persisted columns
+        // (incl. the freshly-added one), the specification endpoint returns the full grid
+        // items. Graft the columns onto the items so the new column actually appears.
+        const [refreshedInvoice, refreshedPackList] = await Promise.all([
+          getSupplyOrderInvoiceItems(selectedInvoiceId),
+          getPackingListSpecificationProducts(nextPackingList.NetUid),
+        ])
 
-        if (savedPackingList) {
-          setPackingList(savedPackingList)
-        }
+        setInvoice(refreshedInvoice)
 
+        const columns =
+          refreshedInvoice.PackingLists.find((list) => list.NetUid === nextPackingList.NetUid)
+            ?.DynamicProductPlacementColumns || []
+
+        setPackingList({ ...refreshedPackList, DynamicProductPlacementColumns: columns })
         setDirty(false)
       } catch (saveError) {
         setError(saveError instanceof Error ? saveError.message : t('Не вдалося зберегти зміни'))
@@ -917,7 +851,7 @@ function useProtocolIncomeModel(source: ProductIncomeSource) {
       setColumnModalOpen(false)
 
       const nextColumn: DynamicProductPlacementColumn = {
-        FromDate: columnFromDate,
+        FromDate: toIso(columnFromDate),
         PackingListId: packingList.Id,
         DynamicProductPlacementRows: [],
       }
@@ -1209,8 +1143,8 @@ function useProtocolIncomeModel(source: ProductIncomeSource) {
     cancelDiscardChanges, columnModalOpen, columnToRemove, confirmCarryOut, confirmDiscardChanges, confirmRemoveColumn,
     drawer, error, fromDate, gridRows,
     closePzDownload, handleAddColumn, handleAllReadyToPlace, handleApplyPlacements, handleCalculateVat, handleCarryOut,
-    handleCellChange, handleDownloadPzDocument, handleMoveRemnants, handleNetWeightChange, handleOpenPlacements,
-    handleProductIncome, handleReadyToPlace,
+    handleCellChange, handleDownloadPzDocument, handleMoveRemnants, handleOpenPlacements,
+    handleProductIncome,
     canUseIncome, handleSave, invoice, isDirty, isLoading, isSaving, navigate: requestNavigate, packingList, pendingDirtyAction,
     isInvoiceAllNotPlaced: isInvoiceAllNotPlaced(invoice, packingList),
     placementStatus, productIncome, protocol, pzDownload, reloadFromServer: requestReloadFromServer,
@@ -1235,141 +1169,6 @@ function isValidDateInputValue(value: string): boolean {
   const date = new Date(`${value}T00:00:00`)
 
   return !Number.isNaN(date.getTime()) && formatLocalDate(date) === value
-}
-
-type WeightAuditDrawerProps = {
-  item: PackingListPackageOrderItem | null
-  opened: boolean
-  onClose: () => void
-}
-
-type WeightAuditState = {
-  entries: IncomeAuditEntity[]
-  error: string | null
-  isLoading: boolean
-}
-
-function WeightAuditDrawer({ item, opened, onClose }: WeightAuditDrawerProps) {
-  const { t } = useI18n()
-  const [auditState, setAuditState] = useValueState<WeightAuditState>({
-    entries: [],
-    error: null,
-    isLoading: false,
-  })
-  const supplyOrderItemNetUid = item?.SupplyInvoiceOrderItem?.SupplyOrderItem?.NetUid?.trim()
-  const productCode = item?.SupplyInvoiceOrderItem?.Product?.VendorCode || ''
-
-  useEffect(() => {
-    if (!opened) {
-      setAuditState({ entries: [], error: null, isLoading: false })
-      return
-    }
-
-    if (!supplyOrderItemNetUid) {
-      setAuditState({ entries: [], error: t('Немає NetUid позиції замовлення для історії ваги'), isLoading: false })
-      return
-    }
-
-    let cancelled = false
-
-    async function loadAudit() {
-      setAuditState({ entries: [], error: null, isLoading: true })
-
-      try {
-        const nextEntries = await getSupplyOrderItemAudit(supplyOrderItemNetUid as string)
-
-        if (!cancelled) {
-          setAuditState({ entries: nextEntries, error: null, isLoading: false })
-        }
-      } catch (loadError) {
-        if (!cancelled) {
-          setAuditState({
-            entries: [],
-            error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити історію ваги'),
-            isLoading: false,
-          })
-        }
-      }
-    }
-
-    void loadAudit()
-
-    return () => {
-      cancelled = true
-    }
-  }, [opened, setAuditState, supplyOrderItemNetUid, t])
-
-  return (
-    <AppDrawer
-      opened={opened}
-      size="md"
-      title={`${t('Історія ваги')}${productCode ? ` ${productCode}` : ''}`}
-      onClose={onClose}
-    >
-      <Stack gap="md">
-        {auditState.error && (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-            {auditState.error}
-          </Alert>
-        )}
-        {auditState.isLoading ? (
-          <Group gap="xs">
-            <Loader size="xs" />
-            <Text c="dimmed" size="sm">
-              {t('Завантаження історії ваги')}
-            </Text>
-          </Group>
-        ) : auditState.entries.length === 0 && !auditState.error ? (
-          <Text c="dimmed" size="sm">
-            {t('Історію змін не знайдено')}
-          </Text>
-        ) : !auditState.error ? (
-          <Stack gap="xs">
-            {auditState.entries.map((entry, index) => (
-              <Box
-                key={`${entry.NetUid || entry.Id || index}`}
-                style={{
-                  border: '1px solid var(--mantine-color-gray-2)',
-                  borderRadius: 6,
-                  padding: '8px 10px',
-                }}
-              >
-                <Group gap="xs" justify="space-between" wrap="nowrap">
-                  <Text fw={600} size="sm">
-                    {displayValue(entry.Type)}
-                  </Text>
-                  <Text c="dimmed" size="xs">
-                    {formatDate(entry.Created)}
-                  </Text>
-                </Group>
-                <Stack gap={2} mt={6}>
-                  <Text c="dimmed" size="xs">
-                    {t('Нові значення')}
-                  </Text>
-                  {(entry.NewValues || []).map((value, valueIndex) => (
-                    <Text key={`${value.Name || 'new'}-${valueIndex}`} size="sm" style={{ overflowWrap: 'anywhere' }}>
-                      {displayValue(value.Name)}: {displayValue(value.Value)}
-                    </Text>
-                  ))}
-                  <Text c="dimmed" mt={4} size="xs">
-                    {t('Старі значення')}
-                  </Text>
-                  {(entry.OldValues || []).map((value, valueIndex) => (
-                    <Text key={`${value.Name || 'old'}-${valueIndex}`} size="sm" style={{ overflowWrap: 'anywhere' }}>
-                      {displayValue(value.Name)}: {displayValue(value.Value)}
-                    </Text>
-                  ))}
-                </Stack>
-                <Text c="dimmed" mt={6} size="xs">
-                  {t('Користувач')}: {displayValue(entry.UpdatedBy)}
-                </Text>
-              </Box>
-            ))}
-          </Stack>
-        ) : null}
-      </Stack>
-    </AppDrawer>
-  )
 }
 
 type PzDocumentDownloadModalProps = {
@@ -1438,18 +1237,14 @@ type ProtocolIncomeModel = ReturnType<typeof useProtocolIncomeModel>
 
 type ProductIncomeColumnsParams = {
   canUseIncome: boolean
-  canViewWeightHistory: boolean
   isPlaced: boolean
   model: ProtocolIncomeModel
-  setAuditItem: (item: PackingListPackageOrderItem | null) => void
 }
 
 function useProductIncomeColumns({
   canUseIncome,
-  canViewWeightHistory,
   isPlaced,
   model,
-  setAuditItem,
 }: ProductIncomeColumnsParams): DataTableColumn<IncomeGridRow>[] {
   const { t } = useI18n()
 
@@ -1498,42 +1293,9 @@ function useProductIncomeColumns({
       {
         id: 'netWeight',
         header: t('Вага Нетто'),
-        width: 150,
+        width: 120,
         align: 'right',
-        enableSorting: false,
-        cell: (gridRow) => (
-          <Group gap={4} justify="flex-end" wrap="nowrap">
-            <NumberInput
-              allowDecimal
-              decimalScale={3}
-              disabled={!canUseIncome || isPlaced || model.isSaving}
-              hideControls
-              size="xs"
-              value={Number((gridRow.item.NetWeight || 0).toFixed(3))}
-              w={92}
-              onBlur={(event) => {
-                const nextValue = Number(event.currentTarget.value)
-                if (nextValue !== (gridRow.item.NetWeight || 0)) {
-                  model.handleNetWeightChange(gridRow.item, nextValue)
-                }
-              }}
-            />
-            {canViewWeightHistory && (
-              <Tooltip label={t('Історія ваги')}>
-                <ActionIcon
-                  aria-label={t('Історія ваги')}
-                  color="gray"
-                  disabled={model.isSaving || !gridRow.item.SupplyInvoiceOrderItem?.SupplyOrderItem?.NetUid}
-                  size="sm"
-                  variant="subtle"
-                  onClick={() => setAuditItem(gridRow.item)}
-                >
-                  <IconHistory size={16} />
-                </ActionIcon>
-              </Tooltip>
-            )}
-          </Group>
-        ),
+        cell: (gridRow) => (gridRow.item.NetWeight || 0).toFixed(3),
       },
       {
         id: 'grossWeight',
@@ -1568,20 +1330,6 @@ function useProductIncomeColumns({
         width: 140,
         align: 'right',
         cell: (gridRow) => (gridRow.item.UnitPrice || 0).toFixed(2),
-      },
-      {
-        id: 'readyToPlace',
-        header: t('Готовий до оприходування'),
-        width: 120,
-        align: 'center',
-        enableSorting: false,
-        cell: (gridRow) => (
-          <Checkbox
-            checked={Boolean(gridRow.item.IsReadyToPlaced)}
-            disabled={!canUseIncome || model.isDirty || model.isSaving || Boolean(gridRow.item.IsReadyToPlaced) || isPlaced}
-            onChange={() => model.handleReadyToPlace(gridRow.item)}
-          />
-        ),
       },
       {
         id: 'isPlaced',
@@ -1704,7 +1452,7 @@ function useProductIncomeColumns({
     })
 
     return [...fixedColumns, ...dynamicColumns]
-  }, [canUseIncome, canViewWeightHistory, isPlaced, model, setAuditItem, t])
+  }, [canUseIncome, isPlaced, model, t])
 }
 
 export function ProductDeliveryProtocolIncomePage() {
@@ -1719,7 +1467,6 @@ function PackingListProductIncomePage({ source }: { source: ProductIncomeSource 
   const model = useProtocolIncomeModel(source)
   const { t } = useI18n()
   const { hasPermission } = useAuth()
-  const [auditItem, setAuditItem] = useValueState<PackingListPackageOrderItem | null>(null)
   const [vendorCodeFilter, setVendorCodeFilter] = useValueState('')
 
   const isPlaced = isPlacementLocked(model.invoice, model.packingList)
@@ -1729,7 +1476,6 @@ function PackingListProductIncomePage({ source }: { source: ProductIncomeSource 
   const canAddDynamicColumn = canUseIncome && hasPermission(PERMISSION_ADD_DYNAMIC_INCOME_COLUMN)
   const canCapitalizeDynamicIncome = canUseIncome && hasPermission(PERMISSION_CAPITALIZE_DYNAMIC_INCOME)
   const canCarryOutDynamicIncome = canUseIncome && hasPermission(PERMISSION_CARRY_OUT_DYNAMIC_INCOME)
-  const canViewWeightHistory = hasPermission(PERMISSION_VIEW_WEIGHT_HISTORY)
   const filteredGridRows = useMemo(() => {
     const value = vendorCodeFilter.trim().toLowerCase()
 
@@ -1744,10 +1490,8 @@ function PackingListProductIncomePage({ source }: { source: ProductIncomeSource 
 
   const columns = useProductIncomeColumns({
     canUseIncome,
-    canViewWeightHistory,
     isPlaced,
     model,
-    setAuditItem,
   })
 
   return (
@@ -1791,10 +1535,8 @@ function PackingListProductIncomePage({ source }: { source: ProductIncomeSource 
         vendorCodeFilter={vendorCodeFilter}
       />
       <ProductIncomeDialogs
-        auditItem={auditItem}
         canUseIncome={canUseIncome}
         model={model}
-        setAuditItem={setAuditItem}
       />
     </Stack>
   )
@@ -1808,24 +1550,12 @@ type ProductIncomePageSectionProps = {
 function ProductIncomePageHeader({ model, source }: ProductIncomePageSectionProps) {
   const { t } = useI18n()
   const sourceNumber = getIncomeSourceNumber(source, model.protocol)
-  const backPath = source === 'direct-supply-order' && model.sourceId
-    ? `/orders/ukraine/all/edit/${model.sourceId}`
-    : '/product-delivery-protocols'
   const title = source === 'direct-supply-order'
     ? t('Прихід товару по прямому замовленню')
     : t('Прихід товару згідно замовлення')
 
   return (
-    <Group justify="space-between" align="center" style={{ flexShrink: 0 }}>
-      <Button
-        color="gray"
-        disabled={model.isSaving}
-        leftSection={<IconArrowLeft size={16} />}
-        variant="subtle"
-        onClick={() => model.navigate(backPath)}
-      >
-        {t('Назад')}
-      </Button>
+    <Group align="center" style={{ flexShrink: 0 }}>
       <Text fw={700} size="lg">
         {`${title}: ${sourceNumber}`}
       </Text>
@@ -2132,17 +1862,13 @@ function ProductIncomeGridCard({
 }
 
 type ProductIncomeDialogsProps = {
-  auditItem: PackingListPackageOrderItem | null
   canUseIncome: boolean
   model: ProtocolIncomeModel
-  setAuditItem: (item: PackingListPackageOrderItem | null) => void
 }
 
 function ProductIncomeDialogs({
-  auditItem,
   canUseIncome,
   model,
-  setAuditItem,
 }: ProductIncomeDialogsProps) {
   const { t } = useI18n()
 
@@ -2165,8 +1891,6 @@ function ProductIncomeDialogs({
         onApply={model.handleApplyPlacements}
         onClose={() => model.setDrawer(null)}
       />
-
-      <WeightAuditDrawer item={auditItem} opened={Boolean(auditItem)} onClose={() => setAuditItem(null)} />
 
       <PzDocumentDownloadModal download={model.pzDownload} onClose={model.closePzDownload} />
 

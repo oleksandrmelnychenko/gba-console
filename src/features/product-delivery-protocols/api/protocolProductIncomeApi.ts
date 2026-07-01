@@ -58,7 +58,11 @@ export async function getSupplyOrderInvoiceItems(invoiceNetId: string): Promise<
     query: { netId: invoiceNetId },
   })
 
-  return normalizeInvoice(result)
+  // Deep-normalize: this endpoint (GetByNetIdWithAllIncludes) is the ONLY one that hydrates
+  // each packing list's DynamicProductPlacementColumns (with rows + placements). The
+  // packinglists/update response and the specification/products/get endpoint both omit them,
+  // so the income page grafts the columns from here onto its (specification) packing list.
+  return normalizeInvoiceWithPackingLists(result)
 }
 
 export async function getPzDocumentBySupplyInvoiceId(invoiceNetId: string): Promise<ExportDocument> {
