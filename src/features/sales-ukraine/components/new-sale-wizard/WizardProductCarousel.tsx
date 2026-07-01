@@ -54,9 +54,9 @@ export function WizardProductCarousel({
   const showInput = searchMode || !focused
 
   return (
-    <Box style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0, position: 'relative' }}>
+    <Box className="new-sale-product-picker">
       <Box style={{ display: 'flex', flex: 1, flexDirection: 'column', justifyContent: 'flex-end', minHeight: 0, overflow: 'hidden' }}>
-        <Stack gap={2}>
+        <Stack className="new-sale-product-picker__list" gap={0}>
           {topProducts.map((product, index) => (
             <ProductViewerRow
               key={getProductKey(product, index)}
@@ -77,17 +77,8 @@ export function WizardProductCarousel({
         <input
           ref={searchInputRef}
           autoFocus
+          className={`new-sale-product-picker__search ${showInput ? '' : 'is-hidden'}`}
           placeholder={t('Пошук товару')}
-          style={{
-            background: 'transparent',
-            border: 'none',
-            borderBottom: '2px solid var(--mantine-color-violet-4)',
-            fontSize: 14,
-            outline: 'none',
-            padding: '6px 4px',
-            width: '100%',
-            ...(showInput ? {} : { height: 0, opacity: 0, padding: 0, pointerEvents: 'none', position: 'absolute' }),
-          }}
           type="text"
           value={searchValue}
           onChange={(event) => onSearchChange(event.currentTarget.value)}
@@ -113,7 +104,7 @@ export function WizardProductCarousel({
             {emptyText || t('Нічого не знайдено')}
           </Text>
         ) : (
-          <Stack gap={2}>
+          <Stack className="new-sale-product-picker__list" gap={0}>
             {bottomProducts.map((product, index) => (
               <ProductViewerRow
                 key={getProductKey(product, index)}
@@ -171,55 +162,61 @@ function ProductViewerRow({
   const name = product.NameUA || product.Name || ''
 
   return (
-    <Box px={6} py={4} style={{ alignItems: 'center', borderRadius: 6, display: 'flex', gap: 6, minWidth: 0 }} onClick={onPick}>
-      <Box style={{ cursor: 'pointer', flex: 1, minWidth: 0 }}>
-        <Text c={color} fw={600} size="xs" truncate>
-          {code}
-        </Text>
-        <Text c="dimmed" size="sm" title={name} truncate>
+    <Box className="new-sale-product-picker-row" onClick={onPick}>
+      <Box className="new-sale-product-picker-row__content">
+        <Box className="new-sale-product-picker-row__headline">
+          <Text c={color} className="new-sale-product-picker-row__code" truncate>
+            {code}
+          </Text>
+          {product.MainOriginalNumber && (
+            <Text className="new-sale-product-picker-row__number" truncate>
+              {product.MainOriginalNumber}
+            </Text>
+          )}
+        </Box>
+        <Text className="new-sale-product-picker-row__name" title={name}>
           {name}
         </Text>
-        {product.MainOriginalNumber && (
-          <Text c="dimmed" size="xs" truncate>
-            {product.MainOriginalNumber}
-          </Text>
-        )}
       </Box>
-      <ProductMetaDetails meta={meta} />
-      {product.NetUid && onProductInterest && (
-        <Tooltip label={t('Цікавить товар')}>
-          <ActionIcon
-            aria-label={t('Цікавить товар')}
-            color="orange"
-            size="sm"
-            style={{ flexShrink: 0 }}
-            variant="subtle"
-            onClick={(event) => {
-              event.stopPropagation()
-              onProductInterest(product)
-            }}
-          >
-            <IconStar size={15} />
-          </ActionIcon>
-        </Tooltip>
-      )}
-      {product.NetUid && onOpenCard && (
-        <Tooltip label={t('Картка товару')}>
-          <ActionIcon
-            aria-label={t('Картка товару')}
-            color="gray"
-            size="sm"
-            style={{ flexShrink: 0 }}
-            variant="subtle"
-            onClick={(event) => {
-              event.stopPropagation()
-              onOpenCard(product.NetUid as string)
-            }}
-          >
-            <IconInfoCircle size={15} />
-          </ActionIcon>
-        </Tooltip>
-      )}
+      <Box className="new-sale-product-picker-row__side">
+        <ProductMetaDetails meta={meta} />
+        <Box className="new-sale-product-picker-row__actions">
+          {product.NetUid && onProductInterest && (
+            <Tooltip label={t('Цікавить товар')}>
+              <ActionIcon
+                aria-label={t('Цікавить товар')}
+                className="new-sale-product-picker-row__action"
+                color="orange"
+                size="sm"
+                variant="subtle"
+                onClick={(event) => {
+                  event.stopPropagation()
+                  onProductInterest(product)
+                }}
+              >
+                <IconStar size={15} />
+              </ActionIcon>
+            </Tooltip>
+          )}
+          {product.NetUid && onOpenCard && (
+            <Tooltip label={t('Картка товару')}>
+              <ActionIcon
+                aria-label={t('Картка товару')}
+                className="new-sale-product-picker-row__action"
+                color="gray"
+                size="sm"
+                variant="subtle"
+                onClick={(event) => {
+                  event.stopPropagation()
+                  onOpenCard(product.NetUid as string)
+                }}
+              >
+                <IconInfoCircle size={15} />
+              </ActionIcon>
+            </Tooltip>
+          )}
+        </Box>
+      </Box>
     </Box>
   )
 }
@@ -234,26 +231,26 @@ function ProductMetaDetails({ meta }: { meta?: ProductPickerMeta }) {
   }
 
   return (
-    <Stack gap={1} style={{ flexShrink: 0, minWidth: 96 }}>
+    <Stack className="new-sale-product-picker-row__metrics" gap={2}>
       {hasAvailability && (
-        <Group gap={6} justify="flex-end" wrap="nowrap">
+        <Group className="new-sale-product-picker-row__metric-line" gap={6} justify="flex-end" wrap="nowrap">
           {meta.available != null && (
-            <Text c={meta.available > 0 ? 'teal' : 'red'} fw={600} size="xs">
+            <Text className={`new-sale-product-picker-row__availability ${meta.available > 0 ? 'is-good' : 'is-bad'}`}>
               {t('Дост.')}: {metaNumberFormatter.format(meta.available)}
             </Text>
           )}
-          {meta.price != null && <Text size="xs">{metaNumberFormatter.format(meta.price)}</Text>}
+          {meta.price != null && <Text className="new-sale-product-picker-row__price">{metaNumberFormatter.format(meta.price)}</Text>}
         </Group>
       )}
       {hasResale && (
-        <Group gap={6} justify="flex-end" wrap="nowrap">
+        <Group className="new-sale-product-picker-row__metric-line" gap={6} justify="flex-end" wrap="nowrap">
           {meta.reSaleAvailable != null && (
-            <Text c={meta.reSaleAvailable > 0 ? 'teal' : 'red'} fw={600} size="xs">
+            <Text className={`new-sale-product-picker-row__availability ${meta.reSaleAvailable > 0 ? 'is-good' : 'is-bad'}`}>
               {t('Перепродаж')}: {metaNumberFormatter.format(meta.reSaleAvailable)}
             </Text>
           )}
           {meta.reSalePrice != null && (
-            <Text size="xs">
+            <Text className="new-sale-product-picker-row__price">
               {metaNumberFormatter.format(meta.reSalePrice)}
               {meta.reSaleCurrency ? ` ${meta.reSaleCurrency}` : ''}
             </Text>
@@ -280,7 +277,6 @@ function ProductMiniCard({
   const { t } = useI18n()
   const code = product.VendorCode || product.Articul || '—'
   const name = product.NameUA || product.Name || ''
-  const borderColor = active ? 'var(--mantine-color-violet-5)' : 'var(--mantine-color-gray-5)'
 
   function copyCode() {
     // Clicking the card blurs the (hidden) search input → keyboard events stop reaching the
@@ -301,30 +297,22 @@ function ProductMiniCard({
 
   return (
     <Box
-      px={8}
-      py={6}
+      className="new-sale-product-picker-card"
+      data-active={active ? 'true' : undefined}
       title={t('Скопіювати код')}
-      style={{
-        background: 'var(--mantine-color-violet-light)',
-        border: `2px solid ${borderColor}`,
-        borderRadius: 8,
-        boxShadow: '0 2px 10px rgba(20, 28, 38, 0.08)',
-        cursor: 'pointer',
-        minWidth: 0,
-      }}
       onClick={copyCode}
     >
-      <Group gap={6} justify="space-between" wrap="nowrap">
-        <Text c={color ?? 'violet.7'} fw={700} size="sm" title={name} truncate>
+      <Box className="new-sale-product-picker-card__top">
+        <Text c={color} className="new-sale-product-picker-card__code" title={name} truncate>
           {code}
         </Text>
         <ProductMetaDetails meta={meta} />
-      </Group>
-      <Text c="dimmed" size="xs" title={name} truncate>
+      </Box>
+      <Text className="new-sale-product-picker-card__name" title={name}>
         {name}
       </Text>
       {product.MainOriginalNumber && (
-        <Text c="dimmed" size="xs" truncate>
+        <Text className="new-sale-product-picker-card__number" truncate>
           {product.MainOriginalNumber}
         </Text>
       )}

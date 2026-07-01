@@ -1,14 +1,9 @@
 import { Box, Group, Popover, Stack, Text } from '@mantine/core'
 import {
   IconAlertTriangle,
-  IconBuildingStore,
-  IconCircleCheck,
-  IconFileTypePdf,
   IconMail,
   IconMapPin,
   IconPhone,
-  IconUser,
-  IconUsers,
 } from '@tabler/icons-react'
 import { useEffect, useState, type ReactNode } from 'react'
 import { formatLocalDate } from '../../../../shared/date/dateTime'
@@ -211,30 +206,27 @@ export function WizardClientHeroHeader({
     : resolvedClient.IsSubClient
       ? t('Підклієнт')
       : t('Клієнт')
-  const ClientIcon = resolvedClient.IsTradePoint ? IconBuildingStore : resolvedClient.IsSubClient ? IconUsers : IconUser
   const isActive = resolvedClient.IsActive !== false
 
   return (
     <Box className="new-sale-client-hero">
       {headerClose && <Box className="new-sale-client-hero__close">{headerClose}</Box>}
-      {clientCode && (
-        <Box className="new-sale-client-hero__stamp" aria-hidden="true">
-          <span>{clientCode}</span>
-        </Box>
-      )}
       <Box className="new-sale-client-hero__identity">
-        <Box className={`new-sale-client-hero__mark ${clientDebtTotal > 0 ? 'has-debt' : ''}`}>
-          <ClientIcon size={22} />
-        </Box>
         <Box className="new-sale-client-hero__copy">
-          <Text className="new-sale-client-hero__name" title={clientTitle}>
-            {clientTitle}
+          <Text className="new-sale-client-hero__name" title={clientCode ? `${clientCode} ${clientTitle}` : clientTitle}>
+            {clientCode && <span className="new-sale-client-hero__code">{clientCode}</span>}
+            <span className="new-sale-client-hero__title">{clientTitle}</span>
           </Text>
           <Group className="new-sale-client-hero__chips" gap={6} wrap="wrap">
-            <span>{clientKind}</span>
-            <span className={isActive ? 'is-active' : ''}>{isActive ? t('Активний') : t('Не активний')}</span>
+            <span className={`new-sale-client-hero__status ${isActive ? 'is-active' : 'is-inactive'}`}>
+              <span className="new-sale-client-hero__status-dot" />
+              <span className="new-sale-client-hero__status-copy">
+                <strong>{isActive ? t('Активний') : t('Не активний')}</strong>
+                <span>{clientKind}</span>
+              </span>
+            </span>
             {clientDebtTotal > 0 && (
-              <span className="is-danger">
+              <span className="new-sale-client-hero__debt">
                 <IconAlertTriangle size={12} />
                 {t('Є борг')}
               </span>
@@ -259,7 +251,6 @@ export function WizardClientHeroHeader({
             <Popover position="bottom-end" shadow="md" width={500} withinPortal>
               <Popover.Target>
                 <Box aria-label={t('Договори')} className="new-sale-client-metric is-clickable" component="button" type="button">
-                  <IconCircleCheck size={13} />
                   <strong>{visibleAgreements.length}</strong>
                   <span>{t('Договори')}</span>
                 </Box>
@@ -282,13 +273,11 @@ export function WizardClientHeroHeader({
             </Popover>
           ) : (
             <Box className="new-sale-client-metric">
-              <IconCircleCheck size={13} />
               <strong>{visibleAgreements.length}</strong>
               <span>{t('Договори')}</span>
             </Box>
           )}
           <Box className="new-sale-client-metric">
-            <IconFileTypePdf size={13} />
             <strong>{visibleRegistryCount}</strong>
             <span>{t('Документи')}</span>
           </Box>

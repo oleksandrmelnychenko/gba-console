@@ -245,7 +245,7 @@ function WizardSaleHeaderContent({
         </Group>
       )}
 
-      {!hideAgreementsAction && subClientCount > 0 && clientAgreements.length > 0 && (
+      {!isInline && !hideAgreementsAction && subClientCount > 0 && clientAgreements.length > 0 && (
         <Popover position="bottom-start" shadow="md" width={500} withinPortal>
           <Popover.Target>
             <Tooltip label={t('Договори')} position="bottom">
@@ -267,7 +267,7 @@ function WizardSaleHeaderContent({
         </Popover>
       )}
 
-      {subClientCount > 0 && (
+      {!isInline && subClientCount > 0 && (
         <Popover opened={isStructureOpen} position="bottom-start" shadow="md" width={440} withinPortal onChange={setStructureOpen}>
           <Popover.Target>
             <Tooltip label={t('Структура клієнта')} position="bottom">
@@ -436,21 +436,19 @@ function WizardHeaderBadge({
 }) {
   return (
     <Paper className="new-sale-wizard-header-badge" radius="md" withBorder>
-      <Text c="dimmed" size="xs">
-        {label}
-      </Text>
-      <Group gap="sm">
+      <Group className="new-sale-wizard-header-badge__values" gap="sm">
         {items.map((item, index) => (
-          <Group gap={4} key={`${item.unit}-${index}`} wrap="nowrap">
+          <Group className="new-sale-wizard-header-badge__value" gap={4} key={`${item.unit}-${index}`} wrap="nowrap">
             <Text c={color} fw={600} size="sm">
               {item.value}
             </Text>
-            <Text c="dimmed" size="xs">
+            <Text className="new-sale-wizard-header-badge__unit">
               {item.unit}
             </Text>
           </Group>
         ))}
       </Group>
+      <Text className="new-sale-wizard-header-badge__label">{label}</Text>
     </Paper>
   )
 }
