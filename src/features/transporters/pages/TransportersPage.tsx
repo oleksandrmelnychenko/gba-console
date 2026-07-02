@@ -419,8 +419,8 @@ export function TransportersPage() {
 
         <div className="transporters-workspace">
           <aside className="transporters-type-rail" aria-label={t('Типи перевізників')}>
-            <div className="transporters-rail-header">
-              <span>{t('Навігація типів')}</span>
+            <div className="app-section-title transporters-rail-header">
+              <span>{t('Типи')}</span>
             </div>
 
             {isLoadingTypes ? (
