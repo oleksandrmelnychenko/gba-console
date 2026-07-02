@@ -33,8 +33,8 @@
      wrapped onto a second row. */
   grid-template-columns:
     minmax(280px, 330px)
-    minmax(200px, 1fr)
-    minmax(120px, 148px)
+    minmax(180px, 1fr)
+    minmax(178px, 210px)
     minmax(130px, 168px)
     auto
     auto
