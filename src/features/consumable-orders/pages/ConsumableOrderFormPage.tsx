@@ -25,7 +25,6 @@ import {
   IconCalendar,
   IconClock,
   IconDeviceFloppy,
-  IconFileInvoice,
   IconFileText,
   IconHash,
   IconNotes,
@@ -655,7 +654,11 @@ export function ConsumableOrderFormPage() {
       opened
       position="right"
       size="wide"
-      title={isEditMode ? t('Редагування прибуткової накладної') : t('Нова прибуткова накладна')}
+      title={
+        <span style={{ fontFamily: 'var(--font-mono)' }}>
+          {isEditMode ? t('Редагування прибуткової накладної') : t('Нова прибуткова накладна')}
+        </span>
+      }
       onClose={handleCancel}
       footer={
         <Button
@@ -674,17 +677,13 @@ export function ConsumableOrderFormPage() {
         <Stack gap="md">
           <section className="consumable-order-form-hero">
             <div className="consumable-order-form-hero__main">
-              <span className="consumable-order-form-eyebrow">{isEditMode ? t('Редагування') : t('Створення')}</span>
               <div className="consumable-order-form-title">
-                <span className="consumable-order-form-title__icon" aria-hidden>
-                  <IconFileInvoice size={18} />
-                </span>
                 <div className="consumable-order-form-title__copy">
                   <strong>{invoiceNumberLabel}</strong>
                   <span>{internalNumberLabel}</span>
                 </div>
                 {isPaid ? (
-                  <Badge color="green" variant="light">
+                  <Badge className="app-role-pill is-green" variant="light">
                     {t('Оплачено')}
                   </Badge>
                 ) : null}
@@ -711,7 +710,7 @@ export function ConsumableOrderFormPage() {
           )}
 
           <section className="consumable-order-form-section">
-            <OrderFormSectionHeader icon={<IconFileInvoice size={16} />} label={t('Документ')} title={t('Реквізити накладної')} />
+            <OrderFormSectionHeader title={t('Реквізити накладної')} />
             <div className="consumable-order-form-grid">
               <Autocomplete
                 className="consumable-order-form-control is-wide"
@@ -802,8 +801,6 @@ export function ConsumableOrderFormPage() {
                   onChange={(event) => updateForm({ paymentTaskEnabled: event.currentTarget.checked })}
                 />
               }
-              icon={<IconReceipt size={16} />}
-              label={t('Оплата')}
               title={t('Платіжний протокол')}
             />
             {form.paymentTaskEnabled ? (
@@ -857,8 +854,6 @@ export function ConsumableOrderFormPage() {
                   {t('Додати')}
                 </Button>
               }
-              icon={<IconPackage size={16} />}
-              label={t('Склад накладної')}
               title={t('Позиції')}
             />
             <div className="consumable-order-form-items">
@@ -896,8 +891,6 @@ export function ConsumableOrderFormPage() {
                   {documentRows.length}
                 </Badge>
               }
-              icon={<IconFileText size={16} />}
-              label={t('Файли')}
               title={t('Документи')}
             />
             <div className="consumable-order-form-documents">
@@ -1153,26 +1146,16 @@ function OrderFormMetric({
 
 function OrderFormSectionHeader({
   action,
-  icon,
-  label,
   title,
 }: {
   action?: ReactNode
-  icon: ReactNode
-  label: string
   title: string
 }) {
   return (
     <div className="consumable-order-form-section-header">
-      <div className="consumable-order-form-section-header__main">
-        <span className="consumable-order-form-section-header__icon" aria-hidden>
-          {icon}
-        </span>
-        <div>
-          <span className="consumable-order-form-section-header__label">{label}</span>
-          <strong>{title}</strong>
-        </div>
-      </div>
+      <Text className="app-section-title" fw={600} size="sm">
+        {title}
+      </Text>
       {action ? <div className="consumable-order-form-section-header__action">{action}</div> : null}
     </div>
   )
