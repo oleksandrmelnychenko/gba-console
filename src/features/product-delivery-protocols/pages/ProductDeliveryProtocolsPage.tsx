@@ -11,17 +11,12 @@ import {
 } from '@mantine/core'
 import {
   IconAlertCircle,
-  IconBuilding,
-  IconCalendar,
   IconDownload,
   IconDots,
   IconFileTypePdf,
-  IconPackageImport,
   IconPlus,
   IconRestore,
   IconSearch,
-  IconTruckDelivery,
-  IconUser,
 } from '@tabler/icons-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -698,14 +693,10 @@ function ProtocolMainCell({ protocol }: { protocol: DeliveryProductProtocol }) {
 
   return (
     <span className="product-delivery-protocols-main-cell" title={title}>
-      <span className="product-delivery-protocols-main-icon" aria-hidden>
-        <IconTruckDelivery size={16} />
-      </span>
       <span className="product-delivery-protocols-main-copy">
         <span className="product-delivery-protocols-main-title">{number}</span>
         {date && (
           <span className="product-delivery-protocols-main-subtitle">
-            <IconCalendar size={12} />
             {t('від')} {date}
           </span>
         )}
@@ -717,13 +708,21 @@ function ProtocolMainCell({ protocol }: { protocol: DeliveryProductProtocol }) {
 function ProtocolStateCell({ protocol }: { protocol: DeliveryProductProtocol }) {
   const { t } = useI18n()
 
+  const statusTone = getProtocolStatusTone(protocol)
+  const statusPillVariant =
+    statusTone === 'success' ? 'is-green' : statusTone === 'neutral' ? 'is-gray' : ''
+  const placementTone = getProtocolPlacementTone(protocol)
+  // Placement is first-class info: its own pill, in a palette distinct from the
+  // green status pill (blue when placed, orange when attention is needed).
+  const placementPillVariant =
+    placementTone === 'success' ? '' : placementTone === 'warning' ? 'is-orange' : 'is-gray'
+
   return (
     <span className="product-delivery-protocols-state-cell">
-      <span className={`product-delivery-protocols-state-main is-${getProtocolStatusTone(protocol)}`}>
-        <span className="product-delivery-protocols-state-dot" aria-hidden />
+      <span className={`app-role-pill ${statusPillVariant} product-delivery-protocols-state-pill`}>
         {getProtocolStatusLabel(protocol, t)}
       </span>
-      <span className={`product-delivery-protocols-state-sub is-${getProtocolPlacementTone(protocol)}`}>
+      <span className={`app-role-pill ${placementPillVariant} product-delivery-protocols-state-pill`}>
         {getProtocolPlacementStatusLabel(protocol, t)}
       </span>
     </span>
@@ -737,9 +736,6 @@ function ProtocolOrganizationCell({ protocol }: { protocol: DeliveryProductProto
 
   return (
     <span className="product-delivery-protocols-icon-cell" title={nativeTitle(tooltip)}>
-      <span className="product-delivery-protocols-small-icon" aria-hidden>
-        <IconBuilding size={14} />
-      </span>
       <span className="product-delivery-protocols-two-line-cell">
         <span>{title}</span>
         <small>{subtitle}</small>
@@ -755,9 +751,6 @@ function ProtocolResponsibleCell({ protocol }: { protocol: DeliveryProductProtoc
 
   return (
     <span className="product-delivery-protocols-icon-cell" title={nativeTitle(tooltip)}>
-      <span className="product-delivery-protocols-user-icon" aria-hidden>
-        <IconUser size={14} />
-      </span>
       <span className="product-delivery-protocols-two-line-cell">
         <span>{title}</span>
         <small>{subtitle}</small>
@@ -778,9 +771,6 @@ function ProtocolSuppliersCell({ protocol }: { protocol: DeliveryProductProtocol
 
   return (
     <span className="product-delivery-protocols-icon-cell" title={nativeTitle(tooltip)}>
-      <span className="product-delivery-protocols-small-icon" aria-hidden>
-        <IconPackageImport size={14} />
-      </span>
       <span className="product-delivery-protocols-two-line-cell">
         <span>{title}</span>
         <small>{subtitle}</small>
