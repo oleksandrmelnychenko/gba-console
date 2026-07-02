@@ -86,10 +86,10 @@ export function RolePermissionsEditor({
           {t('Вибрати все')}
         </button>
         <Group className="role-tree-toolbar-stats" gap="xs" justify="flex-end" wrap="wrap">
-          <Badge color="gray" variant="light">
+          <Badge className="app-role-pill is-gray" variant="light">
             {t('Сторінки')}: {totals.selectedNodes}/{totals.nodes}
           </Badge>
-          <Badge color="gray" variant="light">
+          <Badge className="app-role-pill is-gray" variant="light">
             {t('Права')}: {totals.selectedPermissions}/{totals.permissions}
           </Badge>
         </Group>
@@ -191,10 +191,10 @@ function ModuleSection({
           {module.Description ? <Text className="role-tree-module-description">{module.Description}</Text> : null}
         </button>
         <div className="role-tree-module-stats">
-          <Badge color="gray" variant="light">
+          <Badge className="app-role-pill is-gray" variant="light">
             {summary.selectedNodes}/{summary.nodes}
           </Badge>
-          <Badge color="gray" variant="light">
+          <Badge className="app-role-pill is-gray" variant="light">
             {summary.selectedPermissions}/{summary.permissions}
           </Badge>
         </div>

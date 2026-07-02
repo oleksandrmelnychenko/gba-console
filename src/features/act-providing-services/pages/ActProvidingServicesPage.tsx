@@ -1,31 +1,26 @@
 import {
   ActionIcon,
   Alert,
-  Badge,
   Button,
-  Group,
   Stack,
-  Text,
   TextInput,
   Tooltip,
 } from '@mantine/core'
 import {
   IconAlertCircle,
-  IconChevronDown,
-  IconChevronUp,
-  IconFileText,
-  IconEye,
   IconRestore,
-  IconRoute,
   IconSearch,
 } from '@tabler/icons-react'
 import { notifications } from '@mantine/notifications'
-import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { ExternalLink, Route } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { SYNC_DATA_RANGE_START, formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
 import { useAuth } from '../../auth/useAuth'
@@ -38,6 +33,13 @@ import '../../../shared/ui/console-table-page.css'
 const PAGE_SIZE = DEFAULT_PAGINATOR_PAGE_SIZE
 const PERMISSION_LOGISTIC_WAY = 'ActProvidingServices_SelectAnOption_LogisticWayBtn_PKEY'
 const PERMISSION_VIEW_ACT = 'ActProvidingServices_SelectAnOption_viewBtn_PKEY'
+const ACT_PROVIDING_SERVICES_TABLE_MIN_WIDTH = 1120
+const ACT_PROVIDING_SERVICES_TABLE_DEFAULT_LAYOUT = {
+  columnPinning: {
+    left: ['act'],
+  },
+  density: 'normal',
+} satisfies DataTableDefaultLayout
 
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
   dateStyle: 'short',
@@ -51,12 +53,6 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
 type ActProvidingServiceRow = ActProvidingServiceDisplayModel & {
   act: ActProvidingService
 }
-
-type ActServicesSortId = 'act' | 'invoice' | 'amount' | 'parties' | 'responsible' | 'comment'
-type ActServicesSortState = {
-  direction: 'asc' | 'desc'
-  id: ActServicesSortId
-} | null
 
 type ActProvidingServicesLoadState = {
   acts: ActProvidingService[]
@@ -219,22 +215,78 @@ function ActProvidingServicesPageView({ model }: { model: ReturnType<typeof useA
     setPage,
     setPageSize,
   } = model
-  const [sortState, setSortState] = useValueState<ActServicesSortState>(null)
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const [searchValue, setSearchValue] = useValueState('')
   const filteredRows = useMemo(() => filterActRows(rows, searchValue), [rows, searchValue])
-  const sortedRows = useMemo(() => sortActRows(filteredRows, sortState), [filteredRows, sortState])
-
-  const toggleSort = useCallback(
-    (id: ActServicesSortId) => {
-      setSortState((current) => {
-        if (current?.id !== id) {
-          return { direction: 'asc', id }
-        }
-
-        return { direction: current.direction === 'asc' ? 'desc' : 'asc', id }
-      })
-    },
-    [setSortState],
+  const columns = useMemo<DataTableColumn<ActProvidingServiceRow>[]>(
+    () => [
+      {
+        id: 'act',
+        header: t('Акт'),
+        width: 250,
+        minWidth: 220,
+        accessor: (row) => row.actNumber || row.number || '',
+        cell: (row) => <ActIdentityCell row={row} />,
+      },
+      {
+        id: 'invoice',
+        header: t('Інвойс'),
+        width: 172,
+        minWidth: 146,
+        accessor: (row) => `${row.invNumber || ''} ${row.listInvDate || row.invDate || ''}`,
+        cell: (row) => (
+          <ActTwoLineValue
+            primary={displayValue(row.invNumber)}
+            secondary={formatDateTime(row.listInvDate ?? row.invDate)}
+          />
+        ),
+      },
+      {
+        id: 'amount',
+        header: t('Сума'),
+        width: 124,
+        minWidth: 112,
+        align: 'right',
+        accessor: (row) => getActProvidingServiceListAmount(row) ?? Number.NEGATIVE_INFINITY,
+        cell: (row) => (
+          <ActAmountCell
+            amount={formatMoney(getActProvidingServiceListAmount(row))}
+            currency={displayValue(row.currency)}
+          />
+        ),
+      },
+      {
+        id: 'parties',
+        header: t('Постачальник / Організація'),
+        width: 292,
+        minWidth: 240,
+        fill: true,
+        accessor: (row) => `${row.serviceOrganization || ''} ${row.organization || ''}`,
+        cell: (row) => (
+          <ActTwoLineValue
+            primary={displayValue(row.serviceOrganization)}
+            secondary={displayValue(row.organization)}
+          />
+        ),
+      },
+      {
+        id: 'responsible',
+        header: t('Відповідальний'),
+        width: 164,
+        minWidth: 136,
+        accessor: (row) => row.responsible || '',
+        cell: (row) => <ActProvidingServiceTableValue value={displayValue(row.responsible)} />,
+      },
+      {
+        id: 'comment',
+        header: t('Коментар'),
+        width: 220,
+        minWidth: 156,
+        accessor: (row) => row.comment || '',
+        cell: (row) => <ActProvidingServiceTableValue value={displayValue(row.comment)} />,
+      },
+    ],
+    [t],
   )
 
   const resetPageFilters = useCallback(() => {
@@ -243,9 +295,9 @@ function ActProvidingServicesPageView({ model }: { model: ReturnType<typeof useA
   }, [resetFilters, setSearchValue])
 
   return (
-    <Stack className="act-providing-services-page console-table-page" gap="md">
+    <Stack className="act-providing-services-page console-table-page" gap={6}>
       <div className="console-table-shell">
-        <div className="app-filter-bar">
+        <div className="app-filter-bar act-services-filter-bar">
           <div className="act-services-filter-row">
             <div className="act-services-period-filter">
               <span className="act-services-filter-label">{t('Період')}</span>
@@ -306,6 +358,7 @@ function ActProvidingServicesPageView({ model }: { model: ReturnType<typeof useA
               />
             </div>
           </div>
+          <div ref={setTableToolbarSlot} className="act-services-table-toolbar-slot" />
         </div>
 
         {(error || filterError) && (
@@ -315,12 +368,20 @@ function ActProvidingServicesPageView({ model }: { model: ReturnType<typeof useA
         )}
 
         <div className="act-providing-services-page__table console-table-body">
-          <ActServicesList
+          <DataTable
+            columns={columns}
+            data={filteredRows}
+            defaultLayout={ACT_PROVIDING_SERVICES_TABLE_DEFAULT_LAYOUT}
+            emptyText={t('Актів надання послуг не знайдено')}
+            getRowId={(row, index) => String(row.netId || row.act.Id || index)}
+            height="100%"
             isLoading={isLoading}
-            rows={sortedRows}
-            sortState={sortState}
-            onOpen={openSelectedRow}
-            onSort={toggleSort}
+            layoutVersion="act-providing-services-table-3"
+            minWidth={ACT_PROVIDING_SERVICES_TABLE_MIN_WIDTH}
+            showLayoutControls
+            tableId="act-providing-services"
+            toolbarPortalTarget={tableToolbarSlot}
+            onRowClick={openSelectedRow}
           />
         </div>
       </div>
@@ -346,37 +407,56 @@ function ActProvidingServiceOptionsModal({
   const canOpenViewOption = Boolean(row?.netId) && (canViewAct || canOpenSupplyOrder)
   const canOpenProtocol = Boolean(row?.protocolNetId) && canOpenLogisticWay
   const hasAvailableActions = Boolean(canOpenViewOption || canOpenSupplyOrder || canOpenProtocol)
+  const isActive = row?.act.Deleted !== true
 
   return (
-    <AppModal centered opened={Boolean(row)} title={t('Виберіть опцію')} onClose={onClose}>
+    <AppModal
+      centered
+      opened={Boolean(row)}
+      size={496}
+      title={
+        <span className="act-services-action-title">
+          <span className={`act-services-action-status-dot${isActive ? ' is-active' : ''}`} />
+          {row ? displayValue(row.actNumber || row.number) || t('Акт надання послуг') : t('Акт надання послуг')}
+        </span>
+      }
+      onClose={onClose}
+    >
       {row && (
-        <Stack gap="sm">
-          <Group gap="xs">
-            <Badge color={row.accountingMarker ? 'violet' : 'green'} variant="light">
-              {row.accountingMarker ? t('Бухгалтерський') : t('Управлінський')}
-            </Badge>
-            <Text c="dimmed" size="sm">
-              {displayValue(row.number)} · {formatDateTime(row.date)}
-            </Text>
-          </Group>
-
+        <Stack className="app-modal-actions" gap="xs">
           {canOpenViewOption && (
             <Button
-              component={Link}
+              fullWidth
+              color="dark"
               disabled={!row.netId}
               justify="flex-start"
-              leftSection={<IconEye size={18} />}
-              to={`/act-providing-services/${row.netId}`}
-              variant="light"
+              leftSection={
+                <span className="app-action-icon">
+                  <ExternalLink size={20} color="var(--mantine-color-gray-7)" />
+                </span>
+              }
+              size="md"
+              variant="subtle"
+              onClick={() => {
+                navigate(`/act-providing-services/${row.netId}`)
+                onClose()
+              }}
             >
               {t('Огляд')}
             </Button>
           )}
           {canOpenSupplyOrder && (
             <Button
+              fullWidth
+              color="dark"
               justify="flex-start"
-              leftSection={<IconRoute size={18} />}
-              variant="light"
+              leftSection={
+                <span className="app-action-icon">
+                  <Route size={20} color="var(--mantine-color-gray-7)" />
+                </span>
+              }
+              size="md"
+              variant="subtle"
               onClick={() => {
                 navigate(`/orders/ukraine/view/${row.supplyOrderUkraineNetUid}`)
                 onClose()
@@ -387,9 +467,16 @@ function ActProvidingServiceOptionsModal({
           )}
           {canOpenProtocol && (
             <Button
+              fullWidth
+              color="dark"
               justify="flex-start"
-              leftSection={<IconRoute size={18} />}
-              variant="light"
+              leftSection={
+                <span className="app-action-icon">
+                  <Route size={20} color="var(--mantine-color-gray-7)" />
+                </span>
+              }
+              size="md"
+              variant="subtle"
               onClick={() => {
                 navigate(`/product-delivery-protocols/${row.protocolNetId}`)
                 onClose()
@@ -399,9 +486,9 @@ function ActProvidingServiceOptionsModal({
             </Button>
           )}
           {!hasAvailableActions && (
-            <Text c="dimmed" size="sm">
+            <Button fullWidth color="dark" disabled justify="flex-start" size="md" variant="subtle">
               {t('Немає доступних дій')}
-            </Text>
+            </Button>
           )}
         </Stack>
       )}
@@ -409,152 +496,39 @@ function ActProvidingServiceOptionsModal({
   )
 }
 
-function ActServicesList({
-  isLoading,
-  rows,
-  sortState,
-  onOpen,
-  onSort,
-}: {
-  isLoading: boolean
-  rows: ActProvidingServiceRow[]
-  sortState: ActServicesSortState
-  onOpen: (row: ActProvidingServiceRow) => void
-  onSort: (id: ActServicesSortId) => void
-}) {
-  const { t } = useI18n()
-
-  return (
-    <div className="act-services-list">
-      <div className="act-services-list-head">
-        <ActSortHeader id="act" label={t('Акт')} sortState={sortState} onSort={onSort} />
-        <ActSortHeader id="invoice" label={t('Інвойс')} sortState={sortState} onSort={onSort} />
-        <ActSortHeader id="amount" label={t('Сума')} sortState={sortState} onSort={onSort} align="right" />
-        <ActSortHeader id="parties" label={t('Постачальник / Організація')} sortState={sortState} onSort={onSort} />
-        <ActSortHeader id="responsible" label={t('Відповідальний')} sortState={sortState} onSort={onSort} />
-        <ActSortHeader id="comment" label={t('Коментар')} sortState={sortState} onSort={onSort} />
-        <span aria-hidden />
-      </div>
-
-      <div className="act-services-list-body">
-        {isLoading ? (
-          <div className="act-services-list-state">{t('Завантаження актів надання послуг')}</div>
-        ) : rows.length === 0 ? (
-          <div className="act-services-list-state">{t('Актів надання послуг не знайдено')}</div>
-        ) : (
-          rows.map((row, index) => (
-            <ActServicesRow
-              key={String(row.netId || row.act.Id || index)}
-              row={row}
-              onOpen={onOpen}
-            />
-          ))
-        )}
-      </div>
-    </div>
-  )
-}
-
-function ActSortHeader({
-  align,
-  id,
-  label,
-  sortState,
-  onSort,
-}: {
-  align?: 'right'
-  id: ActServicesSortId
-  label: string
-  sortState: ActServicesSortState
-  onSort: (id: ActServicesSortId) => void
-}) {
-  const isActive = sortState?.id === id
-
-  return (
-    <button
-      className={`act-services-sort-header${isActive ? ' is-active' : ''}${align === 'right' ? ' is-right' : ''}`}
-      type="button"
-      onClick={() => onSort(id)}
-    >
-      <span>{label}</span>
-      {isActive && sortState?.direction === 'desc' ? <IconChevronDown size={13} /> : <IconChevronUp size={13} />}
-    </button>
-  )
-}
-
-function ActServicesRow({ row, onOpen }: { row: ActProvidingServiceRow; onOpen: (row: ActProvidingServiceRow) => void }) {
-  return (
-    <div
-      className="act-services-row"
-      role="button"
-      tabIndex={0}
-      onClick={() => onOpen(row)}
-      onKeyDown={(event) => {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault()
-          onOpen(row)
-        }
-      }}
-    >
-      <ActIdentityCell row={row} />
-      <ActTwoLineValue primary={displayValue(row.invNumber)} secondary={formatDateTime(row.listInvDate ?? row.invDate)} />
-      <ActAmountCell amount={formatMoney(getActProvidingServiceListAmount(row))} currency={displayValue(row.currency)} />
-      <div className="act-services-party-cell">
-        <ActTwoLineValue primary={displayValue(row.serviceOrganization)} secondary={displayValue(row.organization)} />
-      </div>
-      <ActProvidingServiceTableValue value={displayValue(row.responsible)} />
-      <ActProvidingServiceTableValue value={displayValue(row.comment)} />
-      <Tooltip label="Відкрити">
-        <ActionIcon
-          aria-label="Відкрити"
-          className="act-services-row-action"
-          color="gray"
-          disabled={!hasActProvidingServiceActionTarget(row)}
-          size="sm"
-          variant="subtle"
-          onClick={(event) => {
-            event.stopPropagation()
-            onOpen(row)
-          }}
-        >
-          <IconEye size={15} />
-        </ActionIcon>
-      </Tooltip>
-    </div>
-  )
-}
-
 function ActProvidingServiceTableValue({ value }: { value: string }) {
   return (
-    <Tooltip label={value} openDelay={350} withArrow>
-      <span className="act-services-single-value">
-        {value}
-      </span>
-    </Tooltip>
+    <span className="act-services-single-value" title={nativeTitle(value)}>
+      {value}
+    </span>
   )
 }
 
 function ActIdentityCell({ row }: { row: ActProvidingServiceRow }) {
-  const metaItems = [
-    row.managementMarker ? `УО ${row.managementMarker}` : null,
-    row.accountingMarker ? `БО ${row.accountingMarker}` : null,
-    formatDateTime(row.date),
-  ].filter(Boolean)
+  const { t } = useI18n()
+  const type = row.accountingMarker ? t('БО') : t('УО')
+  const date = formatDateTime(row.date)
   const title = displayValue(row.actNumber || row.number)
-  const subtitle = metaItems.join(' · ')
+  const tooltip = [title, type, date].filter(Boolean).join(' · ')
 
   return (
-    <Tooltip label={`${title}\n${subtitle}`} multiline openDelay={350} withArrow>
-      <span className="act-service-identity-cell">
-        <span className="act-service-identity-icon" aria-hidden>
-          <IconFileText size={16} />
-        </span>
-        <span className="act-service-identity-copy">
-          <span className="act-service-identity-title">{title}</span>
-          <span className="act-service-identity-subtitle">{subtitle}</span>
+    <span className="act-service-identity-cell" title={nativeTitle(tooltip)}>
+      <span className="act-service-identity-copy">
+        <span className="act-service-identity-title">{title}</span>
+        <span className="act-service-meta-row">
+          <span className="act-service-meta-value">
+            <span>{t('тип')}</span>
+            <strong>{type}</strong>
+          </span>
+          {date && (
+            <span className="act-service-meta-value">
+              <span>{t('від')}</span>
+              <strong>{date}</strong>
+            </span>
+          )}
         </span>
       </span>
-    </Tooltip>
+    </span>
   )
 }
 
@@ -562,18 +536,16 @@ function ActTwoLineValue({ primary, secondary }: { primary: string; secondary: s
   const tooltip = `${primary}\n${secondary}`
 
   return (
-    <Tooltip label={tooltip} multiline openDelay={350} withArrow>
-      <span className="act-service-two-line-value">
-        <span>{primary}</span>
-        <small>{secondary}</small>
-      </span>
-    </Tooltip>
+    <span className="act-service-two-line-value" title={nativeTitle(tooltip)}>
+      <span>{primary}</span>
+      <small>{secondary}</small>
+    </span>
   )
 }
 
 function ActAmountCell({ amount, currency }: { amount: string; currency: string }) {
   return (
-    <span className="act-service-amount-cell">
+    <span className="act-service-amount-cell" title={nativeTitle([amount, currency].filter(Boolean).join(' '))}>
       <strong>{amount}</strong>
       <small>{currency}</small>
     </span>
@@ -582,7 +554,7 @@ function ActAmountCell({ amount, currency }: { amount: string; currency: string 
 
 function formatDateTime(value?: string): string {
   if (!value) {
-    return '—'
+    return ''
   }
 
   const date = new Date(value)
@@ -596,7 +568,7 @@ function formatDateTime(value?: string): string {
 
 function formatMoney(value?: number): string {
   if (typeof value !== 'number' || !Number.isFinite(value)) {
-    return '—'
+    return ''
   }
 
   return moneyFormatter.format(value)
@@ -641,58 +613,22 @@ function normalizeActSearchValue(value: string): string {
   return value.trim().toLocaleLowerCase('uk')
 }
 
-function sortActRows(rows: ActProvidingServiceRow[], sortState: ActServicesSortState): ActProvidingServiceRow[] {
-  if (!sortState) {
-    return rows
-  }
-
-  const direction = sortState.direction === 'asc' ? 1 : -1
-
-  return [...rows].sort(
-    (firstRow, secondRow) =>
-      compareActSortValues(getActSortValue(firstRow, sortState.id), getActSortValue(secondRow, sortState.id)) *
-      direction,
-  )
-}
-
-function getActSortValue(row: ActProvidingServiceRow, id: ActServicesSortId): number | string {
-  switch (id) {
-    case 'act':
-      return row.actNumber || row.number || ''
-    case 'invoice':
-      return `${row.invNumber || ''} ${row.listInvDate || row.invDate || ''}`
-    case 'amount':
-      return getActProvidingServiceListAmount(row) ?? Number.NEGATIVE_INFINITY
-    case 'parties':
-      return `${row.serviceOrganization || ''} ${row.organization || ''}`
-    case 'responsible':
-      return row.responsible || ''
-    case 'comment':
-      return row.comment || ''
-  }
-}
-
-function compareActSortValues(firstValue: number | string, secondValue: number | string): number {
-  if (typeof firstValue === 'number' && typeof secondValue === 'number') {
-    return firstValue - secondValue
-  }
-
-  return String(firstValue).localeCompare(String(secondValue), 'uk', {
-    numeric: true,
-    sensitivity: 'base',
-  })
-}
-
 function displayValue(value?: string | number | null): string {
   if (typeof value === 'number') {
-    return Number.isFinite(value) ? String(value) : '—'
+    return Number.isFinite(value) ? String(value) : ''
   }
 
-  return value || '—'
+  return value || ''
 }
 
 function hasActProvidingServiceActionTarget(row: ActProvidingServiceRow): boolean {
   return Boolean(row.netId || row.supplyOrderUkraineNetUid || row.protocolNetId)
+}
+
+function nativeTitle(value: string): string | undefined {
+  const title = value.trim()
+
+  return title ? title : undefined
 }
 
 function getFilterError(dateFrom: string, dateTo: string): string | null {

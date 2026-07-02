@@ -29,6 +29,8 @@ type UserNewRouteState = {
   returnPath?: string
 }
 
+const USER_NEW_MONO_STYLE = { fontFamily: 'var(--font-mono)', letterSpacing: 0 } as const
+
 export function UserNewPage() {
   const { t } = useI18n()
   const location = useLocation()
@@ -143,19 +145,31 @@ export function UserNewPage() {
       closeOnClickOutside={!isSaving}
       keepMounted={false}
       position="right"
-      size="min(780px, 100vw)"
-      aria-label={t('Новий користувач')}
+      size="standard"
+      title={<span style={USER_NEW_MONO_STYLE}>{t('Новий користувач')}</span>}
       onClose={closeSheet}
       footer={
-        <Button
-          color={CREATE_ACTION_COLOR}
-          form="user-new-form"
-          leftSection={<IconDeviceFloppy size={16} />}
-          loading={isSaving}
-          type="submit"
-        >
-          {t('Створити')}
-        </Button>
+        <Group gap="xs" justify="flex-end">
+          <Button
+            color="gray"
+            disabled={isSaving}
+            styles={{ label: USER_NEW_MONO_STYLE }}
+            variant="subtle"
+            onClick={closeSheet}
+          >
+            {t('Скасувати')}
+          </Button>
+          <Button
+            color={CREATE_ACTION_COLOR}
+            form="user-new-form"
+            leftSection={<IconDeviceFloppy size={16} />}
+            loading={isSaving}
+            styles={{ label: USER_NEW_MONO_STYLE }}
+            type="submit"
+          >
+            {t('Створити')}
+          </Button>
+        </Group>
       }
     >
       <Stack gap="md">
@@ -168,6 +182,9 @@ export function UserNewPage() {
         <form id="user-new-form" onSubmit={handleSubmit}>
           <Card className="app-section-card" withBorder radius="md" padding="md">
             <Stack gap="md">
+              <Text className="app-section-title" fw={600}>
+                {t('Дані користувача')}
+              </Text>
               <UserForm
                 confirmPassword={confirmPassword}
                 disabled={isSaving || isLoadingRoles}

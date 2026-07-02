@@ -1,31 +1,100 @@
-.transporters-page {
-  box-sizing: border-box;
-  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 24px);
-  min-height: 0;
-  min-width: 0;
-  overflow: hidden;
-  padding: 0;
-}
-
 .transporters-shell {
-  --transporters-command-label-height: 17px;
   --transporters-command-control-height: 36px;
   --transporters-command-label-gap: 4px;
+  --transporters-command-label-height: 17px;
   --transporters-command-content-height: calc(
-    var(--transporters-command-label-height) + var(--transporters-command-label-gap) + var(--transporters-command-control-height)
+    var(--transporters-command-label-height) +
+    var(--transporters-command-label-gap) +
+    var(--transporters-command-control-height)
   );
+}
 
-  background: var(--mantine-color-white);
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 10px;
-  box-sizing: border-box;
-  box-shadow: var(--app-card-shadow);
+.transporters-command-bar {
+  align-items: end;
+  background: #f8f9fa;
+  border-bottom-color: var(--mantine-color-gray-2);
   display: flex;
-  flex-direction: column;
-  height: 100%;
-  min-height: 0;
+  flex: 0 0 auto;
+  gap: 10px;
+  min-height: 86px;
+}
+
+.transporters-command-search {
+  align-items: end;
+  display: grid;
+  flex: 1 1 auto;
+  gap: 10px;
+  grid-template-columns: minmax(280px, 1fr) 148px;
   min-width: 0;
-  overflow: hidden;
+}
+
+.transporters-toolbar-actions,
+.transporters-table-toolbar-slot,
+.transporters-create-actions {
+  align-items: center;
+  align-self: end;
+  display: flex;
+  flex: 0 0 auto;
+  gap: 8px;
+  justify-content: flex-end;
+  min-height: var(--transporters-command-control-height);
+  min-width: 0;
+}
+
+.transporters-table-toolbar-slot .data-table-toolbar {
+  gap: 6px;
+  margin: 0;
+  min-height: 0;
+}
+
+.transporters-search-input,
+.transporters-status-filter {
+  display: grid;
+  grid-template-rows: var(--transporters-command-label-height) var(--transporters-command-control-height);
+  min-height: var(--transporters-command-content-height);
+  min-width: 0;
+  row-gap: var(--transporters-command-label-gap);
+}
+
+.transporters-search-input .mantine-InputWrapper-label,
+.transporters-status-filter .mantine-InputWrapper-label {
+  color: var(--mantine-color-gray-9);
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  height: var(--transporters-command-label-height);
+  letter-spacing: 0;
+  line-height: 1.2;
+  margin-bottom: 0;
+}
+
+.transporters-search-input .mantine-Input-wrapper,
+.transporters-search-input .mantine-TextInput-input,
+.transporters-status-filter .mantine-Input-wrapper,
+.transporters-status-filter .mantine-Select-input {
+  border-color: var(--mantine-color-gray-2);
+  border-radius: 8px;
+  color: var(--mantine-color-gray-8);
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-weight: 400;
+  height: var(--transporters-command-control-height);
+  letter-spacing: 0;
+  line-height: 1.2;
+  min-height: var(--transporters-command-control-height);
+}
+
+.transporters-search-input .mantine-TextInput-input::placeholder {
+  font-family: var(--font-mono);
+  letter-spacing: 0;
+}
+
+.transporters-command-bar .app-paginator-label,
+.transporters-command-bar .mantine-Button-root {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0;
 }
 
 .transporters-workspace {
@@ -37,358 +106,177 @@
 }
 
 .transporters-type-rail {
-  background:
-    linear-gradient(180deg, var(--mantine-color-gray-0), transparent 190px),
-    #fbfcfd;
+  background: #fbfcfd;
   border-right: 1px solid var(--mantine-color-gray-2);
   min-height: 0;
   min-width: 0;
-  padding: 21px 6px 12px 10px;
+  padding: 12px 8px;
 }
 
 .transporters-rail-header {
-  align-items: center;
-  color: var(--mantine-color-gray-5);
-  display: flex;
-  font-size: 10.5px;
-  font-weight: 500;
-  justify-content: space-between;
+  color: var(--mantine-color-gray-9);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
   letter-spacing: 0;
   line-height: 1.2;
-  margin-bottom: 9px;
-  padding: 0 4px;
-  text-transform: uppercase;
+  margin-bottom: 8px;
+  padding: 0 6px;
+}
+
+.transporters-type-scroll {
+  max-height: calc(100vh - 260px);
+  min-height: 0;
+  overflow: auto;
+  scrollbar-width: thin;
 }
 
 .transporters-type-list {
   display: grid;
-  gap: 5px;
+  gap: 4px;
   padding-right: 4px;
-  padding-top: 5px;
 }
 
-/* Master type rail styled as the «Ролі» polished list items: gradient cards,
-   a translate-on-hover lift, and an orange-tinted selected state. */
 .transporters-type-option {
   align-items: center;
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(250, 251, 252, 0.96)),
-    var(--mantine-color-white);
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 7px;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
   color: var(--mantine-color-gray-7);
   cursor: pointer;
   display: grid;
   gap: 8px;
   grid-template-columns: minmax(0, 1fr) auto;
-  min-height: 36px;
-  padding: 0 7px;
+  min-height: 40px;
+  padding: 0 6px 0 18px;
   position: relative;
   text-align: left;
   transition:
-    border-color 110ms var(--tx-ease-smooth),
-    box-shadow 110ms var(--tx-ease-smooth),
+    color 140ms var(--tx-ease-smooth),
     transform 140ms var(--tx-ease-smooth);
   width: 100%;
 }
 
-.transporters-type-option:hover {
-  border-color: var(--mantine-color-gray-4);
-  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.07);
-  transform: translateX(4px);
+.transporters-type-option:hover,
+.transporters-type-option:focus-visible {
+  background: transparent !important;
+  color: var(--mantine-color-gray-9);
+  outline: none;
+  transform: translateX(3px);
 }
 
 .transporters-type-option.is-active {
-  background:
-    linear-gradient(135deg, rgba(255, 247, 237, 0.95), rgba(255, 255, 255, 0.98)),
-    var(--mantine-color-white);
-  border-color: var(--mantine-color-orange-2);
-  box-shadow: 0 5px 16px rgba(var(--brand-orange-rgb), 0.14);
-  color: var(--mantine-color-orange-9);
+  background: transparent !important;
+  border-color: transparent;
+  color: var(--brand-orange);
+  font-weight: 600;
 }
 
 .transporters-type-option.is-active::before {
   background: var(--brand-orange);
   border-radius: 999px;
   content: '';
-  height: 6px;
+  height: 7px;
   left: 8px;
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  width: 6px;
+  width: 7px;
 }
 
 .transporters-type-option-name {
-  align-items: center;
-  display: flex;
-  font-size: 12px;
-  font-weight: 650;
-  line-height: 1.1;
-  min-height: 24px;
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.2;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .transporters-type-option.is-active .transporters-type-option-name {
-  padding-left: 12px;
+  font-weight: 600;
 }
 
 .transporters-type-option-count {
-  align-items: center;
-  background: var(--mantine-color-white);
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 999px;
-  color: var(--mantine-color-gray-7);
-  display: inline-flex;
+  color: var(--mantine-color-gray-6);
+  font-family: var(--font-mono);
   font-size: 11px;
-  font-weight: 750;
-  height: 24px;
-  justify-content: center;
+  font-weight: 600;
   line-height: 1;
-  min-width: 26px;
-  padding: 0 7px;
-  text-align: center;
 }
 
 .transporters-roster {
-  background: var(--mantine-color-white);
   display: flex;
-  flex-direction: column;
   min-height: 0;
   min-width: 0;
-  padding: 12px;
+  overflow: hidden;
 }
 
-/* Shared <DataTable> host: fill the roster column and let the inner scroll
-   region flex, mirroring the «Клієнти» registry card. */
-.transporters-card {
-  min-width: 0;
-}
-
-.transporters-card .data-table {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  min-height: 0;
-}
-
-.transporters-card .data-table-scroll {
-  flex: 1 1 auto;
-  min-height: 0;
-}
-
-/* Preserve the archived-row dim cue from the old hand-rolled roster. */
-.transporters-card .data-table-row.transporters-row-archived {
-  color: var(--mantine-color-gray-6);
-  opacity: 0.64;
-}
-
-.transporters-command-bar {
-  align-items: end;
-  background: var(--mantine-color-white);
-  border-bottom: 1px solid var(--mantine-color-gray-1);
-  display: grid;
-  gap: 10px;
-  grid-template-columns: minmax(300px, 1fr) auto;
-  height: 85px;
-  padding: 12px;
-}
-
-.transporters-command-copy {
+.transporters-profile-cell,
+.transporters-profile-copy,
+.transporters-setting,
+.transporters-setting-copy {
+  display: block;
   min-width: 0;
 }
 
-.transporters-command-label,
-.transporters-search-input .mantine-InputWrapper-label,
-.transporters-status-filter .mantine-InputWrapper-label {
-  color: var(--mantine-color-gray-6);
-  display: flex;
-  font-size: 12px;
-  font-weight: 400;
-  height: var(--transporters-command-label-height);
-  letter-spacing: 0;
-  line-height: 1.2;
-  margin-bottom: var(--transporters-command-label-gap);
-}
-
-.transporters-command-title {
-  align-items: flex-start;
-  color: var(--mantine-color-gray-9);
-  display: flex;
-  font-size: 15px;
-  font-weight: 100;
-  height: var(--transporters-command-control-height);
-  line-height: 1.2;
+.transporters-profile-name,
+.transporters-profile-type,
+.transporters-setting-copy span,
+.transporters-setting-copy strong {
+  display: block;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
-  text-transform: uppercase;
   white-space: nowrap;
-}
-
-.transporters-command-search {
-  align-items: end;
-  display: grid;
-  gap: 8px;
-  grid-template-columns: minmax(0, 1fr) 148px;
-  min-width: 0;
-}
-
-.transporters-command-side {
-  align-items: end;
-  display: flex;
-  gap: 10px;
-  justify-content: flex-end;
-  min-width: 0;
-}
-
-.transporters-toolbar-actions {
-  align-items: center;
-  display: flex;
-  gap: 7px;
-  justify-content: flex-end;
-}
-
-.transporters-search-input {
-  display: grid;
-  grid-template-rows: var(--transporters-command-label-height) var(--transporters-command-control-height);
-  min-height: var(--transporters-command-content-height);
-  min-width: 0;
-  row-gap: var(--transporters-command-label-gap);
-}
-
-.transporters-search-input .mantine-InputWrapper-label {
-  margin-bottom: 0;
-}
-
-.transporters-search-input .mantine-Input-wrapper,
-.transporters-search-input .mantine-TextInput-input {
-  height: var(--transporters-command-control-height);
-  min-height: var(--transporters-command-control-height);
-}
-
-.transporters-search-input .mantine-TextInput-input {
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.transporters-status-filter {
-  width: 148px;
-}
-
-.transporters-status-filter .mantine-Select-input {
-  font-size: 13px;
-  font-weight: 500;
-  height: var(--transporters-command-control-height);
-  min-height: var(--transporters-command-control-height);
-}
-
-.transporters-alert {
-  margin: 10px 12px 0;
-}
-
-.transporters-profile-cell {
-  align-items: center;
-  display: flex;
-  gap: 10px;
-  min-width: 0;
-}
-
-.transporters-profile-copy {
-  min-width: 0;
 }
 
 .transporters-profile-name {
-  color: var(--mantine-color-gray-9);
-  font-size: 13px;
-  font-weight: 720;
+  color: var(--mantine-color-gray-8);
+  font-size: 12.5px;
+  font-weight: 600;
   line-height: 1.15;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .transporters-profile-type {
-  color: var(--mantine-color-gray-5);
+  color: var(--mantine-color-gray-6);
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1.2;
-  margin-top: 4px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  margin-top: 3px;
 }
 
 .transporters-config-cell {
-  align-items: center;
-  display: grid;
-  gap: 8px;
-  grid-template-columns: minmax(0, 1fr);
-  min-width: 0;
-}
-
-.transporters-setting {
-  align-items: center;
-  display: flex;
-  gap: 7px;
-  min-width: 0;
-}
-
-.transporters-setting-copy {
-  display: grid;
-  gap: 1px;
   min-width: 0;
 }
 
 .transporters-setting-copy span {
-  color: var(--mantine-color-gray-5);
-  font-size: 10.5px;
+  color: var(--mantine-color-gray-6);
+  font-size: 11px;
   font-weight: 500;
-  line-height: 1;
+  line-height: 1.2;
 }
 
 .transporters-setting-copy strong {
   color: var(--mantine-color-gray-8);
-  font-size: 12px;
-  font-weight: 620;
-  line-height: 1.15;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.transporters-image-preview,
-.transporters-status-tag {
-  align-items: center;
-  border-radius: 999px;
-  display: inline-flex;
-  font-size: 11px;
-  font-weight: 650;
-  height: 25px;
-  justify-content: center;
-  justify-self: start;
-  line-height: 1;
-  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.2;
+  margin-top: 2px;
 }
 
 .transporters-image-preview {
-  background: var(--mantine-color-gray-0);
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 10px;
-  color: var(--mantine-color-gray-5);
-  gap: 6px;
-  height: 36px;
-  min-width: 78px;
-  overflow: hidden;
-  padding: 0 10px;
-}
-
-.transporters-image-preview.is-filled {
-  background: var(--mantine-color-white);
-  border-color: var(--mantine-color-gray-2);
-  padding: 3px 8px;
+  align-items: center;
+  display: inline-flex;
+  height: 32px;
+  justify-content: flex-start;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .transporters-image-preview img {
@@ -399,35 +287,35 @@
 }
 
 .transporters-status-tag {
-  padding: 0 10px;
+  align-items: center;
+  border-radius: 7px;
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  height: 22px;
+  justify-content: center;
+  letter-spacing: 0;
+  line-height: 1;
+  padding: 0 8px;
+  white-space: nowrap;
 }
 
 .transporters-status-tag.is-active {
-  background: rgba(64, 192, 87, 0.08);
-  border: 1px solid rgba(64, 192, 87, 0.28);
-  color: #2b8a3e;
+  background: var(--mantine-color-green-0);
+  border: 1px solid var(--mantine-color-green-2);
+  color: var(--mantine-color-green-8);
 }
 
 .transporters-status-tag.is-archived {
   background: var(--mantine-color-gray-0);
   border: 1px solid var(--mantine-color-gray-2);
-  color: var(--mantine-color-gray-6);
-}
-
-.transporters-row-actions {
-  align-items: center;
-  display: flex;
-  gap: 4px;
-  justify-content: flex-end;
-}
-
-.transporters-row-action {
-  color: var(--mantine-color-gray-5);
+  color: var(--mantine-color-gray-7);
 }
 
 .transporters-empty-state {
   align-items: center;
-  color: var(--mantine-color-gray-5);
+  color: var(--mantine-color-gray-6);
   display: flex;
   font-size: 12px;
   font-weight: 500;
@@ -437,32 +325,43 @@
   text-align: center;
 }
 
-@media (max-width: 980px) {
-  .transporters-workspace {
-    grid-template-columns: 220px minmax(0, 1fr);
-  }
+.transporters-action-title {
+  align-items: center;
+  display: inline-flex;
+  font-family: var(--font-mono);
+  gap: 8px;
+}
 
+.transporters-action-status-dot {
+  background: var(--mantine-color-gray-4);
+  border-radius: 999px;
+  flex: 0 0 auto;
+  height: 9px;
+  width: 9px;
+}
+
+.transporters-action-status-dot.is-active {
+  background: var(--mantine-color-green-6);
+  box-shadow: 0 0 0 3px rgba(64, 192, 87, 0.16);
+}
+
+@media (max-width: 980px) {
   .transporters-command-bar {
     align-items: stretch;
-    grid-template-columns: 1fr;
+    flex-direction: column;
   }
 
   .transporters-command-search {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .transporters-status-filter {
-    width: 100%;
+  .transporters-toolbar-actions,
+  .transporters-table-toolbar-slot,
+  .transporters-create-actions {
+    justify-content: flex-start;
   }
-}
 
-/* Solid-black text across the filters + roster (was gray-4/5/6/7/8). */
-.transporters-command-label,
-.transporters-search-input .mantine-InputWrapper-label,
-.transporters-status-filter .mantine-InputWrapper-label,
-.transporters-profile-type,
-.transporters-setting-copy span,
-.transporters-setting-copy strong,
-.transporters-empty-state {
-  color: var(--mantine-color-gray-9);
+  .transporters-workspace {
+    grid-template-columns: 220px minmax(0, 1fr);
+  }
 }
