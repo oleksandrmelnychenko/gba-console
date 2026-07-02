@@ -1,26 +1,92 @@
-/* Agreement (contract) cards — the shared «main list» item look: a bordered
-   surface with a hover lift and an orange-tinted selected state (mirrors
-   .list-tree-item / the analyst picker via the central tokens). */
+/* Agreement (contract) cards — the shared selection pattern (mirrors the
+   analyst picker): plain white rows, and the active one gets a rounded orange
+   ring + soft tint + a small top-right dot. No shadows, no glow. */
 .mantine-Card-root.agreement-item {
-  background: rgba(var(--brand-orange-rgb), 0.01);
-  border: 1px solid var(--mantine-color-gray-2);
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+  background: var(--mantine-color-white);
+  /* transparent (not 0) so the selected ring doesn't shift the layout */
+  border: 1px solid transparent;
+  border-radius: 10px;
+  box-shadow: none;
   cursor: pointer;
+  position: relative;
   transition:
     background-color 110ms var(--tx-ease-smooth),
     border-color 110ms var(--tx-ease-smooth),
-    box-shadow 110ms var(--tx-ease-smooth),
     transform 140ms var(--tx-ease-smooth);
 }
 
+/* Small selection dot in the card's top-right corner. */
+.mantine-Card-root.agreement-item::before {
+  background: transparent;
+  border-radius: 999px;
+  content: '';
+  height: 6px;
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  transition: background-color 120ms var(--tx-ease-smooth);
+  width: 6px;
+}
+
 .mantine-Card-root.agreement-item:hover {
-  border-color: var(--mantine-color-orange-2);
-  box-shadow: var(--app-row-hover-shadow);
-  transform: translateX(4px);
+  border-color: var(--mantine-color-gray-3);
+  box-shadow: none;
+  transform: translateX(3px);
 }
 
 .mantine-Card-root.agreement-item.is-selected {
-  background: rgba(var(--brand-orange-rgb), 0.032);
-  border-color: var(--mantine-color-orange-2);
-  box-shadow: var(--app-selected-shadow);
+  background: var(--mantine-color-white);
+  border-color: var(--brand-orange);
+  box-shadow: none;
+}
+
+.mantine-Card-root.agreement-item.is-selected::before {
+  background: var(--brand-orange);
+}
+
+.agreement-form-modal-title,
+.agreement-form-modal-body .mantine-Button-label,
+.agreement-form-section-title {
+  font-family: var(--font-mono);
+  letter-spacing: 0;
+}
+
+/* Section headings inside the agreement modal follow the sheet pattern:
+   gray mono title with a leading orange dot. */
+.agreement-form-section-title {
+  color: var(--mantine-color-gray-7);
+}
+
+.agreement-form-section-title::before {
+  background: var(--brand-orange);
+  border-radius: 999px;
+  content: '';
+  display: inline-block;
+  height: 7px;
+  margin-right: 8px;
+  vertical-align: 1px;
+  width: 7px;
+}
+
+/* Section blocks: gray border, no shadow (the flat sheet pattern). */
+.agreement-form-modal-body .mantine-Card-root {
+  border: 1px solid var(--mantine-color-gray-2);
+  box-shadow: none;
+}
+
+/* Comboboxes like the grid toolbar (36px, radius 8, gray-2 border) in mono. */
+.agreement-form-modal-body .mantine-Select-input {
+  border-color: var(--mantine-color-gray-2);
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  height: 36px;
+  letter-spacing: 0;
+  min-height: 36px;
+}
+
+/* Checkboxes in the modal follow the orange accent. */
+.agreement-form-modal-body .mantine-Checkbox-input:checked {
+  background-color: var(--brand-orange);
+  border-color: var(--brand-orange);
 }

@@ -58,13 +58,52 @@ export function clearDataTableLayout(tableId: string) {
   window.localStorage.removeItem(getDataTableStorageKey(tableId))
 }
 
-function normalizeColumnOrder(columnIds: string[], order?: ColumnOrderState) {
+function normalizeColumnOrder(
+  columnIds: string[],
+  order?: ColumnOrderState,
+  defaultOrder?: ColumnOrderState,
+) {
   const knownColumns = new Set(columnIds)
   const savedOrder = (order ?? []).filter((columnId) => knownColumns.has(columnId))
   const savedColumns = new Set(savedOrder)
   const missingColumns = columnIds.filter((columnId) => !savedColumns.has(columnId))
+  const fallbackOrder = [
+    ...(defaultOrder ?? []).filter((columnId) => knownColumns.has(columnId)),
+    ...columnIds.filter((columnId) => !(defaultOrder ?? []).includes(columnId)),
+  ]
+  const orderIndex = new Map(fallbackOrder.map((columnId, index) => [columnId, index]))
+  const missingByFallbackOrder = missingColumns.toSorted(
+    (left, right) =>
+      (orderIndex.get(left) ?? Number.MAX_SAFE_INTEGER) -
+      (orderIndex.get(right) ?? Number.MAX_SAFE_INTEGER),
+  )
+  const normalizedOrder: ColumnOrderState = []
+  let missingIndex = 0
 
-  return [...savedOrder, ...missingColumns]
+  for (const columnId of savedOrder) {
+    const currentOrderIndex = orderIndex.get(columnId) ?? Number.MAX_SAFE_INTEGER
+
+    while (missingIndex < missingByFallbackOrder.length) {
+      const missingColumnId = missingByFallbackOrder[missingIndex]
+      const missingOrderIndex = orderIndex.get(missingColumnId) ?? Number.MAX_SAFE_INTEGER
+
+      if (missingOrderIndex > currentOrderIndex) {
+        break
+      }
+
+      normalizedOrder.push(missingColumnId)
+      missingIndex += 1
+    }
+
+    normalizedOrder.push(columnId)
+  }
+
+  while (missingIndex < missingByFallbackOrder.length) {
+    normalizedOrder.push(missingByFallbackOrder[missingIndex])
+    missingIndex += 1
+  }
+
+  return normalizedOrder
 }
 
 function normalizeColumnVisibility(
@@ -109,6 +148,7 @@ export function normalizeDataTableLayout(
     columnOrder: normalizeColumnOrder(
       columnIds,
       layout.columnOrder ?? defaultLayout?.columnOrder,
+      defaultLayout?.columnOrder,
     ),
     columnVisibility: normalizeColumnVisibility(
       columnIds,

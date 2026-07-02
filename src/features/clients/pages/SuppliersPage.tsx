@@ -10,36 +10,28 @@ import {
   Stack,
   Text,
   TextInput,
-  ThemeIcon,
   Tooltip,
 } from '@mantine/core'
 import { AppModal } from "../../../shared/ui/AppModal"
-import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { notifications } from '@mantine/notifications'
 import { useDebouncedValue } from '@mantine/hooks'
 import {
   IconAlertCircle,
-  IconBuildingFactory2,
-  IconCash,
-  IconExternalLink,
-  IconFileDescription,
   IconFileTypePdf,
-  IconId,
-  IconMapPin,
-  IconPhone,
   IconPlus,
   IconRestore,
   IconSearch,
   IconToggleLeft,
   IconToggleRight,
 } from '@tabler/icons-react'
+import { ExternalLink, IdCard, Wallet } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE, PAGINATOR_PAGE_SIZE_OPTIONS } from '../../../shared/ui/paginator/paginatorPageSize'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
-import { type RefObject, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import { type ReactNode, type RefObject, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { SupplierPassport } from '../components/SupplierPassport'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -69,10 +61,6 @@ const SUPPLIERS_FILTER_COMBOBOX_PROPS = {
 const SUPPLIERS_FILTER_SCROLL_AREA_PROPS = {
   offsetScrollbars: false as const,
 }
-const supplierAmountFormatter = new Intl.NumberFormat('uk-UA', {
-  maximumFractionDigits: 2,
-  minimumFractionDigits: 0,
-})
 const supplierDateFormatter = new Intl.DateTimeFormat('uk-UA', {
   day: '2-digit',
   month: '2-digit',
@@ -90,24 +78,33 @@ const SUPPLIER_TABLE_MONO_STYLE = {
   fontFamily: 'var(--font-mono)',
   letterSpacing: 0,
 } as const
-const SUPPLIER_TABLE_MIN_WIDTH = 1600
+const SUPPLIER_CODE_SUBTEXT_STYLE = {
+  ...SUPPLIER_TABLE_CELL_STYLE,
+  fontSize: 11,
+  lineHeight: '14px',
+} as const
+const SUPPLIER_TABLE_MIN_WIDTH = 1240
 const SUPPLIER_TABLE_DEFAULT_LAYOUT = {
+  // Default view: supplier (with code beneath the name), role, TIN/USREOU/SROI,
+  // phone, email, brand, manufacturer. Everything else stays available through
+  // the columns menu but is hidden by default.
   columnOrder: [
     'status',
-    'code',
     'supplier',
     'role',
-    'resident',
-    'regionCode',
-    'location',
     'tin',
     'usreou',
     'sroi',
     'phone',
+    'email',
+    'brand',
+    'manufacturer',
+    'resident',
+    'regionCode',
+    'location',
     'director',
     'accountant',
     'fax',
-    'email',
     'agreement',
     'currency',
     'agreementOrg',
@@ -116,8 +113,6 @@ const SUPPLIER_TABLE_DEFAULT_LAYOUT = {
     'incoterms',
     'packing',
     'reserve',
-    'brand',
-    'manufacturer',
     'contactName',
     'legalAddress',
     'actualAddress',
@@ -128,7 +123,31 @@ const SUPPLIER_TABLE_DEFAULT_LAYOUT = {
     'comment',
   ],
   columnPinning: {
-    left: ['status', 'code', 'supplier'],
+    left: ['status', 'supplier'],
+  },
+  columnVisibility: {
+    resident: false,
+    regionCode: false,
+    location: false,
+    director: false,
+    accountant: false,
+    fax: false,
+    agreement: false,
+    currency: false,
+    agreementOrg: false,
+    agreementPeriod: false,
+    payment: false,
+    incoterms: false,
+    packing: false,
+    reserve: false,
+    contactName: false,
+    legalAddress: false,
+    actualAddress: false,
+    deliveryAddress: false,
+    country: false,
+    created: false,
+    updated: false,
+    comment: false,
   },
   density: 'normal',
 } satisfies DataTableDefaultLayout
@@ -626,7 +645,7 @@ function SuppliersPageView({ model }: { model: ReturnType<typeof useSuppliersPag
             getRowId={(supplier, index) => String(supplier.NetUid || supplier.Id || index)}
             height="100%"
             isLoading={isLoading}
-            layoutVersion="suppliers-table-3"
+            layoutVersion="suppliers-table-8"
             loadingText={t('Завантаження постачальників')}
             minWidth={SUPPLIER_TABLE_MIN_WIDTH}
             showLayoutControls
@@ -664,9 +683,14 @@ function SupplierPassportModal({ supplier, onClose }: { supplier: Client | null;
   return (
     <AppModal
       centered
+      classNames={{ body: 'supplier-passport-modal-body' }}
       size="lg"
       opened={Boolean(supplier)}
-      title={supplier ? `${t('Паспорт постачальника')}: ${getSupplierDisplayName(supplier)}` : t('Паспорт постачальника')}
+      title={
+        <span style={{ fontFamily: 'var(--font-mono)' }}>
+          {supplier ? `${t('Паспорт постачальника')}: ${getSupplierDisplayName(supplier)}` : t('Паспорт постачальника')}
+        </span>
+      }
       onClose={onClose}
     >
       {supplier && <SupplierPassport client={supplier} netUid={supplier.NetUid} />}
@@ -695,135 +719,39 @@ function SupplierDetailDrawer({
 }: SupplierDetailDrawerProps) {
   const { t } = useI18n()
   const isActive = supplier?.IsActive !== false
-  const roleName = supplier?.ClientInRole?.ClientTypeRole?.Name?.trim()
-  const balance = supplier?.TotalCurrentAmount || 0
-  const primaryAgreement = supplier ? getPrimarySupplierAgreement(supplier) : null
-  const primaryAgreementName = getSupplierAgreementName(primaryAgreement)
-  const primaryAgreementOrganization = getSupplierAgreementOrganization(primaryAgreement)
-  const primaryAgreementCurrency = getSupplierAgreementCurrency(primaryAgreement)
-  const primaryAgreementPeriod = getSupplierAgreementPeriod(primaryAgreement)
-  const primaryAgreementPayment = getSupplierAgreementPaymentSummary(primaryAgreement)
 
   return (
-    <AppDrawer
+    <AppModal
+      centered
+      size={496}
       opened={Boolean(supplier)}
-      position="right"
-      size="compact"
-      title={supplier ? getSupplierDisplayName(supplier) : t('Постачальник')}
+      title={
+        <span style={{ alignItems: 'center', display: 'inline-flex', fontFamily: 'var(--font-mono)', gap: 8 }}>
+          <span
+            style={{
+              background: isActive ? 'var(--mantine-color-green-6)' : 'var(--mantine-color-gray-4)',
+              borderRadius: 999,
+              boxShadow: isActive ? '0 0 0 3px rgba(64, 192, 87, 0.16)' : 'none',
+              flex: '0 0 auto',
+              height: 9,
+              width: 9,
+            }}
+          />
+          {supplier ? getSupplierDisplayName(supplier) : t('Постачальник')}
+        </span>
+      }
       onClose={onClose}
     >
       {supplier && (
         <div className="suppliers-detail">
-          <section className="suppliers-detail-hero">
-            <div className="suppliers-detail-hero-main">
-              <ThemeIcon color={isActive ? 'orange' : 'gray'} radius="md" size={46} variant="light">
-                <IconBuildingFactory2 size={24} stroke={1.8} />
-              </ThemeIcon>
-              <div className="suppliers-detail-hero-copy">
-                <span className="suppliers-detail-eyebrow">{t('Постачальник')}</span>
-                <strong>{getSupplierDisplayName(supplier)}</strong>
-                <span>
-                  {displayValue(supplier.SupplierCode)} · {displayValue(supplier.Country?.Name)}
-                </span>
-              </div>
-            </div>
-
-            <div className="suppliers-detail-metrics">
-              <SupplierDetailMetric label="EUR" value={formatSupplierAmount(supplier.PurchaseVolumeEur)} />
-              <SupplierDetailMetric
-                label={t('Баланс')}
-                tone={balance < 0 ? 'danger' : 'neutral'}
-                value={formatSupplierAmount(supplier.TotalCurrentAmount)}
-              />
-              <SupplierDetailMetric label={t('Код')} value={displayValue(supplier.SupplierCode)} />
-            </div>
-          </section>
-
-          <section className="suppliers-detail-section">
-            <div className="suppliers-detail-status-strip">
-              <Badge color={isActive ? 'green' : 'gray'} variant="light">
-                {isActive ? t('Активний') : t('Неактивний')}
-              </Badge>
-              {supplier.IsNotResident && (
-                <Badge color="orange" variant="light">
-                  {t('Нерезидент')}
-                </Badge>
-              )}
-              {roleName ? (
-                <span className={`suppliers-profile-role is-${roleBadgeColor(roleName)}`}>{roleName}</span>
-              ) : null}
-            </div>
-          </section>
-
-          <section className={`suppliers-detail-section suppliers-detail-section--agreement${primaryAgreement?.Agreement?.IsActive ? ' is-active' : ''}`}>
-            <div className="suppliers-detail-section-head">
-              <span className="suppliers-detail-section-icon" aria-hidden>
-                <IconFileDescription size={16} />
-              </span>
-              <div>
-                <span className="suppliers-detail-eyebrow">{t('Договір')}</span>
-                <strong>{displayValue(primaryAgreementName)}</strong>
-              </div>
-            </div>
-            <div className="suppliers-detail-agreement-strip">
-              <span className={primaryAgreement?.Agreement?.IsActive ? 'is-active' : ''}>
-                {primaryAgreement?.Agreement?.IsActive ? t('Активний') : t('Договір')}
-              </span>
-              {primaryAgreementCurrency ? <span>{primaryAgreementCurrency}</span> : null}
-              {primaryAgreementOrganization ? <span>{primaryAgreementOrganization}</span> : null}
-            </div>
-            <div className="suppliers-detail-rows">
-              <SupplierDetailRow label={t('Назва')} value={primaryAgreementName} />
-              <SupplierDetailRow label={t('Організація')} value={primaryAgreementOrganization} />
-              <SupplierDetailRow label={t('Валюта')} value={primaryAgreementCurrency} />
-              <SupplierDetailRow label={t('Період')} value={primaryAgreementPeriod} />
-              <SupplierDetailRow label={t('Оплата')} value={primaryAgreementPayment} />
-            </div>
-          </section>
-
-          <section className="suppliers-detail-section">
-            <div className="suppliers-detail-section-head">
-              <span className="suppliers-detail-section-icon" aria-hidden>
-                <IconMapPin size={16} />
-              </span>
-              <div>
-                <span className="suppliers-detail-eyebrow">{t('Поставка')}</span>
-                <strong>{displayValue(supplier.Country?.Name)}</strong>
-              </div>
-            </div>
-            <div className="suppliers-detail-rows">
-              <SupplierDetailRow label={t('Країна')} value={supplier.Country?.Name} />
-              <SupplierDetailRow label="Incoterms" value={getSupplierDeliveryTerms(supplier)} />
-              <SupplierDetailRow label={t('Маркування')} value={getSupplierPackingSummary(supplier)} />
-              <SupplierDetailRow label={t('Юридична адреса')} value={supplier.LegalAddress} />
-              <SupplierDetailRow label={t('Фактична адреса')} value={supplier.ActualAddress || supplier.DeliveryAddress} />
-            </div>
-          </section>
-
-          <section className="suppliers-detail-section">
-            <div className="suppliers-detail-section-head">
-              <span className="suppliers-detail-section-icon" aria-hidden>
-                <IconPhone size={16} />
-              </span>
-              <div>
-                <span className="suppliers-detail-eyebrow">{t('Контакти')}</span>
-                <strong>{displayValue(supplier.SupplierContactName || supplier.SupplierName || supplier.Manufacturer)}</strong>
-              </div>
-            </div>
-            <div className="suppliers-detail-rows">
-              <SupplierDetailRow label={t('Телефон')} value={getSupplierPhone(supplier)} />
-              <SupplierDetailRow label={t('Email')} value={supplier.EmailAddress} />
-              <SupplierDetailRow label={t('Бренд')} value={supplier.Brand} />
-              <SupplierDetailRow label={t('Виробник')} value={supplier.Manufacturer} />
-            </div>
-          </section>
-
           <section className="suppliers-detail-section suppliers-detail-actions">
             <Button
               fullWidth
               justify="flex-start"
-              leftSection={<IconExternalLink size={16} />}
-              variant="light"
+              color="dark"
+              size="md"
+              leftSection={<SupplierDetailActionIcon icon={<ExternalLink size={20} color="var(--mantine-color-gray-7)" />} />}
+              variant="subtle"
               onClick={() => onEdit(supplier)}
             >
               {t('Відкрити картку')}
@@ -831,8 +759,10 @@ function SupplierDetailDrawer({
             <Button
               fullWidth
               justify="flex-start"
-              leftSection={<IconCash size={16} />}
-              variant="light"
+              color="dark"
+              size="md"
+              leftSection={<SupplierDetailActionIcon icon={<Wallet size={20} color="var(--mantine-color-gray-7)" />} />}
+              variant="subtle"
               onClick={() => onCashFlow(supplier)}
             >
               {t('Взаєморозрахунки')}
@@ -840,8 +770,10 @@ function SupplierDetailDrawer({
             <Button
               fullWidth
               justify="flex-start"
-              leftSection={<IconId size={16} />}
-              variant="light"
+              color="dark"
+              size="md"
+              leftSection={<SupplierDetailActionIcon icon={<IdCard size={20} color="var(--mantine-color-gray-7)" />} />}
+              variant="subtle"
               onClick={() => onPassport(supplier)}
             >
               {t('Паспорт постачальника')}
@@ -863,7 +795,7 @@ function SupplierDetailDrawer({
           </Button>
         </div>
       )}
-    </AppDrawer>
+    </AppModal>
   )
 }
 
@@ -987,6 +919,10 @@ function SuppliersFilterToolbar({
   )
 }
 
+function SupplierDetailActionIcon({ icon }: { icon: ReactNode }) {
+  return <span className="suppliers-detail-action-icon">{icon}</span>
+}
+
 function SupplierDocumentModal({
   document,
   opened,
@@ -1030,27 +966,47 @@ function SupplierDocumentModal({
   )
 }
 
+/* Native title instead of Mantine Tooltip: with ~34 columns a Tooltip per cell
+   means hundreds of Floating-UI hook instances re-running on every table render
+   (resize/sort/hover) — the main source of the table lag. */
 function SupplierTableValue({ fw, mono, value }: { fw?: number; mono?: boolean; value: string }) {
   return (
-    <Tooltip label={value} openDelay={350} withArrow>
-      <Text
-        component="span"
-        fw={fw}
-        style={mono ? { ...SUPPLIER_TABLE_CELL_STYLE, ...SUPPLIER_TABLE_MONO_STYLE } : SUPPLIER_TABLE_CELL_STYLE}
-      >
-        {value}
+    <Text
+      component="span"
+      fw={fw}
+      style={mono ? { ...SUPPLIER_TABLE_CELL_STYLE, ...SUPPLIER_TABLE_MONO_STYLE } : SUPPLIER_TABLE_CELL_STYLE}
+      title={value}
+    >
+      {value}
+    </Text>
+  )
+}
+
+/* Supplier column cell: name with the supplier code as a second, dimmed line
+   (the standalone «Код» column was folded in here). */
+function SupplierNameCell({ supplier }: { supplier: Client }) {
+  const name = getSupplierDisplayName(supplier)
+  const code = displayValue(supplier.SupplierCode)
+
+  return (
+    <span style={{ display: 'block', minWidth: 0 }} title={code ? `${name} · ${code}` : name}>
+      <Text component="span" fw={600} style={SUPPLIER_TABLE_CELL_STYLE}>
+        {name}
       </Text>
-    </Tooltip>
+      {code ? (
+        <Text component="span" c="dimmed" style={SUPPLIER_CODE_SUBTEXT_STYLE}>
+          {code}
+        </Text>
+      ) : null}
+    </span>
   )
 }
 
 function SupplierStatusDot({ isActive, label }: { isActive: boolean; label: string }) {
   return (
-    <Tooltip label={label} openDelay={350} withArrow>
-      <span className="suppliers-status-dot-wrap" aria-label={label} role="img">
-        <span className={isActive ? 'suppliers-status-dot is-active' : 'suppliers-status-dot is-inactive'} />
-      </span>
-    </Tooltip>
+    <span className="suppliers-status-dot-wrap" aria-label={label} title={label}>
+      <span className={isActive ? 'suppliers-status-dot is-active' : 'suppliers-status-dot is-inactive'} />
+    </span>
   )
 }
 
@@ -1071,21 +1027,13 @@ function useSupplierColumns() {
         },
       },
       {
-        id: 'code',
-        header: 'Код',
-        width: 110,
-        minWidth: 90,
-        accessor: (supplier) => supplier.SupplierCode,
-        cell: (supplier) => <SupplierTableValue value={displayValue(supplier.SupplierCode)} />,
-      },
-      {
         id: 'supplier',
         header: 'Постачальник',
         width: 360,
         minWidth: 320,
         fill: true,
         accessor: getSupplierDisplayName,
-        cell: (supplier) => <SupplierTableValue fw={600} mono value={getSupplierDisplayName(supplier)} />,
+        cell: (supplier) => <SupplierNameCell supplier={supplier} />,
       },
       {
         id: 'role',
@@ -1096,14 +1044,10 @@ function useSupplierColumns() {
         cell: (supplier) => {
           const name = supplier.ClientInRole?.ClientTypeRole?.Name?.trim()
           return name ? (
-            <Badge color={roleBadgeColor(name)} style={SUPPLIER_TABLE_MONO_STYLE} variant="light">
+            <Badge className="app-role-pill" variant="light">
               {name}
             </Badge>
-          ) : (
-            <Text c="dimmed" style={SUPPLIER_TABLE_MONO_STYLE}>
-              —
-            </Text>
-          )
+          ) : null
         },
       },
       {
@@ -1113,7 +1057,7 @@ function useSupplierColumns() {
         minWidth: 110,
         accessor: (supplier) => (supplier.IsNotResident ? t('Нерезидент') : t('Резидент')),
         cell: (supplier) => (
-          <Badge color={supplier.IsNotResident ? 'orange' : 'gray'} variant="light">
+          <Badge className={supplier.IsNotResident ? 'app-role-pill is-orange' : 'app-role-pill is-gray'} variant="light">
             {supplier.IsNotResident ? t('Нерезидент') : t('Резидент')}
           </Badge>
         ),
@@ -1339,7 +1283,7 @@ function useSupplierColumns() {
         width: 122,
         minWidth: 100,
         accessor: (supplier) => (typeof supplier.Created === 'string' ? supplier.Created : undefined),
-        cell: (supplier) => <SupplierTableValue value={formatSupplierDate(supplier.Created) ?? '-'} />,
+        cell: (supplier) => <SupplierTableValue value={formatSupplierDate(supplier.Created) ?? ''} />,
       },
       {
         id: 'updated',
@@ -1347,7 +1291,7 @@ function useSupplierColumns() {
         width: 122,
         minWidth: 100,
         accessor: (supplier) => (typeof supplier.Updated === 'string' ? supplier.Updated : undefined),
-        cell: (supplier) => <SupplierTableValue value={formatSupplierDate(supplier.Updated) ?? '-'} />,
+        cell: (supplier) => <SupplierTableValue value={formatSupplierDate(supplier.Updated) ?? ''} />,
       },
       {
         id: 'comment',
@@ -1359,32 +1303,6 @@ function useSupplierColumns() {
       },
     ],
     [t],
-  )
-}
-
-function SupplierDetailMetric({
-  label,
-  tone,
-  value,
-}: {
-  label: string
-  tone?: 'danger' | 'neutral'
-  value: string
-}) {
-  return (
-    <span className={`suppliers-detail-metric${tone === 'danger' ? ' is-danger' : ''}`}>
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </span>
-  )
-}
-
-function SupplierDetailRow({ label, value }: { label: string; value?: number | string | null }) {
-  return (
-    <div className="suppliers-detail-row">
-      <span>{label}</span>
-      <strong>{displayValue(value)}</strong>
-    </div>
   )
 }
 
@@ -1426,14 +1344,6 @@ function getSupplierSearchFieldLabel(filterItem: ClientFilterItem): string {
 
 function normalizeSupplierSearchFieldLabelKey(value: string): string {
   return value.replace(/[\s._/-]+/g, '').toLowerCase()
-}
-
-function formatSupplierAmount(value?: number | null): string {
-  if (typeof value !== 'number' || Number.isNaN(value)) {
-    return '-'
-  }
-
-  return supplierAmountFormatter.format(value)
 }
 
 function readSupplierTablePageSize() {
@@ -1486,15 +1396,29 @@ function getSupplierPhone(supplier: Client): string | undefined {
   return supplier.MobileNumber || supplier.ClientNumber
 }
 
+/* Five agreement columns call this from both accessor and cell — without a cache
+   that is ~10 array traversals per row on EVERY table render. Client objects are
+   stable per fetch, so a WeakMap keyed by the row object is safe. */
+const primarySupplierAgreementCache = new WeakMap<Client, ClientAgreement | null>()
+
 function getPrimarySupplierAgreement(supplier: Client): ClientAgreement | null {
+  const cached = primarySupplierAgreementCache.get(supplier)
+
+  if (cached !== undefined) {
+    return cached
+  }
+
   const agreements = Array.isArray(supplier.ClientAgreements)
     ? supplier.ClientAgreements.filter((clientAgreement) => !clientAgreement.Deleted && clientAgreement.Agreement?.Deleted !== true)
     : []
-
-  return agreements.find((clientAgreement) => clientAgreement.Agreement?.IsActive === true)
+  const primary = agreements.find((clientAgreement) => clientAgreement.Agreement?.IsActive === true)
     || agreements.find((clientAgreement) => clientAgreement.Agreement)
     || agreements[0]
     || null
+
+  primarySupplierAgreementCache.set(supplier, primary)
+
+  return primary
 }
 
 function getSupplierAgreementName(clientAgreement?: ClientAgreement | null): string | undefined {
@@ -1587,33 +1511,7 @@ function displayValue(value?: number | string | null): string {
     return String(value)
   }
 
-  const normalized = value?.trim()
-  return normalized || '-'
+  // Empty values render as blank cells (no dash placeholder).
+  return value?.trim() || ''
 }
 
-const ROLE_BADGE_PALETTE = ['violet', 'indigo', 'teal', 'cyan', 'blue', 'grape', 'pink', 'lime'] as const
-
-function roleHash(value: string): number {
-  let hash = 0
-
-  for (let index = 0; index < value.length; index += 1) {
-    hash = (hash << 5) - hash + value.charCodeAt(index)
-    hash |= 0
-  }
-
-  return Math.abs(hash)
-}
-
-function roleBadgeColor(name: string): (typeof ROLE_BADGE_PALETTE)[number] {
-  const key = name.trim().toLowerCase()
-
-  if (key.includes('постач')) {
-    return 'blue'
-  }
-
-  if (key.includes('покуп')) {
-    return 'indigo'
-  }
-
-  return ROLE_BADGE_PALETTE[roleHash(key) % ROLE_BADGE_PALETTE.length]
-}

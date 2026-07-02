@@ -11,7 +11,7 @@ import {
   Title,
   UnstyledButton,
 } from '@mantine/core'
-import { IconAlertCircle, IconSearch } from '@tabler/icons-react'
+import { IconAlertCircle, IconSearch, IconUser } from '@tabler/icons-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { getPurchaseManagers, getSaleManagers } from '../../api/clientLookupsApi'
@@ -141,15 +141,18 @@ export function ManagerPicker({ client, role, onChange, disabled = false }: Mana
   }
 
   return (
-    <Stack gap="sm">
+    <Stack className="manager-pick" gap="sm">
       <Stack gap={6}>
         <Group justify="space-between" align="center">
-          <Title order={5}>{t('Аналітики')}</Title>
-          <Badge color="gray" variant="light">
+          <Title className="manager-pick-title client-section-title" order={5}>
+            {t('Аналітики')}
+          </Title>
+          <Badge className="manager-pick-pill" color="gray" variant="light">
             {filteredManagers.length}
           </Badge>
         </Group>
         <TextInput
+          className="manager-pick-search"
           disabled={disabled}
           leftSection={<IconSearch size={16} />}
           placeholder={t('Пошук')}
@@ -175,15 +178,8 @@ export function ManagerPicker({ client, role, onChange, disabled = false }: Mana
           {managers.length === 0 ? t('Менеджерів не знайдено') : t('Нічого не знайдено')}
         </Text>
       ) : (
-        <Box
-          style={{
-            maxHeight: 'calc(100vh - 320px)',
-            overflowX: 'hidden',
-            overflowY: 'auto',
-            paddingRight: 8,
-          }}
-        >
-          <Stack gap="sm">
+        <Box className="manager-pick-scroll">
+          <Stack className="manager-pick-list" gap="xs">
             {filteredManagers.map((manager, index) => {
               const isSelected = Boolean(selectedNetUid && manager.NetUid === selectedNetUid)
               const isMainManager =
@@ -193,36 +189,46 @@ export function ManagerPicker({ client, role, onChange, disabled = false }: Mana
                 <UnstyledButton
                   key={manager.NetUid || manager.Id || index}
                   aria-pressed={isSelected}
+                  className="manager-pick-button"
                   disabled={disabled}
-                  style={{ display: 'block', width: '100%' }}
                   onClick={() => handleSelect(manager)}
                 >
                   <div className={`manager-pick-item${isSelected ? ' is-selected' : ''}`}>
                     <Group gap="sm" align="center" wrap="nowrap" w="100%">
                       <Avatar
+                        className="manager-pick-avatar"
                         color="gray"
-                        fw={600}
-                        fz="sm"
                         radius="xl"
                         size={46}
-                        variant="filled"
+                        variant="light"
                       >
-                        {manager.Abbreviation}
+                        <IconUser size={22} stroke={1.6} />
                       </Avatar>
 
                       <Stack flex={1} gap={4} miw={0}>
                         <Group gap="xs" miw={0} wrap="nowrap">
-                          <Text fw={600} size="sm" truncate>
+                          <Text className="manager-pick-name" fw={600} size="sm" truncate>
                             {getManagerFullName(manager)}
                           </Text>
                           {isMainManager && (
-                            <Badge color="yellow" size="xs" variant="light">
+                            <Badge
+                              className="manager-pick-pill"
+                              color="yellow"
+                              size="xs"
+                              variant="light"
+                            >
                               {t('Головний')}
                             </Badge>
                           )}
                         </Group>
                         {manager.UserRole?.Name && (
-                          <Badge color="gray" radius="sm" size="sm" variant="light" style={{ maxWidth: '100%' }}>
+                          <Badge
+                            className="manager-pick-pill manager-pick-role"
+                            color="gray"
+                            radius="sm"
+                            size="sm"
+                            variant="light"
+                          >
                             {manager.UserRole.Name}
                           </Badge>
                         )}

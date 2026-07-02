@@ -17,7 +17,7 @@ export function ContactInfoFields({ client, errors, role, onChange }: ContactInf
     <Stack gap="md">
       <Card className="app-section-card" withBorder padding="md" radius="md">
         <Stack gap="md">
-          <Text fw={600}>{t('Контактні дані')}</Text>
+          <Text className="client-section-title" fw={600}>{t('Контактні дані')}</Text>
           <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
             <TextInput
               error={errors?.EmailAddress}
@@ -100,7 +100,7 @@ export function ContactInfoFields({ client, errors, role, onChange }: ContactInf
 
       <Card className="app-section-card" withBorder padding="md" radius="md">
         <Stack gap="md">
-          <Text fw={600}>{t('Адреси')}</Text>
+          <Text className="client-section-title" fw={600}>{t('Адреси')}</Text>
           <SimpleGrid cols={{ base: 1, md: role.isBuyer ? 3 : 1 }} spacing="sm">
             {role.isBuyer && (
               <TextInput

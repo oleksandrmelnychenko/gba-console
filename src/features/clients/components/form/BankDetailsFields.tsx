@@ -23,7 +23,7 @@ export function BankDetailsFields(props: BankDetailsFieldsProps) {
   return (
     <Card className="app-section-card" withBorder radius="md" padding="md">
       <Stack gap="md">
-        <Text fw={600}>{t('Банківські реквізити')}</Text>
+        <Text className="client-section-title" fw={600}>{t('Банківські реквізити')}</Text>
 
         <TextInput
           label={t('Банк та відділення')}

@@ -77,3 +77,73 @@ textarea,
 select {
   font: inherit;
 }
+
+/* Section heading pattern: gray mono title with a leading orange dot.
+   (Shared twin of the edit sheet's .client-section-title.) */
+.app-section-title {
+  color: var(--mantine-color-gray-7);
+  font-family: var(--font-mono);
+  letter-spacing: 0;
+}
+
+.app-section-title::before {
+  background: var(--brand-orange);
+  border-radius: 999px;
+  content: '';
+  display: inline-block;
+  height: 7px;
+  margin-right: 8px;
+  vertical-align: 1px;
+  width: 7px;
+}
+
+/* Role/type pill — the analysts-list badge pattern (blue outlined, mono):
+   used for role badges in tables and page headers. Apply to a Mantine <Badge>. */
+.app-role-pill {
+  --badge-bg: var(--mantine-color-blue-0);
+  --badge-bd: 1px solid var(--mantine-color-blue-2);
+  --badge-color: var(--mantine-color-blue-8);
+
+  background: var(--mantine-color-blue-0);
+  border: 1px solid var(--mantine-color-blue-2);
+  border-radius: 7px;
+  color: var(--mantine-color-blue-8);
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+/* Colour variants of the same outlined-pill pattern (semantic badges). */
+.app-role-pill.is-gray {
+  background: var(--mantine-color-gray-0);
+  border-color: var(--mantine-color-gray-3);
+  color: var(--mantine-color-gray-7);
+}
+
+.app-role-pill.is-orange {
+  background: var(--mantine-color-orange-0);
+  border-color: var(--mantine-color-orange-2);
+  color: var(--mantine-color-orange-8);
+}
+
+.app-role-pill.is-green {
+  background: var(--mantine-color-green-0);
+  border-color: var(--mantine-color-green-3);
+  color: var(--mantine-color-green-8);
+}
+
+/* Text inputs / selects focus in the brand orange (not the violet theme color). */
+.mantine-Input-input:focus,
+.mantine-Input-input:focus-within {
+  border-color: var(--app-focus-border);
+}
+
+/* Modal / Drawer close (X): drop the violet focus ring so it never reads as
+   "selected" after a click. */
+.mantine-Modal-close:focus,
+.mantine-Modal-close:focus-visible,
+.mantine-Drawer-close:focus,
+.mantine-Drawer-close:focus-visible {
+  box-shadow: none;
+  outline: none;
+}

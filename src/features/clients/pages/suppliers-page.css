@@ -3,7 +3,7 @@
   height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 24px);
   min-height: 0;
   overflow: hidden;
-  padding: 0;
+  padding: 0 4px;
 }
 
 .suppliers-card {
@@ -115,12 +115,27 @@
   font-weight: 500;
 }
 
+/* Selected combobox values follow the mono pattern. */
 .suppliers-filter-field .mantine-Input-wrapper,
 .suppliers-filter-field .mantine-Select-input,
 .suppliers-filter-status .mantine-Input-wrapper,
 .suppliers-filter-status .mantine-Select-input {
+  font-family: var(--font-mono);
   font-size: 12.5px;
   font-weight: 400;
+  letter-spacing: 0;
+}
+
+/* Search placeholder in mono too. */
+.suppliers-filter-search-input .mantine-Input-input::placeholder {
+  font-family: var(--font-mono);
+  letter-spacing: 0;
+}
+
+/* Supplier passport modal: section blocks follow the flat pattern. */
+.supplier-passport-modal-body .mantine-Card-root {
+  border: 1px solid var(--mantine-color-gray-2);
+  box-shadow: none;
 }
 
 .suppliers-filter-actions {
@@ -247,9 +262,27 @@
   box-shadow: none;
 }
 
+/* Perf: console-table-page animates background/border/box-shadow on every cell
+   (140ms) and slides the whole row (translateX + large blurred shadow) on hover.
+   With ~34 columns that repaints a ~5000px-wide row per pointer move — kill the
+   animations here; the zebra/hover tint swaps instantly instead. */
+.suppliers-page .data-table-cell,
+.suppliers-page .data-table-row {
+  transition: none;
+}
+
+.suppliers-page .data-table-row:hover {
+  box-shadow: none;
+  transform: none;
+}
+
 /* Keep the per-column header menu (kebab ⋮) always visible, not only on hover. */
 .suppliers-page .data-table-column-menu {
   display: inline-flex;
+}
+
+.suppliers-page .data-table-pinned-icon {
+  color: var(--brand-orange);
 }
 
 .suppliers-status-dot-wrap {
@@ -933,11 +966,8 @@
 
 .suppliers-detail-hero,
 .suppliers-detail-section {
-  background:
-    linear-gradient(90deg, transparent, rgba(248, 249, 250, 0.7) 46%, transparent),
-    var(--mantine-color-white);
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 10px;
+  background: transparent;
+  border: 0;
   min-width: 0;
 }
 
@@ -1149,6 +1179,53 @@
   display: grid;
   gap: 8px;
   grid-template-columns: minmax(0, 1fr);
+}
+
+.suppliers-detail-action-icon {
+  align-items: center;
+  background: transparent;
+  border: 1.5px solid var(--mantine-color-gray-7);
+  border-radius: 50%;
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: 36px;
+  justify-content: center;
+  width: 36px;
+}
+
+/* Detail-modal action buttons: softened text/icon, tighter left padding, and a
+   light-orange hover fill (override Mantine's inline hover var via :hover). */
+.suppliers-detail-actions .mantine-Button-root {
+  color: var(--mantine-color-gray-7);
+  padding-left: 8px;
+}
+
+/* On hover paint only the icon + its ring orange — no row/strip fill, text stays. */
+.suppliers-detail-actions .mantine-Button-root:hover {
+  background: transparent !important;
+}
+
+.suppliers-detail-actions .mantine-Button-root:hover .suppliers-detail-action-icon {
+  border-color: var(--brand-orange);
+}
+
+.suppliers-detail-actions .mantine-Button-root:hover .suppliers-detail-action-icon svg {
+  stroke: var(--brand-orange);
+}
+
+.suppliers-detail-actions .mantine-Button-root:hover .mantine-Button-label {
+  color: var(--brand-orange);
+}
+
+.suppliers-detail-actions .mantine-Button-label {
+  color: var(--mantine-color-gray-7);
+}
+
+/* Modal close (X): drop the violet focus ring so it doesn't read as "selected". */
+.mantine-Modal-close:focus,
+.mantine-Modal-close:focus-visible {
+  box-shadow: none;
+  outline: none;
 }
 
 @media (max-width: 1320px) {
