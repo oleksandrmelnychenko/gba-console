@@ -221,13 +221,13 @@ export function ClientAgreementsPanel({
   return (
     <Stack gap="sm">
       <Group justify="space-between" align="center">
-        <Text fw={600}>{t('Договори')}</Text>
+        <Text className="client-section-title" fw={600}>{t('Договори')}</Text>
         {canEdit && (
           <Button
             color={CREATE_ACTION_COLOR}
             leftSection={<IconPlus size={16} />}
             size="xs"
-            variant="light"
+            variant="outline"
             onClick={openCreate}
           >
             {t('Додати договір')}
@@ -297,8 +297,12 @@ export function ClientAgreementsPanel({
 
       <AppModal
         centered
+        classNames={{
+          body: 'agreement-form-modal-body',
+          title: 'agreement-form-modal-title',
+        }}
         opened={formOpened}
-        size="lg"
+        size={1120}
         title={formIsEdit ? t('Редагування договору') : t('Новий договір')}
         onClose={() => dispatch({ type: 'closeForm' })}
       >
@@ -445,7 +449,7 @@ function BuyerAgreementItem({
               {agreementName}
             </Text>
             {agreement.IsActive && (
-              <Badge color="green" size="xs" variant="light">
+              <Badge className="app-role-pill is-green" size="xs" variant="light">
                 {t('Активний')}
               </Badge>
             )}
@@ -498,7 +502,7 @@ function BuyerAgreementItem({
           )}
 
           {agreement.Currency?.Name && (
-            <Badge color="gray" variant="light">
+            <Badge className="app-role-pill is-gray" variant="light">
               {agreement.Currency.Name}
             </Badge>
           )}
@@ -562,7 +566,7 @@ function ProviderAgreementItem({
               {agreement.Name}
             </Text>
             {agreement.IsActive && (
-              <Badge color="green" size="xs" variant="light">
+              <Badge className="app-role-pill is-green" size="xs" variant="light">
                 {t('Активний')}
               </Badge>
             )}
@@ -574,7 +578,7 @@ function ProviderAgreementItem({
 
         <Group gap="xs" align="center" wrap="nowrap">
           {agreement.Currency?.Name && (
-            <Badge color="gray" variant="light">
+            <Badge className="app-role-pill is-gray" variant="light">
               {agreement.Currency.Name}
             </Badge>
           )}

@@ -85,7 +85,7 @@ export function SupplierPassport({ netUid, client }: SupplierPassportProps) {
   return (
     <Stack gap="md">
       <Card withBorder padding="md" radius="md">
-        <Text fw={600} mb="xs">
+        <Text className="app-section-title" fw={600} mb="xs">
           {t('Загальна інформація')}
         </Text>
         <Stack gap="xs">
@@ -98,7 +98,7 @@ export function SupplierPassport({ netUid, client }: SupplierPassportProps) {
 
       {supplier.PackingMarking && (
         <Card withBorder padding="md" radius="md">
-          <Text fw={600} mb="xs">
+          <Text className="app-section-title" fw={600} mb="xs">
             {t('Умови поставки під брендом CONTECH')}
           </Text>
           <Stack gap="xs">
@@ -109,7 +109,7 @@ export function SupplierPassport({ netUid, client }: SupplierPassportProps) {
       )}
 
       <Card withBorder padding="md" radius="md">
-        <Text fw={600} mb="xs">
+        <Text className="app-section-title" fw={600} mb="xs">
           {t('Умови доставки')}
         </Text>
         <Stack gap="xs">
@@ -122,7 +122,7 @@ export function SupplierPassport({ netUid, client }: SupplierPassportProps) {
       </Card>
 
       <Card withBorder padding="md" radius="md">
-        <Text fw={600} mb="xs">
+        <Text className="app-section-title" fw={600} mb="xs">
           {t('Дані клієнта')}
         </Text>
         <Stack gap="xs">
@@ -136,7 +136,7 @@ export function SupplierPassport({ netUid, client }: SupplierPassportProps) {
 
       {bankDetails && (
         <Card withBorder padding="md" radius="md">
-          <Text fw={600} mb="xs">
+          <Text className="app-section-title" fw={600} mb="xs">
             {t('Банківські реквізити')}
           </Text>
           <Stack gap="xs">
@@ -160,7 +160,7 @@ export function SupplierPassport({ netUid, client }: SupplierPassportProps) {
       )}
 
       <Card withBorder padding="md" radius="md">
-        <Text fw={600} mb="xs">
+        <Text className="app-section-title" fw={600} mb="xs">
           {t('Умови оплати')}
         </Text>
         <Stack gap="xs">

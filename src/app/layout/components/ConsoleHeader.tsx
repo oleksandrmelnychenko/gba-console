@@ -1,5 +1,5 @@
 import { ActionIcon, AppShell, Badge, Box, Group, Title, Text } from '@mantine/core'
-import { IconBell, IconCalendarEvent, IconLogout } from '@tabler/icons-react'
+import { IconBell, IconLogout } from '@tabler/icons-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../../features/auth/useAuth'
 import { HeaderActionBar } from '../../../features/header-actions/components/HeaderActionBar'
@@ -19,9 +19,9 @@ export function ConsoleHeader() {
     t('Робочий простір')
   const roleName = user?.UserRole?.Name?.trim()
   const currentDateLabel = new Intl.DateTimeFormat('uk-UA', {
-    weekday: 'short',
+    weekday: 'long',
     day: '2-digit',
-    month: 'short',
+    month: 'long',
   }).format(new Date())
 
   return (
@@ -57,7 +57,6 @@ export function ConsoleHeader() {
         </Group>
 
         <Group gap={6} wrap="nowrap" className="console-header-date">
-          <IconCalendarEvent size={15} stroke={1.7} />
           <Text size="sm">{currentDateLabel}</Text>
         </Group>
 

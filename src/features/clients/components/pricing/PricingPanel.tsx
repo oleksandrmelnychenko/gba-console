@@ -43,11 +43,16 @@ import type {
 
 export type PricingPanelMode = 'edit' | 'new'
 
+export type PricingPanelSection = 'analysts' | 'agreements'
+
 export type PricingPanelProps = {
   client: Client
   isProvider: boolean
   mode?: PricingPanelMode
   disabled?: boolean
+  /** Render only one half of the panel (its own edit step); omit for the
+   *  legacy side-by-side layout. */
+  section?: PricingPanelSection
   onChange: (client: Client) => void
   onAddContractDocuments?: (files: File[]) => void
   onPendingDiscountDraftChange?: (draft: DiscountsTreeDraft | null) => void
@@ -109,6 +114,7 @@ export function PricingPanel({
   isProvider,
   mode = 'edit',
   disabled = false,
+  section,
   onChange,
   onAddContractDocuments,
   onPendingDiscountDraftChange,
@@ -447,6 +453,77 @@ export function PricingPanel({
     )
   }
 
+  const analystsSection = (
+    <Stack gap="lg">
+      <Card className="app-section-card" withBorder padding="md" radius="md">
+        <ManagerPicker
+          client={client}
+          disabled={disabled}
+          role={isProvider ? 'provider' : 'buyer'}
+          onChange={onChange}
+        />
+      </Card>
+
+      {!isProvider && mode === 'new' && (
+        <ServicePayersPanel
+          disabled={disabled}
+          payers={servicePayers}
+          onChange={handleServicePayersChange}
+        />
+      )}
+    </Stack>
+  )
+
+  const agreementsSection = (
+    <Stack gap="lg">
+      <Card className="app-section-card" withBorder padding="md" radius="md">
+        <ClientAgreementsPanel
+          agreements={clientAgreements}
+          currencies={currencies}
+          exportDocument={exportDocument}
+          isExporting={isExporting}
+          isProvider={isProvider}
+          isRetailClient={isRetailClient}
+          organizations={organizations}
+          pricings={pricings}
+          promotionalPricings={pricings}
+          selectedAgreementNetId={selectedAgreementNetId}
+          onDeleteAgreement={handleDeleteAgreement}
+          onExportAgreementDocument={handleExportAgreementDocument}
+          onExportAgreementWarrantyConditions={handleExportAgreementWarranty}
+          onRowClick={handleRowClick}
+          onSaveAgreement={handleSaveAgreement}
+        />
+      </Card>
+
+      {showDiscountsTree && highlightedAgreement?.Agreement?.NetUid && (
+        <Card className="app-section-card" withBorder padding="md" radius="md">
+          <DiscountsTree
+            clientAgreementNetId={highlightedAgreement.Agreement.NetUid}
+            disabled={disabled}
+            productGroupDiscounts={highlightedAgreement.ProductGroupDiscounts ?? EMPTY_PRODUCT_GROUP_DISCOUNTS}
+            selectedAgreementName={selectedAgreementLabel}
+            onApplyChanges={handleApplyDiscounts}
+            onDraftChange={handleDiscountDraftChange}
+          />
+        </Card>
+      )}
+
+      {isProvider && (
+        <ContractDocumentsSection
+          documents={contractDocuments}
+          isUploading={isUploadingDocuments}
+          showSave={mode === 'edit'}
+          disabled={disabled}
+          error={documentsError}
+          onAdd={handleAddDocuments}
+          onRemove={handleRemoveDocument}
+          onSave={handleSaveDocuments}
+        />
+      )}
+    </Stack>
+  )
+
   return (
     <Stack gap="lg">
       {lookupsError && (
@@ -455,74 +532,16 @@ export function PricingPanel({
         </Alert>
       )}
 
-      <Grid gap="lg">
-        <Grid.Col span={{ base: 12, md: 6 }}>
-          <Stack gap="lg">
-            <ManagerPicker
-              client={client}
-              disabled={disabled}
-              role={isProvider ? 'provider' : 'buyer'}
-              onChange={onChange}
-            />
-
-            {!isProvider && mode === 'new' && (
-              <ServicePayersPanel
-                disabled={disabled}
-                payers={servicePayers}
-                onChange={handleServicePayersChange}
-              />
-            )}
-          </Stack>
-        </Grid.Col>
-
-        <Grid.Col span={{ base: 12, md: 6 }}>
-          <Stack gap="lg">
-            <ClientAgreementsPanel
-              agreements={clientAgreements}
-              currencies={currencies}
-              exportDocument={exportDocument}
-              isExporting={isExporting}
-              isProvider={isProvider}
-              isRetailClient={isRetailClient}
-              organizations={organizations}
-              pricings={pricings}
-              promotionalPricings={pricings}
-              selectedAgreementNetId={selectedAgreementNetId}
-              onDeleteAgreement={handleDeleteAgreement}
-              onExportAgreementDocument={handleExportAgreementDocument}
-              onExportAgreementWarrantyConditions={handleExportAgreementWarranty}
-              onRowClick={handleRowClick}
-              onSaveAgreement={handleSaveAgreement}
-            />
-
-            {showDiscountsTree && highlightedAgreement?.Agreement?.NetUid && (
-              <Card className="app-section-card" withBorder padding="md" radius="md">
-                <DiscountsTree
-                  clientAgreementNetId={highlightedAgreement.Agreement.NetUid}
-                  disabled={disabled}
-                  productGroupDiscounts={highlightedAgreement.ProductGroupDiscounts ?? EMPTY_PRODUCT_GROUP_DISCOUNTS}
-                  selectedAgreementName={selectedAgreementLabel}
-                  onApplyChanges={handleApplyDiscounts}
-                  onDraftChange={handleDiscountDraftChange}
-                />
-              </Card>
-            )}
-
-            {isProvider && (
-              <ContractDocumentsSection
-                documents={contractDocuments}
-                isUploading={isUploadingDocuments}
-                showSave={mode === 'edit'}
-                disabled={disabled}
-                error={documentsError}
-                onAdd={handleAddDocuments}
-                onRemove={handleRemoveDocument}
-                onSave={handleSaveDocuments}
-              />
-            )}
-          </Stack>
-        </Grid.Col>
-      </Grid>
+      {section === 'analysts' ? (
+        analystsSection
+      ) : section === 'agreements' ? (
+        agreementsSection
+      ) : (
+        <Grid gap="lg">
+          <Grid.Col span={{ base: 12, md: 6 }}>{analystsSection}</Grid.Col>
+          <Grid.Col span={{ base: 12, md: 6 }}>{agreementsSection}</Grid.Col>
+        </Grid>
+      )}
     </Stack>
   )
 }
@@ -552,7 +571,7 @@ function ContractDocumentsSection({
   return (
     <Card className="app-section-card" withBorder padding="md" radius="md">
       <Stack gap="md">
-        <Text fw={600}>{t('Документи договору')}</Text>
+        <Text className="client-section-title" fw={600}>{t('Документи договору')}</Text>
 
         {error && (
           <Alert color="red" icon={<IconAlertCircle size={16} />} variant="light">
@@ -566,7 +585,7 @@ function ContractDocumentsSection({
               color="gray"
               disabled={disabled}
               leftSection={<IconUpload size={16} />}
-              variant="light"
+              variant="default"
               {...buttonProps}
             >
               {t('Завантажити документи договору')}

@@ -6,6 +6,7 @@ import {
   Checkbox,
   FileButton,
   Group,
+  Popover,
   SegmentedControl,
   Select,
   SimpleGrid,
@@ -69,7 +70,7 @@ export function GeneralInfoFields(props: GeneralInfoFieldsProps) {
     <Stack gap="md">
       <Card className="app-section-card" withBorder radius="md" padding="md">
         <Stack gap="md">
-          <Text fw={600}>{t('Основна інформація')}</Text>
+          <Text className="client-section-title" fw={600}>{t('Основна інформація')}</Text>
           <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
             <TextInput
               error={errors?.FullName}
@@ -113,7 +114,7 @@ function ProviderFields(props: GeneralInfoFieldsProps) {
     <Stack gap="md">
       <Card className="app-section-card" withBorder radius="md" padding="md">
         <Stack gap="md">
-          <Text fw={600}>{t('Дані постачальника')}</Text>
+          <Text className="client-section-title" fw={600}>{t('Дані постачальника')}</Text>
           <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
             <TextInput
               error={errors?.SupplierCode}
@@ -135,8 +136,8 @@ function ProviderFields(props: GeneralInfoFieldsProps) {
 
       <Card className="app-section-card" withBorder radius="md" padding="md">
         <Stack gap="md">
-          <Text fw={600}>{t('Умови постачання')}</Text>
-          <Group align="flex-end" gap="xs">
+          <Text className="client-section-title" fw={600}>{t('Умови постачання')}</Text>
+          <Group align="flex-end" gap="xs" wrap="nowrap">
             <Select
               clearable
               searchable
@@ -178,7 +179,7 @@ function ProviderFields(props: GeneralInfoFieldsProps) {
             onChange={(event) => props.onChange('IncotermsElse', event.currentTarget.value)}
           />
 
-          <SimpleGrid cols={{ base: 1, md: 3 }} spacing="sm">
+          <SimpleGrid cols={{ base: 1, md: 3 }} spacing="sm" style={{ alignItems: 'end' }}>
             <Select
               clearable
               searchable
@@ -209,7 +210,7 @@ function ProviderFields(props: GeneralInfoFieldsProps) {
                 props.onChange('PackingMarkingPayment', next)
               }}
             />
-            <Group align="flex-end" gap="xs">
+            <Group align="flex-end" gap="xs" wrap="nowrap">
               <Select
                 clearable
                 searchable
@@ -287,7 +288,7 @@ function BuyerFields(props: GeneralInfoFieldsProps) {
         <Card className="app-section-card" withBorder radius="md" padding="md">
           <Stack gap="md">
             <Text fw={600}>{t('Регіон')}</Text>
-            <Group align="flex-end" gap="xs">
+            <Group align="flex-end" gap="xs" wrap="nowrap">
               <Select
                 clearable
                 searchable
@@ -445,32 +446,35 @@ function NewIncotermControl({ onCreate }: { onCreate: (name: string) => void }) 
   const [isOpen, setOpen] = useState(false)
   const [name, setName] = useState('')
 
-  if (!isOpen) {
-    return (
-      <ActionIcon aria-label={t('Додати Incoterms')} color={CREATE_ACTION_COLOR} size="lg" variant="light" onClick={() => setOpen(true)}>
-        <IconPlus size={16} />
-      </ActionIcon>
-    )
-  }
-
   return (
-    <Group align="flex-end" gap="xs">
-      <TextInput label={t('Назва')} value={name} onChange={(event) => setName(event.currentTarget.value)} />
-      <Button
-        color={CREATE_ACTION_COLOR}
-        disabled={!name.trim()}
-        onClick={() => {
-          onCreate(name.trim())
-          setName('')
-          setOpen(false)
-        }}
-      >
-        {t('Створити')}
-      </Button>
-      <Button color="gray" variant="subtle" onClick={() => setOpen(false)}>
-        {t('Скасувати')}
-      </Button>
-    </Group>
+    <Popover opened={isOpen} position="bottom-end" shadow="md" trapFocus width={300} withArrow withinPortal onChange={setOpen}>
+      <Popover.Target>
+        <ActionIcon aria-label={t('Додати Incoterms')} color={CREATE_ACTION_COLOR} size="lg" variant="outline" onClick={() => setOpen(!isOpen)}>
+          <IconPlus size={16} />
+        </ActionIcon>
+      </Popover.Target>
+      <Popover.Dropdown>
+        <Stack gap="xs">
+          <TextInput label={t('Назва')} value={name} onChange={(event) => setName(event.currentTarget.value)} />
+          <Group gap="xs" justify="flex-end">
+            <Button color="gray" variant="subtle" onClick={() => setOpen(false)}>
+              {t('Скасувати')}
+            </Button>
+            <Button
+              color={CREATE_ACTION_COLOR}
+              disabled={!name.trim()}
+              onClick={() => {
+                onCreate(name.trim())
+                setName('')
+                setOpen(false)
+              }}
+            >
+              {t('Створити')}
+            </Button>
+          </Group>
+        </Stack>
+      </Popover.Dropdown>
+    </Popover>
   )
 }
 
@@ -480,34 +484,37 @@ function NewCountryControl({ onCreate }: { onCreate: (name: string, code: string
   const [name, setName] = useState('')
   const [code, setCode] = useState('')
 
-  if (!isOpen) {
-    return (
-      <ActionIcon aria-label={t('Додати країну')} color={CREATE_ACTION_COLOR} size="lg" variant="light" onClick={() => setOpen(true)}>
-        <IconPlus size={16} />
-      </ActionIcon>
-    )
-  }
-
   return (
-    <Group align="flex-end" gap="xs">
-      <TextInput label={t('Країна')} value={name} onChange={(event) => setName(event.currentTarget.value)} />
-      <TextInput label={t('Код країни')} maxLength={25} value={code} onChange={(event) => setCode(event.currentTarget.value)} />
-      <Button
-        color={CREATE_ACTION_COLOR}
-        disabled={!name.trim() || !code.trim()}
-        onClick={() => {
-          onCreate(name.trim(), code.trim())
-          setName('')
-          setCode('')
-          setOpen(false)
-        }}
-      >
-        {t('Створити')}
-      </Button>
-      <Button color="gray" variant="subtle" onClick={() => setOpen(false)}>
-        {t('Скасувати')}
-      </Button>
-    </Group>
+    <Popover opened={isOpen} position="bottom-end" shadow="md" trapFocus width={300} withArrow withinPortal onChange={setOpen}>
+      <Popover.Target>
+        <ActionIcon aria-label={t('Додати країну')} color={CREATE_ACTION_COLOR} size="lg" variant="outline" onClick={() => setOpen(!isOpen)}>
+          <IconPlus size={16} />
+        </ActionIcon>
+      </Popover.Target>
+      <Popover.Dropdown>
+        <Stack gap="xs">
+          <TextInput label={t('Країна')} value={name} onChange={(event) => setName(event.currentTarget.value)} />
+          <TextInput label={t('Код країни')} maxLength={25} value={code} onChange={(event) => setCode(event.currentTarget.value)} />
+          <Group gap="xs" justify="flex-end">
+            <Button color="gray" variant="subtle" onClick={() => setOpen(false)}>
+              {t('Скасувати')}
+            </Button>
+            <Button
+              color={CREATE_ACTION_COLOR}
+              disabled={!name.trim() || !code.trim()}
+              onClick={() => {
+                onCreate(name.trim(), code.trim())
+                setName('')
+                setCode('')
+                setOpen(false)
+              }}
+            >
+              {t('Створити')}
+            </Button>
+          </Group>
+        </Stack>
+      </Popover.Dropdown>
+    </Popover>
   )
 }
 
@@ -516,32 +523,35 @@ function NewRegionControl({ onCreate }: { onCreate: (name: string) => void }) {
   const [isOpen, setOpen] = useState(false)
   const [name, setName] = useState('')
 
-  if (!isOpen) {
-    return (
-      <ActionIcon aria-label={t('Додати регіон')} color={CREATE_ACTION_COLOR} size="lg" variant="light" onClick={() => setOpen(true)}>
-        <IconPlus size={16} />
-      </ActionIcon>
-    )
-  }
-
   return (
-    <Group align="flex-end" gap="xs">
-      <TextInput label={t('Регіон')} maxLength={20} value={name} onChange={(event) => setName(event.currentTarget.value)} />
-      <Button
-        color={CREATE_ACTION_COLOR}
-        disabled={!name.trim()}
-        onClick={() => {
-          onCreate(name.trim())
-          setName('')
-          setOpen(false)
-        }}
-      >
-        {t('Створити')}
-      </Button>
-      <Button color="gray" variant="subtle" onClick={() => setOpen(false)}>
-        {t('Скасувати')}
-      </Button>
-    </Group>
+    <Popover opened={isOpen} position="bottom-end" shadow="md" trapFocus width={300} withArrow withinPortal onChange={setOpen}>
+      <Popover.Target>
+        <ActionIcon aria-label={t('Додати регіон')} color={CREATE_ACTION_COLOR} size="lg" variant="outline" onClick={() => setOpen(!isOpen)}>
+          <IconPlus size={16} />
+        </ActionIcon>
+      </Popover.Target>
+      <Popover.Dropdown>
+        <Stack gap="xs">
+          <TextInput label={t('Регіон')} maxLength={20} value={name} onChange={(event) => setName(event.currentTarget.value)} />
+          <Group gap="xs" justify="flex-end">
+            <Button color="gray" variant="subtle" onClick={() => setOpen(false)}>
+              {t('Скасувати')}
+            </Button>
+            <Button
+              color={CREATE_ACTION_COLOR}
+              disabled={!name.trim()}
+              onClick={() => {
+                onCreate(name.trim())
+                setName('')
+                setOpen(false)
+              }}
+            >
+              {t('Створити')}
+            </Button>
+          </Group>
+        </Stack>
+      </Popover.Dropdown>
+    </Popover>
   )
 }
 

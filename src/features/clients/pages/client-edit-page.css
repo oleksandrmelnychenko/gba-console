@@ -1,7 +1,52 @@
 /* Sheet title (in the drawer header, next to the close button): code + client
    name + status / type badges. No card, border or gradient — a plain title. */
 .client-edit-title {
+  font-family: var(--font-mono);
   min-width: 0;
+}
+
+/* Section headings across the edit sheet (Основна інформація, Контакти, Договори…) in mono,
+   with an orange dot in front as a visual section separator. */
+.client-section-title {
+  color: var(--mantine-color-gray-7);
+  font-family: var(--font-mono);
+}
+
+.client-section-title::before {
+  background: var(--brand-orange);
+  border-radius: 999px;
+  content: '';
+  display: inline-block;
+  height: 7px;
+  margin-right: 8px;
+  vertical-align: 1px;
+  width: 7px;
+}
+
+/* All action buttons on the edit sheet (Створити / Скасувати / Завантажити…)
+   and the footer (Видалити / Зберегти) in mono. */
+.client-edit-footer-actions .mantine-Button-label,
+.client-edit-sheet .mantine-Button-label {
+  font-family: var(--font-mono);
+  letter-spacing: 0;
+}
+
+/* Checkboxes on the edit sheet follow the orange accent (not the violet theme). */
+.client-edit-sheet .mantine-Checkbox-input:checked {
+  background-color: var(--brand-orange);
+  border-color: var(--brand-orange);
+}
+
+/* Comboboxes styled like the main-screen grid toolbar selects (36px, 8px radius,
+   gray-2 border) — but with the mono face. */
+.client-edit-sheet .mantine-Select-input {
+  border-color: var(--mantine-color-gray-2);
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  height: 36px;
+  letter-spacing: 0;
+  min-height: 36px;
 }
 
 .client-edit-title-code {
@@ -9,10 +54,20 @@
   letter-spacing: 0.02em;
 }
 
-/* Flat sheet: drop the card borders so the sections read as clean surfaces with
-   only the soft shadow for separation (no hard outlines, no gradients). */
+/* Flat sheet: gray-bordered section blocks, no shadows, compact padding. The
+   two outer shell cards (nav rail wrapper + step content wrapper) stay
+   borderless — only the small inner blocks carry the border. */
 .client-edit-sheet .mantine-Card-root {
+  border: 1px solid var(--mantine-color-gray-2);
+  box-shadow: none;
+  padding: 14px 16px;
+}
+
+/* The shell wrappers are invisible containers — their own padding only added
+   to the inner blocks' padding, producing oversized side gutters. */
+.client-edit-sheet .client-edit-shell-card {
   border: 0;
+  padding: 0;
 }
 
 /* Left step-nav (rail) styled as the «Ролі» list: numbered list items with a
@@ -21,45 +76,58 @@
   background: transparent;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 2px;
 }
 
+/* Plain-text step nav: no borders, no fills — just the label and a chevron.
+   The active step gets the same orange dot the section headings use, so the
+   dot visually "leads" from the menu to the matching content block. */
 .client-edit-nav-item {
   position: relative;
-  background: var(--mantine-color-white);
-  border: 1px solid var(--mantine-color-gray-2) !important;
+  background: transparent !important;
+  border: 0 !important;
   border-radius: 8px;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
-  color: var(--mantine-color-gray-8) !important;
+  box-shadow: none;
+  color: var(--mantine-color-gray-7) !important;
+  font-size: 13px;
   font-weight: 500;
-  min-height: 52px;
+  min-height: 40px;
   overflow: hidden;
+  padding-left: 18px;
+  padding-right: 6px;
   transition:
-    border-color 110ms var(--tx-ease-smooth),
-    box-shadow 110ms var(--tx-ease-smooth),
+    color 110ms var(--tx-ease-smooth),
     transform 140ms var(--tx-ease-smooth);
+}
+
+/* The left Button section only holds the (hidden) index/icon — its residual
+   margin eats label width in the narrow rail, so drop it entirely. */
+.client-edit-nav-item .mantine-Button-section[data-position='left'] {
+  display: none;
 }
 
 .client-edit-nav-item::before {
   content: '';
   position: absolute;
-  left: 0;
-  top: 8px;
-  bottom: 8px;
-  width: 3px;
+  left: 8px;
+  top: 50%;
+  height: 7px;
+  width: 7px;
   border-radius: 999px;
   background: transparent;
+  transform: translateY(-50%);
   transition: background-color 120ms var(--tx-ease-smooth);
 }
 
 .client-edit-nav-item:hover {
-  border-color: var(--mantine-color-gray-4) !important;
-  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.07);
+  color: var(--mantine-color-gray-9) !important;
   transform: translateX(3px);
 }
 
+/* Keep the label at its natural width so the chevron hugs the text instead of
+   being pushed to the far edge of the row. */
 .client-edit-nav-item .mantine-Button-label {
-  flex: 1 1 auto;
+  flex: 0 1 auto;
 }
 
 .client-edit-nav-lead {
@@ -69,23 +137,17 @@
 }
 
 .client-edit-nav-index {
-  border-right: 1px solid var(--mantine-color-gray-2);
-  color: var(--mantine-color-gray-9);
-  font-size: 11px;
-  font-variant-numeric: tabular-nums;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  padding-right: 9px;
+  display: none;
 }
 
 .client-edit-nav-icon {
-  display: inline-flex;
-  color: var(--mantine-color-gray-9);
+  display: none;
 }
 
 .client-edit-nav-label {
   display: block;
   flex: 1 1 auto;
+  font-family: var(--font-mono);
   overflow: hidden;
   text-align: left;
   text-overflow: ellipsis;
@@ -103,14 +165,18 @@
 }
 
 .client-edit-nav-item.is-active {
-  background: rgba(var(--brand-orange-rgb), 0.06);
-  border-color: var(--mantine-color-orange-2) !important;
-  box-shadow: 0 5px 16px rgba(var(--brand-orange-rgb), 0.14);
-  color: var(--mantine-color-orange-9) !important;
+  background: transparent !important;
+  color: var(--mantine-color-orange-8) !important;
+  font-weight: 600;
 }
 
 .client-edit-nav-item.is-active::before {
-  background: var(--mantine-color-orange-6);
+  background: var(--brand-orange);
+}
+
+.client-edit-nav-item.is-active .client-edit-nav-chevron {
+  color: var(--brand-orange);
+  opacity: 1;
 }
 
 .client-edit-nav-item.is-active .client-edit-nav-index {

@@ -7,6 +7,7 @@ import {
   NumberInput,
   SegmentedControl,
   Select,
+  SimpleGrid,
   Stack,
   Switch,
   Text,
@@ -80,13 +81,18 @@ export function AgreementForm({
   const providerPricing = agreement.ProviderPricing
 
   return (
-    <Stack gap="md">
+    <Stack className="agreement-form" gap="md">
+      {/* Sections side by side so the modal fits without vertical scrolling. */}
+      <SimpleGrid cols={{ base: 1, md: 3 }} spacing="md" style={{ alignItems: 'start' }}>
       <Card className="app-section-card" withBorder radius="md" padding="md">
         <Stack gap="md">
-          <Text fw={600}>{t('Загальні дані')}</Text>
+          <Text className="agreement-form-section-title" fw={600}>
+            {t('Загальні дані')}
+          </Text>
 
           <Switch
             checked={Boolean(agreement.IsActive)}
+            color="green"
             label={t('Активний договір')}
             onChange={(event) => onChange({ IsActive: event.currentTarget.checked })}
           />
@@ -116,7 +122,9 @@ export function AgreementForm({
 
       <Card className="app-section-card" withBorder radius="md" padding="md">
         <Stack gap="md">
-          <Text fw={600}>{t('Ціноутворення')}</Text>
+          <Text className="agreement-form-section-title" fw={600}>
+            {t('Ціноутворення')}
+          </Text>
 
           {isProvider ? (
             <Stack gap="xs">
@@ -226,7 +234,9 @@ export function AgreementForm({
 
       <Card className="app-section-card" withBorder radius="md" padding="md">
         <Stack gap="md">
-          <Text fw={600}>{t('Умови договору')}</Text>
+          <Text className="agreement-form-section-title" fw={600}>
+            {t('Умови договору')}
+          </Text>
 
           {!isProvider && (
             <Group grow align="flex-start">
@@ -340,6 +350,7 @@ export function AgreementForm({
           )}
         </Stack>
       </Card>
+      </SimpleGrid>
     </Stack>
   )
 

@@ -628,7 +628,7 @@ export function ClientEditPage() {
       closeOnClickOutside={!isSaving && !isDeleting}
       keepMounted={false}
       position="right"
-      size="full"
+      size="standard"
       title={
         client ? (
           <ClientEditTitle
@@ -651,7 +651,7 @@ export function ClientEditPage() {
         />
       }
     >
-    <Stack className="client-edit-sheet" gap="lg">
+    <Stack className="client-edit-sheet" gap="md">
       {(error || lookupsError) && (
         <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
           {error || lookupsError}
@@ -729,7 +729,7 @@ function ClientEditActions({
   const { t } = useI18n()
 
   return (
-    <Group gap="xs">
+    <Group gap="xs" className="client-edit-footer-actions">
       {canDelete && (
         <Button color="red" leftSection={<IconTrash size={16} />} loading={isDeleting} variant="light" onClick={onDelete}>
           {t('Видалити')}
@@ -754,13 +754,12 @@ function ClientEditTitle({
   canEditType,
   client,
   onToggleActive,
-  onTypeClick,
 }: {
   canEditActive: boolean
   canEditType: boolean
   client: Client | null
   onToggleActive: (active: boolean) => void
-  onTypeClick: () => void
+  onTypeClick?: () => void
 }) {
   const { t } = useI18n()
   const regionCodeValue = client?.RegionCode?.Value
@@ -798,12 +797,7 @@ function ClientEditTitle({
       </Group>
       <Group gap="xs" mt={4}>
         {(client.ClientInRole?.ClientTypeRole?.Name || canEditType) && (
-          <Badge
-            color="orange"
-            variant="light"
-            style={canEditType ? { cursor: 'pointer' } : undefined}
-            onClick={canEditType ? onTypeClick : undefined}
-          >
+          <Badge className="app-role-pill" variant="light">
             {client.ClientInRole?.ClientTypeRole?.Name || t('Тип клієнта')}
           </Badge>
         )}
@@ -906,7 +900,7 @@ function ClientEditBody({
     <form id="client-edit-form" onSubmit={onSubmit}>
       <Grid gap="md">
         <Grid.Col span={{ base: 12, lg: 3 }}>
-          <Card className="app-section-card" withBorder radius="md" padding="md">
+          <Card className="app-section-card client-edit-shell-card" withBorder radius="md" padding="md">
             <Stack gap={6} className="client-edit-nav" component="nav">
               {steps.map((item, index) => {
                 const isActive = item.value === selectedStep
@@ -940,7 +934,7 @@ function ClientEditBody({
           </Card>
         </Grid.Col>
         <Grid.Col span={{ base: 12, lg: 9 }}>
-          <Card className="app-section-card" withBorder radius="md" padding="md">
+          <Card className="app-section-card client-edit-shell-card" withBorder radius="md" padding="md">
             <Stack gap="md">
               <EditStepContent
                 client={client}
@@ -1015,7 +1009,10 @@ function buildEditSteps(client: Client | null, hasPermission: (permissionKey: st
   ]
 
   if (hasPermission(EDIT_CLIENT_PRICING_PERMISSION)) {
-    steps.push({ value: 'pricing', label: translate('Ціноутворення') })
+    steps.push(
+      { value: 'analysts', label: translate('Аналітики') },
+      { value: 'agreements', label: translate('Договори') },
+    )
   }
 
   if (getClientType(client) === CLIENT_TYPE_BUYER) {
@@ -1070,12 +1067,14 @@ function EditStepContent({
     return <ContactInfoFields client={client} errors={errors} role={role} onChange={setField} />
   }
 
-  if (step === 'pricing') {
+  if (step === 'analysts' || step === 'agreements' || step === 'pricing') {
     return (
       <PricingPanel
         client={client}
         isProvider={role.isProvider}
         mode="edit"
+        // Legacy 'pricing' links still render both halves side by side.
+        section={step === 'pricing' ? undefined : step}
         onChange={onClientChange}
         onPendingDiscountDraftChange={onPendingDiscountDraftChange}
       />
