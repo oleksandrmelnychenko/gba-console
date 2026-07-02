@@ -324,8 +324,10 @@
   --data-table-cell-bg: var(--mantine-color-yellow-0);
 }
 
+/* Row hover — the warm brand tint (came from the old console skin, kept as the
+   shared default per the pattern). */
 .data-table-row:hover .data-table-cell {
-  --data-table-cell-bg: var(--mantine-color-gray-1);
+  --data-table-cell-bg: #fffaf5;
 }
 
 .data-table-row.is-selected {
