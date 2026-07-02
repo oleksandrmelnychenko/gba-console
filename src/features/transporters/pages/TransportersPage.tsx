@@ -23,7 +23,7 @@ import {
   IconUpload,
 } from '@tabler/icons-react'
 import { ExternalLink } from 'lucide-react'
-import { useEffect, useMemo, useReducer, useState } from 'react'
+import { useEffect, useMemo, useReducer, useState, type ReactNode } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -485,7 +485,11 @@ export function TransportersPage() {
         error={formError}
         isSaving={isSaving}
         opened={Boolean(editor)}
-        title={editor?.mode === 'edit' ? t('Редагувати перевізника') : t('Новий перевізник')}
+        title={
+          <span style={{ fontFamily: 'var(--font-mono)' }}>
+            {editor?.mode === 'edit' ? t('Редагувати перевізника') : t('Новий перевізник')}
+          </span>
+        }
         transporter={editor?.mode === 'edit' ? editor.transporter : undefined}
         onClose={() => {
           if (!isSaving) {
@@ -605,7 +609,7 @@ function TransporterEditorModal({
   error: string | null
   isSaving: boolean
   opened: boolean
-  title: string
+  title: ReactNode
   transporter?: Transporter
   onClose: () => void
   onSave: (values: TransporterFormValues) => void

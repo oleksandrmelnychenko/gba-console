@@ -466,7 +466,7 @@ function AccountableExpenseStatusCell({ row }: { row: AccountableExpenseRow }) {
 
   return (
     <span className="accountable-expenses-status-cell">
-      <Badge color={getPaymentStatusColor(row.paymentStatus)} variant="light">
+      <Badge className={`app-role-pill ${getPaymentStatusPillVariant(row.paymentStatus)}`} variant="light">
         {formatPaymentStatus(row.paymentStatus, t)}
       </Badge>
       <small>{t('Підзвіт')}: {formatUnderReportStatus(row.underReportStatus, t)}</small>
@@ -603,13 +603,13 @@ function ExpenseDetailDrawer({ row, onClose }: { row: AccountableExpenseRow | nu
                 </div>
               </div>
               <div className="accountable-expense-detail-badges">
-                <Badge color={getPaymentStatusColor(row.paymentStatus)} variant="light">
+                <Badge className={`app-role-pill ${getPaymentStatusPillVariant(row.paymentStatus)}`} variant="light">
                   {paymentLabel}
                 </Badge>
-                <Badge color={row.underReportStatus === 'closed' ? 'green' : 'gray'} variant="light">
+                <Badge className={row.underReportStatus === 'closed' ? 'app-role-pill is-green' : 'app-role-pill is-gray'} variant="light">
                   {underReportLabel}
                 </Badge>
-                <Badge color="orange" variant="light">
+                <Badge className="app-role-pill is-orange" variant="light">
                   {typeLabel}
                 </Badge>
               </div>
@@ -645,7 +645,7 @@ function ExpenseDetailDrawer({ row, onClose }: { row: AccountableExpenseRow | nu
                   <span>{displayValue(row.vendorCode)}</span>
                 </div>
               </div>
-              <Badge color="orange" variant="light">
+              <Badge className="app-role-pill is-orange" variant="light">
                 {typeLabel}
               </Badge>
             </div>
@@ -904,4 +904,14 @@ function shiftDate(days: number): string {
   date.setDate(date.getDate() + days)
 
   return formatLocalDate(date)
+}
+
+function getPaymentStatusPillVariant(status: Parameters<typeof getPaymentStatusColor>[0]) {
+  const color = getPaymentStatusColor(status)
+
+  if (color === 'green') {
+    return 'is-green'
+  }
+
+  return color === 'orange' ? 'is-orange' : 'is-gray'
 }
