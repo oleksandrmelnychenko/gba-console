@@ -97,6 +97,70 @@ select {
   width: 7px;
 }
 
+/* Status dot — the table "active/inactive" indicator (green/gray). */
+.app-status-dot-wrap {
+  align-items: center;
+  display: inline-flex;
+  height: 100%;
+  justify-content: center;
+  min-height: 18px;
+  width: 100%;
+}
+
+.app-status-dot {
+  border-radius: 999px;
+  display: block;
+  height: 9px;
+  width: 9px;
+}
+
+.app-status-dot.is-active {
+  background: var(--mantine-color-green-6);
+  box-shadow: 0 0 0 3px rgba(64, 192, 87, 0.14);
+}
+
+.app-status-dot.is-inactive {
+  background: var(--mantine-color-gray-4);
+  box-shadow: 0 0 0 3px rgba(134, 142, 150, 0.14);
+}
+
+/* Modal action list — subtle no-fill buttons with the icon in an outlined
+   36px circle; hovering paints icon + ring + label orange (no row fill).
+   Wrap the buttons in a container with .app-modal-actions and render the
+   icon inside <span className="app-action-icon">. */
+.app-action-icon {
+  align-items: center;
+  background: transparent;
+  border: 1.5px solid var(--mantine-color-gray-7);
+  border-radius: 50%;
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: 36px;
+  justify-content: center;
+  width: 36px;
+}
+
+.app-modal-actions .mantine-Button-root {
+  color: var(--mantine-color-gray-7);
+  padding-left: 8px;
+}
+
+.app-modal-actions .mantine-Button-root:hover {
+  background: transparent !important;
+}
+
+.app-modal-actions .mantine-Button-root:hover .app-action-icon {
+  border-color: var(--brand-orange);
+}
+
+.app-modal-actions .mantine-Button-root:hover .app-action-icon svg {
+  stroke: var(--brand-orange);
+}
+
+.app-modal-actions .mantine-Button-root:hover .mantine-Button-label {
+  color: var(--brand-orange);
+}
+
 /* Role/type pill — the analysts-list badge pattern (blue outlined, mono):
    used for role badges in tables and page headers. Apply to a Mantine <Badge>. */
 .app-role-pill {

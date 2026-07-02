@@ -20,20 +20,18 @@ import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
-  IconCash,
-  IconClock,
   IconDotsVertical,
   IconExternalLink,
   IconFileTypePdf,
-  IconHierarchy2,
   IconPlus,
   IconRestore,
   IconSearch,
   IconToggleLeft,
   IconToggleRight,
 } from '@tabler/icons-react'
+import { Clock, ExternalLink, Network, Wallet } from 'lucide-react'
 import { useDebouncedValue } from '@mantine/hooks'
-import { type FormEvent, type RefObject, useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
+import { type FormEvent, type RefObject, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { ClientTypeRoleFilter } from '../components/ClientTypeRoleFilter'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
@@ -44,7 +42,7 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE, PAGINATOR_PAGE_SIZE_OPTIONS } from '../../../shared/ui/paginator/paginatorPageSize'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
-import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import type {
   DataTableColumn,
   DataTableDefaultLayout,
@@ -86,29 +84,39 @@ const DEFAULT_SEARCH_FIELD_OPTIONS = [
 ]
 
 const CLIENT_TABLE_DEFAULT_LAYOUT = {
+  // Region code folded under the client name (pattern: composite data as a
+  // second line in the cell) — no standalone regionCode column.
   columnOrder: [
     'status',
-    'regionCode',
     'client',
     'solvency',
+    'role',
     'tin',
-    'sroi',
     'usreou',
+    'sroi',
     'reserve',
     'location',
     'phone',
     'email',
-    'role',
     'actions',
   ],
   columnPinning: {
-    left: ['status', 'regionCode', 'client', 'solvency'],
+    left: ['status', 'client', 'solvency'],
   },
   columnVisibility: {
     actions: false,
   },
   density: 'normal',
 } satisfies DataTableDefaultLayout
+const CLIENT_CODE_SUBTEXT_STYLE = {
+  display: 'block',
+  fontSize: 11,
+  lineHeight: '14px',
+  maxWidth: '100%',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+} as const
 const CLIENT_TABLE_PAGE_SIZE_STORAGE_KEY = 'gba-data-table:clients:page-size'
 const DEFAULT_CLIENT_TABLE_PAGE_SIZE = DEFAULT_PAGINATOR_PAGE_SIZE
 const CLIENT_SEARCH_DEBOUNCE_MS = 350
@@ -594,6 +602,7 @@ export function ClientsPage() {
 
 function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageModel> }) {
   const { t } = useI18n()
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const {
     activeFilter,
     canCreateClient,
@@ -648,14 +657,6 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
 
   return (
     <Stack className="clients-page" gap={6}>
-      {canCreateClient && (
-        <PageHeaderActions>
-          <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} onClick={openCreateClient}>
-            {t('Новий клієнт')}
-          </Button>
-        </PageHeaderActions>
-      )}
-
       <Card className="app-data-card clients-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar clients-filter-bar">
           <ClientsFilterToolbar
@@ -681,6 +682,18 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
             onSetSearchField={setSearchField}
             onSetSearchValue={setSearchValue}
           />
+          <div ref={setTableToolbarSlot} className="clients-table-toolbar-slot" />
+          {canCreateClient && (
+            <Button
+              className="clients-create-button"
+              color={CREATE_ACTION_COLOR}
+              size="sm"
+              leftSection={<IconPlus size={16} />}
+              onClick={openCreateClient}
+            >
+              {t('Новий клієнт')}
+            </Button>
+          )}
         </div>
 
         {error && (
@@ -699,17 +712,16 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
             columns={clientColumns.filter((column) => column.id !== 'actions')}
             data={clients}
             defaultLayout={CLIENT_TABLE_DEFAULT_LAYOUT}
-            density={CLIENT_TABLE_DEFAULT_LAYOUT.density}
-            showDensityToggle={false}
             emptyText={t('Клієнтів не знайдено')}
             getRowId={(client, index) => String(client.NetUid || client.Id || index)}
             height="100%"
             isLoading={isLoading}
-            layoutVersion="clients-table-10"
+            layoutVersion="clients-table-11"
             loadingText={t('Завантаження клієнтів')}
             minWidth={1450}
-            showLayoutControls={false}
+            showLayoutControls
             tableId="clients"
+            toolbarPortalTarget={tableToolbarSlot}
             sorting={sorting}
             onRowClick={setSelectedClient}
             onSortingChange={(nextSorting) => {
@@ -791,25 +803,48 @@ function ClientActionsModal({
   const subClientCount = client ? getClientSubClients(client).length : 0
 
   return (
-    <AppModal centered opened={Boolean(client)} title={client ? getClientDisplayName(client) : t('Клієнт')} onClose={onClose}>
+    <AppModal
+      centered
+      size={496}
+      opened={Boolean(client)}
+      title={
+        <span style={{ alignItems: 'center', display: 'inline-flex', fontFamily: 'var(--font-mono)', gap: 8 }}>
+          <span
+            style={{
+              background: isActive ? 'var(--mantine-color-green-6)' : 'var(--mantine-color-gray-4)',
+              borderRadius: 999,
+              boxShadow: isActive ? '0 0 0 3px rgba(64, 192, 87, 0.16)' : 'none',
+              flex: '0 0 auto',
+              height: 9,
+              width: 9,
+            }}
+          />
+          {client ? getClientDisplayName(client) : t('Клієнт')}
+        </span>
+      }
+      onClose={onClose}
+    >
       {client && (
         <Stack gap="md">
-          <Group gap="xs">
-            <Badge color={isActive ? 'green' : 'gray'} variant="light">
-              {isActive ? t('Активний') : t('Неактивний')}
-            </Badge>
-            <Text size="sm" c="dimmed">
+          {displayValue(client.RegionCode?.Value) && (
+            <Text size="sm" c="dimmed" style={{ fontFamily: 'var(--font-mono)' }}>
               {displayValue(client.RegionCode?.Value)}
             </Text>
-          </Group>
+          )}
 
-          <Stack gap="xs">
+          <Stack className="app-modal-actions" gap="xs">
             {canViewClient && (
               <Button
                 fullWidth
                 justify="flex-start"
-                leftSection={<IconExternalLink size={16} />}
-                variant="light"
+                color="dark"
+                size="md"
+                leftSection={
+                  <span className="app-action-icon">
+                    <ExternalLink size={20} color="var(--mantine-color-gray-7)" />
+                  </span>
+                }
+                variant="subtle"
                 onClick={() => onEdit(client)}
               >
                 {t('Відкрити картку')}
@@ -819,34 +854,30 @@ function ClientActionsModal({
               <Button
                 fullWidth
                 justify="flex-start"
-                leftSection={<IconCash size={16} />}
-                variant="light"
+                color="dark"
+                size="md"
+                leftSection={
+                  <span className="app-action-icon">
+                    <Wallet size={20} color="var(--mantine-color-gray-7)" />
+                  </span>
+                }
+                variant="subtle"
                 onClick={() => onCashFlow(client)}
               >
                 {t('Взаєморозрахунки')}
               </Button>
             )}
-          </Stack>
-
-          <Divider />
-
-          <Stack gap="xs">
-            <Button
-              fullWidth
-              color={isActive ? 'gray' : 'green'}
-              justify="flex-start"
-              leftSection={isActive ? <IconToggleLeft size={16} /> : <IconToggleRight size={16} />}
-              loading={isActiveLoading}
-              variant="light"
-              onClick={() => onSwitchActive(client)}
-            >
-              {isActive ? t('Позначити неактивним') : t('Позначити активним')}
-            </Button>
             <Button
               fullWidth
               justify="flex-start"
-              leftSection={<IconClock size={16} />}
-              variant="light"
+              color="dark"
+              size="md"
+              leftSection={
+                <span className="app-action-icon">
+                  <Clock size={20} color="var(--mantine-color-gray-7)" />
+                </span>
+              }
+              variant="subtle"
               onClick={() => onReserveDays(client)}
             >
               {t('Дні резерву')}
@@ -855,14 +886,34 @@ function ClientActionsModal({
               <Button
                 fullWidth
                 justify="flex-start"
-                leftSection={<IconHierarchy2 size={16} />}
-                variant="light"
+                color="dark"
+                size="md"
+                leftSection={
+                  <span className="app-action-icon">
+                    <Network size={20} color="var(--mantine-color-gray-7)" />
+                  </span>
+                }
+                variant="subtle"
                 onClick={() => onStructure(client)}
               >
                 {t('Структура клієнта')} ({subClientCount})
               </Button>
             )}
           </Stack>
+
+          <Divider />
+
+          <Button
+            fullWidth
+            color={isActive ? 'gray' : 'green'}
+            justify="flex-start"
+            leftSection={isActive ? <IconToggleLeft size={16} /> : <IconToggleRight size={16} />}
+            loading={isActiveLoading}
+            variant="light"
+            onClick={() => onSwitchActive(client)}
+          >
+            {isActive ? t('Позначити неактивним') : t('Позначити активним')}
+          </Button>
         </Stack>
       )}
     </AppModal>
@@ -1149,32 +1200,28 @@ function useClientColumns(
     () => [
       {
         id: 'status',
-        header: 'Статус',
-        width: 100,
-        minWidth: 90,
+        header: '',
+        width: 48,
+        minWidth: 44,
         accessor: (client) => (client.IsActive === false ? t('Неактивний') : t('Активний')),
-        cell: (client) => (
-          <Badge color={client.IsActive === false ? 'gray' : 'green'} variant="light">
-            {client.IsActive === false ? t('Неактивний') : t('Активний')}
-          </Badge>
-        ),
-      },
-      {
-        id: 'regionCode',
-        header: 'Код',
-        width: 82,
-        minWidth: 76,
-        accessor: (client) => client.RegionCode?.Value,
-        cell: (client) => <ClientTableValue value={displayValue(client.RegionCode?.Value)} />,
+        cell: (client) => {
+          const isActive = client.IsActive !== false
+          const label = isActive ? t('Активний') : t('Неактивний')
+          return (
+            <span className="app-status-dot-wrap" aria-label={label} title={label}>
+              <span className={isActive ? 'app-status-dot is-active' : 'app-status-dot is-inactive'} />
+            </span>
+          )
+        },
       },
       {
         id: 'client',
         header: 'Клієнт',
-        width: 260,
+        width: 280,
         minWidth: 220,
         fill: true,
         accessor: getClientDisplayName,
-        cell: (client) => <ClientTableValue fw={600} value={getClientDisplayName(client)} />,
+        cell: (client) => <ClientNameCell client={client} />,
       },
       {
         id: 'solvency',
@@ -1267,7 +1314,7 @@ function useClientColumns(
         cell: (client) => {
           const name = client.ClientInRole?.ClientTypeRole?.Name?.trim()
           return name ? (
-            <Badge color={roleBadgeColor(name)} variant="light">
+            <Badge className="app-role-pill" variant="light">
               {name}
             </Badge>
           ) : (
@@ -1306,13 +1353,33 @@ function useClientColumns(
   )
 }
 
+/* Native title instead of Mantine Tooltip: a Tooltip per cell across 12+
+   columns creates hundreds of Floating-UI instances (see docs/ui-patterns.md). */
 function ClientTableValue({ fw, value }: { fw?: number; value: string }) {
   return (
-    <Tooltip label={value} openDelay={350} withArrow>
-      <Text component="span" fw={fw} style={CLIENT_TABLE_CELL_STYLE}>
-        {value}
+    <Text component="span" fw={fw} style={CLIENT_TABLE_CELL_STYLE} title={value}>
+      {value}
+    </Text>
+  )
+}
+
+/* Client column cell: name with the region code as a second, dimmed line
+   (the standalone «Код» column was folded in here). */
+function ClientNameCell({ client }: { client: Client }) {
+  const name = getClientDisplayName(client)
+  const code = displayValue(client.RegionCode?.Value)
+
+  return (
+    <span style={{ display: 'block', minWidth: 0 }} title={code ? `${name} · ${code}` : name}>
+      <Text component="span" fw={600} style={CLIENT_TABLE_CELL_STYLE}>
+        {name}
       </Text>
-    </Tooltip>
+      {code ? (
+        <Text component="span" c="dimmed" style={CLIENT_CODE_SUBTEXT_STYLE}>
+          {code}
+        </Text>
+      ) : null}
+    </span>
   )
 }
 
@@ -1464,31 +1531,6 @@ function displayValue(value?: number | string | null): string {
     return String(value)
   }
 
-  const normalized = value?.trim()
-  return normalized || '-'
-}
-
-// Role names are dynamic free strings from the backend, so we derive a stable
-// color per name (djb2 hash, mirroring hashString in navigationIcons.tsx). The
-// palette excludes orange (reserved for create actions) and green/gray (status).
-const ROLE_BADGE_PALETTE = ['violet', 'indigo', 'teal', 'cyan', 'blue', 'grape', 'pink', 'lime'] as const
-
-function roleHash(value: string): number {
-  let hash = 0
-  for (let index = 0; index < value.length; index += 1) {
-    hash = (hash << 5) - hash + value.charCodeAt(index)
-    hash |= 0
-  }
-  return Math.abs(hash)
-}
-
-function roleBadgeColor(name: string): (typeof ROLE_BADGE_PALETTE)[number] {
-  const key = name.trim().toLowerCase()
-  if (key.includes('постач')) {
-    return 'teal'
-  }
-  if (key.includes('покуп')) {
-    return 'indigo'
-  }
-  return ROLE_BADGE_PALETTE[roleHash(key) % ROLE_BADGE_PALETTE.length]
+  // Empty values render as blank cells (no dash placeholder).
+  return value?.trim() || ''
 }
