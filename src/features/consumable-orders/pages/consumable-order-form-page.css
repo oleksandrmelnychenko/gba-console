@@ -74,9 +74,11 @@
 
 .consumable-order-form-title__copy strong {
   color: var(--mantine-color-gray-9);
-  font-size: 15px;
-  font-weight: 720;
-  line-height: 1.15;
+  font-family: var(--font-mono);
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1.2;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -126,50 +128,39 @@
 }
 
 .consumable-order-form-metric {
-  background: rgba(255, 255, 255, 0.82);
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 8px;
   min-width: 0;
-  padding: 10px 11px;
-  position: relative;
-}
-
-.consumable-order-form-metric::before {
-  background: var(--mantine-color-gray-4);
-  border-radius: 999px;
-  content: "";
-  height: 3px;
-  left: 11px;
-  position: absolute;
-  right: 11px;
-  top: -2px;
-}
-
-.consumable-order-form-metric.is-orange::before {
-  background: var(--brand-orange);
 }
 
 .consumable-order-form-metric span,
 .consumable-order-form-metric small {
-  color: var(--mantine-color-gray-5);
+  color: var(--mantine-color-gray-7);
   display: block;
-  font-size: 10px;
-  font-weight: 650;
-  line-height: 1.15;
-  text-transform: uppercase;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.2;
+}
+
+.consumable-order-form-metric span::before {
+  background: var(--brand-orange);
+  border-radius: 999px;
+  content: '';
+  display: inline-block;
+  height: 6px;
+  margin-right: 6px;
+  vertical-align: 1px;
+  width: 6px;
 }
 
 .consumable-order-form-metric strong {
   color: var(--mantine-color-gray-9);
   display: block;
-  font-size: 17px;
-  font-weight: 720;
-  line-height: 1.1;
-  margin-top: 6px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.15;
 
 .consumable-order-form-metric small {
   font-size: 9px;
@@ -708,4 +699,19 @@
   .consumable-order-form-amount-pill {
     flex: 1 1 130px;
   }
+}
+
+
+/* Pattern controls inside the form (docs/ui-patterns.md §9). */
+.consumable-order-form .mantine-Checkbox-input:checked {
+  background-color: var(--brand-orange);
+  border-color: var(--brand-orange);
+}
+
+.consumable-order-form .mantine-Select-input {
+  border-color: var(--mantine-color-gray-2);
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0;
 }

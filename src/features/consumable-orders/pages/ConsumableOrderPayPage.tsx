@@ -17,7 +17,6 @@ import {
   IconClock,
   IconCoins,
   IconDeviceFloppy,
-  IconFileInvoice,
   IconHash,
   IconNotes,
   IconPackage,
@@ -389,7 +388,7 @@ export function ConsumableOrderPayPage() {
       opened
       position="right"
       size="wide"
-      title={t('Оплата прибуткової накладної')}
+      title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Оплата прибуткової накладної')}</span>}
       onClose={() => navigate(returnPath, { replace: true })}
       footer={
         <Button
@@ -408,11 +407,7 @@ export function ConsumableOrderPayPage() {
         <Stack gap="md">
           <section className="consumable-order-pay-hero">
             <div className="consumable-order-pay-hero__main">
-              <span className="consumable-order-pay-eyebrow">{t('Накладна до оплати')}</span>
               <div className="consumable-order-pay-title">
-                <span className="consumable-order-pay-title__icon" aria-hidden>
-                  <IconFileInvoice size={18} />
-                </span>
                 <div className="consumable-order-pay-title__copy">
                   <strong>{orderNumberLabel}</strong>
                   <span>{sourceNumberLabel}</span>
@@ -464,8 +459,6 @@ export function ConsumableOrderPayPage() {
                   {t('Додати статтю')}
                 </Button>
               }
-              icon={<IconWallet size={16} />}
-              label={t('Параметри')}
               title={t('Оплата')}
             />
             <div className="consumable-order-pay-form-grid">
@@ -552,12 +545,10 @@ export function ConsumableOrderPayPage() {
           <section className="consumable-order-pay-section">
             <PaySectionHeader
               action={
-                <Badge color="gray" variant="light">
+                <Badge className="app-role-pill is-gray" variant="light">
                   {items.length}
                 </Badge>
               }
-              icon={<IconPackage size={16} />}
-              label={t('Склад накладної')}
               title={t('Позиції')}
             />
             <div className="consumable-order-pay-items">
@@ -661,26 +652,16 @@ function PaymentMetric({
 
 function PaySectionHeader({
   action,
-  icon,
-  label,
   title,
 }: {
   action?: ReactNode
-  icon: ReactNode
-  label: string
   title: string
 }) {
   return (
     <div className="consumable-order-pay-section-header">
-      <div className="consumable-order-pay-section-header__main">
-        <span className="consumable-order-pay-section-header__icon" aria-hidden>
-          {icon}
-        </span>
-        <div>
-          <span className="consumable-order-pay-section-header__label">{label}</span>
-          <strong>{title}</strong>
-        </div>
-      </div>
+      <Text className="app-section-title" fw={600} size="sm">
+        {title}
+      </Text>
       {action ? <div className="consumable-order-pay-section-header__action">{action}</div> : null}
     </div>
   )

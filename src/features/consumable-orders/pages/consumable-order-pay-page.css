@@ -73,9 +73,11 @@
 
 .consumable-order-pay-title__copy strong {
   color: var(--mantine-color-gray-9);
-  font-size: 15px;
-  font-weight: 720;
-  line-height: 1.15;
+  font-family: var(--font-mono);
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1.2;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -124,50 +126,44 @@
 }
 
 .consumable-order-pay-metric {
-  background: rgba(255, 255, 255, 0.82);
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 8px;
   min-width: 0;
-  padding: 10px 11px;
-  position: relative;
-}
-
-.consumable-order-pay-metric::before {
-  background: var(--mantine-color-gray-4);
-  border-radius: 999px;
-  content: "";
-  height: 3px;
-  left: 11px;
-  position: absolute;
-  right: 11px;
-  top: -2px;
-}
-
-.consumable-order-pay-metric.is-orange::before {
-  background: var(--brand-orange);
-}
-
-.consumable-order-pay-metric.is-green::before {
-  background: var(--mantine-color-green-5);
 }
 
 .consumable-order-pay-metric span,
 .consumable-order-pay-metric small {
-  color: var(--mantine-color-gray-5);
+  color: var(--mantine-color-gray-7);
   display: block;
-  font-size: 10px;
-  font-weight: 650;
-  line-height: 1.15;
-  text-transform: uppercase;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.2;
+}
+
+.consumable-order-pay-metric span::before {
+  background: var(--brand-orange);
+  border-radius: 999px;
+  content: '';
+  display: inline-block;
+  height: 6px;
+  margin-right: 6px;
+  vertical-align: 1px;
+  width: 6px;
+}
+
+.consumable-order-pay-metric.is-green span::before {
+  background: var(--mantine-color-green-6);
 }
 
 .consumable-order-pay-metric strong {
   color: var(--mantine-color-gray-9);
   display: block;
-  font-size: 17px;
-  font-weight: 720;
-  line-height: 1.1;
-  margin-top: 6px;
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.15;
+  margin-top: 4px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -191,34 +187,7 @@
   position: relative;
 }
 
-.consumable-order-pay-section-header::before {
-  background: linear-gradient(
-    90deg,
-    transparent,
-    var(--mantine-color-gray-2) 9%,
-    var(--mantine-color-gray-2) 91%,
-    transparent
-  );
-  bottom: 0;
-  content: "";
-  height: 1px;
-  left: 0;
-  position: absolute;
-  right: 0;
-}
 
-.consumable-order-pay-section-header::after {
-  background: var(--brand-orange);
-  border: 3px solid var(--mantine-color-white);
-  border-radius: 999px;
-  bottom: -4px;
-  box-shadow: 0 0 0 1px var(--mantine-color-gray-2);
-  content: "";
-  height: 8px;
-  left: 40px;
-  position: absolute;
-  width: 8px;
-}
 
 .consumable-order-pay-section-header__main {
   align-items: center;
