@@ -1,5 +1,5 @@
 import { Button, Stack, Text } from '@mantine/core'
-import { IconBarcode, IconRoute, IconTruckDelivery } from '@tabler/icons-react'
+import { PackageCheck, Route, ScanBarcode } from 'lucide-react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import type { DeliveryProductProtocol } from '../types'
@@ -15,6 +15,8 @@ export type ProtocolOptionsModalProps = {
   canOpenSpecifications: boolean
 }
 
+/* Row-actions popup per docs/ui-patterns.md §7.1: mono title (the protocol
+   number), subtle buttons with the icon in an outlined circle, orange on hover. */
 export function ProtocolOptionsModal({
   protocol,
   onClose,
@@ -29,15 +31,33 @@ export function ProtocolOptionsModal({
   const hasInvoices = Boolean(protocol?.SupplyInvoices && protocol.SupplyInvoices.length > 0)
   const hasVisibleOptions =
     canOpenLogisticPath || (canOpenSpecifications && hasInvoices && protocol?.IsShipped) || (canOpenIncome && hasInvoices && protocol?.IsCompleted)
+  const protocolNumber = protocol?.DeliveryProductProtocolNumber?.Number
 
   return (
-    <AppModal centered opened={Boolean(protocol)} size="sm" title={t('Виберіть опцію')} onClose={onClose}>
-      <Stack gap="sm">
+    <AppModal
+      centered
+      opened={Boolean(protocol)}
+      size={496}
+      title={
+        <span style={{ fontFamily: 'var(--font-mono)' }}>
+          {protocolNumber ? `${t('Протокол')} ${protocolNumber}` : t('Виберіть опцію')}
+        </span>
+      }
+      onClose={onClose}
+    >
+      <Stack className="app-modal-actions" gap="xs">
         {canOpenLogisticPath && (
           <Button
-            color="violet"
-            leftSection={<IconRoute size={18} />}
-            variant="light"
+            fullWidth
+            justify="flex-start"
+            color="dark"
+            size="md"
+            leftSection={
+              <span className="app-action-icon">
+                <Route size={20} color="var(--mantine-color-gray-7)" />
+              </span>
+            }
+            variant="subtle"
             onClick={() => protocol && onOpenLogisticPath(protocol)}
           >
             {t('Логістичний шлях')}
@@ -45,9 +65,16 @@ export function ProtocolOptionsModal({
         )}
         {canOpenSpecifications && hasInvoices && protocol?.IsShipped && (
           <Button
-            color="violet"
-            leftSection={<IconBarcode size={18} />}
-            variant="light"
+            fullWidth
+            justify="flex-start"
+            color="dark"
+            size="md"
+            leftSection={
+              <span className="app-action-icon">
+                <ScanBarcode size={20} color="var(--mantine-color-gray-7)" />
+              </span>
+            }
+            variant="subtle"
             onClick={() => protocol && onOpenSpecifications(protocol)}
           >
             {t('Митні коди')}
@@ -55,9 +82,16 @@ export function ProtocolOptionsModal({
         )}
         {canOpenIncome && hasInvoices && protocol?.IsCompleted && (
           <Button
-            color="violet"
-            leftSection={<IconTruckDelivery size={18} />}
-            variant="light"
+            fullWidth
+            justify="flex-start"
+            color="dark"
+            size="md"
+            leftSection={
+              <span className="app-action-icon">
+                <PackageCheck size={20} color="var(--mantine-color-gray-7)" />
+              </span>
+            }
+            variant="subtle"
             onClick={() => protocol && onOpenIncome(protocol)}
           >
             {t('Прихід товару згідно замовлення')}

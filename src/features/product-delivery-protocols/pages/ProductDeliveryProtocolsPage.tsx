@@ -12,7 +12,6 @@ import {
 import {
   IconAlertCircle,
   IconDownload,
-  IconDots,
   IconFileTypePdf,
   IconPlus,
   IconRestore,
@@ -82,7 +81,6 @@ const PRODUCT_DELIVERY_PROTOCOLS_TABLE_MIN_WIDTH = 1212
 const PRODUCT_DELIVERY_PROTOCOLS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['protocol'],
-    right: ['actions'],
   },
   density: 'normal',
 } satisfies DataTableDefaultLayout
@@ -449,7 +447,7 @@ function ProtocolsTableCard({ model }: { model: ReturnType<typeof useProtocolsPa
     filterError, isDownloading, isLoading, openOptions, organizations, page, pageSize, protocols, reload,
     openCreateModal, resetFilters, setPage, setPageSize, totalPages,
   } = model
-  const columns = useProductDeliveryProtocolColumns({ canOpenOptions, onOpenOptions: openOptions })
+  const columns = useProductDeliveryProtocolColumns()
   const organizationOptions = useMemo(
     () => [
       { label: t('Всі організації'), value: '' },
@@ -583,7 +581,7 @@ function ProtocolsTableCard({ model }: { model: ReturnType<typeof useProtocolsPa
           getRowId={(protocol, index) => getProtocolRowId(protocol, index)}
           height="100%"
           isLoading={isLoading}
-          layoutVersion="product-delivery-protocols-table-1"
+          layoutVersion="product-delivery-protocols-table-2"
           minWidth={PRODUCT_DELIVERY_PROTOCOLS_TABLE_MIN_WIDTH}
           showLayoutControls
           tableId="product-delivery-protocols"
@@ -595,13 +593,7 @@ function ProtocolsTableCard({ model }: { model: ReturnType<typeof useProtocolsPa
   )
 }
 
-function useProductDeliveryProtocolColumns({
-  canOpenOptions,
-  onOpenOptions,
-}: {
-  canOpenOptions: boolean
-  onOpenOptions: (protocol: DeliveryProductProtocol) => void
-}): DataTableColumn<DeliveryProductProtocol>[] {
+function useProductDeliveryProtocolColumns(): DataTableColumn<DeliveryProductProtocol>[] {
   const { t } = useI18n()
 
   return useMemo<DataTableColumn<DeliveryProductProtocol>[]>(
@@ -663,25 +655,8 @@ function useProductDeliveryProtocolColumns({
         accessor: (protocol) => getDateTime(protocol.Created),
         cell: (protocol) => <ProtocolCreatedCell protocol={protocol} />,
       },
-      {
-        id: 'actions',
-        header: '',
-        width: 54,
-        minWidth: 54,
-        align: 'right',
-        enableHiding: false,
-        enableResizing: false,
-        enableSorting: false,
-        cell: (protocol) => (
-          <ProtocolActionsCell
-            canOpenOptions={canOpenOptions}
-            protocol={protocol}
-            onOpenOptions={onOpenOptions}
-          />
-        ),
-      },
     ],
-    [canOpenOptions, onOpenOptions, t],
+    [t],
   )
 }
 
@@ -798,29 +773,6 @@ function ProtocolCreatedCell({ protocol }: { protocol: DeliveryProductProtocol }
   )
 }
 
-function ProtocolActionsCell({
-  canOpenOptions,
-  protocol,
-  onOpenOptions,
-}: {
-  canOpenOptions: boolean
-  protocol: DeliveryProductProtocol
-  onOpenOptions: (protocol: DeliveryProductProtocol) => void
-}) {
-  const { t } = useI18n()
-
-  if (!canOpenOptions) {
-    return <span className="product-delivery-protocols-action-placeholder" aria-hidden />
-  }
-
-  return (
-    <div className="product-delivery-protocols-row-actions" onClick={(event) => event.stopPropagation()}>
-      <ActionIcon aria-label={t('Дії')} color="gray" size="sm" title={t('Дії')} variant="subtle" onClick={() => onOpenOptions(protocol)}>
-        <IconDots size={15} />
-      </ActionIcon>
-    </div>
-  )
-}
 
 function ProtocolsDownloadModal({ model }: { model: ReturnType<typeof useProtocolsPageModel> }) {
   const { t } = useI18n()
