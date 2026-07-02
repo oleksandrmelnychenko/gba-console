@@ -168,13 +168,11 @@
   display: inline-flex;
 }
 
+/* Sort glyph is ALWAYS visible on sortable headers (dimmed until the column is
+   actually sorted) — hover-only icons made headers look inconsistent. */
 .data-table-sort-icon[data-sorted='false'] {
-  display: none;
-}
-
-.data-table-th:hover .data-table-sort-icon[data-sorted='false'],
-.data-table-th:focus-within .data-table-sort-icon[data-sorted='false'] {
   display: inline-flex;
+  opacity: 0.45;
 }
 
 .data-table-resizer {
