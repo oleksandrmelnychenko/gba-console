@@ -305,3 +305,20 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Create-protocol modal follows the pattern: toolbar-style mono combos and
+   mono button labels (docs/ui-patterns.md §5.3 / §9). */
+.protocol-create-modal-body .mantine-Select-input {
+  border-color: var(--mantine-color-gray-2);
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  height: 36px;
+  letter-spacing: 0;
+  min-height: 36px;
+}
+
+.protocol-create-modal-body .mantine-Button-label {
+  font-family: var(--font-mono);
+  letter-spacing: 0;
+}

@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 import { formatLocalDateTime, formatLocalInputDateTime } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import type { CreateProtocolPayload, ProtocolOrganization } from '../types'
 import { SupplyTransportationType } from '../types'
 
@@ -49,9 +50,14 @@ export function NewProductDeliveryProtocolModal({
   return (
     <AppModal
       centered
+      classNames={{ body: 'protocol-create-modal-body' }}
       opened={opened}
       size="md"
-      title={`${t('Додати')} ${t('Протокол доставки товару').toLowerCase()}`}
+      title={
+        <span style={{ fontFamily: 'var(--font-mono)' }}>
+          {`${t('Додати')} ${t('Протокол доставки товару').toLowerCase()}`}
+        </span>
+      }
       onClose={onClose}
     >
       {opened ? (
@@ -176,10 +182,10 @@ function NewProductDeliveryProtocolForm({
       />
 
       <Group justify="flex-end" gap="sm">
-        <Button color="gray" disabled={isCreating} variant="light" onClick={onClose}>
+        <Button color="gray" disabled={isCreating} variant="subtle" onClick={onClose}>
           {t('Скасувати')}
         </Button>
-        <Button color="violet" loading={isCreating} onClick={handleSubmit}>
+        <Button color={CREATE_ACTION_COLOR} loading={isCreating} onClick={handleSubmit}>
           {t('Створити')}
         </Button>
       </Group>
