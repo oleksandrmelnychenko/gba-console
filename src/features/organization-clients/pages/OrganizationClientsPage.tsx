@@ -7,10 +7,12 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { IconAlertCircle, IconPencil, IconPlus, IconRefresh, IconRestore, IconSearch } from '@tabler/icons-react'
+import { ExternalLink } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
@@ -38,6 +40,7 @@ export function OrganizationClientsPage() {
   const [searchValue, setSearchValue] = useValueState('')
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
+  const [actionsClient, setActionsClient] = useValueState<OrganizationClient | null>(null)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const openClient = useCallback(
     (client: OrganizationClient) => {
@@ -54,6 +57,20 @@ export function OrganizationClientsPage() {
       })
     },
     [location, navigate],
+  )
+  const openClientActions = useCallback(
+    (client: OrganizationClient) => {
+      setActionsClient(client)
+    },
+    [setActionsClient],
+  )
+  const closeClientActions = useCallback(() => setActionsClient(null), [setActionsClient])
+  const openSelectedClient = useCallback(
+    (client: OrganizationClient) => {
+      closeClientActions()
+      openClient(client)
+    },
+    [closeClientActions, openClient],
   )
   const columns = useMemo<DataTableColumn<OrganizationClient>[]>(
     () => [
@@ -134,7 +151,7 @@ export function OrganizationClientsPage() {
               color="gray"
               title={t('Відкрити')}
               variant="subtle"
-              onClick={() => openClient(client)}
+              onClick={() => openClientActions(client)}
             >
               <IconPencil size={18} />
             </ActionIcon>
@@ -142,7 +159,7 @@ export function OrganizationClientsPage() {
         ),
       },
     ],
-    [openClient, t],
+    [openClientActions, t],
   )
   useEffect(() => {
     const state = location.state as { mutated?: boolean } | null
@@ -282,11 +299,66 @@ export function OrganizationClientsPage() {
             showLayoutControls
             tableId="organization-clients"
             toolbarPortalTarget={tableToolbarSlot}
-            onRowClick={openClient}
+            onRowClick={openClientActions}
           />
         </div>
       </div>
+      <OrganizationClientActionsModal
+        client={actionsClient}
+        onClose={closeClientActions}
+        onOpen={openSelectedClient}
+      />
     </Stack>
+  )
+}
+
+function OrganizationClientActionsModal({
+  client,
+  onClose,
+  onOpen,
+}: {
+  client: OrganizationClient | null
+  onClose: () => void
+  onOpen: (client: OrganizationClient) => void
+}) {
+  const { t } = useI18n()
+  const isActive = client?.Deleted !== true
+
+  return (
+    <AppModal
+      centered
+      opened={Boolean(client)}
+      size={496}
+      title={
+        <span className="organization-clients-action-title">
+          <span className={`organization-clients-action-status-dot${isActive ? ' is-active' : ''}`} />
+          {client ? getOrganizationClientName(client) : t('Організація')}
+        </span>
+      }
+      onClose={onClose}
+    >
+      {client && (
+        <Stack gap="md">
+          <Stack className="app-modal-actions" gap="xs">
+            <Button
+              fullWidth
+              color="dark"
+              justify="flex-start"
+              leftSection={
+                <span className="app-action-icon">
+                  <ExternalLink size={20} color="var(--mantine-color-gray-7)" />
+                </span>
+              }
+              size="md"
+              variant="subtle"
+              onClick={() => onOpen(client)}
+            >
+              {t('Відкрити картку')}
+            </Button>
+          </Stack>
+        </Stack>
+      )}
+    </AppModal>
   )
 }
 
