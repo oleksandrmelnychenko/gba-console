@@ -1,7 +1,6 @@
 import {
   ActionIcon,
   Alert,
-  Avatar,
   Box,
   Button,
   ScrollArea,
@@ -12,7 +11,7 @@ import {
 } from '@mantine/core'
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { useDebouncedValue } from '@mantine/hooks'
-import { IconAlertCircle, IconMail, IconMapPin, IconPhone, IconReceipt, IconRestore, IconSearch, IconShoppingCart } from '@tabler/icons-react'
+import { IconAlertCircle, IconReceipt, IconRestore, IconSearch, IconShoppingCart } from '@tabler/icons-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -33,7 +32,7 @@ const amountFormatter = new Intl.NumberFormat('uk-UA', {
   minimumFractionDigits: 2,
 })
 const ONLINE_SHOP_CLIENT_SEARCH_DEBOUNCE_MS = 350
-const ONLINE_SHOP_CLIENTS_TABLE_MIN_WIDTH = 980
+const ONLINE_SHOP_CLIENTS_TABLE_MIN_WIDTH = 1000
 const ONLINE_SHOP_CLIENTS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['client'],
@@ -228,7 +227,7 @@ export function OnlineShopClientsPage() {
               getRowId={(client, index) => getRetailClientRowKey(client, index)}
               height="100%"
               isLoading={isTableBusy}
-              layoutVersion="online-shop-clients-table-1"
+              layoutVersion="online-shop-clients-table-2"
               minWidth={ONLINE_SHOP_CLIENTS_TABLE_MIN_WIDTH}
               rowClassName={(client) => (isSameRetailClient(client, selectedClient) ? 'is-selected' : undefined)}
               showLayoutControls
@@ -240,15 +239,12 @@ export function OnlineShopClientsPage() {
             />
           </section>
 
-          <aside className="online-shop-clients-side-panel">
+          <aside className={`online-shop-clients-side-panel${selectedClient ? ' is-selected' : ''}`}>
             <section className="online-shop-clients-cart-card">
               <div className="online-shop-clients-cart-header">
                 <div className="online-shop-clients-cart-heading">
-                  <span className="online-shop-clients-cart-icon" aria-hidden>
-                    <IconShoppingCart size={16} />
-                  </span>
                   <div>
-                    <Text className="online-shop-clients-cart-eyebrow">{t('Кошик')}</Text>
+                    <Text className="app-section-title online-shop-clients-cart-eyebrow">{t('Кошик')}</Text>
                     <Text className="online-shop-clients-cart-title">
                       {selectedClient ? displayValue(getRetailClientName(selectedClient)) : t('Клієнта не вибрано')}
                     </Text>
@@ -278,7 +274,7 @@ export function OnlineShopClientsPage() {
                 </Button>
               )}
 
-              <ScrollArea.Autosize mah="calc(100vh - 462px)" type="auto">
+              <ScrollArea className="online-shop-clients-cart-scroll" type="auto">
                 <div className="online-shop-clients-cart-body">
                   {isCartLoading ? (
                     <CartItemsSkeleton />
@@ -293,7 +289,7 @@ export function OnlineShopClientsPage() {
                     </div>
                   )}
                 </div>
-              </ScrollArea.Autosize>
+              </ScrollArea>
 
               <div className="online-shop-clients-cart-total">
                 <Text>{t('Разом')}</Text>
@@ -325,7 +321,7 @@ function useOnlineShopClientColumns(): DataTableColumn<RetailClient>[] {
       {
         id: 'client',
         header: t('Клієнт'),
-        width: 320,
+        width: 300,
         minWidth: 260,
         accessor: getRetailClientName,
         cell: (client) => <OnlineShopClientCell client={client} />,
@@ -333,32 +329,31 @@ function useOnlineShopClientColumns(): DataTableColumn<RetailClient>[] {
       {
         id: 'phone',
         header: t('Телефон'),
-        width: 170,
-        minWidth: 140,
+        width: 156,
+        minWidth: 132,
         accessor: getRetailClientPhone,
-        cell: (client) => <OnlineShopContactCell icon="phone" value={getRetailClientPhone(client)} />,
+        cell: (client) => <OnlineShopContactCell value={getRetailClientPhone(client)} />,
       },
       {
         id: 'email',
         header: t('Email'),
         width: 240,
         minWidth: 180,
-        fill: true,
         accessor: getRetailClientEmail,
-        cell: (client) => <OnlineShopContactCell icon="mail" value={getRetailClientEmail(client)} />,
+        cell: (client) => <OnlineShopContactCell value={getRetailClientEmail(client)} />,
       },
       {
         id: 'city',
         header: t('Місто'),
-        width: 180,
-        minWidth: 140,
+        width: 168,
+        minWidth: 132,
         accessor: getRetailClientCity,
         cell: (client) => <OnlineShopCityCell value={getRetailClientCity(client)} />,
       },
       {
         id: 'created',
         header: t('Створено'),
-        width: 132,
+        width: 136,
         minWidth: 116,
         accessor: (client) => getDateTime(client.Created),
         cell: (client) => <OnlineShopCreatedCell value={client.Created} />,
@@ -373,9 +368,6 @@ function OnlineShopClientCell({ client }: { client: RetailClient }) {
 
   return (
     <div className="online-shop-clients-profile-cell">
-      <Avatar className="online-shop-clients-avatar" radius="xl" size={32}>
-        {getRetailClientInitials(client)}
-      </Avatar>
       <div className="online-shop-clients-profile-copy">
         <Text className="online-shop-clients-profile-name" title={nativeTitle(name)}>
           {name}
@@ -388,13 +380,11 @@ function OnlineShopClientCell({ client }: { client: RetailClient }) {
   )
 }
 
-function OnlineShopContactCell({ icon, value }: { icon: 'mail' | 'phone'; value: string }) {
+function OnlineShopContactCell({ value }: { value: string }) {
   const displayedValue = displayValue(value)
-  const Icon = icon === 'phone' ? IconPhone : IconMail
 
   return (
-    <div className="online-shop-clients-inline-cell">
-      <Icon size={13} />
+    <div className="online-shop-clients-contact-cell">
       <Text title={nativeTitle(displayedValue)}>{displayedValue}</Text>
     </div>
   )
@@ -404,8 +394,7 @@ function OnlineShopCityCell({ value }: { value: string }) {
   const displayedValue = displayValue(value)
 
   return (
-    <div className="online-shop-clients-inline-cell">
-      <IconMapPin size={14} />
+    <div className="online-shop-clients-city-cell">
       <Text title={nativeTitle(displayedValue)}>{displayedValue}</Text>
     </div>
   )
@@ -498,15 +487,6 @@ function getRetailClientEmail(client: RetailClient): string {
 
 function getRetailClientCity(client: RetailClient): string {
   return client.City?.trim() || client.EcommerceRegion?.NameUa?.trim() || client.Client?.RegionCode?.City?.trim() || ''
-}
-
-function getRetailClientInitials(client: RetailClient): string {
-  const nameParts = getRetailClientName(client)
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-
-  return nameParts.map((part) => part[0]).join('').toUpperCase() || 'IM'
 }
 
 function getRetailClientSourceLabel(client: RetailClient): string {

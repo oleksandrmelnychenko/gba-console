@@ -1553,35 +1553,60 @@ function OverflowTooltipText({
   const textRef = useRef<HTMLElement | null>(null)
   const [isOverflowing, setIsOverflowing] = useState(false)
 
-  const updateOverflow = useCallback(() => {
+  const commitOverflow = useCallback((nextOverflowing: boolean) => {
+    setIsOverflowing((currentOverflowing) =>
+      currentOverflowing === nextOverflowing ? currentOverflowing : nextOverflowing,
+    )
+  }, [])
+  const measureOverflow = useCallback(() => {
     const element = textRef.current
 
-    setIsOverflowing(Boolean(element && element.scrollWidth > element.clientWidth + 1))
-  }, [])
+    commitOverflow(Boolean(element && element.scrollWidth > element.clientWidth + 1))
+  }, [commitOverflow])
 
   const setTextRef = useCallback((node: HTMLElement | null) => {
     textRef.current = node
   }, [])
 
   useLayoutEffect(() => {
-    updateOverflow()
+    let animationFrameId = 0
+    const scheduleMeasure = () => {
+      if (animationFrameId) {
+        window.cancelAnimationFrame(animationFrameId)
+      }
+
+      animationFrameId = window.requestAnimationFrame(() => {
+        animationFrameId = 0
+        measureOverflow()
+      })
+    }
+
+    scheduleMeasure()
 
     const element = textRef.current
 
     if (!element) {
-      return undefined
+      return () => {
+        if (animationFrameId) {
+          window.cancelAnimationFrame(animationFrameId)
+        }
+      }
     }
 
-    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(updateOverflow)
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(scheduleMeasure)
 
     observer?.observe(element)
-    window.addEventListener('resize', updateOverflow)
+    window.addEventListener('resize', scheduleMeasure)
 
     return () => {
+      if (animationFrameId) {
+        window.cancelAnimationFrame(animationFrameId)
+      }
+
       observer?.disconnect()
-      window.removeEventListener('resize', updateOverflow)
+      window.removeEventListener('resize', scheduleMeasure)
     }
-  }, [children, updateOverflow])
+  }, [children, measureOverflow])
 
   const node = strong ? (
     <strong ref={setTextRef} className={className}>

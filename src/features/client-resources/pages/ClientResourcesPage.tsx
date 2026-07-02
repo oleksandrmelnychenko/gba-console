@@ -48,7 +48,7 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { usePageBreadcrumb } from '../../../shared/ui/page-header-actions/pageHeaderActionsContext'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
@@ -129,6 +129,8 @@ import { CLIENT_RESOURCE_STEPS } from '../types'
 import './clientResources.css'
 
 const DEFAULT_STEP: ClientResourceStep = 'regions'
+
+const RESOURCE_MONO_STYLE = { fontFamily: 'var(--font-mono)', letterSpacing: 0 } as const
 const BUYER_CLIENT_TYPE = 0
 const PERFECT_CLIENT_CHECKBOX_TYPE = 1
 const PERFECT_CLIENT_TOGGLE_TYPE = 2
@@ -199,9 +201,7 @@ type ResourceAction<T> =
   | { type: 'reload' }
 
 const CLIENT_RESOURCE_TABLE_DEFAULT_LAYOUT = {
-  columnPinning: {
-    right: ['actions'],
-  },
+  columnPinning: {},
   density: 'compact',
 } satisfies DataTableDefaultLayout
 
@@ -220,7 +220,7 @@ function ResourceDataTable<TData extends ClientResourceEntity>({
   data,
   density,
   emptyText,
-  layoutVersion = 'client-resources-table-2',
+  layoutVersion = 'client-resources-table-3',
   minWidth = 760,
   tableId,
 }: ResourceDataTableProps<TData>) {
@@ -240,9 +240,9 @@ function ResourceDataTable<TData extends ClientResourceEntity>({
   )
 }
 
-function TruncatedCell({ value }: { value: unknown }) {
+function TruncatedCell({ mono = false, value }: { mono?: boolean; value: unknown }) {
   const text = displayValue(value)
-  const hasTooltip = text && text !== '—'
+  const hasTooltip = Boolean(text)
 
   return (
     <Tooltip
@@ -255,7 +255,7 @@ function TruncatedCell({ value }: { value: unknown }) {
       position="top-start"
       withArrow
     >
-      <Text component="span" className="client-resources-truncated-cell">
+      <Text component="span" className={`client-resources-truncated-cell${mono ? ' is-mono' : ''}`}>
         {text}
       </Text>
     </Tooltip>
@@ -550,26 +550,20 @@ function ClientResourcesNav({
   const { t } = useI18n()
 
   return (
-    <Stack gap={4} className="client-resources-nav" component="nav">
+    <Stack gap={2} className="client-resources-nav" component="nav">
       {RESOURCE_SECTIONS.map((section) => {
-        const Icon = section.icon
         const isActive = section.step === activeStep
 
         return (
-          <Button
+          <button
             key={section.step}
             className={`client-resources-nav-item${isActive ? ' is-active' : ''}`}
-            color="gray"
-            fullWidth
-            justify="space-between"
-            leftSection={<Icon size={18} stroke={1.8} />}
+            type="button"
             onClick={() => onNavigate(section.step)}
-            rightSection={<IconChevronRight size={16} stroke={2} />}
-            size="sm"
-            variant="subtle"
           >
-            {t(section.label)}
-          </Button>
+            <span>{t(section.label)}</span>
+            <IconChevronRight size={14} stroke={2} />
+          </button>
         )
       })}
     </Stack>
@@ -818,7 +812,7 @@ function RegionsPanelView({ model }: { model: ReturnType<typeof useRegionsPanelM
       <Loadable state={state} emptyTitle="Регіонів не знайдено">
         {filteredRegions.length ? (
           <Box className="client-resources-regions-grid">
-            <Stack gap={8} className="client-resources-region-master">
+            <Stack gap={6} className="client-resources-region-master">
               <TextInput
                 className="client-resources-region-search"
                 leftSection={<IconSearch size={16} stroke={1.8} />}
@@ -826,7 +820,7 @@ function RegionsPanelView({ model }: { model: ReturnType<typeof useRegionsPanelM
                 placeholder={translate('Пошук')}
                 value={search}
               />
-              <Stack gap={8} className="client-resources-region-list">
+              <Stack gap={2} className="client-resources-region-list">
                 {filteredRegions.map((region, index) => {
                   const key = getEntityKey(region, index)
                   const isActive = getEntityKey(selectedRegion) === key
@@ -849,7 +843,7 @@ function RegionsPanelView({ model }: { model: ReturnType<typeof useRegionsPanelM
                         <Text fw={600}>{displayValue(region.Name)}</Text>
                       </span>
                       <Group gap={4} wrap="nowrap">
-                        <Badge variant="light" color={isActive ? CREATE_ACTION_COLOR : 'gray'}>
+                        <Badge className={`app-role-pill ${isActive ? 'is-orange' : 'is-gray'}`} variant="light">
                           {region.RegionCodes?.length || 0}
                         </Badge>
                         <PermissionGate permissionKey={REGION_CODE_CREATE_PERMISSION}>
@@ -911,23 +905,23 @@ function RegionsPanelView({ model }: { model: ReturnType<typeof useRegionsPanelM
             <Box className="client-resources-region-detail">
               <Group justify="space-between" mb="sm">
                 <div>
-                  <Text fw={700}>{displayValue(selectedRegion?.Name)}</Text>
-                  <Text size="xs" c="dimmed">
-                    Коди регіону
+                  <Text className="app-section-title" fw={600} size="sm">
+                    {translate('Коди регіону')}
                   </Text>
+                  <Text fw={600} mt={2} size="sm">{displayValue(selectedRegion?.Name)}</Text>
                 </div>
                 {selectedRegion ? (
                   <PermissionGate permissionKey={REGION_CODE_CREATE_PERMISSION}>
-                    <Tooltip label={translate("Додати код регіону")}>
-                      <ActionIcon
-                        aria-label={translate("Додати код регіону")}
-                        color={CREATE_ACTION_COLOR}
-                        variant="light"
-                        onClick={() => openCreateRegionCode(selectedRegion)}
-                      >
-                        <IconPlus size={17} />
-                      </ActionIcon>
-                    </Tooltip>
+                    <Button
+                      color={CREATE_ACTION_COLOR}
+                      leftSection={<IconPlus size={15} />}
+                      size="xs"
+                      styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
+                      variant="outline"
+                      onClick={() => openCreateRegionCode(selectedRegion)}
+                    >
+                      {translate('Додати код')}
+                    </Button>
                   </PermissionGate>
                 ) : null}
               </Group>
@@ -1078,7 +1072,7 @@ function RegionEditorModal({
   const [name, setName] = useValueState(region?.Name || '')
 
   return (
-    <AppModal centered opened={opened} title={title} onClose={onClose}>
+    <AppModal centered className="client-resources-modal" opened={opened} title={<span style={RESOURCE_MONO_STYLE}>{title}</span>} onClose={onClose}>
       <form
         onSubmit={(event) => {
           event.preventDefault()
@@ -1141,7 +1135,7 @@ function RegionCodeEditorModal({
   }
 
   return (
-    <AppModal centered opened={opened} title={title} onClose={onClose}>
+    <AppModal centered className="client-resources-modal" opened={opened} title={<span style={RESOURCE_MONO_STYLE}>{title}</span>} onClose={onClose}>
       <form
         onSubmit={(event) => {
           event.preventDefault()
@@ -1202,7 +1196,7 @@ function DeleteResourceModal({
   onConfirm: () => void
 }) {
   return (
-    <AppModal centered opened={opened} title={translate("Видалити запис")} onClose={onClose}>
+    <AppModal centered className="client-resources-modal" opened={opened} title={<span style={RESOURCE_MONO_STYLE}>{translate("Видалити запис")}</span>} onClose={onClose}>
       <Stack gap="md">
         {error ? (
           <Alert color="red" icon={<IconAlertCircle size={18} stroke={1.8} />} variant="light">
@@ -1458,22 +1452,27 @@ function PerfectClientGroup({
       {items.length ? (
         <Stack gap={0}>
           {items.map((item) => {
-            const name = displayTranslatedEntity(item.Name, item.PerfectClientTranslations)
-            const description = item.Description?.trim() || displayValue(item.Lable)
+            const baseName = displayTranslatedEntity(item.Name, item.PerfectClientTranslations)
+            const baseDescription = item.Description?.trim() || displayValue(item.Lable)
+            const name = baseName || baseDescription
+            const description = baseDescription.toLocaleLowerCase() === name.toLocaleLowerCase() ? '' : baseDescription
 
             return (
               <Box className="client-resources-perfect-client-row" key={getEntityKey(item)}>
                 <Box className="client-resources-perfect-client-text">
-                  <Tooltip classNames={{ tooltip: 'client-resources-cell-tooltip' }} label={name} disabled={!name || name === '-'}>
+                  <Tooltip classNames={{ tooltip: 'client-resources-cell-tooltip' }} label={name} disabled={!name}>
                     <Text className="client-resources-perfect-client-name">{name}</Text>
                   </Tooltip>
-                  <Tooltip
-                    classNames={{ tooltip: 'client-resources-cell-tooltip' }}
-                    label={description}
-                    disabled={!description || description === '-'}
-                  >
-                    <Text className="client-resources-perfect-client-description">{description}</Text>
-                  </Tooltip>
+                  {description ? (
+                    <Tooltip
+                      classNames={{ tooltip: 'client-resources-cell-tooltip' }}
+                      label={description}
+                    >
+                      <Badge className="app-role-pill is-gray client-resources-perfect-client-description" variant="light">
+                        {description}
+                      </Badge>
+                    </Tooltip>
+                  ) : null}
                 </Box>
                 <Group gap={6} justify="flex-end" wrap="nowrap">
                   <PermissionGate permissionKey={PERFECT_CLIENT_EDIT_PERMISSION}>
@@ -1482,7 +1481,7 @@ function PerfectClientGroup({
                         aria-label={translate("Редагувати параметр")}
                         color="gray"
                         size="sm"
-                        variant="default"
+                        variant="subtle"
                         onClick={() => onEdit(item)}
                       >
                         <IconPencil size={16} />
@@ -1496,7 +1495,7 @@ function PerfectClientGroup({
                         color="red"
                         disabled={!item.NetUid}
                         size="sm"
-                        variant="default"
+                        variant="subtle"
                         onClick={() => onDelete(item)}
                       >
                         <IconTrash size={16} />
@@ -1542,7 +1541,7 @@ function PerfectClientEditorModal({
   }
 
   return (
-    <AppModal centered opened={opened} title={title} onClose={onClose}>
+    <AppModal centered className="client-resources-modal" opened={opened} title={<span style={RESOURCE_MONO_STYLE}>{title}</span>} onClose={onClose}>
       <form
         onSubmit={(event) => {
           event.preventDefault()
@@ -1638,7 +1637,7 @@ function TaxInspectionEditorModal({
   }
 
   return (
-    <AppModal centered opened={opened} size="lg" title={title} onClose={onClose}>
+    <AppModal centered className="client-resources-modal" opened={opened} size="lg" title={<span style={RESOURCE_MONO_STYLE}>{title}</span>} onClose={onClose}>
       <form
         onSubmit={(event) => {
           event.preventDefault()
@@ -1733,7 +1732,7 @@ function PricingEditorModal({
   }
 
   return (
-    <AppModal centered opened={opened} size="lg" title={title} onClose={onClose}>
+    <AppModal centered className="client-resources-modal" opened={opened} size="lg" title={<span style={RESOURCE_MONO_STYLE}>{title}</span>} onClose={onClose}>
       <form
         onSubmit={(event) => {
           event.preventDefault()
@@ -1844,7 +1843,7 @@ function CurrencyEditorModal({
   }
 
   return (
-    <AppModal centered opened={opened} title={title} onClose={onClose}>
+    <AppModal centered className="client-resources-modal" opened={opened} title={<span style={RESOURCE_MONO_STYLE}>{title}</span>} onClose={onClose}>
       <form
         onSubmit={(event) => {
           event.preventDefault()
@@ -1913,7 +1912,7 @@ function StorageEditorModal({
   }
 
   return (
-    <AppModal centered opened={opened} size="lg" title={title} onClose={onClose}>
+    <AppModal centered className="client-resources-modal" opened={opened} size="lg" title={<span style={RESOURCE_MONO_STYLE}>{title}</span>} onClose={onClose}>
       <form
         onSubmit={(event) => {
           event.preventDefault()
@@ -2013,7 +2012,7 @@ function MeasureUnitEditorModal({
   }
 
   return (
-    <AppModal centered opened={opened} title={title} onClose={onClose}>
+    <AppModal centered className="client-resources-modal" opened={opened} title={<span style={RESOURCE_MONO_STYLE}>{title}</span>} onClose={onClose}>
       <form
         onSubmit={(event) => {
           event.preventDefault()
@@ -2069,7 +2068,7 @@ function ReserveEditorModal({
   const [days, setDays] = useValueState(() => String(role?.OrderExpireDays ?? 0))
 
   return (
-    <AppModal centered opened={opened} title={translate("Редагувати резерв")} onClose={onClose}>
+    <AppModal centered className="client-resources-modal" opened={opened} title={<span style={RESOURCE_MONO_STYLE}>{translate("Редагувати резерв")}</span>} onClose={onClose}>
       <form
         onSubmit={(event) => {
           event.preventDefault()
@@ -2128,7 +2127,7 @@ function TransporterEditorModal({
   }
 
   return (
-    <AppModal centered opened={opened} title={title} onClose={onClose}>
+    <AppModal centered className="client-resources-modal" opened={opened} title={<span style={RESOURCE_MONO_STYLE}>{title}</span>} onClose={onClose}>
       <form
         onSubmit={(event) => {
           event.preventDefault()
@@ -2348,7 +2347,7 @@ function OrganizationsPanel({ section }: { section: ClientResourceSection }) {
                 id: 'code',
                 header: 'Код',
                 accessor: (organization) => organization.Code,
-                cell: (organization) => <TruncatedCell value={organization.Code} />,
+                cell: (organization) => <TruncatedCell mono value={organization.Code} />,
                 maxWidth: 80,
                 width: 80,
               },
@@ -2356,7 +2355,7 @@ function OrganizationsPanel({ section }: { section: ClientResourceSection }) {
                 id: 'usreou',
                 header: 'ЄДРПОУ',
                 accessor: (organization) => organization.USREOU,
-                cell: (organization) => <TruncatedCell value={organization.USREOU} />,
+                cell: (organization) => <TruncatedCell mono value={organization.USREOU} />,
                 maxWidth: 120,
                 width: 120,
               },
@@ -2364,7 +2363,7 @@ function OrganizationsPanel({ section }: { section: ClientResourceSection }) {
                 id: 'tin',
                 header: 'ІПН',
                 accessor: (organization) => organization.TIN,
-                cell: (organization) => <TruncatedCell value={organization.TIN} />,
+                cell: (organization) => <TruncatedCell mono value={organization.TIN} />,
                 maxWidth: 120,
                 width: 120,
               },
@@ -2514,7 +2513,7 @@ function OrganizationEditorModal({
   }
 
   return (
-    <AppModal centered opened={opened} size="xl" title={title} onClose={onClose}>
+    <AppModal centered className="client-resources-modal" opened={opened} size="xl" title={<span style={RESOURCE_MONO_STYLE}>{title}</span>} onClose={onClose}>
       <form
         onSubmit={(event) => {
           event.preventDefault()
@@ -4158,7 +4157,7 @@ function ProductReservePanel({ section }: { section: ClientResourceSection }) {
                 maxWidth: 120,
                 width: 120,
                 cell: (role) => (
-                  <Badge color={CREATE_ACTION_COLOR} variant="light">
+                  <Badge className="app-role-pill is-orange" variant="light">
                     {displayValue(role.OrderExpireDays)}
                   </Badge>
                 ),
@@ -4567,7 +4566,7 @@ function ResourcePanel({
 }) {
   return (
     <section className="client-resources-panel">
-      {action ? <PageHeaderActions>{action}</PageHeaderActions> : null}
+      {action ? <div className="client-resources-panel-bar">{action}</div> : null}
       {children}
     </section>
   )
@@ -4706,7 +4705,7 @@ function BooleanBadge({ value }: { value?: boolean }) {
   const { t } = useI18n()
 
   return (
-    <Badge color={value ? 'green' : 'gray'} variant="light">
+    <Badge className={value ? 'app-role-pill is-green' : 'app-role-pill is-gray'} variant="light">
       {value ? t('Так') : t('Ні')}
     </Badge>
   )
@@ -5535,20 +5534,21 @@ function formatVatRate(vatRate: ClientResourceVatRate): string {
     : displayValue(vatRate.Value)
 }
 
+// Empty values render blank (docs/ui-patterns.md §5).
 function displayValue(value: unknown): string {
   if (typeof value === 'string') {
-    return value.trim() || '—'
+    return value.trim() || ''
   }
 
   if (typeof value === 'number') {
-    return Number.isFinite(value) ? String(value) : '—'
+    return Number.isFinite(value) ? String(value) : ''
   }
 
   if (typeof value === 'boolean') {
     return value ? translate('Так') : translate('Ні')
   }
 
-  return '—'
+  return ''
 }
 
 function displayCurrency(currency?: ClientResourceCurrency): string {
@@ -5579,7 +5579,7 @@ function displayTranslationBadges(translations?: ClientResourceTranslation[]) {
   return (
     <Group gap={6}>
       {names.map((name) => (
-        <Badge color="gray" variant="light" key={name}>
+        <Badge className="app-role-pill is-gray" variant="light" key={name}>
           {name}
         </Badge>
       ))}
