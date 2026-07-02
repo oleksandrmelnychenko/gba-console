@@ -1105,8 +1105,15 @@ function InvoiceMainCell({ row }: { row: SupplyUkraineOrderRow }) {
           <span className="supply-invoice-number" title={nativeTitle(invoiceNumber)}>{invoiceNumber}</span>
         </div>
         <div className="supply-invoice-meta">
-          <span title={nativeTitle(orderNumber)}>{t('Замовлення')} {orderNumber}</span>
-          <span title={nativeTitle(agreement)}>{agreement}</span>
+          <span className="supply-order-meta-value is-strong" title={nativeTitle(orderNumber)}>
+            <span>{t('Замовлення')}</span>
+            <strong>{orderNumber}</strong>
+          </span>
+          {agreement ? (
+            <span className="app-role-pill is-gray supply-invoice-agreement-pill" title={nativeTitle(agreement)}>
+              {agreement}
+            </span>
+          ) : null}
         </div>
       </div>
     </div>

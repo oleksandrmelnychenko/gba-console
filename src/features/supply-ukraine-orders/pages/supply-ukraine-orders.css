@@ -236,18 +236,20 @@
   min-width: 0;
 }
 
+/* Outlined circle, no fill — the modal action-icon pattern at cell scale.
+   Ring and glyph share the same color. */
 .supply-invoice-icon {
   align-items: center;
-  background: var(--mantine-color-gray-0);
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 7px;
-  color: var(--mantine-color-gray-5);
+  background: transparent;
+  border: 1px solid var(--mantine-color-gray-7);
+  border-radius: 50%;
+  color: var(--mantine-color-gray-7);
   display: inline-flex;
   flex: 0 0 auto;
-  height: 26px;
+  height: 28px;
   justify-content: center;
   margin-top: 1px;
-  width: 26px;
+  width: 28px;
 }
 
 .supply-invoice-copy {
@@ -266,16 +268,21 @@
 .supply-invoice-label {
   color: var(--brand-orange);
   flex: 0 0 auto;
+  font-family: var(--font-mono);
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
+  letter-spacing: 0;
   line-height: 1.2;
 }
 
+/* Invoice number in mono, near-black for contrast with the orange label. */
 .supply-invoice-number {
   color: var(--mantine-color-gray-9);
   display: block;
+  font-family: var(--font-mono);
   font-size: 13px;
-  font-weight: 650;
+  font-weight: 600;
+  letter-spacing: 0;
   line-height: 1.2;
   min-width: 0;
   overflow: hidden;
@@ -283,13 +290,29 @@
   white-space: nowrap;
 }
 
+/* The agreement rendered as a small gray pill (app-role-pill on a bare span
+   needs its own box sizing). */
+.supply-invoice-agreement-pill {
+  align-items: center;
+  display: inline-flex;
+  flex: 0 1 auto;
+  font-size: 10.5px;
+  line-height: 1.2;
+  max-width: 220px;
+  min-width: 0;
+  overflow: hidden;
+  padding: 2px 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .supply-invoice-meta {
   align-items: center;
-  color: var(--mantine-color-gray-5);
+  color: var(--mantine-color-gray-6);
   display: flex;
   flex-wrap: wrap;
   font-size: 11px;
-  font-weight: 550;
+  font-weight: 500;
   gap: 4px 10px;
   line-height: 1.2;
   min-width: 0;
@@ -334,10 +357,10 @@
 }
 
 .supply-order-main-title {
-  color: var(--mantine-color-gray-9);
+  color: var(--mantine-color-gray-8);
   display: block;
   font-size: 13px;
-  font-weight: 680;
+  font-weight: 600;
   line-height: 1.18;
   min-width: 0;
   overflow: hidden;
@@ -357,22 +380,25 @@
 
 .supply-order-meta-value {
   align-items: center;
-  color: var(--mantine-color-gray-5);
+  color: var(--mantine-color-gray-6);
   display: inline-flex;
   flex: 0 1 auto;
   font-size: 11.5px;
-  font-weight: 520;
+  font-weight: 500;
   gap: 4px;
   line-height: 1.2;
   max-width: 210px;
   min-width: 0;
 }
 
+/* Values (numbers, dates, codes) read in mono, a step darker than their labels. */
 .supply-order-meta-value strong {
-  color: var(--mantine-color-gray-6);
+  color: var(--mantine-color-gray-7);
   display: block;
+  font-family: var(--font-mono);
   font-size: 11.5px;
   font-weight: 600;
+  letter-spacing: 0;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -384,8 +410,8 @@
 }
 
 .supply-order-meta-value.is-strong strong {
-  color: var(--mantine-color-gray-9);
-  font-weight: 700;
+  color: var(--mantine-color-gray-8);
+  font-weight: 650;
 }
 
 .supply-order-meta-separator {
@@ -422,16 +448,16 @@
 }
 
 .supply-order-two-line-primary {
-  color: var(--mantine-color-gray-9);
+  color: var(--mantine-color-gray-8);
   font-size: 12.5px;
-  font-weight: 650;
+  font-weight: 600;
   line-height: 1.15;
 }
 
 .supply-order-two-line-secondary {
-  color: var(--mantine-color-gray-5);
+  color: var(--mantine-color-gray-6);
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1.2;
   margin-top: 3px;
 }
@@ -459,19 +485,24 @@
   justify-content: flex-end;
 }
 
+/* Numbers (money, quantities) in mono per the pattern — instantly scannable. */
 .supply-order-money-amount {
-  color: var(--mantine-color-gray-9);
+  color: var(--mantine-color-gray-8);
   display: block;
-  font-size: 12.5px;
-  font-weight: 650;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0;
   line-height: 1.15;
 }
 
 .supply-order-money-currency {
-  color: var(--mantine-color-gray-5);
+  color: var(--mantine-color-gray-6);
   display: block;
+  font-family: var(--font-mono);
   font-size: 10px;
-  font-weight: 720;
+  font-weight: 600;
+  letter-spacing: 0;
   line-height: 1;
   margin-top: 4px;
   text-transform: uppercase;
@@ -485,26 +516,18 @@
   min-width: 0;
 }
 
+/* The old «#» / «%» chip boxes were pure noise on every row — hidden; the
+   plain mono number carries the column meaning (the header already names it). */
 .supply-order-metric-label {
-  align-items: center;
-  background: var(--mantine-color-gray-0);
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 8px;
-  color: var(--mantine-color-gray-5);
-  display: inline-flex;
-  flex: 0 0 26px;
-  font-size: 11px;
-  font-weight: 720;
-  height: 26px;
-  justify-content: center;
-  line-height: 1;
-  width: 26px;
+  display: none;
 }
 
 .supply-order-metric-number {
-  color: var(--mantine-color-gray-9);
-  font-size: 12.5px;
-  font-weight: 700;
+  color: var(--mantine-color-gray-8);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0;
   line-height: 1;
 }
 

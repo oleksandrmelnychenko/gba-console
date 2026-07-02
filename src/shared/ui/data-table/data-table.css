@@ -362,11 +362,21 @@
 }
 
 .data-table-expand-cell {
-  box-shadow: 1px 0 0 var(--mantine-color-gray-2);
+  box-shadow: none;
 }
 
 .data-table-expand-toggle {
   color: var(--mantine-color-gray-6);
+}
+
+/* Expand chevron follows the orange accent: on hover and while expanded. */
+.data-table-expand-toggle:hover {
+  background: transparent;
+  color: var(--brand-orange);
+}
+
+.data-table-expand-toggle[aria-expanded='true'] {
+  color: var(--brand-orange);
 }
 
 .data-table-expanded-cell {
