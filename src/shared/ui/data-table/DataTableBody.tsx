@@ -1,7 +1,7 @@
-import { Fragment, type ReactNode } from 'react'
+import { Fragment, memo, type ReactNode } from 'react'
 import { ActionIcon, Table } from '@mantine/core'
 import { IconChevronRight } from '@tabler/icons-react'
-import { flexRender, type Table as TableInstance } from '@tanstack/react-table'
+import { flexRender, type Row, type Table as TableInstance } from '@tanstack/react-table'
 import { getPinnedStyle } from './dataTablePinning'
 import type { DataTableColumnMeta } from './types'
 
@@ -26,6 +26,105 @@ type DataTableBodyProps<TData> = {
   rowClassName?: (row: TData) => string | undefined
 }
 
+type DataTableBodyRowProps<TData> = {
+  columnWidths: ReadonlyMap<string, number>
+  expand?: DataTableExpandConfig<TData>
+  fillColumnId?: string
+  pinnedLeftOffset: number
+  row: Row<TData>
+  totalColumnCount: number
+  onRowClick?: (row: TData) => void
+  rowClassName?: (row: TData) => string | undefined
+}
+
+/* Row extracted and memoized: on large pages (500 rows × 30+ columns) the mount
+   sequence re-renders the table several times (viewport width arriving, toolbar
+   portal slot mounting, data landing) — without the memo every pass re-renders
+   every cell, which reads as columns slowly "computing their widths". */
+function DataTableBodyRowInner<TData>({
+  columnWidths,
+  expand,
+  fillColumnId,
+  pinnedLeftOffset,
+  row,
+  totalColumnCount,
+  onRowClick,
+  rowClassName,
+}: DataTableBodyRowProps<TData>) {
+  const canExpand = expand ? expand.canExpandRow(row.original) : false
+  const isExpanded = Boolean(expand && canExpand && expand.isRowExpanded(row.id))
+
+  return (
+    <Fragment>
+      <Table.Tr
+        className={`data-table-row ${rowClassName?.(row.original) ?? ''}`}
+        onClick={onRowClick ? () => onRowClick(row.original) : undefined}
+      >
+        {expand ? (
+          <Table.Td className="data-table-expand-cell">
+            {canExpand ? (
+              <ActionIcon
+                aria-expanded={isExpanded}
+                aria-label={isExpanded ? expand.collapseLabel : expand.expandLabel}
+                className="data-table-expand-toggle"
+                color="gray"
+                size="sm"
+                variant="subtle"
+                onClick={(event) => {
+                  event.stopPropagation()
+                  expand.onToggleRow(row.id)
+                }}
+              >
+                <IconChevronRight
+                  size={16}
+                  stroke={2}
+                  style={{
+                    transform: isExpanded ? 'rotate(90deg)' : undefined,
+                    transition: 'transform 120ms ease',
+                  }}
+                />
+              </ActionIcon>
+            ) : null}
+          </Table.Td>
+        ) : null}
+        {row.getVisibleCells().map((cell) => {
+          const meta = cell.column.columnDef.meta as
+            | DataTableColumnMeta
+            | undefined
+          const columnWidth = columnWidths.get(cell.column.id) ?? cell.column.getSize()
+
+          return (
+            <Table.Td
+              key={cell.id}
+              className={`data-table-cell ${meta?.className ?? ''}`}
+              style={{
+                ...getPinnedStyle(cell.column, 1, pinnedLeftOffset),
+                width: columnWidth,
+                minWidth: cell.column.columnDef.minSize,
+                maxWidth: cell.column.id === fillColumnId ? undefined : cell.column.columnDef.maxSize,
+                textAlign: meta?.align ?? 'left',
+              }}
+            >
+              {flexRender(cell.column.columnDef.cell, cell.getContext())}
+            </Table.Td>
+          )
+        })}
+      </Table.Tr>
+      {expand && isExpanded ? (
+        <Table.Tr className="data-table-expanded-row">
+          <Table.Td className="data-table-expanded-cell" colSpan={totalColumnCount}>
+            <div className="data-table-expanded-content">
+              {expand.renderExpandedRow(row.original)}
+            </div>
+          </Table.Td>
+        </Table.Tr>
+      ) : null}
+    </Fragment>
+  )
+}
+
+const DataTableBodyRow = memo(DataTableBodyRowInner) as typeof DataTableBodyRowInner
+
 export function DataTableBody<TData>({
   columnWidths,
   expand,
@@ -49,78 +148,19 @@ export function DataTableBody<TData>({
 
   return (
     <Table.Tbody>
-      {table.getRowModel().rows.map((row) => {
-        const canExpand = expand ? expand.canExpandRow(row.original) : false
-        const isExpanded = Boolean(expand && canExpand && expand.isRowExpanded(row.id))
-
-        return (
-          <Fragment key={row.id}>
-            <Table.Tr
-              className={`data-table-row ${rowClassName?.(row.original) ?? ''}`}
-              onClick={onRowClick ? () => onRowClick(row.original) : undefined}
-            >
-              {expand ? (
-                <Table.Td className="data-table-expand-cell">
-                  {canExpand ? (
-                    <ActionIcon
-                      aria-expanded={isExpanded}
-                      aria-label={isExpanded ? expand.collapseLabel : expand.expandLabel}
-                      className="data-table-expand-toggle"
-                      color="gray"
-                      size="sm"
-                      variant="subtle"
-                      onClick={(event) => {
-                        event.stopPropagation()
-                        expand.onToggleRow(row.id)
-                      }}
-                    >
-                      <IconChevronRight
-                        size={16}
-                        stroke={2}
-                        style={{
-                          transform: isExpanded ? 'rotate(90deg)' : undefined,
-                          transition: 'transform 120ms ease',
-                        }}
-                      />
-                    </ActionIcon>
-                  ) : null}
-                </Table.Td>
-              ) : null}
-              {row.getVisibleCells().map((cell) => {
-                const meta = cell.column.columnDef.meta as
-                  | DataTableColumnMeta
-                  | undefined
-                const columnWidth = columnWidths.get(cell.column.id) ?? cell.column.getSize()
-
-                return (
-                  <Table.Td
-                    key={cell.id}
-                    className={`data-table-cell ${meta?.className ?? ''}`}
-                    style={{
-                      ...getPinnedStyle(cell.column, 1, pinnedLeftOffset),
-                      width: columnWidth,
-                      minWidth: cell.column.columnDef.minSize,
-                      maxWidth: cell.column.id === fillColumnId ? undefined : cell.column.columnDef.maxSize,
-                      textAlign: meta?.align ?? 'left',
-                    }}
-                  >
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </Table.Td>
-                )
-              })}
-            </Table.Tr>
-            {expand && isExpanded ? (
-              <Table.Tr className="data-table-expanded-row">
-                <Table.Td className="data-table-expanded-cell" colSpan={totalColumnCount}>
-                  <div className="data-table-expanded-content">
-                    {expand.renderExpandedRow(row.original)}
-                  </div>
-                </Table.Td>
-              </Table.Tr>
-            ) : null}
-          </Fragment>
-        )
-      })}
+      {table.getRowModel().rows.map((row) => (
+        <DataTableBodyRow
+          key={row.id}
+          columnWidths={columnWidths}
+          expand={expand}
+          fillColumnId={fillColumnId}
+          pinnedLeftOffset={pinnedLeftOffset}
+          row={row}
+          totalColumnCount={totalColumnCount}
+          onRowClick={onRowClick}
+          rowClassName={rowClassName}
+        />
+      ))}
     </Table.Tbody>
   )
 }
