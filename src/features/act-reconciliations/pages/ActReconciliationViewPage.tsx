@@ -9,12 +9,12 @@ import {
   SimpleGrid,
   Stack,
   Text,
-  Title,
   Tooltip,
 } from '@mantine/core'
-import { IconAlertCircle, IconArrowLeft, IconHistory, IconRefresh, IconSettings } from '@tabler/icons-react'
+import { IconAlertCircle, IconHistory, IconRefresh, IconSettings } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
+import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { translate } from '../../../shared/i18n/translate'
@@ -228,6 +228,7 @@ export function ActReconciliationViewPage() {
 
 function ActReconciliationViewPageView({ model }: { model: ReturnType<typeof useActReconciliationViewModel> }) {
   const { t } = useI18n()
+  const navigate = useNavigate()
   const { density, toggleDensity } = useDataTableDensity('act-reconciliation-items', 'normal')
   const columns = useItemColumns({
     items: model.items,
@@ -238,21 +239,18 @@ function ActReconciliationViewPageView({ model }: { model: ReturnType<typeof use
   })
 
   return (
-    <Stack gap="lg">
-      <Group justify="space-between" align="center">
-        <Group gap="sm">
-          <ActionIcon
-            aria-label={t('Назад')}
-            color="gray"
-            component={Link}
-            size={38}
-            to="/ukraine/act/reconcoliation"
-            variant="light"
-          >
-            <IconArrowLeft size={18} />
-          </ActionIcon>
-          <Title order={4}>{getTitle(model.reconciliation)}</Title>
-        </Group>
+    <AppDrawer
+      opened
+      keepMounted={false}
+      position="right"
+      size="wide"
+      title={
+        <span style={{ fontFamily: 'var(--font-mono)' }}>{getTitle(model.reconciliation)}</span>
+      }
+      onClose={() => navigate('/ukraine/act/reconcoliation')}
+    >
+    <Stack gap="md">
+      <Group justify="flex-end" align="center">
         <Group gap="xs">
           <Tooltip label={t('Історія змін')}>
             <ActionIcon
@@ -310,22 +308,20 @@ function ActReconciliationViewPageView({ model }: { model: ReturnType<typeof use
         />
       </Card>
 
-      <Card className="app-section-card" withBorder radius="md" padding="md">
-        <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="md">
-          <TotalValue label={t('Всього товарів')} value={model.totals.totalProducts} />
-          <TotalValue label={t('Вся кількість')} value={model.totals.totalCount} />
-          <TotalValue
-            color="red"
-            label={t('Недостача')}
-            value={model.totals.lack > 0 ? `- ${model.totals.lack}` : model.totals.lack}
-          />
-          <TotalValue
-            color="teal"
-            label={t('Надлишок')}
-            value={model.totals.excess > 0 ? `+ ${model.totals.excess}` : model.totals.excess}
-          />
-        </SimpleGrid>
-      </Card>
+      <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="md">
+        <TotalValue label={t('Всього товарів')} value={model.totals.totalProducts} />
+        <TotalValue label={t('Вся кількість')} value={model.totals.totalCount} />
+        <TotalValue
+          color="red"
+          label={t('Недостача')}
+          value={model.totals.lack > 0 ? `- ${model.totals.lack}` : model.totals.lack}
+        />
+        <TotalValue
+          color="teal"
+          label={t('Надлишок')}
+          value={model.totals.excess > 0 ? `+ ${model.totals.excess}` : model.totals.excess}
+        />
+      </SimpleGrid>
 
       <ActReconciliationActionsModal
         opened={model.isActionOpen}
@@ -346,21 +342,26 @@ function ActReconciliationViewPageView({ model }: { model: ReturnType<typeof use
         onSelectAction={model.setSelectedAppliedAction}
       />
     </Stack>
+    </AppDrawer>
   )
 }
 
+/* Totals per the pattern: no frame — a mono label with the orange dot (section
+   heading language) and a big mono value (semantic red/teal kept). */
 function TotalValue({ color, label, value }: { color?: string; label: string; value: unknown }) {
   return (
     <Box>
-      <Text size="xs" c="dimmed">
+      <Text className="app-section-title" fw={600} size="xs">
         {label}
       </Text>
-      <Text c={color} fw={700} size="lg">
+      <Text c={color} fw={600} size="lg" style={{ ...ACT_VIEW_MONO_STYLE, marginTop: 2 }}>
         {String(value)}
       </Text>
     </Box>
   )
 }
+
+const ACT_VIEW_MONO_STYLE = { fontFamily: 'var(--font-mono)', letterSpacing: 0 } as const
 
 function useItemColumns({
   items,
