@@ -105,7 +105,7 @@ export function formatUnderReportStatus(status: AccountableExpenseUnderReportSta
     case 'open':
       return t('Ні')
     default:
-      return '—'
+      return ''
   }
 }
 

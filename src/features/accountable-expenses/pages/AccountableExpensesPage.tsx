@@ -11,17 +11,10 @@ import {
 } from '@mantine/core'
 import {
   IconAlertCircle,
-  IconCreditCard,
   IconExternalLink,
-  IconFileInvoice,
-  IconFileText,
-  IconNotes,
-  IconPackage,
   IconRefresh,
-  IconReceipt,
   IconRestore,
   IconSearch,
-  IconUserCheck,
 } from '@tabler/icons-react'
 import { CreditCard as CreditCardIcon, ExternalLink as ExternalLinkIcon, Eye as EyeIcon } from 'lucide-react'
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -585,18 +578,14 @@ function ExpenseDetailDrawer({ row, onClose }: { row: AccountableExpenseRow | nu
       opened={Boolean(row)}
       padding="md"
       size="xl"
-      title={t('Підзвітна витрата')}
+      title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Підзвітна витрата')}</span>}
       onClose={onClose}
     >
       {row && (
         <div className="accountable-expense-detail">
           <section className="accountable-expense-detail-hero">
             <div>
-              <span className="accountable-expense-detail-eyebrow">{t('Підзвітна витрата')}</span>
               <div className="accountable-expense-detail-title">
-                <span className="accountable-expense-detail-title__icon">
-                  <IconFileText size={18} />
-                </span>
                 <div className="accountable-expense-detail-title__copy">
                   <strong>{displayValue(row.productName || row.advanceNumber || row.order.Number)}</strong>
                   <span>{heroMeta || displayValue(undefined)}</span>
@@ -606,9 +595,11 @@ function ExpenseDetailDrawer({ row, onClose }: { row: AccountableExpenseRow | nu
                 <Badge className={`app-role-pill ${getPaymentStatusPillVariant(row.paymentStatus)}`} variant="light">
                   {paymentLabel}
                 </Badge>
-                <Badge className={row.underReportStatus === 'closed' ? 'app-role-pill is-green' : 'app-role-pill is-gray'} variant="light">
-                  {underReportLabel}
-                </Badge>
+                {underReportLabel ? (
+                  <Badge className={row.underReportStatus === 'closed' ? 'app-role-pill is-green' : row.underReportStatus === 'mixed' ? 'app-role-pill is-orange' : 'app-role-pill is-gray'} variant="light">
+                    {underReportLabel}
+                  </Badge>
+                ) : null}
                 <Badge className="app-role-pill is-orange" variant="light">
                   {typeLabel}
                 </Badge>
@@ -621,7 +612,7 @@ function ExpenseDetailDrawer({ row, onClose }: { row: AccountableExpenseRow | nu
             </div>
           </section>
 
-          <ExpenseDetailSection icon={<IconFileInvoice size={16} />} label={t('Документ')} title={t('Реквізити')}>
+          <ExpenseDetailSection title={t('Реквізити')}>
             <div className="accountable-expense-detail-grid">
               <DetailItem label={t('Створено')} value={formatDateTime(row.created)} />
               <DetailItem label={t('Номер документа')} value={displayValue(row.order.Number)} />
@@ -634,12 +625,9 @@ function ExpenseDetailDrawer({ row, onClose }: { row: AccountableExpenseRow | nu
             </div>
           </ExpenseDetailSection>
 
-          <ExpenseDetailSection icon={<IconPackage size={16} />} label={t('Позиція')} title={t('Товар або послуга')}>
+          <ExpenseDetailSection title={t('Товар або послуга')}>
             <div className="accountable-expense-detail-product">
               <div className="accountable-expense-detail-product__main">
-                <span className="accountable-expense-detail-product__icon">
-                  <IconPackage size={16} />
-                </span>
                 <div>
                   <strong>{displayValue(row.productName)}</strong>
                   <span>{displayValue(row.vendorCode)}</span>
@@ -661,7 +649,7 @@ function ExpenseDetailDrawer({ row, onClose }: { row: AccountableExpenseRow | nu
             </div>
           </ExpenseDetailSection>
 
-          <ExpenseDetailSection icon={<IconCreditCard size={16} />} label={t('Оплата')} title={t('Стан розрахунків')}>
+          <ExpenseDetailSection title={t('Стан розрахунків')}>
             <div className="accountable-expense-detail-grid is-compact">
               <DetailItem label={t('Оплата')} value={paymentLabel} />
               <DetailItem label={t('Підзвіт закрито')} value={underReportLabel} />
@@ -670,7 +658,7 @@ function ExpenseDetailDrawer({ row, onClose }: { row: AccountableExpenseRow | nu
             </div>
           </ExpenseDetailSection>
 
-          <ExpenseDetailSection icon={<IconNotes size={16} />} label={t('Коментар')} title={t('Примітка')}>
+          <ExpenseDetailSection title={t('Примітка')}>
             <p className="accountable-expense-detail-comment">{displayValue(row.comment)}</p>
           </ExpenseDetailSection>
 
@@ -689,8 +677,6 @@ function ExpenseDetailDrawer({ row, onClose }: { row: AccountableExpenseRow | nu
                 </Button>
               ) : null
             }
-            icon={<IconReceipt size={16} />}
-            label={t('Авансовий звіт')}
             title={t('Повʼязаний видатковий документ')}
           >
             {outcome ? (
@@ -712,7 +698,7 @@ function ExpenseDetailDrawer({ row, onClose }: { row: AccountableExpenseRow | nu
           </ExpenseDetailSection>
 
           {outcomeOrders.length > 1 && (
-            <ExpenseDetailSection icon={<IconUserCheck size={16} />} label={t('Привʼязки')} title={t('Усі привʼязки до авансових звітів')}>
+            <ExpenseDetailSection title={t('Усі привʼязки до авансових звітів')}>
               <div className="accountable-expense-detail-links">
                 {outcomeOrders.map((item, index) => {
                   const itemOutcome = item.OutcomePaymentOrder
@@ -778,26 +764,18 @@ function ExpenseDetailMetric({
 function ExpenseDetailSection({
   action,
   children,
-  icon,
-  label,
   title,
 }: {
   action?: ReactNode
   children: ReactNode
-  icon: ReactNode
-  label: string
   title: string
 }) {
   return (
     <section className="accountable-expense-detail-section">
       <div className="accountable-expense-detail-section__header">
-        <div className="accountable-expense-detail-section__main">
-          <span className="accountable-expense-detail-section__icon">{icon}</span>
-          <div className="accountable-expense-detail-section__copy">
-            <span>{label}</span>
-            <strong>{title}</strong>
-          </div>
-        </div>
+        <Text className="app-section-title" fw={600} size="sm">
+          {title}
+        </Text>
         {action && <div className="accountable-expense-detail-section__action">{action}</div>}
       </div>
       <div className="accountable-expense-detail-section__body">{children}</div>
@@ -913,5 +891,6 @@ function getPaymentStatusPillVariant(status: Parameters<typeof getPaymentStatusC
     return 'is-green'
   }
 
-  return color === 'orange' ? 'is-orange' : 'is-gray'
+  // 'orange' = частково; все інше (неоплачено) — червоний, щоб кидалось в очі.
+  return color === 'orange' ? 'is-orange' : 'is-red'
 }
