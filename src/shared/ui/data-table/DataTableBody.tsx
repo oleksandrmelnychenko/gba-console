@@ -1,15 +1,17 @@
-import { Fragment, memo, type ReactNode } from 'react'
+import { Fragment, memo, type CSSProperties, type ReactNode } from 'react'
 import { ActionIcon, Table } from '@mantine/core'
 import { IconChevronRight } from '@tabler/icons-react'
 import { flexRender, type Row, type Table as TableInstance } from '@tanstack/react-table'
 import { getPinnedStyle } from './dataTablePinning'
 import type { DataTableColumnMeta } from './types'
 
+const SKELETON_ROW_COUNT = 9
+const SKELETON_LINE_WIDTHS = ['78%', '62%', '46%', '70%', '54%', '84%', '58%', '38%'] as const
+
 type DataTableExpandConfig<TData> = {
   canExpandRow: (row: TData) => boolean
   collapseLabel: string
   expandLabel: string
-  isRowExpanded: (rowId: string) => boolean
   onToggleRow: (rowId: string) => void
   renderExpandedRow: (row: TData) => ReactNode
 }
@@ -17,6 +19,7 @@ type DataTableExpandConfig<TData> = {
 type DataTableBodyProps<TData> = {
   columnWidths: ReadonlyMap<string, number>
   expand?: DataTableExpandConfig<TData>
+  expandedRowIds?: ReadonlySet<string>
   fillColumnId?: string
   isLoading: boolean
   pinnedLeftOffset?: number
@@ -30,6 +33,8 @@ type DataTableBodyRowProps<TData> = {
   columnWidths: ReadonlyMap<string, number>
   expand?: DataTableExpandConfig<TData>
   fillColumnId?: string
+  /* Boolean per row (not the whole Set) so toggling one row re-renders only it. */
+  isExpanded: boolean
   pinnedLeftOffset: number
   row: Row<TData>
   totalColumnCount: number
@@ -45,6 +50,7 @@ function DataTableBodyRowInner<TData>({
   columnWidths,
   expand,
   fillColumnId,
+  isExpanded,
   pinnedLeftOffset,
   row,
   totalColumnCount,
@@ -52,7 +58,6 @@ function DataTableBodyRowInner<TData>({
   rowClassName,
 }: DataTableBodyRowProps<TData>) {
   const canExpand = expand ? expand.canExpandRow(row.original) : false
-  const isExpanded = Boolean(expand && canExpand && expand.isRowExpanded(row.id))
 
   return (
     <Fragment>
@@ -110,7 +115,7 @@ function DataTableBodyRowInner<TData>({
           )
         })}
       </Table.Tr>
-      {expand && isExpanded ? (
+      {expand && canExpand && isExpanded ? (
         <Table.Tr className="data-table-expanded-row">
           <Table.Td className="data-table-expanded-cell" colSpan={totalColumnCount}>
             <div className="data-table-expanded-content">
@@ -128,6 +133,7 @@ const DataTableBodyRow = memo(DataTableBodyRowInner) as typeof DataTableBodyRowI
 export function DataTableBody<TData>({
   columnWidths,
   expand,
+  expandedRowIds,
   fillColumnId,
   isLoading,
   pinnedLeftOffset = 0,
@@ -139,7 +145,50 @@ export function DataTableBody<TData>({
   const totalColumnCount = visibleColumnCount + (expand ? 1 : 0)
 
   if (isLoading) {
-    return <Table.Tbody />
+    const visibleColumns = table.getVisibleLeafColumns()
+
+    return (
+      <Table.Tbody aria-busy="true" className="data-table-skeleton-body">
+        {Array.from({ length: SKELETON_ROW_COUNT }, (_, rowIndex) => (
+          <Table.Tr
+            key={`loading-row-${rowIndex}`}
+            className="data-table-row data-table-skeleton-row"
+          >
+            {expand ? (
+              <Table.Td className="data-table-expand-cell data-table-skeleton-cell">
+                <span className="data-table-skeleton-line data-table-skeleton-line-icon" />
+              </Table.Td>
+            ) : null}
+            {visibleColumns.map((column, columnIndex) => {
+              const meta = column.columnDef.meta as
+                | DataTableColumnMeta
+                | undefined
+              const align = meta?.align ?? 'left'
+              const columnWidth = columnWidths.get(column.id) ?? column.getSize()
+
+              return (
+                <Table.Td
+                  key={column.id}
+                  className={`data-table-cell data-table-skeleton-cell data-table-skeleton-cell-align-${align} ${meta?.className ?? ''}`}
+                  style={{
+                    ...getPinnedStyle(column, 1, pinnedLeftOffset),
+                    width: columnWidth,
+                    minWidth: column.columnDef.minSize,
+                    maxWidth: column.id === fillColumnId ? undefined : column.columnDef.maxSize,
+                    textAlign: align,
+                  }}
+                >
+                  <span
+                    className={`data-table-skeleton-line ${columnIndex === 0 ? 'data-table-skeleton-line-primary' : ''}`}
+                    style={createSkeletonLineStyle(rowIndex, columnIndex)}
+                  />
+                </Table.Td>
+              )
+            })}
+          </Table.Tr>
+        ))}
+      </Table.Tbody>
+    )
   }
 
   if (!table.getRowModel().rows.length) {
@@ -154,6 +203,7 @@ export function DataTableBody<TData>({
           columnWidths={columnWidths}
           expand={expand}
           fillColumnId={fillColumnId}
+          isExpanded={Boolean(expand && expandedRowIds?.has(row.id))}
           pinnedLeftOffset={pinnedLeftOffset}
           row={row}
           totalColumnCount={totalColumnCount}
@@ -163,4 +213,12 @@ export function DataTableBody<TData>({
       ))}
     </Table.Tbody>
   )
+}
+
+function createSkeletonLineStyle(rowIndex: number, columnIndex: number): CSSProperties {
+  return {
+    '--data-table-skeleton-width': SKELETON_LINE_WIDTHS[
+      (rowIndex + columnIndex) % SKELETON_LINE_WIDTHS.length
+    ],
+  } as CSSProperties
 }

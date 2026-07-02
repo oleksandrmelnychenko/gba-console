@@ -33,16 +33,6 @@
   scrollbar-width: thin;
 }
 
-.data-table-loading-overlay {
-  align-items: center;
-  display: flex;
-  inset: 0;
-  justify-content: center;
-  pointer-events: none;
-  position: absolute;
-  z-index: 8;
-}
-
 .data-table-empty {
   align-items: center;
   display: flex;
@@ -52,11 +42,6 @@
   pointer-events: none;
   position: sticky;
   z-index: 7;
-}
-
-.data-table-loading-content {
-  color: var(--mantine-color-gray-6);
-  font-size: 12px;
 }
 
 .data-table-empty-content {
@@ -167,7 +152,7 @@
 }
 
 .data-table-sort-icon {
-  color: var(--mantine-color-gray-5);
+  color: var(--brand-orange);
   display: inline-flex;
   flex: 0 0 auto;
 }
@@ -223,6 +208,10 @@
 
 .data-table-cell {
   background: var(--data-table-cell-bg, var(--mantine-color-white));
+  /* Same 1px gray-2 line as the header — equal separators everywhere. */
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+  color: var(--mantine-color-gray-8);
+  font-weight: 500;
   overflow: hidden;
   text-overflow: ellipsis;
   vertical-align: middle;
@@ -253,6 +242,67 @@
 .data-table-cell .mantine-Badge-label {
   font-size: 10px;
   line-height: 1;
+}
+
+.data-table-skeleton-row {
+  cursor: default;
+  pointer-events: none;
+}
+
+.data-table-skeleton-cell {
+  vertical-align: middle;
+}
+
+.data-table-skeleton-cell-align-center .data-table-skeleton-line {
+  margin-inline: auto;
+}
+
+.data-table-skeleton-cell-align-right .data-table-skeleton-line {
+  margin-left: auto;
+}
+
+.data-table-skeleton-line {
+  --data-table-skeleton-width: 68%;
+  animation: data-table-shimmer 1.2s linear infinite;
+  background: linear-gradient(
+    90deg,
+    var(--mantine-color-gray-1) 0%,
+    var(--mantine-color-gray-2) 42%,
+    var(--mantine-color-gray-1) 84%
+  );
+  background-size: 220% 100%;
+  border-radius: 999px;
+  display: block;
+  height: 10px;
+  max-width: 100%;
+  opacity: 0.95;
+  width: var(--data-table-skeleton-width);
+}
+
+.data-table-skeleton-line-primary {
+  height: 12px;
+}
+
+.data-table-skeleton-line-icon {
+  height: 18px;
+  margin-inline: auto;
+  width: 18px;
+}
+
+@keyframes data-table-shimmer {
+  0% {
+    background-position: 120% 0;
+  }
+
+  100% {
+    background-position: -120% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .data-table-skeleton-line {
+    animation: none;
+  }
 }
 
 .data-table-row {
