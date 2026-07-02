@@ -1,45 +1,66 @@
-import { useCallback, useRef, useSyncExternalStore } from 'react'
+import { useLayoutEffect, useState } from 'react'
 
-/* Width comes from the ResizeObserver entries and is cached: getSnapshot must
-   not read element.clientWidth directly — useSyncExternalStore calls it on every
-   render/commit and a live clientWidth read forces a synchronous reflow right
-   after React mutates the DOM (measurable on resize-drag mousemoves). */
+/* Width updates are cached in state and scheduled through RAF. Reading
+   clientWidth directly from a render snapshot can cause repeated sync layout
+   work and, in some table layouts, nested update loops. */
 export function useElementClientWidth(element: HTMLElement | null) {
-  const widthRef = useRef(0)
+  const [width, setWidth] = useState(0)
 
-  const subscribe = useCallback(
-    (onStoreChange: () => void) => {
-      if (!element) {
-        widthRef.current = 0
-        return () => undefined
+  useLayoutEffect(() => {
+    if (!element) {
+      setWidth(0)
+      return undefined
+    }
+
+    let animationFrame = 0
+    let lastWidth = element.clientWidth
+
+    setWidth((currentWidth) => (currentWidth === lastWidth ? currentWidth : lastWidth))
+
+    const updateWidth = () => {
+      animationFrame = 0
+
+      const nextWidth = element.clientWidth
+
+      if (nextWidth === lastWidth) {
+        return
       }
 
-      widthRef.current = element.clientWidth
+      lastWidth = nextWidth
+      setWidth((currentWidth) => (currentWidth === nextWidth ? currentWidth : nextWidth))
+    }
 
-      if (typeof ResizeObserver === 'undefined') {
-        const handleResize = () => {
-          widthRef.current = element.clientWidth
-          onStoreChange()
+    const scheduleUpdate = () => {
+      if (animationFrame) {
+        return
+      }
+
+      animationFrame = window.requestAnimationFrame(updateWidth)
+    }
+
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', scheduleUpdate)
+
+      return () => {
+        if (animationFrame) {
+          window.cancelAnimationFrame(animationFrame)
         }
 
-        window.addEventListener('resize', handleResize)
-        return () => window.removeEventListener('resize', handleResize)
+        window.removeEventListener('resize', scheduleUpdate)
+      }
+    }
+
+    const observer = new ResizeObserver(scheduleUpdate)
+    observer.observe(element)
+
+    return () => {
+      if (animationFrame) {
+        window.cancelAnimationFrame(animationFrame)
       }
 
-      const observer = new ResizeObserver(() => {
-        widthRef.current = element.clientWidth
-        onStoreChange()
-      })
-      observer.observe(element)
+      observer.disconnect()
+    }
+  }, [element])
 
-      return () => observer.disconnect()
-    },
-    [element],
-  )
-  const getSnapshot = useCallback(
-    () => (element ? widthRef.current : 0),
-    [element],
-  )
-
-  return useSyncExternalStore(subscribe, getSnapshot, () => 0)
+  return width
 }
