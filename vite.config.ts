@@ -69,7 +69,7 @@ export default defineConfig({
       ignored: ['**/.vs/**'],
     },
     proxy: {
-      '^/api/v1/[^/]+/history': {
+      '^/api/v1/[^/]+/(history|report)': {
         target: process.env.VITE_DEV_HISTORY_PROXY_TARGET || 'https://gba-analytics-dev.85.17.167.167.nip.io',
         changeOrigin: true,
         xfwd: true,
