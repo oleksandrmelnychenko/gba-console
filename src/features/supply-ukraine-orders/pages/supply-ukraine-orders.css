@@ -28,11 +28,15 @@
   display: grid;
   flex: 0 0 auto;
   gap: 10px;
+  /* ONE row: period / search / currency / type / actions+paginator / ▦☰ slot /
+     create buttons — the buttons used to be a 7th child of a 6-column grid and
+     wrapped onto a second row. */
   grid-template-columns:
-    minmax(310px, 380px)
-    minmax(260px, 1fr)
-    minmax(132px, 156px)
-    minmax(156px, 190px)
+    minmax(280px, 330px)
+    minmax(200px, 1fr)
+    minmax(120px, 148px)
+    minmax(130px, 168px)
+    auto
     auto
     auto;
   min-height: 86px;
