@@ -654,6 +654,13 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
     setSorting,
     setStructureClient,
   } = model
+  // Identity-stable columns: an inline .filter() in the JSX handed DataTable a
+  // NEW array every page render (each search keystroke), busting every TanStack
+  // memo and re-rendering all rows.
+  const tableClientColumns = useMemo(
+    () => clientColumns.filter((column) => column.id !== 'actions'),
+    [clientColumns],
+  )
 
   return (
     <Stack className="clients-page" gap={6}>
@@ -709,7 +716,7 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
 
         <div className="clients-page__table">
           <DataTable
-            columns={clientColumns.filter((column) => column.id !== 'actions')}
+            columns={tableClientColumns}
             data={clients}
             defaultLayout={CLIENT_TABLE_DEFAULT_LAYOUT}
             emptyText={t('Клієнтів не знайдено')}

@@ -92,12 +92,12 @@
 .data-table-th {
   --data-table-cell-bg: var(--mantine-color-white);
   background: var(--mantine-color-white);
-  border-bottom-color: var(--mantine-color-gray-2);
+  border-bottom: 1px solid var(--mantine-color-gray-2);
   color: var(--mantine-color-gray-7);
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0;
-  text-transform: uppercase;
+  text-transform: none;
   position: relative;
   user-select: none;
   white-space: nowrap;
@@ -173,20 +173,13 @@
 }
 
 .data-table-pinned-icon {
-  color: var(--mantine-color-violet-8);
+  color: var(--brand-orange);
   display: inline-flex;
   flex: 0 0 auto;
 }
 
-/* Column controls stay out of layout at rest so the header name has the full
-   column width; they reveal on hover / keyboard focus. */
 .data-table-column-menu {
   color: var(--mantine-color-gray-5);
-  display: none;
-}
-
-.data-table-th:hover .data-table-column-menu,
-.data-table-th:focus-within .data-table-column-menu {
   display: inline-flex;
 }
 
@@ -224,7 +217,7 @@
 
 .data-table-resizer.is-resizing::after,
 .data-table-resizer:hover::after {
-  background: var(--mantine-color-violet-8);
+  background: var(--brand-orange);
   width: 2px;
 }
 
@@ -288,11 +281,11 @@
 }
 
 .data-table-row.is-selected {
-  --data-table-cell-bg: var(--mantine-color-violet-0);
+  --data-table-cell-bg: var(--mantine-color-orange-0);
 }
 
 .data-table-row.is-selected:hover .data-table-cell {
-  --data-table-cell-bg: var(--mantine-color-violet-0);
+  --data-table-cell-bg: var(--mantine-color-orange-0);
 }
 
 .data-table-empty {
