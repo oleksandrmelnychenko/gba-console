@@ -4,6 +4,7 @@ import {
   Autocomplete,
   Button,
   Checkbox,
+  Divider,
   Group,
   Stack,
   Text,
@@ -13,8 +14,6 @@ import {
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
-  IconBarcode,
-  IconBox,
   IconPencil,
   IconPlus,
   IconRefresh,
@@ -23,14 +22,15 @@ import {
   IconTrash,
   IconX,
 } from '@tabler/icons-react'
-import { useEffect, useMemo, useRef, type CSSProperties, type ReactNode } from 'react'
+import { ExternalLink, Trash2 } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { PermissionGate } from '../../auth/components/PermissionGate'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
-import type { DataTableColumn } from '../../../shared/ui/data-table/types'
-import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
-import { createConsoleTableMarker } from '../../../shared/ui/console-table-utils'
+import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import {
   createConsumableProduct,
   createConsumableProductCategory,
@@ -49,16 +49,16 @@ import type {
   ConsumableProductDraft,
   MeasureUnit,
 } from '../types'
-import '../../online-shop-seo/pages/online-shop-seo-page.css'
+import '../../../shared/ui/console-table-page.css'
 import './consumable-products-page.css'
 
 const PRODUCT_TABLE_DEFAULT_LAYOUT = {
+  columnOrder: ['name', 'vendorCode', 'measureUnit'],
   columnPinning: {
     left: ['name'],
-    right: ['actions'],
   },
-  density: 'compact',
-}
+  density: 'normal',
+} satisfies DataTableDefaultLayout
 
 type CategoryEditor =
   | { mode: 'create'; category?: undefined }
@@ -72,12 +72,6 @@ type DeleteTarget =
   | { category: ConsumableProductCategory; kind: 'category' }
   | { category: ConsumableProductCategory; kind: 'product'; product: ConsumableProduct }
 
-type ConsumableProductSortId = 'measureUnit' | 'name' | 'vendorCode'
-type ConsumableProductSortState = {
-  direction: 'asc' | 'desc'
-  id: ConsumableProductSortId
-} | null
-
 export function ConsumableProductsPage() {
   const { t } = useI18n()
   const [categories, setCategories] = useValueState<ConsumableProductCategory[]>([])
@@ -89,7 +83,9 @@ export function ConsumableProductsPage() {
   const [isSaving, setSaving] = useValueState(false)
   const [categoryEditor, setCategoryEditor] = useValueState<CategoryEditor | null>(null)
   const [productEditor, setProductEditor] = useValueState<ProductEditor | null>(null)
+  const [productActions, setProductActions] = useValueState<ConsumableProduct | null>(null)
   const [deleteTarget, setDeleteTarget] = useValueState<DeleteTarget | null>(null)
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const requestRef = useRef(0)
   const selectedCategory = useMemo(
     () => categories.find((category) => getCategoryKey(category) === selectedCategoryKey) || categories[0] || null,
@@ -285,19 +281,11 @@ export function ConsumableProductsPage() {
   }
 
   return (
-    <Stack className="consumable-products-page seo-page" gap="md">
-      <PageHeaderActions>
-        <PermissionGate permissionKey="SERVICE_Accounting_Consumable_Product_AddBtn_PKEY">
-          <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} onClick={() => setCategoryEditor({ mode: 'create' })}>
-            {t('Додати категорію')}
-          </Button>
-        </PermissionGate>
-      </PageHeaderActions>
-
-      <div className="seo-page-shell">
-        <div className="seo-page-command-bar">
+    <Stack className="consumable-products-page console-table-page" gap={6}>
+      <div className="consumable-products-shell console-table-shell">
+        <div className="app-filter-bar consumable-products-filter-bar">
           <TextInput
-            className="seo-page-search-input"
+            className="consumable-products-search-input"
             leftSection={<IconSearch size={15} />}
             label={t('Пошук')}
             placeholder={t('Категорія або товар')}
@@ -309,10 +297,10 @@ export function ConsumableProductsPage() {
               setSelectedCategoryKey(null)
             }}
           />
-          <div className="seo-page-toolbar-actions">
-            <Tooltip label={t('РЎРєРёРЅСѓС‚Рё')}>
+          <div className="app-filter-actions consumable-products-filter-actions">
+            <Tooltip label={t('Скинути')}>
               <ActionIcon
-                aria-label={t('РЎРєРёРЅСѓС‚Рё')}
+                aria-label={t('Скинути')}
                 color="gray"
                 disabled={!searchValue}
                 size={34}
@@ -328,25 +316,48 @@ export function ConsumableProductsPage() {
               </ActionIcon>
             </Tooltip>
             <Tooltip label={t('Оновити')}>
-              <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={38} variant="light" onClick={() => void reloadCategories()}>
-                <IconRefresh size={18} />
+              <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={34} variant="light" onClick={() => void reloadCategories()}>
+                <IconRefresh size={17} />
               </ActionIcon>
             </Tooltip>
+          </div>
+          <div ref={setTableToolbarSlot} className="consumable-products-table-toolbar-slot" />
+          <div className="consumable-products-create-actions">
+            <PermissionGate permissionKey="SERVICE_Accounting_Consumable_Product_addSupCategoryBtn_PKEY">
+              <Button
+                color={CREATE_ACTION_COLOR}
+                disabled={!selectedCategory}
+                leftSection={<IconPlus size={16} />}
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  if (selectedCategory) {
+                    setProductEditor({ category: selectedCategory, mode: 'create' })
+                  }
+                }}
+              >
+                {t('Додати товар')}
+              </Button>
+            </PermissionGate>
+            <PermissionGate permissionKey="SERVICE_Accounting_Consumable_Product_AddBtn_PKEY">
+              <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} onClick={() => setCategoryEditor({ mode: 'create' })}>
+                {t('Додати категорію')}
+              </Button>
+            </PermissionGate>
           </div>
         </div>
 
         {error && (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert className="console-table-alert" color="red" icon={<IconAlertCircle size={18} />} variant="light">
             {error}
           </Alert>
         )}
 
-        <div className="seo-page-workspace consumable-products-workspace">
-            <aside className="seo-page-rail">
-              <div className="consumable-products-sidebar__header">
-                <span className="consumable-products-sidebar__label">{t('Категорії')}</span>
-              </div>
-              <div className="seo-page-nav">
+        <div className="consumable-products-layout">
+          <aside className="consumable-products-rail" aria-label={t('Категорії')}>
+            <Text className="app-section-title consumable-products-rail-title">{t('Категорії')}</Text>
+            <div className="consumable-products-rail-scroll">
+              <div className="consumable-products-category-list">
                 {categories.map((category) => {
                   const categoryKey = getCategoryKey(category)
                   const productsCount = category.ConsumableProducts?.length || 0
@@ -354,47 +365,55 @@ export function ConsumableProductsPage() {
                   return (
                     <button
                       key={categoryKey}
-                      className={`seo-page-nav-item consumable-products-nav-item${selectedCategory && getCategoryKey(selectedCategory) === categoryKey ? ' is-active' : ''}`}
+                      className={`consumable-products-category-option${selectedCategory && getCategoryKey(selectedCategory) === categoryKey ? ' is-active' : ''}`}
                       type="button"
                       onClick={() => setSelectedCategoryKey(categoryKey)}
                     >
-                      <span className="consumable-products-category-button__marker">
-                        {createConsoleTableMarker(category.Name)}
-                      </span>
                       <span className="consumable-products-category-button__copy">
                         <span className="consumable-products-category-button__name">{displayValue(category.Name)}</span>
-                        <span className="consumable-products-category-button__meta">
-                          {category.IsSupplyServiceCategory ? t('Послуги') : t('Категорія')}
-                        </span>
                       </span>
                       <span className="consumable-products-category-button__count">{productsCount}</span>
                     </button>
                   )
                 })}
               </div>
-            </aside>
+            </div>
+          </aside>
 
-            <section className="seo-page-panel">
-              {selectedCategory ? (
-                <ConsumableCategoryPanel
-                  key={getCategoryKey(selectedCategory)}
-                  category={selectedCategory}
-                  onAddProduct={() => setProductEditor({ category: selectedCategory, mode: 'create' })}
-                  onDeleteCategory={() => setDeleteTarget({ category: selectedCategory, kind: 'category' })}
-                  onDeleteProduct={(product) => setDeleteTarget({ category: selectedCategory, kind: 'product', product })}
-                  onEditCategory={() => setCategoryEditor({ category: selectedCategory, mode: 'edit' })}
-                  onEditProduct={(product) => setProductEditor({ category: selectedCategory, mode: 'edit', product })}
-                />
-              ) : isLoading ? (
-                <div className="consumable-products-empty-state">{t('Завантаження побутових товарів')}</div>
-              ) : (
+          <section className="consumable-products-roster">
+            {selectedCategory ? (
+              <ConsumableCategoryPanel
+                key={getCategoryKey(selectedCategory)}
+                category={selectedCategory}
+                tableToolbarSlot={tableToolbarSlot}
+                onDeleteCategory={() => setDeleteTarget({ category: selectedCategory, kind: 'category' })}
+                onEditCategory={() => setCategoryEditor({ category: selectedCategory, mode: 'edit' })}
+                onOpenProduct={setProductActions}
+              />
+            ) : isLoading ? (
+              <div className="consumable-products-empty-state">{t('Завантаження побутових товарів')}</div>
+            ) : (
               <div className="consumable-products-empty-state">
                 {t('Побутових товарів не знайдено')}
               </div>
-              )}
-            </section>
+            )}
+          </section>
         </div>
       </div>
+
+      <ConsumableProductActionsModal
+        category={selectedCategory}
+        product={productActions}
+        onClose={() => setProductActions(null)}
+        onDelete={(category, product) => {
+          setProductActions(null)
+          setDeleteTarget({ category, kind: 'product', product })
+        }}
+        onEdit={(category, product) => {
+          setProductActions(null)
+          setProductEditor({ category, mode: 'edit', product })
+        }}
+      />
 
       <CategoryEditorModal
         editor={categoryEditor}
@@ -422,34 +441,20 @@ export function ConsumableProductsPage() {
 
 function ConsumableCategoryPanel({
   category,
-  onAddProduct,
   onDeleteCategory,
-  onDeleteProduct,
   onEditCategory,
-  onEditProduct,
+  onOpenProduct,
+  tableToolbarSlot,
 }: {
   category: ConsumableProductCategory
-  onAddProduct: () => void
   onDeleteCategory: () => void
-  onDeleteProduct: (product: ConsumableProduct) => void
   onEditCategory: () => void
-  onEditProduct: (product: ConsumableProduct) => void
+  onOpenProduct: (product: ConsumableProduct) => void
+  tableToolbarSlot: HTMLDivElement | null
 }) {
   const { t } = useI18n()
   const products = useMemo(() => category.ConsumableProducts || [], [category.ConsumableProducts])
-  const [sortState, setSortState] = useValueState<ConsumableProductSortState>(null)
-  const sortedProducts = useMemo(() => sortConsumableProducts(products, sortState), [products, sortState])
-  const columns = useConsumableProductColumns(onEditProduct, onDeleteProduct)
-
-  function toggleSort(id: ConsumableProductSortId) {
-    setSortState((current) => {
-      if (current?.id !== id) {
-        return { direction: 'asc', id }
-      }
-
-      return { direction: current.direction === 'asc' ? 'desc' : 'asc', id }
-    })
-  }
+  const columns = useConsumableProductColumns()
 
   return (
     <section className="consumable-category-panel">
@@ -463,126 +468,42 @@ function ConsumableCategoryPanel({
           </Text>
         </div>
         <Group className="consumable-category-panel__actions" gap="xs">
-            <PermissionGate permissionKey="SERVICE_Accounting_Consumable_Product_addSupCategoryBtn_PKEY">
-              <Button color={CREATE_ACTION_COLOR} leftSection={<IconPlus size={16} />} size="xs" variant="light" onClick={onAddProduct}>
-                {t('Товар')}
-              </Button>
-            </PermissionGate>
-            <PermissionGate permissionKey="SERVICE_Accounting_Consumable_Product_edit_categoryBtn_PKEY">
-              <Tooltip label={t('Редагувати')}>
-                <ActionIcon aria-label={t('Редагувати категорію')} color="gray" variant="light" onClick={onEditCategory}>
-                  <IconPencil size={16} />
-                </ActionIcon>
-              </Tooltip>
-              <Tooltip label={t('Видалити')}>
-                <ActionIcon aria-label={t('Видалити категорію')} color="red" variant="light" onClick={onDeleteCategory}>
-                  <IconTrash size={16} />
-                </ActionIcon>
-              </Tooltip>
-            </PermissionGate>
-          </Group>
+          <PermissionGate permissionKey="SERVICE_Accounting_Consumable_Product_edit_categoryBtn_PKEY">
+            <Tooltip label={t('Редагувати')}>
+              <ActionIcon aria-label={t('Редагувати категорію')} color="gray" variant="light" onClick={onEditCategory}>
+                <IconPencil size={16} />
+              </ActionIcon>
+            </Tooltip>
+            <Tooltip label={t('Видалити')}>
+              <ActionIcon aria-label={t('Видалити категорію')} color="red" variant="light" onClick={onDeleteCategory}>
+                <IconTrash size={16} />
+              </ActionIcon>
+            </Tooltip>
+          </PermissionGate>
+        </Group>
       </div>
 
       <div className="consumable-category-panel__table">
-        <ConsumableProductsRoster
+        <DataTable
           columns={columns}
-          data={sortedProducts}
+          data={products}
           defaultLayout={PRODUCT_TABLE_DEFAULT_LAYOUT}
           emptyText={t('Товарів у категорії немає')}
           getRowId={(product, index) => String(product.NetUid || product.Id || index)}
-          layoutVersion="consumable-products-category-products-1"
-          maxHeight="calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 220px)"
-          minWidth={640}
-          sortState={sortState}
-          showLayoutControls={false}
+          height="100%"
+          layoutVersion="consumable-products-category-products-2"
+          minWidth={680}
+          showLayoutControls
           tableId={`consumable-products-${category.NetUid || category.Id || category.Name || 'category'}`}
-          onSort={toggleSort}
+          toolbarPortalTarget={tableToolbarSlot}
+          onRowClick={onOpenProduct}
         />
       </div>
     </section>
   )
 }
 
-function ConsumableProductsRoster({
-  columns,
-  data,
-  emptyText,
-  getRowId,
-  maxHeight,
-  minWidth = 720,
-  sortState,
-  onSort,
-}: {
-  columns: DataTableColumn<ConsumableProduct>[]
-  data: ConsumableProduct[]
-  defaultLayout?: unknown
-  emptyText?: ReactNode
-  getRowId?: (product: ConsumableProduct, index: number) => string
-  layoutVersion?: string
-  maxHeight?: number | string
-  minWidth?: number
-  showLayoutControls?: boolean
-  sortState?: ConsumableProductSortState
-  tableId?: string
-  onSort?: (id: ConsumableProductSortId) => void
-}) {
-  const tableStyle = {
-    '--seo-roster-columns': 'minmax(340px, 1fr) minmax(98px, 0.24fr) minmax(98px, 0.22fr) 76px',
-    '--seo-roster-min-width': `${minWidth}px`,
-    maxHeight,
-  } as CSSProperties
-
-  return (
-    <div className="seo-roster-table consumable-products-roster" style={tableStyle}>
-      <div className="seo-roster-head">
-        {columns.map((column) =>
-          isConsumableProductSortId(column.id) ? (
-            <button
-              className={`seo-roster-head-cell consumable-products-roster-sort${sortState?.id === column.id ? ' is-active' : ''}`}
-              key={column.id}
-              type="button"
-              onClick={() => onSort?.(column.id as ConsumableProductSortId)}
-            >
-              {column.header}
-              {sortState?.id === column.id ? (
-                <span className="consumable-products-roster-sort__direction">
-                  {sortState.direction === 'asc' ? '↑' : '↓'}
-                </span>
-              ) : null}
-            </button>
-          ) : (
-            <span className={`seo-roster-head-cell is-${column.id}`} key={column.id}>
-              {column.header}
-            </span>
-          ),
-        )}
-      </div>
-
-      <div className="seo-roster-body">
-        {data.length === 0 ? (
-          <div className="seo-roster-empty">{emptyText}</div>
-        ) : (
-          data.map((product, index) => (
-            <div className="seo-roster-row-frame" key={getRowId?.(product, index) || getProductKey(product)}>
-              <div className="seo-roster-row is-hoverable consumable-product-row">
-                {columns.map((column) => (
-                  <div className={`seo-roster-cell is-${column.id}`} key={column.id}>
-                    {column.cell ? column.cell(product) : displayValue(column.accessor?.(product) as string | number | null)}
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-    </div>
-  )
-}
-
-function useConsumableProductColumns(
-  onEditProduct: (product: ConsumableProduct) => void,
-  onDeleteProduct: (product: ConsumableProduct) => void,
-): DataTableColumn<ConsumableProduct>[] {
+function useConsumableProductColumns(): DataTableColumn<ConsumableProduct>[] {
   const { t } = useI18n()
 
   return useMemo<DataTableColumn<ConsumableProduct>[]>(
@@ -611,75 +532,116 @@ function useConsumableProductColumns(
         accessor: (product) => product.MeasureUnit?.Name,
         cell: (product) => <ConsumableProductUnitCell value={displayValue(product.MeasureUnit?.Name)} />,
       },
-      {
-        id: 'actions',
-        header: '',
-        width: 90,
-        minWidth: 82,
-        align: 'right',
-        enableSorting: false,
-        enableHiding: false,
-        enablePinning: false,
-        enableReorder: false,
-        cell: (product) => (
-          <Group className="consumable-product-row-actions" gap={4} justify="flex-end" wrap="nowrap">
-            <PermissionGate permissionKey="SERVICE_Accounting_Consumable_Product_editBtn_PKEY">
-              <Tooltip label={t('Редагувати')}>
-                <ActionIcon aria-label={t('Редагувати товар')} color="gray" size="sm" variant="subtle" onClick={() => onEditProduct(product)}>
-                  <IconPencil size={15} />
-                </ActionIcon>
-              </Tooltip>
-            </PermissionGate>
-            <PermissionGate permissionKey="SERVICE_Accounting_Consumable_Product_removeBtn_PKEY">
-              <Tooltip label={t('Видалити')}>
-                <ActionIcon aria-label={t('Видалити товар')} color="gray" size="sm" variant="subtle" onClick={() => onDeleteProduct(product)}>
-                  <IconTrash size={15} />
-                </ActionIcon>
-              </Tooltip>
-            </PermissionGate>
-          </Group>
-        ),
-      },
     ],
-    [onDeleteProduct, onEditProduct, t],
+    [t],
   )
 }
 
 function ConsumableProductCodeCell({ value }: { value: string }) {
-  return (
-    <Tooltip label={value} openDelay={350} withArrow>
-      <span className="seo-table-role-like-cell consumable-product-code">
-        <span className="seo-table-role-like-icon" aria-hidden>
-          <IconBarcode size={12} />
-        </span>
-        <span className="seo-table-muted-cell is-default">{value}</span>
-      </span>
-    </Tooltip>
-  )
+  if (!value) {
+    return null
+  }
+
+  return <span className="consumable-product-code-cell" title={nativeTitle(value)}>{value}</span>
 }
 
 function ConsumableProductNameCell({ product }: { product: ConsumableProduct }) {
   const title = displayValue(product.Name)
 
   return (
-    <Tooltip label={title} openDelay={350} withArrow>
-      <span className="seo-table-primary-cell">
-        <span className="seo-table-primary-icon" aria-hidden>
-          <IconBox size={15} />
-        </span>
-        <span className="seo-table-primary-copy">
-          <span className="seo-table-primary-title">{title}</span>
-        </span>
+    <span className="consumable-product-name-cell" title={nativeTitle(title)}>
+      <span className="consumable-product-name-copy">
+        <span className="consumable-product-name-title">{title}</span>
       </span>
-    </Tooltip>
+    </span>
   )
 }
 
 function ConsumableProductUnitCell({ value }: { value: string }) {
+  if (!value) {
+    return null
+  }
+
+  return <span className="app-role-pill is-gray consumable-product-unit" title={nativeTitle(value)}>{value}</span>
+}
+
+function ConsumableProductActionsModal({
+  category,
+  product,
+  onClose,
+  onDelete,
+  onEdit,
+}: {
+  category: ConsumableProductCategory | null
+  product: ConsumableProduct | null
+  onClose: () => void
+  onDelete: (category: ConsumableProductCategory, product: ConsumableProduct) => void
+  onEdit: (category: ConsumableProductCategory, product: ConsumableProduct) => void
+}) {
+  const { t } = useI18n()
+
   return (
-    <Tooltip label={value} openDelay={350} withArrow>
-      <span className="seo-table-tag is-neutral consumable-product-unit">{value}</span>
-    </Tooltip>
+    <AppModal
+      centered
+      opened={Boolean(product)}
+      size={496}
+      title={
+        <span className="consumable-product-action-title">
+          <span className="consumable-product-action-status-dot is-active" />
+          {product ? displayValue(product.Name) || t('Товар') : t('Товар')}
+        </span>
+      }
+      onClose={onClose}
+    >
+      {product && (
+        <Stack gap="md">
+          <Stack className="app-modal-actions" gap="xs">
+            <PermissionGate permissionKey="SERVICE_Accounting_Consumable_Product_editBtn_PKEY">
+              <Button
+                fullWidth
+                color="dark"
+                disabled={!category}
+                justify="flex-start"
+                leftSection={
+                  <span className="app-action-icon">
+                    <ExternalLink size={20} color="var(--mantine-color-gray-7)" />
+                  </span>
+                }
+                size="md"
+                variant="subtle"
+                onClick={() => {
+                  if (category) {
+                    onEdit(category, product)
+                  }
+                }}
+              >
+                {t('Редагувати')}
+              </Button>
+            </PermissionGate>
+          </Stack>
+
+          <Divider />
+
+          <PermissionGate permissionKey="SERVICE_Accounting_Consumable_Product_removeBtn_PKEY">
+            <Button
+              fullWidth
+              color="red"
+              disabled={!category}
+              justify="flex-start"
+              leftSection={<Trash2 size={16} />}
+              variant="light"
+              onClick={() => {
+                if (category) {
+                  onDelete(category, product)
+                }
+              }}
+            >
+              {t('Видалити')}
+            </Button>
+          </PermissionGate>
+        </Stack>
+      )}
+    </AppModal>
   )
 }
 
@@ -895,44 +857,6 @@ function ProductEditorForm({
   )
 }
 
-function isConsumableProductSortId(id: string): id is ConsumableProductSortId {
-  return id === 'name' || id === 'vendorCode' || id === 'measureUnit'
-}
-
-function sortConsumableProducts(
-  products: ConsumableProduct[],
-  sortState: ConsumableProductSortState,
-): ConsumableProduct[] {
-  if (!sortState) {
-    return products
-  }
-
-  const direction = sortState.direction === 'asc' ? 1 : -1
-
-  return [...products].sort(
-    (firstProduct, secondProduct) =>
-      getConsumableProductSortValue(firstProduct, sortState.id).localeCompare(
-        getConsumableProductSortValue(secondProduct, sortState.id),
-        'uk',
-        {
-          numeric: true,
-          sensitivity: 'base',
-        },
-      ) * direction,
-  )
-}
-
-function getConsumableProductSortValue(product: ConsumableProduct, id: ConsumableProductSortId): string {
-  switch (id) {
-    case 'measureUnit':
-      return product.MeasureUnit?.Name || ''
-    case 'name':
-      return product.Name || ''
-    case 'vendorCode':
-      return product.VendorCode || ''
-  }
-}
-
 function getCategoryEditorKey(editor: CategoryEditor): string {
   if (editor.mode === 'create') {
     return 'create'
@@ -1009,10 +933,16 @@ function DeleteModal({
 
 function displayValue(value?: number | string | null): string {
   if (typeof value === 'number') {
-    return Number.isFinite(value) ? String(value) : '—'
+    return Number.isFinite(value) ? String(value) : ''
   }
 
-  return value || '—'
+  return value || ''
+}
+
+function nativeTitle(value: string): string | undefined {
+  const title = value.trim()
+
+  return title ? title : undefined
 }
 
 function applySupplyServiceCategoryExclusivity(

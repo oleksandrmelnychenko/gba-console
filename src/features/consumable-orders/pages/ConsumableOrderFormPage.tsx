@@ -20,23 +20,13 @@ import {
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
-  IconBuildingBank,
-  IconBuildingWarehouse,
-  IconCalendar,
-  IconClock,
   IconDeviceFloppy,
   IconFileText,
-  IconHash,
-  IconNotes,
-  IconPackage,
   IconPencil,
   IconPlus,
-  IconReceipt,
   IconRestore,
-  IconScale,
   IconTrash,
   IconUpload,
-  IconUserCheck,
   IconX,
 } from '@tabler/icons-react'
 import { type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useRef } from 'react'
@@ -667,6 +657,7 @@ export function ConsumableOrderFormPage() {
           form="consumable-order-form"
           leftSection={<IconDeviceFloppy size={16} />}
           loading={isSaving || isCalculating}
+          styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
           type="submit"
         >
           {t('Зберегти')}
@@ -680,7 +671,7 @@ export function ConsumableOrderFormPage() {
               <div className="consumable-order-form-title">
                 <div className="consumable-order-form-title__copy">
                   <strong>{invoiceNumberLabel}</strong>
-                  <span>{internalNumberLabel}</span>
+                  {internalNumberLabel !== invoiceNumberLabel ? <span>{internalNumberLabel}</span> : null}
                 </div>
                 {isPaid ? (
                   <Badge className="app-role-pill is-green" variant="light">
@@ -690,7 +681,11 @@ export function ConsumableOrderFormPage() {
               </div>
               <div className="consumable-order-form-meta">
                 <span>{supplierLabel}</span>
-                <span>{agreementLabel}</span>
+                {agreementLabel ? (
+                  <Badge className="app-role-pill consumable-order-form-meta-badge" variant="light">
+                    {agreementLabel}
+                  </Badge>
+                ) : null}
                 <span>{storageLabel}</span>
                 <span>{invoiceDateLabel}</span>
               </div>
@@ -717,7 +712,6 @@ export function ConsumableOrderFormPage() {
                 data={supplierOptions}
                 disabled={isFormLocked}
                 label={t('Постачальник послуг')}
-                leftSection={<IconReceipt size={15} />}
                 placeholder={t('Почніть вводити назву')}
                 value={form.supplierSearch}
                 onChange={(value) => updateForm({ selectedSupplierValue: '', supplierSearch: value })}
@@ -728,7 +722,6 @@ export function ConsumableOrderFormPage() {
                 data={agreementOptions}
                 disabled={!selectedSupplier || isFormLocked}
                 label={t('Договір')}
-                leftSection={<IconFileText size={15} />}
                 placeholder={t('Оберіть договір')}
                 searchable
                 value={form.selectedAgreementValue || null}
@@ -738,14 +731,12 @@ export function ConsumableOrderFormPage() {
                 className="consumable-order-form-control"
                 disabled
                 label={t('Організація')}
-                leftSection={<IconBuildingBank size={15} />}
                 value={organizationLabel === '—' ? '' : organizationLabel}
               />
               <TextInput
                 className="consumable-order-form-control is-compact"
                 disabled={isFormLocked}
                 label={t('Номер накладної')}
-                leftSection={<IconHash size={15} />}
                 value={form.invoiceNumber}
                 onChange={(event) => updateForm({ invoiceNumber: event.currentTarget.value })}
               />
@@ -753,7 +744,6 @@ export function ConsumableOrderFormPage() {
                 className="consumable-order-form-control is-compact"
                 disabled={isFormLocked}
                 label={t('Дата входу')}
-                leftSection={<IconCalendar size={15} />}
                 type="date"
                 value={form.invoiceDate}
                 onChange={(event) => updateForm({ invoiceDate: event.currentTarget.value })}
@@ -762,7 +752,6 @@ export function ConsumableOrderFormPage() {
                 className="consumable-order-form-control is-compact"
                 disabled={isFormLocked}
                 label={t('Час')}
-                leftSection={<IconClock size={15} />}
                 type="time"
                 value={form.invoiceTime}
                 onChange={(event) => updateForm({ invoiceTime: event.currentTarget.value })}
@@ -772,7 +761,6 @@ export function ConsumableOrderFormPage() {
                 data={storageOptions}
                 disabled={isFormLocked}
                 label={t('Склад')}
-                leftSection={<IconBuildingWarehouse size={15} />}
                 placeholder={t('Почніть вводити склад')}
                 value={form.storageSearch}
                 onChange={(value) => updateForm({ selectedStorageValue: '', storageSearch: value })}
@@ -809,7 +797,6 @@ export function ConsumableOrderFormPage() {
                 className="consumable-order-form-control is-compact"
                 disabled={isFormLocked}
                 label={t('Сплатити до')}
-                leftSection={<IconCalendar size={15} />}
                 type="date"
                 value={form.paymentTaskPayToDate}
                 onChange={(event) => updateForm({ paymentTaskPayToDate: event.currentTarget.value })}
@@ -819,7 +806,6 @@ export function ConsumableOrderFormPage() {
                 data={responsibleOptions}
                 disabled={isFormLocked}
                 label={t('Відповідальний')}
-                leftSection={<IconUserCheck size={15} />}
                 searchable
                 value={form.responsibleUserValue || null}
                 onChange={(value) => updateForm({ responsibleUserValue: value || '' })}
@@ -828,7 +814,6 @@ export function ConsumableOrderFormPage() {
                 className="consumable-order-form-control is-wide"
                 disabled={isFormLocked}
                 label={t('Коментар до платежу')}
-                leftSection={<IconNotes size={15} />}
                 value={form.paymentTaskComment}
                 onChange={(event) => updateForm({ paymentTaskComment: event.currentTarget.value })}
               />
@@ -845,10 +830,12 @@ export function ConsumableOrderFormPage() {
               action={
                 <Button
                   className="consumable-order-form-add-button"
+                  color={CREATE_ACTION_COLOR}
                   disabled={isPaid || isFormLocked}
                   leftSection={<IconPlus size={15} />}
+                  size="sm"
                   type="button"
-                  variant="light"
+                  variant="outline"
                   onClick={openNewItemEditor}
                 >
                   {t('Додати')}
@@ -1183,14 +1170,11 @@ function OrderFormItemRow({
     <div className={`consumable-order-form-item-row${item.Deleted ? ' is-deleted' : ''}`}>
       <div className="consumable-order-form-item-top">
         <div className="consumable-order-form-product-cell">
-          <span className="consumable-order-form-product-icon" aria-hidden>
-            <IconPackage size={15} />
-          </span>
           <span className="consumable-order-form-product-copy">
             <span>
               <strong>{productName}</strong>
               {item.Deleted ? (
-                <Badge color="red" size="xs" variant="light">
+                <Badge className="app-role-pill is-red" size="xs" variant="light">
                   {t('Буде видалено')}
                 </Badge>
               ) : null}
@@ -1225,9 +1209,7 @@ function OrderFormItemRow({
           <OrderFormMetaPill label={t('Категорія')} value={category} />
           <OrderFormMetaPill label={t('Стаття витрат')} value={costMovement} />
           <div className="consumable-order-form-qty-cell">
-            <span aria-hidden>
-              <IconScale size={13} />
-            </span>
+            <span>{t('К-сть')}</span>
             <strong>{formatAmount(item.Qty)}</strong>
             {unitName ? <small>{unitName}</small> : null}
           </div>
@@ -1926,10 +1908,11 @@ function formatInputDate(value: string): string {
   return year && month && day ? `${day}.${month}.${year.slice(2)}` : value
 }
 
+// Empty values render blank (docs/ui-patterns.md §5).
 function displayValue(value?: string | number | null): string {
   if (typeof value === 'number') {
-    return Number.isFinite(value) ? String(value) : '—'
+    return Number.isFinite(value) ? String(value) : ''
   }
 
-  return value || '—'
+  return value || ''
 }

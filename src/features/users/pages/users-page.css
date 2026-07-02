@@ -8,36 +8,81 @@
   min-height: 0;
 }
 
-/* ── Filter bar (§5.3): one flex row, everything aligned to the bottom. ── */
+/* ── Filter bar (§5.3): filters → actions → table toolbar → right buttons. ── */
 .users-filter-bar {
   align-items: end;
   background: #f8f9fa;
   border-bottom-color: var(--mantine-color-gray-2);
-  display: flex;
+  display: grid;
   flex: 0 0 auto;
   gap: 10px;
+  grid-template-columns: minmax(220px, 1fr) 168px 168px auto auto auto;
+  overflow-x: auto;
 }
 
 .users-search-input {
-  flex: 1 1 auto;
-  min-width: 180px;
+  min-width: 220px;
 }
 
 .users-filter-select {
-  flex: 0 0 168px;
   min-width: 0;
+}
+
+.users-filter-bar .mantine-InputWrapper-label {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.users-filter-bar .mantine-Input-wrapper,
+.users-filter-bar .mantine-Input-input {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-weight: 400;
+  height: 36px;
+  letter-spacing: 0;
+  min-height: 36px;
+}
+
+.users-filter-bar .mantine-Input-input::placeholder {
+  font-family: var(--font-mono);
+  letter-spacing: 0;
+}
+
+.users-filter-bar .mantine-Select-option {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  letter-spacing: 0;
 }
 
 .users-filter-actions {
   align-items: center;
   align-self: end;
   display: flex;
-  flex: 0 0 auto;
   gap: 6px;
+  justify-content: flex-end;
   min-height: 36px;
+  min-width: 0;
+}
+
+.users-create-actions {
+  align-items: center;
+  align-self: end;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  min-height: 36px;
+  min-width: 0;
 }
 
 .users-roles-action .mantine-Button-label {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.users-filter-bar .mantine-Button-root {
   font-family: var(--font-mono);
   font-weight: 600;
   letter-spacing: 0;
@@ -47,8 +92,9 @@
   align-items: center;
   align-self: end;
   display: flex;
-  flex: 0 0 auto;
+  justify-content: flex-end;
   min-height: 36px;
+  min-width: 0;
 }
 
 .users-table-toolbar-slot .data-table-toolbar {
@@ -59,7 +105,6 @@
 
 .users-create-button {
   align-self: end;
-  flex: 0 0 auto;
   font-family: var(--font-mono);
   font-weight: 600;
   letter-spacing: 0;
@@ -84,6 +129,12 @@
 }
 
 .users-rail-title {
+  color: var(--mantine-color-gray-7);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.2;
   margin-bottom: 6px;
   padding-left: 8px;
 }
@@ -175,22 +226,8 @@
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 10px;
   display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
   overflow: hidden;
-  flex: 1 1 auto;
-  min-height: 0;
-  min-width: 0;
-}
-
-.users-roster .data-table {
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  height: 100%;
-  min-height: 0;
-  min-width: 0;
-}
-
-.users-roster .data-table-scroll {
-  flex: 1 1 auto;
-  min-height: 0;
 }

@@ -11,27 +11,23 @@ import {
 } from '@mantine/core'
 import {
   IconAlertCircle,
-  IconBuilding,
-  IconBuildingBank,
-  IconCash,
-  IconChevronDown,
-  IconChevronUp,
   IconDownload,
-  IconDots,
-  IconEye,
   IconFileTypePdf,
   IconPlus,
   IconRestore,
   IconSearch,
 } from '@tabler/icons-react'
+import { ExternalLink, Wallet } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { PermissionGate } from '../../auth/components/PermissionGate'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
-import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
@@ -57,12 +53,14 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
   minimumFractionDigits: 2,
 })
 
-type SupplierOrganizationSortId = 'balance' | 'bank' | 'contact' | 'created' | 'identifiers' | 'name' | 'organization'
-
-type SupplierOrganizationSortState = {
-  direction: 'asc' | 'desc'
-  id: SupplierOrganizationSortId
-} | null
+const SUPPLIER_ORGANIZATIONS_TABLE_MIN_WIDTH = 1320
+const SUPPLIER_ORGANIZATIONS_TABLE_DEFAULT_LAYOUT = {
+  columnOrder: ['name', 'identifiers', 'organization', 'contact', 'bank', 'balance', 'created'],
+  columnPinning: {
+    left: ['name'],
+  },
+  density: 'normal',
+} satisfies DataTableDefaultLayout
 
 export function SupplierOrganizationsPage() {
   const { t } = useI18n()
@@ -90,10 +88,11 @@ export function SupplierOrganizationsPage() {
   const [selectedOrganization, setSelectedOrganization] = useValueState<SupplyOrganization | null>(null)
   const [page, setPage] = useValueState(1)
   const [pageSize, setPageSize] = useValueState(SUPPLIER_ORGANIZATIONS_PAGE_SIZE)
-  const [sortState, setSortState] = useValueState<SupplierOrganizationSortState>(null)
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const requestRef = useRef(0)
   const filterError = getDateFilterError(dateFrom, dateTo)
   const dateFilters = useMemo(() => ({ from: dateFrom || undefined, to: dateTo || undefined }), [dateFrom, dateTo])
+  const columns = useSupplierOrganizationColumns()
 
   const loadOrganizationsPage = useCallback(async () => {
     const requestId = requestRef.current + 1
@@ -207,29 +206,10 @@ export function SupplierOrganizationsPage() {
     setHasMore(false)
   }
 
-  const sortedOrganizations = useMemo(() => sortSupplierOrganizations(organizations, sortState), [organizations, sortState])
   const hasActiveFilters = Boolean(searchValue.trim() || dateFrom || dateTo)
 
-  function toggleSort(id: SupplierOrganizationSortId) {
-    setSortState((current) => {
-      if (current?.id !== id) {
-        return { direction: 'asc', id }
-      }
-
-      return { direction: current.direction === 'asc' ? 'desc' : 'asc', id }
-    })
-  }
-
   return (
-    <Stack className="supplier-organizations-page console-table-page" gap="md">
-      <PermissionGate permissionKey="SERVICE_Accounting_Supplier_Organizations_AddBtn_PKEY">
-        <PageHeaderActions>
-          <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} onClick={() => openOrganizationSheet('/accounting/supplier-organizations/new')}>
-            {t('Додати')}
-          </Button>
-        </PageHeaderActions>
-      </PermissionGate>
-
+    <Stack className="supplier-organizations-page console-table-page" gap={6}>
       <div className="console-table-shell">
         <div className="app-filter-bar supplier-organizations-command-bar">
           <div className="supplier-organizations-period-filter">
@@ -261,7 +241,7 @@ export function SupplierOrganizationsPage() {
             value={searchValue}
             onChange={(event) => updateSearchValue(event.currentTarget.value)}
           />
-          <div className="app-filter-actions">
+          <div className="app-filter-actions supplier-organizations-command-actions">
             <Tooltip label={t('Скинути')}>
               <ActionIcon
                 aria-label={t('Скинути')}
@@ -297,6 +277,20 @@ export function SupplierOrganizationsPage() {
               onRefresh={() => void reloadOrganizations()}
             />
           </div>
+          <div ref={setTableToolbarSlot} className="supplier-organizations-table-toolbar-slot" />
+          <div className="supplier-organizations-create-actions">
+            <PermissionGate permissionKey="SERVICE_Accounting_Supplier_Organizations_AddBtn_PKEY">
+              <Button
+                color={CREATE_ACTION_COLOR}
+                leftSection={<IconPlus size={16} />}
+                size="sm"
+                type="button"
+                onClick={() => openOrganizationSheet('/accounting/supplier-organizations/new')}
+              >
+                {t('Додати')}
+              </Button>
+            </PermissionGate>
+          </div>
         </div>
 
         {error && (
@@ -312,16 +306,21 @@ export function SupplierOrganizationsPage() {
         )}
 
         <div className="supplier-organizations-page__table console-table-body">
-          <SupplierOrganizationsList
+          <DataTable
+            columns={columns}
+            data={organizations}
+            defaultLayout={SUPPLIER_ORGANIZATIONS_TABLE_DEFAULT_LAYOUT}
+            emptyText={t('Постачальників послуг не знайдено')}
+            getRowId={(organization, index) => String(organization.NetUid || organization.Id || index)}
+            height="100%"
             isLoading={isLoading}
-            organizations={sortedOrganizations}
-            sortState={sortState}
-            onOpenActions={setSelectedOrganization}
-            onOpenCashFlow={(organization) => navigate(`/accounting/supplier-organizations/cash-flow/${organization.NetUid}`)}
-            onOpenEdit={(organization) => openOrganizationSheet(`/accounting/supplier-organizations/edit/${organization.NetUid}`)}
-            onSort={toggleSort}
+            layoutVersion="supplier-organizations-table-2"
+            minWidth={SUPPLIER_ORGANIZATIONS_TABLE_MIN_WIDTH}
+            showLayoutControls
+            tableId="supplier-organizations"
+            toolbarPortalTarget={tableToolbarSlot}
+            onRowClick={setSelectedOrganization}
           />
-
         </div>
       </div>
 
@@ -343,139 +342,101 @@ export function SupplierOrganizationsPage() {
   )
 }
 
-function SupplierOrganizationsList({
-  isLoading,
-  organizations,
-  sortState,
-  onOpenActions,
-  onOpenCashFlow,
-  onOpenEdit,
-  onSort,
-}: {
-  isLoading: boolean
-  organizations: SupplyOrganization[]
-  sortState: SupplierOrganizationSortState
-  onOpenActions: (organization: SupplyOrganization) => void
-  onOpenCashFlow: (organization: SupplyOrganization) => void
-  onOpenEdit: (organization: SupplyOrganization) => void
-  onSort: (id: SupplierOrganizationSortId) => void
-}) {
+function useSupplierOrganizationColumns(): DataTableColumn<SupplyOrganization>[] {
   const { t } = useI18n()
 
-  return (
-    <div className="supplier-organizations-list">
-      <div className="supplier-organizations-list-head">
-        <SupplierOrganizationSortHeader id="name" label={t('Назва')} sortState={sortState} onSort={onSort} />
-        <SupplierOrganizationSortHeader id="identifiers" label={t('Коди')} sortState={sortState} onSort={onSort} />
-        <SupplierOrganizationSortHeader id="organization" label={t('Організація / договори')} sortState={sortState} onSort={onSort} />
-        <SupplierOrganizationSortHeader id="contact" label={t('Контакти')} sortState={sortState} onSort={onSort} />
-        <SupplierOrganizationSortHeader id="bank" label={t('Реквізити')} sortState={sortState} onSort={onSort} />
-        <SupplierOrganizationSortHeader id="balance" label={t('Баланс')} sortState={sortState} align="right" onSort={onSort} />
-        <SupplierOrganizationSortHeader id="created" label={t('Створено')} sortState={sortState} onSort={onSort} />
-        <span aria-hidden />
-      </div>
-
-      <div className="supplier-organizations-list-body">
-        {isLoading ? (
-          <div className="supplier-organizations-list-state">{t('Завантаження постачальників послуг')}</div>
-        ) : organizations.length === 0 ? (
-          <div className="supplier-organizations-list-state">{t('Постачальників послуг не знайдено')}</div>
-        ) : (
-          organizations.map((organization, index) => (
-            <SupplierOrganizationRow
-              key={String(organization.NetUid || organization.Id || index)}
-              organization={organization}
-              onOpenActions={onOpenActions}
-              onOpenCashFlow={onOpenCashFlow}
-              onOpenEdit={onOpenEdit}
-            />
-          ))
-        )}
-      </div>
-    </div>
-  )
-}
-
-function SupplierOrganizationSortHeader({
-  align,
-  id,
-  label,
-  sortState,
-  onSort,
-}: {
-  align?: 'right'
-  id: SupplierOrganizationSortId
-  label: string
-  sortState: SupplierOrganizationSortState
-  onSort: (id: SupplierOrganizationSortId) => void
-}) {
-  const isActive = sortState?.id === id
-
-  return (
-    <button
-      className={`supplier-organizations-sort-header${isActive ? ' is-active' : ''}${align === 'right' ? ' is-right' : ''}`}
-      type="button"
-      onClick={() => onSort(id)}
-    >
-      <span>{label}</span>
-      {isActive && sortState?.direction === 'desc' ? <IconChevronDown size={13} /> : <IconChevronUp size={13} />}
-    </button>
-  )
-}
-
-function SupplierOrganizationRow({
-  organization,
-  onOpenActions,
-  onOpenCashFlow,
-  onOpenEdit,
-}: {
-  organization: SupplyOrganization
-  onOpenActions: (organization: SupplyOrganization) => void
-  onOpenCashFlow: (organization: SupplyOrganization) => void
-  onOpenEdit: (organization: SupplyOrganization) => void
-}) {
-  return (
-    <div
-      className="supplier-organizations-row"
-      role="button"
-      tabIndex={0}
-      onClick={() => onOpenActions(organization)}
-      onKeyDown={(event) => {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault()
-          onOpenActions(organization)
-        }
-      }}
-    >
-      <SupplierOrganizationNameCell organization={organization} />
-      <SupplierOrganizationIdentifiersCell organization={organization} />
-      <SupplierOrganizationAgreementCell organization={organization} />
-      <SupplierOrganizationContactCell organization={organization} />
-      <SupplierOrganizationBankCell organization={organization} />
-      <SupplierOrganizationBalanceCell organization={organization} />
-      <SupplierOrganizationDateCell organization={organization} value={formatDateTime(organization.Created)} />
-      <SupplierOrganizationActions organization={organization} onOpenActions={onOpenActions} onOpenCashFlow={onOpenCashFlow} onOpenEdit={onOpenEdit} />
-    </div>
+  return useMemo<DataTableColumn<SupplyOrganization>[]>(
+    () => [
+      {
+        id: 'name',
+        header: t('Назва'),
+        width: 300,
+        minWidth: 250,
+        accessor: (organization) => compactStrings([organization.Name, organization.ContactPersonName, getAgreementOrganizations(organization), organization.Address]).join(' '),
+        cell: (organization) => <SupplierOrganizationNameCell organization={organization} />,
+      },
+      {
+        id: 'identifiers',
+        header: t('Коди'),
+        width: 220,
+        minWidth: 188,
+        accessor: (organization) => compactStrings([organization.TIN, organization.USREOU, organization.SROI]).join(' '),
+        cell: (organization) => <SupplierOrganizationIdentifiersCell organization={organization} />,
+      },
+      {
+        id: 'organization',
+        header: t('Організація / договори'),
+        width: 292,
+        minWidth: 238,
+        fill: true,
+        accessor: (organization) => compactStrings([getAgreementOrganizations(organization), getAgreementNames(organization), getAgreementCurrencies(organization)]).join(' '),
+        cell: (organization) => <SupplierOrganizationAgreementCell organization={organization} />,
+      },
+      {
+        id: 'contact',
+        header: t('Контакти'),
+        width: 210,
+        minWidth: 176,
+        accessor: (organization) =>
+          compactStrings([
+            organization.ContactPersonName,
+            organization.ContactPersonEmail,
+            organization.EmailAddress,
+            organization.PhoneNumber,
+            organization.ContactPersonPhone,
+          ]).join(' '),
+        cell: (organization) => <SupplierOrganizationContactCell organization={organization} />,
+      },
+      {
+        id: 'bank',
+        header: t('Реквізити'),
+        width: 238,
+        minWidth: 198,
+        accessor: (organization) =>
+          compactStrings([
+            organization.Bank,
+            organization.Requisites,
+            organization.BankAccount,
+            organization.BankAccountEUR,
+            organization.SwiftBic,
+            organization.Swift,
+          ]).join(' '),
+        cell: (organization) => <SupplierOrganizationBankCell organization={organization} />,
+      },
+      {
+        id: 'balance',
+        header: t('Баланс'),
+        width: 126,
+        minWidth: 112,
+        align: 'right',
+        accessor: (organization) => organization.TotalAgreementsCurrentEuroAmount ?? Number.NEGATIVE_INFINITY,
+        cell: (organization) => <SupplierOrganizationBalanceCell organization={organization} />,
+      },
+      {
+        id: 'created',
+        header: t('Створено'),
+        width: 138,
+        minWidth: 124,
+        accessor: (organization) => organization.Created || '',
+        cell: (organization) => <SupplierOrganizationDateCell organization={organization} value={formatDateTime(organization.Created)} />,
+      },
+    ],
+    [t],
   )
 }
 
 function SupplierOrganizationNameCell({ organization }: { organization: SupplyOrganization }) {
   const title = displayValue(organization.Name)
-  const subtitle = compactStrings([organization.ContactPersonName, getAgreementOrganizations(organization), organization.Address])[0] || '—'
+  const subtitle = compactStrings([organization.ContactPersonName, getAgreementOrganizations(organization), organization.Address])[0] || ''
   const tooltip = compactStrings([title, subtitle, organization.Address]).join('\n')
 
   return (
-    <Tooltip label={tooltip} multiline openDelay={350} withArrow>
-      <span className="supplier-organizations-name-cell">
-        <span className="supplier-organizations-name-icon" aria-hidden>
-          <IconBuilding size={16} />
-        </span>
-        <span className="supplier-organizations-name-copy">
-          <span className="supplier-organizations-name-title">{title}</span>
-          <span className="supplier-organizations-name-subtitle">{subtitle}</span>
-        </span>
+    <span className="supplier-organizations-name-cell" title={nativeTitle(tooltip)}>
+      <span className="supplier-organizations-name-copy">
+        <span className="supplier-organizations-name-title">{title}</span>
+        <span className="supplier-organizations-name-subtitle">{subtitle}</span>
       </span>
-    </Tooltip>
+    </span>
   )
 }
 
@@ -488,18 +449,16 @@ function SupplierOrganizationIdentifiersCell({ organization }: { organization: S
   ].filter((item) => item.value)
 
   if (identifiers.length === 0) {
-    return <SupplierOrganizationMutedValue value="—" />
+    return null
   }
 
   return (
     <span className="supplier-organizations-tags-cell">
       {identifiers.slice(0, 3).map((item) => (
-        <Tooltip key={item.label} label={`${item.label}: ${item.value}`} openDelay={350} withArrow>
-          <span className="supplier-organizations-id-tag">
-            <span>{item.label}</span>
-            <strong>{item.value}</strong>
-          </span>
-        </Tooltip>
+        <span key={item.label} className="supplier-organizations-id-tag" title={nativeTitle(`${item.label}: ${item.value}`)}>
+          <span>{item.label}</span>
+          <strong>{item.value}</strong>
+        </span>
       ))}
     </span>
   )
@@ -512,12 +471,10 @@ function SupplierOrganizationAgreementCell({ organization }: { organization: Sup
   const tooltip = compactStrings([organizations, agreements, currencies]).join('\n')
 
   return (
-    <Tooltip label={tooltip} multiline openDelay={350} withArrow>
-      <span className="supplier-organizations-two-line-cell is-separated">
-        <span>{organizations}</span>
-        <small>{compactStrings([agreements, currencies]).join(' · ') || '—'}</small>
-      </span>
-    </Tooltip>
+    <span className="supplier-organizations-two-line-cell is-separated" title={nativeTitle(tooltip)}>
+      <span>{organizations}</span>
+      <small>{compactStrings([agreements, currencies]).join(' · ')}</small>
+    </span>
   )
 }
 
@@ -527,12 +484,10 @@ function SupplierOrganizationContactCell({ organization }: { organization: Suppl
   const tooltip = compactStrings([primary, secondary, organization.ContactPersonComment]).join('\n')
 
   return (
-    <Tooltip label={tooltip} multiline openDelay={350} withArrow>
-      <span className="supplier-organizations-two-line-cell">
-        <span>{primary}</span>
-        <small>{secondary}</small>
-      </span>
-    </Tooltip>
+    <span className="supplier-organizations-two-line-cell" title={nativeTitle(tooltip)}>
+      <span>{primary}</span>
+      <small>{secondary}</small>
+    </span>
   )
 }
 
@@ -542,26 +497,21 @@ function SupplierOrganizationBankCell({ organization }: { organization: SupplyOr
   const tooltip = compactStrings([primary, secondary, organization.Beneficiary, organization.BeneficiaryBank]).join('\n')
 
   return (
-    <Tooltip label={tooltip} multiline openDelay={350} withArrow>
-      <span className="supplier-organizations-bank-cell">
-        <span className="supplier-organizations-bank-icon" aria-hidden>
-          <IconBuildingBank size={14} />
-        </span>
-        <span className="supplier-organizations-two-line-cell">
-          <span>{primary}</span>
-          <small>{secondary}</small>
-        </span>
+    <span className="supplier-organizations-bank-cell" title={nativeTitle(tooltip)}>
+      <span className="supplier-organizations-two-line-cell">
+        <span>{primary}</span>
+        <small>{secondary}</small>
       </span>
-    </Tooltip>
+    </span>
   )
 }
 
 function SupplierOrganizationBalanceCell({ organization }: { organization: SupplyOrganization }) {
   const amount = formatMoney(organization.TotalAgreementsCurrentEuroAmount)
-  const currency = getAgreementCurrencies(organization) || 'EUR'
+  const currency = amount ? getAgreementCurrencies(organization) || 'EUR' : ''
 
   return (
-    <span className="supplier-organizations-balance-cell">
+    <span className="supplier-organizations-balance-cell" title={nativeTitle(compactStrings([amount, currency]).join(' '))}>
       <strong>{amount}</strong>
       <small>{currency}</small>
     </span>
@@ -573,58 +523,10 @@ function SupplierOrganizationDateCell({ organization, value }: { organization: S
   const residency = organization.IsNotResident ? t('Нерезидент') : null
 
   return (
-    <Tooltip label={residency ? `${value}\n${residency}` : value} multiline={Boolean(residency)} openDelay={350} withArrow>
-      <span className="supplier-organizations-date-cell">
-        <span>{value}</span>
-        {residency ? <small className="is-foreign">{residency}</small> : null}
-      </span>
-    </Tooltip>
-  )
-}
-
-function SupplierOrganizationMutedValue({ value }: { value: string }) {
-  return (
-    <Tooltip label={value} openDelay={350} withArrow>
-      <span className="supplier-organizations-muted-value">{value}</span>
-    </Tooltip>
-  )
-}
-
-function SupplierOrganizationActions({
-  organization,
-  onOpenActions,
-  onOpenCashFlow,
-  onOpenEdit,
-}: {
-  organization: SupplyOrganization
-  onOpenActions: (organization: SupplyOrganization) => void
-  onOpenCashFlow: (organization: SupplyOrganization) => void
-  onOpenEdit: (organization: SupplyOrganization) => void
-}) {
-  const { t } = useI18n()
-
-  return (
-    <Group className="supplier-organizations-row-actions" gap={4} justify="flex-end" wrap="nowrap" onClick={(event) => event.stopPropagation()}>
-      <PermissionGate permissionKey="SERVICE_Accounting_Supplier_Organizations_SettlementsBtn_PKEY">
-        <Tooltip label={t('Взаєморозрахунки')}>
-          <ActionIcon aria-label={t('Взаєморозрахунки')} color="gray" size="sm" variant="subtle" onClick={() => onOpenCashFlow(organization)}>
-            <IconCash size={15} />
-          </ActionIcon>
-        </Tooltip>
-      </PermissionGate>
-      <PermissionGate permissionKey="SERVICE_Accounting_Supplier_Organizations_OverviewBtn_PKEY">
-        <Tooltip label={t('Перегляд')}>
-          <ActionIcon aria-label={t('Перегляд')} color="gray" size="sm" variant="subtle" onClick={() => onOpenEdit(organization)}>
-            <IconEye size={15} />
-          </ActionIcon>
-        </Tooltip>
-      </PermissionGate>
-      <Tooltip label={t('Дії')}>
-        <ActionIcon aria-label={t('Дії')} color="gray" size="sm" variant="subtle" onClick={() => onOpenActions(organization)}>
-          <IconDots size={15} />
-        </ActionIcon>
-      </Tooltip>
-    </Group>
+    <span className="supplier-organizations-date-cell" title={nativeTitle(compactStrings([value, residency]).join('\n'))}>
+      <span>{value}</span>
+      {residency ? <small className="is-foreign">{residency}</small> : null}
+    </span>
   )
 }
 
@@ -640,34 +542,59 @@ function SupplierOrganizationActionModal({
   onOpenEdit: (organization: SupplyOrganization) => void
 }) {
   const { t } = useI18n()
+  const isActive = organization?.Deleted !== true
 
   return (
-    <AppModal centered opened={Boolean(organization)} title={t('Оберіть дію')} onClose={onClose}>
-      <Stack gap="sm">
-        <Text fw={600}>{displayValue(organization?.Name)}</Text>
-        <PermissionGate permissionKey="SERVICE_Accounting_Supplier_Organizations_SettlementsBtn_PKEY">
-          <Button
-            fullWidth
-            justify="flex-start"
-            leftSection={<IconCash size={16} />}
-            variant="light"
-            onClick={() => organization && onOpenCashFlow(organization)}
-          >
-            {t('Взаєморозрахунки')}
-          </Button>
-        </PermissionGate>
-        <PermissionGate permissionKey="SERVICE_Accounting_Supplier_Organizations_OverviewBtn_PKEY">
-          <Button
-            fullWidth
-            justify="flex-start"
-            leftSection={<IconEye size={16} />}
-            variant="light"
-            onClick={() => organization && onOpenEdit(organization)}
-          >
-            {t('Перегляд')}
-          </Button>
-        </PermissionGate>
-      </Stack>
+    <AppModal
+      centered
+      opened={Boolean(organization)}
+      size={496}
+      title={
+        <span className="supplier-organizations-action-title">
+          <span className={`supplier-organizations-action-status-dot${isActive ? ' is-active' : ''}`} />
+          {organization ? displayValue(organization.Name) || t('Постачальник послуг') : t('Постачальник послуг')}
+        </span>
+      }
+      onClose={onClose}
+    >
+      {organization && (
+        <Stack className="app-modal-actions" gap="xs">
+          <PermissionGate permissionKey="SERVICE_Accounting_Supplier_Organizations_SettlementsBtn_PKEY">
+            <Button
+              fullWidth
+              color="dark"
+              justify="flex-start"
+              leftSection={
+                <span className="app-action-icon">
+                  <Wallet size={20} color="var(--mantine-color-gray-7)" />
+                </span>
+              }
+              size="md"
+              variant="subtle"
+              onClick={() => onOpenCashFlow(organization)}
+            >
+              {t('Взаєморозрахунки')}
+            </Button>
+          </PermissionGate>
+          <PermissionGate permissionKey="SERVICE_Accounting_Supplier_Organizations_OverviewBtn_PKEY">
+            <Button
+              fullWidth
+              color="dark"
+              justify="flex-start"
+              leftSection={
+                <span className="app-action-icon">
+                  <ExternalLink size={20} color="var(--mantine-color-gray-7)" />
+                </span>
+              }
+              size="md"
+              variant="subtle"
+              onClick={() => onOpenEdit(organization)}
+            >
+              {t('Перегляд')}
+            </Button>
+          </PermissionGate>
+        </Stack>
+      )}
     </AppModal>
   )
 }
@@ -698,61 +625,6 @@ function DocumentModal({ document, onClose }: { document: SupplyOrganizationDocu
       </Stack>
     </AppModal>
   )
-}
-
-function sortSupplierOrganizations(
-  organizations: SupplyOrganization[],
-  sortState: SupplierOrganizationSortState,
-): SupplyOrganization[] {
-  if (!sortState) {
-    return organizations
-  }
-
-  const direction = sortState.direction === 'asc' ? 1 : -1
-
-  return organizations.toSorted(
-    (firstOrganization, secondOrganization) =>
-      compareSupplierSortValues(
-        getSupplierOrganizationSortValue(firstOrganization, sortState.id),
-        getSupplierOrganizationSortValue(secondOrganization, sortState.id),
-      ) * direction,
-  )
-}
-
-function getSupplierOrganizationSortValue(organization: SupplyOrganization, id: SupplierOrganizationSortId): number | string {
-  switch (id) {
-    case 'balance':
-      return organization.TotalAgreementsCurrentEuroAmount ?? Number.NEGATIVE_INFINITY
-    case 'bank':
-      return compactStrings([organization.Bank, organization.Requisites, organization.BankAccount, organization.BankAccountEUR]).join(' ')
-    case 'contact':
-      return compactStrings([
-        organization.ContactPersonName,
-        organization.ContactPersonEmail,
-        organization.EmailAddress,
-        organization.PhoneNumber,
-        organization.ContactPersonPhone,
-      ]).join(' ')
-    case 'created':
-      return organization.Created || ''
-    case 'identifiers':
-      return compactStrings([organization.TIN, organization.USREOU, organization.SROI]).join(' ')
-    case 'name':
-      return organization.Name || ''
-    case 'organization':
-      return compactStrings([getAgreementOrganizations(organization), getAgreementNames(organization), getAgreementCurrencies(organization)]).join(' ')
-  }
-}
-
-function compareSupplierSortValues(firstValue: number | string, secondValue: number | string): number {
-  if (typeof firstValue === 'number' && typeof secondValue === 'number') {
-    return firstValue - secondValue
-  }
-
-  return String(firstValue).localeCompare(String(secondValue), 'uk', {
-    numeric: true,
-    sensitivity: 'base',
-  })
 }
 
 function getDateFilterError(dateFrom: string, dateTo: string): string | null {
@@ -793,7 +665,7 @@ function readStoredSearch(): string {
 
 function formatDateTime(value?: string): string {
   if (!value) {
-    return '—'
+    return ''
   }
 
   const date = new Date(value)
@@ -806,13 +678,19 @@ function formatDateTime(value?: string): string {
 }
 
 function formatMoney(value?: number): string {
-  return typeof value === 'number' && Number.isFinite(value) ? moneyFormatter.format(value) : '—'
+  return typeof value === 'number' && Number.isFinite(value) ? moneyFormatter.format(value) : ''
 }
 
 function displayValue(value?: string | number | null): string {
   if (typeof value === 'number') {
-    return Number.isFinite(value) ? String(value) : '—'
+    return Number.isFinite(value) ? String(value) : ''
   }
 
-  return value || '—'
+  return typeof value === 'string' ? value.trim() : ''
+}
+
+function nativeTitle(value: string): string | undefined {
+  const title = value.trim()
+
+  return title ? title : undefined
 }

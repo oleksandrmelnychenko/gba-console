@@ -1,14 +1,6 @@
-.supplier-organizations-page {
-  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 24px);
-  min-height: 0;
-  overflow: hidden;
-}
-
 .supplier-organizations-page__table {
   display: flex;
-  flex: 1 1 auto;
-  min-height: 0;
-  min-width: 0;
+  overflow: hidden;
 }
 
 .supplier-organizations-command-bar {
@@ -17,27 +9,41 @@
   --supplier-organizations-command-label-height: 17px;
 
   align-items: end;
+  background: #f8f9fa;
+  border-bottom-color: var(--mantine-color-gray-2);
   display: grid;
-  gap: 12px;
-  grid-template-columns: minmax(360px, 430px) minmax(320px, 1fr) auto;
+  flex: 0 0 auto;
+  gap: 10px;
+  grid-template-columns: minmax(340px, 430px) minmax(300px, 1fr) auto auto auto;
+  min-height: 86px;
 }
 
 .supplier-organizations-period-filter,
-.supplier-organizations-date-input,
 .supplier-organizations-search-input {
+  display: grid;
+  grid-template-rows:
+    var(--supplier-organizations-command-label-height)
+    var(--supplier-organizations-command-control-height);
+  min-height: calc(
+    var(--supplier-organizations-command-label-height) +
+    var(--supplier-organizations-command-label-gap) +
+    var(--supplier-organizations-command-control-height)
+  );
   min-width: 0;
+  row-gap: var(--supplier-organizations-command-label-gap);
 }
 
 .supplier-organizations-filter-label,
 .supplier-organizations-search-input .mantine-InputWrapper-label {
-  color: var(--mantine-color-gray-6);
+  color: var(--mantine-color-gray-9);
   display: block;
+  font-family: var(--font-mono);
   font-size: 12px;
-  font-weight: 400;
+  font-weight: 600;
   height: var(--supplier-organizations-command-label-height);
   letter-spacing: 0;
   line-height: 1.2;
-  margin-bottom: var(--supplier-organizations-command-label-gap);
+  margin-bottom: 0;
 }
 
 .supplier-organizations-period-fields {
@@ -54,19 +60,9 @@
   width: 10px;
 }
 
+.supplier-organizations-date-input,
 .supplier-organizations-search-input {
-  display: grid;
-  grid-template-rows: var(--supplier-organizations-command-label-height) var(--supplier-organizations-command-control-height);
-  min-height: calc(
-    var(--supplier-organizations-command-label-height) +
-    var(--supplier-organizations-command-label-gap) +
-    var(--supplier-organizations-command-control-height)
-  );
-  row-gap: var(--supplier-organizations-command-label-gap);
-}
-
-.supplier-organizations-search-input .mantine-InputWrapper-label {
-  margin-bottom: 0;
+  min-width: 0;
 }
 
 .supplier-organizations-date-input .mantine-Input-wrapper,
@@ -76,23 +72,18 @@
   border-color: var(--mantine-color-gray-2);
   border-radius: 8px;
   color: var(--mantine-color-gray-8);
-  font-family: inherit;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-weight: 400;
   height: var(--supplier-organizations-command-control-height);
+  letter-spacing: 0;
   line-height: 1.2;
   min-height: var(--supplier-organizations-command-control-height);
 }
 
-.supplier-organizations-date-input .mantine-Input-wrapper,
-.supplier-organizations-date-input .mantine-Input-input {
-  font-size: 12.5px;
-  font-weight: 520;
+.supplier-organizations-search-input .mantine-TextInput-input::placeholder {
+  font-family: var(--font-mono);
   letter-spacing: 0;
-}
-
-.supplier-organizations-search-input .mantine-Input-wrapper,
-.supplier-organizations-search-input .mantine-TextInput-input {
-  font-size: 13px;
-  font-weight: 500;
 }
 
 .supplier-organizations-date-input .mantine-TextInput-input::-webkit-datetime-edit,
@@ -102,175 +93,56 @@
 .supplier-organizations-date-input .mantine-TextInput-input::-webkit-datetime-edit-day-field,
 .supplier-organizations-date-input .mantine-TextInput-input::-webkit-datetime-edit-year-field {
   color: inherit;
-  font-family: inherit;
+  font-family: var(--font-mono);
   font-size: 12.5px;
-  font-weight: 520;
+  font-weight: 400;
   letter-spacing: 0;
   line-height: 1.2;
 }
 
-.supplier-organizations-list {
+.supplier-organizations-command-actions,
+.supplier-organizations-create-actions {
+  align-items: center;
+  align-self: end;
   display: flex;
-  flex-direction: column;
-  flex: 1 1 auto;
-  min-height: 0;
+  gap: 8px;
+  justify-content: flex-end;
+  min-height: var(--supplier-organizations-command-control-height);
   min-width: 0;
-  overflow-x: auto;
-  overflow-y: hidden;
-  padding: 12px;
 }
 
-.supplier-organizations-list-head,
-.supplier-organizations-row {
+.supplier-organizations-command-bar .app-paginator-label,
+.supplier-organizations-command-bar .mantine-Button-root {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.supplier-organizations-command-bar .mantine-Button-root {
+  white-space: nowrap;
+}
+
+.supplier-organizations-table-toolbar-slot {
   align-items: center;
-  display: grid;
-  gap: 14px;
-  grid-template-columns:
-    minmax(280px, 1.12fr)
-    minmax(230px, 0.82fr)
-    minmax(270px, 1fr)
-    minmax(190px, 0.7fr)
-    minmax(220px, 0.82fr)
-    114px
-    132px
-    98px;
-  min-width: 1350px;
-}
-
-.supplier-organizations-list-head {
-  color: var(--mantine-color-gray-5);
+  align-self: end;
+  display: flex;
   flex: 0 0 auto;
-  font-size: 10.5px;
-  font-weight: 500;
-  line-height: 1.2;
-  padding: 0 24px 8px 10px;
-  text-transform: uppercase;
+  min-height: var(--supplier-organizations-command-control-height);
 }
 
-.supplier-organizations-sort-header {
-  all: unset;
-  align-items: center;
-  border-radius: 6px;
-  box-sizing: border-box;
-  color: inherit;
-  cursor: pointer;
-  display: inline-flex;
-  gap: 4px;
-  max-width: max-content;
-  min-width: 0;
-  padding: 2px 3px;
-  transition:
-    background-color 140ms ease,
-    color 140ms ease;
-}
-
-.supplier-organizations-sort-header:hover,
-.supplier-organizations-sort-header:focus-visible,
-.supplier-organizations-sort-header.is-active {
-  background: var(--mantine-color-orange-0);
-  color: var(--mantine-color-gray-8);
-}
-
-.supplier-organizations-sort-header svg {
-  color: var(--brand-orange);
-  flex: 0 0 auto;
-  opacity: 0.58;
-}
-
-.supplier-organizations-sort-header.is-active svg {
-  opacity: 1;
-}
-
-.supplier-organizations-sort-header.is-right {
-  justify-self: end;
-}
-
-.supplier-organizations-list-body {
-  flex: 1 1 auto;
+.supplier-organizations-table-toolbar-slot .data-table-toolbar {
+  gap: 6px;
+  margin: 0;
   min-height: 0;
-  min-width: 1350px;
-  overflow-x: hidden;
-  overflow-y: auto;
-  padding-right: 14px;
-}
-
-.supplier-organizations-row {
-  background:
-    linear-gradient(90deg, transparent, rgba(248, 249, 250, 0.68) 48%, transparent),
-    var(--mantine-color-white);
-  border-bottom: 1px solid var(--mantine-color-gray-1);
-  cursor: pointer;
-  min-height: 62px;
-  outline: none;
-  padding: 8px 10px;
-  position: relative;
-  transition:
-    background 140ms ease,
-    box-shadow 140ms ease,
-    transform 140ms ease;
-}
-
-.supplier-organizations-row:last-child {
-  border-bottom: 0;
-}
-
-.supplier-organizations-row::before {
-  background: transparent;
-  border-radius: 999px;
-  bottom: 8px;
-  content: '';
-  left: 0;
-  position: absolute;
-  top: 8px;
-  transition: background-color 140ms ease;
-  width: 3px;
-}
-
-.supplier-organizations-row:hover,
-.supplier-organizations-row:focus-visible {
-  background:
-    linear-gradient(90deg, rgba(255, 250, 245, 0.92), rgba(255, 250, 245, 0.44) 42%, transparent),
-    var(--mantine-color-white);
-  box-shadow: 0 9px 22px rgba(20, 28, 38, 0.06);
-  transform: translateX(3px);
-  z-index: 1;
-}
-
-.supplier-organizations-row:hover::before,
-.supplier-organizations-row:focus-visible::before {
-  background: var(--brand-orange);
 }
 
 .supplier-organizations-name-cell,
-.supplier-organizations-bank-cell {
-  align-items: center;
-  display: flex;
-  gap: 10px;
+.supplier-organizations-bank-cell,
+.supplier-organizations-two-line-cell,
+.supplier-organizations-date-cell,
+.supplier-organizations-balance-cell {
+  display: block;
   min-width: 0;
-}
-
-.supplier-organizations-name-icon,
-.supplier-organizations-bank-icon {
-  align-items: center;
-  background: var(--mantine-color-gray-0);
-  border: 1px solid var(--mantine-color-gray-2);
-  color: var(--mantine-color-gray-5);
-  display: inline-flex;
-  justify-content: center;
-}
-
-.supplier-organizations-name-icon {
-  border-radius: 999px;
-  flex: 0 0 34px;
-  height: 34px;
-  width: 34px;
-}
-
-.supplier-organizations-bank-icon {
-  border-radius: 7px;
-  flex: 0 0 24px;
-  height: 24px;
-  width: 24px;
 }
 
 .supplier-organizations-name-copy,
@@ -283,7 +155,6 @@
 .supplier-organizations-name-subtitle,
 .supplier-organizations-two-line-cell > span,
 .supplier-organizations-two-line-cell > small,
-.supplier-organizations-muted-value,
 .supplier-organizations-date-cell > span,
 .supplier-organizations-date-cell > small {
   display: block;
@@ -294,37 +165,30 @@
 }
 
 .supplier-organizations-name-title {
-  color: var(--mantine-color-gray-9);
+  color: var(--mantine-color-gray-8);
   font-size: 12.5px;
-  font-weight: 720;
+  font-weight: 600;
   line-height: 1.15;
 }
 
 .supplier-organizations-name-subtitle,
 .supplier-organizations-two-line-cell > small {
-  color: var(--mantine-color-gray-5);
-  font-size: 10.5px;
-  font-weight: 600;
+  color: var(--mantine-color-gray-6);
+  font-size: 11px;
+  font-weight: 500;
   line-height: 1.2;
   margin-top: 3px;
 }
 
 .supplier-organizations-two-line-cell > span {
   color: var(--mantine-color-gray-8);
-  font-size: 12px;
-  font-weight: 620;
+  font-size: 12.5px;
+  font-weight: 600;
   line-height: 1.15;
 }
 
 .supplier-organizations-two-line-cell.is-separated {
-  border-left: 1px dashed var(--mantine-color-gray-3);
-  min-height: 34px;
-  padding-left: 12px;
-}
-
-.supplier-organizations-date-cell {
-  display: block;
-  min-width: 0;
+  min-height: 32px;
 }
 
 .supplier-organizations-tags-cell {
@@ -337,39 +201,31 @@
 
 .supplier-organizations-id-tag {
   align-items: center;
-  border-radius: 999px;
+  background: var(--mantine-color-gray-0);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 7px;
+  color: var(--mantine-color-gray-7);
   display: inline-flex;
   flex: 0 1 auto;
+  font-family: var(--font-mono);
   font-size: 10.5px;
+  font-weight: 600;
+  gap: 5px;
   height: 23px;
+  letter-spacing: 0;
   line-height: 1;
   max-width: 100%;
   min-width: 0;
   overflow: hidden;
-  padding: 0 8px;
+  padding: 0 7px;
   white-space: nowrap;
-}
-
-.supplier-organizations-id-tag {
-  background: var(--mantine-color-gray-0);
-  border: 1px solid var(--mantine-color-gray-2);
-  color: var(--mantine-color-gray-6);
-  gap: 5px;
-}
-
-.supplier-organizations-id-tag span {
-  font-weight: 650;
 }
 
 .supplier-organizations-id-tag strong {
   color: var(--mantine-color-gray-8);
-  font-weight: 680;
+  font-weight: 650;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.supplier-organizations-bank-cell .supplier-organizations-two-line-cell {
-  min-width: 0;
 }
 
 .supplier-organizations-balance-cell {
@@ -377,13 +233,14 @@
   display: flex;
   flex-direction: column;
   line-height: 1.1;
-  min-width: 0;
 }
 
 .supplier-organizations-balance-cell strong {
-  color: var(--mantine-color-gray-9);
-  font-size: 12.5px;
-  font-weight: 700;
+  color: var(--mantine-color-gray-8);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0;
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -391,58 +248,74 @@
 }
 
 .supplier-organizations-balance-cell small {
-  color: var(--mantine-color-gray-5);
+  color: var(--mantine-color-gray-6);
+  font-family: var(--font-mono);
   font-size: 10px;
-  font-weight: 650;
+  font-weight: 600;
+  letter-spacing: 0;
   margin-top: 3px;
   text-transform: uppercase;
 }
 
-.supplier-organizations-muted-value,
 .supplier-organizations-date-cell > span {
-  color: var(--mantine-color-gray-6);
+  color: var(--mantine-color-gray-8);
+  font-family: var(--font-mono);
   font-size: 12px;
-  font-weight: 560;
+  font-weight: 600;
+  letter-spacing: 0;
   line-height: 1.2;
 }
 
 .supplier-organizations-date-cell > small {
-  color: var(--mantine-color-gray-5);
+  color: var(--mantine-color-gray-6);
   font-size: 10.5px;
-  font-weight: 650;
+  font-weight: 500;
   line-height: 1.15;
   margin-top: 3px;
 }
 
 .supplier-organizations-date-cell > small.is-foreign {
-  color: #d95f16;
+  color: var(--brand-orange);
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0;
 }
 
-.supplier-organizations-row-actions {
-  justify-self: end;
-}
-
-.supplier-organizations-row-actions .mantine-ActionIcon-root {
-  color: var(--mantine-color-gray-5);
-}
-
-.supplier-organizations-row-actions .mantine-ActionIcon-root:hover {
-  background: var(--mantine-color-orange-0);
-  color: var(--mantine-color-orange-8);
-}
-
-.supplier-organizations-list-state {
+.supplier-organizations-action-title {
   align-items: center;
-  color: var(--mantine-color-gray-6);
-  display: flex;
-  font-size: 12px;
-  justify-content: center;
-  min-height: 240px;
+  display: inline-flex;
+  font-family: var(--font-mono);
+  gap: 8px;
+  letter-spacing: 0;
 }
 
-@media (max-width: 980px) {
+.supplier-organizations-action-status-dot {
+  background: var(--mantine-color-gray-4);
+  border-radius: 999px;
+  flex: 0 0 auto;
+  height: 9px;
+  width: 9px;
+}
+
+.supplier-organizations-action-status-dot.is-active {
+  background: var(--mantine-color-green-6);
+  box-shadow: 0 0 0 3px rgba(64, 192, 87, 0.16);
+}
+
+@media (max-width: 1080px) {
   .supplier-organizations-command-bar {
-    align-items: stretch;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .supplier-organizations-command-actions,
+  .supplier-organizations-table-toolbar-slot,
+  .supplier-organizations-create-actions {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 720px) {
+  .supplier-organizations-command-bar {
     grid-template-columns: minmax(0, 1fr);
   }
 }
