@@ -1,14 +1,13 @@
 import {
   ActionIcon,
   Alert,
-  Box,
   Group,
   Stack,
   Text,
   TextInput,
   Tooltip,
 } from '@mantine/core'
-import { IconAlertCircle, IconEye, IconRefresh, IconRestore } from '@tabler/icons-react'
+import { IconAlertCircle, IconRefresh, IconRestore } from '@tabler/icons-react'
 import { useEffect, useMemo, useReducer, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { formatLocalDate, SYNC_DATA_RANGE_START } from '../../../shared/date/dateTime'
@@ -33,7 +32,6 @@ const ACT_MONO_STYLE = { fontFamily: 'var(--font-mono)', letterSpacing: 0 } as c
 const RECONCILIATIONS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['index', 'fromDate', 'number'],
-    right: ['actions'],
   },
   density: 'normal',
 } satisfies DataTableDefaultLayout
@@ -79,7 +77,7 @@ function useActReconciliationsPageModel() {
     [navigate],
   )
 
-  const columns = useReconciliationColumns(openDetail, rowSummaries)
+  const columns = useReconciliationColumns(rowSummaries)
 
   function applyFilters(nextFilters: FilterDraft) {
     setFilterDraft(nextFilters)
@@ -242,10 +240,11 @@ function ActReconciliationsPageView({ model }: { model: ReturnType<typeof useAct
             data={reconciliations}
             defaultLayout={RECONCILIATIONS_TABLE_DEFAULT_LAYOUT}
             emptyText={t('Актів звірок не знайдено')}
+            fillAvailableWidth={false}
             getRowId={(reconciliation, index) => String(reconciliation.NetUid || reconciliation.Id || index)}
             height="100%"
             isLoading={isLoading}
-            layoutVersion="act-reconciliations-table-2"
+            layoutVersion="act-reconciliations-table-3"
             minWidth={1280}
             showLayoutControls
             tableId="act-reconciliations"
@@ -267,7 +266,6 @@ type RowSummary = {
 }
 
 function useReconciliationColumns(
-  onOpenDetail: (reconciliation: ActReconciliation) => void,
   rowSummaries: Map<ActReconciliation, RowSummary>,
 ) {
   const { t } = useI18n()
@@ -354,7 +352,6 @@ function useReconciliationColumns(
         header: t('Коментар'),
         width: 260,
         minWidth: 200,
-        fill: true,
         accessor: (reconciliation) => reconciliation.Comment,
         cell: (reconciliation) => {
           const value = displayValue(reconciliation.Comment)
@@ -366,33 +363,8 @@ function useReconciliationColumns(
           )
         },
       },
-      {
-        id: 'actions',
-        header: '',
-        width: 58,
-        minWidth: 58,
-        maxWidth: 58,
-        align: 'center',
-        enableHiding: false,
-        enableReorder: false,
-        enableResizing: false,
-        enableSorting: false,
-        cell: (reconciliation) => (
-          <Box onClick={(event) => event.stopPropagation()}>
-            <ActionIcon
-              aria-label={t('Огляд')}
-              color="gray"
-              title={t('Огляд')}
-              variant="subtle"
-              onClick={() => onOpenDetail(reconciliation)}
-            >
-              <IconEye size={18} />
-            </ActionIcon>
-          </Box>
-        ),
-      },
     ],
-    [onOpenDetail, rowSummaries, t],
+    [rowSummaries, t],
   )
 }
 

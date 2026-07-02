@@ -43,9 +43,16 @@ export function DataTableToolbar<TData>({
   // detached from the toolbar while the table columns move.
   useEffect(() => {
     if (isColumnDragActive && columnsMenuOpened) {
-      setColumnsMenuOpened(false)
+      const animationFrameId = window.requestAnimationFrame(() => {
+        setColumnsMenuOpened(false)
+      })
+
+      return () => window.cancelAnimationFrame(animationFrameId)
     }
+
+    return undefined
   }, [columnsMenuOpened, isColumnDragActive])
+  const isColumnsMenuOpened = columnsMenuOpened && !isColumnDragActive
 
   const hideableColumns = table
     .getAllLeafColumns()
@@ -62,7 +69,7 @@ export function DataTableToolbar<TData>({
       <Group className="data-table-toolbar-left" gap={8} wrap="nowrap">
         {showLayoutControls ? (
           <Menu
-            opened={columnsMenuOpened}
+            opened={isColumnsMenuOpened}
             width={220}
             position="bottom-start"
             withArrow
@@ -70,7 +77,7 @@ export function DataTableToolbar<TData>({
             /* duration 0: see DataTableHeaderCell — a killed exit transition
                leaks the portal dropdown permanently. */
             transitionProps={{ duration: 0 }}
-            onChange={setColumnsMenuOpened}
+            onChange={(opened) => setColumnsMenuOpened(isColumnDragActive ? false : opened)}
           >
             <Menu.Target>
               <Tooltip label={labels.columns} withArrow>

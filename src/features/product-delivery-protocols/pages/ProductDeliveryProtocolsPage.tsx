@@ -627,7 +627,6 @@ function useProductDeliveryProtocolColumns(): DataTableColumn<DeliveryProductPro
         header: t('Постачальники'),
         width: 280,
         minWidth: 220,
-        fill: true,
         accessor: (protocol) => getSupplierNames(protocol).join(' '),
         cell: (protocol) => <ProtocolSuppliersCell protocol={protocol} />,
       },

@@ -320,6 +320,7 @@ export function UsersPage() {
                   ? t('Користувачів за цими фільтрами не знайдено')
                   : t('Користувачів не знайдено')
               }
+              fillAvailableWidth={false}
               getRowId={(user, index) => String(user.NetUid || user.Id || index)}
               height="100%"
               isLoading={isBusy}
@@ -371,7 +372,6 @@ function useUserColumns(): DataTableColumn<UserProfile>[] {
         header: t('Користувач'),
         width: 260,
         minWidth: 220,
-        fill: true,
         accessor: getUserFullName,
         cell: (user) => <UserNameCell user={user} />,
       },

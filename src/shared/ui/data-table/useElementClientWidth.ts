@@ -11,37 +11,60 @@ export function useElementClientWidth(element: HTMLElement | null) {
   }, [])
 
   useLayoutEffect(() => {
-    if (!element) {
-      commitWidth(0)
-      return undefined
+    let animationFrameId = 0
+    const scheduleWidthCommit = (nextWidth: number) => {
+      if (animationFrameId) {
+        window.cancelAnimationFrame(animationFrameId)
+      }
+
+      animationFrameId = window.requestAnimationFrame(() => {
+        animationFrameId = 0
+        commitWidth(nextWidth)
+      })
     }
 
-    commitWidth(element.clientWidth)
+    if (!element) {
+      scheduleWidthCommit(0)
+
+      return () => {
+        if (animationFrameId) {
+          window.cancelAnimationFrame(animationFrameId)
+        }
+      }
+    }
+
+    scheduleWidthCommit(element.clientWidth)
 
     if (typeof ResizeObserver === 'undefined') {
-      const handleResize = () => commitWidth(element.clientWidth)
+      const handleResize = () => scheduleWidthCommit(element.clientWidth)
 
       window.addEventListener('resize', handleResize)
 
-      return () => window.removeEventListener('resize', handleResize)
+      return () => {
+        if (animationFrameId) {
+          window.cancelAnimationFrame(animationFrameId)
+        }
+
+        window.removeEventListener('resize', handleResize)
+      }
     }
 
     const observer = new ResizeObserver((entries) => {
       const entry = entries[0]
       const borderBox = Array.isArray(entry?.borderBoxSize) ? entry.borderBoxSize[0] : entry?.borderBoxSize
 
-      commitWidth(borderBox?.inlineSize ?? entry?.contentRect.width ?? element.clientWidth)
+      scheduleWidthCommit(borderBox?.inlineSize ?? entry?.contentRect.width ?? element.clientWidth)
     })
     observer.observe(element)
 
-    return () => observer.disconnect()
-  }, [commitWidth, element])
+    return () => {
+      if (animationFrameId) {
+        window.cancelAnimationFrame(animationFrameId)
+      }
 
-  useLayoutEffect(() => {
-    if (element) {
-      commitWidth(element.clientWidth)
+      observer.disconnect()
     }
-  })
+  }, [commitWidth, element])
 
   return width
 }

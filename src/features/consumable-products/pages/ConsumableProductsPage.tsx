@@ -490,9 +490,10 @@ function ConsumableCategoryPanel({
           defaultLayout={PRODUCT_TABLE_DEFAULT_LAYOUT}
           emptyText={t('Товарів у категорії немає')}
           getRowId={(product, index) => String(product.NetUid || product.Id || index)}
+          fillAvailableWidth={false}
           height="100%"
           layoutVersion="consumable-products-category-products-2"
-          minWidth={680}
+          minWidth={500}
           showLayoutControls
           tableId={`consumable-products-${category.NetUid || category.Id || category.Name || 'category'}`}
           toolbarPortalTarget={tableToolbarSlot}

@@ -68,7 +68,7 @@ export function DataTable<TData>({
   getRowId,
   isLoading = false,
   minWidth = 960,
-  fillAvailableWidth = true,
+  fillAvailableWidth = false,
   distributeAvailableWidth = false,
   height,
   maxHeight,
@@ -316,11 +316,12 @@ export function DataTable<TData>({
   const visibleLeafColumns = table.getVisibleLeafColumns()
   const headerGroups = table.getHeaderGroups()
   const baseTableWidth = table.getTotalSize() + expandColumnWidth
+  const shouldFillAvailableWidth = fillAvailableWidth || distributeAvailableWidth
   const tableWidth = Math.ceil(
     Math.max(
       minWidth + expandColumnWidth,
       baseTableWidth,
-      fillAvailableWidth ? scrollViewportWidth : 0,
+      shouldFillAvailableWidth ? scrollViewportWidth : 0,
     ),
   )
   // Memoized so the widths Map keeps its identity across unrelated re-renders —
