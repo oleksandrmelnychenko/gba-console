@@ -394,9 +394,11 @@
 
 .accountable-expense-detail-title__copy strong {
   color: var(--mantine-color-gray-9);
-  font-size: 15px;
-  font-weight: 700;
-  line-height: 1.15;
+  font-family: var(--font-mono);
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1.2;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -429,62 +431,58 @@
 
 .accountable-expense-detail-metrics {
   display: grid;
-  gap: 8px;
+  gap: 16px;
   grid-template-columns: repeat(3, minmax(118px, 1fr));
   min-width: 0;
 }
 
+/* Totals pattern (як підсумки в акті звірки): без коробок і смуг — сірий
+   моно-лейбл з оранжевою крапкою + велике моно-значення. */
 .accountable-expense-detail-metric {
-  background: rgba(255, 255, 255, 0.82);
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 8px;
   min-width: 0;
-  padding: 10px 11px;
-  position: relative;
-}
-
-.accountable-expense-detail-metric::before {
-  background: var(--mantine-color-gray-4);
-  border-radius: 999px;
-  content: "";
-  height: 3px;
-  left: 11px;
-  position: absolute;
-  right: 11px;
-  top: -2px;
-}
-
-.accountable-expense-detail-metric.is-orange::before {
-  background: var(--brand-orange);
 }
 
 .accountable-expense-detail-metric span,
 .accountable-expense-detail-metric small {
-  color: var(--mantine-color-gray-6);
+  color: var(--mantine-color-gray-7);
   display: block;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 0;
-  line-height: 1.15;
-  text-transform: uppercase;
+  line-height: 1.2;
+}
+
+.accountable-expense-detail-metric span::before {
+  background: var(--brand-orange);
+  border-radius: 999px;
+  content: '';
+  display: inline-block;
+  height: 6px;
+  margin-right: 6px;
+  vertical-align: 1px;
+  width: 6px;
 }
 
 .accountable-expense-detail-metric strong {
   color: var(--mantine-color-gray-9);
   display: block;
-  font-size: 17px;
-  font-weight: 700;
-  line-height: 1.1;
-  margin-top: 6px;
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.15;
+  margin-top: 4px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .accountable-expense-detail-metric small {
-  font-size: 9px;
-  margin-top: 4px;
+  color: var(--mantine-color-gray-6);
+  font-size: 10px;
+  font-weight: 500;
+  margin-top: 3px;
 }
 
 .accountable-expense-detail-section__header {
@@ -494,16 +492,6 @@
   min-width: 0;
   padding: 11px 14px 12px;
   position: relative;
-}
-
-.accountable-expense-detail-section__header::before {
-  background: var(--mantine-color-gray-2);
-  bottom: 0;
-  content: "";
-  height: 1px;
-  left: 0;
-  position: absolute;
-  right: 0;
 }
 
 .accountable-expense-detail-section__main {
@@ -549,43 +537,54 @@
 }
 
 .accountable-expense-detail-grid {
+  column-gap: 28px;
   display: grid;
-  gap: 10px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   min-width: 0;
+  row-gap: 12px;
 }
 
 .accountable-expense-detail-grid.is-compact {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+/* Field = «label ······ bold value» leader row (the contacts-card pattern). */
 .accountable-expense-detail-field {
-  background: rgba(248, 250, 252, 0.74);
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 8px;
-  display: grid;
-  gap: 4px;
+  align-items: baseline;
+  display: flex;
+  gap: 8px;
   min-width: 0;
-  padding: 7px 9px;
+}
+
+.accountable-expense-detail-field::before {
+  border-bottom: 1px solid var(--mantine-color-gray-3);
+  content: '';
+  flex: 1 1 auto;
+  min-width: 24px;
+  order: 2;
+  transform: translateY(-3px);
 }
 
 .accountable-expense-detail-field span {
-  color: var(--mantine-color-gray-6);
-  font-family: var(--font-mono);
-  font-size: 9.5px;
-  font-weight: 600;
-  letter-spacing: 0;
-  line-height: 1;
-  text-transform: uppercase;
+  color: var(--mantine-color-gray-8);
+  flex: 0 1 auto;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.3;
+  order: 1;
+  white-space: nowrap;
 }
 
 .accountable-expense-detail-field strong {
-  color: var(--mantine-color-gray-8);
-  font-size: 12px;
-  font-weight: 620;
-  line-height: 1.2;
+  color: var(--mantine-color-gray-9);
+  flex: 0 1 auto;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
   min-width: 0;
+  order: 3;
   overflow-wrap: anywhere;
+  text-align: right;
 }
 
 .accountable-expense-detail-product {

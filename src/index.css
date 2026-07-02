@@ -196,6 +196,12 @@ select {
   color: var(--mantine-color-green-8);
 }
 
+.app-role-pill.is-red {
+  background: var(--mantine-color-red-0);
+  border-color: var(--mantine-color-red-3);
+  color: var(--mantine-color-red-8);
+}
+
 /* Text inputs / selects focus in the brand orange (not the violet theme color). */
 .mantine-Input-input:focus,
 .mantine-Input-input:focus-within {
