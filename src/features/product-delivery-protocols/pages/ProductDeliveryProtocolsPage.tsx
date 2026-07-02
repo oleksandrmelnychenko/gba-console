@@ -3,7 +3,6 @@ import {
   Alert,
   Anchor,
   Button,
-  Group,
   Select,
   Stack,
   Text,
@@ -14,8 +13,6 @@ import {
   IconAlertCircle,
   IconBuilding,
   IconCalendar,
-  IconChevronDown,
-  IconChevronUp,
   IconDownload,
   IconDots,
   IconFileTypePdf,
@@ -27,14 +24,16 @@ import {
   IconUser,
 } from '@tabler/icons-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
-import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
-import { useCallback, useEffect, useMemo, useReducer, useRef, type Dispatch, type SetStateAction } from 'react'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
@@ -65,13 +64,6 @@ type FilterDraft = {
   to: string
 }
 
-type ProtocolSortId = 'comment' | 'created' | 'fromDate' | 'number' | 'organization' | 'responsible' | 'status' | 'suppliers'
-
-type ProtocolSortState = {
-  direction: 'asc' | 'desc'
-  id: ProtocolSortId
-} | null
-
 const EXPORT_COLUMNS: ProtocolExportColumn[] = [
   { Number: 1, TableName: 'DeliveryProductProtocol.DeliveryProductProtocolNumber', ColumnName: 'Number', Translate: 'Номер' },
   { Number: 2, TableName: 'DeliveryProductProtocol', ColumnName: 'FromDate', Translate: 'Від якої дати' },
@@ -91,6 +83,14 @@ const PERMISSION_SELECT_OPTIONS = 'ProductDeliveryProtocols_SelectAnOption_Selec
 const PERMISSION_OPEN_LOGISTIC_PATH = 'ProductDeliveryProtocols_SelectAnOption_LogisticWay_PKEY'
 const PERMISSION_OPEN_SPECIFICATIONS = 'ProductDeliveryProtocols_SelectAnOption_ProductSpecificationCodes_PKEY'
 const PERMISSION_OPEN_INCOME = 'ProductDeliveryProtocols_SelectAnOption_PlacementSupplyOrder_PKEY'
+const PRODUCT_DELIVERY_PROTOCOLS_TABLE_MIN_WIDTH = 1212
+const PRODUCT_DELIVERY_PROTOCOLS_TABLE_DEFAULT_LAYOUT = {
+  columnPinning: {
+    left: ['protocol'],
+    right: ['actions'],
+  },
+  density: 'normal',
+} satisfies DataTableDefaultLayout
 
 function useProtocolsPageModel() {
   const { t } = useI18n()
@@ -119,8 +119,7 @@ function useProtocolsPageModel() {
   const [isLoading, setLoading] = useValueState(true)
   const [page, setPage] = useValueState(1)
   const [pageSize, setPageSize] = useValueState(DEFAULT_PAGINATOR_PAGE_SIZE)
-  const [hasMore, setHasMore] = useValueState(false)
-  const [sortState, setSortState] = useValueState<ProtocolSortState>(null)
+  const [, setHasMore] = useValueState(false)
   const [downloadOpened, setDownloadOpened] = useValueState(false)
   const [downloadDocument, setDownloadDocument] = useValueState<ProtocolExportDocument | null>(null)
   const [downloadError, setDownloadError] = useValueState<string | null>(null)
@@ -128,10 +127,7 @@ function useProtocolsPageModel() {
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const downloadRequestRef = useRef(0)
   const filterError = getFilterError(activeFilters.from, activeFilters.to)
-  const sortedProtocols = useMemo(() => sortProtocols(protocols, sortState), [protocols, sortState])
   const totalPages = Math.max(1, Math.ceil(totalQty / pageSize))
-  const canMoveBackward = page > 1
-  const canMoveForward = hasMore || page < totalPages
   const canExport = hasPermission(PERMISSION_EXPORT)
   const canCreate = hasPermission(PERMISSION_CREATE)
   const canOpenOptions = hasPermission(PERMISSION_SELECT_OPTIONS)
@@ -284,12 +280,12 @@ function useProtocolsPageModel() {
 
   return {
     activeFilters, canCreate, canExport, canOpenIncome, canOpenLogisticPath, canOpenOptions, canOpenSpecifications,
-    canMoveBackward, canMoveForward, closeCreateModal, closeDownload, closeOptions, createError, downloadDocument, downloadError,
+    closeCreateModal, closeDownload, closeOptions, createError, downloadDocument, downloadError,
     downloadOpened, error, exportDocument, filterDraft, filterError, handleCreate, isCreateModalOpen,
     exportScopeWarning, isCreating, isDownloading, isLoading, navigateToIncome, navigateToLogisticPath,
     navigateToSpecifications, openCreateModal, openOptions, optionsProtocol, organizations, organizationsError,
-    page, pageSize, protocols: sortedProtocols, applyFilters, reload, resetFilters, setPage, setPageSize,
-    setSortState, sortState, totalPages, totalQty,
+    page, pageSize, protocols, applyFilters, reload, resetFilters, setPage, setPageSize,
+    totalPages, totalQty,
   }
 }
 
@@ -421,23 +417,10 @@ function useProtocolsLoader({
 }
 
 export function ProductDeliveryProtocolsPage() {
-  const { t } = useI18n()
   const model = useProtocolsPageModel()
 
   return (
     <Stack className="product-delivery-protocols-page console-table-page" gap="md">
-      {model.canCreate && (
-        <PageHeaderActions>
-          <Button
-            color={CREATE_ACTION_COLOR}
-            size="sm"
-            leftSection={<IconPlus size={16} />}
-            onClick={model.openCreateModal}
-          >
-            {t('Додати')}
-          </Button>
-        </PageHeaderActions>
-      )}
       <ProtocolsTableCard model={model} />
       <ProtocolOptionsModal
         canOpenIncome={model.canOpenIncome}
@@ -465,11 +448,13 @@ export function ProductDeliveryProtocolsPage() {
 
 function ProtocolsTableCard({ model }: { model: ReturnType<typeof useProtocolsPageModel> }) {
   const { t } = useI18n()
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const {
-    applyFilters, canExport, canOpenOptions, error, exportDocument, filterDraft,
+    applyFilters, canCreate, canExport, canOpenOptions, error, exportDocument, filterDraft,
     filterError, isDownloading, isLoading, openOptions, organizations, page, pageSize, protocols, reload,
-    resetFilters, setPage, setPageSize, setSortState, sortState, totalPages,
+    openCreateModal, resetFilters, setPage, setPageSize, totalPages,
   } = model
+  const columns = useProductDeliveryProtocolColumns({ canOpenOptions, onOpenOptions: openOptions })
   const organizationOptions = useMemo(
     () => [
       { label: t('Всі організації'), value: '' },
@@ -573,6 +558,19 @@ function ProtocolsTableCard({ model }: { model: ReturnType<typeof useProtocolsPa
             onRefresh={() => reload()}
           />
         </div>
+        <div ref={setTableToolbarSlot} className="product-delivery-protocols-table-toolbar-slot" />
+        <div className="product-delivery-protocols-create-actions">
+          {canCreate && (
+            <Button
+              color={CREATE_ACTION_COLOR}
+              leftSection={<IconPlus size={16} />}
+              size="sm"
+              onClick={openCreateModal}
+            >
+              {t('Додати')}
+            </Button>
+          )}
+        </div>
       </div>
 
       {(error || filterError) && (
@@ -582,139 +580,113 @@ function ProtocolsTableCard({ model }: { model: ReturnType<typeof useProtocolsPa
       )}
 
       <div className="product-delivery-protocols-page__table console-table-body">
-        <ProtocolsList
-          canOpenOptions={canOpenOptions}
+        <DataTable
+          columns={columns}
+          data={protocols}
+          defaultLayout={PRODUCT_DELIVERY_PROTOCOLS_TABLE_DEFAULT_LAYOUT}
+          emptyText={t('Протоколів не знайдено')}
+          getRowId={(protocol, index) => getProtocolRowId(protocol, index)}
+          height="100%"
           isLoading={isLoading}
-          protocols={protocols}
-          sortState={sortState}
-          onOpenOptions={openOptions}
-          onSort={setSortState}
+          layoutVersion="product-delivery-protocols-table-1"
+          minWidth={PRODUCT_DELIVERY_PROTOCOLS_TABLE_MIN_WIDTH}
+          showLayoutControls
+          tableId="product-delivery-protocols"
+          toolbarPortalTarget={tableToolbarSlot}
+          onRowClick={canOpenOptions ? openOptions : undefined}
         />
       </div>
     </div>
   )
 }
 
-function ProtocolsList({
+function useProductDeliveryProtocolColumns({
   canOpenOptions,
-  isLoading,
-  protocols,
-  sortState,
   onOpenOptions,
-  onSort,
 }: {
   canOpenOptions: boolean
-  isLoading: boolean
-  protocols: DeliveryProductProtocol[]
-  sortState: ProtocolSortState
   onOpenOptions: (protocol: DeliveryProductProtocol) => void
-  onSort: Dispatch<SetStateAction<ProtocolSortState>>
-}) {
+}): DataTableColumn<DeliveryProductProtocol>[] {
   const { t } = useI18n()
 
-  return (
-    <div className="product-delivery-protocols-list">
-      <div className="product-delivery-protocols-list-head">
-        <ProtocolSortHeader id="number" label={t('Протокол / дата')} sortState={sortState} onSort={onSort} />
-        <ProtocolSortHeader id="status" label={t('Статус / оприбуткування')} sortState={sortState} onSort={onSort} />
-        <ProtocolSortHeader id="organization" label={t('Організація')} sortState={sortState} onSort={onSort} />
-        <ProtocolSortHeader id="suppliers" label={t('Постачальники')} sortState={sortState} onSort={onSort} />
-        <ProtocolSortHeader id="comment" label={t('Коментар')} sortState={sortState} onSort={onSort} />
-        <ProtocolSortHeader id="responsible" label={t('Відповідальний')} sortState={sortState} onSort={onSort} />
-        <ProtocolSortHeader id="created" label={t('Створено')} sortState={sortState} onSort={onSort} />
-        <span aria-hidden />
-      </div>
-
-      <div className="product-delivery-protocols-list-body">
-        {isLoading ? (
-          <div className="product-delivery-protocols-list-state">{t('Завантаження протоколів')}</div>
-        ) : protocols.length === 0 ? (
-          <div className="product-delivery-protocols-list-state">{t('Протоколів не знайдено')}</div>
-        ) : (
-          protocols.map((protocol, index) => (
-            <ProtocolRow
-              key={String(protocol.NetUid || protocol.Id || index)}
-              canOpenOptions={canOpenOptions}
-              protocol={protocol}
-              onOpenOptions={onOpenOptions}
-            />
-          ))
-        )}
-      </div>
-    </div>
-  )
-}
-
-function ProtocolSortHeader({
-  id,
-  label,
-  sortState,
-  onSort,
-}: {
-  id: ProtocolSortId
-  label: string
-  sortState: ProtocolSortState
-  onSort: Dispatch<SetStateAction<ProtocolSortState>>
-}) {
-  const isActive = sortState?.id === id
-
-  return (
-    <button
-      className={`product-delivery-protocols-sort-header${isActive ? ' is-active' : ''}`}
-      type="button"
-      onClick={() => {
-        onSort((current) => {
-          if (current?.id !== id) {
-            return { direction: 'asc', id }
-          }
-
-          return { direction: current.direction === 'asc' ? 'desc' : 'asc', id }
-        })
-      }}
-    >
-      <span>{label}</span>
-      {isActive && sortState?.direction === 'desc' ? <IconChevronDown size={13} /> : <IconChevronUp size={13} />}
-    </button>
-  )
-}
-
-function ProtocolRow({
-  canOpenOptions,
-  protocol,
-  onOpenOptions,
-}: {
-  canOpenOptions: boolean
-  protocol: DeliveryProductProtocol
-  onOpenOptions: (protocol: DeliveryProductProtocol) => void
-}) {
-  const openOptions = () => {
-    if (canOpenOptions) {
-      onOpenOptions(protocol)
-    }
-  }
-
-  return (
-    <div
-      className={`product-delivery-protocols-row${canOpenOptions ? ' is-clickable' : ''}`}
-      role={canOpenOptions ? 'button' : undefined}
-      tabIndex={canOpenOptions ? 0 : -1}
-      onClick={openOptions}
-      onKeyDown={(event) => {
-        if (canOpenOptions && (event.key === 'Enter' || event.key === ' ')) {
-          event.preventDefault()
-          openOptions()
-        }
-      }}
-    >
-      <ProtocolMainCell protocol={protocol} />
-      <ProtocolStateCell protocol={protocol} />
-      <ProtocolOrganizationCell protocol={protocol} />
-      <ProtocolSuppliersCell protocol={protocol} />
-      <ProtocolCommentCell protocol={protocol} />
-      <ProtocolResponsibleCell protocol={protocol} />
-      <ProtocolCreatedCell protocol={protocol} />
-      <ProtocolActionsCell canOpenOptions={canOpenOptions} protocol={protocol} onOpenOptions={onOpenOptions} />
-    </div>
+  return useMemo<DataTableColumn<DeliveryProductProtocol>[]>(
+    () => [
+      {
+        id: 'protocol',
+        header: t('Протокол / дата'),
+        width: 230,
+        minWidth: 210,
+        accessor: (protocol) => compactStrings([protocol.DeliveryProductProtocolNumber?.Number, formatDate(protocol.FromDate)]).join(' '),
+        cell: (protocol) => <ProtocolMainCell protocol={protocol} />,
+      },
+      {
+        id: 'status',
+        header: t('Статус / оприбуткування'),
+        width: 190,
+        minWidth: 170,
+        accessor: getProtocolStatusSortValue,
+        cell: (protocol) => <ProtocolStateCell protocol={protocol} />,
+      },
+      {
+        id: 'organization',
+        header: t('Організація'),
+        width: 240,
+        minWidth: 200,
+        accessor: getProtocolOrganizationSortValue,
+        cell: (protocol) => <ProtocolOrganizationCell protocol={protocol} />,
+      },
+      {
+        id: 'suppliers',
+        header: t('Постачальники'),
+        width: 280,
+        minWidth: 220,
+        fill: true,
+        accessor: (protocol) => getSupplierNames(protocol).join(' '),
+        cell: (protocol) => <ProtocolSuppliersCell protocol={protocol} />,
+      },
+      {
+        id: 'comment',
+        header: t('Коментар'),
+        width: 210,
+        minWidth: 170,
+        accessor: (protocol) => protocol.Comment || '',
+        cell: (protocol) => <ProtocolCommentCell protocol={protocol} />,
+      },
+      {
+        id: 'responsible',
+        header: t('Відповідальний'),
+        width: 180,
+        minWidth: 150,
+        accessor: getResponsibleName,
+        cell: (protocol) => <ProtocolResponsibleCell protocol={protocol} />,
+      },
+      {
+        id: 'created',
+        header: t('Створено'),
+        width: 140,
+        minWidth: 124,
+        accessor: (protocol) => getDateTime(protocol.Created),
+        cell: (protocol) => <ProtocolCreatedCell protocol={protocol} />,
+      },
+      {
+        id: 'actions',
+        header: '',
+        width: 54,
+        minWidth: 54,
+        align: 'right',
+        enableHiding: false,
+        enableResizing: false,
+        enableSorting: false,
+        cell: (protocol) => (
+          <ProtocolActionsCell
+            canOpenOptions={canOpenOptions}
+            protocol={protocol}
+            onOpenOptions={onOpenOptions}
+          />
+        ),
+      },
+    ],
+    [canOpenOptions, onOpenOptions, t],
   )
 }
 
@@ -722,23 +694,23 @@ function ProtocolMainCell({ protocol }: { protocol: DeliveryProductProtocol }) {
   const { t } = useI18n()
   const number = displayValue(protocol.DeliveryProductProtocolNumber?.Number)
   const date = formatDate(protocol.FromDate)
-  const tooltip = [number, date].join('\n')
+  const title = nativeTitle(compactStrings([number, date]).join('\n'))
 
   return (
-    <Tooltip label={tooltip} multiline openDelay={350} withArrow>
-      <span className="product-delivery-protocols-main-cell">
-        <span className="product-delivery-protocols-main-icon" aria-hidden>
-          <IconTruckDelivery size={16} />
-        </span>
-        <span className="product-delivery-protocols-main-copy">
-          <span className="product-delivery-protocols-main-title">{number}</span>
+    <span className="product-delivery-protocols-main-cell" title={title}>
+      <span className="product-delivery-protocols-main-icon" aria-hidden>
+        <IconTruckDelivery size={16} />
+      </span>
+      <span className="product-delivery-protocols-main-copy">
+        <span className="product-delivery-protocols-main-title">{number}</span>
+        {date && (
           <span className="product-delivery-protocols-main-subtitle">
             <IconCalendar size={12} />
             {t('від')} {date}
           </span>
-        </span>
+        )}
       </span>
-    </Tooltip>
+    </span>
   )
 }
 
@@ -761,40 +733,36 @@ function ProtocolStateCell({ protocol }: { protocol: DeliveryProductProtocol }) 
 function ProtocolOrganizationCell({ protocol }: { protocol: DeliveryProductProtocol }) {
   const title = displayValue(protocol.Organization?.Name)
   const subtitle = displayValue(protocol.Organization?.FullName || protocol.Organization?.Abbreviation || protocol.Organization?.Code)
-  const tooltip = [title, subtitle].filter((value) => value && value !== '-').join('\n') || title
+  const tooltip = compactStrings([title, subtitle]).join('\n') || title
 
   return (
-    <Tooltip label={tooltip} multiline openDelay={350} withArrow>
-      <span className="product-delivery-protocols-icon-cell">
-        <span className="product-delivery-protocols-small-icon" aria-hidden>
-          <IconBuilding size={14} />
-        </span>
-        <span className="product-delivery-protocols-two-line-cell">
-          <span>{title}</span>
-          <small>{subtitle}</small>
-        </span>
+    <span className="product-delivery-protocols-icon-cell" title={nativeTitle(tooltip)}>
+      <span className="product-delivery-protocols-small-icon" aria-hidden>
+        <IconBuilding size={14} />
       </span>
-    </Tooltip>
+      <span className="product-delivery-protocols-two-line-cell">
+        <span>{title}</span>
+        <small>{subtitle}</small>
+      </span>
+    </span>
   )
 }
 
 function ProtocolResponsibleCell({ protocol }: { protocol: DeliveryProductProtocol }) {
   const title = displayValue(getResponsibleName(protocol))
   const subtitle = displayValue(protocol.User?.Name || protocol.User?.FullName)
-  const tooltip = [title, subtitle].filter((value) => value && value !== '-').join('\n') || title
+  const tooltip = compactStrings([title, subtitle]).join('\n') || title
 
   return (
-    <Tooltip label={tooltip} multiline openDelay={350} withArrow>
-      <span className="product-delivery-protocols-icon-cell">
-        <span className="product-delivery-protocols-user-icon" aria-hidden>
-          <IconUser size={14} />
-        </span>
-        <span className="product-delivery-protocols-two-line-cell">
-          <span>{title}</span>
-          <small>{subtitle}</small>
-        </span>
+    <span className="product-delivery-protocols-icon-cell" title={nativeTitle(tooltip)}>
+      <span className="product-delivery-protocols-user-icon" aria-hidden>
+        <IconUser size={14} />
       </span>
-    </Tooltip>
+      <span className="product-delivery-protocols-two-line-cell">
+        <span>{title}</span>
+        <small>{subtitle}</small>
+      </span>
+    </span>
   )
 }
 
@@ -806,20 +774,18 @@ function ProtocolSuppliersCell({ protocol }: { protocol: DeliveryProductProtocol
   const subtitle = suppliers.length > 1
     ? `${suppliers.length} ${t('постачальники')}`
     : `${invoiceCount} ${t('інвойсів')}`
-  const tooltip = suppliers.length > 0 ? suppliers.join('\n') : title
+  const tooltip = suppliers.length > 0 ? suppliers.join('\n') : compactStrings([title, subtitle]).join('\n')
 
   return (
-    <Tooltip label={tooltip} multiline openDelay={350} withArrow>
-      <span className="product-delivery-protocols-icon-cell">
-        <span className="product-delivery-protocols-small-icon" aria-hidden>
-          <IconPackageImport size={14} />
-        </span>
-        <span className="product-delivery-protocols-two-line-cell">
-          <span>{title}</span>
-          <small>{subtitle}</small>
-        </span>
+    <span className="product-delivery-protocols-icon-cell" title={nativeTitle(tooltip)}>
+      <span className="product-delivery-protocols-small-icon" aria-hidden>
+        <IconPackageImport size={14} />
       </span>
-    </Tooltip>
+      <span className="product-delivery-protocols-two-line-cell">
+        <span>{title}</span>
+        <small>{subtitle}</small>
+      </span>
+    </span>
   )
 }
 
@@ -827,9 +793,7 @@ function ProtocolCommentCell({ protocol }: { protocol: DeliveryProductProtocol }
   const value = displayValue(protocol.Comment)
 
   return (
-    <Tooltip label={value} multiline openDelay={350} withArrow>
-      <span className="product-delivery-protocols-comment-cell">{value}</span>
-    </Tooltip>
+    <span className="product-delivery-protocols-comment-cell" title={nativeTitle(value)}>{value}</span>
   )
 }
 
@@ -837,12 +801,10 @@ function ProtocolCreatedCell({ protocol }: { protocol: DeliveryProductProtocol }
   const dateParts = formatDateTimeParts(protocol.Created)
 
   return (
-    <Tooltip label={dateParts.tooltip} openDelay={350} withArrow>
-      <span className="product-delivery-protocols-date-cell">
-        <span>{dateParts.date}</span>
-        <small>{dateParts.time}</small>
-      </span>
-    </Tooltip>
+    <span className="product-delivery-protocols-date-cell" title={nativeTitle(dateParts.tooltip)}>
+      <span>{dateParts.date}</span>
+      <small>{dateParts.time}</small>
+    </span>
   )
 }
 
@@ -862,13 +824,11 @@ function ProtocolActionsCell({
   }
 
   return (
-    <Group className="product-delivery-protocols-row-actions" gap={4} justify="flex-end" wrap="nowrap" onClick={(event) => event.stopPropagation()}>
-      <Tooltip label={t('Дії')}>
-        <ActionIcon aria-label={t('Дії')} color="gray" size="sm" variant="subtle" onClick={() => onOpenOptions(protocol)}>
-          <IconDots size={15} />
-        </ActionIcon>
-      </Tooltip>
-    </Group>
+    <div className="product-delivery-protocols-row-actions" onClick={(event) => event.stopPropagation()}>
+      <ActionIcon aria-label={t('Дії')} color="gray" size="sm" title={t('Дії')} variant="subtle" onClick={() => onOpenOptions(protocol)}>
+        <IconDots size={15} />
+      </ActionIcon>
+    </div>
   )
 }
 
@@ -940,52 +900,16 @@ function getExportScopeWarning(filters: Pick<FilterDraft, 'organization' | 'supp
   return t('Експорт протоколів використовує тільки період дат. Фільтри організації та постачальника не входять у цей документ.')
 }
 
-function sortProtocols(protocols: DeliveryProductProtocol[], sortState: ProtocolSortState): DeliveryProductProtocol[] {
-  if (!sortState) {
-    return protocols
-  }
-
-  const direction = sortState.direction === 'asc' ? 1 : -1
-
-  return protocols.toSorted(
-    (firstProtocol, secondProtocol) =>
-      compareProtocolSortValues(
-        getProtocolSortValue(firstProtocol, sortState.id),
-        getProtocolSortValue(secondProtocol, sortState.id),
-      ) * direction,
-  )
+function getProtocolRowId(protocol: DeliveryProductProtocol, index: number): string {
+  return String(protocol.NetUid || protocol.Id || index)
 }
 
-function getProtocolSortValue(protocol: DeliveryProductProtocol, id: ProtocolSortId): number | string {
-  switch (id) {
-    case 'comment':
-      return protocol.Comment || ''
-    case 'created':
-      return getDateTime(protocol.Created)
-    case 'fromDate':
-      return getDateTime(protocol.FromDate)
-    case 'number':
-      return protocol.DeliveryProductProtocolNumber?.Number || ''
-    case 'organization':
-      return compactStrings([protocol.Organization?.Name, protocol.Organization?.FullName, protocol.Organization?.Abbreviation]).join(' ')
-    case 'responsible':
-      return getResponsibleName(protocol)
-    case 'status':
-      return `${protocol.IsCompleted ? 2 : protocol.IsShipped ? 1 : 0}:${protocol.IsPlaced ? 2 : protocol.IsPartiallyPlaced ? 1 : 0}`
-    case 'suppliers':
-      return getSupplierNames(protocol).join(' ')
-  }
+function getProtocolStatusSortValue(protocol: DeliveryProductProtocol): string {
+  return `${protocol.IsCompleted ? 2 : protocol.IsShipped ? 1 : 0}:${protocol.IsPlaced ? 2 : protocol.IsPartiallyPlaced ? 1 : 0}`
 }
 
-function compareProtocolSortValues(firstValue: number | string, secondValue: number | string): number {
-  if (typeof firstValue === 'number' && typeof secondValue === 'number') {
-    return firstValue - secondValue
-  }
-
-  return String(firstValue).localeCompare(String(secondValue), 'uk', {
-    numeric: true,
-    sensitivity: 'base',
-  })
+function getProtocolOrganizationSortValue(protocol: DeliveryProductProtocol): string {
+  return compactStrings([protocol.Organization?.Name, protocol.Organization?.FullName, protocol.Organization?.Abbreviation]).join(' ')
 }
 
 function getSupplierNames(protocol: DeliveryProductProtocol): string[] {
@@ -1069,7 +993,7 @@ function getDateTime(value: unknown): number {
 
 function formatDate(value?: Date | string): string {
   if (!value) {
-    return '-'
+    return ''
   }
 
   const date = value instanceof Date ? value : new Date(value)
@@ -1083,7 +1007,7 @@ function formatDate(value?: Date | string): string {
 
 function formatDateTime(value?: Date | string): string {
   if (!value) {
-    return '-'
+    return ''
   }
 
   const date = value instanceof Date ? value : new Date(value)
@@ -1097,7 +1021,7 @@ function formatDateTime(value?: Date | string): string {
 
 function formatDateTimeParts(value?: Date | string): { date: string; time: string; tooltip: string } {
   if (!value) {
-    return { date: '-', time: '-', tooltip: '-' }
+    return { date: '', time: '', tooltip: '' }
   }
 
   const date = value instanceof Date ? value : new Date(value)
@@ -1105,7 +1029,7 @@ function formatDateTimeParts(value?: Date | string): { date: string; time: strin
   if (Number.isNaN(date.getTime())) {
     const fallback = String(value)
 
-    return { date: fallback, time: '-', tooltip: fallback }
+    return { date: fallback, time: '', tooltip: fallback }
   }
 
   const datePart = dateFormatter.format(date)
@@ -1123,9 +1047,19 @@ function compactStrings(values: Array<string | null | undefined>): string[] {
 }
 
 function displayValue(value: unknown): string {
-  if (value === null || value === undefined || value === '') {
-    return '-'
+  if (value === null || value === undefined) {
+    return ''
+  }
+
+  if (typeof value === 'string' && value.trim() === '') {
+    return ''
   }
 
   return String(value)
+}
+
+function nativeTitle(value: string): string | undefined {
+  const title = value.trim()
+
+  return title ? title : undefined
 }
