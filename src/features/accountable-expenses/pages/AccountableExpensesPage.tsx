@@ -614,11 +614,11 @@ function ExpenseDetailDrawer({ row, onClose }: { row: AccountableExpenseRow | nu
 
           <ExpenseDetailSection title={t('Реквізити')}>
             <div className="accountable-expense-detail-grid">
-              <DetailItem label={t('Створено')} value={formatDateTime(row.created)} />
-              <DetailItem label={t('Номер документа')} value={displayValue(row.order.Number)} />
-              <DetailItem label={t('Номер організації')} value={displayValue(row.order.OrganizationNumber)} />
-              <DetailItem label={t('Дата організації')} value={formatDateTime(row.order.OrganizationFromDate)} />
-              <DetailItem label={t('Авансовий звіт')} value={displayValue(row.advanceNumber)} />
+              <DetailItem label={t('Створено')} mono value={formatDateTime(row.created)} />
+              <DetailItem label={t('Номер документа')} mono value={displayValue(row.order.Number)} />
+              <DetailItem label={t('Номер організації')} mono value={displayValue(row.order.OrganizationNumber)} />
+              <DetailItem label={t('Дата організації')} mono value={formatDateTime(row.order.OrganizationFromDate)} />
+              <DetailItem label={t('Авансовий звіт')} mono value={displayValue(row.advanceNumber)} />
               <DetailItem label={t('Організація')} value={displayValue(row.organization)} />
               <DetailItem label={t('Кому видано')} value={displayValue(row.payedTo)} />
               <DetailItem label={t('Відповідальний')} value={displayValue(row.responsible)} />
@@ -638,14 +638,14 @@ function ExpenseDetailDrawer({ row, onClose }: { row: AccountableExpenseRow | nu
               </Badge>
             </div>
             <div className="accountable-expense-detail-grid is-compact">
-              <DetailItem label={t('Артикул')} value={displayValue(row.vendorCode)} />
+              <DetailItem label={t('Артикул')} mono value={displayValue(row.vendorCode)} />
               <DetailItem label={t('Тип')} value={typeLabel} />
-              <DetailItem label={t('Кількість')} value={formatAmount(row.qty)} />
-              <DetailItem label={t('Ціна')} value={formatMoney(row.pricePerItem)} />
-              <DetailItem label={t('Сума без ПДВ')} value={formatMoney(row.item.TotalPrice)} />
-              <DetailItem label={t('ПДВ')} value={formatMoney(row.item.VAT)} />
-              <DetailItem label={t('ПДВ %')} value={formatAmount(row.item.VatPercent)} />
-              <DetailItem label={t('Валюта')} value={displayValue(row.currency)} />
+              <DetailItem label={t('Кількість')} mono value={formatAmount(row.qty)} />
+              <DetailItem label={t('Ціна')} mono value={formatMoney(row.pricePerItem)} />
+              <DetailItem label={t('Сума без ПДВ')} mono value={formatMoney(row.item.TotalPrice)} />
+              <DetailItem label={t('ПДВ')} mono value={formatMoney(row.item.VAT)} />
+              <DetailItem label={t('ПДВ %')} mono value={formatAmount(row.item.VatPercent)} />
+              <DetailItem label={t('Валюта')} mono value={displayValue(row.currency)} />
             </div>
           </ExpenseDetailSection>
 
@@ -653,8 +653,8 @@ function ExpenseDetailDrawer({ row, onClose }: { row: AccountableExpenseRow | nu
             <div className="accountable-expense-detail-grid is-compact">
               <DetailItem label={t('Оплата')} value={paymentLabel} />
               <DetailItem label={t('Підзвіт закрито')} value={underReportLabel} />
-              <DetailItem label={t('Оплачено сумарно')} value={formatMoney(row.paidAmount)} />
-              <DetailItem label={t('Сума з ПДВ')} value={formatMoney(row.amount)} />
+              <DetailItem label={t('Оплачено сумарно')} mono value={formatMoney(row.paidAmount)} />
+              <DetailItem label={t('Сума з ПДВ')} mono value={formatMoney(row.amount)} />
             </div>
           </ExpenseDetailSection>
 
@@ -684,7 +684,7 @@ function ExpenseDetailDrawer({ row, onClose }: { row: AccountableExpenseRow | nu
                 <DetailItem label={t('Видатковий ордер')} value={displayValue(outcome.Number || outcome.CustomNumber)} />
                 <DetailItem label={t('Дата')} value={formatDateTime(outcome.FromDate)} />
                 <DetailItem label={t('Сума')} value={formatMoney(outcome.Amount)} />
-                <DetailItem label={t('Валюта')} value={displayValue(outcome.PaymentCurrencyRegister?.Currency?.Code || outcome.PaymentCurrencyRegister?.Currency?.Name)} />
+                <DetailItem label={t('Валюта')} mono value={displayValue(outcome.PaymentCurrencyRegister?.Currency?.Code || outcome.PaymentCurrencyRegister?.Currency?.Name)} />
                 <DetailItem label={t('Рахунок')} value={displayValue(outcome.PaymentCurrencyRegister?.PaymentRegister?.Name)} />
                 <DetailItem label={t('Стаття руху')} value={displayValue(outcome.PaymentMovementOperation?.PaymentMovement?.OperationName)} />
                 <DetailItem label={t('Призначення платежу')} value={displayValue(outcome.PaymentPurpose)} />
@@ -722,11 +722,11 @@ function ExpenseDetailDrawer({ row, onClose }: { row: AccountableExpenseRow | nu
                         )}
                       </Group>
                       <div className="accountable-expense-detail-grid">
-                        <DetailItem label={t('Авансовий звіт')} value={displayValue(itemOutcome?.AdvanceNumber)} />
+                        <DetailItem label={t('Авансовий звіт')} mono value={displayValue(itemOutcome?.AdvanceNumber)} />
                         <DetailItem label={t('Видатковий ордер')} value={displayValue(itemOutcome?.Number || itemOutcome?.CustomNumber)} />
                         <DetailItem label={t('Дата')} value={formatDateTime(itemOutcome?.FromDate)} />
                         <DetailItem label={t('Сума')} value={formatMoney(itemOutcome?.Amount)} />
-                        <DetailItem label={t('Валюта')} value={displayValue(itemOutcome?.PaymentCurrencyRegister?.Currency?.Code || itemOutcome?.PaymentCurrencyRegister?.Currency?.Name)} />
+                        <DetailItem label={t('Валюта')} mono value={displayValue(itemOutcome?.PaymentCurrencyRegister?.Currency?.Code || itemOutcome?.PaymentCurrencyRegister?.Currency?.Name)} />
                         <DetailItem label={t('Закрито')} value={itemOutcome?.IsUnderReportDone ? t('Так') : t('Ні')} />
                       </div>
                     </div>
@@ -783,9 +783,9 @@ function ExpenseDetailSection({
   )
 }
 
-function DetailItem({ label, value }: { label: string; value: string }) {
+function DetailItem({ label, mono = false, value }: { label: string; mono?: boolean; value: string }) {
   return (
-    <div className="accountable-expense-detail-field">
+    <div className={`accountable-expense-detail-field${mono ? ' is-mono' : ''}`}>
       <span>{label}</span>
       <strong>{value}</strong>
     </div>

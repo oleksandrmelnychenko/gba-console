@@ -4,17 +4,10 @@
 
 .consumable-order-pay-hero,
 .consumable-order-pay-section {
-  background:
-    linear-gradient(
-      90deg,
-      rgba(255, 247, 237, 0.42),
-      rgba(255, 255, 255, 0.96) 36%,
-      rgba(248, 250, 252, 0.72)
-    ),
-    var(--mantine-color-white);
+  background: var(--mantine-color-white);
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 8px;
-  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.045);
+  box-shadow: none;
   min-width: 0;
 }
 
@@ -263,9 +256,10 @@
 
 .consumable-order-pay-control .mantine-InputWrapper-label,
 .consumable-order-pay-movement-modal .mantine-InputWrapper-label {
-  color: var(--mantine-color-gray-6);
-  font-size: 11.5px;
-  font-weight: 400;
+  color: var(--mantine-color-gray-9);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
   letter-spacing: 0;
   line-height: 1.2;
   margin-bottom: 5px;
@@ -318,12 +312,13 @@
 }
 
 .consumable-order-pay-items__head {
-  color: var(--mantine-color-gray-5);
-  font-size: 10.5px;
-  font-weight: 500;
+  color: var(--mantine-color-gray-7);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0;
   line-height: 1.2;
   padding: 0 10px 8px;
-  text-transform: uppercase;
 }
 
 .consumable-order-pay-items__head span:nth-child(n + 3) {
@@ -335,34 +330,14 @@
 }
 
 .consumable-order-pay-item-row {
-  background:
-    linear-gradient(
-      90deg,
-      transparent,
-      rgba(248, 249, 250, 0.7) 48%,
-      transparent
-    ),
-    var(--mantine-color-white);
-  border-bottom: 1px solid var(--mantine-color-gray-1);
+  background: var(--mantine-color-white);
+  border-bottom: 1px solid var(--mantine-color-gray-2);
   min-height: 60px;
   padding: 8px 10px;
-  transition:
-    background 140ms ease,
-    box-shadow 140ms ease,
-    transform 140ms ease;
 }
 
 .consumable-order-pay-item-row:hover {
-  background:
-    linear-gradient(
-      90deg,
-      rgba(255, 250, 245, 0.92),
-      rgba(255, 250, 245, 0.42) 42%,
-      transparent
-    ),
-    var(--mantine-color-white);
-  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.055);
-  transform: translateX(2px);
+  background: #fffaf5;
 }
 
 .consumable-order-pay-item-row:last-child {
@@ -492,4 +467,20 @@
   .consumable-order-pay-control.is-comment {
     grid-column: auto;
   }
+}
+
+/* Pattern controls (docs/ui-patterns.md §9). */
+.consumable-order-pay .mantine-Button-label,
+.consumable-order-pay-movement-modal .mantine-Button-label {
+  font-family: var(--font-mono);
+  letter-spacing: 0;
+}
+
+.consumable-order-pay .mantine-Select-input,
+.consumable-order-pay .mantine-Autocomplete-input {
+  border-color: var(--mantine-color-gray-2);
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0;
 }

@@ -397,6 +397,7 @@ export function ConsumableOrderPayPage() {
           form="consumable-order-pay-form"
           leftSection={<IconDeviceFloppy size={16} />}
           loading={isSaving}
+          styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
           type="submit"
         >
           {t('Створити оплату')}

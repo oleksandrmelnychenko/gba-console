@@ -240,6 +240,9 @@ export function UsersPage() {
                 <IconRefresh size={17} />
               </ActionIcon>
             </Tooltip>
+          </div>
+          <div ref={setTableToolbarSlot} className="users-table-toolbar-slot" />
+          <div className="users-create-actions">
             <Button
               className="users-roles-action"
               color="gray"
@@ -250,24 +253,23 @@ export function UsersPage() {
             >
               {t('Ролі')}
             </Button>
+            <Button
+              className="users-create-button"
+              color={CREATE_ACTION_COLOR}
+              leftSection={<IconPlus size={16} />}
+              size="sm"
+              onClick={() =>
+                navigate('/users/new', {
+                  state: {
+                    backgroundLocation: location,
+                    returnPath: `${location.pathname}${location.search}`,
+                  },
+                })
+              }
+            >
+              {t('Новий користувач')}
+            </Button>
           </div>
-          <div ref={setTableToolbarSlot} className="users-table-toolbar-slot" />
-          <Button
-            className="users-create-button"
-            color={CREATE_ACTION_COLOR}
-            leftSection={<IconPlus size={16} />}
-            size="sm"
-            onClick={() =>
-              navigate('/users/new', {
-                state: {
-                  backgroundLocation: location,
-                  returnPath: `${location.pathname}${location.search}`,
-                },
-              })
-            }
-          >
-            {t('Новий користувач')}
-          </Button>
         </div>
 
         {error && (
@@ -278,7 +280,7 @@ export function UsersPage() {
 
         <div className="users-layout">
           <aside className="users-role-rail" aria-label={t('Ролі')}>
-            <Text className="app-section-title users-rail-title" fw={600} size="sm">
+            <Text className="users-rail-title" fw={600} size="sm">
               {t('Ролі')}
             </Text>
 

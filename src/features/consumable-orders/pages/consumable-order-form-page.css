@@ -4,17 +4,10 @@
 
 .consumable-order-form-hero,
 .consumable-order-form-section {
-  background:
-    linear-gradient(
-      90deg,
-      rgba(255, 247, 237, 0.42),
-      rgba(255, 255, 255, 0.96) 38%,
-      rgba(248, 250, 252, 0.72)
-    ),
-    var(--mantine-color-white);
+  background: var(--mantine-color-white);
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 8px;
-  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.045);
+  box-shadow: none;
   min-width: 0;
 }
 
@@ -161,10 +154,14 @@
   font-weight: 600;
   letter-spacing: 0;
   line-height: 1.15;
+  margin-top: 4px;
+}
 
 .consumable-order-form-metric small {
-  font-size: 9px;
-  margin-top: 4px;
+  color: var(--mantine-color-gray-6);
+  font-size: 10px;
+  font-weight: 500;
+  margin-top: 3px;
 }
 
 .consumable-order-form-section {
@@ -184,34 +181,7 @@
   position: relative;
 }
 
-.consumable-order-form-section-header::before {
-  background: linear-gradient(
-    90deg,
-    transparent,
-    var(--mantine-color-gray-2) 9%,
-    var(--mantine-color-gray-2) 91%,
-    transparent
-  );
-  bottom: 0;
-  content: "";
-  height: 1px;
-  left: 0;
-  position: absolute;
-  right: 0;
-}
 
-.consumable-order-form-section-header::after {
-  background: var(--brand-orange);
-  border: 3px solid var(--mantine-color-white);
-  border-radius: 999px;
-  bottom: -4px;
-  box-shadow: 0 0 0 1px var(--mantine-color-gray-2);
-  content: "";
-  height: 8px;
-  left: 40px;
-  position: absolute;
-  width: 8px;
-}
 
 .consumable-order-form-section-header__main {
   align-items: center;
@@ -264,9 +234,10 @@
 
 .consumable-order-form-control .mantine-InputWrapper-label,
 .consumable-order-item-modal .mantine-InputWrapper-label {
-  color: var(--mantine-color-gray-6);
-  font-size: 11.5px;
-  font-weight: 400;
+  color: var(--mantine-color-gray-9);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
   letter-spacing: 0;
   line-height: 1.2;
   margin-bottom: 5px;
@@ -327,30 +298,21 @@
 }
 
 .consumable-order-form-item-row {
-  background:
-    linear-gradient(
-      90deg,
-      rgba(255, 247, 237, 0.28),
-      rgba(255, 255, 255, 0.96) 34%,
-      rgba(248, 250, 252, 0.78)
-    ),
-    var(--mantine-color-white);
+  background: var(--mantine-color-white);
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 8px;
-  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.035);
+  box-shadow: none;
   display: grid;
   gap: 12px;
   min-width: 0;
   padding: 10px;
   transition:
     border-color 140ms ease,
-    box-shadow 140ms ease,
     transform 140ms ease;
 }
 
 .consumable-order-form-item-row:hover {
-  border-color: rgba(251, 146, 60, 0.38);
-  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.055);
+  border-color: var(--mantine-color-gray-4);
   transform: translateX(2px);
 }
 
@@ -431,28 +393,25 @@
 }
 
 .consumable-order-form-meta-pill {
-  background: rgba(248, 250, 252, 0.76);
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 8px;
   display: grid;
   gap: 2px;
   max-width: 260px;
   min-width: 120px;
-  padding: 5px 7px;
 }
 
 .consumable-order-form-meta-pill span {
-  color: var(--mantine-color-gray-5);
-  font-size: 9.5px;
-  font-weight: 650;
+  color: var(--mantine-color-gray-6);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0;
   line-height: 1;
-  text-transform: uppercase;
 }
 
 .consumable-order-form-meta-pill strong {
   color: var(--mantine-color-gray-8);
   font-size: 11.5px;
-  font-weight: 620;
+  font-weight: 600;
   line-height: 1.15;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -460,11 +419,27 @@
 }
 
 .consumable-order-form-qty-cell {
-  align-items: center;
-  display: inline-flex;
-  gap: 8px;
-  justify-content: flex-start;
+  display: grid;
+  gap: 2px;
   min-width: 0;
+}
+
+.consumable-order-form-qty-cell strong {
+  color: var(--mantine-color-gray-8);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.15;
+}
+
+.consumable-order-form-qty-cell > span {
+  color: var(--mantine-color-gray-6);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1;
 }
 
 .consumable-order-form-qty-cell > span {
@@ -483,8 +458,10 @@
 .consumable-order-form-qty-cell strong,
 .consumable-order-form-amount-pill strong {
   color: var(--mantine-color-gray-8);
-  font-size: 12.5px;
-  font-weight: 680;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0;
   line-height: 1.15;
 }
 
@@ -492,34 +469,31 @@
   align-items: center;
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px 20px;
   justify-content: flex-end;
   min-width: 0;
 }
 
 .consumable-order-form-amount-pill {
   align-items: flex-end;
-  background: rgba(248, 250, 252, 0.82);
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 8px;
   display: grid;
   gap: 2px;
   min-width: 74px;
-  padding: 5px 7px;
   text-align: right;
 }
 
 .consumable-order-form-amount-pill span {
-  color: var(--mantine-color-gray-5);
-  font-size: 9.5px;
-  font-weight: 650;
+  color: var(--mantine-color-gray-6);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0;
   line-height: 1;
-  text-transform: uppercase;
 }
 
 .consumable-order-form-amount-pill.is-total {
-  background: rgba(255, 247, 237, 0.72);
-  border-color: rgba(251, 146, 60, 0.3);
+  background: transparent;
+  border: 0;
 }
 
 .consumable-order-form-amount-pill.is-total strong {
@@ -616,9 +590,7 @@
 }
 
 .consumable-order-item-modal__grid {
-  background:
-    linear-gradient(90deg, rgba(255, 247, 237, 0.26), rgba(255, 255, 255, 0.96) 38%),
-    var(--mantine-color-white);
+  background: var(--mantine-color-white);
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 8px;
   padding: 14px;
@@ -703,7 +675,7 @@
 
 
 /* Pattern controls inside the form (docs/ui-patterns.md §9). */
-.consumable-order-form .mantine-Checkbox-input:checked {
+.consumable-order-form .mantine-Checkbox-input:checked:not(:disabled) {
   background-color: var(--brand-orange);
   border-color: var(--brand-orange);
 }
@@ -714,4 +686,23 @@
   font-family: var(--font-mono);
   font-size: 13px;
   letter-spacing: 0;
+}
+
+/* Buttons in the sheet read in mono (docs/ui-patterns.md §9). */
+.consumable-order-form .mantine-Button-label,
+.consumable-order-item-modal .mantine-Button-label {
+  font-family: var(--font-mono);
+  letter-spacing: 0;
+}
+
+.consumable-order-form-meta-badge {
+  flex: 0 0 auto;
+  max-width: 280px;
+  text-transform: none;
+}
+
+/* Крапка-роздільник не потрібна перед пілсом договору. */
+.consumable-order-form-meta .consumable-order-form-meta-badge + span::before,
+.consumable-order-form-meta .consumable-order-form-meta-badge::before {
+  display: none;
 }
