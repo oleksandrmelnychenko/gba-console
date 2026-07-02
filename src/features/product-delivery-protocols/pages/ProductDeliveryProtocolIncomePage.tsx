@@ -762,7 +762,7 @@ function useProtocolIncomeModel(source: ProductIncomeSource) {
         // items. Graft the columns onto the items so the new column actually appears.
         const [refreshedInvoice, refreshedPackList] = await Promise.all([
           getSupplyOrderInvoiceItems(selectedInvoiceId),
-          getPackingListSpecificationProducts(nextPackingList.NetUid),
+          getPackingListSpecificationProducts(nextPackingList.NetUid ?? ''),
         ])
 
         setInvoice(refreshedInvoice)
