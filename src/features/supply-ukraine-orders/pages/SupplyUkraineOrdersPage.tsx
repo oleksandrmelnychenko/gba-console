@@ -20,20 +20,17 @@ import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
   IconDownload,
-  IconEye,
   IconFileInvoice,
   IconFileTypePdf,
   IconFileTypeXls,
-  IconListDetails,
-  IconPackageImport,
   IconPlus,
   IconReceipt,
   IconRestore,
-  IconRoute,
   IconSearch,
   IconTrash,
 } from '@tabler/icons-react'
-import { Fragment, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useReducer, useRef, useState, type ReactNode } from 'react'
+import { Eye, FileText, ListChecks, PackageCheck, PackageOpen, Receipt, ReceiptText, Route } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -1391,101 +1388,106 @@ function OrderActionsModal({
   const directHasProForma = Boolean(row?.directOrder?.SupplyProFormId)
 
   return (
-    <AppModal centered opened={Boolean(row)} size="sm" title={t('Оберіть дію')} onClose={onClose}>
+    <AppModal
+      centered
+      size={496}
+      opened={Boolean(row)}
+      title={<span style={{ fontFamily: 'var(--font-mono)' }}>{getRowTitle(row)}</span>}
+      onClose={onClose}
+    >
       {row && (
-        <Stack gap="xs">
-          <Text c="dimmed" size="sm">{getRowTitle(row)}</Text>
-
+        <Stack className="app-modal-actions" gap="xs">
           {row.kind === 'toUkraine' && canOpenToUkrainePlacement && row.netUid && (
-            <Button
-              justify="flex-start"
-              leftSection={<IconPackageImport size={16} />}
-              variant="light"
+            <OrderActionButton
+              icon={<PackageOpen size={20} color="var(--mantine-color-gray-7)" />}
+              label={t('Розміщення товару')}
               onClick={() => onNavigate(`/orders/ukraine/placement/${row.netUid}`)}
-            >
-              {t('Розміщення товару')}
-            </Button>
+            />
           )}
 
           {row.kind === 'toUkraine' && canOpenToUkraineView && row.netUid && (
-            <Button
-              justify="flex-start"
-              leftSection={<IconEye size={16} />}
-              variant="light"
+            <OrderActionButton
+              icon={<Eye size={20} color="var(--mantine-color-gray-7)" />}
+              label={t('Огляд')}
               onClick={() => onNavigate(`/orders/ukraine/view/${row.netUid}`)}
-            >
-              {t('Огляд')}
-            </Button>
+            />
           )}
 
           {row.kind === 'toUkraine' && canOpenToUkraineProtocols && row.netUid && (
-            <Button
-              justify="flex-start"
-              leftSection={<IconFileInvoice size={16} />}
-              variant="light"
+            <OrderActionButton
+              icon={<ReceiptText size={20} color="var(--mantine-color-gray-7)" />}
+              label={t('Протоколи оплат')}
               onClick={() => onNavigate(`/orders/ukraine/protocols/${row.netUid}`)}
-            >
-              {t('Протоколи оплат')}
-            </Button>
+            />
           )}
 
           {row.kind === 'toUkraine' && canOpenToUkraineOfficialCosts && row.order && (
-            <Button
-              justify="flex-start"
-              leftSection={<IconReceipt size={16} />}
-              variant="light"
+            <OrderActionButton
+              icon={<Receipt size={20} color="var(--mantine-color-gray-7)" />}
+              label={getOfficialCostsActionLabel(row.order, t)}
               onClick={() => onOpenOfficialCosts(row)}
-            >
-              {getOfficialCostsActionLabel(row.order, t)}
-            </Button>
+            />
           )}
 
           {row.kind === 'direct' && canOpenDirectLogistics && row.netUid && (
-            <Button
-              justify="flex-start"
-              leftSection={<IconRoute size={16} />}
-              variant="light"
+            <OrderActionButton
+              icon={<Route size={20} color="var(--mantine-color-gray-7)" />}
+              label={t('Логістика')}
               onClick={() => onNavigate(`/orders/ukraine/all/edit/${row.netUid}`)}
-            >
-              {t('Логістика')}
-            </Button>
+            />
           )}
 
           {row.kind === 'direct' && canOpenDirectInvoices && directHasProForma && row.netUid && (
-            <Button
-              justify="flex-start"
-              leftSection={<IconFileInvoice size={16} />}
-              variant="light"
+            <OrderActionButton
+              icon={<FileText size={20} color="var(--mantine-color-gray-7)" />}
+              label={t('Інвойси і пак листи')}
               onClick={() => onNavigate(`/orders/ukraine/all/edit/${row.netUid}/supply-invoices`)}
-            >
-              {t('Інвойси і пак листи')}
-            </Button>
+            />
           )}
 
           {row.kind === 'direct' && canOpenDirectSpecifications && directHasProForma && row.netUid && (
-            <Button
-              justify="flex-start"
-              leftSection={<IconListDetails size={16} />}
-              variant="light"
+            <OrderActionButton
+              icon={<ListChecks size={20} color="var(--mantine-color-gray-7)" />}
+              label={t('Специфікації')}
               onClick={() => onNavigate(`/orders/ukraine/all/edit/${row.netUid}/specifications`)}
-            >
-              {t('Специфікації')}
-            </Button>
+            />
           )}
 
           {row.kind === 'direct' && canOpenDirectProductIncome && directHasInvoices && row.netUid && (
-            <Button
-              justify="flex-start"
-              leftSection={<IconPackageImport size={16} />}
-              variant="light"
+            <OrderActionButton
+              icon={<PackageCheck size={20} color="var(--mantine-color-gray-7)" />}
+              label={t('Розміщення приходу')}
               onClick={() => onNavigate(`/orders/ukraine/all/edit/${row.netUid}/product-income`)}
-            >
-              {t('Розміщення приходу')}
-            </Button>
+            />
           )}
         </Stack>
       )}
     </AppModal>
+  )
+}
+
+/* Row-actions popup entry per docs/ui-patterns.md §7.1. */
+function OrderActionButton({
+  icon,
+  label,
+  onClick,
+}: {
+  icon: ReactNode
+  label: string
+  onClick: () => void
+}) {
+  return (
+    <Button
+      fullWidth
+      justify="flex-start"
+      color="dark"
+      size="md"
+      leftSection={<span className="app-action-icon">{icon}</span>}
+      variant="subtle"
+      onClick={onClick}
+    >
+      {label}
+    </Button>
   )
 }
 
