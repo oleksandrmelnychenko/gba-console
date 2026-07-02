@@ -276,7 +276,7 @@ export function OrganizationClientsPage() {
 
         {error && (
           <Alert
-            className="organization-clients-page__alert"
+            className="console-table-alert"
             color="red"
             icon={<IconAlertCircle size={18} />}
             variant="light"
@@ -285,7 +285,7 @@ export function OrganizationClientsPage() {
           </Alert>
         )}
 
-        <div className="organization-clients-page__table">
+        <div className="organization-clients-page__table console-table-body">
           <DataTable
             columns={columns}
             data={clients}
