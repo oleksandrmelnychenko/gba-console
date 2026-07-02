@@ -36,7 +36,7 @@
 .product-delivery-protocols-filter-label,
 .product-delivery-protocols-search-input .mantine-InputWrapper-label,
 .product-delivery-protocols-organization-select .mantine-InputWrapper-label {
-  color: var(--mantine-color-gray-6);
+  color: var(--mantine-color-gray-9);
   display: block;
   font-family: var(--font-mono);
   font-size: 12px;
@@ -170,35 +170,7 @@
   min-width: 0;
 }
 
-.product-delivery-protocols-main-icon,
-.product-delivery-protocols-small-icon,
-.product-delivery-protocols-user-icon {
-  align-items: center;
-  background: var(--mantine-color-gray-0);
-  border: 1px solid var(--mantine-color-gray-2);
-  color: var(--mantine-color-gray-6);
-  display: inline-flex;
-  justify-content: center;
-}
-
-.product-delivery-protocols-main-icon {
-  border-radius: 999px;
-  flex: 0 0 34px;
-  height: 34px;
-  width: 34px;
-}
-
-.product-delivery-protocols-small-icon,
-.product-delivery-protocols-user-icon {
-  border-radius: 7px;
-  flex: 0 0 26px;
-  height: 26px;
-  width: 26px;
-}
-
-.product-delivery-protocols-user-icon {
-  border-radius: 999px;
-}
+/* Cell icons removed per the pattern — data reads without decorative glyphs. */
 
 .product-delivery-protocols-main-copy,
 .product-delivery-protocols-two-line-cell,
@@ -229,6 +201,13 @@
   line-height: 1.15;
 }
 
+/* Protocol number is a code → mono (§5.1). */
+.product-delivery-protocols-main-title {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0;
+}
+
 .product-delivery-protocols-main-subtitle,
 .product-delivery-protocols-two-line-cell > small,
 .product-delivery-protocols-date-cell > small {
@@ -239,14 +218,10 @@
   margin-top: 3px;
 }
 
+/* Date value in the subtitle reads in mono. */
 .product-delivery-protocols-main-subtitle {
-  align-items: center;
-  display: flex;
-  gap: 4px;
-}
-
-.product-delivery-protocols-main-subtitle svg {
-  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  letter-spacing: 0;
 }
 
 .product-delivery-protocols-state-cell {
@@ -268,52 +243,23 @@
   white-space: nowrap;
 }
 
-.product-delivery-protocols-state-main {
-  color: var(--mantine-color-gray-8);
-  font-size: 12px;
-  font-weight: 600;
-  gap: 6px;
-  line-height: 1;
+/* Status as the outlined pill pattern (app-role-pill on a bare span needs its
+   own box sizing). */
+.product-delivery-protocols-state-pill {
+  align-items: center;
+  display: inline-flex;
+  flex: 0 1 auto;
+  font-size: 10.5px;
+  line-height: 1.2;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  padding: 2px 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.product-delivery-protocols-state-sub {
-  color: var(--mantine-color-gray-6);
-  font-size: 11px;
-  font-weight: 500;
-  line-height: 1.15;
-  padding-left: 16px;
-}
-
-.product-delivery-protocols-state-dot {
-  border-radius: 999px;
-  flex: 0 0 7px;
-  height: 7px;
-  width: 7px;
-}
-
-.product-delivery-protocols-state-main.is-success .product-delivery-protocols-state-dot {
-  background: var(--mantine-color-green-6);
-}
-
-.product-delivery-protocols-state-main.is-info .product-delivery-protocols-state-dot {
-  background: var(--mantine-color-blue-6);
-}
-
-.product-delivery-protocols-state-main.is-neutral .product-delivery-protocols-state-dot {
-  background: var(--mantine-color-gray-4);
-}
-
-.product-delivery-protocols-state-sub.is-success {
-  color: var(--mantine-color-green-7);
-}
-
-.product-delivery-protocols-state-sub.is-warning {
-  color: var(--mantine-color-orange-7);
-}
-
-.product-delivery-protocols-state-sub.is-neutral {
-  color: var(--mantine-color-gray-6);
-}
+/* Placement renders as a second pill (blue/orange/gray) — see the state cell. */
 
 .product-delivery-protocols-comment-cell,
 .product-delivery-protocols-date-cell > span {
@@ -321,6 +267,13 @@
   font-size: 12.5px;
   font-weight: 500;
   line-height: 1.2;
+}
+
+/* Dates in mono (§5.1) — both the date line and the small time line. */
+.product-delivery-protocols-date-cell > span,
+.product-delivery-protocols-date-cell > small {
+  font-family: var(--font-mono);
+  letter-spacing: 0;
 }
 
 .product-delivery-protocols-row-actions {

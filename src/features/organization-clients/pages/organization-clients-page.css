@@ -1,25 +1,116 @@
 .organization-clients-page {
-  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 24px);
-  min-height: 0;
-  overflow: hidden;
+  padding: 0 4px;
 }
 
-/* Filter strip pinned at the top of the card; the table below it scrolls. */
+.organization-clients-card {
+  min-width: 0;
+}
+
 .organization-clients-filter-bar {
+  --organization-clients-control-height: 36px;
+  --organization-clients-label-gap: 4px;
+  --organization-clients-label-height: 17px;
+
+  align-items: end;
+  background: #f8f9fa;
+  border-bottom-color: var(--mantine-color-gray-2);
+  box-sizing: border-box;
+  display: grid;
   flex: 0 0 auto;
+  gap: 10px;
+  grid-template-columns: minmax(280px, 1fr) auto auto auto;
+  min-height: 86px;
+  padding: 12px 12px 14px;
 }
 
-.organization-clients-filter-bar .clients-filter-row {
-  width: 100%;
+.organization-clients-search-input {
+  display: grid;
+  grid-template-rows:
+    var(--organization-clients-label-height)
+    var(--organization-clients-control-height);
+  max-width: 560px;
+  min-height: calc(
+    var(--organization-clients-label-height) +
+    var(--organization-clients-label-gap) +
+    var(--organization-clients-control-height)
+  );
+  min-width: 0;
+  row-gap: var(--organization-clients-label-gap);
+}
+
+.organization-clients-filter-bar .mantine-InputWrapper-label {
+  color: var(--mantine-color-gray-9);
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  height: var(--organization-clients-label-height);
+  letter-spacing: 0;
+  line-height: 1.2;
+  margin-bottom: 0;
+}
+
+.organization-clients-filter-bar .mantine-Input-wrapper,
+.organization-clients-filter-bar .mantine-Input-input {
+  border-color: var(--mantine-color-gray-2);
+  border-radius: 8px;
+  color: var(--mantine-color-gray-8);
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-weight: 400;
+  height: var(--organization-clients-control-height);
+  letter-spacing: 0;
+  line-height: 1.2;
+  min-height: var(--organization-clients-control-height);
+}
+
+.organization-clients-search-input .mantine-Input-input::placeholder {
+  font-family: var(--font-mono);
+  letter-spacing: 0;
+}
+
+.organization-clients-filter-actions,
+.organization-clients-create-actions {
+  align-items: center;
+  align-self: end;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  min-height: var(--organization-clients-control-height);
+  min-width: 0;
+}
+
+.organization-clients-filter-bar .mantine-Button-root {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+.organization-clients-table-toolbar-slot {
+  align-items: center;
+  align-self: end;
+  display: flex;
+  flex: 0 0 auto;
+  min-height: var(--organization-clients-control-height);
+}
+
+.organization-clients-table-toolbar-slot .data-table-toolbar {
+  gap: 6px;
+  margin: 0;
+  min-height: 0;
 }
 
 .organization-clients-page__alert {
-  margin: 10px 10px 0;
+  margin: 12px 12px 0;
 }
 
 .organization-clients-page__table {
+  display: flex;
   flex: 1 1 auto;
   min-height: 0;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .organization-clients-page__table .data-table {
@@ -32,4 +123,59 @@
 .organization-clients-page__table .data-table-scroll {
   flex: 1 1 auto;
   min-height: 0;
+}
+
+.organization-clients-name-cell,
+.organization-clients-text-cell,
+.organization-clients-number-cell {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.organization-clients-name-cell {
+  color: var(--mantine-color-gray-8);
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.15;
+}
+
+.organization-clients-text-cell {
+  color: var(--mantine-color-gray-8);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.organization-clients-number-cell {
+  color: var(--mantine-color-gray-8);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.2;
+}
+
+.organization-clients-row-actions {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+}
+
+@media (max-width: 920px) {
+  .organization-clients-filter-bar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .organization-clients-search-input {
+    max-width: none;
+  }
+
+  .organization-clients-filter-actions,
+  .organization-clients-table-toolbar-slot,
+  .organization-clients-create-actions {
+    justify-content: flex-start;
+  }
 }
