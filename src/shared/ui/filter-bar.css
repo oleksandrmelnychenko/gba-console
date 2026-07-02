@@ -73,13 +73,13 @@
   min-width: 0;
 }
 
-/* ---- Compact labels (12px caption, gray-7) ---- */
+/* ---- Compact labels (12px caption, near-black gray-9 per the pattern) ---- */
 .app-filter-bar .mantine-InputWrapper-label,
 .sales-filter-bar .mantine-InputWrapper-label,
 .sales-filter-period-menu .mantine-InputWrapper-label,
 .sales-filter-ecommerce .mantine-Checkbox-label,
 .console-table-command-bar .mantine-InputWrapper-label {
-  color: var(--mantine-color-gray-7);
+  color: var(--mantine-color-gray-9);
   font-size: 12px;
   font-weight: 400;
   letter-spacing: 0;

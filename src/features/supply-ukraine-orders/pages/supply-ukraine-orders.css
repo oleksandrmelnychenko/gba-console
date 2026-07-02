@@ -76,7 +76,7 @@
 .supply-ukraine-orders-search-input .mantine-InputWrapper-label,
 .supply-ukraine-orders-currency-filter .mantine-InputWrapper-label,
 .supply-ukraine-orders-type-filter .mantine-InputWrapper-label {
-  color: var(--mantine-color-gray-6);
+  color: var(--mantine-color-gray-9);
   display: block;
   font-family: var(--font-mono);
   font-size: 12px;
