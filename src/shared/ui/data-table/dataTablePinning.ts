@@ -1,6 +1,10 @@
 import type { CSSProperties } from 'react'
 import type { Column } from '@tanstack/react-table'
 
+// Shared identity for the unpinned case so memoized consumers don't see a fresh
+// object on every render.
+const UNPINNED_STYLE: CSSProperties = Object.freeze({})
+
 export function getPinnedStyle<TData>(
   column: Column<TData, unknown>,
   zIndex: number,
@@ -9,7 +13,7 @@ export function getPinnedStyle<TData>(
   const pinned = column.getIsPinned()
 
   if (!pinned) {
-    return {}
+    return UNPINNED_STYLE
   }
 
   return {

@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { ActionIcon, Checkbox, Group, Menu, Tooltip } from '@mantine/core'
 import {
   IconBaselineDensityMedium,
@@ -13,6 +13,7 @@ import type { DataTableDensity, DataTableLabels } from './types'
 type DataTableToolbarProps<TData> = {
   columnTitles: Map<string, string>
   density: DataTableDensity
+  isColumnDragActive?: boolean
   labels: Required<DataTableLabels>
   showLayoutControls: boolean
   showDensityToggle: boolean
@@ -26,6 +27,7 @@ type DataTableToolbarProps<TData> = {
 export function DataTableToolbar<TData>({
   columnTitles,
   density,
+  isColumnDragActive = false,
   labels,
   showLayoutControls,
   showDensityToggle,
@@ -35,6 +37,16 @@ export function DataTableToolbar<TData>({
   onDensityChange,
   onResetLayout,
 }: DataTableToolbarProps<TData>) {
+  const [columnsMenuOpened, setColumnsMenuOpened] = useState(false)
+
+  // An active column drag closes the menu — the portal dropdown would hang
+  // detached from the toolbar while the table columns move.
+  useEffect(() => {
+    if (isColumnDragActive && columnsMenuOpened) {
+      setColumnsMenuOpened(false)
+    }
+  }, [columnsMenuOpened, isColumnDragActive])
+
   const hideableColumns = table
     .getAllLeafColumns()
     .reduce<Column<TData, unknown>[]>((result, column) => {
@@ -49,7 +61,17 @@ export function DataTableToolbar<TData>({
     <Group className="data-table-toolbar" gap={8} wrap="nowrap">
       <Group className="data-table-toolbar-left" gap={8} wrap="nowrap">
         {showLayoutControls ? (
-          <Menu width={220} position="bottom-start" withArrow withinPortal>
+          <Menu
+            opened={columnsMenuOpened}
+            width={220}
+            position="bottom-start"
+            withArrow
+            withinPortal
+            /* duration 0: see DataTableHeaderCell — a killed exit transition
+               leaks the portal dropdown permanently. */
+            transitionProps={{ duration: 0 }}
+            onChange={setColumnsMenuOpened}
+          >
             <Menu.Target>
               <Tooltip label={labels.columns} withArrow>
                 <ActionIcon aria-label={labels.columns} size="sm" variant="subtle" color="gray">
