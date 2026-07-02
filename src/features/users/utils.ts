@@ -61,11 +61,11 @@ export function getUserRegionName(region?: string | null): string {
 
 export function displayValue(value?: number | string | null): string {
   if (typeof value === 'number') {
-    return Number.isFinite(value) ? String(value) : '-'
+    return Number.isFinite(value) ? String(value) : ''
   }
 
-  const normalized = value?.trim()
-  return normalized || '-'
+  // Empty values render as blank (no dash placeholder) — docs/ui-patterns.md §5.
+  return value?.trim() || ''
 }
 
 export function normalizeUserForSave(user: UserProfile): UserProfile {

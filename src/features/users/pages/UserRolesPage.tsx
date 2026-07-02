@@ -5,7 +5,6 @@ import {
   Button,
   Card,
   Group,
-  ScrollArea,
   Skeleton,
   Stack,
   Text,
@@ -26,11 +25,7 @@ import {
 import { useEffect, useMemo, useReducer, useRef } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import {
-  CREATE_ACTION_COLOR,
-  PageHeaderActions,
-  PageHeaderPanelActions,
-} from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { AppModal } from '../../../shared/ui/AppModal'
 import {
   addPermissionToNode,
@@ -412,94 +407,84 @@ export function UserRolesPage() {
   }
 
   return (
-    <Stack gap="lg">
-      <PageHeaderPanelActions>
-        {visibleSelectedRole ? (
-          <>
-            <Button
-              color="gray"
-              className="user-roles-cancel-action"
-              disabled={isLoading || isSaving || !hasSelectionChanges}
-              size="xs"
-              variant="subtle"
-              onClick={cancelSelection}
-            >
-              {t('Скасувати')}
-            </Button>
-            <Button
-              color={CREATE_ACTION_COLOR}
-              disabled={isLoading || !hasSelectionChanges}
-              leftSection={<IconDeviceFloppy size={14} />}
-              loading={isSaving}
-              size="xs"
-              variant="subtle"
-              onClick={handleSavePermissions}
-            >
-              {t('Зберегти')}
-            </Button>
-          </>
-        ) : null}
-      </PageHeaderPanelActions>
-      <PageHeaderActions>
-        <Button
-          color={CREATE_ACTION_COLOR}
-          size="xs"
-          leftSection={<IconPlus size={14} />}
-          onClick={() => setRoleModalState({ open: true, role: null })}
-        >
-          {t('Створити')}
-        </Button>
-      </PageHeaderActions>
-
-      {error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-          {error}
-        </Alert>
-      )}
-
-      <Box className="user-roles-layout">
-        <Card withBorder radius="md" padding="md">
-          <Stack gap="md">
-            <Group
-              align="end"
-              gap="sm"
-              wrap="nowrap"
-              className="clients-filter-row"
-            >
-              <TextInput
-                leftSection={<IconSearch size={16} />}
-                label={t('Пошук ролі')}
-                value={searchDraft}
-                onChange={(event) => updateSearch(event.currentTarget.value)}
-                style={{ flex: '1 1 auto', minWidth: 160 }}
-              />
-              <Tooltip label={t('Скинути')}>
-                <ActionIcon
-                  aria-label={t('Скинути')}
+    <Stack className="user-roles-page console-table-page" gap={6}>
+      <div className="console-table-shell user-roles-shell">
+        <div className="app-filter-bar user-roles-filter-bar">
+          <TextInput
+            className="user-roles-search-input"
+            leftSection={<IconSearch size={16} />}
+            label={t('Пошук ролі')}
+            value={searchDraft}
+            onChange={(event) => updateSearch(event.currentTarget.value)}
+          />
+          <div className="app-filter-actions user-roles-filter-actions">
+            <Tooltip label={t('Скинути')}>
+              <ActionIcon
+                aria-label={t('Скинути')}
+                color="gray"
+                size={34}
+                variant="light"
+                onClick={resetSearch}
+              >
+                <IconRestore size={17} />
+              </ActionIcon>
+            </Tooltip>
+            <Tooltip label={t('Оновити')}>
+              <ActionIcon
+                aria-label={t('Оновити')}
+                color="gray"
+                loading={isLoading}
+                size={34}
+                variant="light"
+                onClick={() => reload()}
+              >
+                <IconRefresh size={17} />
+              </ActionIcon>
+            </Tooltip>
+            {visibleSelectedRole ? (
+              <>
+                <Button
                   color="gray"
-                  size={36}
-                  style={{ flex: '0 0 auto' }}
-                  variant="light"
-                  onClick={resetSearch}
+                  className="user-roles-cancel-action"
+                  disabled={isLoading || isSaving || !hasSelectionChanges}
+                  size="sm"
+                  variant="subtle"
+                  onClick={cancelSelection}
                 >
-                  <IconRestore size={18} />
-                </ActionIcon>
-              </Tooltip>
-              <Tooltip label={t('Оновити')}>
-                <ActionIcon
-                  aria-label={t('Оновити')}
-                  color="gray"
-                  loading={isLoading}
-                  size={36}
-                  style={{ flex: '0 0 auto' }}
-                  variant="light"
-                  onClick={() => reload()}
+                  {t('Скасувати')}
+                </Button>
+                <Button
+                  color={CREATE_ACTION_COLOR}
+                  disabled={isLoading || !hasSelectionChanges}
+                  leftSection={<IconDeviceFloppy size={15} />}
+                  loading={isSaving}
+                  size="sm"
+                  onClick={handleSavePermissions}
                 >
-                  <IconRefresh size={18} />
-                </ActionIcon>
-              </Tooltip>
-            </Group>
+                  {t('Зберегти')}
+                </Button>
+              </>
+            ) : null}
+          </div>
+          <Button
+            className="user-roles-create-button"
+            color={CREATE_ACTION_COLOR}
+            size="sm"
+            leftSection={<IconPlus size={16} />}
+            onClick={() => setRoleModalState({ open: true, role: null })}
+          >
+            {t('Створити')}
+          </Button>
+        </div>
 
+        {error && (
+          <Alert className="console-table-alert" color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            {error}
+          </Alert>
+        )}
+
+        <Box className="user-roles-layout">
+          <div className="user-roles-list-pane">
             <RoleList
               isLoading={isLoading}
               roles={filteredRoles}
@@ -507,13 +492,12 @@ export function UserRolesPage() {
               onEditRole={(role) => setRoleModalState({ open: true, role })}
               onSelectRole={selectRole}
             />
-          </Stack>
-        </Card>
+          </div>
 
-        <Card withBorder radius="md" padding="md">
-          <Stack gap="md">
-            {visibleSelectedRole ? (
-              <RolePermissionsEditor
+          <Card className="app-section-card user-roles-editor-pane" withBorder radius="md" padding="md">
+            <Stack gap="md">
+              {visibleSelectedRole ? (
+                <RolePermissionsEditor
                 modules={modules}
                 selectedNodes={selectedNodes}
                 selectedPermissions={selectedPermissions}
@@ -532,12 +516,13 @@ export function UserRolesPage() {
                   )
                 }
               />
-            ) : (
-              <Text c="dimmed">{t('Оберіть роль зі списку')}</Text>
-            )}
-          </Stack>
-        </Card>
-      </Box>
+              ) : (
+                <Text c="dimmed">{t('Оберіть роль зі списку')}</Text>
+              )}
+            </Stack>
+          </Card>
+        </Box>
+      </div>
 
       {roleModalState.open ? (
         <RoleFormModal
@@ -631,7 +616,7 @@ function RoleList({
 
   return (
     <Box className="user-roles-list-panel">
-      <ScrollArea.Autosize mah="calc(100vh - 330px)" type="auto">
+      <div className="user-role-list-scroll">
         {isLoading ? (
           <Stack gap="xs" className="user-roles-list">
             {Array.from({ length: 6 }, (_, index) => (
@@ -657,31 +642,15 @@ function RoleList({
                     type="button"
                     onClick={() => onSelectRole(role)}
                   >
-                    <span className="user-role-list-content">
-                      <span className="user-role-list-index">
-                        {String(index + 1).padStart(2, '0')}
-                      </span>
-                      <span className="user-role-list-main">
-                        <Text className="user-role-list-name">
-                          {getUserRoleName(role)}
-                        </Text>
-                      </span>
+                    <span className="user-role-list-main">
+                      <Text className="user-role-list-name">
+                        {getUserRoleName(role)}
+                      </Text>
                       <span
                         aria-label={`${t('Сторінки')}: ${pageCount}, ${t('Права')}: ${permissionCount}`}
-                        className="user-role-list-details"
+                        className="user-role-list-metrics"
                       >
-                        <span className="user-role-list-metric">
-                          <strong>{pageCount}</strong>
-                          <span>{t('стор.')}</span>
-                        </span>
-                        <span
-                          aria-hidden="true"
-                          className="user-role-list-metric-divider"
-                        />
-                        <span className="user-role-list-metric">
-                          <strong>{permissionCount}</strong>
-                          <span>{t('прав')}</span>
-                        </span>
+                        {pageCount} {t('стор.')} · {permissionCount} {t('прав')}
                       </span>
                     </span>
                   </button>
@@ -708,7 +677,7 @@ function RoleList({
             </Text>
           </Box>
         )}
-      </ScrollArea.Autosize>
+      </div>
     </Box>
   )
 }

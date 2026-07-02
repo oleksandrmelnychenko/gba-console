@@ -1,12 +1,10 @@
 import {
   ActionIcon,
   Alert,
-  Box,
   Button,
-  Card,
+  Divider,
   FileInput,
   Group,
-  ScrollArea,
   Select,
   Stack,
   Text,
@@ -18,22 +16,21 @@ import {
   IconAlertCircle,
   IconArchive,
   IconDeviceFloppy,
-  IconPencil,
-  IconPhoto,
   IconPlus,
   IconRefresh,
   IconRestore,
   IconSearch,
   IconUpload,
 } from '@tabler/icons-react'
-import { useEffect, useMemo, useReducer } from 'react'
+import { ExternalLink } from 'lucide-react'
+import { useEffect, useMemo, useReducer, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
-import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import {
   archiveTransporter,
   createTransporter,
@@ -42,6 +39,7 @@ import {
   updateTransporter,
 } from '../api/transportersApi'
 import type { Transporter, TransporterType } from '../types'
+import '../../../shared/ui/console-table-page.css'
 import './transporters-page.css'
 
 const archiveDisabledCssClass = 'self_checkout_item_class'
@@ -62,19 +60,15 @@ type TransporterFormValues = {
 }
 
 const TRANSPORTERS_TABLE_DEFAULT_LAYOUT = {
-  columnOrder: ['transporter', 'params', 'image', 'status', 'actions'],
+  columnOrder: ['transporter', 'params', 'image', 'status'],
   columnPinning: { left: ['transporter'] },
   density: 'normal',
 } satisfies DataTableDefaultLayout
 
 function useTransporterColumns({
   selectedTransporterType,
-  onArchive,
-  onEdit,
 }: {
   selectedTransporterType: TransporterType | null
-  onArchive: (transporter: Transporter) => void
-  onEdit: (transporter: Transporter) => void
 }) {
   return useMemo<DataTableColumn<Transporter>[]>(
     () => [
@@ -86,16 +80,10 @@ function useTransporterColumns({
         fill: true,
         accessor: (transporter) => getTransporterName(transporter),
         cell: (transporter) => (
-          <div className="transporters-profile-cell">
-            <div className="transporters-profile-copy">
-              <Tooltip label={getTransporterName(transporter)} openDelay={350} withArrow>
-                <Text className="transporters-profile-name">{getTransporterName(transporter)}</Text>
-              </Tooltip>
-              <Text className="transporters-profile-type">
-                {displayValue(transporter.TransporterType?.Name || selectedTransporterType?.Name)}
-              </Text>
-            </div>
-          </div>
+          <TransporterProfileCell
+            transporter={transporter}
+            typeName={transporter.TransporterType?.Name || selectedTransporterType?.Name}
+          />
         ),
       },
       {
@@ -126,49 +114,8 @@ function useTransporterColumns({
         accessor: (transporter) => (transporter.Deleted === true ? translate('Архів') : translate('Активний')),
         cell: (transporter) => <TransporterStatusTag transporter={transporter} />,
       },
-      {
-        id: 'actions',
-        header: '',
-        width: 84,
-        minWidth: 84,
-        maxWidth: 84,
-        align: 'right',
-        enableHiding: false,
-        enableReorder: false,
-        enableResizing: false,
-        enableSorting: false,
-        cell: (transporter) => (
-          <div className="transporters-row-actions" onClick={(event) => event.stopPropagation()}>
-            <Tooltip label={translate('Редагувати')}>
-              <ActionIcon
-                aria-label={translate('Редагувати')}
-                className="transporters-row-action"
-                color="gray"
-                size="sm"
-                variant="subtle"
-                onClick={() => onEdit(transporter)}
-              >
-                <IconPencil size={15} />
-              </ActionIcon>
-            </Tooltip>
-            <Tooltip label={getArchiveTooltip(transporter)}>
-              <ActionIcon
-                aria-label={translate('Архівувати')}
-                className="transporters-row-action"
-                color="red"
-                disabled={!canArchiveTransporter(transporter)}
-                size="sm"
-                variant="subtle"
-                onClick={() => onArchive(transporter)}
-              >
-                <IconArchive size={15} />
-              </ActionIcon>
-            </Tooltip>
-          </div>
-        ),
-      },
     ],
-    [onArchive, onEdit, selectedTransporterType],
+    [selectedTransporterType],
   )
 }
 
@@ -185,8 +132,10 @@ export function TransportersPage() {
   const [isArchiving, setArchiving] = useValueState(false)
   const [isSaving, setSaving] = useValueState(false)
   const [archiveTarget, setArchiveTarget] = useValueState<Transporter | null>(null)
+  const [actionsTransporter, setActionsTransporter] = useValueState<Transporter | null>(null)
   const [editor, setEditor] = useValueState<TransporterEditorState | null>(null)
   const [formError, setFormError] = useValueState<string | null>(null)
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const usableTransporterTypes = useMemo(
     () => transporterTypes.filter((transporterType) => Boolean(transporterType.NetUid) && isVisibleTransporterType(transporterType)),
@@ -212,8 +161,6 @@ export function TransportersPage() {
   const isBusy = isLoadingTypes || isLoadingTransporters
   const transporterColumns = useTransporterColumns({
     selectedTransporterType,
-    onArchive: setArchiveTarget,
-    onEdit: openEditTransporter,
   })
 
   useEffect(() => {
@@ -338,9 +285,19 @@ export function TransportersPage() {
     setEditor({ mode: 'create' })
   }
 
+  function openTransporterActions(transporter: Transporter) {
+    setActionsTransporter(transporter)
+  }
+
   function openEditTransporter(transporter: Transporter) {
+    setActionsTransporter(null)
     setFormError(null)
     setEditor({ mode: 'edit', transporter })
+  }
+
+  function openArchiveTransporter(transporter: Transporter) {
+    setActionsTransporter(null)
+    setArchiveTarget(transporter)
   }
 
   async function handleSaveTransporter(values: TransporterFormValues) {
@@ -386,22 +343,9 @@ export function TransportersPage() {
   }
 
   return (
-    <Stack className="transporters-page" gap={0}>
-      <PageHeaderActions>
-        <Button
-          className="transporters-create-action"
-          color={CREATE_ACTION_COLOR}
-          disabled={!selectedTransporterType}
-          leftSection={<IconPlus size={16} />}
-          size="sm"
-          onClick={openCreateTransporter}
-        >
-          {t('Створити')}
-        </Button>
-      </PageHeaderActions>
-
-      <Box className="transporters-shell">
-        <div className="transporters-command-bar">
+    <Stack className="transporters-page console-table-page" gap={6}>
+      <div className="transporters-shell console-table-shell">
+        <div className="app-filter-bar transporters-command-bar">
           <div className="transporters-command-search">
             <TextInput
               className="transporters-search-input"
@@ -452,10 +396,23 @@ export function TransportersPage() {
               </ActionIcon>
             </Tooltip>
           </div>
+          <div ref={setTableToolbarSlot} className="transporters-table-toolbar-slot" />
+          <div className="transporters-create-actions">
+            <Button
+              className="transporters-create-action"
+              color={CREATE_ACTION_COLOR}
+              disabled={!selectedTransporterType}
+              leftSection={<IconPlus size={16} />}
+              size="sm"
+              onClick={openCreateTransporter}
+            >
+              {t('Створити')}
+            </Button>
+          </div>
         </div>
 
         {error && (
-          <Alert className="transporters-alert" color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert className="console-table-alert" color="red" icon={<IconAlertCircle size={18} />} variant="light">
             {error}
           </Alert>
         )}
@@ -466,59 +423,62 @@ export function TransportersPage() {
               <span>{t('Навігація типів')}</span>
             </div>
 
-          {isLoadingTypes ? (
-            <div className="transporters-empty-state">{t('Завантаження типів перевізників')}</div>
-          ) : usableTransporterTypes.length > 0 ? (
-            <ScrollArea.Autosize mah="calc(100vh - 260px)" type="auto">
-              <div className="transporters-type-list">
-                {usableTransporterTypes.map((transporterType) => {
-                  const value = transporterType.NetUid || ''
-                  const isActive = selectedTypeNetId === value
-                  const count = getTransporterTypeCount(transporterType, selectedTypeNetId, transporters)
+            {isLoadingTypes ? (
+              <div className="transporters-empty-state">{t('Завантаження типів перевізників')}</div>
+            ) : usableTransporterTypes.length > 0 ? (
+              <div className="transporters-type-scroll">
+                <div className="transporters-type-list">
+                  {usableTransporterTypes.map((transporterType) => {
+                    const value = transporterType.NetUid || ''
+                    const isActive = selectedTypeNetId === value
+                    const count = getTransporterTypeCount(transporterType, selectedTypeNetId, transporters)
 
-                  return (
-                    <button
-                      key={value}
-                      className={`transporters-type-option${isActive ? ' is-active' : ''}`}
-                      type="button"
-                      onClick={() => setSelectedTypeNetId(value)}
-                    >
-                      <span className="transporters-type-option-name">{getTransporterTypeName(transporterType)}</span>
-                      <span className="transporters-type-option-count">{count ?? '-'}</span>
-                    </button>
-                  )
-                })}
+                    return (
+                      <button
+                        key={value}
+                        className={`transporters-type-option${isActive ? ' is-active' : ''}`}
+                        type="button"
+                        onClick={() => setSelectedTypeNetId(value)}
+                      >
+                        <span className="transporters-type-option-name">{getTransporterTypeName(transporterType)}</span>
+                        <span className="transporters-type-option-count">{count ?? ''}</span>
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
-            </ScrollArea.Autosize>
-          ) : (
-            <div className="transporters-empty-state">{t('Типів перевізників не знайдено')}</div>
-          )}
+            ) : (
+              <div className="transporters-empty-state">{t('Типів перевізників не знайдено')}</div>
+            )}
           </aside>
 
-          <section className="transporters-roster">
-            <Card className="app-data-card transporters-card" withBorder radius="md" padding={0}>
-              <DataTable
-                columns={transporterColumns}
-                data={visibleTransporters}
-                defaultLayout={TRANSPORTERS_TABLE_DEFAULT_LAYOUT}
-                density="normal"
-                emptyText={selectedTypeNetId ? t('Перевізників не знайдено') : t('Оберіть тип перевізника')}
-                getRowId={(transporter, index) => String(transporter.NetUid || transporter.Id || index)}
-                height="100%"
-                isLoading={isBusy}
-                layoutVersion="transporters-table-1"
-                loadingText={t('Завантаження перевізників')}
-                minWidth={910}
-                rowClassName={(transporter) => (transporter.Deleted ? 'transporters-row-archived' : undefined)}
-                showDensityToggle={false}
-                showLayoutControls={false}
-                tableId="transporters"
-                onRowClick={openEditTransporter}
-              />
-            </Card>
+          <section className="transporters-roster console-table-body">
+            <DataTable
+              columns={transporterColumns}
+              data={visibleTransporters}
+              defaultLayout={TRANSPORTERS_TABLE_DEFAULT_LAYOUT}
+              emptyText={selectedTypeNetId ? t('Перевізників не знайдено') : t('Оберіть тип перевізника')}
+              getRowId={(transporter, index) => String(transporter.NetUid || transporter.Id || index)}
+              height="100%"
+              isLoading={isBusy}
+              layoutVersion="transporters-table-3"
+              minWidth={910}
+              showLayoutControls
+              tableId="transporters"
+              toolbarPortalTarget={tableToolbarSlot}
+              onRowClick={openTransporterActions}
+            />
           </section>
         </div>
-      </Box>
+      </div>
+
+      <TransporterActionsModal
+        isArchiving={isArchiving}
+        transporter={actionsTransporter}
+        onArchive={openArchiveTransporter}
+        onClose={() => setActionsTransporter(null)}
+        onEdit={openEditTransporter}
+      />
 
       <TransporterEditorModal
         key={editor ? `transporter-${editor.mode}-${editor.mode === 'edit' ? editor.transporter.NetUid || editor.transporter.Id : 'new'}` : 'transporter-closed'}
@@ -559,6 +519,77 @@ export function TransportersPage() {
         </Stack>
       </AppModal>
     </Stack>
+  )
+}
+
+function TransporterActionsModal({
+  isArchiving,
+  transporter,
+  onArchive,
+  onClose,
+  onEdit,
+}: {
+  isArchiving: boolean
+  transporter: Transporter | null
+  onArchive: (transporter: Transporter) => void
+  onClose: () => void
+  onEdit: (transporter: Transporter) => void
+}) {
+  const { t } = useI18n()
+  const isActive = transporter?.Deleted !== true
+  const canArchive = transporter ? canArchiveTransporter(transporter) : false
+
+  return (
+    <AppModal
+      centered
+      opened={Boolean(transporter)}
+      size={496}
+      title={
+        <span className="transporters-action-title">
+          <span className={`transporters-action-status-dot${isActive ? ' is-active' : ''}`} />
+          {transporter ? getTransporterName(transporter) : t('Перевізник')}
+        </span>
+      }
+      onClose={onClose}
+    >
+      {transporter && (
+        <Stack gap="md">
+          <Stack className="app-modal-actions" gap="xs">
+            <Button
+              fullWidth
+              color="dark"
+              justify="flex-start"
+              leftSection={
+                <span className="app-action-icon">
+                  <ExternalLink size={20} color="var(--mantine-color-gray-7)" />
+                </span>
+              }
+              size="md"
+              variant="subtle"
+              onClick={() => onEdit(transporter)}
+            >
+              {t('Редагувати')}
+            </Button>
+          </Stack>
+
+          <Divider />
+
+          <Button
+            fullWidth
+            color="gray"
+            disabled={!canArchive}
+            justify="flex-start"
+            leftSection={<IconArchive size={16} />}
+            loading={isArchiving}
+            title={getArchiveTooltip(transporter)}
+            variant="light"
+            onClick={() => onArchive(transporter)}
+          >
+            {t('Архівувати')}
+          </Button>
+        </Stack>
+      )}
+    </AppModal>
   )
 }
 
@@ -647,6 +678,27 @@ function TransporterEditorModal({
   )
 }
 
+function TransporterProfileCell({
+  transporter,
+  typeName,
+}: {
+  transporter: Transporter
+  typeName?: string
+}) {
+  const name = getTransporterName(transporter)
+  const displayType = displayValue(typeName)
+  const title = [name, displayType].filter(Boolean).join('\n')
+
+  return (
+    <div className="transporters-profile-cell" title={nativeTitle(title)}>
+      <div className="transporters-profile-copy">
+        <span className="transporters-profile-name">{name}</span>
+        <span className="transporters-profile-type">{displayType}</span>
+      </div>
+    </div>
+  )
+}
+
 function TransporterSetting({
   label,
   value,
@@ -654,28 +706,31 @@ function TransporterSetting({
   label: string
   value: string
 }) {
+  if (!value) {
+    return null
+  }
+
   return (
-    <Tooltip label={`${label}: ${value}`} openDelay={350} withArrow>
-      <span className="transporters-setting">
-        <span className="transporters-setting-copy">
-          <span>{label}</span>
-          <strong>{value}</strong>
-        </span>
+    <span className="transporters-setting" title={nativeTitle(`${label}: ${value}`)}>
+      <span className="transporters-setting-copy">
+        <span>{label}</span>
+        <strong>{value}</strong>
       </span>
-    </Tooltip>
+    </span>
   )
 }
 
 function TransporterImagePreview({ transporter }: { transporter: Transporter }) {
   const imageUrl = transporter.ImageUrl?.trim()
 
+  if (!imageUrl) {
+    return null
+  }
+
   return (
-    <Tooltip label={imageUrl || translate('Зображення не вказано')} openDelay={350} withArrow>
-      <span className={`transporters-image-preview${imageUrl ? ' is-filled' : ''}`}>
-        {imageUrl ? <img alt={getTransporterName(transporter)} src={imageUrl} /> : <IconPhoto size={14} />}
-        {!imageUrl ? <span>{translate('Немає')}</span> : null}
-      </span>
-    </Tooltip>
+    <span className="transporters-image-preview is-filled" title={nativeTitle(imageUrl)}>
+      <img alt={getTransporterName(transporter)} src={imageUrl} />
+    </span>
   )
 }
 
@@ -735,11 +790,17 @@ function matchesTransporterSearch(
 
 function displayValue(value?: number | string | null): string {
   if (typeof value === 'number') {
-    return Number.isFinite(value) ? String(value) : '-'
+    return Number.isFinite(value) ? String(value) : ''
   }
 
   const normalized = value?.trim()
-  return normalized || '-'
+  return normalized || ''
+}
+
+function nativeTitle(value: string): string | undefined {
+  const title = value.trim()
+
+  return title ? title : undefined
 }
 
 function transporterToFormValues(transporter?: Transporter): TransporterFormValues {

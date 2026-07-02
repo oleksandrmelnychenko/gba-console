@@ -4,8 +4,11 @@ import { type FormEvent } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { UserRoleType } from '../../../shared/auth/types'
 import type { UserRole } from '../types'
+
+const MODAL_MONO_STYLE = { fontFamily: 'var(--font-mono)', letterSpacing: 0 } as const
 
 const DEFAULT_DASHBOARD = '/dashboard'
 
@@ -48,7 +51,12 @@ export function RoleFormModal({
   }
 
   return (
-    <AppModal centered opened={opened} title={role ? t('Редагування') : t('Створення')} onClose={onClose}>
+    <AppModal
+      centered
+      opened={opened}
+      title={<span style={MODAL_MONO_STYLE}>{role ? t('Редагування ролі') : t('Нова роль')}</span>}
+      onClose={onClose}
+    >
       <form onSubmit={handleSubmit}>
         <Stack gap="md">
           <TextInput
@@ -87,12 +95,13 @@ export function RoleFormModal({
                 {t('Скасувати')}
               </Button>
               <Button
-                color="violet"
+                color={CREATE_ACTION_COLOR}
                 leftSection={<IconDeviceFloppy size={16} />}
                 loading={isSaving}
+                styles={{ label: MODAL_MONO_STYLE }}
                 type="submit"
               >
-                {role ? t('Редагувати') : t('Зберегти')}
+                {t('Зберегти')}
               </Button>
             </Group>
           </Group>

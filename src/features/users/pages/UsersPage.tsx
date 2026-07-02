@@ -1,8 +1,7 @@
 import {
   ActionIcon,
   Alert,
-  Avatar,
-  Box,
+  Badge,
   Button,
   ScrollArea,
   Select,
@@ -14,32 +13,19 @@ import {
 import { useDebouncedValue } from '@mantine/hooks'
 import {
   IconAlertCircle,
-  IconBriefcase,
-  IconBuildingWarehouse,
-  IconCalculator,
-  IconCar,
-  IconChartLine,
-  IconCoins,
-  IconCrown,
-  IconPencil,
   IconPlus,
   IconRefresh,
   IconRestore,
   IconSearch,
   IconShieldLock,
-  IconShoppingCart,
-  IconTruckDelivery,
-  IconUserShield,
-  IconUsersGroup,
 } from '@tabler/icons-react'
-import { useCallback, useEffect, useMemo, useReducer } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import {
-  CREATE_ACTION_COLOR,
-  PageHeaderActions,
-} from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { getUsers } from '../api/usersApi'
 import type { UserProfile, UserRole } from '../types'
 import {
@@ -49,11 +35,33 @@ import {
   getUserRoleName,
 } from '../utils'
 import './users-page.css'
+import '../../../shared/ui/console-table-page.css'
 
 const USERS_SEARCH_DEBOUNCE_MS = 350
 const USER_STATUS_ACTIVE = 'active'
 const USER_STATUS_INACTIVE = 'inactive'
 const USER_STATUS_DELETED = 'deleted'
+const USERS_TABLE_CELL_STYLE = {
+  display: 'block',
+  lineHeight: '18px',
+  maxWidth: '100%',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+} as const
+const USERS_TABLE_SUBTEXT_STYLE = {
+  ...USERS_TABLE_CELL_STYLE,
+  fontSize: 11,
+  lineHeight: '14px',
+} as const
+const USERS_MONO_STYLE = { fontFamily: 'var(--font-mono)', letterSpacing: 0 } as const
+const USERS_TABLE_DEFAULT_LAYOUT = {
+  columnOrder: ['status', 'user', 'role', 'contacts', 'region'],
+  columnPinning: {
+    left: ['status', 'user'],
+  },
+  density: 'normal',
+} satisfies DataTableDefaultLayout
 
 type UserStatus =
   | typeof USER_STATUS_ACTIVE
@@ -70,6 +78,7 @@ export function UsersPage() {
   const { t } = useI18n()
   const location = useLocation()
   const navigate = useNavigate()
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const [users, setUsers] = useValueState<UserProfile[]>([])
   const [searchValue, setSearchValue] = useValueState('')
   const [roleFilter, setRoleFilter] = useValueState<string | null>(null)
@@ -125,6 +134,7 @@ export function UsersPage() {
     },
     [location, navigate],
   )
+  const columns = useUserColumns()
 
   useEffect(() => {
     const controller = new AbortController()
@@ -176,27 +186,9 @@ export function UsersPage() {
   }
 
   return (
-    <Stack className="users-page" gap="md">
-      <PageHeaderActions>
-        <Button
-          color={CREATE_ACTION_COLOR}
-          leftSection={<IconPlus size={15} />}
-          size="sm"
-          onClick={() =>
-            navigate('/users/new', {
-              state: {
-                backgroundLocation: location,
-                returnPath: `${location.pathname}${location.search}`,
-              },
-            })
-          }
-        >
-          {t('Новий користувач')}
-        </Button>
-      </PageHeaderActions>
-
-      <Box className="users-shell">
-        <div className="users-command-bar">
+    <Stack className="users-page console-table-page" gap={6}>
+      <div className="console-table-shell users-shell">
+        <div className="app-filter-bar users-filter-bar">
           <TextInput
             className="users-search-input"
             leftSection={<IconSearch size={15} />}
@@ -223,7 +215,7 @@ export function UsersPage() {
             value={statusFilter}
             onChange={(value) => setStatusFilter(value as UserStatus | null)}
           />
-          <div className="users-toolbar-actions">
+          <div className="app-filter-actions users-filter-actions">
             <Tooltip label={t('Очистити')}>
               <ActionIcon
                 aria-label={t('Очистити')}
@@ -259,19 +251,36 @@ export function UsersPage() {
               {t('Ролі')}
             </Button>
           </div>
+          <div ref={setTableToolbarSlot} className="users-table-toolbar-slot" />
+          <Button
+            className="users-create-button"
+            color={CREATE_ACTION_COLOR}
+            leftSection={<IconPlus size={16} />}
+            size="sm"
+            onClick={() =>
+              navigate('/users/new', {
+                state: {
+                  backgroundLocation: location,
+                  returnPath: `${location.pathname}${location.search}`,
+                },
+              })
+            }
+          >
+            {t('Новий користувач')}
+          </Button>
         </div>
 
         {error && (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert className="console-table-alert" color="red" icon={<IconAlertCircle size={18} />} variant="light">
             {error}
           </Alert>
         )}
 
         <div className="users-layout">
           <aside className="users-role-rail" aria-label={t('Ролі')}>
-            <div className="users-rail-header">
-              <span>{t('Навігація ролей')}</span>
-            </div>
+            <Text className="app-section-title users-rail-title" fw={600} size="sm">
+              {t('Ролі')}
+            </Text>
 
             <button
               className={`users-role-option${roleFilter === null ? ' is-active' : ''}`}
@@ -282,7 +291,7 @@ export function UsersPage() {
               <span className="users-role-option-count">{users.length}</span>
             </button>
 
-            <ScrollArea.Autosize mah="calc(100vh - 330px)" type="auto">
+            <ScrollArea.Autosize className="users-role-scroll" type="auto">
               <div className="users-role-list">
                 {roleNavItems.map((item) => (
                   <button
@@ -299,124 +308,151 @@ export function UsersPage() {
             </ScrollArea.Autosize>
           </aside>
 
-          <section className="users-roster">
-            <div className="users-roster-table">
-              <div className="users-roster-head">
-                <span>{t('Профіль')}</span>
-                <span>{t('Роль')}</span>
-                <span>{t('Контакти')}</span>
-                <span>{t('Регіон')}</span>
-                <span>{t('Стан')}</span>
-                <span />
-              </div>
-
-              <ScrollArea.Autosize mah="calc(100vh - 372px)" type="auto">
-                <div className="users-roster-body">
-                  {isBusy ? (
-                    <div className="users-empty-state">
-                      {t('Завантаження користувачів')}
-                    </div>
-                  ) : filteredUsers.length > 0 ? (
-                    filteredUsers.map((user, index) => (
-                      <UserRosterRow
-                        key={String(user.NetUid || user.Id || index)}
-                        user={user}
-                        onEdit={openUser}
-                      />
-                    ))
-                  ) : (
-                    <div className="users-empty-state">
-                      {hasActiveFilters
-                        ? t('Користувачів за цими фільтрами не знайдено')
-                        : t('Користувачів не знайдено')}
-                    </div>
-                  )}
-                </div>
-              </ScrollArea.Autosize>
-            </div>
+          <section className="users-roster console-table-body">
+            <DataTable
+              columns={columns}
+              data={filteredUsers}
+              defaultLayout={USERS_TABLE_DEFAULT_LAYOUT}
+              emptyText={
+                hasActiveFilters
+                  ? t('Користувачів за цими фільтрами не знайдено')
+                  : t('Користувачів не знайдено')
+              }
+              getRowId={(user, index) => String(user.NetUid || user.Id || index)}
+              height="100%"
+              isLoading={isBusy}
+              layoutVersion="users-table-1"
+              loadingText={t('Завантаження користувачів')}
+              minWidth={860}
+              showLayoutControls
+              tableId="users"
+              toolbarPortalTarget={tableToolbarSlot}
+              onRowClick={openUser}
+            />
           </section>
         </div>
-      </Box>
+      </div>
     </Stack>
   )
 }
 
-function UserRosterRow({
-  user,
-  onEdit,
-}: {
-  user: UserProfile
-  onEdit: (user: UserProfile) => void
-}) {
-  return (
-    <div
-      className={`users-roster-row users-row-${getUserStatus(user)}`}
-      role="button"
-      tabIndex={0}
-      onClick={() => onEdit(user)}
-      onKeyDown={(event) => {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault()
-          onEdit(user)
-        }
-      }}
-    >
-      <div className="users-profile-cell">
-        <Avatar className="users-avatar" radius="xl" size={34}>
-          {getUserInitials(user)}
-        </Avatar>
-        <div className="users-profile-copy">
-          <Text className="users-profile-last-name">
-            {displayValue(user.LastName)}
-          </Text>
-          <Text className="users-profile-first-name">
-            {getUserGivenName(user)}
-          </Text>
-        </div>
-      </div>
+function useUserColumns(): DataTableColumn<UserProfile>[] {
+  const { t } = useI18n()
 
-      <div className="users-role-cell">
-        <span className="users-role-marker" aria-hidden="true">
-          {renderRoleIcon(user.UserRole)}
-        </span>
-        <strong>{displayValue(getUserRoleName(user.UserRole))}</strong>
-      </div>
-
-      <div className="users-contact-cell">
-        <Text className="users-contact-primary">{displayValue(user.Email)}</Text>
-        <Text className="users-contact-secondary">
-          {displayValue(user.PhoneNumber)}
-        </Text>
-      </div>
-
-      <span className="users-region-tag">{getUserRegionName(user.Region)}</span>
-      <UserStatusTag user={user} />
-
-      <Tooltip label="Редагувати">
-        <ActionIcon
-          aria-label="Редагувати"
-          className="users-row-action"
-          color="gray"
-          size="sm"
-          variant="subtle"
-          onClick={(event) => {
-            event.stopPropagation()
-            onEdit(user)
-          }}
-        >
-          <IconPencil size={15} />
-        </ActionIcon>
-      </Tooltip>
-    </div>
+  return useMemo<DataTableColumn<UserProfile>[]>(
+    () => [
+      {
+        id: 'status',
+        header: '',
+        width: 48,
+        minWidth: 44,
+        accessor: (user) => getUserStatusLabel(user),
+        cell: (user) => {
+          const status = getUserStatus(user)
+          const label = getUserStatusLabel(user)
+          return (
+            <span className="app-status-dot-wrap" aria-label={label} title={label}>
+              <span
+                className={
+                  status === USER_STATUS_ACTIVE
+                    ? 'app-status-dot is-active'
+                    : 'app-status-dot is-inactive'
+                }
+                style={status === USER_STATUS_DELETED ? { background: 'var(--mantine-color-red-5)', boxShadow: '0 0 0 3px rgba(250, 82, 82, 0.14)' } : undefined}
+              />
+            </span>
+          )
+        },
+      },
+      {
+        id: 'user',
+        header: t('Користувач'),
+        width: 260,
+        minWidth: 220,
+        fill: true,
+        accessor: getUserFullName,
+        cell: (user) => <UserNameCell user={user} />,
+      },
+      {
+        id: 'role',
+        header: t('Роль'),
+        width: 210,
+        minWidth: 160,
+        accessor: (user) => getUserRoleName(user.UserRole),
+        cell: (user) => {
+          const roleName = displayValue(getUserRoleName(user.UserRole))
+          return roleName ? (
+            <Badge className="app-role-pill" variant="light">
+              {roleName}
+            </Badge>
+          ) : null
+        },
+      },
+      {
+        id: 'contacts',
+        header: t('Контакти'),
+        width: 240,
+        minWidth: 200,
+        accessor: (user) => [user.Email, user.PhoneNumber].filter(Boolean).join(' '),
+        cell: (user) => <UserContactsCell user={user} />,
+      },
+      {
+        id: 'region',
+        header: t('Регіон'),
+        width: 150,
+        minWidth: 120,
+        accessor: (user) => getUserRegionName(user.Region),
+        cell: (user) => {
+          const value = displayValue(getUserRegionName(user.Region))
+          return (
+            <Text component="span" style={USERS_TABLE_CELL_STYLE} title={value || undefined}>
+              {value}
+            </Text>
+          )
+        },
+      },
+    ],
+    [t],
   )
 }
 
-function UserStatusTag({ user }: { user: UserProfile }) {
-  const status = getUserStatus(user)
+/* Name cell per the pattern: last name 600 with the given name as a dimmed
+   second line (no decorative avatar in cells). */
+function UserNameCell({ user }: { user: UserProfile }) {
+  const lastName = displayValue(user.LastName) || displayValue(getUserFullName(user))
+  const givenName = getUserGivenName(user)
+  const title = [lastName, givenName].filter(Boolean).join(' ')
 
   return (
-    <span className={`users-status-tag is-${status}`}>
-      {getUserStatusLabel(user)}
+    <span style={{ display: 'block', minWidth: 0 }} title={title || undefined}>
+      <Text component="span" fw={600} style={USERS_TABLE_CELL_STYLE}>
+        {lastName}
+      </Text>
+      {givenName ? (
+        <Text component="span" c="dimmed" style={USERS_TABLE_SUBTEXT_STYLE}>
+          {givenName}
+        </Text>
+      ) : null}
+    </span>
+  )
+}
+
+/* Contacts per §5.1: email primary, phone as a mono second line. */
+function UserContactsCell({ user }: { user: UserProfile }) {
+  const email = displayValue(user.Email)
+  const phone = displayValue(user.PhoneNumber)
+  const title = [email, phone].filter(Boolean).join('\n')
+
+  return (
+    <span style={{ display: 'block', minWidth: 0 }} title={title || undefined}>
+      <Text component="span" style={USERS_TABLE_CELL_STYLE}>
+        {email}
+      </Text>
+      {phone ? (
+        <Text component="span" c="dimmed" style={{ ...USERS_TABLE_SUBTEXT_STYLE, ...USERS_MONO_STYLE }}>
+          {phone}
+        </Text>
+      ) : null}
     </span>
   )
 }
@@ -476,83 +512,9 @@ function getUserStatusLabel(user: UserProfile) {
   return status === USER_STATUS_INACTIVE ? 'Неактивний' : 'Активний'
 }
 
-function renderRoleIcon(role?: UserRole | null) {
-  const roleName = getUserRoleName(role).toLocaleLowerCase('uk')
-
-  if (roleName.includes('gba') || roleName.includes('топ')) {
-    return <IconCrown size={13} />
-  }
-
-  if (roleName.includes('адміністратор') || roleName.includes('admin')) {
-    return <IconUserShield size={13} />
-  }
-
-  if (roleName.includes('керівник')) {
-    return <IconBriefcase size={13} />
-  }
-
-  if (roleName.includes('аналітик') && roleName.includes('закуп')) {
-    return <IconShoppingCart size={13} />
-  }
-
-  if (roleName.includes('аналітик')) {
-    return <IconChartLine size={13} />
-  }
-
-  if (roleName.includes('бухгалтер')) {
-    return <IconCalculator size={13} />
-  }
-
-  if (roleName.includes('фінанс')) {
-    return <IconCoins size={13} />
-  }
-
-  if (
-    roleName.includes('завсклад') ||
-    roleName.includes('кладов') ||
-    roleName.includes('склад')
-  ) {
-    return <IconBuildingWarehouse size={13} />
-  }
-
-  if (roleName.includes('водій')) {
-    return <IconCar size={13} />
-  }
-
-  if (roleName.includes('логіст')) {
-    return <IconTruckDelivery size={13} />
-  }
-
-  if (roleName.includes('client')) {
-    return <IconUsersGroup size={13} />
-  }
-
-  return <IconShieldLock size={13} />
-}
-
-function getUserInitials(user: UserProfile) {
-  if (user.Abbreviation?.trim()) {
-    return user.Abbreviation.trim().slice(0, 2).toLocaleUpperCase('uk')
-  }
-
-  const parts = [user.FirstName, user.LastName, user.FullName]
-    .flatMap((value) => value?.trim().split(/\s+/) || [])
-    .filter(Boolean)
-
-  return (
-    parts
-      .slice(0, 2)
-      .map((part) => part[0])
-      .join('')
-      .toLocaleUpperCase('uk') || '?'
-  )
-}
-
 function getUserGivenName(user: UserProfile) {
-  const givenName = [user.FirstName, user.MiddleName]
+  return [user.FirstName, user.MiddleName]
     .map((value) => value?.trim())
     .filter(Boolean)
     .join(' ')
-
-  return displayValue(givenName)
 }
