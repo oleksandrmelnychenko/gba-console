@@ -218,72 +218,9 @@
   overflow: hidden;
 }
 
-/* Suppliers DataTable — one consistent separator line under the header and every
-   row (equal), visible zebra striping, a lighter/larger header, and no vertical
-   cell dividers or pill rounding from the console-table-page skin. */
-.suppliers-page .data-table-th {
-  border-bottom: 1px solid var(--mantine-color-gray-2);
-  color: var(--mantine-color-gray-7);
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0;
-  text-transform: none;
-}
-
-.suppliers-page .data-table-cell {
-  background: var(--data-table-cell-bg, var(--mantine-color-white));
-  border-bottom: 1px solid var(--mantine-color-gray-2);
-}
-
-/* Body cells share the header's family, size and case — only the weight is
-   lighter — so header and content read as one consistent typographic style. */
-.suppliers-page .data-table-density-normal .data-table-cell,
-.suppliers-page .data-table-density-compact .data-table-cell {
-  color: var(--mantine-color-gray-8);
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.suppliers-page .data-table-row:nth-child(even) {
-  --data-table-cell-bg: var(--mantine-color-gray-0);
-}
-
-.suppliers-page .data-table-row .data-table-cell:first-child {
-  border-left: 0;
-  border-radius: 0;
-  padding-left: 8px;
-}
-
-.suppliers-page .data-table-row .data-table-cell:last-child {
-  border-radius: 0;
-}
-
-.suppliers-page .data-table-row .data-table-cell:not(:first-child):not(:last-child) {
-  box-shadow: none;
-}
-
-/* Perf: console-table-page animates background/border/box-shadow on every cell
-   (140ms) and slides the whole row (translateX + large blurred shadow) on hover.
-   With ~34 columns that repaints a ~5000px-wide row per pointer move — kill the
-   animations here; the zebra/hover tint swaps instantly instead. */
-.suppliers-page .data-table-cell,
-.suppliers-page .data-table-row {
-  transition: none;
-}
-
-.suppliers-page .data-table-row:hover {
-  box-shadow: none;
-  transform: none;
-}
-
-/* Keep the per-column header menu (kebab ⋮) always visible, not only on hover. */
-.suppliers-page .data-table-column-menu {
-  display: inline-flex;
-}
-
-.suppliers-page .data-table-pinned-icon {
-  color: var(--brand-orange);
-}
+/* Table typography/zebra/kebab/icons intentionally have NO page overrides:
+   the pattern table styles are the shared defaults in data-table.css
+   (docs/ui-patterns.md — the table is identical on every screen). */
 
 .suppliers-status-dot-wrap {
   align-items: center;

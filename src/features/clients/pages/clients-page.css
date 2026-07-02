@@ -90,34 +90,6 @@
   white-space: nowrap;
 }
 
-/* Table typography per docs/ui-patterns.md: header 13/600 gray-7 (no uppercase),
-   body 13/500 gray-8, equal 1px gray-2 separators for header and rows. Zebra и
-   hover come from the DataTable defaults. */
-.clients-page .data-table-th {
-  border-bottom: 1px solid var(--mantine-color-gray-2);
-  color: var(--mantine-color-gray-7);
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0;
-  text-transform: none;
-}
-
-.clients-page .data-table-cell {
-  border-bottom: 1px solid var(--mantine-color-gray-2);
-}
-
-.clients-page .data-table-density-normal .data-table-cell,
-.clients-page .data-table-density-compact .data-table-cell {
-  color: var(--mantine-color-gray-8);
-  font-size: 13px;
-  font-weight: 500;
-}
-
-/* Keep the per-column header menu (kebab ⋮) always visible, not only on hover. */
-.clients-page .data-table-column-menu {
-  display: inline-flex;
-}
-
-.clients-page .data-table-pinned-icon {
-  color: var(--brand-orange);
-}
+/* Table typography/zebra/kebab/icons intentionally have NO page overrides:
+   the pattern table styles are the shared defaults in data-table.css
+   (docs/ui-patterns.md — the table is identical on every screen). */
