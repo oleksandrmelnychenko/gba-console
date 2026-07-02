@@ -641,11 +641,12 @@ function SuppliersPageView({ model }: { model: ReturnType<typeof useSuppliersPag
             columns={columns}
             data={suppliers}
             defaultLayout={SUPPLIER_TABLE_DEFAULT_LAYOUT}
+            distributeAvailableWidth
             emptyText={t('Постачальників не знайдено')}
             getRowId={(supplier, index) => String(supplier.NetUid || supplier.Id || index)}
             height="100%"
             isLoading={isLoading}
-            layoutVersion="suppliers-table-8"
+            layoutVersion="suppliers-table-9"
             loadingText={t('Завантаження постачальників')}
             minWidth={SUPPLIER_TABLE_MIN_WIDTH}
             showLayoutControls
@@ -1233,7 +1234,6 @@ function useSupplierColumns() {
         header: 'Виробник',
         width: 160,
         minWidth: 130,
-        fill: true,
         accessor: (supplier) => supplier.Manufacturer,
         cell: (supplier) => <SupplierTableValue value={displayValue(supplier.Manufacturer)} />,
       },

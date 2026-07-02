@@ -67,6 +67,10 @@ export type DataTableProps<TData> = {
   getRowId?: (row: TData, index: number) => string
   isLoading?: boolean
   minWidth?: number
+  /** When false, columns keep their configured widths instead of stretching one column to fill the viewport. */
+  fillAvailableWidth?: boolean
+  /** Spreads the extra viewport width across regular columns instead of growing a single fill column. */
+  distributeAvailableWidth?: boolean
   height?: string | number
   maxHeight?: string | number
   emptyText?: ReactNode

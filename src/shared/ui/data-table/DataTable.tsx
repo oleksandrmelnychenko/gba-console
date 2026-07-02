@@ -68,6 +68,8 @@ export function DataTable<TData>({
   getRowId,
   isLoading = false,
   minWidth = 960,
+  fillAvailableWidth = true,
+  distributeAvailableWidth = false,
   height,
   maxHeight,
   emptyText,
@@ -315,19 +317,29 @@ export function DataTable<TData>({
   const headerGroups = table.getHeaderGroups()
   const baseTableWidth = table.getTotalSize() + expandColumnWidth
   const tableWidth = Math.ceil(
-    Math.max(minWidth + expandColumnWidth, baseTableWidth, scrollViewportWidth),
+    Math.max(
+      minWidth + expandColumnWidth,
+      baseTableWidth,
+      fillAvailableWidth ? scrollViewportWidth : 0,
+    ),
   )
   // Memoized so the widths Map keeps its identity across unrelated re-renders —
   // it is a prop of every (memoized) body row.
   const { columnWidths, fillColumnId } = useMemo(() => {
-    const fillId = getFillColumnId(visibleLeafColumns, tableWidth, baseTableWidth)
-    const fillExtraWidth = fillId ? tableWidth - baseTableWidth : 0
+    const fillId = getFillColumnId(visibleLeafColumns, tableWidth, baseTableWidth, {
+      distributeAvailableWidth,
+    })
 
     return {
-      columnWidths: createRenderedColumnWidths(visibleLeafColumns, fillId, fillExtraWidth),
+      columnWidths: createRenderedColumnWidths(
+        visibleLeafColumns,
+        fillId,
+        tableWidth - baseTableWidth,
+        { distributeAvailableWidth },
+      ),
       fillColumnId: fillId,
     }
-  }, [baseTableWidth, tableWidth, visibleLeafColumns])
+  }, [baseTableWidth, distributeAvailableWidth, tableWidth, visibleLeafColumns])
   const visibleColumnCount = visibleLeafColumns.length || 1
   const scrollStyle = useMemo(
     () => createScrollStyle(height, maxHeight, scrollViewportWidth > 0),
