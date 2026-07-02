@@ -55,7 +55,7 @@ export function WizardDownloadDocumentsModal({
           <SaleDocumentDownloads documents={documents} />
         )}
         <Group justify="flex-end" mt="xs">
-          <Button color="violet" variant="subtle" onClick={onClose}>
+          <Button color="gray" variant="default" onClick={onClose}>
             {t('Закрити')}
           </Button>
         </Group>

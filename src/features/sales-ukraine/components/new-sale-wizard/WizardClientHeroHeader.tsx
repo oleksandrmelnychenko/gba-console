@@ -213,10 +213,10 @@ export function WizardClientHeroHeader({
       {headerClose && <Box className="new-sale-client-hero__close">{headerClose}</Box>}
       <Box className="new-sale-client-hero__identity">
         <Box className="new-sale-client-hero__copy">
-          <Text className="new-sale-client-hero__name" title={clientCode ? `${clientCode} ${clientTitle}` : clientTitle}>
+          <Box className="new-sale-client-hero__name" title={clientCode ? `${clientCode} ${clientTitle}` : clientTitle}>
             {clientCode && <span className="new-sale-client-hero__code">{clientCode}</span>}
             <span className="new-sale-client-hero__title">{clientTitle}</span>
-          </Text>
+          </Box>
           <Group className="new-sale-client-hero__chips" gap={6} wrap="wrap">
             <span className={`new-sale-client-hero__status ${isActive ? 'is-active' : 'is-inactive'}`}>
               <span className="new-sale-client-hero__status-dot" />

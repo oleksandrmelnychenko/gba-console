@@ -148,6 +148,14 @@
   min-width: 0;
 }
 
+.sales-page-header-actions {
+  align-items: center;
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 8px;
+  width: 100%;
+}
+
 .sales-filter-toolbar {
   min-width: 0;
 }

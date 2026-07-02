@@ -56,7 +56,7 @@ import {
 import { useSearchParams } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
-import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { CREATE_ACTION_COLOR, PageContentHeader } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
 import { translate } from '../../../shared/i18n/translate'
@@ -689,13 +689,19 @@ export function SalesUkrainePage() {
 
   return (
     <Stack className="sales-ukraine-page" gap="lg">
-      {canCreateSale && (
-        <PageHeaderActions>
-          <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} onClick={() => setNewSaleOpen(true)}>
+      <PageContentHeader>
+        <div className="sales-page-header-actions">
+          <Button
+            color={CREATE_ACTION_COLOR}
+            disabled={!canCreateSale}
+            leftSection={<IconPlus size={16} />}
+            size="sm"
+            onClick={() => setNewSaleOpen(true)}
+          >
             {t('Новий продаж')}
           </Button>
-        </PageHeaderActions>
-      )}
+        </div>
+      </PageContentHeader>
 
       <Card className="sales-ukraine-card" withBorder radius="md" padding={0}>
         <Stack className="sales-ukraine-content" gap={0}>

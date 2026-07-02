@@ -1,8 +1,7 @@
-import { ActionIcon, Badge, Box, Button, Group, Loader, Select, Stack, Text, TextInput, Tooltip } from '@mantine/core'
+import { ActionIcon, Box, Button, Group, Loader, Select, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import {
   IconArrowsLeftRight,
   IconBarcode,
-  IconBrandEdge,
   IconCalendarTime,
   IconChevronDown,
   IconChevronRight,
@@ -11,7 +10,6 @@ import {
   IconHistory,
   IconPackage,
   IconPrinter,
-  IconReceipt2,
   IconTag,
 } from '@tabler/icons-react'
 import { Fragment } from 'react'
@@ -24,6 +22,7 @@ import {
   WIZARD_SALE_REGISTER_STATUS_NEW,
   WIZARD_SALE_REGISTER_STATUS_PACKAGING,
 } from './wizardClientStepApi'
+import '../../../../shared/ui/data-table/data-table.css'
 
 const amountFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
 const itemAmountFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 3, minimumFractionDigits: 2 })
@@ -42,13 +41,6 @@ const PAYMENT_LABELS: Record<string, string> = {
   1: 'Оплачено',
   2: 'Оплачено',
   3: 'Оплачено частково',
-}
-
-const PAYMENT_COLORS: Record<string, string> = {
-  0: 'red',
-  1: 'green',
-  2: 'green',
-  3: 'orange',
 }
 
 export function WizardClientRegistry({
@@ -107,7 +99,7 @@ export function WizardClientRegistry({
     .sort((a, b) => getTime(b.Created) - getTime(a.Created))
 
   return (
-    <Stack className="new-sale-register" gap={0}>
+    <Stack className="new-sale-register data-table data-table-density-compact" gap={0}>
       <Box className="new-sale-register-toolbar">
         <Group align="end" className="new-sale-register-toolbar__controls" gap={8} wrap="wrap">
           <Select
@@ -156,7 +148,7 @@ export function WizardClientRegistry({
 
       </Box>
 
-      <Box className="new-sale-register-list">
+      <Box className="new-sale-register-list data-table-scroll">
         {isLoading ? (
           <Group className="new-sale-register-state" gap="xs" justify="center">
             <Loader size="sm" />
@@ -171,12 +163,13 @@ export function WizardClientRegistry({
         ) : (
           <>
             <Box className="new-sale-register-head">
-              <Text>{t('Документ')}</Text>
-              <Text>{t('Оплата')}</Text>
-              <Text>{t('Сума')}</Text>
-              <Text>{t('К-сть')}</Text>
-              <Text>{t('Створено')}</Text>
-              <Text>{t('Дії')}</Text>
+              <Text aria-label={t('Стан')} className="data-table-th" />
+              <Text className="data-table-th">{t('Документ')}</Text>
+              <Text className="data-table-th">{t('Оплата')}</Text>
+              <Text className="data-table-th">{t('Сума')}</Text>
+              <Text className="data-table-th">{t('К-сть')}</Text>
+              <Text className="data-table-th">{t('Створено')}</Text>
+              <Text className="data-table-th">{t('Дії')}</Text>
             </Box>
             <Stack className="new-sale-register-rows" gap={0}>
               {visibleSales.map((sale, index) => {
@@ -238,10 +231,16 @@ function WizardSaleRegistryRow({
   const hideActions = lifecycleKey === 'Received' && paymentKey === '0'
   const showEdit = canEdit && (sale.InputSaleMerges?.length ?? 0) === 0 && (sale.TotalCount ?? 0) > 0
   const showAudit = !isNew || isShift
+  const rowStateClass = paymentKey === '0'
+    ? 'is-danger'
+    : paymentKey === '1' || paymentKey === '2'
+      ? 'is-success'
+      : 'is-neutral'
   const createdDate = sale.ChangedToInvoice || sale.Created
   const currencyCode = sale.ClientAgreement?.Agreement?.Currency?.Code || ''
   const userName = [sale.User?.LastName, sale.User?.FirstName].filter(Boolean).join(' ')
   const rowClassName = [
+    'data-table-row',
     'new-sale-register-row',
     isOpen ? 'is-open' : '',
     isShift ? 'is-shift' : '',
@@ -260,17 +259,17 @@ function WizardSaleRegistryRow({
       }}
     >
       <Box className="new-sale-register-row__grid">
-        <Box className="new-sale-register-row__document">
-          <Box className="new-sale-register-row__edited">
-            {isEdited && (
-              <Tooltip label={t('Рахунок редаговано')}>
-                <Box />
-              </Tooltip>
-            )}
-          </Box>
+        <Box className={`new-sale-register-row__state data-table-cell ${isEdited ? 'is-edited' : rowStateClass}`}>
+          {isEdited ? (
+            <Tooltip label={t('Рахунок редаговано')}>
+              <Box />
+            </Tooltip>
+          ) : (
+            <Box />
+          )}
+        </Box>
 
-          <WizardSaleSourceIcon lifecycleKey={lifecycleKey} sale={sale} />
-
+        <Box className="new-sale-register-row__document data-table-cell">
           <ActionIcon
             aria-label={isOpen ? t('Згорнути') : t('Розгорнути')}
             className="new-sale-register-row__expand"
@@ -297,32 +296,36 @@ function WizardSaleRegistryRow({
           </Box>
         </Box>
 
-        <Box className="new-sale-register-row__payment">
-          {!isNew && PAYMENT_LABELS[paymentKey] && (
-            <Badge color={PAYMENT_COLORS[paymentKey] || 'gray'} size="sm" variant="light">
-              {t(PAYMENT_LABELS[paymentKey])}
-            </Badge>
-          )}
+        <Box
+          className={
+            isNew || !PAYMENT_LABELS[paymentKey]
+              ? 'new-sale-register-row__payment data-table-cell is-empty'
+              : `new-sale-register-row__payment data-table-cell ${rowStateClass}`
+          }
+        >
+          <Text title={!isNew && PAYMENT_LABELS[paymentKey] ? t(PAYMENT_LABELS[paymentKey]) : ''} truncate>
+            {!isNew && PAYMENT_LABELS[paymentKey] ? t(PAYMENT_LABELS[paymentKey]) : ''}
+          </Text>
         </Box>
 
-        <Box className="new-sale-register-row__amount">
+        <Box className="new-sale-register-row__amount data-table-cell">
           <Text className="new-sale-register-row__amount-value">
             {amountFormatter.format(sale.TotalAmountLocal ?? 0)}
           </Text>
           <Text className="new-sale-register-row__amount-code">{currencyCode}</Text>
         </Box>
 
-        <Box className="new-sale-register-row__qty">
+        <Box className="new-sale-register-row__qty data-table-cell">
           <Text className="new-sale-register-row__qty-value">{sale.TotalCount ?? 0}</Text>
           <Text className="new-sale-register-row__qty-label">{t('штук')}</Text>
         </Box>
 
-        <Box className="new-sale-register-row__date">
+        <Box className="new-sale-register-row__date data-table-cell">
           <Text>{formatDateTime(createdDate)}</Text>
           <Text>{userName}</Text>
         </Box>
 
-        <Box className="new-sale-register-row__actions">
+        <Box className="new-sale-register-row__actions data-table-cell">
           {!hideActions && (
             <Group gap={2} wrap="nowrap">
               {showEdit && (
@@ -517,28 +520,6 @@ function WizardSaleRegistryRowContent({ sale }: { sale: SalesUkraineSale }) {
         )}
       </Box>
     </Box>
-  )
-}
-
-function WizardSaleSourceIcon({ lifecycleKey, sale }: { lifecycleKey: string; sale: SalesUkraineSale }) {
-  const { t } = useI18n()
-  const source = sale.Order?.OrderSource
-  const isInvoiceStage = lifecycleKey === 'Packaging' || lifecycleKey === 'Packaged'
-  const indicator =
-    source === 0
-      ? { icon: <IconBrandEdge size={14} />, label: t('Інтернет-магазин') }
-      : source === 2
-        ? { icon: <IconTag size={14} />, label: t('Оферта') }
-        : isInvoiceStage
-          ? { icon: <IconFileInvoice size={14} />, label: t('Накладна') }
-          : { icon: <IconReceipt2 size={14} />, label: t('Рахунок') }
-
-  return (
-    <Tooltip label={indicator.label}>
-      <Box className="new-sale-register-row__source">
-        {indicator.icon}
-      </Box>
-    </Tooltip>
   )
 }
 
