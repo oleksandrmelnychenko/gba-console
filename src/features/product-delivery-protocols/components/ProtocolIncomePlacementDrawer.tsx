@@ -17,6 +17,9 @@ type ProtocolIncomePlacementDrawerProps = {
   opened: boolean
   columnId: string | null
   item: PackingListPackageOrderItem | null
+  // Placement capacity for the column (item qty minus placed minus other
+  // columns) — the row qty is DERIVED from the placements sum on apply.
+  maxQty: number
   row: DynamicProductPlacementRow | null
   selectedStorage: IncomeStorage | null
   onClose: () => void
@@ -47,38 +50,6 @@ function sumQtyExcept(placements: DynamicProductPlacement[], excluded: DynamicPr
   return placements.reduce((total, placement) => total + (placement === excluded ? 0 : placement.Qty || 0), 0)
 }
 
-function isPlaceholderPlacement(placement: DynamicProductPlacement): boolean {
-  return !placement.IsApplied
-    && (placement.StorageNumber || 'N') === 'N'
-    && (placement.RowNumber || 'N') === 'N'
-    && (placement.CellNumber || 'N') === 'N'
-}
-
-function completePlacementsToRowQty(
-  placements: DynamicProductPlacement[],
-  rowQty: number,
-): DynamicProductPlacement[] {
-  const placedQty = sumQty(placements)
-  const remainderQty = rowQty - placedQty
-
-  if (remainderQty <= 0) {
-    return placements
-  }
-
-  const placeholder = placements.find(isPlaceholderPlacement)
-
-  if (placeholder) {
-    return placements.map((placement) =>
-      placement === placeholder ? { ...placement, Qty: (placement.Qty || 0) + remainderQty } : placement,
-    )
-  }
-
-  return [
-    ...placements,
-    { StorageNumber: 'N', RowNumber: 'N', CellNumber: 'N', Qty: remainderQty, IsApplied: false },
-  ]
-}
-
 function placementKey(placement: DynamicProductPlacement, index: number): string {
   if (placement.NetUid || placement.Id) {
     return String(placement.NetUid || placement.Id)
@@ -91,18 +62,20 @@ export function ProtocolIncomePlacementDrawer({
   opened,
   columnId,
   item,
+  maxQty,
   row,
   selectedStorage,
   onClose,
   onApply,
 }: ProtocolIncomePlacementDrawerProps) {
-  const rowKey = getPlacementDrawerKey({ columnId, item, opened, row, selectedStorage, onApply, onClose })
+  const rowKey = getPlacementDrawerKey({ columnId, item, maxQty, opened, row, selectedStorage, onApply, onClose })
 
   return (
     <ProtocolIncomePlacementDrawerContent
       key={opened ? rowKey : 'closed'}
       columnId={columnId}
       item={item}
+      maxQty={maxQty}
       opened={opened}
       row={row}
       selectedStorage={selectedStorage}
@@ -133,6 +106,7 @@ function getPlacementDrawerKey({ columnId, item, opened, row }: ProtocolIncomePl
 function ProtocolIncomePlacementDrawerContent({
   opened,
   item,
+  maxQty,
   row,
   selectedStorage,
   onClose,
@@ -145,7 +119,6 @@ function ProtocolIncomePlacementDrawerContent({
   const [draft, setDraft] = useValueState<PlacementDraftState | null>(null)
   const [error, setError] = useValueState<string | null>(null)
 
-  const rowQty = row?.Qty || 0
   const product: IncomeProduct | null | undefined = item?.SupplyInvoiceOrderItem?.Product
   const availableAddresses = useMemo<IncomeProductPlacement[]>(() => {
     const productPlacements = product?.ProductPlacements || []
@@ -161,11 +134,11 @@ function ProtocolIncomePlacementDrawerContent({
   }, [product, selectedStorage])
 
   const placedQty = sumQty(placements)
-  const canAddPlacements = rowQty > placedQty
+  const canAddPlacements = maxQty > placedQty
 
   function openDraft(placement: DynamicProductPlacement | null) {
     const excludedQty = placement ? sumQtyExcept(placements, placement) : placedQty
-    const defaultQty = placement?.Qty || Math.max(rowQty - excludedQty, 0)
+    const defaultQty = placement?.Qty || Math.max(maxQty - excludedQty, 0)
     const hasAddresses = availableAddresses.length > 0
 
     setError(null)
@@ -196,7 +169,7 @@ function ProtocolIncomePlacementDrawerContent({
       return
     }
 
-    if (draft.qty + excludedQty > rowQty) {
+    if (draft.qty + excludedQty > maxQty) {
       setError(t('Невірна кількість'))
       return
     }
@@ -248,16 +221,17 @@ function ProtocolIncomePlacementDrawerContent({
   }
 
   function handleApply() {
-    if (placedQty > rowQty) {
+    if (placedQty > maxQty) {
       setError(t('Невірна кількість'))
       return
     }
 
-    onApply(completePlacementsToRowQty(placements, rowQty).map((placement) => ({ ...placement })))
+    // The row qty becomes the placements sum — no back-filling to a target qty.
+    onApply(placements.map((placement) => ({ ...placement })))
   }
 
   const headerText = product
-    ? `${product.VendorCode || ''} ${product.NameUA || product.Name || ''} ${rowQty} ${t('шт')}`.trim()
+    ? `${product.VendorCode || ''} ${product.NameUA || product.Name || ''} ${item?.Qty || 0} ${t('шт')}`.trim()
     : ''
 
   return (
@@ -265,7 +239,7 @@ function ProtocolIncomePlacementDrawerContent({
       <Stack gap="md">
         <Text fw={600}>{headerText}</Text>
         <Text c="dimmed" size="sm">
-          {`${t('Доступна К-сть')} ${Math.max(rowQty - placedQty, 0)}`}
+          {`${t('Доступна К-сть')} ${Math.max(maxQty - placedQty, 0)}`}
         </Text>
 
         <Table withTableBorder withColumnBorders>

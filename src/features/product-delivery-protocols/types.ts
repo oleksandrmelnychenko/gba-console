@@ -79,7 +79,6 @@ export type ProtocolsSearchParams = {
 
 export type CreateProtocolPayload = {
   Comment?: string
-  Documents?: File[]
   FromDate: string
   Organization: ProtocolOrganization
   TransportationType: SupplyTransportationType

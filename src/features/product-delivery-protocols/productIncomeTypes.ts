@@ -68,6 +68,10 @@ export type DynamicProductPlacement = EntityFields & {
 export type DynamicProductPlacementRow = EntityFields & {
   Qty?: number
   PackingListPackageOrderItemId?: number
+  // The server persists a row ONLY when the full item navigation object is
+  // attached (PackingListsActor filters rows by PackingListPackageOrderItem !=
+  // null and reads its SupplyInvoiceOrderItem.ProductId for the default cell).
+  PackingListPackageOrderItem?: PackingListPackageOrderItem
   DynamicProductPlacementColumnId?: number
   DynamicProductPlacements: DynamicProductPlacement[]
 }

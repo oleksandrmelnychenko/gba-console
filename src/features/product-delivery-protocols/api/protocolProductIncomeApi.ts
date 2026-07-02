@@ -159,6 +159,29 @@ export async function updateVatOfPackListInvoiceItems(invoice: IncomeSupplyInvoi
   return normalizeInvoice(result)
 }
 
+/**
+ * Persist a single dynamic-column row with its placements — the legacy placements
+ * panel saves through these dedicated endpoints (packinglists/update only stores
+ * the row qty; edited placements would be lost without them).
+ */
+export async function addDynamicPlacementRow(row: DynamicProductPlacementRow): Promise<DynamicProductPlacementRow> {
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/placements/dynamic/rows/new', {
+    method: 'POST',
+    body: row,
+  })
+
+  return normalizeDynamicRow(result as DynamicProductPlacementRow)
+}
+
+export async function updateDynamicPlacementRow(row: DynamicProductPlacementRow): Promise<DynamicProductPlacementRow> {
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/placements/dynamic/rows/update', {
+    method: 'POST',
+    body: row,
+  })
+
+  return normalizeDynamicRow(result as DynamicProductPlacementRow)
+}
+
 export async function createProductIncomeFromPackingListDynamic(
   fromDate: string,
   storageNetId: string,

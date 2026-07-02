@@ -18,6 +18,27 @@
   padding-bottom: var(--mantine-spacing-lg);
 }
 
+/* ---- Grid fill --------------------------------------------------------- */
+/* Wrapper that makes a DataTable absorb the remaining card height and scroll
+   internally (rows scroll, header/totals stay), instead of growing the page. */
+.supply-grid-fill {
+  display: flex;
+  flex-direction: column;
+}
+
+.supply-grid-fill > .data-table {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.supply-grid-fill .data-table-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
 /* ---- Hero header ------------------------------------------------------- */
 .supply-detail-header {
   align-items: center;

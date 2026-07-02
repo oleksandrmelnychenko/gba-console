@@ -1,6 +1,6 @@
 import { apiRequest } from '../../../shared/api/apiClient'
 import { normalizeExportDocument as normalizeSharedExportDocument } from '../../../shared/documents/exportDocument'
-import { toDateTimeQuery } from '../../../shared/date/dateTime'
+import { formatLocalDateTime, toDateTimeQuery } from '../../../shared/date/dateTime'
 import type {
   CreateProtocolPayload,
   DeliveryProductProtocol,
@@ -41,13 +41,12 @@ export async function getProtocolOrganizations(): Promise<ProtocolOrganization[]
 }
 
 export async function createProtocol(payload: CreateProtocolPayload): Promise<DeliveryProductProtocol | null> {
-  const { Documents = [], ...protocolPayload } = payload
+  // Created/Updated MUST be sent (legacy always does): if omitted they deserialize
+  // to DateTime.MinValue and the server's Dapper INSERT fails with SqlDateTime
+  // overflow (params travel as SQL `datetime`), surfacing as «Помилка сервера».
+  const now = formatLocalDateTime(new Date())
   const formData = new FormData()
-  formData.append('deliveryProductProtocolString', JSON.stringify(protocolPayload))
-
-  for (const document of Documents) {
-    formData.append('documents', document)
-  }
+  formData.append('deliveryProductProtocolString', JSON.stringify({ ...payload, Created: now, Updated: now }))
 
   const result = await apiRequest<unknown>('/delivery/product/protocol/new', {
     method: 'POST',

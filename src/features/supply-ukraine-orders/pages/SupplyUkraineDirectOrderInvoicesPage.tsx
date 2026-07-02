@@ -3,6 +3,7 @@ import {
   Alert,
   Anchor,
   Badge,
+  Box,
   Button,
   Card,
   Checkbox,
@@ -35,7 +36,7 @@ import {
   IconTrash,
   IconX,
 } from '@tabler/icons-react'
-import { useEffect, useMemo, useReducer, useState, type Dispatch, type SetStateAction } from 'react'
+import { useEffect, useMemo, useReducer, useState, type CSSProperties, type Dispatch, type SetStateAction } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import './supply-order-detail.css'
 import { formatLocalDateTime } from '../../../shared/date/dateTime'
@@ -156,6 +157,7 @@ type PageState = {
   deleteInvoiceCandidate: SupplyInvoice | null
   deletePackListCandidate: PackingList | null
   error: string | null
+  activeTab: string
   invoiceDetailsByNetId: Record<string, SupplyInvoice>
   invoiceEditor: InvoiceEditorState | null
   invoiceUploadOpen: boolean
@@ -177,6 +179,7 @@ type PageState = {
 type PageStateAction = Partial<PageState> | ((state: PageState) => Partial<PageState>)
 
 const INITIAL_PAGE_STATE: PageState = {
+  activeTab: 'products',
   deleteInvoiceCandidate: null,
   deletePackListCandidate: null,
   error: null,
@@ -234,6 +237,11 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 2,
   minimumFractionDigits: 2,
 })
+// The page lives inside the fixed-height console frame: tab panel and card stretch
+// to the remaining height so the grid scrolls internally and totals stay pinned.
+const PANEL_FILL_STYLE: CSSProperties = { display: 'flex', flex: 1, flexDirection: 'column', minHeight: 0 }
+const CARD_FILL_STYLE = PANEL_FILL_STYLE
+
 const PERMISSION_ADD_INVOICE = 'SUPPLY_INVOICES_ordersUkraineAllEdit_NewInvoiceBtn_PKEY'
 const PERMISSION_EDIT_INVOICE = 'LOGISTIC_WAY_ordersUkraineAllEdit_EditInvoice_PKEY'
 const PERMISSION_ADD_PACK_LIST = 'SUPPLY_INVOICES_ordersUkraineAllEdit_NewPackListBtn_PKEY'
@@ -260,6 +268,7 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
   const [productCardNetId, setProductCardNetId] = useState<string | null>(null)
   const [state, setPageState] = useReducer(pageStateReducer, INITIAL_PAGE_STATE)
   const {
+    activeTab,
     deleteInvoiceCandidate,
     deletePackListCandidate,
     error,
@@ -296,7 +305,12 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
   const canAddPackList = hasPermission(PERMISSION_ADD_PACK_LIST)
   const canRemoveInvoice = hasPermission(PERMISSION_REMOVE_INVOICE)
   const canRemovePackList = hasPermission(PERMISSION_REMOVE_PACK_LIST)
-  const canShowPackListUpload = Boolean(selectedInvoice && canAddPackList)
+  // Legacy business rule: ONE pack list per invoice — the upload button exists
+  // only while the selected invoice has no pack list yet (the server can't
+  // reliably match products across several pack lists of one invoice).
+  const canShowPackListUpload = Boolean(
+    selectedInvoice && canAddPackList && (selectedInvoice.PackingLists?.length || 0) === 0,
+  )
   const isBusy = isSaving || isLoading || isInvoiceLoading
 
   const detailedInvoices = useMemo(
@@ -323,9 +337,11 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
     }),
     [invoiceBalanceByOrderItemKey, orderItems],
   )
+  // Show ONLY the selected invoice's own items (legacy contract: each invoice tab
+  // click fetches /supplies/invoices/items/get and renders just that invoice).
   const selectedInvoiceItems = useMemo(
-    () => buildEditableInvoiceItems(selectedInvoice, orderItems),
-    [orderItems, selectedInvoice],
+    () => selectedInvoice?.SupplyInvoiceOrderItems || [],
+    [selectedInvoice],
   )
   const packListBalanceRows = useMemo(
     () => (selectedInvoice ? buildPackListBalanceRows(selectedInvoice) : []),
@@ -335,9 +351,11 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
     () => new Map(packListBalanceRows.map((row) => [row.key, row])),
     [packListBalanceRows],
   )
+  // Show ONLY the loaded pack list's own rows (legacy contract) — no zero-qty
+  // placeholders for invoice items that were not uploaded into the pack list.
   const selectedPackListItems = useMemo(
-    () => buildEditablePackListItems(selectedPackList, selectedInvoice),
-    [selectedInvoice, selectedPackList],
+    () => selectedPackList?.PackingListPackageOrderItems || [],
+    [selectedPackList],
   )
   const hasInvoiceMismatch = invoiceBalanceRows.some((row) => row.isError)
   const hasPackListMismatch = packListBalanceRows.some((row) => row.isError)
@@ -880,6 +898,7 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
   }
 
   return {
+    activeTab,
     canAddInvoice,
     canEditInvoice,
     canAddPackList,
@@ -943,10 +962,11 @@ function SupplyUkraineDirectOrderInvoicesView({ model }: { model: DirectOrderInv
   const { t } = useI18n()
 
   return (
-    <Stack className="supply-detail-page" gap="lg">
+    // Fixed-height flex frame: grids scroll internally, no page-level scroll.
+    <Stack gap="lg" h="100%" style={{ minHeight: 0, overflow: 'hidden' }}>
       <DirectOrderInvoicesHeader model={model} />
       {model.error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="red" icon={<IconAlertCircle size={18} />} style={{ flexShrink: 0 }} variant="light">
           {model.error}
         </Alert>
       )}
@@ -1035,9 +1055,16 @@ function DirectOrderInvoicesBody({ model }: { model: DirectOrderInvoicesPageMode
   }
 
   return (
-    <Stack gap="lg">
-      <Tabs defaultValue="products" keepMounted={false}>
-        <Tabs.List>
+    <Stack gap="lg" style={{ flex: 1, minHeight: 0 }}>
+      {/* Controlled: the reload spinner unmounts this subtree, so an uncontrolled
+          Tabs would snap back to «Товари замовлення» after add-invoice/pack-list. */}
+      <Tabs
+        keepMounted={false}
+        style={{ display: 'flex', flex: 1, flexDirection: 'column', minHeight: 0 }}
+        value={model.activeTab}
+        onChange={(value) => model.setPageState({ activeTab: value || 'products' })}
+      >
+        <Tabs.List style={{ flexShrink: 0 }}>
           <Tabs.Tab value="products">{t('Товари замовлення')}</Tabs.Tab>
           <Tabs.Tab value="invoices">{t('Інвойси')}</Tabs.Tab>
           <Tabs.Tab value="packlists" disabled={!model.selectedInvoice}>{t('Пак листи')}</Tabs.Tab>
@@ -1056,19 +1083,21 @@ function ProductsPanel({ model }: { model: DirectOrderInvoicesPageModel }) {
   const totalSum = model.orderItems.reduce((sum, item) => sum + (getOrderItemTotal(item) || 0), 0)
 
   return (
-    <Tabs.Panel value="products" pt="md">
-      <Card className="app-section-card" withBorder radius="md" padding="md">
-        <Stack gap="md">
-          <DataTable
-            columns={model.orderItemColumns}
-            data={model.orderRows}
-            emptyText={t('Товарів немає')}
-            getRowId={(item, index) => item.NetUid || String(item.Id || index)}
-            layoutVersion="supply-direct-order-items-2"
-            minWidth={980}
-            rowClassName={(item) => item.IsError ? 'data-table-row-warning' : undefined}
-            tableId="supply-direct-order-items"
-          />
+    <Tabs.Panel style={PANEL_FILL_STYLE} value="products" pt="md">
+      <Card className="app-section-card" withBorder radius="md" padding="md" style={CARD_FILL_STYLE}>
+        <Stack gap="md" style={{ flex: 1, minHeight: 0 }}>
+          <Box className="supply-grid-fill" style={{ flex: 1, minHeight: 0 }}>
+            <DataTable
+              columns={model.orderItemColumns}
+              data={model.orderRows}
+              emptyText={t('Товарів немає')}
+              getRowId={(item, index) => item.NetUid || String(item.Id || index)}
+              layoutVersion="supply-direct-order-items-2"
+              minWidth={980}
+              rowClassName={(item) => item.IsError ? 'data-table-row-warning' : undefined}
+              tableId="supply-direct-order-items"
+            />
+          </Box>
           <SummaryLine
             items={[
               [t('Всього товарів'), formatNumber(model.orderItems.length)],
@@ -1086,33 +1115,35 @@ function InvoicesPanel({ model }: { model: DirectOrderInvoicesPageModel }) {
   const { t } = useI18n()
 
   return (
-    <Tabs.Panel value="invoices" pt="md">
-      <Card className="app-section-card" withBorder radius="md" padding="md">
-        <Stack gap="md">
+    <Tabs.Panel style={PANEL_FILL_STYLE} value="invoices" pt="md">
+      <Card className="app-section-card" withBorder radius="md" padding="md" style={CARD_FILL_STYLE}>
+        <Stack gap="md" style={{ flex: 1, minHeight: 0 }}>
           <InvoiceSelector model={model} />
           {model.isInvoiceLoading ? (
-            <Group justify="center" py="md"><Loader size="sm" /></Group>
+            <Group justify="center" py="md" style={{ flex: 1 }}><Loader size="sm" /></Group>
           ) : (
-            <Stack gap="sm">
+            <Stack gap="sm" style={{ flex: 1, minHeight: 0 }}>
               <QuantityBalanceSummary
                 actualLabel={t('В інвойсах')}
                 differenceLabel={t('Залишилось')}
                 expectedLabel={t('У замовленні')}
                 rows={model.invoiceBalanceRows}
               />
-              <DataTable
-                columns={model.invoiceItemColumns}
-                data={model.selectedInvoiceItems}
-                emptyText={t('Рядків інвойсу немає')}
-                getRowId={getInvoiceOrderItemRowId}
-                layoutVersion="supply-direct-invoice-items-2"
-                minWidth={1080}
-                rowClassName={(item) =>
-                  model.invoiceBalanceByOrderItemKey.get(getInvoiceOrderItemOrderKey(item))?.isError
-                    ? 'data-table-row-warning'
-                    : undefined}
-                tableId="supply-direct-invoice-items"
-              />
+              <Box className="supply-grid-fill" style={{ flex: 1, minHeight: 0 }}>
+                <DataTable
+                  columns={model.invoiceItemColumns}
+                  data={model.selectedInvoiceItems}
+                  emptyText={t('Рядків інвойсу немає')}
+                  getRowId={getInvoiceOrderItemRowId}
+                  layoutVersion="supply-direct-invoice-items-2"
+                  minWidth={1080}
+                  rowClassName={(item) =>
+                    model.invoiceBalanceByOrderItemKey.get(getInvoiceOrderItemOrderKey(item))?.isError
+                      ? 'data-table-row-warning'
+                      : undefined}
+                  tableId="supply-direct-invoice-items"
+                />
+              </Box>
             </Stack>
           )}
           {model.selectedInvoice && <InvoiceTotals invoice={model.selectedInvoice} />}
@@ -1122,7 +1153,13 @@ function InvoicesPanel({ model }: { model: DirectOrderInvoicesPageModel }) {
   )
 }
 
-function InvoiceSelector({ model }: { model: DirectOrderInvoicesPageModel }) {
+function InvoiceSelector({
+  model,
+  showDelete = true,
+}: {
+  model: DirectOrderInvoicesPageModel
+  showDelete?: boolean
+}) {
   const { t } = useI18n()
 
   return (
@@ -1137,15 +1174,26 @@ function InvoiceSelector({ model }: { model: DirectOrderInvoicesPageModel }) {
               const invoiceNetId = invoice.NetUid || null
               const nextInvoice = getSelectedInvoice(invoiceNetId, model.invoiceDetailsByNetId, model.invoices)
 
-              model.setPageState((current) => ({
-                selectedInvoiceNetId: invoiceNetId,
-                selectedPackListNetId: getValidPackListNetId(current.selectedPackListNetId, nextInvoice),
-              }))
+              model.setPageState((current) => {
+                // Evict the cached details so every click re-fetches
+                // /supplies/invoices/items/get, like the legacy client.
+                const nextDetails = { ...current.invoiceDetailsByNetId }
+
+                if (invoiceNetId) {
+                  delete nextDetails[invoiceNetId]
+                }
+
+                return {
+                  invoiceDetailsByNetId: nextDetails,
+                  selectedInvoiceNetId: invoiceNetId,
+                  selectedPackListNetId: getValidPackListNetId(current.selectedPackListNetId, nextInvoice),
+                }
+              })
             }}
           >
             {invoice.Number || t('Інвойс')} ({formatDate(invoice.DateFrom)})
           </Button>
-          {model.canRemoveInvoice && (
+          {showDelete && model.canRemoveInvoice && (
             <Tooltip label={t('Видалити')}>
               <ActionIcon
                 aria-label={t('Видалити')}
@@ -1169,41 +1217,40 @@ function PackListsPanel({ model }: { model: DirectOrderInvoicesPageModel }) {
   const { t } = useI18n()
 
   return (
-    <Tabs.Panel value="packlists" pt="md">
-      <Card className="app-section-card" withBorder radius="md" padding="md">
-        <Stack gap="md">
-          <PackListSelector model={model} />
-          <QuantityBalanceSummary
-            actualLabel={t('У пак листах')}
-            differenceLabel={t('Залишилось')}
-            expectedLabel={t('В інвойсі')}
-            rows={model.packListBalanceRows}
-          />
-          <Group justify="flex-end">
-            {model.canAddPackList && (
-              <Button
-                disabled={model.isBusy || !model.selectedInvoice}
-                leftSection={<IconPackage size={16} />}
-                variant="light"
-                onClick={() => model.setPageState({ packListEditor: { packList: null } })}
-              >
-                {t('Новий пак лист')}
-              </Button>
-            )}
-          </Group>
-          <DataTable
-            columns={model.packListItemColumns}
-            data={model.selectedPackListItems}
-            emptyText={t('Рядків пак листа немає')}
-            getRowId={getPackListOrderItemRowId}
-            layoutVersion="supply-direct-pack-list-items-2"
-            minWidth={1260}
-            rowClassName={(item) =>
-              model.packListBalanceByInvoiceItemKey.get(getPackingListInvoiceItemKey(item))?.isError
-                ? 'data-table-row-warning'
-                : undefined}
-            tableId="supply-direct-pack-list-items"
-          />
+    <Tabs.Panel style={PANEL_FILL_STYLE} value="packlists" pt="md">
+      <Card className="app-section-card" withBorder radius="md" padding="md" style={CARD_FILL_STYLE}>
+        <Stack gap="md" style={{ flex: 1, minHeight: 0 }}>
+          {/* Legacy contract: pack lists are bound to an invoice, so the invoice
+              selector is available here too (without the delete controls). */}
+          <InvoiceSelector model={model} showDelete={false} />
+          {model.isInvoiceLoading ? (
+            <Group justify="center" py="md" style={{ flex: 1 }}><Loader size="sm" /></Group>
+          ) : (
+            <Stack gap="md" style={{ flex: 1, minHeight: 0 }}>
+              <PackListSelector model={model} />
+              <QuantityBalanceSummary
+                actualLabel={t('У пак листах')}
+                differenceLabel={t('Залишилось')}
+                expectedLabel={t('В інвойсі')}
+                rows={model.packListBalanceRows}
+              />
+              <Box className="supply-grid-fill" style={{ flex: 1, minHeight: 0 }}>
+                <DataTable
+                  columns={model.packListItemColumns}
+                  data={model.selectedPackListItems}
+                  emptyText={t('Рядків пак листа немає')}
+                  getRowId={getPackListOrderItemRowId}
+                  layoutVersion="supply-direct-pack-list-items-2"
+                  minWidth={1260}
+                  rowClassName={(item) =>
+                    model.packListBalanceByInvoiceItemKey.get(getPackingListInvoiceItemKey(item))?.isError
+                      ? 'data-table-row-warning'
+                      : undefined}
+                  tableId="supply-direct-pack-list-items"
+                />
+              </Box>
+            </Stack>
+          )}
           <PackListTotals invoice={model.selectedInvoice} packList={model.selectedPackList} />
         </Stack>
       </Card>
@@ -2190,76 +2237,6 @@ function buildPackListBalanceRows(invoice: SupplyInvoice): PackListBalanceRow[] 
   })
 }
 
-function buildEditableInvoiceItems(invoice: SupplyInvoice | null, orderItems: SupplyOrderItem[]): SupplyInvoiceOrderItem[] {
-  if (!invoice) {
-    return []
-  }
-
-  const existingItems = invoice.SupplyInvoiceOrderItems || []
-  const usedItemKeys = new Set<string>()
-  const rows = orderItems.map((orderItem) => {
-    const existingItem = existingItems.find((item) => isInvoiceItemForOrderItem(item, orderItem))
-    const key = existingItem ? getSupplyInvoiceItemKey(existingItem) : ''
-
-    if (key) {
-      usedItemKeys.add(key)
-    }
-
-    return existingItem || createInvoiceOrderItem(orderItem, 0)
-  })
-  const extraRows = existingItems.filter((item) => !usedItemKeys.has(getSupplyInvoiceItemKey(item)))
-
-  return [...rows, ...extraRows]
-}
-
-function buildEditablePackListItems(
-  packList: PackingList | null,
-  invoice: SupplyInvoice | null,
-): PackingListPackageOrderItem[] {
-  if (!packList || !invoice) {
-    return []
-  }
-
-  const existingItems = packList.PackingListPackageOrderItems || []
-  const usedItemKeys = new Set<string>()
-  const rows = (invoice.SupplyInvoiceOrderItems || []).map((invoiceItem) => {
-    const existingItem = existingItems.find((item) => isPackListItemForInvoiceItem(item, invoiceItem))
-    const key = existingItem ? getPackingListPackageOrderItemKey(existingItem) : ''
-
-    if (key) {
-      usedItemKeys.add(key)
-    }
-
-    return existingItem || createPackListOrderItem(invoiceItem, 0)
-  })
-  const extraRows = existingItems.filter((item) => !usedItemKeys.has(getPackingListPackageOrderItemKey(item)))
-
-  return [...rows, ...extraRows]
-}
-
-function createInvoiceOrderItem(orderItem: SupplyOrderItem, qty: number): SupplyInvoiceOrderItem {
-  return {
-    Product: orderItem.Product || null,
-    ProductIsImported: true,
-    Qty: qty,
-    SupplyOrderItem: orderItem,
-    TotalAmount: (orderItem.UnitPrice || 0) * qty,
-    UnitPrice: orderItem.UnitPrice,
-  }
-}
-
-function createPackListOrderItem(invoiceItem: SupplyInvoiceOrderItem, qty: number): PackingListPackageOrderItem {
-  return {
-    ProductIsImported: invoiceItem.ProductIsImported,
-    Qty: qty,
-    SupplyInvoiceOrderItem: invoiceItem,
-    SupplyInvoiceOrderItemId: invoiceItem.Id,
-    TotalGrossPrice: (invoiceItem.UnitPrice || 0) * qty,
-    TotalNetPrice: (invoiceItem.UnitPrice || 0) * qty,
-    UnitPrice: invoiceItem.UnitPrice,
-  }
-}
-
 function createInvoiceMetadataForm(invoice: SupplyInvoice): InvoiceMetadataForm {
   return {
     dateFrom: formatDateTimeInput(invoice.DateFrom ? new Date(invoice.DateFrom) : new Date()),
@@ -2639,18 +2616,6 @@ function getPackingListInvoiceItemKey(item: PackingListPackageOrderItem): string
   }
 
   return getProductKey(item.SupplyInvoiceOrderItem?.Product)
-}
-
-function getPackingListPackageOrderItemKey(item: PackingListPackageOrderItem): string {
-  if (item.NetUid) {
-    return `pack-item-net-${item.NetUid}`
-  }
-
-  if (item.Id) {
-    return `pack-item-id-${item.Id}`
-  }
-
-  return getPackingListInvoiceItemKey(item)
 }
 
 function getInvoiceOrderItemRowId(item: SupplyInvoiceOrderItem, index: number): string {

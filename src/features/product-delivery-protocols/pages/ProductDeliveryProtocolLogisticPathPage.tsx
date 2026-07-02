@@ -300,7 +300,7 @@ export function ProductDeliveryProtocolLogisticPathPage() {
   const model = useLogisticPathModel(id)
 
   return (
-    <Stack gap="lg">
+    <Stack className="product-delivery-protocol-logistic-path-page" gap="lg">
       <Group justify="space-between" align="center">
         <Group gap="sm" align="center">
           <Tooltip label={t('Назад')}>

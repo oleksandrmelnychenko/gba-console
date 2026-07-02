@@ -12,6 +12,7 @@ import {
   Text,
   TextInput,
   Tooltip,
+  UnstyledButton,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import {
@@ -37,6 +38,7 @@ import { getDirectSupplyOrderById } from '../../supply-ukraine-orders/api/supply
 import type { DirectSupplyOrder } from '../../supply-ukraine-orders/types'
 import { getProtocolByNetId } from '../api/productDeliveryProtocolsApi'
 import {
+  addDynamicPlacementRow,
   createProductIncomeFromPackingListDynamic,
   getOrganizationStorages,
   getPackingListSpecificationProducts,
@@ -46,6 +48,7 @@ import {
   getSupplyOrderInvoiceItems,
   markAllItemsReadyToPlace,
   recordProductIncomeFromPackingListDynamicHistory,
+  updateDynamicPlacementRow,
   updatePackingListInInvoice,
   updateVatOfPackListInvoiceItems,
 } from '../api/protocolProductIncomeApi'
@@ -119,28 +122,6 @@ function splitPlacements(placements: DynamicProductPlacement[]) {
   )
 }
 
-function normalizePlacementsForQty(
-  placements: DynamicProductPlacement[],
-  requestedQty: number,
-): DynamicProductPlacement[] {
-  const { appliedPlacements, appliedQty, draftPlacement } = splitPlacements(placements)
-  const qtyToSet = Math.max(requestedQty, appliedQty)
-  const remainderQty = qtyToSet - appliedQty
-
-  if (remainderQty <= 0) {
-    return appliedPlacements
-  }
-
-  return [
-    ...appliedPlacements,
-    {
-      ...(draftPlacement || { StorageNumber: 'N', RowNumber: 'N', CellNumber: 'N' }),
-      Qty: remainderQty,
-      IsApplied: false,
-    },
-  ]
-}
-
 function sumPendingRowQty(row?: DynamicProductPlacementRow): number {
   if (!row) {
     return 0
@@ -155,6 +136,7 @@ function findRowForItem(
 ): DynamicProductPlacementRow | undefined {
   return column.DynamicProductPlacementRows.find((row) => row.PackingListPackageOrderItemId === item.Id)
 }
+
 
 function buildGridRows(packingList: IncomePackingList): IncomeGridRow[] {
   return packingList.PackingListPackageOrderItems.map((item, index) => {
@@ -232,6 +214,10 @@ type DrawerState = {
   item: PackingListPackageOrderItem
   row: DynamicProductPlacementRow
   columnId: string
+  // Placement capacity for THIS column: item qty minus already-placed qty and
+  // minus the qty pending in the other dynamic columns. The row qty is derived
+  // from the placements sum (legacy contract), so the cap can't be row.Qty.
+  maxQty: number
 }
 
 type PendingDirtyAction =
@@ -613,79 +599,6 @@ function useProtocolIncomeModel(source: ProductIncomeSource) {
   )
   const canUseIncome = source === 'direct-supply-order' || Boolean(protocol?.IsCompleted)
 
-  const applyColumnRowQty = useCallback(
-    (columnId: string, item: PackingListPackageOrderItem, qty: number, placements: DynamicProductPlacement[]) => {
-      setPackingList((current) => {
-        if (!current) {
-          return current
-        }
-
-        const columns = current.DynamicProductPlacementColumns.map((column) => {
-          if (columnKey(column) !== columnId) {
-            return column
-          }
-
-          const existing = findRowForItem(column, item)
-          const nextRow: DynamicProductPlacementRow = existing
-            ? { ...existing, Qty: qty, DynamicProductPlacements: placements }
-            : {
-                Qty: qty,
-                PackingListPackageOrderItemId: item.Id,
-                DynamicProductPlacementColumnId: column.Id,
-                DynamicProductPlacements: placements,
-              }
-
-          const rows = existing
-            ? column.DynamicProductPlacementRows.map((row) => (row === existing ? nextRow : row))
-            : [...column.DynamicProductPlacementRows, nextRow]
-
-          return { ...column, DynamicProductPlacementRows: rows }
-        })
-
-        return { ...current, DynamicProductPlacementColumns: columns }
-      })
-      setDirty(true)
-    },
-    [setDirty, setPackingList],
-  )
-
-  const handleCellChange = useCallback(
-    (gridRow: IncomeGridRow, columnId: string, value: number) => {
-      if (!canUseIncome || isSaving || isPlacementLocked(invoice, packingList)) {
-        return
-      }
-
-      const { item } = gridRow
-      const qtyToSet = Math.trunc(value)
-      const itemQty = item.Qty || 0
-
-      const otherColumnsTotal = Array.from(gridRow.rowsByColumn.entries()).reduce(
-        (total, [key, row]) => total + (key === columnId ? 0 : row.Qty || 0),
-        0,
-      )
-
-      if (!Number.isFinite(qtyToSet) || qtyToSet < 0 || otherColumnsTotal + qtyToSet > itemQty) {
-        notifications.show({ color: 'red', message: t('Невірна кількість') })
-        return
-      }
-
-      const currentRow = gridRow.rowsByColumn.get(columnId)
-      const placements = currentRow ? currentRow.DynamicProductPlacements.map((placement) => ({ ...placement })) : []
-      const appliedQty = sumAppliedPlacements(placements)
-
-      if (qtyToSet < appliedQty) {
-        notifications.show({
-          color: 'red',
-          message: t('Неможливо записати меншу кількість ніж розміщено. Для зменшення, необхідно видалити розміщення'),
-        })
-        return
-      }
-
-      applyColumnRowQty(columnId, item, qtyToSet, normalizePlacementsForQty(placements, qtyToSet))
-    },
-    [applyColumnRowQty, canUseIncome, invoice, isSaving, packingList, t],
-  )
-
   const handleOpenPlacements = useCallback(
     (gridRow: IncomeGridRow, columnId: string, row: DynamicProductPlacementRow) => {
       if (!canUseIncome || isSaving) {
@@ -697,36 +610,16 @@ function useProtocolIncomeModel(source: ProductIncomeSource) {
         return
       }
 
-      if (!row.Qty) {
-        notifications.show({ color: 'red', message: t('Неможливо розмісти нульову кількість') })
-        return
-      }
+      const itemQty = gridRow.item.Qty || 0
+      const otherColumnsTotal = Array.from(gridRow.rowsByColumn.entries()).reduce(
+        (total, [key, otherRow]) => total + (key === columnId ? 0 : otherRow.Qty || 0),
+        0,
+      )
+      const maxQty = Math.max(itemQty - (gridRow.item.PlacedQty || 0) - otherColumnsTotal, 0)
 
-      setDrawer({ item: gridRow.item, row, columnId })
+      setDrawer({ item: gridRow.item, row, columnId, maxQty })
     },
     [canUseIncome, invoice, isSaving, packingList, setDrawer, t],
-  )
-
-  const handleApplyPlacements = useCallback(
-    (placements: DynamicProductPlacement[]) => {
-      if (!canUseIncome || isSaving) {
-        return
-      }
-
-      if (!drawer) {
-        return
-      }
-
-      if (isPlacementLocked(invoice, packingList)) {
-        notifications.show({ color: 'red', message: t('Пак лист уже оприбуткований') })
-        setDrawer(null)
-        return
-      }
-
-      applyColumnRowQty(drawer.columnId, drawer.item, sumPlacements(placements), placements)
-      setDrawer(null)
-    },
-    [applyColumnRowQty, canUseIncome, drawer, invoice, isSaving, packingList, setDrawer, t],
   )
 
   const persistPackingList = useCallback(
@@ -787,6 +680,88 @@ function useProtocolIncomeModel(source: ProductIncomeSource) {
       void persistPackingList(packingList)
     }
   }, [packingList, persistPackingList])
+
+  const handleApplyPlacements = useCallback(
+    async (placements: DynamicProductPlacement[]) => {
+      if (!canUseIncome || isSaving || !drawer || !packingList) {
+        return
+      }
+
+      if (isPlacementLocked(invoice, packingList)) {
+        notifications.show({ color: 'red', message: t('Пак лист уже оприбуткований') })
+        setDrawer(null)
+        return
+      }
+
+      const column = packingList.DynamicProductPlacementColumns.find(
+        (candidate) => columnKey(candidate) === drawer.columnId,
+      )
+
+      if (!column) {
+        setDrawer(null)
+        return
+      }
+
+      const { columnId, item, row } = drawer
+
+      setDrawer(null)
+      setSaving(true)
+      setError(null)
+
+      try {
+        // Legacy contract: the placements panel persists IMMEDIATELY through the
+        // dedicated rows endpoints (packinglists/update stores only the row qty,
+        // so edited placements would be lost) — no page-level dirty state.
+        const payload: DynamicProductPlacementRow = {
+          ...row,
+          Qty: sumPlacements(placements),
+          PackingListPackageOrderItemId: item.Id,
+          PackingListPackageOrderItem: item,
+          DynamicProductPlacementColumnId: column.Id,
+          DynamicProductPlacements: placements,
+        }
+
+        const savedRow = row.Id && row.Id > 0
+          ? await updateDynamicPlacementRow(payload)
+          : await addDynamicPlacementRow(payload)
+
+        const nextRow: DynamicProductPlacementRow = {
+          ...savedRow,
+          PackingListPackageOrderItemId: savedRow.PackingListPackageOrderItemId || item.Id,
+        }
+
+        setPackingList((current) => {
+          if (!current) {
+            return current
+          }
+
+          const columns = current.DynamicProductPlacementColumns.map((iterColumn) => {
+            if (columnKey(iterColumn) !== columnId) {
+              return iterColumn
+            }
+
+            const hasRow = iterColumn.DynamicProductPlacementRows.some(
+              (iterRow) => iterRow.PackingListPackageOrderItemId === item.Id,
+            )
+            const rows = hasRow
+              ? iterColumn.DynamicProductPlacementRows.map((iterRow) =>
+                  iterRow.PackingListPackageOrderItemId === item.Id ? nextRow : iterRow,
+                )
+              : [...iterColumn.DynamicProductPlacementRows, nextRow]
+
+            return { ...iterColumn, DynamicProductPlacementRows: rows }
+          })
+
+          return { ...current, DynamicProductPlacementColumns: columns }
+        })
+      } catch (saveError) {
+        setError(saveError instanceof Error ? saveError.message : t('Не вдалося зберегти розміщення'))
+      } finally {
+        setSaving(false)
+      }
+    },
+    [canUseIncome, drawer, invoice, isSaving, packingList, setDrawer, setError, setPackingList, setSaving, t],
+  )
 
   const closePzDownload = useCallback(() => {
     pzDownloadRequestRef.current += 1
@@ -941,10 +916,11 @@ function useProtocolIncomeModel(source: ProductIncomeSource) {
             const nextQty = appliedQty + qtyToSet
 
             return existing
-              ? { ...existing, Qty: nextQty, DynamicProductPlacements: nextPlacements }
+              ? { ...existing, Qty: nextQty, DynamicProductPlacements: nextPlacements, PackingListPackageOrderItem: item }
               : {
                   Qty: nextQty,
                   PackingListPackageOrderItemId: item.Id,
+                  PackingListPackageOrderItem: item,
                   DynamicProductPlacementColumnId: iterColumn.Id,
                   DynamicProductPlacements: nextPlacements,
                 }
@@ -1143,7 +1119,7 @@ function useProtocolIncomeModel(source: ProductIncomeSource) {
     cancelDiscardChanges, columnModalOpen, columnToRemove, confirmCarryOut, confirmDiscardChanges, confirmRemoveColumn,
     drawer, error, fromDate, gridRows,
     closePzDownload, handleAddColumn, handleAllReadyToPlace, handleApplyPlacements, handleCalculateVat, handleCarryOut,
-    handleCellChange, handleDownloadPzDocument, handleMoveRemnants, handleOpenPlacements,
+    handleDownloadPzDocument, handleMoveRemnants, handleOpenPlacements,
     handleProductIncome,
     canUseIncome, handleSave, invoice, isDirty, isLoading, isSaving, navigate: requestNavigate, packingList, pendingDirtyAction,
     isInvoiceAllNotPlaced: isInvoiceAllNotPlaced(invoice, packingList),
@@ -1412,40 +1388,39 @@ function useProductIncomeColumns({
           </Group>
         ),
         cell: (gridRow) => {
-          const row = gridRow.rowsByColumn.get(key)
-
-          if (!row) {
-            return null
+          // Legacy contract: the cell does NOT edit the qty inline — clicking it
+          // opens the placements panel (add/remove/edit cells + quantities) and
+          // the row qty is derived from the placements sum. Items without a row
+          // in this column get a synthetic empty row so placements can be added.
+          const row: DynamicProductPlacementRow = gridRow.rowsByColumn.get(key) || {
+            Qty: 0,
+            PackingListPackageOrderItemId: gridRow.item.Id,
+            DynamicProductPlacements: [],
           }
+          const canOpen = canUseIncome && !isPlaced && !model.isSaving
 
           return (
-            <Group gap="xs" wrap="nowrap">
-              <NumberInput
-                allowDecimal={false}
-                disabled={!canUseIncome || isPlaced || model.isSaving}
-                hideControls
-                min={0}
-                size="xs"
-                value={row.Qty || 0}
-                w={80}
-                onBlur={(event) => {
-                  const nextValue = Number(event.currentTarget.value)
-                  if (nextValue !== (row.Qty || 0)) {
-                    model.handleCellChange(gridRow, key, nextValue)
-                  }
-                }}
-              />
-              <ActionIcon
-                aria-label={t('Оприходування')}
-                color="blue"
-                disabled={!canUseIncome || isPlaced || model.isSaving}
-                size="sm"
-                variant="subtle"
-                onClick={() => model.handleOpenPlacements(gridRow, key, row)}
-              >
-                <IconColumnInsertRight size={16} />
-              </ActionIcon>
-            </Group>
+            <UnstyledButton
+              disabled={!canOpen}
+              style={{ cursor: canOpen ? 'pointer' : 'default', display: 'block', width: '100%' }}
+              onClick={() => canOpen && model.handleOpenPlacements(gridRow, key, row)}
+            >
+              <Stack gap={2}>
+                <Text fw={600} size="sm">
+                  {row.Qty || 0}
+                </Text>
+                {/* Legacy cell text: Storage-Row-Cell - Qty per placement */}
+                {row.DynamicProductPlacements.map((placement, placementIndex) => (
+                  <Text
+                    key={placement.NetUid || placement.Id || placementIndex}
+                    c={placement.IsApplied ? 'teal' : 'dimmed'}
+                    size="xs"
+                  >
+                    {`${placement.StorageNumber || 'N'}-${placement.RowNumber ? `${placement.RowNumber}-` : ''}${placement.CellNumber || 'N'} - ${placement.Qty || 0}`}
+                  </Text>
+                ))}
+              </Stack>
+            </UnstyledButton>
           )
         },
       }
@@ -1885,6 +1860,7 @@ function ProductIncomeDialogs({
       <ProtocolIncomePlacementDrawer
         columnId={model.drawer?.columnId || null}
         item={model.drawer?.item || null}
+        maxQty={model.drawer?.maxQty || 0}
         opened={Boolean(model.drawer)}
         row={model.drawer?.row || null}
         selectedStorage={model.selectedStorage}

@@ -1,4 +1,4 @@
-import { Alert, Button, FileInput, Group, Select, Stack, Textarea, TextInput } from '@mantine/core'
+import { Alert, Button, Group, Select, Stack, Textarea, TextInput } from '@mantine/core'
 import { IconAlertCircle } from '@tabler/icons-react'
 import { useMemo, useState } from 'react'
 import { formatLocalDateTime, formatLocalInputDateTime } from '../../../shared/date/dateTime'
@@ -19,7 +19,6 @@ export type NewProductDeliveryProtocolModalProps = {
 
 type NewProductDeliveryProtocolFormState = {
   comment: string
-  documents: File[]
   fromDate: string
   organizationId: string | null
   submitted: boolean
@@ -29,7 +28,6 @@ type NewProductDeliveryProtocolFormState = {
 function createInitialFormState(): NewProductDeliveryProtocolFormState {
   return {
     comment: '',
-    documents: [],
     fromDate: formatLocalDateTime(new Date()).slice(0, 16),
     organizationId: null,
     submitted: false,
@@ -80,7 +78,7 @@ function NewProductDeliveryProtocolForm({
 }: Omit<NewProductDeliveryProtocolModalProps, 'opened'>) {
   const { t } = useI18n()
   const [form, setForm] = useState(createInitialFormState)
-  const { comment, documents, fromDate, organizationId, submitted, transportationType } = form
+  const { comment, fromDate, organizationId, submitted, transportationType } = form
 
   const organizationOptions = useMemo(
     () =>
@@ -122,7 +120,6 @@ function NewProductDeliveryProtocolForm({
 
     onCreate({
       Comment: comment.trim() || undefined,
-      Documents: documents,
       FromDate: formatLocalInputDateTime(fromDate),
       Organization: organization,
       TransportationType: Number(transportationType) as SupplyTransportationType,
@@ -176,16 +173,6 @@ function NewProductDeliveryProtocolForm({
         minRows={2}
         value={comment}
         onChange={(event) => { const nextValue = event.currentTarget.value; setForm((current) => ({ ...current, comment: nextValue })) }}
-      />
-
-      <FileInput
-        clearable
-        disabled={isCreating}
-        label={t('Документи')}
-        multiple
-        placeholder={t('Додати файли')}
-        value={documents}
-        onChange={(files) => setForm((current) => ({ ...current, documents: files || [] }))}
       />
 
       <Group justify="flex-end" gap="sm">
