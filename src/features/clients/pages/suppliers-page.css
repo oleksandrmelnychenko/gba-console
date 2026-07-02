@@ -81,7 +81,7 @@
 
 .suppliers-filter-bar .mantine-InputWrapper-label,
 .suppliers-filter-row .sales-filter-label {
-  color: var(--mantine-color-gray-6);
+  color: var(--mantine-color-gray-9);
   display: block;
   font-family: var(--font-mono);
   font-size: 12px;

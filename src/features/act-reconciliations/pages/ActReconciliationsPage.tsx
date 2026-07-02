@@ -2,7 +2,6 @@ import {
   ActionIcon,
   Alert,
   Box,
-  Card,
   Group,
   Stack,
   Text,
@@ -10,7 +9,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { IconAlertCircle, IconEye, IconRefresh, IconRestore } from '@tabler/icons-react'
-import { useEffect, useMemo, useReducer } from 'react'
+import { useEffect, useMemo, useReducer, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { formatLocalDate, SYNC_DATA_RANGE_START } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -20,12 +19,16 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { getActReconciliations } from '../api/actReconciliationsApi'
 import type { ActReconciliation } from '../types'
+import '../../../shared/ui/console-table-page.css'
 import './act-reconciliations-page.css'
 
 type FilterDraft = {
   from: string
   to: string
 }
+
+/* Numbers / codes / dates in the tables read in mono (docs/ui-patterns.md §5.1). */
+const ACT_MONO_STYLE = { fontFamily: 'var(--font-mono)', letterSpacing: 0 } as const
 
 const RECONCILIATIONS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -169,6 +172,7 @@ export function ActReconciliationsPage() {
 
 function ActReconciliationsPageView({ model }: { model: ReturnType<typeof useActReconciliationsPageModel> }) {
   const { t } = useI18n()
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const {
     columns,
     error,
@@ -183,28 +187,26 @@ function ActReconciliationsPageView({ model }: { model: ReturnType<typeof useAct
   } = model
 
   return (
-    <Stack gap={6}>
-      <Card className="app-data-card" withBorder radius="md" padding={0}>
-        <div className="app-filter-bar">
-          <Group align="end" gap="sm" wrap="nowrap" justify="space-between" className="act-reconciliations-filter-row">
-            <Group align="end" gap="sm" wrap="nowrap">
-              <TextInput
-                label={t('Від')}
-                max={filterDraft.to || undefined}
-                type="date"
-                value={filterDraft.from}
-                w={150}
-                onChange={(event) => applyFilters({ ...filterDraft, from: event.currentTarget.value })}
-              />
-              <TextInput
-                label={t('До')}
-                min={filterDraft.from || undefined}
-                type="date"
-                value={filterDraft.to}
-                w={150}
-                onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
-              />
-            </Group>
+    <Stack className="act-reconciliations-page console-table-page" gap={6}>
+      <div className="console-table-shell act-reconciliations-shell">
+        <div className="app-filter-bar act-reconciliations-filter-bar">
+          <div className="act-reconciliations-filter-row">
+            <TextInput
+              className="act-reconciliations-date-input"
+              label={t('Від')}
+              max={filterDraft.to || undefined}
+              type="date"
+              value={filterDraft.from}
+              onChange={(event) => applyFilters({ ...filterDraft, from: event.currentTarget.value })}
+            />
+            <TextInput
+              className="act-reconciliations-date-input"
+              label={t('До')}
+              min={filterDraft.from || undefined}
+              type="date"
+              value={filterDraft.to}
+              onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
+            />
             <div className="app-filter-actions">
               <Tooltip label={t('Скинути')}>
                 <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
@@ -224,30 +226,34 @@ function ActReconciliationsPageView({ model }: { model: ReturnType<typeof useAct
                 </ActionIcon>
               </Tooltip>
             </div>
-          </Group>
+          </div>
+          <div ref={setTableToolbarSlot} className="act-reconciliations-table-toolbar-slot" />
         </div>
 
         {(error || filterError) && (
-          <Alert m="md" color={filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert className="console-table-alert" color={filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
             {filterError || error}
           </Alert>
         )}
 
-        <DataTable
-          columns={columns}
-          data={reconciliations}
-          defaultLayout={RECONCILIATIONS_TABLE_DEFAULT_LAYOUT}
-          emptyText={t('Актів звірок не знайдено')}
-          getRowId={(reconciliation, index) => String(reconciliation.NetUid || reconciliation.Id || index)}
-          isLoading={isLoading}
-          layoutVersion="act-reconciliations-table-1"
-          loadingText={t('Завантаження актів звірок')}
-          maxHeight="calc(100vh - 320px)"
-          minWidth={1200}
-          tableId="act-reconciliations"
-          onRowClick={openDetail}
-        />
-      </Card>
+        <div className="act-reconciliations-page__table console-table-body">
+          <DataTable
+            columns={columns}
+            data={reconciliations}
+            defaultLayout={RECONCILIATIONS_TABLE_DEFAULT_LAYOUT}
+            emptyText={t('Актів звірок не знайдено')}
+            getRowId={(reconciliation, index) => String(reconciliation.NetUid || reconciliation.Id || index)}
+            height="100%"
+            isLoading={isLoading}
+            layoutVersion="act-reconciliations-table-2"
+            minWidth={1280}
+            showLayoutControls
+            tableId="act-reconciliations"
+            toolbarPortalTarget={tableToolbarSlot}
+            onRowClick={openDetail}
+          />
+        </div>
+      </div>
     </Stack>
   )
 }
@@ -278,7 +284,7 @@ function useReconciliationColumns(
         enableHiding: false,
         accessor: (reconciliation) => rowSummaries.get(reconciliation)?.index || 0,
         cell: (reconciliation) => (
-          <Text c="dimmed" size="sm">
+          <Text c="dimmed" size="sm" style={ACT_MONO_STYLE}>
             {rowSummaries.get(reconciliation)?.index || ''}
           </Text>
         ),
@@ -289,7 +295,11 @@ function useReconciliationColumns(
         width: 168,
         minWidth: 148,
         accessor: (reconciliation) => getDateTime(reconciliation.FromDate),
-        cell: (reconciliation) => <Text fw={600}>{formatDateTime(reconciliation.FromDate)}</Text>,
+        cell: (reconciliation) => {
+          const value = formatDateTime(reconciliation.FromDate)
+
+          return <Text fw={600} style={ACT_MONO_STYLE} title={nativeTitle(value)}>{value}</Text>
+        },
       },
       {
         id: 'number',
@@ -297,7 +307,11 @@ function useReconciliationColumns(
         width: 168,
         minWidth: 140,
         accessor: (reconciliation) => reconciliation.Number || reconciliation.NetUid,
-        cell: (reconciliation) => <Text fw={700}>{displayValue(reconciliation.Number)}</Text>,
+        cell: (reconciliation) => {
+          const value = displayValue(reconciliation.Number)
+
+          return <Text fw={600} style={ACT_MONO_STYLE} title={nativeTitle(value)}>{value}</Text>
+        },
       },
       {
         id: 'invNumber',
@@ -305,7 +319,11 @@ function useReconciliationColumns(
         width: 220,
         minWidth: 160,
         accessor: (reconciliation) => rowSummaries.get(reconciliation)?.invNumber,
-        cell: (reconciliation) => displayValue(rowSummaries.get(reconciliation)?.invNumber),
+        cell: (reconciliation) => {
+          const value = displayValue(rowSummaries.get(reconciliation)?.invNumber)
+
+          return <span style={ACT_MONO_STYLE} title={nativeTitle(value)}>{value}</span>
+        },
       },
       {
         id: 'organization',
@@ -313,7 +331,11 @@ function useReconciliationColumns(
         width: 260,
         minWidth: 180,
         accessor: (reconciliation) => rowSummaries.get(reconciliation)?.organizationName,
-        cell: (reconciliation) => displayValue(rowSummaries.get(reconciliation)?.organizationName),
+        cell: (reconciliation) => {
+          const value = displayValue(rowSummaries.get(reconciliation)?.organizationName)
+
+          return <span title={nativeTitle(value)}>{value}</span>
+        },
       },
       {
         id: 'difference',
@@ -330,13 +352,19 @@ function useReconciliationColumns(
       {
         id: 'comment',
         header: t('Коментар'),
+        width: 260,
         minWidth: 200,
+        fill: true,
         accessor: (reconciliation) => reconciliation.Comment,
-        cell: (reconciliation) => (
-          <Text size="sm" lineClamp={2}>
-            {displayValue(reconciliation.Comment)}
-          </Text>
-        ),
+        cell: (reconciliation) => {
+          const value = displayValue(reconciliation.Comment)
+
+          return (
+            <Text lineClamp={2} title={nativeTitle(value)}>
+              {value}
+            </Text>
+          )
+        },
       },
       {
         id: 'actions',
@@ -351,16 +379,15 @@ function useReconciliationColumns(
         enableSorting: false,
         cell: (reconciliation) => (
           <Box onClick={(event) => event.stopPropagation()}>
-            <Tooltip label={t('Огляд')}>
-              <ActionIcon
-                aria-label={t('Огляд')}
-                color="gray"
-                variant="subtle"
-                onClick={() => onOpenDetail(reconciliation)}
-              >
-                <IconEye size={18} />
-              </ActionIcon>
-            </Tooltip>
+            <ActionIcon
+              aria-label={t('Огляд')}
+              color="gray"
+              title={t('Огляд')}
+              variant="subtle"
+              onClick={() => onOpenDetail(reconciliation)}
+            >
+              <IconEye size={18} />
+            </ActionIcon>
           </Box>
         ),
       },
@@ -374,13 +401,13 @@ function DifferenceCell({ summary }: { summary?: RowSummary }) {
   const positiveSum = summary?.positiveSum || 0
 
   if (negativeSum === 0 && positiveSum === 0) {
-    return <Text size="sm">0</Text>
+    return <Text size="sm" style={ACT_MONO_STYLE}>0</Text>
   }
 
   return (
     <Group gap={6} wrap="nowrap">
       {negativeSum > 0 && (
-        <Text c="red" fw={600} size="sm">
+        <Text c="red" fw={600} size="sm" style={ACT_MONO_STYLE}>
           - {negativeSum}
         </Text>
       )}
@@ -390,7 +417,7 @@ function DifferenceCell({ summary }: { summary?: RowSummary }) {
         </Text>
       )}
       {positiveSum > 0 && (
-        <Text c="teal" fw={600} size="sm">
+        <Text c="teal" fw={600} size="sm" style={ACT_MONO_STYLE}>
           + {positiveSum}
         </Text>
       )}
@@ -459,7 +486,7 @@ function getDateTime(value: unknown): number {
 
 function formatDateTime(value?: Date | string): string {
   if (!value) {
-    return '-'
+    return ''
   }
 
   const date = value instanceof Date ? value : new Date(value)
@@ -473,8 +500,12 @@ function formatDateTime(value?: Date | string): string {
 
 function displayValue(value: unknown): string {
   if (value === null || value === undefined || value === '') {
-    return '-'
+    return ''
   }
 
   return String(value)
+}
+
+function nativeTitle(value: string): string | undefined {
+  return value ? value : undefined
 }
