@@ -1145,24 +1145,6 @@
   border-color: transparent;
 }
 
-.new-sale-agreement-card__rail {
-  background: rgba(206, 212, 218, 0.85);
-  border-radius: 0;
-  margin: 0;
-}
-
-.new-sale-agreement-card.is-selected .new-sale-agreement-card__rail {
-  background: var(--brand-orange);
-}
-
-.new-sale-agreement-card.is-overdue .new-sale-agreement-card__rail {
-  background: var(--mantine-color-red-5);
-}
-
-.new-sale-agreement-card.is-inactive .new-sale-agreement-card__rail {
-  background: var(--mantine-color-gray-4);
-}
-
 .new-sale-agreement-card__content {
   align-content: start;
   display: grid;
@@ -1202,33 +1184,41 @@
 }
 
 .new-sale-agreement-card__status {
+  align-self: start;
   align-items: center;
-  color: #0ca678;
+  background: var(--mantine-color-blue-0);
+  border: 1px solid var(--mantine-color-blue-2);
+  border-radius: var(--mantine-radius-sm);
+  color: var(--mantine-color-blue-8);
   display: inline-flex;
+  font-family: var(--font-mono);
   font-size: 8.5px;
-  font-weight: 750;
-  gap: 5px;
+  font-weight: 600;
+  gap: 0;
+  justify-content: flex-start;
+  letter-spacing: 0;
   line-height: 1;
-  padding-top: 2px;
+  max-width: 100%;
+  min-height: 18px;
+  padding: 0 7px;
   text-transform: uppercase;
   white-space: nowrap;
 }
 
 .new-sale-agreement-card__status::before {
-  background: currentColor;
-  border-radius: 999px;
-  content: '';
-  height: 5px;
-  opacity: 0.72;
-  width: 5px;
+  content: none;
 }
 
 .new-sale-agreement-card.is-overdue .new-sale-agreement-card__status {
-  color: var(--mantine-color-red-7);
+  background: var(--mantine-color-blue-0);
+  border-color: var(--mantine-color-blue-2);
+  color: var(--mantine-color-blue-8);
 }
 
 .new-sale-agreement-card.is-inactive .new-sale-agreement-card__status {
-  color: var(--mantine-color-gray-6);
+  background: var(--mantine-color-blue-0);
+  border-color: var(--mantine-color-blue-2);
+  color: var(--mantine-color-blue-8);
 }
 
 .new-sale-agreement-card__title-row {
@@ -3673,73 +3663,138 @@
 }
 
 .new-sale-agreements-strip {
+  align-items: stretch;
   gap: 8px;
-  padding: 0 2px 7px;
+  padding: 6px 2px 9px;
+  position: relative;
+}
+
+.new-sale-agreements-strip::before {
+  content: none;
 }
 
 .new-sale-agreement-card {
   background: var(--mantine-color-white);
-  border: 0;
-  border-bottom: 1px solid var(--mantine-color-gray-2);
-  border-radius: 0;
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
   box-shadow: none;
-  flex-basis: 380px;
+  flex: 0 0 380px;
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 104px;
+  overflow: visible;
+}
+
+.new-sale-agreement-card::before,
+.new-sale-agreement-card + .new-sale-agreement-card::before {
+  content: none;
 }
 
 .new-sale-agreement-card:hover,
 .new-sale-agreement-card:focus-visible {
-  background: var(--mantine-color-gray-0);
+  background: var(--mantine-color-white);
+  border-color: var(--mantine-color-gray-3);
   box-shadow: none;
   transform: none;
 }
 
 .new-sale-agreement-card.is-selected {
   background: var(--mantine-color-white);
+  border-color: var(--brand-orange);
+}
+
+.new-sale-agreement-card.is-inactive:not(.is-selected) {
+  border-color: var(--mantine-color-gray-1);
+}
+
+.new-sale-agreement-card.is-overdue:not(.is-selected) {
+  border-color: var(--mantine-color-gray-2);
 }
 
 .new-sale-agreement-card.is-selected::after {
   background: var(--brand-orange);
   border-radius: 999px;
   content: '';
-  height: 7px;
+  height: 6px;
   position: absolute;
   right: 9px;
   top: 9px;
-  width: 7px;
-}
-
-.new-sale-agreement-card__rail {
-  background: var(--mantine-color-gray-3);
-  width: 2px;
-}
-
-.new-sale-agreement-card.is-selected .new-sale-agreement-card__rail {
-  background: var(--brand-orange);
-}
-
-.new-sale-agreement-card.is-overdue .new-sale-agreement-card__rail {
-  background: var(--mantine-color-red-5);
-}
-
-.new-sale-agreement-card.is-inactive .new-sale-agreement-card__rail {
-  background: var(--mantine-color-gray-4);
+  width: 6px;
 }
 
 .new-sale-agreement-card__content {
-  gap: 4px;
-  padding: 8px 12px 7px 10px;
+  display: grid;
+  grid-template-areas:
+    'head'
+    'origin'
+    'limits';
+  grid-template-columns: minmax(0, 1fr);
+  row-gap: 5px;
+  padding: 14px 14px 11px;
+}
+
+.new-sale-agreement-card__head {
+  display: block;
+  grid-area: head;
+  min-width: 0;
+  padding-right: 108px;
+}
+
+.new-sale-agreement-card__identity {
+  gap: 2px;
 }
 
 .new-sale-agreement-card__name {
-  color: var(--mantine-color-gray-9);
-  font-size: 13px;
-  font-weight: 650;
+  color: var(--mantine-color-gray-7);
+  font-family: var(--font-mono);
+  font-size: 13.5px;
+  font-weight: 700;
+  line-height: 1.1;
 }
 
 .new-sale-agreement-card__organization,
 .new-sale-agreement-card__origin {
-  color: var(--mantine-color-gray-5);
-  font-weight: 500;
+  color: var(--mantine-color-gray-7);
+  font-size: 10px;
+  font-weight: 550;
+  line-height: 1.12;
+}
+
+.new-sale-agreement-card__status {
+  background: var(--mantine-color-blue-0);
+  border: 1px solid var(--mantine-color-blue-2);
+  border-radius: var(--mantine-radius-sm);
+  color: var(--mantine-color-blue-8);
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  font-weight: 600;
+  gap: 0;
+  justify-content: flex-start;
+  letter-spacing: 0;
+  max-width: 100%;
+  min-height: 18px;
+  padding: 0 7px;
+  position: absolute;
+  right: 22px;
+  top: 10px;
+  text-transform: uppercase;
+  width: max-content;
+  z-index: 1;
+}
+
+.new-sale-agreement-card__status::before {
+  content: none;
+}
+
+.new-sale-agreement-card.is-overdue .new-sale-agreement-card__status {
+  background: var(--mantine-color-blue-0);
+  border-color: var(--mantine-color-blue-2);
+  color: var(--mantine-color-blue-8);
+}
+
+.new-sale-agreement-card.is-inactive .new-sale-agreement-card__status {
+  background: var(--mantine-color-blue-0);
+  border-color: var(--mantine-color-blue-2);
+  color: var(--mantine-color-blue-8);
 }
 
 .new-sale-agreement-card__currency,
@@ -3748,18 +3803,88 @@
   font-family: var(--font-mono);
 }
 
+.new-sale-agreement-card__currency {
+  background: var(--mantine-color-teal-0);
+  border: 1px solid var(--mantine-color-teal-2);
+  color: var(--mantine-color-teal-8);
+  font-size: 8.5px;
+  font-weight: 650;
+  padding: 3px 6px;
+}
+
+.new-sale-agreement-card__limits {
+  align-items: end;
+  border-top: 0;
+  border-left: 0;
+  display: grid;
+  gap: 8px;
+  grid-area: limits;
+  grid-template-columns: repeat(3, 1fr);
+  margin-top: 8px;
+  min-height: 28px;
+  min-width: 0;
+  padding-top: 0;
+}
+
+.new-sale-agreement-card__metric {
+  align-items: flex-start;
+  background: var(--mantine-color-gray-0);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 6px;
+  flex-direction: column-reverse;
+  gap: 3px;
+  justify-content: end;
+  min-width: 0;
+  padding: 5px 10px;
+}
+
+.new-sale-agreement-card__metric:first-child {
+  padding-left: 10px;
+}
+
+.new-sale-agreement-card__metric:last-child {
+  padding-right: 10px;
+}
+
+.new-sale-agreement-card__metric + .new-sale-agreement-card__metric::before {
+  content: none;
+}
+
+.new-sale-agreement-card__origin {
+  grid-area: origin;
+  min-width: 0;
+}
+
+.new-sale-agreement-card__origin::before {
+  content: none;
+}
+
 .new-sale-agreement-card__metric span,
 .new-sale-hero-agreement__metric > span {
-  color: var(--mantine-color-gray-5);
+  color: var(--mantine-color-gray-7);
   font-family: var(--font-mono);
-  font-size: 8.5px;
-  font-weight: 500;
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1;
 }
 
 .new-sale-agreement-card__metric strong,
 .new-sale-hero-agreement__metric strong {
+  color: var(--mantine-color-gray-8);
   font-family: var(--font-mono);
+  font-size: 11px;
   font-weight: 600;
+  line-height: 1;
+}
+
+.new-sale-agreement-card__metric.is-danger span,
+.new-sale-agreement-card__metric.is-danger strong {
+  color: var(--mantine-color-red-6);
+}
+
+.new-sale-agreement-card__metric.is-danger span {
+  color: var(--mantine-color-gray-7);
 }
 
 .new-sale-hero-agreements-dropdown {
@@ -4343,17 +4468,17 @@
 }
 
 .new-sale-agreements-strip {
-  min-height: 86px;
-  padding-bottom: 2px;
+  min-height: 118px;
+  padding-bottom: 9px;
 }
 
 .new-sale-agreement-card {
-  flex-basis: 390px;
-  min-height: 78px;
+  flex-basis: 380px;
+  min-height: 104px;
 }
 
 .new-sale-agreement-card__head {
-  gap: 14px;
+  gap: 12px;
 }
 
 .new-sale-agreement-card__status {
@@ -4363,13 +4488,14 @@
 }
 
 .new-sale-agreement-card__limits {
-  border-top: 1px solid var(--mantine-color-gray-2);
-  margin-top: 2px;
-  padding-top: 6px;
+  border-top: 0;
+  border-left: 0;
+  margin-top: 8px;
+  padding-top: 0;
 }
 
 .new-sale-agreement-card__metric {
-  gap: 7px;
+  gap: 3px;
 }
 
 .new-sale-register {

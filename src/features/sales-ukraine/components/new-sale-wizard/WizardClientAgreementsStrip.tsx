@@ -1,5 +1,4 @@
 import { Box, Group, Text, Tooltip, UnstyledButton } from '@mantine/core'
-import { IconHelpCircle } from '@tabler/icons-react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import type { ClientAgreement } from '../../../clients/types'
 import {
@@ -71,7 +70,7 @@ function WizardAgreementCard({
       ].filter(Boolean).join(' ')}
       onClick={() => onSelect(clientAgreement)}
     >
-      <Box className="new-sale-agreement-card__rail" />
+      <span className="new-sale-agreement-card__status">{statusLabel}</span>
       <Box className="new-sale-agreement-card__content">
         <Box className="new-sale-agreement-card__head">
           <Box className="new-sale-agreement-card__identity">
@@ -86,15 +85,13 @@ function WizardAgreementCard({
             </Text>
           </Box>
 
-          <span className="new-sale-agreement-card__status">{statusLabel}</span>
         </Box>
 
         {clientAgreement.OriginalClientName && (
           <Tooltip label={clientAgreement.OriginalClientName} multiline maw={320} position="top">
-            <Group className="new-sale-agreement-card__origin" gap={4} wrap="nowrap">
-              <IconHelpCircle size={12} />
-              <Text truncate>{clientAgreement.OriginalClientName}</Text>
-            </Group>
+            <Text className="new-sale-agreement-card__origin" truncate>
+              {clientAgreement.OriginalClientName}
+            </Text>
           </Tooltip>
         )}
 
