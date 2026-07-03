@@ -1,6 +1,5 @@
 import { Box, Group, Popover, Stack, Text } from '@mantine/core'
 import {
-  IconAlertTriangle,
   IconMail,
   IconMapPin,
   IconPhone,
@@ -8,24 +7,23 @@ import {
 import { useEffect, useState, type ReactNode } from 'react'
 import { formatLocalDate } from '../../../../shared/date/dateTime'
 import { useI18n } from '../../../../shared/i18n/useI18n'
-import type { Client, ClientAgreement, ClientInDebt } from '../../../clients/types'
+import type { Client, ClientAgreement } from '../../../clients/types'
 import { WizardAgreementItem } from './WizardAgreementItem'
 import {
   getWizardClientAgreements,
-  getWizardClientGroupedDebts,
   getWizardSalesRegister,
   mapWizardSaleRegisterItems,
   WIZARD_SALE_REGISTER_STATUS_ALL,
 } from './wizardClientStepApi'
-import { getWizardClientDebtTotal } from './wizardClientStepModel'
 import { getWizardHeaderClient } from './wizardSaleHeaderApi'
+
+const metricCountFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 0 })
 
 export function WizardClientHeroHeader({
   activeAgreementNetId,
   agreements,
   client,
   clientNetId,
-  debts,
   headerClose,
   headerTools,
   registryCount,
@@ -34,7 +32,6 @@ export function WizardClientHeroHeader({
   agreements?: ClientAgreement[]
   client?: Client | null
   clientNetId?: string | null
-  debts?: ClientInDebt[]
   headerClose?: ReactNode
   headerTools?: ReactNode
   registryCount?: number
@@ -42,7 +39,6 @@ export function WizardClientHeroHeader({
   const { t } = useI18n()
   const [loadedClient, setLoadedClient] = useState<{ key: string; value: Client | null } | null>(null)
   const [loadedAgreements, setLoadedAgreements] = useState<{ key: string; value: ClientAgreement[] } | null>(null)
-  const [loadedDebts, setLoadedDebts] = useState<{ key: string; value: ClientInDebt[] } | null>(null)
   const [loadedRegistryCount, setLoadedRegistryCount] = useState<{ key: string; value: number } | null>(null)
 
   const resolvedClient = client ?? (clientNetId && loadedClient?.key === clientNetId ? loadedClient.value : null)
@@ -107,35 +103,6 @@ export function WizardClientHeroHeader({
   }, [agreements, resolvedNetId])
 
   useEffect(() => {
-    if (debts || !resolvedNetId) {
-      return
-    }
-
-    const id = resolvedNetId
-    let cancelled = false
-
-    async function load() {
-      try {
-        const next = await getWizardClientGroupedDebts(id)
-
-        if (!cancelled) {
-          setLoadedDebts({ key: id, value: next })
-        }
-      } catch {
-        if (!cancelled) {
-          setLoadedDebts({ key: id, value: [] })
-        }
-      }
-    }
-
-    void load()
-
-    return () => {
-      cancelled = true
-    }
-  }, [debts, resolvedNetId])
-
-  useEffect(() => {
     if (typeof registryCount === 'number' || !resolvedNetId) {
       return
     }
@@ -179,11 +146,9 @@ export function WizardClientHeroHeader({
   }
 
   const visibleAgreements = agreements ?? (resolvedNetId && loadedAgreements?.key === resolvedNetId ? loadedAgreements.value : [])
-  const visibleDebts = debts ?? (resolvedNetId && loadedDebts?.key === resolvedNetId ? loadedDebts.value : [])
   const visibleRegistryCount = registryCount ?? (resolvedNetId && loadedRegistryCount?.key === resolvedNetId ? loadedRegistryCount.value : 0)
   const clientTitle = resolvedClient.FullName || resolvedClient.Name || ''
   const clientCode = resolvedClient.RegionCode?.Value || resolvedClient.ClientNumber || resolvedClient.USREOU || ''
-  const clientDebtTotal = visibleDebts.reduce((sum, debt) => sum + getWizardClientDebtTotal(debt), 0)
   const clientContactCandidates: Array<{ icon: ReactNode; value?: string | null }> = [
     {
       icon: <IconPhone size={13} />,
@@ -201,11 +166,6 @@ export function WizardClientHeroHeader({
   const clientContacts = clientContactCandidates.filter((item): item is { icon: ReactNode; value: string } =>
     Boolean(item.value),
   )
-  const clientKind = resolvedClient.IsTradePoint
-    ? t('Торгова точка')
-    : resolvedClient.IsSubClient
-      ? t('Підклієнт')
-      : t('Клієнт')
   const isActive = resolvedClient.IsActive !== false
 
   return (
@@ -214,24 +174,10 @@ export function WizardClientHeroHeader({
       <Box className="new-sale-client-hero__identity">
         <Box className="new-sale-client-hero__copy">
           <Box className="new-sale-client-hero__name" title={clientCode ? `${clientCode} ${clientTitle}` : clientTitle}>
+            <span className={`new-sale-client-hero__name-status ${isActive ? 'is-active' : 'is-inactive'}`} />
             {clientCode && <span className="new-sale-client-hero__code">{clientCode}</span>}
             <span className="new-sale-client-hero__title">{clientTitle}</span>
           </Box>
-          <Group className="new-sale-client-hero__chips" gap={6} wrap="wrap">
-            <span className={`new-sale-client-hero__status ${isActive ? 'is-active' : 'is-inactive'}`}>
-              <span className="new-sale-client-hero__status-dot" />
-              <span className="new-sale-client-hero__status-copy">
-                <strong>{isActive ? t('Активний') : t('Не активний')}</strong>
-                <span>{clientKind}</span>
-              </span>
-            </span>
-            {clientDebtTotal > 0 && (
-              <span className="new-sale-client-hero__debt">
-                <IconAlertTriangle size={12} />
-                {t('Є борг')}
-              </span>
-            )}
-          </Group>
           {clientContacts.length > 0 && (
             <Group className="new-sale-client-hero__contacts" gap={8} wrap="nowrap">
               {clientContacts.map((item, index) => (
@@ -251,7 +197,7 @@ export function WizardClientHeroHeader({
             <Popover position="bottom-end" shadow="md" width={500} withinPortal>
               <Popover.Target>
                 <Box aria-label={t('Договори')} className="new-sale-client-metric is-clickable" component="button" type="button">
-                  <strong>{visibleAgreements.length}</strong>
+                  <strong>{metricCountFormatter.format(visibleAgreements.length)}</strong>
                   <span>{t('Договори')}</span>
                 </Box>
               </Popover.Target>
@@ -273,13 +219,13 @@ export function WizardClientHeroHeader({
             </Popover>
           ) : (
             <Box className="new-sale-client-metric">
-              <strong>{visibleAgreements.length}</strong>
+              <strong>{metricCountFormatter.format(visibleAgreements.length)}</strong>
               <span>{t('Договори')}</span>
             </Box>
           )}
           <Box className="new-sale-client-metric">
-            <strong>{visibleRegistryCount}</strong>
-            <span>{t('Документи')}</span>
+            <strong>{metricCountFormatter.format(visibleRegistryCount)}</strong>
+            <span>{getDocumentCountLabel(visibleRegistryCount, t)}</span>
           </Box>
         </Box>
         {headerTools && <Box className="new-sale-client-hero__tools">{headerTools}</Box>}
@@ -290,4 +236,8 @@ export function WizardClientHeroHeader({
 
 function getHeroAgreementKey(agreement: ClientAgreement): string {
   return String(agreement.NetUid || agreement.Id || '')
+}
+
+function getDocumentCountLabel(count: number, t: (value: string) => string): string {
+  return count === 1 ? t('Документ') : t('Документів')
 }

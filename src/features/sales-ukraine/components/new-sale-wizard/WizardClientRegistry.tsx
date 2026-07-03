@@ -10,6 +10,7 @@ import { useMemo } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { DataTable } from '../../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../../shared/ui/data-table/types'
+import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
 import { getSaleLifecycleStatusKey, getStatusTypeKey } from '../../saleStatus'
 import type { SalesUkraineOrderItem, SalesUkraineSale } from '../../types'
 import type { WizardSaleRegisterStatistic } from './wizardClientStepApi'
@@ -22,6 +23,7 @@ import '../../../../shared/ui/data-table/data-table.css'
 
 const amountFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
 const itemAmountFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 3, minimumFractionDigits: 2 })
+const qtyFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 3 })
 
 const LIFECYCLE_LABELS: Record<string, string> = {
   Await: 'Очікування',
@@ -161,8 +163,8 @@ export function WizardClientRegistry({
         id: 'qty',
         header: t('\u041a-\u0441\u0442\u044c'),
         accessor: (sale) => sale.TotalCount ?? 0,
-        align: 'right',
         cell: (sale) => <WizardSaleQtyCell sale={sale} />,
+        className: 'new-sale-register-qty-column',
         width: 84,
         minWidth: 76,
       },
@@ -240,7 +242,13 @@ export function WizardClientRegistry({
             value={dateTo}
             onChange={(event) => onChangeDateTo(event.currentTarget.value)}
           />
-          <Button className="new-sale-register-orders-button" size="xs" variant="light" onClick={onOpenOrderedProducts}>
+          <Button
+            className="new-sale-register-orders-button"
+            color={CREATE_ACTION_COLOR}
+            size="xs"
+            variant="filled"
+            onClick={onOpenOrderedProducts}
+          >
             {t('Замовлені товари')}
           </Button>
         </Group>
@@ -288,12 +296,17 @@ function WizardSaleDocumentCell({ sale }: { sale: SalesUkraineSale }) {
 function WizardSaleDocumentTypeCell({ sale }: { sale: SalesUkraineSale }) {
   const { t } = useI18n()
   const lifecycleLabel = getSaleLifecycleLabel(sale)
+  const lifecycleKey = getSaleLifecycleKey(sale)
+  const translatedLifecycleLabel = t(lifecycleLabel)
+  const title = `${sale.IsVatSale ? `${t('\u041f\u0414\u0412')} ` : ''}${translatedLifecycleLabel}`
 
   return (
-    <Text className="new-sale-register-document-type" title={`${sale.IsVatSale ? `${t('\u041f\u0414\u0412')} ` : ''}${t(lifecycleLabel)}`} truncate>
-      {sale.IsVatSale ? `${t('\u041f\u0414\u0412')} ` : ''}
-      {t(lifecycleLabel)}
-    </Text>
+    <Group className="new-sale-register-document-type-cell" gap={4} title={title} wrap="nowrap">
+      {sale.IsVatSale && <span className="new-sale-register-document-pill is-vat">{t('\u041f\u0414\u0412')}</span>}
+      <span className={`new-sale-register-document-pill ${getSaleDocumentTypeClass(lifecycleKey)}`}>
+        {translatedLifecycleLabel}
+      </span>
+    </Group>
   )
 }
 
@@ -301,38 +314,42 @@ function WizardSalePaymentCell({ sale }: { sale: SalesUkraineSale }) {
   const { t } = useI18n()
   const label = getSalePaymentLabel(sale)
   const isEdited = (sale.HistoryInvoiceEdit?.length ?? 0) > 0
+  const statusClass = isEdited ? 'is-edited' : getSaleRowStateClass(sale)
+  const translatedLabel = label ? t(label) : isEdited ? t('\u0420\u0435\u0434\u0430\u0433\u043e\u0432\u0430\u043d\u043e') : ''
   const dotLabel = isEdited
     ? t('\u0420\u0430\u0445\u0443\u043d\u043e\u043a \u0440\u0435\u0434\u0430\u0433\u043e\u0432\u0430\u043d\u043e')
     : t(getSaleDotLabel(sale))
 
+  if (!translatedLabel) {
+    return null
+  }
+
   return (
-    <Group className="new-sale-register-payment-cell" gap={8} wrap="nowrap">
+    <Group className="new-sale-register-payment-cell" gap={4} wrap="nowrap">
       <Tooltip label={dotLabel}>
-        <span className={`new-sale-register-status-dot ${isEdited ? 'is-edited' : getSaleRowStateClass(sale)}`} />
+        <span className={`new-sale-register-status-pill ${statusClass}`}>
+          {translatedLabel}
+        </span>
       </Tooltip>
-      <Text className={`new-sale-register-payment ${getSaleRowStateClass(sale)}`} title={label ? t(label) : ''} truncate>
-        {label ? t(label) : ''}
-      </Text>
     </Group>
   )
 }
 
 function WizardSaleAmountCell({ sale }: { sale: SalesUkraineSale }) {
+  const amount = sale.TotalAmountLocal ?? 0
+
   return (
-    <Box className="new-sale-register-value-cell is-inline">
-      <Text>{amountFormatter.format(sale.TotalAmountLocal ?? 0)}</Text>
+    <Box className={`new-sale-register-value-cell is-inline is-money ${amount < 0 ? 'is-negative' : ''}`}>
+      <Text>{amountFormatter.format(amount)}</Text>
       <Text>{getSaleCurrencyCode(sale)}</Text>
     </Box>
   )
 }
 
 function WizardSaleQtyCell({ sale }: { sale: SalesUkraineSale }) {
-  const { t } = useI18n()
-
   return (
-    <Box className="new-sale-register-value-cell is-inline">
-      <Text>{sale.TotalCount ?? 0}</Text>
-      <Text>{t('\u0448\u0442\u0443\u043a')}</Text>
+    <Box className="new-sale-register-value-cell is-inline is-quantity">
+      <Text>{qtyFormatter.format(sale.TotalCount ?? 0)}</Text>
     </Box>
   )
 }
@@ -518,12 +535,19 @@ function WizardSaleRegistryRowContent({ sale }: { sale: SalesUkraineSale }) {
         id: 'amount',
         header: t('\u0421\u0443\u043c\u0430'),
         accessor: (item) => getOrderItemAmount(item),
-        cell: (item) => (
-          <WizardSaleItemValueCell
-            unit={currencyCode}
-            value={itemAmountFormatter.format(getOrderItemAmount(item))}
-          />
-        ),
+        align: 'right',
+        cell: (item) => {
+          const amount = getOrderItemAmount(item)
+
+          return (
+            <WizardSaleItemValueCell
+              money
+              negative={amount < 0}
+              unit={currencyCode}
+              value={itemAmountFormatter.format(amount)}
+            />
+          )
+        },
         width: 120,
         minWidth: 108,
         enableHiding: false,
@@ -536,7 +560,8 @@ function WizardSaleRegistryRowContent({ sale }: { sale: SalesUkraineSale }) {
         id: 'qty',
         header: t('\u041a-\u0441\u0442\u044c'),
         accessor: (item) => item.Qty ?? 0,
-        cell: (item) => <WizardSaleItemValueCell unit={t('\u0448\u0442\u0443\u043a')} value={String(item.Qty ?? 0)} />,
+        cell: (item) => <WizardSaleItemValueCell quantity value={qtyFormatter.format(item.Qty ?? 0)} />,
+        className: 'new-sale-register-qty-column',
         width: 96,
         minWidth: 84,
         enableHiding: false,
@@ -619,11 +644,23 @@ function WizardSaleItemTextCell({ value }: { value: string }) {
   )
 }
 
-function WizardSaleItemValueCell({ unit, value }: { unit: string; value: string }) {
+function WizardSaleItemValueCell({
+  money = false,
+  negative = false,
+  quantity = false,
+  unit,
+  value,
+}: {
+  money?: boolean
+  negative?: boolean
+  quantity?: boolean
+  unit?: string
+  value: string
+}) {
   return (
-    <Box className="new-sale-item-value-cell">
+    <Box className={`new-sale-item-value-cell ${money ? 'is-money' : ''} ${negative ? 'is-negative' : ''} ${quantity ? 'is-quantity' : ''}`}>
       <Text>{value}</Text>
-      <Text>{unit}</Text>
+      {unit && <Text>{unit}</Text>}
     </Box>
   )
 }
@@ -636,6 +673,14 @@ function getSaleLifecycleLabel(sale: SalesUkraineSale): string {
   const lifecycleKey = getSaleLifecycleKey(sale)
 
   return LIFECYCLE_LABELS[lifecycleKey] || lifecycleKey
+}
+
+function getSaleDocumentTypeClass(lifecycleKey: string): string {
+  return lifecycleKey === 'New'
+    ? 'is-invoice'
+    : lifecycleKey === 'Packaged' || lifecycleKey === 'Packaging'
+      ? 'is-waybill'
+      : 'is-neutral'
 }
 
 function getSalePaymentKey(sale: SalesUkraineSale): string {

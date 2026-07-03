@@ -1,9 +1,10 @@
-import { ActionIcon, Box, Button, Group, Modal, Text, Tooltip, UnstyledButton } from '@mantine/core'
-import { IconBox, IconTruckDelivery, IconUser, IconX } from '@tabler/icons-react'
+import { ActionIcon, Box, Button, Group, Modal, Text, UnstyledButton } from '@mantine/core'
+import { IconX } from '@tabler/icons-react'
 import { notifications } from '@mantine/notifications'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
+import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
 import { getCurrentSaleCart, getSaleById } from '../../api/salesUkraineApi'
 import type { Client } from '../../../clients/types'
 import type { SaleDocumentResult, SalesUkraineSale } from '../../types'
@@ -61,17 +62,17 @@ export function NewSaleWizard({
         closeOnEscape={false}
         closeOnClickOutside={false}
         size="100%"
-        padding="xs"
+        padding={0}
         overlayProps={{ backgroundOpacity: 0.25, blur: 2 }}
         transitionProps={{ transition: 'pop', duration: 200 }}
         styles={{
-          inner: { padding: 4 },
+          inner: { padding: 0 },
           content: {
             width: '100%',
             maxWidth: '100%',
-            height: 'calc(100dvh - 8px)',
-            maxHeight: 'calc(100dvh - 8px)',
-            borderRadius: 14,
+            height: '100dvh',
+            maxHeight: '100dvh',
+            borderRadius: 0,
             display: 'flex',
             flexDirection: 'column',
             overflow: 'visible',
@@ -100,11 +101,7 @@ export function NewSaleWizard({
   )
 }
 
-const WIZARD_STEPS: { icon: typeof IconUser; index: WizardStepIndex }[] = [
-  { icon: IconUser, index: 0 },
-  { icon: IconBox, index: 1 },
-  { icon: IconTruckDelivery, index: 2 },
-]
+const WIZARD_STEPS: { index: WizardStepIndex }[] = [{ index: 0 }, { index: 1 }, { index: 2 }]
 
 function NewSaleWizardContent({
   initialSale,
@@ -594,70 +591,55 @@ function NewSaleWizardContent({
         )}
       </Box>
 
-      <Box
-        mt="md"
-        px="md"
-        py={8}
-        style={{
-          alignItems: 'center',
-          background: '#2f3339',
-          borderRadius: 10,
-          display: 'flex',
-          gap: 12,
-          minHeight: 56,
-        }}
-      >
-        <Group gap={6} style={{ flex: 1 }} wrap="nowrap">
-          <Text c="gray.4" size="xs" style={{ whiteSpace: 'nowrap' }}>
+      <Box className="new-sale-wizard-footer">
+        <Group className="new-sale-wizard-keyboard-state" gap={6} wrap="nowrap">
+          <Text className="new-sale-wizard-keyboard-state__label">
             {t('Стан режиму клавіатури')}:
           </Text>
           {keyboard.label && (
-            <Text fw={600} size="xs" style={{ color: '#37a000', whiteSpace: 'nowrap' }}>
+            <Text className="new-sale-wizard-keyboard-state__value">
               {keyboard.label}
             </Text>
           )}
         </Group>
 
-        <Group gap={10} justify="center" wrap="nowrap">
+        <Group className="new-sale-wizard-step-list" gap={4} justify="center" wrap="nowrap">
           {WIZARD_STEPS.map((step, index) => {
-            const Icon = step.icon
             const title = t(WIZARD_STEP_TITLES[step.index])
             const isActive = index === active
             const isDone = index < active
 
             return (
-              <Tooltip key={step.index} label={title} position="top">
-                <UnstyledButton
-                  aria-current={isActive ? 'step' : undefined}
-                  aria-label={title}
-                  style={{
-                    alignItems: 'center',
-                    borderBottom: isActive ? '2px solid #37a000' : '2px solid transparent',
-                    color: isActive ? '#ffffff' : isDone ? '#37a000' : '#8b9096',
-                    display: 'flex',
-                    height: 38,
-                    justifyContent: 'center',
-                    width: 38,
-                  }}
-                  onClick={() => onStepClick(index)}
-                >
-                  <Icon size={22} stroke={1.8} />
-                </UnstyledButton>
-              </Tooltip>
+              <UnstyledButton
+                aria-current={isActive ? 'step' : undefined}
+                aria-label={title}
+                className={`new-sale-wizard-step ${isActive ? 'is-active' : ''} ${isDone ? 'is-done' : ''}`}
+                key={step.index}
+                onClick={() => onStepClick(index)}
+              >
+                <span className="new-sale-wizard-step__label">{title}</span>
+              </UnstyledButton>
             )
           })}
         </Group>
 
-        <Group gap="xs" justify="flex-end" style={{ flex: 1 }} wrap="nowrap">
+        <Group className="new-sale-wizard-footer__actions" gap="xs" justify="flex-end" wrap="nowrap">
           <Button
+            className="new-sale-wizard-footer__button"
             color="gray"
             disabled={shellBusy}
-            variant="light"
+            variant="default"
             onClick={active === 0 ? requestExit : active === 1 ? goToClients : () => setActive(1)}
           >
             {active === 0 ? t('Скасувати') : t('Назад')}
           </Button>
-          <Button color={active === 2 ? 'teal' : undefined} disabled={nextDisabled} loading={busy} onClick={handleNext}>
+          <Button
+            className="new-sale-wizard-footer__button"
+            color={CREATE_ACTION_COLOR}
+            disabled={nextDisabled}
+            loading={busy}
+            onClick={handleNext}
+          >
             {nextLabel}
           </Button>
         </Group>
@@ -672,4 +654,3 @@ function NewSaleWizardContent({
     </Box>
   )
 }
-

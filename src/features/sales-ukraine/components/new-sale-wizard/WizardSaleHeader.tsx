@@ -20,6 +20,7 @@ import {
 } from './wizardSaleHeaderApi'
 
 const amountFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
+const integerFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 0 })
 
 // Reserved on every render (even with no client / while loading) so the panel keeps a constant
 // height and the content below never jumps when a client appears or changes. Sized to hug a row
@@ -273,7 +274,7 @@ function WizardSaleHeaderContent({
             <Tooltip label={t('Структура клієнта')} position="bottom">
               <ActionIcon
                 aria-label={t('Структура клієнта')}
-                color={isStructureOpen ? 'teal' : 'gray'}
+                color={isStructureOpen ? 'orange' : 'gray'}
                 size="lg"
                 variant={isStructureOpen ? 'light' : 'subtle'}
                 onClick={() => void toggleStructure()}
@@ -360,7 +361,7 @@ function WizardSaleHeaderContent({
       <Group gap="xs" wrap="wrap">
         {(client.Id ?? 0) > 0 && groupedDebts.length === 0 && (
           <WizardHeaderBadge
-            color="teal"
+            color="green"
             items={[{ unit: 'EUR', value: amountFormatter.format(currentBalance) }]}
             label={t('Поточний баланс')}
           />
@@ -370,20 +371,20 @@ function WizardSaleHeaderContent({
             color="red"
             items={groupedDebts.map((item) => ({
               unit: item.Agreement?.Currency?.Code ?? '',
-              value: String(Math.round(getWizardClientDebtTotal(item) * 100) / 100),
+              value: amountFormatter.format(getWizardClientDebtTotal(item)),
             }))}
             label={t('Борг по договорам')}
           />
         )}
         {groupedDebts.length > 0 && maxOverdueDays > 0 && (
-          <WizardHeaderBadge color="red" items={[{ unit: t('Днів'), value: String(maxOverdueDays) }]} label={t('прострочено')} />
+          <WizardHeaderBadge color="red" items={[{ unit: t('Днів'), value: integerFormatter.format(maxOverdueDays) }]} label={t('прострочено')} />
         )}
         {debtTotal && ((debtTotal.TotalEuro ?? 0) > 0 || (debtTotal.TotalLocal ?? 0) > 0) && (
           <WizardHeaderBadge
             color="red"
             items={[
-              ...((debtTotal.TotalEuro ?? 0) > 0 ? [{ unit: 'EUR', value: String(debtTotal.TotalEuro) }] : []),
-              ...((debtTotal.TotalLocal ?? 0) > 0 ? [{ unit: 'UAH', value: String(debtTotal.TotalLocal) }] : []),
+              ...((debtTotal.TotalEuro ?? 0) > 0 ? [{ unit: 'EUR', value: amountFormatter.format(debtTotal.TotalEuro ?? 0) }] : []),
+              ...((debtTotal.TotalLocal ?? 0) > 0 ? [{ unit: 'UAH', value: amountFormatter.format(debtTotal.TotalLocal ?? 0) }] : []),
             ]}
             label={t('Загальний борг')}
           />
@@ -430,12 +431,12 @@ function WizardHeaderBadge({
   items,
   label,
 }: {
-  color: 'red' | 'teal'
+  color: 'green' | 'red'
   items: { unit: string; value: string }[]
   label: string
 }) {
   return (
-    <Paper className="new-sale-wizard-header-badge" radius="md" withBorder>
+    <Paper className={`new-sale-wizard-header-badge is-${color}`} radius="md" withBorder>
       <Group className="new-sale-wizard-header-badge__values" gap="sm">
         {items.map((item, index) => (
           <Group className="new-sale-wizard-header-badge__value" gap={4} key={`${item.unit}-${index}`} wrap="nowrap">

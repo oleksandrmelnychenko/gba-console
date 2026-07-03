@@ -1211,9 +1211,310 @@
 }
 
 .new-sale-agreement-card.is-overdue .new-sale-agreement-card__status {
+  background: var(--mantine-color-red-0);
+  border-color: var(--mantine-color-red-2);
+  color: var(--mantine-color-red-8);
+}
+
+/* Final register cell overrides: keep the sales wizard aligned with the grid patterns. */
+.new-sale-wizard-footer {
+  border-top: 0;
+}
+
+.new-sale-register-document-number,
+.new-sale-register-document-type {
+  font-family: Onest, Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.new-sale-client-agreements-zone {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.new-sale-client-workspace .new-sale-register {
+  border-top: 0;
+}
+
+.new-sale-client-workspace .new-sale-register-toolbar {
+  border-top: 0;
+}
+
+.new-sale-register-document-type-cell {
+  align-items: center;
+  min-width: 0;
+}
+
+.new-sale-register-document-pill {
+  align-items: center;
+  border: 1px solid var(--mantine-color-gray-3);
+  border-radius: 7px;
+  display: inline-flex;
+  flex: 0 1 auto;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.1;
+  min-height: 20px;
+  min-width: 0;
+  overflow: hidden;
+  padding: 0 7px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.new-sale-register-document-pill.is-vat {
+  background: var(--mantine-color-gray-0);
+  border-color: var(--mantine-color-gray-3);
+  color: var(--mantine-color-gray-7);
+}
+
+.new-sale-register-document-pill.is-invoice {
+  background: var(--mantine-color-orange-0);
+  border-color: var(--mantine-color-orange-2);
+  color: var(--mantine-color-orange-8);
+}
+
+.new-sale-register-document-pill.is-waybill {
   background: var(--mantine-color-blue-0);
   border-color: var(--mantine-color-blue-2);
   color: var(--mantine-color-blue-8);
+}
+
+.new-sale-register-document-pill.is-neutral {
+  background: var(--mantine-color-gray-0);
+  border-color: var(--mantine-color-gray-3);
+  color: var(--mantine-color-gray-7);
+}
+
+.new-sale-register-value-cell.is-money,
+.new-sale-item-value-cell.is-money,
+.new-sale-register-value-cell.is-quantity,
+.new-sale-item-value-cell.is-quantity {
+  justify-content: flex-end;
+  justify-self: end;
+  text-align: right;
+  width: 100%;
+}
+
+.new-sale-register-value-cell.is-money .mantine-Text-root:first-child,
+.new-sale-item-value-cell.is-money .mantine-Text-root:first-child {
+  color: var(--mantine-color-green-8);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+
+.new-sale-register-value-cell.is-money .mantine-Text-root:nth-child(2),
+.new-sale-item-value-cell.is-money .mantine-Text-root:nth-child(2) {
+  align-items: center;
+  background: var(--mantine-color-green-0);
+  border: 1px solid var(--mantine-color-green-2);
+  border-radius: 999px;
+  color: var(--mantine-color-green-7);
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0;
+  min-height: 17px;
+  padding: 0 6px;
+  text-transform: uppercase;
+}
+
+.new-sale-register-value-cell.is-money.is-negative .mantine-Text-root:first-child,
+.new-sale-item-value-cell.is-money.is-negative .mantine-Text-root:first-child {
+  color: var(--mantine-color-red-8);
+}
+
+.new-sale-register-value-cell.is-money.is-negative .mantine-Text-root:nth-child(2),
+.new-sale-item-value-cell.is-money.is-negative .mantine-Text-root:nth-child(2) {
+  background: var(--mantine-color-red-0);
+  border-color: var(--mantine-color-red-2);
+  color: var(--mantine-color-red-7);
+}
+
+.new-sale-register-value-cell.is-quantity .mantine-Text-root:first-child,
+.new-sale-item-value-cell.is-quantity .mantine-Text-root:first-child {
+  color: var(--mantine-color-gray-8);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+
+.new-sale-register-value-cell.is-quantity .mantine-Text-root:nth-child(2),
+.new-sale-item-value-cell.is-quantity .mantine-Text-root:nth-child(2) {
+  color: var(--mantine-color-gray-6);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+/* Expanded sale rows: nested table card pattern. */
+.new-sale-register-table .data-table-expanded-cell {
+  background: var(--mantine-color-gray-0);
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+}
+
+.new-sale-register-table .data-table-expanded-content {
+  background: var(--mantine-color-gray-0);
+  border-bottom: 0;
+  padding: 8px 10px 10px 40px;
+}
+
+.new-sale-register-table .new-sale-register-expanded {
+  background: transparent;
+  border-bottom: 0;
+  min-width: 0;
+  padding: 0;
+}
+
+.new-sale-register-table .new-sale-register-expanded__panel {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
+  box-shadow: none;
+  overflow: hidden;
+}
+
+.new-sale-register-table .new-sale-register-expanded__items {
+  min-width: 0;
+}
+
+.new-sale-register-table .new-sale-register-expanded__items .data-table-scroll {
+  background: var(--mantine-color-white);
+  overflow: auto hidden;
+}
+
+.new-sale-register-table .new-sale-register-expanded__items .data-table-table {
+  width: 100%;
+}
+
+.new-sale-register-table .new-sale-register-expanded__items .data-table-th {
+  background: var(--mantine-color-gray-0);
+  color: var(--mantine-color-gray-7);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  padding-block: 6px;
+}
+
+.new-sale-register-table .new-sale-register-expanded__items .data-table-cell {
+  font-size: 12px;
+  padding-block: 7px;
+}
+
+.new-sale-register-table .new-sale-register-expanded__items .data-table-row {
+  height: 44px;
+}
+
+.new-sale-register-table .new-sale-register-expanded__items .data-table-row:hover {
+  --data-table-cell-bg: #fffaf5;
+}
+
+.new-sale-register-table .new-sale-item-product-icon {
+  background: transparent;
+  border: 1px solid var(--mantine-color-gray-3);
+  color: var(--mantine-color-gray-7);
+}
+
+.new-sale-register-orders-button,
+.new-sale-register-orders-button .mantine-Button-label {
+  color: var(--mantine-color-white);
+}
+
+.new-sale-client-agreements-zone {
+  border-bottom: 0;
+}
+
+.new-sale-wizard-footer {
+  border-top: 0;
+}
+
+.new-sale-client-hero__tools::before {
+  content: none;
+}
+
+.new-sale-client-metric span {
+  font-family: inherit;
+}
+
+.new-sale-register-document-number,
+.new-sale-register-document-type {
+  font-family: Onest, Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.new-sale-register-value-cell.is-money,
+.new-sale-item-value-cell.is-money,
+.new-sale-register-value-cell.is-quantity,
+.new-sale-item-value-cell.is-quantity {
+  justify-content: flex-end;
+  justify-self: end;
+  text-align: right;
+  width: 100%;
+}
+
+.new-sale-register-value-cell.is-money .mantine-Text-root:first-child,
+.new-sale-item-value-cell.is-money .mantine-Text-root:first-child {
+  color: var(--mantine-color-green-8);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+
+.new-sale-register-value-cell.is-money .mantine-Text-root:nth-child(2),
+.new-sale-item-value-cell.is-money .mantine-Text-root:nth-child(2) {
+  align-items: center;
+  background: var(--mantine-color-green-0);
+  border: 1px solid var(--mantine-color-green-2);
+  border-radius: 999px;
+  color: var(--mantine-color-green-7);
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  min-height: 17px;
+  padding: 0 6px;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.new-sale-register-value-cell.is-money.is-negative .mantine-Text-root:first-child,
+.new-sale-item-value-cell.is-money.is-negative .mantine-Text-root:first-child {
+  color: var(--mantine-color-red-8);
+}
+
+.new-sale-register-value-cell.is-money.is-negative .mantine-Text-root:nth-child(2),
+.new-sale-item-value-cell.is-money.is-negative .mantine-Text-root:nth-child(2) {
+  background: var(--mantine-color-red-0);
+  border-color: var(--mantine-color-red-2);
+  color: var(--mantine-color-red-7);
+}
+
+.new-sale-register-value-cell.is-quantity .mantine-Text-root:first-child,
+.new-sale-item-value-cell.is-quantity .mantine-Text-root:first-child {
+  color: var(--mantine-color-gray-8);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+
+.new-sale-register-value-cell.is-quantity .mantine-Text-root:nth-child(2),
+.new-sale-item-value-cell.is-quantity .mantine-Text-root:nth-child(2) {
+  color: var(--mantine-color-gray-6);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0;
 }
 
 .new-sale-agreement-card.is-inactive .new-sale-agreement-card__status {
@@ -3788,9 +4089,9 @@
 }
 
 .new-sale-agreement-card.is-overdue .new-sale-agreement-card__status {
-  background: var(--mantine-color-blue-0);
-  border-color: var(--mantine-color-blue-2);
-  color: var(--mantine-color-blue-8);
+  background: var(--mantine-color-red-0);
+  border-color: var(--mantine-color-red-2);
+  color: var(--mantine-color-red-8);
 }
 
 .new-sale-agreement-card.is-inactive .new-sale-agreement-card__status {
@@ -5999,4 +6300,421 @@
 .new-sale-register-row:focus-visible,
 .new-sale-register-row.is-open {
   --data-table-cell-bg: #fffaf5;
+}
+
+/* Wizard header metrics: right-side balances/statistics follow the shared mono pattern. */
+.new-sale-client-hero__metrics {
+  align-items: center;
+  gap: 14px;
+  min-height: 32px;
+}
+
+.new-sale-client-metric,
+.new-sale-wizard-header-badge {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  min-height: 32px;
+  padding: 2px 9px;
+}
+
+.new-sale-wizard-inline-tools .new-sale-wizard-header-badge {
+  min-height: 32px;
+}
+
+.new-sale-client-metric + .new-sale-client-metric::before,
+.new-sale-wizard-inline-tools .new-sale-wizard-header-badge + .new-sale-wizard-header-badge::before,
+.new-sale-client-hero__tools::before {
+  background: var(--mantine-color-gray-2);
+  height: 22px;
+  width: 1px;
+}
+
+.new-sale-client-metric strong,
+.new-sale-wizard-header-badge__value .mantine-Text-root:first-child {
+  color: var(--mantine-color-gray-8);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+  line-height: 1.1;
+}
+
+.new-sale-client-metric span,
+.new-sale-wizard-header-badge__label,
+.new-sale-wizard-header-badge__unit {
+  color: var(--mantine-color-gray-6);
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.15;
+  text-transform: none;
+}
+
+.new-sale-wizard-header-badge.is-green .new-sale-wizard-header-badge__value .mantine-Text-root:first-child {
+  color: var(--mantine-color-green-8);
+}
+
+.new-sale-wizard-header-badge.is-green .new-sale-wizard-header-badge__unit {
+  color: var(--mantine-color-green-7);
+}
+
+.new-sale-wizard-header-badge.is-red .new-sale-wizard-header-badge__value .mantine-Text-root:first-child,
+.new-sale-wizard-header-badge.is-red .new-sale-wizard-header-badge__label,
+.new-sale-wizard-header-badge.is-red .new-sale-wizard-header-badge__unit {
+  color: var(--mantine-color-red-7);
+}
+
+.new-sale-client-hero__contacts span {
+  color: var(--mantine-color-gray-8);
+}
+
+.new-sale-client-hero__contacts svg {
+  color: var(--mantine-color-gray-7);
+}
+
+.new-sale-client-hero__name-status {
+  background: var(--mantine-color-gray-5);
+  border-radius: 999px;
+  flex: 0 0 auto;
+  height: 8px;
+  margin-left: 1px;
+  width: 8px;
+}
+
+.new-sale-client-hero__name-status.is-active {
+  background: var(--mantine-color-green-6);
+  box-shadow: 0 0 0 3px rgba(64, 192, 87, 0.14);
+}
+
+.new-sale-client-hero__name-status.is-inactive {
+  background: var(--mantine-color-gray-5);
+}
+
+.new-sale-client-hero__status-dot {
+  display: none;
+}
+
+.new-sale-wizard-footer {
+  align-items: center;
+  background: var(--mantine-color-white);
+  border-top: 1px solid var(--mantine-color-gray-2);
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  min-height: 48px;
+  padding: 7px 12px;
+}
+
+.new-sale-wizard-keyboard-state {
+  min-width: 0;
+}
+
+.new-sale-wizard-keyboard-state__label,
+.new-sale-wizard-keyboard-state__value,
+.new-sale-wizard-step,
+.new-sale-wizard-footer__button .mantine-Button-label {
+  font-family: var(--font-mono);
+  letter-spacing: 0;
+}
+
+.new-sale-wizard-keyboard-state__label {
+  color: var(--mantine-color-gray-6);
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.new-sale-wizard-keyboard-state__value {
+  color: var(--brand-orange);
+  font-size: 11px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.new-sale-wizard-step-list {
+  align-self: stretch;
+  min-width: 0;
+}
+
+.new-sale-wizard-step {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  color: var(--mantine-color-gray-7);
+  display: inline-flex;
+  font-size: 13px;
+  font-weight: 500;
+  min-height: 34px;
+  padding: 0 10px 0 18px;
+  position: relative;
+  transition:
+    color 140ms ease,
+    transform 140ms ease;
+  white-space: nowrap;
+}
+
+.new-sale-wizard-step::before {
+  background: var(--brand-orange);
+  border-radius: 999px;
+  content: '';
+  height: 7px;
+  left: 7px;
+  opacity: 0;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 7px;
+}
+
+.new-sale-wizard-step:hover {
+  color: var(--mantine-color-gray-9);
+  transform: translateX(3px);
+}
+
+.new-sale-wizard-step.is-active {
+  color: var(--brand-orange);
+  font-weight: 600;
+}
+
+.new-sale-wizard-step.is-active::before {
+  opacity: 1;
+}
+
+.new-sale-wizard-step.is-done {
+  color: var(--mantine-color-gray-8);
+}
+
+.new-sale-wizard-step__label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.new-sale-wizard-footer__actions {
+  min-width: 0;
+}
+
+.new-sale-wizard-footer__button {
+  border-radius: 8px;
+  min-height: 36px;
+}
+
+.new-sale-wizard-footer__button .mantine-Button-label {
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.new-sale-agreement-card.is-overdue .new-sale-agreement-card__status {
+  background: var(--mantine-color-red-0);
+  border-color: var(--mantine-color-red-2);
+  color: var(--mantine-color-red-8);
+}
+
+/* Final register cell overrides: keep the sales wizard aligned with the grid patterns. */
+.new-sale-wizard-footer {
+  border-top: 0;
+}
+
+.new-sale-register-document-number,
+.new-sale-register-document-type {
+  font-family: Onest, Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.new-sale-register-value-cell.is-money,
+.new-sale-item-value-cell.is-money,
+.new-sale-register-value-cell.is-quantity,
+.new-sale-item-value-cell.is-quantity {
+  justify-content: flex-end;
+  justify-self: end;
+  text-align: right;
+  width: 100%;
+}
+
+.new-sale-register-value-cell.is-money .mantine-Text-root:first-child,
+.new-sale-item-value-cell.is-money .mantine-Text-root:first-child {
+  color: var(--mantine-color-green-8);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+
+.new-sale-register-value-cell.is-money .mantine-Text-root:nth-child(2),
+.new-sale-item-value-cell.is-money .mantine-Text-root:nth-child(2) {
+  align-items: center;
+  background: var(--mantine-color-green-0);
+  border: 1px solid var(--mantine-color-green-2);
+  border-radius: 999px;
+  color: var(--mantine-color-green-7);
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0;
+  min-height: 17px;
+  padding: 0 6px;
+  text-transform: uppercase;
+}
+
+.new-sale-register-value-cell.is-money.is-negative .mantine-Text-root:first-child,
+.new-sale-item-value-cell.is-money.is-negative .mantine-Text-root:first-child {
+  color: var(--mantine-color-red-8);
+}
+
+.new-sale-register-value-cell.is-money.is-negative .mantine-Text-root:nth-child(2),
+.new-sale-item-value-cell.is-money.is-negative .mantine-Text-root:nth-child(2) {
+  background: var(--mantine-color-red-0);
+  border-color: var(--mantine-color-red-2);
+  color: var(--mantine-color-red-7);
+}
+
+.new-sale-register-value-cell.is-quantity .mantine-Text-root:first-child,
+.new-sale-item-value-cell.is-quantity .mantine-Text-root:first-child {
+  color: var(--mantine-color-gray-8);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+
+.new-sale-register-value-cell.is-quantity .mantine-Text-root:nth-child(2),
+.new-sale-item-value-cell.is-quantity .mantine-Text-root:nth-child(2) {
+  color: var(--mantine-color-gray-6);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+/* Wizard final cascade overrides. Keep this block last. */
+.new-sale-client-hero {
+  min-height: 64px;
+  padding-bottom: 6px;
+  padding-top: 6px;
+}
+
+.new-sale-client-hero::before {
+  bottom: 8px;
+  top: 8px;
+}
+
+.new-sale-client-hero__copy {
+  row-gap: 2px;
+}
+
+.new-sale-client-hero__metrics {
+  min-height: 28px;
+}
+
+.new-sale-client-metric,
+.new-sale-wizard-header-badge,
+.new-sale-wizard-inline-tools .new-sale-wizard-header-badge {
+  min-height: 28px;
+  padding-bottom: 1px;
+  padding-top: 1px;
+}
+
+.new-sale-client-agreements-zone {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.new-sale-client-workspace .new-sale-register {
+  border-top: 0;
+}
+
+.new-sale-client-workspace .new-sale-register-toolbar {
+  border-top: 0;
+}
+
+.new-sale-register-document-type-cell,
+.new-sale-register-payment-cell {
+  align-items: center;
+  min-width: 0;
+}
+
+.new-sale-register-document-pill,
+.new-sale-register-status-pill {
+  align-items: center;
+  border: 1px solid var(--mantine-color-gray-3);
+  border-radius: 7px;
+  display: inline-flex;
+  flex: 0 1 auto;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  justify-content: center;
+  letter-spacing: 0;
+  line-height: 1.1;
+  min-height: 20px;
+  min-width: 0;
+  overflow: hidden;
+  padding: 0 7px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.new-sale-register-document-pill.is-vat,
+.new-sale-register-document-pill.is-neutral,
+.new-sale-register-status-pill.is-neutral {
+  background: var(--mantine-color-gray-0);
+  border-color: var(--mantine-color-gray-3);
+  color: var(--mantine-color-gray-7);
+}
+
+.new-sale-register-document-pill.is-invoice {
+  background: var(--mantine-color-orange-0);
+  border-color: var(--mantine-color-orange-2);
+  color: var(--mantine-color-orange-8);
+}
+
+.new-sale-register-document-pill.is-waybill {
+  background: var(--mantine-color-blue-0);
+  border-color: var(--mantine-color-blue-2);
+  color: var(--mantine-color-blue-8);
+}
+
+.new-sale-register-status-pill.is-success {
+  background: var(--mantine-color-green-0);
+  border-color: var(--mantine-color-green-2);
+  color: var(--mantine-color-green-8);
+}
+
+.new-sale-register-status-pill.is-danger {
+  background: var(--mantine-color-red-0);
+  border-color: var(--mantine-color-red-2);
+  color: var(--mantine-color-red-8);
+}
+
+.new-sale-register-status-pill.is-edited {
+  background: var(--mantine-color-yellow-0);
+  border-color: var(--mantine-color-yellow-2);
+  color: var(--mantine-color-yellow-8);
+}
+
+.new-sale-register-table .data-table-cell.new-sale-register-qty-column {
+  justify-content: flex-start;
+  text-align: left !important;
+}
+
+.new-sale-register-table .data-table-cell.new-sale-register-qty-column > * {
+  margin-left: 0;
+  margin-right: auto;
+}
+
+.new-sale-register-table .new-sale-register-value-cell.is-quantity,
+.new-sale-register-table .new-sale-item-value-cell.is-quantity {
+  justify-content: flex-start;
+  margin-left: 0;
+  margin-right: auto;
+  text-align: left;
 }
