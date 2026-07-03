@@ -3,6 +3,7 @@ import { notifications } from '@mantine/notifications'
 import { useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { updateSaleDiscount } from '../api/salesUkraineApi'
 import { isDiscountEditableSaleLifecycle } from '../saleStatus'
 import type { SalesUkraineOrderItem, SalesUkraineSale } from '../types'
@@ -21,7 +22,7 @@ export function SaleDiscountModal({
   const { t } = useI18n()
 
   return (
-    <AppModal centered opened={Boolean(sale)} size="sm" title={t('Знижка')} onClose={onClose}>
+    <AppModal centered opened={Boolean(sale)} size="sm" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Знижка')}</span>} onClose={onClose}>
       {sale && (
         <SaleDiscountForm
           key={`${sale.NetUid || sale.Id}-${orderItem?.NetUid || orderItem?.Id || 'sale'}`}
@@ -152,10 +153,10 @@ function SaleDiscountForm({
         onChange={(event) => setComment(event.currentTarget.value)}
       />
       <Group justify="flex-end">
-        <Button color="gray" disabled={isSaving} variant="subtle" onClick={onCancel}>
+        <Button color="gray" disabled={isSaving} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} variant="subtle" onClick={onCancel}>
           {t('Скасувати')}
         </Button>
-        <Button disabled={isReadOnly} loading={isSaving} onClick={save}>
+        <Button color={CREATE_ACTION_COLOR} disabled={isReadOnly} loading={isSaving} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} onClick={save}>
           {t('Зберегти')}
         </Button>
       </Group>

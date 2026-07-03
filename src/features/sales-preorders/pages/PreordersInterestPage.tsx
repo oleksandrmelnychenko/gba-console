@@ -131,8 +131,8 @@ export function PreordersInterestPage() {
 
           return (
             <Stack gap={0}>
-              <Text size="sm">{date}</Text>
-              <Text c="dimmed" size="xs">
+              <Text size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{date}</Text>
+              <Text c="dimmed" size="xs" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>
                 {time}
               </Text>
             </Stack>
@@ -150,9 +150,12 @@ export function PreordersInterestPage() {
 
           return netId && code ? (
             <Anchor
+              c="dark.6"
               component="button"
               fw={600}
+              style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}
               type="button"
+              underline="always"
               onClick={(event) => {
                 event.stopPropagation()
                 setProductCardNetId(netId)
@@ -161,7 +164,7 @@ export function PreordersInterestPage() {
               {code}
             </Anchor>
           ) : (
-            code
+            <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{code}</Text>
           )
         },
         width: 140,
@@ -176,9 +179,11 @@ export function PreordersInterestPage() {
 
           return netId && name ? (
             <Anchor
+              c="dark.6"
               component="button"
               size="sm"
               type="button"
+              underline="always"
               onClick={(event) => {
                 event.stopPropagation()
                 setProductCardNetId(netId)
@@ -203,7 +208,7 @@ export function PreordersInterestPage() {
         id: 'qty',
         header: t('К-сть'),
         accessor: (preOrder) => preOrder.Qty ?? 0,
-        cell: (preOrder) => preOrder.Qty ?? 0,
+        cell: (preOrder) => <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{preOrder.Qty ?? 0}</Text>,
         align: 'right',
         width: 90,
       },
