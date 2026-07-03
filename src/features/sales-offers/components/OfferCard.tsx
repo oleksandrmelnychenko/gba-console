@@ -71,7 +71,7 @@ export function OfferCard({
           </Tooltip>
           <Stack gap={2}>
             <Text fw={600}>{offer.ClientAgreement?.Client?.FullName ?? ''}</Text>
-            <Text c="dimmed" size="sm">
+            <Text c="dimmed" size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>
               {offer.Number ?? ''} {t('Від')} {formatDateTime(offer.Created)}
             </Text>
             <Text c="dimmed" size="sm">
@@ -85,18 +85,18 @@ export function OfferCard({
 
         <Group align="center" gap="xs" wrap="nowrap">
           {status === OFFER_PROCESSING_STATUS.NotProcessed && (
-            <Badge color="red" variant="light">
+            <Badge className="app-role-pill is-red" variant="light">
               {t('Не опрацьовано клієнтом')}
             </Badge>
           )}
           {showNotProcessed && (
-            <Badge color="orange" variant="light">
+            <Badge className="app-role-pill is-orange" variant="light">
               {t('Неопрацьовано')}: {notProcessedCount}
             </Badge>
           )}
 
           {status === OFFER_PROCESSING_STATUS.PartiallyProcessed && (
-            <Badge color="yellow" variant="light">
+            <Badge className="app-role-pill is-yellow" variant="light">
               {daysToEnd} {dayUnitLabel(daysToEnd, t)} ({formatDate(offer.ValidUntil)})
             </Badge>
           )}
@@ -213,7 +213,7 @@ function OfferLine({
       </Stack>
 
       <Stack gap={2}>
-        <Text size="sm">
+        <Text className="app-money" size="sm">
           {formatMoney(item.TotalAmount)} {currencyCode}
         </Text>
         <Text c="dimmed" size="xs">
@@ -223,7 +223,7 @@ function OfferLine({
 
       <Box>
         {canOpenReason && (
-          <Badge color="orange" style={{ cursor: 'pointer' }} variant="light" onClick={onOpenReason}>
+          <Badge className="app-role-pill is-orange" style={{ cursor: 'pointer' }} variant="light" onClick={onOpenReason}>
             {t('Неопрацьовано')}: {notProcessed}
           </Badge>
         )}
@@ -241,7 +241,7 @@ function ReasonBadge({ status }: { status: 'all' | 'none' | 'partial' }) {
 
   if (status === 'all') {
     return (
-      <Badge color="green" variant="light">
+      <Badge className="app-role-pill is-green" variant="light">
         {t('Причину вказано')}
       </Badge>
     )
@@ -249,14 +249,14 @@ function ReasonBadge({ status }: { status: 'all' | 'none' | 'partial' }) {
 
   if (status === 'partial') {
     return (
-      <Badge color="red" variant="light">
+      <Badge className="app-role-pill is-red" variant="light">
         {t('Причину вказано частково')}
       </Badge>
     )
   }
 
   return (
-    <Badge color="red" variant="light">
+    <Badge className="app-role-pill is-red" variant="light">
       {t('Причину не вказано')}
     </Badge>
   )

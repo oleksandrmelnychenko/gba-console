@@ -25,7 +25,7 @@ export function OfferReasonDrawer({
     <AppDrawer
       opened={opened}
       size="lg"
-      title={offer ? `${t('Оферта')} ${offer.Number ?? ''}` : t('Причини')}
+      title={<span style={{ fontFamily: 'var(--font-mono)' }}>{offer ? `${t('Оферта')} ${offer.Number ?? ''}` : t('Причини')}</span>}
       onClose={onClose}
     >
       {opened && offer && <OfferReasonForm key={offer.NetUid} offer={offer} onClose={onClose} onSaved={onSaved} />}
@@ -118,10 +118,10 @@ function OfferReasonForm({
               </Text>
             )}
             <Group gap="xs">
-              <Badge color="gray" variant="light">
+              <Badge className="app-role-pill is-gray" variant="light">
                 {t('Замовлено')}: {item.OrderedQty ?? 0}
               </Badge>
-              <Badge color="orange" variant="light">
+              <Badge className="app-role-pill is-orange" variant="light">
                 {t('Неопрацьовано')}: {getItemNotProcessed(item)}
               </Badge>
             </Group>

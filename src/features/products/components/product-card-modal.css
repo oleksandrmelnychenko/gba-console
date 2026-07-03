@@ -1,0 +1,63 @@
+/* Product card modal — the §7.2 detail language: mono codes, leader rows,
+   dotted section titles, green money. */
+.product-card-vendor-code {
+  color: var(--mantine-color-gray-9);
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.product-card-original-pill {
+  flex: 0 0 auto;
+  text-transform: none;
+}
+
+/* Leader row: «label ——— value». */
+.product-card-field {
+  align-items: baseline;
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+}
+
+.product-card-field::before {
+  border-bottom: 1px solid var(--mantine-color-gray-3);
+  content: '';
+  flex: 1 1 auto;
+  min-width: 24px;
+  order: 2;
+  transform: translateY(-3px);
+}
+
+.product-card-field > span {
+  color: var(--mantine-color-gray-8);
+  flex: 0 1 auto;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.3;
+  order: 1;
+  white-space: nowrap;
+}
+
+.product-card-field > strong {
+  color: var(--mantine-color-gray-9);
+  flex: 0 1 auto;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+  min-width: 0;
+  order: 3;
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+
+.product-card-field.is-mono > strong {
+  font-family: var(--font-mono);
+  letter-spacing: 0;
+}
+
+.product-card-field.is-money > strong {
+  color: var(--mantine-color-green-8);
+  font-family: var(--font-mono);
+  letter-spacing: 0;
+}

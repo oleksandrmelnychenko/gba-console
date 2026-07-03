@@ -50,7 +50,7 @@ export function NewOfferModal({
       centered
       opened={opened}
       size="xl"
-      title={created ? t('Оферту створено') : t('Створити оферту')}
+      title={<span style={{ fontFamily: 'var(--font-mono)' }}>{created ? t('Оферту створено') : t('Створити оферту')}</span>}
       onClose={close}
     >
       {opened

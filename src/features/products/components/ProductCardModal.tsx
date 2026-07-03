@@ -7,6 +7,7 @@ import { getProductByNetId } from '../api/productsApi'
 import type { Product } from '../types'
 import { getProductMainImage, getProductTitle } from '../utils'
 import { ShopImageGallery } from './ShopImageGallery'
+import './product-card-modal.css'
 
 const numberFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 3, minimumFractionDigits: 0 })
 const moneyFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
@@ -21,7 +22,7 @@ export function ProductCardModal({
   const { t } = useI18n()
 
   return (
-    <AppModal centered opened={Boolean(productNetId)} size="lg" title={t('Картка товару')} onClose={onClose}>
+    <AppModal centered opened={Boolean(productNetId)} size="lg" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Картка товару')}</span>} onClose={onClose}>
       {productNetId && <ProductCardContent key={productNetId} productNetId={productNetId} />}
     </AppModal>
   )
@@ -108,11 +109,11 @@ function ProductCardContent({ productNetId }: { productNetId: string }) {
       <Group justify="space-between" align="flex-start" wrap="nowrap">
         <Stack gap={2}>
           <Group gap={8} wrap="wrap">
-            <Text fw={700} size="lg">
+            <Text className="product-card-vendor-code" fw={600} size="lg">
               {displayValue(product.VendorCode)}
             </Text>
             {product.MainOriginalNumber && (
-              <Badge color="gray" variant="light">
+              <Badge className="app-role-pill is-gray product-card-original-pill" variant="light">
                 {product.MainOriginalNumber}
               </Badge>
             )}
@@ -125,7 +126,7 @@ function ProductCardContent({ productNetId }: { productNetId: string }) {
           )}
         </Stack>
         {product.NetUid && (
-          <Anchor href={`/products?netId=${encodeURIComponent(product.NetUid)}`} target="_blank" rel="noopener noreferrer">
+          <Anchor c="dark.6" fw={600} href={`/products?netId=${encodeURIComponent(product.NetUid)}`} rel="noopener noreferrer" target="_blank" underline="always">
             <Group gap={4} wrap="nowrap">
               <IconExternalLink size={14} />
               <Text size="sm">{t('Відкрити')}</Text>
@@ -164,23 +165,23 @@ function ProductCardContent({ productNetId }: { productNetId: string }) {
         onImageClick={(url) => window.open(url, '_blank', 'noopener,noreferrer')}
       />
 
-      <Stack gap={4}>
-        <DetailRow label={t('Доступно (UA)')} value={formatNumber(product.AvailableQtyUk)} />
-        <DetailRow label={t('В дорозі')} value={formatNumber(product.AvailableQtyRoad)} />
-        <DetailRow label={t('Доступно (ПДВ)')} value={formatNumber(product.AvailableQtyUkVAT)} />
-        <DetailRow label={t('Доступно (перепродаж)')} value={formatNumber(product.AvailableQtyUkReSale)} />
-        <DetailRow label={t('Браковані')} value={formatNumber(product.AvailableDefectiveQtyUk)} />
-        <DetailRow label={t('Ціна (локальна)')} value={formatMoney(product.CurrentLocalPrice)} />
-        <DetailRow label={t('Ціна (EUR)')} value={formatMoney(product.CurrentPrice)} />
-        <DetailRow label={t('Од. виміру')} value={product.MeasureUnit?.Name} />
-        <DetailRow label={t('Вага')} value={formatNumber(product.Weight)} />
-        <DetailRow label={t('Розмір')} value={product.Size} />
-        <DetailRow label={t("Об'єм")} value={product.Volume} />
+      <Stack gap={10}>
+        <DetailRow label={t('Доступно (UA)')} mono value={formatNumber(product.AvailableQtyUk)} />
+        <DetailRow label={t('В дорозі')} mono value={formatNumber(product.AvailableQtyRoad)} />
+        <DetailRow label={t('Доступно (ПДВ)')} mono value={formatNumber(product.AvailableQtyUkVAT)} />
+        <DetailRow label={t('Доступно (перепродаж)')} mono value={formatNumber(product.AvailableQtyUkReSale)} />
+        <DetailRow label={t('Браковані')} mono value={formatNumber(product.AvailableDefectiveQtyUk)} />
+        <DetailRow label={t('Ціна (локальна)')} money={(product.CurrentLocalPrice ?? 0) > 0} mono value={formatMoney(product.CurrentLocalPrice)} />
+        <DetailRow label={t('Ціна (EUR)')} money={(product.CurrentPrice ?? 0) > 0} mono value={formatMoney(product.CurrentPrice)} />
+        <DetailRow label={t('Од. виміру')} mono value={product.MeasureUnit?.Name} />
+        <DetailRow label={t('Вага')} mono value={formatNumber(product.Weight)} />
+        <DetailRow label={t('Розмір')} mono value={product.Size} />
+        <DetailRow label={t("Об'єм")} mono value={product.Volume} />
       </Stack>
 
       {description && (
         <Stack gap={2}>
-          <Text c="dimmed" size="xs" tt="uppercase">
+          <Text className="app-section-title" fw={600} size="sm">
             {t('Опис')}
           </Text>
           <Text size="sm">{description}</Text>
@@ -189,7 +190,7 @@ function ProductCardContent({ productNetId }: { productNetId: string }) {
 
       {notes && (
         <Stack gap={2}>
-          <Text c="dimmed" size="xs" tt="uppercase">
+          <Text className="app-section-title" fw={600} size="sm">
             {t('Примітки')}
           </Text>
           <Text size="sm">{notes}</Text>
@@ -199,41 +200,37 @@ function ProductCardContent({ productNetId }: { productNetId: string }) {
   )
 }
 
-function DetailRow({ label, value }: { label: string; value: unknown }) {
+function DetailRow({ label, money = false, mono = false, value }: { label: string; money?: boolean; mono?: boolean; value: unknown }) {
   const text = displayValue(value)
 
-  if (text === '-') {
+  if (!text) {
     return null
   }
 
   return (
-    <Group justify="space-between" align="flex-start" gap="lg" wrap="nowrap">
-      <Text size="sm" c="dimmed">
-        {label}
-      </Text>
-      <Text size="sm" fw={500} ta="right">
-        {text}
-      </Text>
-    </Group>
+    <div className={`product-card-field${money ? ' is-money' : mono ? ' is-mono' : ''}`}>
+      <span>{label}</span>
+      <strong>{text}</strong>
+    </div>
   )
 }
 
 function formatNumber(value?: number | null): string {
-  return typeof value === 'number' && Number.isFinite(value) ? numberFormatter.format(value) : '-'
+  return typeof value === 'number' && Number.isFinite(value) ? numberFormatter.format(value) : ''
 }
 
 function formatMoney(value?: number | null): string {
-  return typeof value === 'number' && Number.isFinite(value) ? moneyFormatter.format(value) : '-'
+  return typeof value === 'number' && Number.isFinite(value) ? moneyFormatter.format(value) : ''
 }
 
 function displayValue(value: unknown): string {
   if (typeof value === 'number') {
-    return Number.isFinite(value) ? String(value) : '-'
+    return Number.isFinite(value) ? String(value) : ''
   }
 
   if (typeof value === 'string') {
-    return value.trim() || '-'
+    return value.trim() || ''
   }
 
-  return '-'
+  return ''
 }

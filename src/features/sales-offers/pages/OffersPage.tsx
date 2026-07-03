@@ -186,7 +186,7 @@ export function OffersPage() {
             }}
           />
           <div className="app-filter-actions offers-filter-actions">
-            <Button color="gray" size="sm" variant="light" onClick={reload}>
+            <Button color="gray" size="sm" styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} variant="light" onClick={reload}>
               {t('Застосувати')}
             </Button>
             <Tooltip label={t('Оновити')}>
@@ -196,7 +196,7 @@ export function OffersPage() {
             </Tooltip>
           </div>
           <div className="offers-create-actions">
-            <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} onClick={() => setNewOpen(true)}>
+            <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} onClick={() => setNewOpen(true)}>
               {t('Створити оферту')}
             </Button>
           </div>
@@ -264,7 +264,7 @@ export function OffersPage() {
         centered
         opened={Boolean(confirmState)}
         size="sm"
-        title={confirmState?.title ?? ''}
+        title={<span style={{ fontFamily: 'var(--font-mono)' }}>{confirmState?.title ?? ''}</span>}
         onClose={() => (isConfirming ? undefined : setConfirmState(null))}
       >
         {confirmState && (
