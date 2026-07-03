@@ -3713,11 +3713,12 @@
 .new-sale-agreement-card.is-selected::after {
   background: var(--brand-orange);
   border-radius: 999px;
+  bottom: 5px;
   content: '';
   height: 6px;
   position: absolute;
-  right: 9px;
-  top: 9px;
+  right: 5px;
+  top: auto;
   width: 6px;
 }
 
@@ -3774,7 +3775,7 @@
   min-height: 18px;
   padding: 0 7px;
   position: absolute;
-  right: 22px;
+  right: 14px;
   top: 10px;
   text-transform: uppercase;
   width: max-content;
@@ -3863,7 +3864,7 @@
 .new-sale-hero-agreement__metric > span {
   color: var(--mantine-color-gray-7);
   font-family: var(--font-mono);
-  font-size: 8px;
+  font-size: 9px;
   font-weight: 600;
   letter-spacing: 0;
   line-height: 1;
@@ -3873,7 +3874,7 @@
 .new-sale-hero-agreement__metric strong {
   color: var(--mantine-color-gray-8);
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
   line-height: 1;
 }
