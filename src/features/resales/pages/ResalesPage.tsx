@@ -17,8 +17,8 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
-import { AppDrawer } from "../../../shared/ui/AppDrawer"
-import { AppModal } from "../../../shared/ui/AppModal"
+import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { AppModal } from '../../../shared/ui/AppModal'
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
@@ -472,8 +472,9 @@ export function ResalesPage() {
 
       <AppModal
         centered
+        className="resales-modal"
         opened={Boolean(deleteCandidate)}
-        title={t('Видалити перепродаж')}
+        title={<span className="resales-modal-title">{t('Видалити перепродаж')}</span>}
         onClose={() => setDeleteCandidate(null)}
       >
         <Stack gap="md">
@@ -905,7 +906,7 @@ export function NewResalePage() {
       opened
       position="right"
       size="min(1440px, 100vw)"
-      title={t('Новий перепродаж')}
+      title={<span className="resales-drawer-title">{t('Новий перепродаж')}</span>}
       onClose={closeSheet}
     >
     <Stack gap="lg">
@@ -2532,7 +2533,7 @@ function ProcessSelectionConfirmDrawer({
       position="right"
       radius="md"
       size="min(980px, 94vw)"
-      title={t('Підтвердження обробки')}
+      title={<span className="resales-drawer-title">{t('Підтвердження обробки')}</span>}
       onClose={onClose}
     >
       <Stack gap="lg">
@@ -2769,7 +2770,7 @@ function ResaleProcessDrawer({
       position="right"
       radius="md"
       size="min(1180px, 96vw)"
-      title={t('Обробка перепродажу')}
+      title={<span className="resales-drawer-title">{t('Обробка перепродажу')}</span>}
       onClose={closeProcessDrawer}
     >
       <Stack gap="lg">
@@ -2926,7 +2927,7 @@ function DownloadDocumentModal({
   const { t } = useI18n()
 
   return (
-    <AppModal centered opened={opened} title={title} onClose={onClose}>
+    <AppModal centered className="resales-modal" opened={opened} title={<span className="resales-modal-title">{title}</span>} onClose={onClose}>
       <Stack gap="sm">
         {document?.DocumentURL || document?.PdfDocumentURL ? (
           <>
@@ -3189,7 +3190,7 @@ function ConsignmentNoteSettingsDrawer({
       position="right"
       radius="md"
       size="min(760px, 96vw)"
-      title={t('Друк ТТН')}
+      title={<span className="resales-drawer-title">{t('Друк ТТН')}</span>}
       onClose={onClose}
     >
       <Stack gap="lg">
@@ -3345,11 +3346,11 @@ function TotalsCard({ items }: { items: Array<{ label: string; value: string }> 
   return (
     <SimpleGrid cols={{ base: 2, md: items.length }} spacing="sm">
       {items.map((item) => (
-        <Card key={item.label} withBorder radius="sm" padding="sm">
-          <Text c="dimmed" size="xs" tt="uppercase">
+        <Card className="resales-total-card" key={item.label} withBorder radius="sm" padding="sm">
+          <Text className="resales-total-label">
             {item.label}
           </Text>
-          <Text fw={700}>{item.value}</Text>
+          <Text className="app-money resales-total-value">{item.value}</Text>
         </Card>
       ))}
     </SimpleGrid>
@@ -3358,11 +3359,11 @@ function TotalsCard({ items }: { items: Array<{ label: string; value: string }> 
 
 function DetailValue({ label, value }: { label: string; value?: string | number }) {
   return (
-    <Card withBorder radius="sm" padding="sm">
-      <Text c="dimmed" size="xs" tt="uppercase">
+    <Card className="resales-detail-value" withBorder radius="sm" padding="sm">
+      <Text className="resales-total-label">
         {label}
       </Text>
-      <Text fw={600} size="sm" lineClamp={2}>
+      <Text className="resales-detail-value-text" lineClamp={2}>
         {displayValue(value)}
       </Text>
     </Card>

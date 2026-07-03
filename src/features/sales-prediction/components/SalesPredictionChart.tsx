@@ -2,6 +2,7 @@ import { LineChart } from '@mantine/charts'
 import { Card, Group, Loader, SimpleGrid, Stack, Text } from '@mantine/core'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { SalesPredictionChartPoint } from '../types'
+import './sales-prediction-chart.css'
 
 type SalesPredictionChartProps = {
   color?: string
@@ -32,10 +33,10 @@ export function SalesPredictionChart({
   const summary = getSummary(data)
 
   return (
-    <Card withBorder radius="md" padding="md">
+    <Card className="sales-prediction-chart-card" withBorder radius="md" padding="md">
       <Stack gap="sm">
         <Group align="flex-start" justify="space-between" wrap="nowrap">
-          <Text fw={600} size="sm">
+          <Text className="sales-prediction-chart-title">
             {title}
           </Text>
           {isLoading && <Loader size="xs" />}
@@ -83,10 +84,10 @@ export function SalesPredictionComparisonChart({
   const rows = buildComparisonRows(activeSeries)
 
   return (
-    <Card withBorder radius="md" padding="md">
+    <Card className="sales-prediction-chart-card" withBorder radius="md" padding="md">
       <Stack gap="sm">
         <Group align="flex-start" justify="space-between" wrap="nowrap">
-          <Text fw={700} size="sm">
+          <Text className="sales-prediction-chart-title">
             {title}
           </Text>
           {isLoading && <Loader size="xs" />}
@@ -133,10 +134,10 @@ function PredictionSummary({ average, peak, total }: { average: number; peak: nu
 function SummaryItem({ label, value }: { label: string; value: string }) {
   return (
     <Stack gap={2}>
-      <Text c="dimmed" size="xs">
+      <Text className="sales-prediction-summary-label">
         {label}
       </Text>
-      <Text fw={700} size="sm">
+      <Text className="app-money sales-prediction-summary-value">
         {value}
       </Text>
     </Stack>
@@ -146,7 +147,7 @@ function SummaryItem({ label, value }: { label: string; value: string }) {
 function ChartState({ label }: { label: string }) {
   return (
     <Group align="center" h={220} justify="center">
-      <Text c="dimmed" size="sm">
+      <Text className="sales-prediction-chart-state">
         {label}
       </Text>
     </Group>
