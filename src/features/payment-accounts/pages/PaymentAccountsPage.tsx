@@ -13,7 +13,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { IconAlertCircle, IconPencil, IconPlus, IconRefresh, IconRestore, IconSearch, IconStar } from '@tabler/icons-react'
+import { IconAlertCircle, IconPencil, IconPlus, IconRefresh, IconRestore, IconSearch } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -22,7 +22,7 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
-import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { PermissionGate } from '../../auth/components/PermissionGate'
 import {
   getPaymentAccountOrganizations,
@@ -190,25 +190,6 @@ export function PaymentAccountsPage() {
 
   return (
     <Stack gap="md">
-      <PermissionGate permissionKey={PAYMENT_ACCOUNT_CREATE_PERMISSION}>
-        <PageHeaderActions>
-          <Button
-            color={CREATE_ACTION_COLOR}
-            size="sm"
-            leftSection={<IconPlus size={16} />}
-            onClick={() =>
-              navigate('/accounting/payment-accounts/new', {
-                state: {
-                  backgroundLocation: location,
-                  returnPath: `${location.pathname}${location.search}`,
-                },
-              })
-            }
-          >
-            {t('Новий рахунок')}
-          </Button>
-        </PageHeaderActions>
-      </PermissionGate>
       <Card className="app-data-card payment-accounts-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar payment-accounts-filter-bar">
           <Group align="end" gap="sm" wrap="nowrap" className="payment-accounts-filter-row">
@@ -261,6 +242,24 @@ export function PaymentAccountsPage() {
               </Tooltip>
               <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
             </div>
+            <PermissionGate permissionKey={PAYMENT_ACCOUNT_CREATE_PERMISSION}>
+              <Button
+                color={CREATE_ACTION_COLOR}
+                leftSection={<IconPlus size={16} />}
+                size="sm"
+                styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
+                onClick={() =>
+                  navigate('/accounting/payment-accounts/new', {
+                    state: {
+                      backgroundLocation: location,
+                      returnPath: `${location.pathname}${location.search}`,
+                    },
+                  })
+                }
+              >
+                {t('Новий рахунок')}
+              </Button>
+            </PermissionGate>
           </Group>
         </div>
 
@@ -313,7 +312,7 @@ function usePaymentAccountColumns(onOpen: (account: PaymentAccount) => void): Da
           <Group gap="xs" wrap="nowrap">
             <Text fw={600}>{displayValue(account.Name)}</Text>
             {account.IsForRetail && (
-              <Badge color="green" size="xs" variant="light">
+              <Badge className="app-role-pill is-green" size="xs" variant="light">
                 {t('Інтернет-магазин')}
               </Badge>
             )}
@@ -345,7 +344,7 @@ function usePaymentAccountColumns(onOpen: (account: PaymentAccount) => void): Da
         accessor: (account) => account.IsActive,
         cell: (account) =>
           account.IsActive ? (
-            <Badge color="violet" leftSection={<IconStar size={12} />} size="xs" variant="light">
+            <Badge className="app-role-pill is-orange" size="xs" variant="light">
               {t('Основний')}
             </Badge>
           ) : (
@@ -405,7 +404,7 @@ function usePaymentAccountColumns(onOpen: (account: PaymentAccount) => void): Da
             <Tooltip label={t('Редагувати')}>
               <ActionIcon
                 aria-label={t('Редагувати')}
-                color="violet"
+                color="gray"
                 disabled={!account.NetUid}
                 size="sm"
                 variant="subtle"
@@ -448,7 +447,7 @@ function getPaymentRegisterTypeLabel(type: PaymentRegisterType | undefined, t: (
     case PaymentRegisterType.Bank:
       return t('Банк')
     default:
-      return '—'
+      return ''
   }
 }
 
@@ -484,8 +483,8 @@ function formatMoney(value?: number): string {
 
 function displayValue(value?: string | number | null): string {
   if (typeof value === 'number') {
-    return Number.isFinite(value) ? String(value) : '—'
+    return Number.isFinite(value) ? String(value) : ''
   }
 
-  return value || '—'
+  return value || ''
 }
