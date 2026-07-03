@@ -209,7 +209,7 @@ export function SalesPanel({ netId }: SalesPanelProps) {
 
       {isLoading ? (
         <Group justify="center" py="xl">
-          <Loader color="violet" size="sm" />
+          <Loader color="orange" size="sm" />
           <Text c="dimmed" size="sm">
             {t('Завантаження продажів')}
           </Text>
@@ -398,7 +398,7 @@ function SaleAccordionItem({
               </Text>
               <Group gap="xs" mt={4} wrap="wrap">
                 {sale.IsVatSale && (
-                  <Badge color="grape" variant="light">
+                  <Badge className="app-role-pill is-orange" variant="light">
                     {t('Облік ПДВ')}
                   </Badge>
                 )}
@@ -599,7 +599,7 @@ function SaleCarrierDetail({ sale }: { sale: Sale }) {
       {sale.Transporter && (
         <Card className="app-section-card" withBorder padding="md" radius="md">
           <Group gap="sm">
-            <ThemeIcon color="violet" radius="sm" variant="light">
+            <ThemeIcon color="gray" radius="sm" variant="light">
               <IconTruckDelivery size={18} />
             </ThemeIcon>
             <Text fw={600}>{displayValue(sale.Transporter.Name)}</Text>
@@ -679,7 +679,7 @@ function getOrderSourceColor(sale: Sale): string {
     return 'teal'
   }
 
-  return 'violet'
+  return 'orange'
 }
 
 function getLifeCycleLabel(value: number | undefined, t: (key: string) => string): string {

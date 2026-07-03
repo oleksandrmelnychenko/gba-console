@@ -13,6 +13,7 @@ import { IconCheck } from '@tabler/icons-react'
 import { useReducer } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import type { Client, ClientAgreement, ClientGroup, ClientWorkplace } from '../../types'
+import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
 
 const WITHOUT_GROUP_ID = 0
 const WITHOUT_GROUP_NAME = '-- Без групи --'
@@ -286,8 +287,8 @@ function WorkplaceFormFields({
                     style={{
                       border: '1px solid var(--mantine-color-default-border)',
                       borderRadius: 'var(--mantine-radius-sm)',
-                      backgroundColor: isSelected ? 'var(--mantine-color-violet-0)' : undefined,
-                      borderColor: isSelected ? 'var(--mantine-color-violet-5)' : undefined,
+                      backgroundColor: isSelected ? 'var(--mantine-color-orange-0)' : undefined,
+                      borderColor: isSelected ? 'rgba(var(--brand-orange-rgb), 0.55)' : undefined,
                     }}
                     onClick={() => toggleAgreement(item)}
                   >
@@ -356,7 +357,7 @@ function WorkplaceFormFields({
               </Button>
             )}
             <Button
-              color="violet"
+              color={CREATE_ACTION_COLOR}
               disabled={disabled}
               leftSection={<IconCheck size={16} />}
               onClick={handleSubmit}

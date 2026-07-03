@@ -3,6 +3,7 @@ import { IconCheck } from '@tabler/icons-react'
 import { useState } from 'react'
 import { AppModal } from '../../../../shared/ui/AppModal'
 import { useI18n } from '../../../../shared/i18n/useI18n'
+import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
 
 export type NewDeliveryRecipientModalProps = {
   opened: boolean
@@ -88,7 +89,7 @@ function NewDeliveryRecipientForm({
           {t('Скасувати')}
         </Button>
         <Button
-          color="violet"
+          color={CREATE_ACTION_COLOR}
           disabled={!trimmedName}
           leftSection={<IconCheck size={16} />}
           loading={isSaving}

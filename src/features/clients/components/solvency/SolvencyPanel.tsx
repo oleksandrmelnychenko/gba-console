@@ -89,7 +89,7 @@ const SUB_FACTOR_ORDER: { key: keyof SubFactors; label: string }[] = [
 const GAUGE_ZONE_COLOR: Record<string, string> = {
   amber: 'yellow',
   green: 'green',
-  over: 'grape',
+  over: 'orange',
   red: 'red',
 }
 
@@ -166,7 +166,7 @@ export function SolvencyPanel({ clientNetId }: SolvencyPanelProps) {
   if (isLoading) {
     return (
       <Group justify="center" py="xl">
-        <Loader color="violet" size="sm" />
+        <Loader color="orange" size="sm" />
         <Text c="dimmed" size="sm">
           {t('Завантаження оцінки')}
         </Text>

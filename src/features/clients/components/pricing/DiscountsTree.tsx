@@ -11,6 +11,7 @@ import {
 } from '../../permissions'
 import type { ProductGroupDiscount } from '../../types'
 import { compactChangedProductGroupDiscounts } from '../../productGroupDiscountPayload'
+import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
 
 type DiscountNode = {
   netId: string
@@ -419,7 +420,7 @@ export function DiscountsTree({
                 <Button color="red" disabled={disabled} size="xs" variant="light" onClick={() => handleChangeActiveInSelected(false)}>
                   {t('Деактивувати')}
                 </Button>
-                <Button color="violet" disabled={disabled} size="xs" variant="light" onClick={() => handleChangeActiveInSelected(true)}>
+                <Button color={CREATE_ACTION_COLOR} disabled={disabled} size="xs" variant="light" onClick={() => handleChangeActiveInSelected(true)}>
                   {t('Активувати')}
                 </Button>
               </Group>
@@ -448,7 +449,7 @@ export function DiscountsTree({
             <Button color="red" disabled={disabled} size="xs" variant="light" onClick={handleCancel}>
               {t('Скасувати')}
             </Button>
-            <Button color="violet" disabled={disabled} size="xs" onClick={handleApply}>
+            <Button color={CREATE_ACTION_COLOR} disabled={disabled} size="xs" onClick={handleApply}>
               {t('Застосувати')}
             </Button>
           </Group>
@@ -531,7 +532,7 @@ function GroupRow({ node, depth, disabled, canCheck, t, onSelect, onCheck, onTog
       )}
       <Tooltip label={`${node.isActive ? t('Активна знижка') : t('Неактивна знижка')} ${node.percent}%`}>
         <Text
-          c={node.isActive ? 'violet' : 'dimmed'}
+          c={node.isActive ? 'orange.9' : 'dimmed'}
           fw={node.isActive ? 600 : 400}
           style={{ cursor: disabled ? 'default' : 'pointer', minWidth: 56, textAlign: 'right' }}
           onClick={() => {

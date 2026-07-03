@@ -742,7 +742,7 @@ export function ClientNewPage() {
         {isLoading ? (
           <Card withBorder radius="md" padding="lg">
             <Group justify="center" py="xl">
-              <Loader color="violet" size="sm" />
+              <Loader color="orange" size="sm" />
               <Text c="dimmed" size="sm">
                 {t('Завантаження ролей')}
               </Text>
@@ -759,7 +759,7 @@ export function ClientNewPage() {
                         key={item}
                         justify="flex-start"
                         variant={item === currentStep ? 'light' : 'subtle'}
-                        color={item === currentStep ? 'violet' : 'gray'}
+                        color={item === currentStep ? 'orange' : 'gray'}
                         disabled={item !== 'role' && !draft.ClientInRole.ClientTypeRole}
                         onClick={() => goToStep(item)}
                       >
@@ -891,7 +891,7 @@ function NewStepContent({
                   fullWidth
                   h="auto"
                   justify="space-between"
-                  color={isSelected ? 'violet' : 'gray'}
+                  color={isSelected ? 'orange' : 'gray'}
                   variant={isSelected ? 'light' : 'default'}
                   onClick={() => setRole(clientType, clientRole)}
                 >
@@ -902,7 +902,7 @@ function NewStepContent({
                         {clientType.Name || '-'}
                       </Text>
                     </Box>
-                    {isSelected && <Badge color="violet">{t('Обрано')}</Badge>}
+                    {isSelected && <Badge className="app-role-pill">{t('Обрано')}</Badge>}
                   </Group>
                 </Button>,
               ]

@@ -308,7 +308,7 @@ export function PerfectClientPanel({ client, onChange }: PerfectClientPanelProps
 
           {isLoading ? (
             <Group justify="center" py="xl">
-              <Loader color="violet" size="sm" />
+              <Loader color="orange" size="sm" />
               <Text c="dimmed" size="sm">
                 {t('Завантаження ідеального клієнта')}
               </Text>
@@ -385,7 +385,7 @@ function CheckboxRow({
       <Stack gap="xs">
         <Checkbox
           checked={isSelected}
-          color="violet"
+          color={CREATE_ACTION_COLOR}
           label={perfectClient.Lable}
           onChange={(event) => onSelectedChange(event.currentTarget.checked)}
         />
@@ -421,7 +421,7 @@ function ToggleRow({
       <Stack gap="xs">
         <Checkbox
           checked={isSelected}
-          color="violet"
+          color={CREATE_ACTION_COLOR}
           label={perfectClient.Lable}
           onChange={(event) => onSelectedChange(event.currentTarget.checked)}
         />
@@ -431,7 +431,7 @@ function ToggleRow({
           </Text>
           <Switch
             checked={isRightSelected}
-            color="violet"
+            color={CREATE_ACTION_COLOR}
             disabled={!isSelected}
             onChange={onSideChange}
           />

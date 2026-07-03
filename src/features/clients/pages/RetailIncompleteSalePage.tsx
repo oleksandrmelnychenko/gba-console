@@ -62,7 +62,7 @@ export function RetailIncompleteSalePage() {
 
           {netUid && isLoading ? (
             <Group justify="center" py="xl">
-              <Loader color="violet" size="sm" />
+              <Loader color="orange" size="sm" />
               <Text size="sm" c="dimmed">
                 {t('Завантаження товарів')}
               </Text>
