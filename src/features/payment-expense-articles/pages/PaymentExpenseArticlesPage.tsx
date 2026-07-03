@@ -15,7 +15,7 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
-import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { ConsoleTableEntityCell } from '../../../shared/ui/console-table-cells'
 import { createConsoleTableMarker } from '../../../shared/ui/console-table-utils'
 import { useAuth } from '../../auth/useAuth'
@@ -103,7 +103,7 @@ export function PaymentExpenseArticlesPage() {
           <Tooltip label={t('Редагувати')}>
             <ActionIcon
               aria-label={t('Редагувати')}
-              color="violet"
+              color="gray"
               variant="subtle"
               onClick={(event) => {
                 event.stopPropagation()
@@ -152,25 +152,6 @@ export function PaymentExpenseArticlesPage() {
 
   return (
     <Stack className="payment-expense-articles-page console-table-page" gap="md">
-      {canCreate && (
-        <PageHeaderActions>
-          <Button
-            color={CREATE_ACTION_COLOR}
-            size="sm"
-            leftSection={<IconPlus size={16} />}
-            onClick={() =>
-              navigate('/accounting/payment-expense-articles/new', {
-                state: {
-                  backgroundLocation: location,
-                  returnPath: `${location.pathname}${location.search}`,
-                },
-              })
-            }
-          >
-            {t('Нова стаття')}
-          </Button>
-        </PageHeaderActions>
-      )}
       <div className="console-table-shell">
         <div className="console-table-command-bar is-search-only">
           <TextInput
@@ -188,6 +169,24 @@ export function PaymentExpenseArticlesPage() {
               </ActionIcon>
             </Tooltip>
           </div>
+          {canCreate && (
+            <Button
+              color={CREATE_ACTION_COLOR}
+              leftSection={<IconPlus size={16} />}
+              size="sm"
+              styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
+              onClick={() =>
+                navigate('/accounting/payment-expense-articles/new', {
+                  state: {
+                    backgroundLocation: location,
+                    returnPath: `${location.pathname}${location.search}`,
+                  },
+                })
+              }
+            >
+              {t('Нова стаття')}
+            </Button>
+          )}
         </div>
 
         {error && (
@@ -217,10 +216,10 @@ export function PaymentExpenseArticlesPage() {
 
 function displayValue(value?: string | number | null): string {
   if (typeof value === 'number') {
-    return Number.isFinite(value) ? String(value) : '—'
+    return Number.isFinite(value) ? String(value) : ''
   }
 
-  return value || '—'
+  return value || ''
 }
 
 function isAbortError(error: unknown): boolean {
