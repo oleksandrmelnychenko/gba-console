@@ -685,7 +685,7 @@ function ProductPlacementsPageView({ model }: { model: ReturnType<typeof useProd
       <AppModal
         centered
         opened={downloadModalOpened}
-        title={t('Документи розміщень')}
+        title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Документи розміщень')}</span>}
         onClose={() => setDownloadModalOpened(false)}
       >
         <Stack gap="sm">
@@ -766,7 +766,7 @@ function ProductPlacementImportModal({
   }
 
   return (
-    <AppModal centered opened={opened} size="lg" title={t('Імпорт розміщень')} onClose={onClose}>
+    <AppModal centered opened={opened} size="lg" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Імпорт розміщень')}</span>} onClose={onClose}>
       <form onSubmit={submitForm}>
         <Stack gap="md">
           {error && (
@@ -874,7 +874,7 @@ function ReturnedProductsModal({
   )
 
   return (
-    <AppModal centered opened={opened} size="min(1100px, 96vw)" title={t('Не пройшли імпорт')} onClose={onClose}>
+    <AppModal centered opened={opened} size="min(1100px, 96vw)" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Не пройшли імпорт')}</span>} onClose={onClose}>
       <Stack gap="md">
         <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
           {t('Перевірте кількість або розміщення та відправте позиції повторно.')}
@@ -933,7 +933,7 @@ function useProductPlacementColumns(
         width: 150,
         minWidth: 132,
         accessor: (row) => row.Created,
-        cell: (row) => formatDateTime(row.Created),
+        cell: (row) => <Text size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{formatDateTime(row.Created)}</Text>,
       },
       {
         id: 'vendorCode',
@@ -958,7 +958,7 @@ function useProductPlacementColumns(
         minWidth: 96,
         align: 'right',
         accessor: (row) => row.Qty,
-        cell: (row) => formatAmount(row.Qty),
+        cell: (row) => <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{formatAmount(row.Qty)}</Text>,
       },
       {
         id: 'placement',
@@ -967,7 +967,7 @@ function useProductPlacementColumns(
         minWidth: 240,
         accessor: (row) => row.Placement,
         cell: (row) => (
-          <Text size="sm" lineClamp={2}>
+          <Text lineClamp={2} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>
             {displayValue(row.Placement)}
           </Text>
         ),
@@ -1074,9 +1074,12 @@ function renderVendorCodeCell(row: ProductPlacementRow, onOpenProductCard: (prod
 
   return netId ? (
     <Anchor
+      c="dark.6"
       component="button"
-      fw={700}
+      fw={600}
+      style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}
       type="button"
+      underline="always"
       onClick={(event) => {
         event.stopPropagation()
         onOpenProductCard(netId)
@@ -1085,7 +1088,7 @@ function renderVendorCodeCell(row: ProductPlacementRow, onOpenProductCard: (prod
       {code}
     </Anchor>
   ) : (
-    <Text fw={700}>{code}</Text>
+    <Text fw={600} style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{code}</Text>
   )
 }
 
@@ -1095,10 +1098,12 @@ function renderProductNameCell(row: ProductPlacementRow, onOpenProductCard: (pro
 
   return netId ? (
     <Anchor
+      c="dark.6"
       component="button"
       lineClamp={2}
       size="sm"
       type="button"
+      underline="always"
       onClick={(event) => {
         event.stopPropagation()
         onOpenProductCard(netId)
