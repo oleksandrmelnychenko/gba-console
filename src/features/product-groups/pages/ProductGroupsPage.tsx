@@ -12,7 +12,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { AppModal } from "../../../shared/ui/AppModal"
-import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { notifications } from '@mantine/notifications'
 import { useDebouncedValue } from '@mantine/hooks'
 import { IconAlertCircle, IconPencil, IconPlus, IconRefresh, IconRestore, IconSearch } from '@tabler/icons-react'
@@ -227,19 +227,6 @@ export function ProductGroupsPage() {
 
   return (
     <Stack className="product-groups-page" gap={6}>
-      <PermissionGate permissionKey={PRODUCT_GROUPS_ADD_PERMISSION}>
-        <PageHeaderActions>
-          <Button
-            color={CREATE_ACTION_COLOR}
-            size="sm"
-            leftSection={<IconPlus size={16} />}
-            onClick={() => setCreateModalOpened(true)}
-            type="button"
-          >
-            {t('Нова група')}
-          </Button>
-        </PageHeaderActions>
-      </PermissionGate>
       <Card className="app-data-card product-groups-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar product-groups-filter-bar">
           <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
@@ -278,6 +265,18 @@ export function ProductGroupsPage() {
               </Tooltip>
               <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
             </div>
+            <PermissionGate permissionKey={PRODUCT_GROUPS_ADD_PERMISSION}>
+              <Button
+                color={CREATE_ACTION_COLOR}
+                leftSection={<IconPlus size={16} />}
+                size="sm"
+                styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
+                type="button"
+                onClick={() => setCreateModalOpened(true)}
+              >
+                {t('Нова група')}
+              </Button>
+            </PermissionGate>
           </Group>
         </div>
 
@@ -340,7 +339,7 @@ function useProductGroupColumns(openProductGroup: (productGroup: ProductGroup) =
         minWidth: 104,
         accessor: (productGroup) => (productGroup.IsActive === false ? t('Неактивна') : t('Активна')),
         cell: (productGroup) => (
-          <Badge color={productGroup.IsActive === false ? 'gray' : 'green'} variant="light">
+          <Badge className={productGroup.IsActive === false ? 'app-role-pill is-gray' : 'app-role-pill is-green'} variant="light">
             {productGroup.IsActive === false ? t('Неактивна') : t('Активна')}
           </Badge>
         ),
@@ -496,7 +495,7 @@ function ProductGroupCreateModal({
             <Button color="gray" type="button" variant="subtle" onClick={onClose}>
               {t('Скасувати')}
             </Button>
-            <Button color="violet" loading={isCreating} type="submit">
+            <Button color={CREATE_ACTION_COLOR} loading={isCreating} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} type="submit">
               {t('Створити')}
             </Button>
           </Group>
