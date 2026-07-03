@@ -19,7 +19,7 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
-import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useAuth } from '../../auth/useAuth'
 import { getPaymentCashflowArticles, searchPaymentCashflowArticles } from '../api/paymentCashflowArticlesApi'
 import type { PaymentCashflowArticle } from '../types'
@@ -100,7 +100,7 @@ export function PaymentCashflowArticlesPage() {
           <Tooltip label={t('Редагувати')}>
             <ActionIcon
               aria-label={t('Редагувати')}
-              color="violet"
+              color="gray"
               variant="subtle"
               onClick={(event) => {
                 event.stopPropagation()
@@ -158,25 +158,6 @@ export function PaymentCashflowArticlesPage() {
 
   return (
     <Stack gap="md">
-      {canCreate && (
-        <PageHeaderActions>
-          <Button
-            color={CREATE_ACTION_COLOR}
-            size="sm"
-            leftSection={<IconPlus size={16} />}
-            onClick={() =>
-              navigate('/accounting/payment-cashflow-articles/new', {
-                state: {
-                  backgroundLocation: location,
-                  returnPath: `${location.pathname}${location.search}`,
-                },
-              })
-            }
-          >
-            {t('Нова стаття')}
-          </Button>
-        </PageHeaderActions>
-      )}
       <Card className="app-data-card payment-cashflow-articles-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar payment-cashflow-articles-filter-bar">
           <Group align="end" gap="sm" wrap="nowrap" className="payment-cashflow-articles-filter-row">
@@ -215,6 +196,24 @@ export function PaymentCashflowArticlesPage() {
               </Tooltip>
               <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
             </div>
+            {canCreate && (
+              <Button
+                color={CREATE_ACTION_COLOR}
+                leftSection={<IconPlus size={16} />}
+                size="sm"
+                styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
+                onClick={() =>
+                  navigate('/accounting/payment-cashflow-articles/new', {
+                    state: {
+                      backgroundLocation: location,
+                      returnPath: `${location.pathname}${location.search}`,
+                    },
+                  })
+                }
+              >
+                {t('Нова стаття')}
+              </Button>
+            )}
           </Group>
         </div>
 
@@ -247,7 +246,7 @@ export function PaymentCashflowArticlesPage() {
 }
 
 function displayValue(value: unknown): string {
-  return typeof value === 'string' && value.trim() ? value : '—'
+  return typeof value === 'string' && value.trim() ? value : ''
 }
 
 function isAbortError(error: unknown): boolean {
