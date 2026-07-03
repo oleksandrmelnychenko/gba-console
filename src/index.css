@@ -217,3 +217,51 @@ select {
   box-shadow: none;
   outline: none;
 }
+
+/* Money values (docs/ui-patterns.md §5.1): mono 600; positive — green,
+   negative — red. Apply .app-money to the element holding the formatted
+   amount; add .is-negative when the raw value is < 0. */
+.app-money {
+  color: var(--mantine-color-green-8);
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.app-money.is-negative {
+  color: var(--mantine-color-red-8);
+}
+
+.app-money-meta {
+  color: var(--mantine-color-green-7);
+}
+
+.app-money.is-negative .app-money-meta,
+.app-money-meta.is-negative {
+  color: var(--mantine-color-red-7);
+}
+
+/* Mantine Tabs follow the §10 tab pattern app-wide: mono labels on the gray-2
+   baseline, brand-orange underline for the active tab (never violet). */
+.mantine-Tabs-list {
+  border-color: var(--mantine-color-gray-2);
+}
+
+.mantine-Tabs-tab {
+  color: var(--mantine-color-gray-7);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.mantine-Tabs-tab:hover {
+  background: transparent;
+  color: var(--mantine-color-gray-9);
+}
+
+.mantine-Tabs-tab[data-active] {
+  border-color: var(--brand-orange);
+  color: var(--mantine-color-gray-9);
+  font-weight: 600;
+}

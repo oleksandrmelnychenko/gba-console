@@ -533,52 +533,52 @@ export function SalesOnlineShopPage() {
                 value={filterDraft.value}
                 onChange={(event) => applyFilters({ ...filterDraft, value: event.currentTarget.value })}
               />
-            <TextInput
-              className="sales-filter-control"
-              label={t('З')}
-              max={filterDraft.to || undefined}
-              type="date"
-              value={filterDraft.from}
-              onChange={(event) => applyFilters({ ...filterDraft, from: event.currentTarget.value })}
-            />
-            <TextInput
-              className="sales-filter-control"
-              label={t('По')}
-              min={filterDraft.from || undefined}
-              type="date"
-              value={filterDraft.to}
-              onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
-            />
-            <Select
-              allowDeselect={false}
-              className="sales-filter-control"
-              data={STATUS_OPTIONS.map((option) => ({ ...option, label: t(option.label) }))}
-              label={t('Статус')}
-              value={filterDraft.status}
-              onChange={(value) =>
-                applyFilters({
-                  ...filterDraft,
-                  status: (value as SalesOnlineShopStatusFilter | null) || 'all',
-                })
-              }
-            />
-            <Select
-              allowDeselect={false}
-              className="sales-filter-control"
-              data={[
-                { value: 'All', label: t('Усі менеджери') },
-                { value: 'Self', label: t('Тільки мої') },
-              ]}
-              label={t('Менеджер')}
-              value={filterDraft.onlyMine ? 'Self' : 'All'}
-              onChange={(value) =>
-                applyFilters({
-                  ...filterDraft,
-                  onlyMine: ((value as SalesOnlineShopUserFilter | null) || 'All') === 'Self',
-                })
-              }
-            />
-              <div className="sales-filter-actions">
+              <TextInput
+                className="sales-filter-control"
+                label={t('З')}
+                max={filterDraft.to || undefined}
+                type="date"
+                value={filterDraft.from}
+                onChange={(event) => applyFilters({ ...filterDraft, from: event.currentTarget.value })}
+              />
+              <TextInput
+                className="sales-filter-control"
+                label={t('По')}
+                min={filterDraft.from || undefined}
+                type="date"
+                value={filterDraft.to}
+                onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
+              />
+              <Select
+                allowDeselect={false}
+                className="sales-filter-control"
+                data={STATUS_OPTIONS.map((option) => ({ ...option, label: t(option.label) }))}
+                label={t('Статус')}
+                value={filterDraft.status}
+                onChange={(value) =>
+                  applyFilters({
+                    ...filterDraft,
+                    status: (value as SalesOnlineShopStatusFilter | null) || 'all',
+                  })
+                }
+              />
+              <Select
+                allowDeselect={false}
+                className="sales-filter-control"
+                data={[
+                  { value: 'All', label: t('Усі менеджери') },
+                  { value: 'Self', label: t('Тільки мої') },
+                ]}
+                label={t('Менеджер')}
+                value={filterDraft.onlyMine ? 'Self' : 'All'}
+                onChange={(value) =>
+                  applyFilters({
+                    ...filterDraft,
+                    onlyMine: ((value as SalesOnlineShopUserFilter | null) || 'All') === 'Self',
+                  })
+                }
+              />
+              <div className="app-filter-actions sales-filter-actions">
                 <Tooltip label={t('Скинути')}>
                   <ActionIcon
                     aria-label={t('Скинути')}

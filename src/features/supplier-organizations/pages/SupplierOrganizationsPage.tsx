@@ -1,5 +1,6 @@
 import {
   ActionIcon,
+  Badge,
   Alert,
   Anchor,
   Button,
@@ -473,7 +474,18 @@ function SupplierOrganizationAgreementCell({ organization }: { organization: Sup
   return (
     <span className="supplier-organizations-two-line-cell is-separated" title={nativeTitle(tooltip)}>
       <span>{organizations}</span>
-      <small>{compactStrings([agreements, currencies]).join(' · ')}</small>
+      <span className="supplier-organizations-agreement-pills">
+        {agreements ? (
+          <Badge className="app-role-pill supplier-organizations-agreement-pill" variant="light">
+            {agreements}
+          </Badge>
+        ) : null}
+        {currencies ? (
+          <Badge className="app-role-pill is-gray supplier-organizations-agreement-pill" variant="light">
+            {currencies}
+          </Badge>
+        ) : null}
+      </span>
     </span>
   )
 }
@@ -507,11 +519,13 @@ function SupplierOrganizationBankCell({ organization }: { organization: SupplyOr
 }
 
 function SupplierOrganizationBalanceCell({ organization }: { organization: SupplyOrganization }) {
-  const amount = formatMoney(organization.TotalAgreementsCurrentEuroAmount)
+  const rawAmount = organization.TotalAgreementsCurrentEuroAmount
+  const amount = formatMoney(rawAmount)
   const currency = amount ? getAgreementCurrencies(organization) || 'EUR' : ''
+  const isNegative = typeof rawAmount === 'number' && rawAmount < 0
 
   return (
-    <span className="supplier-organizations-balance-cell" title={nativeTitle(compactStrings([amount, currency]).join(' '))}>
+    <span className={`supplier-organizations-balance-cell${isNegative ? ' is-negative' : ''}`} title={nativeTitle(compactStrings([amount, currency]).join(' '))}>
       <strong>{amount}</strong>
       <small>{currency}</small>
     </span>

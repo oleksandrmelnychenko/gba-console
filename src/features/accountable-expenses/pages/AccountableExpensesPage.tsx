@@ -12,7 +12,6 @@ import {
 import {
   IconAlertCircle,
   IconExternalLink,
-  IconRefresh,
   IconRestore,
   IconSearch,
 } from '@tabler/icons-react'
@@ -29,6 +28,8 @@ import type {
   DataTableColumn,
   DataTableDefaultLayout,
 } from '../../../shared/ui/data-table/types'
+import { Paginator } from '../../../shared/ui/paginator/Paginator'
+import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
 import {
   getAccountableExpenses,
   searchAccountableExpenses,
@@ -93,6 +94,9 @@ export function AccountableExpensesPage() {
   const [fromDate, setFromDate] = useValueState(() => readStoredFilters().from || defaultFromDate)
   const [toDate, setToDate] = useValueState(() => readStoredFilters().to || defaultToDate)
   const [searchValue, setSearchValue] = useValueState('')
+  const [page, setPage] = useValueState(1)
+  const [pageSize, setPageSize] = useValueState(DEFAULT_PAGINATOR_PAGE_SIZE)
+  const [totalOrders, setTotalOrders] = useValueState<number | undefined>(undefined)
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(false)
   const [selectedRow, setSelectedRow] = useValueState<AccountableExpenseRow | null>(null)
@@ -100,6 +104,7 @@ export function AccountableExpensesPage() {
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const filterError = getDateRangeError(fromDate, toDate)
   const requestRef = useRef(0)
+  const offset = (page - 1) * pageSize
 
   const loadOrders = useCallback(async () => {
     if (filterError) {
@@ -107,6 +112,7 @@ export function AccountableExpensesPage() {
       setError(null)
       setLoading(false)
       setOrders([])
+      setTotalOrders(undefined)
       return
     }
 
@@ -116,16 +122,19 @@ export function AccountableExpensesPage() {
     setError(null)
 
     try {
-      const nextOrders = searchValue
-        ? await searchAccountableExpenses(searchValue, { from: fromDate, to: toDate })
-        : await getAccountableExpenses({ from: fromDate, to: toDate })
+      const trimmedSearchValue = searchValue.trim()
+      const nextResponse = trimmedSearchValue
+        ? await searchAccountableExpenses(trimmedSearchValue, { from: fromDate, limit: pageSize, offset, to: toDate })
+        : await getAccountableExpenses({ from: fromDate, limit: pageSize, offset, to: toDate })
 
       if (requestRef.current === requestId) {
-        setOrders(nextOrders)
+        setOrders(nextResponse.Items)
+        setTotalOrders(nextResponse.Total)
       }
     } catch (loadError) {
       if (requestRef.current === requestId) {
         setOrders([])
+        setTotalOrders(undefined)
         setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити підзвітні витрати'))
       }
     } finally {
@@ -133,7 +142,7 @@ export function AccountableExpensesPage() {
         setLoading(false)
       }
     }
-  }, [filterError, fromDate, searchValue, setError, setLoading, setOrders, t, toDate])
+  }, [filterError, fromDate, offset, pageSize, searchValue, setError, setLoading, setOrders, setTotalOrders, t, toDate])
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -147,7 +156,27 @@ export function AccountableExpensesPage() {
     writeStoredFilters({ from: fromDate, to: toDate })
   }, [fromDate, toDate])
 
-  const rows = useMemo(() => buildExpenseRows(orders), [orders])
+  const hasClientFallbackRows = typeof totalOrders !== 'number' && orders.length > pageSize
+  const visibleOrders = useMemo(
+    () => (hasClientFallbackRows ? orders.slice(offset, offset + pageSize) : orders),
+    [hasClientFallbackRows, offset, orders, pageSize],
+  )
+  const rows = useMemo(() => buildExpenseRows(visibleOrders), [visibleOrders])
+  const canMoveForward = typeof totalOrders === 'number'
+    ? page * pageSize < totalOrders
+    : hasClientFallbackRows
+      ? offset + pageSize < orders.length
+      : orders.length === pageSize
+  const totalPages = typeof totalOrders === 'number'
+    ? Math.max(1, Math.ceil(totalOrders / pageSize))
+    : page + (canMoveForward ? 1 : 0)
+
+  useEffect(() => {
+    if (typeof totalOrders === 'number' && page > totalPages) {
+      setPage(totalPages)
+    }
+  }, [page, setPage, totalOrders, totalPages])
+
   const openPayment = useCallback(
     (row: AccountableExpenseRow) => {
       const netId = row.order.NetUid || row.order.Id
@@ -196,9 +225,11 @@ export function AccountableExpensesPage() {
       setFromDate(defaultFromDate)
       setToDate(defaultToDate)
       setSearchValue('')
+      setPage(1)
       setOrders([])
+      setTotalOrders(undefined)
     },
-    [defaultFromDate, defaultToDate, setFromDate, setOrders, setSearchValue, setToDate],
+    [defaultFromDate, defaultToDate, setFromDate, setOrders, setPage, setSearchValue, setToDate, setTotalOrders],
   )
   const columns = useAccountableExpenseColumns()
   const hasActiveFilters = Boolean(searchValue.trim()) || fromDate !== defaultFromDate || toDate !== defaultToDate
@@ -217,7 +248,9 @@ export function AccountableExpensesPage() {
                 value={fromDate}
                 onChange={(event) => {
                   setFromDate(event.currentTarget.value)
+                  setPage(1)
                   setOrders([])
+                  setTotalOrders(undefined)
                 }}
               />
               <span className="accountable-expenses-period-separator" />
@@ -228,7 +261,9 @@ export function AccountableExpensesPage() {
                 value={toDate}
                 onChange={(event) => {
                   setToDate(event.currentTarget.value)
+                  setPage(1)
                   setOrders([])
+                  setTotalOrders(undefined)
                 }}
               />
             </div>
@@ -242,7 +277,9 @@ export function AccountableExpensesPage() {
             value={searchValue}
             onChange={(event) => {
               setSearchValue(event.currentTarget.value)
+              setPage(1)
               setOrders([])
+              setTotalOrders(undefined)
             }}
           />
 
@@ -259,11 +296,19 @@ export function AccountableExpensesPage() {
                 <IconRestore size={17} />
               </ActionIcon>
             </Tooltip>
-            <Tooltip label={t('Оновити')}>
-              <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={34} variant="light" onClick={() => void loadOrders()}>
-                <IconRefresh size={17} />
-              </ActionIcon>
-            </Tooltip>
+            <Paginator
+              isLoading={isLoading}
+              page={page}
+              pageSize={pageSize}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              onPageSizeChange={(nextPageSize) => {
+                setPage(1)
+                setPageSize(nextPageSize)
+                setTotalOrders(undefined)
+              }}
+              onRefresh={() => void loadOrders()}
+            />
           </div>
           <div ref={setTableToolbarSlot} className="accountable-expenses-table-toolbar-slot" />
         </div>

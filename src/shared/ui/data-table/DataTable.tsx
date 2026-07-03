@@ -25,6 +25,7 @@ import {
   type ColumnOrderState,
   type ColumnPinningState,
   type ColumnSizingState,
+  type Header,
   type OnChangeFn,
   type SortingState,
   type VisibilityState,
@@ -315,19 +316,22 @@ export function DataTable<TData>({
   const expandColumnWidth = isExpandable ? EXPAND_COLUMN_WIDTH : 0
   const visibleLeafColumns = table.getVisibleLeafColumns()
   const headerGroups = table.getHeaderGroups()
+  const firstHeaderGroupColumns = splitRightPinnedHeaders(headerGroups[0]?.headers ?? [])
   const baseTableWidth = table.getTotalSize() + expandColumnWidth
   const shouldFillAvailableWidth = fillAvailableWidth || distributeAvailableWidth
   const tableWidth = Math.ceil(
     Math.max(
       minWidth + expandColumnWidth,
       baseTableWidth,
-      shouldFillAvailableWidth ? scrollViewportWidth : 0,
+      scrollViewportWidth,
     ),
   )
+  const fillerColumnWidth = shouldFillAvailableWidth ? 0 : Math.max(0, tableWidth - baseTableWidth)
+  const renderedColumnTableWidth = shouldFillAvailableWidth ? tableWidth : baseTableWidth
   // Memoized so the widths Map keeps its identity across unrelated re-renders —
   // it is a prop of every (memoized) body row.
   const { columnWidths, fillColumnId } = useMemo(() => {
-    const fillId = getFillColumnId(visibleLeafColumns, tableWidth, baseTableWidth, {
+    const fillId = getFillColumnId(visibleLeafColumns, renderedColumnTableWidth, baseTableWidth, {
       distributeAvailableWidth,
     })
 
@@ -335,12 +339,12 @@ export function DataTable<TData>({
       columnWidths: createRenderedColumnWidths(
         visibleLeafColumns,
         fillId,
-        tableWidth - baseTableWidth,
+        renderedColumnTableWidth - baseTableWidth,
         { distributeAvailableWidth },
       ),
       fillColumnId: fillId,
     }
-  }, [baseTableWidth, distributeAvailableWidth, tableWidth, visibleLeafColumns])
+  }, [baseTableWidth, distributeAvailableWidth, renderedColumnTableWidth, visibleLeafColumns])
   const visibleColumnCount = visibleLeafColumns.length || 1
   const scrollStyle = useMemo(
     () => createScrollStyle(height, maxHeight, scrollViewportWidth > 0),
@@ -499,7 +503,18 @@ export function DataTable<TData>({
               {isExpandable ? (
                 <col style={{ width: EXPAND_COLUMN_WIDTH }} />
               ) : null}
-              {headerGroups[0]?.headers.map((header) => (
+              {firstHeaderGroupColumns.leading.map((header) => (
+                <col
+                  key={header.id}
+                  style={{
+                    width: columnWidths.get(header.column.id) ?? header.column.getSize(),
+                  }}
+                />
+              ))}
+              {fillerColumnWidth > 0 ? (
+                <col style={{ width: fillerColumnWidth }} />
+              ) : null}
+              {firstHeaderGroupColumns.rightPinned.map((header) => (
                 <col
                   key={header.id}
                   style={{
@@ -510,56 +525,26 @@ export function DataTable<TData>({
             </colgroup>
             <Table.Thead>
               {headerGroups.map((headerGroup) => (
-                <Table.Tr key={headerGroup.id}>
-                  {isExpandable ? (
-                    <Table.Th
-                      aria-hidden
-                      className="data-table-th data-table-expand-th"
-                      style={{ width: EXPAND_COLUMN_WIDTH, minWidth: EXPAND_COLUMN_WIDTH }}
-                    />
-                  ) : null}
-                  {/* Items must mirror the RENDERED header sequence (pinned left,
-                      center, pinned right; hidden columns excluded) — passing the
-                      full logical columnOrder desynchronises dnd-kit's index math
-                      once anything is hidden or pinned. */}
-                  <SortableContext
-                    items={headerGroup.headers.map((header) => header.column.id)}
-                    strategy={horizontalListSortingStrategy}
-                  >
-                    {headerGroup.headers.map((header) => {
-                      const pinned = header.column.getIsPinned()
-
-                      return (
-                        <DataTableHeaderCell
-                          key={header.id}
-                          columnWidth={columnWidths.get(header.column.id) ?? header.getSize()}
-                          header={header}
-                          isColumnDragActive={isColumnDragActive}
-                          isFillColumn={header.column.id === fillColumnId}
-                          isResizing={header.column.getIsResizing()}
-                          labels={labels}
-                          pinned={pinned}
-                          pinnedLeftPx={
-                            pinned === 'left'
-                              ? Math.round(header.column.getStart('left')) + expandColumnWidth
-                              : undefined
-                          }
-                          pinnedRightPx={
-                            pinned === 'right' ? Math.round(header.column.getAfter('right')) : undefined
-                          }
-                          showLayoutControls={showLayoutControls}
-                          sorted={header.column.getIsSorted()}
-                        />
-                      )
-                    })}
-                  </SortableContext>
-                </Table.Tr>
+                <DataTableHeaderRow
+                  key={headerGroup.id}
+                  columnWidths={columnWidths}
+                  expandColumnWidth={expandColumnWidth}
+                  fillerColumnWidth={fillerColumnWidth}
+                  fillColumnId={fillColumnId}
+                  headerGroupId={headerGroup.id}
+                  headers={headerGroup.headers}
+                  isColumnDragActive={isColumnDragActive}
+                  isExpandable={isExpandable}
+                  labels={labels}
+                  showLayoutControls={showLayoutControls}
+                />
               ))}
             </Table.Thead>
             <DataTableBody
               columnWidths={columnWidths}
               expand={expandConfig}
               expandedRowIds={expandedRowIds}
+              fillerColumnWidth={fillerColumnWidth}
               fillColumnId={fillColumnId}
               isLoading={isLoading}
               pinnedLeftOffset={expandColumnWidth}
@@ -583,6 +568,103 @@ export function DataTable<TData>({
       </div>
     </div>
   )
+}
+
+function DataTableHeaderRow<TData>({
+  columnWidths,
+  expandColumnWidth,
+  fillerColumnWidth,
+  fillColumnId,
+  headerGroupId,
+  headers,
+  isColumnDragActive,
+  isExpandable,
+  labels,
+  showLayoutControls,
+}: {
+  columnWidths: ReadonlyMap<string, number>
+  expandColumnWidth: number
+  fillerColumnWidth: number
+  fillColumnId?: string
+  headerGroupId: string
+  headers: Header<TData, unknown>[]
+  isColumnDragActive: boolean
+  isExpandable: boolean
+  labels: Required<DataTableLabels>
+  showLayoutControls: boolean
+}) {
+  const { leading, rightPinned } = splitRightPinnedHeaders(headers)
+
+  function renderHeader(header: Header<TData, unknown>) {
+    const pinned = header.column.getIsPinned()
+
+    return (
+      <DataTableHeaderCell
+        key={header.id}
+        columnWidth={columnWidths.get(header.column.id) ?? header.getSize()}
+        header={header}
+        isColumnDragActive={isColumnDragActive}
+        isFillColumn={header.column.id === fillColumnId}
+        isResizing={header.column.getIsResizing()}
+        labels={labels}
+        pinned={pinned}
+        pinnedLeftPx={
+          pinned === 'left'
+            ? Math.round(header.column.getStart('left')) + expandColumnWidth
+            : undefined
+        }
+        pinnedRightPx={
+          pinned === 'right' ? Math.round(header.column.getAfter('right')) : undefined
+        }
+        showLayoutControls={showLayoutControls}
+        sorted={header.column.getIsSorted()}
+      />
+    )
+  }
+
+  return (
+    <Table.Tr key={headerGroupId}>
+      {isExpandable ? (
+        <Table.Th
+          aria-hidden
+          className="data-table-th data-table-expand-th"
+          style={{ width: expandColumnWidth, minWidth: expandColumnWidth }}
+        />
+      ) : null}
+      {/* Items must mirror the RENDERED data-header sequence (pinned left,
+          center, pinned right; hidden columns excluded). The filler is visual
+          chrome only and is intentionally not sortable/draggable. */}
+      <SortableContext
+        items={headers.map((header) => header.column.id)}
+        strategy={horizontalListSortingStrategy}
+      >
+        {leading.map(renderHeader)}
+        {fillerColumnWidth > 0 ? (
+          <Table.Th
+            aria-hidden
+            className="data-table-th data-table-filler-th"
+            style={{ width: fillerColumnWidth, minWidth: fillerColumnWidth }}
+          />
+        ) : null}
+        {rightPinned.map(renderHeader)}
+      </SortableContext>
+    </Table.Tr>
+  )
+}
+
+function splitRightPinnedHeaders<TData>(headers: Header<TData, unknown>[]) {
+  const leading: Header<TData, unknown>[] = []
+  const rightPinned: Header<TData, unknown>[] = []
+
+  headers.forEach((header) => {
+    if (header.column.getIsPinned() === 'right') {
+      rightPinned.push(header)
+    } else {
+      leading.push(header)
+    }
+  })
+
+  return { leading, rightPinned }
 }
 
 function createScrollStyle(

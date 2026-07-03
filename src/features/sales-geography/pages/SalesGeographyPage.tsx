@@ -21,6 +21,7 @@ import { BubbleLegend } from '../components/BubbleLegend'
 import { UkraineBubbleMap } from '../components/UkraineBubbleMap'
 import { OBLAST_CENTROIDS } from '../data/oblastCentroids'
 import type { GeographyMetric, OtherBucket, PlottedRegion, SalesRegionAggregate } from '../types'
+import './sales-geography-page.css'
 
 const TRAILING_MONTHS = 12
 
@@ -33,6 +34,11 @@ const countFormatter = new Intl.NumberFormat('uk-UA')
 const METRIC_BADGE_COLOR: Record<GeographyMetric, string> = {
   sales: 'teal',
   debt: 'orange',
+}
+
+const METRIC_PILL_CLASS: Record<GeographyMetric, string> = {
+  sales: 'app-role-pill is-green sales-geography-pill',
+  debt: 'app-role-pill is-orange sales-geography-pill',
 }
 
 export function SalesGeographyPage() {
@@ -101,7 +107,7 @@ export function SalesGeographyPage() {
 
   return (
     <Stack className="cockpit-page" gap="md">
-      <Group align="center" justify="space-between" wrap="wrap">
+      <Group align="center" className="sales-geography-toolbar" justify="space-between" wrap="wrap">
         <Group gap="sm">
           <SegmentedControl
             color={METRIC_BADGE_COLOR[metric]}
@@ -112,7 +118,7 @@ export function SalesGeographyPage() {
             value={metric}
             onChange={(value) => setMetric(value as GeographyMetric)}
           />
-          <Badge color="gray" variant="light">
+          <Badge className="app-role-pill is-gray sales-geography-pill" variant="light">
             {t('12 міс')}
           </Badge>
         </Group>
@@ -133,8 +139,10 @@ export function SalesGeographyPage() {
         <Card className="app-section-card" padding="md" radius="md" style={{ gridColumn: 'span 1' }} withBorder>
           <Stack gap="md">
             <Group gap="xs">
-              <Text fw={700}>{t('Карта')}</Text>
-              <Badge color={METRIC_BADGE_COLOR[metric]} variant="light">
+              <Text className="app-section-title" fw={600} size="sm">
+                {t('Карта')}
+              </Text>
+              <Badge className={METRIC_PILL_CLASS[metric]} variant="light">
                 {metricLabel}
               </Badge>
             </Group>
@@ -168,10 +176,10 @@ export function SalesGeographyPage() {
                     scaleLabel={t('Масштаб (площа кола)')}
                   />
                   <Stack gap={2} ta="right">
-                    <Text c="dimmed" fw={600} size="xs" tt="uppercase">
+                    <Text className="app-section-title" fw={600} size="xs">
                       {`Σ ${metricLabel}`}
                     </Text>
-                    <Text fw={700} size="lg">
+                    <Text className="sales-geography-total-value" fw={600} size="lg">
                       {formatMoney(totalValue)}
                     </Text>
                   </Stack>
@@ -190,8 +198,10 @@ export function SalesGeographyPage() {
         >
           <Stack gap="sm">
             <Group gap="xs">
-              <Text fw={700}>{t('Рейтинг областей')}</Text>
-              <Badge color="gray" variant="light">
+              <Text className="app-section-title" fw={600} size="sm">
+                {t('Рейтинг областей')}
+              </Text>
+              <Badge className="app-role-pill is-gray sales-geography-pill" variant="light">
                 {plotted.length}
               </Badge>
             </Group>
@@ -202,7 +212,7 @@ export function SalesGeographyPage() {
               </Text>
             ) : (
               <Table.ScrollContainer minWidth={280}>
-                <Table highlightOnHover verticalSpacing="xs">
+                <Table className="sales-geography-rating-table" highlightOnHover verticalSpacing="xs">
                   <Table.Thead>
                     <Table.Tr>
                       <Table.Th>{t('Область')}</Table.Th>
@@ -215,14 +225,18 @@ export function SalesGeographyPage() {
                       <Table.Tr key={region.code}>
                         <Table.Td>
                           <Group gap={6} wrap="nowrap">
-                            <Badge color={METRIC_BADGE_COLOR[metric]} size="sm" variant="light">
+                            <Badge className={METRIC_PILL_CLASS[metric]} size="sm" variant="light">
                               {region.code}
                             </Badge>
                             <Text size="sm">{region.name}</Text>
                           </Group>
                         </Table.Td>
-                        <Table.Td style={{ textAlign: 'right' }}>{formatMoney(region.valueEur)}</Table.Td>
-                        <Table.Td style={{ textAlign: 'right' }}>{countFormatter.format(region.clientCount)}</Table.Td>
+                        <Table.Td style={{ textAlign: 'right' }}>
+                          <span className="sales-geography-money">{formatMoney(region.valueEur)}</span>
+                        </Table.Td>
+                        <Table.Td style={{ textAlign: 'right' }}>
+                          <span className="sales-geography-count">{countFormatter.format(region.clientCount)}</span>
+                        </Table.Td>
                       </Table.Tr>
                     ))}
                   </Table.Tbody>
@@ -231,7 +245,7 @@ export function SalesGeographyPage() {
             )}
 
             {other.count > 0 && (
-              <Text c="dimmed" size="xs">
+              <Text className="sales-geography-other" size="xs">
                 {`${t('Інше')}: ${other.count} ${t('кодів')} · ${formatMoney(other.valueEur)} · ${countFormatter.format(other.clientCount)} ${t('клієнтів')}`}
               </Text>
             )}

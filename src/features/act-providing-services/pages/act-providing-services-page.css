@@ -224,7 +224,7 @@
 }
 
 .act-service-amount-cell strong {
-  color: var(--mantine-color-gray-8);
+  color: var(--mantine-color-green-8);
   font-family: var(--font-mono);
   font-size: 13px;
   font-weight: 600;
@@ -232,7 +232,7 @@
 }
 
 .act-service-amount-cell small {
-  color: var(--mantine-color-gray-6);
+  color: var(--mantine-color-green-7);
   font-family: var(--font-mono);
   font-size: 10px;
   font-weight: 600;

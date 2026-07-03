@@ -490,10 +490,10 @@ function ConsumableCategoryPanel({
           defaultLayout={PRODUCT_TABLE_DEFAULT_LAYOUT}
           emptyText={t('Товарів у категорії немає')}
           getRowId={(product, index) => String(product.NetUid || product.Id || index)}
-          fillAvailableWidth={false}
+          fillAvailableWidth
           height="100%"
-          layoutVersion="consumable-products-category-products-2"
-          minWidth={500}
+          layoutVersion="consumable-products-category-products-3"
+          minWidth={800}
           showLayoutControls
           tableId={`consumable-products-${category.NetUid || category.Id || category.Name || 'category'}`}
           toolbarPortalTarget={tableToolbarSlot}
@@ -512,24 +512,25 @@ function useConsumableProductColumns(): DataTableColumn<ConsumableProduct>[] {
       {
         id: 'name',
         header: t('Назва'),
-        width: 300,
-        minWidth: 220,
+        width: 420,
+        minWidth: 300,
+        fill: true,
         accessor: (product) => product.Name,
         cell: (product) => <ConsumableProductNameCell product={product} />,
       },
       {
         id: 'vendorCode',
         header: t('Артикул'),
-        width: 100,
-        minWidth: 92,
+        width: 180,
+        minWidth: 150,
         accessor: (product) => product.VendorCode,
         cell: (product) => <ConsumableProductCodeCell value={displayValue(product.VendorCode)} />,
       },
       {
         id: 'measureUnit',
         header: t('Одиниця виміру'),
-        width: 100,
-        minWidth: 92,
+        width: 200,
+        minWidth: 180,
         accessor: (product) => product.MeasureUnit?.Name,
         cell: (product) => <ConsumableProductUnitCell value={displayValue(product.MeasureUnit?.Name)} />,
       },

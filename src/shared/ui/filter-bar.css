@@ -51,8 +51,10 @@
 .sales-filter-bar,
 .console-table-command-bar {
   position: relative;
-  background: var(--app-filter-glow), var(--mantine-color-white);
-  border-bottom: 1px solid var(--mantine-color-gray-3);
+  /* The pattern chrome (docs/ui-patterns.md §5.3): the light #f8f9fa strip with
+     a gray-2 bottom edge separates the bar from the table. */
+  background: var(--app-filter-glow), #f8f9fa;
+  border-bottom: 1px solid var(--mantine-color-gray-2);
   /* The pattern padding (docs/ui-patterns.md §5.3) — pages must NOT override.
      Horizontal 8px lines the bar content up with the table text (th/td padding
      is 8px), so the filter labels and the first column start on one vertical. */

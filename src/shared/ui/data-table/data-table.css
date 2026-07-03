@@ -89,6 +89,15 @@
   text-align: left !important;
 }
 
+.data-table-filler-th,
+.data-table-filler-cell {
+  padding: 0 !important;
+}
+
+.data-table-filler-th {
+  cursor: default;
+}
+
 .data-table .mantine-Table-th {
   text-align: left !important;
 }

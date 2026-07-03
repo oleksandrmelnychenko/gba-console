@@ -36,7 +36,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
-import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -208,19 +208,6 @@ export function ConsumableStoragesPage() {
 
   return (
     <Stack gap="md">
-      <PageHeaderActions>
-        <PermissionGate permissionKey={CONSUMABLE_STORAGE_CREATE_PERMISSION}>
-          <Button
-            color={CREATE_ACTION_COLOR}
-            size="sm"
-            leftSection={<IconPlus size={16} />}
-            onClick={openCreateStorage}
-          >
-            {t('Новий склад')}
-          </Button>
-        </PermissionGate>
-      </PageHeaderActions>
-
       <Card className="app-data-card consumable-storages-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar consumable-storages-filter-bar">
           <Group align="end" gap="sm" wrap="wrap" className="consumable-storages-filter-row">
@@ -246,6 +233,17 @@ export function ConsumableStoragesPage() {
                 </ActionIcon>
               </Tooltip>
             </div>
+            <PermissionGate permissionKey={CONSUMABLE_STORAGE_CREATE_PERMISSION}>
+              <Button
+                color={CREATE_ACTION_COLOR}
+                leftSection={<IconPlus size={16} />}
+                size="sm"
+                styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
+                onClick={openCreateStorage}
+              >
+                {t('Новий склад')}
+              </Button>
+            </PermissionGate>
           </Group>
         </div>
 
@@ -488,7 +486,7 @@ function ConsumableStorageDetailDrawer({
   }, [onChanged, onStorageLoaded, storage])
 
   return (
-    <AppDrawer opened={Boolean(storage)} padding="md" size="xl" title={t('Склад')} onClose={onClose}>
+    <AppDrawer opened={Boolean(storage)} padding="md" size="xl" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Склад')}</span>} onClose={onClose}>
       {storage && (
         <Stack gap="md">
           <SimpleGrid cols={{ base: 1, sm: 2 }}>
@@ -1204,7 +1202,7 @@ function DeprecatedConsumableOrderEditorModal({
   }
 
   return (
-    <AppModal centered opened size="80vw" title={isEditMode ? t('Редагувати списання') : t('Списати зі складу')} onClose={onClose}>
+    <AppModal centered opened size="80vw" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{isEditMode ? t('Редагувати списання') : t('Списати зі складу')}</span>} onClose={onClose}>
       <Stack gap="md">
         {error && (
           <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
@@ -1534,7 +1532,7 @@ function DeleteDeprecatedConsumableOrderModal({
   const { t } = useI18n()
 
   return (
-    <AppModal centered opened={Boolean(order)} title={t('Видалити списання')} onClose={onClose}>
+    <AppModal centered opened={Boolean(order)} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Видалити списання')}</span>} onClose={onClose}>
       <Stack gap="md">
         <Text>{order ? t('Списання "{number}" буде видалено.', { number: displayValue(order.Number) }) : ''}</Text>
         <Group justify="flex-end">
@@ -1564,7 +1562,7 @@ function DeleteStorageModal({
   const { t } = useI18n()
 
   return (
-    <AppModal centered opened={Boolean(storage)} title={t('Видалити склад')} onClose={onClose}>
+    <AppModal centered opened={Boolean(storage)} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Видалити склад')}</span>} onClose={onClose}>
       <Stack gap="md">
         <Text>{storage ? t('Склад "{name}" буде видалено.', { name: displayValue(storage.Name) }) : ''}</Text>
         <Group justify="flex-end">
@@ -2002,7 +2000,7 @@ function getDateRangeError(fromDate: string, toDate: string): string | null {
 
 function formatDateTime(value?: string): string {
   if (!value) {
-    return '—'
+    return ''
   }
 
   const date = new Date(value)
@@ -2011,19 +2009,19 @@ function formatDateTime(value?: string): string {
 }
 
 function formatAmount(value?: number): string {
-  return typeof value === 'number' && Number.isFinite(value) ? String(value) : '—'
+  return typeof value === 'number' && Number.isFinite(value) ? String(value) : ''
 }
 
 function formatMoney(value?: number): string {
-  return typeof value === 'number' && Number.isFinite(value) ? value.toFixed(2) : '—'
+  return typeof value === 'number' && Number.isFinite(value) ? value.toFixed(2) : ''
 }
 
 function displayValue(value?: string | number | null): string {
   if (typeof value === 'number') {
-    return Number.isFinite(value) ? String(value) : '—'
+    return Number.isFinite(value) ? String(value) : ''
   }
 
-  return value || '—'
+  return value || ''
 }
 
 function isAbortError(error: unknown): boolean {
