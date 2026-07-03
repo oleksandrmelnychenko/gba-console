@@ -253,7 +253,6 @@
   --accounting-cash-flow-label-gap: 4px;
   --accounting-cash-flow-label-height: 17px;
   align-items: end;
-  background: var(--mantine-color-white);
   flex: 0 0 auto;
 }
 

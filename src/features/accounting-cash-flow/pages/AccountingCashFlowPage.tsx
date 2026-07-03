@@ -32,7 +32,7 @@ import {
   IconSearch,
 } from '@tabler/icons-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
-import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { type ReactNode, useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -543,25 +543,6 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
 
   return (
     <Stack className="cash-flow-page accounting-cash-flow-page" gap={10}>
-      <PageHeaderActions>
-        <Tooltip disabled={canExport} label={t('Експорт доступний після вибору договору')}>
-          <Box>
-            <Button
-              className="accounting-cash-flow-export"
-              color={CREATE_ACTION_COLOR}
-              disabled={!canExport}
-              leftSection={<IconDownload size={15} />}
-              loading={isExporting}
-              size="sm"
-              variant="light"
-              onClick={handleExport}
-            >
-              {t('Експорт / друк')}
-            </Button>
-          </Box>
-        </Tooltip>
-      </PageHeaderActions>
-
       {(counterpartyError || cashFlowError) && (
         <Alert className="accounting-cash-flow-alert" color="red" icon={<IconAlertCircle size={18} />} variant="light">
           {counterpartyError || cashFlowError}
@@ -643,6 +624,23 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
                 >
                   <IconRefresh size={17} />
                 </ActionIcon>
+              </Tooltip>
+              <Tooltip disabled={canExport} label={t('Експорт доступний після вибору договору')}>
+                <Box>
+                  <Button
+                    className="accounting-cash-flow-export"
+                    color={CREATE_ACTION_COLOR}
+                    disabled={!canExport}
+                    leftSection={<IconDownload size={15} />}
+                    loading={isExporting}
+                    size="sm"
+                    styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
+                    variant="light"
+                    onClick={handleExport}
+                  >
+                    {t('Експорт / друк')}
+                  </Button>
+                </Box>
               </Tooltip>
             </div>
           </form>
@@ -958,7 +956,15 @@ function buildHeadItemFields(item: AccountingCashFlowHeadItem, t: (key: string) 
     fields.splice(5, 0, {
       label: 'Статус накладної',
       value: (
-        <Badge color={paymentStatus.color} variant="light">
+        <Badge
+          className={`app-role-pill ${
+            paymentStatus.kind === 'paid' ? 'is-green'
+            : paymentStatus.kind === 'unpaid' ? 'is-red'
+            : paymentStatus.kind === 'partial' ? 'is-yellow'
+            : 'is-gray'
+          }`}
+          variant="light"
+        >
           {t(paymentStatus.label)}
         </Badge>
       ),
