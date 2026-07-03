@@ -145,7 +145,7 @@
   gap: 8px;
   grid-template-columns: minmax(0, 1fr) auto;
   min-height: 40px;
-  padding: 0 6px 0 18px;
+  padding: 0 6px 0 8px;
   position: relative;
   text-align: left;
   transition:
@@ -169,17 +169,6 @@
   font-weight: 600;
 }
 
-.transporters-type-option.is-active::before {
-  background: var(--brand-orange);
-  border-radius: 999px;
-  content: '';
-  height: 7px;
-  left: 8px;
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 7px;
-}
 
 .transporters-type-option-name {
   display: block;

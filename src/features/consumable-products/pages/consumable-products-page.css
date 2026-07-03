@@ -76,6 +76,8 @@
 }
 
 .consumable-products-rail-title {
+  font-size: 13px;
+  font-weight: 600;
   margin-bottom: 6px;
   padding-left: 8px;
 }
@@ -109,26 +111,13 @@
   grid-template-columns: minmax(0, 1fr) auto;
   letter-spacing: 0;
   min-height: 40px;
-  padding: 4px 6px 4px 18px;
+  padding: 4px 6px 4px 8px;
   position: relative;
   text-align: left;
   transition:
     color 110ms var(--tx-ease-smooth),
     transform 140ms var(--tx-ease-smooth);
   width: 100%;
-}
-
-.consumable-products-category-option::before {
-  background: transparent;
-  border-radius: 999px;
-  content: '';
-  height: 7px;
-  left: 6px;
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  transition: background-color 120ms var(--tx-ease-smooth);
-  width: 7px;
 }
 
 .consumable-products-category-option:hover {
@@ -139,10 +128,6 @@
 .consumable-products-category-option.is-active {
   color: var(--mantine-color-orange-8);
   font-weight: 600;
-}
-
-.consumable-products-category-option.is-active::before {
-  background: var(--brand-orange);
 }
 
 .consumable-products-category-button__copy {
