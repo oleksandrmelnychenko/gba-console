@@ -1,0 +1,61 @@
+.offers-modal__title,
+.offer-reason-drawer__title {
+  font-family: var(--font-mono);
+  letter-spacing: 0;
+}
+
+.offers-modal .mantine-Button-label,
+.offer-reason-drawer .mantine-Button-label {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.offers-modal-generated-title {
+  color: var(--mantine-color-gray-8);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.offers-modal-lines-table {
+  border: 1px solid var(--mantine-color-gray-2);
+  border-collapse: separate;
+  border-radius: 8px;
+  border-spacing: 0;
+  overflow: hidden;
+}
+
+.offers-modal-lines-table .mantine-Table-th {
+  background: var(--mantine-color-gray-0);
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+  color: var(--mantine-color-gray-7);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.offers-modal-lines-table .mantine-Table-td {
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+  color: var(--mantine-color-gray-8);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.offers-modal-lines-table .mantine-Table-tr:last-child .mantine-Table-td {
+  border-bottom: 0;
+}
+
+.offers-modal-product-link,
+.offers-modal-product-name,
+.offer-reason-product-link,
+.offer-reason-product-name {
+  color: var(--mantine-color-gray-8);
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.25;
+  min-width: 0;
+  text-align: left;
+}
