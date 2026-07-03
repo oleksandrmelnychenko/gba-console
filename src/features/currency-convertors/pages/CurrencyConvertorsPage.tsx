@@ -10,7 +10,7 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
-import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useAuth } from '../../auth/useAuth'
 import {
   getAllCurrencyTraders,
@@ -345,18 +345,6 @@ export function CurrencyConvertorsPage() {
 
   return (
     <Stack className="currency-convertors-page" gap={6}>
-      {model.canCreate && (
-        <PageHeaderActions>
-          <Button
-            color={CREATE_ACTION_COLOR}
-            size="sm"
-            leftSection={<IconPlus size={16} />}
-            onClick={model.goToCreate}
-          >
-            {t('Створення валютного трейдера')}
-          </Button>
-        </PageHeaderActions>
-      )}
 
       <Card className="app-data-card currency-convertors-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar currency-convertors-filter-bar">
@@ -376,6 +364,17 @@ export function CurrencyConvertorsPage() {
               </Tooltip>
               <DataTableDensityToggle density={model.density} onToggle={model.toggleDensity} size={34} />
             </div>
+            {model.canCreate && (
+              <Button
+                color={CREATE_ACTION_COLOR}
+                leftSection={<IconPlus size={16} />}
+                size="sm"
+                styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
+                onClick={model.goToCreate}
+              >
+                {t('Створення валютного трейдера')}
+              </Button>
+            )}
           </Group>
         </div>
 
@@ -485,7 +484,7 @@ function useCurrencyTraderColumns({
         header: t('Телефон'),
         minWidth: 160,
         accessor: (trader) => trader.PhoneNumber,
-        cell: (trader) => displayValue(trader.PhoneNumber),
+        cell: (trader) => <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{displayValue(trader.PhoneNumber)}</Text>,
       },
     ]
 
