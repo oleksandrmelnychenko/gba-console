@@ -27,7 +27,7 @@ import { type FormEvent, useCallback, useEffect, useMemo, useReducer, useState }
 import { PermissionGate } from '../../auth/components/PermissionGate'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
@@ -203,19 +203,6 @@ export function AccountingBanksPage() {
 
   return (
     <Stack gap="lg">
-      <PermissionGate permissionKey={ACCOUNTING_BANK_CREATE_PERMISSION}>
-        <PageHeaderActions>
-          <Button
-            color={CREATE_ACTION_COLOR}
-            size="sm"
-            leftSection={<IconPlus size={16} />}
-            type="button"
-            onClick={() => openEditor()}
-          >
-            {t('Новий банк')}
-          </Button>
-        </PageHeaderActions>
-      </PermissionGate>
       <Card className="app-data-card accounting-banks-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar accounting-banks-filter-bar">
           <Group align="end" gap="sm" wrap="nowrap" className="accounting-banks-filter-row">
@@ -248,6 +235,18 @@ export function AccountingBanksPage() {
               </Tooltip>
               <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
             </div>
+            <PermissionGate permissionKey={ACCOUNTING_BANK_CREATE_PERMISSION}>
+              <Button
+                color={CREATE_ACTION_COLOR}
+                leftSection={<IconPlus size={16} />}
+                size="sm"
+                styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
+                type="button"
+                onClick={() => openEditor()}
+              >
+                {t('Новий банк')}
+              </Button>
+            </PermissionGate>
           </Group>
         </div>
 
@@ -324,7 +323,7 @@ function BankEditorModal({
   const { t } = useI18n()
 
   return (
-    <AppModal centered opened={isOpen} size="lg" title={bank?.Id ? t('Редагування банку') : t('Новий банк')} onClose={onClose}>
+    <AppModal centered opened={isOpen} size="lg" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{bank?.Id ? t('Редагування банку') : t('Новий банк')}</span>} onClose={onClose}>
       <form onSubmit={onSubmit}>
         <Stack gap="md">
           {error && (
@@ -403,7 +402,7 @@ function BankEditorModal({
                 {t('Скасувати')}
               </Button>
               <PermissionGate permissionKey={ACCOUNTING_BANK_SAVE_PERMISSION}>
-                <Button color="violet" leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} type="submit">
+                <Button color={CREATE_ACTION_COLOR} leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} type="submit">
                   {t('Зберегти')}
                 </Button>
               </PermissionGate>
@@ -426,7 +425,7 @@ function BankDeleteModal({ bank, isSaving, onClose, onDelete }: BankDeleteModalP
   const { t } = useI18n()
 
   return (
-    <AppModal centered opened={Boolean(bank)} title={t('Видалити банк')} onClose={onClose}>
+    <AppModal centered opened={Boolean(bank)} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Видалити банк')}</span>} onClose={onClose}>
       <Stack gap="md">
         <Text>{bank ? t('Банк "{name}" буде позначено як видалений.', { name: getBankName(bank) }) : ''}</Text>
         <Group justify="flex-end">
@@ -464,7 +463,7 @@ function useAccountingBankColumns(
         width: 140,
         minWidth: 120,
         accessor: (bank) => bank.MfoCode,
-        cell: (bank) => displayValue(bank.MfoCode),
+        cell: (bank) => <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{displayValue(bank.MfoCode)}</Text>,
       },
       {
         id: 'edrpouCode',
@@ -472,7 +471,7 @@ function useAccountingBankColumns(
         width: 150,
         minWidth: 132,
         accessor: (bank) => bank.EdrpouCode,
-        cell: (bank) => displayValue(bank.EdrpouCode),
+        cell: (bank) => <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{displayValue(bank.EdrpouCode)}</Text>,
       },
       {
         id: 'city',
@@ -488,7 +487,7 @@ function useAccountingBankColumns(
         width: 180,
         minWidth: 140,
         accessor: (bank) => bank.Phones,
-        cell: (bank) => displayValue(bank.Phones),
+        cell: (bank) => <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{displayValue(bank.Phones)}</Text>,
       },
       {
         id: 'address',
