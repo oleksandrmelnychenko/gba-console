@@ -21,7 +21,7 @@ import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
-import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import {
   deleteCompanyCarRoadList,
@@ -185,18 +185,6 @@ export function CompanyCarRoadListsPage() {
 
   return (
     <Stack className="company-car-road-lists-page" gap={6}>
-      <PageHeaderActions>
-        <Button
-          color={CREATE_ACTION_COLOR}
-          size="sm"
-          disabled={!companyCar?.NetUid}
-          leftSection={<IconPlus size={16} />}
-          onClick={openCreateForm}
-        >
-          {t('Створення шляхового листа')}
-        </Button>
-      </PageHeaderActions>
-
       <Card className="app-data-card company-car-road-lists-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar company-car-road-lists-filter-bar">
           <Group align="end" gap="sm" wrap="wrap" className="company-car-road-lists-filter-row">
@@ -204,7 +192,7 @@ export function CompanyCarRoadListsPage() {
               <Button color="gray" leftSection={<IconArrowLeft size={16} />} size="sm" variant="light" onClick={() => navigate(returnPath)}>
                 {t('Назад')}
               </Button>
-              <Badge color="blue" variant="light">
+              <Badge className="app-role-pill" variant="light">
                 {displayValue(companyCar?.LicensePlate)}
               </Badge>
               <Text fw={700}>{displayValue(companyCar?.CarBrand)}</Text>
@@ -241,6 +229,16 @@ export function CompanyCarRoadListsPage() {
                 </ActionIcon>
               </Tooltip>
             </div>
+            <Button
+              color={CREATE_ACTION_COLOR}
+              disabled={!companyCar?.NetUid}
+              leftSection={<IconPlus size={16} />}
+              size="sm"
+              styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
+              onClick={openCreateForm}
+            >
+              {t('Створення шляхового листа')}
+            </Button>
           </Group>
         </div>
 
@@ -521,7 +519,7 @@ function DeleteRoadListModal({
   const { t } = useI18n()
 
   return (
-    <AppModal centered opened={Boolean(roadList)} title={t('Видалити шляховий лист')} onClose={onClose}>
+    <AppModal centered opened={Boolean(roadList)} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Видалити шляховий лист')}</span>} onClose={onClose}>
       <Stack gap="md">
         <Text>{t('Шляховий лист буде видалено.')}</Text>
         <Group justify="flex-end">
@@ -565,7 +563,7 @@ function getDateRangeError(fromDate: string, toDate: string): string | null {
 
 function formatDateTime(value?: string): string {
   if (!value) {
-    return '—'
+    return ''
   }
 
   const date = new Date(value)
@@ -574,15 +572,15 @@ function formatDateTime(value?: string): string {
 }
 
 function formatNumber(value?: number): string {
-  return typeof value === 'number' && Number.isFinite(value) ? String(value) : '—'
+  return typeof value === 'number' && Number.isFinite(value) ? String(value) : ''
 }
 
 function displayValue(value?: string | number | null): string {
   if (typeof value === 'number') {
-    return Number.isFinite(value) ? String(value) : '—'
+    return Number.isFinite(value) ? String(value) : ''
   }
 
-  return value || '—'
+  return value || ''
 }
 
 function isSameRoadList(left: CompanyCarRoadList, right: CompanyCarRoadList): boolean {
