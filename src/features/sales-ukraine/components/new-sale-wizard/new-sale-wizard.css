@@ -3654,12 +3654,12 @@
 
 .new-sale-client-drum-card.has-debt {
   background: var(--mantine-color-white);
-  border-color: var(--mantine-color-red-5);
-  border-left-color: var(--mantine-color-red-5);
+  border-color: var(--brand-orange);
+  border-left-color: var(--brand-orange);
 }
 
 .new-sale-client-drum-card.has-debt::after {
-  background: var(--mantine-color-red-5);
+  background: var(--brand-orange);
 }
 
 .new-sale-agreements-strip {
@@ -4275,11 +4275,15 @@
 }
 
 .new-sale-client-drum-card {
-  border-bottom-color: var(--mantine-color-gray-2);
-  border-left-width: 0;
-  border-right-color: transparent;
-  border-top-color: var(--mantine-color-gray-2);
+  border: 1px solid var(--brand-orange);
+  box-sizing: border-box;
   min-height: 54px;
+  overflow: visible;
+  width: 100%;
+}
+
+.new-sale-client-drum-card.has-debt {
+  border-color: var(--brand-orange);
 }
 
 .new-sale-client-drum-card__name {
