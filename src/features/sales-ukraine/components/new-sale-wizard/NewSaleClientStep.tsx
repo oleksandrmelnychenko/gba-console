@@ -98,7 +98,6 @@ export function NewSaleClientStep({
   const [saleSearch, setSaleSearch] = useState('')
   const [dateFrom, setDateFrom] = useState(() => formatLocalDate(getDateDaysAgo(7)))
   const [dateTo, setDateTo] = useState(() => formatLocalDate(new Date()))
-  const [expandedKey, setExpandedKey] = useState<string | null>(null)
   const [isOrderedProductsOpen, setOrderedProductsOpen] = useState(false)
   const [editShiftSale, setEditShiftSale] = useState<SalesUkraineSale | null>(null)
   const [mergedSale, setMergedSale] = useState<SalesUkraineSale | null>(null)
@@ -274,7 +273,6 @@ export function NewSaleClientStep({
       setAgreements([])
       setSelectedAgreementKey('')
       setRegistryItems([])
-      setExpandedKey(null)
       setRegistryLoading(false)
       registryRequestRef.current += 1
       registryInFlightKeyRef.current = null
@@ -320,7 +318,6 @@ export function NewSaleClientStep({
     setAgreements([])
     setSelectedAgreementKey('')
     setRegistryItems([])
-    setExpandedKey(null)
     setRegistryLoading(false)
     clientDetailsRequestRef.current += 1
     registryRequestRef.current += 1
@@ -786,10 +783,6 @@ export function NewSaleClientStep({
     void fetchRegister({ to: nextValue })
   }
 
-  function toggleExpand(key: string) {
-    setExpandedKey((current) => (current === key ? null : key))
-  }
-
   function openRow(sale: SalesUkraineSale) {
     if (sale.InputSaleMerges?.length) {
       setMergedSale(sale)
@@ -821,7 +814,7 @@ export function NewSaleClientStep({
     }
   }
 
-  function replaceRegistryRow(statistic: WizardSaleRegisterStatistic, autoExpand: boolean) {
+  function replaceRegistryRow(statistic: WizardSaleRegisterStatistic, _autoExpand: boolean) {
     const netId = statistic.Sale?.NetUid
 
     if (!netId) {
@@ -830,9 +823,6 @@ export function NewSaleClientStep({
 
     setRegistryItems((current) => current.map((item) => (item.Sale?.NetUid === netId ? statistic : item)))
 
-    if (autoExpand && registryItems.some((item) => item.Sale?.NetUid === netId)) {
-      setExpandedKey(netId)
-    }
   }
 
   async function refreshRegistryRow(sale: SalesUkraineSale, autoExpand: boolean) {
@@ -930,7 +920,6 @@ export function NewSaleClientStep({
   async function handleShiftSaved() {
     const shifted = editShiftSale
     setEditShiftSale(null)
-    setExpandedKey(null)
     bumpWizardDebtRefresh()
 
     if (selectedClient) {
@@ -1119,7 +1108,6 @@ export function NewSaleClientStep({
                 canEdit={canEdit}
                 dateFrom={dateFrom}
                 dateTo={dateTo}
-                expandedKey={expandedKey}
                 isLoading={isRegistryLoading}
                 items={registryItems}
                 saleSearch={saleSearch}
@@ -1135,7 +1123,6 @@ export function NewSaleClientStep({
                 onOpenOrderedProducts={() => setOrderedProductsOpen(true)}
                 onOpenRow={openRow}
                 onPrintRow={(sale) => void printRow(sale)}
-                onToggleExpand={toggleExpand}
               />
             </>
           ) : (

@@ -5371,3 +5371,137 @@
   border-radius: 0;
   box-shadow: none;
 }
+
+/* Wizard register now uses the shared DataTable used by /suppliers. */
+.new-sale-register-table {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+}
+
+.new-sale-register-table > .data-table {
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+}
+
+.new-sale-register-table .data-table-scroll {
+  height: 100%;
+}
+
+.new-sale-register-table .data-table-th {
+  font-family: var(--font-mono);
+}
+
+.new-sale-register-table-row.is-shift {
+  --data-table-cell-bg: var(--mantine-color-yellow-0);
+}
+
+.new-sale-register-status-dot {
+  background: var(--mantine-color-gray-4);
+  border-radius: 999px;
+  display: inline-block;
+  height: 9px;
+  width: 9px;
+}
+
+.new-sale-register-status-dot.is-success {
+  background: var(--mantine-color-green-6);
+  box-shadow: 0 0 0 3px rgba(64, 192, 87, 0.16);
+}
+
+.new-sale-register-status-dot.is-danger,
+.new-sale-register-status-dot.is-edited {
+  background: var(--mantine-color-red-5);
+  box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.12);
+}
+
+.new-sale-register-document-cell,
+.new-sale-register-value-cell {
+  display: grid;
+  min-width: 0;
+}
+
+.new-sale-register-document-cell {
+  gap: 0;
+}
+
+.new-sale-register-document-number {
+  color: var(--mantine-color-gray-9);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.2;
+}
+
+.new-sale-register-document-type {
+  color: var(--mantine-color-gray-6);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.2;
+  min-width: 0;
+}
+
+.new-sale-register-payment {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.new-sale-register-payment.is-danger {
+  color: var(--mantine-color-red-6);
+}
+
+.new-sale-register-payment.is-success {
+  color: var(--mantine-color-green-7);
+}
+
+.new-sale-register-value-cell {
+  justify-items: end;
+  text-align: right;
+}
+
+.new-sale-register-value-cell .mantine-Text-root:first-child {
+  color: var(--mantine-color-gray-9);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.new-sale-register-value-cell .mantine-Text-root:nth-child(2) {
+  color: var(--mantine-color-gray-5);
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.new-sale-register-actions .mantine-ActionIcon-root {
+  color: var(--mantine-color-gray-7);
+}
+
+.new-sale-register-actions .mantine-ActionIcon-root:hover {
+  background: transparent;
+  color: var(--brand-orange);
+}
+
+.new-sale-register-table .data-table-expanded-cell {
+  background: var(--mantine-color-white);
+}
+
+.new-sale-register-table .data-table-expanded-content {
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+}
+
+.new-sale-register-table .new-sale-register-expanded {
+  border-bottom: 0;
+  min-width: 0;
+  padding: 0;
+}
+
+.new-sale-register-table .new-sale-register-expanded__panel {
+  border: 0;
+  border-radius: 0;
+}
+
+.new-sale-register-table .new-sale-register-expanded__header,
+.new-sale-register-table .new-sale-register-expanded-item {
+  padding-left: 84px;
+}
