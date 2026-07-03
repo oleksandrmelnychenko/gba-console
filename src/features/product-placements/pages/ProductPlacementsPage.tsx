@@ -42,7 +42,6 @@ import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableD
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
-import { PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import {
   exportProductPlacements,
   exportReturnedProductPlacements,
@@ -530,18 +529,6 @@ function ProductPlacementsPageView({ model }: { model: ReturnType<typeof useProd
 
   return (
     <Stack className="product-placements-page" gap={6}>
-      {returnedRows.length > 0 && (
-        <PageHeaderActions>
-          <Button
-            color="red"
-            leftSection={<IconAlertTriangle size={16} />}
-            variant="light"
-            onClick={() => setReturnModalOpened(true)}
-          >
-            {t('Не пройдені товари')}
-          </Button>
-        </PageHeaderActions>
-      )}
 
       <Card className="app-data-card product-placements-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar product-placements-filter-bar">
@@ -622,6 +609,17 @@ function ProductPlacementsPageView({ model }: { model: ReturnType<typeof useProd
                 onRefresh={() => reload()}
               />
             </div>
+            {returnedRows.length > 0 && (
+              <Button
+                color="red"
+                leftSection={<IconAlertTriangle size={16} />}
+                styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
+                variant="light"
+                onClick={() => setReturnModalOpened(true)}
+              >
+                {t('Не пройдені товари')}
+              </Button>
+            )}
           </Group>
         </div>
 
@@ -1188,7 +1186,7 @@ function getFilterError(dateTo: string, selectedStorageIds: string[]): string | 
 
 function formatDateTime(value?: string): string {
   if (!value) {
-    return '—'
+    return ''
   }
 
   const date = new Date(value)
@@ -1202,7 +1200,7 @@ function formatDateTime(value?: string): string {
 
 function formatAmount(value?: number): string {
   if (typeof value !== 'number' || !Number.isFinite(value)) {
-    return '—'
+    return ''
   }
 
   return amountFormatter.format(value)
@@ -1210,10 +1208,10 @@ function formatAmount(value?: number): string {
 
 function displayValue(value?: string | number | null): string {
   if (typeof value === 'number') {
-    return Number.isFinite(value) ? String(value) : '—'
+    return Number.isFinite(value) ? String(value) : ''
   }
 
-  return value || '—'
+  return value || ''
 }
 
 function toInteger(value: number | string, fallback: number): number {
