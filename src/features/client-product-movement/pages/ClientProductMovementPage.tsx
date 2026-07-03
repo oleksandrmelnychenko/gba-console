@@ -110,6 +110,7 @@ export function ClientProductMovementPage() {
   const [downloadDocument, setDownloadDocument] = useValueState<ClientProductMovementDocumentResult | null>(null)
   const [downloadModalOpened, setDownloadModalOpened] = useValueState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
 
   const offset = (page - 1) * pageSize
   const totalRows = getTotalRows(documents)
@@ -349,7 +350,7 @@ export function ClientProductMovementPage() {
               value={filterDraft.to}
               onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
             />
-            <div className="app-filter-actions" style={{ marginLeft: 'auto' }}>
+            <div className="app-filter-actions client-product-movement-filter-actions">
               {hasClient && (
                 <Tooltip label={t('Експорт')}>
                   <ActionIcon
@@ -377,6 +378,7 @@ export function ClientProductMovementPage() {
                 onRefresh={reload}
               />
             </div>
+            <div ref={setTableToolbarSlot} className="client-product-movement-table-toolbar-slot" />
           </Group>
         </div>
 
@@ -396,16 +398,19 @@ export function ClientProductMovementPage() {
             columns={columns}
             data={rows}
             defaultLayout={MOVEMENT_TABLE_DEFAULT_LAYOUT}
+            distributeAvailableWidth
             emptyText={hasClient ? t('Документів не знайдено') : t('Оберіть клієнта для перегляду')}
             getRowId={(row) => row.id}
             height="100%"
             isLoading={isLoading}
-            layoutVersion="client-product-movement-table-1"
+            layoutVersion="client-product-movement-table-2"
             loadingText={t('Завантаження руху товару')}
             minWidth={1280}
             rowClassName={(row) => (row.kind === MOVEMENT_ROW.DETAIL ? 'gba-movement-detail-row' : undefined)}
+            showLayoutControls
             tableId="client-product-movement"
             toolbarLeft={toolbarLeft}
+            toolbarPortalTarget={tableToolbarSlot}
           />
         </div>
       </Card>
@@ -801,12 +806,12 @@ function getNumber(value: unknown): number | null {
 
 function displayValue(value: unknown): string {
   if (typeof value === 'number') {
-    return Number.isFinite(value) ? String(value) : '—'
+    return Number.isFinite(value) ? String(value) : ''
   }
 
   if (typeof value === 'string') {
-    return value.trim() || '—'
+    return value.trim()
   }
 
-  return '—'
+  return ''
 }

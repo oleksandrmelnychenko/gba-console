@@ -1,4 +1,4 @@
-import { Alert, Avatar, Badge, Button, Select, Stack, Text, Tooltip } from '@mantine/core'
+import { ActionIcon, Alert, Avatar, Badge, Select, Stack, Text, Tooltip } from '@mantine/core'
 import {
   IconAlertCircle,
   IconBuildingBank,
@@ -16,7 +16,6 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
-import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
 import {
@@ -224,19 +223,7 @@ export function SalesDebtorsPage() {
   }
 
   return (
-    <Stack className="sales-debtors-page console-table-page" gap="md">
-      <PageHeaderActions>
-        <Button
-          color={CREATE_ACTION_COLOR}
-          leftSection={<IconFileDownload size={16} />}
-          loading={isExporting}
-          size="sm"
-          onClick={handleExport}
-        >
-          {t('Сформувати звіт')}
-        </Button>
-      </PageHeaderActions>
-
+    <Stack className="sales-debtors-page console-table-page" gap={6}>
       <div className="console-table-shell">
         <div className="sales-debtors-command-bar app-filter-bar">
           <Select
@@ -310,6 +297,18 @@ export function SalesDebtorsPage() {
             }}
           />
           <div className="app-filter-actions sales-debtors-command-actions">
+            <Tooltip label={t('Сформувати звіт')}>
+              <ActionIcon
+                aria-label={t('Сформувати звіт')}
+                color="gray"
+                loading={isExporting}
+                size={34}
+                variant="light"
+                onClick={handleExport}
+              >
+                <IconFileDownload size={17} />
+              </ActionIcon>
+            </Tooltip>
             <DataTableDensityToggle density={density} onToggle={toggleDensity} size="sm" />
             <Paginator
               isLoading={isLoading}
@@ -762,7 +761,7 @@ function DebtorDebtCard({ currencyCode: fallbackCurrencyCode, item }: { currency
             {agreement}
           </span>
         </div>
-        {status !== '—' ? <span className="sales-debtor-detail-debt__status">{status}</span> : null}
+        {status ? <span className="sales-debtor-detail-debt__status">{status}</span> : null}
       </div>
       <div className="sales-debtor-detail-debt__amount">
         <strong>{moneyFormatter.format(amount)}</strong>
@@ -851,7 +850,7 @@ function getDebtStatusLabel(sale: DebtorDebtSale | null): string {
 
 function displayValue(value: number | string | undefined | null): string {
   if (value === null || value === undefined || value === '' || isUuidLike(value)) {
-    return '—'
+    return ''
   }
 
   return String(value)
@@ -863,7 +862,7 @@ function isUuidLike(value: number | string): boolean {
 
 function formatDateTime(value?: string): string {
   if (!value) {
-    return '—'
+    return ''
   }
 
   const date = new Date(value)
@@ -874,20 +873,20 @@ function formatDateTime(value?: string): string {
 function splitProfileName(value: string): [string, string] {
   const normalized = value.trim()
 
-  if (!normalized || normalized === '—') {
-    return ['—', '—']
+  if (!normalized) {
+    return ['', '']
   }
 
   const [firstPart, ...rest] = normalized.split(/\s+/)
 
-  return [firstPart || normalized, rest.join(' ') || '—']
+  return [firstPart || normalized, rest.join(' ')]
 }
 
 function getProfileInitials(value: string): string {
   const parts = value
     .trim()
     .split(/\s+/)
-    .filter((part) => part && part !== '—')
+    .filter(Boolean)
 
   return (
     parts

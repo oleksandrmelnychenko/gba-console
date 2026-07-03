@@ -1,14 +1,12 @@
 import { BarChart } from '@mantine/charts'
-import { Alert, Card, Group, Select, Stack, Text, TextInput } from '@mantine/core'
+import { Alert, Card, Select, Stack, Text, TextInput } from '@mantine/core'
 import { IconAlertCircle } from '@tabler/icons-react'
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
-import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
-import type { DataTableColumn } from '../../../shared/ui/data-table/types'
+import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { getSalesByManagersAndTop, getSalesManagers, getSalesOrganizations } from '../api/salesChartsApi'
 import { formatMoney } from '../money'
 import type {
@@ -19,6 +17,10 @@ import type {
 } from '../types'
 
 const EMPTY_REPORT: SalesByManagersAndTopReport = { SalesByManagerAndProductTop: [], TotalByColumn: {} }
+
+const MANAGER_TOP_TABLE_DEFAULT_LAYOUT = {
+  density: 'normal',
+} satisfies DataTableDefaultLayout
 
 export function ManagerSalesByTopView() {
   const { t } = useI18n()
@@ -32,7 +34,7 @@ export function ManagerSalesByTopView() {
   const [report, setReport] = useValueState<SalesByManagersAndTopReport>(EMPTY_REPORT)
   const [isLoading, setIsLoading] = useValueState(false)
   const [error, setError] = useValueState<string | null>(null)
-  const { density, toggleDensity } = useDataTableDensity('sales-charts-managertop', 'normal')
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -160,47 +162,50 @@ export function ManagerSalesByTopView() {
   )
 
   return (
-    <Card className="app-section-card" withBorder radius="md" padding="md">
-      <Stack gap="md">
-        <Group align="end" gap="sm" wrap="wrap">
+    <Card className="app-data-card sales-chart-card" withBorder radius="md" padding={0}>
+      <div className="app-filter-bar">
+        <div className="sales-chart-filter-row is-manager-top">
           <Select
             clearable
             searchable
+            className="sales-chart-filter-control"
             data={managerOptions}
             label={t('Менеджер')}
             placeholder={t('Усі')}
             value={netIdManager}
-            w={250}
             onChange={setNetIdManager}
           />
           <Select
             clearable
             searchable
+            className="sales-chart-filter-control"
             data={organizationOptions}
             label={t('Організація')}
             placeholder={t('Усі')}
             value={netIdOrganization}
-            w={250}
             onChange={setNetIdOrganization}
           />
           <TextInput
+            className="sales-chart-filter-control"
             label={t('З')}
             max={to || undefined}
             type="date"
             value={from}
-            w={150}
             onChange={(event) => setFrom(event.currentTarget.value)}
           />
           <TextInput
+            className="sales-chart-filter-control"
             label={t('По')}
             min={from || undefined}
             type="date"
             value={to}
-            w={150}
             onChange={(event) => setTo(event.currentTarget.value)}
           />
-          <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />
-        </Group>
+          <div ref={setTableToolbarSlot} className="sales-chart-table-toolbar-slot" />
+        </div>
+      </div>
+
+      <Stack className="sales-chart-content" gap="md" p="md">
 
         {error && (
           <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
@@ -224,15 +229,18 @@ export function ManagerSalesByTopView() {
           <DataTable
             columns={columns}
             data={rows}
-            density={density}
+            defaultLayout={MANAGER_TOP_TABLE_DEFAULT_LAYOUT}
+            distributeAvailableWidth
             emptyText={t('Дані відсутні')}
             getRowId={(row) => row.rowId}
             isLoading={isLoading}
-            layoutVersion="sales-charts-managertop-1"
+            layoutVersion="sales-charts-managertop-2"
             loadingText={t('Завантаження даних')}
             maxHeight="calc(100vh - 360px)"
             minWidth={720}
+            showLayoutControls
             tableId="sales-charts-managertop"
+            toolbarPortalTarget={tableToolbarSlot}
           />
         ) : (
           <Text c="dimmed" size="sm">

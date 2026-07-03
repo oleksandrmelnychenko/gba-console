@@ -1,0 +1,139 @@
+.sales-drawer-loading {
+  padding: 4px 0;
+}
+
+.sales-drawer-skeleton-card {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+
+.sales-drawer-skeleton-line {
+  animation: sales-drawer-shimmer 1.2s linear infinite;
+  background:
+    linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.72), transparent),
+    var(--mantine-color-gray-2);
+  background-size:
+    220px 100%,
+    100% 100%;
+  border-radius: 999px;
+  height: 11px;
+}
+
+@keyframes sales-drawer-shimmer {
+  from {
+    background-position:
+      -220px 0,
+      0 0;
+  }
+
+  to {
+    background-position:
+      calc(220px + 100%) 0,
+      0 0;
+  }
+}
+
+.sales-drawer-skeleton-row {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 44px minmax(100px, 0.8fr) minmax(180px, 1.5fr) minmax(70px, 0.5fr) minmax(88px, 0.6fr);
+}
+
+.sales-drawer-hero {
+  align-items: flex-start;
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  padding-bottom: 12px;
+}
+
+.sales-drawer-document-label {
+  color: var(--mantine-color-gray-7);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.sales-drawer-document-title {
+  color: var(--mantine-color-gray-9);
+  font-family: var(--font-mono);
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.sales-merge-card {
+  box-shadow: none;
+}
+
+.sales-merge-card .mantine-Card-root {
+  box-shadow: none;
+}
+
+.sales-merge-title {
+  color: var(--mantine-color-gray-9);
+  font-family: var(--font-mono);
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.sales-merge-client {
+  color: var(--mantine-color-gray-8);
+  font-weight: 600;
+}
+
+.sales-merge-meta {
+  color: var(--mantine-color-gray-6);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.sales-drawer-action-button .mantine-Button-label,
+.sales-drawer-action-button .mantine-Checkbox-label {
+  font-family: var(--font-mono);
+  letter-spacing: 0;
+}
+
+.sales-drawer-table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.sales-drawer-table .mantine-Table-th {
+  background: var(--mantine-color-gray-0);
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+  color: var(--mantine-color-gray-7);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0;
+  padding: 8px;
+  white-space: nowrap;
+}
+
+.sales-drawer-table .mantine-Table-td {
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+  color: var(--mantine-color-gray-8);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 8px;
+}
+
+.sales-drawer-table .mantine-Table-tbody .mantine-Table-tr:nth-child(even) .mantine-Table-td {
+  background: var(--mantine-color-gray-0);
+}
+
+.sales-drawer-table .mantine-Table-tbody .mantine-Table-tr:hover .mantine-Table-td {
+  background: #fffaf5;
+}
+
+.sales-drawer-table .mantine-NumberInput-input {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  height: 32px;
+}

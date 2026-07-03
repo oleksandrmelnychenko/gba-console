@@ -456,11 +456,12 @@ function IncompleteSalesTableCard({
           columns={columns}
           data={sales}
           defaultLayout={INCOMPLETE_SALES_TABLE_DEFAULT_LAYOUT}
+          distributeAvailableWidth
           emptyText={t('Продажів не знайдено')}
           getRowId={(sale, index) => getIncompleteSaleKey(sale, index)}
           height="100%"
           isLoading={isLoading}
-          layoutVersion="incomplete-sales-online-shop-table-2"
+          layoutVersion="incomplete-sales-online-shop-table-3"
           loadingText={t('Завантаження продажів')}
           minWidth={1260}
           showLayoutControls
@@ -536,7 +537,7 @@ function IncompleteSaleStatusModal({
           <Button variant="subtle" color="gray" disabled={isConfirming} onClick={onClose}>
             {t('Скасувати')}
           </Button>
-          <Button color="violet" leftSection={<IconCheck size={16} />} loading={isConfirming} onClick={onConfirm}>
+          <Button color="orange" leftSection={<IconCheck size={16} />} loading={isConfirming} onClick={onConfirm}>
             {t('Підтвердити')}
           </Button>
         </Group>
@@ -648,7 +649,7 @@ function useIncompleteSalesOnlineShopColumns({
                 {hasClientSales && (
                   <Tooltip label={t('Продажі клієнта')}>
                     <ActionIcon
-                      color="violet"
+                      color="orange"
                       variant="subtle"
                       aria-label={t('Продажі клієнта')}
                       onClick={() => onOpenClientSales(sale)}
@@ -661,7 +662,7 @@ function useIncompleteSalesOnlineShopColumns({
                 {!hasResponsible && status !== 2 && (
                   <Tooltip label={user ? t('Закріпити за собою') : t('Користувача не визначено')}>
                     <ActionIcon
-                      color="violet"
+                      color="orange"
                       disabled={!user || isUpdating}
                       variant="subtle"
                       aria-label={t('Закріпити за собою')}
@@ -712,7 +713,7 @@ function IncompleteSaleDetail({ error, isLoading, sale, onOpenClientSales }: Inc
     <Stack gap="md">
       {isLoading && (
         <Group justify="center" py="sm">
-          <Loader color="violet" size="sm" />
+          <Loader color="orange" size="sm" />
           <Text size="sm" c="dimmed">
             {t('Завантаження деталей')}
           </Text>

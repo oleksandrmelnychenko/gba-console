@@ -1,4 +1,4 @@
-import { ActionIcon, Alert, Badge, Card, Group, Loader, SegmentedControl, SimpleGrid, Stack, Text, Tooltip } from '@mantine/core'
+import { ActionIcon, Alert, Badge, Card, SegmentedControl, SimpleGrid, Stack, Text, Tooltip } from '@mantine/core'
 import { IconAlertCircle, IconRefresh, IconSparkles } from '@tabler/icons-react'
 import { notifications } from '@mantine/notifications'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
@@ -318,36 +318,9 @@ export function SalesCockpitPage() {
   }, [])
 
   return (
-    <Stack className="cockpit-page" gap="md">
-      <Group gap="sm" justify="flex-end">
-        <Text c="dimmed" size="sm">
-          {t('Завдань')}: <strong>{visibleTasks.length}</strong>
-        </Text>
-        <Tooltip label={t('Згенерувати завдання')}>
-          <ActionIcon
-            aria-label={t('Згенерувати завдання')}
-            loading={isRegenerating}
-            variant="subtle"
-            onClick={handleRegenerate}
-          >
-            <IconSparkles size={18} />
-          </ActionIcon>
-        </Tooltip>
-        <Tooltip label={t('Оновити')}>
-          <ActionIcon aria-label={t('Оновити')} loading={isLoading} variant="subtle" onClick={handleReload}>
-            <IconRefresh size={18} />
-          </ActionIcon>
-        </Tooltip>
-      </Group>
-
-      {error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-          {error}
-        </Alert>
-      )}
-
-      <div className="cockpit-filter">
-        <Group align="flex-end" gap="md" justify="space-between" wrap="wrap">
+    <Stack className="cockpit-page" gap={6}>
+      <Card className="app-filter-card cockpit-toolbar-card" withBorder radius="md" padding={0}>
+        <div className="app-filter-bar cockpit-command-bar">
           <TaskFilters
             taskType={taskTypeFilter}
             urgency={urgencyFilter}
@@ -355,6 +328,7 @@ export function SalesCockpitPage() {
             onUrgencyChange={setUrgencyFilter}
           />
           <SegmentedControl
+            className="cockpit-day-filter"
             data={[
               { label: t('Усі'), value: 'all' },
               { label: `${t('Сьогодні')} (${todayCount})`, value: 'today' },
@@ -363,20 +337,42 @@ export function SalesCockpitPage() {
             value={dayFilter}
             onChange={(value) => setDayFilter(value as DayFilter)}
           />
-        </Group>
-      </div>
+          <div className="app-filter-actions cockpit-command-actions">
+            <Text className="cockpit-toolbar-count">
+              {t('Завдань')}: <strong>{visibleTasks.length}</strong>
+            </Text>
+            <Tooltip label={t('Згенерувати завдання')}>
+              <ActionIcon
+                aria-label={t('Згенерувати завдання')}
+                loading={isRegenerating}
+                size={34}
+                variant="light"
+                onClick={handleRegenerate}
+              >
+                <IconSparkles size={17} />
+              </ActionIcon>
+            </Tooltip>
+            <Tooltip label={t('Оновити')}>
+              <ActionIcon aria-label={t('Оновити')} loading={isLoading} size={34} variant="light" onClick={handleReload}>
+                <IconRefresh size={18} />
+              </ActionIcon>
+            </Tooltip>
+          </div>
+        </div>
+      </Card>
+
+      {error && (
+        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          {error}
+        </Alert>
+      )}
 
       {target && <TargetCard target={target} />}
 
       <CockpitDashboardPanel reloadKey={reloadKey} />
 
       {isLoading ? (
-        <Group justify="center" py="xl">
-          <Loader />
-          <Text c="dimmed" size="sm">
-            {t('Завантаження завдань')}
-          </Text>
-        </Group>
+        <CockpitTaskSkeleton label={t('Завантаження завдань')} />
       ) : visibleTasks.length === 0 ? (
         <Card withBorder radius="md" padding="xl">
           <Text c="dimmed" fw={600} ta="center">
@@ -428,9 +424,9 @@ function TargetCard({ target }: { target: CockpitTarget }) {
   const { t } = useI18n()
 
   return (
-    <Card withBorder radius="md" shadow="sm">
+    <Card className="app-section-card" withBorder radius="md">
       <Stack gap="sm">
-        <Text className="cockpit-section-title">{t('Моя ціль (місяць)')}</Text>
+        <Text className="app-section-title" fw={600}>{t('Моя ціль (місяць)')}</Text>
 
         <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
           <TargetMetric label={t('Відвантаження')} metric={target.shipped} t={t} />
@@ -438,6 +434,20 @@ function TargetCard({ target }: { target: CockpitTarget }) {
         </SimpleGrid>
       </Stack>
     </Card>
+  )
+}
+
+function CockpitTaskSkeleton({ label }: { label: string }) {
+  return (
+    <div className="cockpit-task-skeleton" aria-busy="true" aria-label={label}>
+      {Array.from({ length: 6 }).map((_, index) => (
+        <div key={index} className="cockpit-task-skeleton-card">
+          <span className="cockpit-task-skeleton-line is-title" />
+          <span className="cockpit-task-skeleton-line" />
+          <span className="cockpit-task-skeleton-line is-short" />
+        </div>
+      ))}
+    </div>
   )
 }
 

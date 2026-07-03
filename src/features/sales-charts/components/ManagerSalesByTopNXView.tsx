@@ -1,14 +1,12 @@
 import { BarChart } from '@mantine/charts'
-import { Alert, Card, Group, Select, Stack, Text, TextInput } from '@mantine/core'
+import { Alert, Card, Select, Stack, Text, TextInput } from '@mantine/core'
 import { IconAlertCircle } from '@tabler/icons-react'
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
-import type { DataTableColumn } from '../../../shared/ui/data-table/types'
-import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
+import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { getSalesByProductTop } from '../api/salesChartsApi'
 import { formatMoney } from '../money'
 import type { SalesByProductTopReport, SalesChartsTopNXRow } from '../types'
@@ -19,6 +17,10 @@ const TYPE_OPTIONS = [
   { value: String(SalesChartsTopType.TopX), label: 'Top X' },
 ]
 
+const TOP_NX_TABLE_DEFAULT_LAYOUT = {
+  density: 'normal',
+} satisfies DataTableDefaultLayout
+
 export function ManagerSalesByTopNXView() {
   const { t } = useI18n()
   const today = useMemo(() => formatLocalDate(new Date()), [])
@@ -28,7 +30,7 @@ export function ManagerSalesByTopNXView() {
   const [report, setReport] = useValueState<SalesByProductTopReport>({ Managers: [], Products: [] })
   const [isLoading, setIsLoading] = useValueState(false)
   const [error, setError] = useValueState<string | null>(null)
-  const { density, toggleDensity } = useDataTableDensity('sales-charts-topnx', 'normal')
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -107,35 +109,38 @@ export function ManagerSalesByTopNXView() {
   )
 
   return (
-    <Card className="app-section-card" withBorder radius="md" padding="md">
-      <Stack gap="md">
-        <Group align="end" gap="sm" wrap="wrap">
+    <Card className="app-data-card sales-chart-card" withBorder radius="md" padding={0}>
+      <div className="app-filter-bar">
+        <div className="sales-chart-filter-row is-topnx">
           <TextInput
+            className="sales-chart-filter-control"
             label={t('З')}
             max={to || undefined}
             type="date"
             value={from}
-            w={170}
             onChange={(event) => setFrom(event.currentTarget.value)}
           />
           <TextInput
+            className="sales-chart-filter-control"
             label={t('По')}
             min={from || undefined}
             type="date"
             value={to}
-            w={170}
             onChange={(event) => setTo(event.currentTarget.value)}
           />
           <Select
             allowDeselect={false}
+            className="sales-chart-filter-control"
             data={TYPE_OPTIONS}
             label={t('Тип')}
             value={String(typeTop)}
-            w={140}
             onChange={(value) => setTypeTop((Number(value) === SalesChartsTopType.TopX ? SalesChartsTopType.TopX : SalesChartsTopType.TopN))}
           />
-          <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />
-        </Group>
+          <div ref={setTableToolbarSlot} className="sales-chart-table-toolbar-slot" />
+        </div>
+      </div>
+
+      <Stack className="sales-chart-content" gap="md" p="md">
 
         {error && (
           <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
@@ -158,15 +163,18 @@ export function ManagerSalesByTopNXView() {
         <DataTable
           columns={columns}
           data={rows}
-          density={density}
+          defaultLayout={TOP_NX_TABLE_DEFAULT_LAYOUT}
+          distributeAvailableWidth
           emptyText={t('Дані відсутні')}
           getRowId={(row) => row.rowId}
           isLoading={isLoading}
-          layoutVersion="sales-charts-topnx-1"
+          layoutVersion="sales-charts-topnx-2"
           loadingText={t('Завантаження даних')}
           maxHeight="calc(100vh - 360px)"
           minWidth={720}
+          showLayoutControls
           tableId="sales-charts-topnx"
+          toolbarPortalTarget={tableToolbarSlot}
         />
       </Stack>
     </Card>

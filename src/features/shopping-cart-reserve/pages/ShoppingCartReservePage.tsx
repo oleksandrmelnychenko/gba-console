@@ -1,5 +1,5 @@
 import { useEffect, useReducer } from 'react'
-import { ActionIcon, Alert, Group, Loader, Stack, Text, Tooltip } from '@mantine/core'
+import { ActionIcon, Alert, Card, Stack, Text, Tooltip } from '@mantine/core'
 import { IconAlertCircle, IconRefresh } from '@tabler/icons-react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useNavigate } from 'react-router-dom'
@@ -8,6 +8,7 @@ import { getShoppingCartReserves } from '../api/shoppingCartReserveApi'
 import { CartReserveCard } from '../components/CartReserveCard'
 import type { ShoppingCartReserveItem } from '../types'
 import { getCartClientNetUid, getCartKey } from '../utils'
+import './shopping-cart-reserve-page.css'
 
 export function ShoppingCartReservePage() {
   const { t } = useI18n()
@@ -68,52 +69,66 @@ export function ShoppingCartReservePage() {
   }
 
   return (
-    <Stack gap="lg">
-      <Group justify="flex-end" align="center">
-        <Group gap="xs">
-          <Tooltip label={t('Оновити')}>
-            <ActionIcon variant="light" color="gray" aria-label={t('Оновити')} onClick={() => reload()}>
-              <IconRefresh size={18} />
-            </ActionIcon>
-          </Tooltip>
-        </Group>
-      </Group>
+    <Stack className="shopping-cart-reserve-page" gap={6}>
+      <Card className="app-data-card shopping-cart-reserve-card" withBorder radius="md" padding={0}>
+        <div className="app-filter-bar shopping-cart-reserve-command-bar">
+          <div className="app-filter-actions shopping-cart-reserve-command-actions">
+            <Tooltip label={t('Оновити')}>
+              <ActionIcon
+                aria-label={t('Оновити')}
+                color="gray"
+                loading={isLoading}
+                size={34}
+                variant="light"
+                onClick={() => reload()}
+              >
+                <IconRefresh size={18} />
+              </ActionIcon>
+            </Tooltip>
+          </div>
+        </div>
 
-      {error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-          {error}
-        </Alert>
-      )}
+        <div className="shopping-cart-reserve-content">
+          {error && (
+            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+              {error}
+            </Alert>
+          )}
 
-      {isLoading && (
-        <Group justify="center" py="md">
-          <Loader color="violet" size="sm" />
-          <Text size="sm" c="dimmed">
-            {t('Завантаження кошиків')}
-          </Text>
-        </Group>
-      )}
+          {isLoading && (
+            <div className="shopping-cart-reserve-skeleton" aria-label={t('Завантаження кошиків')} aria-busy="true">
+              {Array.from({ length: 4 }, (_, index) => (
+                <div key={index} className="shopping-cart-reserve-skeleton-card">
+                  <span className="shopping-cart-reserve-skeleton-line is-title" />
+                  <span className="shopping-cart-reserve-skeleton-line" />
+                  <span className="shopping-cart-reserve-skeleton-line is-short" />
+                </div>
+              ))}
+            </div>
+          )}
 
-      {!isLoading && !error && carts.length === 0 && (
-        <Text size="sm" c="dimmed" ta="center" py="md">
-          {t('Кошиків не знайдено')}
-        </Text>
-      )}
+          {!isLoading && !error && carts.length === 0 && (
+            <Text size="sm" c="dimmed" ta="center" py="md">
+              {t('Кошиків не знайдено')}
+            </Text>
+          )}
 
-      {carts.map((cart, index) => {
-        const key = getCartKey(cart, index)
+          {carts.map((cart, index) => {
+            const key = getCartKey(cart, index)
 
-        return (
-          <CartReserveCard
-            key={key}
-            cart={cart}
-            index={index}
-            isExpanded={expandedKey === key}
-            onOpenClient={handleOpenClient}
-            onToggle={handleToggle}
-          />
-        )
-      })}
+            return (
+              <CartReserveCard
+                key={key}
+                cart={cart}
+                index={index}
+                isExpanded={expandedKey === key}
+                onOpenClient={handleOpenClient}
+                onToggle={handleToggle}
+              />
+            )
+          })}
+        </div>
+      </Card>
     </Stack>
   )
 }

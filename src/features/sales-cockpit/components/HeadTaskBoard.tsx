@@ -4,7 +4,6 @@ import {
   Badge,
   Card,
   Group,
-  Loader,
   Pagination,
   Select,
   Table,
@@ -196,11 +195,11 @@ export function HeadTaskBoard() {
   }
 
   return (
-    <Card className="app-section-card" withBorder radius="md">
-      <Group align="center" gap="sm" justify="space-between" mb="sm" wrap="wrap">
+    <Card className="app-section-card cockpit-board-card" withBorder radius="md" padding={0}>
+      <Group align="center" className="cockpit-board-header" gap="sm" justify="space-between" wrap="wrap">
         <Group gap="xs">
-          <Text className="cockpit-section-title">{t('Усі задачі (live)')}</Text>
-          <Badge color="indigo" leftSection={<IconProgress size={12} />} variant="light">
+          <Text className="app-section-title" fw={600}>{t('Усі задачі (live)')}</Text>
+          <Badge color="orange" leftSection={<IconProgress size={12} />} variant="light">
             {t('наживо')}
           </Badge>
         </Group>
@@ -209,26 +208,29 @@ export function HeadTaskBoard() {
           <Text c="dimmed" size="xs">
             {relativeUpdatedLabel(lastUpdated, t)}
           </Text>
-          {isLoading && <Loader size="xs" />}
+          {isLoading && <span className="cockpit-inline-loading" aria-hidden="true" />}
         </Group>
       </Group>
 
-      <Group gap="xs" mb="sm" wrap="wrap">
+      <div className="pill-tabs cockpit-board-tabs" role="tablist" aria-label={t('Статуси задач')}>
         {STATUS_TABS.map((tab) => (
-          <Badge
+          <button
             key={tab.value}
-            color={tab.value === status ? 'indigo' : 'gray'}
-            size="lg"
-            style={{ cursor: 'pointer' }}
-            variant={tab.value === status ? 'filled' : 'light'}
+            className={`pill-tab${tab.value === status ? ' is-active' : ''}`}
+            role="tab"
+            type="button"
+            aria-selected={tab.value === status}
             onClick={() => handleStatusChange(tab.value)}
           >
-            {t(tab.label)} · {data.ByStatus[tab.countKey]}
-          </Badge>
+            {t(tab.label)}
+            <Badge className={`app-role-pill ${tab.value === status ? 'is-orange' : 'is-gray'}`} size="sm" variant="light">
+              {data.ByStatus[tab.countKey]}
+            </Badge>
+          </button>
         ))}
-      </Group>
+      </div>
 
-      <Group align="flex-end" gap="md" mb="sm" wrap="wrap">
+      <div className="app-filter-bar cockpit-board-filter">
         <Select
           clearable
           data={managerOptions}
@@ -249,32 +251,29 @@ export function HeadTaskBoard() {
           w={200}
           onChange={handleUrgencyChange}
         />
-        <Tooltip label={t('Оновити')}>
-          <ActionIcon aria-label={t('Оновити')} variant="subtle" onClick={() => setLoading(true)}>
-            <IconRefresh size={18} />
-          </ActionIcon>
-        </Tooltip>
-      </Group>
+        <div className="app-filter-actions cockpit-command-actions">
+          <Tooltip label={t('Оновити')}>
+            <ActionIcon aria-label={t('Оновити')} size={34} variant="light" onClick={() => setLoading(true)}>
+              <IconRefresh size={18} />
+            </ActionIcon>
+          </Tooltip>
+        </div>
+      </div>
 
       {error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} mb="sm" variant="light">
+        <Alert className="cockpit-board-alert" color="red" icon={<IconAlertCircle size={18} />} variant="light">
           {error}
         </Alert>
       )}
 
       {isLoading && data.Tasks.length === 0 ? (
-        <Group justify="center" py="xl">
-          <Loader />
-          <Text c="dimmed" size="sm">
-            {t('Завантаження задач')}
-          </Text>
-        </Group>
+        <HeadTaskBoardSkeleton label={t('Завантаження задач')} />
       ) : data.Tasks.length === 0 ? (
-        <Text c="dimmed" py="md" size="sm" ta="center">
+        <Text c="dimmed" className="cockpit-board-empty" size="sm" ta="center">
           {t('Задач за цим фільтром немає')}
         </Text>
       ) : (
-        <Table.ScrollContainer minWidth={920}>
+        <Table.ScrollContainer className="cockpit-board-table" minWidth={920}>
           <Table className="cockpit-team-table" highlightOnHover striped withColumnBorders>
             <Table.Thead>
               <Table.Tr>
@@ -297,7 +296,7 @@ export function HeadTaskBoard() {
       )}
 
       {totalPages > 1 && (
-        <Group justify="space-between" mt="sm">
+        <Group className="cockpit-board-pagination" justify="space-between">
           <Text c="dimmed" size="xs">
             {t('Усього')}: {data.Total}
           </Text>
@@ -340,7 +339,7 @@ function HeadTaskRow({ task }: { task: HeadTask }) {
       </Table.Td>
       <Table.Td>
         {task.Status === 'in_progress' ? (
-          <Badge color="indigo" leftSection={<IconProgress size={12} />} variant="light">
+          <Badge color="orange" leftSection={<IconProgress size={12} />} variant="light">
             {inProgressLabel(task.InProgressSince, t)}
           </Badge>
         ) : (
@@ -382,6 +381,23 @@ function HeadTaskRow({ task }: { task: HeadTask }) {
   )
 }
 
+function HeadTaskBoardSkeleton({ label }: { label: string }) {
+  return (
+    <div className="cockpit-table-skeleton is-board" aria-busy="true" aria-label={label}>
+      {Array.from({ length: 6 }).map((_, rowIndex) => (
+        <div key={rowIndex} className="cockpit-table-skeleton-row">
+          {Array.from({ length: 7 }).map((__, columnIndex) => (
+            <span
+              key={columnIndex}
+              className={`cockpit-table-skeleton-line${columnIndex === 2 ? ' is-title' : ''}`}
+            />
+          ))}
+        </div>
+      ))}
+    </div>
+  )
+}
+
 const URGENCY_OPTIONS = ['critical', 'high', 'normal', 'low']
 
 function buildManagerOptions(managers: HeadTaskManager[]): { value: string; label: string }[] {
@@ -405,7 +421,7 @@ function taskTypeLabel(taskType: string, t: (key: string) => string): string {
 
 const STATUS_COLOR: Record<string, string> = {
   open: 'blue',
-  in_progress: 'indigo',
+  in_progress: 'orange',
   done: 'green',
   snoozed: 'gray',
   dismissed: 'gray',

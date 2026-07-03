@@ -16,6 +16,7 @@ import {
   updateSaleConsignmentNoteSetting,
 } from '../api/salesUkraineApi'
 import type { SaleConsignmentDocument, SaleConsignmentNoteSetting, SalesUkraineSale } from '../types'
+import './sales-drawers.css'
 
 type ConsignmentNoteDrawerState = {
   error: string | null
@@ -245,12 +246,12 @@ export function ConsignmentNoteSettingsDrawer({
           </Alert>
         )}
 
-        <Group justify="space-between" align="end" gap="sm">
+        <Group className="sales-drawer-hero" align="end" gap="sm">
           <Box style={{ flex: '1 1 260px' }}>
-            <Text c="dimmed" size="xs" tt="uppercase">
+            <Text className="sales-drawer-document-label">
               {t('По документу')}
             </Text>
-            <Text fw={600} size="sm">
+            <Text className="sales-drawer-document-title">
               {t('Накладна')} {displayValue(sale?.SaleNumber?.Value)} {t('від')} {formatDateTime(getConsignmentNoteDate(sale))}
             </Text>
           </Box>
@@ -574,8 +575,8 @@ function formatDateTime(value?: Date | string): string {
 
 function displayValue(value: unknown): string {
   if (typeof value === 'string') {
-    return value.trim() || '—'
+    return value.trim()
   }
 
-  return '—'
+  return ''
 }

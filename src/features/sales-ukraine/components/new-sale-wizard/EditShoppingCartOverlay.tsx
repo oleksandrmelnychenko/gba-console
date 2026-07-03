@@ -53,14 +53,14 @@ export function EditShoppingCartOverlay({
     comment: item.Comment || '',
     discount: getOrderItemDiscount(item),
     localPrice: getWizardProductNumber((item.Product as WizardSaleProduct | undefined)?.CurrentPriceEurToUah) ?? 0,
-    name: item.Product?.NameUA || item.Product?.Name || '—',
+    name: item.Product?.NameUA || item.Product?.Name || '',
     oneTimeDiscount: getWizardProductNumber(item.OneTimeDiscount) ?? 0,
     originalNumber: item.Product?.MainOriginalNumber || '',
     price: getWizardProductNumber((item.Product as WizardSaleProduct | undefined)?.CurrentPrice) ?? 0,
     qty: getWizardProductNumber(item.Qty) ?? 0,
     totalAmount: getWizardProductNumber(item.TotalAmount) ?? 0,
     user: item.User?.LastName || '',
-    vendorCode: item.Product?.VendorCode || item.Product?.Articul || '—',
+    vendorCode: item.Product?.VendorCode || item.Product?.Articul || '',
   }))
 
   const splitRows = splitItems.map((item) => ({
@@ -68,14 +68,14 @@ export function EditShoppingCartOverlay({
     comment: item.Comment || '',
     discount: 0,
     localPrice: getWizardProductNumber(item.Product.CurrentPriceEurToUah) ?? 0,
-    name: item.Product.NameUA || item.Product.Name || '—',
+    name: item.Product.NameUA || item.Product.Name || '',
     oneTimeDiscount: 0,
     originalNumber: item.Product.MainOriginalNumber || '',
     price: getWizardProductNumber(item.Product.CurrentPrice) ?? 0,
     qty: item.Qty,
     totalAmount: item.TotalAmount,
     user: item.User?.LastName || '',
-    vendorCode: item.Product.VendorCode || item.Product.Articul || '—',
+    vendorCode: item.Product.VendorCode || item.Product.Articul || '',
   }))
 
   return (

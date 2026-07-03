@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useI18n } from '../i18n/useI18n'
 import { usePageBreadcrumb } from './page-header-actions/pageHeaderActionsContext'
+import './sales-dashboard-shell.css'
 
 type SalesTab = { label: string; value: string }
 
@@ -23,13 +24,14 @@ export function SalesDashboardShell({ children }: { children: ReactNode }) {
   const { t } = useI18n()
   const navigate = useNavigate()
   const { pathname } = useLocation()
-  const activeTab = SALES_DASHBOARD_TABS.find((tab) => tab.value === pathname) ?? null
+  const activePath = normalizeSalesDashboardPath(pathname)
+  const activeTab = SALES_DASHBOARD_TABS.find((tab) => tab.value === activePath) ?? null
   const active = activeTab?.value ?? null
 
   usePageBreadcrumb(activeTab ? t(activeTab.label) : null)
 
   return (
-    <Stack gap={6}>
+    <Stack className="sales-dashboard-shell" gap={6}>
       <div className="pill-tabs">
         {SALES_DASHBOARD_TABS.map((tab) => {
           const isActive = active === tab.value
@@ -54,4 +56,12 @@ export function SalesDashboardShell({ children }: { children: ReactNode }) {
       {children}
     </Stack>
   )
+}
+
+function normalizeSalesDashboardPath(pathname: string): string {
+  if (pathname === '/sales/return/client') {
+    return '/sales/ukraine/all/returns/new'
+  }
+
+  return pathname
 }

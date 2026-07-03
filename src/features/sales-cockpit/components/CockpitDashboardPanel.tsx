@@ -136,9 +136,9 @@ export function CockpitDashboardPanel({ reloadKey }: { reloadKey: number }) {
   }, [dashboard?.completed_vs_open])
 
   return (
-    <Card withBorder radius="md" shadow="sm">
+    <Card className="app-section-card" withBorder radius="md">
       <Stack gap="md">
-        <Text className="cockpit-section-title">{t('Дашборд завдань')}</Text>
+        <Text className="app-section-title" fw={600}>{t('Дашборд завдань')}</Text>
 
         {error && (
           <Alert color="orange" icon={<IconAlertCircle size={18} />} variant="light">

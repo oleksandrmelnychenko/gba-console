@@ -1,4 +1,4 @@
-import { ActionIcon, Alert, Anchor, Badge, Button, Card, Checkbox, Chip, Group, Loader, NumberInput, Stack, Table, Text } from '@mantine/core'
+import { ActionIcon, Alert, Anchor, Badge, Button, Card, Checkbox, Chip, Group, NumberInput, Stack, Table, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { IconAlertCircle, IconFileInvoice, IconPencil } from '@tabler/icons-react'
 import { useEffect } from 'react'
@@ -6,6 +6,7 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { getCurrentUnmergedSale, getMergedSales, updateMergedSale } from '../api/salesUkraineApi'
 import {
   buildMergedSaleInvoiceDrafts,
@@ -21,6 +22,7 @@ import {
   type MergedSaleInvoiceDraftBySale,
 } from '../mergedSaleInvoice'
 import type { SalesUkraineSale, SalesUkraineSaleMerged } from '../types'
+import './sales-drawers.css'
 
 const amountFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
 const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
@@ -255,11 +257,7 @@ function MergedSalesContent({
   }
 
   if (isLoading) {
-    return (
-      <Group justify="center" py="xl">
-        <Loader />
-      </Group>
-    )
+    return <SalesDrawerSkeleton />
   }
 
   return (
@@ -324,7 +322,7 @@ function MergedSalesContent({
             <Button color="gray" disabled={isConverting} variant="subtle" onClick={() => setConfirmSale(null)}>
               {t('Скасувати')}
             </Button>
-            <Button color="teal" loading={isConverting} onClick={convert}>
+            <Button color={CREATE_ACTION_COLOR} loading={isConverting} onClick={convert}>
               {t('Зробити рахунок')}
             </Button>
           </Group>
@@ -365,23 +363,26 @@ function MergedSaleCard({
   const canInvoice = hasSelectedMergedSaleItems(sale, draft)
 
   return (
-    <Card withBorder padding="md" radius="md">
+    <Card withBorder className="sales-merge-card" padding="md" radius="md">
       <Stack gap="sm">
         <Group justify="space-between" align="flex-start" wrap="wrap">
           <Stack gap={2}>
             <Group gap="xs">
-              <Text fw={600}>{displayValue(sale.SaleNumber?.Value)}</Text>
-              <Badge color={getClientColor(client)} size="xs" variant="light">
+              <Text className="sales-merge-title">{displayValue(sale.SaleNumber?.Value)}</Text>
+              <Badge className={`app-role-pill ${getClientPillClass(client)}`} size="xs" variant="light">
                 {getClientTypeLabel(client, t)}
               </Badge>
             </Group>
-            <Text size="sm">{displayValue(client?.FullName)}</Text>
-            <Text size="xs" c="dimmed">
+            <Text className="sales-merge-client" size="sm">
+              {displayValue(client?.FullName)}
+            </Text>
+            <Text className="sales-merge-meta">
               {[getUserLastName(sale), formatDateTime(sale.Updated)].filter(Boolean).join(' · ')}
             </Text>
           </Stack>
           <Group gap="sm">
             <Checkbox
+              className="sales-drawer-action-button"
               checked={draft?.selected ?? false}
               label={t('Усі товари')}
               onChange={(event) => onSaleToggle(sale, index, event.currentTarget.checked)}
@@ -392,11 +393,12 @@ function MergedSaleCard({
               </ActionIcon>
             )}
             <Button
-              color="teal"
+              className="sales-drawer-action-button"
+              color={CREATE_ACTION_COLOR}
               disabled={!canInvoice}
               leftSection={<IconFileInvoice size={16} />}
               size="xs"
-              variant="light"
+              variant="outline"
               onClick={() => onInvoice(sale, index)}
             >
               {t('Створити накладну')}
@@ -404,7 +406,7 @@ function MergedSaleCard({
           </Group>
         </Group>
 
-        <Table withRowBorders={false}>
+        <Table className="sales-drawer-table" withRowBorders={false}>
           <Table.Thead>
             <Table.Tr>
               <Table.Th w={44} />
@@ -496,16 +498,16 @@ function getClientTypeLabel(client: { IsSubClient?: boolean; IsTradePoint?: bool
   return t('Клієнт')
 }
 
-function getClientColor(client: { IsSubClient?: boolean; IsTradePoint?: boolean } | undefined): string {
+function getClientPillClass(client: { IsSubClient?: boolean; IsTradePoint?: boolean } | undefined): string {
   if (client?.IsTradePoint) {
-    return 'grape'
+    return 'is-orange'
   }
 
   if (client?.IsSubClient) {
-    return 'cyan'
+    return ''
   }
 
-  return 'blue'
+  return 'is-gray'
 }
 
 function getUserLastName(sale: SalesUkraineSale): string {
@@ -526,7 +528,7 @@ function formatDateTime(value?: Date | string): string {
 
 function formatAmount(value: number | null, qty?: number, originalQty?: number | null): string {
   if (typeof value !== 'number') {
-    return '—'
+    return ''
   }
 
   if (typeof qty === 'number' && typeof originalQty === 'number' && originalQty > 0 && qty !== originalQty) {
@@ -538,12 +540,34 @@ function formatAmount(value: number | null, qty?: number, originalQty?: number |
 
 function displayValue(value: unknown): string {
   if (typeof value === 'number') {
-    return Number.isFinite(value) ? String(value) : '—'
+    return Number.isFinite(value) ? String(value) : ''
   }
 
   if (typeof value === 'string') {
-    return value.trim() || '—'
+    return value.trim()
   }
 
-  return '—'
+  return ''
+}
+
+function SalesDrawerSkeleton() {
+  return (
+    <Stack className="sales-drawer-loading" gap="md">
+      {[0, 1].map((cardIndex) => (
+        <Stack key={cardIndex} className="sales-drawer-skeleton-card" gap="sm">
+          <div className="sales-drawer-skeleton-line" style={{ width: cardIndex === 0 ? '32%' : '26%' }} />
+          <div className="sales-drawer-skeleton-line" style={{ width: '54%' }} />
+          {[0, 1, 2, 3].map((rowIndex) => (
+            <div key={rowIndex} className="sales-drawer-skeleton-row">
+              <div className="sales-drawer-skeleton-line" style={{ width: '18px' }} />
+              <div className="sales-drawer-skeleton-line" />
+              <div className="sales-drawer-skeleton-line" style={{ width: rowIndex % 2 ? '82%' : '94%' }} />
+              <div className="sales-drawer-skeleton-line" />
+              <div className="sales-drawer-skeleton-line" />
+            </div>
+          ))}
+        </Stack>
+      ))}
+    </Stack>
+  )
 }

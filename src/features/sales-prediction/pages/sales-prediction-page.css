@@ -1,0 +1,9 @@
+.sales-prediction-page {
+  height: 100%;
+  min-height: 0;
+  overflow: auto;
+}
+
+.sales-prediction-filter-card {
+  flex: 0 0 auto;
+}

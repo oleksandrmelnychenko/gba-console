@@ -1,17 +1,18 @@
-import { Alert, Button, Card, Group, Loader, Stack, Text, TextInput } from '@mantine/core'
+import { ActionIcon, Alert, Button, Card, Group, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconAlertCircle, IconPlus } from '@tabler/icons-react'
+import { IconAlertCircle, IconPlus, IconRefresh } from '@tabler/icons-react'
 import { useEffect } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { getOffers, getPublicOfferLink, processOffer, restartOfferValidity } from '../api/salesOffersApi'
 import { NewOfferModal } from '../components/NewOfferModal'
 import { OfferCard } from '../components/OfferCard'
 import { OfferReasonDrawer } from '../components/OfferReasonDrawer'
 import type { ClientShoppingCart, OfferOrderItem, OffersFilters } from '../types'
+import './offers-page.css'
 
 type FilterDraft = {
   from: string
@@ -163,60 +164,80 @@ export function OffersPage() {
   }
 
   return (
-    <Stack gap="md">
-      <PageHeaderActions>
-        <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} onClick={() => setNewOpen(true)}>
-          {t('Створити оферту')}
-        </Button>
-      </PageHeaderActions>
+    <Stack className="offers-page" gap={6}>
+      <Card withBorder radius="md" padding={0} className="app-data-card offers-card">
+        <div className="app-filter-bar offers-filter-bar">
+          <TextInput
+            label={t('Дата з')}
+            type="date"
+            value={draft.from}
+            onChange={(event) => {
+              const nextValue = event.currentTarget.value
+              setDraft((current) => ({ ...current, from: nextValue }))
+            }}
+          />
+          <TextInput
+            label={t('Дата по')}
+            type="date"
+            value={draft.to}
+            onChange={(event) => {
+              const nextValue = event.currentTarget.value
+              setDraft((current) => ({ ...current, to: nextValue }))
+            }}
+          />
+          <div className="app-filter-actions offers-filter-actions">
+            <Button color="gray" size="sm" variant="light" onClick={reload}>
+              {t('Застосувати')}
+            </Button>
+            <Tooltip label={t('Оновити')}>
+              <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={34} variant="light" onClick={refresh}>
+                <IconRefresh size={17} />
+              </ActionIcon>
+            </Tooltip>
+          </div>
+          <div className="offers-create-actions">
+            <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} onClick={() => setNewOpen(true)}>
+              {t('Створити оферту')}
+            </Button>
+          </div>
+        </div>
 
-      <Card withBorder radius="md" padding={0} className="app-filter-card">
-        <Group align="flex-end" gap="sm" className="app-filter-bar">
-        <TextInput
-          label={t('Дата з')}
-          type="date"
-          value={draft.from}
-          onChange={(event) => { const nextValue = event.currentTarget.value; setDraft((current) => ({ ...current, from: nextValue })) }}
-        />
-        <TextInput
-          label={t('Дата по')}
-          type="date"
-          value={draft.to}
-          onChange={(event) => { const nextValue = event.currentTarget.value; setDraft((current) => ({ ...current, to: nextValue })) }}
-        />
-        <Button onClick={reload}>{t('Застосувати')}</Button>
-        </Group>
-
-        <Stack gap="md" p="md">
+        <Stack className="offers-page__content" gap="md" p="md">
           {error && (
-        <Alert color="red" icon={<IconAlertCircle size={16} />} title={t('Помилка')}>
-          {error}
-        </Alert>
-      )}
+            <Alert color="red" icon={<IconAlertCircle size={16} />} title={t('Помилка')}>
+              {error}
+            </Alert>
+          )}
 
-      {isLoading ? (
-        <Group justify="center" py="xl">
-          <Loader />
-        </Group>
-      ) : offers.length === 0 ? (
-        <Text c="dimmed">{t('Оферти відсутні')}</Text>
-      ) : (
-        <Stack gap="sm">
-          {offers.map((offer) => (
-            <OfferCard
-              key={offer.NetUid}
-              expanded={expandedNetId === offer.NetUid}
-              offer={offer}
-              onCopyLink={copyLink}
-              onDelete={requestDelete}
-              onOpenItemReason={openItemReason}
-              onOpenReason={openReason}
-              onRestart={restart}
-              onToggle={toggle}
-            />
-          ))}
-        </Stack>
-      )}
+          {isLoading ? (
+            <div className="offers-skeleton" aria-label={t('Завантаження оферт')} aria-busy="true">
+              {Array.from({ length: 5 }, (_, index) => (
+                <div key={index} className="offers-skeleton-card">
+                  <span className="offers-skeleton-line is-title" />
+                  <span className="offers-skeleton-line" />
+                  <span className="offers-skeleton-line is-short" />
+                </div>
+              ))}
+            </div>
+          ) : offers.length === 0 ? (
+            <Text c="dimmed">{t('Оферти відсутні')}</Text>
+          ) : (
+            <Stack gap="sm">
+              {offers.map((offer) => (
+                <OfferCard
+                  key={offer.NetUid}
+                  expanded={expandedNetId === offer.NetUid}
+                  offer={offer}
+                  onCopyLink={copyLink}
+                  onDelete={requestDelete}
+                  onOpenItemReason={openItemReason}
+                  onOpenReason={openReason}
+                  onRestart={restart}
+                  onToggle={toggle}
+                />
+              ))}
+            </Stack>
+          )}
         </Stack>
       </Card>
 

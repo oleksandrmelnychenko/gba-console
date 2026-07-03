@@ -119,9 +119,9 @@ export function HeadDashboardChartsPanel({ reloadKey, rows }: { reloadKey: numbe
   const escalatedCount = dashboard?.escalated_count ?? 0
 
   return (
-    <Card withBorder radius="md" shadow="sm">
+    <Card className="app-section-card" withBorder radius="md">
       <Stack gap="md">
-        <Text className="cockpit-section-title">{t('Дашборд команди')}</Text>
+        <Text className="app-section-title" fw={600}>{t('Дашборд команди')}</Text>
 
         {error && (
           <Alert color="orange" icon={<IconAlertCircle size={18} />} variant="light">

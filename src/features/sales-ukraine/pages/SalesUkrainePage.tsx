@@ -7,7 +7,6 @@ import {
   Card,
   Checkbox,
   Group,
-  Loader,
   Menu,
   Popover,
   Select,
@@ -138,7 +137,7 @@ const STATUS_COLORS: Record<string, string> = {
   Packaging: 'green', // Накладна
   Received: 'teal',
   Shipping: 'cyan',
-  TransporterChanged: 'indigo',
+  TransporterChanged: 'blue',
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -688,7 +687,7 @@ export function SalesUkrainePage() {
   )
 
   return (
-    <Stack className="sales-ukraine-page" gap="lg">
+    <Stack className="sales-ukraine-page" gap={6}>
       <Card className="sales-ukraine-card" withBorder radius="md" padding={0}>
         <Stack className="sales-ukraine-content" gap={0}>
           <div className="sales-filter-bar">
@@ -906,11 +905,20 @@ export function SalesUkrainePage() {
 
           <div className="sales-grid">
             {isLoading ? (
-              <div className="sales-grid-state">
-                <Group justify="center" gap="xs">
-                  <Loader size="sm" />
-                  {t('Завантаження продажів')}
-                </Group>
+              <div className="sales-grid-skeleton" aria-label={t('Завантаження продажів')} aria-busy="true">
+                {Array.from({ length: 9 }, (_, rowIndex) => (
+                  <div key={rowIndex} className="sales-grid-row sales-grid-skeleton-row">
+                    <span className="sales-grid-skeleton-line is-main" />
+                    <span className="sales-grid-skeleton-line is-number" />
+                    <span className="sales-grid-skeleton-line is-number" />
+                    <span className="sales-grid-skeleton-line is-number" />
+                    <span className="sales-grid-skeleton-line is-short" />
+                    <span className="sales-grid-skeleton-line is-icon" />
+                    <span className="sales-grid-skeleton-line is-short" />
+                    <span className="sales-grid-skeleton-line is-short" />
+                    <span className="sales-grid-skeleton-line is-status" />
+                  </div>
+                ))}
               </div>
             ) : sales.length === 0 ? (
               <div className="sales-grid-state">{t('Продажів не знайдено')}</div>

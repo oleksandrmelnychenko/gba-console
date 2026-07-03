@@ -137,7 +137,7 @@ export function SaleDocumentsMenu({ sale }: { sale: SalesUkraineSale }) {
           <Stack gap="sm">
             <SaleDocumentDownloads documents={resultState.documents} />
             <Group justify="flex-end" mt="xs">
-              <Button color="violet" variant="subtle" onClick={() => setResultState(null)}>
+              <Button color="orange" variant="subtle" onClick={() => setResultState(null)}>
                 {t('Закрити')}
               </Button>
             </Group>

@@ -33,10 +33,11 @@
 }
 
 .sales-debtors-filter .mantine-InputWrapper-label {
-  color: var(--mantine-color-gray-7);
+  color: var(--mantine-color-gray-9);
   display: block;
+  font-family: var(--font-mono);
   font-size: 12px;
-  font-weight: 400;
+  font-weight: 600;
   height: var(--sales-debtors-label-height);
   letter-spacing: 0;
   line-height: 1.2;
@@ -48,9 +49,9 @@
   border-color: var(--mantine-color-gray-2);
   border-radius: 8px;
   color: var(--mantine-color-gray-8);
-  font-family: inherit;
+  font-family: var(--font-mono);
   font-size: 12.5px;
-  font-weight: 520;
+  font-weight: 400;
   height: var(--sales-debtors-control-height);
   line-height: 1.2;
   min-height: var(--sales-debtors-control-height);
@@ -70,7 +71,7 @@
   flex-direction: column;
   min-height: 0;
   min-width: 0;
-  padding: 12px;
+  padding: 0;
 }
 
 .sales-debtors-list-head,
@@ -90,13 +91,15 @@
 }
 
 .sales-debtors-list-head {
+  background: var(--mantine-color-gray-0);
+  border-bottom: 1px solid var(--mantine-color-gray-2);
   color: var(--mantine-color-gray-7);
   flex: 0 0 auto;
-  font-size: 10.5px;
-  font-weight: 500;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
   line-height: 1.2;
-  padding: 0 24px 8px 10px;
-  text-transform: uppercase;
+  padding: 8px 24px 8px 10px;
 }
 
 .sales-debtors-sort-header {
@@ -146,24 +149,23 @@
   min-height: 0;
   min-width: 0;
   overflow: auto;
-  padding-right: 14px;
+  padding-right: 0;
 }
 
 .sales-debtors-row {
-  background:
-    linear-gradient(90deg, transparent, rgba(248, 249, 250, 0.68) 48%, transparent),
-    var(--mantine-color-white);
-  border-bottom: 1px solid var(--mantine-color-gray-1);
-  border-radius: 8px;
+  background: var(--mantine-color-white);
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+  border-radius: 0;
   cursor: pointer;
   min-height: 56px;
   outline: none;
   padding: 8px 10px;
   position: relative;
-  transition:
-    background 140ms ease,
-    box-shadow 140ms ease,
-    transform 140ms ease;
+  transition: background-color 140ms ease;
+}
+
+.sales-debtors-row:nth-child(even) {
+  background: var(--mantine-color-gray-0);
 }
 
 .sales-debtors-list.is-normal .sales-debtors-row {
@@ -172,24 +174,12 @@
 }
 
 .sales-debtors-row::before {
-  background: transparent;
-  border-radius: 999px;
-  bottom: 8px;
-  content: '';
-  left: 0;
-  position: absolute;
-  top: 8px;
-  transition: background-color 140ms ease;
-  width: 3px;
+  content: none;
 }
 
 .sales-debtors-row:hover,
 .sales-debtors-row:focus-visible {
-  background:
-    linear-gradient(90deg, rgba(255, 250, 245, 0.92), rgba(255, 250, 245, 0.44) 42%, transparent),
-    var(--mantine-color-white);
-  box-shadow: 0 9px 22px rgba(20, 28, 38, 0.06);
-  transform: translateX(3px);
+  background: #fffaf5;
   z-index: 1;
 }
 
@@ -258,9 +248,9 @@
 }
 
 .sales-debtors-manager-last-name {
-  color: var(--mantine-color-gray-9);
+  color: var(--mantine-color-gray-8);
   font-size: 13px;
-  font-weight: 720;
+  font-weight: 600;
   line-height: 1.15;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -268,7 +258,7 @@
 }
 
 .sales-debtors-manager-first-name {
-  color: var(--mantine-color-gray-5);
+  color: var(--mantine-color-gray-6);
   font-size: 11px;
   font-weight: 600;
   line-height: 1.2;
@@ -279,7 +269,7 @@
 }
 
 .sales-debtors-amount-cell {
-  color: var(--mantine-color-gray-9);
+  color: var(--mantine-color-gray-8);
   display: grid;
   justify-items: end;
   line-height: 1.08;
@@ -287,13 +277,15 @@
 }
 
 .sales-debtors-amount-cell strong {
+  font-family: var(--font-mono);
   font-size: 12.5px;
-  font-weight: 720;
+  font-weight: 600;
   letter-spacing: 0;
 }
 
 .sales-debtors-amount-cell small {
-  color: var(--mantine-color-gray-5);
+  color: var(--mantine-color-gray-6);
+  font-family: var(--font-mono);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0;
@@ -308,7 +300,7 @@
 
 .sales-debtors-days-cell {
   align-items: center;
-  color: var(--mantine-color-gray-9);
+  color: var(--mantine-color-gray-8);
   display: inline-flex;
   gap: 8px;
   justify-content: flex-start;
@@ -323,7 +315,7 @@
   background: var(--mantine-color-gray-0);
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 8px;
-  color: var(--mantine-color-gray-5);
+  color: var(--mantine-color-gray-6);
   display: inline-flex;
   flex: 0 0 26px;
   font-size: 11px;
@@ -334,8 +326,9 @@
 }
 
 .sales-debtors-days-cell strong {
+  font-family: var(--font-mono);
   font-size: 12.5px;
-  font-weight: 720;
+  font-weight: 600;
 }
 
 .sales-debtors-days-cell.is-danger strong {
@@ -404,11 +397,9 @@
 
 .sales-debtor-detail-hero,
 .sales-debtor-detail-section {
-  background:
-    linear-gradient(90deg, transparent, rgba(248, 249, 250, 0.7) 46%, transparent),
-    var(--mantine-color-white);
+  background: var(--mantine-color-white);
   border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 10px;
+  border-radius: 8px;
   min-width: 0;
 }
 
@@ -430,26 +421,7 @@
 .sales-debtor-detail-hero__icon,
 .sales-debtor-detail-section__icon,
 .sales-debtor-detail-debt__icon {
-  align-items: center;
-  background: var(--mantine-color-gray-0);
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 999px;
-  color: var(--mantine-color-gray-6);
-  display: inline-flex;
-  flex: 0 0 auto;
-  justify-content: center;
-}
-
-.sales-debtor-detail-hero__icon {
-  color: var(--brand-orange);
-  height: 42px;
-  width: 42px;
-}
-
-.sales-debtor-detail-section__icon,
-.sales-debtor-detail-debt__icon {
-  height: 32px;
-  width: 32px;
+  display: none;
 }
 
 .sales-debtor-detail-hero__copy,
@@ -459,24 +431,27 @@
 }
 
 .sales-debtor-detail-eyebrow {
-  color: var(--mantine-color-gray-5);
-  font-size: 10.5px;
+  color: var(--mantine-color-gray-7);
+  font-family: var(--font-mono);
+  font-size: 12px;
   font-weight: 600;
+  letter-spacing: 0;
   line-height: 1.2;
-  text-transform: uppercase;
 }
 
 .sales-debtor-detail-hero__copy strong,
 .sales-debtor-detail-section__head strong {
   color: var(--mantine-color-gray-9);
-  font-size: 14px;
-  font-weight: 720;
+  font-family: var(--font-mono);
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: 0;
   line-height: 1.2;
   min-width: 0;
 }
 
 .sales-debtor-detail-hero__copy > span:last-child {
-  color: var(--mantine-color-gray-5);
+  color: var(--mantine-color-gray-6);
   font-size: 12px;
   font-weight: 600;
   line-height: 1.25;
@@ -493,9 +468,9 @@
 }
 
 .sales-debtor-detail-metric {
-  background: var(--mantine-color-gray-0);
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 9px;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
   display: grid;
   min-height: 64px;
   min-width: 0;
@@ -503,17 +478,30 @@
 }
 
 .sales-debtor-detail-metric span {
-  color: var(--mantine-color-gray-5);
-  font-size: 10.5px;
-  font-weight: 700;
+  color: var(--mantine-color-gray-7);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
   line-height: 1.2;
-  text-transform: uppercase;
+}
+
+.sales-debtor-detail-metric span::before {
+  background: var(--brand-orange);
+  border-radius: 999px;
+  content: '';
+  display: inline-block;
+  height: 7px;
+  margin-right: 8px;
+  vertical-align: 1px;
+  width: 7px;
 }
 
 .sales-debtor-detail-metric strong {
   color: var(--mantine-color-gray-9);
-  font-size: 16px;
-  font-weight: 760;
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 600;
   line-height: 1.08;
   margin-top: 5px;
   overflow: hidden;
@@ -522,7 +510,8 @@
 }
 
 .sales-debtor-detail-metric small {
-  color: var(--mantine-color-gray-5);
+  color: var(--mantine-color-gray-6);
+  font-family: var(--font-mono);
   font-size: 10px;
   font-weight: 700;
   line-height: 1;
@@ -539,8 +528,8 @@
 }
 
 .sales-debtor-detail-section__head {
-  border-bottom: 1px solid var(--mantine-color-gray-1);
-  padding-bottom: 12px;
+  border-bottom: 0;
+  padding-bottom: 0;
 }
 
 .sales-debtor-detail-count {
@@ -569,14 +558,12 @@
 
 .sales-debtor-detail-debt {
   align-items: center;
-  background:
-    linear-gradient(90deg, transparent, rgba(248, 249, 250, 0.68) 48%, transparent),
-    var(--mantine-color-white);
-  border-bottom: 1px solid var(--mantine-color-gray-1);
-  border-radius: 8px;
+  background: var(--mantine-color-white);
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+  border-radius: 0;
   display: grid;
   gap: 10px;
-  grid-template-columns: 34px minmax(0, 1fr) 132px 76px;
+  grid-template-columns: minmax(0, 1fr) 132px 76px;
   min-height: 62px;
   padding: 8px 10px;
 }
@@ -587,9 +574,9 @@
 }
 
 .sales-debtor-detail-debt__main > strong {
-  color: var(--mantine-color-gray-9);
+  color: var(--mantine-color-gray-8);
   font-size: 12.5px;
-  font-weight: 720;
+  font-weight: 600;
   line-height: 1.2;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -633,13 +620,15 @@
 }
 
 .sales-debtor-detail-debt__amount strong {
-  color: var(--mantine-color-gray-9);
+  color: var(--mantine-color-gray-8);
+  font-family: var(--font-mono);
   font-size: 12.5px;
-  font-weight: 720;
+  font-weight: 600;
 }
 
 .sales-debtor-detail-debt__amount small {
-  color: var(--mantine-color-gray-5);
+  color: var(--mantine-color-gray-6);
+  font-family: var(--font-mono);
   font-size: 10px;
   font-weight: 700;
   margin-top: 3px;

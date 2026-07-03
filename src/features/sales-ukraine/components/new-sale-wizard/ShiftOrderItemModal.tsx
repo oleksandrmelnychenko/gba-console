@@ -106,7 +106,7 @@ function ShiftOrderItemForm({
             {t('Для клієнта')}:
           </Text>
           <Text fw={600} size="sm">
-            {regionCode || '—'}
+            {regionCode || ''}
           </Text>
         </Group>
         <Group gap={6} wrap="nowrap">
@@ -114,7 +114,7 @@ function ShiftOrderItemForm({
             {t('З рахунка')}:
           </Text>
           <Text fw={600} size="sm">
-            {sourceName || '—'}
+            {sourceName || ''}
           </Text>
         </Group>
         <Group gap={6} wrap="nowrap">
@@ -122,7 +122,7 @@ function ShiftOrderItemForm({
             {t('Аналітик')}:
           </Text>
           <Text fw={600} size="sm">
-            {analyst || '—'}
+            {analyst || ''}
           </Text>
         </Group>
       </Stack>

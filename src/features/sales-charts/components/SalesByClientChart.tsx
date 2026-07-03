@@ -1,5 +1,5 @@
 import { LineChart } from '@mantine/charts'
-import { Alert, Autocomplete, Card, Group, Select, Stack, Text, TextInput } from '@mantine/core'
+import { Alert, Autocomplete, Card, Select, Stack, Text, TextInput } from '@mantine/core'
 import { IconAlertCircle } from '@tabler/icons-react'
 import { useEffect, useMemo } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -118,15 +118,15 @@ export function SalesByClientChart() {
   const periodFormatter = useMemo(() => createPeriodFormatter(typePeriod), [typePeriod])
 
   return (
-    <Card className="app-section-card" withBorder radius="md" padding="md">
-      <Stack gap="md">
-        <Group align="end" gap="sm" wrap="wrap">
+    <Card className="app-data-card sales-chart-card" withBorder radius="md" padding={0}>
+      <div className="app-filter-bar">
+        <div className="sales-chart-filter-row is-client">
           <Autocomplete
+            className="sales-chart-filter-control"
             data={autocompleteData}
             label={t('Клієнт')}
             placeholder={t('Пошук клієнта')}
             value={clientQuery}
-            w={280}
             onChange={(value) => {
               setClientQuery(value)
               setNetId(null)
@@ -137,30 +137,33 @@ export function SalesByClientChart() {
             }}
           />
           <TextInput
+            className="sales-chart-filter-control"
             label={t('З')}
             max={to || undefined}
             type="date"
             value={from}
-            w={150}
             onChange={(event) => setFrom(event.currentTarget.value)}
           />
           <TextInput
+            className="sales-chart-filter-control"
             label={t('По')}
             min={from || undefined}
             type="date"
             value={to}
-            w={150}
             onChange={(event) => setTo(event.currentTarget.value)}
           />
           <Select
             allowDeselect={false}
+            className="sales-chart-filter-control"
             data={PERIOD_OPTIONS.map((option) => ({ ...option, label: t(option.label) }))}
             label={t('Тип')}
             value={String(typePeriod)}
-            w={150}
             onChange={(value) => setTypePeriod(toPeriodType(value))}
           />
-        </Group>
+        </div>
+      </div>
+
+      <Stack className="sales-chart-content" gap="md" p="md">
 
         {error && (
           <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
@@ -178,7 +181,7 @@ export function SalesByClientChart() {
             data={points}
             dataKey="name"
             h={300}
-            series={[{ color: 'violet.6', label: t('Сума продажу в євро'), name: 'amount' }]}
+            series={[{ color: 'orange.6', label: t('Сума продажу в євро'), name: 'amount' }]}
             xAxisProps={{ tickFormatter: periodFormatter }}
           />
         )}

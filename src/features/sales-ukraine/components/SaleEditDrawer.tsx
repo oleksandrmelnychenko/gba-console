@@ -3,7 +3,6 @@ import {
   Badge,
   Button,
   Group,
-  Loader,
   NumberInput,
   ScrollArea,
   Stack,
@@ -15,6 +14,7 @@ import { IconAlertCircle, IconArrowsLeftRight, IconBuildingWarehouse, IconReceip
 import { useEffect, useReducer } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { getShiftedSaleById, shiftOrderItemsCurrent } from '../api/salesUkraineApi'
 import { getSaleLifecycleStatusKey } from '../saleStatus'
 import {
@@ -23,6 +23,7 @@ import {
   type SalesUkraineOrderItemShiftStatus,
   type SalesUkraineSale,
 } from '../types'
+import './sales-drawers.css'
 
 const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
 const amountFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
@@ -213,11 +214,7 @@ function SaleEditContent({
   }
 
   if (isLoading) {
-    return (
-      <Group justify="center" py="xl">
-        <Loader />
-      </Group>
-    )
+    return <SaleEditSkeleton />
   }
 
   if (error) {
@@ -262,7 +259,7 @@ function SaleEditContent({
       </Group>
 
       <ScrollArea.Autosize mah="calc(100vh - 260px)" type="auto">
-        <Table withColumnBorders highlightOnHover horizontalSpacing="sm" stickyHeader verticalSpacing={6}>
+        <Table className="sales-drawer-table" withRowBorders={false} stickyHeader>
           <Table.Thead>
             <Table.Tr>
               <Table.Th>{t('Код Виробника')}</Table.Th>
@@ -340,7 +337,7 @@ function SaleEditContent({
         <Button color="gray" disabled={isSaving} variant="subtle" onClick={onClose}>
           {t('Скасувати')}
         </Button>
-        <Button color="teal" leftSection={<IconArrowsLeftRight size={16} />} loading={isSaving} onClick={doShift}>
+        <Button color={CREATE_ACTION_COLOR} leftSection={<IconArrowsLeftRight size={16} />} loading={isSaving} onClick={doShift}>
           {t('Зробити зсув')}
         </Button>
       </Group>
@@ -507,13 +504,13 @@ function getNumber(value: unknown): number | null {
 
 function formatDateTime(value?: Date | string): string {
   if (!value) {
-    return '—'
+    return ''
   }
 
   const date = new Date(value)
 
   if (Number.isNaN(date.getTime())) {
-    return typeof value === 'string' ? value : '—'
+    return typeof value === 'string' ? value : ''
   }
 
   const day = String(date.getDate()).padStart(2, '0')
@@ -524,12 +521,40 @@ function formatDateTime(value?: Date | string): string {
 
 function displayValue(value: unknown): string {
   if (typeof value === 'number') {
-    return Number.isFinite(value) ? String(value) : '—'
+    return Number.isFinite(value) ? String(value) : ''
   }
 
   if (typeof value === 'string') {
-    return value.trim() || '—'
+    return value.trim()
   }
 
-  return '—'
+  return ''
+}
+
+function SaleEditSkeleton() {
+  return (
+    <Stack className="sales-drawer-loading" gap="md">
+      <div className="sales-drawer-skeleton-card">
+        <Stack gap="sm">
+          <div className="sales-drawer-skeleton-line" style={{ width: '22%' }} />
+          {[0, 1, 2, 3, 4, 5].map((rowIndex) => (
+            <div
+              key={rowIndex}
+              className="sales-drawer-skeleton-row"
+              style={{
+                gridTemplateColumns:
+                  'minmax(96px, 0.8fr) minmax(96px, 0.8fr) minmax(200px, 1.5fr) minmax(80px, 0.6fr) minmax(80px, 0.6fr)',
+              }}
+            >
+              <div className="sales-drawer-skeleton-line" />
+              <div className="sales-drawer-skeleton-line" />
+              <div className="sales-drawer-skeleton-line" style={{ width: rowIndex % 2 ? '76%' : '92%' }} />
+              <div className="sales-drawer-skeleton-line" />
+              <div className="sales-drawer-skeleton-line" />
+            </div>
+          ))}
+        </Stack>
+      </div>
+    </Stack>
+  )
 }

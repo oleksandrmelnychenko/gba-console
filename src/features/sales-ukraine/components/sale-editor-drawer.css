@@ -1,0 +1,14 @@
+.sale-editor-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+}
+
+.sale-editor-tabs > .pill-tabs {
+  flex: 0 0 auto;
+}
+
+.sale-editor-tab-panel {
+  min-height: 0;
+}

@@ -32,7 +32,7 @@ import {
   IconTrash,
   IconTruckDelivery,
 } from '@tabler/icons-react'
-import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { formatLocalDate, formatLocalDateTime } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -42,12 +42,10 @@ import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
 import { ProductCardModal } from '../../products/components/ProductCardModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
-import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
-import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import {
   addResale,
@@ -229,7 +227,7 @@ export function ResalesPage() {
   const [deleteCandidate, setDeleteCandidate] = useValueState<ReSale | null>(null)
   const [consignmentNoteSale, setConsignmentNoteSale] = useValueState<ReSale | null>(null)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
-  const { density, toggleDensity } = useDataTableDensity('resales', RESALES_TABLE_DEFAULT_LAYOUT.density)
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const { isLoading, items, total } = listState
   const offset = (page - 1) * pageSize
   const canMoveForward = typeof total === 'number' ? page * pageSize < total : items.length === pageSize
@@ -358,24 +356,6 @@ export function ResalesPage() {
 
   return (
     <Stack className="resales-page" gap={6}>
-      <PageHeaderActions>
-        <Button
-          color={CREATE_ACTION_COLOR}
-          size="sm"
-          leftSection={<IconPlus size={16} />}
-          onClick={() =>
-            navigate('/resales/new', {
-              state: {
-                backgroundLocation: location,
-                returnPath: `${location.pathname}${location.search}`,
-              },
-            })
-          }
-        >
-          {t('Створити')}
-        </Button>
-      </PageHeaderActions>
-
       <Card className="app-data-card resales-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar resales-filter-bar">
           <Group align="end" gap="sm" wrap="nowrap" className="resales-filter-row">
@@ -414,13 +394,12 @@ export function ResalesPage() {
                 setStatus(value || '0')
               }}
             />
-            <div className="app-filter-actions">
+            <div className="app-filter-actions resales-filter-actions">
               <Tooltip label={t('Скинути')}>
                 <ActionIcon variant="light" color="gray" size={34} aria-label={t('Скинути')} onClick={resetFilters}>
                   <IconRestore size={17} />
                 </ActionIcon>
               </Tooltip>
-              <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
               <Paginator
                 isLoading={isLoading}
                 page={page}
@@ -433,6 +412,24 @@ export function ResalesPage() {
                 }}
                 onRefresh={reload}
               />
+            </div>
+            <div ref={setTableToolbarSlot} className="resales-table-toolbar-slot" />
+            <div className="resales-create-actions">
+              <Button
+                color={CREATE_ACTION_COLOR}
+                size="sm"
+                leftSection={<IconPlus size={16} />}
+                onClick={() =>
+                  navigate('/resales/new', {
+                    state: {
+                      backgroundLocation: location,
+                      returnPath: `${location.pathname}${location.search}`,
+                    },
+                  })
+                }
+              >
+                {t('Створити')}
+              </Button>
             </div>
           </Group>
         </div>
@@ -453,15 +450,17 @@ export function ResalesPage() {
             columns={columns}
             data={items}
             defaultLayout={RESALES_TABLE_DEFAULT_LAYOUT}
-            density={density}
+            distributeAvailableWidth
             emptyText={`${t('Перепродажів не знайдено')}. ${t('Дані можуть бути поза вибраним періодом. Розширте дати у фільтрі.')}`}
             getRowId={(resale, index) => String(resale.NetUid || resale.Id || index)}
             height="100%"
             isLoading={isLoading}
-            layoutVersion="resales-table-1"
+            layoutVersion="resales-table-2"
             loadingText={t('Завантаження перепродажів')}
             minWidth={1320}
+            showLayoutControls
             tableId="resales"
+            toolbarPortalTarget={tableToolbarSlot}
             onRowClick={(resale) => {
               if (resale.NetUid) {
                 navigate(`/resales/${resale.NetUid}`)
@@ -1859,7 +1858,7 @@ function useResaleAvailabilityColumns({
         header: (
           <ActionIcon
             aria-label={t('Обрати всі')}
-            color={allSelected ? 'violet' : 'gray'}
+            color={allSelected ? 'orange' : 'gray'}
             disabled={rows.length === 0}
             size={28}
             variant={allSelected ? 'filled' : 'light'}
@@ -1880,7 +1879,7 @@ function useResaleAvailabilityColumns({
         cell: (row) => (
           <ActionIcon
             aria-label={t('Обрати')}
-            color={selectedKeys.includes(getAvailabilityKey(row)) ? 'violet' : 'gray'}
+            color={selectedKeys.includes(getAvailabilityKey(row)) ? 'orange' : 'gray'}
             size={28}
             variant={selectedKeys.includes(getAvailabilityKey(row)) ? 'filled' : 'light'}
             onClick={(event) => {
@@ -2538,7 +2537,7 @@ function ProcessSelectionConfirmDrawer({
     >
       <Stack gap="lg">
         <Group gap="xs">
-          <Badge color="violet" variant="light">
+          <Badge color="orange" variant="light">
             {t('Позицій')}: {rows.length}
           </Badge>
           <Badge color="blue" variant="light">
@@ -3674,7 +3673,7 @@ function displayPaymentStatus(status?: ResalePaymentStatus | null): string {
   const statusValue = normalizeNumericStatus(status?.SalePaymentStatusType)
 
   if (statusValue === null) {
-    return status?.Name || status?.Value || '—'
+    return status?.Name || status?.Value || ''
   }
 
   const statusMap: Record<number, string> = {
@@ -3685,7 +3684,7 @@ function displayPaymentStatus(status?: ResalePaymentStatus | null): string {
     4: translate('Повернення'),
   }
 
-  return statusMap[statusValue] || status?.Name || status?.Value || '—'
+  return statusMap[statusValue] || status?.Name || status?.Value || ''
 }
 
 function getPaymentStatusColor(status?: ResalePaymentStatus | null): string {
@@ -3941,7 +3940,7 @@ function formatResaleProductLocation(location: ResaleProductLocation): string {
   ].filter(Boolean).join('-')
   const qty = typeof location.Qty === 'number' ? ` x ${formatAmount(location.Qty)}` : ''
 
-  return `${address || '-'}${qty}`
+  return `${address || ''}${qty}`
 }
 
 function readTotal(items: ReSale[]): number | undefined {
@@ -3980,7 +3979,7 @@ function shiftDateTimeInput(days: number, boundary?: 'start' | 'end'): string {
 
 function formatDateTime(value?: string): string {
   if (!value) {
-    return '—'
+    return ''
   }
 
   const date = new Date(value)
@@ -3994,7 +3993,7 @@ function formatDateTime(value?: string): string {
 
 function formatAmount(value?: number): string {
   if (typeof value !== 'number' || !Number.isFinite(value)) {
-    return '—'
+    return ''
   }
 
   return amountFormatter.format(value)
@@ -4002,7 +4001,7 @@ function formatAmount(value?: number): string {
 
 function formatMoney(value?: number): string {
   if (typeof value !== 'number' || !Number.isFinite(value)) {
-    return '—'
+    return ''
   }
 
   return moneyFormatter.format(value)
@@ -4010,10 +4009,10 @@ function formatMoney(value?: number): string {
 
 function displayValue(value?: string | number | null): string {
   if (typeof value === 'number') {
-    return Number.isFinite(value) ? String(value) : '—'
+    return Number.isFinite(value) ? String(value) : ''
   }
 
-  return value || '—'
+  return value || ''
 }
 
 function toNumber(value: number | string): number {

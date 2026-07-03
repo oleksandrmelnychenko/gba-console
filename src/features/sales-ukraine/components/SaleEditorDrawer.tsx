@@ -11,7 +11,6 @@ import {
   ScrollArea,
   Select,
   Stack,
-  Tabs,
   Text,
   TextInput,
   Tooltip,
@@ -58,6 +57,7 @@ import { getSaleLocalCurrencyCode, isNonVatEurSale, roundMoney } from '../saleMo
 import { isStatusType } from '../saleStatus'
 import { MergedSalesDrawer } from './MergedSalesDrawer'
 import { SaleDetailsDrawer } from './SaleDetailsDrawer'
+import './sale-editor-drawer.css'
 import type {
   SaleClientDebtTotal,
   SalesUkraineClientAgreement,
@@ -81,6 +81,8 @@ type RetailPaymentState = {
   key: string
   status: SalesUkraineRetailPaymentStatus | null
 }
+
+type SaleEditorTab = 'products' | 'client'
 
 export function SaleEditorDrawer({ sale, onClose }: { onClose: () => void; sale: SalesUkraineSale | null }) {
   const { t } = useI18n()
@@ -119,6 +121,7 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
   const [isMergedOpen, setMergedOpen] = useValueState(false)
   const [isReassignOpen, setReassignOpen] = useValueState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  const [activeTab, setActiveTab] = useState<SaleEditorTab>('products')
 
   useEffect(() => {
     const netId = initialSale.NetUid
@@ -382,15 +385,28 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
         )}
       </Group>
 
-      <Tabs defaultValue="products">
-        <Tabs.List>
-          <Tabs.Tab value="products">
+      <div className="sale-editor-tabs">
+        <div className="pill-tabs">
+          <button
+            aria-pressed={activeTab === 'products'}
+            className={`pill-tab${activeTab === 'products' ? ' is-active' : ''}`}
+            type="button"
+            onClick={() => setActiveTab('products')}
+          >
             {t('Товари')} ({orderItems.length})
-          </Tabs.Tab>
-          <Tabs.Tab value="client">{t('Клієнт')}</Tabs.Tab>
-        </Tabs.List>
+          </button>
+          <button
+            aria-pressed={activeTab === 'client'}
+            className={`pill-tab${activeTab === 'client' ? ' is-active' : ''}`}
+            type="button"
+            onClick={() => setActiveTab('client')}
+          >
+            {t('Клієнт')}
+          </button>
+        </div>
 
-        <Tabs.Panel value="products" pt="md">
+        {activeTab === 'products' ? (
+        <div className="sale-editor-tab-panel">
           {isEditable && (
             <Group justify="flex-end" mb="sm">
               <Button leftSection={<IconPlus size={16} />} variant="light" onClick={() => setAddOpen(true)}>
@@ -401,21 +417,23 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
           <DataTable
             columns={itemColumns}
             data={orderItems}
+            distributeAvailableWidth
             emptyText={t('Товарів не знайдено')}
             getRowId={(item, index) => String(item.NetUid || item.Id || index)}
             isLoading={isLoading}
-            layoutVersion="sales-ukraine-editor-items-1"
+            layoutVersion="sales-ukraine-editor-items-2"
             loadingText={t('Завантаження товарів')}
             maxHeight="calc(100vh - 320px)"
             minWidth={820}
             tableId="sales-ukraine-editor-items"
           />
-        </Tabs.Panel>
-
-        <Tabs.Panel value="client" pt="md">
+        </div>
+        ) : (
+        <div className="sale-editor-tab-panel">
           <ClientTab canEdit={isEditable} sale={sale} onSwitched={reload} />
-        </Tabs.Panel>
-      </Tabs>
+        </div>
+        )}
+      </div>
 
       <AddProductModal
         opened={isAddOpen}
@@ -884,7 +902,7 @@ function AddProductForm({ sale, onCancel, onAdded }: { onAdded: () => void; onCa
                   key={product.NetUid || product.Id || index}
                   p="xs"
                   style={{
-                    backgroundColor: isActive ? 'var(--mantine-color-violet-light)' : undefined,
+                    backgroundColor: isActive ? 'rgba(var(--brand-orange-rgb), 0.12)' : undefined,
                     borderRadius: 6,
                   }}
                   onClick={() => setSelected(product)}
@@ -1259,12 +1277,12 @@ function getNumber(value: unknown): number | null {
 
 function displayValue(value: unknown): string {
   if (typeof value === 'number') {
-    return Number.isFinite(value) ? String(value) : '—'
+    return Number.isFinite(value) ? String(value) : ''
   }
 
   if (typeof value === 'string') {
-    return value.trim() || '—'
+    return value.trim()
   }
 
-  return '—'
+  return ''
 }

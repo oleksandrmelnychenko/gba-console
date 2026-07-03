@@ -1,0 +1,69 @@
+.shopping-cart-reserve-page {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.shopping-cart-reserve-command-bar {
+  align-items: end;
+  display: flex;
+  justify-content: flex-end;
+  min-height: 62px;
+}
+
+.shopping-cart-reserve-card {
+  min-height: 0;
+}
+
+.shopping-cart-reserve-content {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  overflow: auto;
+  padding: 12px;
+}
+
+.shopping-cart-reserve-skeleton {
+  display: grid;
+  gap: 12px;
+}
+
+.shopping-cart-reserve-skeleton-card {
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+}
+
+.shopping-cart-reserve-skeleton-line {
+  animation: data-table-shimmer 1.2s linear infinite;
+  background: linear-gradient(
+    90deg,
+    var(--mantine-color-gray-1) 0%,
+    var(--mantine-color-gray-2) 42%,
+    var(--mantine-color-gray-1) 84%
+  );
+  background-size: 220% 100%;
+  border-radius: 999px;
+  display: block;
+  height: 10px;
+  width: 64%;
+}
+
+.shopping-cart-reserve-skeleton-line.is-title {
+  height: 12px;
+  width: 36%;
+}
+
+.shopping-cart-reserve-skeleton-line.is-short {
+  width: 22%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shopping-cart-reserve-skeleton-line {
+    animation: none;
+  }
+}

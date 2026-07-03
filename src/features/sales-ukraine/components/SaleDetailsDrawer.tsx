@@ -439,7 +439,7 @@ function CarrierHistory({ current, entries }: { current: SalesUkraineUpdateDataC
               {columns.map((col, index) => (
                 <Table.Th
                   key={`head-${index}`}
-                  style={{ whiteSpace: 'nowrap', color: col.isCurrent ? 'var(--mantine-color-violet-7)' : undefined }}
+                  style={{ whiteSpace: 'nowrap', color: col.isCurrent ? 'var(--brand-orange)' : undefined }}
                 >
                   {col.header}
                 </Table.Th>
@@ -468,7 +468,7 @@ function CarrierHistory({ current, entries }: { current: SalesUkraineUpdateDataC
                         fontWeight: col.isCurrent ? 600 : undefined,
                       }}
                     >
-                      {value || '—'}
+                      {value}
                     </Table.Td>
                   )
                 })}
@@ -483,7 +483,7 @@ function CarrierHistory({ current, entries }: { current: SalesUkraineUpdateDataC
                       {t('Завантажити')}
                     </Anchor>
                   ) : (
-                    '—'
+                    ''
                   )}
                 </Table.Td>
               ))}
@@ -617,12 +617,12 @@ function toSecure(url: string): string {
 
 function displayValue(value: unknown): string {
   if (typeof value === 'number') {
-    return Number.isFinite(value) ? String(value) : '—'
+    return Number.isFinite(value) ? String(value) : ''
   }
 
   if (typeof value === 'string') {
-    return value.trim() || '—'
+    return value.trim()
   }
 
-  return '—'
+  return ''
 }

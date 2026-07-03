@@ -1,34 +1,48 @@
-import { Stack, Tabs } from '@mantine/core'
+import { Stack } from '@mantine/core'
+import { useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { ManagerSalesByTopNXView } from '../components/ManagerSalesByTopNXView'
 import { ManagerSalesByTopView } from '../components/ManagerSalesByTopView'
 import { SalesByClientChart } from '../components/SalesByClientChart'
+import './sales-charts-page.css'
+
+type SalesChartsTab = 'topNX' | 'sales' | 'top'
+
+const SALES_CHART_TABS: Array<{ label: string; value: SalesChartsTab }> = [
+  { label: 'Top N-X', value: 'topNX' },
+  { label: 'Продажі', value: 'sales' },
+  { label: 'Топ', value: 'top' },
+]
 
 export function SalesChartsPage() {
   const { t } = useI18n()
+  const [activeTab, setActiveTab] = useState<SalesChartsTab>('topNX')
 
   return (
-    <Stack gap="lg">
-      <Tabs color={CREATE_ACTION_COLOR} defaultValue="topNX" keepMounted={false}>
-        <Tabs.List>
-          <Tabs.Tab value="topNX">Top N-X</Tabs.Tab>
-          <Tabs.Tab value="sales">{t('Продажі')}</Tabs.Tab>
-          <Tabs.Tab value="top">{t('Топ')}</Tabs.Tab>
-        </Tabs.List>
+    <Stack className="sales-charts-page" gap={6}>
+      <div className="pill-tabs">
+        {SALES_CHART_TABS.map((tab) => {
+          const isActive = activeTab === tab.value
 
-        <Tabs.Panel pt="md" value="topNX">
-          <ManagerSalesByTopNXView />
-        </Tabs.Panel>
+          return (
+            <button
+              key={tab.value}
+              aria-pressed={isActive}
+              className={`pill-tab${isActive ? ' is-active' : ''}`}
+              type="button"
+              onClick={() => setActiveTab(tab.value)}
+            >
+              {t(tab.label)}
+            </button>
+          )
+        })}
+      </div>
 
-        <Tabs.Panel pt="md" value="sales">
-          <SalesByClientChart />
-        </Tabs.Panel>
-
-        <Tabs.Panel pt="md" value="top">
-          <ManagerSalesByTopView />
-        </Tabs.Panel>
-      </Tabs>
+      <div className="sales-charts-page__panel">
+        {activeTab === 'topNX' ? <ManagerSalesByTopNXView /> : null}
+        {activeTab === 'sales' ? <SalesByClientChart /> : null}
+        {activeTab === 'top' ? <ManagerSalesByTopView /> : null}
+      </div>
     </Stack>
   )
 }

@@ -17,7 +17,7 @@ const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
   year: 'numeric',
 })
 
-export function displayValue(value: unknown, fallback = '—'): string {
+export function displayValue(value: unknown, fallback = ''): string {
   if (typeof value === 'number') {
     return Number.isFinite(value) ? String(value) : fallback
   }
@@ -32,19 +32,19 @@ export function displayValue(value: unknown, fallback = '—'): string {
 export function formatAmount(value: unknown): string {
   const numberValue = readNumber(value)
 
-  return typeof numberValue === 'number' ? amountFormatter.format(numberValue) : '—'
+  return typeof numberValue === 'number' ? amountFormatter.format(numberValue) : ''
 }
 
 export function formatMoney(value: unknown): string {
   const numberValue = readNumber(value)
 
-  return typeof numberValue === 'number' ? moneyFormatter.format(numberValue) : '—'
+  return typeof numberValue === 'number' ? moneyFormatter.format(numberValue) : ''
 }
 
 export function formatDateTime(value: unknown): string {
   const date = value ? new Date(value as Date | string) : null
 
-  return date && !Number.isNaN(date.getTime()) ? dateTimeFormatter.format(date) : '—'
+  return date && !Number.isNaN(date.getTime()) ? dateTimeFormatter.format(date) : ''
 }
 
 export function getStatusLabel(
@@ -54,7 +54,7 @@ export function getStatusLabel(
   const option = SALE_RETURN_ITEM_STATUSES.find((item) => item.value === status)
 
   if (!option) {
-    return '—'
+    return ''
   }
 
   const translated = t(option.code)

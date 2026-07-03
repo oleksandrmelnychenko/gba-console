@@ -23,7 +23,7 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
 })
 
 export function SalesPredictionChart({
-  color = 'violet.6',
+  color = 'orange.6',
   data,
   isLoading = false,
   title,

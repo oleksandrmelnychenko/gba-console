@@ -88,7 +88,7 @@ export function TaskCard({
                 </Badge>
               )}
               {isInProgress && (
-                <Badge color="indigo" leftSection={<IconProgress size={12} />} variant="light">
+                <Badge color="orange" leftSection={<IconProgress size={12} />} variant="light">
                   {inProgressLabel}
                 </Badge>
               )}
@@ -114,7 +114,7 @@ export function TaskCard({
             )}
             {viber && (
               <Tooltip label={`Viber: ${viber}`}>
-                <ActionIcon color="grape" component="a" href={`viber://chat?number=${viber}`} variant="light">
+                <ActionIcon color="orange" component="a" href={`viber://chat?number=${viber}`} variant="light">
                   <IconMessageCircle size={18} />
                 </ActionIcon>
               </Tooltip>
@@ -150,7 +150,7 @@ export function TaskCard({
         <Group gap="xs" justify="flex-end">
           {canTakeInProgress && (
             <Button
-              color="indigo"
+              color="orange"
               disabled={pending}
               leftSection={<IconPlayerPlay size={16} />}
               size="xs"

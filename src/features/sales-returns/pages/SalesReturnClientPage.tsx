@@ -4,6 +4,7 @@ import {
   Badge,
   Box,
   Button,
+  Card,
   Group,
   Loader,
   NumberInput,
@@ -16,7 +17,7 @@ import {
 } from '@mantine/core'
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
-import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
@@ -33,6 +34,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { ClientReturnsReportPanel } from '../components/ClientReturnsReportPanel'
+import './sales-return-client-page.css'
 import {
   createDirectSaleReturn,
   getIncomeConsignments,
@@ -493,23 +495,27 @@ export function SalesReturnClientPage() {
   }
 
   return (
-    <Box p="lg">
-      <PageHeaderActions>
-        <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} onClick={() => setCreateOpened(true)}>
-          {t('Створити повернення')}
-        </Button>
-      </PageHeaderActions>
-      <Stack gap="md">
-        <Group justify="flex-end" align="flex-start">
-          <Button
-            leftSection={<IconReportAnalytics size={16} />}
-            variant="light"
-            onClick={() => setReportOpened(true)}
-          >
-            {t('Сформувати звіт')}
-          </Button>
-        </Group>
-      </Stack>
+    <Box className="sales-return-client-page">
+      <Card className="app-filter-card sales-return-client-command-card" withBorder radius="md" padding={0}>
+        <div className="app-filter-bar sales-return-client-command-bar">
+          <div className="app-filter-actions sales-return-client-command-actions">
+            <Button
+              color="gray"
+              leftSection={<IconReportAnalytics size={16} />}
+              size="sm"
+              variant="light"
+              onClick={() => setReportOpened(true)}
+            >
+              {t('Сформувати звіт')}
+            </Button>
+          </div>
+          <div className="sales-return-client-create-actions">
+            <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} onClick={() => setCreateOpened(true)}>
+              {t('Створити повернення')}
+            </Button>
+          </div>
+        </div>
+      </Card>
 
       <ClientReturnsReportPanel opened={reportOpened} onClose={() => setReportOpened(false)} />
 

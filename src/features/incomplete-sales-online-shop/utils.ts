@@ -29,7 +29,7 @@ export function getIncompleteSaleStatusLabel(sale: IncompleteSalesOnlineShopItem
     case 2:
       return translate('Виконано')
     default:
-      return '-'
+      return ''
   }
 }
 
@@ -44,7 +44,7 @@ export function getIncompleteSaleCreatedTime(sale: IncompleteSalesOnlineShopItem
 
 export function formatIncompleteSaleDate(sale: IncompleteSalesOnlineShopItem): string {
   const date = parseDate(sale.Created)
-  return date ? dateTimeFormatter.format(date) : '-'
+  return date ? dateTimeFormatter.format(date) : ''
 }
 
 export function getIncompleteSaleProductCount(sale: IncompleteSalesOnlineShopItem): number {
@@ -115,7 +115,7 @@ export function displayValue(value?: number | string | null): string {
   }
 
   const normalized = value?.trim()
-  return normalized || '-'
+  return normalized || ''
 }
 
 function parseDate(value: Date | string | undefined): Date | null {

@@ -113,7 +113,7 @@ export function OfferCard({
 
           {status === OFFER_PROCESSING_STATUS.PartiallyProcessed && (
             <Tooltip label={t('Копіювати посилання')}>
-              <ActionIcon color="grape" variant="subtle" onClick={() => onCopyLink(offer)}>
+              <ActionIcon color="orange" variant="subtle" onClick={() => onCopyLink(offer)}>
                 <IconLink size={18} />
               </ActionIcon>
             </Tooltip>

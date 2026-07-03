@@ -1,10 +1,25 @@
-/* Sales geography (docs/ui-patterns.md): dotted section titles, pills, mono
-   data language; the rating table mirrors the shared table look (§5). */
-.sales-geography-toolbar .mantine-SegmentedControl-label {
-  font-family: var(--font-mono);
-  font-size: 12.5px;
-  font-weight: 600;
-  letter-spacing: 0;
+.sales-geography-page {
+  flex: 1 1 auto;
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 4px;
+}
+
+.sales-geography-toolbar {
+  align-items: center;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  min-height: 62px;
+}
+
+.sales-geography-metric-tabs {
+  justify-content: flex-start;
+}
+
+.sales-geography-actions {
+  align-self: center;
 }
 
 .sales-geography-pill {
@@ -12,7 +27,16 @@
   text-transform: none;
 }
 
+.sales-geography-map-card {
+  grid-column: span 2;
+}
+
+.sales-geography-rating-card {
+  min-width: 0;
+}
+
 .sales-geography-rating-table thead th {
+  background: var(--mantine-color-gray-0);
   color: var(--mantine-color-gray-7);
   font-family: var(--font-mono);
   font-size: 12px;
@@ -56,4 +80,107 @@
   font-size: 11px;
   font-weight: 500;
   letter-spacing: 0;
+}
+
+.sales-geography-map-skeleton {
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  min-height: 320px;
+  padding: 28px;
+  place-items: center;
+  position: relative;
+}
+
+.sales-geography-map-skeleton-circle,
+.sales-geography-skeleton-line {
+  animation: data-table-shimmer 1.2s linear infinite;
+  background: linear-gradient(
+    90deg,
+    var(--mantine-color-gray-1) 0%,
+    var(--mantine-color-gray-2) 42%,
+    var(--mantine-color-gray-1) 84%
+  );
+  background-size: 220% 100%;
+}
+
+.sales-geography-map-skeleton-circle {
+  border-radius: 999px;
+  display: block;
+  position: absolute;
+}
+
+.sales-geography-map-skeleton-circle.is-lg {
+  height: 120px;
+  left: 34%;
+  top: 24%;
+  width: 120px;
+}
+
+.sales-geography-map-skeleton-circle.is-md {
+  height: 76px;
+  right: 24%;
+  top: 43%;
+  width: 76px;
+}
+
+.sales-geography-map-skeleton-circle.is-sm {
+  bottom: 28%;
+  height: 46px;
+  left: 25%;
+  width: 46px;
+}
+
+.sales-geography-skeleton-line {
+  border-radius: 999px;
+  display: block;
+  height: 10px;
+  width: 62%;
+}
+
+.sales-geography-skeleton-line.is-short {
+  width: 34%;
+}
+
+.sales-geography-rating-skeleton {
+  display: grid;
+  gap: 10px;
+}
+
+.sales-geography-rating-skeleton-row {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 42px minmax(0, 1fr) 90px;
+}
+
+.sales-geography-skeleton-line.is-code {
+  width: 100%;
+}
+
+.sales-geography-skeleton-line.is-number {
+  justify-self: end;
+  width: 72px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sales-geography-map-skeleton-circle,
+  .sales-geography-skeleton-line {
+    animation: none;
+  }
+}
+
+@media (max-width: 960px) {
+  .sales-geography-toolbar,
+  .sales-geography-map-card {
+    grid-column: auto;
+  }
+
+  .sales-geography-toolbar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sales-geography-actions {
+    justify-content: flex-start;
+  }
 }

@@ -4,8 +4,6 @@ import {
   Badge,
   Card,
   Group,
-  Loader,
-  SegmentedControl,
   SimpleGrid,
   Stack,
   Table,
@@ -30,11 +28,6 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
 })
 
 const countFormatter = new Intl.NumberFormat('uk-UA')
-
-const METRIC_BADGE_COLOR: Record<GeographyMetric, string> = {
-  sales: 'teal',
-  debt: 'orange',
-}
 
 const METRIC_PILL_CLASS: Record<GeographyMetric, string> = {
   sales: 'app-role-pill is-green sales-geography-pill',
@@ -106,28 +99,38 @@ export function SalesGeographyPage() {
   const metricLabel = metric === 'sales' ? t('Продажі') : t('Борг')
 
   return (
-    <Stack className="cockpit-page" gap="md">
-      <Group align="center" className="sales-geography-toolbar" justify="space-between" wrap="wrap">
-        <Group gap="sm">
-          <SegmentedControl
-            color={METRIC_BADGE_COLOR[metric]}
-            data={[
+    <Stack className="sales-geography-page" gap={6}>
+      <Card className="app-filter-card" withBorder radius="md" padding={0}>
+        <div className="app-filter-bar sales-geography-toolbar">
+          <div className="pill-tabs sales-geography-metric-tabs" role="tablist" aria-label={t('Метрика')}>
+            {[
               { label: t('Продажі'), value: 'sales' },
               { label: t('Борг'), value: 'debt' },
-            ]}
-            value={metric}
-            onChange={(value) => setMetric(value as GeographyMetric)}
-          />
+            ].map((option) => (
+              <button
+                key={option.value}
+                className={`pill-tab${metric === option.value ? ' is-active' : ''}`}
+                role="tab"
+                type="button"
+                aria-selected={metric === option.value}
+                onClick={() => setMetric(option.value as GeographyMetric)}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
           <Badge className="app-role-pill is-gray sales-geography-pill" variant="light">
             {t('12 міс')}
           </Badge>
-        </Group>
-        <Tooltip label={t('Оновити')}>
-          <ActionIcon aria-label={t('Оновити')} loading={isLoading} variant="subtle" onClick={handleReload}>
-            <IconRefresh size={18} />
-          </ActionIcon>
-        </Tooltip>
-      </Group>
+          <div className="app-filter-actions sales-geography-actions">
+            <Tooltip label={t('Оновити')}>
+              <ActionIcon aria-label={t('Оновити')} loading={isLoading} size={34} variant="light" onClick={handleReload}>
+                <IconRefresh size={18} />
+              </ActionIcon>
+            </Tooltip>
+          </div>
+        </div>
+      </Card>
 
       {error && (
         <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
@@ -136,7 +139,7 @@ export function SalesGeographyPage() {
       )}
 
       <SimpleGrid cols={{ base: 1, lg: 3 }} spacing="md">
-        <Card className="app-section-card" padding="md" radius="md" style={{ gridColumn: 'span 1' }} withBorder>
+        <Card className="app-section-card sales-geography-map-card" padding="md" radius="md" withBorder>
           <Stack gap="md">
             <Group gap="xs">
               <Text className="app-section-title" fw={600} size="sm">
@@ -148,12 +151,7 @@ export function SalesGeographyPage() {
             </Group>
 
             {isLoading && plotted.length === 0 ? (
-              <Group justify="center" py="xl">
-                <Loader />
-                <Text c="dimmed" size="sm">
-                  {t('Завантаження карти')}
-                </Text>
-              </Group>
+              <GeographyMapSkeleton label={t('Завантаження карти')} />
             ) : plotted.length === 0 ? (
               <Card className="app-section-card" padding="xl" radius="md" withBorder>
                 <Text c="dimmed" fw={600} ta="center">
@@ -190,10 +188,9 @@ export function SalesGeographyPage() {
         </Card>
 
         <Card
-          className="app-section-card"
+          className="app-section-card sales-geography-rating-card"
           padding="md"
           radius="md"
-          style={{ gridColumn: 'span 1' }}
           withBorder
         >
           <Stack gap="sm">
@@ -207,9 +204,13 @@ export function SalesGeographyPage() {
             </Group>
 
             {plotted.length === 0 ? (
-              <Text c="dimmed" size="sm">
-                {t('Немає даних для відображення')}
-              </Text>
+              isLoading ? (
+                <GeographyRatingSkeleton label={t('Завантаження рейтингу')} />
+              ) : (
+                <Text c="dimmed" size="sm">
+                  {t('Немає даних для відображення')}
+                </Text>
+              )
             ) : (
               <Table.ScrollContainer minWidth={280}>
                 <Table className="sales-geography-rating-table" highlightOnHover verticalSpacing="xs">
@@ -283,4 +284,30 @@ function splitAggregates(aggregates: SalesRegionAggregate[]): { plotted: Plotted
   }
 
   return { plotted, other }
+}
+
+function GeographyMapSkeleton({ label }: { label: string }) {
+  return (
+    <div className="sales-geography-map-skeleton" aria-busy="true" aria-label={label}>
+      <span className="sales-geography-map-skeleton-circle is-lg" />
+      <span className="sales-geography-map-skeleton-circle is-md" />
+      <span className="sales-geography-map-skeleton-circle is-sm" />
+      <span className="sales-geography-skeleton-line" />
+      <span className="sales-geography-skeleton-line is-short" />
+    </div>
+  )
+}
+
+function GeographyRatingSkeleton({ label }: { label: string }) {
+  return (
+    <div className="sales-geography-rating-skeleton" aria-busy="true" aria-label={label}>
+      {Array.from({ length: 8 }).map((_, index) => (
+        <div key={index} className="sales-geography-rating-skeleton-row">
+          <span className="sales-geography-skeleton-line is-code" />
+          <span className="sales-geography-skeleton-line" />
+          <span className="sales-geography-skeleton-line is-number" />
+        </div>
+      ))}
+    </div>
+  )
 }

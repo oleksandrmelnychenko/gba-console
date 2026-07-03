@@ -1,4 +1,4 @@
-import { ActionIcon, Alert, Badge, Button, Card, Group, Loader, SimpleGrid, Stack, Table, Text, Tooltip } from '@mantine/core'
+import { ActionIcon, Alert, Badge, Button, Card, Group, SimpleGrid, Stack, Table, Text, Tooltip } from '@mantine/core'
 import { IconAlertCircle, IconMap2, IconRefresh } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -135,22 +135,29 @@ export function HeadDashboardPage() {
   }, [])
 
   return (
-    <Stack className="cockpit-page" gap="md">
-      <Group gap="xs" justify="flex-end">
-        <Button
-          leftSection={<IconMap2 size={16} />}
-          size="xs"
-          variant="light"
-          onClick={() => navigate('/sales/geography')}
-        >
-          {t('Карта продажів/боргу')}
-        </Button>
-        <Tooltip label={t('Оновити')}>
-          <ActionIcon aria-label={t('Оновити')} loading={isLoading} variant="subtle" onClick={handleReload}>
-            <IconRefresh size={18} />
-          </ActionIcon>
-        </Tooltip>
-      </Group>
+    <Stack className="cockpit-page" gap={6}>
+      <Card className="app-filter-card cockpit-toolbar-card" withBorder radius="md" padding={0}>
+        <div className="app-filter-bar cockpit-command-bar cockpit-head-command-bar">
+          <div />
+          <div className="app-filter-actions cockpit-command-actions">
+            <Button
+              className="cockpit-toolbar-button"
+              color="orange"
+              leftSection={<IconMap2 size={16} />}
+              size="sm"
+              variant="outline"
+              onClick={() => navigate('/sales/geography')}
+            >
+              {t('Карта продажів/боргу')}
+            </Button>
+            <Tooltip label={t('Оновити')}>
+              <ActionIcon aria-label={t('Оновити')} loading={isLoading} size={34} variant="light" onClick={handleReload}>
+                <IconRefresh size={18} />
+              </ActionIcon>
+            </Tooltip>
+          </div>
+        </div>
+      </Card>
 
       {forbidden ? (
         <Card className="app-section-card" withBorder radius="md" padding="xl">
@@ -191,12 +198,7 @@ export function HeadDashboardPage() {
           <HeadDashboardChartsPanel reloadKey={reloadKey} rows={rows} />
 
           {isLoading && rows.length === 0 ? (
-            <Group justify="center" py="xl">
-              <Loader />
-              <Text c="dimmed" size="sm">
-                {t('Завантаження дашборду')}
-              </Text>
-            </Group>
+            <CockpitTableSkeleton label={t('Завантаження дашборду')} />
           ) : rows.length === 0 ? (
             <Card className="app-section-card" withBorder radius="md" padding="xl">
               <Text c="dimmed" fw={600} ta="center">
@@ -261,7 +263,7 @@ export function HeadDashboardPage() {
           <Card className="app-section-card" withBorder radius="md">
             <Stack gap="sm">
               <Group gap="xs">
-                <Text className="cockpit-section-title">{t('Ескальовані задачі')}</Text>
+                <Text className="app-section-title" fw={600}>{t('Ескальовані задачі')}</Text>
                 <Badge color={escalated.count > 0 ? 'red' : 'gray'} variant="light">
                   {escalated.count}
                 </Badge>
@@ -283,6 +285,25 @@ export function HeadDashboardPage() {
         </>
       )}
     </Stack>
+  )
+}
+
+function CockpitTableSkeleton({ label }: { label: string }) {
+  return (
+    <Card className="app-section-card" withBorder radius="md" padding="md">
+      <div className="cockpit-table-skeleton" aria-busy="true" aria-label={label}>
+        {Array.from({ length: 7 }).map((_, rowIndex) => (
+          <div key={rowIndex} className="cockpit-table-skeleton-row">
+            {Array.from({ length: 6 }).map((__, columnIndex) => (
+              <span
+                key={columnIndex}
+                className={`cockpit-table-skeleton-line${columnIndex === 0 ? ' is-title' : ''}`}
+              />
+            ))}
+          </div>
+        ))}
+      </div>
+    </Card>
   )
 }
 

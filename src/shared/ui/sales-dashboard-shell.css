@@ -1,0 +1,15 @@
+.sales-dashboard-shell {
+  flex: 1 1 auto;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.sales-dashboard-shell > .pill-tabs {
+  flex: 0 0 auto;
+}
+
+.sales-dashboard-shell > :not(.pill-tabs) {
+  flex: 1 1 auto;
+  min-height: 0;
+}

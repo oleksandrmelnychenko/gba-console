@@ -17,6 +17,7 @@ import type {
   SalesPredictionPoint,
   SalesPredictionProductOption,
 } from '../types'
+import './sales-prediction-page.css'
 
 function toChartPoints(points: SalesPredictionPoint[]): SalesPredictionChartPoint[] {
   return points.map((point) => ({
@@ -292,11 +293,7 @@ export function SalesPredictionPage() {
   }
 
   return (
-    <Stack gap="lg">
-      <Text fw={700} size="lg">
-        {t('Прогноз продажів')}
-      </Text>
-
+    <Stack className="sales-prediction-page" gap={6}>
       <PredictionFilters
         clientData={clientData}
         clientNetId={clientNetId}
@@ -361,7 +358,7 @@ function PredictionFilters({
   const { t } = useI18n()
 
   return (
-    <Card withBorder radius="md" padding={0} className="app-filter-card">
+    <Card withBorder radius="md" padding={0} className="app-filter-card sales-prediction-filter-card">
       <div className="app-filter-bar">
         <Grid gap="md">
           <Grid.Col span={{ base: 12, md: 6 }}>

@@ -20,12 +20,9 @@
 
 .sale-detail-hero {
   align-items: stretch;
-  background:
-    linear-gradient(90deg, rgba(var(--brand-orange-rgb), 0.06), transparent 42%),
-    linear-gradient(180deg, var(--mantine-color-white), #fbfcfd);
+  background: var(--mantine-color-white);
   border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 12px;
-  box-shadow: 0 10px 24px rgba(20, 28, 38, 0.045);
+  border-radius: 8px;
   display: grid;
   gap: 14px;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -81,8 +78,10 @@
 .sale-detail-title {
   color: var(--mantine-color-gray-9);
   display: block;
-  font-size: 16px;
-  font-weight: 720;
+  font-family: var(--font-mono);
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: 0;
   line-height: 1.18;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -112,26 +111,30 @@
 }
 
 .sale-detail-total-label {
-  color: var(--mantine-color-gray-5);
-  font-size: 10.5px;
-  font-weight: 500;
+  color: var(--mantine-color-gray-7);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
   line-height: 1.2;
-  text-transform: uppercase;
 }
 
 .sale-detail-total strong {
   color: var(--mantine-color-gray-9);
-  font-size: 22px;
-  font-weight: 740;
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0;
   line-height: 1.1;
 }
 
 .sale-detail-total span:last-child {
-  color: var(--mantine-color-gray-5);
+  color: var(--mantine-color-gray-6);
+  font-family: var(--font-mono);
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
+  letter-spacing: 0;
   line-height: 1.2;
-  text-transform: uppercase;
 }
 
 .sale-detail-total.is-unpaid strong,
@@ -150,11 +153,13 @@
 .sale-detail-payment-pill,
 .sale-detail-soft-pill {
   align-items: center;
-  border-radius: 999px;
+  border-radius: 7px;
   display: inline-flex;
+  font-family: var(--font-mono);
   font-size: 11px;
-  font-weight: 680;
+  font-weight: 600;
   height: 24px;
+  letter-spacing: 0;
   line-height: 1;
   padding: 0 9px;
   white-space: nowrap;
@@ -202,10 +207,6 @@
 }
 
 .sale-detail-metric {
-  background:
-    linear-gradient(90deg, transparent, rgba(248, 249, 250, 0.74) 48%, transparent),
-    var(--mantine-color-white);
-  border-bottom: 1px solid var(--mantine-color-gray-1);
   display: grid;
   gap: 4px;
   min-width: 0;
@@ -213,17 +214,31 @@
 }
 
 .sale-detail-metric span {
-  color: var(--mantine-color-gray-5);
-  font-size: 10.5px;
-  font-weight: 500;
+  color: var(--mantine-color-gray-7);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
   line-height: 1.2;
-  text-transform: uppercase;
+}
+
+.sale-detail-metric span::before {
+  background: var(--brand-orange);
+  border-radius: 999px;
+  content: '';
+  display: inline-block;
+  height: 7px;
+  margin-right: 8px;
+  vertical-align: 1px;
+  width: 7px;
 }
 
 .sale-detail-metric strong {
   color: var(--mantine-color-gray-9);
-  font-size: 13px;
-  font-weight: 700;
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0;
   line-height: 1.15;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -239,7 +254,7 @@
 
 .sale-detail-info-section {
   border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 10px;
+  border-radius: 8px;
   min-width: 0;
   overflow: hidden;
 }
@@ -250,9 +265,7 @@
 
 .sale-detail-section-header {
   align-items: center;
-  background:
-    linear-gradient(90deg, rgba(var(--brand-orange-rgb), 0.035), transparent 38%),
-    var(--mantine-color-white);
+  background: var(--mantine-color-white);
   display: flex;
   gap: 8px;
   min-height: 38px;
@@ -261,41 +274,12 @@
   position: relative;
 }
 
-.sale-detail-section-header::before {
-  background:
-    linear-gradient(90deg, transparent, var(--mantine-color-gray-2) 10%, var(--mantine-color-gray-2) 90%, transparent);
-  bottom: 0;
-  content: '';
-  height: 1px;
-  left: 0;
-  position: absolute;
-  right: 0;
-}
-
 .sale-detail-section-header::after {
-  background: var(--brand-orange);
-  border: 3px solid var(--mantine-color-white);
-  border-radius: 999px;
-  bottom: -4px;
-  box-shadow: 0 0 0 1px var(--mantine-color-gray-2);
-  content: '';
-  height: 8px;
-  left: 34px;
-  position: absolute;
-  width: 8px;
+  display: none;
 }
 
 .sale-detail-section-icon {
-  align-items: center;
-  background: var(--mantine-color-gray-0);
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 8px;
-  color: var(--mantine-color-gray-6);
-  display: inline-flex;
-  flex: 0 0 auto;
-  height: 26px;
-  justify-content: center;
-  width: 26px;
+  display: none;
 }
 
 .sale-detail-section-icon svg {
@@ -303,11 +287,24 @@
 }
 
 .sale-detail-section-title {
-  color: var(--mantine-color-gray-9);
+  color: var(--mantine-color-gray-7);
   display: block;
+  font-family: var(--font-mono);
   font-size: 13px;
-  font-weight: 650;
+  font-weight: 600;
+  letter-spacing: 0;
   line-height: 1.2;
+}
+
+.sale-detail-section-title::before {
+  background: var(--brand-orange);
+  border-radius: 999px;
+  content: '';
+  display: inline-block;
+  height: 7px;
+  margin-right: 8px;
+  vertical-align: 1px;
+  width: 7px;
 }
 
 .sale-detail-section-subtitle {
@@ -327,32 +324,39 @@
 
 .sale-detail-row {
   align-items: start;
-  border-bottom: 1px solid var(--mantine-color-gray-1);
-  display: grid;
-  gap: 12px;
-  grid-template-columns: minmax(92px, 0.42fr) minmax(0, 1fr);
+  display: flex;
+  gap: 8px;
   min-height: 32px;
   padding: 7px 0;
 }
 
-.sale-detail-row:last-child {
-  border-bottom: 0;
+.sale-detail-row::before {
+  align-self: baseline;
+  border-bottom: 1px solid var(--mantine-color-gray-3);
+  content: '';
+  flex: 1 1 auto;
+  order: 2;
+  transform: translateY(-3px);
 }
 
 .sale-detail-row span {
-  color: var(--mantine-color-gray-5);
-  font-size: 11px;
+  color: var(--mantine-color-gray-8);
+  flex: 0 0 auto;
+  font-size: 12px;
   font-weight: 500;
   line-height: 1.25;
+  order: 1;
 }
 
 .sale-detail-row strong {
-  color: var(--mantine-color-gray-8);
+  color: var(--mantine-color-gray-9);
+  flex: 0 1 auto;
   font-size: 12px;
-  font-weight: 620;
+  font-weight: 600;
   line-height: 1.25;
   min-width: 0;
   overflow-wrap: anywhere;
+  order: 3;
   text-align: right;
 }
 
@@ -365,13 +369,14 @@
 }
 
 .sale-detail-comment span {
-  color: var(--mantine-color-gray-5);
+  color: var(--mantine-color-gray-7);
   display: block;
-  font-size: 10.5px;
-  font-weight: 500;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
   line-height: 1.2;
   margin-bottom: 5px;
-  text-transform: uppercase;
 }
 
 .sale-detail-comment p {
@@ -384,7 +389,7 @@
 
 .sale-detail-products {
   border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 10px;
+  border-radius: 8px;
   min-width: 0;
   overflow: hidden;
 }
@@ -403,16 +408,15 @@
 }
 
 .sale-detail-products-head {
-  background:
-    linear-gradient(90deg, transparent, rgba(248, 249, 250, 0.78) 48%, transparent),
-    var(--mantine-color-white);
-  border-bottom: 1px solid var(--mantine-color-gray-1);
-  color: var(--mantine-color-gray-5);
-  font-size: 10px;
+  background: var(--mantine-color-gray-0);
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+  color: var(--mantine-color-gray-7);
+  font-family: var(--font-mono);
+  font-size: 13px;
   font-weight: 600;
+  letter-spacing: 0;
   line-height: 1.2;
   padding: 9px 22px 8px 12px;
-  text-transform: uppercase;
 }
 
 .sale-detail-products-head span {
@@ -433,12 +437,22 @@
 }
 
 .sale-detail-product-row {
-  background:
-    linear-gradient(90deg, transparent, rgba(248, 249, 250, 0.68) 48%, transparent),
-    var(--mantine-color-white);
-  border-bottom: 1px solid var(--mantine-color-gray-1);
+  background: var(--mantine-color-white);
+  border-bottom: 1px solid var(--mantine-color-gray-2);
   min-height: 52px;
   padding: 8px 12px;
+}
+
+.sale-detail-product-row:nth-child(even) {
+  background: var(--mantine-color-gray-0);
+}
+
+.sale-detail-product-row:hover {
+  background: #fffaf5;
+}
+
+.sale-detail-product-row:nth-child(even):hover {
+  background: #fffaf5;
 }
 
 .sale-detail-product-row:last-child {
@@ -512,11 +526,12 @@
 }
 
 .sale-detail-product-amount small {
-  color: var(--mantine-color-gray-5);
+  color: var(--mantine-color-gray-6);
+  font-family: var(--font-mono);
   font-size: 10px;
-  font-weight: 700;
+  font-weight: 600;
+  letter-spacing: 0;
   margin-left: 4px;
-  text-transform: uppercase;
 }
 
 .sale-detail-products-empty {

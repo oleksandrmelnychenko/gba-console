@@ -34,7 +34,7 @@ import {
 } from '@tabler/icons-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { ProductCardModal } from '../../products/components/ProductCardModal'
-import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -579,11 +579,6 @@ export function NewUkraineSaleReturnPage() {
 
   return (
     <Box className="new-sale-return-page console-table-page">
-      <PageHeaderActions>
-        <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} onClick={() => setCreateOpened(true)}>
-          {t('Створити')}
-        </Button>
-      </PageHeaderActions>
       <div className="console-table-shell new-sale-return-shell">
         <div className="new-sale-return-command-bar app-filter-bar">
           <div className="new-sale-return-period-filter">
@@ -635,6 +630,11 @@ export function NewUkraineSaleReturnPage() {
               }}
               onRefresh={() => setReloadKey((value) => value + 1)}
             />
+          </div>
+          <div className="new-sale-return-create-actions">
+            <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} onClick={() => setCreateOpened(true)}>
+              {t('Створити')}
+            </Button>
           </div>
         </div>
 
@@ -1150,8 +1150,8 @@ function ReturnOrganizationCell({ saleReturn }: { saleReturn: SalesReturn }) {
 }
 
 function ReturnSalesCell({ saleReturn }: { saleReturn: SalesReturn }) {
-  const sales = displayValue(getSaleNumbers(saleReturn))
-  const saleNumbers = sales === '—' ? [] : sales.split(/\s+/).filter(Boolean)
+  const sales = getSaleNumbers(saleReturn).trim()
+  const saleNumbers = sales.split(/\s+/).filter(Boolean)
 
   return (
     <Tooltip label={sales}>
@@ -1168,7 +1168,7 @@ function ReturnSalesCell({ saleReturn }: { saleReturn: SalesReturn }) {
             ))}
           </span>
         ) : (
-          <span className="new-sale-return-muted-inline">—</span>
+          <span className="new-sale-return-muted-inline" />
         )}
       </span>
     </Tooltip>
@@ -1294,26 +1294,26 @@ function getReturnSortValue(saleReturn: SalesReturn, id: ReturnsSortId): number 
 }
 
 function getReturnUserName(user?: SalesReturn['CreatedBy']): string {
-  return displayValue(user?.FullName || [user?.LastName, user?.Name].filter(Boolean).join(' '))
+  return user?.FullName?.trim() || [user?.LastName, user?.Name].filter(Boolean).join(' ').trim()
 }
 
 function splitReturnProfileName(value: string): [string, string] {
   const normalized = value.trim()
 
-  if (!normalized || normalized === '—') {
-    return ['—', '—']
+  if (!normalized) {
+    return ['', '']
   }
 
   const [firstPart, ...rest] = normalized.split(/\s+/)
 
-  return [firstPart || normalized, rest.join(' ') || '—']
+  return [firstPart || normalized, rest.join(' ')]
 }
 
 function getReturnInitials(value: string): string {
   const parts = value
     .trim()
     .split(/\s+/)
-    .filter((part) => part && part !== '—')
+    .filter(Boolean)
 
   return (
     parts
@@ -1636,7 +1636,7 @@ function DownloadLink({
   url?: string
 }) {
   if (!url) {
-    return <Text c="dimmed">{label}: {displayValue(null)}</Text>
+    return <Text c="dimmed">{label}</Text>
   }
 
   return (
@@ -1691,7 +1691,7 @@ function groupDraftsByClient(drafts: ReturnOrderItemDraft[]): Array<{
     }
 
     groups.push({
-      clientName: getEntityName(client) || '—',
+      clientName: getEntityName(client),
       drafts: [draft],
       key,
     })

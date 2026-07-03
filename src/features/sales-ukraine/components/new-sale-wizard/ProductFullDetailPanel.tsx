@@ -70,7 +70,7 @@ export function ProductFullDetailPanel({
   const mainImage = getProductMainImage(product)
   const shopImageUrl = getProductShopImageUrl(product)
   const titleColor = getRelatedProductRowColor(product)
-  const code = product.VendorCode || product.Articul || '—'
+  const code = product.VendorCode || product.Articul || ''
   const productName = product.NameUA || product.Name || t('Без назви')
   const originalNumber = product.MainOriginalNumber || ''
   const size = product.Size || ''
@@ -255,7 +255,7 @@ export function ProductFullDetailPanel({
                       <Group gap={6} style={{ minWidth: 0 }} wrap="nowrap">
                         {showRowDetails && row.regionCode && <span className="new-sale-product-card__region">{row.regionCode}</span>}
                         <Text className="new-sale-product-card__row-name" title={row.name} truncate>
-                          {row.name || '—'}
+                          {row.name || ''}
                         </Text>
                       </Group>
                       <Group gap={8} wrap="nowrap">

@@ -17,6 +17,31 @@
   width: 100%;
 }
 
+.resales-filter-actions {
+  margin-left: auto;
+}
+
+.resales-table-toolbar-slot,
+.resales-create-actions {
+  align-items: center;
+  align-self: end;
+  display: flex;
+  min-height: 36px;
+}
+
+.resales-table-toolbar-slot .data-table-toolbar {
+  gap: 6px;
+  margin: 0;
+  min-height: 0;
+}
+
+.resales-create-actions .mantine-Button-root {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
 .resales-page__alert {
   margin: 12px 12px 0;
 }

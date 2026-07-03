@@ -6,7 +6,6 @@ import {
   Button,
   Card,
   Group,
-  Loader,
   Menu,
   Select,
   Stack,
@@ -134,11 +133,11 @@ const STATUS_COLORS: Record<string, string> = {
   InvoiceChanged: 'blue',
   New: 'green',
   OrderClosed: 'gray',
-  Packaged: 'violet',
+  Packaged: 'orange',
   Packaging: 'orange',
   Received: 'teal',
   Shipping: 'cyan',
-  TransporterChanged: 'indigo',
+  TransporterChanged: 'blue',
 }
 
 const PAYMENT_STATUS_LABELS: Record<string, string> = {
@@ -615,11 +614,20 @@ export function SalesOnlineShopPage() {
 
           <div className="sales-grid sales-online-grid">
             {isLoading ? (
-              <div className="sales-grid-state">
-                <Group justify="center" gap="xs">
-                  <Loader size="sm" />
-                  {t('Завантаження продажів')}
-                </Group>
+              <div className="sales-grid-skeleton" aria-label={t('Завантаження продажів')} aria-busy="true">
+                {Array.from({ length: 10 }).map((_, rowIndex) => (
+                  <div key={rowIndex} className="sales-grid-row sales-grid-skeleton-row">
+                    <span className="sales-grid-skeleton-line is-main" />
+                    <span className="sales-grid-skeleton-line is-number" />
+                    <span className="sales-grid-skeleton-line is-number" />
+                    <span className="sales-grid-skeleton-line is-number" />
+                    <span className="sales-grid-skeleton-line is-short" />
+                    <span className="sales-grid-skeleton-line is-icon" />
+                    <span className="sales-grid-skeleton-line is-short" />
+                    <span className="sales-grid-skeleton-line is-short" />
+                    <span className="sales-grid-skeleton-line is-status" />
+                  </div>
+                ))}
               </div>
             ) : sales.length === 0 ? (
               <div className="sales-grid-state">{t('Продажів не знайдено')}</div>
@@ -747,7 +755,7 @@ export function SalesOnlineShopPage() {
               <Button color="gray" disabled={isConfirming} variant="subtle" onClick={() => setConfirmState(null)}>
                 {t('Скасувати')}
               </Button>
-              <Button color={confirmState.color || 'violet'} loading={isConfirming} onClick={runConfirm}>
+              <Button color={confirmState.color || 'orange'} loading={isConfirming} onClick={runConfirm}>
                 {confirmState.confirmLabel}
               </Button>
             </Group>
@@ -895,7 +903,7 @@ function SalesOnlineShopGridRow({
               </Badge>
             )}
             {sale.IsDevelopment && (
-              <Badge color="grape" size="xs" variant="light">
+              <Badge color="orange" size="xs" variant="light">
                 {t('Протокол')}
               </Badge>
             )}
@@ -1665,12 +1673,12 @@ function getNumber(value: unknown): number | null {
 
 function displayValue(value: unknown): string {
   if (typeof value === 'number') {
-    return Number.isFinite(value) ? String(value) : '—'
+    return Number.isFinite(value) ? String(value) : ''
   }
 
   if (typeof value === 'string') {
-    return value.trim() || '—'
+    return value.trim()
   }
 
-  return '—'
+  return ''
 }

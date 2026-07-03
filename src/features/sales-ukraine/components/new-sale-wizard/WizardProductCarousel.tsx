@@ -158,7 +158,7 @@ function ProductViewerRow({
   product: WizardSaleProduct
 }) {
   const { t } = useI18n()
-  const code = product.VendorCode || product.Articul || '—'
+  const code = product.VendorCode || product.Articul || ''
   const name = product.NameUA || product.Name || ''
 
   return (
@@ -275,7 +275,7 @@ function ProductMiniCard({
   searchInputRef: RefObject<HTMLInputElement | null>
 }) {
   const { t } = useI18n()
-  const code = product.VendorCode || product.Articul || '—'
+  const code = product.VendorCode || product.Articul || ''
   const name = product.NameUA || product.Name || ''
 
   function copyCode() {

@@ -209,7 +209,7 @@ function SaleExpandContentItem({
               {hasOneTimeDiscount ? formatPercent(oneTimeDiscount) : t('Знижка')}
             </Anchor>
           ) : (
-            <strong>{hasOneTimeDiscount ? formatPercent(oneTimeDiscount) : '—'}</strong>
+            <strong>{hasOneTimeDiscount ? formatPercent(oneTimeDiscount) : ''}</strong>
           )}
         </div>
         {hasOneTimeDiscount && discountUpdater && (
@@ -233,11 +233,6 @@ function ValueBlock({
 }) {
   return (
     <div className={`sale-expand-value-cell${isQuantityAccent ? ' is-quantity-accent' : ''}${isWarning ? ' is-warning' : ''}`}>
-      {isQuantityAccent && (
-        <span className="sale-expand-quantity-marker" aria-hidden="true">
-          #
-        </span>
-      )}
       <strong>{value}</strong>
     </div>
   )
@@ -274,7 +269,7 @@ function formatAmount(value: number | null): string {
 }
 
 function formatPercent(value: number | null): string {
-  return typeof value === 'number' ? `${amountFormatter.format(value)} %` : '—'
+  return typeof value === 'number' ? `${amountFormatter.format(value)} %` : ''
 }
 
 function formatDateTime(value?: Date | string): string {
@@ -312,12 +307,12 @@ function getNumber(value: unknown): number | null {
 
 function displayValue(value: unknown): string {
   if (typeof value === 'number') {
-    return Number.isFinite(value) ? String(value) : '—'
+    return Number.isFinite(value) ? String(value) : ''
   }
 
   if (typeof value === 'string') {
-    return value.trim() || '—'
+    return value.trim()
   }
 
-  return '—'
+  return ''
 }

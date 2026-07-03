@@ -4,8 +4,6 @@ import { useEffect, useMemo, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
-import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { ProductCardModal } from '../../products/components/ProductCardModal'
 import { getPreorders } from '../api/salesPreordersApi'
@@ -72,7 +70,7 @@ export function PreordersInterestPage() {
   const [hasMore, setHasMore] = useValueState(false)
   const [reloadToken, setReloadToken] = useValueState(0)
   const [productCardNetId, setProductCardNetId] = useState<string | null>(null)
-  const { density, toggleDensity } = useDataTableDensity('sales-preorders', PREORDERS_TABLE_DEFAULT_LAYOUT.density)
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -216,8 +214,8 @@ export function PreordersInterestPage() {
   return (
     <Stack className="preorders-interest-page" gap={6}>
       <Card className="app-data-card" withBorder radius="md" padding={0}>
-        <div className="app-filter-bar">
-          <div className="app-filter-actions">
+        <div className="app-filter-bar preorders-interest-command-bar">
+          <div className="app-filter-actions preorders-interest-command-actions">
             <Tooltip label={t('Оновити')}>
               <ActionIcon
                 aria-label={t('Оновити')}
@@ -230,8 +228,8 @@ export function PreordersInterestPage() {
                 <IconRefresh size={18} />
               </ActionIcon>
             </Tooltip>
-            <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
           </div>
+          <div ref={setTableToolbarSlot} className="preorders-interest-table-toolbar-slot" />
         </div>
 
         <div className="preorders-interest-page__table">
@@ -239,13 +237,16 @@ export function PreordersInterestPage() {
             columns={columns}
             data={preOrders}
             defaultLayout={PREORDERS_TABLE_DEFAULT_LAYOUT}
-            density={density}
+            distributeAvailableWidth
             emptyText={t('Передзамовлень не знайдено')}
             getRowId={(preOrder, index) => String(preOrder.NetUid || preOrder.Id || index)}
             height="100%"
             isLoading={isLoading}
-            layoutVersion="sales-preorders-table-1"
+            layoutVersion="sales-preorders-table-2"
+            minWidth={980}
+            showLayoutControls
             tableId="sales-preorders"
+            toolbarPortalTarget={tableToolbarSlot}
           />
         </div>
 

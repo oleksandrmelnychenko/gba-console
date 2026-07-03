@@ -50,7 +50,7 @@ export function CartReserveCard({ cart, index, isExpanded, onOpenClient, onToggl
               {clientName || t('Без назви')}
             </Anchor>
             <Text size="xs" c="dimmed">
-              {t('Дійсно до')}: {formatCartDate(cart.ValidUntil) || '—'}
+              {t('Дійсно до')}: {formatCartDate(cart.ValidUntil)}
             </Text>
           </Stack>
 
@@ -66,7 +66,7 @@ export function CartReserveCard({ cart, index, isExpanded, onOpenClient, onToggl
 
             <Badge color={getDaysColor(daysRemaining)} variant="light">
               {daysRemaining == null
-                ? '—'
+                ? ''
                 : `${t('Залишилось днів')}: ${daysRemaining}`}
             </Badge>
 
@@ -86,9 +86,10 @@ export function CartReserveCard({ cart, index, isExpanded, onOpenClient, onToggl
             columns={columns}
             data={orderItems}
             defaultLayout={CART_ITEMS_LAYOUT}
+            distributeAvailableWidth
             emptyText={t('Позицій не знайдено')}
             getRowId={getOrderItemKey}
-            layoutVersion="shopping-cart-reserve-items-1"
+            layoutVersion="shopping-cart-reserve-items-2"
             minWidth={1100}
             tableId={`shopping-cart-reserve-items-${cart.NetUid || index}`}
           />
@@ -126,7 +127,7 @@ function useCartItemColumns(localCurrencyCode: string, onOpenProductCard: (produ
         accessor: (item) => item.Product?.VendorCode || '',
         cell: (item) => {
           const netId = item.Product?.NetUid
-          const code = item.Product?.VendorCode || '—'
+          const code = item.Product?.VendorCode || ''
 
           return netId ? (
             <Anchor
@@ -163,10 +164,10 @@ function useCartItemColumns(localCurrencyCode: string, onOpenProductCard: (produ
                   onOpenProductCard(item.Product?.NetUid as string)
                 }}
               >
-                {item.Product?.Name || '—'}
+                {item.Product?.Name || ''}
               </Anchor>
             ) : (
-              <Text size="sm">{item.Product?.Name || '—'}</Text>
+              <Text size="sm">{item.Product?.Name || ''}</Text>
             )}
             {item.Comment ? (
               <Tooltip label={item.Comment} position="top" multiline maw={320}>
@@ -184,7 +185,7 @@ function useCartItemColumns(localCurrencyCode: string, onOpenProductCard: (produ
         width: 180,
         minWidth: 140,
         accessor: (item) => item.Product?.MainOriginalNumber || '',
-        cell: (item) => item.Product?.MainOriginalNumber || '—',
+        cell: (item) => item.Product?.MainOriginalNumber || '',
       },
       {
         id: 'created',
@@ -194,7 +195,7 @@ function useCartItemColumns(localCurrencyCode: string, onOpenProductCard: (produ
         accessor: (item) => (item.Created ? new Date(item.Created).getTime() : 0),
         cell: (item) => (
           <Stack gap={0}>
-            <Text size="sm">{formatCartDate(item.Created) || '—'}</Text>
+            <Text size="sm">{formatCartDate(item.Created) || ''}</Text>
             <Text size="xs" c="dimmed">
               {formatCartTime(item.Created)}
             </Text>
@@ -207,7 +208,7 @@ function useCartItemColumns(localCurrencyCode: string, onOpenProductCard: (produ
         width: 150,
         minWidth: 120,
         accessor: (item) => item.User?.LastName || '',
-        cell: (item) => item.User?.LastName || '—',
+        cell: (item) => item.User?.LastName || '',
       },
       {
         id: 'specificationCode',
@@ -215,7 +216,7 @@ function useCartItemColumns(localCurrencyCode: string, onOpenProductCard: (produ
         width: 160,
         minWidth: 130,
         accessor: (item) => item.AssignedSpecification?.SpecificationCode || '',
-        cell: (item) => item.AssignedSpecification?.SpecificationCode || '—',
+        cell: (item) => item.AssignedSpecification?.SpecificationCode || '',
       },
       {
         id: 'qty',
