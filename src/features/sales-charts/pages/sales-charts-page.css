@@ -11,6 +11,8 @@
 }
 
 .sales-chart-card {
+  display: flex;
+  flex-direction: column;
   min-height: 0;
   width: 100%;
 }
@@ -87,4 +89,33 @@
   .sales-chart-filter-row.is-client {
     grid-template-columns: minmax(0, 1fr);
   }
+}
+
+/* Скрол-модель: картка = колонка; контент тягнеться, таблиця скролить сама
+   (липкі хедери), графік фіксований зверху. */
+.sales-chart-content {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.sales-chart-table-wrap {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+}
+
+/* Мова даних: гроші в таблицях графіків — зелений моно (§5.1). */
+.sales-chart-money {
+  color: var(--mantine-color-green-8);
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.sales-chart-row-label {
+  color: var(--mantine-color-gray-8);
+  font-size: 13px;
 }

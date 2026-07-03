@@ -1,21 +1,16 @@
-import { ActionIcon, Alert, Avatar, Badge, Select, Stack, Text, Tooltip } from '@mantine/core'
+import { ActionIcon, Alert, Badge, Select, Stack, Text, Tooltip } from '@mantine/core'
 import {
   IconAlertCircle,
   IconBuildingBank,
   IconCalendar,
-  IconChevronDown,
-  IconChevronUp,
   IconFileDownload,
-  IconFileInvoice,
-  IconReceipt,
-  IconUserDollar,
 } from '@tabler/icons-react'
-import { useEffect, useMemo, useReducer, type KeyboardEvent } from 'react'
+import { useEffect, useMemo, useReducer, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
-import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
-import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
+import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
 import {
@@ -53,12 +48,12 @@ const currencyCodeByType: Record<TypeOfCurrencyOfAgreementValue, string> = {
   [TypeOfCurrencyOfAgreement.USD]: 'USD',
 }
 
-type DebtorsTableDensity = 'compact' | 'normal'
-type DebtorsSortId = 'clientName' | 'missedDays' | 'overdueDebt' | 'regionCode' | 'remainderDebt' | 'totalDebtInDays' | 'userName'
-type DebtorsSortState = {
-  direction: 'asc' | 'desc'
-  id: DebtorsSortId
-} | null
+const SALES_DEBTORS_TABLE_DEFAULT_LAYOUT = {
+  columnPinning: {
+    left: ['client'],
+  },
+  density: 'compact',
+} satisfies DataTableDefaultLayout
 
 const moneyFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 2,
@@ -94,15 +89,15 @@ export function SalesDebtorsPage() {
   const [isExporting, setExporting] = useValueState(false)
   const [downloadDocument, setDownloadDocument] = useValueState<DebtorsDocumentResult | null>(null)
   const [downloadModalOpened, setDownloadModalOpened] = useValueState(false)
-  const [sortState, setSortState] = useValueState<DebtorsSortState>(null)
   const [selectedDebtor, setSelectedDebtor] = useValueState<ClientInDebt | null>(null)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
-  const { density, toggleDensity } = useDataTableDensity('sales-debtors', 'compact')
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
 
   const offset = (page - 1) * pageSize
   const currencyCode = currencyCodeByType[typeCurrency]
+  const debtorColumns = useDebtorColumns(currencyCode, days)
   const totalPages = Math.max(1, Math.ceil(debtors.TotalQtyClients / pageSize))
-  const sortedDebtors = useMemo(() => sortDebtors(debtors.ClientInDebtors, sortState), [debtors.ClientInDebtors, sortState])
+  const debtorRows = debtors.ClientInDebtors
 
   const managerOptions = useMemo(
     () =>
@@ -212,15 +207,6 @@ export function SalesDebtorsPage() {
     }
   }
 
-  function toggleSort(id: DebtorsSortId) {
-    setSortState((current) => {
-      if (current?.id !== id) {
-        return { direction: 'asc', id }
-      }
-
-      return { direction: current.direction === 'asc' ? 'desc' : 'asc', id }
-    })
-  }
 
   return (
     <Stack className="sales-debtors-page console-table-page" gap={6}>
@@ -309,7 +295,6 @@ export function SalesDebtorsPage() {
                 <IconFileDownload size={17} />
               </ActionIcon>
             </Tooltip>
-            <DataTableDensityToggle density={density} onToggle={toggleDensity} size="sm" />
             <Paginator
               isLoading={isLoading}
               page={page}
@@ -323,6 +308,7 @@ export function SalesDebtorsPage() {
               onRefresh={reload}
             />
           </div>
+          <div className="sales-debtors-toolbar-slot" ref={setTableToolbarSlot} />
         </div>
 
         {error && (
@@ -332,15 +318,19 @@ export function SalesDebtorsPage() {
         )}
 
         <div className="sales-debtors-page__table console-table-body">
-          <DebtorsList
-            currencyCode={currencyCode}
-            days={days}
-            density={density as DebtorsTableDensity}
+          <DataTable
+            columns={debtorColumns}
+            data={debtorRows}
+            defaultLayout={SALES_DEBTORS_TABLE_DEFAULT_LAYOUT}
+            emptyText={t('Боржників не знайдено')}
+            getRowId={(row, index) => String(row.ClientNetId || `${row.ClientName || 'debtor'}-${index}`)}
+            height="100%"
             isLoading={isLoading}
-            rows={sortedDebtors}
-            sortState={sortState}
-            onOpen={setSelectedDebtor}
-            onSort={toggleSort}
+            layoutVersion="sales-debtors-table-1"
+            minWidth={1120}
+            tableId="sales-debtors"
+            toolbarPortalTarget={tableToolbarSlot}
+            onRowClick={setSelectedDebtor}
           />
         </div>
 
@@ -357,117 +347,88 @@ export function SalesDebtorsPage() {
   )
 }
 
-function DebtorsList({
-  currencyCode,
-  days,
-  density,
-  isLoading,
-  rows,
-  sortState,
-  onOpen,
-  onSort,
-}: {
-  currencyCode: string
-  days: number
-  density: DebtorsTableDensity
-  isLoading: boolean
-  rows: ClientInDebt[]
-  sortState: DebtorsSortState
-  onOpen: (row: ClientInDebt) => void
-  onSort: (id: DebtorsSortId) => void
-}) {
+function useDebtorColumns(currencyCode: string, days: number) {
   const { t } = useI18n()
 
-  return (
-    <div className={`sales-debtors-list is-${density}`}>
-      <div className="sales-debtors-list-head">
-        <DebtorsSortHeader id="regionCode" label={t('Регіон')} sortState={sortState} onSort={onSort} />
-        <DebtorsSortHeader id="clientName" label={t('Клієнт')} sortState={sortState} onSort={onSort} />
-        <DebtorsSortHeader id="userName" label={t('Відповідальний')} sortState={sortState} onSort={onSort} />
-        <DebtorsSortHeader id="totalDebtInDays" label={`${t('Борг через')} ${days} ${t('днів')}`} sortState={sortState} onSort={onSort} align="right" />
-        <DebtorsSortHeader id="missedDays" label={t('Дні')} sortState={sortState} onSort={onSort} />
-        <DebtorsSortHeader id="remainderDebt" label={t('Залишок')} sortState={sortState} onSort={onSort} align="right" />
-        <DebtorsSortHeader id="overdueDebt" label={t('Прострочено')} sortState={sortState} onSort={onSort} align="right" />
-      </div>
-
-      <div className="sales-debtors-list-body">
-        {isLoading ? (
-          <div className="sales-debtors-list-state">{t('Завантаження боржників')}</div>
-        ) : rows.length === 0 ? (
-          <div className="sales-debtors-list-state">{t('Боржників не знайдено')}</div>
-        ) : (
-          rows.map((row, index) => (
-            <DebtorRow
-              key={row.ClientNetId || `${row.ClientName || 'debtor'}-${index}`}
-              currencyCode={currencyCode}
-              row={row}
-              onOpen={onOpen}
-            />
-          ))
-        )}
-      </div>
-    </div>
-  )
-}
-
-function DebtorsSortHeader({
-  align,
-  id,
-  label,
-  sortState,
-  onSort,
-}: {
-  align?: 'center' | 'right'
-  id: DebtorsSortId
-  label: string
-  sortState: DebtorsSortState
-  onSort: (id: DebtorsSortId) => void
-}) {
-  const isActive = sortState?.id === id
-  const SortIcon = isActive && sortState.direction === 'desc' ? IconChevronDown : IconChevronUp
-
-  return (
-    <button
-      className={`sales-debtors-sort-header${isActive ? ' is-active' : ''}${align ? ` is-${align}` : ''}`}
-      type="button"
-      onClick={() => onSort(id)}
-    >
-      <span>{label}</span>
-      <SortIcon size={12} />
-    </button>
-  )
-}
-
-function DebtorRow({ currencyCode, row, onOpen }: { currencyCode: string; row: ClientInDebt; onOpen: (row: ClientInDebt) => void }) {
-  function openRow() {
-    onOpen(row)
-  }
-
-  function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault()
-      openRow()
-    }
-  }
-
-  return (
-    <div className="sales-debtors-row" role="button" tabIndex={0} onClick={openRow} onKeyDown={handleKeyDown}>
-      <DebtorRegionCell value={displayValue(row.RegionCode)} />
-      <DebtorClientCell debtor={row} />
-      <DebtorManagerCell value={displayValue(row.UserName)} />
-      <DebtorAmountCell amount={row.TotalDebtInDays} currencyCode={currencyCode} />
-      <DebtorDaysCell value={row.MissedDays ?? 0} />
-      <DebtorAmountCell amount={row.RemainderDebt} currencyCode={currencyCode} />
-      <DebtorAmountCell amount={row.OverdueDebt} currencyCode={currencyCode} tone={(row.OverdueDebt ?? 0) > 0 ? 'danger' : undefined} />
-    </div>
+  return useMemo<DataTableColumn<ClientInDebt>[]>(
+    () => [
+      {
+        id: 'region',
+        header: t('Регіон'),
+        width: 96,
+        minWidth: 80,
+        accessor: (row) => row.RegionCode || '',
+        cell: (row) => <DebtorRegionCell value={displayValue(row.RegionCode)} />,
+      },
+      {
+        id: 'client',
+        header: t('Клієнт'),
+        width: 260,
+        minWidth: 220,
+        fill: true,
+        accessor: (row) => row.ClientName || '',
+        cell: (row) => <DebtorClientCell debtor={row} />,
+      },
+      {
+        id: 'manager',
+        header: t('Відповідальний'),
+        width: 180,
+        minWidth: 150,
+        accessor: (row) => row.UserName || '',
+        cell: (row) => <DebtorManagerCell value={displayValue(row.UserName)} />,
+      },
+      {
+        id: 'totalDebtInDays',
+        header: `${t('Борг через')} ${days} ${t('днів')}`,
+        width: 168,
+        minWidth: 140,
+        align: 'right',
+        accessor: (row) => row.TotalDebtInDays ?? 0,
+        cell: (row) => <DebtorAmountCell amount={row.TotalDebtInDays} currencyCode={currencyCode} />,
+      },
+      {
+        id: 'missedDays',
+        header: t('Дні'),
+        width: 92,
+        minWidth: 76,
+        align: 'right',
+        accessor: (row) => row.MissedDays ?? 0,
+        cell: (row) => <DebtorDaysCell value={row.MissedDays ?? 0} />,
+      },
+      {
+        id: 'remainderDebt',
+        header: t('Залишок'),
+        width: 156,
+        minWidth: 130,
+        align: 'right',
+        accessor: (row) => row.RemainderDebt ?? 0,
+        cell: (row) => <DebtorAmountCell amount={row.RemainderDebt} currencyCode={currencyCode} />,
+      },
+      {
+        id: 'overdueDebt',
+        header: t('Прострочено'),
+        width: 156,
+        minWidth: 130,
+        align: 'right',
+        accessor: (row) => row.OverdueDebt ?? 0,
+        cell: (row) => (
+          <DebtorAmountCell amount={row.OverdueDebt} currencyCode={currencyCode} tone={(row.OverdueDebt ?? 0) > 0 ? 'danger' : undefined} />
+        ),
+      },
+    ],
+    [currencyCode, days, t],
   )
 }
 
 function DebtorRegionCell({ value }: { value: string }) {
+  if (!value) {
+    return null
+  }
+
   return (
-    <Tooltip label={value}>
-      <span className="sales-debtors-region-cell">{value}</span>
-    </Tooltip>
+    <Badge className="app-role-pill is-gray sales-debtors-region-cell" title={value} variant="light">
+      {value}
+    </Badge>
   )
 }
 
@@ -477,16 +438,9 @@ function DebtorClientCell({ debtor }: { debtor: ClientInDebt }) {
 
   return (
     <div className="console-table-entity-cell sales-debtors-client-cell">
-      <span className="console-table-entity-marker sales-debtors-client-marker" aria-hidden>
-        <IconUserDollar size={17} stroke={1.8} />
-      </span>
       <span className="console-table-entity-copy">
-        <Tooltip label={title}>
-          <span className="console-table-entity-title">{title}</span>
-        </Tooltip>
-        <Tooltip label={subtitle}>
-          <span className="console-table-entity-subtitle">{subtitle}</span>
-        </Tooltip>
+        <span className="console-table-entity-title" title={title}>{title}</span>
+        <span className="console-table-entity-subtitle" title={subtitle}>{subtitle}</span>
       </span>
     </div>
   )
@@ -497,16 +451,9 @@ function DebtorManagerCell({ value }: { value: string }) {
 
   return (
     <div className="sales-debtors-manager-cell">
-      <Avatar className="sales-debtors-manager-avatar" radius="xl" size={34}>
-        {getProfileInitials(value)}
-      </Avatar>
-      <div className="sales-debtors-manager-copy">
-        <Tooltip label={value}>
-          <Text className="sales-debtors-manager-last-name">{lastName}</Text>
-        </Tooltip>
-        <Tooltip label={value}>
-          <Text className="sales-debtors-manager-first-name">{givenName}</Text>
-        </Tooltip>
+      <div className="sales-debtors-manager-copy" title={value}>
+        <Text className="sales-debtors-manager-last-name">{lastName}</Text>
+        <Text className="sales-debtors-manager-first-name">{givenName}</Text>
       </div>
     </div>
   )
@@ -534,7 +481,6 @@ function DebtorAmountCell({
 function DebtorDaysCell({ value }: { value: number }) {
   return (
     <span className={`sales-debtors-days-cell${value < 0 ? ' is-danger' : value > 0 ? ' is-warning' : ''}`}>
-      <span aria-hidden>#</span>
       <strong>{value}</strong>
     </span>
   )
@@ -553,13 +499,13 @@ function SalesDebtorsSummary({ currencyCode, debtors }: { currencyCode: string; 
         <span>{t('Днів')}</span>
         <strong>{debtors.TotalMissedDays}</strong>
       </span>
-      <span className="sales-debtors-summary-item">
+      <span className="sales-debtors-summary-item is-money">
         <span>{t('Залишок')}</span>
         <strong>
           {moneyFormatter.format(debtors.TotalRemainderDebtorsValue)} {currencyCode}
         </strong>
       </span>
-      <span className={`sales-debtors-summary-item${debtors.TotalOverdueDebtorsValue > 0 ? ' is-danger' : ''}`}>
+      <span className={`sales-debtors-summary-item is-money${debtors.TotalOverdueDebtorsValue > 0 ? ' is-danger' : ''}`}>
         <span>{t('Прострочено')}</span>
         <strong>
           {moneyFormatter.format(debtors.TotalOverdueDebtorsValue)} {currencyCode}
@@ -632,16 +578,12 @@ function DebtorDetailDrawer({
   }, [debtor?.ClientNetId, setError, setItems, setLoading, setTotal, t])
 
   return (
-    <AppDrawer opened={Boolean(debtor)} position="right" size="standard" title={t('Деталі боржника')} onClose={onClose}>
+    <AppDrawer opened={Boolean(debtor)} position="right" size="standard" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Деталі боржника')}</span>} onClose={onClose}>
       {debtor ? (
         <div className="sales-debtor-detail">
           <section className="sales-debtor-detail-hero">
             <div className="sales-debtor-detail-hero__main">
-              <span className="sales-debtor-detail-hero__icon" aria-hidden>
-                <IconUserDollar size={20} stroke={1.8} />
-              </span>
               <div className="sales-debtor-detail-hero__copy">
-                <span className="sales-debtor-detail-eyebrow">{t('Клієнт')}</span>
                 <strong>{displayValue(debtor.ClientName)}</strong>
                 <span>
                   {displayValue(debtor.RegionCode)} · {displayValue(debtor.UserName)}
@@ -657,13 +599,9 @@ function DebtorDetailDrawer({
 
           <section className="sales-debtor-detail-section">
             <div className="sales-debtor-detail-section__head">
-              <span className="sales-debtor-detail-section__icon" aria-hidden>
-                <IconReceipt size={16} />
-              </span>
-              <div>
-                <span className="sales-debtor-detail-eyebrow">{t('Підсумок')}</span>
-                <strong>{t('Загальна заборгованість')}</strong>
-              </div>
+              <Text className="app-section-title" fw={600} size="sm">
+                {t('Загальна заборгованість')}
+              </Text>
             </div>
             <div className="sales-debtor-detail-total-grid">
               <DebtorDetailMetric label="EUR" unit="EUR" value={total?.TotalEuro} />
@@ -674,14 +612,10 @@ function DebtorDetailDrawer({
 
           <section className="sales-debtor-detail-section">
             <div className="sales-debtor-detail-section__head">
-              <span className="sales-debtor-detail-section__icon" aria-hidden>
-                <IconFileInvoice size={16} />
-              </span>
-              <div>
-                <span className="sales-debtor-detail-eyebrow">{t('Документи')}</span>
-                <strong>{t('Борги по клієнту')}</strong>
-              </div>
-              <Badge className="sales-debtor-detail-count" variant="light">
+              <Text className="app-section-title" fw={600} size="sm">
+                {t('Борги по клієнту')}
+              </Text>
+              <Badge className="app-role-pill is-gray sales-debtor-detail-count" variant="light">
                 {items.length}
               </Badge>
             </div>
@@ -744,9 +678,6 @@ function DebtorDebtCard({ currencyCode: fallbackCurrencyCode, item }: { currency
 
   return (
     <article className="sales-debtor-detail-debt">
-      <span className="sales-debtor-detail-debt__icon" aria-hidden>
-        <IconFileInvoice size={16} />
-      </span>
       <div className="sales-debtor-detail-debt__main">
         <Tooltip label={documentNumber}>
           <strong>{documentNumber}</strong>
@@ -772,45 +703,32 @@ function DebtorDebtCard({ currencyCode: fallbackCurrencyCode, item }: { currency
   )
 }
 
-function sortDebtors(rows: ClientInDebt[], sortState: DebtorsSortState): ClientInDebt[] {
-  if (!sortState) {
-    return rows
-  }
-
-  const direction = sortState.direction === 'asc' ? 1 : -1
-
-  return [...rows].sort((a, b) => {
-    const firstValue = getDebtorSortValue(a, sortState.id)
-    const secondValue = getDebtorSortValue(b, sortState.id)
-
-    if (typeof firstValue === 'number' && typeof secondValue === 'number') {
-      return (firstValue - secondValue) * direction
-    }
-
-    return String(firstValue).localeCompare(String(secondValue), 'uk', { numeric: true, sensitivity: 'base' }) * direction
-  })
+function displayValue(value?: string | null): string {
+  return value?.trim() || ''
 }
 
-function getDebtorSortValue(row: ClientInDebt, id: DebtorsSortId): number | string {
-  switch (id) {
-    case 'clientName':
-      return row.ClientName || ''
-    case 'missedDays':
-      return row.MissedDays ?? 0
-    case 'overdueDebt':
-      return row.OverdueDebt ?? 0
-    case 'regionCode':
-      return row.RegionCode || ''
-    case 'remainderDebt':
-      return row.RemainderDebt ?? 0
-    case 'totalDebtInDays':
-      return row.TotalDebtInDays ?? 0
-    case 'userName':
-      return row.UserName || ''
-    default:
-      return ''
+function formatDateTime(value?: string | null): string {
+  if (!value) {
+    return ''
   }
+
+  const date = new Date(value)
+
+  return Number.isNaN(date.getTime()) ? '' : dateTimeFormatter.format(date)
 }
+
+function splitProfileName(value: string): [string, string] {
+  const normalized = value.trim()
+
+  if (!normalized) {
+    return ['', '']
+  }
+
+  const [firstPart, ...rest] = normalized.split(/\s+/)
+
+  return [firstPart || normalized, rest.join(' ')]
+}
+
 
 function getDebtDocumentNumber(item: DebtorDebtItem, sale: DebtorDebtSale | null): string {
   return displayValue(
@@ -845,55 +763,6 @@ function getDebtStatusLabel(sale: DebtorDebtSale | null): string {
     sale?.BaseSalePaymentStatus?.Value ||
     sale?.BaseLifeCycleStatus?.Name ||
     sale?.BaseLifeCycleStatus?.Value,
-  )
-}
-
-function displayValue(value: number | string | undefined | null): string {
-  if (value === null || value === undefined || value === '' || isUuidLike(value)) {
-    return ''
-  }
-
-  return String(value)
-}
-
-function isUuidLike(value: number | string): boolean {
-  return typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value.trim())
-}
-
-function formatDateTime(value?: string): string {
-  if (!value) {
-    return ''
-  }
-
-  const date = new Date(value)
-
-  return Number.isNaN(date.getTime()) ? value : dateTimeFormatter.format(date)
-}
-
-function splitProfileName(value: string): [string, string] {
-  const normalized = value.trim()
-
-  if (!normalized) {
-    return ['', '']
-  }
-
-  const [firstPart, ...rest] = normalized.split(/\s+/)
-
-  return [firstPart || normalized, rest.join(' ')]
-}
-
-function getProfileInitials(value: string): string {
-  const parts = value
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean)
-
-  return (
-    parts
-      .slice(0, 2)
-      .map((part) => part[0])
-      .join('')
-      .toLocaleUpperCase('uk') || '?'
   )
 }
 

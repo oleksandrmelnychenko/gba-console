@@ -176,6 +176,10 @@ export function SalesByClientChart() {
             {isLoading ? t('Завантаження даних') : t('Дані відсутні')}
           </Text>
         ) : (
+          <div>
+            <Text className="app-section-title" fw={600} mb={8} size="sm">
+              {t('Динаміка продажів клієнта')}
+            </Text>
           <LineChart
             curveType="linear"
             data={points}
@@ -184,6 +188,7 @@ export function SalesByClientChart() {
             series={[{ color: 'orange.6', label: t('Сума продажу в євро'), name: 'amount' }]}
             xAxisProps={{ tickFormatter: periodFormatter }}
           />
+          </div>
         )}
       </Stack>
     </Card>
