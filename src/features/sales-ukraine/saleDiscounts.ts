@@ -12,6 +12,36 @@ export function getVisibleOrderItemBaseDiscount(orderItem: SalesUkraineOrderItem
   return isOrderItemBaseDiscountSuppressed(orderItem) ? 0 : discount
 }
 
+export function getUniformOneTimeDiscount(orderItems: SalesUkraineOrderItem[]): number | null {
+  if (!orderItems.length) {
+    return null
+  }
+
+  const first = getNumber(orderItems[0]?.OneTimeDiscount)
+
+  if (typeof first !== 'number' || first === 0) {
+    return null
+  }
+
+  return orderItems.every((item) => getNumber(item.OneTimeDiscount) === first) ? first : null
+}
+
+export function getAverageOneTimeDiscount(orderItems: SalesUkraineOrderItem[]): number | null {
+  if (!orderItems.length) {
+    return null
+  }
+
+  const discounts = orderItems.map((item) => getNumber(item.OneTimeDiscount))
+
+  if (discounts.some((value) => typeof value !== 'number' || value <= 0)) {
+    return null
+  }
+
+  const sum = (discounts as number[]).reduce((acc, value) => acc + value, 0)
+
+  return Math.round((sum / discounts.length) * 100) / 100
+}
+
 export function isOrderItemBaseDiscountSuppressed(orderItem: SalesUkraineOrderItem): boolean {
   const top = orderItem.Product?.Top?.trim().toLowerCase()
 

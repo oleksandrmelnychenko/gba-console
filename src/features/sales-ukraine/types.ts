@@ -278,6 +278,7 @@ export type SalesUkraineSale = SalesUkraineEntity & {
   TotalAmountEurToUah?: number
   TotalAmountLocal?: number
   TotalCount?: number
+  TotalPositions?: number
   TotalRowsQty?: number
   Transporter?: SalesUkraineTransporter
   UpdateUser?: SalesUkraineUser

@@ -77,6 +77,7 @@ import {
   unlockSale,
   updateSale,
 } from '../api/salesUkraineApi'
+import { getAverageOneTimeDiscount, getUniformOneTimeDiscount } from '../saleDiscounts'
 import { getSaleLifecycleStatusKey, getStatusTypeKey, isDiscountEditableSaleLifecycle, isStatusType } from '../saleStatus'
 import { ConsignmentNoteSettingsDrawer } from '../components/ConsignmentNoteSettingsDrawer'
 import { NewSaleWizard } from '../components/new-sale-wizard/NewSaleWizard'
@@ -1135,7 +1136,7 @@ function SaleGridRow({
   const transporterImageUrl = getTransporterImageUrl(sale)
   const unpaid = isUnpaidSale(sale)
   const localAmount = getNumber(sale.TotalAmountLocal) ?? getNumber(sale.TotalAmount)
-  const vat = getNumber(sale.Order?.TotalVat)
+  const vat = sale.IsVatSale ? getNumber(sale.Order?.TotalVat) : null
   const positions = getOrderItemCount(sale)
   const paymentColor = getPaymentStatusColor(sale)
 
@@ -1150,6 +1151,11 @@ function SaleGridRow({
   const showBang = Boolean(sale.IsVatSale) && !sale.IsAcceptedToPacking
   const bangClickable = Boolean(sale.ChangedToInvoice) && canWillNotShip
   const discountEditable = isNewOrPackagingStatus(sale) && positions > 0
+  const rowOrderItems = Array.isArray(sale.Order?.OrderItems) ? sale.Order.OrderItems : []
+  const uniformDiscount = getUniformOneTimeDiscount(rowOrderItems)
+  const averageDiscount = uniformDiscount == null ? getAverageOneTimeDiscount(rowOrderItems) : null
+  const saleDiscountBadge = uniformDiscount != null || averageDiscount != null ? formatCompactPercent(uniformDiscount ?? averageDiscount ?? 0) : null
+  const saleDiscountUpdater = uniformDiscount != null ? rowOrderItems[0]?.DiscountUpdatedBy?.LastName?.trim() || '' : ''
   const isEdited = Array.isArray(sale.HistoryInvoiceEdit) && sale.HistoryInvoiceEdit.length > 0
 
   const openSale = () => onOpenSale(sale)
@@ -1305,7 +1311,17 @@ function SaleGridRow({
       </div>
 
       <div className="sg-slot" data-row-stop="true">
-        {discountEditable ? (
+        {saleDiscountBadge != null ? (
+          <Tooltip label={saleDiscountUpdater ? `${t('Знижка')}: ${saleDiscountUpdater}` : t('Знижка')}>
+            {discountEditable ? (
+              <button className="sg-discount-badge" type="button" onClick={() => onOpenDiscount(sale)}>
+                {saleDiscountBadge}
+              </button>
+            ) : (
+              <span className="sg-discount-badge is-static">{saleDiscountBadge}</span>
+            )}
+          </Tooltip>
+        ) : discountEditable ? (
           <Tooltip label={t('Знижка')}>
             <ActionIcon aria-label={t('Знижка')} color="gray" size="sm" variant="subtle" onClick={() => onOpenDiscount(sale)}>
               <IconPercentage size={15} />
@@ -1410,7 +1426,7 @@ function SaleDetail({ sale }: { sale: SalesUkraineSale }) {
   const paymentTone = getPaymentStatusTone(sale)
   const primaryAmount = getNumber(sale.TotalAmountLocal) ?? getNumber(sale.TotalAmount)
   const secondaryAmount = getSecondaryAmount(sale)
-  const vatAmount = getNumber(sale.Order?.TotalVat)
+  const vatAmount = sale.IsVatSale ? getNumber(sale.Order?.TotalVat) : null
   const currencyCode = getSaleCurrencyCode(sale)
   const secondaryCurrencyCode = getSecondaryAmountCode(sale)
 
@@ -1862,7 +1878,7 @@ function isNewOrPackagingStatus(sale: SalesUkraineSale): boolean {
 }
 
 function getOrderItemCount(sale: SalesUkraineSale): number {
-  return sale.Order?.OrderItems?.length || getNumber(sale.Order?.TotalCount) || getNumber(sale.TotalCount) || 0
+  return sale.Order?.OrderItems?.length || getNumber(sale.TotalPositions) || getNumber(sale.Order?.TotalCount) || getNumber(sale.TotalCount) || 0
 }
 
 function needsSaleDetails(sale: SalesUkraineSale): boolean {
@@ -1960,6 +1976,10 @@ function formatDateRangeFilterValue(value: string): string {
 
 function formatAmount(value: number | null): string {
   return typeof value === 'number' ? amountFormatter.format(value) : displayValue(value)
+}
+
+function formatCompactPercent(value: number): string {
+  return `${new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2 }).format(value)}%`
 }
 
 function getNumber(value: unknown): number | null {

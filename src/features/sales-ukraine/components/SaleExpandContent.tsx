@@ -1,9 +1,9 @@
 import { Anchor, Box, Text } from '@mantine/core'
-import { IconBox } from '@tabler/icons-react'
+import { IconBox, IconPercentage } from '@tabler/icons-react'
 import { useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { ProductCardModal } from '../../products/components/ProductCardModal'
-import { getVisibleOrderItemBaseDiscount } from '../saleDiscounts'
+import { getUniformOneTimeDiscount, getVisibleOrderItemBaseDiscount } from '../saleDiscounts'
 import { isDiscountEditableSaleLifecycle } from '../saleStatus'
 import type { SalesUkraineOrderItem, SalesUkraineSale, SalesUkraineUser } from '../types'
 
@@ -27,7 +27,7 @@ export function SaleExpandContent({
   const localCurrencyCode = sale.ClientAgreement?.Agreement?.Currency?.Code || ''
   const canEditDiscount = isDiscountEditableSaleLifecycle(sale.BaseLifeCycleStatus?.SaleLifeCycleType)
   const isVatSale = Boolean(sale.IsVatSale)
-  const hasUniformDiscount = hasUniformOrderItemDiscount(orderItems)
+  const hasUniformDiscount = getUniformOneTimeDiscount(orderItems) != null
   const useEurToUah = !isVatSale && localCurrencyCode === BASE_CURRENCY_CODE
   const secondCode = useEurToUah ? 'UAH' : BASE_CURRENCY_CODE
   if (!orderItems.length) {
@@ -208,13 +208,14 @@ function SaleExpandContentItem({
               className="sale-expand-discount-action"
               c="dark.8"
               component="button"
+              title={t('Знижка')}
               type="button"
               onClick={(event) => {
                 event.stopPropagation()
                 onOpenItemDiscount()
               }}
             >
-              {hasOneTimeDiscount ? formatPercent(oneTimeDiscount) : t('Знижка')}
+              {hasOneTimeDiscount ? formatPercent(oneTimeDiscount) : <IconPercentage aria-label={t('Знижка')} size={13} stroke={1.9} />}
             </Anchor>
           ) : (
             <strong>{hasOneTimeDiscount ? formatPercent(oneTimeDiscount) : ''}</strong>
@@ -247,20 +248,6 @@ function ValueBlock({
       <strong>{value}</strong>
     </div>
   )
-}
-
-function hasUniformOrderItemDiscount(orderItems: SalesUkraineOrderItem[]): boolean {
-  if (!orderItems.length) {
-    return false
-  }
-
-  const firstDiscount = getNumber(orderItems[0]?.OneTimeDiscount)
-
-  if (typeof firstDiscount !== 'number' || firstDiscount === 0) {
-    return false
-  }
-
-  return orderItems.every((item) => getNumber(item.OneTimeDiscount) === firstDiscount)
 }
 
 function getOrderItemProductName(item: SalesUkraineOrderItem): string {
