@@ -106,7 +106,7 @@
 .online-shop-cities-filter-option.is-active {
   background: transparent;
   border-color: transparent;
-  color: var(--mantine-color-orange-9);
+  color: var(--brand-orange);
   font-weight: 600;
 }
 
@@ -114,17 +114,6 @@
   color: var(--mantine-color-orange-8);
 }
 
-.online-shop-cities-filter-option.is-active::before {
-  background: var(--brand-orange);
-  border-radius: 999px;
-  content: '';
-  height: 6px;
-  left: 8px;
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 6px;
-}
 
 .online-shop-cities-filter-name {
   align-items: center;
@@ -204,18 +193,6 @@
   min-width: 0;
 }
 
-.online-shop-cities-city-icon {
-  align-items: center;
-  background: var(--mantine-color-gray-0);
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 999px;
-  color: var(--mantine-color-gray-8);
-  display: inline-flex;
-  flex: 0 0 34px;
-  height: 34px;
-  justify-content: center;
-  width: 34px;
-}
 
 .online-shop-cities-city-icon svg {
   stroke-width: 1.7;
@@ -227,19 +204,19 @@
 }
 
 .online-shop-cities-name-primary {
-  color: var(--mantine-color-gray-9);
+  color: var(--mantine-color-gray-8);
   font-size: 13px;
-  font-weight: 720;
-  line-height: 1.15;
+  font-weight: 600;
+  line-height: 1.2;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .online-shop-cities-name-secondary {
-  color: var(--mantine-color-gray-5);
-  font-size: 11px;
-  font-weight: 600;
+  color: var(--mantine-color-gray-6);
+  font-size: 11.5px;
+  font-weight: 500;
   line-height: 1.2;
   margin-top: 3px;
   overflow: hidden;
@@ -259,18 +236,6 @@
   padding-left: 12px;
 }
 
-.online-shop-cities-payment-marker {
-  align-items: center;
-  background: var(--mantine-color-gray-0);
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 7px;
-  color: var(--mantine-color-gray-5);
-  display: inline-flex;
-  flex: 0 0 auto;
-  height: 24px;
-  justify-content: center;
-  width: 24px;
-}
 
 .online-shop-cities-payment-cell.is-local .online-shop-cities-payment-marker {
   background: var(--mantine-color-green-0);
@@ -321,7 +286,10 @@
 }
 
 .online-shop-cities-date-primary {
-  color: var(--mantine-color-gray-9);
+  color: var(--mantine-color-gray-8);
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0;
   font-size: 13px;
   font-weight: 720;
   line-height: 1.15;
@@ -331,6 +299,8 @@
 }
 
 .online-shop-cities-date-secondary {
+  font-family: var(--font-mono);
+  letter-spacing: 0;
   color: var(--mantine-color-gray-5);
   font-size: 11px;
   font-weight: 600;
