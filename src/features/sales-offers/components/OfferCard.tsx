@@ -15,10 +15,10 @@ import {
   getReasonStatus,
 } from './offerHelpers'
 
-const STATUS_COLOR: Record<number, string> = {
-  [OFFER_PROCESSING_STATUS.FullyProcessed]: 'green',
-  [OFFER_PROCESSING_STATUS.NotProcessed]: 'red',
-  [OFFER_PROCESSING_STATUS.PartiallyProcessed]: 'yellow',
+const STATUS_CLASS: Record<number, string> = {
+  [OFFER_PROCESSING_STATUS.FullyProcessed]: 'is-green',
+  [OFFER_PROCESSING_STATUS.NotProcessed]: 'is-red',
+  [OFFER_PROCESSING_STATUS.PartiallyProcessed]: 'is-yellow',
 }
 
 export function OfferCard({
@@ -51,30 +51,21 @@ export function OfferCard({
   const canOpenReason = status === OFFER_PROCESSING_STATUS.FullyProcessed && notProcessedCount !== 0
 
   return (
-    <Card padding="sm" radius="md" withBorder>
+    <Card className="offer-card" padding="sm" radius="md" withBorder>
       <Group align="flex-start" gap="sm" justify="space-between" wrap="nowrap">
         <Group align="flex-start" gap="sm" wrap="nowrap">
-          <ActionIcon aria-label={t('Розгорнути')} variant="subtle" onClick={() => onToggle(offer)}>
+          <ActionIcon className="offer-card-toggle" aria-label={t('Розгорнути')} variant="subtle" onClick={() => onToggle(offer)}>
             {expanded ? <IconChevronDown size={18} /> : <IconChevronRight size={18} />}
           </ActionIcon>
           <Tooltip label={statusLabel(status, t)}>
-            <Box
-              style={{
-                backgroundColor: `var(--mantine-color-${STATUS_COLOR[status] ?? 'gray'}-6)`,
-                borderRadius: '50%',
-                flexShrink: 0,
-                height: 12,
-                marginTop: 6,
-                width: 12,
-              }}
-            />
+            <Box className={`offer-card-status-dot ${STATUS_CLASS[status] ?? 'is-gray'}`} />
           </Tooltip>
           <Stack gap={2}>
-            <Text fw={600}>{offer.ClientAgreement?.Client?.FullName ?? ''}</Text>
-            <Text c="dimmed" size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>
+            <Text className="offer-card-client">{offer.ClientAgreement?.Client?.FullName ?? ''}</Text>
+            <Text className="offer-card-meta">
               {offer.Number ?? ''} {t('Від')} {formatDateTime(offer.Created)}
             </Text>
-            <Text c="dimmed" size="sm">
+            <Text className="offer-card-secondary">
               {offer.CreatedBy?.LastName ?? ''}
               {offer.ClientAgreement?.Agreement?.Name
                 ? ` : ${t('На договір')} ${offer.ClientAgreement.Agreement.Name}`
@@ -174,23 +165,14 @@ function OfferLine({
   const canOpenReason = isOfferProcessed && notProcessed > 0
 
   return (
-    <Box
-      style={{
-        borderTop: '1px solid var(--mantine-color-gray-3)',
-        display: 'grid',
-        gap: 8,
-        gridTemplateColumns: '2fr 1fr 1fr 2fr',
-        paddingTop: 8,
-      }}
-    >
+    <Box className="offer-line">
       <Stack gap={2}>
         {item.Product?.NetUid ? (
           <Anchor
+            className="offer-line-product-link"
             component="button"
-            fw={500}
-            size="sm"
-            style={{ textAlign: 'left' }}
             type="button"
+            underline="always"
             onClick={(event) => {
               event.stopPropagation()
               onOpenProductCard(item.Product?.NetUid as string)
@@ -201,7 +183,7 @@ function OfferLine({
               .join(' ')}
           </Anchor>
         ) : (
-          <Text fw={500} size="sm">
+          <Text className="offer-line-product-name">
             {[item.Product?.VendorCode, item.Product?.MainOriginalNumber, item.Product?.Name]
               .filter(Boolean)
               .join(' ')}
@@ -213,23 +195,24 @@ function OfferLine({
       </Stack>
 
       <Stack gap={2}>
-        <Text className="app-money" size="sm">
-          {formatMoney(item.TotalAmount)} {currencyCode}
+        <Text className="offer-line-money">
+          <span className="app-money">{formatMoney(item.TotalAmount)}</span>
+          <span className="app-money-meta">{currencyCode}</span>
         </Text>
-        <Text c="dimmed" size="xs">
+        <Text className="offer-line-qty">
           {t('Кількість')}: {item.Qty ?? 0}
         </Text>
       </Stack>
 
       <Box>
         {canOpenReason && (
-          <Badge className="app-role-pill is-orange" style={{ cursor: 'pointer' }} variant="light" onClick={onOpenReason}>
+          <Badge className="app-role-pill is-orange offer-line-reason-pill" variant="light" onClick={onOpenReason}>
             {t('Неопрацьовано')}: {notProcessed}
           </Badge>
         )}
       </Box>
 
-      <Text c="dimmed" size="sm">
+      <Text className="offer-line-comment">
         {item.Comment ?? ''}
       </Text>
     </Box>

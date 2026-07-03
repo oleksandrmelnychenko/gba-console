@@ -3,10 +3,12 @@ import { notifications } from '@mantine/notifications'
 import { useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { ProductCardModal } from '../../products/components/ProductCardModal'
 import { processOffer } from '../api/salesOffersApi'
 import type { ClientShoppingCart, OfferOrderItem } from '../types'
 import { getItemNotProcessed } from './offerHelpers'
+import './offers-modal.css'
 
 export function OfferReasonDrawer({
   offer,
@@ -23,9 +25,10 @@ export function OfferReasonDrawer({
 
   return (
     <AppDrawer
+      className="offer-reason-drawer"
       opened={opened}
       size="lg"
-      title={<span style={{ fontFamily: 'var(--font-mono)' }}>{offer ? `${t('Оферта')} ${offer.Number ?? ''}` : t('Причини')}</span>}
+      title={<span className="offer-reason-drawer__title">{offer ? `${t('Оферта')} ${offer.Number ?? ''}` : t('Причини')}</span>}
       onClose={onClose}
     >
       {opened && offer && <OfferReasonForm key={offer.NetUid} offer={offer} onClose={onClose} onSaved={onSaved} />}
@@ -85,7 +88,7 @@ function OfferReasonForm({
         />
       )}
 
-      <Text fw={600} size="sm">
+      <Text className="app-section-title">
         {t('Неопрацьовані позиції')}
       </Text>
 
@@ -100,11 +103,10 @@ function OfferReasonForm({
           <Group gap="xs" justify="space-between">
             {item.Product?.NetUid ? (
               <Anchor
+                className="offer-reason-product-link"
                 component="button"
-                fw={500}
-                size="sm"
-                style={{ textAlign: 'left' }}
                 type="button"
+                underline="always"
                 onClick={(event) => {
                   event.stopPropagation()
                   setProductCardNetId(item.Product?.NetUid as string)
@@ -113,7 +115,7 @@ function OfferReasonForm({
                 {[item.Product?.VendorCode, item.Product?.Name].filter(Boolean).join(' ')}
               </Anchor>
             ) : (
-              <Text fw={500} size="sm">
+              <Text className="offer-reason-product-name">
                 {[item.Product?.VendorCode, item.Product?.Name].filter(Boolean).join(' ')}
               </Text>
             )}
@@ -144,7 +146,7 @@ function OfferReasonForm({
         <Button color="gray" disabled={isSaving} variant="subtle" onClick={onClose}>
           {t('Скасувати')}
         </Button>
-        <Button loading={isSaving} onClick={save}>
+        <Button color={CREATE_ACTION_COLOR} loading={isSaving} onClick={save}>
           {t('Зберегти')}
         </Button>
       </Group>

@@ -4,6 +4,7 @@ import { IconCopy, IconSearch, IconTrash } from '@tabler/icons-react'
 import { useEffect, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { ProductCardModal } from '../../products/components/ProductCardModal'
 import {
   createOffer,
@@ -22,6 +23,7 @@ import type {
   OffersNewLine,
   OffersProduct,
 } from '../types'
+import './offers-modal.css'
 
 export function NewOfferModal({
   onClose,
@@ -48,9 +50,10 @@ export function NewOfferModal({
   return (
     <AppModal
       centered
+      className="offers-modal"
       opened={opened}
       size="xl"
-      title={<span style={{ fontFamily: 'var(--font-mono)' }}>{created ? t('Оферту створено') : t('Створити оферту')}</span>}
+      title={<span className="offers-modal__title">{created ? t('Оферту створено') : t('Створити оферту')}</span>}
       onClose={close}
     >
       {opened
@@ -78,7 +81,7 @@ function OfferGeneratedLink({ offer, onDone }: { offer: ClientShoppingCart; onDo
 
   return (
     <Stack gap="md">
-      <Text fw={600}>
+      <Text className="offers-modal-generated-title">
         {t('Оферта')} {offer.Number ?? ''}
       </Text>
       <Group align="flex-end" gap="xs" wrap="nowrap">
@@ -88,7 +91,7 @@ function OfferGeneratedLink({ offer, onDone }: { offer: ClientShoppingCart; onDo
         </ActionIcon>
       </Group>
       <Group justify="flex-end">
-        <Button onClick={onDone}>{t('Готово')}</Button>
+        <Button color={CREATE_ACTION_COLOR} onClick={onDone}>{t('Готово')}</Button>
       </Group>
     </Stack>
   )
@@ -352,7 +355,7 @@ function NewOfferForm({
   }
 
   return (
-    <Stack gap="md">
+    <Stack className="offers-modal-form" gap="md">
       <Select
         searchable
         data={clientData}
@@ -419,7 +422,7 @@ function NewOfferForm({
       />
 
       {lines.length > 0 && (
-        <Table striped withTableBorder>
+        <Table className="offers-modal-lines-table" striped>
           <Table.Thead>
             <Table.Tr>
               <Table.Th>{t('Товар')}</Table.Th>
@@ -434,10 +437,10 @@ function NewOfferForm({
                 <Table.Td>
                   {line.product.NetUid ? (
                     <Anchor
+                      className="offers-modal-product-link"
                       component="button"
-                      size="sm"
-                      style={{ textAlign: 'left' }}
                       type="button"
+                      underline="always"
                       onClick={(event) => {
                         event.stopPropagation()
                         setProductCardNetId(line.product.NetUid as string)
@@ -446,7 +449,7 @@ function NewOfferForm({
                       {getProductLabel(line.product)}
                     </Anchor>
                   ) : (
-                    <Text size="sm">{getProductLabel(line.product)}</Text>
+                    <Text className="offers-modal-product-name">{getProductLabel(line.product)}</Text>
                   )}
                 </Table.Td>
                 <Table.Td>
@@ -485,7 +488,7 @@ function NewOfferForm({
         <Button color="gray" disabled={isCreating} variant="subtle" onClick={onCancel}>
           {t('Скасувати')}
         </Button>
-        <Button disabled={!agreementNetId || lines.length === 0} loading={isCreating} onClick={create}>
+        <Button color={CREATE_ACTION_COLOR} disabled={!agreementNetId || lines.length === 0} loading={isCreating} onClick={create}>
           {t('Створити')}
         </Button>
       </Group>
