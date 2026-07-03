@@ -1,7 +1,6 @@
 import { Anchor, Box, Text } from '@mantine/core'
 import { IconBox } from '@tabler/icons-react'
 import { useState } from 'react'
-import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { ProductCardModal } from '../../products/components/ProductCardModal'
 import { getVisibleOrderItemBaseDiscount } from '../saleDiscounts'
@@ -46,14 +45,16 @@ export function SaleExpandContent({
       <div
         className="sale-expand-content"
         data-vat={isVatSale ? 'true' : 'false'}
+        role="table"
+        aria-label={t('Товари продажу')}
       >
-        <div className="sale-expand-content-head">
-          <span>{t('Товар')}</span>
-          <span>{t('К-сть')}</span>
-          <span>{localCurrencyCode || t('Сума')}</span>
-          <span>{secondCode}</span>
-          {isVatSale && <span>{t('ПДВ')}</span>}
-          <span>{t('Знижки')}</span>
+        <div className="sale-expand-content-head" role="row">
+          <span role="columnheader">{t('Товар')}</span>
+          <span role="columnheader">{t('К-сть')}</span>
+          <span role="columnheader">{localCurrencyCode || t('Сума')}</span>
+          <span role="columnheader">{secondCode}</span>
+          {isVatSale && <span role="columnheader">{t('ПДВ')}</span>}
+          <span role="columnheader">{t('Знижки')}</span>
         </div>
         {orderItems.map((orderItem, index) => (
           <SaleExpandContentItem
@@ -118,8 +119,8 @@ function SaleExpandContentItem({
   const discountUpdater = getResponsible(orderItem.DiscountUpdatedBy)
 
   return (
-    <div className={`sale-expand-content-item${hasQtyOverflow ? ' is-qty-warning' : ''}`}>
-      <div className="sale-expand-product-cell">
+    <div className={`sale-expand-content-item${hasQtyOverflow ? ' is-qty-warning' : ''}`} role="row">
+      <div className="sale-expand-product-cell" role="cell">
         <span className="sale-expand-product-icon" aria-hidden="true">
           <IconBox size={14} stroke={1.7} />
         </span>
@@ -129,7 +130,6 @@ function SaleExpandContentItem({
               <>
                 <Anchor
                   className="sale-expand-product-code"
-                  c={CREATE_ACTION_COLOR}
                   component="button"
                   title={displayValue(getOrderItemProductCode(orderItem))}
                   type="button"
@@ -139,7 +139,6 @@ function SaleExpandContentItem({
                 </Anchor>
                 <Anchor
                   className="sale-expand-product-name"
-                  c="dark.9"
                   component="button"
                   title={displayValue(getOrderItemProductName(orderItem))}
                   type="button"
@@ -161,17 +160,26 @@ function SaleExpandContentItem({
           </div>
           <div className="sale-expand-product-meta">
             {orderItem.Product?.MainOriginalNumber && (
-              <span title={orderItem.Product.MainOriginalNumber}>{orderItem.Product.MainOriginalNumber}</span>
-            )}
-            {created && (
-              <span>
-                {t('Від')} {created}
+              <span className="sale-expand-product-meta-value is-number" title={orderItem.Product.MainOriginalNumber}>
+                <strong>{orderItem.Product.MainOriginalNumber}</strong>
               </span>
             )}
-            {responsible && <span title={responsible}>{responsible}</span>}
+            {created && (
+              <span className="sale-expand-product-meta-value">
+                <span>{t('Від')}</span>
+                <strong>{created}</strong>
+              </span>
+            )}
+            {responsible && (
+              <span className="sale-expand-product-meta-value" title={responsible}>
+                <span>{t('Менеджер')}</span>
+                <strong>{responsible}</strong>
+              </span>
+            )}
             {specificationCode && (
-              <span className="is-strong">
-                {t('Митний код')}: {specificationCode}
+              <span className="sale-expand-product-meta-value is-strong">
+                <span>{t('Митний код')}</span>
+                <strong>{specificationCode}</strong>
               </span>
             )}
           </div>
@@ -188,7 +196,7 @@ function SaleExpandContentItem({
       <ValueBlock value={secondAmountText} />
       {isVatSale && <ValueBlock value={formatAmount(getNumber(orderItem.TotalVat))} />}
 
-      <div className="sale-expand-discount-cell">
+      <div className="sale-expand-discount-cell" role="cell">
         <div className="sale-expand-discount-line">
           <span>{t('База')}</span>
           <strong>{formatPercent(baseDiscount)}</strong>
@@ -232,7 +240,10 @@ function ValueBlock({
   value: string
 }) {
   return (
-    <div className={`sale-expand-value-cell${isQuantityAccent ? ' is-quantity-accent' : ''}${isWarning ? ' is-warning' : ''}`}>
+    <div
+      className={`sale-expand-value-cell${isQuantityAccent ? ' is-quantity-accent' : ''}${isWarning ? ' is-warning' : ''}`}
+      role="cell"
+    >
       <strong>{value}</strong>
     </div>
   )

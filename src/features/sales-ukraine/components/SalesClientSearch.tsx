@@ -103,6 +103,11 @@ export function SalesClientSearch({
 
   return (
     <Combobox
+      classNames={{
+        dropdown: 'sales-filter-dropdown',
+        option: 'sales-filter-dropdown-option',
+        options: 'sales-filter-dropdown-options',
+      }}
       store={combobox}
       withinPortal
       onOptionSubmit={(optionValue) => {

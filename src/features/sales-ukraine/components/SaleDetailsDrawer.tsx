@@ -6,7 +6,6 @@ import {
   Checkbox,
   FileInput,
   Group,
-  Image,
   NumberInput,
   ScrollArea,
   Select,
@@ -17,13 +16,15 @@ import {
   Textarea,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconCheck, IconPencil, IconTruckDelivery, IconX } from '@tabler/icons-react'
-import { useState } from 'react'
+import { IconCheck, IconPencil, IconX } from '@tabler/icons-react'
+import { useState, type ReactNode } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { getSaleTransporterTypes, getSaleTransportersByType, updateSaleFromData } from '../api/salesUkraineApi'
 import { getSaleLifecycleStatusKey } from '../saleStatus'
 import type { SalesUkraineSale, SalesUkraineTransporter, SalesUkraineUpdateDataCarrier } from '../types'
+import './sales-drawers.css'
 
 export function SaleDetailsDrawer({
   sale,
@@ -38,6 +39,11 @@ export function SaleDetailsDrawer({
 
   return (
     <AppDrawer
+      classNames={{
+        body: 'sale-carrier-drawer-body',
+        content: 'sale-carrier-drawer-content',
+        title: 'sale-carrier-drawer-title',
+      }}
       opened={Boolean(sale)}
       position="right"
       size="min(1080px, 100vw)"
@@ -200,13 +206,13 @@ function SaleDetailsContent({ sale, onSaved }: { onSaved: () => void; sale: Sale
   }, [])
 
   return (
-    <Stack gap="md">
+    <Stack className="sale-carrier-sheet" gap={0}>
       {/* Single panel like the legacy: data/form on the left (client info sits under the transporter,
           edit button at the bottom), the change history table on the right. */}
-      <Box style={{ alignItems: 'flex-start', display: 'flex', flexWrap: 'wrap', gap: 'var(--mantine-spacing-xl)' }}>
-        <Box style={{ flex: '0 0 360px', maxWidth: '100%', minWidth: 0 }}>
+      <Box className="sale-carrier-layout">
+        <Box className="sale-carrier-main">
           {isEditMode ? (
-        <Stack gap="sm">
+        <Stack className="sale-carrier-edit-form" gap="sm">
           <Select
             clearable
             searchable
@@ -306,10 +312,10 @@ function SaleDetailsContent({ sale, onSaved }: { onSaved: () => void; sale: Sale
             </Group>
           )}
           <Group justify="flex-end">
-            <Button color="gray" disabled={isSaving} leftSection={<IconX size={16} />} variant="subtle" onClick={cancelEdit}>
+            <Button className="sales-drawer-action-button" color="gray" disabled={isSaving} leftSection={<IconX size={16} />} variant="default" onClick={cancelEdit}>
               {t('Скасувати')}
             </Button>
-            <Button leftSection={<IconCheck size={16} />} loading={isSaving} onClick={save}>
+            <Button className="sales-drawer-action-button" color={CREATE_ACTION_COLOR} leftSection={<IconCheck size={16} />} loading={isSaving} onClick={save}>
               {t('Зберегти')}
             </Button>
           </Group>
@@ -320,19 +326,19 @@ function SaleDetailsContent({ sale, onSaved }: { onSaved: () => void; sale: Sale
 
           {/* Edit button at the bottom of the left column, under "Завантажити ТТН" (legacy order). */}
           {!sale.IsSent && !isEditMode && (
-            <Button leftSection={<IconPencil size={16} />} mt="md" variant="light" onClick={enterEdit}>
+            <Button className="sales-drawer-action-button sale-carrier-edit-button" color={CREATE_ACTION_COLOR} leftSection={<IconPencil size={16} />} mt="md" variant="outline" onClick={enterEdit}>
               {t('Редагувати')}
             </Button>
           )}
           {sale.IsSent && (
-            <Badge color="teal" mt="md" variant="light">
+            <Badge className="app-role-pill is-green sale-carrier-sent-pill" color="teal" mt="md" variant="light">
               {t('Продаж проведено')}
             </Badge>
           )}
         </Box>
 
         {/* RIGHT: change history table beside the data, as in the legacy panel. */}
-        <Box style={{ flex: '1 1 520px', minWidth: 0 }}>
+        <Box className="sale-carrier-history">
           <CarrierHistory current={currentCarrier} entries={Array.isArray(sale.UpdateDataCarrier) ? sale.UpdateDataCarrier : []} />
         </Box>
       </Box>
@@ -342,8 +348,6 @@ function SaleDetailsContent({ sale, onSaved }: { onSaved: () => void; sale: Sale
 
 function DetailsView({ sale }: { sale: SalesUkraineSale }) {
   const { t } = useI18n()
-  const lifecycleStatusKey = getSaleLifecycleStatusKey(sale.BaseLifeCycleStatus?.SaleLifeCycleType ?? sale.BaseLifeCycleStatus?.Name)
-  const showShipmentDate = lifecycleStatusKey === 'Packaging' || lifecycleStatusKey === 'Packaged'
 
   // Highlight fields that differ from the last recorded change (sd_error in the legacy panel).
   const entries = Array.isArray(sale.UpdateDataCarrier) ? sale.UpdateDataCarrier : []
@@ -351,40 +355,50 @@ function DetailsView({ sale }: { sale: SalesUkraineSale }) {
   const changed = (current: unknown, previous: unknown) => last != null && normalizeCompare(current) !== normalizeCompare(previous)
 
   return (
-    <Stack gap={6}>
-      <Group gap="xs">
-        {sale.Transporter?.ImageUrl ? (
-          <Image alt="" h={20} src={toSecure(sale.Transporter.ImageUrl)} w={20} />
-        ) : (
-          <IconTruckDelivery size={20} />
-        )}
-        <Text fw={600} c={changed(sale.Transporter?.Name, last?.Transporter?.Name) ? 'orange.7' : undefined}>
-          {displayValue(sale.Transporter?.Name || sale.Transporter?.Title)}
-        </Text>
-      </Group>
-      <ClientInfo sale={sale} />
-      <Row changed={changed(sale.DeliveryRecipientAddress?.City, last?.City)} label={t('Місто')} value={sale.DeliveryRecipientAddress?.City} />
-      <Row changed={changed(sale.DeliveryRecipientAddress?.Department, last?.Department)} label={t('Відділення')} value={sale.DeliveryRecipientAddress?.Department} />
-      {showShipmentDate && (
-        <Row changed={changed(formatDate(sale.ShipmentDate), formatDate(last?.ShipmentDate))} label={t('Дата відгрузки')} value={formatDate(sale.ShipmentDate)} />
-      )}
-      {sale.IsPrinted && <Row label={t('Номер декларації')} value={sale.TTN} />}
-      <Row changed={changed(sale.DeliveryRecipient?.FullName, last?.FullName)} label={t('Отримувач товару')} value={sale.DeliveryRecipient?.FullName} />
-      <Row changed={changed(sale.DeliveryRecipient?.MobilePhone, last?.MobilePhone)} label={t('Мобільний телефон')} value={sale.DeliveryRecipient?.MobilePhone} />
-      <Row changed={changed(sale.Comment, last?.Comment)} label={t('Коментар')} value={sale.Comment} />
-      <Row changed={changed(Boolean(sale.IsCashOnDelivery), Boolean(last?.IsCashOnDelivery))} label={t('Наложений платіж')} value={sale.IsCashOnDelivery ? t('Так') : t('Ні')} />
+    <Stack className="sale-carrier-details" gap="sm">
+      <section className="sale-carrier-section">
+        <Text className="app-section-title sale-carrier-section-title">{t('Перевезення')}</Text>
+        <div className="sale-carrier-rows">
+          <Row changed={changed(sale.Transporter?.Name, last?.Transporter?.Name)} label={t('Перевізник')} value={sale.Transporter?.Name || sale.Transporter?.Title} />
+          <ClientInfo sale={sale} />
+        </div>
+      </section>
+
+      <section className="sale-carrier-section">
+        <Text className="app-section-title sale-carrier-section-title">{t('Адреса і отримувач')}</Text>
+        <div className="sale-carrier-rows">
+          <Row changed={changed(sale.DeliveryRecipientAddress?.City, last?.City)} label={t('Місто')} value={sale.DeliveryRecipientAddress?.City} />
+          <Row changed={changed(sale.DeliveryRecipientAddress?.Department, last?.Department)} label={t('Відділення')} value={sale.DeliveryRecipientAddress?.Department} />
+          <Row changed={changed(formatDate(sale.ShipmentDate), formatDate(last?.ShipmentDate))} label={t('Дата відгрузки')} mono value={formatDate(sale.ShipmentDate)} />
+          {sale.IsPrinted && <Row label={t('Номер декларації')} mono value={sale.TTN} />}
+          <Row changed={changed(sale.DeliveryRecipient?.FullName, last?.FullName)} label={t('Отримувач товару')} value={sale.DeliveryRecipient?.FullName} />
+          <Row changed={changed(sale.DeliveryRecipient?.MobilePhone, last?.MobilePhone)} label={t('Мобільний телефон')} mono value={sale.DeliveryRecipient?.MobilePhone} />
+          <Row changed={changed(sale.Comment, last?.Comment)} label={t('Коментар')} value={sale.Comment} />
+        </div>
+      </section>
+
+      <section className="sale-carrier-section">
+        <Text className="app-section-title sale-carrier-section-title">{t('Оплата і документи')}</Text>
+        <div className="sale-carrier-rows">
+          <Row changed={changed(Boolean(sale.IsCashOnDelivery), Boolean(last?.IsCashOnDelivery))} label={t('Наложений платіж')}>
+            <BooleanPill active={Boolean(sale.IsCashOnDelivery)} />
+          </Row>
       {sale.IsCashOnDelivery && (
-        <Row changed={changed(sale.CashOnDeliveryAmount, last?.CashOnDeliveryAmount)} label={t('Сума накладеного платежу')} value={sale.CashOnDeliveryAmount} />
+            <Row changed={changed(sale.CashOnDeliveryAmount, last?.CashOnDeliveryAmount)} label={t('Сума накладеного платежу')} mono value={sale.CashOnDeliveryAmount} />
       )}
-      <Row changed={changed(Boolean(sale.HasDocuments), Boolean(last?.HasDocument))} label={t('Є документи')} value={sale.HasDocuments ? t('Так') : t('Ні')} />
+          <Row changed={changed(Boolean(sale.HasDocuments), Boolean(last?.HasDocument))} label={t('Є документи')}>
+            <BooleanPill active={Boolean(sale.HasDocuments)} />
+          </Row>
       {sale.CustomersOwnTtn?.Number && (
-        <Row changed={changed(sale.CustomersOwnTtn.Number, last?.Number)} label={t('Власне ТТН')} value={sale.CustomersOwnTtn.Number} />
+            <Row changed={changed(sale.CustomersOwnTtn.Number, last?.Number)} label={t('Власне ТТН')} mono value={sale.CustomersOwnTtn.Number} />
       )}
       {sale.CustomersOwnTtn?.TtnPDFPath && (
-        <Anchor href={toSecure(sale.CustomersOwnTtn.TtnPDFPath)} target="_blank" rel="noopener noreferrer">
+            <Anchor className="sale-carrier-document-link" href={toSecure(sale.CustomersOwnTtn.TtnPDFPath)} target="_blank" rel="noopener noreferrer">
           {t('Завантажити ТТН')}
         </Anchor>
       )}
+        </div>
+      </section>
     </Stack>
   )
 }
@@ -394,9 +408,12 @@ function CarrierHistory({ current, entries }: { current: SalesUkraineUpdateDataC
 
   if (entries.length === 0) {
     return (
-      <Text size="sm" c="dimmed">
+      <section className="sale-carrier-section">
+      <Text className="app-section-title sale-carrier-section-title">{t('Історія змін')}</Text>
+      <Text className="sale-carrier-empty-history" size="sm">
         {t('Історія змін відсутня')}
       </Text>
+      </section>
     )
   }
 
@@ -429,10 +446,10 @@ function CarrierHistory({ current, entries }: { current: SalesUkraineUpdateDataC
   ]
 
   return (
-    <Stack gap="xs">
-      <Text fw={600}>{t('Історія змін')}</Text>
+    <section className="sale-carrier-section sale-carrier-history-section">
+      <Text className="app-section-title sale-carrier-section-title">{t('Історія змін')}</Text>
       <ScrollArea type="auto">
-        <Table withColumnBorders withRowBorders striped>
+        <Table className="sales-drawer-table sale-carrier-history-table" withColumnBorders withRowBorders striped>
           <Table.Thead>
             <Table.Tr>
               <Table.Th />
@@ -491,23 +508,14 @@ function CarrierHistory({ current, entries }: { current: SalesUkraineUpdateDataC
           </Table.Tbody>
         </Table>
       </ScrollArea>
-    </Stack>
+    </section>
   )
 }
 
 // Compact label/value pair for the client info block — left-aligned (not stretched) so the value
 // sits right next to its label rather than across the full drawer width.
 function HeaderRow({ label, value }: { label: string; value: unknown }) {
-  return (
-    <Group align="flex-start" gap="sm" wrap="nowrap">
-      <Text c="dimmed" size="sm" style={{ flexShrink: 0, width: 130 }}>
-        {label}
-      </Text>
-      <Text fw={500} size="sm">
-        {displayValue(value)}
-      </Text>
-    </Group>
-  )
+  return <Row label={label} mono value={value} />
 }
 
 // Client code / name / invoice number + date — shown under the transporter in both view and edit.
@@ -515,27 +523,44 @@ function ClientInfo({ sale }: { sale: SalesUkraineSale }) {
   const { t } = useI18n()
 
   return (
-    <Stack gap={6}>
+    <>
       <HeaderRow label={t('Код клієнта')} value={sale.ClientAgreement?.Client?.RegionCode?.Value} />
-      <HeaderRow label={t('Назва клієнта')} value={sale.ClientAgreement?.Client?.FullName} />
-      <HeaderRow
-        label={t('Номер накладної та дата')}
-        value={`${sale.SaleNumber?.Value ?? ''} ${formatDate(sale.Created)}`.trim()}
-      />
-    </Stack>
+      <Row label={t('Назва клієнта')} value={sale.ClientAgreement?.Client?.FullName} />
+      <HeaderRow label={t('Номер накладної та дата')} value={`${sale.SaleNumber?.Value ?? ''} ${formatDate(sale.Created)}`.trim()} />
+    </>
   )
 }
 
-function Row({ changed, label, value }: { changed?: boolean; label: string; value: unknown }) {
+function Row({
+  changed,
+  children,
+  label,
+  mono = false,
+  value,
+}: {
+  changed?: boolean
+  children?: ReactNode
+  label: string
+  mono?: boolean
+  value?: unknown
+}) {
   return (
-    <Group justify="space-between" align="flex-start" gap="lg" wrap="nowrap">
-      <Text size="sm" c="dimmed">
-        {label}
-      </Text>
-      <Text size="sm" ta="right" c={changed ? 'orange.7' : undefined} fw={changed ? 600 : undefined}>
-        {displayValue(value)}
-      </Text>
-    </Group>
+    <div className={`sale-carrier-row${changed ? ' is-changed' : ''}`}>
+      <span className="sale-carrier-row__label">{label}</span>
+      <strong className={`sale-carrier-row__value${mono ? ' is-mono' : ''}`} title={displayValue(value)}>
+        {children ?? displayValue(value)}
+      </strong>
+    </div>
+  )
+}
+
+function BooleanPill({ active }: { active: boolean }) {
+  const { t } = useI18n()
+
+  return (
+    <Badge className={`app-role-pill ${active ? 'is-green' : 'is-gray'}`} size="xs" variant="light">
+      {active ? t('Так') : t('Ні')}
+    </Badge>
   )
 }
 
