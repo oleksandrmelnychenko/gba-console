@@ -68,15 +68,6 @@ export async function createProductIncomeFromDynamicPlacements(
   return normalizeOrder(result ?? order)
 }
 
-export async function recordProductIncomeFromDynamicPlacementsHistory(
-  order: PlacementSupplyOrder,
-): Promise<void> {
-  await apiRequest<unknown>('/history/order/item/new/supply/ukraine/dynamic', {
-    method: 'POST',
-    body: order,
-  })
-}
-
 export async function searchPlacementProducts(value: string): Promise<PlacementProduct[]> {
   const result = await apiRequest<unknown>('/products/search/vendorcode', {
     query: { limit: 20, offset: 0, value: value.trim() },

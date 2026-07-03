@@ -47,7 +47,6 @@ import {
   getProductIncomeBySupplyOrderNetId,
   getSupplyOrderInvoiceItems,
   markAllItemsReadyToPlace,
-  recordProductIncomeFromPackingListDynamicHistory,
   updateDynamicPlacementRow,
   updatePackingListInInvoice,
   updateVatOfPackListInvoiceItems,
@@ -981,20 +980,6 @@ function useProtocolIncomeModel(source: ProductIncomeSource) {
     }
   }, [canUseIncome, invoice, isDirty, isSaving, packingList, selectPackingList, setError, setInvoice, setSaving, t, vatPercent])
 
-  const recordDynamicIncomeHistory = useCallback(
-    async (savedPackingList: IncomePackingList) => {
-      try {
-        await recordProductIncomeFromPackingListDynamicHistory(savedPackingList)
-      } catch {
-        notifications.show({
-          color: 'yellow',
-          message: t('Оприходування виконано, але історію руху не записано'),
-        })
-      }
-    },
-    [t],
-  )
-
   const handleAllReadyToPlace = useCallback(async () => {
     if (!canUseIncome || !packingList?.NetUid || isSaving || isPlacementLocked(invoice, packingList)) {
       return
@@ -1044,11 +1029,10 @@ function useProtocolIncomeModel(source: ProductIncomeSource) {
     setError(null)
 
     try {
-      const savedPackingList = await createProductIncomeFromPackingListDynamic(toIso(fromDate), selectedStorage.NetUid, {
+      await createProductIncomeFromPackingListDynamic(toIso(fromDate), selectedStorage.NetUid, {
         ...packingList,
         IsPlaced: true,
       })
-      await recordDynamicIncomeHistory(savedPackingList)
       reloadFromServer()
     } catch (actionError) {
       setError(actionError instanceof Error ? actionError.message : t('Не вдалося виконати запит'))
@@ -1056,7 +1040,7 @@ function useProtocolIncomeModel(source: ProductIncomeSource) {
       setSaving(false)
     }
   }, [
-    canUseIncome, fromDate, invoice, isDirty, isSaving, packingList, recordDynamicIncomeHistory, reloadFromServer,
+    canUseIncome, fromDate, invoice, isDirty, isSaving, packingList, reloadFromServer,
     selectedStorage, setConfirmCarryOut, setError, setSaving, t,
   ])
 
@@ -1084,8 +1068,7 @@ function useProtocolIncomeModel(source: ProductIncomeSource) {
     setError(null)
 
     try {
-      const savedPackingList = await createProductIncomeFromPackingListDynamic(toIso(fromDate), selectedStorage.NetUid, packingList)
-      await recordDynamicIncomeHistory(savedPackingList)
+      await createProductIncomeFromPackingListDynamic(toIso(fromDate), selectedStorage.NetUid, packingList)
       reloadFromServer()
     } catch (actionError) {
       setError(actionError instanceof Error ? actionError.message : t('Не вдалося виконати запит'))
@@ -1093,7 +1076,7 @@ function useProtocolIncomeModel(source: ProductIncomeSource) {
       setSaving(false)
     }
   }, [
-    canUseIncome, fromDate, invoice, isDirty, isSaving, packingList, recordDynamicIncomeHistory, reloadFromServer,
+    canUseIncome, fromDate, invoice, isDirty, isSaving, packingList, reloadFromServer,
     selectedStorage, setError, setSaving, t,
   ])
 

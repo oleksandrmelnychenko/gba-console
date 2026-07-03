@@ -59,7 +59,6 @@ import {
   getAvailableProductsByStorage,
   getProductStorageAvailableConsignments,
   getProductStorageStorages,
-  recordProductStorageWriteOffHistory,
 } from '../api/productStoragesApi'
 import type {
   ProductStorageAvailableConsignment,
@@ -731,7 +730,7 @@ function useProductStoragesPageModel() {
           },
         })
       } else if (actionModal.mode === 'writeoff') {
-        const depreciatedOrder = await createProductStorageWriteOff({
+        await createProductStorageWriteOff({
           Comment: actionForm.comment.trim(),
           DepreciatedOrderItems: buildWriteOffItems(actionModal, actionForm),
           FromDate: actionForm.fromDate,
@@ -739,13 +738,6 @@ function useProductStoragesPageModel() {
           Organization: fromStorage.Organization || null,
           Storage: fromStorage,
         })
-
-        if (depreciatedOrder) {
-          await recordHistoryUpdate(
-            () => recordProductStorageWriteOffHistory(depreciatedOrder),
-            t('Операцію виконано, але історію руху товару не оновлено'),
-          )
-        }
       } else if (selectedReturnConsignment) {
         const availability = actionModal.rows[0]?.availability
 
@@ -2139,17 +2131,6 @@ function getActionSubmitIcon(mode: ProductStorageActionMode) {
   }
 
   return <IconCheck size={16} />
-}
-
-async function recordHistoryUpdate(record: () => Promise<void>, warningMessage: string): Promise<void> {
-  try {
-    await record()
-  } catch {
-    notifications.show({
-      color: 'yellow',
-      message: warningMessage,
-    })
-  }
 }
 
 function toNumberInputValue(value: number | string): number | '' {

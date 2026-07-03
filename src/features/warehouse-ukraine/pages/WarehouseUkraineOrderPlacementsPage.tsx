@@ -18,7 +18,6 @@ import {
   createProductIncomeFromDynamicPlacements,
   getNonDefectiveStorages,
   getSupplyOrderUkraineById,
-  recordProductIncomeFromDynamicPlacementsHistory,
   updateSupplyOrderUkraine,
 } from '../api/orderPlacementsApi'
 import { NewDynamicColumnModal } from '../components/NewDynamicColumnModal'
@@ -480,20 +479,6 @@ function useOrderPlacementsModel() {
     }
   }, [isBusy, isDirty, order, persistOrder])
 
-  const recordDynamicIncomeHistory = useCallback(
-    async (savedOrder: PlacementSupplyOrder) => {
-      try {
-        await recordProductIncomeFromDynamicPlacementsHistory(savedOrder)
-      } catch {
-        notifications.show({
-          color: 'yellow',
-          message: t('Оприходування виконано, але історію руху не записано'),
-        })
-      }
-    },
-    [t],
-  )
-
   const placeOrder = useCallback(
     async (isFullPlaced: boolean) => {
       const storageNetId = selectedStorageId
@@ -521,13 +506,12 @@ function useOrderPlacementsModel() {
       setPlacing(true)
 
       try {
-        const savedOrder = await createProductIncomeFromDynamicPlacements(
+        await createProductIncomeFromDynamicPlacements(
           { ...order, IsPlaced: isFullPlaced },
           incomeDate,
           storageNetId,
         )
         notifications.show({ color: 'green', message: t('Оприходування виконано') })
-        await recordDynamicIncomeHistory(savedOrder)
         setConfirmPlacement(null)
         setReloadKey((key) => key + 1)
       } catch {
@@ -537,7 +521,7 @@ function useOrderPlacementsModel() {
       }
     },
     [
-      incomeDate, isBusy, isDirty, order, recordDynamicIncomeHistory, selectedStorageId, setConfirmPlacement,
+      incomeDate, isBusy, isDirty, order, selectedStorageId, setConfirmPlacement,
       setPlacing, setReloadKey, t,
     ],
   )

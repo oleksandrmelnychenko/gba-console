@@ -62,14 +62,6 @@ export async function createDepreciatedOrderFromFile(
   })
 
   const exceptions = normalizeExceptions(result)
-  const depreciatedOrderId = exceptions.length > 0 ? null : readNumber(result)
-
-  if (depreciatedOrderId !== null) {
-    void apiRequest<unknown>('/history/order/item/orders/depreciated/file/new', {
-      method: 'POST',
-      query: { depreciatedOrderId },
-    }).catch(() => undefined)
-  }
 
   return {
     exceptions,

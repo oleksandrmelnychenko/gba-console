@@ -34,7 +34,6 @@ import {
   getProductCapitalizationOrganizations,
   getProductCapitalizationStoragesByOrganization,
   parseProductCapitalizationItemsFromFile,
-  recordProductCapitalizationHistory,
   searchProductsByVendorCode,
 } from '../api/productCapitalizationsApi'
 import { resolveProductCapitalizationSelection } from '../productCapitalizationSelection'
@@ -761,13 +760,6 @@ function useNewProductCapitalizationModel(opened: boolean, onClose: () => void, 
         throw new Error(t('Сервер не повернув створене оприбуткування'))
       }
 
-      if (isCurrentSubmit() && productCapitalization) {
-        await recordHistoryUpdate(
-          () => recordProductCapitalizationHistory(productCapitalization),
-          t('Оприбуткування створено, але історію руху товару не оновлено'),
-        )
-      }
-
       if (isCurrentSubmit()) {
         notifications.show({ color: 'green', message: t('Оприбуткування створено') })
         resetDraft()
@@ -876,17 +868,6 @@ function useNewProductCapitalizationModel(opened: boolean, onClose: () => void, 
     setMissingModalOpened,
     submit,
     updateItem,
-  }
-}
-
-async function recordHistoryUpdate(record: () => Promise<void>, warningMessage: string): Promise<void> {
-  try {
-    await record()
-  } catch {
-    notifications.show({
-      color: 'yellow',
-      message: warningMessage,
-    })
   }
 }
 

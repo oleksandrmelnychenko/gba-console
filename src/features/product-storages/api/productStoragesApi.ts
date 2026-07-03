@@ -70,13 +70,6 @@ export async function createProductStorageWriteOff(payload: ProductStorageWriteO
   })
 }
 
-export async function recordProductStorageWriteOffHistory(depreciatedOrder: unknown): Promise<void> {
-  await apiRequest<unknown>('/history/order/item/orders/depreciated/new', {
-    method: 'POST',
-    body: depreciatedOrder,
-  })
-}
-
 export async function getProductStorageAvailableConsignments(params: {
   productNetId: string
   storageNetId: string

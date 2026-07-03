@@ -196,15 +196,6 @@ export async function createProductIncomeFromPackingListDynamic(
   return normalizePackingList(result)
 }
 
-export async function recordProductIncomeFromPackingListDynamicHistory(
-  packingList: IncomePackingList,
-): Promise<void> {
-  await apiRequest<unknown>('/history/order/item/new/packinglist/dynamic', {
-    method: 'POST',
-    body: packingList,
-  })
-}
-
 export async function getNonDefectiveStorages(): Promise<IncomeStorage[]> {
   const result = await apiRequest<unknown>('/storages/all/nondefective')
 

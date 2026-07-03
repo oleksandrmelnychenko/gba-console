@@ -65,13 +65,6 @@ export async function createProductCapitalization(
   return normalizeProductCapitalization(result)
 }
 
-export async function recordProductCapitalizationHistory(productCapitalization: ProductCapitalization): Promise<void> {
-  await apiRequest<unknown>('/history/order/item/add/product/capitalization', {
-    method: 'POST',
-    body: productCapitalization,
-  })
-}
-
 export async function searchProductsByVendorCode(
   value: string,
   limit = 20,
