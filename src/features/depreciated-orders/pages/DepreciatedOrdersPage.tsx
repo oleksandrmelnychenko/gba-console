@@ -30,7 +30,7 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
-import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useAuth } from '../../auth/useAuth'
 import {
   createDepreciatedOrderFromFile,
@@ -451,22 +451,8 @@ export function DepreciatedOrdersPage() {
 }
 
 function DepreciatedOrdersPageView({ model }: { model: ReturnType<typeof useDepreciatedOrdersPageModel> }) {
-  const { t } = useI18n()
-
   return (
     <Stack gap="lg">
-      <PageHeaderActions>
-        <Button
-          color={CREATE_ACTION_COLOR}
-          size="sm"
-          disabled={!model.isLoadingStorages && model.storages.length === 0}
-          leftSection={<IconPlus size={16} />}
-          loading={model.isLoadingStorages}
-          onClick={model.openCreateModal}
-        >
-          {t('Створити акт списання')}
-        </Button>
-      </PageHeaderActions>
       <DepreciatedOrdersTableCard model={model} />
       <DepreciatedOrderDetailDrawer
         detailError={model.detailError}
@@ -558,6 +544,17 @@ function DepreciatedOrdersTableCard({ model }: { model: ReturnType<typeof useDep
             />
             <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
           </div>
+          <Button
+            color={CREATE_ACTION_COLOR}
+            disabled={!model.isLoadingStorages && model.storages.length === 0}
+            leftSection={<IconPlus size={16} />}
+            loading={model.isLoadingStorages}
+            size="sm"
+            styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
+            onClick={model.openCreateModal}
+          >
+            {t('Створити акт списання')}
+          </Button>
         </Group>
       </div>
 
@@ -626,7 +623,7 @@ function useDepreciatedOrderColumns(
         accessor: (order) => Boolean(order.IsManagement),
         cell: (order) =>
           order.IsManagement ? (
-            <Badge color="violet" variant="light">
+            <Badge className="app-role-pill" variant="light">
               {t('Так')}
             </Badge>
           ) : (
