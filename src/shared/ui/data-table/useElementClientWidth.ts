@@ -11,60 +11,37 @@ export function useElementClientWidth(element: HTMLElement | null) {
   }, [])
 
   useLayoutEffect(() => {
-    let animationFrameId = 0
-    const scheduleWidthCommit = (nextWidth: number) => {
-      if (animationFrameId) {
-        window.cancelAnimationFrame(animationFrameId)
-      }
-
-      animationFrameId = window.requestAnimationFrame(() => {
-        animationFrameId = 0
-        commitWidth(nextWidth)
-      })
-    }
-
     if (!element) {
-      scheduleWidthCommit(0)
-
-      return () => {
-        if (animationFrameId) {
-          window.cancelAnimationFrame(animationFrameId)
-        }
-      }
+      commitWidth(0)
+      return undefined
     }
 
-    scheduleWidthCommit(element.clientWidth)
+    commitWidth(element.clientWidth)
 
     if (typeof ResizeObserver === 'undefined') {
-      const handleResize = () => scheduleWidthCommit(element.clientWidth)
+      const handleResize = () => commitWidth(element.clientWidth)
 
       window.addEventListener('resize', handleResize)
 
-      return () => {
-        if (animationFrameId) {
-          window.cancelAnimationFrame(animationFrameId)
-        }
-
-        window.removeEventListener('resize', handleResize)
-      }
+      return () => window.removeEventListener('resize', handleResize)
     }
 
     const observer = new ResizeObserver((entries) => {
       const entry = entries[0]
       const borderBox = Array.isArray(entry?.borderBoxSize) ? entry.borderBoxSize[0] : entry?.borderBoxSize
 
-      scheduleWidthCommit(borderBox?.inlineSize ?? entry?.contentRect.width ?? element.clientWidth)
+      commitWidth(borderBox?.inlineSize ?? entry?.contentRect.width ?? element.clientWidth)
     })
     observer.observe(element)
 
-    return () => {
-      if (animationFrameId) {
-        window.cancelAnimationFrame(animationFrameId)
-      }
-
-      observer.disconnect()
-    }
+    return () => observer.disconnect()
   }, [commitWidth, element])
+
+  useLayoutEffect(() => {
+    if (element) {
+      commitWidth(element.clientWidth)
+    }
+  })
 
   return width
 }
