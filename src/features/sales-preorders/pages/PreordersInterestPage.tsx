@@ -119,7 +119,15 @@ export function PreordersInterestPage() {
         id: 'contact',
         header: t('Контакт'),
         accessor: (preOrder) => composeContact(preOrder),
-        cell: (preOrder) => composeContact(preOrder),
+        cell: (preOrder) => {
+          const contact = composeContact(preOrder)
+
+          return (
+            <Text className="preorders-interest-contact" title={contact}>
+              {contact}
+            </Text>
+          )
+        },
         minWidth: 200,
       },
       {
@@ -131,8 +139,8 @@ export function PreordersInterestPage() {
 
           return (
             <Stack gap={0}>
-              <Text size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{date}</Text>
-              <Text c="dimmed" size="xs" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>
+              <Text className="preorders-interest-date-value">{date}</Text>
+              <Text className="preorders-interest-date-time">
                 {time}
               </Text>
             </Stack>
@@ -150,10 +158,9 @@ export function PreordersInterestPage() {
 
           return netId && code ? (
             <Anchor
-              c="dark.6"
+              className="preorders-interest-product-code-link"
               component="button"
-              fw={600}
-              style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}
+              title={code}
               type="button"
               underline="always"
               onClick={(event) => {
@@ -164,7 +171,9 @@ export function PreordersInterestPage() {
               {code}
             </Anchor>
           ) : (
-            <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{code}</Text>
+            <Text className="preorders-interest-product-code" title={code}>
+              {code}
+            </Text>
           )
         },
         width: 140,
@@ -179,9 +188,9 @@ export function PreordersInterestPage() {
 
           return netId && name ? (
             <Anchor
-              c="dark.6"
+              className="preorders-interest-product-name-link"
               component="button"
-              size="sm"
+              title={name}
               type="button"
               underline="always"
               onClick={(event) => {
@@ -192,7 +201,9 @@ export function PreordersInterestPage() {
               {name}
             </Anchor>
           ) : (
-            name
+            <Text className="preorders-interest-product-name" title={name}>
+              {name}
+            </Text>
           )
         },
         minWidth: 240,
@@ -201,14 +212,22 @@ export function PreordersInterestPage() {
         id: 'comment',
         header: t('Коментар'),
         accessor: (preOrder) => preOrder.Comment || '',
-        cell: (preOrder) => preOrder.Comment || '',
+        cell: (preOrder) => (
+          <Text className="preorders-interest-comment" title={preOrder.Comment || ''}>
+            {preOrder.Comment || ''}
+          </Text>
+        ),
         minWidth: 200,
       },
       {
         id: 'qty',
         header: t('К-сть'),
         accessor: (preOrder) => preOrder.Qty ?? 0,
-        cell: (preOrder) => <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{preOrder.Qty ?? 0}</Text>,
+        cell: (preOrder) => (
+          <Text className="preorders-interest-qty">
+            {preOrder.Qty ?? 0}
+          </Text>
+        ),
         align: 'right',
         width: 90,
       },
@@ -258,6 +277,7 @@ export function PreordersInterestPage() {
         {hasMore && (
           <Center p="md">
             <Button
+              className="preorders-interest-load-more-button"
               color="gray"
               loading={isLoadingMore}
               variant="light"

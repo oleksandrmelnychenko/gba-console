@@ -7,6 +7,7 @@ import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/Page
 import { updateSaleDiscount } from '../api/salesUkraineApi'
 import { isDiscountEditableSaleLifecycle } from '../saleStatus'
 import type { SalesUkraineOrderItem, SalesUkraineSale } from '../types'
+import './sale-discount-modal.css'
 
 export function SaleDiscountModal({
   sale,
@@ -22,7 +23,14 @@ export function SaleDiscountModal({
   const { t } = useI18n()
 
   return (
-    <AppModal centered opened={Boolean(sale)} size="sm" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Знижка')}</span>} onClose={onClose}>
+    <AppModal
+      centered
+      className="sale-discount-modal"
+      opened={Boolean(sale)}
+      size="sm"
+      title={<span className="sale-discount-modal__title">{t('Знижка')}</span>}
+      onClose={onClose}
+    >
       {sale && (
         <SaleDiscountForm
           key={`${sale.NetUid || sale.Id}-${orderItem?.NetUid || orderItem?.Id || 'sale'}`}
@@ -124,7 +132,7 @@ function SaleDiscountForm({
   return (
     <Stack gap="md">
       {orderItem && (
-        <Text size="sm" fw={600}>
+        <Text className="sale-discount-modal__product-name">
           {orderItem.Product?.NameUA || orderItem.Product?.Name || orderItem.Product?.VendorCode || ''}
         </Text>
       )}
@@ -153,10 +161,10 @@ function SaleDiscountForm({
         onChange={(event) => setComment(event.currentTarget.value)}
       />
       <Group justify="flex-end">
-        <Button color="gray" disabled={isSaving} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} variant="subtle" onClick={onCancel}>
+        <Button color="gray" disabled={isSaving} variant="subtle" onClick={onCancel}>
           {t('Скасувати')}
         </Button>
-        <Button color={CREATE_ACTION_COLOR} disabled={isReadOnly} loading={isSaving} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} onClick={save}>
+        <Button color={CREATE_ACTION_COLOR} disabled={isReadOnly} loading={isSaving} onClick={save}>
           {t('Зберегти')}
         </Button>
       </Group>

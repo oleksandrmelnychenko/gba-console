@@ -1,0 +1,10 @@
+.product-interest-modal__title {
+  font-family: var(--font-mono);
+  letter-spacing: 0;
+}
+
+.product-interest-modal .mantine-Button-label {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0;
+}

@@ -34,6 +34,17 @@
   white-space: nowrap;
 }
 
+.offers-confirm-modal__title {
+  font-family: var(--font-mono);
+  letter-spacing: 0;
+}
+
+.offers-confirm-modal .mantine-Button-label {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
 .offers-page__content {
   flex: 1 1 auto;
   min-height: 0;

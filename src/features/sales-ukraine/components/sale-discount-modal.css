@@ -1,0 +1,17 @@
+.sale-discount-modal__title {
+  font-family: var(--font-mono);
+  letter-spacing: 0;
+}
+
+.sale-discount-modal__product-name {
+  color: var(--mantine-color-gray-8);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.sale-discount-modal .mantine-Button-label {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0;
+}

@@ -15,8 +15,8 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
-import { AppDrawer } from "../../../shared/ui/AppDrawer"
-import { AppModal } from "../../../shared/ui/AppModal"
+import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { AppModal } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { notifications } from '@mantine/notifications'
 import {
@@ -520,13 +520,15 @@ export function SalesReturnClientPage() {
       <ClientReturnsReportPanel opened={reportOpened} onClose={() => setReportOpened(false)} />
 
       <AppDrawer
+        className="sales-return-client-drawer"
         opened={createOpened}
         position="right"
         size="min(1120px, 100vw)"
-        title={t('Повернення від клієнта')}
+        title={<span className="sales-return-client-drawer-title">{t('Повернення від клієнта')}</span>}
         onClose={closeCreateDrawer}
         footer={
           <Button
+            className="sales-return-client-primary-action"
             color={CREATE_ACTION_COLOR}
             disabled={!items.length}
             form="sales-return-client-form"
@@ -537,190 +539,211 @@ export function SalesReturnClientPage() {
           </Button>
         }
       >
-        <Stack gap="md">
-          <Group justify="flex-end" align="flex-start">
-          <Button
-            leftSection={<IconRefresh size={16} />}
-            variant="light"
-            onClick={() => {
-              setItems([])
-              resetProductDraft()
-              setError(null)
-              setWarning(null)
-            }}
-          >
-            {t('Очистити')}
-          </Button>
-        </Group>
+        <Stack className="sales-return-client-drawer-content" gap="md">
+          <Group className="sales-return-client-drawer-actions" justify="flex-end" align="flex-start">
+            <Button
+              color="gray"
+              leftSection={<IconRefresh size={16} />}
+              variant="light"
+              onClick={() => {
+                setItems([])
+                resetProductDraft()
+                setError(null)
+                setWarning(null)
+              }}
+            >
+              {t('Очистити')}
+            </Button>
+          </Group>
 
-        {error ? (
-          <Alert color="red" icon={<IconAlertCircle size={16} />} title={t('Помилка')}>
-            {error}
-          </Alert>
-        ) : null}
-        {warning ? (
-          <Alert color="yellow" icon={<IconAlertCircle size={16} />} title={t('Увага')}>
-            {warning}
-          </Alert>
-        ) : null}
+          {error ? (
+            <Alert color="red" icon={<IconAlertCircle size={16} />} title={t('Помилка')}>
+              {error}
+            </Alert>
+          ) : null}
+          {warning ? (
+            <Alert color="yellow" icon={<IconAlertCircle size={16} />} title={t('Увага')}>
+              {warning}
+            </Alert>
+          ) : null}
 
-        <form id="sales-return-client-form" onSubmit={handleSubmit}>
-          <Stack gap="md">
-            <SimpleGrid cols={{ base: 1, md: 2, lg: 4 }}>
-              <Select
-                clearable
-                data={organizations.map((organization) => ({
-                  label: getEntityName(organization) || t('Без назви'),
-                  value: getEntityKey(organization),
-                }))}
-                disabled={isLoadingOrganizations}
-                label={t('Організація')}
-                onChange={handleOrganizationChange}
-                searchable
-                value={organizationId}
-              />
-              <Select
-                clearable
-                data={storages.map((storage) => ({
-                  label: [storage.Name, storage.Organization?.Name ? `(${storage.Organization.Name})` : ''].filter(Boolean).join(' '),
-                  value: getEntityKey(storage),
-                }))}
-                disabled={!selectedOrganization || isLoadingStorages}
-                label={t('Склад')}
-                onChange={setStorageId}
-                searchable
-                value={storageId}
-              />
-              <Select
-                clearable
-                data={visibleClients.map((client) => ({
-                  label: getClientName(client),
-                  value: getEntityKey(client),
-                }))}
-                disabled={!selectedOrganization}
-                label={t('Клієнт')}
-                onChange={handleClientChange}
-                onSearchChange={setClientSearch}
-                placeholder={t('Пошук за назвою або кодом')}
-                rightSection={isSearchingClients ? <IconSearch size={14} /> : null}
-                searchable
-                searchValue={clientSearch}
-                value={clientId}
-              />
-              <Select
-                clearable
-                data={agreements.map((agreement) => ({
-                  label: getAgreementLabel(agreement),
-                  value: getEntityKey(agreement),
-                }))}
-                disabled={!selectedClient}
-                label={t('Договір')}
-                onChange={setAgreementId}
-                searchable
-                value={agreementId}
-              />
-            </SimpleGrid>
+          <form id="sales-return-client-form" onSubmit={handleSubmit}>
+            <Stack gap="md">
+              <Card className="app-section-card sales-return-client-section" withBorder radius="md" padding="md">
+                <Stack gap="sm">
+                  <Text className="app-section-title">{t('Параметри повернення')}</Text>
+                  <SimpleGrid className="sales-return-client-form-grid" cols={{ base: 1, md: 2, lg: 4 }}>
+                    <Select
+                      clearable
+                      data={organizations.map((organization) => ({
+                        label: getEntityName(organization) || t('Без назви'),
+                        value: getEntityKey(organization),
+                      }))}
+                      disabled={isLoadingOrganizations}
+                      label={t('Організація')}
+                      onChange={handleOrganizationChange}
+                      searchable
+                      value={organizationId}
+                    />
+                    <Select
+                      clearable
+                      data={storages.map((storage) => ({
+                        label: [storage.Name, storage.Organization?.Name ? `(${storage.Organization.Name})` : ''].filter(Boolean).join(' '),
+                        value: getEntityKey(storage),
+                      }))}
+                      disabled={!selectedOrganization || isLoadingStorages}
+                      label={t('Склад')}
+                      onChange={setStorageId}
+                      searchable
+                      value={storageId}
+                    />
+                    <Select
+                      clearable
+                      data={visibleClients.map((client) => ({
+                        label: getClientName(client),
+                        value: getEntityKey(client),
+                      }))}
+                      disabled={!selectedOrganization}
+                      label={t('Клієнт')}
+                      onChange={handleClientChange}
+                      onSearchChange={setClientSearch}
+                      placeholder={t('Пошук за назвою або кодом')}
+                      rightSection={isSearchingClients ? <IconSearch size={14} /> : null}
+                      searchable
+                      searchValue={clientSearch}
+                      value={clientId}
+                    />
+                    <Select
+                      clearable
+                      data={agreements.map((agreement) => ({
+                        label: getAgreementLabel(agreement),
+                        value: getEntityKey(agreement),
+                      }))}
+                      disabled={!selectedClient}
+                      label={t('Договір')}
+                      onChange={setAgreementId}
+                      searchable
+                      value={agreementId}
+                    />
+                  </SimpleGrid>
+                </Stack>
+              </Card>
 
-            <Box>
-              <Group align="flex-end" gap="sm">
-                <TextInput
-                  label={t('Артикул')}
-                  placeholder={t('Введіть артикул')}
-                  rightSection={isSearchingProducts ? <Loader size={14} /> : undefined}
-                  value={productSearch}
-                  onChange={(event) => updateProductSearch(event.currentTarget.value)}
-                />
-                <Select
-                  clearable
-                  data={productOptions}
-                  disabled={!productOptions.length}
-                  label={t('Знайдений товар')}
-                  onChange={handleProductChange}
-                  searchable
-                  value={selectedProductId}
-                  w={{ base: '100%', md: 320 }}
-                />
-              </Group>
-            </Box>
+              <Card className="app-section-card sales-return-client-section" withBorder radius="md" padding="md">
+                <Stack gap="sm">
+                  <Text className="app-section-title">{t('Товар')}</Text>
+                  <Box>
+                    <Group className="sales-return-client-product-search" align="flex-end" gap="sm">
+                      <TextInput
+                        label={t('Артикул')}
+                        placeholder={t('Введіть артикул')}
+                        rightSection={isSearchingProducts ? <Loader size={14} /> : undefined}
+                        value={productSearch}
+                        onChange={(event) => updateProductSearch(event.currentTarget.value)}
+                      />
+                      <Select
+                        clearable
+                        data={productOptions}
+                        disabled={!productOptions.length}
+                        label={t('Знайдений товар')}
+                        onChange={handleProductChange}
+                        searchable
+                        value={selectedProductId}
+                        w={{ base: '100%', md: 320 }}
+                      />
+                    </Group>
+                  </Box>
 
-            <SimpleGrid cols={{ base: 1, md: 4 }}>
-              <NumberInput
-                allowDecimal
-                decimalScale={3}
-                label={t('Кількість')}
-                min={0}
-                onChange={(value) => setQty(typeof value === 'number' ? value : '')}
-                value={qty}
-              />
-              <Select
-                clearable
-                data={statusOptions}
-                label={t('Причина повернення')}
-                onChange={(value) => setStatus(parseStatusValue(value))}
-                value={typeof status === 'number' ? String(status) : null}
-              />
-              <TextInput
-                label={t('Партія')}
-                readOnly
-                rightSection={
-                  <Tooltip label={t('Обрати партію')}>
-                    <ActionIcon
-                      aria-label={t('Обрати партію')}
-                      disabled={!selectedProduct || isLoadingBatches}
-                      onClick={() => setBatchModalOpened(true)}
-                      variant="subtle"
+                  <SimpleGrid className="sales-return-client-form-grid" cols={{ base: 1, md: 4 }}>
+                    <NumberInput
+                      allowDecimal
+                      decimalScale={3}
+                      label={t('Кількість')}
+                      min={0}
+                      onChange={(value) => setQty(typeof value === 'number' ? value : '')}
+                      value={qty}
+                    />
+                    <Select
+                      clearable
+                      data={statusOptions}
+                      label={t('Причина повернення')}
+                      onChange={(value) => setStatus(parseStatusValue(value))}
+                      value={typeof status === 'number' ? String(status) : null}
+                    />
+                    <TextInput
+                      label={t('Партія')}
+                      readOnly
+                      rightSection={
+                        <Tooltip label={t('Обрати партію')}>
+                          <ActionIcon
+                            aria-label={t('Обрати партію')}
+                            disabled={!selectedProduct || isLoadingBatches}
+                            onClick={() => setBatchModalOpened(true)}
+                            variant="subtle"
+                          >
+                            <IconPackageImport size={16} />
+                          </ActionIcon>
+                        </Tooltip>
+                      }
+                      value={batch?.IncomeToStorageNumber || ''}
+                    />
+                    <Button
+                      color={CREATE_ACTION_COLOR}
+                      leftSection={<IconPlus size={16} />}
+                      mt={{ base: 0, md: 24 }}
+                      onClick={addItem}
+                      type="button"
+                      variant="light"
                     >
-                      <IconPackageImport size={16} />
-                    </ActionIcon>
-                  </Tooltip>
-                }
-                value={batch?.IncomeToStorageNumber || ''}
-              />
-              <Button
-                leftSection={<IconPlus size={16} />}
-                mt={{ base: 0, md: 24 }}
-                onClick={addItem}
-                type="button"
-                variant="light"
-              >
-                {t('Додати позицію')}
-              </Button>
-            </SimpleGrid>
+                      {t('Додати позицію')}
+                    </Button>
+                  </SimpleGrid>
+                </Stack>
+              </Card>
 
-            <DataTable
-              columns={returnItemsColumns}
-              data={items}
-              defaultLayout={RETURN_ITEMS_TABLE_LAYOUT}
-              emptyText={t('Позиції повернення ще не додано')}
-              getRowId={(item, index) => `${item.product.NetUid || item.product.Id || 'product'}-${index}`}
-              minWidth={940}
-              tableId="sales-return-client-items"
-            />
-          </Stack>
-        </form>
-      </Stack>
+              <Card className="app-section-card sales-return-client-section" withBorder radius="md" padding="md">
+                <Stack gap="sm">
+                  <Text className="app-section-title">{t('Позиції повернення')}</Text>
+                  <div className="sales-return-client-table-frame">
+                    <DataTable
+                      columns={returnItemsColumns}
+                      data={items}
+                      defaultLayout={RETURN_ITEMS_TABLE_LAYOUT}
+                      emptyText={t('Позиції повернення ще не додано')}
+                      getRowId={(item, index) => `${item.product.NetUid || item.product.Id || 'product'}-${index}`}
+                      minWidth={940}
+                      tableId="sales-return-client-items"
+                    />
+                  </div>
+                </Stack>
+              </Card>
+            </Stack>
+          </form>
+        </Stack>
       </AppDrawer>
 
       <AppModal
         opened={batchModalOpened}
         onClose={() => setBatchModalOpened(false)}
         size="xl"
-        title={t('Партії приходу')}
+        title={<span className="sales-return-client-modal-title">{t('Партії приходу')}</span>}
       >
-        <DataTable
-          columns={batchColumns}
-          data={batches}
-          defaultLayout={BATCH_TABLE_LAYOUT}
-          emptyText={t('Партій не знайдено')}
-          getRowId={(row, index) => `${row.IncomeToStorageNumber || 'batch'}-${index}`}
-          isLoading={isLoadingBatches}
-          minWidth={920}
-          onRowClick={(row) => {
-            setBatch(row)
-            setBatchModalOpened(false)
-          }}
-          tableId="sales-return-client-batches"
-        />
+        <div className="sales-return-client-batch-modal-table">
+          <DataTable
+            columns={batchColumns}
+            data={batches}
+            defaultLayout={BATCH_TABLE_LAYOUT}
+            emptyText={t('Партій не знайдено')}
+            getRowId={(row, index) => `${row.IncomeToStorageNumber || 'batch'}-${index}`}
+            isLoading={isLoadingBatches}
+            minWidth={920}
+            onRowClick={(row) => {
+              setBatch(row)
+              setBatchModalOpened(false)
+            }}
+            tableId="sales-return-client-batches"
+          />
+        </div>
       </AppModal>
     </Box>
   )
@@ -739,42 +762,42 @@ function useDirectReturnColumns({
         id: 'vendorCode',
         header: t('Артикул'),
         accessor: (item) => item.product.VendorCode,
-        cell: (item) => <Text fw={600}>{displayValue(item.product.VendorCode)}</Text>,
+        cell: (item) => <MonoCell value={displayValue(item.product.VendorCode)} />,
         width: 140,
       },
       {
         id: 'product',
         header: t('Товар'),
         accessor: (item) => getEntityName(item.product),
-        cell: (item) => displayValue(getEntityName(item.product)),
+        cell: (item) => <EntityCell value={displayValue(getEntityName(item.product))} />,
         width: 260,
       },
       {
         id: 'qty',
         header: t('Кількість'),
         accessor: (item) => item.qty,
-        cell: (item) => formatAmount(item.qty),
+        cell: (item) => <NumberCell value={formatAmount(item.qty)} />,
         width: 110,
       },
       {
         id: 'status',
         header: t('Причина'),
         accessor: (item) => getStatusLabel(item.status, t),
-        cell: (item) => <Badge variant="light">{getStatusLabel(item.status, t)}</Badge>,
+        cell: (item) => <StatusPill value={getStatusLabel(item.status, t)} />,
         width: 220,
       },
       {
         id: 'batch',
         header: t('Партія'),
         accessor: (item) => item.batch.IncomeToStorageNumber,
-        cell: (item) => displayValue(item.batch.IncomeToStorageNumber),
+        cell: (item) => <MonoCell value={displayValue(item.batch.IncomeToStorageNumber)} />,
         width: 180,
       },
       {
         id: 'price',
         header: t('Ціна партії'),
         accessor: (item) => getBatchPrice(item.batch),
-        cell: (item) => formatMoney(getBatchPrice(item.batch)),
+        cell: (item) => <MoneyCell value={formatMoney(getBatchPrice(item.batch))} />,
         align: 'right',
         width: 130,
       },
@@ -803,35 +826,35 @@ function useBatchColumns(t: (value: string) => string): DataTableColumn<SalesRet
         id: 'number',
         header: t('Номер приходу'),
         accessor: (batch) => batch.IncomeToStorageNumber,
-        cell: (batch) => <Text fw={600}>{displayValue(batch.IncomeToStorageNumber)}</Text>,
+        cell: (batch) => <MonoCell value={displayValue(batch.IncomeToStorageNumber)} />,
         width: 180,
       },
       {
         id: 'currency',
         header: t('Валюта'),
         accessor: (batch) => batch.Currency,
-        cell: (batch) => displayValue(batch.Currency),
+        cell: (batch) => <CurrencyPill value={displayValue(batch.Currency)} />,
         width: 90,
       },
       {
         id: 'organization',
         header: t('Організація'),
         accessor: (batch) => batch.OrganizationName,
-        cell: (batch) => displayValue(batch.OrganizationName),
+        cell: (batch) => <EntityCell value={displayValue(batch.OrganizationName)} />,
         width: 180,
       },
       {
         id: 'supplier',
         header: t('Постачальник'),
         accessor: (batch) => batch.SupplierName,
-        cell: (batch) => displayValue(batch.SupplierName),
+        cell: (batch) => <EntityCell value={displayValue(batch.SupplierName)} />,
         width: 180,
       },
       {
         id: 'remaining',
         header: t('Залишок'),
         accessor: (batch) => batch.RemainingQty,
-        cell: (batch) => formatAmount(batch.RemainingQty),
+        cell: (batch) => <NumberCell value={formatAmount(batch.RemainingQty)} />,
         align: 'right',
         width: 100,
       },
@@ -839,7 +862,7 @@ function useBatchColumns(t: (value: string) => string): DataTableColumn<SalesRet
         id: 'netPrice',
         header: t('InvoiceNetUnitPrice'),
         accessor: (batch) => batch.NetPrice,
-        cell: (batch) => formatMoney(batch.NetPrice),
+        cell: (batch) => <MoneyCell value={formatMoney(batch.NetPrice)} />,
         align: 'right',
         width: 150,
       },
@@ -847,7 +870,7 @@ function useBatchColumns(t: (value: string) => string): DataTableColumn<SalesRet
         id: 'grossPrice',
         header: t('AccountingGrossUnitPrice'),
         accessor: (batch) => batch.GrossPrice,
-        cell: (batch) => formatMoney(batch.GrossPrice),
+        cell: (batch) => <MoneyCell value={formatMoney(batch.GrossPrice)} />,
         align: 'right',
         width: 170,
       },
@@ -855,12 +878,60 @@ function useBatchColumns(t: (value: string) => string): DataTableColumn<SalesRet
         id: 'date',
         header: t('Дата приходу'),
         accessor: (batch) => batch.IncomeToStorageDate,
-        cell: (batch) => formatDateTime(batch.IncomeToStorageDate),
+        cell: (batch) => <MonoCell value={formatDateTime(batch.IncomeToStorageDate)} />,
         width: 160,
       },
     ],
     [t],
   )
+}
+
+function MonoCell({ value }: { value: string }) {
+  return (
+    <Text className="sales-return-client-mono-cell" title={value}>
+      {value}
+    </Text>
+  )
+}
+
+function EntityCell({ value }: { value: string }) {
+  return (
+    <Text className="sales-return-client-entity-cell" title={value}>
+      {value}
+    </Text>
+  )
+}
+
+function NumberCell({ value }: { value: string }) {
+  return (
+    <Text className="sales-return-client-number-cell" title={value}>
+      {value}
+    </Text>
+  )
+}
+
+function MoneyCell({ value }: { value: string }) {
+  return value ? (
+    <Text className="app-money sales-return-client-money-cell" title={value}>
+      {value}
+    </Text>
+  ) : null
+}
+
+function StatusPill({ value }: { value: string }) {
+  return value ? (
+    <Badge className="app-role-pill is-orange" variant="light">
+      {value}
+    </Badge>
+  ) : null
+}
+
+function CurrencyPill({ value }: { value: string }) {
+  return value ? (
+    <Badge className="app-role-pill is-gray" variant="light">
+      {value}
+    </Badge>
+  ) : null
 }
 
 function validateReturnForm({
