@@ -1,4 +1,5 @@
 import { Anchor, Group, Stack, Text } from '@mantine/core'
+import type { ReactNode } from 'react'
 import { IconFileTypePdf } from '@tabler/icons-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -14,7 +15,7 @@ export function DownloadDocumentModal({
   document: ClientProductMovementDocumentResult | null
   onClose: () => void
   opened: boolean
-  title: string
+  title: ReactNode
 }) {
   const { t } = useI18n()
   const excelUrl = document?.excelUrl ?? null

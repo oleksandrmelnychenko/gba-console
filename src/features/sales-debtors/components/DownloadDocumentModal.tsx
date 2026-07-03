@@ -4,6 +4,7 @@ import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import type { DebtorsDocumentResult } from '../types'
+import './download-document-modal.css'
 
 type DownloadDocumentModalProps = {
   opened: boolean
@@ -15,7 +16,7 @@ export function DownloadDocumentModal({ document, onClose, opened }: DownloadDoc
   const { t } = useI18n()
 
   return (
-    <AppModal centered opened={opened} title={t('Документи')} onClose={onClose}>
+    <AppModal centered className="sales-debtors-document-modal" opened={opened} title={<span className="sales-debtors-document-modal__title">{t('Документи')}</span>} onClose={onClose}>
       <Stack gap="sm">
         {document?.excelUrl || document?.pdfUrl ? (
           <>

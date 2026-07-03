@@ -243,6 +243,11 @@
   padding-right: 4px;
 }
 
+.sales-debtor-detail-drawer-title {
+  font-family: var(--font-mono);
+  letter-spacing: 0;
+}
+
 .sales-debtor-detail-hero,
 .sales-debtor-detail-section {
   background: var(--mantine-color-white);
