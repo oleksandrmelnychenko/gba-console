@@ -21,7 +21,7 @@ import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -554,17 +554,6 @@ function OutgoingCashflowsContent({ model }: { model: OutgoingCashflowsPageModel
 
   return (
     <Stack gap="md">
-      <PageHeaderActions>
-        <Button
-          color={CREATE_ACTION_COLOR}
-          size="sm"
-          leftSection={<IconPlus size={16} />}
-          onClick={() => navigate('/accounting/outgoing-cashflow/new', { state: { backgroundLocation: location } })}
-        >
-          {t('Новий')}
-        </Button>
-      </PageHeaderActions>
-
       <Card className="app-data-card outgoing-cashflows-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar outgoing-cashflows-filter-bar">
           <Group align="end" gap="sm" wrap="wrap" className="outgoing-cashflows-filter-row">
@@ -641,6 +630,15 @@ function OutgoingCashflowsContent({ model }: { model: OutgoingCashflowsPageModel
               </Tooltip>
               <DataTableDensityToggle density={density} onToggle={onToggleDensity} size={34} />
             </div>
+            <Button
+              color={CREATE_ACTION_COLOR}
+              leftSection={<IconPlus size={16} />}
+              size="sm"
+              styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
+              onClick={() => navigate('/accounting/outgoing-cashflow/new', { state: { backgroundLocation: location } })}
+            >
+              {t('Новий')}
+            </Button>
           </Group>
         </div>
 
@@ -658,16 +656,16 @@ function OutgoingCashflowsContent({ model }: { model: OutgoingCashflowsPageModel
           )}
 
           <Group gap="xs">
-            <Badge color="violet" variant="light">
+            <Badge className="app-role-pill" variant="light">
               {t('Завантажено')}: {cashflows.Collection.length}
             </Badge>
-            <Badge color="gray" variant="light">
+            <Badge className="app-role-pill is-gray" variant="light">
               {t('Рядків')}: {rows.length}
             </Badge>
-            <Badge color="green" variant="light">
+            <Badge className="app-role-pill is-green" variant="light">
               {t('Кредиторська заборгованість')}: {formatMoney(cashflows.PositiveDifferenceAmount)}
             </Badge>
-            <Badge color="red" variant="light">
+            <Badge className="app-role-pill is-red" variant="light">
               {t('Дебіторська заборгованість')}: {formatMoney(cashflows.NegativeDifferenceAmount)}
             </Badge>
           </Group>
@@ -766,7 +764,7 @@ function useOutgoingCashflowColumns({
           <Group gap={6} wrap="nowrap">
             <Text fw={600} size="sm">{displayValue(row.number)}</Text>
             {row.isCanceled && (
-              <Badge color="red" size="xs" variant="light">
+              <Badge className="app-role-pill is-red" size="xs" variant="light">
                 {t('Скасовано')}
               </Badge>
             )}
@@ -898,7 +896,7 @@ function useOutgoingCashflowColumns({
             <Tooltip label={t('Редагувати звіт')}>
               <ActionIcon
                 aria-label={t('Редагувати звіт')}
-                color="violet"
+                color="gray"
                 disabled={!row.order.NetUid}
                 size="sm"
                 variant="subtle"
@@ -974,7 +972,7 @@ function useOutgoingCashflowColumns({
 
 function StatusFlag({ active }: { active?: boolean }) {
   return active ? (
-    <Badge color="green" size="xs" variant="light">
+    <Badge className="app-role-pill is-green" size="xs" variant="light">
       Так
     </Badge>
   ) : (
@@ -991,12 +989,12 @@ function PayedToCell({ row }: { row: OutgoingCashflowRow }) {
     <Group gap={6} wrap="nowrap">
       <Text size="sm">{displayValue(row.payedTo)}</Text>
       {row.isUnderReport && (
-        <Badge color="indigo" size="xs" variant="light">
+        <Badge className="app-role-pill" size="xs" variant="light">
           {t('Підзвіт')}
         </Badge>
       )}
       {row.rootAssigned && (
-        <Badge color="gray" size="xs" variant="light">
+        <Badge className="app-role-pill is-gray" size="xs" variant="light">
           {t('Призначено')}
         </Badge>
       )}
@@ -1552,7 +1550,7 @@ function getDateRangeError(fromDate: string, toDate: string): string | null {
 
 function formatDateTime(value?: string): string {
   if (!value) {
-    return '—'
+    return ''
   }
 
   const date = new Date(value)
@@ -1565,11 +1563,11 @@ function formatDateTime(value?: string): string {
 }
 
 function formatMoney(value?: number): string {
-  return typeof value === 'number' && Number.isFinite(value) ? moneyFormatter.format(value) : '—'
+  return typeof value === 'number' && Number.isFinite(value) ? moneyFormatter.format(value) : ''
 }
 
 function formatMoneyOptional(value?: number): string {
-  return hasNumber(value) ? formatMoney(value) : '—'
+  return hasNumber(value) ? formatMoney(value) : ''
 }
 
 function formatMoneyWithCurrency(value?: number, currency?: string): string {
@@ -1583,7 +1581,7 @@ function formatMoneyWithCurrency(value?: number, currency?: string): string {
 }
 
 function formatOptionalNumber(value?: number): string {
-  return typeof value === 'number' && Number.isFinite(value) ? String(value) : '—'
+  return typeof value === 'number' && Number.isFinite(value) ? String(value) : ''
 }
 
 function hasNumber(value?: number): value is number {
@@ -1596,8 +1594,8 @@ function joinTruthyParts(...parts: Array<string | undefined>): string {
 
 function displayValue(value?: string | number | null): string {
   if (typeof value === 'number') {
-    return Number.isFinite(value) ? String(value) : '—'
+    return Number.isFinite(value) ? String(value) : ''
   }
 
-  return value || '—'
+  return value || ''
 }
