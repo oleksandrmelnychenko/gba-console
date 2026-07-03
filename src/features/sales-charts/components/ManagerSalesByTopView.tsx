@@ -124,7 +124,7 @@ export function ManagerSalesByTopView() {
   const columns = useMemo<DataTableColumn<SalesChartsManagerTopRow>[]>(() => {
     const dynamicColumns = columnKeys.map<DataTableColumn<SalesChartsManagerTopRow>>((key) => ({
       align: 'right',
-      cell: (row) => formatMoney(row.values[key]),
+      cell: (row) => <span className="sales-chart-money">{formatMoney(row.values[key])}</span>,
       enableSorting: false,
       header: key,
       id: `col-${key}`,
@@ -142,7 +142,7 @@ export function ManagerSalesByTopView() {
       ...dynamicColumns,
       {
         align: 'right',
-        cell: (row) => formatMoney(row.total),
+        cell: (row) => <span className="sales-chart-money">{formatMoney(row.total)}</span>,
         enableSorting: false,
         header: t('Всього'),
         id: 'total',
@@ -214,6 +214,10 @@ export function ManagerSalesByTopView() {
         )}
 
         {chartData.length > 0 && (
+          <div>
+            <Text className="app-section-title" fw={600} mb={8} size="sm">
+              {t('Продано по менеджерах')}
+            </Text>
           <BarChart
             data={chartData}
             dataKey="manager"
@@ -223,25 +227,28 @@ export function ManagerSalesByTopView() {
             valueFormatter={(value) => formatMoney(value)}
             withLegend={false}
           />
+          </div>
         )}
 
         {columnKeys.length > 0 ? (
-          <DataTable
-            columns={columns}
-            data={rows}
-            defaultLayout={MANAGER_TOP_TABLE_DEFAULT_LAYOUT}
-            distributeAvailableWidth
-            emptyText={t('Дані відсутні')}
-            getRowId={(row) => row.rowId}
-            isLoading={isLoading}
-            layoutVersion="sales-charts-managertop-2"
-            loadingText={t('Завантаження даних')}
-            maxHeight="calc(100vh - 360px)"
-            minWidth={720}
-            showLayoutControls
-            tableId="sales-charts-managertop"
-            toolbarPortalTarget={tableToolbarSlot}
-          />
+          <div className="sales-chart-table-wrap">
+            <DataTable
+              columns={columns}
+              data={rows}
+              defaultLayout={MANAGER_TOP_TABLE_DEFAULT_LAYOUT}
+              distributeAvailableWidth
+              emptyText={t('Дані відсутні')}
+              getRowId={(row) => row.rowId}
+              height="100%"
+              isLoading={isLoading}
+              layoutVersion="sales-charts-managertop-2"
+              loadingText={t('Завантаження даних')}
+              minWidth={720}
+              showLayoutControls
+              tableId="sales-charts-managertop"
+              toolbarPortalTarget={tableToolbarSlot}
+            />
+          </div>
         ) : (
           <Text c="dimmed" size="sm">
             {isLoading ? t('Завантаження даних') : t('Дані відсутні')}

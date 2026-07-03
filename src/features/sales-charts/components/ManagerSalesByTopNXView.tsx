@@ -67,7 +67,7 @@ export function ManagerSalesByTopNXView() {
   const columns = useMemo<DataTableColumn<SalesChartsTopNXRow>[]>(() => {
     const managerColumns = report.Managers.map<DataTableColumn<SalesChartsTopNXRow>>((manager) => ({
       align: 'right',
-      cell: (row) => formatMoney(row.values[manager.NetId]),
+      cell: (row) => <span className="sales-chart-money">{formatMoney(row.values[manager.NetId])}</span>,
       enableSorting: false,
       header: manager.ManagerName,
       id: manager.NetId,
@@ -77,7 +77,7 @@ export function ManagerSalesByTopNXView() {
     return [
       {
         cell: (row) => (
-          <Text fw={row.isManager || row.isTotal ? 700 : 400} pl={row.isManager || row.isTotal ? 0 : 8} size="sm">
+          <Text className="sales-chart-row-label" fw={row.isManager || row.isTotal ? 600 : 500} pl={row.isManager || row.isTotal ? 0 : 8} size="sm">
             {row.label}
           </Text>
         ),
@@ -89,7 +89,7 @@ export function ManagerSalesByTopNXView() {
       ...managerColumns,
       {
         align: 'right',
-        cell: (row) => formatMoney(row.total),
+        cell: (row) => <span className="sales-chart-money">{formatMoney(row.total)}</span>,
         enableSorting: false,
         header: t('Підсумок'),
         id: 'total',
@@ -149,6 +149,10 @@ export function ManagerSalesByTopNXView() {
         )}
 
         {chartData.length > 0 && (
+          <div>
+            <Text className="app-section-title" fw={600} mb={8} size="sm">
+              {t('Продано по менеджерах')}
+            </Text>
           <BarChart
             data={chartData}
             dataKey="manager"
@@ -158,8 +162,10 @@ export function ManagerSalesByTopNXView() {
             valueFormatter={(value) => formatMoney(value)}
             withLegend={false}
           />
+          </div>
         )}
 
+        <div className="sales-chart-table-wrap">
         <DataTable
           columns={columns}
           data={rows}
@@ -170,12 +176,13 @@ export function ManagerSalesByTopNXView() {
           isLoading={isLoading}
           layoutVersion="sales-charts-topnx-2"
           loadingText={t('Завантаження даних')}
-          maxHeight="calc(100vh - 360px)"
+          height="100%"
           minWidth={720}
           showLayoutControls
           tableId="sales-charts-topnx"
           toolbarPortalTarget={tableToolbarSlot}
         />
+        </div>
       </Stack>
     </Card>
   )
