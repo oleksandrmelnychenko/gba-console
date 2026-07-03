@@ -23,6 +23,7 @@ import {
 } from '../utils'
 import { CurrencyRatesHistory } from './CurrencyRatesHistory'
 import { CurrencyRatesUpdateForm } from './CurrencyRatesUpdateForm'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 
 type CurrencyRatesPanelProps = {
   group: ExchangeRateGroup
@@ -442,7 +443,7 @@ export function CurrencyRatesPanel({ group, onClose, onRefresh, style }: Currenc
           </Button>
         )}
         {!isReadOnly && (
-          <Button variant={panelState.isFormOpen ? 'outline' : 'light'} color="violet" onClick={toggleForm}>
+          <Button variant={panelState.isFormOpen ? 'outline' : 'light'} color={CREATE_ACTION_COLOR} onClick={toggleForm}>
             {panelState.isFormOpen ? t('Скасувати') : t('Створити')}
           </Button>
         )}

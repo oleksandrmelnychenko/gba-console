@@ -24,6 +24,7 @@ import {
   searchCompanyCarUsers,
   updateCompanyCarRoadList,
 } from '../api/companyCarsApi'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import type {
   CompanyCar,
   CompanyCarRoadList,
@@ -574,7 +575,7 @@ function RoadListFormFooter({
         <Button color="gray" disabled={isSaving} variant="light" onClick={onClose}>
           {t('Скасувати')}
         </Button>
-        <Button color="violet" disabled={isSaveDisabled} leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} onClick={onSave}>
+        <Button color={CREATE_ACTION_COLOR} disabled={isSaveDisabled} leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} onClick={onSave}>
           {t('Зберегти')}
         </Button>
       </Group>

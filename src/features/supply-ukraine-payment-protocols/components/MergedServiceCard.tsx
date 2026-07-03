@@ -20,6 +20,7 @@ import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import type { MergedService, ProtocolUser, SupplyDocument, SupplyPaymentTask } from '../types'
 import { formatDate, formatMoney, fromDateInput, responsibleName, toDateInput } from './helpers'
 import type { MergedServicePermissions } from './MergedServicesSection'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 
 type AddPaymentTaskValues = {
   comment: string
@@ -165,7 +166,7 @@ function AddPaymentTaskForm({
             {t('Скасувати')}
           </Button>
           <Button
-            color="violet"
+            color={CREATE_ACTION_COLOR}
             loading={isSaving}
             onClick={() => {
               void onSubmit({ comment, payToDate, responsible })
@@ -254,7 +255,7 @@ export function MergedServiceCard({
         <LabelValueRow label={`${t('ПДВ')} (${t('Бух.')})`}>{formatMoney(service.AccountingVat, currencyCode)}</LabelValueRow>
 
         {service.IsIncludeAccountingValue && (
-          <Badge color="violet" variant="light">
+          <Badge className="app-role-pill" variant="light">
             {t('Бух. вартість включена у цінну брутто')}
           </Badge>
         )}
@@ -324,7 +325,7 @@ export function MergedServiceCard({
             />
           ) : (
             <Button
-              color="violet"
+              color={CREATE_ACTION_COLOR}
               leftSection={<IconPlus size={16} />}
               variant="light"
               onClick={() => setAddOpen(true)}
@@ -346,7 +347,7 @@ export function MergedServiceCard({
             />
           ) : (
             <Button
-              color="violet"
+              color={CREATE_ACTION_COLOR}
               leftSection={<IconPlus size={16} />}
               variant="light"
               onClick={() => setAddAccountingOpen(true)}

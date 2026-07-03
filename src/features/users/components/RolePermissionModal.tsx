@@ -5,6 +5,7 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import type { DashboardNode, UserPermission } from '../types'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 
 export type RolePermissionSubmit = {
   image: File | null
@@ -134,7 +135,7 @@ export function RolePermissionModal({ isSaving, node, opened, permission, onClos
             <Button color="gray" disabled={isSaving} variant="subtle" onClick={onClose}>
               {t('Скасувати')}
             </Button>
-            <Button color="violet" leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} type="submit">
+            <Button color={CREATE_ACTION_COLOR} leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} type="submit">
               {permission ? t('Редагувати') : t('Зберегти')}
             </Button>
           </Group>

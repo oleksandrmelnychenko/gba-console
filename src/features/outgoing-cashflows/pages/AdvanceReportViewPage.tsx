@@ -711,7 +711,7 @@ function DifferenceMessage({ model }: { model: ReturnType<typeof useAdvanceRepor
         {t('Винні колезі')}: {formatMoney(difference)}
       </Badge>
       <Button
-        color="violet"
+        color={CREATE_ACTION_COLOR}
         disabled={model.isBusy}
         loading={model.isSaving || model.isRecalculating}
         size="xs"

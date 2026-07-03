@@ -148,7 +148,7 @@ export function ProductPickerCarousel<T extends ProductPickerItem>({
                   borderColor: isActive
                     ? active === false
                       ? 'var(--mantine-color-gray-5)'
-                      : 'var(--mantine-color-violet-6)'
+                      : 'var(--brand-orange)'
                     : undefined,
                   cursor: 'pointer',
                   flex: '0 0 200px',

@@ -183,7 +183,7 @@ export function OrganizationClientNewPage() {
 
             {isLoadingCurrencies && (
               <Group gap="xs">
-                <Loader color="violet" size="xs" />
+                <Loader color="orange" size="xs" />
                 <Text c="dimmed" size="sm">
                   {t('Завантаження валют')}
                 </Text>

@@ -24,6 +24,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import type {
   DepreciatedOrder,
   DepreciatedOrderExportDocument,
@@ -86,7 +87,7 @@ export function DepreciatedOrderDetailDrawer({
           <Group justify="space-between" gap="sm">
             <Group gap="xs">
               {order.IsManagement && (
-                <Badge color="violet" variant="light">
+                <Badge className="app-role-pill" variant="light">
                   {t('Управ.')}
                 </Badge>
               )}
@@ -97,7 +98,7 @@ export function DepreciatedOrderDetailDrawer({
               )}
             </Group>
             <Button
-              color="violet"
+              color={CREATE_ACTION_COLOR}
               disabled={!order.NetUid}
               leftSection={<IconDownload size={16} />}
               loading={isDownloading}

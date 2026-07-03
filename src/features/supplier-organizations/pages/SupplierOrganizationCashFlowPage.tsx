@@ -328,7 +328,7 @@ export function SupplierOrganizationCashFlowPage() {
       <CashFlowSummary cashFlow={cashFlow} lastItem={lastItem} />
 
       <Group gap="xs">
-        <Badge color="violet" variant="light">
+        <Badge className="app-role-pill" variant="light">
           {t('Рядків')}: {rows.length}
         </Badge>
       </Group>

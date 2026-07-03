@@ -256,7 +256,7 @@ export function ProductGroupDetailPage() {
       {isLoading ? (
         <Card withBorder radius="md" padding="lg">
           <Group justify="center" py="xl">
-            <Loader color="violet" size="sm" />
+            <Loader color="orange" size="sm" />
             <Text c="dimmed" size="sm">
               {t('Завантаження групи товарів')}
             </Text>

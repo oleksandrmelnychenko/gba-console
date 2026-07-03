@@ -80,7 +80,7 @@ export function OrganisationSearchControl({
         label={t('Організація')}
         leftSection={<IconBuilding size={16} />}
         placeholder={t('Введіть назву')}
-        rightSection={isLoading ? <Loader color="violet" size="xs" /> : null}
+        rightSection={isLoading ? <Loader color="orange" size="xs" /> : null}
         value={value}
         onChange={(event) => onChange(event.currentTarget.value)}
       />

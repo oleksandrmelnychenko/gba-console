@@ -4,6 +4,7 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { ReconciliationStorageOption } from '../types'
 import { PlacementFields, type PlacementValues } from './PlacementFields'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 
 export type ProductPlacementFormValues = {
   cellNumber?: string
@@ -113,7 +114,7 @@ export function ProductPlacementForm({
         </>
       )}
       <Group justify="flex-end">
-        <Button color="violet" disabled={!canSubmit} loading={isSubmitting} onClick={handleSubmit}>
+        <Button color={CREATE_ACTION_COLOR} disabled={!canSubmit} loading={isSubmitting} onClick={handleSubmit}>
           {t('Оприходувати')}
         </Button>
       </Group>

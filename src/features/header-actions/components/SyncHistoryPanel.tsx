@@ -93,7 +93,7 @@ export function SyncHistoryPanel({
           </Text>
           {isLoading ? (
             <Group gap="xs" className="sync-history-state">
-              <Loader size="xs" color="violet" />
+              <Loader size="xs" color="orange" />
               <Text size="sm" c="dimmed">
                 {t('Завантаження')}
               </Text>
@@ -117,7 +117,7 @@ export function SyncHistoryPanel({
         </Text>
         {isLoading ? (
           <Group gap="xs" justify="center" className="sync-history-state">
-            <Loader size="xs" color="violet" />
+            <Loader size="xs" color="orange" />
             <Text size="sm" c="dimmed">
               {t('Завантаження')}
             </Text>

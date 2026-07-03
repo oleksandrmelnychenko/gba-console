@@ -16,6 +16,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { PaymentImageList } from './PaymentImageList'
 import { PaymentShopOrderItemsTable } from './PaymentShopOrderItemsTable'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import {
   PaymentType,
   RetailPaymentStatusType,
@@ -146,7 +147,7 @@ export function PaymentShopDetailDrawer({
                 onChange={(value) => setDraft((current) => ({ ...current, image: value }))}
               />
               <Group justify="flex-end">
-                <Button color="violet" loading={isCreating} onClick={handleCreate}>
+                <Button color={CREATE_ACTION_COLOR} loading={isCreating} onClick={handleCreate}>
                   {t('Створити')}
                 </Button>
               </Group>

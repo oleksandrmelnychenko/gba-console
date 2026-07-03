@@ -796,7 +796,7 @@ export function IncomeCashflowShopFormPage() {
                   </Text>
                 </div>
                 <Group gap="xs">
-                  <Badge color="violet" variant="light">
+                  <Badge className="app-role-pill" variant="light">
                     {t('Поточний договір')}: {formatMoney(selectedAgreement?.CurrentAmount)}
                   </Badge>
                   <Badge color="gray" variant="light">

@@ -21,6 +21,7 @@ import {
 } from '../utils'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 
 const AGREEMENTS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -158,7 +159,7 @@ export function OrganizationClientAgreementsPanel({
       <Group justify="space-between" align="center">
         <Text fw={600}>{t('Договори')}</Text>
         <Button
-          color="violet"
+          color={CREATE_ACTION_COLOR}
           disabled={!canAddAgreement}
           leftSection={<IconPlus size={16} />}
           size="xs"
@@ -217,7 +218,7 @@ export function OrganizationClientAgreementsPanel({
             <Button variant="subtle" color="gray" onClick={() => setModalOpened(false)}>
               {t('Скасувати')}
             </Button>
-            <Button color="violet" leftSection={<IconCheck size={16} />} onClick={handleAddAgreement}>
+            <Button color={CREATE_ACTION_COLOR} leftSection={<IconCheck size={16} />} onClick={handleAddAgreement}>
               {t('Додати')}
             </Button>
           </Group>

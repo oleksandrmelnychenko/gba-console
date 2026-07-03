@@ -300,7 +300,7 @@ function PaymentShopTableCard({ model }: { model: ReturnType<typeof usePaymentOn
           />
           <div className="app-filter-actions">
             <Tooltip label={t('Пошук')}>
-              <ActionIcon aria-label={t('Пошук')} color="violet" size={34} variant="light" onClick={applyFilters}>
+              <ActionIcon aria-label={t('Пошук')} color="gray" size={34} variant="light" onClick={applyFilters}>
                 <IconSearch size={17} />
               </ActionIcon>
             </Tooltip>

@@ -12,6 +12,7 @@ import type {
 } from '../types'
 import { MergedServiceCard } from './MergedServiceCard'
 import { NewMergedServiceForm } from './NewMergedServiceForm'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 
 type AddPaymentTaskValues = {
   comment: string
@@ -136,7 +137,7 @@ export function MergedServicesSection({
           {t('Об’єднаний сервіс')}
         </Text>
         {permissions.canCreateService && (
-          <Button color="violet" leftSection={<IconPlus size={16} />} variant="light" onClick={() => setNewOpen(true)}>
+          <Button color={CREATE_ACTION_COLOR} leftSection={<IconPlus size={16} />} variant="light" onClick={() => setNewOpen(true)}>
             {t('Додати')}
           </Button>
         )}

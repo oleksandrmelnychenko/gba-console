@@ -769,7 +769,7 @@ function AvailablePaymentsTableCard({ model }: { model: ReturnType<typeof useAva
         )}
 
         {markedModels.length > 0 && (
-          <Alert color="violet" icon={<IconListDetails size={18} />} variant="light">
+          <Alert color="orange" icon={<IconListDetails size={18} />} variant="light">
             <Stack gap="xs">
               <Group justify="space-between" gap="sm">
                 <Text size="sm">
@@ -1028,7 +1028,7 @@ function renderTasksCell(
         {notDone}
       </Badge>
       {marked > 0 && (
-        <Badge color="violet" variant="light">
+        <Badge className="app-role-pill" variant="light">
           {marked}
         </Badge>
       )}
