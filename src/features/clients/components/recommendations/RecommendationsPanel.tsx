@@ -154,7 +154,7 @@ export function RecommendationsPanel({ client, productNetId }: RecommendationsPa
 
   return (
     <Stack gap="md" pos="relative">
-      <LoadingOverlay visible={isLoading} overlayProps={{ blur: 1 }} loaderProps={{ color: 'violet' }} />
+      <LoadingOverlay visible={isLoading} overlayProps={{ blur: 1 }} loaderProps={{ color: 'orange' }} />
 
       <Card className="app-section-card" withBorder radius="md" padding="md">
         <Stack gap="md">
@@ -174,7 +174,7 @@ export function RecommendationsPanel({ client, productNetId }: RecommendationsPa
                 onChange={(value) => dispatch({ type: 'setByRegion', value: value === 'region' })}
               />
               <Tooltip label={isGrid ? t('Список') : t('Таблиця')}>
-                <ActionIcon color="violet" variant="light" onClick={() => dispatch({ type: 'toggleGrid' })}>
+                <ActionIcon color="gray" variant="light" onClick={() => dispatch({ type: 'toggleGrid' })}>
                   {isGrid ? <IconList size={18} /> : <IconLayoutGrid size={18} />}
                 </ActionIcon>
               </Tooltip>
@@ -189,7 +189,7 @@ export function RecommendationsPanel({ client, productNetId }: RecommendationsPa
 
           {isLoading ? (
             <Group justify="center" py="xl">
-              <Loader color="violet" size="sm" />
+              <Loader color="orange" size="sm" />
               <Text c="dimmed" size="sm">
                 {t('Завантаження рекомендацій')}
               </Text>

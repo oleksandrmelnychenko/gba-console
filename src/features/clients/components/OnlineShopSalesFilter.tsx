@@ -119,7 +119,7 @@ export function OnlineShopSalesFilter({ onClearSales, onGetAllSales, onSelectFas
       <Popover.Dropdown p={0}>
         {isLoading ? (
           <Stack align="center" gap="xs" py="md">
-            <Loader color="violet" size="sm" />
+            <Loader color="orange" size="sm" />
           </Stack>
         ) : clients.length > 0 ? (
           <ScrollArea.Autosize mah={280} type="auto" onBottomReached={loadMore}>
@@ -138,7 +138,7 @@ export function OnlineShopSalesFilter({ onClearSales, onGetAllSales, onSelectFas
               ))}
               {isLoadingMore && (
                 <Stack align="center" gap="xs" py="sm">
-                  <Loader color="violet" size="xs" />
+                  <Loader color="orange" size="xs" />
                 </Stack>
               )}
             </Stack>

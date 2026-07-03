@@ -21,6 +21,7 @@ import {
   getClientGroups,
 } from '../../api/clientCabinetApi'
 import type { ClientGroup } from '../../types'
+import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
 
 export type GroupsModalProps = {
   opened: boolean
@@ -215,7 +216,7 @@ export function GroupsModal({ opened, clientId, clientNetId, onClose, onChange }
             <IconX size={18} />
           </ActionIcon>
           <Button
-            color="violet"
+            color={CREATE_ACTION_COLOR}
             disabled={!trimmedName}
             leftSection={<IconPlus size={16} />}
             loading={isSubmitting}
@@ -227,7 +228,7 @@ export function GroupsModal({ opened, clientId, clientNetId, onClose, onChange }
 
         {isLoading ? (
           <Group justify="center" py="md">
-            <Loader color="violet" size="sm" />
+            <Loader color="orange" size="sm" />
           </Group>
         ) : groups.length === 0 ? (
           <Text c="dimmed" size="sm">
@@ -248,7 +249,7 @@ export function GroupsModal({ opened, clientId, clientNetId, onClose, onChange }
                   borderRadius: 'var(--mantine-radius-sm)',
                   background:
                     editingGroup && editingGroup.NetUid === group.NetUid
-                      ? 'var(--mantine-color-violet-light)'
+                      ? 'var(--mantine-color-orange-0)'
                       : undefined,
                 }}
               >

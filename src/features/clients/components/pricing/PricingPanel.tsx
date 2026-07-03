@@ -445,7 +445,7 @@ export function PricingPanel({
   if (isLoadingLookups) {
     return (
       <Group justify="center" py="xl">
-        <Loader color="violet" size="sm" />
+        <Loader color="orange" size="sm" />
         <Text c="dimmed" size="sm">
           {t('Завантаження')}
         </Text>

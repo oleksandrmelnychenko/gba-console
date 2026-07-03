@@ -982,7 +982,7 @@ function ClientsFilterToolbar({
         leftSection={<IconSearch size={16} />}
         label={t('Пошук')}
         placeholder={t('Введіть значення')}
-        rightSection={isTableBusy ? <Loader color="violet" size={14} /> : undefined}
+        rightSection={isTableBusy ? <Loader color="orange" size={14} /> : undefined}
         value={searchValue}
         onChange={(event) => {
           onSetPage(1)
@@ -1092,7 +1092,7 @@ function ReserveDaysModal({
             <Button variant="subtle" color="gray" onClick={onClose}>
               {t('Скасувати')}
             </Button>
-            <Button type="submit" color="violet" loading={isSaving}>
+            <Button color={CREATE_ACTION_COLOR} loading={isSaving} type="submit">
               {t('Зберегти')}
             </Button>
           </Group>

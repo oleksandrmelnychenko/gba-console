@@ -802,7 +802,7 @@ function ClientEditTitle({
           </Badge>
         )}
         {client.IsTemporaryClient && (
-          <Badge color="violet" variant="light">
+          <Badge className="app-role-pill" variant="light">
             {t('З інтернет-магазину')}
           </Badge>
         )}
@@ -879,7 +879,7 @@ function ClientEditBody({
     return (
       <Card className="app-section-card" withBorder radius="md" padding="lg">
         <Group justify="center" py="xl">
-          <Loader color="violet" size="sm" />
+          <Loader color="orange" size="sm" />
           <Text c="dimmed" size="sm">
             {t('Завантаження картки')}
           </Text>

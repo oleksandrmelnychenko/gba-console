@@ -82,7 +82,7 @@ export function OnlineShopSalesPanel({ netUid }: OnlineShopSalesPanelProps) {
   if (isLoading) {
     return (
       <Group justify="center" py="xl">
-        <Loader color="violet" size="sm" />
+        <Loader color="orange" size="sm" />
         <Text size="sm" c="dimmed">
           {t('Завантаження продажів')}
         </Text>
@@ -118,7 +118,7 @@ export function OnlineShopSalesPanel({ netUid }: OnlineShopSalesPanelProps) {
                       </Text>
                     </Box>
                     <Stack gap={4} align="flex-end">
-                      <Badge color="violet" variant="light">
+                      <Badge className="app-role-pill" variant="light">
                         {t('Інтернет-магазин')}
                       </Badge>
                       <Text fw={700}>{formatAmount(getSaleTotal(sale))}</Text>

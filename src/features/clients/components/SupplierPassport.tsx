@@ -54,7 +54,7 @@ export function SupplierPassport({ netUid, client }: SupplierPassportProps) {
   if (isLoading) {
     return (
       <Center py="xl">
-        <Loader color="violet" />
+        <Loader color="orange" />
       </Center>
     )
   }

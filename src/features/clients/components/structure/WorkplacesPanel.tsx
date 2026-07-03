@@ -119,7 +119,7 @@ export function WorkplacesPanel({
 
       {isLoading ? (
         <Group justify="center" py="xl">
-          <Loader color="violet" size="sm" />
+          <Loader color="orange" size="sm" />
           <Text c="dimmed" size="sm">
             {t('Завантаження')}
           </Text>
@@ -266,7 +266,7 @@ function WorkplaceItem({
     >
       <Group justify="space-between" align="center" wrap="nowrap">
         <Group gap="sm" align="center" wrap="nowrap">
-          <Avatar color={workplace.IsBlocked ? 'gray' : 'violet'} radius="xl">
+          <Avatar color={workplace.IsBlocked ? 'gray' : 'orange'} radius="xl">
             {workplace.Abbreviation}
           </Avatar>
           <Stack gap={2}>

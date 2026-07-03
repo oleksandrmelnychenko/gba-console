@@ -3,6 +3,7 @@ import { IconCheck, IconTrash } from '@tabler/icons-react'
 import { useRef, useState } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import type { ServicePayer } from '../../types'
+import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
 
 const EMPTY_NET_UID = '00000000-0000-0000-0000-000000000000'
 
@@ -202,7 +203,7 @@ function ServicePayerFormFields({
             </Button>
           )}
           <Button
-            color="violet"
+            color={CREATE_ACTION_COLOR}
             disabled={disabled}
             leftSection={<IconCheck size={16} />}
             onClick={handleSubmit}

@@ -188,7 +188,7 @@ export function ClientStructurePanel({ client, onChange }: ClientStructurePanelP
           <Group justify="flex-end" align="center">
             <Tooltip label={t('Підгрупи')}>
               <ActionIcon
-                color="violet"
+                color="gray"
                 size="lg"
                 variant="light"
                 onClick={() => setGroupsModalOpened(true)}
@@ -208,7 +208,7 @@ export function ClientStructurePanel({ client, onChange }: ClientStructurePanelP
             </Tooltip>
           </Group>
 
-          <Tabs color="violet" defaultValue="subClients" keepMounted={false} radius="xl" variant="pills">
+          <Tabs defaultValue="subClients" keepMounted={false} radius="xl" variant="pills">
             <Tabs.List justify="center">
               <Tabs.Tab value="subClients">{t('Субклієнти')}</Tabs.Tab>
               <Tabs.Tab value="workplaces">{t('Робочі місця')}</Tabs.Tab>

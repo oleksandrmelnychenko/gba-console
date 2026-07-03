@@ -243,7 +243,7 @@ export function ClientAgreementsPanel({
 
       {isLoading ? (
         <Group justify="center" py="xl">
-          <Loader color="violet" size="sm" />
+          <Loader color="orange" size="sm" />
           <Text c="dimmed" size="sm">
             {t('Завантаження')}
           </Text>
@@ -369,7 +369,7 @@ export function ClientAgreementsPanel({
         <Stack gap="sm">
           {isExporting ? (
             <Group justify="center" py="md">
-              <Loader color="violet" size="sm" />
+              <Loader color="orange" size="sm" />
             </Group>
           ) : exportDocument?.DocumentURL || exportDocument?.PdfDocumentURL ? (
             <>

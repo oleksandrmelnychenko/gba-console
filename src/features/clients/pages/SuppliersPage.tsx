@@ -850,7 +850,7 @@ function SuppliersFilterToolbar({
         leftSection={<IconSearch size={16} />}
         label={t('Назва або код')}
         placeholder={t('Назва або код')}
-        rightSection={isTableBusy ? <Loader color="violet" size={14} /> : undefined}
+        rightSection={isTableBusy ? <Loader color="orange" size={14} /> : undefined}
         value={searchValue}
         onChange={(event) => {
           onSetPage(1)
