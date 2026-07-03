@@ -85,7 +85,7 @@ export function ProductInterestModal({
   }
 
   return (
-    <AppModal centered opened={opened} size="xs" title={t('Зацікавленість')} onClose={closeModal}>
+    <AppModal centered opened={opened} size="xs" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Зацікавленість')}</span>} onClose={closeModal}>
       <form onSubmit={submitForm}>
         <Stack gap="sm">
           <NumberInput
