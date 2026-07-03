@@ -654,6 +654,38 @@ function MovementInfoItemsTable({ document }: { document: ClientProductMovementD
   )
 }
 
+function MovementEntityCell({ value }: { value: string }) {
+  return (
+    <Text className="client-product-movement-entity-cell" title={value}>
+      {value}
+    </Text>
+  )
+}
+
+function MovementMonoCell({ value }: { value: string }) {
+  return (
+    <Text className="client-product-movement-mono-cell" title={value}>
+      {value}
+    </Text>
+  )
+}
+
+function MovementNumberCell({ value }: { value: string }) {
+  return (
+    <Text className="client-product-movement-number-cell" title={value}>
+      {value}
+    </Text>
+  )
+}
+
+function MovementMoneyCell({ value }: { value: string }) {
+  return value ? (
+    <span className="app-money client-product-movement-money-cell" title={value}>
+      {value}
+    </span>
+  ) : null
+}
+
 function buildRows(documents: ClientProductMovementDocument[], expandedKeys: Set<string>): MovementRow[] {
   const rows: MovementRow[] = []
 

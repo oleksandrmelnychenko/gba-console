@@ -42,6 +42,60 @@
   white-space: nowrap;
 }
 
+.resales-modal-title,
+.resales-drawer-title {
+  font-family: var(--font-mono);
+  letter-spacing: 0;
+}
+
+.resales-modal .mantine-Button-label {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.resales-total-card,
+.resales-detail-value {
+  border-color: var(--mantine-color-gray-2);
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+.resales-total-label {
+  color: var(--mantine-color-gray-7);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.2;
+}
+
+.resales-total-label::before {
+  background: var(--brand-orange);
+  border-radius: 999px;
+  content: '';
+  display: inline-block;
+  height: 7px;
+  margin-right: 8px;
+  vertical-align: 1px;
+  width: 7px;
+}
+
+.resales-total-value {
+  display: block;
+  font-size: 13px;
+  line-height: 1.25;
+  margin-top: 5px;
+}
+
+.resales-detail-value-text {
+  color: var(--mantine-color-gray-8);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+  margin-top: 5px;
+}
+
 .resales-page__alert {
   margin: 12px 12px 0;
 }
