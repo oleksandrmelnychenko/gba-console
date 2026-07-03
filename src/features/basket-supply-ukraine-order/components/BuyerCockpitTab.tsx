@@ -1057,7 +1057,7 @@ function SuggestedQtyCell({ item, t }: { item: ReorderSuggestion; t: TranslateFu
       {hasLearned && (
         <Tooltip label={t('Кількість скориговано на основі попередніх рішень байера')} withinPortal>
           <Badge
-            color="grape"
+            color="orange"
             leftSection={<IconSchool size={11} />}
             size="xs"
             variant="light"

@@ -279,7 +279,7 @@ export function OrganizationClientEditPage() {
       {isLoading ? (
         <Card withBorder radius="md" padding="lg">
           <Group justify="center" py="xl">
-            <Loader color="violet" size="sm" />
+            <Loader color="orange" size="sm" />
             <Text c="dimmed" size="sm">
               {t('Завантаження організації')}
             </Text>
@@ -303,7 +303,7 @@ export function OrganizationClientEditPage() {
 
               {isLoadingCurrencies && (
                 <Group gap="xs">
-                  <Loader color="violet" size="xs" />
+                  <Loader color="orange" size="xs" />
                   <Text c="dimmed" size="sm">
                     {t('Завантаження валют')}
                   </Text>

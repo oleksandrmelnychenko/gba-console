@@ -75,6 +75,7 @@ import {
   searchAvailablePaymentRegisters,
   setAvailablePaymentTaskToActive,
 } from '../api/availablePaymentsApi'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import {
   TaskStatusValue,
   type AccountingTypeValue,
@@ -1545,7 +1546,7 @@ function AvailablePaymentOutcomeForm({
               <Button color="gray" disabled={isSaving} type="button" variant="light" onClick={onCancel}>
                 {t('Скасувати')}
               </Button>
-              <Button color="violet" leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} type="submit">
+              <Button color={CREATE_ACTION_COLOR} leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} type="submit">
                 {t('Створити')}
               </Button>
             </Group>
@@ -1908,7 +1909,7 @@ function PaymentTab({
           )}
           {!isDone && (
             <Button
-              color="violet"
+              color={CREATE_ACTION_COLOR}
               disabled={isSaving || isUnsupported || !isAvailableForPayment}
               leftSection={<IconCash size={16} />}
               onClick={onCreateOutcome}

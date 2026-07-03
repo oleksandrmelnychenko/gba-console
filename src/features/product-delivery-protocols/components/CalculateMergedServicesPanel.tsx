@@ -4,6 +4,7 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import type { CalculateMergedServiceInvoiceItem, MergedService, SupplyExtraChargeType } from '../detailTypes'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 
 type CalculateSubmit = {
   extraChargeType: SupplyExtraChargeType
@@ -172,7 +173,7 @@ function CalculateMergedServicesPanelContent({
         </Text>
 
         <Group justify="flex-end">
-          <Button color="violet" disabled={isSaving} loading={isSaving} onClick={handleSubmit}>
+          <Button color={CREATE_ACTION_COLOR} disabled={isSaving} loading={isSaving} onClick={handleSubmit}>
             {t('Розрахувати')}
           </Button>
         </Group>

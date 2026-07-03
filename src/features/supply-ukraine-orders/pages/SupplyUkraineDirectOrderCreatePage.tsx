@@ -583,7 +583,7 @@ function OrderDetailsSection({
         onChange={onAgreementChange}
       />
       {selectedClientAgreement?.Agreement?.Currency && (
-        <Badge color="violet" variant="light">
+        <Badge className="app-role-pill" variant="light">
           {t('Валюта')}: {selectedClientAgreement.Agreement.Currency.Code || selectedClientAgreement.Agreement.Currency.Name || '-'}
         </Badge>
       )}

@@ -5,6 +5,7 @@ import { AppModal } from '../../../shared/ui/AppModal'
 import { useAuth } from '../../auth/useAuth'
 import type { ProtocolDetail } from '../detailTypes'
 import { getProtocolStatusActionLabel } from '../protocolStatus'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 
 const CHANGE_STATUS_PERMISSION = 'ProductDeliveryProtocols_unified_services_ChangeStatusBtn_PKEY'
 
@@ -29,7 +30,7 @@ export function StatusSection({
     <>
       <Card withBorder radius="md" padding="md">
         <Button
-          color="violet"
+          color={CREATE_ACTION_COLOR}
           disabled={!canChangeStatus}
           fullWidth
           loading={canChangeStatus && isUpdating}
@@ -55,7 +56,7 @@ export function StatusSection({
             {t('Скасувати')}
           </Button>
           <Button
-            color="violet"
+            color={CREATE_ACTION_COLOR}
             loading={isUpdating}
             onClick={() => {
               setConfirmOpen(false)

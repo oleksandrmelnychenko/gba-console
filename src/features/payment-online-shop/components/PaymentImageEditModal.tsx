@@ -4,6 +4,7 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import type { RetailClientPaymentImageItem } from '../types'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 
 export type PaymentImageEditModalProps = {
   editError: string | null
@@ -80,7 +81,7 @@ function PaymentImageEditForm({ editError, isSaving, item, onClose, onConfirm }:
         <Button color="gray" variant="light" onClick={onClose}>
           {t('Скасувати')}
         </Button>
-        <Button color="violet" loading={isSaving} onClick={handleConfirm}>
+        <Button color={CREATE_ACTION_COLOR} loading={isSaving} onClick={handleConfirm}>
           {t('Підтвердити')}
         </Button>
       </Group>

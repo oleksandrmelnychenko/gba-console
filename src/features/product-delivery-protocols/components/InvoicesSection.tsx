@@ -158,7 +158,7 @@ function InvoiceViewCard({
           </Button>
           {canEditDeliveryDocuments && (
             <Button
-              color="violet"
+              color={CREATE_ACTION_COLOR}
               disabled={isSaving}
               leftSection={<IconDeviceFloppy size={16} />}
               loading={isSaving}
@@ -547,7 +547,7 @@ export function InvoicesSection({
       <Group justify="space-between" align="center">
         <Text fw={700}>{t('Інвойси')}</Text>
         {canManageInvoices && (
-          <Button color="violet" disabled={status.isAssigning} variant="light" onClick={() => setDrawerOpened(true)}>
+          <Button color={CREATE_ACTION_COLOR} disabled={status.isAssigning} variant="light" onClick={() => setDrawerOpened(true)}>
             {t('Управління інвойсами')}
           </Button>
         )}

@@ -19,6 +19,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import type { DepreciatedOrderCreateFromFilePayload, DepreciatedOrderStorage } from '../types'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 
 export type DepreciatedOrderCreateModalProps = {
   createError: string | null
@@ -235,7 +236,7 @@ export function DepreciatedOrderCreateModal({
             <Button color="red" disabled={isCreating} type="button" variant="subtle" onClick={closeModal}>
               {t('Скасувати')}
             </Button>
-            <Button color="violet" loading={isCreating} type="submit">
+            <Button color={CREATE_ACTION_COLOR} loading={isCreating} type="submit">
               {t('Списати')}
             </Button>
           </Group>

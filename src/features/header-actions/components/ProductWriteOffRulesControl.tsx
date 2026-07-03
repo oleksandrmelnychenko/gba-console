@@ -160,7 +160,7 @@ export function ProductWriteOffRulesControl() {
 
         {state.isLoading && (
           <Group gap="xs">
-            <Loader size="xs" color="violet" />
+            <Loader size="xs" color="orange" />
             <Text size="sm" c="dimmed">
               {t('Завантаження')}
             </Text>

@@ -40,6 +40,7 @@ import {
 } from '../api/supplyReturnsApi'
 import type { SupplyReturn, SupplyReturnExportDocument, SupplyReturnItem } from '../types'
 import './supply-returns-page.css'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 
 type FilterDraft = {
   from: string
@@ -477,7 +478,7 @@ function SupplyReturnDetailDrawer({ model }: { model: ReturnType<typeof useSuppl
         <>
           <Group justify="flex-end" mb="md">
             <Button
-              color="violet"
+              color={CREATE_ACTION_COLOR}
               disabled={!selectedReturn.NetUid}
               leftSection={<IconDownload size={16} />}
               loading={isDownloading}
@@ -562,7 +563,7 @@ function useSupplyReturnColumns(
         accessor: (supplyReturn) => Boolean(supplyReturn.IsManagement),
         cell: (supplyReturn) =>
           supplyReturn.IsManagement ? (
-            <Badge color="violet" variant="light">
+            <Badge className="app-role-pill" variant="light">
               {t('Так')}
             </Badge>
           ) : (
@@ -767,7 +768,7 @@ function SupplyReturnDetail({
 
       <Group gap="xs">
         {supplyReturn.IsManagement && (
-          <Badge color="violet" variant="light">
+          <Badge className="app-role-pill" variant="light">
             {t('Управ.')}
           </Badge>
         )}

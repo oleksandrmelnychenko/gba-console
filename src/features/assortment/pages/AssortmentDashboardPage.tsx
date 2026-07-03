@@ -64,7 +64,7 @@ const BAND_META: Record<string, { label: string; color: string }> = {
   overstock: { label: 'Надлишок', color: 'blue' },
   understock: { label: 'Дефіцит', color: 'orange' },
   dead: { label: 'Мертві', color: 'red' },
-  order_to_demand: { label: 'Під замовлення', color: 'grape' },
+  order_to_demand: { label: 'Під замовлення', color: 'orange' },
 }
 
 const BAND_ORDER = ['healthy', 'slow', 'overstock', 'understock', 'order_to_demand', 'dead']
@@ -544,7 +544,7 @@ function AssortmentKpis({
   return (
     <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="md">
       <KpiTile
-        color="violet"
+        color="gray"
         icon={<IconBuildingWarehouse size={22} />}
         label={t('Вартість запасів')}
         sub={`${formatInt(body?.total_skus)} SKU`}
@@ -712,7 +712,7 @@ function AssortmentRatings({
           onPick={onPick}
         />
         <RankList
-          color="grape"
+          color="orange"
           empty={t('Немає даних')}
           icon={<IconArrowBackUp size={16} />}
           metric={(row: AssortmentMarginRow) => pct(row.return_rate ?? null)}

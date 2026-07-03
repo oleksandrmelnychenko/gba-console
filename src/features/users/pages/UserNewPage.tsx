@@ -198,7 +198,7 @@ export function UserNewPage() {
 
               {isLoadingRoles && (
                 <Group gap="xs">
-                  <Loader color="violet" size="xs" />
+                  <Loader color="orange" size="xs" />
                   <Text c="dimmed" size="sm">
                     {t('Завантаження ролей')}
                   </Text>

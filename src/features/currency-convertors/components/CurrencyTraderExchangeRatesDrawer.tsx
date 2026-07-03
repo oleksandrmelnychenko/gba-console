@@ -16,6 +16,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { CURRENCY_ORDER } from '../types'
 import type { CurrencyTrader, CurrencyTraderExchangeRate } from '../types'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 
 type NewRateDraft = {
   date: string
@@ -104,7 +105,7 @@ export function CurrencyTraderExchangeRatesDrawer({
             onChange={(event) => onChangeTo(event.currentTarget.value)}
           />
           {canEdit && showAddButton && !isAdding && (
-            <Button color="violet" leftSection={<IconPlus size={16} />} onClick={onStartAdd}>
+            <Button color={CREATE_ACTION_COLOR} leftSection={<IconPlus size={16} />} onClick={onStartAdd}>
               {t('Добавити курс валют')}
             </Button>
           )}
@@ -138,7 +139,7 @@ export function CurrencyTraderExchangeRatesDrawer({
                 <Button color="gray" disabled={isSaving} variant="light" onClick={onCancelAdd}>
                   {t('Скасувати')}
                 </Button>
-                <Button color="violet" leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} onClick={onSaveNewRate}>
+                <Button color={CREATE_ACTION_COLOR} leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} onClick={onSaveNewRate}>
                   {t('Зберегти')}
                 </Button>
               </Group>
@@ -191,7 +192,7 @@ export function CurrencyTraderExchangeRatesDrawer({
                             <>
                               <ActionIcon
                                 aria-label={t('Зберегти')}
-                                color="violet"
+                                color="gray"
                                 loading={isSaving}
                                 variant="light"
                                 onClick={onSaveEdit}

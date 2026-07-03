@@ -244,7 +244,7 @@ export function ActProvidingServiceDetailBody({ model }: { model: ActProvidingSe
                   {displayValue(displayModel.number)} · {formatDateTime(displayModel.date)}
                 </Text>
               </Stack>
-              <Badge color={displayModel.accountingMarker ? 'violet' : 'green'} size="lg" variant="light">
+              <Badge className={displayModel.accountingMarker ? 'app-role-pill is-orange' : 'app-role-pill is-green'} size="lg" variant="light">
                 {displayModel.accountingMarker ? t('Бухгалтерський') : t('Управлінський')}
               </Badge>
             </Group>

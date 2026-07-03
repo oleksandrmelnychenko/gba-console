@@ -62,6 +62,7 @@ import {
   getTaxFreeStatusOptions,
 } from '../utils'
 import './tax-free-documents-page.css'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 
 const FILTER_STORAGE_KEY = 'taxFreeDocumentFilters:v2'
 
@@ -670,7 +671,7 @@ function TaxFreeAccountingActionModal({
 
         <Stack gap="xs">
           <Button
-            color="violet"
+            color={CREATE_ACTION_COLOR}
             justify="space-between"
             leftSection={<IconCash size={17} />}
             rightSection={<IconChevronRight size={16} />}
@@ -1329,7 +1330,7 @@ function TaxFreeStatusPanel({
 
       <Stack gap="xs">
         {getStatusTimeline(document).map((item) => (
-          <Group key={item.status} justify="space-between" p="sm" bg={item.active ? 'violet.0' : 'gray.0'} style={{ borderRadius: 6 }}>
+          <Group key={item.status} justify="space-between" p="sm" bg={item.active ? 'orange-0' : 'gray.0'} style={{ borderRadius: 6 }}>
             <Text fw={item.active ? 700 : 500}>{getTaxFreeStatusLabel(item.status)}</Text>
             <Text size="sm" c="dimmed">
               {formatDateTime(item.date) || '---'}
@@ -1641,7 +1642,7 @@ function getStatusColor(status?: TaxFreeStatus) {
     case TaxFreeStatus.Printed:
       return 'cyan'
     case TaxFreeStatus.Formed:
-      return 'violet'
+      return 'orange'
     case TaxFreeStatus.NotFormed:
       return 'gray'
     default:

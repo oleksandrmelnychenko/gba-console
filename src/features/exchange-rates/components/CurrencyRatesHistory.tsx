@@ -18,7 +18,7 @@ export function CurrencyRatesHistory({ error, isLoading, items, selectedRate }: 
     <ScrollArea className="exchange-rates-history-scroll" type="auto">
       {isLoading && (
         <Group gap="xs" justify="center" className="exchange-rates-history-state">
-          <Loader size="xs" color="violet" />
+          <Loader size="xs" color="orange" />
           <Text size="sm" c="dimmed">
             {t('Завантаження')}
           </Text>

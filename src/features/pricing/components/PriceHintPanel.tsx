@@ -110,7 +110,7 @@ export function PriceHintPanel({ productNetId, clientAgreementNetId }: PriceHint
   if (isLoading) {
     return (
       <Group justify="center" py="md">
-        <Loader color="violet" size="sm" />
+        <Loader color="orange" size="sm" />
         <Text c="dimmed" size="sm">
           {t('Розрахунок ціни')}
         </Text>
@@ -175,7 +175,7 @@ function PriceHintCard({ recommendation }: { recommendation: PriceRecommendation
           </Badge>
         )}
         {recommendation.suggested_discount_pct !== null && (
-          <Badge color="violet" size="sm" variant="light">
+          <Badge className="app-role-pill" size="sm" variant="light">
             {t('знижка')} {formatPercent(recommendation.suggested_discount_pct)}
           </Badge>
         )}
@@ -208,7 +208,7 @@ function PricePositioningCharts({
 
   const markers: RangeBandMarker[] = [
     { value: recommendation.price_floor, label: t('мін.'), color: 'gray.6' },
-    { value: recommendation.recommended_price, label: t('реком.'), color: 'violet.7', dashed: false },
+    { value: recommendation.recommended_price, label: t('реком.'), color: 'orange.7', dashed: false },
     { value: recommendation.baseline_price, label: t('база'), color: 'orange.6' },
   ]
 
@@ -218,7 +218,7 @@ function PricePositioningCharts({
   const waterfallSteps = [
     { key: 'cost', label: t('собівартість'), value: recommendation.unit_cost_eur, color: 'gray.5' },
     { key: 'floor', label: t('мін. ціна'), value: recommendation.price_floor, color: 'blue.5' },
-    { key: 'recommended', label: t('рекомендована'), value: recommendation.recommended_price, color: 'violet.6' },
+    { key: 'recommended', label: t('рекомендована'), value: recommendation.recommended_price, color: 'orange.6' },
     { key: 'baseline', label: t('базова'), value: recommendation.baseline_price, color: 'orange.5' },
   ]
   const showWaterfall = waterfallSteps.filter((step) => isFiniteValue(step.value)).length >= 2

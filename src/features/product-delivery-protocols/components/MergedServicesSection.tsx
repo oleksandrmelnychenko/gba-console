@@ -21,6 +21,7 @@ import { CalculateMergedServicesPanel } from './CalculateMergedServicesPanel'
 import { MergedServiceEditCard, type MergedServiceEditFiles } from './MergedServiceEditCard'
 import { MergedServiceViewCard } from './MergedServiceViewCard'
 import { NewMergedServiceForm } from './NewMergedServiceForm'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 
 const ADD_MERGED_SERVICE_PERMISSION = 'ProductDeliveryProtocols_unified_services_AddBtn_PKEY'
 
@@ -229,7 +230,7 @@ export function MergedServicesSection({
         <Text fw={700}>{t('Об’єднані сервіси')}</Text>
         {canAddService && (
           <Button
-            color="violet"
+            color={CREATE_ACTION_COLOR}
             disabled={isSaving}
             leftSection={<IconPlus size={16} />}
             variant="light"

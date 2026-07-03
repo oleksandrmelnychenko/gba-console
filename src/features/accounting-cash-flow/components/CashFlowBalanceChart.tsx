@@ -54,7 +54,7 @@ export function CashFlowBalanceChart({
         fillOpacity={0.18}
         gridAxis="y"
         h={170}
-        series={[{ color: 'violet.6', label: t('Баланс'), name: 'balance' }]}
+        series={[{ color: 'orange.6', label: t('Баланс'), name: 'balance' }]}
         tickLine="y"
         valueFormatter={(value) => formatMoney(value)}
         withDots={false}

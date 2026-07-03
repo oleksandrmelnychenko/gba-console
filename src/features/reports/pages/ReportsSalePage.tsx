@@ -116,7 +116,7 @@ export function ReportsSalePage() {
   return (
     <Stack gap="lg">
       <Group justify="flex-end" align="center">
-        <Badge color={activeSheet ? 'gray' : 'violet'} variant="light">
+        <Badge className={activeSheet ? 'app-role-pill is-gray' : 'app-role-pill is-orange'} variant="light">
           {isLoading ? t('Читання файлу') : activeSheet ? `${t('Рядків')}: ${visibleRows.length}` : t('Файл не вибрано')}
         </Badge>
       </Group>

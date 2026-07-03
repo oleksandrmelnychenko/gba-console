@@ -75,7 +75,7 @@ export function CurrencyRatesFooter() {
   if (isLoading) {
     return (
       <Group gap="xs" wrap="nowrap">
-        <Loader size="xs" color="violet" />
+        <Loader size="xs" color="orange" />
         <Text size="xs" c="dimmed">
           {t('Завантаження')}
         </Text>
@@ -147,7 +147,7 @@ function RateGroup({
       onClick={onClick}
       aria-pressed={isSelected}
     >
-      <Badge className="rate-group-badge" color="violet" variant={isSelected ? 'filled' : 'light'} size="xs" radius="xl">
+      <Badge className="rate-group-badge app-role-pill" variant={isSelected ? 'filled' : 'light'} size="xs" radius="xl">
         {group.title}
       </Badge>
       {group.rates.map((rate) => (

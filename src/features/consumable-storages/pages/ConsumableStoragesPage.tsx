@@ -999,7 +999,7 @@ function useDeprecatedConsumableOrderColumns({
             <Tooltip label={t('Редагувати')}>
               <ActionIcon
                 aria-label={t('Редагувати')}
-                color="violet"
+                color="gray"
                 disabled={!row.order.NetUid}
                 size="sm"
                 variant="subtle"

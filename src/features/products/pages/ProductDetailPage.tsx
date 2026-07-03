@@ -1310,7 +1310,7 @@ function ProductImagesPanel({ onProductSaved, product }: { onProductSaved: (prod
                   <Image src={preview.url} alt={preview.file.name || getProductTitle(product)} h={190} fit="contain" radius="sm" />
                 </button>
                 <Group justify="space-between" gap="xs" wrap="nowrap">
-                  <Badge color="violet" variant="light">
+                  <Badge className="app-role-pill" variant="light">
                     {t('Нове')}
                   </Badge>
                   <Text size="sm" c="dimmed" truncate="end">

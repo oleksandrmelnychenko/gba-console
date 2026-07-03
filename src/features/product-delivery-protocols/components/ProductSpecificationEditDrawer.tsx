@@ -11,6 +11,7 @@ import type {
   SpecificationProduct,
 } from '../specificationTypes'
 import { getLatestProductSpecification, getProductSpecificationDateTime } from '../productSpecificationLatest'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 
 export type ProductSpecificationDraft = {
   customsValue: number | ''
@@ -159,7 +160,7 @@ function ProductSpecificationEditDrawerContent({
               {t('Скасувати')}
             </Button>
             {canSave && (
-              <Button color="violet" leftSection={<IconCheck size={16} />} loading={isSaving} onClick={submit}>
+              <Button color={CREATE_ACTION_COLOR} leftSection={<IconCheck size={16} />} loading={isSaving} onClick={submit}>
                 {t('Змінити')}
               </Button>
             )}

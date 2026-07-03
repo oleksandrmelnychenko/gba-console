@@ -250,7 +250,7 @@ export function PaymentDeliveryProtocolsSection({
           {t('Протоколи доставки')}
         </Text>
         {canCreateProtocol && (
-          <Button color="violet" leftSection={<IconPlus size={16} />} variant="light" onClick={() => setFormOpen(true)}>
+          <Button color={CREATE_ACTION_COLOR} leftSection={<IconPlus size={16} />} variant="light" onClick={() => setFormOpen(true)}>
             {t('Створити платіжну задачу')}
           </Button>
         )}

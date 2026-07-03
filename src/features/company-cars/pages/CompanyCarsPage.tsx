@@ -359,7 +359,7 @@ function useCompanyCarColumns({
             <Tooltip label={t('Редагувати')}>
               <ActionIcon
                 aria-label={t('Редагувати')}
-                color="violet"
+                color="gray"
                 disabled={!companyCar.NetUid}
                 size="sm"
                 variant="subtle"
