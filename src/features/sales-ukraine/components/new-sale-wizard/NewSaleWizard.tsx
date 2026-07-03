@@ -61,16 +61,16 @@ export function NewSaleWizard({
         closeOnEscape={false}
         closeOnClickOutside={false}
         size="100%"
-        padding="lg"
+        padding="xs"
         overlayProps={{ backgroundOpacity: 0.25, blur: 2 }}
         transitionProps={{ transition: 'pop', duration: 200 }}
         styles={{
-          inner: { padding: 8 },
+          inner: { padding: 4 },
           content: {
             width: '100%',
             maxWidth: '100%',
-            height: 'calc(100dvh - 16px)',
-            maxHeight: 'calc(100dvh - 16px)',
+            height: 'calc(100dvh - 8px)',
+            maxHeight: 'calc(100dvh - 8px)',
             borderRadius: 14,
             display: 'flex',
             flexDirection: 'column',
