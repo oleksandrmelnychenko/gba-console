@@ -46,25 +46,25 @@ export function CartReserveCard({ cart, index, isExpanded, onOpenClient, onToggl
       <Stack gap="sm">
         <Group justify="space-between" align="flex-start" wrap="nowrap">
           <Stack gap={2}>
-            <Anchor fw={700} onClick={() => onOpenClient(cart)}>
+            <Anchor c="dark.6" fw={600} underline="always" onClick={() => onOpenClient(cart)}>
               {clientName || t('Без назви')}
             </Anchor>
-            <Text size="xs" c="dimmed">
+            <Text c="dimmed" size="xs" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>
               {t('Дійсно до')}: {formatCartDate(cart.ValidUntil)}
             </Text>
           </Stack>
 
           <Group gap="sm" align="center" wrap="nowrap">
             <Stack gap={2} align="flex-end">
-              <Text fw={700}>
+              <Text className="app-money" fw={600}>
                 {formatMoney(cart.TotalAmount)} {getCartCurrencyCode()}
               </Text>
-              <Text size="sm" c="dimmed">
+              <Text className="app-money app-money-meta" size="sm">
                 {formatMoney(cart.TotalLocalAmount)} {localCurrencyCode}
               </Text>
             </Stack>
 
-            <Badge color={getDaysColor(daysRemaining)} variant="light">
+            <Badge className={`app-role-pill ${getDaysPillClass(daysRemaining)}`} variant="light">
               {daysRemaining == null
                 ? ''
                 : `${t('Залишилось днів')}: ${daysRemaining}`}
@@ -100,20 +100,20 @@ export function CartReserveCard({ cart, index, isExpanded, onOpenClient, onToggl
   )
 }
 
-function getDaysColor(daysRemaining: number | null): string {
+function getDaysPillClass(daysRemaining: number | null): string {
   if (daysRemaining == null) {
-    return 'gray'
+    return 'is-gray'
   }
 
   if (daysRemaining <= 0) {
-    return 'red'
+    return 'is-red'
   }
 
   if (daysRemaining <= 3) {
-    return 'orange'
+    return 'is-orange'
   }
 
-  return 'green'
+  return 'is-green'
 }
 
 function useCartItemColumns(localCurrencyCode: string, onOpenProductCard: (productNetId: string) => void) {
@@ -131,9 +131,12 @@ function useCartItemColumns(localCurrencyCode: string, onOpenProductCard: (produ
 
           return netId ? (
             <Anchor
+              c="dark.6"
               component="button"
               fw={600}
+              style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}
               type="button"
+              underline="always"
               onClick={(event) => {
                 event.stopPropagation()
                 onOpenProductCard(netId)
@@ -142,7 +145,7 @@ function useCartItemColumns(localCurrencyCode: string, onOpenProductCard: (produ
               {code}
             </Anchor>
           ) : (
-            <Text fw={600}>{code}</Text>
+            <Text fw={600} style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{code}</Text>
           )
         },
       },
@@ -156,9 +159,11 @@ function useCartItemColumns(localCurrencyCode: string, onOpenProductCard: (produ
           <Stack gap={0}>
             {item.Product?.NetUid ? (
               <Anchor
+                c="dark.6"
                 component="button"
                 size="sm"
                 type="button"
+                underline="always"
                 onClick={(event) => {
                   event.stopPropagation()
                   onOpenProductCard(item.Product?.NetUid as string)
@@ -185,7 +190,7 @@ function useCartItemColumns(localCurrencyCode: string, onOpenProductCard: (produ
         width: 180,
         minWidth: 140,
         accessor: (item) => item.Product?.MainOriginalNumber || '',
-        cell: (item) => item.Product?.MainOriginalNumber || '',
+        cell: (item) => <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{item.Product?.MainOriginalNumber || ''}</Text>,
       },
       {
         id: 'created',
@@ -195,8 +200,8 @@ function useCartItemColumns(localCurrencyCode: string, onOpenProductCard: (produ
         accessor: (item) => (item.Created ? new Date(item.Created).getTime() : 0),
         cell: (item) => (
           <Stack gap={0}>
-            <Text size="sm">{formatCartDate(item.Created) || ''}</Text>
-            <Text size="xs" c="dimmed">
+            <Text size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{formatCartDate(item.Created) || ''}</Text>
+            <Text c="dimmed" size="xs" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>
               {formatCartTime(item.Created)}
             </Text>
           </Stack>
@@ -216,7 +221,7 @@ function useCartItemColumns(localCurrencyCode: string, onOpenProductCard: (produ
         width: 160,
         minWidth: 130,
         accessor: (item) => item.AssignedSpecification?.SpecificationCode || '',
-        cell: (item) => item.AssignedSpecification?.SpecificationCode || '',
+        cell: (item) => <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{item.AssignedSpecification?.SpecificationCode || ''}</Text>,
       },
       {
         id: 'qty',
@@ -225,7 +230,7 @@ function useCartItemColumns(localCurrencyCode: string, onOpenProductCard: (produ
         minWidth: 90,
         align: 'right',
         accessor: (item) => item.Qty ?? 0,
-        cell: (item) => formatQty(item),
+        cell: (item) => <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{formatQty(item)}</Text>,
       },
       {
         id: 'amount',
@@ -236,10 +241,10 @@ function useCartItemColumns(localCurrencyCode: string, onOpenProductCard: (produ
         accessor: (item) => getOrderItemAmount(item, localCurrencyCode),
         cell: (item) => (
           <Stack gap={0} align="flex-end">
-            <Text fw={600}>
+            <Text className="app-money" fw={600} size="sm">
               {formatMoney(item.TotalAmountLocal)} {localCurrencyCode}
             </Text>
-            <Text size="xs" c="dimmed">
+            <Text className="app-money app-money-meta" size="xs">
               {formatMoney(getOrderItemAmount(item, localCurrencyCode))} {getOrderItemAmountCurrency(localCurrencyCode)}
             </Text>
           </Stack>
