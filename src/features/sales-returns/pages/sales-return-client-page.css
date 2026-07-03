@@ -38,6 +38,91 @@
   white-space: nowrap;
 }
 
+.sales-return-client-drawer-title,
+.sales-return-client-modal-title {
+  font-family: var(--font-mono);
+  letter-spacing: 0;
+}
+
+.sales-return-client-drawer .mantine-Button-label,
+.sales-return-client-command-bar .mantine-Button-label {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.sales-return-client-drawer-content {
+  min-width: 0;
+}
+
+.sales-return-client-drawer-actions {
+  margin-bottom: -4px;
+}
+
+.sales-return-client-section {
+  box-shadow: none;
+}
+
+.sales-return-client-form-grid {
+  align-items: end;
+}
+
+.sales-return-client-product-search {
+  flex-wrap: nowrap;
+}
+
+.sales-return-client-product-search .mantine-InputWrapper-root {
+  min-width: 0;
+}
+
+.sales-return-client-product-search .mantine-InputWrapper-root:first-child {
+  flex: 1 1 240px;
+}
+
+.sales-return-client-table-frame,
+.sales-return-client-batch-modal-table {
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.sales-return-client-mono-cell,
+.sales-return-client-number-cell,
+.sales-return-client-money-cell {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.25;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sales-return-client-mono-cell,
+.sales-return-client-number-cell {
+  color: var(--mantine-color-gray-8);
+}
+
+.sales-return-client-number-cell,
+.sales-return-client-money-cell {
+  text-align: right;
+}
+
+.sales-return-client-entity-cell {
+  color: var(--mantine-color-gray-8);
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.25;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 @media (max-width: 640px) {
   .sales-return-client-command-bar {
     grid-template-columns: minmax(0, 1fr);
@@ -46,5 +131,10 @@
   .sales-return-client-command-actions,
   .sales-return-client-create-actions {
     justify-content: flex-start;
+  }
+
+  .sales-return-client-product-search {
+    align-items: stretch;
+    flex-direction: column;
   }
 }

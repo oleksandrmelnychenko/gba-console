@@ -499,3 +499,42 @@
     overflow-x: auto;
   }
 }
+
+/* Leader-рядки деталки (§7.2). */
+.new-sale-return-detail-field {
+  align-items: baseline;
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+}
+
+.new-sale-return-detail-field::before {
+  border-bottom: 1px solid var(--mantine-color-gray-3);
+  content: '';
+  flex: 1 1 auto;
+  min-width: 24px;
+  order: 2;
+  transform: translateY(-3px);
+}
+
+.new-sale-return-detail-field > span {
+  color: var(--mantine-color-gray-8);
+  flex: 0 1 auto;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.3;
+  order: 1;
+  white-space: nowrap;
+}
+
+.new-sale-return-detail-field > strong {
+  color: var(--mantine-color-gray-9);
+  flex: 0 1 auto;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+  min-width: 0;
+  order: 3;
+  overflow-wrap: anywhere;
+  text-align: right;
+}

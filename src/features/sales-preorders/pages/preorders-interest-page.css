@@ -46,3 +46,85 @@
   flex: 1 1 auto;
   min-height: 0;
 }
+
+.preorders-interest-contact,
+.preorders-interest-product-name,
+.preorders-interest-product-name-link {
+  color: var(--mantine-color-gray-8);
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.25;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.preorders-interest-product-name-link {
+  color: var(--mantine-color-gray-8);
+  text-align: left;
+}
+
+.preorders-interest-product-code,
+.preorders-interest-product-code-link,
+.preorders-interest-date-value,
+.preorders-interest-date-time,
+.preorders-interest-qty {
+  font-family: var(--font-mono);
+  letter-spacing: 0;
+}
+
+.preorders-interest-product-code,
+.preorders-interest-product-code-link,
+.preorders-interest-date-value,
+.preorders-interest-qty {
+  color: var(--mantine-color-gray-8);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.preorders-interest-product-code,
+.preorders-interest-product-code-link {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.preorders-interest-product-code-link {
+  color: var(--mantine-color-gray-8);
+  text-align: left;
+}
+
+.preorders-interest-date-time {
+  color: var(--mantine-color-gray-6);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+.preorders-interest-comment {
+  color: var(--mantine-color-gray-7);
+  display: block;
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1.25;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.preorders-interest-qty {
+  display: block;
+  text-align: right;
+}
+
+.preorders-interest-load-more-button .mantine-Button-label {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0;
+}

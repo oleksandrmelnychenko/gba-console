@@ -657,13 +657,13 @@ export function NewUkraineSaleReturnPage() {
           />
         </div>
       </div>
-      <AppDrawer opened={Boolean(selectedReturn)} onClose={() => setSelectedReturn(null)} position="right" size="xl" title={t('Повернення')}>
+      <AppDrawer opened={Boolean(selectedReturn)} onClose={() => setSelectedReturn(null)} position="right" size="xl" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Повернення')}</span>}>
         {selectedReturn ? (
           <ReturnDetails saleReturn={selectedReturn} columns={detailColumns} />
         ) : null}
       </AppDrawer>
 
-      <AppDrawer opened={createOpened} onClose={() => setCreateOpened(false)} position="right" size="100%" title={t('Нове повернення')}>
+      <AppDrawer opened={createOpened} onClose={() => setCreateOpened(false)} position="right" size="100%" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Нове повернення')}</span>}>
         <Stack gap="md">
           {createError ? (
             <Alert color="red" icon={<IconAlertCircle size={16} />} title={t('Помилка')}>
@@ -724,7 +724,7 @@ export function NewUkraineSaleReturnPage() {
         </Stack>
       </AppDrawer>
 
-      <AppModal opened={reviewOpened} onClose={() => setReviewOpened(false)} size="xl" title={t('Перегляд повернення')}>
+      <AppModal opened={reviewOpened} onClose={() => setReviewOpened(false)} size="xl" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Перегляд повернення')}</span>}>
         <Stack gap="md">
           {reviewError ? (
             <Alert color="red" icon={<IconAlertCircle size={16} />} title={t('Помилка')}>
@@ -741,6 +741,8 @@ export function NewUkraineSaleReturnPage() {
                     <div style={{ minWidth: 0 }}>
                       {draft.orderItem.Product?.NetUid ? (
                         <Anchor
+                          c="dark.6"
+                          underline="always"
                           component="button"
                           display="block"
                           fw={600}
@@ -761,6 +763,8 @@ export function NewUkraineSaleReturnPage() {
                       )}
                       {draft.orderItem.Product?.NetUid ? (
                         <Anchor
+                          c="dark.6"
+                          underline="always"
                           component="button"
                           display="block"
                           maw="100%"
@@ -810,12 +814,14 @@ export function NewUkraineSaleReturnPage() {
         </Stack>
       </AppModal>
 
-      <AppModal opened={Boolean(editor)} onClose={() => setEditor(null)} size="lg" title={t('Позиція повернення')}>
+      <AppModal opened={Boolean(editor)} onClose={() => setEditor(null)} size="lg" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Позиція повернення')}</span>}>
         {editor ? (
           <Stack gap="md">
             <div>
               {editor.row.item.Product?.NetUid ? (
                 <Anchor
+                  c="dark.6"
+                  underline="always"
                   component="button"
                   fw={600}
                   type="button"
@@ -831,6 +837,8 @@ export function NewUkraineSaleReturnPage() {
               )}
               {editor.row.item.Product?.NetUid ? (
                 <Anchor
+                  c="dark.6"
+                  underline="always"
                   component="button"
                   display="block"
                   size="sm"
@@ -903,14 +911,14 @@ export function NewUkraineSaleReturnPage() {
         ) : null}
       </AppModal>
 
-      <AppModal opened={downloadModalOpened} onClose={() => setDownloadModalOpened(false)} title={t('Документи')}>
+      <AppModal opened={downloadModalOpened} onClose={() => setDownloadModalOpened(false)} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Документи')}</span>}>
         <Stack gap="sm">
           <DownloadLink icon={<ExcelIcon size={16} />} label={t('Excel')} url={downloadDocument?.DocumentURL || downloadDocument?.XlsxDocument} />
           <DownloadLink icon={<IconFileTypePdf size={16} />} label={t('PDF')} url={downloadDocument?.PdfDocumentURL || downloadDocument?.PdfDocument} />
         </Stack>
       </AppModal>
 
-      <AppModal opened={Boolean(cancelCandidate)} onClose={() => setCancelCandidate(null)} title={t('Скасувати повернення')}>
+      <AppModal opened={Boolean(cancelCandidate)} onClose={() => setCancelCandidate(null)} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Скасувати повернення')}</span>}>
         <Stack gap="md">
           <Text>{t('Скасувати повернення')} {cancelCandidate?.Number}?</Text>
           <Group justify="flex-end">
@@ -1201,8 +1209,8 @@ function ReturnAmountCell({ saleReturn }: { saleReturn: SalesReturn }) {
 
   return (
     <span className="new-sale-return-amount-cell">
-      <strong>{formatMoney(saleReturn.TotalAmountLocal)}</strong>
-      <small>{currency}</small>
+      <strong className="app-money">{formatMoney(saleReturn.TotalAmountLocal)}</strong>
+      <small className="app-money-meta">{currency}</small>
     </span>
   )
 }
@@ -1386,6 +1394,8 @@ function useSaleItemColumns({
           return (
             <Anchor
               bg={isHighlighted ? '#78ff33' : undefined}
+              c="dark.6"
+              underline="always"
               component="button"
               fw={600}
               px={isHighlighted ? 4 : undefined}
@@ -1410,6 +1420,8 @@ function useSaleItemColumns({
 
           return netId ? (
             <Anchor
+              c="dark.6"
+              underline="always"
               component="button"
               size="sm"
               type="button"
@@ -1453,7 +1465,7 @@ function useSaleItemColumns({
         id: 'price',
         header: t('Сума'),
         accessor: (row) => row.item.TotalAmountLocal,
-        cell: (row) => formatMoney(row.item.TotalAmountLocal),
+        cell: (row) => <span className="app-money">{formatMoney(row.item.TotalAmountLocal)}</span>,
         align: 'right',
         width: 120,
       },
@@ -1464,10 +1476,10 @@ function useSaleItemColumns({
           const draft = drafts.find((item) => getOrderItemKey(item.orderItem) === getOrderItemKey(row.item))
 
           return draft ? (
-            <Badge variant="light">
+            <Badge className="app-role-pill" variant="light">
               {formatAmount(draft.qty)} · {getStatusLabel(draft.status, t)}
             </Badge>
-          ) : '—'
+          ) : ''
         },
         width: 240,
       },
@@ -1507,6 +1519,8 @@ function useDetailColumns({
 
           return netId ? (
             <Anchor
+              c="dark.6"
+              underline="always"
               component="button"
               fw={600}
               type="button"
@@ -1532,6 +1546,8 @@ function useDetailColumns({
 
           return netId ? (
             <Anchor
+              c="dark.6"
+              underline="always"
               component="button"
               size="sm"
               type="button"
@@ -1574,7 +1590,7 @@ function useDetailColumns({
         id: 'amount',
         header: t('Сума'),
         accessor: (item) => item.AmountLocal,
-        cell: (item) => formatMoney(item.AmountLocal),
+        cell: (item) => <span className="app-money">{formatMoney(item.AmountLocal)}</span>,
         align: 'right',
         width: 120,
       },
@@ -1582,7 +1598,7 @@ function useDetailColumns({
         id: 'vatAmount',
         header: t('ПДВ'),
         accessor: (item) => (item.OrderItem?.Order?.Sale?.IsVatSale ? item.VatAmountLocal : undefined),
-        cell: (item) => (item.OrderItem?.Order?.Sale?.IsVatSale ? formatMoney(item.VatAmountLocal) : '—'),
+        cell: (item) => (item.OrderItem?.Order?.Sale?.IsVatSale ? <span className="app-money">{formatMoney(item.VatAmountLocal)}</span> : ''),
         align: 'right',
         width: 120,
       },
@@ -1640,7 +1656,7 @@ function DownloadLink({
   }
 
   return (
-    <Anchor href={url} target="_blank" rel="noreferrer">
+    <Anchor c="dark.6" href={url} rel="noreferrer" target="_blank" underline="always">
       <Group gap="xs">
         {icon}
         <span>{label}</span>
@@ -1650,10 +1666,12 @@ function DownloadLink({
 }
 
 function DetailValue({ label, value }: { label: string; value: unknown }) {
+  const text = displayValue(value)
+
   return (
-    <div>
-      <Text size="xs" c="dimmed">{label}</Text>
-      <Text fw={600}>{displayValue(value)}</Text>
+    <div className="new-sale-return-detail-field">
+      <span>{label}</span>
+      <strong>{text}</strong>
     </div>
   )
 }

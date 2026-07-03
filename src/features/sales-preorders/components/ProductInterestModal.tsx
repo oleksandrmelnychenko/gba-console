@@ -5,7 +5,9 @@ import { type FormEvent } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { createPreorder } from '../api/salesPreordersApi'
+import './product-interest-modal.css'
 
 export type ProductInterestModalProps = {
   clientAgreementNetId: string
@@ -85,7 +87,14 @@ export function ProductInterestModal({
   }
 
   return (
-    <AppModal centered opened={opened} size="xs" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Зацікавленість')}</span>} onClose={closeModal}>
+    <AppModal
+      centered
+      className="product-interest-modal"
+      opened={opened}
+      size="xs"
+      title={<span className="product-interest-modal__title">{t('Зацікавленість')}</span>}
+      onClose={closeModal}
+    >
       <form onSubmit={submitForm}>
         <Stack gap="sm">
           <NumberInput
@@ -114,7 +123,7 @@ export function ProductInterestModal({
             <Button color="gray" disabled={isCreating} type="button" variant="light" onClick={closeModal}>
               {t('Скасувати')}
             </Button>
-            <Button loading={isCreating} type="submit">
+            <Button color={CREATE_ACTION_COLOR} loading={isCreating} type="submit">
               {t('Створити')}
             </Button>
           </Group>
