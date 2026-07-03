@@ -34,7 +34,7 @@ import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableD
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
-import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import {
@@ -401,12 +401,6 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
 
   return (
     <Stack className="product-capitalizations-page" gap={6}>
-      <PageHeaderActions>
-        <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} onClick={() => setCreatePanelOpened(true)}>
-          {t('Нове оприбуткування')}
-        </Button>
-      </PageHeaderActions>
-
       <Card className="app-data-card product-capitalizations-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar product-capitalizations-filter-bar">
           <div className="product-capitalizations-filter-row">
@@ -426,7 +420,7 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
                   w={150}
                   onChange={(event) => { const nextValue = event.currentTarget.value; setFilterDraft((current) => ({ ...current, to: nextValue })) }}
                 />
-                <Button color="violet" type="submit">
+                <Button color="gray" styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} type="submit" variant="light">
                   {t('Застосувати')}
                 </Button>
               </Group>
@@ -451,6 +445,15 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
                 onRefresh={reload}
               />
             </div>
+            <Button
+              color={CREATE_ACTION_COLOR}
+              leftSection={<IconPlus size={16} />}
+              size="sm"
+              styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
+              onClick={() => setCreatePanelOpened(true)}
+            >
+              {t('Нове оприбуткування')}
+            </Button>
           </div>
         </div>
 
@@ -508,7 +511,7 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
       <AppModal
         centered
         opened={downloadModalOpened}
-        title={t('Експорт оприбуткування')}
+        title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Експорт оприбуткування')}</span>}
         onClose={() => setDownloadModalOpened(false)}
       >
         <Stack gap="sm">
