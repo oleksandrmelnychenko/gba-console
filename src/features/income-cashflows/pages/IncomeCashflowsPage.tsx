@@ -23,7 +23,7 @@ import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -521,54 +521,6 @@ function IncomeCashflowsContent({ model }: { model: IncomeCashflowsPageModel }) 
 
   return (
     <Stack gap="lg">
-      <PageHeaderActions>
-        <Menu position="bottom-end" shadow="md" width={300} withinPortal>
-          <Menu.Target>
-            <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} rightSection={<IconChevronDown size={14} />}>
-              {t('Новий')}
-            </Button>
-          </Menu.Target>
-          <Menu.Dropdown>
-            <Menu.Label>{t('Каса')}</Menu.Label>
-            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/conversion?type=0', { state: { backgroundLocation: location } })}>
-              {t('Інший касовий прихід')}
-            </Menu.Item>
-            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/client?type=0&operationType=0', { state: { backgroundLocation: location } })}>
-              {t('Оплата покупця')}
-            </Menu.Item>
-            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/client?type=0&operationType=1', { state: { backgroundLocation: location } })}>
-              {t('Повернення постачальника')}
-            </Menu.Item>
-            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/client?type=0&operationType=2', { state: { backgroundLocation: location } })}>
-              {t('Інші з контрагентами')}
-            </Menu.Item>
-            <Menu.Divider />
-            <Menu.Label>{t('Банк')}</Menu.Label>
-            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/conversion?type=2', { state: { backgroundLocation: location } })}>
-              {t('Інші надходження на рахунок')}
-            </Menu.Item>
-            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/client?type=2&operationType=0', { state: { backgroundLocation: location } })}>
-              {t('Оплата покупця')}
-            </Menu.Item>
-            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/client?type=2&operationType=1', { state: { backgroundLocation: location } })}>
-              {t('Повернення постачальника')}
-            </Menu.Item>
-            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/client?type=2&operationType=2', { state: { backgroundLocation: location } })}>
-              {t('Інші з контрагентами')}
-            </Menu.Item>
-            <Menu.Divider />
-            <Menu.Label>{t('Колеги')}</Menu.Label>
-            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/user', { state: { backgroundLocation: location } })}>
-              {t('Повернення від колеги')}
-            </Menu.Item>
-            <Menu.Divider />
-            <Menu.Label>{t('Магазин')}</Menu.Label>
-            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/shop', { state: { backgroundLocation: location } })}>
-              {t('Оплата магазину')}
-            </Menu.Item>
-          </Menu.Dropdown>
-        </Menu>
-      </PageHeaderActions>
 
       <Card className="app-data-card income-cashflows-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar">
@@ -639,6 +591,52 @@ function IncomeCashflowsContent({ model }: { model: IncomeCashflowsPageModel }) 
               </Tooltip>
               <DataTableDensityToggle density={density} onToggle={onToggleDensity} size={34} />
             </div>
+            <Menu position="bottom-end" shadow="md" width={300} withinPortal>
+          <Menu.Target>
+            <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} rightSection={<IconChevronDown size={14} />} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}>
+              {t('Новий')}
+            </Button>
+          </Menu.Target>
+          <Menu.Dropdown>
+            <Menu.Label>{t('Каса')}</Menu.Label>
+            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/conversion?type=0', { state: { backgroundLocation: location } })}>
+              {t('Інший касовий прихід')}
+            </Menu.Item>
+            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/client?type=0&operationType=0', { state: { backgroundLocation: location } })}>
+              {t('Оплата покупця')}
+            </Menu.Item>
+            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/client?type=0&operationType=1', { state: { backgroundLocation: location } })}>
+              {t('Повернення постачальника')}
+            </Menu.Item>
+            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/client?type=0&operationType=2', { state: { backgroundLocation: location } })}>
+              {t('Інші з контрагентами')}
+            </Menu.Item>
+            <Menu.Divider />
+            <Menu.Label>{t('Банк')}</Menu.Label>
+            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/conversion?type=2', { state: { backgroundLocation: location } })}>
+              {t('Інші надходження на рахунок')}
+            </Menu.Item>
+            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/client?type=2&operationType=0', { state: { backgroundLocation: location } })}>
+              {t('Оплата покупця')}
+            </Menu.Item>
+            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/client?type=2&operationType=1', { state: { backgroundLocation: location } })}>
+              {t('Повернення постачальника')}
+            </Menu.Item>
+            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/client?type=2&operationType=2', { state: { backgroundLocation: location } })}>
+              {t('Інші з контрагентами')}
+            </Menu.Item>
+            <Menu.Divider />
+            <Menu.Label>{t('Колеги')}</Menu.Label>
+            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/user', { state: { backgroundLocation: location } })}>
+              {t('Повернення від колеги')}
+            </Menu.Item>
+            <Menu.Divider />
+            <Menu.Label>{t('Магазин')}</Menu.Label>
+            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/shop', { state: { backgroundLocation: location } })}>
+              {t('Оплата магазину')}
+            </Menu.Item>
+          </Menu.Dropdown>
+        </Menu>
           </Group>
         </div>
 
@@ -655,13 +653,13 @@ function IncomeCashflowsContent({ model }: { model: IncomeCashflowsPageModel }) 
         )}
 
         <Group gap="xs" px="md" pt="md">
-          <Badge color="violet" variant="light">
+          <Badge className="app-role-pill" variant="light">
             {t('Завантажено')}: {incomeOrders.length}
           </Badge>
-          <Badge color="gray" variant="light">
+          <Badge className="app-role-pill is-gray" variant="light">
             {t('Всього')}: {totalQty}
           </Badge>
-          <Badge color="gray" variant="light">
+          <Badge className="app-role-pill is-gray" variant="light">
             {t('Скасовано')}: {incomeOrders.filter((order) => order.IsCanceled).length}
           </Badge>
         </Group>
@@ -760,7 +758,7 @@ function useIncomeCashflowColumns({
           <Group gap={6} wrap="nowrap">
             <Text fw={600} size="sm">{displayValue(row.number)}</Text>
             {row.isCanceled && (
-              <Badge color="red" size="xs" variant="light">
+              <Badge className="app-role-pill is-red" size="xs" variant="light">
                 {t('Скасовано')}
               </Badge>
             )}
@@ -1086,8 +1084,14 @@ function IncomePaymentStatusBadge({ value }: { value: unknown }) {
     )
   }
 
+  const pillClass =
+    status.kind === 'paid' ? 'is-green'
+    : status.kind === 'unpaid' ? 'is-red'
+    : status.kind === 'partial' ? 'is-yellow'
+    : 'is-gray'
+
   return (
-    <Badge color={status.color} size="sm" variant="light">
+    <Badge className={`app-role-pill ${pillClass}`} size="sm" variant="light">
       {t(status.label)}
     </Badge>
   )
@@ -1492,7 +1496,7 @@ function isClientPaymentReassignable(income: IncomePaymentOrder): boolean {
 
 function StatusFlag({ active }: { active?: boolean }) {
   return active ? (
-    <Badge color="green" size="xs" variant="light">
+    <Badge className="app-role-pill is-green" size="xs" variant="light">
       Так
     </Badge>
   ) : (
@@ -1509,7 +1513,7 @@ function PayerCell({ row }: { row: IncomeCashflowRow }) {
     <Group gap={6} wrap="nowrap">
       <Text size="sm">{displayValue(row.payer)}</Text>
       {row.rootAssigned && (
-        <Badge color="indigo" size="xs" variant="light">
+        <Badge className="app-role-pill" size="xs" variant="light">
           {t('Повернення')}
         </Badge>
       )}
@@ -1852,7 +1856,7 @@ function getDateRangeError(fromDate: string, toDate: string): string | null {
 
 function formatDateTime(value?: string): string {
   if (!value) {
-    return '—'
+    return ''
   }
 
   const date = new Date(value)
@@ -1895,8 +1899,8 @@ function hasNumber(value?: number): value is number {
 
 function displayValue(value?: string | number | null): string {
   if (typeof value === 'number') {
-    return Number.isFinite(value) ? String(value) : '—'
+    return Number.isFinite(value) ? String(value) : ''
   }
 
-  return value || '—'
+  return value || ''
 }
