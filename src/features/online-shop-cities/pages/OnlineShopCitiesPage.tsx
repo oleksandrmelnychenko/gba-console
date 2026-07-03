@@ -1,4 +1,5 @@
 import {
+  Badge,
   ActionIcon,
   Alert,
   Box,
@@ -17,14 +18,11 @@ import {
   IconAlertCircle,
   IconArchive,
   IconDeviceFloppy,
-  IconHome,
-  IconMapPin,
   IconPlus,
   IconRefresh,
   IconRestore,
   IconSearch,
   IconTrash,
-  IconWorld,
 } from '@tabler/icons-react'
 import { type FormEvent, useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -462,21 +460,22 @@ function useCityColumns({
         minWidth: 280,
         fill: true,
         accessor: (city) => [city.NameUa, city.NameRu, city.NetUid, city.Id].filter(Boolean).join(' '),
-        cell: (city) => (
-          <div className="online-shop-cities-name-cell">
-            <span className="online-shop-cities-city-icon" aria-hidden="true">
-              <IconMapPin size={15} />
-            </span>
-            <div className="online-shop-cities-name-copy">
-              <Text className="online-shop-cities-name-primary">
-                {displayValue(city.NameUa)}
-              </Text>
-              <Text className="online-shop-cities-name-secondary">
-                {displayValue(city.NameRu)}
-              </Text>
+        cell: (city) => {
+          const nameUa = displayValue(city.NameUa)
+          const nameRu = displayValue(city.NameRu)
+          const showSecondary = Boolean(nameRu) && nameRu.toLocaleLowerCase() !== nameUa.toLocaleLowerCase()
+
+          return (
+            <div className="online-shop-cities-name-cell">
+              <div className="online-shop-cities-name-copy">
+                <Text className="online-shop-cities-name-primary">{nameUa || nameRu}</Text>
+                {showSecondary ? (
+                  <Text className="online-shop-cities-name-secondary">{nameRu}</Text>
+                ) : null}
+              </div>
             </div>
-          </div>
-        ),
+          )
+        },
       },
       {
         id: 'payment',
@@ -489,12 +488,9 @@ function useCityColumns({
 
           return (
             <div className={`online-shop-cities-payment-cell${isLocalPayment ? ' is-local' : ' is-global'}`}>
-              <span className="online-shop-cities-payment-marker" aria-hidden="true">
-                {isLocalPayment ? <IconHome size={13} /> : <IconWorld size={13} />}
-              </span>
-              <strong>
+              <Badge className={isLocalPayment ? 'app-role-pill' : 'app-role-pill is-gray'} variant="light">
                 {isLocalPayment ? t('Локальна') : t('Загальна')}
-              </strong>
+              </Badge>
             </div>
           )
         },
@@ -509,9 +505,9 @@ function useCityColumns({
           const isArchived = city.Deleted === true
 
           return (
-            <span className={`online-shop-cities-status-tag${isArchived ? ' is-archived' : ' is-active'}`}>
+            <Badge className={isArchived ? 'app-role-pill is-gray' : 'app-role-pill is-green'} variant="light">
               {isArchived ? t('Архів') : t('Активне')}
-            </span>
+            </Badge>
           )
         },
       },
