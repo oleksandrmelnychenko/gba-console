@@ -130,7 +130,7 @@ export function WarehouseUkrainePage() {
 
   return (
     <Stack gap="md">
-      <div className="pill-tabs" style={{ width: 'fit-content', margin: '0 auto' }}>
+      <div className="pill-tabs">
         {visibleTabs.map((tab) => {
           const isActive = tab.value === activeTabItem?.value
 
@@ -143,10 +143,9 @@ export function WarehouseUkrainePage() {
               onClick={() => setActiveTab(tab.value)}
             >
               <Group gap={6} wrap="nowrap" align="center">
-                {tab.icon}
                 {tab.label}
                 {tab.showBadge && editingTotal > 0 && (
-                  <Badge color="violet" size="sm" variant="light">
+                  <Badge className="app-role-pill is-orange" size="sm" variant="light">
                     {editingTotal}
                   </Badge>
                 )}

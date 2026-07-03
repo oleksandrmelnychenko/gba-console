@@ -27,16 +27,14 @@ import {
   IconSearch,
   IconUserPlus,
 } from '@tabler/icons-react'
-import { useCallback, useEffect, useMemo, useReducer } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useAuth } from '../../auth/useAuth'
 import { getIncompleteSales, updateIncompleteSale } from '../../clients/api/onlineShopClientsApi'
 import { IncompleteSaleItemsList } from '../../clients/components/IncompleteSaleItemsList'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
-import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
-import type { DataTableColumn, DataTableDefaultLayout, DataTableDensity } from '../../../shared/ui/data-table/types'
+import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import type { RetailCartItem } from '../../clients/onlineShopTypes'
 import type { SaleOrderItem } from '../../clients/salesTypes'
 import type {
@@ -58,6 +56,7 @@ import {
   getRetailClientPhone,
 } from '../utils'
 import './incomplete-sales-online-shop-page.css'
+import '../../../shared/ui/console-table-page.css'
 
 type FilterDraft = {
   from: string
@@ -128,7 +127,6 @@ function useIncompleteSalesOnlineShopPageModel() {
   const [selectedSale, setSelectedSale] = useValueState<IncompleteSalesOnlineShopItem | null>(null)
   const [pendingStatusAction, setPendingStatusAction] = useValueState<PendingStatusAction | null>(null)
   const [updatingId, setUpdatingId] = useValueState<string | null>(null)
-  const { density, toggleDensity } = useDataTableDensity('incomplete-sales-online-shop', 'normal')
 
   useEffect(() => {
     let cancelled = false
@@ -285,7 +283,6 @@ function useIncompleteSalesOnlineShopPageModel() {
 
   return {
     columns,
-    density,
     detailError,
     error,
     filterDraft,
@@ -294,7 +291,6 @@ function useIncompleteSalesOnlineShopPageModel() {
     pendingStatusAction,
     sales,
     selectedSale,
-    toggleDensity,
     closeDetail,
     confirmStatusAction,
     openClientSales,
@@ -319,7 +315,6 @@ function IncompleteSalesOnlineShopPageView({
 }) {
   const {
     columns,
-    density,
     detailError,
     error,
     filterDraft,
@@ -328,7 +323,6 @@ function IncompleteSalesOnlineShopPageView({
     pendingStatusAction,
     sales,
     selectedSale,
-    toggleDensity,
     closeDetail,
     confirmStatusAction,
     openClientSales,
@@ -340,10 +334,9 @@ function IncompleteSalesOnlineShopPageView({
   } = model
 
   return (
-    <Stack gap="lg">
+    <Stack className="incomplete-sales-online-shop-page console-table-page" gap={6}>
       <IncompleteSalesTableCard
         columns={columns}
-        density={density}
         error={error}
         filterDraft={filterDraft}
         isLoading={isLoading}
@@ -355,7 +348,6 @@ function IncompleteSalesOnlineShopPageView({
         onReset={resetFilters}
         onToChange={(to) => applyFilters({ ...filterDraft, to })}
         onToggleAccepted={(isAccepted) => applyFilters({ ...filterDraft, isAccepted })}
-        onToggleDensity={toggleDensity}
       />
 
       <IncompleteSaleDetailDrawer
@@ -377,7 +369,6 @@ function IncompleteSalesOnlineShopPageView({
 
 function IncompleteSalesTableCard({
   columns,
-  density,
   error,
   filterDraft,
   isLoading,
@@ -389,10 +380,8 @@ function IncompleteSalesTableCard({
   onReset,
   onToChange,
   onToggleAccepted,
-  onToggleDensity,
 }: {
   columns: DataTableColumn<IncompleteSalesOnlineShopItem>[]
-  density: DataTableDensity
   error: string | null
   filterDraft: FilterDraft
   isLoading: boolean
@@ -404,15 +393,15 @@ function IncompleteSalesTableCard({
   onReset: () => void
   onToChange: (to: string) => void
   onToggleAccepted: (isAccepted: boolean) => void
-  onToggleDensity: () => void
 }) {
   const { t } = useI18n()
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
 
   return (
-    <Card className="app-data-card" withBorder radius="md" padding={0}>
-      <div className="app-filter-bar">
-        <Group align="end" gap="sm" wrap="nowrap" className="incomplete-sales-online-shop-filter-row">
+    <div className="incomplete-sales-online-shop-shell console-table-shell">
+      <div className="app-filter-bar incomplete-sales-online-shop-filter-bar">
           <TextInput
+            className="incomplete-sales-online-shop-date-input"
             label={t('З')}
             max={filterDraft.to || undefined}
             type="date"
@@ -420,6 +409,7 @@ function IncompleteSalesTableCard({
             onChange={(event) => onFromChange(event.currentTarget.value)}
           />
           <TextInput
+            className="incomplete-sales-online-shop-date-input"
             label={t('По')}
             min={filterDraft.from || undefined}
             type="date"
@@ -427,7 +417,7 @@ function IncompleteSalesTableCard({
             onChange={(event) => onToChange(event.currentTarget.value)}
           />
           <TextInput
-            flex={1}
+            className="incomplete-sales-online-shop-search-input"
             label={t('Номер')}
             leftSection={<IconSearch size={16} />}
             placeholder={t('Телефон')}
@@ -436,11 +426,11 @@ function IncompleteSalesTableCard({
           />
           <Checkbox
             checked={filterDraft.isAccepted}
+            className="incomplete-sales-online-shop-checkbox"
             label={t('Тільки мої продажі')}
-            mb={8}
             onChange={(event) => onToggleAccepted(event.currentTarget.checked)}
           />
-          <div className="app-filter-actions">
+          <div className="app-filter-actions incomplete-sales-online-shop-filter-actions">
             <Tooltip label={t('Скинути')}>
               <ActionIcon variant="light" color="gray" size={34} aria-label={t('Скинути')} onClick={onReset}>
                 <IconRestore size={17} />
@@ -451,33 +441,35 @@ function IncompleteSalesTableCard({
                 <IconRefresh size={18} />
               </ActionIcon>
             </Tooltip>
-            <DataTableDensityToggle density={density} onToggle={onToggleDensity} size={34} />
           </div>
-        </Group>
+          <div ref={setTableToolbarSlot} className="incomplete-sales-online-shop-table-toolbar-slot" />
       </div>
 
       {error && (
-        <Alert m="md" color="red" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert className="console-table-alert" color="red" icon={<IconAlertCircle size={18} />} variant="light">
           {error}
         </Alert>
       )}
 
-      <DataTable
-        columns={columns}
-        data={sales}
-        defaultLayout={INCOMPLETE_SALES_TABLE_DEFAULT_LAYOUT}
-        density={density}
-        emptyText={t('Продажів не знайдено')}
-        getRowId={(sale, index) => getIncompleteSaleKey(sale, index)}
-        isLoading={isLoading}
-        layoutVersion="incomplete-sales-online-shop-table-1"
-        loadingText={t('Завантаження продажів')}
-        maxHeight="calc(100vh - 310px)"
-        minWidth={1260}
-        tableId="incomplete-sales-online-shop"
-        onRowClick={onOpenDetail}
-      />
-    </Card>
+      <div className="incomplete-sales-online-shop-table console-table-body">
+        <DataTable
+          columns={columns}
+          data={sales}
+          defaultLayout={INCOMPLETE_SALES_TABLE_DEFAULT_LAYOUT}
+          emptyText={t('Продажів не знайдено')}
+          getRowId={(sale, index) => getIncompleteSaleKey(sale, index)}
+          height="100%"
+          isLoading={isLoading}
+          layoutVersion="incomplete-sales-online-shop-table-2"
+          loadingText={t('Завантаження продажів')}
+          minWidth={1260}
+          showLayoutControls
+          tableId="incomplete-sales-online-shop"
+          toolbarPortalTarget={tableToolbarSlot}
+          onRowClick={onOpenDetail}
+        />
+      </div>
+    </div>
   )
 }
 

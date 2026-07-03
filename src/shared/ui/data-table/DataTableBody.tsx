@@ -1,7 +1,7 @@
 import { Fragment, memo, type CSSProperties, type ReactNode } from 'react'
 import { ActionIcon, Table } from '@mantine/core'
 import { IconChevronRight } from '@tabler/icons-react'
-import { flexRender, type Row, type Table as TableInstance } from '@tanstack/react-table'
+import { flexRender, type Cell, type Column, type Row, type Table as TableInstance } from '@tanstack/react-table'
 import { getPinnedStyle } from './dataTablePinning'
 import type { DataTableColumnMeta } from './types'
 
@@ -20,6 +20,7 @@ type DataTableBodyProps<TData> = {
   columnWidths: ReadonlyMap<string, number>
   expand?: DataTableExpandConfig<TData>
   expandedRowIds?: ReadonlySet<string>
+  fillerColumnWidth: number
   fillColumnId?: string
   isLoading: boolean
   pinnedLeftOffset?: number
@@ -32,6 +33,7 @@ type DataTableBodyProps<TData> = {
 type DataTableBodyRowProps<TData> = {
   columnWidths: ReadonlyMap<string, number>
   expand?: DataTableExpandConfig<TData>
+  fillerColumnWidth: number
   fillColumnId?: string
   /* Boolean per row (not the whole Set) so toggling one row re-renders only it. */
   isExpanded: boolean
@@ -49,6 +51,7 @@ type DataTableBodyRowProps<TData> = {
 function DataTableBodyRowInner<TData>({
   columnWidths,
   expand,
+  fillerColumnWidth,
   fillColumnId,
   isExpanded,
   pinnedLeftOffset,
@@ -58,6 +61,30 @@ function DataTableBodyRowInner<TData>({
   rowClassName,
 }: DataTableBodyRowProps<TData>) {
   const canExpand = expand ? expand.canExpandRow(row.original) : false
+  const { leading, rightPinned } = splitRightPinnedCells(row.getVisibleCells())
+
+  function renderCell(cell: Cell<TData, unknown>) {
+    const meta = cell.column.columnDef.meta as
+      | DataTableColumnMeta
+      | undefined
+    const columnWidth = columnWidths.get(cell.column.id) ?? cell.column.getSize()
+
+    return (
+      <Table.Td
+        key={cell.id}
+        className={`data-table-cell ${meta?.className ?? ''}`}
+        style={{
+          ...getPinnedStyle(cell.column, 1, pinnedLeftOffset),
+          width: columnWidth,
+          minWidth: cell.column.columnDef.minSize,
+          maxWidth: cell.column.id === fillColumnId ? undefined : cell.column.columnDef.maxSize,
+          textAlign: meta?.align ?? 'left',
+        }}
+      >
+        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+      </Table.Td>
+    )
+  }
 
   return (
     <Fragment>
@@ -92,28 +119,15 @@ function DataTableBodyRowInner<TData>({
             ) : null}
           </Table.Td>
         ) : null}
-        {row.getVisibleCells().map((cell) => {
-          const meta = cell.column.columnDef.meta as
-            | DataTableColumnMeta
-            | undefined
-          const columnWidth = columnWidths.get(cell.column.id) ?? cell.column.getSize()
-
-          return (
-            <Table.Td
-              key={cell.id}
-              className={`data-table-cell ${meta?.className ?? ''}`}
-              style={{
-                ...getPinnedStyle(cell.column, 1, pinnedLeftOffset),
-                width: columnWidth,
-                minWidth: cell.column.columnDef.minSize,
-                maxWidth: cell.column.id === fillColumnId ? undefined : cell.column.columnDef.maxSize,
-                textAlign: meta?.align ?? 'left',
-              }}
-            >
-              {flexRender(cell.column.columnDef.cell, cell.getContext())}
-            </Table.Td>
-          )
-        })}
+        {leading.map(renderCell)}
+        {fillerColumnWidth > 0 ? (
+          <Table.Td
+            aria-hidden
+            className="data-table-cell data-table-filler-cell"
+            style={{ width: fillerColumnWidth, minWidth: fillerColumnWidth }}
+          />
+        ) : null}
+        {rightPinned.map(renderCell)}
       </Table.Tr>
       {expand && canExpand && isExpanded ? (
         <Table.Tr className="data-table-expanded-row">
@@ -134,6 +148,7 @@ export function DataTableBody<TData>({
   columnWidths,
   expand,
   expandedRowIds,
+  fillerColumnWidth,
   fillColumnId,
   isLoading,
   pinnedLeftOffset = 0,
@@ -142,10 +157,11 @@ export function DataTableBody<TData>({
   onRowClick,
   rowClassName,
 }: DataTableBodyProps<TData>) {
-  const totalColumnCount = visibleColumnCount + (expand ? 1 : 0)
+  const hasFillerColumn = fillerColumnWidth > 0
+  const totalColumnCount = visibleColumnCount + (expand ? 1 : 0) + (hasFillerColumn ? 1 : 0)
 
   if (isLoading) {
-    const visibleColumns = table.getVisibleLeafColumns()
+    const { leading, rightPinned } = splitRightPinnedColumns(table.getVisibleLeafColumns())
 
     return (
       <Table.Tbody aria-busy="true" className="data-table-skeleton-body">
@@ -159,7 +175,7 @@ export function DataTableBody<TData>({
                 <span className="data-table-skeleton-line data-table-skeleton-line-icon" />
               </Table.Td>
             ) : null}
-            {visibleColumns.map((column, columnIndex) => {
+            {leading.map((column, columnIndex) => {
               const meta = column.columnDef.meta as
                 | DataTableColumnMeta
                 | undefined
@@ -185,6 +201,40 @@ export function DataTableBody<TData>({
                 </Table.Td>
               )
             })}
+            {hasFillerColumn ? (
+              <Table.Td
+                aria-hidden
+                className="data-table-cell data-table-filler-cell data-table-skeleton-cell"
+                style={{ width: fillerColumnWidth, minWidth: fillerColumnWidth }}
+              />
+            ) : null}
+            {rightPinned.map((column, columnIndex) => {
+              const meta = column.columnDef.meta as
+                | DataTableColumnMeta
+                | undefined
+              const align = meta?.align ?? 'left'
+              const columnWidth = columnWidths.get(column.id) ?? column.getSize()
+              const skeletonColumnIndex = leading.length + columnIndex
+
+              return (
+                <Table.Td
+                  key={column.id}
+                  className={`data-table-cell data-table-skeleton-cell data-table-skeleton-cell-align-${align} ${meta?.className ?? ''}`}
+                  style={{
+                    ...getPinnedStyle(column, 1, pinnedLeftOffset),
+                    width: columnWidth,
+                    minWidth: column.columnDef.minSize,
+                    maxWidth: column.id === fillColumnId ? undefined : column.columnDef.maxSize,
+                    textAlign: align,
+                  }}
+                >
+                  <span
+                    className={`data-table-skeleton-line ${skeletonColumnIndex === 0 ? 'data-table-skeleton-line-primary' : ''}`}
+                    style={createSkeletonLineStyle(rowIndex, skeletonColumnIndex)}
+                  />
+                </Table.Td>
+              )
+            })}
           </Table.Tr>
         ))}
       </Table.Tbody>
@@ -202,6 +252,7 @@ export function DataTableBody<TData>({
           key={row.id}
           columnWidths={columnWidths}
           expand={expand}
+          fillerColumnWidth={fillerColumnWidth}
           fillColumnId={fillColumnId}
           isExpanded={Boolean(expand && expandedRowIds?.has(row.id))}
           pinnedLeftOffset={pinnedLeftOffset}
@@ -213,6 +264,36 @@ export function DataTableBody<TData>({
       ))}
     </Table.Tbody>
   )
+}
+
+function splitRightPinnedCells<TData>(cells: Cell<TData, unknown>[]) {
+  const leading: Cell<TData, unknown>[] = []
+  const rightPinned: Cell<TData, unknown>[] = []
+
+  cells.forEach((cell) => {
+    if (cell.column.getIsPinned() === 'right') {
+      rightPinned.push(cell)
+    } else {
+      leading.push(cell)
+    }
+  })
+
+  return { leading, rightPinned }
+}
+
+function splitRightPinnedColumns<TData>(columns: Column<TData, unknown>[]) {
+  const leading: Column<TData, unknown>[] = []
+  const rightPinned: Column<TData, unknown>[] = []
+
+  columns.forEach((column) => {
+    if (column.getIsPinned() === 'right') {
+      rightPinned.push(column)
+    } else {
+      leading.push(column)
+    }
+  })
+
+  return { leading, rightPinned }
 }
 
 function createSkeletonLineStyle(rowIndex: number, columnIndex: number): CSSProperties {

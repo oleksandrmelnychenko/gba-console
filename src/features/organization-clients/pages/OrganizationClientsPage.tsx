@@ -122,7 +122,7 @@ export function OrganizationClientsPage() {
         minWidth: 96,
         align: 'right',
         accessor: (client) => client.MarginAmount,
-        cell: (client) => <OrganizationNumberCell value={client.MarginAmount} />,
+        cell: (client) => <OrganizationNumberCell money value={client.MarginAmount} />,
       },
       {
         id: 'agreements',
@@ -382,11 +382,12 @@ function OrganizationTextCell({ value }: { value?: string | null }) {
   )
 }
 
-function OrganizationNumberCell({ value }: { value?: number | null }) {
+function OrganizationNumberCell({ money = false, value }: { money?: boolean; value?: number | null }) {
   const display = displayTableValue(value)
+  const moneyClass = money ? ` app-money${typeof value === 'number' && value < 0 ? ' is-negative' : ''}` : ''
 
   return (
-    <span className="organization-clients-number-cell" title={nativeTitle(display)}>
+    <span className={`organization-clients-number-cell${moneyClass}`} title={nativeTitle(display)}>
       {display}
     </span>
   )

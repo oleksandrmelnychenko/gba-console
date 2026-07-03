@@ -14,24 +14,24 @@ import {
 import { useDebouncedValue } from '@mantine/hooks'
 import {
   IconAlertCircle,
-  IconChevronDown,
-  IconChevronUp,
   IconCreditCard,
-  IconEye,
-  IconFileText,
   IconPencil,
   IconPlus,
   IconRefresh,
   IconRestore,
   IconSearch,
 } from '@tabler/icons-react'
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { CreditCard as CreditCardIcon, Eye as EyeIcon, SquarePen as SquarePenIcon } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, type Location, type NavigateFunction } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
-import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { AppModal } from '../../../shared/ui/AppModal'
+import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import {
   getConsumableOrders,
   searchConsumableOrders,
@@ -63,12 +63,14 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
   minimumFractionDigits: 2,
 })
 
-type ConsumableOrderSortId = 'amount' | 'document' | 'responsible' | 'serviceOrganization' | 'status' | 'storage'
+const ORDERS_MONO_STYLE = { fontFamily: 'var(--font-mono)', letterSpacing: 0 } as const
 
-type ConsumableOrderSortState = {
-  direction: 'asc' | 'desc'
-  id: ConsumableOrderSortId
-} | null
+const CONSUMABLE_ORDERS_TABLE_DEFAULT_LAYOUT = {
+  columnPinning: {
+    left: ['document'],
+  },
+  density: 'normal',
+} satisfies DataTableDefaultLayout
 
 export function ConsumableOrdersPage() {
   const { t } = useI18n()
@@ -81,7 +83,8 @@ export function ConsumableOrdersPage() {
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(false)
   const [selectedRow, setSelectedRow] = useValueState<ConsumableOrderRow | null>(null)
-  const [sortState, setSortState] = useValueState<ConsumableOrderSortState>(null)
+  const [actionsRow, setActionsRow] = useValueState<ConsumableOrderRow | null>(null)
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const [debouncedSearchValue] = useDebouncedValue(searchValue, SEARCH_DEBOUNCE_MS)
   const normalizedSearchValue = debouncedSearchValue.trim()
   const isSearchSettling = searchValue.trim() !== normalizedSearchValue
@@ -127,7 +130,7 @@ export function ConsumableOrdersPage() {
   }, [loadOrders])
 
   const rows = useMemo(() => buildConsumableOrderRows(orders), [orders])
-  const sortedRows = useMemo(() => sortConsumableOrderRows(rows, sortState), [rows, sortState])
+  const columns = useConsumableOrderColumns()
   const isTableBusy = isLoading || isSearchSettling
   const defaultFromDate = shiftDate(-DEFAULT_LOOKBACK_DAYS)
   const defaultToDate = formatLocalDate(new Date())
@@ -140,24 +143,9 @@ export function ConsumableOrdersPage() {
     setOrders([])
   }
 
-  function toggleSort(id: ConsumableOrderSortId) {
-    setSortState((current) => {
-      if (current?.id !== id) {
-        return { direction: 'asc', id }
-      }
-
-      return { direction: current.direction === 'asc' ? 'desc' : 'asc', id }
-    })
-  }
 
   return (
-    <Stack className="consumable-orders-page console-table-page" gap="md">
-      <PageHeaderActions>
-        <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} onClick={() => navigate('/accounting/consumable-orders/new', { state: { backgroundLocation: location, returnPath: '/accounting/consumable-orders' } })}>
-          {t('Додати')}
-        </Button>
-      </PageHeaderActions>
-
+    <Stack className="consumable-orders-page console-table-page" gap={6}>
       <div className="console-table-shell">
         <div className="app-filter-bar consumable-orders-command-bar">
           <div className="consumable-orders-period-filter">
@@ -208,6 +196,16 @@ export function ConsumableOrdersPage() {
               </ActionIcon>
             </Tooltip>
           </div>
+          <div className="consumable-orders-table-toolbar-slot" ref={setTableToolbarSlot} />
+          <Button
+            color={CREATE_ACTION_COLOR}
+            leftSection={<IconPlus size={16} />}
+            size="sm"
+            styles={{ label: ORDERS_MONO_STYLE }}
+            onClick={() => navigate('/accounting/consumable-orders/new', { state: { backgroundLocation: location, returnPath: '/accounting/consumable-orders' } })}
+          >
+            {t('Нова накладна')}
+          </Button>
         </div>
 
         {error && (
@@ -223,17 +221,39 @@ export function ConsumableOrdersPage() {
         )}
 
         <div className="consumable-orders-page__table console-table-body">
-          <ConsumableOrdersList
+          <DataTable
+            columns={columns}
+            data={rows}
+            defaultLayout={CONSUMABLE_ORDERS_TABLE_DEFAULT_LAYOUT}
+            emptyText={t('Прибуткових накладних не знайдено')}
+            getRowId={(row) => row.id}
+            height="100%"
             isLoading={isTableBusy}
-            rows={sortedRows}
-            sortState={sortState}
-            onOpen={setSelectedRow}
-            onPay={(row) => navigateToPay(navigate, row, location)}
-            onSort={toggleSort}
-            onView={(row) => navigateToEdit(navigate, row, location)}
+            layoutVersion="consumable-orders-table-1"
+            minWidth={1080}
+            tableId="consumable-orders"
+            toolbarPortalTarget={tableToolbarSlot}
+            onRowClick={setActionsRow}
           />
         </div>
       </div>
+
+      <ConsumableOrderActionsModal
+        row={actionsRow}
+        onClose={() => setActionsRow(null)}
+        onOpenDetails={(row) => {
+          setActionsRow(null)
+          setSelectedRow(row)
+        }}
+        onPay={(row) => {
+          setActionsRow(null)
+          navigateToPay(navigate, row, location)
+        }}
+        onView={(row) => {
+          setActionsRow(null)
+          navigateToEdit(navigate, row, location)
+        }}
+      />
 
       <ConsumableOrderDetailDrawer
         row={selectedRow}
@@ -245,117 +265,121 @@ export function ConsumableOrdersPage() {
   )
 }
 
-function ConsumableOrdersList({
-  isLoading,
-  rows,
-  sortState,
-  onOpen,
+function useConsumableOrderColumns() {
+  const { t } = useI18n()
+
+  return useMemo<DataTableColumn<ConsumableOrderRow>[]>(
+    () => [
+      {
+        id: 'document',
+        header: t('Документ'),
+        width: 260,
+        minWidth: 220,
+        accessor: (row) => row.order.Number || row.organizationNumber || '',
+        cell: (row) => <ConsumableOrderDocumentCell row={row} />,
+      },
+      {
+        id: 'serviceOrganization',
+        header: t('Постачальник / Організація'),
+        width: 250,
+        minWidth: 200,
+        fill: true,
+        accessor: (row) => row.serviceOrganization || '',
+        cell: (row) => <ConsumableOrderSupplierCell row={row} />,
+      },
+      {
+        id: 'storage',
+        header: t('Склад'),
+        width: 170,
+        minWidth: 140,
+        accessor: (row) => row.storage || '',
+        cell: (row) => <ConsumableOrderStorageCell row={row} />,
+      },
+      {
+        id: 'amount',
+        header: t('Сума'),
+        width: 168,
+        minWidth: 140,
+        align: 'right',
+        accessor: (row) => row.amount,
+        cell: (row) => <ConsumableOrderAmountCell row={row} />,
+      },
+      {
+        id: 'responsible',
+        header: t('Відповідальний'),
+        width: 180,
+        minWidth: 150,
+        accessor: (row) => row.responsible || '',
+        cell: (row) => <ConsumableOrderResponsibleCell row={row} />,
+      },
+      {
+        id: 'status',
+        header: t('Статус'),
+        width: 158,
+        minWidth: 132,
+        accessor: (row) => (row.isPayed ? 1 : 0),
+        cell: (row) => <ConsumableOrderStatusCell row={row} />,
+      },
+    ],
+    [t],
+  )
+}
+
+function ConsumableOrderActionsModal({
+  row,
+  onClose,
+  onOpenDetails,
   onPay,
-  onSort,
   onView,
 }: {
-  isLoading: boolean
-  rows: ConsumableOrderRow[]
-  sortState: ConsumableOrderSortState
-  onOpen: (row: ConsumableOrderRow) => void
+  row: ConsumableOrderRow | null
+  onClose: () => void
+  onOpenDetails: (row: ConsumableOrderRow) => void
   onPay: (row: ConsumableOrderRow) => void
-  onSort: (id: ConsumableOrderSortId) => void
   onView: (row: ConsumableOrderRow) => void
 }) {
   const { t } = useI18n()
+  const title = row?.order.Number || row?.organizationNumber || t('Накладна')
 
   return (
-    <div className="consumable-orders-list">
-      <div className="consumable-orders-list-head">
-        <ConsumableOrderSortHeader id="document" label={t('Документ / дата')} sortState={sortState} onSort={onSort} />
-        <ConsumableOrderSortHeader id="serviceOrganization" label={t('Постачальник / організація')} sortState={sortState} onSort={onSort} />
-        <ConsumableOrderSortHeader id="storage" label={t('Склад')} sortState={sortState} onSort={onSort} />
-        <ConsumableOrderSortHeader id="amount" label={t('Сума')} sortState={sortState} align="right" onSort={onSort} />
-        <ConsumableOrderSortHeader id="responsible" label={t('Відповідальний')} sortState={sortState} onSort={onSort} />
-        <ConsumableOrderSortHeader id="status" label={t('Статус')} sortState={sortState} onSort={onSort} />
-        <span aria-hidden />
-      </div>
-
-      <div className="consumable-orders-list-body">
-        {isLoading ? (
-          <div className="consumable-orders-list-state">{t('Завантаження прибуткових накладних')}</div>
-        ) : rows.length === 0 ? (
-          <div className="consumable-orders-list-state">{t('Прибуткових накладних не знайдено')}</div>
-        ) : (
-          rows.map((row) => (
-            <ConsumableOrderListRow
-              key={row.id}
-              row={row}
-              onOpen={onOpen}
-              onPay={onPay}
-              onView={onView}
-            />
-          ))
-        )}
-      </div>
-    </div>
-  )
-}
-
-function ConsumableOrderSortHeader({
-  align,
-  id,
-  label,
-  sortState,
-  onSort,
-}: {
-  align?: 'right'
-  id: ConsumableOrderSortId
-  label: string
-  sortState: ConsumableOrderSortState
-  onSort: (id: ConsumableOrderSortId) => void
-}) {
-  const isActive = sortState?.id === id
-
-  return (
-    <button
-      className={`consumable-orders-sort-header${isActive ? ' is-active' : ''}${align === 'right' ? ' is-right' : ''}`}
-      type="button"
-      onClick={() => onSort(id)}
+    <AppModal
+      centered
+      opened={Boolean(row)}
+      size={496}
+      title={<span style={ORDERS_MONO_STYLE}>{title}</span>}
+      onClose={onClose}
     >
-      <span>{label}</span>
-      {isActive && sortState?.direction === 'desc' ? <IconChevronDown size={13} /> : <IconChevronUp size={13} />}
-    </button>
-  )
-}
-
-function ConsumableOrderListRow({
-  row,
-  onOpen,
-  onPay,
-  onView,
-}: {
-  row: ConsumableOrderRow
-  onOpen: (row: ConsumableOrderRow) => void
-  onPay: (row: ConsumableOrderRow) => void
-  onView: (row: ConsumableOrderRow) => void
-}) {
-  return (
-    <div
-      className="consumable-orders-row"
-      role="button"
-      tabIndex={0}
-      onClick={() => onOpen(row)}
-      onKeyDown={(event) => {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault()
-          onOpen(row)
-        }
-      }}
-    >
-      <ConsumableOrderDocumentCell row={row} />
-      <ConsumableOrderSupplierCell row={row} />
-      <ConsumableOrderStorageCell row={row} />
-      <ConsumableOrderAmountCell row={row} />
-      <ConsumableOrderResponsibleCell row={row} />
-      <ConsumableOrderStatusCell row={row} />
-      <ConsumableOrderActions row={row} onOpen={onOpen} onPay={onPay} onView={onView} />
-    </div>
+      {row ? (
+        <Stack className="app-modal-actions" gap="xs">
+          <Button fullWidth justify="flex-start" size="lg" variant="subtle" onClick={() => onOpenDetails(row)}>
+            <Group gap={12} wrap="nowrap">
+              <span className="app-action-icon">
+                <EyeIcon size={20} />
+              </span>
+              {t('Деталі')}
+            </Group>
+          </Button>
+          <Button fullWidth justify="flex-start" size="lg" variant="subtle" onClick={() => onView(row)}>
+            <Group gap={12} wrap="nowrap">
+              <span className="app-action-icon">
+                <SquarePenIcon size={20} />
+              </span>
+              {t('Редагувати')}
+            </Group>
+          </Button>
+          {!row.isPayed ? (
+            <Button fullWidth justify="flex-start" size="lg" variant="subtle" onClick={() => onPay(row)}>
+              <Group gap={12} wrap="nowrap">
+                <span className="app-action-icon">
+                  <CreditCardIcon size={20} />
+                </span>
+                {t('Оплатити')}
+              </Group>
+            </Button>
+          ) : null}
+        </Stack>
+      ) : null}
+    </AppModal>
   )
 }
 
@@ -374,16 +398,15 @@ function ConsumableOrderDocumentCell({ row }: { row: ConsumableOrderRow }) {
   return (
     <Tooltip label={tooltip} multiline openDelay={350} withArrow>
       <span className="consumable-orders-document-cell">
-        <span className="consumable-orders-document-icon" aria-hidden>
-          <IconFileText size={15} />
-        </span>
         <span className="consumable-orders-document-copy">
           <span className="consumable-orders-document-title">{title}</span>
           <span className="consumable-orders-document-dates">
             <span><small>{t('Ств.')}</small>{createdDate}</span>
             {organizationDate ? <span><small>{t('Вх.')}</small>{organizationDate}</span> : null}
           </span>
-          {invoice ? <span className="consumable-orders-document-invoice"><small>{t('Накл.')}</small>{invoice}</span> : null}
+          {invoice && invoice !== title ? (
+            <span className="consumable-orders-document-invoice"><small>{t('Накл.')}</small>{invoice}</span>
+          ) : null}
         </span>
       </span>
     </Tooltip>
@@ -401,7 +424,11 @@ function ConsumableOrderSupplierCell({ row }: { row: ConsumableOrderRow }) {
       <span className="consumable-orders-two-line-cell">
         <span>{title}</span>
         {organization ? <small>{organization}</small> : null}
-        {agreement ? <small>{agreement}</small> : null}
+        {agreement ? (
+          <Badge className="app-role-pill consumable-orders-agreement-pill" variant="light">
+            {agreement}
+          </Badge>
+        ) : null}
       </span>
     </Tooltip>
   )
@@ -436,7 +463,9 @@ function ConsumableOrderAmountCell({ row }: { row: ConsumableOrderRow }) {
     <Tooltip label={tooltip} multiline openDelay={350} withArrow>
       <span className="consumable-orders-amount-cell">
         <strong>{totalWithVat}</strong>
-        <span><small>{t('без ПДВ')}</small>{totalWithoutVat}</span>
+        {totalWithoutVat !== totalWithVat ? (
+          <span><small>{t('без ПДВ')}</small>{totalWithoutVat}</span>
+        ) : null}
         <em>{currency}</em>
       </span>
     </Tooltip>
@@ -463,68 +492,13 @@ function ConsumableOrderStatusCell({ row }: { row: ConsumableOrderRow }) {
 
   return (
     <span className="consumable-orders-status-cell">
-      <Badge color={row.isPayed ? 'green' : 'orange'} variant="light">
+      <Badge className={row.isPayed ? 'app-role-pill is-green' : 'app-role-pill is-red'} variant="light">
         {row.isPayed ? t('Оплачено') : t('Не оплачено')}
       </Badge>
       <small>{row.isDone ? t('Закрито') : t('В роботі')}</small>
     </span>
   )
 }
-
-function ConsumableOrderActions({
-  row,
-  onOpen,
-  onPay,
-  onView,
-}: {
-  row: ConsumableOrderRow
-  onOpen: (row: ConsumableOrderRow) => void
-  onPay: (row: ConsumableOrderRow) => void
-  onView: (row: ConsumableOrderRow) => void
-}) {
-  const { t } = useI18n()
-
-  return (
-    <Group className="consumable-orders-row-actions" gap={4} justify="flex-end" wrap="nowrap" onClick={(event) => event.stopPropagation()}>
-      {!row.isPayed && (
-        <Tooltip label={t('Оплатити')}>
-          <ActionIcon
-            aria-label={t('Оплатити')}
-            color="green"
-            size="sm"
-            variant="subtle"
-            onClick={() => onPay(row)}
-          >
-            <IconCreditCard size={15} />
-          </ActionIcon>
-        </Tooltip>
-      )}
-      <Tooltip label={t('Редагувати')}>
-        <ActionIcon
-          aria-label={t('Редагувати')}
-          color={CREATE_ACTION_COLOR}
-          size="sm"
-          variant="subtle"
-          onClick={() => onView(row)}
-        >
-          <IconPencil size={15} />
-        </ActionIcon>
-      </Tooltip>
-      <Tooltip label={t('Деталі')}>
-        <ActionIcon
-          aria-label={t('Деталі')}
-          color="gray"
-          size="sm"
-          variant="subtle"
-          onClick={() => onOpen(row)}
-        >
-          <IconEye size={15} />
-        </ActionIcon>
-      </Tooltip>
-    </Group>
-  )
-}
-
 
 function ConsumableOrderDetailDrawer({
   row,
@@ -543,39 +517,39 @@ function ConsumableOrderDetailDrawer({
   const outcomes = order?.OutcomePaymentOrderConsumablesOrders || []
 
   return (
-    <AppDrawer opened={Boolean(row)} padding="md" size="xl" title={t('Прибуткова накладна')} onClose={onClose}>
+    <AppDrawer opened={Boolean(row)} padding="md" size="xl" title={<span style={ORDERS_MONO_STYLE}>{t('Прибуткова накладна')}</span>} onClose={onClose}>
       {row && order && (
         <Stack gap="md">
           <Group justify="flex-end">
-            <Button leftSection={<IconPencil size={16} />} variant="light" onClick={() => onView(row)}>
+            <Button leftSection={<IconPencil size={16} />} styles={{ label: ORDERS_MONO_STYLE }} variant="light" onClick={() => onView(row)}>
               {t('Редагувати')}
             </Button>
             {!order.IsPayed && (
-              <Button color="green" leftSection={<IconCreditCard size={16} />} variant="light" onClick={() => onPay(row)}>
+              <Button color="green" leftSection={<IconCreditCard size={16} />} styles={{ label: ORDERS_MONO_STYLE }} variant="light" onClick={() => onPay(row)}>
                 {t('Оплатити')}
               </Button>
             )}
           </Group>
 
           <SimpleGrid cols={{ base: 1, sm: 2 }}>
-            <DetailItem label={t('Створено')} value={formatDateTime(row.created)} />
-            <DetailItem label={t('Номер')} value={displayValue(order.Number)} />
-            <DetailItem label={t('Дата входу')} value={formatDateTime(order.OrganizationFromDate)} />
-            <DetailItem label={t('Номер накладної')} value={displayValue(order.OrganizationNumber)} />
+            <DetailItem label={t('Створено')} mono value={formatDateTime(row.created)} />
+            <DetailItem label={t('Номер')} mono value={displayValue(order.Number)} />
+            <DetailItem label={t('Дата входу')} mono value={formatDateTime(order.OrganizationFromDate)} />
+            <DetailItem label={t('Номер накладної')} mono value={displayValue(order.OrganizationNumber)} />
             <DetailItem label={t('Постачальник послуг')} value={displayValue(row.serviceOrganization)} />
             <DetailItem label={t('Організація')} value={displayValue(row.organization)} />
             <DetailItem label={t('Договір')} value={displayValue(order.SupplyOrganizationAgreement?.Name || order.SupplyOrganizationAgreement?.Number)} />
             <DetailItem label={t('Склад')} value={displayValue(row.storage)} />
-            <DetailItem label={t('Сума')} value={formatMoney(row.totalAmountWithoutVat)} />
-            <DetailItem label={t('Разом з ПДВ')} value={formatMoney(row.amount)} />
-            <DetailItem label={t('Валюта')} value={displayValue(row.currency)} />
+            <DetailItem label={t('Сума')} mono value={formatMoney(row.totalAmountWithoutVat)} />
+            <DetailItem label={t('Разом з ПДВ')} mono value={formatMoney(row.amount)} />
+            <DetailItem label={t('Валюта')} mono value={displayValue(row.currency)} />
             <DetailItem label={t('Відповідальний')} value={displayValue(row.responsible)} />
             <DetailItem label={t('Оплачено')} value={order.IsPayed ? t('Так') : t('Ні')} />
             <DetailItem label={t('Закрито')} value={order.IsDone ? t('Так') : t('Ні')} />
           </SimpleGrid>
 
           <Stack gap={2}>
-            <Text c="dimmed" size="xs" tt="uppercase">
+            <Text className="app-section-title" fw={600} size="sm">
               {t('Коментар')}
             </Text>
             <Text size="sm">{displayValue(row.comment)}</Text>
@@ -584,19 +558,21 @@ function ConsumableOrderDetailDrawer({
           <Divider />
 
           <Stack gap="sm">
-            <Text fw={700}>{t('Позиції')}</Text>
+            <Text className="app-section-title" fw={600} size="sm">
+              {t('Позиції')}
+            </Text>
             {items.length > 0 ? (
               items.map((item, index) => (
                 <SimpleGrid key={getItemKey(item, index)} cols={{ base: 1, sm: 3 }}>
-                  <DetailItem label={t('Артикул')} value={displayValue(item.ConsumableProduct?.VendorCode)} />
+                  <DetailItem label={t('Артикул')} mono value={displayValue(item.ConsumableProduct?.VendorCode)} />
                   <DetailItem label={t('Назва')} value={displayValue(getItemName(item))} />
                   <DetailItem label={t('Категорія')} value={displayValue(item.ConsumableProductCategory?.Name || item.ConsumableProduct?.ConsumableProductCategory?.Name)} />
-                  <DetailItem label={t('Кількість')} value={formatAmount(item.Qty)} />
-                  <DetailItem label={t('Ціна')} value={formatMoney(item.PricePerItem)} />
-                  <DetailItem label={t('Сума без ПДВ')} value={formatMoney(item.TotalPrice)} />
-                  <DetailItem label={t('ПДВ %')} value={formatAmount(item.VatPercent)} />
-                  <DetailItem label={t('ПДВ')} value={formatMoney(item.VAT)} />
-                  <DetailItem label={t('Разом з ПДВ')} value={formatMoney(item.TotalPriceWithVAT)} />
+                  <DetailItem label={t('Кількість')} mono value={formatAmount(item.Qty)} />
+                  <DetailItem label={t('Ціна')} mono value={formatMoney(item.PricePerItem)} />
+                  <DetailItem label={t('Сума без ПДВ')} mono value={formatMoney(item.TotalPrice)} />
+                  <DetailItem label={t('ПДВ %')} mono value={formatAmount(item.VatPercent)} />
+                  <DetailItem label={t('ПДВ')} mono value={formatMoney(item.VAT)} />
+                  <DetailItem label={t('Разом з ПДВ')} mono value={formatMoney(item.TotalPriceWithVAT)} />
                 </SimpleGrid>
               ))
             ) : (
@@ -609,7 +585,9 @@ function ConsumableOrderDetailDrawer({
           <Divider />
 
           <Stack gap="sm">
-            <Text fw={700}>{t('Структура документа')}</Text>
+            <Text className="app-section-title" fw={600} size="sm">
+              {t('Структура документа')}
+            </Text>
             {outcomes.length > 0 ? (
               outcomes.map((item, index) => (
                 <OutcomeStructureItem key={getOutcomeLinkKey(item, index)} item={item} />
@@ -640,10 +618,10 @@ function OutcomeStructureItem({ item }: { item: OutcomePaymentOrderConsumablesOr
 
   return (
     <SimpleGrid cols={{ base: 1, sm: 2 }}>
-      <DetailItem label={t('Ордер')} value={displayValue(outcome.Number || outcome.AdvanceNumber)} />
-      <DetailItem label={t('Дата')} value={formatDateTime(outcome.FromDate)} />
-      <DetailItem label={t('Сума')} value={formatMoney(outcome.Amount)} />
-      <DetailItem label={t('Валюта')} value={displayValue(outcome.PaymentCurrencyRegister?.Currency?.Code || outcome.PaymentCurrencyRegister?.Currency?.Name)} />
+      <DetailItem label={t('Ордер')} mono value={displayValue(outcome.Number || outcome.AdvanceNumber)} />
+      <DetailItem label={t('Дата')} mono value={formatDateTime(outcome.FromDate)} />
+      <DetailItem label={t('Сума')} mono value={formatMoney(outcome.Amount)} />
+      <DetailItem label={t('Валюта')} mono value={displayValue(outcome.PaymentCurrencyRegister?.Currency?.Code || outcome.PaymentCurrencyRegister?.Currency?.Name)} />
       <DetailItem label={t('Організація')} value={displayValue(getEntityName(outcome.Organization))} />
       <DetailItem label={t('Кому видано')} value={displayValue(getEntityName(outcome.Colleague))} />
       <DetailItem label={t('Підзвіт')} value={outcome.IsUnderReport ? t('Так') : t('Ні')} />
@@ -652,14 +630,12 @@ function OutcomeStructureItem({ item }: { item: OutcomePaymentOrderConsumablesOr
   )
 }
 
-function DetailItem({ label, value }: { label: string; value: string }) {
+function DetailItem({ label, mono = false, value }: { label: string; mono?: boolean; value: string }) {
   return (
-    <Stack gap={2}>
-      <Text c="dimmed" size="xs" tt="uppercase">
-        {label}
-      </Text>
-      <Text size="sm">{value}</Text>
-    </Stack>
+    <div className={`consumable-orders-detail-field${mono ? ' is-mono' : ''}`}>
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
   )
 }
 
@@ -684,44 +660,6 @@ function buildConsumableOrderRows(orders: ConsumablesOrder[]): ConsumableOrderRo
     storage: getEntityName(order.ConsumablesStorage),
     totalAmountWithoutVat: order.TotalAmountWithoutVAT,
   }))
-}
-
-function sortConsumableOrderRows(rows: ConsumableOrderRow[], sortState: ConsumableOrderSortState): ConsumableOrderRow[] {
-  if (!sortState) {
-    return rows
-  }
-
-  const direction = sortState.direction === 'asc' ? 1 : -1
-
-  return [...rows].sort((left, right) => compareConsumableOrderSortValues(
-    getConsumableOrderSortValue(left, sortState.id),
-    getConsumableOrderSortValue(right, sortState.id),
-  ) * direction)
-}
-
-function getConsumableOrderSortValue(row: ConsumableOrderRow, id: ConsumableOrderSortId): number | string {
-  switch (id) {
-    case 'amount':
-      return row.amount ?? row.totalAmountWithoutVat ?? 0
-    case 'document':
-      return compactStrings([row.order.Number, row.created, row.organizationNumber, row.organizationFromDate]).join(' ')
-    case 'responsible':
-      return compactStrings([row.responsible, row.comment]).join(' ')
-    case 'serviceOrganization':
-      return compactStrings([row.serviceOrganization, row.organization, getOrderAgreementName(row)]).join(' ')
-    case 'status':
-      return `${row.isPayed ? 1 : 0}-${row.isDone ? 1 : 0}`
-    case 'storage':
-      return compactStrings([row.storage, row.itemCount]).join(' ')
-  }
-}
-
-function compareConsumableOrderSortValues(left: number | string, right: number | string): number {
-  if (typeof left === 'number' && typeof right === 'number') {
-    return left - right
-  }
-
-  return String(left).localeCompare(String(right), 'uk', { numeric: true, sensitivity: 'base' })
 }
 
 function getOrderAgreementName(row: ConsumableOrderRow): string {
@@ -811,10 +749,11 @@ function formatMoney(value?: number): string {
   return typeof value === 'number' && Number.isFinite(value) ? moneyFormatter.format(value) : '—'
 }
 
+// Empty values render blank (docs/ui-patterns.md §5).
 function displayValue(value?: string | number | null): string {
   if (typeof value === 'number') {
-    return Number.isFinite(value) ? String(value) : '—'
+    return Number.isFinite(value) ? String(value) : ''
   }
 
-  return value || '—'
+  return value || ''
 }

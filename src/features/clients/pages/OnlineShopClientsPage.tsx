@@ -17,6 +17,7 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
 import { getRetailClientCart, getRetailClientsPage, searchRetailClientsPage } from '../api/onlineShopClientsApi'
@@ -265,9 +266,9 @@ export function OnlineShopClientsPage() {
                 <Button
                   className="online-shop-clients-sales-button"
                   fullWidth
+                  color={CREATE_ACTION_COLOR}
                   disabled={!selectedClientNetId}
                   leftSection={<IconReceipt size={16} />}
-                  variant="light"
                   onClick={openSalesDrawer}
                 >
                   {t('Продажі клієнта')}

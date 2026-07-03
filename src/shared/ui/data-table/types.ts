@@ -27,7 +27,7 @@ export type DataTableColumn<TData> = {
   maxWidth?: number
   align?: 'left' | 'center' | 'right'
   className?: string
-  /** When true, this column absorbs the extra horizontal space so the table fills its container. */
+  /** Preferred stretch target when DataTable is allowed to grow a data column. */
   fill?: boolean
   enableSorting?: boolean
   enableHiding?: boolean
@@ -67,7 +67,7 @@ export type DataTableProps<TData> = {
   getRowId?: (row: TData, index: number) => string
   isLoading?: boolean
   minWidth?: number
-  /** When true, one column stretches to fill the viewport. Defaults to false so configured widths stay stable. */
+  /** When true, one column stretches to fill the viewport. Defaults to false so configured column widths stay stable. */
   fillAvailableWidth?: boolean
   /** Spreads the extra viewport width across regular columns instead of growing a single fill column. */
   distributeAvailableWidth?: boolean

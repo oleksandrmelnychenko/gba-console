@@ -1,37 +1,54 @@
 import { apiRequest } from '../../../shared/api/apiClient'
 import { toDateTimeQuery } from '../../../shared/date/dateTime'
 import type {
+  AccountableExpensesResponse,
   AccountableExpensesSearchParams,
   ConsumablesOrder,
   ConsumablesOrderItem,
   OutcomePaymentOrderConsumablesOrder,
 } from '../types'
 
-export async function getAccountableExpenses(params: AccountableExpensesSearchParams): Promise<ConsumablesOrder[]> {
+export async function getAccountableExpenses(params: AccountableExpensesSearchParams): Promise<AccountableExpensesResponse> {
   const result = await apiRequest<unknown>('/consumables/orders/all/services', {
     query: {
       from: toDateTimeQuery(params.from, 'start'),
+      limit: params.limit,
+      offset: params.offset,
       to: toDateTimeQuery(params.to, 'end'),
       value: '',
     },
   })
 
-  return normalizeConsumablesOrders(result)
+  return normalizeConsumablesOrdersResponse(result)
 }
 
 export async function searchAccountableExpenses(
   value: string,
   params: AccountableExpensesSearchParams,
-): Promise<ConsumablesOrder[]> {
+): Promise<AccountableExpensesResponse> {
   const result = await apiRequest<unknown>('/consumables/orders/all/services', {
     query: {
       from: toDateTimeQuery(params.from, 'start'),
+      limit: params.limit,
+      offset: params.offset,
       to: toDateTimeQuery(params.to, 'end'),
       value,
     },
   })
 
-  return normalizeConsumablesOrders(result)
+  return normalizeConsumablesOrdersResponse(result)
+}
+
+function normalizeConsumablesOrdersResponse(result: unknown): AccountableExpensesResponse {
+  const items = normalizeConsumablesOrders(result)
+  const payload = result && typeof result === 'object' && !Array.isArray(result) ? (result as Record<string, unknown>) : {}
+  const total = readNumber(payload.TotalRowsQty, readNumber(payload.TotalRowQty, readNumber(payload.Total)))
+    ?? readNumber(items[0]?.TotalRowsQty, readNumber(items[0]?.TotalRowQty))
+
+  return {
+    Items: items,
+    Total: total,
+  }
 }
 
 function normalizeConsumablesOrders(result: unknown): ConsumablesOrder[] {
@@ -96,4 +113,20 @@ function readArrayPayload(result: unknown, keys: string[]): unknown[] {
   }
 
   return []
+}
+
+function readNumber(value: unknown, fallback?: number): number | undefined {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value
+  }
+
+  if (typeof value === 'string') {
+    const parsedValue = Number(value)
+
+    if (Number.isFinite(parsedValue)) {
+      return parsedValue
+    }
+  }
+
+  return fallback
 }
