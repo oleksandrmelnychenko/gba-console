@@ -22,6 +22,11 @@
   flex: 0 0 auto;
 }
 
+.warehouse-ukraine-page > .pill-tabs {
+  margin-inline: -4px;
+  width: calc(100% + 8px);
+}
+
 .warehouse-ukraine-shell {
   flex: 1 1 auto;
 }

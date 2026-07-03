@@ -270,9 +270,11 @@
   min-width: 0;
   position: relative;
   z-index: 1;
-  justify-self: center;
-  width: fit-content;
+  justify-self: stretch;
   max-width: 100%;
+  background: transparent;
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+  border-radius: 0 0 10px 10px;
 }
 
 .console-header-top-nav {

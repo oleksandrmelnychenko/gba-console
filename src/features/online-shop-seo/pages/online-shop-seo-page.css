@@ -426,16 +426,6 @@
   position: relative;
 }
 
-.seo-shop-data-section-header::before {
-  background:
-    linear-gradient(90deg, transparent, var(--mantine-color-gray-2) 10%, var(--mantine-color-gray-2) 90%, transparent);
-  bottom: 0;
-  content: '';
-  height: 1px;
-  left: 0;
-  position: absolute;
-  right: 0;
-}
 
 .seo-shop-data-section-header::after {
   background: var(--brand-orange);
@@ -515,7 +505,7 @@
 }
 
 .seo-shop-data-section .seo-roster-row {
-  border-bottom-color: var(--mantine-color-gray-1);
+  border-bottom-color: var(--mantine-color-gray-2);
   padding-left: 12px;
 }
 
@@ -553,9 +543,7 @@
 
 .seo-shop-data-list-item {
   align-items: center;
-  background:
-    linear-gradient(90deg, transparent, rgba(248, 249, 250, 0.68) 48%, transparent),
-    var(--mantine-color-white);
+  background: var(--mantine-color-white);
   border-bottom: 1px solid var(--mantine-color-gray-1);
   color: inherit;
   cursor: pointer;
@@ -619,13 +607,9 @@
 }
 
 .seo-shop-data-list-item.is-client.is-active {
-  background:
-    linear-gradient(180deg, rgba(64, 192, 87, 0.05), transparent 44%),
-    var(--mantine-color-white);
-  border-color: rgba(64, 192, 87, 0.24);
-  box-shadow:
-    0 10px 24px rgba(20, 28, 38, 0.04),
-    inset 0 0 0 1px rgba(64, 192, 87, 0.08);
+  background: var(--mantine-color-white);
+  border-color: rgba(64, 192, 87, 0.4);
+  box-shadow: none;
 }
 
 .seo-shop-data-list-item.is-client:last-child {
@@ -633,7 +617,7 @@
 }
 
 .seo-shop-data-list-item.is-client::before {
-  background: linear-gradient(180deg, var(--brand-orange), rgba(var(--brand-orange-rgb), 0.32));
+  background: var(--brand-orange);
   border-radius: 999px;
   bottom: 12px;
   display: block;
@@ -644,7 +628,7 @@
 }
 
 .seo-shop-data-list-item.is-client.is-active::before {
-  background: linear-gradient(180deg, var(--mantine-color-green-6), var(--mantine-color-green-2));
+  background: var(--mantine-color-green-6);
 }
 
 .seo-shop-data-list-item.is-client:hover,
@@ -1194,13 +1178,13 @@
 }
 
 .seo-roster-head {
-  color: var(--mantine-color-gray-5);
-  font-size: 10.5px;
-  font-weight: 500;
+  color: var(--mantine-color-gray-7);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
   letter-spacing: 0;
   line-height: 1.2;
   padding: 11px 24px 8px 10px;
-  text-transform: uppercase;
 }
 
 .seo-roster-body {
@@ -1209,10 +1193,8 @@
 }
 
 .seo-roster-row {
-  background:
-    linear-gradient(90deg, transparent, rgba(248, 249, 250, 0.68) 48%, transparent),
-    var(--mantine-color-white);
-  border-bottom: 1px solid var(--mantine-color-gray-1);
+  background: var(--mantine-color-white);
+  border-bottom: 1px solid var(--mantine-color-gray-2);
   color: inherit;
   min-height: 54px;
   outline: none;
@@ -1225,9 +1207,7 @@
 }
 
 .seo-roster-row.is-ru {
-  background:
-    linear-gradient(90deg, transparent, rgba(255, 245, 235, 0.42) 48%, transparent),
-    #fffdfb;
+  background: #fffdfb;
 }
 
 .seo-roster-row-frame {
@@ -1257,9 +1237,6 @@
 .seo-roster-row.is-clickable:focus-visible,
 .seo-roster-row.is-hoverable:hover {
   background: #fffaf5;
-  box-shadow: 0 9px 22px rgba(20, 28, 38, 0.06);
-  transform: translateX(4px);
-  z-index: 1;
 }
 
 .seo-roster-row.is-clickable:hover::before,
@@ -1336,9 +1313,9 @@
 }
 
 .seo-table-contact-last-name {
-  color: var(--mantine-color-gray-9);
+  color: var(--mantine-color-gray-8);
   font-size: 13px;
-  font-weight: 720;
+  font-weight: 600;
   line-height: 1.15;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1346,9 +1323,9 @@
 }
 
 .seo-table-contact-first-name {
-  color: var(--mantine-color-gray-5);
-  font-size: 11px;
-  font-weight: 600;
+  color: var(--mantine-color-gray-6);
+  font-size: 11.5px;
+  font-weight: 500;
   line-height: 1.2;
   margin-top: 3px;
   overflow: hidden;
@@ -1358,9 +1335,9 @@
 
 .seo-table-primary-title,
 .seo-table-text-primary {
-  color: var(--mantine-color-gray-9);
+  color: var(--mantine-color-gray-8);
   font-size: 13px;
-  font-weight: 400;
+  font-weight: 600;
   line-height: 1.15;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1368,9 +1345,9 @@
 }
 
 .seo-table-primary-subtitle {
-  color: var(--mantine-color-gray-5);
-  font-size: 11px;
-  font-weight: 600;
+  color: var(--mantine-color-gray-6);
+  font-size: 11.5px;
+  font-weight: 500;
   line-height: 1.2;
   margin-top: 3px;
   overflow: hidden;
@@ -1389,9 +1366,11 @@
 }
 
 .seo-table-date-primary {
-  color: var(--mantine-color-gray-9);
+  color: var(--mantine-color-gray-8);
+  font-family: var(--font-mono);
   font-size: 13px;
-  font-weight: 720;
+  font-weight: 600;
+  letter-spacing: 0;
   line-height: 1.15;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1399,9 +1378,11 @@
 }
 
 .seo-table-date-secondary {
-  color: var(--mantine-color-gray-5);
-  font-size: 11px;
-  font-weight: 600;
+  font-family: var(--font-mono);
+  letter-spacing: 0;
+  color: var(--mantine-color-gray-6);
+  font-size: 11.5px;
+  font-weight: 500;
   line-height: 1.2;
   margin-top: 3px;
   overflow: hidden;
@@ -1410,8 +1391,8 @@
 }
 
 .seo-table-muted-cell {
-  color: var(--mantine-color-gray-5);
-  font-size: 11px;
+  color: var(--mantine-color-gray-6);
+  font-size: 11.5px;
   font-weight: 500;
   line-height: 1.2;
   overflow: hidden;

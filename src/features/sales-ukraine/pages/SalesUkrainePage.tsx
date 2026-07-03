@@ -56,7 +56,7 @@ import {
 import { useSearchParams } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
-import { CREATE_ACTION_COLOR, PageContentHeader } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
 import { translate } from '../../../shared/i18n/translate'
@@ -132,7 +132,7 @@ const STATUS_OPTIONS: Array<{ label: string; value: SalesUkraineStatusFilter }> 
 const STATUS_COLORS: Record<string, string> = {
   Await: 'yellow',
   InvoiceChanged: 'blue',
-  New: 'violet', // Рахунок
+  New: 'orange', // Рахунок
   OrderClosed: 'gray',
   Packaged: 'green', // Накладна
   Packaging: 'green', // Накладна
@@ -689,24 +689,10 @@ export function SalesUkrainePage() {
 
   return (
     <Stack className="sales-ukraine-page" gap="lg">
-      <PageContentHeader>
-        <div className="sales-page-header-actions">
-          <Button
-            color={CREATE_ACTION_COLOR}
-            disabled={!canCreateSale}
-            leftSection={<IconPlus size={16} />}
-            size="sm"
-            onClick={() => setNewSaleOpen(true)}
-          >
-            {t('Новий продаж')}
-          </Button>
-        </div>
-      </PageContentHeader>
-
       <Card className="sales-ukraine-card" withBorder radius="md" padding={0}>
         <Stack className="sales-ukraine-content" gap={0}>
           <div className="sales-filter-bar">
-            <div className="sales-filter-row">
+            <div className="sales-filter-row has-create">
               <TextInput
                 className="sales-filter-search"
                 label={t('Пошук')}
@@ -899,6 +885,16 @@ export function SalesUkrainePage() {
                 </Tooltip>
                 <Box className="sales-filter-toolbar">{toolbarRight}</Box>
               </div>
+              <Button
+                className="sales-filter-create"
+                color={CREATE_ACTION_COLOR}
+                disabled={!canCreateSale}
+                leftSection={<IconPlus size={16} />}
+                size="sm"
+                onClick={() => setNewSaleOpen(true)}
+              >
+                {t('Новий продаж')}
+              </Button>
             </div>
           </div>
 
@@ -1069,7 +1065,7 @@ export function SalesUkrainePage() {
               <Button color="gray" disabled={isConfirming} variant="subtle" onClick={() => setConfirmState(null)}>
                 {t('Скасувати')}
               </Button>
-              <Button color={confirmState.color || 'violet'} loading={isConfirming} onClick={runConfirm}>
+              <Button color={confirmState.color || CREATE_ACTION_COLOR} loading={isConfirming} onClick={runConfirm}>
                 {confirmState.confirmLabel}
               </Button>
             </Group>
@@ -1240,12 +1236,12 @@ function SaleGridRow({
               <span className="sg-client-name-text">{displayValue(clientName)}</span>
             </Tooltip>
             {sale.IsVatSale && (
-              <Badge color="blue" size="xs" variant="light">
+              <Badge className="app-role-pill" size="xs" variant="light">
                 {t('ПДВ')}
               </Badge>
             )}
             {sale.IsDevelopment && (
-              <Badge color="grape" size="xs" variant="light">
+              <Badge className="app-role-pill is-orange" size="xs" variant="light">
                 {t('Протокол')}
               </Badge>
             )}
@@ -1287,11 +1283,11 @@ function SaleGridRow({
         <span className="sg-amt-val">{formatAmount(localAmount)}</span>
         <span className="sg-amt-unit">{displayValue(getSaleCurrencyCode(sale))}</span>
       </div>
-      <div className="sg-amt">
+      <div className={`sg-amt${unpaid ? ' is-unpaid' : ''}`}>
         <span className="sg-amt-val">{formatAmount(getSecondaryAmount(sale))}</span>
         <span className="sg-amt-unit">{getSecondaryAmountCode(sale)}</span>
       </div>
-      <div className="sg-amt">
+      <div className={`sg-amt${unpaid ? ' is-unpaid' : ''}`}>
         <span className="sg-amt-val">{formatAmount(vat)}</span>
         <span className="sg-amt-unit">{t('ПДВ')}</span>
       </div>
@@ -1974,12 +1970,12 @@ function getNumber(value: unknown): number | null {
 
 function displayValue(value: unknown): string {
   if (typeof value === 'number') {
-    return Number.isFinite(value) ? String(value) : '—'
+    return Number.isFinite(value) ? String(value) : ''
   }
 
   if (typeof value === 'string') {
-    return value.trim() || '—'
+    return value.trim() || ''
   }
 
-  return '—'
+  return ''
 }

@@ -54,9 +54,7 @@ import './consumable-products-page.css'
 
 const PRODUCT_TABLE_DEFAULT_LAYOUT = {
   columnOrder: ['name', 'vendorCode', 'measureUnit'],
-  columnPinning: {
-    left: ['name'],
-  },
+  columnPinning: {},
   density: 'normal',
 } satisfies DataTableDefaultLayout
 
@@ -488,11 +486,11 @@ function ConsumableCategoryPanel({
           columns={columns}
           data={products}
           defaultLayout={PRODUCT_TABLE_DEFAULT_LAYOUT}
+          distributeAvailableWidth
           emptyText={t('Товарів у категорії немає')}
           getRowId={(product, index) => String(product.NetUid || product.Id || index)}
-          fillAvailableWidth
           height="100%"
-          layoutVersion="consumable-products-category-products-3"
+          layoutVersion="consumable-products-category-products-4"
           minWidth={800}
           showLayoutControls
           tableId={`consumable-products-${category.NetUid || category.Id || category.Name || 'category'}`}
@@ -514,7 +512,6 @@ function useConsumableProductColumns(): DataTableColumn<ConsumableProduct>[] {
         header: t('Назва'),
         width: 420,
         minWidth: 300,
-        fill: true,
         accessor: (product) => product.Name,
         cell: (product) => <ConsumableProductNameCell product={product} />,
       },

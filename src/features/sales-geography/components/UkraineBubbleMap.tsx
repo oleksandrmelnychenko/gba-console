@@ -71,10 +71,9 @@ export function UkraineBubbleMap({ regions, metric, formatMoney, formatCount }: 
       <svg
         viewBox={`0 0 ${VIEW_WIDTH} ${VIEW_HEIGHT}`}
         width="100%"
-        height="auto"
         role="img"
         aria-label="Карта України"
-        style={{ display: 'block', maxHeight: 520 }}
+        style={{ display: 'block', height: 'auto', maxHeight: 520 }}
       >
         <polygon
           points={outlinePoints}

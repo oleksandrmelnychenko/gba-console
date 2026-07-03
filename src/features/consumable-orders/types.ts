@@ -169,6 +169,8 @@ export type ConsumablesOrder = EntityFields & {
   TotalAmount?: number
   TotalAmountWithoutVAT?: number
   TotalPaidAmount?: number
+  TotalRowQty?: number
+  TotalRowsQty?: number
   User?: NamedEntity | null
 }
 
@@ -193,7 +195,14 @@ export type ConsumableOrderRow = {
 
 export type ConsumableOrdersSearchParams = {
   from: string
+  limit?: number
+  offset?: number
   to: string
+}
+
+export type ConsumableOrdersResponse = {
+  Items: ConsumablesOrder[]
+  Total?: number
 }
 
 export type ConsumableOrderCalculation = {

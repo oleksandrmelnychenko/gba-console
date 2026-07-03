@@ -23,7 +23,6 @@ import {
   IconAlertCircle,
   IconBasket,
   IconBuilding,
-  IconBuildingWarehouse,
   IconCheck,
   IconChevronRight,
   IconCreditCard,
@@ -339,7 +338,6 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         accessor: (row) => getPageTitle(row.page),
         cell: (row) => (
           <SeoTablePrimaryCell
-            icon={<IconFileText size={15} />}
             subtitle={shortText(row.page.Description, 120)}
             title={displayValue(getPageTitle(row.page))}
           />
@@ -591,7 +589,6 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         accessor: (register) => register.AccountNumber || register.IBAN,
         cell: (register) => (
           <SeoTablePrimaryCell
-            icon={<IconCreditCard size={15} />}
             title={displayValue(register.AccountNumber || register.IBAN)}
           />
         ),
@@ -2477,22 +2474,16 @@ function SeoRosterTable<TData>({
 
 function SeoTablePrimaryCell({
   avatar,
-  icon,
   subtitle,
   title,
 }: {
   avatar?: ReactNode
-  icon?: ReactNode
   subtitle?: ReactNode
   title: ReactNode
 }) {
   return (
     <div className="seo-table-primary-cell">
-      {avatar || (
-        <span className="seo-table-primary-icon" aria-hidden>
-          {icon}
-        </span>
-      )}
+      {avatar}
       <span className="seo-table-primary-copy">
         <Text className="seo-table-primary-title">{title}</Text>
         {subtitle ? (
@@ -2544,7 +2535,6 @@ function SeoTableDateCell({ value }: { value?: Date | string }) {
 function SeoTableStorageCell({ storage }: { storage: OnlineShopStorage }) {
   return (
     <SeoTablePrimaryCell
-      icon={<IconBuildingWarehouse size={15} />}
       subtitle={displayValue(getCompactOrganizationName(storage.Organization))}
       title={displayValue(storage.Name)}
     />

@@ -2,6 +2,7 @@ import { apiRequest } from '../../../shared/api/apiClient'
 import { sanitizeConsumableOrderPayload } from '../consumableOrderPayload'
 import type {
   ConsumableOrderCalculation,
+  ConsumableOrdersResponse,
   ConsumableOrdersSearchParams,
   ConsumableProduct,
   ConsumableProductCategory,
@@ -20,27 +21,31 @@ import type {
 
 const SUPPLY_ORGANIZATION_LOOKUP_LIMIT = 20
 
-export async function getConsumableOrders(params: ConsumableOrdersSearchParams): Promise<ConsumablesOrder[]> {
+export async function getConsumableOrders(params: ConsumableOrdersSearchParams): Promise<ConsumableOrdersResponse> {
   const result = await apiRequest<unknown>('/consumables/orders/all', {
     query: {
       from: params.from,
+      limit: params.limit,
+      offset: params.offset,
       to: params.to,
     },
   })
 
-  return normalizeConsumablesOrders(result)
+  return normalizeConsumablesOrdersResponse(result)
 }
 
-export async function searchConsumableOrders(value: string, params?: ConsumableOrdersSearchParams): Promise<ConsumablesOrder[]> {
+export async function searchConsumableOrders(value: string, params?: ConsumableOrdersSearchParams): Promise<ConsumableOrdersResponse> {
   const result = await apiRequest<unknown>('/consumables/orders/search', {
     query: {
       from: params?.from,
+      limit: params?.limit,
+      offset: params?.offset,
       to: params?.to,
       value,
     },
   })
 
-  return normalizeConsumablesOrders(result)
+  return normalizeConsumablesOrdersResponse(result)
 }
 
 export async function getConsumableOrder(netId: string): Promise<ConsumablesOrder | null> {
@@ -218,6 +223,21 @@ function normalizeConsumableOrderCalculation(result: unknown): ConsumableOrderCa
       .map(normalizeConsumablesOrder)
       .filter((order): order is ConsumablesOrder => Boolean(order)),
     Total: readNumber(payload.Total),
+  }
+}
+
+function normalizeConsumablesOrdersResponse(result: unknown): ConsumableOrdersResponse {
+  const items = normalizeConsumablesOrders(result)
+  const payload = result && typeof result === 'object' && !Array.isArray(result) ? (result as Record<string, unknown>) : {}
+  const total = readNumber(payload.TotalRowsQty)
+    ?? readNumber(payload.TotalRowQty)
+    ?? readNumber(payload.Total)
+    ?? readNumber(items[0]?.TotalRowsQty)
+    ?? readNumber(items[0]?.TotalRowQty)
+
+  return {
+    Items: items,
+    Total: total,
   }
 }
 

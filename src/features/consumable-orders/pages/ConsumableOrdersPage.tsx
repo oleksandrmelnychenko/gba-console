@@ -17,7 +17,6 @@ import {
   IconCreditCard,
   IconPencil,
   IconPlus,
-  IconRefresh,
   IconRestore,
   IconSearch,
 } from '@tabler/icons-react'
@@ -31,6 +30,8 @@ import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { Paginator } from '../../../shared/ui/paginator/Paginator'
+import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import {
   getConsumableOrders,
@@ -80,6 +81,9 @@ export function ConsumableOrdersPage() {
   const [fromDate, setFromDate] = useValueState(() => shiftDate(-DEFAULT_LOOKBACK_DAYS))
   const [toDate, setToDate] = useValueState(() => formatLocalDate(new Date()))
   const [searchValue, setSearchValue] = useValueState('')
+  const [page, setPage] = useValueState(1)
+  const [pageSize, setPageSize] = useValueState(DEFAULT_PAGINATOR_PAGE_SIZE)
+  const [totalOrders, setTotalOrders] = useValueState<number | undefined>(undefined)
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(false)
   const [selectedRow, setSelectedRow] = useValueState<ConsumableOrderRow | null>(null)
@@ -90,6 +94,7 @@ export function ConsumableOrdersPage() {
   const isSearchSettling = searchValue.trim() !== normalizedSearchValue
   const filterError = getDateRangeError(fromDate, toDate)
   const requestRef = useRef(0)
+  const offset = (page - 1) * pageSize
 
   const loadOrders = useCallback(async () => {
     if (filterError) {
@@ -97,6 +102,7 @@ export function ConsumableOrdersPage() {
       setError(null)
       setLoading(false)
       setOrders([])
+      setTotalOrders(undefined)
       return
     }
 
@@ -106,16 +112,18 @@ export function ConsumableOrdersPage() {
     setError(null)
 
     try {
-      const nextOrders = normalizedSearchValue
-        ? await searchConsumableOrders(normalizedSearchValue, { from: fromDate, to: toDate })
-        : await getConsumableOrders({ from: fromDate, to: toDate })
+      const nextResponse = normalizedSearchValue
+        ? await searchConsumableOrders(normalizedSearchValue, { from: fromDate, limit: pageSize, offset, to: toDate })
+        : await getConsumableOrders({ from: fromDate, limit: pageSize, offset, to: toDate })
 
       if (requestRef.current === requestId) {
-        setOrders(nextOrders)
+        setOrders(nextResponse.Items)
+        setTotalOrders(nextResponse.Total)
       }
     } catch (loadError) {
       if (requestRef.current === requestId) {
         setOrders([])
+        setTotalOrders(undefined)
         setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити прибуткові накладні'))
       }
     } finally {
@@ -123,24 +131,45 @@ export function ConsumableOrdersPage() {
         setLoading(false)
       }
     }
-  }, [filterError, fromDate, normalizedSearchValue, setError, setLoading, setOrders, t, toDate])
+  }, [filterError, fromDate, normalizedSearchValue, offset, pageSize, setError, setLoading, setOrders, setTotalOrders, t, toDate])
 
   useEffect(() => {
     void loadOrders()
   }, [loadOrders])
 
-  const rows = useMemo(() => buildConsumableOrderRows(orders), [orders])
+  const hasClientFallbackRows = typeof totalOrders !== 'number' && orders.length > pageSize
+  const visibleOrders = useMemo(
+    () => (hasClientFallbackRows ? orders.slice(offset, offset + pageSize) : orders),
+    [hasClientFallbackRows, offset, orders, pageSize],
+  )
+  const rows = useMemo(() => buildConsumableOrderRows(visibleOrders), [visibleOrders])
   const columns = useConsumableOrderColumns()
   const isTableBusy = isLoading || isSearchSettling
+  const canMoveForward = typeof totalOrders === 'number'
+    ? page * pageSize < totalOrders
+    : hasClientFallbackRows
+      ? offset + pageSize < orders.length
+      : orders.length === pageSize
+  const totalPages = typeof totalOrders === 'number'
+    ? Math.max(1, Math.ceil(totalOrders / pageSize))
+    : page + (canMoveForward ? 1 : 0)
   const defaultFromDate = shiftDate(-DEFAULT_LOOKBACK_DAYS)
   const defaultToDate = formatLocalDate(new Date())
   const hasActiveFilters = Boolean(searchValue.trim()) || fromDate !== defaultFromDate || toDate !== defaultToDate
+
+  useEffect(() => {
+    if (typeof totalOrders === 'number' && page > totalPages) {
+      setPage(totalPages)
+    }
+  }, [page, setPage, totalOrders, totalPages])
 
   function resetFilters() {
     setFromDate(defaultFromDate)
     setToDate(defaultToDate)
     setSearchValue('')
+    setPage(1)
     setOrders([])
+    setTotalOrders(undefined)
   }
 
 
@@ -156,7 +185,12 @@ export function ConsumableOrdersPage() {
                 aria-label={t('Від')}
                 type="date"
                 value={fromDate}
-                onChange={(event) => setFromDate(event.currentTarget.value)}
+                onChange={(event) => {
+                  setFromDate(event.currentTarget.value)
+                  setPage(1)
+                  setOrders([])
+                  setTotalOrders(undefined)
+                }}
               />
               <span className="consumable-orders-period-separator" />
               <TextInput
@@ -164,7 +198,12 @@ export function ConsumableOrdersPage() {
                 aria-label={t('До')}
                 type="date"
                 value={toDate}
-                onChange={(event) => setToDate(event.currentTarget.value)}
+                onChange={(event) => {
+                  setToDate(event.currentTarget.value)
+                  setPage(1)
+                  setOrders([])
+                  setTotalOrders(undefined)
+                }}
               />
             </div>
           </div>
@@ -175,9 +214,14 @@ export function ConsumableOrdersPage() {
             label={t('Пошук')}
             placeholder={t('Номер, постачальник, склад або коментар')}
             value={searchValue}
-            onChange={(event) => setSearchValue(event.currentTarget.value)}
+            onChange={(event) => {
+              setSearchValue(event.currentTarget.value)
+              setPage(1)
+              setOrders([])
+              setTotalOrders(undefined)
+            }}
           />
-          <div className="app-filter-actions">
+          <div className="app-filter-actions consumable-orders-command-actions">
             <Tooltip label={t('Скинути')}>
               <ActionIcon
                 aria-label={t('Скинути')}
@@ -190,11 +234,19 @@ export function ConsumableOrdersPage() {
                 <IconRestore size={17} />
               </ActionIcon>
             </Tooltip>
-            <Tooltip label={t('Оновити')}>
-              <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={34} variant="light" onClick={() => void loadOrders()}>
-                <IconRefresh size={17} />
-              </ActionIcon>
-            </Tooltip>
+            <Paginator
+              isLoading={isLoading}
+              page={page}
+              pageSize={pageSize}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              onPageSizeChange={(nextPageSize) => {
+                setPage(1)
+                setPageSize(nextPageSize)
+                setTotalOrders(undefined)
+              }}
+              onRefresh={() => void loadOrders()}
+            />
           </div>
           <div className="consumable-orders-table-toolbar-slot" ref={setTableToolbarSlot} />
           <Button
