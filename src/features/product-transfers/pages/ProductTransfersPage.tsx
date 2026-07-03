@@ -22,7 +22,7 @@ import {
 } from '@mantine/core'
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
-import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
@@ -559,7 +559,6 @@ export function ProductTransfersPage() {
 function ProductTransfersPageView({ model }: { model: ReturnType<typeof useProductTransfersPageModel> }) {
   return (
     <Stack gap="lg">
-      <ProductTransfersHeader model={model} />
       <ProductTransfersTableCard model={model} />
       <ProductTransferDetailDrawer model={model} />
       <ProductTransferCreateModal model={model} />
@@ -568,31 +567,13 @@ function ProductTransfersPageView({ model }: { model: ReturnType<typeof useProdu
   )
 }
 
-function ProductTransfersHeader({ model }: { model: ReturnType<typeof useProductTransfersPageModel> }) {
-  const { t } = useI18n()
-  const { isLoadingStorages, openCreateModal, storageOptions } = model
-
-  return (
-    <PageHeaderActions>
-      <Button
-        color={CREATE_ACTION_COLOR}
-        size="sm"
-        disabled={!isLoadingStorages && storageOptions.length === 0}
-        leftSection={<IconPlus size={16} />}
-        loading={isLoadingStorages}
-        onClick={openCreateModal}
-      >
-        {t('Нове переміщення')}
-      </Button>
-    </PageHeaderActions>
-  )
-}
 
 function ProductTransfersTableCard({ model }: { model: ReturnType<typeof useProductTransfersPageModel> }) {
   const { t } = useI18n()
   const {
-    columns, error, filterDraft, filterError, hasMore, isLoading, isLoadingMore, openDetail, loadMoreTransfers,
-    pageSize, reload, resetFilters, applyFilters, setPageSize, storageError, transfers,
+    columns, error, filterDraft, filterError, hasMore, isLoading, isLoadingMore, isLoadingStorages, openCreateModal,
+    openDetail, loadMoreTransfers, pageSize, reload, resetFilters, applyFilters, setPageSize, storageError,
+    storageOptions, transfers,
   } = model
 
   return (
@@ -643,6 +624,17 @@ function ProductTransfersTableCard({ model }: { model: ReturnType<typeof useProd
               </ActionIcon>
             </Tooltip>
           </div>
+          <Button
+            color={CREATE_ACTION_COLOR}
+            disabled={!isLoadingStorages && storageOptions.length === 0}
+            leftSection={<IconPlus size={16} />}
+            loading={isLoadingStorages}
+            size="sm"
+            styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
+            onClick={openCreateModal}
+          >
+            {t('Нове переміщення')}
+          </Button>
         </Group>
       </div>
 
@@ -692,14 +684,14 @@ function ProductTransferDetailDrawer({ model }: { model: ReturnType<typeof usePr
       opened={Boolean(selectedTransfer)}
       position="right"
       size="min(920px, 100vw)"
-      title={t('Деталі переміщення')}
+      title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Деталі переміщення')}</span>}
       onClose={closeDetail}
     >
       {selectedTransfer && (
         <>
           <Group justify="flex-end" mb="md">
             <Button
-              color="violet"
+              color={CREATE_ACTION_COLOR}
               disabled={!selectedTransfer.NetUid}
               leftSection={<IconDownload size={16} />}
               loading={isDownloading}
@@ -716,7 +708,7 @@ function ProductTransferDetailDrawer({ model }: { model: ReturnType<typeof usePr
       <AppModal
         centered
         opened={downloadOpened}
-        title={t('Завантажити')}
+        title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Завантажити')}</span>}
         onClose={closeDownload}
       >
         <Stack gap="sm">
@@ -766,7 +758,7 @@ function ProductTransferCreateModal({ model }: { model: ReturnType<typeof usePro
   } = model
 
   return (
-    <AppModal centered opened={isCreateModalOpen} size="xl" title={t('Нове переміщення з файлу')} onClose={closeCreateModal}>
+    <AppModal centered opened={isCreateModalOpen} size="xl" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Нове переміщення з файлу')}</span>} onClose={closeCreateModal}>
       <form id="product-transfer-create-form" onSubmit={handleCreate}>
         <Stack gap="md">
           {createError && (
@@ -909,7 +901,7 @@ function ProductTransferCreateModal({ model }: { model: ReturnType<typeof usePro
               <Button color="gray" disabled={isCreating} type="button" variant="subtle" onClick={closeCreateModal}>
                 {t('Скасувати')}
               </Button>
-              <Button color="violet" loading={isCreating} type="submit">
+              <Button color={CREATE_ACTION_COLOR} loading={isCreating} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} type="submit">
                 {t('Створити')}
               </Button>
             </Group>
@@ -928,7 +920,7 @@ function ProductTransferImportResultModal({ model }: { model: ReturnType<typeof 
       centered
       opened={exceptionMessages.length > 0}
       size="lg"
-      title={t('Результат імпорту')}
+      title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Результат імпорту')}</span>}
       onClose={() => setExceptionMessages([])}
     >
       <Stack gap="sm">
@@ -1008,7 +1000,7 @@ function useProductTransferColumns(
         accessor: (transfer) => Boolean(transfer.IsManagement),
         cell: (transfer) =>
           transfer.IsManagement ? (
-            <Badge color="violet" variant="light">
+            <Badge className="app-role-pill" variant="light">
               {t('Так')}
             </Badge>
           ) : (
@@ -1201,12 +1193,12 @@ function TransferDetail({
 
       <Group gap="xs">
         {transfer.IsManagement && (
-          <Badge color="violet" variant="light">
+          <Badge className="app-role-pill" variant="light">
             {t('Управлінське')}
           </Badge>
         )}
         {isLoading && (
-          <Badge color="gray" variant="light">
+          <Badge className="app-role-pill is-gray" variant="light">
             {t('Завантаження деталей')}
           </Badge>
         )}
@@ -1240,7 +1232,7 @@ function TransferDetail({
       <Stack gap="xs">
         <Group justify="space-between">
           <Text fw={600}>{t('Позиції')}</Text>
-          <Badge color="gray" variant="light">
+          <Badge className="app-role-pill is-gray" variant="light">
             {items.length}
           </Badge>
         </Group>
@@ -1498,7 +1490,7 @@ function formatLocation(location: ProductTransferLocation): string {
   const address = [placement?.StorageNumber, placement?.RowNumber, placement?.CellNumber].filter(Boolean).join('-')
   const qty = formatAmount(toNumber(location.Qty) ?? toNumber(placement?.Qty))
 
-  if (!address && qty === '—') {
+  if (!address && !qty) {
     return ''
   }
 
@@ -1543,12 +1535,12 @@ function formatAmount(value: number | null): string {
 
 function displayValue(value: unknown): string {
   if (typeof value === 'number') {
-    return Number.isFinite(value) ? String(value) : '—'
+    return Number.isFinite(value) ? String(value) : ''
   }
 
   if (typeof value === 'string') {
-    return value.trim() || '—'
+    return value.trim() || ''
   }
 
-  return '—'
+  return ''
 }
