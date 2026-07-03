@@ -1,7 +1,7 @@
 import { ActionIcon, Alert, Anchor, Badge, Button, Checkbox, Group, Select, SimpleGrid, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { IconAlertCircle, IconCheck, IconRefresh, IconRestore } from '@tabler/icons-react'
-import { useEffect, useMemo, useReducer, useRef } from 'react'
+import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { translate } from '../../../shared/i18n/translate'
@@ -9,8 +9,6 @@ import type { TranslateFunction } from '../../../shared/i18n/types'
 import { SaleAuditDetail, getSaleStatisticBySaleId, type SaleAuditStatistic } from '../../../shared/sale-audit'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
-import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import type { EditingItemsResponse, EditingActItem, WarehouseUkraineUser } from '../types'
@@ -42,7 +40,7 @@ type EditingListProps = {
 
 export function EditingList({ kind, layoutVersion, loader, onProcessed, processor, tableId }: EditingListProps) {
   const { t } = useI18n()
-  const { density, toggleDensity } = useDataTableDensity(tableId, 'normal')
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const initialFilters = useMemo<FilterDraft>(
     () => ({ from: getDateShiftedByDays(-7), to: getDateShiftedByDays(0), isDevelopment: false }),
     [],
@@ -254,80 +252,86 @@ export function EditingList({ kind, layoutVersion, loader, onProcessed, processo
   }
 
   return (
-    <Stack gap="md">
-      <Group align="end" gap="sm" wrap="wrap">
-        <TextInput
-          label={t('Початкова дата')}
-          max={filterDraft.to || undefined}
-          type="date"
-          value={filterDraft.from}
-          onChange={(event) => applyFilters({ ...filterDraft, from: event.currentTarget.value })}
-        />
-        <TextInput
-          label={t('Кінцева дата')}
-          min={filterDraft.from || undefined}
-          type="date"
-          value={filterDraft.to}
-          onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
-        />
-        <Checkbox
-          checked={filterDraft.isDevelopment}
-          label={t('Опрацьовані')}
-          onChange={(event) => applyFilters({ ...filterDraft, isDevelopment: event.currentTarget.checked })}
-        />
-        <Tooltip label={t('Скинути')}>
-          <ActionIcon aria-label={t('Скинути')} color="gray" size={36} variant="light" onClick={resetFilters}>
-            <IconRestore size={18} />
-          </ActionIcon>
-        </Tooltip>
-        <Tooltip label={t('Оновити')}>
-          <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={36} variant="light" onClick={() => reload()}>
-            <IconRefresh size={18} />
-          </ActionIcon>
-        </Tooltip>
-        <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />
-      </Group>
+    <Stack className="warehouse-ukraine-tab" gap={6}>
+      <div className="warehouse-ukraine-shell console-table-shell">
+        <div className="app-filter-bar warehouse-ukraine-filter-bar is-editing">
+          <TextInput
+            className="warehouse-ukraine-filter-input"
+            label={t('Початкова дата')}
+            max={filterDraft.to || undefined}
+            type="date"
+            value={filterDraft.from}
+            onChange={(event) => applyFilters({ ...filterDraft, from: event.currentTarget.value })}
+          />
+          <TextInput
+            className="warehouse-ukraine-filter-input"
+            label={t('Кінцева дата')}
+            min={filterDraft.from || undefined}
+            type="date"
+            value={filterDraft.to}
+            onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
+          />
+          <Checkbox
+            checked={filterDraft.isDevelopment}
+            label={t('Опрацьовані')}
+            onChange={(event) => applyFilters({ ...filterDraft, isDevelopment: event.currentTarget.checked })}
+          />
+          <div className="app-filter-actions warehouse-ukraine-filter-actions">
+            <Tooltip label={t('Скинути')}>
+              <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
+                <IconRestore size={17} />
+              </ActionIcon>
+            </Tooltip>
+            <Tooltip label={t('Оновити')}>
+              <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={34} variant="light" onClick={() => reload()}>
+                <IconRefresh size={17} />
+              </ActionIcon>
+            </Tooltip>
+            <Select
+              aria-label={t('Кількість рядків')}
+              data={PAGE_SIZE_OPTIONS}
+              size="xs"
+              value={String(pageSize)}
+              w={76}
+              onChange={(value) => setPageSize(Number(value || DEFAULT_PAGE_SIZE))}
+            />
+          </div>
+          <div ref={setTableToolbarSlot} className="warehouse-ukraine-table-toolbar-slot" />
+        </div>
 
-      {(error || filterError) && (
-        <Alert color={filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
-          {filterError || error}
-        </Alert>
-      )}
+        {(error || filterError) && (
+          <Alert className="console-table-alert" color={filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
+            {filterError || error}
+          </Alert>
+        )}
 
-      <Group justify="space-between" gap="xs">
-        <Text c="dimmed" size="xs">
-          {t('Показано')} {items.length} / {totalQty}
-        </Text>
-        <Select
-          aria-label={t('Кількість рядків')}
-          data={PAGE_SIZE_OPTIONS}
-          size="xs"
-          value={String(pageSize)}
-          w={88}
-          onChange={(value) => setPageSize(Number(value || DEFAULT_PAGE_SIZE))}
-        />
-      </Group>
+        <div className="warehouse-ukraine-table console-table-body">
+          <DataTable
+            columns={columns}
+            data={items}
+            emptyText={t('Даних не знайдено')}
+            getRowId={(item, index) => String(item.NetUid || item.Id || index)}
+            height="100%"
+            isLoading={isLoading}
+            layoutVersion={`${layoutVersion}-toolbar`}
+            minWidth={920}
+            showLayoutControls
+            tableId={tableId}
+            toolbarPortalTarget={tableToolbarSlot}
+          />
+        </div>
 
-      <DataTable
-        columns={columns}
-        data={items}
-        density={density}
-        emptyText={t('Даних не знайдено')}
-        getRowId={(item, index) => String(item.NetUid || item.Id || index)}
-        isLoading={isLoading}
-        layoutVersion={layoutVersion}
-        maxHeight="calc(100vh - 480px)"
-        minWidth={920}
-        tableId={tableId}
-      />
-
-      {hasMore && (
-        <Group justify="center">
-          <Button color="gray" loading={isLoadingMore} variant="light" onClick={loadMoreItems}>
-            {t('Завантажити ще')}
-          </Button>
-        </Group>
-      )}
+        <div className="console-table-footer warehouse-ukraine-table-footer">
+          <Text c="dimmed" size="xs">
+            {t('Показано')} {items.length} / {totalQty}
+          </Text>
+          {hasMore && (
+            <Button color="gray" loading={isLoadingMore} variant="light" onClick={loadMoreItems}>
+              {t('Завантажити ще')}
+            </Button>
+          )}
+        </div>
+      </div>
 
       <AppModal
         centered

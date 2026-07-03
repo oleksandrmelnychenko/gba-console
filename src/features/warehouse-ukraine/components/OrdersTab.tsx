@@ -1,16 +1,13 @@
-import { ActionIcon, Alert, Button, Card, Group, Select, Stack, Text, TextInput, Tooltip } from '@mantine/core'
+import { ActionIcon, Alert, Button, Select, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import { IconAlertCircle, IconRefresh, IconRestore } from '@tabler/icons-react'
-import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
 import { getSupplyUkraineOrderDisplayNumber } from '../../../shared/supplyUkraineOrderNumbers'
 import { translate } from '../../../shared/i18n/translate'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
-import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
-import { PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { getWarehouseUkraineOrders } from '../api/ordersApi'
 import type { SupplyOrderUkraine } from '../types'
 import { displayValue, formatDateTime, getDateShiftedByDays, toIsoString } from './dateHelpers'
@@ -122,7 +119,6 @@ function useOrdersTabModel() {
   const initialState = useMemo(() => createInitialOrdersState(initialFilters), [initialFilters])
   const [state, dispatchState] = useReducer(ordersTabReducer, initialState)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
-  const { density, toggleDensity } = useDataTableDensity('warehouse-ukraine-orders', TABLE_DEFAULT_LAYOUT.density)
   const { activeFilters, orders, pageSize } = state
   const filterError = getFilterError(activeFilters.from, activeFilters.to)
   const listRequestKey = `${activeFilters.from}|${activeFilters.to}|${activeFilters.placed}|${pageSize}`
@@ -251,42 +247,26 @@ function useOrdersTabModel() {
     ...state,
     applyFilters,
     columns,
-    density,
     filterError,
     loadMoreOrders,
     openOrder,
     reload,
     resetFilters,
     setPageSize,
-    toggleDensity,
   }
 }
 
 export function OrdersTab() {
   const model = useOrdersTabModel()
   const { t } = useI18n()
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
 
   return (
-    <Stack gap="md">
-      <PageHeaderActions>
-        <Tooltip label={t('Оновити')}>
-          <ActionIcon
-            aria-label={t('Оновити')}
-            color="gray"
-            loading={model.isLoading}
-            size={38}
-            variant="light"
-            onClick={() => model.reload()}
-          >
-            <IconRefresh size={18} />
-          </ActionIcon>
-        </Tooltip>
-      </PageHeaderActions>
-
-      <Card withBorder radius="md" padding="md">
-        <Stack gap="md">
-          <Group align="end" gap="sm" wrap="wrap">
+    <Stack className="warehouse-ukraine-tab" gap={6}>
+      <div className="warehouse-ukraine-shell console-table-shell">
+        <div className="app-filter-bar warehouse-ukraine-filter-bar is-orders">
             <TextInput
+              className="warehouse-ukraine-filter-input"
               label={t('Початкова дата')}
               max={model.filterDraft.to || undefined}
               type="date"
@@ -294,6 +274,7 @@ export function OrdersTab() {
               onChange={(event) => model.applyFilters({ ...model.filterDraft, from: event.currentTarget.value })}
             />
             <TextInput
+              className="warehouse-ukraine-filter-input"
               label={t('Кінцева дата')}
               min={model.filterDraft.from || undefined}
               type="date"
@@ -301,6 +282,7 @@ export function OrdersTab() {
               onChange={(event) => model.applyFilters({ ...model.filterDraft, to: event.currentTarget.value })}
             />
             <Select
+              className="warehouse-ukraine-filter-input"
               allowDeselect={false}
               data={[
                 { value: 'false', label: t('Не оприбутковані') },
@@ -311,55 +293,71 @@ export function OrdersTab() {
               w={190}
               onChange={(value) => model.applyFilters({ ...model.filterDraft, placed: value === 'true' })}
             />
-            <Tooltip label={t('Скинути')}>
-              <ActionIcon aria-label={t('Скинути')} color="gray" size={36} variant="light" onClick={model.resetFilters}>
-                <IconRestore size={18} />
-              </ActionIcon>
-            </Tooltip>
-            <DataTableDensityToggle density={model.density} onToggle={model.toggleDensity} size={36} />
-          </Group>
+            <div className="app-filter-actions warehouse-ukraine-filter-actions">
+              <Tooltip label={t('Скинути')}>
+                <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={model.resetFilters}>
+                  <IconRestore size={17} />
+                </ActionIcon>
+              </Tooltip>
+              <Tooltip label={t('Оновити')}>
+                <ActionIcon
+                  aria-label={t('Оновити')}
+                  color="gray"
+                  loading={model.isLoading}
+                  size={34}
+                  variant="light"
+                  onClick={() => model.reload()}
+                >
+                  <IconRefresh size={17} />
+                </ActionIcon>
+              </Tooltip>
+              <Select
+                aria-label={t('Кількість рядків')}
+                data={PAGE_SIZE_OPTIONS}
+                size="xs"
+                value={String(model.pageSize)}
+                w={76}
+                onChange={(value) => model.setPageSize(Number(value || DEFAULT_PAGE_SIZE))}
+              />
+            </div>
+            <div ref={setTableToolbarSlot} className="warehouse-ukraine-table-toolbar-slot" />
+          </div>
 
           {(model.error || model.filterError) && (
-            <Alert color={model.filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert className="console-table-alert" color={model.filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
               {model.filterError || model.error}
             </Alert>
           )}
 
-          <Group justify="flex-end" gap="xs">
-            <Select
-              aria-label={t('Кількість рядків')}
-              data={PAGE_SIZE_OPTIONS}
-              size="xs"
-              value={String(model.pageSize)}
-              w={88}
-              onChange={(value) => model.setPageSize(Number(value || DEFAULT_PAGE_SIZE))}
-            />
-          </Group>
-
+          <div className="warehouse-ukraine-table console-table-body">
           <DataTable
             columns={model.columns}
             data={model.orders}
             defaultLayout={TABLE_DEFAULT_LAYOUT}
-            density={model.density}
             emptyText={t('Замовлень не знайдено')}
             getRowId={(order, index) => String(order.NetUid || order.Id || index)}
+            height="100%"
             isLoading={model.isLoading}
-            layoutVersion="warehouse-ukraine-orders-1"
-            maxHeight="calc(100vh - 420px)"
+            layoutVersion="warehouse-ukraine-orders-2"
             minWidth={1200}
+            showLayoutControls
             tableId="warehouse-ukraine-orders"
+            toolbarPortalTarget={tableToolbarSlot}
             onRowClick={model.openOrder}
           />
+          </div>
 
           {model.hasMore && (
-            <Group justify="center">
+            <div className="console-table-footer warehouse-ukraine-table-footer">
+              <Text c="dimmed" size="sm">
+                {t('Показано')} {model.orders.length} / {model.totalQty}
+              </Text>
               <Button color="gray" loading={model.isLoadingMore} variant="light" onClick={model.loadMoreOrders}>
                 {t('Завантажити ще')}
               </Button>
-            </Group>
+            </div>
           )}
-        </Stack>
-      </Card>
+      </div>
     </Stack>
   )
 }

@@ -30,7 +30,6 @@ import {
   IconDeviceFloppy,
   IconFileText,
   IconHash,
-  IconInfoCircle,
   IconLink,
   IconPencil,
   IconPhone,
@@ -48,10 +47,7 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import type { TranslationKey } from '../../../shared/i18n/types'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import {
-  CREATE_ACTION_COLOR,
-  PageHeaderActions,
-} from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { usePageBreadcrumb } from '../../../shared/ui/page-header-actions/pageHeaderActionsContext'
 import {
   addEcommerceStorage,
@@ -105,6 +101,7 @@ import {
   validatePage,
 } from '../utils'
 import './online-shop-seo-page.css'
+import '../../../shared/ui/console-table-page.css'
 
 type SeoTab = 'pages' | 'info-payment' | 'contacts' | 'shop-clients' | 'bank-cards' | 'warehouses' | 'shop-data'
 type SeoShopDataSearchTarget = 'bank-cards' | 'clients' | 'storages'
@@ -1446,6 +1443,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
       description: 'Контактна інформація та дані оплати для інтернет-магазину.',
       title: 'Основні налаштування',
     }
+  const showCommandBar = activeTab !== 'info-payment'
   const headerAction = activeTab === 'contacts'
     ? (
       <Button
@@ -1476,93 +1474,92 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
     ? settings.find((entry) => entry.locale === editingGeneralLocale) || null
     : null
   return (
-    <Stack className="seo-page" gap="md">
-      <PageHeaderActions>
-        {headerAction}
-      </PageHeaderActions>
-
+    <Stack className="seo-page console-table-page" gap={6}>
       <Box className="seo-page-shell">
-        <div className="seo-page-command-bar">
-          {commandSearch ? (
-            <div className={`seo-page-command-search${commandSearch.filterOptions ? ' has-filter' : ''}`}>
-              {commandSearch.filterOptions && commandSearch.filterValue && commandSearch.onFilterChange ? (
-                <div className="seo-page-command-combo">
-                  <Text className="seo-page-command-combo-label">{t(commandSearch.label)}</Text>
-                  <div className="seo-page-command-combo-control">
-                    <Select
-                      allowDeselect={false}
-                      aria-label={t(commandSearch.filterLabel || 'Шукати по')}
-                      className="seo-page-command-combo-filter"
-                      data={commandSearch.filterOptions.map((option) => ({
-                        label: t(option.label),
-                        value: option.value,
-                      }))}
-                      rightSectionWidth={24}
-                      value={commandSearch.filterValue}
-                      variant="unstyled"
-                      onChange={(value) => commandSearch.onFilterChange?.(value || commandSearch.filterValue || '')}
-                    />
-                    <span className="seo-page-command-combo-divider" aria-hidden />
-                    <TextInput
-                      aria-label={t(commandSearch.label)}
-                      className="seo-page-command-combo-input"
-                      leftSection={<IconSearch size={15} />}
-                      placeholder={t(commandSearch.placeholder)}
-                      value={commandSearch.value}
-                      variant="unstyled"
-                      onChange={(event) => commandSearch.onChange(event.currentTarget.value)}
-                    />
+        {showCommandBar && (
+          <div className="app-filter-bar seo-page-command-bar">
+            {commandSearch ? (
+              <div className={`seo-page-command-search${commandSearch.filterOptions ? ' has-filter' : ''}`}>
+                {commandSearch.filterOptions && commandSearch.filterValue && commandSearch.onFilterChange ? (
+                  <div className="seo-page-command-combo">
+                    <Text className="seo-page-command-combo-label">{t(commandSearch.label)}</Text>
+                    <div className="seo-page-command-combo-control">
+                      <Select
+                        allowDeselect={false}
+                        aria-label={t(commandSearch.filterLabel || 'Шукати по')}
+                        className="seo-page-command-combo-filter"
+                        data={commandSearch.filterOptions.map((option) => ({
+                          label: t(option.label),
+                          value: option.value,
+                        }))}
+                        rightSectionWidth={24}
+                        value={commandSearch.filterValue}
+                        variant="unstyled"
+                        onChange={(value) => commandSearch.onFilterChange?.(value || commandSearch.filterValue || '')}
+                      />
+                      <span className="seo-page-command-combo-divider" aria-hidden />
+                      <TextInput
+                        aria-label={t(commandSearch.label)}
+                        className="seo-page-command-combo-input"
+                        leftSection={<IconSearch size={15} />}
+                        placeholder={t(commandSearch.placeholder)}
+                        value={commandSearch.value}
+                        variant="unstyled"
+                        onChange={(event) => commandSearch.onChange(event.currentTarget.value)}
+                      />
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <TextInput
-                  className="seo-page-search-input"
-                  leftSection={<IconSearch size={15} />}
-                  label={t(commandSearch.label)}
-                  placeholder={t(commandSearch.placeholder)}
-                  value={commandSearch.value}
-                  onChange={(event) => commandSearch.onChange(event.currentTarget.value)}
-                />
+                ) : (
+                  <TextInput
+                    className="seo-page-search-input"
+                    leftSection={<IconSearch size={15} />}
+                    label={t(commandSearch.label)}
+                    placeholder={t(commandSearch.placeholder)}
+                    value={commandSearch.value}
+                    onChange={(event) => commandSearch.onChange(event.currentTarget.value)}
+                  />
+                )}
+              </div>
+            ) : (
+              <div className="seo-page-command-summary">
+                <Text className="seo-page-command-summary-description">
+                  {t(commandSummary.description)}
+                </Text>
+                <Text className="seo-page-command-summary-title">{t(commandSummary.title)}</Text>
+              </div>
+            )}
+            <div className="seo-page-toolbar-actions">
+              {commandSearch && (
+                <Tooltip label={t('Скинути')}>
+                  <ActionIcon
+                    aria-label={t('Скинути')}
+                    color="gray"
+                    disabled={!commandSearch.value}
+                    size={34}
+                    type="button"
+                    variant="light"
+                    onClick={commandSearch.onReset}
+                  >
+                    <IconRestore size={17} />
+                  </ActionIcon>
+                </Tooltip>
               )}
-            </div>
-          ) : (
-            <div className="seo-page-command-summary">
-              <Text className="seo-page-command-summary-description">
-                {t(commandSummary.description)}
-              </Text>
-              <Text className="seo-page-command-summary-title">{t(commandSummary.title)}</Text>
-            </div>
-          )}
-          <div className="seo-page-toolbar-actions">
-            {commandSearch && (
-              <Tooltip label={t('Скинути')}>
+              <Tooltip label={t('Оновити')}>
                 <ActionIcon
-                  aria-label={t('Скинути')}
+                  aria-label={t('Оновити')}
                   color="gray"
-                  disabled={!commandSearch.value}
+                  loading={isActiveTabRefreshing}
                   size={34}
-                  type="button"
                   variant="light"
-                  onClick={commandSearch.onReset}
+                  onClick={() => reload()}
                 >
-                  <IconRestore size={17} />
+                  <IconRefresh size={17} />
                 </ActionIcon>
               </Tooltip>
-            )}
-            <Tooltip label={t('Оновити')}>
-              <ActionIcon
-                aria-label={t('Оновити')}
-                color="gray"
-                loading={isActiveTabRefreshing}
-                size={34}
-                variant="light"
-                onClick={() => reload()}
-              >
-                <IconRefresh size={17} />
-              </ActionIcon>
-            </Tooltip>
+              {headerAction}
+            </div>
           </div>
-        </div>
+        )}
 
         {error && (
           <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
@@ -1625,7 +1622,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
                         >
                           <div className="seo-settings-tree-module-header">
                             <div className="seo-settings-tree-module-title">
-                              <Text className="seo-settings-tree-module-name">{entry.locale}</Text>
+                              <Text className="app-section-title seo-settings-tree-module-name" fw={600} size="sm">{entry.locale}</Text>
                             </div>
                             <Tooltip label={t('Редагувати')}>
                               <ActionIcon
@@ -1648,9 +1645,6 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
                               return (
                                 <article className="seo-settings-tree-node" key={`${entry.locale}-${section.group}`}>
                                   <div className="seo-settings-tree-node-row">
-                                    <span className="seo-settings-tree-node-icon">
-                                      {section.group === 'contact' ? <IconInfoCircle size={15} /> : <IconCreditCard size={15} />}
-                                    </span>
                                     <div className="seo-settings-tree-node-title">
                                       <Text className="seo-settings-tree-node-name">{t(section.label)}</Text>
                                     </div>
@@ -1667,9 +1661,6 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
                                           key={`${entry.locale}-${field.group}-${field.id}`}
                                         >
                                           <span className="seo-settings-tree-connector" aria-hidden />
-                                          <span className="seo-settings-tree-field-icon">
-                                            {field.group === 'contact' ? <IconInfoCircle size={13} /> : <IconCreditCard size={13} />}
-                                          </span>
                                           <div className="seo-settings-tree-field-content">
                                             <div className="seo-settings-tree-field-body">
                                               <Text className="seo-settings-tree-field-name">{t(field.label)}</Text>
@@ -1842,7 +1833,11 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
       <AppDrawer
         opened={Boolean(generalEditorEntry)}
         size="standard"
-        title={generalEditorEntry ? `${t('Редагування')} ${getLocaleLabel(generalEditorEntry.locale)}` : t('Редагування')}
+        title={
+          <span style={{ fontFamily: 'var(--font-mono)' }}>
+            {generalEditorEntry ? `${t('Редагування')} ${getLocaleLabel(generalEditorEntry.locale)}` : t('Редагування')}
+          </span>
+        }
         onClose={closeGeneralLocaleEditor}
       >
         {generalEditorEntry && (
@@ -1862,18 +1857,12 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
                   <Text className="seo-matrix-editor-title">{generalEditorEntry.locale}</Text>
                 </span>
               </div>
-              <Button color="gray" size="xs" type="button" variant="light" onClick={closeGeneralLocaleEditor}>
-                {t('Закрити')}
-              </Button>
             </div>
 
             <section className="seo-general-sheet-section">
               <div className="seo-general-sheet-section-header">
-                <span className="seo-matrix-section-icon">
-                  <IconInfoCircle size={15} />
-                </span>
                 <span>
-                  <Text className="seo-matrix-section-title">{t('Загальна інформація')}</Text>
+                  <Text className="app-section-title" fw={600} size="sm">{t('Загальна інформація')}</Text>
                   <Text className="seo-matrix-section-description">
                     {t('Адреса, телефон, пошта, сайт і Pixel ID для вибраної мови.')}
                   </Text>
@@ -1890,11 +1879,8 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
 
             <section className="seo-general-sheet-section">
               <div className="seo-general-sheet-section-header">
-                <span className="seo-matrix-section-icon">
-                  <IconCreditCard size={15} />
-                </span>
                 <span>
-                  <Text className="seo-matrix-section-title">{t('Оплата')}</Text>
+                  <Text className="app-section-title" fw={600} size="sm">{t('Оплата')}</Text>
                   <Text className="seo-matrix-section-description">
                     {t('Суми, коментарі та повідомлення, які бачить клієнт під час оформлення.')}
                   </Text>
@@ -1912,7 +1898,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
         )}
       </AppDrawer>
 
-      <AppModal centered opened={isPageEditorOpen} size="xl" title={t('Редагування SEO сторінки')} onClose={closePageEditor}>
+      <AppModal centered opened={isPageEditorOpen} size="xl" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Редагування SEO сторінки')}</span>} onClose={closePageEditor}>
         <form onSubmit={handleSavePage}>
           <Stack gap="md">
             {formError && (
@@ -2004,7 +1990,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
               />
             </SimpleGrid>
             <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
-              <Avatar color="violet" name={getSeoContactDisplayName(contactFormValues) || undefined} radius="md" size={72} src={contactFormValues.ImgUrl || undefined}>
+              <Avatar color="gray" name={getSeoContactDisplayName(contactFormValues) || undefined} radius="md" size={72} src={contactFormValues.ImgUrl || undefined}>
                 {getContactInitials(contactFormValues)}
               </Avatar>
               <FileInput

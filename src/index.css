@@ -196,6 +196,12 @@ select {
   color: var(--mantine-color-green-8);
 }
 
+.app-role-pill.is-yellow {
+  background: var(--mantine-color-yellow-0);
+  border-color: var(--mantine-color-yellow-4);
+  color: var(--mantine-color-yellow-9);
+}
+
 .app-role-pill.is-red {
   background: var(--mantine-color-red-0);
   border-color: var(--mantine-color-red-3);
@@ -244,6 +250,7 @@ select {
 /* Mantine Tabs follow the §10 tab pattern app-wide: mono labels on the gray-2
    baseline, brand-orange underline for the active tab (never violet). */
 .mantine-Tabs-list {
+  background: #f8f9fa;
   border-color: var(--mantine-color-gray-2);
 }
 

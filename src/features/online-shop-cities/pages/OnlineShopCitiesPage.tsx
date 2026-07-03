@@ -5,14 +5,13 @@ import {
   Button,
   Checkbox,
   Group,
-  ScrollArea,
   SimpleGrid,
   Stack,
   Text,
   TextInput,
   Tooltip,
 } from '@mantine/core'
-import { AppModal } from "../../../shared/ui/AppModal"
+import { AppModal } from '../../../shared/ui/AppModal'
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
@@ -20,7 +19,6 @@ import {
   IconDeviceFloppy,
   IconHome,
   IconMapPin,
-  IconPencil,
   IconPlus,
   IconRefresh,
   IconRestore,
@@ -28,14 +26,17 @@ import {
   IconTrash,
   IconWorld,
 } from '@tabler/icons-react'
-import { type FormEvent, useCallback, useEffect, useMemo, useReducer } from 'react'
+import { type FormEvent, useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { getOnlineShopCities, saveOnlineShopCity } from '../api/onlineShopCitiesApi'
 import type { OnlineShopCity } from '../types'
 import './online-shop-cities-page.css'
+import '../../../shared/ui/console-table-page.css'
 
 const CITY_FILTER_ALL = 'all'
 const CITY_FILTER_ACTIVE = 'active'
@@ -61,6 +62,11 @@ const EMPTY_FORM_VALUES: CityFormValues = {
   NameRu: '',
   NameUa: '',
 }
+
+const CITIES_TABLE_DEFAULT_LAYOUT = {
+  columnPinning: { left: ['city'] },
+  density: 'normal',
+} satisfies DataTableDefaultLayout
 
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
   day: '2-digit',
@@ -252,19 +258,7 @@ export function OnlineShopCitiesPage() {
   }
 
   return (
-    <Stack className="online-shop-cities-page" gap="md">
-      <PageHeaderActions>
-        <Button
-          color={CREATE_ACTION_COLOR}
-          size="sm"
-          leftSection={<IconPlus size={16} />}
-          type="button"
-          onClick={() => openEditor()}
-        >
-          {t('Нове місто')}
-        </Button>
-      </PageHeaderActions>
-
+    <Stack className="online-shop-cities-page console-table-page" gap={6}>
       <OnlineShopCitiesRegistry
         cityFilter={cityFilter}
         cityNavigationItems={cityNavigationItems}
@@ -274,6 +268,7 @@ export function OnlineShopCitiesPage() {
         searchDraft={searchDraft}
         visibleCities={visibleCities}
         onCityFilterChange={setCityFilter}
+        onCreateCity={() => openEditor()}
         onOpenEditor={openEditor}
         onRequestArchive={requestArchive}
         onReload={reload}
@@ -318,6 +313,7 @@ type OnlineShopCitiesRegistryProps = {
   searchDraft: string
   visibleCities: OnlineShopCity[]
   onCityFilterChange: (filter: CityFilter) => void
+  onCreateCity: () => void
   onOpenEditor: (city?: OnlineShopCity) => void
   onRequestArchive: (city: OnlineShopCity) => void
   onReload: () => void
@@ -334,6 +330,7 @@ function OnlineShopCitiesRegistry({
   searchDraft,
   visibleCities,
   onCityFilterChange,
+  onCreateCity,
   onOpenEditor,
   onRequestArchive,
   onReload,
@@ -341,9 +338,13 @@ function OnlineShopCitiesRegistry({
   onSearchChange,
 }: OnlineShopCitiesRegistryProps) {
   const { t } = useI18n()
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
+  const columns = useCityColumns({
+    onRequestArchive,
+  })
 
   return (
-    <Box className="online-shop-cities-shell">
+    <Box className="online-shop-cities-shell console-table-shell">
       <div className="app-filter-bar online-shop-cities-command-bar">
         <TextInput
           className="online-shop-cities-search-input"
@@ -382,10 +383,22 @@ function OnlineShopCitiesRegistry({
             </ActionIcon>
           </Tooltip>
         </div>
+        <div ref={setTableToolbarSlot} className="online-shop-cities-table-toolbar-slot" />
+        <div className="online-shop-cities-create-actions">
+          <Button
+            color={CREATE_ACTION_COLOR}
+            size="sm"
+            leftSection={<IconPlus size={16} />}
+            type="button"
+            onClick={onCreateCity}
+          >
+            {t('Нове місто')}
+          </Button>
+        </div>
       </div>
 
       {error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert className="console-table-alert" color="red" icon={<IconAlertCircle size={18} />} variant="light">
           {error}
         </Alert>
       )}
@@ -412,147 +425,153 @@ function OnlineShopCitiesRegistry({
         </aside>
 
         <section className="online-shop-cities-roster">
-          <div className="online-shop-cities-roster-table">
-            <div className="online-shop-cities-roster-head">
-              <span>{t('Місто')}</span>
-              <span>{t('Оплата')}</span>
-              <span>{t('Стан')}</span>
-              <span>{t('Оновлено')}</span>
-              <span />
-              <span />
-            </div>
-
-            <ScrollArea.Autosize mah="calc(100vh - 372px)" type="auto">
-              <div className="online-shop-cities-roster-body">
-                {isLoading ? (
-                  <div className="online-shop-cities-empty-state">
-                    {t('Завантаження міст')}
-                  </div>
-                ) : visibleCities.length > 0 ? (
-                  visibleCities.map((city, index) => (
-                    <CityRosterRow
-                      key={String(city.NetUid || city.Id || index)}
-                      city={city}
-                      onOpenEditor={onOpenEditor}
-                      onRequestArchive={onRequestArchive}
-                    />
-                  ))
-                ) : (
-                  <div className="online-shop-cities-empty-state">
-                    {hasActiveFilters
-                      ? t('Міст за цими фільтрами не знайдено')
-                      : t('Міст не знайдено')}
-                  </div>
-                )}
-              </div>
-            </ScrollArea.Autosize>
-          </div>
+          <DataTable
+            columns={columns}
+            data={visibleCities}
+            defaultLayout={CITIES_TABLE_DEFAULT_LAYOUT}
+            emptyText={hasActiveFilters ? t('Міст за цими фільтрами не знайдено') : t('Міст не знайдено')}
+            getRowId={(city, index) => String(city.NetUid || city.Id || index)}
+            height="100%"
+            isLoading={isLoading}
+            layoutVersion="online-shop-cities-table-1"
+            minWidth={900}
+            showLayoutControls
+            tableId="online-shop-cities"
+            toolbarPortalTarget={tableToolbarSlot}
+            onRowClick={onOpenEditor}
+          />
         </section>
       </div>
     </Box>
   )
 }
 
-function CityRosterRow({
-  city,
-  onOpenEditor,
+function useCityColumns({
   onRequestArchive,
 }: {
-  city: OnlineShopCity
-  onOpenEditor: (city: OnlineShopCity) => void
   onRequestArchive: (city: OnlineShopCity) => void
-}) {
+}): DataTableColumn<OnlineShopCity>[] {
   const { t } = useI18n()
-  const dateParts = formatDateParts(city.Updated)
-  const isArchived = city.Deleted === true
-  const isLocalPayment = city.IsLocalPayment === true
 
-  function openCity() {
-    onOpenEditor(city)
-  }
+  return useMemo<DataTableColumn<OnlineShopCity>[]>(
+    () => [
+      {
+        id: 'city',
+        header: t('Місто'),
+        width: 360,
+        minWidth: 280,
+        fill: true,
+        accessor: (city) => [city.NameUa, city.NameRu, city.NetUid, city.Id].filter(Boolean).join(' '),
+        cell: (city) => (
+          <div className="online-shop-cities-name-cell">
+            <span className="online-shop-cities-city-icon" aria-hidden="true">
+              <IconMapPin size={15} />
+            </span>
+            <div className="online-shop-cities-name-copy">
+              <Text className="online-shop-cities-name-primary">
+                {displayValue(city.NameUa)}
+              </Text>
+              <Text className="online-shop-cities-name-secondary">
+                {displayValue(city.NameRu)}
+              </Text>
+            </div>
+          </div>
+        ),
+      },
+      {
+        id: 'payment',
+        header: t('Оплата'),
+        width: 190,
+        minWidth: 160,
+        accessor: (city) => Boolean(city.IsLocalPayment),
+        cell: (city) => {
+          const isLocalPayment = city.IsLocalPayment === true
 
-  return (
-    <div
-      className={`online-shop-cities-row${isArchived ? ' is-archived' : ''}`}
-      role="button"
-      tabIndex={0}
-      onClick={openCity}
-      onKeyDown={(event) => {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault()
-          openCity()
-        }
-      }}
-    >
-      <div className="online-shop-cities-name-cell">
-        <span className="online-shop-cities-city-icon" aria-hidden="true">
-          <IconMapPin size={15} />
-        </span>
-        <div className="online-shop-cities-name-copy">
-          <Text className="online-shop-cities-name-primary">
-            {displayValue(city.NameUa)}
-          </Text>
-          <Text className="online-shop-cities-name-secondary">
-            {displayValue(city.NameRu)}
-          </Text>
-        </div>
-      </div>
+          return (
+            <div className={`online-shop-cities-payment-cell${isLocalPayment ? ' is-local' : ' is-global'}`}>
+              <span className="online-shop-cities-payment-marker" aria-hidden="true">
+                {isLocalPayment ? <IconHome size={13} /> : <IconWorld size={13} />}
+              </span>
+              <strong>
+                {isLocalPayment ? t('Локальна') : t('Загальна')}
+              </strong>
+            </div>
+          )
+        },
+      },
+      {
+        id: 'status',
+        header: t('Стан'),
+        width: 130,
+        minWidth: 112,
+        accessor: (city) => Boolean(city.Deleted),
+        cell: (city) => {
+          const isArchived = city.Deleted === true
 
-      <div className={`online-shop-cities-payment-cell${isLocalPayment ? ' is-local' : ' is-global'}`}>
-        <span className="online-shop-cities-payment-marker" aria-hidden="true">
-          {isLocalPayment ? <IconHome size={13} /> : <IconWorld size={13} />}
-        </span>
-        <strong>
-          {isLocalPayment ? t('Локальна') : t('Загальна')}
-        </strong>
-      </div>
+          return (
+            <span className={`online-shop-cities-status-tag${isArchived ? ' is-archived' : ' is-active'}`}>
+              {isArchived ? t('Архів') : t('Активне')}
+            </span>
+          )
+        },
+      },
+      {
+        id: 'updated',
+        header: t('Оновлено'),
+        width: 150,
+        minWidth: 130,
+        accessor: (city) => formatDateTime(city.Updated),
+        cell: (city) => {
+          const dateParts = formatDateParts(city.Updated)
 
-      <span className={`online-shop-cities-status-tag${isArchived ? ' is-archived' : ' is-active'}`}>
-        {isArchived ? t('Архів') : t('Активне')}
-      </span>
+          return (
+            <div className="online-shop-cities-date-cell">
+              <Text className="online-shop-cities-date-primary">
+                {dateParts.date}
+              </Text>
+              <Text className="online-shop-cities-date-secondary">
+                {dateParts.time}
+              </Text>
+            </div>
+          )
+        },
+      },
+      {
+        id: 'archive',
+        header: '',
+        width: 54,
+        minWidth: 54,
+        align: 'right',
+        enableHiding: false,
+        enablePinning: false,
+        enableReorder: false,
+        enableResizing: false,
+        enableSorting: false,
+        cell: (city) => {
+          const isArchived = city.Deleted === true
 
-      <div className="online-shop-cities-date-cell">
-        <Text className="online-shop-cities-date-primary">
-          {dateParts.date}
-        </Text>
-        <Text className="online-shop-cities-date-secondary">
-          {dateParts.time}
-        </Text>
-      </div>
-
-      <Tooltip label={t('Редагувати')}>
-        <ActionIcon
-          aria-label={t('Редагувати')}
-          className="online-shop-cities-row-action"
-          color="gray"
-          size="sm"
-          variant="subtle"
-          onClick={(event) => {
-            event.stopPropagation()
-            onOpenEditor(city)
-          }}
-        >
-          <IconPencil size={15} />
-        </ActionIcon>
-      </Tooltip>
-
-      <Tooltip label={t('Архівувати')}>
-        <ActionIcon
-          aria-label={t('Архівувати')}
-          className="online-shop-cities-row-action"
-          color="gray"
-          disabled={!city.Id || isArchived}
-          size="sm"
-          variant="subtle"
-          onClick={(event) => {
-            event.stopPropagation()
-            onRequestArchive(city)
-          }}
-        >
-          <IconArchive size={15} />
-        </ActionIcon>
-      </Tooltip>
-    </div>
+          return (
+            <Tooltip label={t('Архівувати')}>
+              <ActionIcon
+                aria-label={t('Архівувати')}
+                className="online-shop-cities-row-action"
+                color="gray"
+                disabled={!city.Id || isArchived}
+                size="sm"
+                variant="subtle"
+                onClick={(event) => {
+                  event.stopPropagation()
+                  onRequestArchive(city)
+                }}
+              >
+                <IconArchive size={15} />
+              </ActionIcon>
+            </Tooltip>
+          )
+        },
+      },
+    ],
+    [onRequestArchive, t],
   )
 }
 
@@ -633,7 +652,7 @@ function CityEditorModal({
               <Button color="gray" disabled={isSaving} type="button" variant="subtle" onClick={onClose}>
                 {t('Скасувати')}
               </Button>
-              <Button color="violet" leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} type="submit">
+              <Button color={CREATE_ACTION_COLOR} leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} type="submit">
                 {t('Зберегти')}
               </Button>
             </Group>
@@ -748,11 +767,11 @@ function displayValue(value?: boolean | number | string | null): string {
   }
 
   if (typeof value === 'number') {
-    return Number.isFinite(value) ? String(value) : '-'
+    return Number.isFinite(value) ? String(value) : ''
   }
 
   const normalized = value?.trim()
-  return normalized || '-'
+  return normalized || ''
 }
 
 function formatDateTime(value?: Date | string): string {
@@ -773,13 +792,13 @@ function formatDateParts(value?: Date | string) {
   const formatted = formatDateTime(value)
 
   if (!formatted) {
-    return { date: '-', time: '' }
+    return { date: '', time: '' }
   }
 
   const [date, time] = formatted.split(',').map((part) => part.trim())
 
   return {
-    date: date || '-',
+    date: date || '',
     time: time || '',
   }
 }

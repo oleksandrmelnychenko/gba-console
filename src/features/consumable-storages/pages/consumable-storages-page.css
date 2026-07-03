@@ -3,16 +3,66 @@
    so only the filter strip + card shell are aligned; the table keeps its own
    natural scroll model. */
 .consumable-storages-filter-row {
+  --storages-label-height: 17px;
+  --storages-label-gap: 4px;
+  --storages-control-height: 36px;
+
+  align-items: end;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(260px, 360px) minmax(0, 1fr) auto;
   width: 100%;
 }
 
-/* Pin the refresh action to the trailing edge of the wrapping filter row. */
-.consumable-storages-filter-actions {
-  margin-left: auto;
+/* Пошук: фіксована висота лейбла + контрола — поля рівняються по низу (§5.3). */
+.consumable-storages-filter-row .mantine-InputWrapper-label {
+  height: var(--storages-label-height);
+  margin-bottom: var(--storages-label-gap);
 }
 
-/* Body below the flush filter strip carries its own padding (the card is
-   padding={0} so the strip can sit flush). */
+.consumable-storages-filter-row .mantine-TextInput-input {
+  height: var(--storages-control-height);
+  min-height: var(--storages-control-height);
+}
+
+/* Дії + кнопка створення — третя колонка сітки, по низу рядка. */
+.consumable-storages-filter-actions {
+  align-items: center;
+  display: inline-flex;
+  gap: 8px;
+  grid-column: 3;
+}
+
+/* Тіло під смужкою: таблиця впритул до країв картки (падінги дає сама
+   таблиця — 8px у th/td), алерти зі своїм відступом. */
 .consumable-storages-card__body {
-  padding: 12px;
+  padding: 0;
+}
+
+.consumable-storages-card__body > .mantine-Alert-root {
+  margin: 12px 12px 0;
+}
+
+/* Storage form sheet follows the sheet-form pattern (§9): mono labels and
+   36px pattern controls. */
+.consumable-storage-form .mantine-InputWrapper-label {
+  color: var(--mantine-color-gray-9);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.2;
+  margin-bottom: 5px;
+}
+
+.consumable-storage-form .mantine-Input-input {
+  border-color: var(--mantine-color-gray-2);
+  border-radius: 8px;
+  min-height: 36px;
+}
+
+.consumable-storage-form .mantine-Select-input {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0;
 }

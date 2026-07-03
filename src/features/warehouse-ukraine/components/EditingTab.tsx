@@ -49,8 +49,8 @@ export function EditingTab() {
   }, [countsReloadKey, setActQty, setCarrierQty])
 
   return (
-    <Stack gap="md">
-      <div className="pill-tabs" style={{ width: 'fit-content' }}>
+    <Stack className="warehouse-ukraine-tab" gap={6}>
+      <div className="pill-tabs">
         <button
           type="button"
           className={`pill-tab${activeTab === ACT_TAB ? ' is-active' : ''}`}
@@ -59,7 +59,7 @@ export function EditingTab() {
         >
           <Group gap={6} wrap="nowrap" align="center">
             {t('Акт редагування накладної')}
-            <Badge color="violet" size="sm" variant="light">
+            <Badge className="app-role-pill is-orange" size="sm" variant="light">
               {actQty}
             </Badge>
           </Group>
@@ -72,14 +72,14 @@ export function EditingTab() {
         >
           <Group gap={6} wrap="nowrap" align="center">
             {t('Редаговані перевізники')}
-            <Badge color="violet" size="sm" variant="light">
+            <Badge className="app-role-pill is-orange" size="sm" variant="light">
               {carrierQty}
             </Badge>
           </Group>
         </button>
       </div>
 
-      <Box>
+      <Box className="warehouse-ukraine-editing-panel">
         {activeTab === ACT_TAB ? (
           <EditingList
             kind="act"

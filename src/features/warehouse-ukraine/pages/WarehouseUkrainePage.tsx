@@ -19,6 +19,8 @@ import { InvoiceRegisterTab } from '../components/InvoiceRegisterTab'
 import { OrdersTab } from '../components/OrdersTab'
 import { SalesTab } from '../components/SalesTab'
 import { ShipmentsTab } from '../components/ShipmentsTab'
+import './warehouse-ukraine-page.css'
+import '../../../shared/ui/console-table-page.css'
 
 const PKEY_INVOICES = 'STORAGES_Ukraine_Invoices_Warehouse_Ukraine_PKEY'
 const PKEY_SHIPMENTS = 'STORAGES_Ukraine_Shipments_Warehouse_Ukraine_PKEY'
@@ -129,7 +131,7 @@ export function WarehouseUkrainePage() {
   usePageBreadcrumb(activeTabItem?.label ?? null)
 
   return (
-    <Stack gap="md">
+    <Stack className="warehouse-ukraine-page console-table-page" gap={6}>
       <div className="pill-tabs">
         {visibleTabs.map((tab) => {
           const isActive = tab.value === activeTabItem?.value
@@ -155,7 +157,7 @@ export function WarehouseUkrainePage() {
         })}
       </div>
 
-      {activeTabItem && <Box>{activeTabItem.render()}</Box>}
+      {activeTabItem && <Box className="warehouse-ukraine-tab-panel">{activeTabItem.render()}</Box>}
     </Stack>
   )
 }

@@ -40,9 +40,10 @@ function formatWith(formatter: Intl.DateTimeFormat, value?: Date | string): stri
   return formatter.format(date)
 }
 
+// Empty values render blank (docs/ui-patterns.md §5).
 export function displayValue(value: unknown): string {
   if (value === null || value === undefined || value === '') {
-    return '-'
+    return ''
   }
 
   return String(value)
