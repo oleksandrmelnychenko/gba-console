@@ -167,6 +167,8 @@ function DataTableHeaderCellInner<TData>({
   sorted,
 }: DataTableHeaderCellProps<TData>) {
   const meta = header.column.columnDef.meta as DataTableColumnMeta | undefined
+  const align = meta?.align ?? 'left'
+  const justify = align === 'right' ? 'flex-end' : align === 'center' ? 'center' : 'flex-start'
   const canReorder = showLayoutControls && meta?.enableReorder !== false
   const canSort = header.column.getCanSort()
 
@@ -197,18 +199,19 @@ function DataTableHeaderCellInner<TData>({
   return (
     <Table.Th
       ref={setNodeRef}
-      ta="left"
+      ta={align}
       className={`data-table-th ${isDragging ? 'is-dragging' : ''}`}
+      data-align={align}
       style={{
         ...createPinnedStyle(pinned, pinnedLeftPx, pinnedRightPx),
         ...dragStyle,
         width: columnWidth,
         minWidth: header.column.columnDef.minSize,
         maxWidth: isFillColumn ? undefined : header.column.columnDef.maxSize,
-        textAlign: 'left',
+        textAlign: align,
       }}
     >
-      <Group className="data-table-header-inner" gap={6} wrap="nowrap" justify="flex-start">
+      <Group className="data-table-header-inner" gap={6} wrap="nowrap" justify={justify}>
         <UnstyledButton
           {...(canReorder ? attributes : {})}
           {...(canReorder ? listeners : {})}

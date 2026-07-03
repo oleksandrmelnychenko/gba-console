@@ -5391,7 +5391,25 @@
 }
 
 .new-sale-register-table .data-table-th {
+  color: var(--mantine-color-gray-8);
   font-family: var(--font-mono);
+}
+
+.new-sale-register-table .data-table-density-compact .data-table-cell {
+  padding-block: 7px;
+}
+
+.new-sale-register-table .data-table-row {
+  height: 44px;
+}
+
+.new-sale-register-table .data-table-expand-cell {
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+}
+
+.new-sale-register-table .data-table-cell[style*='right:'],
+.new-sale-register-table .data-table-th[style*='right:'] {
+  box-shadow: none !important;
 }
 
 .new-sale-register-table-row.is-shift {
@@ -5402,6 +5420,7 @@
   background: var(--mantine-color-gray-4);
   border-radius: 999px;
   display: inline-block;
+  flex: 0 0 auto;
   height: 9px;
   width: 9px;
 }
@@ -5436,7 +5455,7 @@
 }
 
 .new-sale-register-document-type {
-  color: var(--mantine-color-gray-6);
+  color: var(--mantine-color-gray-8);
   font-size: 11px;
   font-weight: 500;
   line-height: 1.2;
@@ -5446,6 +5465,12 @@
 .new-sale-register-payment {
   font-size: 12px;
   font-weight: 500;
+  min-width: 0;
+}
+
+.new-sale-register-payment-cell {
+  align-items: center;
+  min-width: 0;
 }
 
 .new-sale-register-payment.is-danger {
@@ -5471,6 +5496,16 @@
   color: var(--mantine-color-gray-5);
   font-size: 10px;
   font-weight: 500;
+}
+
+.new-sale-register-value-cell.is-inline {
+  align-items: baseline;
+  display: inline-flex;
+  gap: 4px;
+  justify-content: flex-end;
+  justify-self: end;
+  white-space: nowrap;
+  width: 100%;
 }
 
 .new-sale-register-actions .mantine-ActionIcon-root {
@@ -5504,4 +5539,107 @@
 .new-sale-register-table .new-sale-register-expanded__header,
 .new-sale-register-table .new-sale-register-expanded-item {
   padding-left: 84px;
+}
+
+.new-sale-register-table .data-table-expanded-content {
+  background: var(--mantine-color-white);
+  padding: 8px 14px 12px 40px;
+}
+
+.new-sale-register-table .new-sale-register-expanded {
+  background: var(--mantine-color-white);
+  border-bottom: 0;
+  min-width: 0;
+  padding: 0;
+}
+
+.new-sale-register-table .new-sale-register-expanded__panel {
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 0;
+  box-shadow: none;
+  overflow: hidden;
+}
+
+.new-sale-register-table .new-sale-register-expanded__items {
+  min-width: 0;
+}
+
+.new-sale-register-table .new-sale-register-expanded__items .data-table-scroll {
+  overflow: hidden;
+}
+
+.new-sale-register-table .new-sale-register-expanded__items .data-table-table {
+  width: 100%;
+}
+
+.new-sale-register-table .new-sale-register-expanded__items .data-table-th {
+  color: var(--mantine-color-gray-8);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  padding-block: 6px;
+}
+
+.new-sale-register-table .new-sale-register-expanded__items .data-table-cell {
+  padding-block: 9px;
+}
+
+.new-sale-register-table .new-sale-register-expanded__items .data-table-row {
+  height: 52px;
+}
+
+.new-sale-item-product-cell {
+  min-width: 0;
+}
+
+.new-sale-item-product-icon {
+  align-items: center;
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 999px;
+  color: var(--mantine-color-gray-7);
+  display: inline-flex;
+  flex: 0 0 28px;
+  height: 28px;
+  justify-content: center;
+  width: 28px;
+}
+
+.new-sale-item-product-name {
+  color: var(--mantine-color-gray-9);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+  min-width: 0;
+}
+
+.new-sale-item-text-cell {
+  color: var(--mantine-color-gray-8);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.2;
+  min-width: 0;
+}
+
+.new-sale-item-value-cell {
+  align-items: baseline;
+  display: inline-flex;
+  gap: 4px;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.new-sale-item-value-cell .mantine-Text-root:first-child {
+  color: var(--mantine-color-gray-9);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.new-sale-item-value-cell .mantine-Text-root:nth-child(2) {
+  color: var(--mantine-color-gray-6);
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.2;
 }

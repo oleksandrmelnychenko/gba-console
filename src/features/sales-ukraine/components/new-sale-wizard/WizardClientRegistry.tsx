@@ -1,14 +1,10 @@
 import { ActionIcon, Box, Button, Group, Select, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import {
   IconArrowsLeftRight,
-  IconBarcode,
-  IconCalendarTime,
-  IconCoins,
   IconFileInvoice,
   IconHistory,
   IconPackage,
   IconPrinter,
-  IconTag,
 } from '@tabler/icons-react'
 import { useMemo } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
@@ -43,7 +39,8 @@ const PAYMENT_LABELS: Record<string, string> = {
   3: 'Оплачено частково',
 }
 
-const WIZARD_REGISTER_TABLE_MIN_WIDTH = 1128
+const WIZARD_REGISTER_TABLE_MIN_WIDTH = 1084
+const WIZARD_REGISTER_ITEMS_TABLE_MIN_WIDTH = 900
 
 const WIZARD_REGISTER_TABLE_LAYOUT: DataTableDefaultLayout = {
   columnPinning: {
@@ -57,7 +54,18 @@ const WIZARD_REGISTER_TABLE_LAYOUT: DataTableDefaultLayout = {
     documentType: 116,
     payment: 132,
     qty: 84,
-    state: 44,
+  },
+  density: 'compact',
+}
+
+const WIZARD_REGISTER_ITEMS_TABLE_LAYOUT: DataTableDefaultLayout = {
+  columnSizing: {
+    amount: 120,
+    created: 160,
+    originalNumber: 160,
+    product: 320,
+    qty: 96,
+    vendorCode: 150,
   },
   density: 'compact',
 }
@@ -115,20 +123,6 @@ export function WizardClientRegistry({
 
   const columns = useMemo<DataTableColumn<SalesUkraineSale>[]>(
     () => [
-      {
-        id: 'state',
-        header: '',
-        accessor: (sale) => getSalePaymentKey(sale),
-        align: 'center',
-        cell: (sale) => <WizardSaleStateCell sale={sale} />,
-        width: 44,
-        minWidth: 44,
-        maxWidth: 44,
-        enableHiding: false,
-        enablePinning: false,
-        enableResizing: false,
-        enableSorting: false,
-      },
       {
         id: 'document',
         header: t('\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442'),
@@ -268,7 +262,7 @@ export function WizardClientRegistry({
           getRowId={(sale, index) => String(sale.NetUid || sale.Id || index)}
           height="100%"
           isLoading={isLoading}
-          layoutVersion="new-sale-wizard-register-3"
+          layoutVersion="new-sale-wizard-register-4"
           minWidth={WIZARD_REGISTER_TABLE_MIN_WIDTH}
           renderExpandedRow={(sale) => <WizardSaleRegistryRowContent sale={sale} />}
           rowClassName={(sale) => getSaleRowClassName(sale)}
@@ -279,19 +273,6 @@ export function WizardClientRegistry({
       </Box>
     </Stack>
   )
-}
-
-
-function WizardSaleStateCell({ sale }: { sale: SalesUkraineSale }) {
-  const { t } = useI18n()
-  const isEdited = (sale.HistoryInvoiceEdit?.length ?? 0) > 0
-  const dot = <span className={`new-sale-register-status-dot ${isEdited ? 'is-edited' : getSaleRowStateClass(sale)}`} />
-
-  return isEdited ? (
-    <Tooltip label={t('\u0420\u0430\u0445\u0443\u043d\u043e\u043a \u0440\u0435\u0434\u0430\u0433\u043e\u0432\u0430\u043d\u043e')}>
-      {dot}
-    </Tooltip>
-  ) : dot
 }
 
 function WizardSaleDocumentCell({ sale }: { sale: SalesUkraineSale }) {
@@ -319,17 +300,26 @@ function WizardSaleDocumentTypeCell({ sale }: { sale: SalesUkraineSale }) {
 function WizardSalePaymentCell({ sale }: { sale: SalesUkraineSale }) {
   const { t } = useI18n()
   const label = getSalePaymentLabel(sale)
+  const isEdited = (sale.HistoryInvoiceEdit?.length ?? 0) > 0
+  const dotLabel = isEdited
+    ? t('\u0420\u0430\u0445\u0443\u043d\u043e\u043a \u0440\u0435\u0434\u0430\u0433\u043e\u0432\u0430\u043d\u043e')
+    : t(getSaleDotLabel(sale))
 
   return (
-    <Text className={`new-sale-register-payment ${getSaleRowStateClass(sale)}`} title={label ? t(label) : ''} truncate>
-      {label ? t(label) : ''}
-    </Text>
+    <Group className="new-sale-register-payment-cell" gap={8} wrap="nowrap">
+      <Tooltip label={dotLabel}>
+        <span className={`new-sale-register-status-dot ${isEdited ? 'is-edited' : getSaleRowStateClass(sale)}`} />
+      </Tooltip>
+      <Text className={`new-sale-register-payment ${getSaleRowStateClass(sale)}`} title={label ? t(label) : ''} truncate>
+        {label ? t(label) : ''}
+      </Text>
+    </Group>
   )
 }
 
 function WizardSaleAmountCell({ sale }: { sale: SalesUkraineSale }) {
   return (
-    <Box className="new-sale-register-value-cell">
+    <Box className="new-sale-register-value-cell is-inline">
       <Text>{amountFormatter.format(sale.TotalAmountLocal ?? 0)}</Text>
       <Text>{getSaleCurrencyCode(sale)}</Text>
     </Box>
@@ -340,7 +330,7 @@ function WizardSaleQtyCell({ sale }: { sale: SalesUkraineSale }) {
   const { t } = useI18n()
 
   return (
-    <Box className="new-sale-register-value-cell">
+    <Box className="new-sale-register-value-cell is-inline">
       <Text>{sale.TotalCount ?? 0}</Text>
       <Text>{t('\u0448\u0442\u0443\u043a')}</Text>
     </Box>
@@ -477,104 +467,163 @@ function WizardSaleRegistryRowContent({ sale }: { sale: SalesUkraineSale }) {
   const { t } = useI18n()
   const orderItems = Array.isArray(sale.Order?.OrderItems) ? sale.Order.OrderItems : []
   const currencyCode = sale.ClientAgreement?.Agreement?.Currency?.Code || ''
-  const totalQty = orderItems.reduce((sum, item) => sum + (item.Qty ?? 0), 0)
-  const totalAmount = orderItems.reduce((sum, item) => sum + getOrderItemAmount(item), 0)
+  const itemColumns = useMemo<DataTableColumn<SalesUkraineOrderItem>[]>(
+    () => [
+      {
+        id: 'product',
+        header: t('\u0422\u043e\u0432\u0430\u0440'),
+        accessor: (item) => item.Product?.Name || '',
+        cell: (item) => (
+          <WizardSaleItemProductCell
+            fallbackName={t('\u0422\u043e\u0432\u0430\u0440 \u0431\u0435\u0437 \u043d\u0430\u0437\u0432\u0438')}
+            item={item}
+          />
+        ),
+        width: 320,
+        minWidth: 260,
+        fill: true,
+        enableHiding: false,
+        enablePinning: false,
+        enableReorder: false,
+        enableResizing: false,
+        enableSorting: false,
+      },
+      {
+        id: 'vendorCode',
+        header: t('\u041a\u043e\u0434 \u0432\u0438\u0440\u043e\u0431\u043d\u0438\u043a\u0430'),
+        accessor: (item) => item.Product?.VendorCode || '',
+        cell: (item) => <WizardSaleItemTextCell value={item.Product?.VendorCode || '-'} />,
+        width: 150,
+        minWidth: 132,
+        enableHiding: false,
+        enablePinning: false,
+        enableReorder: false,
+        enableResizing: false,
+        enableSorting: false,
+      },
+      {
+        id: 'originalNumber',
+        header: t('\u041e\u0440\u0438\u0433. \u043d\u043e\u043c\u0435\u0440'),
+        accessor: (item) => item.Product?.MainOriginalNumber || '',
+        cell: (item) => <WizardSaleItemTextCell value={item.Product?.MainOriginalNumber || '-'} />,
+        width: 160,
+        minWidth: 142,
+        enableHiding: false,
+        enablePinning: false,
+        enableReorder: false,
+        enableResizing: false,
+        enableSorting: false,
+      },
+      {
+        id: 'amount',
+        header: t('\u0421\u0443\u043c\u0430'),
+        accessor: (item) => getOrderItemAmount(item),
+        cell: (item) => (
+          <WizardSaleItemValueCell
+            unit={currencyCode}
+            value={itemAmountFormatter.format(getOrderItemAmount(item))}
+          />
+        ),
+        width: 120,
+        minWidth: 108,
+        enableHiding: false,
+        enablePinning: false,
+        enableReorder: false,
+        enableResizing: false,
+        enableSorting: false,
+      },
+      {
+        id: 'qty',
+        header: t('\u041a-\u0441\u0442\u044c'),
+        accessor: (item) => item.Qty ?? 0,
+        cell: (item) => <WizardSaleItemValueCell unit={t('\u0448\u0442\u0443\u043a')} value={String(item.Qty ?? 0)} />,
+        width: 96,
+        minWidth: 84,
+        enableHiding: false,
+        enablePinning: false,
+        enableReorder: false,
+        enableResizing: false,
+        enableSorting: false,
+      },
+      {
+        id: 'created',
+        header: t('\u0421\u0442\u0432\u043e\u0440\u0435\u043d\u043e'),
+        accessor: (item) => getTime(item.Created),
+        cell: (item) => <WizardSaleItemTextCell value={formatDateTime(item.Created)} />,
+        width: 160,
+        minWidth: 142,
+        enableHiding: false,
+        enablePinning: false,
+        enableReorder: false,
+        enableResizing: false,
+        enableSorting: false,
+      },
+    ],
+    [currencyCode, t],
+  )
 
   return (
     <Box className="new-sale-register-expanded">
       <Box className="new-sale-register-expanded__panel">
-        <Box className="new-sale-register-expanded__header">
-          <Group gap={8} wrap="nowrap">
-            <Box className="new-sale-register-expanded__header-icon">
-              <IconPackage size={16} />
-            </Box>
-            <Box className="new-sale-register-expanded__header-copy">
-              <Text>{t('Склад документа')}</Text>
-              <Text>
-                {orderItems.length} {t('позицій')}
-              </Text>
-            </Box>
-          </Group>
-
-          <Group className="new-sale-register-expanded__totals" gap={8} justify="flex-end" wrap="nowrap">
-            <Box>
-              <Text>{t('Сума')}</Text>
-              <Text>
-                {itemAmountFormatter.format(totalAmount)} {currencyCode}
-              </Text>
-            </Box>
-            <Box>
-              <Text>{t('К-сть')}</Text>
-              <Text>
-                {totalQty} {t('штук')}
-              </Text>
-            </Box>
-          </Group>
-        </Box>
-
         {orderItems.length === 0 ? (
-          <Text className="new-sale-register-expanded__empty">{t('Товарів не знайдено')}</Text>
+          <Text className="new-sale-register-expanded__empty">
+            {t('\u0422\u043e\u0432\u0430\u0440\u0456\u0432 \u043d\u0435 \u0437\u043d\u0430\u0439\u0434\u0435\u043d\u043e')}
+          </Text>
         ) : (
-          <Stack className="new-sale-register-expanded__items" gap={0}>
-            {orderItems.map((item, index) => {
-              const vendorCode = item.Product?.VendorCode || ''
-              const originalNumber = item.Product?.MainOriginalNumber || ''
-              const productName = item.Product?.Name || t('Товар без назви')
-              const createdUser = [item.User?.LastName, item.User?.FirstName].filter(Boolean).join(' ')
-
-              return (
-                <Box className="new-sale-register-expanded-item" key={String(item.NetUid || item.Id || index)}>
-                  <Box className="new-sale-register-expanded-item__product">
-                    <Box className="new-sale-register-expanded-item__icon">
-                      <IconPackage size={16} />
-                    </Box>
-                    <Box className="new-sale-register-expanded-item__copy">
-                      <Text className="new-sale-register-expanded-item__name" title={productName}>
-                        {productName}
-                      </Text>
-                      <Group className="new-sale-register-expanded-item__codes" gap={6} wrap="wrap">
-                        {vendorCode && (
-                          <span>
-                            <IconBarcode size={12} />
-                            {t('Код виробника')} {vendorCode}
-                          </span>
-                        )}
-                        {originalNumber && (
-                          <span>
-                            <IconTag size={12} />
-                            {t('Ориг. номер')} {originalNumber}
-                          </span>
-                        )}
-                        {!vendorCode && !originalNumber && <span>{t('Коди не вказані')}</span>}
-                      </Group>
-                    </Box>
-                  </Box>
-
-                  <Box className="new-sale-register-expanded-item__stat">
-                    <IconCoins size={14} />
-                    <Text>{itemAmountFormatter.format(getOrderItemAmount(item))}</Text>
-                    <Text>{currencyCode}</Text>
-                  </Box>
-
-                  <Box className="new-sale-register-expanded-item__stat">
-                    <IconPackage size={14} />
-                    <Text>{item.Qty ?? 0}</Text>
-                    <Text>{t('штук')}</Text>
-                  </Box>
-
-                  <Box className="new-sale-register-expanded-item__date">
-                    <IconCalendarTime size={14} />
-                    <Box>
-                      <Text>{formatDateTime(item.Created)}</Text>
-                      {createdUser && <Text>{createdUser}</Text>}
-                    </Box>
-                  </Box>
-                </Box>
-              )
-            })}
-          </Stack>
+          <Box className="new-sale-register-expanded__items">
+            <DataTable
+              columns={itemColumns}
+              data={orderItems}
+              defaultLayout={WIZARD_REGISTER_ITEMS_TABLE_LAYOUT}
+              distributeAvailableWidth
+              getRowId={(item, index) => String(item.NetUid || item.Id || index)}
+              layoutVersion="new-sale-register-items-1"
+              minWidth={WIZARD_REGISTER_ITEMS_TABLE_MIN_WIDTH}
+              showDensityToggle={false}
+              showLayoutControls={false}
+              tableId="new-sale-register-items"
+            />
+          </Box>
         )}
       </Box>
+    </Box>
+  )
+}
+
+function WizardSaleItemProductCell({
+  fallbackName,
+  item,
+}: {
+  fallbackName: string
+  item: SalesUkraineOrderItem
+}) {
+  const productName = item.Product?.Name || fallbackName
+
+  return (
+    <Group className="new-sale-item-product-cell" gap={9} wrap="nowrap">
+      <Box className="new-sale-item-product-icon">
+        <IconPackage size={16} />
+      </Box>
+      <Text className="new-sale-item-product-name" title={productName} truncate>
+        {productName}
+      </Text>
+    </Group>
+  )
+}
+
+function WizardSaleItemTextCell({ value }: { value: string }) {
+  return (
+    <Text className="new-sale-item-text-cell" title={value} truncate>
+      {value}
+    </Text>
+  )
+}
+
+function WizardSaleItemValueCell({ unit, value }: { unit: string; value: string }) {
+  return (
+    <Box className="new-sale-item-value-cell">
+      <Text>{value}</Text>
+      <Text>{unit}</Text>
     </Box>
   )
 }
@@ -602,6 +651,12 @@ function getSalePaymentLabel(sale: SalesUkraineSale): string {
   }
 
   return PAYMENT_LABELS[paymentKey] || ''
+}
+
+function getSaleDotLabel(sale: SalesUkraineSale): string {
+  const paymentKey = getSalePaymentKey(sale)
+
+  return PAYMENT_LABELS[paymentKey] || '\u0421\u0442\u0430\u0442\u0443\u0441 \u043d\u0435 \u0432\u0438\u0437\u043d\u0430\u0447\u0435\u043d\u043e'
 }
 
 function getSaleRowStateClass(sale: SalesUkraineSale): string {
