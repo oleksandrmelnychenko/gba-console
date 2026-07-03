@@ -1,14 +1,12 @@
-import { ActionIcon, Alert, Badge, Button, Card, Group, Pagination, Select, Stack, Text, TextInput, Tooltip } from '@mantine/core'
+import { ActionIcon, Alert, Badge, Button, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { IconAlertCircle, IconDownload, IconRefresh, IconRestore } from '@tabler/icons-react'
-import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
+import { IconAlertCircle, IconDownload, IconRestore } from '@tabler/icons-react'
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { translate } from '../../../shared/i18n/translate'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
-import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
-import { PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { getInvoiceRegister, getInvoiceRegisterPrintDocument } from '../api/invoiceRegisterApi'
 import { getInvoicePrintStatus } from '../invoicePrintStatus'
 import type { Sale, WarehouseUkraineExportDocument } from '../types'
@@ -259,14 +257,12 @@ function useInvoiceRegisterModel() {
   }
 
   const columns = useInvoiceRegisterColumns(invoiceIndexMap)
-  const { density, toggleDensity } = useDataTableDensity('warehouse-ukraine-invoice-register', TABLE_DEFAULT_LAYOUT.density)
 
   return {
     ...state,
     applyFilters,
     closeDownload,
     columns,
-    density,
     exportDocument,
     filterError,
     pageEnd,
@@ -275,7 +271,6 @@ function useInvoiceRegisterModel() {
     resetFilters,
     setPage,
     setPageSize,
-    toggleDensity,
     totalPages,
     updateFilterDraft,
   }
@@ -284,104 +279,86 @@ function useInvoiceRegisterModel() {
 export function InvoiceRegisterTab() {
   const model = useInvoiceRegisterModel()
   const { t } = useI18n()
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
 
   return (
-    <Stack gap="md">
-      <PageHeaderActions>
-        <Group gap="xs">
-          <Tooltip label={t('Оновити')}>
-            <ActionIcon
-              aria-label={t('Оновити')}
-              color="gray"
-              loading={model.isLoading}
-              size={38}
-              variant="light"
-              onClick={() => model.reload()}
-            >
-              <IconRefresh size={18} />
-            </ActionIcon>
-          </Tooltip>
-          <Button
-            color="gray"
-            leftSection={<IconDownload size={16} />}
-            loading={model.isDownloading}
-            disabled={Boolean(model.filterError) || model.isLoading || model.isDownloading}
-            variant="light"
-            onClick={model.exportDocument}
-          >
-            {t('Роздрукувати')}
-          </Button>
-          <DataTableDensityToggle density={model.density} onToggle={model.toggleDensity} size={38} />
-        </Group>
-      </PageHeaderActions>
-
-      <Card withBorder radius="md" padding="md">
-        <Stack gap="md">
-          <Group align="end" gap="sm" wrap="wrap">
+    <Stack className="warehouse-ukraine-tab" gap={6}>
+      <div className="warehouse-ukraine-shell console-table-shell">
+        <div className="app-filter-bar warehouse-ukraine-filter-bar is-invoice-register">
             <TextInput
+              className="warehouse-ukraine-filter-input"
               label={t('Значення')}
               value={model.filterDraft.value}
               onChange={(event) => model.updateFilterDraft({ ...model.filterDraft, value: event.currentTarget.value })}
             />
             <TextInput
+              className="warehouse-ukraine-filter-input"
               label={t('На дату')}
               type="date"
               value={model.filterDraft.date}
               onChange={(event) => model.applyFilters({ ...model.filterDraft, date: event.currentTarget.value })}
             />
-            <Tooltip label={t('Скинути')}>
-              <ActionIcon aria-label={t('Скинути')} color="gray" size={36} variant="light" onClick={model.resetFilters}>
-                <IconRestore size={18} />
-              </ActionIcon>
-            </Tooltip>
-          </Group>
+            <div className="app-filter-actions warehouse-ukraine-filter-actions">
+              <Tooltip label={t('Скинути')}>
+                <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={model.resetFilters}>
+                  <IconRestore size={17} />
+                </ActionIcon>
+              </Tooltip>
+              <Button
+                color="gray"
+                leftSection={<IconDownload size={16} />}
+                loading={model.isDownloading}
+                disabled={Boolean(model.filterError) || model.isLoading || model.isDownloading}
+                variant="light"
+                onClick={model.exportDocument}
+              >
+                {t('Роздрукувати')}
+              </Button>
+              <Paginator
+                isLoading={model.isLoading}
+                page={Math.min(model.page, model.totalPages)}
+                pageSize={model.pageSize}
+                pageSizeOptions={PAGE_SIZE_OPTIONS}
+                totalPages={model.totalPages}
+                onPageChange={model.setPage}
+                onPageSizeChange={model.setPageSize}
+                onRefresh={() => model.reload()}
+              />
+            </div>
+            <div ref={setTableToolbarSlot} className="warehouse-ukraine-table-toolbar-slot" />
+          </div>
 
           {(model.error || model.filterError) && (
-            <Alert color={model.filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert className="console-table-alert" color={model.filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
               {model.filterError || model.error}
             </Alert>
           )}
 
-          <Group justify="flex-end" gap="xs">
-            <Select
-              aria-label={t('Кількість рядків')}
-              data={PAGE_SIZE_OPTIONS}
-              size="xs"
-              value={String(model.pageSize)}
-              w={88}
-              onChange={(value) => model.setPageSize(Number(value || DEFAULT_PAGE_SIZE))}
-            />
-          </Group>
-
+          <div className="warehouse-ukraine-table console-table-body">
           <DataTable
             columns={model.columns}
             data={model.invoices}
             defaultLayout={TABLE_DEFAULT_LAYOUT}
-            density={model.density}
             emptyText={t('Накладних не знайдено')}
             getRowId={(invoice, index) => String(invoice.NetUid || invoice.Id || index)}
+            height="100%"
             isLoading={model.isLoading}
-            layoutVersion="warehouse-ukraine-invoice-register-2"
-            maxHeight="calc(100vh - 420px)"
+            layoutVersion="warehouse-ukraine-invoice-register-3"
             minWidth={1000}
+            showLayoutControls
             tableId="warehouse-ukraine-invoice-register"
+            toolbarPortalTarget={tableToolbarSlot}
           />
+          </div>
 
           {model.totalQty > 0 && (
-            <Group justify="space-between" gap="sm">
+            <div className="console-table-footer warehouse-ukraine-table-footer">
               <Text c="dimmed" size="sm">
                 {t('Показано')} {model.pageStart}-{model.pageEnd} {t('з')} {model.totalQty}
               </Text>
-              <Pagination
-                total={model.totalPages}
-                value={Math.min(model.page, model.totalPages)}
-                withEdges
-                onChange={model.setPage}
-              />
-            </Group>
+            </div>
           )}
-        </Stack>
-      </Card>
+      </div>
 
       <DownloadDocumentModal
         document={model.downloadDocument}

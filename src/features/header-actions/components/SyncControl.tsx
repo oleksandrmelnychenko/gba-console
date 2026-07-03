@@ -10,6 +10,7 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { notifications } from '@mantine/notifications'
 import { IconArrowsExchange2 } from '@tabler/icons-react'
 import { useCallback, useEffect, useReducer } from 'react'
@@ -33,6 +34,12 @@ import { SyncTypeChecklist } from './SyncTypeChecklist'
 import { SyncHistoryPanel } from './SyncHistoryPanel'
 
 type SyncTab = 'fenix' | 'amg' | 'gba-to-1c' | 'daily'
+
+/* Select dropdowns portal to <body>, so the orange selected-option override
+   rides in on a dropdown class (same approach as the suppliers filter). */
+const SYNC_COMBOBOX_PROPS = {
+  classNames: { dropdown: 'sync-modal-dropdown' },
+}
 
 const syncTabs: { value: SyncTab; label: (t: (key: 'Вигрузка GBA в 1С' | 'Щоденна синхронізація') => string) => string }[] = [
   { value: 'fenix', label: () => 'FENIX' },
@@ -348,25 +355,25 @@ export function SyncControl() {
       <AppModal
         opened={state.opened}
         onClose={() => dispatch({ type: 'closed' })}
-        title={t('Синхронізація')}
+        title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Синхронізація')}</span>}
         size="xl"
         className="sync-modal"
         centered
       >
         <Stack gap="md">
-          <Group gap={6} wrap="wrap" className="sync-pills">
+          <div className="pill-tabs">
             {syncTabs.map((tab) => (
               <button
                 key={tab.value}
                 type="button"
-                className={`sync-pill${state.activeTab === tab.value ? ' is-active' : ''}`}
+                className={`pill-tab${state.activeTab === tab.value ? ' is-active' : ''}`}
                 onClick={() => dispatch({ type: 'tabChanged', tab: tab.value })}
                 aria-pressed={state.activeTab === tab.value}
               >
                 {tab.label(t)}
               </button>
             ))}
-          </Group>
+          </div>
 
           <Box className="sync-panel">
             <Stack gap="md" className="sync-resizable">
@@ -420,6 +427,7 @@ export function SyncControl() {
                     />
                     <Select
                       label={t('Тип')}
+                      comboboxProps={SYNC_COMBOBOX_PROPS}
                       value={state.documentType}
                       onChange={(value) => value && dispatch({ type: 'documentTypeChanged', value })}
                       data={[
@@ -427,7 +435,7 @@ export function SyncControl() {
                         { value: String(TypeOfXmlDocument.ProductIncomes), label: t('Прихідні накладні на товар') },
                       ]}
                     />
-                    <Button color="violet" loading={state.isSyncing} onClick={runGbaToOneCSync}>
+                    <Button color={CREATE_ACTION_COLOR} loading={state.isSyncing} onClick={runGbaToOneCSync}>
                       {t('Синхронізувати')}
                     </Button>
                   </Group>
@@ -462,6 +470,7 @@ export function SyncControl() {
                     />
                     <Select
                       label={t('Організація')}
+                      comboboxProps={SYNC_COMBOBOX_PROPS}
                       value={state.dailyForAmg}
                       onChange={(value) => value && dispatch({ type: 'dailyOrganisationChanged', value })}
                       data={[
@@ -474,7 +483,7 @@ export function SyncControl() {
                     <Text c="dimmed" size="sm">
                       {t('Режим')}
                     </Text>
-                    <Badge color="green" variant="light">
+                    <Badge className="app-role-pill is-gray" variant="light">
                       {t('Без зміни залишків')}
                     </Badge>
                   </Group>
@@ -484,7 +493,7 @@ export function SyncControl() {
                   />
                   <Group justify="flex-end">
                     <Button
-                      color="violet"
+                      color={CREATE_ACTION_COLOR}
                       loading={state.isSyncing}
                       onClick={() =>
                         dispatch({
@@ -492,11 +501,11 @@ export function SyncControl() {
                           types: isEveryDailyTypeSelected ? [] : allDailySyncTypes,
                         })
                       }
-                      variant="light"
+                      variant="outline"
                     >
                       {t(isEveryDailyTypeSelected ? 'Скинути' : 'Вибрати всі')}
                     </Button>
-                    <Button color="violet" loading={state.isSyncing} onClick={runDailySync}>
+                    <Button color={CREATE_ACTION_COLOR} loading={state.isSyncing} onClick={runDailySync}>
                       {t('Синхронізувати')}
                     </Button>
                   </Group>
@@ -593,7 +602,7 @@ function RemnantsSyncSection({
       <SyncSectionHeader title={title} />
       <Group align="flex-start" justify="space-between" wrap="nowrap">
         <SyncTypeChecklist selectedTypes={selectedTypes} onChange={onTypeChange} />
-        <Button color="violet" loading={isLoading} onClick={onRun} className="sync-run-button">
+        <Button color={CREATE_ACTION_COLOR} loading={isLoading} onClick={onRun} className="sync-run-button">
           {t('Синхронізувати')}
         </Button>
       </Group>
@@ -603,7 +612,7 @@ function RemnantsSyncSection({
 
 function SyncSectionHeader({ title }: { title: string }) {
   return (
-    <Text fw={700} size="lg" lh={1.2}>
+    <Text className="app-section-title" fw={600} size="sm" lh={1.2}>
       {title}
     </Text>
   )

@@ -18,19 +18,16 @@ import {
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
-  IconChevronLeft,
-  IconChevronRight,
   IconCircleCheck,
   IconCircleDashed,
   IconDeviceFloppy,
   IconDownload,
   IconEdit,
-  IconFileText,
   IconPlus,
   IconPrinter,
   IconRefresh,
+  IconRestore,
   IconTrash,
-  IconTruckDelivery,
   IconX,
 } from '@tabler/icons-react'
 import { useEffect, useMemo, useReducer, useState } from 'react'
@@ -41,10 +38,9 @@ import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
-import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
-import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { Paginator } from '../../../shared/ui/paginator/Paginator'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import {
   getAllShipmentLists,
   getAutoShipmentList,
@@ -555,6 +551,12 @@ function useShipmentsTabModel({ onCarriedOut }: ShipmentsTabModelOptions = {}) {
     reload()
   }
 
+  function resetFilters() {
+    setFilterDraft(initialFilters)
+    setQtyEdits({})
+    refreshList()
+  }
+
   function commitQtyPlaces(item: ShipmentListItem, rowId: string) {
     if (!canEditShipment) {
       return
@@ -771,6 +773,7 @@ function useShipmentsTabModel({ onCarriedOut }: ShipmentsTabModelOptions = {}) {
     printShipments,
     qtyEdits,
     refreshList,
+    resetFilters,
     saveAddress,
     saveComment,
     saveRecipient,
@@ -794,18 +797,15 @@ export function ShipmentsTab() {
   const [activeTab, setActiveTab] = useState<string | null>(SHIPMENTS_TAB_ALL)
 
   return (
-    <Stack gap="md">
-      <div className="pill-tabs" style={{ width: 'fit-content' }}>
+    <Stack className="warehouse-ukraine-tab" gap={6}>
+      <div className="pill-tabs">
         <button
           type="button"
           className={`pill-tab${activeTab === SHIPMENTS_TAB_ALL ? ' is-active' : ''}`}
           aria-pressed={activeTab === SHIPMENTS_TAB_ALL}
           onClick={() => setActiveTab(SHIPMENTS_TAB_ALL)}
         >
-          <Group gap={6} wrap="nowrap" align="center">
-            <IconFileText size={16} />
-            {t('Усі')}
-          </Group>
+          {t('Усі')}
         </button>
         <button
           type="button"
@@ -813,14 +813,11 @@ export function ShipmentsTab() {
           aria-pressed={activeTab === SHIPMENTS_TAB_AUTO}
           onClick={() => setActiveTab(SHIPMENTS_TAB_AUTO)}
         >
-          <Group gap={6} wrap="nowrap" align="center">
-            <IconTruckDelivery size={16} />
-            {t('Підбір')}
-          </Group>
+          {t('Підбір')}
         </button>
       </div>
 
-      <Box>
+      <Box className="warehouse-ukraine-subtab-panel">
         {activeTab === SHIPMENTS_TAB_AUTO ? (
           <AutoShipmentsPanel onCarriedOut={() => setActiveTab(SHIPMENTS_TAB_ALL)} />
         ) : (
@@ -839,10 +836,7 @@ function AutoShipmentsPanel({ onCarriedOut }: AutoShipmentsPanelProps) {
   const model = useShipmentsTabModel({ onCarriedOut })
   const { t } = useI18n()
   const columns = useShipmentColumns(model)
-  const { density, toggleDensity } = useDataTableDensity(
-    'warehouse-ukraine-shipments',
-    TABLE_DEFAULT_LAYOUT.density,
-  )
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
 
   const typeOptions = toTransporterOptions(model.transporterTypes)
   const transporterOptions = toTransporterOptions(model.transporters)
@@ -851,27 +845,11 @@ function AutoShipmentsPanel({ onCarriedOut }: AutoShipmentsPanelProps) {
   const hasShipmentList = Boolean(model.shipmentList.NetUid)
 
   return (
-    <Stack gap="md">
-      <PageHeaderActions>
-        <Tooltip label={t('Оновити')}>
-          <ActionIcon
-            aria-label={t('Оновити')}
-            color="gray"
-            loading={model.isLoading}
-            size={38}
-            variant="light"
-            onClick={() => model.refreshList()}
-          >
-            <IconRefresh size={18} />
-          </ActionIcon>
-        </Tooltip>
-        <DataTableDensityToggle density={density} onToggle={toggleDensity} size={38} />
-      </PageHeaderActions>
-
-      <Card withBorder radius="md" padding="md">
-        <Stack gap="md">
-          <Group align="end" gap="sm" wrap="wrap">
+    <Stack className="warehouse-ukraine-tab" gap={6}>
+      <div className="warehouse-ukraine-shell console-table-shell">
+        <div className="app-filter-bar warehouse-ukraine-filter-bar is-auto-shipments">
             <Select
+              className="warehouse-ukraine-filter-input"
               data={typeOptions}
               label={t('Перевізники')}
               placeholder={t('Перевізники')}
@@ -880,6 +858,7 @@ function AutoShipmentsPanel({ onCarriedOut }: AutoShipmentsPanelProps) {
               onChange={(value) => model.setSelectedTypeNetId(value)}
             />
             <Select
+              className="warehouse-ukraine-filter-input"
               data={transporterOptions}
               label={t('Перевізники')}
               placeholder={t('Перевізники')}
@@ -888,6 +867,7 @@ function AutoShipmentsPanel({ onCarriedOut }: AutoShipmentsPanelProps) {
               onChange={(value) => model.setSelectedTransporterNetId(value)}
             />
             <TextInput
+              className="warehouse-ukraine-filter-input"
               label={t('Початкова дата')}
               max={model.filterDraft.to || undefined}
               type="date"
@@ -895,62 +875,83 @@ function AutoShipmentsPanel({ onCarriedOut }: AutoShipmentsPanelProps) {
               onChange={(event) => model.setFilterDraft({ ...model.filterDraft, from: event.currentTarget.value })}
             />
             <TextInput
+              className="warehouse-ukraine-filter-input"
               label={t('Кінцева дата')}
               min={model.filterDraft.from || undefined}
               type="date"
               value={model.filterDraft.to}
               onChange={(event) => model.setFilterDraft({ ...model.filterDraft, to: event.currentTarget.value })}
             />
-            {hasShipmentList && (
-              <Badge
-                color={model.shipmentList.IsSent ? 'green' : 'gray'}
-                leftSection={model.shipmentList.IsSent ? <IconCircleCheck size={12} /> : <IconCircleDashed size={12} />}
-                variant="light"
+            <div className="app-filter-actions warehouse-ukraine-filter-actions">
+              <Tooltip label={t('Скинути')}>
+                <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={model.resetFilters}>
+                  <IconRestore size={17} />
+                </ActionIcon>
+              </Tooltip>
+              <Tooltip label={t('Оновити')}>
+                <ActionIcon
+                  aria-label={t('Оновити')}
+                  color="gray"
+                  loading={model.isLoading}
+                  size={34}
+                  variant="light"
+                  onClick={() => model.refreshList()}
+                >
+                  <IconRefresh size={17} />
+                </ActionIcon>
+              </Tooltip>
+            </div>
+            <div ref={setTableToolbarSlot} className="warehouse-ukraine-table-toolbar-slot" />
+            <div className="warehouse-ukraine-command-actions">
+              {hasShipmentList && (
+                <Badge className={model.shipmentList.IsSent ? 'app-role-pill is-green' : 'app-role-pill is-gray'} variant="light">
+                  {model.shipmentList.IsSent ? t('Проведено') : t('Не проведено')}
+                </Badge>
+              )}
+              <Button
+                color="green"
+                disabled={!model.shipmentList.NetUid || !model.canEditShipment || model.items.length === 0}
+                loading={model.isSaving}
+                styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
+                onClick={() => model.setConfirmCarryOut(true)}
               >
-                {model.shipmentList.IsSent ? t('Проведено') : t('Не проведено')}
-              </Badge>
-            )}
-            <Button
-              color="green"
-              disabled={!model.shipmentList.NetUid || !model.canEditShipment || model.items.length === 0}
-              leftSection={<IconTruckDelivery size={18} />}
-              loading={model.isSaving}
-              variant="light"
-              onClick={() => model.setConfirmCarryOut(true)}
-            >
-              {t('Провести і закрити')}
-            </Button>
-            <Button
-              disabled={!model.selectedTransporterNetId || Boolean(model.filterError)}
-              leftSection={<IconPrinter size={18} />}
-              variant="light"
-              onClick={() => model.printShipments()}
-            >
-              {t('Роздрукувати')}
-            </Button>
-          </Group>
+                {t('Провести і закрити')}
+              </Button>
+              <Button
+                color={CREATE_ACTION_COLOR}
+                disabled={!model.selectedTransporterNetId || Boolean(model.filterError)}
+                styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
+                variant="outline"
+                onClick={() => model.printShipments()}
+              >
+                {t('Роздрукувати')}
+              </Button>
+            </div>
+          </div>
 
           {(model.error || model.filterError) && (
-            <Alert color={model.filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert className="console-table-alert" color={model.filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
               {model.filterError || model.error}
             </Alert>
           )}
 
+          <div className="warehouse-ukraine-table console-table-body">
           <DataTable
             columns={columns}
             data={model.items}
             defaultLayout={TABLE_DEFAULT_LAYOUT}
-            density={density}
             emptyText={`${t('Відвантажень не знайдено')}. ${t('Дані можуть бути поза вибраним періодом. Розширте дати у фільтрі.')}`}
             getRowId={getRowId}
+            height="100%"
             isLoading={model.isLoading}
-            layoutVersion="warehouse-ukraine-shipments-1"
-            maxHeight="calc(100vh - 420px)"
+            layoutVersion="warehouse-ukraine-shipments-2"
             minWidth={1800}
+            showLayoutControls
             tableId="warehouse-ukraine-shipments"
+            toolbarPortalTarget={tableToolbarSlot}
           />
-        </Stack>
-      </Card>
+          </div>
+      </div>
 
       <EditDeliveryRecipientModal
         isSaving={model.isSaving}
@@ -1043,10 +1044,7 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
 
   const filterError = getFilterError(filterDraft.from, filterDraft.to)
-  const { density, toggleDensity } = useDataTableDensity(
-    'warehouse-ukraine-all-shipments',
-    ALL_SHIPMENTS_TABLE_DEFAULT_LAYOUT.density,
-  )
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const listIndexMap = useMemo(() => buildShipmentListIndexMap(shipmentLists), [shipmentLists])
   const listColumns = useAllShipmentColumns(listIndexMap)
   const draftItems = useMemo(() => shipmentDraft?.ShipmentListItems || [], [shipmentDraft])
@@ -1219,11 +1217,16 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
     { value: ALL_TRANSPORTERS_VALUE, label: t('Усі') },
     ...toTransporterOptions(transporters),
   ]
-  const canMoveBack = page > 1
   const canMoveForward = shipmentLists.length === pageSize
 
   function refreshList() {
     reload()
+  }
+
+  function resetListFilters() {
+    setPage(1)
+    setFilterDraft(initialFilters)
+    setSelectedTransporterNetId(ALL_TRANSPORTERS_VALUE)
   }
 
   function updateListFilter(nextFilter: FilterDraft) {
@@ -1241,9 +1244,9 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
     setSelectedTransporterNetId(value || ALL_TRANSPORTERS_VALUE)
   }
 
-  function changePageSize(value: string | null) {
+  function changePageSize(nextPageSize: number) {
     setPage(1)
-    setPageSize(Number(value || DEFAULT_ALL_SHIPMENTS_LIMIT))
+    setPageSize(nextPageSize || DEFAULT_ALL_SHIPMENTS_LIMIT)
   }
 
   async function loadManualSales(
@@ -1672,32 +1675,11 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
         : null
 
   return (
-    <Stack gap="md">
-      <PageHeaderActions>
-        <Group gap="xs" wrap="nowrap">
-          <Tooltip label={t('Оновити')}>
-            <ActionIcon
-              aria-label={t('Оновити')}
-              color="gray"
-              loading={isLoading}
-              size={38}
-              variant="light"
-              onClick={refreshList}
-            >
-              <IconRefresh size={18} />
-            </ActionIcon>
-          </Tooltip>
-          <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={18} />} onClick={onCreate}>
-            {t('Створити')}
-          </Button>
-          <DataTableDensityToggle density={density} onToggle={toggleDensity} size={38} />
-        </Group>
-      </PageHeaderActions>
-
-      <Card withBorder radius="md" padding="md">
-        <Stack gap="md">
-          <Group align="end" gap="sm" wrap="wrap">
+    <Stack className="warehouse-ukraine-tab" gap={6}>
+      <div className="warehouse-ukraine-shell console-table-shell">
+        <div className="app-filter-bar warehouse-ukraine-filter-bar is-all-shipments">
             <Select
+              className="warehouse-ukraine-filter-input"
               data={typeOptions}
               label={t('Тип перевізника')}
               placeholder={t('Тип перевізника')}
@@ -1706,6 +1688,7 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
               onChange={changeTransporterType}
             />
             <Select
+              className="warehouse-ukraine-filter-input"
               data={transporterOptions}
               label={t('Перевізник')}
               placeholder={t('Перевізник')}
@@ -1714,6 +1697,7 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
               onChange={changeTransporter}
             />
             <TextInput
+              className="warehouse-ukraine-filter-input"
               label={t('Початкова дата')}
               max={filterDraft.to || undefined}
               type="date"
@@ -1721,74 +1705,62 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
               onChange={(event) => updateListFilter({ ...filterDraft, from: event.currentTarget.value })}
             />
             <TextInput
+              className="warehouse-ukraine-filter-input"
               label={t('Кінцева дата')}
               min={filterDraft.from || undefined}
               type="date"
               value={filterDraft.to}
               onChange={(event) => updateListFilter({ ...filterDraft, to: event.currentTarget.value })}
             />
-          </Group>
+            <div className="app-filter-actions warehouse-ukraine-filter-actions">
+              <Tooltip label={t('Скинути')}>
+                <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetListFilters}>
+                  <IconRestore size={17} />
+                </ActionIcon>
+              </Tooltip>
+              <Paginator
+                hasNext={canMoveForward}
+                isLoading={isLoading}
+                page={page}
+                pageSize={pageSize}
+                pageSizeOptions={ALL_SHIPMENTS_PAGE_SIZE_OPTIONS}
+                onPageChange={setPage}
+                onPageSizeChange={changePageSize}
+                onRefresh={refreshList}
+              />
+            </div>
+            <div ref={setTableToolbarSlot} className="warehouse-ukraine-table-toolbar-slot" />
+            <div className="warehouse-ukraine-command-actions">
+              <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={18} />} onClick={onCreate}>
+                {t('Створити')}
+              </Button>
+            </div>
+          </div>
 
           {(error || filterError) && (
-            <Alert color={filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert className="console-table-alert" color={filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
               {filterError || error}
             </Alert>
           )}
 
-          <Group justify="space-between" gap="sm">
-            <Text size="sm" c="dimmed">
-              {t('Сторінка')} {page}
-            </Text>
-            <Group gap="xs" wrap="nowrap">
-              <Select
-                aria-label={t('Розмір сторінки')}
-                data={ALL_SHIPMENTS_PAGE_SIZE_OPTIONS}
-                value={String(pageSize)}
-                w={86}
-                onChange={changePageSize}
-              />
-              <ActionIcon
-                aria-label={t('Попередня сторінка')}
-                color="gray"
-                disabled={!canMoveBack || isLoading}
-                size={36}
-                variant="light"
-                onClick={() => setPage((currentPage) => Math.max(1, currentPage - 1))}
-              >
-                <IconChevronLeft size={18} />
-              </ActionIcon>
-              <Text size="sm" w={34} ta="center">
-                {page}
-              </Text>
-              <ActionIcon
-                aria-label={t('Наступна сторінка')}
-                color="gray"
-                disabled={!canMoveForward || isLoading}
-                size={36}
-                variant="light"
-                onClick={() => setPage((currentPage) => currentPage + 1)}
-              >
-                <IconChevronRight size={18} />
-              </ActionIcon>
-            </Group>
-          </Group>
-
+          <div className="warehouse-ukraine-table console-table-body">
           <DataTable
             columns={listColumns}
             data={shipmentLists}
             defaultLayout={ALL_SHIPMENTS_TABLE_DEFAULT_LAYOUT}
-            density={density}
             emptyText={`${t('Відвантажень не знайдено')}. ${t('Дані можуть бути поза вибраним періодом. Розширте дати у фільтрі.')}`}
             getRowId={getShipmentListRowId}
+            height="100%"
             isLoading={isLoading}
-            layoutVersion="warehouse-ukraine-all-shipments-1"
-            maxHeight="calc(100vh - 420px)"
+            layoutVersion="warehouse-ukraine-all-shipments-2"
             minWidth={1100}
+            showLayoutControls
             tableId="warehouse-ukraine-all-shipments"
+            toolbarPortalTarget={tableToolbarSlot}
             onRowClick={openShipment}
           />
-        </Stack>
-      </Card>
+          </div>
+      </div>
 
       <AppDrawer
         opened={Boolean(shipmentDraft)}

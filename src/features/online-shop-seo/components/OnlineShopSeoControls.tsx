@@ -16,6 +16,7 @@ import { IconAlertCircle, IconDeviceFloppy, IconRestore, IconSearch } from '@tab
 import { type FormEvent, type ReactNode } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import type {
   SeoContactInfo,
   SeoContactInfoFormValues,
@@ -92,7 +93,7 @@ export function LocaleAccordion({ children, emptyText, entries }: LocaleAccordio
         <Accordion.Item key={entry.locale} value={entry.locale}>
           <Accordion.Control>
             <Group gap="xs">
-              <Badge color="violet" variant="light">
+              <Badge className="app-role-pill is-orange" variant="light">
                 {getLocaleLabel(entry.locale)}
               </Badge>
               <Text fw={600}>{entry.locale}</Text>
@@ -149,7 +150,7 @@ export function ContactInfoForm({ contactInfo, isSaving, locale, onSave }: Conta
           <TextInput label="Pixel ID" value={values.PixelId} onChange={(event) => setField('PixelId', event.currentTarget.value)} />
         </SimpleGrid>
         <Group justify="flex-end">
-          <Button color="violet" leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} type="submit">
+          <Button color={CREATE_ACTION_COLOR} leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} type="submit">
             {t('Зберегти')}
           </Button>
         </Group>
@@ -219,7 +220,7 @@ export function PaymentInfoForm({ isSaving, locale, onSave, payment }: PaymentIn
         />
         <Group justify="flex-end">
           <Button
-            color="violet"
+            color={CREATE_ACTION_COLOR}
             disabled={!canSave}
             leftSection={<IconDeviceFloppy size={16} />}
             loading={isSaving}

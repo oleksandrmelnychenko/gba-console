@@ -1,0 +1,152 @@
+.warehouse-ukraine-page,
+.warehouse-ukraine-tab-panel,
+.warehouse-ukraine-tab,
+.warehouse-ukraine-tab-content,
+.warehouse-ukraine-subtab-panel,
+.warehouse-ukraine-editing-panel {
+  min-height: 0;
+}
+
+.warehouse-ukraine-tab-panel,
+.warehouse-ukraine-tab,
+.warehouse-ukraine-tab-content,
+.warehouse-ukraine-subtab-panel,
+.warehouse-ukraine-editing-panel {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+}
+
+.warehouse-ukraine-page > .pill-tabs,
+.warehouse-ukraine-tab > .pill-tabs {
+  flex: 0 0 auto;
+}
+
+.warehouse-ukraine-shell {
+  flex: 1 1 auto;
+}
+
+.warehouse-ukraine-filter-bar {
+  align-items: end;
+  display: grid;
+  flex: 0 0 auto;
+  gap: 10px;
+}
+
+.warehouse-ukraine-filter-bar.is-sales {
+  grid-template-columns: minmax(220px, 1fr) minmax(148px, 170px) minmax(148px, 170px) auto auto;
+}
+
+.warehouse-ukraine-filter-bar.is-orders {
+  grid-template-columns: minmax(148px, 170px) minmax(148px, 170px) minmax(170px, 190px) auto auto;
+}
+
+.warehouse-ukraine-filter-bar.is-invoice-register {
+  grid-template-columns: minmax(220px, 1fr) minmax(148px, 170px) auto auto;
+}
+
+.warehouse-ukraine-filter-bar.is-verification {
+  grid-template-columns: minmax(260px, 320px) minmax(148px, 170px) minmax(148px, 170px) auto auto;
+}
+
+.warehouse-ukraine-filter-bar.is-editing {
+  grid-template-columns: minmax(148px, 170px) minmax(148px, 170px) auto auto auto;
+}
+
+.warehouse-ukraine-filter-bar.is-auto-shipments {
+  grid-template-columns: minmax(180px, 220px) minmax(180px, 220px) minmax(148px, 170px) minmax(148px, 170px) auto auto auto;
+}
+
+.warehouse-ukraine-filter-bar.is-all-shipments {
+  grid-template-columns: minmax(180px, 220px) minmax(190px, 240px) minmax(148px, 170px) minmax(148px, 170px) auto auto auto;
+}
+
+.warehouse-ukraine-filter-input {
+  min-width: 0;
+}
+
+.warehouse-ukraine-filter-bar .mantine-Checkbox-root {
+  align-self: end;
+  min-height: 36px;
+}
+
+.warehouse-ukraine-filter-bar .mantine-Checkbox-label {
+  color: var(--mantine-color-gray-9);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.warehouse-ukraine-filter-actions,
+.warehouse-ukraine-table-toolbar-slot,
+.warehouse-ukraine-command-actions {
+  align-items: center;
+  align-self: end;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  min-height: 36px;
+  min-width: 0;
+}
+
+.warehouse-ukraine-table-toolbar-slot .data-table-toolbar {
+  gap: 6px;
+  margin: 0;
+  min-height: 0;
+}
+
+.warehouse-ukraine-filter-actions .mantine-Button-root,
+.warehouse-ukraine-command-actions .mantine-Button-root {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+.warehouse-ukraine-table {
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+}
+
+.warehouse-ukraine-table-footer {
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.warehouse-ukraine-table-footer .mantine-Text-root {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+@media (max-width: 1180px) {
+  .warehouse-ukraine-filter-bar.is-sales,
+  .warehouse-ukraine-filter-bar.is-orders,
+  .warehouse-ukraine-filter-bar.is-invoice-register,
+  .warehouse-ukraine-filter-bar.is-verification,
+  .warehouse-ukraine-filter-bar.is-editing,
+  .warehouse-ukraine-filter-bar.is-auto-shipments,
+  .warehouse-ukraine-filter-bar.is-all-shipments {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .warehouse-ukraine-filter-actions,
+  .warehouse-ukraine-table-toolbar-slot,
+  .warehouse-ukraine-command-actions {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 720px) {
+  .warehouse-ukraine-filter-bar.is-sales,
+  .warehouse-ukraine-filter-bar.is-orders,
+  .warehouse-ukraine-filter-bar.is-invoice-register,
+  .warehouse-ukraine-filter-bar.is-verification,
+  .warehouse-ukraine-filter-bar.is-editing,
+  .warehouse-ukraine-filter-bar.is-auto-shipments,
+  .warehouse-ukraine-filter-bar.is-all-shipments {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

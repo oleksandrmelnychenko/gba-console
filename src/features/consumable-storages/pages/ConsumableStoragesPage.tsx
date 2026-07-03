@@ -396,7 +396,7 @@ function useConsumableStorageColumns({
               <Tooltip label={t('Редагувати')}>
                 <ActionIcon
                   aria-label={t('Редагувати')}
-                  color="violet"
+                  color="gray"
                   disabled={!storage.NetUid}
                   size="sm"
                   variant="subtle"

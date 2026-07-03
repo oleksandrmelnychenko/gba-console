@@ -1,24 +1,20 @@
-import { ActionIcon, Alert, Anchor, Badge, Card, Group, Select, Stack, Text, TextInput, Tooltip } from '@mantine/core'
+import { ActionIcon, Alert, Anchor, Badge, Group, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import {
   IconAlertCircle,
-  IconChevronLeft,
-  IconChevronRight,
   IconDownload,
   IconFileText,
   IconPrinter,
-  IconRefresh,
   IconRestore,
 } from '@tabler/icons-react'
-import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
+import { Truck as TruckIcon } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { translate } from '../../../shared/i18n/translate'
 import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
-import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
-import { PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import {
   getSaleActProtocolEditDocument,
   getSalePrintDocument,
@@ -39,6 +35,21 @@ import {
 import { SaleCarrierDrawer } from './SaleCarrierDrawer'
 
 const DEFAULT_LIMIT = 500
+const TRANSPORTER_LOGO_STYLE = {
+  backgroundPosition: 'center',
+  backgroundRepeat: 'no-repeat',
+  backgroundSize: 'contain',
+  display: 'block',
+  flex: '0 0 auto',
+  height: 18,
+  width: 24,
+} as const
+
+const salesMoneyFormatter = new Intl.NumberFormat('uk-UA', {
+  maximumFractionDigits: 2,
+  minimumFractionDigits: 2,
+})
+
 const PAGE_SIZE_OPTIONS = ['100', '200', '500', '1000']
 
 const TABLE_DEFAULT_LAYOUT = {
@@ -91,12 +102,10 @@ function useSalesTabModel() {
   const [downloadError, setDownloadError] = useValueState<string | null>(null)
   const [isDownloading, setDownloading] = useValueState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
-  const { density, toggleDensity } = useDataTableDensity('warehouse-ukraine-sales', TABLE_DEFAULT_LAYOUT.density)
   const downloadRequestRef = useRef(0)
   const realtimeReloadRef = useRef<number | null>(null)
   const filterError = getFilterError(activeFilters.from, activeFilters.to)
   const orderedSales = useMemo(() => orderWarehouseSales(salesState.sales), [salesState.sales])
-  const saleIndexMap = useMemo(() => buildIndexMap(orderedSales), [orderedSales])
 
   const replaceSale = useCallback(
     (targetSale: Sale, nextSale: Sale) => {
@@ -285,23 +294,22 @@ function useSalesTabModel() {
     setActiveFilters(initialFilters)
   }
 
-  function changePageSize(nextValue: string | null) {
+  function changePageSize(nextPageSize: number) {
     setPage(1)
-    setPageSize(Number(nextValue || DEFAULT_LIMIT))
+    setPageSize(nextPageSize || DEFAULT_LIMIT)
   }
 
-  const canMoveBack = page > 1
   const canMoveForward = salesState.totalQty > 0
     ? page * pageSize < salesState.totalQty
     : salesState.sales.length === pageSize
 
-  const columns = useSalesColumns({ indexMap: saleIndexMap, onPrint: printSale, onPrintActProtocolEdit: printActProtocolEdit, onOpenCarrier: setCarrierSale })
+  const columns = useSalesColumns({ onPrint: printSale, onPrintActProtocolEdit: printActProtocolEdit, onOpenCarrier: setCarrierSale })
 
   return {
-    activeFilters, applyFilters, canMoveBack, canMoveForward, carrierSale, changePageSize, closeDownload, columns,
-    density, downloadDocument, downloadError, downloadOpened, error: salesState.error, filterDraft, filterError,
+    activeFilters, applyFilters, canMoveForward, carrierSale, changePageSize, closeDownload, columns,
+    downloadDocument, downloadError, downloadOpened, error: salesState.error, filterDraft, filterError,
     isDownloading, isLoading: salesState.isLoading, page, pageSize, reload, resetFilters, sales: orderedSales,
-    setCarrierSale, setPage, toggleDensity, totalQty: salesState.totalQty,
+    setCarrierSale, setPage, totalQty: salesState.totalQty,
   }
 }
 
@@ -330,33 +338,20 @@ function salesListReducer(state: SalesListState, action: SalesListAction): Sales
 export function SalesTab() {
   const model = useSalesTabModel()
   const { t } = useI18n()
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
 
   return (
-    <Stack gap="md">
-      <PageHeaderActions>
-        <Tooltip label={t('Оновити')}>
-          <ActionIcon
-            aria-label={t('Оновити')}
-            color="gray"
-            loading={model.isLoading}
-            size={38}
-            variant="light"
-            onClick={() => model.reload()}
-          >
-            <IconRefresh size={18} />
-          </ActionIcon>
-        </Tooltip>
-      </PageHeaderActions>
-
-      <Card withBorder radius="md" padding="md">
-        <Stack gap="md">
-          <Group align="end" gap="sm" wrap="nowrap">
+    <Stack className="warehouse-ukraine-tab" gap={6}>
+      <div className="warehouse-ukraine-shell console-table-shell">
+        <div className="app-filter-bar warehouse-ukraine-filter-bar is-sales">
             <TextInput
+              className="warehouse-ukraine-filter-input"
               label={t('Пошук по товару')}
               value={model.filterDraft.value}
               onChange={(event) => model.applyFilters({ ...model.filterDraft, value: event.currentTarget.value })}
             />
             <TextInput
+              className="warehouse-ukraine-filter-input"
               label={t('Початкова дата')}
               max={model.filterDraft.to || undefined}
               type="date"
@@ -364,75 +359,56 @@ export function SalesTab() {
               onChange={(event) => model.applyFilters({ ...model.filterDraft, from: event.currentTarget.value })}
             />
             <TextInput
+              className="warehouse-ukraine-filter-input"
               label={t('Кінцева дата')}
               min={model.filterDraft.from || undefined}
               type="date"
               value={model.filterDraft.to}
               onChange={(event) => model.applyFilters({ ...model.filterDraft, to: event.currentTarget.value })}
             />
-            <Tooltip label={t('Скинути')}>
-              <ActionIcon aria-label={t('Скинути')} color="gray" size={36} variant="light" onClick={model.resetFilters}>
-                <IconRestore size={18} />
-              </ActionIcon>
-            </Tooltip>
-            <DataTableDensityToggle density={model.density} onToggle={model.toggleDensity} size={36} />
-            <Group gap={4} wrap="nowrap" style={{ marginLeft: 'auto' }}>
-              <Select
-                aria-label={t('Кількість рядків')}
-                data={PAGE_SIZE_OPTIONS}
-                disabled={model.isLoading}
-                size="xs"
-                value={String(model.pageSize)}
-                w={96}
-                onChange={model.changePageSize}
+            <div className="app-filter-actions warehouse-ukraine-filter-actions">
+              <Tooltip label={t('Скинути')}>
+                <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={model.resetFilters}>
+                  <IconRestore size={17} />
+                </ActionIcon>
+              </Tooltip>
+              <Paginator
+                hasNext={model.canMoveForward}
+                isLoading={model.isLoading}
+                page={model.page}
+                pageSize={model.pageSize}
+                pageSizeOptions={PAGE_SIZE_OPTIONS}
+                onPageChange={model.setPage}
+                onPageSizeChange={model.changePageSize}
+                onRefresh={() => model.reload()}
               />
-              <Text c="dark" fw={700} size="xs" style={{ whiteSpace: 'nowrap' }}>
-                {t('стор.')} {model.page}
-              </Text>
-              <ActionIcon
-                aria-label={t('Попередня сторінка')}
-                color="gray"
-                disabled={!model.canMoveBack || model.isLoading}
-                size="sm"
-                variant="subtle"
-                onClick={() => model.setPage((current) => Math.max(1, current - 1))}
-              >
-                <IconChevronLeft size={16} />
-              </ActionIcon>
-              <ActionIcon
-                aria-label={t('Наступна сторінка')}
-                color="gray"
-                disabled={!model.canMoveForward || model.isLoading}
-                size="sm"
-                variant="subtle"
-                onClick={() => model.setPage((current) => current + 1)}
-              >
-                <IconChevronRight size={16} />
-              </ActionIcon>
-            </Group>
-          </Group>
+            </div>
+            <div ref={setTableToolbarSlot} className="warehouse-ukraine-table-toolbar-slot" />
+          </div>
 
           {(model.error || model.filterError) && (
-            <Alert color={model.filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert className="console-table-alert" color={model.filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
               {model.filterError || model.error}
             </Alert>
           )}
 
+          <div className="warehouse-ukraine-table console-table-body">
           <DataTable
             columns={model.columns}
             data={model.sales}
             defaultLayout={TABLE_DEFAULT_LAYOUT}
-            density={model.density}
             emptyText={t('Документів не знайдено')}
             getRowId={(sale, index) => String(sale.NetUid || sale.Id || index)}
+            height="100%"
             isLoading={model.isLoading}
-            layoutVersion="warehouse-ukraine-sales-1"
-            maxHeight="calc(100vh - 420px)"
+            layoutVersion="warehouse-ukraine-sales-2"
             minWidth={1480}
+            showLayoutControls
             tableId="warehouse-ukraine-sales"
+            toolbarPortalTarget={tableToolbarSlot}
           />
-        </Stack>
-      </Card>
+          </div>
+      </div>
 
       <SaleCarrierDrawer sale={model.carrierSale} onClose={() => model.setCarrierSale(null)} />
       <DownloadDocumentModal
@@ -447,12 +423,10 @@ export function SalesTab() {
 }
 
 function useSalesColumns({
-  indexMap,
   onOpenCarrier,
   onPrint,
   onPrintActProtocolEdit,
 }: {
-  indexMap: Map<Sale, number>
   onOpenCarrier: (sale: Sale) => void
   onPrint: (sale: Sale) => void
   onPrintActProtocolEdit: (sale: Sale) => void
@@ -462,26 +436,12 @@ function useSalesColumns({
   return useMemo<DataTableColumn<Sale>[]>(
     () => [
       {
-        id: 'index',
-        header: '#',
-        width: 56,
-        minWidth: 48,
-        align: 'right',
-        enableSorting: false,
-        accessor: (sale) => indexMap.get(sale) || 0,
-        cell: (sale) => (
-          <Text c="dimmed" size="sm">
-            {indexMap.get(sale) || ''}
-          </Text>
-        ),
-      },
-      {
         id: 'fromDate',
         header: t('Від якої дати'),
         width: 150,
         minWidth: 130,
         accessor: (sale) => sale.ChangedToInvoice,
-        cell: (sale) => <Text fw={600}>{formatDateTime(sale.ChangedToInvoice)}</Text>,
+        cell: (sale) => <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{formatDateTime(sale.ChangedToInvoice)}</Text>,
       },
       {
         id: 'actions',
@@ -532,11 +492,11 @@ function useSalesColumns({
           const status = getInvoicePrintStatus(sale)
 
           if (!status) {
-            return '-'
+            return ''
           }
 
           return (
-            <Badge color={status.color} variant="light">
+            <Badge className={status.key === 'printed' ? 'app-role-pill is-green' : 'app-role-pill is-orange'} variant="light">
               {status.label}
             </Badge>
           )
@@ -548,7 +508,19 @@ function useSalesColumns({
         width: 150,
         minWidth: 120,
         accessor: (sale) => sale.SaleNumber?.Value,
-        cell: (sale) => <Text fw={700}>{displayValue(sale.SaleNumber?.Value)}</Text>,
+        cell: (sale) => {
+          const saleNumber = displayValue(sale.SaleNumber?.Value)
+
+          if (!saleNumber) {
+            return ''
+          }
+
+          return (
+            <Badge className="app-role-pill is-yellow" variant="light">
+              {saleNumber}
+            </Badge>
+          )
+        },
       },
       {
         id: 'client',
@@ -568,7 +540,11 @@ function useSalesColumns({
         minWidth: 90,
         align: 'right',
         accessor: (sale) => sale.TotalAmountLocal,
-        cell: (sale) => displayValue(sale.TotalAmountLocal),
+        cell: (sale) => (
+          <span className="app-money">
+            {typeof sale.TotalAmountLocal === 'number' ? salesMoneyFormatter.format(sale.TotalAmountLocal) : displayValue(sale.TotalAmountLocal)}
+          </span>
+        ),
       },
       {
         id: 'currency',
@@ -576,7 +552,19 @@ function useSalesColumns({
         width: 90,
         minWidth: 80,
         accessor: (sale) => sale.ClientAgreement?.Agreement?.Currency?.Code,
-        cell: (sale) => displayValue(sale.ClientAgreement?.Agreement?.Currency?.Code),
+        cell: (sale) => {
+          const currencyCode = displayValue(sale.ClientAgreement?.Agreement?.Currency?.Code)
+
+          if (!currencyCode) {
+            return ''
+          }
+
+          return (
+            <Badge className="app-role-pill is-green" variant="light">
+              {currencyCode}
+            </Badge>
+          )
+        },
       },
       {
         id: 'responsible',
@@ -605,18 +593,27 @@ function useSalesColumns({
         accessor: (sale) => sale.Transporter?.Name,
         cell: (sale) => {
           if (!sale.Transporter?.Name) {
-            return '-'
+            return ''
           }
 
+          const transporterLogoUrl = sale.Transporter.ImageUrl?.trim()
+
           return (
-            <Anchor component="button" type="button" size="sm" onClick={() => onOpenCarrier(sale)}>
-              {sale.Transporter.Name}
-            </Anchor>
+            <Group gap={6} wrap="nowrap">
+              {transporterLogoUrl ? (
+                <span aria-hidden style={{ ...TRANSPORTER_LOGO_STYLE, backgroundImage: `url(${upgradeHttpToHttps(transporterLogoUrl)})` }} />
+              ) : (
+                <TruckIcon size={15} style={{ color: 'var(--mantine-color-gray-6)', flex: '0 0 auto' }} />
+              )}
+              <Anchor c="dark.6" component="button" fw={600} size="sm" type="button" underline="always" onClick={() => onOpenCarrier(sale)}>
+                {sale.Transporter.Name}
+              </Anchor>
+            </Group>
           )
         },
       },
     ],
-    [indexMap, onOpenCarrier, onPrint, onPrintActProtocolEdit, t],
+    [onOpenCarrier, onPrint, onPrintActProtocolEdit, t],
   )
 }
 
@@ -694,13 +691,6 @@ function upgradeHttpToHttps(url: string): string {
   return url.replace(/^http:\/\//i, 'https://')
 }
 
-function buildIndexMap(sales: Sale[]): Map<Sale, number> {
-  return sales.reduce((indexMap, sale, index) => {
-    indexMap.set(sale, index + 1)
-
-    return indexMap
-  }, new Map<Sale, number>())
-}
 
 function getFilterError(from: string, to: string): string | null {
   if (!from || !to) {

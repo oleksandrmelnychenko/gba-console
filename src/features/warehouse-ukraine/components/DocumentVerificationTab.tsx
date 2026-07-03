@@ -2,8 +2,6 @@ import {
   ActionIcon,
   Alert,
   Button,
-  Card,
-  Group,
   Select,
   Stack,
   Text,
@@ -12,12 +10,10 @@ import {
 } from '@mantine/core'
 import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
 import { IconAlertCircle, IconDownload, IconRefresh, IconRestore } from '@tabler/icons-react'
-import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { translate } from '../../../shared/i18n/translate'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
-import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import {
   exportDocumentVerification,
@@ -400,17 +396,12 @@ function useDocumentVerificationModel() {
   )
 
   const columns = useVerificationColumns(itemIndexMap)
-  const { density, toggleDensity } = useDataTableDensity(
-    'warehouse-ukraine-verification',
-    TABLE_DEFAULT_LAYOUT.density,
-  )
 
   return {
     ...state,
     applyFilters,
     closeDownload,
     columns,
-    density,
     exportDocument,
     exportError,
     filterError,
@@ -421,47 +412,18 @@ function useDocumentVerificationModel() {
     setSelectedStorageIds,
     storageFilterError,
     storageOptions,
-    toggleDensity,
   }
 }
 
 export function DocumentVerificationTab() {
   const model = useDocumentVerificationModel()
   const { t } = useI18n()
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
 
   return (
-    <Stack gap="md">
-      <Group justify="flex-end" align="center">
-        <Group gap="xs">
-          <Tooltip label={t('Оновити')}>
-            <ActionIcon
-              aria-label={t('Оновити')}
-              color="gray"
-              loading={model.isLoading}
-              size={38}
-              variant="light"
-              onClick={() => model.reload()}
-            >
-              <IconRefresh size={18} />
-            </ActionIcon>
-          </Tooltip>
-          <Button
-            color="gray"
-            leftSection={<IconDownload size={16} />}
-            disabled={Boolean(model.exportError) || !model.storagesReady}
-            loading={model.isDownloading}
-            variant="light"
-            onClick={model.exportDocument}
-          >
-            {t('Роздрукувати')}
-          </Button>
-          <DataTableDensityToggle density={model.density} onToggle={model.toggleDensity} size={38} />
-        </Group>
-      </Group>
-
-      <Card withBorder radius="md" padding="md">
-        <Stack gap="md">
-          <Group align="end" gap="sm" wrap="wrap">
+    <Stack className="warehouse-ukraine-tab" gap={6}>
+      <div className="warehouse-ukraine-shell console-table-shell">
+        <div className="app-filter-bar warehouse-ukraine-filter-bar is-verification">
             <CheckboxMultiSelect
               data={model.storageOptions}
               label={t('Організація')}
@@ -470,6 +432,7 @@ export function DocumentVerificationTab() {
               onChange={model.setSelectedStorageIds}
             />
             <TextInput
+              className="warehouse-ukraine-filter-input"
               label={t('Початкова дата')}
               max={model.filterDraft.to || undefined}
               type="date"
@@ -477,21 +440,56 @@ export function DocumentVerificationTab() {
               onChange={(event) => model.applyFilters({ ...model.filterDraft, from: event.currentTarget.value })}
             />
             <TextInput
+              className="warehouse-ukraine-filter-input"
               label={t('Кінцева дата')}
               min={model.filterDraft.from || undefined}
               type="date"
               value={model.filterDraft.to}
               onChange={(event) => model.applyFilters({ ...model.filterDraft, to: event.currentTarget.value })}
             />
-            <Tooltip label={t('Скинути')}>
-              <ActionIcon aria-label={t('Скинути')} color="gray" size={36} variant="light" onClick={model.resetFilters}>
-                <IconRestore size={18} />
-              </ActionIcon>
-            </Tooltip>
-          </Group>
+            <div className="app-filter-actions warehouse-ukraine-filter-actions">
+              <Tooltip label={t('Скинути')}>
+                <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={model.resetFilters}>
+                  <IconRestore size={17} />
+                </ActionIcon>
+              </Tooltip>
+              <Tooltip label={t('Оновити')}>
+                <ActionIcon
+                  aria-label={t('Оновити')}
+                  color="gray"
+                  loading={model.isLoading}
+                  size={34}
+                  variant="light"
+                  onClick={() => model.reload()}
+                >
+                  <IconRefresh size={17} />
+                </ActionIcon>
+              </Tooltip>
+              <Button
+                color="gray"
+                leftSection={<IconDownload size={16} />}
+                disabled={Boolean(model.exportError) || !model.storagesReady}
+                loading={model.isDownloading}
+                variant="light"
+                onClick={model.exportDocument}
+              >
+                {t('Роздрукувати')}
+              </Button>
+              <Select
+                aria-label={t('Кількість рядків')}
+                data={PAGE_SIZE_OPTIONS}
+                size="xs"
+                value={String(model.pageSize)}
+                w={76}
+                onChange={(value) => model.setPageSize(Number(value || DEFAULT_PAGE_SIZE))}
+              />
+            </div>
+            <div ref={setTableToolbarSlot} className="warehouse-ukraine-table-toolbar-slot" />
+          </div>
 
           {(model.error || model.filterError || model.storageFilterError || model.storagesError) && (
             <Alert
+              className="console-table-alert"
               color={model.filterError || model.storageFilterError ? 'yellow' : 'red'}
               icon={<IconAlertCircle size={18} />}
               variant="light"
@@ -500,40 +498,34 @@ export function DocumentVerificationTab() {
             </Alert>
           )}
 
-          <Group justify="flex-end" gap="xs">
-            <Select
-              aria-label={t('Кількість рядків')}
-              data={PAGE_SIZE_OPTIONS}
-              size="xs"
-              value={String(model.pageSize)}
-              w={88}
-              onChange={(value) => model.setPageSize(Number(value || DEFAULT_PAGE_SIZE))}
-            />
-          </Group>
-
+          <div className="warehouse-ukraine-table console-table-body">
           <DataTable
             columns={model.columns}
             data={model.items}
             defaultLayout={TABLE_DEFAULT_LAYOUT}
-            density={model.density}
             emptyText={t('Даних не знайдено')}
             getRowId={(item, index) => String(item.NetUid || item.Id || index)}
+            height="100%"
             isLoading={model.isLoading}
-            layoutVersion="warehouse-ukraine-verification-1"
-            maxHeight="calc(100vh - 440px)"
+            layoutVersion="warehouse-ukraine-verification-2"
             minWidth={1080}
+            showLayoutControls
             tableId="warehouse-ukraine-verification"
+            toolbarPortalTarget={tableToolbarSlot}
           />
+          </div>
 
           {model.hasMore && (
-            <Group justify="center">
+            <div className="console-table-footer warehouse-ukraine-table-footer">
+              <Text c="dimmed" size="sm">
+                {t('Показано')} {model.items.length} / {model.totalQty}
+              </Text>
               <Button color="gray" loading={model.isLoadingMore} variant="light" onClick={model.loadMoreItems}>
                 {t('Завантажити ще')}
               </Button>
-            </Group>
+            </div>
           )}
-        </Stack>
-      </Card>
+      </div>
 
       <DownloadDocumentModal
         document={model.downloadDocument}

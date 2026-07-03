@@ -40,6 +40,7 @@ export type WarehouseUkraineUser = EntityFields & {
 }
 
 export type WarehouseUkraineTransporter = EntityFields & {
+  ImageUrl?: string | null
   Name?: string
 }
 

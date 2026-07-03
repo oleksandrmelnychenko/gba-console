@@ -1,5 +1,5 @@
-import { Badge, Box, Group, Loader, ScrollArea, SimpleGrid, Stack, Text, ThemeIcon } from '@mantine/core'
-import { IconAlertCircle, IconClock, IconHistory } from '@tabler/icons-react'
+import { Badge, Box, Group, Loader, ScrollArea, SimpleGrid, Stack, Text } from '@mantine/core'
+import { IconAlertCircle, IconHistory } from '@tabler/icons-react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { getSyncTypeLabel } from '../syncHistoryLabels'
 import type { SyncHistoryItem } from '../types'
@@ -47,7 +47,7 @@ export function SyncHistoryPanel({
   const latestDate = formatSyncDate(latestHistoryItem?.Date)
   const latestType = latestHistoryItem ? t(getSyncTypeLabel(latestHistoryItem.Type, historyKind)) : ''
   const latestMessages = getLatestMessages(messages)
-  const statusColor = getStatusColor(isError, isSyncing, latestMessages.length > 0)
+  const statusPillClass = getStatusPillClass(isError, isSyncing, latestMessages.length > 0)
   const statusLabel = getStatusLabel({
     hasMessages: latestMessages.length > 0,
     isError,
@@ -60,16 +60,11 @@ export function SyncHistoryPanel({
     <Stack gap="sm" className={`sync-history-panel${isSyncing ? ' is-active' : ''}${isError ? ' is-error' : ''}`}>
       <Group justify="space-between" align="flex-start" gap="md" wrap="nowrap">
         <Group gap="sm" wrap="nowrap">
-          <ThemeIcon
-            color={statusColor}
-            variant={isSyncing || isError ? 'filled' : 'light'}
-            radius={8}
-            size={34}
-          >
+          <span className={`sync-status-icon${isError ? ' is-error' : ''}`}>
             <SyncStatusIcon isError={isError} isSyncing={isSyncing} />
-          </ThemeIcon>
+          </span>
           <Box className="sync-status-heading">
-            <Text fw={700} size="sm" lh={1.25}>
+            <Text fw={600} size="sm" lh={1.25}>
               {t('Процес синхронізації')}
             </Text>
             <Text size="xs" c="dimmed" className="sync-status-source">
@@ -77,14 +72,14 @@ export function SyncHistoryPanel({
             </Text>
           </Box>
         </Group>
-        <Badge color={statusColor} variant="light">
+        <Badge className={`app-role-pill ${statusPillClass}`} variant="light">
           {statusLabel}
         </Badge>
       </Group>
 
       <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="xs">
         <Box className="sync-status-card">
-          <Text size="xs" c="dimmed" fw={700} className="sync-status-label">
+          <Text size="xs" fw={600} className="app-section-title sync-status-label">
             {t('Поточний стан')}
           </Text>
           <Text size="sm" fw={600} className="sync-status-value">
@@ -93,7 +88,7 @@ export function SyncHistoryPanel({
         </Box>
 
         <Box className="sync-status-card">
-          <Text size="xs" c="dimmed" fw={700} className="sync-status-label">
+          <Text size="xs" fw={600} className="app-section-title sync-status-label">
             {t('Остання зміна')}
           </Text>
           {isLoading ? (
@@ -117,12 +112,9 @@ export function SyncHistoryPanel({
       </SimpleGrid>
 
       <Box className="sync-history-feed">
-        <Group justify="space-between" mb={6} wrap="nowrap">
-          <Text size="xs" c="dimmed" fw={700} className="sync-status-label">
-            {t('Останні події')}
-          </Text>
-          <IconClock size={15} stroke={1.8} className="sync-history-clock" />
-        </Group>
+        <Text size="xs" fw={600} mb={6} className="app-section-title sync-status-label">
+          {t('Останні події')}
+        </Text>
         {isLoading ? (
           <Group gap="xs" justify="center" className="sync-history-state">
             <Loader size="xs" color="violet" />
@@ -159,7 +151,7 @@ export function SyncHistoryPanel({
 
       {latestMessages.length > 0 && (
         <Box className="sync-message-feed">
-          <Text size="xs" c="dimmed" fw={700} mb={6} className="sync-status-label">
+          <Text size="xs" fw={600} mb={6} className="app-section-title sync-status-label">
             {t('Останні повідомлення')}
           </Text>
           <Stack gap={3}>
@@ -194,7 +186,7 @@ function getCurrentMessage(
 
 function SyncStatusIcon({ isError, isSyncing }: { isError: boolean; isSyncing: boolean }) {
   if (isSyncing) {
-    return <Loader color="white" size={14} type="oval" />
+    return <Loader color="var(--brand-orange)" size={16} type="oval" />
   }
 
   if (isError) {
@@ -204,16 +196,16 @@ function SyncStatusIcon({ isError, isSyncing }: { isError: boolean; isSyncing: b
   return <IconHistory size={18} stroke={1.8} />
 }
 
-function getStatusColor(isError: boolean, isSyncing: boolean, hasMessages: boolean): 'gray' | 'green' | 'red' | 'violet' {
+function getStatusPillClass(isError: boolean, isSyncing: boolean, hasMessages: boolean): 'is-gray' | 'is-green' | 'is-orange' | 'is-red' {
   if (isError) {
-    return 'red'
+    return 'is-red'
   }
 
   if (isSyncing) {
-    return 'violet'
+    return 'is-orange'
   }
 
-  return hasMessages ? 'green' : 'gray'
+  return hasMessages ? 'is-green' : 'is-gray'
 }
 
 function getStatusLabel({

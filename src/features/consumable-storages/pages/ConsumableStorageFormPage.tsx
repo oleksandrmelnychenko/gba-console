@@ -11,6 +11,7 @@ import { IconAlertCircle, IconDeviceFloppy } from '@tabler/icons-react'
 import { type FormEvent, useEffect, useMemo, useReducer } from 'react'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import './consumable-storages-page.css'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -238,7 +239,7 @@ export function ConsumableStorageFormPage() {
       opened
       position="right"
       size="standard"
-      title={isEditMode ? t('Редагування складу') : t('Новий склад')}
+      title={<span style={{ fontFamily: 'var(--font-mono)' }}>{isEditMode ? t('Редагування складу') : t('Новий склад')}</span>}
       onClose={handleCancel}
       footer={
         <Button
@@ -246,6 +247,7 @@ export function ConsumableStorageFormPage() {
           disabled={isLoading || !canSave}
           form="consumable-storage-form"
           leftSection={<IconDeviceFloppy size={16} />}
+          styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
           loading={isSaving}
           type="submit"
         >
@@ -253,7 +255,7 @@ export function ConsumableStorageFormPage() {
         </Button>
       }
     >
-      <form id="consumable-storage-form" onSubmit={handleSubmit}>
+      <form className="consumable-storage-form" id="consumable-storage-form" onSubmit={handleSubmit}>
         <Stack gap="md">
           {error && (
             <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">

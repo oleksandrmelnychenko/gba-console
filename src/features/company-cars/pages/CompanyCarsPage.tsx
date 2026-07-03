@@ -2,7 +2,6 @@ import {
   ActionIcon,
   Alert,
   Button,
-  Card,
   Group,
   Stack,
   Text,
@@ -11,18 +10,19 @@ import {
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { IconAlertCircle, IconPencil, IconPlus, IconRefresh, IconRestore, IconRoad, IconSearch } from '@tabler/icons-react'
-import { useCallback, useEffect, useMemo, useReducer } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
-import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { PermissionGate } from '../../auth/components/PermissionGate'
 import { getCompanyCars, searchCompanyCars } from '../api/companyCarsApi'
 import { COMPANY_CAR_CREATE_PERMISSION } from '../permissions'
 import type { CompanyCar } from '../types'
 import './company-cars-page.css'
+import '../../../shared/ui/console-table-page.css'
 
 const COMPANY_CARS_PATH = '/accounting/company-cars'
 const SEARCH_DEBOUNCE_MS = 350
@@ -59,6 +59,7 @@ export function CompanyCarsPage() {
   const [pageState, dispatchPageState] = useReducer(companyCarsPageReducer, initialCompanyCarsPageState)
   const { companyCars, error, isLoading } = pageState
   const [searchValue, setSearchValue] = useValueState('')
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const [debouncedSearchValue] = useDebouncedValue(searchValue, SEARCH_DEBOUNCE_MS)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const normalizedSearchValue = debouncedSearchValue.trim()
@@ -128,74 +129,72 @@ export function CompanyCarsPage() {
   }, [normalizedSearchValue, reloadKey, t])
 
   return (
-    <Stack className="company-cars-page" gap={6}>
-      <PageHeaderActions>
-        <PermissionGate permissionKey={COMPANY_CAR_CREATE_PERMISSION}>
-          <Button
-            color={CREATE_ACTION_COLOR}
-            size="sm"
-            leftSection={<IconPlus size={16} />}
-            onClick={() =>
-              navigate(`${COMPANY_CARS_PATH}/new`, {
-                state: {
-                  backgroundLocation: location,
-                  returnPath: `${location.pathname}${location.search}`,
-                },
-              })
-            }
-          >
-            {t('Завести нову машину компанії')}
-          </Button>
-        </PermissionGate>
-      </PageHeaderActions>
-
-      <Card className="app-data-card company-cars-card" withBorder radius="md" padding={0}>
+    <Stack className="company-cars-page console-table-page" gap={6}>
+      <div className="company-cars-card console-table-shell">
         <div className="app-filter-bar company-cars-filter-bar">
-          <Group align="end" gap="sm" wrap="nowrap" className="company-cars-filter-row">
-            <TextInput
-              size="sm"
-              leftSection={<IconSearch size={16} />}
-              label={t('Пошук')}
-              placeholder={t('Місце вводу для пошуку')}
-              value={searchValue}
-              style={{ flex: '1 1 auto', minWidth: 240 }}
-              onChange={(event) => setSearchValue(event.currentTarget.value)}
-            />
-            <div className="app-filter-actions">
-              <Tooltip label={t('Скинути')}>
-                <ActionIcon
-                  aria-label={t('Скинути')}
-                  color="gray"
-                  size={34}
-                  variant="light"
-                  onClick={() => setSearchValue('')}
-                >
-                  <IconRestore size={17} />
-                </ActionIcon>
-              </Tooltip>
-              <Tooltip label={t('Оновити')}>
-                <ActionIcon
-                  aria-label={t('Оновити')}
-                  color="gray"
-                  loading={isLoading}
-                  size={34}
-                  variant="light"
-                  onClick={reload}
-                >
-                  <IconRefresh size={18} />
-                </ActionIcon>
-              </Tooltip>
-            </div>
-          </Group>
+          <TextInput
+            className="company-cars-search-input"
+            size="sm"
+            leftSection={<IconSearch size={16} />}
+            label={t('Пошук')}
+            placeholder={t('Місце вводу для пошуку')}
+            value={searchValue}
+            onChange={(event) => setSearchValue(event.currentTarget.value)}
+          />
+          <div className="app-filter-actions company-cars-filter-actions">
+            <Tooltip label={t('Скинути')}>
+              <ActionIcon
+                aria-label={t('Скинути')}
+                color="gray"
+                size={34}
+                variant="light"
+                onClick={() => setSearchValue('')}
+              >
+                <IconRestore size={17} />
+              </ActionIcon>
+            </Tooltip>
+            <Tooltip label={t('Оновити')}>
+              <ActionIcon
+                aria-label={t('Оновити')}
+                color="gray"
+                loading={isLoading}
+                size={34}
+                variant="light"
+                onClick={reload}
+              >
+                <IconRefresh size={18} />
+              </ActionIcon>
+            </Tooltip>
+          </div>
+          <div ref={setTableToolbarSlot} className="company-cars-table-toolbar-slot" />
+          <div className="company-cars-create-actions">
+            <PermissionGate permissionKey={COMPANY_CAR_CREATE_PERMISSION}>
+              <Button
+                color={CREATE_ACTION_COLOR}
+                size="sm"
+                leftSection={<IconPlus size={16} />}
+                onClick={() =>
+                  navigate(`${COMPANY_CARS_PATH}/new`, {
+                    state: {
+                      backgroundLocation: location,
+                      returnPath: `${location.pathname}${location.search}`,
+                    },
+                  })
+                }
+              >
+                {t('Завести нову машину компанії')}
+              </Button>
+            </PermissionGate>
+          </div>
         </div>
 
         {error && (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert className="console-table-alert" color="red" icon={<IconAlertCircle size={18} />} variant="light">
             {error}
           </Alert>
         )}
 
-        <div className="company-cars-page__table">
+        <div className="company-cars-page__table console-table-body">
           <DataTable
             columns={columns}
             data={companyCars}
@@ -204,13 +203,15 @@ export function CompanyCarsPage() {
             getRowId={(companyCar, index) => String(companyCar.NetUid || companyCar.Id || index)}
             height="100%"
             isLoading={isTableBusy}
-            layoutVersion="company-cars-1"
+            layoutVersion="company-cars-2"
             minWidth={1180}
+            showLayoutControls
             tableId="company-cars"
+            toolbarPortalTarget={tableToolbarSlot}
             onRowClick={openEditor}
           />
         </div>
-      </Card>
+      </div>
     </Stack>
   )
 }

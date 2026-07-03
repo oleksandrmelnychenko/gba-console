@@ -460,7 +460,7 @@
 }
 
 .console-nav-toggle[aria-pressed='true'] {
-  color: #5b21b6;
+  color: var(--brand-orange);
 }
 
 .console-sidebar {
@@ -644,7 +644,7 @@
 
 .console-header-action:hover {
   background: transparent;
-  color: #5b21b6;
+  color: var(--brand-orange);
 }
 
 .console-header-user {
@@ -714,41 +714,39 @@
   padding-top: 8px;
 }
 
+/* Sync modal follows docs/ui-patterns.md: mono buttons (§8), orange
+   checkboxes (§9), toolbar-style controls (§5.3). */
+.sync-modal .mantine-Button-label {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.sync-modal .mantine-Checkbox-input:checked,
+.sync-modal .mantine-Checkbox-input[data-indeterminate] {
+  background-color: var(--brand-orange);
+  border-color: var(--brand-orange);
+}
+
+.sync-modal .mantine-Input-input {
+  border-color: var(--mantine-color-gray-2);
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  letter-spacing: 0;
+}
+
+/* Select dropdowns portal to <body>: paint the selected/hovered option in the
+   orange tint instead of the violet theme fill (same as the suppliers filter). */
+.sync-modal-dropdown [data-combobox-option]:hover,
+.sync-modal-dropdown [data-combobox-option][data-combobox-selected] {
+  background: #fff4eb;
+  color: var(--mantine-color-gray-9);
+}
+
 .sync-message-empty {
   padding: 12px 4px;
   text-align: center;
-}
-
-.sync-pills {
-  padding: 4px;
-  border-radius: 999px;
-  background: var(--mantine-color-gray-1);
-}
-
-.sync-pill {
-  height: 30px;
-  padding: 0 14px;
-  border: 0;
-  border-radius: 999px;
-  background: transparent;
-  color: var(--mantine-color-gray-7);
-  cursor: pointer;
-  font: inherit;
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.01em;
-  transition:
-    background-color 160ms var(--tx-ease-spring),
-    color 160ms var(--tx-ease-spring);
-}
-
-.sync-pill:hover {
-  color: #5b21b6;
-}
-
-.sync-pill.is-active {
-  background: #5b21b6;
-  color: #ffffff;
 }
 
 .sync-panel {
@@ -759,11 +757,17 @@
    gray-2 baseline; the active tab gets the brand-orange 2px underline — the
    same language as the top app nav. No pills, no fills, no icons. */
 .pill-tabs {
+  background: #f8f9fa;
   border-bottom: 1px solid var(--mantine-color-gray-2);
+  border-radius: 0 0 10px 10px;
   display: flex;
   flex-wrap: nowrap;
   gap: 22px;
+  /* `safe` falls back to start when the strip overflows, keeping the leading
+     tabs scrollable-to instead of clipped past the unreachable start edge. */
+  justify-content: safe center;
   overflow-x: auto;
+  padding: 0 8px;
   scrollbar-width: none;
   width: 100%;
 }
@@ -828,8 +832,9 @@
 }
 
 .sync-message {
-  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-family: var(--font-mono);
   color: var(--mantine-color-gray-7);
+  letter-spacing: 0;
   overflow-wrap: anywhere;
 }
 
@@ -837,20 +842,34 @@
   padding: 12px;
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 8px;
-  background: linear-gradient(180deg, #ffffff 0%, var(--mantine-color-gray-0) 100%);
-  transition:
-    border-color 180ms var(--tx-ease-spring),
-    box-shadow 180ms var(--tx-ease-spring);
+  background: #ffffff;
+  transition: border-color 180ms var(--tx-ease-spring);
 }
 
 .sync-history-panel.is-active {
-  border-color: var(--mantine-color-violet-3);
-  box-shadow: 0 8px 24px rgba(91, 33, 182, 0.08);
+  border-color: rgba(var(--brand-orange-rgb), 0.5);
 }
 
 .sync-history-panel.is-error {
   border-color: var(--mantine-color-red-3);
-  box-shadow: 0 8px 24px rgba(224, 36, 36, 0.08);
+}
+
+/* Status glyph in an outlined one-color circle (§7.1 / §5.2 icon language). */
+.sync-status-icon {
+  align-items: center;
+  border: 1.5px solid var(--mantine-color-gray-7);
+  border-radius: 50%;
+  color: var(--mantine-color-gray-7);
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: 36px;
+  justify-content: center;
+  width: 36px;
+}
+
+.sync-status-icon.is-error {
+  border-color: var(--mantine-color-red-6);
+  color: var(--mantine-color-red-6);
 }
 
 .sync-status-heading {
@@ -906,21 +925,17 @@
 .sync-history-date {
   flex: 0 0 168px;
   color: var(--mantine-color-gray-6);
-  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   font-size: 11px;
+  letter-spacing: 0;
 }
 
 .sync-history-type {
   min-width: 0;
-  color: var(--mantine-color-gray-9);
+  color: var(--mantine-color-gray-8);
   font-weight: 600;
   overflow-wrap: anywhere;
-}
-
-.sync-history-clock {
-  flex: 0 0 auto;
-  color: var(--mantine-color-gray-5);
 }
 
 .sync-type-checklist {
