@@ -464,7 +464,7 @@ function useColumns({
               >
                 {isExpanded ? <IconChevronDown size={16} /> : <IconChevronRight size={16} />}
               </ActionIcon>
-              <Text fw={600}>{displayValue(row.document.DocumentTypeName)}</Text>
+              <MovementEntityCell value={displayValue(row.document.DocumentTypeName)} />
             </Group>
           )
         },
@@ -476,7 +476,7 @@ function useColumns({
         minWidth: 120,
         enableSorting: false,
         accessor: (row) => row.document.DocumentNumber,
-        cell: (row) => (row.kind === MOVEMENT_ROW.DETAIL ? null : displayValue(row.document.DocumentNumber)),
+        cell: (row) => (row.kind === MOVEMENT_ROW.DETAIL ? null : <MovementMonoCell value={displayValue(row.document.DocumentNumber)} />),
       },
       {
         id: 'fromDate',
@@ -485,7 +485,7 @@ function useColumns({
         minWidth: 130,
         enableSorting: false,
         accessor: (row) => row.document.DocumentFromDate,
-        cell: (row) => (row.kind === MOVEMENT_ROW.DETAIL ? null : displayValue(formatDateTime(row.document.DocumentFromDate))),
+        cell: (row) => (row.kind === MOVEMENT_ROW.DETAIL ? null : <MovementMonoCell value={displayValue(formatDateTime(row.document.DocumentFromDate))} />),
       },
       {
         id: 'organization',
@@ -512,7 +512,7 @@ function useColumns({
         minWidth: 130,
         enableSorting: false,
         accessor: (row) => row.document.DocumentUpdatedDate,
-        cell: (row) => (row.kind === MOVEMENT_ROW.DETAIL ? null : displayValue(formatDateTime(row.document.DocumentUpdatedDate))),
+        cell: (row) => (row.kind === MOVEMENT_ROW.DETAIL ? null : <MovementMonoCell value={displayValue(formatDateTime(row.document.DocumentUpdatedDate))} />),
       },
       {
         id: 'amount',
@@ -522,7 +522,7 @@ function useColumns({
         align: 'right',
         enableSorting: false,
         accessor: (row) => getNumber(row.document.TotalEuroAmount),
-        cell: (row) => (row.kind === MOVEMENT_ROW.DETAIL ? null : formatAmount(getNumber(row.document.TotalEuroAmount))),
+        cell: (row) => (row.kind === MOVEMENT_ROW.DETAIL ? null : <MovementMoneyCell value={formatAmount(getNumber(row.document.TotalEuroAmount))} />),
       },
       {
         id: 'positions',
@@ -532,7 +532,7 @@ function useColumns({
         align: 'right',
         enableSorting: false,
         accessor: (row) => getNumber(row.document.TotalPositions),
-        cell: (row) => (row.kind === MOVEMENT_ROW.DETAIL ? null : displayValue(getNumber(row.document.TotalPositions))),
+        cell: (row) => (row.kind === MOVEMENT_ROW.DETAIL ? null : <MovementNumberCell value={displayValue(getNumber(row.document.TotalPositions))} />),
       },
     ],
     [expandedKeys, onToggle, t],
@@ -560,10 +560,11 @@ function MovementInfoItemsTable({ document }: { document: ClientProductMovementD
             <Stack align="flex-start" gap={0}>
               {netId ? (
                 <Anchor
+                  className="client-product-movement-product-code"
                   component="button"
-                  fw={600}
-                  size="sm"
+                  title={code}
                   type="button"
+                  underline="always"
                   onClick={(event) => {
                     event.stopPropagation()
                     setProductCardNetId(netId)
@@ -572,16 +573,15 @@ function MovementInfoItemsTable({ document }: { document: ClientProductMovementD
                   {code}
                 </Anchor>
               ) : (
-                <Text fw={600} size="sm">
-                  {code}
-                </Text>
+                <MovementMonoCell value={code} />
               )}
               {netId ? (
                 <Anchor
-                  c="dimmed"
+                  className="client-product-movement-product-name"
                   component="button"
-                  size="xs"
+                  title={name}
                   type="button"
+                  underline="always"
                   onClick={(event) => {
                     event.stopPropagation()
                     setProductCardNetId(netId)
@@ -590,7 +590,7 @@ function MovementInfoItemsTable({ document }: { document: ClientProductMovementD
                   {name}
                 </Anchor>
               ) : (
-                <Text c="dimmed" size="xs">
+                <Text className="client-product-movement-product-name" title={name}>
                   {name}
                 </Text>
               )}
@@ -604,7 +604,7 @@ function MovementInfoItemsTable({ document }: { document: ClientProductMovementD
         width: 200,
         minWidth: 140,
         accessor: (item) => item.ProductSpecificationCode,
-        cell: (item) => displayValue(item.ProductSpecificationCode),
+        cell: (item) => <MovementMonoCell value={displayValue(item.ProductSpecificationCode)} />,
       },
       {
         id: 'responsible',
@@ -621,7 +621,7 @@ function MovementInfoItemsTable({ document }: { document: ClientProductMovementD
         minWidth: 110,
         align: 'right',
         accessor: (item) => getNumber(item.TotalAmount),
-        cell: (item) => formatAmount(getNumber(item.TotalAmount)),
+        cell: (item) => <MovementMoneyCell value={formatAmount(getNumber(item.TotalAmount))} />,
       },
       {
         id: 'qty',
@@ -630,14 +630,14 @@ function MovementInfoItemsTable({ document }: { document: ClientProductMovementD
         minWidth: 90,
         align: 'right',
         accessor: (item) => getNumber(item.ItemQty),
-        cell: (item) => displayValue(getNumber(item.ItemQty)),
+        cell: (item) => <MovementNumberCell value={displayValue(getNumber(item.ItemQty))} />,
       },
     ],
     [t],
   )
 
   return (
-    <Box py="xs">
+    <Box className="client-product-movement-detail-table" py="xs">
       <DataTable
         columns={itemColumns}
         data={items}

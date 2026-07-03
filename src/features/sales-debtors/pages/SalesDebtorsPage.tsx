@@ -578,7 +578,14 @@ function DebtorDetailDrawer({
   }, [debtor?.ClientNetId, setError, setItems, setLoading, setTotal, t])
 
   return (
-    <AppDrawer opened={Boolean(debtor)} position="right" size="standard" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Деталі боржника')}</span>} onClose={onClose}>
+    <AppDrawer
+      className="sales-debtor-detail-drawer"
+      opened={Boolean(debtor)}
+      position="right"
+      size="standard"
+      title={<span className="sales-debtor-detail-drawer-title">{t('Деталі боржника')}</span>}
+      onClose={onClose}
+    >
       {debtor ? (
         <div className="sales-debtor-detail">
           <section className="sales-debtor-detail-hero">

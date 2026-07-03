@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { ActionIcon, Anchor, Badge, Card, Group, Stack, Text, Tooltip } from '@mantine/core'
+import { ActionIcon, Anchor, Badge, Card, Group, Stack, Text } from '@mantine/core'
 import { IconChevronDown, IconChevronUp } from '@tabler/icons-react'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
@@ -42,14 +42,14 @@ export function CartReserveCard({ cart, index, isExpanded, onOpenClient, onToggl
   const columns = useCartItemColumns(localCurrencyCode, setProductCardNetId)
 
   return (
-    <Card withBorder radius="md" padding="md">
+    <Card className="cart-reserve-card" withBorder radius="md" padding="md">
       <Stack gap="sm">
         <Group justify="space-between" align="flex-start" wrap="nowrap">
           <Stack gap={2}>
-            <Anchor c="dark.6" fw={600} underline="always" onClick={() => onOpenClient(cart)}>
+            <Anchor className="cart-reserve-client-link" underline="always" onClick={() => onOpenClient(cart)}>
               {clientName || t('Без назви')}
             </Anchor>
-            <Text c="dimmed" size="xs" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>
+            <Text className="cart-reserve-validity">
               {t('Дійсно до')}: {formatCartDate(cart.ValidUntil)}
             </Text>
           </Stack>
@@ -71,6 +71,7 @@ export function CartReserveCard({ cart, index, isExpanded, onOpenClient, onToggl
             </Badge>
 
             <ActionIcon
+              className="cart-reserve-toggle"
               variant="light"
               color="gray"
               aria-label={isExpanded ? t('Згорнути') : t('Розгорнути')}
@@ -82,17 +83,19 @@ export function CartReserveCard({ cart, index, isExpanded, onOpenClient, onToggl
         </Group>
 
         {isExpanded && (
-          <DataTable
-            columns={columns}
-            data={orderItems}
-            defaultLayout={CART_ITEMS_LAYOUT}
-            distributeAvailableWidth
-            emptyText={t('Позицій не знайдено')}
-            getRowId={getOrderItemKey}
-            layoutVersion="shopping-cart-reserve-items-2"
-            minWidth={1100}
-            tableId={`shopping-cart-reserve-items-${cart.NetUid || index}`}
-          />
+          <div className="cart-reserve-items-frame">
+            <DataTable
+              columns={columns}
+              data={orderItems}
+              defaultLayout={CART_ITEMS_LAYOUT}
+              distributeAvailableWidth
+              emptyText={t('Позицій не знайдено')}
+              getRowId={getOrderItemKey}
+              layoutVersion="shopping-cart-reserve-items-2"
+              minWidth={1100}
+              tableId={`shopping-cart-reserve-items-${cart.NetUid || index}`}
+            />
+          </div>
         )}
       </Stack>
       <ProductCardModal productNetId={productCardNetId} onClose={() => setProductCardNetId(null)} />
@@ -131,10 +134,9 @@ function useCartItemColumns(localCurrencyCode: string, onOpenProductCard: (produ
 
           return netId ? (
             <Anchor
-              c="dark.6"
+              className="cart-reserve-code-link"
               component="button"
-              fw={600}
-              style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}
+              title={code}
               type="button"
               underline="always"
               onClick={(event) => {
@@ -145,7 +147,7 @@ function useCartItemColumns(localCurrencyCode: string, onOpenProductCard: (produ
               {code}
             </Anchor>
           ) : (
-            <Text fw={600} style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{code}</Text>
+            <Text className="cart-reserve-mono-cell" title={code}>{code}</Text>
           )
         },
       },
@@ -159,9 +161,9 @@ function useCartItemColumns(localCurrencyCode: string, onOpenProductCard: (produ
           <Stack gap={0}>
             {item.Product?.NetUid ? (
               <Anchor
-                c="dark.6"
+                className="cart-reserve-product-link"
                 component="button"
-                size="sm"
+                title={item.Product?.Name || ''}
                 type="button"
                 underline="always"
                 onClick={(event) => {
@@ -172,14 +174,12 @@ function useCartItemColumns(localCurrencyCode: string, onOpenProductCard: (produ
                 {item.Product?.Name || ''}
               </Anchor>
             ) : (
-              <Text size="sm">{item.Product?.Name || ''}</Text>
+              <Text className="cart-reserve-product-name" title={item.Product?.Name || ''}>{item.Product?.Name || ''}</Text>
             )}
             {item.Comment ? (
-              <Tooltip label={item.Comment} position="top" multiline maw={320}>
-                <Text size="xs" c="dimmed" lineClamp={1}>
-                  {item.Comment}
-                </Text>
-              </Tooltip>
+              <Text className="cart-reserve-comment" lineClamp={1} title={item.Comment}>
+                {item.Comment}
+              </Text>
             ) : null}
           </Stack>
         ),
@@ -190,7 +190,7 @@ function useCartItemColumns(localCurrencyCode: string, onOpenProductCard: (produ
         width: 180,
         minWidth: 140,
         accessor: (item) => item.Product?.MainOriginalNumber || '',
-        cell: (item) => <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{item.Product?.MainOriginalNumber || ''}</Text>,
+        cell: (item) => <Text className="cart-reserve-mono-cell" title={item.Product?.MainOriginalNumber || ''}>{item.Product?.MainOriginalNumber || ''}</Text>,
       },
       {
         id: 'created',
@@ -200,8 +200,8 @@ function useCartItemColumns(localCurrencyCode: string, onOpenProductCard: (produ
         accessor: (item) => (item.Created ? new Date(item.Created).getTime() : 0),
         cell: (item) => (
           <Stack gap={0}>
-            <Text size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{formatCartDate(item.Created) || ''}</Text>
-            <Text c="dimmed" size="xs" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>
+            <Text className="cart-reserve-date-cell">{formatCartDate(item.Created) || ''}</Text>
+            <Text className="cart-reserve-time-cell">
               {formatCartTime(item.Created)}
             </Text>
           </Stack>
@@ -221,7 +221,7 @@ function useCartItemColumns(localCurrencyCode: string, onOpenProductCard: (produ
         width: 160,
         minWidth: 130,
         accessor: (item) => item.AssignedSpecification?.SpecificationCode || '',
-        cell: (item) => <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{item.AssignedSpecification?.SpecificationCode || ''}</Text>,
+        cell: (item) => <Text className="cart-reserve-mono-cell" title={item.AssignedSpecification?.SpecificationCode || ''}>{item.AssignedSpecification?.SpecificationCode || ''}</Text>,
       },
       {
         id: 'qty',
@@ -230,7 +230,7 @@ function useCartItemColumns(localCurrencyCode: string, onOpenProductCard: (produ
         minWidth: 90,
         align: 'right',
         accessor: (item) => item.Qty ?? 0,
-        cell: (item) => <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{formatQty(item)}</Text>,
+        cell: (item) => <Text className="cart-reserve-number-cell">{formatQty(item)}</Text>,
       },
       {
         id: 'amount',
