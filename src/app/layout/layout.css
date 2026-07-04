@@ -547,21 +547,22 @@
 }
 
 .console-sidebar-item:hover {
-  background: rgba(91, 33, 182, 0.06);
-  color: #5b21b6;
+  background: rgba(var(--brand-orange-rgb), 0.07);
+  color: var(--mantine-color-gray-9);
 }
 
 .console-sidebar-item:hover .console-sidebar-item-icon {
-  color: #5b21b6;
+  color: var(--mantine-color-gray-8);
 }
 
 .console-sidebar-item.is-active {
-  background: #5b21b6;
-  color: #ffffff;
+  background: rgba(var(--brand-orange-rgb), 0.1);
+  color: var(--brand-orange);
+  font-weight: 600;
 }
 
 .console-sidebar-item.is-active .console-sidebar-item-icon {
-  color: #ffffff;
+  color: var(--brand-orange);
 }
 
 .console-header-actions {
@@ -1119,13 +1120,13 @@
 }
 
 .rate-group-button:hover {
-  background: rgba(91, 33, 182, 0.06);
-  border-color: rgba(91, 33, 182, 0.18);
+  background: rgba(var(--brand-orange-rgb), 0.06);
+  border-color: rgba(var(--brand-orange-rgb), 0.2);
 }
 
 .rate-group-button.is-selected {
-  background: rgba(91, 33, 182, 0.08);
-  border-color: rgba(91, 33, 182, 0.36);
+  background: rgba(var(--brand-orange-rgb), 0.08);
+  border-color: rgba(var(--brand-orange-rgb), 0.4);
 }
 
 .rate-group-badge {
@@ -1164,7 +1165,7 @@
 }
 
 .rate-group-button.is-selected .rate-item-value {
-  color: #5b21b6;
+  color: var(--brand-orange);
 }
 
 .exchange-rates-panel {
@@ -1228,14 +1229,14 @@
 }
 
 .exchange-rates-panel-rate:hover {
-  background: rgba(91, 33, 182, 0.06);
-  border-color: rgba(91, 33, 182, 0.32);
+  background: rgba(var(--brand-orange-rgb), 0.06);
+  border-color: rgba(var(--brand-orange-rgb), 0.35);
 }
 
 .exchange-rates-panel-rate.is-selected {
-  background: #5b21b6;
-  border-color: #5b21b6;
-  color: #ffffff;
+  background: rgba(var(--brand-orange-rgb), 0.1);
+  border-color: rgba(var(--brand-orange-rgb), 0.55);
+  color: var(--brand-orange);
 }
 
 .exchange-rates-panel-rate-code {
@@ -1296,7 +1297,7 @@
 }
 
 .exchange-rates-history-amount span {
-  color: #5b21b6;
+  color: var(--brand-orange);
   font-size: 12px;
 }
 
