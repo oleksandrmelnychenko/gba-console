@@ -1,6 +1,6 @@
 import { Anchor, Box, Button, Group, Loader, Stack, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconFileExcel, IconFileTypePdf, IconUserOff } from '@tabler/icons-react'
+import { IconFileExcel, IconFileTypePdf, IconUserSearch } from '@tabler/icons-react'
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { formatLocalDate } from '../../../../shared/date/dateTime'
 import { useI18n } from '../../../../shared/i18n/useI18n'
@@ -1125,9 +1125,16 @@ export function NewSaleClientStep({
               />
             </>
           ) : (
-            <Stack align="center" className="new-sale-client-empty" gap="xs" justify="center">
-              <IconUserOff size={48} stroke={1.2} style={{ color: 'var(--mantine-color-gray-4)' }} />
-              <Text c="dimmed">{t('Не вибраний клієнт')}</Text>
+            <Stack align="center" className="new-sale-client-empty" gap={10} justify="center">
+              <span className="new-sale-client-empty__icon">
+                <IconUserSearch size={30} stroke={1.55} />
+              </span>
+              <Stack align="center" gap={3}>
+                <Text className="new-sale-client-empty__title">{t('Клієнт ще не вибраний')}</Text>
+                <Text className="new-sale-client-empty__description">
+                  {t('Оберіть клієнта у списку зліва, щоб відкрити договори, борги та реєстр документів.')}
+                </Text>
+              </Stack>
             </Stack>
           )}
         </Box>
