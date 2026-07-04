@@ -530,10 +530,14 @@ function NewSaleWizardContent({
 
       <Box
         style={{
+          boxSizing: 'border-box',
           flex: 1,
           minHeight: 0,
           overflow: active === 0 ? 'visible' : active === 1 ? 'hidden' : 'auto',
-          paddingRight: active === 1 ? 0 : 4,
+          paddingBottom: active === 0 ? 8 : 0,
+          paddingLeft: active === 0 ? 8 : 0,
+          paddingRight: active === 0 ? 8 : active === 1 ? 0 : 4,
+          paddingTop: active === 0 ? 8 : 0,
         }}
       >
         {active === 0 && (
