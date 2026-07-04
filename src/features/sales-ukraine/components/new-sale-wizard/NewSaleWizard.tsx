@@ -514,16 +514,17 @@ function NewSaleWizardContent({
   return (
     <Box
       aria-label={t('Майстер нової продажі')}
+      className="new-sale-wizard-frame"
       role="group"
       style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}
       onKeyDown={handleRootKeyDown}
     >
+      <Box className="new-sale-wizard-frame-close">{wizardHeaderClose}</Box>
       {active === 2 && (
         <WizardClientHeroHeader
           activeAgreementNetId={state.agreementNetId}
           client={wizardClient}
           clientNetId={state.clientNetId}
-          headerClose={wizardHeaderClose}
           headerTools={wizardHeaderTools}
         />
       )}
@@ -543,7 +544,6 @@ function NewSaleWizardContent({
         {active === 0 && (
           <NewSaleClientStep
             clientNetId={state.clientNetId}
-            headerClose={wizardHeaderClose}
             headerTools={wizardHeaderTools}
             initialClient={selectedClient}
             onClientResolved={setSelectedClient}
@@ -571,7 +571,6 @@ function NewSaleWizardContent({
             agreementNetId={state.agreementNetId}
             client={wizardClient}
             clientNetId={state.clientNetId}
-            headerClose={wizardHeaderClose}
             headerTools={wizardHeaderTools}
             sale={productsCart}
             onBusyChange={setProductsBusy}

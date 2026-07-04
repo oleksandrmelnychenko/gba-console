@@ -1070,6 +1070,7 @@ export function NewSaleClientStep({
             activeAgreementNetId={selectedAgreementKey}
             agreements={agreements}
             client={selectedClient}
+            debts={groupedDebts}
             headerClose={headerClose}
             headerTools={headerTools}
             registryCount={registryItems.length}

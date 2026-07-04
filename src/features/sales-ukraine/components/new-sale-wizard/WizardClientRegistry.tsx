@@ -296,17 +296,12 @@ function WizardSaleDocumentCell({ sale }: { sale: SalesUkraineSale }) {
 function WizardSaleDocumentTypeCell({ sale }: { sale: SalesUkraineSale }) {
   const { t } = useI18n()
   const lifecycleLabel = getSaleLifecycleLabel(sale)
-  const lifecycleKey = getSaleLifecycleKey(sale)
-  const translatedLifecycleLabel = t(lifecycleLabel)
-  const title = `${sale.IsVatSale ? `${t('\u041f\u0414\u0412')} ` : ''}${translatedLifecycleLabel}`
 
   return (
-    <Group className="new-sale-register-document-type-cell" gap={4} title={title} wrap="nowrap">
-      {sale.IsVatSale && <span className="new-sale-register-document-pill is-vat">{t('\u041f\u0414\u0412')}</span>}
-      <span className={`new-sale-register-document-pill ${getSaleDocumentTypeClass(lifecycleKey)}`}>
-        {translatedLifecycleLabel}
-      </span>
-    </Group>
+    <Text className="new-sale-register-document-type" title={`${sale.IsVatSale ? `${t('\u041f\u0414\u0412')} ` : ''}${t(lifecycleLabel)}`} truncate>
+      {sale.IsVatSale ? `${t('\u041f\u0414\u0412')} ` : ''}
+      {t(lifecycleLabel)}
+    </Text>
   )
 }
 
@@ -314,42 +309,38 @@ function WizardSalePaymentCell({ sale }: { sale: SalesUkraineSale }) {
   const { t } = useI18n()
   const label = getSalePaymentLabel(sale)
   const isEdited = (sale.HistoryInvoiceEdit?.length ?? 0) > 0
-  const statusClass = isEdited ? 'is-edited' : getSaleRowStateClass(sale)
-  const translatedLabel = label ? t(label) : isEdited ? t('\u0420\u0435\u0434\u0430\u0433\u043e\u0432\u0430\u043d\u043e') : ''
   const dotLabel = isEdited
     ? t('\u0420\u0430\u0445\u0443\u043d\u043e\u043a \u0440\u0435\u0434\u0430\u0433\u043e\u0432\u0430\u043d\u043e')
     : t(getSaleDotLabel(sale))
 
-  if (!translatedLabel) {
-    return null
-  }
-
   return (
-    <Group className="new-sale-register-payment-cell" gap={4} wrap="nowrap">
+    <Group className="new-sale-register-payment-cell" gap={8} wrap="nowrap">
       <Tooltip label={dotLabel}>
-        <span className={`new-sale-register-status-pill ${statusClass}`}>
-          {translatedLabel}
-        </span>
+        <span className={`new-sale-register-status-dot ${isEdited ? 'is-edited' : getSaleRowStateClass(sale)}`} />
       </Tooltip>
+      <Text className={`new-sale-register-payment ${getSaleRowStateClass(sale)}`} title={label ? t(label) : ''} truncate>
+        {label ? t(label) : ''}
+      </Text>
     </Group>
   )
 }
 
 function WizardSaleAmountCell({ sale }: { sale: SalesUkraineSale }) {
-  const amount = sale.TotalAmountLocal ?? 0
-
   return (
-    <Box className={`new-sale-register-value-cell is-inline is-money ${amount < 0 ? 'is-negative' : ''}`}>
-      <Text>{amountFormatter.format(amount)}</Text>
+    <Box className="new-sale-register-value-cell is-inline">
+      <Text>{amountFormatter.format(sale.TotalAmountLocal ?? 0)}</Text>
       <Text>{getSaleCurrencyCode(sale)}</Text>
     </Box>
   )
 }
 
 function WizardSaleQtyCell({ sale }: { sale: SalesUkraineSale }) {
+  const { t } = useI18n()
+
   return (
-    <Box className="new-sale-register-value-cell is-inline is-quantity">
-      <Text>{qtyFormatter.format(sale.TotalCount ?? 0)}</Text>
+    <Box className="new-sale-register-value-cell is-inline">
+      <Text>{sale.TotalCount ?? 0}</Text>
+      <Text>{t('\u0448\u0442\u0443\u043a')}</Text>
     </Box>
   )
 }
@@ -673,14 +664,6 @@ function getSaleLifecycleLabel(sale: SalesUkraineSale): string {
   const lifecycleKey = getSaleLifecycleKey(sale)
 
   return LIFECYCLE_LABELS[lifecycleKey] || lifecycleKey
-}
-
-function getSaleDocumentTypeClass(lifecycleKey: string): string {
-  return lifecycleKey === 'New'
-    ? 'is-invoice'
-    : lifecycleKey === 'Packaged' || lifecycleKey === 'Packaging'
-      ? 'is-waybill'
-      : 'is-neutral'
 }
 
 function getSalePaymentKey(sale: SalesUkraineSale): string {

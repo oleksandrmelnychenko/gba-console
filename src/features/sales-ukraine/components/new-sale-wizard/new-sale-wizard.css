@@ -4655,17 +4655,17 @@
   max-width: 260px;
 }
 
-/* Client identity: light two-line layout. */
+/* Client identity: compact stacked layout. */
 .new-sale-client-hero__copy {
-  align-items: center;
-  column-gap: 12px;
+  align-items: start;
   display: grid;
   grid-template-areas:
-    'name name'
-    'meta contacts';
-  grid-template-columns: minmax(0, auto) minmax(0, 1fr);
+    'name'
+    'meta'
+    'contacts';
+  grid-template-columns: minmax(0, 1fr);
   max-width: 100%;
-  row-gap: 4px;
+  row-gap: 3px;
 }
 
 .new-sale-client-hero__name {
@@ -6436,6 +6436,45 @@
   display: none;
 }
 
+.new-sale-client-hero__chips {
+  align-items: center;
+  line-height: 14px;
+}
+
+.new-sale-client-hero__status {
+  align-items: center;
+  column-gap: 0;
+  display: inline-flex;
+  min-height: 14px;
+}
+
+.new-sale-client-hero__status-copy {
+  align-items: center;
+  display: inline-flex;
+  flex-direction: row;
+  gap: 5px;
+  line-height: 14px;
+}
+
+.new-sale-client-hero__status-copy strong,
+.new-sale-client-hero__status-copy span {
+  display: inline-block;
+  line-height: 14px;
+}
+
+.new-sale-client-hero__debt {
+  align-items: center;
+  display: inline-flex;
+  line-height: 14px;
+  margin-top: 0;
+  min-height: 14px;
+}
+
+.new-sale-client-hero__debt svg {
+  display: block;
+  flex: 0 0 auto;
+}
+
 .new-sale-wizard-footer {
   align-items: center;
   background: var(--mantine-color-white);
@@ -6634,6 +6673,33 @@
 }
 
 /* Wizard final cascade overrides. Keep this block last. */
+.new-sale-wizard-frame {
+  position: relative;
+}
+
+.new-sale-wizard-frame-close {
+  position: absolute;
+  right: 4px;
+  top: 4px;
+  z-index: 30;
+}
+
+.new-sale-wizard-frame-close .mantine-ActionIcon-root {
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid var(--mantine-color-gray-3);
+  border-radius: 999px;
+  box-shadow: none;
+  color: var(--mantine-color-gray-7);
+  height: 34px;
+  width: 34px;
+}
+
+.new-sale-wizard-frame-close .mantine-ActionIcon-root:hover {
+  background: var(--mantine-color-gray-0);
+  border-color: var(--mantine-color-gray-4);
+  color: var(--mantine-color-gray-9);
+}
+
 .new-sale-client-hero {
   min-height: 64px;
   padding-bottom: 6px;
