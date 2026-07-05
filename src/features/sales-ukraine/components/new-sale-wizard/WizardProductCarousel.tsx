@@ -58,7 +58,7 @@ export function WizardProductCarousel({
       <Box
         style={{
           display: 'flex',
-          flex: showInput ? '0 0 auto' : 1,
+          flex: 1,
           flexDirection: 'column',
           justifyContent: 'flex-end',
           minHeight: 0,
