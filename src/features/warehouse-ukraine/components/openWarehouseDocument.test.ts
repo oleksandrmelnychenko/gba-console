@@ -5,6 +5,7 @@ import {
   hasWarehouseDocumentUrl,
   openPendingWarehouseDocumentWindow,
   openWarehouseDocumentInWindow,
+  openWarehouseDocumentUrl,
 } from './openWarehouseDocument'
 
 function createFakeWindow() {
@@ -51,6 +52,25 @@ describe('openWarehouseDocument', () => {
     expect(pendingWindow).toBeNull()
     expect(opened).toBe(false)
     expect(openMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('opens an already-created document URL without a pending blank page', () => {
+    const fakeWindow = createFakeWindow()
+    const openMock = vi.fn(() => fakeWindow)
+    vi.stubGlobal('window', { location: { protocol: 'https:' }, open: openMock })
+
+    const opened = openWarehouseDocumentUrl('http://example.test/invoice.pdf')
+
+    expect(opened).toBe(true)
+    expect(openMock).toHaveBeenCalledWith('https://example.test/invoice.pdf', '_blank', 'noopener,noreferrer')
+    expect(fakeWindow.opener).toBeNull()
+  })
+
+  it('reports when the browser blocks an already-created document popup', () => {
+    const openMock = vi.fn(() => null)
+    vi.stubGlobal('window', { location: { protocol: 'https:' }, open: openMock })
+
+    expect(openWarehouseDocumentUrl('https://example.test/invoice.pdf')).toBe(false)
   })
 
   it('prefers PDF for direct print and keeps Excel as document fallback', () => {

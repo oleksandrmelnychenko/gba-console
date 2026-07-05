@@ -6,7 +6,6 @@ import {
   Button,
   Card,
   Checkbox,
-  Divider,
   Group,
   Loader,
   NumberInput,
@@ -1444,23 +1443,31 @@ function ProductStorageActionModal({
     ...option,
     label: t(option.label),
   }))
-  const returnConsignmentOptions = returnConsignments.map((consignment) => ({
-    label: formatConsignmentOption(consignment),
-    value: getConsignmentKey(consignment),
-  }))
   const singleAvailableQty = getQuantity(modal.rows[0]?.availability)
   const singleMaxQty =
     modal.mode === 'return'
       ? getReturnMaxQty(singleAvailableQty, selectedReturnConsignment)
       : singleAvailableQty
   const displayedQty = isSingle ? Number(form.qty) : sumActionRows(modal.rows)
+  const footer = (
+    <Group justify="flex-end">
+      <Button color="gray" disabled={isSubmitting} variant="light" onClick={onClose}>
+        {t('Скасувати')}
+      </Button>
+      <Button disabled={isSubmitting} leftSection={getActionSubmitIcon(modal.mode)} loading={isSubmitting} onClick={onSubmit}>
+        {t(getActionSubmitLabel(modal.mode))}
+      </Button>
+    </Group>
+  )
 
   return (
-    <AppModal
-      centered
+    <AppDrawer
+      className="app-form-sheet"
+      closeOnClickOutside={false}
+      footer={footer}
       opened
-      title={t(getActionTitle(modal))}
-      size="xl"
+      size="standard"
+      title={<span className="product-storages-action-sheet-title">{t(getActionTitle(modal))}</span>}
       onClose={() => {
         if (!isSubmitting) {
           onClose()
@@ -1546,31 +1553,14 @@ function ProductStorageActionModal({
         ) : null}
 
         {modal.mode === 'return' ? (
-          <Stack gap="sm">
-            <Select
-              searchable
-              allowDeselect={false}
-              data={returnConsignmentOptions}
-              disabled={isSubmitting || isLoadingReturnConsignments || returnConsignmentOptions.length === 0}
-              label={t('Прихід')}
-              placeholder={isLoadingReturnConsignments ? t('Завантаження') : t('Оберіть прихід')}
-              value={form.consignmentId || null}
-              onChange={(value) => onChangeForm((current) => ({ ...current, consignmentId: value || '' }))}
-            />
-            {selectedReturnConsignment ? (
-              <Group gap="xs">
-                <Badge color="gray" variant="light">
-                  {t('Постачальник')}: {displayValue(getClientName(selectedReturnConsignment.Supplier))}
-                </Badge>
-                <Badge color="gray" variant="light">
-                  {t('Організація')}: {displayValue(selectedReturnConsignment.Organization?.FullName || selectedReturnConsignment.Organization?.Name)}
-                </Badge>
-                <Badge color="gray" variant="light">
-                  {t('Доступно по партії')}: {formatAmount(selectedReturnConsignment.RemainingQty)}
-                </Badge>
-              </Group>
-            ) : null}
-          </Stack>
+          <ReturnConsignmentsPanel
+            disabled={isSubmitting}
+            isLoading={isLoadingReturnConsignments}
+            returnConsignments={returnConsignments}
+            selectedConsignmentId={form.consignmentId}
+            selectedReturnConsignment={selectedReturnConsignment}
+            onSelect={(consignmentId) => onChangeForm((current) => ({ ...current, consignmentId }))}
+          />
         ) : null}
 
         {showQuantityField ? (
@@ -1609,18 +1599,119 @@ function ProductStorageActionModal({
             {actionError || returnConsignmentsError}
           </Alert>
         )}
-
-        <Divider />
-        <Group justify="flex-end">
-          <Button color="gray" disabled={isSubmitting} variant="light" onClick={onClose}>
-            {t('Скасувати')}
-          </Button>
-          <Button disabled={isSubmitting} leftSection={getActionSubmitIcon(modal.mode)} loading={isSubmitting} onClick={onSubmit}>
-            {t(getActionSubmitLabel(modal.mode))}
-          </Button>
-        </Group>
       </Stack>
-    </AppModal>
+    </AppDrawer>
+  )
+}
+
+function ReturnConsignmentsPanel({
+  disabled,
+  isLoading,
+  returnConsignments,
+  selectedConsignmentId,
+  selectedReturnConsignment,
+  onSelect,
+}: {
+  disabled: boolean
+  isLoading: boolean
+  returnConsignments: ProductStorageAvailableConsignment[]
+  selectedConsignmentId: string
+  selectedReturnConsignment: ProductStorageAvailableConsignment | null
+  onSelect: (consignmentId: string) => void
+}) {
+  const { t } = useI18n()
+  const [searchValue, setSearchValue] = useValueState('')
+  const normalizedSearchValue = normalizeReturnConsignmentSearchValue(searchValue)
+  const visibleConsignments = useMemo(
+    () => returnConsignments.filter((consignment) => matchesReturnConsignmentSearch(consignment, normalizedSearchValue)),
+    [normalizedSearchValue, returnConsignments],
+  )
+  const countLabel = normalizedSearchValue
+    ? `${visibleConsignments.length}/${returnConsignments.length}`
+    : String(returnConsignments.length)
+
+  return (
+    <Stack className="product-storages-return-panel" gap="sm">
+      <Group align="center" justify="space-between" gap="sm">
+        <Text className="app-section-title product-storages-return-title" fw={600} size="sm">
+          {t('Партії товару')}
+        </Text>
+        <span className="app-role-pill is-orange product-storages-return-count">
+          {countLabel}
+        </span>
+      </Group>
+
+      <TextInput
+        className="product-storages-return-search"
+        disabled={isLoading || returnConsignments.length === 0}
+        leftSection={<IconSearch size={14} />}
+        placeholder={t('Пошук по приходу, даті або постачальнику')}
+        value={searchValue}
+        onChange={(event) => setSearchValue(event.currentTarget.value)}
+      />
+
+      {isLoading ? (
+        <Group className="product-storages-return-empty" gap="xs">
+          <Loader size="sm" />
+          <Text size="sm">{t('Завантаження приходів')}</Text>
+        </Group>
+      ) : visibleConsignments.length > 0 ? (
+        <ScrollArea.Autosize className="product-storages-return-list" mah={190} type="auto">
+          {visibleConsignments.map((consignment, index) => {
+            const consignmentId = getConsignmentKey(consignment)
+            const isSelected = consignmentId === selectedConsignmentId
+
+            return (
+              <button
+                className={`product-storages-return-option${isSelected ? ' is-selected' : ''}`}
+                disabled={disabled}
+                key={consignmentId || index}
+                type="button"
+                onClick={() => onSelect(consignmentId)}
+              >
+                <span className="product-storages-return-option-main">
+                  <span className="product-storages-return-option-number">
+                    {formatDate(consignment.FromDate)} {displayValue(consignment.ProductIncomeNumber)}
+                  </span>
+                  <span className="product-storages-return-option-meta">
+                    {displayValue(getClientName(consignment.Supplier))}
+                  </span>
+                </span>
+                <span className="app-role-pill is-gray product-storages-return-qty">
+                  {formatAmount(consignment.RemainingQty)}
+                </span>
+              </button>
+            )
+          })}
+        </ScrollArea.Autosize>
+      ) : (
+        <Text className="product-storages-return-empty" size="sm">
+          {returnConsignments.length > 0
+            ? t('За пошуком приходів не знайдено')
+            : t('Доступних приходів для повернення не знайдено')}
+        </Text>
+      )}
+
+      {selectedReturnConsignment ? (
+        <div className="product-storages-return-details">
+          <ReturnConsignmentDetail label={t('Постачальник')} value={getClientName(selectedReturnConsignment.Supplier)} />
+          <ReturnConsignmentDetail
+            label={t('Організація')}
+            value={selectedReturnConsignment.Organization?.FullName || selectedReturnConsignment.Organization?.Name}
+          />
+          <ReturnConsignmentDetail label={t('Доступно по партії')} value={formatAmount(selectedReturnConsignment.RemainingQty)} />
+        </div>
+      ) : null}
+    </Stack>
+  )
+}
+
+function ReturnConsignmentDetail({ label, value }: { label: string; value?: string | number }) {
+  return (
+    <div className="product-storages-return-detail">
+      <span>{label}</span>
+      <strong>{displayValue(value)}</strong>
+    </div>
   )
 }
 
@@ -2298,15 +2389,25 @@ function hasReturnConsignmentItemId(consignment: ProductStorageAvailableConsignm
   return Boolean(consignment.ConsignmentItemId)
 }
 
-function formatConsignmentOption(consignment: ProductStorageAvailableConsignment): string {
-  const parts = [
+function matchesReturnConsignmentSearch(consignment: ProductStorageAvailableConsignment, normalizedSearchValue: string): boolean {
+  if (!normalizedSearchValue) {
+    return true
+  }
+
+  const searchableValue = normalizeReturnConsignmentSearchValue([
     formatDate(consignment.FromDate),
     consignment.ProductIncomeNumber,
     getClientName(consignment.Supplier),
+    consignment.Organization?.FullName,
+    consignment.Organization?.Name,
     formatAmount(consignment.RemainingQty),
-  ].filter(Boolean)
+  ].filter(Boolean).join(' '))
 
-  return parts.join(' · ')
+  return searchableValue.includes(normalizedSearchValue)
+}
+
+function normalizeReturnConsignmentSearchValue(value: string): string {
+  return value.trim().toLocaleLowerCase('uk-UA')
 }
 
 function getClientName(client?: { FullName?: string; Name?: string; SupplierName?: string } | null): string {

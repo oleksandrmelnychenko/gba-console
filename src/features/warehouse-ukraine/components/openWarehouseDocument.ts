@@ -36,6 +36,17 @@ export function openWarehouseDocumentInWindow(pendingWindow: Window | null, docu
   return false
 }
 
+export function openWarehouseDocumentUrl(documentUrl: string): boolean {
+  const openedWindow = window.open(getDocumentHref(documentUrl), '_blank', 'noopener,noreferrer')
+
+  if (!openedWindow) {
+    return false
+  }
+
+  openedWindow.opener = null
+  return true
+}
+
 export function closePendingWarehouseDocumentWindow(pendingWindow: Window | null) {
   if (pendingWindow && !pendingWindow.closed) {
     pendingWindow.close()

@@ -1,12 +1,4 @@
 import { Badge, Box, Group, Stack } from '@mantine/core'
-import {
-  IconChecklist,
-  IconEdit,
-  IconFileInvoice,
-  IconPackage,
-  IconReceipt,
-  IconTruck,
-} from '@tabler/icons-react'
 import { useEffect, useMemo, type ReactNode } from 'react'
 import { useAuth } from '../../auth/useAuth'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -36,7 +28,6 @@ const TAB_VERIFICATION = 'verification'
 type WarehouseUkraineTab = {
   value: string
   label: string
-  icon: ReactNode
   permissionKey: string
   showBadge?: boolean
   render: () => ReactNode
@@ -76,28 +67,24 @@ export function WarehouseUkrainePage() {
       {
         value: TAB_SALES,
         label: t('Накладні'),
-        icon: <IconFileInvoice size={16} />,
         permissionKey: PKEY_INVOICES,
         render: () => <SalesTab />,
       },
       {
         value: TAB_SHIPMENTS,
         label: t('Відвантаження'),
-        icon: <IconTruck size={16} />,
         permissionKey: PKEY_SHIPMENTS,
         render: () => <ShipmentsTab />,
       },
       {
         value: TAB_ORDERS,
         label: t('Замовлення на Україну'),
-        icon: <IconPackage size={16} />,
         permissionKey: PKEY_UKRAINE_ORDER,
         render: () => <OrdersTab />,
       },
       {
         value: TAB_EDITING,
         label: t('Протокол актів редагування накладних'),
-        icon: <IconEdit size={16} />,
         permissionKey: PKEY_UKRAINE_ORDER,
         showBadge: true,
         render: () => <EditingTab />,
@@ -105,14 +92,12 @@ export function WarehouseUkrainePage() {
       {
         value: TAB_INVOICE_REGISTER,
         label: t('Реєстр накладних'),
-        icon: <IconReceipt size={16} />,
         permissionKey: PKEY_UKRAINE_ORDER,
         render: () => <InvoiceRegisterTab />,
       },
       {
         value: TAB_VERIFICATION,
         label: t('Звірка'),
-        icon: <IconChecklist size={16} />,
         permissionKey: PKEY_UKRAINE_ORDER,
         render: () => <DocumentVerificationTab />,
       },

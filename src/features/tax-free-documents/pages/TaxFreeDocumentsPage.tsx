@@ -84,6 +84,14 @@ const TAX_FREE_TABLE_CELL_STYLE = {
   whiteSpace: 'nowrap',
 } as const
 
+/* §5.1: numbers/codes/dates/sums render in mono 600. */
+const TAX_FREE_TABLE_CELL_MONO_STYLE = {
+  ...TAX_FREE_TABLE_CELL_STYLE,
+  fontFamily: 'var(--font-mono)',
+  fontWeight: 600,
+  letterSpacing: 0,
+} as const
+
 const ITEMS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['index', 'vendorCode', 'productName'],
@@ -653,7 +661,7 @@ function TaxFreeAccountingActionModal({
   const { t } = useI18n()
 
   return (
-    <AppModal centered opened={opened} title={t('Бухгалтерська дія')} onClose={onClose}>
+    <AppModal centered opened={opened} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Бухгалтерська дія')}</span>} onClose={onClose}>
       <Stack gap="md">
         {document ? (
           <Stack gap={2}>
@@ -725,21 +733,21 @@ function useTaxFreeDocumentColumns({
     () => [
       {
         accessor: (row) => row.packListNumber,
-        cell: (row) => <TaxFreeTableValue value={displayValue(row.packListNumber)} />,
+        cell: (row) => <TaxFreeTableValue mono value={displayValue(row.packListNumber)} />,
         header: t('Номер пакувального'),
         id: 'packListNumber',
         width: 150,
       },
       {
         accessor: (row) => row.document.Number,
-        cell: (row) => <TaxFreeTableValue fw={600} value={displayValue(row.document.Number)} />,
+        cell: (row) => <TaxFreeTableValue mono value={displayValue(row.document.Number)} />,
         header: t('Номер Tax Free'),
         id: 'number',
         width: 150,
       },
       {
         accessor: (row) => row.document.DateOfPrint,
-        cell: (row) => <TaxFreeTableValue value={formatDateTime(row.document.DateOfPrint)} />,
+        cell: (row) => <TaxFreeTableValue mono value={formatDateTime(row.document.DateOfPrint)} />,
         header: t('Дата Tax Free'),
         id: 'dateOfPrint',
         width: 150,
@@ -747,7 +755,7 @@ function useTaxFreeDocumentColumns({
       {
         accessor: (row) => row.document.TotalWithVatPl,
         align: 'right',
-        cell: (row) => <TaxFreeTableValue value={formatMoney(row.document.TotalWithVatPl)} />,
+        cell: (row) => <TaxFreeTableValue mono value={formatMoney(row.document.TotalWithVatPl)} />,
         header: t('Сума з ПДВ, місцева валюта'),
         id: 'amountPln',
         width: 130,
@@ -755,7 +763,7 @@ function useTaxFreeDocumentColumns({
       {
         accessor: (row) => row.document.VatAmountPl,
         align: 'right',
-        cell: (row) => <TaxFreeTableValue value={formatMoney(row.document.VatAmountPl)} />,
+        cell: (row) => <TaxFreeTableValue mono value={formatMoney(row.document.VatAmountPl)} />,
         header: t('ПДВ, місцева валюта'),
         id: 'vatPln',
         width: 120,
@@ -763,7 +771,7 @@ function useTaxFreeDocumentColumns({
       {
         accessor: (row) => row.document.TotalWithVat,
         align: 'right',
-        cell: (row) => <TaxFreeTableValue value={formatMoney(row.document.TotalWithVat)} />,
+        cell: (row) => <TaxFreeTableValue mono value={formatMoney(row.document.TotalWithVat)} />,
         header: t('Сума з ПДВ EUR'),
         id: 'amountEur',
         width: 130,
@@ -771,7 +779,7 @@ function useTaxFreeDocumentColumns({
       {
         accessor: (row) => row.document.TotalNetWeight,
         align: 'right',
-        cell: (row) => <TaxFreeTableValue value={formatAmount(row.document.TotalNetWeight)} />,
+        cell: (row) => <TaxFreeTableValue mono value={formatAmount(row.document.TotalNetWeight)} />,
         header: t('Вага'),
         id: 'weight',
         width: 95,
@@ -814,7 +822,7 @@ function useTaxFreeDocumentColumns({
       {
         accessor: (row) => row.status,
         cell: (row) => (
-          <Badge color={getStatusColor(row.document.TaxFreeStatus)} radius="sm" variant="light">
+          <Badge className={`app-role-pill ${getStatusPillClass(row.document.TaxFreeStatus)}`} variant="light">
             {row.status || t('Невідомо')}
           </Badge>
         ),
@@ -856,7 +864,7 @@ function useTaxFreeDocumentColumns({
       },
       {
         accessor: (row) => row.document.ClosedDate,
-        cell: (row) => <TaxFreeTableValue value={formatDateTime(row.document.ClosedDate)} />,
+        cell: (row) => <TaxFreeTableValue mono value={formatDateTime(row.document.ClosedDate)} />,
         header: t('Дата закриття TF'),
         id: 'closedDate',
         width: 150,
@@ -965,19 +973,24 @@ function useTaxFreeItemColumns(items: TaxFreeItem[]) {
   )
 }
 
-function TaxFreeTableValue({ fw, value }: { fw?: number; value: string }) {
+/* Native title (§5: no per-cell Mantine <Tooltip>). */
+function TaxFreeTableValue({ fw, mono, value }: { fw?: number; mono?: boolean; value: string }) {
   return (
-    <Tooltip label={value} openDelay={350} withArrow>
-      <Text component="span" fw={fw} style={TAX_FREE_TABLE_CELL_STYLE}>
-        {value}
-      </Text>
-    </Tooltip>
+    <Text
+      component="span"
+      fw={mono ? undefined : fw}
+      style={mono ? TAX_FREE_TABLE_CELL_MONO_STYLE : TAX_FREE_TABLE_CELL_STYLE}
+      title={value || undefined}
+    >
+      {value}
+    </Text>
   )
 }
 
+/* Empty values render blank (§5), never a dash. */
 function displayValue(value: unknown): string {
   if (value === null || value === undefined || value === '') {
-    return '-'
+    return ''
   }
 
   return String(value)
@@ -1006,7 +1019,7 @@ function TaxFreeDocumentDrawer({
   const [activeTab, setActiveTab] = useValueState<TaxFreeDocumentDrawerTab>('details')
 
   return (
-    <AppDrawer opened={Boolean(document)} position="right" size="min(1100px, 100vw)" title={getDrawerTitle(document, t)} onClose={onClose}>
+    <AppDrawer opened={Boolean(document)} position="right" size="min(1100px, 100vw)" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{getDrawerTitle(document, t)}</span>} onClose={onClose}>
       {document && (
         <div>
           <div className="pill-tabs" style={{ width: 'fit-content' }}>
@@ -1257,14 +1270,13 @@ function TaxFreeDocumentDetailsTab({
         </SimpleGrid>
 
         <Group justify="flex-end">
-          <Button color="gray" variant="light" onClick={onClose}>
+          <Button variant="default" onClick={onClose}>
             {t('Скасувати')}
           </Button>
           <Button
-            color="gray"
             disabled={document.TaxFreeStatus !== TaxFreeStatus.Formed}
             leftSection={<IconPrinter size={17} />}
-            variant="light"
+            variant="default"
             onClick={() => onPreview(document)}
           >
             {t('Друк')}
@@ -1356,12 +1368,12 @@ function TaxFreePrintPreviewModal({
   const { t } = useI18n()
 
   return (
-    <AppModal centered opened={Boolean(document)} size="lg" title={`${t('Попередній перегляд')} ${document?.Number || ''}`} onClose={onClose}>
+    <AppModal centered opened={Boolean(document)} size="lg" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{`${t('Попередній перегляд')} ${document?.Number || ''}`}</span>} onClose={onClose}>
       {document && (
         <Stack gap="md">
           <Group justify="space-between">
             <Text fw={600}>{t('Ставка ПДВ')} 23%</Text>
-            <Badge color={getStatusColor(document.TaxFreeStatus)} variant="light">
+            <Badge className={`app-role-pill ${getStatusPillClass(document.TaxFreeStatus)}`} variant="light">
               {getTaxFreeStatusLabel(document.TaxFreeStatus)}
             </Badge>
           </Group>
@@ -1388,7 +1400,7 @@ function TaxFreePrintPreviewModal({
           </Table.ScrollContainer>
 
           <Group justify="flex-end">
-            <Button color="gray" variant="light" onClick={onClose}>
+            <Button variant="default" onClick={onClose}>
               {t('Скасувати')}
             </Button>
             <Button leftSection={<IconPrinter size={17} />} loading={isPrinting} onClick={() => onPrint(document)}>
@@ -1631,22 +1643,19 @@ function mergeCarriers(currentCarriers: Statham[], nextCarriers: Statham[]) {
   return [...carriersById.values()]
 }
 
-function getStatusColor(status?: TaxFreeStatus) {
+/* §4 status pill: green success, orange attention, gray neutral (no blue/cyan). */
+function getStatusPillClass(status?: TaxFreeStatus): string {
   switch (status) {
     case TaxFreeStatus.Closed:
-      return 'green'
+      return 'is-green'
     case TaxFreeStatus.Returned:
-      return 'orange'
-    case TaxFreeStatus.Tabulated:
-      return 'blue'
-    case TaxFreeStatus.Printed:
-      return 'cyan'
     case TaxFreeStatus.Formed:
-      return 'orange'
+      return 'is-orange'
+    case TaxFreeStatus.Tabulated:
+    case TaxFreeStatus.Printed:
     case TaxFreeStatus.NotFormed:
-      return 'gray'
     default:
-      return 'gray'
+      return 'is-gray'
   }
 }
 

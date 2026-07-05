@@ -1,4 +1,5 @@
 import { ActionIcon, Alert, Anchor, Badge, Button, Group, Stack, Text, TextInput, Tooltip } from '@mantine/core'
+import { useDebouncedValue } from '@mantine/hooks'
 import {
   IconAlertCircle,
   IconDownload,
@@ -12,6 +13,7 @@ import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'r
 import { useAuth } from '../../auth/useAuth'
 import { NewSaleWizard } from '../../sales-ukraine/components/new-sale-wizard/NewSaleWizard'
 import { SALES_UKRAINE_EDIT_PERMISSION } from '../../sales-ukraine/permissions'
+import type { SalesUkraineSale } from '../../sales-ukraine/types'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { translate } from '../../../shared/i18n/translate'
@@ -32,11 +34,9 @@ import type { Sale, WarehouseUkraineExportDocument } from '../types'
 import { DownloadDocumentModal } from './DownloadDocumentModal'
 import { displayValue, formatDateTime, getDateShiftedByDays, toDateString } from './dateHelpers'
 import {
-  closePendingWarehouseDocumentWindow,
   getPreferredWarehousePrintUrl,
   hasWarehouseDocumentUrl,
-  openPendingWarehouseDocumentWindow,
-  openWarehouseDocumentInWindow,
+  openWarehouseDocumentUrl,
 } from './openWarehouseDocument'
 import { SaleCarrierDrawer } from './SaleCarrierDrawer'
 
@@ -59,7 +59,19 @@ const salesMoneyFormatter = new Intl.NumberFormat('uk-UA', {
 const PAGE_SIZE_OPTIONS = ['100', '200', '500', '1000']
 
 const TABLE_DEFAULT_LAYOUT = {
-  columnPinning: { left: ['index', 'fromDate'] },
+  columnPinning: { left: ['fromDate'] },
+  columnSizing: {
+    actions: 112,
+    amount: 118,
+    client: 300,
+    comment: 260,
+    currency: 82,
+    fromDate: 150,
+    number: 140,
+    responsible: 168,
+    status: 128,
+    transporter: 192,
+  },
   density: 'normal',
 } satisfies DataTableDefaultLayout
 
@@ -99,6 +111,7 @@ function useSalesTabModel() {
   )
   const [filterDraft, setFilterDraft] = useValueState<FilterDraft>(initialFilters)
   const [activeFilters, setActiveFilters] = useValueState<FilterDraft>(initialFilters)
+  const [debouncedSearchValue] = useDebouncedValue(filterDraft.value, 350)
   const [salesState, dispatchSalesState] = useReducer(salesListReducer, INITIAL_SALES_STATE)
   const [pageSize, setPageSize] = useValueState(DEFAULT_LIMIT)
   const [page, setPage] = useValueState(1)
@@ -142,6 +155,15 @@ function useSalesTabModel() {
 
   useRealtimeEvent(realtimeEvents.saleAdded, scheduleRealtimeReload)
   useRealtimeEvent(realtimeEvents.saleUpdated, scheduleRealtimeReload)
+
+  useEffect(() => {
+    if (debouncedSearchValue === activeFilters.value) {
+      return
+    }
+
+    setPage(1)
+    setActiveFilters((currentFilters) => ({ ...currentFilters, value: debouncedSearchValue }))
+  }, [activeFilters.value, debouncedSearchValue, setActiveFilters, setPage])
 
   useEffect(() => {
     if (filterError) {
@@ -195,7 +217,6 @@ function useSalesTabModel() {
     async (loader: () => Promise<WarehouseUkraineExportDocument>) => {
       const requestId = downloadRequestRef.current + 1
       downloadRequestRef.current = requestId
-      const pendingWindow = openPendingWarehouseDocumentWindow()
       setDownloadOpened(true)
       setDownloadDocument(null)
       setDownloadError(null)
@@ -207,30 +228,24 @@ function useSalesTabModel() {
         if (downloadRequestRef.current === requestId) {
           const documentUrl = getPreferredWarehousePrintUrl(document)
 
-          if (documentUrl && openWarehouseDocumentInWindow(pendingWindow, documentUrl)) {
+          if (documentUrl && openWarehouseDocumentUrl(documentUrl)) {
             setDownloadOpened(false)
             setDownloadDocument(null)
             setDownloadError(null)
           } else {
-            closePendingWarehouseDocumentWindow(pendingWindow)
             setDownloadDocument(hasWarehouseDocumentUrl(document) ? document : null)
             setDownloadError(hasWarehouseDocumentUrl(document) ? null : t('Немає документів для завантаження'))
           }
         }
       } catch (exportError) {
         if (downloadRequestRef.current === requestId) {
-          closePendingWarehouseDocumentWindow(pendingWindow)
           setDownloadError(
             exportError instanceof Error ? exportError.message : t('Немає документів для завантаження'),
           )
-        } else {
-          closePendingWarehouseDocumentWindow(pendingWindow)
         }
       } finally {
         if (downloadRequestRef.current === requestId) {
           setDownloading(false)
-        } else {
-          closePendingWarehouseDocumentWindow(pendingWindow)
         }
       }
     },
@@ -315,7 +330,7 @@ function useSalesTabModel() {
     activeFilters, applyFilters, canMoveForward, carrierSale, changePageSize, closeDownload, columns,
     downloadDocument, downloadError, downloadOpened, error: salesState.error, filterDraft, filterError,
     isDownloading, isLoading: salesState.isLoading, page, pageSize, reload, resetFilters, sales: orderedSales,
-    setCarrierSale, setPage, totalQty: salesState.totalQty,
+    setCarrierSale, setFilterDraft, setPage, totalQty: salesState.totalQty,
   }
 }
 
@@ -347,87 +362,90 @@ export function SalesTab() {
   const { hasPermission } = useAuth()
   const canCreateSale = hasPermission(SALES_UKRAINE_EDIT_PERMISSION)
   const [isNewSaleOpen, setNewSaleOpen] = useState(false)
+  const [wizardEditSale, setWizardEditSale] = useState<SalesUkraineSale | null>(null)
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
 
   return (
     <Stack className="warehouse-ukraine-tab" gap={6}>
       <div className="warehouse-ukraine-shell console-table-shell">
         <div className="app-filter-bar warehouse-ukraine-filter-bar is-sales">
-            <TextInput
-              className="warehouse-ukraine-filter-input"
-              label={t('Пошук по товару')}
-              value={model.filterDraft.value}
-              onChange={(event) => model.applyFilters({ ...model.filterDraft, value: event.currentTarget.value })}
+          <TextInput
+            className="warehouse-ukraine-filter-input"
+            label={t('Пошук по товару')}
+            value={model.filterDraft.value}
+            onChange={(event) => model.setFilterDraft({ ...model.filterDraft, value: event.currentTarget.value })}
+          />
+          <TextInput
+            className="warehouse-ukraine-filter-input"
+            label={t('Початкова дата')}
+            max={model.filterDraft.to || undefined}
+            type="date"
+            value={model.filterDraft.from}
+            onChange={(event) => model.applyFilters({ ...model.filterDraft, from: event.currentTarget.value })}
+          />
+          <TextInput
+            className="warehouse-ukraine-filter-input"
+            label={t('Кінцева дата')}
+            min={model.filterDraft.from || undefined}
+            type="date"
+            value={model.filterDraft.to}
+            onChange={(event) => model.applyFilters({ ...model.filterDraft, to: event.currentTarget.value })}
+          />
+          <div className="app-filter-actions warehouse-ukraine-filter-actions">
+            <Tooltip label={t('Скинути')}>
+              <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={model.resetFilters}>
+                <IconRestore size={17} />
+              </ActionIcon>
+            </Tooltip>
+            <Paginator
+              hasNext={model.canMoveForward}
+              isLoading={model.isLoading}
+              page={model.page}
+              pageSize={model.pageSize}
+              pageSizeOptions={PAGE_SIZE_OPTIONS}
+              onPageChange={model.setPage}
+              onPageSizeChange={model.changePageSize}
+              onRefresh={() => model.reload()}
             />
-            <TextInput
-              className="warehouse-ukraine-filter-input"
-              label={t('Початкова дата')}
-              max={model.filterDraft.to || undefined}
-              type="date"
-              value={model.filterDraft.from}
-              onChange={(event) => model.applyFilters({ ...model.filterDraft, from: event.currentTarget.value })}
-            />
-            <TextInput
-              className="warehouse-ukraine-filter-input"
-              label={t('Кінцева дата')}
-              min={model.filterDraft.from || undefined}
-              type="date"
-              value={model.filterDraft.to}
-              onChange={(event) => model.applyFilters({ ...model.filterDraft, to: event.currentTarget.value })}
-            />
-            <div className="app-filter-actions warehouse-ukraine-filter-actions">
-              <Tooltip label={t('Скинути')}>
-                <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={model.resetFilters}>
-                  <IconRestore size={17} />
-                </ActionIcon>
-              </Tooltip>
-              <Paginator
-                hasNext={model.canMoveForward}
-                isLoading={model.isLoading}
-                page={model.page}
-                pageSize={model.pageSize}
-                pageSizeOptions={PAGE_SIZE_OPTIONS}
-                onPageChange={model.setPage}
-                onPageSizeChange={model.changePageSize}
-                onRefresh={() => model.reload()}
-              />
-            </div>
-            <div ref={setTableToolbarSlot} className="warehouse-ukraine-table-toolbar-slot" />
-            <div className="warehouse-ukraine-command-actions">
-              <Button
-                color={CREATE_ACTION_COLOR}
-                disabled={!canCreateSale}
-                leftSection={<IconPlus size={16} />}
-                size="sm"
-                onClick={() => setNewSaleOpen(true)}
-              >
-                {t('Утворити')}
-              </Button>
-            </div>
           </div>
+          <div ref={setTableToolbarSlot} className="warehouse-ukraine-table-toolbar-slot" />
+          <div className="warehouse-ukraine-command-actions">
+            <Button
+              color={CREATE_ACTION_COLOR}
+              disabled={!canCreateSale}
+              leftSection={<IconPlus size={16} />}
+              size="sm"
+              onClick={() => setNewSaleOpen(true)}
+            >
+              {t('Утворити')}
+            </Button>
+          </div>
+        </div>
 
-          {(model.error || model.filterError) && (
-            <Alert className="console-table-alert" color={model.filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
-              {model.filterError || model.error}
-            </Alert>
-          )}
+        {(model.error || model.filterError) && (
+          <Alert className="console-table-alert" color={model.filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
+            {model.filterError || model.error}
+          </Alert>
+        )}
 
-          <div className="warehouse-ukraine-table console-table-body">
+        <div className="warehouse-ukraine-table console-table-body">
           <DataTable
             columns={model.columns}
             data={model.sales}
             defaultLayout={TABLE_DEFAULT_LAYOUT}
+            distributeAvailableWidth
             emptyText={t('Документів не знайдено')}
             getRowId={(sale, index) => String(sale.NetUid || sale.Id || index)}
             height="100%"
             isLoading={model.isLoading}
-            layoutVersion="warehouse-ukraine-sales-2"
+            layoutVersion="warehouse-ukraine-sales-3"
             minWidth={1480}
             showLayoutControls
             tableId="warehouse-ukraine-sales"
             toolbarPortalTarget={tableToolbarSlot}
+            onRowClick={(sale) => setWizardEditSale(sale as unknown as SalesUkraineSale)}
           />
-          </div>
+        </div>
       </div>
 
       <SaleCarrierDrawer sale={model.carrierSale} onClose={() => model.setCarrierSale(null)} />
@@ -439,13 +457,16 @@ export function SalesTab() {
         onClose={model.closeDownload}
       />
       <NewSaleWizard
-        opened={canCreateSale && isNewSaleOpen}
+        editSale={wizardEditSale}
+        opened={(canCreateSale && isNewSaleOpen) || Boolean(wizardEditSale)}
         onClose={() => {
           setNewSaleOpen(false)
+          setWizardEditSale(null)
           model.reload()
         }}
         onCreated={() => {
           setNewSaleOpen(false)
+          setWizardEditSale(null)
           model.reload()
         }}
       />
@@ -483,7 +504,16 @@ function useSalesColumns({
         cell: (sale) => (
           <Group gap={4} wrap="nowrap">
             <Tooltip label={t('Підтвердження на друк і Друк пакета документів')}>
-              <ActionIcon aria-label={t('Роздрукувати')} color="gray" size="sm" variant="subtle" onClick={() => onPrint(sale)}>
+              <ActionIcon
+                aria-label={t('Роздрукувати')}
+                color="gray"
+                size="sm"
+                variant="subtle"
+                onClick={(event) => {
+                  event.stopPropagation()
+                  onPrint(sale)
+                }}
+              >
                 <IconPrinter size={16} />
               </ActionIcon>
             </Tooltip>
@@ -493,7 +523,10 @@ function useSalesColumns({
                 color={sale.IsPrintedActProtocolEdit ? 'teal' : 'gray'}
                 size="sm"
                 variant="subtle"
-                onClick={() => onPrintActProtocolEdit(sale)}
+                onClick={(event) => {
+                  event.stopPropagation()
+                  onPrintActProtocolEdit(sale)
+                }}
               >
                 <IconFileText size={16} />
               </ActionIcon>
@@ -504,6 +537,7 @@ function useSalesColumns({
                   href={upgradeHttpToHttps(sale.CustomersOwnTtn.TtnPDFPath)}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={(event) => event.stopPropagation()}
                 >
                   <IconDownload size={16} />
                 </Anchor>
@@ -556,10 +590,11 @@ function useSalesColumns({
       {
         id: 'client',
         header: t("Повне ім'я"),
+        width: 300,
         minWidth: 240,
         accessor: (sale) => buildClientName(sale),
         cell: (sale) => (
-          <Text size="sm" lineClamp={2}>
+          <Text size="sm" lineClamp={2} title={displayValue(buildClientName(sale))}>
             {displayValue(buildClientName(sale))}
           </Text>
         ),
@@ -608,10 +643,11 @@ function useSalesColumns({
       {
         id: 'comment',
         header: t('Коментар'),
+        width: 260,
         minWidth: 200,
         accessor: (sale) => sale.Comment,
         cell: (sale) => (
-          <Text size="sm" lineClamp={2}>
+          <Text size="sm" lineClamp={2} title={displayValue(sale.Comment)}>
             {displayValue(sale.Comment)}
           </Text>
         ),
@@ -636,7 +672,18 @@ function useSalesColumns({
               ) : (
                 <TruckIcon size={15} style={{ color: 'var(--mantine-color-gray-6)', flex: '0 0 auto' }} />
               )}
-              <Anchor c="dark.6" component="button" fw={600} size="sm" type="button" underline="always" onClick={() => onOpenCarrier(sale)}>
+              <Anchor
+                c="dark.6"
+                component="button"
+                fw={600}
+                size="sm"
+                type="button"
+                underline="always"
+                onClick={(event) => {
+                  event.stopPropagation()
+                  onOpenCarrier(sale)
+                }}
+              >
                 {sale.Transporter.Name}
               </Anchor>
             </Group>

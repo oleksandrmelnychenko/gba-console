@@ -31,7 +31,8 @@ export function MergeInvoicesModal({
       centered
       opened={opened}
       size="md"
-      title={t("Об'єднати інвойси?")}
+      className="app-form-sheet"
+      title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t("Об'єднати інвойси?")}</span>}
       onClose={() => {
         if (!isMerging) {
           onClose()

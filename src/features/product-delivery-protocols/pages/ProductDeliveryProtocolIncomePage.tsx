@@ -26,6 +26,7 @@ import { formatLocalDate, formatLocalInputDateTime } from '../../../shared/date/
 import type { ExportDocument } from '../../../shared/documents/exportDocument'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
@@ -1450,15 +1451,30 @@ export function ProductDeliveryProtocolIncomeSheet({ sourceId }: { sourceId: str
 }
 
 export function SupplyUkraineDirectOrderProductIncomePage() {
-  return <PackingListProductIncomePage source="direct-supply-order" />
+  const { t } = useI18n()
+  const navigate = useNavigate()
+
+  return (
+    <AppDrawer
+      closeOnClickOutside={false}
+      opened
+      size="full"
+      title={<span className="product-delivery-protocol-income-sheet-title">{t('Розміщення приходу')}</span>}
+      onClose={() => navigate(-1)}
+    >
+      <PackingListProductIncomePage embedded showHeader source="direct-supply-order" />
+    </AppDrawer>
+  )
 }
 
 function PackingListProductIncomePage({
   embedded = false,
+  showHeader = !embedded,
   source,
   sourceId,
 }: {
   embedded?: boolean
+  showHeader?: boolean
   source: ProductIncomeSource
   sourceId?: string
 }) {
@@ -1494,7 +1510,7 @@ function PackingListProductIncomePage({
 
   return (
     <Stack className={`product-income-page${embedded ? ' is-sheet' : ''}`} gap={6}>
-      {!embedded && <ProductIncomePageHeader model={model} source={source} />}
+      {showHeader && <ProductIncomePageHeader model={model} source={source} />}
       <ProtocolIncomeSummaryCard model={model} source={source} />
 
       {!model.isLoading && model.protocol && !canUseIncome && (
@@ -1551,11 +1567,12 @@ function ProductIncomePageHeader({ model, source }: ProductIncomePageSectionProp
   const title = source === 'direct-supply-order'
     ? t('Прихід товару по прямому замовленню')
     : t('Прихід товару згідно замовлення')
+  const titleText = sourceNumber ? `${title}: ${sourceNumber}` : title
 
   return (
     <Group align="center" className="product-income-page-header">
       <Text className="product-income-page-title">
-        {`${title}: ${sourceNumber}`}
+        {titleText}
       </Text>
     </Group>
   )

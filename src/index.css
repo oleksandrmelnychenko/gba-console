@@ -353,6 +353,51 @@ select {
   letter-spacing: 0;
 }
 
+/* ── Selector chip (docs/ui-patterns.md §6) ──────────────────────────────────
+   Document/entity selector buttons (invoices, pack lists): white background,
+   mono 600 caption; the selected chip keeps the white background and gets the
+   brand-orange border + a 6px orange dot on the left — no filled/tinted fills.
+   Apply to a Mantine <Button variant="default"> + .is-selected. */
+.app-selector-chip.mantine-Button-root {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  height: auto;
+  letter-spacing: 0;
+  min-height: 36px;
+  padding-block: 5px;
+  padding-left: 24px;
+  position: relative;
+}
+
+/* :not(:disabled) so Mantine's disabled greying still shows through during
+   async busy windows (the chips carry disabled={isBusy}). */
+.app-selector-chip.mantine-Button-root:not(:disabled):not([data-disabled]) {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-3);
+  color: var(--mantine-color-gray-8);
+}
+
+.app-selector-chip.mantine-Button-root:not(:disabled):not([data-disabled]):hover {
+  background: var(--mantine-color-white);
+  border-color: var(--mantine-color-gray-4);
+}
+
+.app-selector-chip.is-selected.mantine-Button-root:not(:disabled):not([data-disabled]) {
+  border-color: var(--brand-orange);
+}
+
+.app-selector-chip.is-selected.mantine-Button-root::before {
+  background: var(--brand-orange);
+  border-radius: 999px;
+  content: '';
+  height: 6px;
+  left: 11px;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+}
+
 /* ── Leader row (docs/ui-patterns.md §7.2) ───────────────────────────────────
    «label ——— value»: label gray-8 on the left, a thin gray-3 filler line,
    the 600 gray-9 value on the right. Add .is-mono for numbers/codes/dates. */

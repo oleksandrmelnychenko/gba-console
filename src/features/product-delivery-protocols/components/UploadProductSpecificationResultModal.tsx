@@ -37,7 +37,14 @@ export function UploadProductSpecificationResultModal({
   const { t } = useI18n()
 
   return (
-    <AppModal centered opened={Boolean(result)} size="md" title={t('Результат')} onClose={onClose}>
+    <AppModal
+      centered
+      className="app-form-sheet"
+      opened={Boolean(result)}
+      size="md"
+      title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Результат')}</span>}
+      onClose={onClose}
+    >
       {result ? <UploadProductSpecificationResultContent key={getResultKey(result)} result={result} /> : null}
     </AppModal>
   )

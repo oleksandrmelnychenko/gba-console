@@ -52,6 +52,20 @@
   padding: 14px 16px;
 }
 
+.supply-detail-header.is-sheet {
+  border-radius: 8px;
+  justify-content: flex-end;
+  padding: 10px 12px;
+}
+
+.supply-direct-invoices-sheet-title {
+  color: var(--mantine-color-gray-9);
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
 .supply-detail-header-main {
   align-items: center;
   display: flex;
@@ -426,3 +440,5 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Selector chips use the shared .app-selector-chip (§6) from index.css. */

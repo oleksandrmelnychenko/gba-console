@@ -84,7 +84,14 @@ export function UploadProductSpecificationModal({
   }
 
   return (
-    <AppModal centered opened={opened} size="lg" title={t('Завантаження митних кодів')} onClose={closeModal}>
+    <AppModal
+      centered
+      className="app-form-sheet"
+      opened={opened}
+      size="lg"
+      title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Завантаження митних кодів')}</span>}
+      onClose={closeModal}
+    >
       <Stack gap="md">
         {validationError && (
           <Alert color="red" icon={<IconAlertCircle size={16} />} variant="light">

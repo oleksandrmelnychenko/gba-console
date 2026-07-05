@@ -870,7 +870,7 @@ function useOutgoingCashflowColumns({
             <Tooltip label={t('Структура документів')}>
               <ActionIcon
                 aria-label={t('Структура документів')}
-                color="blue"
+                color="gray"
                 size="sm"
                 variant="subtle"
                 onClick={(event) => {
@@ -1001,7 +1001,7 @@ function PayedToCell({ row }: { row: OutgoingCashflowRow }) {
         </Badge>
       )}
       {Boolean(row.differenceAmount) && (
-        <Text className="app-money" fw={700} size="sm">
+        <Text className="app-money" size="sm">
           {formatMoney(row.differenceAmount)}
         </Text>
       )}
@@ -1053,7 +1053,7 @@ function OutgoingCashflowDetailDrawer({ row, onClose }: { row: OutgoingCashflowR
           <Divider />
 
           <Stack gap="xs">
-            <Text fw={700}>{t('Пов’язані документи')}</Text>
+            <Text className="app-section-title" fw={600} size="sm">{t('Пов’язані документи')}</Text>
             {relatedOrders.length > 0 ? (
               relatedOrders.map((item, index) => {
                 const order = item.ConsumablesOrder
@@ -1107,7 +1107,7 @@ function OutgoingCashflowDocumentStructureDrawer({
       {row && (
         <Stack gap="md">
           {isCalculating && (
-            <Alert color="blue" variant="light">
+            <Alert color="gray" variant="light">
               {t('Перерахунок структури документів...')}
             </Alert>
           )}
@@ -1191,10 +1191,7 @@ function AssignedPaymentOrderBlock({
 
   return (
     <Stack gap="xs">
-      <Group gap="xs">
-        <IconHierarchy2 size={16} />
-        <Text fw={700}>{title}</Text>
-      </Group>
+      <Text className="app-section-title" fw={600} size="sm">{title}</Text>
       <AdvanceReportStructureSummary
         assignedPaymentOrder={assignedPaymentOrder}
         calculatedTotal={calculatedTotal}

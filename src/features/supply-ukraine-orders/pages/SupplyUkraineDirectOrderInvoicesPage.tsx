@@ -41,6 +41,7 @@ import './supply-order-detail.css'
 import { formatLocalDateTime } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
+import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
@@ -255,8 +256,22 @@ function pageStateReducer(state: PageState, action: PageStateAction): PageState 
 
 export function SupplyUkraineDirectOrderInvoicesPage() {
   const model = useSupplyUkraineDirectOrderInvoicesPageModel()
+  const { t } = useI18n()
+  const navigate = useNavigate()
+  const orderNumber = getOrderNumber(model.order)
+  const sheetTitle = orderNumber ? `${t('Інвойси і пак листи')} ${orderNumber}` : t('Інвойси і пак листи')
 
-  return <SupplyUkraineDirectOrderInvoicesView model={model} />
+  return (
+    <AppDrawer
+      closeOnClickOutside={false}
+      opened
+      size="full"
+      title={<span className="supply-direct-invoices-sheet-title">{sheetTitle}</span>}
+      onClose={() => navigate(-1)}
+    >
+      <SupplyUkraineDirectOrderInvoicesView embedded model={model} />
+    </AppDrawer>
+  )
 }
 
 function useSupplyUkraineDirectOrderInvoicesPageModel() {
@@ -957,13 +972,19 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
 
 type DirectOrderInvoicesPageModel = ReturnType<typeof useSupplyUkraineDirectOrderInvoicesPageModel>
 
-function SupplyUkraineDirectOrderInvoicesView({ model }: { model: DirectOrderInvoicesPageModel }) {
+function SupplyUkraineDirectOrderInvoicesView({
+  embedded = false,
+  model,
+}: {
+  embedded?: boolean
+  model: DirectOrderInvoicesPageModel
+}) {
   const { t } = useI18n()
 
   return (
     // Fixed-height flex frame: grids scroll internally, no page-level scroll.
-    <Stack gap="lg" h="100%" style={{ minHeight: 0, overflow: 'hidden' }}>
-      <DirectOrderInvoicesHeader model={model} />
+    <Stack gap={embedded ? 6 : 'lg'} h="100%" style={{ minHeight: 0, overflow: 'hidden' }}>
+      <DirectOrderInvoicesHeader embedded={embedded} model={model} />
       {model.error && (
         <Alert color="red" icon={<IconAlertCircle size={18} />} style={{ flexShrink: 0 }} variant="light">
           {model.error}
@@ -981,31 +1002,39 @@ function SupplyUkraineDirectOrderInvoicesView({ model }: { model: DirectOrderInv
   )
 }
 
-function DirectOrderInvoicesHeader({ model }: { model: DirectOrderInvoicesPageModel }) {
+function DirectOrderInvoicesHeader({
+  embedded = false,
+  model,
+}: {
+  embedded?: boolean
+  model: DirectOrderInvoicesPageModel
+}) {
   const { t } = useI18n()
 
   return (
-    <header className="supply-detail-header">
-      <div className="supply-detail-header-main">
-        <Tooltip label={t('Назад')}>
-          <ActionIcon
-            aria-label={t('Назад')}
-            className="supply-detail-back"
-            variant="default"
-            onClick={model.goBack}
-          >
-            <IconArrowLeft size={18} />
-          </ActionIcon>
-        </Tooltip>
-        <div className="supply-detail-copy">
-          <h1 className="supply-detail-title">
-            {t('Інвойси і пак листи')}
-            {getOrderNumber(model.order) && (
-              <span className="supply-detail-number">{getOrderNumber(model.order)}</span>
-            )}
-          </h1>
+    <header className={`supply-detail-header${embedded ? ' is-sheet' : ''}`}>
+      {!embedded && (
+        <div className="supply-detail-header-main">
+          <Tooltip label={t('Назад')}>
+            <ActionIcon
+              aria-label={t('Назад')}
+              className="supply-detail-back"
+              variant="default"
+              onClick={model.goBack}
+            >
+              <IconArrowLeft size={18} />
+            </ActionIcon>
+          </Tooltip>
+          <div className="supply-detail-copy">
+            <h1 className="supply-detail-title">
+              {t('Інвойси і пак листи')}
+              {getOrderNumber(model.order) && (
+                <span className="supply-detail-number">{getOrderNumber(model.order)}</span>
+              )}
+            </h1>
+          </div>
         </div>
-      </div>
+      )}
       <div className="supply-detail-header-actions">
         <Button
           color="gray"
@@ -1269,9 +1298,9 @@ function PackListSelector({ model }: { model: DirectOrderInvoicesPageModel }) {
       {(model.selectedInvoice?.PackingLists || []).map((packList) => (
         <Group key={packList.NetUid || packList.Id} gap={4} wrap="nowrap">
           <Button
-            color={packList.NetUid === model.selectedPackListNetId ? 'blue' : 'gray'}
+            className={`app-selector-chip${packList.NetUid === model.selectedPackListNetId ? ' is-selected' : ''}`}
             disabled={model.isBusy}
-            variant={packList.NetUid === model.selectedPackListNetId ? 'filled' : 'light'}
+            variant="default"
             onClick={() => model.setPageState({ selectedPackListNetId: packList.NetUid || null })}
           >
             {packList.No || packList.InvNo || t('Пак лист')} ({formatDate(packList.FromDate)})
@@ -1925,7 +1954,7 @@ function useInvoiceItemColumns({
         width: 150,
         align: 'right',
         accessor: (item) => item.Qty,
-        cell: (item) => formatNumber(item.Qty),
+        cell: (item) => <NumberCell value={formatNumber(item.Qty)} />,
       },
       {
         id: 'leftToInvoice',
@@ -1936,7 +1965,7 @@ function useInvoiceItemColumns({
         cell: (item) => <BalanceBadge value={balanceByOrderItemKey.get(getInvoiceOrderItemOrderKey(item))?.difference || 0} />,
       },
       { id: 'price', header: t('Ціна'), width: 120, align: 'right', accessor: (item) => item.UnitPrice, cell: (item) => <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{formatMoney(item.UnitPrice)}</Text> },
-      { id: 'total', header: t('Сума'), width: 130, align: 'right', accessor: (item) => item.TotalAmount, cell: (item) => formatMoney(item.TotalAmount || (item.UnitPrice || 0) * (item.Qty || 0)) },
+      { id: 'total', header: t('Сума'), width: 130, align: 'right', accessor: (item) => item.TotalAmount, cell: (item) => <NumberCell value={formatMoney(item.TotalAmount || (item.UnitPrice || 0) * (item.Qty || 0))} /> },
       { id: 'imported', header: t('Імпорт'), width: 110, accessor: (item) => item.ProductIsImported, cell: (item) => <Badge className={item.ProductIsImported ? 'app-role-pill is-green' : 'app-role-pill is-gray'} variant="light">{item.ProductIsImported ? t('Так') : t('Ні')}</Badge> },
     ],
     [balanceByOrderItemKey, onOpenProductCard, t],
@@ -1956,15 +1985,15 @@ function usePackListItemColumns({
     () => [
       { id: 'code', header: t('Код'), width: 130, accessor: (item) => item.SupplyInvoiceOrderItem?.Product?.VendorCode, cell: (item) => <ProductCodeCell product={item.SupplyInvoiceOrderItem?.Product} onOpenProductCard={onOpenProductCard} /> },
       { id: 'name', header: t('Товар'), minWidth: 260, accessor: (item) => item.SupplyInvoiceOrderItem?.Product?.Name, cell: (item) => <ProductNameCell product={item.SupplyInvoiceOrderItem?.Product} onOpenProductCard={onOpenProductCard} /> },
-      { id: 'netUnit', header: t('Нетто од.'), width: 120, align: 'right', accessor: (item) => item.NetWeight, cell: (item) => formatNumber(item.NetWeight) },
-      { id: 'grossUnit', header: t('Брутто од.'), width: 120, align: 'right', accessor: (item) => item.GrossWeight, cell: (item) => formatNumber(item.GrossWeight) },
+      { id: 'netUnit', header: t('Нетто од.'), width: 120, align: 'right', accessor: (item) => item.NetWeight, cell: (item) => <NumberCell value={formatNumber(item.NetWeight)} /> },
+      { id: 'grossUnit', header: t('Брутто од.'), width: 120, align: 'right', accessor: (item) => item.GrossWeight, cell: (item) => <NumberCell value={formatNumber(item.GrossWeight)} /> },
       {
         id: 'qty',
         header: t('Кількість'),
         width: 150,
         align: 'right',
         accessor: (item) => item.Qty,
-        cell: (item) => formatNumber(item.Qty),
+        cell: (item) => <NumberCell value={formatNumber(item.Qty)} />,
       },
       {
         id: 'leftToPack',
@@ -1974,12 +2003,21 @@ function usePackListItemColumns({
         accessor: (item) => balanceByInvoiceItemKey.get(getPackingListInvoiceItemKey(item))?.difference,
         cell: (item) => <BalanceBadge value={balanceByInvoiceItemKey.get(getPackingListInvoiceItemKey(item))?.difference || 0} />,
       },
-      { id: 'net', header: t('Нетто'), width: 120, align: 'right', accessor: (item) => item.TotalNetWeight, cell: (item) => formatNumber(item.TotalNetWeight) },
-      { id: 'gross', header: t('Брутто'), width: 120, align: 'right', accessor: (item) => item.TotalGrossWeight, cell: (item) => formatNumber(item.TotalGrossWeight) },
+      { id: 'net', header: t('Нетто'), width: 120, align: 'right', accessor: (item) => item.TotalNetWeight, cell: (item) => <NumberCell value={formatNumber(item.TotalNetWeight)} /> },
+      { id: 'gross', header: t('Брутто'), width: 120, align: 'right', accessor: (item) => item.TotalGrossWeight, cell: (item) => <NumberCell value={formatNumber(item.TotalGrossWeight)} /> },
       { id: 'price', header: t('Ціна'), width: 120, align: 'right', accessor: (item) => item.UnitPrice, cell: (item) => <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{formatMoney(item.UnitPrice)}</Text> },
       { id: 'total', header: t('Сума'), width: 130, align: 'right', accessor: (item) => item.TotalGrossPrice, cell: (item) => <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{formatMoney(item.TotalGrossPrice)}</Text> },
     ],
     [balanceByInvoiceItemKey, onOpenProductCard, t],
+  )
+}
+
+/* Bare mono number cell (§5.1). */
+function NumberCell({ value }: { value: string }) {
+  return (
+    <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>
+      {value}
+    </Text>
   )
 }
 
@@ -2954,9 +2992,10 @@ function getOrderNumber(order: DirectSupplyOrder | null): string {
   return order?.SupplyOrderNumber?.Number ? `№ ${order.SupplyOrderNumber.Number}` : ''
 }
 
+/* Empty values render blank (§5/§7.2) — never a dash. */
 function formatDate(value?: Date | string | null): string {
   if (!value) {
-    return '-'
+    return ''
   }
 
   const date = value instanceof Date ? value : new Date(value)
@@ -2969,11 +3008,11 @@ function formatDate(value?: Date | string | null): string {
 }
 
 function formatNumber(value?: number): string {
-  return typeof value === 'number' && Number.isFinite(value) ? numberFormatter.format(value) : '-'
+  return typeof value === 'number' && Number.isFinite(value) ? numberFormatter.format(value) : ''
 }
 
 function formatMoney(value?: number): string {
-  return typeof value === 'number' && Number.isFinite(value) ? moneyFormatter.format(value) : '-'
+  return typeof value === 'number' && Number.isFinite(value) ? moneyFormatter.format(value) : ''
 }
 
 function getOrderItemTotal(item: SupplyOrderItem): number | undefined {

@@ -950,18 +950,21 @@ export function NewResalePage() {
           <Stack gap={12}>
             <SimpleGrid className="resales-new-grid" cols={{ base: 1, md: 3 }} spacing="sm">
               <NumberInput
+                hideControls
                 className="resales-new-control is-number"
                 label={t('Сума для рахунку')}
                 value={form.amount}
                 onChange={(value) => setForm((currentForm) => ({ ...currentForm, amount: toNumber(value) }))}
               />
               <NumberInput
+                hideControls
                 className="resales-new-control is-number"
                 label={`${t('Похибка')} +/-`}
                 value={form.infelicity}
                 onChange={(value) => setForm((currentForm) => ({ ...currentForm, infelicity: toNumber(value) }))}
               />
               <NumberInput
+                hideControls
                 className="resales-new-control is-number"
                 label={t('Націнка, %')}
                 value={form.extraChargePercent}
@@ -1066,6 +1069,7 @@ export function NewResalePage() {
               />
               <Button
                 className="resales-new-action"
+                color={CREATE_ACTION_COLOR}
                 disabled={!payload || isLoadingOptions || isLoadingAvailabilities}
                 loading={isProcessing}
                 variant="light"
@@ -1084,6 +1088,7 @@ export function NewResalePage() {
               </Button>
               <Button
                 className="resales-new-action"
+                color={CREATE_ACTION_COLOR}
                 disabled={!payload || isLoadingOptions || isLoadingAvailabilities}
                 leftSection={<IconDownload size={16} />}
                 loading={isExporting}

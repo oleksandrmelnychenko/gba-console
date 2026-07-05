@@ -467,10 +467,10 @@ export function AdvancedReportsPage() {
               </Group>
 
               <Group gap="xs" wrap="nowrap">
-                <Badge color="green" variant="light">
+                <Badge className="app-role-pill is-green" variant="light">
                   {t('Кредиторська заборгованість')}: {formatMoney(reports.PositiveDifferenceAmount)}
                 </Badge>
-                <Badge color="red" variant="light">
+                <Badge className="app-role-pill is-red" variant="light">
                   {t('Дебіторська заборгованість')}: {formatMoney(reports.NegativeDifferenceAmount)}
                 </Badge>
               </Group>
@@ -688,17 +688,17 @@ function PayedToCell({ row }: { row: AdvancedReportRow }) {
     <Group gap={6} wrap="nowrap">
       <Text size="sm">{displayValue(row.payedTo)}</Text>
       {row.isUnderReport && (
-        <Badge color="indigo" size="xs" variant="light">
+        <Badge className="app-role-pill is-gray" size="xs" variant="light">
           {t('Підзвіт')}
         </Badge>
       )}
       {row.rootAssigned && (
-        <Badge color="gray" size="xs" variant="light">
+        <Badge className="app-role-pill is-gray" size="xs" variant="light">
           {t('Підзвіт')}
         </Badge>
       )}
       {Boolean(row.differenceAmount) && (
-        <Text className="app-money" fw={700} size="sm">
+        <Text className="app-money" size="sm">
           {formatMoney(row.differenceAmount)}
         </Text>
       )}
@@ -750,7 +750,7 @@ function AdvancedReportDetailDrawer({ row, onClose }: { row: AdvancedReportRow |
           <Divider />
 
           <Stack gap="xs">
-            <Text fw={700}>{t('Пов’язані документи')}</Text>
+            <Text className="app-section-title" fw={600} size="sm">{t('Пов’язані документи')}</Text>
             {relatedOrders.length > 0 ? (
               relatedOrders.map((item, index) => {
                 const order = item.ConsumablesOrder
@@ -804,7 +804,7 @@ function AdvancedReportDocumentStructureDrawer({
       {row && (
         <Stack gap="md">
           {isCalculating && (
-            <Alert color="blue" variant="light">
+            <Alert color="gray" variant="light">
               {t('Перерахунок структури документів...')}
             </Alert>
           )}
@@ -894,10 +894,7 @@ function AssignedPaymentOrderBlock({
 
   return (
     <Stack gap="xs">
-      <Group gap="xs">
-        <IconHierarchy2 size={16} />
-        <Text fw={700}>{title}</Text>
-      </Group>
+      <Text className="app-section-title" fw={600} size="sm">{title}</Text>
       <AdvanceReportStructureSummary
         assignedPaymentOrder={assignedPaymentOrder}
         calculatedTotal={calculatedTotal}

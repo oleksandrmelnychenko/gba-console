@@ -39,7 +39,7 @@
 }
 
 .warehouse-ukraine-filter-bar.is-sales {
-  grid-template-columns: minmax(220px, 1fr) minmax(148px, 170px) minmax(148px, 170px) auto auto auto;
+  grid-template-columns: minmax(220px, 1fr) 150px 150px max-content max-content max-content;
 }
 
 .warehouse-ukraine-filter-bar.is-orders {
@@ -95,6 +95,12 @@
   min-width: 0;
 }
 
+.warehouse-ukraine-filter-bar.is-sales .warehouse-ukraine-filter-actions,
+.warehouse-ukraine-filter-bar.is-sales .warehouse-ukraine-table-toolbar-slot,
+.warehouse-ukraine-filter-bar.is-sales .warehouse-ukraine-command-actions {
+  flex: 0 0 auto;
+}
+
 .warehouse-ukraine-table-toolbar-slot .data-table-toolbar {
   gap: 6px;
   margin: 0;
@@ -141,6 +147,18 @@
   .warehouse-ukraine-table-toolbar-slot,
   .warehouse-ukraine-command-actions {
     justify-content: flex-start;
+  }
+}
+
+@media (min-width: 981px) and (max-width: 1180px) {
+  .warehouse-ukraine-filter-bar.is-sales {
+    grid-template-columns: minmax(180px, 1fr) 138px 138px max-content max-content max-content;
+  }
+
+  .warehouse-ukraine-filter-bar.is-sales .warehouse-ukraine-filter-actions,
+  .warehouse-ukraine-filter-bar.is-sales .warehouse-ukraine-table-toolbar-slot,
+  .warehouse-ukraine-filter-bar.is-sales .warehouse-ukraine-command-actions {
+    justify-content: flex-end;
   }
 }
 

@@ -111,6 +111,14 @@ const SAD_LIST_TABLE_CELL_STYLE = {
   whiteSpace: 'nowrap',
 } as const
 
+/* §5.1: numbers/codes/dates/sums render in mono 600. */
+const SAD_LIST_TABLE_CELL_MONO_STYLE = {
+  ...SAD_LIST_TABLE_CELL_STYLE,
+  fontFamily: 'var(--font-mono)',
+  fontWeight: 600,
+  letterSpacing: 0,
+} as const
+
 const SAD_ITEMS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['select', 'vendorCode', 'product'],
@@ -152,19 +160,24 @@ type DownloadDocumentLink = {
   url?: string
 }
 
-function SadListTableValue({ fw, value }: { fw?: number; value: string }) {
+/* Native title (§5: no per-cell Mantine <Tooltip> — hundreds of them lag). */
+function SadListTableValue({ fw, mono, value }: { fw?: number; mono?: boolean; value: string }) {
   return (
-    <Tooltip label={value} openDelay={350} withArrow>
-      <Text component="span" fw={fw} style={SAD_LIST_TABLE_CELL_STYLE}>
-        {value}
-      </Text>
-    </Tooltip>
+    <Text
+      component="span"
+      fw={mono ? undefined : fw}
+      style={mono ? SAD_LIST_TABLE_CELL_MONO_STYLE : SAD_LIST_TABLE_CELL_STYLE}
+      title={value || undefined}
+    >
+      {value}
+    </Text>
   )
 }
 
+/* Empty values render blank (§5), never a dash. */
 function displayValue(value: unknown): string {
   if (value === null || value === undefined || value === '') {
-    return '-'
+    return ''
   }
 
   return String(value)
@@ -233,14 +246,14 @@ export function AllSadsPage() {
         id: 'fromDate',
         header: t('Дата'),
         accessor: (sad) => sad.FromDate,
-        cell: (sad) => <SadListTableValue value={formatDate(sad.FromDate)} />,
+        cell: (sad) => <SadListTableValue mono value={formatDate(sad.FromDate)} />,
         width: 130,
       },
       {
         id: 'number',
         header: t('Номер'),
         accessor: (sad) => sad.Number,
-        cell: (sad) => <SadListTableValue fw={600} value={displayValue(sad.Number)} />,
+        cell: (sad) => <SadListTableValue mono value={displayValue(sad.Number)} />,
         width: 170,
       },
       {
@@ -255,7 +268,7 @@ export function AllSadsPage() {
         header: t('Замовлення'),
         accessor: (sad) => sad.SupplyOrderUkraineId,
         cell: (sad) => (
-          <Badge color={sad.SupplyOrderUkraineId ? 'green' : 'gray'} variant="light">
+          <Badge className={`app-role-pill ${sad.SupplyOrderUkraineId ? 'is-green' : 'is-gray'}`} variant="light">
             {sad.SupplyOrderUkraineId ? t('Створено') : t('Немає')}
           </Badge>
         ),
@@ -293,7 +306,7 @@ export function AllSadsPage() {
         id: 'amount',
         header: t('EUR'),
         accessor: (sad) => sad.TotalAmountWithMargin ?? sad.TotalAmount,
-        cell: (sad) => <SadListTableValue value={formatNumber(sad.TotalAmountWithMargin ?? sad.TotalAmount)} />,
+        cell: (sad) => <SadListTableValue mono value={formatNumber(sad.TotalAmountWithMargin ?? sad.TotalAmount)} />,
         align: 'right',
         width: 120,
       },
@@ -301,7 +314,7 @@ export function AllSadsPage() {
         id: 'amountLocal',
         header: t('Місцева валюта'),
         accessor: (sad) => sad.TotalAmountLocal,
-        cell: (sad) => <SadListTableValue value={formatNumber(sad.TotalAmountLocal)} />,
+        cell: (sad) => <SadListTableValue mono value={formatNumber(sad.TotalAmountLocal)} />,
         align: 'right',
         width: 120,
       },
@@ -530,7 +543,7 @@ export function AllSadsPage() {
         }}
       />
 
-      <AppModal centered opened={Boolean(deleteTarget)} title={t('Видалити SAD')} onClose={() => setDeleteTarget(null)}>
+      <AppModal centered opened={Boolean(deleteTarget)} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Видалити SAD')}</span>} onClose={() => setDeleteTarget(null)}>
         <Stack>
           <Text>{t('Видалити обраний SAD?')}</Text>
           <Group justify="flex-end">
@@ -963,8 +976,8 @@ function SadEditorPage({ mode, netId }: { mode: EditorMode; netId?: string }) {
     <Stack gap="md">
       <Group align="center" justify="space-between">
         <Group gap="sm">
-          <Badge color={isReadonly ? 'green' : 'yellow'}>{status}</Badge>
-          <Badge variant="light">{getSadTypeLabel(sad.SadType)}</Badge>
+          <Badge className={`app-role-pill ${isReadonly ? 'is-green' : 'is-gray'}`} variant="light">{status}</Badge>
+          <Badge className="app-role-pill is-gray" variant="light">{getSadTypeLabel(sad.SadType)}</Badge>
         </Group>
         <Group>
           <Button leftSection={<IconFileUpload size={16} />} variant="light" onClick={() => setDocumentsOpen(true)}>
@@ -1158,7 +1171,7 @@ function SadEditorPage({ mode, netId }: { mode: EditorMode; netId?: string }) {
         onClose={() => setAddItemsOpen(false)}
       />
 
-      <AppModal centered opened={Boolean(deleteItemTarget)} title={t('Видалити позицію')} onClose={() => setDeleteItemTarget(null)}>
+      <AppModal centered opened={Boolean(deleteItemTarget)} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Видалити позицію')}</span>} onClose={() => setDeleteItemTarget(null)}>
         <Stack>
           <Text>{t('Позицію буде прибрано з SAD після наступного збереження.')}</Text>
           <Group justify="flex-end">
@@ -1464,7 +1477,7 @@ function TirMovementPanel({
         }}
       />
 
-      <AppModal centered opened={Boolean(deletePalletTarget)} title={t('Видалити палету')} onClose={() => setDeletePalletTarget(null)}>
+      <AppModal centered opened={Boolean(deletePalletTarget)} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Видалити палету')}</span>} onClose={() => setDeletePalletTarget(null)}>
         <Stack>
           <Text>{t('Палету буде прибрано з SAD після наступного збереження.')}</Text>
           <Group justify="flex-end">
@@ -1795,9 +1808,9 @@ function MoveItemsModalContent({
   }
 
   return (
-    <AppModal centered opened size="lg" title={t('Перемістити в палету')} onClose={onClose}>
+    <AppModal centered opened size="lg" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Перемістити в палету')}</span>} onClose={onClose}>
       <Stack>
-        <Alert color="violet" variant="light">
+        <Alert color="orange" variant="light">
           {t('До палети буде додано')} {selectedItems.length} {t('позицій. Кількість береться з поля "Не в палеті".')}
         </Alert>
         <Checkbox
@@ -2135,7 +2148,7 @@ function SadDocumentsModal({
   }
 
   return (
-    <AppModal centered opened={opened} size="lg" title={t('Документи SAD')} onClose={onClose}>
+    <AppModal centered opened={opened} size="lg" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Документи SAD')}</span>} onClose={onClose}>
       <Stack>
         <FileInput
           clearable
@@ -2189,7 +2202,7 @@ function DownloadDocumentsModal({
   const links = useMemo(() => document ? createDownloadDocumentLinks(document, t) : [], [document, t])
 
   return (
-    <AppModal centered opened={opened} title={t('Документи для друку')} onClose={onClose}>
+    <AppModal centered opened={opened} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Документи для друку')}</span>} onClose={onClose}>
       <Stack>
         {links.length === 0 && <Text c="dimmed">{t('Посилань немає')}</Text>}
         {links.map((link) => (
@@ -2249,7 +2262,7 @@ function SpecificationEditorModal({
   }
 
   return (
-    <AppModal centered opened size="lg" title={t('Специфікація товару')} onClose={onClose}>
+    <AppModal centered opened size="lg" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Специфікація товару')}</span>} onClose={onClose}>
       <Stack>
         <Text fw={600}>{editor.product.VendorCode} · {editor.product.Name}</Text>
         <TextInput
@@ -2352,7 +2365,7 @@ function SpecificationUploadModal({
   }
 
   return (
-    <AppModal centered opened={opened} size="lg" title={t('Імпорт специфікацій')} onClose={onClose}>
+    <AppModal centered opened={opened} size="lg" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Імпорт специфікацій')}</span>} onClose={onClose}>
       <Stack>
         <FileInput clearable label={t('Файл')} value={file} onChange={setFile} />
         <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }}>
@@ -2411,7 +2424,26 @@ function SadActionModal({
   const canCreateSupplyOrder = Boolean(sad.IsSend && !sad.IsFromSale && !sad.SupplyOrderUkraineId)
 
   return (
-    <AppModal centered opened={Boolean(sad)} title={`${t('SAD')} ${sad.Number || ''}`} onClose={onClose}>
+    <AppModal
+      centered
+      opened={Boolean(sad)}
+      title={
+        <span style={{ alignItems: 'center', display: 'inline-flex', fontFamily: 'var(--font-mono)', gap: 8 }}>
+          <span
+            style={{
+              background: sad.IsSend ? 'var(--mantine-color-green-6)' : 'var(--mantine-color-gray-4)',
+              borderRadius: 999,
+              boxShadow: sad.IsSend ? '0 0 0 3px rgba(64, 192, 87, 0.16)' : 'none',
+              flex: '0 0 auto',
+              height: 9,
+              width: 9,
+            }}
+          />
+          {`${t('SAD')} ${sad.Number || ''}`.trim()}
+        </span>
+      }
+      onClose={onClose}
+    >
       <Stack>
         <Button justify="space-between" rightSection={<IconEye size={16} />} variant="light" onClick={() => onNavigate(editPath)}>
           {t('Перегляд / редагування')}
@@ -2483,7 +2515,7 @@ function StatusBadge({ sad }: { sad: Sad }) {
   const { t } = useI18n()
 
   return (
-    <Badge color={sad.IsSend ? 'green' : 'yellow'} variant="light">
+    <Badge className={`app-role-pill ${sad.IsSend ? 'is-green' : 'is-gray'}`} variant="light">
       {sad.IsSend ? t('Проведено') : t('Чернетка')}
     </Badge>
   )

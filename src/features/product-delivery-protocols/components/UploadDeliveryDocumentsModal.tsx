@@ -99,7 +99,8 @@ export function UploadDeliveryDocumentsModal({
       centered
       opened={opened}
       size="lg"
-      title={t('Завантаження документів доставки')}
+      className="app-form-sheet"
+      title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Завантаження документів доставки')}</span>}
       onClose={() => {
         if (!isSaving) {
           onClose()

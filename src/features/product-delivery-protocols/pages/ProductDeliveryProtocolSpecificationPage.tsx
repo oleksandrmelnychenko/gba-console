@@ -1,5 +1,6 @@
 import {
   Alert,
+  Badge,
   Button,
   Card,
   Group,
@@ -59,6 +60,7 @@ import type {
   SpecificationSupplyInvoice,
   UploadProductSpecificationResult,
 } from '../specificationTypes'
+import './product-delivery-protocol-specification-page.css'
 
 const invoiceDateFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short' })
 const CURRENCY_EUR = 'eur'
@@ -897,210 +899,243 @@ export function ProductDeliveryProtocolSpecificationPage() {
 
   return (
     <AppDrawer
+      className="app-form-sheet"
       opened
       keepMounted={false}
       position="right"
       size="min(1500px, 97vw)"
       title={
-        <span style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>
+        <span className="app-sheet-title-mono">
           {t('Митні коди згідно протоколу')}
-          {model.protocol?.DeliveryProductProtocolNumber?.Number
-            ? ` (${model.protocol.DeliveryProductProtocolNumber.Number})`
-            : ''}
+          {model.protocol?.DeliveryProductProtocolNumber?.Number && (
+            <Badge className="app-role-pill is-yellow" variant="light">
+              {model.protocol.DeliveryProductProtocolNumber.Number}
+            </Badge>
+          )}
         </span>
       }
       onClose={() => navigate('/product-delivery-protocols')}
     >
-    <Stack gap="lg">
-      <Group gap="sm" justify="flex-end">
-        <SegmentedControl
-          data={SPECIFICATION_CURRENCY_OPTIONS}
-          disabled={model.isActionBusy}
-          value={model.currencyIsEur ? CURRENCY_EUR : CURRENCY_UAH}
-          onChange={(value) => model.setCurrencyIsEur(value === CURRENCY_EUR)}
-        />
-        <SegmentedControl
-          data={SERVICE_MODE_OPTIONS}
-          disabled={model.isActionBusy}
-          value={model.withManagementServices ? SERVICES_MANAGEMENT : SERVICES_ACCOUNTING}
-          onChange={(value) => model.setWithManagementServices(value === SERVICES_MANAGEMENT)}
-        />
-      </Group>
+      <Stack className="product-specification-sheet" gap="md">
+        {model.error && (
+          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            {model.error}
+          </Alert>
+        )}
 
-      {model.error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-          {model.error}
-        </Alert>
-      )}
+        {model.isLoading ? (
+          <Text c="dimmed" size="sm">
+            {t('Завантаження')}
+          </Text>
+        ) : model.protocol ? (
+          <Stack gap="md">
+            {specificationUnavailableMessage && (
+              <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+                {specificationUnavailableMessage}
+              </Alert>
+            )}
 
-      {model.isLoading ? (
-        <Text c="dimmed" size="sm">
-          {t('Завантаження')}
-        </Text>
-      ) : model.protocol ? (
-        <Stack gap="lg">
-          {specificationUnavailableMessage && (
-            <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
-              {specificationUnavailableMessage}
-            </Alert>
-          )}
-
-          <Card className="app-section-card" withBorder radius="md" padding="md">
-            <Stack gap="md">
-              <Group justify="flex-end" gap="xs">
-                {canUpload && (
-                  <Button
-                    color={CREATE_ACTION_COLOR}
-                    disabled={model.isActionBusy}
-                    leftSection={<IconFileImport size={16} />}
-                    loading={model.isUploading}
-                    styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
-                    onClick={() => model.setUploadOpen(true)}
-                  >
-                    {t('Завантаження митних кодів')}
-                  </Button>
-                )}
-                {canUploadDocuments && (
-                  <Button
-                    color="gray"
-                    disabled={!canOpenDeliveryDocuments || model.isActionBusy}
-                    leftSection={<IconFileImport size={16} />}
-                    loading={model.isSavingDocuments}
-                    styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
-                    variant="light"
-                    onClick={model.openDocuments}
-                  >
-                    {t('Завантаження документів доставки')}
-                  </Button>
-                )}
-                {canMerge && (
-                  <Button
-                    color="gray"
-                    disabled={model.isActionBusy}
-                    leftSection={<IconLayersIntersect size={16} />}
-                    loading={model.isMerging}
-                    styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
-                    variant="light"
-                    onClick={model.openMerge}
-                  >
-                    {t("Об'єднати інвойси?")}
-                  </Button>
-                )}
-                {canDownload && (
-                  <Button
-                    color="gray"
-                    disabled={model.isActionBusy}
-                    leftSection={<IconDownload size={16} />}
-                    loading={model.isDownloading}
-                    styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
-                    variant="light"
-                    onClick={model.openDownload}
-                  >
-                    {t('Завантажити')}
-                  </Button>
-                )}
-              </Group>
-
-              <Group gap="xs" wrap="wrap">
-                {invoices.map((invoice) => (
-                  <Button
-                    key={invoice.NetUid || invoice.Id}
-                    color={invoice.NetUid === model.selectedInvoiceNetId ? CREATE_ACTION_COLOR : 'gray'}
-                    disabled={model.isActionBusy}
-                    variant={invoice.NetUid === model.selectedInvoiceNetId ? 'light' : 'subtle'}
-                    onClick={() => model.selectInvoice(invoice)}
-                  >
-                    <Stack gap={0} align="flex-start">
-                      <Text size="sm">
-                        {t('Інвойс')} {invoice.Number} {t('Від')} {invoiceDate(invoice.DateFrom)}
-                        {(invoice.MergedSupplyInvoices || [])
-                          .map((merged) => ` /${merged.Number} ${t('Від')} ${invoiceDate(merged.DateFrom)}`)
-                          .join('')}
-                      </Text>
-                      <Text c="dimmed" size="xs">
-                        {t('Постачальник')}: {invoice.SupplyOrder?.Client?.FullName || ''}
-                      </Text>
-                    </Stack>
-                  </Button>
-                ))}
-              </Group>
-
-              {model.selectedInvoice && (model.selectedInvoice.PackingLists?.length || 0) > 0 && (
-                <Group gap="xs" wrap="wrap">
-                  {(model.selectedInvoice.PackingLists || []).map((packList) => (
-                    <Button
-                      key={packList.NetUid || packList.Id}
-                      color={packList.NetUid === model.selectedPackListNetId ? CREATE_ACTION_COLOR : 'gray'}
+            <Card className="app-section-card product-specification-sheet-card" withBorder radius="md" padding="md">
+              <Stack gap="md">
+                <div className="product-specification-sheet-header">
+                  <div className="product-specification-sheet-switches">
+                    <SegmentedControl
+                      className="product-specification-sheet-segment"
+                      data={SPECIFICATION_CURRENCY_OPTIONS}
                       disabled={model.isActionBusy}
                       size="xs"
-                      styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
-                      variant={packList.NetUid === model.selectedPackListNetId ? 'light' : 'subtle'}
-                      onClick={() => model.selectPackList(packList)}
-                    >
-                      {t('Пак ліст')} №: {packList.InvNo} ({t('Від')} {invoiceDate(packList.FromDate)})
-                      {(packList.MergedPackingLists || [])
-                        .map((merged) => ` /${merged.No} (${t('Від')} ${invoiceDate(merged.FromDate)})`)
-                        .join('')}
-                    </Button>
-                  ))}
-                </Group>
-              )}
+                      value={model.currencyIsEur ? CURRENCY_EUR : CURRENCY_UAH}
+                      onChange={(value) => model.setCurrencyIsEur(value === CURRENCY_EUR)}
+                    />
+                    <SegmentedControl
+                      className="product-specification-sheet-segment"
+                      data={SERVICE_MODE_OPTIONS}
+                      disabled={model.isActionBusy}
+                      size="xs"
+                      value={model.withManagementServices ? SERVICES_MANAGEMENT : SERVICES_ACCOUNTING}
+                      onChange={(value) => model.setWithManagementServices(value === SERVICES_MANAGEMENT)}
+                    />
+                  </div>
 
-              {model.packingListError && (
-                <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-                  {model.packingListError}
-                </Alert>
-              )}
+                  <Group className="product-specification-sheet-actions" justify="flex-end" gap="xs" wrap="wrap">
+                    {canUpload && (
+                      <Button
+                        color={CREATE_ACTION_COLOR}
+                        disabled={model.isActionBusy}
+                        leftSection={<IconFileImport size={16} />}
+                        loading={model.isUploading}
+                        onClick={() => model.setUploadOpen(true)}
+                      >
+                        {t('Завантаження митних кодів')}
+                      </Button>
+                    )}
+                    {canUploadDocuments && (
+                      <Button
+                        disabled={!canOpenDeliveryDocuments || model.isActionBusy}
+                        leftSection={<IconFileImport size={16} />}
+                        loading={model.isSavingDocuments}
+                        variant="default"
+                        onClick={model.openDocuments}
+                      >
+                        {t('Завантаження документів доставки')}
+                      </Button>
+                    )}
+                    {canMerge && (
+                      <Button
+                        disabled={model.isActionBusy}
+                        leftSection={<IconLayersIntersect size={16} />}
+                        loading={model.isMerging}
+                        variant="default"
+                        onClick={model.openMerge}
+                      >
+                        {t("Об'єднати інвойси?")}
+                      </Button>
+                    )}
+                    {canDownload && (
+                      <Button
+                        disabled={model.isActionBusy}
+                        leftSection={<IconDownload size={16} />}
+                        loading={model.isDownloading}
+                        variant="default"
+                        onClick={model.openDownload}
+                      >
+                        {t('Завантажити')}
+                      </Button>
+                    )}
+                  </Group>
+                </div>
 
-              {model.packingList && (model.packingList.PackingListPackageOrderItems?.length || 0) > 0 && (
-                <TextInput
-                  label={t('Пошук')}
-                  placeholder={t('Код товару')}
-                  disabled={model.isActionBusy}
-                  value={vendorCodeFilter}
-                  w={260}
-                  onChange={(event) => setVendorCodeFilter(event.currentTarget.value)}
-                />
-              )}
+                <div className="product-specification-tabs">
+                  <div className="product-specification-tab-row">
+                    <Text className="product-specification-tab-label" component="div">
+                      {t('Інвойси')}
+                    </Text>
+                    <div className="product-specification-tab-list" role="tablist" aria-label={t('Інвойси')}>
+                      {invoices.map((invoice) => {
+                        const isSelected = invoice.NetUid === model.selectedInvoiceNetId
+                        const mergedInvoices = (invoice.MergedSupplyInvoices || [])
+                          .map((merged) => `/${merged.Number} ${t('Від')} ${invoiceDate(merged.DateFrom)}`)
+                          .join(' ')
 
-              {model.isPackingListLoading ? (
-                <Text c="dimmed" size="sm">
-                  {t('Завантаження')}
-                </Text>
-              ) : filteredPackingList && (filteredPackingList.PackingListPackageOrderItems?.length || 0) > 0 ? (
-                <SpecificationProductsGrid
-                  canEditSpecification={canEditSpecification}
-                  currencyIsEur={model.currencyIsEur}
-                  invoiceDeliveryAmount={model.selectedInvoice?.DeliveryAmount}
-                  packingList={filteredPackingList}
-                  withManagementServices={model.withManagementServices}
-                  onEditSpecification={model.openSpecificationEditor}
-                />
-              ) : (
-                <Group gap="xs" c="dimmed">
-                  <IconFilesOff size={18} />
-                  <Text size="sm">{t('Немає даних')}</Text>
-                </Group>
-              )}
-            </Stack>
-          </Card>
+                        return (
+                          <button
+                            key={invoice.NetUid || invoice.Id}
+                            aria-selected={isSelected}
+                            className={`product-specification-tab${isSelected ? ' is-selected' : ''}`}
+                            disabled={model.isActionBusy}
+                            role="tab"
+                            type="button"
+                            onClick={() => model.selectInvoice(invoice)}
+                          >
+                            <span className="product-specification-tab-title">
+                              {t('Інвойс')} {invoice.Number} {t('Від')} {invoiceDate(invoice.DateFrom)}
+                              {mergedInvoices ? ` ${mergedInvoices}` : ''}
+                            </span>
+                            <span className="product-specification-tab-subtitle">
+                              {t('Постачальник')}: {invoice.SupplyOrder?.Client?.FullName || t('Не вказано')}
+                            </span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
 
-          {model.packingList && (model.packingList.Id || 0) > 0 && (
-            <SpecificationTotals
-              currencyIsEur={model.currencyIsEur}
-              invoice={model.selectedInvoice}
-              packingList={model.packingList}
-            />
-          )}
-        </Stack>
-      ) : null}
+                  {model.selectedInvoice && (model.selectedInvoice.PackingLists?.length || 0) > 0 && (
+                    <div className="product-specification-tab-row">
+                      <Text className="product-specification-tab-label" component="div">
+                        {t('Пак листи')}
+                      </Text>
+                      <div className="product-specification-tab-list is-compact" role="tablist" aria-label={t('Пак листи')}>
+                        {(model.selectedInvoice.PackingLists || []).map((packList) => {
+                          const isSelected = packList.NetUid === model.selectedPackListNetId
+                          const mergedPackLists = (packList.MergedPackingLists || [])
+                            .map((merged) => `/${merged.No} ${t('Від')} ${invoiceDate(merged.FromDate)}`)
+                            .join(' ')
 
-      <ProductDeliveryProtocolSpecificationModals
-        canSaveSpecification={canSaveSpecification}
-        invoices={invoices}
-        model={model}
-      />
-    </Stack>
+                          return (
+                            <button
+                              key={packList.NetUid || packList.Id}
+                              aria-selected={isSelected}
+                              className={`product-specification-tab is-pack-list${isSelected ? ' is-selected' : ''}`}
+                              disabled={model.isActionBusy}
+                              role="tab"
+                              type="button"
+                              onClick={() => model.selectPackList(packList)}
+                            >
+                              <span className="product-specification-tab-title">
+                                {t('Пак ліст')} № {packList.InvNo}
+                              </span>
+                              <span className="product-specification-tab-subtitle">
+                                {t('Від')} {invoiceDate(packList.FromDate)}
+                                {mergedPackLists ? ` ${mergedPackLists}` : ''}
+                              </span>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {model.packingListError && (
+                  <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+                    {model.packingListError}
+                  </Alert>
+                )}
+
+                {model.packingList && (model.packingList.PackingListPackageOrderItems?.length || 0) > 0 && (
+                  <div className="product-specification-search-row">
+                    <TextInput
+                      className="product-specification-search-input"
+                      label={t('Пошук')}
+                      placeholder={t('Код товару')}
+                      disabled={model.isActionBusy}
+                      value={vendorCodeFilter}
+                      onChange={(event) => setVendorCodeFilter(event.currentTarget.value)}
+                    />
+                  </div>
+                )}
+
+                <div className="product-specification-grid-slot">
+                  {model.isPackingListLoading ? (
+                    <Text c="dimmed" size="sm">
+                      {t('Завантаження')}
+                    </Text>
+                  ) : filteredPackingList && (filteredPackingList.PackingListPackageOrderItems?.length || 0) > 0 ? (
+                    <SpecificationProductsGrid
+                      canEditSpecification={canEditSpecification}
+                      currencyIsEur={model.currencyIsEur}
+                      invoiceDeliveryAmount={model.selectedInvoice?.DeliveryAmount}
+                      packingList={filteredPackingList}
+                      withManagementServices={model.withManagementServices}
+                      onEditSpecification={model.openSpecificationEditor}
+                    />
+                  ) : (
+                    <Group gap="xs" c="dimmed">
+                      <IconFilesOff size={18} />
+                      <Text size="sm">{t('Немає даних')}</Text>
+                    </Group>
+                  )}
+                </div>
+              </Stack>
+            </Card>
+
+            {model.packingList && (model.packingList.Id || 0) > 0 && (
+              <SpecificationTotals
+                currencyIsEur={model.currencyIsEur}
+                invoice={model.selectedInvoice}
+                packingList={model.packingList}
+              />
+            )}
+          </Stack>
+        ) : null}
+
+        <ProductDeliveryProtocolSpecificationModals
+          canSaveSpecification={canSaveSpecification}
+          invoices={invoices}
+          model={model}
+        />
+      </Stack>
     </AppDrawer>
   )
 }
@@ -1211,8 +1246,9 @@ function ProductDeliveryProtocolSpecificationModals({
 
       <AppModal
         centered
+        className="app-form-sheet"
         opened={model.isDocumentsCloseConfirmOpen}
-        title={t('Є незбережені зміни')}
+        title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Є незбережені зміни')}</span>}
         onClose={() => {
           if (!model.isSavingDocuments) {
             model.cancelCloseDocuments()
@@ -1222,7 +1258,7 @@ function ProductDeliveryProtocolSpecificationModals({
         <Stack gap="md">
           <Text>{t('Якщо закрити вікно, зміни по документах доставки не будуть збережені.')}</Text>
           <Group justify="flex-end">
-            <Button color="gray" disabled={model.isSavingDocuments} variant="light" onClick={model.cancelCloseDocuments}>
+            <Button disabled={model.isSavingDocuments} variant="default" onClick={model.cancelCloseDocuments}>
               {t('Залишитися')}
             </Button>
             <Button color="red" disabled={model.isSavingDocuments} onClick={model.closeDocumentsDraft}>

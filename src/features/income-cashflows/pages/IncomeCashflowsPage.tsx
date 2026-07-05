@@ -17,7 +17,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { IconAlertCircle, IconChevronDown, IconEye, IconHierarchy2, IconPlus, IconRefresh, IconRestore, IconSearch, IconUserShare, IconX } from '@tabler/icons-react'
+import { IconAlertCircle, IconChevronDown, IconEye, IconPlus, IconRefresh, IconRestore, IconSearch, IconUserShare, IconX } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -853,7 +853,7 @@ function useIncomeCashflowColumns({
             <Tooltip label={t('Переназначити клієнта')}>
               <ActionIcon
                 aria-label={t('Переназначити клієнта')}
-                color="blue"
+                color="gray"
                 size="sm"
                 variant="subtle"
                 onClick={(event) => {
@@ -952,9 +952,9 @@ function IncomeCashflowDetailDrawer({
           {isClientPaymentReassignable(income) && (
             <Group justify="flex-end">
               <Button
-                color="blue"
+                color={CREATE_ACTION_COLOR}
                 leftSection={<IconUserShare size={16} />}
-                variant="light"
+                variant="outline"
                 onClick={() => onReassign(row)}
               >
                 {t('Переназначити клієнта')}
@@ -1033,7 +1033,7 @@ function IncomeOrderSalesSection({
 
   return (
     <Stack gap="xs">
-      <Text fw={700}>{t('Рахунки та продажі')}</Text>
+      <Text className="app-section-title" fw={600} size="sm">{t('Рахунки та продажі')}</Text>
       {sales.map((sale, index) => (
         <IncomeOrderSaleBlock
           key={getIncomeOrderSaleKey(sale, index)}
@@ -1148,13 +1148,10 @@ function IncomeDocumentStructure({
 
   return (
     <Stack gap="sm">
-      <Group gap="xs">
-        <IconHierarchy2 size={16} />
-        <Text fw={700}>{t('Структура документів')}</Text>
-      </Group>
+      <Text className="app-section-title" fw={600} size="sm">{t('Структура документів')}</Text>
 
       {structureCalculation.isCalculating && (
-        <Alert color="blue" variant="light">
+        <Alert color="gray" variant="light">
           {t('Перерахунок структури документів...')}
         </Alert>
       )}
@@ -1272,7 +1269,7 @@ function CancelIncomeCashflowModal({
           {t('Скасувати ордер')} <Text span fw={600}>{row?.number || t('Без номера')}</Text>?
         </Text>
         <Group justify="flex-end">
-          <Button color="gray" disabled={isSaving} variant="light" onClick={onClose}>
+          <Button disabled={isSaving} variant="default" onClick={onClose}>
             {t('Ні')}
           </Button>
           <Button color="red" leftSection={<IconX size={16} />} loading={isSaving} onClick={onCancel}>
@@ -1473,7 +1470,7 @@ function ReassignIncomeClientModal({
         )}
 
         <Group justify="flex-end">
-          <Button color="gray" disabled={isSaving} variant="light" onClick={handleClose}>
+          <Button disabled={isSaving} variant="default" onClick={handleClose}>
             {t('Скасувати')}
           </Button>
           <Button

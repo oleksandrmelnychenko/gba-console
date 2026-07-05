@@ -105,7 +105,8 @@ function ProductSpecificationEditDrawerContent({
       padding="lg"
       position="right"
       size="34rem"
-      title={`${t('Митний код')} ${product?.VendorCode || ''}`.trim()}
+      className="app-form-sheet"
+      title={<span style={{ fontFamily: 'var(--font-mono)' }}>{`${t('Митний код')} ${product?.VendorCode || ''}`.trim()}</span>}
       onClose={requestClose}
     >
       {product && (
@@ -201,13 +202,14 @@ function ProductSpecificationEditDrawerContent({
       <AppModal
         centered
         opened={confirmCloseOpen}
-        title={t('Є незбережені зміни')}
+        className="app-form-sheet"
+        title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Є незбережені зміни')}</span>}
         onClose={() => setConfirmCloseOpen(false)}
       >
         <Stack gap="md">
           <Text>{t('Якщо закрити вікно, зміни митного коду не будуть збережені.')}</Text>
           <Group justify="flex-end">
-            <Button color="gray" variant="light" onClick={() => setConfirmCloseOpen(false)}>
+            <Button variant="default" onClick={() => setConfirmCloseOpen(false)}>
               {t('Залишитися')}
             </Button>
             <Button color="red" onClick={confirmClose}>

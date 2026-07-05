@@ -24,7 +24,14 @@ export function SpecificationDownloadModal({
   const { t } = useI18n()
 
   return (
-    <AppModal centered opened={opened} size="sm" title={t('Завантажити')} onClose={onClose}>
+    <AppModal
+      centered
+      className="app-form-sheet"
+      opened={opened}
+      size="sm"
+      title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Завантажити')}</span>}
+      onClose={onClose}
+    >
       <Stack gap="sm">
         {isLoading ? (
           <Text c="dimmed" size="sm">

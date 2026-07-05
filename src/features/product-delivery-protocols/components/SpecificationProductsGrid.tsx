@@ -116,9 +116,12 @@ export function SpecificationProductsGrid({
         cell: (row) =>
           onOpenProductCard && row.productNetId ? (
             <Anchor
+              c="dark.6"
               component="button"
               fw={600}
+              style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}
               type="button"
+              underline="always"
               onClick={(event) => {
                 event.stopPropagation()
                 onOpenProductCard(row.productNetId)
@@ -127,7 +130,7 @@ export function SpecificationProductsGrid({
               {displayText(row.vendorCode)}
             </Anchor>
           ) : (
-            <Text fw={600}>{displayText(row.vendorCode)}</Text>
+            <Text fw={600} style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{displayText(row.vendorCode)}</Text>
           ),
       },
       {
@@ -162,7 +165,9 @@ export function SpecificationProductsGrid({
         accessor: (row) => row.specificationCode,
         cell: (row) => (
           <Group gap={6} wrap="nowrap">
-            <Text size="sm">{displayText(row.specificationCode)}</Text>
+            <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>
+              {displayText(row.specificationCode)}
+            </Text>
             {canEditSpecification && onEditSpecification && (
               <Tooltip label={t('Редагувати')}>
                 <ActionIcon
@@ -226,14 +231,10 @@ export function SpecificationProductsGrid({
         accessor: (row) => row.isImported,
         cell: (row) =>
           row.isImported ? (
-            <Badge className="app-role-pill" variant="light">
+            <Badge className="app-role-pill is-green" variant="light">
               {t('Так')}
             </Badge>
-          ) : (
-            <Text c="dimmed" size="sm">
-              -
-            </Text>
-          ),
+          ) : null,
       },
       {
         id: 'netWeight',
@@ -578,6 +579,7 @@ function displayNumber(value: number): string {
   return String(value ?? 0)
 }
 
+/* Empty values render blank (§5), never a dash. */
 function displayText(value: string): string {
-  return value ? value : '-'
+  return value || ''
 }
