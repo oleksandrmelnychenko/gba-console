@@ -154,7 +154,6 @@ export function WizardClientRegistry({
         id: 'amount',
         header: t('\u0421\u0443\u043c\u0430'),
         accessor: (sale) => sale.TotalAmountLocal ?? 0,
-        align: 'right',
         cell: (sale) => <WizardSaleAmountCell sale={sale} />,
         width: 118,
         minWidth: 104,
@@ -172,7 +171,6 @@ export function WizardClientRegistry({
         id: 'created',
         header: t('\u0421\u0442\u0432\u043e\u0440\u0435\u043d\u043e'),
         accessor: (sale) => getTime(sale.ChangedToInvoice || sale.Created),
-        align: 'right',
         cell: (sale) => <WizardSaleCreatedCell sale={sale} />,
         width: 166,
         minWidth: 142,
@@ -180,7 +178,6 @@ export function WizardClientRegistry({
       {
         id: 'actions',
         header: t('\u0414\u0456\u0457'),
-        align: 'right',
         cell: (sale) => (
           <WizardSaleActionsCell
             canEdit={canEdit}
@@ -220,10 +217,8 @@ export function WizardClientRegistry({
           <TextInput
             className="new-sale-register-search"
             label={t('Пошук по товару')}
-            placeholder={t('Пошук по товару')}
             size="xs"
             value={saleSearch}
-            w={220}
             onChange={(event) => onChangeSaleSearch(event.currentTarget.value)}
           />
           <TextInput
@@ -385,7 +380,7 @@ function WizardSaleActionsCell({
   }
 
   return (
-    <Group className="new-sale-register-actions" gap={2} justify="flex-end" wrap="nowrap">
+    <Group className="new-sale-register-actions" gap={2} justify="flex-start" wrap="nowrap">
       {showEdit && (
         <Tooltip label={isNew ? t('\u0410\u043a\u0442 \u0440\u0435\u0434\u0430\u0433\u0443\u0432\u0430\u043d\u043d\u044f \u0440\u0430\u0445\u0443\u043d\u043a\u0443') : t('\u0410\u043a\u0442 \u0440\u0435\u0434\u0430\u0433\u0443\u0432\u0430\u043d\u043d\u044f \u043d\u0430\u043a\u043b\u0430\u0434\u043d\u043e\u0457')}>
           <ActionIcon
@@ -526,7 +521,6 @@ function WizardSaleRegistryRowContent({ sale }: { sale: SalesUkraineSale }) {
         id: 'amount',
         header: t('\u0421\u0443\u043c\u0430'),
         accessor: (item) => getOrderItemAmount(item),
-        align: 'right',
         cell: (item) => {
           const amount = getOrderItemAmount(item)
 

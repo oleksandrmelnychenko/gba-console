@@ -1647,7 +1647,15 @@
 }
 
 .new-sale-register-toolbar__controls {
+  display: flex;
+  flex-wrap: nowrap;
   min-width: 0;
+  width: 100%;
+}
+
+.new-sale-register-search {
+  flex: 1 1 auto;
+  min-width: 320px;
 }
 
 .new-sale-register-toolbar .mantine-InputWrapper-label {
@@ -5822,8 +5830,8 @@
 }
 
 .new-sale-register-value-cell {
-  justify-items: end;
-  text-align: right;
+  justify-items: start;
+  text-align: left;
 }
 
 .new-sale-register-value-cell .mantine-Text-root:first-child {
@@ -5842,10 +5850,19 @@
   align-items: baseline;
   display: inline-flex;
   gap: 4px;
-  justify-content: flex-end;
-  justify-self: end;
+  justify-content: flex-start;
+  justify-self: start;
   white-space: nowrap;
   width: 100%;
+}
+
+.new-sale-register-table .data-table-th,
+.new-sale-register-table .data-table-cell {
+  text-align: left !important;
+}
+
+.new-sale-register-actions {
+  justify-content: flex-start;
 }
 
 .new-sale-register-actions .mantine-ActionIcon-root {
