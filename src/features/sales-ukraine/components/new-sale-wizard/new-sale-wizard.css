@@ -1299,7 +1299,7 @@
 
 .new-sale-register-value-cell.is-money .mantine-Text-root:first-child,
 .new-sale-item-value-cell.is-money .mantine-Text-root:first-child {
-  color: var(--mantine-color-green-8);
+  color: var(--mantine-color-gray-9);
   font-family: var(--font-mono);
   font-size: 13px;
   font-weight: 600;
@@ -1310,30 +1310,30 @@
 .new-sale-register-value-cell.is-money .mantine-Text-root:nth-child(2),
 .new-sale-item-value-cell.is-money .mantine-Text-root:nth-child(2) {
   align-items: center;
-  background: var(--mantine-color-green-0);
-  border: 1px solid var(--mantine-color-green-2);
-  border-radius: 999px;
-  color: var(--mantine-color-green-7);
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  color: var(--mantine-color-gray-5);
   display: inline-flex;
   font-family: var(--font-mono);
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0;
-  min-height: 17px;
-  padding: 0 6px;
+  min-height: auto;
+  padding: 0;
   text-transform: uppercase;
 }
 
 .new-sale-register-value-cell.is-money.is-negative .mantine-Text-root:first-child,
 .new-sale-item-value-cell.is-money.is-negative .mantine-Text-root:first-child {
-  color: var(--mantine-color-red-8);
+  color: var(--mantine-color-gray-9);
 }
 
 .new-sale-register-value-cell.is-money.is-negative .mantine-Text-root:nth-child(2),
 .new-sale-item-value-cell.is-money.is-negative .mantine-Text-root:nth-child(2) {
-  background: var(--mantine-color-red-0);
-  border-color: var(--mantine-color-red-2);
-  color: var(--mantine-color-red-7);
+  background: transparent;
+  border-color: transparent;
+  color: var(--mantine-color-gray-5);
 }
 
 .new-sale-register-value-cell.is-quantity .mantine-Text-root:first-child,
@@ -1461,7 +1461,7 @@
 
 .new-sale-register-value-cell.is-money .mantine-Text-root:first-child,
 .new-sale-item-value-cell.is-money .mantine-Text-root:first-child {
-  color: var(--mantine-color-green-8);
+  color: var(--mantine-color-gray-9);
   font-family: var(--font-mono);
   font-size: 13px;
   font-weight: 600;
@@ -1472,30 +1472,30 @@
 .new-sale-register-value-cell.is-money .mantine-Text-root:nth-child(2),
 .new-sale-item-value-cell.is-money .mantine-Text-root:nth-child(2) {
   align-items: center;
-  background: var(--mantine-color-green-0);
-  border: 1px solid var(--mantine-color-green-2);
-  border-radius: 999px;
-  color: var(--mantine-color-green-7);
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  color: var(--mantine-color-gray-5);
   display: inline-flex;
   font-family: var(--font-mono);
   font-size: 10px;
   font-weight: 600;
-  min-height: 17px;
-  padding: 0 6px;
   letter-spacing: 0;
+  min-height: auto;
+  padding: 0;
   text-transform: uppercase;
 }
 
 .new-sale-register-value-cell.is-money.is-negative .mantine-Text-root:first-child,
 .new-sale-item-value-cell.is-money.is-negative .mantine-Text-root:first-child {
-  color: var(--mantine-color-red-8);
+  color: var(--mantine-color-gray-9);
 }
 
 .new-sale-register-value-cell.is-money.is-negative .mantine-Text-root:nth-child(2),
 .new-sale-item-value-cell.is-money.is-negative .mantine-Text-root:nth-child(2) {
-  background: var(--mantine-color-red-0);
-  border-color: var(--mantine-color-red-2);
-  color: var(--mantine-color-red-7);
+  background: transparent;
+  border-color: transparent;
+  color: var(--mantine-color-gray-5);
 }
 
 .new-sale-register-value-cell.is-quantity .mantine-Text-root:first-child,
@@ -5883,7 +5883,7 @@
 
 .new-sale-register-table .data-table-expanded-content {
   background: var(--mantine-color-white);
-  padding: 8px 14px 12px 40px;
+  padding: 8px 0 12px;
 }
 
 .new-sale-register-table .new-sale-register-expanded {
@@ -5897,7 +5897,9 @@
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 0;
   box-shadow: none;
+  margin-left: auto;
   overflow: hidden;
+  width: calc(100% - 100px);
 }
 
 .new-sale-register-table .new-sale-register-expanded__items {
@@ -5906,6 +5908,7 @@
 
 .new-sale-register-table .new-sale-register-expanded__items .data-table-scroll {
   overflow: hidden;
+  scrollbar-gutter: auto;
 }
 
 .new-sale-register-table .new-sale-register-expanded__items .data-table-table {
@@ -5918,10 +5921,40 @@
   font-size: 12px;
   font-weight: 600;
   padding-block: 6px;
+  padding-inline: 0;
+  text-align: left !important;
 }
 
 .new-sale-register-table .new-sale-register-expanded__items .data-table-cell {
   padding-block: 9px;
+  padding-inline: 0;
+  text-align: left !important;
+}
+
+.new-sale-register-table .new-sale-register-expanded__items .data-table-th:last-child,
+.new-sale-register-table .new-sale-register-expanded__items .data-table-cell:last-child {
+  padding-right: 0;
+}
+
+.new-sale-register-table .new-sale-register-expanded__items .data-table-th:first-child,
+.new-sale-register-table .new-sale-register-expanded__items .data-table-cell:first-child {
+  padding-left: 10px;
+}
+
+.new-sale-register-table .new-sale-register-expanded__items .data-table-th[data-align='right'] .data-table-header-inner,
+.new-sale-register-table .new-sale-register-expanded__items .data-table-th[data-align='right'] .data-table-header-button,
+.new-sale-register-table .new-sale-register-expanded__items .data-table-th[data-align='right'] .data-table-header-label {
+  justify-content: flex-start !important;
+  text-align: left !important;
+}
+
+.new-sale-register-table .new-sale-register-expanded__items .new-sale-item-value-cell.is-money,
+.new-sale-register-table .new-sale-register-expanded__items .new-sale-item-value-cell.is-quantity {
+  justify-content: flex-start;
+  justify-self: start;
+  margin-left: 0;
+  margin-right: auto;
+  text-align: left;
 }
 
 .new-sale-register-table .new-sale-register-expanded__items .data-table-row {
@@ -6616,7 +6649,7 @@
 
 .new-sale-register-value-cell.is-money .mantine-Text-root:first-child,
 .new-sale-item-value-cell.is-money .mantine-Text-root:first-child {
-  color: var(--mantine-color-green-8);
+  color: var(--mantine-color-gray-9);
   font-family: var(--font-mono);
   font-size: 13px;
   font-weight: 600;
@@ -6627,30 +6660,30 @@
 .new-sale-register-value-cell.is-money .mantine-Text-root:nth-child(2),
 .new-sale-item-value-cell.is-money .mantine-Text-root:nth-child(2) {
   align-items: center;
-  background: var(--mantine-color-green-0);
-  border: 1px solid var(--mantine-color-green-2);
-  border-radius: 999px;
-  color: var(--mantine-color-green-7);
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  color: var(--mantine-color-gray-5);
   display: inline-flex;
   font-family: var(--font-mono);
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0;
-  min-height: 17px;
-  padding: 0 6px;
+  min-height: auto;
+  padding: 0;
   text-transform: uppercase;
 }
 
 .new-sale-register-value-cell.is-money.is-negative .mantine-Text-root:first-child,
 .new-sale-item-value-cell.is-money.is-negative .mantine-Text-root:first-child {
-  color: var(--mantine-color-red-8);
+  color: var(--mantine-color-gray-9);
 }
 
 .new-sale-register-value-cell.is-money.is-negative .mantine-Text-root:nth-child(2),
 .new-sale-item-value-cell.is-money.is-negative .mantine-Text-root:nth-child(2) {
-  background: var(--mantine-color-red-0);
-  border-color: var(--mantine-color-red-2);
-  color: var(--mantine-color-red-7);
+  background: transparent;
+  border-color: transparent;
+  color: var(--mantine-color-gray-5);
 }
 
 .new-sale-register-value-cell.is-quantity .mantine-Text-root:first-child,
