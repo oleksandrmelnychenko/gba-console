@@ -1,24 +1,32 @@
 import {
   Alert,
   Badge,
+  Box,
   Button,
   Group,
   NumberInput,
-  ScrollArea,
   Stack,
-  Table,
   Text,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconAlertCircle, IconArrowsLeftRight, IconBuildingWarehouse, IconReceipt } from '@tabler/icons-react'
+import {
+  IconAlertCircle,
+  IconArrowsLeftRight,
+  IconBuildingWarehouse,
+  IconPackage,
+  IconReceipt,
+} from '@tabler/icons-react'
 import { useEffect, useReducer } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { getShiftedSaleById, shiftOrderItemsCurrent } from '../api/salesUkraineApi'
 import { getSaleLifecycleStatusKey } from '../saleStatus'
 import {
   OrderItemShiftStatusType,
+  type OrderItemShiftStatusTypeValue,
   type SalesUkraineOrderItem,
   type SalesUkraineOrderItemShiftStatus,
   type SalesUkraineSale,
@@ -27,9 +35,34 @@ import './sales-drawers.css'
 
 const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
 const amountFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
+const qtyFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2 })
+const SALE_EDIT_TABLE_MIN_WIDTH = 1120
+const SALE_EDIT_TABLE_LAYOUT: DataTableDefaultLayout = {
+  columnSizing: {
+    amount: 120,
+    bill: 124,
+    created: 128,
+    currency: 76,
+    originalNumber: 150,
+    product: 300,
+    qty: 86,
+    store: 124,
+    user: 180,
+    vendorCode: 140,
+  },
+  density: 'compact',
+}
 
 type ShiftDraftEntry = { bill: number | string; billTouched: boolean; store: number | string; storeTouched: boolean }
 type ShiftDraft = Record<string, ShiftDraftEntry>
+type SaleEditOrderItemRow = {
+  billNum: number
+  entry: ShiftDraftEntry
+  item: SalesUkraineOrderItem
+  key: string
+  qty: number
+  storeNum: number
+}
 
 const EMPTY_DRAFT_ENTRY: ShiftDraftEntry = { bill: '', billTouched: false, store: '', storeTouched: false }
 type SaleEditState = {
@@ -63,13 +96,19 @@ export function SaleEditDrawer({
 
   return (
     <AppDrawer
-      offset={8}
+      classNames={{
+        body: 'sale-edit-drawer-body',
+        content: 'sale-edit-drawer-content',
+        header: 'sale-edit-drawer-header',
+        title: 'sale-edit-drawer-title',
+      }}
+      offset={0}
       opened={Boolean(sale)}
       padding="lg"
       position="right"
-      radius="md"
-      size="min(1180px, 100vw)"
-      title={sale ? `${title} ${sale.SaleNumber?.Value || ''}`.trim() : title}
+      radius={0}
+      size="100%"
+      title={title}
       onClose={onClose}
     >
       {sale && <SaleEditContent key={sale.NetUid || sale.Id} initialSale={sale} onClose={onClose} onSaved={onSaved} />}
@@ -180,6 +219,25 @@ function SaleEditContent({
 
   const orderItems = getOrderItems(sale)
   const isNew = isNewSale(sale)
+  const totalAmount = orderItems.reduce((sum, item) => sum + (getNumber(item.TotalAmount) ?? 0), 0)
+  const totalQty = orderItems.reduce((sum, item) => sum + (getNumber(item.Qty) ?? 0), 0)
+  const billShiftTotal = sumShiftQty(orderItems, draft, OrderItemShiftStatusType.Bill)
+  const storeShiftTotal = sumShiftQty(orderItems, draft, OrderItemShiftStatusType.Store)
+  const tableRows = orderItems.map((item, index) => {
+    const key = itemKey(item, index)
+    const qty = getNumber(item.Qty) ?? 0
+    const entry = draft[key] || EMPTY_DRAFT_ENTRY
+
+    return {
+      billNum: entry.billTouched ? toNumber(entry.bill) : getExistingShiftQty(item, OrderItemShiftStatusType.Bill),
+      entry,
+      item,
+      key,
+      qty,
+      storeNum: entry.storeTouched ? toNumber(entry.store) : getExistingShiftQty(item, OrderItemShiftStatusType.Store),
+    }
+  })
+  const tableColumns = createSaleEditColumns({ isNew, isSaving, t, updateEntry })
 
   function updateEntry(key: string, patch: Partial<ShiftDraftEntry>) {
     dispatch({ key, patch, type: 'draftEntryChanged' })
@@ -235,114 +293,279 @@ function SaleEditContent({
 
   return (
     <Stack
-      gap="md"
+      className="sale-edit-sheet"
+      gap={0}
       onKeyUp={(event) => {
         if (event.key === 'Enter' && !isSaving) {
           void doShift()
         }
       }}
     >
-      <Group justify="space-between" wrap="wrap">
-        <Badge color="blue" variant="light">
-          {t('Товарів')}: {orderItems.length}
-        </Badge>
-        <Group gap="xs">
+      <Box className="sale-edit-hero">
+        <Box className="sale-edit-hero__main">
+          <span className="sale-edit-hero__icon">
+            <IconArrowsLeftRight size={23} stroke={1.8} />
+          </span>
+          <Box className="sale-edit-hero__copy">
+            <Text className="sale-edit-hero__eyebrow">{isNew ? t('Рахунок') : t('Накладна')}</Text>
+            <Text className="sale-edit-hero__number">{sale.SaleNumber?.Value || '-'}</Text>
+          </Box>
+        </Box>
+        <Group className="sale-edit-metrics" gap={8} wrap="nowrap">
+          <SaleEditMetric label={t('позицій')} value={orderItems.length} />
+          <SaleEditMetric label={t('к-сть')} value={qtyFormatter.format(totalQty)} />
+          <SaleEditMetric label="EUR" value={amountFormatter.format(totalAmount)} />
+          {!isNew && <SaleEditMetric label={t('в рахунок')} value={qtyFormatter.format(billShiftTotal)} />}
+          <SaleEditMetric label={t('на склад')} value={qtyFormatter.format(storeShiftTotal)} />
+        </Group>
+      </Box>
+
+      <Box className="sale-edit-command">
+        <Box className="sale-edit-command__copy">
+          <Group gap={8} wrap="nowrap">
+            <IconPackage size={17} stroke={1.8} />
+            <Text className="sale-edit-command__title">{t('Склад накладної')}</Text>
+            <Badge className="sale-edit-command__badge" variant="light">
+              {orderItems.length}
+            </Badge>
+          </Group>
+          <Text className="sale-edit-command__description">
+            {t('Вкажіть кількість для зсуву позицій між рахунком та складом')}
+          </Text>
+        </Box>
+        <Group className="sale-edit-bulk-actions" gap={8}>
           {!isNew && (
-            <Button disabled={isSaving} leftSection={<IconReceipt size={16} />} variant="light" onClick={allToBill}>
+            <Button
+              className="sale-edit-bulk-action"
+              disabled={isSaving}
+              leftSection={<IconReceipt size={16} />}
+              variant="light"
+              onClick={allToBill}
+            >
               {t('Все в рахунок')}
             </Button>
           )}
-          <Button disabled={isSaving} leftSection={<IconBuildingWarehouse size={16} />} variant="light" onClick={allToStore}>
+          <Button
+            className="sale-edit-bulk-action"
+            disabled={isSaving}
+            leftSection={<IconBuildingWarehouse size={16} />}
+            variant="light"
+            onClick={allToStore}
+          >
             {t('Все на склад')}
           </Button>
         </Group>
-      </Group>
+      </Box>
 
-      <ScrollArea.Autosize mah="calc(100vh - 260px)" type="auto">
-        <Table className="sales-drawer-table" withRowBorders={false} stickyHeader>
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th>{t('Код Виробника')}</Table.Th>
-              <Table.Th>{t('Ориг. номер')}</Table.Th>
-              <Table.Th>{t('Назва товару')}</Table.Th>
-              <Table.Th ta="right">{t('Сума')}</Table.Th>
-              <Table.Th>{t('Валюта')}</Table.Th>
-              <Table.Th ta="right">{t('К-сть')}</Table.Th>
-              {!isNew && (
-                <Table.Th ta="right" style={{ minWidth: 120 }}>
-                  {t('В рахунок')}
-                </Table.Th>
-              )}
-              <Table.Th ta="right" style={{ minWidth: 120 }}>
-                {t('На склад')}
-              </Table.Th>
-              <Table.Th>{t('Дата')}</Table.Th>
-              <Table.Th>{t('Відповідальний')}</Table.Th>
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
-            {orderItems.map((item, index) => {
-              const key = itemKey(item, index)
-              const qty = getNumber(item.Qty) ?? 0
-              const entry = draft[key] || EMPTY_DRAFT_ENTRY
-              const billNum = entry.billTouched ? toNumber(entry.bill) : getExistingShiftQty(item, OrderItemShiftStatusType.Bill)
-              const storeNum = entry.storeTouched ? toNumber(entry.store) : getExistingShiftQty(item, OrderItemShiftStatusType.Store)
+      <Box className="sale-edit-table-shell">
+        <DataTable
+          columns={tableColumns}
+          data={tableRows}
+          defaultLayout={SALE_EDIT_TABLE_LAYOUT}
+          distributeAvailableWidth
+          emptyText={t('Товарів не знайдено')}
+          getRowId={(row) => row.key}
+          height="100%"
+          layoutVersion={isNew ? 'sale-edit-new-1' : 'sale-edit-invoice-1'}
+          minWidth={SALE_EDIT_TABLE_MIN_WIDTH}
+          showDensityToggle={false}
+          tableId={isNew ? 'sale-edit-new' : 'sale-edit-invoice'}
+        />
+      </Box>
 
-              return (
-                <Table.Tr key={key}>
-                  <Table.Td>{displayValue(getOrderItemProductCode(item))}</Table.Td>
-                  <Table.Td>{displayValue(item.Product?.MainOriginalNumber)}</Table.Td>
-                  <Table.Td>{displayValue(getOrderItemProductName(item))}</Table.Td>
-                  <Table.Td ta="right">{amountFormatter.format(getNumber(item.TotalAmount) ?? 0)}</Table.Td>
-                  <Table.Td>EUR</Table.Td>
-                  <Table.Td ta="right">{displayValue(qty)}</Table.Td>
-                  {!isNew && (
-                    <Table.Td>
-                      <NumberInput
-                        allowDecimal={false}
-                        allowNegative={false}
-                        clampBehavior="strict"
-                        hideControls
-                        max={Math.max(0, qty - storeNum)}
-                        min={0}
-                        size="xs"
-                        value={entry.bill}
-                        onChange={(value) => updateEntry(key, { bill: value, billTouched: true })}
-                      />
-                    </Table.Td>
-                  )}
-                  <Table.Td>
-                    <NumberInput
-                      allowDecimal={false}
-                      allowNegative={false}
-                      clampBehavior="strict"
-                      hideControls
-                      max={Math.max(0, qty - (isNew ? 0 : billNum))}
-                      min={0}
-                      size="xs"
-                      value={entry.store}
-                      onChange={(value) => updateEntry(key, { store: value, storeTouched: true })}
-                    />
-                  </Table.Td>
-                  <Table.Td>{formatDateTime(item.Created)}</Table.Td>
-                  <Table.Td>{displayValue(getUserName(item.User))}</Table.Td>
-                </Table.Tr>
-              )
-            })}
-          </Table.Tbody>
-        </Table>
-      </ScrollArea.Autosize>
-
-      <Group justify="flex-end" gap="sm">
-        <Button color="gray" disabled={isSaving} variant="subtle" onClick={onClose}>
+      <Group className="sale-edit-footer" justify="flex-end" gap="sm">
+        <Button className="sale-edit-cancel" color="gray" disabled={isSaving} variant="subtle" onClick={onClose}>
           {t('Скасувати')}
         </Button>
-        <Button color={CREATE_ACTION_COLOR} leftSection={<IconArrowsLeftRight size={16} />} loading={isSaving} onClick={doShift}>
+        <Button
+          className="sale-edit-submit"
+          color={CREATE_ACTION_COLOR}
+          leftSection={<IconArrowsLeftRight size={16} />}
+          loading={isSaving}
+          onClick={doShift}
+        >
           {t('Зробити зсув')}
         </Button>
       </Group>
     </Stack>
   )
+}
+
+function createSaleEditColumns({
+  isNew,
+  isSaving,
+  t,
+  updateEntry,
+}: {
+  isNew: boolean
+  isSaving: boolean
+  t: (key: string) => string
+  updateEntry: (key: string, patch: Partial<ShiftDraftEntry>) => void
+}): DataTableColumn<SaleEditOrderItemRow>[] {
+  const columns: DataTableColumn<SaleEditOrderItemRow>[] = [
+    {
+      id: 'vendorCode',
+      header: t('Код Виробника'),
+      accessor: (row) => getOrderItemProductCode(row.item),
+      cell: (row) => <span className="sale-edit-code-pill">{displayValue(getOrderItemProductCode(row.item)) || '-'}</span>,
+      width: 140,
+      minWidth: 120,
+      enableSorting: false,
+    },
+    {
+      id: 'originalNumber',
+      header: t('Ориг. номер'),
+      accessor: (row) => row.item.Product?.MainOriginalNumber || '',
+      cell: (row) => <span className="sale-edit-muted-value">{displayValue(row.item.Product?.MainOriginalNumber) || '-'}</span>,
+      width: 150,
+      minWidth: 132,
+      enableSorting: false,
+    },
+    {
+      id: 'product',
+      header: t('Назва товару'),
+      accessor: (row) => getOrderItemProductName(row.item),
+      cell: (row) => (
+        <Text className="sale-edit-product-name" title={displayValue(getOrderItemProductName(row.item))} truncate>
+          {displayValue(getOrderItemProductName(row.item)) || '-'}
+        </Text>
+      ),
+      width: 300,
+      minWidth: 240,
+      fill: true,
+      enableSorting: false,
+    },
+    {
+      id: 'amount',
+      header: t('Сума'),
+      accessor: (row) => getNumber(row.item.TotalAmount) ?? 0,
+      cell: (row) => (
+        <span className="sale-edit-money">{amountFormatter.format(getNumber(row.item.TotalAmount) ?? 0)}</span>
+      ),
+      width: 120,
+      minWidth: 108,
+      enableSorting: false,
+    },
+    {
+      id: 'currency',
+      header: t('Валюта'),
+      accessor: () => 'EUR',
+      cell: () => <span className="sale-edit-currency">EUR</span>,
+      width: 76,
+      minWidth: 72,
+      enableSorting: false,
+    },
+    {
+      id: 'qty',
+      header: t('К-сть'),
+      accessor: (row) => row.qty,
+      cell: (row) => <span className="sale-edit-qty">{displayValue(row.qty)}</span>,
+      width: 86,
+      minWidth: 76,
+      enableSorting: false,
+    },
+    {
+      id: 'store',
+      header: t('На склад'),
+      accessor: (row) => row.entry.store,
+      cell: (row) => (
+        <NumberInput
+          allowDecimal={false}
+          allowNegative={false}
+          clampBehavior="strict"
+          hideControls
+          max={Math.max(0, row.qty - (isNew ? 0 : row.billNum))}
+          min={0}
+          className="sale-edit-shift-input"
+          disabled={isSaving}
+          size="xs"
+          value={row.entry.store}
+          onChange={(value) => updateEntry(row.key, { store: value, storeTouched: true })}
+        />
+      ),
+      width: 124,
+      minWidth: 112,
+      className: 'sale-edit-input-column',
+      enableSorting: false,
+    },
+    {
+      id: 'created',
+      header: t('Дата'),
+      accessor: (row) => row.item.Created || '',
+      cell: (row) => <span className="sale-edit-muted-value">{formatDateTime(row.item.Created) || '-'}</span>,
+      width: 128,
+      minWidth: 118,
+      enableSorting: false,
+    },
+    {
+      id: 'user',
+      header: t('Відповідальний'),
+      accessor: (row) => getUserName(row.item.User),
+      cell: (row) => <span className="sale-edit-user-name">{displayValue(getUserName(row.item.User)) || '-'}</span>,
+      width: 180,
+      minWidth: 150,
+      enableSorting: false,
+    },
+  ]
+
+  if (!isNew) {
+    columns.splice(6, 0, {
+      id: 'bill',
+      header: t('В рахунок'),
+      accessor: (row) => row.entry.bill,
+      cell: (row) => (
+        <NumberInput
+          allowDecimal={false}
+          allowNegative={false}
+          clampBehavior="strict"
+          hideControls
+          max={Math.max(0, row.qty - row.storeNum)}
+          min={0}
+          className="sale-edit-shift-input"
+          disabled={isSaving}
+          size="xs"
+          value={row.entry.bill}
+          onChange={(value) => updateEntry(row.key, { bill: value, billTouched: true })}
+        />
+      ),
+      width: 124,
+      minWidth: 112,
+      className: 'sale-edit-input-column',
+      enableSorting: false,
+    })
+  }
+
+  return columns
+}
+
+function SaleEditMetric({ label, value }: { label: string; value: number | string }) {
+  return (
+    <Box className="sale-edit-metric">
+      <Text>{value}</Text>
+      <Text>{label}</Text>
+    </Box>
+  )
+}
+
+function sumShiftQty(
+  orderItems: SalesUkraineOrderItem[],
+  draft: ShiftDraft,
+  shiftStatus: OrderItemShiftStatusTypeValue,
+): number {
+  return orderItems.reduce((sum, item, index) => {
+    const key = itemKey(item, index)
+    const entry = draft[key] || EMPTY_DRAFT_ENTRY
+    const value =
+      shiftStatus === OrderItemShiftStatusType.Bill
+        ? entry.billTouched
+          ? toNumber(entry.bill)
+          : getExistingShiftQty(item, OrderItemShiftStatusType.Bill)
+        : entry.storeTouched
+          ? toNumber(entry.store)
+          : getExistingShiftQty(item, OrderItemShiftStatusType.Store)
+
+    return sum + value
+  }, 0)
 }
 
 function buildShiftPayload(sale: SalesUkraineSale, draft: ShiftDraft): SalesUkraineSale {
