@@ -35,7 +35,7 @@ import {
   IconTrash,
   IconX,
 } from '@tabler/icons-react'
-import { useEffect, useMemo, useReducer, useState, type CSSProperties, type Dispatch, type SetStateAction } from 'react'
+import { useEffect, useMemo, useReducer, useState, type CSSProperties, type Dispatch, type SetStateAction, type ReactNode } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import './supply-order-detail.css'
 import { formatLocalDateTime } from '../../../shared/date/dateTime'
@@ -1340,7 +1340,7 @@ function DirectOrderInvoicesModals({ model }: { model: DirectOrderInvoicesPageMo
       <DeleteModal
         isSaving={model.isSaving}
         opened={Boolean(model.deleteInvoiceCandidate)}
-        title={t('Видалити інвойс')}
+        title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Видалити інвойс')}</span>}
         value={model.deleteInvoiceCandidate?.Number || ''}
         onClose={() => model.setPageState({ deleteInvoiceCandidate: null })}
         onConfirm={model.confirmDeleteInvoice}
@@ -1348,7 +1348,7 @@ function DirectOrderInvoicesModals({ model }: { model: DirectOrderInvoicesPageMo
       <DeleteModal
         isSaving={model.isSaving}
         opened={Boolean(model.deletePackListCandidate)}
-        title={t('Видалити пак лист')}
+        title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Видалити пак лист')}</span>}
         value={model.deletePackListCandidate?.No || model.deletePackListCandidate?.InvNo || ''}
         onClose={() => model.setPageState({ deletePackListCandidate: null })}
         onConfirm={model.confirmDeletePackList}
@@ -1378,7 +1378,7 @@ function InvoiceUploadModal({
   }
 
   return (
-    <AppModal centered opened={opened} size="lg" title={t('Додати інвойс')} onClose={close}>
+    <AppModal centered opened={opened} size="lg" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Додати інвойс')}</span>} onClose={close}>
       <Stack gap="md">
         <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
           <TextInput
@@ -1453,7 +1453,7 @@ function PackListUploadModal({
   }
 
   return (
-    <AppModal centered opened={opened} size="lg" title={t('Додати пак лист')} onClose={close}>
+    <AppModal centered opened={opened} size="lg" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Додати пак лист')}</span>} onClose={close}>
       <Stack gap="md">
         <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
           <TextInput
@@ -1525,7 +1525,7 @@ function InvoiceMetadataModal({
   const opened = Boolean(editor)
 
   return (
-    <AppModal centered opened={opened} size="lg" title={t('Редагувати інвойс')} onClose={onClose}>
+    <AppModal centered opened={opened} size="lg" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Редагувати інвойс')}</span>} onClose={onClose}>
       {editor && (
         <InvoiceMetadataModalBody
           key={editor.invoice.NetUid || editor.invoice.Id || 'invoice'}
@@ -1868,7 +1868,7 @@ function DeleteModal({
 }: {
   isSaving: boolean
   opened: boolean
-  title: string
+  title: ReactNode
   value: string
   onClose: () => void
   onConfirm: () => void
@@ -1895,10 +1895,10 @@ function useOrderItemColumns(onOpenProductCard: (productNetId: string) => void):
     () => [
       { id: 'code', header: t('Код'), width: 130, accessor: (item) => item.Product?.VendorCode, cell: (item) => <ProductCodeCell product={item.Product} onOpenProductCard={onOpenProductCard} /> },
       { id: 'name', header: t('Товар'), minWidth: 260, accessor: (item) => item.Product?.Name, cell: (item) => <ProductNameCell product={item.Product} onOpenProductCard={onOpenProductCard} /> },
-      { id: 'qty', header: t('Кількість'), width: 120, align: 'right', accessor: (item) => item.Qty, cell: (item) => formatNumber(item.Qty) },
+      { id: 'qty', header: t('Кількість'), width: 120, align: 'right', accessor: (item) => item.Qty, cell: (item) => <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{formatNumber(item.Qty)}</Text> },
       { id: 'leftToInvoice', header: t('Залишок'), width: 120, align: 'right', accessor: (item) => item.QtyDifference, cell: (item) => <BalanceBadge value={item.QtyDifference || 0} /> },
-      { id: 'price', header: t('Ціна'), width: 120, align: 'right', accessor: (item) => item.UnitPrice, cell: (item) => formatMoney(item.UnitPrice) },
-      { id: 'total', header: t('Сума'), width: 130, align: 'right', accessor: (item) => getOrderItemTotal(item), cell: (item) => formatMoney(getOrderItemTotal(item)) },
+      { id: 'price', header: t('Ціна'), width: 120, align: 'right', accessor: (item) => item.UnitPrice, cell: (item) => <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{formatMoney(item.UnitPrice)}</Text> },
+      { id: 'total', header: t('Сума'), width: 130, align: 'right', accessor: (item) => getOrderItemTotal(item), cell: (item) => <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{formatMoney(getOrderItemTotal(item))}</Text> },
       { id: 'placed', header: t('Розміщено'), width: 120, accessor: (item) => item.IsPlaced, cell: (item) => <Badge className={item.IsPlaced ? 'app-role-pill is-green' : 'app-role-pill is-gray'} variant="light">{item.IsPlaced ? t('Так') : t('Ні')}</Badge> },
     ],
     [onOpenProductCard, t],
@@ -1934,9 +1934,9 @@ function useInvoiceItemColumns({
         accessor: (item) => balanceByOrderItemKey.get(getInvoiceOrderItemOrderKey(item))?.difference,
         cell: (item) => <BalanceBadge value={balanceByOrderItemKey.get(getInvoiceOrderItemOrderKey(item))?.difference || 0} />,
       },
-      { id: 'price', header: t('Ціна'), width: 120, align: 'right', accessor: (item) => item.UnitPrice, cell: (item) => formatMoney(item.UnitPrice) },
+      { id: 'price', header: t('Ціна'), width: 120, align: 'right', accessor: (item) => item.UnitPrice, cell: (item) => <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{formatMoney(item.UnitPrice)}</Text> },
       { id: 'total', header: t('Сума'), width: 130, align: 'right', accessor: (item) => item.TotalAmount, cell: (item) => formatMoney(item.TotalAmount || (item.UnitPrice || 0) * (item.Qty || 0)) },
-      { id: 'imported', header: t('Імпорт'), width: 110, accessor: (item) => item.ProductIsImported, cell: (item) => <Badge color={item.ProductIsImported ? 'green' : 'gray'} variant="light">{item.ProductIsImported ? t('Так') : t('Ні')}</Badge> },
+      { id: 'imported', header: t('Імпорт'), width: 110, accessor: (item) => item.ProductIsImported, cell: (item) => <Badge className={item.ProductIsImported ? 'app-role-pill is-green' : 'app-role-pill is-gray'} variant="light">{item.ProductIsImported ? t('Так') : t('Ні')}</Badge> },
     ],
     [balanceByOrderItemKey, onOpenProductCard, t],
   )
@@ -1975,8 +1975,8 @@ function usePackListItemColumns({
       },
       { id: 'net', header: t('Нетто'), width: 120, align: 'right', accessor: (item) => item.TotalNetWeight, cell: (item) => formatNumber(item.TotalNetWeight) },
       { id: 'gross', header: t('Брутто'), width: 120, align: 'right', accessor: (item) => item.TotalGrossWeight, cell: (item) => formatNumber(item.TotalGrossWeight) },
-      { id: 'price', header: t('Ціна'), width: 120, align: 'right', accessor: (item) => item.UnitPrice, cell: (item) => formatMoney(item.UnitPrice) },
-      { id: 'total', header: t('Сума'), width: 130, align: 'right', accessor: (item) => item.TotalGrossPrice, cell: (item) => formatMoney(item.TotalGrossPrice) },
+      { id: 'price', header: t('Ціна'), width: 120, align: 'right', accessor: (item) => item.UnitPrice, cell: (item) => <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{formatMoney(item.UnitPrice)}</Text> },
+      { id: 'total', header: t('Сума'), width: 130, align: 'right', accessor: (item) => item.TotalGrossPrice, cell: (item) => <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{formatMoney(item.TotalGrossPrice)}</Text> },
     ],
     [balanceByInvoiceItemKey, onOpenProductCard, t],
   )
@@ -2101,9 +2101,9 @@ function SummaryLine({ items }: { items: Array<[string, string]> }) {
   return (
     <Group gap="lg" wrap="wrap">
       {items.map(([label, value]) => (
-        <Stack key={label} gap={0}>
-          <Text c="dimmed" size="xs">{label}</Text>
-          <Text fw={700} size="sm">{value}</Text>
+        <Stack key={label} gap={2}>
+          <Text className="app-section-title" fw={600} size="xs">{label}</Text>
+          <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{value}</Text>
         </Stack>
       ))}
     </Group>
@@ -2134,7 +2134,7 @@ function QuantityBalanceSummary({
         <Text size="sm">{expectedLabel}: <Text span fw={700}>{formatNumber(expectedQty)}</Text></Text>
         <Text size="sm">{actualLabel}: <Text span fw={700}>{formatNumber(actualQty)}</Text></Text>
         <Text size="sm">{differenceLabel}: <Text span fw={700}>{formatNumber(difference)}</Text></Text>
-        {invalidRows > 0 && <Badge color="yellow" variant="filled">{invalidRows}</Badge>}
+        {invalidRows > 0 && <Badge className="app-role-pill is-yellow" variant="light">{invalidRows}</Badge>}
       </Group>
     </Alert>
   )
@@ -2144,7 +2144,7 @@ function BalanceBadge({ value }: { value: number }) {
   const isOk = isZeroQuantity(value)
 
   return (
-    <Badge color={isOk ? 'green' : 'yellow'} variant={isOk ? 'light' : 'filled'}>
+    <Badge className={isOk ? 'app-role-pill is-green' : 'app-role-pill is-yellow'} variant="light">
       {formatNumber(value)}
     </Badge>
   )
@@ -2738,7 +2738,7 @@ function TotalsBadges({ totals }: { totals: SupplyOrderInvoiceTotals }) {
   return (
     <Group gap="xs">
       {entries.slice(0, 6).map(([key, value]) => (
-        <Badge key={key} color="gray" variant="light">
+        <Badge key={key} className="app-role-pill is-gray" variant="light">
           {t(key)}: {String(value)}
         </Badge>
       ))}
