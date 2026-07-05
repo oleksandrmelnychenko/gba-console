@@ -14,7 +14,7 @@ import { DownloadDocumentModal } from './DownloadDocumentModal'
 import { displayValue, getDateShiftedByDays } from './dateHelpers'
 
 const DEFAULT_PAGE_SIZE = 20
-const PAGE_SIZE_OPTIONS = ['20', '50', '100', '150']
+const PAGE_SIZE_OPTIONS = ['20', '50', '100', '150', '500']
 const SEARCH_DEBOUNCE_MS = 200
 
 const TABLE_DEFAULT_LAYOUT = {

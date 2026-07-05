@@ -168,7 +168,9 @@ export function EditingList({ kind, layoutVersion, loader, onProcessed, processo
   }
 
   function openProcessConfirm(item: EditingActItem) {
-    if (!item.Sale?.IsPrinted) {
+    // Legacy only enforced the printed guard on the carrier tab; the act tab could open the audit
+    // for a non-printed invoice.
+    if (kind === 'carrier' && !item.Sale?.IsPrinted) {
       setError(t('Накладну не роздруковано'))
 
       return
@@ -516,23 +518,61 @@ function CarrierChangeSummary({ item }: { item: EditingActItem }) {
         <Text fw={700} size="sm">
           {t('Нові дані')}
         </Text>
-        <SummaryLine label={t('Перевізник')} value={readNestedString(item, ['Transporter', 'Name'])} />
-        <SummaryLine label={t('Місто')} value={readStringField(item, 'City')} />
-        <SummaryLine label={t('Відділення')} value={readStringField(item, 'Department')} />
+        <SummaryLine
+          label={t('Перевізник')}
+          value={readNestedString(item, ['Transporter', 'Name'])}
+          changed={isCarrierFieldChanged(readNestedString(item, ['Transporter', 'Name']), previous?.Transporter?.Name)}
+        />
+        <SummaryLine
+          label={t('Місто')}
+          value={readStringField(item, 'City')}
+          changed={isCarrierFieldChanged(readStringField(item, 'City'), previous?.City)}
+        />
+        <SummaryLine
+          label={t('Відділення')}
+          value={readStringField(item, 'Department')}
+          changed={isCarrierFieldChanged(readStringField(item, 'Department'), previous?.Department)}
+        />
         <SummaryLine
           label={t('Дата відвантаження')}
           value={formatDateTimeOrEmpty(readRawValue(item, 'ShipmentDate'))}
+          changed={isCarrierFieldChanged(formatDateTimeOrEmpty(readRawValue(item, 'ShipmentDate')), formatDateTimeOrEmpty(previous?.ShipmentDate))}
         />
-        <SummaryLine label={t("Повне ім'я")} value={readStringField(item, 'FullName')} />
-        <SummaryLine label={t('Мобільний телефон')} value={readStringField(item, 'MobilePhone')} />
-        <SummaryLine label={t('Коментар')} value={readStringField(item, 'Comment')} />
-        <SummaryLine label={t('Накладений платіж')} value={formatBoolean(t, readBooleanField(item, 'IsCashOnDelivery'))} />
+        <SummaryLine
+          label={t("Повне ім'я")}
+          value={readStringField(item, 'FullName')}
+          changed={isCarrierFieldChanged(readStringField(item, 'FullName'), previous?.FullName)}
+        />
+        <SummaryLine
+          label={t('Мобільний телефон')}
+          value={readStringField(item, 'MobilePhone')}
+          changed={isCarrierFieldChanged(readStringField(item, 'MobilePhone'), previous?.MobilePhone)}
+        />
+        <SummaryLine
+          label={t('Коментар')}
+          value={readStringField(item, 'Comment')}
+          changed={isCarrierFieldChanged(readStringField(item, 'Comment'), previous?.Comment)}
+        />
+        <SummaryLine
+          label={t('Накладений платіж')}
+          value={formatBoolean(t, readBooleanField(item, 'IsCashOnDelivery'))}
+          changed={isCarrierFieldChanged(formatBoolean(t, readBooleanField(item, 'IsCashOnDelivery')), formatBoolean(t, previous?.IsCashOnDelivery))}
+        />
         <SummaryLine
           label={t('Сума накладеного платежу')}
           value={formatAmount(readNumberField(item, 'CashOnDeliveryAmount'))}
+          changed={isCarrierFieldChanged(formatAmount(readNumberField(item, 'CashOnDeliveryAmount')), formatAmount(previous?.CashOnDeliveryAmount))}
         />
-        <SummaryLine label={t('Наявність документів')} value={formatBoolean(t, readBooleanField(item, 'HasDocument'))} />
-        <SummaryLine label={t('ТТН')} value={readStringField(item, 'TTN') || readStringField(item, 'Number')} />
+        <SummaryLine
+          label={t('Наявність документів')}
+          value={formatBoolean(t, readBooleanField(item, 'HasDocument'))}
+          changed={isCarrierFieldChanged(formatBoolean(t, readBooleanField(item, 'HasDocument')), formatBoolean(t, previous?.HasDocument))}
+        />
+        <SummaryLine
+          label={t('ТТН')}
+          value={readStringField(item, 'TTN') || readStringField(item, 'Number')}
+          changed={isCarrierFieldChanged(readStringField(item, 'TTN') || readStringField(item, 'Number'), previous?.TTN || previous?.Number)}
+        />
         <SummaryLine
           label={t('Відповідальний')}
           value={buildUserNameFromFields(readNestedString(item, ['User', 'FirstName']), readNestedString(item, ['User', 'LastName']))}
@@ -543,9 +583,14 @@ function CarrierChangeSummary({ item }: { item: EditingActItem }) {
   )
 }
 
-function SummaryLine({ label, link, value }: { label: string; link?: boolean; value?: string }) {
+function SummaryLine({ changed, label, link, value }: { changed?: boolean; label: string; link?: boolean; value?: string }) {
   return (
-    <Group gap={6} wrap="nowrap" align="flex-start">
+    <Group
+      gap={6}
+      wrap="nowrap"
+      align="flex-start"
+      style={changed ? { backgroundColor: 'var(--mantine-color-red-1)', borderRadius: 4, padding: '1px 4px' } : undefined}
+    >
       <Text c="dimmed" size="xs" miw={110}>
         {label}:
       </Text>
@@ -558,6 +603,11 @@ function SummaryLine({ label, link, value }: { label: string; link?: boolean; va
       )}
     </Group>
   )
+}
+
+// null/undefined and '' are equivalent (legacy null↔empty rule); everything else compared as trimmed strings.
+function isCarrierFieldChanged(nextValue?: string, previousValue?: string): boolean {
+  return (nextValue ?? '').trim() !== (previousValue ?? '').trim()
 }
 
 function readStringField(item: EditingActItem, field: string): string {

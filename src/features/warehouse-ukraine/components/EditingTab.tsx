@@ -15,11 +15,16 @@ import { EditingList } from './EditingList'
 const ACT_TAB = 'act'
 const CARRIER_TAB = 'carrier'
 
-export function EditingTab() {
+export function EditingTab({ onCountChanged }: { onCountChanged?: () => void }) {
   const { t } = useI18n()
   const [actQty, setActQty] = useValueState(0)
   const [carrierQty, setCarrierQty] = useValueState(0)
   const [countsReloadKey, reloadCounts] = useReducer((key: number) => key + 1, 0)
+
+  const handleProcessed = () => {
+    reloadCounts()
+    onCountChanged?.()
+  }
   const [activeTab, setActiveTab] = useValueState(ACT_TAB)
 
   useEffect(() => {
@@ -87,7 +92,7 @@ export function EditingTab() {
             loader={getEditingActList}
             processor={approveEditingAct}
             tableId="warehouse-ukraine-editing-act"
-            onProcessed={reloadCounts}
+            onProcessed={handleProcessed}
           />
         ) : (
           <EditingList
@@ -96,7 +101,7 @@ export function EditingTab() {
             loader={getEditingCarrierList}
             processor={approveEditingCarrier}
             tableId="warehouse-ukraine-editing-carrier"
-            onProcessed={reloadCounts}
+            onProcessed={handleProcessed}
           />
         )}
       </Box>

@@ -1,5 +1,5 @@
 import { Badge, Box, Group, Stack } from '@mantine/core'
-import { useEffect, useMemo, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, type ReactNode } from 'react'
 import { useAuth } from '../../auth/useAuth'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -38,29 +38,17 @@ export function WarehouseUkrainePage() {
   const { hasPermission } = useAuth()
   const [editingTotal, setEditingTotal] = useValueState(0)
 
-  useEffect(() => {
-    let cancelled = false
-
-    async function loadEditingTotal() {
-      try {
-        const total = await getTotalActForEditing()
-
-        if (!cancelled) {
-          setEditingTotal(total)
-        }
-      } catch {
-        if (!cancelled) {
-          setEditingTotal(0)
-        }
-      }
-    }
-
-    void loadEditingTotal()
-
-    return () => {
-      cancelled = true
+  const reloadEditingTotal = useCallback(async () => {
+    try {
+      setEditingTotal(await getTotalActForEditing())
+    } catch {
+      setEditingTotal(0)
     }
   }, [setEditingTotal])
+
+  useEffect(() => {
+    void reloadEditingTotal()
+  }, [reloadEditingTotal])
 
   const tabs = useMemo<WarehouseUkraineTab[]>(
     () => [
@@ -87,7 +75,7 @@ export function WarehouseUkrainePage() {
         label: t('Протокол актів редагування накладних'),
         permissionKey: PKEY_UKRAINE_ORDER,
         showBadge: true,
-        render: () => <EditingTab />,
+        render: () => <EditingTab onCountChanged={reloadEditingTotal} />,
       },
       {
         value: TAB_INVOICE_REGISTER,
@@ -102,7 +90,7 @@ export function WarehouseUkrainePage() {
         render: () => <DocumentVerificationTab />,
       },
     ],
-    [t],
+    [reloadEditingTotal, t],
   )
 
   const visibleTabs = useMemo(() => {

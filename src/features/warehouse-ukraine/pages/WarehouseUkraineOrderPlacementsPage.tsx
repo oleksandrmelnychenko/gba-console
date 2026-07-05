@@ -1,6 +1,6 @@
 import { ActionIcon, Alert, Badge, Button, Card, Group, NumberInput, Select, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconAlertCircle, IconArrowLeft, IconColumnInsertRight, IconTrash } from '@tabler/icons-react'
+import { IconAlertCircle, IconArrowLeft, IconColumnInsertRight, IconPlus, IconTrash } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
@@ -60,6 +60,12 @@ function columnKey(column: DynamicProductPlacementColumn): string {
 
 function sumPlacements(placements: DynamicProductPlacement[]): number {
   return placements.reduce((total, placement) => total + (placement.Qty || 0), 0)
+}
+
+function formatPlacementAddress(placement: DynamicProductPlacement): string {
+  const location = [placement.StorageNumber, placement.RowNumber, placement.CellNumber].filter(Boolean).join('-')
+
+  return `${location} - ${placement.Qty || 0}`
 }
 
 function sumAppliedPlacements(placements: DynamicProductPlacement[]): number {
@@ -747,34 +753,51 @@ export function WarehouseUkraineOrderPlacementsPage() {
               return null
             }
 
+            const placements = Array.isArray(row.DynamicProductPlacements) ? row.DynamicProductPlacements : []
+
             return (
-              <Group gap="xs" wrap="nowrap">
-                <NumberInput
-                  allowDecimal={false}
-                  disabled={!canEditDynamicColumn || model.isBusy}
-                  hideControls
-                  min={0}
-                  size="xs"
-                  value={row.Qty || 0}
-                  w={80}
-                  onBlur={(event) => {
-                    const nextValue = Number(event.currentTarget.value)
-                    if (nextValue !== (row.Qty || 0)) {
-                      model.handleCellChange(gridRow, key, nextValue)
-                    }
-                  }}
-                />
-                <ActionIcon
-                  aria-label={t('Оприходування')}
-                  color="blue"
-                  disabled={!canEditDynamicColumn || model.isBusy}
-                  size="sm"
-                  variant="subtle"
-                  onClick={() => model.handleOpenPlacements(gridRow, key, row)}
-                >
-                  <IconColumnInsertRight size={16} />
-                </ActionIcon>
-              </Group>
+              <Stack gap={2}>
+                <Group gap="xs" wrap="nowrap">
+                  <NumberInput
+                    allowDecimal={false}
+                    disabled={!canEditDynamicColumn || model.isBusy}
+                    hideControls
+                    min={0}
+                    size="xs"
+                    value={row.Qty || 0}
+                    w={80}
+                    onBlur={(event) => {
+                      const nextValue = Number(event.currentTarget.value)
+                      if (nextValue !== (row.Qty || 0)) {
+                        model.handleCellChange(gridRow, key, nextValue)
+                      }
+                    }}
+                  />
+                  <ActionIcon
+                    aria-label={t('Оприходування')}
+                    color="blue"
+                    disabled={!canEditDynamicColumn || model.isBusy}
+                    size="sm"
+                    variant="subtle"
+                    onClick={() => model.handleOpenPlacements(gridRow, key, row)}
+                  >
+                    <IconColumnInsertRight size={16} />
+                  </ActionIcon>
+                </Group>
+                {placements.length > 0 ? (
+                  placements.map((placement, placementIndex) => (
+                    <Text key={placement.Id ?? placementIndex} c="dimmed" size="xs">
+                      {formatPlacementAddress(placement)}
+                    </Text>
+                  ))
+                ) : (
+                  (row.Qty || 0) > 0 && (
+                    <Tooltip label={t('Не розміщено')}>
+                      <IconPlus size={13} style={{ color: 'var(--mantine-color-teal-6)' }} />
+                    </Tooltip>
+                  )
+                )}
+              </Stack>
             )
           },
         }
@@ -802,6 +825,11 @@ export function WarehouseUkraineOrderPlacementsPage() {
               'Від',
             )} ${formatDate(model.order?.FromDate)}`}
           </Text>
+          {model.order?.Supplier?.FullName && (
+            <Text c="dimmed" size="sm">
+              {`${t('Постачальник')}: ${model.order.Supplier.FullName}`}
+            </Text>
+          )}
           {model.order && (
             <Badge color={model.order.IsPlaced ? 'green' : 'gray'} variant="light">
               {model.order.IsPlaced ? t('Розміщено') : t('Не розміщено')}

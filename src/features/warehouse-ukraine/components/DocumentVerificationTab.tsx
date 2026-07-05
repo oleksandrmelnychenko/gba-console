@@ -25,7 +25,7 @@ import { DownloadDocumentModal } from './DownloadDocumentModal'
 import { displayValue, getDateShiftedByDays, toDateString } from './dateHelpers'
 
 const DEFAULT_PAGE_SIZE = 20
-const PAGE_SIZE_OPTIONS = ['20', '50', '100', '150']
+const PAGE_SIZE_OPTIONS = ['20', '50', '100', '150', '500']
 
 const TABLE_DEFAULT_LAYOUT = {
   columnPinning: { left: ['index', 'productCode'] },
@@ -484,6 +484,9 @@ export function DocumentVerificationTab() {
                 onChange={(value) => model.setPageSize(Number(value || DEFAULT_PAGE_SIZE))}
               />
             </div>
+            <Text c="dimmed" size="sm">
+              {`${t('На дату')} ${new Date().toLocaleDateString('uk-UA')} 6:00`}
+            </Text>
             <div ref={setTableToolbarSlot} className="warehouse-ukraine-table-toolbar-slot" />
           </div>
 
@@ -570,7 +573,6 @@ function useVerificationColumns(indexMap: Map<DocumentVerificationItem, number>)
         header: t('Місце Зберігання'),
         width: 160,
         minWidth: 120,
-        enableSorting: false,
         accessor: (item) => buildLocation(item),
         cell: (item) => displayValue(buildLocation(item)),
       },

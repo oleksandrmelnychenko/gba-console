@@ -4,6 +4,7 @@ import {
   IconAlertCircle,
   IconDownload,
   IconFileText,
+  IconPencil,
   IconPlus,
   IconPrinter,
   IconRestore,
@@ -13,6 +14,7 @@ import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'r
 import { useAuth } from '../../auth/useAuth'
 import { NewSaleWizard } from '../../sales-ukraine/components/new-sale-wizard/NewSaleWizard'
 import { SALES_UKRAINE_EDIT_PERMISSION } from '../../sales-ukraine/permissions'
+import { SaleDetailsDrawer } from '../../sales-ukraine/components/SaleDetailsDrawer'
 import type { SalesUkraineSale } from '../../sales-ukraine/types'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -38,7 +40,6 @@ import {
   hasWarehouseDocumentUrl,
   openWarehouseDocumentUrl,
 } from './openWarehouseDocument'
-import { SaleCarrierDrawer } from './SaleCarrierDrawer'
 
 const DEFAULT_LIMIT = 500
 const TRANSPORTER_LOGO_STYLE = {
@@ -59,8 +60,9 @@ const salesMoneyFormatter = new Intl.NumberFormat('uk-UA', {
 const PAGE_SIZE_OPTIONS = ['100', '200', '500', '1000']
 
 const TABLE_DEFAULT_LAYOUT = {
-  columnPinning: { left: ['fromDate'] },
+  columnPinning: { left: ['index', 'fromDate'] },
   columnSizing: {
+    index: 52,
     actions: 112,
     amount: 118,
     client: 300,
@@ -125,6 +127,10 @@ function useSalesTabModel() {
   const realtimeReloadRef = useRef<number | null>(null)
   const filterError = getFilterError(activeFilters.from, activeFilters.to)
   const orderedSales = useMemo(() => orderWarehouseSales(salesState.sales), [salesState.sales])
+  const salesIndexMap = useMemo(
+    () => orderedSales.reduce((indexMap, sale, index) => indexMap.set(sale, index + 1), new Map<Sale, number>()),
+    [orderedSales],
+  )
 
   const replaceSale = useCallback(
     (targetSale: Sale, nextSale: Sale) => {
@@ -324,7 +330,7 @@ function useSalesTabModel() {
     ? page * pageSize < salesState.totalQty
     : salesState.sales.length === pageSize
 
-  const columns = useSalesColumns({ onPrint: printSale, onPrintActProtocolEdit: printActProtocolEdit, onOpenCarrier: setCarrierSale })
+  const columns = useSalesColumns({ indexMap: salesIndexMap, onPrint: printSale, onPrintActProtocolEdit: printActProtocolEdit, onOpenCarrier: setCarrierSale })
 
   return {
     activeFilters, applyFilters, canMoveForward, carrierSale, changePageSize, closeDownload, columns,
@@ -446,9 +452,24 @@ export function SalesTab() {
             onRowClick={(sale) => setWizardEditSale(sale as unknown as SalesUkraineSale)}
           />
         </div>
+        {model.totalQty > 0 && (
+          <div className="console-table-footer warehouse-ukraine-table-footer">
+            <Text c="dimmed" size="sm">
+              {t('Показано')} {(model.page - 1) * model.pageSize + 1}-{Math.min(model.page * model.pageSize, model.totalQty)} {t('з')}{' '}
+              {model.totalQty}
+            </Text>
+          </div>
+        )}
       </div>
 
-      <SaleCarrierDrawer sale={model.carrierSale} onClose={() => model.setCarrierSale(null)} />
+      <SaleDetailsDrawer
+        sale={model.carrierSale as unknown as SalesUkraineSale | null}
+        onClose={() => model.setCarrierSale(null)}
+        onSaved={() => {
+          model.setCarrierSale(null)
+          model.reload()
+        }}
+      />
       <DownloadDocumentModal
         document={model.downloadDocument}
         error={model.downloadError}
@@ -475,10 +496,12 @@ export function SalesTab() {
 }
 
 function useSalesColumns({
+  indexMap,
   onOpenCarrier,
   onPrint,
   onPrintActProtocolEdit,
 }: {
+  indexMap: Map<Sale, number>
   onOpenCarrier: (sale: Sale) => void
   onPrint: (sale: Sale) => void
   onPrintActProtocolEdit: (sale: Sale) => void
@@ -487,6 +510,20 @@ function useSalesColumns({
 
   return useMemo<DataTableColumn<Sale>[]>(
     () => [
+      {
+        id: 'index',
+        header: '#',
+        width: 52,
+        minWidth: 44,
+        align: 'right',
+        enableSorting: false,
+        accessor: (sale) => indexMap.get(sale) || 0,
+        cell: (sale) => (
+          <Text c="dimmed" size="sm">
+            {indexMap.get(sale) || ''}
+          </Text>
+        ),
+      },
       {
         id: 'fromDate',
         header: t('Від якої дати'),
@@ -664,9 +701,15 @@ function useSalesColumns({
           }
 
           const transporterLogoUrl = toProxiedAssetUrl(sale.Transporter.ImageUrl?.trim())
+          const carrierEdited = Boolean(sale.UpdateDataCarrier?.length)
 
           return (
             <Group gap={6} wrap="nowrap">
+              {carrierEdited && (
+                <Tooltip label={t('Перевізника редаговано')}>
+                  <IconPencil size={14} style={{ color: 'var(--mantine-color-orange-6)', flex: '0 0 auto' }} />
+                </Tooltip>
+              )}
               {transporterLogoUrl ? (
                 <span aria-hidden style={{ ...TRANSPORTER_LOGO_STYLE, backgroundImage: `url(${upgradeHttpToHttps(transporterLogoUrl)})` }} />
               ) : (
@@ -691,7 +734,7 @@ function useSalesColumns({
         },
       },
     ],
-    [onOpenCarrier, onPrint, onPrintActProtocolEdit, t],
+    [indexMap, onOpenCarrier, onPrint, onPrintActProtocolEdit, t],
   )
 }
 

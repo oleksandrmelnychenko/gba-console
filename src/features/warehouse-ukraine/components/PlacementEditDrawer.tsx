@@ -236,6 +236,32 @@ export function PlacementEditDrawer({
           {`${t('Доступна К-сть')} ${Math.max(rowQty - placedQty, 0)}`}
         </Text>
 
+        {(product?.ProductPlacements?.length ?? 0) > 0 && (
+          <Stack gap={4}>
+            <Text c="dimmed" fw={600} size="xs">
+              {t('Наявні розміщення товару')}
+            </Text>
+            <Table withTableBorder withColumnBorders>
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th>{t('Склад')}</Table.Th>
+                  <Table.Th>{t('Ряд')}</Table.Th>
+                  <Table.Th>{t('Полиця')}</Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {(product?.ProductPlacements || []).map((placement, index) => (
+                  <Table.Tr key={placement.Id ?? index}>
+                    <Table.Td>{placement.StorageNumber || placement.Storage?.Name || ''}</Table.Td>
+                    <Table.Td>{placement.RowNumber || ''}</Table.Td>
+                    <Table.Td>{placement.CellNumber || ''}</Table.Td>
+                  </Table.Tr>
+                ))}
+              </Table.Tbody>
+            </Table>
+          </Stack>
+        )}
+
         <Table withTableBorder withColumnBorders>
           <Table.Thead>
             <Table.Tr>

@@ -1204,9 +1204,18 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
     onRemoveItem: removeDraftItem,
     updateItem: updateDraftItem,
   })
+  const manualSelectableSaleKeys = useMemo(
+    () =>
+      manualSales
+        .map((sale) => getShipmentSaleKey(sale))
+        .filter((key): key is string => Boolean(key) && !draftSaleKeys.has(key)),
+    [manualSales, draftSaleKeys],
+  )
+
   const manualColumns = useManualShipmentSalesColumns({
     existingSaleKeys: draftSaleKeys,
     qtyPlaces: manualQtyPlaces,
+    selectableSaleKeys: manualSelectableSaleKeys,
     selectedSaleKeys: manualSelectedSaleKeys,
     setQtyPlaces: setManualQtyPlaces,
     setSelectedSaleKeys: setManualSelectedSaleKeys,
@@ -2087,6 +2096,7 @@ function useAllShipmentColumns(indexMap: Map<ShipmentList, number>): DataTableCo
 
 type ManualShipmentSalesColumnsModel = {
   existingSaleKeys: Set<string>
+  selectableSaleKeys: string[]
   qtyPlaces: Record<string, string>
   selectedSaleKeys: Record<string, boolean>
   setQtyPlaces: (updater: (current: Record<string, string>) => Record<string, string>) => void
@@ -2100,7 +2110,32 @@ function useManualShipmentSalesColumns(model: ManualShipmentSalesColumnsModel): 
     () => [
       {
         id: 'select',
-        header: '',
+        header: (() => {
+          const selectableCount = model.selectableSaleKeys.length
+          const selectedCount = model.selectableSaleKeys.filter((key) => model.selectedSaleKeys[key]).length
+          const allSelected = selectableCount > 0 && selectedCount === selectableCount
+
+          return (
+            <Checkbox
+              aria-label={t('Обрати всі')}
+              checked={allSelected}
+              disabled={selectableCount === 0}
+              indeterminate={selectedCount > 0 && !allSelected}
+              onChange={(event) => {
+                const checked = event.currentTarget.checked
+
+                model.setSelectedSaleKeys((current) => {
+                  const next = { ...current }
+                  model.selectableSaleKeys.forEach((key) => {
+                    next[key] = checked
+                  })
+
+                  return next
+                })
+              }}
+            />
+          )
+        })(),
         width: 54,
         minWidth: 48,
         align: 'center',
