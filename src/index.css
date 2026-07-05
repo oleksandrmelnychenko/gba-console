@@ -224,27 +224,45 @@ select {
   outline: none;
 }
 
-/* Money values (docs/ui-patterns.md §5.1): mono 600; positive — green,
-   negative — red. Apply .app-money to the element holding the formatted
-   amount; add .is-negative when the raw value is < 0. */
+/* Money values (docs/ui-patterns.md §5.1): mono 600, neutral gray in grids
+   and money blocks. Apply .app-money to the element holding the formatted
+   amount; .is-negative is kept only as a semantic hook, not for color. */
 .app-money {
-  color: var(--mantine-color-green-8);
+  color: var(--mantine-color-gray-8) !important;
   font-family: var(--font-mono);
   font-weight: 600;
   letter-spacing: 0;
 }
 
 .app-money.is-negative {
-  color: var(--mantine-color-red-8);
+  color: var(--mantine-color-gray-8) !important;
 }
 
 .app-money-meta {
-  color: var(--mantine-color-green-7);
+  color: var(--mantine-color-gray-6) !important;
 }
 
 .app-money.is-negative .app-money-meta,
 .app-money-meta.is-negative {
-  color: var(--mantine-color-red-7);
+  color: var(--mantine-color-gray-6) !important;
+}
+
+[class*='money-cell'] strong,
+[class*='balance-cell'] strong,
+[class*='amount-cell'] strong,
+[class*='money-amount'],
+.is-money > strong,
+.is-money .mantine-Text-root:first-child {
+  color: var(--mantine-color-gray-8) !important;
+}
+
+[class*='money-cell'] small,
+[class*='balance-cell'] small,
+[class*='amount-cell'] small,
+[class*='money-currency'],
+.is-money > small,
+.is-money .mantine-Text-root:nth-child(2) {
+  color: var(--mantine-color-gray-6) !important;
 }
 
 /* Mantine Tabs follow the §10 tab pattern app-wide: mono labels on the gray-2
@@ -252,6 +270,8 @@ select {
 .mantine-Tabs-list {
   background: #f8f9fa;
   border-color: var(--mantine-color-gray-2);
+  border-radius: 0 0 10px 10px;
+  justify-content: center;
 }
 
 .mantine-Tabs-tab {
@@ -271,4 +291,108 @@ select {
   border-color: var(--brand-orange);
   color: var(--mantine-color-gray-9);
   font-weight: 600;
+}
+
+/* ── Form sheet scope (docs/ui-patterns.md §7/§8/§9) ─────────────────────────
+   Put .app-form-sheet on an AppDrawer/AppModal that hosts a form or a detail
+   view: mono button captions, §9 field chrome with the focus/error borders
+   re-asserted, orange checkboxes, mono combos/numbers/dates, borderless-shadow
+   cards. One shared scope instead of per-feature copies. */
+.app-sheet-title-mono {
+  align-items: center;
+  display: inline-flex;
+  font-family: var(--font-mono);
+  gap: 8px;
+  letter-spacing: 0;
+}
+
+.app-form-sheet .mantine-Button-label {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.app-form-sheet .mantine-Card-root {
+  box-shadow: none;
+}
+
+.app-form-sheet .mantine-Input-input {
+  border-color: var(--mantine-color-gray-2);
+  border-radius: 8px;
+}
+
+.app-form-sheet .mantine-Input-input:focus,
+.app-form-sheet .mantine-Input-input:focus-within {
+  border-color: var(--app-focus-border);
+  box-shadow: var(--app-focus-ring);
+}
+
+.app-form-sheet .mantine-Input-input[data-error] {
+  border-color: var(--mantine-color-red-6);
+}
+
+.app-form-sheet .mantine-NumberInput-input,
+.app-form-sheet .mantine-Select-input,
+.app-form-sheet input[type='date'],
+.app-form-sheet input[type='time'],
+.app-form-sheet input[type='datetime-local'] {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0;
+}
+
+.app-form-sheet .mantine-Checkbox-input:checked:not(:disabled),
+.app-form-sheet .mantine-Checkbox-input[data-indeterminate]:not(:disabled) {
+  background-color: var(--brand-orange);
+  border-color: var(--brand-orange);
+}
+
+.app-form-sheet .mantine-SegmentedControl-label {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  letter-spacing: 0;
+}
+
+/* ── Leader row (docs/ui-patterns.md §7.2) ───────────────────────────────────
+   «label ——— value»: label gray-8 on the left, a thin gray-3 filler line,
+   the 600 gray-9 value on the right. Add .is-mono for numbers/codes/dates. */
+.app-leader-row {
+  align-items: baseline;
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+}
+
+.app-leader-row::before {
+  align-self: end;
+  background: var(--mantine-color-gray-3);
+  content: '';
+  flex: 1 1 auto;
+  height: 1px;
+  min-width: 16px;
+  order: 2;
+  transform: translateY(-3px);
+}
+
+.app-leader-row-label {
+  color: var(--mantine-color-gray-8);
+  flex: 0 1 auto;
+  font-size: 13px;
+  font-weight: 500;
+  order: 1;
+}
+
+.app-leader-row-value {
+  color: var(--mantine-color-gray-9);
+  flex: 0 1 auto;
+  font-size: 13px;
+  font-weight: 600;
+  order: 3;
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+
+.app-leader-row-value.is-mono {
+  font-family: var(--font-mono);
+  letter-spacing: 0;
 }

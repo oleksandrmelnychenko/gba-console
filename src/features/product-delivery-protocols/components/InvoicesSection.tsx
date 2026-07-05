@@ -169,10 +169,10 @@ function InvoiceViewCard({
             </Button>
           )}
         </Group>
-        <LabelValueRow label={t('Номер документу')}>{invoice.ServiceNumber || '-'}</LabelValueRow>
-        <LabelValueRow label={t('Номер інвойса')}>{invoiceNumber || '-'}</LabelValueRow>
+        <LabelValueRow label={t('Номер документу')}>{invoice.ServiceNumber || ''}</LabelValueRow>
+        <LabelValueRow label={t('Номер інвойса')}>{invoiceNumber || ''}</LabelValueRow>
         <LabelValueRow label={t('Дата інвойса')}>{formatDateTime(invoice.DateFrom)}</LabelValueRow>
-        <LabelValueRow label={t('Постачальник')}>{invoice.SupplyOrder?.Client?.FullName || '-'}</LabelValueRow>
+        <LabelValueRow label={t('Постачальник')}>{invoice.SupplyOrder?.Client?.FullName || ''}</LabelValueRow>
         <LabelValueRow label={t('Заг. вартість нетто')}>{formatMoney(invoice.TotalNetPrice, currencyCode)}</LabelValueRow>
         <LabelValueRow label={t('Сума доставки')}>{formatMoney(invoice.DeliveryAmount, currencyCode)}</LabelValueRow>
         <LabelValueRow label={t('Сума знижки')}>{formatMoney(invoice.DiscountAmount, currencyCode)}</LabelValueRow>
@@ -181,7 +181,7 @@ function InvoiceViewCard({
         <LabelValueRow label={`${t('Витрати')} (${t('Бух.')})`}>
           {formatMoney(invoice.AccountingTotalSpending, 'EUR')}
         </LabelValueRow>
-        <LabelValueRow label={t('Номер митної декларації')}>{invoice.NumberCustomDeclaration || '-'}</LabelValueRow>
+        <LabelValueRow label={t('Номер митної декларації')}>{invoice.NumberCustomDeclaration || ''}</LabelValueRow>
         <LabelValueRow label={t('Дата митної декларації')}>{formatDateTime(invoice.DateCustomDeclaration)}</LabelValueRow>
         <LabelValueRow label={t('Документи доставки')}>
           {deliveryDocuments.length > 0 ? (
@@ -205,7 +205,7 @@ function InvoiceViewCard({
                     </Anchor>
                   ) : (
                     <Text size="sm" td={document.Deleted ? 'line-through' : undefined}>
-                      {document.FileName || '-'}
+                      {document.FileName || ''}
                     </Text>
                   )}
                   <Group gap={6} wrap="nowrap">
@@ -233,7 +233,7 @@ function InvoiceViewCard({
               ))}
             </Stack>
           ) : (
-            '-'
+            ''
           )}
         </LabelValueRow>
         {canEditDeliveryDocuments && (
@@ -314,7 +314,7 @@ function InvoiceExpensesDrawer({
   const mergedServices = invoice?.SupplyInvoiceMergedServices || []
 
   return (
-    <AppDrawer opened={opened} size="lg" title={`${t('Витрати')}. ${t('Інвойс')} ${invoice?.Number || ''}`} onClose={onClose}>
+    <AppDrawer opened={opened} size="lg" title={<span style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{`${t('Витрати')}. ${t('Інвойс')} ${invoice?.Number || ''}`}</span>} onClose={onClose}>
       <Stack gap="md">
         {error && (
           <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
@@ -351,7 +351,7 @@ function InvoiceExpensesDrawer({
 
 function BillOfLadingExpenseCard({ service }: { service: SupplyInvoiceBillOfLadingService }) {
   const { t } = useI18n()
-  const organization = service.BillOfLadingService?.SupplyOrganization?.Name || '-'
+  const organization = service.BillOfLadingService?.SupplyOrganization?.Name || ''
   const currencyCode = service.BillOfLadingService?.SupplyOrganizationAgreement?.Currency?.Code || ''
 
   return (
@@ -375,13 +375,13 @@ function MergedServiceExpenseCard({ service }: { service: SupplyInvoiceMergedSer
   return (
     <Card withBorder radius="md" padding="md">
       <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="xs">
-        <LabelValueRow label={t('Сервіс')}>{mergedService?.ConsumableProduct?.Name || '-'}</LabelValueRow>
-        <LabelValueRow label={t('Постачальник')}>{mergedService?.SupplyOrganization?.Name || '-'}</LabelValueRow>
+        <LabelValueRow label={t('Сервіс')}>{mergedService?.ConsumableProduct?.Name || ''}</LabelValueRow>
+        <LabelValueRow label={t('Постачальник')}>{mergedService?.SupplyOrganization?.Name || ''}</LabelValueRow>
         <LabelValueRow label={t('Витрати')}>{formatMoney(service.Value, currencyCode)}</LabelValueRow>
         <LabelValueRow label={`${t('Витрати')} (${t('Бух.')})`}>
           {formatMoney(service.AccountingValue, currencyCode)}
         </LabelValueRow>
-        <LabelValueRow label={`${t('Курс')} EUR -> ${currencyCode || '-'}`}>
+        <LabelValueRow label={`${t('Курс')} EUR -> ${currencyCode || ''}`}>
           {formatMoney(service.ExchangeRateEurToAgreementCurrency, currencyCode)}
         </LabelValueRow>
         <LabelValueRow label={`${t('Курс')} EUR -> UAH`}>
@@ -484,7 +484,7 @@ function AssignInvoicesDrawer({
     <AppDrawer
       opened={opened}
       size="md"
-      title={`${t('Додати')} ${t('Інвойси').toLowerCase()}`}
+      title={<span style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{`${t('Додати')} ${t('Інвойси').toLowerCase()}`}</span>}
       onClose={() => {
         if (!isSaving) {
           onClose()

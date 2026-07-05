@@ -29,7 +29,6 @@ import {
   IconDeviceFloppy,
   IconEdit,
   IconFileImport,
-  IconFileInvoice,
   IconFileUpload,
   IconPackage,
   IconRefresh,
@@ -998,9 +997,6 @@ function DirectOrderInvoicesHeader({ model }: { model: DirectOrderInvoicesPageMo
             <IconArrowLeft size={18} />
           </ActionIcon>
         </Tooltip>
-        <span className="supply-detail-icon">
-          <IconFileInvoice size={22} stroke={1.8} />
-        </span>
         <div className="supply-detail-copy">
           <h1 className="supply-detail-title">
             {t('Інвойси і пак листи')}
@@ -1012,9 +1008,11 @@ function DirectOrderInvoicesHeader({ model }: { model: DirectOrderInvoicesPageMo
       </div>
       <div className="supply-detail-header-actions">
         <Button
+          color="gray"
           disabled={model.isSaving || model.isInvoiceLoading}
           leftSection={<IconRefresh size={16} />}
           loading={model.isLoading}
+          styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
           variant="light"
           onClick={() => model.reloadOrder()}
         >
@@ -1022,10 +1020,12 @@ function DirectOrderInvoicesHeader({ model }: { model: DirectOrderInvoicesPageMo
         </Button>
         {model.canAddInvoice && (
           <Button
+            color={CREATE_ACTION_COLOR}
             disabled={model.isBusy}
             leftSection={<IconFileImport size={16} />}
             loading={model.isSaving}
-            variant="light"
+            styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
+            variant="outline"
             onClick={() => model.setPageState({ invoiceUploadOpen: true })}
           >
             {t('Додати інвойс')}
@@ -1033,10 +1033,12 @@ function DirectOrderInvoicesHeader({ model }: { model: DirectOrderInvoicesPageMo
         )}
         {model.canShowPackListUpload && (
           <Button
+            color={CREATE_ACTION_COLOR}
             disabled={model.isBusy}
             leftSection={<IconPackage size={16} />}
             loading={model.isSaving}
-            variant="light"
+            styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
+            variant="outline"
             onClick={() => model.setPageState({ packListUploadOpen: true })}
           >
             {t('Додати пак лист')}
@@ -1897,7 +1899,7 @@ function useOrderItemColumns(onOpenProductCard: (productNetId: string) => void):
       { id: 'leftToInvoice', header: t('Залишок'), width: 120, align: 'right', accessor: (item) => item.QtyDifference, cell: (item) => <BalanceBadge value={item.QtyDifference || 0} /> },
       { id: 'price', header: t('Ціна'), width: 120, align: 'right', accessor: (item) => item.UnitPrice, cell: (item) => formatMoney(item.UnitPrice) },
       { id: 'total', header: t('Сума'), width: 130, align: 'right', accessor: (item) => getOrderItemTotal(item), cell: (item) => formatMoney(getOrderItemTotal(item)) },
-      { id: 'placed', header: t('Розміщено'), width: 120, accessor: (item) => item.IsPlaced, cell: (item) => <Badge color={item.IsPlaced ? 'green' : 'gray'} variant="light">{item.IsPlaced ? t('Так') : t('Ні')}</Badge> },
+      { id: 'placed', header: t('Розміщено'), width: 120, accessor: (item) => item.IsPlaced, cell: (item) => <Badge className={item.IsPlaced ? 'app-role-pill is-green' : 'app-role-pill is-gray'} variant="light">{item.IsPlaced ? t('Так') : t('Ні')}</Badge> },
     ],
     [onOpenProductCard, t],
   )
@@ -1988,13 +1990,16 @@ function ProductCodeCell({
   product?: Product | null
 }) {
   const netId = product?.NetUid
-  const code = product?.VendorCode || '-'
+  const code = product?.VendorCode || ''
 
   return netId ? (
     <Anchor
+      c="dark.6"
       component="button"
       fw={600}
+      style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}
       type="button"
+      underline="always"
       onClick={(event) => {
         event.stopPropagation()
         onOpenProductCard(netId)
@@ -2003,7 +2008,7 @@ function ProductCodeCell({
       {code}
     </Anchor>
   ) : (
-    <Text fw={600} size="sm">{code}</Text>
+    <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{code}</Text>
   )
 }
 
@@ -2015,13 +2020,15 @@ function ProductNameCell({
   product?: Product | null
 }) {
   const netId = product?.NetUid
-  const name = product?.Name || product?.NameUA || '-'
+  const name = product?.Name || product?.NameUA || ''
 
   return netId ? (
     <Anchor
+      c="dark.6"
       component="button"
       size="sm"
       type="button"
+      underline="always"
       onClick={(event) => {
         event.stopPropagation()
         onOpenProductCard(netId)
