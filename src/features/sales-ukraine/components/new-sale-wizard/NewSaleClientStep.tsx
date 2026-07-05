@@ -1,6 +1,6 @@
 import { Anchor, Box, Button, Group, Loader, Stack, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconFileExcel, IconFileTypePdf, IconUserSearch } from '@tabler/icons-react'
+import { IconExternalLink, IconFileCheck, IconFileExcel, IconFileTypePdf, IconUserSearch } from '@tabler/icons-react'
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { formatLocalDate } from '../../../../shared/date/dateTime'
 import { useI18n } from '../../../../shared/i18n/useI18n'
@@ -1178,45 +1178,7 @@ export function NewSaleClientStep({
         onInvoice={onInvoiceMergedSale ? handleMergedInvoice : undefined}
       />
 
-      <AppModal centered opened={Boolean(printState)} size="sm" title={t('Документ')} onClose={closePrint}>
-        {printState && (
-          <Stack gap="sm">
-            {printState.isLoading ? (
-              <Group justify="center" py="md">
-                <Loader size="sm" />
-              </Group>
-            ) : printState.document?.pdfUrl || printState.document?.excelUrl ? (
-              <>
-                {printState.document.pdfUrl && (
-                  <Anchor href={printState.document.pdfUrl} rel="noopener noreferrer" target="_blank">
-                    <Group gap="xs">
-                      <IconFileTypePdf size={18} />
-                      <Text>{t('Відкрити PDF')}</Text>
-                    </Group>
-                  </Anchor>
-                )}
-                {printState.document.excelUrl && (
-                  <Anchor href={printState.document.excelUrl} rel="noopener noreferrer" target="_blank">
-                    <Group gap="xs">
-                      <IconFileExcel size={18} />
-                      <Text>{t('Відкрити Excel')}</Text>
-                    </Group>
-                  </Anchor>
-                )}
-              </>
-            ) : (
-              <Text c="dimmed" size="sm">
-                {t('Документ недоступний для завантаження')}
-              </Text>
-            )}
-            <Group justify="flex-end">
-              <Button variant="subtle" onClick={closePrint}>
-                {t('Закрити')}
-              </Button>
-            </Group>
-          </Stack>
-        )}
-      </AppModal>
+      <WizardPrintDocumentModal opened={Boolean(printState)} printState={printState} onClose={closePrint} />
 
       <AppModal
         centered
@@ -1254,6 +1216,115 @@ export function NewSaleClientStep({
         </Box>
       </AppModal>
     </>
+  )
+}
+
+function WizardPrintDocumentModal({
+  opened,
+  printState,
+  onClose,
+}: {
+  opened: boolean
+  printState: WizardPrintState | null
+  onClose: () => void
+}) {
+  const { t } = useI18n()
+  const document = printState?.document
+  const hasDocuments = Boolean(document?.pdfUrl || document?.excelUrl)
+
+  return (
+    <AppModal
+      centered
+      className="new-sale-print-modal"
+      classNames={{
+        body: 'new-sale-print-modal__modal-body',
+        content: 'new-sale-print-modal__content',
+        header: 'new-sale-print-modal__header',
+        title: 'new-sale-print-modal__modal-title',
+      }}
+      opened={opened}
+      size={460}
+      title={<span className="new-sale-print-modal__title">{t('Документ')}</span>}
+      onClose={onClose}
+    >
+      <Stack className="new-sale-print-modal__body" gap={0}>
+        <Box className="new-sale-print-modal__summary">
+          <span className="new-sale-print-modal__summary-icon">
+            <IconFileCheck size={22} stroke={1.8} />
+          </span>
+          <Box className="new-sale-print-modal__summary-copy">
+            <Text className="new-sale-print-modal__eyebrow">{t('Друк')}</Text>
+            <Text className="new-sale-print-modal__heading">{t('Документ продажу')}</Text>
+            <Text className="new-sale-print-modal__description">
+              {printState?.isLoading
+                ? t('Формуємо файл для відкриття')
+                : hasDocuments
+                  ? t('Виберіть потрібний формат документа')
+                  : t('Документ недоступний для завантаження')}
+            </Text>
+          </Box>
+        </Box>
+
+        {printState?.isLoading ? (
+          <Box className="new-sale-print-modal__loading">
+            <Loader color="orange" size="sm" />
+            <Text>{t('Зачекайте кілька секунд')}</Text>
+          </Box>
+        ) : hasDocuments ? (
+          <Stack className="new-sale-print-modal__documents" gap={8}>
+            {document?.pdfUrl && (
+              <WizardPrintDocumentLink
+                href={document.pdfUrl}
+                icon={<IconFileTypePdf size={20} stroke={1.8} />}
+                kind="pdf"
+                label={t('PDF')}
+                meta={t('Відкрити документ у новій вкладці')}
+              />
+            )}
+            {document?.excelUrl && (
+              <WizardPrintDocumentLink
+                href={document.excelUrl}
+                icon={<IconFileExcel size={20} stroke={1.8} />}
+                kind="excel"
+                label={t('Excel')}
+                meta={t('Відкрити таблицю у новій вкладці')}
+              />
+            )}
+          </Stack>
+        ) : (
+          <Box className="new-sale-print-modal__empty">
+            <Text>{t('Файл не повернувся з сервера')}</Text>
+            <Text>{t('Спробуйте сформувати документ ще раз')}</Text>
+          </Box>
+        )}
+
+      </Stack>
+    </AppModal>
+  )
+}
+
+function WizardPrintDocumentLink({
+  href,
+  icon,
+  kind,
+  label,
+  meta,
+}: {
+  href: string
+  icon: ReactNode
+  kind: 'excel' | 'pdf'
+  label: string
+  meta: string
+}) {
+  return (
+    <Anchor className={`new-sale-print-document is-${kind}`} href={href} rel="noopener noreferrer" target="_blank">
+      <span className="new-sale-print-document__icon">{icon}</span>
+      <span className="new-sale-print-document__copy">
+        <span className="new-sale-print-document__label">{label}</span>
+        <span className="new-sale-print-document__meta">{meta}</span>
+      </span>
+      <IconExternalLink className="new-sale-print-document__arrow" size={17} stroke={1.8} />
+    </Anchor>
   )
 }
 

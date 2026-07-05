@@ -6873,6 +6873,193 @@
   text-align: left;
 }
 
+.new-sale-print-modal__content {
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 14px;
+  box-shadow: 0 18px 55px rgba(15, 23, 42, 0.14);
+  overflow: hidden;
+}
+
+.new-sale-print-modal__header {
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+  min-height: 46px;
+  padding: 13px 16px 10px;
+}
+
+.new-sale-print-modal__modal-body {
+  padding: 0;
+}
+
+.new-sale-print-modal__modal-title,
+.new-sale-print-modal__title {
+  color: var(--mantine-color-gray-8);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.new-sale-print-modal__body {
+  background: var(--mantine-color-white);
+}
+
+.new-sale-print-modal__summary {
+  align-items: center;
+  background: var(--mantine-color-gray-0);
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+  display: flex;
+  gap: 12px;
+  padding: 14px 16px;
+}
+
+.new-sale-print-modal__summary-icon {
+  align-items: center;
+  background: var(--mantine-color-orange-0);
+  border: 1px solid var(--mantine-color-orange-2);
+  border-radius: 12px;
+  color: var(--brand-orange);
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: 42px;
+  justify-content: center;
+  width: 42px;
+}
+
+.new-sale-print-modal__summary-copy {
+  min-width: 0;
+}
+
+.new-sale-print-modal__eyebrow {
+  color: var(--mantine-color-gray-5);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.new-sale-print-modal__heading {
+  color: var(--mantine-color-gray-9);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.new-sale-print-modal__description {
+  color: var(--mantine-color-gray-6);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.new-sale-print-modal__documents {
+  padding: 12px 14px;
+}
+
+.new-sale-print-document {
+  align-items: center;
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 10px;
+  color: inherit;
+  display: grid;
+  gap: 11px;
+  grid-template-columns: 38px minmax(0, 1fr) 20px;
+  min-height: 64px;
+  padding: 10px 12px;
+  text-decoration: none;
+  transition:
+    border-color 150ms ease,
+    background-color 150ms ease,
+    transform 150ms ease;
+}
+
+.new-sale-print-document:hover {
+  background: var(--mantine-color-gray-0);
+  border-color: var(--mantine-color-orange-3);
+  color: inherit;
+  text-decoration: none;
+  transform: translateX(2px);
+}
+
+.new-sale-print-document__icon {
+  align-items: center;
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 9px;
+  display: inline-flex;
+  height: 38px;
+  justify-content: center;
+  width: 38px;
+}
+
+.new-sale-print-document.is-pdf .new-sale-print-document__icon {
+  background: var(--mantine-color-red-0);
+  border-color: var(--mantine-color-red-2);
+  color: var(--mantine-color-red-7);
+}
+
+.new-sale-print-document.is-excel .new-sale-print-document__icon {
+  background: var(--mantine-color-green-0);
+  border-color: var(--mantine-color-green-2);
+  color: var(--mantine-color-green-7);
+}
+
+.new-sale-print-document__copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.new-sale-print-document__label {
+  color: var(--mantine-color-gray-9);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.new-sale-print-document__meta {
+  color: var(--mantine-color-gray-5);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.new-sale-print-document__arrow {
+  color: var(--mantine-color-gray-5);
+  justify-self: end;
+}
+
+.new-sale-print-modal__loading,
+.new-sale-print-modal__empty {
+  align-items: center;
+  display: grid;
+  justify-items: center;
+  min-height: 116px;
+  padding: 22px 20px;
+  text-align: center;
+}
+
+.new-sale-print-modal__loading {
+  gap: 10px;
+}
+
+.new-sale-print-modal__loading .mantine-Text-root,
+.new-sale-print-modal__empty .mantine-Text-root:first-child {
+  color: var(--mantine-color-gray-8);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.new-sale-print-modal__empty .mantine-Text-root:nth-child(2) {
+  color: var(--mantine-color-gray-5);
+  font-size: 12px;
+  font-weight: 500;
+}
+
 .new-sale-client-step {
   border-color: transparent;
   overflow: hidden;
