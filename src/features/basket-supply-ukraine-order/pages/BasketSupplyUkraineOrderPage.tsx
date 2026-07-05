@@ -165,9 +165,9 @@ export function BasketSupplyUkraineOrderPage() {
   }
 
   return (
-    <Stack className="basket-supply-page" gap="lg">
+    <Stack className="basket-supply-page" gap={6}>
       <div>
-        <div className="pill-tabs" style={{ width: 'fit-content' }}>
+        <div className="pill-tabs">
           {[
             { value: 'sales', label: t('Фактура') },
             { value: 'cart', label: t('Переміщення на Україну') },
@@ -678,7 +678,7 @@ function BasketCartWorkflow() {
 
       <Card className="app-section-card" withBorder padding="md" radius="md">
         <Stack gap="md">
-          <Group align="end" justify="space-between" wrap="wrap">
+          <div className="app-filter-bar basket-supply-command-bar is-split">
             <SimpleGrid className="basket-supply-filters" cols={{ base: 1, md: 3 }} spacing="sm">
               <TextInput
                 label={t('Пошук по товару')}
@@ -718,15 +718,15 @@ function BasketCartWorkflow() {
                   <IconRefresh size={16} />
                 </ActionIcon>
               </Tooltip>
-              <Button leftSection={FILE_IMPORT_ICON} variant="light" onClick={() => openUploadModal('load')}>
+              <Button leftSection={FILE_IMPORT_ICON} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} variant="light" onClick={() => openUploadModal('load')}>
                 {t('Завантажити в корзину')}
               </Button>
-              <Button leftSection={FILE_SPREADSHEET_ICON} variant="light" onClick={() => openUploadModal('preview')}>
+              <Button leftSection={FILE_SPREADSHEET_ICON} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} variant="light" onClick={() => openUploadModal('preview')}>
                 {t('Вибрати для експорту')}
               </Button>
               <DataTableDensityToggle density={sourceDensity} onToggle={toggleSourceDensity} size={36} />
             </Group>
-          </Group>
+          </div>
 
           <DataTable
             columns={sourceColumns}

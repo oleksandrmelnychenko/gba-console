@@ -786,20 +786,20 @@ export function BuyerCockpitTab() {
         </Alert>
       )}
 
-      <Group align="flex-end" gap="md" wrap="wrap">
+      <div className="app-filter-bar basket-supply-command-bar">
         <Select
           clearable
           data={producerOptions}
           disabled={areProducersLoading}
           label={t('Виробник')}
           nothingFoundMessage={t('Нічого не знайдено')}
-          onChange={setSelectedProducerId}
           placeholder={areProducersLoading ? t('Завантаження…') : t('Оберіть виробника')}
           searchable
           value={selectedProducerId}
           w={360}
+          onChange={setSelectedProducerId}
         />
-      </Group>
+      </div>
 
       {error && (
         <Alert color="red" icon={<IconAlertCircle size={16} />} variant="light">

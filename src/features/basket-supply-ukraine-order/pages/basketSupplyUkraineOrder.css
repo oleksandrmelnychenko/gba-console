@@ -69,3 +69,20 @@
 .budget-cart-table .budget-cart-divider-row:hover td {
   background: transparent;
 }
+
+/* §5.3 bar на табах кошика: фільтри в один рядок по низу. */
+.basket-supply-command-bar {
+  align-items: end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.basket-supply-command-bar.is-split {
+  justify-content: space-between;
+}
+
+.basket-supply-command-bar .basket-supply-filters {
+  flex: 1 1 auto;
+  max-width: 760px;
+}

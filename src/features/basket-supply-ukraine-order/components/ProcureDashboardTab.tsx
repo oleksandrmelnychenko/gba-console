@@ -224,7 +224,7 @@ export function ProcureDashboardTab() {
 
   return (
     <Stack gap="lg">
-      <Group align="flex-end" gap="md" wrap="wrap">
+      <div className="app-filter-bar basket-supply-command-bar">
         <NumberInput
           allowDecimal={false}
           allowNegative={false}
@@ -258,7 +258,7 @@ export function ProcureDashboardTab() {
             </ActionIcon>
           </Tooltip>
         </Group>
-      </Group>
+      </div>
 
       {error && (
         <Alert color="red" icon={<IconAlertCircle size={16} />} variant="light">
@@ -269,7 +269,7 @@ export function ProcureDashboardTab() {
       <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
         <Card className="app-section-card" padding="md" radius="md" withBorder>
           <Stack align="center" gap="xs">
-            <Text fw={600} size="sm">
+            <Text className="app-section-title" fw={600} size="sm">
               {t('Терміновість поповнення')}
             </Text>
             <UrgencyDonut
@@ -286,7 +286,7 @@ export function ProcureDashboardTab() {
         <Card className="app-section-card" padding="md" radius="md" withBorder>
           <Stack gap="xs">
             <Group justify="space-between">
-              <Text fw={600} size="sm">
+              <Text className="app-section-title" fw={600} size="sm">
                 {t('Запас днів покриття')}
               </Text>
             </Group>
@@ -305,7 +305,7 @@ export function ProcureDashboardTab() {
 
       <Card className="app-section-card" padding="md" radius="md" withBorder>
         <Stack gap="md">
-          <Text fw={600} size="sm">
+          <Text className="app-section-title" fw={600} size="sm">
             {t('Прогноз попиту')}
           </Text>
           {isLoading && <ForecastLine actualLabel="" data={[]} emptyLabel="" forecastLabel="" isLoading />}
@@ -336,7 +336,7 @@ export function ProcureDashboardTab() {
       <Card className="app-section-card" padding="md" radius="md" withBorder>
         <Stack gap="xs">
           <Group justify="space-between">
-            <Text fw={600} size="sm">
+            <Text className="app-section-title" fw={600} size="sm">
               {t('Пріоритетні позиції')}
             </Text>
             <Text c="dimmed" size="xs">
