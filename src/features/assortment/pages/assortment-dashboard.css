@@ -1,33 +1,54 @@
 /* ── Assortment intelligence dashboard ──────────────────────────────────────
-   Professional dashboard layout: KPI tiles, a segmented stock-state bar, a
-   health gauge, ranked lists and a detail table. Cards reuse .app-section-card
-   so their shadow resolves from --app-card-shadow (central token). */
+   On the docs/ui-patterns.md system: §2 section titles (mono + orange dot),
+   §4 pills, §5.1 data language (Onest for names, mono for numbers, money in
+   green/red), §7.2 metric tiles (no boxes-in-boxes, no colored strips),
+   §1 — no shadows, no violet; controls follow the 36px/radius-8/mono toolbar
+   language. Cards keep the .app-section-card shell but drop its shadow. */
 
 .assort-dash {
-  padding: 16px;
+  padding: 0 4px 8px;
+}
+
+.assort-dash .app-section-card {
+  box-shadow: none;
 }
 
 /* Header ------------------------------------------------------------------- */
 .assort-dash__header {
+  overflow: visible;
+}
+
+.assort-dash__bar {
+  align-items: end;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
   flex-wrap: wrap;
-  gap: 12px;
-  padding: 16px 18px;
+  gap: 10px 16px;
+  justify-content: space-between;
+}
+
+.assort-dash__summary {
+  align-self: center;
+  display: grid;
+  gap: 3px;
 }
 
 .assort-dash__title {
-  font-size: 20px;
-  font-weight: 700;
-  line-height: 1.15;
-  letter-spacing: -0.01em;
-  color: var(--mantine-color-gray-9);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
 }
 
+/* Meta row (§5.1): Onest labels in gray-6, mono values in gray-7. */
 .assort-dash__subtitle {
-  font-size: 13px;
+  font-size: 12.5px;
   color: var(--mantine-color-gray-6);
+}
+
+.assort-dash__subtitle b {
+  color: var(--mantine-color-gray-7);
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0;
 }
 
 .assort-dash__controls {
@@ -36,44 +57,69 @@
   gap: 8px;
 }
 
-/* KPI tiles ---------------------------------------------------------------- */
+/* Toolbar-language controls (§5.3): mono near-black labels, 36px fields,
+   radius 8, gray-2 border, mono values. Shared by header + table filters. */
+.assort-dash__controls .mantine-InputWrapper-label,
+.assort-filter .mantine-InputWrapper-label {
+  color: var(--mantine-color-gray-9);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.assort-dash__controls .mantine-Input-input,
+.assort-filter .mantine-Input-input {
+  border-color: var(--mantine-color-gray-2);
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-weight: 400;
+  height: 36px;
+  letter-spacing: 0;
+  min-height: 36px;
+}
+
+.assort-dash__controls .mantine-Input-input::placeholder,
+.assort-filter .mantine-Input-input::placeholder {
+  font-family: var(--font-mono);
+  letter-spacing: 0;
+}
+
+/* Portal dropdowns: mono options, orange selected/hover tint (§1 — no violet). */
+.assort-select-dropdown [data-combobox-option] {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  letter-spacing: 0;
+}
+
+.assort-select-dropdown [data-combobox-option]:hover,
+.assort-select-dropdown [data-combobox-option][data-combobox-selected],
+.assort-select-dropdown [data-combobox-option][aria-selected='true'] {
+  background: #fff4eb;
+  color: var(--mantine-color-gray-9);
+}
+
+/* KPI tiles (§7.2 metric): gray mono label with the orange dot, large mono
+   value, small meta under it. No icon circles, no colored strips. */
 .kpi-tile {
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 16px;
-}
-
-.kpi-tile__icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: 0 0 auto;
-  width: 42px;
-  height: 42px;
-  border-radius: 12px;
-}
-
-.kpi-tile__body {
-  min-width: 0;
-  display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
+  padding: 14px 16px;
 }
 
 .kpi-tile__label {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--mantine-color-gray-6);
 }
 
 .kpi-tile__value {
-  font-size: 24px;
-  font-weight: 700;
-  line-height: 1.1;
-  letter-spacing: -0.02em;
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.15;
   color: var(--mantine-color-gray-9);
   white-space: nowrap;
   overflow: hidden;
@@ -101,6 +147,11 @@
   gap: 10px;
 }
 
+/* Outlined one-color circle (§7.1 icon language). */
+.assort-region__icon {
+  color: var(--mantine-color-gray-7);
+}
+
 .assort-region__title div {
   min-width: 0;
   display: flex;
@@ -108,10 +159,10 @@
   gap: 1px;
 }
 
-.assort-region__title span {
+.assort-region__title span:not(.assort-region__icon) {
   font-size: 14px;
-  font-weight: 700;
-  color: var(--mantine-color-gray-9);
+  font-weight: 600;
+  color: var(--mantine-color-gray-8);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -130,25 +181,24 @@
   gap: 10px;
 }
 
+/* §7.2 metric — no boxes or divider strips around the numbers. */
 .assort-region__metric {
   min-width: 0;
-  padding-left: 12px;
-  border-left: 1px solid var(--mantine-color-gray-2);
 }
 
-.assort-region__metric span {
+.assort-region__metric .app-section-title {
   display: block;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
-  color: var(--mantine-color-gray-6);
-  text-transform: uppercase;
 }
 
 .assort-region__metric b {
   display: block;
-  font-size: 16px;
-  color: var(--mantine-color-gray-9);
-  font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--mantine-color-gray-8);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -156,7 +206,7 @@
 
 /* Section card scaffolding ------------------------------------------------- */
 .assort-card {
-  padding: 18px;
+  padding: 16px;
 }
 
 .assort-card__head {
@@ -167,15 +217,16 @@
   margin-bottom: 14px;
 }
 
+/* Font geometry only — color/family/dot come from .app-section-title (§2). */
 .assort-card__title {
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: 0.01em;
-  color: var(--mantine-color-gray-9);
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .assort-card__hint {
+  font-family: var(--font-mono);
   font-size: 12px;
+  letter-spacing: 0;
   color: var(--mantine-color-gray-6);
 }
 
@@ -238,18 +289,20 @@
 
 .band-legend__count {
   flex: 0 0 auto;
+  font-family: var(--font-mono);
   font-size: 13px;
-  font-weight: 700;
-  color: var(--mantine-color-gray-9);
-  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--mantine-color-gray-8);
 }
 
 .band-legend__value {
   flex: 0 0 96px;
   text-align: right;
+  font-family: var(--font-mono);
   font-size: 12px;
+  letter-spacing: 0;
   color: var(--mantine-color-gray-6);
-  font-variant-numeric: tabular-nums;
 }
 
 /* Health gauge + ABC/XYZ mix ---------------------------------------------- */
@@ -280,9 +333,10 @@
 
 .assort-mix__title {
   flex: 0 0 42px;
+  font-family: var(--font-mono);
   font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
+  font-weight: 600;
+  letter-spacing: 0;
   text-transform: uppercase;
   color: var(--mantine-color-gray-6);
 }
@@ -293,20 +347,24 @@
   gap: 6px;
 }
 
+/* Outlined mono chip — the §4 gray pill on a bare span. */
 .assort-mix__chip {
   display: inline-flex;
   align-items: baseline;
   gap: 5px;
   padding: 2px 9px;
-  border-radius: 999px;
-  background: var(--mantine-color-gray-1);
+  border: 1px solid var(--mantine-color-gray-3);
+  border-radius: 7px;
+  background: var(--mantine-color-gray-0);
+  font-family: var(--font-mono);
   font-size: 12px;
+  letter-spacing: 0;
   color: var(--mantine-color-gray-7);
 }
 
 .assort-mix__chip b {
-  color: var(--mantine-color-gray-9);
-  font-variant-numeric: tabular-nums;
+  color: var(--mantine-color-gray-8);
+  font-weight: 600;
 }
 
 /* Ranked lists ------------------------------------------------------------- */
@@ -324,9 +382,8 @@
 }
 
 .rank-list__title {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--mantine-color-gray-9);
+  font-size: 12.5px;
+  font-weight: 600;
 }
 
 .rank-row {
@@ -354,10 +411,11 @@
 
 .rank-row__rank {
   flex: 0 0 20px;
+  font-family: var(--font-mono);
   font-size: 12px;
-  font-weight: 700;
-  color: var(--mantine-color-gray-5);
-  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--mantine-color-gray-6);
   text-align: center;
 }
 
@@ -369,17 +427,21 @@
   line-height: 1.2;
 }
 
+/* Two-line cell language (§5.1): mono code on top, Onest name under it. */
 .rank-row__code {
-  font-size: 13px;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
   font-weight: 600;
-  color: var(--mantine-color-gray-9);
+  letter-spacing: 0;
+  color: var(--mantine-color-gray-8);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .rank-row__name {
-  font-size: 11.5px;
+  font-size: 11px;
+  font-weight: 500;
   color: var(--mantine-color-gray-6);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -388,10 +450,11 @@
 
 .rank-row__metric {
   flex: 0 0 auto;
+  font-family: var(--font-mono);
   font-size: 13px;
-  font-weight: 700;
-  color: var(--mantine-color-gray-9);
-  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--mantine-color-gray-8);
   text-align: right;
 }
 
@@ -406,7 +469,7 @@
 .assort-table-card {
   display: flex;
   flex-direction: column;
-  padding: 18px;
+  padding: 16px;
 }
 
 .assort-filter {
@@ -414,7 +477,15 @@
   align-items: flex-end;
   flex-wrap: wrap;
   gap: 10px;
-  margin-bottom: 12px;
+  margin: 0 -16px 12px;
+}
+
+/* Numeric table cell — bare mono number (§5.1), no chips. */
+.assort-cell-num {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--mantine-color-gray-8);
 }
 
 .assort-cell-product {
@@ -425,12 +496,67 @@
 }
 
 .assort-cell-product b {
-  font-size: 13px;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
   font-weight: 600;
-  color: var(--mantine-color-gray-9);
+  letter-spacing: 0;
+  color: var(--mantine-color-gray-8);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.assort-cell-product span {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--mantine-color-gray-6);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Product card (drawer, §7.2) ---------------------------------------------- */
+.assort-product-hero {
+  padding: 14px 16px;
+}
+
+.assort-product-hero__name {
+  font-family: var(--font-mono);
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--mantine-color-gray-9);
+}
+
+.assort-product-hero__code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0;
+  color: var(--mantine-color-gray-6);
+}
+
+/* Meta-row numbers (§5.1): mono values inside Onest dimmed meta text. */
+.assort-meta-num {
+  color: var(--mantine-color-gray-7);
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+/* §7.2 metric: mono label with the orange dot + large mono value, no boxes. */
+.assort-stat__label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.assort-stat__value {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--mantine-color-gray-9);
 }
 
 @media (max-width: 900px) {
@@ -442,12 +568,4 @@
   .assort-region__metrics {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-}
-
-.assort-cell-product span {
-  font-size: 11.5px;
-  color: var(--mantine-color-gray-6);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }

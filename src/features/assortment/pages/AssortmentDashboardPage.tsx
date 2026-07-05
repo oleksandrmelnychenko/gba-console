@@ -8,21 +8,9 @@ import {
   Stack,
   Text,
   TextInput,
-  ThemeIcon,
 } from '@mantine/core'
-import {
-  IconAlertCircle,
-  IconArrowBackUp,
-  IconBuildingWarehouse,
-  IconHeartbeat,
-  IconMapPin,
-  IconPercentage,
-  IconReceipt2,
-  IconSnowflake,
-  IconTrendingDown,
-  IconTrendingUp,
-} from '@tabler/icons-react'
-import { type ReactNode, useEffect, useMemo } from 'react'
+import { IconAlertCircle, IconMapPin } from '@tabler/icons-react'
+import { useEffect, useMemo } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
@@ -58,13 +46,15 @@ const RATING_LIMIT = 8
 const REGION_LIMIT = 50
 const REGION_WINDOW_DAYS = 365
 
-const BAND_META: Record<string, { label: string; color: string }> = {
-  healthy: { label: 'Здорові', color: 'teal' },
-  slow: { label: 'Повільні', color: 'yellow' },
-  overstock: { label: 'Надлишок', color: 'blue' },
-  understock: { label: 'Дефіцит', color: 'orange' },
-  dead: { label: 'Мертві', color: 'red' },
-  order_to_demand: { label: 'Під замовлення', color: 'orange' },
+/* color paints the band bar/legend swatches (chart colors); pill is the
+   app-role-pill variant (§4) for the same band rendered as a badge. */
+const BAND_META: Record<string, { label: string; color: string; pill: string }> = {
+  healthy: { label: 'Здорові', color: 'teal', pill: 'is-green' },
+  slow: { label: 'Повільні', color: 'yellow', pill: 'is-yellow' },
+  overstock: { label: 'Надлишок', color: 'blue', pill: 'is-orange' },
+  understock: { label: 'Дефіцит', color: 'orange', pill: 'is-orange' },
+  dead: { label: 'Мертві', color: 'red', pill: 'is-red' },
+  order_to_demand: { label: 'Під замовлення', color: 'orange', pill: 'is-orange' },
 }
 
 const BAND_ORDER = ['healthy', 'slow', 'overstock', 'understock', 'order_to_demand', 'dead']
@@ -94,24 +84,47 @@ type SelectOption = {
   label: string
 }
 
-function bandMeta(band: string): { label: string; color: string } {
-  return BAND_META[band] ?? { label: band, color: 'gray' }
+function bandMeta(band: string): { label: string; color: string; pill: string } {
+  return BAND_META[band] ?? { label: band, color: 'gray', pill: 'is-gray' }
 }
 
 function healthColor(health: number): string {
   return health < 40 ? 'red' : health < 70 ? 'yellow' : 'teal'
 }
 
+function healthPill(health: number): string {
+  return health < 40 ? 'is-red' : health < 70 ? 'is-yellow' : 'is-green'
+}
+
+/* Missing values render blank everywhere (§5/§7.2) — never a dash, and never
+   a fabricated zero (a green «0 €» is indistinguishable from real zero). */
 function pct(value: number | null | undefined): string {
-  return value == null ? '—' : `${(value * 100).toFixed(0)}%`
+  return value == null ? '' : `${(value * 100).toFixed(0)}%`
 }
 
 function formatMoney(value: number | null | undefined): string {
-  return money.format(value ?? 0)
+  return value == null ? '' : money.format(value)
 }
 
 function formatInt(value: number | null | undefined): string {
-  return value == null ? '—' : integer.format(value)
+  return value == null ? '' : integer.format(value)
+}
+
+function intCell(value: number | null | undefined): string {
+  return value == null ? '' : integer.format(Math.round(value))
+}
+
+function MoneyCell({ value }: { value: number | null | undefined }) {
+  if (value == null) {
+    return null
+  }
+
+  return <span className={`app-money${value < 0 ? ' is-negative' : ''}`}>{money.format(value)}</span>
+}
+
+/* Portal dropdowns need the orange selected-option override (§1 — no violet). */
+const ASSORT_COMBOBOX_PROPS = {
+  classNames: { dropdown: 'assort-select-dropdown' },
 }
 
 function regionName(region: AssortmentRegionRow): string {
@@ -160,7 +173,7 @@ function useAssortmentColumns(t: (key: string) => string, hasRegion: boolean) {
           minWidth: 110,
           accessor: (row) => row.health,
           cell: (row) => (
-            <Badge color={healthColor(row.health)} variant="light">
+            <Badge className={`app-role-pill ${healthPill(row.health)}`} variant="light">
               {integer.format(Math.round(row.health))}
             </Badge>
           ),
@@ -173,7 +186,7 @@ function useAssortmentColumns(t: (key: string) => string, hasRegion: boolean) {
           cell: (row) => {
             const meta = bandMeta(row.band)
             return (
-              <Badge color={meta.color} variant="light">
+              <Badge className={`app-role-pill ${meta.pill}`.trim()} variant="light">
                 {meta.label}
               </Badge>
             )
@@ -186,9 +199,9 @@ function useAssortmentColumns(t: (key: string) => string, hasRegion: boolean) {
           minWidth: 100,
           accessor: (row) => `${row.abc}${row.xyz}`,
           cell: (row) => (
-            <Text fw={600} size="sm">
+            <span className="assort-cell-num">
               {row.abc}/{row.xyz}
-            </Text>
+            </span>
           ),
         },
         {
@@ -197,7 +210,9 @@ function useAssortmentColumns(t: (key: string) => string, hasRegion: boolean) {
           align: 'right',
           minWidth: 110,
           accessor: (row) => row.margin_pct ?? -Infinity,
-          cell: (row) => pct(row.margin_pct),
+          cell: (row) => (
+            <span className="assort-cell-num">{row.margin_pct == null ? '' : pct(row.margin_pct)}</span>
+          ),
         },
         {
           id: 'cover',
@@ -205,7 +220,7 @@ function useAssortmentColumns(t: (key: string) => string, hasRegion: boolean) {
           align: 'right',
           minWidth: 130,
           accessor: (row) => row.cover_days ?? -Infinity,
-          cell: (row) => (row.cover_days == null ? '—' : integer.format(Math.round(row.cover_days))),
+          cell: (row) => <span className="assort-cell-num">{intCell(row.cover_days)}</span>,
         },
         {
           id: 'eur',
@@ -213,7 +228,7 @@ function useAssortmentColumns(t: (key: string) => string, hasRegion: boolean) {
           align: 'right',
           minWidth: 130,
           accessor: (row) => row.eur_value,
-          cell: (row) => formatMoney(row.eur_value),
+          cell: (row) => <MoneyCell value={row.eur_value} />,
         },
       ]
 
@@ -229,7 +244,7 @@ function useAssortmentColumns(t: (key: string) => string, hasRegion: boolean) {
           align: 'right',
           minWidth: 130,
           accessor: (row) => row.regional_revenue_eur ?? 0,
-          cell: (row) => formatMoney(row.regional_revenue_eur),
+          cell: (row) => <MoneyCell value={row.regional_revenue_eur} />,
         },
         {
           id: 'regionUnits',
@@ -237,7 +252,7 @@ function useAssortmentColumns(t: (key: string) => string, hasRegion: boolean) {
           align: 'right',
           minWidth: 120,
           accessor: (row) => row.regional_units ?? 0,
-          cell: (row) => formatInt(row.regional_units),
+          cell: (row) => <span className="assort-cell-num">{intCell(row.regional_units)}</span>,
         },
         {
           id: 'regionClients',
@@ -245,7 +260,7 @@ function useAssortmentColumns(t: (key: string) => string, hasRegion: boolean) {
           align: 'right',
           minWidth: 105,
           accessor: (row) => row.regional_client_count ?? 0,
-          cell: (row) => formatInt(row.regional_client_count),
+          cell: (row) => <span className="assort-cell-num">{intCell(row.regional_client_count)}</span>,
         },
       ]
     },
@@ -447,7 +462,7 @@ export function AssortmentDashboardPage() {
       <AppDrawer
         opened={selectedProductId != null}
         size="standard"
-        title={t('Картка товару')}
+        title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Картка товару')}</span>}
         onClose={() => setSelectedProductId(null)}
       >
         {selectedProductId != null && (
@@ -481,11 +496,14 @@ function AssortmentHeader({
   const { t } = useI18n()
 
   return (
-    <Card className="app-section-card assort-dash__header" withBorder radius="md" padding={0}>
-      <div>
-        <Text className="assort-dash__title">{t('Аналітика асортименту')}</Text>
+    <Card className="app-data-card assort-dash__header" withBorder radius="md" padding={0}>
+      <div className="app-filter-bar assort-dash__bar">
+      <div className="assort-dash__summary">
+        <Text className="app-section-title assort-dash__title">{t('Аналітика асортименту')}</Text>
         <Text className="assort-dash__subtitle">
-          {t('Стан запасів')} · {formatInt(totalSkus)} SKU · {t('середнє здоровʼя')} {avgHealth}
+          {t('Стан запасів')}
+          {totalSkus == null ? '' : <> · <b>{formatInt(totalSkus)}</b> SKU</>} · {t('середнє здоровʼя')}{' '}
+          <b>{avgHealth}</b>
         </Text>
       </div>
       <div className="assort-dash__controls">
@@ -498,6 +516,7 @@ function AssortmentHeader({
         />
         <Select
           clearable
+          comboboxProps={ASSORT_COMBOBOX_PROPS}
           data={regionOptions}
           disabled={regionOptions.length === 0}
           label={t('Регіон')}
@@ -517,12 +536,14 @@ function AssortmentHeader({
           }}
         />
         <Select
+          comboboxProps={ASSORT_COMBOBOX_PROPS}
           data={sortOptions.map((option) => ({ value: option.value, label: t(option.label) }))}
           label={t('Сортування')}
           value={filters.sort ?? 'health_asc'}
           w={210}
           onChange={(value) => onFiltersChange({ ...filters, sort: value ?? 'health_asc' })}
         />
+      </div>
       </div>
     </Card>
   )
@@ -544,31 +565,17 @@ function AssortmentKpis({
   return (
     <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="md">
       <KpiTile
-        color="gray"
-        icon={<IconBuildingWarehouse size={22} />}
         label={t('Вартість запасів')}
-        sub={`${formatInt(body?.total_skus)} SKU`}
+        sub={body?.total_skus == null ? undefined : `${formatInt(body.total_skus)} SKU`}
         value={formatMoney(body?.total_eur_value)}
       />
+      <KpiTile label={t('Річна виручка')} value={formatMoney(body?.total_revenue_eur)} />
       <KpiTile
-        color="teal"
-        icon={<IconReceipt2 size={22} />}
-        label={t('Річна виручка')}
-        value={formatMoney(body?.total_revenue_eur)}
-      />
-      <KpiTile
-        color="blue"
-        icon={<IconPercentage size={22} />}
         label={t('Середня маржа')}
         sub={negativeMarginSkus ? `${formatInt(negativeMarginSkus)} ${t('у мінусі')}` : undefined}
         value={pct(weightedMargin)}
       />
-      <KpiTile
-        color="orange"
-        icon={<IconArrowBackUp size={22} />}
-        label={t('Повернення')}
-        value={pct(overallReturnRate)}
-      />
+      <KpiTile label={t('Повернення')} value={pct(overallReturnRate)} />
     </SimpleGrid>
   )
 }
@@ -590,8 +597,10 @@ function AssortmentStructure({
     <SimpleGrid cols={{ base: 1, lg: 3 }} spacing="md">
       <Card className="app-section-card assort-card" withBorder radius="md" padding={0} style={{ gridColumn: 'span 2' }}>
         <div className="assort-card__head">
-          <span className="assort-card__title">{t('Структура запасів за станом')}</span>
-          <span className="assort-card__hint">{formatInt(body?.total_skus)} SKU</span>
+          <span className="assort-card__title app-section-title">{t('Структура запасів за станом')}</span>
+          <span className="assort-card__hint">
+            {body?.total_skus == null ? '' : `${formatInt(body.total_skus)} SKU`}
+          </span>
         </div>
         <div className="band-bar">
           {visibleBandSegments.map((segment) => (
@@ -626,12 +635,12 @@ function AssortmentStructure({
 
       <Card className="app-section-card assort-card" withBorder radius="md" padding={0}>
         <div className="assort-card__head">
-          <span className="assort-card__title">{t('Здоровʼя та структура')}</span>
+          <span className="assort-card__title app-section-title">{t('Здоровʼя та структура')}</span>
         </div>
         <div className="assort-gauge">
           <RingProgress
             label={
-              <Text fw={700} size="xl" ta="center">
+              <Text ff="var(--font-mono)" fw={600} size="xl" ta="center">
                 {avgHealth}
               </Text>
             }
@@ -669,52 +678,42 @@ function AssortmentRatings({
   return (
     <Card className="app-section-card assort-card" withBorder radius="md" padding={0}>
       <div className="assort-card__head">
-        <span className="assort-card__title">{t('Рейтинги')}</span>
+        <span className="assort-card__title app-section-title">{t('Рейтинги')}</span>
         <span className="assort-card__hint">
           {t('Топ')} {RATING_LIMIT} · {t('клікни для деталей')}
         </span>
       </div>
       <div className="rank-grid">
         <RankList
-          color="red"
           empty={t('Немає даних')}
-          icon={<IconHeartbeat size={16} />}
           metric={(row) => integer.format(Math.round(row.health))}
           rows={rows.slice(0, RATING_LIMIT)}
           title={t('Найнижче здоровʼя')}
           onPick={onPick}
         />
         <RankList
-          color="cyan"
           empty={t('Немає даних')}
-          icon={<IconSnowflake size={16} />}
           metric={(row: AssortmentStockRow) => formatMoney(row.eur_value)}
           rows={stock?.rows ?? []}
           title={t('Заморожений запас')}
           onPick={onPick}
         />
         <RankList
-          color="teal"
           empty={t('Немає даних')}
-          icon={<IconTrendingUp size={16} />}
           metric={(row: AssortmentMarginRow) => formatMoney(row.margin_eur)}
           rows={margin?.leaders ?? []}
           title={t('Найкраща маржа')}
           onPick={onPick}
         />
         <RankList
-          color="orange"
           empty={t('Немає даних')}
-          icon={<IconTrendingDown size={16} />}
           metric={(row: AssortmentMarginRow) => pct(row.margin_pct)}
           rows={margin?.laggards ?? []}
           title={t('Найнижча маржа')}
           onPick={onPick}
         />
         <RankList
-          color="orange"
           empty={t('Немає даних')}
-          icon={<IconArrowBackUp size={16} />}
           metric={(row: AssortmentMarginRow) => pct(row.return_rate ?? null)}
           rows={returns?.high_returns ?? []}
           title={t('Проблемні повернення')}
@@ -747,12 +746,13 @@ function AssortmentDetailTable({
   return (
     <Card className="app-section-card assort-table-card" withBorder radius="md" padding={0}>
       <div className="assort-card__head">
-        <span className="assort-card__title">{t('Деталізація асортименту')}</span>
-        <span className="assort-card__hint">{formatInt(rows.length)}</span>
+        <span className="assort-card__title app-section-title">{t('Деталізація асортименту')}</span>
+        <Badge className="app-role-pill is-gray" variant="light">{formatInt(rows.length)}</Badge>
       </div>
-      <div className="assort-filter">
+      <div className="app-filter-bar assort-filter">
         <Select
           clearable
+          comboboxProps={ASSORT_COMBOBOX_PROPS}
           data={BAND_ORDER.map((key) => ({ value: key, label: bandMeta(key).label }))}
           label={t('Стан')}
           placeholder={t('Усі')}
@@ -761,6 +761,7 @@ function AssortmentDetailTable({
           onChange={(value) => onFiltersChange({ ...filters, band: value ?? undefined })}
         />
         <Select
+          comboboxProps={ASSORT_COMBOBOX_PROPS}
           data={sortOptions.map((option) => ({ value: option.value, label: t(option.label) }))}
           label={t('Сортування')}
           value={filters.sort ?? 'health_asc'}
@@ -791,9 +792,9 @@ function RegionSummary({ region }: { region: AssortmentRegionRow }) {
   return (
     <Card className="app-section-card assort-region" withBorder radius="md" padding={0}>
       <div className="assort-region__title">
-        <ThemeIcon color="indigo" size={34} variant="light">
+        <span className="app-action-icon assort-region__icon">
           <IconMapPin size={18} />
-        </ThemeIcon>
+        </span>
         <div>
           <span>{regionName(region)}</span>
           <small>{t('регіональний зріз за 365 днів')}</small>
@@ -809,38 +810,23 @@ function RegionSummary({ region }: { region: AssortmentRegionRow }) {
   )
 }
 
+/* §7.2 metric: mono label with the orange dot + mono value, no boxes/strips. */
 function RegionMetric({ label, value }: { label: string; value: string }) {
   return (
     <div className="assort-region__metric">
-      <span>{label}</span>
+      <span className="app-section-title">{label}</span>
       <b>{value}</b>
     </div>
   )
 }
 
-function KpiTile({
-  color,
-  icon,
-  label,
-  sub,
-  value,
-}: {
-  color: string
-  icon: ReactNode
-  label: string
-  sub?: string
-  value: string
-}) {
+/* §7.2 metric: gray mono label with the orange dot + a large mono value. */
+function KpiTile({ label, sub, value }: { label: string; sub?: string; value: string }) {
   return (
     <Card className="app-section-card kpi-tile" withBorder radius="md" padding={0}>
-      <ThemeIcon className="kpi-tile__icon" color={color} size={42} variant="light">
-        {icon}
-      </ThemeIcon>
-      <div className="kpi-tile__body">
-        <span className="kpi-tile__label">{label}</span>
-        <span className="kpi-tile__value">{value}</span>
-        {sub && <span className="kpi-tile__sub">{sub}</span>}
-      </div>
+      <span className="kpi-tile__label app-section-title">{label}</span>
+      <span className="kpi-tile__value">{value}</span>
+      {sub && <span className="kpi-tile__sub">{sub}</span>}
     </Card>
   )
 }
@@ -871,17 +857,13 @@ function MixGroup({ counts, title }: { counts?: Record<string, number>; title: s
 type RankRow = { product_id: number; vendor_code?: string | null; name?: string | null }
 
 function RankList<T extends RankRow>({
-  color,
   empty,
-  icon,
   metric,
   rows,
   title,
   onPick,
 }: {
-  color: string
   empty: string
-  icon: ReactNode
   metric: (row: T) => string
   rows: T[]
   title: string
@@ -890,10 +872,7 @@ function RankList<T extends RankRow>({
   return (
     <div className="rank-list">
       <div className="rank-list__head">
-        <ThemeIcon color={color} radius="sm" size={26} variant="light">
-          {icon}
-        </ThemeIcon>
-        <span className="rank-list__title">{title}</span>
+        <span className="rank-list__title app-section-title">{title}</span>
       </div>
       {rows.length === 0 ? (
         <div className="rank-empty">{empty}</div>
