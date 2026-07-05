@@ -1,3 +1,4 @@
+import type { ComboboxRenderPillInput } from '@mantine/core'
 import {
   ActionIcon,
   Alert,
@@ -9,6 +10,7 @@ import {
   Group,
   MultiSelect,
   NumberInput,
+  Pill,
   Select,
   SimpleGrid,
   Stack,
@@ -131,6 +133,8 @@ const PROCESS_TABLE_DEFAULT_LAYOUT = {
   },
   density: 'normal',
 } satisfies DataTableDefaultLayout
+
+const MAX_VISIBLE_SPECIFICATION_PILLS = 3
 
 const PROCESS_CONFIRM_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -901,117 +905,167 @@ export function NewResalePage() {
     navigate(returnPath, { replace: true })
   }
 
+  function renderSpecificationPill({ disabled, onRemove, option, value }: ComboboxRenderPillInput<string>) {
+    const currentValue = String(value ?? option.value)
+    const pillIndex = form.specificationCodes.indexOf(currentValue)
+    const selectedCount = form.specificationCodes.length
+
+    if (pillIndex > MAX_VISIBLE_SPECIFICATION_PILLS) {
+      return null
+    }
+
+    if (pillIndex === MAX_VISIBLE_SPECIFICATION_PILLS && selectedCount > MAX_VISIBLE_SPECIFICATION_PILLS + 1) {
+      return (
+        <Pill className="resales-new-specification-pill is-overflow" radius={7} size="sm">
+          +{selectedCount - MAX_VISIBLE_SPECIFICATION_PILLS}
+        </Pill>
+      )
+    }
+
+    return (
+      <Pill
+        className="resales-new-specification-pill"
+        disabled={disabled}
+        radius={7}
+        size="sm"
+        withRemoveButton={!disabled}
+        onRemove={onRemove}
+      >
+        {option.label}
+      </Pill>
+    )
+  }
+
   return (
     <AppDrawer
+      className="resales-new-drawer"
       opened
       position="right"
       size="min(1440px, 100vw)"
       title={<span className="resales-drawer-title">{t('Новий перепродаж')}</span>}
       onClose={closeSheet}
     >
-    <Stack gap="lg">
-      <Group justify="flex-end" align="end">
-        <Group gap="xs">
-          <Button color="gray" variant="light" onClick={closeSheet}>
-            {t('До списку')}
-          </Button>
-          <Tooltip label={t('Оновити фільтри')}>
-            <ActionIcon
-              aria-label={t('Оновити фільтри')}
-              color="gray"
-              loading={isLoadingOptions}
-              size={38}
-              variant="light"
-              onClick={() => reload()}
-            >
-              <IconRefresh size={18} />
-            </ActionIcon>
-          </Tooltip>
-        </Group>
-      </Group>
-
-      <Card withBorder radius="md" padding="md">
-        <Stack gap="md">
-            <SimpleGrid cols={{ base: 1, md: 3 }} spacing="sm">
+      <Stack className="resales-new-sheet" gap={12}>
+        <Card className="resales-new-filter-card" withBorder radius="md" padding="md">
+          <Stack gap={12}>
+            <SimpleGrid className="resales-new-grid" cols={{ base: 1, md: 3 }} spacing="sm">
               <NumberInput
+                className="resales-new-control is-number"
                 label={t('Сума для рахунку')}
                 value={form.amount}
                 onChange={(value) => setForm((currentForm) => ({ ...currentForm, amount: toNumber(value) }))}
               />
               <NumberInput
+                className="resales-new-control is-number"
                 label={`${t('Похибка')} +/-`}
                 value={form.infelicity}
                 onChange={(value) => setForm((currentForm) => ({ ...currentForm, infelicity: toNumber(value) }))}
               />
               <NumberInput
+                className="resales-new-control is-number"
                 label={t('Націнка, %')}
                 value={form.extraChargePercent}
                 onChange={(value) => setForm((currentForm) => ({ ...currentForm, extraChargePercent: toNumber(value) }))}
               />
             </SimpleGrid>
-            <SimpleGrid cols={{ base: 1, md: 3 }} spacing="sm">
+            <SimpleGrid className="resales-new-grid" cols={{ base: 1, md: 3 }} spacing="sm">
               <MultiSelect
                 searchable
+                className="resales-new-control"
+                clearable
                 data={productGroupOptions}
                 disabled={isLoadingOptions}
                 label={t('Групи товарів')}
+                limit={80}
+                maxDropdownHeight={280}
                 value={form.productGroupIds}
                 onChange={(value) => setForm((currentForm) => ({ ...currentForm, productGroupIds: value }))}
               />
               <MultiSelect
                 searchable
+                className="resales-new-control"
+                clearable
                 data={storageOptions}
                 disabled={isLoadingOptions}
                 label={t('Склади')}
+                limit={80}
+                maxDropdownHeight={280}
                 value={form.storageIds}
                 onChange={(value) => setForm((currentForm) => ({ ...currentForm, storageIds: value }))}
               />
               <MultiSelect
                 searchable
+                className="resales-new-control resales-new-specification-control"
+                clearable
                 data={specificationOptions}
                 disabled={isLoadingOptions}
                 label={t('Коди специфікацій')}
+                limit={80}
+                maxDropdownHeight={280}
+                renderPill={renderSpecificationPill}
                 value={form.specificationCodes}
                 onChange={(value) => setForm((currentForm) => ({ ...currentForm, specificationCodes: value }))}
               />
             </SimpleGrid>
-            <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
+            <Group align="end" gap="sm" wrap="nowrap" className="resales-new-filter-row">
               <TextInput
+                className="resales-new-control resales-new-search-control"
                 leftSection={<IconSearch size={16} />}
                 label={t('Пошук товару')}
                 value={form.search}
-                style={{ flex: '1 1 260px' }}
-                onChange={(event) => { const nextValue = event.currentTarget.value; setForm((currentForm) => ({ ...currentForm, search: nextValue })) }}
+                onChange={(event) => {
+                  const nextValue = event.currentTarget.value
+                  setForm((currentForm) => ({ ...currentForm, search: nextValue }))
+                }}
               />
               <TextInput
+                className="resales-new-control resales-new-date-control"
                 label={t('Від')}
                 type="datetime-local"
                 value={form.from}
-                w={190}
-                onChange={(event) => { const nextValue = event.currentTarget.value; setForm((currentForm) => ({ ...currentForm, from: nextValue })) }}
+                onChange={(event) => {
+                  const nextValue = event.currentTarget.value
+                  setForm((currentForm) => ({ ...currentForm, from: nextValue }))
+                }}
               />
               <TextInput
+                className="resales-new-control resales-new-date-control"
                 label={t('До')}
                 type="datetime-local"
                 value={form.to}
-                w={190}
-                onChange={(event) => { const nextValue = event.currentTarget.value; setForm((currentForm) => ({ ...currentForm, to: nextValue })) }}
+                onChange={(event) => {
+                  const nextValue = event.currentTarget.value
+                  setForm((currentForm) => ({ ...currentForm, to: nextValue }))
+                }}
               />
-              <Button color="gray" variant="light" onClick={resetFilters}>
+              <Button className="resales-new-action" color="gray" variant="light" onClick={resetFilters}>
                 {t('Скинути')}
               </Button>
+              <Tooltip label={t('Оновити фільтри')}>
+                <ActionIcon
+                  aria-label={t('Оновити фільтри')}
+                  color="gray"
+                  loading={isLoadingOptions}
+                  size={36}
+                  variant="light"
+                  onClick={() => reload()}
+                >
+                  <IconRefresh size={18} />
+                </ActionIcon>
+              </Tooltip>
             </Group>
-            <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
+            <Group align="end" gap="sm" wrap="nowrap" className="resales-new-filter-row">
               <Select
                 searchable
+                className="resales-new-control resales-new-generate-storage-control"
                 data={generateStorageOptions}
                 disabled={isLoadingOptions}
                 label={t('Склад для автоматичного створення')}
                 value={generateStorageNetId}
-                style={{ flex: '1 1 260px' }}
                 onChange={setGenerateStorageNetId}
               />
               <Button
+                className="resales-new-action"
                 disabled={!payload || isLoadingOptions || isLoadingAvailabilities}
                 loading={isProcessing}
                 variant="light"
@@ -1020,6 +1074,8 @@ export function NewResalePage() {
                 {t('Створити автоматично')}
               </Button>
               <Button
+                className="resales-new-action"
+                color={CREATE_ACTION_COLOR}
                 disabled={!payload || isLoadingOptions || isLoadingAvailabilities || !canProcessSelected}
                 loading={isProcessing}
                 onClick={requestProcessSelected}
@@ -1027,6 +1083,7 @@ export function NewResalePage() {
                 {t('Обробити')} {selectedRows.length ? selectedRows.length : ''}
               </Button>
               <Button
+                className="resales-new-action"
                 disabled={!payload || isLoadingOptions || isLoadingAvailabilities}
                 leftSection={<IconDownload size={16} />}
                 loading={isExporting}
@@ -1036,81 +1093,81 @@ export function NewResalePage() {
                 {t('Друк')}
               </Button>
             </Group>
-        </Stack>
-      </Card>
-
-      {(error || warning || dateRangeError) && (
-        <Alert color={warning || dateRangeError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
-          <Stack gap={4}>
-            <Text size="sm">{warning?.Message || dateRangeError || error}</Text>
-            {warning?.Products?.map((product) => (
-              <Text key={`${product.ProductId}-${product.VendorCode}`} size="xs">
-                {displayValue(product.VendorCode)} - {formatAmount(product.Qty)}
-              </Text>
-            ))}
           </Stack>
-        </Alert>
-      )}
+        </Card>
 
-      <TotalsCard
-        items={[
-          { label: t('Кількість'), value: formatAmount(totals.totalQty) },
-          { label: t('З ПДВ'), value: formatMoney(totals.totalValueWithVat) },
-          { label: t('З націнкою'), value: formatMoney(totals.totalWithExtraValue) },
-        ]}
-      />
+        {(error || warning || dateRangeError) && (
+          <Alert color={warning || dateRangeError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
+            <Stack gap={4}>
+              <Text size="sm">{warning?.Message || dateRangeError || error}</Text>
+              {warning?.Products?.map((product) => (
+                <Text key={`${product.ProductId}-${product.VendorCode}`} size="xs">
+                  {displayValue(product.VendorCode)} - {formatAmount(product.Qty)}
+                </Text>
+              ))}
+            </Stack>
+          </Alert>
+        )}
 
-      <Card withBorder radius="md" padding="md">
-        <DataTable
-          columns={columns}
-          data={availabilities}
-          defaultLayout={AVAILABILITIES_TABLE_DEFAULT_LAYOUT}
-          emptyText={t('Доступних товарів не знайдено')}
-          getRowId={(row, index) => getAvailabilityKey(row) || String(index)}
-          isLoading={isLoadingAvailabilities || isLoadingOptions}
-          layoutVersion="resale-availabilities-table-1"
-          loadingText={t('Завантаження доступних товарів')}
-          maxHeight="calc(100vh - 410px)"
-          minWidth={1440}
-          tableId="resale-availabilities"
-          onRowClick={toggleAvailability}
+        <TotalsCard
+          items={[
+            { label: t('Кількість'), value: formatAmount(totals.totalQty) },
+            { label: t('З ПДВ'), value: formatMoney(totals.totalValueWithVat) },
+            { label: t('З націнкою'), value: formatMoney(totals.totalWithExtraValue) },
+          ]}
         />
-      </Card>
 
-      <ProcessSelectionConfirmDrawer
-        isSaving={isProcessing}
-        opened={processConfirmOpened}
-        rows={selectedRows}
-        onClose={() => setProcessConfirmOpened(false)}
-        onConfirm={() => void processSelected()}
-      />
+        <Card withBorder radius="md" padding="md">
+          <DataTable
+            columns={columns}
+            data={availabilities}
+            defaultLayout={AVAILABILITIES_TABLE_DEFAULT_LAYOUT}
+            emptyText={t('Доступних товарів не знайдено')}
+            getRowId={(row, index) => getAvailabilityKey(row) || String(index)}
+            isLoading={isLoadingAvailabilities || isLoadingOptions}
+            layoutVersion="resale-availabilities-table-1"
+            loadingText={t('Завантаження доступних товарів')}
+            maxHeight="calc(100vh - 410px)"
+            minWidth={1440}
+            tableId="resale-availabilities"
+            onRowClick={toggleAvailability}
+          />
+        </Card>
 
-      <ResaleProcessDrawer
-        key={processState.id}
-        fromStorageId={processState.fromStorageId}
-        isSaving={isProcessing}
-        opened={processState.opened}
-        processData={processState.data}
-        productNetIdByProductId={productNetIdByProductId}
-        onClose={() => setProcessState((currentState) => ({
-          ...currentState,
-          data: null,
-          fromStorageId: undefined,
-          opened: false,
-        }))}
-        onCreate={handleCreated}
-        onRecalculate={updateResaleAvailabilityList}
-      />
+        <ProcessSelectionConfirmDrawer
+          isSaving={isProcessing}
+          opened={processConfirmOpened}
+          rows={selectedRows}
+          onClose={() => setProcessConfirmOpened(false)}
+          onConfirm={() => void processSelected()}
+        />
 
-      <DownloadDocumentModal
-        document={downloadDocument}
-        opened={downloadModalOpened}
-        title={t('Документ підбору')}
-        onClose={() => setDownloadModalOpened(false)}
-      />
+        <ResaleProcessDrawer
+          key={processState.id}
+          fromStorageId={processState.fromStorageId}
+          isSaving={isProcessing}
+          opened={processState.opened}
+          processData={processState.data}
+          productNetIdByProductId={productNetIdByProductId}
+          onClose={() => setProcessState((currentState) => ({
+            ...currentState,
+            data: null,
+            fromStorageId: undefined,
+            opened: false,
+          }))}
+          onCreate={handleCreated}
+          onRecalculate={updateResaleAvailabilityList}
+        />
 
-      <ProductCardModal productNetId={productCardNetId} onClose={() => setProductCardNetId(null)} />
-    </Stack>
+        <DownloadDocumentModal
+          document={downloadDocument}
+          opened={downloadModalOpened}
+          title={t('Документ підбору')}
+          onClose={() => setDownloadModalOpened(false)}
+        />
+
+        <ProductCardModal productNetId={productCardNetId} onClose={() => setProductCardNetId(null)} />
+      </Stack>
     </AppDrawer>
   )
 }
