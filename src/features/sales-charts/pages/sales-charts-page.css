@@ -17,15 +17,21 @@
   width: 100%;
 }
 
+.sales-chart-card > .app-filter-bar {
+  overflow-x: auto;
+}
+
 .sales-chart-filter-row {
   align-items: end;
   display: grid;
   gap: 10px;
   min-height: 85px;
+  min-width: max-content;
+  width: 100%;
 }
 
 .sales-chart-filter-row.is-topnx {
-  grid-template-columns: minmax(150px, 170px) minmax(150px, 170px) minmax(120px, 150px) minmax(0, 1fr) auto;
+  grid-template-columns: minmax(150px, 170px) minmax(150px, 170px) minmax(120px, 150px) minmax(32px, 1fr) auto;
 }
 
 .sales-chart-filter-row.is-manager-top {
@@ -34,12 +40,12 @@
     minmax(220px, 260px)
     minmax(140px, 160px)
     minmax(140px, 160px)
-    minmax(0, 1fr)
+    minmax(32px, 1fr)
     auto;
 }
 
 .sales-chart-filter-row.is-client {
-  grid-template-columns: minmax(240px, 300px) minmax(140px, 160px) minmax(140px, 160px) minmax(140px, 160px) minmax(0, 1fr);
+  grid-template-columns: minmax(240px, 300px) minmax(140px, 160px) minmax(140px, 160px) minmax(140px, 160px) minmax(32px, 1fr);
 }
 
 .sales-chart-filter-control {
@@ -69,26 +75,6 @@
 
 .sales-chart-table {
   min-height: 0;
-}
-
-@media (max-width: 1100px) {
-  .sales-chart-filter-row.is-manager-top,
-  .sales-chart-filter-row.is-topnx,
-  .sales-chart-filter-row.is-client {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .sales-chart-table-toolbar-slot {
-    justify-content: flex-start;
-  }
-}
-
-@media (max-width: 640px) {
-  .sales-chart-filter-row.is-manager-top,
-  .sales-chart-filter-row.is-topnx,
-  .sales-chart-filter-row.is-client {
-    grid-template-columns: minmax(0, 1fr);
-  }
 }
 
 /* Скрол-модель: картка = колонка; контент тягнеться, таблиця скролить сама

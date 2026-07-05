@@ -12,7 +12,29 @@
   margin: 12px 12px 0;
 }
 
+.client-product-movement-filter-bar {
+  overflow-x: auto;
+}
+
+.client-product-movement-filter-row {
+  align-items: end;
+  display: grid;
+  gap: 10px;
+  grid-template-columns:
+    minmax(240px, 260px)
+    minmax(220px, 240px)
+    minmax(160px, 180px)
+    minmax(140px, 150px)
+    minmax(140px, 150px)
+    minmax(32px, 1fr)
+    auto
+    auto;
+  min-width: max-content;
+  width: 100%;
+}
+
 .client-product-movement-filter-actions {
+  grid-column: 7;
   margin-left: auto;
 }
 
@@ -20,6 +42,7 @@
   align-items: center;
   align-self: end;
   display: flex;
+  grid-column: 8;
   justify-content: flex-end;
   min-height: 36px;
 }

@@ -197,7 +197,7 @@ export function VatReportsPage() {
   }
 
   return (
-    <Stack gap="md">
+    <Stack className="vat-reports-page" gap={6}>
       <Card className="app-data-card vat-reports-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar vat-reports-filter-bar">
           <Group align="end" gap="sm" wrap="nowrap" justify="space-between" className="vat-reports-filter-row">
@@ -222,13 +222,13 @@ export function VatReportsPage() {
         </div>
 
         {error && (
-          <Alert m="md" color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert className="vat-reports-alert" color="red" icon={<IconAlertCircle size={18} />} variant="light">
             {error}
           </Alert>
         )}
 
         {filterError && (
-          <Alert m="md" color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert className="vat-reports-alert" color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
             {filterError}
           </Alert>
         )}
@@ -248,7 +248,7 @@ export function VatReportsPage() {
         />
 
         {hasMore && (
-          <Group justify="center" p="md">
+          <Group className="vat-reports-footer" justify="center">
             <Button color="gray" disabled={Boolean(filterError)} loading={isLoadingMore} variant="light" onClick={loadMore}>
               {t('Завантажити ще')}
             </Button>

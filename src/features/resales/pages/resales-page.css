@@ -11,9 +11,21 @@
 /* Filter strip pinned at the top of the card; the table below it scrolls. */
 .resales-filter-bar {
   flex: 0 0 auto;
+  overflow-x: auto;
 }
 
 .resales-filter-bar .resales-filter-row {
+  align-items: end;
+  display: grid;
+  gap: 10px;
+  grid-template-columns:
+    minmax(140px, 150px)
+    minmax(140px, 150px)
+    minmax(150px, 160px)
+    minmax(32px, 1fr)
+    auto
+    auto;
+  min-width: max-content;
   width: 100%;
 }
 

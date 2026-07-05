@@ -1,13 +1,29 @@
 /* Balances list — chrome aligned with the «Продажі» reference.
    The page keeps its load-more (infinite-scroll) mechanism and the table's
    own maxHeight scroll model; only the filter strip + card shell are aligned. */
+.balances-filter-bar {
+  overflow-x: auto;
+}
+
 .balances-filter-row {
+  align-items: end;
+  display: grid;
+  gap: 10px;
+  grid-template-columns:
+    minmax(140px, 150px)
+    minmax(140px, 150px)
+    minmax(220px, 260px)
+    minmax(180px, 200px)
+    minmax(32px, 1fr)
+    auto;
+  min-width: max-content;
   width: 100%;
 }
 
 /* Pin the reset / refresh / density / page-size cluster to the trailing edge
    of the wrapping filter row. */
 .balances-filter-actions {
+  grid-column: 6;
   margin-left: auto;
 }
 

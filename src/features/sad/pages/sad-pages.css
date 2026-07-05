@@ -4,6 +4,18 @@
   overflow: hidden;
 }
 
+.sad-list-page__toolbar {
+  flex: 0 0 auto;
+}
+
+.sad-list-page__filters {
+  width: 100%;
+}
+
+.sad-list-page__actions {
+  margin-left: auto;
+}
+
 .sad-list-page__stack {
   flex: 1 1 auto;
   height: 100%;

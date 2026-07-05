@@ -1,0 +1,24 @@
+.available-payments-filter-bar {
+  overflow-x: auto;
+}
+
+.available-payments-filter-row {
+  display: grid;
+  grid-template-columns:
+    minmax(260px, 1.4fr)
+    minmax(190px, 0.7fr)
+    max-content
+    max-content
+    minmax(16px, 1fr)
+    max-content;
+  width: max(100%, 980px);
+  min-width: 0;
+}
+
+.available-payments-filter-row > .app-filter-actions {
+  grid-column: 6;
+}
+
+.available-payments-body {
+  padding: 10px 8px 8px;
+}

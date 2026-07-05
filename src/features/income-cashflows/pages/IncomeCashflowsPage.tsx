@@ -523,52 +523,50 @@ function IncomeCashflowsContent({ model }: { model: IncomeCashflowsPageModel }) 
     <Stack gap="lg">
 
       <Card className="app-data-card income-cashflows-card" withBorder radius="md" padding={0}>
-        <div className="app-filter-bar">
-          <Group align="end" gap="sm" wrap="nowrap" justify="space-between" className="income-cashflows-filter-row">
-            <Group align="end" gap="sm" wrap="wrap">
-              <TextInput label={t('Від')} type="date" value={fromDate} onChange={(event) => onSetFromDate(event.currentTarget.value)} />
-              <TextInput label={t('До')} type="date" value={toDate} onChange={(event) => onSetToDate(event.currentTarget.value)} />
-              <TextInput
-                leftSection={<IconSearch size={16} />}
-                label={t('Пошук')}
-                placeholder={t('Номер, платник, рахунок або коментар')}
-                value={searchValue}
-                w={340}
-                onChange={(event) => onSetSearchValue(event.currentTarget.value)}
-              />
-              <Select
-                clearable
-                searchable
-                data={toSelectOptions(currencies, (currency) => currency.Name || currency.Code)}
-                label={t('Валюта')}
-                placeholder={t('Усі')}
-                value={currencyNetId || null}
-                w={190}
-                onChange={(value) => onSetCurrencyNetId(value || '')}
-              />
-              <Select
-                clearable
-                searchable
-                data={toSelectOptions(paymentRegisters, (register) => register.Name)}
-                label={t('Рахунок')}
-                placeholder={t('Усі')}
-                value={paymentRegisterNetId || null}
-                w={250}
-                onChange={(value) => onSetPaymentRegisterNetId(value || '')}
-              />
-              <MultiSelect
-                clearable
-                searchable
-                data={organizationOptions}
-                label={t('Організації')}
-                placeholder={t('Без фільтра')}
-                value={selectedOrganizationIds}
-                w={360}
-                onChange={onSetSelectedOrganizationIds}
-              />
-            </Group>
+        <div className="app-filter-bar income-cashflows-filter-bar">
+          <Group align="end" gap="sm" wrap="nowrap" className="income-cashflows-filter-row">
+            <TextInput label={t('Від')} type="date" value={fromDate} onChange={(event) => onSetFromDate(event.currentTarget.value)} />
+            <TextInput label={t('До')} type="date" value={toDate} onChange={(event) => onSetToDate(event.currentTarget.value)} />
+            <TextInput
+              leftSection={<IconSearch size={16} />}
+              label={t('Пошук')}
+              placeholder={t('Номер, платник, рахунок або коментар')}
+              value={searchValue}
+              w={340}
+              onChange={(event) => onSetSearchValue(event.currentTarget.value)}
+            />
+            <Select
+              clearable
+              searchable
+              data={toSelectOptions(currencies, (currency) => currency.Name || currency.Code)}
+              label={t('Валюта')}
+              placeholder={t('Усі')}
+              value={currencyNetId || null}
+              w={190}
+              onChange={(value) => onSetCurrencyNetId(value || '')}
+            />
+            <Select
+              clearable
+              searchable
+              data={toSelectOptions(paymentRegisters, (register) => register.Name)}
+              label={t('Рахунок')}
+              placeholder={t('Усі')}
+              value={paymentRegisterNetId || null}
+              w={250}
+              onChange={(value) => onSetPaymentRegisterNetId(value || '')}
+            />
+            <MultiSelect
+              clearable
+              searchable
+              data={organizationOptions}
+              label={t('Організації')}
+              placeholder={t('Без фільтра')}
+              value={selectedOrganizationIds}
+              w={360}
+              onChange={onSetSelectedOrganizationIds}
+            />
 
-            <div className="app-filter-actions">
+            <div className="app-filter-actions income-cashflows-filter-actions">
               <Tooltip label={t('Скинути')}>
                 <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={onResetFilters}>
                   <IconRestore size={17} />
@@ -591,52 +589,54 @@ function IncomeCashflowsContent({ model }: { model: IncomeCashflowsPageModel }) 
               </Tooltip>
               <DataTableDensityToggle density={density} onToggle={onToggleDensity} size={34} />
             </div>
-            <Menu position="bottom-end" shadow="md" width={300} withinPortal>
-          <Menu.Target>
-            <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} rightSection={<IconChevronDown size={14} />} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}>
-              {t('Новий')}
-            </Button>
-          </Menu.Target>
-          <Menu.Dropdown>
-            <Menu.Label>{t('Каса')}</Menu.Label>
-            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/conversion?type=0', { state: { backgroundLocation: location } })}>
-              {t('Інший касовий прихід')}
-            </Menu.Item>
-            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/client?type=0&operationType=0', { state: { backgroundLocation: location } })}>
-              {t('Оплата покупця')}
-            </Menu.Item>
-            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/client?type=0&operationType=1', { state: { backgroundLocation: location } })}>
-              {t('Повернення постачальника')}
-            </Menu.Item>
-            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/client?type=0&operationType=2', { state: { backgroundLocation: location } })}>
-              {t('Інші з контрагентами')}
-            </Menu.Item>
-            <Menu.Divider />
-            <Menu.Label>{t('Банк')}</Menu.Label>
-            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/conversion?type=2', { state: { backgroundLocation: location } })}>
-              {t('Інші надходження на рахунок')}
-            </Menu.Item>
-            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/client?type=2&operationType=0', { state: { backgroundLocation: location } })}>
-              {t('Оплата покупця')}
-            </Menu.Item>
-            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/client?type=2&operationType=1', { state: { backgroundLocation: location } })}>
-              {t('Повернення постачальника')}
-            </Menu.Item>
-            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/client?type=2&operationType=2', { state: { backgroundLocation: location } })}>
-              {t('Інші з контрагентами')}
-            </Menu.Item>
-            <Menu.Divider />
-            <Menu.Label>{t('Колеги')}</Menu.Label>
-            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/user', { state: { backgroundLocation: location } })}>
-              {t('Повернення від колеги')}
-            </Menu.Item>
-            <Menu.Divider />
-            <Menu.Label>{t('Магазин')}</Menu.Label>
-            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/shop', { state: { backgroundLocation: location } })}>
-              {t('Оплата магазину')}
-            </Menu.Item>
-          </Menu.Dropdown>
-        </Menu>
+            <div className="income-cashflows-create-actions">
+              <Menu position="bottom-end" shadow="md" width={300} withinPortal>
+                <Menu.Target>
+                  <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} rightSection={<IconChevronDown size={14} />} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}>
+                    {t('Новий')}
+                  </Button>
+                </Menu.Target>
+                <Menu.Dropdown>
+                  <Menu.Label>{t('Каса')}</Menu.Label>
+                  <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/conversion?type=0', { state: { backgroundLocation: location } })}>
+                    {t('Інший касовий прихід')}
+                  </Menu.Item>
+                  <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/client?type=0&operationType=0', { state: { backgroundLocation: location } })}>
+                    {t('Оплата покупця')}
+                  </Menu.Item>
+                  <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/client?type=0&operationType=1', { state: { backgroundLocation: location } })}>
+                    {t('Повернення постачальника')}
+                  </Menu.Item>
+                  <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/client?type=0&operationType=2', { state: { backgroundLocation: location } })}>
+                    {t('Інші з контрагентами')}
+                  </Menu.Item>
+                  <Menu.Divider />
+                  <Menu.Label>{t('Банк')}</Menu.Label>
+                  <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/conversion?type=2', { state: { backgroundLocation: location } })}>
+                    {t('Інші надходження на рахунок')}
+                  </Menu.Item>
+                  <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/client?type=2&operationType=0', { state: { backgroundLocation: location } })}>
+                    {t('Оплата покупця')}
+                  </Menu.Item>
+                  <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/client?type=2&operationType=1', { state: { backgroundLocation: location } })}>
+                    {t('Повернення постачальника')}
+                  </Menu.Item>
+                  <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/client?type=2&operationType=2', { state: { backgroundLocation: location } })}>
+                    {t('Інші з контрагентами')}
+                  </Menu.Item>
+                  <Menu.Divider />
+                  <Menu.Label>{t('Колеги')}</Menu.Label>
+                  <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/user', { state: { backgroundLocation: location } })}>
+                    {t('Повернення від колеги')}
+                  </Menu.Item>
+                  <Menu.Divider />
+                  <Menu.Label>{t('Магазин')}</Menu.Label>
+                  <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/shop', { state: { backgroundLocation: location } })}>
+                    {t('Оплата магазину')}
+                  </Menu.Item>
+                </Menu.Dropdown>
+              </Menu>
+            </div>
           </Group>
         </div>
 

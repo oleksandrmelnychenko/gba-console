@@ -1,21 +1,45 @@
 .product-history-page {
+  box-sizing: border-box;
   height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 24px);
   min-height: 0;
   overflow: hidden;
+  padding: 0 4px;
+}
+
+.product-history-card {
+  min-width: 0;
 }
 
 /* Filter strip pinned at the top of the card; the table below it scrolls. */
 .product-history-filter-bar {
   flex: 0 0 auto;
+  overflow-x: auto;
 }
 
 .product-history-filter-bar .product-history-filter-row {
+  align-items: end;
+  display: grid;
+  gap: 10px;
+  grid-template-columns:
+    minmax(300px, 320px)
+    minmax(140px, 150px)
+    minmax(220px, 240px)
+    minmax(32px, 1fr)
+    auto;
+  min-width: max-content;
   width: 100%;
 }
 
+.product-history-filter-row .app-filter-actions {
+  grid-column: 5;
+  margin-left: auto;
+}
+
 .product-history-page__table {
+  box-sizing: border-box;
   flex: 1 1 auto;
   min-height: 0;
+  padding: 0 8px 8px;
 }
 
 .product-history-page__table .data-table {

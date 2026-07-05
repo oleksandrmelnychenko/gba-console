@@ -45,7 +45,6 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
-import { PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { SadAddItemsModal } from '../components/SadAddItemsModal'
 import { SadPaymentFromSadModal } from '../components/SadPaymentFromSadModal'
 import { SadSupplyOrderFromSadModal } from '../components/SadSupplyOrderFromSadModal'
@@ -426,16 +425,8 @@ export function AllSadsPage() {
 
   return (
     <Stack className="sad-list-page" gap={6}>
-      <PageHeaderActions>
-        <Tooltip label={t('Оновити')}>
-          <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={38} variant="light" onClick={() => reload()}>
-            <IconRefresh size={18} />
-          </ActionIcon>
-        </Tooltip>
-      </PageHeaderActions>
-
-      <Stack className="sad-list-page__stack" gap="xs">
-        <Group align="flex-end" gap="xs">
+      <div className="app-filter-bar sad-list-page__toolbar">
+        <Group align="flex-end" className="sad-list-page__filters" gap="xs" wrap="nowrap">
           <TextInput
             label={t('Від')}
             type="date"
@@ -450,8 +441,17 @@ export function AllSadsPage() {
             w={150}
             onChange={(event) => { const nextValue = event.currentTarget.value; setFilters((currentFilters) => ({ ...currentFilters, to: nextValue })) }}
           />
+          <div className="app-filter-actions sad-list-page__actions">
+            <Tooltip label={t('Оновити')}>
+              <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={34} variant="light" onClick={() => reload()}>
+                <IconRefresh size={17} />
+              </ActionIcon>
+            </Tooltip>
+          </div>
         </Group>
+      </div>
 
+      <Stack className="sad-list-page__stack" gap="xs">
         {error && (
           <Alert color="red" icon={<IconAlertCircle size={18} />}>
             {error}

@@ -3,7 +3,6 @@ import {
   Alert,
   Autocomplete,
   Button,
-  Divider,
   Group,
   NumberInput,
   Select,
@@ -11,7 +10,6 @@ import {
   Stack,
   Text,
   TextInput,
-  Tooltip,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
@@ -24,6 +22,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -44,8 +43,14 @@ import type {
 } from '../types'
 import { ProductCapitalizationMissingItemsModal } from './ProductCapitalizationMissingItemsModal'
 import { ProductCapitalizationUploadModal } from './ProductCapitalizationUploadModal'
+import './product-capitalization-sheet.css'
 
 const VENDOR_CODE_DEBOUNCE_MS = 280
+
+/* Portal dropdowns get the orange selected-option override (§1 — no violet). */
+const CAPITALIZATION_COMBOBOX_PROPS = {
+  classNames: { dropdown: 'product-capitalization-dropdown' },
+}
 
 const ITEMS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -128,11 +133,32 @@ export function NewProductCapitalizationPanel({ opened, onClose, onCreated }: Ne
 
   return (
     <AppDrawer
+      className="product-capitalization-sheet"
+      footer={
+        <>
+          <Button
+            disabled={isFormBusy}
+            leftSection={<IconFileSpreadsheet size={16} />}
+            variant="default"
+            onClick={model.openUploadModal}
+          >
+            {t('Імпорт з Excel')}
+          </Button>
+          <Button
+            color={CREATE_ACTION_COLOR}
+            disabled={isFormBusy}
+            loading={model.isSubmitting}
+            onClick={model.submit}
+          >
+            {t('Провести')}
+          </Button>
+        </>
+      }
       opened={opened}
       padding="lg"
       position="right"
       size="78rem"
-      title={t('Нове оприбуткування')}
+      title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Нове оприбуткування')}</span>}
       onClose={model.requestClose}
     >
       <Stack gap="md">
@@ -142,7 +168,10 @@ export function NewProductCapitalizationPanel({ opened, onClose, onCreated }: Ne
           </Alert>
         )}
 
-        <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="sm">
+        <Text className="app-section-title" fw={600} size="sm">
+          {t('Параметри документа')}
+        </Text>
+        <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="sm" style={{ alignItems: 'end' }}>
           <TextInput
             disabled={isFormBusy}
             label={t('Коментар')}
@@ -157,6 +186,7 @@ export function NewProductCapitalizationPanel({ opened, onClose, onCreated }: Ne
             onChange={(event) => model.setFromDate(event.currentTarget.value)}
           />
           <Select
+            comboboxProps={CAPITALIZATION_COMBOBOX_PROPS}
             data={model.organizationOptions}
             disabled={isFormBusy}
             label={t('Організація')}
@@ -165,6 +195,7 @@ export function NewProductCapitalizationPanel({ opened, onClose, onCreated }: Ne
             onChange={model.selectOrganization}
           />
           <Select
+            comboboxProps={CAPITALIZATION_COMBOBOX_PROPS}
             data={model.storageOptions}
             disabled={isFormBusy || !model.selectedOrganizationNetId || model.isLoadingStorages}
             label={t('Склад')}
@@ -175,10 +206,12 @@ export function NewProductCapitalizationPanel({ opened, onClose, onCreated }: Ne
           />
         </SimpleGrid>
 
-        <Divider />
-
+        <Text className="app-section-title" fw={600} size="sm">
+          {t('Товари')}
+        </Text>
         <Group align="end" gap="sm" wrap="nowrap">
           <Autocomplete
+            comboboxProps={CAPITALIZATION_COMBOBOX_PROPS}
             data={model.vendorCodeOptions}
             disabled={isFormBusy}
             label={t('Артикул')}
@@ -216,22 +249,15 @@ export function NewProductCapitalizationPanel({ opened, onClose, onCreated }: Ne
             value={model.itemEntry.unitPrice}
             onChange={(value) => model.setItemEntry((current) => ({ ...current, unitPrice: toNumberOrEmpty(value) }))}
           />
-          <Button disabled={isFormBusy} leftSection={<IconPlus size={16} />} mb={1} onClick={model.addItem}>
-            {t('Додати рядок')}
-          </Button>
-        </Group>
-
-        <Group justify="space-between">
           <Button
+            color={CREATE_ACTION_COLOR}
             disabled={isFormBusy}
-            leftSection={<IconFileSpreadsheet size={16} />}
-            variant="light"
-            onClick={model.openUploadModal}
+            leftSection={<IconPlus size={16} />}
+            mb={1}
+            variant="outline"
+            onClick={model.addItem}
           >
-            {t('Імпорт з Excel')}
-          </Button>
-          <Button color="green" disabled={isFormBusy} loading={model.isSubmitting} onClick={model.submit}>
-            {t('Провести')}
+            {t('Додати рядок')}
           </Button>
         </Group>
 
@@ -242,7 +268,7 @@ export function NewProductCapitalizationPanel({ opened, onClose, onCreated }: Ne
           emptyText={t('Додайте хоча б один товар')}
           getRowId={(item) => item.__rowKey}
           layoutVersion="new-product-capitalization-items-1"
-          maxHeight="calc(100vh - 360px)"
+          maxHeight="calc(100vh - 400px)"
           minWidth={920}
           tableId="new-product-capitalization-items"
         />
@@ -264,11 +290,17 @@ export function NewProductCapitalizationPanel({ opened, onClose, onCreated }: Ne
         onClose={() => model.setMissingModalOpened(false)}
       />
 
-      <AppModal centered opened={model.confirmCloseOpen} title={t('Є незбережені зміни')} onClose={model.cancelClose}>
+      <AppModal
+        centered
+        className="product-capitalization-confirm-modal"
+        opened={model.confirmCloseOpen}
+        title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Є незбережені зміни')}</span>}
+        onClose={model.cancelClose}
+      >
         <Stack gap="md">
           <Text>{t('Якщо закрити форму, документ оприбуткування не буде створено.')}</Text>
           <Group justify="flex-end">
-            <Button color="gray" variant="light" onClick={model.cancelClose}>
+            <Button variant="default" onClick={model.cancelClose}>
               {t('Залишитися')}
             </Button>
             <Button color="red" onClick={model.confirmClose}>
@@ -888,7 +920,11 @@ function useItemColumns(
         minWidth: 48,
         align: 'right',
         enableSorting: false,
-        cell: (item) => String(items.findIndex((candidate) => candidate.__rowKey === item.__rowKey) + 1),
+        cell: (item) => (
+          <span className="product-capitalization-cell-num">
+            {String(items.findIndex((candidate) => candidate.__rowKey === item.__rowKey) + 1)}
+          </span>
+        ),
       },
       {
         id: 'vendorCode',
@@ -896,7 +932,11 @@ function useItemColumns(
         width: 160,
         minWidth: 124,
         accessor: (item) => item.Product?.VendorCode,
-        cell: (item) => <Text fw={700}>{displayValue(item.Product?.VendorCode || item.ProductVendorCode)}</Text>,
+        cell: (item) => (
+          <span className="product-capitalization-cell-code">
+            {displayValue(item.Product?.VendorCode || item.ProductVendorCode)}
+          </span>
+        ),
       },
       {
         id: 'name',
@@ -905,7 +945,7 @@ function useItemColumns(
         minWidth: 220,
         accessor: (item) => item.Product?.Name,
         cell: (item) => (
-          <Text fw={600} lineClamp={2}>
+          <Text c="gray.8" fw={600} lineClamp={2} size="sm">
             {displayValue(item.Product?.Name || item.ProductName)}
           </Text>
         ),
@@ -978,18 +1018,17 @@ function useItemColumns(
         enableSorting: false,
         enableHiding: false,
         cell: (item) => (
-          <Tooltip label={t('Видалити')}>
-            <ActionIcon
-              aria-label={t('Видалити')}
-              color="red"
-              disabled={disabled}
-              size="sm"
-              variant="subtle"
-              onClick={() => onRemove(item.__rowKey)}
-            >
-              <IconTrash size={16} />
-            </ActionIcon>
-          </Tooltip>
+          <ActionIcon
+            aria-label={t('Видалити')}
+            color="red"
+            disabled={disabled}
+            size="sm"
+            title={t('Видалити')}
+            variant="subtle"
+            onClick={() => onRemove(item.__rowKey)}
+          >
+            <IconTrash size={16} />
+          </ActionIcon>
         ),
       },
     ],
@@ -1058,9 +1097,10 @@ function toPositiveInteger(value: number | string | undefined): number {
   return Math.trunc(numberValue)
 }
 
+/* Empty values render as blank cells (§5), never a dash. */
 function displayValue(value: unknown): string {
   if (value === null || value === undefined || value === '') {
-    return '-'
+    return ''
   }
 
   return String(value)

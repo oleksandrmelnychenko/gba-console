@@ -187,7 +187,7 @@ export function CompanyCarRoadListsPage() {
     <Stack className="company-car-road-lists-page" gap={6}>
       <Card className="app-data-card company-car-road-lists-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar company-car-road-lists-filter-bar">
-          <Group align="end" gap="sm" wrap="wrap" className="company-car-road-lists-filter-row">
+          <Group align="end" gap="sm" wrap="nowrap" className="company-car-road-lists-filter-row">
             <Group gap="xs" wrap="nowrap" className="company-car-road-lists-identity">
               <Button color="gray" leftSection={<IconArrowLeft size={16} />} size="sm" variant="light" onClick={() => navigate(returnPath)}>
                 {t('Назад')}

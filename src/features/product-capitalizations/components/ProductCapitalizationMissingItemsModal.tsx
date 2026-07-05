@@ -17,14 +17,20 @@ export function ProductCapitalizationMissingItemsModal({
   const { t } = useI18n()
 
   return (
-    <AppModal centered opened={opened} size="md" title={t('Відсутні артикули')} onClose={onClose}>
+    <AppModal
+      centered
+      opened={opened}
+      size="md"
+      title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Відсутні артикули')}</span>}
+      onClose={onClose}
+    >
       <Stack gap="md">
         <Alert color="red" icon={<IconAlertTriangle size={18} />} variant="light">
           {t('Ці артикули з файлу не знайдено серед товарів')}
         </Alert>
         <Group gap="xs">
           {items.map((code) => (
-            <Badge key={code} color="red" size="lg" variant="light">
+            <Badge key={code} className="app-role-pill is-red" size="lg" variant="light">
               {code}
             </Badge>
           ))}

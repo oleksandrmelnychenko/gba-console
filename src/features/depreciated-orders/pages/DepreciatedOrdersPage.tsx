@@ -495,7 +495,7 @@ function DepreciatedOrdersTableCard({ model }: { model: ReturnType<typeof useDep
 
   return (
     <Card className="app-data-card" withBorder radius="md" padding={0}>
-      <div className="app-filter-bar">
+      <div className="app-filter-bar depreciated-orders-filter-bar">
         <Group align="end" gap="sm" wrap="nowrap" justify="space-between" className="depreciated-orders-filter-row">
           <Group align="end" gap="sm" wrap="nowrap">
             <TextInput
@@ -559,7 +559,7 @@ function DepreciatedOrdersTableCard({ model }: { model: ReturnType<typeof useDep
       </div>
 
       {(error || filterError || storageError) && (
-        <Alert m="md" color={filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert className="depreciated-orders-alert" color={filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
           {filterError || error || storageError}
         </Alert>
       )}
@@ -581,7 +581,7 @@ function DepreciatedOrdersTableCard({ model }: { model: ReturnType<typeof useDep
       />
 
       {hasMore && (
-        <Group justify="center" p="md">
+        <Group className="depreciated-orders-footer" justify="center">
           <Button color="gray" loading={isLoadingMore} variant="light" onClick={loadMoreOrders}>
             {t('Завантажити ще')}
           </Button>

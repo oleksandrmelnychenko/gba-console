@@ -379,7 +379,7 @@ export function CurrencyConvertorsPage() {
         </div>
 
         {model.error && (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert className="currency-convertors-alert" color="red" icon={<IconAlertCircle size={18} />} variant="light">
             {model.error}
           </Alert>
         )}

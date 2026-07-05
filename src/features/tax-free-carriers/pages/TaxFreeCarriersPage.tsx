@@ -30,7 +30,7 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import { AppModal } from '../../../shared/ui/AppModal'
-import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { useAuth } from '../../auth/useAuth'
@@ -230,18 +230,10 @@ function useTaxFreeCarriersLoader({
 }
 
 export function TaxFreeCarriersPage() {
-  const { t } = useI18n()
   const model = useTaxFreeCarriersPageModel()
 
   return (
     <Stack gap={6}>
-      {model.canManage && (
-        <PageHeaderActions>
-          <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} onClick={model.openCreate}>
-            {t('Додати')}
-          </Button>
-        </PageHeaderActions>
-      )}
       <CarriersTableCard model={model} />
       <CarriersDeleteModal model={model} />
       <CarriersDownloadModal model={model} />
@@ -252,8 +244,8 @@ export function TaxFreeCarriersPage() {
 function CarriersTableCard({ model }: { model: ReturnType<typeof useTaxFreeCarriersPageModel> }) {
   const { t } = useI18n()
   const {
-    canPrint, columns, carriers, error, exportDocument, isDownloading, isLoading,
-    openEdit, reload, resetSearch, searchDraft, updateSearchDraft,
+    canManage, canPrint, columns, carriers, error, exportDocument, isDownloading, isLoading,
+    openCreate, openEdit, reload, resetSearch, searchDraft, updateSearchDraft,
   } = model
 
   return (
@@ -301,6 +293,13 @@ function CarriersTableCard({ model }: { model: ReturnType<typeof useTaxFreeCarri
               </Tooltip>
             )}
           </div>
+          {canManage && (
+            <div className="tax-free-carriers-create-actions">
+              <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} onClick={openCreate}>
+                {t('Додати')}
+              </Button>
+            </div>
+          )}
         </Group>
       </div>
 

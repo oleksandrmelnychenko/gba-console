@@ -1,25 +1,58 @@
 .product-placements-page {
+  box-sizing: border-box;
   height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 24px);
   min-height: 0;
   overflow: hidden;
+  padding: 0 4px;
+}
+
+.product-placements-card {
+  min-width: 0;
 }
 
 /* Filter strip pinned at the top of the card; the table below it scrolls. */
 .product-placements-filter-bar {
   flex: 0 0 auto;
+  overflow-x: auto;
 }
 
 .product-placements-filter-bar .product-placements-filter-row {
+  align-items: end;
+  display: grid;
+  gap: 10px;
+  grid-template-columns:
+    minmax(300px, 320px)
+    minmax(140px, 150px)
+    minmax(220px, 240px)
+    minmax(32px, 1fr)
+    auto
+    auto;
+  min-width: max-content;
   width: 100%;
 }
 
+.product-placements-filter-row .app-filter-actions {
+  grid-column: 5;
+  margin-left: auto;
+}
+
+.product-placements-filter-row > .mantine-Button-root {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  grid-column: 6;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
 .product-placements-page__alert {
-  margin: 12px 12px 0;
+  margin: 10px 8px 0;
 }
 
 .product-placements-page__table {
+  box-sizing: border-box;
   flex: 1 1 auto;
   min-height: 0;
+  padding: 0 8px 8px;
 }
 
 .product-placements-page__table .data-table {

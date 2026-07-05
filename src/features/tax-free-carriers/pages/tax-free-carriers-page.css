@@ -11,6 +11,20 @@
   margin-left: auto;
 }
 
+.tax-free-carriers-create-actions {
+  align-items: center;
+  align-self: end;
+  display: flex;
+  min-height: 36px;
+}
+
+.tax-free-carriers-create-actions .mantine-Button-root {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
 /* Body below the flush filter strip carries its own padding (the card is
    padding={0} so the strip sits flush). */
 .tax-free-carriers-card__body {

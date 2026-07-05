@@ -719,8 +719,26 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
   return (
     <Stack gap="md">
       <Card className="app-data-card" withBorder radius="md" padding={0}>
-        <div className="app-filter-bar">
-          <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row product-remains-filter-row">
+        <div className="app-filter-bar product-remains-filter-bar">
+          <Group align="end" gap="sm" wrap="nowrap" className="product-remains-filter-row">
+            <div className="product-remains-toolbar-tabs pill-tabs">
+              {([
+                { value: 'batches', label: t('Партії') },
+                { value: 'products', label: t('Товари') },
+              ] as const).map((tab) => (
+                <button
+                  key={tab.value}
+                  type="button"
+                  className={`pill-tab${activeTab === tab.value ? ' is-active' : ''}`}
+                  aria-pressed={activeTab === tab.value}
+                  onClick={() => {
+                    selectActiveTab(tab.value)
+                  }}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
             <Select
               searchable
               allowDeselect={false}
@@ -821,7 +839,7 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
           </Group>
         </div>
 
-        <Stack className="product-remains-body" gap="md">
+        <Stack className="product-remains-body" gap={10}>
           {alertMessage && (
             <Alert color={isWarningAlert ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
               {alertMessage}
@@ -829,27 +847,8 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
           )}
 
           <Box>
-            <div className="pill-tabs" style={{ width: 'fit-content' }}>
-              {([
-                { value: 'batches', label: t('Партії') },
-                { value: 'products', label: t('Товари') },
-              ] as const).map((tab) => (
-                <button
-                  key={tab.value}
-                  type="button"
-                  className={`pill-tab${activeTab === tab.value ? ' is-active' : ''}`}
-                  aria-pressed={activeTab === tab.value}
-                  onClick={() => {
-                    selectActiveTab(tab.value)
-                  }}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-
             {activeTab === 'batches' && (
-              <Box pt="md">
+              <Box>
               <Stack gap="md">
                 <DataTable
                   columns={batchColumns}
@@ -879,7 +878,7 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
             )}
 
             {activeTab === 'products' && (
-              <Box pt="md">
+              <Box>
               <Stack gap="md">
                 <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
                   <TextInput

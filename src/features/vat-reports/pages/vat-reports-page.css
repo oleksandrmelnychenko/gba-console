@@ -1,3 +1,30 @@
+.vat-reports-page {
+  box-sizing: border-box;
+  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 24px);
+  min-height: 0;
+  overflow: hidden;
+  padding: 0 4px;
+}
+
+.vat-reports-filter-bar {
+  overflow-x: auto;
+}
+
 .vat-reports-filter-row {
-  width: 100%;
+  display: grid;
+  grid-template-columns: max-content minmax(16px, 1fr) max-content;
+  width: max(100%, max-content);
+  min-width: 0;
+}
+
+.vat-reports-filter-row > .app-filter-actions {
+  grid-column: 3;
+}
+
+.vat-reports-alert {
+  margin: 10px 8px 0;
+}
+
+.vat-reports-footer {
+  padding: 8px;
 }

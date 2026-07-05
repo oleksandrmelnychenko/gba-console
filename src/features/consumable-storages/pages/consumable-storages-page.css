@@ -10,7 +10,7 @@
   align-items: end;
   display: grid;
   gap: 10px;
-  grid-template-columns: minmax(260px, 360px) minmax(0, 1fr) auto;
+  grid-template-columns: minmax(260px, 360px) minmax(0, 1fr) auto auto;
   width: 100%;
 }
 
@@ -25,12 +25,23 @@
   min-height: var(--storages-control-height);
 }
 
-/* Дії + кнопка створення — третя колонка сітки, по низу рядка. */
+/* Дії + кнопка створення — в один рядок, праворуч тулбара. */
 .consumable-storages-filter-actions {
   align-items: center;
   display: inline-flex;
   gap: 8px;
   grid-column: 3;
+}
+
+.consumable-storages-create-action {
+  align-items: center;
+  display: inline-flex;
+  grid-column: 4;
+  min-height: var(--storages-control-height);
+}
+
+.consumable-storages-create-action .mantine-Button-root {
+  white-space: nowrap;
 }
 
 /* Тіло під смужкою: таблиця впритул до країв картки (падінги дає сама

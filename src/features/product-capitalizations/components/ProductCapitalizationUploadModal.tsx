@@ -1,7 +1,9 @@
 import { Alert, Button, Checkbox, FileInput, Group, NumberInput, SimpleGrid, Stack, Text } from '@mantine/core'
 import { IconAlertCircle, IconFileSpreadsheet, IconUpload } from '@tabler/icons-react'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import './product-capitalization-sheet.css'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import {
   hasDuplicateProductCapitalizationImportColumns,
@@ -78,7 +80,14 @@ export function ProductCapitalizationUploadModal({
   }
 
   return (
-    <AppModal centered opened={opened} size="lg" title={t('Імпорт з Excel')} onClose={closeModal}>
+    <AppModal
+      centered
+      className="product-capitalization-upload-modal"
+      opened={opened}
+      size="lg"
+      title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Імпорт з Excel')}</span>}
+      onClose={closeModal}
+    >
       <Stack gap="md">
         {(validationError || submitError) && (
           <Alert color="red" icon={<IconAlertCircle size={16} />} variant="light">
@@ -180,10 +189,16 @@ export function ProductCapitalizationUploadModal({
         </Text>
 
         <Group justify="flex-end">
-          <Button disabled={isSubmitting} variant="subtle" onClick={closeModal}>
+          <Button disabled={isSubmitting} variant="default" onClick={closeModal}>
             {t('Скасувати')}
           </Button>
-          <Button disabled={isSubmitting} leftSection={<IconUpload size={16} />} loading={isSubmitting} onClick={submitForm}>
+          <Button
+            color={CREATE_ACTION_COLOR}
+            disabled={isSubmitting}
+            leftSection={<IconUpload size={16} />}
+            loading={isSubmitting}
+            onClick={submitForm}
+          >
             {t('Завантажити')}
           </Button>
         </Group>

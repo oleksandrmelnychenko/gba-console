@@ -3,18 +3,42 @@
    canonical .app-data-card / .app-filter-bar / .app-filter-actions rules in
    shared/ui/filter-bar.css. */
 
-/* Let the filter strip span the full card width so the actions cluster pins to
-   the trailing edge while the fixed-width controls sit at the leading edge. */
+/* Let the filter strip span the full card width while tabs + filters + actions
+   stay in a single toolbar row. */
+.product-remains-filter-bar {
+  overflow-x: auto;
+}
+
 .product-remains-filter-row {
+  align-items: end;
+  display: grid;
+  gap: 10px;
+  grid-template-columns:
+    auto
+    minmax(260px, 280px)
+    minmax(140px, 150px)
+    minmax(140px, 150px)
+    minmax(280px, 300px)
+    minmax(84px, 92px)
+    minmax(32px, 1fr)
+    auto;
+  min-width: max-content;
   width: 100%;
 }
 
+.product-remains-toolbar-tabs {
+  align-self: end;
+  min-height: 36px;
+  width: max-content;
+}
+
 .product-remains-filter-row .app-filter-actions {
+  grid-column: 8;
   margin-left: auto;
 }
 
-/* The card is padding-0 (so the filter strip is flush); the tabbed body below
-   the strip carries its own padding. */
+/* The card is padding-0 (so the filter strip is flush); the body below
+   carries its own padding. */
 .product-remains-body {
-  padding: 16px;
+  padding: 10px 8px 8px;
 }

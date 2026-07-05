@@ -996,8 +996,8 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
       ) : null}
 
       <Card className="app-data-card" withBorder radius="md" padding={0}>
-        <div className="app-filter-bar">
-          <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
+        <div className="app-filter-bar product-storages-filter-bar">
+          <Group align="end" gap="sm" wrap="nowrap" className="product-storages-filter-row">
             <Select
               searchable
               allowDeselect={false}
@@ -1069,7 +1069,7 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
           </Group>
         </div>
 
-        <Stack gap="md" className="product-storages-body">
+        <Stack gap={10} className="product-storages-body">
           {(filterError || error || (!isLoadingStorages && storageOptions.length === 0)) && (
             <Alert color={filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
               {filterError ? t(filterError) : error || t('Складів не знайдено')}

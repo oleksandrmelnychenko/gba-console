@@ -1,4 +1,4 @@
-import { Alert, Card, Grid, Loader, Select, Stack, Text } from '@mantine/core'
+import { Alert, Card, Loader, Select, Stack, Text } from '@mantine/core'
 import { IconAlertCircle, IconSearch } from '@tabler/icons-react'
 import { useEffect } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -359,46 +359,41 @@ function PredictionFilters({
 
   return (
     <Card withBorder radius="md" padding={0} className="app-filter-card sales-prediction-filter-card">
-      <div className="app-filter-bar">
-        <Grid gap="md">
-          <Grid.Col span={{ base: 12, md: 6 }}>
-            <Select
-              clearable
-              searchable
-              data={clientData}
-              label={t('Клієнт')}
-              leftSection={<IconSearch size={16} />}
-              nothingFoundMessage={
-                clientQuery.trim().length < 2 ? t('Введіть мінімум 2 символи') : t('Нічого не знайдено')
-              }
-              placeholder={t('Пошук клієнта')}
-              rightSection={isLoadingClient ? <Loader size="xs" /> : null}
-              searchValue={clientQuery}
-              value={clientNetId}
-              onChange={onClientChange}
-              onSearchChange={onClientSearchChange}
-            />
-          </Grid.Col>
-
-          <Grid.Col span={{ base: 12, md: 6 }}>
-            <Select
-              clearable
-              searchable
-              data={productData}
-              label={t('Товар')}
-              leftSection={<IconSearch size={16} />}
-              nothingFoundMessage={
-                productQuery.trim().length < 2 ? t('Введіть мінімум 2 символи') : t('Нічого не знайдено')
-              }
-              placeholder={t('Пошук товару')}
-              rightSection={isLoadingProduct ? <Loader size="xs" /> : null}
-              searchValue={productQuery}
-              value={productNetId}
-              onChange={onProductChange}
-              onSearchChange={onProductSearchChange}
-            />
-          </Grid.Col>
-        </Grid>
+      <div className="app-filter-bar sales-prediction-filter-bar">
+        <div className="sales-prediction-filter-row">
+          <Select
+            clearable
+            searchable
+            data={clientData}
+            label={t('Клієнт')}
+            leftSection={<IconSearch size={16} />}
+            nothingFoundMessage={
+              clientQuery.trim().length < 2 ? t('Введіть мінімум 2 символи') : t('Нічого не знайдено')
+            }
+            placeholder={t('Пошук клієнта')}
+            rightSection={isLoadingClient ? <Loader size="xs" /> : null}
+            searchValue={clientQuery}
+            value={clientNetId}
+            onChange={onClientChange}
+            onSearchChange={onClientSearchChange}
+          />
+          <Select
+            clearable
+            searchable
+            data={productData}
+            label={t('Товар')}
+            leftSection={<IconSearch size={16} />}
+            nothingFoundMessage={
+              productQuery.trim().length < 2 ? t('Введіть мінімум 2 символи') : t('Нічого не знайдено')
+            }
+            placeholder={t('Пошук товару')}
+            rightSection={isLoadingProduct ? <Loader size="xs" /> : null}
+            searchValue={productQuery}
+            value={productNetId}
+            onChange={onProductChange}
+            onSearchChange={onProductSearchChange}
+          />
+        </div>
       </div>
     </Card>
   )

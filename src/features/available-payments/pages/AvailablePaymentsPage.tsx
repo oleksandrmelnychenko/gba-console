@@ -50,6 +50,7 @@ import {
   type PriceTotal,
   type SupplyPaymentTask,
 } from '../types'
+import './available-payments-page.css'
 
 type FilterDraft = {
   from: string
@@ -697,8 +698,8 @@ function AvailablePaymentsTableCard({ model }: { model: ReturnType<typeof useAva
 
   return (
     <Card className="app-filter-card" withBorder radius="md" padding={0}>
-      <div className="app-filter-bar">
-        <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
+      <div className="app-filter-bar available-payments-filter-bar">
+        <Group align="end" gap="sm" wrap="nowrap" className="available-payments-filter-row">
           <Select
             data={organizationOptions}
             label={t('Організація')}
@@ -732,7 +733,7 @@ function AvailablePaymentsTableCard({ model }: { model: ReturnType<typeof useAva
             style={{ flex: '0 0 auto' }}
             onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
           />
-          <div className="app-filter-actions" style={{ marginLeft: 'auto' }}>
+          <div className="app-filter-actions">
             <Tooltip label={t('Скинути')}>
               <ActionIcon
                 aria-label={t('Скинути')}
@@ -761,7 +762,7 @@ function AvailablePaymentsTableCard({ model }: { model: ReturnType<typeof useAva
         </Group>
       </div>
 
-      <Stack gap="md" p="md">
+      <Stack className="available-payments-body" gap={10}>
         {(error || filterError || organizationsError) && (
           <Alert color={filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
             {filterError || error || organizationsError}

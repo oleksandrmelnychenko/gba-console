@@ -556,7 +556,7 @@ function OutgoingCashflowsContent({ model }: { model: OutgoingCashflowsPageModel
     <Stack gap="md">
       <Card className="app-data-card outgoing-cashflows-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar outgoing-cashflows-filter-bar">
-          <Group align="end" gap="sm" wrap="wrap" className="outgoing-cashflows-filter-row">
+          <Group align="end" gap="sm" wrap="nowrap" className="outgoing-cashflows-filter-row">
             <TextInput label={t('Від')} type="date" value={fromDate} onChange={(event) => onSetFromDate(event.currentTarget.value)} />
             <TextInput label={t('До')} type="date" value={toDate} onChange={(event) => onSetToDate(event.currentTarget.value)} />
             <TextInput
@@ -630,15 +630,17 @@ function OutgoingCashflowsContent({ model }: { model: OutgoingCashflowsPageModel
               </Tooltip>
               <DataTableDensityToggle density={density} onToggle={onToggleDensity} size={34} />
             </div>
-            <Button
-              color={CREATE_ACTION_COLOR}
-              leftSection={<IconPlus size={16} />}
-              size="sm"
-              styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
-              onClick={() => navigate('/accounting/outgoing-cashflow/new', { state: { backgroundLocation: location } })}
-            >
-              {t('Новий')}
-            </Button>
+            <div className="outgoing-cashflows-create-actions">
+              <Button
+                color={CREATE_ACTION_COLOR}
+                leftSection={<IconPlus size={16} />}
+                size="sm"
+                styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
+                onClick={() => navigate('/accounting/outgoing-cashflow/new', { state: { backgroundLocation: location } })}
+              >
+                {t('Новий')}
+              </Button>
+            </div>
           </Group>
         </div>
 

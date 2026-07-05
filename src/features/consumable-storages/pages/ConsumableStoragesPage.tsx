@@ -210,7 +210,7 @@ export function ConsumableStoragesPage() {
     <Stack gap="md">
       <Card className="app-data-card consumable-storages-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar consumable-storages-filter-bar">
-          <Group align="end" gap="sm" wrap="wrap" className="consumable-storages-filter-row">
+          <Group align="end" gap="sm" wrap="nowrap" className="consumable-storages-filter-row">
             <TextInput
               label={t('Пошук')}
               leftSection={<IconSearch size={16} />}
@@ -234,15 +234,17 @@ export function ConsumableStoragesPage() {
               </Tooltip>
             </div>
             <PermissionGate permissionKey={CONSUMABLE_STORAGE_CREATE_PERMISSION}>
-              <Button
-                color={CREATE_ACTION_COLOR}
-                leftSection={<IconPlus size={16} />}
-                size="sm"
-                styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
-                onClick={openCreateStorage}
-              >
-                {t('Новий склад')}
-              </Button>
+              <div className="consumable-storages-create-action">
+                <Button
+                  color={CREATE_ACTION_COLOR}
+                  leftSection={<IconPlus size={16} />}
+                  size="sm"
+                  styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
+                  onClick={openCreateStorage}
+                >
+                  {t('Новий склад')}
+                </Button>
+              </div>
             </PermissionGate>
           </Group>
         </div>

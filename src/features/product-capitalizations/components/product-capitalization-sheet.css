@@ -1,0 +1,84 @@
+/* «Нове оприбуткування» sheet + its modals on the docs/ui-patterns.md system:
+   §2 section titles, §8 mono buttons, §9 form controls (mono combos/numbers,
+   Onest field labels, orange checkboxes), §5 table cell language. The class
+   names spell the feature out in full — no abbreviations. */
+
+/* §8: button captions in forms/footers are mono 600. */
+.product-capitalization-sheet .mantine-Button-label,
+.product-capitalization-upload-modal .mantine-Button-label,
+.product-capitalization-confirm-modal .mantine-Button-label {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+/* §9 field chrome: radius 8, gray-2 border. Labels stay Onest (not mono). */
+.product-capitalization-sheet .mantine-Input-input,
+.product-capitalization-upload-modal .mantine-Input-input {
+  border-color: var(--mantine-color-gray-2);
+  border-radius: 8px;
+}
+
+/* The gray-2 pin above outcascades the app-wide focus/error borders (same
+   specificity, later chunk) — re-assert them, like the shared filter-bar.css. */
+.product-capitalization-sheet .mantine-Input-input:focus,
+.product-capitalization-sheet .mantine-Input-input:focus-within,
+.product-capitalization-upload-modal .mantine-Input-input:focus,
+.product-capitalization-upload-modal .mantine-Input-input:focus-within {
+  border-color: var(--app-focus-border);
+  box-shadow: var(--app-focus-ring);
+}
+
+.product-capitalization-sheet .mantine-Input-input[data-error],
+.product-capitalization-upload-modal .mantine-Input-input[data-error] {
+  border-color: var(--mantine-color-red-6);
+}
+
+/* §9: combos, codes and numbers read in mono; the comment field stays Onest. */
+.product-capitalization-sheet .mantine-Select-input,
+.product-capitalization-sheet .mantine-Autocomplete-input,
+.product-capitalization-sheet .mantine-NumberInput-input,
+.product-capitalization-sheet input[type='datetime-local'],
+.product-capitalization-upload-modal .mantine-NumberInput-input {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0;
+}
+
+/* Orange checkboxes (§9), including the indeterminate state; disabled ones
+   keep Mantine's gray so a parsing form still reads as locked. */
+.product-capitalization-upload-modal .mantine-Checkbox-input:checked:not(:disabled),
+.product-capitalization-upload-modal .mantine-Checkbox-input[data-indeterminate]:not(:disabled) {
+  background-color: var(--brand-orange);
+  border-color: var(--brand-orange);
+}
+
+/* Portal dropdowns: mono options, orange selected/hover tint (§1 — no violet). */
+.product-capitalization-dropdown [data-combobox-option] {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  letter-spacing: 0;
+}
+
+.product-capitalization-dropdown [data-combobox-option]:hover,
+.product-capitalization-dropdown [data-combobox-option][data-combobox-selected],
+.product-capitalization-dropdown [data-combobox-option][aria-selected='true'] {
+  background: #fff4eb;
+  color: var(--mantine-color-gray-9);
+}
+
+/* Items table cells (§5.1): mono codes and row numbers. */
+.product-capitalization-cell-code {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--mantine-color-gray-8);
+}
+
+.product-capitalization-cell-num {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--mantine-color-gray-6);
+}

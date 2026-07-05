@@ -126,6 +126,8 @@ const BASKET_RECOMMENDATIONS_TABLE_DEFAULT_LAYOUT = {
   density: 'normal',
 } satisfies DataTableDefaultLayout
 
+const EMPTY_NET_UID = '00000000-0000-0000-0000-000000000000'
+
 const EMPTY_TOTALS: CartItemsTotals = {
   TotalEuroAmount: 0,
   TotalPlnAmount: 0,
@@ -2188,7 +2190,40 @@ function getTabPath(tab: BasketSupplyWorkflowTab) {
 }
 
 function getCartItemKey(item: SupplyOrderUkraineCartItem, fallbackIndex?: number) {
-  return item.NetUid || String(item.Id || fallbackIndex || `${item.Product?.VendorCode || ''}-${item.FromDate || ''}`)
+  const netUid = normalizeNetUid(item.NetUid)
+
+  if (netUid) {
+    return `net:${netUid}`
+  }
+
+  if (typeof item.Id === 'number' && item.Id > 0) {
+    return `id:${item.Id}`
+  }
+
+  const productKey = [
+    item.ProductId,
+    normalizeNetUid(item.Product?.NetUid),
+    item.Product?.Id,
+    item.Product?.VendorCode,
+  ].find((value) => value !== undefined && value !== null && String(value).trim() !== '')
+
+  return [
+    'cart-item',
+    productKey || 'product',
+    item.FromDate || 'no-date',
+    item.UploadedQty ?? item.ChangedQty ?? item.TempQty ?? item.AvailableQty ?? 'no-qty',
+    fallbackIndex ?? 'no-index',
+  ].map((part) => String(part)).join(':')
+}
+
+function normalizeNetUid(value?: string | null) {
+  const normalized = value?.trim()
+
+  if (!normalized || normalized === EMPTY_NET_UID) {
+    return ''
+  }
+
+  return normalized
 }
 
 function getBasketSaleKey(sale: BasketSale) {

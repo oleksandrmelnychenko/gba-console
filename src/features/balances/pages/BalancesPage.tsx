@@ -281,7 +281,7 @@ function BalancesTableCard({ model }: { model: ReturnType<typeof useBalancesPage
   return (
     <Card className="app-data-card balances-card" withBorder radius="md" padding={0}>
       <div className="app-filter-bar balances-filter-bar">
-        <Group align="end" gap="sm" wrap="wrap" className="balances-filter-row">
+        <Group align="end" gap="sm" wrap="nowrap" className="balances-filter-row">
           <TextInput
             label={t('Від якої дати')}
             max={filterDraft.to || undefined}

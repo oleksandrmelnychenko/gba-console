@@ -4,6 +4,26 @@
   box-shadow: var(--app-card-shadow);
 }
 
+.product-transfers-filter-bar {
+  overflow-x: auto;
+}
+
 .product-transfers-filter-row {
-  width: 100%;
+  display: grid;
+  grid-template-columns: max-content max-content minmax(16px, 1fr) max-content max-content;
+  width: max(100%, max-content);
+  min-width: 0;
+}
+
+.product-transfers-filter-row > .app-filter-actions {
+  grid-column: 4;
+}
+
+.product-transfers-filter-row > .mantine-Button-root {
+  grid-column: 5;
+  white-space: nowrap;
+}
+
+.product-transfers-body {
+  padding: 10px 8px 8px;
 }

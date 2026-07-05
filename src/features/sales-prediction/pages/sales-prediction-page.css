@@ -1,9 +1,23 @@
 .sales-prediction-page {
+  box-sizing: border-box;
   height: 100%;
   min-height: 0;
   overflow: auto;
+  padding: 0 4px;
 }
 
 .sales-prediction-filter-card {
   flex: 0 0 auto;
+  min-width: 0;
+}
+
+.sales-prediction-filter-bar {
+  overflow-x: auto;
+}
+
+.sales-prediction-filter-row {
+  display: grid;
+  grid-template-columns: minmax(320px, 1fr) minmax(320px, 1fr);
+  gap: 12px;
+  width: max(100%, 720px);
 }

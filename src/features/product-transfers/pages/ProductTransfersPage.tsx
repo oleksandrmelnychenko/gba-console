@@ -578,7 +578,7 @@ function ProductTransfersTableCard({ model }: { model: ReturnType<typeof useProd
 
   return (
     <Card className="app-filter-card product-transfers-card" withBorder radius="md" padding={0}>
-      <div className="app-filter-bar">
+      <div className="app-filter-bar product-transfers-filter-bar">
         <Group align="end" gap="sm" wrap="nowrap" className="product-transfers-filter-row">
           <TextInput
             label={t('З')}
@@ -594,7 +594,7 @@ function ProductTransfersTableCard({ model }: { model: ReturnType<typeof useProd
             value={filterDraft.to}
             onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
           />
-          <div className="app-filter-actions" style={{ marginLeft: 'auto' }}>
+          <div className="app-filter-actions">
             <Select
               aria-label={t('Кількість рядків')}
               data={PAGE_SIZE_OPTIONS}
@@ -638,7 +638,7 @@ function ProductTransfersTableCard({ model }: { model: ReturnType<typeof useProd
         </Group>
       </div>
 
-      <Stack gap="md" p="md">
+      <Stack className="product-transfers-body" gap={10}>
         {(error || filterError || storageError) && (
           <Alert color={filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
             {filterError || error || storageError}

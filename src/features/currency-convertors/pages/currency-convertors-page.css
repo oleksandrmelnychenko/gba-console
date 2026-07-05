@@ -1,21 +1,46 @@
 .currency-convertors-page {
+  box-sizing: border-box;
   height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 24px);
   min-height: 0;
   overflow: hidden;
+  padding: 0 4px;
+}
+
+.currency-convertors-card {
+  min-width: 0;
 }
 
 /* Filter strip pinned at the top of the card; the table below it scrolls. */
 .currency-convertors-filter-bar {
   flex: 0 0 auto;
+  overflow-x: auto;
 }
 
 .currency-convertors-filter-bar .currency-convertors-filter-row {
-  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(16px, 1fr) max-content max-content;
+  width: max(100%, max-content);
+  min-width: 0;
+}
+
+.currency-convertors-filter-row > .app-filter-actions {
+  grid-column: 2;
+}
+
+.currency-convertors-filter-row > .mantine-Button-root {
+  grid-column: 3;
+  white-space: nowrap;
+}
+
+.currency-convertors-alert {
+  margin: 10px 8px 0;
 }
 
 .currency-convertors-page__table {
+  box-sizing: border-box;
   flex: 1 1 auto;
   min-height: 0;
+  padding: 0 8px 8px;
 }
 
 .currency-convertors-page__table .data-table {
