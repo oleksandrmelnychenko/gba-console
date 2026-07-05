@@ -84,6 +84,7 @@ export type Sale = EntityFields & {
   RetailClient?: (EntityFields & { Name?: string; PhoneNumber?: string }) | null
   Order?: WarehouseUkraineOrder | null
   ChangedToInvoice?: Date | string
+  TotalAmount?: number
   TotalAmountLocal?: number
   Comment?: string
   TTN?: string

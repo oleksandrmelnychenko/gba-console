@@ -213,7 +213,7 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
   const useEurToUah = isNonVatEurSale(sale)
   const editorCurrencyCode = getSaleLocalCurrencyCode(sale)
   const headerTotal = useEurToUah
-    ? roundMoney(orderItems.reduce((sum, item) => sum + (getNumber(item.TotalAmountEurToUah) ?? 0), 0))
+    ? getNumber(sale.TotalAmountEurToUah) ?? roundMoney(orderItems.reduce((sum, item) => sum + (getNumber(item.TotalAmountEurToUah) ?? 0), 0))
     : getNumber(sale.TotalAmountLocal) ?? getNumber(sale.TotalAmount) ?? 0
   const itemColumns = useItemColumns({ canEdit: isEditable, onDelete: setDeletingItem, onEditQty: setEditingItem, useEurToUah })
   const reviewIssues = getSaleReviewIssues(sale, { isRetailPaymentLoading, retailPaymentStatus })
@@ -294,7 +294,7 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
         item.Product?.VendorCode || item.Product?.Articul || '',
         item.Product?.NameUA || item.Product?.Name || '',
         getNumber(item.Qty) ?? '',
-        getNumber(item.PricePerItem) ?? '',
+        getOrderItemUnitPriceEur(item) ?? '',
         getNumber(item.TotalAmount) ?? getNumber(item.TotalAmountLocal) ?? '',
       ].join('\t')
     })
@@ -638,8 +638,8 @@ function useItemColumns({
       header: t('Ціна'),
       width: 120,
       align: 'right',
-      accessor: (item) => getNumber(item.PricePerItem),
-      cell: (item) => formatAmount(getNumber(item.PricePerItem)),
+      accessor: (item) => getOrderItemUnitPrice(item, useEurToUah),
+      cell: (item) => formatAmount(getOrderItemUnitPrice(item, useEurToUah)),
     },
     {
       id: 'baseDiscount',
@@ -1251,6 +1251,22 @@ function getUserName(sale: SalesUkraineSale): string {
   const user = sale.UpdateUser || sale.User
 
   return user?.FullName?.trim() || [user?.LastName, user?.FirstName].filter(Boolean).join(' ').trim() || ''
+}
+
+function getOrderItemUnitPrice(item: SalesUkraineOrderItem, useEurToUah: boolean): number | null {
+  const qty = getNumber(item.Qty)
+  const amount = useEurToUah
+    ? getNumber(item.TotalAmountEurToUah)
+    : getNumber(item.TotalAmountLocal) ?? getNumber(item.TotalAmount)
+
+  return amount != null && qty ? amount / qty : null
+}
+
+function getOrderItemUnitPriceEur(item: SalesUkraineOrderItem): number | null {
+  const qty = getNumber(item.Qty)
+  const amount = getNumber(item.TotalAmount) ?? getNumber(item.TotalAmountLocal)
+
+  return amount != null && qty ? amount / qty : null
 }
 
 function formatAmount(value: number | null): string {

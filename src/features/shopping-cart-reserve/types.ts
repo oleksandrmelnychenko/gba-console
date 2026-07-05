@@ -43,7 +43,7 @@ export type CartReserveAssignedSpecification = {
 export type CartReserveOrderItem = CartReserveEntity & {
   AssignedSpecification?: CartReserveAssignedSpecification | null
   Comment?: string
-  OverLordQty?: number
+  OverLoadQty?: number
   Product?: CartReserveProduct
   Qty?: number
   TotalAmount?: number

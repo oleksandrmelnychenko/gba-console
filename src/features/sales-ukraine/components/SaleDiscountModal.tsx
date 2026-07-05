@@ -60,7 +60,7 @@ function SaleDiscountForm({
   const isReadOnly = !isDiscountEditableSaleLifecycle(sale.BaseLifeCycleStatus?.SaleLifeCycleType)
   const [amount, setAmount] = useState<number | string>(() => getInitialDiscount(sale, orderItem))
   const [comment, setComment] = useState(() =>
-    orderItem ? orderItem.OneTimeDiscountComment || '' : sale.OneTimeDiscountComment || orderItems[0]?.OneTimeDiscountComment || '',
+    orderItem ? orderItem.OneTimeDiscountComment || '' : sale.OneTimeDiscountComment || '',
   )
   const [isSaving, setSaving] = useState(false)
 

@@ -790,7 +790,6 @@ function IncompleteSaleDetail({ error, isLoading, sale, onOpenClientSales }: Inc
 
 function toSaleOrderItem(item: RetailCartItem): SaleOrderItem {
   const product = item.Product
-  const user = item.User as SaleOrderItem['User']
 
   return {
     Id: item.Id,
@@ -809,7 +808,6 @@ function toSaleOrderItem(item: RetailCartItem): SaleOrderItem {
     TotalAmount: toNumber(item.TotalAmount),
     TotalAmountLocal: toNumber(item.TotalAmountLocal),
     TotalWeight: toNumber(item.TotalWeight),
-    User: user,
   }
 }
 

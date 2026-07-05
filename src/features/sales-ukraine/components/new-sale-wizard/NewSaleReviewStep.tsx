@@ -317,9 +317,13 @@ export function NewSaleReviewStep({
   const orderItems = Array.isArray(sale?.Order?.OrderItems) ? sale.Order.OrderItems : []
   const useEurToUah = isNonVatEurSale(sale)
   const localCurrencyCode = getSaleLocalCurrencyCode(sale)
-  const total = useEurToUah
-    ? roundMoney(orderItems.reduce((sum, item) => sum + (getNumber(item.TotalAmountEurToUah) ?? 0), 0))
-    : getNumber(sale?.TotalAmountLocal) ?? getNumber(sale?.Order?.TotalAmountLocal) ?? 0
+  const summaryCount = splitItems.length > 0 ? splitItems.length : orderItems.length
+  const total =
+    splitItems.length > 0
+      ? roundMoney(splitItems.reduce((sum, item) => sum + (useEurToUah ? item.TotalAmountEurToUah : item.TotalAmountLocal), 0))
+      : useEurToUah
+        ? roundMoney(orderItems.reduce((sum, item) => sum + (getNumber(item.TotalAmountEurToUah) ?? 0), 0))
+        : getNumber(sale?.TotalAmountLocal) ?? getNumber(sale?.Order?.TotalAmountLocal) ?? 0
   const selfCheckout = isSelfCheckout(value.transporter)
 
   const transporterOptions: WizardReviewComboboxOption<SalesUkraineTransporter>[] = transporters.map((item, index) => ({
@@ -633,7 +637,7 @@ export function NewSaleReviewStep({
       <Card withBorder padding="md" radius="md">
         <Group justify="space-between" wrap="wrap">
           <Text fw={600}>
-            {t('Товарів')}: {orderItems.length}
+            {t('Товарів')}: {summaryCount}
           </Text>
           <Text fw={700} size="lg">
             {amountFormatter.format(total)} {localCurrencyCode}

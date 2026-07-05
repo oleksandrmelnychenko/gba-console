@@ -240,7 +240,7 @@ export function SalesOnlineShopPage() {
           return sale
         }
 
-        const onlineSale = next as unknown as SalesOnlineShopSale
+        const onlineSale = { ...(next as unknown as SalesOnlineShopSale), TotalRowsQty: sale.TotalRowsQty }
         setSales((current) => replaceSaleInList(current, onlineSale))
 
         return onlineSale
@@ -1348,6 +1348,8 @@ function SaleDetailProductRow({
   item: SalesOnlineShopOrderItem
 }) {
   const amount = getNumber(item.TotalAmountLocal) ?? getNumber(item.TotalAmount)
+  const qty = getNumber(item.Qty)
+  const unitPrice = amount != null && qty ? amount / qty : null
 
   return (
     <div className="sale-detail-product-row">
@@ -1364,8 +1366,8 @@ function SaleDetailProductRow({
           </OverflowTooltipText>
         </div>
       </div>
-      <span className="sale-detail-product-value">{displayValue(getNumber(item.Qty))}</span>
-      <span className="sale-detail-product-value">{formatAmount(getNumber(item.PricePerItem))}</span>
+      <span className="sale-detail-product-value">{displayValue(qty)}</span>
+      <span className="sale-detail-product-value">{formatAmount(unitPrice)}</span>
       <span className="sale-detail-product-amount">
         {formatAmount(amount)} <small>{displayValue(currencyCode)}</small>
       </span>
@@ -1374,7 +1376,15 @@ function SaleDetailProductRow({
 }
 
 function getTotalRows(sales: SalesOnlineShopSale[]): number {
-  return getNumber(sales[0]?.TotalRowsQty) || sales.length
+  for (const sale of sales) {
+    const total = getNumber(sale.TotalRowsQty)
+
+    if (total) {
+      return total
+    }
+  }
+
+  return sales.length
 }
 
 function getSaleDate(sale: SalesOnlineShopSale): Date | null {
@@ -1530,7 +1540,7 @@ function isStatusType(value: number | string | null | undefined, expected: numbe
 }
 
 function getOrderItemCount(sale: SalesOnlineShopSale): number {
-  return sale.Order?.OrderItems?.length || getNumber(sale.Order?.TotalCount) || getNumber(sale.TotalCount) || 0
+  return sale.Order?.OrderItems?.length || getNumber(sale.TotalPositions) || 0
 }
 
 function needsSaleDetails(sale: SalesOnlineShopSale): boolean {

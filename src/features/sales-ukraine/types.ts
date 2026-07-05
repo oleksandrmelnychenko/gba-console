@@ -93,6 +93,7 @@ export type SalesUkraineAgreement = SalesUkraineEntity & {
 export type SalesUkraineHistoryInvoiceEdit = SalesUkraineEntity
 
 export type SalesUkraineClient = SalesUkraineEntity & {
+  ClientNumber?: string
   FirstName?: string
   FullName?: string
   IsSubClient?: boolean
@@ -210,7 +211,7 @@ export type SalesUkraineOrderItem = SalesUkraineEntity & {
   PricePerItem?: number
   Product?: SalesUkraineProduct
   Qty?: number
-  OverLordQty?: number
+  OverLoadQty?: number
   TotalAmount?: number
   TotalAmountLocal?: number
   TotalAmountEurToUah?: number
@@ -274,6 +275,10 @@ export type SalesUkraineSale = SalesUkraineEntity & {
   TTN?: string
   TransporterId?: number | string
   UpdateDataCarrier?: SalesUkraineUpdateDataCarrier[]
+  IsEdited?: boolean
+  OneTimeDiscountUniform?: number | null
+  OneTimeDiscountAverage?: number | null
+  DiscountUpdatedByLastName?: string | null
   TotalAmount?: number
   TotalAmountEurToUah?: number
   TotalAmountLocal?: number

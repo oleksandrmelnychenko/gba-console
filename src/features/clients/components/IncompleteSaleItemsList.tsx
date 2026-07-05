@@ -71,11 +71,6 @@ function IncompleteSaleItemRow({ item }: { item: SaleOrderItem }) {
           <Text c="dimmed" size="xs">
             {t('Від')} {formatDateTime(item.Created)}
           </Text>
-          {item.User?.LastName && (
-            <Text c="dimmed" size="xs">
-              {item.User.LastName}
-            </Text>
-          )}
         </Group>
       </Box>
       <Stack align="flex-end" gap={2}>

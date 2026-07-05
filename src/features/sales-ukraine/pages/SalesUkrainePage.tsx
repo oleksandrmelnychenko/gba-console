@@ -328,10 +328,15 @@ export function SalesUkrainePage() {
   const realtimeReloadRef = useRef<number | null>(null)
   const backgroundReloadRef = useRef(false)
   const salesRef = useRef<SalesUkraineSale[]>(sales)
+  const expandedKeysRef = useRef<Set<string>>(expandedKeys)
 
   useEffect(() => {
     salesRef.current = sales
   }, [sales])
+
+  useEffect(() => {
+    expandedKeysRef.current = expandedKeys
+  }, [expandedKeys])
 
   const ensureSaleDetails = useCallback(
     async (sale: SalesUkraineSale): Promise<SalesUkraineSale | null> => {
@@ -344,11 +349,13 @@ export function SalesUkrainePage() {
       }
 
       try {
-        const next = await getSaleById(sale.NetUid)
+        const loaded = await getSaleById(sale.NetUid)
 
-        if (!next) {
+        if (!loaded) {
           return sale
         }
+
+        const next = { ...loaded, TotalRowsQty: sale.TotalRowsQty }
 
         setSales((current) => replaceSaleInList(current, next))
 
@@ -371,6 +378,17 @@ export function SalesUkrainePage() {
       }
     },
     [ensureSaleDetails, setSelectedSale],
+  )
+
+  const openSaleDetails = useCallback(
+    async (sale: SalesUkraineSale) => {
+      const next = await ensureSaleDetails(sale)
+
+      if (next) {
+        setDetailsSale(next)
+      }
+    },
+    [ensureSaleDetails, setDetailsSale],
   )
 
   const openSaleDiscount = useCallback(
@@ -535,7 +553,17 @@ export function SalesUkrainePage() {
         const next = await getSalesUkraine(activeFilters)
 
         if (!cancelled) {
-          setSales(next)
+          const { sales: mergedSales, rehydrate } = mergeExpandedSaleDetails(next, salesRef.current, expandedKeysRef.current)
+
+          setSales(mergedSales)
+
+          for (const netUid of rehydrate) {
+            void getSaleById(netUid).then((fresh) => {
+              if (fresh && !cancelled) {
+                setSales((current) => replaceSaleInList(current, fresh))
+              }
+            })
+          }
 
           if (isBackgroundReload) {
             setError(null)
@@ -601,7 +629,13 @@ export function SalesUkrainePage() {
       message: t('Розблокувати продаж для відвантаження?'),
       title: t('Підтвердження відвантаження'),
       onConfirm: async () => {
-        await updateSale({ ...sale, IsAcceptedToPacking: true })
+        const next = await ensureSaleDetails(sale)
+
+        if (!next) {
+          throw new Error(t('Не вдалося завантажити продаж'))
+        }
+
+        await updateSale({ ...next, IsAcceptedToPacking: true })
         notifications.show({ color: 'green', message: t('Збережено') })
       },
     })
@@ -955,7 +989,7 @@ export function SalesUkrainePage() {
                         onOpenSale={(target) => void openSaleSheet(target)}
                         onOpenEditor={setWizardEditSale}
                         onOpenEditShift={setEditShiftSale}
-                        onOpenDetails={setDetailsSale}
+                        onOpenDetails={(target) => void openSaleDetails(target)}
                         onOpenConsignment={setConsignmentSale}
                         onOpenAudit={openAudit}
                         onUnlock={requestUnlock}
@@ -1127,8 +1161,9 @@ function SaleGridRow({
   const { t } = useI18n()
 
   const client = sale.ClientAgreement?.Client
-  const code = client?.RegionCode?.Value?.trim()
+  const code = (client?.RootClient ? client.RootClient.RegionCode?.Value : client?.RegionCode?.Value)?.trim()
   const clientName = getSaleClientDisplayName(sale)
+  const retailLine = getRetailClientLine(sale)
   const date = getSaleDate(sale)
   const manager = getSaleUserName(sale)
   const contract = sale.ClientAgreement?.Agreement?.Name
@@ -1152,11 +1187,19 @@ function SaleGridRow({
   const bangClickable = Boolean(sale.ChangedToInvoice) && canWillNotShip
   const discountEditable = isNewOrPackagingStatus(sale) && positions > 0
   const rowOrderItems = Array.isArray(sale.Order?.OrderItems) ? sale.Order.OrderItems : []
-  const uniformDiscount = getUniformOneTimeDiscount(rowOrderItems)
-  const averageDiscount = uniformDiscount == null ? getAverageOneTimeDiscount(rowOrderItems) : null
+  const uniformDiscount = rowOrderItems.length ? getUniformOneTimeDiscount(rowOrderItems) : getNumber(sale.OneTimeDiscountUniform)
+  const averageDiscount =
+    uniformDiscount == null
+      ? rowOrderItems.length
+        ? getAverageOneTimeDiscount(rowOrderItems)
+        : getNumber(sale.OneTimeDiscountAverage)
+      : null
   const saleDiscountBadge = uniformDiscount != null || averageDiscount != null ? formatCompactPercent(uniformDiscount ?? averageDiscount ?? 0) : null
-  const saleDiscountUpdater = uniformDiscount != null ? rowOrderItems[0]?.DiscountUpdatedBy?.LastName?.trim() || '' : ''
-  const isEdited = Array.isArray(sale.HistoryInvoiceEdit) && sale.HistoryInvoiceEdit.length > 0
+  const saleDiscountUpdater =
+    uniformDiscount != null
+      ? (rowOrderItems[0]?.DiscountUpdatedBy?.LastName ?? sale.DiscountUpdatedByLastName)?.trim() || ''
+      : ''
+  const isEdited = Boolean(sale.IsEdited) || (Array.isArray(sale.HistoryInvoiceEdit) && sale.HistoryInvoiceEdit.length > 0)
 
   const openSale = () => onOpenSale(sale)
 
@@ -1259,6 +1302,11 @@ function SaleGridRow({
                 {t('Протокол')}
               </Badge>
             )}
+            {retailLine && (
+              <Tooltip label={retailLine} multiline maw={360}>
+                <span className="sg-client-retail">{retailLine}</span>
+              </Tooltip>
+            )}
           </div>
 
           <div className="sg-meta">
@@ -1279,7 +1327,7 @@ function SaleGridRow({
               </>
             )}
             {contract && <span className="sg-meta-contract">{contract}</span>}
-            {Array.isArray(sale.HistoryInvoiceEdit) && sale.HistoryInvoiceEdit.length > 0 && (
+            {isEdited && (
               <Tooltip label={t('Рахунок редаговано')}>
                 <IconPencil size={12} style={{ color: 'var(--mantine-color-orange-6)' }} />
               </Tooltip>
@@ -1313,7 +1361,7 @@ function SaleGridRow({
       <div className="sg-slot" data-row-stop="true">
         {saleDiscountBadge != null ? (
           <Tooltip label={saleDiscountUpdater ? `${t('Знижка')}: ${saleDiscountUpdater}` : t('Знижка')}>
-            {discountEditable ? (
+            {discountEditable && uniformDiscount != null ? (
               <button className="sg-discount-badge" type="button" onClick={() => onOpenDiscount(sale)}>
                 {saleDiscountBadge}
               </button>
@@ -1497,9 +1545,13 @@ function SaleDetail({ sale }: { sale: SalesUkraineSale }) {
           title={t('Клієнт і договір')}
           rows={[
             [t('Клієнт'), getSaleClientName(sale)],
+            [t('Покупець'), getRetailClientLine(sale)],
             [t('Договір'), sale.ClientAgreement?.Agreement?.Name],
             [t('Організація'), sale.ClientAgreement?.Agreement?.Organization?.Name],
-            [t('Телефон'), sale.ClientAgreement?.Client?.MobileNumber || sale.ClientAgreement?.Client?.PhoneNumber],
+            [
+              t('Телефон'),
+              sale.ClientAgreement?.Client?.MobileNumber || sale.ClientAgreement?.Client?.PhoneNumber || sale.ClientAgreement?.Client?.ClientNumber,
+            ],
           ]}
         />
         <SaleDetailSection
@@ -1691,6 +1743,8 @@ function SaleDetailProductRow({
   item: SalesUkraineOrderItem
 }) {
   const amount = getNumber(item.TotalAmountLocal) ?? getNumber(item.TotalAmount)
+  const qty = getNumber(item.Qty)
+  const unitPrice = amount != null && qty ? amount / qty : null
 
   return (
     <div className="sale-detail-product-row">
@@ -1707,8 +1761,8 @@ function SaleDetailProductRow({
           </OverflowTooltipText>
         </div>
       </div>
-      <span className="sale-detail-product-value">{displayValue(getNumber(item.Qty))}</span>
-      <span className="sale-detail-product-value">{formatAmount(getNumber(item.PricePerItem))}</span>
+      <span className="sale-detail-product-value">{displayValue(qty)}</span>
+      <span className="sale-detail-product-value">{formatAmount(unitPrice)}</span>
       <span className="sale-detail-product-amount">
         {formatAmount(amount)} <small>{displayValue(currencyCode)}</small>
       </span>
@@ -1717,7 +1771,15 @@ function SaleDetailProductRow({
 }
 
 function getTotalRows(sales: SalesUkraineSale[]): number {
-  return getNumber(sales[0]?.TotalRowsQty) || sales.length
+  for (const sale of sales) {
+    const total = getNumber(sale.TotalRowsQty)
+
+    if (total) {
+      return total
+    }
+  }
+
+  return sales.length
 }
 
 function getSaleDate(sale: SalesUkraineSale): Date | null {
@@ -1746,6 +1808,16 @@ function getSaleClientDisplayName(sale: SalesUkraineSale): string {
   const rootName = root.FullName?.trim() || [root.LastName, root.FirstName].filter(Boolean).join(' ').trim()
 
   return rootName ? `${rootName} (${baseName})` : baseName
+}
+
+function getRetailClientLine(sale: SalesUkraineSale): string {
+  const retail = sale.RetailClient
+
+  if (!retail) {
+    return ''
+  }
+
+  return [retail.PhoneNumber?.trim(), retail.Name?.trim() || retail.FullName?.trim()].filter(Boolean).join(' - ')
 }
 
 function getSaleUserName(sale: SalesUkraineSale): string {
@@ -1878,7 +1950,7 @@ function isNewOrPackagingStatus(sale: SalesUkraineSale): boolean {
 }
 
 function getOrderItemCount(sale: SalesUkraineSale): number {
-  return sale.Order?.OrderItems?.length || getNumber(sale.TotalPositions) || getNumber(sale.Order?.TotalCount) || getNumber(sale.TotalCount) || 0
+  return sale.Order?.OrderItems?.length || getNumber(sale.TotalPositions) || 0
 }
 
 function needsSaleDetails(sale: SalesUkraineSale): boolean {
@@ -1887,6 +1959,36 @@ function needsSaleDetails(sale: SalesUkraineSale): boolean {
 
 function replaceSaleInList(sales: SalesUkraineSale[], nextSale: SalesUkraineSale): SalesUkraineSale[] {
   return sales.map((sale) => (isSameSale(sale, nextSale) ? nextSale : sale))
+}
+
+function mergeExpandedSaleDetails(
+  next: SalesUkraineSale[],
+  previous: SalesUkraineSale[],
+  expandedKeys: Set<string>,
+): { sales: SalesUkraineSale[]; rehydrate: string[] } {
+  const rehydrate: string[] = []
+
+  const sales = next.map((sale) => {
+    const key = String(sale.NetUid || sale.Id || '')
+
+    if (!key || !expandedKeys.has(key) || !needsSaleDetails(sale)) {
+      return sale
+    }
+
+    const prior = previous.find((item) => isSameSale(item, sale))
+
+    if (!prior || needsSaleDetails(prior)) {
+      return sale
+    }
+
+    if (sale.NetUid) {
+      rehydrate.push(sale.NetUid)
+    }
+
+    return { ...sale, HasDetails: true, Order: prior.Order }
+  })
+
+  return { rehydrate, sales }
 }
 
 function isSameSale(left: SalesUkraineSale, right: SalesUkraineSale): boolean {

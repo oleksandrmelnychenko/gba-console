@@ -2283,7 +2283,6 @@ export function NewSaleProductsStep({
         <EditShoppingCartOverlay
           currentItems={orderItems}
           isSplit={editCart.isSplit}
-          localCurrencyCode={localCurrencyCode}
           selected={editCart.selected}
           splitItems={editCart.splitItems}
         />

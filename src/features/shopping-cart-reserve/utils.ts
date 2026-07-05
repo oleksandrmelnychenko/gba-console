@@ -101,7 +101,7 @@ export function formatMoney(value?: number): string {
 export function formatQty(item: CartReserveOrderItem): string {
   const qty = item.Qty ?? 0
 
-  return item.OverLordQty ? `${qty} / ${item.OverLordQty}` : String(qty)
+  return item.OverLoadQty ? `${qty} / ${item.OverLoadQty}` : String(qty)
 }
 
 export function getOrderItemAmount(item: CartReserveOrderItem, localCurrencyCode: string): number {

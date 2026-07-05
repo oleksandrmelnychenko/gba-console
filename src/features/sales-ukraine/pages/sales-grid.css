@@ -927,6 +927,15 @@
   cursor: default;
 }
 
+.sg-client-retail {
+  color: var(--mantine-color-gray-6);
+  font-size: 11px;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .sg-transporter-cell {
   align-items: center;
   display: flex;

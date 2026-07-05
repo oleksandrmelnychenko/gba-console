@@ -155,6 +155,7 @@ export type SalesOnlineShopSale = SalesOnlineShopEntity & {
   TotalAmountEurToUah?: number
   TotalAmountLocal?: number
   TotalCount?: number
+  TotalPositions?: number
   TotalRowsQty?: number
   TransporterId?: number | string
   TTN?: string

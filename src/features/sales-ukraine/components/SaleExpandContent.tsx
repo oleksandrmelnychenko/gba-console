@@ -111,10 +111,10 @@ function SaleExpandContentItem({
   const secondAmount = useEurToUah ? getNumber(orderItem.TotalAmountEurToUah) : getNumber(orderItem.TotalAmount)
   const localAmountText = formatAmount(getNumber(orderItem.TotalAmountLocal))
   const secondAmountText = formatAmount(secondAmount)
-  const overLordQty = getNumber(orderItem.OverLordQty)
+  const overLoadQty = getNumber(orderItem.OverLoadQty)
   const qty = getNumber(orderItem.Qty)
-  const qtyText = overLordQty ? `${displayValue(qty)} / ${overLordQty}` : displayValue(qty)
-  const hasQtyOverflow = typeof overLordQty === 'number' && overLordQty !== 0 && qty !== overLordQty
+  const qtyText = overLoadQty ? `${displayValue(qty)} / ${overLoadQty}` : displayValue(qty)
+  const hasQtyOverflow = typeof overLoadQty === 'number' && overLoadQty !== 0 && qty !== overLoadQty
   const comment = orderItem.Comment?.trim()
   const discountUpdater = getResponsible(orderItem.DiscountUpdatedBy)
 

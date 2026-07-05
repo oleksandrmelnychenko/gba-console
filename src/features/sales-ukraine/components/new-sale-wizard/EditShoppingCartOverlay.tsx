@@ -26,13 +26,11 @@ export type WizardCartSelection = {
 export function EditShoppingCartOverlay({
   currentItems,
   isSplit,
-  localCurrencyCode,
   selected,
   splitItems,
 }: {
   currentItems: SalesUkraineOrderItem[]
   isSplit: boolean
-  localCurrencyCode: string
   selected: WizardCartSelection | null
   splitItems: WizardSplitOrderItem[]
 }) {
@@ -95,7 +93,6 @@ export function EditShoppingCartOverlay({
       <CartTable
         discountHeader={t('Ручна знижка')}
         list="current"
-        localCurrencyCode={localCurrencyCode}
         rows={currentRows}
         selectedIndex={selected?.list === 'current' ? selected.index : null}
         title=""
@@ -104,7 +101,6 @@ export function EditShoppingCartOverlay({
         <CartTable
           discountHeader={t('Знижка')}
           list="split"
-          localCurrencyCode={localCurrencyCode}
           rows={splitRows}
           selectedIndex={selected?.list === 'split' ? selected.index : null}
           title={t('Нова накладна з рахунку')}
@@ -132,14 +128,12 @@ type CartTableRow = {
 function CartTable({
   discountHeader,
   list,
-  localCurrencyCode,
   rows,
   selectedIndex,
   title,
 }: {
   discountHeader: string
   list: 'current' | 'split'
-  localCurrencyCode: string
   rows: CartTableRow[]
   selectedIndex: number | null
   title: string
@@ -166,10 +160,10 @@ function CartTable({
               <Table.Th>{t('Додав')}</Table.Th>
               <Table.Th ta="right">{t('Кількість')}</Table.Th>
               <Table.Th ta="right">EUR</Table.Th>
-              <Table.Th ta="right">{localCurrencyCode}</Table.Th>
+              <Table.Th ta="right">UAH</Table.Th>
               <Table.Th ta="right">{t('Сума в EUR')}</Table.Th>
               <Table.Th ta="right">{discountHeader}</Table.Th>
-              <Table.Th ta="right">{`${t('Сума в')} ${localCurrencyCode}`}</Table.Th>
+              <Table.Th ta="right">{`${t('Сума в')} UAH`}</Table.Th>
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
@@ -224,7 +218,7 @@ function CartTable({
           </Text>
         </Text>
         <Text size="sm">
-          {`${t('Сума в')} ${localCurrencyCode}`}:{' '}
+          {`${t('Сума в')} UAH`}:{' '}
           <Text fw={700} span>
             {priceFormatter.format(totalAmountLocal)}
           </Text>

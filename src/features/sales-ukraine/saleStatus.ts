@@ -69,5 +69,5 @@ export function getSaleLifecycleTypeKey(value: number | string | null | undefine
 export function isDiscountEditableSaleLifecycle(value: number | string | null | undefined): boolean {
   const key = getSaleLifecycleTypeKey(value)
 
-  return key === '0' || key === '1' || key === '2'
+  return key === '0' || key === '1'
 }

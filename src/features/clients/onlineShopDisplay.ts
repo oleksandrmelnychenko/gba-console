@@ -15,6 +15,13 @@ export function getRetailItemQuantity(item: RetailCartItem): number {
 }
 
 export function getRetailItemUnitPrice(item: RetailCartItem): number {
+  const total = getNumber(item.Total) ?? getNumber(item.Sum) ?? getNumber(item.TotalAmountLocal) ?? getNumber(item.TotalAmount)
+  const quantity = getRetailItemQuantity(item)
+
+  if (typeof total === 'number' && quantity > 0) {
+    return total / quantity
+  }
+
   return getNumber(item.Product?.CurrentLocalPrice) ?? getNumber(item.UnitPrice) ?? getNumber(item.PricePerItem) ?? getNumber(item.Price) ?? 0
 }
 

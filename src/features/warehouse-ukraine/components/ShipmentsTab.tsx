@@ -2188,12 +2188,12 @@ function useManualShipmentSalesColumns(model: ManualShipmentSalesColumnsModel): 
       },
       {
         id: 'totalAmount',
-        header: t('Вся сума'),
+        header: t('Сума в EUR'),
         width: 120,
         minWidth: 100,
         align: 'right',
-        accessor: (sale) => sale.TotalAmountLocal,
-        cell: (sale) => displayValue(sale.TotalAmountLocal),
+        accessor: (sale) => sale.TotalAmount,
+        cell: (sale) => displayValue(sale.TotalAmount),
       },
       {
         id: 'responsible',

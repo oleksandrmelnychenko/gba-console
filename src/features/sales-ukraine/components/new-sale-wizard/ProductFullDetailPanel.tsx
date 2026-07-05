@@ -76,10 +76,11 @@ export function ProductFullDetailPanel({
   const size = product.Size || ''
   const top = product.Top || ''
   const headerQty = displayQty ?? 0
-  const basePrice = pricing?.PriceEUR ?? getWizardProductNumber(product.CurrentPrice)
+  const basePrice = pricing?.PriceEUR || getWizardProductNumber(product.CurrentPrice)
   const salePrice = pricing?.DiscountPriceEUR ?? basePrice
-  const retailPrice = pricing?.RetailPriceEUR ?? null
-  const localRetailPrice = pricing?.RetailPriceLocal ?? getWizardProductNumber(product.CurrentPriceEurToUah)
+  const retailPrice = pricing?.RetailPriceEUR || null
+  const localSalePrice = getWizardProductNumber(product.CurrentPriceEurToUah)
+  const localRetailPrice = pricing?.RetailPriceLocal || null
   const discountRate = pricing?.DiscountRate ?? null
   const pricingName = pricing?.Pricing?.Name || ''
   const hasLogistics = Boolean(nearestSupplyOrder)
@@ -130,7 +131,7 @@ export function ProductFullDetailPanel({
           <Group className="new-sale-product-card__money" gap={8} wrap="nowrap">
             <MetricBlock label={t('Доступно')} tone={headerQty > 0 ? 'good' : 'bad'} value={qtyFormatter.format(headerQty)} />
             <MetricBlock label="EUR" tone="strong" value={formatPrice(salePrice)} />
-            {localRetailPrice != null && <MetricBlock label="UAH" value={formatPrice(localRetailPrice)} />}
+            {localSalePrice != null && <MetricBlock label="UAH" value={formatPrice(localSalePrice)} />}
           </Group>
         </Group>
 
@@ -153,6 +154,7 @@ export function ProductFullDetailPanel({
             <Box className="new-sale-product-card__retail">
               <span>{t('Роздріб')}</span>
               <strong>{formatPrice(retailPrice)} EUR</strong>
+              {localRetailPrice != null && <small>{formatPrice(localRetailPrice)} UAH</small>}
             </Box>
           )}
 
