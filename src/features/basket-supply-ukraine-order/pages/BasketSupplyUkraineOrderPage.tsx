@@ -676,9 +676,8 @@ function BasketCartWorkflow() {
         </Alert>
       )}
 
-      <Card className="app-section-card" withBorder padding="md" radius="md">
-        <Stack gap="md">
-          <div className="app-filter-bar basket-supply-command-bar is-split">
+      <Card className="app-data-card" padding={0} radius="md" withBorder>
+        <div className="app-filter-bar basket-supply-command-bar is-split">
             <SimpleGrid className="basket-supply-filters" cols={{ base: 1, md: 3 }} spacing="sm">
               <TextInput
                 label={t('Пошук по товару')}
@@ -726,7 +725,8 @@ function BasketCartWorkflow() {
               </Button>
               <DataTableDensityToggle density={sourceDensity} onToggle={toggleSourceDensity} size={36} />
             </Group>
-          </div>
+        </div>
+        <Stack gap="md" p="md">
 
           <DataTable
             columns={sourceColumns}
