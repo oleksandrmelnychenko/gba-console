@@ -108,6 +108,13 @@ const URGENCY_BADGE_COLOR: Record<ProcurementUrgency, string> = {
   none: 'gray',
 }
 
+const URGENCY_PILL_CLASS: Record<ProcurementUrgency, string> = {
+  critical: 'app-role-pill is-red',
+  high: 'app-role-pill is-orange',
+  normal: 'app-role-pill is-yellow',
+  none: 'app-role-pill is-gray',
+}
+
 const URGENCY_RANK: Record<ProcurementUrgency, number> = {
   critical: 0,
   high: 1,
@@ -570,7 +577,7 @@ export function BuyerCockpitTab() {
         header: t('Терміновість'),
         accessor: (item) => URGENCY_RANK[item.urgency],
         cell: (item) => (
-          <Badge color={URGENCY_BADGE_COLOR[item.urgency]} size="sm" variant="light">
+          <Badge className={URGENCY_PILL_CLASS[item.urgency]} size="sm" variant="light">
             {t(URGENCY_LABEL[item.urgency])}
           </Badge>
         ),
@@ -592,7 +599,7 @@ export function BuyerCockpitTab() {
           }
 
           return (
-            <Badge color="blue" size="sm" variant="outline">
+            <Badge className="app-role-pill" size="sm" variant="outline">
               {label}
             </Badge>
           )
@@ -677,7 +684,7 @@ export function BuyerCockpitTab() {
         id: 'unitCost',
         header: `${t('Ціна')} (EUR)`,
         accessor: (item) => item.unit_cost_eur ?? 0,
-        cell: (item) => (item.unit_cost_eur === null ? '—' : eurFormatter.format(item.unit_cost_eur)),
+        cell: (item) => (item.unit_cost_eur === null ? '' : <span className="app-money">{eurFormatter.format(item.unit_cost_eur)}</span>),
         width: 120,
         align: 'right',
       },
@@ -687,7 +694,7 @@ export function BuyerCockpitTab() {
         accessor: (item) => item.unit_margin_eur ?? 0,
         cell: (item) => {
           if (item.unit_margin_eur === null) {
-            return '—'
+            return ''
           }
 
           return (
@@ -704,7 +711,7 @@ export function BuyerCockpitTab() {
         header: t('Рівень сервісу'),
         accessor: (item) => item.applied_service_level ?? 0,
         cell: (item) =>
-          item.applied_service_level === null ? '—' : `${percentFormatter.format(item.applied_service_level * 100)}%`,
+          item.applied_service_level === null ? '' : `${percentFormatter.format(item.applied_service_level * 100)}%`,
         width: 130,
         align: 'right',
       },
@@ -833,7 +840,7 @@ export function BuyerCockpitTab() {
                     {qtyFormatter.format(plan.lead_time_std_days)} {t('днів')}
                   </Text>
                   {plan.lead_time_source && (
-                    <Badge color="gray" size="sm" variant="light">
+                    <Badge className="app-role-pill is-gray" size="sm" variant="light">
                       {t(LEAD_TIME_SOURCE_LABEL[plan.lead_time_source] ?? plan.lead_time_source)}
                     </Badge>
                   )}
@@ -959,7 +966,7 @@ export function BuyerCockpitTab() {
         centered
         opened={isConfirmOpen}
         size="sm"
-        title={t('Створити чернетку замовлення?')}
+        title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Створити чернетку замовлення?')}</span>}
         onClose={() => {
           if (!isCreatingOrder) {
             closeConfirm()
@@ -1050,7 +1057,7 @@ function SuggestedQtyCell({ item, t }: { item: ReorderSuggestion; t: TranslateFu
         )}
       </Group>
       {hasRounding && hints.length > 0 && (
-        <Badge color="gray" size="xs" variant="light">
+        <Badge className="app-role-pill is-gray" size="xs" variant="light">
           {hints.join(' / ')}
         </Badge>
       )}

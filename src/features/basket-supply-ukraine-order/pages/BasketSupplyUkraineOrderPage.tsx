@@ -803,7 +803,7 @@ function BasketCartWorkflow() {
         onLoadValidItems={addPreviewItemsToDestination}
       />
 
-      <AppModal centered opened={isCreateModalOpen} size="lg" title={t('Створити документ')} onClose={closeCreateModal}>
+      <AppModal centered opened={isCreateModalOpen} size="lg" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Створити документ')}</span>} onClose={closeCreateModal}>
         <Stack gap="md">
           <DocumentTargetControls
             disabled={isCreatingDocument || isReferenceLoading}
@@ -829,7 +829,7 @@ function BasketCartWorkflow() {
         </Stack>
       </AppModal>
 
-      <AppModal centered opened={Boolean(reserveItem)} title={t('Резерв')} onClose={() => setReserveItem(null)}>
+      <AppModal centered opened={Boolean(reserveItem)} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Резерв')}</span>} onClose={() => setReserveItem(null)}>
         <Stack gap="md">
           <Text size="sm">
             {reserveItem?.Product?.VendorCode} {reserveItem?.Product?.Name}
@@ -1302,7 +1302,7 @@ function SalesWorkflowTab() {
         </Stack>
       </Card>
 
-      <AppModal centered opened={isCreateModalOpen} size="lg" title={t('Створити документ')} onClose={closeCreateModal}>
+      <AppModal centered opened={isCreateModalOpen} size="lg" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Створити документ')}</span>} onClose={closeCreateModal}>
         <Stack gap="md">
           <DocumentTargetControls
             disabled={isCreatingDocument || isReferenceLoading}
@@ -1475,7 +1475,7 @@ function TotalItem({ isLoading, label, value }: { isLoading: boolean; label: str
       <Text c="dimmed" size="xs">
         {label}
       </Text>
-      <Text fw={700}>{isLoading ? '...' : value}</Text>
+      <Text className="app-money" fw={600}>{isLoading ? '...' : value}</Text>
     </Box>
   )
 }
@@ -1578,7 +1578,7 @@ function useBasketSalesColumns({
         id: 'eur',
         header: `${t('Вартість Брутто')} (EUR)`,
         accessor: (sale) => toNumber(sale.TotalAmount),
-        cell: (sale) => formatAmount(sale.TotalAmount),
+        cell: (sale) => <span className="app-money">{formatAmount(sale.TotalAmount)}</span>,
         width: 150,
         align: 'right',
       },
@@ -1586,7 +1586,7 @@ function useBasketSalesColumns({
         id: 'pln',
         header: `${t('Вартість Брутто')} (PLN)`,
         accessor: (sale) => toNumber(sale.TotalAmountLocal),
-        cell: (sale) => formatAmount(sale.TotalAmountLocal),
+        cell: (sale) => <span className="app-money">{formatAmount(sale.TotalAmountLocal)}</span>,
         width: 150,
         align: 'right',
       },
@@ -1806,15 +1806,15 @@ function PriorityBadge({ priority }: { priority?: SupplyOrderUkraineCartItemPrio
   const { t } = useI18n()
   const color =
     priority === SUPPLY_ORDER_UKRAINE_CART_ITEM_PRIORITY.High
-      ? 'red'
+      ? 'is-red'
       : priority === SUPPLY_ORDER_UKRAINE_CART_ITEM_PRIORITY.TIR
-        ? 'orange'
+        ? 'is-orange'
         : priority === SUPPLY_ORDER_UKRAINE_CART_ITEM_PRIORITY.Low
-          ? 'green'
-          : 'gray'
+          ? 'is-green'
+          : 'is-gray'
 
   return (
-    <Badge color={color} size="sm" variant="filled">
+    <Badge className={`app-role-pill ${color}`} size="sm" variant="light">
       {getPriorityLabel(priority, t)}
     </Badge>
   )
@@ -2216,7 +2216,7 @@ function getPriorityLabel(priority: SupplyOrderUkraineCartItemPriority | undefin
     return t('Низький')
   }
 
-  return t('—')
+  return ''
 }
 
 function formatDate(value: Date | string | undefined) {

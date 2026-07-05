@@ -19,7 +19,6 @@ import {
   AgingBars,
   ForecastLine,
   UrgencyDonut,
-  URGENCY_COLOR,
   type ForecastPoint,
   type UrgencyLevel,
   type UrgencySliceInput,
@@ -175,7 +174,7 @@ export function ProcureDashboardTab() {
         header: t('Терміновість'),
         accessor: (item) => item.urgency,
         cell: (item) => (
-          <Badge color={urgencyBadgeColor(item.urgency)} size="sm" variant="light">
+          <Badge className={urgencyPillClass(item.urgency)} size="sm" variant="light">
             {t(URGENCY_LABEL[item.urgency] ?? item.urgency)}
           </Badge>
         ),
@@ -398,12 +397,20 @@ function sumCount(slices: UrgencySliceInput[]): number {
   return slices.reduce((sum, slice) => sum + slice.value, 0)
 }
 
-function urgencyBadgeColor(urgency: string): string {
+function urgencyPillClass(urgency: string): string {
   const level = URGENCY_TO_LEVEL[urgency]
 
-  if (!level) {
-    return 'gray'
+  if (level === 'critical') {
+    return 'app-role-pill is-red'
   }
 
-  return URGENCY_COLOR[level].replace('var(--mantine-color-', '').replace('-6)', '')
+  if (level === 'high') {
+    return 'app-role-pill is-orange'
+  }
+
+  if (level === 'normal') {
+    return 'app-role-pill is-yellow'
+  }
+
+  return 'app-role-pill is-gray'
 }
