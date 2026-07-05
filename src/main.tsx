@@ -12,6 +12,20 @@ import './shared/ui/filter-bar.css'
 // the DOM (otherwise a stray removeChild/insertBefore white-screens the whole app).
 installDomMutationResilience()
 
+// After a redeploy the open tab still references the previous build's hashed
+// chunks; the first lazy-route navigation then 404s («Failed to fetch
+// dynamically imported module»). Reload once to pick up the fresh index.html.
+window.addEventListener('vite:preloadError', (event) => {
+  const RELOAD_FLAG = 'chunk-reload-at'
+  const lastReload = Number(sessionStorage.getItem(RELOAD_FLAG) || 0)
+
+  if (Date.now() - lastReload > 30_000) {
+    event.preventDefault()
+    sessionStorage.setItem(RELOAD_FLAG, String(Date.now()))
+    window.location.reload()
+  }
+})
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <AppProviders>
