@@ -100,6 +100,18 @@ export function WarehouseUkrainePage() {
   const defaultTab = visibleTabs[0]?.value ?? ''
   const [activeTab, setActiveTab] = useValueState(defaultTab)
   const activeTabItem = visibleTabs.find((tab) => tab.value === activeTab) ?? visibleTabs[0]
+  const resolvedActiveValue = activeTabItem?.value ?? ''
+
+  // Keep-alive: a tab is mounted on its first activation and then kept mounted (hidden with CSS) so
+  // its filter/grid state survives tab switches — legacy persisted this in redux. Only visited tabs
+  // mount, so entering the screen still loads just the default tab (no all-tabs load on open).
+  const [mountedTabs, setMountedTabs] = useValueState<Set<string>>(() => new Set(resolvedActiveValue ? [resolvedActiveValue] : []))
+
+  useEffect(() => {
+    if (resolvedActiveValue && !mountedTabs.has(resolvedActiveValue)) {
+      setMountedTabs((current) => new Set(current).add(resolvedActiveValue))
+    }
+  }, [resolvedActiveValue, mountedTabs, setMountedTabs])
 
   usePageBreadcrumb(activeTabItem?.label ?? null)
 
@@ -130,7 +142,17 @@ export function WarehouseUkrainePage() {
         })}
       </div>
 
-      {activeTabItem && <Box className="warehouse-ukraine-tab-panel">{activeTabItem.render()}</Box>}
+      {visibleTabs
+        .filter((tab) => mountedTabs.has(tab.value))
+        .map((tab) => (
+          <Box
+            key={tab.value}
+            className="warehouse-ukraine-tab-panel"
+            style={tab.value === resolvedActiveValue ? undefined : { display: 'none' }}
+          >
+            {tab.render()}
+          </Box>
+        ))}
     </Stack>
   )
 }

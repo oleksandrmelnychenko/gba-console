@@ -1,5 +1,6 @@
-import { ActionIcon, Group, Select, Text, Tooltip } from '@mantine/core'
+import { ActionIcon, Group, NumberInput, Select, Text, Tooltip } from '@mantine/core'
 import { IconChevronLeft, IconChevronRight, IconRefresh } from '@tabler/icons-react'
+import { useEffect, useState } from 'react'
 import { useI18n } from '../../i18n/useI18n'
 import { DEFAULT_PAGINATOR_PAGE_SIZE, PAGINATOR_PAGE_SIZE_OPTIONS } from './paginatorPageSize'
 import './paginator.css'
@@ -48,6 +49,32 @@ export function Paginator({
   const canPrevious = page > 1
   const canNext = hasNext ?? (typeof totalPages === 'number' ? page < totalPages : true)
 
+  // Editable page number: jump to an arbitrary page on Enter/blur, clamped to [1, totalPages]
+  // when the total is known. Kept as a draft so typing doesn't fire a jump per keystroke.
+  const [pageDraft, setPageDraft] = useState(String(page))
+
+  useEffect(() => {
+    setPageDraft(String(page))
+  }, [page])
+
+  function commitPageDraft() {
+    const parsed = Math.floor(Number(pageDraft))
+
+    if (!Number.isFinite(parsed) || parsed < 1) {
+      setPageDraft(String(page))
+
+      return
+    }
+
+    const clamped = typeof totalPages === 'number' ? Math.min(parsed, Math.max(1, totalPages)) : parsed
+
+    if (clamped !== page) {
+      onPageChange(clamped)
+    }
+
+    setPageDraft(String(clamped))
+  }
+
   return (
     <Group className={className ? `app-paginator ${className}` : 'app-paginator'} gap={2} wrap="nowrap">
       <Select
@@ -61,8 +88,32 @@ export function Paginator({
         onChange={(value) => onPageSizeChange(Number(value) || DEFAULT_PAGINATOR_PAGE_SIZE)}
       />
       <Text className="app-paginator-label" size="xs">
-        {t('стор.')} {page}
+        {t('стор.')}
       </Text>
+      <NumberInput
+        allowDecimal={false}
+        allowNegative={false}
+        aria-label={t('Номер сторінки')}
+        disabled={isLoading}
+        hideControls
+        min={1}
+        max={typeof totalPages === 'number' ? Math.max(1, totalPages) : undefined}
+        size="xs"
+        value={pageDraft}
+        w={52}
+        onBlur={commitPageDraft}
+        onChange={(value) => setPageDraft(String(value))}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter') {
+            event.currentTarget.blur()
+          }
+        }}
+      />
+      {typeof totalPages === 'number' && (
+        <Text className="app-paginator-label" size="xs">
+          / {totalPages}
+        </Text>
+      )}
       <ActionIcon
         aria-label={t('Попередня сторінка')}
         color="gray"

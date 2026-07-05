@@ -409,6 +409,7 @@ export function SalesTab() {
               page={model.page}
               pageSize={model.pageSize}
               pageSizeOptions={PAGE_SIZE_OPTIONS}
+              totalPages={model.totalQty > 0 ? Math.ceil(model.totalQty / model.pageSize) : undefined}
               onPageChange={model.setPage}
               onPageSizeChange={model.changePageSize}
               onRefresh={() => model.reload()}
