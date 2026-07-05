@@ -12,7 +12,7 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import type { EditingItemsResponse, EditingActItem, WarehouseUkraineUser } from '../types'
-import { displayValue, formatDateTime, getDateShiftedByDays, toDateString } from './dateHelpers'
+import { displayValue, formatDate, formatDateTime, getDateShiftedByDays, toDateString } from './dateHelpers'
 
 const DEFAULT_PAGE_SIZE = 20
 const PAGE_SIZE_OPTIONS = ['20', '40', '60', '100']
@@ -348,14 +348,19 @@ export function EditingList({ kind, layoutVersion, loader, onProcessed, processo
           {confirmItem && kind === 'carrier' && <CarrierChangeSummary item={confirmItem} />}
 
           {confirmItem && kind === 'act' && (
-            <SaleAuditDetail error={auditError} isLoading={auditLoading} statistic={auditStatistic} />
+            <SaleAuditDetail error={auditError} isLoading={auditLoading} showConfirm={false} statistic={auditStatistic} />
           )}
 
           <Group justify="flex-end" gap="sm">
             <Button color="gray" variant="light" onClick={closeConfirm}>
               {t('Скасувати')}
             </Button>
-            <Button color="green" loading={isProcessing} onClick={processConfirmedItem}>
+            <Button
+              color="green"
+              loading={isProcessing}
+              disabled={kind === 'act' && (auditLoading || Boolean(auditError) || !auditStatistic)}
+              onClick={processConfirmedItem}
+            >
               {t('Підтвердити')}
             </Button>
           </Group>
@@ -510,7 +515,7 @@ function CarrierChangeSummary({ item }: { item: EditingActItem }) {
         <SummaryLine label={t('Накладений платіж')} value={formatBoolean(t, previous?.IsCashOnDelivery)} />
         <SummaryLine label={t('Сума накладеного платежу')} value={formatAmount(previous?.CashOnDeliveryAmount)} />
         <SummaryLine label={t('Наявність документів')} value={formatBoolean(t, previous?.HasDocument)} />
-        <SummaryLine label={t('ТТН')} value={previous?.TTN || previous?.Number} />
+        <SummaryLine label={t('ТТН')} value={previous?.Number} />
         <SummaryLine label={t('Відповідальний')} value={buildUserName(previous?.User)} />
         <SummaryLine label={t('Документ')} value={previous?.TtnPDFPath ?? undefined} link />
       </Stack>
@@ -521,32 +526,32 @@ function CarrierChangeSummary({ item }: { item: EditingActItem }) {
         <SummaryLine
           label={t('Перевізник')}
           value={readNestedString(item, ['Transporter', 'Name'])}
-          changed={isCarrierFieldChanged(readNestedString(item, ['Transporter', 'Name']), previous?.Transporter?.Name)}
+          changed={isCarrierTextFieldChanged(readNestedRaw(item, ['Transporter', 'Name']), previous?.Transporter?.Name)}
         />
         <SummaryLine
           label={t('Місто')}
           value={readStringField(item, 'City')}
-          changed={isCarrierFieldChanged(readStringField(item, 'City'), previous?.City)}
+          changed={isCarrierTextFieldChanged(readRawValue(item, 'City'), previous?.City)}
         />
         <SummaryLine
           label={t('Відділення')}
           value={readStringField(item, 'Department')}
-          changed={isCarrierFieldChanged(readStringField(item, 'Department'), previous?.Department)}
+          changed={isCarrierTextFieldChanged(readRawValue(item, 'Department'), previous?.Department)}
         />
         <SummaryLine
           label={t('Дата відвантаження')}
-          value={formatDateTimeOrEmpty(readRawValue(item, 'ShipmentDate'))}
-          changed={isCarrierFieldChanged(formatDateTimeOrEmpty(readRawValue(item, 'ShipmentDate')), formatDateTimeOrEmpty(previous?.ShipmentDate))}
+          value={formatDateOrEmpty(readRawValue(item, 'ShipmentDate'))}
+          changed={isShipmentDayChanged(readRawValue(item, 'ShipmentDate'), previous?.ShipmentDate)}
         />
         <SummaryLine
           label={t("Повне ім'я")}
           value={readStringField(item, 'FullName')}
-          changed={isCarrierFieldChanged(readStringField(item, 'FullName'), previous?.FullName)}
+          changed={isCarrierTextFieldChanged(readRawValue(item, 'FullName'), previous?.FullName)}
         />
         <SummaryLine
           label={t('Мобільний телефон')}
           value={readStringField(item, 'MobilePhone')}
-          changed={isCarrierFieldChanged(readStringField(item, 'MobilePhone'), previous?.MobilePhone)}
+          changed={isCarrierTextFieldChanged(readRawValue(item, 'MobilePhone'), previous?.MobilePhone)}
         />
         <SummaryLine
           label={t('Коментар')}
@@ -570,8 +575,8 @@ function CarrierChangeSummary({ item }: { item: EditingActItem }) {
         />
         <SummaryLine
           label={t('ТТН')}
-          value={readStringField(item, 'TTN') || readStringField(item, 'Number')}
-          changed={isCarrierFieldChanged(readStringField(item, 'TTN') || readStringField(item, 'Number'), previous?.TTN || previous?.Number)}
+          value={readStringField(item, 'Number')}
+          changed={isCarrierFieldChanged(readStringField(item, 'Number'), previous?.Number)}
         />
         <SummaryLine
           label={t('Відповідальний')}
@@ -606,8 +611,26 @@ function SummaryLine({ changed, label, link, value }: { changed?: boolean; label
 }
 
 // null/undefined and '' are equivalent (legacy null↔empty rule); everything else compared as trimmed strings.
+// Used for Comment/ТТН/boolean/amount rows where legacy treats blank and missing as the same.
 function isCarrierFieldChanged(nextValue?: string, previousValue?: string): boolean {
   return (nextValue ?? '').trim() !== (previousValue ?? '').trim()
+}
+
+// Plain text carrier fields: legacy keeps null and '' DISTINCT (raw loose compare), so a null→''
+// edit still highlights. Compares the raw underlying values, not the stringified display value.
+function isCarrierTextFieldChanged(nextRaw: unknown, previousRaw: unknown): boolean {
+  const normalize = (value: unknown) => (value == null ? null : String(value).trim())
+
+  return normalize(nextRaw) !== normalize(previousRaw)
+}
+
+// ShipmentDate diff is by calendar day only (legacy compared date strings, ignoring time-of-day).
+function isShipmentDayChanged(nextRaw: unknown, previousRaw?: Date | string): boolean {
+  return formatDateOrEmpty(nextRaw) !== formatDateOrEmpty(previousRaw)
+}
+
+function formatDateOrEmpty(value: unknown): string {
+  return value == null || value === '' ? '' : formatDate(value as Date | string)
 }
 
 function readStringField(item: EditingActItem, field: string): string {
@@ -628,6 +651,16 @@ function readNestedString(item: EditingActItem, path: string[]): string {
 
 function readRawValue(item: EditingActItem, field: string): unknown {
   return (item as unknown as Record<string, unknown>)[field]
+}
+
+function readNestedRaw(item: EditingActItem, path: string[]): unknown {
+  let value: unknown = item
+
+  path.forEach((field) => {
+    value = value && typeof value === 'object' ? (value as Record<string, unknown>)[field] : undefined
+  })
+
+  return value
 }
 
 function readBooleanField(item: EditingActItem, field: string): boolean {

@@ -29,10 +29,11 @@ type SaleAuditDetailProps = {
   error: string | null
   isLoading: boolean
   onConfirmed?: () => void
+  showConfirm?: boolean
   statistic: SaleAuditStatistic | null
 }
 
-export function SaleAuditDetail({ error, isLoading, onConfirmed, statistic }: SaleAuditDetailProps) {
+export function SaleAuditDetail({ error, isLoading, onConfirmed, showConfirm = true, statistic }: SaleAuditDetailProps) {
   const { t } = useI18n()
   const sale = statistic?.Sale
   const printRequestRef = useRef(0)
@@ -176,7 +177,7 @@ export function SaleAuditDetail({ error, isLoading, onConfirmed, statistic }: Sa
       <Card withBorder padding="md" radius="md">
         <Group justify="space-between" align="center">
           <Text fw={600}>{t('Переміщено')}</Text>
-          {confirmableHistoryNetId && (
+          {showConfirm && confirmableHistoryNetId && (
             <Button size="xs" variant="light" onClick={() => setConfirmHistoryNetId(confirmableHistoryNetId)}>
               {t('Підтвердити обробку')}
             </Button>
