@@ -14,7 +14,6 @@ import {
 } from '@mantine/core'
 import {
   IconAlertCircle,
-  IconArrowLeft,
   IconDownload,
   IconFileTypePdf,
   IconRefresh,
@@ -44,6 +43,7 @@ import {
   getSupplyOrganization,
 } from '../api/supplierOrganizationsApi'
 import type { SupplyOrganization } from '../types'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 
 const ACCOUNTING_TYPES = [
   { label: 'Усі', value: '2' },
@@ -232,53 +232,48 @@ export function SupplierOrganizationCashFlowPage() {
   )
 
   return (
+    <AppDrawer
+      opened
+      keepMounted={false}
+      position="right"
+      size="min(1400px, 96vw)"
+      title={
+        <span style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>
+          {t('Взаєморозрахунки')}{organization?.Name ? ` · ${organization.Name}` : ''}
+        </span>
+      }
+      onClose={() => navigate('/accounting/supplier-organizations')}
+    >
     <Stack className="cash-flow-page" gap="sm">
-      <Group justify="space-between" align="center" gap="sm">
-        <Group gap="xs">
-          <Tooltip label={t('Назад')}>
-            <ActionIcon aria-label={t('Назад')} color="gray" size={38} variant="light" onClick={() => navigate('/accounting/supplier-organizations')}>
-              <IconArrowLeft size={18} />
-            </ActionIcon>
-          </Tooltip>
-          <Stack gap={0}>
-            <Text fw={700} size="lg">
-              {t('Взаєморозрахунки')}
-            </Text>
-            <Text c="dimmed" size="sm">
-              {displayValue(organization?.Name)}
-            </Text>
-          </Stack>
-        </Group>
-        <Group gap="xs">
-          <Tooltip label={t('Друк')}>
-            <ActionIcon
-              aria-label={t('Друк')}
-              color="gray"
-              disabled={Boolean(filterError)}
-              loading={isExporting}
-              size={38}
-              variant="light"
-              onClick={exportDocument}
-            >
-              <IconDownload size={18} />
-            </ActionIcon>
-          </Tooltip>
-          <Tooltip label={t('Оновити')}>
-            <ActionIcon
-              aria-label={t('Оновити')}
-              color="gray"
-              loading={isLoadingOrganization || isLoadingCashFlow}
-              size={38}
-              variant="light"
-              onClick={() => {
-                void loadOrganization()
-                void loadCashFlow()
-              }}
-            >
-              <IconRefresh size={18} />
-            </ActionIcon>
-          </Tooltip>
-        </Group>
+      <Group gap="xs" justify="flex-end">
+        <Tooltip label={t('Друк')}>
+          <ActionIcon
+            aria-label={t('Друк')}
+            color="gray"
+            disabled={Boolean(filterError)}
+            loading={isExporting}
+            size={34}
+            variant="light"
+            onClick={exportDocument}
+          >
+            <IconDownload size={17} />
+          </ActionIcon>
+        </Tooltip>
+        <Tooltip label={t('Оновити')}>
+          <ActionIcon
+            aria-label={t('Оновити')}
+            color="gray"
+            loading={isLoadingOrganization || isLoadingCashFlow}
+            size={34}
+            variant="light"
+            onClick={() => {
+              void loadOrganization()
+              void loadCashFlow()
+            }}
+          >
+            <IconRefresh size={17} />
+          </ActionIcon>
+        </Tooltip>
       </Group>
 
       {error && (
@@ -307,8 +302,10 @@ export function SupplierOrganizationCashFlowPage() {
 
       <Group gap="xs">
         <Button
+          color={!selectedAgreementNetUid ? CREATE_ACTION_COLOR : 'gray'}
           size="xs"
-          variant={!selectedAgreementNetUid ? 'filled' : 'light'}
+          styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
+          variant={!selectedAgreementNetUid ? 'light' : 'subtle'}
           onClick={() => setSelectedAgreementNetUid('')}
         >
           {t('Усі договори')}
@@ -316,8 +313,10 @@ export function SupplierOrganizationCashFlowPage() {
         {agreements.map((agreement) => (
           <Button
             key={agreement.NetUid || agreement.Id || agreement.Name}
+            color={selectedAgreementNetUid === agreement.NetUid ? CREATE_ACTION_COLOR : 'gray'}
             size="xs"
-            variant={selectedAgreementNetUid === agreement.NetUid ? 'filled' : 'light'}
+            styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
+            variant={selectedAgreementNetUid === agreement.NetUid ? 'light' : 'subtle'}
             onClick={() => setSelectedAgreementNetUid(agreement.NetUid || '')}
           >
             {displayValue(agreement.Name)}
@@ -349,6 +348,7 @@ export function SupplierOrganizationCashFlowPage() {
       <CashFlowDetailDrawer row={selectedRow} onClose={() => setSelectedRow(null)} />
       <DocumentModal document={downloadDocument} onClose={() => setDownloadDocument(null)} />
     </Stack>
+    </AppDrawer>
   )
 }
 

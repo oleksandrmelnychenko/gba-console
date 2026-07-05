@@ -1,27 +1,41 @@
-import { Button, Group, Stack } from '@mantine/core'
-import { IconArrowLeft, IconDeviceFloppy, IconRefresh } from '@tabler/icons-react'
-import { Link, useParams } from 'react-router-dom'
+import { Button, Group } from '@mantine/core'
+import { IconDeviceFloppy, IconRefresh } from '@tabler/icons-react'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import {
   ActProvidingServiceDetailBody,
   useActProvidingServiceDetailModel,
 } from '../components/ActProvidingServiceDetail'
 
+const DETAIL_MONO_STYLE = { fontFamily: 'var(--font-mono)', letterSpacing: 0 } as const
+
 export function ActProvidingServiceDetailPage() {
   const { id } = useParams<{ id: string }>()
   const { t } = useI18n()
+  const navigate = useNavigate()
   const model = useActProvidingServiceDetailModel(id)
   const { act, isDirty, isLoading, isSaving, loadAct, save } = model
 
   return (
-    <Stack gap="lg">
-      <Group justify="space-between" gap="sm">
-        <Button component={Link} leftSection={<IconArrowLeft size={16} />} to="/act-providing-services" variant="light">
-          {t('Назад')}
-        </Button>
-        <Group gap="xs">
-          <Button color="gray" leftSection={<IconRefresh size={16} />} loading={isLoading} variant="light" onClick={loadAct}>
+    <AppDrawer
+      opened
+      keepMounted={false}
+      position="right"
+      size="wide"
+      title={<span style={DETAIL_MONO_STYLE}>{t('Акт надання послуг')}</span>}
+      onClose={() => navigate('/act-providing-services')}
+      footer={
+        <Group gap="xs" justify="flex-end">
+          <Button
+            color="gray"
+            leftSection={<IconRefresh size={16} />}
+            loading={isLoading}
+            styles={{ label: DETAIL_MONO_STYLE }}
+            variant="light"
+            onClick={loadAct}
+          >
             {t('Оновити')}
           </Button>
           <Button
@@ -29,14 +43,15 @@ export function ActProvidingServiceDetailPage() {
             disabled={!act || !isDirty || isLoading}
             leftSection={<IconDeviceFloppy size={16} />}
             loading={isSaving}
+            styles={{ label: DETAIL_MONO_STYLE }}
             onClick={save}
           >
             {t('Зберегти')}
           </Button>
         </Group>
-      </Group>
-
+      }
+    >
       <ActProvidingServiceDetailBody model={model} />
-    </Stack>
+    </AppDrawer>
   )
 }

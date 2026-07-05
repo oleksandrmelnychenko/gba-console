@@ -224,7 +224,7 @@
 }
 
 .act-service-amount-cell strong {
-  color: var(--mantine-color-green-8);
+  color: var(--mantine-color-gray-8);
   font-family: var(--font-mono);
   font-size: 13px;
   font-weight: 600;
@@ -232,7 +232,7 @@
 }
 
 .act-service-amount-cell small {
-  color: var(--mantine-color-green-7);
+  color: var(--mantine-color-gray-6);
   font-family: var(--font-mono);
   font-size: 10px;
   font-weight: 600;
@@ -275,4 +275,48 @@
   .act-services-table-toolbar-slot {
     justify-content: flex-start;
   }
+}
+
+/* Leader-рядки деталки акта (§7.2). */
+.act-service-detail-field {
+  align-items: baseline;
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+}
+
+.act-service-detail-field::before {
+  border-bottom: 1px solid var(--mantine-color-gray-3);
+  content: '';
+  flex: 1 1 auto;
+  min-width: 24px;
+  order: 2;
+  transform: translateY(-3px);
+}
+
+.act-service-detail-field > span {
+  color: var(--mantine-color-gray-8);
+  flex: 0 1 auto;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.3;
+  order: 1;
+  white-space: nowrap;
+}
+
+.act-service-detail-field > strong {
+  color: var(--mantine-color-gray-9);
+  flex: 0 1 auto;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+  min-width: 0;
+  order: 3;
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+
+.act-service-detail-field.is-mono > strong {
+  font-family: var(--font-mono);
+  letter-spacing: 0;
 }

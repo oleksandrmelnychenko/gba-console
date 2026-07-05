@@ -9,7 +9,6 @@ import {
   Text,
   Textarea,
   TextInput,
-  Title,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { IconAlertCircle } from '@tabler/icons-react'
@@ -239,9 +238,11 @@ export function ActProvidingServiceDetailBody({ model }: { model: ActProvidingSe
           <Stack gap="lg">
             <Group justify="space-between" align="flex-start" gap="sm">
               <Stack gap={4}>
-                <Title order={3}>{t('Акт надання послуг')}</Title>
-                <Text c="dimmed" size="sm">
-                  {displayValue(displayModel.number)} · {formatDateTime(displayModel.date)}
+                <Text fw={500} size="lg" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>
+                  {displayValue(displayModel.number)}
+                </Text>
+                <Text c="dimmed" size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>
+                  {formatDateTime(displayModel.date)}
                 </Text>
               </Stack>
               <Badge className={displayModel.accountingMarker ? 'app-role-pill is-orange' : 'app-role-pill is-green'} size="lg" variant="light">
@@ -249,20 +250,20 @@ export function ActProvidingServiceDetailBody({ model }: { model: ActProvidingSe
               </Badge>
             </Group>
 
-            <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="sm">
-              <DetailValue label={t('Номер')} value={displayModel.number} />
+            <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm" verticalSpacing={10}>
+              <DetailValue label={t('Номер')} mono value={displayModel.number} />
               <DetailValue label={t('Організація')} value={displayModel.organization} />
               <DetailValue label={t('Постачальник послуг')} value={displayModel.serviceOrganization} />
               <DetailValue label={t('Договір')} value={displayModel.agreement} />
-              <DetailValue label={t('Валюта')} value={displayModel.currency} />
-              <DetailValue label={t('Дата інвойсу')} value={formatDateTime(displayModel.invDate)} />
-              <DetailValue label={t('Номер інвойсу')} value={displayModel.invNumber} />
+              <DetailValue label={t('Валюта')} mono value={displayModel.currency} />
+              <DetailValue label={t('Дата інвойсу')} mono value={formatDateTime(displayModel.invDate)} />
+              <DetailValue label={t('Номер інвойсу')} mono value={displayModel.invNumber} />
               <DetailValue label={t('Відповідальний')} value={displayModel.actResponsible} />
               <DetailValue label={t('Послуга')} value={displayModel.name} />
-              <DetailValue label={t('Сума')} value={formatMoney(displayModel.amount)} />
-              <DetailValue label={t('ПДВ %')} value={formatPercent(displayModel.percentVat)} />
-              <DetailValue label={t('ПДВ')} value={formatMoney(displayModel.amountVat)} />
-              <DetailValue label={t('Разом з ПДВ')} value={formatMoney(displayModel.totalWithVat)} />
+              <DetailValue label={t('Сума')} mono value={formatMoney(displayModel.amount)} />
+              <DetailValue label={t('ПДВ %')} mono value={formatPercent(displayModel.percentVat)} />
+              <DetailValue label={t('ПДВ')} mono value={formatMoney(displayModel.amountVat)} />
+              <DetailValue label={t('Разом з ПДВ')} mono value={formatMoney(displayModel.totalWithVat)} />
             </SimpleGrid>
 
             <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
@@ -299,16 +300,12 @@ export function ActProvidingServiceDetailBody({ model }: { model: ActProvidingSe
   )
 }
 
-function DetailValue({ label, value }: { label: string; value?: string | number }) {
+function DetailValue({ label, mono = false, value }: { label: string; mono?: boolean; value?: string | number }) {
   return (
-    <Card withBorder radius="sm" padding="sm">
-      <Text c="dimmed" size="xs" tt="uppercase">
-        {label}
-      </Text>
-      <Text fw={600} lineClamp={2} size="sm">
-        {displayValue(value)}
-      </Text>
-    </Card>
+    <div className={`act-service-detail-field${mono ? ' is-mono' : ''}`}>
+      <span>{label}</span>
+      <strong>{displayValue(value)}</strong>
+    </div>
   )
 }
 
@@ -326,7 +323,7 @@ function toDateTimeLocal(value?: string): string {
 
 function formatDateTime(value?: string): string {
   if (!value) {
-    return '—'
+    return ''
   }
 
   const date = new Date(value)
@@ -340,7 +337,7 @@ function formatDateTime(value?: string): string {
 
 function formatMoney(value?: number): string {
   if (typeof value !== 'number' || !Number.isFinite(value)) {
-    return '—'
+    return ''
   }
 
   return moneyFormatter.format(value)
@@ -348,7 +345,7 @@ function formatMoney(value?: number): string {
 
 function formatPercent(value?: number): string {
   if (typeof value !== 'number' || !Number.isFinite(value)) {
-    return '—'
+    return ''
   }
 
   return `${value}%`
@@ -356,8 +353,8 @@ function formatPercent(value?: number): string {
 
 function displayValue(value?: string | number | null): string {
   if (typeof value === 'number') {
-    return Number.isFinite(value) ? String(value) : '—'
+    return Number.isFinite(value) ? String(value) : ''
   }
 
-  return value || '—'
+  return value || ''
 }
