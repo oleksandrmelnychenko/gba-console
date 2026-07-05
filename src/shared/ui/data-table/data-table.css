@@ -406,6 +406,10 @@
   box-shadow: none;
 }
 
+.data-table-expand-cell.is-expandable {
+  cursor: pointer;
+}
+
 .data-table-expand-toggle {
   color: var(--mantine-color-gray-6);
 }
@@ -413,6 +417,10 @@
 /* Expand chevron follows the orange accent: on hover and while expanded. */
 .data-table-expand-toggle:hover {
   background: transparent;
+  color: var(--brand-orange);
+}
+
+.data-table-expand-cell.is-expandable:hover .data-table-expand-toggle {
   color: var(--brand-orange);
 }
 

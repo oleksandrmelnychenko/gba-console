@@ -93,7 +93,15 @@ function DataTableBodyRowInner<TData>({
         onClick={onRowClick ? () => onRowClick(row.original) : undefined}
       >
         {expand ? (
-          <Table.Td className="data-table-expand-cell">
+          <Table.Td
+            className={`data-table-expand-cell ${canExpand ? 'is-expandable' : ''}`}
+            onClick={canExpand
+              ? (event) => {
+                  event.stopPropagation()
+                  expand.onToggleRow(row.id)
+                }
+              : undefined}
+          >
             {canExpand ? (
               <ActionIcon
                 aria-expanded={isExpanded}
