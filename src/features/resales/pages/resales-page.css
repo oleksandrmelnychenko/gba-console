@@ -66,6 +66,125 @@
   letter-spacing: 0;
 }
 
+.resales-new-sheet {
+  min-height: 100%;
+}
+
+.resales-new-filter-card {
+  border-color: var(--mantine-color-gray-2);
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+.resales-new-grid {
+  align-items: end;
+}
+
+.resales-new-filter-row {
+  align-items: end;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(240px, 1fr) minmax(186px, 190px) minmax(186px, 190px) auto auto;
+  width: 100%;
+}
+
+.resales-new-filter-row:last-child {
+  grid-template-columns: minmax(260px, 1fr) auto auto auto;
+}
+
+.resales-new-control {
+  min-width: 0;
+}
+
+.resales-new-search-control,
+.resales-new-generate-storage-control {
+  min-width: 240px;
+}
+
+.resales-new-date-control {
+  min-width: 186px;
+}
+
+.resales-new-filter-card .mantine-InputWrapper-label {
+  color: var(--mantine-color-gray-9);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.resales-new-filter-card .mantine-Input-input,
+.resales-new-filter-card .mantine-PillsInput-input {
+  border-color: var(--mantine-color-gray-2);
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  letter-spacing: 0;
+  min-height: 36px;
+}
+
+.resales-new-filter-card .mantine-Input-input::placeholder,
+.resales-new-filter-card .mantine-PillsInput-field::placeholder {
+  color: var(--mantine-color-gray-6);
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  letter-spacing: 0;
+}
+
+.resales-new-control.is-number .mantine-Input-input,
+.resales-new-date-control .mantine-Input-input {
+  font-variant-numeric: tabular-nums;
+}
+
+.resales-new-control.is-number .mantine-Input-input {
+  text-align: right;
+}
+
+.resales-new-specification-control .mantine-PillsInput-input {
+  align-items: flex-start;
+  max-height: 76px;
+  overflow-y: auto;
+  padding-bottom: 5px;
+  padding-top: 5px;
+}
+
+.resales-new-specification-control .mantine-Pill-root,
+.resales-new-specification-pill {
+  background: var(--mantine-color-gray-0);
+  border: 1px solid var(--mantine-color-gray-3);
+  color: var(--mantine-color-gray-8);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.resales-new-specification-pill.is-overflow {
+  background: var(--mantine-color-orange-0);
+  border-color: var(--mantine-color-orange-2);
+  color: var(--mantine-color-orange-8);
+}
+
+.resales-new-action {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+@media (max-width: 980px) {
+  .resales-new-filter-row,
+  .resales-new-filter-row:last-child {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .resales-new-search-control,
+  .resales-new-generate-storage-control,
+  .resales-new-date-control {
+    min-width: 0;
+  }
+}
+
 .resales-total-card,
 .resales-detail-value {
   border-color: var(--mantine-color-gray-2);
