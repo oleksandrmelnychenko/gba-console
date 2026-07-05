@@ -2,10 +2,45 @@
    existing load-more / max-height scroll model. The card shadow and filter
    strip come from the global filter-bar.css; only the full-width filter row
    and the body padding (the card uses padding={0}) are page-local. */
+.product-specification-codes-filter-bar {
+  overflow-x: auto;
+}
+
 .product-specification-codes-filter-row {
+  align-items: end;
+  display: grid;
+  gap: 10px;
+  grid-template-columns:
+    auto
+    minmax(220px, 260px)
+    minmax(220px, 260px)
+    minmax(32px, 1fr)
+    auto;
+  min-width: max-content;
   width: 100%;
 }
 
+.product-specification-codes-filter-row .app-filter-actions {
+  grid-column: 5;
+  margin-left: auto;
+}
+
+.product-specification-codes-filter-row .mantine-SegmentedControl-root {
+  align-self: end;
+  min-height: 36px;
+}
+
+.product-specification-codes-filter-row .mantine-SegmentedControl-label,
+.product-specification-codes-filter-row .mantine-Button-label {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.product-specification-codes-filter-row .mantine-Button-root {
+  white-space: nowrap;
+}
+
 .product-specification-codes-body {
-  padding: 16px;
+  padding: 10px 8px 8px;
 }
