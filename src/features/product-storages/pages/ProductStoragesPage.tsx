@@ -46,6 +46,7 @@ import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import { useAuth } from '../../auth/useAuth'
 import '../../online-shop-seo/pages/online-shop-seo-page.css'
@@ -1450,11 +1451,17 @@ function ProductStorageActionModal({
       : singleAvailableQty
   const displayedQty = isSingle ? Number(form.qty) : sumActionRows(modal.rows)
   const footer = (
-    <Group justify="flex-end">
-      <Button color="gray" disabled={isSubmitting} variant="light" onClick={onClose}>
+    <Group className="product-storages-action-footer" justify="flex-end">
+      <Button disabled={isSubmitting} variant="default" onClick={onClose}>
         {t('Скасувати')}
       </Button>
-      <Button disabled={isSubmitting} leftSection={getActionSubmitIcon(modal.mode)} loading={isSubmitting} onClick={onSubmit}>
+      <Button
+        color={CREATE_ACTION_COLOR}
+        disabled={isSubmitting}
+        leftSection={getActionSubmitIcon(modal.mode)}
+        loading={isSubmitting}
+        onClick={onSubmit}
+      >
         {t(getActionSubmitLabel(modal.mode))}
       </Button>
     </Group>
@@ -1462,7 +1469,7 @@ function ProductStorageActionModal({
 
   return (
     <AppDrawer
-      className="app-form-sheet"
+      className="app-form-sheet product-storages-action-sheet"
       closeOnClickOutside={false}
       footer={footer}
       opened
@@ -1474,25 +1481,26 @@ function ProductStorageActionModal({
         }
       }}
     >
-      <Stack gap="md">
+      <Stack className="product-storages-action-content" gap="md">
         <SegmentedControl
+          className="product-storages-action-mode"
           data={modeOptions}
           disabled={isSubmitting}
           value={modal.mode}
           onChange={(value) => onChangeMode(value as ProductStorageActionMode)}
         />
 
-        <Group gap="xs">
-          <Badge color="gray" variant="light">
+        <div className="product-storages-action-summary">
+          <Badge className="app-role-pill is-gray" variant="light">
             {t('Позицій')}: {modal.rows.length}
           </Badge>
-          <Badge color="gray" variant="light">
+          <Badge className="app-role-pill is-orange" variant="light">
             {t('Кількість')}: {formatAmount(Number.isFinite(displayedQty) ? displayedQty : 0)}
           </Badge>
-          <Badge color="gray" variant="light">
+          <Badge className="app-role-pill is-gray product-storages-action-storage-pill" variant="light">
             {t('Склад')}: {displayValue(fromStorage?.Name)}
           </Badge>
-        </Group>
+        </div>
 
         <SimpleGrid cols={{ base: 1, sm: 2 }}>
           <TextInput
@@ -1505,6 +1513,7 @@ function ProductStorageActionModal({
           {showManagementSwitch ? (
             <Switch
               checked={form.isManagement}
+              color={CREATE_ACTION_COLOR}
               disabled={isSubmitting}
               label={t('Управлінська операція')}
               mt={30}
@@ -1634,7 +1643,7 @@ function ReturnConsignmentsPanel({
     <Stack className="product-storages-return-panel" gap="sm">
       <Group align="center" justify="space-between" gap="sm">
         <Text className="app-section-title product-storages-return-title" fw={600} size="sm">
-          {t('Партії товару')}
+          {t('Прихід')}
         </Text>
         <span className="app-role-pill is-orange product-storages-return-count">
           {countLabel}

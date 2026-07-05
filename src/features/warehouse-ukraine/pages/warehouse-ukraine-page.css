@@ -173,3 +173,20 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Sales tab grid cells (docs/ui-patterns.md §5.1): bare mono values — no chips.
+   Document number = mono 600 gray-8; currency = mono uppercase gray-6. */
+.sales-tab-cell-num {
+  color: var(--mantine-color-gray-8);
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.sales-tab-cell-currency {
+  color: var(--mantine-color-gray-6);
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}

@@ -611,19 +611,9 @@ function useSalesColumns({
         width: 150,
         minWidth: 120,
         accessor: (sale) => sale.SaleNumber?.Value,
-        cell: (sale) => {
-          const saleNumber = displayValue(sale.SaleNumber?.Value)
-
-          if (!saleNumber) {
-            return ''
-          }
-
-          return (
-            <Badge className="app-role-pill is-yellow" variant="light">
-              {saleNumber}
-            </Badge>
-          )
-        },
+        cell: (sale) => (
+          <span className="sales-tab-cell-num">{displayValue(sale.SaleNumber?.Value)}</span>
+        ),
       },
       {
         id: 'client',
@@ -656,19 +646,11 @@ function useSalesColumns({
         width: 90,
         minWidth: 80,
         accessor: (sale) => sale.ClientAgreement?.Agreement?.Currency?.Code,
-        cell: (sale) => {
-          const currencyCode = displayValue(sale.ClientAgreement?.Agreement?.Currency?.Code)
-
-          if (!currencyCode) {
-            return ''
-          }
-
-          return (
-            <Badge className="app-role-pill is-green" variant="light">
-              {currencyCode}
-            </Badge>
-          )
-        },
+        cell: (sale) => (
+          <span className="sales-tab-cell-currency">
+            {displayValue(sale.ClientAgreement?.Agreement?.Currency?.Code)}
+          </span>
+        ),
       },
       {
         id: 'responsible',
