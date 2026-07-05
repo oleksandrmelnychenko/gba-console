@@ -1,5 +1,4 @@
 import {
-  ActionIcon,
   Alert,
   Button,
   Card,
@@ -8,13 +7,11 @@ import {
   Stack,
   Text,
   TextInput,
-  Tooltip,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
-  IconArrowLeft,
   IconDownload,
   IconFileImport,
   IconFilesOff,
@@ -26,6 +23,7 @@ import { formatLocalDate, formatLocalInputDateTime } from '../../../shared/date/
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useAuth } from '../../auth/useAuth'
 import { getProtocolByNetId } from '../api/productDeliveryProtocolsApi'
@@ -898,40 +896,35 @@ export function ProductDeliveryProtocolSpecificationPage() {
   const filteredPackingList = filterPackingListByVendorCode(model.packingList, vendorCodeFilter)
 
   return (
+    <AppDrawer
+      opened
+      keepMounted={false}
+      position="right"
+      size="min(1500px, 97vw)"
+      title={
+        <span style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>
+          {t('Митні коди згідно протоколу')}
+          {model.protocol?.DeliveryProductProtocolNumber?.Number
+            ? ` (${model.protocol.DeliveryProductProtocolNumber.Number})`
+            : ''}
+        </span>
+      }
+      onClose={() => navigate('/product-delivery-protocols')}
+    >
     <Stack gap="lg">
-      <Group justify="space-between" align="center">
-        <Group gap="sm" align="center">
-          <Tooltip label={t('Назад')}>
-            <ActionIcon
-              aria-label={t('Назад')}
-              color="gray"
-              variant="light"
-              onClick={() => navigate('/product-delivery-protocols')}
-            >
-              <IconArrowLeft size={18} />
-            </ActionIcon>
-          </Tooltip>
-          <Text fw={700} size="lg">
-            {t('Митні коди згідно протоколу')}
-            {model.protocol?.DeliveryProductProtocolNumber?.Number
-              ? ` (${model.protocol.DeliveryProductProtocolNumber.Number})`
-              : ''}
-          </Text>
-        </Group>
-        <Group gap="sm" align="center">
-          <SegmentedControl
-            data={SPECIFICATION_CURRENCY_OPTIONS}
-            disabled={model.isActionBusy}
-            value={model.currencyIsEur ? CURRENCY_EUR : CURRENCY_UAH}
-            onChange={(value) => model.setCurrencyIsEur(value === CURRENCY_EUR)}
-          />
-          <SegmentedControl
-            data={SERVICE_MODE_OPTIONS}
-            disabled={model.isActionBusy}
-            value={model.withManagementServices ? SERVICES_MANAGEMENT : SERVICES_ACCOUNTING}
-            onChange={(value) => model.setWithManagementServices(value === SERVICES_MANAGEMENT)}
-          />
-        </Group>
+      <Group gap="sm" justify="flex-end">
+        <SegmentedControl
+          data={SPECIFICATION_CURRENCY_OPTIONS}
+          disabled={model.isActionBusy}
+          value={model.currencyIsEur ? CURRENCY_EUR : CURRENCY_UAH}
+          onChange={(value) => model.setCurrencyIsEur(value === CURRENCY_EUR)}
+        />
+        <SegmentedControl
+          data={SERVICE_MODE_OPTIONS}
+          disabled={model.isActionBusy}
+          value={model.withManagementServices ? SERVICES_MANAGEMENT : SERVICES_ACCOUNTING}
+          onChange={(value) => model.setWithManagementServices(value === SERVICES_MANAGEMENT)}
+        />
       </Group>
 
       {model.error && (
@@ -961,6 +954,7 @@ export function ProductDeliveryProtocolSpecificationPage() {
                     disabled={model.isActionBusy}
                     leftSection={<IconFileImport size={16} />}
                     loading={model.isUploading}
+                    styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
                     onClick={() => model.setUploadOpen(true)}
                   >
                     {t('Завантаження митних кодів')}
@@ -972,6 +966,7 @@ export function ProductDeliveryProtocolSpecificationPage() {
                     disabled={!canOpenDeliveryDocuments || model.isActionBusy}
                     leftSection={<IconFileImport size={16} />}
                     loading={model.isSavingDocuments}
+                    styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
                     variant="light"
                     onClick={model.openDocuments}
                   >
@@ -984,6 +979,7 @@ export function ProductDeliveryProtocolSpecificationPage() {
                     disabled={model.isActionBusy}
                     leftSection={<IconLayersIntersect size={16} />}
                     loading={model.isMerging}
+                    styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
                     variant="light"
                     onClick={model.openMerge}
                   >
@@ -996,6 +992,7 @@ export function ProductDeliveryProtocolSpecificationPage() {
                     disabled={model.isActionBusy}
                     leftSection={<IconDownload size={16} />}
                     loading={model.isDownloading}
+                    styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
                     variant="light"
                     onClick={model.openDownload}
                   >
@@ -1008,9 +1005,9 @@ export function ProductDeliveryProtocolSpecificationPage() {
                 {invoices.map((invoice) => (
                   <Button
                     key={invoice.NetUid || invoice.Id}
-                    color={invoice.NetUid === model.selectedInvoiceNetId ? 'blue' : 'gray'}
+                    color={invoice.NetUid === model.selectedInvoiceNetId ? CREATE_ACTION_COLOR : 'gray'}
                     disabled={model.isActionBusy}
-                    variant={invoice.NetUid === model.selectedInvoiceNetId ? 'filled' : 'light'}
+                    variant={invoice.NetUid === model.selectedInvoiceNetId ? 'light' : 'subtle'}
                     onClick={() => model.selectInvoice(invoice)}
                   >
                     <Stack gap={0} align="flex-start">
@@ -1033,10 +1030,11 @@ export function ProductDeliveryProtocolSpecificationPage() {
                   {(model.selectedInvoice.PackingLists || []).map((packList) => (
                     <Button
                       key={packList.NetUid || packList.Id}
-                      color={packList.NetUid === model.selectedPackListNetId ? 'blue' : 'gray'}
+                      color={packList.NetUid === model.selectedPackListNetId ? CREATE_ACTION_COLOR : 'gray'}
                       disabled={model.isActionBusy}
                       size="xs"
-                      variant={packList.NetUid === model.selectedPackListNetId ? 'outline' : 'subtle'}
+                      styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
+                      variant={packList.NetUid === model.selectedPackListNetId ? 'light' : 'subtle'}
                       onClick={() => model.selectPackList(packList)}
                     >
                       {t('Пак ліст')} №: {packList.InvNo} ({t('Від')} {invoiceDate(packList.FromDate)})
@@ -1103,6 +1101,7 @@ export function ProductDeliveryProtocolSpecificationPage() {
         model={model}
       />
     </Stack>
+    </AppDrawer>
   )
 }
 
