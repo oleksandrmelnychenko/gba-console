@@ -6,7 +6,6 @@ import {
   FileButton,
   Group,
   ScrollArea,
-  SegmentedControl,
   Stack,
   Text,
   TextInput,
@@ -204,16 +203,8 @@ export function ProductSpecificationCodesPage() {
   return (
     <Stack gap="lg">
       <Card className="app-data-card" withBorder radius="md" padding={0}>
-        <div className="app-filter-bar">
+        <div className="app-filter-bar product-specification-codes-filter-bar">
           <Group align="end" gap="sm" wrap="nowrap" className="product-specification-codes-filter-row">
-            <SegmentedControl
-              data={[
-                { label: t('Україна'), value: 'uk' },
-                { label: t('Польща'), value: 'pl' },
-              ]}
-              value={model.region}
-              onChange={(value) => model.setRegion(value as ProductSpecificationRegion)}
-            />
             <TextInput
               label={t('Код товару')}
               leftSection={<IconSearch size={16} />}
@@ -233,7 +224,7 @@ export function ProductSpecificationCodesPage() {
             <div className="app-filter-actions">
               <FileButton accept=".xlsx,.xls,.csv" onChange={handleUpload}>
                 {(props) => (
-                  <Button {...props} leftSection={<IconUpload size={16} />} loading={isUploading} variant="light">
+                  <Button {...props} color={CREATE_ACTION_COLOR} leftSection={<IconUpload size={16} />} loading={isUploading} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} variant="outline">
                     {t('Завантажити Excel')}
                   </Button>
                 )}
@@ -260,7 +251,7 @@ export function ProductSpecificationCodesPage() {
           </Group>
         </div>
 
-        <Stack gap="md" className="product-specification-codes-body">
+        <Stack gap={10} className="product-specification-codes-body">
           {model.error && (
             <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
               {model.error}
@@ -274,6 +265,7 @@ export function ProductSpecificationCodesPage() {
             <Button
               color="gray"
               disabled={!model.hasMore || model.isLoading || model.isLoadingMore}
+              styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
               loading={model.isLoadingMore}
               variant="light"
               onClick={model.loadMore}
@@ -495,3 +487,5 @@ function displayValue(value: unknown): string {
 
   return String(value)
 }
+
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
