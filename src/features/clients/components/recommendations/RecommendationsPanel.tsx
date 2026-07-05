@@ -19,6 +19,7 @@ import {
 import { IconAlertCircle, IconLayoutGrid, IconList, IconPhoto } from '@tabler/icons-react'
 import { useEffect, useReducer } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
+import { toProxiedAssetUrl } from '../../../../shared/url/proxiedAssetUrl'
 import { AppModal } from '../../../../shared/ui/AppModal'
 import {
   getMostPurchasedProductsByClientId,
@@ -329,7 +330,7 @@ function ProductImage({
         fit="contain"
         h={height}
         radius="sm"
-        src={product.Image}
+        src={toProxiedAssetUrl(product.Image)}
       />
     </button>
   )
@@ -382,7 +383,7 @@ function ProductImagePreviewModal({
             minHeight: 360,
           }}
         >
-          <Image alt={displayValue(title)} fit="contain" mah="calc(100vh - 220px)" src={product.Image} w="100%" />
+          <Image alt={displayValue(title)} fit="contain" mah="calc(100vh - 220px)" src={toProxiedAssetUrl(product.Image)} w="100%" />
         </Box>
       ) : (
         <Text c="dimmed" size="sm">

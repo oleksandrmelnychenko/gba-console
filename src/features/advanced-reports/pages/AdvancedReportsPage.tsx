@@ -698,7 +698,7 @@ function PayedToCell({ row }: { row: AdvancedReportRow }) {
         </Badge>
       )}
       {Boolean(row.differenceAmount) && (
-        <Text c={(row.differenceAmount || 0) < 0 ? 'red' : 'green'} fw={700} size="sm">
+        <Text className="app-money" fw={700} size="sm">
           {formatMoney(row.differenceAmount)}
         </Text>
       )}

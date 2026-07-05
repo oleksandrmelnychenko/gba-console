@@ -59,6 +59,7 @@ import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/Page
 import { type FormEvent, useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { getDocumentHref } from '../../../shared/url/getDocumentHref'
+import { toProxiedAssetUrl } from '../../../shared/url/proxiedAssetUrl'
 import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
 import { PermissionGate } from '../../auth/components/PermissionGate'
@@ -1270,9 +1271,9 @@ function ProductImagesPanel({ onProductSaved, product }: { onProductSaved: (prod
                 <button
                   type="button"
                   style={{ background: 'transparent', border: 0, cursor: 'zoom-in', padding: 0 }}
-                  onClick={() => setPreviewImageUrl(image.ImageUrl || null)}
+                  onClick={() => setPreviewImageUrl(toProxiedAssetUrl(image.ImageUrl) || null)}
                 >
-                  <Image src={image.ImageUrl} alt={image.FileName || getProductTitle(product)} h={190} fit="contain" radius="sm" />
+                  <Image src={toProxiedAssetUrl(image.ImageUrl)} alt={image.FileName || getProductTitle(product)} h={190} fit="contain" radius="sm" />
                 </button>
                 <Group justify="space-between" gap="xs" wrap="nowrap">
                   <Badge color={image.Deleted ? 'red' : image.IsMainImage ? 'green' : 'gray'} variant="light">

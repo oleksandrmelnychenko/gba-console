@@ -4,7 +4,10 @@
    shared/ui/filter-bar.css. */
 
 /* Let the filter strip span the full card width while tabs + filters + actions
-   stay in a single toolbar row. */
+   stay in a single toolbar row. Tracks are shrinkable (§5.3 reference bars):
+   fixed mins + min-width: max-content used to force the row to ~1400px, pushing
+   the limit/actions cluster off-screen on laptop widths. overflow-x stays only
+   as the last-resort fallback below the track minimums. */
 .product-remains-filter-bar {
   overflow-x: auto;
 }
@@ -15,14 +18,20 @@
   gap: 10px;
   grid-template-columns:
     auto
-    minmax(260px, 280px)
-    minmax(140px, 150px)
-    minmax(140px, 150px)
-    minmax(280px, 300px)
-    minmax(84px, 92px)
-    minmax(32px, 1fr)
+    minmax(170px, 280px)
+    minmax(118px, 150px)
+    minmax(118px, 150px)
+    minmax(180px, 300px)
+    minmax(76px, 92px)
+    minmax(8px, 1fr)
     auto;
-  min-width: max-content;
+  width: 100%;
+}
+
+/* Fields fill their grid tracks; the inline w={} widths were removed so the
+   tracks (not the controls) decide how the row shrinks. */
+.product-remains-filter-row .mantine-InputWrapper-root {
+  min-width: 0;
   width: 100%;
 }
 

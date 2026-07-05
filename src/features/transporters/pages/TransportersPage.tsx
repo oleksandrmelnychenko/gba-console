@@ -31,6 +31,7 @@ import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { toProxiedAssetUrl } from '../../../shared/url/proxiedAssetUrl'
 import {
   archiveTransporter,
   createTransporter,
@@ -725,7 +726,7 @@ function TransporterSetting({
 }
 
 function TransporterImagePreview({ transporter }: { transporter: Transporter }) {
-  const imageUrl = transporter.ImageUrl?.trim()
+  const imageUrl = toProxiedAssetUrl(transporter.ImageUrl?.trim())
 
   if (!imageUrl) {
     return null

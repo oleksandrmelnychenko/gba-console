@@ -54,6 +54,7 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout, DataTableDensity } from '../../../shared/ui/data-table/types'
+import { toProxiedAssetUrl } from '../../../shared/url/proxiedAssetUrl'
 import { PermissionGate } from '../../auth/components/PermissionGate'
 import {
   changeClientResourcePricingPriority,
@@ -4474,7 +4475,7 @@ function TransporterTable({
                   withArrow
                 >
                   <Group gap="sm" wrap="nowrap" className="client-resources-transporter-cell">
-                    <Avatar src={transporter.ImageUrl} alt={displayValue(transporter.Name)} size="sm" radius="sm" />
+                    <Avatar src={toProxiedAssetUrl(transporter.ImageUrl)} alt={displayValue(transporter.Name)} size="sm" radius="sm" />
                     <Text fw={600} className="client-resources-truncated-cell">
                       {displayValue(transporter.Name)}
                     </Text>

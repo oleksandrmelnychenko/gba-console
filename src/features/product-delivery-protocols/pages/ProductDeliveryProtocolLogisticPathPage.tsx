@@ -1,11 +1,12 @@
-import { ActionIcon, Alert, Button, Group, Stack, Text, Tooltip } from '@mantine/core'
+import { Alert, Badge, Stack, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconAlertCircle, IconArrowLeft } from '@tabler/icons-react'
+import { IconAlertCircle } from '@tabler/icons-react'
 import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { UserRoleType } from '../../../shared/auth/types'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { useAuth } from '../../auth/useAuth'
 import { getProtocolByNetId } from '../api/productDeliveryProtocolsApi'
 import {
@@ -300,31 +301,25 @@ export function ProductDeliveryProtocolLogisticPathPage() {
   const model = useLogisticPathModel(id)
 
   return (
-    <Stack className="product-delivery-protocol-logistic-path-page" gap="lg">
-      <Group justify="space-between" align="center">
-        <Group gap="sm" align="center">
-          <Tooltip label={t('Назад')}>
-            <ActionIcon
-              aria-label={t('Назад')}
-              color="gray"
-              variant="light"
-              onClick={() => navigate('/product-delivery-protocols')}
-            >
-              <IconArrowLeft size={18} />
-            </ActionIcon>
-          </Tooltip>
-          <Text fw={700} size="lg">
-            {t('Протокол доставки товару')}
-            {model.protocol?.DeliveryProductProtocolNumber?.Number
-              ? ` (${model.protocol.DeliveryProductProtocolNumber.Number})`
-              : ''}
-          </Text>
-        </Group>
-        <Button color="gray" variant="light" onClick={() => navigate('/product-delivery-protocols')}>
-          {t('Назад')}
-        </Button>
-      </Group>
-
+    <AppDrawer
+      className="app-form-sheet"
+      closeOnEscape={false}
+      opened
+      position="right"
+      size="wide"
+      title={
+        <span className="app-sheet-title-mono">
+          {t('Протокол доставки товару')}
+          {model.protocol?.DeliveryProductProtocolNumber?.Number && (
+            <Badge className="app-role-pill is-yellow" variant="light">
+              {model.protocol.DeliveryProductProtocolNumber.Number}
+            </Badge>
+          )}
+        </span>
+      }
+      onClose={() => navigate('/product-delivery-protocols')}
+    >
+      <Stack gap="lg">
       {model.error && (
         <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
           {model.error}
@@ -376,6 +371,7 @@ export function ProductDeliveryProtocolLogisticPathPage() {
           )}
         </Stack>
       ) : null}
-    </Stack>
+      </Stack>
+    </AppDrawer>
   )
 }

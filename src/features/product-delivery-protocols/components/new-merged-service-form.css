@@ -1,0 +1,110 @@
+.new-merged-service-title {
+  color: var(--mantine-color-gray-9);
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.new-merged-service-modal {
+  max-width: 100%;
+  padding-bottom: 0;
+  width: 100%;
+}
+
+.new-merged-service-section {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.new-merged-service-section .app-section-title {
+  line-height: 1.2;
+}
+
+.new-merged-service-section-body {
+  margin-top: 10px;
+}
+
+.new-merged-service-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.new-merged-service-control {
+  min-width: 0;
+}
+
+.new-merged-service-control.is-wide {
+  grid-column: span 2;
+}
+
+.new-merged-service-control.is-number .mantine-Input-input {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.new-merged-service-modal .mantine-InputBase-label,
+.new-merged-service-modal .mantine-Checkbox-label {
+  color: var(--mantine-color-gray-9);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.new-merged-service-modal .mantine-Input-input {
+  border-color: var(--mantine-color-gray-2);
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  letter-spacing: 0;
+  min-height: 36px;
+}
+
+.new-merged-service-modal textarea.mantine-Input-input {
+  min-height: 72px;
+}
+
+.new-merged-service-checkbox {
+  margin-top: 10px;
+}
+
+.new-merged-service-checkbox .mantine-Checkbox-input:checked {
+  background-color: var(--brand-orange);
+  border-color: var(--brand-orange);
+}
+
+.new-merged-service-footer {
+  background: var(--mantine-color-white);
+  border-top: 1px solid var(--mantine-color-gray-2);
+  bottom: -1px;
+  margin: 2px -12px 0;
+  padding: 12px 12px 0;
+  position: sticky;
+  z-index: 2;
+}
+
+.new-merged-service-footer .mantine-Button-root {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+@media (max-width: 980px) {
+  .new-merged-service-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 680px) {
+  .new-merged-service-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .new-merged-service-control.is-wide {
+    grid-column: auto;
+  }
+}

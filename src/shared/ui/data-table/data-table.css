@@ -286,6 +286,28 @@
   pointer-events: none;
 }
 
+/* Grid money values are neutral: mono for scanability, no red/green by sign.
+   Page-level money classes used to color positive/negative values; keep this
+   shared override close to DataTable so every registry stays consistent. */
+.data-table .app-money,
+.data-table .app-money.is-negative,
+.data-table [class*='money-cell'] strong,
+.data-table [class*='balance-cell'] strong,
+.data-table [class*='amount-cell'] strong,
+.data-table [class*='money-amount'] {
+  color: var(--mantine-color-gray-8) !important;
+}
+
+.data-table .app-money-meta,
+.data-table .app-money-meta.is-negative,
+.data-table .app-money.is-negative .app-money-meta,
+.data-table [class*='money-cell'] small,
+.data-table [class*='balance-cell'] small,
+.data-table [class*='amount-cell'] small,
+.data-table [class*='money-currency'] {
+  color: var(--mantine-color-gray-6) !important;
+}
+
 .data-table-skeleton-cell {
   vertical-align: middle;
 }

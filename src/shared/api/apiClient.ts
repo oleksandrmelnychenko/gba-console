@@ -77,6 +77,12 @@ export function unwrapApiResponse<T>(payload: unknown): T {
 
 const inFlightGetRequests = new Map<string, InFlightGetRequest>()
 const GET_DEDUPE_ABORT_DELAY_MS = 50
+/* A GET that never settles (stalled backend/proxy response) would otherwise
+   sit in the dedupe map forever: every retry with the same params joins the
+   zombie promise and the screen hangs with no error — reload included, since
+   the key is identical. Cap shared GETs so the entry aborts with a network
+   error, clears from the map, and the next attempt opens a fresh request. */
+const GET_DEDUPE_TIMEOUT_MS = 120_000
 
 export async function apiRequest<T>(path: string, options: ApiRequestOptions = {}): Promise<T> {
   if (shouldDeduplicateGetRequest(options)) {
@@ -123,6 +129,19 @@ function createInFlightGetRequest<T>(key: string, path: string, options: ApiRequ
     settled: false,
     subscribers: 0,
   }
+  const timeoutTimer = setTimeout(() => {
+    if (!request.settled && !controller.signal.aborted) {
+      /* Abort with a network ApiError as the reason so subscribers see the
+         regular "server unavailable" message instead of a raw AbortError. */
+      controller.abort(
+        new ApiError(
+          options.errorMessages?.network || translate('Сервер недоступний. Спробуйте ще раз пізніше.'),
+          0,
+          null,
+        ),
+      )
+    }
+  }, GET_DEDUPE_TIMEOUT_MS)
 
   request.promise = sendApiRequest<T>(
     path,
@@ -133,6 +152,7 @@ function createInFlightGetRequest<T>(key: string, path: string, options: ApiRequ
     true,
   ).finally(() => {
     request.settled = true
+    clearTimeout(timeoutTimer)
 
     if (request.abortTimer) {
       clearTimeout(request.abortTimer)

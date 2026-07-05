@@ -1,5 +1,6 @@
 import type { Product, ProductImage, ProductOriginalNumber } from './types'
 import { translate } from '../../shared/i18n/translate'
+import { toProxiedAssetUrl } from '../../shared/url/proxiedAssetUrl'
 
 const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
 const PRODUCT_SHOP_IMAGE_BASE_URL = 'https://concord-shop.com/userdata/shop/product/'
@@ -66,13 +67,15 @@ export function getProductGroupNames(product?: Product | null): string {
 export function getProductMainImage(product?: Product | null): ProductImage | null {
   const shopImageUrl = getProductShopImageUrl(product)
   const activeImages = product?.ProductImages?.filter((image) => !image.Deleted) || []
-
-  return (
-    activeImages.find((image) => image.IsMainImage && Boolean(image.ImageUrl))
-    || activeImages.find((image) => Boolean(image.ImageUrl))
+  const image =
+    activeImages.find((candidate) => candidate.IsMainImage && Boolean(candidate.ImageUrl))
+    || activeImages.find((candidate) => Boolean(candidate.ImageUrl))
     || (product?.Image ? { ImageUrl: product.Image } : null)
     || (shopImageUrl ? { ImageUrl: shopImageUrl } : null)
-  )
+
+  /* Internal-origin /Images/ URLs are unreachable from the browser — rewrite
+     them to the same-origin proxy path. */
+  return image ? { ...image, ImageUrl: toProxiedAssetUrl(image.ImageUrl) } : null
 }
 
 export function getProductWriteOffRuleLocaleLabel(locale: string | undefined): 'Україна' | 'Польща' | 'Невідомий регіон' {

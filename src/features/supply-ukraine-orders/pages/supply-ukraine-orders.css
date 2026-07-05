@@ -486,7 +486,7 @@
 
 /* Numbers (money, quantities) in mono per the pattern — instantly scannable. */
 .supply-order-money-amount {
-  color: var(--mantine-color-green-8);
+  color: var(--mantine-color-gray-8);
   display: block;
   font-family: var(--font-mono);
   font-size: 13px;
@@ -496,7 +496,7 @@
 }
 
 .supply-order-money-currency {
-  color: var(--mantine-color-green-7);
+  color: var(--mantine-color-gray-6);
   display: block;
   font-family: var(--font-mono);
   font-size: 10px;

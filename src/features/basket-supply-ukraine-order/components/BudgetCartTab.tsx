@@ -467,7 +467,7 @@ function BudgetCartRow({
         {item.unit_margin_eur === null ? (
           <Text size="sm">—</Text>
         ) : (
-          <Text c={item.unit_margin_eur >= 0 ? 'green' : 'red'} fw={600} size="sm">
+          <Text className="app-money" fw={600} size="sm">
             {eurFormatter.format(item.unit_margin_eur)}
           </Text>
         )}

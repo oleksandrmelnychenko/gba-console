@@ -78,7 +78,7 @@
 
 ### 5.1 Дані в клітинках (еталон — Замовлення на Україну)
 
-- **Грошові значення:** моно 600; **> 0 — зелений** (`green-8`, валюта-мета `green-7`), **< 0 — червоний** (`red-8`/`red-7`). Спільні класи: `.app-money` (+`.is-negative`) і `.app-money-meta` в index.css. Еталон — баланс у /accounting/supplier-organizations.
+- **Грошові значення:** моно 600; **без червоного/зеленого за знаком** — сума `gray-8`, валюта/мета `gray-6`. Спільні класи: `.app-money` (+`.is-negative` тільки як semantic hook) і `.app-money-meta` в index.css. Еталон — баланс у /accounting/supplier-organizations.
 
 Мова даних — «Onest для назв, МОНО для чисел», сірі рівні без блідого `gray-5`:
 

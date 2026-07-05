@@ -914,7 +914,7 @@ export function NewResalePage() {
       return null
     }
 
-    if (pillIndex === MAX_VISIBLE_SPECIFICATION_PILLS && selectedCount > MAX_VISIBLE_SPECIFICATION_PILLS + 1) {
+    if (pillIndex === MAX_VISIBLE_SPECIFICATION_PILLS && selectedCount > MAX_VISIBLE_SPECIFICATION_PILLS) {
       return (
         <Pill className="resales-new-specification-pill is-overflow" radius={7} size="sm">
           +{selectedCount - MAX_VISIBLE_SPECIFICATION_PILLS}

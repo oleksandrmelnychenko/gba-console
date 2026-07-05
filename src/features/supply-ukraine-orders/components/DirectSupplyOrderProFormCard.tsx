@@ -15,7 +15,6 @@ import {
 import { notifications } from '@mantine/notifications'
 import {
   IconDeviceFloppy,
-  IconFileInvoice,
   IconPencil,
   IconTrash,
   IconUpload,
@@ -23,6 +22,7 @@ import {
 import { useEffect, useReducer } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import {
   deleteSupplyProformDocument,
@@ -143,24 +143,37 @@ export function DirectSupplyOrderProFormCard({
   }
 
   return (
-    <Card withBorder radius="md" padding="lg">
+    <Card className="supply-detail-card" withBorder radius="md" padding="lg">
       <Stack gap="md">
         <Group justify="space-between" gap="sm" wrap="wrap">
           <Group gap="xs">
-            <IconFileInvoice size={18} />
-            <Text fw={600}>{t('Проформа')}</Text>
-            <Badge color={hasProForm ? 'green' : 'yellow'} variant="light">
+            <Text className="app-section-title" fw={600} size="sm">
+              {t('Проформа')}
+            </Text>
+            <Badge className={`app-role-pill ${hasProForm ? 'is-green' : 'is-orange'}`} variant="light">
               {hasProForm ? t('Створено') : t('Потрібно створити')}
             </Badge>
           </Group>
           {isEditing ? (
             <Group gap="xs">
-              <Button leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} size="xs" variant="light" onClick={() => void saveProForm()}>
+              <Button
+                color={CREATE_ACTION_COLOR}
+                leftSection={<IconDeviceFloppy size={16} />}
+                loading={isSaving}
+                size="xs"
+                onClick={() => void saveProForm()}
+              >
                 {t('Зберегти')}
               </Button>
             </Group>
           ) : canEdit ? (
-            <Button leftSection={<IconPencil size={16} />} size="xs" variant="light" onClick={() => dispatch({ type: 'startEditing' })}>
+            <Button
+              color={CREATE_ACTION_COLOR}
+              leftSection={<IconPencil size={16} />}
+              size="xs"
+              variant="outline"
+              onClick={() => dispatch({ type: 'startEditing' })}
+            >
               {hasProForm ? t('Редагувати') : t('Створити')}
             </Button>
           ) : null}
@@ -194,20 +207,22 @@ export function DirectSupplyOrderProFormCard({
             </>
           ) : (
             <>
-              <InfoBlock label={t('Номер')} value={draft.Number || '-'} />
-              <InfoBlock label={t('Сума нетто')} value={formatMoney(draft.NetPrice)} />
-              <InfoBlock label={t('Дата')} value={formatDateTime(draft.DateFrom)} />
+              <InfoBlock label={t('Номер')} mono value={draft.Number || ''} />
+              <InfoBlock label={t('Сума нетто')} mono value={formatMoney(draft.NetPrice)} />
+              <InfoBlock label={t('Дата')} mono value={formatDateTime(draft.DateFrom)} />
             </>
           )}
         </SimpleGrid>
 
         <Stack gap="xs">
           <Group justify="space-between" gap="xs" wrap="wrap">
-            <Text fw={600} size="sm">{t('Документи')}</Text>
+            <Text className="app-section-title" fw={600} size="sm">
+              {t('Документи')}
+            </Text>
             {isEditing && (
               <FileButton multiple onChange={(nextFiles) => dispatch({ type: 'addFiles', files: nextFiles || [] })}>
                 {(fileProps) => (
-                  <Button {...fileProps} disabled={isSaving} leftSection={<IconUpload size={16} />} size="xs" variant="light">
+                  <Button {...fileProps} disabled={isSaving} leftSection={<IconUpload size={16} />} size="xs" variant="default">
                     {t('Додати файли')}
                   </Button>
                 )}
@@ -450,18 +465,21 @@ function formatFileSize(size: number): string {
   return `${Math.round(size / 1024 / 102.4) / 10} MB`
 }
 
-function InfoBlock({ label, value }: { label: string, value: string }) {
+function InfoBlock({ label, mono, value }: { label: string, mono?: boolean, value: string }) {
   return (
     <Stack gap={2}>
       <Text c="dimmed" size="xs">{label}</Text>
-      <Text fw={600} size="sm">{value}</Text>
+      <Text ff={mono ? 'var(--font-mono)' : undefined} fw={600} size="sm">
+        {value}
+      </Text>
     </Stack>
   )
 }
 
+/* Empty values render blank (§5/§7.2) — never a dash. */
 function formatDateTime(value?: Date | string): string {
   if (!value) {
-    return '-'
+    return ''
   }
 
   const date = value instanceof Date ? value : new Date(value)
@@ -474,5 +492,5 @@ function formatDateTime(value?: Date | string): string {
 }
 
 function formatMoney(value?: number): string {
-  return typeof value === 'number' && Number.isFinite(value) ? moneyFormatter.format(value) : '-'
+  return typeof value === 'number' && Number.isFinite(value) ? moneyFormatter.format(value) : ''
 }

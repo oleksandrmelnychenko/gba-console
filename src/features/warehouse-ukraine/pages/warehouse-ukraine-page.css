@@ -39,7 +39,7 @@
 }
 
 .warehouse-ukraine-filter-bar.is-sales {
-  grid-template-columns: minmax(220px, 1fr) minmax(148px, 170px) minmax(148px, 170px) auto auto;
+  grid-template-columns: minmax(220px, 1fr) minmax(148px, 170px) minmax(148px, 170px) auto auto auto;
 }
 
 .warehouse-ukraine-filter-bar.is-orders {

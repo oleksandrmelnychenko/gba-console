@@ -746,7 +746,6 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
               disabled={isLoadingStorages}
               label={t('Склад')}
               value={selectedStorageValue}
-              w={280}
               onChange={(value) => {
                 resetAllData()
                 setSelectedStorageValue(value || ALL_STORAGES_VALUE)
@@ -756,7 +755,6 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
               label={t('З')}
               type="date"
               value={dateFrom}
-              w={150}
               onChange={(event) => {
                 resetAllData()
                 setDateFrom(event.currentTarget.value)
@@ -766,7 +764,6 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
               label={t('По')}
               type="date"
               value={dateTo}
-              w={150}
               onChange={(event) => {
                 resetAllData()
                 setDateTo(event.currentTarget.value)
@@ -781,7 +778,6 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
               placeholder={t('Всі постачальники')}
               searchValue={supplierSearch}
               value={supplierNetId}
-              w={300}
               onChange={(value) => {
                 resetAllData()
                 setSupplierNetId(value)
@@ -793,7 +789,6 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
               data={pageSizeOptions}
               label={t('Ліміт')}
               value={String(pageSize)}
-              w={92}
               onChange={(value) => {
                 resetAllData()
                 setPageSize(Number(value || PAGE_SIZE))

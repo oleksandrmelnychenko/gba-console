@@ -1,6 +1,7 @@
 import { ActionIcon, Anchor, Alert, Badge, Button, Card, Group, Stack, Text, Tooltip } from '@mantine/core'
 import { IconAlertCircle, IconEdit, IconTrash } from '@tabler/icons-react'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import { useAuth } from '../../auth/useAuth'
 import type { MergedService, SupplyDocument, SupplyPaymentTask } from '../detailTypes'
@@ -110,12 +111,12 @@ export function MergedServiceViewCard({
         {hasActions && (
           <Group justify="flex-end" gap="xs">
             {invoiceCount > 0 && canCalculate && (
-              <Button disabled={isSaving} size="xs" variant="light" onClick={onCalculate}>
+              <Button color={CREATE_ACTION_COLOR} disabled={isSaving} size="xs" variant="outline" onClick={onCalculate}>
                 {t('Розрахувати')}
               </Button>
             )}
             {canAssignInvoices && (
-              <Button disabled={isSaving} size="xs" variant="light" onClick={onAssignInvoices}>
+              <Button color={CREATE_ACTION_COLOR} disabled={isSaving} size="xs" variant="outline" onClick={onAssignInvoices}>
                 {t('Додати')} {t('Інвойси')}
               </Button>
             )}

@@ -5,7 +5,6 @@ import {
   Box,
   Button,
   Card,
-  Divider,
   Group,
   SimpleGrid,
   Stack,
@@ -581,20 +580,27 @@ function ProductCapitalizationDetailDrawer({
 
   return (
     <AppDrawer
+      className="product-capitalization-detail-drawer"
       opened={Boolean(capitalization)}
       padding="lg"
       position="right"
       size="78rem"
-      title={capitalization?.Number ? `${t('Оприбуткування')} ${capitalization.Number}` : t('Оприбуткування')}
+      title={<span className="product-capitalization-detail-drawer-title">{t('Оприбуткування')}</span>}
       onClose={onClose}
     >
       {capitalization && (
-        <Stack gap="md">
-          <Group justify="space-between" gap="sm">
-            <Text c="dimmed" size="sm">
-              {formatDateTime(capitalization.FromDate)}
-            </Text>
+        <Stack className="product-capitalization-detail-body" gap={12}>
+          <div className="product-capitalization-detail-header">
+            <div className="product-capitalization-detail-heading">
+              <Text className="product-capitalization-detail-title">
+                {t('Оприбуткування')} <span>{displayValue(capitalization.Number)}</span>
+              </Text>
+              <Text className="product-capitalization-detail-date">
+                {formatDateTime(capitalization.FromDate)}
+              </Text>
+            </div>
             <Button
+              className="product-capitalization-detail-export"
               color="gray"
               disabled={!capitalization.NetUid || Boolean(exportingNetId)}
               leftSection={<IconDownload size={16} />}
@@ -604,7 +610,7 @@ function ProductCapitalizationDetailDrawer({
             >
               {t('Експорт')}
             </Button>
-          </Group>
+          </div>
 
           {detailError && (
             <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
@@ -612,56 +618,56 @@ function ProductCapitalizationDetailDrawer({
             </Alert>
           )}
 
-          <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="sm">
+          <SimpleGrid className="product-capitalization-detail-grid" cols={{ base: 1, sm: 2, lg: 4 }} spacing={8}>
             <DetailValue label={t('Склад')} value={capitalization.Storage?.Name} />
             <DetailValue label={t('Організація')} value={capitalization.Organization?.Name} />
             <DetailValue label={t('Відповідальний')} value={getResponsibleName(capitalization)} />
-            <DetailValue label={t('Сума')} value={formatMoney(capitalization.TotalAmount)} />
+            <DetailValue label={t('Сума')} tone="money" value={formatMoney(capitalization.TotalAmount)} />
           </SimpleGrid>
 
           {capitalization.Comment && (
-            <Box>
-              <Text size="xs" c="dimmed" mb={4}>
+            <Box className="product-capitalization-detail-comment">
+              <Text className="product-capitalization-detail-comment-label">
                 {t('Коментар')}
               </Text>
-              <Text size="sm">{capitalization.Comment}</Text>
+              <Text className="product-capitalization-detail-comment-value">{capitalization.Comment}</Text>
             </Box>
           )}
 
-          <Divider />
-
-          <Group gap="lg">
+          <Group className="product-capitalization-detail-totals" gap={8}>
             <TotalValue label={t('Кількість')} value={formatAmount(totals.qty)} />
             <TotalValue label={t('Сума')} value={formatMoney(totals.amount)} />
             <TotalValue label={t('Вага')} value={formatAmount(totals.weight)} />
           </Group>
 
-          <DataTable
-            columns={itemColumns}
-            data={items}
-            defaultLayout={PRODUCT_CAPITALIZATION_ITEMS_TABLE_DEFAULT_LAYOUT}
-            emptyText={t('Позицій не знайдено')}
-            getRowId={(item, index) => String(item.NetUid || item.Id || `${getItemVendorCode(item)}-${index}`)}
-            isLoading={isLoading}
-            layoutVersion="product-capitalization-items-table-1"
-            loadingText={t('Завантаження позицій оприбуткування')}
-            maxHeight="calc(100vh - 420px)"
-            minWidth={920}
-            tableId="product-capitalization-items"
-          />
+          <div className="product-capitalization-detail-table">
+            <DataTable
+              columns={itemColumns}
+              data={items}
+              defaultLayout={PRODUCT_CAPITALIZATION_ITEMS_TABLE_DEFAULT_LAYOUT}
+              emptyText={t('Позицій не знайдено')}
+              getRowId={(item, index) => String(item.NetUid || item.Id || `${getItemVendorCode(item)}-${index}`)}
+              isLoading={isLoading}
+              layoutVersion="product-capitalization-items-table-1"
+              loadingText={t('Завантаження позицій оприбуткування')}
+              maxHeight="calc(100vh - 420px)"
+              minWidth={920}
+              tableId="product-capitalization-items"
+            />
+          </div>
         </Stack>
       )}
     </AppDrawer>
   )
 }
 
-function DetailValue({ label, value }: { label: string; value: unknown }) {
+function DetailValue({ label, tone, value }: { label: string; tone?: 'money'; value: unknown }) {
   return (
-    <Box>
-      <Text size="xs" c="dimmed">
+    <Box className={`product-capitalization-detail-field${tone ? ` is-${tone}` : ''}`}>
+      <Text className="product-capitalization-detail-field-label">
         {label}
       </Text>
-      <Text size="sm" fw={600} lineClamp={2}>
+      <Text className="product-capitalization-detail-field-value" lineClamp={2}>
         {displayValue(value)}
       </Text>
     </Box>
@@ -670,11 +676,11 @@ function DetailValue({ label, value }: { label: string; value: unknown }) {
 
 function TotalValue({ label, value }: { label: string; value: string }) {
   return (
-    <Box>
-      <Text size="xs" c="dimmed">
+    <Box className="product-capitalization-detail-total">
+      <Text className="product-capitalization-detail-total-label">
         {label}
       </Text>
-      <Text size="lg" fw={700}>
+      <Text className="product-capitalization-detail-total-value">
         {value}
       </Text>
     </Box>

@@ -88,7 +88,7 @@ function ProtocolRow({
 
         {task && (
           <Stack gap={2}>
-            <Text size="sm">{responsibleName(task.User) || '-'}</Text>
+            <Text size="sm">{responsibleName(task.User) || ''}</Text>
             <Text c="dimmed" size="xs">
               {t('Сплатити до')}: {formatDate(task.PayToDate)}
             </Text>
@@ -246,11 +246,11 @@ export function PaymentDeliveryProtocolsSection({
   return (
     <Stack gap="md">
       <Group justify="space-between" align="center">
-        <Text fw={700} size="lg">
+        <Text className="app-section-title" fw={600} size="sm">
           {t('Протоколи доставки')}
         </Text>
         {canCreateProtocol && (
-          <Button color={CREATE_ACTION_COLOR} leftSection={<IconPlus size={16} />} variant="light" onClick={() => setFormOpen(true)}>
+          <Button color={CREATE_ACTION_COLOR} leftSection={<IconPlus size={16} />} onClick={() => setFormOpen(true)}>
             {t('Створити платіжну задачу')}
           </Button>
         )}
@@ -274,9 +274,10 @@ export function PaymentDeliveryProtocolsSection({
       )}
 
       <AppDrawer
+        className="app-form-sheet"
         opened={isFormOpen}
         size="md"
-        title={t('Створити платіжну задачу')}
+        title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Створити платіжну задачу')}</span>}
         onClose={() => setFormOpen(false)}
         footer={
           <Button color={CREATE_ACTION_COLOR} loading={isSaving} onClick={handleSubmit}>
@@ -341,11 +342,17 @@ export function PaymentDeliveryProtocolsSection({
         </Stack>
       </AppDrawer>
 
-      <AppModal centered opened={Boolean(removeTarget)} title={t('Видалити')} onClose={() => setRemoveTarget(null)}>
+      <AppModal
+        centered
+        className="app-form-sheet"
+        opened={Boolean(removeTarget)}
+        title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Видалити')}</span>}
+        onClose={() => setRemoveTarget(null)}
+      >
         <Stack gap="md">
           <Text size="sm">{t('Ви впевнені, що хочете видалити?')}</Text>
           <Group justify="flex-end" gap="sm">
-            <Button color="gray" disabled={isSaving} variant="light" onClick={() => setRemoveTarget(null)}>
+            <Button disabled={isSaving} variant="default" onClick={() => setRemoveTarget(null)}>
               {t('Скасувати')}
             </Button>
             <Button color="red" loading={isSaving} onClick={handleRemoveConfirm}>
@@ -456,7 +463,7 @@ function formatInputNumber(value: number): string {
 
 function formatPercent(value: number | undefined): string {
   if (typeof value !== 'number' || !Number.isFinite(value)) {
-    return '-'
+    return ''
   }
 
   return `${roundNumber(value)} %`

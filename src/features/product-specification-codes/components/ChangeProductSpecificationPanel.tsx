@@ -1,13 +1,15 @@
-import { Alert, Button, Divider, Group, NumberInput, Radio, Stack, Text, TextInput } from '@mantine/core'
+import { Alert, Button, Group, NumberInput, Radio, Stack, Text, TextInput } from '@mantine/core'
 import { IconAlertCircle, IconCheck } from '@tabler/icons-react'
 import { notifications } from '@mantine/notifications'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useAuth } from '../../auth/useAuth'
 import { changeProductSpecification } from '../api/productSpecificationCodesApi'
 import { ProductSpecificationChangeMode, type ProductSpecification } from '../types'
+import './change-product-specification-panel.css'
 
 const CHANGE_PERMISSION = 'Accounting_Specification_codes_ChangeBtn_PKEY'
 
@@ -115,18 +117,46 @@ export function ChangeProductSpecificationPanel({
   }
 
   const vendorCode = productSpecification?.Product?.VendorCode || ''
+  const title = vendorCode ? (
+    <span className="product-specification-change-title">
+      <span>{t('Зміна митного коду для')}</span>
+      <span className="product-specification-change-title-code">{vendorCode}</span>
+    </span>
+  ) : (
+    <span className="product-specification-change-title">{t('Зміна митного коду')}</span>
+  )
 
   return (
     <AppDrawer
+      className="product-specification-change-sheet"
+      footer={
+        productSpecification ? (
+          <>
+            <Button color="gray" disabled={isSubmitting} variant="light" onClick={requestClose}>
+              {t('Скасувати')}
+            </Button>
+            {canChange && (
+              <Button
+                color={CREATE_ACTION_COLOR}
+                leftSection={<IconCheck size={16} />}
+                loading={isSubmitting}
+                onClick={submit}
+              >
+                {t('Змінити')}
+              </Button>
+            )}
+          </>
+        ) : null
+      }
       opened={Boolean(productSpecification)}
       padding="lg"
       position="right"
       size="32rem"
-      title={`${t('Зміна митного коду для')} ${vendorCode}`.trim()}
+      title={title}
       onClose={requestClose}
     >
       {productSpecification && (
-        <Stack gap="md">
+        <Stack className="product-specification-change-body" gap={12}>
           {error && (
             <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
               {error}
@@ -134,24 +164,28 @@ export function ChangeProductSpecificationPanel({
           )}
 
           <Radio.Group
+            className="product-specification-change-mode"
             label={t('Застосувати')}
             value={String(form.changeMode)}
             onChange={(value) =>
               setForm((current) => ({ ...current, changeMode: Number(value) as ProductSpecificationChangeMode }))
             }
           >
-            <Stack gap="xs" mt="xs">
+            <Stack className="product-specification-change-options" gap={4} mt={8}>
               <Radio
+                className="product-specification-change-option"
                 disabled={isSubmitting}
                 label={t('Для даного товару')}
                 value={String(ProductSpecificationChangeMode.SingleProduct)}
               />
               <Radio
+                className="product-specification-change-option"
                 disabled={isSubmitting}
                 label={t('Для всіх товарів за назвою')}
                 value={String(ProductSpecificationChangeMode.AllProductsByName)}
               />
               <Radio
+                className="product-specification-change-option"
                 disabled={isSubmitting}
                 label={t('Для всіх товарів за кодом')}
                 value={String(ProductSpecificationChangeMode.AllProductsByCode)}
@@ -159,61 +193,53 @@ export function ChangeProductSpecificationPanel({
             </Stack>
           </Radio.Group>
 
-          <TextInput
-            disabled={isSubmitting}
-            label={t('Митний код')}
-            required
-            value={form.specificationCode}
-            onChange={(event) => { const nextValue = event.currentTarget.value; setForm((current) => ({ ...current, specificationCode: nextValue })) }}
-          />
+          <div className="product-specification-change-form">
+            <TextInput
+              disabled={isSubmitting}
+              label={t('Митний код')}
+              required
+              value={form.specificationCode}
+              onChange={(event) => {
+                const nextValue = event.currentTarget.value
+                setForm((current) => ({ ...current, specificationCode: nextValue }))
+              }}
+            />
 
-          <TextInput
-            disabled={isSubmitting}
-            label={t('Підтвердіть митний код')}
-            required
-            value={form.confirmSpecificationCode}
-            onChange={(event) => {
-              const nextValue = event.currentTarget.value
-              setForm((current) => ({ ...current, confirmSpecificationCode: nextValue }))
-            }}
-          />
+            <TextInput
+              disabled={isSubmitting}
+              label={t('Підтвердіть митний код')}
+              required
+              value={form.confirmSpecificationCode}
+              onChange={(event) => {
+                const nextValue = event.currentTarget.value
+                setForm((current) => ({ ...current, confirmSpecificationCode: nextValue }))
+              }}
+            />
 
-          <NumberInput
-            decimalScale={2}
-            disabled={isSubmitting}
-            label={t('Митна вартість')}
-            value={form.customsValue}
-            onChange={(value) => setForm((current) => ({ ...current, customsValue: toNumberOrEmpty(value) }))}
-          />
+            <NumberInput
+              decimalScale={2}
+              disabled={isSubmitting}
+              label={t('Митна вартість')}
+              value={form.customsValue}
+              onChange={(value) => setForm((current) => ({ ...current, customsValue: toNumberOrEmpty(value) }))}
+            />
 
-          <NumberInput
-            decimalScale={2}
-            disabled={isSubmitting}
-            label={t('Мито')}
-            value={form.customs}
-            onChange={(value) => setForm((current) => ({ ...current, customs: toNumberOrEmpty(value) }))}
-          />
+            <NumberInput
+              decimalScale={2}
+              disabled={isSubmitting}
+              label={t('Мито')}
+              value={form.customs}
+              onChange={(value) => setForm((current) => ({ ...current, customs: toNumberOrEmpty(value) }))}
+            />
 
-          <NumberInput
-            decimalScale={2}
-            disabled={isSubmitting}
-            label={t('ПДВ')}
-            value={form.vat}
-            onChange={(value) => setForm((current) => ({ ...current, vat: toNumberOrEmpty(value) }))}
-          />
-
-          <Divider />
-
-          <Group justify="flex-end">
-            <Button color="gray" disabled={isSubmitting} variant="light" onClick={requestClose}>
-              {t('Скасувати')}
-            </Button>
-            {canChange && (
-              <Button leftSection={<IconCheck size={16} />} loading={isSubmitting} onClick={submit}>
-                {t('Змінити')}
-              </Button>
-            )}
-          </Group>
+            <NumberInput
+              decimalScale={2}
+              disabled={isSubmitting}
+              label={t('ПДВ')}
+              value={form.vat}
+              onChange={(value) => setForm((current) => ({ ...current, vat: toNumberOrEmpty(value) }))}
+            />
+          </div>
         </Stack>
       )}
 

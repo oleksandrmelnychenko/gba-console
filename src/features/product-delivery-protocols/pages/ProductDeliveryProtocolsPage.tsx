@@ -25,6 +25,7 @@ import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
@@ -40,6 +41,7 @@ import {
 } from '../api/productDeliveryProtocolsApi'
 import { NewProductDeliveryProtocolModal } from '../components/NewProductDeliveryProtocolModal'
 import { ProtocolOptionsModal } from '../components/ProtocolOptionsModal'
+import { ProductDeliveryProtocolIncomeSheet } from './ProductDeliveryProtocolIncomePage'
 import { getProtocolPlacementStatusLabel, getProtocolStatusLabel } from '../protocolStatus'
 import type {
   CreateProtocolPayload,
@@ -105,6 +107,7 @@ function useProtocolsPageModel() {
   const [organizations, setOrganizations] = useValueState<ProtocolOrganization[]>([])
   const [organizationsError, setOrganizationsError] = useValueState<string | null>(null)
   const [optionsProtocol, setOptionsProtocol] = useValueState<DeliveryProductProtocol | null>(null)
+  const [incomeProtocol, setIncomeProtocol] = useValueState<DeliveryProductProtocol | null>(null)
   const [isCreateModalOpen, setCreateModalOpen] = useValueState(false)
   const [createError, setCreateError] = useValueState<string | null>(null)
   const [isCreating, setCreating] = useValueState(false)
@@ -248,6 +251,10 @@ function useProtocolsPageModel() {
     [canOpenOptions, setOptionsProtocol],
   )
   const closeOptions = useCallback(() => setOptionsProtocol(null), [setOptionsProtocol])
+  const closeIncome = useCallback(() => {
+    setIncomeProtocol(null)
+    reload()
+  }, [reload, setIncomeProtocol])
 
   const navigateToLogisticPath = useCallback(
     (protocol: DeliveryProductProtocol) => {
@@ -266,16 +273,16 @@ function useProtocolsPageModel() {
   const navigateToIncome = useCallback(
     (protocol: DeliveryProductProtocol) => {
       closeOptions()
-      navigate(`/product-delivery-protocols/${protocol.NetUid}/product-income`)
+      setIncomeProtocol(protocol)
     },
-    [closeOptions, navigate],
+    [closeOptions, setIncomeProtocol],
   )
 
   return {
     activeFilters, canCreate, canExport, canOpenIncome, canOpenLogisticPath, canOpenOptions, canOpenSpecifications,
-    closeCreateModal, closeDownload, closeOptions, createError, downloadDocument, downloadError,
+    closeCreateModal, closeDownload, closeIncome, closeOptions, createError, downloadDocument, downloadError,
     downloadOpened, error, exportDocument, filterDraft, filterError, handleCreate, isCreateModalOpen,
-    exportScopeWarning, isCreating, isDownloading, isLoading, navigateToIncome, navigateToLogisticPath,
+    exportScopeWarning, incomeProtocol, isCreating, isDownloading, isLoading, navigateToIncome, navigateToLogisticPath,
     navigateToSpecifications, openCreateModal, openOptions, optionsProtocol, organizations, organizationsError,
     page, pageSize, protocols, applyFilters, reload, resetFilters, setPage, setPageSize,
     totalPages, totalQty,
@@ -411,6 +418,11 @@ function useProtocolsLoader({
 
 export function ProductDeliveryProtocolsPage() {
   const model = useProtocolsPageModel()
+  const { t } = useI18n()
+  const incomeProtocolNumber = model.incomeProtocol?.DeliveryProductProtocolNumber?.Number || ''
+  const incomeSheetTitle = incomeProtocolNumber
+    ? `${t('Прихід товару згідно замовлення')}: ${incomeProtocolNumber}`
+    : t('Прихід товару згідно замовлення')
 
   return (
     <Stack className="product-delivery-protocols-page console-table-page" gap={6}>
@@ -425,6 +437,15 @@ export function ProductDeliveryProtocolsPage() {
         onOpenLogisticPath={model.navigateToLogisticPath}
         onOpenSpecifications={model.navigateToSpecifications}
       />
+      <AppDrawer
+        closeOnClickOutside={false}
+        opened={Boolean(model.incomeProtocol?.NetUid)}
+        size="full"
+        title={<span className="product-delivery-protocol-income-sheet-title">{incomeSheetTitle}</span>}
+        onClose={model.closeIncome}
+      >
+        {model.incomeProtocol?.NetUid && <ProductDeliveryProtocolIncomeSheet sourceId={model.incomeProtocol.NetUid} />}
+      </AppDrawer>
       <NewProductDeliveryProtocolModal
         createError={model.createError}
         isCreating={model.isCreating}

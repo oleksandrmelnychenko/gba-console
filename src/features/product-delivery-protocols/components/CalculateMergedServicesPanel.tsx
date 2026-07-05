@@ -1,10 +1,16 @@
-import { Alert, Button, Checkbox, Group, Select, Stack, Text, TextInput } from '@mantine/core'
+import { Alert, Badge, Button, Checkbox, Group, SegmentedControl, Select, Stack, Text, TextInput } from '@mantine/core'
 import { useMemo } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppDrawer } from '../../../shared/ui/AppDrawer'
-import type { CalculateMergedServiceInvoiceItem, MergedService, SupplyExtraChargeType } from '../detailTypes'
+import { AppModal } from '../../../shared/ui/AppModal'
+import type {
+  CalculateMergedServiceInvoiceItem,
+  MergedService,
+  SupplyExtraChargeType,
+  SupplyInvoice,
+} from '../detailTypes'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import './calculate-merged-services-panel.css'
 
 type CalculateSubmit = {
   extraChargeType: SupplyExtraChargeType
@@ -61,6 +67,10 @@ function CalculateMergedServicesPanelContent({
     { label: t('Розраховано по вазі'), value: '1' },
     { label: t("Розраховано по об'єму"), value: '2' },
   ]
+  const modeOptions = [
+    { label: t('Розрахувати автоматично'), value: 'auto' },
+    { label: t('Розрахувати вручну'), value: 'manual' },
+  ]
 
   function updateItem(index: number, patch: Partial<CalculateMergedServiceInvoiceItem>) {
     if (isSaving) {
@@ -88,68 +98,93 @@ function CalculateMergedServicesPanelContent({
   }
 
   return (
-    <AppDrawer
+    <AppModal
+      centered
+      closeOnClickOutside={!isSaving}
       opened={opened}
-      size="md"
-      title={t('Розрахувати')}
+      size="min(980px, calc(100vw - 32px))"
+      title={<span className="calculate-merged-services-title">{t('Розрахувати')}</span>}
       onClose={() => {
         if (!isSaving) {
           onClose()
         }
       }}
     >
-      <Stack gap="md">
+      <Stack className="calculate-merged-services-modal" gap={12}>
         {error && (
           <Alert color="red" variant="light">
             {error}
           </Alert>
         )}
 
-        <Group gap="lg">
-          <Checkbox
-            checked={isAuto}
-            disabled={isSaving}
-            label={t('Розрахувати автоматично')}
-            onChange={() => setIsAuto(true)}
-          />
-          <Checkbox
-            checked={!isAuto}
-            disabled={isSaving}
-            label={t('Розрахувати вручну')}
-            onChange={() => setIsAuto(false)}
-          />
-        </Group>
+        <section className="calculate-merged-services-section">
+          <Text className="app-section-title" fw={600} size="sm">
+            {t('Налаштування')}
+          </Text>
+          <div className="calculate-merged-services-settings">
+            <SegmentedControl
+              className="calculate-merged-services-mode"
+              data={modeOptions}
+              disabled={isSaving}
+              value={isAuto ? 'auto' : 'manual'}
+              onChange={(value) => setIsAuto(value === 'auto')}
+            />
+            {isAuto && (
+              <Select
+                className="calculate-merged-services-control"
+                data={typeOptions}
+                disabled={isSaving}
+                label={t('Тип')}
+                value={String(extraChargeType)}
+                onChange={(value) => setExtraChargeType((Number(value) || 0) as SupplyExtraChargeType)}
+              />
+            )}
+            {currencyCode && (
+              <div className="calculate-merged-services-currency">
+                <Text component="span">{t('Валюта')}</Text>
+                <Badge className="app-role-pill is-gray" size="sm" variant="light">
+                  {currencyCode}
+                </Badge>
+              </div>
+            )}
+          </div>
+        </section>
 
-        {isAuto && (
-          <Select
-            data={typeOptions}
-            disabled={isSaving}
-            label={t('Тип')}
-            value={String(extraChargeType)}
-            onChange={(value) => setExtraChargeType((Number(value) || 0) as SupplyExtraChargeType)}
-          />
-        )}
-
-        <Stack gap="sm">
+        <Stack className="calculate-merged-services-list" gap="xs">
           {items.map((item, index) => (
-            <Stack key={item.entity.NetUid || index} gap={4}>
-              <Text size="sm" fw={600}>
-                № {item.number} - {t('Постачальник')}: {item.entity.SupplyInvoice?.SupplyOrder?.Client?.FullName || '-'}
-              </Text>
-              <Text c="dimmed" size="xs">
-                {(item.entity.SupplyInvoice?.ExchangeRate || 0) !== 0
-                  ? `${t('Курс')}: ${item.entity.SupplyInvoice?.ExchangeRate} ${currencyCode}; ${item.entity.SupplyInvoice?.ExchangeRateEurToUah || 0} EUR`
-                  : `${item.entity.SupplyInvoice?.ExchangeRateEurToUah || 0} EUR`}
-              </Text>
-              <Group align="flex-end" gap="sm" wrap="nowrap">
+            <div
+              key={item.entity.NetUid || index}
+              className={`calculate-service-invoice-card${item.isSelected || isAuto ? ' is-selected' : ''}`}
+            >
+              <Group align="center" className="calculate-service-invoice-head" gap={8} wrap="nowrap">
+                <Badge className="app-role-pill is-yellow calculate-service-invoice-number" size="sm" variant="light">
+                  № {item.number || '-'}
+                </Badge>
+                <Text
+                  className="calculate-service-invoice-supplier"
+                  title={item.entity.SupplyInvoice?.SupplyOrder?.Client?.FullName || '-'}
+                >
+                  {item.entity.SupplyInvoice?.SupplyOrder?.Client?.FullName || '-'}
+                </Text>
+              </Group>
+
+              <div className="calculate-service-invoice-meta">
+                <Text component="span">{t('Курс')}</Text>
+                <strong>{formatInvoiceRate(item.entity.SupplyInvoice, currencyCode)}</strong>
+              </div>
+
+              <div className="calculate-service-invoice-fields">
                 {!isAuto && (
                   <Checkbox
                     checked={item.isSelected}
+                    className="calculate-service-invoice-check"
                     disabled={isSaving}
+                    label={t('Вибрати')}
                     onChange={() => updateItem(index, { isSelected: !item.isSelected })}
                   />
                 )}
                 <TextInput
+                  className="calculate-service-invoice-control is-number"
                   disabled={isSaving || !item.isSelected || isAuto}
                   label={t('Вартість')}
                   type="number"
@@ -157,31 +192,42 @@ function CalculateMergedServicesPanelContent({
                   onChange={(event) => updateItem(index, { value: event.currentTarget.value })}
                 />
                 <TextInput
+                  className="calculate-service-invoice-control is-number"
                   disabled={isSaving || !item.isSelected || isAuto}
                   label={`${t('Вартість')} (${t('Бух.')})`}
                   type="number"
                   value={item.accountingValue}
                   onChange={(event) => updateItem(index, { accountingValue: event.currentTarget.value })}
                 />
-              </Group>
-            </Stack>
+              </div>
+            </div>
           ))}
         </Stack>
 
-        <Text c="dimmed" size="xs">
-          {currencyCode}
-        </Text>
-
-        <Group justify="flex-end">
+        <Group className="calculate-merged-services-footer" justify="flex-end" gap={8}>
+          <Button disabled={isSaving} variant="default" onClick={onClose}>
+            {t('Скасувати')}
+          </Button>
           <Button color={CREATE_ACTION_COLOR} disabled={isSaving} loading={isSaving} onClick={handleSubmit}>
             {t('Розрахувати')}
           </Button>
         </Group>
       </Stack>
-    </AppDrawer>
+    </AppModal>
   )
 }
 
 function getMergedServicePanelKey(service: MergedService): string {
   return String(service.NetUid || service.Id || 'open')
+}
+
+function formatInvoiceRate(invoice: SupplyInvoice | null | undefined, currencyCode: string): string {
+  const exchangeRate = invoice?.ExchangeRate || 0
+  const exchangeRateEurToUah = invoice?.ExchangeRateEurToUah || 0
+
+  if (exchangeRate !== 0) {
+    return `${exchangeRate} ${currencyCode}; ${exchangeRateEurToUah} EUR`
+  }
+
+  return `${exchangeRateEurToUah} EUR`
 }

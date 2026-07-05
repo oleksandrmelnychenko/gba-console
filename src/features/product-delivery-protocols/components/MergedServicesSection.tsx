@@ -227,13 +227,15 @@ export function MergedServicesSection({
   return (
     <Stack gap="md">
       <Group justify="space-between" align="center">
-        <Text fw={700}>{t('Об’єднані сервіси')}</Text>
+        <Text className="app-section-title" fw={600} size="sm">
+          {t('Об’єднані сервіси')}
+        </Text>
         {canAddService && (
           <Button
             color={CREATE_ACTION_COLOR}
             disabled={isSaving}
             leftSection={<IconPlus size={16} />}
-            variant="light"
+            variant="outline"
             onClick={() => setNewOpen(true)}
           >
             {t('Додати')}
@@ -328,7 +330,7 @@ export function MergedServicesSection({
         <Stack gap="md">
           <Text size="sm">{t('Ви впевнені, що хочете видалити?')}</Text>
           <Group justify="flex-end" gap="sm">
-            <Button color="gray" disabled={isSaving} variant="light" onClick={() => setRemoveTarget(null)}>
+            <Button disabled={isSaving} variant="default" onClick={() => setRemoveTarget(null)}>
               {t('Скасувати')}
             </Button>
             <Button color="red" disabled={isSaving} loading={isSaving} onClick={handleRemoveConfirm}>

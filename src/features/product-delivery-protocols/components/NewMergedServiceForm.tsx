@@ -2,7 +2,6 @@ import {
   Alert,
   Button,
   Checkbox,
-  Divider,
   FileInput,
   Group,
   NumberInput,
@@ -14,11 +13,11 @@ import {
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { IconAlertCircle } from '@tabler/icons-react'
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, type ReactNode } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { AppModal } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import {
   getResponsibleUsers,
@@ -33,6 +32,7 @@ import type {
 } from '../detailTypes'
 import type { ProtocolUser } from '../types'
 import { responsibleName } from './protocolDetailHelpers'
+import './new-merged-service-form.css'
 
 const SUPPLY_ORGANIZATION_SEARCH_DEBOUNCE_MS = 300
 
@@ -327,22 +327,19 @@ export function NewMergedServiceForm({
   }
 
   return (
-    <AppDrawer
+    <AppModal
+      centered
+      closeOnClickOutside={!isSaving}
       opened={opened}
-      size="lg"
-      title={t('Додати')}
+      size="min(1280px, calc(100vw - 32px))"
+      title={<span className="new-merged-service-title">{t('Додати об’єднаний сервіс')}</span>}
       onClose={() => {
         if (!isSaving) {
           onClose()
         }
       }}
-      footer={
-        <Button color={CREATE_ACTION_COLOR} disabled={isSaving} loading={isSaving} onClick={handleSubmit}>
-          {t('Зберегти')}
-        </Button>
-      }
     >
-      <Stack gap="sm">
+      <Stack className="new-merged-service-modal" gap={12}>
         {loadError && (
           <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
             {loadError}
@@ -354,245 +351,337 @@ export function NewMergedServiceForm({
           </Alert>
         )}
 
-        <Select
-          data={organizationOptions}
-          label={t('Постачальник послуг')}
-          nothingFoundMessage={t('Нічого не знайдено')}
-          searchable
-          searchValue={organizationSearch}
-          value={values.supplyOrganization?.NetUid || null}
-          onChange={(value) => {
-            selectOrganization(value)
-            setOrganizationSearch('')
-          }}
-          onSearchChange={setOrganizationSearch}
-        />
-        <Select
-          data={agreementOptions}
-          disabled={!values.supplyOrganization}
-          label={t('Договір')}
-          searchable
-          value={values.agreement?.NetUid || null}
-          onChange={selectAgreement}
-        />
-        <Select
-          data={productOptions}
-          label={t('Тип')}
-          searchable
-          value={values.consumableProduct?.NetUid || null}
-          onChange={selectProduct}
-        />
-        <TextInput
-          label={t('Назва')}
-          value={values.name}
-          onChange={(event) => update('name', event.currentTarget.value)}
-        />
-        <TextInput
-          label={t('Номер інвойса')}
-          value={values.invoiceNumber}
-          onChange={(event) => update('invoiceNumber', event.currentTarget.value)}
-        />
-
-        <Group grow>
-          <TextInput
-            label={t('Вартість Брутто')}
-            type="number"
-            value={values.grossPrice}
-            onChange={(event) => update('grossPrice', event.currentTarget.value)}
-          />
-          <TextInput
-            label={t('ПДВ %')}
-            type="number"
-            value={values.percent}
-            onChange={(event) => update('percent', event.currentTarget.value)}
-          />
-        </Group>
-
-        <Group grow>
-          <TextInput
-            label={t('Вартість Брутто (Бух.)')}
-            type="number"
-            value={values.grossPriceAccounting}
-            onChange={(event) => update('grossPriceAccounting', event.currentTarget.value)}
-          />
-          <TextInput
-            label={`${t('ПДВ %')} (${t('Бух.')})`}
-            type="number"
-            value={values.percentAccounting}
-            onChange={(event) => update('percentAccounting', event.currentTarget.value)}
-          />
-        </Group>
-
-        <Group grow>
-          <TextInput
-            label={t('Курс валют')}
-            type="number"
-            value={values.exchangeRate}
-            onChange={(event) => update('exchangeRate', event.currentTarget.value)}
-          />
-          <TextInput
-            label={t('Курс валют (Бух.)')}
-            type="number"
-            value={values.accountingExchangeRate}
-            onChange={(event) => update('accountingExchangeRate', event.currentTarget.value)}
-          />
-        </Group>
-
-        <Checkbox
-          checked={values.isIncludeAccountingValue}
-          label={t('Включати бух. вартість у ціну брутто')}
-          onChange={(event) => update('isIncludeAccountingValue', event.currentTarget.checked)}
-        />
-
-        <TextInput
-          label={t('Від якої дати')}
-          type="date"
-          value={toDateInput(values.fromDate)}
-          onChange={(event) => update('fromDate', fromDateInput(event.currentTarget.value))}
-        />
-
-        <Checkbox
-          checked={values.isSupplyInformationTask}
-          label={t('Доставка в межах країни')}
-          onChange={(event) => update('isSupplyInformationTask', event.currentTarget.checked)}
-        />
-
-        {values.isSupplyInformationTask && (
-          <Stack gap="sm">
-            <NumberInput
-              label={t('Вартість доставки в межах країни')}
-              value={values.supplyInformationTaskGrossPrice}
-              onChange={(value) => update('supplyInformationTaskGrossPrice', String(value))}
+        <NewMergedServiceSection title={t('Основне')}>
+          <div className="new-merged-service-grid">
+            <Select
+              className="new-merged-service-control is-wide"
+              data={organizationOptions}
+              disabled={isSaving}
+              label={t('Постачальник послуг')}
+              nothingFoundMessage={t('Нічого не знайдено')}
+              searchable
+              searchValue={organizationSearch}
+              value={values.supplyOrganization?.NetUid || null}
+              onChange={(value) => {
+                selectOrganization(value)
+                setOrganizationSearch('')
+              }}
+              onSearchChange={setOrganizationSearch}
             />
             <Select
-              data={userOptions}
-              label={t('Відповідальний за оплату в межах країни')}
+              className="new-merged-service-control"
+              data={agreementOptions}
+              disabled={isSaving || !values.supplyOrganization}
+              label={t('Договір')}
               searchable
-              value={values.supplyInformationTaskUser?.NetUid || null}
-              onChange={(netUid) => selectUser('supplyInformationTaskUser', netUid)}
+              value={values.agreement?.NetUid || null}
+              onChange={selectAgreement}
             />
-            <Textarea
-              label={t('Коментар')}
-              value={values.supplyInformationTaskComment}
-              onChange={(event) => update('supplyInformationTaskComment', event.currentTarget.value)}
+            <Select
+              className="new-merged-service-control"
+              data={productOptions}
+              disabled={isSaving}
+              label={t('Тип')}
+              searchable
+              value={values.consumableProduct?.NetUid || null}
+              onChange={selectProduct}
             />
-          </Stack>
-        )}
-
-        <FileInput
-          clearable
-          label={t('Рахунок')}
-          multiple
-          value={values.accountDocuments}
-          onChange={(files) => update('accountDocuments', files)}
-        />
-        <FileInput
-          clearable
-          label={t('Акт надання послуг')}
-          multiple
-          value={values.actDocuments}
-          onChange={(files) => update('actDocuments', files)}
-        />
-        <FileInput
-          clearable
-          label={t('Інші файли')}
-          multiple
-          value={values.files}
-          onChange={(files) => update('files', files)}
-        />
-
-        <Group grow>
-          <TextInput
-            label={t('Сплатити до')}
-            type="date"
-            value={toDateInput(values.payToDate)}
-            onChange={(event) => update('payToDate', fromDateInput(event.currentTarget.value))}
-          />
-        </Group>
-        <Textarea
-          label={t('Коментар')}
-          value={values.comment}
-          onChange={(event) => update('comment', event.currentTarget.value)}
-        />
-
-        <Divider />
-
-        <Checkbox
-          checked={values.createTask}
-          label={t('Створити платіжну задачу')}
-          onChange={(event) => update('createTask', event.currentTarget.checked)}
-        />
-        {values.createTask && (
-          <Stack gap="sm">
             <TextInput
-              label={t('Сплатити до')}
+              className="new-merged-service-control"
+              disabled={isSaving}
+              label={t('Номер інвойса')}
+              value={values.invoiceNumber}
+              onChange={(event) => update('invoiceNumber', event.currentTarget.value)}
+            />
+            <TextInput
+              className="new-merged-service-control is-wide"
+              disabled={isSaving}
+              label={t('Назва')}
+              value={values.name}
+              onChange={(event) => update('name', event.currentTarget.value)}
+            />
+            <TextInput
+              className="new-merged-service-control"
+              disabled={isSaving}
+              label={t('Від якої дати')}
               type="date"
-              value={toDateInput(values.taskPayToDate)}
-              onChange={(event) => update('taskPayToDate', fromDateInput(event.currentTarget.value))}
+              value={toDateInput(values.fromDate)}
+              onChange={(event) => update('fromDate', fromDateInput(event.currentTarget.value))}
             />
-            <Select
-              data={userOptions}
-              label={t('Відповідальний')}
-              searchable
-              value={values.taskUser?.NetUid || null}
-              onChange={(netUid) => selectUser('taskUser', netUid)}
+          </div>
+        </NewMergedServiceSection>
+
+        <NewMergedServiceSection title={t('Витрати')}>
+          <div className="new-merged-service-grid">
+            <TextInput
+              className="new-merged-service-control is-number"
+              disabled={isSaving}
+              label={t('Вартість Брутто')}
+              type="number"
+              value={values.grossPrice}
+              onChange={(event) => update('grossPrice', event.currentTarget.value)}
             />
-            <Textarea
-              label={t('Коментар')}
-              value={values.taskComment}
-              onChange={(event) => update('taskComment', event.currentTarget.value)}
+            <TextInput
+              className="new-merged-service-control is-number"
+              disabled={isSaving}
+              label={t('ПДВ %')}
+              type="number"
+              value={values.percent}
+              onChange={(event) => update('percent', event.currentTarget.value)}
+            />
+            <TextInput
+              className="new-merged-service-control is-number"
+              disabled={isSaving}
+              label={t('Курс валют')}
+              type="number"
+              value={values.exchangeRate}
+              onChange={(event) => update('exchangeRate', event.currentTarget.value)}
+            />
+            <TextInput
+              className="new-merged-service-control is-number"
+              disabled={isSaving}
+              label={t('Вартість Брутто (Бух.)')}
+              type="number"
+              value={values.grossPriceAccounting}
+              onChange={(event) => update('grossPriceAccounting', event.currentTarget.value)}
+            />
+            <TextInput
+              className="new-merged-service-control is-number"
+              disabled={isSaving}
+              label={`${t('ПДВ %')} (${t('Бух.')})`}
+              type="number"
+              value={values.percentAccounting}
+              onChange={(event) => update('percentAccounting', event.currentTarget.value)}
+            />
+            <TextInput
+              className="new-merged-service-control is-number"
+              disabled={isSaving}
+              label={t('Курс валют (Бух.)')}
+              type="number"
+              value={values.accountingExchangeRate}
+              onChange={(event) => update('accountingExchangeRate', event.currentTarget.value)}
+            />
+          </div>
+          <Checkbox
+            checked={values.isIncludeAccountingValue}
+            className="new-merged-service-checkbox"
+            disabled={isSaving}
+            label={t('Включати бух. вартість у ціну брутто')}
+            onChange={(event) => update('isIncludeAccountingValue', event.currentTarget.checked)}
+          />
+        </NewMergedServiceSection>
+
+        <NewMergedServiceSection title={t('Доставка в межах країни')}>
+          <Checkbox
+            checked={values.isSupplyInformationTask}
+            className="new-merged-service-checkbox"
+            disabled={isSaving}
+            label={t('Доставка в межах країни')}
+            onChange={(event) => update('isSupplyInformationTask', event.currentTarget.checked)}
+          />
+
+          {values.isSupplyInformationTask && (
+            <div className="new-merged-service-grid">
+              <NumberInput
+                className="new-merged-service-control is-number"
+                disabled={isSaving}
+                label={t('Вартість доставки в межах країни')}
+                value={values.supplyInformationTaskGrossPrice}
+                onChange={(value) => update('supplyInformationTaskGrossPrice', String(value))}
+              />
+              <Select
+                className="new-merged-service-control"
+                data={userOptions}
+                disabled={isSaving}
+                label={t('Відповідальний за оплату в межах країни')}
+                searchable
+                value={values.supplyInformationTaskUser?.NetUid || null}
+                onChange={(netUid) => selectUser('supplyInformationTaskUser', netUid)}
+              />
+              <Textarea
+                className="new-merged-service-control is-wide"
+                disabled={isSaving}
+                label={t('Коментар')}
+                value={values.supplyInformationTaskComment}
+                onChange={(event) => update('supplyInformationTaskComment', event.currentTarget.value)}
+              />
+            </div>
+          )}
+        </NewMergedServiceSection>
+
+        <NewMergedServiceSection title={t('Документи')}>
+          <div className="new-merged-service-grid">
+            <FileInput
+              clearable
+              className="new-merged-service-control"
+              disabled={isSaving}
+              label={t('Рахунок')}
+              multiple
+              value={values.accountDocuments}
+              onChange={(files) => update('accountDocuments', files)}
             />
             <FileInput
               clearable
-              label={t('Інші файли')}
+              className="new-merged-service-control"
+              disabled={isSaving}
+              label={t('Акт надання послуг')}
               multiple
-              value={values.taskFiles}
-              onChange={(files) => update('taskFiles', files)}
-            />
-          </Stack>
-        )}
-
-        <Checkbox
-          checked={values.createAccountingTask}
-          label={`${t('Створити платіжну задачу')} (${t('Бух.')})`}
-          onChange={(event) => update('createAccountingTask', event.currentTarget.checked)}
-        />
-        {values.createAccountingTask && (
-          <Stack gap="sm">
-            <TextInput
-              label={t('Сплатити до')}
-              type="date"
-              value={toDateInput(values.accountingTaskPayToDate)}
-              onChange={(event) => update('accountingTaskPayToDate', fromDateInput(event.currentTarget.value))}
-            />
-            <Select
-              data={userOptions}
-              label={t('Відповідальний')}
-              searchable
-              value={values.accountingTaskUser?.NetUid || null}
-              onChange={(netUid) => selectUser('accountingTaskUser', netUid)}
-            />
-            <Textarea
-              label={t('Коментар')}
-              value={values.accountingTaskComment}
-              onChange={(event) => update('accountingTaskComment', event.currentTarget.value)}
+              value={values.actDocuments}
+              onChange={(files) => update('actDocuments', files)}
             />
             <FileInput
               clearable
+              className="new-merged-service-control"
+              disabled={isSaving}
               label={t('Інші файли')}
               multiple
-              value={values.accountingTaskFiles}
-              onChange={(files) => update('accountingTaskFiles', files)}
+              value={values.files}
+              onChange={(files) => update('files', files)}
             />
+            <TextInput
+              className="new-merged-service-control"
+              disabled={isSaving}
+              label={t('Сплатити до')}
+              type="date"
+              value={toDateInput(values.payToDate)}
+              onChange={(event) => update('payToDate', fromDateInput(event.currentTarget.value))}
+            />
+            <Textarea
+              className="new-merged-service-control is-wide"
+              disabled={isSaving}
+              label={t('Коментар')}
+              value={values.comment}
+              onChange={(event) => update('comment', event.currentTarget.value)}
+            />
+          </div>
+        </NewMergedServiceSection>
+
+        <NewMergedServiceSection title={t('Платіжні задачі')}>
+          <Stack gap={10}>
+            <Checkbox
+              checked={values.createTask}
+              className="new-merged-service-checkbox"
+              disabled={isSaving}
+              label={t('Створити платіжну задачу')}
+              onChange={(event) => update('createTask', event.currentTarget.checked)}
+            />
+            {values.createTask && (
+              <div className="new-merged-service-grid">
+                <TextInput
+                  className="new-merged-service-control"
+                  disabled={isSaving}
+                  label={t('Сплатити до')}
+                  type="date"
+                  value={toDateInput(values.taskPayToDate)}
+                  onChange={(event) => update('taskPayToDate', fromDateInput(event.currentTarget.value))}
+                />
+                <Select
+                  className="new-merged-service-control"
+                  data={userOptions}
+                  disabled={isSaving}
+                  label={t('Відповідальний')}
+                  searchable
+                  value={values.taskUser?.NetUid || null}
+                  onChange={(netUid) => selectUser('taskUser', netUid)}
+                />
+                <Textarea
+                  className="new-merged-service-control is-wide"
+                  disabled={isSaving}
+                  label={t('Коментар')}
+                  value={values.taskComment}
+                  onChange={(event) => update('taskComment', event.currentTarget.value)}
+                />
+                <FileInput
+                  clearable
+                  className="new-merged-service-control is-wide"
+                  disabled={isSaving}
+                  label={t('Інші файли')}
+                  multiple
+                  value={values.taskFiles}
+                  onChange={(files) => update('taskFiles', files)}
+                />
+              </div>
+            )}
+
+            <Checkbox
+              checked={values.createAccountingTask}
+              className="new-merged-service-checkbox"
+              disabled={isSaving}
+              label={`${t('Створити платіжну задачу')} (${t('Бух.')})`}
+              onChange={(event) => update('createAccountingTask', event.currentTarget.checked)}
+            />
+            {values.createAccountingTask && (
+              <div className="new-merged-service-grid">
+                <TextInput
+                  className="new-merged-service-control"
+                  disabled={isSaving}
+                  label={t('Сплатити до')}
+                  type="date"
+                  value={toDateInput(values.accountingTaskPayToDate)}
+                  onChange={(event) => update('accountingTaskPayToDate', fromDateInput(event.currentTarget.value))}
+                />
+                <Select
+                  className="new-merged-service-control"
+                  data={userOptions}
+                  disabled={isSaving}
+                  label={t('Відповідальний')}
+                  searchable
+                  value={values.accountingTaskUser?.NetUid || null}
+                  onChange={(netUid) => selectUser('accountingTaskUser', netUid)}
+                />
+                <Textarea
+                  className="new-merged-service-control is-wide"
+                  disabled={isSaving}
+                  label={t('Коментар')}
+                  value={values.accountingTaskComment}
+                  onChange={(event) => update('accountingTaskComment', event.currentTarget.value)}
+                />
+                <FileInput
+                  clearable
+                  className="new-merged-service-control is-wide"
+                  disabled={isSaving}
+                  label={t('Інші файли')}
+                  multiple
+                  value={values.accountingTaskFiles}
+                  onChange={(files) => update('accountingTaskFiles', files)}
+                />
+              </div>
+            )}
           </Stack>
-        )}
+        </NewMergedServiceSection>
 
         {productOptions.length === 0 && !loadError && (
           <Text c="dimmed" size="xs">
             {t('Завантаження')}
           </Text>
         )}
+
+        <Group className="new-merged-service-footer" justify="flex-end" gap={8}>
+          <Button disabled={isSaving} variant="default" onClick={onClose}>
+            {t('Скасувати')}
+          </Button>
+          <Button color={CREATE_ACTION_COLOR} disabled={isSaving} loading={isSaving} onClick={handleSubmit}>
+            {t('Зберегти')}
+          </Button>
+        </Group>
       </Stack>
-    </AppDrawer>
+    </AppModal>
+  )
+}
+
+function NewMergedServiceSection({
+  children,
+  title,
+}: {
+  children: ReactNode
+  title: string
+}) {
+  return (
+    <section className="new-merged-service-section">
+      <Text className="app-section-title" fw={600} size="sm">
+        {title}
+      </Text>
+      <div className="new-merged-service-section-body">{children}</div>
+    </section>
   )
 }

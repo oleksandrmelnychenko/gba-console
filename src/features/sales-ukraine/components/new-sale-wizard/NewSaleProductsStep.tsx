@@ -4,6 +4,7 @@ import { IconBox, IconSettings } from '@tabler/icons-react'
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { useAuth } from '../../../auth/useAuth'
 import { useI18n } from '../../../../shared/i18n/useI18n'
+import { toProxiedAssetUrl } from '../../../../shared/url/proxiedAssetUrl'
 import { realtimeEvents, useRealtimeEvent } from '../../../../shared/realtime/events'
 import type { Client } from '../../../clients/types'
 import { updateProduct } from '../../../products/api/productsApi'
@@ -1208,7 +1209,7 @@ export function NewSaleProductsStep({
       return
     }
 
-    setImageUrl(product.Image)
+    setImageUrl(toProxiedAssetUrl(product.Image) || null)
     keyboard.setState('ViewImage')
   }
 

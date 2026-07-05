@@ -147,11 +147,10 @@ function InvoiceViewCard({
       <Stack gap="xs">
         <Group justify="flex-end" gap="sm">
           <Button
-            color="gray"
             disabled={isSaving}
             leftSection={<IconListDetails size={16} />}
             size="xs"
-            variant="light"
+            variant="default"
             onClick={() => setExpensesOpened(true)}
           >
             {t('Детальні витрати')}
@@ -169,20 +168,20 @@ function InvoiceViewCard({
             </Button>
           )}
         </Group>
-        <LabelValueRow label={t('Номер документу')}>{invoice.ServiceNumber || ''}</LabelValueRow>
-        <LabelValueRow label={t('Номер інвойса')}>{invoiceNumber || ''}</LabelValueRow>
-        <LabelValueRow label={t('Дата інвойса')}>{formatDateTime(invoice.DateFrom)}</LabelValueRow>
+        <LabelValueRow label={t('Номер документу')} mono>{invoice.ServiceNumber || ''}</LabelValueRow>
+        <LabelValueRow label={t('Номер інвойса')} mono>{invoiceNumber || ''}</LabelValueRow>
+        <LabelValueRow label={t('Дата інвойса')} mono>{formatDateTime(invoice.DateFrom)}</LabelValueRow>
         <LabelValueRow label={t('Постачальник')}>{invoice.SupplyOrder?.Client?.FullName || ''}</LabelValueRow>
-        <LabelValueRow label={t('Заг. вартість нетто')}>{formatMoney(invoice.TotalNetPrice, currencyCode)}</LabelValueRow>
-        <LabelValueRow label={t('Сума доставки')}>{formatMoney(invoice.DeliveryAmount, currencyCode)}</LabelValueRow>
-        <LabelValueRow label={t('Сума знижки')}>{formatMoney(invoice.DiscountAmount, currencyCode)}</LabelValueRow>
-        <LabelValueRow label={t('Кінцева вартість Нетто')}>{formatMoney(totalNetPrice, currencyCode)}</LabelValueRow>
-        <LabelValueRow label={t('Витрати')}>{formatMoney(invoice.TotalSpending, 'EUR')}</LabelValueRow>
-        <LabelValueRow label={`${t('Витрати')} (${t('Бух.')})`}>
+        <LabelValueRow label={t('Заг. вартість нетто')} mono>{formatMoney(invoice.TotalNetPrice, currencyCode)}</LabelValueRow>
+        <LabelValueRow label={t('Сума доставки')} mono>{formatMoney(invoice.DeliveryAmount, currencyCode)}</LabelValueRow>
+        <LabelValueRow label={t('Сума знижки')} mono>{formatMoney(invoice.DiscountAmount, currencyCode)}</LabelValueRow>
+        <LabelValueRow label={t('Кінцева вартість Нетто')} mono>{formatMoney(totalNetPrice, currencyCode)}</LabelValueRow>
+        <LabelValueRow label={t('Витрати')} mono>{formatMoney(invoice.TotalSpending, 'EUR')}</LabelValueRow>
+        <LabelValueRow label={`${t('Витрати')} (${t('Бух.')})`} mono>
           {formatMoney(invoice.AccountingTotalSpending, 'EUR')}
         </LabelValueRow>
-        <LabelValueRow label={t('Номер митної декларації')}>{invoice.NumberCustomDeclaration || ''}</LabelValueRow>
-        <LabelValueRow label={t('Дата митної декларації')}>{formatDateTime(invoice.DateCustomDeclaration)}</LabelValueRow>
+        <LabelValueRow label={t('Номер митної декларації')} mono>{invoice.NumberCustomDeclaration || ''}</LabelValueRow>
+        <LabelValueRow label={t('Дата митної декларації')} mono>{formatDateTime(invoice.DateCustomDeclaration)}</LabelValueRow>
         <LabelValueRow label={t('Документи доставки')}>
           {deliveryDocuments.length > 0 ? (
             <Stack gap={6}>
@@ -358,8 +357,8 @@ function BillOfLadingExpenseCard({ service }: { service: SupplyInvoiceBillOfLadi
     <Card withBorder radius="md" padding="md">
       <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="xs">
         <LabelValueRow label={t('Коносамент')}>{organization}</LabelValueRow>
-        <LabelValueRow label={t('Витрати')}>{formatMoney(service.Value, currencyCode)}</LabelValueRow>
-        <LabelValueRow label={`${t('Витрати')} (${t('Бух.')})`}>
+        <LabelValueRow label={t('Витрати')} mono>{formatMoney(service.Value, currencyCode)}</LabelValueRow>
+        <LabelValueRow label={`${t('Витрати')} (${t('Бух.')})`} mono>
           {formatMoney(service.AccountingValue, currencyCode)}
         </LabelValueRow>
       </SimpleGrid>
@@ -377,14 +376,14 @@ function MergedServiceExpenseCard({ service }: { service: SupplyInvoiceMergedSer
       <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="xs">
         <LabelValueRow label={t('Сервіс')}>{mergedService?.ConsumableProduct?.Name || ''}</LabelValueRow>
         <LabelValueRow label={t('Постачальник')}>{mergedService?.SupplyOrganization?.Name || ''}</LabelValueRow>
-        <LabelValueRow label={t('Витрати')}>{formatMoney(service.Value, currencyCode)}</LabelValueRow>
-        <LabelValueRow label={`${t('Витрати')} (${t('Бух.')})`}>
+        <LabelValueRow label={t('Витрати')} mono>{formatMoney(service.Value, currencyCode)}</LabelValueRow>
+        <LabelValueRow label={`${t('Витрати')} (${t('Бух.')})`} mono>
           {formatMoney(service.AccountingValue, currencyCode)}
         </LabelValueRow>
-        <LabelValueRow label={`${t('Курс')} EUR -> ${currencyCode || ''}`}>
+        <LabelValueRow label={`${t('Курс')} EUR -> ${currencyCode || ''}`} mono>
           {formatMoney(service.ExchangeRateEurToAgreementCurrency, currencyCode)}
         </LabelValueRow>
-        <LabelValueRow label={`${t('Курс')} EUR -> UAH`}>
+        <LabelValueRow label={`${t('Курс')} EUR -> UAH`} mono>
           {formatMoney(service.ExchangeRateEurToUah, 'UAH')}
         </LabelValueRow>
       </SimpleGrid>
@@ -545,9 +544,16 @@ export function InvoicesSection({
   return (
     <Stack gap="md">
       <Group justify="space-between" align="center">
-        <Text fw={700}>{t('Інвойси')}</Text>
+        <Text className="app-section-title" fw={600} size="sm">
+          {t('Інвойси')}
+        </Text>
         {canManageInvoices && (
-          <Button color={CREATE_ACTION_COLOR} disabled={status.isAssigning} variant="light" onClick={() => setDrawerOpened(true)}>
+          <Button
+            color={CREATE_ACTION_COLOR}
+            disabled={status.isAssigning}
+            variant="outline"
+            onClick={() => setDrawerOpened(true)}
+          >
             {t('Управління інвойсами')}
           </Button>
         )}

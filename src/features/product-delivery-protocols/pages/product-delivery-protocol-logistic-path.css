@@ -1,21 +1,17 @@
-/* "Продажі" alignment for the delivery-protocol logistic-path detail screen.
-
-   The section cards (protocol summary, status) render inside child section
-   components, so the Sales soft brand shadow is applied here from the page's
-   own feature CSS, scoped to the direct section-card children of the content
-   stack. This mirrors the global .app-section-card treatment without reaching
-   into the shared layer or the child components. */
-.product-delivery-protocol-logistic-path-sections > .mantine-Card-root {
-  box-shadow: var(--app-card-shadow);
+/* «Протокол доставки товару» renders as a right sheet (.app-form-sheet in
+   index.css carries the §7/§8/§9 chrome: mono buttons, field chrome, orange
+   checkboxes, shadowless section cards). Only sheet-local layout lives here. */
+.product-delivery-protocol-logistic-path-sections {
+  min-width: 0;
 }
 
-/* The page lives inside the fixed-height, overflow-hidden console frame; its
-   content (details, status, invoices management) is taller than the viewport,
-   so the page owns the vertical scroll instead of being clipped. */
-.product-delivery-protocol-logistic-path-page {
-  max-height: 100%;
-  min-height: 0;
-  overflow-x: hidden;
-  overflow-y: auto;
-  padding-bottom: var(--mantine-spacing-lg);
+.product-delivery-protocol-status-card {
+  box-shadow: none;
+}
+
+.product-delivery-protocol-status-action {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0;
+  min-width: 112px;
 }

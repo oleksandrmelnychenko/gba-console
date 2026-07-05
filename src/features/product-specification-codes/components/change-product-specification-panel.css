@@ -1,0 +1,131 @@
+.product-specification-change-title {
+  align-items: center;
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.product-specification-change-title-code {
+  color: var(--mantine-color-gray-9);
+  font-weight: 700;
+}
+
+.product-specification-change-body {
+  min-width: 0;
+}
+
+.product-specification-change-sheet .mantine-Button-label {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.product-specification-change-sheet .mantine-InputWrapper-label,
+.product-specification-change-mode .mantine-RadioGroup-label {
+  color: var(--mantine-color-gray-9);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.product-specification-change-mode .mantine-RadioGroup-label {
+  align-items: center;
+  display: inline-flex;
+  gap: 8px;
+}
+
+.product-specification-change-mode .mantine-RadioGroup-label::before {
+  background: var(--brand-orange);
+  border-radius: 999px;
+  content: '';
+  flex: 0 0 auto;
+  height: 7px;
+  width: 7px;
+}
+
+.product-specification-change-sheet .mantine-Input-input {
+  border-color: var(--mantine-color-gray-2);
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  letter-spacing: 0;
+  min-height: 36px;
+}
+
+.product-specification-change-sheet .mantine-Input-input:focus,
+.product-specification-change-sheet .mantine-Input-input:focus-within {
+  border-color: var(--app-focus-border);
+  box-shadow: var(--app-focus-ring);
+}
+
+.product-specification-change-sheet .mantine-Input-input[data-error] {
+  border-color: var(--mantine-color-red-6);
+}
+
+.product-specification-change-options {
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 10px;
+  padding: 4px;
+}
+
+.product-specification-change-option {
+  border: 1px solid transparent;
+  border-radius: 8px;
+  min-height: 38px;
+  padding: 8px 10px;
+  transition:
+    border-color 140ms var(--tx-ease-smooth),
+    color 140ms var(--tx-ease-smooth),
+    transform 140ms var(--tx-ease-smooth);
+}
+
+.product-specification-change-option:hover {
+  border-color: var(--mantine-color-gray-3);
+  transform: translateX(3px);
+}
+
+.product-specification-change-option .mantine-Radio-label {
+  color: var(--mantine-color-gray-7);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.product-specification-change-option:has(.mantine-Radio-radio:checked) {
+  border-color: var(--brand-orange);
+  position: relative;
+}
+
+.product-specification-change-option:has(.mantine-Radio-radio:checked)::after {
+  background: var(--brand-orange);
+  border-radius: 999px;
+  content: '';
+  height: 6px;
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  width: 6px;
+}
+
+.product-specification-change-option:has(.mantine-Radio-radio:checked) .mantine-Radio-label {
+  color: var(--brand-orange);
+  font-weight: 600;
+}
+
+.product-specification-change-sheet .mantine-Radio-radio:checked {
+  background-color: var(--brand-orange);
+  border-color: var(--brand-orange);
+}
+
+.product-specification-change-form {
+  border-top: 1px solid var(--mantine-color-gray-2);
+  display: grid;
+  gap: 10px;
+  padding-top: 12px;
+}

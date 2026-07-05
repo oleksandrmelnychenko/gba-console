@@ -1,9 +1,9 @@
-import { Alert, Button, Stack, Text } from '@mantine/core'
+import { Alert, Button, Group, Skeleton, Stack } from '@mantine/core'
 import { IconAlertCircle } from '@tabler/icons-react'
 import { useEffect } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { AppModal } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { getServiceApprovedInvoices } from '../api/protocolDetailApi'
 import type { MergedService, SupplyInvoice } from '../detailTypes'
@@ -13,6 +13,7 @@ import {
   mergeProtocolInvoiceAssignmentCandidates,
 } from '../protocolInvoiceAssignment'
 import { InvoiceSelectList } from './InvoiceSelectList'
+import './assign-invoices-to-merged-service-panel.css'
 
 export function AssignInvoicesToMergedServicePanel({
   opened,
@@ -108,35 +109,52 @@ export function AssignInvoicesToMergedServicePanel({
   }
 
   return (
-    <AppDrawer
+    <AppModal
+      centered
+      closeOnClickOutside={!isSaving}
       opened={opened}
-      size="md"
-      title={`${t('Додати')} ${t('Інвойси').toLowerCase()}`}
+      size="min(860px, calc(100vw - 32px))"
+      title={
+        <span className="assign-invoices-title">
+          {`${t('Додати')} ${t('Інвойси').toLowerCase()}`}
+        </span>
+      }
       onClose={() => {
         if (!isSaving) {
           onClose()
         }
       }}
-      footer={
-        <Button color={CREATE_ACTION_COLOR} disabled={isLoading || isSaving} loading={isSaving} onClick={handleAssign}>
-          {t('Зберегти')}
-        </Button>
-      }
     >
-      <Stack gap="md">
+      <Stack className="assign-invoices-modal" gap={12}>
         {error && (
           <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
             {error}
           </Alert>
         )}
         {isLoading ? (
-          <Text c="dimmed" size="sm">
-            {t('Завантаження')}
-          </Text>
+          <Stack gap="xs">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <Skeleton key={index} height={78} radius={8} />
+            ))}
+          </Stack>
         ) : (
           <InvoiceSelectList disabled={isSaving} invoices={invoices} selected={selected} onToggle={toggle} />
         )}
+
+        <Group className="assign-invoices-footer" justify="flex-end" gap={8}>
+          <Button disabled={isSaving} variant="default" onClick={onClose}>
+            {t('Скасувати')}
+          </Button>
+          <Button
+            color={CREATE_ACTION_COLOR}
+            disabled={isLoading || isSaving}
+            loading={isSaving}
+            onClick={handleAssign}
+          >
+            {t('Зберегти')}
+          </Button>
+        </Group>
       </Stack>
-    </AppDrawer>
+    </AppModal>
   )
 }

@@ -1,13 +1,17 @@
-import { ActionIcon, Alert, Anchor, Badge, Group, Stack, Text, TextInput, Tooltip } from '@mantine/core'
+import { ActionIcon, Alert, Anchor, Badge, Button, Group, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import {
   IconAlertCircle,
   IconDownload,
   IconFileText,
+  IconPlus,
   IconPrinter,
   IconRestore,
 } from '@tabler/icons-react'
 import { Truck as TruckIcon } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import { useAuth } from '../../auth/useAuth'
+import { NewSaleWizard } from '../../sales-ukraine/components/new-sale-wizard/NewSaleWizard'
+import { SALES_UKRAINE_EDIT_PERMISSION } from '../../sales-ukraine/permissions'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { translate } from '../../../shared/i18n/translate'
@@ -15,6 +19,8 @@ import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/event
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { toProxiedAssetUrl } from '../../../shared/url/proxiedAssetUrl'
 import {
   getSaleActProtocolEditDocument,
   getSalePrintDocument,
@@ -338,6 +344,9 @@ function salesListReducer(state: SalesListState, action: SalesListAction): Sales
 export function SalesTab() {
   const model = useSalesTabModel()
   const { t } = useI18n()
+  const { hasPermission } = useAuth()
+  const canCreateSale = hasPermission(SALES_UKRAINE_EDIT_PERMISSION)
+  const [isNewSaleOpen, setNewSaleOpen] = useState(false)
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
 
   return (
@@ -384,6 +393,17 @@ export function SalesTab() {
               />
             </div>
             <div ref={setTableToolbarSlot} className="warehouse-ukraine-table-toolbar-slot" />
+            <div className="warehouse-ukraine-command-actions">
+              <Button
+                color={CREATE_ACTION_COLOR}
+                disabled={!canCreateSale}
+                leftSection={<IconPlus size={16} />}
+                size="sm"
+                onClick={() => setNewSaleOpen(true)}
+              >
+                {t('Утворити')}
+              </Button>
+            </div>
           </div>
 
           {(model.error || model.filterError) && (
@@ -417,6 +437,17 @@ export function SalesTab() {
         isLoading={model.isDownloading}
         opened={model.downloadOpened}
         onClose={model.closeDownload}
+      />
+      <NewSaleWizard
+        opened={canCreateSale && isNewSaleOpen}
+        onClose={() => {
+          setNewSaleOpen(false)
+          model.reload()
+        }}
+        onCreated={() => {
+          setNewSaleOpen(false)
+          model.reload()
+        }}
       />
     </Stack>
   )
@@ -596,7 +627,7 @@ function useSalesColumns({
             return ''
           }
 
-          const transporterLogoUrl = sale.Transporter.ImageUrl?.trim()
+          const transporterLogoUrl = toProxiedAssetUrl(sale.Transporter.ImageUrl?.trim())
 
           return (
             <Group gap={6} wrap="nowrap">

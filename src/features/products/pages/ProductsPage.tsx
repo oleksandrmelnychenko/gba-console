@@ -75,6 +75,7 @@ import {
   uploadProductRelatedDocument,
 } from '../api/productsApi'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { toProxiedAssetUrl } from '../../../shared/url/proxiedAssetUrl'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { PermissionGate } from '../../auth/components/PermissionGate'
 import { useAuth } from '../../auth/useAuth'
@@ -1203,9 +1204,9 @@ function ProductInlineView({
                   type="button"
                   className="product-inline-thumb"
                   key={`${image.NetUid || image.ImageUrl || index}`}
-                  onClick={() => setPreviewImageUrl(image.ImageUrl || null)}
+                  onClick={() => setPreviewImageUrl(toProxiedAssetUrl(image.ImageUrl) || null)}
                 >
-                  <Image src={image.ImageUrl} alt={image.FileName || getProductTitle(product)} fit="cover" h="100%" w="100%" />
+                  <Image src={toProxiedAssetUrl(image.ImageUrl)} alt={image.FileName || getProductTitle(product)} fit="cover" h="100%" w="100%" />
                 </button>
               ))}
             </Group>

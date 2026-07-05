@@ -6,7 +6,7 @@ const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short',
 
 export function formatDate(value?: Date | string | null): string {
   if (!value) {
-    return '-'
+    return ''
   }
 
   const date = value instanceof Date ? value : new Date(value)
@@ -20,7 +20,7 @@ export function formatDate(value?: Date | string | null): string {
 
 export function formatDateTime(value?: Date | string | null): string {
   if (!value) {
-    return '-'
+    return ''
   }
 
   const date = value instanceof Date ? value : new Date(value)

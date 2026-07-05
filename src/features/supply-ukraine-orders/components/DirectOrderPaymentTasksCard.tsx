@@ -1,5 +1,5 @@
 import { Alert, Card, Group, Loader, Select, Stack, Text } from '@mantine/core'
-import { IconAlertCircle, IconClipboardList } from '@tabler/icons-react'
+import { IconAlertCircle } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -173,10 +173,9 @@ export function DirectOrderPaymentTasksCard({
   return (
     <Card className="supply-detail-card" withBorder radius="md" padding="lg">
       <Stack gap="md">
-        <Group gap="xs">
-          <IconClipboardList size={18} />
-          <Text fw={600}>{t('Платіжні задачі')}</Text>
-        </Group>
+        <Text className="app-section-title" fw={600} size="sm">
+          {t('Платіжні задачі')}
+        </Text>
 
         {error && (
           <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">

@@ -4,7 +4,6 @@ import {
   Anchor,
   Box,
   Button,
-  Card,
   Group,
   NumberInput,
   Select,
@@ -74,7 +73,6 @@ const PERMISSION_CAPITALIZE_DYNAMIC_INCOME = 'PRODUCT_INCOME_ordersUkraineAllEdi
 const PERMISSION_CARRY_OUT_DYNAMIC_INCOME = 'PRODUCT_INCOME_ordersUkraineAllEdit_CarryOutBtn_PKEY'
 
 const dateFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short' })
-
 function formatDate(value?: Date | string): string {
   if (!value) {
     return '-'
@@ -83,6 +81,21 @@ function formatDate(value?: Date | string): string {
   const date = value instanceof Date ? value : new Date(value)
 
   return Number.isNaN(date.getTime()) ? String(value) : dateFormatter.format(date)
+}
+
+function formatIncomeNumber(value: number, fractionDigits = 2, minimumFractionDigits = fractionDigits): string {
+  return new Intl.NumberFormat('uk-UA', {
+    maximumFractionDigits: fractionDigits,
+    minimumFractionDigits,
+  }).format(value)
+}
+
+function formatIncomeQty(value: number): string {
+  return formatIncomeNumber(value, 3, 0)
+}
+
+function ProductIncomeNumericCell({ children }: { children: string | number }) {
+  return <span className="product-income-number-cell">{children}</span>
 }
 
 function getIncomeUserName(user?: IncomeProductIncome['User']): string {
@@ -279,10 +292,11 @@ function isPlacementLocked(invoice: IncomeSupplyInvoice | null, packingList: Inc
   return Boolean(invoice?.IsFullyPlaced || packingList?.IsPlaced)
 }
 
-function useProtocolIncomeModel(source: ProductIncomeSource) {
+function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) {
   const { t } = useI18n()
   const navigate = useNavigate()
-  const { id } = useParams<{ id: string }>()
+  const { id: routeId } = useParams<{ id: string }>()
+  const id = sourceId || routeId
 
   const [protocol, setProtocol] = useValueState<IncomeProtocol | null>(null)
   const [storages, setStorages] = useValueState<IncomeStorage[]>([])
@@ -1215,11 +1229,7 @@ function useProductIncomeColumns({
         width: 48,
         align: 'right',
         enableSorting: false,
-        cell: (gridRow) => (
-          <Text c="dimmed" size="sm">
-            {gridRow.index}
-          </Text>
-        ),
+        cell: (gridRow) => <ProductIncomeNumericCell>{gridRow.index}</ProductIncomeNumericCell>,
       },
       {
         id: 'name',
@@ -1234,14 +1244,18 @@ function useProductIncomeColumns({
         id: 'vendorCode',
         header: t('Код Виробника'),
         width: 160,
-        cell: (gridRow) => gridRow.item.SupplyInvoiceOrderItem?.Product?.VendorCode || '-',
+        cell: (gridRow) => (
+          <span className="app-role-pill is-gray product-income-code-pill">
+            {gridRow.item.SupplyInvoiceOrderItem?.Product?.VendorCode || '-'}
+          </span>
+        ),
       },
       {
         id: 'qty',
         header: t('К-сть'),
         width: 80,
         align: 'right',
-        cell: (gridRow) => gridRow.item.Qty || 0,
+        cell: (gridRow) => <ProductIncomeNumericCell>{formatIncomeQty(gridRow.item.Qty || 0)}</ProductIncomeNumericCell>,
       },
       {
         id: 'measureUnit',
@@ -1254,14 +1268,14 @@ function useProductIncomeColumns({
         header: t('Вага Нетто'),
         width: 120,
         align: 'right',
-        cell: (gridRow) => (gridRow.item.NetWeight || 0).toFixed(3),
+        cell: (gridRow) => <ProductIncomeNumericCell>{formatIncomeNumber(gridRow.item.NetWeight || 0, 3)}</ProductIncomeNumericCell>,
       },
       {
         id: 'grossWeight',
         header: t('Вага Брутто'),
         width: 120,
         align: 'right',
-        cell: (gridRow) => (gridRow.item.GrossWeight || 0).toFixed(3),
+        cell: (gridRow) => <ProductIncomeNumericCell>{formatIncomeNumber(gridRow.item.GrossWeight || 0, 3)}</ProductIncomeNumericCell>,
       },
       {
         id: 'specificationCode',
@@ -1274,49 +1288,65 @@ function useProductIncomeColumns({
         header: t('Мито %'),
         width: 90,
         align: 'right',
-        cell: (gridRow) => lastSpecificationNumberProp(gridRow.item, 'DutyPercent') ?? '-',
+        cell: (gridRow) => {
+          const value = lastSpecificationNumberProp(gridRow.item, 'DutyPercent')
+
+          return value == null ? '-' : <ProductIncomeNumericCell>{formatIncomeNumber(value, 2)}</ProductIncomeNumericCell>
+        },
       },
       {
         id: 'customsValue',
         header: t('Митна вартість'),
         width: 130,
         align: 'right',
-        cell: (gridRow) => lastSpecificationNumberProp(gridRow.item, 'CustomsValue') ?? '-',
+        cell: (gridRow) => {
+          const value = lastSpecificationNumberProp(gridRow.item, 'CustomsValue')
+
+          return value == null ? '-' : <ProductIncomeNumericCell>{formatIncomeNumber(value, 2)}</ProductIncomeNumericCell>
+        },
       },
       {
         id: 'unitPrice',
         header: t('Ціна за одиницю нетто'),
         width: 140,
         align: 'right',
-        cell: (gridRow) => (gridRow.item.UnitPrice || 0).toFixed(2),
+        cell: (gridRow) => <ProductIncomeNumericCell>{formatIncomeNumber(gridRow.item.UnitPrice || 0, 2)}</ProductIncomeNumericCell>,
       },
       {
         id: 'isPlaced',
         header: t('Оприходуваний'),
         width: 120,
         align: 'center',
-        cell: (gridRow) => (gridRow.item.IsPlaced ? t('Так') : t('Ні')),
+        cell: (gridRow) => (
+          <span className={`app-role-pill ${gridRow.item.IsPlaced ? 'is-green' : 'is-gray'}`}>
+            {gridRow.item.IsPlaced ? t('Так') : t('Ні')}
+          </span>
+        ),
       },
       {
         id: 'isImported',
         header: t('Імпорт'),
         width: 90,
         align: 'center',
-        cell: (gridRow) => (gridRow.item.ProductIsImported ? t('Так') : '-'),
+        cell: (gridRow) => (
+          <span className={`app-role-pill ${gridRow.item.ProductIsImported ? 'is-orange' : 'is-gray'}`}>
+            {gridRow.item.ProductIsImported ? t('Так') : '-'}
+          </span>
+        ),
       },
       {
         id: 'totalNetPrice',
         header: t('Заг. вартість нетто'),
         width: 140,
         align: 'right',
-        cell: (gridRow) => (gridRow.item.TotalNetPrice || 0).toFixed(2),
+        cell: (gridRow) => <ProductIncomeNumericCell>{formatIncomeNumber(gridRow.item.TotalNetPrice || 0, 2)}</ProductIncomeNumericCell>,
       },
       {
         id: 'placedQty',
         header: t('К-сть оприходуваних'),
         width: 160,
         align: 'right',
-        cell: (gridRow) => gridRow.item.PlacedQty || 0,
+        cell: (gridRow) => <ProductIncomeNumericCell>{formatIncomeQty(gridRow.item.PlacedQty || 0)}</ProductIncomeNumericCell>,
       },
       {
         id: 'placement',
@@ -1389,9 +1419,7 @@ function useProductIncomeColumns({
               onClick={() => canOpen && model.handleOpenPlacements(gridRow, key, row)}
             >
               <Stack gap={2}>
-                <Text fw={600} size="sm">
-                  {row.Qty || 0}
-                </Text>
+                <ProductIncomeNumericCell>{formatIncomeQty(row.Qty || 0)}</ProductIncomeNumericCell>
                 {/* Legacy cell text: Storage-Row-Cell - Qty per placement */}
                 {row.DynamicProductPlacements.map((placement, placementIndex) => (
                   <Text
@@ -1417,12 +1445,24 @@ export function ProductDeliveryProtocolIncomePage() {
   return <PackingListProductIncomePage source="delivery-protocol" />
 }
 
+export function ProductDeliveryProtocolIncomeSheet({ sourceId }: { sourceId: string }) {
+  return <PackingListProductIncomePage embedded source="delivery-protocol" sourceId={sourceId} />
+}
+
 export function SupplyUkraineDirectOrderProductIncomePage() {
   return <PackingListProductIncomePage source="direct-supply-order" />
 }
 
-function PackingListProductIncomePage({ source }: { source: ProductIncomeSource }) {
-  const model = useProtocolIncomeModel(source)
+function PackingListProductIncomePage({
+  embedded = false,
+  source,
+  sourceId,
+}: {
+  embedded?: boolean
+  source: ProductIncomeSource
+  sourceId?: string
+}) {
+  const model = useProtocolIncomeModel(source, sourceId)
   const { t } = useI18n()
   const { hasPermission } = useAuth()
   const [vendorCodeFilter, setVendorCodeFilter] = useValueState('')
@@ -1453,12 +1493,12 @@ function PackingListProductIncomePage({ source }: { source: ProductIncomeSource 
   })
 
   return (
-    <Stack gap="md" h="100%" style={{ minHeight: 0 }}>
-      <ProductIncomePageHeader model={model} source={source} />
+    <Stack className={`product-income-page${embedded ? ' is-sheet' : ''}`} gap={6}>
+      {!embedded && <ProductIncomePageHeader model={model} source={source} />}
       <ProtocolIncomeSummaryCard model={model} source={source} />
 
       {!model.isLoading && model.protocol && !canUseIncome && (
-        <Alert color="yellow" icon={<IconAlertCircle size={18} />} style={{ flexShrink: 0 }} variant="light">
+        <Alert className="product-income-alert" color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
           {t('Оприходування доступне після завершення протоколу')}
         </Alert>
       )}
@@ -1480,7 +1520,7 @@ function PackingListProductIncomePage({ source }: { source: ProductIncomeSource 
       />
 
       {model.error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} style={{ flexShrink: 0 }} variant="light">
+        <Alert className="product-income-alert" color="red" icon={<IconAlertCircle size={18} />} variant="light">
           {model.error}
         </Alert>
       )}
@@ -1513,8 +1553,8 @@ function ProductIncomePageHeader({ model, source }: ProductIncomePageSectionProp
     : t('Прихід товару згідно замовлення')
 
   return (
-    <Group align="center" style={{ flexShrink: 0 }}>
-      <Text fw={700} size="lg">
+    <Group align="center" className="product-income-page-header">
+      <Text className="product-income-page-title">
         {`${title}: ${sourceNumber}`}
       </Text>
     </Group>
@@ -1528,50 +1568,23 @@ function ProtocolIncomeSummaryCard({ model, source }: ProductIncomePageSectionPr
   const currencyCode = model.protocol?.ClientAgreement?.Agreement?.Currency?.Code || '-'
 
   return (
-    <Card className="app-section-card" withBorder radius="md" padding="md" style={{ flexShrink: 0 }}>
-      <Group gap="xl" wrap="wrap">
-        <Stack gap={2}>
-          <Text c="dimmed" size="xs">
-            {t('Статус')}
-          </Text>
-          <Text size="sm">{model.placementStatus}</Text>
-        </Stack>
-        <Stack gap={2}>
-          <Text c="dimmed" size="xs">
-            {t('Від')}
-          </Text>
-          <Text size="sm">{formatDate(model.protocol?.FromDate)}</Text>
-        </Stack>
-        <Stack gap={2}>
-          <Text c="dimmed" size="xs">
-            {t('Організація')}
-          </Text>
-          <Text size="sm">{model.protocol?.Organization?.Name || '-'}</Text>
-        </Stack>
+    <Box className="product-income-summary-panel">
+      <Text className="app-section-title" fw={600} size="sm">
+        {t('Дані протоколу')}
+      </Text>
+      <div className="product-income-summary-grid">
+        <ProductIncomeDetailItem label={t('Статус')} value={model.placementStatus} tone="orange" />
+        <ProductIncomeDetailItem label={t('Від')} value={formatDate(model.protocol?.FromDate)} />
+        <ProductIncomeDetailItem label={t('Організація')} value={model.protocol?.Organization?.Name || '-'} />
         {source === 'direct-supply-order' && (
           <>
-            <Stack gap={2}>
-              <Text c="dimmed" size="xs">
-                {t('Постачальник')}
-              </Text>
-              <Text size="sm">{supplierName}</Text>
-            </Stack>
-            <Stack gap={2}>
-              <Text c="dimmed" size="xs">
-                {t('Договір')}
-              </Text>
-              <Text size="sm">{agreementName}</Text>
-            </Stack>
-            <Stack gap={2}>
-              <Text c="dimmed" size="xs">
-                {t('Валюта')}
-              </Text>
-              <Text size="sm">{currencyCode}</Text>
-            </Stack>
+            <ProductIncomeDetailItem label={t('Постачальник')} value={supplierName} />
+            <ProductIncomeDetailItem label={t('Договір')} value={agreementName} />
+            <ProductIncomeDetailItem label={t('Валюта')} value={currencyCode} tone="green" />
           </>
         )}
-      </Group>
-    </Card>
+      </div>
+    </Box>
   )
 }
 
@@ -1583,34 +1596,38 @@ function PlacedProductIncomeCard({ isPlaced, model }: { isPlaced: boolean; model
   }
 
   return (
-    <Card className="app-section-card" withBorder radius="md" padding="md" style={{ flexShrink: 0 }}>
-      <Group gap="xl" wrap="wrap">
-        <Stack gap={2}>
-          <Text c="dimmed" size="xs">
-            {t('Номер')}
-          </Text>
-          <Text size="sm">{model.productIncome.Number || '-'}</Text>
-        </Stack>
-        <Stack gap={2}>
-          <Text c="dimmed" size="xs">
-            {t('Дата оприходування')}
-          </Text>
-          <Text size="sm">{formatDate(model.productIncome.FromDate)}</Text>
-        </Stack>
-        <Stack gap={2}>
-          <Text c="dimmed" size="xs">
-            {t('Склад')}
-          </Text>
-          <Text size="sm">{model.productIncome.Storage?.Name || '-'}</Text>
-        </Stack>
-        <Stack gap={2}>
-          <Text c="dimmed" size="xs">
-            {t('Відповідальний')}
-          </Text>
-          <Text size="sm">{getIncomeUserName(model.productIncome.User)}</Text>
-        </Stack>
-      </Group>
-    </Card>
+    <Box className="product-income-summary-panel is-placed">
+      <Text className="app-section-title" fw={600} size="sm">
+        {t('Оприбуткування')}
+      </Text>
+      <div className="product-income-summary-grid">
+        <ProductIncomeDetailItem label={t('Номер')} value={model.productIncome.Number || '-'} tone="yellow" />
+        <ProductIncomeDetailItem label={t('Дата оприходування')} value={formatDate(model.productIncome.FromDate)} />
+        <ProductIncomeDetailItem label={t('Склад')} value={model.productIncome.Storage?.Name || '-'} />
+        <ProductIncomeDetailItem label={t('Відповідальний')} value={getIncomeUserName(model.productIncome.User)} />
+      </div>
+    </Box>
+  )
+}
+
+function ProductIncomeDetailItem({
+  label,
+  tone,
+  value,
+}: {
+  label: string
+  tone?: 'green' | 'orange' | 'yellow'
+  value: string
+}) {
+  return (
+    <div className="product-income-detail-item">
+      <span className="product-income-detail-label">{label}</span>
+      {tone ? (
+        <span className={`app-role-pill is-${tone} product-income-detail-pill`}>{value}</span>
+      ) : (
+        <span className="product-income-detail-value">{value}</span>
+      )}
+    </div>
   )
 }
 
@@ -1643,11 +1660,15 @@ function ProductIncomeControlsCard({
   const { canUseIncome, hasColumns, hasItemsNotReadyToPlace, isPlaced } = state
 
   return (
-    <Card className="app-section-card" withBorder radius="md" padding="md" style={{ flexShrink: 0 }}>
+    <Box className="product-income-controls-panel">
+      <Text className="app-section-title" fw={600} size="sm">
+        {t('Параметри приходу')}
+      </Text>
       <Group justify="space-between" align="end" wrap="wrap" gap="md">
         {/* Left: document controls (invoice / packing list / storage / date / VAT) */}
-        <Group gap="sm" align="end" wrap="wrap">
+        <Group className="product-income-controls" gap="sm" align="end" wrap="wrap">
           <Select
+            className="product-income-control"
             data={(model.protocol?.SupplyInvoices || []).map((supplyInvoice) => ({
               value: supplyInvoice.NetUid || '',
               label: supplyInvoice.Number || supplyInvoice.NetUid || '',
@@ -1655,10 +1676,10 @@ function ProductIncomeControlsCard({
             disabled={model.isLoading || model.isSaving}
             label={t('Накладна')}
             value={model.selectedInvoiceId}
-            w={180}
             onChange={(value) => model.setSelectedInvoiceId(value)}
           />
           <Select
+            className="product-income-control"
             data={(model.invoice?.PackingLists || []).map((list) => ({
               value: list.NetUid || '',
               label: list.No || list.PlNo || list.NetUid || '',
@@ -1666,46 +1687,45 @@ function ProductIncomeControlsCard({
             disabled={model.isLoading || model.isSaving || !model.invoice}
             label={t('Пакувальний лист')}
             value={model.packingList?.NetUid || null}
-            w={180}
             onChange={(value) => value && void model.selectPackingList(value)}
           />
           {!isPlaced && (
             <Select
+              className="product-income-control"
               data={model.storages.map((storage) => ({ value: storage.NetUid || '', label: storage.Name || '' }))}
               disabled={!canUseIncome || model.isDirty || model.isSaving}
               label={t('Склад')}
               value={model.selectedStorageId}
-              w={180}
               onChange={(value) => model.setSelectedStorageId(value)}
             />
           )}
           {model.isInvoiceAllNotPlaced && (
             <TextInput
+              className="product-income-control is-date"
               disabled={!canUseIncome || isPlaced || model.isDirty || model.isSaving}
               label={t('Від якої дати')}
               type="date"
               value={model.fromDate}
-              w={160}
               onChange={(event) => model.setFromDate(event.currentTarget.value)}
             />
           )}
           <NumberInput
+            className="product-income-control is-vat"
             disabled={!canUseIncome || isPlaced || model.isDirty || model.isSaving}
             label={t('Відсоток ПДВ')}
             min={0}
             suffix="%"
             value={model.vatPercent}
-            w={110}
             onChange={(value) => model.setVatPercent(typeof value === 'number' ? value : Number(value) || 0)}
           />
         </Group>
 
         {/* Right: actions — secondary tools first, then the green primary actions (legacy look) */}
-        <Group gap="sm" align="end" justify="flex-end" wrap="wrap">
+        <Group className="product-income-actions" gap="sm" align="end" justify="flex-end" wrap="wrap">
           {!isPlaced && hasItemsNotReadyToPlace && (
             <Button
               disabled={!canUseIncome || model.isDirty || model.isSaving}
-              variant="light"
+              variant="default"
               onClick={() => void model.handleAllReadyToPlace()}
             >
               {t('Всі готові до розміщення')}
@@ -1713,8 +1733,9 @@ function ProductIncomeControlsCard({
           )}
           {!isPlaced && canAddDynamicColumn && (
             <Button
+              color={CREATE_ACTION_COLOR}
               disabled={!canUseIncome || model.isDirty || model.isSaving}
-              variant="light"
+              variant="outline"
               onClick={() => model.setColumnModalOpen(true)}
             >
               {t('Додати')}
@@ -1722,8 +1743,9 @@ function ProductIncomeControlsCard({
           )}
           {!isPlaced && canCapitalizeDynamicIncome && (
             <Button
+              color={CREATE_ACTION_COLOR}
               disabled={!canUseIncome || model.isDirty || model.isSaving}
-              variant="light"
+              variant="outline"
               onClick={() => void model.handleProductIncome()}
             >
               {t('Оприходувати')}
@@ -1731,8 +1753,9 @@ function ProductIncomeControlsCard({
           )}
           {!isPlaced && hasColumns && canCarryOutDynamicIncome && (
             <Button
+              color={CREATE_ACTION_COLOR}
               disabled={!canUseIncome || model.isDirty || model.isSaving}
-              variant="light"
+              variant="outline"
               onClick={() => model.setConfirmCarryOut(true)}
             >
               {t('Провести')}
@@ -1753,7 +1776,7 @@ function ProductIncomeControlsCard({
           </Button>
         </Group>
       </Group>
-    </Card>
+    </Box>
   )
 }
 
@@ -1775,47 +1798,50 @@ function ProductIncomeGridCard({
   const { t } = useI18n()
 
   return (
-    <Card className="app-section-card" withBorder radius="md" padding="md" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-      <Stack gap="md" style={{ flex: 1, minHeight: 0 }}>
+    <Box className="product-income-grid-panel">
+      <div className="product-income-grid-toolbar">
+        <Text className="app-section-title product-income-grid-title" fw={600} size="sm">
+          {t('Товари')}
+        </Text>
         <TextInput
+          className="product-income-search"
           label={t('Пошук')}
           placeholder={t('Код товару')}
           value={vendorCodeFilter}
-          w={260}
           onChange={(event) => setVendorCodeFilter(event.currentTarget.value)}
         />
-        <Box className="income-grid-fill" style={{ flex: 1, minHeight: 0 }}>
-          <DataTable
-            columns={columns}
-            data={filteredGridRows}
-            emptyText={t('Дані відсутні')}
-            getRowId={(gridRow) => String(gridRow.item.NetUid || gridRow.item.Id || gridRow.index)}
-            isLoading={model.isLoading}
-            layoutVersion="protocol-product-income-1"
-            minWidth={1400}
-            tableId="protocol-product-income"
-          />
-        </Box>
-
-        <Group gap="xl" justify="flex-end">
-          <Text size="sm">
-            {t('К-сть')}: <Text span fw={700}>{model.totalQty}</Text>
-          </Text>
-          <Text size="sm">
-            {t('Митна вартість')}: <Text span fw={700}>{(model.packingList?.TotalCustomValue || 0).toFixed(2)}</Text>
-          </Text>
-          <Text size="sm">
-            {t('Заг. вартість нетто')}: <Text span fw={700}>{(model.packingList?.TotalNetPrice || 0).toFixed(2)}</Text>
-          </Text>
-          <Text size="sm">
-            {t('Заг. вага нетто')}: <Text span fw={700}>{(model.packingList?.TotalNetWeight || 0).toFixed(3)}</Text>
-          </Text>
-          <Text size="sm">
-            {t('Заг. вага брутто')}: <Text span fw={700}>{(model.packingList?.TotalGrossWeight || 0).toFixed(3)}</Text>
-          </Text>
+        <Group className="product-income-grid-summary" gap={10} justify="flex-end" wrap="wrap">
+          <ProductIncomeSummaryMetric label={t('К-сть')} value={formatIncomeQty(model.totalQty)} />
+          <ProductIncomeSummaryMetric label={t('Митна вартість')} value={formatIncomeNumber(model.packingList?.TotalCustomValue || 0, 2)} />
+          <ProductIncomeSummaryMetric label={t('Заг. вартість нетто')} value={formatIncomeNumber(model.packingList?.TotalNetPrice || 0, 2)} />
+          <ProductIncomeSummaryMetric label={t('Заг. вага нетто')} value={formatIncomeNumber(model.packingList?.TotalNetWeight || 0, 3)} />
+          <ProductIncomeSummaryMetric label={t('Заг. вага брутто')} value={formatIncomeNumber(model.packingList?.TotalGrossWeight || 0, 3)} />
         </Group>
-      </Stack>
-    </Card>
+      </div>
+      <Box className="income-grid-fill">
+        <DataTable
+          columns={columns}
+          data={filteredGridRows}
+          emptyText={t('Дані відсутні')}
+          getRowId={(gridRow) => String(gridRow.item.NetUid || gridRow.item.Id || gridRow.index)}
+          height="100%"
+          isLoading={model.isLoading}
+          layoutVersion="protocol-product-income-2"
+          minWidth={1400}
+          showLayoutControls
+          tableId="protocol-product-income"
+        />
+      </Box>
+    </Box>
+  )
+}
+
+function ProductIncomeSummaryMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <span className="product-income-summary-metric">
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </span>
   )
 }
 

@@ -1,15 +1,11 @@
-import { Group, Text } from '@mantine/core'
 import type { ReactNode } from 'react'
 
-export function LabelValueRow({ label, children }: { label: string; children?: ReactNode }) {
+/* §7.2 leader row: «label ——— value». Pass mono for numbers/codes/dates. */
+export function LabelValueRow({ label, mono, children }: { label: string; mono?: boolean; children?: ReactNode }) {
   return (
-    <Group justify="space-between" align="flex-start" gap="md" wrap="nowrap">
-      <Text c="dimmed" size="sm" style={{ flexShrink: 0 }}>
-        {label}
-      </Text>
-      <Text size="sm" fw={500} style={{ textAlign: 'right', wordBreak: 'break-word' }}>
-        {children}
-      </Text>
-    </Group>
+    <span className="app-leader-row">
+      <span className="app-leader-row-label">{label}</span>
+      <span className={`app-leader-row-value${mono ? ' is-mono' : ''}`}>{children}</span>
+    </span>
   )
 }

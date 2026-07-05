@@ -11,26 +11,20 @@ import {
   Loader,
   NumberInput,
   SegmentedControl,
-  SimpleGrid,
   Stack,
   Text,
   Textarea,
   TextInput,
-  Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
-  IconArrowLeft,
   IconCheck,
-  IconClipboardList,
   IconFileInvoice,
   IconPackageImport,
   IconPencil,
   IconPlus,
-  IconRoute,
   IconTrash,
-  IconTruck,
   IconUpload,
 } from '@tabler/icons-react'
 import { useEffect, useReducer, useState } from 'react'
@@ -501,142 +495,144 @@ export function SupplyUkraineDirectOrderDetailPage() {
       accessor: (document) => document.Name || document.FileName,
       cell: (document) => document.DocumentUrl
         ? <a className="document-link" href={upgradeHttpToHttps(document.DocumentUrl)} rel="noreferrer" target="_blank">{document.Name || document.FileName || t('Документ')}</a>
-        : document.Name || document.FileName || '-',
+        : document.Name || document.FileName || '',
     },
     {
       id: 'fileName',
       header: t('Файл'),
       minWidth: 220,
       accessor: (document) => document.FileName,
-      cell: (document) => document.FileName || '-',
+      cell: (document) => document.FileName || '',
     },
     {
       id: 'processed',
       header: t('Опрацьовано'),
       width: 130,
       accessor: (document) => document.IsProcessed,
-      cell: (document) => statusBadge(t('Так'), document.IsProcessed),
+      cell: (document) => yesNoPill(t, document.IsProcessed),
     },
     {
       id: 'received',
       header: t('Отримано'),
       width: 130,
       accessor: (document) => document.IsReceived,
-      cell: (document) => statusBadge(t('Так'), document.IsReceived),
+      cell: (document) => yesNoPill(t, document.IsReceived),
     },
     {
       id: 'processedDate',
       header: t('Дата'),
       width: 150,
       accessor: (document) => document.ProcessedDate,
-      cell: (document) => formatDateTime(document.ProcessedDate),
+      cell: (document) => (
+        <span className="supply-order-cell-num">{formatDateTime(document.ProcessedDate)}</span>
+      ),
     },
     {
       id: 'comment',
       header: t('Коментар'),
       minWidth: 200,
       accessor: (document) => document.Comment,
-      cell: (document) => document.Comment || '-',
+      cell: (document) => document.Comment || '',
     },
     {
       id: 'actions',
-      header: t('Дії'),
+      header: '',
       width: 200,
       accessor: (document) => document.NetUid,
       cell: (document) => (
         <Group gap={4} wrap="nowrap">
           <FileButton onChange={(file) => uploadDocumentFile(document, file)}>
             {(fileProps) => (
-              <Tooltip label={t('Завантажити файл')}>
-                <ActionIcon
-                  {...fileProps}
-                  aria-label={t('Завантажити файл')}
-                  color="gray"
-                  disabled={
-                    isSaving ||
-                    areDeliveryDocumentActionsLocked ||
-                    document.Deleted ||
-                    Boolean(document.IsProcessed && document.IsReceived)
-                  }
-                  variant="light"
-                >
-                  <IconUpload size={16} />
-                </ActionIcon>
-              </Tooltip>
+              <ActionIcon
+                {...fileProps}
+                aria-label={t('Завантажити файл')}
+                color="gray"
+                disabled={
+                  isSaving ||
+                  areDeliveryDocumentActionsLocked ||
+                  document.Deleted ||
+                  Boolean(document.IsProcessed && document.IsReceived)
+                }
+                title={t('Завантажити файл')}
+                variant="light"
+              >
+                <IconUpload size={16} />
+              </ActionIcon>
             )}
           </FileButton>
-          <Tooltip label={t('Зміна статуса документа')}>
-            <ActionIcon
-              aria-label={t('Зміна статуса документа')}
-              color="teal"
-              disabled={
-                isSaving ||
-                areDeliveryDocumentActionsLocked ||
-                document.Deleted ||
-                Boolean(document.IsProcessed && document.IsReceived)
-              }
-              variant="light"
-              onClick={() => openStatusModal(document)}
-            >
-              <IconCheck size={16} />
-            </ActionIcon>
-          </Tooltip>
+          <ActionIcon
+            aria-label={t('Зміна статуса документа')}
+            color="gray"
+            disabled={
+              isSaving ||
+              areDeliveryDocumentActionsLocked ||
+              document.Deleted ||
+              Boolean(document.IsProcessed && document.IsReceived)
+            }
+            title={t('Зміна статуса документа')}
+            variant="light"
+            onClick={() => openStatusModal(document)}
+          >
+            <IconCheck size={16} />
+          </ActionIcon>
           {(document.FileName || document.DocumentUrl) && (
-            <Tooltip label={t('Очистити файл')}>
-              <ActionIcon
-                aria-label={t('Очистити файл')}
-                color="red"
-                disabled={isSaving || areDeliveryDocumentActionsLocked}
-                variant="light"
-                onClick={() => clearDocumentFile(document)}
-              >
-                <IconTrash size={16} />
-              </ActionIcon>
-            </Tooltip>
+            <ActionIcon
+              aria-label={t('Очистити файл')}
+              color="red"
+              disabled={isSaving || areDeliveryDocumentActionsLocked}
+              title={t('Очистити файл')}
+              variant="light"
+              onClick={() => clearDocumentFile(document)}
+            >
+              <IconTrash size={16} />
+            </ActionIcon>
           )}
         </Group>
       ),
     },
   ]
 
-  return (
-    <Stack className="supply-detail-page" gap="lg">
-      <header className="supply-detail-header">
-        <div className="supply-detail-header-main">
-          <Tooltip label={t('Назад')}>
-            <ActionIcon
-              aria-label={t('Назад')}
-              className="supply-detail-back"
-              variant="default"
-              onClick={() => navigate('/orders/ukraine/all')}
-            >
-              <IconArrowLeft size={18} />
-            </ActionIcon>
-          </Tooltip>
-          <span className="supply-detail-icon">
-            <IconRoute size={22} stroke={1.8} />
-          </span>
-          <div className="supply-detail-copy">
-            <h1 className="supply-detail-title">
-              {t('Логістика замовлення')}
-              {getOrderNumber(order) && <span className="supply-detail-number">{getOrderNumber(order)}</span>}
-            </h1>
-          </div>
-        </div>
-        <div className="supply-detail-header-actions">
-          {order && !order.IsApproved && canApproveOrder && (
-            <Button color={CREATE_ACTION_COLOR} leftSection={<IconCheck size={16} />} loading={isSaving} onClick={approveOrder}>
-              {t('Затвердити замовлення')}
-            </Button>
-          )}
-          {order && canOpenCreditNotes && (
-            <Button leftSection={<IconFileInvoice size={16} />} variant="light" onClick={() => dispatchCreditNote({ type: 'setDrawerOpen', open: true })}>
-              {t('Кредит ноти')}
-            </Button>
-          )}
-        </div>
-      </header>
+  const creditNotesButton = order && canOpenCreditNotes ? (
+    <Button
+      leftSection={<IconFileInvoice size={16} />}
+      variant="default"
+      onClick={() => dispatchCreditNote({ type: 'setDrawerOpen', open: true })}
+    >
+      {t('Кредит ноти')}
+    </Button>
+  ) : null
+  const approveButton = order && !order.IsApproved && canApproveOrder ? (
+    <Button color={CREATE_ACTION_COLOR} leftSection={<IconCheck size={16} />} loading={isSaving} onClick={approveOrder}>
+      {t('Затвердити замовлення')}
+    </Button>
+  ) : null
 
+  return (
+    <AppDrawer
+      className="supply-order-sheet"
+      closeOnEscape={false}
+      footer={creditNotesButton || approveButton ? (
+        <>
+          {creditNotesButton ?? <span />}
+          {approveButton}
+        </>
+      ) : undefined}
+      opened
+      position="right"
+      size="wide"
+      title={
+        <span className="supply-order-sheet-title">
+          {t('Логістика замовлення')}
+          {getOrderNumber(order) && (
+            <Badge className="app-role-pill is-yellow" variant="light">
+              {getOrderNumber(order)}
+            </Badge>
+          )}
+        </span>
+      }
+      onClose={() => navigate('/orders/ukraine/all')}
+    >
+      <Stack gap="lg">
       {error && (
         <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
           {error}
@@ -650,24 +646,23 @@ export function SupplyUkraineDirectOrderDetailPage() {
       ) : order ? (
         <Stack gap="lg">
           <Group gap="xs" wrap="wrap">
-            {statusBadge(t('Погоджено'), order.IsApproved)}
-            {statusBadge(t('Відправлено'), order.IsOrderShipped)}
-            {statusBadge(t('Прибуло'), order.IsOrderArrived)}
-            {statusBadge(t('Завершено'), order.IsCompleted)}
-            {statusBadge(t('Розміщено'), order.IsFullyPlaced)}
+            {statusPill(t('Погоджено'), t, order.IsApproved)}
+            {statusPill(t('Відправлено'), t, order.IsOrderShipped)}
+            {statusPill(t('Прибуло'), t, order.IsOrderArrived)}
+            {statusPill(t('Завершено'), t, order.IsCompleted)}
+            {statusPill(t('Розміщено'), t, order.IsFullyPlaced)}
           </Group>
 
           {/* Block 1 — Вибір постачальника */}
           <Card className="supply-detail-card" withBorder radius="md" padding="lg">
             <Stack gap="md">
-              <Group gap="xs">
-                <IconTruck size={18} />
-                <Text fw={600}>{t('Вибір постачальника')}</Text>
-              </Group>
-              <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
-                <InfoBlock label={t('Постачальник')} value={getEntityName(order.Client)} />
-                <InfoBlock label={t('Отримувач товару')} value={getEntityName(order.Organization)} />
-              </SimpleGrid>
+              <Text className="app-section-title" fw={600} size="sm">
+                {t('Вибір постачальника')}
+              </Text>
+              <div className="supply-order-fields">
+                <LeaderField label={t('Постачальник')} value={getEntityName(order.Client)} />
+                <LeaderField label={t('Отримувач товару')} value={getEntityName(order.Organization)} />
+              </div>
               <Stack gap={4} align="flex-start">
                 <Text fw={600} size="sm">{t('Тип доставки')}</Text>
                 <SegmentedControl
@@ -683,9 +678,14 @@ export function SupplyUkraineDirectOrderDetailPage() {
           <Card className="supply-detail-card" withBorder radius="md" padding="lg">
             <Stack gap="md">
               <Group gap="xs">
-                <IconClipboardList size={18} />
-                <Text fw={600}>{t('Замовлення')}</Text>
-                {getOrderNumber(order) && <Text c="dimmed" size="sm">{getOrderNumber(order)}</Text>}
+                <Text className="app-section-title" fw={600} size="sm">
+                  {t('Замовлення')}
+                </Text>
+                {getOrderNumber(order) && (
+                  <Text c="gray.7" className="supply-order-number-meta" size="sm">
+                    {getOrderNumber(order)}
+                  </Text>
+                )}
               </Group>
               <Group align="flex-end" gap="sm" wrap="wrap">
                 <NumberInput
@@ -719,7 +719,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
                 />
                 {isEditingAmount ? (
                   <Group gap="xs">
-                    <Button color="gray" disabled={isSaving} variant="light" onClick={cancelAmountEdit}>
+                    <Button disabled={isSaving} variant="default" onClick={cancelAmountEdit}>
                       {t('Скасувати')}
                     </Button>
                     <Button color={CREATE_ACTION_COLOR} loading={isSaving} onClick={saveAmount}>
@@ -728,9 +728,10 @@ export function SupplyUkraineDirectOrderDetailPage() {
                   </Group>
                 ) : canEditAmount ? (
                   <Button
+                    color={CREATE_ACTION_COLOR}
                     disabled={isLocked}
                     leftSection={<IconPencil size={16} />}
-                    variant="light"
+                    variant="outline"
                     onClick={() => dispatchAmountEdit({ type: 'startEditing' })}
                   >
                     {t('Редагувати')}
@@ -757,18 +758,21 @@ export function SupplyUkraineDirectOrderDetailPage() {
           {/* Order metrics — kept below the three primary blocks */}
           <Card className="supply-detail-card" withBorder radius="md" padding="lg">
             <Stack gap="md">
-              <Text fw={600}>{t('Підсумок замовлення')}</Text>
-              <SimpleGrid cols={{ base: 1, md: 2, xl: 3 }} spacing="md">
-                <InfoBlock label={t('Договір')} value={order.ClientAgreement?.Agreement?.Name || '-'} />
-                <InfoBlock
+              <Text className="app-section-title" fw={600} size="sm">
+                {t('Підсумок замовлення')}
+              </Text>
+              <div className="supply-order-fields">
+                <LeaderField label={t('Договір')} value={order.ClientAgreement?.Agreement?.Name || ''} />
+                <LeaderField
                   label={t('Валюта')}
-                  value={order.ClientAgreement?.Agreement?.Currency?.Code || order.ClientAgreement?.Agreement?.Currency?.Name || '-'}
+                  mono
+                  value={order.ClientAgreement?.Agreement?.Currency?.Code || order.ClientAgreement?.Agreement?.Currency?.Name || ''}
                 />
-                <InfoBlock label={t('Відповідальний')} value={getUserName(order.Responsible)} />
-                <InfoBlock label={t('Кількість')} value={formatNumber(order.TotalQuantity)} />
-                <InfoBlock label={t('Сума нетто')} value={formatMoney(order.TotalNetPrice)} />
-                <InfoBlock label={t('ПДВ')} value={formatMoney(order.TotalVat)} />
-              </SimpleGrid>
+                <LeaderField label={t('Відповідальний')} value={getUserName(order.Responsible)} />
+                <LeaderField label={t('Кількість')} mono value={formatNumber(order.TotalQuantity)} />
+                <LeaderField label={t('Сума нетто')} mono value={formatMoney(order.TotalNetPrice)} />
+                <LeaderField label={t('ПДВ')} mono value={formatMoney(order.TotalVat)} />
+              </div>
             </Stack>
           </Card>
 
@@ -776,8 +780,9 @@ export function SupplyUkraineDirectOrderDetailPage() {
             <Group gap="xs" wrap="wrap">
               {canOpenInvoices && (
                 <Button
+                  color={CREATE_ACTION_COLOR}
                   leftSection={<IconPlus size={16} />}
-                  variant="light"
+                  variant="outline"
                   onClick={() => navigate(`/orders/ukraine/all/edit/${order.NetUid}/supply-invoices`)}
                 >
                   {t('Добавити новий інвойс')}
@@ -786,7 +791,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
               {canOpenProductIncome && (
                 <Button
                   leftSection={<IconPackageImport size={16} />}
-                  variant="light"
+                  variant="default"
                   onClick={() => navigate(`/orders/ukraine/all/edit/${order.NetUid}/product-income`)}
                 >
                   {t('Розміщення приходу')}
@@ -797,10 +802,9 @@ export function SupplyUkraineDirectOrderDetailPage() {
 
           <Card className="supply-detail-card" withBorder radius="md" padding="lg">
             <Stack gap="md">
-              <Group gap="xs">
-                <IconRoute size={18} />
-                <Text fw={600}>{t('Документи доставки')}</Text>
-              </Group>
+              <Text className="app-section-title" fw={600} size="sm">
+                {t('Документи доставки')}
+              </Text>
               <DataTable
                 columns={documentColumns}
                 data={order.SupplyOrderDeliveryDocuments || []}
@@ -816,8 +820,15 @@ export function SupplyUkraineDirectOrderDetailPage() {
       ) : (
         <Text c="dimmed">{t('Замовлення не знайдено')}</Text>
       )}
+      </Stack>
 
-      <AppDrawer opened={creditNotesOpen} size="md" title={t('Кредит ноти')} onClose={() => dispatchCreditNote({ type: 'setDrawerOpen', open: false })}>
+      <AppDrawer
+        className="supply-order-sheet"
+        opened={creditNotesOpen}
+        size="md"
+        title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Кредит ноти')}</span>}
+        onClose={() => dispatchCreditNote({ type: 'setDrawerOpen', open: false })}
+      >
         <Stack gap="md">
           <Group justify="flex-end">
             <Button color={CREATE_ACTION_COLOR} loading={isSaving} onClick={openCreditNoteModal}>
@@ -832,23 +843,19 @@ export function SupplyUkraineDirectOrderDetailPage() {
             <Stack gap="xs">
               {(order?.CreditNoteDocuments || []).map((creditNote, index) => (
                 <Box
+                  className="supply-order-credit-note"
                   key={creditNote.NetUid || creditNote.Id || `${creditNote.Number || 'credit-note'}-${index}`}
-                  style={{
-                    border: '1px solid var(--mantine-color-gray-2)',
-                    borderRadius: 6,
-                    padding: '8px 10px',
-                  }}
                 >
                   <Group justify="space-between" gap="xs" wrap="nowrap">
-                    <Text fw={600} size="sm">
-                      {creditNote.Number || '-'}
+                    <Text className="supply-order-credit-note-number" size="sm">
+                      {creditNote.Number || ''}
                     </Text>
-                    <Text c="dimmed" size="xs">
+                    <Text c="dimmed" className="supply-order-credit-note-date" size="xs">
                       {formatDateTime(creditNote.FromDate)}
                     </Text>
                   </Group>
                   <Text size="sm">
-                    {t('Сума')}: {formatMoney(creditNote.Amount)}
+                    {t('Сума')}: <span className="app-money">{formatMoney(creditNote.Amount)}</span>
                   </Text>
                   {creditNote.Comment && (
                     <Text c="dimmed" size="sm" style={{ overflowWrap: 'anywhere' }}>
@@ -867,7 +874,12 @@ export function SupplyUkraineDirectOrderDetailPage() {
         </Stack>
       </AppDrawer>
 
-      <AppModal opened={creditNoteModalOpen} title={t('Кредит нота')} onClose={closeCreditNoteModal}>
+      <AppModal
+        className="supply-order-sheet"
+        opened={creditNoteModalOpen}
+        title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Кредит нота')}</span>}
+        onClose={closeCreditNoteModal}
+      >
         <Stack gap="md">
           <TextInput
             label={t('Номер')}
@@ -897,7 +909,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
           <Group gap="xs">
             <FileButton onChange={(file) => dispatchCreditNote({ type: 'setFile', value: file })}>
               {(fileProps) => (
-                <Button {...fileProps} leftSection={<IconUpload size={16} />} variant="light">
+                <Button {...fileProps} leftSection={<IconUpload size={16} />} variant="default">
                   {t('Завантажити файл')}
                 </Button>
               )}
@@ -905,22 +917,21 @@ export function SupplyUkraineDirectOrderDetailPage() {
             {creditNoteFile && (
               <Group gap={4} wrap="nowrap">
                 <Text size="sm">{creditNoteFile.name}</Text>
-                <Tooltip label={t('Видалити')}>
-                  <ActionIcon
-                    aria-label={t('Видалити')}
-                    color="red"
-                    size="sm"
-                    variant="subtle"
-                    onClick={() => dispatchCreditNote({ type: 'setFile', value: null })}
-                  >
-                    <IconTrash size={16} />
-                  </ActionIcon>
-                </Tooltip>
+                <ActionIcon
+                  aria-label={t('Видалити')}
+                  color="red"
+                  size="sm"
+                  title={t('Видалити')}
+                  variant="subtle"
+                  onClick={() => dispatchCreditNote({ type: 'setFile', value: null })}
+                >
+                  <IconTrash size={16} />
+                </ActionIcon>
               </Group>
             )}
           </Group>
           <Group justify="flex-end" gap="xs">
-            <Button color="gray" disabled={isSaving} variant="light" onClick={closeCreditNoteModal}>
+            <Button disabled={isSaving} variant="default" onClick={closeCreditNoteModal}>
               {t('Скасувати')}
             </Button>
             <Button color={CREATE_ACTION_COLOR} loading={isSaving} onClick={() => void saveCreditNote()}>
@@ -931,8 +942,9 @@ export function SupplyUkraineDirectOrderDetailPage() {
       </AppModal>
 
       <AppModal
+        className="supply-order-sheet"
         opened={Boolean(statusDocument)}
-        title={t('Зміна статуса документа')}
+        title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Зміна статуса документа')}</span>}
         onClose={closeStatusModal}
       >
         <Stack gap="md">
@@ -952,7 +964,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
             onChange={(event) => dispatchStatusModal({ type: 'setComment', value: event.currentTarget.value })}
           />
           <Group justify="flex-end" gap="xs">
-            <Button color="gray" disabled={isSaving} variant="light" onClick={closeStatusModal}>
+            <Button disabled={isSaving} variant="default" onClick={closeStatusModal}>
               {t('Скасувати')}
             </Button>
             <Button color={CREATE_ACTION_COLOR} loading={isSaving} onClick={saveDocumentStatus}>
@@ -961,16 +973,17 @@ export function SupplyUkraineDirectOrderDetailPage() {
           </Group>
         </Stack>
       </AppModal>
-    </Stack>
+    </AppDrawer>
   )
 }
 
-function InfoBlock({ label, value }: { label: string, value: string }) {
+/* §7.2 leader row: label ——— value; mono values for numbers/codes/sums. */
+function LeaderField({ label, mono, value }: { label: string, mono?: boolean, value: string }) {
   return (
-    <Stack gap={2}>
-      <Text c="dimmed" size="xs">{label}</Text>
-      <Text fw={600} size="sm">{value}</Text>
-    </Stack>
+    <span className="supply-order-field">
+      <span className="supply-order-field-label">{label}</span>
+      <span className={`supply-order-field-value${mono ? ' is-mono' : ''}`}>{value}</span>
+    </span>
   )
 }
 
@@ -1005,10 +1018,19 @@ function combineDateTimeInput(datePart: string, timePart: string): string {
   return `${datePart}T${timePart || '00:00'}`
 }
 
-function statusBadge(label: string, value?: boolean) {
+/* §4 pills: green — success/active, gray — neutral/negative status. */
+function statusPill(label: string, t: (key: string) => string, value?: boolean) {
   return (
-    <Badge color={value ? 'green' : 'gray'} variant="light">
-      {label}: {value ? 'так' : 'ні'}
+    <Badge className={`app-role-pill ${value ? 'is-green' : 'is-gray'}`} variant="light">
+      {label}: {t(value ? 'так' : 'ні')}
+    </Badge>
+  )
+}
+
+function yesNoPill(t: (key: string) => string, value?: boolean) {
+  return (
+    <Badge className={`app-role-pill ${value ? 'is-green' : 'is-gray'}`} variant="light">
+      {t(value ? 'Так' : 'Ні')}
     </Badge>
   )
 }
@@ -1017,17 +1039,18 @@ function getOrderNumber(order: DirectSupplyOrder | null): string {
   return order?.SupplyOrderNumber?.Number ? `№ ${order.SupplyOrderNumber.Number}` : ''
 }
 
+/* Empty values render blank (§5/§7.2) — never a dash. */
 function getEntityName(entity?: { FullName?: string, Name?: string } | null): string {
-  return entity?.FullName || entity?.Name || '-'
+  return entity?.FullName || entity?.Name || ''
 }
 
 function getUserName(user?: { FirstName?: string, FullName?: string, LastName?: string, MiddleName?: string, Name?: string } | null): string {
-  return user?.FullName || [user?.LastName, user?.FirstName, user?.MiddleName].filter(Boolean).join(' ') || user?.Name || '-'
+  return user?.FullName || [user?.LastName, user?.FirstName, user?.MiddleName].filter(Boolean).join(' ') || user?.Name || ''
 }
 
 function formatDateTime(value?: Date | string): string {
   if (!value) {
-    return '-'
+    return ''
   }
 
   const date = value instanceof Date ? value : new Date(value)
@@ -1040,9 +1063,9 @@ function formatDateTime(value?: Date | string): string {
 }
 
 function formatNumber(value?: number): string {
-  return typeof value === 'number' && Number.isFinite(value) ? numberFormatter.format(value) : '-'
+  return typeof value === 'number' && Number.isFinite(value) ? numberFormatter.format(value) : ''
 }
 
 function formatMoney(value?: number): string {
-  return typeof value === 'number' && Number.isFinite(value) ? moneyFormatter.format(value) : '-'
+  return typeof value === 'number' && Number.isFinite(value) ? moneyFormatter.format(value) : ''
 }

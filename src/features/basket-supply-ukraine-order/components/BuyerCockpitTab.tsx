@@ -697,11 +697,7 @@ export function BuyerCockpitTab() {
             return ''
           }
 
-          return (
-            <Text c={item.unit_margin_eur >= 0 ? 'green' : 'red'} fw={600} size="sm">
-              {eurFormatter.format(item.unit_margin_eur)}
-            </Text>
-          )
+          return <Text className="app-money" fw={600} size="sm">{eurFormatter.format(item.unit_margin_eur)}</Text>
         },
         width: 120,
         align: 'right',
