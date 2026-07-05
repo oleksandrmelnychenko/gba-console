@@ -64,11 +64,11 @@ const URGENCY_LABEL: Record<ProcurementUrgency, string> = {
   none: 'Достатньо',
 }
 
-const URGENCY_BADGE_COLOR: Record<ProcurementUrgency, string> = {
-  critical: 'red',
-  high: 'orange',
-  normal: 'yellow',
-  none: 'gray',
+const URGENCY_PILL_CLASS: Record<ProcurementUrgency, string> = {
+  critical: 'app-role-pill is-red',
+  high: 'app-role-pill is-orange',
+  normal: 'app-role-pill is-yellow',
+  none: 'app-role-pill is-gray',
 }
 
 const qtyFormatter = new Intl.NumberFormat('uk-UA', {
@@ -440,13 +440,13 @@ function BudgetCartRow({
         <Text size="sm">#{item.product_id}</Text>
       </td>
       <td>
-        <Badge color={URGENCY_BADGE_COLOR[item.urgency]} size="sm" variant="light">
+        <Badge className={URGENCY_PILL_CLASS[item.urgency]} size="sm" variant="light">
           {t(URGENCY_LABEL[item.urgency])}
         </Badge>
       </td>
       <td>
         {quadrant ? (
-          <Badge color="blue" size="sm" variant="outline">
+          <Badge className="app-role-pill" size="sm" variant="outline">
             {quadrant}
           </Badge>
         ) : (
@@ -461,7 +461,7 @@ function BudgetCartRow({
         </Text>
       </td>
       <td style={{ textAlign: 'right' }}>
-        <Text size="sm">{item.unit_cost_eur === null ? '—' : eurFormatter.format(item.unit_cost_eur)}</Text>
+        <Text className="app-money" size="sm">{item.unit_cost_eur === null ? '' : eurFormatter.format(item.unit_cost_eur)}</Text>
       </td>
       <td style={{ textAlign: 'right' }}>
         {item.unit_margin_eur === null ? (
@@ -473,13 +473,13 @@ function BudgetCartRow({
         )}
       </td>
       <td style={{ textAlign: 'right' }}>
-        <Text size="sm">{item.line_cost_eur === null ? '—' : eurFormatter.format(item.line_cost_eur)}</Text>
+        <Text className="app-money" size="sm">{item.line_cost_eur === null ? '' : eurFormatter.format(item.line_cost_eur)}</Text>
       </td>
       <td style={{ textAlign: 'right' }}>
-        <Text size="sm">{item.value_density === null ? '—' : densityFormatter.format(item.value_density)}</Text>
+        <Text size="sm">{item.value_density === null ? '' : densityFormatter.format(item.value_density)}</Text>
       </td>
       <td style={{ textAlign: 'center' }}>
-        <Badge color={deferred ? 'gray' : 'green'} size="sm" variant={deferred ? 'light' : 'filled'}>
+        <Badge className={deferred ? 'app-role-pill is-gray' : 'app-role-pill is-green'} size="sm" variant="light">
           {deferred ? t('відкладено') : t('в бюджеті')}
         </Badge>
       </td>
