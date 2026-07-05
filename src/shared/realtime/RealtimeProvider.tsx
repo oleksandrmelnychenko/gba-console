@@ -1,6 +1,8 @@
 import { notifications } from '@mantine/notifications'
 import {
   HubConnectionBuilder,
+  HubConnectionState,
+  HttpTransportType,
   LogLevel,
   type HubConnection,
   type RetryContext,
@@ -35,6 +37,7 @@ const hubPaths = {
 } as const
 
 const reconnectDelays = [0, 2_000, 5_000, 10_000, 30_000]
+const startRetryDelays = [2_000, 5_000, 10_000, 30_000]
 
 const amountFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 2,
@@ -51,25 +54,20 @@ export function RealtimeProvider({ children }: PropsWithChildren) {
     }
 
     let disposed = false
-    const dataSyncConnection = createDataSyncConnection(t, user)
     const connections = [
       createProductReservationConnection(),
       createSupplyOrdersConnection(t),
       createExchangeRatesConnection(),
       createResaleConnection(),
-      dataSyncConnection,
+      createDataSyncConnection(t, user),
     ]
+    const stopManagedConnections = manageConnections(connections, () => disposed)
 
-    connections.forEach((connection) => {
-      void startConnection(connection, () => disposed)
-    })
     void reconcileDataSyncProgressWithServer()
 
     return () => {
       disposed = true
-      connections.forEach((connection) => {
-        void connection.stop().catch(() => undefined)
-      })
+      stopManagedConnections()
     }
   }, [isAuthenticated, isLoading, t, user])
 
@@ -185,7 +183,10 @@ async function reconcileDataSyncProgressWithServer(): Promise<void> {
 
 function createConnection(path: string): HubConnection {
   const connection = new HubConnectionBuilder()
-    .withUrl(realtimeUrl(path), { withCredentials: true })
+    .withUrl(realtimeUrl(path), {
+      transport: HttpTransportType.WebSockets | HttpTransportType.ServerSentEvents | HttpTransportType.LongPolling,
+      withCredentials: true,
+    })
     .withAutomaticReconnect({
       nextRetryDelayInMilliseconds: (context: RetryContext) => {
         if (!navigator.onLine) {
@@ -204,22 +205,83 @@ function createConnection(path: string): HubConnection {
   return connection
 }
 
+function manageConnections(connections: HubConnection[], isDisposed: () => boolean): () => void {
+  const retryTimers = new Set<ReturnType<typeof window.setTimeout>>()
+
+  const clearRetryTimers = () => {
+    retryTimers.forEach((timer) => window.clearTimeout(timer))
+    retryTimers.clear()
+  }
+
+  const scheduleStart = (connection: HubConnection, retryCount = 0) => {
+    if (isDisposed()) {
+      return
+    }
+
+    const timer = window.setTimeout(() => {
+      retryTimers.delete(timer)
+      void startConnection(connection, isDisposed, retryCount)
+    }, getStartRetryDelay(retryCount))
+
+    retryTimers.add(timer)
+  }
+
+  const handleOnline = () => {
+    connections.forEach((connection) => {
+      if (connection.state === HubConnectionState.Disconnected) {
+        void startConnection(connection, isDisposed)
+      }
+    })
+  }
+
+  connections.forEach((connection) => {
+    connection.onclose(() => {
+      if (!isDisposed()) {
+        scheduleStart(connection)
+      }
+    })
+
+    void startConnection(connection, isDisposed)
+  })
+  window.addEventListener('online', handleOnline)
+
+  return () => {
+    clearRetryTimers()
+    window.removeEventListener('online', handleOnline)
+    connections.forEach((connection) => {
+      void connection.stop().catch(() => undefined)
+    })
+  }
+}
+
 async function startConnection(connection: HubConnection, isDisposed: () => boolean, retryCount = 0): Promise<void> {
   if (isDisposed()) {
+    return
+  }
+
+  if (connection.state !== HubConnectionState.Disconnected) {
     return
   }
 
   try {
     await connection.start()
   } catch {
-    if (isDisposed() || retryCount >= 5) {
+    if (isDisposed()) {
       return
     }
 
     window.setTimeout(() => {
       void startConnection(connection, isDisposed, retryCount + 1)
-    }, 5_000)
+    }, getStartRetryDelay(retryCount))
   }
+}
+
+function getStartRetryDelay(retryCount: number): number {
+  if (!navigator.onLine) {
+    return startRetryDelays[startRetryDelays.length - 1]
+  }
+
+  return startRetryDelays[retryCount] ?? startRetryDelays[startRetryDelays.length - 1]
 }
 
 function showSupplyOrderNotification(notification: SupplyOrderNotification, t: (key: string) => string): void {
