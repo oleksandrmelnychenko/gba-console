@@ -377,12 +377,20 @@ export function SalesOnlineShopPage() {
         return
       }
 
+      const netId = sale.NetUid
+
       setConfirmState({
         confirmLabel: t('Підтвердити'),
         message: t('Позначити, що замовлення не буде відвантажено?'),
         title: t('Не буде відвантажено'),
         onConfirm: async () => {
-          await updateSale({ ...asUkraineSale(sale), IsAcceptedToPacking: true })
+          const hydrated = await getSaleById(netId)
+
+          if (!hydrated) {
+            throw new Error(t('Не вдалося завантажити продаж'))
+          }
+
+          await updateSale({ ...hydrated, IsAcceptedToPacking: true })
           notifications.show({ color: 'green', message: t('Збережено') })
         },
       })
