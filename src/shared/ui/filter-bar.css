@@ -154,6 +154,8 @@
   max-height: 36px;
   overflow: hidden;
   padding-bottom: 0;
+  /* Місце під X + шеврон: пілси не заїжджають під праву секцію контрола. */
+  padding-inline-end: 52px;
   padding-top: 0;
 }
 
