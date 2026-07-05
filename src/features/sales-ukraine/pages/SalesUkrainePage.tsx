@@ -1177,12 +1177,15 @@ function SaleGridRow({
 
   const lifecycleStatusKey = getSaleStatusKey(sale)
   const isPackaging = lifecycleStatusKey === 'Packaging' || lifecycleStatusKey === 'Packaged'
+  // Legacy hides the edit-act / print / audit / delivery actions for a Received-and-unpaid sale
+  // (a strictly NotPaid sale that has already been received). PartialPaid stays visible.
+  const hideEditActActions = lifecycleStatusKey === 'Received' && unpaid
   const hidePrintBlock = Boolean(sale.IsVatSale) && !sale.IsAcceptedToPacking && !isAdmin
   const showTtn = Boolean(sale.TransporterId) && isPackaging && !hidePrintBlock
   const showWillNotShip = canWillNotShip && Boolean(sale.IsVatSale) && !sale.IsAcceptedToPacking
   const showUnlock = canUnlock && Boolean(sale.IsLocked)
   const showEdit = canEditSale && (sale.InputSaleMerges?.length ?? 0) === 0
-  const showEditShift = showEdit && positions > 0
+  const showEditShift = showEdit && positions > 0 && !hideEditActActions
   const showBang = Boolean(sale.IsVatSale) && !sale.IsAcceptedToPacking
   const bangClickable = Boolean(sale.ChangedToInvoice) && canWillNotShip
   const discountEditable = isNewOrPackagingStatus(sale) && positions > 0
@@ -1383,28 +1386,30 @@ function SaleGridRow({
       </div>
 
       <div className="sg-transporter-cell" data-row-stop="true">
-        <Tooltip label={transporter || t('Перевізник')}>
-          <button
-            className="sg-transporter-button"
-            type="button"
-            aria-label={transporter || t('Перевізник')}
-            onClick={() => onOpenDetails(sale)}
-          >
-            {transporterImageUrl ? (
-              <span
-                className="sg-transporter-logo"
-                style={{ backgroundImage: `url(${toSecureUrl(transporterImageUrl)})` }}
-                aria-hidden="true"
-              />
-            ) : (
-              <IconTruckDelivery size={15} />
-            )}
-          </button>
-        </Tooltip>
+        {!hideEditActActions && (
+          <Tooltip label={transporter || t('Перевізник')}>
+            <button
+              className="sg-transporter-button"
+              type="button"
+              aria-label={transporter || t('Перевізник')}
+              onClick={() => onOpenDetails(sale)}
+            >
+              {transporterImageUrl ? (
+                <span
+                  className="sg-transporter-logo"
+                  style={{ backgroundImage: `url(${toSecureUrl(transporterImageUrl)})` }}
+                  aria-hidden="true"
+                />
+              ) : (
+                <IconTruckDelivery size={15} />
+              )}
+            </button>
+          </Tooltip>
+        )}
       </div>
 
       <div className="sg-doc-actions" data-row-stop="true">
-        {!hidePrintBlock && <SaleDocumentsMenu sale={sale} />}
+        {!hidePrintBlock && !hideEditActActions && <SaleDocumentsMenu sale={sale} />}
         <Menu position="bottom-end" shadow="md" withinPortal>
           <Menu.Target>
             <ActionIcon aria-label={t('Дії')} color="gray" size="sm" variant="subtle">
@@ -1422,9 +1427,11 @@ function SaleGridRow({
                 {lifecycleStatusKey === 'New' ? t('Акт редагування рахунку') : t('Акт редагування накладної')}
               </Menu.Item>
             )}
-            <Menu.Item leftSection={<IconTruckDelivery size={16} />} onClick={() => onOpenDetails(sale)}>
-              {t('Дані доставки')}
-            </Menu.Item>
+            {!hideEditActActions && (
+              <Menu.Item leftSection={<IconTruckDelivery size={16} />} onClick={() => onOpenDetails(sale)}>
+                {t('Дані доставки')}
+              </Menu.Item>
+            )}
             {showTtn && (
               <Menu.Item leftSection={<IconReceipt size={16} />} onClick={() => onOpenConsignment(sale)}>
                 {t('Друк ТТН')}
@@ -1445,9 +1452,11 @@ function SaleGridRow({
                 {t('Розблокувати')}
               </Menu.Item>
             )}
-            <Menu.Item leftSection={<IconHistory size={16} />} onClick={() => onOpenAudit(sale)}>
-              {t('Історія редагувань')}
-            </Menu.Item>
+            {!hideEditActActions && (
+              <Menu.Item leftSection={<IconHistory size={16} />} onClick={() => onOpenAudit(sale)}>
+                {t('Історія редагувань')}
+              </Menu.Item>
+            )}
           </Menu.Dropdown>
         </Menu>
       </div>

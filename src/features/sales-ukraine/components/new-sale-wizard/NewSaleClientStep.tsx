@@ -13,7 +13,7 @@ import { AppModal } from '../../../../shared/ui/AppModal'
 import { useAuth } from '../../../auth/useAuth'
 import { getClientSubClients, getRootClientBySubClientNetId } from '../../../clients/api/clientCabinetApi'
 import type { Client, ClientAgreement, ClientInDebt } from '../../../clients/types'
-import { getSaleActProtocolEditDocument } from '../../api/salesUkraineApi'
+import { getSaleActProtocolEditDocument, getSaleById, updateSale } from '../../api/salesUkraineApi'
 import { SALES_UKRAINE_EDIT_PERMISSION } from '../../permissions'
 import type { SaleDocumentResult, SalesUkraineClientAgreement, SalesUkraineSale } from '../../types'
 import { MergedSalesDrawer } from '../MergedSalesDrawer'
@@ -896,6 +896,25 @@ export function NewSaleClientStep({
     const requestId = printRequestRef.current + 1
     printRequestRef.current = requestId
     setPrintState({ document: null, isLoading: true })
+
+    // Mark-before-print (mirrors legacy OnPrintActProtocolEdit): on the first print of the current
+    // edit act, persist IsInvoice + IsPrintedActProtocolEdit so the printed-status indicator lights
+    // up. A later shift resets the flag server-side, so this re-marks after each edit. The registry
+    // row is a lightweight SalesRegisterModel, so hydrate the full sale first — posting an
+    // un-hydrated sale to /sales/update would wipe its OrderPackages (empty Order.OrderPackages ->
+    // RemoveAllByOrderId).
+    if (!sale.IsPrintedActProtocolEdit) {
+      try {
+        const hydrated = await getSaleById(netId)
+
+        if (hydrated) {
+          await updateSale({ ...hydrated, IsInvoice: true, IsPrintedActProtocolEdit: true })
+        }
+      } catch {
+        // Persisting the printed flag is best-effort; never block the print itself.
+      }
+    }
+
     void refreshRegistryRow(sale, true)
 
     try {

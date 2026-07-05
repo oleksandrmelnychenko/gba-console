@@ -402,7 +402,7 @@ function WizardSaleActionsCell({
         <Tooltip label={t('\u0414\u0440\u0443\u043a')}>
           <ActionIcon
             aria-label={t('\u0414\u0440\u0443\u043a')}
-            color="gray"
+            color={sale.IsPrintedActProtocolEdit ? 'teal' : 'gray'}
             size="sm"
             variant="subtle"
             onClick={(event) => {

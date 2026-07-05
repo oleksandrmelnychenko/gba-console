@@ -7,6 +7,7 @@ import {
   NumberInput,
   Stack,
   Text,
+  Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import {
@@ -468,21 +469,28 @@ function createSaleEditColumns({
       id: 'store',
       header: t('На склад'),
       accessor: (row) => row.entry.store,
-      cell: (row) => (
-        <NumberInput
-          allowDecimal={false}
-          allowNegative={false}
-          clampBehavior="strict"
-          hideControls
-          max={Math.max(0, row.qty - (isNew ? 0 : row.billNum))}
-          min={0}
-          className="sale-edit-shift-input"
-          disabled={isSaving}
-          size="xs"
-          value={row.entry.store}
-          onChange={(value) => updateEntry(row.key, { store: value, storeTouched: true })}
-        />
-      ),
+      cell: (row) => {
+        const storageName = getReturnStorageName(row.item)
+        const label = storageName ? `${t('Скасувати резерв на склад')}: ${storageName}` : t('Скасувати резерв на склад')
+
+        return (
+          <Tooltip label={label} disabled={!storageName} withArrow>
+            <NumberInput
+              allowDecimal={false}
+              allowNegative={false}
+              clampBehavior="strict"
+              hideControls
+              max={Math.max(0, row.qty - (isNew ? 0 : row.billNum))}
+              min={0}
+              className="sale-edit-shift-input"
+              disabled={isSaving}
+              size="xs"
+              value={row.entry.store}
+              onChange={(value) => updateEntry(row.key, { store: value, storeTouched: true })}
+            />
+          </Tooltip>
+        )
+      },
       width: 124,
       minWidth: 112,
       className: 'sale-edit-input-column',
@@ -514,19 +522,21 @@ function createSaleEditColumns({
       header: t('В рахунок'),
       accessor: (row) => row.entry.bill,
       cell: (row) => (
-        <NumberInput
-          allowDecimal={false}
-          allowNegative={false}
-          clampBehavior="strict"
-          hideControls
-          max={Math.max(0, row.qty - row.storeNum)}
-          min={0}
-          className="sale-edit-shift-input"
-          disabled={isSaving}
-          size="xs"
-          value={row.entry.bill}
-          onChange={(value) => updateEntry(row.key, { bill: value, billTouched: true })}
-        />
+        <Tooltip label={t('Скасувати резерв у рахунку')} withArrow>
+          <NumberInput
+            allowDecimal={false}
+            allowNegative={false}
+            clampBehavior="strict"
+            hideControls
+            max={Math.max(0, row.qty - row.storeNum)}
+            min={0}
+            className="sale-edit-shift-input"
+            disabled={isSaving}
+            size="xs"
+            value={row.entry.bill}
+            onChange={(value) => updateEntry(row.key, { bill: value, billTouched: true })}
+          />
+        </Tooltip>
       ),
       width: 124,
       minWidth: 112,
@@ -699,6 +709,13 @@ function getOrderItemProductCode(item: SalesUkraineOrderItem): string {
 
 function getUserName(user?: SalesUkraineOrderItem['User']): string {
   return user?.FullName?.trim() || [user?.LastName, user?.FirstName].filter(Boolean).join(' ').trim() || ''
+}
+
+function getReturnStorageName(item: SalesUkraineOrderItem): string {
+  const movements = item.ConsignmentItemMovements
+  const last = Array.isArray(movements) && movements.length ? movements[movements.length - 1] : undefined
+
+  return last?.ConsignmentItem?.ProductIncomeItem?.ProductIncome?.Storage?.Name?.trim() || ''
 }
 
 function toNumber(value: number | string): number {

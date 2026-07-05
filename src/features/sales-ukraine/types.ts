@@ -219,6 +219,10 @@ export type SalesUkraineOrderItem = SalesUkraineEntity & {
   AssignedSpecification?: { SpecificationCode?: string }
   DiscountUpdatedBy?: SalesUkraineUser
   Comment?: string
+  ConsignmentItemMovements?: Array<{
+    Id?: number
+    ConsignmentItem?: { ProductIncomeItem?: { ProductIncome?: { Storage?: { Name?: string } } } }
+  }>
   ShiftStatuses?: SalesUkraineOrderItemShiftStatus[]
   User?: SalesUkraineUser
 }
@@ -264,6 +268,7 @@ export type SalesUkraineSale = SalesUkraineEntity & {
   IsInvoice?: boolean
   IsLocked?: boolean
   IsPrinted?: boolean
+  IsPrintedActProtocolEdit?: boolean
   IsPrintedPaymentInvoice?: boolean
   IsSent?: boolean
   IsVatSale?: boolean
