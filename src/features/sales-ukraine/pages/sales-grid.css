@@ -863,7 +863,7 @@
 }
 
 .sg-amt-val {
-  color: var(--mantine-color-green-8);
+  color: var(--mantine-color-gray-9);
   font-family: var(--font-mono);
   font-weight: 600;
   letter-spacing: 0;
