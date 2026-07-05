@@ -1169,9 +1169,10 @@ function InvoiceSelector({
       {model.invoices.map((invoice) => (
         <Group key={invoice.NetUid || invoice.Id} gap={4} wrap="nowrap">
           <Button
-            color={invoice.NetUid === model.selectedInvoiceNetId ? 'blue' : 'gray'}
+            color={invoice.NetUid === model.selectedInvoiceNetId ? CREATE_ACTION_COLOR : 'gray'}
             disabled={model.isBusy}
-            variant={invoice.NetUid === model.selectedInvoiceNetId ? 'filled' : 'light'}
+            styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
+            variant={invoice.NetUid === model.selectedInvoiceNetId ? 'light' : 'subtle'}
             onClick={() => {
               const invoiceNetId = invoice.NetUid || null
               const nextInvoice = getSelectedInvoice(invoiceNetId, model.invoiceDetailsByNetId, model.invoices)
@@ -1806,7 +1807,7 @@ function PackListDocumentsList({
         <Group key={document.NetUid || document.Id || `${document.FileName}-${index}`} justify="space-between" wrap="nowrap">
           <Stack gap={0}>
             {getDocumentUrl(document) && !document.Deleted ? (
-              <Anchor href={upgradeHttpToHttps(getDocumentUrl(document))} rel="noreferrer" size="sm" target="_blank">
+              <Anchor c="dark.6" href={upgradeHttpToHttps(getDocumentUrl(document))} rel="noreferrer" size="sm" target="_blank" underline="always">
                 {document.FileName || document.GeneratedName || t('Документ')}
               </Anchor>
             ) : (
@@ -1878,7 +1879,7 @@ function DeleteModal({
   return (
     <AppModal centered opened={opened} title={title} onClose={onClose}>
       <Stack gap="md">
-        <Text>{t('Видалити')} <Text span fw={700}>{value || '-'}</Text>?</Text>
+        <Text>{t('Видалити')} <Text span fw={600} style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{value || ''}</Text>?</Text>
         <Group justify="flex-end">
           <Button disabled={isSaving} variant="subtle" onClick={onClose}>{t('Скасувати')}</Button>
           <Button color="red" leftSection={<IconTrash size={16} />} loading={isSaving} onClick={onConfirm}>{t('Видалити')}</Button>
@@ -2131,9 +2132,9 @@ function QuantityBalanceSummary({
     <Alert color={invalidRows ? 'yellow' : 'green'} icon={<IconAlertCircle size={18} />} variant="light">
       <Group gap="lg" wrap="wrap">
         <Text fw={600}>{invalidRows ? t('Є розбіжності') : t('Кількості збігаються')}</Text>
-        <Text size="sm">{expectedLabel}: <Text span fw={700}>{formatNumber(expectedQty)}</Text></Text>
-        <Text size="sm">{actualLabel}: <Text span fw={700}>{formatNumber(actualQty)}</Text></Text>
-        <Text size="sm">{differenceLabel}: <Text span fw={700}>{formatNumber(difference)}</Text></Text>
+        <Text size="sm">{expectedLabel}: <Text span fw={600} style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{formatNumber(expectedQty)}</Text></Text>
+        <Text size="sm">{actualLabel}: <Text span fw={600} style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{formatNumber(actualQty)}</Text></Text>
+        <Text size="sm">{differenceLabel}: <Text span fw={600} style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{formatNumber(difference)}</Text></Text>
         {invalidRows > 0 && <Badge className="app-role-pill is-yellow" variant="light">{invalidRows}</Badge>}
       </Group>
     </Alert>
