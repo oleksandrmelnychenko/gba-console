@@ -256,7 +256,7 @@
 }
 
 .supplier-organizations-balance-cell strong {
-  color: var(--mantine-color-green-8);
+  color: var(--mantine-color-gray-8);
   font-family: var(--font-mono);
   font-size: 13px;
   font-weight: 600;
@@ -268,7 +268,7 @@
 }
 
 .supplier-organizations-balance-cell small {
-  color: var(--mantine-color-green-7);
+  color: var(--mantine-color-gray-6);
   font-family: var(--font-mono);
   font-size: 10px;
   font-weight: 600;
@@ -355,11 +355,11 @@
   text-transform: none;
 }
 
-/* Гроші: додатні — зелені, відємні — червоні (правило користувача). */
+/* Гроші в грідах нейтральні: без зеленого/червоного за знаком. */
 .supplier-organizations-balance-cell.is-negative strong {
-  color: var(--mantine-color-red-8);
+  color: var(--mantine-color-gray-8);
 }
 
 .supplier-organizations-balance-cell.is-negative small {
-  color: var(--mantine-color-red-7);
+  color: var(--mantine-color-gray-6);
 }

@@ -1,4 +1,4 @@
-import { Card, SimpleGrid, Text } from '@mantine/core'
+import { SimpleGrid, Text } from '@mantine/core'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { getAccountingCashFlowClosingBalance } from '../cashFlowTotals'
 import type { AccountingCashFlow, AccountingCashFlowHeadItem } from '../types'
@@ -29,14 +29,20 @@ function SummaryValue({ label, value }: { label: string; value?: number }) {
   const isNegative = typeof value === 'number' && value < 0
 
   return (
-    <Card className="cash-flow-summary-tile" withBorder radius="md" padding="sm">
-      <Text size="xs" c="dimmed">
+    <div className="cash-flow-summary-tile">
+      <Text className="app-section-title" fw={600} size="xs">
         {label}
       </Text>
-      <Text size="lg" fw={700} c={isNegative ? 'red' : undefined}>
+      <Text
+        c={isNegative ? 'red.7' : undefined}
+        fw={600}
+        mt={2}
+        size="lg"
+        style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}
+      >
         {formatMoney(value)}
       </Text>
-    </Card>
+    </div>
   )
 }
 
