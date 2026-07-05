@@ -102,12 +102,12 @@ export function SaleEditDrawer({
         header: 'sale-edit-drawer-header',
         title: 'sale-edit-drawer-title',
       }}
-      offset={0}
+      offset={8}
       opened={Boolean(sale)}
       padding="lg"
       position="right"
-      radius={0}
-      size="100%"
+      radius="md"
+      size="full"
       title={title}
       onClose={onClose}
     >

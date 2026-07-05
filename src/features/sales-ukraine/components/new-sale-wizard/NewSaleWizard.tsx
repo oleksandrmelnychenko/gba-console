@@ -66,18 +66,18 @@ export function NewSaleWizard({
         overlayProps={{ backgroundOpacity: 0.25, blur: 2 }}
         transitionProps={{ transition: 'pop', duration: 200 }}
         styles={{
-          inner: { padding: 0 },
+          inner: { padding: 8 },
           content: {
-            width: '100%',
-            maxWidth: '100%',
-            height: '100dvh',
-            maxHeight: '100dvh',
-            borderRadius: 0,
+            width: 'calc(100vw - 16px)',
+            maxWidth: 'calc(100vw - 16px)',
+            height: 'calc(100dvh - 16px)',
+            maxHeight: 'calc(100dvh - 16px)',
+            borderRadius: 14,
             display: 'flex',
             flexDirection: 'column',
-            overflow: 'visible',
+            overflow: 'hidden',
           },
-          body: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'visible' },
+          body: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' },
         }}
         onClose={() => {
           if (!contentBusy) {
