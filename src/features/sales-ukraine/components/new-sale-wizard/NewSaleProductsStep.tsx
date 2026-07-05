@@ -2133,7 +2133,7 @@ export function NewSaleProductsStep({
         headerClose={headerClose}
         headerTools={headerTools}
       />
-      <Group align="stretch" className="new-sale-products-step__body" gap="md" wrap="nowrap">
+      <Box className="new-sale-products-step__body">
         {/* LEFT: search controls + vertical product carousel (mirrors the client step layout) */}
         <Box className="new-sale-products-step__picker-rail">
           <Stack className="new-sale-products-step__search-controls" gap={8}>
@@ -2277,7 +2277,7 @@ export function NewSaleProductsStep({
 
           {relatedColumnPanel && <Box className="new-sale-products-step__related-slot">{relatedColumnPanel}</Box>}
         </Box>
-      </Group>
+      </Box>
 
       {editCart && (
         <EditShoppingCartOverlay
