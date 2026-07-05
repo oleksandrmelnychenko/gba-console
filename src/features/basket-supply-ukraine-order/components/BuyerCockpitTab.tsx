@@ -779,13 +779,8 @@ export function BuyerCockpitTab() {
   const hasItems = sortedItems.length > 0
 
   return (
-    <Stack gap="lg">
-      {producersError && (
-        <Alert color="yellow" icon={<IconAlertCircle size={16} />} variant="light">
-          {producersError}
-        </Alert>
-      )}
-
+    <Stack gap={6}>
+      <Card className="app-data-card" padding={0} radius="md" withBorder>
       <div className="app-filter-bar basket-supply-command-bar">
         <Select
           clearable
@@ -800,6 +795,12 @@ export function BuyerCockpitTab() {
           onChange={setSelectedProducerId}
         />
       </div>
+      <Stack gap="md" p="md">
+      {producersError && (
+        <Alert color="yellow" icon={<IconAlertCircle size={16} />} variant="light">
+          {producersError}
+        </Alert>
+      )}
 
       {error && (
         <Alert color="red" icon={<IconAlertCircle size={16} />} variant="light">
@@ -961,6 +962,8 @@ export function BuyerCockpitTab() {
           </Stack>
         </Card>
       )}
+      </Stack>
+      </Card>
 
       <AppModal
         centered

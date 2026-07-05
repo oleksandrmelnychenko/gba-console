@@ -223,7 +223,8 @@ export function ProcureDashboardTab() {
   )
 
   return (
-    <Stack gap="lg">
+    <Stack gap={6}>
+      <Card className="app-data-card" padding={0} radius="md" withBorder>
       <div className="app-filter-bar basket-supply-command-bar">
         <NumberInput
           allowDecimal={false}
@@ -259,6 +260,7 @@ export function ProcureDashboardTab() {
           </Tooltip>
         </Group>
       </div>
+      <Stack gap="md" p="md">
 
       {error && (
         <Alert color="red" icon={<IconAlertCircle size={16} />} variant="light">
@@ -355,6 +357,8 @@ export function ProcureDashboardTab() {
             toolbarRight={toolbarRight}
           />
         </Stack>
+      </Card>
+      </Stack>
       </Card>
     </Stack>
   )
