@@ -971,7 +971,7 @@ function TotalQtyTile({ label, value }: { label: string; value?: number | null }
       <Text size="xs" c="dimmed" lh={1.15} lineClamp={2}>
         {label}
       </Text>
-      <Text size="sm" fw={700}>
+      <Text className="app-money" size="sm" fw={700}>
         {formatAmount(value)}
       </Text>
     </Box>

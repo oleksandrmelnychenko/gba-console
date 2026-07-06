@@ -101,7 +101,6 @@ import {
   displayValue,
   formatAmount,
   formatPrice,
-  getBooleanBadgeColor,
   getProductCode,
   getProductGroupNames,
   getProductMainImage,
@@ -1218,12 +1217,12 @@ function ProductInlineView({
           <InfoBlock label="Опис" value={product.DescriptionUA || product.Description} wide />
           <InfoBlock label="Нотатки" value={product.NotesUA || product.Notes} wide />
           <InfoBlock label="Top" value={product.Top} />
-          <InfoBlock label="Вага" value={formatAmount(product.Weight)} />
+          <InfoBlock mono label="Вага" value={formatAmount(product.Weight)} />
           <InfoBlock label="Розмір" value={product.Size} />
-          <InfoBlock label="Об'єм" value={product.Volume} />
-          <InfoBlock label="Норма пакування" value={product.OrderStandard} />
-          <InfoBlock label="Пакування" value={product.PackingStandard} />
-          <InfoBlock label="Оригінальний номер" value={getProductMainOriginalNumber(product)} />
+          <InfoBlock mono label="Об'єм" value={product.Volume} />
+          <InfoBlock mono label="Норма пакування" value={product.OrderStandard} />
+          <InfoBlock mono label="Пакування" value={product.PackingStandard} />
+          <InfoBlock mono label="Оригінальний номер" value={getProductMainOriginalNumber(product)} />
           <InfoBlock label="Синоніми UA" value={product.SynonymsUA} />
           <InfoBlock label="Група товару" value={getProductGroupNames(product)} />
           <InfoBlock label="Одиниця" value={product.MeasureUnit?.Name} />
@@ -1231,7 +1230,7 @@ function ProductInlineView({
 
         <Box className="product-inline-prices">
           <Group gap="sm" mb="xs" wrap="nowrap">
-            <Text fw={700} style={{ flex: 1, minWidth: 0 }}>{t('Тип ціни')}</Text>
+            <Text className="app-section-title" fw={600} size="sm" style={{ flex: 1, minWidth: 0 }}>{t('Тип ціни')}</Text>
             <Text c="dimmed" size="sm" ta="right" style={{ flexShrink: 0, width: 80 }}>{t('EUR')}</Text>
             <Text c="dimmed" size="sm" ta="right" style={{ flexShrink: 0, width: 80 }}>{t('UAH')}</Text>
           </Group>
@@ -1246,9 +1245,9 @@ function ProductInlineView({
           </Stack>
           <Divider my={8} />
           <Group gap="xs">
-            <Badge color={getBooleanBadgeColor(product.IsForZeroSale)} variant="light">{t('Нульовий продаж')}</Badge>
-            <Badge color={getBooleanBadgeColor(product.IsForSale)} variant="light">{t('Продаж')}</Badge>
-            <Badge color={getBooleanBadgeColor(product.IsForWeb)} variant="light">{t('Сайт')}</Badge>
+            <Badge className={`app-role-pill ${product.IsForZeroSale ? 'is-green' : 'is-gray'}`} variant="light">{t('Нульовий продаж')}</Badge>
+            <Badge className={`app-role-pill ${product.IsForSale ? 'is-green' : 'is-gray'}`} variant="light">{t('Продаж')}</Badge>
+            <Badge className={`app-role-pill ${product.IsForWeb ? 'is-green' : 'is-gray'}`} variant="light">{t('Сайт')}</Badge>
           </Group>
         </Box>
       </Box>
@@ -1281,8 +1280,8 @@ function ProductInlinePriceRow({ price }: { price: CalculatedProductPrice }) {
     <Box className="product-inline-price-row">
       <Group gap="sm" wrap="nowrap">
         <Text size="sm" lineClamp={1} style={{ flex: 1, minWidth: 0 }}>{displayValue(breakdown.pricingName)}</Text>
-        <Text size="sm" fw={650} ta="right" style={{ flexShrink: 0, width: 80 }}>{formatPrice(breakdown.retailPriceEUR)}</Text>
-        <Text size="sm" fw={650} ta="right" style={{ flexShrink: 0, width: 80 }}>{formatPrice(breakdown.retailPriceLocal)}</Text>
+        <Text className="app-money" size="sm" fw={650} ta="right" style={{ flexShrink: 0, width: 80 }}>{formatPrice(breakdown.retailPriceEUR)}</Text>
+        <Text className="app-money" size="sm" fw={650} ta="right" style={{ flexShrink: 0, width: 80 }}>{formatPrice(breakdown.retailPriceLocal)}</Text>
       </Group>
       {(showBase || breakdown.hasDiscount) ? (
         <Group gap={6} mt={1} wrap="wrap">
@@ -1347,10 +1346,12 @@ function ProductInlineActions({
 
 function InfoBlock({
   label,
+  mono,
   value,
   wide,
 }: {
   label: string
+  mono?: boolean
   value?: ReactNode
   wide?: boolean
 }) {
@@ -1362,7 +1363,7 @@ function InfoBlock({
     <Box className={`product-inline-info-block ${wide ? 'is-wide' : ''}`}>
       <Text c="dimmed" size="xs">{t(label)}</Text>
       {isPrimitive ? (
-        <Text size="sm" fw={600}>{displayValue(value as boolean | number | string)}</Text>
+        <Text className={mono ? 'app-money' : undefined} size="sm" fw={600}>{displayValue(value as boolean | number | string)}</Text>
       ) : (
         <Text size="sm" fw={600} component="div">{value ?? '-'}</Text>
       )}
