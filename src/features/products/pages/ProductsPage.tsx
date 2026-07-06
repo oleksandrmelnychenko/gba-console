@@ -1385,7 +1385,7 @@ function ProductInlineTabs({
 
   return (
     <div className="product-inline-tabs">
-      <div className="pill-tabs" style={{ width: 'fit-content' }}>
+      <div className="pill-tabs">
         {([
           { value: 'numbers', label: t('Оригінальні номери') },
           { value: 'analogues', label: t('Аналоги') },
@@ -1633,7 +1633,7 @@ function ProductOriginalNumbersTab({
       enableSorting: false,
       cell: (item) =>
         item.IsMainOriginalNumber ? (
-          <Badge size="xs" color="green" variant="light">
+          <Badge className="app-role-pill is-green" size="xs" variant="light">
             {t('Основний')}
           </Badge>
         ) : null,
@@ -1881,7 +1881,7 @@ function ProductRelatedProductsTab({
       minWidth: 90,
       align: 'right',
       accessor: (row) => getRelatedProductAvailableQty(row.product, type),
-      cell: (row) => formatAmount(getRelatedProductAvailableQty(row.product, type)),
+      cell: (row) => <span className="app-money">{formatAmount(getRelatedProductAvailableQty(row.product, type))}</span>,
     },
     ...(type === 'components'
       ? ([
@@ -2044,7 +2044,7 @@ function ProductUploadDocumentToolbar({
               <Group gap="xs" justify="space-between" wrap="nowrap">
                 <Text size="sm">{t('Місце зберігання')}</Text>
                 {storageCorrectionRowsCount > 0 ? (
-                  <Badge color="yellow" size="xs" variant="light">
+                  <Badge className="app-role-pill is-yellow" size="xs" variant="light">
                     {storageCorrectionRowsCount}
                   </Badge>
                 ) : null}
@@ -3128,21 +3128,21 @@ function ProductIncomeMovementsTable({ rows }: { rows: ProductIncomeMovement[] }
               <Table.Td>{displayValue(row.IncomeInvoiceNumber)}</Table.Td>
               <Table.Td>{formatInlineDateTime(row.IncomeInvoiceDate)}</Table.Td>
               <Table.Td>{displayValue(row.Currency)}</Table.Td>
-              <Table.Td ta="right">{formatAmount(row.ExchangeRate)}</Table.Td>
-              <Table.Td ta="right">{formatPrice(row.UnitPriceLocal)}</Table.Td>
-              <Table.Td ta="right">{formatPrice(row.NetPrice)}</Table.Td>
-              <Table.Td ta="right">{formatPrice(row.TotalNetPrice)}</Table.Td>
-              <Table.Td ta="right">{formatPrice(row.GrossPrice)}</Table.Td>
-              <Table.Td ta="right">{formatPrice(row.AccountingGrossPrice)}</Table.Td>
-              <Table.Td ta="right">{formatPrice(row.ManagementEurUnitPrice)}</Table.Td>
-              <Table.Td ta="right">{formatPrice(row.AccountingEurUnitPrice)}</Table.Td>
-              <Table.Td ta="right">{formatAmount(row.Weight)}</Table.Td>
-              <Table.Td ta="right">{formatAmount(row.IncomeQty)}</Table.Td>
-              <Table.Td ta="right">{formatAmount(row.RemainingQty)}</Table.Td>
+              <Table.Td className="app-money" ta="right">{formatAmount(row.ExchangeRate)}</Table.Td>
+              <Table.Td className="app-money" ta="right">{formatPrice(row.UnitPriceLocal)}</Table.Td>
+              <Table.Td className="app-money" ta="right">{formatPrice(row.NetPrice)}</Table.Td>
+              <Table.Td className="app-money" ta="right">{formatPrice(row.TotalNetPrice)}</Table.Td>
+              <Table.Td className="app-money" ta="right">{formatPrice(row.GrossPrice)}</Table.Td>
+              <Table.Td className="app-money" ta="right">{formatPrice(row.AccountingGrossPrice)}</Table.Td>
+              <Table.Td className="app-money" ta="right">{formatPrice(row.ManagementEurUnitPrice)}</Table.Td>
+              <Table.Td className="app-money" ta="right">{formatPrice(row.AccountingEurUnitPrice)}</Table.Td>
+              <Table.Td className="app-money" ta="right">{formatAmount(row.Weight)}</Table.Td>
+              <Table.Td className="app-money" ta="right">{formatAmount(row.IncomeQty)}</Table.Td>
+              <Table.Td className="app-money" ta="right">{formatAmount(row.RemainingQty)}</Table.Td>
               <Table.Td>{displayValue(row.FromInvoiceNumber)}</Table.Td>
               <Table.Td>{formatInlineDateTime(row.FromInvoiceDate)}</Table.Td>
-              <Table.Td ta="right">{formatPrice(row.ReturnPrice)}</Table.Td>
-              <Table.Td ta="right">{formatPrice(row.PriceDifference)}</Table.Td>
+              <Table.Td className="app-money" ta="right">{formatPrice(row.ReturnPrice)}</Table.Td>
+              <Table.Td className="app-money" ta="right">{formatPrice(row.PriceDifference)}</Table.Td>
             </Table.Tr>
           ))}
         </Table.Tbody>
@@ -3183,8 +3183,8 @@ function ProductOutcomeMovementsTable({ rows }: { rows: ProductOutcomeMovement[]
                 <Table.Td className={editedClassName}>{displayValue(row.DocumentNumber)}</Table.Td>
                 <Table.Td>{displayValue(row.ClientName)}</Table.Td>
                 <Table.Td>{displayValue(row.ResponsibleName)}</Table.Td>
-                <Table.Td ta="right">{formatPrice(row.Price)}</Table.Td>
-                <Table.Td ta="right">{formatAmount(row.Qty)}</Table.Td>
+                <Table.Td className="app-money" ta="right">{formatPrice(row.Price)}</Table.Td>
+                <Table.Td className="app-money" ta="right">{formatAmount(row.Qty)}</Table.Td>
               </Table.Tr>
             )
           })}
