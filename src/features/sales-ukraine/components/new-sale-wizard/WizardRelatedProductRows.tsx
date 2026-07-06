@@ -78,11 +78,7 @@ function WizardRelatedProductRow({
           <Text c={color} className="new-sale-related-row__code" truncate>
             {code}
           </Text>
-          {product.MainOriginalNumber && (
-            <Text className="new-sale-related-row__number" truncate>
-              {product.MainOriginalNumber}
-            </Text>
-          )}
+          <RelatedInlineFacts product={product} />
         </Box>
         <Text className="new-sale-related-row__name" title={name}>
           {name}
@@ -127,6 +123,27 @@ function WizardRelatedProductRow({
           )}
         </Box>
       </Box>
+    </Box>
+  )
+}
+
+function RelatedInlineFacts({ product }: { product: WizardSaleProduct }) {
+  const facts = [
+    product.MainOriginalNumber,
+    product.Top,
+    product.Size,
+    product.MeasureUnit?.Name,
+  ].filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+
+  if (facts.length === 0) {
+    return null
+  }
+
+  return (
+    <Box className="new-sale-related-row__facts">
+      {facts.map((fact) => (
+        <span key={fact}>{fact}</span>
+      ))}
     </Box>
   )
 }

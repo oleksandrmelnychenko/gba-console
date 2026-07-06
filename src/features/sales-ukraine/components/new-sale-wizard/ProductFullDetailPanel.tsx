@@ -38,6 +38,7 @@ export function ProductFullDetailPanel({
   chips,
   descriptionDraft,
   isEditingDescription,
+  localCurrencyCode = 'UAH',
   nearestSupplyOrder,
   pricing,
   product,
@@ -54,6 +55,7 @@ export function ProductFullDetailPanel({
   chips: WizardDetailChip[]
   descriptionDraft: string
   isEditingDescription: boolean
+  localCurrencyCode?: string
   nearestSupplyOrder?: WizardNearestSupplyOrder | null
   pricing: WizardCalculatedProductPricing | null
   product: WizardSaleProduct
@@ -79,10 +81,13 @@ export function ProductFullDetailPanel({
   const originalNumber = product.MainOriginalNumber || ''
   const size = product.Size || ''
   const top = product.Top || ''
+  const measureUnit = product.MeasureUnit?.Name || t('шт')
   const headerQty = displayQty ?? 0
-  const basePrice = pricing?.PriceEUR || getWizardProductNumber(product.CurrentPrice)
+  const basePrice = pricing?.PriceEUR ?? getWizardProductNumber(product.CurrentPrice)
   const salePrice = pricing?.DiscountPriceEUR ?? basePrice
-  const localSalePrice = getWizardProductNumber(product.CurrentPriceEurToUah)
+  const retailPrice = pricing?.RetailPriceEUR ?? null
+  const localSalePrice = getWizardProductNumber(product.CurrentPriceEurToUah) ?? getWizardProductNumber(product.CurrentLocalPrice)
+  const localRetailPrice = pricing?.RetailPriceLocal ?? null
   const discountRate = pricing?.DiscountRate ?? null
   const hasLogistics = Boolean(nearestSupplyOrder)
 
@@ -130,9 +135,13 @@ export function ProductFullDetailPanel({
           </Box>
 
           <Group className="new-sale-product-card__money" gap={8} wrap="nowrap">
-            <MetricBlock label={t('Доступно')} tone={headerQty > 0 ? 'good' : 'bad'} value={qtyFormatter.format(headerQty)} />
+            <MetricBlock
+              label={t('Доступно')}
+              tone={headerQty > 0 ? 'good' : 'bad'}
+              value={`${qtyFormatter.format(headerQty)} ${measureUnit}`}
+            />
             <MetricBlock label="EUR" tone="strong" value={formatPrice(salePrice)} />
-            {localSalePrice != null && <MetricBlock label="UAH" value={formatPrice(localSalePrice)} />}
+            {localSalePrice != null && <MetricBlock label={localCurrencyCode} value={formatPrice(localSalePrice)} />}
           </Group>
         </Group>
 
@@ -142,6 +151,14 @@ export function ProductFullDetailPanel({
             {discountRate != null && <span className="new-sale-product-card__discount">-{priceFormatter.format(discountRate)}%</span>}
           </Box>
 
+          {retailPrice != null && (
+            <Box className="new-sale-product-card__retail">
+              <span>{t('Роздріб')}</span>
+              <strong>{formatPrice(retailPrice)} EUR</strong>
+              {localRetailPrice != null && <small>{formatPrice(localRetailPrice)} {localCurrencyCode}</small>}
+            </Box>
+          )}
+
           {hasLogistics && (
             <Box className="new-sale-product-card__next">
               <IconTruckDelivery size={16} />
@@ -150,7 +167,7 @@ export function ProductFullDetailPanel({
                 <strong>
                   {nearestSupplyOrder?.OrderArrivedDate ? formatLocalDate(new Date(nearestSupplyOrder.OrderArrivedDate)) : '—'}
                   {' · '}
-                  {qtyFormatter.format(nearestSupplyOrder?.Qty ?? 0)} {t('шт')}
+                  {qtyFormatter.format(nearestSupplyOrder?.Qty ?? 0)} {measureUnit}
                 </strong>
               </Box>
             </Box>

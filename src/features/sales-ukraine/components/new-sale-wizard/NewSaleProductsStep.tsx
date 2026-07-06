@@ -9,7 +9,7 @@ import { realtimeEvents, useRealtimeEvent } from '../../../../shared/realtime/ev
 import type { Client } from '../../../clients/types'
 import { updateProduct } from '../../../products/api/productsApi'
 import type { Product } from '../../../products/types'
-import { getRelatedProductRowColor } from '../../../products/utils'
+import { getProductMainImage, getRelatedProductRowColor } from '../../../products/utils'
 import { ProductCardModal } from '../../../products/components/ProductCardModal'
 import { ProductInterestModal } from '../../../sales-preorders'
 import { addOrderItem, deleteOrderItem, updateOrderItem } from '../../api/salesUkraineApi'
@@ -337,17 +337,9 @@ export function NewSaleProductsStep({
 
         virtualExhaustedRef.current = false
 
-        if (next.length === 1 && next[0]) {
-          const single = next[0]
-          setResults([single, ...(single.NextSearchedProducts ?? [])])
-          setMainIndex(0)
-          focusMainProduct(single)
-          setWizardKeyboardState('ProductSelection')
-        } else {
-          setResults(next)
-          setMainIndex(0)
-          clearActiveProductData()
-        }
+        setResults(next.length === 1 && next[0] ? [next[0], ...(next[0].NextSearchedProducts ?? [])] : next)
+        setMainIndex(0)
+        clearActiveProductData()
       } catch {
         if (!cancelled) {
           setResults([])
@@ -1208,11 +1200,13 @@ export function NewSaleProductsStep({
   }
 
   function openImage(product: WizardSaleProduct | null) {
-    if (!product?.Image) {
+    const imageUrl = product ? (getProductMainImage(product as Product)?.ImageUrl ?? product.Image) : null
+
+    if (!imageUrl) {
       return
     }
 
-    setImageUrl(toProxiedAssetUrl(product.Image) || null)
+    setImageUrl(toProxiedAssetUrl(imageUrl) || imageUrl)
     keyboard.setState('ViewImage')
   }
 
@@ -1439,6 +1433,10 @@ export function NewSaleProductsStep({
       return true
     }
 
+    if (hotkey === 'CtrlEnter') {
+      return true
+    }
+
     if (hotkey === 'Escape') {
       setCloseConfirmOpen(true)
 
@@ -1534,11 +1532,6 @@ export function NewSaleProductsStep({
 
         return true
       case 'CtrlEnter':
-        // Toggle the detail overlay shut and reset the keyboard state, otherwise it stays parked
-        // in 'FullDetail' (where Ctrl(+Shift)+Enter is a no-op) and the shortcut can't reopen it.
-        resetDetail()
-        keyboard.setState('ProductSelection')
-
         return true
       case 'CtrlI':
         openImage(activeProduct)
@@ -1651,10 +1644,6 @@ export function NewSaleProductsStep({
       case 'Ctrl':
         return true
       case 'CtrlEnter':
-        // Toggle the analogue detail overlay shut and reset the keyboard state so the shortcut reopens.
-        resetDetail()
-        keyboard.setState('AnalogueSelection')
-
         return true
       case 'Space':
         return true
@@ -1785,10 +1774,6 @@ export function NewSaleProductsStep({
       case 'Ctrl':
         return true
       case 'CtrlEnter':
-        // Toggle the component detail overlay shut and reset the keyboard state so the shortcut reopens.
-        resetDetail()
-        keyboard.setState('ComponentSelection')
-
         return true
       case 'Space':
         if (
@@ -1983,6 +1968,7 @@ export function NewSaleProductsStep({
   const mainStatesActive = kbState === 'ProductSearch' || kbState === 'ProductSelection' || kbState === 'FullDetail'
   const analogueStatesActive = kbState === 'AnalogueSelection' || kbState === 'AnalogueFullDetail'
   const componentStatesActive = kbState === 'ComponentSelection' || kbState === 'ComponentFullDetail'
+  const keepMainPickerCentered = kbState === 'ProductSearch' || kbState === 'ProductSelection' || kbState === 'FullDetail'
   const setQtyByNetUid = new Map<string, number>()
 
   componentEntries.entries.forEach((entry) => {
@@ -2000,6 +1986,8 @@ export function NewSaleProductsStep({
   const canEditMainDescription = hasPermission(CHANGE_PRODUCT_DESCRIPTION_PERMISSION)
 
   function renderPriceExtra(product: WizardSaleProduct, setQty?: number) {
+    const localPrice = getWizardProductNumber(product.CurrentPriceEurToUah) ?? getWizardProductNumber(product.CurrentLocalPrice) ?? 0
+
     return (
       <Group className="new-sale-related-row__metrics" gap={6} wrap="nowrap">
         {setQty != null && (
@@ -2014,7 +2002,7 @@ export function NewSaleProductsStep({
           {qtyFormatter.format(getWizardSellableQty(product, isVatSale) ?? 0)} {product.MeasureUnit?.Name ?? ''}
         </Text>
         <Text className="new-sale-related-row__metric">{amountFormatter.format(getWizardProductNumber(product.CurrentPrice) ?? 0)} EUR</Text>
-        <Text className="new-sale-related-row__metric">{amountFormatter.format(getWizardProductNumber(product.CurrentPriceEurToUah) ?? 0)} UAH</Text>
+        <Text className="new-sale-related-row__metric">{amountFormatter.format(localPrice)} {localCurrencyCode}</Text>
       </Group>
     )
   }
@@ -2041,6 +2029,7 @@ export function NewSaleProductsStep({
         descriptionDraft={descriptionDraft}
         displayQty={getDisplayedAvailableQty(selectedMainProduct) ?? 0}
         isEditingDescription={editingDescription && active?.source === 'main'}
+        localCurrencyCode={localCurrencyCode}
         nearestSupplyOrder={selectedMainSnapshot?.nearestOrder}
         pricing={detailPricingFor(selectedMainProduct)}
         product={selectedMainProduct}
@@ -2177,7 +2166,7 @@ export function NewSaleProductsStep({
           </Stack>
 
           <Box
-            className={`new-sale-products-step__picker-carousel ${isSearchPristine && !selectedMainProduct && results.length === 0 ? 'is-empty' : ''}`}
+            className={`new-sale-products-step__picker-carousel ${keepMainPickerCentered ? 'is-search-centered' : ''} ${isSearchPristine && !selectedMainProduct && results.length === 0 ? 'is-empty' : ''}`}
           >
             <WizardProductCarousel
               active={mainStatesActive}
@@ -2185,6 +2174,7 @@ export function NewSaleProductsStep({
               getItemColor={(product) => getRelatedProductRowColor(product)}
               getMeta={getProductMeta}
               getPricing={detailPricingFor}
+              localCurrencyCode={localCurrencyCode}
               // Keep the selected main product pinned on the left while drilling into its
               // analogues/components (active.source switches to 'analogue'/'component'); otherwise
               // the carousel reverts to the search list and the chosen product visually drops out.
@@ -2241,6 +2231,7 @@ export function NewSaleProductsStep({
                   descriptionDraft={descriptionDraft}
                   displayQty={getDisplayedAvailableQty(focusedAnalogue) ?? 0}
                   isEditingDescription={editingDescription && active?.source === 'analogue'}
+                  localCurrencyCode={localCurrencyCode}
                   nearestSupplyOrder={focusedAnalogueSnapshot?.nearestOrder}
                   pricing={detailPricingFor(focusedAnalogue)}
                   product={focusedAnalogue}
@@ -2261,6 +2252,7 @@ export function NewSaleProductsStep({
                   descriptionDraft={descriptionDraft}
                   displayQty={getDisplayedAvailableQty(focusedComponent) ?? 0}
                   isEditingDescription={editingDescription && active?.source === 'component'}
+                  localCurrencyCode={localCurrencyCode}
                   nearestSupplyOrder={focusedComponentSnapshot?.nearestOrder}
                   pricing={detailPricingFor(focusedComponent)}
                   product={focusedComponent}
