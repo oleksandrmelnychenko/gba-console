@@ -505,7 +505,7 @@
   border-top: 1px solid var(--mantine-color-gray-1);
   flex: 1 1 auto;
   min-height: 0;
-  overflow-x: hidden;
+  overflow-x: auto;
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: 0 10px 12px;
@@ -614,11 +614,42 @@
   z-index: 4;
 }
 
-.sales-grid-head span {
+.sales-grid-head > span {
   min-width: 0;
   overflow: hidden;
+  position: relative;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* Drag handle at each header column boundary (useGridColumnResize). Double-click
+   resets the column to its fluid default. */
+.sg-col-resizer {
+  bottom: 0;
+  cursor: col-resize;
+  position: absolute;
+  right: 0;
+  top: 0;
+  touch-action: none;
+  width: 10px;
+  z-index: 2;
+}
+
+.sg-col-resizer::after {
+  background: transparent;
+  border-radius: 2px;
+  bottom: 5px;
+  content: '';
+  position: absolute;
+  right: 3px;
+  top: 5px;
+  transition: background 120ms ease;
+  width: 2px;
+}
+
+.sales-grid-head span:hover .sg-col-resizer::after,
+.sg-col-resizer:hover::after {
+  background: var(--mantine-color-gray-4);
 }
 
 .sales-grid-head span:not(:first-child) {
@@ -887,9 +918,10 @@
 .sg-positions {
   color: var(--mantine-color-gray-8);
   font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 20px;
+  font-weight: 700;
   justify-self: start;
+  line-height: 1.1;
   text-align: left;
   white-space: nowrap;
 }

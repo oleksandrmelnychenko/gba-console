@@ -80,6 +80,8 @@ import {
 } from '../api/salesUkraineApi'
 import { getAverageOneTimeDiscount, getUniformOneTimeDiscount } from '../saleDiscounts'
 import { getSaleLifecycleStatusKey, getStatusTypeKey, isDiscountEditableSaleLifecycle, isStatusType } from '../saleStatus'
+import { useGridColumnResize } from './useGridColumnResize'
+import type { CSSProperties } from 'react'
 import { ConsignmentNoteSettingsDrawer } from '../components/ConsignmentNoteSettingsDrawer'
 import { NewSaleWizard } from '../components/new-sale-wizard/NewSaleWizard'
 import { SaleEditDrawer } from '../components/SaleEditDrawer'
@@ -101,6 +103,33 @@ import type {
   SalesUkraineStatusFilter,
   SalesUkraineUserFilter,
 } from '../types'
+
+// Column order matches the `.sales-grid-head` / `.sales-grid-row` cells 1:1.
+// Fluid by default (minmax + fr) so the grid fills the width; each column can be
+// dragged to a fixed px width via its header handle (useGridColumnResize).
+const SALES_GRID_DEFAULT_COLUMNS = [
+  'minmax(300px, 1.4fr)',
+  'minmax(112px, 0.8fr)',
+  'minmax(104px, 0.8fr)',
+  'minmax(92px, 0.6fr)',
+  '54px',
+  'minmax(66px, 0.5fr)',
+  'minmax(100px, 0.6fr)',
+  'minmax(96px, 0.6fr)',
+  'minmax(140px, 0.9fr)',
+]
+
+const SALES_GRID_HEAD_LABELS = [
+  'Продаж / клієнт',
+  'Сума',
+  'Дод. сума',
+  'ПДВ',
+  'Поз.',
+  'Знижка',
+  'Перевізник',
+  'Документи',
+  'Статус',
+]
 
 type FilterDraft = {
   clientId: string
@@ -221,6 +250,11 @@ export function SalesUkrainePage() {
   const [page, setPage] = useValueState(1)
   const [pageSize, setPageSize] = useValueState(DEFAULT_PAGINATOR_PAGE_SIZE)
   const [sales, setSales] = useValueState<SalesUkraineSale[]>([])
+  const {
+    resetColumn: resetGridColumn,
+    startResize: startGridColumnResize,
+    template: gridColumnsTemplate,
+  } = useGridColumnResize(SALES_GRID_DEFAULT_COLUMNS, 'sales-ukraine-grid-columns')
   const [selectedSale, setSelectedSale] = useValueState<SalesUkraineSale | null>(null)
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
@@ -948,7 +982,7 @@ export function SalesUkrainePage() {
             </Alert>
           )}
 
-          <div className="sales-grid">
+          <div className="sales-grid" style={{ '--sales-grid-columns': gridColumnsTemplate } as CSSProperties}>
             {isLoading ? (
               <div className="sales-grid-skeleton" aria-label={t('Завантаження продажів')} aria-busy="true">
                 {Array.from({ length: 9 }, (_, rowIndex) => (
@@ -970,15 +1004,20 @@ export function SalesUkrainePage() {
             ) : (
               <>
                 <div className="sales-grid-head">
-                  <span>{t('Продаж / клієнт')}</span>
-                  <span>{t('Сума')}</span>
-                  <span>{t('Дод. сума')}</span>
-                  <span>{t('ПДВ')}</span>
-                  <span>{t('Поз.')}</span>
-                  <span>{t('Знижка')}</span>
-                  <span>{t('Перевізник')}</span>
-                  <span>{t('Документи')}</span>
-                  <span>{t('Статус')}</span>
+                  {SALES_GRID_HEAD_LABELS.map((label, columnIndex) => (
+                    <span key={label}>
+                      {t(label)}
+                      {columnIndex < SALES_GRID_HEAD_LABELS.length - 1 && (
+                        <span
+                          aria-hidden="true"
+                          className="sg-col-resizer"
+                          title={t('Перетягніть, щоб змінити ширину · подвійний клік — скинути')}
+                          onDoubleClick={() => resetGridColumn(columnIndex)}
+                          onPointerDown={(event) => startGridColumnResize(columnIndex, event)}
+                        />
+                      )}
+                    </span>
+                  ))}
                 </div>
                 {sales.map((sale, index) => {
                   const key = String(sale.NetUid || sale.Id || index)
