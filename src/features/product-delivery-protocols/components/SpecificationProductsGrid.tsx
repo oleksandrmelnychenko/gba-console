@@ -306,13 +306,13 @@ export function SpecificationProductsGrid({
       },
     ]
 
-    const accountingServiceColumns = [...netServiceColumns, ...generalServiceColumns]
-    const serviceColumns: DataTableColumn<SpecificationRow>[] = accountingServiceColumns.map((service) =>
-      buildServiceColumn(service),
-    )
+    const serviceColumns: DataTableColumn<SpecificationRow>[] = [
+      ...netServiceColumns.map((service) => buildServiceColumn(service, `${t('БО')} · ${t('Собівартість товару')}`)),
+      ...generalServiceColumns.map((service) => buildServiceColumn(service, `${t('БО')} · ${t('Загальні витрати')}`)),
+    ]
 
     if (withManagementServices) {
-      managementServiceColumns.forEach((service) => serviceColumns.push(buildServiceColumn(service)))
+      managementServiceColumns.forEach((service) => serviceColumns.push(buildServiceColumn(service, t('УО'))))
     }
 
     const totalColumns: DataTableColumn<SpecificationRow>[] = []
@@ -380,10 +380,22 @@ export function SpecificationProductsGrid({
   )
 }
 
-function buildServiceColumn(service: ServiceColumn): DataTableColumn<SpecificationRow> {
+function buildServiceColumn(service: ServiceColumn, groupLabel?: string): DataTableColumn<SpecificationRow> {
   return {
     id: service.id,
-    header: service.name,
+    // Two-line header: the accounting-category band (БО · собівартість / БО · загальні / УО) above
+    // the service name, so cost-of-goods vs general vs management columns are distinguishable
+    // per-column (the shared DataTable has no grouped super-header support).
+    header: groupLabel
+      ? (
+          <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', lineHeight: 1.15 }}>
+            <span style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', color: 'var(--mantine-color-dimmed)', letterSpacing: 0.2 }}>
+              {groupLabel}
+            </span>
+            <span>{service.name}</span>
+          </span>
+        )
+      : service.name,
     width: 220,
     minWidth: 160,
     align: 'right',

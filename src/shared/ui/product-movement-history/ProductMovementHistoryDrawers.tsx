@@ -259,7 +259,7 @@ const movementItemTypeOptions: Array<{ label: string; value: number }> = [
   { label: 'Повернення', value: 1 },
   { label: 'Акт редагування накладної', value: 2 },
   { label: 'Прихід товару', value: 3 },
-  { label: 'Замовлення постачання в Україну', value: 4 },
+  { label: 'Прихід на Україну', value: 4 },
   { label: 'Акт уцінки', value: 5 },
   { label: 'Повернення постачальнику', value: 6 },
   { label: 'Переміщення товару', value: 7 },
