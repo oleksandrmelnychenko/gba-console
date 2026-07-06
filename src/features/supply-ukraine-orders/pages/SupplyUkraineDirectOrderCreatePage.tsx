@@ -422,7 +422,7 @@ function SupplyUkraineOrderFileCreatePage({ mode }: { mode: CreateMode }) {
       opened
       position="right"
       size="wide"
-      title={isToUkraineMode ? t('Нова поставка в Україну') : t('Нове замовлення Україна')}
+      title={<span className="app-sheet-title-mono">{isToUkraineMode ? t('Нова поставка в Україну') : t('Нове замовлення Україна')}</span>}
       onClose={() => navigate('/orders/ukraine/all')}
       footer={
         <Button
@@ -523,7 +523,7 @@ function OrderDetailsSection({
 
   return (
     <Stack gap="md">
-      <Text fw={600}>{t('Замовлення')}</Text>
+      <Text className="app-section-title" fw={600} size="sm">{t('Замовлення')}</Text>
       <TextInput
         disabled={isLoading || isSaving}
         label={t('Дата')}
@@ -584,7 +584,7 @@ function OrderDetailsSection({
         onChange={onAgreementChange}
       />
       {selectedClientAgreement?.Agreement?.Currency && (
-        <Badge className="app-role-pill" variant="light">
+        <Badge className="app-role-pill is-gray" variant="light">
           {t('Валюта')}: {selectedClientAgreement.Agreement.Currency.Code || selectedClientAgreement.Agreement.Currency.Name || '-'}
         </Badge>
       )}
@@ -619,7 +619,7 @@ function ImportConfigurationSection({
 
   return (
     <Stack gap="md">
-      <Text fw={600}>{t('Імпорт')}</Text>
+      <Text className="app-section-title" fw={600} size="sm">{t('Імпорт')}</Text>
       <FileInput
         clearable
         accept={EXCEL_FILE_ACCEPT}
