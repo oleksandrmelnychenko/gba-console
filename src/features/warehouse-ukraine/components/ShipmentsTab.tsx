@@ -1917,6 +1917,15 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
             maxHeight="calc(100vh - 360px)"
             minWidth={980}
             tableId="warehouse-ukraine-manual-shipment-sales"
+            onRowClick={(sale) => {
+              const saleKey = getShipmentSaleKey(sale)
+
+              if (!saleKey || draftSaleKeys.has(saleKey)) {
+                return
+              }
+
+              setManualSelectedSaleKeys((current) => ({ ...current, [saleKey]: !current[saleKey] }))
+            }}
           />
 
           <Group justify="flex-end" gap="sm">
