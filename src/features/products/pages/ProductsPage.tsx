@@ -3160,7 +3160,7 @@ function ProductIncomeMovementsGrid({
       },
       {
         id: 'unitPriceLocal',
-        header: t('Ціна UAH'),
+        header: t('Ціна (вал. угоди)'),
         width: 110,
         align: 'right',
         accessor: (row) => row.UnitPriceLocal,
