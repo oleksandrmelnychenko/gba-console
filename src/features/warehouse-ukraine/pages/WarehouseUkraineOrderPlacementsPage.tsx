@@ -282,6 +282,7 @@ function useOrderPlacementsModel() {
             : {
                 Qty: qty,
                 SupplyOrderUkraineItemId: item.Id,
+                SupplyOrderUkraineItem: item,
                 DynamicProductPlacementColumnId: column.Id,
                 DynamicProductPlacements: placements,
               }
@@ -461,6 +462,7 @@ function useOrderPlacementsModel() {
                 : {
                     Qty: nextQty,
                     SupplyOrderUkraineItemId: item.Id,
+                    SupplyOrderUkraineItem: item,
                     DynamicProductPlacementColumnId: iterColumn.Id,
                     DynamicProductPlacements: nextPlacements,
                   },

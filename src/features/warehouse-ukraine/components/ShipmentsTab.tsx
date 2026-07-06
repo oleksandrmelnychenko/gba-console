@@ -108,7 +108,7 @@ const MANUAL_SHIPMENT_SALES_TABLE_DEFAULT_LAYOUT = {
 const ALL_TRANSPORTERS_VALUE = '__all_transporters__'
 const SHIPMENTS_TAB_ALL = 'all'
 const SHIPMENTS_TAB_AUTO = 'auto'
-const DEFAULT_SHIPMENT_LOOKBACK_DAYS = 30
+const DEFAULT_SHIPMENT_LOOKBACK_DAYS = 7
 const DEFAULT_ALL_SHIPMENTS_LIMIT = 20
 const ALL_SHIPMENTS_PAGE_SIZE_OPTIONS = ['20', '50', '100']
 
@@ -954,6 +954,7 @@ function AutoShipmentsPanel({ onCarriedOut }: AutoShipmentsPanelProps) {
       </div>
 
       <EditDeliveryRecipientModal
+        key={`recipient-${activeModal?.kind === 'recipient' ? activeModal.item.Sale.NetUid : 'idle'}`}
         isSaving={model.isSaving}
         opened={activeModal?.kind === 'recipient'}
         recipient={activeModal?.kind === 'recipient' ? activeModal.item.Sale.DeliveryRecipient || null : null}
@@ -962,6 +963,7 @@ function AutoShipmentsPanel({ onCarriedOut }: AutoShipmentsPanelProps) {
       />
 
       <EditDeliveryAddressModal
+        key={`address-${activeModal?.kind === 'address' ? activeModal.item.Sale.NetUid : 'idle'}`}
         address={activeModal?.kind === 'address' ? activeModal.item.Sale.DeliveryRecipientAddress || null : null}
         isSaving={model.isSaving}
         opened={activeModal?.kind === 'address'}
@@ -1066,7 +1068,9 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
     () => hasShipmentListChanges(selectedShipment, shipmentDraft),
     [selectedShipment, shipmentDraft],
   )
-  const canEditShipment = Boolean(shipmentDraft && !shipmentDraft.IsSent)
+  // Legacy kept carried-out (IsSent) shipments fully editable — post-dispatch TTN/declaration/qty
+  // entry happens precisely on the «Усі» list — and the update endpoint persists regardless of IsSent.
+  const canEditShipment = Boolean(shipmentDraft)
 
   useEffect(() => {
     let cancelled = false
@@ -1281,7 +1285,7 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
       const result = await getManualShipmentSales({
         transporterNetId,
         from: toManualShipmentQueryDate(nextFilter.from),
-        to: toManualShipmentQueryDate(nextFilter.to),
+        to: toManualShipmentQueryDate(nextFilter.to, 'end'),
       })
 
       setManualSales(result)

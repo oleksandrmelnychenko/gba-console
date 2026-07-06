@@ -43,6 +43,9 @@ export type DynamicProductPlacement = EntityFields & {
 export type DynamicProductPlacementRow = EntityFields & {
   Qty?: number
   SupplyOrderUkraineItemId?: number
+  // The server persists a placement row only when the nested entity (not just the FK) is attached
+  // (SupplyOrderUkrainesActor keys off row.SupplyOrderUkraineItem.Id); new rows must carry it.
+  SupplyOrderUkraineItem?: PlacementOrderItem
   DynamicProductPlacementColumnId?: number
   DynamicProductPlacements: DynamicProductPlacement[]
 }

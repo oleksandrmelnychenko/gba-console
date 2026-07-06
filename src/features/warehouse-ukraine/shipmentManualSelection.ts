@@ -58,7 +58,7 @@ export function isValidManualQtyPlaces(value: string | number | undefined): bool
   return Number.isFinite(parsed) && parsed >= 0
 }
 
-export function toManualShipmentQueryDate(value: string): string {
+export function toManualShipmentQueryDate(value: string, boundary: 'start' | 'end' = 'start'): string {
   const trimmedValue = value.trim()
 
   if (!trimmedValue) {
@@ -66,8 +66,12 @@ export function toManualShipmentQueryDate(value: string): string {
   }
 
   const dateInputMatch = trimmedValue.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  // A bare yyyy-mm-dd upper bound must cover the whole day (local end-of-day), otherwise sales
+  // invoiced today fall past the midnight boundary and never appear with the default filter.
   const date = dateInputMatch
-    ? new Date(Number(dateInputMatch[1]), Number(dateInputMatch[2]) - 1, Number(dateInputMatch[3]))
+    ? boundary === 'end'
+      ? new Date(Number(dateInputMatch[1]), Number(dateInputMatch[2]) - 1, Number(dateInputMatch[3]), 23, 59, 59, 999)
+      : new Date(Number(dateInputMatch[1]), Number(dateInputMatch[2]) - 1, Number(dateInputMatch[3]))
     : new Date(trimmedValue)
 
   return Number.isNaN(date.getTime()) ? value : date.toISOString()

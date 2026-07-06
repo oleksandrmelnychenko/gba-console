@@ -1,4 +1,6 @@
-import { formatDateInputForQuery, formatLocalDate } from '../../../shared/date/dateTime'
+import { formatDateInputForQuery, formatLocalDate, toDateTimeQuery } from '../../../shared/date/dateTime'
+
+export { toDateTimeQuery }
 
 export function getDateShiftedByDays(days: number): string {
   const date = new Date()

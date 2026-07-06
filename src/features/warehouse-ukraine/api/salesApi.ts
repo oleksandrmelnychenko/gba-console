@@ -58,9 +58,13 @@ export async function getSaleActProtocolEditDocument(
 }
 
 export async function updateWarehouseUkraineSale(sale: Sale): Promise<Sale> {
+  // The list projection loads with includeDetails=false, so Order.OrderPackages arrives empty.
+  // Posting that back would make the server treat the sale as having zero packages and soft-delete
+  // every real OrderPackage (RemoveAllByOrderId). Strip Order so the packing block is skipped while
+  // the flag/status/TTN updates still apply.
   const result = await apiRequest<unknown>('/sales/update', {
     method: 'POST',
-    body: sale,
+    body: { ...sale, Order: null },
   })
 
   return result && typeof result === 'object' ? (result as Sale) : sale

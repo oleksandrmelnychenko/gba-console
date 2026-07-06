@@ -10,7 +10,7 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { getWarehouseUkraineOrders } from '../api/ordersApi'
 import type { SupplyOrderUkraine } from '../types'
-import { displayValue, formatDateTime, getDateShiftedByDays, toIsoString } from './dateHelpers'
+import { displayValue, formatDateTime, getDateShiftedByDays, toDateTimeQuery, toIsoString } from './dateHelpers'
 
 const DEFAULT_PAGE_SIZE = 20
 const PAGE_SIZE_OPTIONS = ['20', '50', '100', '150']
@@ -25,6 +25,15 @@ type FilterDraft = {
   to: string
   placed: boolean
 }
+
+function createDefaultOrderFilters(): FilterDraft {
+  return { from: getDateShiftedByDays(-7), to: getDateShiftedByDays(0), placed: false }
+}
+
+// Legacy kept the applied orders filter in the in-memory redux store, so it survived the primary
+// drill-down (row → placements page → back). Mirror that with a module-scoped last-applied filter
+// (lost on hard reload, exactly like legacy).
+let lastOrderFilters: FilterDraft | null = null
 
 type OrdersTabState = {
   filterDraft: FilterDraft
@@ -112,14 +121,16 @@ function ordersTabReducer(state: OrdersTabState, action: OrdersTabAction): Order
 function useOrdersTabModel() {
   const { t } = useI18n()
   const navigate = useNavigate()
-  const initialFilters = useMemo<FilterDraft>(
-    () => ({ from: getDateShiftedByDays(-7), to: getDateShiftedByDays(0), placed: false }),
-    [],
-  )
+  const initialFilters = useMemo<FilterDraft>(() => lastOrderFilters ?? createDefaultOrderFilters(), [])
   const initialState = useMemo(() => createInitialOrdersState(initialFilters), [initialFilters])
   const [state, dispatchState] = useReducer(ordersTabReducer, initialState)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const { activeFilters, orders, pageSize } = state
+
+  useEffect(() => {
+    lastOrderFilters = activeFilters
+  }, [activeFilters])
+
   const filterError = getFilterError(activeFilters.from, activeFilters.to)
   const listRequestKey = `${activeFilters.from}|${activeFilters.to}|${activeFilters.placed}|${pageSize}`
   const listRequestKeyRef = useRef(listRequestKey)
@@ -149,7 +160,7 @@ function useOrdersTabModel() {
       try {
         const result = await getWarehouseUkraineOrders({
           from: toIsoString(activeFilters.from),
-          to: toIsoString(activeFilters.to),
+          to: toDateTimeQuery(activeFilters.to, 'end'),
           limit: pageSize,
           offset: 0,
           placed: activeFilters.placed,
@@ -193,7 +204,7 @@ function useOrdersTabModel() {
     try {
       const result = await getWarehouseUkraineOrders({
         from: toIsoString(activeFilters.from),
-        to: toIsoString(activeFilters.to),
+        to: toDateTimeQuery(activeFilters.to, 'end'),
         limit: pageSize,
         offset: requestOffset,
         placed: activeFilters.placed,
