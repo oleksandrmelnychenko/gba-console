@@ -1,6 +1,9 @@
-import { ActionIcon, ScrollArea, Tooltip } from '@mantine/core'
+import { ActionIcon, Box, Group, Text, Tooltip } from '@mantine/core'
 import { IconPackage, IconTrash } from '@tabler/icons-react'
+import { useMemo } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
+import { DataTable } from '../../../../shared/ui/data-table/DataTable'
+import type { DataTableColumn, DataTableDefaultLayout } from '../../../../shared/ui/data-table/types'
 import { roundMoney } from '../../saleMoney'
 import type { SalesUkraineOrderItem } from '../../types'
 import {
@@ -10,9 +13,31 @@ import {
   getWizardProductNumber,
   type WizardSaleProduct,
 } from './wizardSaleProduct'
+import '../../../../shared/ui/data-table/data-table.css'
 
 const qtyFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 3 })
 const priceFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
+
+const WIZARD_CART_TABLE_MIN_WIDTH = 1280
+const WIZARD_CART_TABLE_LAYOUT: DataTableDefaultLayout = {
+  columnPinning: {
+    right: ['actions'],
+  },
+  columnSizing: {
+    actions: 48,
+    addedBy: 112,
+    comment: 128,
+    discount: 124,
+    index: 42,
+    originalNumber: 138,
+    price: 132,
+    product: 260,
+    qty: 78,
+    specificationCode: 116,
+    total: 132,
+  },
+  density: 'compact',
+}
 
 function displayValue(value: unknown): string {
   const text = value == null ? '' : String(value).trim()
@@ -39,144 +64,169 @@ export function WizardShoppingCartGrid({
   const totalQty = items.reduce((sum, item) => sum + (getWizardProductNumber(item.Qty) ?? 0), 0)
   const totalAmount = roundMoney(items.reduce((sum, item) => sum + (getWizardProductNumber(item.TotalAmount) ?? 0), 0))
   const totalAmountLocal = roundMoney(items.reduce((sum, item) => sum + getOrderItemLocalTotal(item, useEurToUah), 0))
-  const gridClassName = `new-sale-cart__grid${onRemove ? ' has-actions' : ''}`
+
+  const columns = useMemo<DataTableColumn<SalesUkraineOrderItem>[]>(() => {
+    const result: DataTableColumn<SalesUkraineOrderItem>[] = [
+      {
+        id: 'index',
+        header: '#',
+        accessor: (item) => items.indexOf(item),
+        cell: (item) => <Text className="new-sale-cart__index">{items.indexOf(item) + 1}</Text>,
+        width: 42,
+        minWidth: 42,
+        enableSorting: false,
+      },
+      {
+        id: 'product',
+        header: t('Товар'),
+        accessor: (item) => item.Product?.VendorCode || item.Product?.Articul || item.Product?.NameUA || item.Product?.Name || '',
+        cell: (item) => <WizardCartProductCell item={item} />,
+        width: 260,
+        minWidth: 230,
+        fill: true,
+      },
+      {
+        id: 'comment',
+        header: t('Коментар'),
+        accessor: (item) => item.Comment || '',
+        cell: (item) => <WizardCartTextCell value={displayValue(item.Comment)} />,
+        width: 128,
+        minWidth: 104,
+      },
+      {
+        id: 'originalNumber',
+        header: t('Ориг. номер'),
+        accessor: (item) => item.Product?.MainOriginalNumber || '',
+        cell: (item) => <WizardCartTextCell value={displayValue(item.Product?.MainOriginalNumber)} />,
+        width: 138,
+        minWidth: 118,
+      },
+      {
+        id: 'specificationCode',
+        header: t('Митний код'),
+        accessor: (item) => item.AssignedSpecification?.SpecificationCode || '',
+        cell: (item) => <WizardCartTextCell value={displayValue(item.AssignedSpecification?.SpecificationCode)} />,
+        width: 116,
+        minWidth: 100,
+      },
+      {
+        id: 'addedBy',
+        header: t('Додав'),
+        accessor: (item) => item.User?.LastName || '',
+        cell: (item) => <WizardCartTextCell value={displayValue(item.User?.LastName)} />,
+        width: 112,
+        minWidth: 96,
+      },
+      {
+        id: 'qty',
+        header: t('К-сть'),
+        accessor: (item) => getWizardProductNumber(item.Qty) ?? 0,
+        cell: (item) => <WizardCartValueCell unit={t('шт')} value={qtyFormatter.format(getWizardProductNumber(item.Qty) ?? 0)} />,
+        width: 78,
+        minWidth: 72,
+      },
+      {
+        id: 'price',
+        header: t('Ціна'),
+        accessor: (item) => getWizardProductNumber((item.Product as WizardSaleProduct | undefined)?.CurrentPrice) ?? 0,
+        cell: (item) => {
+          const product = item.Product as WizardSaleProduct | undefined
+
+          return (
+            <WizardCartStackValueCell
+              primaryUnit="EUR"
+              primaryValue={priceFormatter.format(getWizardProductNumber(product?.CurrentPrice) ?? 0)}
+              secondaryUnit={localCurrencyCode}
+              secondaryValue={priceFormatter.format(getOrderItemLocalPrice(item, useEurToUah))}
+            />
+          )
+        },
+        width: 132,
+        minWidth: 118,
+      },
+      {
+        id: 'total',
+        header: t('Сума'),
+        accessor: (item) => getWizardProductNumber(item.TotalAmount) ?? 0,
+        cell: (item) => (
+          <WizardCartStackValueCell
+            primaryUnit="EUR"
+            primaryValue={priceFormatter.format(getWizardProductNumber(item.TotalAmount) ?? 0)}
+            secondaryUnit={localCurrencyCode}
+            secondaryValue={priceFormatter.format(getOrderItemLocalTotal(item, useEurToUah))}
+          />
+        ),
+        width: 132,
+        minWidth: 118,
+      },
+      {
+        id: 'discount',
+        header: t('Знижка / ручні'),
+        accessor: (item) => getOrderItemDiscount(item),
+        cell: (item) => (
+          <WizardCartDiscountCell
+            discount={priceFormatter.format(getOrderItemDiscount(item))}
+            manualDiscount={priceFormatter.format(getWizardProductNumber(item.OneTimeDiscount) ?? 0)}
+          />
+        ),
+        width: 124,
+        minWidth: 112,
+      },
+    ]
+
+    if (onRemove) {
+      result.push({
+        id: 'actions',
+        header: '',
+        cell: (item) => (
+          <Group className="new-sale-cart__actions" gap={2} justify="flex-start" wrap="nowrap">
+            <Tooltip label={t('Видалити')}>
+              <ActionIcon
+                aria-label={t('Видалити')}
+                color="red"
+                disabled={busy}
+                size="sm"
+                variant="subtle"
+                onClick={(event) => {
+                  event.preventDefault()
+                  event.stopPropagation()
+                  onRemove(item)
+                }}
+              >
+                <IconTrash size={15} />
+              </ActionIcon>
+            </Tooltip>
+          </Group>
+        ),
+        width: 48,
+        minWidth: 44,
+        enableSorting: false,
+      })
+    }
+
+    return result
+  }, [busy, items, localCurrencyCode, onRemove, t, useEurToUah])
 
   return (
     <div className="new-sale-cart">
-      <ScrollArea.Autosize mah={280} type="auto">
-        <div className={gridClassName} role="table" aria-label={t('Кошик')}>
-          <div className="new-sale-cart__head" role="row">
-            <span>#</span>
-            <span>{t('Товар')}</span>
-            <span>{t('Коментар')}</span>
-            <span>{t('Ориг. номер')}</span>
-            <span>{t('Митний код')}</span>
-            <span>{t('Додав')}</span>
-            <span className="is-right">{t('К-сть')}</span>
-            <span className="is-right">{t('Ціна')}</span>
-            <span className="is-right">{t('Сума')}</span>
-            <span className="is-right">{t('Знижка / ручна')}</span>
-            {onRemove && <span />}
-          </div>
-          <div className="new-sale-cart__body" role="rowgroup">
-            {items.length === 0 ? (
-              <div className="new-sale-cart__empty">{t('Кошик порожній')}</div>
-            ) : (
-              items.map((item, index) => {
-                const product = item.Product as WizardSaleProduct | undefined
-                const code = displayValue(item.Product?.VendorCode || item.Product?.Articul)
-                const name = displayValue(item.Product?.NameUA || item.Product?.Name)
-                const comment = displayValue(item.Comment)
-                const originalNumber = displayValue(item.Product?.MainOriginalNumber)
-                const specificationCode = displayValue(item.AssignedSpecification?.SpecificationCode)
-                const addedBy = displayValue(item.User?.LastName)
-                const qty = qtyFormatter.format(getWizardProductNumber(item.Qty) ?? 0)
-                const eurPrice = priceFormatter.format(getWizardProductNumber(product?.CurrentPrice) ?? 0)
-                const localPrice = priceFormatter.format(getOrderItemLocalPrice(item, useEurToUah))
-                const totalEur = priceFormatter.format(getWizardProductNumber(item.TotalAmount) ?? 0)
-                const totalLocal = priceFormatter.format(getOrderItemLocalTotal(item, useEurToUah))
-                const discount = priceFormatter.format(getOrderItemDiscount(item))
-                const manualDiscount = priceFormatter.format(getWizardProductNumber(item.OneTimeDiscount) ?? 0)
-
-                return (
-                  <div
-                    key={String(item.NetUid || item.Id || index)}
-                    className={`new-sale-cart__row${onRowClick ? ' is-clickable' : ''}`}
-                    role={onRowClick ? 'button' : 'row'}
-                    tabIndex={onRowClick ? 0 : undefined}
-                    onClick={() => onRowClick?.(item)}
-                    onKeyDown={(event) => {
-                      if (!onRowClick || (event.key !== 'Enter' && event.key !== ' ')) {
-                        return
-                      }
-
-                      event.preventDefault()
-                      onRowClick(item)
-                    }}
-                  >
-                    <div className="new-sale-cart__index">{index + 1}</div>
-                    <div className="new-sale-cart__product">
-                      <span className="new-sale-cart__product-icon" aria-hidden="true">
-                        <IconPackage size={14} />
-                      </span>
-                      <div className="new-sale-cart__product-copy">
-                        <span className="new-sale-cart__product-code" title={code}>
-                          {code}
-                        </span>
-                        <span className="new-sale-cart__product-name" title={name}>
-                          {name}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="new-sale-cart__text-cell" title={comment}>
-                      {comment}
-                    </div>
-                    <div className="new-sale-cart__text-cell" title={originalNumber}>
-                      {originalNumber}
-                    </div>
-                    <div className="new-sale-cart__text-cell" title={specificationCode}>
-                      {specificationCode}
-                    </div>
-                    <div className="new-sale-cart__text-cell" title={addedBy}>
-                      {addedBy}
-                    </div>
-                    <div className="new-sale-cart__metric is-qty">
-                      <strong>{qty}</strong>
-                    </div>
-                    <div className="new-sale-cart__money-pair">
-                      <span>
-                        <strong>{eurPrice}</strong>
-                        <em>EUR</em>
-                      </span>
-                      <span>
-                        <strong>{localPrice}</strong>
-                        <em>{localCurrencyCode}</em>
-                      </span>
-                    </div>
-                    <div className="new-sale-cart__money-pair is-total">
-                      <span>
-                        <strong>{totalEur}</strong>
-                        <em>EUR</em>
-                      </span>
-                      <span>
-                        <strong>{totalLocal}</strong>
-                        <em>{localCurrencyCode}</em>
-                      </span>
-                    </div>
-                    <div className="new-sale-cart__money-pair is-discount">
-                      <span>
-                        <strong>{discount}</strong>
-                      </span>
-                      <span>
-                        <strong>{manualDiscount}</strong>
-                      </span>
-                    </div>
-                    {onRemove && (
-                      <div className="new-sale-cart__action">
-                        <Tooltip label={t('Видалити')}>
-                          <ActionIcon
-                            aria-label={t('Видалити')}
-                            color="red"
-                            disabled={busy}
-                            size="sm"
-                            variant="subtle"
-                            onClick={(event) => {
-                              event.stopPropagation()
-                              onRemove(item)
-                            }}
-                          >
-                            <IconTrash size={15} />
-                          </ActionIcon>
-                        </Tooltip>
-                      </div>
-                    )}
-                  </div>
-                )
-              })
-            )}
-          </div>
-        </div>
-      </ScrollArea.Autosize>
+      <Box className="new-sale-cart__table">
+        <DataTable
+          columns={columns}
+          data={items}
+          defaultLayout={WIZARD_CART_TABLE_LAYOUT}
+          distributeAvailableWidth
+          emptyText={t('Кошик порожній')}
+          getRowId={(item, index) => String(item.NetUid || item.Id || index)}
+          isLoading={busy && items.length === 0}
+          layoutVersion="new-sale-wizard-cart-1"
+          maxHeight={280}
+          minWidth={WIZARD_CART_TABLE_MIN_WIDTH}
+          showDensityToggle={false}
+          showLayoutControls={false}
+          tableId="new-sale-wizard-cart"
+          onRowClick={onRowClick}
+        />
+      </Box>
 
       {items.length > 0 && (
         <div className="new-sale-cart__totals">
@@ -195,5 +245,83 @@ export function WizardShoppingCartGrid({
         </div>
       )}
     </div>
+  )
+}
+
+function WizardCartProductCell({ item }: { item: SalesUkraineOrderItem }) {
+  const code = displayValue(item.Product?.VendorCode || item.Product?.Articul)
+  const name = displayValue(item.Product?.NameUA || item.Product?.Name)
+
+  return (
+    <Group className="new-sale-cart__product-cell" gap={9} wrap="nowrap">
+      <Box className="new-sale-cart__product-icon">
+        <IconPackage size={15} />
+      </Box>
+      <Box className="new-sale-cart__product-copy">
+        <Text className="new-sale-cart__product-code" title={code} truncate>
+          {code}
+        </Text>
+        <Text className="new-sale-cart__product-name" title={name} truncate>
+          {name}
+        </Text>
+      </Box>
+    </Group>
+  )
+}
+
+function WizardCartTextCell({ value }: { value: string }) {
+  return (
+    <Text className="new-sale-cart__text-cell" title={value} truncate>
+      {value}
+    </Text>
+  )
+}
+
+function WizardCartValueCell({ unit, value }: { unit?: string; value: string }) {
+  return (
+    <Box className="new-sale-cart__value-cell is-inline">
+      <Text>{value}</Text>
+      {unit && <Text>{unit}</Text>}
+    </Box>
+  )
+}
+
+function WizardCartStackValueCell({
+  primaryUnit,
+  primaryValue,
+  secondaryUnit,
+  secondaryValue,
+}: {
+  primaryUnit: string
+  primaryValue: string
+  secondaryUnit: string
+  secondaryValue: string
+}) {
+  return (
+    <Box className="new-sale-cart__value-cell">
+      <Group gap={4} wrap="nowrap">
+        <Text>{primaryValue}</Text>
+        <Text>{primaryUnit}</Text>
+      </Group>
+      <Group gap={4} wrap="nowrap">
+        <Text>{secondaryValue}</Text>
+        <Text>{secondaryUnit}</Text>
+      </Group>
+    </Box>
+  )
+}
+
+function WizardCartDiscountCell({
+  discount,
+  manualDiscount,
+}: {
+  discount: string
+  manualDiscount: string
+}) {
+  return (
+    <Box className="new-sale-cart__discount-cell">
+      <Text>{discount}</Text>
+      <Text>{manualDiscount}</Text>
+    </Box>
   )
 }
