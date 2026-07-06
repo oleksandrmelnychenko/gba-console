@@ -1032,7 +1032,7 @@ function ProductAssortmentCarousel({
         />
       </Group>
 
-      <Box className="product-assortment-carousel">
+      <Box className={`product-assortment-carousel ${isSelectionMode ? 'is-selection-mode' : ''}`}>
       <Box className="product-assortment-rail product-assortment-rail-top">
         {isLoading && !isVirtualLoad ? (
           <Stack align="center" justify="center" h="100%">
@@ -3123,10 +3123,10 @@ function ProductIncomeMovementsTable({ rows }: { rows: ProductIncomeMovement[] }
               <Table.Td>{displayValue(row.StorageName)}</Table.Td>
               <Table.Td>{displayValue(row.SupplierName)}</Table.Td>
               <Table.Td>{displayValue(row.OrganizationName)}</Table.Td>
-              <Table.Td>{formatInlineDateTime(row.IncomeToStorageDate)}</Table.Td>
-              <Table.Td>{displayValue(row.IncomeToStorageNumber)}</Table.Td>
-              <Table.Td>{displayValue(row.IncomeInvoiceNumber)}</Table.Td>
-              <Table.Td>{formatInlineDateTime(row.IncomeInvoiceDate)}</Table.Td>
+              <Table.Td className="app-money">{formatInlineDateTime(row.IncomeToStorageDate)}</Table.Td>
+              <Table.Td className="app-money">{displayValue(row.IncomeToStorageNumber)}</Table.Td>
+              <Table.Td className="app-money">{displayValue(row.IncomeInvoiceNumber)}</Table.Td>
+              <Table.Td className="app-money">{formatInlineDateTime(row.IncomeInvoiceDate)}</Table.Td>
               <Table.Td>{displayValue(row.Currency)}</Table.Td>
               <Table.Td className="app-money" ta="right">{formatAmount(row.ExchangeRate)}</Table.Td>
               <Table.Td className="app-money" ta="right">{formatPrice(row.UnitPriceLocal)}</Table.Td>
@@ -3139,8 +3139,8 @@ function ProductIncomeMovementsTable({ rows }: { rows: ProductIncomeMovement[] }
               <Table.Td className="app-money" ta="right">{formatAmount(row.Weight)}</Table.Td>
               <Table.Td className="app-money" ta="right">{formatAmount(row.IncomeQty)}</Table.Td>
               <Table.Td className="app-money" ta="right">{formatAmount(row.RemainingQty)}</Table.Td>
-              <Table.Td>{displayValue(row.FromInvoiceNumber)}</Table.Td>
-              <Table.Td>{formatInlineDateTime(row.FromInvoiceDate)}</Table.Td>
+              <Table.Td className="app-money">{displayValue(row.FromInvoiceNumber)}</Table.Td>
+              <Table.Td className="app-money">{formatInlineDateTime(row.FromInvoiceDate)}</Table.Td>
               <Table.Td className="app-money" ta="right">{formatPrice(row.ReturnPrice)}</Table.Td>
               <Table.Td className="app-money" ta="right">{formatPrice(row.PriceDifference)}</Table.Td>
             </Table.Tr>
@@ -3172,15 +3172,20 @@ function ProductOutcomeMovementsTable({ rows }: { rows: ProductOutcomeMovement[]
         </Table.Thead>
         <Table.Tbody>
           {rows.map((row, index) => {
-            const editedClassName = row.HasUpdateDataCarrier ? 'product-inline-table-cell-edited' : undefined
+            const isEdited = row.HasUpdateDataCarrier
 
             return (
-              <Table.Tr className={row.HasUpdateDataCarrier ? 'product-inline-table-row-edited' : undefined} key={getOutcomeMovementRowKey(row, index)}>
-                <Table.Td className={editedClassName}>{formatInlineDateTime(row.FromDate)}</Table.Td>
-                <Table.Td className={editedClassName}>{displayValue(row.DocumentTypeName)}</Table.Td>
+              <Table.Tr key={getOutcomeMovementRowKey(row, index)}>
+                <Table.Td className="app-money">
+                  <span className="product-movement-date">
+                    {isEdited ? <span className="product-edited-dot" aria-hidden="true" title={t('Редаговано')} /> : null}
+                    {formatInlineDateTime(row.FromDate)}
+                  </span>
+                </Table.Td>
+                <Table.Td>{displayValue(row.DocumentTypeName)}</Table.Td>
                 <Table.Td>{displayValue(row.StorageName)}</Table.Td>
                 <Table.Td>{displayValue(row.OrganizationName)}</Table.Td>
-                <Table.Td className={editedClassName}>{displayValue(row.DocumentNumber)}</Table.Td>
+                <Table.Td className="app-money">{displayValue(row.DocumentNumber)}</Table.Td>
                 <Table.Td>{displayValue(row.ClientName)}</Table.Td>
                 <Table.Td>{displayValue(row.ResponsibleName)}</Table.Td>
                 <Table.Td className="app-money" ta="right">{formatPrice(row.Price)}</Table.Td>

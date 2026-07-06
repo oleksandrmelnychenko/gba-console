@@ -37,13 +37,17 @@
 
 .product-assortment-carousel {
   display: grid;
-  grid-template-rows: minmax(0, 1fr) 104px minmax(0, 1fr); /* rail / fixed centre slot (fits search input + mode selects) / rail */
+  grid-template-rows: minmax(0, 1fr) 84px minmax(0, 1fr); /* rail / compact centre slot / rail */
   flex: 1; /* fills the column under the controls → drum centred in remaining space */
   min-height: 0;
   border: 0;
   background: transparent;
   overflow: visible; /* lets the selected plate float out over the inline view */
   outline: none;
+}
+
+.product-assortment-carousel.is-selection-mode {
+  grid-template-rows: minmax(0, 0.62fr) 84px minmax(0, 1.38fr);
 }
 
 .product-assortment-carousel-header {
@@ -100,15 +104,15 @@
   min-height: 36px;
   justify-self: start; /* anchor left, extend right only as far as the name needs */
   padding: 4px 14px;
-  border: 2px solid #7c3aed; /* violet border (restored) */
+  border: 2px solid var(--brand-orange);
   border-radius: 12px;
   background: #ffffff; /* white fill */
   box-shadow:
     0 2px 6px -2px rgba(16, 24, 40, 0.08),
-    0 14px 30px -12px rgba(124, 58, 237, 0.42);
+    0 14px 30px -12px rgba(var(--brand-orange-rgb), 0.42);
   color: #20252a;
   cursor: pointer;
-  font: inherit;
+  font-family: var(--font-mono);
   text-align: left;
   outline: none; /* no OS-accent (yellow) focus ring — the violet border is the indicator */
   transition:
@@ -575,13 +579,20 @@
   cursor: default;
 }
 
-.product-inline-table-row-edited {
-  background: #fff4e6;
+/* «Редаговано» — за патерном (§5.1/§10): без заливки рядка й помаранчевого тексту.
+   Дані лишаються моно gray-8; ознака редагування — тонка оранжева крапка перед датою. */
+.product-movement-date {
+  align-items: center;
+  display: inline-flex;
+  gap: 6px;
 }
 
-.product-inline-table-cell-edited {
-  color: #c2410c;
-  font-weight: 700;
+.product-edited-dot {
+  background: var(--brand-orange);
+  border-radius: 999px;
+  flex: 0 0 auto;
+  height: 7px;
+  width: 7px;
 }
 
 @media (max-width: 1280px) {
@@ -631,9 +642,13 @@
   }
 
   .product-assortment-carousel {
-    grid-template-rows: minmax(96px, 1fr) 104px minmax(96px, 1fr);
+    grid-template-rows: minmax(96px, 1fr) 84px minmax(96px, 1fr);
     flex: none;
     height: 60vh;
+  }
+
+  .product-assortment-carousel.is-selection-mode {
+    grid-template-rows: minmax(96px, 1fr) 84px minmax(96px, 1fr);
   }
 
   .product-assortment-selected {
