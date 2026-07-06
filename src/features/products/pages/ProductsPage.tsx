@@ -3101,7 +3101,7 @@ function ProductIncomeMovementsTable({ rows }: { rows: ProductIncomeMovement[] }
             <Table.Th>{t('Дата інвойсу')}</Table.Th>
             <Table.Th>{t('Валюта')}</Table.Th>
             <Table.Th ta="right">{t('Курс')}</Table.Th>
-            <Table.Th ta="right">{t('Ціна UAH')}</Table.Th>
+            <Table.Th ta="right">{t('Ціна (вал. угоди)')}</Table.Th>
             <Table.Th ta="right">{t('Net')}</Table.Th>
             <Table.Th ta="right">{t('Total Net')}</Table.Th>
             <Table.Th ta="right">{t('Gross')}</Table.Th>
