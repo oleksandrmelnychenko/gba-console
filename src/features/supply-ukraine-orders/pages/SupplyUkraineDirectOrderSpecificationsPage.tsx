@@ -753,6 +753,27 @@ function SupplyUkraineDirectOrderSpecificationsView({ model }: { model: DirectOr
       size="full"
       title={<span className="app-sheet-title-mono">{sheetTitle}</span>}
       onClose={model.goBack}
+      footer={
+        model.packingList && (model.packingList.Id || 0) > 0 ? (
+          <Group justify="space-between" align="center" w="100%" wrap="nowrap" gap="md">
+            <Group gap="sm" wrap="nowrap">
+              <SegmentedControl
+                data={[{ label: t('EUR'), value: 'eur' }, { label: t('UAH'), value: 'uah' }]}
+                disabled={model.isActionBusy}
+                value={model.currencyIsEur ? 'eur' : 'uah'}
+                onChange={(value) => model.setCurrencyIsEur(value === 'eur')}
+              />
+              <SegmentedControl
+                data={[{ label: 'УО', value: 'management' }, { label: 'БО', value: 'base' }]}
+                disabled={model.isActionBusy}
+                value={model.withManagementServices ? 'management' : 'base'}
+                onChange={(value) => model.setWithManagementServices(value === 'management')}
+              />
+            </Group>
+            <DirectOrderSpecificationTotals model={model} />
+          </Group>
+        ) : undefined
+      }
     >
       <Stack gap="lg">
         <DirectOrderSpecificationsHeader embedded model={model} />
@@ -764,7 +785,6 @@ function SupplyUkraineDirectOrderSpecificationsView({ model }: { model: DirectOr
         )}
 
         <DirectOrderSpecificationsBody model={model} />
-        <DirectOrderSpecificationTotals model={model} />
       </Stack>
       <DirectOrderSpecificationsModals model={model} />
     </AppDrawer>
@@ -804,26 +824,6 @@ function DirectOrderSpecificationsHeader({ embedded, model }: { embedded?: boole
           </div>
         </div>
       )}
-      <div className="supply-detail-header-actions">
-        <SegmentedControl
-          data={[
-            { label: t('EUR'), value: 'eur' },
-            { label: t('UAH'), value: 'uah' },
-          ]}
-          disabled={model.isActionBusy}
-          value={model.currencyIsEur ? 'eur' : 'uah'}
-          onChange={(value) => model.setCurrencyIsEur(value === 'eur')}
-        />
-        <SegmentedControl
-          data={[
-            { label: 'УО', value: 'management' },
-            { label: 'БО', value: 'base' },
-          ]}
-          disabled={model.isActionBusy}
-          value={model.withManagementServices ? 'management' : 'base'}
-          onChange={(value) => model.setWithManagementServices(value === 'management')}
-        />
-      </div>
     </header>
   )
 }
