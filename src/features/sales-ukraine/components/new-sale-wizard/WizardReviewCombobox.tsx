@@ -9,6 +9,7 @@ export type WizardReviewComboboxOption<T> = {
 
 export function WizardReviewCombobox<T>({
   allowFreeForm = false,
+  classNames,
   label,
   onFreeText,
   onSelect,
@@ -17,6 +18,11 @@ export function WizardReviewCombobox<T>({
   tabIndex,
 }: {
   allowFreeForm?: boolean
+  classNames?: {
+    input?: string
+    label?: string
+    root?: string
+  }
   label: string
   onFreeText?: (input: string) => void
   onSelect: (entity: T) => void
@@ -66,6 +72,7 @@ export function WizardReviewCombobox<T>({
     >
       <Combobox.Target>
         <InputBase
+          classNames={classNames}
           label={label}
           rightSection={<Combobox.Chevron />}
           rightSectionPointerEvents="none"
