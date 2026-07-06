@@ -16,7 +16,6 @@ import {
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
-  IconArrowLeft,
   IconCalculator,
   IconDeviceFloppy,
   IconFile,
@@ -31,6 +30,7 @@ import { useAuth } from '../../auth/useAuth'
 import { ProductCardModal } from '../../products/components/ProductCardModal'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { getSupplyUkraineOrderDisplayNumber } from '../../../shared/supplyUkraineOrderNumbers'
+import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -420,18 +420,18 @@ export function SupplyUkraineOrderOverviewPage() {
   const { density: overviewDensity, toggleDensity: toggleOverviewDensity } = useDataTableDensity('supply-ukraine-order-overview', TABLE_DEFAULT_LAYOUT.density)
   const orderRecord = asRecord(order)
   const currencyCode = order?.ClientAgreement?.Agreement?.Currency?.Code || order?.ClientAgreement?.Agreement?.Currency?.Name || ''
+  const orderDisplayNumber = getSupplyUkraineOrderDisplayNumber(order) || id
 
   return (
-    <Stack gap="lg">
-      <Group justify="space-between" align="center">
-        <Button color="gray" leftSection={<IconArrowLeft size={16} />} variant="subtle" onClick={() => navigate(-1)}>
-          {t('Назад')}
-        </Button>
-        <Group justify="flex-end">
-          <Stack gap={2} align="flex-end">
-            <Text fw={700} size="xl">{t('Огляд поставки в Україну')}</Text>
-            <Text c="dimmed" size="sm">{getSupplyUkraineOrderDisplayNumber(order) || id}</Text>
-          </Stack>
+    <AppDrawer
+      closeOnClickOutside={false}
+      opened
+      size="full"
+      title={<span className="app-sheet-title-mono">{`${t('Огляд поставки в Україну')}${orderDisplayNumber ? ` № ${orderDisplayNumber}` : ''}`}</span>}
+      onClose={() => navigate(-1)}
+    >
+      <Stack gap="lg">
+      <Group justify="flex-end" wrap="wrap">
           {canManageDocuments && order && (
             <Button
               color="gray"
@@ -454,7 +454,6 @@ export function SupplyUkraineOrderOverviewPage() {
               {t('Розміщення товару')}
             </Button>
           )}
-        </Group>
       </Group>
 
       {error && (
@@ -466,8 +465,8 @@ export function SupplyUkraineOrderOverviewPage() {
       <Card className="app-section-card" withBorder radius="md" padding="md">
         <Stack gap="md">
           <Group justify="space-between" align="center">
-            <Text fw={700}>{t('Замовлення')}</Text>
-            <Badge color={order?.IsPlaced ? 'green' : 'gray'} variant="light">
+            <Text className="app-section-title" fw={600} size="sm">{t('Замовлення')}</Text>
+            <Badge className={`app-role-pill ${order?.IsPlaced ? 'is-green' : 'is-gray'}`} variant="light">
               {order?.IsPlaced ? t('Розміщено') : t('Не розміщено')}
             </Badge>
           </Group>
@@ -492,7 +491,7 @@ export function SupplyUkraineOrderOverviewPage() {
           <Group align="flex-end" justify="space-between" wrap="wrap">
             <NumberInput
               allowDecimal={false}
-                disabled={!order || isSavingVat || isSavingVatItems}
+              disabled={!order || isSavingVat || isSavingVatItems}
               label={t('Відсоток ПДВ')}
               max={100}
               min={0}
@@ -518,7 +517,7 @@ export function SupplyUkraineOrderOverviewPage() {
           <Stack gap="md">
             <Group justify="space-between" align="center">
               <Stack gap={2}>
-                <Text fw={700}>{t('Документи замовлення')}</Text>
+                <Text className="app-section-title" fw={600} size="sm">{t('Документи замовлення')}</Text>
               </Stack>
               <Group gap="xs">
                 {order && (
@@ -547,7 +546,7 @@ export function SupplyUkraineOrderOverviewPage() {
         <Stack gap="md">
           <Group justify="space-between" align="flex-end">
             <Stack gap={2}>
-              <Text fw={700}>{t('Товари')}</Text>
+              <Text className="app-section-title" fw={600} size="sm">{t('Товари')}</Text>
             </Stack>
             <Group justify="flex-end" align="flex-end">
               {hasVatItemChanges && (
@@ -649,6 +648,7 @@ export function SupplyUkraineOrderOverviewPage() {
       </AppModal>
       <ProductCardModal productNetId={productCardNetId} onClose={() => setProductCardNetId(null)} />
     </Stack>
+    </AppDrawer>
   )
 }
 

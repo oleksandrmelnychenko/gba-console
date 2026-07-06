@@ -34,6 +34,12 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { ClientReturnsReportPanel } from '../components/ClientReturnsReportPanel'
+import {
+  type DirectReturnStorageKind,
+  filterDirectReturnStorages,
+  getDirectReturnStorageRequirement,
+  isDirectReturnStorageAllowed,
+} from '../directReturnStorage'
 import './sales-return-client-page.css'
 import {
   createDirectSaleReturn,
@@ -116,10 +122,19 @@ export function SalesReturnClientPage() {
     () => organizations.find((organization) => getEntityKey(organization) === organizationId) || null,
     [organizationId, organizations],
   )
-  const selectedStorage = useMemo(
-    () => storages.find((storage) => getEntityKey(storage) === storageId) || null,
-    [storageId, storages],
+  const storageRequirement = useMemo(
+    () => getDirectReturnStorageRequirement(items, status),
+    [items, status],
   )
+  const storageOptions = useMemo(
+    () => filterDirectReturnStorages(storages, items, status),
+    [items, status, storages],
+  )
+  const selectedStorage = useMemo(
+    () => storageOptions.find((storage) => getEntityKey(storage) === storageId) || null,
+    [storageId, storageOptions],
+  )
+  const storageSelectValue = selectedStorage ? storageId : null
   const selectedClient = useMemo(
     () => clients.find((client) => getEntityKey(client) === clientId) || null,
     [clientId, clients],
@@ -364,6 +379,7 @@ export function SalesReturnClientPage() {
   function handleOrganizationChange(nextOrganizationId: string | null) {
     setOrganizationId(nextOrganizationId)
     setStorageId(null)
+    setStorages([])
     setClientId(null)
     setAgreementId(null)
     setClientSearch('')
@@ -378,6 +394,17 @@ export function SalesReturnClientPage() {
     setAgreementId(null)
     setError(null)
     setWarning(null)
+  }
+
+  function handleStatusChange(value: string | null) {
+    const nextStatus = parseStatusValue(value)
+
+    setStatus(nextStatus)
+    setStorageId(null)
+
+    if (getDirectReturnStorageRequirement(items, nextStatus).mixed) {
+      setWarning(t('Брак і звичайні причини повернення потребують різних складів. Створіть окремі повернення.'))
+    }
   }
 
   function handleProductChange(nextProductId: string | null) {
@@ -397,6 +424,7 @@ export function SalesReturnClientPage() {
   function addItem() {
     const validationError = validateDraftItem({
       batch,
+      existingItems: items,
       product: selectedProduct,
       qty,
       status,
@@ -587,15 +615,21 @@ export function SalesReturnClientPage() {
                     />
                     <Select
                       clearable
-                      data={storages.map((storage) => ({
+                      data={storageOptions.map((storage) => ({
                         label: [storage.Name, storage.Organization?.Name ? `(${storage.Organization.Name})` : ''].filter(Boolean).join(' '),
                         value: getEntityKey(storage),
                       }))}
-                      disabled={!selectedOrganization || isLoadingStorages}
+                      disabled={!selectedOrganization || isLoadingStorages || !storageRequirement.kind || storageRequirement.mixed}
                       label={t('Склад')}
                       onChange={setStorageId}
+                      placeholder={getStorageSelectPlaceholder({
+                        isLoading: isLoadingStorages,
+                        kind: storageRequirement.kind,
+                        mixed: storageRequirement.mixed,
+                        t,
+                      })}
                       searchable
-                      value={storageId}
+                      value={storageSelectValue}
                     />
                     <Select
                       clearable
@@ -632,6 +666,13 @@ export function SalesReturnClientPage() {
               <Card className="app-section-card sales-return-client-section" withBorder radius="md" padding="md">
                 <Stack gap="sm">
                   <Text className="app-section-title">{t('Товар')}</Text>
+                  <StorageConditionHint
+                    isLoading={isLoadingStorages}
+                    kind={storageRequirement.kind}
+                    mixed={storageRequirement.mixed}
+                    optionsCount={storageOptions.length}
+                    t={t}
+                  />
                   <Box>
                     <Group className="sales-return-client-product-search" align="flex-end" gap="sm">
                       <TextInput
@@ -667,7 +708,7 @@ export function SalesReturnClientPage() {
                       clearable
                       data={statusOptions}
                       label={t('Причина повернення')}
-                      onChange={(value) => setStatus(parseStatusValue(value))}
+                      onChange={handleStatusChange}
                       value={typeof status === 'number' ? String(status) : null}
                     />
                     <TextInput
@@ -934,6 +975,80 @@ function CurrencyPill({ value }: { value: string }) {
   ) : null
 }
 
+function StorageConditionHint({
+  isLoading,
+  kind,
+  mixed,
+  optionsCount,
+  t,
+}: {
+  isLoading: boolean
+  kind: DirectReturnStorageKind | null
+  mixed: boolean
+  optionsCount: number
+  t: (value: string) => string
+}) {
+  if (mixed) {
+    return (
+      <Text c="red" size="xs">
+        {t('Брак і звичайні причини повернення потребують різних складів. Створіть окремі повернення.')}
+      </Text>
+    )
+  }
+
+  if (!kind) {
+    return (
+      <Text c="dimmed" size="xs">
+        {t('Оберіть причину повернення, щоб побачити доступні склади')}
+      </Text>
+    )
+  }
+
+  if (!isLoading && optionsCount === 0) {
+    return (
+      <Text c="red" size="xs">
+        {kind === 'defective'
+          ? t('Для браку немає доступних складів браку')
+          : t('Для цієї причини немає доступних звичайних складів')}
+      </Text>
+    )
+  }
+
+  return (
+    <Text c="dimmed" size="xs">
+      {kind === 'defective'
+        ? t('Для причини Брак доступні тільки склади браку')
+        : t('Для цієї причини доступні тільки звичайні склади')}
+    </Text>
+  )
+}
+
+function getStorageSelectPlaceholder({
+  isLoading,
+  kind,
+  mixed,
+  t,
+}: {
+  isLoading: boolean
+  kind: DirectReturnStorageKind | null
+  mixed: boolean
+  t: (value: string) => string
+}) {
+  if (isLoading) {
+    return t('Завантаження')
+  }
+
+  if (mixed) {
+    return t('Розділіть повернення')
+  }
+
+  if (!kind) {
+    return t('Спочатку оберіть причину')
+  }
+
+  return kind === 'defective' ? t('Оберіть склад браку') : t('Оберіть склад')
+}
+
 function validateReturnForm({
   agreement,
   client,
@@ -947,10 +1062,6 @@ function validateReturnForm({
   storage: SalesReturnStorage | null
   t: (value: string) => string
 }) {
-  if (!storage?.Id) {
-    return t('Оберіть склад')
-  }
-
   if (!client?.Id) {
     return t('Оберіть клієнта')
   }
@@ -963,17 +1074,33 @@ function validateReturnForm({
     return t('Додайте хоча б одну позицію повернення')
   }
 
+  const storageRequirement = getDirectReturnStorageRequirement(items)
+
+  if (storageRequirement.mixed) {
+    return t('Брак і звичайні причини повернення потребують різних складів. Створіть окремі повернення.')
+  }
+
+  if (!storage?.Id) {
+    return t('Оберіть склад')
+  }
+
+  if (!isDirectReturnStorageAllowed(storage, storageRequirement.kind)) {
+    return t('Обраний склад не відповідає причині повернення')
+  }
+
   return null
 }
 
 function validateDraftItem({
   batch,
+  existingItems,
   product,
   qty,
   status,
   t,
 }: {
   batch: SalesReturnBatch | null
+  existingItems: DirectSalesReturnProduct[]
   product: SalesReturnProduct | null
   qty: number | ''
   status?: SalesReturnItemStatusValue
@@ -996,6 +1123,10 @@ function validateDraftItem({
 
   if (typeof status !== 'number') {
     return t('Оберіть причину повернення')
+  }
+
+  if (getDirectReturnStorageRequirement(existingItems, status).mixed) {
+    return t('Брак і звичайні причини повернення потребують різних складів. Створіть окремі повернення.')
   }
 
   if (!batch?.IncomeToStorageNumber) {
