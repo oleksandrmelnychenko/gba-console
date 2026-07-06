@@ -7256,3 +7256,7 @@
     min-height: 360px;
   }
 }
+
+.new-sale-products-step-empty {
+  margin: auto;
+}

@@ -1,6 +1,6 @@
 import { Box, Group, Select, Stack, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconBox, IconSettings } from '@tabler/icons-react'
+import { IconBox, IconSearch, IconSettings } from '@tabler/icons-react'
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { useAuth } from '../../../auth/useAuth'
 import { useI18n } from '../../../../shared/i18n/useI18n'
@@ -2053,6 +2053,12 @@ export function NewSaleProductsStep({
         onToggleDescription={() => void toggleDescriptionEdit()}
       />
     ) : null
+  const isSearchPristine = query.trim().length < 4
+  const showProductSearchEmpty = !selectedMainProduct && orderItems.length === 0 && !isSearching && results.length === 0
+  const productSearchEmptyTitle = isSearchPristine ? t('Пошук товару ще не виконаний') : t('Товарів не знайдено')
+  const productSearchEmptyDescription = isSearchPristine
+    ? t('Введіть мінімум 4 символи у пошуку, щоб побачити доступні товари.')
+    : t('Змініть запит або поле пошуку, щоб знайти потрібний товар.')
   const analoguePanel = selectedMainProduct ? (
     <Stack className="new-sale-products-step__related-panel" gap={7}>
       <Group className="new-sale-products-step__related-head" justify="space-between" wrap="nowrap">
@@ -2173,7 +2179,7 @@ export function NewSaleProductsStep({
           <Box style={{ flex: 1, minHeight: 0 }}>
             <WizardProductCarousel
               active={mainStatesActive}
-              emptyText={query.trim().length < 4 ? t('Введіть мінімум 4 символи') : t('Нічого не знайдено')}
+              emptyText={isSearchPristine ? t('Введіть мінімум 4 символи') : t('Нічого не знайдено')}
               focusedIndex={mainIndex}
               getItemColor={(product) => getRelatedProductRowColor(product)}
               getMeta={getProductMeta}
@@ -2209,6 +2215,20 @@ export function NewSaleProductsStep({
         {/* RIGHT: detail + analogues + components scroll above a pinned cart grid */}
         <Box className="new-sale-products-step__workspace">
           <Box className="new-sale-products-step__main-column">
+            {showProductSearchEmpty ? (
+              <Stack align="center" className="new-sale-client-empty new-sale-products-step-empty" gap={10} justify="center">
+                <span className="new-sale-client-empty__icon">
+                  <IconSearch size={30} stroke={1.55} />
+                </span>
+                <Stack align="center" gap={3}>
+                  <Text className="new-sale-client-empty__title">{productSearchEmptyTitle}</Text>
+                  <Text className="new-sale-client-empty__description">
+                    {productSearchEmptyDescription}
+                  </Text>
+                </Stack>
+              </Stack>
+            ) : (
+              <>
           <Box className="new-sale-products-step__main-scroll">
             <Stack gap="md">
               {selectedMainProductPanel && <Box className="new-sale-products-step__product-slot">{selectedMainProductPanel}</Box>}
@@ -2281,6 +2301,8 @@ export function NewSaleProductsStep({
               )}
             </Stack>
           </Box>
+              </>
+            )}
           </Box>
 
           {relatedColumnPanel && <Box className="new-sale-products-step__related-slot">{relatedColumnPanel}</Box>}
