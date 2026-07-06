@@ -39,7 +39,7 @@ describe('product utils', () => {
     expect(getProductWriteOffRuleLocaleLabel(undefined)).toBe('Невідомий регіон')
   })
 
-  it('keeps searched products in next-selection order for the assortment drum', () => {
+  it('splits searched products around the assortment drum search slot', () => {
     const products = [
       { VendorCode: 'A' },
       { VendorCode: 'B' },
@@ -48,8 +48,36 @@ describe('product utils', () => {
     ] as Product[]
 
     expect(splitProductSearchResults(products)).toEqual({
-      topProducts: [],
-      bottomProducts: products,
+      topProducts: [
+        { VendorCode: 'A' },
+        { VendorCode: 'B' },
+      ],
+      bottomProducts: [
+        { VendorCode: 'C' },
+        { VendorCode: 'D' },
+      ],
+    })
+  })
+
+  it('keeps the first down-arrow product at the start of the lower rail for odd result counts', () => {
+    const products = [
+      { VendorCode: 'A' },
+      { VendorCode: 'B' },
+      { VendorCode: 'C' },
+      { VendorCode: 'D' },
+      { VendorCode: 'E' },
+    ] as Product[]
+
+    expect(splitProductSearchResults(products)).toEqual({
+      topProducts: [
+        { VendorCode: 'A' },
+        { VendorCode: 'B' },
+      ],
+      bottomProducts: [
+        { VendorCode: 'C' },
+        { VendorCode: 'D' },
+        { VendorCode: 'E' },
+      ],
     })
   })
 })

@@ -47,7 +47,7 @@
 }
 
 .product-assortment-carousel.is-selection-mode {
-  grid-template-rows: minmax(0, 0.62fr) 84px minmax(0, 1.38fr);
+  grid-template-rows: minmax(0, 0.61fr) 84px minmax(0, 1.39fr);
 }
 
 .product-assortment-carousel-header {
@@ -115,6 +115,7 @@
   font-family: var(--font-mono);
   text-align: left;
   outline: none; /* no OS-accent (yellow) focus ring — the violet border is the indicator */
+  transform: translateY(-4px);
   transition:
     box-shadow 160ms var(--tx-ease-spring),
     transform 160ms var(--tx-ease-spring);
@@ -126,7 +127,7 @@
 }
 
 .product-assortment-selected:active {
-  transform: translateY(0);
+  transform: translateY(-4px);
 }
 
 .product-assortment-selected-code {
@@ -177,11 +178,11 @@
 @keyframes assortment-plate-in {
   from {
     opacity: 0;
-    transform: translateY(6px) scale(0.985);
+    transform: translateY(2px) scale(0.985);
   }
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(-4px) scale(1);
   }
 }
 
@@ -451,6 +452,104 @@
   width: 8px;
 }
 
+.product-placement-popover.mantine-Popover-dropdown {
+  border-color: var(--mantine-color-gray-2);
+  border-radius: 14px;
+  box-shadow:
+    0 1px 2px rgba(16, 24, 40, 0.06),
+    0 18px 42px -20px rgba(16, 24, 40, 0.32);
+  padding: 18px 20px;
+}
+
+.product-placement-editor {
+  min-width: min(720px, calc(100vw - 72px));
+}
+
+.product-placement-editor__header {
+  padding-bottom: 4px;
+}
+
+.product-placement-editor__title {
+  color: #111318;
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.product-placement-editor__subtitle {
+  color: var(--mantine-color-gray-6);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.product-placement-editor__total {
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0;
+  min-width: 62px;
+}
+
+.product-placement-editor__table {
+  border: 1px solid var(--mantine-color-gray-2);
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
+}
+
+.product-placement-editor__table th {
+  background: #fff;
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+  color: #101318;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.1;
+  padding: 12px 14px;
+}
+
+.product-placement-editor__table td {
+  border-bottom: 1px solid var(--mantine-color-gray-1);
+  padding: 8px 10px;
+  vertical-align: middle;
+}
+
+.product-placement-editor__table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.product-placement-editor__table--readonly td {
+  color: var(--mantine-color-gray-8);
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-weight: 650;
+  letter-spacing: 0;
+}
+
+.product-placement-editor__field .mantine-Input-input {
+  border-color: var(--mantine-color-gray-3);
+  border-radius: 8px;
+  color: var(--mantine-color-gray-8);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 650;
+  height: 34px;
+  letter-spacing: 0;
+  min-height: 34px;
+}
+
+.product-placement-editor__field--qty .mantine-Input-input {
+  text-align: right;
+}
+
+.product-placement-editor__footer {
+  padding-top: 8px;
+}
+
 .product-inline-image {
   display: flex;
   align-items: center;
@@ -550,6 +649,30 @@
   margin-top: 12px;
 }
 
+.product-inline-tabs .mantine-InputWrapper-label,
+.product-inline-tabs .mantine-Checkbox-label,
+.product-inline-tabs .mantine-Radio-label,
+.product-inline-tabs .mantine-Switch-label,
+.product-inline-tabs .mantine-Button-label {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.product-inline-tabs .mantine-Input-input,
+.product-inline-tabs .mantine-Select-input,
+.product-inline-tabs .mantine-NumberInput-input {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  letter-spacing: 0;
+}
+
+.product-inline-tabs .mantine-Input-input::placeholder {
+  font-family: var(--font-mono);
+  letter-spacing: 0;
+}
+
 .product-original-number-card {
   cursor: pointer;
   transition:
@@ -561,6 +684,33 @@
 .product-original-number-card.is-selected {
   border-color: #1d6f8f;
   background: #e8f7fb;
+}
+
+.product-original-number-toolbar {
+  align-items: flex-end;
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  width: 100%;
+}
+
+.product-original-number-form {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.product-original-number-input {
+  flex: 1 1 auto;
+  min-width: 180px;
+}
+
+.product-original-number-main {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.product-original-number-upload {
+  flex: 0 0 auto;
 }
 
 .product-related-open-button {
@@ -579,6 +729,42 @@
   cursor: default;
 }
 
+.product-movement-toolbar {
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.product-movement-toolbar__control {
+  flex: 0 0 212px;
+}
+
+.product-movement-toolbar__control .mantine-Input-input {
+  height: 36px;
+  min-height: 36px;
+  border-radius: 8px;
+}
+
+.product-movement-toolbar__button.mantine-Button-root {
+  min-height: 36px;
+  border-radius: 8px;
+}
+
+.product-movement-toolbar__button .mantine-Button-label {
+  font-weight: 600;
+}
+
+.product-movement-cell-text {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--mantine-color-gray-8);
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* «Редаговано» — за патерном (§5.1/§10): без заливки рядка й помаранчевого тексту.
    Дані лишаються моно gray-8; ознака редагування — тонка оранжева крапка перед датою. */
 .product-movement-date {
@@ -593,6 +779,28 @@
   flex: 0 0 auto;
   height: 7px;
   width: 7px;
+}
+
+/* «Рух товару» — фільтр типів документів: рівний грід замість рваного flex-wrap,
+   щоб чекбокси стояли колонками з однаковими відступами (§9 — чекбокси оранжеві). */
+.product-movement-type-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.product-movement-type-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px 20px;
+  /* top-align: when a long label (напр. «Акт редагування накладної (склад)») wraps to
+     2 lines, single-line checkboxes in the same row must keep their box on the first
+     line — center would drop them below the wrapped item's box (ragged). */
+  align-items: start;
+}
+
+.product-movement-type-filters > .mantine-Button-root {
+  align-self: flex-start;
 }
 
 @media (max-width: 1280px) {
@@ -655,6 +863,15 @@
     width: auto; /* no pop-out when stacked into a single column */
     min-width: 0;
     max-width: 100%;
+  }
+
+  .product-original-number-toolbar,
+  .product-original-number-form {
+    flex-wrap: wrap;
+  }
+
+  .product-original-number-input {
+    flex-basis: 100%;
   }
 }
 

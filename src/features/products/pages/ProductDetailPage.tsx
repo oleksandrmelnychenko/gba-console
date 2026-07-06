@@ -713,7 +713,7 @@ function ProductAvailabilityPlacementRow({
   }
 
   return (
-    <Popover opened={opened} position="bottom-start" shadow="md" width={760} withinPortal onChange={setOpened}>
+    <Popover offset={2} opened={opened} position="bottom-start" shadow="md" width={760} withinPortal onChange={setOpened}>
       <Popover.Target>
         <Box role="button" tabIndex={0} style={{ height: '100%' }} onClick={() => setOpened((currentOpened) => !currentOpened)} onKeyDown={(event) => {
           if (event.key === 'Enter' || event.key === ' ') {
@@ -724,7 +724,7 @@ function ProductAvailabilityPlacementRow({
           {content}
         </Box>
       </Popover.Target>
-      <Popover.Dropdown>
+      <Popover.Dropdown className="product-placement-popover">
         <ProductPlacementEditor
           availability={availability}
           key={getProductPlacementsKey(placements)}
@@ -824,18 +824,18 @@ function ProductPlacementEditor({
   }
 
   return (
-    <Stack gap="sm">
-      <Group justify="space-between" gap="sm" wrap="nowrap">
+    <Stack className="product-placement-editor" gap="sm">
+      <Group className="product-placement-editor__header" justify="space-between" gap="sm" wrap="nowrap">
         <Box style={{ minWidth: 0 }}>
-          <Text fw={700} size="sm" lineClamp={1}>{displayValue(availability.Storage?.Name)}</Text>
-          <Text c="dimmed" size="xs" lineClamp={1}>{displayValue(availability.Storage?.Organization?.Name)}</Text>
+          <Text className="product-placement-editor__title" lineClamp={1}>{displayValue(availability.Storage?.Name)}</Text>
+          <Text className="product-placement-editor__subtitle" lineClamp={1}>{displayValue(availability.Storage?.Organization?.Name)}</Text>
         </Box>
         <Group gap="xs" wrap="nowrap">
-          <Badge color={Math.abs(draftTotal - originalTotal) > 0.00001 ? 'red' : 'green'} variant="light">
+          <Badge className="product-placement-editor__total" color={Math.abs(draftTotal - originalTotal) > 0.00001 ? 'red' : 'green'} variant="light">
             {formatAmount(draftTotal)} / {formatAmount(originalTotal)}
           </Badge>
           {!isEditing ? (
-            <Button size="xs" variant="outline" leftSection={<IconEdit size={14} />} onClick={startEditing}>
+            <Button color={CREATE_ACTION_COLOR} size="xs" variant="outline" leftSection={<IconEdit size={14} />} onClick={startEditing}>
               {t('Редагувати')}
             </Button>
           ) : null}
@@ -851,7 +851,7 @@ function ProductPlacementEditor({
       {isEditing ? (
         <Stack gap="xs">
           <ScrollArea mah={320}>
-            <Table withTableBorder miw={680}>
+            <Table className="product-placement-editor__table" miw={680}>
               <Table.Thead>
                 <Table.Tr>
                   <Table.Th>{t('Стелаж')}</Table.Th>
@@ -866,6 +866,7 @@ function ProductPlacementEditor({
                   <Table.Tr key={placement.DraftKey}>
                     <Table.Td>
                       <TextInput
+                        className="product-placement-editor__field"
                         size="xs"
                         value={placement.StorageNumber || ''}
                         onChange={(event) => updatePlacementDraft(index, 'StorageNumber', event.currentTarget.value)}
@@ -873,6 +874,7 @@ function ProductPlacementEditor({
                     </Table.Td>
                     <Table.Td>
                       <TextInput
+                        className="product-placement-editor__field"
                         size="xs"
                         value={placement.RowNumber || ''}
                         onChange={(event) => updatePlacementDraft(index, 'RowNumber', event.currentTarget.value)}
@@ -880,6 +882,7 @@ function ProductPlacementEditor({
                     </Table.Td>
                     <Table.Td>
                       <TextInput
+                        className="product-placement-editor__field"
                         size="xs"
                         value={placement.CellNumber || ''}
                         onChange={(event) => updatePlacementDraft(index, 'CellNumber', event.currentTarget.value)}
@@ -887,6 +890,7 @@ function ProductPlacementEditor({
                     </Table.Td>
                     <Table.Td>
                       <NumberInput
+                        className="product-placement-editor__field product-placement-editor__field--qty"
                         hideControls
                         min={0}
                         size="xs"
@@ -913,8 +917,8 @@ function ProductPlacementEditor({
               </Table.Tbody>
             </Table>
           </ScrollArea>
-          <Group justify="space-between" gap="sm">
-            <Button size="xs" variant="outline" leftSection={<IconPlus size={14} />} onClick={addPlacement}>
+          <Group className="product-placement-editor__footer" justify="space-between" gap="sm">
+            <Button color={CREATE_ACTION_COLOR} size="xs" variant="outline" leftSection={<IconPlus size={14} />} onClick={addPlacement}>
               {t('Додати місце')}
             </Button>
             <Group gap="xs">
@@ -929,7 +933,7 @@ function ProductPlacementEditor({
         </Stack>
       ) : (
         <ScrollArea mah={300}>
-          <Table striped withTableBorder miw={540}>
+          <Table className="product-placement-editor__table product-placement-editor__table--readonly" miw={540}>
             <Table.Thead>
               <Table.Tr>
                 <Table.Th>{t('Місце')}</Table.Th>
@@ -993,7 +997,10 @@ export function ProductActionDrawer({
       // The edit form is a narrow single/two-column form — give it a compact sheet (~half width);
       // the grid panels (movement / remains / write-off) keep the wide sheet.
       size={activePanel === 'edit' ? 'compact' : 'min(1180px, 100vw)'}
-      title={activePanel ? getPanelTitle(activePanel, t) : ''}
+      // Shared form/detail-sheet scope: mono button captions, §9 field chrome,
+      // orange checkboxes, mono combos/numbers/dates, borderless-shadow cards.
+      classNames={{ body: 'app-form-sheet' }}
+      title={activePanel ? <span className="app-sheet-title-mono">{getPanelTitle(activePanel, t)}</span> : ''}
       onClose={onClose}
     >
       {activePanel === 'audit' && <ProductAuditPanel key={getProductPanelKey(product)} product={product} />}
@@ -1486,21 +1493,32 @@ function ProductSpecificationPanel({
 
   return (
     <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
-      <Card withBorder radius="md" padding="md">
+      <Card className="app-section-card" withBorder radius="md" padding="md">
         <Stack gap="md">
           <Stack gap="xs">
-            <Title order={5}>{t('Поточний')}</Title>
+            <Text className="app-section-title" fw={600} size="sm">{t('Поточний')}</Text>
             {currentSpecification ? (
               <Stack gap={4}>
-                <Text fw={700} size="sm">{displayValue(formatSpecificationCodeWithRate(currentSpecification))}</Text>
+                <Text className="app-money" fw={700} size="sm">{displayValue(formatSpecificationCodeWithRate(currentSpecification))}</Text>
                 <SimpleGrid cols={3} spacing={6} mt={4}>
-                  <InfoBlock label="Митна вартість" value={displayValue(currentSpecification.CustomsValue)} />
-                  <InfoBlock label="Мито" value={displayValue(currentSpecification.Duty)} />
-                  <InfoBlock label="ПДВ" value={displayValue(currentSpecification.VATValue)} />
+                  <InfoBlock label="Митна вартість" mono value={displayValue(currentSpecification.CustomsValue)} />
+                  <InfoBlock label="Мито" mono value={displayValue(currentSpecification.Duty)} />
+                  <InfoBlock label="ПДВ" mono value={displayValue(currentSpecification.VATValue)} />
                 </SimpleGrid>
-                <Text c="dimmed" size="xs" mt={4}>
-                  {[formatSpecificationAuthor(currentSpecification), formatDate(currentSpecification.Created)].filter((part) => part && part !== '-').join(' · ')}
-                </Text>
+                {(() => {
+                  const author = formatSpecificationAuthor(currentSpecification)
+                  const created = formatDate(currentSpecification.Created)
+                  const showAuthor = Boolean(author && author !== '-')
+                  const showCreated = Boolean(created && created !== '-')
+                  if (!showAuthor && !showCreated) return null
+                  return (
+                    <Text c="dimmed" size="xs" mt={4}>
+                      {showAuthor ? author : null}
+                      {showAuthor && showCreated ? ' · ' : null}
+                      {showCreated ? <span style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{created}</span> : null}
+                    </Text>
+                  )
+                })()}
               </Stack>
             ) : (
               <Text c="dimmed" size="sm">{t('Немає поточного коду')}</Text>
@@ -1510,7 +1528,7 @@ function ProductSpecificationPanel({
           <PermissionGate permissionKey={PRODUCT_SPECIFICATION_CHANGE_PERMISSION}>
             <Divider />
             <Stack gap="sm">
-              <Title order={5}>{t('Змінити специфікацію')}</Title>
+              <Text className="app-section-title" fw={600} size="sm">{t('Змінити специфікацію')}</Text>
               {error && <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">{error}</Alert>}
               <TextInput
                 label={t('Код специфікації')}
@@ -1555,9 +1573,9 @@ function ProductSpecificationPanel({
         </Stack>
       </Card>
 
-      <Card withBorder radius="md" padding="md">
+      <Card className="app-section-card" withBorder radius="md" padding="md">
         <Stack gap="xs">
-          <Title order={5}>{t('Історія')}</Title>
+          <Text className="app-section-title" fw={600} size="sm">{t('Історія')}</Text>
           {specifications.length === 0 ? (
             <Text c="dimmed" size="sm">{t('Специфікацій не знайдено')}</Text>
           ) : (
@@ -1574,8 +1592,8 @@ function ProductSpecificationPanel({
                     }}
                   >
                     <Group justify="space-between" gap="xs" wrap="nowrap">
-                      <Text fw={600} size="sm">{displayValue(formatSpecificationCodeWithRate(specification))}</Text>
-                      <Text c="dimmed" size="xs">{formatDate(specification.Created)}</Text>
+                      <Text className="app-money" fw={600} size="sm">{displayValue(formatSpecificationCodeWithRate(specification))}</Text>
+                      <Text c="dimmed" size="xs"><span style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{formatDate(specification.Created)}</span></Text>
                     </Group>
                     <Text c="dimmed" size="xs">{formatSpecificationAuthor(specification)}</Text>
                   </Box>
@@ -1637,17 +1655,17 @@ function ProductConsignmentRemainingsPanel({ product }: { product: Product }) {
   const remainingsColumns = useMemo<DataTableColumn<ProductConsignmentRemaining>[]>(() => [
     { id: 'storage', header: t('Склад'), accessor: (row) => row.StorageName, cell: (row) => displayValue(row.StorageName) },
     { id: 'supplier', header: t('Постачальник'), accessor: (row) => row.SupplierName, cell: (row) => displayValue(row.SupplierName) },
-    { id: 'date', header: t('Дата'), accessor: (row) => row.FromDate, cell: (row) => formatDate(row.FromDate) },
-    { id: 'invoice', header: t('Інвойс'), accessor: (row) => row.InvoiceNumber, cell: (row) => displayValue(row.InvoiceNumber) },
-    { id: 'income', header: t('Прихід'), accessor: (row) => row.ProductIncomeNumber, cell: (row) => displayValue(row.ProductIncomeNumber) },
-    { id: 'remaining', header: t('Залишок'), align: 'right', accessor: (row) => row.RemainingQty, cell: (row) => formatAmount(row.RemainingQty) },
-    { id: 'netPrice', header: t('Нетто'), align: 'right', accessor: (row) => row.NetPrice, cell: (row) => formatPrice(row.NetPrice) },
-    { id: 'totalNetPrice', header: t('Загальна нетто'), align: 'right', accessor: (row) => row.TotalNetPrice, cell: (row) => formatPrice(row.TotalNetPrice) },
-    { id: 'grossPrice', header: t('Брутто'), align: 'right', accessor: (row) => row.GrossPrice, cell: (row) => formatPrice(row.GrossPrice) },
-    { id: 'accountingGrossPrice', header: t('Облікова брутто'), align: 'right', accessor: (row) => row.AccountingGrossPrice, cell: (row) => formatPrice(row.AccountingGrossPrice) },
+    { id: 'date', header: t('Дата'), accessor: (row) => row.FromDate, cell: (row) => <span className="app-money">{formatDate(row.FromDate)}</span> },
+    { id: 'invoice', header: t('Інвойс'), accessor: (row) => row.InvoiceNumber, cell: (row) => <span className="app-money">{displayValue(row.InvoiceNumber)}</span> },
+    { id: 'income', header: t('Прихід'), accessor: (row) => row.ProductIncomeNumber, cell: (row) => <span className="app-money">{displayValue(row.ProductIncomeNumber)}</span> },
+    { id: 'remaining', header: t('Залишок'), align: 'right', accessor: (row) => row.RemainingQty, cell: (row) => <span className="app-money">{formatAmount(row.RemainingQty)}</span> },
+    { id: 'netPrice', header: t('Нетто'), align: 'right', accessor: (row) => row.NetPrice, cell: (row) => <span className="app-money">{formatPrice(row.NetPrice)}</span> },
+    { id: 'totalNetPrice', header: t('Загальна нетто'), align: 'right', accessor: (row) => row.TotalNetPrice, cell: (row) => <span className="app-money">{formatPrice(row.TotalNetPrice)}</span> },
+    { id: 'grossPrice', header: t('Брутто'), align: 'right', accessor: (row) => row.GrossPrice, cell: (row) => <span className="app-money">{formatPrice(row.GrossPrice)}</span> },
+    { id: 'accountingGrossPrice', header: t('Облікова брутто'), align: 'right', accessor: (row) => row.AccountingGrossPrice, cell: (row) => <span className="app-money">{formatPrice(row.AccountingGrossPrice)}</span> },
     { id: 'currency', header: t('Валюта'), accessor: (row) => row.CurrencyName, cell: (row) => displayValue(row.CurrencyName) },
     { id: 'organization', header: t('Організація'), accessor: (row) => row.OrganizationName, cell: (row) => displayValue(row.OrganizationName) },
-    { id: 'weight', header: t('Вага'), align: 'right', accessor: (row) => row.Weight, cell: (row) => formatAmount(row.Weight) },
+    { id: 'weight', header: t('Вага'), align: 'right', accessor: (row) => row.Weight, cell: (row) => <span className="app-money">{formatAmount(row.Weight)}</span> },
   ], [t])
 
   if (missingNetUidError) {
@@ -1885,50 +1903,57 @@ function ProductMovementPanel({ product }: { product: Product }) {
   }
 
   const movementColumns = useMemo<DataTableColumn<ProductMovement>[]>(() => [
-    { id: 'incomeNumber', header: t('Номер прихідної накладної'), minWidth: 160, accessor: (row) => row.IncomeDocumentNumber, cell: (row) => displayValue(row.IncomeDocumentNumber) },
-    { id: 'incomeDate', header: t('Дата прихідної накладної'), minWidth: 160, accessor: (row) => row.IncomeDocumentFromDate, cell: (row) => formatDateTime(row.IncomeDocumentFromDate) },
-    { id: 'document', header: t('Документ'), minWidth: 150, accessor: (row) => row.DocumentType || row.MovementType, cell: (row) => (row.IsEdited ? <Text component="span" c="orange.7" fw={600}>{displayValue(row.DocumentType || row.MovementType)}</Text> : displayValue(row.DocumentType || row.MovementType)) },
-    { id: 'number', header: t('Номер'), minWidth: 130, accessor: (row) => row.DocumentNumber, cell: (row) => (row.IsEdited ? <Text component="span" c="orange.7" fw={600}>{displayValue(row.DocumentNumber)}</Text> : displayValue(row.DocumentNumber)) },
-    { id: 'date', header: t('Дата'), minWidth: 140, accessor: (row) => row.DocumentFromDate || row.FromDate || row.Created, cell: (row) => formatDateTime(row.DocumentFromDate || row.FromDate || row.Created) },
+    { id: 'incomeNumber', header: t('Номер прихідної накладної'), minWidth: 160, accessor: (row) => row.IncomeDocumentNumber, cell: (row) => <span className="app-money">{displayValue(row.IncomeDocumentNumber)}</span> },
+    { id: 'incomeDate', header: t('Дата прихідної накладної'), minWidth: 160, accessor: (row) => row.IncomeDocumentFromDate, cell: (row) => <span className="app-money">{formatDateTime(row.IncomeDocumentFromDate)}</span> },
+    { id: 'document', header: t('Документ'), minWidth: 150, accessor: (row) => row.DocumentType || row.MovementType, cell: (row) => displayValue(row.DocumentType || row.MovementType) },
+    { id: 'number', header: t('Номер'), minWidth: 130, accessor: (row) => row.DocumentNumber, cell: (row) => <span className="app-money">{displayValue(row.DocumentNumber)}</span> },
+    { id: 'date', header: t('Дата'), minWidth: 140, accessor: (row) => row.DocumentFromDate || row.FromDate || row.Created, cell: (row) => (
+      <span className="app-money product-movement-date">
+        {row.IsEdited ? <span className="product-edited-dot" aria-hidden="true" title={t('Редаговано')} /> : null}
+        {formatDateTime(row.DocumentFromDate || row.FromDate || row.Created)}
+      </span>
+    ) },
     { id: 'client', header: t('Клієнт'), minWidth: 220, accessor: (row) => row.ClientName, cell: (row) => displayValue(row.ClientName) },
     { id: 'storage', header: t('Склад'), minWidth: 120, accessor: (row) => row.StorageName, cell: (row) => displayValue(row.StorageName) },
     { id: 'organization', header: t('Організація'), minWidth: 160, accessor: (row) => row.OrganizationName, cell: (row) => displayValue(row.OrganizationName) },
     { id: 'responsible', header: t('Відповідальний'), minWidth: 150, accessor: (row) => row.Responsible || row.UserName, cell: (row) => displayValue(row.Responsible || row.UserName) },
-    { id: 'price', header: t('Собівартість'), minWidth: 120, align: 'right', accessor: (row) => row.Price, cell: (row) => formatPrice(row.Price) },
-    { id: 'accountingPrice', header: t('Облікова собівартість'), minWidth: 160, align: 'right', accessor: (row) => row.AccountingPrice, cell: (row) => formatPrice(row.AccountingPrice) },
-    { id: 'discount', header: t('Знижка'), minWidth: 110, align: 'right', accessor: (row) => row.Discount, cell: (row) => formatPrice(row.Discount) },
-    { id: 'income', header: t('Прихід'), minWidth: 110, align: 'right', accessor: (row) => row.IncomeQty, cell: (row) => formatAmount(row.IncomeQty) },
-    { id: 'outcome', header: t('Розхід'), minWidth: 110, align: 'right', accessor: (row) => row.OutcomeQty, cell: (row) => formatAmount(row.OutcomeQty) },
+    { id: 'price', header: t('Собівартість'), minWidth: 120, align: 'right', accessor: (row) => row.Price, cell: (row) => <span className="app-money">{formatPrice(row.Price)}</span> },
+    { id: 'accountingPrice', header: t('Облікова собівартість'), minWidth: 160, align: 'right', accessor: (row) => row.AccountingPrice, cell: (row) => <span className="app-money">{formatPrice(row.AccountingPrice)}</span> },
+    { id: 'discount', header: t('Знижка'), minWidth: 110, align: 'right', accessor: (row) => row.Discount, cell: (row) => <span className="app-money">{formatPrice(row.Discount)}</span> },
+    { id: 'income', header: t('Прихід'), minWidth: 110, align: 'right', accessor: (row) => row.IncomeQty, cell: (row) => <span className="app-money">{formatAmount(row.IncomeQty)}</span> },
+    { id: 'outcome', header: t('Розхід'), minWidth: 110, align: 'right', accessor: (row) => row.OutcomeQty, cell: (row) => <span className="app-money">{formatAmount(row.OutcomeQty)}</span> },
     { id: 'comment', header: t('Коментар'), minWidth: 220, accessor: (row) => row.Comment, cell: (row) => displayValue(row.Comment) },
   ], [t])
 
   return (
     <Stack gap="md">
-      <Group align="end" gap="sm" wrap="wrap" className="clients-filter-row">
+      <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
         <TextInput label={t('З')} type="date" value={dateFrom} onChange={(event) => setDateFrom(event.currentTarget.value)} />
         <TextInput label={t('По')} type="date" value={dateTo} onChange={(event) => setDateTo(event.currentTarget.value)} />
         <Select label={t('Тип руху')} data={movementTypeOptions.map((option) => ({ ...option, label: t(option.label) }))} value={movementType} w={220} onChange={(value) => setMovementType(value || '0')} />
         <Button disabled={Boolean(filterError) || Boolean(typesError)} leftSection={<IconRefresh size={18} />} loading={isLoading} variant="outline" onClick={() => reload()}>
           {t('Оновити')}
         </Button>
-        <Button disabled={!productNetUid || Boolean(filterError) || Boolean(typesError)} leftSection={<IconDownload size={18} />} loading={isExporting} variant="outline" onClick={() => void exportMovements()}>
+        <Button disabled={!productNetUid || Boolean(filterError) || Boolean(typesError)} leftSection={<IconDownload size={18} />} loading={isExporting} variant="default" onClick={() => void exportMovements()}>
           {t('Друк')}
         </Button>
       </Group>
-      <Group gap="md" wrap="wrap" align="center">
-        {movementItemTypeOptions.map((option) => (
-          <Checkbox
-            key={option.value}
-            checked={selectedTypes.includes(option.value)}
-            label={t(option.label)}
-            size="xs"
-            onChange={() => toggleMovementItemType(option.value)}
-          />
-        ))}
+      <div className="product-movement-type-filters">
+        <div className="product-movement-type-grid">
+          {movementItemTypeOptions.map((option) => (
+            <Checkbox
+              key={option.value}
+              checked={selectedTypes.includes(option.value)}
+              label={t(option.label)}
+              size="sm"
+              onChange={() => toggleMovementItemType(option.value)}
+            />
+          ))}
+        </div>
         <Button size="xs" color="gray" variant="subtle" onClick={() => setSelectedTypes(movementItemTypes)}>
           {t('Скинути')}
         </Button>
-      </Group>
+      </div>
       {activeError && <Alert color={filterError || missingNetUidError || typesError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">{activeError}</Alert>}
       {!activeError && (
         <DataTable
@@ -2334,7 +2359,7 @@ function InfoRow({ label, multiline, value }: { label: string; multiline?: boole
   )
 }
 
-function InfoBlock({ label, value }: { label: string; value?: number | string | null }) {
+function InfoBlock({ label, mono, value }: { label: string; mono?: boolean; value?: number | string | null }) {
   const { t } = useI18n()
 
   return (
@@ -2342,7 +2367,7 @@ function InfoBlock({ label, value }: { label: string; value?: number | string | 
       <Text c="dimmed" size="xs" lineClamp={1}>
         {t(label)}
       </Text>
-      <Text size="sm" fw={600} style={{ overflowWrap: 'anywhere' }}>
+      <Text className={mono ? 'app-money' : undefined} size="sm" fw={600} style={{ overflowWrap: 'anywhere' }}>
         {displayValue(value)}
       </Text>
     </Box>

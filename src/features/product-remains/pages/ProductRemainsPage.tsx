@@ -27,7 +27,7 @@ import {
   IconRestore,
   IconSearch,
 } from '@tabler/icons-react'
-import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
@@ -180,12 +180,6 @@ function useProductRemainsPageModel() {
     'product-remains-products',
     PRODUCTS_TABLE_DEFAULT_LAYOUT.density,
   )
-  const batchToolbarLeft = useMemo(() => <TableStatus totals={batchTotals} />, [batchTotals])
-  const productToolbarLeft = useMemo(
-    () => <TableStatus searchValue={productSearchValue} totals={productTotals} />,
-    [productSearchValue, productTotals],
-  )
-
   useEffect(() => {
     const nextActiveTab = getProductRemainsInitialTab(routeTab)
 
@@ -380,11 +374,11 @@ function useProductRemainsPageModel() {
   }
 
   return {
-    activeError, activeTab, batchColumns, batchDensity, batchDetailColumns, batchHasMore, batchRows, batchToolbarLeft, batchTotals,
+    activeError, activeTab, batchColumns, batchDensity, batchDetailColumns, batchHasMore, batchRows, batchTotals,
     dateFrom, dateTo, downloadDocument, downloadModalOpened, exportingTab, filterError, isActiveLoading,
     isProductStorageSelectionInvalid,
     isLoadingBatches, isLoadingProducts, isLoadingStorages, isLoadingSuppliers, openMovement, pageSize, productColumns,
-    productDensity, productHasMore, productRows, productSearchDraft, productStorageError, productToolbarLeft, productTotals, resourceError,
+    productDensity, productHasMore, productRows, productSearchDraft, productStorageError, productTotals, resourceError,
     selectedBatch, selectedMovementRow, selectedStorageValue: storageSelectValue, selectedSupplierNetId, storageNetId, storageOptions, supplierNetId,
     supplierSearch, supplierSelectOptions, handleExport, refreshData, resetAllData, resetFilters, selectActiveTab,
     toggleBatchDensity, toggleProductDensity, setBatchOffset, setDateFrom, setDateTo, setDownloadModalOpened, setPageSize,
@@ -702,43 +696,45 @@ export function ProductRemainsPage() {
 function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProductRemainsPageModel> }) {
   const { t } = useI18n()
   const {
-    activeError, activeTab, batchColumns, batchDensity, batchDetailColumns, batchHasMore, batchRows, batchToolbarLeft, batchTotals,
+    activeError, activeTab, batchColumns, batchDensity, batchDetailColumns, batchHasMore, batchRows, batchTotals,
     dateFrom, dateTo, downloadDocument, downloadModalOpened, exportingTab, filterError, isActiveLoading,
     isProductStorageSelectionInvalid,
     isLoadingBatches, isLoadingProducts, isLoadingStorages, isLoadingSuppliers, openMovement, pageSize, productColumns,
-    productDensity, productHasMore, productRows, productSearchDraft, productStorageError, productToolbarLeft, productTotals, resourceError,
+    productDensity, productHasMore, productRows, productSearchDraft, productStorageError, productTotals, resourceError,
     selectedBatch, selectedMovementRow, selectedStorageValue, selectedSupplierNetId, storageNetId, storageOptions, supplierNetId,
     supplierSearch, supplierSelectOptions, handleExport, refreshData, resetAllData, resetFilters, selectActiveTab,
     toggleBatchDensity, toggleProductDensity, setBatchOffset, setDateFrom, setDateTo, setDownloadModalOpened, setPageSize,
     setProductOffset, setSelectedBatch, setSelectedMovementRow, setSelectedStorageValue,
     setSupplierNetId, setSupplierSearch, updateProductSearch,
   } = model
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const alertMessage = filterError || resourceError || activeError
   const isWarningAlert = Boolean(filterError || (!resourceError && activeTab === 'products' && productStorageError))
 
   return (
     <Stack gap="md">
       <Card className="app-data-card" withBorder radius="md" padding={0}>
+        <div className="product-remains-tabs pill-tabs">
+          {([
+            { value: 'batches', label: t('Партії') },
+            { value: 'products', label: t('Товари') },
+          ] as const).map((tab) => (
+            <button
+              key={tab.value}
+              type="button"
+              className={`pill-tab${activeTab === tab.value ? ' is-active' : ''}`}
+              aria-pressed={activeTab === tab.value}
+              onClick={() => {
+                selectActiveTab(tab.value)
+              }}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
         <div className="app-filter-bar product-remains-filter-bar">
           <div className="product-remains-filter-row">
-            <div className="product-remains-toolbar-tabs pill-tabs">
-              {([
-                { value: 'batches', label: t('Партії') },
-                { value: 'products', label: t('Товари') },
-              ] as const).map((tab) => (
-                <button
-                  key={tab.value}
-                  type="button"
-                  className={`pill-tab${activeTab === tab.value ? ' is-active' : ''}`}
-                  aria-pressed={activeTab === tab.value}
-                  onClick={() => {
-                    selectActiveTab(tab.value)
-                  }}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
             <Select
               searchable
               allowDeselect={false}
@@ -830,6 +826,7 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
                 onToggle={activeTab === 'batches' ? toggleBatchDensity : toggleProductDensity}
                 size={34}
               />
+              <div ref={setTableToolbarSlot} className="product-remains-table-toolbar-slot" />
             </div>
           </div>
         </div>
@@ -841,78 +838,74 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
             </Alert>
           )}
 
-          <Box>
-            {activeTab === 'batches' && (
-              <Box>
-              <Stack gap="md">
-                <DataTable
-                  columns={batchColumns}
-                  data={batchRows}
-                  defaultLayout={BATCHES_TABLE_DEFAULT_LAYOUT}
-                  density={batchDensity}
-                  emptyText={t('Залишків за партіями не знайдено')}
-                  getRowId={getBatchRowId}
-                  isLoading={isLoadingBatches}
-                  layoutVersion="product-remains-batches-table-1"
-                  loadingText={t('Завантаження залишків за партіями')}
-                  maxHeight="calc(100vh - 390px)"
-                  minWidth={1390}
-                  tableId="product-remains-batches"
-                  toolbarLeft={batchToolbarLeft}
-                  onRowClick={setSelectedBatch}
-                />
-                <TableFooter
-                  canLoadMore={batchHasMore && !filterError}
-                  isLoading={isLoadingBatches}
-                  loaded={batchRows.length}
-                  onLoadMore={() => setBatchOffset(batchRows.length)}
-                />
-                <RemainsTotalsFooter kind="batches" totals={batchTotals} />
-              </Stack>
-              </Box>
-            )}
+          {activeTab === 'batches' && (
+            <Stack className="product-remains-tab-content" gap={12}>
+              <DataTable
+                columns={batchColumns}
+                data={batchRows}
+                defaultLayout={BATCHES_TABLE_DEFAULT_LAYOUT}
+                density={batchDensity}
+                emptyText={t('Залишків за партіями не знайдено')}
+                getRowId={getBatchRowId}
+                isLoading={isLoadingBatches}
+                layoutVersion="product-remains-batches-table-1"
+                loadingText={t('Завантаження залишків за партіями')}
+                maxHeight="calc(100vh - 390px)"
+                minWidth={1390}
+                showLayoutControls
+                tableId="product-remains-batches"
+                toolbarPortalTarget={tableToolbarSlot}
+                onRowClick={setSelectedBatch}
+              />
+              <TableFooter
+                canLoadMore={batchHasMore && !filterError}
+                isLoading={isLoadingBatches}
+                loaded={batchRows.length}
+                onLoadMore={() => setBatchOffset(batchRows.length)}
+              />
+              <RemainsTotalsFooter kind="batches" totals={batchTotals} />
+            </Stack>
+          )}
 
-            {activeTab === 'products' && (
-              <Box>
-              <Stack gap="md">
-                <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
-                  <TextInput
-                    leftSection={<IconSearch size={16} />}
-                    label={t('Пошук товару')}
-                    placeholder={t('Код або назва')}
-                    value={productSearchDraft}
-                    style={{ flex: '1 1 260px' }}
-                    onChange={(event) => updateProductSearch(event.currentTarget.value)}
-                  />
-                </Group>
+          {activeTab === 'products' && (
+            <Stack className="product-remains-tab-content" gap={12}>
+              <Group align="end" gap="sm" wrap="nowrap" className="product-remains-search-row">
+                <TextInput
+                  leftSection={<IconSearch size={16} />}
+                  label={t('Пошук товару')}
+                  placeholder={t('Код або назва')}
+                  value={productSearchDraft}
+                  style={{ flex: '1 1 260px' }}
+                  onChange={(event) => updateProductSearch(event.currentTarget.value)}
+                />
+              </Group>
 
-                <DataTable
-                  columns={productColumns}
-                  data={productRows}
-                  defaultLayout={PRODUCTS_TABLE_DEFAULT_LAYOUT}
-                  density={productDensity}
-                  emptyText={isProductStorageSelectionInvalid ? t('Оберіть склад для перегляду товарів') : t('Залишків за товарами не знайдено')}
-                  getRowId={getProductRowId}
-                  isLoading={isLoadingProducts}
-                  layoutVersion="product-remains-products-table-1"
-                  loadingText={t('Завантаження залишків за товарами')}
-                  maxHeight="calc(100vh - 450px)"
-                  minWidth={1600}
-                  tableId="product-remains-products"
-                  toolbarLeft={productToolbarLeft}
-                  onRowClick={openMovement}
-                />
-                <TableFooter
-                  canLoadMore={productHasMore && !filterError && !isProductStorageSelectionInvalid}
-                  isLoading={isLoadingProducts}
-                  loaded={productRows.length}
-                  onLoadMore={() => setProductOffset(productRows.length)}
-                />
-                <RemainsTotalsFooter kind="products" totals={productTotals} />
-              </Stack>
-              </Box>
-            )}
-          </Box>
+              <DataTable
+                columns={productColumns}
+                data={productRows}
+                defaultLayout={PRODUCTS_TABLE_DEFAULT_LAYOUT}
+                density={productDensity}
+                emptyText={isProductStorageSelectionInvalid ? t('Оберіть склад для перегляду товарів') : t('Залишків за товарами не знайдено')}
+                getRowId={getProductRowId}
+                isLoading={isLoadingProducts}
+                layoutVersion="product-remains-products-table-1"
+                loadingText={t('Завантаження залишків за товарами')}
+                maxHeight="calc(100vh - 450px)"
+                minWidth={1600}
+                showLayoutControls
+                tableId="product-remains-products"
+                toolbarPortalTarget={tableToolbarSlot}
+                onRowClick={openMovement}
+              />
+              <TableFooter
+                canLoadMore={productHasMore && !filterError && !isProductStorageSelectionInvalid}
+                isLoading={isLoadingProducts}
+                loaded={productRows.length}
+                onLoadMore={() => setProductOffset(productRows.length)}
+              />
+              <RemainsTotalsFooter kind="products" totals={productTotals} />
+            </Stack>
+          )}
         </Stack>
       </Card>
 
@@ -1315,39 +1308,6 @@ function useProductRemainBatchDetailColumns() {
   )
 }
 
-function TableStatus<TItem>({
-  searchValue,
-  totals,
-}: {
-  searchValue?: string
-  totals: CollectionWithTotals<TItem> | null
-}) {
-  const { t } = useI18n()
-
-  return (
-    <Group gap="md">
-      {searchValue && (
-        <Text size="xs" c="dimmed">
-          {t('пошук')}: {searchValue}
-        </Text>
-      )}
-      {totals && (
-        <>
-          <Text size="xs" c="dimmed">
-            {t('Усього')}: {formatAmount(totals.TotalQty)}
-          </Text>
-          <Text size="xs" c="dimmed">
-            {t('Період')}: {formatAmount(totals.TotalQtyFiltered)}
-          </Text>
-          <Text size="xs" c="dimmed">
-            {t('Сума за період')}: {formatMoney(totals.TotalAmountFiltered)}
-          </Text>
-        </>
-      )}
-    </Group>
-  )
-}
-
 function TableFooter({
   canLoadMore,
   isLoading,
@@ -1362,7 +1322,7 @@ function TableFooter({
   const { t } = useI18n()
 
   return (
-    <Group justify="flex-end" gap="sm">
+    <Group className="product-remains-table-footer" justify="flex-end" gap="sm">
       <Button
         color="gray"
         disabled={!canLoadMore || isLoading}
@@ -1379,13 +1339,9 @@ function TableFooter({
 
 function TotalEntry({ label, value }: { label: string; value: string }) {
   return (
-    <Box>
-      <Text c="dimmed" size="xs">
-        {label}
-      </Text>
-      <Text size="sm" fw={600}>
-        {value}
-      </Text>
+    <Box className="product-remains-total">
+      <span className="product-remains-total__label">{label}</span>
+      <span className="product-remains-total__value app-money">{value}</span>
     </Box>
   )
 }
@@ -1398,16 +1354,12 @@ function RemainsTotalsFooter<TItem>({ totals, kind }: { totals: CollectionWithTo
   }
 
   const generalLabel = t('Загальна')
-  const periodLabel = t('За вибраний період')
+  const periodLabel = t('Період')
   const accountingShort = t('Бух.')
 
   return (
-    <Box>
-      <Divider mb="sm" />
-      <Text fw={700} size="sm" mb="xs">
-        {t('Сума')}
-      </Text>
-      <SimpleGrid cols={{ base: 2, sm: 3, lg: 4 }} spacing="sm">
+    <Box className="product-remains-totals-footer">
+      <div className="product-remains-totals-footer__grid">
         <TotalEntry label={t('Загальна к-сть')} value={formatAmount(totals.TotalQty)} />
         <TotalEntry label={`${generalLabel} (EUR)`} value={formatMoney(totals.TotalAmount)} />
         <TotalEntry label={`${generalLabel} (EUR, ${accountingShort})`} value={formatMoney(totals.AccountingTotalAmount)} />
@@ -1420,7 +1372,7 @@ function RemainsTotalsFooter<TItem>({ totals, kind }: { totals: CollectionWithTo
           <TotalEntry label={`${periodLabel} (${LOCAL_CURRENCY_CODE})`} value={formatMoney(totals.TotalAmountLocalFiltered)} />
         )}
         <TotalEntry label={`${periodLabel} (${LOCAL_CURRENCY_CODE}, ${accountingShort})`} value={formatMoney(totals.AccountingTotalAmountLocalFiltered)} />
-      </SimpleGrid>
+      </div>
     </Box>
   )
 }

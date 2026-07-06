@@ -3,11 +3,18 @@
    canonical .app-data-card / .app-filter-bar / .app-filter-actions rules in
    shared/ui/filter-bar.css. */
 
-/* Let the filter strip span the full card width while tabs + filters + actions
-   stay in a single toolbar row. Tracks are shrinkable (§5.3 reference bars):
-   fixed mins + min-width: max-content used to force the row to ~1400px, pushing
-   the limit/actions cluster off-screen on laptop widths. overflow-x stays only
-   as the last-resort fallback below the track minimums. */
+.product-remains-tabs {
+  border-radius: 0;
+  padding-bottom: 4px;
+}
+
+.product-remains-tabs .pill-tab {
+  padding-bottom: 12px;
+}
+
+/* Let the filter strip span the full card width while filters + actions stay in
+   a single toolbar row. The tabs are a separate full-width strip above, so the
+   controls no longer steal horizontal space from the header. */
 .product-remains-filter-bar {
   overflow-x: auto;
 }
@@ -17,13 +24,11 @@
   display: grid;
   gap: 10px;
   grid-template-columns:
-    auto
-    minmax(170px, 280px)
-    minmax(118px, 150px)
-    minmax(118px, 150px)
-    minmax(180px, 300px)
+    minmax(170px, 260px)
+    minmax(118px, 148px)
+    minmax(118px, 148px)
+    minmax(190px, 1fr)
     minmax(76px, 92px)
-    minmax(8px, 1fr)
     auto;
   width: 100%;
 }
@@ -35,19 +40,134 @@
   width: 100%;
 }
 
-.product-remains-toolbar-tabs {
-  align-self: end;
-  min-height: 36px;
-  width: max-content;
+.product-remains-filter-row .app-filter-actions {
+  margin-left: auto;
 }
 
-.product-remains-filter-row .app-filter-actions {
-  grid-column: 8;
-  margin-left: auto;
+.product-remains-table-toolbar-slot {
+  display: inline-flex;
+  min-height: 34px;
+}
+
+.product-remains-table-toolbar-slot .data-table-toolbar {
+  border: 0;
+  padding: 0;
+}
+
+.product-remains-table-toolbar-slot .data-table-toolbar-left {
+  gap: 4px;
 }
 
 /* The card is padding-0 (so the filter strip is flush); the body below
    carries its own padding. */
 .product-remains-body {
-  padding: 10px 8px 8px;
+  padding: 14px 8px 8px;
+}
+
+.product-remains-tab-content {
+  min-width: 0;
+}
+
+.product-remains-tab-content > .data-table {
+  margin-top: 2px;
+}
+
+.product-remains-search-row {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 2px;
+  scrollbar-width: thin;
+}
+
+.product-remains-search-row .mantine-InputWrapper-root {
+  flex: 1 1 320px;
+  max-width: 520px;
+  min-width: 260px;
+}
+
+.product-remains-search-row .mantine-InputWrapper-label {
+  color: var(--mantine-color-gray-9);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.product-remains-search-row .mantine-Input-input {
+  border-color: var(--mantine-color-gray-2);
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  letter-spacing: 0;
+  min-height: 36px;
+}
+
+.product-remains-table-footer {
+  min-height: 36px;
+}
+
+.product-remains-table-footer .mantine-Button-label {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.product-remains-totals-footer {
+  padding: 2px 0 4px;
+}
+
+.product-remains-totals-footer__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(154px, 1fr));
+  gap: 10px 18px;
+}
+
+.product-remains-total {
+  min-width: 0;
+}
+
+.product-remains-total__label {
+  align-items: center;
+  color: var(--mantine-color-gray-6);
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  gap: 6px;
+  letter-spacing: 0;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.product-remains-total__label::before {
+  background: var(--brand-orange);
+  border-radius: 999px;
+  content: '';
+  flex: 0 0 auto;
+  height: 7px;
+  width: 7px;
+}
+
+.product-remains-total__value {
+  display: block;
+  font-size: 17px;
+  line-height: 1.25;
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 1180px) {
+  .product-remains-filter-row {
+    grid-template-columns:
+      minmax(160px, 220px)
+      minmax(118px, 140px)
+      minmax(118px, 140px)
+      minmax(170px, 240px)
+      minmax(76px, 86px)
+      auto;
+    min-width: 960px;
+  }
 }

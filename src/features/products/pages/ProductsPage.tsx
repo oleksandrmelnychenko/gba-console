@@ -45,7 +45,7 @@ import {
   IconUpload,
 } from '@tabler/icons-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
-import { type KeyboardEvent, type ReactNode, useCallback, useEffect, useReducer, useRef, useState } from 'react'
+import { type KeyboardEvent, type ReactNode, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
@@ -165,9 +165,9 @@ const inlineMovementLabels = {
     loading: 'Завантаження приходів',
   },
   outcome: {
-    empty: 'Виходів не знайдено',
-    exportTitle: 'Документ виходу',
-    loading: 'Завантаження виходів',
+    empty: 'Розходів не знайдено',
+    exportTitle: 'Документ розходу',
+    loading: 'Завантаження розходів',
   },
 } as const
 const productUploadDocumentLabels = {
@@ -1391,7 +1391,7 @@ function ProductInlineTabs({
           { value: 'analogues', label: t('Аналоги') },
           { value: 'components', label: t('Комплектуючі') },
           { value: 'income', label: t('Прихід') },
-          { value: 'outcome', label: t('Вихід') },
+          { value: 'outcome', label: t('Розхід') },
         ] as const).map((tab) => (
           <button
             key={tab.value}
@@ -1694,46 +1694,49 @@ function ProductOriginalNumbersTab({
         </Alert>
       )}
 
-      <Group justify="flex-end">
-        <ProductUploadDocumentButton
-          product={product}
-          type="originalNumbers"
-          onProductChanged={onProductChanged}
-        />
-      </Group>
-
-      <PermissionGate permissionKey={PRODUCT_EDIT_PERMISSION}>
-        <Group align="end" gap="sm" wrap="wrap">
-          <TextInput
-            ref={codeInputRef}
-            label={t('Оригінальний номер')}
-            value={codeDraft}
-            error={isDuplicate ? t('Такий оригінальний номер вже існує') : undefined}
-            style={{ flex: '1 1 260px' }}
-            onChange={(event) => setCodeDraft(event.currentTarget.value)}
-          />
-          <Checkbox
-            checked={isMainDraft}
-            label={t('Основний')}
-            pb={8}
-            onChange={(event) => setMainDraft(event.currentTarget.checked)}
-          />
-          <Button
-            color={CREATE_ACTION_COLOR}
-            disabled={!canSave}
-            leftSection={selectedItem ? <IconDeviceFloppy size={16} /> : <IconPlus size={16} />}
-            loading={isSaving}
-            onClick={saveOriginalNumber}
-          >
-            {selectedItem ? t('Зберегти') : t('Додати')}
-          </Button>
-          {selectedItem ? (
-            <Button color="gray" disabled={isSaving} variant="light" onClick={resetForm}>
-              {t('Скинути')}
+      <div className="product-original-number-toolbar">
+        <PermissionGate permissionKey={PRODUCT_EDIT_PERMISSION}>
+          <Group className="product-original-number-form" align="end" gap="sm" wrap="nowrap">
+            <TextInput
+              ref={codeInputRef}
+              className="product-original-number-input"
+              label={t('Оригінальний номер')}
+              value={codeDraft}
+              error={isDuplicate ? t('Такий оригінальний номер вже існує') : undefined}
+              onChange={(event) => setCodeDraft(event.currentTarget.value)}
+            />
+            <Checkbox
+              checked={isMainDraft}
+              className="product-original-number-main"
+              label={t('Основний')}
+              pb={8}
+              onChange={(event) => setMainDraft(event.currentTarget.checked)}
+            />
+            <Button
+              color={CREATE_ACTION_COLOR}
+              disabled={!canSave}
+              leftSection={selectedItem ? <IconDeviceFloppy size={16} /> : <IconPlus size={16} />}
+              loading={isSaving}
+              onClick={saveOriginalNumber}
+            >
+              {selectedItem ? t('Зберегти') : t('Додати')}
             </Button>
-          ) : null}
-        </Group>
-      </PermissionGate>
+            {selectedItem ? (
+              <Button color="gray" disabled={isSaving} variant="light" onClick={resetForm}>
+                {t('Скинути')}
+              </Button>
+            ) : null}
+          </Group>
+        </PermissionGate>
+
+        <div className="product-original-number-upload">
+          <ProductUploadDocumentButton
+            product={product}
+            type="originalNumbers"
+            onProductChanged={onProductChanged}
+          />
+        </div>
+      </div>
 
       {selectedCode ? (
         <Text c="dimmed" size="xs">
@@ -3033,13 +3036,15 @@ function ProductInlineMovementsTab({
 
   return (
     <Stack gap="sm">
-      <Group align="end" gap="sm" wrap="wrap">
-        <TextInput label={t('З')} type="date" value={dateFrom} onChange={(event) => setDateFrom(event.currentTarget.value)} />
-        <TextInput label={t('По')} type="date" value={dateTo} onChange={(event) => setDateTo(event.currentTarget.value)} />
-        <Button leftSection={<IconRefresh size={16} />} loading={state.isLoading} variant="outline" onClick={() => reload()}>
+      <Group className="product-movement-toolbar" align="end" gap="sm" wrap="wrap">
+        <TextInput className="product-movement-toolbar__control" label={t('З')} type="date" value={dateFrom} onChange={(event) => setDateFrom(event.currentTarget.value)} />
+        <TextInput className="product-movement-toolbar__control" label={t('По')} type="date" value={dateTo} onChange={(event) => setDateTo(event.currentTarget.value)} />
+        <Button className="product-movement-toolbar__button" color={CREATE_ACTION_COLOR} leftSection={<IconRefresh size={16} />} loading={state.isLoading} variant="outline" onClick={() => reload()}>
           {t('Оновити')}
         </Button>
         <Button
+          className="product-movement-toolbar__button"
+          color={CREATE_ACTION_COLOR}
           disabled={!productNetUid}
           leftSection={<IconDownload size={16} />}
           loading={state.isExporting}
@@ -3062,17 +3067,10 @@ function ProductInlineMovementsTab({
         <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
           {state.exportError}
         </Alert>
-      ) : state.isLoading ? (
-        <Group justify="center" py="md">
-          <Loader size="sm" />
-          <Text c="dimmed" size="sm">{t(labels.loading)}</Text>
-        </Group>
-      ) : state.rows.length === 0 ? (
-        <Text c="dimmed" size="sm">{t(labels.empty)}</Text>
       ) : direction === 'income' ? (
-        <ProductIncomeMovementsTable rows={state.rows as ProductIncomeMovement[]} />
+        <ProductIncomeMovementsGrid emptyText={t(labels.empty)} isLoading={state.isLoading} rows={state.rows as ProductIncomeMovement[]} />
       ) : (
-        <ProductOutcomeMovementsTable rows={state.rows as ProductOutcomeMovement[]} />
+        <ProductOutcomeMovementsGrid emptyText={t(labels.empty)} isLoading={state.isLoading} rows={state.rows as ProductOutcomeMovement[]} />
       )}
 
       <ProductMovementDownloadModal
@@ -3084,118 +3082,312 @@ function ProductInlineMovementsTab({
   )
 }
 
-function ProductIncomeMovementsTable({ rows }: { rows: ProductIncomeMovement[] }) {
+function ProductIncomeMovementsGrid({
+  emptyText,
+  isLoading,
+  rows,
+}: {
+  emptyText: string
+  isLoading: boolean
+  rows: ProductIncomeMovement[]
+}) {
   const { t } = useI18n()
+  const columns = useMemo<DataTableColumn<ProductIncomeMovement>[]>(
+    () => [
+      {
+        id: 'storage',
+        header: t('Склад'),
+        width: 110,
+        accessor: (row) => row.StorageName,
+        cell: (row) => renderMovementText(row.StorageName),
+      },
+      {
+        id: 'supplier',
+        header: t('Постачальник'),
+        width: 180,
+        accessor: (row) => row.SupplierName,
+        cell: (row) => renderMovementText(row.SupplierName),
+      },
+      {
+        id: 'organization',
+        header: t('Організація'),
+        width: 150,
+        accessor: (row) => row.OrganizationName,
+        cell: (row) => renderMovementText(row.OrganizationName),
+      },
+      {
+        id: 'incomeDate',
+        header: t('Дата приходу'),
+        width: 150,
+        accessor: (row) => row.IncomeToStorageDate,
+        cell: (row) => renderMovementDate(row.IncomeToStorageDate),
+      },
+      {
+        id: 'incomeNumber',
+        header: t('Номер приходу'),
+        width: 140,
+        accessor: (row) => row.IncomeToStorageNumber,
+        cell: (row) => renderMovementMono(row.IncomeToStorageNumber),
+      },
+      {
+        id: 'invoice',
+        header: t('Інвойс'),
+        width: 110,
+        accessor: (row) => row.IncomeInvoiceNumber,
+        cell: (row) => renderMovementMono(row.IncomeInvoiceNumber),
+      },
+      {
+        id: 'invoiceDate',
+        header: t('Дата інвойсу'),
+        width: 150,
+        accessor: (row) => row.IncomeInvoiceDate,
+        cell: (row) => renderMovementDate(row.IncomeInvoiceDate),
+      },
+      {
+        id: 'currency',
+        header: t('Валюта'),
+        width: 92,
+        accessor: (row) => row.Currency,
+        cell: (row) => renderMovementCurrency(row.Currency),
+      },
+      {
+        id: 'exchangeRate',
+        header: t('Курс'),
+        width: 92,
+        align: 'right',
+        accessor: (row) => row.ExchangeRate,
+        cell: (row) => renderMovementAmount(row.ExchangeRate),
+      },
+      {
+        id: 'unitPriceLocal',
+        header: t('Ціна UAH'),
+        width: 110,
+        align: 'right',
+        accessor: (row) => row.UnitPriceLocal,
+        cell: (row) => renderMovementPrice(row.UnitPriceLocal),
+      },
+      {
+        id: 'netPrice',
+        header: t('Net'),
+        width: 104,
+        align: 'right',
+        accessor: (row) => row.NetPrice,
+        cell: (row) => renderMovementPrice(row.NetPrice),
+      },
+      {
+        id: 'totalNetPrice',
+        header: t('Total Net'),
+        width: 118,
+        align: 'right',
+        accessor: (row) => row.TotalNetPrice,
+        cell: (row) => renderMovementPrice(row.TotalNetPrice),
+      },
+      {
+        id: 'grossPrice',
+        header: t('Gross'),
+        width: 112,
+        align: 'right',
+        accessor: (row) => row.GrossPrice,
+        cell: (row) => renderMovementPrice(row.GrossPrice),
+      },
+      {
+        id: 'accountingGrossPrice',
+        header: t('Бух. Gross'),
+        width: 124,
+        align: 'right',
+        accessor: (row) => row.AccountingGrossPrice,
+        cell: (row) => renderMovementPrice(row.AccountingGrossPrice),
+      },
+      {
+        id: 'managementEurUnitPrice',
+        header: t('Упр. EUR'),
+        width: 112,
+        align: 'right',
+        accessor: (row) => row.ManagementEurUnitPrice,
+        cell: (row) => renderMovementPrice(row.ManagementEurUnitPrice),
+      },
+      {
+        id: 'accountingEurUnitPrice',
+        header: t('Бух. EUR'),
+        width: 112,
+        align: 'right',
+        accessor: (row) => row.AccountingEurUnitPrice,
+        cell: (row) => renderMovementPrice(row.AccountingEurUnitPrice),
+      },
+      {
+        id: 'weight',
+        header: t('Вага'),
+        width: 100,
+        align: 'right',
+        accessor: (row) => row.Weight,
+        cell: (row) => renderMovementAmount(row.Weight),
+      },
+      {
+        id: 'incomeQty',
+        header: t('Прихід'),
+        width: 104,
+        align: 'right',
+        accessor: (row) => row.IncomeQty,
+        cell: (row) => renderMovementAmount(row.IncomeQty),
+      },
+      {
+        id: 'remainingQty',
+        header: t('Залишок'),
+        width: 104,
+        align: 'right',
+        accessor: (row) => row.RemainingQty,
+        cell: (row) => renderMovementAmount(row.RemainingQty),
+      },
+      {
+        id: 'fromInvoiceNumber',
+        header: t('З інвойсу'),
+        width: 120,
+        accessor: (row) => row.FromInvoiceNumber,
+        cell: (row) => renderMovementMono(row.FromInvoiceNumber),
+      },
+      {
+        id: 'fromInvoiceDate',
+        header: t('Дата з інвойсу'),
+        width: 150,
+        accessor: (row) => row.FromInvoiceDate,
+        cell: (row) => renderMovementDate(row.FromInvoiceDate),
+      },
+      {
+        id: 'returnPrice',
+        header: t('Ціна повернення'),
+        width: 140,
+        align: 'right',
+        accessor: (row) => row.ReturnPrice,
+        cell: (row) => renderMovementPrice(row.ReturnPrice),
+      },
+      {
+        id: 'priceDifference',
+        header: t('Різниця'),
+        width: 110,
+        align: 'right',
+        accessor: (row) => row.PriceDifference,
+        cell: (row) => renderMovementPrice(row.PriceDifference),
+      },
+    ],
+    [t],
+  )
 
   return (
-    <ScrollArea>
-      <Table striped highlightOnHover withTableBorder miw={1960}>
-        <Table.Thead>
-          <Table.Tr>
-            <Table.Th>{t('Склад')}</Table.Th>
-            <Table.Th>{t('Постачальник')}</Table.Th>
-            <Table.Th>{t('Організація')}</Table.Th>
-            <Table.Th>{t('Дата приходу')}</Table.Th>
-            <Table.Th>{t('Номер приходу')}</Table.Th>
-            <Table.Th>{t('Інвойс')}</Table.Th>
-            <Table.Th>{t('Дата інвойсу')}</Table.Th>
-            <Table.Th>{t('Валюта')}</Table.Th>
-            <Table.Th ta="right">{t('Курс')}</Table.Th>
-            <Table.Th ta="right">{t('Ціна (вал. угоди)')}</Table.Th>
-            <Table.Th ta="right">{t('Net')}</Table.Th>
-            <Table.Th ta="right">{t('Total Net')}</Table.Th>
-            <Table.Th ta="right">{t('Gross')}</Table.Th>
-            <Table.Th ta="right">{t('Бух. Gross')}</Table.Th>
-            <Table.Th ta="right">{t('Упр. EUR')}</Table.Th>
-            <Table.Th ta="right">{t('Бух. EUR')}</Table.Th>
-            <Table.Th ta="right">{t('Вага')}</Table.Th>
-            <Table.Th ta="right">{t('Прихід')}</Table.Th>
-            <Table.Th ta="right">{t('Залишок')}</Table.Th>
-            <Table.Th>{t('З інвойсу')}</Table.Th>
-            <Table.Th>{t('Дата з інвойсу')}</Table.Th>
-            <Table.Th ta="right">{t('Ціна повернення')}</Table.Th>
-            <Table.Th ta="right">{t('Різниця')}</Table.Th>
-          </Table.Tr>
-        </Table.Thead>
-        <Table.Tbody>
-          {rows.map((row, index) => (
-            <Table.Tr key={getIncomeMovementRowKey(row, index)}>
-              <Table.Td>{displayValue(row.StorageName)}</Table.Td>
-              <Table.Td>{displayValue(row.SupplierName)}</Table.Td>
-              <Table.Td>{displayValue(row.OrganizationName)}</Table.Td>
-              <Table.Td className="app-money">{formatInlineDateTime(row.IncomeToStorageDate)}</Table.Td>
-              <Table.Td className="app-money">{displayValue(row.IncomeToStorageNumber)}</Table.Td>
-              <Table.Td className="app-money">{displayValue(row.IncomeInvoiceNumber)}</Table.Td>
-              <Table.Td className="app-money">{formatInlineDateTime(row.IncomeInvoiceDate)}</Table.Td>
-              <Table.Td>{displayValue(row.Currency)}</Table.Td>
-              <Table.Td className="app-money" ta="right">{formatAmount(row.ExchangeRate)}</Table.Td>
-              <Table.Td className="app-money" ta="right">{formatPrice(row.UnitPriceLocal)}</Table.Td>
-              <Table.Td className="app-money" ta="right">{formatPrice(row.NetPrice)}</Table.Td>
-              <Table.Td className="app-money" ta="right">{formatPrice(row.TotalNetPrice)}</Table.Td>
-              <Table.Td className="app-money" ta="right">{formatPrice(row.GrossPrice)}</Table.Td>
-              <Table.Td className="app-money" ta="right">{formatPrice(row.AccountingGrossPrice)}</Table.Td>
-              <Table.Td className="app-money" ta="right">{formatPrice(row.ManagementEurUnitPrice)}</Table.Td>
-              <Table.Td className="app-money" ta="right">{formatPrice(row.AccountingEurUnitPrice)}</Table.Td>
-              <Table.Td className="app-money" ta="right">{formatAmount(row.Weight)}</Table.Td>
-              <Table.Td className="app-money" ta="right">{formatAmount(row.IncomeQty)}</Table.Td>
-              <Table.Td className="app-money" ta="right">{formatAmount(row.RemainingQty)}</Table.Td>
-              <Table.Td className="app-money">{displayValue(row.FromInvoiceNumber)}</Table.Td>
-              <Table.Td className="app-money">{formatInlineDateTime(row.FromInvoiceDate)}</Table.Td>
-              <Table.Td className="app-money" ta="right">{formatPrice(row.ReturnPrice)}</Table.Td>
-              <Table.Td className="app-money" ta="right">{formatPrice(row.PriceDifference)}</Table.Td>
-            </Table.Tr>
-          ))}
-        </Table.Tbody>
-      </Table>
-    </ScrollArea>
+    <DataTable
+      columns={columns}
+      data={rows}
+      density="compact"
+      emptyText={emptyText}
+      getRowId={getIncomeMovementRowKey}
+      isLoading={isLoading}
+      layoutVersion="product-income-movements-1"
+      maxHeight={360}
+      minWidth={2500}
+      showDensityToggle={false}
+      showLayoutControls={false}
+      tableId="product-income-movements"
+    />
   )
 }
 
-function ProductOutcomeMovementsTable({ rows }: { rows: ProductOutcomeMovement[] }) {
+function ProductOutcomeMovementsGrid({
+  emptyText,
+  isLoading,
+  rows,
+}: {
+  emptyText: string
+  isLoading: boolean
+  rows: ProductOutcomeMovement[]
+}) {
   const { t } = useI18n()
+  const columns = useMemo<DataTableColumn<ProductOutcomeMovement>[]>(
+    () => [
+      {
+        id: 'date',
+        header: t('Дата'),
+        width: 150,
+        accessor: (row) => row.FromDate,
+        cell: (row) => renderOutcomeMovementDate(row, t),
+      },
+      {
+        id: 'documentType',
+        header: t('Тип документа'),
+        width: 150,
+        accessor: (row) => row.DocumentTypeName,
+        cell: (row) => renderMovementText(row.DocumentTypeName),
+      },
+      {
+        id: 'storage',
+        header: t('Склад'),
+        width: 140,
+        accessor: (row) => row.StorageName,
+        cell: (row) => renderMovementText(row.StorageName),
+      },
+      {
+        id: 'organization',
+        header: t('Організація'),
+        width: 160,
+        accessor: (row) => row.OrganizationName,
+        cell: (row) => renderMovementText(row.OrganizationName),
+      },
+      {
+        id: 'documentNumber',
+        header: t('Номер'),
+        width: 140,
+        accessor: (row) => row.DocumentNumber,
+        cell: (row) => renderMovementMono(row.DocumentNumber),
+      },
+      {
+        id: 'client',
+        header: t('Клієнт'),
+        minWidth: 190,
+        fill: true,
+        accessor: (row) => row.ClientName,
+        cell: (row) => renderMovementText(row.ClientName),
+      },
+      {
+        id: 'responsible',
+        header: t('Відповідальний'),
+        width: 190,
+        accessor: (row) => row.ResponsibleName,
+        cell: (row) => renderMovementText(row.ResponsibleName),
+      },
+      {
+        id: 'price',
+        header: t('Ціна'),
+        width: 110,
+        align: 'right',
+        accessor: (row) => row.Price,
+        cell: (row) => renderMovementPrice(row.Price),
+      },
+      {
+        id: 'qty',
+        header: t('Кількість'),
+        width: 110,
+        align: 'right',
+        accessor: (row) => row.Qty,
+        cell: (row) => renderMovementAmount(row.Qty),
+      },
+    ],
+    [t],
+  )
 
   return (
-    <ScrollArea>
-      <Table striped highlightOnHover withTableBorder miw={1280}>
-        <Table.Thead>
-          <Table.Tr>
-            <Table.Th>{t('Дата')}</Table.Th>
-            <Table.Th>{t('Тип документа')}</Table.Th>
-            <Table.Th>{t('Склад')}</Table.Th>
-            <Table.Th>{t('Організація')}</Table.Th>
-            <Table.Th>{t('Номер')}</Table.Th>
-            <Table.Th>{t('Клієнт')}</Table.Th>
-            <Table.Th>{t('Відповідальний')}</Table.Th>
-            <Table.Th ta="right">{t('Ціна')}</Table.Th>
-            <Table.Th ta="right">{t('Кількість')}</Table.Th>
-          </Table.Tr>
-        </Table.Thead>
-        <Table.Tbody>
-          {rows.map((row, index) => {
-            const isEdited = row.HasUpdateDataCarrier
-
-            return (
-              <Table.Tr key={getOutcomeMovementRowKey(row, index)}>
-                <Table.Td className="app-money">
-                  <span className="product-movement-date">
-                    {isEdited ? <span className="product-edited-dot" aria-hidden="true" title={t('Редаговано')} /> : null}
-                    {formatInlineDateTime(row.FromDate)}
-                  </span>
-                </Table.Td>
-                <Table.Td>{displayValue(row.DocumentTypeName)}</Table.Td>
-                <Table.Td>{displayValue(row.StorageName)}</Table.Td>
-                <Table.Td>{displayValue(row.OrganizationName)}</Table.Td>
-                <Table.Td className="app-money">{displayValue(row.DocumentNumber)}</Table.Td>
-                <Table.Td>{displayValue(row.ClientName)}</Table.Td>
-                <Table.Td>{displayValue(row.ResponsibleName)}</Table.Td>
-                <Table.Td className="app-money" ta="right">{formatPrice(row.Price)}</Table.Td>
-                <Table.Td className="app-money" ta="right">{formatAmount(row.Qty)}</Table.Td>
-              </Table.Tr>
-            )
-          })}
-        </Table.Tbody>
-      </Table>
-    </ScrollArea>
+    <DataTable
+      columns={columns}
+      data={rows}
+      density="compact"
+      emptyText={emptyText}
+      fillAvailableWidth
+      getRowId={getOutcomeMovementRowKey}
+      isLoading={isLoading}
+      layoutVersion="product-outcome-movements-1"
+      maxHeight={360}
+      minWidth={1300}
+      showDensityToggle={false}
+      showLayoutControls={false}
+      tableId="product-outcome-movements"
+    />
   )
 }
 
@@ -3434,14 +3626,73 @@ function toNumber(value?: number | null): number {
   return typeof value === 'number' && Number.isFinite(value) ? value : 0
 }
 
+function renderMovementText(value?: number | string | null) {
+  const text = formatMovementCellValue(value)
+
+  return <span className="product-movement-cell-text" title={text}>{text}</span>
+}
+
+function renderMovementMono(value?: number | string | null) {
+  const text = formatMovementCellValue(value)
+
+  return <span className="app-money" title={text}>{text}</span>
+}
+
+function renderMovementDate(value?: Date | string | null) {
+  const text = formatInlineDateTime(value)
+
+  return <span className="app-money" title={text}>{text}</span>
+}
+
+function renderMovementAmount(value?: number | null) {
+  const text = typeof value === 'number' && Number.isFinite(value) ? formatAmount(value) : ''
+
+  return <span className="app-money" title={text}>{text}</span>
+}
+
+function renderMovementPrice(value?: number | null) {
+  const text = typeof value === 'number' && Number.isFinite(value) ? formatPrice(value) : ''
+
+  return <span className="app-money" title={text}>{text}</span>
+}
+
+function renderMovementCurrency(value?: string | null) {
+  const text = formatMovementCellValue(value)
+
+  return text ? <Badge className="app-role-pill is-gray" variant="light">{text}</Badge> : null
+}
+
+function renderOutcomeMovementDate(row: ProductOutcomeMovement, t: (value: string) => string) {
+  const text = formatInlineDateTime(row.FromDate)
+
+  return (
+    <span className="product-movement-date app-money" title={text}>
+      {row.HasUpdateDataCarrier ? <span className="product-edited-dot" aria-hidden="true" title={t('Редаговано')} /> : null}
+      {text}
+    </span>
+  )
+}
+
+function formatMovementCellValue(value?: number | string | null): string {
+  if (value === null || value === undefined || value === '') {
+    return ''
+  }
+
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? String(value) : ''
+  }
+
+  return value.trim()
+}
+
 function formatInlineDateTime(value?: Date | string | null): string {
   if (!value) {
-    return '-'
+    return ''
   }
 
   const date = value instanceof Date ? value : new Date(value)
 
-  return Number.isNaN(date.getTime()) ? '-' : dateTimeFormatter.format(date)
+  return Number.isNaN(date.getTime()) ? '' : dateTimeFormatter.format(date)
 }
 
 function getIncomeMovementRowKey(row: ProductIncomeMovement, index: number): string {

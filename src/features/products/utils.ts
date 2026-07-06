@@ -90,9 +90,11 @@ export function getProductWriteOffRuleLocaleLabel(locale: string | undefined): '
 }
 
 export function splitProductSearchResults<T>(products: T[]): { bottomProducts: T[]; topProducts: T[] } {
+  const splitIndex = Math.floor(products.length / 2)
+
   return {
-    bottomProducts: products,
-    topProducts: [],
+    bottomProducts: products.slice(splitIndex),
+    topProducts: products.slice(0, splitIndex),
   }
 }
 
