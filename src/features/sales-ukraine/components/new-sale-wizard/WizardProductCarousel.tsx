@@ -2,12 +2,7 @@ import { Box, Group, Loader, Stack, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import type { ReactNode, RefObject } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
-import type { ProductPickerMeta } from '../../../products/components/ProductPickerCarousel'
-import type { WizardCalculatedProductPricing } from './newSaleWizardApi'
-import { WizardProductPriceStrip } from './WizardProductPriceStrip'
 import type { WizardSaleProduct } from './wizardSaleProduct'
-
-const metaNumberFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2 })
 
 // Vertical product picker that mirrors the client carousel on step 1: a "wheel" with the
 // products above the focused one on top, the focused product (or the search input) in the
@@ -19,13 +14,10 @@ export function WizardProductCarousel({
   focusedIndex,
   hasFocus,
   isLoading,
-  localCurrencyCode = 'UAH',
   searchInputRef,
   searchMode,
   searchValue,
   getItemColor,
-  getMeta,
-  getPricing,
   onPick,
   onSearchChange,
 }: {
@@ -33,11 +25,8 @@ export function WizardProductCarousel({
   detailSlot?: ReactNode
   focusedIndex: number
   getItemColor?: (product: WizardSaleProduct) => string | undefined
-  getMeta?: (product: WizardSaleProduct) => ProductPickerMeta | undefined
-  getPricing?: (product: WizardSaleProduct) => WizardCalculatedProductPricing | null
   hasFocus: boolean
   isLoading?: boolean
-  localCurrencyCode?: string
   onPick: (index: number) => void
   onSearchChange: (value: string) => void
   products: WizardSaleProduct[]
@@ -51,7 +40,6 @@ export function WizardProductCarousel({
   const bottomProducts = focused ? products.slice(focusedIndex + 1) : products
   const bottomOffset = focused ? focusedIndex + 1 : 0
   const showInput = searchMode || !focused
-  const focusedPricing = focused ? getPricing?.(focused) : null
 
   return (
     <Box className={`new-sale-product-picker ${searchMode ? 'is-search-mode' : ''}`}>
@@ -95,9 +83,6 @@ export function WizardProductCarousel({
           <ProductMiniCard
             active={active}
             color={getItemColor?.(focused)}
-            localCurrencyCode={localCurrencyCode}
-            meta={getMeta?.(focused)}
-            pricing={focusedPricing}
             product={focused}
             searchInputRef={searchInputRef}
           />
@@ -174,81 +159,14 @@ function ProductViewerRow({
   )
 }
 
-function ProductMetaDetails({
-  localCurrencyCode,
-  meta,
-  product,
-}: {
-  localCurrencyCode: string
-  meta?: ProductPickerMeta
-  product: WizardSaleProduct
-}) {
-  const { t } = useI18n()
-  const hasAvailability = meta?.available != null || meta?.price != null
-  const hasResale = meta?.reSaleAvailable != null || meta?.reSalePrice != null
-  const measureUnit = product.MeasureUnit?.Name ?? ''
-  const localPrice = getNumber(product.CurrentPriceEurToUah) ?? getNumber(product.CurrentLocalPrice)
-
-  if (!meta && localPrice == null) {
-    return null
-  }
-
-  if (!hasAvailability && !hasResale && localPrice == null) {
-    return null
-  }
-
-  return (
-    <Stack className="new-sale-product-picker-row__metrics" gap={2}>
-      {hasAvailability && (
-        <Group className="new-sale-product-picker-row__metric-line" gap={6} justify="flex-end" wrap="nowrap">
-          {meta.available != null && (
-            <Text className={`new-sale-product-picker-row__availability ${meta.available > 0 ? 'is-good' : 'is-bad'}`}>
-              {t('Дост.')}: {metaNumberFormatter.format(meta.available)}
-              {measureUnit ? ` ${measureUnit}` : ''}
-            </Text>
-          )}
-          {meta.price != null && <Text className="new-sale-product-picker-row__price">{metaNumberFormatter.format(meta.price)} EUR</Text>}
-          {localPrice != null && (
-            <Text className="new-sale-product-picker-row__price is-local">
-              {metaNumberFormatter.format(localPrice)} {localCurrencyCode}
-            </Text>
-          )}
-        </Group>
-      )}
-      {hasResale && (
-        <Group className="new-sale-product-picker-row__metric-line" gap={6} justify="flex-end" wrap="nowrap">
-          {meta.reSaleAvailable != null && (
-            <Text className={`new-sale-product-picker-row__availability ${meta.reSaleAvailable > 0 ? 'is-good' : 'is-bad'}`}>
-              {t('Перепродаж')}: {metaNumberFormatter.format(meta.reSaleAvailable)}
-              {measureUnit ? ` ${measureUnit}` : ''}
-            </Text>
-          )}
-          {meta.reSalePrice != null && (
-            <Text className="new-sale-product-picker-row__price">
-              {metaNumberFormatter.format(meta.reSalePrice)}
-              {meta.reSaleCurrency ? ` ${meta.reSaleCurrency}` : ''}
-            </Text>
-          )}
-        </Group>
-      )}
-    </Stack>
-  )
-}
-
 function ProductMiniCard({
   active,
   color,
-  localCurrencyCode,
-  meta,
-  pricing,
   product,
   searchInputRef,
 }: {
   active: boolean
   color?: string
-  localCurrencyCode: string
-  meta?: ProductPickerMeta
-  pricing?: WizardCalculatedProductPricing | null
   product: WizardSaleProduct
   searchInputRef: RefObject<HTMLInputElement | null>
 }) {
@@ -284,52 +202,14 @@ function ProductMiniCard({
         <Text c={color} className="new-sale-product-picker-card__code" title={name} truncate>
           {code}
         </Text>
-        <ProductMetaDetails localCurrencyCode={localCurrencyCode} meta={meta} product={product} />
       </Box>
       <Text className="new-sale-product-picker-card__name" title={name}>
         {name}
       </Text>
-      <ProductInlineFacts product={product} />
-      <WizardProductPriceStrip dense pricing={pricing} product={product} />
-    </Box>
-  )
-}
-
-function ProductInlineFacts({ product }: { product: WizardSaleProduct }) {
-  const facts = [
-    product.MainOriginalNumber,
-    product.Top,
-    product.Size,
-    product.MeasureUnit?.Name,
-  ].filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
-
-  if (facts.length === 0) {
-    return null
-  }
-
-  return (
-    <Box className="new-sale-product-picker-row__facts">
-      {facts.map((fact) => (
-        <span key={fact}>{fact}</span>
-      ))}
     </Box>
   )
 }
 
 function getProductKey(product: WizardSaleProduct, index: number): string {
   return String(product.NetUid || product.VendorCode || product.Articul || index)
-}
-
-function getNumber(value: unknown): number | null {
-  if (typeof value === 'number') {
-    return Number.isFinite(value) ? value : null
-  }
-
-  if (typeof value === 'string') {
-    const parsed = Number(value)
-
-    return Number.isFinite(parsed) ? parsed : null
-  }
-
-  return null
 }

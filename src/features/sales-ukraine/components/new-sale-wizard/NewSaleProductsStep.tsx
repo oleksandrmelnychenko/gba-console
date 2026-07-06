@@ -49,6 +49,7 @@ import { ProductImageViewModal } from './ProductImageViewModal'
 import { ShiftOrderItemModal } from './ShiftOrderItemModal'
 import { WizardConfirmModal } from './WizardConfirmModal'
 import { WizardProductCarousel } from './WizardProductCarousel'
+import { WizardProductPriceStrip } from './WizardProductPriceStrip'
 import { WizardRelatedProductRows } from './WizardRelatedProductRows'
 import { WizardClientHeroHeader } from './WizardClientHeroHeader'
 import {
@@ -2076,6 +2077,64 @@ export function NewSaleProductsStep({
         onToggleDescription={() => void toggleDescriptionEdit()}
       />
     ) : null
+  const selectedMainProductSummary = selectedMainProduct
+    ? (() => {
+        const code = selectedMainProduct.VendorCode || selectedMainProduct.Articul || ''
+        const name = selectedMainProduct.NameUA || selectedMainProduct.Name || t('Товар без назви')
+        const meta = getProductMeta(selectedMainProduct)
+        const pricing = detailPricingFor(selectedMainProduct)
+        const localPrice = getWizardProductNumber(selectedMainProduct.CurrentPriceEurToUah) ?? getWizardProductNumber(selectedMainProduct.CurrentLocalPrice)
+        const facts = [
+          selectedMainProduct.MainOriginalNumber,
+          selectedMainProduct.Top,
+          selectedMainProduct.Size,
+          selectedMainProduct.MeasureUnit?.Name,
+        ].filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+
+        return (
+          <Box className="new-sale-products-step__selected-product-band">
+            <Box className="new-sale-products-step__selected-product-copy">
+              <Text className="new-sale-products-step__selected-product-code" c={getRelatedProductRowColor(selectedMainProduct)} title={code} truncate>
+                {code}
+              </Text>
+              <Text className="new-sale-products-step__selected-product-name" title={name} truncate>
+                {name}
+              </Text>
+            </Box>
+
+            {facts.length > 0 && (
+              <Box className="new-sale-products-step__selected-product-facts">
+                {facts.map((fact) => (
+                  <span key={fact}>{fact}</span>
+                ))}
+              </Box>
+            )}
+
+            <Group className="new-sale-products-step__selected-product-metrics" gap={7} wrap="nowrap">
+              {meta?.available != null && (
+                <span className={`new-sale-products-step__selected-product-metric ${meta.available > 0 ? 'is-good' : 'is-bad'}`}>
+                  Дост.: {qtyFormatter.format(meta.available)} {selectedMainProduct.MeasureUnit?.Name ?? ''}
+                </span>
+              )}
+              {meta?.price != null && (
+                <span className="new-sale-products-step__selected-product-metric">
+                  {amountFormatter.format(meta.price)} EUR
+                </span>
+              )}
+              {localPrice != null && (
+                <span className="new-sale-products-step__selected-product-metric is-muted">
+                  {amountFormatter.format(localPrice)} {localCurrencyCode}
+                </span>
+              )}
+            </Group>
+
+            <Box className="new-sale-products-step__selected-product-prices">
+              <WizardProductPriceStrip dense localCurrency={localCurrencyCode} pricing={pricing} product={selectedMainProduct} />
+            </Box>
+          </Box>
+        )
+      })()
+    : null
   const isSearchPristine = query.trim().length < PRODUCT_SEARCH_MIN_QUERY_LENGTH
   const showProductSearchEmpty = !selectedMainProduct && orderItems.length === 0 && !isSearching && results.length === 0
   const productSearchEmptyTitle = isSearchPristine ? t('Пошук товару ще не виконаний') : t('Товарів не знайдено')
@@ -2206,9 +2265,6 @@ export function NewSaleProductsStep({
               active={mainStatesActive}
               focusedIndex={mainIndex}
               getItemColor={(product) => getRelatedProductRowColor(product)}
-              getMeta={getProductMeta}
-              getPricing={detailPricingFor}
-              localCurrencyCode={localCurrencyCode}
               // Keep the selected main product pinned on the left while drilling into its
               // analogues/components (active.source switches to 'analogue'/'component'); otherwise
               // the carousel reverts to the search list and the chosen product visually drops out.
@@ -2252,10 +2308,15 @@ export function NewSaleProductsStep({
               </Stack>
             ) : (
               <>
-          {relatedGridPanel}
+                {relatedGridPanel}
 
-          <Box className="new-sale-products-step__main-scroll">
-            <Stack gap="md">
+                {selectedMainProductSummary && (
+                  <Box className="new-sale-products-step__selected-slot">{selectedMainProductSummary}</Box>
+                )}
+
+                {(isMainFullDetail || kbState === 'AnalogueFullDetail' || kbState === 'ComponentFullDetail') && (
+                  <Box className="new-sale-products-step__main-scroll">
+                    <Stack gap="md">
               {isMainFullDetail && selectedMainProductPanel && <Box className="new-sale-products-step__product-slot">{selectedMainProductPanel}</Box>}
 
               {kbState === 'AnalogueFullDetail' && focusedAnalogue && (
@@ -2303,8 +2364,9 @@ export function NewSaleProductsStep({
                   onToggleDescription={() => void toggleDescriptionEdit()}
                 />
               )}
-            </Stack>
-          </Box>
+                    </Stack>
+                  </Box>
+                )}
 
           {/* Pinned cart — stays put regardless of how many analogues/components are shown */}
           <Box className="new-sale-products-step__cart-slot">
