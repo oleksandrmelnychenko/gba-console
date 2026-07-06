@@ -1,6 +1,5 @@
-import { ActionIcon, Box, Group, Loader, Stack, Text, Tooltip } from '@mantine/core'
+import { Box, Group, Loader, Stack, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconInfoCircle, IconStar } from '@tabler/icons-react'
 import type { ReactNode, RefObject } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import type { ProductPickerMeta } from '../../../products/components/ProductPickerCarousel'
@@ -27,9 +26,7 @@ export function WizardProductCarousel({
   getItemColor,
   getMeta,
   getPricing,
-  onOpenCard,
   onPick,
-  onProductInterest,
   onSearchChange,
 }: {
   active: boolean
@@ -41,9 +38,7 @@ export function WizardProductCarousel({
   hasFocus: boolean
   isLoading?: boolean
   localCurrencyCode?: string
-  onOpenCard?: (productNetId: string) => void
   onPick: (index: number) => void
-  onProductInterest?: (product: WizardSaleProduct) => void
   onSearchChange: (value: string) => void
   products: WizardSaleProduct[]
   searchInputRef: RefObject<HTMLInputElement | null>
@@ -76,12 +71,8 @@ export function WizardProductCarousel({
             <ProductViewerRow
               key={getProductKey(product, index)}
               color={getItemColor?.(product)}
-              localCurrencyCode={localCurrencyCode}
-              meta={getMeta?.(product)}
               product={product}
-              onOpenCard={onOpenCard}
               onPick={() => onPick(index)}
-              onProductInterest={onProductInterest}
             />
           ))}
         </Stack>
@@ -124,12 +115,8 @@ export function WizardProductCarousel({
               <ProductViewerRow
                 key={getProductKey(product, index)}
                 color={getItemColor?.(product)}
-                localCurrencyCode={localCurrencyCode}
-                meta={getMeta?.(product)}
                 product={product}
-                onOpenCard={onOpenCard}
                 onPick={() => onPick(bottomOffset + index)}
-                onProductInterest={onProductInterest}
               />
             ))}
           </Stack>
@@ -149,75 +136,38 @@ export function WizardProductCarousel({
 
 function ProductViewerRow({
   color,
-  localCurrencyCode,
-  meta,
   product,
-  onOpenCard,
   onPick,
-  onProductInterest,
 }: {
   color?: string
-  localCurrencyCode: string
-  meta?: ProductPickerMeta
-  onOpenCard?: (productNetId: string) => void
   onPick: () => void
-  onProductInterest?: (product: WizardSaleProduct) => void
   product: WizardSaleProduct
 }) {
-  const { t } = useI18n()
   const code = product.VendorCode || product.Articul || ''
   const name = product.NameUA || product.Name || ''
+  const colorClassName = color?.startsWith('red')
+    ? 'is-red'
+    : color?.startsWith('blue')
+      ? 'is-blue'
+      : color?.startsWith('green')
+        ? 'is-green'
+        : ''
 
   return (
     <Box className="new-sale-product-picker-row" onClick={onPick}>
       <Box className="new-sale-product-picker-row__content">
-        <Box className="new-sale-product-picker-row__headline">
-          <Text c={color} className="new-sale-product-picker-row__code" truncate>
-            {code}
-          </Text>
-          <ProductInlineFacts product={product} />
+        <Box className="new-sale-product-picker-row__status">
+          <Box className={`new-sale-product-picker-row__dot ${colorClassName}`} />
         </Box>
-        <Text className="new-sale-product-picker-row__name" title={name}>
-          {name}
-        </Text>
-      </Box>
-      <Box className="new-sale-product-picker-row__side">
-        <ProductMetaDetails localCurrencyCode={localCurrencyCode} meta={meta} product={product} />
-        <Box className="new-sale-product-picker-row__actions">
-          {product.NetUid && onProductInterest && (
-            <Tooltip label={t('Цікавить товар')}>
-              <ActionIcon
-                aria-label={t('Цікавить товар')}
-                className="new-sale-product-picker-row__action"
-                color="orange"
-                size="sm"
-                variant="subtle"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  onProductInterest(product)
-                }}
-              >
-                <IconStar size={15} />
-              </ActionIcon>
-            </Tooltip>
+        <Box className="new-sale-product-picker-row__copy">
+          {code && (
+            <Text className="new-sale-product-picker-row__code" title={code} truncate>
+              {code}
+            </Text>
           )}
-          {product.NetUid && onOpenCard && (
-            <Tooltip label={t('Картка товару')}>
-              <ActionIcon
-                aria-label={t('Картка товару')}
-                className="new-sale-product-picker-row__action"
-                color="gray"
-                size="sm"
-                variant="subtle"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  onOpenCard(product.NetUid as string)
-                }}
-              >
-                <IconInfoCircle size={15} />
-              </ActionIcon>
-            </Tooltip>
-          )}
+          <Text className="new-sale-product-picker-row__name" title={name} truncate>
+            {name}
+          </Text>
         </Box>
       </Box>
     </Box>

@@ -2082,14 +2082,14 @@ export function NewSaleProductsStep({
   const productSearchEmptyDescription = isSearchPristine
     ? t('Введіть мінімум 3 символи у пошуку, щоб побачити доступні товари.')
     : t('Змініть запит або поле пошуку, щоб знайти потрібний товар.')
-  const analoguePanel = selectedMainProduct ? (
+  const analoguePanel = (
     <Stack className="new-sale-products-step__related-panel" gap={7}>
       <Group className="new-sale-products-step__related-head" justify="space-between" wrap="nowrap">
         <Text className="new-sale-products-step__related-title">{t('Аналоги')}</Text>
         <span>{analogueState.items.length}</span>
       </Group>
       <Box className="new-sale-products-step__related-scroll">
-        {analogueState.items.length > 0 ? (
+        {selectedMainProduct && analogueState.items.length > 0 ? (
           <WizardRelatedProductRows
             active={analogueStatesActive}
             focusedIndex={analogueIndex ?? -1}
@@ -2113,15 +2113,15 @@ export function NewSaleProductsStep({
         )}
       </Box>
     </Stack>
-  ) : null
-  const componentPanel = selectedMainProduct ? (
+  )
+  const componentPanel = (
     <Stack className="new-sale-products-step__related-panel new-sale-products-step__component-panel" gap={7}>
       <Group className="new-sale-products-step__related-head" justify="space-between" wrap="nowrap">
         <Text className="new-sale-products-step__related-title">{t('Комплектуючі')}</Text>
         <span>{componentEntries.entries.length}</span>
       </Group>
       <Box className="new-sale-products-step__related-scroll">
-        {componentEntries.entries.length > 0 ? (
+        {selectedMainProduct && componentEntries.entries.length > 0 ? (
           <WizardRelatedProductRows
             active={componentStatesActive}
             focusedIndex={componentIndex ?? -1}
@@ -2152,13 +2152,13 @@ export function NewSaleProductsStep({
         )}
       </Box>
     </Stack>
-  ) : null
-  const relatedColumnPanel = selectedMainProduct ? (
-    <Stack className="new-sale-products-step__related-column" gap={10}>
+  )
+  const relatedGridPanel = (
+    <Box className="new-sale-products-step__related-grid">
       {analoguePanel}
       {componentPanel}
-    </Stack>
-  ) : null
+    </Box>
+  )
 
   return (
     <Box ref={containerRef} className="new-sale-products-step">
@@ -2218,8 +2218,6 @@ export function NewSaleProductsStep({
               searchInputRef={searchInputRef}
               searchMode={kbState === 'ProductSearch'}
               searchValue={query}
-              onOpenCard={setProductCardNetId}
-              onProductInterest={agreementNetId ? (product) => openInterest(product) : undefined}
               onPick={(index) => {
                 focusMain(index)
 
@@ -2254,9 +2252,11 @@ export function NewSaleProductsStep({
               </Stack>
             ) : (
               <>
+          {relatedGridPanel}
+
           <Box className="new-sale-products-step__main-scroll">
             <Stack gap="md">
-              {selectedMainProductPanel && <Box className="new-sale-products-step__product-slot">{selectedMainProductPanel}</Box>}
+              {isMainFullDetail && selectedMainProductPanel && <Box className="new-sale-products-step__product-slot">{selectedMainProductPanel}</Box>}
 
               {kbState === 'AnalogueFullDetail' && focusedAnalogue && (
                 <ProductFullDetailPanel
@@ -2335,8 +2335,6 @@ export function NewSaleProductsStep({
               </>
             )}
           </Box>
-
-          {relatedColumnPanel && <Box className="new-sale-products-step__related-slot">{relatedColumnPanel}</Box>}
         </Box>
       </Box>
 
