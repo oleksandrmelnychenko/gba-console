@@ -308,8 +308,6 @@
 }
 
 .sale-edit-bulk-action {
-  border-color: var(--mantine-color-gray-2);
-  color: var(--mantine-color-gray-8);
   min-height: 32px;
 }
 

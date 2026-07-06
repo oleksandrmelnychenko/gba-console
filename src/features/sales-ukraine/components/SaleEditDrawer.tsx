@@ -340,7 +340,7 @@ function SaleEditContent({
               className="sale-edit-bulk-action"
               disabled={isSaving}
               leftSection={<IconReceipt size={16} />}
-              variant="light"
+              variant="outline"
               onClick={allToBill}
             >
               {t('Все в рахунок')}
@@ -350,7 +350,7 @@ function SaleEditContent({
             className="sale-edit-bulk-action"
             disabled={isSaving}
             leftSection={<IconBuildingWarehouse size={16} />}
-            variant="light"
+            variant="outline"
             onClick={allToStore}
           >
             {t('Все на склад')}

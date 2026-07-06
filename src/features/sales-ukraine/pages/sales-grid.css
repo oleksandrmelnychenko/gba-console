@@ -878,10 +878,6 @@
   color: var(--mantine-color-gray-7);
 }
 
-.sg-amt.is-unpaid .sg-amt-val,
-.sg-amt.is-unpaid .sg-amt-unit {
-  color: var(--mantine-color-red-6);
-}
 
 .sg-positions {
   align-items: center;
@@ -910,6 +906,19 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* The "add discount" affordance is a quick shortcut, not a value — keep the
+   column blank when a sale has no discount and only reveal it on row hover /
+   keyboard focus, instead of a lone "%" placeholder on every row. */
+.sg-discount-add {
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+.sales-grid-row:hover .sg-discount-add,
+.sg-discount-add:focus-visible {
+  opacity: 1;
 }
 
 .sg-discount-badge {

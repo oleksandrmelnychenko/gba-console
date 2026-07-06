@@ -1,5 +1,5 @@
 import { Anchor, Box, Text } from '@mantine/core'
-import { IconBox, IconPercentage } from '@tabler/icons-react'
+import { IconBox } from '@tabler/icons-react'
 import { useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { ProductCardModal } from '../../products/components/ProductCardModal'
@@ -215,10 +215,10 @@ function SaleExpandContentItem({
                 onOpenItemDiscount()
               }}
             >
-              {hasOneTimeDiscount ? formatPercent(oneTimeDiscount) : <IconPercentage aria-label={t('Знижка')} size={13} stroke={1.9} />}
+              {formatPercent(oneTimeDiscount ?? 0)}
             </Anchor>
           ) : (
-            <strong>{hasOneTimeDiscount ? formatPercent(oneTimeDiscount) : ''}</strong>
+            <strong>{formatPercent(oneTimeDiscount ?? 0)}</strong>
           )}
         </div>
         {hasOneTimeDiscount && discountUpdater && (

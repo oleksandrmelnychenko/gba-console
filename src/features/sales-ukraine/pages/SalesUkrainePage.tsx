@@ -1395,8 +1395,15 @@ function SaleGridRow({
             )}
           </Tooltip>
         ) : discountEditable ? (
-          <Tooltip label={t('Знижка')}>
-            <ActionIcon aria-label={t('Знижка')} color="gray" size="sm" variant="subtle" onClick={() => onOpenDiscount(sale)}>
+          <Tooltip label={t('Додати знижку')}>
+            <ActionIcon
+              aria-label={t('Додати знижку')}
+              className="sg-discount-add"
+              color="gray"
+              size="sm"
+              variant="subtle"
+              onClick={() => onOpenDiscount(sale)}
+            >
               <IconPercentage size={15} />
             </ActionIcon>
           </Tooltip>
