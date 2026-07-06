@@ -255,7 +255,10 @@ function toDateTimeLocalValue(value: Date | string | undefined): string {
   if (typeof value === 'string') {
     const match = value.match(/^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2})/)
 
-    if (match) {
+    // Only take the raw prefix for a naive (timezone-less) local value that came from the input; a
+    // Z/offset-bearing instant from the server must be converted to browser-local below, otherwise
+    // the field shows UTC as if it were local and jumps after each save round-trip.
+    if (match && !/[zZ]|[+-]\d{2}:?\d{2}$/.test(value)) {
       return match[1]
     }
   }
