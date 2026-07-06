@@ -18,6 +18,7 @@ import {
   IconAlertCircle,
   IconCalculator,
   IconDeviceFloppy,
+  IconListCheck,
   IconFile,
   IconFileUpload,
   IconPackageImport,
@@ -180,6 +181,29 @@ export function SupplyUkraineOrderOverviewPage() {
     setOrder((currentOrder) => currentOrder
       ? { ...currentOrder, VatPercent: toPercentNumber(value, 0) }
       : currentOrder)
+  }
+
+  // Apply the entered order-level VАТ % to every item row at once (client-side),
+  // like the legacy "add VAT for all" (#30). The rows become editable/dirty so
+  // "Зберегти ПДВ" persists them.
+  function applyOrderVatToAllItems() {
+    const percent = toPercentNumber(order?.VatPercent ?? 0, 0)
+
+    setOrder((currentOrder) => {
+      if (!currentOrder) {
+        return currentOrder
+      }
+
+      const nextItems = (currentOrder.SupplyOrderUkraineItems || []).map((item) => ({
+        ...item,
+        VatPercentStore: item.VatPercentStore ?? readNumber(asRecord(item).VatPercent) ?? 0,
+        VatPercent: percent,
+        isChanged: true,
+      }))
+
+      return { ...currentOrder, SupplyOrderUkraineItems: nextItems }
+    })
+    setVatItemChanges(true)
   }
 
   async function calculateVatPercentForOrder() {
@@ -502,17 +526,26 @@ export function SupplyUkraineOrderOverviewPage() {
               w={220}
               onChange={changeOrderVatPercent}
             />
-            <Button
-              color={CREATE_ACTION_COLOR}
-              leftSection={<IconCalculator size={16} />}
-              // "+ ПДВ" is the bulk apply-to-all-rows action (#30) — it must stay
-              // usable even mid-edit, so it is not gated on unsaved per-item edits.
-              disabled={!order || isSavingVat || isSavingVatItems}
-              loading={isSavingVat}
-              onClick={calculateVatPercentForOrder}
-            >
-              {t('+ ПДВ')}
-            </Button>
+            <Group gap="xs">
+              <Button
+                variant="default"
+                leftSection={<IconListCheck size={16} />}
+                disabled={!order || isSavingVat || isSavingVatItems}
+                onClick={applyOrderVatToAllItems}
+              >
+                {t('До всіх рядків')}
+              </Button>
+              <Button
+                color={CREATE_ACTION_COLOR}
+                leftSection={<IconCalculator size={16} />}
+                // "+ ПДВ" is the server recalc; kept usable mid-edit (#30).
+                disabled={!order || isSavingVat || isSavingVatItems}
+                loading={isSavingVat}
+                onClick={calculateVatPercentForOrder}
+              >
+                {t('+ ПДВ')}
+              </Button>
+            </Group>
           </Group>
         </Stack>
       </Card>

@@ -537,6 +537,132 @@
   min-width: 0;
 }
 
+.supply-orders-official-costs-content.mantine-Modal-content {
+  border-radius: 12px;
+}
+
+.supply-orders-official-costs-header.mantine-Modal-header {
+  min-height: 0;
+  padding: 18px 24px 8px;
+}
+
+.supply-orders-official-costs-body.mantine-Modal-body {
+  padding: 8px 24px 22px;
+}
+
+.supply-orders-official-costs-title {
+  color: var(--mantine-color-gray-9);
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1.2;
+}
+
+.supply-orders-official-costs-card.mantine-Card-root {
+  border-color: var(--mantine-color-gray-2);
+  box-shadow: none;
+  padding: 14px 16px;
+}
+
+.supply-orders-official-costs-grid {
+  align-items: start;
+}
+
+.supply-orders-official-costs-field {
+  min-width: 0;
+}
+
+.supply-orders-official-costs-field .mantine-InputWrapper-label {
+  color: var(--mantine-color-gray-9);
+  font-family: Onest, Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: 0;
+  line-height: 1.2;
+  margin-bottom: 6px;
+}
+
+.supply-orders-official-costs-field .mantine-Input-wrapper,
+.supply-orders-official-costs-field .mantine-Input-input,
+.supply-orders-official-costs-field .mantine-Select-input,
+.supply-orders-official-costs-field .mantine-TextInput-input,
+.supply-orders-official-costs-field .mantine-NumberInput-input,
+.supply-orders-official-costs-field .mantine-FileInput-input {
+  border-color: var(--mantine-color-gray-2);
+  border-radius: 8px;
+  color: var(--mantine-color-gray-8);
+  font-size: 13px;
+  font-weight: 500;
+  height: 36px;
+  line-height: 1.2;
+  min-height: 36px;
+}
+
+.supply-orders-official-costs-field .mantine-Input-input:disabled,
+.supply-orders-official-costs-field .mantine-Select-input:disabled,
+.supply-orders-official-costs-field .mantine-TextInput-input:disabled,
+.supply-orders-official-costs-field .mantine-NumberInput-input:disabled,
+.supply-orders-official-costs-field .mantine-FileInput-input:disabled {
+  background: var(--mantine-color-gray-0);
+  color: var(--mantine-color-gray-6);
+  opacity: 1;
+}
+
+.supply-orders-official-costs-field.is-mono .mantine-Input-input,
+.supply-orders-official-costs-field.is-mono .mantine-Select-input,
+.supply-orders-official-costs-field.is-mono .mantine-TextInput-input,
+.supply-orders-official-costs-field.is-mono .mantine-NumberInput-input {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.supply-orders-official-costs-field.is-mono .mantine-Input-input::placeholder,
+.supply-orders-official-costs-field.is-mono .mantine-Select-input::placeholder,
+.supply-orders-official-costs-field.is-mono .mantine-TextInput-input::placeholder,
+.supply-orders-official-costs-field.is-mono .mantine-NumberInput-input::placeholder {
+  font-family: var(--font-mono);
+  letter-spacing: 0;
+}
+
+.supply-orders-official-costs-field.is-mono .mantine-TextInput-input::-webkit-datetime-edit,
+.supply-orders-official-costs-field.is-mono .mantine-TextInput-input::-webkit-datetime-edit-fields-wrapper,
+.supply-orders-official-costs-field.is-mono .mantine-TextInput-input::-webkit-datetime-edit-text,
+.supply-orders-official-costs-field.is-mono .mantine-TextInput-input::-webkit-datetime-edit-month-field,
+.supply-orders-official-costs-field.is-mono .mantine-TextInput-input::-webkit-datetime-edit-day-field,
+.supply-orders-official-costs-field.is-mono .mantine-TextInput-input::-webkit-datetime-edit-year-field,
+.supply-orders-official-costs-field.is-mono .mantine-TextInput-input::-webkit-datetime-edit-hour-field,
+.supply-orders-official-costs-field.is-mono .mantine-TextInput-input::-webkit-datetime-edit-minute-field {
+  color: inherit;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.supply-orders-official-costs-field .mantine-Input-section {
+  color: var(--mantine-color-gray-6);
+}
+
+.supply-orders-official-costs-footer {
+  padding-top: 2px;
+}
+
+.supply-orders-official-costs-footer .mantine-Button-root {
+  border-radius: 8px;
+  min-height: 36px;
+}
+
+.supply-orders-official-costs-footer .mantine-Button-label {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.supply-orders-official-costs-cancel.mantine-Button-root {
+  color: var(--brand-orange);
+}
+
 @media (max-width: 1320px) {
   .supply-ukraine-orders-filter-bar {
     grid-template-columns: minmax(300px, 1fr) minmax(260px, 1fr) auto;

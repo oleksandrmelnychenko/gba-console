@@ -1799,99 +1799,138 @@ function OfficialCostsModal({
   }
 
   return (
-    <AppModal centered opened={Boolean(row)} size="lg" title={t('Офіційні витрати доставки')} onClose={onClose}>
-      <Stack gap="md">
+    <AppModal
+      centered
+      classNames={{
+        body: 'supply-orders-official-costs-body',
+        content: 'supply-orders-official-costs-content',
+        header: 'supply-orders-official-costs-header',
+      }}
+      opened={Boolean(row)}
+      size={1120}
+      title={<span className="supply-orders-official-costs-title">{t('Офіційні витрати доставки')}</span>}
+      onClose={onClose}
+    >
+      <Stack className="supply-orders-official-costs" gap="md">
         {error && (
           <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
             {error}
           </Alert>
         )}
 
-        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
-          <Select
-            data={organizationOptions}
-            disabled={isLoading || isSaving}
-            label={t('Постачальник послуг')}
-            nothingFoundMessage={t('Нічого не знайдено')}
-            searchable
-            searchValue={organizationSearch}
-            value={form.serviceOrganizationKey || null}
-            onChange={(value) => {
-              changeOrganization(value)
-              setOrganizationSearch('')
-            }}
-            onSearchChange={setOrganizationSearch}
-          />
-          <Select
-            data={agreementOptions}
-            disabled={isLoading || isSaving || !selectedOrganization}
-            label={t('Договір')}
-            searchable
-            value={form.serviceAgreementKey || null}
-            onChange={(value) => updateForm({ serviceAgreementKey: value || '' })}
-          />
-          <Select
-            data={productOptions}
-            disabled={isLoading || isSaving}
-            label={t('Тип')}
-            searchable
-            value={form.consumableProductKey || null}
-            onChange={(value) => updateForm({ consumableProductKey: value || '' })}
-          />
-          <TextInput
-            disabled={isSaving}
-            label={t('Номер інвойса')}
-            value={form.invoiceNumber}
-            onChange={(event) => updateForm({ invoiceNumber: event.currentTarget.value })}
-          />
-          <NumberInput
-            disabled={isSaving}
-            label={t('Вартість брутто')}
-            min={0}
-            value={form.grossAmount}
-            onChange={(value) => updateForm({ grossAmount: toNonNegativeNumber(value) })}
-          />
-          <NumberInput
-            disabled={isSaving}
-            label={t('ПДВ %')}
-            min={0}
-            value={form.vatPercent}
-            onChange={(value) => updateForm({ vatPercent: toNonNegativeNumber(value) })}
-          />
-          <NumberInput
-            disabled={isSaving}
-            label={t('Бух. вартість брутто')}
-            min={0}
-            value={form.accountingGrossAmount}
-            onChange={(value) => updateForm({ accountingGrossAmount: toNonNegativeNumber(value) })}
-          />
-          <NumberInput
-            disabled={isSaving}
-            label={t('Бух. ПДВ %')}
-            min={0}
-            value={form.accountingVatPercent}
-            onChange={(value) => updateForm({ accountingVatPercent: toNonNegativeNumber(value) })}
-          />
-          <TextInput
-            disabled={isSaving}
-            label={t('Дата')}
-            type="datetime-local"
-            value={form.fromDate}
-            onChange={(event) => updateForm({ fromDate: event.currentTarget.value })}
-          />
-          <FileInput
-            clearable
-            multiple
-            disabled={isSaving || Boolean(expense?.Id)}
-            label={t('Акти надання послуг')}
-            value={form.actDocuments}
-            onChange={(files) => updateForm({ actDocuments: files })}
-          />
-        </SimpleGrid>
+        <Card className="app-section-card supply-orders-official-costs-card" withBorder radius="md" padding="md">
+          <Stack gap="md">
+            <Text className="app-section-title" fw={600} size="sm">
+              {t('Дані витрат')}
+            </Text>
 
-        <Group justify="flex-end">
-          <Button disabled={isSaving} variant="subtle" onClick={onClose}>{t('Скасувати')}</Button>
-          <Button leftSection={<IconReceipt size={16} />} loading={isSaving} onClick={saveOfficialCosts}>{t('Зберегти')}</Button>
+            <SimpleGrid className="supply-orders-official-costs-grid" cols={{ base: 1, md: 2 }} spacing="md">
+              <Select
+                className="supply-orders-official-costs-field is-mono"
+                data={organizationOptions}
+                disabled={isLoading || isSaving}
+                label={t('Постачальник послуг')}
+                nothingFoundMessage={t('Нічого не знайдено')}
+                searchable
+                searchValue={organizationSearch}
+                value={form.serviceOrganizationKey || null}
+                onChange={(value) => {
+                  changeOrganization(value)
+                  setOrganizationSearch('')
+                }}
+                onSearchChange={setOrganizationSearch}
+              />
+              <Select
+                className="supply-orders-official-costs-field is-mono"
+                data={agreementOptions}
+                disabled={isLoading || isSaving || !selectedOrganization}
+                label={t('Договір')}
+                searchable
+                value={form.serviceAgreementKey || null}
+                onChange={(value) => updateForm({ serviceAgreementKey: value || '' })}
+              />
+              <Select
+                className="supply-orders-official-costs-field is-mono"
+                data={productOptions}
+                disabled={isLoading || isSaving}
+                label={t('Тип')}
+                searchable
+                value={form.consumableProductKey || null}
+                onChange={(value) => updateForm({ consumableProductKey: value || '' })}
+              />
+              <TextInput
+                className="supply-orders-official-costs-field is-mono"
+                disabled={isSaving}
+                label={t('Номер інвойса')}
+                value={form.invoiceNumber}
+                onChange={(event) => updateForm({ invoiceNumber: event.currentTarget.value })}
+              />
+              <NumberInput
+                className="supply-orders-official-costs-field is-mono"
+                disabled={isSaving}
+                label={t('Вартість брутто')}
+                min={0}
+                value={form.grossAmount}
+                onChange={(value) => updateForm({ grossAmount: toNonNegativeNumber(value) })}
+              />
+              <NumberInput
+                className="supply-orders-official-costs-field is-mono"
+                disabled={isSaving}
+                label={t('ПДВ %')}
+                min={0}
+                value={form.vatPercent}
+                onChange={(value) => updateForm({ vatPercent: toNonNegativeNumber(value) })}
+              />
+              <NumberInput
+                className="supply-orders-official-costs-field is-mono"
+                disabled={isSaving}
+                label={t('Бух. вартість брутто')}
+                min={0}
+                value={form.accountingGrossAmount}
+                onChange={(value) => updateForm({ accountingGrossAmount: toNonNegativeNumber(value) })}
+              />
+              <NumberInput
+                className="supply-orders-official-costs-field is-mono"
+                disabled={isSaving}
+                label={t('Бух. ПДВ %')}
+                min={0}
+                value={form.accountingVatPercent}
+                onChange={(value) => updateForm({ accountingVatPercent: toNonNegativeNumber(value) })}
+              />
+              <TextInput
+                className="supply-orders-official-costs-field is-mono"
+                disabled={isSaving}
+                label={t('Дата')}
+                type="datetime-local"
+                value={form.fromDate}
+                onChange={(event) => updateForm({ fromDate: event.currentTarget.value })}
+              />
+              <FileInput
+                clearable
+                multiple
+                className="supply-orders-official-costs-field"
+                disabled={isSaving || Boolean(expense?.Id)}
+                label={t('Акти надання послуг')}
+                value={form.actDocuments}
+                onChange={(files) => updateForm({ actDocuments: files })}
+              />
+            </SimpleGrid>
+          </Stack>
+        </Card>
+
+        <Group className="supply-orders-official-costs-footer" justify="flex-end" gap="sm">
+          <Button className="supply-orders-official-costs-cancel" disabled={isSaving} variant="subtle" onClick={onClose}>
+            {t('Скасувати')}
+          </Button>
+          <Button
+            className="supply-orders-official-costs-save"
+            color={CREATE_ACTION_COLOR}
+            leftSection={<IconReceipt size={16} />}
+            loading={isSaving}
+            onClick={saveOfficialCosts}
+          >
+            {t('Зберегти')}
+          </Button>
         </Group>
       </Stack>
     </AppModal>
