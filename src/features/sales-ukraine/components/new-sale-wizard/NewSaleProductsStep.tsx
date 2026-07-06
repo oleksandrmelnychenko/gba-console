@@ -2079,8 +2079,6 @@ export function NewSaleProductsStep({
     ) : null
   const selectedMainProductSummary = selectedMainProduct
     ? (() => {
-        const code = selectedMainProduct.VendorCode || selectedMainProduct.Articul || ''
-        const name = selectedMainProduct.NameUA || selectedMainProduct.Name || t('Товар без назви')
         const meta = getProductMeta(selectedMainProduct)
         const pricing = detailPricingFor(selectedMainProduct)
         const localPrice = getWizardProductNumber(selectedMainProduct.CurrentPriceEurToUah) ?? getWizardProductNumber(selectedMainProduct.CurrentLocalPrice)
@@ -2093,15 +2091,6 @@ export function NewSaleProductsStep({
 
         return (
           <Box className="new-sale-products-step__selected-product-band">
-            <Box className="new-sale-products-step__selected-product-copy">
-              <Text className="new-sale-products-step__selected-product-code" c={getRelatedProductRowColor(selectedMainProduct)} title={code} truncate>
-                {code}
-              </Text>
-              <Text className="new-sale-products-step__selected-product-name" title={name} truncate>
-                {name}
-              </Text>
-            </Box>
-
             {facts.length > 0 && (
               <Box className="new-sale-products-step__selected-product-facts">
                 {facts.map((fact) => (

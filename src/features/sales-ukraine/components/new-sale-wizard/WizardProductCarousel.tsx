@@ -66,7 +66,7 @@ export function WizardProductCarousel({
         </Stack>
       </Box>
 
-      <Box className="new-sale-product-picker__focus" py={6} style={{ flexShrink: 0, position: 'relative' }}>
+      <Box className="new-sale-product-picker__focus" py={0} style={{ flexShrink: 0, position: 'relative' }}>
         {/* Keep the input mounted even while hidden so it retains keyboard focus —
             otherwise arrow-key navigation stops working in selection mode. */}
         <input
