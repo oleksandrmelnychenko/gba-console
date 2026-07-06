@@ -1379,9 +1379,7 @@ function SaleGridRow({
         <span className="sg-amt-unit">{t('ПДВ')}</span>
       </div>
 
-      <div className="sg-positions">
-        {positions} {t('поз.')}
-      </div>
+      <div className="sg-positions">{positions}</div>
 
       <div className="sg-slot" data-row-stop="true">
         {saleDiscountBadge != null ? (
