@@ -145,7 +145,9 @@ export function NewUkraineSaleReturnPage() {
   const [clientSearch, setClientSearch] = useState('')
   const [clientId, setClientId] = useState<string | null>(null)
   const [saleSearch, setSaleSearch] = useState('')
-  const [saleFromDate, setSaleFromDate] = useState(() => shiftDateInput(-14))
+  // Wide default so a product from an older sale is actually found ("не находить
+  // товар", bug #10) — the "З дати" filter below stays editable to narrow it.
+  const [saleFromDate, setSaleFromDate] = useState(() => shiftDateInput(-1825))
   const [saleToDate, setSaleToDate] = useState(() => shiftDateInput(0))
   const [salesState, setSalesState] = useState<SalesSearchState>({
     isLoading: false,
