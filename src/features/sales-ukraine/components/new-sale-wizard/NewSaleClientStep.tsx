@@ -815,6 +815,8 @@ export function NewSaleClientStep({
   }
 
   function replaceRegistryRow(statistic: WizardSaleRegisterStatistic, _autoExpand: boolean) {
+    void _autoExpand
+
     const netId = statistic.Sale?.NetUid
 
     if (!netId) {
@@ -822,7 +824,6 @@ export function NewSaleClientStep({
     }
 
     setRegistryItems((current) => current.map((item) => (item.Sale?.NetUid === netId ? statistic : item)))
-
   }
 
   async function refreshRegistryRow(sale: SalesUkraineSale, autoExpand: boolean) {

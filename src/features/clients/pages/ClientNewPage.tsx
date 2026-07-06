@@ -41,7 +41,7 @@ import { PerfectClientPanel } from '../components/perfect-client/PerfectClientPa
 import { PricingPanel } from '../components/pricing/PricingPanel'
 import { applyPendingDiscountDraft } from '../components/pricing/pendingDiscountDraft'
 import type { DiscountsTreeDraft } from '../components/pricing/DiscountsTree'
-import { validateClientForm, validateRegionCodeSubmitState } from '../components/form/validateClientForm'
+import { type ClientFormErrors, validateClientForm, validateRegionCodeSubmitState } from '../components/form/validateClientForm'
 import type { Client, ClientContractDocument, ClientType, ClientTypeRole, Currency, Region } from '../types'
 
 const CLIENT_TYPE_BUYER = 0
@@ -50,6 +50,28 @@ const NEW_CLIENT_SESSION_STORAGE_KEY = 'gba_console:new_client_session:v1'
 const NEW_CLIENT_STEPS = ['role', 'general-information', 'contact-information', 'bank-details', 'perfect-client', 'pricing'] as const
 
 type NewClientStep = (typeof NEW_CLIENT_STEPS)[number]
+
+const NEW_CLIENT_FIELD_STEPS: Partial<Record<string, NewClientStep>> = {
+  FullName: 'general-information',
+  Brand: 'general-information',
+  SupplierCode: 'general-information',
+  SupplierName: 'general-information',
+  IncotermsElse: 'general-information',
+  Name: 'general-information',
+  SROI: 'general-information',
+  TIN: 'general-information',
+  USREOU: 'general-information',
+  EmailAddress: 'contact-information',
+  FaxNumber: 'contact-information',
+  ICQ: 'contact-information',
+  SMSNumber: 'contact-information',
+  AccountantNumber: 'contact-information',
+  DirectorNumber: 'contact-information',
+  Manager: 'contact-information',
+  DeliveryAddress: 'contact-information',
+  LegalAddress: 'contact-information',
+  ActualAddress: 'contact-information',
+}
 
 type ClientNewRouteState = {
   clientType?: 'supplier' | 'client'
@@ -77,6 +99,7 @@ type SetClientDraftField = <K extends keyof ClientDraft>(key: K, value: ClientDr
 type NewStepContentProps = {
   clientTypes: ClientType[]
   draft: ClientDraft
+  errors: ClientFormErrors
   role: ClientFormRole
   hasPermission: (permissionKey: string) => boolean
   lookups: ReturnType<typeof useClientFormLookups>['lookups']
@@ -241,6 +264,7 @@ export function ClientNewPage() {
       : createEmptyDraft(Boolean(routeState?.parentClientId)),
   )
   const [error, setError] = useValueState<string | null>(null)
+  const [formErrors, setFormErrors] = useValueState<ClientFormErrors>({})
   const [isLoading, setLoading] = useValueState(true)
   const [isSaving, setSaving] = useValueState(false)
   const [isLoadingRegionCode, setLoadingRegionCode] = useValueState(false)
@@ -248,7 +272,7 @@ export function ClientNewPage() {
   const pendingDocumentsRef = useRef<File[]>([])
   const pendingDiscountDraftRef = useRef<DiscountsTreeDraft | null>(null)
   const regionCodeRequestRef = useRef(0)
-  const submittedRef = useRef(false)
+  const [isSubmitted, setSubmitted] = useValueState(false)
   const requestedStep = normalizeStep(step)
   const visibleSteps = useMemo(() => buildVisibleNewSteps(draft), [draft])
   const currentStep = requestedStep || 'role'
@@ -338,7 +362,7 @@ export function ClientNewPage() {
   // After a successful create we navigate away from the wizard. Suppress the
   // redirect guards below so the (now reset) draft cannot bounce the user back
   // into a fresh "/clients/new/role" form while the closing navigation settles.
-  if (submittedRef.current) {
+  if (isSubmitted) {
     return null
   }
 
@@ -351,6 +375,19 @@ export function ClientNewPage() {
   }
 
   function setDraftField<K extends keyof ClientDraft>(key: K, value: ClientDraft[K]) {
+    setFormErrors((currentErrors) => {
+      const field = String(key)
+
+      if (!currentErrors[field]) {
+        return currentErrors
+      }
+
+      const nextErrors = { ...currentErrors }
+      delete nextErrors[field]
+
+      return nextErrors
+    })
+
     setDraft((currentDraft) => ({
       ...currentDraft,
       [key]: value,
@@ -359,6 +396,8 @@ export function ClientNewPage() {
   }
 
   function setRole(clientType: ClientType, nextRole: ClientTypeRole) {
+    setFormErrors({})
+
     setDraft((currentDraft) => {
       const isTypeChanged = !isSameClientType(currentDraft.ClientInRole.ClientType, clientType)
 
@@ -369,6 +408,7 @@ export function ClientNewPage() {
 
       return {
         ...currentDraft,
+        ...(clientType.Type === CLIENT_TYPE_PROVIDER ? { SROI: undefined, TIN: undefined, USREOU: undefined } : {}),
         ...(isTypeChanged
           ? {
               ClientAgreements: [],
@@ -645,8 +685,15 @@ export function ClientNewPage() {
 
     const draftToSubmit = applyPendingDiscountDraft(draft, pendingDiscountDraftRef.current) as ClientDraft
     const validationErrors = validateClientForm(draftToSubmit, role, t('Забагато символів'))
+    setFormErrors(validationErrors)
 
     if (Object.keys(validationErrors).length > 0) {
+      const errorStep = getFirstNewClientErrorStep(validationErrors, visibleSteps)
+
+      if (errorStep && errorStep !== currentStep) {
+        goToStep(errorStep)
+      }
+
       setError(t('Перевірте правильність заповнення форми'))
       return
     }
@@ -702,7 +749,7 @@ export function ClientNewPage() {
         color: documentsWereSaved ? 'green' : 'yellow',
         message: documentsWereSaved ? t('Клієнта створено') : t('Клієнта створено без документів'),
       })
-      submittedRef.current = true
+      setSubmitted(true)
       clearNewClientSession()
       setDraft(createEmptyDraft())
       pendingDocumentsRef.current = []
@@ -716,6 +763,21 @@ export function ClientNewPage() {
           : undefined),
       })
     } catch (saveError) {
+      const serverValidationErrors = getNewClientServerValidationErrors(saveError, role, t('Забагато символів'))
+
+      if (serverValidationErrors) {
+        setFormErrors(serverValidationErrors)
+
+        const errorStep = getFirstNewClientErrorStep(serverValidationErrors, visibleSteps)
+
+        if (errorStep && errorStep !== currentStep) {
+          goToStep(errorStep)
+        }
+
+        setError(t('Перевірте правильність заповнення форми'))
+        return
+      }
+
       setError(saveError instanceof Error ? saveError.message : t('Не вдалося створити клієнта'))
     } finally {
       setSaving(false)
@@ -774,6 +836,7 @@ export function ClientNewPage() {
                   <NewStepContent
                     clientTypes={clientTypes}
                     draft={draft}
+                    errors={formErrors}
                     role={role}
                     hasPermission={hasPermission}
                     lookups={lookups}
@@ -844,6 +907,7 @@ export function ClientNewPage() {
 function NewStepContent({
   clientTypes,
   draft,
+  errors,
   role,
   hasPermission,
   lookups,
@@ -919,7 +983,7 @@ function NewStepContent({
         <Title order={3} size="h4">
           {t('Контакти')}
         </Title>
-        <ContactInfoFields client={draft} role={role} onChange={setDraftField} />
+        <ContactInfoFields client={draft} errors={errors} role={role} onChange={setDraftField} />
       </Stack>
     )
   }
@@ -974,6 +1038,7 @@ function NewStepContent({
       <GeneralInfoFields
         client={draft}
         countries={lookups.countries}
+        errors={errors}
         incoterms={lookups.incoterms}
         isLoadingRegionCode={isLoadingRegionCode}
         packingMarkingPayments={lookups.packingMarkingPayments}
@@ -1046,6 +1111,35 @@ function buildVisibleNewSteps(draft: ClientDraft): NewClientStep[] {
   steps.push('pricing')
 
   return steps
+}
+
+function getFirstNewClientErrorStep(errors: ClientFormErrors, visibleSteps: NewClientStep[]): NewClientStep | null {
+  for (const field of Object.keys(errors)) {
+    const step = NEW_CLIENT_FIELD_STEPS[field]
+
+    if (step && visibleSteps.includes(step)) {
+      return step
+    }
+  }
+
+  return null
+}
+
+function getNewClientServerValidationErrors(
+  error: unknown,
+  role: ClientFormRole,
+  tooManyMessage: string,
+): ClientFormErrors | null {
+  if (!role.isBuyer || !(error instanceof Error)) {
+    return null
+  }
+
+  const message = error.message.toLocaleLowerCase('uk-UA')
+  const isTinLengthError =
+    (message.includes('інн') || message.includes('іпн') || message.includes('tin'))
+    && message.includes('30')
+
+  return isTinLengthError ? { TIN: tooManyMessage } : null
 }
 
 function buildCreatePayload(draft: ClientDraft): Client {

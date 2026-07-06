@@ -85,15 +85,18 @@ export type SupplyInvoice = EntityFields & {
   ExchangeRate?: number
   ExchangeRateEurToUah?: number
   MergedSupplyInvoices?: SupplyInvoice[]
+  NetPrice?: number
   Number?: string
   NumberCustomDeclaration?: string
   ServiceNumber?: string
+  SupplyOrganizationAgreement?: SupplyOrganizationAgreement | null
   SupplyInvoiceBillOfLadingServices?: SupplyInvoiceBillOfLadingService[]
   SupplyInvoiceDeliveryDocuments?: SupplyDocument[]
   SupplyInvoiceMergedServices?: SupplyInvoiceMergedService[]
   SupplyOrder?: SupplyOrder | null
   TotalNetPrice?: number
   TotalSpending?: number
+  TotalValueWithVat?: number
 }
 
 export type BillOfLadingService = EntityFields & {

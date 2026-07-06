@@ -1655,6 +1655,7 @@ export function ResalePage() {
         items={[
           { label: t('Кількість'), value: formatAmount(totals.qty) },
           { label: t('Сума'), value: formatMoney(totals.amount) },
+          { label: t('Сума, грн'), value: formatMoney(getResaleUahAmount(model.ReSale)) },
           { label: t('ПДВ'), value: formatMoney(totals.vat) },
           { label: t('Вага'), value: formatAmount(totals.weight) },
           { label: t('Оплачено'), value: formatMoney(model.ReSale.TotalPaymentAmount) },
@@ -1791,6 +1792,15 @@ function useResalesColumns({
         minWidth: 82,
         accessor: (resale) => resale.ClientAgreement?.Agreement?.Currency?.Code,
         cell: (resale) => displayValue(resale.ClientAgreement?.Agreement?.Currency?.Code || 'UAH'),
+      },
+      {
+        id: 'amountLocal',
+        header: t('Сума, грн'),
+        width: 120,
+        minWidth: 104,
+        align: 'right',
+        accessor: (resale) => getResaleUahAmount(resale),
+        cell: (resale) => formatMoney(getResaleUahAmount(resale)),
       },
       {
         id: 'payment',
@@ -4060,6 +4070,24 @@ function formatAmount(value?: number): string {
   }
 
   return amountFormatter.format(value)
+}
+
+/* UAH equivalent of a resale total. TotalAmountLocal is the AGREEMENT-currency
+   amount (EUR for EUR agreements), NOT UAH — so use TotalAmountEurToUah for EUR
+   agreements, TotalAmountLocal for UAH ones, and blank for other foreign
+   currencies that carry no UAH conversion. */
+function getResaleUahAmount(resale: { ClientAgreement?: ResaleClientAgreement | null; TotalAmount?: number; TotalAmountLocal?: number; TotalAmountEurToUah?: number }): number | undefined {
+  const currencyCode = resale.ClientAgreement?.Agreement?.Currency?.Code
+
+  if (currencyCode === 'EUR') {
+    return resale.TotalAmountEurToUah
+  }
+
+  if (!currencyCode || currencyCode === 'UAH') {
+    return resale.TotalAmountLocal ?? resale.TotalAmount
+  }
+
+  return undefined
 }
 
 function formatMoney(value?: number): string {

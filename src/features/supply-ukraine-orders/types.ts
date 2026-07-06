@@ -459,6 +459,7 @@ export type UkraineOrderFromSupplierParseConfiguration = {
   UnitPriceColumnNumber: number
   VendorCodeColumnNumber: number
   WeightColumnNumber: number
+  WithTotalAmount: boolean
   WithGrossWeight: boolean
   WithIsImportedProduct: boolean
   WithSpecificationCode: boolean

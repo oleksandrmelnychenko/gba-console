@@ -694,7 +694,7 @@ function getSaleRowStateClass(sale: SalesUkraineSale): string {
 function getSaleRowClassName(sale: SalesUkraineSale): string {
   return [
     'new-sale-register-table-row',
-    Boolean((sale as { ShiftStatus?: unknown }).ShiftStatus) ? 'is-shift' : '',
+    (sale as { ShiftStatus?: unknown }).ShiftStatus ? 'is-shift' : '',
   ].filter(Boolean).join(' ')
 }
 

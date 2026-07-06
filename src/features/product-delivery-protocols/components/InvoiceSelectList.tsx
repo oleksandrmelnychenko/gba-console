@@ -2,7 +2,7 @@ import { Badge, Card, Checkbox, Group, Stack, Text } from '@mantine/core'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { SupplyInvoice } from '../detailTypes'
 import { getProtocolInvoiceAssignmentKey } from '../protocolInvoiceAssignment'
-import { formatDateTime } from './protocolDetailHelpers'
+import { formatDateTime, getInvoiceCurrencyCode, getInvoiceTotalNetPrice } from './protocolDetailHelpers'
 import './invoice-select-list.css'
 
 const invoiceAmountFormatter = new Intl.NumberFormat('uk-UA', {
@@ -35,11 +35,10 @@ export function InvoiceSelectList({
     <Stack gap="xs">
       {invoices.map((invoice, index) => {
         const key = getProtocolInvoiceAssignmentKey(invoice)
-        const currencyCode = invoice.SupplyOrder?.ClientAgreement?.Agreement?.Currency?.Code || ''
+        const currencyCode = getInvoiceCurrencyCode(invoice)
         const isSelected = Boolean(selected[key])
         const supplier = invoice.SupplyOrder?.Client?.FullName || '-'
-        const amount =
-          typeof invoice.TotalNetPrice === 'number' ? invoiceAmountFormatter.format(invoice.TotalNetPrice) : '0'
+        const amount = invoiceAmountFormatter.format(getInvoiceTotalNetPrice(invoice))
 
         return (
           <Card

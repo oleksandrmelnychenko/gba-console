@@ -44,7 +44,7 @@ import {
 } from '../protocolInvoiceAssignment'
 import { InvoiceSelectList } from './InvoiceSelectList'
 import { LabelValueRow } from './LabelValueRow'
-import { formatDateTime, formatMoney } from './protocolDetailHelpers'
+import { formatDateTime, formatMoney, getInvoiceCurrencyCode, getInvoiceTotalNetPrice } from './protocolDetailHelpers'
 
 const MANAGE_INVOICES_PERMISSION = 'ProductDeliveryProtocols_logistic_path_card_invoices_infoBtn_PKEY'
 
@@ -85,9 +85,10 @@ function InvoiceViewCard({
   onSaveDocuments: (invoice: SupplyInvoice, documents: File[]) => Promise<void>
 }) {
   const { t } = useI18n()
-  const currencyCode = invoice.SupplyOrder?.ClientAgreement?.Agreement?.Currency?.Code || ''
+  const currencyCode = getInvoiceCurrencyCode(invoice)
+  const invoiceNetPrice = getInvoiceTotalNetPrice(invoice)
   const totalNetPrice =
-    (invoice.TotalNetPrice || 0) + (invoice.DeliveryAmount || 0) - (invoice.DiscountAmount || 0)
+    invoiceNetPrice + (invoice.DeliveryAmount || 0) - (invoice.DiscountAmount || 0)
   const invoiceNumber = [
     invoice.Number,
     ...(invoice.MergedSupplyInvoices || []).map((mergedInvoice) => mergedInvoice.Number),
@@ -172,7 +173,7 @@ function InvoiceViewCard({
         <LabelValueRow label={t('Номер інвойса')} mono>{invoiceNumber || ''}</LabelValueRow>
         <LabelValueRow label={t('Дата інвойса')} mono>{formatDateTime(invoice.DateFrom)}</LabelValueRow>
         <LabelValueRow label={t('Постачальник')}>{invoice.SupplyOrder?.Client?.FullName || ''}</LabelValueRow>
-        <LabelValueRow label={t('Заг. вартість нетто')} mono>{formatMoney(invoice.TotalNetPrice, currencyCode)}</LabelValueRow>
+        <LabelValueRow label={t('Заг. вартість нетто')} mono>{formatMoney(invoiceNetPrice, currencyCode)}</LabelValueRow>
         <LabelValueRow label={t('Сума доставки')} mono>{formatMoney(invoice.DeliveryAmount, currencyCode)}</LabelValueRow>
         <LabelValueRow label={t('Сума знижки')} mono>{formatMoney(invoice.DiscountAmount, currencyCode)}</LabelValueRow>
         <LabelValueRow label={t('Кінцева вартість Нетто')} mono>{formatMoney(totalNetPrice, currencyCode)}</LabelValueRow>

@@ -266,17 +266,23 @@ function BuyerFields(props: GeneralInfoFieldsProps) {
 
           <SimpleGrid cols={{ base: 1, md: 3 }} spacing="sm">
             <TextInput
+              error={props.errors?.SROI}
               label={t('Номер платника ПДВ')}
+              maxLength={30}
               value={client.SROI || ''}
               onChange={(event) => props.onChange('SROI', event.currentTarget.value)}
             />
             <TextInput
+              error={props.errors?.TIN}
               label={t('ІПН')}
+              maxLength={30}
               value={client.TIN || ''}
               onChange={(event) => props.onChange('TIN', event.currentTarget.value)}
             />
             <TextInput
+              error={props.errors?.USREOU}
               label={t('ЄДРПОУ')}
+              maxLength={30}
               value={client.USREOU || ''}
               onChange={(event) => props.onChange('USREOU', event.currentTarget.value)}
             />

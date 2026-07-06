@@ -4,6 +4,8 @@ import {
   deleteSupplyProformDocument,
   searchSupplyOrderServiceOrganizations,
   uploadDirectSupplyOrderFromFile,
+  uploadPackingListFile,
+  uploadSupplyInvoiceFile,
   uploadSupplyOrderProformDocuments,
   uploadSupplyOrderUkraineFromSupplierFile,
 } from './supplyUkraineOrdersApi'
@@ -12,6 +14,7 @@ import type {
   ClientAgreement,
   DirectSupplyOrderCreatePayload,
   Organization,
+  PackingListDocumentParseConfiguration,
   SupplyOrderDocumentParseConfiguration,
   SupplyProForm,
   SupplyOrderUkraineSupplierCreatePayload,
@@ -127,7 +130,90 @@ describe('supplyUkraineOrdersApi', () => {
       Number: 'PF-42',
       ProFormDocuments: [{ FileName: 'proform.pdf' }],
     })
+    expect(response?.SupplyProFormId).toBe('proform-1')
     expect(response?.SupplyProForm?.ProFormDocuments).toEqual([])
+  })
+
+  it('normalizes invoice upload responses that return the parent order', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      NetUid: 'direct-order-1',
+      SupplyInvoices: [
+        { NetUid: 'invoice-old', Number: 'INV-OLD' },
+        { NetUid: 'invoice-new', Number: 'INV-NEW' },
+      ],
+    })
+
+    const response = await uploadSupplyInvoiceFile({
+      file: new File(['xlsx'], 'invoice.xlsx'),
+      invoice: { Number: 'INV-NEW' },
+      parseConfiguration: createDirectParseConfiguration(),
+      supplyOrderNetId: 'direct-order-1',
+    })
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/invoices/update/file', {
+      body: expect.any(FormData),
+      method: 'POST',
+      query: { netId: 'direct-order-1' },
+    })
+    expect(response?.NetUid).toBe('invoice-new')
+    expect(response?.Number).toBe('INV-NEW')
+  })
+
+  it('normalizes invoice upload responses that return a wrapped invoice', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      SupplyInvoice: { NetUid: 'invoice-wrapper', Number: 'INV-WRAP' },
+    })
+
+    const response = await uploadSupplyInvoiceFile({
+      file: new File(['xlsx'], 'invoice.xlsx'),
+      invoice: { Number: 'INV-WRAP' },
+      parseConfiguration: createDirectParseConfiguration(),
+      supplyOrderNetId: 'direct-order-1',
+    })
+
+    expect(response?.NetUid).toBe('invoice-wrapper')
+    expect(response?.Number).toBe('INV-WRAP')
+  })
+
+  it('normalizes packing-list upload responses that return the parent invoice', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      NetUid: 'invoice-1',
+      PackingLists: [
+        { NetUid: 'pack-1', No: 'PL-1' },
+        { NetUid: 'pack-2', No: 'PL-2' },
+      ],
+    })
+
+    const response = await uploadPackingListFile({
+      file: new File(['xlsx'], 'pack-list.xlsx'),
+      packingList: { No: 'PL-2' },
+      parseConfiguration: createPackListParseConfiguration(),
+      supplyInvoiceNetId: 'invoice-1',
+    })
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/packinglists/new/file', {
+      body: expect.any(FormData),
+      method: 'POST',
+      query: { netId: 'invoice-1' },
+    })
+    expect(response?.NetUid).toBe('pack-2')
+    expect(response?.No).toBe('PL-2')
+  })
+
+  it('normalizes packing-list upload responses that return a wrapped packing list', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      Data: { NetUid: 'pack-wrapper', No: 'PL-WRAP' },
+    })
+
+    const response = await uploadPackingListFile({
+      file: new File(['xlsx'], 'pack-list.xlsx'),
+      packingList: { No: 'PL-WRAP' },
+      parseConfiguration: createPackListParseConfiguration(),
+      supplyInvoiceNetId: 'invoice-1',
+    })
+
+    expect(response?.NetUid).toBe('pack-wrapper')
+    expect(response?.No).toBe('PL-WRAP')
   })
 
   it('deletes direct-order proform documents through the proforms document endpoint', async () => {
@@ -179,6 +265,7 @@ function createParseConfiguration(): UkraineOrderFromSupplierParseConfiguration 
     WithGrossWeight: false,
     WithIsImportedProduct: false,
     WithSpecificationCode: false,
+    WithTotalAmount: false,
     WithWeight: false,
   }
 }
@@ -209,6 +296,23 @@ function createDirectParseConfiguration(): SupplyOrderDocumentParseConfiguration
     VendorCodeColumnNumber: 1,
     WithGrossWeight: false,
     WithNetWeight: false,
+    WithTotalAmount: false,
+  }
+}
+
+function createPackListParseConfiguration(): PackingListDocumentParseConfiguration {
+  return {
+    EndRow: 20,
+    GrossWeightColumnNumber: 7,
+    IsWeightPerUnit: true,
+    NetWeightColumnNumber: 6,
+    QtyColumnNumber: 2,
+    StartRow: 2,
+    TotalAmountColumnNumber: 0,
+    UnitPriceColumnNumber: 5,
+    VendorCodeColumnNumber: 1,
+    WithGrossWeight: true,
+    WithNetWeight: true,
     WithTotalAmount: false,
   }
 }

@@ -27,6 +27,7 @@ import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { formatLocalDateTime } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { EXCEL_FILE_ACCEPT, isExcelFile } from '../excelFiles'
 import {
   getSupplyOrderOrganizations,
   getSupplyOrderSuppliers,
@@ -360,8 +361,8 @@ function SupplyUkraineOrderFileCreatePage({ mode }: { mode: CreateMode }) {
       return
     }
 
-    if (!form.file) {
-      dispatchPage({ type: 'setError', error: t('Оберіть файл') })
+    if (!form.file || !isExcelFile(form.file)) {
+      dispatchPage({ type: 'setError', error: t('Оберіть Excel файл') })
       return
     }
 
@@ -621,7 +622,7 @@ function ImportConfigurationSection({
       <Text fw={600}>{t('Імпорт')}</Text>
       <FileInput
         clearable
-        accept=".xls,.xlsx"
+        accept={EXCEL_FILE_ACCEPT}
         disabled={isSaving}
         label={t('Файл')}
         leftSection={<IconFileSpreadsheet size={16} />}
@@ -1003,6 +1004,7 @@ function toUkraineParseConfigurationFromForm(form: ParseForm): UkraineOrderFromS
     UnitPriceColumnNumber: unitPriceColumnNumber,
     VendorCodeColumnNumber: baseConfiguration.VendorCodeColumnNumber,
     WeightColumnNumber: form.withWeight ? Number(form.weightColumnNumber) : 0,
+    WithTotalAmount: form.withTotalAmount,
     WithGrossWeight: form.withGrossWeight,
     WithIsImportedProduct: form.withImportedProduct,
     WithSpecificationCode: form.withSpecificationCode,

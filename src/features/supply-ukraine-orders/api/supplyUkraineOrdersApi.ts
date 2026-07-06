@@ -277,7 +277,7 @@ export async function uploadSupplyInvoiceFile({
     query: { netId: supplyOrderNetId },
   })
 
-  return normalizeSupplyInvoice(result)
+  return normalizeUploadedSupplyInvoice(result)
 }
 
 export async function uploadPackingListFile({
@@ -303,7 +303,7 @@ export async function uploadPackingListFile({
     query: { netId: supplyInvoiceNetId },
   })
 
-  return normalizePackingList(result)
+  return normalizeUploadedPackingList(result)
 }
 
 export async function deleteSupplyInvoice(netId: string): Promise<void> {
@@ -602,6 +602,8 @@ function normalizeDirectSupplyOrder(result: unknown): DirectSupplyOrder | null {
 }
 
 function normalizeDirectSupplyOrderObject(order: DirectSupplyOrder): DirectSupplyOrder {
+  const supplyProForm = normalizeSupplyProForm(order.SupplyProForm)
+
   return {
     ...order,
     CreditNoteDocuments: Array.isArray(order.CreditNoteDocuments) ? order.CreditNoteDocuments : [],
@@ -609,7 +611,8 @@ function normalizeDirectSupplyOrderObject(order: DirectSupplyOrder): DirectSuppl
     SupplyOrderDeliveryDocuments: Array.isArray(order.SupplyOrderDeliveryDocuments) ? order.SupplyOrderDeliveryDocuments : [],
     SupplyOrderItems: Array.isArray(order.SupplyOrderItems) ? order.SupplyOrderItems : [],
     SupplyOrderNumber: normalizeNumberObject(order.SupplyOrderNumber),
-    SupplyProForm: normalizeSupplyProForm(order.SupplyProForm),
+    SupplyProForm: supplyProForm,
+    SupplyProFormId: order.SupplyProFormId || supplyProForm?.Id || supplyProForm?.NetUid || null,
   }
 }
 
@@ -643,12 +646,40 @@ function normalizeSupplyInvoice(result: unknown): SupplyInvoice | null {
   return ensureSupplyInvoice(result as SupplyInvoice)
 }
 
+function normalizeUploadedSupplyInvoice(result: unknown): SupplyInvoice | null {
+  const payload = parseJsonPayload(result)
+  const orderPayload = readObjectPayload(payload, ['SupplyOrder', 'SupplyOrderModel', 'Order', 'Data']) || payload
+  const order = normalizeDirectSupplyOrder(orderPayload)
+
+  if (order?.SupplyInvoices?.length) {
+    return order.SupplyInvoices[order.SupplyInvoices.length - 1] || null
+  }
+
+  const invoicePayload = readObjectPayload(payload, ['SupplyInvoice', 'SupplyInvoiceModel', 'Invoice', 'Item', 'Data'])
+
+  return normalizeSupplyInvoice(invoicePayload || payload)
+}
+
 function normalizePackingList(result: unknown): PackingList | null {
   if (!result || typeof result !== 'object') {
     return null
   }
 
   return ensurePackingList(result as PackingList)
+}
+
+function normalizeUploadedPackingList(result: unknown): PackingList | null {
+  const payload = parseJsonPayload(result)
+  const invoicePayload = readObjectPayload(payload, ['SupplyInvoice', 'SupplyInvoiceModel', 'Invoice', 'Data']) || payload
+  const invoice = normalizeSupplyInvoice(invoicePayload)
+
+  if (invoice?.PackingLists?.length) {
+    return invoice.PackingLists[invoice.PackingLists.length - 1] || null
+  }
+
+  const packingListPayload = readObjectPayload(payload, ['PackingList', 'PackingListModel', 'Item', 'Data'])
+
+  return normalizePackingList(packingListPayload || payload)
 }
 
 function ensureSupplyInvoice(invoice: SupplyInvoice): SupplyInvoice {
@@ -752,6 +783,24 @@ function parseJsonPayload(result: unknown): unknown {
   } catch {
     return result
   }
+}
+
+function readObjectPayload(result: unknown, keys: string[]): unknown | null {
+  if (!result || typeof result !== 'object') {
+    return null
+  }
+
+  const payload = result as Record<string, unknown>
+
+  for (const key of keys) {
+    const value = payload[key]
+
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      return value
+    }
+  }
+
+  return null
 }
 
 function readNumber(value: unknown): number | undefined {

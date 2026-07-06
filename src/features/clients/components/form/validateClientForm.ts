@@ -33,6 +33,9 @@ export function validateClientForm(
   if (role.isBuyer) {
     rules.push(
       { field: 'Name', value: client.Name, max: 100 },
+      { field: 'SROI', value: client.SROI, max: 30 },
+      { field: 'TIN', value: client.TIN, max: 30 },
+      { field: 'USREOU', value: client.USREOU, max: 30 },
       { field: 'ICQ', value: client.ICQ, max: 20 },
       { field: 'SMSNumber', value: client.SMSNumber, max: 20 },
       { field: 'AccountantNumber', value: client.AccountantNumber, max: 20 },

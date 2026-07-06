@@ -534,6 +534,18 @@
   margin-left: 4px;
 }
 
+/* Secondary UAH figure under the item price/amount (§5.1 mono meta). */
+.sale-detail-product-uah {
+  color: var(--mantine-color-gray-6);
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0;
+  margin-left: 0;
+  margin-top: 1px;
+}
+
 .sale-detail-products-empty {
   align-items: center;
   color: var(--mantine-color-gray-6);

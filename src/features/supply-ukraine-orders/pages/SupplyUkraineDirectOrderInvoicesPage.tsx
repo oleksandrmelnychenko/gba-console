@@ -48,6 +48,7 @@ import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useAuth } from '../../auth/useAuth'
 import { ProductCardModal } from '../../products/components/ProductCardModal'
+import { EXCEL_FILE_ACCEPT, isExcelFile } from '../excelFiles'
 import {
   deletePackingList,
   deleteSupplyInvoice,
@@ -319,12 +320,7 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
   const canAddPackList = hasPermission(PERMISSION_ADD_PACK_LIST)
   const canRemoveInvoice = hasPermission(PERMISSION_REMOVE_INVOICE)
   const canRemovePackList = hasPermission(PERMISSION_REMOVE_PACK_LIST)
-  // Legacy business rule: ONE pack list per invoice — the upload button exists
-  // only while the selected invoice has no pack list yet (the server can't
-  // reliably match products across several pack lists of one invoice).
-  const canShowPackListUpload = Boolean(
-    selectedInvoice && canAddPackList && (selectedInvoice.PackingLists?.length || 0) === 0,
-  )
+  const canShowPackListUpload = Boolean(selectedInvoice && canAddPackList)
   const isBusy = isSaving || isLoading || isInvoiceLoading
 
   const detailedInvoices = useMemo(
@@ -605,6 +601,9 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
       notifications.show({ color: 'green', message: t('Інвойс завантажено') })
       setPageState({ invoiceUploadOpen: false })
       await reloadOrder(invoice?.NetUid || selectedInvoiceNetId)
+      if (invoice) {
+        mergeUploadedInvoice(invoice)
+      }
     } catch (saveError) {
       notifications.show({ color: 'red', message: saveError instanceof Error ? saveError.message : t('Не вдалося виконати запит') })
     } finally {
@@ -661,14 +660,64 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
       notifications.show({ color: 'green', message: t('Пак лист завантажено') })
       setPageState({ packListUploadOpen: false })
       await reloadOrder(selectedInvoice.NetUid)
-      if (packList?.NetUid) {
-        setPageState({ selectedPackListNetId: packList.NetUid })
+      if (packList) {
+        mergeUploadedPackList(selectedInvoice.NetUid, packList)
       }
     } catch (saveError) {
       notifications.show({ color: 'red', message: saveError instanceof Error ? saveError.message : t('Не вдалося виконати запит') })
     } finally {
       setPageState({ isSaving: false })
     }
+  }
+
+  function mergeUploadedInvoice(invoice: SupplyInvoice) {
+    setPageState((current) => {
+      const nextInvoice = invoice.NetUid && current.invoiceDetailsByNetId[invoice.NetUid]
+        ? mergeSupplyInvoiceData(current.invoiceDetailsByNetId[invoice.NetUid], invoice)
+        : invoice
+
+      return {
+        activeTab: 'invoices',
+        invoiceDetailsByNetId: nextInvoice.NetUid
+          ? { ...current.invoiceDetailsByNetId, [nextInvoice.NetUid]: nextInvoice }
+          : current.invoiceDetailsByNetId,
+        order: current.order
+          ? { ...current.order, SupplyInvoices: upsertInvoice(current.order.SupplyInvoices || [], nextInvoice) }
+          : current.order,
+        selectedInvoiceNetId: nextInvoice.NetUid || current.selectedInvoiceNetId,
+        selectedPackListNetId: getValidPackListNetId(current.selectedPackListNetId, nextInvoice),
+      }
+    })
+  }
+
+  function mergeUploadedPackList(invoiceNetUid: string, packList: PackingList) {
+    setPageState((current) => {
+      const currentInvoice = getSelectedInvoice(invoiceNetUid, current.invoiceDetailsByNetId, current.order?.SupplyInvoices || [])
+
+      if (!currentInvoice) {
+        return {
+          activeTab: 'packlists',
+          selectedPackListNetId: packList.NetUid || current.selectedPackListNetId,
+        }
+      }
+
+      const nextInvoice = {
+        ...currentInvoice,
+        PackingLists: upsertPackList(currentInvoice.PackingLists || [], packList),
+      }
+
+      return {
+        activeTab: 'packlists',
+        invoiceDetailsByNetId: invoiceNetUid
+          ? { ...current.invoiceDetailsByNetId, [invoiceNetUid]: nextInvoice }
+          : current.invoiceDetailsByNetId,
+        order: current.order
+          ? { ...current.order, SupplyInvoices: upsertInvoice(current.order.SupplyInvoices || [], nextInvoice) }
+          : current.order,
+        selectedInvoiceNetId: invoiceNetUid || current.selectedInvoiceNetId,
+        selectedPackListNetId: packList.NetUid || current.selectedPackListNetId,
+      }
+    })
   }
 
   async function confirmDeleteInvoice() {
@@ -1177,7 +1226,7 @@ function InvoicesPanel({ model }: { model: DirectOrderInvoicesPageModel }) {
               </Box>
             </Stack>
           )}
-          {model.selectedInvoice && <InvoiceTotals invoice={model.selectedInvoice} />}
+          {model.selectedInvoice && <InvoiceTotals invoice={model.selectedInvoice} order={model.order} />}
         </Stack>
       </Card>
     </Tabs.Panel>
@@ -1195,52 +1244,56 @@ function InvoiceSelector({
 
   return (
     <Group gap="xs" wrap="wrap">
-      {model.invoices.map((invoice) => (
-        <Group key={invoice.NetUid || invoice.Id} gap={4} wrap="nowrap">
-          <Button
-            color={invoice.NetUid === model.selectedInvoiceNetId ? CREATE_ACTION_COLOR : 'gray'}
-            disabled={model.isBusy}
-            styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
-            variant={invoice.NetUid === model.selectedInvoiceNetId ? 'light' : 'subtle'}
-            onClick={() => {
-              const invoiceNetId = invoice.NetUid || null
-              const nextInvoice = getSelectedInvoice(invoiceNetId, model.invoiceDetailsByNetId, model.invoices)
+      {model.invoices.map((invoice) => {
+        const currencyCode = getInvoiceCurrencyCode(invoice, model.order)
 
-              model.setPageState((current) => {
-                // Evict the cached details so every click re-fetches
-                // /supplies/invoices/items/get, like the legacy client.
-                const nextDetails = { ...current.invoiceDetailsByNetId }
+        return (
+          <Group key={invoice.NetUid || invoice.Id} gap={4} wrap="nowrap">
+            <Button
+              color={invoice.NetUid === model.selectedInvoiceNetId ? CREATE_ACTION_COLOR : 'gray'}
+              disabled={model.isBusy}
+              styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
+              variant={invoice.NetUid === model.selectedInvoiceNetId ? 'light' : 'subtle'}
+              onClick={() => {
+                const invoiceNetId = invoice.NetUid || null
+                const nextInvoice = getSelectedInvoice(invoiceNetId, model.invoiceDetailsByNetId, model.invoices)
 
-                if (invoiceNetId) {
-                  delete nextDetails[invoiceNetId]
-                }
+                model.setPageState((current) => {
+                  // Evict the cached details so every click re-fetches
+                  // /supplies/invoices/items/get, like the legacy client.
+                  const nextDetails = { ...current.invoiceDetailsByNetId }
 
-                return {
-                  invoiceDetailsByNetId: nextDetails,
-                  selectedInvoiceNetId: invoiceNetId,
-                  selectedPackListNetId: getValidPackListNetId(current.selectedPackListNetId, nextInvoice),
-                }
-              })
-            }}
-          >
-            {invoice.Number || t('Інвойс')} ({formatDate(invoice.DateFrom)})
-          </Button>
-          {showDelete && model.canRemoveInvoice && (
-            <Tooltip label={t('Видалити')}>
-              <ActionIcon
-                aria-label={t('Видалити')}
-                color="red"
-                disabled={model.isBusy}
-                size="xs"
-                variant="subtle"
-                onClick={() => model.setPageState({ deleteInvoiceCandidate: invoice })}
-              >
-                <IconTrash size={14} />
-              </ActionIcon>
-            </Tooltip>
-          )}
-        </Group>
-      ))}
+                  if (invoiceNetId) {
+                    delete nextDetails[invoiceNetId]
+                  }
+
+                  return {
+                    invoiceDetailsByNetId: nextDetails,
+                    selectedInvoiceNetId: invoiceNetId,
+                    selectedPackListNetId: getValidPackListNetId(current.selectedPackListNetId, nextInvoice),
+                  }
+                })
+              }}
+            >
+              {invoice.Number || t('Інвойс')} ({formatDate(invoice.DateFrom)}){currencyCode ? ` ${currencyCode}` : ''}
+            </Button>
+            {showDelete && model.canRemoveInvoice && (
+              <Tooltip label={t('Видалити')}>
+                <ActionIcon
+                  aria-label={t('Видалити')}
+                  color="red"
+                  disabled={model.isBusy}
+                  size="xs"
+                  variant="subtle"
+                  onClick={() => model.setPageState({ deleteInvoiceCandidate: invoice })}
+                >
+                  <IconTrash size={14} />
+                </ActionIcon>
+              </Tooltip>
+            )}
+          </Group>
+        )
+      })}
     </Group>
   )
 }
@@ -1283,7 +1336,7 @@ function PackListsPanel({ model }: { model: DirectOrderInvoicesPageModel }) {
               </Box>
             </Stack>
           )}
-          <PackListTotals invoice={model.selectedInvoice} packList={model.selectedPackList} />
+          <PackListTotals invoice={model.selectedInvoice} order={model.order} packList={model.selectedPackList} />
         </Stack>
       </Card>
     </Tabs.Panel>
@@ -1435,7 +1488,7 @@ function InvoiceUploadModal({
         />
         <FileInput
           clearable
-          accept=".xls,.xlsx"
+          accept={EXCEL_FILE_ACCEPT}
           disabled={isSaving}
           label={t('Файл')}
           value={form.file}
@@ -1510,7 +1563,7 @@ function PackListUploadModal({
         />
         <FileInput
           clearable
-          accept=".xls,.xlsx"
+          accept={EXCEL_FILE_ACCEPT}
           disabled={isSaving}
           label={t('Файл')}
           value={form.file}
@@ -2080,15 +2133,22 @@ function ProductNameCell({
   )
 }
 
-function InvoiceTotals({ invoice }: { invoice: SupplyInvoice }) {
+function InvoiceTotals({
+  invoice,
+  order,
+}: {
+  invoice: SupplyInvoice
+  order: DirectSupplyOrder | null
+}) {
   const { t } = useI18n()
+  const currencyCode = getInvoiceCurrencyCode(invoice, order)
 
   return (
     <SummaryLine
       items={[
         [t('Позицій у пак листах'), formatNumber(countPackingListItems(invoice))],
         [t('Кількість у пак листах'), formatNumber(sumPackingListQty(invoice))],
-        [t('Сума інвойса'), formatMoney(invoice.TotalNetPrice)],
+        [t('Сума інвойса'), formatMoney(getSupplyInvoiceAmount(invoice), currencyCode)],
         [t('Нетто'), formatNumber(invoice.TotalNetWeight)],
         [t('Брутто'), formatNumber(invoice.TotalGrossWeight)],
       ]}
@@ -2098,12 +2158,15 @@ function InvoiceTotals({ invoice }: { invoice: SupplyInvoice }) {
 
 function PackListTotals({
   invoice,
+  order,
   packList,
 }: {
   invoice: SupplyInvoice | null
+  order: DirectSupplyOrder | null
   packList: PackingList | null
 }) {
   const { t } = useI18n()
+  const currencyCode = getInvoiceCurrencyCode(invoice, order)
 
   if (packList) {
     return (
@@ -2111,7 +2174,7 @@ function PackListTotals({
         items={[
           [t('Позицій'), formatNumber(packList.PackingListPackageOrderItems?.length || 0)],
           [t('Кількість'), formatNumber(packList.TotalQuantity)],
-          [t('Сума'), formatMoney(packList.TotalNetPrice)],
+          [t('Сума'), formatMoney(getPackingListAmount(packList), currencyCode)],
           [t('Нетто'), formatNumber(packList.TotalNetWeight)],
           [t('Брутто'), formatNumber(packList.TotalGrossWeight)],
         ]}
@@ -2128,7 +2191,7 @@ function PackListTotals({
       items={[
         [t('Позицій у пак листах'), formatNumber(countPackingListItems(invoice))],
         [t('Кількість'), formatNumber(invoice.TotalQuantity)],
-        [t('Сума інвойса'), formatMoney(invoice.TotalNetPrice)],
+        [t('Сума інвойса'), formatMoney(getSupplyInvoiceAmount(invoice), currencyCode)],
         [t('Нетто'), formatNumber(invoice.TotalNetWeight)],
         [t('Брутто'), formatNumber(invoice.TotalGrossWeight)],
       ]}
@@ -2164,6 +2227,9 @@ function QuantityBalanceSummary({
   const expectedQty = sumRows(rows, 'expectedQty')
   const actualQty = sumRows(rows, 'actualQty')
   const difference = roundQuantity(expectedQty - actualQty)
+  const isOverage = difference < 0
+  const differenceValue = isOverage ? Math.abs(difference) : difference
+  const currentDifferenceLabel = isOverage ? t('Перевищено') : differenceLabel
   const invalidRows = rows.filter((row) => row.isError).length
 
   return (
@@ -2172,7 +2238,7 @@ function QuantityBalanceSummary({
         <Text fw={600}>{invalidRows ? t('Є розбіжності') : t('Кількості збігаються')}</Text>
         <Text size="sm">{expectedLabel}: <Text span fw={600} style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{formatNumber(expectedQty)}</Text></Text>
         <Text size="sm">{actualLabel}: <Text span fw={600} style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{formatNumber(actualQty)}</Text></Text>
-        <Text size="sm">{differenceLabel}: <Text span fw={600} style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{formatNumber(difference)}</Text></Text>
+        <Text size="sm">{currentDifferenceLabel}: <Text span fw={600} style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{formatNumber(differenceValue)}</Text></Text>
         {invalidRows > 0 && <Badge className="app-role-pill is-yellow" variant="light">{invalidRows}</Badge>}
       </Group>
     </Alert>
@@ -2180,11 +2246,14 @@ function QuantityBalanceSummary({
 }
 
 function BalanceBadge({ value }: { value: number }) {
+  const { t } = useI18n()
   const isOk = isZeroQuantity(value)
+  const isOverage = value < 0
+  const label = isOverage ? `${t('Перевищено')} ${formatNumber(Math.abs(value))}` : formatNumber(value)
 
   return (
-    <Badge className={isOk ? 'app-role-pill is-green' : 'app-role-pill is-yellow'} variant="light">
-      {formatNumber(value)}
+    <Badge className={isOk ? 'app-role-pill is-green' : isOverage ? 'app-role-pill is-red' : 'app-role-pill is-yellow'} variant="light">
+      {label}
     </Badge>
   )
 }
@@ -2692,7 +2761,48 @@ function getProductKey(product: SupplyOrderItem['Product']): string {
   return ''
 }
 
-function isSameEntity(left: PackingList, right: PackingList): boolean {
+function upsertInvoice(invoices: SupplyInvoice[], invoice: SupplyInvoice): SupplyInvoice[] {
+  return upsertEntity(invoices, invoice)
+}
+
+function upsertPackList(packLists: PackingList[], packList: PackingList): PackingList[] {
+  return upsertEntity(packLists, packList)
+}
+
+function upsertEntity<T extends { Id?: number; NetUid?: string }>(items: T[], nextItem: T): T[] {
+  const index = items.findIndex((item) => isSameEntity(item, nextItem))
+
+  if (index < 0) {
+    return [...items, nextItem]
+  }
+
+  const nextItems = [...items]
+  nextItems[index] = { ...nextItems[index], ...nextItem }
+
+  return nextItems
+}
+
+function mergeSupplyInvoiceData(current: SupplyInvoice, incoming: SupplyInvoice): SupplyInvoice {
+  return {
+    ...current,
+    ...incoming,
+    InformationDeliveryProtocols: keepFilledArray(incoming.InformationDeliveryProtocols, current.InformationDeliveryProtocols),
+    InvoiceDocuments: keepFilledArray(incoming.InvoiceDocuments, current.InvoiceDocuments),
+    PackingLists: keepFilledArray(incoming.PackingLists, current.PackingLists),
+    PaymentDeliveryProtocols: keepFilledArray(incoming.PaymentDeliveryProtocols, current.PaymentDeliveryProtocols),
+    SupplyInvoiceDeliveryDocuments: keepFilledArray(
+      incoming.SupplyInvoiceDeliveryDocuments,
+      current.SupplyInvoiceDeliveryDocuments,
+    ),
+    SupplyInvoiceOrderItems: keepFilledArray(incoming.SupplyInvoiceOrderItems, current.SupplyInvoiceOrderItems),
+  }
+}
+
+function keepFilledArray<T>(incoming: T[] | undefined, current: T[] | undefined): T[] {
+  return incoming?.length ? incoming : current || incoming || []
+}
+
+function isSameEntity(left: { Id?: number; NetUid?: string }, right: { Id?: number; NetUid?: string }): boolean {
   if (left.NetUid && right.NetUid) {
     return left.NetUid === right.NetUid
   }
@@ -2750,6 +2860,66 @@ function sumPackingListQty(invoice: SupplyInvoice): number {
     ),
     0,
   )
+}
+
+function getInvoiceCurrencyCode(
+  invoice: SupplyInvoice | null | undefined,
+  order: DirectSupplyOrder | null | undefined,
+): string {
+  const currencyCode = invoice?.SupplyOrganizationAgreement?.Currency?.Code
+    || invoice?.SupplyOrganizationAgreement?.Currency?.Name
+    || invoice?.SupplyOrder?.ClientAgreement?.Agreement?.Currency?.Code
+    || invoice?.SupplyOrder?.ClientAgreement?.Agreement?.Currency?.Name
+    || getOrderCurrencyCode(order)
+
+  if (currencyCode) {
+    return currencyCode
+  }
+
+  for (const mergedInvoice of invoice?.MergedSupplyInvoices || []) {
+    const mergedCurrencyCode = getInvoiceCurrencyCode(mergedInvoice, order)
+
+    if (mergedCurrencyCode) {
+      return mergedCurrencyCode
+    }
+  }
+
+  return ''
+}
+
+function getOrderCurrencyCode(order: DirectSupplyOrder | null | undefined): string {
+  return order?.ClientAgreement?.Agreement?.Currency?.Code
+    || order?.ClientAgreement?.Agreement?.Currency?.Name
+    || ''
+}
+
+function getSupplyInvoiceAmount(invoice: SupplyInvoice | null | undefined): number | undefined {
+  const invoiceRecord = invoice as (SupplyInvoice & {
+    TotalAmount?: number | string
+    TotalValue?: number | string
+  }) | null | undefined
+  const amount =
+    readFiniteNumber(invoiceRecord?.TotalNetPrice)
+    ?? readFiniteNumber(invoiceRecord?.NetPrice)
+    ?? readFiniteNumber(invoiceRecord?.TotalAmount)
+    ?? readFiniteNumber(invoiceRecord?.TotalValue)
+    ?? readFiniteNumber(invoiceRecord?.TotalValueWithVat)
+
+  if (typeof amount === 'number') {
+    return amount
+  }
+
+  const mergedAmount = (invoice?.MergedSupplyInvoices || []).reduce(
+    (total, mergedInvoice) => total + (getSupplyInvoiceAmount(mergedInvoice) || 0),
+    0,
+  )
+
+  return invoice?.MergedSupplyInvoices?.length ? mergedAmount : undefined
+}
+
+function getPackingListAmount(packList: PackingList | null | undefined): number | undefined {
+  return readFiniteNumber(packList?.TotalNetPrice)
+    ?? readFiniteNumber(packList?.TotalGrossPrice)
 }
 
 function getDocumentUrl(document: SupplyInvoiceDeliveryDocument): string {
@@ -2892,7 +3062,7 @@ function getInvoiceMetadataValidationMessage(form: InvoiceMetadataForm, invoice:
 
   const deliveryAmount = toAmountNumber(form.deliveryAmount)
   const discountAmount = toAmountNumber(form.discountAmount)
-  const invoiceNetPrice = invoice.NetPrice || invoice.TotalNetPrice || 0
+  const invoiceNetPrice = getSupplyInvoiceAmount(invoice) || 0
 
   if (discountAmount > invoiceNetPrice + deliveryAmount) {
     return 'Некоректна сума знижки'
@@ -2937,12 +3107,6 @@ function getPackListUploadValidationMessage(form: PackListUploadForm): string | 
   }
 
   return null
-}
-
-function isExcelFile(file: File): boolean {
-  const extension = file.name.split('.').pop()?.toLowerCase()
-
-  return extension === 'xls' || extension === 'xlsx'
 }
 
 function hasDuplicatePositiveNumbers(values: NumberFieldValue[]): boolean {
@@ -3011,8 +3175,10 @@ function formatNumber(value?: number): string {
   return typeof value === 'number' && Number.isFinite(value) ? numberFormatter.format(value) : ''
 }
 
-function formatMoney(value?: number): string {
-  return typeof value === 'number' && Number.isFinite(value) ? moneyFormatter.format(value) : ''
+function formatMoney(value?: number, currencyCode?: string | null): string {
+  const amount = typeof value === 'number' && Number.isFinite(value) ? moneyFormatter.format(value) : ''
+
+  return amount && currencyCode ? `${amount} ${currencyCode}` : amount
 }
 
 function getOrderItemTotal(item: SupplyOrderItem): number | undefined {
@@ -3026,6 +3192,20 @@ function getOrderItemTotal(item: SupplyOrderItem): number | undefined {
 
   if (typeof item.UnitPrice === 'number' && typeof item.Qty === 'number') {
     return item.UnitPrice * item.Qty
+  }
+
+  return undefined
+}
+
+function readFiniteNumber(value: unknown): number | undefined {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value
+  }
+
+  if (typeof value === 'string') {
+    const parsedValue = Number(value.replace(/\s/g, '').replace(',', '.'))
+
+    return Number.isFinite(parsedValue) ? parsedValue : undefined
   }
 
   return undefined
