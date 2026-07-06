@@ -481,8 +481,20 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
     },
     [navigate, setSelectedItem],
   )
-  const leadColumns = useMemo<CashFlowGridLeadColumn<AccountingCashFlowHeadItem>[]>(
-    () => [
+  // Legacy showed a per-row «Курс» (ExchangeRate) column in client mode for non-UAH agreements,
+  // populated for UAH income-payment rows. Only render it in that scope.
+  const showExchangeRateColumn = useMemo(() => {
+    if (mode !== 'client') {
+      return false
+    }
+
+    const currency = selectedAgreement ? getAgreementCurrency(selectedAgreement) : ''
+
+    return !selectedAgreement || currency.toLowerCase() !== 'uah'
+  }, [mode, selectedAgreement])
+
+  const leadColumns = useMemo<CashFlowGridLeadColumn<AccountingCashFlowHeadItem>[]>(() => {
+    const columns: CashFlowGridLeadColumn<AccountingCashFlowHeadItem>[] = [
       {
         id: 'name',
         isLabel: true,
@@ -512,9 +524,34 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
           </span>
         ),
       },
-    ],
-    [t],
-  )
+    ]
+
+    if (showExchangeRateColumn) {
+      columns.splice(1, 0, {
+        id: 'exchangeRate',
+        header: t('Курс'),
+        width: 110,
+        cell: (item) => {
+          const order = toRecord(item.IncomePaymentOrder)
+          const currency = stringValue(toRecord(order?.Currency)?.Code)
+
+          if (!order || currency.toLowerCase() !== 'uah') {
+            return null
+          }
+
+          const rate = numberValue(order.ExchangeRate)
+
+          return (
+            <span className="accounting-cash-flow-organization-cell">
+              {rate != null ? formatMoney(rate) : ''}
+            </span>
+          )
+        },
+      })
+    }
+
+    return columns
+  }, [showExchangeRateColumn, t])
   const summary = useMemo(
     () => ({
       afterInAmount: cashFlow?.AfterRangeInAmount,

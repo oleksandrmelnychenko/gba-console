@@ -2059,7 +2059,7 @@ function usePackListItemColumns({
       { id: 'net', header: t('Нетто'), width: 120, align: 'right', accessor: (item) => item.TotalNetWeight, cell: (item) => <NumberCell value={formatNumber(item.TotalNetWeight)} /> },
       { id: 'gross', header: t('Брутто'), width: 120, align: 'right', accessor: (item) => item.TotalGrossWeight, cell: (item) => <NumberCell value={formatNumber(item.TotalGrossWeight)} /> },
       { id: 'price', header: t('Ціна'), width: 120, align: 'right', accessor: (item) => item.UnitPrice, cell: (item) => <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{formatMoney(item.UnitPrice)}</Text> },
-      { id: 'total', header: t('Сума'), width: 130, align: 'right', accessor: (item) => item.TotalGrossPrice, cell: (item) => <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{formatMoney(item.TotalGrossPrice)}</Text> },
+      { id: 'total', header: t('Сума'), width: 130, align: 'right', accessor: (item) => getPackListItemAmount(item), cell: (item) => <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{formatMoney(getPackListItemAmount(item))}</Text> },
     ],
     [balanceByInvoiceItemKey, onOpenProductCard, t],
   )
@@ -2917,6 +2917,24 @@ function getSupplyInvoiceAmount(invoice: SupplyInvoice | null | undefined): numb
   return invoice?.MergedSupplyInvoices?.length ? mergedAmount : undefined
 }
 
+function getPackListItemAmount(item: PackingListPackageOrderItem): number {
+  const direct = readFiniteNumber(item.TotalGrossPrice) ?? readFiniteNumber(item.TotalNetPrice)
+
+  if (typeof direct === 'number' && direct !== 0) {
+    return direct
+  }
+
+  // A 2nd packing list's items store UnitPrice=0 on the row; derive Qty*UnitPrice from the invoice
+  // item (or its order item) so the per-item «Сума» and the pack-list total agree and aren't 0.
+  const unitPrice =
+    item.UnitPrice
+    || item.SupplyInvoiceOrderItem?.UnitPrice
+    || item.SupplyInvoiceOrderItem?.SupplyOrderItem?.UnitPrice
+    || 0
+
+  return unitPrice * (item.Qty || 0)
+}
+
 function getPackingListAmount(packList: PackingList | null | undefined): number | undefined {
   const direct = readFiniteNumber(packList?.TotalNetPrice) ?? readFiniteNumber(packList?.TotalGrossPrice)
 
@@ -2925,10 +2943,10 @@ function getPackingListAmount(packList: PackingList | null | undefined): number 
   }
 
   // The backend populates the pack-list-level total for some pack lists but not
-  // others (then Сума read 0). Fall back to summing the items' own net/gross
-  // prices so every pack list shows a sum.
+  // others (then Сума read 0). Fall back to summing each item's effective amount
+  // so every pack list shows a sum.
   const summed = (packList?.PackingListPackageOrderItems || []).reduce(
-    (total, item) => total + (readFiniteNumber(item.TotalNetPrice) ?? readFiniteNumber(item.TotalGrossPrice) ?? 0),
+    (total, item) => total + getPackListItemAmount(item),
     0,
   )
 

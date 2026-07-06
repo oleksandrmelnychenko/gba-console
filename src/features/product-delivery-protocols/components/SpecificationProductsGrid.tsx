@@ -47,6 +47,7 @@ type ServiceColumn = {
 type SpecificationProductsGridProps = {
   canEditSpecification?: boolean
   currencyIsEur: boolean
+  invoiceCurrencyCode?: string
   invoiceDeliveryAmount?: number
   onEditSpecification?: (item: PackingListPackageOrderItem) => void
   onOpenProductCard?: (productNetId: string) => void
@@ -67,6 +68,7 @@ const weightFormatter = new Intl.NumberFormat('uk-UA', {
 export function SpecificationProductsGrid({
   canEditSpecification = false,
   currencyIsEur,
+  invoiceCurrencyCode,
   invoiceDeliveryAmount,
   onEditSpecification,
   onOpenProductCard,
@@ -74,6 +76,9 @@ export function SpecificationProductsGrid({
   withManagementServices,
 }: SpecificationProductsGridProps) {
   const { t } = useI18n()
+  // The «(Інвойса)» columns always show the invoice currency (not the €/грн toggle); label them so
+  // the operator knows the units aren't the toggled currency.
+  const invoiceCurrencySuffix = invoiceCurrencyCode ? `, ${invoiceCurrencyCode}` : ''
   const items = useMemo(() => packingList.PackingListPackageOrderItems || [], [packingList])
   const hasDeliveryAmount =
     invoiceDeliveryAmount === undefined
@@ -206,7 +211,7 @@ export function SpecificationProductsGrid({
       },
       {
         id: 'unitPrice',
-        header: `${t('Ціна Нетто')} (${t('Інвойса')})`,
+        header: `${t('Ціна Нетто')} (${t('Інвойса')})${invoiceCurrencySuffix}`,
         width: 170,
         minWidth: 140,
         align: 'right',
@@ -215,7 +220,7 @@ export function SpecificationProductsGrid({
       },
       {
         id: 'netPrice',
-        header: `${t('Сума нетто')} (${t('Інвойса')})`,
+        header: `${t('Сума нетто')} (${t('Інвойса')})${invoiceCurrencySuffix}`,
         width: 160,
         minWidth: 130,
         align: 'right',
@@ -352,6 +357,7 @@ export function SpecificationProductsGrid({
     canEditSpecification,
     generalServiceColumns,
     hasDeliveryAmount,
+    invoiceCurrencySuffix,
     managementServiceColumns,
     netServiceColumns,
     onEditSpecification,
