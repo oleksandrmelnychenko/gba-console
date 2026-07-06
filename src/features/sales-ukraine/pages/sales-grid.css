@@ -656,10 +656,7 @@
   text-align: right;
 }
 
-.sales-grid-head span:nth-child(5) {
-  text-align: left;
-}
-
+.sales-grid-head span:nth-child(5),
 .sales-grid-head span:nth-child(6),
 .sales-grid-head span:nth-child(7) {
   text-align: center;
@@ -823,22 +820,26 @@
   color: var(--mantine-color-gray-9);
 }
 
+/* Matches the shared .app-role-pill (is-gray) pattern: 7px radius, mono, gray-3. */
 .sg-client-code {
   flex: 0 0 auto;
   background: var(--mantine-color-gray-0);
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 999px;
+  border: 1px solid var(--mantine-color-gray-3);
+  border-radius: 7px;
   color: var(--mantine-color-gray-7);
+  font-family: var(--font-mono);
   font-size: 10px;
   font-weight: 600;
+  letter-spacing: 0;
   line-height: 1;
   padding: 3px 6px;
 }
 
+/* Client name must always be fully visible — wrap instead of truncating. */
 .sg-client-name-text {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  min-width: 0;
+  overflow-wrap: break-word;
+  white-space: normal;
 }
 
 .sg-meta {
@@ -875,7 +876,7 @@
   white-space: nowrap;
   background: var(--mantine-color-gray-0);
   border: 1px solid var(--mantine-color-gray-3);
-  border-radius: 999px;
+  border-radius: 7px;
   color: var(--mantine-color-gray-7);
   font-family: var(--font-mono);
   font-size: 10.5px;
@@ -918,11 +919,11 @@
 .sg-positions {
   color: var(--mantine-color-gray-8);
   font-family: var(--font-mono);
-  font-size: 20px;
-  font-weight: 700;
-  justify-self: start;
+  font-size: 15px;
+  font-weight: 600;
+  justify-self: center;
   line-height: 1.1;
-  text-align: left;
+  text-align: center;
   white-space: nowrap;
 }
 
