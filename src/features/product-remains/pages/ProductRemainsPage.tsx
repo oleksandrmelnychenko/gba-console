@@ -720,7 +720,7 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
     <Stack gap="md">
       <Card className="app-data-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar product-remains-filter-bar">
-          <Group align="end" gap="sm" wrap="nowrap" className="product-remains-filter-row">
+          <div className="product-remains-filter-row">
             <div className="product-remains-toolbar-tabs pill-tabs">
               {([
                 { value: 'batches', label: t('Партії') },
@@ -831,7 +831,7 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
                 size={34}
               />
             </div>
-          </Group>
+          </div>
         </div>
 
         <Stack className="product-remains-body" gap={10}>

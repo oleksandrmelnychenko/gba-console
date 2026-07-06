@@ -580,6 +580,8 @@ export function WarehouseUkraineOrderPlacementsPage() {
   const canCarryOut = hasPermission(PLACEMENT_CARRY_OUT_PERMISSION)
   const canGetUp = hasPermission(PLACEMENT_GET_UP_PERMISSION)
   const orderDisplayNumber = getSupplyUkraineOrderDisplayNumber(model.order) || ''
+  const isOpenOrder = Boolean(model.order && !model.order.IsPlaced)
+  const canEditOpenOrder = canEditPlacement && isOpenOrder
 
   const columns = useMemo<DataTableColumn<PlacementGridRow>[]>(() => {
     const fixedColumns: DataTableColumn<PlacementGridRow>[] = [
@@ -589,32 +591,28 @@ export function WarehouseUkraineOrderPlacementsPage() {
         width: 48,
         align: 'right',
         enableSorting: false,
-        cell: (gridRow) => (
-          <Text c="dimmed" size="sm">
-            {gridRow.index}
-          </Text>
-        ),
+        cell: (gridRow) => renderAmountCell(gridRow.index),
       },
       {
         id: 'vendorCode',
         header: t('Код товару'),
         width: 160,
-        accessor: (gridRow) => gridRow.item.Product?.VendorCode,
-        cell: (gridRow) => displayValue(gridRow.item.Product?.VendorCode),
+        accessor: (gridRow) => getVendorCode(gridRow.item),
+        cell: (gridRow) => renderMonoCell(getVendorCode(gridRow.item)),
       },
       {
         id: 'name',
         header: t('Назва'),
         minWidth: 220,
         accessor: (gridRow) => getProductName(gridRow.item),
-        cell: (gridRow) => displayValue(getProductName(gridRow.item)),
+        cell: (gridRow) => renderNameCell(getProductName(gridRow.item)),
       },
       {
         id: 'specificationCode',
         header: t('Код УКТЗЕД'),
         width: 150,
-        accessor: (gridRow) => gridRow.item.ProductSpecification?.SpecificationCode,
-        cell: (gridRow) => displayValue(gridRow.item.ProductSpecification?.SpecificationCode),
+        accessor: (gridRow) => getSpecificationCode(gridRow.item),
+        cell: (gridRow) => renderMonoCell(getSpecificationCode(gridRow.item)),
       },
       {
         id: 'qty',
@@ -622,14 +620,14 @@ export function WarehouseUkraineOrderPlacementsPage() {
         width: 80,
         align: 'right',
         accessor: (gridRow) => gridRow.item.Qty,
-        cell: (gridRow) => formatAmount(gridRow.item.Qty),
+        cell: (gridRow) => renderAmountCell(gridRow.item.Qty),
       },
       {
         id: 'measureUnit',
         header: t('Од. виміру'),
         width: 120,
-        accessor: (gridRow) => gridRow.item.Product?.MeasureUnit?.Name,
-        cell: (gridRow) => displayValue(gridRow.item.Product?.MeasureUnit?.Name),
+        accessor: (gridRow) => getMeasureUnitName(gridRow.item),
+        cell: (gridRow) => renderMonoCell(getMeasureUnitName(gridRow.item)),
       },
       {
         id: 'netUnitPrice',
@@ -637,7 +635,7 @@ export function WarehouseUkraineOrderPlacementsPage() {
         width: 110,
         align: 'right',
         accessor: (gridRow) => getNetUnitPrice(gridRow.item),
-        cell: (gridRow) => formatMoney(getNetUnitPrice(gridRow.item)),
+        cell: (gridRow) => renderMoneyCell(getNetUnitPrice(gridRow.item)),
       },
       {
         id: 'totalNetPrice',
@@ -645,7 +643,7 @@ export function WarehouseUkraineOrderPlacementsPage() {
         width: 120,
         align: 'right',
         accessor: (gridRow) => gridRow.item.NetPriceLocal,
-        cell: (gridRow) => formatMoney(gridRow.item.NetPriceLocal),
+        cell: (gridRow) => renderMoneyCell(gridRow.item.NetPriceLocal),
       },
       {
         id: 'deliveryExpenseAmount',
@@ -653,7 +651,7 @@ export function WarehouseUkraineOrderPlacementsPage() {
         width: 120,
         align: 'right',
         accessor: (gridRow) => gridRow.item.DeliveryExpenseAmount,
-        cell: (gridRow) => formatMoney(gridRow.item.DeliveryExpenseAmount),
+        cell: (gridRow) => renderMoneyCell(gridRow.item.DeliveryExpenseAmount),
       },
       {
         id: 'accountingDeliveryExpenseAmount',
@@ -661,7 +659,7 @@ export function WarehouseUkraineOrderPlacementsPage() {
         width: 120,
         align: 'right',
         accessor: (gridRow) => gridRow.item.AccountingDeliveryExpenseAmount,
-        cell: (gridRow) => formatMoney(gridRow.item.AccountingDeliveryExpenseAmount),
+        cell: (gridRow) => renderMoneyCell(gridRow.item.AccountingDeliveryExpenseAmount),
       },
       {
         id: 'isImported',
@@ -670,8 +668,8 @@ export function WarehouseUkraineOrderPlacementsPage() {
         accessor: (gridRow) => gridRow.item.ProductIsImported,
         cell: (gridRow) =>
           gridRow.item.ProductIsImported
-            ? <Badge color="green" variant="light">{t('Так')}</Badge>
-            : <Badge color="gray" variant="light">{t('Ні')}</Badge>,
+            ? <Badge className="app-role-pill is-green" variant="light">{t('Так')}</Badge>
+            : <Badge className="app-role-pill is-gray" variant="light">{t('Ні')}</Badge>,
       },
       {
         id: 'vatPercent',
@@ -679,7 +677,7 @@ export function WarehouseUkraineOrderPlacementsPage() {
         width: 100,
         align: 'right',
         accessor: (gridRow) => gridRow.item.VatPercent,
-        cell: (gridRow) => formatAmount(gridRow.item.VatPercent),
+        cell: (gridRow) => renderAmountCell(gridRow.item.VatPercent),
       },
       {
         id: 'vatAmount',
@@ -687,7 +685,7 @@ export function WarehouseUkraineOrderPlacementsPage() {
         width: 120,
         align: 'right',
         accessor: (gridRow) => gridRow.item.VatAmountLocal,
-        cell: (gridRow) => formatMoney(gridRow.item.VatAmountLocal),
+        cell: (gridRow) => renderMoneyCell(gridRow.item.VatAmountLocal),
       },
       {
         id: 'totalWithVat',
@@ -695,7 +693,7 @@ export function WarehouseUkraineOrderPlacementsPage() {
         width: 120,
         align: 'right',
         accessor: (gridRow) => gridRow.item.GrossPriceLocal,
-        cell: (gridRow) => formatMoney(gridRow.item.GrossPriceLocal),
+        cell: (gridRow) => renderMoneyCell(gridRow.item.GrossPriceLocal),
       },
       {
         id: 'totalManagementGrossPrice',
@@ -703,7 +701,7 @@ export function WarehouseUkraineOrderPlacementsPage() {
         width: 130,
         align: 'right',
         accessor: (gridRow) => gridRow.item.AccountingGrossPriceLocal,
-        cell: (gridRow) => formatMoney(gridRow.item.AccountingGrossPriceLocal),
+        cell: (gridRow) => renderMoneyCell(gridRow.item.AccountingGrossPriceLocal),
       },
       {
         id: 'netWeight',
@@ -711,7 +709,7 @@ export function WarehouseUkraineOrderPlacementsPage() {
         width: 120,
         align: 'right',
         accessor: (gridRow) => getNetWeight(gridRow.item),
-        cell: (gridRow) => formatAmount(getNetWeight(gridRow.item)),
+        cell: (gridRow) => renderAmountCell(getNetWeight(gridRow.item)),
       },
       {
         id: 'grossWeight',
@@ -719,7 +717,7 @@ export function WarehouseUkraineOrderPlacementsPage() {
         width: 120,
         align: 'right',
         accessor: (gridRow) => getGrossWeight(gridRow.item),
-        cell: (gridRow) => formatAmount(getGrossWeight(gridRow.item)),
+        cell: (gridRow) => renderAmountCell(getGrossWeight(gridRow.item)),
       },
       {
         id: 'placedQty',
@@ -727,14 +725,14 @@ export function WarehouseUkraineOrderPlacementsPage() {
         width: 160,
         align: 'right',
         accessor: (gridRow) => gridRow.item.PlacedQty,
-        cell: (gridRow) => formatAmount(gridRow.item.PlacedQty),
+        cell: (gridRow) => renderAmountCell(gridRow.item.PlacedQty),
       },
     ]
 
     const dynamicColumns: DataTableColumn<PlacementGridRow>[] = (model.order?.DynamicProductPlacementColumns || []).map(
       (column) => {
         const key = columnKey(column)
-        const canEditDynamicColumn = canEditPlacement && !model.order?.IsPlaced
+        const canEditDynamicColumn = canEditOpenOrder
         const canDelete = canEditDynamicColumn && !columnHasAppliedPlacements(column)
 
         return {
@@ -744,12 +742,12 @@ export function WarehouseUkraineOrderPlacementsPage() {
           enableSorting: false,
           header: (
             <Group gap="xs" justify="space-between" wrap="nowrap">
-              <Text size="sm">{formatDate(column.FromDate)}</Text>
+              <Text className="warehouse-order-placement-dynamic-date" size="sm">{formatDate(column.FromDate)}</Text>
               <Group gap={4} wrap="nowrap">
                 <Tooltip label={t('Перемістити залишки')}>
                   <ActionIcon
                     aria-label={t('Перемістити залишки')}
-                    color="gray"
+                    color={CREATE_ACTION_COLOR}
                     disabled={!canEditDynamicColumn || model.isBusy}
                     size="sm"
                     variant="subtle"
@@ -788,6 +786,7 @@ export function WarehouseUkraineOrderPlacementsPage() {
                 <Group gap="xs" wrap="nowrap">
                   <NumberInput
                     allowDecimal={false}
+                    className="warehouse-order-placement-dynamic-qty"
                     disabled={!canEditDynamicColumn || model.isBusy}
                     hideControls
                     min={0}
@@ -803,7 +802,7 @@ export function WarehouseUkraineOrderPlacementsPage() {
                   />
                   <ActionIcon
                     aria-label={t('Оприходування')}
-                    color="blue"
+                    color={CREATE_ACTION_COLOR}
                     disabled={!canEditDynamicColumn || model.isBusy}
                     size="sm"
                     variant="subtle"
@@ -814,14 +813,14 @@ export function WarehouseUkraineOrderPlacementsPage() {
                 </Group>
                 {placements.length > 0 ? (
                   placements.map((placement, placementIndex) => (
-                    <Text key={placement.Id ?? placementIndex} c="dimmed" size="xs">
+                    <Text key={placement.Id ?? placementIndex} className="warehouse-order-placement-placement-line" size="xs">
                       {formatPlacementAddress(placement)}
                     </Text>
                   ))
                 ) : (
                   (row.Qty || 0) > 0 && (
                     <Tooltip label={t('Не розміщено')}>
-                      <IconPlus size={13} style={{ color: 'var(--mantine-color-teal-6)' }} />
+                      <IconPlus size={13} style={{ color: 'var(--brand-orange)' }} />
                     </Tooltip>
                   )
                 )}
@@ -833,7 +832,7 @@ export function WarehouseUkraineOrderPlacementsPage() {
     )
 
     return [...fixedColumns, ...dynamicColumns]
-  }, [canEditPlacement, model, t])
+  }, [canEditOpenOrder, model, t])
 
   return (
     <AppDrawer
@@ -876,7 +875,7 @@ export function WarehouseUkraineOrderPlacementsPage() {
         >
           <Group justify="space-between" align="end" wrap="wrap">
             <Group gap="sm" align="end">
-              {!model.order?.IsPlaced && (
+              {isOpenOrder && (
                 <Select
                   className="warehouse-order-placement-control"
                   data={model.storages.map((storage) => ({ value: storage.NetUid || '', label: storage.Name || '' }))}
@@ -887,21 +886,23 @@ export function WarehouseUkraineOrderPlacementsPage() {
                   onChange={(value) => model.setSelectedStorageId(value)}
                 />
               )}
-              {canEditPlacement && !model.order?.IsPlaced && (
+              {canEditOpenOrder && (
                 <Button
                   className="warehouse-order-placement-action-button"
+                  color={CREATE_ACTION_COLOR}
                   disabled={model.isBusy}
-                  variant="light"
+                  variant="outline"
                   onClick={() => model.setColumnModalOpen(true)}
                 >
                   {t('Додати колонку')}
                 </Button>
               )}
-              {canActReconciliation && !model.order?.IsPlaced && (
+              {canActReconciliation && isOpenOrder && (
                 <Button
                   className="warehouse-order-placement-action-button"
+                  color={CREATE_ACTION_COLOR}
                   disabled={model.isBusy || model.isDirty}
-                  variant="light"
+                  variant="outline"
                   onClick={() => model.setUnorderedOpen(true)}
                 >
                   {t('Інший товар / більша кількість')}
@@ -909,7 +910,7 @@ export function WarehouseUkraineOrderPlacementsPage() {
               )}
             </Group>
             <Group gap="sm" align="end">
-              {!model.order?.IsPlaced && (canCarryOut || canGetUp) && (
+              {isOpenOrder && (canCarryOut || canGetUp) && (
                 <TextInput
                   className="warehouse-order-placement-control"
                   label={t('Дата оприходування')}
@@ -947,22 +948,22 @@ export function WarehouseUkraineOrderPlacementsPage() {
                   {t('Зберегти')}
                 </Button>
               )}
-              {!model.order?.IsPlaced && canCarryOut && (
+              {isOpenOrder && canCarryOut && (
                 <Button
                   className="warehouse-order-placement-action-button"
-                  color="teal"
+                  color={CREATE_ACTION_COLOR}
                   disabled={model.isBusy || model.isDirty}
                   onClick={() => model.setConfirmPlacement({ isFullPlaced: true })}
                 >
                   {t('Провести')}
                 </Button>
               )}
-              {!model.order?.IsPlaced && canGetUp && (
+              {isOpenOrder && canGetUp && (
                 <Button
                   className="warehouse-order-placement-action-button"
-                  color="blue"
+                  color={CREATE_ACTION_COLOR}
                   disabled={model.isBusy || model.isDirty}
-                  variant="light"
+                  variant="outline"
                   onClick={() => model.setConfirmPlacement({ isFullPlaced: false })}
                 >
                   {t('Оприходувати')}
@@ -973,118 +974,137 @@ export function WarehouseUkraineOrderPlacementsPage() {
           </Group>
         </Card>
 
-      {model.error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-          {model.error}
-        </Alert>
-      )}
+        {model.error && (
+          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            {model.error}
+          </Alert>
+        )}
 
-      <Card
-        className="app-section-card warehouse-order-placement-card warehouse-order-placement-table-card"
-        withBorder
-        radius="md"
-        padding="md"
-      >
-        <Stack gap="md">
-          <DataTable
-            columns={columns}
-            data={model.gridRows}
-            density={model.density}
-            defaultLayout={TABLE_DEFAULT_LAYOUT}
-            emptyText={t('Замовлень не знайдено')}
-            getRowId={(gridRow) => String(gridRow.item.NetUid || gridRow.item.Id || gridRow.index)}
-            isLoading={model.isLoading}
-            layoutVersion="warehouse-ukraine-placements-3"
-            maxHeight="calc(100vh - 360px)"
-            minWidth={2600}
-            tableId="warehouse-ukraine-placements"
-          />
+        <Card
+          className="app-section-card warehouse-order-placement-card warehouse-order-placement-table-card"
+          withBorder
+          radius="md"
+          padding="md"
+        >
+          <Stack gap="md">
+            <DataTable
+              columns={columns}
+              data={model.gridRows}
+              density={model.density}
+              defaultLayout={TABLE_DEFAULT_LAYOUT}
+              emptyText={t('Замовлень не знайдено')}
+              getRowId={(gridRow) => String(gridRow.item.NetUid || gridRow.item.Id || gridRow.index)}
+              isLoading={model.isLoading}
+              layoutVersion="warehouse-ukraine-placements-3"
+              maxHeight="calc(100vh - 360px)"
+              minWidth={2600}
+              tableId="warehouse-ukraine-placements"
+            />
 
-          <Group className="warehouse-order-placement-summary" gap="xl" justify="flex-end">
-            <Text size="sm">
-              {t('Всього товарів')}: <Text span fw={700}>{model.totalProductsCount}</Text>
-            </Text>
-            <Text size="sm">
-              {t('Заг. вага нетто')}: <Text span fw={700}>{formatAmount(model.totalNetWeight)}</Text>
-            </Text>
-          </Group>
-        </Stack>
-      </Card>
+            <Group className="warehouse-order-placement-summary" gap="xl" justify="flex-end">
+              <Text size="sm">
+                {t('Всього товарів')}: <Text span fw={700}>{model.totalProductsCount}</Text>
+              </Text>
+              <Text size="sm">
+                {t('Заг. вага нетто')}: <Text span fw={700}>{formatAmount(model.totalNetWeight)}</Text>
+              </Text>
+            </Group>
+          </Stack>
+        </Card>
 
-      <NewDynamicColumnModal
-        key={model.columnModalOpen ? 'warehouse-column-open' : 'warehouse-column-closed'}
-        disabled={model.isBusy}
-        opened={model.columnModalOpen}
-        onAdd={model.handleAddColumn}
-        onClose={() => model.setColumnModalOpen(false)}
-      />
+        <NewDynamicColumnModal
+          key={model.columnModalOpen ? 'warehouse-column-open' : 'warehouse-column-closed'}
+          disabled={model.isBusy}
+          opened={model.columnModalOpen}
+          onAdd={model.handleAddColumn}
+          onClose={() => model.setColumnModalOpen(false)}
+        />
 
-      <PlacementEditDrawer
-        key={getDrawerKey(model.drawer)}
-        item={model.drawer?.item || null}
-        opened={Boolean(model.drawer)}
-        row={model.drawer?.row || null}
-        selectedStorage={model.selectedStorage}
-        onApply={model.handleApplyPlacements}
-        onClose={() => model.setDrawer(null)}
-      />
+        <PlacementEditDrawer
+          key={getDrawerKey(model.drawer)}
+          item={model.drawer?.item || null}
+          opened={Boolean(model.drawer)}
+          row={model.drawer?.row || null}
+          selectedStorage={model.selectedStorage}
+          onApply={model.handleApplyPlacements}
+          onClose={() => model.setDrawer(null)}
+        />
 
-      <PlacementUnorderedProductsDrawer
-        order={model.order}
-        opened={model.unorderedOpen}
-        onClose={() => model.setUnorderedOpen(false)}
-        onSaved={(updatedOrder) => {
-          model.setOrder(updatedOrder)
-          model.setUnorderedOpen(false)
-        }}
-      />
+        <PlacementUnorderedProductsDrawer
+          order={model.order}
+          opened={model.unorderedOpen}
+          onClose={() => model.setUnorderedOpen(false)}
+          onSaved={(updatedOrder) => {
+            model.setOrder(updatedOrder)
+            model.setUnorderedOpen(false)
+          }}
+        />
 
-      <AppModal
-        opened={Boolean(model.columnToRemove)}
-        title={t('Ви впевнені, що хочете видалити?')}
-        onClose={() => {
-          if (!model.isBusy) {
-            model.setColumnToRemove(null)
-          }
-        }}
-      >
-        <Group justify="flex-end">
-          <Button color="gray" disabled={model.isBusy} variant="light" onClick={() => model.setColumnToRemove(null)}>
-            {t('Скасувати')}
-          </Button>
-          <Button color="red" disabled={model.isBusy} loading={model.isSaving} onClick={model.confirmRemoveColumn}>
-            {t('Видалити')}
-          </Button>
-        </Group>
-      </AppModal>
-
-      <AppModal
-        opened={Boolean(model.confirmPlacement)}
-        title={t('Ви впевнені?')}
-        onClose={() => (model.isBusy ? undefined : model.setConfirmPlacement(null))}
-      >
-        <Stack gap="md">
-          <Text>
-            {model.confirmPlacement?.isFullPlaced
-              ? t('Провести замовлення повністю?')
-              : t('Оприходувати замовлення?')}
-          </Text>
+        <AppModal
+          opened={Boolean(model.columnToRemove)}
+          title={t('Ви впевнені, що хочете видалити?')}
+          onClose={() => {
+            if (!model.isBusy) {
+              model.setColumnToRemove(null)
+            }
+          }}
+        >
           <Group justify="flex-end">
-            <Button color="gray" disabled={model.isBusy} variant="light" onClick={() => model.setConfirmPlacement(null)}>
+            <Button
+              className="warehouse-order-placement-action-button"
+              color="gray"
+              disabled={model.isBusy}
+              variant="light"
+              onClick={() => model.setColumnToRemove(null)}
+            >
               {t('Скасувати')}
             </Button>
             <Button
-              color="teal"
+              className="warehouse-order-placement-action-button"
+              color="red"
               disabled={model.isBusy}
-              loading={model.isPlacing}
-              onClick={() => model.placeOrder(Boolean(model.confirmPlacement?.isFullPlaced))}
+              loading={model.isSaving}
+              onClick={model.confirmRemoveColumn}
             >
-              {t('Підтвердити')}
+              {t('Видалити')}
             </Button>
           </Group>
-        </Stack>
-      </AppModal>
-    </Stack>
+        </AppModal>
+
+        <AppModal
+          opened={Boolean(model.confirmPlacement)}
+          title={t('Ви впевнені?')}
+          onClose={() => (model.isBusy ? undefined : model.setConfirmPlacement(null))}
+        >
+          <Stack gap="md">
+            <Text>
+              {model.confirmPlacement?.isFullPlaced
+                ? t('Провести замовлення повністю?')
+                : t('Оприходувати замовлення?')}
+            </Text>
+            <Group justify="flex-end">
+              <Button
+                className="warehouse-order-placement-action-button"
+                color="gray"
+                disabled={model.isBusy}
+                variant="light"
+                onClick={() => model.setConfirmPlacement(null)}
+              >
+                {t('Скасувати')}
+              </Button>
+              <Button
+                className="warehouse-order-placement-action-button"
+                color={CREATE_ACTION_COLOR}
+                disabled={model.isBusy}
+                loading={model.isPlacing}
+                onClick={() => model.placeOrder(Boolean(model.confirmPlacement?.isFullPlaced))}
+              >
+                {t('Підтвердити')}
+              </Button>
+            </Group>
+          </Stack>
+        </AppModal>
+      </Stack>
     </AppDrawer>
   )
 }
@@ -1107,8 +1127,54 @@ function isValidDateInputValue(value: string): boolean {
   return !Number.isNaN(date.getTime()) && formatLocalDate(date) === value
 }
 
+function renderMonoCell(value: unknown) {
+  const text = displayValue(value)
+
+  return <span className="warehouse-order-placement-cell-mono" title={text}>{text}</span>
+}
+
+function renderNameCell(value: unknown) {
+  const text = displayValue(value)
+
+  return <span className="warehouse-order-placement-cell-name" title={text}>{text}</span>
+}
+
+function renderAmountCell(value?: number) {
+  return <span className="app-money">{formatAmount(value)}</span>
+}
+
+function renderMoneyCell(value?: number) {
+  return <span className="app-money">{formatMoney(value)}</span>
+}
+
+function getVendorCode(item: PlacementOrderItem): string | undefined {
+  const itemRecord = asRecord(item)
+
+  return item.Product?.VendorCode || readString(itemRecord, ['VendorCode', 'ProductVendorCode', 'ProductCode', 'Code'])
+}
+
 function getProductName(item: PlacementOrderItem): string | undefined {
-  return item.Product?.Name || item.Product?.NameUA
+  const itemRecord = asRecord(item)
+
+  return item.Product?.NameUA
+    || item.Product?.Name
+    || readString(itemRecord, ['ProductNameUA', 'ProductNameUa', 'ProductName', 'NameUA', 'NameUa', 'Name'])
+}
+
+function getSpecificationCode(item: PlacementOrderItem): string | undefined {
+  const itemRecord = asRecord(item)
+
+  return item.ProductSpecification?.SpecificationCode
+    || readString(itemRecord, ['SpecificationCode', 'ProductSpecificationCode', 'CustomsCode', 'UkTZEDCode'])
+}
+
+function getMeasureUnitName(item: PlacementOrderItem): string | undefined {
+  const itemRecord = asRecord(item)
+  const measureUnit = asRecord(itemRecord.MeasureUnit)
+
+  return item.Product?.MeasureUnit?.Name
+    || readString(measureUnit, ['Name'])
+    || readString(itemRecord, ['MeasureUnitName', 'UnitName', 'Unit'])
 }
 
 function getNetUnitPrice(item: PlacementOrderItem): number | undefined {
@@ -1116,25 +1182,41 @@ function getNetUnitPrice(item: PlacementOrderItem): number | undefined {
 }
 
 function getNetWeight(item: PlacementOrderItem): number | undefined {
-  return item.NetWeight
+  return item.TotalNetWeight ?? item.NetWeight
 }
 
 function getGrossWeight(item: PlacementOrderItem): number | undefined {
-  return item.GrossWeight
+  return item.TotalGrossWeight ?? item.GrossWeight
 }
 
 function formatAmount(value?: number): string {
-  return typeof value === 'number' && Number.isFinite(value) ? amountFormatter.format(value) : '-'
+  return typeof value === 'number' && Number.isFinite(value) ? amountFormatter.format(value) : ''
 }
 
 function formatMoney(value?: number): string {
-  return typeof value === 'number' && Number.isFinite(value) ? moneyFormatter.format(value) : '-'
+  return typeof value === 'number' && Number.isFinite(value) ? moneyFormatter.format(value) : ''
 }
 
 function displayValue(value: unknown): string {
   if (value === null || value === undefined || value === '') {
-    return '-'
+    return ''
   }
 
   return String(value)
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' ? value as Record<string, unknown> : {}
+}
+
+function readString(record: Record<string, unknown>, keys: string[]): string | undefined {
+  for (const key of keys) {
+    const value = record[key]
+
+    if (typeof value === 'string' && value.trim()) {
+      return value
+    }
+  }
+
+  return undefined
 }
