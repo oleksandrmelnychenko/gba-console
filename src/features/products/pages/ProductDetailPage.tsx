@@ -675,8 +675,8 @@ export function ProductStockSummary({
             onProductSaved={onProductSaved}
           />
         ))}
-        {/* Total = sum of the warehouse amounts (legacy "Всього"). */}
-        <TotalQtyTile label={t('Всього')} value={warehousesTotal} />
+        {/* Total = sum of the warehouse amounts (legacy "Всього") — pinned to the far right. */}
+        <TotalQtyTile pushRight label={t('Всього')} value={warehousesTotal} />
       </div>
     </Stack>
   )
@@ -953,11 +953,11 @@ function ProductPlacementEditor({
   )
 }
 
-function TotalQtyTile({ label, value }: { label: string; value?: number | null }) {
+function TotalQtyTile({ label, pushRight, value }: { label: string; pushRight?: boolean; value?: number | null }) {
   const numeric = Number(value) || 0
 
   return (
-    <Stack gap={0} style={{ minWidth: 0 }}>
+    <Stack gap={0} style={{ marginLeft: pushRight ? 'auto' : undefined, minWidth: 0 }}>
       <Group gap={6} align="center" wrap="nowrap">
         <Text className="app-money" size="xl" fw={700} lh={1.05}>
           {formatAmount(value)}
