@@ -51,7 +51,7 @@
 }
 
 .data-table-scroll::-webkit-scrollbar {
-  height: 6px;
+  height: 10px;
   width: 6px;
 }
 
