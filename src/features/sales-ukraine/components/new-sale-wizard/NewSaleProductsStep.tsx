@@ -83,6 +83,7 @@ const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
 const CHANGE_PRODUCT_DESCRIPTION_PERMISSION = 'Sales_Ukraine_all_Change_Products_Btn_PKEY'
 const amountFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
 const qtyFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 3 })
+const PRODUCT_SEARCH_MIN_QUERY_LENGTH = 3
 
 const SEARCH_MODE_OPTIONS = [
   { label: 'Всі', value: '5' },
@@ -309,7 +310,7 @@ export function NewSaleProductsStep({
   useEffect(() => {
     const value = query.trim()
 
-    if (value.length < 4 || !agreementNetId) {
+    if (value.length < PRODUCT_SEARCH_MIN_QUERY_LENGTH || !agreementNetId) {
       return
     }
 
@@ -630,7 +631,7 @@ export function NewSaleProductsStep({
   async function loadMoreResults() {
     const value = query.trim()
 
-    if (virtualLoadingRef.current || virtualExhaustedRef.current || value.length < 4 || !agreementNetId) {
+    if (virtualLoadingRef.current || virtualExhaustedRef.current || value.length < PRODUCT_SEARCH_MIN_QUERY_LENGTH || !agreementNetId) {
       return
     }
 
@@ -663,7 +664,7 @@ export function NewSaleProductsStep({
 
     setQuery(value)
 
-    if (value.trim().length < 4) {
+    if (value.trim().length < PRODUCT_SEARCH_MIN_QUERY_LENGTH) {
       setResults([])
       setSearching(false)
       clearActiveProductData()
@@ -684,7 +685,7 @@ export function NewSaleProductsStep({
     setResults([])
     clearActiveProductData()
 
-    if (query.trim().length >= 4) {
+    if (query.trim().length >= PRODUCT_SEARCH_MIN_QUERY_LENGTH) {
       forceSearchRef.current = true
       setSearching(true)
     }
@@ -2042,11 +2043,11 @@ export function NewSaleProductsStep({
         onToggleDescription={() => void toggleDescriptionEdit()}
       />
     ) : null
-  const isSearchPristine = query.trim().length < 4
+  const isSearchPristine = query.trim().length < PRODUCT_SEARCH_MIN_QUERY_LENGTH
   const showProductSearchEmpty = !selectedMainProduct && orderItems.length === 0 && !isSearching && results.length === 0
   const productSearchEmptyTitle = isSearchPristine ? t('Пошук товару ще не виконаний') : t('Товарів не знайдено')
   const productSearchEmptyDescription = isSearchPristine
-    ? t('Введіть мінімум 4 символи у пошуку, щоб побачити доступні товари.')
+    ? t('Введіть мінімум 3 символи у пошуку, щоб побачити доступні товари.')
     : t('Змініть запит або поле пошуку, щоб знайти потрібний товар.')
   const analoguePanel = selectedMainProduct ? (
     <Stack className="new-sale-products-step__related-panel" gap={7}>

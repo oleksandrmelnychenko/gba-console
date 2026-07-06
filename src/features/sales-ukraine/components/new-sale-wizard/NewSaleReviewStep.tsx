@@ -644,23 +644,23 @@ export function NewSaleReviewStep({
   }
 
   return (
-    <Box className="new-sale-review-step">
+    <Box className="new-sale-review-step app-form-sheet">
       <Box className="new-sale-review-step__body">
-        <Box className="new-sale-review-summary">
-          <Text className="new-sale-review-summary__eyebrow">{t('Оформлення')}</Text>
-          <Box className="new-sale-review-summary__metric">
-            <Text className="new-sale-review-summary__value">{summaryCount}</Text>
-            <Text className="new-sale-review-summary__label">{t('товарів')}</Text>
+        <Stack className="new-sale-review-form app-form-sheet" gap="sm">
+          <Box className="new-sale-review-summary new-sale-review-summary--inline">
+            <Text className="new-sale-review-summary__eyebrow">{t('Оформлення')}</Text>
+            <Box className="new-sale-review-summary__metric">
+              <Text className="new-sale-review-summary__value">{summaryCount}</Text>
+              <Text className="new-sale-review-summary__label">{t('товарів')}</Text>
+            </Box>
+            <Box className="new-sale-review-summary__divider" />
+            <Box className="new-sale-review-summary__metric">
+              <Text className="new-sale-review-summary__amount">{amountFormatter.format(total)}</Text>
+              <Text className="new-sale-review-summary__currency">{localCurrencyCode}</Text>
+            </Box>
+            <Text className="new-sale-review-summary__note">{t('До сплати')}</Text>
           </Box>
-          <Box className="new-sale-review-summary__divider" />
-          <Box className="new-sale-review-summary__metric">
-            <Text className="new-sale-review-summary__amount">{amountFormatter.format(total)}</Text>
-            <Text className="new-sale-review-summary__currency">{localCurrencyCode}</Text>
-          </Box>
-          <Text className="new-sale-review-summary__note">{t('До сплати')}</Text>
-        </Box>
 
-        <Stack className="new-sale-review-form" gap="sm">
           <Box className="new-sale-review-section">
             <Box className="new-sale-review-section__head">
               <Text className="new-sale-review-section__title">{t('Доставка')}</Text>
