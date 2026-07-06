@@ -57,7 +57,6 @@ const TABLE_DEFAULT_LAYOUT = {
 } satisfies DataTableDefaultLayout
 
 const PLACEMENT_PERMISSION = 'PlacementHeader_ProductPlacement_ordersUkraineView_PKEY'
-const CALCULATE_VAT_PERMISSION = 'PlacementHeader_Calculate_ordersUkraineView_PKEY'
 const MANAGE_DOCUMENTS_PERMISSION = 'PlacementHeader_LoadingSales_ordersUkraineView_PKEY'
 
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
@@ -114,7 +113,6 @@ export function SupplyUkraineOrderOverviewPage() {
   const [newDocuments, setNewDocuments] = useState<UkraineOrderNewDocument[]>([])
   const [hasVatItemChanges, setVatItemChanges] = useState(false)
   const [productCardNetId, setProductCardNetId] = useState<string | null>(null)
-  const canCalculateVat = hasPermission(CALCULATE_VAT_PERMISSION)
   const canManageDocuments = hasPermission(MANAGE_DOCUMENTS_PERMISSION)
   const canOpenPlacement = hasPermission(PLACEMENT_PERMISSION)
 
@@ -502,17 +500,15 @@ export function SupplyUkraineOrderOverviewPage() {
               w={220}
               onChange={changeOrderVatPercent}
             />
-            {canCalculateVat && (
-              <Button
-                color={CREATE_ACTION_COLOR}
-                leftSection={<IconCalculator size={16} />}
-                disabled={!order || isSavingVat || isSavingVatItems}
-                loading={isSavingVat}
-                onClick={calculateVatPercentForOrder}
-              >
-                {t('Розрахувати')}
-              </Button>
-            )}
+            <Button
+              color={CREATE_ACTION_COLOR}
+              leftSection={<IconCalculator size={16} />}
+              disabled={!order || isSavingVat || isSavingVatItems}
+              loading={isSavingVat}
+              onClick={calculateVatPercentForOrder}
+            >
+              {t('+ ПДВ')}
+            </Button>
           </Group>
         </Stack>
       </Card>

@@ -89,7 +89,7 @@ function ProductCardContent({ productNetId }: { productNetId: string }) {
     )
   }
 
-  const name = product.NameUA || product.Name || ''
+  const name = getProductTitle(product)
   const description = product.DescriptionUA || product.Description
   const notes = product.NotesUA || product.Notes
   const mainImage = getProductMainImage(product)
@@ -118,7 +118,7 @@ function ProductCardContent({ productNetId }: { productNetId: string }) {
               </Badge>
             )}
           </Group>
-          <Text>{displayValue(name)}</Text>
+          <Text>{name}</Text>
           {product.ProductGroupNames && (
             <Text c="dimmed" size="xs">
               {product.ProductGroupNames}

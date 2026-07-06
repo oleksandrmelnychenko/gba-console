@@ -219,6 +219,7 @@ const movementTypeOptions = [
   { label: 'Бухгалтерський рух', value: '1' },
   { label: 'Управлінський рух', value: '2' },
 ]
+const PRODUCT_INCOME_DEFAULT_LOOKBACK_DAYS = 30
 
 const dateFormatter = new Intl.DateTimeFormat('uk-UA', {
   day: '2-digit',
@@ -1797,7 +1798,7 @@ const PRODUCT_MOVEMENT_DEFAULT_LAYOUT = {
 function ProductMovementPanel({ product }: { product: Product }) {
   const { t } = useI18n()
   const productNetUid = product.NetUid?.trim()
-  const [dateFrom, setDateFrom] = useState(getTodayDate)
+  const [dateFrom, setDateFrom] = useState(() => getDateDaysAgo(PRODUCT_INCOME_DEFAULT_LOOKBACK_DAYS))
   const [dateTo, setDateTo] = useState(getTodayDate)
   const [movementType, setMovementType] = useState('0')
   const [selectedTypes, setSelectedTypes] = useState<number[]>(movementItemTypes)
@@ -2603,6 +2604,15 @@ function getPanelTitle(panel: ProductDetailPanel, t: (key: string) => string): s
 
 function getTodayDate(): string {
   const date = new Date()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+
+  return `${date.getFullYear()}-${month}-${day}`
+}
+
+function getDateDaysAgo(days: number): string {
+  const date = new Date()
+  date.setDate(date.getDate() - days)
   const month = String(date.getMonth() + 1).padStart(2, '0')
   const day = String(date.getDate()).padStart(2, '0')
 

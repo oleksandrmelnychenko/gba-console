@@ -1287,10 +1287,10 @@ function ProductInlinePriceRow({ price }: { price: CalculatedProductPrice }) {
       {(showBase || breakdown.hasDiscount) ? (
         <Group gap={6} mt={1} wrap="wrap">
           {showBase ? (
-            <Text c="dimmed" lh={1.1} style={{ fontSize: 10 }}>{t('База EUR')}: {formatPrice(breakdown.basePriceEUR)}</Text>
+            <Text c="dimmed" lh={1.1} style={{ fontSize: 12 }}>{t('База EUR')}: {formatPrice(breakdown.basePriceEUR)}</Text>
           ) : null}
           {breakdown.discountPriceEUR !== undefined ? (
-            <Text c="teal.8" fw={650} lh={1.1} style={{ fontSize: 10 }}>{t('Після знижки EUR')}: {formatPrice(breakdown.discountPriceEUR)}</Text>
+            <Text c="teal.8" fw={650} lh={1.1} style={{ fontSize: 12 }}>{t('Після знижки EUR')}: {formatPrice(breakdown.discountPriceEUR)}</Text>
           ) : null}
           {breakdown.discountRate !== undefined ? (
             <Badge size="xs" variant="light" color="teal">{t('Знижка')} {formatAmount(breakdown.discountRate)}%</Badge>
@@ -2947,7 +2947,7 @@ function ProductInlineMovementsTab({
 }) {
   const { t } = useI18n()
   const productNetUid = product.NetUid?.trim()
-  const [dateFrom, setDateFrom] = useState(() => (direction === 'income' ? getDateDaysAgo(7) : getTodayDate()))
+  const [dateFrom, setDateFrom] = useState(() => (direction === 'income' ? getDateDaysAgo(30) : getTodayDate()))
   const [dateTo, setDateTo] = useState(getTodayDate)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const [state, dispatch] = useReducer(inlineMovementReducer, {
