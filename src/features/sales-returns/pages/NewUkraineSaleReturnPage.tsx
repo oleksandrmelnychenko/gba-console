@@ -441,7 +441,10 @@ export function NewUkraineSaleReturnPage() {
 
   async function loadEditorWarningsAndStorages(row: SaleItemRow, status?: SalesReturnItemStatusValue) {
     const orderItemNetId = row.item.NetUid
-    const organizationNetId = row.sale.ClientAgreement?.Agreement?.Organization?.NetUid
+    // Fall back to the organization the user filtered by when the sale payload
+    // omits the deeply-nested Organization.NetUid — otherwise the editor hard-
+    // failed and showed no return storages at all (bug #10).
+    const organizationNetId = row.sale.ClientAgreement?.Agreement?.Organization?.NetUid || selectedOrganizationNetUid
 
     if (!orderItemNetId || !organizationNetId) {
       setEditorError(t('Неможливо визначити продаж або організацію для складів повернення'))
@@ -906,6 +909,11 @@ export function NewUkraineSaleReturnPage() {
                 value={editorStorageId}
               />
             </SimpleGrid>
+            {!isLoadingEditorStorages && !editorError && editorStorages.length === 0 && (
+              <Text c="dimmed" size="xs">
+                {t('Немає складів, доступних для повернення за умовами цієї причини')}
+              </Text>
+            )}
             <Group justify="flex-end">
               <Button variant="light" onClick={() => setEditor(null)}>
                 {t('Скасувати')}

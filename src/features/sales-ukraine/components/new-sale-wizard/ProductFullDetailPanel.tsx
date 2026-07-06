@@ -69,6 +69,10 @@ export function ProductFullDetailPanel({
   const { t } = useI18n()
   const mainImage = getProductMainImage(product)
   const shopImageUrl = getProductShopImageUrl(product)
+  // Fall back to the shop image when the sparse search payload carries no
+  // ProductImages — otherwise the panel showed an empty placeholder while the
+  // product card (which fetches the full record) showed the picture (bug #19).
+  const primaryImageUrl = mainImage?.ImageUrl || shopImageUrl
   const titleColor = getRelatedProductRowColor(product)
   const code = product.VendorCode || product.Articul || ''
   const productName = product.NameUA || product.Name || t('Без назви')
@@ -90,13 +94,13 @@ export function ProductFullDetailPanel({
       <Box className="new-sale-product-card__rail" aria-hidden="true" />
 
       <Box className="new-sale-product-card__media">
-        {mainImage?.ImageUrl ? (
+        {primaryImageUrl ? (
           <Image
             alt={code}
             fallbackSrc={shopImageUrl || undefined}
             fit="contain"
             h="100%"
-            src={mainImage.ImageUrl}
+            src={primaryImageUrl}
             w="100%"
           />
         ) : (
