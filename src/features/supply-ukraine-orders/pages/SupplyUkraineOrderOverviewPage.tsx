@@ -222,6 +222,9 @@ export function SupplyUkraineOrderOverviewPage() {
 
         return {
           ...item,
+          // Capture the pre-edit value so Скасувати can revert even when the
+          // backend sent no VatPercent (then the hydrate-time store is undefined).
+          VatPercentStore: item.VatPercentStore ?? readNumber(asRecord(item).VatPercent) ?? 0,
           VatPercent: toPercentNumber(value, 2),
           isChanged: true,
         }
@@ -286,7 +289,7 @@ export function SupplyUkraineOrderOverviewPage() {
 
           return {
             ...item,
-            VatPercent: typeof item.VatPercentStore === 'number' ? item.VatPercentStore : item.VatPercent,
+            VatPercent: typeof item.VatPercentStore === 'number' ? item.VatPercentStore : 0,
             isChanged: false,
           }
         }),
@@ -481,9 +484,9 @@ export function SupplyUkraineOrderOverviewPage() {
             <DetailValue label={t('Валюта')} value={currencyCode} />
             <DetailValue label={t('Організація')} value={getRecipientOrganizationName(order)} />
             <DetailValue label={t('Відповідальний')} value={getEntityName(order?.Responsible)} />
-            <DetailValue label={t('Кількість')} value={formatAmount(order?.TotalQty)} />
+            <DetailValue label={t('Кількість')} value={formatAmount(readNumber(orderRecord.TotalQty))} />
             <DetailValue label={t('Сума')} value={formatMoney(order?.TotalGrossPriceLocal)} />
-            <DetailValue label={currencyCode ? `${t('Курс')} ${currencyCode} ${t('до')} EUR` : t('Курс')} value={formatAmount(order?.ExchangeRateAmount)} />
+            <DetailValue label={currencyCode && currencyCode !== 'EUR' ? `${t('Курс')} ${currencyCode} ${t('до')} EUR` : t('Курс')} value={formatAmount(order?.ExchangeRateAmount)} />
             <DetailValue label={t('Додатковий відсоток')} value={formatAmount(order?.AdditionalPercent)} />
             <DetailValue label={t('ПДВ')} value={formatAmount(order?.VatPercent)} />
           </SimpleGrid>
@@ -502,7 +505,7 @@ export function SupplyUkraineOrderOverviewPage() {
             <Button
               color={CREATE_ACTION_COLOR}
               leftSection={<IconCalculator size={16} />}
-              disabled={!order || isSavingVat || isSavingVatItems}
+              disabled={!order || isSavingVat || isSavingVatItems || hasVatItemChanges}
               loading={isSavingVat}
               onClick={calculateVatPercentForOrder}
             >
@@ -604,9 +607,9 @@ export function SupplyUkraineOrderOverviewPage() {
         <Group gap="xl" justify="flex-end" wrap="wrap">
           <TotalValue label={t('Управлінські витрати')} value={formatMoney(readNumber(orderRecord.TotalDeliveryExpenseAmount))} />
           <TotalValue label={t('Бухгалтерські витрати')} value={formatMoney(readNumber(orderRecord.TotalAccountingDeliveryExpenseAmount))} />
-          <TotalValue label={t('Кількість')} value={formatAmount(order?.TotalQty)} />
+          <TotalValue label={t('Кількість')} value={formatAmount(readNumber(orderRecord.TotalQty))} />
           <TotalValue label={t('Нетто')} value={formatMoney(readNumber(orderRecord.TotalNetPriceLocal))} />
-          <TotalValue label={t('ПДВ')} value={formatMoney(order?.TotalVatAmount)} />
+          <TotalValue label={t('ПДВ')} value={formatMoney(readNumber(orderRecord.TotalVatAmount))} />
           <TotalValue label={t('З ПДВ')} value={formatMoney(readNumber(orderRecord.TotalNetPriceLocalWithVat))} />
           <TotalValue label={t('Вага нетто')} value={formatAmount(readNumber(orderRecord.TotalNetWeight))} />
           <TotalValue label={t('Вага брутто')} value={formatAmount(readNumber(orderRecord.TotalGrossWeight))} />
