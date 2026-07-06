@@ -1,4 +1,4 @@
-import { Button, Group, NumberInput, Stack, Text, TextInput } from '@mantine/core'
+import { Box, Button, Group, NumberInput, Stack, Text, TextInput } from '@mantine/core'
 import { useState } from 'react'
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
@@ -26,7 +26,20 @@ export function ChangeQtyModal({
   const { t } = useI18n()
 
   return (
-    <AppModal centered opened={opened} size="sm" title={t('Кількість')} onClose={onCancel}>
+    <AppModal
+      centered
+      classNames={{
+        body: 'new-sale-qty-modal__body',
+        close: 'new-sale-qty-modal__close',
+        content: 'new-sale-qty-modal__content',
+        header: 'new-sale-qty-modal__header',
+        title: 'new-sale-qty-modal__title',
+      }}
+      opened={opened}
+      size={420}
+      title={t('Додати в кошик')}
+      onClose={onCancel}
+    >
       {opened && (
         <ChangeQtyForm
           availableQty={availableQty}
@@ -86,39 +99,55 @@ function ChangeQtyForm({
   }
 
   return (
-    <Stack gap="md" onKeyDown={handleKeyDown}>
-      <Stack align="center" gap={0}>
-        <Text fw={700} size="xl">
+    <Stack className="new-sale-qty-form" gap={0} onKeyDown={handleKeyDown}>
+      <Box className="new-sale-qty-form__available">
+        <Text className="new-sale-qty-form__available-value">
           {qtyFormatter.format(availableQty)}
         </Text>
-        <Text c="dimmed" size="sm">
+        <Text className="new-sale-qty-form__available-label">
           {t('Доступна К-сть')}
         </Text>
-      </Stack>
+      </Box>
 
-      <NumberInput
-        allowNegative={false}
-        autoFocus
-        data-autofocus
-        decimalScale={3}
-        error={showError ? t('Невірна кількість') : undefined}
-        label={showError ? t('Невірна кількість') : t('Кількість')}
-        min={0}
-        value={value}
-        onChange={(next) => {
-          setTouched(true)
-          setValue(next)
-        }}
-        onFocus={(event) => event.currentTarget.select()}
-      />
+      <Box className="new-sale-qty-form__fields">
+        <NumberInput
+          allowNegative={false}
+          autoFocus
+          classNames={{
+            input: 'new-sale-qty-form__input',
+            label: 'new-sale-qty-form__label',
+            root: 'new-sale-qty-form__field',
+          }}
+          data-autofocus
+          decimalScale={3}
+          error={showError ? t('Невірна кількість') : undefined}
+          label={showError ? t('Невірна кількість') : t('Кількість')}
+          min={0}
+          value={value}
+          onChange={(next) => {
+            setTouched(true)
+            setValue(next)
+          }}
+          onFocus={(event) => event.currentTarget.select()}
+        />
 
-      <TextInput label={t('Коментар')} value={comment} onChange={(event) => setComment(event.currentTarget.value)} />
+        <TextInput
+          classNames={{
+            input: 'new-sale-qty-form__input',
+            label: 'new-sale-qty-form__label',
+            root: 'new-sale-qty-form__field',
+          }}
+          label={t('Коментар')}
+          value={comment}
+          onChange={(event) => setComment(event.currentTarget.value)}
+        />
+      </Box>
 
-      <Group justify="flex-end" gap="sm">
-        <Button color="gray" disabled={busy} variant="light" onClick={onCancel}>
+      <Group className="new-sale-qty-form__actions" justify="flex-end" gap="sm">
+        <Button className="new-sale-qty-form__cancel" color="gray" disabled={busy} variant="light" onClick={onCancel}>
           {t('Скасувати')}
         </Button>
-        <Button disabled={showError} loading={busy} onClick={accept}>
+        <Button className="new-sale-qty-form__submit" disabled={showError} loading={busy} onClick={accept}>
           {t('Додати')}
         </Button>
       </Group>

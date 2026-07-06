@@ -3696,6 +3696,201 @@
   padding: 4px 8px;
 }
 
+.new-sale-qty-modal__content.mantine-Modal-content {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.98)),
+    var(--mantine-color-white);
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  border-radius: 14px;
+  box-shadow:
+    0 22px 52px rgba(15, 23, 42, 0.16),
+    0 1px 0 rgba(255, 255, 255, 0.9) inset;
+  font-family: Onest, Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  overflow: hidden;
+}
+
+.new-sale-qty-modal__header.mantine-Modal-header {
+  background: transparent;
+  min-height: 0;
+  padding: 18px 20px 4px;
+}
+
+.new-sale-qty-modal__title.mantine-Modal-title {
+  color: var(--mantine-color-gray-9);
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.2;
+}
+
+.new-sale-qty-modal__close.mantine-Modal-close {
+  border-radius: 999px;
+  color: var(--mantine-color-gray-7);
+  height: 30px;
+  min-height: 30px;
+  width: 30px;
+}
+
+.new-sale-qty-modal__close.mantine-Modal-close:hover {
+  background: rgba(248, 250, 252, 0.95);
+  color: var(--mantine-color-gray-9);
+}
+
+.new-sale-qty-modal__body.mantine-Modal-body {
+  padding: 0 18px 16px;
+}
+
+.new-sale-qty-form {
+  min-width: 0;
+}
+
+.new-sale-qty-form__available {
+  align-items: center;
+  background:
+    radial-gradient(circle at 50% 0, rgba(var(--brand-orange-rgb), 0.12), transparent 42%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.9));
+  border: 1px solid rgba(226, 232, 240, 0.96);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  margin: 8px 0 14px;
+  min-height: 82px;
+  position: relative;
+}
+
+.new-sale-qty-form__available::before {
+  background: linear-gradient(180deg, rgba(var(--brand-orange-rgb), 0.95), rgba(var(--brand-orange-rgb), 0.18));
+  border-radius: 999px;
+  bottom: 16px;
+  content: '';
+  left: -1px;
+  position: absolute;
+  top: 16px;
+  width: 2px;
+}
+
+.new-sale-qty-form__available-value {
+  color: var(--mantine-color-gray-9);
+  font-family: var(--font-mono);
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1;
+}
+
+.new-sale-qty-form__available-label {
+  color: var(--mantine-color-gray-5);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  margin-top: 8px;
+}
+
+.new-sale-qty-form__fields {
+  display: grid;
+  gap: 13px;
+}
+
+.new-sale-qty-form__field {
+  min-width: 0;
+}
+
+.new-sale-qty-form__label.mantine-InputWrapper-label {
+  color: var(--mantine-color-gray-8);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1;
+  margin-bottom: 7px;
+}
+
+.new-sale-qty-form__input.mantine-Input-input {
+  background: rgba(255, 255, 255, 0.96);
+  border-color: rgba(203, 213, 225, 0.92);
+  border-radius: 9px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  color: var(--mantine-color-gray-9);
+  font-family: Onest, Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  height: 38px;
+  min-height: 38px;
+  padding-left: 12px;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background 160ms ease;
+}
+
+.new-sale-qty-form__input.mantine-Input-input:hover {
+  border-color: rgba(var(--brand-orange-rgb), 0.4);
+}
+
+.new-sale-qty-form__input.mantine-Input-input:focus,
+.new-sale-qty-form__input.mantine-Input-input:focus-within {
+  border-color: rgba(var(--brand-orange-rgb), 0.78);
+  box-shadow:
+    0 0 0 3px rgba(var(--brand-orange-rgb), 0.09),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85);
+}
+
+.new-sale-qty-form__fields .new-sale-qty-form__field:first-child .new-sale-qty-form__input {
+  font-family: var(--font-mono);
+}
+
+.new-sale-qty-modal__content .mantine-NumberInput-controls {
+  border-color: rgba(203, 213, 225, 0.9);
+  border-radius: 0 9px 9px 0;
+  overflow: hidden;
+}
+
+.new-sale-qty-modal__content .mantine-NumberInput-control {
+  border-color: rgba(203, 213, 225, 0.72);
+  color: var(--mantine-color-gray-6);
+}
+
+.new-sale-qty-form__actions {
+  background: linear-gradient(180deg, rgba(248, 250, 252, 0), rgba(248, 250, 252, 0.82));
+  border-radius: 12px;
+  margin-top: 16px;
+  padding: 4px 0 0;
+}
+
+.new-sale-qty-form__cancel.mantine-Button-root,
+.new-sale-qty-form__submit.mantine-Button-root {
+  border-radius: 9px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  height: 36px;
+  min-width: 102px;
+}
+
+.new-sale-qty-form__cancel.mantine-Button-root {
+  background: rgba(241, 245, 249, 0.95);
+  color: var(--mantine-color-gray-8);
+}
+
+.new-sale-qty-form__cancel.mantine-Button-root:hover {
+  background: rgba(226, 232, 240, 0.9);
+}
+
+.new-sale-qty-form__submit.mantine-Button-root {
+  background: var(--brand-orange);
+  box-shadow: 0 10px 18px rgba(var(--brand-orange-rgb), 0.22);
+  color: var(--mantine-color-white);
+}
+
+.new-sale-qty-form__submit.mantine-Button-root:hover {
+  background: var(--brand-orange);
+  box-shadow: 0 12px 22px rgba(var(--brand-orange-rgb), 0.26);
+  filter: brightness(0.98);
+}
+
 .new-sale-products-step__cart-slot {
   flex: 1 1 0;
   min-height: 0;
