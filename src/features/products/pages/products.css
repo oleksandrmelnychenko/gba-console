@@ -412,20 +412,38 @@
 }
 
 .product-inline-stock-bar {
+  border-top: 1px solid var(--mantine-color-gray-2);
   margin-top: 8px;
-  padding: 8px 10px;
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 8px;
-  background: #f8faf9;
+  padding-top: 10px;
 }
 
-/* Legacy stock bar = a single horizontal row of equal-height counters (no wrapping). */
-.product-inline-stock-bar .mantine-SimpleGrid-root {
-  grid-template-columns: none !important;
-  grid-auto-flow: column !important;
-  grid-auto-columns: minmax(0, 1fr) !important;
-  align-items: stretch !important;
-  gap: 6px !important;
+/* Stock bar: one wrapping line of value-over-label metrics separated by thin
+   vertical rules (matches the client-header metric pattern). */
+.product-stock-bar {
+  align-items: flex-start;
+  display: flex;
+  flex-wrap: wrap;
+  row-gap: 10px;
+}
+
+.product-stock-bar > * {
+  border-left: 1px solid var(--mantine-color-gray-2);
+  padding: 0 18px;
+}
+
+.product-stock-bar > *:first-child {
+  border-left: 0;
+  padding-left: 0;
+}
+
+/* Orange marker shown when a counter is > 1. */
+.product-stock-dot {
+  background: var(--brand-orange);
+  border-radius: 999px;
+  display: inline-block;
+  flex: 0 0 auto;
+  height: 8px;
+  width: 8px;
 }
 
 .product-inline-image {

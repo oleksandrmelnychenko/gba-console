@@ -58,6 +58,7 @@ import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { type FormEvent, useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import './products.css'
 import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import { toProxiedAssetUrl } from '../../../shared/url/proxiedAssetUrl'
 import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
@@ -659,12 +660,12 @@ export function ProductStockSummary({
           {reservationError}
         </Alert>
       )}
-      <Group gap="lg" align="flex-start" wrap="wrap">
+      <div className="product-stock-bar">
         {/* Static reserve fields, in the legacy stock-bar order. */}
         <TotalQtyTile label={t('В рахунку в ресейлі')} value={reservation.TotalProductReSaleQty} />
-        <TotalQtyTile label={t('В рахунках в Польщі')} value={reservation.TotalReservedPL} />
+        {/* Hidden per request: <TotalQtyTile label={t('В рахунках в Польщі')} value={reservation.TotalReservedPL} /> */}
         <TotalQtyTile label={t('В рахунках в Україні')} value={reservation.TotalReservedUK} />
-        <TotalQtyTile label={`${t('Резерв в корзині')} PL`} value={reservation.TotalCartReservedPL} />
+        {/* Hidden per request: <TotalQtyTile label={`${t('Резерв в корзині')} PL`} value={reservation.TotalCartReservedPL} /> */}
         <TotalQtyTile label={`${t('Резерв в корзині')} UK`} value={reservation.TotalCartReservedUK} />
         {/* Dynamic per-warehouse list (ProductAvailabilities). */}
         {availabilityItems.map((availability, index) => (
@@ -676,7 +677,7 @@ export function ProductStockSummary({
         ))}
         {/* Total = sum of the warehouse amounts (legacy "Всього"). */}
         <TotalQtyTile label={t('Всього')} value={warehousesTotal} />
-      </Group>
+      </div>
     </Stack>
   )
 }
@@ -691,14 +692,18 @@ function ProductAvailabilityPlacementRow({
   const [opened, setOpened] = useState(false)
   const placements = availability.Storage?.ProductPlacements || []
   const hasPlacements = placements.length > 0
+  const amount = Number(availability.Amount) || 0
   const content = (
     <Stack gap={0} style={{ cursor: hasPlacements ? 'pointer' : 'default', minWidth: 0 }}>
-      <Text size="xs" c="dimmed" lh={1.15} lineClamp={2} title={displayValue(availability.Storage?.Name)}>
+      <Group gap={6} align="center" wrap="nowrap">
+        <Text className="app-money" size="xl" fw={700} lh={1.05}>
+          {formatAmount(availability.Amount)}
+        </Text>
+        {amount > 1 && <span className="product-stock-dot" aria-hidden="true" />}
+      </Group>
+      <Text size="xs" c="dimmed" lh={1.2} lineClamp={2} title={displayValue(availability.Storage?.Name)}>
         {displayValue(availability.Storage?.Name)}
         {hasPlacements ? ' ▾' : ''}
-      </Text>
-      <Text className="app-money" size="sm" fw={700}>
-        {formatAmount(availability.Amount)}
       </Text>
     </Stack>
   )
@@ -949,13 +954,18 @@ function ProductPlacementEditor({
 }
 
 function TotalQtyTile({ label, value }: { label: string; value?: number | null }) {
+  const numeric = Number(value) || 0
+
   return (
     <Stack gap={0} style={{ minWidth: 0 }}>
-      <Text size="xs" c="dimmed" lh={1.15} lineClamp={2}>
+      <Group gap={6} align="center" wrap="nowrap">
+        <Text className="app-money" size="xl" fw={700} lh={1.05}>
+          {formatAmount(value)}
+        </Text>
+        {numeric > 1 && <span className="product-stock-dot" aria-hidden="true" />}
+      </Group>
+      <Text size="xs" c="dimmed" lh={1.2} lineClamp={2}>
         {label}
-      </Text>
-      <Text className="app-money" size="sm" fw={700}>
-        {formatAmount(value)}
       </Text>
     </Stack>
   )
