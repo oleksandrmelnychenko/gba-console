@@ -861,7 +861,7 @@ function SpecificationActionButtons({ model }: { model: DirectOrderSpecification
           disabled={model.isActionBusy}
           leftSection={<IconFileImport size={16} />}
           loading={model.isUploading}
-          variant="light"
+          variant="outline"
           onClick={() => model.setUploadOpen(true)}
         >
           {t('Завантаження митних кодів')}
@@ -872,7 +872,7 @@ function SpecificationActionButtons({ model }: { model: DirectOrderSpecification
           disabled={!model.selectedInvoice || model.isActionBusy}
           leftSection={<IconFileImport size={16} />}
           loading={model.isSavingDocuments}
-          variant="light"
+          variant="outline"
           onClick={model.openDocuments}
         >
           {t('Завантаження документів доставки')}
@@ -883,7 +883,7 @@ function SpecificationActionButtons({ model }: { model: DirectOrderSpecification
           disabled={model.isActionBusy}
           leftSection={<IconDownload size={16} />}
           loading={model.isDownloading}
-          variant="light"
+          variant="outline"
           onClick={model.openDownload}
         >
           {t('Завантажити')}

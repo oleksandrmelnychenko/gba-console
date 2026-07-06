@@ -681,7 +681,7 @@ function IncomeCashflowsContent({ model }: { model: IncomeCashflowsPageModel }) 
 
         {hasMore && (
           <Group justify="center" p="md">
-            <Button loading={isLoadingMore} variant="light" onClick={() => void onLoadIncomeOrders(incomeOrders.length, true)}>
+            <Button loading={isLoadingMore} variant="outline" onClick={() => void onLoadIncomeOrders(incomeOrders.length, true)}>
               {t('Завантажити ще')}
             </Button>
           </Group>

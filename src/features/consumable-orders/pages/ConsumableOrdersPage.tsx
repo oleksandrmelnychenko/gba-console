@@ -573,11 +573,11 @@ function ConsumableOrderDetailDrawer({
       {row && order && (
         <Stack gap="md">
           <Group justify="flex-end">
-            <Button leftSection={<IconPencil size={16} />} styles={{ label: ORDERS_MONO_STYLE }} variant="light" onClick={() => onView(row)}>
+            <Button leftSection={<IconPencil size={16} />} styles={{ label: ORDERS_MONO_STYLE }} variant="outline" onClick={() => onView(row)}>
               {t('Редагувати')}
             </Button>
             {!order.IsPayed && (
-              <Button color="green" leftSection={<IconCreditCard size={16} />} styles={{ label: ORDERS_MONO_STYLE }} variant="light" onClick={() => onPay(row)}>
+              <Button color="green" leftSection={<IconCreditCard size={16} />} styles={{ label: ORDERS_MONO_STYLE }} variant="outline" onClick={() => onPay(row)}>
                 {t('Оплатити')}
               </Button>
             )}

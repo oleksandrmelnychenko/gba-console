@@ -227,7 +227,7 @@ export function UploadDeliveryDocumentsModal({
         <Group justify="flex-end">
           <FileButton multiple accept=".xls,.xlsx,.pdf" onChange={(files) => !isSaving && files && onAddFiles(files)}>
             {(props) => (
-              <Button {...props} disabled={isSaving} leftSection={<IconUpload size={16} />} variant="light">
+              <Button {...props} disabled={isSaving} leftSection={<IconUpload size={16} />} variant="outline">
                 {t('Завантажити')}
               </Button>
             )}

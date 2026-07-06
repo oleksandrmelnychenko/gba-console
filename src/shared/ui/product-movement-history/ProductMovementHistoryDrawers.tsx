@@ -701,7 +701,7 @@ function ProductStorageLocationHistoryDrawerContent({
               disabled={Boolean(filterError || missingNetUidError)}
               leftSection={<IconRefresh size={18} />}
               loading={isLoading}
-              variant="light"
+              variant="outline"
               onClick={() => reload()}
             >
               {t('Оновити')}
@@ -890,7 +890,7 @@ function ProductMovementPanel({ active, product }: { active: boolean; product: M
           disabled={Boolean(filterError) || Boolean(typesError)}
           leftSection={<IconRefresh size={18} />}
           loading={isLoading}
-          variant="light"
+          variant="outline"
           onClick={() => reload()}
         >
           {t('Оновити')}
@@ -899,7 +899,7 @@ function ProductMovementPanel({ active, product }: { active: boolean; product: M
           disabled={!productNetUid || Boolean(filterError) || Boolean(typesError)}
           leftSection={<IconDownload size={18} />}
           loading={isExporting}
-          variant="light"
+          variant="outline"
           onClick={() => void exportMovements()}
         >
           {t('Друк')}
@@ -1261,10 +1261,10 @@ function MovementDateToolbar({
     <Group align="end" gap="sm" wrap="wrap" className="clients-filter-row">
       <TextInput label={t('З')} type="date" value={dateFrom} w={150} onChange={(event) => onDateFromChange(event.currentTarget.value)} />
       <TextInput label={t('По')} type="date" value={dateTo} w={150} onChange={(event) => onDateToChange(event.currentTarget.value)} />
-      <Button leftSection={<IconRefresh size={18} />} loading={isLoading} variant="light" onClick={onRefresh}>
+      <Button leftSection={<IconRefresh size={18} />} loading={isLoading} variant="outline" onClick={onRefresh}>
         {t('Оновити')}
       </Button>
-      <Button disabled={exportDisabled} leftSection={<IconDownload size={18} />} loading={exportLoading} variant="light" onClick={onExport}>
+      <Button disabled={exportDisabled} leftSection={<IconDownload size={18} />} loading={exportLoading} variant="outline" onClick={onExport}>
         {t('Друк')}
       </Button>
     </Group>

@@ -1086,7 +1086,7 @@ function CurrencySelector({
                     mt="xs"
                     size="xs"
                     type="button"
-                    variant="light"
+                    variant="outline"
                     onClick={() => onOpenCurrencyActivity(draft.original as PaymentCurrencyRegister)}
                   >
                     {t('Рух валюти')}
@@ -1223,7 +1223,7 @@ function PaymentAccountActivityPanel({
               </Badge>
             </Group>
             <Group gap="xs">
-              <Button color="green" disabled={!account.NetUid} size="xs" variant="light" onClick={onOpenIncome}>
+              <Button color="green" disabled={!account.NetUid} size="xs" variant="outline" onClick={onOpenIncome}>
                 {t('Прихід')}
               </Button>
               <Button color="red" disabled={!account.NetUid} size="xs" variant="light" onClick={onOpenOutgoing}>
@@ -1234,7 +1234,7 @@ function PaymentAccountActivityPanel({
                 leftSection={<IconArrowsExchange size={16} />}
                 size="xs"
                 type="button"
-                variant="light"
+                variant="outline"
                 onClick={() => {
                   setTransferModalOpened(true)
                   onActiveTabChange('transfers')
@@ -1247,7 +1247,7 @@ function PaymentAccountActivityPanel({
                 leftSection={<IconArrowsExchange size={16} />}
                 size="xs"
                 type="button"
-                variant="light"
+                variant="outline"
                 onClick={() => {
                   setExchangeModalOpened(true)
                   onActiveTabChange('exchanges')

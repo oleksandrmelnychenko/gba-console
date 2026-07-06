@@ -1284,7 +1284,7 @@ function DeprecatedConsumableOrderEditorModal({
                   <Button
                     disabled={!productValue || isSaving}
                     leftSection={<IconPlus size={16} />}
-                    variant="light"
+                    variant="outline"
                     onClick={addSelectedProduct}
                   >
                     {t('Додати')}
@@ -1399,7 +1399,7 @@ function ConsumablesOrderItemsPicker({
                     disabled={isSaving || selected}
                     leftSection={<IconPlus size={14} />}
                     size="xs"
-                    variant="light"
+                    variant="outline"
                     onClick={() => onAdd(order, item)}
                   >
                     {selected ? t('Додано') : t('Додати')}

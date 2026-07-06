@@ -1174,7 +1174,7 @@ function ClientStructureModal({
               fullWidth
               justify="flex-start"
               leftSection={<IconExternalLink size={16} />}
-              variant="light"
+              variant="outline"
               onClick={() => onOpenClient(subClient)}
             >
               <Stack gap={0} align="flex-start">

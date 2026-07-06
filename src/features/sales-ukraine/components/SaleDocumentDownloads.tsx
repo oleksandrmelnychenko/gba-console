@@ -38,7 +38,7 @@ export function SaleDocumentDownloads({ documents }: { documents: SaleDocumentDo
                   rel="noopener noreferrer"
                   size="xs"
                   target="_blank"
-                  variant="light"
+                  variant="outline"
                 >
                   Excel
                 </Button>

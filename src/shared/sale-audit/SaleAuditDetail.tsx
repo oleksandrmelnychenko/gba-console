@@ -178,7 +178,7 @@ export function SaleAuditDetail({ error, isLoading, onConfirmed, showConfirm = t
         <Group justify="space-between" align="center">
           <Text fw={600}>{t('Переміщено')}</Text>
           {showConfirm && confirmableHistoryNetId && (
-            <Button size="xs" variant="light" onClick={() => setConfirmHistoryNetId(confirmableHistoryNetId)}>
+            <Button size="xs" variant="outline" onClick={() => setConfirmHistoryNetId(confirmableHistoryNetId)}>
               {t('Підтвердити обробку')}
             </Button>
           )}

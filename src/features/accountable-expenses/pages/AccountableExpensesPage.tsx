@@ -716,7 +716,7 @@ function ExpenseDetailDrawer({ row, onClose }: { row: AccountableExpenseRow | nu
                   leftSection={<IconExternalLink size={14} />}
                   size="xs"
                   to={advanceReportLink}
-                  variant="light"
+                  variant="outline"
                 >
                   {t('Відкрити')}
                 </Button>
@@ -760,7 +760,7 @@ function ExpenseDetailDrawer({ row, onClose }: { row: AccountableExpenseRow | nu
                             leftSection={<IconExternalLink size={14} />}
                             size="xs"
                             to={itemAdvanceReportLink}
-                            variant="light"
+                            variant="outline"
                           >
                             {t('Відкрити')}
                           </Button>

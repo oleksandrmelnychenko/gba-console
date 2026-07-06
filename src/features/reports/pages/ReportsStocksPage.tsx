@@ -294,7 +294,7 @@ export function ReportsStocksPage() {
                 <Group justify="space-between">
                   <Text fw={700}>{t('Показники')}</Text>
                   <Group gap={6}>
-                    <Button size="xs" variant="light" onClick={() => setAllMeasurements(setMeasurements, true)}>
+                    <Button size="xs" variant="outline" onClick={() => setAllMeasurements(setMeasurements, true)}>
                       {t('Усі')}
                     </Button>
                     <Button size="xs" variant="subtle" color="gray" onClick={() => setAllMeasurements(setMeasurements, false)}>
@@ -353,7 +353,7 @@ export function ReportsStocksPage() {
                 <Button
                   leftSection={<IconPlus size={16} />}
                   size="xs"
-                  variant="light"
+                  variant="outline"
                   onClick={() => setSelections((current) => [...current, createEmptySelection()])}
                 >
                   {t('Додати')}
@@ -427,7 +427,7 @@ export function ReportsStocksPage() {
                 value={templateName}
                 onChange={(event) => setTemplateName(event.currentTarget.value)}
               />
-              <Button variant="light" onClick={saveTemplate}>{t('Зберегти шаблон')}</Button>
+              <Button variant="outline" onClick={saveTemplate}>{t('Зберегти шаблон')}</Button>
               <Button leftSection={<IconRefresh size={16} />} variant="subtle" color="gray" onClick={loadTemplates}>
                 {t('Показати шаблони')}
               </Button>
@@ -489,7 +489,7 @@ export function ReportsStocksPage() {
               leftSection={<IconDownload size={16} />}
               disabled={!result?.table.rows.length}
               size="xs"
-              variant="light"
+              variant="outline"
               onClick={exportPreviewCsv}
             >
               CSV
@@ -497,7 +497,7 @@ export function ReportsStocksPage() {
             <Button
               disabled={!result?.document.DocumentURL && !result?.document.PdfDocumentURL}
               size="xs"
-              variant="light"
+              variant="outline"
               onClick={() => setDownloadModalOpened(true)}
             >
               {t('Файли')}
@@ -670,7 +670,7 @@ function SelectionValuePicker({ from, label, selection, selections, to, onChange
             value={manualValue}
             onChange={(event) => setManualValue(event.currentTarget.value)}
           />
-          <Button size="sm" type="button" variant="light" onClick={addManualValue}>
+          <Button size="sm" type="button" variant="outline" onClick={addManualValue}>
             {t('Додати')}
           </Button>
         </Group>

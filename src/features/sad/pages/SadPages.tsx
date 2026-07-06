@@ -407,7 +407,7 @@ export function AllSadsPage() {
           disabled={!hasMore}
           loading={isLoadingMore}
           size="xs"
-          variant="light"
+          variant="outline"
           onClick={() => loadSads(sads.length)}
         >
           {t('Ще')}
@@ -980,12 +980,12 @@ function SadEditorPage({ mode, netId }: { mode: EditorMode; netId?: string }) {
           <Badge className="app-role-pill is-gray" variant="light">{getSadTypeLabel(sad.SadType)}</Badge>
         </Group>
         <Group>
-          <Button leftSection={<IconFileUpload size={16} />} variant="light" onClick={() => setDocumentsOpen(true)}>
+          <Button leftSection={<IconFileUpload size={16} />} variant="outline" onClick={() => setDocumentsOpen(true)}>
             {t('Документи')}
           </Button>
           <Button
             leftSection={<IconDownload size={16} />}
-            variant="light"
+            variant="outline"
             onClick={async () => {
               if (!sad.NetUid) {
                 return
@@ -1001,7 +1001,7 @@ function SadEditorPage({ mode, netId }: { mode: EditorMode; netId?: string }) {
             {t('Завантажити')}
           </Button>
           {!isReadonly && mode !== 'sale' && !sad.IsFromSale && (
-            <Button leftSection={<IconPlus size={16} />} variant="light" onClick={() => setAddItemsOpen(true)}>
+            <Button leftSection={<IconPlus size={16} />} variant="outline" onClick={() => setAddItemsOpen(true)}>
               {t('Додати товар')}
             </Button>
           )}
@@ -1011,7 +1011,7 @@ function SadEditorPage({ mode, netId }: { mode: EditorMode; netId?: string }) {
             </Button>
           )}
           {!isReadonly && mode !== 'tir' && (
-            <Button disabled={isSaving || (mode === 'base' && !isEditorDirty)} variant="light" onClick={() => saveSad(false)}>
+            <Button disabled={isSaving || (mode === 'base' && !isEditorDirty)} variant="outline" onClick={() => saveSad(false)}>
               {t('Зберегти')}
             </Button>
           )}
@@ -1422,7 +1422,7 @@ function TirMovementPanel({
           <Button
             disabled={readonly || selectedSourceItems.length === 0}
             leftSection={<IconArrowRight size={16} />}
-            variant="light"
+            variant="outline"
             onClick={() => setMoveModalOpen(true)}
           >
             {t('До палети')}
@@ -1430,7 +1430,7 @@ function TirMovementPanel({
           <Button
             disabled={readonly || selectedPalletItems.length === 0}
             leftSection={<IconArrowLeft size={16} />}
-            variant="light"
+            variant="outline"
             onClick={moveLeft}
           >
             {t('Повернути')}
@@ -2023,12 +2023,12 @@ export function SadSpecificationsPage() {
       <Group align="center" justify="space-between">
         <StatusBadge sad={sad} />
         <Group>
-          <Button leftSection={<IconFileUpload size={16} />} variant="light" onClick={() => setUploadOpen(true)}>
+          <Button leftSection={<IconFileUpload size={16} />} variant="outline" onClick={() => setUploadOpen(true)}>
             {t('Імпорт')}
           </Button>
           <Button
             leftSection={<IconDownload size={16} />}
-            variant="light"
+            variant="outline"
             onClick={async () => {
               if (!sad.NetUid) {
                 return
@@ -2211,7 +2211,7 @@ function DownloadDocumentsModal({
             disabled={!link.url}
             justify="space-between"
             rightSection={<IconDownload size={16} />}
-            variant="light"
+            variant="outline"
             onClick={() => link.url && window.open(getDocumentHref(link.url), '_blank', 'noopener,noreferrer')}
           >
             {link.label}
@@ -2445,13 +2445,13 @@ function SadActionModal({
       onClose={onClose}
     >
       <Stack>
-        <Button justify="space-between" rightSection={<IconEye size={16} />} variant="light" onClick={() => onNavigate(editPath)}>
+        <Button justify="space-between" rightSection={<IconEye size={16} />} variant="outline" onClick={() => onNavigate(editPath)}>
           {t('Перегляд / редагування')}
         </Button>
         <Button
           justify="space-between"
           rightSection={<IconEdit size={16} />}
-          variant="light"
+          variant="outline"
           onClick={() => sad.NetUid && onNavigate(`/sad/edit/${sad.NetUid}/specifications`)}
         >
           {t('Коди специфікацій')}
@@ -2460,7 +2460,7 @@ function SadActionModal({
           <Button
             justify="space-between"
             rightSection={<IconArrowRight size={16} />}
-            variant="light"
+            variant="outline"
             onClick={() => onCreateSupplyOrder(sad)}
           >
             {t('Створити замовлення постачання')}

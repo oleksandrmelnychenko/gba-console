@@ -155,7 +155,7 @@ function PlacementUnorderedProductsContent({
         <AddUnorderedProductForm isSaving={isSaving} onCancel={() => setAdding(false)} onCreate={addItem} />
       ) : (
         <Group justify="flex-end">
-          <Button leftSection={<IconPlus size={16} />} variant="light" onClick={() => setAdding(true)}>
+          <Button leftSection={<IconPlus size={16} />} variant="outline" onClick={() => setAdding(true)}>
             {t('Додати товар')}
           </Button>
         </Group>

@@ -764,7 +764,7 @@ function IncompleteSaleDetail({ error, isLoading, sale, onOpenClientSales }: Inc
           {hasClientSales && (
             <Button
               mt="xs"
-              variant="light"
+              variant="outline"
               leftSection={<IconReceipt size={16} />}
               onClick={() => onOpenClientSales(sale)}
             >

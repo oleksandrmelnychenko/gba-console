@@ -777,7 +777,7 @@ function AvailablePaymentsTableCard({ model }: { model: ReturnType<typeof useAva
                   {t('Вибрано платіжних задач')}: {markedModels.length}
                 </Text>
                 <Group gap="xs">
-                  <Button size="xs" variant="light" onClick={openMarkedOutcome}>
+                  <Button size="xs" variant="outline" onClick={openMarkedOutcome}>
                     {t('Створити видатковий')}
                   </Button>
                   <Button color="gray" size="xs" variant="subtle" onClick={clearMarked}>

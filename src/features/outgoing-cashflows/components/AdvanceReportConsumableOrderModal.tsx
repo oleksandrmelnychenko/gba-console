@@ -717,7 +717,7 @@ export function AdvanceReportConsumableOrderModal({
               {visibleItems.length}
             </Badge>
           </Group>
-          <Button disabled={isBusy} leftSection={<IconPlus size={16} />} variant="light" onClick={openNewItemEditor}>
+          <Button disabled={isBusy} leftSection={<IconPlus size={16} />} variant="outline" onClick={openNewItemEditor}>
             {t('Додати')}
           </Button>
         </Group>

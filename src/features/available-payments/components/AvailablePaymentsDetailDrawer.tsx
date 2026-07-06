@@ -1098,7 +1098,7 @@ function AvailablePaymentTaskList({
                     <Button
                       disabled={isSaving || Boolean(markedSelectionError)}
                       size="xs"
-                      variant="light"
+                      variant="outline"
                       onClick={() => onCreateOutcome(markedModels, { requireDocuments: false })}
                     >
                       {t('Створити видатковий')}
@@ -1111,7 +1111,7 @@ function AvailablePaymentTaskList({
                       disabled={isSaving || Boolean(markedMergeError)}
                       leftSection={<IconGitMerge size={16} />}
                       size="xs"
-                      variant="light"
+                      variant="outline"
                       onClick={() => void onMergeMarked(markedModels)}
                     >
                       {t('Об’єднати задачі')}
@@ -1504,7 +1504,7 @@ function AvailablePaymentOutcomeForm({
                   leftSection={<IconPlus size={16} />}
                   size="xs"
                   type="button"
-                  variant="light"
+                  variant="outline"
                   onClick={onCreateMovement}
                 >
                   {t('Створити статтю')}
@@ -1903,7 +1903,7 @@ function PaymentTab({
         )}
         <Group gap="xs">
           {!isDone && !isUnsupported && !isAvailableForPayment && (
-            <Button color="green" disabled={isSaving} loading={isSaving} variant="light" onClick={onMoveToDone}>
+            <Button color="green" disabled={isSaving} loading={isSaving} variant="outline" onClick={onMoveToDone}>
               {t('Перевести в оплату')}
             </Button>
           )}

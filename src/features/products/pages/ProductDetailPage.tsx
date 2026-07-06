@@ -830,7 +830,7 @@ function ProductPlacementEditor({
             {formatAmount(draftTotal)} / {formatAmount(originalTotal)}
           </Badge>
           {!isEditing ? (
-            <Button size="xs" variant="light" leftSection={<IconEdit size={14} />} onClick={startEditing}>
+            <Button size="xs" variant="outline" leftSection={<IconEdit size={14} />} onClick={startEditing}>
               {t('Редагувати')}
             </Button>
           ) : null}
@@ -909,7 +909,7 @@ function ProductPlacementEditor({
             </Table>
           </ScrollArea>
           <Group justify="space-between" gap="sm">
-            <Button size="xs" variant="light" leftSection={<IconPlus size={14} />} onClick={addPlacement}>
+            <Button size="xs" variant="outline" leftSection={<IconPlus size={14} />} onClick={addPlacement}>
               {t('Додати місце')}
             </Button>
             <Group gap="xs">
@@ -1898,10 +1898,10 @@ function ProductMovementPanel({ product }: { product: Product }) {
         <TextInput label={t('З')} type="date" value={dateFrom} onChange={(event) => setDateFrom(event.currentTarget.value)} />
         <TextInput label={t('По')} type="date" value={dateTo} onChange={(event) => setDateTo(event.currentTarget.value)} />
         <Select label={t('Тип руху')} data={movementTypeOptions.map((option) => ({ ...option, label: t(option.label) }))} value={movementType} w={220} onChange={(value) => setMovementType(value || '0')} />
-        <Button disabled={Boolean(filterError) || Boolean(typesError)} leftSection={<IconRefresh size={18} />} loading={isLoading} variant="light" onClick={() => reload()}>
+        <Button disabled={Boolean(filterError) || Boolean(typesError)} leftSection={<IconRefresh size={18} />} loading={isLoading} variant="outline" onClick={() => reload()}>
           {t('Оновити')}
         </Button>
-        <Button disabled={!productNetUid || Boolean(filterError) || Boolean(typesError)} leftSection={<IconDownload size={18} />} loading={isExporting} variant="light" onClick={() => void exportMovements()}>
+        <Button disabled={!productNetUid || Boolean(filterError) || Boolean(typesError)} leftSection={<IconDownload size={18} />} loading={isExporting} variant="outline" onClick={() => void exportMovements()}>
           {t('Друк')}
         </Button>
       </Group>

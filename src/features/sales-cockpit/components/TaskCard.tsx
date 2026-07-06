@@ -165,7 +165,7 @@ export function TaskCard({
           <Button color="gray" leftSection={<IconClock size={16} />} size="xs" variant="light" onClick={() => onSnooze(task)}>
             {t('Відкласти')}
           </Button>
-          <Button color="blue" leftSection={<IconMessagePlus size={16} />} size="xs" variant="light" onClick={() => onAddNote(task)}>
+          <Button color="blue" leftSection={<IconMessagePlus size={16} />} size="xs" variant="outline" onClick={() => onAddNote(task)}>
             {t('Нотатка')}
           </Button>
           <Button color="red" leftSection={<IconX size={16} />} size="xs" variant="subtle" onClick={() => onDismiss(task)}>

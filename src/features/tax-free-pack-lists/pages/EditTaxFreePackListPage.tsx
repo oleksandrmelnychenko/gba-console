@@ -553,7 +553,7 @@ export function EditTaxFreePackListPage() {
 
           {!packList?.IsSent && (
             <Group justify="space-between">
-              <Button disabled={isDirty} variant="light" onClick={() => setBreakModalOpen(true)}>
+              <Button disabled={isDirty} variant="outline" onClick={() => setBreakModalOpen(true)}>
                 {t('Розбити')}
               </Button>
               {isDirty && (
@@ -676,7 +676,7 @@ export function EditTaxFreePackListPage() {
                   leftSection={<IconPrinter size={16} />}
                   loading={isPrinting}
                   size="xs"
-                  variant="light"
+                  variant="outline"
                   onClick={printSelectedTaxFrees}
                 >
                   {t('Друк')}

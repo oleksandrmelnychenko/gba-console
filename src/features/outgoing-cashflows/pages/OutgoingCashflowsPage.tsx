@@ -689,7 +689,7 @@ function OutgoingCashflowsContent({ model }: { model: OutgoingCashflowsPageModel
 
           {hasMore && (
             <Group justify="center">
-              <Button loading={isLoadingMore} variant="light" onClick={() => void onLoadCashflows(cashflows.Collection.length, true)}>
+              <Button loading={isLoadingMore} variant="outline" onClick={() => void onLoadCashflows(cashflows.Collection.length, true)}>
                 {t('Завантажити ще')}
               </Button>
             </Group>

@@ -287,7 +287,7 @@ function ProtocolIncomePlacementDrawerContent({
 
         {!draft && (
           <Group>
-            <Button disabled={!canAddPlacements} variant="light" onClick={() => openDraft(null)}>
+            <Button disabled={!canAddPlacements} variant="outline" onClick={() => openDraft(null)}>
               {t('Додати')}
             </Button>
           </Group>

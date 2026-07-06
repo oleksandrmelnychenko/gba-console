@@ -1311,32 +1311,32 @@ function ProductInlineActions({
 
   return (
     <Group gap={6} className="product-inline-actions">
-      <Button size="xs" variant="light" disabled={disabled} leftSection={<IconHistory size={15} />} onClick={() => onOpenPanel('storage-history')}>
+      <Button size="xs" variant="outline" disabled={disabled} leftSection={<IconHistory size={15} />} onClick={() => onOpenPanel('storage-history')}>
         {t('Історія місця зберігання')}
       </Button>
-      <Button size="xs" variant="light" disabled={disabled} leftSection={<IconFileDescription size={15} />} onClick={() => onOpenPanel('specification')}>
+      <Button size="xs" variant="outline" disabled={disabled} leftSection={<IconFileDescription size={15} />} onClick={() => onOpenPanel('specification')}>
         {t('Специфікація')}
       </Button>
-      <Button size="xs" variant="light" disabled={disabled} leftSection={<IconPhoto size={15} />} onClick={() => onOpenPanel('images')}>
+      <Button size="xs" variant="outline" disabled={disabled} leftSection={<IconPhoto size={15} />} onClick={() => onOpenPanel('images')}>
         {t('Зображення')}
       </Button>
       <PermissionGate permissionKey={PRODUCT_BALANCES_PERMISSION}>
-        <Button size="xs" variant="light" disabled={disabled} leftSection={<IconPackage size={15} />} onClick={() => onOpenPanel('remains')}>
+        <Button size="xs" variant="outline" disabled={disabled} leftSection={<IconPackage size={15} />} onClick={() => onOpenPanel('remains')}>
           {t('Залишки по партіям')}
         </Button>
       </PermissionGate>
       <PermissionGate permissionKey={PRODUCT_EDIT_PERMISSION}>
-        <Button size="xs" variant="light" disabled={disabled} leftSection={<IconEdit size={15} />} onClick={() => onOpenPanel('edit')}>
+        <Button size="xs" variant="outline" disabled={disabled} leftSection={<IconEdit size={15} />} onClick={() => onOpenPanel('edit')}>
           {t('Редагувати')}
         </Button>
       </PermissionGate>
       <PermissionGate permissionKey={PRODUCT_MOVEMENT_PERMISSION}>
-        <Button size="xs" variant="light" disabled={disabled} leftSection={<IconArrowsExchange size={15} />} onClick={() => onOpenPanel('movement')}>
+        <Button size="xs" variant="outline" disabled={disabled} leftSection={<IconArrowsExchange size={15} />} onClick={() => onOpenPanel('movement')}>
           {t('Рух товару')}
         </Button>
       </PermissionGate>
       <PermissionGate permissionKey={PRODUCT_WRITE_OFF_PERMISSION}>
-        <Button size="xs" variant="light" disabled={disabled} leftSection={<IconClipboardList size={15} />} onClick={() => onOpenPanel('writeoff')}>
+        <Button size="xs" variant="outline" disabled={disabled} leftSection={<IconClipboardList size={15} />} onClick={() => onOpenPanel('writeoff')}>
           {t('Правила списання')}
         </Button>
       </PermissionGate>
@@ -2542,7 +2542,7 @@ function ProductFileUploadModal({
             disabled={pricingState.isLoading || pricingOptions.length === 0}
             leftSection={<IconPlus size={16} />}
             size="xs"
-            variant="light"
+            variant="outline"
             onClick={addPriceRow}
           >
             {t('Додати ціну')}
@@ -2626,7 +2626,7 @@ function ProductUploadDocumentButton({
   return (
     <>
       <PermissionGate permissionKey={PRODUCT_UPLOAD_DOCUMENT_PERMISSION}>
-        <Button size="xs" variant="light" leftSection={<IconUpload size={16} />} onClick={openModal}>
+        <Button size="xs" variant="outline" leftSection={<IconUpload size={16} />} onClick={openModal}>
           {t(labels.button)}
         </Button>
       </PermissionGate>
@@ -3036,14 +3036,14 @@ function ProductInlineMovementsTab({
       <Group align="end" gap="sm" wrap="wrap">
         <TextInput label={t('З')} type="date" value={dateFrom} onChange={(event) => setDateFrom(event.currentTarget.value)} />
         <TextInput label={t('По')} type="date" value={dateTo} onChange={(event) => setDateTo(event.currentTarget.value)} />
-        <Button leftSection={<IconRefresh size={16} />} loading={state.isLoading} variant="light" onClick={() => reload()}>
+        <Button leftSection={<IconRefresh size={16} />} loading={state.isLoading} variant="outline" onClick={() => reload()}>
           {t('Оновити')}
         </Button>
         <Button
           disabled={!productNetUid}
           leftSection={<IconDownload size={16} />}
           loading={state.isExporting}
-          variant="light"
+          variant="outline"
           onClick={() => void exportRows()}
         >
           {t('Завантажити')}

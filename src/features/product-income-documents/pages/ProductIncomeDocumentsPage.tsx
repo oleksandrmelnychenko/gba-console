@@ -850,19 +850,19 @@ function ProductIncomeOptionsModal({
               justify="flex-start"
               leftSection={<IconExternalLink size={18} />}
               to={primarySourceLink}
-              variant="light"
+              variant="outline"
             >
               {t('Відкрити джерело')}
             </Button>
           )}
-          <Button justify="flex-start" leftSection={<IconEye size={18} />} variant="light" onClick={() => onOverview(document)}>
+          <Button justify="flex-start" leftSection={<IconEye size={18} />} variant="outline" onClick={() => onOverview(document)}>
             {t('Деталі документа')}
           </Button>
           <Button
             disabled={!document.NetUid}
             justify="flex-start"
             leftSection={<IconStack2 size={18} />}
-            variant="light"
+            variant="outline"
             onClick={() => onRemainings(document)}
           >
             {t('Залишки по партіям')}
@@ -945,7 +945,7 @@ function ProductIncomeDocumentDrawer({
                   component={Link}
                   leftSection={<IconExternalLink size={16} />}
                   to={sourceLink}
-                  variant="light"
+                  variant="outline"
                 >
                   {t('Джерело')}
                 </Button>
@@ -954,7 +954,7 @@ function ProductIncomeDocumentDrawer({
                 disabled={!document.NetUid}
                 leftSection={<IconDownload size={16} />}
                 loading={exportingNetId === document.NetUid}
-                variant="light"
+                variant="outline"
                 onClick={() => onExport(document)}
               >
                 {t('Експорт')}

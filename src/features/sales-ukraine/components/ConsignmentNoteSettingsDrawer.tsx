@@ -373,7 +373,7 @@ export function ConsignmentNoteSettingsDrawer({
               {t('Видалити')}
             </Button>
           )}
-          <Button disabled={!noteState.isEdited || isPrinting} loading={isSaving} variant="light" onClick={saveSetting}>
+          <Button disabled={!noteState.isEdited || isPrinting} loading={isSaving} variant="outline" onClick={saveSetting}>
             {hasExistingSetting ? t('Зберегти') : t('Створити')}
           </Button>
           <Button leftSection={<IconTruckDelivery size={16} />} loading={isPrinting} onClick={printDocument}>

@@ -789,7 +789,7 @@ export function OutgoingPaymentGroupForm({ onCancel, onCreated }: OutgoingPaymen
               leftSection={<IconPlus size={16} />}
               maw={220}
               type="button"
-              variant="light"
+              variant="outline"
               onClick={() => void handleCreateMovement()}
             >
               {t('Зберегти')}

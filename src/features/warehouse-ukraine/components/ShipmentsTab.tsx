@@ -1839,7 +1839,7 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
             />
             <Button
               leftSection={<IconPlus size={18} />}
-              variant="light"
+              variant="outline"
               onClick={openManualPicker}
               disabled={!canEditShipment || isSaving}
             >
@@ -1849,7 +1849,7 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
               <Box component="span">
                 <Button
                   leftSection={<IconPrinter size={18} />}
-                  variant="light"
+                  variant="outline"
                   onClick={printSelectedShipment}
                   disabled={Boolean(printSelectedShipmentDisabledReason)}
                 >
@@ -1920,7 +1920,7 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
                 disabled={Boolean(manualFilterError) || isManualLoading}
                 leftSection={<IconRefresh size={18} />}
                 loading={isManualLoading}
-                variant="light"
+                variant="outline"
                 onClick={() => void loadManualSales(manualFilterDraft)}
               >
                 {t('Оновити')}

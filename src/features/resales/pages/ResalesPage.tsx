@@ -1618,20 +1618,20 @@ export function ResalePage() {
             }}
           />
           <Group justify="flex-end">
-            <Button disabled={!model.ReSale.NetUid} leftSection={<IconDownload size={16} />} loading={isExporting} variant="light" onClick={() => exportDocument(DocumentType.PaymentDocument)}>
+            <Button disabled={!model.ReSale.NetUid} leftSection={<IconDownload size={16} />} loading={isExporting} variant="outline" onClick={() => exportDocument(DocumentType.PaymentDocument)}>
               {t('Платіжний документ')}
             </Button>
             {changedToInvoice && (
-              <Button disabled={!model.ReSale.NetUid} leftSection={<IconDownload size={16} />} loading={isExporting} variant="light" onClick={() => exportDocument(DocumentType.SalesInvoice)}>
+              <Button disabled={!model.ReSale.NetUid} leftSection={<IconDownload size={16} />} loading={isExporting} variant="outline" onClick={() => exportDocument(DocumentType.SalesInvoice)}>
                 {t('Інвойс')}
               </Button>
             )}
             {changedToInvoice && (
-              <Button disabled={!model.ReSale.NetUid} leftSection={<IconTruckDelivery size={16} />} variant="light" onClick={() => setConsignmentNoteOpened(true)}>
+              <Button disabled={!model.ReSale.NetUid} leftSection={<IconTruckDelivery size={16} />} variant="outline" onClick={() => setConsignmentNoteOpened(true)}>
                 {t('ТТН')}
               </Button>
             )}
-            <Button disabled={isCompleted || isSaving} loading={isSaving} variant="light" onClick={() => recalculate()}>
+            <Button disabled={isCompleted || isSaving} loading={isSaving} variant="outline" onClick={() => recalculate()}>
               {t('Перерахувати')}
             </Button>
             <Button disabled={isSaving} loading={isSaving} onClick={saveResale}>
@@ -2909,7 +2909,7 @@ function ResaleProcessDrawer({
           tableId="resale-process"
         />
         <Group justify="flex-end">
-          <Button loading={isRecalculating} variant="light" onClick={() => void recalculateRows()}>
+          <Button loading={isRecalculating} variant="outline" onClick={() => void recalculateRows()}>
             {t('Перерахувати')}
           </Button>
           <Button disabled={isRecalculating || processForm.isDirty} loading={isSaving} onClick={create}>
@@ -3395,7 +3395,7 @@ function ConsignmentNoteSettingsDrawer({
               {t('Видалити')}
             </Button>
           )}
-          <Button disabled={!noteState.isEdited || isPrinting} loading={isSaving} variant="light" onClick={saveSetting}>
+          <Button disabled={!noteState.isEdited || isPrinting} loading={isSaving} variant="outline" onClick={saveSetting}>
             {hasExistingSetting ? t('Зберегти') : t('Створити')}
           </Button>
           <Button leftSection={<IconTruckDelivery size={16} />} loading={isPrinting} onClick={printDocument}>

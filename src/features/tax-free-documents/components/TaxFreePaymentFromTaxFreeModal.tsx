@@ -451,7 +451,7 @@ export function TaxFreePaymentFromTaxFreeModal({
                   leftSection={<IconPlus size={16} />}
                   mt={24}
                   type="button"
-                  variant="light"
+                  variant="outline"
                   onClick={() => void handleCreateMovement()}
                 >
                   {t('Створити статтю')}

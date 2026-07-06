@@ -473,10 +473,10 @@ export function AdvanceReportViewPage() {
         <Group gap="xs" justify="flex-end">
           {!model.isDone && (
             <>
-              <Button disabled={model.isBusy} leftSection={<IconReceipt2 size={16} />} variant="light" onClick={model.openConsumableModal}>
+              <Button disabled={model.isBusy} leftSection={<IconReceipt2 size={16} />} variant="outline" onClick={model.openConsumableModal}>
                 {t('Додати товар / послугу')}
               </Button>
-              <Button disabled={model.isBusy} leftSection={<IconGasStation size={16} />} variant="light" onClick={model.openFuelModal}>
+              <Button disabled={model.isBusy} leftSection={<IconGasStation size={16} />} variant="outline" onClick={model.openFuelModal}>
                 {t('Додати пальне')}
               </Button>
             </>
@@ -686,17 +686,17 @@ function DifferenceMessage({ model }: { model: ReturnType<typeof useAdvanceRepor
           disabled={model.isBusy}
           loading={model.isSaving || model.isRecalculating}
           size="xs"
-          variant="light"
+          variant="outline"
           onClick={model.settleDifference}
         >
           {t('Оплатив')}
         </Button>
         {model.canAppendRows && (
           <>
-            <Button disabled={model.isBusy} leftSection={<IconReceipt2 size={14} />} size="xs" variant="light" onClick={model.openConsumableModal}>
+            <Button disabled={model.isBusy} leftSection={<IconReceipt2 size={14} />} size="xs" variant="outline" onClick={model.openConsumableModal}>
               {t('Прикріпити накладну')}
             </Button>
-            <Button disabled={model.isBusy} leftSection={<IconGasStation size={14} />} size="xs" variant="light" onClick={model.openFuelModal}>
+            <Button disabled={model.isBusy} leftSection={<IconGasStation size={14} />} size="xs" variant="outline" onClick={model.openFuelModal}>
               {t('Додати пальне')}
             </Button>
           </>

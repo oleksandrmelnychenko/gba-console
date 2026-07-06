@@ -693,7 +693,7 @@ function TaxFreeAccountingActionModal({
             justify="space-between"
             leftSection={<IconCash size={17} />}
             rightSection={<IconChevronRight size={16} />}
-            variant="light"
+            variant="outline"
             onClick={() => onSelect('income')}
           >
             {t('Прибутковий касовий ордер')}

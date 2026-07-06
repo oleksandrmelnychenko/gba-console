@@ -356,25 +356,25 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
 
       <Group justify="flex-end" gap="sm">
         {Array.isArray(sale.InputSaleMerges) && sale.InputSaleMerges.length > 0 && (
-          <Button leftSection={<IconArrowsJoin size={16} />} variant="light" onClick={() => setMergedOpen(true)}>
+          <Button leftSection={<IconArrowsJoin size={16} />} variant="outline" onClick={() => setMergedOpen(true)}>
             {t("Об'єднання")}
           </Button>
         )}
         <Button
           disabled={orderItems.length === 0}
           leftSection={<IconCopy size={16} />}
-          variant="light"
+          variant="outline"
           onClick={copySaleData}
         >
           {t('Копіювати')}
         </Button>
         {isEditable && (
-          <Button leftSection={<IconUserShare size={16} />} variant="light" onClick={() => setReassignOpen(true)}>
+          <Button leftSection={<IconUserShare size={16} />} variant="outline" onClick={() => setReassignOpen(true)}>
             {t('Переназначити')}
           </Button>
         )}
         {(sale.Transporter || isEditable) && (
-          <Button leftSection={<IconTruck size={16} />} variant="light" onClick={() => setDetailsOpen(true)}>
+          <Button leftSection={<IconTruck size={16} />} variant="outline" onClick={() => setDetailsOpen(true)}>
             {t('Доставка')}
           </Button>
         )}
@@ -409,7 +409,7 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
         <div className="sale-editor-tab-panel">
           {isEditable && (
             <Group justify="flex-end" mb="sm">
-              <Button leftSection={<IconPlus size={16} />} variant="light" onClick={() => setAddOpen(true)}>
+              <Button leftSection={<IconPlus size={16} />} variant="outline" onClick={() => setAddOpen(true)}>
                 {t('Додати товар')}
               </Button>
             </Group>
@@ -1214,7 +1214,7 @@ function ClientTab({ canEdit, sale, onSwitched }: { canEdit: boolean; onSwitched
         <Button
           disabled={!canEdit || !selectedAgreement || selectedAgreement === currentAgreementNetUid}
           loading={isSwitching}
-          variant="light"
+          variant="outline"
           onClick={switchAgreement}
         >
           {t('Змінити договір')}

@@ -719,10 +719,10 @@ function BasketCartWorkflow() {
                   <IconRefresh size={16} />
                 </ActionIcon>
               </Tooltip>
-              <Button leftSection={FILE_IMPORT_ICON} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} variant="light" onClick={() => openUploadModal('load')}>
+              <Button leftSection={FILE_IMPORT_ICON} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} variant="outline" onClick={() => openUploadModal('load')}>
                 {t('Завантажити в корзину')}
               </Button>
-              <Button leftSection={FILE_SPREADSHEET_ICON} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} variant="light" onClick={() => openUploadModal('preview')}>
+              <Button leftSection={FILE_SPREADSHEET_ICON} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} variant="outline" onClick={() => openUploadModal('preview')}>
                 {t('Вибрати для експорту')}
               </Button>
               <DataTableDensityToggle density={sourceDensity} onToggle={toggleSourceDensity} size={36} />
@@ -751,7 +751,7 @@ function BasketCartWorkflow() {
         <Button
           disabled={!selectedSourceCount}
           leftSection={ARROW_RIGHT_ICON}
-          variant="light"
+          variant="outline"
           onClick={moveSelectedRight}
         >
           {t('Додати')} ({selectedSourceCount})
@@ -759,7 +759,7 @@ function BasketCartWorkflow() {
         <Button
           disabled={!selectedDestinationCount}
           leftSection={ARROW_LEFT_ICON}
-          variant="light"
+          variant="outline"
           onClick={moveSelectedLeft}
         >
           {t('Повернути')} ({selectedDestinationCount})
@@ -1250,7 +1250,7 @@ function SalesWorkflowTab() {
         <Button
           disabled={!selectedSourceCount}
           leftSection={<IconArrowRight size={16} />}
-          variant="light"
+          variant="outline"
           onClick={moveSelectedSalesRight}
         >
           {t('Додати')} ({selectedSourceCount})
@@ -1258,7 +1258,7 @@ function SalesWorkflowTab() {
         <Button
           disabled={!selectedDestinationCount}
           leftSection={<IconArrowLeft size={16} />}
-          variant="light"
+          variant="outline"
           onClick={moveSelectedSalesLeft}
         >
           {t('Повернути')} ({selectedDestinationCount})

@@ -812,7 +812,7 @@ export function NewSaleReviewStep({
                         href={sale.CustomersOwnTtn.TtnPDFPath}
                         rel="noopener noreferrer"
                         target="_blank"
-                        variant="light"
+                        variant="outline"
                       >
                         {t('Завантажити ТТН')}
                       </Button>

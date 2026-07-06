@@ -445,7 +445,7 @@ export function OutgoingCashOrderForm({ onCancel, onCreated }: OutgoingCashOrder
               leftSection={<IconPlus size={16} />}
               maw={220}
               type="button"
-              variant="light"
+              variant="outline"
               onClick={() => void handleCreateMovement()}
             >
               {t('Зберегти')}

@@ -1436,7 +1436,7 @@ function useSaleItemColumns({
         header: '',
         cell: (row) => (
           <Group gap="xs" wrap="nowrap">
-            <Button size="xs" variant="light" onClick={() => onEdit(row)}>
+            <Button size="xs" variant="outline" onClick={() => onEdit(row)}>
               {drafts.some((draft) => getOrderItemKey(draft.orderItem) === getOrderItemKey(row.item)) ? t('Змінити') : t('Додати')}
             </Button>
           </Group>

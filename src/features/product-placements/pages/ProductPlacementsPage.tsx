@@ -897,7 +897,7 @@ function ReturnedProductsModal({
           toolbarLeft={toolbarLeft}
         />
         <Group justify="flex-end">
-          <Button leftSection={<IconDownload size={16} />} loading={isExporting} variant="light" onClick={onExport}>
+          <Button leftSection={<IconDownload size={16} />} loading={isExporting} variant="outline" onClick={onExport}>
             {t('Експорт')}
           </Button>
           <Button loading={isSubmitting} onClick={onSubmit}>

@@ -989,7 +989,7 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
     <Stack gap="lg">
       {canOpenPreview && selectedAvailabilities.length > 0 ? (
         <Group justify="flex-end" align="end">
-          <Button disabled={Boolean(filterError)} leftSection={<IconEye size={16} />} variant="light" onClick={openPreview}>
+          <Button disabled={Boolean(filterError)} leftSection={<IconEye size={16} />} variant="outline" onClick={openPreview}>
             {t('Preview')} ({selectedAvailabilities.length})
           </Button>
         </Group>
