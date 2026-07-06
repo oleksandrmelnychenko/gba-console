@@ -2176,10 +2176,11 @@ export function NewSaleProductsStep({
             />
           </Stack>
 
-          <Box style={{ flex: 1, minHeight: 0 }}>
+          <Box
+            className={`new-sale-products-step__picker-carousel ${isSearchPristine && !selectedMainProduct && results.length === 0 ? 'is-empty' : ''}`}
+          >
             <WizardProductCarousel
               active={mainStatesActive}
-              emptyText={isSearchPristine ? t('Введіть мінімум 4 символи') : t('Нічого не знайдено')}
               focusedIndex={mainIndex}
               getItemColor={(product) => getRelatedProductRowColor(product)}
               getMeta={getProductMeta}

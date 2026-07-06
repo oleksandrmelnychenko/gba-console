@@ -17,7 +17,6 @@ export function WizardProductCarousel({
   products,
   active,
   detailSlot,
-  emptyText,
   focusedIndex,
   hasFocus,
   isLoading,
@@ -34,7 +33,6 @@ export function WizardProductCarousel({
 }: {
   active: boolean
   detailSlot?: ReactNode
-  emptyText?: string
   focusedIndex: number
   getItemColor?: (product: WizardSaleProduct) => string | undefined
   getMeta?: (product: WizardSaleProduct) => ProductPickerMeta | undefined
@@ -61,6 +59,7 @@ export function WizardProductCarousel({
   return (
     <Box className="new-sale-product-picker">
       <Box
+        className="new-sale-product-picker__upper"
         style={{
           display: 'flex',
           flex: 1,
@@ -85,7 +84,7 @@ export function WizardProductCarousel({
         </Stack>
       </Box>
 
-      <Box py={6} style={{ flexShrink: 0, position: 'relative' }}>
+      <Box className="new-sale-product-picker__focus" py={6} style={{ flexShrink: 0, position: 'relative' }}>
         {/* Keep the input mounted even while hidden so it retains keyboard focus —
             otherwise arrow-key navigation stops working in selection mode. */}
         <input
@@ -110,16 +109,12 @@ export function WizardProductCarousel({
         )}
       </Box>
 
-      <Box style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+      <Box className="new-sale-product-picker__lower" style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
         {isLoading ? (
           <Group justify="center" py="sm">
             <Loader size="sm" />
           </Group>
-        ) : bottomProducts.length === 0 && !focused ? (
-          <Text c="dimmed" py="sm" size="sm">
-            {emptyText || t('Нічого не знайдено')}
-          </Text>
-        ) : (
+        ) : bottomProducts.length === 0 && !focused ? null : (
           <Stack className="new-sale-product-picker__list" gap={0}>
             {bottomProducts.map((product, index) => (
               <ProductViewerRow
