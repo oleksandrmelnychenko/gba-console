@@ -4,6 +4,8 @@ import { IconInfoCircle, IconStar } from '@tabler/icons-react'
 import type { ReactNode, RefObject } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import type { ProductPickerMeta } from '../../../products/components/ProductPickerCarousel'
+import type { WizardCalculatedProductPricing } from './newSaleWizardApi'
+import { WizardProductPriceStrip } from './WizardProductPriceStrip'
 import type { WizardSaleProduct } from './wizardSaleProduct'
 
 const metaNumberFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2 })
@@ -24,6 +26,7 @@ export function WizardProductCarousel({
   searchValue,
   getItemColor,
   getMeta,
+  getPricing,
   onOpenCard,
   onPick,
   onProductInterest,
@@ -35,6 +38,7 @@ export function WizardProductCarousel({
   focusedIndex: number
   getItemColor?: (product: WizardSaleProduct) => string | undefined
   getMeta?: (product: WizardSaleProduct) => ProductPickerMeta | undefined
+  getPricing?: (product: WizardSaleProduct) => WizardCalculatedProductPricing | null
   hasFocus: boolean
   isLoading?: boolean
   onOpenCard?: (productNetId: string) => void
@@ -52,6 +56,7 @@ export function WizardProductCarousel({
   const bottomProducts = focused ? products.slice(focusedIndex + 1) : products
   const bottomOffset = focused ? focusedIndex + 1 : 0
   const showInput = searchMode || !focused
+  const focusedPricing = focused ? getPricing?.(focused) : null
 
   return (
     <Box className="new-sale-product-picker">
@@ -85,6 +90,7 @@ export function WizardProductCarousel({
             otherwise arrow-key navigation stops working in selection mode. */}
         <input
           ref={searchInputRef}
+          aria-label={t('Пошук товару')}
           autoFocus
           className={`new-sale-product-picker__search ${showInput ? '' : 'is-hidden'}`}
           placeholder={t('Пошук товару')}
@@ -97,6 +103,7 @@ export function WizardProductCarousel({
             active={active}
             color={getItemColor?.(focused)}
             meta={getMeta?.(focused)}
+            pricing={focusedPricing}
             product={focused}
             searchInputRef={searchInputRef}
           />
@@ -132,18 +139,7 @@ export function WizardProductCarousel({
       {focused && detailSlot && (
         // Extended info replaces the compact card and floats out beyond the (narrow) column,
         // vertically centered over the main area, instead of widening the column.
-        <Box
-          style={{
-            borderRadius: 'var(--mantine-radius-md)',
-            boxShadow: '0 10px 34px rgba(20, 28, 38, 0.22)',
-            left: 0,
-            position: 'absolute',
-            top: '50%',
-            transform: 'translateY(-50%)',
-            width: 'min(760px, calc(100vw - 380px))',
-            zIndex: 100,
-          }}
-        >
+        <Box className="new-sale-product-picker__detail-slot">
           {detailSlot}
         </Box>
       )}
@@ -274,12 +270,14 @@ function ProductMiniCard({
   active,
   color,
   meta,
+  pricing,
   product,
   searchInputRef,
 }: {
   active: boolean
   color?: string
   meta?: ProductPickerMeta
+  pricing?: WizardCalculatedProductPricing | null
   product: WizardSaleProduct
   searchInputRef: RefObject<HTMLInputElement | null>
 }) {
@@ -325,6 +323,7 @@ function ProductMiniCard({
           {product.MainOriginalNumber}
         </Text>
       )}
+      <WizardProductPriceStrip dense pricing={pricing} product={product} />
     </Box>
   )
 }

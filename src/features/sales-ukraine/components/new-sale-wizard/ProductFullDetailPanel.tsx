@@ -3,7 +3,6 @@ import {
   IconBarcode,
   IconBox,
   IconCheck,
-  IconCurrencyEuro,
   IconInfoCircle,
   IconPencil,
   IconPhoto,
@@ -14,6 +13,7 @@ import { formatLocalDate } from '../../../../shared/date/dateTime'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { getProductMainImage, getProductShopImageUrl, getRelatedProductRowColor } from '../../../products/utils'
 import type { WizardCalculatedProductPricing, WizardNearestSupplyOrder } from './newSaleWizardApi'
+import { WizardProductPriceStrip } from './WizardProductPriceStrip'
 import { getWizardProductNumber, type WizardSaleProduct } from './wizardSaleProduct'
 
 const qtyFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 3 })
@@ -82,11 +82,8 @@ export function ProductFullDetailPanel({
   const headerQty = displayQty ?? 0
   const basePrice = pricing?.PriceEUR || getWizardProductNumber(product.CurrentPrice)
   const salePrice = pricing?.DiscountPriceEUR ?? basePrice
-  const retailPrice = pricing?.RetailPriceEUR || null
   const localSalePrice = getWizardProductNumber(product.CurrentPriceEurToUah)
-  const localRetailPrice = pricing?.RetailPriceLocal || null
   const discountRate = pricing?.DiscountRate ?? null
-  const pricingName = pricing?.Pricing?.Name || ''
   const hasLogistics = Boolean(nearestSupplyOrder)
 
   return (
@@ -118,9 +115,9 @@ export function ProductFullDetailPanel({
                 <IconBarcode size={13} />
                 {code}
               </span>
-              {originalNumber && <span className="new-sale-product-card__pill">{originalNumber}</span>}
-              {top && <span className="new-sale-product-card__pill is-soft">{top}</span>}
-              {size && (
+              {Boolean(originalNumber) && <span className="new-sale-product-card__pill">{originalNumber}</span>}
+              {Boolean(top) && <span className="new-sale-product-card__pill is-soft">{top}</span>}
+              {Boolean(size) && (
                 <span className="new-sale-product-card__pill is-soft">
                   <IconRulerMeasure size={12} />
                   {size}
@@ -141,26 +138,9 @@ export function ProductFullDetailPanel({
 
         <Group align="stretch" className="new-sale-product-card__pricing-row" gap={8} wrap="nowrap">
           <Box className="new-sale-product-card__price-chain">
-            <Box className="new-sale-product-card__mini-icon">
-              <IconCurrencyEuro size={15} />
-            </Box>
-            <Box className="new-sale-product-card__price-copy">
-              <span>{pricingName || t('Прайс')}</span>
-              <strong>{formatPrice(salePrice)} EUR</strong>
-            </Box>
+            <WizardProductPriceStrip pricing={pricing} product={product} />
             {discountRate != null && <span className="new-sale-product-card__discount">-{priceFormatter.format(discountRate)}%</span>}
-            {basePrice != null && basePrice !== salePrice && (
-              <span className="new-sale-product-card__muted-price">{formatPrice(basePrice)} EUR</span>
-            )}
           </Box>
-
-          {retailPrice != null && (
-            <Box className="new-sale-product-card__retail">
-              <span>{t('Роздріб')}</span>
-              <strong>{formatPrice(retailPrice)} EUR</strong>
-              {localRetailPrice != null && <small>{formatPrice(localRetailPrice)} UAH</small>}
-            </Box>
-          )}
 
           {hasLogistics && (
             <Box className="new-sale-product-card__next">

@@ -2177,6 +2177,7 @@ export function NewSaleProductsStep({
               focusedIndex={mainIndex}
               getItemColor={(product) => getRelatedProductRowColor(product)}
               getMeta={getProductMeta}
+              getPricing={detailPricingFor}
               // Keep the selected main product pinned on the left while drilling into its
               // analogues/components (active.source switches to 'analogue'/'component'); otherwise
               // the carousel reverts to the search list and the chosen product visually drops out.
