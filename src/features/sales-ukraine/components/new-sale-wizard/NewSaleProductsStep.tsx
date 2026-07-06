@@ -1295,6 +1295,32 @@ export function NewSaleProductsStep({
     }
   }
 
+  function openMainFullDetail(): boolean {
+    const product = active?.source === 'main' && activeProduct ? activeProduct : mainProduct
+
+    if (!product) {
+      return false
+    }
+
+    const productIndex = results.findIndex((item) => {
+      if (product.NetUid && item.NetUid) {
+        return item.NetUid === product.NetUid
+      }
+
+      return item === product
+    })
+
+    if (productIndex >= 0) {
+      setMainIndex(productIndex)
+    }
+
+    focusMainProduct(product)
+    setDetail({ chipIndex: getDefaultMainDetailChipIndex(), rowIndex: null })
+    keyboard.setState('FullDetail')
+
+    return true
+  }
+
   function escapeFromAnalogues() {
     resetDetail()
     setAnalogueIndex(null)
@@ -1435,6 +1461,8 @@ export function NewSaleProductsStep({
     }
 
     if (hotkey === 'CtrlEnter') {
+      openMainFullDetail()
+
       return true
     }
 
@@ -1464,10 +1492,7 @@ export function NewSaleProductsStep({
 
         return true
       case 'CtrlEnter':
-        if (mainProduct) {
-          setDetail({ chipIndex: getDefaultMainDetailChipIndex(), rowIndex: null })
-          keyboard.setState('FullDetail')
-        }
+        openMainFullDetail()
 
         return true
       case 'CtrlI':
@@ -2008,14 +2033,14 @@ export function NewSaleProductsStep({
     )
   }
 
-  // Keep selected product details visible in the work area. Ctrl+Enter now only changes
-  // keyboard navigation inside the same detail block.
+  // Keep the product summary visible, but reveal the old full-detail data only in Ctrl+Enter mode.
   const selectedMainProduct = mainProduct ? (active?.source === 'main' && activeProduct ? activeProduct : mainProduct) : null
   const selectedMainSnapshot = getProductDetailSnapshot(selectedMainProduct)
+  const isMainFullDetail = kbState === 'FullDetail' && active?.source === 'main'
   const selectedMainChipIndex =
-    selectedMainProduct && active?.source === 'main' && detail?.chipIndex != null
+    selectedMainProduct && isMainFullDetail && detail?.chipIndex != null
       ? detail.chipIndex
-      : selectedMainProduct
+      : selectedMainProduct && isMainFullDetail
         ? getDefaultMainDetailChipIndex()
         : null
   const focusedAnalogueSnapshot = getProductDetailSnapshot(focusedAnalogue)
@@ -2029,7 +2054,9 @@ export function NewSaleProductsStep({
         chips={getMainChips(selectedMainSnapshot?.availabilities)}
         descriptionDraft={descriptionDraft}
         displayQty={getDisplayedAvailableQty(selectedMainProduct) ?? 0}
+        isFullDetail={isMainFullDetail}
         isEditingDescription={editingDescription && active?.source === 'main'}
+        isVatSale={isVatSale}
         localCurrencyCode={localCurrencyCode}
         nearestSupplyOrder={selectedMainSnapshot?.nearestOrder}
         pricing={detailPricingFor(selectedMainProduct)}
@@ -2039,7 +2066,13 @@ export function NewSaleProductsStep({
         selectedRowIndex={active?.source === 'main' ? (detail?.rowIndex ?? null) : null}
         showRowDetails={selectedMainChipIndex === 0}
         onDescriptionDraftChange={setDescriptionDraft}
-        onSelectChip={(chipIndex) => setDetail({ chipIndex, rowIndex: null })}
+        onSelectChip={(chipIndex) => {
+          setDetail({ chipIndex, rowIndex: null })
+
+          if (!isMainFullDetail) {
+            keyboard.setState('FullDetail')
+          }
+        }}
         onToggleDescription={() => void toggleDescriptionEdit()}
       />
     ) : null
@@ -2231,7 +2264,9 @@ export function NewSaleProductsStep({
                   chips={getMainChips(focusedAnalogueSnapshot?.availabilities)}
                   descriptionDraft={descriptionDraft}
                   displayQty={getDisplayedAvailableQty(focusedAnalogue) ?? 0}
+                  isFullDetail
                   isEditingDescription={editingDescription && active?.source === 'analogue'}
+                  isVatSale={isVatSale}
                   localCurrencyCode={localCurrencyCode}
                   nearestSupplyOrder={focusedAnalogueSnapshot?.nearestOrder}
                   pricing={detailPricingFor(focusedAnalogue)}
@@ -2252,7 +2287,9 @@ export function NewSaleProductsStep({
                   chips={getMainChips(focusedComponentSnapshot?.availabilities)}
                   descriptionDraft={descriptionDraft}
                   displayQty={getDisplayedAvailableQty(focusedComponent) ?? 0}
+                  isFullDetail
                   isEditingDescription={editingDescription && active?.source === 'component'}
+                  isVatSale={isVatSale}
                   localCurrencyCode={localCurrencyCode}
                   nearestSupplyOrder={focusedComponentSnapshot?.nearestOrder}
                   pricing={detailPricingFor(focusedComponent)}

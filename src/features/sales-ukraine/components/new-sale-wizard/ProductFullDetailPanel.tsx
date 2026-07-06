@@ -37,7 +37,9 @@ export function ProductFullDetailPanel({
   canEditDescription,
   chips,
   descriptionDraft,
+  isFullDetail,
   isEditingDescription,
+  isVatSale,
   localCurrencyCode = 'UAH',
   nearestSupplyOrder,
   pricing,
@@ -54,7 +56,9 @@ export function ProductFullDetailPanel({
   canEditDescription: boolean
   chips: WizardDetailChip[]
   descriptionDraft: string
+  isFullDetail: boolean
   isEditingDescription: boolean
+  isVatSale: boolean
   localCurrencyCode?: string
   nearestSupplyOrder?: WizardNearestSupplyOrder | null
   pricing: WizardCalculatedProductPricing | null
@@ -90,9 +94,16 @@ export function ProductFullDetailPanel({
   const localRetailPrice = pricing?.RetailPriceLocal ?? null
   const discountRate = pricing?.DiscountRate ?? null
   const hasLogistics = Boolean(nearestSupplyOrder)
+  const legacyFacts = [
+    { label: 'TOP', value: top },
+    { label: t('Код'), value: code },
+    { label: t('Ориг.'), value: originalNumber },
+    { label: t('Розмір'), value: size },
+  ].filter((item) => item.value)
+  const legacyLines = buildLegacyPriceLines(product, isVatSale, localCurrencyCode, displayQty ?? headerQty)
 
   return (
-    <Paper className="new-sale-product-card">
+    <Paper className={cx('new-sale-product-card', isFullDetail && 'is-full-detail')}>
       <Box className="new-sale-product-card__rail" aria-hidden="true" />
 
       <Box className="new-sale-product-card__media">
@@ -174,6 +185,41 @@ export function ProductFullDetailPanel({
           )}
         </Group>
 
+        {isFullDetail && (legacyFacts.length > 0 || legacyLines.length > 0) && (
+          <Box className="new-sale-product-card__legacy">
+            {legacyFacts.length > 0 && (
+              <Box className="new-sale-product-card__legacy-facts">
+                {legacyFacts.map((item) => (
+                  <span key={item.label}>
+                    <small>{item.label}</small>
+                    <strong>{item.value}</strong>
+                  </span>
+                ))}
+              </Box>
+            )}
+
+            {legacyLines.length > 0 && (
+              <Box className="new-sale-product-card__legacy-lines">
+                {legacyLines.map((line) => (
+                  <Box key={line.key} className="new-sale-product-card__legacy-line">
+                    <span>{line.label}</span>
+                    <strong>
+                      {qtyFormatter.format(line.qty)} {measureUnit}
+                    </strong>
+                    {line.localPrice != null && (
+                      <em>
+                        {formatPrice(line.localPrice)} {line.localCurrency}
+                      </em>
+                    )}
+                    {line.eurPrice != null && <em>{formatPrice(line.eurPrice)} EUR</em>}
+                    {line.uahPrice != null && <em>{formatPrice(line.uahPrice)} UAH</em>}
+                  </Box>
+                ))}
+              </Box>
+            )}
+          </Box>
+        )}
+
         <Box className="new-sale-product-card__availability">
           {chips.map((chip, index) => {
             const selected = index === selectedChipIndex
@@ -238,6 +284,7 @@ export function ProductFullDetailPanel({
             )}
           </Box>
 
+          {isFullDetail && (
           <Box className="new-sale-product-card__rows">
             <Group gap={6} justify="space-between" wrap="nowrap">
               <span className="new-sale-product-card__section-title">
@@ -273,10 +320,60 @@ export function ProductFullDetailPanel({
               <Box className="new-sale-product-card__empty-row">{t('Немає деталізації')}</Box>
             )}
           </Box>
+          )}
         </Group>
       </Box>
     </Paper>
   )
+}
+
+type LegacyPriceLine = {
+  eurPrice?: number | null
+  key: string
+  label: string
+  localCurrency: string
+  localPrice?: number | null
+  qty: number
+  uahPrice?: number | null
+}
+
+function buildLegacyPriceLines(
+  product: WizardSaleProduct,
+  isVatSale: boolean,
+  localCurrencyCode: string,
+  displayQty: number,
+): LegacyPriceLine[] {
+  const storageQty =
+    isVatSale
+      ? getWizardProductNumber(product.AvailableQtyUkVAT) ?? displayQty
+      : getWizardProductNumber(product.AvailableQtyUk) ?? displayQty
+  const showNonVatUahConversion = !isVatSale && localCurrencyCode === 'EUR'
+  const storageLine: LegacyPriceLine = {
+    eurPrice: showNonVatUahConversion ? null : getWizardProductNumber(product.CurrentPrice),
+    key: 'storage',
+    label: isVatSale ? 'ПДВ склад' : 'Склад',
+    localCurrency: localCurrencyCode,
+    localPrice: getWizardProductNumber(product.CurrentLocalPrice),
+    qty: storageQty,
+    uahPrice: showNonVatUahConversion ? getWizardProductNumber(product.CurrentPriceEurToUah) : null,
+  }
+
+  if (isVatSale) {
+    return [storageLine]
+  }
+
+  const resaleQty = getWizardProductNumber(product.AvailableQtyUkReSale)
+  const resaleLine: LegacyPriceLine = {
+    eurPrice: showNonVatUahConversion ? null : getWizardProductNumber(product.CurrentPriceReSale),
+    key: 'resale',
+    label: 'Перепродаж',
+    localCurrency: localCurrencyCode,
+    localPrice: getWizardProductNumber(product.CurrentLocalPriceReSale),
+    qty: resaleQty ?? 0,
+    uahPrice: showNonVatUahConversion ? getWizardProductNumber(product.CurrentPriceReSaleEurToUah) : null,
+  }
+
+  return [storageLine, resaleLine]
 }
 
 function MetricBlock({ label, tone, value }: { label: string; tone?: 'bad' | 'good' | 'strong'; value: string }) {

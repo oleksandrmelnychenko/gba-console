@@ -584,6 +584,7 @@ function NewSaleWizardContent({
             onMergedSubmitted={goToClients}
             onRegisterSubmit={registerReviewSubmit}
             onVatDocuments={onVatDocuments}
+            withVatAccounting={withVatAccounting}
           />
         )}
       </Box>
@@ -620,26 +621,30 @@ function NewSaleWizardContent({
           })}
         </Group>
 
-        <Group className="new-sale-wizard-footer__actions" gap="xs" justify="flex-end" wrap="nowrap">
-          <Button
-            className="new-sale-wizard-footer__button"
-            color="gray"
-            disabled={shellBusy}
-            variant="default"
-            onClick={active === 0 ? requestExit : active === 1 ? goToClients : () => setActive(1)}
-          >
-            {active === 0 ? t('Скасувати') : t('Назад')}
-          </Button>
-          <Button
-            className="new-sale-wizard-footer__button"
-            color={CREATE_ACTION_COLOR}
-            disabled={nextDisabled}
-            loading={busy}
-            onClick={handleNext}
-          >
-            {nextLabel}
-          </Button>
-        </Group>
+        {active !== 2 ? (
+          <Group className="new-sale-wizard-footer__actions" gap="xs" justify="flex-end" wrap="nowrap">
+            <Button
+              className="new-sale-wizard-footer__button"
+              color="gray"
+              disabled={shellBusy}
+              variant="default"
+              onClick={active === 0 ? requestExit : active === 1 ? goToClients : () => setActive(1)}
+            >
+              {active === 0 ? t('Скасувати') : t('Назад')}
+            </Button>
+            <Button
+              className="new-sale-wizard-footer__button"
+              color={CREATE_ACTION_COLOR}
+              disabled={nextDisabled}
+              loading={busy}
+              onClick={handleNext}
+            >
+              {nextLabel}
+            </Button>
+          </Group>
+        ) : (
+          <Box className="new-sale-wizard-footer__actions" aria-hidden="true" />
+        )}
       </Box>
 
       <WizardConfirmModal

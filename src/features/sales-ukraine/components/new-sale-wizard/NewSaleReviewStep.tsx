@@ -1,6 +1,6 @@
-import { ActionIcon, Box, Button, Checkbox, FileInput, Group, Stack, Text, TextInput } from '@mantine/core'
+import { ActionIcon, Box, Button, Checkbox, FileInput, Group, Text, TextInput } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconCircleX, IconUpload } from '@tabler/icons-react'
+import { IconCircleX, IconCopy, IconUpload } from '@tabler/icons-react'
 import { useEffect, useRef, useState } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import {
@@ -12,7 +12,6 @@ import {
   updateMergedSale,
   updateSaleFromData,
 } from '../../api/salesUkraineApi'
-import { getSaleLocalCurrencyCode, isNonVatEurSale, roundMoney } from '../../saleMoney'
 import { getSaleLifecycleTypeKey } from '../../saleStatus'
 import type { SaleDocumentResult, SalesUkraineRetailPaymentStatus, SalesUkraineSale, SalesUkraineTransporter } from '../../types'
 import type { WizardSplitOrderItem } from './EditShoppingCartOverlay'
@@ -36,7 +35,14 @@ import { WizardReviewCombobox, type WizardReviewComboboxOption } from './WizardR
 import { WizardReviewConfirmModal } from './WizardReviewConfirmModal'
 
 const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
-const amountFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
+const SALE_LIFE_CYCLE_STATUS_NAMES: Record<number, string> = {
+  0: 'Рахунок',
+  1: 'Накладна',
+  2: 'Накладна',
+  3: 'Відправлено',
+  4: 'Отримано',
+  5: 'Очікування',
+}
 const reviewFieldClassNames = {
   input: 'new-sale-review-field__input',
   label: 'new-sale-review-field__label',
@@ -60,6 +66,7 @@ export function NewSaleReviewStep({
   onMergedSubmitted,
   onRegisterSubmit,
   onVatDocuments,
+  withVatAccounting,
 }: {
   clientNetId: string | null
   onBusyChange?: (busy: boolean) => void
@@ -71,6 +78,7 @@ export function NewSaleReviewStep({
   onVatDocuments?: (result: SaleDocumentResult) => void
   sale: SalesUkraineSale | null
   value: NewSaleReviewValue
+  withVatAccounting?: boolean
 }) {
   const { t } = useI18n()
   const [transporters, setTransporters] = useState<SalesUkraineTransporter[]>([])
@@ -325,16 +333,6 @@ export function NewSaleReviewStep({
     }
   }, [retailSale?.Id, retailSale?.RetailClient])
 
-  const orderItems = Array.isArray(sale?.Order?.OrderItems) ? sale.Order.OrderItems : []
-  const useEurToUah = isNonVatEurSale(sale)
-  const localCurrencyCode = getSaleLocalCurrencyCode(sale)
-  const summaryCount = splitItems.length > 0 ? splitItems.length : orderItems.length
-  const total =
-    splitItems.length > 0
-      ? roundMoney(splitItems.reduce((sum, item) => sum + (useEurToUah ? item.TotalAmountEurToUah : item.TotalAmountLocal), 0))
-      : useEurToUah
-        ? roundMoney(orderItems.reduce((sum, item) => sum + (getNumber(item.TotalAmountEurToUah) ?? 0), 0))
-        : getNumber(sale?.TotalAmountLocal) ?? getNumber(sale?.Order?.TotalAmountLocal) ?? 0
   const selfCheckout = isSelfCheckout(value.transporter)
 
   const transporterOptions: WizardReviewComboboxOption<SalesUkraineTransporter>[] = transporters.map((item, index) => ({
@@ -371,6 +369,9 @@ export function NewSaleReviewStep({
   const addressKey = value.address?.Id != null ? String(value.address.Id) : null
 
   const lifecycleKey = getSaleLifecycleTypeKey(sale?.BaseLifeCycleStatus?.SaleLifeCycleType)
+  const documentTitle = sale
+    ? `${withVatAccounting ? `(${t('ПДВ')}) ` : ''}${getSaleLifeCycleStatusName(sale)} ${sale.SaleNumber?.Value ?? ''}`.trim()
+    : ''
   const primaryLabel = isMergedMode
     ? t('Створити накладну')
     : sale
@@ -379,7 +380,7 @@ export function NewSaleReviewStep({
         : lifecycleKey === '0'
           ? t('Створити накладну')
           : t('Оновити накладну')
-      : null
+      : t('Створити продаж')
 
   function selectTransporter(transporter: SalesUkraineTransporter) {
     onChange({ transporter })
@@ -646,171 +647,179 @@ export function NewSaleReviewStep({
   return (
     <Box className="new-sale-review-step app-form-sheet">
       <Box className="new-sale-review-step__body">
-        <Stack className="new-sale-review-form app-form-sheet" gap="sm">
-          <Box className="new-sale-review-summary new-sale-review-summary--inline">
-            <Text className="new-sale-review-summary__eyebrow">{t('Оформлення')}</Text>
-            <Box className="new-sale-review-summary__metric">
-              <Text className="new-sale-review-summary__value">{summaryCount}</Text>
-              <Text className="new-sale-review-summary__label">{t('товарів')}</Text>
-            </Box>
-            <Box className="new-sale-review-summary__divider" />
-            <Box className="new-sale-review-summary__metric">
-              <Text className="new-sale-review-summary__amount">{amountFormatter.format(total)}</Text>
-              <Text className="new-sale-review-summary__currency">{localCurrencyCode}</Text>
-            </Box>
-            <Text className="new-sale-review-summary__note">{t('До сплати')}</Text>
-          </Box>
+        <Box className="new-sale-review-form app-form-sheet">
+          <Box className="new-sale-review-layout">
+            <Box className="new-sale-review-main">
+              {documentTitle && (
+                <Box className="new-sale-review-document-head">
+                  <span className="new-sale-review-document-head__icon" aria-hidden="true">
+                    <IconCopy size={17} stroke={1.8} />
+                  </span>
+                  <Text className="new-sale-review-document-head__title" title={documentTitle}>
+                    {documentTitle}
+                  </Text>
+                </Box>
+              )}
 
-          <Box className="new-sale-review-section">
-            <Box className="new-sale-review-section__head">
-              <Text className="new-sale-review-section__title">{t('Доставка')}</Text>
-              <Text className="new-sale-review-section__note">{t('Основні дані для перевізника')}</Text>
-            </Box>
+              <Box className="new-sale-review-section">
+                <Box className="new-sale-review-section__head">
+                  <Text className="new-sale-review-section__title">{t('Доставка')}</Text>
+                </Box>
 
-            <Box className="new-sale-review-grid">
-              <WizardReviewCombobox
-                classNames={reviewFieldClassNames}
-                label={t('Перевізник')}
-                options={transporterOptions}
-                selectedKey={transporterKey}
-                tabIndex={-1}
-                onSelect={selectTransporter}
-              />
+                <Box className="new-sale-review-grid">
+                  <WizardReviewCombobox
+                    classNames={reviewFieldClassNames}
+                    label={t('Перевізник')}
+                    options={transporterOptions}
+                    selectedKey={transporterKey}
+                    tabIndex={-1}
+                    onSelect={selectTransporter}
+                  />
 
-              <WizardReviewCombobox
-                allowFreeForm
-                classNames={reviewFieldClassNames}
-                label={t('Одержувач')}
-                options={recipientOptions}
-                selectedKey={recipientKey}
-                onFreeText={(input) => void createRecipient(input)}
-                onSelect={selectRecipient}
-              />
+                  <WizardReviewCombobox
+                    allowFreeForm
+                    classNames={reviewFieldClassNames}
+                    label={t('Одержувач')}
+                    options={recipientOptions}
+                    selectedKey={recipientKey}
+                    onFreeText={(input) => void createRecipient(input)}
+                    onSelect={selectRecipient}
+                  />
 
-              {!selfCheckout && (
-                <>
-                  <Box className="new-sale-review-field-span">
-                    <Group className="new-sale-review-address-row" align="flex-end" gap={8} wrap="nowrap">
-                      <Box className="new-sale-review-address-control">
-                        <WizardReviewCombobox
-                          allowFreeForm
-                          classNames={reviewFieldClassNames}
-                          label={t('Адреса')}
-                          options={addressOptions}
-                          selectedKey={addressKey}
-                          onFreeText={(input) => void createAddress(input)}
-                          onSelect={selectAddress}
-                        />
+                  {!selfCheckout && (
+                    <>
+                      <Box className="new-sale-review-field-span">
+                        <Group className="new-sale-review-address-row" align="flex-end" gap={8} wrap="nowrap">
+                          <Box className="new-sale-review-address-control">
+                            <WizardReviewCombobox
+                              allowFreeForm
+                              classNames={reviewFieldClassNames}
+                              label={t('Адреса')}
+                              options={addressOptions}
+                              selectedKey={addressKey}
+                              onFreeText={(input) => void createAddress(input)}
+                              onSelect={selectAddress}
+                            />
+                          </Box>
+                          <ActionIcon
+                            aria-label={t('Очистити адресу')}
+                            className="new-sale-review-clear"
+                            color="gray"
+                            size="lg"
+                            variant="subtle"
+                            onClick={clearAddress}
+                          >
+                            <IconCircleX size={17} />
+                          </ActionIcon>
+                        </Group>
                       </Box>
-                      <ActionIcon
-                        aria-label={t('Очистити адресу')}
-                        className="new-sale-review-clear"
-                        color="gray"
-                        size="lg"
-                        variant="subtle"
-                        onClick={clearAddress}
-                      >
-                        <IconCircleX size={17} />
-                      </ActionIcon>
-                    </Group>
+
+                      <TextInput
+                        classNames={reviewFieldClassNames}
+                        label={t('Місто')}
+                        value={value.city}
+                        onChange={(event) => onChange({ city: event.currentTarget.value })}
+                      />
+                      <TextInput
+                        classNames={reviewFieldClassNames}
+                        label={t('Відділення')}
+                        value={value.department}
+                        onChange={(event) => onChange({ department: event.currentTarget.value })}
+                      />
+                    </>
+                  )}
+
+                  <TextInput
+                    classNames={reviewFieldClassNames}
+                    label={t('Мобільний телефон')}
+                    value={value.mobilePhone}
+                    onChange={(event) => onChange({ mobilePhone: event.currentTarget.value })}
+                  />
+                  <TextInput
+                    classNames={reviewFieldClassNames}
+                    label={t('Коментар')}
+                    value={value.comment}
+                    onChange={(event) => onChange({ comment: event.currentTarget.value === '' ? ' ' : event.currentTarget.value })}
+                  />
+                </Box>
+              </Box>
+
+              <Box className="new-sale-review-section">
+                <Box className="new-sale-review-section__head">
+                  <Text className="new-sale-review-section__title">{t('Оплата і документи')}</Text>
+                </Box>
+
+                <Box className="new-sale-review-options">
+                  <Box className={`new-sale-review-option-row ${value.isCashOnDelivery ? 'is-active' : 'is-idle'}`}>
+                    <Checkbox
+                      checked={value.isCashOnDelivery}
+                      classNames={reviewCheckboxClassNames}
+                      label={t('Наложений платіж')}
+                      onChange={() => onChange({ isCashOnDelivery: !value.isCashOnDelivery })}
+                    />
+                    {value.isCashOnDelivery ? (
+                      <TextInput
+                        classNames={reviewFieldClassNames}
+                        label={t('Рекомендована покупцем')}
+                        value={String(value.codAmount)}
+                        onChange={(event) => onChange({ codAmount: event.currentTarget.value })}
+                      />
+                    ) : null}
                   </Box>
 
-                  <TextInput
-                    classNames={reviewFieldClassNames}
-                    label={t('Місто')}
-                    value={value.city}
-                    onChange={(event) => onChange({ city: event.currentTarget.value })}
-                  />
-                  <TextInput
-                    classNames={reviewFieldClassNames}
-                    label={t('Відділення')}
-                    value={value.department}
-                    onChange={(event) => onChange({ department: event.currentTarget.value })}
-                  />
-                </>
-              )}
+                  <Box className={`new-sale-review-option-row ${value.hasOwnTtn ? 'is-active' : 'is-idle'}`}>
+                    <Checkbox
+                      checked={value.hasOwnTtn}
+                      classNames={reviewCheckboxClassNames}
+                      label={t('Власне ТТН')}
+                      onChange={() => onChange({ hasOwnTtn: !value.hasOwnTtn })}
+                    />
+                    {value.hasOwnTtn ? (
+                      <TextInput
+                        autoFocus
+                        aria-label={t('Номер ТТН')}
+                        classNames={reviewFieldClassNames}
+                        label={t('Номер ТТН')}
+                        value={value.ttnNumber}
+                        onChange={(event) => onChange({ ttnNumber: event.currentTarget.value })}
+                      />
+                    ) : null}
+                  </Box>
 
-              <TextInput
-                classNames={reviewFieldClassNames}
-                label={t('Мобільний телефон')}
-                value={value.mobilePhone}
-                onChange={(event) => onChange({ mobilePhone: event.currentTarget.value })}
-              />
-              <TextInput
-                classNames={reviewFieldClassNames}
-                label={t('Коментар')}
-                value={value.comment}
-                onChange={(event) => onChange({ comment: event.currentTarget.value === '' ? ' ' : event.currentTarget.value })}
-              />
-            </Box>
-          </Box>
+                  {value.hasOwnTtn && (
+                    <Box className="new-sale-review-option-row is-upload">
+                      <Box className="new-sale-review-option-spacer" />
+                      <FileInput
+                        classNames={reviewFieldClassNames}
+                        label={t('Файл ТТН')}
+                        leftSection={<IconUpload size={16} />}
+                        placeholder={t('Завантажити')}
+                        value={value.ttnFile}
+                        onChange={(file) => {
+                          if (file) {
+                            onChange({ ttnFile: file })
+                          }
+                        }}
+                      />
+                    </Box>
+                  )}
 
-          <Box className="new-sale-review-section">
-            <Box className="new-sale-review-section__head">
-              <Text className="new-sale-review-section__title">{t('Оплата і документи')}</Text>
-              <Text className="new-sale-review-section__note">{t('ТТН та додаткові умови')}</Text>
-            </Box>
-
-            <Box className="new-sale-review-grid">
-              <Checkbox
-                checked={value.isCashOnDelivery}
-                classNames={reviewCheckboxClassNames}
-                label={t('Наложений платіж')}
-                onChange={() => onChange({ isCashOnDelivery: !value.isCashOnDelivery })}
-              />
-              {value.isCashOnDelivery && (
-                <TextInput
-                  classNames={reviewFieldClassNames}
-                  label={t('Рекомендована Покупцем')}
-                  value={String(value.codAmount)}
-                  onChange={(event) => onChange({ codAmount: event.currentTarget.value })}
-                />
-              )}
-
-              <Checkbox
-                checked={value.hasOwnTtn}
-                classNames={reviewCheckboxClassNames}
-                label={t('Власне ТТН')}
-                onChange={() => onChange({ hasOwnTtn: !value.hasOwnTtn })}
-              />
-              {value.hasOwnTtn && (
-                <>
-                  <TextInput
-                    autoFocus
-                    aria-label={t('Номер ТТН')}
-                    classNames={reviewFieldClassNames}
-                    value={value.ttnNumber}
-                    onChange={(event) => onChange({ ttnNumber: event.currentTarget.value })}
-                  />
-                  <FileInput
-                    classNames={reviewFieldClassNames}
-                    label={t('Завантажити ТТН')}
-                    leftSection={<IconUpload size={16} />}
-                    placeholder={t('Завантажити')}
-                    value={value.ttnFile}
-                    onChange={(file) => {
-                      if (file) {
-                        onChange({ ttnFile: file })
-                      }
-                    }}
-                  />
-                </>
-              )}
-
-              {(sale?.Id ?? 0) > 0 && sale?.CustomersOwnTtn?.TtnPDFPath ? (
-                <Group className="new-sale-review-field-span" justify="flex-start">
-                  <Button
-                    className="new-sale-review-link-button"
-                    component="a"
-                    href={sale.CustomersOwnTtn.TtnPDFPath}
-                    rel="noopener noreferrer"
-                    target="_blank"
-                    variant="light"
-                  >
-                    {t('Завантажити ТТН')}
-                  </Button>
-                </Group>
-              ) : null}
+                  {(sale?.Id ?? 0) > 0 && sale?.CustomersOwnTtn?.TtnPDFPath ? (
+                    <Group className="new-sale-review-field-span" justify="flex-start">
+                      <Button
+                        className="new-sale-review-link-button"
+                        component="a"
+                        href={sale.CustomersOwnTtn.TtnPDFPath}
+                        rel="noopener noreferrer"
+                        target="_blank"
+                        variant="light"
+                      >
+                        {t('Завантажити ТТН')}
+                      </Button>
+                    </Group>
+                  ) : null}
+                </Box>
+              </Box>
             </Box>
           </Box>
 
@@ -824,7 +833,7 @@ export function NewSaleReviewStep({
               {primaryLabel}
             </Button>
           </Group>
-        </Stack>
+        </Box>
       </Box>
 
       <WizardReviewConfirmModal opened={confirmOpened} onCancel={handleCancelClose} onConfirm={handleConfirmClose} />
@@ -879,16 +888,8 @@ function applyRecipientSelection(
   patch.department = address?.Department || ''
 }
 
-function getNumber(value: unknown): number | null {
-  if (typeof value === 'number') {
-    return Number.isFinite(value) ? value : null
-  }
+function getSaleLifeCycleStatusName(sale: SalesUkraineSale): string {
+  const type = Number(sale.BaseLifeCycleStatus?.SaleLifeCycleType)
 
-  if (typeof value === 'string') {
-    const parsed = Number(value)
-
-    return Number.isFinite(parsed) ? parsed : null
-  }
-
-  return null
+  return Number.isFinite(type) ? (SALE_LIFE_CYCLE_STATUS_NAMES[type] ?? '') : ''
 }
