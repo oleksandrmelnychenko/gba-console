@@ -31,7 +31,7 @@ import {
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { ProductCardModal } from '../../products/components/ProductCardModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
-import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -168,6 +168,7 @@ export function NewUkraineSaleReturnPage() {
   const [editorError, setEditorError] = useState<string | null>(null)
   const [isLoadingEditorStorages, setLoadingEditorStorages] = useState(false)
   const [productCardNetId, setProductCardNetId] = useState<string | null>(null)
+  const salesRequestIdRef = useRef(0)
 
   const { items, isLoading } = listState
   const filteredItems = useMemo(() => filterReturns(items, searchValue), [items, searchValue])
@@ -318,6 +319,9 @@ export function NewUkraineSaleReturnPage() {
   }
 
   const loadSales = useCallback(async () => {
+    const requestId = salesRequestIdRef.current + 1
+
+    salesRequestIdRef.current = requestId
     // The create-return modal auto-loads the recent-sales window on open (legacy behaviour) so
     // the user can browse/narrow — an earlier empty-filter guard suppressed this and left the
     // grid blank («не находить товар»).
@@ -337,6 +341,10 @@ export function NewUkraineSaleReturnPage() {
         value: saleSearch,
       })
 
+      if (requestId !== salesRequestIdRef.current) {
+        return
+      }
+
       setSalesState({
         isLoading: false,
         sales,
@@ -346,6 +354,10 @@ export function NewUkraineSaleReturnPage() {
         setCreateWarning(t('Продажі для повернення не знайдено'))
       }
     } catch (loadError) {
+      if (requestId !== salesRequestIdRef.current) {
+        return
+      }
+
       setSalesState({
         isLoading: false,
         sales: [],
@@ -429,15 +441,42 @@ export function NewUkraineSaleReturnPage() {
     setEditorStorages(draft?.storage ? [draft.storage] : [])
     setEditorError(null)
     setEditorVatWarning(null)
-    void loadEditorWarningsAndStorages(row, draft?.status)
+    void loadEditorVatWarning(row)
+
+    if (typeof draft?.status === 'number') {
+      void loadEditorStorages(row, draft.status)
+    }
   }
 
-  async function loadEditorWarningsAndStorages(row: SaleItemRow, status?: SalesReturnItemStatusValue) {
+  async function loadEditorVatWarning(row: SaleItemRow) {
+    const orderItemNetId = row.item.NetUid
+
+    if (!orderItemNetId) {
+      return
+    }
+
+    try {
+      const vatWarning = await getReturnVatWarning(orderItemNetId)
+
+      setEditorVatWarning(vatWarning || null)
+    } catch {
+      setEditorVatWarning(null)
+    }
+  }
+
+  async function loadEditorStorages(row: SaleItemRow, status?: SalesReturnItemStatusValue) {
     const orderItemNetId = row.item.NetUid
     // Fall back to the organization the user filtered by when the sale payload
     // omits the deeply-nested Organization.NetUid — otherwise the editor hard-
     // failed and showed no return storages at all (bug #10).
     const organizationNetId = row.sale.ClientAgreement?.Agreement?.Organization?.NetUid || selectedOrganizationNetUid
+
+    if (typeof status !== 'number') {
+      setEditorStorages([])
+      setEditorStorageId(null)
+      setLoadingEditorStorages(false)
+      return
+    }
 
     if (!orderItemNetId || !organizationNetId) {
       setEditorError(t('Неможливо визначити продаж або організацію для складів повернення'))
@@ -447,17 +486,13 @@ export function NewUkraineSaleReturnPage() {
     setLoadingEditorStorages(true)
 
     try {
-      const [storages, vatWarning] = await Promise.all([
-        getReturnStorages({
-          orderItemNetId,
-          organizationNetId,
-          status,
-        }),
-        getReturnVatWarning(orderItemNetId),
-      ])
+      const storages = await getReturnStorages({
+        orderItemNetId,
+        organizationNetId,
+        status,
+      })
 
       setEditorStorages(storages)
-      setEditorVatWarning(vatWarning || null)
       setEditorStorageId((currentStorageId) => {
         if (currentStorageId && storages.some((storage) => getEntityKey(storage) === currentStorageId)) {
           return currentStorageId
@@ -904,7 +939,9 @@ export function NewUkraineSaleReturnPage() {
                   const nextStatus = parseStatusValue(value)
 
                   setEditorStatus(nextStatus)
-                  void loadEditorWarningsAndStorages(editor.row, nextStatus)
+                  setEditorStorageId(null)
+                  setEditorStorages([])
+                  void loadEditorStorages(editor.row, nextStatus)
                 }}
                 value={typeof editorStatus === 'number' ? String(editorStatus) : null}
               />
@@ -914,18 +951,23 @@ export function NewUkraineSaleReturnPage() {
                   label: [storage.Name, storage.Organization?.Name ? `(${storage.Organization.Name})` : ''].filter(Boolean).join(' '),
                   value: getEntityKey(storage),
                 }))}
-                disabled={isLoadingEditorStorages}
+                disabled={typeof editorStatus !== 'number' || isLoadingEditorStorages}
                 label={t('Склад повернення')}
                 onChange={setEditorStorageId}
+                placeholder={typeof editorStatus === 'number' ? t('Оберіть склад') : t('Спочатку оберіть причину')}
                 searchable
                 value={editorStorageId}
               />
             </SimpleGrid>
-            {!isLoadingEditorStorages && !editorError && editorStorages.length === 0 && (
+            {typeof editorStatus !== 'number' ? (
+              <Text c="dimmed" size="xs">
+                {t('Оберіть причину повернення, щоб побачити доступні склади')}
+              </Text>
+            ) : !isLoadingEditorStorages && !editorError && editorStorages.length === 0 ? (
               <Text c="dimmed" size="xs">
                 {t('Немає складів, доступних для повернення за умовами цієї причини')}
               </Text>
-            )}
+            ) : null}
             <Group justify="flex-end">
               <Button variant="default" onClick={() => setEditor(null)}>
                 {t('Скасувати')}

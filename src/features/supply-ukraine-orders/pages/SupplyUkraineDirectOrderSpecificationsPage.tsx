@@ -26,6 +26,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import './supply-order-detail.css'
 import { formatLocalDate, formatLocalInputDateTime } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import {
   addOrUpdateProductSpecification,
@@ -741,54 +742,68 @@ function useSupplyUkraineDirectOrderSpecificationsPageModel() {
 type DirectOrderSpecificationsPageModel = ReturnType<typeof useSupplyUkraineDirectOrderSpecificationsPageModel>
 
 function SupplyUkraineDirectOrderSpecificationsView({ model }: { model: DirectOrderSpecificationsPageModel }) {
+  const { t } = useI18n()
+  const orderNumber = getOrderNumber(model.order)
+  const sheetTitle = `${t('Специфікації')}${orderNumber ? ` № ${orderNumber}` : ''}`
+
   return (
-    <Stack gap="lg">
-      <DirectOrderSpecificationsHeader model={model} />
+    <AppDrawer
+      closeOnClickOutside={false}
+      opened
+      size="full"
+      title={<span className="app-sheet-title-mono">{sheetTitle}</span>}
+      onClose={model.goBack}
+    >
+      <Stack gap="lg">
+        <DirectOrderSpecificationsHeader embedded model={model} />
 
-      {model.error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-          {model.error}
-        </Alert>
-      )}
+        {model.error && (
+          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            {model.error}
+          </Alert>
+        )}
 
-      <DirectOrderSpecificationsBody model={model} />
-      <DirectOrderSpecificationTotals model={model} />
+        <DirectOrderSpecificationsBody model={model} />
+        <DirectOrderSpecificationTotals model={model} />
+      </Stack>
       <DirectOrderSpecificationsModals model={model} />
-    </Stack>
+    </AppDrawer>
   )
 }
 
-function DirectOrderSpecificationsHeader({ model }: { model: DirectOrderSpecificationsPageModel }) {
+function DirectOrderSpecificationsHeader({ embedded, model }: { embedded?: boolean; model: DirectOrderSpecificationsPageModel }) {
   const { t } = useI18n()
 
   const orderNumber = getOrderNumber(model.order)
 
   return (
-    <header className="supply-detail-header">
-      <div className="supply-detail-header-main">
-        <Tooltip label={t('Назад')}>
-          <ActionIcon
-            aria-label={t('Назад')}
-            className="supply-detail-back"
-            variant="default"
-            onClick={model.goBack}
-          >
-            <IconArrowLeft size={18} />
-          </ActionIcon>
-        </Tooltip>
-        <span className="supply-detail-icon">
-          <IconClipboardList size={22} stroke={1.8} />
-        </span>
-        <div className="supply-detail-copy">
-          <h1 className="supply-detail-title">
-            {t('Специфікації')}
-            {orderNumber && <span className="supply-detail-number">{orderNumber}</span>}
-          </h1>
-          <p className="supply-detail-subtitle">
-            {t('Постачальник')}: <strong>{model.order?.Client?.FullName || model.order?.Client?.Name || '-'}</strong>
-          </p>
+    <header className={`supply-detail-header${embedded ? ' is-sheet' : ''}`}>
+      {!embedded && (
+        <div className="supply-detail-header-main">
+          <Tooltip label={t('Назад')}>
+            <ActionIcon
+              aria-label={t('Назад')}
+              className="supply-detail-back"
+              variant="default"
+              onClick={model.goBack}
+            >
+              <IconArrowLeft size={18} />
+            </ActionIcon>
+          </Tooltip>
+          <span className="supply-detail-icon">
+            <IconClipboardList size={22} stroke={1.8} />
+          </span>
+          <div className="supply-detail-copy">
+            <h1 className="supply-detail-title">
+              {t('Специфікації')}
+              {orderNumber && <span className="supply-detail-number">{orderNumber}</span>}
+            </h1>
+            <p className="supply-detail-subtitle">
+              {t('Постачальник')}: <strong>{model.order?.Client?.FullName || model.order?.Client?.Name || '-'}</strong>
+            </p>
+          </div>
         </div>
-      </div>
+      )}
       <div className="supply-detail-header-actions">
         <SegmentedControl
           data={[

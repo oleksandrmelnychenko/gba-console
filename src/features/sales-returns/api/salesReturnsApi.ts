@@ -19,6 +19,8 @@ import type {
 const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
 const CLIENT_SEARCH_LIMIT = 20
 const CLIENT_SEARCH_SQL = 'RegionCode.Value/Client.FullName/Client.USREOU'
+const PRODUCT_RETURN_SEARCH_MODE = 5
+const PRODUCT_RETURN_SORT_MODE = 2
 
 export async function getSaleReturns(params: SalesReturnsSearchParams): Promise<SalesReturn[]> {
   const result = await apiRequest<unknown>('/sales/returns/all/filtered', {
@@ -192,15 +194,15 @@ export async function searchReturnProducts(value: string): Promise<SalesReturnPr
   const result = await apiRequest<unknown>('/products/search/advanced', {
     query: {
       limit: 10,
-      mode: 0,
+      mode: PRODUCT_RETURN_SEARCH_MODE,
       netId: EMPTY_GUID,
       offset: 0,
-      sortMode: 0,
+      sortMode: PRODUCT_RETURN_SORT_MODE,
       value: normalizedValue,
     },
   })
 
-  return readArrayPayload(result, ['Items', 'Products', 'Data']) as SalesReturnProduct[]
+  return readArrayPayload(result, ['Items', 'Products', 'Collection', 'Data']) as SalesReturnProduct[]
 }
 
 export async function getReturnProductByNetId(netId: string): Promise<SalesReturnProduct | null> {
