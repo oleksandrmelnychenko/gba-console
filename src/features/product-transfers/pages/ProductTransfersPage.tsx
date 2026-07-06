@@ -44,6 +44,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { useAuth } from '../../auth/useAuth'
 import {
   addProductTransferFromFile,
@@ -133,25 +134,23 @@ function useProductTransfersPageModel() {
   const [downloadError, setDownloadError] = useValueState<string | null>(null)
   const [isDownloading, setDownloading] = useValueState(false)
   const [isLoading, setLoading] = useValueState(true)
-  const [isLoadingMore, setLoadingMore] = useValueState(false)
   const [isLoadingStorages, setLoadingStorages] = useValueState(true)
+  const [page, setPage] = useValueState(1)
   const [pageSize, setPageSize] = useValueState(DEFAULT_PAGE_SIZE)
-  const [hasMore, setHasMore] = useValueState(false)
-  const [, setTotalQty] = useValueState(0)
+  const [totalQty, setTotalQty] = useValueState(0)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const detailRequestRef = useRef(0)
   const downloadRequestRef = useRef(0)
   const filterError = getFilterError(activeFilters.from, activeFilters.to)
-  const listRequestKey = `${activeFilters.from}|${activeFilters.to}|${pageSize}`
-  const listRequestKeyRef = useRef(listRequestKey)
+  const pageOffset = (page - 1) * pageSize
+  const totalPages = totalQty > 0 ? Math.max(1, Math.ceil(totalQty / pageSize)) : 1
   const storageOptions = useMemo(() => buildStorageOptions(storages), [storages])
   const resetTransfers = useCallback(() => {
     setTransfers([])
-    setHasMore(false)
     setTotalQty(0)
     setLoading(false)
     setSelectedTransfer(null)
-  }, [setHasMore, setLoading, setSelectedTransfer, setTotalQty, setTransfers])
+  }, [setLoading, setSelectedTransfer, setTotalQty, setTransfers])
   const fromStorage = useMemo(
     () => storages.find((storage) => storage.NetUid === createForm.fromStorageNetUid) || null,
     [createForm.fromStorageNetUid, storages],
@@ -259,7 +258,7 @@ function useProductTransfersPageModel() {
     }
   }, [setDownloadDocument, setDownloadError, setDownloadOpened, setDownloading, t])
 
-  const transferIndexMap = useMemo(() => buildTransferIndexMap(transfers), [transfers])
+  const transferIndexMap = useMemo(() => buildTransferIndexMap(transfers, pageOffset), [pageOffset, transfers])
   const columns = useProductTransferColumns(openDetail, transferIndexMap)
 
   useProductTransferStoragesLoader({
@@ -270,60 +269,39 @@ function useProductTransfersPageModel() {
     setStorages,
   })
 
-  useEffect(() => {
-    listRequestKeyRef.current = listRequestKey
-  }, [listRequestKey])
   useProductTransfersLoader({
     activeFilters,
     filterError,
+    page,
     pageSize,
     reloadKey,
     resetTransfers,
     setError,
-    setHasMore,
     setLoading,
     setTotalQty,
     setTransfers,
   })
+  useEffect(() => {
+    if (!isLoading && page > totalPages) {
+      setPage(totalPages)
+    }
+  }, [isLoading, page, setPage, totalPages])
 
   function applyFilters(nextFilters: FilterDraft) {
+    setPage(1)
     setFilterDraft(nextFilters)
     setActiveFilters(nextFilters)
   }
 
   function resetFilters() {
+    setPage(1)
     setFilterDraft(initialFilters)
     setActiveFilters(initialFilters)
   }
 
-  async function loadMoreTransfers() {
-    const requestKey = listRequestKeyRef.current
-    const requestOffset = transfers.length
-    setLoadingMore(true)
-    setError(null)
-
-    try {
-      const result = await getProductTransfers({
-        from: activeFilters.from,
-        limit: pageSize,
-        offset: requestOffset,
-        to: activeFilters.to,
-      })
-
-      if (listRequestKeyRef.current === requestKey) {
-        setTransfers((current) => (current.length === requestOffset ? [...current, ...result.items] : current))
-        setTotalQty(result.totalQty)
-        setHasMore(requestOffset + result.items.length < result.totalQty && result.items.length > 0)
-      }
-    } catch (loadError) {
-      if (listRequestKeyRef.current === requestKey) {
-        setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити наступні переміщення'))
-      }
-    } finally {
-      if (listRequestKeyRef.current === requestKey) {
-        setLoadingMore(false)
-      }
-    }
+  function handlePageSizeChange(nextPageSize: number) {
+    setPage(1)
+    setPageSize(nextPageSize)
   }
 
   function openCreateModal() {
@@ -405,10 +383,10 @@ function useProductTransfersPageModel() {
 
   return {
     columns, createError, createForm, detailError, downloadDocument, downloadError, downloadOpened,
-    effectiveToStorageNetUid, error, exceptionMessages, filterDraft, filterError, hasMore, isAdmin,
-    isCreateModalOpen, isCreating, isDetailLoading, isDownloading, isLoading, isLoadingMore, isLoadingStorages,
-    pageSize, selectedTransfer, setPageSize, storageError, storageOptions, storages, toStorageOptions,
-    transfers, closeCreateModal, closeDownload, handleCreate, loadMoreTransfers, openCreateModal, openDetail,
+    effectiveToStorageNetUid, error, exceptionMessages, filterDraft, filterError, isAdmin, isCreateModalOpen,
+    isCreating, isDetailLoading, isDownloading, isLoading, isLoadingStorages, page, pageSize, selectedTransfer,
+    setPage, setPageSize: handlePageSizeChange, storageError, storageOptions, storages, toStorageOptions,
+    totalPages, transfers, closeCreateModal, closeDownload, handleCreate, openCreateModal, openDetail,
     openDownload, reload, resetFilters, setCreateForm, setExceptionMessages, applyFilters, setSelectedTransfer,
     closeDetail,
   }
@@ -469,22 +447,22 @@ function useProductTransferStoragesLoader({
 function useProductTransfersLoader({
   activeFilters,
   filterError,
+  page,
   pageSize,
   reloadKey,
   resetTransfers,
   setError,
-  setHasMore,
   setLoading,
   setTotalQty,
   setTransfers,
 }: {
   activeFilters: FilterDraft
   filterError: string | null
+  page: number
   pageSize: number
   reloadKey: number
   resetTransfers: () => void
   setError: (value: string | null) => void
-  setHasMore: (value: boolean) => void
   setLoading: (value: boolean) => void
   setTotalQty: (value: number) => void
   setTransfers: (value: ProductTransfer[]) => void
@@ -507,19 +485,17 @@ function useProductTransfersLoader({
         const result = await getProductTransfers({
           from: activeFilters.from,
           limit: pageSize,
-          offset: 0,
+          offset: (page - 1) * pageSize,
           to: activeFilters.to,
         })
 
         if (!cancelled) {
           setTransfers(result.items)
           setTotalQty(result.totalQty)
-          setHasMore(result.items.length < result.totalQty && result.items.length > 0)
         }
       } catch (loadError) {
         if (!cancelled) {
           setTransfers([])
-          setHasMore(false)
           setTotalQty(0)
           setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити переміщення товарів'))
         }
@@ -538,11 +514,11 @@ function useProductTransfersLoader({
   }, [
     activeFilters,
     filterError,
+    page,
     pageSize,
     reloadKey,
     resetTransfers,
     setError,
-    setHasMore,
     setLoading,
     setTotalQty,
     setTransfers,
@@ -571,9 +547,9 @@ function ProductTransfersPageView({ model }: { model: ReturnType<typeof useProdu
 function ProductTransfersTableCard({ model }: { model: ReturnType<typeof useProductTransfersPageModel> }) {
   const { t } = useI18n()
   const {
-    columns, error, filterDraft, filterError, hasMore, isLoading, isLoadingMore, isLoadingStorages, openCreateModal,
-    openDetail, loadMoreTransfers, pageSize, reload, resetFilters, applyFilters, setPageSize, storageError,
-    storageOptions, transfers,
+    columns, error, filterDraft, filterError, isLoading, isLoadingStorages, openCreateModal, openDetail, page,
+    pageSize, reload, resetFilters, applyFilters, setPage, setPageSize, storageError, storageOptions, totalPages,
+    transfers,
   } = model
 
   return (
@@ -595,17 +571,6 @@ function ProductTransfersTableCard({ model }: { model: ReturnType<typeof useProd
             onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
           />
           <div className="app-filter-actions">
-            <Select
-              aria-label={t('Кількість рядків')}
-              data={PAGE_SIZE_OPTIONS}
-              size="sm"
-              value={String(pageSize)}
-              w={88}
-              onChange={(value) => {
-                setPageSize(Number(value || DEFAULT_PAGE_SIZE))
-                reload()
-              }}
-            />
             <Tooltip label={t('Скинути')}>
               <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
                 <IconRestore size={17} />
@@ -660,11 +625,18 @@ function ProductTransfersTableCard({ model }: { model: ReturnType<typeof useProd
           onRowClick={openDetail}
         />
 
-        {hasMore && (
-          <Group justify="center">
-            <Button color="gray" loading={isLoadingMore} variant="light" onClick={loadMoreTransfers}>
-              {t('Завантажити ще')}
-            </Button>
+        {!filterError && (
+          <Group justify="flex-end">
+            <Paginator
+              isLoading={isLoading}
+              page={page}
+              pageSize={pageSize}
+              pageSizeOptions={PAGE_SIZE_OPTIONS}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+              onRefresh={reload}
+            />
           </Group>
         )}
       </Stack>
@@ -1097,9 +1069,9 @@ function useProductTransferColumns(
   )
 }
 
-function buildTransferIndexMap(transfers: ProductTransfer[]): Map<ProductTransfer, number> {
+function buildTransferIndexMap(transfers: ProductTransfer[], offset = 0): Map<ProductTransfer, number> {
   return transfers.reduce((indexMap, transfer, index) => {
-    indexMap.set(transfer, index + 1)
+    indexMap.set(transfer, offset + index + 1)
 
     return indexMap
   }, new Map<ProductTransfer, number>())
