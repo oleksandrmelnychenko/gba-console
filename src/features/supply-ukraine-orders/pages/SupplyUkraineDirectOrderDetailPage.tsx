@@ -52,6 +52,7 @@ import type {
   DirectSupplyOrder,
   SupplyOrderDeliveryDocument,
 } from '../types'
+import { hasSupplyProForm } from '../proFormHelpers'
 
 const TRANSPORTATION_OPTIONS: Array<{ label: string, value: string }> = [
   { label: 'Авто', value: '0' },
@@ -251,7 +252,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
   const canApproveOrder = hasPermission(PERMISSION_APPROVE_ORDER)
   const canOpenCreditNotes = hasPermission(PERMISSION_CREDIT_NOTES)
   const canEditAmount = hasPermission(PERMISSION_EDIT_ORDER_AMOUNT)
-  const canOpenInvoices = hasPermission(PERMISSION_OPEN_DIRECT_INVOICES) && Boolean(order?.SupplyProFormId)
+  const canOpenInvoices = hasPermission(PERMISSION_OPEN_DIRECT_INVOICES) && hasSupplyProForm(order)
   const canOpenProductIncome = hasPermission(PERMISSION_OPEN_DIRECT_PRODUCT_INCOME) && hasInvoices
 
   useEffect(() => {

@@ -54,7 +54,7 @@ import { WizardClientHeroHeader } from './WizardClientHeroHeader'
 import {
   getWizardAvailabilityChipCount,
   getWizardAvailabilityRows,
-  getWizardDetailedStorageQty,
+  getWizardDetailedSellableQty,
   type WizardAvailabilityKey,
 } from './wizardSaleAvailability'
 import {
@@ -499,7 +499,10 @@ export function NewSaleProductsStep({
     (product: WizardSaleProduct) => {
       const snapshot = getProductDetailSnapshot(product)
 
-      return getWizardDetailedStorageQty(product, isVatSale, snapshot?.availabilities)
+      // Sellable (storage + reSale), not storage-only: the storage-only variant
+      // dropped Перепродаж to 0 in the header while the list still counted it,
+      // so the same product read two different quantities (bug #4).
+      return getWizardDetailedSellableQty(product, isVatSale, snapshot?.availabilities)
     },
     [getProductDetailSnapshot, isVatSale],
   )
@@ -2005,7 +2008,10 @@ export function NewSaleProductsStep({
           </Text>
         )}
         <Text className="new-sale-related-row__metric is-qty">
-          {qtyFormatter.format(getDisplayedAvailableQty(product) ?? 0)} {product.MeasureUnit?.Name ?? ''}
+          {/* Search-payload sellable qty (stable across focus) so the number does
+              not jump when switching between analogues as the detailed snapshot
+              loads for the focused row (bug #17). */}
+          {qtyFormatter.format(getWizardSellableQty(product, isVatSale) ?? 0)} {product.MeasureUnit?.Name ?? ''}
         </Text>
         <Text className="new-sale-related-row__metric">{amountFormatter.format(getWizardProductNumber(product.CurrentPrice) ?? 0)} EUR</Text>
         <Text className="new-sale-related-row__metric">{amountFormatter.format(getWizardProductNumber(product.CurrentPriceEurToUah) ?? 0)} UAH</Text>

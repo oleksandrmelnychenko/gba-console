@@ -9,7 +9,6 @@ import {
   IconPrinter,
   IconRestore,
 } from '@tabler/icons-react'
-import { Truck as TruckIcon } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useAuth } from '../../auth/useAuth'
 import { NewSaleWizard } from '../../sales-ukraine/components/new-sale-wizard/NewSaleWizard'
@@ -24,7 +23,7 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
-import { toProxiedAssetUrl } from '../../../shared/url/proxiedAssetUrl'
+import { TransporterLogo } from '../../../shared/ui/TransporterLogo'
 import {
   getSaleActProtocolEditDocument,
   getSalePrintDocument,
@@ -683,7 +682,6 @@ function useSalesColumns({
             return ''
           }
 
-          const transporterLogoUrl = toProxiedAssetUrl(sale.Transporter.ImageUrl?.trim())
           const carrierEdited = Boolean(sale.UpdateDataCarrier?.length)
 
           return (
@@ -693,11 +691,7 @@ function useSalesColumns({
                   <IconPencil size={14} style={{ color: 'var(--mantine-color-orange-6)', flex: '0 0 auto' }} />
                 </Tooltip>
               )}
-              {transporterLogoUrl ? (
-                <span aria-hidden style={{ ...TRANSPORTER_LOGO_STYLE, backgroundImage: `url(${upgradeHttpToHttps(transporterLogoUrl)})` }} />
-              ) : (
-                <TruckIcon size={15} style={{ color: 'var(--mantine-color-gray-6)', flex: '0 0 auto' }} />
-              )}
+              <TransporterLogo imageUrl={sale.Transporter.ImageUrl} style={TRANSPORTER_LOGO_STYLE} />
               <Anchor
                 c="dark.6"
                 component="button"

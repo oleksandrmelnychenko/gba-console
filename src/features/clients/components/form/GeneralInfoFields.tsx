@@ -274,7 +274,7 @@ function BuyerFields(props: GeneralInfoFieldsProps) {
             />
             <TextInput
               error={props.errors?.TIN}
-              label={t('ІПН')}
+              label={t('ІПН (ІНН)')}
               maxLength={30}
               value={client.TIN || ''}
               onChange={(event) => props.onChange('TIN', event.currentTarget.value)}

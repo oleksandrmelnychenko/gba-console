@@ -57,6 +57,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
+import { TransporterLogo } from '../../../shared/ui/TransporterLogo'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
 import { SaleAuditDetail, getSaleStatisticBySaleId, type SaleAuditStatistic } from '../../../shared/sale-audit'
 import { UserRoleType } from '../../../shared/auth/types'
@@ -999,15 +1000,7 @@ function SalesOnlineShopGridRow({
             aria-label={transporter || t('Перевізник')}
             onClick={() => onOpenDetails(sale)}
           >
-            {transporterImageUrl ? (
-              <span
-                className="sg-transporter-logo"
-                style={{ backgroundImage: `url(${toSecureUrl(transporterImageUrl)})` }}
-                aria-hidden="true"
-              />
-            ) : (
-              <IconTruckDelivery size={15} />
-            )}
+            <TransporterLogo className="sg-transporter-logo" imageUrl={transporterImageUrl} />
           </button>
         </Tooltip>
       </div>
@@ -1589,9 +1582,6 @@ function getSaleDeliveryAddress(sale: SalesOnlineShopSale): string {
   return [address?.City, address?.Department, address?.Value].filter(Boolean).join(', ')
 }
 
-function toSecureUrl(url: string): string {
-  return url.startsWith('http://') ? `https://${url.slice('http://'.length)}` : url
-}
 
 function SaleSourceIcon({ sale }: { sale: SalesOnlineShopSale }) {
   const { t } = useI18n()

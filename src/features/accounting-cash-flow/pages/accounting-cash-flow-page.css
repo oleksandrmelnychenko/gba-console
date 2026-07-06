@@ -448,6 +448,7 @@
 .accounting-cash-flow-agreement-picker {
   display: grid;
   gap: 12px;
+  min-height: 0;
   min-width: 0;
 }
 
@@ -464,8 +465,27 @@
 .accounting-cash-flow-agreement-list {
   display: grid;
   gap: 8px;
+  max-height: min(34vh, 330px);
   min-width: 0;
-  padding: 2px 6px 6px 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 2px 8px 6px 0;
+  scrollbar-color: var(--mantine-color-gray-4) transparent;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+}
+
+.accounting-cash-flow-agreement-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.accounting-cash-flow-agreement-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.accounting-cash-flow-agreement-list::-webkit-scrollbar-thumb {
+  background: var(--mantine-color-gray-4);
+  border-radius: 999px;
 }
 
 .accounting-cash-flow-agreement-card {

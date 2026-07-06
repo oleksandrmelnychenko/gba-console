@@ -58,6 +58,7 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
+import { TransporterLogo } from '../../../shared/ui/TransporterLogo'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
@@ -339,8 +340,12 @@ export function SalesUkrainePage() {
   }, [expandedKeys])
 
   const ensureSaleDetails = useCallback(
-    async (sale: SalesUkraineSale): Promise<SalesUkraineSale | null> => {
-      if (!needsSaleDetails(sale)) {
+    async (sale: SalesUkraineSale, options?: { force?: boolean }): Promise<SalesUkraineSale | null> => {
+      // force: hydrate even when HasDetails isn't strictly false. Writes that post
+      // the whole sale back (e.g. IsAcceptedToPacking) must run on a fresh, fully
+      // hydrated record — a stale in-memory row without Order.OrderPackages wipes
+      // them server-side on /sales/update (bug #13).
+      if (!options?.force && !needsSaleDetails(sale)) {
         return sale
       }
 
@@ -352,7 +357,9 @@ export function SalesUkrainePage() {
         const loaded = await getSaleById(sale.NetUid)
 
         if (!loaded) {
-          return sale
+          // Return null (not the un-hydrated sale) so callers' guards fire —
+          // posting an un-hydrated sale to /sales/update wipes Order packages.
+          return null
         }
 
         const next = { ...loaded, TotalRowsQty: sale.TotalRowsQty }
@@ -629,7 +636,7 @@ export function SalesUkrainePage() {
       message: t('Розблокувати продаж для відвантаження?'),
       title: t('Підтвердження відвантаження'),
       onConfirm: async () => {
-        const next = await ensureSaleDetails(sale)
+        const next = await ensureSaleDetails(sale, { force: true })
 
         if (!next) {
           throw new Error(t('Не вдалося завантажити продаж'))
@@ -1394,15 +1401,7 @@ function SaleGridRow({
               aria-label={transporter || t('Перевізник')}
               onClick={() => onOpenDetails(sale)}
             >
-              {transporterImageUrl ? (
-                <span
-                  className="sg-transporter-logo"
-                  style={{ backgroundImage: `url(${toSecureUrl(transporterImageUrl)})` }}
-                  aria-hidden="true"
-                />
-              ) : (
-                <IconTruckDelivery size={15} />
-              )}
+              <TransporterLogo className="sg-transporter-logo" imageUrl={transporterImageUrl} />
             </button>
           </Tooltip>
         )}
@@ -2051,10 +2050,6 @@ function getSaleDeliveryAddress(sale: SalesUkraineSale): string {
     || [carrier?.City, carrier?.Department].filter(Boolean).join(', ')
     || ''
   )
-}
-
-function toSecureUrl(url: string): string {
-  return url.startsWith('http://') ? `https://${url.slice('http://'.length)}` : url
 }
 
 function parseDate(value: unknown): Date | null {

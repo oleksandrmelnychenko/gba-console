@@ -1135,11 +1135,26 @@ function getNewClientServerValidationErrors(
   }
 
   const message = error.message.toLocaleLowerCase('uk-UA')
-  const isTinLengthError =
-    (message.includes('інн') || message.includes('іпн') || message.includes('tin'))
-    && message.includes('30')
 
-  return isTinLengthError ? { TIN: tooManyMessage } : null
+  if (!message.includes('30')) {
+    return null
+  }
+
+  // Route a server length rejection to the field it names so it lands inline on
+  // the general-information tab instead of a raw top-level alert (bug #20).
+  if (message.includes('єдрпоу') || message.includes('usreou')) {
+    return { USREOU: tooManyMessage }
+  }
+
+  if (message.includes('пдв') || message.includes('sroi') || message.includes('vat')) {
+    return { SROI: tooManyMessage }
+  }
+
+  if (message.includes('інн') || message.includes('іпн') || message.includes('tin')) {
+    return { TIN: tooManyMessage }
+  }
+
+  return null
 }
 
 function buildCreatePayload(draft: ClientDraft): Client {

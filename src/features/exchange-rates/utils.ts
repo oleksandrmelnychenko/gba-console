@@ -72,7 +72,9 @@ export function buildExchangeRateGroups(
       rates: data.government.filter((rate) => rate.Culture === POLAND_LANGUAGE),
       historyEndpoint: exchangeRateEndpoints.governmentHistory,
       historyKey: 'GovExchangeRateHistories',
-      updateMode: 'single-government',
+      // Batch (array) POST like the UAH group — the per-object single POST was
+      // rejected by /exchangerates/gov/update, so the PLN rate never updated (bug #21).
+      updateMode: 'batch-government',
     },
   ]
 

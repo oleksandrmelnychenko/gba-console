@@ -214,6 +214,7 @@ export function NewUkraineSaleReturnPage() {
           limit: pageSize,
           offset,
           to: toDate,
+          value: searchValue,
         })
 
         if (!cancelled) {
@@ -238,11 +239,14 @@ export function NewUkraineSaleReturnPage() {
     return () => {
       cancelled = true
     }
-  }, [fromDate, offset, pageSize, reloadKey, t, toDate])
+  }, [fromDate, offset, pageSize, reloadKey, searchValue, t, toDate])
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
       setSearchValue(searchDraft.trim())
+      // A new query re-queries from the first page — otherwise a high page
+      // offset would ask the server for a page that the filtered set lacks.
+      setPage(1)
     }, 200)
 
     return () => {

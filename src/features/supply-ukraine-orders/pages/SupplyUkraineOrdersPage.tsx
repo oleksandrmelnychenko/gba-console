@@ -71,6 +71,7 @@ import type {
   SupplyUkraineOrdersFilter,
   SupplyUkraineOrdersResponse,
 } from '../types'
+import { hasSupplyProForm } from '../proFormHelpers'
 import '../../../shared/ui/console-table-page.css'
 import './supply-ukraine-orders.css'
 
@@ -1385,7 +1386,7 @@ function OrderActionsModal({
     canOpenToUkraineView,
   } = permissions
   const directHasInvoices = (row?.directOrder?.SupplyInvoices?.length || 0) > 0
-  const directHasProForma = Boolean(row?.directOrder?.SupplyProFormId)
+  const directHasProForma = hasSupplyProForm(row?.directOrder)
 
   return (
     <AppModal

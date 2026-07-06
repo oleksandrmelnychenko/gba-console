@@ -24,7 +24,7 @@ describe('exchange rate groups', () => {
     })
 
     expect(groups.find((group) => group.id === 'government-uah')?.updateMode).toBe('batch-government')
-    expect(groups.find((group) => group.id === 'government-pln')?.updateMode).toBe('single-government')
+    expect(groups.find((group) => group.id === 'government-pln')?.updateMode).toBe('batch-government')
   })
 
   it('uses the NBU daily timestamp for both UAH and PLN government forms', () => {

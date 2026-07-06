@@ -29,6 +29,7 @@ import {
   updateDirectSupplyOrder,
   uploadSupplyOrderProformDocuments,
 } from '../api/supplyUkraineOrdersApi'
+import { hasSupplyProForm } from '../proFormHelpers'
 import type { DirectSupplyOrder, SupplyProForm, SupplyProFormDocument } from '../types'
 
 const moneyFormatter = new Intl.NumberFormat('uk-UA', {
@@ -70,7 +71,7 @@ export function DirectSupplyOrderProFormCard({
   const [state, dispatch] = useReducer(proFormCardReducer, order, createInitialProFormCardState)
   const { draft, files, isEditing, isSaving } = state
   const documents = (draft.ProFormDocuments || []).filter((document) => !document.Deleted)
-  const hasProForm = Boolean(order.SupplyProFormId || order.SupplyProForm?.NetUid || order.SupplyProForm?.Id)
+  const hasProForm = hasSupplyProForm(order)
 
   useEffect(() => {
     dispatch({ type: 'sync', order })
