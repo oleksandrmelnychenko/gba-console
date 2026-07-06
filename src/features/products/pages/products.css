@@ -423,6 +423,7 @@
   align-items: flex-start;
   display: flex;
   flex-wrap: wrap;
+  justify-content: flex-end;
   row-gap: 10px;
 }
 
