@@ -488,15 +488,15 @@
 
 .sales-grid {
   --sales-grid-columns:
-    minmax(300px, 1.4fr)
-    minmax(112px, 0.8fr)
-    minmax(104px, 0.8fr)
-    minmax(92px, 0.6fr)
+    minmax(280px, 1fr)
+    120px
+    118px
+    90px
     54px
-    minmax(66px, 0.5fr)
-    minmax(100px, 0.6fr)
-    minmax(96px, 0.6fr)
-    minmax(140px, 0.9fr);
+    78px
+    118px
+    104px
+    150px;
   display: flex;
   flex-direction: column;
   background:
@@ -514,15 +514,15 @@
 
 .sales-online-grid {
   --sales-grid-columns:
-    minmax(300px, 1.4fr)
-    minmax(112px, 0.8fr)
-    minmax(104px, 0.8fr)
-    minmax(92px, 0.6fr)
+    minmax(280px, 1fr)
+    120px
+    118px
+    90px
     54px
-    minmax(66px, 0.5fr)
-    minmax(100px, 0.6fr)
-    minmax(96px, 0.6fr)
-    minmax(140px, 0.9fr);
+    78px
+    118px
+    104px
+    150px;
 }
 
 @media (max-width: 1180px) {

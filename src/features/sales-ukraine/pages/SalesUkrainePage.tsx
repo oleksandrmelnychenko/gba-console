@@ -107,16 +107,18 @@ import type {
 // Column order matches the `.sales-grid-head` / `.sales-grid-row` cells 1:1.
 // Fluid by default (minmax + fr) so the grid fills the width; each column can be
 // dragged to a fixed px width via its header handle (useGridColumnResize).
+// Data columns are sized to their content so the client column (1fr) absorbs
+// all remaining width and shows the full name. Any column can still be dragged.
 const SALES_GRID_DEFAULT_COLUMNS = [
-  'minmax(300px, 1.4fr)',
-  'minmax(112px, 0.8fr)',
-  'minmax(104px, 0.8fr)',
-  'minmax(92px, 0.6fr)',
+  'minmax(280px, 1fr)',
+  '120px',
+  '118px',
+  '90px',
   '54px',
-  'minmax(66px, 0.5fr)',
-  'minmax(100px, 0.6fr)',
-  'minmax(96px, 0.6fr)',
-  'minmax(140px, 0.9fr)',
+  '78px',
+  '118px',
+  '104px',
+  '150px',
 ]
 
 const SALES_GRID_HEAD_LABELS = [

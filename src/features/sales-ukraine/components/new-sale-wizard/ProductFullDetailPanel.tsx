@@ -147,7 +147,7 @@ export function ProductFullDetailPanel({
 
         <Group align="stretch" className="new-sale-product-card__pricing-row" gap={8} wrap="nowrap">
           <Box className="new-sale-product-card__price-chain">
-            <WizardProductPriceStrip pricing={pricing} product={product} />
+            <WizardProductPriceStrip localCurrency={localCurrencyCode} pricing={pricing} product={product} />
             {discountRate != null && <span className="new-sale-product-card__discount">-{priceFormatter.format(discountRate)}%</span>}
           </Box>
 
