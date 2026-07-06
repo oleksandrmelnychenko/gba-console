@@ -505,7 +505,9 @@ export function SupplyUkraineOrderOverviewPage() {
             <Button
               color={CREATE_ACTION_COLOR}
               leftSection={<IconCalculator size={16} />}
-              disabled={!order || isSavingVat || isSavingVatItems || hasVatItemChanges}
+              // "+ ПДВ" is the bulk apply-to-all-rows action (#30) — it must stay
+              // usable even mid-edit, so it is not gated on unsaved per-item edits.
+              disabled={!order || isSavingVat || isSavingVatItems}
               loading={isSavingVat}
               onClick={calculateVatPercentForOrder}
             >

@@ -914,6 +914,16 @@ export function ProductDeliveryProtocolSpecificationPage() {
           )}
         </span>
       }
+      footer={
+        model.packingList && (model.packingList.Id || 0) > 0 ? (
+          <SpecificationTotals
+            flat
+            currencyIsEur={model.currencyIsEur}
+            invoice={model.selectedInvoice}
+            packingList={model.packingList}
+          />
+        ) : undefined
+      }
       onClose={() => navigate('/product-delivery-protocols')}
     >
       <Stack className="product-specification-sheet" gap="md">
@@ -1120,13 +1130,6 @@ export function ProductDeliveryProtocolSpecificationPage() {
               </Stack>
             </Card>
 
-            {model.packingList && (model.packingList.Id || 0) > 0 && (
-              <SpecificationTotals
-                currencyIsEur={model.currencyIsEur}
-                invoice={model.selectedInvoice}
-                packingList={model.packingList}
-              />
-            )}
           </Stack>
         ) : null}
 

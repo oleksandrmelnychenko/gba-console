@@ -1349,12 +1349,6 @@ function useProductIncomeColumns({
         align: 'right',
         cell: (gridRow) => <ProductIncomeNumericCell>{formatIncomeQty(gridRow.item.PlacedQty || 0)}</ProductIncomeNumericCell>,
       },
-      {
-        id: 'placement',
-        header: t('Ячейка'),
-        width: 160,
-        cell: (gridRow) => gridRow.item.Placement || '-',
-      },
     ]
 
     const dynamicColumns: DataTableColumn<IncomeGridRow>[] = (

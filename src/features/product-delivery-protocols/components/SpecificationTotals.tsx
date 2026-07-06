@@ -4,6 +4,8 @@ import type { SpecificationPackingList, SpecificationSupplyInvoice } from '../sp
 
 type SpecificationTotalsProps = {
   currencyIsEur: boolean
+  /** Render without the Paper card (for the pinned sheet footer). */
+  flat?: boolean
   invoice: SpecificationSupplyInvoice | null
   packingList: SpecificationPackingList
 }
@@ -18,7 +20,7 @@ const weightFormatter = new Intl.NumberFormat('uk-UA', {
   minimumFractionDigits: 0,
 })
 
-export function SpecificationTotals({ currencyIsEur, invoice, packingList }: SpecificationTotalsProps) {
+export function SpecificationTotals({ currencyIsEur, flat, invoice, packingList }: SpecificationTotalsProps) {
   const { t } = useI18n()
   const currencyCode = invoice?.SupplyOrder?.ClientAgreement?.Agreement?.Currency?.Code
 
@@ -56,20 +58,28 @@ export function SpecificationTotals({ currencyIsEur, invoice, packingList }: Spe
     },
   ]
 
+  const content = (
+    <Group gap="xl" wrap="wrap" style={flat ? { flex: 1 } : undefined}>
+      {totals.map((total) => (
+        <Stack key={total.label} gap={2}>
+          <Text c="dimmed" size="xs">
+            {total.label}
+          </Text>
+          <Text fw={600} size="sm">
+            {total.value}
+          </Text>
+        </Stack>
+      ))}
+    </Group>
+  )
+
+  if (flat) {
+    return content
+  }
+
   return (
     <Paper withBorder p="md" radius="md">
-      <Group gap="xl" wrap="wrap">
-        {totals.map((total) => (
-          <Stack key={total.label} gap={2}>
-            <Text c="dimmed" size="xs">
-              {total.label}
-            </Text>
-            <Text fw={600} size="sm">
-              {total.value}
-            </Text>
-          </Stack>
-        ))}
-      </Group>
+      {content}
     </Paper>
   )
 }
