@@ -22,6 +22,7 @@ export const OBLAST_CENTROIDS: Record<string, OblastCentroid> = {
   CK: { name: 'Черкаська', lat: 49.44, lng: 32.06 },
   GT: { name: 'Житомирська', lat: 50.25, lng: 28.66 },
   KD: { name: 'Кіровоградська', lat: 48.51, lng: 32.26 },
+  PA: { name: 'Полтавська', lat: 49.59, lng: 34.55 },
   IF: { name: 'Івано-Франківська', lat: 48.92, lng: 24.71 },
   CE: { name: 'Чернівецька', lat: 48.29, lng: 25.94 },
   SM: { name: 'Сумська', lat: 50.91, lng: 34.8 },
@@ -31,6 +32,8 @@ export const OBLAST_CENTROIDS: Record<string, OblastCentroid> = {
   DN: { name: 'Донецька', lat: 48.02, lng: 37.8 },
   XN: { name: 'Херсонська', lat: 46.64, lng: 32.61 },
   LK: { name: 'Луганська', lat: 48.57, lng: 39.31 },
+  KR: { name: 'Крим', lat: 44.95, lng: 34.1 },
+  '200': { name: 'Крим', lat: 44.95, lng: 34.1 },
 }
 
 // Equirectangular projection over the Ukraine bbox. Used by BOTH the national

@@ -21,7 +21,7 @@ import { OBLAST_CENTROIDS } from '../data/oblastCentroids'
 import type { GeographyMetric, OtherBucket, PlottedRegion, SalesRegionAggregate } from '../types'
 import './sales-geography-page.css'
 
-const TRAILING_MONTHS = 12
+type SalesGeographyPeriodKey = 'all' | '12' | '24' | '36'
 
 const moneyFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 0,
@@ -37,6 +37,7 @@ const METRIC_PILL_CLASS: Record<GeographyMetric, string> = {
 export function SalesGeographyPage() {
   const { t } = useI18n()
   const [metric, setMetric] = useState<GeographyMetric>('sales')
+  const [period, setPeriod] = useState<SalesGeographyPeriodKey>('all')
   const [aggregates, setAggregates] = useValueState<SalesRegionAggregate[]>([])
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useState(true)
@@ -51,7 +52,10 @@ export function SalesGeographyPage() {
       }
 
       try {
-        const result = await getSalesGeography({ metric, months: TRAILING_MONTHS })
+        const result = await getSalesGeography({
+          metric,
+          ...(metric === 'sales' ? getPeriodParams(period) : {}),
+        })
 
         if (active) {
           setAggregates(result)
@@ -76,7 +80,7 @@ export function SalesGeographyPage() {
     return () => {
       active = false
     }
-  }, [metric, reloadKey, setAggregates, setError, t])
+  }, [metric, period, reloadKey, setAggregates, setError, t])
 
   const { plotted, other } = useMemo(() => splitAggregates(aggregates), [aggregates])
 
@@ -97,6 +101,10 @@ export function SalesGeographyPage() {
   }, [])
 
   const metricLabel = metric === 'sales' ? t('Продажі') : t('Борг')
+  const periodLabel =
+    period === 'all'
+      ? t('Весь час')
+      : `${period} ${t('міс')}`
 
   return (
     <Stack className="sales-geography-page" gap={6}>
@@ -119,9 +127,31 @@ export function SalesGeographyPage() {
               </button>
             ))}
           </div>
-          <Badge className="app-role-pill is-gray sales-geography-pill" variant="light">
-            {t('12 міс')}
-          </Badge>
+          {metric === 'sales' ? (
+            <div className="pill-tabs sales-geography-metric-tabs" role="tablist" aria-label={t('Період')}>
+              {[
+                { label: t('Весь час'), value: 'all' },
+                { label: t('12 міс'), value: '12' },
+                { label: t('24 міс'), value: '24' },
+                { label: t('36 міс'), value: '36' },
+              ].map((option) => (
+                <button
+                  key={option.value}
+                  className={`pill-tab${period === option.value ? ' is-active' : ''}`}
+                  role="tab"
+                  type="button"
+                  aria-selected={period === option.value}
+                  onClick={() => setPeriod(option.value as SalesGeographyPeriodKey)}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <Badge className="app-role-pill is-gray sales-geography-pill" variant="light">
+              {t('Поточний стан')}
+            </Badge>
+          )}
           <div className="app-filter-actions sales-geography-actions">
             <Tooltip label={t('Оновити')}>
               <ActionIcon aria-label={t('Оновити')} loading={isLoading} size={34} variant="light" onClick={handleReload}>
@@ -148,6 +178,11 @@ export function SalesGeographyPage() {
               <Badge className={METRIC_PILL_CLASS[metric]} variant="light">
                 {metricLabel}
               </Badge>
+              {metric === 'sales' && (
+                <Badge className="app-role-pill is-gray sales-geography-pill" variant="light">
+                  {periodLabel}
+                </Badge>
+              )}
             </Group>
 
             {isLoading && plotted.length === 0 ? (
@@ -255,6 +290,14 @@ export function SalesGeographyPage() {
       </SimpleGrid>
     </Stack>
   )
+}
+
+function getPeriodParams(period: SalesGeographyPeriodKey): { period: 'all' } | { months: number } {
+  if (period === 'all') {
+    return { period: 'all' }
+  }
+
+  return { months: Number(period) }
 }
 
 // Join aggregates to the centroid table. Known oblast codes become plotted bubbles

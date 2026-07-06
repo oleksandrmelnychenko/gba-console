@@ -6,13 +6,32 @@ import type { GeographyParams, SalesRegionAggregate } from '../types'
 // prepends /api/v1/{lang} and unwraps the { Body } envelope.
 export async function getSalesGeography(params: GeographyParams = {}): Promise<SalesRegionAggregate[]> {
   const result = await apiRequest<unknown>('/sales/geography', {
-    query: {
-      metric: params.metric ?? 'sales',
-      months: params.months ?? 12,
-    },
+    query: buildGeographyQuery(params),
   })
 
   return normalizeAggregates(result)
+}
+
+function buildGeographyQuery(params: GeographyParams): Record<string, string | number> {
+  const query: Record<string, string | number> = {
+    metric: params.metric ?? 'sales',
+  }
+
+  if (params.period) {
+    query.period = params.period
+  } else {
+    query.months = params.months ?? 12
+  }
+
+  if (params.from) {
+    query.from = params.from
+  }
+
+  if (params.to) {
+    query.to = params.to
+  }
+
+  return query
 }
 
 function normalizeAggregates(result: unknown): SalesRegionAggregate[] {

@@ -10,9 +10,14 @@ export type SalesRegionAggregate = {
 
 export type GeographyMetric = 'sales' | 'debt'
 
+export type GeographyPeriod = 'all'
+
 export type GeographyParams = {
   metric?: GeographyMetric
+  period?: GeographyPeriod
   months?: number
+  from?: string
+  to?: string
 }
 
 // A single plotted bubble: an aggregate joined to its oblast centroid.
