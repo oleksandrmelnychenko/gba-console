@@ -49,6 +49,7 @@ import {
   type UkraineOrderNewDocument,
 } from '../components/SupplyUkraineOrderDocumentsModal'
 import type { SupplyOrderUkraine, SupplyOrderUkraineDocument, SupplyOrderUkraineItem } from '../types'
+import './supply-order-detail.css'
 
 const TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -59,7 +60,11 @@ const TABLE_DEFAULT_LAYOUT = {
 
 const PLACEMENT_PERMISSION = 'PlacementHeader_ProductPlacement_ordersUkraineView_PKEY'
 const MANAGE_DOCUMENTS_PERMISSION = 'PlacementHeader_LoadingSales_ordersUkraineView_PKEY'
+const BACK_ROUTE = '/orders/ukraine/all'
 
+const dateFormatter = new Intl.DateTimeFormat('uk-UA', {
+  dateStyle: 'short',
+})
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
   dateStyle: 'short',
   timeStyle: 'short',
@@ -448,19 +453,37 @@ export function SupplyUkraineOrderOverviewPage() {
   const orderRecord = asRecord(order)
   const currencyCode = order?.ClientAgreement?.Agreement?.Currency?.Code || order?.ClientAgreement?.Agreement?.Currency?.Name || ''
   const orderDisplayNumber = getSupplyUkraineOrderDisplayNumber(order) || id
+  const supplierName = getEntityName(order?.Supplier)
 
   return (
     <AppDrawer
+      className="supply-order-sheet supply-order-overview-sheet"
       closeOnClickOutside={false}
       opened
       size="full"
-      title={<span className="app-sheet-title-mono">{`${t('Огляд поставки в Україну')}${orderDisplayNumber ? ` № ${orderDisplayNumber}` : ''}`}</span>}
-      onClose={() => navigate(-1)}
+      title={
+        <div className="supply-order-overview-title">
+          <div className="supply-order-overview-title-main">
+            <span>{t('Замовлення на поставку в Україну')}</span>
+            {orderDisplayNumber && (
+              <Badge className="app-role-pill is-yellow supply-order-overview-number-pill" variant="light">
+                {orderDisplayNumber}
+              </Badge>
+            )}
+          </div>
+          <div className="supply-order-overview-title-meta">
+            <span>{t('Від')} <strong>{formatDate(order?.FromDate)}</strong></span>
+            {supplierName && <span>{t('Постачальник')}: <strong>{supplierName}</strong></span>}
+          </div>
+        </div>
+      }
+      onClose={() => navigate(BACK_ROUTE)}
     >
-      <Stack gap="lg">
-      <Group justify="flex-end" wrap="wrap">
+      <Stack className="supply-order-overview-body" gap="md">
+        <Group className="supply-order-overview-actions" justify="flex-end" wrap="wrap">
           {canManageDocuments && order && (
             <Button
+              className="supply-order-overview-action-button"
               color="gray"
               disabled={isSavingDocuments}
               leftSection={<IconFileUpload size={16} />}
@@ -472,6 +495,7 @@ export function SupplyUkraineOrderOverviewPage() {
           )}
           {canOpenPlacement && id && !order?.IsPlaced && (
             <Button
+              className="supply-order-overview-action-button"
               color="gray"
               disabled={isSavingDocuments || isSavingVat || isSavingVatItems}
               leftSection={<IconPackageImport size={16} />}
@@ -481,77 +505,80 @@ export function SupplyUkraineOrderOverviewPage() {
               {t('Розміщення товару')}
             </Button>
           )}
-      </Group>
+        </Group>
 
-      {error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-          {error}
-        </Alert>
-      )}
+        {error && (
+          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            {error}
+          </Alert>
+        )}
 
-      <Card className="app-section-card" withBorder radius="md" padding="md">
-        <Stack gap="md">
-          <Group justify="space-between" align="center">
-            <Text className="app-section-title" fw={600} size="sm">{t('Замовлення')}</Text>
-            <Badge className={`app-role-pill ${order?.IsPlaced ? 'is-green' : 'is-gray'}`} variant="light">
-              {order?.IsPlaced ? t('Розміщено') : t('Не розміщено')}
-            </Badge>
-          </Group>
-
-          <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="md">
-            <DetailValue label={t('Номер')} value={getSupplyUkraineOrderDisplayNumber(order)} />
-            <DetailValue label={t('Дата')} value={formatDateTime(order?.FromDate)} />
-            <DetailValue label={t('Інвойс')} value={order?.InvNumber} />
-            <DetailValue label={t('Дата інвойсу')} value={formatDateTime(order?.InvDate)} />
-            <DetailValue mono={false} label={t('Постачальник')} value={getEntityName(order?.Supplier)} />
-            <DetailValue mono={false} label={t('Договір')} value={order?.ClientAgreement?.Agreement?.Name} />
-            <DetailValue label={t('Валюта')} value={currencyCode} />
-            <DetailValue mono={false} label={t('Організація')} value={getRecipientOrganizationName(order)} />
-            <DetailValue mono={false} label={t('Відповідальний')} value={getEntityName(order?.Responsible)} />
-            <DetailValue label={t('Кількість')} value={formatAmount(readNumber(orderRecord.TotalQty))} />
-            <DetailValue label={t('Сума')} value={formatMoney(order?.TotalGrossPriceLocal)} />
-            <DetailValue label={currencyCode && currencyCode !== 'EUR' ? `${t('Курс')} ${currencyCode} ${t('до')} EUR` : t('Курс')} value={formatAmount(order?.ExchangeRateAmount)} />
-            <DetailValue label={t('Додатковий відсоток')} value={formatAmount(order?.AdditionalPercent)} />
-            <DetailValue label={t('ПДВ')} value={formatAmount(order?.VatPercent)} />
-          </SimpleGrid>
-
-          <Group align="flex-end" justify="space-between" wrap="wrap">
-            <NumberInput
-              allowDecimal={false}
-              disabled={!order || isSavingVat || isSavingVatItems}
-              label={t('Відсоток ПДВ')}
-              max={100}
-              min={0}
-              value={order?.VatPercent ?? 0}
-              w={220}
-              onChange={changeOrderVatPercent}
-            />
-            <Group gap="xs">
-              <Button
-                variant="default"
-                leftSection={<IconListCheck size={16} />}
-                disabled={!order || isSavingVat || isSavingVatItems}
-                onClick={applyOrderVatToAllItems}
-              >
-                {t('До всіх рядків')}
-              </Button>
-              <Button
-                color={CREATE_ACTION_COLOR}
-                leftSection={<IconCalculator size={16} />}
-                // "+ ПДВ" is the server recalc; kept usable mid-edit (#30).
-                disabled={!order || isSavingVat || isSavingVatItems}
-                loading={isSavingVat}
-                onClick={calculateVatPercentForOrder}
-              >
-                {t('+ ПДВ')}
-              </Button>
+        <Card className="app-section-card supply-order-overview-card" withBorder radius="md" padding="md">
+          <Stack gap="md">
+            <Group justify="space-between" align="center">
+              <Text className="app-section-title" fw={600} size="sm">{t('Замовлення')}</Text>
+              <Badge className={`app-role-pill ${order?.IsPlaced ? 'is-green' : 'is-gray'}`} variant="light">
+                {order?.IsPlaced ? t('Розміщено') : t('Не розміщено')}
+              </Badge>
             </Group>
-          </Group>
-        </Stack>
-      </Card>
 
-      {canManageDocuments && (
-        <Card className="app-section-card" withBorder radius="md" padding="md">
+            <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="md">
+              <DetailValue label={t('Номер')} value={getSupplyUkraineOrderDisplayNumber(order)} />
+              <DetailValue label={t('Дата')} value={formatDateTime(order?.FromDate)} />
+              <DetailValue label={t('Інвойс')} value={order?.InvNumber} />
+              <DetailValue label={t('Дата інвойсу')} value={formatDateTime(order?.InvDate)} />
+              <DetailValue mono={false} label={t('Постачальник')} value={getEntityName(order?.Supplier)} />
+              <DetailValue mono={false} label={t('Договір')} value={order?.ClientAgreement?.Agreement?.Name} />
+              <DetailValue label={t('Валюта')} value={currencyCode} />
+              <DetailValue mono={false} label={t('Організація')} value={getRecipientOrganizationName(order)} />
+              <DetailValue mono={false} label={t('Відповідальний')} value={getEntityName(order?.Responsible)} />
+              <DetailValue label={t('Кількість')} value={formatAmount(readNumber(orderRecord.TotalQty))} />
+              <DetailValue label={t('Сума')} value={formatMoney(order?.TotalGrossPriceLocal)} />
+              <DetailValue label={currencyCode && currencyCode !== 'EUR' ? `${t('Курс')} ${currencyCode} ${t('до')} EUR` : t('Курс')} value={formatAmount(order?.ExchangeRateAmount)} />
+              <DetailValue label={t('Додатковий відсоток')} value={formatAmount(order?.AdditionalPercent)} />
+              <DetailValue label={t('ПДВ')} value={formatAmount(order?.VatPercent)} />
+            </SimpleGrid>
+
+            <Group align="flex-end" justify="space-between" wrap="wrap">
+              <NumberInput
+                allowDecimal={false}
+                className="supply-order-overview-control is-mono"
+                disabled={!order || isSavingVat || isSavingVatItems}
+                label={t('Відсоток ПДВ')}
+                max={100}
+                min={0}
+                value={order?.VatPercent ?? 0}
+                w={220}
+                onChange={changeOrderVatPercent}
+              />
+              <Group gap="xs">
+                <Button
+                  className="supply-order-overview-action-button"
+                  variant="default"
+                  leftSection={<IconListCheck size={16} />}
+                  disabled={!order || isSavingVat || isSavingVatItems}
+                  onClick={applyOrderVatToAllItems}
+                >
+                  {t('До всіх рядків')}
+                </Button>
+                <Button
+                  className="supply-order-overview-action-button"
+                  color={CREATE_ACTION_COLOR}
+                  leftSection={<IconCalculator size={16} />}
+                  // "+ ПДВ" is the server recalc; kept usable mid-edit (#30).
+                  disabled={!order || isSavingVat || isSavingVatItems}
+                  loading={isSavingVat}
+                  onClick={calculateVatPercentForOrder}
+                >
+                  {t('+ ПДВ')}
+                </Button>
+              </Group>
+            </Group>
+          </Stack>
+        </Card>
+
+        {canManageDocuments && (
+        <Card className="app-section-card supply-order-overview-card" withBorder radius="md" padding="md">
           <Stack gap="md">
             <Group justify="space-between" align="center">
               <Stack gap={2}>
@@ -559,7 +586,7 @@ export function SupplyUkraineOrderOverviewPage() {
               </Stack>
               <Group gap="xs">
                 {order && (
-                  <Button color="gray" disabled={isSavingDocuments} leftSection={<IconFileUpload size={16} />} variant="light" onClick={openDocumentsModal}>
+                  <Button className="supply-order-overview-action-button" color="gray" disabled={isSavingDocuments} leftSection={<IconFileUpload size={16} />} variant="light" onClick={openDocumentsModal}>
                     {t('Завантажити')}
                   </Button>
                 )}
@@ -578,9 +605,9 @@ export function SupplyUkraineOrderOverviewPage() {
             />
           </Stack>
         </Card>
-      )}
+        )}
 
-      <Card className="app-section-card" withBorder radius="md" padding="md">
+        <Card className="app-section-card supply-order-overview-card supply-order-overview-table-card" withBorder radius="md" padding="md">
         <Stack gap="md">
           <Group justify="space-between" align="flex-end">
             <Stack gap={2}>
@@ -590,6 +617,7 @@ export function SupplyUkraineOrderOverviewPage() {
               {hasVatItemChanges && (
                 <Group gap="xs">
                   <Button
+                    className="supply-order-overview-action-button"
                     color={CREATE_ACTION_COLOR}
                     leftSection={<IconDeviceFloppy size={16} />}
                     disabled={isSavingVatItems}
@@ -600,6 +628,7 @@ export function SupplyUkraineOrderOverviewPage() {
                     {t('Зберегти ПДВ')}
                   </Button>
                   <Button
+                    className="supply-order-overview-action-button"
                     color="gray"
                     disabled={isSavingVatItems}
                     leftSection={<IconX size={16} />}
@@ -612,6 +641,7 @@ export function SupplyUkraineOrderOverviewPage() {
                 </Group>
               )}
               <TextInput
+                className="supply-order-overview-control supply-order-overview-search"
                 leftSection={<IconSearch size={16} />}
                 placeholder={t('Код, назва або код УКТЗЕД')}
                 value={search}
@@ -636,10 +666,10 @@ export function SupplyUkraineOrderOverviewPage() {
             tableId="supply-ukraine-order-overview"
           />
         </Stack>
-      </Card>
+        </Card>
 
-      <Card className="app-section-card" withBorder radius="md" padding="md">
-        <Group gap="xl" justify="flex-end" wrap="wrap">
+        <Card className="app-section-card supply-order-overview-card" withBorder radius="md" padding="md">
+        <Group className="supply-order-overview-totals" gap="xl" justify="flex-end" wrap="wrap">
           <TotalValue label={t('Управлінські витрати')} value={formatMoney(readNumber(orderRecord.TotalDeliveryExpenseAmount))} />
           <TotalValue label={t('Бухгалтерські витрати')} value={formatMoney(readNumber(orderRecord.TotalAccountingDeliveryExpenseAmount))} />
           <TotalValue label={t('Кількість')} value={formatAmount(readNumber(orderRecord.TotalQty))} />
@@ -649,7 +679,7 @@ export function SupplyUkraineOrderOverviewPage() {
           <TotalValue label={t('Вага нетто')} value={formatAmount(readNumber(orderRecord.TotalNetWeight))} />
           <TotalValue label={t('Вага брутто')} value={formatAmount(readNumber(orderRecord.TotalGrossWeight))} />
         </Group>
-      </Card>
+        </Card>
 
       <SupplyUkraineOrderDocumentsModal
         existingDocuments={documentDrafts}
@@ -685,7 +715,7 @@ export function SupplyUkraineOrderOverviewPage() {
         </Stack>
       </AppModal>
       <ProductCardModal productNetId={productCardNetId} onClose={() => setProductCardNetId(null)} />
-    </Stack>
+      </Stack>
     </AppDrawer>
   )
 }
@@ -712,8 +742,8 @@ function useOverviewColumns({
         cell: (row) =>
           row.productNetId ? (
             <Anchor
+              className="supply-order-overview-code-link"
               component="button"
-              fw={700}
               type="button"
               onClick={(event) => {
                 event.stopPropagation()
@@ -723,7 +753,7 @@ function useOverviewColumns({
               {displayValue(row.vendorCode)}
             </Anchor>
           ) : (
-            <Text fw={700}>{displayValue(row.vendorCode)}</Text>
+            <Text className="supply-order-overview-code-link">{displayValue(row.vendorCode)}</Text>
           ),
       },
       {
@@ -734,8 +764,8 @@ function useOverviewColumns({
         cell: (row) =>
           row.productNetId ? (
             <Anchor
+              className="supply-order-overview-product-name"
               component="button"
-              size="sm"
               type="button"
               onClick={(event) => {
                 event.stopPropagation()
@@ -745,7 +775,7 @@ function useOverviewColumns({
               {displayValue(row.productName)}
             </Anchor>
           ) : (
-            displayValue(row.productName)
+            <span className="supply-order-overview-product-name">{displayValue(row.productName)}</span>
           ),
       },
       {
@@ -802,6 +832,7 @@ function useOverviewColumns({
         cell: (row) => (
           <NumberInput
             allowDecimal
+            className="supply-order-overview-vat-input"
             decimalScale={2}
             disabled={isSavingVatItems}
             hideControls
@@ -946,23 +977,19 @@ function useDocumentColumns(): DataTableColumn<SupplyOrderUkraineDocument>[] {
 
 function DetailValue({ label, mono = true, value }: { label: string, mono?: boolean, value: unknown }) {
   return (
-    <Stack gap={2}>
-      <Text c="dimmed" size="xs" tt="uppercase" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{label}</Text>
-      {mono ? (
-        <Text className="app-money" size="sm">{displayValue(value)}</Text>
-      ) : (
-        <Text c="gray.8" fw={600} size="sm">{displayValue(value)}</Text>
-      )}
+    <Stack className={`supply-order-overview-detail-value${mono ? ' is-mono' : ''}`} gap={2}>
+      <Text className="supply-order-overview-detail-label">{label}</Text>
+      <Text className="supply-order-overview-detail-data">{displayValue(value)}</Text>
     </Stack>
   )
 }
 
 function TotalValue({ label, value }: { label: string, value: unknown }) {
   return (
-    <Stack gap={2} align="flex-end">
-      <Text c="dimmed" size="xs" tt="uppercase" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{label}</Text>
-      <Text className="app-money" fw={700} size="sm">{displayValue(value)}</Text>
-    </Stack>
+    <div className="supply-order-overview-total-value">
+      <span>{label}</span>
+      <strong>{displayValue(value)}</strong>
+    </div>
   )
 }
 
@@ -1168,6 +1195,20 @@ function formatDateTime(value?: Date | string): string {
   }
 
   return dateTimeFormatter.format(date)
+}
+
+function formatDate(value?: Date | string): string {
+  if (!value) {
+    return '-'
+  }
+
+  const date = value instanceof Date ? value : new Date(value)
+
+  if (Number.isNaN(date.getTime())) {
+    return String(value)
+  }
+
+  return dateFormatter.format(date)
 }
 
 function formatAmount(value?: number): string {

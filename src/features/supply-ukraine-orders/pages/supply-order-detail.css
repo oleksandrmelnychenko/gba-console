@@ -435,9 +435,221 @@
   letter-spacing: 0;
 }
 
+/* ---- «Замовлення на поставку в Україну» overview right sheet ------------ */
+.supply-order-overview-title {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.supply-order-overview-title-main {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+
+.supply-order-overview-title-main > span {
+  color: var(--mantine-color-gray-9);
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.2;
+}
+
+.supply-order-overview-number-pill {
+  max-width: 220px;
+}
+
+.supply-order-overview-title-meta {
+  align-items: center;
+  color: var(--mantine-color-gray-6);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 11.5px;
+  font-weight: 500;
+  gap: 6px 12px;
+  line-height: 1.2;
+  min-width: 0;
+}
+
+.supply-order-overview-title-meta strong {
+  color: var(--mantine-color-gray-8);
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.supply-order-overview-body {
+  min-width: 0;
+}
+
+.supply-order-overview-sheet .app-section-card.supply-order-overview-card.mantine-Card-root {
+  border-color: var(--mantine-color-gray-2);
+  box-shadow: none;
+  padding: 14px 16px;
+}
+
+.supply-order-overview-actions {
+  min-height: 36px;
+}
+
+.supply-order-overview-action-button.mantine-Button-root {
+  border-radius: 8px;
+  min-height: 36px;
+}
+
+.supply-order-overview-action-button .mantine-Button-label {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.supply-order-overview-control .mantine-InputWrapper-label {
+  color: var(--mantine-color-gray-9);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.2;
+  margin-bottom: 4px;
+}
+
+.supply-order-overview-control .mantine-Input-input {
+  border-color: var(--mantine-color-gray-2);
+  border-radius: 8px;
+  color: var(--mantine-color-gray-8);
+  font-size: 12.5px;
+  font-weight: 500;
+  height: 36px;
+  min-height: 36px;
+}
+
+.supply-order-overview-control.is-mono .mantine-Input-input,
+.supply-order-overview-search .mantine-Input-input::placeholder {
+  font-family: var(--font-mono);
+  letter-spacing: 0;
+}
+
+.supply-order-overview-search .mantine-Input-input::placeholder {
+  color: var(--mantine-color-gray-6);
+  font-size: 12px;
+}
+
+.supply-order-overview-detail-value {
+  min-width: 0;
+}
+
+.supply-order-overview-detail-label {
+  color: var(--mantine-color-gray-6);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.supply-order-overview-detail-data {
+  color: var(--mantine-color-gray-8);
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.2;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.supply-order-overview-detail-value.is-mono .supply-order-overview-detail-data {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.supply-order-overview-code-link {
+  color: var(--mantine-color-gray-8);
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-weight: 650;
+  letter-spacing: 0;
+}
+
+.supply-order-overview-product-name {
+  color: var(--mantine-color-gray-8);
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.supply-order-overview-vat-input .mantine-Input-input {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-align: right;
+}
+
+.supply-order-overview-table-card .data-table {
+  min-height: 360px;
+}
+
+.supply-order-overview-totals {
+  row-gap: 12px;
+}
+
+.supply-order-overview-total-value {
+  min-width: 0;
+  text-align: right;
+}
+
+.supply-order-overview-total-value span {
+  color: var(--mantine-color-gray-6);
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.supply-order-overview-total-value span::before {
+  background: var(--brand-orange);
+  border-radius: 999px;
+  content: '';
+  display: inline-block;
+  height: 6px;
+  margin-right: 6px;
+  vertical-align: 1px;
+  width: 6px;
+}
+
+.supply-order-overview-total-value strong {
+  color: var(--mantine-color-gray-9);
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 650;
+  letter-spacing: 0;
+  line-height: 1.15;
+  margin-top: 4px;
+  white-space: nowrap;
+}
+
 @media (max-width: 640px) {
   .supply-order-fields {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .supply-order-overview-title-main > span {
+    font-size: 16px;
+  }
+
+  .supply-order-overview-total-value {
+    text-align: left;
   }
 }
 

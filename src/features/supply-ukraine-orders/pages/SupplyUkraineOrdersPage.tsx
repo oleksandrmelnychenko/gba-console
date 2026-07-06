@@ -527,6 +527,12 @@ function useSupplyUkraineOrdersPageController() {
 
   function navigateFromModal(path: string) {
     dispatchUi({ row: null, type: 'setSelectedRow' })
+
+    if (path.startsWith('/orders/ukraine/placement/')) {
+      navigate(path, { state: { backgroundLocation: location } })
+      return
+    }
+
     navigate(path)
   }
 

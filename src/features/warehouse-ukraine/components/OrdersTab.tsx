@@ -1,7 +1,7 @@
 import { ActionIcon, Alert, Button, Select, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import { IconAlertCircle, IconRefresh, IconRestore } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
 import { getSupplyUkraineOrderDisplayNumber } from '../../../shared/supplyUkraineOrderNumbers'
@@ -121,6 +121,7 @@ function ordersTabReducer(state: OrdersTabState, action: OrdersTabAction): Order
 function useOrdersTabModel() {
   const { t } = useI18n()
   const navigate = useNavigate()
+  const location = useLocation()
   const initialFilters = useMemo<FilterDraft>(() => lastOrderFilters ?? createDefaultOrderFilters(), [])
   const initialState = useMemo(() => createInitialOrdersState(initialFilters), [initialFilters])
   const [state, dispatchState] = useReducer(ordersTabReducer, initialState)
@@ -248,7 +249,7 @@ function useOrdersTabModel() {
 
   function openOrder(order: SupplyOrderUkraine) {
     if (order.NetUid) {
-      navigate(`/warehouse/ukraine/orders/${order.NetUid}/placements`)
+      navigate(`/warehouse/ukraine/orders/${order.NetUid}/placements`, { state: { backgroundLocation: location } })
     }
   }
 

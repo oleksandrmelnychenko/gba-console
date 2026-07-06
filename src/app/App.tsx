@@ -26,6 +26,7 @@ import {
   TaxFreeCarrierFormPage,
   UserEditPage,
   UserNewPage,
+  WarehouseUkraineOrderPlacementsPage,
 } from './routes/lazyConsolePages'
 import { consoleRoutes } from './routes/consoleRoutes'
 import { lazyRoute } from './routes/lazyRoute'
@@ -101,6 +102,8 @@ export function App() {
             <Route path="/tax-free/carriers/edit/:id" element={lazyRoute(<TaxFreeCarrierFormPage />)} />
             <Route path="/orders/ukraine/all/new" element={lazyRoute(<SupplyUkraineDirectOrderCreatePage />)} />
             <Route path="/orders/ukraine/to-ukraine/new" element={lazyRoute(<SupplyUkraineToUkraineOrderCreatePage />)} />
+            <Route path="/orders/ukraine/placement/:id" element={lazyRoute(<WarehouseUkraineOrderPlacementsPage />)} />
+            <Route path="/warehouse/ukraine/orders/:id/placements" element={lazyRoute(<WarehouseUkraineOrderPlacementsPage />)} />
             <Route path="/product-groups/:id" element={lazyRoute(<ProductGroupDetailPage />)} />
             <Route path="/resales/new" element={lazyRoute(<NewResalePage />)} />
             <Route path="/users/new" element={lazyRoute(<UserNewPage />)} />

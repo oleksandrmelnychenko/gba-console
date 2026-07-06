@@ -1,5 +1,5 @@
-import { Alert, Badge, Button, Card, Group, Loader, Stack, Text } from '@mantine/core'
-import { IconAlertCircle, IconArrowLeft } from '@tabler/icons-react'
+import { Alert, Badge, Card, Group, Loader, Stack, Text } from '@mantine/core'
+import { IconAlertCircle } from '@tabler/icons-react'
 import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -311,12 +311,6 @@ export function SupplyUkrainePaymentProtocolsView() {
       onClose={closeSheet}
     >
       <Stack className="supply-payment-sheet-body" gap="md">
-        <Group justify="flex-start">
-          <Button className="supply-payment-sheet-back" leftSection={<IconArrowLeft size={16} />} variant="subtle" onClick={closeSheet}>
-            {t('До списку')}
-          </Button>
-        </Group>
-
         {error && (
           <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
             {error}

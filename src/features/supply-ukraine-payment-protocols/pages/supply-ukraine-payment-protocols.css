@@ -35,12 +35,6 @@
   min-width: 0;
 }
 
-.supply-payment-sheet-back.mantine-Button-root {
-  color: var(--mantine-color-gray-7);
-  padding-left: 0;
-}
-
-.supply-payment-sheet-back .mantine-Button-label,
 .supply-payment-action-button .mantine-Button-label {
   font-family: var(--font-mono);
   font-weight: 600;

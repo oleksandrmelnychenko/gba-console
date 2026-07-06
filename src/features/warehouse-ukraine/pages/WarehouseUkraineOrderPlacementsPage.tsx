@@ -1,13 +1,14 @@
 import { ActionIcon, Alert, Badge, Button, Card, Group, NumberInput, Select, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconAlertCircle, IconArrowLeft, IconColumnInsertRight, IconPlus, IconTrash } from '@tabler/icons-react'
+import { IconAlertCircle, IconColumnInsertRight, IconPlus, IconTrash } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { getSupplyUkraineOrderDisplayNumber } from '../../../shared/supplyUkraineOrderNumbers'
+import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -33,6 +34,7 @@ import type {
   PlacementStorage,
   PlacementSupplyOrder,
 } from '../placementsTypes'
+import './warehouse-ukraine-page.css'
 
 const PLACEMENT_ADD_CANCEL_SAVE_PERMISSION = 'PlacementHeader_AddCancelSave_ordersUkrainePlacement_PKEY'
 const PLACEMENT_ACT_RECONCILIATION_PERMISSION = 'PlacementHeader_ActReconciliationNew_ordersUkrainePlacement_PKEY'
@@ -160,10 +162,29 @@ type DrawerState = {
   columnId: string
 }
 
+type PlacementLocationState = {
+  backgroundLocation?: {
+    hash: string
+    pathname: string
+    search: string
+    state: unknown
+  }
+}
+
 function useOrderPlacementsModel() {
   const { t } = useI18n()
   const navigate = useNavigate()
+  const location = useLocation()
   const { id } = useParams<{ id: string }>()
+  const routeState = location.state as PlacementLocationState | null
+  const backgroundLocation = routeState?.backgroundLocation
+  const fallbackReturnPath = location.pathname.startsWith('/warehouse/ukraine/orders/')
+    ? '/warehouse/ukraine'
+    : '/orders/ukraine/all'
+  const returnPath = backgroundLocation
+    ? `${backgroundLocation.pathname}${backgroundLocation.search}${backgroundLocation.hash}`
+    : fallbackReturnPath
+  const returnState = backgroundLocation?.state
 
   const [order, setOrder] = useValueState<PlacementSupplyOrder | null>(null)
   const [storages, setStorages] = useValueState<PlacementStorage[]>([])
@@ -233,6 +254,10 @@ function useOrderPlacementsModel() {
 
     setReloadKey((key) => key + 1)
   }, [isBusy, setReloadKey])
+
+  const closeSheet = useCallback(() => {
+    navigate(returnPath, { state: returnState })
+  }, [navigate, returnPath, returnState])
 
   const selectedStorage = useMemo(
     () => storages.find((storage) => storage.NetUid === selectedStorageId) || null,
@@ -538,9 +563,9 @@ function useOrderPlacementsModel() {
   const totalNetWeight = order?.TotalNetWeight || 0
 
   return {
-    columnModalOpen, columnToRemove, confirmPlacement, confirmRemoveColumn, density, drawer, error, gridRows, handleAddColumn,
+    closeSheet, columnModalOpen, columnToRemove, confirmPlacement, confirmRemoveColumn, density, drawer, error, gridRows, handleAddColumn,
     handleApplyPlacements, handleCellChange, handleMoveRemnants, handleOpenPlacements, handleSave, incomeDate, isDirty,
-    isBusy, isLoading, isPlacing, isSaving, navigate, order, placeOrder, reloadFromServer, selectedStorage, selectedStorageId,
+    isBusy, isLoading, isPlacing, isSaving, order, placeOrder, reloadFromServer, selectedStorage, selectedStorageId,
     setColumnModalOpen, setColumnToRemove, setConfirmPlacement, setDrawer, setIncomeDate, setOrder, setSelectedStorageId,
     setUnorderedOpen, storages, toggleDensity, totalNetWeight, totalProductsCount, unorderedOpen,
   }
@@ -554,6 +579,7 @@ export function WarehouseUkraineOrderPlacementsPage() {
   const canActReconciliation = hasPermission(PLACEMENT_ACT_RECONCILIATION_PERMISSION)
   const canCarryOut = hasPermission(PLACEMENT_CARRY_OUT_PERMISSION)
   const canGetUp = hasPermission(PLACEMENT_GET_UP_PERMISSION)
+  const orderDisplayNumber = getSupplyUkraineOrderDisplayNumber(model.order) || ''
 
   const columns = useMemo<DataTableColumn<PlacementGridRow>[]>(() => {
     const fixedColumns: DataTableColumn<PlacementGridRow>[] = [
@@ -810,118 +836,142 @@ export function WarehouseUkraineOrderPlacementsPage() {
   }, [canEditPlacement, model, t])
 
   return (
-    <Stack gap="md">
-      <Group justify="space-between" align="center">
-        <Button
-          color="gray"
-          disabled={model.isBusy}
-          leftSection={<IconArrowLeft size={16} />}
-          variant="subtle"
-          onClick={() => model.navigate('/warehouse/ukraine')}
+    <AppDrawer
+      className="warehouse-order-placement-sheet"
+      closeOnClickOutside={false}
+      opened
+      position="right"
+      size="full"
+      title={
+        <div className="warehouse-order-placement-title">
+          <div className="warehouse-order-placement-title-main">
+            <span>{t('Замовлення на поставку в Україну')}</span>
+            {orderDisplayNumber && (
+              <Badge className="app-role-pill is-yellow warehouse-order-placement-number-pill" variant="light">
+                {orderDisplayNumber}
+              </Badge>
+            )}
+            {model.order && (
+              <Badge className={`app-role-pill ${model.order.IsPlaced ? 'is-green' : 'is-gray'}`} variant="light">
+                {model.order.IsPlaced ? t('Розміщено') : t('Не розміщено')}
+              </Badge>
+            )}
+          </div>
+          <div className="warehouse-order-placement-title-meta">
+            <span>{t('Від')} <strong>{formatDate(model.order?.FromDate)}</strong></span>
+            {model.order?.Supplier?.FullName && (
+              <span>{t('Постачальник')}: <strong>{model.order.Supplier.FullName}</strong></span>
+            )}
+          </div>
+        </div>
+      }
+      onClose={model.closeSheet}
+    >
+      <Stack className="warehouse-order-placement-body" gap="md">
+        <Card
+          className="app-section-card warehouse-order-placement-card warehouse-order-placement-toolbar-card"
+          withBorder
+          radius="md"
+          padding="md"
         >
-          {t('Назад')}
-        </Button>
-        <Group gap="sm" justify="flex-end">
-          <Text fw={700} size="lg">
-            {`${t('Замовлення на поставку в Україну')} #${getSupplyUkraineOrderDisplayNumber(model.order) || ''} ${t(
-              'Від',
-            )} ${formatDate(model.order?.FromDate)}`}
-          </Text>
-          {model.order?.Supplier?.FullName && (
-            <Text c="dimmed" size="sm">
-              {`${t('Постачальник')}: ${model.order.Supplier.FullName}`}
-            </Text>
-          )}
-          {model.order && (
-            <Badge color={model.order.IsPlaced ? 'green' : 'gray'} variant="light">
-              {model.order.IsPlaced ? t('Розміщено') : t('Не розміщено')}
-            </Badge>
-          )}
-        </Group>
-      </Group>
-
-      <Card className="app-section-card" withBorder radius="md" padding="md">
-        <Group justify="space-between" align="end" wrap="wrap">
-          <Group gap="sm" align="end">
-            {!model.order?.IsPlaced && (
-              <Select
-                data={model.storages.map((storage) => ({ value: storage.NetUid || '', label: storage.Name || '' }))}
-                label={t('Склад')}
-                disabled={model.isBusy}
-                value={model.selectedStorageId}
-                w={240}
-                onChange={(value) => model.setSelectedStorageId(value)}
-              />
-            )}
-            {canEditPlacement && !model.order?.IsPlaced && (
-              <Button disabled={model.isBusy} variant="light" onClick={() => model.setColumnModalOpen(true)}>
-                {t('Додати колонку')}
-              </Button>
-            )}
-            {canActReconciliation && !model.order?.IsPlaced && (
-              <Button
-                disabled={model.isBusy || model.isDirty}
-                variant="light"
-                onClick={() => model.setUnorderedOpen(true)}
-              >
-                {t('Інший товар / більша кількість')}
-              </Button>
-            )}
+          <Group justify="space-between" align="end" wrap="wrap">
+            <Group gap="sm" align="end">
+              {!model.order?.IsPlaced && (
+                <Select
+                  className="warehouse-order-placement-control"
+                  data={model.storages.map((storage) => ({ value: storage.NetUid || '', label: storage.Name || '' }))}
+                  label={t('Склад')}
+                  disabled={model.isBusy}
+                  value={model.selectedStorageId}
+                  w={240}
+                  onChange={(value) => model.setSelectedStorageId(value)}
+                />
+              )}
+              {canEditPlacement && !model.order?.IsPlaced && (
+                <Button
+                  className="warehouse-order-placement-action-button"
+                  disabled={model.isBusy}
+                  variant="light"
+                  onClick={() => model.setColumnModalOpen(true)}
+                >
+                  {t('Додати колонку')}
+                </Button>
+              )}
+              {canActReconciliation && !model.order?.IsPlaced && (
+                <Button
+                  className="warehouse-order-placement-action-button"
+                  disabled={model.isBusy || model.isDirty}
+                  variant="light"
+                  onClick={() => model.setUnorderedOpen(true)}
+                >
+                  {t('Інший товар / більша кількість')}
+                </Button>
+              )}
+            </Group>
+            <Group gap="sm" align="end">
+              {!model.order?.IsPlaced && (canCarryOut || canGetUp) && (
+                <TextInput
+                  className="warehouse-order-placement-control"
+                  label={t('Дата оприходування')}
+                  disabled={model.isBusy || model.isDirty}
+                  type="date"
+                  value={model.incomeDate}
+                  w={170}
+                  onChange={(event) => model.setIncomeDate(event.currentTarget.value)}
+                />
+              )}
+              {model.isDirty && (
+                <Text className="warehouse-order-placement-dirty" c="orange" size="sm">
+                  {t('Є незбережені зміни')}
+                </Text>
+              )}
+              {canEditPlacement && model.isDirty && (
+                <Button
+                  className="warehouse-order-placement-action-button"
+                  color="gray"
+                  disabled={model.isBusy}
+                  variant="light"
+                  onClick={model.reloadFromServer}
+                >
+                  {t('Скасувати')}
+                </Button>
+              )}
+              {canEditPlacement && (
+                <Button
+                  className="warehouse-order-placement-action-button"
+                  color={CREATE_ACTION_COLOR}
+                  disabled={!model.isDirty || model.isBusy}
+                  loading={model.isSaving}
+                  onClick={model.handleSave}
+                >
+                  {t('Зберегти')}
+                </Button>
+              )}
+              {!model.order?.IsPlaced && canCarryOut && (
+                <Button
+                  className="warehouse-order-placement-action-button"
+                  color="teal"
+                  disabled={model.isBusy || model.isDirty}
+                  onClick={() => model.setConfirmPlacement({ isFullPlaced: true })}
+                >
+                  {t('Провести')}
+                </Button>
+              )}
+              {!model.order?.IsPlaced && canGetUp && (
+                <Button
+                  className="warehouse-order-placement-action-button"
+                  color="blue"
+                  disabled={model.isBusy || model.isDirty}
+                  variant="light"
+                  onClick={() => model.setConfirmPlacement({ isFullPlaced: false })}
+                >
+                  {t('Оприходувати')}
+                </Button>
+              )}
+              <DataTableDensityToggle density={model.density} onToggle={model.toggleDensity} size="lg" />
+            </Group>
           </Group>
-          <Group gap="sm" align="end">
-            {!model.order?.IsPlaced && (canCarryOut || canGetUp) && (
-              <TextInput
-                label={t('Дата оприходування')}
-                disabled={model.isBusy || model.isDirty}
-                type="date"
-                value={model.incomeDate}
-                w={170}
-                onChange={(event) => model.setIncomeDate(event.currentTarget.value)}
-              />
-            )}
-            {model.isDirty && (
-              <Text c="orange" size="sm">
-                {t('Є незбережені зміни')}
-              </Text>
-            )}
-            {canEditPlacement && model.isDirty && (
-              <Button color="gray" disabled={model.isBusy} variant="light" onClick={model.reloadFromServer}>
-                {t('Скасувати')}
-              </Button>
-            )}
-            {canEditPlacement && (
-              <Button
-                color={CREATE_ACTION_COLOR}
-                disabled={!model.isDirty || model.isBusy}
-                loading={model.isSaving}
-                onClick={model.handleSave}
-              >
-                {t('Зберегти')}
-              </Button>
-            )}
-            {!model.order?.IsPlaced && canCarryOut && (
-              <Button
-                color="teal"
-                disabled={model.isBusy || model.isDirty}
-                onClick={() => model.setConfirmPlacement({ isFullPlaced: true })}
-              >
-                {t('Провести')}
-              </Button>
-            )}
-            {!model.order?.IsPlaced && canGetUp && (
-              <Button
-                color="blue"
-                disabled={model.isBusy || model.isDirty}
-                variant="light"
-                onClick={() => model.setConfirmPlacement({ isFullPlaced: false })}
-              >
-                {t('Оприходувати')}
-              </Button>
-            )}
-            <DataTableDensityToggle density={model.density} onToggle={model.toggleDensity} size="lg" />
-          </Group>
-        </Group>
-      </Card>
+        </Card>
 
       {model.error && (
         <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
@@ -929,7 +979,12 @@ export function WarehouseUkraineOrderPlacementsPage() {
         </Alert>
       )}
 
-      <Card className="app-section-card" withBorder radius="md" padding="md">
+      <Card
+        className="app-section-card warehouse-order-placement-card warehouse-order-placement-table-card"
+        withBorder
+        radius="md"
+        padding="md"
+      >
         <Stack gap="md">
           <DataTable
             columns={columns}
@@ -945,7 +1000,7 @@ export function WarehouseUkraineOrderPlacementsPage() {
             tableId="warehouse-ukraine-placements"
           />
 
-          <Group gap="xl" justify="flex-end">
+          <Group className="warehouse-order-placement-summary" gap="xl" justify="flex-end">
             <Text size="sm">
               {t('Всього товарів')}: <Text span fw={700}>{model.totalProductsCount}</Text>
             </Text>
@@ -1030,6 +1085,7 @@ export function WarehouseUkraineOrderPlacementsPage() {
         </Stack>
       </AppModal>
     </Stack>
+    </AppDrawer>
   )
 }
 
