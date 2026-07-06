@@ -168,7 +168,6 @@ export function NewUkraineSaleReturnPage() {
   const [editorError, setEditorError] = useState<string | null>(null)
   const [isLoadingEditorStorages, setLoadingEditorStorages] = useState(false)
   const [productCardNetId, setProductCardNetId] = useState<string | null>(null)
-  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
 
   const { items, isLoading } = listState
   const filteredItems = useMemo(() => filterReturns(items, searchValue), [items, searchValue])
@@ -635,7 +634,6 @@ export function NewUkraineSaleReturnPage() {
               onRefresh={() => setReloadKey((value) => value + 1)}
             />
           </div>
-          <div ref={setTableToolbarSlot} className="new-sale-return-table-toolbar-slot" />
           <div className="new-sale-return-create-actions">
             <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} onClick={() => setCreateOpened(true)}>
               {t('Створити')}
@@ -661,9 +659,7 @@ export function NewUkraineSaleReturnPage() {
             isLoading={isLoading}
             layoutVersion="sales-return-new-returns-1"
             minWidth={1260}
-            showLayoutControls
             tableId="sales-return-new-returns"
-            toolbarPortalTarget={tableToolbarSlot}
             onRowClick={setSelectedReturn}
           />
         </div>
