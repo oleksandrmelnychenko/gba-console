@@ -734,7 +734,30 @@ export function NewUkraineSaleReturnPage() {
         </Stack>
       </AppDrawer>
 
-      <AppModal opened={reviewOpened} onClose={() => setReviewOpened(false)} size="xl" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Перегляд повернення')}</span>}>
+      <AppDrawer
+        opened={reviewOpened}
+        onClose={() => setReviewOpened(false)}
+        position="right"
+        size="standard"
+        closeOnEscape={false}
+        title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Перегляд повернення')}</span>}
+        footer={
+          <Group gap="sm">
+            <Button variant="default" onClick={() => setReviewOpened(false)}>
+              {t('Скасувати')}
+            </Button>
+            <Button
+              color={CREATE_ACTION_COLOR}
+              disabled={!drafts.length}
+              leftSection={<IconCheck size={16} />}
+              loading={isSaving}
+              onClick={() => void saveReturn()}
+            >
+              {t('Зберегти')}
+            </Button>
+          </Group>
+        }
+      >
         <Stack gap="md">
           {reviewError ? (
             <Alert color="red" icon={<IconAlertCircle size={16} />} title={t('Помилка')}>
@@ -813,16 +836,8 @@ export function NewUkraineSaleReturnPage() {
             </Stack>
           ))}
 
-          <Group justify="flex-end">
-            <Button variant="light" onClick={() => setReviewOpened(false)}>
-              {t('Скасувати')}
-            </Button>
-            <Button disabled={!drafts.length} leftSection={<IconCheck size={16} />} loading={isSaving} onClick={() => void saveReturn()}>
-              {t('Зберегти')}
-            </Button>
-          </Group>
         </Stack>
-      </AppModal>
+      </AppDrawer>
 
       <AppModal opened={Boolean(editor)} onClose={() => setEditor(null)} size="lg" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Позиція повернення')}</span>}>
         {editor ? (
@@ -915,10 +930,10 @@ export function NewUkraineSaleReturnPage() {
               </Text>
             )}
             <Group justify="flex-end">
-              <Button variant="light" onClick={() => setEditor(null)}>
+              <Button variant="default" onClick={() => setEditor(null)}>
                 {t('Скасувати')}
               </Button>
-              <Button onClick={saveEditorDraft}>
+              <Button color={CREATE_ACTION_COLOR} onClick={saveEditorDraft}>
                 {editor.draft ? t('Оновити') : t('Додати')}
               </Button>
             </Group>
@@ -937,7 +952,7 @@ export function NewUkraineSaleReturnPage() {
         <Stack gap="md">
           <Text>{t('Скасувати повернення')} {cancelCandidate?.Number}?</Text>
           <Group justify="flex-end">
-            <Button variant="light" onClick={() => setCancelCandidate(null)}>
+            <Button variant="default" onClick={() => setCancelCandidate(null)}>
               {t('Ні')}
             </Button>
             <Button color="red" loading={isCanceling} onClick={() => void confirmCancel()}>
