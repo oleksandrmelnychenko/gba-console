@@ -2918,8 +2918,21 @@ function getSupplyInvoiceAmount(invoice: SupplyInvoice | null | undefined): numb
 }
 
 function getPackingListAmount(packList: PackingList | null | undefined): number | undefined {
-  return readFiniteNumber(packList?.TotalNetPrice)
-    ?? readFiniteNumber(packList?.TotalGrossPrice)
+  const direct = readFiniteNumber(packList?.TotalNetPrice) ?? readFiniteNumber(packList?.TotalGrossPrice)
+
+  if (typeof direct === 'number' && direct !== 0) {
+    return direct
+  }
+
+  // The backend populates the pack-list-level total for some pack lists but not
+  // others (then Сума read 0). Fall back to summing the items' own net/gross
+  // prices so every pack list shows a sum.
+  const summed = (packList?.PackingListPackageOrderItems || []).reduce(
+    (total, item) => total + (readFiniteNumber(item.TotalNetPrice) ?? readFiniteNumber(item.TotalGrossPrice) ?? 0),
+    0,
+  )
+
+  return summed !== 0 ? summed : direct
 }
 
 function getDocumentUrl(document: SupplyInvoiceDeliveryDocument): string {
