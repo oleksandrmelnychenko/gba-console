@@ -2393,6 +2393,7 @@ export function NewSaleProductsStep({
         <EditShoppingCartOverlay
           currentItems={orderItems}
           isSplit={editCart.isSplit}
+          onClose={() => void exitEditCart()}
           selected={editCart.selected}
           splitItems={editCart.splitItems}
         />

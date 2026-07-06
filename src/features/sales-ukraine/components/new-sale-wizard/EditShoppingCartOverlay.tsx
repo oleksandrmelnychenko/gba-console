@@ -1,4 +1,5 @@
-import { Box, Group, Text } from '@mantine/core'
+import { ActionIcon, Box, Group, Text } from '@mantine/core'
+import { IconX } from '@tabler/icons-react'
 import { useEffect, useRef } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { DataTable } from '../../../../shared/ui/data-table/DataTable'
@@ -47,11 +48,13 @@ export type WizardCartSelection = {
 export function EditShoppingCartOverlay({
   currentItems,
   isSplit,
+  onClose,
   selected,
   splitItems,
 }: {
   currentItems: SalesUkraineOrderItem[]
   isSplit: boolean
+  onClose: () => void
   selected: WizardCartSelection | null
   splitItems: WizardSplitOrderItem[]
 }) {
@@ -101,7 +104,20 @@ export function EditShoppingCartOverlay({
     <Box
       className="new-sale-cart-edit-overlay"
       ref={rootRef}
+      aria-modal="true"
+      role="dialog"
     >
+      <Box className="new-sale-cart-edit-overlay__frame">
+        <ActionIcon
+          aria-label={t('Закрити')}
+          className="new-sale-cart-edit-overlay__close"
+          size="lg"
+          variant="subtle"
+          onClick={onClose}
+        >
+          <IconX size={18} />
+        </ActionIcon>
+        <Box className="new-sale-cart-edit-overlay__content">
       <CartTable
         discountHeader={t('Ручна знижка')}
         list="current"
@@ -118,6 +134,8 @@ export function EditShoppingCartOverlay({
           title={t('Нова накладна з рахунку')}
         />
       )}
+        </Box>
+      </Box>
     </Box>
   )
 }

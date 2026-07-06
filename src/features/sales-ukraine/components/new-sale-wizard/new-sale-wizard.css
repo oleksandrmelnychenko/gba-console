@@ -2562,17 +2562,52 @@
 
 .new-sale-cart-edit-overlay {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.94)),
-    var(--mantine-color-white);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(248, 250, 252, 0.86)),
+    rgba(255, 255, 255, 0.92);
   display: flex;
-  gap: 10px;
   inset: 0;
   min-height: 0;
   min-width: 0;
   overflow: hidden;
-  padding: 10px;
+  padding: 14px;
   position: absolute;
-  z-index: 20;
+  z-index: 40;
+}
+
+.new-sale-cart-edit-overlay__frame {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 10px;
+  box-shadow: 0 18px 52px rgba(20, 28, 38, 0.12);
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.new-sale-cart-edit-overlay__content {
+  display: flex;
+  flex: 1 1 auto;
+  gap: 10px;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  padding: 42px 10px 10px;
+}
+
+.new-sale-cart-edit-overlay__close {
+  color: var(--mantine-color-gray-8);
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  z-index: 3;
+}
+
+.new-sale-cart-edit-overlay__close:hover {
+  background: var(--mantine-color-gray-0);
+  color: var(--mantine-color-gray-9);
 }
 
 .new-sale-cart-edit {
