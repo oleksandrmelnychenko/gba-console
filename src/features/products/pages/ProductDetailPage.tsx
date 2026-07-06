@@ -659,7 +659,7 @@ export function ProductStockSummary({
           {reservationError}
         </Alert>
       )}
-      <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={8}>
+      <Group gap="lg" align="flex-start" wrap="wrap">
         {/* Static reserve fields, in the legacy stock-bar order. */}
         <TotalQtyTile label={t('В рахунку в ресейлі')} value={reservation.TotalProductReSaleQty} />
         <TotalQtyTile label={t('В рахунках в Польщі')} value={reservation.TotalReservedPL} />
@@ -676,7 +676,7 @@ export function ProductStockSummary({
         ))}
         {/* Total = sum of the warehouse amounts (legacy "Всього"). */}
         <TotalQtyTile label={t('Всього')} value={warehousesTotal} />
-      </SimpleGrid>
+      </Group>
     </Stack>
   )
 }
@@ -692,24 +692,15 @@ function ProductAvailabilityPlacementRow({
   const placements = availability.Storage?.ProductPlacements || []
   const hasPlacements = placements.length > 0
   const content = (
-    <Box
-      style={{
-        background: 'var(--mantine-color-gray-0)',
-        border: '1px solid var(--mantine-color-gray-2)',
-        borderRadius: 6,
-        cursor: hasPlacements ? 'pointer' : 'default',
-        height: '100%',
-        minWidth: 0,
-        padding: '5px 8px',
-      }}
-    >
+    <Stack gap={0} style={{ cursor: hasPlacements ? 'pointer' : 'default', minWidth: 0 }}>
       <Text size="xs" c="dimmed" lh={1.15} lineClamp={2} title={displayValue(availability.Storage?.Name)}>
         {displayValue(availability.Storage?.Name)}
+        {hasPlacements ? ' ▾' : ''}
       </Text>
-      <Text size="sm" fw={700}>
+      <Text className="app-money" size="sm" fw={700}>
         {formatAmount(availability.Amount)}
       </Text>
-    </Box>
+    </Stack>
   )
 
   if (!hasPlacements) {
@@ -959,22 +950,14 @@ function ProductPlacementEditor({
 
 function TotalQtyTile({ label, value }: { label: string; value?: number | null }) {
   return (
-    <Box
-      style={{
-        background: 'var(--mantine-color-gray-0)',
-        border: '1px solid var(--mantine-color-gray-2)',
-        borderRadius: 6,
-        height: '100%',
-        padding: '5px 8px',
-      }}
-    >
+    <Stack gap={0} style={{ minWidth: 0 }}>
       <Text size="xs" c="dimmed" lh={1.15} lineClamp={2}>
         {label}
       </Text>
       <Text className="app-money" size="sm" fw={700}>
         {formatAmount(value)}
       </Text>
-    </Box>
+    </Stack>
   )
 }
 
