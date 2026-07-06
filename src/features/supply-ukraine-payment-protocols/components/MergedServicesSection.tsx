@@ -131,20 +131,20 @@ export function MergedServicesSection({
   }
 
   return (
-    <Stack gap="md">
+    <Stack className="supply-payment-section" gap="md">
       <Group justify="space-between" align="center">
-        <Text fw={700} size="lg">
+        <Text className="app-section-title" fw={600} size="sm">
           {t('Об’єднаний сервіс')}
         </Text>
         {permissions.canCreateService && (
-          <Button color={CREATE_ACTION_COLOR} leftSection={<IconPlus size={16} />} variant="light" onClick={() => setNewOpen(true)}>
+          <Button className="supply-payment-action-button" color={CREATE_ACTION_COLOR} leftSection={<IconPlus size={16} />} variant="light" onClick={() => setNewOpen(true)}>
             {t('Додати')}
           </Button>
         )}
       </Group>
 
       {visibleServices.length === 0 ? (
-        <Text c="dimmed" size="sm">
+        <Text className="supply-payment-empty-state">
           {t('Об’єднаний сервіс')}: 0
         </Text>
       ) : (

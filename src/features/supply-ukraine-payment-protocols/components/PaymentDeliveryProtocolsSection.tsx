@@ -48,52 +48,52 @@ function ProtocolRow({
   const task = protocol.SupplyPaymentTask
 
   return (
-    <Card withBorder radius="md" padding="md">
+    <Card className="supply-payment-protocol-card" withBorder radius="md" padding="md">
       <Stack gap="xs">
         <Group justify="space-between" align="center">
-          <Text fw={700}>{protocol.SupplyOrderUkrainePaymentDeliveryProtocolKey?.Key || t('Платіжні задачі')}</Text>
+          <Text className="supply-payment-protocol-title">{protocol.SupplyOrderUkrainePaymentDeliveryProtocolKey?.Key || t('Платіжні задачі')}</Text>
           {canRemove && (
             <Tooltip label={t('Видалити')}>
-              <ActionIcon color="red" variant="subtle" onClick={onRemove}>
+              <ActionIcon className="supply-payment-remove-action" color="red" variant="subtle" onClick={onRemove}>
                 <IconTrash size={18} />
               </ActionIcon>
             </Tooltip>
           )}
         </Group>
 
-        <Group justify="space-between">
-          <Text c="dimmed" size="sm">
+        <Group className="supply-payment-detail-row" justify="space-between">
+          <Text>
             {t('Вартість Брутто')}
           </Text>
-          <Text fw={500} size="sm">
+          <Text className="is-mono">
             {formatMoney(protocol.Value)}
           </Text>
         </Group>
-        <Group justify="space-between">
-          <Text c="dimmed" size="sm">
+        <Group className="supply-payment-detail-row" justify="space-between">
+          <Text>
             {t('Відсоток')}
           </Text>
-          <Text fw={500} size="sm">
+          <Text className="is-mono">
             {formatPercent(protocol.Discount)}
           </Text>
         </Group>
-        <Group justify="space-between">
-          <Text c="dimmed" size="sm">
+        <Group className="supply-payment-detail-row" justify="space-between">
+          <Text>
             {t('Вид витрати')}
           </Text>
-          <Text fw={500} size="sm">
+          <Text className="is-strong">
             {protocol.IsAccounting ? t('Бух. витрата') : t('Упр. витрата')}
           </Text>
         </Group>
 
         {task && (
-          <Stack gap={2}>
-            <Text size="sm">{responsibleName(task.User) || ''}</Text>
-            <Text c="dimmed" size="xs">
+          <Stack className="supply-payment-task-snippet" gap={2}>
+            <Text>{responsibleName(task.User) || ''}</Text>
+            <Text>
               {t('Сплатити до')}: {formatDate(task.PayToDate)}
             </Text>
             {task.Comment && (
-              <Text c="dimmed" size="xs">
+              <Text>
                 {task.Comment}
               </Text>
             )}
@@ -244,20 +244,20 @@ export function PaymentDeliveryProtocolsSection({
   }
 
   return (
-    <Stack gap="md">
+    <Stack className="supply-payment-section" gap="md">
       <Group justify="space-between" align="center">
         <Text className="app-section-title" fw={600} size="sm">
           {t('Протоколи доставки')}
         </Text>
         {canCreateProtocol && (
-          <Button color={CREATE_ACTION_COLOR} leftSection={<IconPlus size={16} />} onClick={() => setFormOpen(true)}>
+          <Button className="supply-payment-action-button" color={CREATE_ACTION_COLOR} leftSection={<IconPlus size={16} />} onClick={() => setFormOpen(true)}>
             {t('Створити платіжну задачу')}
           </Button>
         )}
       </Group>
 
       {visibleProtocols.length === 0 ? (
-        <Text c="dimmed" size="sm">
+        <Text className="supply-payment-empty-state">
           {t('Протоколи доставки')}: 0
         </Text>
       ) : (

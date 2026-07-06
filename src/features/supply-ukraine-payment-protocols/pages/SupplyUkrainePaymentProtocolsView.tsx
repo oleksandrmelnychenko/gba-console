@@ -1,9 +1,10 @@
-import { Alert, Button, Card, Group, Loader, Stack, Text } from '@mantine/core'
+import { Alert, Badge, Button, Card, Group, Loader, Stack, Text } from '@mantine/core'
 import { IconAlertCircle, IconArrowLeft } from '@tabler/icons-react'
 import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { useAuth } from '../../auth/useAuth'
 import { getSupplyUkraineOrderDisplayNumber } from '../../../shared/supplyUkraineOrderNumbers'
 import {
@@ -24,6 +25,7 @@ import type {
   SupplyOrderUkrainePaymentDeliveryProtocolKey,
   SupplyPaymentTask,
 } from '../types'
+import './supply-ukraine-payment-protocols.css'
 
 const BACK_ROUTE = '/orders/ukraine/all'
 const PERMISSION_ADD_PAYMENT_PROTOCOL = 'LOGISTIC_WAY_ordersUkraineAllEdit_AddPaymentProtocolToProform_PKEY'
@@ -44,6 +46,11 @@ export function SupplyUkrainePaymentProtocolsView() {
   const [actionError, setActionError] = useValueState<string | null>(null)
   const canAddPaymentProtocol = hasPermission(PERMISSION_ADD_PAYMENT_PROTOCOL)
   const canRemovePaymentTask = hasPermission(PERMISSION_REMOVE_PAYMENT_TASK)
+  const orderNumber = getSupplyUkraineOrderDisplayNumber(order) || netid || ''
+
+  function closeSheet() {
+    navigate(BACK_ROUTE)
+  }
 
   function rejectAction(message: string): never {
     setActionError(message)
@@ -283,83 +290,93 @@ export function SupplyUkrainePaymentProtocolsView() {
   }
 
   return (
-    <Stack gap="lg">
-      <Group justify="space-between" align="center">
-        <Button color="gray" leftSection={<IconArrowLeft size={16} />} variant="subtle" onClick={() => navigate(BACK_ROUTE)}>
-          {t('Назад')}
-        </Button>
-        <Stack gap={2} align="flex-end">
-          <Text fw={700} size="xl">
-            {t('Платіжні задачі')}
-          </Text>
-          <Group gap={6}>
-            <Text c="dimmed" size="sm">
-              {t('Замовлення на Україну')}
-            </Text>
-            <Text fw={600} size="sm">
-              {getSupplyUkraineOrderDisplayNumber(order) || netid}
-            </Text>
-          </Group>
-        </Stack>
-      </Group>
-
-      {error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-          {error}
-        </Alert>
-      )}
-      {actionError && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-          {actionError}
-        </Alert>
-      )}
-
-      {isLoading ? (
-        <Group justify="center" py="xl">
-          <Loader />
+    <AppDrawer
+      className="supply-payment-sheet"
+      opened
+      position="right"
+      size="wide"
+      title={
+        <div className="supply-payment-sheet-title">
+          <span>{t('Платіжні задачі')}</span>
+          <div>
+            <small>{t('Замовлення на Україну')}</small>
+            {orderNumber && (
+              <Badge className="app-role-pill is-yellow supply-payment-sheet-order-pill" variant="light">
+                {orderNumber}
+              </Badge>
+            )}
+          </div>
+        </div>
+      }
+      onClose={closeSheet}
+    >
+      <Stack className="supply-payment-sheet-body" gap="md">
+        <Group justify="flex-start">
+          <Button className="supply-payment-sheet-back" leftSection={<IconArrowLeft size={16} />} variant="subtle" onClick={closeSheet}>
+            {t('До списку')}
+          </Button>
         </Group>
-      ) : order ? (
-        <Stack gap="lg">
-          <Card withBorder radius="md" padding="lg">
-            <MergedServicesSection
-              isSaving={isSaving}
-              permissions={{
-                canCreatePaymentTask: canAddPaymentProtocol,
-                canCreateService: canAddPaymentProtocol,
-                canRemovePaymentTask,
-                canRemoveService: canRemovePaymentTask,
-              }}
-              services={order.MergedServices || []}
-              users={users}
-              onAddPaymentTask={handleAddPaymentTask}
-              onCreateService={handleCreateService}
-              onRemovePaymentTask={handleRemovePaymentTask}
-              onRemoveService={handleRemoveService}
-            />
-          </Card>
 
-          <Card withBorder radius="md" padding="lg">
-            <PaymentDeliveryProtocolsSection
-              canCreateProtocol={canAddPaymentProtocol}
-              canRemoveProtocol={canRemovePaymentTask}
-              isSaving={isSaving}
-              protocolKeys={protocolKeys}
-              protocols={order.SupplyOrderUkrainePaymentDeliveryProtocols || []}
-              totalGrossPriceLocal={order.TotalGrossPriceLocal || 0}
-              users={users}
-              onCreateProtocol={handleCreateProtocol}
-              onRemoveProtocol={handleRemoveProtocol}
-            />
+        {error && (
+          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            {error}
+          </Alert>
+        )}
+        {actionError && (
+          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            {actionError}
+          </Alert>
+        )}
+
+        {isLoading ? (
+          <Card className="app-section-card supply-payment-section-card" withBorder radius="md" padding="md">
+            <Group justify="center" py="xl">
+              <Loader color="orange" size="sm" />
+            </Group>
           </Card>
-        </Stack>
-      ) : (
-        !error && (
-          <Text c="dimmed" size="sm">
-            {t('Замовлення не знайдено')}
-          </Text>
-        )
-      )}
-    </Stack>
+        ) : order ? (
+          <Stack gap="md">
+            <Card className="app-section-card supply-payment-section-card" withBorder radius="md" padding="md">
+              <MergedServicesSection
+                isSaving={isSaving}
+                permissions={{
+                  canCreatePaymentTask: canAddPaymentProtocol,
+                  canCreateService: canAddPaymentProtocol,
+                  canRemovePaymentTask,
+                  canRemoveService: canRemovePaymentTask,
+                }}
+                services={order.MergedServices || []}
+                users={users}
+                onAddPaymentTask={handleAddPaymentTask}
+                onCreateService={handleCreateService}
+                onRemovePaymentTask={handleRemovePaymentTask}
+                onRemoveService={handleRemoveService}
+              />
+            </Card>
+
+            <Card className="app-section-card supply-payment-section-card" withBorder radius="md" padding="md">
+              <PaymentDeliveryProtocolsSection
+                canCreateProtocol={canAddPaymentProtocol}
+                canRemoveProtocol={canRemovePaymentTask}
+                isSaving={isSaving}
+                protocolKeys={protocolKeys}
+                protocols={order.SupplyOrderUkrainePaymentDeliveryProtocols || []}
+                totalGrossPriceLocal={order.TotalGrossPriceLocal || 0}
+                users={users}
+                onCreateProtocol={handleCreateProtocol}
+                onRemoveProtocol={handleRemoveProtocol}
+              />
+            </Card>
+          </Stack>
+        ) : (
+          !error && (
+            <Card className="app-section-card supply-payment-section-card" withBorder radius="md" padding="md">
+              <Text className="supply-payment-empty-state">{t('Замовлення не знайдено')}</Text>
+            </Card>
+          )
+        )}
+      </Stack>
+    </AppDrawer>
   )
 }
 

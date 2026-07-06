@@ -1,0 +1,200 @@
+.supply-payment-sheet-title {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.supply-payment-sheet-title > span {
+  color: var(--mantine-color-gray-9);
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.2;
+}
+
+.supply-payment-sheet-title > div {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+}
+
+.supply-payment-sheet-title small {
+  color: var(--mantine-color-gray-6);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.supply-payment-sheet-order-pill {
+  max-width: 220px;
+}
+
+.supply-payment-sheet-body {
+  min-width: 0;
+}
+
+.supply-payment-sheet-back.mantine-Button-root {
+  color: var(--mantine-color-gray-7);
+  padding-left: 0;
+}
+
+.supply-payment-sheet-back .mantine-Button-label,
+.supply-payment-action-button .mantine-Button-label {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.supply-payment-section-card.mantine-Card-root {
+  border-color: var(--mantine-color-gray-2);
+  box-shadow: none;
+  padding: 14px 16px;
+}
+
+.supply-payment-section {
+  min-width: 0;
+}
+
+.supply-payment-empty-state {
+  align-items: center;
+  color: var(--mantine-color-gray-7);
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-weight: 600;
+  gap: 8px;
+  letter-spacing: 0;
+  line-height: 1.25;
+}
+
+.supply-payment-empty-state::before {
+  background: var(--brand-orange);
+  border-radius: 999px;
+  content: '';
+  display: inline-block;
+  flex: 0 0 auto;
+  height: 7px;
+  width: 7px;
+}
+
+.supply-payment-service-card.mantine-Card-root,
+.supply-payment-protocol-card.mantine-Card-root,
+.supply-payment-task-card.mantine-Card-root,
+.supply-payment-inline-form.mantine-Card-root {
+  border-color: var(--mantine-color-gray-2);
+  box-shadow: none;
+}
+
+.supply-payment-service-title,
+.supply-payment-protocol-title,
+.supply-payment-task-title,
+.supply-payment-inline-form-title {
+  color: var(--mantine-color-gray-8);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: 0;
+  line-height: 1.2;
+}
+
+.supply-payment-detail-row {
+  align-items: baseline;
+  column-gap: 14px;
+  display: grid;
+  grid-template-columns: minmax(120px, 0.95fr) minmax(0, 1.25fr);
+  min-width: 0;
+  padding: 2px 0;
+}
+
+.supply-payment-detail-row > span,
+.supply-payment-detail-row > .mantine-Text-root:first-child {
+  color: var(--mantine-color-gray-6);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.2;
+  min-width: 0;
+}
+
+.supply-payment-detail-row > strong,
+.supply-payment-detail-row > .mantine-Text-root:last-child {
+  color: var(--mantine-color-gray-8);
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.2;
+  min-width: 0;
+  overflow: hidden;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.supply-payment-detail-row > strong.is-mono,
+.supply-payment-detail-row > .mantine-Text-root.is-mono {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.supply-payment-detail-row > .mantine-Text-root.is-strong {
+  font-weight: 650;
+}
+
+.supply-payment-document-row .mantine-Text-root:first-child,
+.supply-payment-document-list > .mantine-Text-root:first-child {
+  color: var(--mantine-color-gray-6);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.supply-payment-document-name {
+  color: var(--mantine-color-gray-8);
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.supply-payment-task-person {
+  color: var(--mantine-color-gray-8);
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.supply-payment-task-meta,
+.supply-payment-task-snippet .mantine-Text-root {
+  color: var(--mantine-color-gray-6);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.25;
+}
+
+.supply-payment-task-snippet {
+  border-top: 1px solid var(--mantine-color-gray-2);
+  margin-top: 4px;
+  padding-top: 8px;
+}
+
+.supply-payment-remove-action.mantine-ActionIcon-root {
+  color: var(--mantine-color-gray-6);
+}
+
+.supply-payment-remove-action.mantine-ActionIcon-root:hover {
+  color: var(--mantine-color-red-7);
+}
+
+@media (max-width: 720px) {
+  .supply-payment-detail-row {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 3px;
+  }
+
+  .supply-payment-detail-row > strong,
+  .supply-payment-detail-row > .mantine-Text-root:last-child {
+    text-align: left;
+  }
+}

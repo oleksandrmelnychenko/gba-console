@@ -503,11 +503,11 @@ export function SupplyUkraineOrderOverviewPage() {
             <DetailValue label={t('Дата')} value={formatDateTime(order?.FromDate)} />
             <DetailValue label={t('Інвойс')} value={order?.InvNumber} />
             <DetailValue label={t('Дата інвойсу')} value={formatDateTime(order?.InvDate)} />
-            <DetailValue label={t('Постачальник')} value={getEntityName(order?.Supplier)} />
-            <DetailValue label={t('Договір')} value={order?.ClientAgreement?.Agreement?.Name} />
+            <DetailValue mono={false} label={t('Постачальник')} value={getEntityName(order?.Supplier)} />
+            <DetailValue mono={false} label={t('Договір')} value={order?.ClientAgreement?.Agreement?.Name} />
             <DetailValue label={t('Валюта')} value={currencyCode} />
-            <DetailValue label={t('Організація')} value={getRecipientOrganizationName(order)} />
-            <DetailValue label={t('Відповідальний')} value={getEntityName(order?.Responsible)} />
+            <DetailValue mono={false} label={t('Організація')} value={getRecipientOrganizationName(order)} />
+            <DetailValue mono={false} label={t('Відповідальний')} value={getEntityName(order?.Responsible)} />
             <DetailValue label={t('Кількість')} value={formatAmount(readNumber(orderRecord.TotalQty))} />
             <DetailValue label={t('Сума')} value={formatMoney(order?.TotalGrossPriceLocal)} />
             <DetailValue label={currencyCode && currencyCode !== 'EUR' ? `${t('Курс')} ${currencyCode} ${t('до')} EUR` : t('Курс')} value={formatAmount(order?.ExchangeRateAmount)} />
@@ -761,7 +761,7 @@ function useOverviewColumns({
         width: 110,
         align: 'right',
         accessor: (row) => row.qty,
-        cell: (row) => formatAmount(row.qty),
+        cell: (row) => <span className="app-money">{formatAmount(row.qty)}</span>,
       },
       {
         id: 'measureUnit',
@@ -776,7 +776,7 @@ function useOverviewColumns({
         width: 110,
         align: 'right',
         accessor: (row) => row.unitPrice,
-        cell: (row) => formatMoney(row.unitPrice),
+        cell: (row) => <span className="app-money">{formatMoney(row.unitPrice)}</span>,
       },
       {
         id: 'amount',
@@ -784,14 +784,14 @@ function useOverviewColumns({
         width: 120,
         align: 'right',
         accessor: (row) => row.amount,
-        cell: (row) => formatMoney(row.amount),
+        cell: (row) => <span className="app-money">{formatMoney(row.amount)}</span>,
       },
       {
         id: 'isImported',
         header: t('Імпорт'),
         width: 96,
         accessor: (row) => row.isImported,
-        cell: (row) => row.isImported ? <Badge color="green" variant="light">{t('Так')}</Badge> : <Badge color="gray" variant="light">{t('Ні')}</Badge>,
+        cell: (row) => row.isImported ? <Badge className="app-role-pill is-green" variant="light">{t('Так')}</Badge> : <Badge className="app-role-pill is-gray" variant="light">{t('Ні')}</Badge>,
       },
       {
         id: 'vatPercent',
@@ -821,7 +821,7 @@ function useOverviewColumns({
         width: 120,
         align: 'right',
         accessor: (row) => row.vatAccounting,
-        cell: (row) => formatMoney(row.vatAccounting),
+        cell: (row) => <span className="app-money">{formatMoney(row.vatAccounting)}</span>,
       },
       {
         id: 'totalWithVat',
@@ -829,7 +829,7 @@ function useOverviewColumns({
         width: 120,
         align: 'right',
         accessor: (row) => row.totalWithVat,
-        cell: (row) => formatMoney(row.totalWithVat),
+        cell: (row) => <span className="app-money">{formatMoney(row.totalWithVat)}</span>,
       },
       {
         id: 'netWeight',
@@ -837,7 +837,7 @@ function useOverviewColumns({
         width: 120,
         align: 'right',
         accessor: (row) => row.netWeight,
-        cell: (row) => formatAmount(row.netWeight),
+        cell: (row) => <span className="app-money">{formatAmount(row.netWeight)}</span>,
       },
       {
         id: 'grossWeight',
@@ -845,7 +845,7 @@ function useOverviewColumns({
         width: 120,
         align: 'right',
         accessor: (row) => row.grossWeight,
-        cell: (row) => formatAmount(row.grossWeight),
+        cell: (row) => <span className="app-money">{formatAmount(row.grossWeight)}</span>,
       },
       {
         id: 'accountingDeliveryExpenseAmount',
@@ -853,7 +853,7 @@ function useOverviewColumns({
         width: 120,
         align: 'right',
         accessor: (row) => row.accountingDeliveryExpenseAmount,
-        cell: (row) => formatMoney(row.accountingDeliveryExpenseAmount),
+        cell: (row) => <span className="app-money">{formatMoney(row.accountingDeliveryExpenseAmount)}</span>,
       },
       {
         id: 'deliveryExpenseAmount',
@@ -861,7 +861,7 @@ function useOverviewColumns({
         width: 120,
         align: 'right',
         accessor: (row) => row.deliveryExpenseAmount,
-        cell: (row) => formatMoney(row.deliveryExpenseAmount),
+        cell: (row) => <span className="app-money">{formatMoney(row.deliveryExpenseAmount)}</span>,
       },
       {
         id: 'accountingCost',
@@ -869,7 +869,7 @@ function useOverviewColumns({
         width: 140,
         align: 'right',
         accessor: (row) => row.accountingCost,
-        cell: (row) => formatMoney(row.accountingCost),
+        cell: (row) => <span className="app-money">{formatMoney(row.accountingCost)}</span>,
       },
       {
         id: 'managementCost',
@@ -877,7 +877,7 @@ function useOverviewColumns({
         width: 140,
         align: 'right',
         accessor: (row) => row.managementCost,
-        cell: (row) => formatMoney(row.managementCost),
+        cell: (row) => <span className="app-money">{formatMoney(row.managementCost)}</span>,
       },
     ],
     [isSavingVatItems, onChangeVatPercent, onOpenProductCard, t],
@@ -944,20 +944,24 @@ function useDocumentColumns(): DataTableColumn<SupplyOrderUkraineDocument>[] {
   )
 }
 
-function DetailValue({ label, value }: { label: string, value: unknown }) {
+function DetailValue({ label, mono = true, value }: { label: string, mono?: boolean, value: unknown }) {
   return (
     <Stack gap={2}>
-      <Text c="dimmed" size="xs" tt="uppercase">{label}</Text>
-      <Text fw={600} size="sm">{displayValue(value)}</Text>
+      <Text c="dimmed" size="xs" tt="uppercase" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{label}</Text>
+      {mono ? (
+        <Text className="app-money" size="sm">{displayValue(value)}</Text>
+      ) : (
+        <Text c="gray.8" fw={600} size="sm">{displayValue(value)}</Text>
+      )}
     </Stack>
   )
 }
 
 function TotalValue({ label, value }: { label: string, value: unknown }) {
   return (
-    <Stack gap={0} align="flex-end">
-      <Text c="dimmed" size="xs">{label}</Text>
-      <Text fw={700}>{displayValue(value)}</Text>
+    <Stack gap={2} align="flex-end">
+      <Text c="dimmed" size="xs" tt="uppercase" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{label}</Text>
+      <Text className="app-money" fw={700} size="sm">{displayValue(value)}</Text>
     </Stack>
   )
 }

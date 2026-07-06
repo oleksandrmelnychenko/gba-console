@@ -49,26 +49,22 @@ function toProtocolUserOptions(users: ProtocolUser[]): SelectOption[] {
 
 function DocumentLink({ document }: { document: SupplyDocument }) {
   if (!document.DocumentUrl) {
-    return <Text size="sm">{document.FileName || '-'}</Text>
+    return <Text className="supply-payment-document-name">{document.FileName || '-'}</Text>
   }
 
   return (
-    <Anchor href={upgradeHttpToHttps(document.DocumentUrl)} rel="noreferrer" size="sm" target="_blank">
+    <Anchor className="supply-payment-document-name" href={upgradeHttpToHttps(document.DocumentUrl)} rel="noreferrer" target="_blank">
       {document.FileName || document.DocumentUrl}
     </Anchor>
   )
 }
 
-function LabelValueRow({ children, label }: { children: ReactNode; label: string }) {
+function LabelValueRow({ children, label, mono = false }: { children: ReactNode; label: string; mono?: boolean }) {
   return (
-    <Group justify="space-between" align="flex-start" wrap="nowrap" gap="md">
-      <Text c="dimmed" size="sm">
-        {label}
-      </Text>
-      <Text fw={500} size="sm" ta="right">
-        {children}
-      </Text>
-    </Group>
+    <div className="supply-payment-detail-row">
+      <span>{label}</span>
+      <strong className={mono ? 'is-mono' : undefined}>{children}</strong>
+    </div>
   )
 }
 
@@ -86,26 +82,26 @@ function PaymentTaskRow({
   const { t } = useI18n()
 
   return (
-    <Card withBorder radius="sm" padding="sm">
+    <Card className="supply-payment-task-card" withBorder radius="sm" padding="sm">
       <Group justify="space-between" align="flex-start" wrap="nowrap">
         <Stack gap={2}>
-          <Text fw={600} size="sm">
+          <Text className="supply-payment-task-title">
             {t('Платіжна задача')}
             {isAccounting ? ` (${t('Бух.')})` : ''}
           </Text>
-          <Text size="sm">{responsibleName(task.User) || '-'}</Text>
-          <Text c="dimmed" size="xs">
+          <Text className="supply-payment-task-person">{responsibleName(task.User) || '-'}</Text>
+          <Text className="supply-payment-task-meta">
             {t('Сплатити до')}: {formatDate(task.PayToDate)}
           </Text>
           {task.Comment && (
-            <Text c="dimmed" size="xs">
+            <Text className="supply-payment-task-meta">
               {task.Comment}
             </Text>
           )}
         </Stack>
         {canRemove && (
           <Tooltip label={t('Видалити')}>
-            <ActionIcon color="red" variant="subtle" onClick={onRemove}>
+            <ActionIcon className="supply-payment-remove-action" color="red" variant="subtle" onClick={onRemove}>
               <IconTrash size={18} />
             </ActionIcon>
           </Tooltip>
@@ -140,9 +136,9 @@ function AddPaymentTaskForm({
   const userOptions = toProtocolUserOptions(users)
 
   return (
-    <Card withBorder radius="sm" padding="sm">
+    <Card className="supply-payment-inline-form" withBorder radius="sm" padding="sm">
       <Stack gap="sm">
-        <Text fw={600} size="sm">
+        <Text className="supply-payment-inline-form-title">
           {t('Створити платіжну задачу')}
           {isAccounting ? ` (${t('Бух.')})` : ''}
         </Text>
@@ -162,10 +158,11 @@ function AddPaymentTaskForm({
         />
         <Textarea label={t('Коментар')} value={comment} onChange={(event) => setComment(event.currentTarget.value)} />
         <Group justify="flex-end" gap="sm">
-          <Button color="gray" disabled={isSaving} variant="light" onClick={onCancel}>
+          <Button className="supply-payment-action-button" color="gray" disabled={isSaving} variant="light" onClick={onCancel}>
             {t('Скасувати')}
           </Button>
           <Button
+            className="supply-payment-action-button"
             color={CREATE_ACTION_COLOR}
             loading={isSaving}
             onClick={() => {
@@ -219,20 +216,20 @@ export function MergedServiceCard({
   }
 
   return (
-    <Card withBorder radius="md" padding="md">
+    <Card className="supply-payment-service-card" withBorder radius="md" padding="md">
       <Stack gap="xs">
         <Group justify="space-between" align="center">
-          <Text fw={700}>{t('Об’єднаний сервіс')}</Text>
+          <Text className="supply-payment-service-title">{t('Об’єднаний сервіс')}</Text>
           {permissions.canRemoveService && (
             <Tooltip label={t('Видалити')}>
-              <ActionIcon color="red" variant="subtle" onClick={() => onRemoveService(service)}>
+              <ActionIcon className="supply-payment-remove-action" color="red" variant="subtle" onClick={() => onRemoveService(service)}>
                 <IconTrash size={18} />
               </ActionIcon>
             </Tooltip>
           )}
         </Group>
 
-        <LabelValueRow label={t('Номер інвойса')}>{service.Number || '-'}</LabelValueRow>
+        <LabelValueRow mono label={t('Номер інвойса')}>{service.Number || '-'}</LabelValueRow>
         <LabelValueRow label={t('Постачальник послуг')}>{service.SupplyOrganization?.Name || '-'}</LabelValueRow>
         <LabelValueRow label={t('Договір')}>
           {service.SupplyOrganizationAgreement?.Name || '-'} ({currencyCode})
@@ -240,19 +237,19 @@ export function MergedServiceCard({
         <LabelValueRow label={t('Тип')}>{service.ConsumableProduct?.Name || '-'}</LabelValueRow>
         <LabelValueRow label={t('Назва')}>{service.Name || '-'}</LabelValueRow>
 
-        <LabelValueRow label={t('Вартість Брутто')}>{formatMoney(service.GrossPrice, currencyCode)}</LabelValueRow>
-        <LabelValueRow label={t('Вартість Нетто')}>{formatMoney(service.NetPrice, currencyCode)}</LabelValueRow>
-        <LabelValueRow label={t('ПДВ %')}>{service.VatPercent ?? 0}</LabelValueRow>
-        <LabelValueRow label={t('ПДВ')}>{formatMoney(service.Vat, currencyCode)}</LabelValueRow>
+        <LabelValueRow mono label={t('Вартість Брутто')}>{formatMoney(service.GrossPrice, currencyCode)}</LabelValueRow>
+        <LabelValueRow mono label={t('Вартість Нетто')}>{formatMoney(service.NetPrice, currencyCode)}</LabelValueRow>
+        <LabelValueRow mono label={t('ПДВ %')}>{service.VatPercent ?? 0}</LabelValueRow>
+        <LabelValueRow mono label={t('ПДВ')}>{formatMoney(service.Vat, currencyCode)}</LabelValueRow>
 
-        <LabelValueRow label={`${t('Вартість Брутто')} (${t('Бух.')})`}>
+        <LabelValueRow mono label={`${t('Вартість Брутто')} (${t('Бух.')})`}>
           {formatMoney(service.AccountingGrossPrice, currencyCode)}
         </LabelValueRow>
-        <LabelValueRow label={`${t('Вартість Нетто')} (${t('Бух.')})`}>
+        <LabelValueRow mono label={`${t('Вартість Нетто')} (${t('Бух.')})`}>
           {formatMoney(service.AccountingNetPrice, currencyCode)}
         </LabelValueRow>
-        <LabelValueRow label={`${t('ПДВ %')} (${t('Бух.')})`}>{service.AccountingVatPercent ?? 0}</LabelValueRow>
-        <LabelValueRow label={`${t('ПДВ')} (${t('Бух.')})`}>{formatMoney(service.AccountingVat, currencyCode)}</LabelValueRow>
+        <LabelValueRow mono label={`${t('ПДВ %')} (${t('Бух.')})`}>{service.AccountingVatPercent ?? 0}</LabelValueRow>
+        <LabelValueRow mono label={`${t('ПДВ')} (${t('Бух.')})`}>{formatMoney(service.AccountingVat, currencyCode)}</LabelValueRow>
 
         {service.IsIncludeAccountingValue && (
           <Badge className="app-role-pill" variant="light">
@@ -260,17 +257,17 @@ export function MergedServiceCard({
           </Badge>
         )}
 
-        <LabelValueRow label={t('Від якої дати')}>{formatDate(service.FromDate)}</LabelValueRow>
+        <LabelValueRow mono label={t('Від якої дати')}>{formatDate(service.FromDate)}</LabelValueRow>
 
         {service.SupplyInformationTask && (
-          <LabelValueRow label={t('Доставка в межах країни')}>
+          <LabelValueRow mono label={t('Доставка в межах країни')}>
             {formatMoney(service.SupplyInformationTask.GrossPrice, currencyCode)}
           </LabelValueRow>
         )}
 
         {service.SupplyServiceAccountDocument && (
-          <Group gap="xs">
-            <Text c="dimmed" size="sm">
+          <Group className="supply-payment-document-row" gap="xs">
+            <Text>
               {t('Рахунок')}:
             </Text>
             <DocumentLink document={service.SupplyServiceAccountDocument} />
@@ -278,8 +275,8 @@ export function MergedServiceCard({
         )}
 
         {service.ActProvidingServiceDocument && (
-          <Group gap="xs">
-            <Text c="dimmed" size="sm">
+          <Group className="supply-payment-document-row" gap="xs">
+            <Text>
               {t('Акт надання послуг')}:
             </Text>
             <DocumentLink document={service.ActProvidingServiceDocument} />
@@ -287,8 +284,8 @@ export function MergedServiceCard({
         )}
 
         {invoiceDocuments.length > 0 && (
-          <Stack gap={4}>
-            <Text c="dimmed" size="sm">
+          <Stack className="supply-payment-document-list" gap={4}>
+            <Text>
               {t('Інші файли')}:
             </Text>
             {invoiceDocuments.map((document, index) => (
@@ -325,6 +322,7 @@ export function MergedServiceCard({
             />
           ) : (
             <Button
+              className="supply-payment-action-button"
               color={CREATE_ACTION_COLOR}
               leftSection={<IconPlus size={16} />}
               variant="light"
@@ -347,6 +345,7 @@ export function MergedServiceCard({
             />
           ) : (
             <Button
+              className="supply-payment-action-button"
               color={CREATE_ACTION_COLOR}
               leftSection={<IconPlus size={16} />}
               variant="light"
