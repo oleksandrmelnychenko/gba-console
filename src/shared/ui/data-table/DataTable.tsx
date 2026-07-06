@@ -546,7 +546,11 @@ export function DataTable<TData>({
               expandedRowIds={expandedRowIds}
               fillerColumnWidth={fillerColumnWidth}
               fillColumnId={fillColumnId}
-              isLoading={isLoading}
+              // Hold the skeleton until the viewport width is measured on fill
+              // tables — otherwise the fill column renders narrow (base width)
+              // then jumps wide once measured, reading as a column "sliding" to
+              // full width during load.
+              isLoading={isLoading && (!shouldFillAvailableWidth || scrollViewportWidth > 0)}
               pinnedLeftOffset={expandColumnWidth}
               table={table}
               visibleColumnCount={visibleColumnCount}
