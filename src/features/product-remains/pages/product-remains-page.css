@@ -28,7 +28,6 @@
     minmax(118px, 148px)
     minmax(118px, 148px)
     minmax(190px, 1fr)
-    minmax(76px, 92px)
     auto;
   width: 100%;
 }
@@ -103,16 +102,6 @@
   min-height: 36px;
 }
 
-.product-remains-table-footer {
-  min-height: 36px;
-}
-
-.product-remains-table-footer .mantine-Button-label {
-  font-family: var(--font-mono);
-  font-weight: 600;
-  letter-spacing: 0;
-}
-
 .product-remains-totals-footer {
   padding: 2px 0 4px;
 }
@@ -166,7 +155,6 @@
       minmax(118px, 140px)
       minmax(118px, 140px)
       minmax(170px, 240px)
-      minmax(76px, 86px)
       auto;
     min-width: 960px;
   }

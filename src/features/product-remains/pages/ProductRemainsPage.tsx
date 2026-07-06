@@ -19,7 +19,6 @@ import { AppModal } from "../../../shared/ui/AppModal"
 import {
   IconAlertCircle,
   IconArrowsExchange,
-  IconChevronDown,
   IconDownload,
   IconFileTypePdf,
   IconFileTypeXls,
@@ -36,6 +35,7 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import {
   exportGroupedProductRemains,
@@ -172,6 +172,10 @@ function useProductRemainsPageModel() {
   const supplierSelectOptions = useMemo(() => buildSupplierOptions(supplierOptions), [supplierOptions])
   const batchColumns = useProductRemainBatchColumns()
   const productColumns = useProductRemainProductColumns(openMovement)
+  const batchPage = getPageFromOffset(batchOffset, pageSize)
+  const productPage = getPageFromOffset(productOffset, pageSize)
+  const batchTotalPages = getTotalPages(batchTotals, pageSize)
+  const productTotalPages = getTotalPages(productTotals, pageSize)
   const { density: batchDensity, toggleDensity: toggleBatchDensity } = useDataTableDensity(
     'product-remains-batches',
     BATCHES_TABLE_DEFAULT_LAYOUT.density,
@@ -271,6 +275,24 @@ function useProductRemainsPageModel() {
   function resetAllData() {
     resetBatchData()
     resetProductData()
+  }
+
+  function changePageSize(nextPageSize: number) {
+    setPageSize(nextPageSize)
+    resetAllData()
+  }
+
+  function changeActivePage(nextPage: number) {
+    const nextOffset = Math.max(0, nextPage - 1) * pageSize
+
+    if (activeTab === 'batches') {
+      setBatchOffset(nextOffset)
+      setSelectedBatch(null)
+      return
+    }
+
+    setProductOffset(nextOffset)
+    setSelectedMovementRow(null)
   }
 
   function updateProductSearch(nextValue: string) {
@@ -374,15 +396,15 @@ function useProductRemainsPageModel() {
   }
 
   return {
-    activeError, activeTab, batchColumns, batchDensity, batchDetailColumns, batchHasMore, batchRows, batchTotals,
+    activeError, activeTab, batchColumns, batchDensity, batchDetailColumns, batchHasMore, batchPage, batchRows, batchTotals, batchTotalPages,
     dateFrom, dateTo, downloadDocument, downloadModalOpened, exportingTab, filterError, isActiveLoading,
     isProductStorageSelectionInvalid,
     isLoadingBatches, isLoadingProducts, isLoadingStorages, isLoadingSuppliers, openMovement, pageSize, productColumns,
-    productDensity, productHasMore, productRows, productSearchDraft, productStorageError, productTotals, resourceError,
+    productDensity, productHasMore, productPage, productRows, productSearchDraft, productStorageError, productTotals, productTotalPages, resourceError,
     selectedBatch, selectedMovementRow, selectedStorageValue: storageSelectValue, selectedSupplierNetId, storageNetId, storageOptions, supplierNetId,
-    supplierSearch, supplierSelectOptions, handleExport, refreshData, resetAllData, resetFilters, selectActiveTab,
-    toggleBatchDensity, toggleProductDensity, setBatchOffset, setDateFrom, setDateTo, setDownloadModalOpened, setPageSize,
-    setProductOffset, setSelectedBatch, setSelectedMovementRow, setSelectedStorageValue,
+    supplierSearch, supplierSelectOptions, changeActivePage, changePageSize, handleExport, refreshData, resetAllData, resetFilters, selectActiveTab,
+    toggleBatchDensity, toggleProductDensity, setDateFrom, setDateTo, setDownloadModalOpened,
+    setSelectedBatch, setSelectedMovementRow, setSelectedStorageValue,
     setSupplierNetId, setSupplierSearch, updateProductSearch,
   }
 }
@@ -541,7 +563,7 @@ function useProductRemainBatchesLoader({
         })
 
         if (!cancelled) {
-          setBatchRows((currentRows) => (currentOffset > 0 ? currentRows.concat(response.Collection) : response.Collection))
+          setBatchRows(response.Collection)
           setBatchTotals(response)
           setBatchHasMore(hasMoreCollectionPage(currentOffset, response, pageSize))
         }
@@ -640,11 +662,7 @@ function useProductRemainProductsLoader({
         })
 
         if (!cancelled) {
-          setProductRows((currentRows) => {
-            const previousRows = currentOffset > 0 ? currentRows : []
-            const combinedRows = previousRows.concat(response.Collection)
-            return combinedRows.map((row, index) => ({ ...row, RowNumber: index + 1 }))
-          })
+          setProductRows(response.Collection.map((row, index) => ({ ...row, RowNumber: currentOffset + index + 1 })))
           setProductTotals(response)
           setProductHasMore(hasMoreCollectionPage(currentOffset, response, pageSize))
         }
@@ -687,6 +705,18 @@ function hasMoreCollectionPage<TItem>(
   return response.Collection.length === pageSize
 }
 
+function getPageFromOffset(offset: number, pageSize: number): number {
+  return Math.floor(Math.max(0, offset) / Math.max(1, pageSize)) + 1
+}
+
+function getTotalPages<TItem>(totals: CollectionWithTotals<TItem> | null, pageSize: number): number | undefined {
+  const totalRowsQty = totals?.TotalRowsQtyFiltered ?? totals?.TotalRowsQty
+
+  return typeof totalRowsQty === 'number'
+    ? Math.max(1, Math.ceil(totalRowsQty / Math.max(1, pageSize)))
+    : undefined
+}
+
 export function ProductRemainsPage() {
   const model = useProductRemainsPageModel()
 
@@ -696,15 +726,15 @@ export function ProductRemainsPage() {
 function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProductRemainsPageModel> }) {
   const { t } = useI18n()
   const {
-    activeError, activeTab, batchColumns, batchDensity, batchDetailColumns, batchHasMore, batchRows, batchTotals,
+    activeError, activeTab, batchColumns, batchDensity, batchDetailColumns, batchHasMore, batchPage, batchRows, batchTotals, batchTotalPages,
     dateFrom, dateTo, downloadDocument, downloadModalOpened, exportingTab, filterError, isActiveLoading,
     isProductStorageSelectionInvalid,
     isLoadingBatches, isLoadingProducts, isLoadingStorages, isLoadingSuppliers, openMovement, pageSize, productColumns,
-    productDensity, productHasMore, productRows, productSearchDraft, productStorageError, productTotals, resourceError,
+    productDensity, productHasMore, productPage, productRows, productSearchDraft, productStorageError, productTotals, productTotalPages, resourceError,
     selectedBatch, selectedMovementRow, selectedStorageValue, selectedSupplierNetId, storageNetId, storageOptions, supplierNetId,
-    supplierSearch, supplierSelectOptions, handleExport, refreshData, resetAllData, resetFilters, selectActiveTab,
-    toggleBatchDensity, toggleProductDensity, setBatchOffset, setDateFrom, setDateTo, setDownloadModalOpened, setPageSize,
-    setProductOffset, setSelectedBatch, setSelectedMovementRow, setSelectedStorageValue,
+    supplierSearch, supplierSelectOptions, changeActivePage, changePageSize, handleExport, refreshData, resetAllData, resetFilters, selectActiveTab,
+    toggleBatchDensity, toggleProductDensity, setDateFrom, setDateTo, setDownloadModalOpened,
+    setSelectedBatch, setSelectedMovementRow, setSelectedStorageValue,
     setSupplierNetId, setSupplierSearch, updateProductSearch,
   } = model
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
@@ -780,16 +810,6 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
               }}
               onSearchChange={setSupplierSearch}
             />
-            <Select
-              allowDeselect={false}
-              data={pageSizeOptions}
-              label={t('Ліміт')}
-              value={String(pageSize)}
-              onChange={(value) => {
-                resetAllData()
-                setPageSize(Number(value || PAGE_SIZE))
-              }}
-            />
             <div className="app-filter-actions">
               <Tooltip label={t('Скинути')}>
                 <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
@@ -809,18 +829,17 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
                   <IconDownload size={17} />
                 </ActionIcon>
               </Tooltip>
-              <Tooltip label={t('Оновити')}>
-                <ActionIcon
-                  aria-label={t('Оновити')}
-                  color="gray"
-                  loading={isActiveLoading || isLoadingStorages}
-                  size={34}
-                  variant="light"
-                  onClick={refreshData}
-                >
-                  <IconRefresh size={17} />
-                </ActionIcon>
-              </Tooltip>
+              <Paginator
+                hasNext={activeTab === 'batches' ? batchHasMore : productHasMore}
+                isLoading={isActiveLoading}
+                page={activeTab === 'batches' ? batchPage : productPage}
+                pageSize={pageSize}
+                pageSizeOptions={pageSizeOptions}
+                totalPages={activeTab === 'batches' ? batchTotalPages : productTotalPages}
+                onPageChange={changeActivePage}
+                onPageSizeChange={changePageSize}
+                onRefresh={refreshData}
+              />
               <DataTableDensityToggle
                 density={activeTab === 'batches' ? batchDensity : productDensity}
                 onToggle={activeTab === 'batches' ? toggleBatchDensity : toggleProductDensity}
@@ -857,12 +876,6 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
                 toolbarPortalTarget={tableToolbarSlot}
                 onRowClick={setSelectedBatch}
               />
-              <TableFooter
-                canLoadMore={batchHasMore && !filterError}
-                isLoading={isLoadingBatches}
-                loaded={batchRows.length}
-                onLoadMore={() => setBatchOffset(batchRows.length)}
-              />
               <RemainsTotalsFooter kind="batches" totals={batchTotals} />
             </Stack>
           )}
@@ -896,12 +909,6 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
                 tableId="product-remains-products"
                 toolbarPortalTarget={tableToolbarSlot}
                 onRowClick={openMovement}
-              />
-              <TableFooter
-                canLoadMore={productHasMore && !filterError && !isProductStorageSelectionInvalid}
-                isLoading={isLoadingProducts}
-                loaded={productRows.length}
-                onLoadMore={() => setProductOffset(productRows.length)}
               />
               <RemainsTotalsFooter kind="products" totals={productTotals} />
             </Stack>
@@ -1305,35 +1312,6 @@ function useProductRemainBatchDetailColumns() {
     },
     ],
     [],
-  )
-}
-
-function TableFooter({
-  canLoadMore,
-  isLoading,
-  loaded,
-  onLoadMore,
-}: {
-  canLoadMore: boolean
-  isLoading: boolean
-  loaded: number
-  onLoadMore: () => void
-}) {
-  const { t } = useI18n()
-
-  return (
-    <Group className="product-remains-table-footer" justify="flex-end" gap="sm">
-      <Button
-        color="gray"
-        disabled={!canLoadMore || isLoading}
-        leftSection={<IconChevronDown size={16} />}
-        loading={isLoading && loaded > 0}
-        variant="light"
-        onClick={onLoadMore}
-      >
-        {t('Завантажити ще')}
-      </Button>
-    </Group>
   )
 }
 
