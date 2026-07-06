@@ -1134,7 +1134,8 @@ function renderMonoCell(value: unknown) {
 }
 
 function renderNameCell(value: unknown) {
-  const text = displayValue(value)
+  // Blank (not a dash) when the product has no name — the «Код товару» column still identifies it.
+  const text = value === null || value === undefined || value === '' ? '' : String(value)
 
   return <span className="warehouse-order-placement-cell-name" title={text}>{text}</span>
 }
