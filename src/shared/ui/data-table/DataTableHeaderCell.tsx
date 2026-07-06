@@ -1,4 +1,4 @@
-import { memo, useEffect, useState, type CSSProperties } from 'react'
+import { memo, type CSSProperties } from 'react'
 import {
   ActionIcon,
   Group,
@@ -53,17 +53,22 @@ function DataTableHeaderMenuInner<TData>({
   isColumnDragActive,
   labels,
 }: DataTableHeaderMenuProps<TData>) {
-  const [opened, setOpened] = useState(false)
-
-  useEffect(() => {
-    if (isColumnDragActive && opened) {
-      setOpened(false)
-    }
-  }, [isColumnDragActive, opened])
+  if (isColumnDragActive) {
+    return (
+      <ActionIcon
+        aria-label={labels.columns}
+        className="data-table-column-menu"
+        disabled
+        size="xs"
+        variant="subtle"
+      >
+        <IconDotsVertical size={14} stroke={1.8} />
+      </ActionIcon>
+    )
+  }
 
   return (
     <Menu
-      opened={opened}
       width={180}
       position="bottom-end"
       withArrow
@@ -76,7 +81,6 @@ function DataTableHeaderMenuInner<TData>({
       /* hideDetached would display:none the OPEN dropdown whenever the hover-only
          kebab target collapses (pointer travelling to a menu item). */
       hideDetached={false}
-      onChange={setOpened}
     >
       <Menu.Target>
         <ActionIcon
@@ -86,7 +90,6 @@ function DataTableHeaderMenuInner<TData>({
           variant="subtle"
           onClick={(event) => {
             event.stopPropagation()
-            setOpened((current) => !current)
           }}
         >
           <IconDotsVertical size={14} stroke={1.8} />

@@ -6,8 +6,10 @@ import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import {
   ActProvidingServiceDetailBody,
-  useActProvidingServiceDetailModel,
 } from '../components/ActProvidingServiceDetail'
+import {
+  useActProvidingServiceDetailModel,
+} from '../components/useActProvidingServiceDetailModel'
 
 const DETAIL_MONO_STYLE = { fontFamily: 'var(--font-mono)', letterSpacing: 0 } as const
 

@@ -6,8 +6,10 @@ import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/Page
 import type { ActProvidingServiceDisplayModel } from '../utils'
 import {
   ActProvidingServiceDetailBody,
-  useActProvidingServiceDetailModel,
 } from './ActProvidingServiceDetail'
+import {
+  useActProvidingServiceDetailModel,
+} from './useActProvidingServiceDetailModel'
 
 export type ActProvidingServiceDetailDrawerProps = {
   row: ActProvidingServiceDisplayModel | null

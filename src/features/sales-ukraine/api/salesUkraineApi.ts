@@ -227,11 +227,13 @@ export async function updateSale(sale: SalesUkraineSale): Promise<void> {
   })
 }
 
-export async function updateSaleDiscount(sale: SalesUkraineSale): Promise<void> {
-  await apiRequest<unknown>('/sales/discount/update', {
+export async function updateSaleDiscount(sale: SalesUkraineSale): Promise<SalesUkraineSale | null> {
+  const result = await apiRequest<unknown>('/sales/discount/update', {
     body: sale,
     method: 'POST',
   })
+
+  return normalizeSale(result)
 }
 
 export async function getSaleTransporterTypes(): Promise<SalesUkraineTransporterType[]> {

@@ -16,7 +16,7 @@ export function SaleDiscountModal({
   onSaved,
 }: {
   onClose: () => void
-  onSaved: () => void
+  onSaved: (sale: SalesUkraineSale | null) => void
   orderItem?: SalesUkraineOrderItem | null
   sale: SalesUkraineSale | null
 }) {
@@ -51,7 +51,7 @@ function SaleDiscountForm({
   onSaved,
 }: {
   onCancel: () => void
-  onSaved: () => void
+  onSaved: (sale: SalesUkraineSale | null) => void
   orderItem: SalesUkraineOrderItem | null
   sale: SalesUkraineSale
 }) {
@@ -116,12 +116,12 @@ function SaleDiscountForm({
                 })),
               }
             : sale.Order,
-        }
+    }
 
     try {
-      await updateSaleDiscount(payload)
+      const updatedSale = await updateSaleDiscount(payload)
       notifications.show({ color: 'green', message: t('Знижку збережено') })
-      onSaved()
+      onSaved(updatedSale)
     } catch {
       notifications.show({ color: 'red', message: t('Не вдалося зберегти знижку') })
     } finally {

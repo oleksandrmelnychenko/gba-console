@@ -1,6 +1,6 @@
 import { ActionIcon, Group, NumberInput, Select, Text, Tooltip } from '@mantine/core'
 import { IconChevronLeft, IconChevronRight, IconRefresh } from '@tabler/icons-react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useI18n } from '../../i18n/useI18n'
 import { DEFAULT_PAGINATOR_PAGE_SIZE, PAGINATOR_PAGE_SIZE_OPTIONS } from './paginatorPageSize'
 import './paginator.css'
@@ -51,17 +51,14 @@ export function Paginator({
 
   // Editable page number: jump to an arbitrary page on Enter/blur, clamped to [1, totalPages]
   // when the total is known. Kept as a draft so typing doesn't fire a jump per keystroke.
-  const [pageDraft, setPageDraft] = useState(String(page))
-
-  useEffect(() => {
-    setPageDraft(String(page))
-  }, [page])
+  const [pageDraft, setPageDraft] = useState(() => ({ page, value: String(page) }))
+  const currentPageDraft = pageDraft.page === page ? pageDraft.value : String(page)
 
   function commitPageDraft() {
-    const parsed = Math.floor(Number(pageDraft))
+    const parsed = Math.floor(Number(currentPageDraft))
 
     if (!Number.isFinite(parsed) || parsed < 1) {
-      setPageDraft(String(page))
+      setPageDraft({ page, value: String(page) })
 
       return
     }
@@ -72,7 +69,7 @@ export function Paginator({
       onPageChange(clamped)
     }
 
-    setPageDraft(String(clamped))
+    setPageDraft({ page: clamped, value: String(clamped) })
   }
 
   return (
@@ -99,10 +96,10 @@ export function Paginator({
         min={1}
         max={typeof totalPages === 'number' ? Math.max(1, totalPages) : undefined}
         size="xs"
-        value={pageDraft}
+        value={currentPageDraft}
         w={52}
         onBlur={commitPageDraft}
-        onChange={(value) => setPageDraft(String(value))}
+        onChange={(value) => setPageDraft({ page, value: String(value) })}
         onKeyDown={(event) => {
           if (event.key === 'Enter') {
             event.currentTarget.blur()

@@ -1062,10 +1062,9 @@ function OrderResponsibleGridCell({ value }: { value: string }) {
 function SupplyOrderInvoicesExpand({ order }: { order: DirectSupplyOrder }) {
   const { t } = useI18n()
   const columns = useSupplyOrderInvoiceColumns()
-  const invoices = order.SupplyInvoices || []
   const rows = useMemo(
-    () => invoices.map((invoice, index) => mapInvoiceRow(order, invoice, index + 1)),
-    [invoices, order],
+    () => (order.SupplyInvoices || []).map((invoice, index) => mapInvoiceRow(order, invoice, index + 1)),
+    [order],
   )
 
   return (

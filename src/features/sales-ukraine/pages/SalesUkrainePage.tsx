@@ -166,6 +166,9 @@ const amountFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 2,
   minimumFractionDigits: 2,
 })
+const compactPercentFormatter = new Intl.NumberFormat('uk-UA', {
+  maximumFractionDigits: 2,
+})
 
 const SALES_FILTER_COMBOBOX_PROPS = {
   classNames: {
@@ -1038,7 +1041,19 @@ export function SalesUkrainePage() {
         orderItem={discountTarget?.orderItem}
         sale={discountTarget?.sale ?? null}
         onClose={() => setDiscountTarget(null)}
-        onSaved={() => {
+        onSaved={(updatedSale) => {
+          if (updatedSale) {
+            setSales((current) => replaceSaleInList(current, updatedSale))
+
+            if (selectedSale && isSameSale(selectedSale, updatedSale)) {
+              setSelectedSale(updatedSale)
+            }
+
+            if (detailsSale && isSameSale(detailsSale, updatedSale)) {
+              setDetailsSale(updatedSale)
+            }
+          }
+
           setDiscountTarget(null)
           reload()
         }}
@@ -2096,7 +2111,7 @@ function formatAmount(value: number | null): string {
 }
 
 function formatCompactPercent(value: number): string {
-  return `${new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2 }).format(value)}%`
+  return `${compactPercentFormatter.format(value)}%`
 }
 
 function getNumber(value: unknown): number | null {

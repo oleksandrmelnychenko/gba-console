@@ -13,6 +13,7 @@ import {
   getShiftedSaleById,
   searchSalesUkraineClients,
   shiftOrderItemsCurrent,
+  updateSaleDiscount,
 } from './salesUkraineApi'
 
 vi.mock('../../../shared/api/apiClient', () => ({
@@ -143,6 +144,25 @@ describe('sales Ukraine document request contracts', () => {
     await expect(shiftOrderItemsCurrent(sale)).resolves.toEqual({ NetUid: 'updated-sale-net-id' })
 
     expect(apiRequestMock).toHaveBeenCalledWith('/orders/items/shift/current', {
+      body: sale,
+      method: 'POST',
+    })
+  })
+
+  it('returns the updated sale from the one-time discount endpoint', async () => {
+    const sale = {
+      NetUid: 'sale-net-id',
+      Order: { OrderItems: [{ Id: 1, OneTimeDiscount: 12 }] },
+    }
+
+    apiRequestMock.mockResolvedValueOnce({ Sale: { NetUid: 'sale-net-id', Order: { OrderItems: [{ Id: 1, OneTimeDiscount: 12 }] } } })
+
+    await expect(updateSaleDiscount(sale)).resolves.toEqual({
+      NetUid: 'sale-net-id',
+      Order: { OrderItems: [{ Id: 1, OneTimeDiscount: 12 }] },
+    })
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/discount/update', {
       body: sale,
       method: 'POST',
     })
