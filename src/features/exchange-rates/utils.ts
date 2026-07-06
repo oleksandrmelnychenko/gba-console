@@ -72,7 +72,7 @@ export function buildExchangeRateGroups(
       rates: data.government.filter((rate) => rate.Culture === POLAND_LANGUAGE),
       historyEndpoint: exchangeRateEndpoints.governmentHistory,
       historyKey: 'GovExchangeRateHistories',
-      updateMode: 'batch-government',
+      updateMode: 'single-government',
     },
   ]
 
@@ -109,7 +109,7 @@ export function startOfToday(): Date {
 export function getDefaultFormDate(groupId: string): Date {
   const now = new Date()
 
-  if (groupId === 'government-uah') {
+  if (groupId === 'government-uah' || groupId === 'government-pln') {
     return new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 1, 0)
   }
 

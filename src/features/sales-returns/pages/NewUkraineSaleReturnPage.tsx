@@ -321,17 +321,9 @@ export function NewUkraineSaleReturnPage() {
   }
 
   const loadSales = useCallback(async () => {
-    // An unfiltered search hydrates hundreds of sales with all their items — legacy only fires
-    // this after a client is picked or a product code is typed. Require the same before hitting
-    // the endpoint so opening the modal (or a bare date change) stays instant.
-    if (!selectedClientNetUid && !saleSearch.trim()) {
-      setSalesState({ isLoading: false, sales: [] })
-      setCreateError(null)
-      setCreateWarning(t('Оберіть клієнта або введіть код товару для пошуку продажів'))
-
-      return
-    }
-
+    // The create-return modal auto-loads the recent-sales window on open (legacy behaviour) so
+    // the user can browse/narrow — an earlier empty-filter guard suppressed this and left the
+    // grid blank («не находить товар»).
     setSalesState((currentState) => ({
       ...currentState,
       isLoading: true,

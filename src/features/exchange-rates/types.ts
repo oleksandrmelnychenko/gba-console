@@ -34,7 +34,12 @@ export type ExchangeRateHistoryKey =
   | 'GovExchangeRateHistories'
   | 'GovCrossExchangeRateHistories'
 
-export type ExchangeRateUpdateMode = 'single-commercial' | 'single-cross' | 'batch-government' | 'single-government-cross'
+export type ExchangeRateUpdateMode =
+  | 'single-commercial'
+  | 'single-cross'
+  | 'batch-government'
+  | 'single-government'
+  | 'single-government-cross'
 
 export type ExchangeRateGroup = {
   id: ExchangeRateGroupId

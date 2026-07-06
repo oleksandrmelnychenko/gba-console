@@ -97,6 +97,8 @@ function getSingleUpdateEndpoint(updateMode: ExchangeRateUpdateMode): string {
       return endpoints.updateCommercial
     case 'single-cross':
       return endpoints.updateCommercialCross
+    case 'single-government':
+      return endpoints.updateGovernment
     case 'single-government-cross':
       return endpoints.updateGovernmentCross
     default:
