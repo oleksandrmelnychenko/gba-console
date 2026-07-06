@@ -493,6 +493,14 @@ function useSupplyUkraineOrdersPageController() {
     dispatchUi({ patch, type: 'patchFilterDraft' })
   }
 
+  // The Поставки/Замовлення type toggle applies immediately (unlike the range/text filters, which
+  // apply on refresh): patch the draft AND commit it to active filters in one go so the list
+  // re-fetches for the chosen kind right away.
+  function applyTypeFilter(type: SupplyUkraineOrderKind) {
+    dispatchUi({ patch: { type }, type: 'patchFilterDraft' })
+    dispatchUi({ filters: { ...filterDraft, type }, type: 'setActiveFilters' })
+  }
+
   function refreshOrders() {
     dispatchUi({ filters: filterDraft, type: 'setActiveFilters' })
     reload()
@@ -621,6 +629,7 @@ function useSupplyUkraineOrdersPageController() {
     orderActionsPermissions,
     page,
     pageSize,
+    applyTypeFilter,
     refreshOrders,
     resetFilters,
     rows,
@@ -664,6 +673,7 @@ export function SupplyUkraineOrdersPage() {
     orderActionsPermissions,
     page,
     pageSize,
+    applyTypeFilter,
     refreshOrders,
     resetFilters,
     rows,
@@ -692,6 +702,7 @@ export function SupplyUkraineOrdersPage() {
         onChangePage={changePage}
         onChangePageSize={changePageSize}
         onDownload={downloadPrintDocument}
+        onApplyType={applyTypeFilter}
         onFilterDraftChange={updateFilterDraft}
         onCreateDirect={createDirect}
         onCreateToUkraine={createToUkraine}
@@ -742,6 +753,7 @@ function OrdersListCard({
   onCreateDirect,
   onCreateToUkraine,
   onDownload,
+  onApplyType,
   onFilterDraftChange,
   onRefresh,
   onResetFilters,
@@ -765,6 +777,7 @@ function OrdersListCard({
   onCreateDirect: () => void
   onCreateToUkraine: () => void
   onDownload: () => void
+  onApplyType: (type: SupplyUkraineOrderKind) => void
   onFilterDraftChange: (patch: Partial<SupplyUkraineOrdersFilter>) => void
   onRefresh: () => void
   onResetFilters: () => void
@@ -791,6 +804,7 @@ function OrdersListCard({
         onCreateDirect={onCreateDirect}
         onCreateToUkraine={onCreateToUkraine}
         onDownload={onDownload}
+        onApplyType={onApplyType}
         onFilterDraftChange={onFilterDraftChange}
         onRefresh={onRefresh}
         onResetFilters={onResetFilters}
@@ -1162,6 +1176,7 @@ function OrdersFilterToolbar({
   onCreateDirect,
   onCreateToUkraine,
   onDownload,
+  onApplyType,
   onFilterDraftChange,
   onRefresh,
   onResetFilters,
@@ -1181,6 +1196,7 @@ function OrdersFilterToolbar({
   onCreateDirect: () => void
   onCreateToUkraine: () => void
   onDownload: () => void
+  onApplyType: (type: SupplyUkraineOrderKind) => void
   onFilterDraftChange: (patch: Partial<SupplyUkraineOrdersFilter>) => void
   onRefresh: () => void
   onResetFilters: () => void
@@ -1233,7 +1249,7 @@ function OrdersFilterToolbar({
         data={TYPE_OPTIONS.map((option) => ({ ...option, label: t(option.label) }))}
         label={t('Тип')}
         value={filterDraft.type}
-        onChange={(value) => onFilterDraftChange({ type: (value as SupplyUkraineOrderKind) || 'all' })}
+        onChange={(value) => onApplyType((value as SupplyUkraineOrderKind) || 'all')}
       />
       <div className="app-filter-actions">
         <Tooltip label={t('Скинути фільтри')}>
