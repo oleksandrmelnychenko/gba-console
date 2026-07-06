@@ -38,6 +38,7 @@ import {
   getPreferredWarehousePrintUrl,
   hasWarehouseDocumentUrl,
   openWarehouseDocumentUrl,
+  printWarehouseDocumentUrl,
 } from './openWarehouseDocument'
 
 const DEFAULT_LIMIT = 500
@@ -232,8 +233,14 @@ function useSalesTabModel() {
 
         if (downloadRequestRef.current === requestId) {
           const documentUrl = getPreferredWarehousePrintUrl(document)
+          // Prefer legacy's direct print dialog; fall back to a new tab, then the download modal.
+          const printed = documentUrl ? await printWarehouseDocumentUrl(documentUrl) : false
 
-          if (documentUrl && openWarehouseDocumentUrl(documentUrl)) {
+          if (downloadRequestRef.current !== requestId) {
+            return
+          }
+
+          if (printed || (documentUrl && openWarehouseDocumentUrl(documentUrl))) {
             setDownloadOpened(false)
             setDownloadDocument(null)
             setDownloadError(null)

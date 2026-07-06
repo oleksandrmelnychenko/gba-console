@@ -73,7 +73,7 @@ import {
   toManualShipmentQueryDate,
 } from '../shipmentManualSelection'
 import { ChangeCommentModal } from './ChangeCommentModal'
-import { displayValue, formatDateTime, getDateShiftedByDays } from './dateHelpers'
+import { displayValue, formatDateTime, getDateShiftedByDays, toDateTimeQuery } from './dateHelpers'
 import { DownloadDocumentModal } from './DownloadDocumentModal'
 import { EditDeliveryAddressModal } from './EditDeliveryAddressModal'
 import { EditDeliveryRecipientModal } from './EditDeliveryRecipientModal'
@@ -163,7 +163,9 @@ function hasCarrierUpdateMarker(shipmentList: ShipmentList): boolean {
 }
 
 function isRecipientAddressReadOnly(item: ShipmentListItem): boolean {
-  return Boolean(item.IsDirty || item.Sale.WarehousesShipment)
+  // Legacy gated recipient/address editing only on an existing WarehousesShipment (independent-save
+  // model); IsDirty (pending qty edit) must not block it.
+  return Boolean(item.Sale.WarehousesShipment)
 }
 
 function getChangedTransporterDecoration(item: ShipmentListItem): 'line-through' | undefined {
@@ -400,17 +402,36 @@ type ShipmentsTabModelOptions = {
   onCarriedOut?: () => void
 }
 
+// Auto-panel («Підбір») filter/selection carried across the panel's unmount (toggle + carry-out).
+let lastAutoShipmentFilters: FilterDraft | null = null
+let lastAutoShipmentTypeNetId: string | null = null
+let lastAutoShipmentTransporterNetId: string | null = null
+
 function useShipmentsTabModel({ onCarriedOut }: ShipmentsTabModelOptions = {}) {
   const { t } = useI18n()
   const initialFilters = useMemo<FilterDraft>(
-    () => ({ from: getDateShiftedByDays(-DEFAULT_SHIPMENT_LOOKBACK_DAYS), to: getDateShiftedByDays(0) }),
+    () =>
+      lastAutoShipmentFilters ?? { from: getDateShiftedByDays(-DEFAULT_SHIPMENT_LOOKBACK_DAYS), to: getDateShiftedByDays(0) },
     [],
   )
   const [filterDraft, setFilterDraft] = useValueState<FilterDraft>(initialFilters)
   const [transporterTypes, setTransporterTypes] = useValueState<ShipmentTransporterType[]>([])
-  const [selectedTypeNetId, setSelectedTypeNetId] = useValueState<string | null>(null)
+  const [selectedTypeNetId, setSelectedTypeNetId] = useValueState<string | null>(lastAutoShipmentTypeNetId)
   const [transporters, setTransporters] = useValueState<ShipmentTransporter[]>([])
-  const [selectedTransporterNetId, setSelectedTransporterNetId] = useValueState<string | null>(null)
+  const [selectedTransporterNetId, setSelectedTransporterNetId] = useValueState<string | null>(lastAutoShipmentTransporterNetId)
+
+  // The auto («Підбір») panel unmounts on every Усі↔Підбір toggle and after carry-out, so persist
+  // its date window + transporter selection module-scoped (mirrors legacy's in-memory store; lost
+  // on hard reload, like legacy).
+  useEffect(() => {
+    lastAutoShipmentFilters = filterDraft
+  }, [filterDraft])
+  useEffect(() => {
+    lastAutoShipmentTypeNetId = selectedTypeNetId
+  }, [selectedTypeNetId])
+  useEffect(() => {
+    lastAutoShipmentTransporterNetId = selectedTransporterNetId
+  }, [selectedTransporterNetId])
   const [shipmentList, setShipmentList] = useValueState<ShipmentList>({ ShipmentListItems: [] })
   const [qtyEdits, setQtyEdits] = useValueState<Record<string, string>>({})
   const [error, setError] = useValueState<string | null>(null)
@@ -602,7 +623,10 @@ function useShipmentsTabModel({ onCarriedOut }: ShipmentsTabModelOptions = {}) {
     setError(null)
 
     try {
-      await updateShipmentList(nextShipmentList)
+      await updateShipmentList(nextShipmentList, {
+        from: toDateTimeQuery(filterDraft.from, 'start'),
+        to: toDateTimeQuery(filterDraft.to, 'end'),
+      })
       refreshList()
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : t('Не вдалося виконати запит'))
@@ -622,7 +646,10 @@ function useShipmentsTabModel({ onCarriedOut }: ShipmentsTabModelOptions = {}) {
     setError(null)
 
     try {
-      await updateShipmentList({ ...shipmentList, IsSent: true })
+      await updateShipmentList({ ...shipmentList, IsSent: true }, {
+        from: toDateTimeQuery(filterDraft.from, 'start'),
+        to: toDateTimeQuery(filterDraft.to, 'end'),
+      })
       refreshList()
       onCarriedOut?.()
     } catch (saveError) {
@@ -1198,6 +1225,8 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
     onEditAddress: (item) => {
       if (!item.Sale.DeliveryRecipient) {
         notifications.show({ color: 'yellow', message: t('Додайте одержувача для цієї накладної') })
+
+        return
       }
 
       setActiveModal({ kind: 'address', item })
@@ -1311,15 +1340,14 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
       return
     }
 
-    const nextFilter = { ...filterDraft }
-
-    setManualFilterDraft(nextFilter)
+    // Keep the operator's last-used manual date range across openings (first open uses the default
+    // initialFilters the state was seeded with).
     setManualSales([])
     setManualSelectedSaleKeys({})
     setManualQtyPlaces({})
     setManualError(null)
     setManualPickerOpen(true)
-    void loadManualSales(nextFilter, transporterNetId)
+    void loadManualSales(manualFilterDraft, transporterNetId)
   }
 
   function closeManualPicker() {
@@ -2571,6 +2599,8 @@ function useShipmentColumns(model: ShipmentColumnsModel): DataTableColumn<Shipme
             onEdit={() => {
               if (!item.Sale.DeliveryRecipient) {
                 notifications.show({ color: 'yellow', message: t('Додайте одержувача для цієї накладної') })
+
+                return
               }
 
               model.setActiveModal({ kind: 'address', item })

@@ -89,10 +89,16 @@ export async function getShipmentListById(shipmentListNetId: string): Promise<Sh
   return normalizeShipmentList(result)
 }
 
-export async function updateShipmentList(shipmentList: ShipmentList): Promise<void> {
+export async function updateShipmentList(
+  shipmentList: ShipmentList,
+  window?: { from: string; to: string },
+): Promise<void> {
   await apiRequest<unknown>('/sales/shipments/update', {
     method: 'POST',
     body: shipmentList,
+    // Pass the active date window so the server only reconciles (soft-deletes) items the client
+    // could actually see — items outside the window are never touched.
+    query: window ? { from: window.from, to: window.to } : undefined,
   })
 }
 
