@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   getAverageBaseDiscount,
+  getPartialAverageBaseDiscount,
+  getPartialUniformBaseDiscount,
   getUniformBaseDiscount,
   getVisibleOrderItemBaseDiscount,
   isOrderItemBaseDiscountSuppressed,
@@ -35,5 +37,10 @@ describe('sale discount helpers', () => {
   it('returns average base discount only when all positions have a base discount', () => {
     expect(getAverageBaseDiscount([{ Discount: 10 }, { Discount: 20 }] as SalesUkraineOrderItem[])).toBe(15)
     expect(getAverageBaseDiscount([{ Discount: 10 }, { Discount: 0 }] as SalesUkraineOrderItem[])).toBeNull()
+  })
+
+  it('returns partial base discount when only some positions have a contract discount', () => {
+    expect(getPartialUniformBaseDiscount([{ Discount: 20 }, { Discount: 0 }, { Discount: null }] as SalesUkraineOrderItem[])).toBe(20)
+    expect(getPartialAverageBaseDiscount([{ Discount: 10 }, { Discount: 20 }, { Discount: 0 }] as SalesUkraineOrderItem[])).toBe(15)
   })
 })

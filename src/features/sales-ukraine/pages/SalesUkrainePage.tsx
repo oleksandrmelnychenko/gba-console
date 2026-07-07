@@ -81,6 +81,8 @@ import {
 import {
   getAverageBaseDiscount,
   getAverageOneTimeDiscount,
+  getPartialAverageBaseDiscount,
+  getPartialUniformBaseDiscount,
   getUniformBaseDiscount,
   getUniformOneTimeDiscount,
 } from '../saleDiscounts'
@@ -1276,10 +1278,33 @@ function SaleGridRow({
         ? getAverageBaseDiscount(rowOrderItems)
         : getNumber(sale.BaseDiscountAverage)
       : null
-  const baseDiscountBadge =
-    uniformBaseDiscount != null || averageBaseDiscount != null
-      ? formatCompactPercent(uniformBaseDiscount ?? averageBaseDiscount ?? 0)
+  const partialUniformBaseDiscount =
+    uniformBaseDiscount == null && averageBaseDiscount == null
+      ? rowOrderItems.length
+        ? getPartialUniformBaseDiscount(rowOrderItems)
+        : getNumber(sale.BaseDiscountPartialUniform)
       : null
+  const partialAverageBaseDiscount =
+    uniformBaseDiscount == null && averageBaseDiscount == null && partialUniformBaseDiscount == null
+      ? rowOrderItems.length
+        ? getPartialAverageBaseDiscount(rowOrderItems)
+        : getNumber(sale.BaseDiscountPartialAverage)
+      : null
+  const baseDiscountBadge =
+    uniformBaseDiscount != null
+    || averageBaseDiscount != null
+    || partialUniformBaseDiscount != null
+    || partialAverageBaseDiscount != null
+      ? formatCompactPercent(
+          uniformBaseDiscount ?? averageBaseDiscount ?? partialUniformBaseDiscount ?? partialAverageBaseDiscount ?? 0,
+        )
+      : null
+  const baseDiscountTooltip = getBaseDiscountTooltip({
+    averageBaseDiscount,
+    partialAverageBaseDiscount,
+    partialUniformBaseDiscount,
+    t,
+  })
   const saleDiscountUpdater =
     uniformOneTimeDiscount != null
       ? (rowOrderItems[0]?.DiscountUpdatedBy?.LastName ?? sale.DiscountUpdatedByLastName)?.trim() || ''
@@ -1443,7 +1468,7 @@ function SaleGridRow({
 
       <div className="sg-slot" data-row-stop="true">
         {baseDiscountBadge != null && (
-          <Tooltip label={averageBaseDiscount != null ? t('Середня базова знижка') : t('Базова знижка')}>
+          <Tooltip label={baseDiscountTooltip}>
             <span className="sg-discount-badge sg-discount-badge-base is-static">{baseDiscountBadge}</span>
           </Tooltip>
         )}
@@ -2225,6 +2250,26 @@ function formatAmount(value: number | null): string {
 
 function formatCompactPercent(value: number): string {
   return `${compactPercentFormatter.format(value)}%`
+}
+
+function getBaseDiscountTooltip({
+  averageBaseDiscount,
+  partialAverageBaseDiscount,
+  partialUniformBaseDiscount,
+  t,
+}: {
+  averageBaseDiscount: number | null
+  partialAverageBaseDiscount: number | null
+  partialUniformBaseDiscount: number | null
+  t: (value: string) => string
+}): string {
+  if (partialUniformBaseDiscount != null || partialAverageBaseDiscount != null) {
+    return partialAverageBaseDiscount != null
+      ? t('Середня базова знижка для частини позицій')
+      : t('Базова знижка для частини позицій')
+  }
+
+  return averageBaseDiscount != null ? t('Середня базова знижка') : t('Базова знижка')
 }
 
 function getNumber(value: unknown): number | null {

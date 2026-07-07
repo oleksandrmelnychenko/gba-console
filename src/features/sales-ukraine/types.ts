@@ -286,6 +286,8 @@ export type SalesUkraineSale = SalesUkraineEntity & {
   OneTimeDiscountAverage?: number | null
   BaseDiscountUniform?: number | null
   BaseDiscountAverage?: number | null
+  BaseDiscountPartialUniform?: number | null
+  BaseDiscountPartialAverage?: number | null
   DiscountUpdatedByLastName?: string | null
   TotalAmount?: number
   TotalAmountEurToUah?: number

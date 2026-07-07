@@ -20,6 +20,14 @@ export function getAverageBaseDiscount(orderItems: SalesUkraineOrderItem[]): num
   return getAveragePositiveDiscount(orderItems.map((item) => item.Discount))
 }
 
+export function getPartialUniformBaseDiscount(orderItems: SalesUkraineOrderItem[]): number | null {
+  return getUniformPositiveDiscount(orderItems.map((item) => item.Discount).filter(isPositiveDiscount))
+}
+
+export function getPartialAverageBaseDiscount(orderItems: SalesUkraineOrderItem[]): number | null {
+  return getAveragePositiveDiscount(orderItems.map((item) => item.Discount).filter(isPositiveDiscount))
+}
+
 export function getUniformOneTimeDiscount(orderItems: SalesUkraineOrderItem[]): number | null {
   return getUniformPositiveDiscount(orderItems.map((item) => item.OneTimeDiscount))
 }
@@ -80,4 +88,10 @@ function getAveragePositiveDiscount(values: unknown[]): number | null {
   const sum = (discounts as number[]).reduce((acc, value) => acc + value, 0)
 
   return Math.round((sum / discounts.length) * 100) / 100
+}
+
+function isPositiveDiscount(value: unknown): boolean {
+  const discount = getNumber(value)
+
+  return typeof discount === 'number' && discount > 0
 }
