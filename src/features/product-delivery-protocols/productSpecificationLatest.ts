@@ -37,7 +37,37 @@ export function getProductSpecificationDateTime(value?: Date | string): number {
     return 0
   }
 
-  const date = value instanceof Date ? value : new Date(value)
+  const date = value instanceof Date ? value : parseProductSpecificationDate(value)
 
   return Number.isNaN(date.getTime()) ? 0 : date.getTime()
+}
+
+function parseProductSpecificationDate(value: string): Date {
+  const trimmedValue = value.trim()
+  const localizedMatch = /^(\d{1,2})\.(\d{1,2})\.(\d{2}|\d{4})(?:,?\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/.exec(trimmedValue)
+
+  if (localizedMatch) {
+    const [, dayValue, monthValue, yearValue, hourValue = '0', minuteValue = '0', secondValue = '0'] = localizedMatch
+    const day = Number(dayValue)
+    const month = Number(monthValue)
+    const yearPart = Number(yearValue)
+    const year = yearValue.length === 2 ? 2000 + yearPart : yearPart
+    const hour = Number(hourValue)
+    const minute = Number(minuteValue)
+    const second = Number(secondValue)
+    const date = new Date(year, month - 1, day, hour, minute, second)
+
+    if (
+      date.getFullYear() === year &&
+      date.getMonth() === month - 1 &&
+      date.getDate() === day &&
+      date.getHours() === hour &&
+      date.getMinutes() === minute &&
+      date.getSeconds() === second
+    ) {
+      return date
+    }
+  }
+
+  return new Date(trimmedValue)
 }

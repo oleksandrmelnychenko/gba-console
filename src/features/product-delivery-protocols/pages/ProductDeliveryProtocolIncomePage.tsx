@@ -53,6 +53,7 @@ import {
 } from '../api/protocolProductIncomeApi'
 import { NewIncomeDynamicColumnModal } from '../components/NewIncomeDynamicColumnModal'
 import { ProtocolIncomePlacementDrawer } from '../components/ProtocolIncomePlacementDrawer'
+import { getLatestProductSpecificationFromList } from '../productSpecificationLatest'
 import type {
   DynamicProductPlacement,
   DynamicProductPlacementColumn,
@@ -193,34 +194,7 @@ function lastSpecificationNumberProp(
 function getLastProductSpecification(item: PackingListPackageOrderItem) {
   const specifications = item.SupplyInvoiceOrderItem?.Product?.ProductSpecifications || []
 
-  return specifications.reduce<(typeof specifications)[number] | null>((latest, current) => {
-    if (!latest) {
-      return current
-    }
-
-    const currentTime = getDateTime(current.Created)
-    const latestTime = getDateTime(latest.Created)
-
-    if (currentTime > latestTime) {
-      return current
-    }
-
-    if (currentTime === latestTime && (current.Id || 0) > (latest.Id || 0)) {
-      return current
-    }
-
-    return latest
-  }, null)
-}
-
-function getDateTime(value?: Date | string): number {
-  if (!value) {
-    return 0
-  }
-
-  const date = value instanceof Date ? value : new Date(value)
-
-  return Number.isNaN(date.getTime()) ? 0 : date.getTime()
+  return getLatestProductSpecificationFromList(specifications)
 }
 
 type DrawerState = {

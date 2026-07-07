@@ -1,22 +1,16 @@
 import {
-  ActionIcon,
   Alert,
   Button,
-  Card,
   Group,
   Loader,
-  SegmentedControl,
   Stack,
   Text,
   TextInput,
-  Tooltip,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
-  IconArrowLeft,
-  IconClipboardList,
   IconDownload,
   IconFileImport,
   IconFilesOff,
@@ -28,6 +22,7 @@ import { formatLocalDate, formatLocalInputDateTime } from '../../../shared/date/
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import {
   addOrUpdateProductSpecification,
   getPackingListSpecificationProducts,
@@ -744,40 +739,29 @@ type DirectOrderSpecificationsPageModel = ReturnType<typeof useSupplyUkraineDire
 function SupplyUkraineDirectOrderSpecificationsView({ model }: { model: DirectOrderSpecificationsPageModel }) {
   const { t } = useI18n()
   const orderNumber = getOrderNumber(model.order)
-  const sheetTitle = `${t('Специфікації')}${orderNumber ? ` № ${orderNumber}` : ''}`
 
   return (
     <AppDrawer
+      className="supply-order-specifications-sheet"
       closeOnClickOutside={false}
       opened
       size="full"
-      title={<span className="app-sheet-title-mono">{sheetTitle}</span>}
+      title={
+        <span className="supply-order-spec-title">
+          <span>{t('Специфікації')}</span>
+          {orderNumber && <span className="app-role-pill is-yellow supply-order-spec-title-number">{orderNumber}</span>}
+        </span>
+      }
       onClose={model.goBack}
       footer={
         model.packingList && (model.packingList.Id || 0) > 0 ? (
-          <Group justify="space-between" align="center" w="100%" wrap="nowrap" gap="md">
-            <Group gap="sm" wrap="nowrap">
-              <SegmentedControl
-                data={[{ label: t('EUR'), value: 'eur' }, { label: t('UAH'), value: 'uah' }]}
-                disabled={model.isActionBusy}
-                value={model.currencyIsEur ? 'eur' : 'uah'}
-                onChange={(value) => model.setCurrencyIsEur(value === 'eur')}
-              />
-              <SegmentedControl
-                data={[{ label: 'УО', value: 'management' }, { label: 'БО', value: 'base' }]}
-                disabled={model.isActionBusy}
-                value={model.withManagementServices ? 'management' : 'base'}
-                onChange={(value) => model.setWithManagementServices(value === 'management')}
-              />
-            </Group>
+          <Group className="supply-order-spec-footer" justify="flex-end" align="center" w="100%" wrap="nowrap" gap="md">
             <DirectOrderSpecificationTotals model={model} />
           </Group>
         ) : undefined
       }
     >
-      <Stack gap="lg">
-        <DirectOrderSpecificationsHeader embedded model={model} />
-
+      <Stack gap="sm" className="supply-order-specifications-content">
         {model.error && (
           <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
             {model.error}
@@ -788,43 +772,6 @@ function SupplyUkraineDirectOrderSpecificationsView({ model }: { model: DirectOr
       </Stack>
       <DirectOrderSpecificationsModals model={model} />
     </AppDrawer>
-  )
-}
-
-function DirectOrderSpecificationsHeader({ embedded, model }: { embedded?: boolean; model: DirectOrderSpecificationsPageModel }) {
-  const { t } = useI18n()
-
-  const orderNumber = getOrderNumber(model.order)
-
-  return (
-    <header className={`supply-detail-header${embedded ? ' is-sheet' : ''}`}>
-      {!embedded && (
-        <div className="supply-detail-header-main">
-          <Tooltip label={t('Назад')}>
-            <ActionIcon
-              aria-label={t('Назад')}
-              className="supply-detail-back"
-              variant="default"
-              onClick={model.goBack}
-            >
-              <IconArrowLeft size={18} />
-            </ActionIcon>
-          </Tooltip>
-          <span className="supply-detail-icon">
-            <IconClipboardList size={22} stroke={1.8} />
-          </span>
-          <div className="supply-detail-copy">
-            <h1 className="supply-detail-title">
-              {t('Специфікації')}
-              {orderNumber && <span className="supply-detail-number">{orderNumber}</span>}
-            </h1>
-            <p className="supply-detail-subtitle">
-              {t('Постачальник')}: <strong>{model.order?.Client?.FullName || model.order?.Client?.Name || '-'}</strong>
-            </p>
-          </div>
-        </div>
-      )}
-    </header>
   )
 }
 
@@ -840,55 +787,120 @@ function DirectOrderSpecificationsBody({ model }: { model: DirectOrderSpecificat
   }
 
   return (
-    <Card className="supply-detail-card" withBorder radius="md" padding="md">
-      <Stack gap="md">
-        <SpecificationActionButtons model={model} />
-        <InvoiceButtons model={model} />
-        <PackListButtons model={model} />
-        <SpecificationGridArea model={model} />
-      </Stack>
-    </Card>
+    <div className="supply-order-specifications-body">
+      <SpecificationActionButtons model={model} />
+      <InvoiceButtons model={model} />
+      <PackListButtons model={model} />
+      <SpecificationGridArea model={model} />
+    </div>
   )
 }
 
 function SpecificationActionButtons({ model }: { model: DirectOrderSpecificationsPageModel }) {
   const { t } = useI18n()
+  const hasTotals = Boolean(model.packingList && (model.packingList.Id || 0) > 0)
 
   return (
-    <Group justify="flex-end" gap="xs">
-      {model.canUploadSpecifications && (
-        <Button
+    <Group className="supply-order-spec-actions app-filter-bar" justify="space-between" gap="xs" wrap="nowrap">
+      {hasTotals ? (
+        <SpecificationViewTabs model={model} />
+      ) : (
+        <span className="supply-order-spec-tabs-spacer" />
+      )}
+      <Group className="supply-order-spec-action-buttons" justify="flex-end" gap="xs" wrap="wrap">
+        {model.canUploadSpecifications && (
+          <Button
+            color={CREATE_ACTION_COLOR}
+            className="supply-order-spec-action-button"
+            disabled={model.isActionBusy}
+            leftSection={<IconFileImport size={16} />}
+            loading={model.isUploading}
+            variant="outline"
+            onClick={() => model.setUploadOpen(true)}
+          >
+            {t('Завантаження митних кодів')}
+          </Button>
+        )}
+        {model.canUploadDocuments && (
+          <Button
+            color={CREATE_ACTION_COLOR}
+            className="supply-order-spec-action-button"
+            disabled={!model.selectedInvoice || model.isActionBusy}
+            leftSection={<IconFileImport size={16} />}
+            loading={model.isSavingDocuments}
+            variant="outline"
+            onClick={model.openDocuments}
+          >
+            {t('Завантаження документів доставки')}
+          </Button>
+        )}
+        {model.canDownload && (
+          <Button
+            color={CREATE_ACTION_COLOR}
+            className="supply-order-spec-action-button"
+            disabled={model.isActionBusy}
+            leftSection={<IconDownload size={16} />}
+            loading={model.isDownloading}
+            variant="outline"
+            onClick={model.openDownload}
+          >
+            {t('Завантажити')}
+          </Button>
+        )}
+      </Group>
+    </Group>
+  )
+}
+
+function SpecificationViewTabs({ model }: { model: DirectOrderSpecificationsPageModel }) {
+  const { t } = useI18n()
+
+  return (
+    <Group className="supply-order-spec-tabs" gap="sm" wrap="nowrap">
+      <div aria-label={t('Валюта')} className="supply-order-spec-tab-group" role="tablist">
+        <button
+          aria-selected={model.currencyIsEur}
+          className={`supply-order-spec-tab${model.currencyIsEur ? ' is-active' : ''}`}
           disabled={model.isActionBusy}
-          leftSection={<IconFileImport size={16} />}
-          loading={model.isUploading}
-          variant="outline"
-          onClick={() => model.setUploadOpen(true)}
+          role="tab"
+          type="button"
+          onClick={() => model.setCurrencyIsEur(true)}
         >
-          {t('Завантаження митних кодів')}
-        </Button>
-      )}
-      {model.canUploadDocuments && (
-        <Button
-          disabled={!model.selectedInvoice || model.isActionBusy}
-          leftSection={<IconFileImport size={16} />}
-          loading={model.isSavingDocuments}
-          variant="outline"
-          onClick={model.openDocuments}
-        >
-          {t('Завантаження документів доставки')}
-        </Button>
-      )}
-      {model.canDownload && (
-        <Button
+          {t('EUR')}
+        </button>
+        <button
+          aria-selected={!model.currencyIsEur}
+          className={`supply-order-spec-tab${!model.currencyIsEur ? ' is-active' : ''}`}
           disabled={model.isActionBusy}
-          leftSection={<IconDownload size={16} />}
-          loading={model.isDownloading}
-          variant="outline"
-          onClick={model.openDownload}
+          role="tab"
+          type="button"
+          onClick={() => model.setCurrencyIsEur(false)}
         >
-          {t('Завантажити')}
-        </Button>
-      )}
+          {t('UAH')}
+        </button>
+      </div>
+      <div aria-label={t('Тип обліку')} className="supply-order-spec-tab-group" role="tablist">
+        <button
+          aria-selected={model.withManagementServices}
+          className={`supply-order-spec-tab${model.withManagementServices ? ' is-active' : ''}`}
+          disabled={model.isActionBusy}
+          role="tab"
+          type="button"
+          onClick={() => model.setWithManagementServices(true)}
+        >
+          УО
+        </button>
+        <button
+          aria-selected={!model.withManagementServices}
+          className={`supply-order-spec-tab${!model.withManagementServices ? ' is-active' : ''}`}
+          disabled={model.isActionBusy}
+          role="tab"
+          type="button"
+          onClick={() => model.setWithManagementServices(false)}
+        >
+          БО
+        </button>
+      </div>
     </Group>
   )
 }
@@ -901,21 +913,25 @@ function InvoiceButtons({ model }: { model: DirectOrderSpecificationsPageModel }
   }
 
   return (
-    <div className="supply-detail-toolbar">
-      <span className="supply-detail-toolbar-label">{t('Інвойси')}</span>
+    <div className="supply-order-spec-selector">
+      <Text className="app-section-title supply-order-spec-selector-title" fw={600}>{t('Інвойси')}</Text>
       <Group gap="xs" wrap="wrap">
-        {model.invoices.map((invoice) => (
-          <Button
-            key={invoice.NetUid || invoice.Id}
-            color={invoice.NetUid === model.selectedInvoiceNetId ? 'blue' : 'gray'}
-            disabled={model.isActionBusy}
-            loading={model.isInvoiceLoading && invoice.NetUid === model.selectedInvoiceNetId}
-            variant={invoice.NetUid === model.selectedInvoiceNetId ? 'filled' : 'light'}
-            onClick={() => model.selectInvoice(invoice)}
-          >
-            {t('Інвойс')} {invoice.Number || '-'} {t('Від')} {formatDate(invoice.DateFrom)}
-          </Button>
-        ))}
+        {model.invoices.map((invoice) => {
+          const isActive = invoice.NetUid === model.selectedInvoiceNetId
+
+          return (
+            <Button
+              key={invoice.NetUid || invoice.Id}
+              className={`app-selector-chip supply-order-spec-chip${isActive ? ' is-selected' : ''}`}
+              disabled={model.isActionBusy}
+              loading={model.isInvoiceLoading && isActive}
+              variant="default"
+              onClick={() => model.selectInvoice(invoice)}
+            >
+              {t('Інвойс')} {invoice.Number || '-'} {t('Від')} {formatDate(invoice.DateFrom)}
+            </Button>
+          )
+        })}
       </Group>
     </div>
   )
@@ -929,21 +945,25 @@ function PackListButtons({ model }: { model: DirectOrderSpecificationsPageModel 
   }
 
   return (
-    <div className="supply-detail-toolbar">
-      <span className="supply-detail-toolbar-label">{t('Пак листи')}</span>
+    <div className="supply-order-spec-selector">
+      <Text className="app-section-title supply-order-spec-selector-title" fw={600}>{t('Пак листи')}</Text>
       <Group gap="xs" wrap="wrap">
-        {(model.selectedInvoice.PackingLists || []).map((packList) => (
-          <Button
-            key={packList.NetUid || packList.Id}
-            color={packList.NetUid === model.selectedPackListNetId ? 'blue' : 'gray'}
-            disabled={model.isActionBusy}
-            size="xs"
-            variant={packList.NetUid === model.selectedPackListNetId ? 'outline' : 'subtle'}
-            onClick={() => model.selectPackList(packList)}
-          >
-            {t('Пак лист')} №: {packList.InvNo || packList.No || '-'} ({t('Від')} {formatDate(packList.FromDate)})
-          </Button>
-        ))}
+        {(model.selectedInvoice.PackingLists || []).map((packList) => {
+          const isActive = packList.NetUid === model.selectedPackListNetId
+
+          return (
+            <Button
+              key={packList.NetUid || packList.Id}
+              className={`app-selector-chip supply-order-spec-chip${isActive ? ' is-selected' : ''}`}
+              disabled={model.isActionBusy}
+              size="xs"
+              variant="default"
+              onClick={() => model.selectPackList(packList)}
+            >
+              {t('Пак лист')} №: {packList.InvNo || packList.No || '-'} ({t('Від')} {formatDate(packList.FromDate)})
+            </Button>
+          )
+        })}
       </Group>
     </div>
   )
@@ -953,7 +973,7 @@ function SpecificationGridArea({ model }: { model: DirectOrderSpecificationsPage
   const { t } = useI18n()
 
   return (
-    <>
+    <div className="supply-order-spec-grid-block">
       {model.packingListError && (
         <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
           {model.packingListError}
@@ -961,15 +981,17 @@ function SpecificationGridArea({ model }: { model: DirectOrderSpecificationsPage
       )}
 
       {model.packingList && (model.packingList.PackingListPackageOrderItems?.length || 0) > 0 && (
-        <TextInput
-          className="supply-detail-search"
-          label={t('Пошук')}
-          placeholder={t('Код товару')}
-          disabled={model.isActionBusy}
-          value={model.vendorCodeFilter}
-          w={260}
-          onChange={(event) => model.setVendorCodeFilter(event.currentTarget.value)}
-        />
+        <div className="supply-order-spec-grid-toolbar">
+          <TextInput
+            className="supply-detail-search supply-order-spec-search"
+            label={t('Пошук')}
+            placeholder={t('Код товару')}
+            disabled={model.isActionBusy}
+            value={model.vendorCodeFilter}
+            w={260}
+            onChange={(event) => model.setVendorCodeFilter(event.currentTarget.value)}
+          />
+        </div>
       )}
 
       {model.isPackingListLoading ? (
@@ -989,7 +1011,7 @@ function SpecificationGridArea({ model }: { model: DirectOrderSpecificationsPage
           <span>{t('Немає даних')}</span>
         </div>
       )}
-    </>
+    </div>
   )
 }
 
@@ -1000,6 +1022,7 @@ function DirectOrderSpecificationTotals({ model }: { model: DirectOrderSpecifica
 
   return (
     <SpecificationTotals
+      flat
       currencyIsEur={model.currencyIsEur}
       invoice={model.selectedInvoice as unknown as SpecificationSupplyInvoice}
       packingList={model.packingList}

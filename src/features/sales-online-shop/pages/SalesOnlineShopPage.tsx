@@ -1081,6 +1081,8 @@ function SaleDetail({ sale }: { sale: SalesOnlineShopSale }) {
   const secondaryCurrencyCode = getSecondaryAmountCode(sale)
   const deliverySale = sale as SalesOnlineShopSaleWithDelivery
   const retailClientLine = getRetailClientLine(sale)
+  const showUahPrices = currencyCode !== 'UAH'
+  const uahRate = getSaleUahRate(sale)
   const clientRows: Array<[string, unknown]> = [
     [t('Клієнт'), getSaleClientName(sale)],
     [t('Договір'), sale.ClientAgreement?.Agreement?.Name],
@@ -1191,10 +1193,11 @@ function SaleDetail({ sale }: { sale: SalesOnlineShopSale }) {
         </div>
 
         <div className="sale-detail-products-table">
-          <div className="sale-detail-products-head">
+          <div className={`sale-detail-products-head${showUahPrices ? ' has-uah-price' : ''}`}>
             <span>{t('Товар')}</span>
             <span>{t('К-сть')}</span>
             <span>{t('Ціна')}</span>
+            {showUahPrices && <span>{t('Ціна')} UAH</span>}
             <span>{t('Сума')}</span>
           </div>
           <div className="sale-detail-products-body">
@@ -1204,6 +1207,8 @@ function SaleDetail({ sale }: { sale: SalesOnlineShopSale }) {
                   key={String(item.NetUid || item.Id || index)}
                   item={item}
                   currencyCode={currencyCode}
+                  showUah={showUahPrices}
+                  uahRate={uahRate}
                 />
               ))
             ) : (
@@ -1344,16 +1349,22 @@ function SaleDetailSection({
 function SaleDetailProductRow({
   currencyCode,
   item,
+  showUah,
+  uahRate,
 }: {
   currencyCode: string
   item: SalesOnlineShopOrderItem
+  showUah?: boolean
+  uahRate?: number | null
 }) {
   const amount = getNumber(item.TotalAmountLocal) ?? getNumber(item.TotalAmount)
   const qty = getNumber(item.Qty)
   const unitPrice = amount != null && qty ? amount / qty : null
+  const uahAmount = showUah ? getOrderItemUahAmount(item, amount, uahRate) : null
+  const uahUnitPrice = uahAmount != null && qty ? uahAmount / qty : null
 
   return (
-    <div className="sale-detail-product-row">
+    <div className={`sale-detail-product-row${showUah ? ' has-uah-price' : ''}`}>
       <div className="sale-detail-product-name">
         <span className="sale-detail-product-icon" aria-hidden="true">
           <IconTag size={14} />
@@ -1369,8 +1380,14 @@ function SaleDetailProductRow({
       </div>
       <span className="sale-detail-product-value">{displayValue(qty)}</span>
       <span className="sale-detail-product-value">{formatAmount(unitPrice)}</span>
+      {showUah && (
+        <span className="sale-detail-product-value is-uah">
+          {formatAmount(uahUnitPrice)} <small>UAH</small>
+        </span>
+      )}
       <span className="sale-detail-product-amount">
         {formatAmount(amount)} <small>{displayValue(currencyCode)}</small>
+        {uahAmount != null && <small className="sale-detail-product-uah">{formatAmount(uahAmount)} грн</small>}
       </span>
     </div>
   )
@@ -1524,6 +1541,33 @@ function getSecondaryAmount(sale: SalesOnlineShopSale): number | null {
 
 function getSecondaryAmountCode(sale: SalesOnlineShopSale): string {
   return isNonVatEurAgreement(sale) ? 'UAH' : 'EUR'
+}
+
+function getSaleUahRate(sale: SalesOnlineShopSale): number | null {
+  const currencyCode = getSaleCurrencyCode(sale)
+
+  if (currencyCode === 'UAH') {
+    return null
+  }
+
+  const primaryAmount = getNumber(sale.TotalAmountLocal) ?? getNumber(sale.TotalAmount)
+  const uahAmount = getNumber(sale.TotalAmountEurToUah)
+
+  return primaryAmount && uahAmount ? uahAmount / primaryAmount : null
+}
+
+function getOrderItemUahAmount(
+  item: SalesOnlineShopOrderItem,
+  primaryAmount: number | null,
+  uahRate?: number | null,
+): number | null {
+  const directAmount = getNumber(item.TotalAmountEurToUah)
+
+  if (directAmount != null) {
+    return directAmount
+  }
+
+  return primaryAmount != null && uahRate ? primaryAmount * uahRate : null
 }
 
 function isNewOrPackagingStatus(sale: SalesOnlineShopSale): boolean {

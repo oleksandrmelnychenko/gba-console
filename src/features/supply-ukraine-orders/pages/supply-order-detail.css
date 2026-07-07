@@ -229,6 +229,180 @@
   box-shadow: 0 0 0 2px rgba(var(--brand-orange-rgb), 0.1);
 }
 
+/* ---- Specifications sheet --------------------------------------------- */
+.supply-order-spec-title {
+  align-items: center;
+  color: var(--mantine-color-gray-9);
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 500;
+  gap: 8px;
+  letter-spacing: 0;
+  line-height: 1.2;
+}
+
+.supply-order-spec-title-number {
+  align-items: center;
+  display: inline-flex;
+  font-size: 11.5px;
+  height: 24px;
+  line-height: 1;
+  padding: 0 10px;
+}
+
+.supply-order-specifications-content {
+  min-width: 0;
+}
+
+.supply-order-specifications-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  min-width: 0;
+}
+
+.supply-order-spec-actions.app-filter-bar {
+  align-items: center;
+  background: #f8f9fa;
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.supply-order-spec-tabs {
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+.supply-order-spec-tab-group {
+  align-items: center;
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 16px;
+  height: 36px;
+  min-width: 0;
+  padding: 0 2px;
+}
+
+.supply-order-spec-tab-group + .supply-order-spec-tab-group {
+  margin-left: 10px;
+}
+
+.supply-order-spec-tabs-spacer {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.supply-order-spec-action-buttons {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.supply-order-spec-action-button.mantine-Button-root {
+  border-radius: 8px;
+  height: 36px;
+}
+
+.supply-order-spec-action-button .mantine-Button-label {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.supply-order-spec-tab {
+  align-items: center;
+  align-self: stretch;
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: var(--mantine-color-gray-7);
+  cursor: pointer;
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+  justify-content: center;
+  letter-spacing: 0;
+  margin-bottom: -1px;
+  min-width: 34px;
+  padding: 0 0 9px;
+  transition:
+    border-color 140ms ease,
+    color 140ms ease;
+}
+
+.supply-order-spec-tab:hover:not(:disabled) {
+  color: var(--mantine-color-gray-9);
+}
+
+.supply-order-spec-tab.is-active {
+  border-bottom-color: var(--brand-orange);
+  color: var(--mantine-color-gray-9);
+  font-weight: 600;
+}
+
+.supply-order-spec-tab:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.supply-order-spec-selector {
+  background: #f8f9fa;
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.supply-order-spec-selector-title {
+  margin-bottom: 8px;
+}
+
+.supply-order-spec-chip.mantine-Button-root {
+  border-radius: 8px;
+  min-height: 36px;
+}
+
+.supply-order-spec-chip .mantine-Button-label {
+  font-size: 12.5px;
+}
+
+.supply-order-spec-grid-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  min-width: 0;
+}
+
+.supply-order-spec-grid-toolbar {
+  align-items: flex-end;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.supply-order-spec-search .mantine-InputWrapper-label {
+  color: var(--mantine-color-gray-9);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.supply-order-spec-search .mantine-Input-input {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  letter-spacing: 0;
+}
+
+.supply-order-spec-footer {
+  min-width: 0;
+}
+
 /* ---- Summary metric tiles ---------------------------------------------- */
 .supply-detail-metric {
   background: var(--mantine-color-white);

@@ -407,6 +407,12 @@
   min-width: 620px;
 }
 
+.sale-detail-products-head.has-uah-price,
+.sale-detail-product-row.has-uah-price {
+  grid-template-columns: minmax(240px, 1fr) 76px 100px 112px 136px;
+  min-width: 740px;
+}
+
 .sale-detail-products-head {
   background: var(--mantine-color-gray-0);
   border-bottom: 1px solid var(--mantine-color-gray-2);
@@ -434,6 +440,10 @@
 .sale-detail-products-body {
   min-width: 620px;
   padding-right: 10px;
+}
+
+.sale-detail-products-head.has-uah-price + .sale-detail-products-body {
+  min-width: 740px;
 }
 
 .sale-detail-product-row {
@@ -518,6 +528,21 @@
   line-height: 1.15;
   text-align: right;
   white-space: nowrap;
+}
+
+.sale-detail-product-value small {
+  color: var(--mantine-color-gray-6);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0;
+  margin-left: 4px;
+}
+
+.sale-detail-product-value.is-uah {
+  color: var(--mantine-color-gray-9);
+  font-family: var(--font-mono);
+  font-weight: 700;
 }
 
 .sale-detail-product-amount {

@@ -108,6 +108,7 @@ export type SalesOnlineShopOrderItem = SalesOnlineShopEntity & {
   Product?: SalesOnlineShopProduct
   Qty?: number
   TotalAmount?: number
+  TotalAmountEurToUah?: number
   TotalAmountLocal?: number
 }
 

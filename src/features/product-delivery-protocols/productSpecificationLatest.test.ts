@@ -22,6 +22,24 @@ describe('product specification latest selector', () => {
     expect(getLatestProductSpecificationFromList(specifications)?.SpecificationCode).toBe('higher-id')
   })
 
+  it('parses localized Ukrainian short dates as day-month-year', () => {
+    const specifications: ProductSpecificationEntity[] = [
+      { Id: 8, Created: '07.06.26', SpecificationCode: 'june' },
+      { Id: 9, Created: '06.07.26', SpecificationCode: 'july' },
+    ]
+
+    expect(getLatestProductSpecificationFromList(specifications)?.SpecificationCode).toBe('july')
+  })
+
+  it('orders localized dates with time values', () => {
+    const specifications: ProductSpecificationEntity[] = [
+      { Id: 8, Created: '06.07.2026, 09:30', SpecificationCode: 'morning' },
+      { Id: 9, Created: '06.07.2026, 11:41', SpecificationCode: 'late' },
+    ]
+
+    expect(getLatestProductSpecificationFromList(specifications)?.SpecificationCode).toBe('late')
+  })
+
   it('returns null for empty input', () => {
     expect(getLatestProductSpecificationFromList([])).toBeNull()
     expect(getLatestProductSpecificationFromList(null)).toBeNull()

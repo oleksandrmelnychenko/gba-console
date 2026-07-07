@@ -1570,6 +1570,8 @@ function SaleDetail({ sale }: { sale: SalesUkraineSale }) {
   const vatAmount = sale.IsVatSale ? getNumber(sale.Order?.TotalVat) : null
   const currencyCode = getSaleCurrencyCode(sale)
   const secondaryCurrencyCode = getSecondaryAmountCode(sale)
+  const showUahPrices = currencyCode !== 'UAH'
+  const uahRate = getSaleUahRate(sale)
 
   return (
     <div className="sale-detail-sheet">
@@ -1678,10 +1680,11 @@ function SaleDetail({ sale }: { sale: SalesUkraineSale }) {
         </div>
 
         <div className="sale-detail-products-table">
-          <div className="sale-detail-products-head">
+          <div className={`sale-detail-products-head${showUahPrices ? ' has-uah-price' : ''}`}>
             <span>{t('Товар')}</span>
             <span>{t('К-сть')}</span>
             <span>{t('Ціна')}</span>
+            {showUahPrices && <span>{t('Ціна')} UAH</span>}
             <span>{t('Сума')}</span>
           </div>
           <div className="sale-detail-products-body">
@@ -1691,7 +1694,8 @@ function SaleDetail({ sale }: { sale: SalesUkraineSale }) {
                   key={String(item.NetUid || item.Id || index)}
                   item={item}
                   currencyCode={currencyCode}
-                  showUah={isNonVatEurAgreement(sale)}
+                  showUah={showUahPrices}
+                  uahRate={uahRate}
                 />
               ))
             ) : (
@@ -1833,21 +1837,21 @@ function SaleDetailProductRow({
   currencyCode,
   item,
   showUah,
+  uahRate,
 }: {
   currencyCode: string
   item: SalesUkraineOrderItem
   showUah?: boolean
+  uahRate?: number | null
 }) {
   const amount = getNumber(item.TotalAmountLocal) ?? getNumber(item.TotalAmount)
   const qty = getNumber(item.Qty)
   const unitPrice = amount != null && qty ? amount / qty : null
-  // For non-VAT EUR agreements the агрегат currency is EUR; also show the UAH
-  // equivalent per line (same TotalAmountEurToUah source as the sale total).
-  const uahAmount = showUah ? getNumber(item.TotalAmountEurToUah) : null
+  const uahAmount = showUah ? getOrderItemUahAmount(item, amount, uahRate) : null
   const uahUnitPrice = uahAmount != null && qty ? uahAmount / qty : null
 
   return (
-    <div className="sale-detail-product-row">
+    <div className={`sale-detail-product-row${showUah ? ' has-uah-price' : ''}`}>
       <div className="sale-detail-product-name">
         <span className="sale-detail-product-icon" aria-hidden="true">
           <IconTag size={14} />
@@ -1864,8 +1868,12 @@ function SaleDetailProductRow({
       <span className="sale-detail-product-value">{displayValue(qty)}</span>
       <span className="sale-detail-product-value">
         {formatAmount(unitPrice)}
-        {uahUnitPrice != null && <small className="sale-detail-product-uah">{formatAmount(uahUnitPrice)} грн</small>}
       </span>
+      {showUah && (
+        <span className="sale-detail-product-value is-uah">
+          {formatAmount(uahUnitPrice)} <small>UAH</small>
+        </span>
+      )}
       <span className="sale-detail-product-amount">
         {formatAmount(amount)} <small>{displayValue(currencyCode)}</small>
         {uahAmount != null && <small className="sale-detail-product-uah">{formatAmount(uahAmount)} грн</small>}
@@ -2047,6 +2055,33 @@ function getSecondaryAmount(sale: SalesUkraineSale): number | null {
 
 function getSecondaryAmountCode(sale: SalesUkraineSale): string {
   return isNonVatEurAgreement(sale) ? 'UAH' : 'EUR'
+}
+
+function getSaleUahRate(sale: SalesUkraineSale): number | null {
+  const currencyCode = getSaleCurrencyCode(sale)
+
+  if (currencyCode === 'UAH') {
+    return null
+  }
+
+  const primaryAmount = getNumber(sale.TotalAmountLocal) ?? getNumber(sale.TotalAmount)
+  const uahAmount = getNumber(sale.TotalAmountEurToUah)
+
+  return primaryAmount && uahAmount ? uahAmount / primaryAmount : null
+}
+
+function getOrderItemUahAmount(
+  item: SalesUkraineOrderItem,
+  primaryAmount: number | null,
+  uahRate?: number | null,
+): number | null {
+  const directAmount = getNumber(item.TotalAmountEurToUah)
+
+  if (directAmount != null) {
+    return directAmount
+  }
+
+  return primaryAmount != null && uahRate ? primaryAmount * uahRate : null
 }
 
 function isNewOrPackagingStatus(sale: SalesUkraineSale): boolean {

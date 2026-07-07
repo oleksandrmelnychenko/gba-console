@@ -65,6 +65,8 @@ const weightFormatter = new Intl.NumberFormat('uk-UA', {
   minimumFractionDigits: 0,
 })
 
+const NUMERIC_CELL_STYLE = { fontFamily: 'var(--font-mono)', letterSpacing: 0 } as const
+
 export function SpecificationProductsGrid({
   canEditSpecification = false,
   currencyIsEur,
@@ -106,11 +108,7 @@ export function SpecificationProductsGrid({
         enableSorting: false,
         enableHiding: false,
         accessor: (row) => row.index,
-        cell: (row) => (
-          <Text c="dimmed" size="sm">
-            {row.index}
-          </Text>
-        ),
+        cell: (row) => renderNumericCell(row.index, { dimmed: true }),
       },
       {
         id: 'vendorCode',
@@ -199,7 +197,7 @@ export function SpecificationProductsGrid({
         minWidth: 60,
         align: 'right',
         accessor: (row) => row.qty,
-        cell: (row) => displayNumber(row.qty),
+        cell: (row) => renderNumberCell(row.qty),
       },
       {
         id: 'measureUnit',
@@ -216,7 +214,7 @@ export function SpecificationProductsGrid({
         minWidth: 140,
         align: 'right',
         accessor: (row) => row.unitPrice,
-        cell: (row) => formatPrice(row.unitPrice),
+        cell: (row) => renderPriceCell(row.unitPrice),
       },
       {
         id: 'netPrice',
@@ -225,7 +223,7 @@ export function SpecificationProductsGrid({
         minWidth: 130,
         align: 'right',
         accessor: (row) => row.netPrice,
-        cell: (row) => formatPrice(row.netPrice),
+        cell: (row) => renderPriceCell(row.netPrice),
       },
       {
         id: 'isImported',
@@ -248,7 +246,7 @@ export function SpecificationProductsGrid({
         minWidth: 100,
         align: 'right',
         accessor: (row) => row.netWeight,
-        cell: (row) => formatWeight(row.netWeight),
+        cell: (row) => renderWeightCell(row.netWeight),
       },
       {
         id: 'grossWeight',
@@ -257,7 +255,7 @@ export function SpecificationProductsGrid({
         minWidth: 100,
         align: 'right',
         accessor: (row) => row.grossWeight,
-        cell: (row) => formatWeight(row.grossWeight),
+        cell: (row) => renderWeightCell(row.grossWeight),
       },
       {
         id: 'customsValue',
@@ -266,7 +264,7 @@ export function SpecificationProductsGrid({
         minWidth: 100,
         align: 'right',
         accessor: (row) => row.customsValue,
-        cell: (row) => displayNumber(row.customsValue),
+        cell: (row) => renderNumberCell(row.customsValue),
       },
       {
         id: 'dutyPercent',
@@ -275,7 +273,7 @@ export function SpecificationProductsGrid({
         minWidth: 70,
         align: 'right',
         accessor: (row) => row.dutyPercent,
-        cell: (row) => displayNumber(row.dutyPercent),
+        cell: (row) => renderNumberCell(row.dutyPercent),
       },
       {
         id: 'duty',
@@ -284,7 +282,7 @@ export function SpecificationProductsGrid({
         minWidth: 70,
         align: 'right',
         accessor: (row) => row.duty,
-        cell: (row) => displayNumber(row.duty),
+        cell: (row) => renderNumberCell(row.duty),
       },
       {
         id: 'vatPercent',
@@ -293,7 +291,7 @@ export function SpecificationProductsGrid({
         minWidth: 70,
         align: 'right',
         accessor: (row) => row.vatPercent,
-        cell: (row) => displayNumber(row.vatPercent),
+        cell: (row) => renderNumberCell(row.vatPercent),
       },
       {
         id: 'vatValue',
@@ -302,7 +300,7 @@ export function SpecificationProductsGrid({
         minWidth: 70,
         align: 'right',
         accessor: (row) => row.vatValue,
-        cell: (row) => displayNumber(row.vatValue),
+        cell: (row) => renderNumberCell(row.vatValue),
       },
     ]
 
@@ -325,7 +323,7 @@ export function SpecificationProductsGrid({
         minWidth: 90,
         align: 'right',
         accessor: (row) => (currencyIsEur ? row.deliveryAmountEur : row.deliveryAmountUah),
-        cell: (row) => formatPrice(currencyIsEur ? row.deliveryAmountEur : row.deliveryAmountUah),
+        cell: (row) => renderPriceCell(currencyIsEur ? row.deliveryAmountEur : row.deliveryAmountUah),
       })
     }
 
@@ -336,7 +334,7 @@ export function SpecificationProductsGrid({
       minWidth: 140,
       align: 'right',
       accessor: (row) => (currencyIsEur ? row.totalAccountingGrossPriceEur : row.totalAccountingGrossPrice),
-      cell: (row) => formatPrice(currencyIsEur ? row.totalAccountingGrossPriceEur : row.totalAccountingGrossPrice),
+      cell: (row) => renderPriceCell(currencyIsEur ? row.totalAccountingGrossPriceEur : row.totalAccountingGrossPrice),
     })
 
     if (withManagementServices) {
@@ -347,7 +345,7 @@ export function SpecificationProductsGrid({
         minWidth: 140,
         align: 'right',
         accessor: (row) => (currencyIsEur ? row.totalGrossPriceEur : row.totalGrossPrice),
-        cell: (row) => formatPrice(currencyIsEur ? row.totalGrossPriceEur : row.totalGrossPrice),
+        cell: (row) => renderPriceCell(currencyIsEur ? row.totalGrossPriceEur : row.totalGrossPrice),
       })
     }
 
@@ -401,7 +399,7 @@ function buildServiceColumn(service: ServiceColumn, groupLabel?: string): DataTa
     align: 'right',
     enableSorting: false,
     accessor: (row) => row.serviceValues[service.id] || 0,
-    cell: (row) => formatPrice(row.serviceValues[service.id] || 0),
+    cell: (row) => renderPriceCell(row.serviceValues[service.id] || 0),
   }
 }
 
@@ -595,6 +593,32 @@ function formatWeight(value: number): string {
 
 function displayNumber(value: number): string {
   return String(value ?? 0)
+}
+
+function renderNumberCell(value: number) {
+  return renderNumericCell(displayNumber(value))
+}
+
+function renderPriceCell(value: number) {
+  return renderNumericCell(formatPrice(value))
+}
+
+function renderWeightCell(value: number) {
+  return renderNumericCell(formatWeight(value))
+}
+
+function renderNumericCell(value: number | string, options: { dimmed?: boolean } = {}) {
+  return (
+    <Text
+      c={options.dimmed ? 'gray.7' : 'gray.8'}
+      component="span"
+      fw={options.dimmed ? 500 : 600}
+      size="sm"
+      style={NUMERIC_CELL_STYLE}
+    >
+      {value}
+    </Text>
+  )
 }
 
 /* Empty values render blank (§5), never a dash. */
