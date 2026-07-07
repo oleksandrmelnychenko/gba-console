@@ -16,11 +16,7 @@ import {
   TextInput,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import {
-  IconAlertCircle,
-  IconFileSpreadsheet,
-  IconUpload,
-} from '@tabler/icons-react'
+import { CircleAlert, FileSpreadsheet, Upload } from 'lucide-react'
 import { useEffect, useMemo, useReducer, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
@@ -428,7 +424,7 @@ function SupplyUkraineOrderFileCreatePage({ mode }: { mode: CreateMode }) {
         <Button
           color={CREATE_ACTION_COLOR}
           form="supply-ukraine-order-create-form"
-          leftSection={<IconUpload size={16} />}
+          leftSection={<Upload size={16} />}
           loading={isSaving}
           type="submit"
         >
@@ -443,7 +439,7 @@ function SupplyUkraineOrderFileCreatePage({ mode }: { mode: CreateMode }) {
           </Text>
 
           {error && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
             </Alert>
           )}
@@ -625,7 +621,7 @@ function ImportConfigurationSection({
         accept={EXCEL_FILE_ACCEPT}
         disabled={isSaving}
         label={t('Файл')}
-        leftSection={<IconFileSpreadsheet size={16} />}
+        leftSection={<FileSpreadsheet size={16} />}
         placeholder={t('Оберіть файл')}
         value={file}
         onChange={onFileChange}
@@ -799,7 +795,7 @@ function UploadErrorsAlert({ response }: { response: UploadResponse }) {
   const missingVendorCodes = response.MissingVendorCodes || []
 
   return (
-    <Alert color="red" icon={<IconAlertCircle size={18} />} title={t('Файл містить помилки')} variant="light">
+    <Alert color="red" icon={<CircleAlert size={18} />} title={t('Файл містить помилки')} variant="light">
       <Stack gap="xs">
         {response.MissingVendorCodesFileUrl && (
           <Anchor href={response.MissingVendorCodesFileUrl} rel="noreferrer" target="_blank">

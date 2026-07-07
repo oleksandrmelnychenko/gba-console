@@ -12,16 +12,7 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
-import {
-  IconAlertCircle,
-  IconChevronLeft,
-  IconChevronRight,
-  IconDownload,
-  IconFileTypePdf,
-  IconMinus,
-  IconPlus,
-  IconRefresh,
-} from '@tabler/icons-react'
+import { ChevronLeft, ChevronRight, CircleAlert, Download, FileText, Minus, Plus, RefreshCw } from 'lucide-react'
 import { ExcelIcon } from '../ExcelIcon'
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { apiRequest } from '../../api/apiClient'
@@ -699,7 +690,7 @@ function ProductStorageLocationHistoryDrawerContent({
           <Group gap="xs">
             <Button
               disabled={Boolean(filterError || missingNetUidError)}
-              leftSection={<IconRefresh size={18} />}
+              leftSection={<RefreshCw size={18} />}
               loading={isLoading}
               variant="outline"
               onClick={() => reload()}
@@ -713,7 +704,7 @@ function ProductStorageLocationHistoryDrawerContent({
               variant="light"
               onClick={() => dispatchDrawerState({ type: 'previous-page' })}
             >
-              <IconChevronLeft size={18} />
+              <ChevronLeft size={18} />
             </ActionIcon>
             <ActionIcon
               aria-label={t('Наступна сторінка')}
@@ -722,12 +713,12 @@ function ProductStorageLocationHistoryDrawerContent({
               variant="light"
               onClick={() => dispatchDrawerState({ type: 'next-page' })}
             >
-              <IconChevronRight size={18} />
+              <ChevronRight size={18} />
             </ActionIcon>
           </Group>
         </Group>
         {activeError ? (
-          <Alert color={filterError || missingNetUidError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color={filterError || missingNetUidError ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">
             {activeError}
           </Alert>
         ) : null}
@@ -888,7 +879,7 @@ function ProductMovementPanel({ active, product }: { active: boolean; product: M
         />
         <Button
           disabled={Boolean(filterError) || Boolean(typesError)}
-          leftSection={<IconRefresh size={18} />}
+          leftSection={<RefreshCw size={18} />}
           loading={isLoading}
           variant="outline"
           onClick={() => reload()}
@@ -897,7 +888,7 @@ function ProductMovementPanel({ active, product }: { active: boolean; product: M
         </Button>
         <Button
           disabled={!productNetUid || Boolean(filterError) || Boolean(typesError)}
-          leftSection={<IconDownload size={18} />}
+          leftSection={<Download size={18} />}
           loading={isExporting}
           variant="outline"
           onClick={() => void exportMovements()}
@@ -920,7 +911,7 @@ function ProductMovementPanel({ active, product }: { active: boolean; product: M
         </Button>
       </Group>
       {activeError ? (
-        <Alert color={filterError || missingNetUidError || typesError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color={filterError || missingNetUidError || typesError ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">
           {activeError}
         </Alert>
       ) : null}
@@ -1064,7 +1055,7 @@ function ProductIncomeMovementPanel({ active, product }: { active: boolean; prod
         onRefresh={() => reload()}
       />
       {activeError ? (
-        <Alert color={filterError || missingNetUidError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color={filterError || missingNetUidError ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">
           {activeError}
         </Alert>
       ) : null}
@@ -1208,7 +1199,7 @@ function ProductOutcomeMovementPanel({ active, product }: { active: boolean; pro
         onRefresh={() => reload()}
       />
       {activeError ? (
-        <Alert color={filterError || missingNetUidError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color={filterError || missingNetUidError ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">
           {activeError}
         </Alert>
       ) : null}
@@ -1261,10 +1252,10 @@ function MovementDateToolbar({
     <Group align="end" gap="sm" wrap="wrap" className="clients-filter-row">
       <TextInput label={t('З')} type="date" value={dateFrom} w={150} onChange={(event) => onDateFromChange(event.currentTarget.value)} />
       <TextInput label={t('По')} type="date" value={dateTo} w={150} onChange={(event) => onDateToChange(event.currentTarget.value)} />
-      <Button leftSection={<IconRefresh size={18} />} loading={isLoading} variant="outline" onClick={onRefresh}>
+      <Button leftSection={<RefreshCw size={18} />} loading={isLoading} variant="outline" onClick={onRefresh}>
         {t('Оновити')}
       </Button>
-      <Button disabled={exportDisabled} leftSection={<IconDownload size={18} />} loading={exportLoading} variant="outline" onClick={onExport}>
+      <Button disabled={exportDisabled} leftSection={<Download size={18} />} loading={exportLoading} variant="outline" onClick={onExport}>
         {t('Друк')}
       </Button>
     </Group>
@@ -1298,7 +1289,7 @@ function ProductDocumentDownloadModal({
             {document.PdfDocumentURL ? (
               <Anchor href={upgradeHttpToHttps(document.PdfDocumentURL)} target="_blank" rel="noreferrer" className="document-link">
                 <span className="document-link-badge document-link-badge-pdf">
-                  <IconFileTypePdf size={22} stroke={1.8} />
+                  <FileText size={22} strokeWidth={1.8} />
                 </span>
                 <span>{t('PDF документ')}</span>
               </Anchor>
@@ -1787,7 +1778,7 @@ function useStorageLocationHistoryColumns(): DataTableColumn<ProductStorageLocat
         cell: (row) => (
           <Tooltip label={row.AdditionType === 1 ? t('Списано з місця') : t('Додано на місце')}>
             <ActionIcon aria-label={row.AdditionType === 1 ? t('Списано з місця') : t('Додано на місце')} color={row.AdditionType === 1 ? 'red' : 'green'} size="sm" variant="light">
-              {row.AdditionType === 1 ? <IconMinus size={15} /> : <IconPlus size={15} />}
+              {row.AdditionType === 1 ? <Minus size={15} /> : <Plus size={15} />}
             </ActionIcon>
           </Tooltip>
         ),

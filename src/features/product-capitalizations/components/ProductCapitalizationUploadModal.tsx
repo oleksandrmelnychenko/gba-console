@@ -1,5 +1,5 @@
 import { Alert, Button, Checkbox, FileInput, Group, NumberInput, SimpleGrid, Stack, Text } from '@mantine/core'
-import { IconAlertCircle, IconFileSpreadsheet, IconUpload } from '@tabler/icons-react'
+import { CircleAlert, FileSpreadsheet, Upload } from 'lucide-react'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -90,7 +90,7 @@ export function ProductCapitalizationUploadModal({
     >
       <Stack gap="md">
         {(validationError || submitError) && (
-          <Alert color="red" icon={<IconAlertCircle size={16} />} variant="light">
+          <Alert color="red" icon={<CircleAlert size={16} />} variant="light">
             {validationError || submitError}
           </Alert>
         )}
@@ -100,7 +100,7 @@ export function ProductCapitalizationUploadModal({
           accept=".xls,.xlsx,.csv"
           disabled={isSubmitting}
           label={t('Завантажити файли')}
-          leftSection={<IconFileSpreadsheet size={16} />}
+          leftSection={<FileSpreadsheet size={16} />}
           multiple
           placeholder={t('Оберіть файли')}
           value={form.files}
@@ -195,7 +195,7 @@ export function ProductCapitalizationUploadModal({
           <Button
             color={CREATE_ACTION_COLOR}
             disabled={isSubmitting}
-            leftSection={<IconUpload size={16} />}
+            leftSection={<Upload size={16} />}
             loading={isSubmitting}
             onClick={submitForm}
           >

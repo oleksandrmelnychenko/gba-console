@@ -1,5 +1,5 @@
 import { ActionIcon, Anchor, Button, Card, Center, Stack, Text, Tooltip } from '@mantine/core'
-import { IconRefresh } from '@tabler/icons-react'
+import { RefreshCw } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -249,7 +249,7 @@ export function PreordersInterestPage() {
                 variant="light"
                 onClick={refresh}
               >
-                <IconRefresh size={18} />
+                <RefreshCw size={18} />
               </ActionIcon>
             </Tooltip>
           </div>

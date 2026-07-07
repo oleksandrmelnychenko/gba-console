@@ -15,12 +15,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { AppModal } from "../../../shared/ui/AppModal"
-import {
-  IconAlertCircle,
-  IconFileTypePdf,
-  IconRestore,
-  IconSearch,
-} from '@tabler/icons-react'
+import { CircleAlert, FileText, RotateCcw, Search } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { useDebouncedValue } from '@mantine/hooks'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
@@ -358,7 +353,7 @@ function ProductHistoryPageView({ model }: { model: ReturnType<typeof useProduct
               }}
             />
             <TextInput
-              leftSection={<IconSearch size={16} />}
+              leftSection={<Search size={16} />}
               label={t('Пошук')}
               placeholder={t('Код або назва товару')}
               value={searchDraft}
@@ -368,7 +363,7 @@ function ProductHistoryPageView({ model }: { model: ReturnType<typeof useProduct
             <div className="app-filter-actions">
               <Tooltip label={t('Скинути')}>
                 <ActionIcon variant="light" color="gray" size={34} aria-label={t('Скинути')} onClick={resetFilters}>
-                  <IconRestore size={17} />
+                  <RotateCcw size={17} />
                 </ActionIcon>
               </Tooltip>
               <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
@@ -404,7 +399,7 @@ function ProductHistoryPageView({ model }: { model: ReturnType<typeof useProduct
           <Alert
             className="product-history-page__alert"
             color={filterError && !noStorages ? 'yellow' : 'red'}
-            icon={<IconAlertCircle size={18} />}
+            icon={<CircleAlert size={18} />}
             variant="light"
           >
             {noStorages ? t('Складів не знайдено') : filterError || error}
@@ -452,7 +447,7 @@ function ProductHistoryPageView({ model }: { model: ReturnType<typeof useProduct
               {downloadDocument.PdfDocumentURL && (
                 <Anchor href={getDocumentHref(downloadDocument.PdfDocumentURL)} target="_blank" rel="noreferrer" className="document-link">
                   <span className="document-link-badge document-link-badge-pdf">
-                    <IconFileTypePdf size={22} stroke={1.8} />
+                    <FileText size={22} strokeWidth={1.8} />
                   </span>
                   <span>{t('PDF документ')}</span>
                 </Anchor>

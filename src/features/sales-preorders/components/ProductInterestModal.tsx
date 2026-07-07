@@ -1,6 +1,6 @@
 import { Alert, Button, Group, NumberInput, Stack, Textarea } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconAlertCircle } from '@tabler/icons-react'
+import { CircleAlert } from 'lucide-react'
 import { type FormEvent } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -107,7 +107,7 @@ export function ProductInterestModal({
             onChange={(value) => setForm((current) => ({ ...current, qty: toNumberInputValue(value) }))}
           />
           {touched && qtyError && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {qtyError}
             </Alert>
           )}

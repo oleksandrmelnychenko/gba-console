@@ -12,7 +12,7 @@ import {
   Textarea,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { IconAlertCircle } from '@tabler/icons-react'
+import { CircleAlert } from 'lucide-react'
 import { useEffect, useMemo, type ReactNode } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -341,12 +341,12 @@ export function NewMergedServiceForm({
     >
       <Stack className="new-merged-service-modal" gap={12}>
         {loadError && (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {loadError}
           </Alert>
         )}
         {validationError && (
-          <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
             {validationError}
           </Alert>
         )}

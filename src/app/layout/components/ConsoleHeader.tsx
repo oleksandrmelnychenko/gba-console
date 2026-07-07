@@ -1,5 +1,5 @@
 import { ActionIcon, AppShell, Badge, Box, Group, Title, Text } from '@mantine/core'
-import { IconBell, IconLogout } from '@tabler/icons-react'
+import { Bell, LogOut } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../../features/auth/useAuth'
 import { HeaderActionBar } from '../../../features/header-actions/components/HeaderActionBar'
@@ -47,12 +47,12 @@ export function ConsoleHeader() {
           <HeaderActionBar />
           <Box className="console-bell">
             <ActionIcon variant="subtle" color="gray" size="lg" aria-label={t('Сповіщення')}>
-              <IconBell size={24} stroke={1.7} />
+              <Bell size={24} strokeWidth={1.7} />
             </ActionIcon>
             <span className="console-bell-badge tx-spring-pop" aria-hidden="true" />
           </Box>
           <ActionIcon variant="subtle" color="gray" size="lg" aria-label={t('Вийти')} onClick={logout}>
-            <IconLogout size={24} stroke={1.7} />
+            <LogOut size={24} strokeWidth={1.7} />
           </ActionIcon>
         </Group>
 

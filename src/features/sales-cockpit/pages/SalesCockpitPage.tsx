@@ -1,5 +1,5 @@
 import { ActionIcon, Alert, Badge, Card, SegmentedControl, SimpleGrid, Stack, Text, Tooltip } from '@mantine/core'
-import { IconAlertCircle, IconRefresh, IconSparkles } from '@tabler/icons-react'
+import { CircleAlert, RefreshCw, Sparkles } from 'lucide-react'
 import { notifications } from '@mantine/notifications'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -349,12 +349,12 @@ export function SalesCockpitPage() {
                 variant="light"
                 onClick={handleRegenerate}
               >
-                <IconSparkles size={17} />
+                <Sparkles size={17} />
               </ActionIcon>
             </Tooltip>
             <Tooltip label={t('Оновити')}>
               <ActionIcon aria-label={t('Оновити')} loading={isLoading} size={34} variant="light" onClick={handleReload}>
-                <IconRefresh size={18} />
+                <RefreshCw size={18} />
               </ActionIcon>
             </Tooltip>
           </div>
@@ -362,7 +362,7 @@ export function SalesCockpitPage() {
       </Card>
 
       {error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {error}
         </Alert>
       )}

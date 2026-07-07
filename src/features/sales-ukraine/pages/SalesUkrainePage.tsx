@@ -16,31 +16,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import {
-  IconAlertCircle,
-  IconAlertTriangle,
-  IconArrowsLeftRight,
-  IconBrandEdge,
-  IconCheck,
-  IconChevronDown,
-  IconChevronRight,
-  IconDots,
-  IconLock,
-  IconPercentage,
-  IconFileInvoice,
-  IconHistory,
-  IconLockOpen,
-  IconPencil,
-  IconPlus,
-  IconPrinter,
-  IconReceipt,
-  IconReceipt2,
-  IconRestore,
-  IconSearch,
-  IconTag,
-  IconTruckDelivery,
-  IconX,
-} from '@tabler/icons-react'
+import { ArrowLeftRight, Check, ChevronDown, ChevronRight, CircleAlert, Ellipsis, Globe, History, Lock, LockOpen, Pencil, Percent, Plus, Printer, Receipt, ReceiptText, RotateCcw, Search, Tag, TriangleAlert, Truck, X } from 'lucide-react'
 import {
   Fragment,
   isValidElement,
@@ -880,7 +856,7 @@ export function SalesUkrainePage() {
               <TextInput
                 className="sales-filter-search"
                 label={t('Пошук')}
-                leftSection={<IconSearch size={16} />}
+                leftSection={<Search size={16} />}
                 placeholder={t('Товар або номер продажу')}
                 size="sm"
                 value={filterDraft.value}
@@ -894,7 +870,7 @@ export function SalesUkrainePage() {
                       className="sales-filter-period"
                       color="gray"
                       justify="space-between"
-                      rightSection={<IconChevronDown size={14} />}
+                      rightSection={<ChevronDown size={14} />}
                       size="sm"
                       variant="default"
                     >
@@ -980,13 +956,13 @@ export function SalesUkrainePage() {
                         type="button"
                       >
                         <span title={organisationSummary}>{organisationSummary}</span>
-                        <IconChevronDown size={14} />
+                        <ChevronDown size={14} />
                       </button>
                     </Popover.Target>
                     <Popover.Dropdown className="sales-filter-organisation-menu">
                       <TextInput
                         className="sales-filter-organisation-search"
-                        leftSection={<IconSearch size={14} />}
+                        leftSection={<Search size={14} />}
                         placeholder={t('Пошук')}
                         size="xs"
                         value={organisationQuery}
@@ -1011,7 +987,7 @@ export function SalesUkrainePage() {
                               }
                             >
                               <span className="sales-filter-organisation-check" aria-hidden="true">
-                                {checked && <IconCheck size={13} />}
+                                {checked && <Check size={13} />}
                               </span>
                               <span className="sales-filter-organisation-option-label" title={option.label}>
                                 {option.label}
@@ -1032,7 +1008,7 @@ export function SalesUkrainePage() {
                       type="button"
                       onClick={() => applyFilters({ ...filterDraft, organisationIds: [] })}
                     >
-                      <IconX size={14} />
+                      <X size={14} />
                     </button>
                   )}
                 </div>
@@ -1061,7 +1037,7 @@ export function SalesUkrainePage() {
                     variant="light"
                     onClick={resetFilters}
                   >
-                    <IconRestore size={17} />
+                    <RotateCcw size={17} />
                   </ActionIcon>
                 </Tooltip>
                 <Box className="sales-filter-toolbar">{toolbarRight}</Box>
@@ -1070,7 +1046,7 @@ export function SalesUkrainePage() {
                 className="sales-filter-create"
                 color={CREATE_ACTION_COLOR}
                 disabled={!canCreateSale}
-                leftSection={<IconPlus size={16} />}
+                leftSection={<Plus size={16} />}
                 size="sm"
                 onClick={() => setNewSaleOpen(true)}
               >
@@ -1080,7 +1056,7 @@ export function SalesUkrainePage() {
           </div>
 
           {error && (
-            <Alert className="sales-grid-alert" color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert className="sales-grid-alert" color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
             </Alert>
           )}
@@ -1448,7 +1424,7 @@ const SaleGridRow = memo(function SaleGridRow({
             <span className="sg-action-slot">
               <Tooltip label={t('Редагування')}>
                 <ActionIcon aria-label={t('Редагування')} color="gray" size="sm" variant="subtle" onClick={() => onOpenEditor(sale)}>
-                  <IconPencil size={15} />
+                  <Pencil size={15} />
                 </ActionIcon>
               </Tooltip>
             </span>
@@ -1467,25 +1443,25 @@ const SaleGridRow = memo(function SaleGridRow({
                     style={{ opacity: 1 }}
                     onClick={() => onWillNotShip(sale)}
                   >
-                    <IconAlertTriangle size={14} />
+                    <TriangleAlert size={14} />
                   </button>
                 ) : (
                   <span className="sg-bang" style={{ opacity: sale.ChangedToInvoice ? 1 : 0.55 }}>
-                    <IconAlertTriangle size={14} />
+                    <TriangleAlert size={14} />
                   </span>
                 )}
               </Tooltip>
             </span>
           ) : (
             <span className="sg-action-slot is-bang" aria-hidden="true">
-              <span className="sg-bang sg-bang-placeholder"><IconAlertTriangle size={14} /></span>
+              <span className="sg-bang sg-bang-placeholder"><TriangleAlert size={14} /></span>
             </span>
           )}
           {canExpand ? (
             <span className="sg-action-slot">
               <Tooltip label={isExpanded ? t('Згорнути') : t('Розгорнути')}>
                 <ActionIcon aria-label={t('Розгорнути')} color="gray" size="sm" variant="subtle" onClick={() => onToggleExpand(saleKey, sale)}>
-                  {isExpanded ? <IconChevronDown size={15} /> : <IconChevronRight size={15} />}
+                  {isExpanded ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
                 </ActionIcon>
               </Tooltip>
             </span>
@@ -1542,12 +1518,12 @@ const SaleGridRow = memo(function SaleGridRow({
             {contract && <span className="sg-meta-contract">{contract}</span>}
             {isEdited && (
               <Tooltip label={t('Рахунок редаговано')}>
-                <IconPencil size={12} style={{ color: 'var(--mantine-color-orange-6)' }} />
+                <Pencil size={12} style={{ color: 'var(--mantine-color-orange-6)' }} />
               </Tooltip>
             )}
             {sale.IsPrinted && (
               <Tooltip label={t('Документи надруковано')}>
-                <IconPrinter size={12} style={{ color: 'var(--mantine-color-gray-5)' }} />
+                <Printer size={12} style={{ color: 'var(--mantine-color-gray-5)' }} />
               </Tooltip>
             )}
           </div>
@@ -1595,12 +1571,12 @@ const SaleGridRow = memo(function SaleGridRow({
               variant="subtle"
               onClick={() => onOpenDiscount(sale)}
             >
-              <IconPercentage size={15} />
+              <Percent size={15} />
             </ActionIcon>
           </Tooltip>
         ) : sale.IsLocked ? (
           <Tooltip label={t('Заблоковано')}>
-            <IconLock size={14} style={{ color: 'var(--mantine-color-gray-5)' }} />
+            <Lock size={14} style={{ color: 'var(--mantine-color-gray-5)' }} />
           </Tooltip>
         ) : null}
       </div>
@@ -1625,27 +1601,27 @@ const SaleGridRow = memo(function SaleGridRow({
         <Menu position="bottom-end" shadow="md" withinPortal>
           <Menu.Target>
             <ActionIcon aria-label={t('Дії')} color="gray" size="sm" variant="subtle">
-              <IconDots size={16} />
+              <Ellipsis size={16} />
             </ActionIcon>
           </Menu.Target>
           <Menu.Dropdown>
             {showEdit && (
-              <Menu.Item leftSection={<IconPencil size={16} />} onClick={() => onOpenEditor(sale)}>
+              <Menu.Item leftSection={<Pencil size={16} />} onClick={() => onOpenEditor(sale)}>
                 {t('Редагування')}
               </Menu.Item>
             )}
             {showEditShift && (
-              <Menu.Item leftSection={<IconArrowsLeftRight size={16} />} onClick={() => onOpenEditShift(sale)}>
+              <Menu.Item leftSection={<ArrowLeftRight size={16} />} onClick={() => onOpenEditShift(sale)}>
                 {lifecycleStatusKey === 'New' ? t('Акт редагування рахунку') : t('Акт редагування накладної')}
               </Menu.Item>
             )}
             {!hideEditActActions && (
-              <Menu.Item leftSection={<IconTruckDelivery size={16} />} onClick={() => onOpenDetails(sale)}>
+              <Menu.Item leftSection={<Truck size={16} />} onClick={() => onOpenDetails(sale)}>
                 {t('Дані доставки')}
               </Menu.Item>
             )}
             {showTtn && (
-              <Menu.Item leftSection={<IconReceipt size={16} />} onClick={() => onOpenConsignment(sale)}>
+              <Menu.Item leftSection={<Receipt size={16} />} onClick={() => onOpenConsignment(sale)}>
                 {t('Друк ТТН')}
               </Menu.Item>
             )}
@@ -1653,19 +1629,19 @@ const SaleGridRow = memo(function SaleGridRow({
               <Menu.Item
                 color="orange"
                 disabled={!sale.ChangedToInvoice}
-                leftSection={<IconAlertTriangle size={16} />}
+                leftSection={<TriangleAlert size={16} />}
                 onClick={() => onWillNotShip(sale)}
               >
                 {t('Розблокувати для відвантаження')}
               </Menu.Item>
             )}
             {showUnlock && (
-              <Menu.Item color="red" leftSection={<IconLockOpen size={16} />} onClick={() => onUnlock(sale)}>
+              <Menu.Item color="red" leftSection={<LockOpen size={16} />} onClick={() => onUnlock(sale)}>
                 {t('Розблокувати')}
               </Menu.Item>
             )}
             {!hideEditActActions && (
-              <Menu.Item leftSection={<IconHistory size={16} />} onClick={() => onOpenAudit(sale)}>
+              <Menu.Item leftSection={<History size={16} />} onClick={() => onOpenAudit(sale)}>
                 {t('Історія редагувань')}
               </Menu.Item>
             )}
@@ -1782,7 +1758,7 @@ function SaleDetail({ sale }: { sale: SalesUkraineSale }) {
 
       <div className="sale-detail-sections">
         <SaleDetailSection
-          icon={<IconReceipt2 size={15} />}
+          icon={<Receipt size={15} />}
           title={t('Продаж')}
           rows={[
             [t('Номер'), sale.SaleNumber?.Value],
@@ -1792,7 +1768,7 @@ function SaleDetail({ sale }: { sale: SalesUkraineSale }) {
           ]}
         />
         <SaleDetailSection
-          icon={<IconTag size={15} />}
+          icon={<Tag size={15} />}
           title={t('Клієнт і договір')}
           rows={[
             [t('Клієнт'), getSaleClientName(sale)],
@@ -1806,7 +1782,7 @@ function SaleDetail({ sale }: { sale: SalesUkraineSale }) {
           ]}
         />
         <SaleDetailSection
-          icon={<IconTruckDelivery size={15} />}
+          icon={<Truck size={15} />}
           title={t('Доставка')}
           rows={[
             [t('Перевізник'), transporterValue],
@@ -2010,7 +1986,7 @@ function SaleDetailProductRow({
     <div className={`sale-detail-product-row${showUah ? ' has-uah-price' : ''}`}>
       <div className="sale-detail-product-name">
         <span className="sale-detail-product-icon" aria-hidden="true">
-          <IconTag size={14} />
+          <Tag size={14} />
         </span>
         <div className="sale-detail-product-copy">
           <OverflowTooltipText className="sale-detail-product-title">
@@ -2128,12 +2104,12 @@ function SaleSourceIcon({ sale }: { sale: SalesUkraineSale }) {
 
   const indicator =
     source === 0
-      ? { icon: <IconBrandEdge size={14} />, label: t('Інтернет-магазин') }
+      ? { icon: <Globe size={14} />, label: t('Інтернет-магазин') }
       : source === 2
-        ? { icon: <IconTag size={14} />, label: t('Оферта') }
+        ? { icon: <Tag size={14} />, label: t('Оферта') }
         : isInvoiceStage
-          ? { icon: <IconFileInvoice size={14} />, label: t('Накладна') }
-          : { icon: <IconReceipt2 size={14} />, label: t('Рахунок') }
+          ? { icon: <ReceiptText size={14} />, label: t('Накладна') }
+          : { icon: <Receipt size={14} />, label: t('Рахунок') }
 
   return (
     <Tooltip label={indicator.label}>

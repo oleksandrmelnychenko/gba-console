@@ -11,18 +11,7 @@ import {
   ThemeIcon,
   Tooltip,
 } from '@mantine/core'
-import {
-  IconCheck,
-  IconChevronRight,
-  IconFileText,
-  IconFolder,
-  IconMinus,
-  IconPencil,
-  IconPhoto,
-  IconPlus,
-  IconRoute,
-  IconShieldCheck,
-} from '@tabler/icons-react'
+import { Check, ChevronRight, FileText, Folder, Image as ImageIcon, Minus, Pencil, Plus, Route, ShieldCheck } from 'lucide-react'
 import { useMemo, useState, type CSSProperties } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { DashboardNode, DashboardNodeModule, UserPermission } from '../types'
@@ -174,7 +163,7 @@ function ModuleSection({
           variant="subtle"
           onClick={onToggleCollapse}
         >
-          <IconChevronRight size={16} stroke={2} style={{ transform: collapsed ? undefined : 'rotate(90deg)' }} />
+          <ChevronRight size={16} strokeWidth={2} style={{ transform: collapsed ? undefined : 'rotate(90deg)' }} />
         </ActionIcon>
         <SelectionMark
           checked={isSelected}
@@ -184,7 +173,7 @@ function ModuleSection({
           onChange={() => onToggleModule(module)}
         />
         <ThemeIcon className="role-tree-module-icon" color="gray" size={28} variant="light">
-          <IconFolder size={16} />
+          <Folder size={16} />
         </ThemeIcon>
         <button className="role-tree-module-title" type="button" onClick={onToggleCollapse}>
           <Text className="role-tree-module-name">{module.Module || t('Без назви')}</Text>
@@ -289,7 +278,7 @@ function NodeRow({
           variant="subtle"
           onClick={onToggleCollapse}
         >
-          <IconChevronRight size={16} stroke={2} style={{ transform: collapsed ? undefined : 'rotate(90deg)' }} />
+          <ChevronRight size={16} strokeWidth={2} style={{ transform: collapsed ? undefined : 'rotate(90deg)' }} />
         </ActionIcon>
         <SelectionMark
           checked={nodeFullySelected}
@@ -298,14 +287,14 @@ function NodeRow({
           onChange={() => onToggleNode(node)}
         />
         <ThemeIcon className="role-tree-node-icon" color="gray" size={26} variant="light">
-          <IconFileText size={15} />
+          <FileText size={15} />
         </ThemeIcon>
         <button className="role-tree-node-title" disabled={!hasDetails} type="button" onClick={onToggleCollapse}>
           <Text className="role-tree-node-name">{node.Module || t('Без назви')}</Text>
           <span className="role-tree-node-meta">
             {node.Route ? (
               <span className="role-tree-route">
-                <IconRoute size={12} />
+                <Route size={12} />
                 {node.Route}
               </span>
             ) : null}
@@ -321,7 +310,7 @@ function NodeRow({
         <div className="role-tree-node-actions">
           <Tooltip label={t('Додати')}>
             <ActionIcon aria-label={t('Додати')} color="gray" size="sm" variant="light" onClick={() => onAddPermission(node)}>
-              <IconPlus size={16} />
+              <Plus size={16} />
             </ActionIcon>
           </Tooltip>
         </div>
@@ -392,7 +381,7 @@ function PermissionRow({ node, permission, selected, onEditPermission, onToggleP
       <span className="role-tree-connector" aria-hidden />
       <SelectionMark checked={selected} label={t('Вибрати право')} size="sm" onChange={() => onTogglePermission(permission)} />
       <ThemeIcon className="role-tree-permission-icon" color="gray" size={24} variant="light">
-        <IconShieldCheck size={14} />
+        <ShieldCheck size={14} />
       </ThemeIcon>
       <div className="role-tree-permission-body">
         <div className="role-tree-permission-copy">
@@ -420,7 +409,7 @@ function PermissionRow({ node, permission, selected, onEditPermission, onToggleP
           <HoverCard position="left" shadow="md" width={680} withArrow>
             <HoverCard.Target>
               <ActionIcon aria-label={t('Зображення')} color="gray" size="sm" variant="subtle">
-                <IconPhoto size={16} />
+                <ImageIcon size={16} />
               </ActionIcon>
             </HoverCard.Target>
             <HoverCard.Dropdown>
@@ -436,7 +425,7 @@ function PermissionRow({ node, permission, selected, onEditPermission, onToggleP
             variant="subtle"
             onClick={() => onEditPermission(node, permission)}
           >
-            <IconPencil size={16} />
+            <Pencil size={16} />
           </ActionIcon>
         </Tooltip>
       </div>
@@ -468,7 +457,7 @@ function SelectionMark({ checked, disabled = false, indeterminate = false, label
       type="button"
       onClick={onChange}
     >
-      {indeterminate ? <IconMinus size={11} stroke={2.2} /> : checked ? <IconCheck size={11} stroke={2.2} /> : null}
+      {indeterminate ? <Minus size={11} strokeWidth={2.2} /> : checked ? <Check size={11} strokeWidth={2.2} /> : null}
     </button>
   )
 }

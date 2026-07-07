@@ -14,12 +14,7 @@ import {
   UnstyledButton,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import {
-  IconAlertCircle,
-  IconColumnInsertRight,
-  IconFileTypePdf,
-  IconTrash,
-} from '@tabler/icons-react'
+import { BetweenVerticalEnd, CircleAlert, FileText, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { formatLocalDate, formatLocalInputDateTime } from '../../../shared/date/dateTime'
@@ -150,7 +145,6 @@ function findRowForItem(
 ): DynamicProductPlacementRow | undefined {
   return column.DynamicProductPlacementRows.find((row) => row.PackingListPackageOrderItemId === item.Id)
 }
-
 
 function buildGridRows(packingList: IncomePackingList): IncomeGridRow[] {
   return packingList.PackingListPackageOrderItems.map((item, index) => {
@@ -1135,7 +1129,7 @@ function PzDocumentDownloadModal({
             {t('Завантаження')}
           </Text>
         ) : error ? (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         ) : document?.DocumentURL || document?.PdfDocumentURL ? (
@@ -1161,7 +1155,7 @@ function PzDocumentDownloadModal({
                 target="_blank"
               >
                 <span className="document-link-badge document-link-badge-pdf">
-                  <IconFileTypePdf size={22} stroke={1.8} />
+                  <FileText size={22} strokeWidth={1.8} />
                 </span>
                 <span>{t('PDF документ')}</span>
               </Anchor>
@@ -1345,7 +1339,7 @@ function useProductIncomeColumns({
                   variant="subtle"
                   onClick={() => model.handleMoveRemnants(column)}
                 >
-                  <IconColumnInsertRight size={16} />
+                  <BetweenVerticalEnd size={16} />
                 </ActionIcon>
               </Tooltip>
               {canDelete && (
@@ -1358,7 +1352,7 @@ function useProductIncomeColumns({
                     variant="subtle"
                     onClick={() => model.setColumnToRemove(column)}
                   >
-                    <IconTrash size={16} />
+                    <Trash2 size={16} />
                   </ActionIcon>
                 </Tooltip>
               )}
@@ -1478,7 +1472,7 @@ function PackingListProductIncomePage({
       <ProtocolIncomeSummaryCard model={model} source={source} />
 
       {!model.isLoading && model.protocol && !canUseIncome && (
-        <Alert className="product-income-alert" color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert className="product-income-alert" color="yellow" icon={<CircleAlert size={18} />} variant="light">
           {t('Оприходування доступне після завершення протоколу')}
         </Alert>
       )}
@@ -1500,7 +1494,7 @@ function PackingListProductIncomePage({
       />
 
       {model.error && (
-        <Alert className="product-income-alert" color="red" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert className="product-income-alert" color="red" icon={<CircleAlert size={18} />} variant="light">
           {model.error}
         </Alert>
       )}

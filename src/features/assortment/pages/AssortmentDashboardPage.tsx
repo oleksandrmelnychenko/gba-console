@@ -9,7 +9,7 @@ import {
   Text,
   TextInput,
 } from '@mantine/core'
-import { IconAlertCircle, IconMapPin } from '@tabler/icons-react'
+import { CircleAlert, MapPin } from 'lucide-react'
 import { useEffect, useMemo } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -420,7 +420,7 @@ export function AssortmentDashboardPage() {
       />
 
       {error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {error}
         </Alert>
       )}
@@ -793,7 +793,7 @@ function RegionSummary({ region }: { region: AssortmentRegionRow }) {
     <Card className="app-section-card assort-region" withBorder radius="md" padding={0}>
       <div className="assort-region__title">
         <span className="app-action-icon assort-region__icon">
-          <IconMapPin size={18} />
+          <MapPin size={18} />
         </span>
         <div>
           <span>{regionName(region)}</span>

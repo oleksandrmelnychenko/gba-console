@@ -1,5 +1,5 @@
 import { ActionIcon, Alert, Button, Select, Stack, Text, TextInput, Tooltip } from '@mantine/core'
-import { IconAlertCircle, IconRefresh, IconRestore } from '@tabler/icons-react'
+import { CircleAlert, RefreshCw, RotateCcw } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -308,7 +308,7 @@ export function OrdersTab() {
             <div className="app-filter-actions warehouse-ukraine-filter-actions">
               <Tooltip label={t('Скинути')}>
                 <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={model.resetFilters}>
-                  <IconRestore size={17} />
+                  <RotateCcw size={17} />
                 </ActionIcon>
               </Tooltip>
               <Tooltip label={t('Оновити')}>
@@ -320,7 +320,7 @@ export function OrdersTab() {
                   variant="light"
                   onClick={() => model.reload()}
                 >
-                  <IconRefresh size={17} />
+                  <RefreshCw size={17} />
                 </ActionIcon>
               </Tooltip>
               <Select
@@ -336,7 +336,7 @@ export function OrdersTab() {
           </div>
 
           {(model.error || model.filterError) && (
-            <Alert className="console-table-alert" color={model.filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert className="console-table-alert" color={model.filterError ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">
               {model.filterError || model.error}
             </Alert>
           )}

@@ -1,6 +1,6 @@
 import { Box, Group, Select, Stack, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconBox, IconSearch, IconSettings } from '@tabler/icons-react'
+import { Box as BoxIcon, Search, Settings } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useAuth } from '../../../auth/useAuth'
 import { useI18n } from '../../../../shared/i18n/useI18n'
@@ -2214,7 +2214,7 @@ export function NewSaleProductsStep({
             renderExtra={(product) => (
               <Group className="new-sale-related-row__component-extra" gap={6} wrap="nowrap">
                 <Box className="new-sale-related-row__component-icon">
-                  {componentEntries.isBaseSet ? <IconBox size={13} /> : <IconSettings size={13} />}
+                  {componentEntries.isBaseSet ? <BoxIcon size={13} /> : <Settings size={13} />}
                 </Box>
                 {renderPriceExtra(product, product.NetUid ? setQtyByNetUid.get(product.NetUid) : undefined)}
               </Group>
@@ -2322,7 +2322,7 @@ export function NewSaleProductsStep({
             {showProductSearchEmpty ? (
               <Stack align="center" className="new-sale-client-empty new-sale-products-step-empty" gap={10} justify="center">
                 <span className="new-sale-client-empty__icon">
-                  <IconSearch size={30} stroke={1.55} />
+                  <Search size={30} strokeWidth={1.55} />
                 </span>
                 <Stack align="center" gap={3}>
                   <Text className="new-sale-client-empty__title">{productSearchEmptyTitle}</Text>

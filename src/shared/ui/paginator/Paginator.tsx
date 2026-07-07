@@ -1,5 +1,5 @@
 import { ActionIcon, Group, NumberInput, Select, Text, Tooltip } from '@mantine/core'
-import { IconChevronLeft, IconChevronRight, IconRefresh } from '@tabler/icons-react'
+import { ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react'
 import { useState } from 'react'
 import { useI18n } from '../../i18n/useI18n'
 import { DEFAULT_PAGINATOR_PAGE_SIZE, PAGINATOR_PAGE_SIZE_OPTIONS } from './paginatorPageSize'
@@ -119,7 +119,7 @@ export function Paginator({
         variant="subtle"
         onClick={() => onPageChange(Math.max(1, page - 1))}
       >
-        <IconChevronLeft size={16} />
+        <ChevronLeft size={16} />
       </ActionIcon>
       <ActionIcon
         aria-label={t('Наступна сторінка')}
@@ -129,7 +129,7 @@ export function Paginator({
         variant="subtle"
         onClick={() => onPageChange(page + 1)}
       >
-        <IconChevronRight size={16} />
+        <ChevronRight size={16} />
       </ActionIcon>
       {onRefresh && (
         <Tooltip label={t('Оновити')}>
@@ -141,7 +141,7 @@ export function Paginator({
             variant="subtle"
             onClick={onRefresh}
           >
-            <IconRefresh size={16} />
+            <RefreshCw size={16} />
           </ActionIcon>
         </Tooltip>
       )}

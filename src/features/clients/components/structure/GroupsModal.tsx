@@ -10,7 +10,7 @@ import {
   UnstyledButton,
 } from '@mantine/core'
 import { AppModal } from '../../../../shared/ui/AppModal'
-import { IconAlertCircle, IconPlus, IconTrash, IconX } from '@tabler/icons-react'
+import { CircleAlert, Plus, Trash2, X } from 'lucide-react'
 import { useEffect } from 'react'
 import { useValueState } from '../../../../shared/hooks/useValueState'
 import { useI18n } from '../../../../shared/i18n/useI18n'
@@ -186,7 +186,7 @@ export function GroupsModal({ opened, clientId, clientNetId, onClose, onChange }
     >
       <Stack gap="md">
         {error && (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}
@@ -213,12 +213,12 @@ export function GroupsModal({ opened, clientId, clientNetId, onClose, onChange }
             variant="light"
             onClick={resetForm}
           >
-            <IconX size={18} />
+            <X size={18} />
           </ActionIcon>
           <Button
             color={CREATE_ACTION_COLOR}
             disabled={!trimmedName}
-            leftSection={<IconPlus size={16} />}
+            leftSection={<Plus size={16} />}
             loading={isSubmitting}
             onClick={() => void handleSubmit()}
           >
@@ -269,7 +269,7 @@ export function GroupsModal({ opened, clientId, clientNetId, onClose, onChange }
                   variant="subtle"
                   onClick={() => setGroupPendingDelete(group)}
                 >
-                  <IconTrash size={16} />
+                  <Trash2 size={16} />
                 </ActionIcon>
               </Group>
             ))}

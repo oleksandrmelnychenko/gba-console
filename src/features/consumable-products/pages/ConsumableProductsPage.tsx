@@ -12,17 +12,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import {
-  IconAlertCircle,
-  IconPencil,
-  IconPlus,
-  IconRefresh,
-  IconRestore,
-  IconSearch,
-  IconTrash,
-  IconX,
-} from '@tabler/icons-react'
-import { ExternalLink, Trash2 } from 'lucide-react'
+import { CircleAlert, ExternalLink, Pencil, Plus, RefreshCw, RotateCcw, Search, Trash2, X } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { PermissionGate } from '../../auth/components/PermissionGate'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -284,7 +274,7 @@ export function ConsumableProductsPage() {
         <div className="app-filter-bar consumable-products-filter-bar">
           <TextInput
             className="consumable-products-search-input"
-            leftSection={<IconSearch size={15} />}
+            leftSection={<Search size={15} />}
             label={t('Пошук')}
             placeholder={t('Категорія або товар')}
             value={searchValue}
@@ -310,12 +300,12 @@ export function ConsumableProductsPage() {
                   setSelectedCategoryKey(null)
                 }}
               >
-                <IconRestore size={17} />
+                <RotateCcw size={17} />
               </ActionIcon>
             </Tooltip>
             <Tooltip label={t('Оновити')}>
               <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={34} variant="light" onClick={() => void reloadCategories()}>
-                <IconRefresh size={17} />
+                <RefreshCw size={17} />
               </ActionIcon>
             </Tooltip>
           </div>
@@ -325,7 +315,7 @@ export function ConsumableProductsPage() {
               <Button
                 color={CREATE_ACTION_COLOR}
                 disabled={!selectedCategory}
-                leftSection={<IconPlus size={16} />}
+                leftSection={<Plus size={16} />}
                 size="sm"
                 variant="outline"
                 onClick={() => {
@@ -338,7 +328,7 @@ export function ConsumableProductsPage() {
               </Button>
             </PermissionGate>
             <PermissionGate permissionKey="SERVICE_Accounting_Consumable_Product_AddBtn_PKEY">
-              <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} onClick={() => setCategoryEditor({ mode: 'create' })}>
+              <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<Plus size={16} />} onClick={() => setCategoryEditor({ mode: 'create' })}>
                 {t('Додати категорію')}
               </Button>
             </PermissionGate>
@@ -346,7 +336,7 @@ export function ConsumableProductsPage() {
         </div>
 
         {error && (
-          <Alert className="console-table-alert" color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert className="console-table-alert" color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}
@@ -469,12 +459,12 @@ function ConsumableCategoryPanel({
           <PermissionGate permissionKey="SERVICE_Accounting_Consumable_Product_edit_categoryBtn_PKEY">
             <Tooltip label={t('Редагувати')}>
               <ActionIcon aria-label={t('Редагувати категорію')} color="gray" variant="light" onClick={onEditCategory}>
-                <IconPencil size={16} />
+                <Pencil size={16} />
               </ActionIcon>
             </Tooltip>
             <Tooltip label={t('Видалити')}>
               <ActionIcon aria-label={t('Видалити категорію')} color="red" variant="light" onClick={onDeleteCategory}>
-                <IconTrash size={16} />
+                <Trash2 size={16} />
               </ActionIcon>
             </Tooltip>
           </PermissionGate>
@@ -701,12 +691,12 @@ function CategoryEditorForm({
         onChange={(event) => setSupplyServiceCategory(event.currentTarget.checked)}
       />
       <Group justify="flex-end">
-        <Button color="gray" leftSection={<IconX size={16} />} variant="subtle" onClick={onClose}>
+        <Button color="gray" leftSection={<X size={16} />} variant="subtle" onClick={onClose}>
           {t('Скасувати')}
         </Button>
         <Button
           color={CREATE_ACTION_COLOR}
-          leftSection={<IconPlus size={16} />}
+          leftSection={<Plus size={16} />}
           loading={isSubmitting}
           onClick={() => onSubmit({ isSupplyServiceCategory, name })}
         >
@@ -845,10 +835,10 @@ function ProductEditorForm({
         }}
       />
       <Group justify="flex-end">
-        <Button color="gray" leftSection={<IconX size={16} />} variant="subtle" onClick={onClose}>
+        <Button color="gray" leftSection={<X size={16} />} variant="subtle" onClick={onClose}>
           {t('Скасувати')}
         </Button>
-        <Button color={CREATE_ACTION_COLOR} leftSection={<IconPlus size={16} />} loading={isSubmitting} onClick={submit}>
+        <Button color={CREATE_ACTION_COLOR} leftSection={<Plus size={16} />} loading={isSubmitting} onClick={submit}>
           {t('Зберегти')}
         </Button>
       </Group>

@@ -6,16 +6,7 @@ import {
   Table,
   UnstyledButton,
 } from '@mantine/core'
-import {
-  IconChevronDown,
-  IconChevronUp,
-  IconDotsVertical,
-  IconEyeOff,
-  IconPinned,
-  IconPinnedFilled,
-  IconPinnedOff,
-  IconSortAscending,
-} from '@tabler/icons-react'
+import { ArrowUpNarrowWide, ChevronDown, ChevronUp, EllipsisVertical, EyeOff, Pin, PinOff } from 'lucide-react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { flexRender, type Column, type Header } from '@tanstack/react-table'
@@ -62,7 +53,7 @@ function DataTableHeaderMenuInner<TData>({
         size="xs"
         variant="subtle"
       >
-        <IconDotsVertical size={14} stroke={1.8} />
+        <EllipsisVertical size={14} strokeWidth={1.8} />
       </ActionIcon>
     )
   }
@@ -92,26 +83,26 @@ function DataTableHeaderMenuInner<TData>({
             event.stopPropagation()
           }}
         >
-          <IconDotsVertical size={14} stroke={1.8} />
+          <EllipsisVertical size={14} strokeWidth={1.8} />
         </ActionIcon>
       </Menu.Target>
       <Menu.Dropdown>
         {column.getCanPin() ? (
           <>
             <Menu.Item
-              leftSection={<IconPinned size={15} stroke={1.8} />}
+              leftSection={<Pin size={15} strokeWidth={1.8} />}
               onClick={() => column.pin('left')}
             >
               {labels.pinLeft}
             </Menu.Item>
             <Menu.Item
-              leftSection={<IconPinned size={15} stroke={1.8} />}
+              leftSection={<Pin size={15} strokeWidth={1.8} />}
               onClick={() => column.pin('right')}
             >
               {labels.pinRight}
             </Menu.Item>
             <Menu.Item
-              leftSection={<IconPinnedOff size={15} stroke={1.8} />}
+              leftSection={<PinOff size={15} strokeWidth={1.8} />}
               onClick={() => column.pin(false)}
             >
               {labels.unpin}
@@ -121,7 +112,7 @@ function DataTableHeaderMenuInner<TData>({
         {column.getCanHide() ? (
           <Menu.Item
             color="red"
-            leftSection={<IconEyeOff size={15} stroke={1.8} />}
+            leftSection={<EyeOff size={15} strokeWidth={1.8} />}
             onClick={() => column.toggleVisibility(false)}
           >
             {labels.hideColumn}
@@ -233,17 +224,17 @@ function DataTableHeaderCellInner<TData>({
               className="data-table-pinned-icon"
               title={labels.pinnedColumn}
             >
-              <IconPinnedFilled size={12} stroke={1.8} />
+              <Pin size={12} strokeWidth={1.8} />
             </span>
           ) : null}
           {canSort ? (
             <span className="data-table-sort-icon" data-sorted={sorted ? 'true' : 'false'} aria-label={sortLabel}>
               {sorted === 'asc' ? (
-                <IconChevronUp size={14} stroke={2} />
+                <ChevronUp size={14} strokeWidth={2} />
               ) : sorted === 'desc' ? (
-                <IconChevronDown size={14} stroke={2} />
+                <ChevronDown size={14} strokeWidth={2} />
               ) : (
-                <IconSortAscending size={14} stroke={1.8} />
+                <ArrowUpNarrowWide size={14} strokeWidth={1.8} />
               )}
             </span>
           ) : null}

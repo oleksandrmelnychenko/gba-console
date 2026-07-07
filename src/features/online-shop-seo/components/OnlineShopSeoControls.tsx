@@ -12,7 +12,7 @@ import {
   Textarea,
   Tooltip,
 } from '@mantine/core'
-import { IconAlertCircle, IconDeviceFloppy, IconRestore, IconSearch } from '@tabler/icons-react'
+import { CircleAlert, RotateCcw, Save, Search } from 'lucide-react'
 import { type FormEvent, type ReactNode } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -45,7 +45,7 @@ export function SearchToolbar({ action, placeholder, value, onChange, onReset }:
   return (
     <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
       <TextInput
-        leftSection={<IconSearch size={16} />}
+        leftSection={<Search size={16} />}
         label={t('Пошук')}
         placeholder={placeholder}
         value={value}
@@ -62,7 +62,7 @@ export function SearchToolbar({ action, placeholder, value, onChange, onReset }:
           variant="light"
           onClick={onReset}
         >
-          <IconRestore size={18} />
+          <RotateCcw size={18} />
         </ActionIcon>
       </Tooltip>
       {action}
@@ -150,7 +150,7 @@ export function ContactInfoForm({ contactInfo, isSaving, locale, onSave }: Conta
           <TextInput label="Pixel ID" value={values.PixelId} onChange={(event) => setField('PixelId', event.currentTarget.value)} />
         </SimpleGrid>
         <Group justify="flex-end">
-          <Button color={CREATE_ACTION_COLOR} leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} type="submit">
+          <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSaving} type="submit">
             {t('Зберегти')}
           </Button>
         </Group>
@@ -187,7 +187,7 @@ export function PaymentInfoForm({ isSaving, locale, onSave, payment }: PaymentIn
     <form onSubmit={handleSubmit}>
       <Stack gap="md">
         {!canSave && (
-          <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
             {t('Запис оплати відсутній')}
           </Alert>
         )}
@@ -222,7 +222,7 @@ export function PaymentInfoForm({ isSaving, locale, onSave, payment }: PaymentIn
           <Button
             color={CREATE_ACTION_COLOR}
             disabled={!canSave}
-            leftSection={<IconDeviceFloppy size={16} />}
+            leftSection={<Save size={16} />}
             loading={isSaving}
             type="submit"
           >

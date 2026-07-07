@@ -1,6 +1,6 @@
 import { Fragment, memo, type CSSProperties, type ReactNode } from 'react'
 import { ActionIcon, Table } from '@mantine/core'
-import { IconChevronRight } from '@tabler/icons-react'
+import { ChevronRight } from 'lucide-react'
 import { flexRender, type Cell, type Column, type Row, type Table as TableInstance } from '@tanstack/react-table'
 import { getPinnedStyle } from './dataTablePinning'
 import type { DataTableColumnMeta } from './types'
@@ -115,9 +115,9 @@ function DataTableBodyRowInner<TData>({
                   expand.onToggleRow(row.id)
                 }}
               >
-                <IconChevronRight
+                <ChevronRight
                   size={16}
-                  stroke={2}
+                  strokeWidth={2}
                   style={{
                     transform: isExpanded ? 'rotate(90deg)' : undefined,
                     transition: 'transform 120ms ease',

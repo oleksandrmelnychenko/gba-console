@@ -11,13 +11,7 @@ import {
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
-import {
-  IconAlertCircle,
-  IconDownload,
-  IconFileImport,
-  IconFilesOff,
-  IconLayersIntersect,
-} from '@tabler/icons-react'
+import { CircleAlert, Download, FileInput, FileX, Layers } from 'lucide-react'
 import { useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { formatLocalDate, formatLocalInputDateTime } from '../../../shared/date/dateTime'
@@ -928,7 +922,7 @@ export function ProductDeliveryProtocolSpecificationPage() {
     >
       <Stack className="product-specification-sheet" gap="md">
         {model.error && (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {model.error}
           </Alert>
         )}
@@ -940,7 +934,7 @@ export function ProductDeliveryProtocolSpecificationPage() {
         ) : model.protocol ? (
           <Stack gap="md">
             {specificationUnavailableMessage && (
-              <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+              <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
                 {specificationUnavailableMessage}
               </Alert>
             )}
@@ -972,7 +966,7 @@ export function ProductDeliveryProtocolSpecificationPage() {
                       <Button
                         color={CREATE_ACTION_COLOR}
                         disabled={model.isActionBusy}
-                        leftSection={<IconFileImport size={16} />}
+                        leftSection={<FileInput size={16} />}
                         loading={model.isUploading}
                         onClick={() => model.setUploadOpen(true)}
                       >
@@ -982,7 +976,7 @@ export function ProductDeliveryProtocolSpecificationPage() {
                     {canUploadDocuments && (
                       <Button
                         disabled={!canOpenDeliveryDocuments || model.isActionBusy}
-                        leftSection={<IconFileImport size={16} />}
+                        leftSection={<FileInput size={16} />}
                         loading={model.isSavingDocuments}
                         variant="default"
                         onClick={model.openDocuments}
@@ -993,7 +987,7 @@ export function ProductDeliveryProtocolSpecificationPage() {
                     {canMerge && (
                       <Button
                         disabled={model.isActionBusy}
-                        leftSection={<IconLayersIntersect size={16} />}
+                        leftSection={<Layers size={16} />}
                         loading={model.isMerging}
                         variant="default"
                         onClick={model.openMerge}
@@ -1004,7 +998,7 @@ export function ProductDeliveryProtocolSpecificationPage() {
                     {canDownload && (
                       <Button
                         disabled={model.isActionBusy}
-                        leftSection={<IconDownload size={16} />}
+                        leftSection={<Download size={16} />}
                         loading={model.isDownloading}
                         variant="default"
                         onClick={model.openDownload}
@@ -1088,7 +1082,7 @@ export function ProductDeliveryProtocolSpecificationPage() {
                 </div>
 
                 {model.packingListError && (
-                  <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+                  <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
                     {model.packingListError}
                   </Alert>
                 )}
@@ -1122,7 +1116,7 @@ export function ProductDeliveryProtocolSpecificationPage() {
                     />
                   ) : (
                     <Group gap="xs" c="dimmed">
-                      <IconFilesOff size={18} />
+                      <FileX size={18} />
                       <Text size="sm">{t('Немає даних')}</Text>
                     </Group>
                   )}

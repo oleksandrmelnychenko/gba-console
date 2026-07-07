@@ -1,6 +1,6 @@
 import { ActionIcon, Alert, Anchor, Badge, Button, Card, Checkbox, Chip, Group, NumberInput, Stack, Table, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconAlertCircle, IconFileInvoice, IconPencil } from '@tabler/icons-react'
+import { CircleAlert, Pencil, ReceiptText } from 'lucide-react'
 import { useEffect } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -263,7 +263,7 @@ function MergedSalesContent({
   return (
     <Stack gap="md">
       {error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {error}
         </Alert>
       )}
@@ -389,14 +389,14 @@ function MergedSaleCard({
             />
             {onEdit && (
               <ActionIcon aria-label={t('Редагувати')} color="gray" size="lg" variant="subtle" onClick={() => onEdit(sale)}>
-                <IconPencil size={18} />
+                <Pencil size={18} />
               </ActionIcon>
             )}
             <Button
               className="sales-drawer-action-button"
               color={CREATE_ACTION_COLOR}
               disabled={!canInvoice}
-              leftSection={<IconFileInvoice size={16} />}
+              leftSection={<ReceiptText size={16} />}
               size="xs"
               variant="outline"
               onClick={() => onInvoice(sale, index)}

@@ -13,12 +13,7 @@ import {
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
-import {
-  IconAlertCircle,
-  IconFileSpreadsheet,
-  IconPlus,
-  IconTrash,
-} from '@tabler/icons-react'
+import { CircleAlert, FileSpreadsheet, Plus, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
@@ -138,7 +133,7 @@ export function NewProductCapitalizationPanel({ opened, onClose, onCreated }: Ne
         <>
           <Button
             disabled={isFormBusy}
-            leftSection={<IconFileSpreadsheet size={16} />}
+            leftSection={<FileSpreadsheet size={16} />}
             variant="default"
             onClick={model.openUploadModal}
           >
@@ -163,7 +158,7 @@ export function NewProductCapitalizationPanel({ opened, onClose, onCreated }: Ne
     >
       <Stack gap="md">
         {model.error && (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {model.error}
           </Alert>
         )}
@@ -252,7 +247,7 @@ export function NewProductCapitalizationPanel({ opened, onClose, onCreated }: Ne
           <Button
             color={CREATE_ACTION_COLOR}
             disabled={isFormBusy}
-            leftSection={<IconPlus size={16} />}
+            leftSection={<Plus size={16} />}
             mb={1}
             variant="outline"
             onClick={model.addItem}
@@ -1027,7 +1022,7 @@ function useItemColumns(
             variant="subtle"
             onClick={() => onRemove(item.__rowKey)}
           >
-            <IconTrash size={16} />
+            <Trash2 size={16} />
           </ActionIcon>
         ),
       },

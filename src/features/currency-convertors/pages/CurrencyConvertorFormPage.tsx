@@ -1,6 +1,6 @@
 import { Alert, Button, SimpleGrid, Stack, TextInput } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconAlertCircle, IconDeviceFloppy } from '@tabler/icons-react'
+import { CircleAlert, Save } from 'lucide-react'
 import { type FormEvent, useEffect, useReducer } from 'react'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
@@ -149,7 +149,7 @@ export function CurrencyConvertorFormPage() {
           color={CREATE_ACTION_COLOR}
           disabled={isLoading || !canSave}
           form="currency-trader-form"
-          leftSection={<IconDeviceFloppy size={16} />}
+          leftSection={<Save size={16} />}
           loading={isSaving}
           type="submit"
         >
@@ -160,13 +160,13 @@ export function CurrencyConvertorFormPage() {
       <form id="currency-trader-form" onSubmit={handleSubmit}>
         <Stack gap="md">
           {error && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
             </Alert>
           )}
 
           {!canSave && (
-            <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
               {t('Немає прав для збереження валютного трейдера')}
             </Alert>
           )}

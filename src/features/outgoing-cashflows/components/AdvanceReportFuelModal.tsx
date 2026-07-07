@@ -11,7 +11,7 @@ import {
   Text,
   TextInput,
 } from '@mantine/core'
-import { IconAlertCircle, IconDeviceFloppy, IconX } from '@tabler/icons-react'
+import { CircleAlert, Save, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -361,7 +361,7 @@ export function AdvanceReportFuelModal({
     <AppModal centered opened={opened} size="xl" title={t('Додати пальне')} onClose={requestClose}>
       <Stack gap="md">
         {error && (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}
@@ -466,10 +466,10 @@ export function AdvanceReportFuelModal({
         </Group>
 
         <Group justify="flex-end">
-          <Button color="gray" disabled={isSaving} leftSection={<IconX size={16} />} variant="light" onClick={requestClose}>
+          <Button color="gray" disabled={isSaving} leftSection={<X size={16} />} variant="light" onClick={requestClose}>
             {t('Скасувати')}
           </Button>
-          <Button leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} onClick={() => void submitFueling()}>
+          <Button leftSection={<Save size={16} />} loading={isSaving} onClick={() => void submitFueling()}>
             {t('Додати')}
           </Button>
         </Group>

@@ -1,5 +1,5 @@
 import { ActionIcon, Box, Collapse, Group, Loader, Text, ThemeIcon } from '@mantine/core'
-import { IconCheck, IconChevronRight, IconMinus } from '@tabler/icons-react'
+import { Check, ChevronRight, Minus } from 'lucide-react'
 import { type CSSProperties, type ReactNode, useCallback, useMemo, useState } from 'react'
 import { useI18n } from '../../i18n/useI18n'
 import './tree.css'
@@ -122,7 +122,7 @@ function TreeRow({ node, depth, expanded, onToggleExpand, t }: TreeRowProps) {
             variant="subtle"
             onClick={handleToggle}
           >
-            <IconChevronRight size={16} stroke={2} style={{ transform: isOpen ? 'rotate(90deg)' : undefined }} />
+            <ChevronRight size={16} strokeWidth={2} style={{ transform: isOpen ? 'rotate(90deg)' : undefined }} />
           </ActionIcon>
         ) : (
           <span className="app-tree-disclosure-spacer" aria-hidden="true" />
@@ -200,7 +200,7 @@ export function SelectionMark({ state, label, disabled = false, onToggle }: Sele
       type="button"
       onClick={onToggle}
     >
-      {indeterminate ? <IconMinus size={11} stroke={2.2} /> : checked ? <IconCheck size={11} stroke={2.2} /> : null}
+      {indeterminate ? <Minus size={11} strokeWidth={2.2} /> : checked ? <Check size={11} strokeWidth={2.2} /> : null}
     </button>
   )
 }

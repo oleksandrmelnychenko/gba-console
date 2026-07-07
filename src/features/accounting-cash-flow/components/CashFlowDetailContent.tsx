@@ -1,5 +1,5 @@
 import { Anchor, Badge, Button, Divider, Group, Stack, Text } from '@mantine/core'
-import { IconExternalLink, IconFileTypePdf } from '@tabler/icons-react'
+import { ExternalLink, FileText } from 'lucide-react'
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -58,7 +58,7 @@ function CashFlowDetailView({ detail }: { detail: CashFlowDetailViewModel }) {
                 className="document-link"
               >
                 <span className="document-link-badge document-link-badge-pdf">
-                  <IconFileTypePdf size={18} stroke={1.8} />
+                  <FileText size={18} strokeWidth={1.8} />
                 </span>
                 <span>{document.name || t('Документ')}</span>
               </Anchor>
@@ -68,7 +68,7 @@ function CashFlowDetailView({ detail }: { detail: CashFlowDetailViewModel }) {
                 <Button
                   color="gray"
                   component={Link}
-                  leftSection={<IconExternalLink size={16} />}
+                  leftSection={<ExternalLink size={16} />}
                   to={orderLink.route}
                   variant="light"
                 >

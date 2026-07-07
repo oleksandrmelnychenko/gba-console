@@ -1,6 +1,6 @@
 import { Alert, Button, Checkbox, Group, NumberInput, Select, Stack, Text } from '@mantine/core'
 import { AppModal } from "../../../shared/ui/AppModal"
-import { IconAlertCircle } from '@tabler/icons-react'
+import { CircleAlert } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { TaxFree, TaxFreeItem, TaxFreePackList } from '../types'
@@ -98,7 +98,7 @@ export function MoveTaxFreeItemsModal({ items, opened, packList, onClose, onSubm
     <AppModal centered opened={opened} size="lg" title={t('Перенесення у Tax Free')} onClose={onClose}>
       <Stack>
         {error && (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}

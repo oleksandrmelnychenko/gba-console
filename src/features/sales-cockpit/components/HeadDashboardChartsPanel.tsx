@@ -1,5 +1,5 @@
 import { Alert, Badge, Card, Group, SimpleGrid, Stack, Text } from '@mantine/core'
-import { IconAlertCircle } from '@tabler/icons-react'
+import { CircleAlert } from 'lucide-react'
 import { useEffect, useMemo, useReducer } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AgingBars, type AgingSeries } from '../../../shared/ui/charts'
@@ -124,7 +124,7 @@ export function HeadDashboardChartsPanel({ reloadKey, rows }: { reloadKey: numbe
         <Text className="app-section-title" fw={600}>{t('Дашборд команди')}</Text>
 
         {error && (
-          <Alert color="orange" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="orange" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}

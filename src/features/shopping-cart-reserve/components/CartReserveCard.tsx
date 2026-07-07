@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { ActionIcon, Anchor, Badge, Card, Group, Stack, Text } from '@mantine/core'
-import { IconChevronDown, IconChevronUp } from '@tabler/icons-react'
+import { ChevronDown, ChevronUp } from 'lucide-react'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { ProductCardModal } from '../../products/components/ProductCardModal'
@@ -77,7 +77,7 @@ export function CartReserveCard({ cart, index, isExpanded, onOpenClient, onToggl
               aria-label={isExpanded ? t('Згорнути') : t('Розгорнути')}
               onClick={() => onToggle(index)}
             >
-              {isExpanded ? <IconChevronUp size={18} /> : <IconChevronDown size={18} />}
+              {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
             </ActionIcon>
           </Group>
         </Group>

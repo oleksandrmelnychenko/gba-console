@@ -1,5 +1,5 @@
 import { Button, Group, Stack, Textarea, TextInput } from '@mantine/core'
-import { IconCheck, IconTrash } from '@tabler/icons-react'
+import { Check, Trash2 } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import type { ServicePayer } from '../../types'
@@ -188,7 +188,7 @@ function ServicePayerFormFields({
             <Button
               color="red"
               disabled={disabled}
-              leftSection={<IconTrash size={16} />}
+              leftSection={<Trash2 size={16} />}
               variant="light"
               onClick={() => payer && onDelete(payer)}
             >
@@ -205,7 +205,7 @@ function ServicePayerFormFields({
           <Button
             color={CREATE_ACTION_COLOR}
             disabled={disabled}
-            leftSection={<IconCheck size={16} />}
+            leftSection={<Check size={16} />}
             onClick={handleSubmit}
           >
             {isEdit ? t('Зберегти') : t('Додати')}

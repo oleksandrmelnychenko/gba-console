@@ -1,6 +1,6 @@
 import { Alert, Button, Group, Select, Stack, Text, TextInput } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconAlertCircle, IconSearch } from '@tabler/icons-react'
+import { CircleAlert, Search } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { formatLocalDate, formatLocalDateTime } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -162,7 +162,7 @@ export function SadSupplyOrderFromSadModal({
     <AppModal centered opened={opened} size="lg" title={t('Створити замовлення постачання з SAD')} onClose={onClose}>
       <Stack>
         {error && (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}
@@ -172,7 +172,7 @@ export function SadSupplyOrderFromSadModal({
         </Text>
 
         <TextInput
-          leftSection={<IconSearch size={16} />}
+          leftSection={<Search size={16} />}
           label={t('Пошук постачальника')}
           value={supplierSearch}
           onChange={(event) => setSupplierSearch(event.currentTarget.value)}

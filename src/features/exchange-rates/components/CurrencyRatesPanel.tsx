@@ -7,7 +7,7 @@ import {
   TextInput,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconRestore, IconX } from '@tabler/icons-react'
+import { RotateCcw, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, type CSSProperties, type FormEvent } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { getExchangeRateHistory, updateExchangeRates } from '../api/exchangeRatesApi'
@@ -383,7 +383,7 @@ export function CurrencyRatesPanel({ group, onClose, onRefresh, style }: Currenc
           </Text>
         </Box>
         <ActionIcon variant="subtle" color="gray" aria-label={t('Закрити')} onClick={onClose}>
-          <IconX size={18} stroke={1.8} />
+          <X size={18} strokeWidth={1.8} />
         </ActionIcon>
       </Group>
 
@@ -411,7 +411,7 @@ export function CurrencyRatesPanel({ group, onClose, onRefresh, style }: Currenc
           }
         />
         <ActionIcon variant="light" color="gray" aria-label={t('Скинути')} onClick={resetFilter}>
-          <IconRestore size={18} stroke={1.8} />
+          <RotateCcw size={18} strokeWidth={1.8} />
         </ActionIcon>
       </Group>
 

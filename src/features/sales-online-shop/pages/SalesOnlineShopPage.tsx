@@ -15,30 +15,7 @@ import {
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
-import {
-  IconAlertCircle,
-  IconAlertTriangle,
-  IconBrandEdge,
-  IconChevronDown,
-  IconChevronRight,
-  IconDots,
-  IconExternalLink,
-  IconFileInvoice,
-  IconEye,
-  IconHistory,
-  IconInfoCircle,
-  IconLock,
-  IconLockOpen,
-  IconPencil,
-  IconPercentage,
-  IconPrinter,
-  IconReceipt,
-  IconReceipt2,
-  IconRestore,
-  IconSearch,
-  IconTag,
-  IconTruckDelivery,
-} from '@tabler/icons-react'
+import { ChevronDown, ChevronRight, CircleAlert, Ellipsis, ExternalLink, Eye, Globe, History, Info, Lock, LockOpen, Pencil, Percent, Printer, Receipt, ReceiptText, RotateCcw, Search, Tag, TriangleAlert, Truck } from 'lucide-react'
 import {
   Fragment,
   isValidElement,
@@ -628,7 +605,7 @@ export function SalesOnlineShopPage() {
               <TextInput
                 className="sales-filter-search"
                 label={t('Пошук')}
-                leftSection={<IconSearch size={16} />}
+                leftSection={<Search size={16} />}
                 placeholder={t('Товар або номер продажу')}
                 value={filterDraft.value}
                 onChange={(event) => applySearchValue(event.currentTarget.value)}
@@ -685,7 +662,7 @@ export function SalesOnlineShopPage() {
                     variant="light"
                     onClick={resetFilters}
                   >
-                    <IconRestore size={17} />
+                    <RotateCcw size={17} />
                   </ActionIcon>
                 </Tooltip>
                 <Paginator
@@ -705,7 +682,7 @@ export function SalesOnlineShopPage() {
           </div>
 
           {error && (
-            <Alert className="sales-grid-alert" color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert className="sales-grid-alert" color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
             </Alert>
           )}
@@ -954,7 +931,7 @@ const SalesOnlineShopGridRow = memo(function SalesOnlineShopGridRow({
           {showEdit && (
             <Tooltip label={t('Відкрити продаж')}>
               <ActionIcon aria-label={t('Відкрити продаж')} color="gray" size="sm" variant="subtle" onClick={() => onOpenEditor(sale)}>
-                <IconPencil size={15} />
+                <Pencil size={15} />
               </ActionIcon>
             </Tooltip>
           )}
@@ -989,7 +966,7 @@ const SalesOnlineShopGridRow = memo(function SalesOnlineShopGridRow({
                 variant="subtle"
                 onClick={() => onToggleExpand(saleKey, sale)}
               >
-                {isExpanded ? <IconChevronDown size={15} /> : <IconChevronRight size={15} />}
+                {isExpanded ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
               </ActionIcon>
             </Tooltip>
           )}
@@ -1000,7 +977,7 @@ const SalesOnlineShopGridRow = memo(function SalesOnlineShopGridRow({
             {sale.MisplacedSaleId && (
               <Tooltip label={t('Часткова продажа')}>
                 <Box c="red" style={{ display: 'inline-flex' }}>
-                  <IconInfoCircle size={14} />
+                  <Info size={14} />
                 </Box>
               </Tooltip>
             )}
@@ -1050,12 +1027,12 @@ const SalesOnlineShopGridRow = memo(function SalesOnlineShopGridRow({
             )}
             {Array.isArray(sale.HistoryInvoiceEdit) && sale.HistoryInvoiceEdit.length > 0 && (
               <Tooltip label={t('Рахунок редаговано')}>
-                <IconPencil size={12} style={{ color: 'var(--mantine-color-orange-6)' }} />
+                <Pencil size={12} style={{ color: 'var(--mantine-color-orange-6)' }} />
               </Tooltip>
             )}
             {sale.IsPrinted && (
               <Tooltip label={t('Документи надруковано')}>
-                <IconPrinter size={12} style={{ color: 'var(--mantine-color-gray-5)' }} />
+                <Printer size={12} style={{ color: 'var(--mantine-color-gray-5)' }} />
               </Tooltip>
             )}
           </div>
@@ -1083,12 +1060,12 @@ const SalesOnlineShopGridRow = memo(function SalesOnlineShopGridRow({
         {discountEditable ? (
           <Tooltip label={t('Знижка')}>
             <ActionIcon aria-label={t('Знижка')} color="gray" size="sm" variant="subtle" onClick={() => onOpenDiscount(sale)}>
-              <IconPercentage size={15} />
+              <Percent size={15} />
             </ActionIcon>
           </Tooltip>
         ) : sale.IsLocked ? (
           <Tooltip label={t('Заблоковано')}>
-            <IconLock size={14} style={{ color: 'var(--mantine-color-gray-5)' }} />
+            <Lock size={14} style={{ color: 'var(--mantine-color-gray-5)' }} />
           </Tooltip>
         ) : null}
       </div>
@@ -1109,27 +1086,27 @@ const SalesOnlineShopGridRow = memo(function SalesOnlineShopGridRow({
       <div className="sg-doc-actions" data-row-stop="true">
         <Tooltip label={t('Деталі')}>
           <ActionIcon aria-label={t('Деталі')} color="gray" size="sm" variant="subtle" onClick={() => onOpenSale(sale)}>
-            <IconEye size={15} />
+            <Eye size={15} />
           </ActionIcon>
         </Tooltip>
         {!hidePrintBlock && <SaleDocumentsMenu sale={asUkraineSale(sale)} />}
         <Menu position="bottom-end" shadow="md" withinPortal>
           <Menu.Target>
             <ActionIcon aria-label={t('Дії')} color="gray" size="sm" variant="subtle">
-              <IconDots size={16} />
+              <Ellipsis size={16} />
             </ActionIcon>
           </Menu.Target>
           <Menu.Dropdown>
             {showEdit && (
-              <Menu.Item leftSection={<IconExternalLink size={16} />} onClick={() => onOpenEditor(sale)}>
+              <Menu.Item leftSection={<ExternalLink size={16} />} onClick={() => onOpenEditor(sale)}>
                 {t('Відкрити продаж')}
               </Menu.Item>
             )}
-            <Menu.Item leftSection={<IconTruckDelivery size={16} />} onClick={() => onOpenDetails(sale)}>
+            <Menu.Item leftSection={<Truck size={16} />} onClick={() => onOpenDetails(sale)}>
               {t('Дані доставки')}
             </Menu.Item>
             {showTtn && (
-              <Menu.Item leftSection={<IconReceipt size={16} />} onClick={() => onOpenConsignment(sale)}>
+              <Menu.Item leftSection={<Receipt size={16} />} onClick={() => onOpenConsignment(sale)}>
                 {t('Друк ТТН')}
               </Menu.Item>
             )}
@@ -1137,18 +1114,18 @@ const SalesOnlineShopGridRow = memo(function SalesOnlineShopGridRow({
               <Menu.Item
                 color="orange"
                 disabled={!sale.ChangedToInvoice}
-                leftSection={<IconAlertTriangle size={16} />}
+                leftSection={<TriangleAlert size={16} />}
                 onClick={() => onWillNotShip(sale)}
               >
                 {t('Не буде відвантажено')}
               </Menu.Item>
             )}
             {showUnlock && (
-              <Menu.Item color="red" leftSection={<IconLockOpen size={16} />} onClick={() => onUnlock(sale)}>
+              <Menu.Item color="red" leftSection={<LockOpen size={16} />} onClick={() => onUnlock(sale)}>
                 {t('Розблокувати')}
               </Menu.Item>
             )}
-            <Menu.Item leftSection={<IconHistory size={16} />} onClick={() => onOpenAudit(sale)}>
+            <Menu.Item leftSection={<History size={16} />} onClick={() => onOpenAudit(sale)}>
               {t('Історія редагувань')}
             </Menu.Item>
           </Menu.Dropdown>
@@ -1247,7 +1224,7 @@ function SaleDetail({ sale }: { sale: SalesOnlineShopSale }) {
 
       <div className="sale-detail-sections">
         <SaleDetailSection
-          icon={<IconReceipt2 size={15} />}
+          icon={<Receipt size={15} />}
           title={t('Продаж')}
           rows={[
             [t('Номер'), sale.SaleNumber?.Value],
@@ -1257,12 +1234,12 @@ function SaleDetail({ sale }: { sale: SalesOnlineShopSale }) {
           ]}
         />
         <SaleDetailSection
-          icon={<IconTag size={15} />}
+          icon={<Tag size={15} />}
           title={t('Клієнт і договір')}
           rows={clientRows}
         />
         <SaleDetailSection
-          icon={<IconTruckDelivery size={15} />}
+          icon={<Truck size={15} />}
           title={t('Доставка')}
           rows={[
             [
@@ -1478,7 +1455,7 @@ function SaleDetailProductRow({
     <div className={`sale-detail-product-row${showUah ? ' has-uah-price' : ''}`}>
       <div className="sale-detail-product-name">
         <span className="sale-detail-product-icon" aria-hidden="true">
-          <IconTag size={14} />
+          <Tag size={14} />
         </span>
         <div className="sale-detail-product-copy">
           <OverflowTooltipText className="sale-detail-product-title">
@@ -1785,7 +1762,6 @@ function getSaleDeliveryAddress(sale: SalesOnlineShopSale): string {
   return [address?.City, address?.Department, address?.Value].filter(Boolean).join(', ')
 }
 
-
 function SaleSourceIcon({ sale }: { sale: SalesOnlineShopSale }) {
   const { t } = useI18n()
   const source = sale.Order?.OrderSource
@@ -1794,12 +1770,12 @@ function SaleSourceIcon({ sale }: { sale: SalesOnlineShopSale }) {
 
   const indicator =
     source === 0
-      ? { icon: <IconBrandEdge size={14} />, label: t('Інтернет-магазин') }
+      ? { icon: <Globe size={14} />, label: t('Інтернет-магазин') }
       : source === 2
-        ? { icon: <IconTag size={14} />, label: t('Оферта') }
+        ? { icon: <Tag size={14} />, label: t('Оферта') }
         : isInvoiceStage
-          ? { icon: <IconFileInvoice size={14} />, label: t('Накладна') }
-          : { icon: <IconReceipt2 size={14} />, label: t('Рахунок') }
+          ? { icon: <ReceiptText size={14} />, label: t('Накладна') }
+          : { icon: <Receipt size={14} />, label: t('Рахунок') }
 
   return (
     <Tooltip label={indicator.label}>

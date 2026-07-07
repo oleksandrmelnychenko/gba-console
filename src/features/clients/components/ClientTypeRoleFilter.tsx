@@ -1,5 +1,5 @@
 import { Box, Button, Checkbox, Group, Popover, ScrollArea, Stack, Text } from '@mantine/core'
-import { IconChevronDown } from '@tabler/icons-react'
+import { ChevronDown } from 'lucide-react'
 import { useMemo } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { ClientType } from '../types'
@@ -59,7 +59,7 @@ export function ClientTypeRoleFilter({ clientTypes, disabled, value, onChange }:
           color="gray"
           disabled={isDisabled}
           justify="space-between"
-          rightSection={<IconChevronDown size={16} />}
+          rightSection={<ChevronDown size={16} />}
           style={{ flex: '0 0 180px' }}
         >
           <Text size="sm" truncate>

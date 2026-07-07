@@ -16,7 +16,7 @@ import {
   Title,
   Tooltip,
 } from '@mantine/core'
-import { IconAlertCircle, IconLayoutGrid, IconList, IconPhoto } from '@tabler/icons-react'
+import { CircleAlert, Image as ImageIcon, LayoutGrid, List } from 'lucide-react'
 import { useEffect, useReducer } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { toProxiedAssetUrl } from '../../../../shared/url/proxiedAssetUrl'
@@ -176,14 +176,14 @@ export function RecommendationsPanel({ client, productNetId }: RecommendationsPa
               />
               <Tooltip label={isGrid ? t('Список') : t('Таблиця')}>
                 <ActionIcon color="gray" variant="light" onClick={() => dispatch({ type: 'toggleGrid' })}>
-                  {isGrid ? <IconList size={18} /> : <IconLayoutGrid size={18} />}
+                  {isGrid ? <List size={18} /> : <LayoutGrid size={18} />}
                 </ActionIcon>
               </Tooltip>
             </Group>
           </Group>
 
           {error && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
             </Alert>
           )}
@@ -307,7 +307,7 @@ function ProductImage({
         }}
       >
         <ThemeIcon color="gray" size="xl" variant="light">
-          <IconPhoto size={28} />
+          <ImageIcon size={28} />
         </ThemeIcon>
       </Box>
     )

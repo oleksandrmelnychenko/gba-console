@@ -1,5 +1,5 @@
 import { Box, Group, Stack, Text, ThemeIcon } from '@mantine/core'
-import { IconTag } from '@tabler/icons-react'
+import { Tag } from 'lucide-react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { SaleOrderItem } from '../salesTypes'
 
@@ -53,7 +53,7 @@ function IncompleteSaleItemRow({ item }: { item: SaleOrderItem }) {
   return (
     <Group align="flex-start" gap="sm" wrap="nowrap">
       <ThemeIcon color="gray" radius="sm" variant="light">
-        <IconTag size={16} />
+        <Tag size={16} />
       </ThemeIcon>
       <Box flex={1} miw={0}>
         <Text fw={600} lineClamp={2} size="sm">

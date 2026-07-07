@@ -1,5 +1,5 @@
 import { Alert, Button, Group, Select, Stack, Textarea, TextInput } from '@mantine/core'
-import { IconAlertCircle } from '@tabler/icons-react'
+import { CircleAlert } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { formatLocalDateTime, formatLocalInputDateTime } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -135,7 +135,7 @@ function NewProductDeliveryProtocolForm({
   return (
     <Stack gap="md">
       {(createError || organizationsError) && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {createError || organizationsError}
         </Alert>
       )}

@@ -8,7 +8,7 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
-import { IconAlertCircle, IconRestore } from '@tabler/icons-react'
+import { CircleAlert, RotateCcw } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -150,7 +150,7 @@ export function AdvancePaymentsPage() {
             <div className="app-filter-actions">
               <Tooltip label={t('Скинути')}>
                 <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
-                  <IconRestore size={17} />
+                  <RotateCcw size={17} />
                 </ActionIcon>
               </Tooltip>
               <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
@@ -168,13 +168,13 @@ export function AdvancePaymentsPage() {
         </div>
 
         {error && (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}
 
         {filterError && (
-          <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
             {filterError}
           </Alert>
         )}

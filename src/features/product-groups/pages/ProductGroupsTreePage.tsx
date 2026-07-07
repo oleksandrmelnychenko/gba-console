@@ -1,6 +1,6 @@
 import { ActionIcon, Alert, Group, Loader, Skeleton, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { IconAlertCircle, IconFolder, IconFolders, IconRefresh, IconRestore, IconSearch } from '@tabler/icons-react'
+import { CircleAlert, Folder, Folders, RefreshCw, RotateCcw, Search } from 'lucide-react'
 import { useEffect, useMemo, useReducer } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -108,7 +108,7 @@ export function ProductGroupsTreePage() {
             <Group align="end" gap="sm" wrap="nowrap">
               <TextInput
                 label={t('Пошук групи')}
-                leftSection={<IconSearch size={16} />}
+                leftSection={<Search size={16} />}
                 style={{ flex: '1 1 auto', minWidth: 160 }}
                 value={searchDraft}
                 onChange={(event) => setSearchDraft(event.currentTarget.value)}
@@ -121,18 +121,18 @@ export function ProductGroupsTreePage() {
                   variant="light"
                   onClick={() => setSearchDraft('')}
                 >
-                  <IconRestore size={17} />
+                  <RotateCcw size={17} />
                 </ActionIcon>
               </Tooltip>
               <Tooltip label={t('Оновити')}>
                 <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={34} variant="light" onClick={() => reload()}>
-                  <IconRefresh size={17} />
+                  <RefreshCw size={17} />
                 </ActionIcon>
               </Tooltip>
             </Group>
 
             {error ? (
-              <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+              <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
                 {error}
               </Alert>
             ) : null}
@@ -203,7 +203,7 @@ function buildGroupNode(group: ProductGroup, t: (value: string) => string): Tree
   return {
     id: String(group.NetUid || group.Id || getProductGroupName(group)),
     label: getProductGroupName(group),
-    icon: children.length > 0 ? <IconFolders size={15} /> : <IconFolder size={15} />,
+    icon: children.length > 0 ? <Folders size={15} /> : <Folder size={15} />,
     meta: (
       <>
         <span>

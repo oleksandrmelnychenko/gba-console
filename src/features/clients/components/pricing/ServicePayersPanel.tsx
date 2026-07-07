@@ -1,7 +1,7 @@
 import { Button, Card, Group, Stack, Text, UnstyledButton } from '@mantine/core'
 import { AppModal } from '../../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
-import { IconPlus } from '@tabler/icons-react'
+import { Plus } from 'lucide-react'
 import { useState } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import type { ServicePayer } from '../../types'
@@ -69,7 +69,7 @@ export function ServicePayersPanel({ payers, disabled = false, onChange }: Servi
             <Button
               color={CREATE_ACTION_COLOR}
               disabled={disabled}
-              leftSection={<IconPlus size={16} />}
+              leftSection={<Plus size={16} />}
               size="xs"
               variant="light"
               onClick={openNew}

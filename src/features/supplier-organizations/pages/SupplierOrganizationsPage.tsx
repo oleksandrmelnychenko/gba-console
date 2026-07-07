@@ -10,15 +10,7 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
-import {
-  IconAlertCircle,
-  IconDownload,
-  IconFileTypePdf,
-  IconPlus,
-  IconRestore,
-  IconSearch,
-} from '@tabler/icons-react'
-import { ExternalLink, Wallet } from 'lucide-react'
+import { CircleAlert, Download, ExternalLink, FileText, Plus, RotateCcw, Search, Wallet } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -236,7 +228,7 @@ export function SupplierOrganizationsPage() {
 
           <TextInput
             className="supplier-organizations-search-input"
-            leftSection={<IconSearch size={16} />}
+            leftSection={<Search size={16} />}
             label={t('Пошук')}
             placeholder={t('Назва, код, телефон або email')}
             value={searchValue}
@@ -252,7 +244,7 @@ export function SupplierOrganizationsPage() {
                 variant="light"
                 onClick={resetFilters}
               >
-                <IconRestore size={17} />
+                <RotateCcw size={17} />
               </ActionIcon>
             </Tooltip>
             <Tooltip label={t('Друк')}>
@@ -265,7 +257,7 @@ export function SupplierOrganizationsPage() {
                 variant="light"
                 onClick={exportList}
               >
-                <IconDownload size={18} />
+                <Download size={18} />
               </ActionIcon>
             </Tooltip>
             <Paginator
@@ -283,7 +275,7 @@ export function SupplierOrganizationsPage() {
             <PermissionGate permissionKey="SERVICE_Accounting_Supplier_Organizations_AddBtn_PKEY">
               <Button
                 color={CREATE_ACTION_COLOR}
-                leftSection={<IconPlus size={16} />}
+                leftSection={<Plus size={16} />}
                 size="sm"
                 type="button"
                 onClick={() => openOrganizationSheet('/accounting/supplier-organizations/new')}
@@ -295,13 +287,13 @@ export function SupplierOrganizationsPage() {
         </div>
 
         {error && (
-          <Alert className="console-table-alert" color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert className="console-table-alert" color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}
 
         {filterError && (
-          <Alert className="console-table-alert" color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert className="console-table-alert" color="yellow" icon={<CircleAlert size={18} />} variant="light">
             {filterError}
           </Alert>
         )}
@@ -630,7 +622,7 @@ function DocumentModal({ document, onClose }: { document: SupplyOrganizationDocu
         {document?.PdfDocumentURL && (
           <Anchor href={upgradeHttpToHttps(document.PdfDocumentURL)} target="_blank" rel="noreferrer" className="document-link">
             <Group gap="xs">
-              <IconFileTypePdf size={22} stroke={1.8} />
+              <FileText size={22} strokeWidth={1.8} />
               <span>{t('Завантажити PDF')}</span>
             </Group>
           </Anchor>

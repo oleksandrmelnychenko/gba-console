@@ -16,7 +16,7 @@ import {
   Textarea,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconCheck, IconPencil, IconX } from '@tabler/icons-react'
+import { Check, Pencil, X } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { TranslateFunction } from '../../../shared/i18n/types'
@@ -325,10 +325,10 @@ function SaleDetailsContent({ sale, onSaved }: { onSaved: () => void; sale: Sale
             </Group>
           )}
           <Group justify="flex-end">
-            <Button className="sales-drawer-action-button" color="gray" disabled={isSaving} leftSection={<IconX size={16} />} variant="default" onClick={cancelEdit}>
+            <Button className="sales-drawer-action-button" color="gray" disabled={isSaving} leftSection={<X size={16} />} variant="default" onClick={cancelEdit}>
               {t('Скасувати')}
             </Button>
-            <Button className="sales-drawer-action-button" color={CREATE_ACTION_COLOR} leftSection={<IconCheck size={16} />} loading={isSaving} onClick={save}>
+            <Button className="sales-drawer-action-button" color={CREATE_ACTION_COLOR} leftSection={<Check size={16} />} loading={isSaving} onClick={save}>
               {t('Зберегти')}
             </Button>
           </Group>
@@ -339,7 +339,7 @@ function SaleDetailsContent({ sale, onSaved }: { onSaved: () => void; sale: Sale
 
           {/* Edit button at the bottom of the left column, under "Завантажити ТТН" (legacy order). */}
           {!sale.IsSent && !isEditMode && (
-            <Button className="sales-drawer-action-button sale-carrier-edit-button" color={CREATE_ACTION_COLOR} leftSection={<IconPencil size={16} />} mt="md" variant="outline" onClick={enterEdit}>
+            <Button className="sales-drawer-action-button sale-carrier-edit-button" color={CREATE_ACTION_COLOR} leftSection={<Pencil size={16} />} mt="md" variant="outline" onClick={enterEdit}>
               {t('Редагувати')}
             </Button>
           )}

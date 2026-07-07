@@ -1,5 +1,5 @@
 import { Alert, Button, Group, NumberInput, Radio, Stack, Text, TextInput } from '@mantine/core'
-import { IconAlertCircle, IconCheck } from '@tabler/icons-react'
+import { Check, CircleAlert } from 'lucide-react'
 import { notifications } from '@mantine/notifications'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
@@ -138,7 +138,7 @@ export function ChangeProductSpecificationPanel({
             {canChange && (
               <Button
                 color={CREATE_ACTION_COLOR}
-                leftSection={<IconCheck size={16} />}
+                leftSection={<Check size={16} />}
                 loading={isSubmitting}
                 onClick={submit}
               >
@@ -158,7 +158,7 @@ export function ChangeProductSpecificationPanel({
       {productSpecification && (
         <Stack className="product-specification-change-body" gap={12}>
           {error && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
             </Alert>
           )}

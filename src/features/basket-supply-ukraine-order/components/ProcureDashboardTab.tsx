@@ -10,7 +10,7 @@ import {
   Text,
   Tooltip,
 } from '@mantine/core'
-import { IconAlertCircle, IconRefresh } from '@tabler/icons-react'
+import { CircleAlert, RefreshCw } from 'lucide-react'
 import { useEffect, useMemo, useReducer, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -217,7 +217,7 @@ export function ProcureDashboardTab() {
         variant="subtle"
         onClick={() => reload()}
       >
-        <IconRefresh size={16} />
+        <RefreshCw size={16} />
       </ActionIcon>
     </Tooltip>
   )
@@ -255,7 +255,7 @@ export function ProcureDashboardTab() {
               variant="light"
               onClick={applyFilters}
             >
-              <IconRefresh size={18} />
+              <RefreshCw size={18} />
             </ActionIcon>
           </Tooltip>
         </Group>
@@ -263,7 +263,7 @@ export function ProcureDashboardTab() {
       <Stack gap="md" p="md">
 
       {error && (
-        <Alert color="red" icon={<IconAlertCircle size={16} />} variant="light">
+        <Alert color="red" icon={<CircleAlert size={16} />} variant="light">
           {error}
         </Alert>
       )}

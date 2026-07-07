@@ -1,6 +1,6 @@
 import { ActionIcon, Box, Button, Checkbox, FileInput, Group, Text, TextInput } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconCircleX, IconCopy, IconUpload } from '@tabler/icons-react'
+import { CircleX, Copy, Upload } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import {
@@ -659,7 +659,7 @@ export function NewSaleReviewStep({
               {documentTitle && (
                 <Box className="new-sale-review-document-head">
                   <span className="new-sale-review-document-head__icon" aria-hidden="true">
-                    <IconCopy size={17} stroke={1.8} />
+                    <Copy size={17} strokeWidth={1.8} />
                   </span>
                   <Text className="new-sale-review-document-head__title" title={documentTitle}>
                     {documentTitle}
@@ -715,7 +715,7 @@ export function NewSaleReviewStep({
                             variant="subtle"
                             onClick={clearAddress}
                           >
-                            <IconCircleX size={17} />
+                            <CircleX size={17} />
                           </ActionIcon>
                         </Group>
                       </Box>
@@ -798,7 +798,7 @@ export function NewSaleReviewStep({
                       <FileInput
                         classNames={reviewFieldClassNames}
                         label={t('Файл ТТН')}
-                        leftSection={<IconUpload size={16} />}
+                        leftSection={<Upload size={16} />}
                         placeholder={t('Завантажити')}
                         value={value.ttnFile}
                         onChange={(file) => {

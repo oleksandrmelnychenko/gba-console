@@ -1,5 +1,5 @@
 import { Alert, Button, ScrollArea, SimpleGrid, Stack, TextInput } from '@mantine/core'
-import { IconAlertCircle } from '@tabler/icons-react'
+import { CircleAlert } from 'lucide-react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
@@ -79,7 +79,7 @@ export function TaxFreeCarrierPassportDrawer({
       <ScrollArea h="calc(100vh - 120px)" type="auto">
         <Stack gap="md" pr="md">
           {error && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
             </Alert>
           )}

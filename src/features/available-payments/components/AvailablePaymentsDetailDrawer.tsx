@@ -21,19 +21,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import {
-  IconAlertCircle,
-  IconCash,
-  IconDeviceFloppy,
-  IconExternalLink,
-  IconFileUpload,
-  IconGitMerge,
-  IconInfoCircle,
-  IconPlus,
-  IconRestore,
-  IconTrash,
-  IconX,
-} from '@tabler/icons-react'
+import { Banknote, CircleAlert, ExternalLink, FileUp, GitMerge, Info, Plus, RotateCcw, Save, Trash2, X } from 'lucide-react'
 import { type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { formatLocalDate, formatLocalInputDateTime } from '../../../shared/date/dateTime'
@@ -942,7 +930,7 @@ function AvailablePaymentsDetailDrawerView({ model }: { model: AvailablePayments
     <AppDrawer opened={Boolean(group) || outcomeModels.length > 0} position="right" size="80vw" title={title} onClose={requestDrawerClose}>
       <Stack gap="md">
         {error && (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}
@@ -1086,7 +1074,7 @@ function AvailablePaymentTaskList({
   return (
     <Stack gap="sm">
       {markedModels.length > 0 && (
-        <Alert color="blue" icon={<IconInfoCircle size={18} />} variant="light">
+        <Alert color="blue" icon={<Info size={18} />} variant="light">
           <Stack gap="xs">
             <Group justify="space-between" gap="sm">
               <Text size="sm">
@@ -1109,7 +1097,7 @@ function AvailablePaymentTaskList({
                   <span>
                     <Button
                       disabled={isSaving || Boolean(markedMergeError)}
-                      leftSection={<IconGitMerge size={16} />}
+                      leftSection={<GitMerge size={16} />}
                       size="xs"
                       variant="outline"
                       onClick={() => void onMergeMarked(markedModels)}
@@ -1134,7 +1122,7 @@ function AvailablePaymentTaskList({
                     variant="subtle"
                     onClick={() => onToggleMarked(markedModel)}
                   >
-                    <IconX size={14} />
+                    <X size={14} />
                   </ActionIcon>
                   <Text size="sm">{`${markedModel.serviceName} (${markedModel.organizationName})`}</Text>
                 </Group>
@@ -1213,7 +1201,7 @@ function AvailablePaymentTaskList({
                 />
 
                 {model.isUnsupported && (
-                  <Alert color="orange" icon={<IconAlertCircle size={18} />} variant="light">
+                  <Alert color="orange" icon={<CircleAlert size={18} />} variant="light">
                     {t(
                       'Немає підтриманого джерела для цієї платіжної задачі. Створення видаткового ордера заблоковано.',
                     )}
@@ -1501,7 +1489,7 @@ function AvailablePaymentOutcomeForm({
                 />
                 <Button
                   disabled={isSaving || Boolean(selectedMovement) || !form.movementSearch.trim()}
-                  leftSection={<IconPlus size={16} />}
+                  leftSection={<Plus size={16} />}
                   size="xs"
                   type="button"
                   variant="outline"
@@ -1546,7 +1534,7 @@ function AvailablePaymentOutcomeForm({
               <Button color="gray" disabled={isSaving} type="button" variant="light" onClick={onCancel}>
                 {t('Скасувати')}
               </Button>
-              <Button color={CREATE_ACTION_COLOR} leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} type="submit">
+              <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSaving} type="submit">
                 {t('Створити')}
               </Button>
             </Group>
@@ -1685,7 +1673,7 @@ function CashFlowTab({
     return (
       <Stack gap="md">
         {controls}
-        <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
           {filterError}
         </Alert>
       </Stack>
@@ -1707,7 +1695,7 @@ function CashFlowTab({
     return (
       <Stack gap="md">
         {controls}
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {state.error}
         </Alert>
       </Stack>
@@ -1885,7 +1873,7 @@ function PaymentTab({
                 {...props}
                 color="gray"
                 disabled={isSaving}
-                leftSection={<IconFileUpload size={16} />}
+                leftSection={<FileUp size={16} />}
                 variant="light"
               >
                 {t('Завантажити файли')}
@@ -1911,7 +1899,7 @@ function PaymentTab({
             <Button
               color={CREATE_ACTION_COLOR}
               disabled={isSaving || isUnsupported || !isAvailableForPayment}
-              leftSection={<IconCash size={16} />}
+              leftSection={<Banknote size={16} />}
               onClick={onCreateOutcome}
             >
               {t('Створити видатковий')}
@@ -1944,7 +1932,7 @@ function PaymentTab({
                     variant="subtle"
                     onClick={() => onFilesChanged(files.filter((entry) => getLocalFileKey(entry) !== getLocalFileKey(file)))}
                   >
-                    <IconTrash size={16} />
+                    <Trash2 size={16} />
                   </ActionIcon>
                 </Tooltip>
               </Group>
@@ -2036,7 +2024,7 @@ function RedirectToSourceButton({
         <Button
           color="gray"
           data-disabled
-          leftSection={<IconExternalLink size={16} />}
+          leftSection={<ExternalLink size={16} />}
           size="xs"
           variant="subtle"
           onClick={(event) => event.preventDefault()}
@@ -2050,7 +2038,7 @@ function RedirectToSourceButton({
   return (
     <Button
       color="gray"
-      leftSection={<IconExternalLink size={16} />}
+      leftSection={<ExternalLink size={16} />}
       size="xs"
       variant="subtle"
       onClick={() => onRedirectToSource(model)}
@@ -2115,7 +2103,7 @@ function DocumentsList({
                 variant="subtle"
                 onClick={() => onDocumentDeletedChange(key, !isDeleted, originalDeleted)}
               >
-                {isDeleted ? <IconRestore size={16} /> : <IconTrash size={16} />}
+                {isDeleted ? <RotateCcw size={16} /> : <Trash2 size={16} />}
               </ActionIcon>
             </Tooltip>
           </Group>
@@ -2243,7 +2231,6 @@ function TaskStatusBadge({ task }: { task: SupplyPaymentTask }) {
     </Badge>
   )
 }
-
 
 function getAvailableOrganizations(
   models: AvailablePaymentTaskModel[],

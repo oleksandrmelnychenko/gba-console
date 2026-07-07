@@ -12,7 +12,7 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
-import { IconAlertCircle, IconListDetails, IconRefresh, IconRestore, IconX } from '@tabler/icons-react'
+import { CircleAlert, ListTree, RefreshCw, RotateCcw, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { formatDateInputForQuery, formatLocalDate } from '../../../shared/date/dateTime'
@@ -742,7 +742,7 @@ function AvailablePaymentsTableCard({ model }: { model: ReturnType<typeof useAva
                 variant="light"
                 onClick={resetFilters}
               >
-                <IconRestore size={17} />
+                <RotateCcw size={17} />
               </ActionIcon>
             </Tooltip>
             <Tooltip label={t('Оновити')}>
@@ -754,7 +754,7 @@ function AvailablePaymentsTableCard({ model }: { model: ReturnType<typeof useAva
                 variant="light"
                 onClick={() => reload()}
               >
-                <IconRefresh size={18} />
+                <RefreshCw size={18} />
               </ActionIcon>
             </Tooltip>
             <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
@@ -764,13 +764,13 @@ function AvailablePaymentsTableCard({ model }: { model: ReturnType<typeof useAva
 
       <Stack className="available-payments-body" gap={10}>
         {(error || filterError || organizationsError) && (
-          <Alert color={filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color={filterError ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">
             {filterError || error || organizationsError}
           </Alert>
         )}
 
         {markedModels.length > 0 && (
-          <Alert color="orange" icon={<IconListDetails size={18} />} variant="light">
+          <Alert color="orange" icon={<ListTree size={18} />} variant="light">
             <Stack gap="xs">
               <Group justify="space-between" gap="sm">
                 <Text size="sm">
@@ -795,7 +795,7 @@ function AvailablePaymentsTableCard({ model }: { model: ReturnType<typeof useAva
                       variant="subtle"
                       onClick={() => toggleMarked(markedModel)}
                     >
-                      <IconX size={14} />
+                      <X size={14} />
                     </ActionIcon>
                     <Text size="sm">{`${markedModel.serviceName} (${markedModel.organizationName})`}</Text>
                   </Group>
@@ -999,7 +999,7 @@ function useAvailablePaymentsColumns(
                   onOpen(group)
                 }}
               >
-                <IconListDetails size={18} />
+                <ListTree size={18} />
               </ActionIcon>
             </Tooltip>
           </Box>

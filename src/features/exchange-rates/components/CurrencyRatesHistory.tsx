@@ -1,5 +1,5 @@
 import { Badge, Group, Loader, ScrollArea, Stack, Text } from '@mantine/core'
-import { IconArrowDown, IconArrowUp } from '@tabler/icons-react'
+import { ArrowDown, ArrowUp } from 'lucide-react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { ExchangeRate } from '../types'
 import { formatHistoryDate, formatRate } from '../utils'
@@ -56,7 +56,7 @@ export function CurrencyRatesHistory({ error, isLoading, items, selectedRate }: 
 
 function HistoryRow({ previous, rate }: { previous?: ExchangeRate; rate: ExchangeRate }) {
   const isIncrease = !previous || previous.Amount < rate.Amount
-  const Icon = isIncrease ? IconArrowUp : IconArrowDown
+  const Icon = isIncrease ? ArrowUp : ArrowDown
 
   return (
     <Group gap="sm" wrap="nowrap" className="exchange-rates-history-row">
@@ -64,7 +64,7 @@ function HistoryRow({ previous, rate }: { previous?: ExchangeRate; rate: Exchang
         {formatHistoryDate(rate.Created)}
       </Text>
       <Badge color={isIncrease ? 'green' : 'red'} variant="light" radius="sm" className="exchange-rates-history-direction">
-        <Icon size={13} stroke={2} />
+        <Icon size={13} strokeWidth={2} />
       </Badge>
       <Text size="sm" className="exchange-rates-history-amount">
         {formatRate(rate.Amount)} <span>{rate.Code}</span>

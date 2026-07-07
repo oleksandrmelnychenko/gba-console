@@ -1,5 +1,5 @@
 import { Alert, Button, Group, Stack, Textarea } from '@mantine/core'
-import { IconAlertCircle } from '@tabler/icons-react'
+import { CircleAlert } from 'lucide-react'
 import { useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
@@ -51,7 +51,7 @@ export function ChangeCommentModal({ comment, isSaving, onClose, onSave, opened 
           onChange={(event) => setDraft({ value: event.currentTarget.value, touched, trackedComment: comment })}
         />
         {touched && error && (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}

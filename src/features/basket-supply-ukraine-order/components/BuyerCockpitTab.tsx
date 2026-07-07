@@ -17,16 +17,7 @@ import {
 } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
-import {
-  IconAlertCircle,
-  IconAlertTriangle,
-  IconCheck,
-  IconRefresh,
-  IconSchool,
-  IconSettings,
-  IconThumbDown,
-  IconThumbUp,
-} from '@tabler/icons-react'
+import { Check, CircleAlert, RefreshCw, School, Settings, ThumbsDown, ThumbsUp, TriangleAlert } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { TranslateFunction } from '../../../shared/i18n/types'
@@ -728,7 +719,7 @@ export function BuyerCockpitTab() {
               label={`${t('дешевший постачальник')}: €${eurFormatter.format(item.cheaper_alt.cost_eur)}`}
             >
               <ActionIcon aria-label={t('дешевший постачальник')} color="orange" size="sm" variant="subtle">
-                <IconAlertTriangle size={16} />
+                <TriangleAlert size={16} />
               </ActionIcon>
             </Tooltip>
           ) : null,
@@ -765,7 +756,7 @@ export function BuyerCockpitTab() {
         variant="subtle"
         onClick={() => reload()}
       >
-        <IconRefresh size={16} />
+        <RefreshCw size={16} />
       </ActionIcon>
     </Tooltip>
   )
@@ -793,13 +784,13 @@ export function BuyerCockpitTab() {
       </div>
       <Stack gap="md" p="md">
       {producersError && (
-        <Alert color="yellow" icon={<IconAlertCircle size={16} />} variant="light">
+        <Alert color="yellow" icon={<CircleAlert size={16} />} variant="light">
           {producersError}
         </Alert>
       )}
 
       {error && (
-        <Alert color="red" icon={<IconAlertCircle size={16} />} variant="light">
+        <Alert color="red" icon={<CircleAlert size={16} />} variant="light">
           {error}
         </Alert>
       )}
@@ -854,7 +845,7 @@ export function BuyerCockpitTab() {
                 </Stack>
                 <Popover position="bottom-end" shadow="md" withinPortal>
                   <Popover.Target>
-                    <Button leftSection={<IconSettings size={16} />} size="xs" variant="default">
+                    <Button leftSection={<Settings size={16} />} size="xs" variant="default">
                       {t('Налаштування виробника')}
                     </Button>
                   </Popover.Target>
@@ -1064,7 +1055,7 @@ function SuggestedQtyCell({ item, t }: { item: ReorderSuggestion; t: TranslateFu
         <Tooltip label={t('Кількість скориговано на основі попередніх рішень байера')} withinPortal>
           <Badge
             color="orange"
-            leftSection={<IconSchool size={11} />}
+            leftSection={<School size={11} />}
             size="xs"
             variant="light"
           >
@@ -1084,7 +1075,7 @@ function TermsStatusIndicator({ status, t }: { status: TermsSaveStatus; t: Trans
   if (status === 'saved') {
     return (
       <Tooltip label={t('Збережено')}>
-        <IconCheck color="var(--mantine-color-green-6)" size={16} />
+        <Check color="var(--mantine-color-green-6)" size={16} />
       </Tooltip>
     )
   }
@@ -1108,7 +1099,7 @@ function FeedbackActionsCell({
   if (decision === 'accepted') {
     return (
       <Group gap={4} justify="center" wrap="nowrap">
-        <IconCheck color="var(--mantine-color-green-6)" size={16} />
+        <Check color="var(--mantine-color-green-6)" size={16} />
         <Text c="green" size="xs">
           {t('Прийнято')}
         </Text>
@@ -1135,7 +1126,7 @@ function FeedbackActionsCell({
           size="sm"
           variant="subtle"
         >
-          <IconThumbUp size={16} />
+          <ThumbsUp size={16} />
         </ActionIcon>
       </Tooltip>
       <Tooltip label={t('Відхилити')}>
@@ -1147,7 +1138,7 @@ function FeedbackActionsCell({
           size="sm"
           variant="subtle"
         >
-          <IconThumbDown size={16} />
+          <ThumbsDown size={16} />
         </ActionIcon>
       </Tooltip>
     </Group>

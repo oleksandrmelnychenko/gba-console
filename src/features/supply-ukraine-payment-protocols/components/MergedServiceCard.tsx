@@ -12,7 +12,7 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
-import { IconPlus, IconTrash } from '@tabler/icons-react'
+import { Plus, Trash2 } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -102,7 +102,7 @@ function PaymentTaskRow({
         {canRemove && (
           <Tooltip label={t('Видалити')}>
             <ActionIcon className="supply-payment-remove-action" color="red" variant="subtle" onClick={onRemove}>
-              <IconTrash size={18} />
+              <Trash2 size={18} />
             </ActionIcon>
           </Tooltip>
         )}
@@ -223,7 +223,7 @@ export function MergedServiceCard({
           {permissions.canRemoveService && (
             <Tooltip label={t('Видалити')}>
               <ActionIcon className="supply-payment-remove-action" color="red" variant="subtle" onClick={() => onRemoveService(service)}>
-                <IconTrash size={18} />
+                <Trash2 size={18} />
               </ActionIcon>
             </Tooltip>
           )}
@@ -324,7 +324,7 @@ export function MergedServiceCard({
             <Button
               className="supply-payment-action-button"
               color={CREATE_ACTION_COLOR}
-              leftSection={<IconPlus size={16} />}
+              leftSection={<Plus size={16} />}
               variant="light"
               onClick={() => setAddOpen(true)}
             >
@@ -347,7 +347,7 @@ export function MergedServiceCard({
             <Button
               className="supply-payment-action-button"
               color={CREATE_ACTION_COLOR}
-              leftSection={<IconPlus size={16} />}
+              leftSection={<Plus size={16} />}
               variant="light"
               onClick={() => setAddAccountingOpen(true)}
             >

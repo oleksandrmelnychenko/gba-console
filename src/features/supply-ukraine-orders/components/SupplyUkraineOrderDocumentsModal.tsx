@@ -9,7 +9,7 @@ import {
   Text,
   Tooltip,
 } from '@mantine/core'
-import { IconArrowBackUp, IconFile, IconFileTypePdf, IconTrash, IconUpload } from '@tabler/icons-react'
+import { File, FileText, Trash2, Undo2, Upload } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
@@ -65,7 +65,7 @@ export function SupplyUkraineOrderDocumentsModal({
                 </Group>
                 <Tooltip label={t('Видалити')}>
                   <ActionIcon color="red" disabled={isSaving} variant="subtle" onClick={() => onRemoveNewDocument(document)}>
-                    <IconTrash size={16} />
+                    <Trash2 size={16} />
                   </ActionIcon>
                 </Tooltip>
               </Group>
@@ -101,7 +101,7 @@ export function SupplyUkraineOrderDocumentsModal({
                     variant="subtle"
                     onClick={() => onToggleExistingDocument(document)}
                   >
-                    {document.Deleted ? <IconArrowBackUp size={16} /> : <IconTrash size={16} />}
+                    {document.Deleted ? <Undo2 size={16} /> : <Trash2 size={16} />}
                   </ActionIcon>
                 </Tooltip>
               </Group>
@@ -120,7 +120,7 @@ export function SupplyUkraineOrderDocumentsModal({
         <Group justify="flex-end">
           <FileButton multiple accept=".xls,.xlsx,.pdf" onChange={(files) => onAddFiles(files || [])}>
             {(props) => (
-              <Button {...props} disabled={isSaving} leftSection={<IconUpload size={16} />} variant="outline">
+              <Button {...props} disabled={isSaving} leftSection={<Upload size={16} />} variant="outline">
                 {t('Завантажити')}
               </Button>
             )}
@@ -142,10 +142,10 @@ function DocumentTypeIcon({ contentType }: { contentType?: string }) {
   }
 
   if (normalizedType === 'pdf') {
-    return <IconFileTypePdf size={18} />
+    return <FileText size={18} />
   }
 
-  return <IconFile size={18} />
+  return <File size={18} />
 }
 
 function getDocumentKey(document: SupplyOrderUkraineDocument, index: number): string {

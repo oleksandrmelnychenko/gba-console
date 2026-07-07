@@ -10,7 +10,7 @@ import {
   Text,
   Tooltip,
 } from '@mantine/core'
-import { IconAlertCircle, IconRefresh } from '@tabler/icons-react'
+import { CircleAlert, RefreshCw } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -155,7 +155,7 @@ export function SalesGeographyPage() {
           <div className="app-filter-actions sales-geography-actions">
             <Tooltip label={t('Оновити')}>
               <ActionIcon aria-label={t('Оновити')} loading={isLoading} size={34} variant="light" onClick={handleReload}>
-                <IconRefresh size={18} />
+                <RefreshCw size={18} />
               </ActionIcon>
             </Tooltip>
           </div>
@@ -163,7 +163,7 @@ export function SalesGeographyPage() {
       </Card>
 
       {error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {error}
         </Alert>
       )}

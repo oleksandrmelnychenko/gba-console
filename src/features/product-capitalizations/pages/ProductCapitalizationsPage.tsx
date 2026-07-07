@@ -14,14 +14,7 @@ import {
 } from '@mantine/core'
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
-import {
-  IconAlertCircle,
-  IconDownload,
-  IconEye,
-  IconFileTypePdf,
-  IconPlus,
-  IconRestore,
-} from '@tabler/icons-react'
+import { CircleAlert, Download, Eye, FileText, Plus, RotateCcw } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { type FormEvent, useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
@@ -427,7 +420,7 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
             <div className="app-filter-actions">
               <Tooltip label={t('Скинути')}>
                 <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
-                  <IconRestore size={17} />
+                  <RotateCcw size={17} />
                 </ActionIcon>
               </Tooltip>
               <DataTableDensityToggle density={density} size={34} onToggle={toggleDensity} />
@@ -446,7 +439,7 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
             </div>
             <Button
               color={CREATE_ACTION_COLOR}
-              leftSection={<IconPlus size={16} />}
+              leftSection={<Plus size={16} />}
               size="sm"
               styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
               onClick={() => setCreatePanelOpened(true)}
@@ -460,7 +453,7 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
           <Alert
             className="product-capitalizations-page__alert"
             color={filterError ? 'yellow' : 'red'}
-            icon={<IconAlertCircle size={18} />}
+            icon={<CircleAlert size={18} />}
             variant="light"
           >
             {filterError || error}
@@ -537,7 +530,7 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
                   className="document-link"
                 >
                   <span className="document-link-badge document-link-badge-pdf">
-                    <IconFileTypePdf size={22} stroke={1.8} />
+                    <FileText size={22} strokeWidth={1.8} />
                   </span>
                   <span>{t('PDF документ')}</span>
                 </Anchor>
@@ -603,7 +596,7 @@ function ProductCapitalizationDetailDrawer({
               className="product-capitalization-detail-export"
               color="gray"
               disabled={!capitalization.NetUid || Boolean(exportingNetId)}
-              leftSection={<IconDownload size={16} />}
+              leftSection={<Download size={16} />}
               loading={exportingNetId === capitalization.NetUid}
               variant="light"
               onClick={() => onExport(capitalization)}
@@ -613,7 +606,7 @@ function ProductCapitalizationDetailDrawer({
           </div>
 
           {detailError && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {detailError}
             </Alert>
           )}
@@ -791,7 +784,7 @@ function useProductCapitalizationColumns(
                   variant="subtle"
                   onClick={() => onOpenDetail(capitalization)}
                 >
-                  <IconEye size={16} />
+                  <Eye size={16} />
                 </ActionIcon>
               </Tooltip>
               <Tooltip label="Експорт">
@@ -804,7 +797,7 @@ function useProductCapitalizationColumns(
                   variant="subtle"
                   onClick={() => onExport(capitalization)}
                 >
-                  <IconDownload size={16} />
+                  <Download size={16} />
                 </ActionIcon>
               </Tooltip>
             </Group>

@@ -10,13 +10,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import {
-  IconAlertCircle,
-  IconArrowsLeftRight,
-  IconBuildingWarehouse,
-  IconPackage,
-  IconReceipt,
-} from '@tabler/icons-react'
+import { ArrowLeftRight, CircleAlert, Package, Receipt, Warehouse } from 'lucide-react'
 import { useEffect, useReducer } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
@@ -278,7 +272,7 @@ function SaleEditContent({
 
   if (error) {
     return (
-      <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+      <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
         {error}
       </Alert>
     )
@@ -305,7 +299,7 @@ function SaleEditContent({
       <Box className="sale-edit-hero">
         <Box className="sale-edit-hero__main">
           <span className="sale-edit-hero__icon">
-            <IconArrowsLeftRight size={23} stroke={1.8} />
+            <ArrowLeftRight size={23} strokeWidth={1.8} />
           </span>
           <Box className="sale-edit-hero__copy">
             <Text className="sale-edit-hero__eyebrow">{isNew ? t('Рахунок') : t('Накладна')}</Text>
@@ -324,7 +318,7 @@ function SaleEditContent({
       <Box className="sale-edit-command">
         <Box className="sale-edit-command__copy">
           <Group gap={8} wrap="nowrap">
-            <IconPackage size={17} stroke={1.8} />
+            <Package size={17} strokeWidth={1.8} />
             <Text className="sale-edit-command__title">{t('Склад накладної')}</Text>
             <Badge className="sale-edit-command__badge" variant="light">
               {orderItems.length}
@@ -339,7 +333,7 @@ function SaleEditContent({
             <Button
               className="sale-edit-bulk-action"
               disabled={isSaving}
-              leftSection={<IconReceipt size={16} />}
+              leftSection={<Receipt size={16} />}
               variant="outline"
               onClick={allToBill}
             >
@@ -349,7 +343,7 @@ function SaleEditContent({
           <Button
             className="sale-edit-bulk-action"
             disabled={isSaving}
-            leftSection={<IconBuildingWarehouse size={16} />}
+            leftSection={<Warehouse size={16} />}
             variant="outline"
             onClick={allToStore}
           >
@@ -381,7 +375,7 @@ function SaleEditContent({
         <Button
           className="sale-edit-submit"
           color={CREATE_ACTION_COLOR}
-          leftSection={<IconArrowsLeftRight size={16} />}
+          leftSection={<ArrowLeftRight size={16} />}
           loading={isSaving}
           onClick={doShift}
         >

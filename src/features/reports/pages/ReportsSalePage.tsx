@@ -11,15 +11,7 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
-import {
-  IconAlertCircle,
-  IconDownload,
-  IconPrinter,
-  IconRefresh,
-  IconRestore,
-  IconSearch,
-  IconUpload,
-} from '@tabler/icons-react'
+import { CircleAlert, Download, Printer, RefreshCw, RotateCcw, Search, Upload } from 'lucide-react'
 import { type ChangeEvent, type ReactNode, useMemo } from 'react'
 import readXlsxFile from 'read-excel-file/browser'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -124,7 +116,7 @@ export function ReportsSalePage() {
       <Card withBorder radius="md" padding="md" className="app-section-card">
         <Stack gap="md">
           <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
-            <Button color={CREATE_ACTION_COLOR} component="label" leftSection={<IconUpload size={16} />} loading={isLoading}>
+            <Button color={CREATE_ACTION_COLOR} component="label" leftSection={<Upload size={16} />} loading={isLoading}>
               {t('Завантажити файл')}
               <input
                 accept=".csv,.tsv,.txt,.xlsx,.xls"
@@ -137,19 +129,19 @@ export function ReportsSalePage() {
             {fileName ? <Text size="sm" c="dimmed">{fileName}</Text> : null}
             <Tooltip label={t('Експорт CSV')}>
               <ActionIcon aria-label={t('Експорт CSV')} disabled={!activeSheet} variant="subtle" onClick={exportCsv}>
-                <IconDownload size={18} />
+                <Download size={18} />
               </ActionIcon>
             </Tooltip>
             <Tooltip label={t('Друк')}>
               <ActionIcon aria-label={t('Друк')} disabled={!activeSheet} variant="subtle" onClick={() => window.print()}>
-                <IconPrinter size={18} />
+                <Printer size={18} />
               </ActionIcon>
             </Tooltip>
           </Group>
 
           <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
             <TextInput
-              leftSection={<IconSearch size={16} />}
+              leftSection={<Search size={16} />}
               label={t('Пошук')}
               placeholder={t('Текст у будь-якій колонці')}
               value={searchDraft}
@@ -159,7 +151,7 @@ export function ReportsSalePage() {
             <TextInput label={t('Дата по')} type="date" value={dateTo} onChange={(event) => setDateTo(event.currentTarget.value)} />
             <Tooltip label={t('Скинути')}>
               <ActionIcon aria-label={t('Скинути')} color="gray" variant="subtle" onClick={resetFilters}>
-                <IconRestore size={18} />
+                <RotateCcw size={18} />
               </ActionIcon>
             </Tooltip>
             <Tooltip label={t('Очистити файл')}>
@@ -174,7 +166,7 @@ export function ReportsSalePage() {
                   resetFilters()
                 }}
               >
-                <IconRefresh size={18} />
+                <RefreshCw size={18} />
               </ActionIcon>
             </Tooltip>
             <DataTableDensityToggle density={density} onToggle={toggleDensity} size="md" />
@@ -182,7 +174,7 @@ export function ReportsSalePage() {
         </Stack>
       </Card>
 
-      {error ? <Alert color="red" icon={<IconAlertCircle size={18} />}>{error}</Alert> : null}
+      {error ? <Alert color="red" icon={<CircleAlert size={18} />}>{error}</Alert> : null}
 
       {activeSheet ? (
         <Card withBorder radius="md" padding="md" className="app-section-card">

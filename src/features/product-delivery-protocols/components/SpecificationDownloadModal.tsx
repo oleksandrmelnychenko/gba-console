@@ -1,5 +1,5 @@
 import { Alert, Anchor, Stack, Text } from '@mantine/core'
-import { IconAlertCircle, IconFileTypePdf } from '@tabler/icons-react'
+import { CircleAlert, FileText } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
@@ -38,7 +38,7 @@ export function SpecificationDownloadModal({
             {t('Завантаження')}
           </Text>
         ) : error ? (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         ) : document?.DocumentURL || document?.PdfDocumentURL ? (
@@ -54,7 +54,7 @@ export function SpecificationDownloadModal({
             {document.PdfDocumentURL && (
               <Anchor href={upgradeHttpToHttps(document.PdfDocumentURL)} target="_blank" rel="noreferrer">
                 <Stack gap={2}>
-                  <IconFileTypePdf size={22} stroke={1.8} />
+                  <FileText size={22} strokeWidth={1.8} />
                   <Text size="sm">{t('PDF документ')}</Text>
                 </Stack>
               </Anchor>

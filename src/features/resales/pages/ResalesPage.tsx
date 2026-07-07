@@ -22,18 +22,7 @@ import {
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { notifications } from '@mantine/notifications'
-import {
-  IconAlertCircle,
-  IconArrowRight,
-  IconDownload,
-  IconFileTypePdf,
-  IconPlus,
-  IconRefresh,
-  IconRestore,
-  IconSearch,
-  IconTrash,
-  IconTruckDelivery,
-} from '@tabler/icons-react'
+import { ArrowRight, CircleAlert, Download, FileText, Plus, RefreshCw, RotateCcw, Search, Trash2, Truck } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { formatLocalDate, formatLocalDateTime } from '../../../shared/date/dateTime'
@@ -401,7 +390,7 @@ export function ResalesPage() {
             <div className="app-filter-actions resales-filter-actions">
               <Tooltip label={t('Скинути')}>
                 <ActionIcon variant="light" color="gray" size={34} aria-label={t('Скинути')} onClick={resetFilters}>
-                  <IconRestore size={17} />
+                  <RotateCcw size={17} />
                 </ActionIcon>
               </Tooltip>
               <Paginator
@@ -422,7 +411,7 @@ export function ResalesPage() {
               <Button
                 color={CREATE_ACTION_COLOR}
                 size="sm"
-                leftSection={<IconPlus size={16} />}
+                leftSection={<Plus size={16} />}
                 onClick={() =>
                   navigate('/resales/new', {
                     state: {
@@ -442,7 +431,7 @@ export function ResalesPage() {
           <Alert
             className="resales-page__alert"
             color={filterError ? 'yellow' : 'red'}
-            icon={<IconAlertCircle size={18} />}
+            icon={<CircleAlert size={18} />}
             variant="light"
           >
             {filterError || error}
@@ -1013,7 +1002,7 @@ export function NewResalePage() {
             <Group align="end" gap="sm" wrap="nowrap" className="resales-new-filter-row">
               <TextInput
                 className="resales-new-control resales-new-search-control"
-                leftSection={<IconSearch size={16} />}
+                leftSection={<Search size={16} />}
                 label={t('Пошук товару')}
                 value={form.search}
                 onChange={(event) => {
@@ -1053,7 +1042,7 @@ export function NewResalePage() {
                   variant="light"
                   onClick={() => reload()}
                 >
-                  <IconRefresh size={18} />
+                  <RefreshCw size={18} />
                 </ActionIcon>
               </Tooltip>
             </Group>
@@ -1090,7 +1079,7 @@ export function NewResalePage() {
                 className="resales-new-action"
                 color={CREATE_ACTION_COLOR}
                 disabled={!payload || isLoadingOptions || isLoadingAvailabilities}
-                leftSection={<IconDownload size={16} />}
+                leftSection={<Download size={16} />}
                 loading={isExporting}
                 variant="light"
                 onClick={exportAvailabilities}
@@ -1102,7 +1091,7 @@ export function NewResalePage() {
         </Card>
 
         {(error || warning || dateRangeError) && (
-          <Alert color={warning || dateRangeError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color={warning || dateRangeError ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">
             <Stack gap={4}>
               <Text size="sm">{warning?.Message || dateRangeError || error}</Text>
               {warning?.Products?.map((product) => (
@@ -1540,7 +1529,7 @@ export function ResalePage() {
 
   if (!model) {
     return (
-      <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+      <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
         {error || t('Перепродаж не знайдено')}
       </Alert>
     )
@@ -1555,14 +1544,14 @@ export function ResalePage() {
           </Button>
           <Tooltip label={t('Оновити')}>
             <ActionIcon aria-label={t('Оновити')} color="gray" size={38} variant="light" onClick={() => reload()}>
-              <IconRefresh size={18} />
+              <RefreshCw size={18} />
             </ActionIcon>
           </Tooltip>
         </Group>
       </Group>
 
       {(error || warning) && (
-        <Alert color={warning ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color={warning ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">
           <Stack gap={4}>
             <Text size="sm">{warning?.Message || error}</Text>
             {warning?.Products?.map((product) => (
@@ -1618,16 +1607,16 @@ export function ResalePage() {
             }}
           />
           <Group justify="flex-end">
-            <Button disabled={!model.ReSale.NetUid} leftSection={<IconDownload size={16} />} loading={isExporting} variant="outline" onClick={() => exportDocument(DocumentType.PaymentDocument)}>
+            <Button disabled={!model.ReSale.NetUid} leftSection={<Download size={16} />} loading={isExporting} variant="outline" onClick={() => exportDocument(DocumentType.PaymentDocument)}>
               {t('Платіжний документ')}
             </Button>
             {changedToInvoice && (
-              <Button disabled={!model.ReSale.NetUid} leftSection={<IconDownload size={16} />} loading={isExporting} variant="outline" onClick={() => exportDocument(DocumentType.SalesInvoice)}>
+              <Button disabled={!model.ReSale.NetUid} leftSection={<Download size={16} />} loading={isExporting} variant="outline" onClick={() => exportDocument(DocumentType.SalesInvoice)}>
                 {t('Інвойс')}
               </Button>
             )}
             {changedToInvoice && (
-              <Button disabled={!model.ReSale.NetUid} leftSection={<IconTruckDelivery size={16} />} variant="outline" onClick={() => setConsignmentNoteOpened(true)}>
+              <Button disabled={!model.ReSale.NetUid} leftSection={<Truck size={16} />} variant="outline" onClick={() => setConsignmentNoteOpened(true)}>
                 {t('ТТН')}
               </Button>
             )}
@@ -1838,7 +1827,7 @@ function useResalesColumns({
                   onExport(resale, DocumentType.PaymentDocument)
                 }}
               >
-                <IconDownload size={16} />
+                <Download size={16} />
               </ActionIcon>
             </Tooltip>
             {isResaleInvoice(resale) && (
@@ -1856,7 +1845,7 @@ function useResalesColumns({
                       onExport(resale, DocumentType.SalesInvoice)
                     }}
                   >
-                    <IconFileTypePdf size={16} />
+                    <FileText size={16} />
                   </ActionIcon>
                 </Tooltip>
                 <Tooltip label={t('ТТН')}>
@@ -1871,7 +1860,7 @@ function useResalesColumns({
                       onOpenConsignmentNote(resale)
                     }}
                   >
-                    <IconTruckDelivery size={16} />
+                    <Truck size={16} />
                   </ActionIcon>
                 </Tooltip>
               </>
@@ -1890,13 +1879,13 @@ function useResalesColumns({
                     onDelete(resale)
                   }}
                 >
-                  <IconTrash size={16} />
+                  <Trash2 size={16} />
                 </ActionIcon>
               </Tooltip>
             )}
             <Tooltip label={t('Відкрити')}>
               <ActionIcon component={Link} to={`/resales/${resale.NetUid || ''}`} aria-label={t('Відкрити')} color="gray" size={30} variant="subtle">
-                <IconArrowRight size={16} />
+                <ArrowRight size={16} />
               </ActionIcon>
             </Tooltip>
           </Group>
@@ -2847,12 +2836,12 @@ function ResaleProcessDrawer({
     >
       <Stack gap="lg">
         {processForm.warning && (
-          <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
             {processForm.warning.Message}
           </Alert>
         )}
         {processForm.isDirty && !processForm.warning && (
-          <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
             {t('Перерахуйте позиції перед створенням')}
           </Alert>
         )}
@@ -3014,7 +3003,7 @@ function DownloadDocumentModal({
             {document.PdfDocumentURL && (
               <Anchor href={getDocumentHref(document.PdfDocumentURL)} target="_blank" rel="noreferrer" className="document-link">
                 <span className="document-link-badge document-link-badge-pdf">
-                  <IconFileTypePdf size={22} stroke={1.8} />
+                  <FileText size={22} strokeWidth={1.8} />
                 </span>
                 <span>{t('PDF документ')}</span>
               </Anchor>
@@ -3267,7 +3256,7 @@ function ConsignmentNoteSettingsDrawer({
     >
       <Stack gap="lg">
         {noteState.error && (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {noteState.error}
           </Alert>
         )}
@@ -3398,7 +3387,7 @@ function ConsignmentNoteSettingsDrawer({
           <Button disabled={!noteState.isEdited || isPrinting} loading={isSaving} variant="outline" onClick={saveSetting}>
             {hasExistingSetting ? t('Зберегти') : t('Створити')}
           </Button>
-          <Button leftSection={<IconTruckDelivery size={16} />} loading={isPrinting} onClick={printDocument}>
+          <Button leftSection={<Truck size={16} />} loading={isPrinting} onClick={printDocument}>
             {t('Друк')}
           </Button>
         </Group>

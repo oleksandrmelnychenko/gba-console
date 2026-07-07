@@ -1,5 +1,5 @@
 import { ActionIcon, Alert, Button, FileInput, Group, Stack, Text } from '@mantine/core'
-import { IconAlertCircle, IconFile, IconTrash, IconUpload } from '@tabler/icons-react'
+import { CircleAlert, File, Trash2, Upload } from 'lucide-react'
 import { notifications } from '@mantine/notifications'
 import { useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -66,7 +66,7 @@ export function TaxFreeDocumentsPanel({ files, taxFree, onFilesChange, onUpdated
   return (
     <Stack gap="sm">
       {error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {error}
         </Alert>
       )}
@@ -74,7 +74,7 @@ export function TaxFreeDocumentsPanel({ files, taxFree, onFilesChange, onUpdated
       <FileInput
         clearable
         multiple
-        leftSection={<IconUpload size={16} />}
+        leftSection={<Upload size={16} />}
         label={t('Файли')}
         placeholder={t('Оберіть файли')}
         value={files}
@@ -86,7 +86,7 @@ export function TaxFreeDocumentsPanel({ files, taxFree, onFilesChange, onUpdated
           {documents.map((document, index) => (
             <Group key={document.NetUid || `${document.FileName}-${index}`} justify="space-between" wrap="nowrap">
               <Group gap="xs" wrap="nowrap">
-                <IconFile size={18} />
+                <File size={18} />
                 <div>
                   <Text size="sm" fw={600}>{document.FileName || t('Документ')}</Text>
                   {document.ContentType && <Text size="xs" c="dimmed">{document.ContentType}</Text>}
@@ -99,7 +99,7 @@ export function TaxFreeDocumentsPanel({ files, taxFree, onFilesChange, onUpdated
                 variant="subtle"
                 onClick={() => removeDocument(document)}
               >
-                <IconTrash size={16} />
+                <Trash2 size={16} />
               </ActionIcon>
             </Group>
           ))}

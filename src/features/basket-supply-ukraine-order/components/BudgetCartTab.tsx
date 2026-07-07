@@ -15,7 +15,7 @@ import {
   Text,
   Tooltip,
 } from '@mantine/core'
-import { IconAlertCircle, IconRefresh } from '@tabler/icons-react'
+import { CircleAlert, RefreshCw } from 'lucide-react'
 import { Fragment, useEffect, useMemo, useReducer, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { TranslateFunction } from '../../../shared/i18n/types'
@@ -260,14 +260,14 @@ export function BudgetCartTab() {
               variant="subtle"
               onClick={triggerOptimize}
             >
-              <IconRefresh size={18} />
+              <RefreshCw size={18} />
             </ActionIcon>
           </Tooltip>
         )}
       </Group>
 
       {error && (
-        <Alert color="red" icon={<IconAlertCircle size={16} />} variant="light">
+        <Alert color="red" icon={<CircleAlert size={16} />} variant="light">
           {error}
         </Alert>
       )}

@@ -1,5 +1,5 @@
 import { Alert, Card, Stack, Text, Title, type MantineColor } from '@mantine/core'
-import { IconAlertTriangle, IconLock } from '@tabler/icons-react'
+import { Lock, TriangleAlert } from 'lucide-react'
 import { type ReactNode } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useNavigation } from '../../../features/navigation/hooks/useNavigation'
@@ -37,7 +37,7 @@ export function NavigationRouteGuard({ children }: { children: ReactNode }) {
       <NavigationRouteState
         color="red"
         description={error.message || t('Не вдалося завантажити меню консолі.')}
-        icon={<IconAlertTriangle size={20} stroke={1.8} />}
+        icon={<TriangleAlert size={20} strokeWidth={1.8} />}
         title={t('Меню недоступне')}
       />
     )
@@ -48,7 +48,7 @@ export function NavigationRouteGuard({ children }: { children: ReactNode }) {
       <NavigationRouteState
         color="orange"
         description={t('Цей маршрут недоступний для поточної ролі.')}
-        icon={<IconLock size={20} stroke={1.8} />}
+        icon={<Lock size={20} strokeWidth={1.8} />}
         title={t('Немає доступу')}
       />
     )

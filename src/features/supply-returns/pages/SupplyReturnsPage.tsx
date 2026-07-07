@@ -15,13 +15,7 @@ import {
 } from '@mantine/core'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
-import {
-  IconAlertCircle,
-  IconDownload,
-  IconEye,
-  IconFileTypePdf,
-  IconRestore,
-} from '@tabler/icons-react'
+import { CircleAlert, Download, Eye, FileText, RotateCcw } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -404,7 +398,7 @@ function SupplyReturnsTableCard({ model }: { model: ReturnType<typeof useSupplyR
           <div className="app-filter-actions">
             <Tooltip label={t('Скинути')}>
               <ActionIcon variant="light" color="gray" size={34} aria-label={t('Скинути')} onClick={resetFilters}>
-                <IconRestore size={17} />
+                <RotateCcw size={17} />
               </ActionIcon>
             </Tooltip>
             <Paginator
@@ -424,7 +418,7 @@ function SupplyReturnsTableCard({ model }: { model: ReturnType<typeof useSupplyR
         <Alert
           className="supply-returns-page__alert"
           color={filterError ? 'yellow' : 'red'}
-          icon={<IconAlertCircle size={18} />}
+          icon={<CircleAlert size={18} />}
           variant="light"
         >
           {filterError || error}
@@ -480,7 +474,7 @@ function SupplyReturnDetailDrawer({ model }: { model: ReturnType<typeof useSuppl
             <Button
               color={CREATE_ACTION_COLOR}
               disabled={!selectedReturn.NetUid}
-              leftSection={<IconDownload size={16} />}
+              leftSection={<Download size={16} />}
               loading={isDownloading}
               variant="light"
               onClick={() => openDownload(selectedReturn)}
@@ -499,7 +493,7 @@ function SupplyReturnDetailDrawer({ model }: { model: ReturnType<typeof useSuppl
               {t('Завантаження')}
             </Text>
           ) : downloadError ? (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {downloadError}
             </Alert>
           ) : downloadDocument?.DocumentURL || downloadDocument?.PdfDocumentURL ? (
@@ -515,7 +509,7 @@ function SupplyReturnDetailDrawer({ model }: { model: ReturnType<typeof useSuppl
               {downloadDocument.PdfDocumentURL && (
                 <Anchor href={getDocumentHref(downloadDocument.PdfDocumentURL)} target="_blank" rel="noreferrer" className="document-link">
                   <span className="document-link-badge document-link-badge-pdf">
-                    <IconFileTypePdf size={22} stroke={1.8} />
+                    <FileText size={22} strokeWidth={1.8} />
                   </span>
                   <span>{t('PDF документ')}</span>
                 </Anchor>
@@ -676,7 +670,7 @@ function useSupplyReturnColumns(
                 variant="subtle"
                 onClick={() => onOpenDetail(supplyReturn)}
               >
-                <IconEye size={18} />
+                <Eye size={18} />
               </ActionIcon>
             </Tooltip>
           </Box>
@@ -761,7 +755,7 @@ function SupplyReturnDetail({
   return (
     <Stack gap="md">
       {error && (
-        <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
           {error}
         </Alert>
       )}

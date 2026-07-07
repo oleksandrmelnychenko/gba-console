@@ -15,18 +15,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import {
-  IconAlertCircle,
-  IconDeviceFloppy,
-  IconDownload,
-  IconEdit,
-  IconPlus,
-  IconPrinter,
-  IconRefresh,
-  IconRestore,
-  IconTrash,
-  IconX,
-} from '@tabler/icons-react'
+import { CircleAlert, Download, Plus, Printer, RefreshCw, RotateCcw, Save, SquarePen, Trash2, X } from 'lucide-react'
 import { useEffect, useMemo, useReducer, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -913,7 +902,7 @@ function AutoShipmentsPanel({ onCarriedOut }: AutoShipmentsPanelProps) {
             <div className="app-filter-actions warehouse-ukraine-filter-actions">
               <Tooltip label={t('Скинути')}>
                 <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={model.resetFilters}>
-                  <IconRestore size={17} />
+                  <RotateCcw size={17} />
                 </ActionIcon>
               </Tooltip>
               <Tooltip label={t('Оновити')}>
@@ -925,7 +914,7 @@ function AutoShipmentsPanel({ onCarriedOut }: AutoShipmentsPanelProps) {
                   variant="light"
                   onClick={() => model.refreshList()}
                 >
-                  <IconRefresh size={17} />
+                  <RefreshCw size={17} />
                 </ActionIcon>
               </Tooltip>
             </div>
@@ -958,7 +947,7 @@ function AutoShipmentsPanel({ onCarriedOut }: AutoShipmentsPanelProps) {
           </div>
 
           {(model.error || model.filterError) && (
-            <Alert className="console-table-alert" color={model.filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert className="console-table-alert" color={model.filterError ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">
               {model.filterError || model.error}
             </Alert>
           )}
@@ -1757,7 +1746,7 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
             <div className="app-filter-actions warehouse-ukraine-filter-actions">
               <Tooltip label={t('Скинути')}>
                 <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetListFilters}>
-                  <IconRestore size={17} />
+                  <RotateCcw size={17} />
                 </ActionIcon>
               </Tooltip>
               <Paginator
@@ -1773,14 +1762,14 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
             </div>
             <div ref={setTableToolbarSlot} className="warehouse-ukraine-table-toolbar-slot" />
             <div className="warehouse-ukraine-command-actions">
-              <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={18} />} onClick={onCreate}>
+              <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<Plus size={18} />} onClick={onCreate}>
                 {t('Створити')}
               </Button>
             </div>
           </div>
 
           {(error || filterError) && (
-            <Alert className="console-table-alert" color={filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert className="console-table-alert" color={filterError ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">
               {filterError || error}
             </Alert>
           )}
@@ -1842,7 +1831,7 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
             <div className="warehouse-shipment-edit-actions">
               <Button
                 color={CREATE_ACTION_COLOR}
-                leftSection={<IconPlus size={18} />}
+                leftSection={<Plus size={18} />}
                 variant="outline"
                 onClick={openManualPicker}
                 disabled={!canEditShipment || isSaving}
@@ -1853,7 +1842,7 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
                 <Box component="span">
                   <Button
                     color={CREATE_ACTION_COLOR}
-                    leftSection={<IconPrinter size={18} />}
+                    leftSection={<Printer size={18} />}
                     variant="outline"
                     onClick={printSelectedShipment}
                     disabled={Boolean(printSelectedShipmentDisabledReason)}
@@ -1864,21 +1853,21 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
               </Tooltip>
               <Button
                 color={CREATE_ACTION_COLOR}
-                leftSection={<IconDeviceFloppy size={18} />}
+                leftSection={<Save size={18} />}
                 disabled={!canEditShipment || !hasShipmentDraftChanges}
                 loading={isSaving}
                 onClick={saveSelectedShipment}
               >
                 {t('Зберегти')}
               </Button>
-              <Button color="gray" leftSection={<IconX size={18} />} variant="light" onClick={requestCloseShipment}>
+              <Button color="gray" leftSection={<X size={18} />} variant="light" onClick={requestCloseShipment}>
                 {t('Скасувати')}
               </Button>
             </div>
           </div>
 
           {editError && (
-            <Alert className="console-table-alert warehouse-shipment-edit-alert" color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert className="console-table-alert warehouse-shipment-edit-alert" color="red" icon={<CircleAlert size={18} />} variant="light">
               {editError}
             </Alert>
           )}
@@ -1924,7 +1913,7 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
               />
               <Button
                 disabled={Boolean(manualFilterError) || isManualLoading}
-                leftSection={<IconRefresh size={18} />}
+                leftSection={<RefreshCw size={18} />}
                 loading={isManualLoading}
                 variant="outline"
                 onClick={() => void loadManualSales(manualFilterDraft)}
@@ -1938,7 +1927,7 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
           </Card>
 
           {(manualError || manualFilterError) && (
-            <Alert color={manualFilterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color={manualFilterError ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">
               {manualFilterError || manualError}
             </Alert>
           )}
@@ -1971,7 +1960,7 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
             </Button>
             <Button
               disabled={isManualLoading || manualSelectedCount === 0}
-              leftSection={<IconPlus size={18} />}
+              leftSection={<Plus size={18} />}
               onClick={appendManualSelectedSalesToDraft}
             >
               {t('Додати')}
@@ -2120,7 +2109,7 @@ function useAllShipmentColumns(indexMap: Map<ShipmentList, number>): DataTableCo
 
           return (
             <Group gap={6} wrap="nowrap">
-              <IconEdit size={14} />
+              <SquarePen size={14} />
               <TransporterIcon cssClass={transporterCssClass} imageUrl={transporterImageUrl} name={transporterName} size={18} />
               <Text size="sm" truncate>
                 {transporterName}
@@ -2549,7 +2538,7 @@ function useEditShipmentColumns(model: EditShipmentColumnsModel): DataTableColum
           item.Sale.IsVatSale ? (
             <Tooltip label={t('Роздрукувати')}>
               <ActionIcon color="gray" size="sm" variant="subtle" onClick={() => model.onPrintSale(item)}>
-                <IconPrinter size={16} />
+                <Printer size={16} />
               </ActionIcon>
             </Tooltip>
           ) : (
@@ -2573,7 +2562,7 @@ function useEditShipmentColumns(model: EditShipmentColumnsModel): DataTableColum
               variant="subtle"
               onClick={() => model.onRemoveItem(item)}
             >
-              <IconTrash size={16} />
+              <Trash2 size={16} />
             </ActionIcon>
           </Tooltip>
         ),
@@ -2794,7 +2783,7 @@ function useShipmentColumns(model: ShipmentColumnsModel): DataTableColumn<Shipme
           return (
             <Tooltip label={t('Завантажити ТТН')}>
               <Anchor href={upgradeHttpToHttps(path)} target="_blank" rel="noreferrer">
-                <IconDownload size={18} />
+                <Download size={18} />
               </Anchor>
             </Tooltip>
           )
@@ -2815,7 +2804,7 @@ function EditableTextCell({ disabled = false, isCrossed = false, onEdit, text }:
   return (
     <Group gap={4} wrap="nowrap" align="center">
       <ActionIcon color="gray" disabled={disabled} size="sm" variant="subtle" onClick={onEdit}>
-        <IconEdit size={14} />
+        <SquarePen size={14} />
       </ActionIcon>
       <Text size="sm" td={isCrossed ? 'line-through' : undefined} truncate>
         {text}

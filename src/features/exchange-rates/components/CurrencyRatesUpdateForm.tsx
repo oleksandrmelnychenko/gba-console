@@ -1,5 +1,5 @@
 import { Button, Group, NumberInput, Stack, Text, TextInput } from '@mantine/core'
-import { IconDeviceFloppy } from '@tabler/icons-react'
+import { Save } from 'lucide-react'
 import type { FormEvent } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { ExchangeRate } from '../types'
@@ -56,7 +56,7 @@ export function CurrencyRatesUpdateForm({
             {formError}
           </Text>
         )}
-        <Button type="submit" color={CREATE_ACTION_COLOR} loading={isSaving} leftSection={<IconDeviceFloppy size={16} stroke={1.8} />}>
+        <Button type="submit" color={CREATE_ACTION_COLOR} loading={isSaving} leftSection={<Save size={16} strokeWidth={1.8} />}>
           {t('Зберегти')}
         </Button>
       </Stack>

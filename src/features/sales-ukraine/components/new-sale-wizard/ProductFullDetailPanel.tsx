@@ -1,14 +1,5 @@
 import { ActionIcon, Box, Group, Image, Paper, ScrollArea, Stack, Text, TextInput, Tooltip } from '@mantine/core'
-import {
-  IconBarcode,
-  IconBox,
-  IconCheck,
-  IconInfoCircle,
-  IconPencil,
-  IconPhoto,
-  IconRulerMeasure,
-  IconTruckDelivery,
-} from '@tabler/icons-react'
+import { Barcode, Box as BoxIcon, Check, Image as ImageIcon, Info, Pencil, Ruler, Truck } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { formatLocalDate } from '../../../../shared/date/dateTime'
 import { useI18n } from '../../../../shared/i18n/useI18n'
@@ -130,7 +121,7 @@ export function ProductFullDetailPanel({
           />
         ) : (
           <Box className="new-sale-product-card__media-empty">
-            <IconPhoto size={30} stroke={1.6} />
+            <ImageIcon size={30} strokeWidth={1.6} />
           </Box>
         )}
       </Box>
@@ -140,14 +131,14 @@ export function ProductFullDetailPanel({
           <Box className="new-sale-product-card__identity">
             <Group gap={7} wrap="nowrap">
               <span className="new-sale-product-card__code">
-                <IconBarcode size={13} />
+                <Barcode size={13} />
                 {code}
               </span>
               {Boolean(originalNumber) && <span className="new-sale-product-card__pill">{originalNumber}</span>}
               {Boolean(top) && <span className="new-sale-product-card__pill is-soft">{top}</span>}
               {Boolean(size) && (
                 <span className="new-sale-product-card__pill is-soft">
-                  <IconRulerMeasure size={12} />
+                  <Ruler size={12} />
                   {size}
                 </span>
               )}
@@ -184,7 +175,7 @@ export function ProductFullDetailPanel({
 
           {hasLogistics && (
             <Box className="new-sale-product-card__next">
-              <IconTruckDelivery size={16} />
+              <Truck size={16} />
               <Box>
                 <span>{t('Найближча партія')}</span>
                 <strong>
@@ -264,7 +255,7 @@ export function ProductFullDetailPanel({
           <Box className="new-sale-product-card__description">
             <Group gap={6} justify="space-between" wrap="nowrap">
               <span className="new-sale-product-card__section-title">
-                <IconInfoCircle size={13} />
+                <Info size={13} />
                 {t('Опис')}
               </span>
               {canEditDescription && (
@@ -276,7 +267,7 @@ export function ProductFullDetailPanel({
                     variant="subtle"
                     onClick={onToggleDescription}
                   >
-                    {isEditingDescription ? <IconCheck size={15} /> : <IconPencil size={15} />}
+                    {isEditingDescription ? <Check size={15} /> : <Pencil size={15} />}
                   </ActionIcon>
                 </Tooltip>
               )}
@@ -305,7 +296,7 @@ export function ProductFullDetailPanel({
           <Box className="new-sale-product-card__rows">
             <Group gap={6} justify="space-between" wrap="nowrap">
               <span className="new-sale-product-card__section-title">
-                <IconBox size={13} />
+                <BoxIcon size={13} />
                 {t('Деталі')}
               </span>
               <span className="new-sale-product-card__rows-count">{rows.length}</span>

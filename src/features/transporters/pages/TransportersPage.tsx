@@ -12,19 +12,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import {
-  IconAlertCircle,
-  IconArchive,
-  IconBus,
-  IconDeviceFloppy,
-  IconPlus,
-  IconRefresh,
-  IconRestore,
-  IconSearch,
-  IconUpload,
-  IconWalk,
-} from '@tabler/icons-react'
-import { ExternalLink } from 'lucide-react'
+import { Archive, Bus, CircleAlert, ExternalLink, Footprints, Plus, RefreshCw, RotateCcw, Save, Search, Upload } from 'lucide-react'
 import { useEffect, useMemo, useReducer, useState, type ReactNode } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
@@ -354,7 +342,7 @@ export function TransportersPage() {
             <TextInput
               className="transporters-search-input"
               label={t('Пошук')}
-              leftSection={<IconSearch size={15} />}
+              leftSection={<Search size={15} />}
               placeholder={t('Пошук перевізника')}
               value={search}
               onChange={(event) => setSearch(event.currentTarget.value)}
@@ -384,7 +372,7 @@ export function TransportersPage() {
                 variant="light"
                 onClick={() => setSearch('')}
               >
-                <IconRestore size={17} />
+                <RotateCcw size={17} />
               </ActionIcon>
             </Tooltip>
             <Tooltip label={t('Оновити')}>
@@ -396,7 +384,7 @@ export function TransportersPage() {
                 variant="light"
                 onClick={() => reload()}
               >
-                <IconRefresh size={17} />
+                <RefreshCw size={17} />
               </ActionIcon>
             </Tooltip>
           </div>
@@ -406,7 +394,7 @@ export function TransportersPage() {
               className="transporters-create-action"
               color={CREATE_ACTION_COLOR}
               disabled={!selectedTransporterType}
-              leftSection={<IconPlus size={16} />}
+              leftSection={<Plus size={16} />}
               size="sm"
               onClick={openCreateTransporter}
             >
@@ -416,7 +404,7 @@ export function TransportersPage() {
         </div>
 
         {error && (
-          <Alert className="console-table-alert" color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert className="console-table-alert" color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}
@@ -587,7 +575,7 @@ function TransporterActionsModal({
             color="gray"
             disabled={!canArchive}
             justify="flex-start"
-            leftSection={<IconArchive size={16} />}
+            leftSection={<Archive size={16} />}
             loading={isArchiving}
             title={getArchiveTooltip(transporter)}
             variant="light"
@@ -637,7 +625,7 @@ function TransporterEditorModal({
       >
         <Stack gap="md">
           {error ? (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
             </Alert>
           ) : null}
@@ -668,7 +656,7 @@ function TransporterEditorModal({
             accept="image/*"
             clearable
             label={translate('Зображення')}
-            leftSection={<IconUpload size={16} />}
+            leftSection={<Upload size={16} />}
             value={values.ImageFile}
             onChange={(file) => setField('ImageFile', file)}
           />
@@ -676,7 +664,7 @@ function TransporterEditorModal({
             <Button color="gray" disabled={isSaving} type="button" variant="subtle" onClick={onClose}>
               {translate('Скасувати')}
             </Button>
-            <Button color={CREATE_ACTION_COLOR} leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} type="submit">
+            <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSaving} type="submit">
               {translate('Зберегти')}
             </Button>
           </Group>
@@ -757,7 +745,7 @@ function TransporterImagePreview({ transporter }: { transporter: Transporter }) 
   if (cssClass === 'bus_item_class' || cssClass === 'self_checkout_item_class') {
     return (
       <span className="transporters-image-preview is-filled" title={nativeTitle(name)}>
-        {cssClass === 'bus_item_class' ? <IconBus size={28} stroke={1.5} /> : <IconWalk size={28} stroke={1.5} />}
+        {cssClass === 'bus_item_class' ? <Bus size={28} strokeWidth={1.5} /> : <Footprints size={28} strokeWidth={1.5} />}
       </span>
     )
   }

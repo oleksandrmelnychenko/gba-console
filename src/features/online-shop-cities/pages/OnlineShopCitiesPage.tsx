@@ -14,16 +14,7 @@ import {
 } from '@mantine/core'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { notifications } from '@mantine/notifications'
-import {
-  IconAlertCircle,
-  IconArchive,
-  IconDeviceFloppy,
-  IconPlus,
-  IconRefresh,
-  IconRestore,
-  IconSearch,
-  IconTrash,
-} from '@tabler/icons-react'
+import { Archive, CircleAlert, Plus, RefreshCw, RotateCcw, Save, Search, Trash2 } from 'lucide-react'
 import { type FormEvent, useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
@@ -346,7 +337,7 @@ function OnlineShopCitiesRegistry({
       <div className="app-filter-bar online-shop-cities-command-bar">
         <TextInput
           className="online-shop-cities-search-input"
-          leftSection={<IconSearch size={15} />}
+          leftSection={<Search size={15} />}
           label={t('Пошук міста')}
           placeholder={t('Назва UA, RU або UID')}
           value={searchDraft}
@@ -364,7 +355,7 @@ function OnlineShopCitiesRegistry({
               variant="light"
               onClick={onResetSearch}
             >
-              <IconRestore size={17} />
+              <RotateCcw size={17} />
             </ActionIcon>
           </Tooltip>
           <Tooltip label={t('Оновити')}>
@@ -377,7 +368,7 @@ function OnlineShopCitiesRegistry({
               variant="light"
               onClick={onReload}
             >
-              <IconRefresh size={17} />
+              <RefreshCw size={17} />
             </ActionIcon>
           </Tooltip>
         </div>
@@ -386,7 +377,7 @@ function OnlineShopCitiesRegistry({
           <Button
             color={CREATE_ACTION_COLOR}
             size="sm"
-            leftSection={<IconPlus size={16} />}
+            leftSection={<Plus size={16} />}
             type="button"
             onClick={onCreateCity}
           >
@@ -396,7 +387,7 @@ function OnlineShopCitiesRegistry({
       </div>
 
       {error && (
-        <Alert className="console-table-alert" color="red" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert className="console-table-alert" color="red" icon={<CircleAlert size={18} />} variant="light">
           {error}
         </Alert>
       )}
@@ -560,7 +551,7 @@ function useCityColumns({
                   onRequestArchive(city)
                 }}
               >
-                <IconArchive size={15} />
+                <Archive size={15} />
               </ActionIcon>
             </Tooltip>
           )
@@ -601,7 +592,7 @@ function CityEditorModal({
       <form onSubmit={onSubmit}>
         <Stack gap="md">
           {error && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
             </Alert>
           )}
@@ -635,7 +626,7 @@ function CityEditorModal({
                 <Button
                   color="red"
                   disabled={isSaving}
-                  leftSection={<IconTrash size={16} />}
+                  leftSection={<Trash2 size={16} />}
                   type="button"
                   variant="subtle"
                   onClick={() => onArchive(city)}
@@ -648,7 +639,7 @@ function CityEditorModal({
               <Button color="gray" disabled={isSaving} type="button" variant="subtle" onClick={onClose}>
                 {t('Скасувати')}
               </Button>
-              <Button color={CREATE_ACTION_COLOR} leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} type="submit">
+              <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSaving} type="submit">
                 {t('Зберегти')}
               </Button>
             </Group>

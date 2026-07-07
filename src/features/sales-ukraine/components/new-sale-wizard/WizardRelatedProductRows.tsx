@@ -1,5 +1,5 @@
 import { ActionIcon, Box, Stack, Text, Tooltip } from '@mantine/core'
-import { IconInfoCircle, IconStar } from '@tabler/icons-react'
+import { Info, Star } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import type { WizardSaleProduct } from './wizardSaleProduct'
@@ -100,7 +100,7 @@ function WizardRelatedProductRow({
                   onProductInterest(product)
                 }}
               >
-                <IconStar size={15} />
+                <Star size={15} />
               </ActionIcon>
             </Tooltip>
           )}
@@ -117,7 +117,7 @@ function WizardRelatedProductRow({
                   onOpenCard(product.NetUid as string)
                 }}
               >
-                <IconInfoCircle size={15} />
+                <Info size={15} />
               </ActionIcon>
             </Tooltip>
           )}

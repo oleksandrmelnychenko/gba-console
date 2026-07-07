@@ -17,16 +17,7 @@ import {
   TextInput,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import {
-  IconAlertCircle,
-  IconCheck,
-  IconFileInvoice,
-  IconPackageImport,
-  IconPencil,
-  IconPlus,
-  IconTrash,
-  IconUpload,
-} from '@tabler/icons-react'
+import { Check, CircleAlert, PackagePlus, Pencil, Plus, ReceiptText, Trash2, Upload } from 'lucide-react'
 import { useEffect, useReducer, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import './supply-order-detail.css'
@@ -557,7 +548,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
                 title={t('Завантажити файл')}
                 variant="light"
               >
-                <IconUpload size={16} />
+                <Upload size={16} />
               </ActionIcon>
             )}
           </FileButton>
@@ -574,7 +565,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
             variant="light"
             onClick={() => openStatusModal(document)}
           >
-            <IconCheck size={16} />
+            <Check size={16} />
           </ActionIcon>
           {(document.FileName || document.DocumentUrl) && (
             <ActionIcon
@@ -585,7 +576,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
               variant="light"
               onClick={() => clearDocumentFile(document)}
             >
-              <IconTrash size={16} />
+              <Trash2 size={16} />
             </ActionIcon>
           )}
         </Group>
@@ -595,7 +586,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
 
   const creditNotesButton = order && canOpenCreditNotes ? (
     <Button
-      leftSection={<IconFileInvoice size={16} />}
+      leftSection={<ReceiptText size={16} />}
       variant="default"
       onClick={() => dispatchCreditNote({ type: 'setDrawerOpen', open: true })}
     >
@@ -603,7 +594,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
     </Button>
   ) : null
   const approveButton = order && !order.IsApproved && canApproveOrder ? (
-    <Button color={CREATE_ACTION_COLOR} leftSection={<IconCheck size={16} />} loading={isSaving} onClick={approveOrder}>
+    <Button color={CREATE_ACTION_COLOR} leftSection={<Check size={16} />} loading={isSaving} onClick={approveOrder}>
       {t('Затвердити замовлення')}
     </Button>
   ) : null
@@ -635,7 +626,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
     >
       <Stack gap="lg">
       {error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {error}
         </Alert>
       )}
@@ -731,7 +722,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
                   <Button
                     color={CREATE_ACTION_COLOR}
                     disabled={isLocked}
-                    leftSection={<IconPencil size={16} />}
+                    leftSection={<Pencil size={16} />}
                     variant="outline"
                     onClick={() => dispatchAmountEdit({ type: 'startEditing' })}
                   >
@@ -782,7 +773,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
               {canOpenInvoices && (
                 <Button
                   color={CREATE_ACTION_COLOR}
-                  leftSection={<IconPlus size={16} />}
+                  leftSection={<Plus size={16} />}
                   variant="outline"
                   onClick={() => navigate(`/orders/ukraine/all/edit/${order.NetUid}/supply-invoices`)}
                 >
@@ -791,7 +782,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
               )}
               {canOpenProductIncome && (
                 <Button
-                  leftSection={<IconPackageImport size={16} />}
+                  leftSection={<PackagePlus size={16} />}
                   variant="default"
                   onClick={() => navigate(`/orders/ukraine/all/edit/${order.NetUid}/product-income`)}
                 >
@@ -910,7 +901,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
           <Group gap="xs">
             <FileButton onChange={(file) => dispatchCreditNote({ type: 'setFile', value: file })}>
               {(fileProps) => (
-                <Button {...fileProps} leftSection={<IconUpload size={16} />} variant="default">
+                <Button {...fileProps} leftSection={<Upload size={16} />} variant="default">
                   {t('Завантажити файл')}
                 </Button>
               )}
@@ -926,7 +917,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
                   variant="subtle"
                   onClick={() => dispatchCreditNote({ type: 'setFile', value: null })}
                 >
-                  <IconTrash size={16} />
+                  <Trash2 size={16} />
                 </ActionIcon>
               </Group>
             )}

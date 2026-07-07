@@ -14,16 +14,7 @@ import {
   ThemeIcon,
   Tooltip,
 } from '@mantine/core'
-import {
-  IconAlertCircle,
-  IconBuildingStore,
-  IconChevronDown,
-  IconChevronRight,
-  IconEdit,
-  IconHistory,
-  IconTag,
-  IconTruckDelivery,
-} from '@tabler/icons-react'
+import { ChevronDown, ChevronRight, CircleAlert, History, SquarePen, Store, Tag, Truck } from 'lucide-react'
 import { useEffect, useRef } from 'react'
 import { AppDrawer } from '../../../../shared/ui/AppDrawer'
 import { useValueState } from '../../../../shared/hooks/useValueState'
@@ -202,7 +193,7 @@ export function SalesPanel({ netId }: SalesPanelProps) {
       </Card>
 
       {error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {error}
         </Alert>
       )}
@@ -317,7 +308,7 @@ function SaleAccordionItem({
             <Text fw={700}>X</Text>
           </ThemeIcon>
           <ActionIcon color="gray" variant="subtle" onClick={onToggle}>
-            {isOpen ? <IconChevronDown size={18} /> : <IconChevronRight size={18} />}
+            {isOpen ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
           </ActionIcon>
           <Box flex={1} miw={0}>
             <Group justify="space-between" align="flex-start" wrap="nowrap">
@@ -382,12 +373,12 @@ function SaleAccordionItem({
       <Group align="flex-start" gap="sm" wrap="nowrap">
         <Tooltip disabled={!isEdited} label={t('Info.InvoiceEdited')}>
           <ThemeIcon color={getOrderSourceColor(sale)} radius="sm" variant="light">
-            <IconBuildingStore size={18} />
+            <Store size={18} />
           </ThemeIcon>
         </Tooltip>
 
         <ActionIcon color="gray" variant="subtle" onClick={onToggle}>
-          {isOpen ? <IconChevronDown size={18} /> : <IconChevronRight size={18} />}
+          {isOpen ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
         </ActionIcon>
 
         <Box flex={1} miw={0}>
@@ -434,21 +425,21 @@ function SaleAccordionItem({
             {!hasMerges && sale.TotalCount !== 0 && (
               <Tooltip label={t('Редагувати')}>
                 <ActionIcon color="gray" variant="subtle" onClick={() => onEdit(sale)}>
-                  <IconEdit size={18} />
+                  <SquarePen size={18} />
                 </ActionIcon>
               </Tooltip>
             )}
             {(!isNew || sale.ShiftStatus) && (
               <Tooltip label={t('Рух ТМЦ')}>
                 <ActionIcon color="gray" variant="subtle" onClick={() => onAudit(sale, statistic)}>
-                  <IconHistory size={18} />
+                  <History size={18} />
                 </ActionIcon>
               </Tooltip>
             )}
             {sale.Transporter && (
               <Tooltip label={sale.Transporter.Name || t('Перевізник')}>
                 <ActionIcon color="gray" variant="subtle" onClick={() => onCarrier(sale)}>
-                  <IconTruckDelivery size={18} />
+                  <Truck size={18} />
                 </ActionIcon>
               </Tooltip>
             )}
@@ -485,7 +476,7 @@ function SaleOrderItemRow({
   return (
     <Group align="flex-start" gap="sm" wrap="nowrap">
       <ThemeIcon color="gray" radius="sm" variant="light">
-        <IconTag size={16} />
+        <Tag size={16} />
       </ThemeIcon>
       <Box flex={1} miw={0}>
         <Text fw={600} lineClamp={2} size="sm">
@@ -526,7 +517,7 @@ function SaleReturnItemRow({
   return (
     <Group align="flex-start" gap="sm" wrap="nowrap">
       <ThemeIcon color="gray" radius="sm" variant="light">
-        <IconTag size={16} />
+        <Tag size={16} />
       </ThemeIcon>
       <Box flex={1} miw={0}>
         <Text fw={600} lineClamp={2} size="sm">
@@ -560,7 +551,7 @@ function SaleEditDetail({ sale }: { sale: Sale }) {
 
   return (
     <Stack gap="md">
-      <Alert color="blue" icon={<IconAlertCircle size={18} />} variant="light">
+      <Alert color="blue" icon={<CircleAlert size={18} />} variant="light">
         {t('Редагування продажу доступне у застосунку менеджера продажів')}
       </Alert>
 
@@ -600,7 +591,7 @@ function SaleCarrierDetail({ sale }: { sale: Sale }) {
         <Card className="app-section-card" withBorder padding="md" radius="md">
           <Group gap="sm">
             <ThemeIcon color="gray" radius="sm" variant="light">
-              <IconTruckDelivery size={18} />
+              <Truck size={18} />
             </ThemeIcon>
             <Text fw={600}>{displayValue(sale.Transporter.Name)}</Text>
           </Group>

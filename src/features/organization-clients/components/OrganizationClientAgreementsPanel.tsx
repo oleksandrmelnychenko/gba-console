@@ -9,7 +9,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { AppModal } from "../../../shared/ui/AppModal"
-import { IconCheck, IconPlus, IconTrash } from '@tabler/icons-react'
+import { Check, Plus, Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { Currency, OrganizationClientAgreement } from '../types'
@@ -120,7 +120,7 @@ export function OrganizationClientAgreementsPanel({
                 variant="subtle"
                 onClick={() => onRemoveAgreement(row.agreement, row.index)}
               >
-                <IconTrash size={16} />
+                <Trash2 size={16} />
               </ActionIcon>
             </Tooltip>
           )
@@ -161,7 +161,7 @@ export function OrganizationClientAgreementsPanel({
         <Button
           color={CREATE_ACTION_COLOR}
           disabled={!canAddAgreement}
-          leftSection={<IconPlus size={16} />}
+          leftSection={<Plus size={16} />}
           size="xs"
           variant="light"
           onClick={openAddModal}
@@ -218,7 +218,7 @@ export function OrganizationClientAgreementsPanel({
             <Button variant="subtle" color="gray" onClick={() => setModalOpened(false)}>
               {t('Скасувати')}
             </Button>
-            <Button color={CREATE_ACTION_COLOR} leftSection={<IconCheck size={16} />} onClick={handleAddAgreement}>
+            <Button color={CREATE_ACTION_COLOR} leftSection={<Check size={16} />} onClick={handleAddAgreement}>
               {t('Додати')}
             </Button>
           </Group>

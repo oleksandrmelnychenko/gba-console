@@ -9,7 +9,7 @@ import {
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { notifications } from '@mantine/notifications'
-import { IconAlertCircle, IconDeviceFloppy } from '@tabler/icons-react'
+import { CircleAlert, Save } from 'lucide-react'
 import { type FormEvent, useEffect } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -153,7 +153,7 @@ export function OrganizationClientNewPage() {
         <Button
           color={CREATE_ACTION_COLOR}
           form="organization-client-new-form"
-          leftSection={<IconDeviceFloppy size={16} />}
+          leftSection={<Save size={16} />}
           loading={isSaving}
           type="submit"
         >
@@ -163,7 +163,7 @@ export function OrganizationClientNewPage() {
     >
       <Stack gap="md">
         {error && (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}

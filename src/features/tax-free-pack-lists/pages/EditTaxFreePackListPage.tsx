@@ -18,18 +18,7 @@ import {
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
-import {
-  IconAlertCircle,
-  IconArrowLeft,
-  IconArrowRight,
-  IconDeviceFloppy,
-  IconFile,
-  IconPrinter,
-  IconRefresh,
-  IconSearch,
-  IconTruckDelivery,
-  IconTrash,
-} from '@tabler/icons-react'
+import { ArrowLeft, ArrowRight, CircleAlert, File, Printer, RefreshCw, Save, Search, Trash2, Truck } from 'lucide-react'
 import { notifications } from '@mantine/notifications'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useParams } from 'react-router-dom'
@@ -464,7 +453,7 @@ export function EditTaxFreePackListPage() {
         <Group gap="xs">
           <Tooltip label={t('Оновити')}>
             <ActionIcon variant="light" size={36} aria-label={t('Оновити')} onClick={requestReload}>
-              <IconRefresh size={18} />
+              <RefreshCw size={18} />
             </ActionIcon>
           </Tooltip>
           {!packList?.IsSent && (
@@ -476,7 +465,7 @@ export function EditTaxFreePackListPage() {
       </Group>
 
       {error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light" withCloseButton onClose={() => setError(null)}>
+        <Alert color="red" icon={<CircleAlert size={18} />} variant="light" withCloseButton onClose={() => setError(null)}>
           {error}
         </Alert>
       )}
@@ -503,7 +492,7 @@ export function EditTaxFreePackListPage() {
                 }}
               />
               <TextInput
-                leftSection={<IconSearch size={16} />}
+                leftSection={<Search size={16} />}
                 label={t('Пошук клієнта')}
                 value={clientSearch}
                 onChange={(event) => setClientSearch(event.currentTarget.value)}
@@ -559,7 +548,7 @@ export function EditTaxFreePackListPage() {
               {isDirty && (
                 <Group>
                   <Button variant="subtle" onClick={cancelChanges}>{t('Скасувати')}</Button>
-                  <Button color={CREATE_ACTION_COLOR} leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} onClick={() => persistPackList()}>
+                  <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSaving} onClick={() => persistPackList()}>
                     {t('Зберегти')}
                   </Button>
                 </Group>
@@ -623,7 +612,7 @@ export function EditTaxFreePackListPage() {
               variant="filled"
               onClick={moveSelectedRight}
             >
-              <IconArrowRight size={20} />
+              <ArrowRight size={20} />
             </ActionIcon>
           </Tooltip>
           <Tooltip label={t('Повернути з Tax Free')}>
@@ -634,7 +623,7 @@ export function EditTaxFreePackListPage() {
               variant="light"
               onClick={moveSelectedLeft}
             >
-              <IconArrowLeft size={20} />
+              <ArrowLeft size={20} />
             </ActionIcon>
           </Tooltip>
         </div>
@@ -673,7 +662,7 @@ export function EditTaxFreePackListPage() {
                 )}
                 <Button
                   disabled={selectedTaxFreeIds.size === 0 || isDirty || hasNonPrintableSelectedTaxFrees}
-                  leftSection={<IconPrinter size={16} />}
+                  leftSection={<Printer size={16} />}
                   loading={isPrinting}
                   size="xs"
                   variant="outline"
@@ -684,7 +673,7 @@ export function EditTaxFreePackListPage() {
                 <Button
                   color="red"
                   disabled={selectedTaxFreeIds.size === 0 || packList?.IsSent}
-                  leftSection={<IconTrash size={16} />}
+                  leftSection={<Trash2 size={16} />}
                   size="xs"
                   variant="subtle"
                   onClick={() => {
@@ -969,27 +958,27 @@ function TaxFreeCard({
           <Group gap="xs">
             <Tooltip label={t('Документи')}>
               <ActionIcon aria-label={t('Документи')} variant="subtle" onClick={onDocuments}>
-                <IconFile size={16} />
+                <File size={16} />
               </ActionIcon>
             </Tooltip>
             {!isDirty && canPrint && (
               <Tooltip label={t('Друк')}>
                 <ActionIcon aria-label={t('Друк')} loading={false} variant="subtle" onClick={onPrint}>
-                  <IconPrinter size={16} />
+                  <Printer size={16} />
                 </ActionIcon>
               </Tooltip>
             )}
             {!isDirty && canSelectCarrier && (
               <Tooltip label={t('Перевізник')}>
                 <ActionIcon aria-label={t('Перевізник')} variant="subtle" onClick={onSelectCarrier}>
-                  <IconTruckDelivery size={16} />
+                  <Truck size={16} />
                 </ActionIcon>
               </Tooltip>
             )}
             {!isReadOnly && (
               <Tooltip label={t('Видалити')}>
                 <ActionIcon aria-label={t('Видалити')} color="red" variant="subtle" onClick={onDelete}>
-                  <IconTrash size={16} />
+                  <Trash2 size={16} />
                 </ActionIcon>
               </Tooltip>
             )}
@@ -1193,7 +1182,7 @@ function useSourceColumns({
               onDelete(row)
             }}
           >
-            <IconTrash size={16} />
+            <Trash2 size={16} />
           </ActionIcon>
         ),
       },

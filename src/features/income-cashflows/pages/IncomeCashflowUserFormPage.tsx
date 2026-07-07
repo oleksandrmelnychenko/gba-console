@@ -14,7 +14,7 @@ import {
   Textarea,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconAlertCircle, IconDeviceFloppy, IconPlus } from '@tabler/icons-react'
+import { CircleAlert, Plus, Save } from 'lucide-react'
 import { type FormEvent, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
@@ -357,7 +357,7 @@ export function IncomeCashflowUserFormPage() {
           color={CREATE_ACTION_COLOR}
           disabled={isLoading || isSaving}
           form="income-cashflow-user-form"
-          leftSection={<IconDeviceFloppy size={16} />}
+          leftSection={<Save size={16} />}
           loading={isSaving}
           type="submit"
         >
@@ -377,7 +377,7 @@ export function IncomeCashflowUserFormPage() {
           </Group>
 
           {error && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
             </Alert>
           )}
@@ -476,7 +476,7 @@ export function IncomeCashflowUserFormPage() {
             />
             <Button
               disabled={Boolean(activeMovement) || !form.movementSearch.trim() || isLoading}
-              leftSection={<IconPlus size={16} />}
+              leftSection={<Plus size={16} />}
               mt={24}
               type="button"
               variant="default"

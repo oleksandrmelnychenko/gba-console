@@ -1,5 +1,5 @@
 import { Badge, CopyButton, Group, ScrollArea, Stack, Tabs, Text, Tooltip, ActionIcon } from '@mantine/core'
-import { IconCheck, IconCopy } from '@tabler/icons-react'
+import { Check, Copy } from 'lucide-react'
 import { useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
@@ -95,7 +95,7 @@ function UploadProductSpecificationResultContent({ result }: { result: UploadPro
           {({ copied, copy }) => (
             <Tooltip label={copied ? t('Скопійовано') : t('Копіювати')}>
               <ActionIcon color={copied ? 'green' : 'gray'} variant="light" onClick={copy}>
-                {copied ? <IconCheck size={18} /> : <IconCopy size={18} />}
+                {copied ? <Check size={18} /> : <Copy size={18} />}
               </ActionIcon>
             </Tooltip>
           )}

@@ -14,14 +14,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import {
-  IconAlertCircle,
-  IconArrowBackUp,
-  IconDeviceFloppy,
-  IconListDetails,
-  IconTrash,
-  IconUpload,
-} from '@tabler/icons-react'
+import { CircleAlert, ListTree, Save, Trash2, Undo2, Upload } from 'lucide-react'
 import { useEffect } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -149,7 +142,7 @@ function InvoiceViewCard({
         <Group justify="flex-end" gap="sm">
           <Button
             disabled={isSaving}
-            leftSection={<IconListDetails size={16} />}
+            leftSection={<ListTree size={16} />}
             size="xs"
             variant="default"
             onClick={() => setExpensesOpened(true)}
@@ -160,7 +153,7 @@ function InvoiceViewCard({
             <Button
               color={CREATE_ACTION_COLOR}
               disabled={isSaving}
-              leftSection={<IconDeviceFloppy size={16} />}
+              leftSection={<Save size={16} />}
               loading={isSaving}
               size="xs"
               onClick={handleSaveDocuments}
@@ -224,7 +217,7 @@ function InvoiceViewCard({
                           variant="light"
                           onClick={() => toggleDeleted(document, index)}
                         >
-                          {document.Deleted ? <IconArrowBackUp size={14} /> : <IconTrash size={14} />}
+                          {document.Deleted ? <Undo2 size={14} /> : <Trash2 size={14} />}
                         </ActionIcon>
                       </Tooltip>
                     )}
@@ -241,7 +234,7 @@ function InvoiceViewCard({
             <Divider />
             <FileInput
               clearable
-              leftSection={<IconUpload size={16} />}
+              leftSection={<Upload size={16} />}
               label={t('Додати документи доставки')}
               multiple
               disabled={isSaving}
@@ -317,7 +310,7 @@ function InvoiceExpensesDrawer({
     <AppDrawer opened={opened} size="lg" title={<span style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{`${t('Витрати')}. ${t('Інвойс')} ${invoice?.Number || ''}`}</span>} onClose={onClose}>
       <Stack gap="md">
         {error && (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}
@@ -498,7 +491,7 @@ function AssignInvoicesDrawer({
     >
       <Stack gap="md">
         {error && (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}

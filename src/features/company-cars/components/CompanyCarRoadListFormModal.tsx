@@ -12,7 +12,7 @@ import {
   TextInput,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { IconAlertCircle, IconDeviceFloppy, IconX } from '@tabler/icons-react'
+import { CircleAlert, Save, X } from 'lucide-react'
 import { useEffect, useMemo, useReducer } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
@@ -120,7 +120,7 @@ export function CompanyCarRoadListFormModal({
     >
       <Stack gap="md">
         {error && (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}
@@ -540,7 +540,7 @@ function RoadListDriversEditor({
                   variant="subtle"
                   onClick={() => onRemoveDriver(driver)}
                 >
-                  <IconX size={12} />
+                  <X size={12} />
                 </ActionIcon>
               </Group>
             </Chip>
@@ -575,7 +575,7 @@ function RoadListFormFooter({
         <Button color="gray" disabled={isSaving} variant="light" onClick={onClose}>
           {t('Скасувати')}
         </Button>
-        <Button color={CREATE_ACTION_COLOR} disabled={isSaveDisabled} leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} onClick={onSave}>
+        <Button color={CREATE_ACTION_COLOR} disabled={isSaveDisabled} leftSection={<Save size={16} />} loading={isSaving} onClick={onSave}>
           {t('Зберегти')}
         </Button>
       </Group>

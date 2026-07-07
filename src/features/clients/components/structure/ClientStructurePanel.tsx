@@ -1,5 +1,5 @@
 import { ActionIcon, Alert, Card, Grid, Group, Stack, Tabs, Tooltip } from '@mantine/core'
-import { IconAlertCircle, IconUserPlus, IconUsersGroup } from '@tabler/icons-react'
+import { CircleAlert, UserPlus, Users } from 'lucide-react'
 import { useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useValueState } from '../../../../shared/hooks/useValueState'
@@ -178,7 +178,7 @@ export function ClientStructurePanel({ client, onChange }: ClientStructurePanelP
   return (
     <Stack gap="lg">
       {error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {error}
         </Alert>
       )}
@@ -193,7 +193,7 @@ export function ClientStructurePanel({ client, onChange }: ClientStructurePanelP
                 variant="light"
                 onClick={() => setGroupsModalOpened(true)}
               >
-                <IconUsersGroup size={18} />
+                <Users size={18} />
               </ActionIcon>
             </Tooltip>
             <Tooltip label={t('Новий користувач')}>
@@ -203,7 +203,7 @@ export function ClientStructurePanel({ client, onChange }: ClientStructurePanelP
                 variant="light"
                 onClick={openNewUser}
               >
-                <IconUserPlus size={18} />
+                <UserPlus size={18} />
               </ActionIcon>
             </Tooltip>
           </Group>

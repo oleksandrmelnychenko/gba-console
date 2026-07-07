@@ -14,13 +14,7 @@ import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
 import { CREATE_ACTION_COLOR } from "../../../shared/ui/page-header-actions/PageHeaderActions"
 import { notifications } from '@mantine/notifications'
-import {
-  IconAlertCircle,
-  IconCheck,
-  IconDeviceFloppy,
-  IconKey,
-  IconTrash,
-} from '@tabler/icons-react'
+import { Check, CircleAlert, Key, Save, Trash2 } from 'lucide-react'
 import { type FormEvent, useEffect, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -247,7 +241,7 @@ export function UserEditPage() {
     >
       <Stack className="user-sheet" gap="md">
         {error && (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}
@@ -300,7 +294,7 @@ function UserEditActions({
       <Button
         color="red"
         disabled={!user}
-        leftSection={<IconTrash size={16} />}
+        leftSection={<Trash2 size={16} />}
         loading={isDeleting}
         variant="light"
         onClick={onDelete}
@@ -311,7 +305,7 @@ function UserEditActions({
         color={CREATE_ACTION_COLOR}
         disabled={!user}
         form="user-edit-form"
-        leftSection={<IconDeviceFloppy size={16} />}
+        leftSection={<Save size={16} />}
         loading={isSaving}
         type="submit"
       >
@@ -385,7 +379,7 @@ function UserEditContent({
           aria-pressed={activeTab === 'password'}
           onClick={() => setActiveTab('password')}
         >
-          <IconKey size={15} stroke={1.8} style={{ marginRight: 6, verticalAlign: '-2px' }} />
+          <Key size={15} strokeWidth={1.8} style={{ marginRight: 6, verticalAlign: '-2px' }} />
           {t('Зміна пароля')}
         </button>
       </div>
@@ -482,7 +476,7 @@ function UserPasswordPanel({
             <Group justify="flex-end">
               <Button
                 color={CREATE_ACTION_COLOR}
-                leftSection={<IconKey size={16} />}
+                leftSection={<Key size={16} />}
                 loading={isResettingPassword}
                 type="submit"
               >
@@ -520,7 +514,7 @@ function DeleteUserModal({
           <Button variant="subtle" color="gray" onClick={onClose}>
             {t('Скасувати')}
           </Button>
-          <Button color="red" leftSection={<IconCheck size={16} />} loading={isDeleting} onClick={onDelete}>
+          <Button color="red" leftSection={<Check size={16} />} loading={isDeleting} onClick={onDelete}>
             {t('Видалити')}
           </Button>
         </Group>

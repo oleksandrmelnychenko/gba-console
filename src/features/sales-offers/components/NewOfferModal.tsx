@@ -1,6 +1,6 @@
 import { ActionIcon, Anchor, Button, Group, Loader, NumberInput, Select, Stack, Table, Text, TextInput } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconCopy, IconSearch, IconTrash } from '@tabler/icons-react'
+import { Copy, Search, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
@@ -87,7 +87,7 @@ function OfferGeneratedLink({ offer, onDone }: { offer: ClientShoppingCart; onDo
       <Group align="flex-end" gap="xs" wrap="nowrap">
         <TextInput readOnly label={t('Посилання')} style={{ flex: 1 }} value={link} />
         <ActionIcon aria-label={t('Копіювати посилання')} size="lg" variant="light" onClick={copy}>
-          <IconCopy size={18} />
+          <Copy size={18} />
         </ActionIcon>
       </Group>
       <Group justify="flex-end">
@@ -360,7 +360,7 @@ function NewOfferForm({
         searchable
         data={clientData}
         label={t('Клієнт')}
-        leftSection={<IconSearch size={16} />}
+        leftSection={<Search size={16} />}
         nothingFoundMessage={clientQuery.trim().length < 2 ? t('Введіть мінімум 2 символи') : t('Нічого не знайдено')}
         placeholder={t('Пошук клієнта')}
         searchValue={clientQuery}
@@ -408,7 +408,7 @@ function NewOfferForm({
         data={productData}
         disabled={!agreementNetId}
         label={t('Товар')}
-        leftSection={<IconSearch size={16} />}
+        leftSection={<Search size={16} />}
         nothingFoundMessage={
           productQuery.trim().length < 2 ? t('Введіть мінімум 2 символи') : t('Нічого не знайдено')
         }
@@ -469,7 +469,7 @@ function NewOfferForm({
                 </Table.Td>
                 <Table.Td>
                   <ActionIcon color="red" variant="subtle" onClick={() => removeLine(line.key)}>
-                    <IconTrash size={16} />
+                    <Trash2 size={16} />
                   </ActionIcon>
                 </Table.Td>
               </Table.Tr>

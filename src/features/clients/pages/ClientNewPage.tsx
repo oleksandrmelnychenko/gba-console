@@ -15,7 +15,7 @@ import {
 import { AppModal } from "../../../shared/ui/AppModal"
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { notifications } from '@mantine/notifications'
-import { IconAlertCircle, IconCheck, IconChevronLeft, IconChevronRight } from '@tabler/icons-react'
+import { Check, ChevronLeft, ChevronRight, CircleAlert } from 'lucide-react'
 import { type FormEvent, useEffect, useMemo, useRef } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
@@ -796,7 +796,7 @@ export function ClientNewPage() {
     >
       <Stack gap="md">
         {(error || lookupsError) && (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error || lookupsError}
           </Alert>
         )}
@@ -870,7 +870,7 @@ export function ClientNewPage() {
               <Button
                 variant="light"
                 color="gray"
-                leftSection={<IconChevronLeft size={16} />}
+                leftSection={<ChevronLeft size={16} />}
                 disabled={visibleSteps.indexOf(currentStep) <= 0}
                 onClick={goPrevious}
               >
@@ -881,7 +881,7 @@ export function ClientNewPage() {
                   type="submit"
                   color={CREATE_ACTION_COLOR}
                   disabled={!isPricingValid || isLoadingRegionCode || Boolean(regionCodeError)}
-                  leftSection={<IconCheck size={16} />}
+                  leftSection={<Check size={16} />}
                   loading={isSaving}
                 >
                   {t('Створити')}
@@ -889,7 +889,7 @@ export function ClientNewPage() {
               ) : (
                 <Button
                   color={CREATE_ACTION_COLOR}
-                  rightSection={<IconChevronRight size={16} />}
+                  rightSection={<ChevronRight size={16} />}
                   disabled={currentStep === 'role' && !draft.ClientInRole.ClientTypeRole}
                   onClick={goNext}
                 >

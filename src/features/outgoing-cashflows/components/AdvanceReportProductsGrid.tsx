@@ -1,5 +1,5 @@
 import { ActionIcon, Group, Tooltip } from '@mantine/core'
-import { IconFileText, IconTrash } from '@tabler/icons-react'
+import { FileText, Trash2 } from 'lucide-react'
 import { useMemo } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -171,7 +171,7 @@ export function AdvanceReportProductsGrid({
                   onRemove(row)
                 }}
               >
-                <IconTrash size={16} />
+                <Trash2 size={16} />
               </ActionIcon>
             </Tooltip>
           ),
@@ -214,7 +214,7 @@ function DocumentsCell({ urls }: { urls: string[] }) {
             size="sm"
             variant="subtle"
           >
-            <IconFileText size={16} />
+            <FileText size={16} />
           </ActionIcon>
         </Tooltip>
       ))}

@@ -14,25 +14,7 @@ import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
 import { CREATE_ACTION_COLOR } from "../../../shared/ui/page-header-actions/PageHeaderActions"
 import { notifications } from '@mantine/notifications'
-import {
-  IconAddressBook,
-  IconAlertCircle,
-  IconBuildingBank,
-  IconChartBar,
-  IconCheck,
-  IconChevronRight,
-  IconCircleDot,
-  IconDeviceFloppy,
-  IconGauge,
-  IconInfoCircle,
-  IconSitemap,
-  IconStar,
-  IconTag,
-  IconTarget,
-  IconTrash,
-  IconWorld,
-  type IconProps,
-} from '@tabler/icons-react'
+import { BookUser, ChartBar, Check, ChevronRight, CircleAlert, CircleDot, Gauge, Globe, Info, Landmark, Network, Save, Star, Tag, Target, Trash2, type LucideProps } from 'lucide-react'
 import type { ComponentType } from 'react'
 import { type FormEvent, useEffect, useMemo, useRef } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -74,17 +56,17 @@ import type { Client, ClientContractDocument, ClientType, ClientTypeRole, Curren
 import './client-edit-page.css'
 
 // Per-step icon for the edit-sheet side nav (Roles-style numbered list).
-const STEP_ICON: Record<string, ComponentType<IconProps>> = {
-  'general-information': IconInfoCircle,
-  'contact-information': IconAddressBook,
-  pricing: IconTag,
-  sales: IconChartBar,
-  'perfect-client': IconTarget,
-  'client-types': IconSitemap,
-  'e-commerce': IconWorld,
-  'most-purchased-products': IconStar,
-  solvency: IconGauge,
-  'bank-details': IconBuildingBank,
+const STEP_ICON: Record<string, ComponentType<LucideProps>> = {
+  'general-information': Info,
+  'contact-information': BookUser,
+  pricing: Tag,
+  sales: ChartBar,
+  'perfect-client': Target,
+  'client-types': Network,
+  'e-commerce': Globe,
+  'most-purchased-products': Star,
+  solvency: Gauge,
+  'bank-details': Landmark,
 }
 
 const CLIENT_TYPE_BUYER = 0
@@ -653,7 +635,7 @@ export function ClientEditPage() {
     >
     <Stack className="client-edit-sheet" gap="md">
       {(error || lookupsError) && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {error || lookupsError}
         </Alert>
       )}
@@ -731,7 +713,7 @@ function ClientEditActions({
   return (
     <Group gap="xs" className="client-edit-footer-actions">
       {canDelete && (
-        <Button color="red" leftSection={<IconTrash size={16} />} loading={isDeleting} variant="light" onClick={onDelete}>
+        <Button color="red" leftSection={<Trash2 size={16} />} loading={isDeleting} variant="light" onClick={onDelete}>
           {t('Видалити')}
         </Button>
       )}
@@ -739,7 +721,7 @@ function ClientEditActions({
         color={CREATE_ACTION_COLOR}
         disabled={!client}
         form="client-edit-form"
-        leftSection={<IconDeviceFloppy size={16} />}
+        leftSection={<Save size={16} />}
         loading={isSaving}
         type="submit"
       >
@@ -904,7 +886,7 @@ function ClientEditBody({
             <Stack gap={6} className="client-edit-nav" component="nav">
               {steps.map((item, index) => {
                 const isActive = item.value === selectedStep
-                const StepIcon = STEP_ICON[item.value] ?? IconCircleDot
+                const StepIcon = STEP_ICON[item.value] ?? CircleDot
 
                 return (
                   <Button
@@ -917,11 +899,11 @@ function ClientEditBody({
                       <span className="client-edit-nav-lead">
                         <span className="client-edit-nav-index">{String(index + 1).padStart(2, '0')}</span>
                         <span className="client-edit-nav-icon">
-                          <StepIcon size={17} stroke={1.8} />
+                          <StepIcon size={17} strokeWidth={1.8} />
                         </span>
                       </span>
                     }
-                    rightSection={<IconChevronRight className="client-edit-nav-chevron" size={16} stroke={2} />}
+                    rightSection={<ChevronRight className="client-edit-nav-chevron" size={16} strokeWidth={2} />}
                     size="sm"
                     variant="subtle"
                     onClick={() => onGoToStep(item.value)}
@@ -993,7 +975,7 @@ function DeleteClientModal({
           <Button variant="subtle" color="gray" onClick={onClose}>
             {t('Скасувати')}
           </Button>
-          <Button color="red" leftSection={<IconCheck size={16} />} loading={isDeleting} onClick={onConfirm}>
+          <Button color="red" leftSection={<Check size={16} />} loading={isDeleting} onClick={onConfirm}>
             {t('Видалити')}
           </Button>
         </Group>

@@ -14,11 +14,7 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
-import {
-  IconAlertCircle,
-  IconRefresh,
-  IconRestore,
-} from '@tabler/icons-react'
+import { CircleAlert, RefreshCw, RotateCcw } from 'lucide-react'
 import { type FormEvent, useCallback, useEffect, useMemo, useRef } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -208,7 +204,7 @@ function useOrganisationServicesPageModel() {
             }
           }}
         >
-          <IconRefresh size={16} />
+          <RefreshCw size={16} />
         </ActionIcon>
       </Tooltip>
     ),
@@ -560,7 +556,7 @@ function OrganisationServicesPageView({ model }: { model: OrganisationServicesPa
                   variant="light"
                   onClick={resetFilters}
                 >
-                  <IconRestore size={18} />
+                  <RotateCcw size={18} />
                 </ActionIcon>
               </Tooltip>
             </Group>
@@ -593,7 +589,7 @@ function OrganisationServicesPageView({ model }: { model: OrganisationServicesPa
       </Card>
 
       {visibleError && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {visibleError}
         </Alert>
       )}

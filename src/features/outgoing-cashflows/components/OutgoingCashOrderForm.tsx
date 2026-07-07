@@ -12,7 +12,7 @@ import {
   Text,
   TextInput,
 } from '@mantine/core'
-import { IconAlertCircle, IconArrowLeft, IconDeviceFloppy, IconPlus } from '@tabler/icons-react'
+import { ArrowLeft, CircleAlert, Plus, Save } from 'lucide-react'
 import { type FormEvent, useEffect, useMemo } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -308,7 +308,7 @@ export function OutgoingCashOrderForm({ onCancel, onCreated }: OutgoingCashOrder
             <Group gap="xs">
               <Button
                 color="gray"
-                leftSection={<IconArrowLeft size={16} />}
+                leftSection={<ArrowLeft size={16} />}
                 type="button"
                 variant="light"
                 onClick={onCancel}
@@ -318,7 +318,7 @@ export function OutgoingCashOrderForm({ onCancel, onCreated }: OutgoingCashOrder
               <Button
                 color={CREATE_ACTION_COLOR}
                 disabled={isLoading || isSaving}
-                leftSection={<IconDeviceFloppy size={16} />}
+                leftSection={<Save size={16} />}
                 loading={isSaving}
                 type="submit"
               >
@@ -328,7 +328,7 @@ export function OutgoingCashOrderForm({ onCancel, onCreated }: OutgoingCashOrder
           </Group>
 
           {error && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
             </Alert>
           )}
@@ -442,7 +442,7 @@ export function OutgoingCashOrderForm({ onCancel, onCreated }: OutgoingCashOrder
             />
             <Button
               disabled={Boolean(selectedMovement) || !form.movementSearch.trim() || isLoading || isSaving}
-              leftSection={<IconPlus size={16} />}
+              leftSection={<Plus size={16} />}
               maw={220}
               type="button"
               variant="outline"

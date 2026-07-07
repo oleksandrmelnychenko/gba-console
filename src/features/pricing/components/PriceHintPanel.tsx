@@ -1,5 +1,5 @@
 import { Alert, Badge, Divider, Group, Loader, Stack, Text } from '@mantine/core'
-import { IconAlertCircle } from '@tabler/icons-react'
+import { CircleAlert } from 'lucide-react'
 import { useEffect, useReducer } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { MarginWaterfall, RangeBandChart } from '../../../shared/ui/charts'
@@ -120,7 +120,7 @@ export function PriceHintPanel({ productNetId, clientAgreementNetId }: PriceHint
 
   if (error || !recommendation) {
     return (
-      <Alert color="orange" icon={<IconAlertCircle size={18} />} variant="light">
+      <Alert color="orange" icon={<CircleAlert size={18} />} variant="light">
         {t('недоступно')}
       </Alert>
     )

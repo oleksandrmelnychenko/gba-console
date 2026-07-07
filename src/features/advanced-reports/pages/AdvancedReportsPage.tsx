@@ -14,15 +14,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import {
-  IconAlertCircle,
-  IconDotsVertical,
-  IconEdit,
-  IconEye,
-  IconHierarchy2,
-  IconRestore,
-  IconSearch,
-} from '@tabler/icons-react'
+import { CircleAlert, EllipsisVertical, Eye, Network, RotateCcw, Search, SquarePen } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -406,7 +398,7 @@ export function AdvancedReportsPage() {
               <TextInput label={t('Від')} type="date" value={fromDate} onChange={(event) => changeFromDate(event.currentTarget.value)} />
               <TextInput label={t('До')} type="date" value={toDate} onChange={(event) => changeToDate(event.currentTarget.value)} />
               <TextInput
-                leftSection={<IconSearch size={16} />}
+                leftSection={<Search size={16} />}
                 label={t('Пошук')}
                 placeholder={t('Номер, організація, отримувач або коментар')}
                 value={searchValue}
@@ -416,7 +408,7 @@ export function AdvancedReportsPage() {
               <div className="app-filter-actions">
                 <Tooltip label={t('Скинути фільтри')}>
                   <ActionIcon variant="light" color="gray" size={34} aria-label={t('Скинути фільтри')} onClick={resetFilters}>
-                    <IconRestore size={17} />
+                    <RotateCcw size={17} />
                   </ActionIcon>
                 </Tooltip>
                 <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
@@ -479,13 +471,13 @@ export function AdvancedReportsPage() {
         </div>
 
         {error && (
-          <Alert className="advanced-reports-page__alert" color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert className="advanced-reports-page__alert" color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}
 
         {filterError && (
-          <Alert className="advanced-reports-page__alert" color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert className="advanced-reports-page__alert" color="yellow" icon={<CircleAlert size={18} />} variant="light">
             {filterError}
           </Alert>
         )}
@@ -650,24 +642,24 @@ function useAdvancedReportColumns({
                 variant="subtle"
                 onClick={(event) => event.stopPropagation()}
               >
-                <IconDotsVertical size={16} />
+                <EllipsisVertical size={16} />
               </ActionIcon>
             </Menu.Target>
 
             <Menu.Dropdown onClick={(event) => event.stopPropagation()}>
-              <Menu.Item leftSection={<IconEye size={16} />} onClick={() => onOpen(row)}>
+              <Menu.Item leftSection={<Eye size={16} />} onClick={() => onOpen(row)}>
                 {t('Деталі видаткового ордера')}
               </Menu.Item>
               <Menu.Item
                 disabled={!row.isUnderReport || !row.order.NetUid}
-                leftSection={<IconEdit size={16} />}
+                leftSection={<SquarePen size={16} />}
                 onClick={() => onEdit(row)}
               >
                 {t('Авансовий звіт')}
               </Menu.Item>
               <Menu.Item
                 disabled={!row.hasDocumentStructure}
-                leftSection={<IconHierarchy2 size={16} />}
+                leftSection={<Network size={16} />}
                 onClick={() => onOpenDocumentStructure(row)}
               >
                 {row.hasDocumentStructure ? t('Структура документів') : t('Структура документів відсутня')}
@@ -810,7 +802,7 @@ function AdvancedReportDocumentStructureDrawer({
           )}
 
           {calculationError && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {calculationError}
             </Alert>
           )}

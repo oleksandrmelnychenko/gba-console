@@ -1,5 +1,5 @@
 import { Box, Button, Group, Paper, Stack, Text } from '@mantine/core'
-import { IconFileExcel, IconFileTypePdf } from '@tabler/icons-react'
+import { FileSpreadsheet, FileText } from 'lucide-react'
 
 export type SaleDocumentDownload = {
   excelUrl: string | null
@@ -34,7 +34,7 @@ export function SaleDocumentDownloads({ documents }: { documents: SaleDocumentDo
                   color="teal"
                   component="a"
                   href={document.excelUrl}
-                  leftSection={<IconFileExcel size={16} />}
+                  leftSection={<FileSpreadsheet size={16} />}
                   rel="noopener noreferrer"
                   size="xs"
                   target="_blank"
@@ -48,7 +48,7 @@ export function SaleDocumentDownloads({ documents }: { documents: SaleDocumentDo
                   color="red"
                   component="a"
                   href={document.pdfUrl}
-                  leftSection={<IconFileTypePdf size={16} />}
+                  leftSection={<FileText size={16} />}
                   rel="noopener noreferrer"
                   size="xs"
                   target="_blank"

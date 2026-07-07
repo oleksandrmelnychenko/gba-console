@@ -9,16 +9,7 @@ import {
   Title,
   UnstyledButton,
 } from '@mantine/core'
-import {
-  IconBasket,
-  IconBuildingStore,
-  IconChartBar,
-  IconChevronRight,
-  IconFileAnalytics,
-  IconPackage,
-  IconTruckDelivery,
-  IconUsers,
-} from '@tabler/icons-react'
+import { ChartBar, ChevronRight, FileChartColumn, Package, ShoppingBasket, Store, Truck, Users } from 'lucide-react'
 import { useMemo, type ComponentType } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useNavigation } from '../../features/navigation/hooks/useNavigation'
@@ -29,7 +20,7 @@ import type { TranslationKey } from '../../shared/i18n/types'
 type DashboardAction = {
   color: string
   description: TranslationKey
-  icon: ComponentType<{ size?: number; stroke?: number }>
+  icon: ComponentType<{ size?: number; strokeWidth?: number }>
   label: TranslationKey
   route: string
 }
@@ -38,49 +29,49 @@ const dashboardActions: DashboardAction[] = [
   {
     color: 'teal',
     description: 'Рахунки, відвантаження, повернення',
-    icon: IconBasket,
+    icon: ShoppingBasket,
     label: 'Продажі Україна',
     route: '/sales/ukraine/all',
   },
   {
     color: 'cyan',
     description: 'Наявність, розміщення, історія руху',
-    icon: IconPackage,
+    icon: Package,
     label: 'Товари',
     route: '/products',
   },
   {
     color: 'indigo',
     description: 'Прихід, інвойси, специфікації',
-    icon: IconTruckDelivery,
+    icon: Truck,
     label: 'Замовлення постачання',
     route: '/orders/ukraine/all',
   },
   {
     color: 'grape',
     description: 'Приймання, пакування, склади',
-    icon: IconBuildingStore,
+    icon: Store,
     label: 'Склад Україна',
     route: '/warehouse/ukraine',
   },
   {
     color: 'blue',
     description: 'Клієнти, виробники, організації',
-    icon: IconUsers,
+    icon: Users,
     label: 'Клієнти',
     route: '/clients',
   },
   {
     color: 'orange',
     description: 'Рейтинги, запас, маржа, повернення',
-    icon: IconChartBar,
+    icon: ChartBar,
     label: 'Аналітика асортименту',
     route: '/products/assortment',
   },
   {
     color: 'gray',
     description: 'Платежі, звіти, взаєморозрахунки',
-    icon: IconFileAnalytics,
+    icon: FileChartColumn,
     label: 'Облік',
     route: '/accounting/available-payments',
   },
@@ -124,7 +115,7 @@ export function DashboardPage() {
               <Group align="flex-start" justify="space-between" gap="md" wrap="nowrap">
                 <Group align="flex-start" gap="sm" wrap="nowrap" className="dashboard-action-main">
                   <ThemeIcon color={action.color} radius="md" size={42} variant="light">
-                    <action.icon size={22} stroke={1.8} />
+                    <action.icon size={22} strokeWidth={1.8} />
                   </ThemeIcon>
                   <Box className="dashboard-action-copy">
                     <Text fw={700}>{t(action.label)}</Text>
@@ -134,7 +125,7 @@ export function DashboardPage() {
                   </Box>
                 </Group>
                 <ThemeIcon className="dashboard-action-arrow" color="gray" radius="xl" size={30} variant="subtle">
-                  <IconChevronRight size={18} stroke={1.9} />
+                  <ChevronRight size={18} strokeWidth={1.9} />
                 </ThemeIcon>
               </Group>
             </UnstyledButton>

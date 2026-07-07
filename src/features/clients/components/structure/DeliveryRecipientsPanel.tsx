@@ -10,7 +10,7 @@ import {
   Text,
   Tooltip,
 } from '@mantine/core'
-import { IconAlertCircle, IconPlus, IconTrash } from '@tabler/icons-react'
+import { CircleAlert, Plus, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { AppModal } from '../../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -177,7 +177,7 @@ export function DeliveryRecipientsPanel({
             <Button
               color={CREATE_ACTION_COLOR}
               disabled={isBusy}
-              leftSection={<IconPlus size={16} />}
+              leftSection={<Plus size={16} />}
               size="xs"
               variant="light"
               onClick={() => setModalOpened(true)}
@@ -187,7 +187,7 @@ export function DeliveryRecipientsPanel({
           </Group>
 
           {error && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
             </Alert>
           )}
@@ -243,7 +243,7 @@ export function DeliveryRecipientsPanel({
             </Button>
             <Button
               color="red"
-              leftSection={<IconTrash size={16} />}
+              leftSection={<Trash2 size={16} />}
               loading={Boolean(deletingNetUid)}
               onClick={() => void handleDelete()}
             >
@@ -312,7 +312,7 @@ function RecipientItem({
               onRemove()
             }}
           >
-            <IconTrash size={18} />
+            <Trash2 size={18} />
           </ActionIcon>
         )}
       </Group>

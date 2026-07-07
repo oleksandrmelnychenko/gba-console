@@ -10,7 +10,7 @@ import {
   Text,
   Tooltip,
 } from '@mantine/core'
-import { IconAlertCircle, IconProgress, IconRefresh } from '@tabler/icons-react'
+import { CircleAlert, CircleDashed, RefreshCw } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ApiError } from '../../../shared/api/apiClient'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -199,7 +199,7 @@ export function HeadTaskBoard() {
       <Group align="center" className="cockpit-board-header" gap="sm" justify="space-between" wrap="wrap">
         <Group gap="xs">
           <Text className="app-section-title" fw={600}>{t('Усі задачі (live)')}</Text>
-          <Badge color="orange" leftSection={<IconProgress size={12} />} variant="light">
+          <Badge color="orange" leftSection={<CircleDashed size={12} />} variant="light">
             {t('наживо')}
           </Badge>
         </Group>
@@ -254,14 +254,14 @@ export function HeadTaskBoard() {
         <div className="app-filter-actions cockpit-command-actions">
           <Tooltip label={t('Оновити')}>
             <ActionIcon aria-label={t('Оновити')} size={34} variant="light" onClick={() => setLoading(true)}>
-              <IconRefresh size={18} />
+              <RefreshCw size={18} />
             </ActionIcon>
           </Tooltip>
         </div>
       </div>
 
       {error && (
-        <Alert className="cockpit-board-alert" color="red" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert className="cockpit-board-alert" color="red" icon={<CircleAlert size={18} />} variant="light">
           {error}
         </Alert>
       )}
@@ -339,7 +339,7 @@ function HeadTaskRow({ task }: { task: HeadTask }) {
       </Table.Td>
       <Table.Td>
         {task.Status === 'in_progress' ? (
-          <Badge color="orange" leftSection={<IconProgress size={12} />} variant="light">
+          <Badge color="orange" leftSection={<CircleDashed size={12} />} variant="light">
             {inProgressLabel(task.InProgressSince, t)}
           </Badge>
         ) : (

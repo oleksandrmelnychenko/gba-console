@@ -15,7 +15,7 @@ import {
   TextInput,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { IconAlertCircle } from '@tabler/icons-react'
+import { CircleAlert } from 'lucide-react'
 import { useEffect, useMemo } from 'react'
 import { formatLocalDate, formatLocalInputDateTime } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -479,12 +479,12 @@ function MergedServiceAlerts({
   return (
     <>
       {loadError && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {loadError}
         </Alert>
       )}
       {validationError && (
-        <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
           {validationError}
         </Alert>
       )}

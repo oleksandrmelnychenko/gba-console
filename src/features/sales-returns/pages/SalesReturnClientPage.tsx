@@ -19,15 +19,7 @@ import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { notifications } from '@mantine/notifications'
-import {
-  IconAlertCircle,
-  IconPackageImport,
-  IconPlus,
-  IconRefresh,
-  IconReportAnalytics,
-  IconSearch,
-  IconTrash,
-} from '@tabler/icons-react'
+import { CircleAlert, FileChartColumn, PackagePlus, Plus, RefreshCw, Search, Trash2 } from 'lucide-react'
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -529,7 +521,7 @@ export function SalesReturnClientPage() {
           <div className="app-filter-actions sales-return-client-command-actions">
             <Button
               color="gray"
-              leftSection={<IconReportAnalytics size={16} />}
+              leftSection={<FileChartColumn size={16} />}
               size="sm"
               variant="light"
               onClick={() => setReportOpened(true)}
@@ -538,7 +530,7 @@ export function SalesReturnClientPage() {
             </Button>
           </div>
           <div className="sales-return-client-create-actions">
-            <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} onClick={() => setCreateOpened(true)}>
+            <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<Plus size={16} />} onClick={() => setCreateOpened(true)}>
               {t('Створити повернення')}
             </Button>
           </div>
@@ -571,7 +563,7 @@ export function SalesReturnClientPage() {
           <Group className="sales-return-client-drawer-actions" justify="flex-end" align="flex-start">
             <Button
               color="gray"
-              leftSection={<IconRefresh size={16} />}
+              leftSection={<RefreshCw size={16} />}
               variant="light"
               onClick={() => {
                 setItems([])
@@ -585,12 +577,12 @@ export function SalesReturnClientPage() {
           </Group>
 
           {error ? (
-            <Alert color="red" icon={<IconAlertCircle size={16} />} title={t('Помилка')}>
+            <Alert color="red" icon={<CircleAlert size={16} />} title={t('Помилка')}>
               {error}
             </Alert>
           ) : null}
           {warning ? (
-            <Alert color="yellow" icon={<IconAlertCircle size={16} />} title={t('Увага')}>
+            <Alert color="yellow" icon={<CircleAlert size={16} />} title={t('Увага')}>
               {warning}
             </Alert>
           ) : null}
@@ -642,7 +634,7 @@ export function SalesReturnClientPage() {
                       onChange={handleClientChange}
                       onSearchChange={setClientSearch}
                       placeholder={t('Пошук за назвою або кодом')}
-                      rightSection={isSearchingClients ? <IconSearch size={14} /> : null}
+                      rightSection={isSearchingClients ? <Search size={14} /> : null}
                       searchable
                       searchValue={clientSearch}
                       value={clientId}
@@ -722,7 +714,7 @@ export function SalesReturnClientPage() {
                             onClick={() => setBatchModalOpened(true)}
                             variant="subtle"
                           >
-                            <IconPackageImport size={16} />
+                            <PackagePlus size={16} />
                           </ActionIcon>
                         </Tooltip>
                       }
@@ -730,7 +722,7 @@ export function SalesReturnClientPage() {
                     />
                     <Button
                       color={CREATE_ACTION_COLOR}
-                      leftSection={<IconPlus size={16} />}
+                      leftSection={<Plus size={16} />}
                       mt={{ base: 0, md: 24 }}
                       onClick={addItem}
                       type="button"
@@ -848,7 +840,7 @@ function useDirectReturnColumns({
         cell: (item) => (
           <Tooltip label={t('Видалити')}>
             <ActionIcon aria-label={t('Видалити')} color="red" onClick={() => onRemove(item)} variant="subtle">
-              <IconTrash size={16} />
+              <Trash2 size={16} />
             </ActionIcon>
           </Tooltip>
         ),

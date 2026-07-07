@@ -1,5 +1,5 @@
 import { Alert, Card, Loader, Select, Stack, Text } from '@mantine/core'
-import { IconAlertCircle, IconSearch } from '@tabler/icons-react'
+import { CircleAlert, Search } from 'lucide-react'
 import { useEffect } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -366,7 +366,7 @@ function PredictionFilters({
             searchable
             data={clientData}
             label={t('Клієнт')}
-            leftSection={<IconSearch size={16} />}
+            leftSection={<Search size={16} />}
             nothingFoundMessage={
               clientQuery.trim().length < 2 ? t('Введіть мінімум 2 символи') : t('Нічого не знайдено')
             }
@@ -382,7 +382,7 @@ function PredictionFilters({
             searchable
             data={productData}
             label={t('Товар')}
-            leftSection={<IconSearch size={16} />}
+            leftSection={<Search size={16} />}
             nothingFoundMessage={
               productQuery.trim().length < 2 ? t('Введіть мінімум 2 символи') : t('Нічого не знайдено')
             }
@@ -442,17 +442,17 @@ function PredictionCharts({
   return (
     <>
       {clientNetId && clientPredictionError && (
-        <Alert color="orange" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="orange" icon={<CircleAlert size={18} />} variant="light">
           {clientPredictionError}
         </Alert>
       )}
       {productNetId && productPredictionError && (
-        <Alert color="orange" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="orange" icon={<CircleAlert size={18} />} variant="light">
           {productPredictionError}
         </Alert>
       )}
       {clientNetId && productNetId && combinedPredictionError && (
-        <Alert color="orange" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="orange" icon={<CircleAlert size={18} />} variant="light">
           {combinedPredictionError}
         </Alert>
       )}

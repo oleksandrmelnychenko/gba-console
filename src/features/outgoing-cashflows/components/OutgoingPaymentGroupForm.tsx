@@ -16,7 +16,7 @@ import {
   Textarea,
   TextInput,
 } from '@mantine/core'
-import { IconAlertCircle, IconArrowLeft, IconDeviceFloppy, IconPlus } from '@tabler/icons-react'
+import { ArrowLeft, CircleAlert, Plus, Save } from 'lucide-react'
 import { type FormEvent, useEffect, useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -648,13 +648,13 @@ export function OutgoingPaymentGroupForm({ onCancel, onCreated }: OutgoingPaymen
                 value={String(registerType)}
                 onChange={handleRegisterTypeChanged}
               />
-              <Button color="gray" leftSection={<IconArrowLeft size={16} />} type="button" variant="light" onClick={onCancel}>
+              <Button color="gray" leftSection={<ArrowLeft size={16} />} type="button" variant="light" onClick={onCancel}>
                 {t('Назад')}
               </Button>
               <Button
                 color={CREATE_ACTION_COLOR}
                 disabled={isLoading || isResolvingCounterparty || isSaving}
-                leftSection={<IconDeviceFloppy size={16} />}
+                leftSection={<Save size={16} />}
                 loading={isSaving}
                 type="submit"
               >
@@ -666,7 +666,7 @@ export function OutgoingPaymentGroupForm({ onCancel, onCreated }: OutgoingPaymen
           <SegmentedControl data={operationOptions} disabled={isLoading || isSaving} value={String(operationType)} onChange={handleOperationChanged} />
 
           {error && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
             </Alert>
           )}
@@ -786,7 +786,7 @@ export function OutgoingPaymentGroupForm({ onCancel, onCreated }: OutgoingPaymen
             />
             <Button
               disabled={Boolean(activeMovement) || !form.movementSearch.trim() || isLoading || isSaving}
-              leftSection={<IconPlus size={16} />}
+              leftSection={<Plus size={16} />}
               maw={220}
               type="button"
               variant="outline"

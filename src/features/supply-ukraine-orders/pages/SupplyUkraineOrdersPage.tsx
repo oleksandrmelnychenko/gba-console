@@ -17,20 +17,8 @@ import {
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
-import {
-  IconAlertCircle,
-  IconDownload,
-  IconFileInvoice,
-  IconFileTypePdf,
-  IconFileTypeXls,
-  IconPlus,
-  IconReceipt,
-  IconRestore,
-  IconSearch,
-  IconTrash,
-} from '@tabler/icons-react'
+import { CircleAlert, Download, Eye, FileSpreadsheet, FileText, ListChecks, PackageCheck, PackageOpen, Plus, Receipt, ReceiptText, RotateCcw, Route, Search, Trash2 } from 'lucide-react'
 import { Fragment, useCallback, useEffect, useMemo, useReducer, useRef, useState, type ReactNode } from 'react'
-import { Eye, FileText, ListChecks, PackageCheck, PackageOpen, Receipt, ReceiptText, Route } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -832,13 +820,13 @@ function OrdersListCard({
       />
 
       {currenciesError && (
-        <Alert className="console-table-alert" color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert className="console-table-alert" color="yellow" icon={<CircleAlert size={18} />} variant="light">
           {currenciesError}
         </Alert>
       )}
 
       {(orderError || filterError) && (
-        <Alert className="console-table-alert" color="red" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert className="console-table-alert" color="red" icon={<CircleAlert size={18} />} variant="light">
           {filterError || orderError}
         </Alert>
       )}
@@ -1128,7 +1116,7 @@ function InvoiceMainCell({ row }: { row: SupplyUkraineOrderRow }) {
   return (
     <div className="supply-invoice-main-cell">
       <span className="supply-invoice-icon" aria-hidden>
-        <IconFileInvoice size={14} />
+        <ReceiptText size={14} />
       </span>
       <div className="supply-invoice-copy">
         <div className="supply-invoice-main-line">
@@ -1247,7 +1235,7 @@ function OrdersFilterToolbar({
       </div>
       <TextInput
         className="supply-ukraine-orders-search-input"
-        leftSection={<IconSearch size={16} />}
+        leftSection={<Search size={16} />}
         label={t('Постачальник')}
         placeholder={t('Назва постачальника')}
         value={filterDraft.supplier}
@@ -1282,13 +1270,13 @@ function OrdersFilterToolbar({
       <div className="app-filter-actions">
         <Tooltip label={t('Скинути фільтри')}>
           <ActionIcon variant="light" color="gray" size={34} aria-label={t('Скинути фільтри')} onClick={onResetFilters}>
-            <IconRestore size={17} />
+            <RotateCcw size={17} />
           </ActionIcon>
         </Tooltip>
         {canPrint && (
           <Tooltip label={t('Завантажити')}>
             <ActionIcon variant="light" color="gray" size={34} aria-label={t('Завантажити')} loading={isDownloading} onClick={onDownload}>
-              <IconDownload size={18} />
+              <Download size={18} />
             </ActionIcon>
           </Tooltip>
         )}
@@ -1305,12 +1293,12 @@ function OrdersFilterToolbar({
       <div ref={onTableToolbarSlotMount} className="supply-ukraine-orders-table-toolbar-slot" />
       <div className="supply-ukraine-orders-create-actions">
         {createPermissions.canCreateDirect && (
-          <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} onClick={onCreateDirect}>
+          <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<Plus size={16} />} onClick={onCreateDirect}>
             {t('Нове замовлення')}
           </Button>
         )}
         {createPermissions.canCreateToUkraine && (
-          <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} variant="outline" onClick={onCreateToUkraine}>
+          <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<Plus size={16} />} variant="outline" onClick={onCreateToUkraine}>
             {t('Поставка')}
           </Button>
         )}
@@ -1386,7 +1374,7 @@ function OrdersPageModals({
             <Button color="gray" disabled={isDeleting} variant="light" onClick={onCloseDelete}>
               {t('Скасувати')}
             </Button>
-            <Button color="red" leftSection={<IconTrash size={16} />} loading={isDeleting} onClick={onConfirmDelete}>
+            <Button color="red" leftSection={<Trash2 size={16} />} loading={isDeleting} onClick={onConfirmDelete}>
               {t('Видалити')}
             </Button>
           </Group>
@@ -1841,7 +1829,7 @@ function OfficialCostsModal({
     >
       <Stack className="supply-orders-official-costs" gap="md">
         {error && (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}
@@ -1953,7 +1941,7 @@ function OfficialCostsModal({
           <Button
             className="supply-orders-official-costs-save"
             color={CREATE_ACTION_COLOR}
-            leftSection={<IconReceipt size={16} />}
+            leftSection={<Receipt size={16} />}
             loading={isSaving}
             onClick={saveOfficialCosts}
           >
@@ -1986,17 +1974,17 @@ function DownloadDocumentModal({
         {isLoading ? (
           <Text c="dimmed">{t('Документ формується')}</Text>
         ) : error ? (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">{error}</Alert>
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">{error}</Alert>
         ) : document?.DocumentURL || document?.PdfDocumentURL ? (
           <Group>
             {document.DocumentURL && (
               <Anchor href={getDocumentHref(document.DocumentURL)} target="_blank" rel="noreferrer" className="document-link">
-                <Group gap={6}><IconFileTypeXls size={16} /> XLS</Group>
+                <Group gap={6}><FileSpreadsheet size={16} /> XLS</Group>
               </Anchor>
             )}
             {document.PdfDocumentURL && (
               <Anchor href={getDocumentHref(document.PdfDocumentURL)} target="_blank" rel="noreferrer" className="document-link">
-                <Group gap={6}><IconFileTypePdf size={16} /> PDF</Group>
+                <Group gap={6}><FileText size={16} /> PDF</Group>
               </Anchor>
             )}
           </Group>

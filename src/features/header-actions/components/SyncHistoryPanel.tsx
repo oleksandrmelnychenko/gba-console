@@ -1,5 +1,5 @@
 import { Badge, Box, Group, Loader, ScrollArea, SimpleGrid, Stack, Text } from '@mantine/core'
-import { IconAlertCircle, IconHistory } from '@tabler/icons-react'
+import { CircleAlert, History } from 'lucide-react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { getSyncTypeLabel } from '../syncHistoryLabels'
 import type { SyncHistoryItem } from '../types'
@@ -190,10 +190,10 @@ function SyncStatusIcon({ isError, isSyncing }: { isError: boolean; isSyncing: b
   }
 
   if (isError) {
-    return <IconAlertCircle size={18} stroke={1.8} />
+    return <CircleAlert size={18} strokeWidth={1.8} />
   }
 
-  return <IconHistory size={18} stroke={1.8} />
+  return <History size={18} strokeWidth={1.8} />
 }
 
 function getStatusPillClass(isError: boolean, isSyncing: boolean, hasMessages: boolean): 'is-gray' | 'is-green' | 'is-orange' | 'is-red' {

@@ -19,27 +19,7 @@ import {
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
-import {
-  IconAlertCircle,
-  IconBasket,
-  IconBuilding,
-  IconCheck,
-  IconChevronRight,
-  IconCreditCard,
-  IconDeviceFloppy,
-  IconFileText,
-  IconHash,
-  IconLink,
-  IconPencil,
-  IconPhone,
-  IconPhoto,
-  IconPlus,
-  IconRefresh,
-  IconRestore,
-  IconSearch,
-  IconTrash,
-  IconX,
-} from '@tabler/icons-react'
+import { Building, Check, ChevronRight, CircleAlert, CreditCard, FileText, Hash, Image, Link, Pencil, Phone, Plus, RefreshCw, RotateCcw, Save, Search, ShoppingBasket, Trash2, X } from 'lucide-react'
 import { type CSSProperties, type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useReducer } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -350,7 +330,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         minWidth: 180,
         accessor: (row) => row.page.Url,
         cell: (row) => (
-          <SeoTableRoleLikeCell icon={<IconLink size={14} />} tone="url">
+          <SeoTableRoleLikeCell icon={<Link size={14} />} tone="url">
             {displayValue(row.page.Url)}
           </SeoTableRoleLikeCell>
         ),
@@ -396,7 +376,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
           <SeoTableActionCell>
             <Tooltip label={t('Редагувати')}>
               <ActionIcon aria-label={t('Редагувати')} color="gray" variant="subtle" onClick={() => openPageEditor(row)}>
-                <IconPencil size={18} />
+                <Pencil size={18} />
               </ActionIcon>
             </Tooltip>
           </SeoTableActionCell>
@@ -423,7 +403,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         minWidth: 150,
         accessor: (contact) => contact.Phone,
         cell: (contact) => (
-          <SeoTableRoleLikeCell icon={<IconPhone size={14} />}>
+          <SeoTableRoleLikeCell icon={<Phone size={14} />}>
             {displayValue(contact.Phone)}
           </SeoTableRoleLikeCell>
         ),
@@ -464,7 +444,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
                 variant="subtle"
                 onClick={() => openContactEditor(contact)}
               >
-                <IconPencil size={18} />
+                <Pencil size={18} />
               </ActionIcon>
             </Tooltip>
             <Tooltip label={t('Видалити')}>
@@ -475,7 +455,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
                 variant="subtle"
                 onClick={() => requestRemoveContact(contact)}
               >
-                <IconTrash size={18} />
+                <Trash2 size={18} />
               </ActionIcon>
             </Tooltip>
           </SeoTableActionCell>
@@ -564,7 +544,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
                 variant="subtle"
                 onClick={() => void handleToggleOnlineShopClient(client)}
               >
-                {client.IsForRetail ? <IconX size={18} /> : <IconCheck size={18} />}
+                {client.IsForRetail ? <X size={18} /> : <Check size={18} />}
               </ActionIcon>
             </Tooltip>
           </SeoTableActionCell>
@@ -654,7 +634,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
                 variant="subtle"
                 onClick={() => void handleSelectPaymentRegister(register)}
               >
-                <IconCheck size={18} />
+                <Check size={18} />
               </ActionIcon>
             </Tooltip>
           </SeoTableActionCell>
@@ -679,7 +659,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         minWidth: 100,
         accessor: (storage) => Number(storage.RetailPriority || 0),
         cell: (storage) => (
-          <SeoTableRoleLikeCell icon={<IconHash size={14} />} tone="url">
+          <SeoTableRoleLikeCell icon={<Hash size={14} />} tone="url">
             {displayValue(storage.RetailPriority)}
           </SeoTableRoleLikeCell>
         ),
@@ -713,7 +693,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
                 variant="subtle"
                 onClick={() => openPriorityEditor(storage)}
               >
-                <IconPencil size={18} />
+                <Pencil size={18} />
               </ActionIcon>
             </Tooltip>
             <Tooltip label={t('Видалити зі списку')}>
@@ -724,7 +704,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
                 variant="subtle"
                 onClick={() => requestRemoveStorage(storage)}
               >
-                <IconTrash size={18} />
+                <Trash2 size={18} />
               </ActionIcon>
             </Tooltip>
           </SeoTableActionCell>
@@ -750,7 +730,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         minWidth: 100,
         accessor: (storage) => Number(storage.RetailPriority || 0),
         cell: (storage) => (
-          <SeoTableRoleLikeCell icon={<IconHash size={14} />} tone="url">
+          <SeoTableRoleLikeCell icon={<Hash size={14} />} tone="url">
             {displayValue(storage.RetailPriority)}
           </SeoTableRoleLikeCell>
         ),
@@ -793,7 +773,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
                   variant="subtle"
                   onClick={() => void handleAddStorage(storage)}
                 >
-                  <IconPlus size={18} />
+                  <Plus size={18} />
                 </ActionIcon>
               </Tooltip>
             </SeoTableActionCell>
@@ -1445,7 +1425,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
     ? (
       <Button
         color={CREATE_ACTION_COLOR}
-        leftSection={<IconPlus size={14} />}
+        leftSection={<Plus size={14} />}
         size="xs"
         type="button"
         onClick={() => openContactEditor()}
@@ -1457,7 +1437,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
       ? (
         <Button
           color={CREATE_ACTION_COLOR}
-          leftSection={<IconPlus size={14} />}
+          leftSection={<Plus size={14} />}
           size="xs"
           type="button"
           onClick={() => setStorageDrawerOpen(true)}
@@ -1498,7 +1478,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
                       <TextInput
                         aria-label={t(commandSearch.label)}
                         className="seo-page-command-combo-input"
-                        leftSection={<IconSearch size={15} />}
+                        leftSection={<Search size={15} />}
                         placeholder={t(commandSearch.placeholder)}
                         value={commandSearch.value}
                         variant="unstyled"
@@ -1509,7 +1489,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
                 ) : (
                   <TextInput
                     className="seo-page-search-input"
-                    leftSection={<IconSearch size={15} />}
+                    leftSection={<Search size={15} />}
                     label={t(commandSearch.label)}
                     placeholder={t(commandSearch.placeholder)}
                     value={commandSearch.value}
@@ -1537,7 +1517,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
                     variant="light"
                     onClick={commandSearch.onReset}
                   >
-                    <IconRestore size={17} />
+                    <RotateCcw size={17} />
                   </ActionIcon>
                 </Tooltip>
               )}
@@ -1550,7 +1530,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
                   variant="light"
                   onClick={() => reload()}
                 >
-                  <IconRefresh size={17} />
+                  <RefreshCw size={17} />
                 </ActionIcon>
               </Tooltip>
               {headerAction}
@@ -1559,7 +1539,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
         )}
 
         {error && (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}
@@ -1579,7 +1559,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
                   onClick={() => setActiveTab(tab.value)}
                 >
                   <span className="online-shop-seo-nav-item-label">{t(tab.label)}</span>
-                  <IconChevronRight className="online-shop-seo-nav-item-chevron" size={16} stroke={2} aria-hidden />
+                  <ChevronRight className="online-shop-seo-nav-item-chevron" size={16} strokeWidth={2} aria-hidden />
                 </button>
               ))}
             </div>
@@ -1632,7 +1612,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
                                 variant="subtle"
                                 onClick={() => openGeneralLocaleEditor(entry)}
                               >
-                                <IconPencil size={14} />
+                                <Pencil size={14} />
                               </ActionIcon>
                             </Tooltip>
                           </div>
@@ -1840,7 +1820,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
         {generalEditorEntry && (
           <Stack className="seo-general-sheet" gap="md">
             {formError && (
-              <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+              <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
                 {formError}
               </Alert>
             )}
@@ -1899,7 +1879,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
         <form onSubmit={handleSavePage}>
           <Stack gap="md">
             {formError && (
-              <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+              <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
                 {formError}
               </Alert>
             )}
@@ -1945,7 +1925,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
               <Button color="gray" disabled={isSaving} type="button" variant="light" onClick={closePageEditor}>
                 {t('Скасувати')}
               </Button>
-              <Button color={CREATE_ACTION_COLOR} leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} type="submit">
+              <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSaving} type="submit">
                 {t('Зберегти')}
               </Button>
             </Group>
@@ -1962,7 +1942,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
         <form onSubmit={handleSaveContact}>
           <Stack gap="md">
             {formError && (
-              <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+              <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
                 {formError}
               </Alert>
             )}
@@ -1995,7 +1975,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
                 clearable
                 disabled={isSaving || isImageUploading}
                 label={t('Фото')}
-                leftSection={<IconPhoto size={16} />}
+                leftSection={<Image size={16} />}
                 placeholder={t('Обрати файл')}
                 style={{ flex: '1 1 auto' }}
                 onChange={handleContactImageChange}
@@ -2022,7 +2002,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
               <Button
                 color={CREATE_ACTION_COLOR}
                 disabled={isImageUploading}
-                leftSection={<IconDeviceFloppy size={16} />}
+                leftSection={<Save size={16} />}
                 loading={isSaving}
                 type="submit"
               >
@@ -2047,7 +2027,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
             <Button color="gray" disabled={isSaving} variant="light" onClick={() => setRemoveContactTarget(null)}>
               {t('Скасувати')}
             </Button>
-            <Button color="red" leftSection={<IconTrash size={16} />} loading={isSaving} onClick={handleRemoveContact}>
+            <Button color="red" leftSection={<Trash2 size={16} />} loading={isSaving} onClick={handleRemoveContact}>
               {t('Видалити')}
             </Button>
           </Group>
@@ -2058,7 +2038,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
         <form onSubmit={handleSaveStoragePriority}>
           <Stack gap="md">
             {formError && (
-              <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+              <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
                 {formError}
               </Alert>
             )}
@@ -2078,7 +2058,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
               <Button color="gray" disabled={isSaving} type="button" variant="light" onClick={closePriorityEditor}>
                 {t('Скасувати')}
               </Button>
-              <Button color={CREATE_ACTION_COLOR} leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} type="submit">
+              <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSaving} type="submit">
                 {t('Зберегти')}
               </Button>
             </Group>
@@ -2100,7 +2080,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
             <Button color="gray" disabled={isSaving} variant="light" onClick={() => setRemoveStorageTarget(null)}>
               {t('Скасувати')}
             </Button>
-            <Button color="red" leftSection={<IconTrash size={16} />} loading={isSaving} onClick={handleRemoveStorage}>
+            <Button color="red" leftSection={<Trash2 size={16} />} loading={isSaving} onClick={handleRemoveStorage}>
               {t('Видалити')}
             </Button>
           </Group>
@@ -2232,7 +2212,7 @@ function SeoShopClientList({
                   <div className="seo-shop-client-tile-copy">
                     <div className="seo-shop-client-tile-top">
                       <span className="seo-shop-client-tile-avatar" aria-hidden>
-                        <IconBasket size={21} />
+                        <ShoppingBasket size={21} />
                       </span>
                       <div className="seo-shop-client-tile-heading">
                         <Text className="seo-shop-client-tile-title">{clientName}</Text>
@@ -2244,14 +2224,14 @@ function SeoShopClientList({
                       <div className="seo-shop-client-tile-details">
                         <div className="seo-shop-client-tile-detail">
                           <span className="seo-shop-client-tile-detail-label">
-                            <IconFileText size={12} />
+                            <FileText size={12} />
                             <span>Договір</span>
                           </span>
                           <span className="seo-shop-client-tile-detail-value">{agreementName || 'Не вказано'}</span>
                         </div>
                         <div className="seo-shop-client-tile-detail">
                           <span className="seo-shop-client-tile-detail-label">
-                            <IconBuilding size={12} />
+                            <Building size={12} />
                             <span>Організація</span>
                           </span>
                           <span className="seo-shop-client-tile-detail-value">{agreementOrganizationName || 'Не вказано'}</span>
@@ -2261,7 +2241,7 @@ function SeoShopClientList({
                   </div>
 
                   <span className={`seo-shop-client-tile-action${isForRetail ? ' is-active' : ' is-inactive'}`} aria-hidden>
-                    {isForRetail ? <IconCheck size={16} /> : <IconX size={16} />}
+                    {isForRetail ? <Check size={16} /> : <X size={16} />}
                   </span>
                 </div>
               )
@@ -2331,7 +2311,7 @@ function SeoShopCardList({
                   <div className="seo-shop-bank-card-surface">
                     <div className="seo-shop-bank-card-top">
                       <span className="seo-shop-bank-card-chip" aria-hidden>
-                        <IconCreditCard size={16} />
+                        <CreditCard size={16} />
                       </span>
                       <span className={`seo-shop-bank-card-brand is-${cardBrand}`}>
                         <span className="seo-shop-bank-card-brand-mark" aria-hidden />

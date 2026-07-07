@@ -8,7 +8,7 @@ import {
   TextInput,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconAlertCircle, IconDeviceFloppy, IconTrash } from '@tabler/icons-react'
+import { CircleAlert, Save, Trash2 } from 'lucide-react'
 import { type FormEvent, useEffect, useMemo, useReducer } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
@@ -227,7 +227,7 @@ export function CompanyCarFormPage() {
             <Button
               color="red"
               disabled={isLoading || !companyCar.NetUid}
-              leftSection={<IconTrash size={16} />}
+              leftSection={<Trash2 size={16} />}
               loading={isDeleting}
               type="button"
               variant="light"
@@ -240,7 +240,7 @@ export function CompanyCarFormPage() {
             color={CREATE_ACTION_COLOR}
             disabled={isLoading || !canSave}
             form="company-car-form"
-            leftSection={<IconDeviceFloppy size={16} />}
+            leftSection={<Save size={16} />}
             loading={isSaving}
             type="submit"
           >
@@ -252,13 +252,13 @@ export function CompanyCarFormPage() {
       <form id="company-car-form" onSubmit={handleSubmit}>
         <Stack gap="md">
           {error && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
             </Alert>
           )}
 
           {!canSave && (
-            <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
               {t('Немає прав для збереження автомобіля компанії')}
             </Alert>
           )}

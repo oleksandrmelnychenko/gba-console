@@ -11,7 +11,7 @@ import {
 } from '@mantine/core'
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { useDebouncedValue } from '@mantine/hooks'
-import { IconAlertCircle, IconReceipt, IconRestore, IconSearch, IconShoppingCart } from '@tabler/icons-react'
+import { CircleAlert, Receipt, RotateCcw, Search, ShoppingCart } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -171,7 +171,7 @@ export function OnlineShopClientsPage() {
         <div className="app-filter-bar online-shop-clients-filter-bar">
           <TextInput
             className="online-shop-clients-search"
-            leftSection={<IconSearch size={16} />}
+            leftSection={<Search size={16} />}
             label={t('Пошук клієнта')}
             placeholder={t('Клієнт, телефон або email')}
             value={searchValue}
@@ -194,7 +194,7 @@ export function OnlineShopClientsPage() {
                 variant="light"
                 onClick={resetSearch}
               >
-                <IconRestore size={18} />
+                <RotateCcw size={18} />
               </ActionIcon>
             </Tooltip>
             <Paginator
@@ -213,7 +213,7 @@ export function OnlineShopClientsPage() {
         </div>
 
         {error && (
-          <Alert className="console-table-alert" color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert className="console-table-alert" color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}
@@ -257,7 +257,7 @@ export function OnlineShopClientsPage() {
               </div>
 
               {cartError && (
-                <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+                <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
                   {cartError}
                 </Alert>
               )}
@@ -268,7 +268,7 @@ export function OnlineShopClientsPage() {
                   fullWidth
                   color={CREATE_ACTION_COLOR}
                   disabled={!selectedClientNetId}
-                  leftSection={<IconReceipt size={16} />}
+                  leftSection={<Receipt size={16} />}
                   onClick={openSalesDrawer}
                 >
                   {t('Продажі клієнта')}
@@ -283,7 +283,7 @@ export function OnlineShopClientsPage() {
                     <OnlineShopOrderItemsList emptyText={t('Кошик порожній')} items={cartItems} />
                   ) : (
                     <div className="online-shop-clients-cart-empty">
-                      <IconShoppingCart size={22} />
+                      <ShoppingCart size={22} />
                       <Text>
                         {selectedClient ? t('Кошик порожній') : t('Вибери клієнта в таблиці')}
                       </Text>

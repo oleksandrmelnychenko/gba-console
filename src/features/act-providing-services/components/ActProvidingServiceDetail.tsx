@@ -10,7 +10,7 @@ import {
   Textarea,
   TextInput,
 } from '@mantine/core'
-import { IconAlertCircle } from '@tabler/icons-react'
+import { CircleAlert } from 'lucide-react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { ActProvidingServiceDetailModel } from './useActProvidingServiceDetailModel'
 
@@ -39,7 +39,7 @@ export function ActProvidingServiceDetailBody({ model }: { model: ActProvidingSe
   return (
     <Stack gap="lg">
       {error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {error}
         </Alert>
       )}

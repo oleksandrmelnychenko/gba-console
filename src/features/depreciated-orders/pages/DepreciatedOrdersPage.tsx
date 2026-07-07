@@ -13,13 +13,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import {
-  IconAlertCircle,
-  IconEye,
-  IconPlus,
-  IconRefresh,
-  IconRestore,
-} from '@tabler/icons-react'
+import { CircleAlert, Eye, Plus, RefreshCw, RotateCcw } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -516,7 +510,7 @@ function DepreciatedOrdersTableCard({ model }: { model: ReturnType<typeof useDep
           <div className="app-filter-actions">
             <Tooltip label={t('Скинути')}>
               <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
-                <IconRestore size={17} />
+                <RotateCcw size={17} />
               </ActionIcon>
             </Tooltip>
             <Tooltip label={t('Оновити')}>
@@ -528,7 +522,7 @@ function DepreciatedOrdersTableCard({ model }: { model: ReturnType<typeof useDep
                 variant="light"
                 onClick={() => reload()}
               >
-                <IconRefresh size={18} />
+                <RefreshCw size={18} />
               </ActionIcon>
             </Tooltip>
             <Select
@@ -547,7 +541,7 @@ function DepreciatedOrdersTableCard({ model }: { model: ReturnType<typeof useDep
           <Button
             color={CREATE_ACTION_COLOR}
             disabled={!model.isLoadingStorages && model.storages.length === 0}
-            leftSection={<IconPlus size={16} />}
+            leftSection={<Plus size={16} />}
             loading={model.isLoadingStorages}
             size="sm"
             styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
@@ -559,7 +553,7 @@ function DepreciatedOrdersTableCard({ model }: { model: ReturnType<typeof useDep
       </div>
 
       {(error || filterError || storageError) && (
-        <Alert className="depreciated-orders-alert" color={filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert className="depreciated-orders-alert" color={filterError ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">
           {filterError || error || storageError}
         </Alert>
       )}
@@ -699,7 +693,7 @@ function useDepreciatedOrderColumns(
           <Box onClick={(event) => event.stopPropagation()}>
             <Tooltip label={t('Деталі')}>
               <ActionIcon aria-label={t('Деталі')} color="gray" variant="subtle" onClick={() => onOpenDetail(order)}>
-                <IconEye size={18} />
+                <Eye size={18} />
               </ActionIcon>
             </Tooltip>
           </Box>

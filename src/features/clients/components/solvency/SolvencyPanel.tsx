@@ -13,7 +13,7 @@ import {
   Text,
   Title,
 } from '@mantine/core'
-import { IconAlertCircle, IconInfoCircle } from '@tabler/icons-react'
+import { CircleAlert, Info } from 'lucide-react'
 import { useEffect, useReducer } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { getClientSolvencyCharts, getClientSolvencyScore } from '../../api/clientSolvencyApi'
@@ -176,7 +176,7 @@ export function SolvencyPanel({ clientNetId }: SolvencyPanelProps) {
 
   if (error || !score) {
     return (
-      <Alert color="orange" icon={<IconAlertCircle size={18} />} title={t('Оцінка платоспроможності недоступна')} variant="light">
+      <Alert color="orange" icon={<CircleAlert size={18} />} title={t('Оцінка платоспроможності недоступна')} variant="light">
         {error || t('Дані недоступні')}
       </Alert>
     )
@@ -184,7 +184,7 @@ export function SolvencyPanel({ clientNetId }: SolvencyPanelProps) {
 
   if (score.applicable === false || score.score == null) {
     return (
-      <Alert color="gray" icon={<IconInfoCircle size={18} />} variant="light">
+      <Alert color="gray" icon={<Info size={18} />} variant="light">
         {t('не покупець — оцінка платоспроможності незастосовна')}
       </Alert>
     )
@@ -216,7 +216,7 @@ export function SolvencyPanel({ clientNetId }: SolvencyPanelProps) {
         </Stack>
       </Card>
       {chartsError && (
-        <Alert color="orange" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="orange" icon={<CircleAlert size={18} />} variant="light">
           {chartsError}
         </Alert>
       )}

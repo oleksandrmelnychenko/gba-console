@@ -12,16 +12,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import {
-  IconAlertCircle,
-  IconDeviceFloppy,
-  IconPencil,
-  IconPlus,
-  IconRefresh,
-  IconRestore,
-  IconSearch,
-  IconTrash,
-} from '@tabler/icons-react'
+import { CircleAlert, Pencil, Plus, RefreshCw, RotateCcw, Save, Search, Trash2 } from 'lucide-react'
 import { useEffect, useMemo, useReducer, useRef } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -412,7 +403,7 @@ export function UserRolesPage() {
         <div className="app-filter-bar user-roles-filter-bar">
           <TextInput
             className="user-roles-search-input"
-            leftSection={<IconSearch size={16} />}
+            leftSection={<Search size={16} />}
             label={t('Пошук ролі')}
             value={searchDraft}
             onChange={(event) => updateSearch(event.currentTarget.value)}
@@ -426,7 +417,7 @@ export function UserRolesPage() {
                 variant="light"
                 onClick={resetSearch}
               >
-                <IconRestore size={17} />
+                <RotateCcw size={17} />
               </ActionIcon>
             </Tooltip>
             <Tooltip label={t('Оновити')}>
@@ -438,7 +429,7 @@ export function UserRolesPage() {
                 variant="light"
                 onClick={() => reload()}
               >
-                <IconRefresh size={17} />
+                <RefreshCw size={17} />
               </ActionIcon>
             </Tooltip>
             {visibleSelectedRole ? (
@@ -456,7 +447,7 @@ export function UserRolesPage() {
                 <Button
                   color={CREATE_ACTION_COLOR}
                   disabled={isLoading || !hasSelectionChanges}
-                  leftSection={<IconDeviceFloppy size={15} />}
+                  leftSection={<Save size={15} />}
                   loading={isSaving}
                   size="sm"
                   onClick={handleSavePermissions}
@@ -470,7 +461,7 @@ export function UserRolesPage() {
             className="user-roles-create-button"
             color={CREATE_ACTION_COLOR}
             size="sm"
-            leftSection={<IconPlus size={16} />}
+            leftSection={<Plus size={16} />}
             onClick={() => setRoleModalState({ open: true, role: null })}
           >
             {t('Створити')}
@@ -478,7 +469,7 @@ export function UserRolesPage() {
         </div>
 
         {error && (
-          <Alert className="console-table-alert" color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert className="console-table-alert" color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}
@@ -584,7 +575,7 @@ export function UserRolesPage() {
             </Button>
             <Button
               color="red"
-              leftSection={<IconTrash size={16} />}
+              leftSection={<Trash2 size={16} />}
               loading={isSaving}
               onClick={handleDeleteRole}
             >
@@ -663,7 +654,7 @@ function RoleList({
                       variant="subtle"
                       onClick={() => onEditRole(role)}
                     >
-                      <IconPencil size={16} />
+                      <Pencil size={16} />
                     </ActionIcon>
                   </Tooltip>
                 </div>

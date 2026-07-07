@@ -20,18 +20,7 @@ import {
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { AppModal } from '../../../shared/ui/AppModal'
-import {
-  IconAlertCircle,
-  IconDeviceFloppy,
-  IconDownload,
-  IconFileTypePdf,
-  IconFileTypeXls,
-  IconPlus,
-  IconPrinter,
-  IconRefresh,
-  IconRestore,
-  IconTrash,
-} from '@tabler/icons-react'
+import { CircleAlert, Download, FileSpreadsheet, FileText, Plus, Printer, RefreshCw, RotateCcw, Save, Trash2 } from 'lucide-react'
 import { type FormEvent, useEffect, useMemo } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -275,18 +264,18 @@ export function ReportsStocksPage() {
               </Tooltip>
               <Tooltip label={t('Скинути')}>
                 <ActionIcon aria-label={t('Скинути')} variant="subtle" color="gray" onClick={resetReport}>
-                  <IconRestore size={18} />
+                  <RotateCcw size={18} />
                 </ActionIcon>
               </Tooltip>
               <Tooltip label={t('Друк')}>
                 <ActionIcon aria-label={t('Друк')} variant="subtle" color="gray" onClick={() => window.print()}>
-                  <IconPrinter size={18} />
+                  <Printer size={18} />
                 </ActionIcon>
               </Tooltip>
             </Group>
 
             {filterError ? (
-              <Alert color="red" icon={<IconAlertCircle size={18} />}>{filterError}</Alert>
+              <Alert color="red" icon={<CircleAlert size={18} />}>{filterError}</Alert>
             ) : null}
 
             <SimpleGrid cols={{ base: 1, lg: 3 }} spacing="md">
@@ -351,7 +340,7 @@ export function ReportsStocksPage() {
               <Group justify="space-between">
                 <Text fw={700}>{t('Умови відбору')}</Text>
                 <Button
-                  leftSection={<IconPlus size={16} />}
+                  leftSection={<Plus size={16} />}
                   size="xs"
                   variant="outline"
                   onClick={() => setSelections((current) => [...current, createEmptySelection()])}
@@ -410,7 +399,7 @@ export function ReportsStocksPage() {
                         variant="subtle"
                         onClick={() => setSelections((current) => current.filter((_, itemIndex) => itemIndex !== index))}
                       >
-                        <IconTrash size={18} />
+                        <Trash2 size={18} />
                       </ActionIcon>
                     </Tooltip>
                   </Group>
@@ -428,7 +417,7 @@ export function ReportsStocksPage() {
                 onChange={(event) => setTemplateName(event.currentTarget.value)}
               />
               <Button variant="outline" onClick={saveTemplate}>{t('Зберегти шаблон')}</Button>
-              <Button leftSection={<IconRefresh size={16} />} variant="subtle" color="gray" onClick={loadTemplates}>
+              <Button leftSection={<RefreshCw size={16} />} variant="subtle" color="gray" onClick={loadTemplates}>
                 {t('Показати шаблони')}
               </Button>
             </Group>
@@ -437,7 +426,7 @@ export function ReportsStocksPage() {
                 {templates.map((template) => (
                   <Group key={template.Name} gap={6} wrap="nowrap">
                     <Button
-                      leftSection={<IconRestore size={16} />}
+                      leftSection={<RotateCcw size={16} />}
                       size="xs"
                       variant="default"
                       onClick={() => applyTemplate(template)}
@@ -452,7 +441,7 @@ export function ReportsStocksPage() {
                         variant="subtle"
                         onClick={() => updateTemplate(template.Name)}
                       >
-                        <IconDeviceFloppy size={16} />
+                        <Save size={16} />
                       </ActionIcon>
                     </Tooltip>
                     <Tooltip label={t('Видалити')}>
@@ -463,7 +452,7 @@ export function ReportsStocksPage() {
                         variant="subtle"
                         onClick={() => deleteTemplate(template.Name)}
                       >
-                        <IconTrash size={16} />
+                        <Trash2 size={16} />
                       </ActionIcon>
                     </Tooltip>
                   </Group>
@@ -474,7 +463,7 @@ export function ReportsStocksPage() {
         </form>
       </Card>
 
-      {error ? <Alert color="red" icon={<IconAlertCircle size={18} />}>{error}</Alert> : null}
+      {error ? <Alert color="red" icon={<CircleAlert size={18} />}>{error}</Alert> : null}
 
       <Card className="app-section-card" withBorder radius="md" padding="md">
         <Group justify="space-between" mb="sm">
@@ -486,7 +475,7 @@ export function ReportsStocksPage() {
           </Box>
           <Group gap={6}>
             <Button
-              leftSection={<IconDownload size={16} />}
+              leftSection={<Download size={16} />}
               disabled={!result?.table.rows.length}
               size="xs"
               variant="outline"
@@ -512,12 +501,12 @@ export function ReportsStocksPage() {
         <Stack>
           {result?.document.DocumentURL ? (
             <Anchor href={getDocumentHref(result.document.DocumentURL)} target="_blank" rel="noreferrer">
-              <Group gap="xs"><IconFileTypeXls size={18} /> XLSX</Group>
+              <Group gap="xs"><FileSpreadsheet size={18} /> XLSX</Group>
             </Anchor>
           ) : null}
           {result?.document.PdfDocumentURL ? (
             <Anchor href={getDocumentHref(result.document.PdfDocumentURL)} target="_blank" rel="noreferrer">
-              <Group gap="xs"><IconFileTypePdf size={18} /> PDF</Group>
+              <Group gap="xs"><FileText size={18} /> PDF</Group>
             </Anchor>
           ) : null}
           {!result?.document.DocumentURL && !result?.document.PdfDocumentURL ? <Text c="dimmed">{t('Файл не повернувся з API')}</Text> : null}
@@ -720,7 +709,7 @@ function SelectionValuePicker({ from, label, selection, selections, to, onChange
                   variant="transparent"
                   onClick={() => removeValue(valueIndex)}
                 >
-                  <IconTrash size={12} />
+                  <Trash2 size={12} />
                 </ActionIcon>
               )}
               variant="light"
@@ -768,7 +757,7 @@ function GroupingEditor({ groups, options, title, onAdd, onRemove, resolveItem }
           <Group key={`${group.type}-${index}`} justify="space-between" wrap="nowrap">
             <Text size="sm">{getReportFieldLabel(group.key)}</Text>
             <ActionIcon aria-label={t('Видалити')} color="red" size="sm" variant="subtle" onClick={() => onRemove(index)}>
-              <IconTrash size={16} />
+              <Trash2 size={16} />
             </ActionIcon>
           </Group>
         ))}

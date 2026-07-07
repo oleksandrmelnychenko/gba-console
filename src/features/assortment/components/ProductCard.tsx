@@ -1,5 +1,5 @@
 import { Alert, Badge, Card, Group, Loader, SimpleGrid, Stack, Text } from '@mantine/core'
-import { IconAlertCircle } from '@tabler/icons-react'
+import { CircleAlert } from 'lucide-react'
 import { useEffect } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -114,7 +114,7 @@ export function ProductCard({
     return (
       <Card withBorder>
         {error ? (
-          <Alert color="orange" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="orange" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         ) : (
@@ -151,7 +151,7 @@ export function ProductCard({
             {t('Замінники')} ({subs?.in_stock_count ?? 0} {t('в наявності')})
           </Text>
           {subsError ? (
-            <Alert color="orange" icon={<IconAlertCircle size={16} />} variant="light">
+            <Alert color="orange" icon={<CircleAlert size={16} />} variant="light">
               {subsError}
             </Alert>
           ) : (
@@ -175,7 +175,7 @@ export function ProductCard({
             {t('Попит за регіонами')}
           </Text>
           {regionsError ? (
-            <Alert color="orange" icon={<IconAlertCircle size={16} />} variant="light">
+            <Alert color="orange" icon={<CircleAlert size={16} />} variant="light">
               {regionsError}
             </Alert>
           ) : (productRegions?.regions ?? []).length === 0 ? (

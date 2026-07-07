@@ -23,20 +23,7 @@ import {
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
-import {
-  IconAlertCircle,
-  IconArrowsExchange,
-  IconCheck,
-  IconClipboardList,
-  IconDownload,
-  IconEye,
-  IconFileTypePdf,
-  IconFileTypeXls,
-  IconRefresh,
-  IconRestore,
-  IconSearch,
-  IconTrash,
-} from '@tabler/icons-react'
+import { ArrowLeftRight, Check, CircleAlert, ClipboardList, Download, Eye, FileSpreadsheet, FileText, RefreshCw, RotateCcw, Search, Trash2 } from 'lucide-react'
 import { useDebouncedValue } from '@mantine/hooks'
 import { useCallback, useEffect, useMemo, useReducer, useRef, type CSSProperties, type Dispatch, type ReactNode, type SetStateAction } from 'react'
 import { UserRoleType } from '../../../shared/auth/types'
@@ -989,7 +976,7 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
     <Stack gap="lg">
       {canOpenPreview && selectedAvailabilities.length > 0 ? (
         <Group justify="flex-end" align="end">
-          <Button disabled={Boolean(filterError)} leftSection={<IconEye size={16} />} variant="outline" onClick={openPreview}>
+          <Button disabled={Boolean(filterError)} leftSection={<Eye size={16} />} variant="outline" onClick={openPreview}>
             {t('Preview')} ({selectedAvailabilities.length})
           </Button>
         </Group>
@@ -1024,7 +1011,7 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
               onChange={(event) => updateToDate(event.currentTarget.value)}
             />
             <TextInput
-              leftSection={<IconSearch size={16} />}
+              leftSection={<Search size={16} />}
               label={t('Пошук')}
               placeholder={t('Код або назва товару')}
               value={searchDraft}
@@ -1042,7 +1029,7 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
                   variant="light"
                   onClick={handleExport}
                 >
-                  <IconDownload size={18} />
+                  <Download size={18} />
                 </ActionIcon>
               </Tooltip>
               <Tooltip label={t('Оновити')}>
@@ -1057,12 +1044,12 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
                     reload()
                   }}
                 >
-                  <IconRefresh size={18} />
+                  <RefreshCw size={18} />
                 </ActionIcon>
               </Tooltip>
               <Tooltip label={t('Скинути')}>
                 <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
-                  <IconRestore size={17} />
+                  <RotateCcw size={17} />
                 </ActionIcon>
               </Tooltip>
             </div>
@@ -1071,7 +1058,7 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
 
         <Stack gap={10} className="product-storages-body">
           {(filterError || error || (!isLoadingStorages && storageOptions.length === 0)) && (
-            <Alert color={filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color={filterError ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">
               {filterError ? t(filterError) : error || t('Складів не знайдено')}
             </Alert>
           )}
@@ -1168,7 +1155,7 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
                   className="document-link"
                 >
                   <span className="document-link-badge document-link-badge-excel">
-                    <IconFileTypeXls size={22} stroke={1.8} />
+                    <FileSpreadsheet size={22} strokeWidth={1.8} />
                   </span>
                   <span>{t('Excel документ')}</span>
                 </Anchor>
@@ -1181,7 +1168,7 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
                   className="document-link"
                 >
                   <span className="document-link-badge document-link-badge-pdf">
-                    <IconFileTypePdf size={22} stroke={1.8} />
+                    <FileText size={22} strokeWidth={1.8} />
                   </span>
                   <span>{t('PDF документ')}</span>
                 </Anchor>
@@ -1336,7 +1323,7 @@ function ProductStoragePreviewDrawer({
                 onRemoveRow(row.availability)
               }}
             >
-              <IconTrash size={16} />
+              <Trash2 size={16} />
             </ActionIcon>
           </Tooltip>
         ),
@@ -1349,12 +1336,12 @@ function ProductStoragePreviewDrawer({
     <AppDrawer opened={opened} size="xl" title={`${t('Preview')} (${rows.length})`} onClose={onClose}>
       <Stack gap="md">
         {hasInvalidRows ? (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {t('Кількість має бути більшою за 0 і не перевищувати доступний залишок')}
           </Alert>
         ) : null}
         {!canProcess ? (
-          <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
             {t('Недостатньо прав для операції зі складською позицією')}
           </Alert>
         ) : null}
@@ -1383,7 +1370,7 @@ function ProductStoragePreviewDrawer({
             <Button color="gray" variant="light" onClick={onClose}>
               {t('Скасувати')}
             </Button>
-            <Button disabled={!canProcess || !rows.length || hasInvalidRows} leftSection={<IconCheck size={16} />} onClick={onProcess}>
+            <Button disabled={!canProcess || !rows.length || hasInvalidRows} leftSection={<Check size={16} />} onClick={onProcess}>
               {t('Виконати')}
             </Button>
           </Group>
@@ -1604,7 +1591,7 @@ function ProductStorageActionModal({
         />
 
         {(actionError || returnConsignmentsError) && (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {actionError || returnConsignmentsError}
           </Alert>
         )}
@@ -1653,7 +1640,7 @@ function ReturnConsignmentsPanel({
       <TextInput
         className="product-storages-return-search"
         disabled={isLoading || returnConsignments.length === 0}
-        leftSection={<IconSearch size={14} />}
+        leftSection={<Search size={14} />}
         placeholder={t('Пошук по приходу, даті або постачальнику')}
         value={searchValue}
         onChange={(event) => setSearchValue(event.currentTarget.value)}
@@ -1863,7 +1850,7 @@ function useProductStoragesColumns({
                       onOpenAction(availability)
                     }}
                   >
-                    <IconClipboardList size={20} />
+                    <ClipboardList size={20} />
                   </ActionIcon>
                 </Tooltip>
               ) : null}
@@ -2223,14 +2210,14 @@ function getActionSuccessMessage(mode: ProductStorageActionMode): string {
 
 function getActionSubmitIcon(mode: ProductStorageActionMode) {
   if (mode === 'transfer') {
-    return <IconArrowsExchange size={16} />
+    return <ArrowLeftRight size={16} />
   }
 
   if (mode === 'writeoff') {
-    return <IconClipboardList size={16} />
+    return <ClipboardList size={16} />
   }
 
-  return <IconCheck size={16} />
+  return <Check size={16} />
 }
 
 function toNumberInputValue(value: number | string): number | '' {

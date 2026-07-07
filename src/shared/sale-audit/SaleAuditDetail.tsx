@@ -1,12 +1,6 @@
 import { ActionIcon, Alert, Anchor, Box, Button, Card, Divider, Group, Loader, Stack, Text, ThemeIcon, Tooltip } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import {
-  IconAlertCircle,
-  IconArrowsExchange,
-  IconFileInvoice,
-  IconFileTypePdf,
-  IconReportAnalytics,
-} from '@tabler/icons-react'
+import { ArrowLeftRight, CircleAlert, FileChartColumn, FileText, ReceiptText } from 'lucide-react'
 import { ExcelIcon } from '../ui/ExcelIcon'
 import { useRef } from 'react'
 import { useValueState } from '../hooks/useValueState'
@@ -134,7 +128,7 @@ export function SaleAuditDetail({ error, isLoading, onConfirmed, showConfirm = t
   return (
     <Stack gap="md">
       {error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {error}
         </Alert>
       )}
@@ -209,7 +203,7 @@ export function SaleAuditDetail({ error, isLoading, onConfirmed, showConfirm = t
               <Loader color="violet" size="sm" />
             </Group>
           ) : printError ? (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {printError}
             </Alert>
           ) : printDocument?.DocumentURL || printDocument?.PdfDocumentURL ? (
@@ -225,7 +219,7 @@ export function SaleAuditDetail({ error, isLoading, onConfirmed, showConfirm = t
               {printDocument.PdfDocumentURL && (
                 <Anchor className="document-link" href={getDocumentHref(printDocument.PdfDocumentURL)} rel="noreferrer" target="_blank">
                   <span className="document-link-badge document-link-badge-pdf">
-                    <IconFileTypePdf size={22} stroke={1.8} />
+                    <FileText size={22} strokeWidth={1.8} />
                   </span>
                   <span>{t('PDF документ')}</span>
                 </Anchor>
@@ -269,7 +263,7 @@ function LifeCycleRow({ line }: { line: SaleAuditLifeCycleLineItem }) {
     <Group justify="space-between" align="center">
       <Group gap="xs">
         <ThemeIcon color={line.IsActive ? 'violet' : 'gray'} radius="xl" size="sm" variant="light">
-          <IconArrowsExchange size={12} />
+          <ArrowLeftRight size={12} />
         </ThemeIcon>
         <Text fw={line.IsActive ? 600 : 400} size="sm">
           {getLifeCycleLineLabel(line.Value, t)}
@@ -322,12 +316,12 @@ function AuditOrderItem({
           <Group gap={4} wrap="nowrap">
             <Tooltip label={t('Видаткова накладна')} position="top">
               <ActionIcon aria-label={t('Видаткова накладна')} color="gray" variant="subtle" onClick={onPrintInvoice}>
-                <IconFileInvoice size={18} />
+                <ReceiptText size={18} />
               </ActionIcon>
             </Tooltip>
             <Tooltip label={t('Акт редагування')} position="top">
               <ActionIcon aria-label={t('Акт редагування')} color="gray" variant="subtle" onClick={onPrintAct}>
-                <IconReportAnalytics size={18} />
+                <FileChartColumn size={18} />
               </ActionIcon>
             </Tooltip>
           </Group>

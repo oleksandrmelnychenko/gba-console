@@ -16,19 +16,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import {
-  IconAlertCircle,
-  IconArrowLeft,
-  IconDeviceFloppy,
-  IconFile,
-  IconFileTypePdf,
-  IconFileTypeXls,
-  IconPlus,
-  IconRefresh,
-  IconTrash,
-  IconUpload,
-  IconX,
-} from '@tabler/icons-react'
+import { ArrowLeft, CircleAlert, File, FileSpreadsheet, FileText, Plus, RefreshCw, Save, Trash2, Upload, X } from 'lucide-react'
 import { type FormEvent, useEffect, useMemo, useRef } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { PermissionGate } from '../../auth/components/PermissionGate'
@@ -270,7 +258,7 @@ export function SupplierOrganizationEditPage() {
         <Group gap="xs">
           <Tooltip label={t('Назад')}>
             <ActionIcon aria-label={t('Назад')} color="gray" size={38} variant="light" onClick={closeDrawer}>
-              <IconArrowLeft size={18} />
+              <ArrowLeft size={18} />
             </ActionIcon>
           </Tooltip>
           <Stack gap={0}>
@@ -286,13 +274,13 @@ export function SupplierOrganizationEditPage() {
           {!isNew && (
             <Tooltip label={t('Оновити')}>
               <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={38} variant="light" onClick={() => void reloadOrganization()}>
-                <IconRefresh size={18} />
+                <RefreshCw size={18} />
               </ActionIcon>
             </Tooltip>
           )}
           <PermissionGate permissionKey="SERVICE_Accounting_Supplier_Organizations_DelBtn_PKEY">
             {!isNew && (
-              <Button color="red" leftSection={<IconTrash size={16} />} loading={isDeleting} variant="light" onClick={() => setDeleteOpened(true)}>
+              <Button color="red" leftSection={<Trash2 size={16} />} loading={isDeleting} variant="light" onClick={() => setDeleteOpened(true)}>
                 {t('Видалити')}
               </Button>
             )}
@@ -301,7 +289,7 @@ export function SupplierOrganizationEditPage() {
       </Group>
 
       {error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {error}
         </Alert>
       )}
@@ -411,7 +399,7 @@ function GeneralInfoForm({
           />
         </Group>
         <Group justify="flex-end">
-          <Button color={CREATE_ACTION_COLOR} leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} type="submit">
+          <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSaving} type="submit">
             {t('Зберегти')}
           </Button>
         </Group>
@@ -457,7 +445,7 @@ function BankDetailsForm({
           <TextInput label="BankAccountEUR" value={values.BankAccountEUR} onChange={(event) => setField('BankAccountEUR', event.currentTarget.value)} />
         </SimpleGrid>
         <Group justify="flex-end">
-          <Button color={CREATE_ACTION_COLOR} leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} type="submit">
+          <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSaving} type="submit">
             {t('Зберегти')}
           </Button>
         </Group>
@@ -499,7 +487,7 @@ function ContactPersonForm({
           <TextInput label={t('Коментар')} value={values.ContactPersonComment} onChange={(event) => setField('ContactPersonComment', event.currentTarget.value)} />
         </SimpleGrid>
         <Group justify="flex-end">
-          <Button color={CREATE_ACTION_COLOR} leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} type="submit">
+          <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSaving} type="submit">
             {t('Зберегти')}
           </Button>
         </Group>
@@ -612,7 +600,7 @@ function AgreementsPanel({
             {t('Договорів')}: {agreements.length}
           </Badge>
         </Group>
-        <Button color={CREATE_ACTION_COLOR} leftSection={<IconPlus size={16} />} onClick={() => setEditor(createEmptyAgreement())}>
+        <Button color={CREATE_ACTION_COLOR} leftSection={<Plus size={16} />} onClick={() => setEditor(createEmptyAgreement())}>
           {t('Новий договір')}
         </Button>
       </Group>
@@ -809,28 +797,28 @@ function AgreementDrawer({
               return (
                 <Group key={getSupplierAgreementDocumentKey(document, documentName)} justify="space-between" wrap="nowrap">
                   <Group gap="xs" wrap="nowrap">
-                    <IconFile size={16} />
+                    <File size={16} />
                     <Text size="sm">{displayValue(documentName)}</Text>
                   </Group>
                   <Group gap={4} wrap="nowrap">
                     {documentUrl && (
                       <Tooltip label={t('Документ')}>
                         <ActionIcon component="a" href={getDocumentHref(documentUrl)} target="_blank" rel="noreferrer" aria-label={t('Документ')} size="sm" variant="subtle">
-                          <IconFileTypeXls size={16} />
+                          <FileSpreadsheet size={16} />
                         </ActionIcon>
                       </Tooltip>
                     )}
                     {documentPdfUrl && (
                       <Tooltip label={t('PDF')}>
                         <ActionIcon component="a" href={getDocumentHref(documentPdfUrl)} target="_blank" rel="noreferrer" aria-label={t('PDF')} size="sm" variant="subtle">
-                          <IconFileTypePdf size={16} />
+                          <FileText size={16} />
                         </ActionIcon>
                       </Tooltip>
                     )}
                     {editor && (
                       <Tooltip label={t('Видалити')}>
                         <ActionIcon aria-label={t('Видалити документ')} color="red" size="sm" variant="subtle" onClick={() => onDeleteDocument(editor, document)}>
-                          <IconTrash size={16} />
+                          <Trash2 size={16} />
                         </ActionIcon>
                       </Tooltip>
                     )}
@@ -844,17 +832,17 @@ function AgreementDrawer({
           <FileInput
             clearable
             label={t('Додати файли')}
-            leftSection={<IconUpload size={16} />}
+            leftSection={<Upload size={16} />}
             multiple
             value={values.files}
             onChange={(files) => setField('files', files || [])}
           />
 
           <Group justify="flex-end">
-            <Button color="gray" leftSection={<IconX size={16} />} variant="subtle" onClick={onClose}>
+            <Button color="gray" leftSection={<X size={16} />} variant="subtle" onClick={onClose}>
               {t('Скасувати')}
             </Button>
-            <Button color={CREATE_ACTION_COLOR} leftSection={<IconDeviceFloppy size={16} />} loading={isSubmitting} type="submit">
+            <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSubmitting} type="submit">
               {t('Зберегти')}
             </Button>
           </Group>

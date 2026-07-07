@@ -1,5 +1,5 @@
 import { Alert, Stack, Text } from '@mantine/core'
-import { IconAlertCircle } from '@tabler/icons-react'
+import { CircleAlert } from 'lucide-react'
 import { useMemo } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
@@ -34,7 +34,7 @@ export function AppliedActionsHistoryDrawer({
     <AppDrawer opened={opened} padding="lg" position="right" size="72rem" title={title} onClose={onClose}>
       <Stack gap="md">
         {error && (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}

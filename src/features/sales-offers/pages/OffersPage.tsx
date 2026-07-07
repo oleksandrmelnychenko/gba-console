@@ -1,6 +1,6 @@
 import { ActionIcon, Alert, Button, Card, Group, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconAlertCircle, IconPlus, IconRefresh } from '@tabler/icons-react'
+import { CircleAlert, Plus, RefreshCw } from 'lucide-react'
 import { useEffect } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -191,12 +191,12 @@ export function OffersPage() {
             </Button>
             <Tooltip label={t('Оновити')}>
               <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={34} variant="light" onClick={refresh}>
-                <IconRefresh size={17} />
+                <RefreshCw size={17} />
               </ActionIcon>
             </Tooltip>
           </div>
           <div className="offers-create-actions">
-            <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} onClick={() => setNewOpen(true)}>
+            <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<Plus size={16} />} onClick={() => setNewOpen(true)}>
               {t('Створити оферту')}
             </Button>
           </div>
@@ -204,7 +204,7 @@ export function OffersPage() {
 
         <Stack className="offers-page__content" gap="md" p="md">
           {error && (
-            <Alert color="red" icon={<IconAlertCircle size={16} />} title={t('Помилка')}>
+            <Alert color="red" icon={<CircleAlert size={16} />} title={t('Помилка')}>
               {error}
             </Alert>
           )}

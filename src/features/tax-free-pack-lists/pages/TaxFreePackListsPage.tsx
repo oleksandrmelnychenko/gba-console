@@ -11,14 +11,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { AppModal } from "../../../shared/ui/AppModal"
-import {
-  IconAlertCircle,
-  IconDownload,
-  IconEdit,
-  IconPackageExport,
-  IconRestore,
-  IconTrash,
-} from '@tabler/icons-react'
+import { CircleAlert, Download, PackageMinus, RotateCcw, SquarePen, Trash2 } from 'lucide-react'
 import { notifications } from '@mantine/notifications'
 import { useEffect, useMemo, useReducer, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -248,7 +241,7 @@ export function TaxFreePackListsPage() {
                   aria-label={t('Скинути')}
                   onClick={resetFilters}
                 >
-                  <IconRestore size={17} />
+                  <RotateCcw size={17} />
                 </ActionIcon>
               </Tooltip>
               <Tooltip label={t('Завантажити')}>
@@ -259,7 +252,7 @@ export function TaxFreePackListsPage() {
                   loading={isExporting}
                   onClick={exportPackLists}
                 >
-                  <IconDownload size={18} />
+                  <Download size={18} />
                 </ActionIcon>
               </Tooltip>
               <Paginator
@@ -279,7 +272,7 @@ export function TaxFreePackListsPage() {
         </div>
 
         {(error || filterError) && (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {filterError || error}
           </Alert>
         )}
@@ -309,7 +302,7 @@ export function TaxFreePackListsPage() {
           <Stack gap="xs">
             <Button
               justify="flex-start"
-              leftSection={<IconEdit size={16} />}
+              leftSection={<SquarePen size={16} />}
               variant="subtle"
               onClick={() => navigate(`/tax-free/pack-list/edit/${selectedPackList.NetUid}`)}
             >
@@ -318,7 +311,7 @@ export function TaxFreePackListsPage() {
             <Button
               disabled={!selectedPackList.IsSent || Boolean(selectedPackList.SupplyOrderUkraineId)}
               justify="flex-start"
-              leftSection={<IconPackageExport size={16} />}
+              leftSection={<PackageMinus size={16} />}
               variant="subtle"
               onClick={() => {
                 setOrderPackList(selectedPackList)
@@ -467,7 +460,7 @@ function usePackListColumns({
                   onOpen(packList)
                 }}
               >
-                <IconEdit size={16} />
+                <SquarePen size={16} />
               </ActionIcon>
             </Tooltip>
             <Tooltip label={packList.IsSent ? t('Проведений лист не можна видалити') : t('Видалити')}>
@@ -482,7 +475,7 @@ function usePackListColumns({
                   onDelete(packList)
                 }}
               >
-                <IconTrash size={16} />
+                <Trash2 size={16} />
               </ActionIcon>
             </Tooltip>
           </Group>

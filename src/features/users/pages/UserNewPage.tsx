@@ -10,7 +10,7 @@ import {
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { CREATE_ACTION_COLOR } from "../../../shared/ui/page-header-actions/PageHeaderActions"
 import { notifications } from '@mantine/notifications'
-import { IconAlertCircle, IconDeviceFloppy } from '@tabler/icons-react'
+import { CircleAlert, Save } from 'lucide-react'
 import { type FormEvent, useEffect } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -162,7 +162,7 @@ export function UserNewPage() {
           <Button
             color={CREATE_ACTION_COLOR}
             form="user-new-form"
-            leftSection={<IconDeviceFloppy size={16} />}
+            leftSection={<Save size={16} />}
             loading={isSaving}
             styles={{ label: USER_NEW_MONO_STYLE }}
             type="submit"
@@ -174,7 +174,7 @@ export function UserNewPage() {
     >
       <Stack gap="md">
         {error && (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}

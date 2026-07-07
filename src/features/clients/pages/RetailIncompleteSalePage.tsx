@@ -1,5 +1,5 @@
 import { Alert, Card, Group, Loader, Stack, Text } from '@mantine/core'
-import { IconAlertCircle } from '@tabler/icons-react'
+import { CircleAlert } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -55,7 +55,7 @@ export function RetailIncompleteSalePage() {
       <Card className="app-section-card" withBorder radius="md" padding="md">
         <Stack gap="md">
           {netUid && error && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
             </Alert>
           )}

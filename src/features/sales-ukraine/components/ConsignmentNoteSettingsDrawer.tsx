@@ -1,6 +1,6 @@
 import { Alert, Anchor, Box, Button, Group, NumberInput, Select, SimpleGrid, Stack, Text, TextInput } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconAlertCircle, IconFileTypePdf, IconTruckDelivery } from '@tabler/icons-react'
+import { CircleAlert, FileText, Truck } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { useEffect, useMemo } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -241,7 +241,7 @@ export function ConsignmentNoteSettingsDrawer({
     >
       <Stack gap="lg">
         {noteState.error && (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {noteState.error}
           </Alert>
         )}
@@ -376,7 +376,7 @@ export function ConsignmentNoteSettingsDrawer({
           <Button disabled={!noteState.isEdited || isPrinting} loading={isSaving} variant="outline" onClick={saveSetting}>
             {hasExistingSetting ? t('Зберегти') : t('Створити')}
           </Button>
-          <Button leftSection={<IconTruckDelivery size={16} />} loading={isPrinting} onClick={printDocument}>
+          <Button leftSection={<Truck size={16} />} loading={isPrinting} onClick={printDocument}>
             {t('Друк')}
           </Button>
         </Group>
@@ -423,7 +423,7 @@ function DownloadDocumentModal({
             {pdfUrl && (
               <Anchor href={pdfUrl} target="_blank" rel="noopener noreferrer">
                 <Group gap="xs">
-                  <IconFileTypePdf size={20} />
+                  <FileText size={20} />
                   <Text>{t('PDF документ')}</Text>
                 </Group>
               </Anchor>

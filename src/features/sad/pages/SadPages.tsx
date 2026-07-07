@@ -20,20 +20,7 @@ import {
 } from '@mantine/core'
 import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
-import {
-  IconAlertCircle,
-  IconArrowLeft,
-  IconArrowRight,
-  IconCash,
-  IconDownload,
-  IconEdit,
-  IconEye,
-  IconFileUpload,
-  IconPackage,
-  IconPlus,
-  IconRefresh,
-  IconTrash,
-} from '@tabler/icons-react'
+import { ArrowLeft, ArrowRight, Banknote, CircleAlert, Download, Eye, FileUp, Package, Plus, RefreshCw, SquarePen, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useState, type ReactNode } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { formatDateInputForQuery, formatLocalDate, SYNC_DATA_RANGE_START } from '../../../shared/date/dateTime'
@@ -347,7 +334,7 @@ export function AllSadsPage() {
                   setSelectedSad(sad)
                 }}
               >
-                <IconEye size={16} />
+                <Eye size={16} />
               </ActionIcon>
             </Tooltip>
             {sad.IsSend && sad.Client ? (
@@ -361,7 +348,7 @@ export function AllSadsPage() {
                     setOutcomeSource(buildSadOutcomeSource(sad))
                   }}
                 >
-                  <IconCash size={16} />
+                  <Banknote size={16} />
                 </ActionIcon>
               </Tooltip>
             ) : null}
@@ -377,7 +364,7 @@ export function AllSadsPage() {
                   setDeleteTarget(sad)
                 }}
               >
-                <IconTrash size={16} />
+                <Trash2 size={16} />
               </ActionIcon>
             </Tooltip>
           </Group>
@@ -457,7 +444,7 @@ export function AllSadsPage() {
           <div className="app-filter-actions sad-list-page__actions">
             <Tooltip label={t('Оновити')}>
               <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={34} variant="light" onClick={() => reload()}>
-                <IconRefresh size={17} />
+                <RefreshCw size={17} />
               </ActionIcon>
             </Tooltip>
           </div>
@@ -466,7 +453,7 @@ export function AllSadsPage() {
 
       <Stack className="sad-list-page__stack" gap="xs">
         {error && (
-          <Alert color="red" icon={<IconAlertCircle size={18} />}>
+          <Alert color="red" icon={<CircleAlert size={18} />}>
             {error}
           </Alert>
         )}
@@ -958,7 +945,7 @@ function SadEditorPage({ mode, netId }: { mode: EditorMode; netId?: string }) {
 
   if (error) {
     return (
-      <Alert color="red" icon={<IconAlertCircle size={18} />}>
+      <Alert color="red" icon={<CircleAlert size={18} />}>
         {error}
       </Alert>
     )
@@ -966,7 +953,7 @@ function SadEditorPage({ mode, netId }: { mode: EditorMode; netId?: string }) {
 
   if (!sad) {
     return (
-      <Alert color="yellow" icon={<IconAlertCircle size={18} />}>
+      <Alert color="yellow" icon={<CircleAlert size={18} />}>
         {t('SAD не знайдено')}
       </Alert>
     )
@@ -980,11 +967,11 @@ function SadEditorPage({ mode, netId }: { mode: EditorMode; netId?: string }) {
           <Badge className="app-role-pill is-gray" variant="light">{getSadTypeLabel(sad.SadType)}</Badge>
         </Group>
         <Group>
-          <Button leftSection={<IconFileUpload size={16} />} variant="outline" onClick={() => setDocumentsOpen(true)}>
+          <Button leftSection={<FileUp size={16} />} variant="outline" onClick={() => setDocumentsOpen(true)}>
             {t('Документи')}
           </Button>
           <Button
-            leftSection={<IconDownload size={16} />}
+            leftSection={<Download size={16} />}
             variant="outline"
             onClick={async () => {
               if (!sad.NetUid) {
@@ -1001,7 +988,7 @@ function SadEditorPage({ mode, netId }: { mode: EditorMode; netId?: string }) {
             {t('Завантажити')}
           </Button>
           {!isReadonly && mode !== 'sale' && !sad.IsFromSale && (
-            <Button leftSection={<IconPlus size={16} />} variant="outline" onClick={() => setAddItemsOpen(true)}>
+            <Button leftSection={<Plus size={16} />} variant="outline" onClick={() => setAddItemsOpen(true)}>
               {t('Додати товар')}
             </Button>
           )}
@@ -1293,7 +1280,7 @@ function SadItemsPanel({
           <Group justify="flex-end">
             <Tooltip label={t('Видалити')}>
               <ActionIcon aria-label={t('Видалити')} color="red" size="sm" variant="subtle" onClick={() => onDelete(item)}>
-                <IconTrash size={16} />
+                <Trash2 size={16} />
               </ActionIcon>
             </Tooltip>
           </Group>
@@ -1421,7 +1408,7 @@ function TirMovementPanel({
         <Stack align="center" justify="center">
           <Button
             disabled={readonly || selectedSourceItems.length === 0}
-            leftSection={<IconArrowRight size={16} />}
+            leftSection={<ArrowRight size={16} />}
             variant="outline"
             onClick={() => setMoveModalOpen(true)}
           >
@@ -1429,7 +1416,7 @@ function TirMovementPanel({
           </Button>
           <Button
             disabled={readonly || selectedPalletItems.length === 0}
-            leftSection={<IconArrowLeft size={16} />}
+            leftSection={<ArrowLeft size={16} />}
             variant="outline"
             onClick={moveLeft}
           >
@@ -1634,7 +1621,7 @@ function SadPalletsTable({
         accessor: (item) => item.__pallet.Number,
         cell: (item) => (
           <Group gap={6} wrap="nowrap">
-            <IconPackage size={14} />
+            <Package size={14} />
             <Text size="sm">{item.__pallet.Number || t('Без номера')}</Text>
           </Group>
         ),
@@ -1683,7 +1670,7 @@ function SadPalletsTable({
         cell: (item) => !readonly ? (
           <Tooltip label={t('Видалити палету')}>
             <ActionIcon aria-label={t('Видалити палету')} color="red" size="sm" variant="subtle" onClick={() => onDeletePallet(item.__pallet)}>
-              <IconTrash size={16} />
+              <Trash2 size={16} />
             </ActionIcon>
           </Tooltip>
         ) : null,
@@ -1985,7 +1972,7 @@ export function SadSpecificationsPage() {
                   variant="subtle"
                   onClick={() => setEditingSpec({ product, specification: getLastSpecification(product) || null })}
                 >
-                  <IconEdit size={16} />
+                  <SquarePen size={16} />
                 </ActionIcon>
               </Tooltip>
             </Group>
@@ -2004,7 +1991,7 @@ export function SadSpecificationsPage() {
 
   if (error) {
     return (
-      <Alert color="red" icon={<IconAlertCircle size={18} />}>
+      <Alert color="red" icon={<CircleAlert size={18} />}>
         {error}
       </Alert>
     )
@@ -2012,7 +1999,7 @@ export function SadSpecificationsPage() {
 
   if (!sad) {
     return (
-      <Alert color="yellow" icon={<IconAlertCircle size={18} />}>
+      <Alert color="yellow" icon={<CircleAlert size={18} />}>
         {t('SAD не знайдено')}
       </Alert>
     )
@@ -2023,11 +2010,11 @@ export function SadSpecificationsPage() {
       <Group align="center" justify="space-between">
         <StatusBadge sad={sad} />
         <Group>
-          <Button leftSection={<IconFileUpload size={16} />} variant="outline" onClick={() => setUploadOpen(true)}>
+          <Button leftSection={<FileUp size={16} />} variant="outline" onClick={() => setUploadOpen(true)}>
             {t('Імпорт')}
           </Button>
           <Button
-            leftSection={<IconDownload size={16} />}
+            leftSection={<Download size={16} />}
             variant="outline"
             onClick={async () => {
               if (!sad.NetUid) {
@@ -2045,7 +2032,7 @@ export function SadSpecificationsPage() {
           </Button>
           <Tooltip label={t('Оновити')}>
             <ActionIcon aria-label={t('Оновити')} variant="subtle" onClick={() => reload()}>
-              <IconRefresh size={18} />
+              <RefreshCw size={18} />
             </ActionIcon>
           </Tooltip>
           <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />
@@ -2170,7 +2157,7 @@ function SadDocumentsModal({
               </Box>
               <Tooltip label={t('Видалити')}>
                 <ActionIcon aria-label={t('Видалити')} color="red" size="sm" variant="subtle" onClick={() => removeDocument(document)}>
-                  <IconTrash size={16} />
+                  <Trash2 size={16} />
                 </ActionIcon>
               </Tooltip>
             </Group>
@@ -2210,7 +2197,7 @@ function DownloadDocumentsModal({
             key={link.label}
             disabled={!link.url}
             justify="space-between"
-            rightSection={<IconDownload size={16} />}
+            rightSection={<Download size={16} />}
             variant="outline"
             onClick={() => link.url && window.open(getDocumentHref(link.url), '_blank', 'noopener,noreferrer')}
           >
@@ -2445,12 +2432,12 @@ function SadActionModal({
       onClose={onClose}
     >
       <Stack>
-        <Button justify="space-between" rightSection={<IconEye size={16} />} variant="outline" onClick={() => onNavigate(editPath)}>
+        <Button justify="space-between" rightSection={<Eye size={16} />} variant="outline" onClick={() => onNavigate(editPath)}>
           {t('Перегляд / редагування')}
         </Button>
         <Button
           justify="space-between"
-          rightSection={<IconEdit size={16} />}
+          rightSection={<SquarePen size={16} />}
           variant="outline"
           onClick={() => sad.NetUid && onNavigate(`/sad/edit/${sad.NetUid}/specifications`)}
         >
@@ -2459,7 +2446,7 @@ function SadActionModal({
         {canCreateSupplyOrder && (
           <Button
             justify="space-between"
-            rightSection={<IconArrowRight size={16} />}
+            rightSection={<ArrowRight size={16} />}
             variant="outline"
             onClick={() => onCreateSupplyOrder(sad)}
           >

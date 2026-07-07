@@ -1,5 +1,5 @@
 import { Alert, Anchor, Badge, Group, Image, Loader, Stack, Text } from '@mantine/core'
-import { IconAlertCircle, IconExternalLink } from '@tabler/icons-react'
+import { CircleAlert, ExternalLink } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
@@ -75,7 +75,7 @@ function ProductCardContent({ productNetId }: { productNetId: string }) {
 
   if (error) {
     return (
-      <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+      <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
         {error}
       </Alert>
     )
@@ -128,7 +128,7 @@ function ProductCardContent({ productNetId }: { productNetId: string }) {
         {product.NetUid && (
           <Anchor c="dark.6" fw={600} href={`/products?netId=${encodeURIComponent(product.NetUid)}`} rel="noopener noreferrer" target="_blank" underline="always">
             <Group gap={4} wrap="nowrap">
-              <IconExternalLink size={14} />
+              <ExternalLink size={14} />
               <Text size="sm">{t('Відкрити')}</Text>
             </Group>
           </Anchor>

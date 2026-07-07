@@ -17,16 +17,7 @@ import {
 } from '@mantine/core'
 import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
-import {
-  IconAlertCircle,
-  IconAlertTriangle,
-  IconDownload,
-  IconFileImport,
-  IconFileTypePdf,
-  IconRestore,
-  IconSearch,
-  IconUpload,
-} from '@tabler/icons-react'
+import { CircleAlert, Download, FileInput as FileInputIcon, FileText, RotateCcw, Search, TriangleAlert, Upload } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { useDebouncedValue } from '@mantine/hooks'
 import { type FormEvent, useCallback, useEffect, useMemo, useReducer } from 'react'
@@ -558,7 +549,7 @@ function ProductPlacementsPageView({ model }: { model: ReturnType<typeof useProd
               }}
             />
             <TextInput
-              leftSection={<IconSearch size={16} />}
+              leftSection={<Search size={16} />}
               label={t('Пошук')}
               placeholder={t('Код або назва товару')}
               value={searchDraft}
@@ -568,7 +559,7 @@ function ProductPlacementsPageView({ model }: { model: ReturnType<typeof useProd
             <div className="app-filter-actions">
               <Tooltip label={t('Скинути')}>
                 <ActionIcon variant="light" color="gray" size={34} aria-label={t('Скинути')} onClick={resetFilters}>
-                  <IconRestore size={17} />
+                  <RotateCcw size={17} />
                 </ActionIcon>
               </Tooltip>
               <Tooltip label={t('Імпорт')}>
@@ -580,7 +571,7 @@ function ProductPlacementsPageView({ model }: { model: ReturnType<typeof useProd
                   variant="light"
                   onClick={() => setImportModalOpened(true)}
                 >
-                  <IconFileImport size={18} />
+                  <FileInputIcon size={18} />
                 </ActionIcon>
               </Tooltip>
               <Tooltip label={t('Експорт')}>
@@ -592,7 +583,7 @@ function ProductPlacementsPageView({ model }: { model: ReturnType<typeof useProd
                   variant="light"
                   onClick={handleExport}
                 >
-                  <IconDownload size={18} />
+                  <Download size={18} />
                 </ActionIcon>
               </Tooltip>
               <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
@@ -612,7 +603,7 @@ function ProductPlacementsPageView({ model }: { model: ReturnType<typeof useProd
             {returnedRows.length > 0 && (
               <Button
                 color="red"
-                leftSection={<IconAlertTriangle size={16} />}
+                leftSection={<TriangleAlert size={16} />}
                 styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
                 variant="light"
                 onClick={() => setReturnModalOpened(true)}
@@ -627,7 +618,7 @@ function ProductPlacementsPageView({ model }: { model: ReturnType<typeof useProd
           <Alert
             className="product-placements-page__alert"
             color={filterError && !noStorages ? 'yellow' : 'red'}
-            icon={<IconAlertCircle size={18} />}
+            icon={<CircleAlert size={18} />}
             variant="light"
           >
             {noStorages ? t('Складів не знайдено') : filterError || error}
@@ -702,7 +693,7 @@ function ProductPlacementsPageView({ model }: { model: ReturnType<typeof useProd
               {downloadDocument.PdfDocumentURL && (
                 <Anchor href={getDocumentHref(downloadDocument.PdfDocumentURL)} target="_blank" rel="noreferrer" className="document-link">
                   <span className="document-link-badge document-link-badge-pdf">
-                    <IconFileTypePdf size={22} stroke={1.8} />
+                    <FileText size={22} strokeWidth={1.8} />
                   </span>
                   <span>{t('PDF документ')}</span>
                 </Anchor>
@@ -770,7 +761,7 @@ function ProductPlacementImportModal({
       <form onSubmit={submitForm}>
         <Stack gap="md">
           {error && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
             </Alert>
           )}
@@ -787,7 +778,7 @@ function ProductPlacementImportModal({
             clearable
             accept=".xlsx"
             label={t('Файл')}
-            leftSection={<IconUpload size={16} />}
+            leftSection={<Upload size={16} />}
             placeholder={t('Оберіть файл')}
             value={form.file}
             onChange={(file) => setForm((currentForm) => ({ ...currentForm, file }))}
@@ -876,11 +867,11 @@ function ReturnedProductsModal({
   return (
     <AppModal centered opened={opened} size="min(1100px, 96vw)" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Не пройшли імпорт')}</span>} onClose={onClose}>
       <Stack gap="md">
-        <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
           {t('Перевірте кількість або розміщення та відправте позиції повторно.')}
         </Alert>
         {error && (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}
@@ -897,7 +888,7 @@ function ReturnedProductsModal({
           toolbarLeft={toolbarLeft}
         />
         <Group justify="flex-end">
-          <Button leftSection={<IconDownload size={16} />} loading={isExporting} variant="outline" onClick={onExport}>
+          <Button leftSection={<Download size={16} />} loading={isExporting} variant="outline" onClick={onExport}>
             {t('Експорт')}
           </Button>
           <Button loading={isSubmitting} onClick={onSubmit}>

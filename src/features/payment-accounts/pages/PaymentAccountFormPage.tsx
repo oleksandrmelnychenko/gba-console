@@ -17,16 +17,7 @@ import {
   TextInput,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import {
-  IconAlertCircle,
-  IconArrowLeft,
-  IconArrowsExchange,
-  IconDeviceFloppy,
-  IconPencil,
-  IconRefresh,
-  IconTrash,
-  IconX,
-} from '@tabler/icons-react'
+import { ArrowLeft, ArrowLeftRight, CircleAlert, Pencil, RefreshCw, Save, Trash2, X } from 'lucide-react'
 import { type FormEvent, type ReactNode, useEffect, useMemo, useReducer } from 'react'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
@@ -566,7 +557,7 @@ export function PaymentAccountFormPage() {
             <Button color="gray" disabled={isDeleting} variant="light" onClick={() => setDeleteModalOpened(false)}>
               {t('Скасувати')}
             </Button>
-            <Button color="red" leftSection={<IconTrash size={16} />} loading={isDeleting} onClick={handleDelete}>
+            <Button color="red" leftSection={<Trash2 size={16} />} loading={isDeleting} onClick={handleDelete}>
               {t('Видалити')}
             </Button>
           </Group>
@@ -762,13 +753,13 @@ function PaymentAccountFormCard({
         />
 
         {error && (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}
 
         {!canSave && (
-          <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
             {t('Немає прав для збереження рахунку')}
           </Alert>
         )}
@@ -861,14 +852,14 @@ function PaymentAccountFormHeader({
 
   return (
     <Group justify="flex-end" gap="xs" wrap="wrap">
-      <Button color="gray" leftSection={<IconArrowLeft size={16} />} type="button" variant="light" onClick={onCancel}>
+      <Button color="gray" leftSection={<ArrowLeft size={16} />} type="button" variant="light" onClick={onCancel}>
         {t('Назад')}
       </Button>
       {isEditMode && canSave && !isEditing && (
         <Button
           color={CREATE_ACTION_COLOR}
           disabled={isLoading || isSaving || isDeleting}
-          leftSection={<IconPencil size={16} />}
+          leftSection={<Pencil size={16} />}
           type="button"
           onClick={onEdit}
         >
@@ -879,7 +870,7 @@ function PaymentAccountFormHeader({
         <Button
           color="red"
           disabled={isLoading || isSaving}
-          leftSection={<IconTrash size={16} />}
+          leftSection={<Trash2 size={16} />}
           loading={isDeleting}
           type="button"
           variant="light"
@@ -897,7 +888,7 @@ function PaymentAccountFormHeader({
         <Button
           color={CREATE_ACTION_COLOR}
           disabled={isLoading || !canSave}
-          leftSection={<IconDeviceFloppy size={16} />}
+          leftSection={<Save size={16} />}
           loading={isSaving}
           type="submit"
         >
@@ -1231,7 +1222,7 @@ function PaymentAccountActivityPanel({
               </Button>
               <Button
                 disabled={!account.NetUid || isLoadingAccount}
-                leftSection={<IconArrowsExchange size={16} />}
+                leftSection={<ArrowLeftRight size={16} />}
                 size="xs"
                 type="button"
                 variant="outline"
@@ -1244,7 +1235,7 @@ function PaymentAccountActivityPanel({
               </Button>
               <Button
                 disabled={!account.NetUid || isLoadingAccount}
-                leftSection={<IconArrowsExchange size={16} />}
+                leftSection={<ArrowLeftRight size={16} />}
                 size="xs"
                 type="button"
                 variant="outline"
@@ -1258,7 +1249,7 @@ function PaymentAccountActivityPanel({
               <Button
                 color="gray"
                 disabled={isLoadingAccount}
-                leftSection={<IconRefresh size={16} />}
+                leftSection={<RefreshCw size={16} />}
                 loading={state.isLoading}
                 size="xs"
                 type="button"
@@ -1276,7 +1267,7 @@ function PaymentAccountActivityPanel({
           </Group>
 
           {state.error && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {state.error}
             </Alert>
           )}
@@ -1470,7 +1461,7 @@ function PaymentAccountTransferModal({
       <form onSubmit={handleSubmit}>
         <Stack gap="md">
           {error && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
             </Alert>
           )}
@@ -1556,7 +1547,7 @@ function PaymentAccountTransferModal({
             <Button color="gray" disabled={isSubmitting} type="button" variant="light" onClick={onClose}>
               {t('Скасувати')}
             </Button>
-            <Button color={CREATE_ACTION_COLOR} leftSection={<IconArrowsExchange size={16} />} loading={isSubmitting} type="submit">
+            <Button color={CREATE_ACTION_COLOR} leftSection={<ArrowLeftRight size={16} />} loading={isSubmitting} type="submit">
               {t('Створити')}
             </Button>
           </Group>
@@ -1673,7 +1664,7 @@ function PaymentAccountExchangeModal({
       <form onSubmit={handleSubmit}>
         <Stack gap="md">
           {error && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
             </Alert>
           )}
@@ -1759,7 +1750,7 @@ function PaymentAccountExchangeModal({
             <Button color="gray" disabled={isSubmitting} type="button" variant="light" onClick={onClose}>
               {t('Скасувати')}
             </Button>
-            <Button color={CREATE_ACTION_COLOR} leftSection={<IconArrowsExchange size={16} />} loading={isSubmitting} type="submit">
+            <Button color={CREATE_ACTION_COLOR} leftSection={<ArrowLeftRight size={16} />} loading={isSubmitting} type="submit">
               {t('Створити')}
             </Button>
           </Group>
@@ -1792,7 +1783,7 @@ function CancelActivityModal({
           <Button color="gray" disabled={isLoading} type="button" variant="light" onClick={onClose}>
             {t('Ні')}
           </Button>
-          <Button color="red" leftSection={<IconX size={16} />} loading={isLoading} type="button" onClick={onConfirm}>
+          <Button color="red" leftSection={<X size={16} />} loading={isLoading} type="button" onClick={onConfirm}>
             {t('Так, скасувати')}
           </Button>
         </Group>
@@ -1998,7 +1989,7 @@ function getTransferColumns(
         <Button
           color="red"
           disabled={Boolean(transfer.IsCanceled) || !getEntityValue(transfer)}
-          leftSection={<IconX size={14} />}
+          leftSection={<X size={14} />}
           size="xs"
           type="button"
           variant="light"
@@ -2042,7 +2033,7 @@ function getExchangeColumns(
         <Button
           color="red"
           disabled={Boolean(exchange.IsCanceled) || !getEntityValue(exchange)}
-          leftSection={<IconX size={14} />}
+          leftSection={<X size={14} />}
           size="xs"
           type="button"
           variant="light"

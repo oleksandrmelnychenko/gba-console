@@ -1,5 +1,5 @@
 import { ActionIcon, Anchor, Badge, Box, Card, Collapse, Group, Stack, Text, Tooltip } from '@mantine/core'
-import { IconChevronDown, IconChevronRight, IconLink, IconMessage, IconRestore, IconTrash } from '@tabler/icons-react'
+import { ChevronDown, ChevronRight, Link, MessageSquare, RotateCcw, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { ProductCardModal } from '../../products/components/ProductCardModal'
@@ -55,7 +55,7 @@ export function OfferCard({
       <Group align="flex-start" gap="sm" justify="space-between" wrap="nowrap">
         <Group align="flex-start" gap="sm" wrap="nowrap">
           <ActionIcon className="offer-card-toggle" aria-label={t('Розгорнути')} variant="subtle" onClick={() => onToggle(offer)}>
-            {expanded ? <IconChevronDown size={18} /> : <IconChevronRight size={18} />}
+            {expanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
           </ActionIcon>
           <Tooltip label={statusLabel(status, t)}>
             <Box className={`offer-card-status-dot ${STATUS_CLASS[status] ?? 'is-gray'}`} />
@@ -97,7 +97,7 @@ export function OfferCard({
           {canOpenReason && (
             <Tooltip label={t('Причини')}>
               <ActionIcon color="blue" variant="subtle" onClick={() => onOpenReason(offer)}>
-                <IconMessage size={18} />
+                <MessageSquare size={18} />
               </ActionIcon>
             </Tooltip>
           )}
@@ -105,7 +105,7 @@ export function OfferCard({
           {status === OFFER_PROCESSING_STATUS.PartiallyProcessed && (
             <Tooltip label={t('Копіювати посилання')}>
               <ActionIcon color="orange" variant="subtle" onClick={() => onCopyLink(offer)}>
-                <IconLink size={18} />
+                <Link size={18} />
               </ActionIcon>
             </Tooltip>
           )}
@@ -113,7 +113,7 @@ export function OfferCard({
           {status === OFFER_PROCESSING_STATUS.NotProcessed && (
             <Tooltip label={t('Перезапустити')}>
               <ActionIcon color="teal" variant="subtle" onClick={() => onRestart(offer)}>
-                <IconRestore size={18} />
+                <RotateCcw size={18} />
               </ActionIcon>
             </Tooltip>
           )}
@@ -121,7 +121,7 @@ export function OfferCard({
           {status === OFFER_PROCESSING_STATUS.PartiallyProcessed && (
             <Tooltip label={t('Видалити')}>
               <ActionIcon color="red" variant="subtle" onClick={() => onDelete(offer)}>
-                <IconTrash size={18} />
+                <Trash2 size={18} />
               </ActionIcon>
             </Tooltip>
           )}

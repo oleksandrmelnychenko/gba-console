@@ -1,5 +1,5 @@
 import { Alert, Badge, Box, Card, Group, Loader, ScrollArea, Stack, Text, Title } from '@mantine/core'
-import { IconAlertCircle } from '@tabler/icons-react'
+import { CircleAlert } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { getRetailClientSales } from '../api/onlineShopClientsApi'
@@ -93,7 +93,7 @@ export function OnlineShopSalesPanel({ netUid }: OnlineShopSalesPanelProps) {
   return (
     <Stack gap="md">
       {error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {error}
         </Alert>
       )}

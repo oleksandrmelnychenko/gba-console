@@ -7,7 +7,7 @@ import {
   Text,
   TextInput,
 } from '@mantine/core'
-import { IconBuilding, IconX } from '@tabler/icons-react'
+import { Building, X } from 'lucide-react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { ServiceOrganization } from '../types'
 
@@ -78,7 +78,7 @@ export function OrganisationSearchControl({
     >
       <TextInput
         label={t('Організація')}
-        leftSection={<IconBuilding size={16} />}
+        leftSection={<Building size={16} />}
         placeholder={t('Введіть назву')}
         rightSection={isLoading ? <Loader color="orange" size="xs" /> : null}
         value={value}
@@ -128,7 +128,7 @@ export function OrganisationSearchControl({
           </Text>
           <Button
             color="gray"
-            leftSection={<IconX size={14} />}
+            leftSection={<X size={14} />}
             size="compact-xs"
             variant="subtle"
             onClick={onClear}

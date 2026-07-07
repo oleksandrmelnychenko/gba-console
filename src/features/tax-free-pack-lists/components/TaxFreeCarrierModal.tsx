@@ -1,6 +1,6 @@
 import { Alert, Button, Group, Select, Stack, TextInput } from '@mantine/core'
 import { AppModal } from "../../../shared/ui/AppModal"
-import { IconAlertCircle, IconSearch } from '@tabler/icons-react'
+import { CircleAlert, Search } from 'lucide-react'
 import { notifications } from '@mantine/notifications'
 import { useEffect, useMemo, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -122,13 +122,13 @@ export function TaxFreeCarrierModal({ opened, taxFree, onClose, onUpdated }: Tax
     <AppModal centered opened={opened} size="lg" title={t('Перевізник')} onClose={onClose}>
       <Stack>
         {error && (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}
 
         <TextInput
-          leftSection={<IconSearch size={16} />}
+          leftSection={<Search size={16} />}
           label={t('Пошук перевізника')}
           placeholder={t('Мінімум 2 символи')}
           value={search}

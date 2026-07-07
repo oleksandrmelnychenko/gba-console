@@ -7,7 +7,7 @@ import {
   TextInput,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconAlertCircle, IconDeviceFloppy, IconTrash } from '@tabler/icons-react'
+import { CircleAlert, Save, Trash2 } from 'lucide-react'
 import { type FormEvent, useEffect, useReducer } from 'react'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
@@ -224,7 +224,7 @@ export function PaymentCashflowArticleFormPage() {
             <Button
               color="red"
               disabled={isLoading}
-              leftSection={<IconTrash size={16} />}
+              leftSection={<Trash2 size={16} />}
               loading={isDeleting}
               type="button"
               variant="light"
@@ -238,7 +238,7 @@ export function PaymentCashflowArticleFormPage() {
               color={CREATE_ACTION_COLOR}
               disabled={isLoading}
               form="payment-cashflow-article-form"
-              leftSection={<IconDeviceFloppy size={16} />}
+              leftSection={<Save size={16} />}
               loading={isSaving}
               type="submit"
             >
@@ -251,7 +251,7 @@ export function PaymentCashflowArticleFormPage() {
       <form id="payment-cashflow-article-form" onSubmit={handleSubmit}>
         <Stack gap="md">
           {error && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
             </Alert>
           )}
@@ -281,7 +281,7 @@ export function PaymentCashflowArticleFormPage() {
             <Button color="gray" disabled={isDeleting} variant="light" onClick={() => setDeleteModalOpened(false)}>
               {t('Скасувати')}
             </Button>
-            <Button color="red" leftSection={<IconTrash size={16} />} loading={isDeleting} onClick={handleDelete}>
+            <Button color="red" leftSection={<Trash2 size={16} />} loading={isDeleting} onClick={handleDelete}>
               {t('Видалити')}
             </Button>
           </Group>

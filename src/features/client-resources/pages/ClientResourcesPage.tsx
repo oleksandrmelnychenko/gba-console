@@ -19,30 +19,7 @@ import {
 } from '@mantine/core'
 import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
-import {
-  IconAlertCircle,
-  IconArrowDown,
-  IconArrowUp,
-  IconBuilding,
-  IconChevronRight,
-  IconCoin,
-  IconDatabaseOff,
-  IconDeviceFloppy,
-  IconExternalLink,
-  IconMapPin,
-  IconPackage,
-  IconPencil,
-  IconPlus,
-  IconReceiptTax,
-  IconRefresh,
-  IconRulerMeasure,
-  IconSearch,
-  IconStar,
-  IconTrash,
-  IconTruck,
-  IconUpload,
-  IconUsers,
-} from '@tabler/icons-react'
+import { ArrowDown, ArrowUp, Building, ChevronRight, CircleAlert, Coins, DatabaseX, ExternalLink, MapPin, Package, Pencil, Plus, ReceiptText, RefreshCw, Ruler, Save, Search, Star, Trash2, Truck, Upload, Users } from 'lucide-react'
 import { type ComponentType, type ReactNode, useCallback, useEffect, useMemo, useReducer } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
@@ -172,7 +149,7 @@ const TYPE_TAXATION_OPTIONS = [
   { value: '4', label: 'Не платник' },
 ]
 
-type ResourceIcon = ComponentType<{ size?: number; stroke?: number }>
+type ResourceIcon = ComponentType<{ size?: number; strokeWidth?: number }>
 
 type ClientResourceSection = {
   description: string
@@ -456,61 +433,61 @@ const RESOURCE_SECTIONS: ClientResourceSection[] = [
     step: 'regions',
     label: 'Регіони',
     description: 'Регіони та коди регіонів',
-    icon: IconMapPin,
+    icon: MapPin,
   },
   {
     step: 'perfect-clients',
     label: 'Ідеальний клієнт',
     description: 'Параметри за ролями клієнтів',
-    icon: IconStar,
+    icon: Star,
   },
   {
     step: 'organizations',
     label: 'Організації',
     description: 'Юридичні особи та реквізити',
-    icon: IconBuilding,
+    icon: Building,
   },
   {
     step: 'tax-inspectation',
     label: 'Податкові інспекції',
     description: 'Довідник інспекцій',
-    icon: IconReceiptTax,
+    icon: ReceiptText,
   },
   {
     step: 'pricing',
     label: 'Ціноутворення',
     description: 'Типи цін та націнки',
-    icon: IconCoin,
+    icon: Coins,
   },
   {
     step: 'currencies',
     label: 'Валюти',
     description: 'Валютні довідники',
-    icon: IconCoin,
+    icon: Coins,
   },
   {
     step: 'storages',
     label: 'Склади',
     description: 'Складські майданчики',
-    icon: IconPackage,
+    icon: Package,
   },
   {
     step: 'measure-unit',
     label: 'Одиниці виміру',
     description: 'Коди та назви одиниць',
-    icon: IconRulerMeasure,
+    icon: Ruler,
   },
   {
     step: 'product-reserve',
     label: 'Резерв товару',
     description: 'Дні резерву за ролями',
-    icon: IconUsers,
+    icon: Users,
   },
   {
     step: 'carrier',
     label: 'Перевізники',
     description: 'Типи та записи перевізників',
-    icon: IconTruck,
+    icon: Truck,
   },
 ]
 
@@ -563,7 +540,7 @@ function ClientResourcesNav({
             onClick={() => onNavigate(section.step)}
           >
             <span>{t(section.label)}</span>
-            <IconChevronRight size={14} stroke={2} />
+            <ChevronRight size={14} strokeWidth={2} />
           </button>
         )
       })}
@@ -801,7 +778,7 @@ function RegionsPanelView({ model }: { model: ReturnType<typeof useRegionsPanelM
     <Group gap="xs" wrap="nowrap">
       <RefreshControl isLoading={state.isLoading} onRefresh={state.reload} />
       <PermissionGate permissionKey={REGION_CREATE_PERMISSION}>
-        <Button color={CREATE_ACTION_COLOR} leftSection={<IconPlus size={16} />} size="xs" onClick={openCreateRegion}>
+        <Button color={CREATE_ACTION_COLOR} leftSection={<Plus size={16} />} size="xs" onClick={openCreateRegion}>
           Новий регіон
         </Button>
       </PermissionGate>
@@ -816,7 +793,7 @@ function RegionsPanelView({ model }: { model: ReturnType<typeof useRegionsPanelM
             <Stack gap={6} className="client-resources-region-master">
               <TextInput
                 className="client-resources-region-search"
-                leftSection={<IconSearch size={16} stroke={1.8} />}
+                leftSection={<Search size={16} strokeWidth={1.8} />}
                 onChange={(event) => setSearch(event.currentTarget.value)}
                 placeholder={translate('Пошук')}
                 value={search}
@@ -859,7 +836,7 @@ function RegionsPanelView({ model }: { model: ReturnType<typeof useRegionsPanelM
                                 openCreateRegionCode(region)
                               }}
                             >
-                              <IconPlus size={16} />
+                              <Plus size={16} />
                             </ActionIcon>
                           </Tooltip>
                         </PermissionGate>
@@ -875,7 +852,7 @@ function RegionsPanelView({ model }: { model: ReturnType<typeof useRegionsPanelM
                                 openEditRegion(region)
                               }}
                             >
-                              <IconPencil size={16} />
+                              <Pencil size={16} />
                             </ActionIcon>
                           </Tooltip>
                         </PermissionGate>
@@ -893,7 +870,7 @@ function RegionsPanelView({ model }: { model: ReturnType<typeof useRegionsPanelM
                                 setDeleteTarget({ type: 'region', region })
                               }}
                             >
-                              <IconTrash size={16} />
+                              <Trash2 size={16} />
                             </ActionIcon>
                           </Tooltip>
                         </PermissionGate>
@@ -915,7 +892,7 @@ function RegionsPanelView({ model }: { model: ReturnType<typeof useRegionsPanelM
                   <PermissionGate permissionKey={REGION_CODE_CREATE_PERMISSION}>
                     <Button
                       color={CREATE_ACTION_COLOR}
-                      leftSection={<IconPlus size={15} />}
+                      leftSection={<Plus size={15} />}
                       size="xs"
                       styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
                       variant="outline"
@@ -967,7 +944,7 @@ function RegionsPanelView({ model }: { model: ReturnType<typeof useRegionsPanelM
                                 variant="subtle"
                                 onClick={() => openEditRegionCode(selectedRegion, code)}
                               >
-                                <IconPencil size={16} />
+                                <Pencil size={16} />
                               </ActionIcon>
                             </Tooltip>
                           </PermissionGate>
@@ -984,7 +961,7 @@ function RegionsPanelView({ model }: { model: ReturnType<typeof useRegionsPanelM
                                   setDeleteTarget({ type: 'regionCode', regionCode: code })
                                 }}
                               >
-                                <IconTrash size={16} />
+                                <Trash2 size={16} />
                               </ActionIcon>
                             </Tooltip>
                           </PermissionGate>
@@ -1082,7 +1059,7 @@ function RegionEditorModal({
       >
         <Stack gap="md">
           {error ? (
-            <Alert color="red" icon={<IconAlertCircle size={18} stroke={1.8} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} strokeWidth={1.8} />} variant="light">
               {error}
             </Alert>
           ) : null}
@@ -1099,7 +1076,7 @@ function RegionEditorModal({
             <Button color="gray" disabled={isSaving} type="button" variant="subtle" onClick={onClose}>
               Скасувати
             </Button>
-            <Button color={CREATE_ACTION_COLOR} leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} type="submit">
+            <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSaving} type="submit">
               Зберегти
             </Button>
           </Group>
@@ -1145,7 +1122,7 @@ function RegionCodeEditorModal({
       >
         <Stack gap="md">
           {error ? (
-            <Alert color="red" icon={<IconAlertCircle size={18} stroke={1.8} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} strokeWidth={1.8} />} variant="light">
               {error}
             </Alert>
           ) : null}
@@ -1171,7 +1148,7 @@ function RegionCodeEditorModal({
             <Button color="gray" disabled={isSaving} type="button" variant="subtle" onClick={onClose}>
               Скасувати
             </Button>
-            <Button color={CREATE_ACTION_COLOR} leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} type="submit">
+            <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSaving} type="submit">
               Зберегти
             </Button>
           </Group>
@@ -1200,7 +1177,7 @@ function DeleteResourceModal({
     <AppModal centered className="client-resources-modal" opened={opened} title={<span style={RESOURCE_MONO_STYLE}>{translate("Видалити запис")}</span>} onClose={onClose}>
       <Stack gap="md">
         {error ? (
-          <Alert color="red" icon={<IconAlertCircle size={18} stroke={1.8} />} variant="light">
+          <Alert color="red" icon={<CircleAlert size={18} strokeWidth={1.8} />} variant="light">
             {error}
           </Alert>
         ) : null}
@@ -1209,7 +1186,7 @@ function DeleteResourceModal({
           <Button color="gray" disabled={isSaving} type="button" variant="subtle" onClick={onClose}>
             Скасувати
           </Button>
-          <Button color="red" leftSection={<IconTrash size={16} />} loading={isSaving} onClick={onConfirm}>
+          <Button color="red" leftSection={<Trash2 size={16} />} loading={isSaving} onClick={onConfirm}>
             Видалити
           </Button>
         </Group>
@@ -1365,7 +1342,7 @@ function PerfectClientsPanel({ section }: { section: ClientResourceSection }) {
         <Button
           color={CREATE_ACTION_COLOR}
           disabled={!selectedRole}
-          leftSection={<IconPlus size={16} />}
+          leftSection={<Plus size={16} />}
           size="xs"
           onClick={openCreatePerfectClient}
         >
@@ -1485,7 +1462,7 @@ function PerfectClientGroup({
                         variant="subtle"
                         onClick={() => onEdit(item)}
                       >
-                        <IconPencil size={16} />
+                        <Pencil size={16} />
                       </ActionIcon>
                     </Tooltip>
                   </PermissionGate>
@@ -1499,7 +1476,7 @@ function PerfectClientGroup({
                         variant="subtle"
                         onClick={() => onDelete(item)}
                       >
-                        <IconTrash size={16} />
+                        <Trash2 size={16} />
                       </ActionIcon>
                     </Tooltip>
                   </PermissionGate>
@@ -1551,7 +1528,7 @@ function PerfectClientEditorModal({
       >
         <Stack gap="md">
           {error ? (
-            <Alert color="red" icon={<IconAlertCircle size={18} stroke={1.8} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} strokeWidth={1.8} />} variant="light">
               {error}
             </Alert>
           ) : null}
@@ -1647,7 +1624,7 @@ function TaxInspectionEditorModal({
       >
         <Stack gap="md">
           {error ? (
-            <Alert color="red" icon={<IconAlertCircle size={18} stroke={1.8} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} strokeWidth={1.8} />} variant="light">
               {error}
             </Alert>
           ) : null}
@@ -1742,7 +1719,7 @@ function PricingEditorModal({
       >
         <Stack gap="md">
           {error ? (
-            <Alert color="red" icon={<IconAlertCircle size={18} stroke={1.8} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} strokeWidth={1.8} />} variant="light">
               {error}
             </Alert>
           ) : null}
@@ -1853,7 +1830,7 @@ function CurrencyEditorModal({
       >
         <Stack gap="md">
           {error ? (
-            <Alert color="red" icon={<IconAlertCircle size={18} stroke={1.8} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} strokeWidth={1.8} />} variant="light">
               {error}
             </Alert>
           ) : null}
@@ -1922,7 +1899,7 @@ function StorageEditorModal({
       >
         <Stack gap="md">
           {error ? (
-            <Alert color="red" icon={<IconAlertCircle size={18} stroke={1.8} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} strokeWidth={1.8} />} variant="light">
               {error}
             </Alert>
           ) : null}
@@ -2022,7 +1999,7 @@ function MeasureUnitEditorModal({
       >
         <Stack gap="md">
           {error ? (
-            <Alert color="red" icon={<IconAlertCircle size={18} stroke={1.8} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} strokeWidth={1.8} />} variant="light">
               {error}
             </Alert>
           ) : null}
@@ -2078,7 +2055,7 @@ function ReserveEditorModal({
       >
         <Stack gap="md">
           {error ? (
-            <Alert color="red" icon={<IconAlertCircle size={18} stroke={1.8} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} strokeWidth={1.8} />} variant="light">
               {error}
             </Alert>
           ) : null}
@@ -2137,7 +2114,7 @@ function TransporterEditorModal({
       >
         <Stack gap="md">
           {error ? (
-            <Alert color="red" icon={<IconAlertCircle size={18} stroke={1.8} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} strokeWidth={1.8} />} variant="light">
               {error}
             </Alert>
           ) : null}
@@ -2168,7 +2145,7 @@ function TransporterEditorModal({
             accept="image/*"
             clearable
             label={translate("Зображення 40x40")}
-            leftSection={<IconUpload size={16} />}
+            leftSection={<Upload size={16} />}
             value={values.ImageFile}
             onChange={(file) => setField('ImageFile', file)}
           />
@@ -2185,7 +2162,7 @@ function ModalActions({ isSaving, onClose }: { isSaving: boolean; onClose: () =>
       <Button color="gray" disabled={isSaving} type="button" variant="subtle" onClick={onClose}>
         Скасувати
       </Button>
-      <Button color={CREATE_ACTION_COLOR} leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} type="submit">
+      <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSaving} type="submit">
         Зберегти
       </Button>
     </Group>
@@ -2301,7 +2278,7 @@ function OrganizationsPanel({ section }: { section: ClientResourceSection }) {
     <Group gap="xs" wrap="nowrap">
       <RefreshControl isLoading={state.isLoading} onRefresh={state.reload} />
       <PermissionGate permissionKey={ORGANIZATION_CREATE_PERMISSION}>
-        <Button color={CREATE_ACTION_COLOR} leftSection={<IconPlus size={16} />} size="xs" onClick={openCreateOrganization}>
+        <Button color={CREATE_ACTION_COLOR} leftSection={<Plus size={16} />} size="xs" onClick={openCreateOrganization}>
           Нова організація
         </Button>
       </PermissionGate>
@@ -2318,7 +2295,7 @@ function OrganizationsPanel({ section }: { section: ClientResourceSection }) {
         searchValue={search}
       />
       {supportError ? (
-        <Alert color="yellow" icon={<IconAlertCircle size={18} stroke={1.8} />} mb="md" variant="light">
+        <Alert color="yellow" icon={<CircleAlert size={18} strokeWidth={1.8} />} mb="md" variant="light">
           {supportError}
         </Alert>
       ) : null}
@@ -2404,7 +2381,7 @@ function OrganizationsPanel({ section }: { section: ClientResourceSection }) {
                           variant="subtle"
                           onClick={() => openEditOrganization(organization)}
                         >
-                          <IconPencil size={16} />
+                          <Pencil size={16} />
                         </ActionIcon>
                       </Tooltip>
                     </PermissionGate>
@@ -2421,7 +2398,7 @@ function OrganizationsPanel({ section }: { section: ClientResourceSection }) {
                             setDeleteTarget({ type: 'organization', organization })
                           }}
                         >
-                          <IconTrash size={16} />
+                          <Trash2 size={16} />
                         </ActionIcon>
                       </Tooltip>
                     </PermissionGate>
@@ -2523,7 +2500,7 @@ function OrganizationEditorModal({
       >
         <Stack gap="md">
           {error ? (
-            <Alert color="red" icon={<IconAlertCircle size={18} stroke={1.8} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} strokeWidth={1.8} />} variant="light">
               {error}
             </Alert>
           ) : null}
@@ -2684,7 +2661,7 @@ function OrganizationEditorModal({
             <Button color="gray" disabled={isSaving} type="button" variant="subtle" onClick={onClose}>
               Скасувати
             </Button>
-            <Button color={CREATE_ACTION_COLOR} leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} type="submit">
+            <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSaving} type="submit">
               Зберегти
             </Button>
           </Group>
@@ -2784,7 +2761,7 @@ function TaxInspectionsPanel({ section }: { section: ClientResourceSection }) {
     <Group gap="xs" wrap="nowrap">
       <RefreshControl isLoading={state.isLoading} onRefresh={state.reload} />
       <PermissionGate permissionKey={TAX_INSPECTION_CREATE_PERMISSION}>
-        <Button color={CREATE_ACTION_COLOR} leftSection={<IconPlus size={16} />} size="xs" onClick={openCreateTaxInspection}>
+        <Button color={CREATE_ACTION_COLOR} leftSection={<Plus size={16} />} size="xs" onClick={openCreateTaxInspection}>
           Нова налогова інспекція
         </Button>
       </PermissionGate>
@@ -2880,7 +2857,7 @@ function TaxInspectionsPanel({ section }: { section: ClientResourceSection }) {
                           variant="subtle"
                           onClick={() => openEditTaxInspection(inspection)}
                         >
-                          <IconPencil size={16} />
+                          <Pencil size={16} />
                         </ActionIcon>
                       </Tooltip>
                     </PermissionGate>
@@ -2897,7 +2874,7 @@ function TaxInspectionsPanel({ section }: { section: ClientResourceSection }) {
                             setDeleteTarget({ type: 'taxInspection', taxInspection: inspection })
                           }}
                         >
-                          <IconTrash size={16} />
+                          <Trash2 size={16} />
                         </ActionIcon>
                       </Tooltip>
                     </PermissionGate>
@@ -3103,7 +3080,7 @@ function PricingPanel({ section }: { section: ClientResourceSection }) {
         <Button
           color={CREATE_ACTION_COLOR}
           disabled={isPricingSupportBlocked}
-          leftSection={<IconPlus size={16} />}
+          leftSection={<Plus size={16} />}
           loading={isLoadingSupport}
           size="xs"
           onClick={openCreatePricing}
@@ -3124,7 +3101,7 @@ function PricingPanel({ section }: { section: ClientResourceSection }) {
         searchValue={search}
       />
       {supportError ? (
-        <Alert color="yellow" icon={<IconAlertCircle size={18} stroke={1.8} />} mb="md" variant="light">
+        <Alert color="yellow" icon={<CircleAlert size={18} strokeWidth={1.8} />} mb="md" variant="light">
           {supportError}
         </Alert>
       ) : null}
@@ -3216,7 +3193,7 @@ function PricingResourceTable({
                     variant="subtle"
                     onClick={() => onChangePriority(pricing, true)}
                   >
-                    <IconArrowUp size={14} />
+                    <ArrowUp size={14} />
                   </ActionIcon>
                 </Tooltip>
                 <Tooltip label={translate("Опустити")}>
@@ -3228,7 +3205,7 @@ function PricingResourceTable({
                     variant="subtle"
                     onClick={() => onChangePriority(pricing, false)}
                   >
-                    <IconArrowDown size={14} />
+                    <ArrowDown size={14} />
                   </ActionIcon>
                 </Tooltip>
               </Group>
@@ -3308,7 +3285,7 @@ function PricingResourceTable({
                   variant="subtle"
                   onClick={() => onEdit(pricing)}
                 >
-                  <IconPencil size={16} />
+                  <Pencil size={16} />
                 </ActionIcon>
               </Tooltip>
             </PermissionGate>
@@ -3322,7 +3299,7 @@ function PricingResourceTable({
                   variant="subtle"
                   onClick={() => onDelete(pricing)}
                 >
-                  <IconTrash size={16} />
+                  <Trash2 size={16} />
                 </ActionIcon>
               </Tooltip>
             </PermissionGate>
@@ -3435,7 +3412,7 @@ function CurrenciesPanel({ section }: { section: ClientResourceSection }) {
     <Group gap="xs" wrap="nowrap">
       <RefreshControl isLoading={state.isLoading} onRefresh={state.reload} />
       <PermissionGate permissionKey={CURRENCY_CREATE_PERMISSION}>
-        <Button color={CREATE_ACTION_COLOR} leftSection={<IconPlus size={16} />} size="xs" onClick={openCreateCurrency}>
+        <Button color={CREATE_ACTION_COLOR} leftSection={<Plus size={16} />} size="xs" onClick={openCreateCurrency}>
           Нова валюта
         </Button>
       </PermissionGate>
@@ -3499,7 +3476,7 @@ function CurrenciesPanel({ section }: { section: ClientResourceSection }) {
                           variant="subtle"
                           onClick={() => openEditCurrency(currency)}
                         >
-                          <IconPencil size={16} />
+                          <Pencil size={16} />
                         </ActionIcon>
                       </Tooltip>
                     </PermissionGate>
@@ -3516,7 +3493,7 @@ function CurrenciesPanel({ section }: { section: ClientResourceSection }) {
                             setDeleteTarget({ type: 'currency', currency })
                           }}
                         >
-                          <IconTrash size={16} />
+                          <Trash2 size={16} />
                         </ActionIcon>
                       </Tooltip>
                     </PermissionGate>
@@ -3663,7 +3640,7 @@ function StoragesPanel({ section }: { section: ClientResourceSection }) {
     <Group gap="xs" wrap="nowrap">
       <RefreshControl isLoading={state.isLoading} onRefresh={state.reload} />
       <PermissionGate permissionKey={STORAGE_CREATE_PERMISSION}>
-        <Button color={CREATE_ACTION_COLOR} leftSection={<IconPlus size={16} />} size="xs" onClick={openCreateStorage}>
+        <Button color={CREATE_ACTION_COLOR} leftSection={<Plus size={16} />} size="xs" onClick={openCreateStorage}>
           Новий склад
         </Button>
       </PermissionGate>
@@ -3680,7 +3657,7 @@ function StoragesPanel({ section }: { section: ClientResourceSection }) {
         searchValue={search}
       />
       {organizationsState.error ? (
-        <Alert color="yellow" icon={<IconAlertCircle size={18} stroke={1.8} />} mb="md" variant="light">
+        <Alert color="yellow" icon={<CircleAlert size={18} strokeWidth={1.8} />} mb="md" variant="light">
           {organizationsState.error}
         </Alert>
       ) : null}
@@ -3763,7 +3740,7 @@ function StoragesPanel({ section }: { section: ClientResourceSection }) {
                           variant="subtle"
                           onClick={() => openEditStorage(storage)}
                         >
-                          <IconPencil size={16} />
+                          <Pencil size={16} />
                         </ActionIcon>
                       </Tooltip>
                     </PermissionGate>
@@ -3780,7 +3757,7 @@ function StoragesPanel({ section }: { section: ClientResourceSection }) {
                             setDeleteTarget({ type: 'storage', storage })
                           }}
                         >
-                          <IconTrash size={16} />
+                          <Trash2 size={16} />
                         </ActionIcon>
                       </Tooltip>
                     </PermissionGate>
@@ -3921,7 +3898,7 @@ function MeasureUnitsPanel({ section }: { section: ClientResourceSection }) {
     <Group gap="xs" wrap="nowrap">
       <RefreshControl isLoading={state.isLoading} onRefresh={state.reload} />
       <PermissionGate permissionKey={MEASURE_UNIT_CREATE_PERMISSION}>
-        <Button color={CREATE_ACTION_COLOR} leftSection={<IconPlus size={16} />} size="xs" onClick={openCreateMeasureUnit}>
+        <Button color={CREATE_ACTION_COLOR} leftSection={<Plus size={16} />} size="xs" onClick={openCreateMeasureUnit}>
           Нова одиниця
         </Button>
       </PermissionGate>
@@ -3985,7 +3962,7 @@ function MeasureUnitsPanel({ section }: { section: ClientResourceSection }) {
                           variant="subtle"
                           onClick={() => openEditMeasureUnit(measureUnit)}
                         >
-                          <IconPencil size={16} />
+                          <Pencil size={16} />
                         </ActionIcon>
                       </Tooltip>
                     </PermissionGate>
@@ -4002,7 +3979,7 @@ function MeasureUnitsPanel({ section }: { section: ClientResourceSection }) {
                             setDeleteTarget({ type: 'measureUnit', measureUnit })
                           }}
                         >
-                          <IconTrash size={16} />
+                          <Trash2 size={16} />
                         </ActionIcon>
                       </Tooltip>
                     </PermissionGate>
@@ -4133,7 +4110,7 @@ function ProductReservePanel({ section }: { section: ClientResourceSection }) {
                       className="client-resources-truncated-action"
                       color={CREATE_ACTION_COLOR}
                       disabled={!role.Id}
-                      rightSection={<IconExternalLink size={14} />}
+                      rightSection={<ExternalLink size={14} />}
                       size="xs"
                       variant="subtle"
                       onClick={() => openClientsForRole(role)}
@@ -4185,7 +4162,7 @@ function ProductReservePanel({ section }: { section: ClientResourceSection }) {
                           setEditor({ role })
                         }}
                       >
-                        <IconPencil size={16} />
+                        <Pencil size={16} />
                       </ActionIcon>
                     </Tooltip>
                   </Group>
@@ -4353,7 +4330,7 @@ function CarrierPanel({ section }: { section: ClientResourceSection }) {
       <Button
         color={CREATE_ACTION_COLOR}
         disabled={!selectedTransporterType}
-        leftSection={<IconPlus size={16} />}
+        leftSection={<Plus size={16} />}
         size="xs"
         onClick={openCreateTransporter}
       >
@@ -4522,7 +4499,7 @@ function TransporterTable({
                               variant="subtle"
                               onClick={() => onEdit(transporter)}
                             >
-                              <IconPencil size={16} />
+                              <Pencil size={16} />
                             </ActionIcon>
                           </Tooltip>
                           <Tooltip label={isProtected ? translate("Системного перевізника не можна архівувати") : translate("Архівувати")}>
@@ -4534,7 +4511,7 @@ function TransporterTable({
                               variant="subtle"
                               onClick={() => onDelete(transporter)}
                             >
-                              <IconTrash size={16} />
+                              <Trash2 size={16} />
                             </ActionIcon>
                           </Tooltip>
                         </Group>
@@ -4595,7 +4572,7 @@ function PanelToolbar({
       {onSearchChange ? (
         <TextInput
           className={`client-resources-search${searchFullWidth ? ' client-resources-search-full' : ''}`}
-          leftSection={<IconSearch size={16} stroke={1.8} />}
+          leftSection={<Search size={16} strokeWidth={1.8} />}
           onChange={(event) => onSearchChange(event.currentTarget.value)}
           placeholder={t('Пошук')}
           value={searchValue}
@@ -4617,7 +4594,7 @@ function RefreshControl({ isLoading, onRefresh }: { isLoading: boolean; onRefres
   return (
     <Tooltip label={t('Оновити')}>
       <ActionIcon aria-label={t('Оновити')} loading={isLoading} onClick={onRefresh} variant="subtle" color="gray">
-        <IconRefresh size={18} stroke={1.8} />
+        <RefreshCw size={18} strokeWidth={1.8} />
       </ActionIcon>
     </Tooltip>
   )
@@ -4649,7 +4626,7 @@ function Loadable<T>({
     return (
       <Alert
         color="red"
-        icon={<IconAlertCircle size={18} stroke={1.8} />}
+        icon={<CircleAlert size={18} strokeWidth={1.8} />}
         title={t('Не вдалося завантажити дані')}
         variant="light"
       >
@@ -4671,7 +4648,7 @@ function Loadable<T>({
 }
 
 function EmptyState({
-  icon: Icon = IconDatabaseOff,
+  icon: Icon = DatabaseX,
   message,
   title,
 }: {
@@ -4684,7 +4661,7 @@ function EmptyState({
   return (
     <Box className="client-resources-empty">
       <ThemeIcon color="gray" variant="light" radius="xl" size={44}>
-        <Icon size={22} stroke={1.8} />
+        <Icon size={22} strokeWidth={1.8} />
       </ThemeIcon>
       <div>
         <Text fw={700}>{t(title)}</Text>

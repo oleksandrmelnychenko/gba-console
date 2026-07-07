@@ -14,17 +14,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import {
-  IconAlertCircle,
-  IconCalculator,
-  IconDeviceFloppy,
-  IconListCheck,
-  IconFile,
-  IconFileUpload,
-  IconPackageImport,
-  IconSearch,
-  IconX,
-} from '@tabler/icons-react'
+import { Calculator, CircleAlert, File, FileUp, ListCheck, PackagePlus, Save, Search, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
@@ -486,7 +476,7 @@ export function SupplyUkraineOrderOverviewPage() {
               className="supply-order-overview-action-button"
               color="gray"
               disabled={isSavingDocuments}
-              leftSection={<IconFileUpload size={16} />}
+              leftSection={<FileUp size={16} />}
               variant="light"
               onClick={openDocumentsModal}
             >
@@ -498,7 +488,7 @@ export function SupplyUkraineOrderOverviewPage() {
               className="supply-order-overview-action-button"
               color="gray"
               disabled={isSavingDocuments || isSavingVat || isSavingVatItems}
-              leftSection={<IconPackageImport size={16} />}
+              leftSection={<PackagePlus size={16} />}
               variant="light"
               onClick={() => navigate(`/orders/ukraine/placement/${id}`)}
             >
@@ -508,7 +498,7 @@ export function SupplyUkraineOrderOverviewPage() {
         </Group>
 
         {error && (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}
@@ -555,7 +545,7 @@ export function SupplyUkraineOrderOverviewPage() {
                 <Button
                   className="supply-order-overview-action-button"
                   variant="default"
-                  leftSection={<IconListCheck size={16} />}
+                  leftSection={<ListCheck size={16} />}
                   disabled={!order || isSavingVat || isSavingVatItems}
                   onClick={applyOrderVatToAllItems}
                 >
@@ -564,7 +554,7 @@ export function SupplyUkraineOrderOverviewPage() {
                 <Button
                   className="supply-order-overview-action-button"
                   color={CREATE_ACTION_COLOR}
-                  leftSection={<IconCalculator size={16} />}
+                  leftSection={<Calculator size={16} />}
                   // "+ ПДВ" is the server recalc; kept usable mid-edit (#30).
                   disabled={!order || isSavingVat || isSavingVatItems}
                   loading={isSavingVat}
@@ -586,7 +576,7 @@ export function SupplyUkraineOrderOverviewPage() {
               </Stack>
               <Group gap="xs">
                 {order && (
-                  <Button className="supply-order-overview-action-button" color="gray" disabled={isSavingDocuments} leftSection={<IconFileUpload size={16} />} variant="light" onClick={openDocumentsModal}>
+                  <Button className="supply-order-overview-action-button" color="gray" disabled={isSavingDocuments} leftSection={<FileUp size={16} />} variant="light" onClick={openDocumentsModal}>
                     {t('Завантажити')}
                   </Button>
                 )}
@@ -619,7 +609,7 @@ export function SupplyUkraineOrderOverviewPage() {
                   <Button
                     className="supply-order-overview-action-button"
                     color={CREATE_ACTION_COLOR}
-                    leftSection={<IconDeviceFloppy size={16} />}
+                    leftSection={<Save size={16} />}
                     disabled={isSavingVatItems}
                     loading={isSavingVatItems}
                     size="sm"
@@ -631,7 +621,7 @@ export function SupplyUkraineOrderOverviewPage() {
                     className="supply-order-overview-action-button"
                     color="gray"
                     disabled={isSavingVatItems}
-                    leftSection={<IconX size={16} />}
+                    leftSection={<X size={16} />}
                     size="sm"
                     variant="light"
                     onClick={cancelItemVatPercentChanges}
@@ -642,7 +632,7 @@ export function SupplyUkraineOrderOverviewPage() {
               )}
               <TextInput
                 className="supply-order-overview-control supply-order-overview-search"
-                leftSection={<IconSearch size={16} />}
+                leftSection={<Search size={16} />}
                 placeholder={t('Код, назва або код УКТЗЕД')}
                 value={search}
                 onChange={(event) => setSearch(event.currentTarget.value)}
@@ -965,7 +955,7 @@ function useDocumentColumns(): DataTableColumn<SupplyOrderUkraineDocument>[] {
               target="_blank"
               variant="subtle"
             >
-              <IconFile size={16} />
+              <File size={16} />
             </ActionIcon>
           </Tooltip>
         ) : null,

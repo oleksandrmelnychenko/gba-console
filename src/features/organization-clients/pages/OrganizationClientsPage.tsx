@@ -6,8 +6,7 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
-import { IconAlertCircle, IconPencil, IconPlus, IconRefresh, IconRestore, IconSearch } from '@tabler/icons-react'
-import { ExternalLink } from 'lucide-react'
+import { CircleAlert, ExternalLink, Pencil, Plus, RefreshCw, RotateCcw, Search } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -153,7 +152,7 @@ export function OrganizationClientsPage() {
               variant="subtle"
               onClick={() => openClientActions(client)}
             >
-              <IconPencil size={18} />
+              <Pencil size={18} />
             </ActionIcon>
           </div>
         ),
@@ -227,7 +226,7 @@ export function OrganizationClientsPage() {
         <div className="app-filter-bar organization-clients-filter-bar">
           <TextInput
             className="organization-clients-search-input"
-            leftSection={<IconSearch size={16} />}
+            leftSection={<Search size={16} />}
             label={t('Пошук')}
             placeholder={t('Назва організації')}
             value={searchDraft}
@@ -244,7 +243,7 @@ export function OrganizationClientsPage() {
                 variant="light"
                 onClick={() => reload()}
               >
-                <IconRefresh size={18} />
+                <RefreshCw size={18} />
               </ActionIcon>
             </Tooltip>
             <Tooltip label={t('Скинути')}>
@@ -256,7 +255,7 @@ export function OrganizationClientsPage() {
                 variant="light"
                 onClick={resetSearch}
               >
-                <IconRestore size={17} />
+                <RotateCcw size={17} />
               </ActionIcon>
             </Tooltip>
           </div>
@@ -264,7 +263,7 @@ export function OrganizationClientsPage() {
           <div className="organization-clients-create-actions">
             <Button
               color={CREATE_ACTION_COLOR}
-              leftSection={<IconPlus size={16} />}
+              leftSection={<Plus size={16} />}
               size="sm"
               type="button"
               onClick={openCreateClient}
@@ -278,7 +277,7 @@ export function OrganizationClientsPage() {
           <Alert
             className="console-table-alert"
             color="red"
-            icon={<IconAlertCircle size={18} />}
+            icon={<CircleAlert size={18} />}
             variant="light"
           >
             {error}

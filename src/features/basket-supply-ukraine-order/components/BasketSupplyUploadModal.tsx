@@ -1,6 +1,6 @@
 import { Alert, Button, Checkbox, FileInput, Group, NumberInput, SimpleGrid, Stack, Text } from '@mantine/core'
 import { AppModal } from "../../../shared/ui/AppModal"
-import { IconAlertCircle, IconFileSpreadsheet, IconUpload } from '@tabler/icons-react'
+import { CircleAlert, FileSpreadsheet, Upload } from 'lucide-react'
 import { useState } from 'react'
 import type {
   BasketSupplyFileUploadMode,
@@ -78,7 +78,7 @@ export function BasketSupplyUploadModal({
     >
       <Stack gap="md">
         {(validationError || submitError) && (
-          <Alert color="red" icon={<IconAlertCircle size={16} />} variant="light">
+          <Alert color="red" icon={<CircleAlert size={16} />} variant="light">
             {validationError || submitError}
           </Alert>
         )}
@@ -88,7 +88,7 @@ export function BasketSupplyUploadModal({
           accept=".xls,.xlsx,.csv"
           disabled={isSubmitting}
           label={t('Завантажити файли')}
-          leftSection={<IconFileSpreadsheet size={16} />}
+          leftSection={<FileSpreadsheet size={16} />}
           placeholder={t('Оберіть файл')}
           value={form.file}
           onChange={(file) => setForm((current) => ({ ...current, file }))}
@@ -249,7 +249,7 @@ export function BasketSupplyUploadModal({
           <Button disabled={isSubmitting} variant="subtle" onClick={closeModal}>
             {t('Скасувати')}
           </Button>
-          <Button leftSection={<IconUpload size={16} />} loading={isSubmitting} onClick={submitForm}>
+          <Button leftSection={<Upload size={16} />} loading={isSubmitting} onClick={submitForm}>
             {t('Завантажити')}
           </Button>
         </Group>

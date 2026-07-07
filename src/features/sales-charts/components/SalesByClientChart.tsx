@@ -1,6 +1,6 @@
 import { LineChart } from '@mantine/charts'
 import { Alert, Autocomplete, Card, Select, Stack, Text, TextInput } from '@mantine/core'
-import { IconAlertCircle } from '@tabler/icons-react'
+import { CircleAlert } from 'lucide-react'
 import { useEffect, useMemo } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -166,7 +166,7 @@ export function SalesByClientChart() {
       <Stack className="sales-chart-content" gap="md" p="md">
 
         {error && (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}

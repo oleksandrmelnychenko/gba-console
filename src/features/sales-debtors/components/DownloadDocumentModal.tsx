@@ -1,5 +1,5 @@
 import { Anchor, Stack, Text } from '@mantine/core'
-import { IconFileTypePdf } from '@tabler/icons-react'
+import { FileText } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
@@ -31,7 +31,7 @@ export function DownloadDocumentModal({ document, onClose, opened }: DownloadDoc
             {document.pdfUrl && (
               <Anchor href={document.pdfUrl} target="_blank" rel="noreferrer" className="document-link">
                 <span className="document-link-badge document-link-badge-pdf">
-                  <IconFileTypePdf size={22} stroke={1.8} />
+                  <FileText size={22} strokeWidth={1.8} />
                 </span>
                 <span>{t('Pdf')}</span>
               </Anchor>

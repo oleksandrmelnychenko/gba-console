@@ -1,6 +1,6 @@
 import { useEffect, useReducer } from 'react'
 import { ActionIcon, Alert, Card, Stack, Text, Tooltip } from '@mantine/core'
-import { IconAlertCircle, IconRefresh } from '@tabler/icons-react'
+import { CircleAlert, RefreshCw } from 'lucide-react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useNavigate } from 'react-router-dom'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -82,7 +82,7 @@ export function ShoppingCartReservePage() {
                 variant="light"
                 onClick={() => reload()}
               >
-                <IconRefresh size={18} />
+                <RefreshCw size={18} />
               </ActionIcon>
             </Tooltip>
           </div>
@@ -90,7 +90,7 @@ export function ShoppingCartReservePage() {
 
         <div className="shopping-cart-reserve-content">
           {error && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
             </Alert>
           )}

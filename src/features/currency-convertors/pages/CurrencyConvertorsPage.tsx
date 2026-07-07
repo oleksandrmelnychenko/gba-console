@@ -1,6 +1,6 @@
 import { ActionIcon, Alert, Box, Button, Card, Group, Stack, Text, Tooltip } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconAlertCircle, IconPencil, IconPlus, IconRefresh } from '@tabler/icons-react'
+import { CircleAlert, Pencil, Plus, RefreshCw } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -359,7 +359,7 @@ export function CurrencyConvertorsPage() {
                   variant="light"
                   onClick={() => model.reload()}
                 >
-                  <IconRefresh size={18} />
+                  <RefreshCw size={18} />
                 </ActionIcon>
               </Tooltip>
               <DataTableDensityToggle density={model.density} onToggle={model.toggleDensity} size={34} />
@@ -367,7 +367,7 @@ export function CurrencyConvertorsPage() {
             {model.canCreate && (
               <Button
                 color={CREATE_ACTION_COLOR}
-                leftSection={<IconPlus size={16} />}
+                leftSection={<Plus size={16} />}
                 size="sm"
                 styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
                 onClick={model.goToCreate}
@@ -379,7 +379,7 @@ export function CurrencyConvertorsPage() {
         </div>
 
         {model.error && (
-          <Alert className="currency-convertors-alert" color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert className="currency-convertors-alert" color="red" icon={<CircleAlert size={18} />} variant="light">
             {model.error}
           </Alert>
         )}
@@ -514,7 +514,7 @@ function useCurrencyTraderColumns({
                 variant="subtle"
                 onClick={() => onEdit(trader)}
               >
-                <IconPencil size={18} />
+                <Pencil size={18} />
               </ActionIcon>
             </Tooltip>
           </Box>

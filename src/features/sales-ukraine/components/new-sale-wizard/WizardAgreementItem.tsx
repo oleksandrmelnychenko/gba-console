@@ -1,5 +1,5 @@
 import { Box, Group, Text, Tooltip } from '@mantine/core'
-import { IconHelpCircle } from '@tabler/icons-react'
+import { CircleHelp } from 'lucide-react'
 import type { ClientAgreement } from '../../../clients/types'
 import { getWizardClientDebtDays, getWizardClientDebtTotal } from './wizardClientStepModel'
 
@@ -85,7 +85,7 @@ export function WizardAgreementItem({
         {clientAgreement.OriginalClientName && (
           <Tooltip label={clientAgreement.OriginalClientName} multiline maw={320} position="top">
             <Group className="new-sale-hero-agreement__origin" gap={4} wrap="nowrap">
-              <IconHelpCircle size={12} />
+              <CircleHelp size={12} />
               <Text truncate>{clientAgreement.OriginalClientName}</Text>
             </Group>
           </Tooltip>

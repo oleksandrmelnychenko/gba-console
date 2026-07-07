@@ -1,11 +1,5 @@
 import { ActionIcon, Box, Button, Group, Select, Stack, Text, TextInput, Tooltip } from '@mantine/core'
-import {
-  IconArrowsLeftRight,
-  IconFileInvoice,
-  IconHistory,
-  IconPackage,
-  IconPrinter,
-} from '@tabler/icons-react'
+import { ArrowLeftRight, History, Package, Printer, ReceiptText } from 'lucide-react'
 import { useMemo } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { DataTable } from '../../../../shared/ui/data-table/DataTable'
@@ -394,7 +388,7 @@ function WizardSaleActionsCell({
               onEdit(sale)
             }}
           >
-            <IconArrowsLeftRight size={15} />
+            <ArrowLeftRight size={15} />
           </ActionIcon>
         </Tooltip>
       )}
@@ -411,7 +405,7 @@ function WizardSaleActionsCell({
               onPrint(sale)
             }}
           >
-            <IconPrinter size={15} />
+            <Printer size={15} />
           </ActionIcon>
         </Tooltip>
       )}
@@ -428,7 +422,7 @@ function WizardSaleActionsCell({
               onAudit(sale)
             }}
           >
-            <IconHistory size={15} />
+            <History size={15} />
           </ActionIcon>
         </Tooltip>
       )}
@@ -457,7 +451,7 @@ function WizardSaleActionsCell({
                 }}
               />
             ) : (
-              <IconFileInvoice size={15} />
+              <ReceiptText size={15} />
             )}
           </ActionIcon>
         </Tooltip>
@@ -612,7 +606,7 @@ function WizardSaleItemProductCell({
   return (
     <Group className="new-sale-item-product-cell" gap={9} wrap="nowrap">
       <Box className="new-sale-item-product-icon">
-        <IconPackage size={16} />
+        <Package size={16} />
       </Box>
       <Text className="new-sale-item-product-name" title={productName} truncate>
         {productName}

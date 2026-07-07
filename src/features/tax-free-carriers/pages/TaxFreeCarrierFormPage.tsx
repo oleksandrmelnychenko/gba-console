@@ -11,15 +11,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import {
-  IconAlertCircle,
-  IconCar,
-  IconDeviceFloppy,
-  IconEdit,
-  IconId,
-  IconPlus,
-  IconTrash,
-} from '@tabler/icons-react'
+import { Car, CircleAlert, IdCard, Plus, Save, SquarePen, Trash2 } from 'lucide-react'
 import { type FormEvent, useEffect } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
@@ -197,7 +189,7 @@ export function TaxFreeCarrierFormPage() {
           color={CREATE_ACTION_COLOR}
           disabled={isLoading || !canSave}
           form="tax-free-carrier-form"
-          leftSection={<IconDeviceFloppy size={16} />}
+          leftSection={<Save size={16} />}
           loading={isSaving}
           type="submit"
         >
@@ -208,13 +200,13 @@ export function TaxFreeCarrierFormPage() {
       <form id="tax-free-carrier-form" onSubmit={handleSubmit}>
         <Stack gap="md">
           {error && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
             </Alert>
           )}
 
           {!canSave && (
-            <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
               {t('Немає прав для збереження перевізника')}
             </Alert>
           )}
@@ -296,14 +288,14 @@ function PassportsSection({
     <Stack gap="sm">
       <Group justify="space-between">
         <Group gap="xs">
-          <IconId size={18} />
+          <IdCard size={18} />
           <Text fw={700}>{t('Новий Паспорт')}</Text>
         </Group>
         {canAdd && (
           <Button
             color="gray"
             disabled={disabled}
-            leftSection={<IconPlus size={16} />}
+            leftSection={<Plus size={16} />}
             size="xs"
             type="button"
             variant="light"
@@ -340,7 +332,7 @@ function PassportsSection({
                       variant="subtle"
                       onClick={() => onEdit(index)}
                     >
-                      <IconEdit size={18} />
+                      <SquarePen size={18} />
                     </ActionIcon>
                   </Tooltip>
                   <Tooltip label={t('Видалити')}>
@@ -351,7 +343,7 @@ function PassportsSection({
                       variant="subtle"
                       onClick={() => onRemove(index)}
                     >
-                      <IconTrash size={18} />
+                      <Trash2 size={18} />
                     </ActionIcon>
                   </Tooltip>
                 </Group>
@@ -381,13 +373,13 @@ function CarsSection({
     <Stack gap="sm">
       <Group justify="space-between">
         <Group gap="xs">
-          <IconCar size={18} />
+          <Car size={18} />
           <Text fw={700}>{t('Машина перевізника')}</Text>
         </Group>
         <Button
           color="gray"
           disabled={disabled}
-          leftSection={<IconPlus size={16} />}
+          leftSection={<Plus size={16} />}
           size="xs"
           type="button"
           variant="light"
@@ -420,7 +412,7 @@ function CarsSection({
                     variant="subtle"
                     onClick={() => onRemove(index)}
                   >
-                    <IconTrash size={18} />
+                    <Trash2 size={18} />
                   </ActionIcon>
                 </Tooltip>
               </Group>

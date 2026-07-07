@@ -1,6 +1,6 @@
 import { Alert, NumberInput, Table, Tabs, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconAlertCircle } from '@tabler/icons-react'
+import { CircleAlert } from 'lucide-react'
 import { useEffect } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -268,7 +268,7 @@ export function ActReconciliationActionsModal({
   return (
     <AppModal centered opened={opened} size="lg" title={getModalTitle(target, t)} onClose={handleClose}>
       {(storagesError || submitError) && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} mb="sm" variant="light">
+        <Alert color="red" icon={<CircleAlert size={18} />} mb="sm" variant="light">
           {submitError || storagesError}
         </Alert>
       )}

@@ -1,5 +1,5 @@
 import { ActionIcon, Button, Checkbox, Group, NumberInput, Select, Stack, Table, Text, TextInput } from '@mantine/core'
-import { IconTrash } from '@tabler/icons-react'
+import { Trash2 } from 'lucide-react'
 import { useMemo } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -276,7 +276,7 @@ function ProtocolIncomePlacementDrawerContent({
                         removePlacement(placement)
                       }}
                     >
-                      <IconTrash size={16} />
+                      <Trash2 size={16} />
                     </ActionIcon>
                   )}
                 </Table.Td>

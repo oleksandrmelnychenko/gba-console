@@ -14,18 +14,7 @@ import {
   Title,
   Tooltip,
 } from '@mantine/core'
-import {
-  IconAlertCircle,
-  IconArrowsExchange,
-  IconDownload,
-  IconExternalLink,
-  IconEye,
-  IconFileTypePdf,
-  IconHistory,
-  IconRestore,
-  IconSearch,
-  IconStack2,
-} from '@tabler/icons-react'
+import { ArrowLeftRight, CircleAlert, Download, ExternalLink, Eye, FileText, History, Layers, RotateCcw, Search } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { Link } from 'react-router-dom'
@@ -668,7 +657,7 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
             />
             <TextInput
               size="sm"
-              leftSection={<IconSearch size={16} />}
+              leftSection={<Search size={16} />}
               label={t('Пошук')}
               placeholder={t('Номер, постачальник або коментар')}
               value={searchDraft}
@@ -678,7 +667,7 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
             <div className="app-filter-actions">
               <Tooltip label={t('Скинути')}>
                 <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
-                  <IconRestore size={17} />
+                  <RotateCcw size={17} />
                 </ActionIcon>
               </Tooltip>
               <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
@@ -709,7 +698,7 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
           <Alert
             className="product-income-documents-page__alert"
             color={filterError ? 'yellow' : 'red'}
-            icon={<IconAlertCircle size={18} />}
+            icon={<CircleAlert size={18} />}
             variant="light"
           >
             {filterError || error}
@@ -804,7 +793,7 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
                   className="document-link"
                 >
                   <span className="document-link-badge document-link-badge-pdf">
-                    <IconFileTypePdf size={22} stroke={1.8} />
+                    <FileText size={22} strokeWidth={1.8} />
                   </span>
                   <span>{t('PDF документ')}</span>
                 </Anchor>
@@ -848,20 +837,20 @@ function ProductIncomeOptionsModal({
             <Button
               component={Link}
               justify="flex-start"
-              leftSection={<IconExternalLink size={18} />}
+              leftSection={<ExternalLink size={18} />}
               to={primarySourceLink}
               variant="outline"
             >
               {t('Відкрити джерело')}
             </Button>
           )}
-          <Button justify="flex-start" leftSection={<IconEye size={18} />} variant="outline" onClick={() => onOverview(document)}>
+          <Button justify="flex-start" leftSection={<Eye size={18} />} variant="outline" onClick={() => onOverview(document)}>
             {t('Деталі документа')}
           </Button>
           <Button
             disabled={!document.NetUid}
             justify="flex-start"
-            leftSection={<IconStack2 size={18} />}
+            leftSection={<Layers size={18} />}
             variant="outline"
             onClick={() => onRemainings(document)}
           >
@@ -943,7 +932,7 @@ function ProductIncomeDocumentDrawer({
               {sourceLink && (
                 <Button
                   component={Link}
-                  leftSection={<IconExternalLink size={16} />}
+                  leftSection={<ExternalLink size={16} />}
                   to={sourceLink}
                   variant="outline"
                 >
@@ -952,7 +941,7 @@ function ProductIncomeDocumentDrawer({
               )}
               <Button
                 disabled={!document.NetUid}
-                leftSection={<IconDownload size={16} />}
+                leftSection={<Download size={16} />}
                 loading={exportingNetId === document.NetUid}
                 variant="outline"
                 onClick={() => onExport(document)}
@@ -986,7 +975,7 @@ function ProductIncomeDocumentDrawer({
           </SimpleGrid>
 
           {detailMode === 'view' && deferredOverviewNote && (
-            <Alert color={CREATE_ACTION_COLOR} icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color={CREATE_ACTION_COLOR} icon={<CircleAlert size={18} />} variant="light">
               {deferredOverviewNote}
             </Alert>
           )}
@@ -1012,7 +1001,7 @@ function ProductIncomeDocumentDrawer({
             <Stack gap="sm">
               <Title order={4}>{t('Позиції документа')}</Title>
               {documentInfoError && (
-                <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+                <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
                   {documentInfoError}
                 </Alert>
               )}
@@ -1036,12 +1025,12 @@ function ProductIncomeDocumentDrawer({
             <Stack gap="sm">
               <Title order={4}>{t('Залишки по партіям')}</Title>
               {documentInfoError && (
-                <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+                <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
                   {documentInfoError}
                 </Alert>
               )}
               {remainingsError && (
-                <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+                <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
                   {remainingsError}
                 </Alert>
               )}
@@ -1107,7 +1096,7 @@ function CapitalizationOverview({
           </Text>
         </Group>
         {error && (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}
@@ -1654,7 +1643,7 @@ function useProductIncomeDocumentColumns({
                   onOpen(row.document)
                 }}
               >
-                <IconExternalLink size={16} />
+                <ExternalLink size={16} />
               </ActionIcon>
             </Tooltip>
             <Tooltip label={t('Експорт')}>
@@ -1670,7 +1659,7 @@ function useProductIncomeDocumentColumns({
                   onExport(row.document)
                 }}
               >
-                <IconDownload size={16} />
+                <Download size={16} />
               </ActionIcon>
             </Tooltip>
           </Group>
@@ -1951,7 +1940,7 @@ function ProductHistoryActionButtons({
             onOpenStorageLocationHistory(product)
           }}
         >
-          <IconHistory size={16} />
+          <History size={16} />
         </ActionIcon>
       </Tooltip>
       {canOpenProductMovement ? (
@@ -1967,7 +1956,7 @@ function ProductHistoryActionButtons({
               onOpenMovementHistory(product)
             }}
           >
-            <IconArrowsExchange size={16} />
+            <ArrowLeftRight size={16} />
           </ActionIcon>
         </Tooltip>
       ) : null}

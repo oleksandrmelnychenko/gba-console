@@ -1,5 +1,5 @@
 import { ActionIcon, Group, Tooltip } from '@mantine/core'
-import { IconBasket } from '@tabler/icons-react'
+import { ShoppingBasket } from 'lucide-react'
 import type { ComponentType } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
@@ -9,7 +9,7 @@ import { ProductWriteOffRulesControl } from './ProductWriteOffRulesControl'
 import { SyncControl } from './SyncControl'
 
 type HeaderActionButtonProps = {
-  icon: ComponentType<{ size?: number; stroke?: number }>
+  icon: ComponentType<{ size?: number; strokeWidth?: number }>
   label: string
   onClick: () => void
 }
@@ -26,7 +26,7 @@ export function HeaderActionBar() {
     <Group gap={4} wrap="nowrap" className="console-header-tool-actions">
       {canOpenSync && <SyncControl />}
       <ProductWriteOffRulesControl />
-      <HeaderActionButton icon={IconBasket} label={t('Кошик')} onClick={() => navigate('/basket-supply-ukraine-order')} />
+      <HeaderActionButton icon={ShoppingBasket} label={t('Кошик')} onClick={() => navigate('/basket-supply-ukraine-order')} />
     </Group>
   )
 }
@@ -42,7 +42,7 @@ function HeaderActionButton({ icon: Icon, label, onClick }: HeaderActionButtonPr
         size="lg"
         onClick={onClick}
       >
-        <Icon size={24} stroke={1.7} />
+        <Icon size={24} strokeWidth={1.7} />
       </ActionIcon>
     </Tooltip>
   )

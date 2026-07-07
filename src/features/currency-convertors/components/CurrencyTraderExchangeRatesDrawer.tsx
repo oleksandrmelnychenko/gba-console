@@ -11,7 +11,7 @@ import {
   Text,
   TextInput,
 } from '@mantine/core'
-import { IconAlertCircle, IconDeviceFloppy, IconPencil, IconPlus, IconTrash, IconX } from '@tabler/icons-react'
+import { CircleAlert, Pencil, Plus, Save, Trash2, X } from 'lucide-react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { CURRENCY_ORDER } from '../types'
@@ -105,14 +105,14 @@ export function CurrencyTraderExchangeRatesDrawer({
             onChange={(event) => onChangeTo(event.currentTarget.value)}
           />
           {canEdit && showAddButton && !isAdding && (
-            <Button color={CREATE_ACTION_COLOR} leftSection={<IconPlus size={16} />} onClick={onStartAdd}>
+            <Button color={CREATE_ACTION_COLOR} leftSection={<Plus size={16} />} onClick={onStartAdd}>
               {t('Добавити курс валют')}
             </Button>
           )}
         </Group>
 
         {error && (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}
@@ -139,7 +139,7 @@ export function CurrencyTraderExchangeRatesDrawer({
                 <Button color="gray" disabled={isSaving} variant="light" onClick={onCancelAdd}>
                   {t('Скасувати')}
                 </Button>
-                <Button color={CREATE_ACTION_COLOR} leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} onClick={onSaveNewRate}>
+                <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSaving} onClick={onSaveNewRate}>
                   {t('Зберегти')}
                 </Button>
               </Group>
@@ -197,7 +197,7 @@ export function CurrencyTraderExchangeRatesDrawer({
                                 variant="light"
                                 onClick={onSaveEdit}
                               >
-                                <IconDeviceFloppy size={16} />
+                                <Save size={16} />
                               </ActionIcon>
                               <ActionIcon
                                 aria-label={t('Скасувати')}
@@ -206,7 +206,7 @@ export function CurrencyTraderExchangeRatesDrawer({
                                 variant="light"
                                 onClick={onCancelEdit}
                               >
-                                <IconX size={16} />
+                                <X size={16} />
                               </ActionIcon>
                             </>
                           ) : (
@@ -218,7 +218,7 @@ export function CurrencyTraderExchangeRatesDrawer({
                                 variant="subtle"
                                 onClick={() => onStartEdit(rate)}
                               >
-                                <IconPencil size={16} />
+                                <Pencil size={16} />
                               </ActionIcon>
                               <ActionIcon
                                 aria-label={t('Видалити')}
@@ -227,7 +227,7 @@ export function CurrencyTraderExchangeRatesDrawer({
                                 variant="subtle"
                                 onClick={() => onDelete(rate)}
                               >
-                                <IconTrash size={16} />
+                                <Trash2 size={16} />
                               </ActionIcon>
                             </>
                           )}

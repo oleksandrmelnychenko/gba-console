@@ -12,7 +12,7 @@ import {
 } from '@mantine/core'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { notifications } from '@mantine/notifications'
-import { IconArrowsExchange2 } from '@tabler/icons-react'
+import { ArrowRightLeft } from 'lucide-react'
 import { useCallback, useEffect, useReducer } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { markDataSyncStarted, useDataSyncProgress } from '../../../shared/realtime/dataSyncProgressStore'
@@ -348,7 +348,7 @@ export function SyncControl() {
           size="lg"
           onClick={() => dispatch({ type: 'opened' })}
         >
-          <IconArrowsExchange2 size={24} stroke={1.7} />
+          <ArrowRightLeft size={24} strokeWidth={1.7} />
         </ActionIcon>
       </Tooltip>
 

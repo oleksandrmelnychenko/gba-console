@@ -10,7 +10,7 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
-import { IconAlertCircle, IconRefresh, IconRestore } from '@tabler/icons-react'
+import { CircleAlert, RefreshCw, RotateCcw } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { formatDateInputForQuery, formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -316,7 +316,7 @@ function BalancesTableCard({ model }: { model: ReturnType<typeof useBalancesPage
           <div className="app-filter-actions balances-filter-actions">
             <Tooltip label={t('Скинути')}>
               <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
-                <IconRestore size={17} />
+                <RotateCcw size={17} />
               </ActionIcon>
             </Tooltip>
             <Tooltip label={t('Оновити')}>
@@ -328,7 +328,7 @@ function BalancesTableCard({ model }: { model: ReturnType<typeof useBalancesPage
                 variant="light"
                 onClick={() => reload()}
               >
-                <IconRefresh size={17} />
+                <RefreshCw size={17} />
               </ActionIcon>
             </Tooltip>
             <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
@@ -349,7 +349,7 @@ function BalancesTableCard({ model }: { model: ReturnType<typeof useBalancesPage
 
       <Stack className="balances-card__body" gap="md">
         {(error || filterError) && (
-          <Alert color={filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color={filterError ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">
             {filterError || error}
           </Alert>
         )}

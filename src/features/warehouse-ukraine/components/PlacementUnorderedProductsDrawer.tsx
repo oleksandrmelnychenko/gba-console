@@ -14,7 +14,7 @@ import {
   UnstyledButton,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconPlus, IconSearch, IconTrash } from '@tabler/icons-react'
+import { Plus, Search, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
@@ -140,7 +140,7 @@ function PlacementUnorderedProductsContent({
                         variant="subtle"
                         onClick={() => deleteItem(item)}
                       >
-                        <IconTrash size={16} />
+                        <Trash2 size={16} />
                       </ActionIcon>
                     </Tooltip>
                   </Table.Td>
@@ -155,7 +155,7 @@ function PlacementUnorderedProductsContent({
         <AddUnorderedProductForm isSaving={isSaving} onCancel={() => setAdding(false)} onCreate={addItem} />
       ) : (
         <Group justify="flex-end">
-          <Button leftSection={<IconPlus size={16} />} variant="outline" onClick={() => setAdding(true)}>
+          <Button leftSection={<Plus size={16} />} variant="outline" onClick={() => setAdding(true)}>
             {t('Додати товар')}
           </Button>
         </Group>
@@ -234,7 +234,7 @@ function AddUnorderedProductForm({
       <TextInput
         autoFocus
         label={t('Пошук по товару')}
-        leftSection={<IconSearch size={16} />}
+        leftSection={<Search size={16} />}
         placeholder={t('Код Виробника')}
         rightSection={isSearching ? <Loader size="xs" /> : null}
         value={query}

@@ -11,7 +11,7 @@ import {
   Title,
   UnstyledButton,
 } from '@mantine/core'
-import { IconAlertCircle, IconSearch, IconUser } from '@tabler/icons-react'
+import { CircleAlert, Search, User } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { getPurchaseManagers, getSaleManagers } from '../../api/clientLookupsApi'
@@ -154,7 +154,7 @@ export function ManagerPicker({ client, role, onChange, disabled = false }: Mana
         <TextInput
           className="manager-pick-search"
           disabled={disabled}
-          leftSection={<IconSearch size={16} />}
+          leftSection={<Search size={16} />}
           placeholder={t('Пошук')}
           size="sm"
           value={search}
@@ -164,7 +164,7 @@ export function ManagerPicker({ client, role, onChange, disabled = false }: Mana
       </Stack>
 
       {error && (
-        <Alert color="red" icon={<IconAlertCircle size={16} />} variant="light">
+        <Alert color="red" icon={<CircleAlert size={16} />} variant="light">
           {error}
         </Alert>
       )}
@@ -202,7 +202,7 @@ export function ManagerPicker({ client, role, onChange, disabled = false }: Mana
                         size={46}
                         variant="light"
                       >
-                        <IconUser size={22} stroke={1.6} />
+                        <User size={22} strokeWidth={1.6} />
                       </Avatar>
 
                       <Stack flex={1} gap={4} miw={0}>

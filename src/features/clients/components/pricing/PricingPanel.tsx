@@ -11,7 +11,7 @@ import {
   Stack,
   Text,
 } from '@mantine/core'
-import { IconAlertCircle, IconUpload, IconX } from '@tabler/icons-react'
+import { CircleAlert, Upload, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -527,7 +527,7 @@ export function PricingPanel({
   return (
     <Stack gap="lg">
       {lookupsError && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {lookupsError}
         </Alert>
       )}
@@ -574,7 +574,7 @@ function ContractDocumentsSection({
         <Text className="client-section-title" fw={600}>{t('Документи договору')}</Text>
 
         {error && (
-          <Alert color="red" icon={<IconAlertCircle size={16} />} variant="light">
+          <Alert color="red" icon={<CircleAlert size={16} />} variant="light">
             {error}
           </Alert>
         )}
@@ -584,7 +584,7 @@ function ContractDocumentsSection({
             <Button
               color="gray"
               disabled={disabled}
-              leftSection={<IconUpload size={16} />}
+              leftSection={<Upload size={16} />}
               variant="default"
               {...buttonProps}
             >
@@ -627,7 +627,7 @@ function ContractDocumentsSection({
                   variant="subtle"
                   onClick={() => onRemove(document)}
                 >
-                  <IconX size={16} />
+                  <X size={16} />
                 </ActionIcon>
               </Group>
             ))}

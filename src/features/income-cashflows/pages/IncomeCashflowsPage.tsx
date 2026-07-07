@@ -17,7 +17,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { IconAlertCircle, IconChevronDown, IconEye, IconPlus, IconRefresh, IconRestore, IconSearch, IconUserShare, IconX } from '@tabler/icons-react'
+import { ChevronDown, CircleAlert, Eye, Plus, RefreshCw, RotateCcw, Search, Share2, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -528,7 +528,7 @@ function IncomeCashflowsContent({ model }: { model: IncomeCashflowsPageModel }) 
             <TextInput label={t('Від')} type="date" value={fromDate} onChange={(event) => onSetFromDate(event.currentTarget.value)} />
             <TextInput label={t('До')} type="date" value={toDate} onChange={(event) => onSetToDate(event.currentTarget.value)} />
             <TextInput
-              leftSection={<IconSearch size={16} />}
+              leftSection={<Search size={16} />}
               label={t('Пошук')}
               placeholder={t('Номер, платник, рахунок або коментар')}
               value={searchValue}
@@ -569,7 +569,7 @@ function IncomeCashflowsContent({ model }: { model: IncomeCashflowsPageModel }) 
             <div className="app-filter-actions income-cashflows-filter-actions">
               <Tooltip label={t('Скинути')}>
                 <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={onResetFilters}>
-                  <IconRestore size={17} />
+                  <RotateCcw size={17} />
                 </ActionIcon>
               </Tooltip>
               <Tooltip label={t('Оновити')}>
@@ -584,7 +584,7 @@ function IncomeCashflowsContent({ model }: { model: IncomeCashflowsPageModel }) 
                     void onLoadIncomeOrders(0, false)
                   }}
                 >
-                  <IconRefresh size={18} />
+                  <RefreshCw size={18} />
                 </ActionIcon>
               </Tooltip>
               <DataTableDensityToggle density={density} onToggle={onToggleDensity} size={34} />
@@ -592,7 +592,7 @@ function IncomeCashflowsContent({ model }: { model: IncomeCashflowsPageModel }) 
             <div className="income-cashflows-create-actions">
               <Menu position="bottom-end" shadow="md" width={300} withinPortal>
                 <Menu.Target>
-                  <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} rightSection={<IconChevronDown size={14} />} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}>
+                  <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<Plus size={16} />} rightSection={<ChevronDown size={14} />} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}>
                     {t('Новий')}
                   </Button>
                 </Menu.Target>
@@ -641,13 +641,13 @@ function IncomeCashflowsContent({ model }: { model: IncomeCashflowsPageModel }) 
         </div>
 
         {error && (
-          <Alert m="md" color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert m="md" color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}
 
         {filterError && (
-          <Alert m="md" color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert m="md" color="yellow" icon={<CircleAlert size={18} />} variant="light">
             {filterError}
           </Alert>
         )}
@@ -861,7 +861,7 @@ function useIncomeCashflowColumns({
                   onReassign(row)
                 }}
               >
-                <IconUserShare size={16} />
+                <Share2 size={16} />
               </ActionIcon>
             </Tooltip>
           ) : null,
@@ -892,7 +892,7 @@ function useIncomeCashflowColumns({
                 onCancel(row)
               }}
             >
-              <IconX size={16} />
+              <X size={16} />
             </ActionIcon>
           </Tooltip>
           )
@@ -920,7 +920,7 @@ function useIncomeCashflowColumns({
                 onOpen(row)
               }}
             >
-              <IconEye size={16} />
+              <Eye size={16} />
             </ActionIcon>
           </Tooltip>
         ),
@@ -953,7 +953,7 @@ function IncomeCashflowDetailDrawer({
             <Group justify="flex-end">
               <Button
                 color={CREATE_ACTION_COLOR}
-                leftSection={<IconUserShare size={16} />}
+                leftSection={<Share2 size={16} />}
                 variant="outline"
                 onClick={() => onReassign(row)}
               >
@@ -1157,7 +1157,7 @@ function IncomeDocumentStructure({
       )}
 
       {structureCalculation.error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {structureCalculation.error}
         </Alert>
       )}
@@ -1272,7 +1272,7 @@ function CancelIncomeCashflowModal({
           <Button disabled={isSaving} variant="default" onClick={onClose}>
             {t('Ні')}
           </Button>
-          <Button color="red" leftSection={<IconX size={16} />} loading={isSaving} onClick={onCancel}>
+          <Button color="red" leftSection={<X size={16} />} loading={isSaving} onClick={onCancel}>
             {t('Скасувати')}
           </Button>
         </Group>
@@ -1464,7 +1464,7 @@ function ReassignIncomeClientModal({
         />
 
         {error && (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}
@@ -1475,7 +1475,7 @@ function ReassignIncomeClientModal({
           </Button>
           <Button
             disabled={!selectedClientValue || !selectedAgreementValue}
-            leftSection={<IconUserShare size={16} />}
+            leftSection={<Share2 size={16} />}
             loading={isSaving}
             onClick={() => void handleSubmit()}
           >

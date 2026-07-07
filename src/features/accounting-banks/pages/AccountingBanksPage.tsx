@@ -13,16 +13,7 @@ import {
 } from '@mantine/core'
 import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
-import {
-  IconAlertCircle,
-  IconDeviceFloppy,
-  IconPencil,
-  IconPlus,
-  IconRefresh,
-  IconRestore,
-  IconSearch,
-  IconTrash,
-} from '@tabler/icons-react'
+import { CircleAlert, Pencil, Plus, RefreshCw, RotateCcw, Save, Search, Trash2 } from 'lucide-react'
 import { type FormEvent, useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { PermissionGate } from '../../auth/components/PermissionGate'
 import { translate } from '../../../shared/i18n/translate'
@@ -208,7 +199,7 @@ export function AccountingBanksPage() {
           <Group align="end" gap="sm" wrap="nowrap" className="accounting-banks-filter-row">
             <TextInput
               size="sm"
-              leftSection={<IconSearch size={16} />}
+              leftSection={<Search size={16} />}
               label={t('Пошук')}
               placeholder={t('Назва, МФО, ЄДРПОУ, місто, телефон або адреса')}
               value={searchDraft}
@@ -218,7 +209,7 @@ export function AccountingBanksPage() {
             <div className="app-filter-actions">
               <Tooltip label={t('Скинути')}>
                 <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetSearch}>
-                  <IconRestore size={17} />
+                  <RotateCcw size={17} />
                 </ActionIcon>
               </Tooltip>
               <Tooltip label={t('Оновити')}>
@@ -230,7 +221,7 @@ export function AccountingBanksPage() {
                   variant="light"
                   onClick={reload}
                 >
-                  <IconRefresh size={17} />
+                  <RefreshCw size={17} />
                 </ActionIcon>
               </Tooltip>
               <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
@@ -238,7 +229,7 @@ export function AccountingBanksPage() {
             <PermissionGate permissionKey={ACCOUNTING_BANK_CREATE_PERMISSION}>
               <Button
                 color={CREATE_ACTION_COLOR}
-                leftSection={<IconPlus size={16} />}
+                leftSection={<Plus size={16} />}
                 size="sm"
                 styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
                 type="button"
@@ -252,7 +243,7 @@ export function AccountingBanksPage() {
 
         <Stack className="accounting-banks-card__body" gap="md">
           {error && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
             </Alert>
           )}
@@ -327,7 +318,7 @@ function BankEditorModal({
       <form onSubmit={onSubmit}>
         <Stack gap="md">
           {error && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
             </Alert>
           )}
@@ -387,7 +378,7 @@ function BankEditorModal({
                   <Button
                     color="red"
                     disabled={isSaving}
-                    leftSection={<IconTrash size={16} />}
+                    leftSection={<Trash2 size={16} />}
                     type="button"
                     variant="subtle"
                     onClick={() => onDelete(bank)}
@@ -402,7 +393,7 @@ function BankEditorModal({
                 {t('Скасувати')}
               </Button>
               <PermissionGate permissionKey={ACCOUNTING_BANK_SAVE_PERMISSION}>
-                <Button color={CREATE_ACTION_COLOR} leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} type="submit">
+                <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSaving} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} type="submit">
                   {t('Зберегти')}
                 </Button>
               </PermissionGate>
@@ -517,7 +508,7 @@ function useAccountingBankColumns(
                 variant="subtle"
                 onClick={() => openEditor(bank)}
               >
-                <IconPencil size={18} />
+                <Pencil size={18} />
               </ActionIcon>
             </Tooltip>
             <PermissionGate permissionKey={ACCOUNTING_BANK_DELETE_PERMISSION}>
@@ -529,7 +520,7 @@ function useAccountingBankColumns(
                   variant="subtle"
                   onClick={() => requestDelete(bank)}
                 >
-                  <IconTrash size={18} />
+                  <Trash2 size={18} />
                 </ActionIcon>
               </Tooltip>
             </PermissionGate>

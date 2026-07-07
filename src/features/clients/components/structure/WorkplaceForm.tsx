@@ -9,7 +9,7 @@ import {
   TextInput,
   UnstyledButton,
 } from '@mantine/core'
-import { IconCheck } from '@tabler/icons-react'
+import { Check } from 'lucide-react'
 import { useReducer } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import type { Client, ClientAgreement, ClientGroup, ClientWorkplace } from '../../types'
@@ -359,7 +359,7 @@ function WorkplaceFormFields({
             <Button
               color={CREATE_ACTION_COLOR}
               disabled={disabled}
-              leftSection={<IconCheck size={16} />}
+              leftSection={<Check size={16} />}
               onClick={handleSubmit}
             >
               {isEdit ? t('Зберегти') : t('Створити')}

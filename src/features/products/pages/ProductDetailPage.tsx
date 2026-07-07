@@ -34,26 +34,7 @@ import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableD
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { notifications } from '@mantine/notifications'
-import {
-  IconAlertCircle,
-  IconArrowLeft,
-  IconArrowsExchange,
-  IconCheck,
-  IconChevronLeft,
-  IconChevronRight,
-  IconClipboardList,
-  IconDeviceFloppy,
-  IconDownload,
-  IconEdit,
-  IconFileDescription,
-  IconFileTypePdf,
-  IconHistory,
-  IconPackage,
-  IconPhoto,
-  IconPlus,
-  IconRefresh,
-  IconTrash,
-} from '@tabler/icons-react'
+import { ArrowLeft, ArrowLeftRight, Check, ChevronLeft, ChevronRight, CircleAlert, ClipboardList, Download, FileText, History, Image as ImageIcon, Package, Plus, RefreshCw, Save, SquarePen, Trash2 } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { type FormEvent, useCallback, useEffect, useMemo, useReducer, useState } from 'react'
@@ -358,7 +339,7 @@ export function ProductDetailPage() {
         <Group align="flex-start" gap="sm" wrap="nowrap">
           <Tooltip label={t('Назад')}>
             <ActionIcon aria-label={t('Назад')} color="gray" variant="light" onClick={() => navigate('/products')}>
-              <IconArrowLeft size={18} />
+              <ArrowLeft size={18} />
             </ActionIcon>
           </Tooltip>
           <Box>
@@ -381,20 +362,20 @@ export function ProductDetailPage() {
               variant="light"
               onClick={() => reload()}
             >
-              <IconRefresh size={18} />
+              <RefreshCw size={18} />
             </ActionIcon>
           </Tooltip>
         </Group>
       </Group>
 
       {error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {error}
         </Alert>
       )}
 
       {!error && !isLoading && !product && (
-        <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
           {t('Товар не знайдено')}
         </Alert>
       )}
@@ -429,7 +410,7 @@ export function ProductDetailPage() {
                       justifyContent: 'center',
                     }}
                   >
-                    <IconPhoto size={48} color="var(--mantine-color-gray-5)" />
+                    <ImageIcon size={48} color="var(--mantine-color-gray-5)" />
                   </Box>
                 )}
                 <Group gap={6} wrap="wrap">
@@ -554,49 +535,49 @@ function ProductActionToolbar({ openPanel }: { openPanel: (panel: ProductDetailP
     <Group gap="xs" justify="flex-end">
       <Tooltip label={t('Історія місця зберігання')}>
         <ActionIcon aria-label={t('Історія місця зберігання')} color="gray" size={38} variant="light" onClick={() => openPanel('storage-history')}>
-          <IconHistory size={18} />
+          <History size={18} />
         </ActionIcon>
       </Tooltip>
       <Tooltip label={t('Історія змін полів')}>
         <ActionIcon aria-label={t('Історія змін полів')} color="gray" size={38} variant="light" onClick={() => openPanel('audit')}>
-          <IconClipboardList size={18} />
+          <ClipboardList size={18} />
         </ActionIcon>
       </Tooltip>
       <Tooltip label={t('Специфікація')}>
         <ActionIcon aria-label={t('Специфікація')} color="gray" size={38} variant="light" onClick={() => openPanel('specification')}>
-          <IconFileDescription size={18} />
+          <FileText size={18} />
         </ActionIcon>
       </Tooltip>
       <Tooltip label={t('Зображення')}>
         <ActionIcon aria-label={t('Зображення')} color="gray" size={38} variant="light" onClick={() => openPanel('images')}>
-          <IconPhoto size={18} />
+          <ImageIcon size={18} />
         </ActionIcon>
       </Tooltip>
       <PermissionGate permissionKey={PRODUCT_BALANCES_PERMISSION}>
         <Tooltip label={t('Залишки по партіям')}>
           <ActionIcon aria-label={t('Залишки по партіям')} color="gray" size={38} variant="light" onClick={() => openPanel('remains')}>
-            <IconPackage size={18} />
+            <Package size={18} />
           </ActionIcon>
         </Tooltip>
       </PermissionGate>
       <PermissionGate permissionKey={PRODUCT_EDIT_PERMISSION}>
         <Tooltip label={t('Редагувати')}>
           <ActionIcon aria-label={t('Редагувати')} color="gray" size={38} variant="light" onClick={() => openPanel('edit')}>
-            <IconEdit size={18} />
+            <SquarePen size={18} />
           </ActionIcon>
         </Tooltip>
       </PermissionGate>
       <PermissionGate permissionKey={PRODUCT_MOVEMENT_PERMISSION}>
         <Tooltip label={t('Рух товару')}>
           <ActionIcon aria-label={t('Рух товару')} color="gray" size={38} variant="light" onClick={() => openPanel('movement')}>
-            <IconArrowsExchange size={18} />
+            <ArrowLeftRight size={18} />
           </ActionIcon>
         </Tooltip>
       </PermissionGate>
       <PermissionGate permissionKey={PRODUCT_WRITE_OFF_PERMISSION}>
         <Tooltip label={t('Правила списання')}>
           <ActionIcon aria-label={t('Правила списання')} color="gray" size={38} variant="light" onClick={() => openPanel('writeoff')}>
-            <IconClipboardList size={18} />
+            <ClipboardList size={18} />
           </ActionIcon>
         </Tooltip>
       </PermissionGate>
@@ -656,7 +637,7 @@ export function ProductStockSummary({
   return (
     <Stack gap="xs">
       {reservationError && (
-        <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
           {reservationError}
         </Alert>
       )}
@@ -835,7 +816,7 @@ function ProductPlacementEditor({
             {formatAmount(draftTotal)} / {formatAmount(originalTotal)}
           </Badge>
           {!isEditing ? (
-            <Button color={CREATE_ACTION_COLOR} size="xs" variant="outline" leftSection={<IconEdit size={14} />} onClick={startEditing}>
+            <Button color={CREATE_ACTION_COLOR} size="xs" variant="outline" leftSection={<SquarePen size={14} />} onClick={startEditing}>
               {t('Редагувати')}
             </Button>
           ) : null}
@@ -843,7 +824,7 @@ function ProductPlacementEditor({
       </Group>
 
       {error ? (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {error}
         </Alert>
       ) : null}
@@ -908,7 +889,7 @@ function ProductPlacementEditor({
                           variant="light"
                           onClick={() => removeLocalPlacement(index)}
                         >
-                          <IconTrash size={14} />
+                          <Trash2 size={14} />
                         </ActionIcon>
                       </Tooltip>
                     </Table.Td>
@@ -918,14 +899,14 @@ function ProductPlacementEditor({
             </Table>
           </ScrollArea>
           <Group className="product-placement-editor__footer" justify="space-between" gap="sm">
-            <Button color={CREATE_ACTION_COLOR} size="xs" variant="outline" leftSection={<IconPlus size={14} />} onClick={addPlacement}>
+            <Button color={CREATE_ACTION_COLOR} size="xs" variant="outline" leftSection={<Plus size={14} />} onClick={addPlacement}>
               {t('Додати місце')}
             </Button>
             <Group gap="xs">
               <Button size="xs" color="gray" variant="light" disabled={isSaving} onClick={cancelEditing}>
                 {t('Скасувати')}
               </Button>
-              <Button size="xs" color={CREATE_ACTION_COLOR} leftSection={<IconDeviceFloppy size={14} />} loading={isSaving} onClick={() => void savePlacements()}>
+              <Button size="xs" color={CREATE_ACTION_COLOR} leftSection={<Save size={14} />} loading={isSaving} onClick={() => void savePlacements()}>
                 {t('Зберегти')}
               </Button>
             </Group>
@@ -1035,7 +1016,7 @@ function ProductPermissionDeniedAlert() {
   const { t } = useI18n()
 
   return (
-    <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+    <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
       {t('Недостатньо прав для цієї дії')}
     </Alert>
   )
@@ -1090,7 +1071,7 @@ function ProductEditPanel({ onProductSaved, product }: { onProductSaved: (produc
     <form onSubmit={submitForm}>
       <Stack gap="md">
         {error && (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}
@@ -1122,7 +1103,7 @@ function ProductEditPanel({ onProductSaved, product }: { onProductSaved: (produc
             paddingTop: 'var(--mantine-spacing-sm)',
           }}
         >
-          <Button type="submit" color={CREATE_ACTION_COLOR} loading={isSaving} leftSection={<IconDeviceFloppy size={18} />}>
+          <Button type="submit" color={CREATE_ACTION_COLOR} loading={isSaving} leftSection={<Save size={18} />}>
             {t('Зберегти')}
           </Button>
         </Group>
@@ -1226,7 +1207,7 @@ function ProductImagesPanel({ onProductSaved, product }: { onProductSaved: (prod
   return (
     <Stack gap="md">
       {error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {error}
         </Alert>
       )}
@@ -1244,10 +1225,10 @@ function ProductImagesPanel({ onProductSaved, product }: { onProductSaved: (prod
           />
         </PermissionGate>
         <Group gap="xs" wrap="nowrap">
-          <Button variant="light" color="gray" leftSection={<IconRefresh size={18} />} disabled={!hasChanges || isSaving} onClick={resetImageChanges}>
+          <Button variant="light" color="gray" leftSection={<RefreshCw size={18} />} disabled={!hasChanges || isSaving} onClick={resetImageChanges}>
             {t('Скасувати')}
           </Button>
-          <Button color={CREATE_ACTION_COLOR} leftSection={<IconDeviceFloppy size={18} />} loading={isSaving} disabled={!hasChanges} onClick={saveImages}>
+          <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={18} />} loading={isSaving} disabled={!hasChanges} onClick={saveImages}>
             {t('Зберегти')}
           </Button>
         </Group>
@@ -1284,12 +1265,12 @@ function ProductImagesPanel({ onProductSaved, product }: { onProductSaved: (prod
                     <Group gap={4} wrap="nowrap">
                       <Tooltip label={t('Зробити головним')}>
                         <ActionIcon color="gray" variant="light" disabled={image.Deleted || image.IsMainImage} onClick={() => makeMain(image)}>
-                          <IconCheck size={16} />
+                          <Check size={16} />
                         </ActionIcon>
                       </Tooltip>
                       <Tooltip label={t('Видалити')}>
                         <ActionIcon color="red" variant="light" disabled={image.Deleted} onClick={() => removeImage(image)}>
-                          <IconTrash size={16} />
+                          <Trash2 size={16} />
                         </ActionIcon>
                       </Tooltip>
                     </Group>
@@ -1390,7 +1371,7 @@ function ProductAuditPanel({ product }: { product: Product }) {
         w={260}
         onChange={(value) => setField((value as ProductAuditField) || 'Description')}
       />
-      {activeError && <Alert color={missingNetUidError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">{activeError}</Alert>}
+      {activeError && <Alert color={missingNetUidError ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">{activeError}</Alert>}
       {isLoading ? (
         <LoadingState label={t('Завантаження історії змін')} />
       ) : entries.length === 0 && !activeError ? (
@@ -1529,7 +1510,7 @@ function ProductSpecificationPanel({
             <Divider />
             <Stack gap="sm">
               <Text className="app-section-title" fw={600} size="sm">{t('Змінити специфікацію')}</Text>
-              {error && <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">{error}</Alert>}
+              {error && <Alert color="red" icon={<CircleAlert size={18} />} variant="light">{error}</Alert>}
               <TextInput
                 label={t('Код специфікації')}
                 value={draft.SpecificationCode}
@@ -1561,7 +1542,7 @@ function ProductSpecificationPanel({
               <Group justify="flex-end">
                 <Button
                   color={CREATE_ACTION_COLOR}
-                  leftSection={<IconDeviceFloppy size={16} />}
+                  leftSection={<Save size={16} />}
                   loading={isSaving}
                   onClick={() => void saveSpecification()}
                 >
@@ -1669,11 +1650,11 @@ function ProductConsignmentRemainingsPanel({ product }: { product: Product }) {
   ], [t])
 
   if (missingNetUidError) {
-    return <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">{missingNetUidError}</Alert>
+    return <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">{missingNetUidError}</Alert>
   }
 
   if (error) {
-    return <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">{error}</Alert>
+    return <Alert color="red" icon={<CircleAlert size={18} />} variant="light">{error}</Alert>
   }
 
   return (
@@ -1772,15 +1753,15 @@ function ProductStorageHistoryPanel({ product }: { product: Product }) {
         <Select label={t('Розмір сторінки')} data={pageSizeOptions} value={String(pageSize)} w={140} onChange={(value) => { setPage(1); setPageSize(Number(value || 20)) }} />
         <Group gap="xs">
           <ActionIcon aria-label={t('Попередня сторінка')} color="gray" disabled={!canMoveBack || isLoading || Boolean(filterError)} variant="light" onClick={() => setPage((currentPage) => Math.max(1, currentPage - 1))}>
-            <IconChevronLeft size={18} />
+            <ChevronLeft size={18} />
           </ActionIcon>
           <ActionIcon aria-label={t('Наступна сторінка')} color="gray" disabled={!canMoveForward || isLoading || Boolean(filterError)} variant="light" onClick={() => setPage((currentPage) => currentPage + 1)}>
-            <IconChevronRight size={18} />
+            <ChevronRight size={18} />
           </ActionIcon>
           <DataTableDensityToggle density={density} onToggle={toggleDensity} size="md" />
         </Group>
       </Group>
-      {activeError && <Alert color={filterError || missingNetUidError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">{activeError}</Alert>}
+      {activeError && <Alert color={filterError || missingNetUidError ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">{activeError}</Alert>}
       {!activeError ? (
         <DataTable
           columns={storageHistoryColumns}
@@ -1931,10 +1912,10 @@ function ProductMovementPanel({ product }: { product: Product }) {
         <TextInput label={t('З')} type="date" value={dateFrom} onChange={(event) => setDateFrom(event.currentTarget.value)} />
         <TextInput label={t('По')} type="date" value={dateTo} onChange={(event) => setDateTo(event.currentTarget.value)} />
         <Select label={t('Тип руху')} data={movementTypeOptions.map((option) => ({ ...option, label: t(option.label) }))} value={movementType} w={220} onChange={(value) => setMovementType(value || '0')} />
-        <Button disabled={Boolean(filterError) || Boolean(typesError)} leftSection={<IconRefresh size={18} />} loading={isLoading} variant="outline" onClick={() => reload()}>
+        <Button disabled={Boolean(filterError) || Boolean(typesError)} leftSection={<RefreshCw size={18} />} loading={isLoading} variant="outline" onClick={() => reload()}>
           {t('Оновити')}
         </Button>
-        <Button disabled={!productNetUid || Boolean(filterError) || Boolean(typesError)} leftSection={<IconDownload size={18} />} loading={isExporting} variant="default" onClick={() => void exportMovements()}>
+        <Button disabled={!productNetUid || Boolean(filterError) || Boolean(typesError)} leftSection={<Download size={18} />} loading={isExporting} variant="default" onClick={() => void exportMovements()}>
           {t('Друк')}
         </Button>
       </Group>
@@ -1954,7 +1935,7 @@ function ProductMovementPanel({ product }: { product: Product }) {
           {t('Скинути')}
         </Button>
       </div>
-      {activeError && <Alert color={filterError || missingNetUidError || typesError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">{activeError}</Alert>}
+      {activeError && <Alert color={filterError || missingNetUidError || typesError ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">{activeError}</Alert>}
       {!activeError && (
         <DataTable
           columns={movementColumns}
@@ -2009,7 +1990,7 @@ function ProductDocumentDownloadModal({
             {document.PdfDocumentURL ? (
               <Anchor href={getDocumentHref(document.PdfDocumentURL)} target="_blank" rel="noreferrer" className="document-link">
                 <span className="document-link-badge document-link-badge-pdf">
-                  <IconFileTypePdf size={22} stroke={1.8} />
+                  <FileText size={22} strokeWidth={1.8} />
                 </span>
                 <span>{t('PDF документ')}</span>
               </Anchor>
@@ -2272,7 +2253,7 @@ function ProductWriteOffRulesPanel({ onChanged, product }: { onChanged: () => vo
             variant="subtle"
             onClick={() => removeRule(row)}
           >
-            <IconTrash size={16} />
+            <Trash2 size={16} />
           </ActionIcon>
         </Tooltip>
       ),
@@ -2300,12 +2281,12 @@ function ProductWriteOffRulesPanel({ onChanged, product }: { onChanged: () => vo
         ) : null}
         <Select label={t('Правило')} data={writeOffRuleTypeOptions.map((option) => ({ ...option, label: t(option.label) }))} value={ruleType} w={220} onChange={(value) => setRuleType(value || '0')} />
         <Select label={t('Регіон')} data={writeOffLocaleOptions.map((option) => ({ ...option, label: t(option.label) }))} value={locale} w={180} onChange={(value) => setLocale(value || 'uk')} />
-        <Button disabled={!productNetUid || isLoading || (scope === 'group' && (isLoadingGroups || !selectedProductGroupNetId))} color={CREATE_ACTION_COLOR} leftSection={<IconPlus size={18} />} loading={isSaving} onClick={addRule}>
+        <Button disabled={!productNetUid || isLoading || (scope === 'group' && (isLoadingGroups || !selectedProductGroupNetId))} color={CREATE_ACTION_COLOR} leftSection={<Plus size={18} />} loading={isSaving} onClick={addRule}>
           {t('Додати')}
         </Button>
         <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />
       </Group>
-      {activeError && <Alert color={missingNetUidError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">{activeError}</Alert>}
+      {activeError && <Alert color={missingNetUidError ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">{activeError}</Alert>}
       {!activeError ? (
         <DataTable
           columns={writeOffColumns}

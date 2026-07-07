@@ -16,16 +16,7 @@ import { AppModal } from "../../../shared/ui/AppModal"
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { notifications } from '@mantine/notifications'
 import { useDebouncedValue } from '@mantine/hooks'
-import {
-  IconAlertCircle,
-  IconFileTypePdf,
-  IconPlus,
-  IconRestore,
-  IconSearch,
-  IconToggleLeft,
-  IconToggleRight,
-} from '@tabler/icons-react'
-import { ExternalLink, IdCard, Wallet } from 'lucide-react'
+import { CircleAlert, ExternalLink, FileText, IdCard, Plus, RotateCcw, Search, ToggleLeft, ToggleRight, Wallet } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE, PAGINATOR_PAGE_SIZE_OPTIONS } from '../../../shared/ui/paginator/paginatorPageSize'
@@ -623,7 +614,7 @@ function SuppliersPageView({ model }: { model: ReturnType<typeof useSuppliersPag
             className="suppliers-create-button"
             color={CREATE_ACTION_COLOR}
             size="sm"
-            leftSection={<IconPlus size={16} />}
+            leftSection={<Plus size={16} />}
             onClick={openNewSupplier}
           >
             {t('Добавити')}
@@ -631,7 +622,7 @@ function SuppliersPageView({ model }: { model: ReturnType<typeof useSuppliersPag
         </div>
 
         {error && (
-          <Alert className="console-table-alert" color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert className="console-table-alert" color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}
@@ -787,7 +778,7 @@ function SupplierDetailDrawer({
             fullWidth
             color={isActive ? 'gray' : 'green'}
             justify="flex-start"
-            leftSection={isActive ? <IconToggleLeft size={16} /> : <IconToggleRight size={16} />}
+            leftSection={isActive ? <ToggleLeft size={16} /> : <ToggleRight size={16} />}
             loading={isActiveLoading}
             variant="light"
             onClick={() => onSwitchActive(supplier)}
@@ -847,7 +838,7 @@ function SuppliersFilterToolbar({
         ref={searchInputRef}
         className="sales-filter-search suppliers-filter-search-input"
         size="sm"
-        leftSection={<IconSearch size={16} />}
+        leftSection={<Search size={16} />}
         label={t('Назва або код')}
         placeholder={t('Назва або код')}
         rightSection={isTableBusy ? <Loader color="orange" size={14} /> : undefined}
@@ -892,7 +883,7 @@ function SuppliersFilterToolbar({
       <div className="app-filter-actions sales-filter-actions suppliers-filter-actions">
         <Tooltip label={t('Скинути')}>
           <ActionIcon variant="light" color="gray" size={34} aria-label={t('Скинути')} onClick={onReset}>
-            <IconRestore size={17} />
+            <RotateCcw size={17} />
           </ActionIcon>
         </Tooltip>
         <Tooltip label={t('Експорт в Excel')}>
@@ -951,7 +942,7 @@ function SupplierDocumentModal({
             {document.PdfDocumentURL && (
               <Anchor href={getDocumentHref(document.PdfDocumentURL)} target="_blank" rel="noreferrer" className="document-link">
                 <span className="document-link-badge document-link-badge-pdf">
-                  <IconFileTypePdf size={22} stroke={1.8} />
+                  <FileText size={22} strokeWidth={1.8} />
                 </span>
                 <span>{t('PDF документ')}</span>
               </Anchor>

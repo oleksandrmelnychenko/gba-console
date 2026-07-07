@@ -1,5 +1,5 @@
 import { ActionIcon, Box, Button, Group, Modal, Text, UnstyledButton } from '@mantine/core'
-import { IconX } from '@tabler/icons-react'
+import { X } from 'lucide-react'
 import { notifications } from '@mantine/notifications'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react'
@@ -507,7 +507,7 @@ function NewSaleWizardContent({
   const wizardClient = selectedClient ?? state.sale?.ClientAgreement?.Client ?? state.agreement?.Client ?? null
   const wizardHeaderClose = (
     <ActionIcon aria-label={t('Закрити')} color="gray" disabled={shellBusy} size="lg" variant="subtle" onClick={requestExit}>
-      <IconX size={20} />
+      <X size={20} />
     </ActionIcon>
   )
   const onSaleReassigned = useCallback((movedSale: SalesUkraineSale | null) => {

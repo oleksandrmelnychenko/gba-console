@@ -1,5 +1,5 @@
 import { ActionIcon, Box, Group, Text } from '@mantine/core'
-import { IconX } from '@tabler/icons-react'
+import { X } from 'lucide-react'
 import { useEffect, useRef } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { DataTable } from '../../../../shared/ui/data-table/DataTable'
@@ -115,7 +115,7 @@ export function EditShoppingCartOverlay({
           variant="subtle"
           onClick={onClose}
         >
-          <IconX size={18} />
+          <X size={18} />
         </ActionIcon>
         <Box className="new-sale-cart-edit-overlay__content">
       <CartTable

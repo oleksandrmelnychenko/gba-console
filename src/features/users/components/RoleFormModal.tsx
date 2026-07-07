@@ -1,5 +1,5 @@
 import { Button, Group, NumberInput, Stack, TextInput } from '@mantine/core'
-import { IconDeviceFloppy, IconTrash } from '@tabler/icons-react'
+import { Save, Trash2 } from 'lucide-react'
 import { type FormEvent } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -77,7 +77,7 @@ export function RoleFormModal({
               <Button
                 color="red"
                 disabled={isSaving}
-                leftSection={<IconTrash size={16} />}
+                leftSection={<Trash2 size={16} />}
                 type="button"
                 variant="subtle"
                 onClick={onDelete}
@@ -96,7 +96,7 @@ export function RoleFormModal({
               </Button>
               <Button
                 color={CREATE_ACTION_COLOR}
-                leftSection={<IconDeviceFloppy size={16} />}
+                leftSection={<Save size={16} />}
                 loading={isSaving}
                 styles={{ label: MODAL_MONO_STYLE }}
                 type="submit"

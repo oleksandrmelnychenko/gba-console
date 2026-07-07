@@ -16,16 +16,7 @@ import {
 } from '@mantine/core'
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
-import {
-  IconAlertCircle,
-  IconArrowsExchange,
-  IconDownload,
-  IconFileTypePdf,
-  IconFileTypeXls,
-  IconRefresh,
-  IconRestore,
-  IconSearch,
-} from '@tabler/icons-react'
+import { ArrowLeftRight, CircleAlert, Download, FileSpreadsheet, FileText, RefreshCw, RotateCcw, Search } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -813,7 +804,7 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
             <div className="app-filter-actions">
               <Tooltip label={t('Скинути')}>
                 <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
-                  <IconRestore size={17} />
+                  <RotateCcw size={17} />
                 </ActionIcon>
               </Tooltip>
               <Tooltip label={t('Експорт')}>
@@ -826,7 +817,7 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
                   variant="light"
                   onClick={handleExport}
                 >
-                  <IconDownload size={17} />
+                  <Download size={17} />
                 </ActionIcon>
               </Tooltip>
               <Paginator
@@ -852,7 +843,7 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
 
         <Stack className="product-remains-body" gap={10}>
           {alertMessage && (
-            <Alert color={isWarningAlert ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color={isWarningAlert ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">
               {alertMessage}
             </Alert>
           )}
@@ -884,7 +875,7 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
             <Stack className="product-remains-tab-content" gap={12}>
               <Group align="end" gap="sm" wrap="nowrap" className="product-remains-search-row">
                 <TextInput
-                  leftSection={<IconSearch size={16} />}
+                  leftSection={<Search size={16} />}
                   label={t('Пошук товару')}
                   placeholder={t('Код або назва')}
                   value={productSearchDraft}
@@ -963,7 +954,7 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
                   className="document-link"
                 >
                   <span className="document-link-badge document-link-badge-excel">
-                    <IconFileTypeXls size={22} stroke={1.8} />
+                    <FileSpreadsheet size={22} strokeWidth={1.8} />
                   </span>
                   <span>{t('Excel документ')}</span>
                 </Anchor>
@@ -976,7 +967,7 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
                   className="document-link"
                 >
                   <span className="document-link-badge document-link-badge-pdf">
-                    <IconFileTypePdf size={22} stroke={1.8} />
+                    <FileText size={22} strokeWidth={1.8} />
                   </span>
                   <span>{t('PDF документ')}</span>
                 </Anchor>
@@ -1233,7 +1224,7 @@ function useProductRemainProductColumns(onOpenMovement: (row: RemainingConsignme
               onOpenMovement(row)
             }}
           >
-            <IconArrowsExchange size={16} />
+            <ArrowLeftRight size={16} />
           </ActionIcon>
         </Tooltip>
       ),
@@ -1437,7 +1428,7 @@ function BatchDetails({
       </SimpleGrid>
       <Divider />
       {error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {error}
         </Alert>
       )}
@@ -1591,7 +1582,7 @@ function ProductRemainMovementsPanel({ row }: { row: RemainingConsignment }) {
         <Button
           color="gray"
           disabled={Boolean(missingNetIdError || filterError)}
-          leftSection={<IconRefresh size={18} />}
+          leftSection={<RefreshCw size={18} />}
           loading={isLoading}
           variant="light"
           onClick={() => dispatch({ type: 'reloadRequested' })}
@@ -1600,7 +1591,7 @@ function ProductRemainMovementsPanel({ row }: { row: RemainingConsignment }) {
         </Button>
       </Group>
       {activeError && (
-        <Alert color={missingNetIdError || filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color={missingNetIdError || filterError ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">
           {activeError}
         </Alert>
       )}

@@ -11,14 +11,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import {
-  IconAlertCircle,
-  IconPlus,
-  IconRefresh,
-  IconRestore,
-  IconSearch,
-  IconShieldLock,
-} from '@tabler/icons-react'
+import { CircleAlert, Plus, RefreshCw, RotateCcw, Search, Shield } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -191,7 +184,7 @@ export function UsersPage() {
         <div className="app-filter-bar users-filter-bar">
           <TextInput
             className="users-search-input"
-            leftSection={<IconSearch size={15} />}
+            leftSection={<Search size={15} />}
             label={t('Пошук користувача')}
             placeholder={t('ПІБ, email, телефон')}
             value={searchValue}
@@ -225,7 +218,7 @@ export function UsersPage() {
                 variant="light"
                 onClick={resetFilters}
               >
-                <IconRestore size={17} />
+                <RotateCcw size={17} />
               </ActionIcon>
             </Tooltip>
             <Tooltip label={t('Оновити')}>
@@ -237,7 +230,7 @@ export function UsersPage() {
                 variant="light"
                 onClick={() => reload()}
               >
-                <IconRefresh size={17} />
+                <RefreshCw size={17} />
               </ActionIcon>
             </Tooltip>
           </div>
@@ -246,7 +239,7 @@ export function UsersPage() {
             <Button
               className="users-roles-action"
               color="gray"
-              leftSection={<IconShieldLock size={15} />}
+              leftSection={<Shield size={15} />}
               size="sm"
               variant="light"
               onClick={() => navigate('/users/roles')}
@@ -256,7 +249,7 @@ export function UsersPage() {
             <Button
               className="users-create-button"
               color={CREATE_ACTION_COLOR}
-              leftSection={<IconPlus size={16} />}
+              leftSection={<Plus size={16} />}
               size="sm"
               onClick={() =>
                 navigate('/users/new', {
@@ -273,7 +266,7 @@ export function UsersPage() {
         </div>
 
         {error && (
-          <Alert className="console-table-alert" color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert className="console-table-alert" color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}

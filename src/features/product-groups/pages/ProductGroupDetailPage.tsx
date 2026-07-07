@@ -10,12 +10,7 @@ import {
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { notifications } from '@mantine/notifications'
-import {
-  IconAlertCircle,
-  IconChevronLeft,
-  IconDeviceFloppy,
-  IconRestore,
-} from '@tabler/icons-react'
+import { ChevronLeft, CircleAlert, RotateCcw, Save } from 'lucide-react'
 import { type FormEvent, useEffect, useMemo } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -217,7 +212,7 @@ export function ProductGroupDetailPage() {
         <Group gap="xs">
           <Button
             color="gray"
-            leftSection={<IconChevronLeft size={16} />}
+            leftSection={<ChevronLeft size={16} />}
             type="button"
             variant="light"
             onClick={closeSheet}
@@ -227,7 +222,7 @@ export function ProductGroupDetailPage() {
           <Button
             color="gray"
             disabled={!isEdited || isSaving}
-            leftSection={<IconRestore size={16} />}
+            leftSection={<RotateCcw size={16} />}
             type="button"
             variant="light"
             onClick={resetEdits}
@@ -238,7 +233,7 @@ export function ProductGroupDetailPage() {
             color={CREATE_ACTION_COLOR}
             disabled={!formProductGroup || !isEdited}
             form="product-group-edit-form"
-            leftSection={<IconDeviceFloppy size={16} />}
+            leftSection={<Save size={16} />}
             loading={isSaving}
             type="submit"
           >
@@ -248,7 +243,7 @@ export function ProductGroupDetailPage() {
       </Group>
 
       {error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {error}
         </Alert>
       )}

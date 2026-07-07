@@ -1,5 +1,5 @@
 import { ActionIcon, Box, Card, Group, Loader, ScrollArea, Text, Tooltip } from '@mantine/core'
-import { IconInfoCircle, IconStar } from '@tabler/icons-react'
+import { Info, Star } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -182,7 +182,7 @@ export function ProductPickerCarousel<T extends ProductPickerItem>({
                               onProductInterest(product)
                             }}
                           >
-                            <IconStar size={15} />
+                            <Star size={15} />
                           </ActionIcon>
                         </Tooltip>
                       )}
@@ -199,7 +199,7 @@ export function ProductPickerCarousel<T extends ProductPickerItem>({
                               onOpenCard(product.NetUid as string)
                             }}
                           >
-                            <IconInfoCircle size={15} />
+                            <Info size={15} />
                           </ActionIcon>
                         </Tooltip>
                       )}

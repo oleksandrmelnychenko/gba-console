@@ -11,7 +11,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconAlertCircle, IconArrowLeft, IconPencil, IconPlus, IconRefresh, IconRestore, IconTrash } from '@tabler/icons-react'
+import { ArrowLeft, CircleAlert, Pencil, Plus, RefreshCw, RotateCcw, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { formatDateInputForQuery, formatLocalDate } from '../../../shared/date/dateTime'
@@ -189,7 +189,7 @@ export function CompanyCarRoadListsPage() {
         <div className="app-filter-bar company-car-road-lists-filter-bar">
           <Group align="end" gap="sm" wrap="nowrap" className="company-car-road-lists-filter-row">
             <Group gap="xs" wrap="nowrap" className="company-car-road-lists-identity">
-              <Button color="gray" leftSection={<IconArrowLeft size={16} />} size="sm" variant="light" onClick={() => navigate(returnPath)}>
+              <Button color="gray" leftSection={<ArrowLeft size={16} />} size="sm" variant="light" onClick={() => navigate(returnPath)}>
                 {t('Назад')}
               </Button>
               <Badge className="app-role-pill" variant="light">
@@ -219,20 +219,20 @@ export function CompanyCarRoadListsPage() {
             <div className="app-filter-actions">
               <Tooltip label={t('Скинути')}>
                 <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
-                  <IconRestore size={17} />
+                  <RotateCcw size={17} />
                 </ActionIcon>
               </Tooltip>
               <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
               <Tooltip label={t('Оновити')}>
                 <ActionIcon aria-label={t('Оновити')} loading={isLoading} size={34} variant="light" onClick={reload}>
-                  <IconRefresh size={18} />
+                  <RefreshCw size={18} />
                 </ActionIcon>
               </Tooltip>
             </div>
             <Button
               color={CREATE_ACTION_COLOR}
               disabled={!companyCar?.NetUid}
-              leftSection={<IconPlus size={16} />}
+              leftSection={<Plus size={16} />}
               size="sm"
               styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
               onClick={openCreateForm}
@@ -243,13 +243,13 @@ export function CompanyCarRoadListsPage() {
         </div>
 
         {error && (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}
 
         {filterError && (
-          <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
             {filterError}
           </Alert>
         )}
@@ -479,7 +479,7 @@ function useRoadListColumns({
                   onEdit(roadList)
                 }}
               >
-                <IconPencil size={16} />
+                <Pencil size={16} />
               </ActionIcon>
             </Tooltip>
             <Tooltip label={t('Видалити')}>
@@ -494,7 +494,7 @@ function useRoadListColumns({
                   onDelete(roadList)
                 }}
               >
-                <IconTrash size={16} />
+                <Trash2 size={16} />
               </ActionIcon>
             </Tooltip>
           </Group>
@@ -526,7 +526,7 @@ function DeleteRoadListModal({
           <Button color="gray" disabled={isSaving} variant="light" onClick={onClose}>
             {t('Скасувати')}
           </Button>
-          <Button color="red" leftSection={<IconTrash size={16} />} loading={isSaving} onClick={onDelete}>
+          <Button color="red" leftSection={<Trash2 size={16} />} loading={isSaving} onClick={onDelete}>
             {t('Видалити')}
           </Button>
         </Group>

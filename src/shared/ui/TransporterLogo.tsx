@@ -1,4 +1,4 @@
-import { IconTruckDelivery } from '@tabler/icons-react'
+import { Truck } from 'lucide-react'
 import { useState, type CSSProperties } from 'react'
 import { upgradeHttpToHttps } from '../url/upgradeHttpToHttps'
 import { toProxiedAssetUrl } from '../url/proxiedAssetUrl'
@@ -29,7 +29,7 @@ export function TransporterLogo({
   const [failedSrc, setFailedSrc] = useState<string | null>(null)
 
   if (!src || failedSrc === src) {
-    return <IconTruckDelivery size={iconSize} style={TRUCK_ICON_STYLE} />
+    return <Truck size={iconSize} style={TRUCK_ICON_STYLE} />
   }
 
   return (

@@ -11,17 +11,7 @@ import {
   Text,
   Tooltip,
 } from '@mantine/core'
-import {
-  IconAlertCircle,
-  IconCheck,
-  IconFileTypePdf,
-  IconHelpCircle,
-  IconPencil,
-  IconPlus,
-  IconPrinter,
-  IconShieldCheck,
-  IconTrash,
-} from '@tabler/icons-react'
+import { Check, CircleAlert, CircleHelp, FileText, Pencil, Plus, Printer, ShieldCheck, Trash2 } from 'lucide-react'
 import { ExcelIcon } from '../../../../shared/ui/ExcelIcon'
 import { useMemo, useReducer } from 'react'
 import { AppModal } from '../../../../shared/ui/AppModal'
@@ -225,7 +215,7 @@ export function ClientAgreementsPanel({
         {canEdit && (
           <Button
             color={CREATE_ACTION_COLOR}
-            leftSection={<IconPlus size={16} />}
+            leftSection={<Plus size={16} />}
             size="xs"
             variant="outline"
             onClick={openCreate}
@@ -236,7 +226,7 @@ export function ClientAgreementsPanel({
       </Group>
 
       {error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {error}
         </Alert>
       )}
@@ -333,7 +323,7 @@ export function ClientAgreementsPanel({
                 {formIsEdit && (
                   <Button
                     color="red"
-                    leftSection={<IconTrash size={16} />}
+                    leftSection={<Trash2 size={16} />}
                     loading={isDeleting}
                     variant="light"
                     onClick={handleDelete}
@@ -348,7 +338,7 @@ export function ClientAgreementsPanel({
                 </Button>
                 <Button
                   color={CREATE_ACTION_COLOR}
-                  leftSection={<IconCheck size={16} />}
+                  leftSection={<Check size={16} />}
                   loading={isSaving}
                   onClick={handleSave}
                 >
@@ -394,7 +384,7 @@ export function ClientAgreementsPanel({
                   target="_blank"
                 >
                   <span className="document-link-badge document-link-badge-pdf">
-                    <IconFileTypePdf size={22} stroke={1.8} />
+                    <FileText size={22} strokeWidth={1.8} />
                   </span>
                   <span>{t('PDF документ')}</span>
                 </Anchor>
@@ -456,7 +446,7 @@ function BuyerAgreementItem({
             {originalClientName && (
               <Tooltip label={originalClientName} position="top">
                 <Group gap={2} align="center" wrap="nowrap">
-                  <IconHelpCircle size={12} />
+                  <CircleHelp size={12} />
                   <Text c="dimmed" size="xs" truncate>
                     {originalClientName}
                   </Text>
@@ -482,7 +472,7 @@ function BuyerAgreementItem({
                     onPrint()
                   }}
                 >
-                  <IconPrinter size={18} />
+                  <Printer size={18} />
                 </ActionIcon>
               </Tooltip>
               <Tooltip label={t('Гарантійні умови')} position="top">
@@ -495,7 +485,7 @@ function BuyerAgreementItem({
                     onWarranty()
                   }}
                 >
-                  <IconShieldCheck size={18} />
+                  <ShieldCheck size={18} />
                 </ActionIcon>
               </Tooltip>
             </>
@@ -528,7 +518,7 @@ function BuyerAgreementItem({
                 onEdit()
               }}
             >
-              <IconPencil size={18} />
+              <Pencil size={18} />
             </ActionIcon>
           )}
         </Group>
@@ -602,7 +592,7 @@ function ProviderAgreementItem({
                 onEdit()
               }}
             >
-              <IconPencil size={18} />
+              <Pencil size={18} />
             </ActionIcon>
           )}
         </Group>

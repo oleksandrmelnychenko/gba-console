@@ -1,5 +1,5 @@
 import { Alert, Button, FileInput, Group, NumberInput, SimpleGrid, Stack } from '@mantine/core'
-import { IconAlertCircle, IconFileSpreadsheet, IconUpload } from '@tabler/icons-react'
+import { CircleAlert, FileSpreadsheet, Upload } from 'lucide-react'
 import { useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
@@ -94,7 +94,7 @@ export function UploadProductSpecificationModal({
     >
       <Stack gap="md">
         {validationError && (
-          <Alert color="red" icon={<IconAlertCircle size={16} />} variant="light">
+          <Alert color="red" icon={<CircleAlert size={16} />} variant="light">
             {validationError}
           </Alert>
         )}
@@ -179,7 +179,7 @@ export function UploadProductSpecificationModal({
           accept=".xls,.xlsx"
           disabled={isLoading}
           label={t('Завантажити')}
-          leftSection={<IconFileSpreadsheet size={16} />}
+          leftSection={<FileSpreadsheet size={16} />}
           placeholder={t('Оберіть файл')}
           value={file}
           onChange={(nextFile) => {
@@ -193,7 +193,7 @@ export function UploadProductSpecificationModal({
           <Button disabled={isLoading} variant="subtle" onClick={closeModal}>
             {t('Скасувати')}
           </Button>
-          <Button disabled={isLoading} leftSection={<IconUpload size={16} />} loading={isLoading} onClick={submitForm}>
+          <Button disabled={isLoading} leftSection={<Upload size={16} />} loading={isLoading} onClick={submitForm}>
             {t('Завантажити')}
           </Button>
         </Group>

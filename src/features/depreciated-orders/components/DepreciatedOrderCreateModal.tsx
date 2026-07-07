@@ -12,7 +12,7 @@ import {
   Textarea,
   TextInput,
 } from '@mantine/core'
-import { IconAlertCircle, IconFileSpreadsheet } from '@tabler/icons-react'
+import { CircleAlert, FileSpreadsheet } from 'lucide-react'
 import { type FormEvent, useMemo } from 'react'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -126,12 +126,12 @@ export function DepreciatedOrderCreateModal({
       <form id="depreciated-order-create-form" onSubmit={submitForm}>
         <Stack gap="md">
           {(validationError || createError) && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {validationError || createError}
             </Alert>
           )}
           {storageError && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {storageError}
             </Alert>
           )}
@@ -220,7 +220,7 @@ export function DepreciatedOrderCreateModal({
             clearable
             disabled={isCreating}
             label={t('Завантажте документ')}
-            leftSection={<IconFileSpreadsheet size={16} />}
+            leftSection={<FileSpreadsheet size={16} />}
             placeholder={t('XLS або XLSX')}
             value={form.file}
             onChange={(file) => setForm((current) => ({ ...current, file }))}

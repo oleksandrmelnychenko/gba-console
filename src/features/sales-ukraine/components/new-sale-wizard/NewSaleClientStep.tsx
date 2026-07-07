@@ -1,6 +1,6 @@
 import { Anchor, Box, Loader, Stack, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconExternalLink, IconFileCheck, IconFileExcel, IconFileTypePdf, IconUserSearch } from '@tabler/icons-react'
+import { ExternalLink, FileCheck, FileSpreadsheet, FileText, UserSearch } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { formatLocalDate } from '../../../../shared/date/dateTime'
 import { useI18n } from '../../../../shared/i18n/useI18n'
@@ -1134,7 +1134,7 @@ export function NewSaleClientStep({
           ) : (
             <Stack align="center" className="new-sale-client-empty" gap={10} justify="center">
               <span className="new-sale-client-empty__icon">
-                <IconUserSearch size={30} stroke={1.55} />
+                <UserSearch size={30} strokeWidth={1.55} />
               </span>
               <Stack align="center" gap={3}>
                 <Text className="new-sale-client-empty__title">{t('Клієнт ще не вибраний')}</Text>
@@ -1220,7 +1220,7 @@ function WizardPrintDocumentModal({
       <Stack className="new-sale-print-modal__body" gap={0}>
         <Box className="new-sale-print-modal__summary">
           <span className="new-sale-print-modal__summary-icon">
-            <IconFileCheck size={22} stroke={1.8} />
+            <FileCheck size={22} strokeWidth={1.8} />
           </span>
           <Box className="new-sale-print-modal__summary-copy">
             <Text className="new-sale-print-modal__eyebrow">{t('Друк')}</Text>
@@ -1245,7 +1245,7 @@ function WizardPrintDocumentModal({
             {document?.pdfUrl && (
               <WizardPrintDocumentLink
                 href={document.pdfUrl}
-                icon={<IconFileTypePdf size={20} stroke={1.8} />}
+                icon={<FileText size={20} strokeWidth={1.8} />}
                 kind="pdf"
                 label={t('PDF')}
                 meta={t('Відкрити документ у новій вкладці')}
@@ -1254,7 +1254,7 @@ function WizardPrintDocumentModal({
             {document?.excelUrl && (
               <WizardPrintDocumentLink
                 href={document.excelUrl}
-                icon={<IconFileExcel size={20} stroke={1.8} />}
+                icon={<FileSpreadsheet size={20} strokeWidth={1.8} />}
                 kind="excel"
                 label={t('Excel')}
                 meta={t('Відкрити таблицю у новій вкладці')}
@@ -1293,7 +1293,7 @@ function WizardPrintDocumentLink({
         <span className="new-sale-print-document__label">{label}</span>
         <span className="new-sale-print-document__meta">{meta}</span>
       </span>
-      <IconExternalLink className="new-sale-print-document__arrow" size={17} stroke={1.8} />
+      <ExternalLink className="new-sale-print-document__arrow" size={17} strokeWidth={1.8} />
     </Anchor>
   )
 }

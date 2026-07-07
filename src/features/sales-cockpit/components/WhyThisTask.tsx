@@ -1,5 +1,5 @@
 import { ActionIcon, Badge, Collapse, Group, List, Stack, Text } from '@mantine/core'
-import { IconChevronDown, IconChevronRight } from '@tabler/icons-react'
+import { ChevronDown, ChevronRight } from 'lucide-react'
 import { useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { CockpitTask } from '../types'
@@ -16,7 +16,7 @@ export function WhyThisTask({ task }: { task: CockpitTask }) {
     <Stack gap={4}>
       <Group gap={4} wrap="nowrap">
         <ActionIcon aria-label={t('Чому це завдання')} size="sm" variant="subtle" onClick={() => setExpanded((current) => !current)}>
-          {expanded ? <IconChevronDown size={16} /> : <IconChevronRight size={16} />}
+          {expanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
         </ActionIcon>
         <Text c="dimmed" size="xs" fw={600} style={{ cursor: 'pointer' }} onClick={() => setExpanded((current) => !current)}>
           {t('Чому це завдання')}

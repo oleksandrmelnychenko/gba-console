@@ -17,7 +17,7 @@ import {
   Textarea,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconAlertCircle, IconDeviceFloppy, IconPlus } from '@tabler/icons-react'
+import { CircleAlert, Plus, Save } from 'lucide-react'
 import { type FormEvent, useEffect, useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
@@ -743,7 +743,7 @@ export function IncomeCashflowClientFormPage() {
           color={CREATE_ACTION_COLOR}
           disabled={isLoading || isResolvingCounterparty || isSaving}
           form="income-cashflow-client-form"
-          leftSection={<IconDeviceFloppy size={16} />}
+          leftSection={<Save size={16} />}
           loading={isSaving}
           type="submit"
         >
@@ -777,7 +777,7 @@ export function IncomeCashflowClientFormPage() {
           <SegmentedControl data={operationOptions} disabled={isLoading || isSaving} value={String(operationType)} onChange={handleOperationChanged} />
 
           {error && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
             </Alert>
           )}
@@ -908,7 +908,7 @@ export function IncomeCashflowClientFormPage() {
             />
             <Button
               disabled={Boolean(activeMovement) || !form.movementSearch.trim() || isLoading}
-              leftSection={<IconPlus size={16} />}
+              leftSection={<Plus size={16} />}
               mt={24}
               type="button"
               variant="default"

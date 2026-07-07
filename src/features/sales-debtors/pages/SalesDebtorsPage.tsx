@@ -1,10 +1,5 @@
 import { ActionIcon, Alert, Badge, Select, Stack, Text, Tooltip } from '@mantine/core'
-import {
-  IconAlertCircle,
-  IconBuildingBank,
-  IconCalendar,
-  IconFileDownload,
-} from '@tabler/icons-react'
+import { Calendar, CircleAlert, FileDown, Landmark } from 'lucide-react'
 import { useEffect, useMemo, useReducer, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -207,7 +202,6 @@ export function SalesDebtorsPage() {
     }
   }
 
-
   return (
     <Stack className="sales-debtors-page console-table-page" gap={6}>
       <div className="console-table-shell">
@@ -292,7 +286,7 @@ export function SalesDebtorsPage() {
                 variant="light"
                 onClick={handleExport}
               >
-                <IconFileDownload size={17} />
+                <FileDown size={17} />
               </ActionIcon>
             </Tooltip>
             <Paginator
@@ -312,7 +306,7 @@ export function SalesDebtorsPage() {
         </div>
 
         {error && (
-          <Alert className="console-table-alert" color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert className="console-table-alert" color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}
@@ -630,7 +624,7 @@ function DebtorDetailDrawer({
             {isLoading ? (
               <div className="sales-debtor-detail-state">{t('Завантаження деталей')}</div>
             ) : error ? (
-              <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+              <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
                 {error}
               </Alert>
             ) : items.length === 0 ? (
@@ -691,11 +685,11 @@ function DebtorDebtCard({ currencyCode: fallbackCurrencyCode, item }: { currency
         </Tooltip>
         <div className="sales-debtor-detail-debt__meta">
           <span>
-            <IconCalendar size={13} />
+            <Calendar size={13} />
             {documentDate}
           </span>
           <span>
-            <IconBuildingBank size={13} />
+            <Landmark size={13} />
             {agreement}
           </span>
         </div>
@@ -735,7 +729,6 @@ function splitProfileName(value: string): [string, string] {
 
   return [firstPart || normalized, rest.join(' ')]
 }
-
 
 function getDebtDocumentNumber(item: DebtorDebtItem, sale: DebtorDebtSale | null): string {
   return displayValue(

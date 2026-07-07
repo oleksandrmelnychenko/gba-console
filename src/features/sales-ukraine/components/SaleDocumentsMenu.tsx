@@ -1,6 +1,6 @@
 import { ActionIcon, Button, Group, Menu, Stack, Tooltip } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconFileText } from '@tabler/icons-react'
+import { FileText } from 'lucide-react'
 import { useMemo } from 'react'
 import { useAuth } from '../../auth/useAuth'
 import { UserRoleType } from '../../../shared/auth/types'
@@ -109,7 +109,7 @@ export function SaleDocumentsMenu({ sale }: { sale: SalesUkraineSale }) {
         <Menu.Target>
           <Tooltip label={t('Документи')}>
             <ActionIcon aria-label={t('Документи')} color="gray" variant="subtle">
-              <IconFileText size={18} />
+              <FileText size={18} />
             </ActionIcon>
           </Tooltip>
         </Menu.Target>

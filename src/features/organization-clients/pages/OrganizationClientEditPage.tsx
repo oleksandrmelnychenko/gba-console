@@ -11,12 +11,7 @@ import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
 import { CREATE_ACTION_COLOR } from "../../../shared/ui/page-header-actions/PageHeaderActions"
 import { notifications } from '@mantine/notifications'
-import {
-  IconAlertCircle,
-  IconCheck,
-  IconDeviceFloppy,
-  IconTrash,
-} from '@tabler/icons-react'
+import { Check, CircleAlert, Save, Trash2 } from 'lucide-react'
 import { type FormEvent, useEffect, useRef } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
@@ -249,7 +244,7 @@ export function OrganizationClientEditPage() {
           <Button
             color="red"
             disabled={!client}
-            leftSection={<IconTrash size={16} />}
+            leftSection={<Trash2 size={16} />}
             loading={isDeleting}
             variant="light"
             onClick={() => setDeleteModalOpened(true)}
@@ -260,7 +255,7 @@ export function OrganizationClientEditPage() {
             color={CREATE_ACTION_COLOR}
             disabled={!client}
             form="organization-client-edit-form"
-            leftSection={<IconDeviceFloppy size={16} />}
+            leftSection={<Save size={16} />}
             loading={isSaving}
             type="submit"
           >
@@ -271,7 +266,7 @@ export function OrganizationClientEditPage() {
     >
     <Stack gap="lg">
       {error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {error}
         </Alert>
       )}
@@ -325,7 +320,7 @@ export function OrganizationClientEditPage() {
             <Button variant="subtle" color="gray" onClick={() => setDeleteModalOpened(false)}>
               {t('Скасувати')}
             </Button>
-            <Button color="red" leftSection={<IconCheck size={16} />} loading={isDeleting} onClick={handleDelete}>
+            <Button color="red" leftSection={<Check size={16} />} loading={isDeleting} onClick={handleDelete}>
               {t('Видалити')}
             </Button>
           </Group>

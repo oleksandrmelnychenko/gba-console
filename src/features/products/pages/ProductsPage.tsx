@@ -23,27 +23,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import {
-  IconAlertCircle,
-  IconArrowsExchange,
-  IconBox,
-  IconClipboardList,
-  IconDeviceFloppy,
-  IconDownload,
-  IconEdit,
-  IconFileTypePdf,
-  IconFileDescription,
-  IconHistory,
-  IconPackage,
-  IconPhoto,
-  IconPlus,
-  IconRefresh,
-  IconSearch,
-  IconSettings,
-  IconStar,
-  IconTrash,
-  IconUpload,
-} from '@tabler/icons-react'
+import { ArrowLeftRight, Box as BoxIcon, CircleAlert, ClipboardList, Download, FileText, History, Image as ImageIcon, Package, Plus, RefreshCw, Save, Search, Settings, SquarePen, Star, Trash2, Upload } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { type KeyboardEvent, type ReactNode, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
@@ -913,7 +893,7 @@ export function ProductsPage() {
   return (
     <Stack gap="md" className="products-page">
       {error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {error}
         </Alert>
       )}
@@ -1064,7 +1044,7 @@ function ProductAssortmentCarousel({
           <TextInput
             autoFocus
             aria-label={t('Введіть товар')}
-            leftSection={<IconSearch size={17} />}
+            leftSection={<Search size={17} />}
             placeholder={t('Введіть артикул або назву товару')}
             size="md"
             value={searchDraft}
@@ -1106,7 +1086,7 @@ function ProductCarouselRow({
       className={`product-carousel-row ${getProductRowToneClass(product)}`}
       onClick={() => onSelect(product)}
     >
-      <IconBox size={16} stroke={1.7} className="product-carousel-row-icon" />
+      <BoxIcon size={16} strokeWidth={1.7} className="product-carousel-row-icon" />
       <span className="product-carousel-row-body">
         <span className="product-carousel-row-code">{getProductCode(product)}</span>
         <span className="product-carousel-row-name">{getProductTitle(product)}</span>
@@ -1164,14 +1144,14 @@ function ProductInlineView({
           <ProductInlineActions disabled={isLoading} onOpenPanel={onOpenPanel} />
           <Tooltip label={t('Оновити')}>
             <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} variant="light" onClick={onReload}>
-              <IconRefresh size={18} />
+              <RefreshCw size={18} />
             </ActionIcon>
           </Tooltip>
         </Group>
       </Group>
 
       {detailError && (
-        <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
           {detailError}
         </Alert>
       )}
@@ -1193,7 +1173,7 @@ function ProductInlineView({
             {mainImage?.ImageUrl ? (
               <Image src={mainImage.ImageUrl} alt={getProductTitle(product)} fit="contain" h="100%" w="100%" />
             ) : (
-              <IconPackage size={42} stroke={1.5} />
+              <Package size={42} strokeWidth={1.5} />
             )}
           </Box>
           {productImages.length > 1 ? (
@@ -1311,32 +1291,32 @@ function ProductInlineActions({
 
   return (
     <Group gap={6} className="product-inline-actions">
-      <Button size="xs" variant="outline" disabled={disabled} leftSection={<IconHistory size={15} />} onClick={() => onOpenPanel('storage-history')}>
+      <Button size="xs" variant="outline" disabled={disabled} leftSection={<History size={15} />} onClick={() => onOpenPanel('storage-history')}>
         {t('Історія місця зберігання')}
       </Button>
-      <Button size="xs" variant="outline" disabled={disabled} leftSection={<IconFileDescription size={15} />} onClick={() => onOpenPanel('specification')}>
+      <Button size="xs" variant="outline" disabled={disabled} leftSection={<FileText size={15} />} onClick={() => onOpenPanel('specification')}>
         {t('Специфікація')}
       </Button>
-      <Button size="xs" variant="outline" disabled={disabled} leftSection={<IconPhoto size={15} />} onClick={() => onOpenPanel('images')}>
+      <Button size="xs" variant="outline" disabled={disabled} leftSection={<ImageIcon size={15} />} onClick={() => onOpenPanel('images')}>
         {t('Зображення')}
       </Button>
       <PermissionGate permissionKey={PRODUCT_BALANCES_PERMISSION}>
-        <Button size="xs" variant="outline" disabled={disabled} leftSection={<IconPackage size={15} />} onClick={() => onOpenPanel('remains')}>
+        <Button size="xs" variant="outline" disabled={disabled} leftSection={<Package size={15} />} onClick={() => onOpenPanel('remains')}>
           {t('Залишки по партіям')}
         </Button>
       </PermissionGate>
       <PermissionGate permissionKey={PRODUCT_EDIT_PERMISSION}>
-        <Button size="xs" variant="outline" disabled={disabled} leftSection={<IconEdit size={15} />} onClick={() => onOpenPanel('edit')}>
+        <Button size="xs" variant="outline" disabled={disabled} leftSection={<SquarePen size={15} />} onClick={() => onOpenPanel('edit')}>
           {t('Редагувати')}
         </Button>
       </PermissionGate>
       <PermissionGate permissionKey={PRODUCT_MOVEMENT_PERMISSION}>
-        <Button size="xs" variant="outline" disabled={disabled} leftSection={<IconArrowsExchange size={15} />} onClick={() => onOpenPanel('movement')}>
+        <Button size="xs" variant="outline" disabled={disabled} leftSection={<ArrowLeftRight size={15} />} onClick={() => onOpenPanel('movement')}>
           {t('Рух товару')}
         </Button>
       </PermissionGate>
       <PermissionGate permissionKey={PRODUCT_WRITE_OFF_PERMISSION}>
-        <Button size="xs" variant="outline" disabled={disabled} leftSection={<IconClipboardList size={15} />} onClick={() => onOpenPanel('writeoff')}>
+        <Button size="xs" variant="outline" disabled={disabled} leftSection={<ClipboardList size={15} />} onClick={() => onOpenPanel('writeoff')}>
           {t('Правила списання')}
         </Button>
       </PermissionGate>
@@ -1662,7 +1642,7 @@ function ProductOriginalNumbersTab({
                   void makeMainOriginalNumber(item)
                 }}
               >
-                <IconStar size={15} />
+                <Star size={15} />
               </ActionIcon>
             </Tooltip>
             <Tooltip label={t('Видалити')}>
@@ -1677,7 +1657,7 @@ function ProductOriginalNumbersTab({
                   void removeOriginalNumber(item)
                 }}
               >
-                <IconTrash size={15} />
+                <Trash2 size={15} />
               </ActionIcon>
             </Tooltip>
           </Group>
@@ -1689,7 +1669,7 @@ function ProductOriginalNumbersTab({
   return (
     <Stack gap="sm" tabIndex={0} onKeyDown={handleOriginalNumbersKeyDown}>
       {error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {error}
         </Alert>
       )}
@@ -1715,7 +1695,7 @@ function ProductOriginalNumbersTab({
             <Button
               color={CREATE_ACTION_COLOR}
               disabled={!canSave}
-              leftSection={selectedItem ? <IconDeviceFloppy size={16} /> : <IconPlus size={16} />}
+              leftSection={selectedItem ? <Save size={16} /> : <Plus size={16} />}
               loading={isSaving}
               onClick={saveOriginalNumber}
             >
@@ -1835,9 +1815,9 @@ function ProductRelatedProductsTab({
         <Group gap={6} wrap="nowrap" align="center">
           {type === 'components' ? (
             row.isProductSet ? (
-              <IconBox size={15} className="product_page_iconBox" />
+              <BoxIcon size={15} className="product_page_iconBox" />
             ) : (
-              <IconSettings size={15} />
+              <Settings size={15} />
             )
           ) : null}
           <Text fw={650} size="sm" lineClamp={1} c={getRelatedProductRowColor(row.product)}>
@@ -1928,7 +1908,7 @@ function ProductRelatedProductsTab({
                 void removeRelatedProduct(row)
               }}
             >
-              <IconTrash size={15} />
+              <Trash2 size={15} />
             </ActionIcon>
           </Tooltip>
         </PermissionGate>
@@ -1939,7 +1919,7 @@ function ProductRelatedProductsTab({
   return (
     <Stack gap="sm">
       {error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {error}
         </Alert>
       )}
@@ -2027,23 +2007,23 @@ function ProductUploadDocumentToolbar({
           </Menu.Target>
           <Menu.Dropdown>
             <Menu.Label>{t('Асортимент')}</Menu.Label>
-            <Menu.Item leftSection={<IconUpload size={15} />} onClick={() => setProductUploadOpened(true)}>
+            <Menu.Item leftSection={<Upload size={15} />} onClick={() => setProductUploadOpened(true)}>
               {t('Товари')}
             </Menu.Item>
             <Menu.Divider />
             <Menu.Label>{t('Повʼязані товари')}</Menu.Label>
-            <Menu.Item leftSection={<IconUpload size={15} />} onClick={() => setUploadType('analogues')}>
+            <Menu.Item leftSection={<Upload size={15} />} onClick={() => setUploadType('analogues')}>
               {t('Аналоги')}
             </Menu.Item>
-            <Menu.Item leftSection={<IconUpload size={15} />} onClick={() => setUploadType('components')}>
+            <Menu.Item leftSection={<Upload size={15} />} onClick={() => setUploadType('components')}>
               {t('Комплектуючі')}
             </Menu.Item>
-            <Menu.Item leftSection={<IconUpload size={15} />} onClick={() => setUploadType('originalNumbers')}>
+            <Menu.Item leftSection={<Upload size={15} />} onClick={() => setUploadType('originalNumbers')}>
               {t('Оригінальні номери')}
             </Menu.Item>
             <Menu.Divider />
             <Menu.Label>{t('Розміщення')}</Menu.Label>
-            <Menu.Item leftSection={<IconUpload size={15} />} onClick={() => setStorageUploadOpened(true)}>
+            <Menu.Item leftSection={<Upload size={15} />} onClick={() => setStorageUploadOpened(true)}>
               <Group gap="xs" justify="space-between" wrap="nowrap">
                 <Text size="sm">{t('Місце зберігання')}</Text>
                 {storageCorrectionRowsCount > 0 ? (
@@ -2255,7 +2235,7 @@ function ProductPlacementStorageUploadModal({
     <AppModal centered opened={opened} size="min(960px, 96vw)" title={t('Завантаження місць зберігання')} onClose={closeModal}>
       <Stack gap="md">
         {(error || storagesError) ? (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">{error || storagesError}</Alert>
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">{error || storagesError}</Alert>
         ) : null}
 
         {notPassedRows.length === 0 ? (
@@ -2284,7 +2264,7 @@ function ProductPlacementStorageUploadModal({
               <NumberInput label={t('Колонка місця')} min={1} value={columnPlacement} onChange={(value) => setColumnPlacement(Number(value) || 0)} />
             </SimpleGrid>
             <Group justify="flex-end">
-              <Button color={CREATE_ACTION_COLOR} disabled={!canUpload} leftSection={<IconUpload size={16} />} loading={isUploading} onClick={() => void uploadFile()}>
+              <Button color={CREATE_ACTION_COLOR} disabled={!canUpload} leftSection={<Upload size={16} />} loading={isUploading} onClick={() => void uploadFile()}>
                 {t('Завантажити')}
               </Button>
             </Group>
@@ -2324,7 +2304,7 @@ function ProductPlacementStorageUploadModal({
               <Button color="gray" variant="light" disabled={isSavingReturn} onClick={closeModal}>
                 {t('Закрити')}
               </Button>
-              <Button color={CREATE_ACTION_COLOR} leftSection={<IconDeviceFloppy size={16} />} loading={isSavingReturn} onClick={() => void saveNotPassedRows()}>
+              <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSavingReturn} onClick={() => void saveNotPassedRows()}>
                 {t('Зберегти')}
               </Button>
             </Group>
@@ -2497,12 +2477,12 @@ function ProductFileUploadModal({
     <AppModal centered opened={opened} size="min(960px, 96vw)" title={t('Завантаження товарів')} onClose={closeModal}>
       <Stack gap="sm">
         {(error || pricingState.error) ? (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error || pricingState.error}
           </Alert>
         ) : null}
         {!error && !pricingState.error && hasDuplicatePricingRows ? (
-          <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
             {t('Один тип ціни вибрано кілька разів. Приберіть дубль перед завантаженням.')}
           </Alert>
         ) : null}
@@ -2543,7 +2523,7 @@ function ProductFileUploadModal({
           <Text fw={700}>{t('Ціни')}</Text>
           <Button
             disabled={pricingState.isLoading || pricingOptions.length === 0}
-            leftSection={<IconPlus size={16} />}
+            leftSection={<Plus size={16} />}
             size="xs"
             variant="outline"
             onClick={addPriceRow}
@@ -2581,7 +2561,7 @@ function ProductFileUploadModal({
                   />
                   <Tooltip label={t('Видалити')}>
                     <ActionIcon aria-label={t('Видалити')} color="red" variant="light" onClick={() => removePriceRow(priceRow.key)}>
-                      <IconTrash size={16} />
+                      <Trash2 size={16} />
                     </ActionIcon>
                   </Tooltip>
                 </Group>
@@ -2596,7 +2576,7 @@ function ProductFileUploadModal({
           <Button color="gray" disabled={isUploading} variant="light" onClick={closeModal}>
             {t('Скасувати')}
           </Button>
-          <Button color={CREATE_ACTION_COLOR} leftSection={<IconUpload size={16} />} loading={isUploading} disabled={!canSubmit} onClick={() => void submitUpload()}>
+          <Button color={CREATE_ACTION_COLOR} leftSection={<Upload size={16} />} loading={isUploading} disabled={!canSubmit} onClick={() => void submitUpload()}>
             {t('Завантажити')}
           </Button>
         </Group>
@@ -2629,7 +2609,7 @@ function ProductUploadDocumentButton({
   return (
     <>
       <PermissionGate permissionKey={PRODUCT_UPLOAD_DOCUMENT_PERMISSION}>
-        <Button size="xs" variant="outline" leftSection={<IconUpload size={16} />} onClick={openModal}>
+        <Button size="xs" variant="outline" leftSection={<Upload size={16} />} onClick={openModal}>
           {t(labels.button)}
         </Button>
       </PermissionGate>
@@ -2722,7 +2702,7 @@ function ProductUploadDocumentModal({
     <AppModal centered opened={opened} title={t(labels.title)} onClose={closeModal}>
       <Stack gap="sm" onKeyDown={handleUploadKeyDown}>
         {error ? (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         ) : null}
@@ -2778,7 +2758,7 @@ function ProductUploadDocumentModal({
           <Button color="gray" disabled={isUploading} variant="light" onClick={closeModal}>
             {t('Скасувати')}
           </Button>
-          <Button color={CREATE_ACTION_COLOR} leftSection={<IconUpload size={16} />} loading={isUploading} disabled={!canSubmit} onClick={() => void submitUpload()}>
+          <Button color={CREATE_ACTION_COLOR} leftSection={<Upload size={16} />} loading={isUploading} disabled={!canSubmit} onClick={() => void submitUpload()}>
             {t('Завантажити')}
           </Button>
         </Group>
@@ -3039,14 +3019,14 @@ function ProductInlineMovementsTab({
       <Group className="product-movement-toolbar" align="end" gap="sm" wrap="wrap">
         <TextInput className="product-movement-toolbar__control" label={t('З')} type="date" value={dateFrom} onChange={(event) => setDateFrom(event.currentTarget.value)} />
         <TextInput className="product-movement-toolbar__control" label={t('По')} type="date" value={dateTo} onChange={(event) => setDateTo(event.currentTarget.value)} />
-        <Button className="product-movement-toolbar__button" color={CREATE_ACTION_COLOR} leftSection={<IconRefresh size={16} />} loading={state.isLoading} variant="outline" onClick={() => reload()}>
+        <Button className="product-movement-toolbar__button" color={CREATE_ACTION_COLOR} leftSection={<RefreshCw size={16} />} loading={state.isLoading} variant="outline" onClick={() => reload()}>
           {t('Оновити')}
         </Button>
         <Button
           className="product-movement-toolbar__button"
           color={CREATE_ACTION_COLOR}
           disabled={!productNetUid}
-          leftSection={<IconDownload size={16} />}
+          leftSection={<Download size={16} />}
           loading={state.isExporting}
           variant="outline"
           onClick={() => void exportRows()}
@@ -3056,15 +3036,15 @@ function ProductInlineMovementsTab({
       </Group>
 
       {!productNetUid ? (
-        <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
           {t('У товару немає NetUid для завантаження руху товару')}
         </Alert>
       ) : state.error ? (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {state.error}
         </Alert>
       ) : state.exportError ? (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {state.exportError}
         </Alert>
       ) : direction === 'income' ? (
@@ -3418,7 +3398,7 @@ function ProductMovementDownloadModal({
             {document.PdfDocumentURL ? (
               <Anchor href={getDocumentHref(document.PdfDocumentURL)} target="_blank" rel="noreferrer" className="document-link">
                 <span className="document-link-badge document-link-badge-pdf">
-                  <IconFileTypePdf size={22} stroke={1.8} />
+                  <FileText size={22} strokeWidth={1.8} />
                 </span>
                 <span>{t('PDF документ')}</span>
               </Anchor>

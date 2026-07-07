@@ -15,7 +15,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { IconAlertCircle, IconEdit, IconEye, IconHierarchy2, IconPlus, IconRefresh, IconRestore, IconSearch, IconX } from '@tabler/icons-react'
+import { CircleAlert, Eye, Network, Plus, RefreshCw, RotateCcw, Search, SquarePen, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -560,7 +560,7 @@ function OutgoingCashflowsContent({ model }: { model: OutgoingCashflowsPageModel
             <TextInput label={t('Від')} type="date" value={fromDate} onChange={(event) => onSetFromDate(event.currentTarget.value)} />
             <TextInput label={t('До')} type="date" value={toDate} onChange={(event) => onSetToDate(event.currentTarget.value)} />
             <TextInput
-              leftSection={<IconSearch size={16} />}
+              leftSection={<Search size={16} />}
               label={t('Пошук')}
               placeholder={t('Номер, отримувач, рахунок або коментар')}
               value={searchValue}
@@ -610,7 +610,7 @@ function OutgoingCashflowsContent({ model }: { model: OutgoingCashflowsPageModel
             <div className="app-filter-actions outgoing-cashflows-filter-actions">
               <Tooltip label={t('Скинути фільтри')}>
                 <ActionIcon aria-label={t('Скинути фільтри')} color="gray" size={34} variant="light" onClick={onResetFilters}>
-                  <IconRestore size={17} />
+                  <RotateCcw size={17} />
                 </ActionIcon>
               </Tooltip>
               <Tooltip label={t('Оновити')}>
@@ -625,7 +625,7 @@ function OutgoingCashflowsContent({ model }: { model: OutgoingCashflowsPageModel
                     void onLoadCashflows(0, false)
                   }}
                 >
-                  <IconRefresh size={17} />
+                  <RefreshCw size={17} />
                 </ActionIcon>
               </Tooltip>
               <DataTableDensityToggle density={density} onToggle={onToggleDensity} size={34} />
@@ -633,7 +633,7 @@ function OutgoingCashflowsContent({ model }: { model: OutgoingCashflowsPageModel
             <div className="outgoing-cashflows-create-actions">
               <Button
                 color={CREATE_ACTION_COLOR}
-                leftSection={<IconPlus size={16} />}
+                leftSection={<Plus size={16} />}
                 size="sm"
                 styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
                 onClick={() => navigate('/accounting/outgoing-cashflow/new', { state: { backgroundLocation: location } })}
@@ -646,13 +646,13 @@ function OutgoingCashflowsContent({ model }: { model: OutgoingCashflowsPageModel
 
         <Stack className="outgoing-cashflows-card__body" gap="md">
           {error && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
             </Alert>
           )}
 
           {filterError && (
-            <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
               {filterError}
             </Alert>
           )}
@@ -878,7 +878,7 @@ function useOutgoingCashflowColumns({
                   onOpenDocumentStructure(row)
                 }}
               >
-                <IconHierarchy2 size={16} />
+                <Network size={16} />
               </ActionIcon>
             </Tooltip>
           ) : null,
@@ -907,7 +907,7 @@ function useOutgoingCashflowColumns({
                   onEditReport(row)
                 }}
               >
-                <IconEdit size={16} />
+                <SquarePen size={16} />
               </ActionIcon>
             </Tooltip>
           ) : null,
@@ -935,7 +935,7 @@ function useOutgoingCashflowColumns({
                 onCancel(row)
               }}
             >
-              <IconX size={16} />
+              <X size={16} />
             </ActionIcon>
           </Tooltip>
         ),
@@ -962,7 +962,7 @@ function useOutgoingCashflowColumns({
                 onOpen(row)
               }}
             >
-              <IconEye size={16} />
+              <Eye size={16} />
             </ActionIcon>
           </Tooltip>
         ),
@@ -1113,7 +1113,7 @@ function OutgoingCashflowDocumentStructureDrawer({
           )}
 
           {calculationError && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {calculationError}
             </Alert>
           )}

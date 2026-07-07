@@ -1,5 +1,5 @@
 import { Alert, Badge, Card, Stack, Text, Tooltip } from '@mantine/core'
-import { IconAlertCircle } from '@tabler/icons-react'
+import { CircleAlert } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -169,7 +169,7 @@ export function NewEcommerceClientsPage() {
           <Alert
             className="new-ecommerce-clients-page__alert"
             color="red"
-            icon={<IconAlertCircle size={18} />}
+            icon={<CircleAlert size={18} />}
             variant="light"
           >
             {error}

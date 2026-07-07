@@ -1,5 +1,5 @@
 import { Button, Group, Stack, Text } from '@mantine/core'
-import { IconPlus } from '@tabler/icons-react'
+import { Plus } from 'lucide-react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
@@ -137,7 +137,7 @@ export function MergedServicesSection({
           {t('Об’єднаний сервіс')}
         </Text>
         {permissions.canCreateService && (
-          <Button className="supply-payment-action-button" color={CREATE_ACTION_COLOR} leftSection={<IconPlus size={16} />} variant="light" onClick={() => setNewOpen(true)}>
+          <Button className="supply-payment-action-button" color={CREATE_ACTION_COLOR} leftSection={<Plus size={16} />} variant="light" onClick={() => setNewOpen(true)}>
             {t('Додати')}
           </Button>
         )}

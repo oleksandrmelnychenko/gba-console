@@ -7,7 +7,7 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
-import { IconAlertCircle, IconRefresh, IconRestore } from '@tabler/icons-react'
+import { CircleAlert, RefreshCw, RotateCcw } from 'lucide-react'
 import { useEffect, useMemo, useReducer, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { formatLocalDate, SYNC_DATA_RANGE_START } from '../../../shared/date/dateTime'
@@ -208,7 +208,7 @@ function ActReconciliationsPageView({ model }: { model: ReturnType<typeof useAct
             <div className="app-filter-actions">
               <Tooltip label={t('Скинути')}>
                 <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
-                  <IconRestore size={17} />
+                  <RotateCcw size={17} />
                 </ActionIcon>
               </Tooltip>
               <Tooltip label={t('Оновити')}>
@@ -220,7 +220,7 @@ function ActReconciliationsPageView({ model }: { model: ReturnType<typeof useAct
                   variant="light"
                   onClick={() => reload()}
                 >
-                  <IconRefresh size={18} />
+                  <RefreshCw size={18} />
                 </ActionIcon>
               </Tooltip>
             </div>
@@ -229,7 +229,7 @@ function ActReconciliationsPageView({ model }: { model: ReturnType<typeof useAct
         </div>
 
         {(error || filterError) && (
-          <Alert className="console-table-alert" color={filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert className="console-table-alert" color={filterError ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">
             {filterError || error}
           </Alert>
         )}

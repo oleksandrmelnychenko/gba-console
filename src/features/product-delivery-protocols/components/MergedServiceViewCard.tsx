@@ -1,5 +1,5 @@
 import { ActionIcon, Anchor, Alert, Badge, Button, Card, Group, Stack, Text, Tooltip } from '@mantine/core'
-import { IconAlertCircle, IconEdit, IconTrash } from '@tabler/icons-react'
+import { CircleAlert, SquarePen, Trash2 } from 'lucide-react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
@@ -123,14 +123,14 @@ export function MergedServiceViewCard({
             {canUpdate && (
               <Tooltip label={t('Редагувати')}>
                 <ActionIcon color="gray" disabled={isSaving} variant="subtle" onClick={onEdit}>
-                  <IconEdit size={18} />
+                  <SquarePen size={18} />
                 </ActionIcon>
               </Tooltip>
             )}
             {canRemove && (
               <Tooltip label={t('Видалити')}>
                 <ActionIcon color="red" disabled={isSaving} variant="subtle" onClick={onRemove}>
-                  <IconTrash size={18} />
+                  <Trash2 size={18} />
                 </ActionIcon>
               </Tooltip>
             )}
@@ -138,7 +138,7 @@ export function MergedServiceViewCard({
         )}
 
         {!service.IsCalculatedValue && (
-          <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
             {t('Сервіс необхідно розрахувати')}
           </Alert>
         )}

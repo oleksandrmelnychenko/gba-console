@@ -9,12 +9,7 @@ import {
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
-import {
-  IconAlertCircle,
-  IconDownload,
-  IconFileImport,
-  IconFilesOff,
-} from '@tabler/icons-react'
+import { CircleAlert, Download, FileInput, FileX } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import './supply-order-detail.css'
@@ -763,7 +758,7 @@ function SupplyUkraineDirectOrderSpecificationsView({ model }: { model: DirectOr
     >
       <Stack gap="sm" className="supply-order-specifications-content">
         {model.error && (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {model.error}
           </Alert>
         )}
@@ -813,7 +808,7 @@ function SpecificationActionButtons({ model }: { model: DirectOrderSpecification
             color={CREATE_ACTION_COLOR}
             className="supply-order-spec-action-button"
             disabled={model.isActionBusy}
-            leftSection={<IconFileImport size={16} />}
+            leftSection={<FileInput size={16} />}
             loading={model.isUploading}
             variant="outline"
             onClick={() => model.setUploadOpen(true)}
@@ -826,7 +821,7 @@ function SpecificationActionButtons({ model }: { model: DirectOrderSpecification
             color={CREATE_ACTION_COLOR}
             className="supply-order-spec-action-button"
             disabled={!model.selectedInvoice || model.isActionBusy}
-            leftSection={<IconFileImport size={16} />}
+            leftSection={<FileInput size={16} />}
             loading={model.isSavingDocuments}
             variant="outline"
             onClick={model.openDocuments}
@@ -839,7 +834,7 @@ function SpecificationActionButtons({ model }: { model: DirectOrderSpecification
             color={CREATE_ACTION_COLOR}
             className="supply-order-spec-action-button"
             disabled={model.isActionBusy}
-            leftSection={<IconDownload size={16} />}
+            leftSection={<Download size={16} />}
             loading={model.isDownloading}
             variant="outline"
             onClick={model.openDownload}
@@ -975,7 +970,7 @@ function SpecificationGridArea({ model }: { model: DirectOrderSpecificationsPage
   return (
     <div className="supply-order-spec-grid-block">
       {model.packingListError && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {model.packingListError}
         </Alert>
       )}
@@ -1007,7 +1002,7 @@ function SpecificationGridArea({ model }: { model: DirectOrderSpecificationsPage
         />
       ) : (
         <div className="supply-detail-state">
-          <IconFilesOff size={18} />
+          <FileX size={18} />
           <span>{t('Немає даних')}</span>
         </div>
       )}

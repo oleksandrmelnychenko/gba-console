@@ -1,6 +1,6 @@
 import { Alert, Button, Group, Loader, NumberInput, Stack, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconCalendarClock } from '@tabler/icons-react'
+import { CalendarClock } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { formatLocalDate } from '../../../../shared/date/dateTime'
 import { useI18n } from '../../../../shared/i18n/useI18n'
@@ -146,7 +146,7 @@ function FutureReservationForm({
       </Text>
 
       {supplyOrderNetId ? (
-        <Alert color="blue" icon={<IconCalendarClock size={18} />} variant="light">
+        <Alert color="blue" icon={<CalendarClock size={18} />} variant="light">
           {t('Найближча поставка')}: {order?.Number ? `${order.Number} · ` : ''}
           {order?.OrderArrivedDate ? formatLocalDate(new Date(order.OrderArrivedDate)) : t('дата невідома')}
           {maxCount !== null ? ` · ${maxCount} ${t('штук')}` : ''}

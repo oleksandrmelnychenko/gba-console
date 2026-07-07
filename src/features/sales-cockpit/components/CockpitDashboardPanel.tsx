@@ -1,5 +1,5 @@
 import { Alert, Card, Group, SimpleGrid, Stack, Text } from '@mantine/core'
-import { IconAlertCircle } from '@tabler/icons-react'
+import { CircleAlert } from 'lucide-react'
 import { useEffect, useMemo, useReducer } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import {
@@ -141,7 +141,7 @@ export function CockpitDashboardPanel({ reloadKey }: { reloadKey: number }) {
         <Text className="app-section-title" fw={600}>{t('Дашборд завдань')}</Text>
 
         {error && (
-          <Alert color="orange" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="orange" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}

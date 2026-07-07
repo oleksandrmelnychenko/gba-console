@@ -1,6 +1,6 @@
 import { ActionIcon, Alert, Group, Loader, Skeleton, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { IconAlertCircle, IconRefresh, IconRestore, IconSearch, IconUser, IconUsersGroup } from '@tabler/icons-react'
+import { CircleAlert, RefreshCw, RotateCcw, Search, User, Users } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -115,7 +115,7 @@ export function ClientsStructureTreePage() {
         id: key,
         label: getClientName(client, t),
         meta: getClientMeta(client),
-        icon: childClients.length > 0 ? <IconUsersGroup size={15} /> : <IconUser size={15} />,
+        icon: childClients.length > 0 ? <Users size={15} /> : <User size={15} />,
         active: key === selectedNetUid,
         hasChildren: loaded ? childClients.length > 0 : true,
         loading: loadingKeys.has(key),
@@ -140,25 +140,25 @@ export function ClientsStructureTreePage() {
             <Group align="end" gap="sm" wrap="nowrap">
               <TextInput
                 label={t('Пошук клієнта')}
-                leftSection={<IconSearch size={16} />}
+                leftSection={<Search size={16} />}
                 style={{ flex: '1 1 auto', minWidth: 160 }}
                 value={searchDraft}
                 onChange={(event) => setSearchDraft(event.currentTarget.value)}
               />
               <Tooltip label={t('Скинути')}>
                 <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={() => setSearchDraft('')}>
-                  <IconRestore size={17} />
+                  <RotateCcw size={17} />
                 </ActionIcon>
               </Tooltip>
               <Tooltip label={t('Оновити')}>
                 <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={34} variant="light" onClick={() => reload()}>
-                  <IconRefresh size={17} />
+                  <RefreshCw size={17} />
                 </ActionIcon>
               </Tooltip>
             </Group>
 
             {error ? (
-              <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+              <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
                 {error}
               </Alert>
             ) : null}

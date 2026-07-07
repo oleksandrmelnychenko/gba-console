@@ -12,7 +12,7 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
-import { IconAlertCircle, IconPlus, IconTrash } from '@tabler/icons-react'
+import { CircleAlert, Plus, Trash2 } from 'lucide-react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
@@ -55,7 +55,7 @@ function ProtocolRow({
           {canRemove && (
             <Tooltip label={t('Видалити')}>
               <ActionIcon className="supply-payment-remove-action" color="red" variant="subtle" onClick={onRemove}>
-                <IconTrash size={18} />
+                <Trash2 size={18} />
               </ActionIcon>
             </Tooltip>
           )}
@@ -250,7 +250,7 @@ export function PaymentDeliveryProtocolsSection({
           {t('Протоколи доставки')}
         </Text>
         {canCreateProtocol && (
-          <Button className="supply-payment-action-button" color={CREATE_ACTION_COLOR} leftSection={<IconPlus size={16} />} onClick={() => setFormOpen(true)}>
+          <Button className="supply-payment-action-button" color={CREATE_ACTION_COLOR} leftSection={<Plus size={16} />} onClick={() => setFormOpen(true)}>
             {t('Створити платіжну задачу')}
           </Button>
         )}
@@ -287,7 +287,7 @@ export function PaymentDeliveryProtocolsSection({
       >
         <Stack gap="sm">
           {validationError && (
-            <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
               {validationError}
             </Alert>
           )}

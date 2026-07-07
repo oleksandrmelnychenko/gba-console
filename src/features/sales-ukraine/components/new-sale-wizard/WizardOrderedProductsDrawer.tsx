@@ -1,5 +1,5 @@
 import { Alert, Group, Loader, Table, Text } from '@mantine/core'
-import { IconAlertCircle } from '@tabler/icons-react'
+import { CircleAlert } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../../shared/ui/AppDrawer'
@@ -72,7 +72,7 @@ function WizardOrderedProductsContent({ clientNetId }: { clientNetId: string }) 
 
   if (error) {
     return (
-      <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+      <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
         {error}
       </Alert>
     )

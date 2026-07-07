@@ -12,7 +12,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { IconAlertCircle, IconChevronDown, IconChevronRight, IconDownload } from '@tabler/icons-react'
+import { ChevronDown, ChevronRight, CircleAlert, Download } from 'lucide-react'
 import { useEffect, useMemo, useReducer, useState } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -380,7 +380,7 @@ export function ClientProductMovementPage() {
                     variant="light"
                     onClick={exportDocument}
                   >
-                    <IconDownload size={18} />
+                    <Download size={18} />
                   </ActionIcon>
                 </Tooltip>
               )}
@@ -405,7 +405,7 @@ export function ClientProductMovementPage() {
           <Alert
             className="client-product-movement-page__alert"
             color="red"
-            icon={<IconAlertCircle size={18} />}
+            icon={<CircleAlert size={18} />}
             variant="light"
           >
             {error}
@@ -481,7 +481,7 @@ function useColumns({
                 variant="subtle"
                 onClick={() => onToggle(documentKey)}
               >
-                {isExpanded ? <IconChevronDown size={16} /> : <IconChevronRight size={16} />}
+                {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
               </ActionIcon>
               <MovementEntityCell value={displayValue(row.document.DocumentTypeName)} />
             </Group>

@@ -22,19 +22,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import {
-  IconAlertCircle,
-  IconArrowBackUp,
-  IconArrowLeft,
-  IconDeviceFloppy,
-  IconEdit,
-  IconFileImport,
-  IconFileUpload,
-  IconPackage,
-  IconRefresh,
-  IconTrash,
-  IconX,
-} from '@tabler/icons-react'
+import { ArrowLeft, CircleAlert, FileInput as FileInputIcon, FileUp, Package, RefreshCw, Save, SquarePen, Trash2, Undo2, X } from 'lucide-react'
 import { useEffect, useMemo, useReducer, useState, type CSSProperties, type Dispatch, type SetStateAction, type ReactNode } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import './supply-order-detail.css'
@@ -1035,7 +1023,7 @@ function SupplyUkraineDirectOrderInvoicesView({
     <Stack gap={embedded ? 6 : 'lg'} h="100%" style={{ minHeight: 0, overflow: 'hidden' }}>
       <DirectOrderInvoicesHeader embedded={embedded} model={model} />
       {model.error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} style={{ flexShrink: 0 }} variant="light">
+        <Alert color="red" icon={<CircleAlert size={18} />} style={{ flexShrink: 0 }} variant="light">
           {model.error}
         </Alert>
       )}
@@ -1071,7 +1059,7 @@ function DirectOrderInvoicesHeader({
               variant="default"
               onClick={model.goBack}
             >
-              <IconArrowLeft size={18} />
+              <ArrowLeft size={18} />
             </ActionIcon>
           </Tooltip>
           <div className="supply-detail-copy">
@@ -1088,7 +1076,7 @@ function DirectOrderInvoicesHeader({
         <Button
           color="gray"
           disabled={model.isSaving || model.isInvoiceLoading}
-          leftSection={<IconRefresh size={16} />}
+          leftSection={<RefreshCw size={16} />}
           loading={model.isLoading}
           styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
           variant="light"
@@ -1100,7 +1088,7 @@ function DirectOrderInvoicesHeader({
           <Button
             color={CREATE_ACTION_COLOR}
             disabled={model.isBusy}
-            leftSection={<IconFileImport size={16} />}
+            leftSection={<FileInputIcon size={16} />}
             loading={model.isSaving}
             styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
             variant="outline"
@@ -1113,7 +1101,7 @@ function DirectOrderInvoicesHeader({
           <Button
             color={CREATE_ACTION_COLOR}
             disabled={model.isBusy}
-            leftSection={<IconPackage size={16} />}
+            leftSection={<Package size={16} />}
             loading={model.isSaving}
             styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
             variant="outline"
@@ -1287,7 +1275,7 @@ function InvoiceSelector({
                   variant="subtle"
                   onClick={() => model.setPageState({ deleteInvoiceCandidate: invoice })}
                 >
-                  <IconTrash size={14} />
+                  <Trash2 size={14} />
                 </ActionIcon>
               </Tooltip>
             )}
@@ -1367,7 +1355,7 @@ function PackListSelector({ model }: { model: DirectOrderInvoicesPageModel }) {
                 variant="subtle"
                 onClick={() => model.setPageState({ packListEditor: { packList } })}
               >
-                <IconEdit size={14} />
+                <SquarePen size={14} />
               </ActionIcon>
             </Tooltip>
           )}
@@ -1381,7 +1369,7 @@ function PackListSelector({ model }: { model: DirectOrderInvoicesPageModel }) {
                 variant="subtle"
                 onClick={() => model.setPageState({ deletePackListCandidate: packList })}
               >
-                <IconTrash size={14} />
+                <Trash2 size={14} />
               </ActionIcon>
             </Tooltip>
           )}
@@ -1721,7 +1709,7 @@ function InvoiceMetadataModalBody({
         multiple
         disabled={isSaving}
         label={t('Документи інвойсу')}
-        leftSection={<IconFileUpload size={16} />}
+        leftSection={<FileUp size={16} />}
         value={[]}
         onChange={addFiles}
       />
@@ -1732,8 +1720,8 @@ function InvoiceMetadataModalBody({
       />
       <Divider />
       <Group justify="flex-end">
-        <Button disabled={isSaving} leftSection={<IconX size={16} />} variant="subtle" onClick={onClose}>{t('Скасувати')}</Button>
-        <Button color={CREATE_ACTION_COLOR} leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} onClick={() => onSubmit(form)}>{t('Зберегти')}</Button>
+        <Button disabled={isSaving} leftSection={<X size={16} />} variant="subtle" onClick={onClose}>{t('Скасувати')}</Button>
+        <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSaving} onClick={() => onSubmit(form)}>{t('Зберегти')}</Button>
       </Group>
     </Stack>
   )
@@ -1850,7 +1838,7 @@ function PackListMetadataModalBody({
           multiple
           disabled={isSaving}
           label={t('Документи')}
-          leftSection={<IconFileUpload size={16} />}
+          leftSection={<FileUp size={16} />}
           value={[]}
           onChange={addFiles}
         />
@@ -1861,8 +1849,8 @@ function PackListMetadataModalBody({
         />
         <Divider />
         <Group justify="flex-end">
-          <Button disabled={isSaving} leftSection={<IconX size={16} />} variant="subtle" onClick={onClose}>{t('Скасувати')}</Button>
-          <Button color={CREATE_ACTION_COLOR} leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} onClick={() => onSubmit(form)}>{t('Зберегти')}</Button>
+          <Button disabled={isSaving} leftSection={<X size={16} />} variant="subtle" onClick={onClose}>{t('Скасувати')}</Button>
+          <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSaving} onClick={() => onSubmit(form)}>{t('Зберегти')}</Button>
         </Group>
     </Stack>
   )
@@ -1902,13 +1890,13 @@ function PackListDocumentsList({
           {document.Deleted ? (
             <Tooltip label={t('Відновити')}>
               <ActionIcon aria-label={t('Відновити')} color="gray" variant="subtle" onClick={() => onRestore(document, index)}>
-                <IconArrowBackUp size={16} />
+                <Undo2 size={16} />
               </ActionIcon>
             </Tooltip>
           ) : (
             <Tooltip label={t('Видалити')}>
               <ActionIcon aria-label={t('Видалити')} color="red" variant="subtle" onClick={() => onRemove(document, index)}>
-                <IconTrash size={16} />
+                <Trash2 size={16} />
               </ActionIcon>
             </Tooltip>
           )}
@@ -1964,7 +1952,7 @@ function DeleteModal({
         <Text>{t('Видалити')} <Text span fw={600} style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{value || ''}</Text>?</Text>
         <Group justify="flex-end">
           <Button disabled={isSaving} variant="subtle" onClick={onClose}>{t('Скасувати')}</Button>
-          <Button color="red" leftSection={<IconTrash size={16} />} loading={isSaving} onClick={onConfirm}>{t('Видалити')}</Button>
+          <Button color="red" leftSection={<Trash2 size={16} />} loading={isSaving} onClick={onConfirm}>{t('Видалити')}</Button>
         </Group>
       </Stack>
     </AppModal>
@@ -2233,7 +2221,7 @@ function QuantityBalanceSummary({
   const invalidRows = rows.filter((row) => row.isError).length
 
   return (
-    <Alert color={invalidRows ? 'yellow' : 'green'} icon={<IconAlertCircle size={18} />} variant="light">
+    <Alert color={invalidRows ? 'yellow' : 'green'} icon={<CircleAlert size={18} />} variant="light">
       <Group gap="lg" wrap="wrap">
         <Text fw={600}>{invalidRows ? t('Є розбіжності') : t('Кількості збігаються')}</Text>
         <Text size="sm">{expectedLabel}: <Text span fw={600} style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{formatNumber(expectedQty)}</Text></Text>

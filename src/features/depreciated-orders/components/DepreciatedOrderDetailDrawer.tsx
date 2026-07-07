@@ -10,11 +10,7 @@ import {
   Stack,
   Text,
 } from '@mantine/core'
-import {
-  IconAlertCircle,
-  IconDownload,
-  IconFileTypePdf,
-} from '@tabler/icons-react'
+import { CircleAlert, Download, FileText } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { useMemo } from 'react'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
@@ -100,7 +96,7 @@ export function DepreciatedOrderDetailDrawer({
             <Button
               color={CREATE_ACTION_COLOR}
               disabled={!order.NetUid}
-              leftSection={<IconDownload size={16} />}
+              leftSection={<Download size={16} />}
               loading={isDownloading}
               variant="light"
               onClick={() => onExport(order)}
@@ -110,7 +106,7 @@ export function DepreciatedOrderDetailDrawer({
           </Group>
 
           {detailError && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {detailError}
             </Alert>
           )}
@@ -156,7 +152,7 @@ export function DepreciatedOrderDetailDrawer({
               {t('Завантаження')}
             </Text>
           ) : downloadError ? (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {downloadError}
             </Alert>
           ) : downloadDocument?.DocumentURL || downloadDocument?.PdfDocumentURL ? (
@@ -172,7 +168,7 @@ export function DepreciatedOrderDetailDrawer({
               {downloadDocument.PdfDocumentURL && (
                 <Anchor href={getDocumentHref(downloadDocument.PdfDocumentURL)} target="_blank" rel="noreferrer" className="document-link">
                   <span className="document-link-badge document-link-badge-pdf">
-                    <IconFileTypePdf size={22} stroke={1.8} />
+                    <FileText size={22} strokeWidth={1.8} />
                   </span>
                   <span>{t('PDF документ')}</span>
                 </Anchor>

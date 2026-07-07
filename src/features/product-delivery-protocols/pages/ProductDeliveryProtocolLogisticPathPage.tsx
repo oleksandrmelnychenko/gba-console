@@ -1,6 +1,6 @@
 import { Alert, Badge, Stack, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconAlertCircle } from '@tabler/icons-react'
+import { CircleAlert } from 'lucide-react'
 import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { UserRoleType } from '../../../shared/auth/types'
@@ -321,7 +321,7 @@ export function ProductDeliveryProtocolLogisticPathPage() {
     >
       <Stack gap="lg">
       {model.error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {model.error}
         </Alert>
       )}

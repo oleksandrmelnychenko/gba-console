@@ -17,7 +17,7 @@ import {
 } from '@mantine/core'
 import { AppModal } from '../../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
-import { IconAlertCircle, IconPlus } from '@tabler/icons-react'
+import { CircleAlert, Plus } from 'lucide-react'
 import { useEffect, useRef } from 'react'
 import { useValueState } from '../../../../shared/hooks/useValueState'
 import { useI18n } from '../../../../shared/i18n/useI18n'
@@ -291,7 +291,7 @@ export function PerfectClientPanel({ client, onChange }: PerfectClientPanelProps
             <Button
               color={CREATE_ACTION_COLOR}
               disabled={!roleId}
-              leftSection={<IconPlus size={16} />}
+              leftSection={<Plus size={16} />}
               size="xs"
               variant="light"
               onClick={openAddModal}
@@ -301,7 +301,7 @@ export function PerfectClientPanel({ client, onChange }: PerfectClientPanelProps
           </Group>
 
           {error && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
             </Alert>
           )}
@@ -495,7 +495,7 @@ function PerfectClientAddModal({
       >
         <Stack gap="md">
           {error && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
             </Alert>
           )}

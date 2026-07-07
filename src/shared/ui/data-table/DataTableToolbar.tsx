@@ -1,12 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { ActionIcon, Checkbox, Group, Menu, Tooltip } from '@mantine/core'
-import {
-  IconBaselineDensityMedium,
-  IconBaselineDensitySmall,
-  IconCheck,
-  IconColumns3,
-  IconRestore,
-} from '@tabler/icons-react'
+import { Check, Columns3, RotateCcw, Rows3, Rows4 } from 'lucide-react'
 import type { Column, Table as TableInstance } from '@tanstack/react-table'
 import type { DataTableDensity, DataTableLabels } from './types'
 
@@ -82,7 +76,7 @@ export function DataTableToolbar<TData>({
             <Menu.Target>
               <Tooltip label={labels.columns} withArrow>
                 <ActionIcon aria-label={labels.columns} size="sm" variant="subtle" color="gray">
-                  <IconColumns3 size={17} stroke={1.8} />
+                  <Columns3 size={17} strokeWidth={1.8} />
                 </ActionIcon>
               </Tooltip>
             </Menu.Target>
@@ -122,7 +116,7 @@ export function DataTableToolbar<TData>({
               </Menu.Item>
               <Menu.Divider />
               <Menu.Item
-                leftSection={<IconRestore size={16} stroke={1.8} />}
+                leftSection={<RotateCcw size={16} strokeWidth={1.8} />}
                 onClick={onResetLayout}
               >
                 {labels.resetLayout}
@@ -144,9 +138,9 @@ export function DataTableToolbar<TData>({
               onClick={() => onDensityChange(density === 'compact' ? 'normal' : 'compact')}
             >
               {density === 'compact' ? (
-                <IconBaselineDensitySmall size={17} stroke={1.8} />
+                <Rows4 size={17} strokeWidth={1.8} />
               ) : (
-                <IconBaselineDensityMedium size={17} stroke={1.8} />
+                <Rows3 size={17} strokeWidth={1.8} />
               )}
             </ActionIcon>
           </Tooltip>
@@ -157,5 +151,5 @@ export function DataTableToolbar<TData>({
 }
 
 function DensityCheck({ checked }: { checked: boolean }) {
-  return <IconCheck size={15} stroke={1.8} style={{ opacity: checked ? 1 : 0 }} />
+  return <Check size={15} strokeWidth={1.8} style={{ opacity: checked ? 1 : 0 }} />
 }

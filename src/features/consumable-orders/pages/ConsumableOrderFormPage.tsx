@@ -18,17 +18,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import {
-  IconAlertCircle,
-  IconDeviceFloppy,
-  IconFileText,
-  IconPencil,
-  IconPlus,
-  IconRestore,
-  IconTrash,
-  IconUpload,
-  IconX,
-} from '@tabler/icons-react'
+import { CircleAlert, FileText, Pencil, Plus, RotateCcw, Save, Trash2, Upload, X } from 'lucide-react'
 import { type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useRef } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
@@ -655,7 +645,7 @@ export function ConsumableOrderFormPage() {
           color={CREATE_ACTION_COLOR}
           disabled={!canSave}
           form="consumable-order-form"
-          leftSection={<IconDeviceFloppy size={16} />}
+          leftSection={<Save size={16} />}
           loading={isSaving || isCalculating}
           styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
           type="submit"
@@ -699,7 +689,7 @@ export function ConsumableOrderFormPage() {
           </section>
 
           {error && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
             </Alert>
           )}
@@ -832,7 +822,7 @@ export function ConsumableOrderFormPage() {
                   className="consumable-order-form-add-button"
                   color={CREATE_ACTION_COLOR}
                   disabled={isPaid || isFormLocked}
-                  leftSection={<IconPlus size={15} />}
+                  leftSection={<Plus size={15} />}
                   size="sm"
                   type="button"
                   variant="outline"
@@ -886,7 +876,7 @@ export function ConsumableOrderFormPage() {
                 className="consumable-order-form-control consumable-order-form-upload"
                 disabled={isFormLocked}
                 label={t('Додати документи')}
-                leftSection={<IconUpload size={16} />}
+                leftSection={<Upload size={16} />}
                 multiple
                 placeholder={t('Оберіть файли')}
                 onChange={handleFilesAdded}
@@ -901,7 +891,7 @@ export function ConsumableOrderFormPage() {
                     className={`consumable-order-form-document-row${document.Deleted ? ' is-deleted' : ''}`}
                   >
                     <span className="consumable-order-form-document-icon" aria-hidden>
-                      <IconFileText size={15} />
+                      <FileText size={15} />
                     </span>
                     <div className="consumable-order-form-document-copy">
                       {documentUrl && !document.Deleted ? (
@@ -922,7 +912,7 @@ export function ConsumableOrderFormPage() {
                       variant="subtle"
                       onClick={() => toggleDocumentDeleted(document)}
                     >
-                      {document.Deleted ? <IconRestore size={16} /> : <IconTrash size={16} />}
+                      {document.Deleted ? <RotateCcw size={16} /> : <Trash2 size={16} />}
                     </ActionIcon>
                   </div>
                 )
@@ -942,7 +932,7 @@ export function ConsumableOrderFormPage() {
       <AppModal centered opened={itemEditor.opened} size="xl" title={itemEditor.mode === 'edit' ? t('Редагувати позицію') : t('Додати позицію')} onClose={closeItemEditor}>
         <Stack className="consumable-order-item-modal" gap="md">
           {itemEditor.error && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {itemEditor.error}
             </Alert>
           )}
@@ -1098,10 +1088,10 @@ export function ConsumableOrderFormPage() {
           </SimpleGrid>
 
           <Group className="consumable-order-item-modal__actions" justify="flex-end">
-            <Button disabled={isMutationLocked} leftSection={<IconX size={16} />} variant="default" onClick={closeItemEditor}>
+            <Button disabled={isMutationLocked} leftSection={<X size={16} />} variant="default" onClick={closeItemEditor}>
               {t('Скасувати')}
             </Button>
-            <Button color={CREATE_ACTION_COLOR} disabled={isMutationLocked} leftSection={<IconDeviceFloppy size={16} />} onClick={() => void saveEditorItem()}>
+            <Button color={CREATE_ACTION_COLOR} disabled={isMutationLocked} leftSection={<Save size={16} />} onClick={() => void saveEditorItem()}>
               {t('Зберегти')}
             </Button>
           </Group>
@@ -1186,7 +1176,7 @@ function OrderFormItemRow({
           {!item.Deleted ? (
             <Tooltip label={t('Редагувати')}>
               <ActionIcon aria-label={t('Редагувати')} disabled={disabled} size="sm" variant="subtle" onClick={onEdit}>
-                <IconPencil size={16} />
+                <Pencil size={16} />
               </ActionIcon>
             </Tooltip>
           ) : null}
@@ -1199,7 +1189,7 @@ function OrderFormItemRow({
               variant="subtle"
               onClick={onToggleDeleted}
             >
-              {item.Deleted ? <IconRestore size={16} /> : <IconTrash size={16} />}
+              {item.Deleted ? <RotateCcw size={16} /> : <Trash2 size={16} />}
             </ActionIcon>
           </Tooltip>
         </div>

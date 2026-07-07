@@ -1,5 +1,5 @@
 import { ActionIcon, Alert, Badge, Button, Card, Group, SimpleGrid, Stack, Table, Text, Tooltip } from '@mantine/core'
-import { IconAlertCircle, IconMap2, IconRefresh } from '@tabler/icons-react'
+import { CircleAlert, Map, RefreshCw } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ApiError } from '../../../shared/api/apiClient'
@@ -143,7 +143,7 @@ export function HeadDashboardPage() {
             <Button
               className="cockpit-toolbar-button"
               color="orange"
-              leftSection={<IconMap2 size={16} />}
+              leftSection={<Map size={16} />}
               size="sm"
               variant="outline"
               onClick={() => navigate('/sales/geography')}
@@ -152,7 +152,7 @@ export function HeadDashboardPage() {
             </Button>
             <Tooltip label={t('Оновити')}>
               <ActionIcon aria-label={t('Оновити')} loading={isLoading} size={34} variant="light" onClick={handleReload}>
-                <IconRefresh size={18} />
+                <RefreshCw size={18} />
               </ActionIcon>
             </Tooltip>
           </div>
@@ -168,7 +168,7 @@ export function HeadDashboardPage() {
       ) : (
         <>
           {error && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
             </Alert>
           )}

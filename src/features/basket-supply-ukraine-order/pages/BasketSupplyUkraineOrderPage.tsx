@@ -19,19 +19,7 @@ import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
 import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
-import {
-  IconAlertCircle,
-  IconArrowLeft,
-  IconArrowRight,
-  IconCheck,
-  IconEye,
-  IconFileImport,
-  IconFileSpreadsheet,
-  IconPencil,
-  IconRefresh,
-  IconRestore,
-  IconSearch,
-} from '@tabler/icons-react'
+import { ArrowLeft, ArrowRight, Check, CircleAlert, Eye, FileInput, FileSpreadsheet, Pencil, RefreshCw, RotateCcw, Search } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -145,13 +133,13 @@ const qtyFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 3,
 })
 
-const ALERT_CIRCLE_ICON = <IconAlertCircle size={16} />
-const ARROW_LEFT_ICON = <IconArrowLeft size={16} />
-const ARROW_RIGHT_ICON = <IconArrowRight size={16} />
-const CHECK_ICON = <IconCheck size={16} />
-const FILE_IMPORT_ICON = <IconFileImport size={16} />
-const FILE_SPREADSHEET_ICON = <IconFileSpreadsheet size={16} />
-const SEARCH_ICON = <IconSearch size={16} />
+const ALERT_CIRCLE_ICON = <CircleAlert size={16} />
+const ARROW_LEFT_ICON = <ArrowLeft size={16} />
+const ARROW_RIGHT_ICON = <ArrowRight size={16} />
+const CHECK_ICON = <Check size={16} />
+const FILE_IMPORT_ICON = <FileInput size={16} />
+const FILE_SPREADSHEET_ICON = <FileSpreadsheet size={16} />
+const SEARCH_ICON = <Search size={16} />
 
 export function BasketSupplyUkraineOrderPage() {
   const { t } = useI18n()
@@ -717,7 +705,7 @@ function BasketCartWorkflow() {
             <Group gap="xs">
               <Tooltip label={t('Оновити')}>
                 <ActionIcon aria-label={t('Оновити')} loading={isLoading} variant="subtle" onClick={() => reload()}>
-                  <IconRefresh size={16} />
+                  <RefreshCw size={16} />
                 </ActionIcon>
               </Tooltip>
               <Button leftSection={FILE_IMPORT_ICON} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} variant="outline" onClick={() => openUploadModal('load')}>
@@ -1180,22 +1168,22 @@ function SalesWorkflowTab() {
   return (
     <Stack gap="md">
       {error && (
-        <Alert color="red" icon={<IconAlertCircle size={16} />} variant="light">
+        <Alert color="red" icon={<CircleAlert size={16} />} variant="light">
           {error}
         </Alert>
       )}
       {referenceError && (
-        <Alert color="yellow" icon={<IconAlertCircle size={16} />} variant="light">
+        <Alert color="yellow" icon={<CircleAlert size={16} />} variant="light">
           {referenceError}
         </Alert>
       )}
       {createError && (
-        <Alert color="red" icon={<IconAlertCircle size={16} />} variant="light">
+        <Alert color="red" icon={<CircleAlert size={16} />} variant="light">
           {createError}
         </Alert>
       )}
       {createdDocument && (
-        <Alert color="green" icon={<IconCheck size={16} />} variant="light">
+        <Alert color="green" icon={<Check size={16} />} variant="light">
           {t('Створено')} {createdDocument.kind}: {createdDocument.number || createdDocument.netUid || t('без номера')}
         </Alert>
       )}
@@ -1217,7 +1205,7 @@ function SalesWorkflowTab() {
             />
             <TextInput
               label={t('Пошук')}
-              leftSection={<IconSearch size={16} />}
+              leftSection={<Search size={16} />}
               value={filterDraft.value}
               onChange={(event) => {
                 const nextValue = event.currentTarget.value
@@ -1229,12 +1217,12 @@ function SalesWorkflowTab() {
                 }
               }}
             />
-            <Button leftSection={<IconRestore size={16} />} variant="subtle" onClick={resetFilters}>
+            <Button leftSection={<RotateCcw size={16} />} variant="subtle" onClick={resetFilters}>
               {t('Скинути')}
             </Button>
             <Tooltip label={t('Оновити')}>
               <ActionIcon aria-label={t('Оновити')} loading={isLoading} variant="subtle" onClick={() => reload()}>
-                <IconRefresh size={16} />
+                <RefreshCw size={16} />
               </ActionIcon>
             </Tooltip>
             <DataTableDensityToggle density={salesDensity} onToggle={toggleSalesDensity} size={36} />
@@ -1270,7 +1258,7 @@ function SalesWorkflowTab() {
       <Group align="center" className="basket-supply-transfer-controls" justify="center">
         <Button
           disabled={!selectedSourceCount}
-          leftSection={<IconArrowRight size={16} />}
+          leftSection={<ArrowRight size={16} />}
           variant="outline"
           onClick={moveSelectedSalesRight}
         >
@@ -1278,7 +1266,7 @@ function SalesWorkflowTab() {
         </Button>
         <Button
           disabled={!selectedDestinationCount}
-          leftSection={<IconArrowLeft size={16} />}
+          leftSection={<ArrowLeft size={16} />}
           variant="outline"
           onClick={moveSelectedSalesLeft}
         >
@@ -1446,7 +1434,7 @@ function RecommendationsTab() {
     () => (
       <Tooltip label={t('Оновити')}>
         <ActionIcon aria-label={t('Оновити')} loading={isLoading} size="sm" variant="subtle" onClick={() => reload()}>
-          <IconRefresh size={16} />
+          <RefreshCw size={16} />
         </ActionIcon>
       </Tooltip>
     ),
@@ -1633,7 +1621,7 @@ function useBasketSalesColumns({
                 onOpen(sale)
               }}
             >
-              <IconEye size={16} />
+              <Eye size={16} />
             </ActionIcon>
           </Tooltip>
         ),
@@ -1731,7 +1719,7 @@ function useCartSourceColumns({
                 openReserveModal(item)
               }}
             >
-              <IconPencil size={16} />
+              <Pencil size={16} />
             </ActionIcon>
           </Tooltip>
         ),

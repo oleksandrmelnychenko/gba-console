@@ -1,6 +1,6 @@
 import { Alert, Autocomplete, Button, Grid, Group, NumberInput, Select, Stack, Text, TextInput, Textarea } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconAlertCircle, IconPlus } from '@tabler/icons-react'
+import { CircleAlert, Plus } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -320,7 +320,7 @@ export function SadPaymentFromSadModal({
         )}
 
         {error && (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}
@@ -433,7 +433,7 @@ export function SadPaymentFromSadModal({
                 <Button
                   disabled={Boolean(activeMovement) || !form.movementSearch.trim() || isLoading || isSaving}
                   fullWidth
-                  leftSection={<IconPlus size={16} />}
+                  leftSection={<Plus size={16} />}
                   mt={24}
                   type="button"
                   variant="outline"

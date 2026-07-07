@@ -1,5 +1,5 @@
 import { Alert, Button, Checkbox, FileInput, Group, Image, Stack, Text, Textarea, TextInput } from '@mantine/core'
-import { IconAlertCircle, IconDeviceFloppy, IconPhoto } from '@tabler/icons-react'
+import { CircleAlert, Image as ImageIcon, Save } from 'lucide-react'
 import { type FormEvent } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -69,7 +69,7 @@ export function RolePermissionModal({ isSaving, node, opened, permission, onClos
       <form onSubmit={handleSubmit}>
         <Stack gap="md">
           {error ? (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
             </Alert>
           ) : null}
@@ -126,7 +126,7 @@ export function RolePermissionModal({ isSaving, node, opened, permission, onClos
             clearable
             disabled={isSaving}
             label={t('Зображення')}
-            leftSection={<IconPhoto size={16} />}
+            leftSection={<ImageIcon size={16} />}
             placeholder={t('Оберіть файл')}
             value={image}
             onChange={setImage}
@@ -135,7 +135,7 @@ export function RolePermissionModal({ isSaving, node, opened, permission, onClos
             <Button color="gray" disabled={isSaving} variant="subtle" onClick={onClose}>
               {t('Скасувати')}
             </Button>
-            <Button color={CREATE_ACTION_COLOR} leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} type="submit">
+            <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSaving} type="submit">
               {permission ? t('Редагувати') : t('Зберегти')}
             </Button>
           </Group>

@@ -1,5 +1,5 @@
 import { Anchor, Box, Text, Tooltip } from '@mantine/core'
-import { IconBox } from '@tabler/icons-react'
+import { Box as BoxIcon } from 'lucide-react'
 import { memo, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { ProductCardModal } from '../../products/components/ProductCardModal'
@@ -131,7 +131,7 @@ function SaleExpandContentItem({
     <div className={`sale-expand-content-item${hasQtyOverflow ? ' is-qty-warning' : ''}`} role="row">
       <div className="sale-expand-product-cell" role="cell">
         <span className="sale-expand-product-icon" aria-hidden="true">
-          <IconBox size={14} stroke={1.7} />
+          <BoxIcon size={14} strokeWidth={1.7} />
         </span>
         <div className="sale-expand-product-copy">
           <div className="sale-expand-product-main">

@@ -1,5 +1,5 @@
 import { ActionIcon, Alert, Anchor, Badge, Button, Card, Group, SimpleGrid, Stack, Text, Title, Tooltip } from '@mantine/core'
-import { IconAlertCircle, IconArrowLeft, IconFileTypePdf, IconMapPin } from '@tabler/icons-react'
+import { ArrowLeft, CircleAlert, FileText, MapPin } from 'lucide-react'
 import { useEffect, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -159,7 +159,7 @@ function SupplyOrderProductPlacementContent({
     <Stack gap="lg">
       <Group justify="space-between" align="center">
         <Group gap="sm" align="center">
-          <Button color="gray" leftSection={<IconArrowLeft size={16} />} variant="subtle" onClick={() => navigate(-1)}>
+          <Button color="gray" leftSection={<ArrowLeft size={16} />} variant="subtle" onClick={() => navigate(-1)}>
             {t('Назад')}
           </Button>
           {firstUkraineItem && income?.NetUid && (
@@ -179,7 +179,7 @@ function SupplyOrderProductPlacementContent({
       </Group>
 
       {error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {error}
         </Alert>
       )}
@@ -281,7 +281,7 @@ function SupplyOrderProductPlacementContent({
                   className="document-link"
                 >
                   <span className="document-link-badge document-link-badge-pdf">
-                    <IconFileTypePdf size={22} stroke={1.8} />
+                    <FileText size={22} strokeWidth={1.8} />
                   </span>
                   <span>{t('PDF документ')}</span>
                 </Anchor>
@@ -491,7 +491,7 @@ function usePlacementColumns(
                   onOpenPlacementDetails(row)
                 }}
               >
-                <IconMapPin size={16} />
+                <MapPin size={16} />
               </ActionIcon>
             </Tooltip>
           ) : null,

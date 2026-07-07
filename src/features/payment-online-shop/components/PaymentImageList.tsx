@@ -1,5 +1,5 @@
 import { ActionIcon, Anchor, Text, Tooltip } from '@mantine/core'
-import { IconEdit, IconLock, IconPhoto } from '@tabler/icons-react'
+import { Image, Lock, SquarePen } from 'lucide-react'
 import { useMemo } from 'react'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
@@ -23,7 +23,7 @@ export function PaymentImageList({ isEditing, items, onSelect }: PaymentImageLis
       cell: (row) =>
         row.ImgUrl ? (
           <Anchor href={row.ImgUrl} target="_blank" rel="noreferrer">
-            <IconPhoto size={18} />
+            <Image size={18} />
           </Anchor>
         ) : (
           ''
@@ -68,12 +68,12 @@ export function PaymentImageList({ isEditing, items, onSelect }: PaymentImageLis
         !isEditing || row.IsLocked ? (
           <Tooltip label={t('Змінити неможливо, оплата проведена')} position="left">
             <ActionIcon color="gray" variant="subtle" aria-label={t('Змінити неможливо, оплата проведена')}>
-              <IconLock size={16} />
+              <Lock size={16} />
             </ActionIcon>
           </Tooltip>
         ) : (
           <ActionIcon color="gray" variant="subtle" aria-label={t('Редагування')} onClick={() => onSelect(row)}>
-            <IconEdit size={16} />
+            <SquarePen size={16} />
           </ActionIcon>
         ),
     },

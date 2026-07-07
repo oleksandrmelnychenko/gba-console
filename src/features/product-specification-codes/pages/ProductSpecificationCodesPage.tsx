@@ -13,7 +13,7 @@ import {
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
-import { IconAlertCircle, IconRefresh, IconRestore, IconSearch, IconUpload } from '@tabler/icons-react'
+import { CircleAlert, RefreshCw, RotateCcw, Search, Upload } from 'lucide-react'
 import { useEffect, useMemo, useReducer, useRef } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -207,7 +207,7 @@ export function ProductSpecificationCodesPage() {
           <Group align="end" gap="sm" wrap="nowrap" className="product-specification-codes-filter-row">
             <TextInput
               label={t('Код товару')}
-              leftSection={<IconSearch size={16} />}
+              leftSection={<Search size={16} />}
               placeholder={t('Місце вводу для пошуку')}
               style={{ flex: '1 1 240px' }}
               value={model.vendorCodeDraft}
@@ -215,7 +215,7 @@ export function ProductSpecificationCodesPage() {
             />
             <TextInput
               label={t('Митний код')}
-              leftSection={<IconSearch size={16} />}
+              leftSection={<Search size={16} />}
               placeholder={t('Місце вводу для пошуку')}
               style={{ flex: '1 1 240px' }}
               value={model.specificationCodeDraft}
@@ -224,14 +224,14 @@ export function ProductSpecificationCodesPage() {
             <div className="app-filter-actions">
               <FileButton accept=".xlsx,.xls,.csv" onChange={handleUpload}>
                 {(props) => (
-                  <Button {...props} color={CREATE_ACTION_COLOR} leftSection={<IconUpload size={16} />} loading={isUploading} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} variant="outline">
+                  <Button {...props} color={CREATE_ACTION_COLOR} leftSection={<Upload size={16} />} loading={isUploading} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} variant="outline">
                     {t('Завантажити Excel')}
                   </Button>
                 )}
               </FileButton>
               <Tooltip label={t('Скинути')}>
                 <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={model.resetFilters}>
-                  <IconRestore size={17} />
+                  <RotateCcw size={17} />
                 </ActionIcon>
               </Tooltip>
               <Tooltip label={t('Оновити')}>
@@ -243,7 +243,7 @@ export function ProductSpecificationCodesPage() {
                   variant="light"
                   onClick={() => model.reload()}
                 >
-                  <IconRefresh size={18} />
+                  <RefreshCw size={18} />
                 </ActionIcon>
               </Tooltip>
               <DataTableDensityToggle density={model.density} onToggle={model.toggleDensity} size={34} />
@@ -253,7 +253,7 @@ export function ProductSpecificationCodesPage() {
 
         <Stack gap={10} className="product-specification-codes-body">
           {model.error && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {model.error}
             </Alert>
           )}

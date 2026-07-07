@@ -1,5 +1,5 @@
 import { Checkbox, Combobox, Group, Input, InputBase, ScrollArea, useCombobox } from '@mantine/core'
-import { IconSearch } from '@tabler/icons-react'
+import { Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useI18n } from '../i18n/useI18n'
 
@@ -82,7 +82,7 @@ export function CheckboxMultiSelect({
           <Combobox.Search
             value={search}
             placeholder={t('Пошук')}
-            leftSection={<IconSearch size={14} />}
+            leftSection={<Search size={14} />}
             onChange={(event) => setSearch(event.currentTarget.value)}
           />
         )}

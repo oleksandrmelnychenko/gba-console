@@ -17,19 +17,7 @@ import {
   UnstyledButton,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import {
-  IconAlertCircle,
-  IconAlertTriangle,
-  IconArrowsJoin,
-  IconCopy,
-  IconFileInvoice,
-  IconPencil,
-  IconPlus,
-  IconSearch,
-  IconTrash,
-  IconTruck,
-  IconUserShare,
-} from '@tabler/icons-react'
+import { CircleAlert, Copy, Merge, Pencil, Plus, ReceiptText, Search, Share2, Trash2, TriangleAlert, Truck } from 'lucide-react'
 import { useEffect, useReducer, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -317,7 +305,7 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
   return (
     <Stack gap="md">
       {error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {error}
         </Alert>
       )}
@@ -361,30 +349,30 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
 
       <Group justify="flex-end" gap="sm">
         {Array.isArray(sale.InputSaleMerges) && sale.InputSaleMerges.length > 0 && (
-          <Button leftSection={<IconArrowsJoin size={16} />} variant="outline" onClick={() => setMergedOpen(true)}>
+          <Button leftSection={<Merge size={16} />} variant="outline" onClick={() => setMergedOpen(true)}>
             {t("Об'єднання")}
           </Button>
         )}
         <Button
           disabled={orderItems.length === 0}
-          leftSection={<IconCopy size={16} />}
+          leftSection={<Copy size={16} />}
           variant="outline"
           onClick={copySaleData}
         >
           {t('Копіювати')}
         </Button>
         {isEditable && (
-          <Button leftSection={<IconUserShare size={16} />} variant="outline" onClick={() => setReassignOpen(true)}>
+          <Button leftSection={<Share2 size={16} />} variant="outline" onClick={() => setReassignOpen(true)}>
             {t('Переназначити')}
           </Button>
         )}
         {(sale.Transporter || isEditable) && (
-          <Button leftSection={<IconTruck size={16} />} variant="outline" onClick={() => setDetailsOpen(true)}>
+          <Button leftSection={<Truck size={16} />} variant="outline" onClick={() => setDetailsOpen(true)}>
             {t('Доставка')}
           </Button>
         )}
         {canConvert && (
-          <Button color="teal" leftSection={<IconFileInvoice size={16} />} onClick={() => setConvertOpen(true)}>
+          <Button color="teal" leftSection={<ReceiptText size={16} />} onClick={() => setConvertOpen(true)}>
             {t('Зробити рахунок')}
           </Button>
         )}
@@ -414,7 +402,7 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
         <div className="sale-editor-tab-panel">
           {isEditable && (
             <Group justify="flex-end" mb="sm">
-              <Button leftSection={<IconPlus size={16} />} variant="outline" onClick={() => setAddOpen(true)}>
+              <Button leftSection={<Plus size={16} />} variant="outline" onClick={() => setAddOpen(true)}>
                 {t('Додати товар')}
               </Button>
             </Group>
@@ -501,7 +489,7 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
         <Stack gap="md">
           <Text>{t('Перетворити продаж на рахунок?')}</Text>
           {reviewIssues.length > 0 && (
-            <Alert color="orange" icon={<IconAlertTriangle size={18} />} variant="light">
+            <Alert color="orange" icon={<TriangleAlert size={18} />} variant="light">
               <Stack gap={4}>
                 {reviewIssues.map((issue) => (
                   <Text key={issue} size="sm">
@@ -686,12 +674,12 @@ function useItemColumns({
           <Group gap={2} justify="center" wrap="nowrap">
             <Tooltip label={t('Змінити кількість')}>
               <ActionIcon aria-label={t('Змінити кількість')} color="gray" variant="subtle" onClick={() => onEditQty(item)}>
-                <IconPencil size={16} />
+                <Pencil size={16} />
               </ActionIcon>
             </Tooltip>
             <Tooltip label={t('Видалити')}>
               <ActionIcon aria-label={t('Видалити')} color="red" variant="subtle" onClick={() => onDelete(item)}>
-                <IconTrash size={16} />
+                <Trash2 size={16} />
               </ActionIcon>
             </Tooltip>
           </Group>
@@ -923,7 +911,7 @@ function AddProductForm({ sale, onCancel, onAdded }: { onAdded: () => void; onCa
       <TextInput
         autoFocus
         label={t('Пошук по товару')}
-        leftSection={<IconSearch size={16} />}
+        leftSection={<Search size={16} />}
         placeholder={t('Код Виробника')}
         rightSection={isSearching ? <Loader size="xs" /> : null}
         value={query}

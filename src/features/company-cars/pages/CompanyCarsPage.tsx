@@ -9,7 +9,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { IconAlertCircle, IconPencil, IconPlus, IconRefresh, IconRestore, IconRoad, IconSearch } from '@tabler/icons-react'
+import { CircleAlert, Pencil, Plus, RefreshCw, RotateCcw, Route, Search } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -135,7 +135,7 @@ export function CompanyCarsPage() {
           <TextInput
             className="company-cars-search-input"
             size="sm"
-            leftSection={<IconSearch size={16} />}
+            leftSection={<Search size={16} />}
             label={t('Пошук')}
             placeholder={t('Місце вводу для пошуку')}
             value={searchValue}
@@ -150,7 +150,7 @@ export function CompanyCarsPage() {
                 variant="light"
                 onClick={() => setSearchValue('')}
               >
-                <IconRestore size={17} />
+                <RotateCcw size={17} />
               </ActionIcon>
             </Tooltip>
             <Tooltip label={t('Оновити')}>
@@ -162,7 +162,7 @@ export function CompanyCarsPage() {
                 variant="light"
                 onClick={reload}
               >
-                <IconRefresh size={18} />
+                <RefreshCw size={18} />
               </ActionIcon>
             </Tooltip>
           </div>
@@ -172,7 +172,7 @@ export function CompanyCarsPage() {
               <Button
                 color={CREATE_ACTION_COLOR}
                 size="sm"
-                leftSection={<IconPlus size={16} />}
+                leftSection={<Plus size={16} />}
                 onClick={() =>
                   navigate(`${COMPANY_CARS_PATH}/new`, {
                     state: {
@@ -189,7 +189,7 @@ export function CompanyCarsPage() {
         </div>
 
         {error && (
-          <Alert className="console-table-alert" color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert className="console-table-alert" color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}
@@ -353,7 +353,7 @@ function useCompanyCarColumns({
                   onRoadLists(companyCar)
                 }}
               >
-                <IconRoad size={16} />
+                <Route size={16} />
               </ActionIcon>
             </Tooltip>
             <Tooltip label={t('Редагувати')}>
@@ -368,7 +368,7 @@ function useCompanyCarColumns({
                   onEdit(companyCar)
                 }}
               >
-                <IconPencil size={16} />
+                <Pencil size={16} />
               </ActionIcon>
             </Tooltip>
           </Group>

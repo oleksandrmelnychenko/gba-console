@@ -1,5 +1,5 @@
 import { Button, Group, Stack, TextInput } from '@mantine/core'
-import { IconCheck } from '@tabler/icons-react'
+import { Check } from 'lucide-react'
 import { useState } from 'react'
 import { AppModal } from '../../../../shared/ui/AppModal'
 import { useI18n } from '../../../../shared/i18n/useI18n'
@@ -91,7 +91,7 @@ function NewDeliveryRecipientForm({
         <Button
           color={CREATE_ACTION_COLOR}
           disabled={!trimmedName}
-          leftSection={<IconCheck size={16} />}
+          leftSection={<Check size={16} />}
           loading={isSaving}
           onClick={handleSave}
         >

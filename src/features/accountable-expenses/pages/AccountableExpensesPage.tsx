@@ -9,13 +9,7 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
-import {
-  IconAlertCircle,
-  IconExternalLink,
-  IconRestore,
-  IconSearch,
-} from '@tabler/icons-react'
-import { CreditCard as CreditCardIcon, ExternalLink as ExternalLinkIcon, Eye as EyeIcon } from 'lucide-react'
+import { CircleAlert, CreditCard as CreditCardIcon, ExternalLink, ExternalLink as ExternalLinkIcon, Eye as EyeIcon, RotateCcw, Search } from 'lucide-react'
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -271,7 +265,7 @@ export function AccountableExpensesPage() {
 
           <TextInput
             className="accountable-expenses-search-input"
-            leftSection={<IconSearch size={15} />}
+            leftSection={<Search size={15} />}
             label={t('Пошук')}
             placeholder={t('Номер, товар, відповідальний')}
             value={searchValue}
@@ -293,7 +287,7 @@ export function AccountableExpensesPage() {
                 variant="light"
                 onClick={resetFilters}
               >
-                <IconRestore size={17} />
+                <RotateCcw size={17} />
               </ActionIcon>
             </Tooltip>
             <Paginator
@@ -314,13 +308,13 @@ export function AccountableExpensesPage() {
         </div>
 
         {error && (
-          <Alert className="console-table-alert" color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert className="console-table-alert" color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}
 
         {filterError && (
-          <Alert className="console-table-alert" color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert className="console-table-alert" color="yellow" icon={<CircleAlert size={18} />} variant="light">
             {filterError}
           </Alert>
         )}
@@ -713,7 +707,7 @@ function ExpenseDetailDrawer({ row, onClose }: { row: AccountableExpenseRow | nu
                 <Button
                   className="accountable-expense-detail-open-button"
                   component={Link}
-                  leftSection={<IconExternalLink size={14} />}
+                  leftSection={<ExternalLink size={14} />}
                   size="xs"
                   to={advanceReportLink}
                   variant="outline"
@@ -757,7 +751,7 @@ function ExpenseDetailDrawer({ row, onClose }: { row: AccountableExpenseRow | nu
                           <Button
                             className="accountable-expense-detail-open-button"
                             component={Link}
-                            leftSection={<IconExternalLink size={14} />}
+                            leftSection={<ExternalLink size={14} />}
                             size="xs"
                             to={itemAdvanceReportLink}
                             variant="outline"

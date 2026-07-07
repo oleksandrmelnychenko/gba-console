@@ -1,6 +1,6 @@
 import { Loader, Popover, ScrollArea, Stack, Text, TextInput, UnstyledButton } from '@mantine/core'
 import { useDebouncedValue, useDisclosure } from '@mantine/hooks'
-import { IconSearch } from '@tabler/icons-react'
+import { Search } from 'lucide-react'
 import { useEffect, useRef } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -107,7 +107,7 @@ export function OnlineShopSalesFilter({ onClearSales, onGetAllSales, onSelectFas
     <Popover opened={opened} width="target" position="bottom-start" shadow="md" onClose={close}>
       <Popover.Target>
         <TextInput
-          leftSection={<IconSearch size={16} />}
+          leftSection={<Search size={16} />}
           label={t('Пошук')}
           placeholder={t('Пошук по номеру телефону')}
           value={searchValue}

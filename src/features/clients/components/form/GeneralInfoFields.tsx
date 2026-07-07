@@ -15,7 +15,7 @@ import {
   Text,
   TextInput,
 } from '@mantine/core'
-import { IconPlus, IconTrash, IconX } from '@tabler/icons-react'
+import { Plus, Trash2, X } from 'lucide-react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
 import type {
@@ -319,7 +319,7 @@ function BuyerFields(props: GeneralInfoFieldsProps) {
                   variant="light"
                   onClick={() => props.onRegionChange(null)}
                 >
-                  <IconTrash size={16} />
+                  <Trash2 size={16} />
                 </ActionIcon>
               )}
               <NewRegionControl onCreate={props.onCreateRegion} />
@@ -431,7 +431,7 @@ function ContractDocuments({
             variant="subtle"
             onClick={() => onRemove(document)}
           >
-            <IconX size={16} />
+            <X size={16} />
           </ActionIcon>
         </Group>
       ))}
@@ -456,7 +456,7 @@ function NewIncotermControl({ onCreate }: { onCreate: (name: string) => void }) 
     <Popover opened={isOpen} position="bottom-end" shadow="md" trapFocus width={300} withArrow withinPortal onChange={setOpen}>
       <Popover.Target>
         <ActionIcon aria-label={t('Додати Incoterms')} color={CREATE_ACTION_COLOR} size="lg" variant="outline" onClick={() => setOpen(!isOpen)}>
-          <IconPlus size={16} />
+          <Plus size={16} />
         </ActionIcon>
       </Popover.Target>
       <Popover.Dropdown>
@@ -494,7 +494,7 @@ function NewCountryControl({ onCreate }: { onCreate: (name: string, code: string
     <Popover opened={isOpen} position="bottom-end" shadow="md" trapFocus width={300} withArrow withinPortal onChange={setOpen}>
       <Popover.Target>
         <ActionIcon aria-label={t('Додати країну')} color={CREATE_ACTION_COLOR} size="lg" variant="outline" onClick={() => setOpen(!isOpen)}>
-          <IconPlus size={16} />
+          <Plus size={16} />
         </ActionIcon>
       </Popover.Target>
       <Popover.Dropdown>
@@ -533,7 +533,7 @@ function NewRegionControl({ onCreate }: { onCreate: (name: string) => void }) {
     <Popover opened={isOpen} position="bottom-end" shadow="md" trapFocus width={300} withArrow withinPortal onChange={setOpen}>
       <Popover.Target>
         <ActionIcon aria-label={t('Додати регіон')} color={CREATE_ACTION_COLOR} size="lg" variant="outline" onClick={() => setOpen(!isOpen)}>
-          <IconPlus size={16} />
+          <Plus size={16} />
         </ActionIcon>
       </Popover.Target>
       <Popover.Dropdown>

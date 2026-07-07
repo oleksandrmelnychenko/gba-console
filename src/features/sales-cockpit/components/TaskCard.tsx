@@ -1,15 +1,5 @@
 import { ActionIcon, Anchor, Badge, Button, Card, Group, Stack, Text, Tooltip } from '@mantine/core'
-import {
-  IconCheck,
-  IconClock,
-  IconMail,
-  IconMessageCircle,
-  IconMessagePlus,
-  IconPhone,
-  IconPlayerPlay,
-  IconProgress,
-  IconX,
-} from '@tabler/icons-react'
+import { Check, CircleDashed, Clock, Mail, MessageCircle, MessageSquarePlus, Phone, Play, X } from 'lucide-react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { WhyThisTask } from './WhyThisTask'
 import type { CockpitTask, CockpitTaskType, CockpitUrgency } from '../types'
@@ -88,7 +78,7 @@ export function TaskCard({
                 </Badge>
               )}
               {isInProgress && (
-                <Badge color="orange" leftSection={<IconProgress size={12} />} variant="light">
+                <Badge color="orange" leftSection={<CircleDashed size={12} />} variant="light">
                   {inProgressLabel}
                 </Badge>
               )}
@@ -101,21 +91,21 @@ export function TaskCard({
             {phone && (
               <Tooltip label={`${t('Подзвонити')}: ${phone}`}>
                 <ActionIcon color="green" component="a" href={`tel:${phone}`} variant="light">
-                  <IconPhone size={18} />
+                  <Phone size={18} />
                 </ActionIcon>
               </Tooltip>
             )}
             {email && (
               <Tooltip label={`${t('Написати')}: ${email}`}>
                 <ActionIcon color="blue" component="a" href={`mailto:${email}`} variant="light">
-                  <IconMail size={18} />
+                  <Mail size={18} />
                 </ActionIcon>
               </Tooltip>
             )}
             {viber && (
               <Tooltip label={`Viber: ${viber}`}>
                 <ActionIcon color="orange" component="a" href={`viber://chat?number=${viber}`} variant="light">
-                  <IconMessageCircle size={18} />
+                  <MessageCircle size={18} />
                 </ActionIcon>
               </Tooltip>
             )}
@@ -152,23 +142,23 @@ export function TaskCard({
             <Button
               color="orange"
               disabled={pending}
-              leftSection={<IconPlayerPlay size={16} />}
+              leftSection={<Play size={16} />}
               size="xs"
               onClick={() => onTakeInProgress(task)}
             >
               {t('Взяти в роботу')}
             </Button>
           )}
-          <Button color="green" leftSection={<IconCheck size={16} />} size="xs" variant={canTakeInProgress ? 'light' : 'filled'} onClick={() => onDone(task)}>
+          <Button color="green" leftSection={<Check size={16} />} size="xs" variant={canTakeInProgress ? 'light' : 'filled'} onClick={() => onDone(task)}>
             {t('Виконано')}
           </Button>
-          <Button color="gray" leftSection={<IconClock size={16} />} size="xs" variant="light" onClick={() => onSnooze(task)}>
+          <Button color="gray" leftSection={<Clock size={16} />} size="xs" variant="light" onClick={() => onSnooze(task)}>
             {t('Відкласти')}
           </Button>
-          <Button color="blue" leftSection={<IconMessagePlus size={16} />} size="xs" variant="outline" onClick={() => onAddNote(task)}>
+          <Button color="blue" leftSection={<MessageSquarePlus size={16} />} size="xs" variant="outline" onClick={() => onAddNote(task)}>
             {t('Нотатка')}
           </Button>
-          <Button color="red" leftSection={<IconX size={16} />} size="xs" variant="subtle" onClick={() => onDismiss(task)}>
+          <Button color="red" leftSection={<X size={16} />} size="xs" variant="subtle" onClick={() => onDismiss(task)}>
             {t('Відхилити')}
           </Button>
         </Group>

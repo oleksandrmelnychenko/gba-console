@@ -1,6 +1,6 @@
 import { Alert, Button, Group, Select, Stack, Text, TextInput } from '@mantine/core'
 import { AppModal } from "../../../shared/ui/AppModal"
-import { IconAlertCircle, IconSearch } from '@tabler/icons-react'
+import { CircleAlert, Search } from 'lucide-react'
 import { notifications } from '@mantine/notifications'
 import { useEffect, useMemo, useReducer } from 'react'
 import { formatLocalDateTime, formatLocalInputDateTime } from '../../../shared/date/dateTime'
@@ -167,7 +167,7 @@ export function CreateSupplyOrderModal({ opened, packList, onClose, onCreated }:
     <AppModal centered opened={opened} size="lg" title={t('Створити замовлення з пакувального листа')} onClose={onClose}>
       <Stack>
         {error && (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}
@@ -176,7 +176,7 @@ export function CreateSupplyOrderModal({ opened, packList, onClose, onCreated }:
           {t('Пакувальний лист')}: <b>{packList?.Number || '-'}</b>, {t('дата')}: {formatDateTime(packList?.FromDate)}
         </Text>
         <TextInput
-          leftSection={<IconSearch size={16} />}
+          leftSection={<Search size={16} />}
           label={t('Пошук постачальника')}
           value={supplierSearch}
           onChange={(event) => dispatch({ type: 'supplierSearchChanged', value: event.currentTarget.value })}

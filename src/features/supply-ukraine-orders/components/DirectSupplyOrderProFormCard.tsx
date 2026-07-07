@@ -13,12 +13,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import {
-  IconDeviceFloppy,
-  IconPencil,
-  IconTrash,
-  IconUpload,
-} from '@tabler/icons-react'
+import { Pencil, Save, Trash2, Upload } from 'lucide-react'
 import { useEffect, useReducer } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -159,7 +154,7 @@ export function DirectSupplyOrderProFormCard({
             <Group gap="xs">
               <Button
                 color={CREATE_ACTION_COLOR}
-                leftSection={<IconDeviceFloppy size={16} />}
+                leftSection={<Save size={16} />}
                 loading={isSaving}
                 size="xs"
                 onClick={() => void saveProForm()}
@@ -170,7 +165,7 @@ export function DirectSupplyOrderProFormCard({
           ) : canEdit ? (
             <Button
               color={CREATE_ACTION_COLOR}
-              leftSection={<IconPencil size={16} />}
+              leftSection={<Pencil size={16} />}
               size="xs"
               variant="outline"
               onClick={() => dispatch({ type: 'startEditing' })}
@@ -223,7 +218,7 @@ export function DirectSupplyOrderProFormCard({
             {isEditing && (
               <FileButton multiple onChange={(nextFiles) => dispatch({ type: 'addFiles', files: nextFiles || [] })}>
                 {(fileProps) => (
-                  <Button {...fileProps} disabled={isSaving} leftSection={<IconUpload size={16} />} size="xs" variant="default">
+                  <Button {...fileProps} disabled={isSaving} leftSection={<Upload size={16} />} size="xs" variant="default">
                     {t('Додати файли')}
                   </Button>
                 )}
@@ -275,7 +270,7 @@ export function DirectSupplyOrderProFormCard({
                         variant="subtle"
                         onClick={() => void removeDocument(document)}
                       >
-                        <IconTrash size={16} />
+                        <Trash2 size={16} />
                       </ActionIcon>
                     </Tooltip>
                   )}

@@ -10,14 +10,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import {
-  IconAlertCircle,
-  IconDownload,
-  IconFileTypePdf,
-  IconPlus,
-  IconRestore,
-  IconSearch,
-} from '@tabler/icons-react'
+import { CircleAlert, Download, FileText, Plus, RotateCcw, Search } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
@@ -538,7 +531,7 @@ function ProtocolsTableCard({ model }: { model: ReturnType<typeof useProtocolsPa
 
         <TextInput
           className="product-delivery-protocols-search-input"
-          leftSection={<IconSearch size={16} />}
+          leftSection={<Search size={16} />}
           label={t('Постачальник')}
           placeholder={t('Пошук постачальника')}
           value={filterDraft.supplier}
@@ -569,7 +562,7 @@ function ProtocolsTableCard({ model }: { model: ReturnType<typeof useProtocolsPa
               variant="light"
               onClick={resetFilters}
             >
-              <IconRestore size={17} />
+              <RotateCcw size={17} />
             </ActionIcon>
           </Tooltip>
           {canExport && (
@@ -583,7 +576,7 @@ function ProtocolsTableCard({ model }: { model: ReturnType<typeof useProtocolsPa
                 variant="light"
                 onClick={exportDocument}
               >
-                <IconDownload size={18} />
+                <Download size={18} />
               </ActionIcon>
             </Tooltip>
           )}
@@ -605,7 +598,7 @@ function ProtocolsTableCard({ model }: { model: ReturnType<typeof useProtocolsPa
           {canCreate && (
             <Button
               color={CREATE_ACTION_COLOR}
-              leftSection={<IconPlus size={16} />}
+              leftSection={<Plus size={16} />}
               size="sm"
               onClick={openCreateModal}
             >
@@ -616,7 +609,7 @@ function ProtocolsTableCard({ model }: { model: ReturnType<typeof useProtocolsPa
       </div>
 
       {(error || filterError) && (
-        <Alert className="console-table-alert" color={filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert className="console-table-alert" color={filterError ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">
           {filterError || error}
         </Alert>
       )}
@@ -821,7 +814,6 @@ function ProtocolCreatedCell({ protocol }: { protocol: DeliveryProductProtocol }
   )
 }
 
-
 function ProtocolsDownloadModal({ model }: { model: ReturnType<typeof useProtocolsPageModel> }) {
   const { t } = useI18n()
   const { closeDownload, downloadDocument, downloadError, downloadOpened, exportScopeWarning, isDownloading } = model
@@ -830,7 +822,7 @@ function ProtocolsDownloadModal({ model }: { model: ReturnType<typeof useProtoco
     <AppModal centered opened={downloadOpened} title={t('Завантажити')} onClose={closeDownload}>
       <Stack gap="sm">
         {exportScopeWarning && (
-          <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
             {exportScopeWarning}
           </Alert>
         )}
@@ -840,7 +832,7 @@ function ProtocolsDownloadModal({ model }: { model: ReturnType<typeof useProtoco
             {t('Завантаження')}
           </Text>
         ) : downloadError ? (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {downloadError}
           </Alert>
         ) : downloadDocument?.DocumentURL || downloadDocument?.PdfDocumentURL ? (
@@ -866,7 +858,7 @@ function ProtocolsDownloadModal({ model }: { model: ReturnType<typeof useProtoco
                 className="document-link"
               >
                 <span className="document-link-badge document-link-badge-pdf">
-                  <IconFileTypePdf size={22} stroke={1.8} />
+                  <FileText size={22} strokeWidth={1.8} />
                 </span>
                 <span>{t('PDF документ')}</span>
               </Anchor>

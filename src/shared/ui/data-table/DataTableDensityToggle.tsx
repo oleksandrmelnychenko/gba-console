@@ -1,5 +1,5 @@
 import { ActionIcon, Tooltip } from '@mantine/core'
-import { IconBaselineDensityMedium, IconBaselineDensitySmall } from '@tabler/icons-react'
+import { Rows3, Rows4 } from 'lucide-react'
 import { useI18n } from '../../i18n/useI18n'
 import type { DataTableDensity } from './types'
 
@@ -27,7 +27,7 @@ export function DataTableDensityToggle({ density, onToggle, size = 36 }: DataTab
         aria-label={t('Щільність рядків')}
         onClick={onToggle}
       >
-        {density === 'compact' ? <IconBaselineDensitySmall size={18} /> : <IconBaselineDensityMedium size={18} />}
+        {density === 'compact' ? <Rows4 size={18} /> : <Rows3 size={18} />}
       </ActionIcon>
     </Tooltip>
   )

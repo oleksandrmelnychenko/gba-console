@@ -1,5 +1,5 @@
 import { Alert, Button, Group, ScrollArea, Stack, Text, Tooltip } from '@mantine/core'
-import { IconAlertTriangle } from '@tabler/icons-react'
+import { TriangleAlert } from 'lucide-react'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { useI18n } from '../../../shared/i18n/useI18n'
 
@@ -20,7 +20,7 @@ export function DepreciatedOrderExceptionsModal({ exceptions, onClose }: Depreci
       onClose={onClose}
     >
       <Stack gap="sm">
-        <Alert color="yellow" icon={<IconAlertTriangle size={18} />} variant="light">
+        <Alert color="yellow" icon={<TriangleAlert size={18} />} variant="light">
           {t('Частину товарів не вдалося списати.')}
         </Alert>
         <ScrollArea.Autosize mah={400} type="auto">

@@ -18,17 +18,7 @@ import {
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
-import {
-  IconAlertCircle,
-  IconCash,
-  IconChevronRight,
-  IconEye,
-  IconPrinter,
-  IconRestore,
-  IconSearch,
-  IconTimeline,
-  IconTruckDelivery,
-} from '@tabler/icons-react'
+import { Banknote, ChartGantt, ChevronRight, CircleAlert, Eye, Printer, RotateCcw, Search, Truck } from 'lucide-react'
 import { type ReactNode, useCallback, useEffect, useMemo, useReducer } from 'react'
 import { formatLocalDate, SYNC_DATA_RANGE_START } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -544,7 +534,7 @@ function TaxFreeDocumentsPageView({ model }: { model: ReturnType<typeof useTaxFr
               onSearchChange={setCarrierSearch}
             />
             <TextInput
-              leftSection={<IconSearch size={16} />}
+              leftSection={<Search size={16} />}
               label={t('Номер Tax Free')}
               placeholder={t('Введіть номер')}
               value={searchDraft}
@@ -554,7 +544,7 @@ function TaxFreeDocumentsPageView({ model }: { model: ReturnType<typeof useTaxFr
             <div className="app-filter-actions">
               <Tooltip label={t('Скинути')}>
                 <ActionIcon variant="light" color="gray" size={34} aria-label={t('Скинути')} onClick={resetFilters}>
-                  <IconRestore size={17} />
+                  <RotateCcw size={17} />
                 </ActionIcon>
               </Tooltip>
               <Paginator
@@ -577,7 +567,7 @@ function TaxFreeDocumentsPageView({ model }: { model: ReturnType<typeof useTaxFr
           <Alert
             className="tax-free-documents-page__alert"
             color={filterError ? 'yellow' : 'red'}
-            icon={<IconAlertCircle size={18} />}
+            icon={<CircleAlert size={18} />}
             variant="light"
           >
             {filterError || error}
@@ -681,8 +671,8 @@ function TaxFreeAccountingActionModal({
           <Button
             color={CREATE_ACTION_COLOR}
             justify="space-between"
-            leftSection={<IconCash size={17} />}
-            rightSection={<IconChevronRight size={16} />}
+            leftSection={<Banknote size={17} />}
+            rightSection={<ChevronRight size={16} />}
             variant="light"
             onClick={() => onSelect('advance')}
           >
@@ -691,8 +681,8 @@ function TaxFreeAccountingActionModal({
           <Button
             color="green"
             justify="space-between"
-            leftSection={<IconCash size={17} />}
-            rightSection={<IconChevronRight size={16} />}
+            leftSection={<Banknote size={17} />}
+            rightSection={<ChevronRight size={16} />}
             variant="outline"
             onClick={() => onSelect('income')}
           >
@@ -701,8 +691,8 @@ function TaxFreeAccountingActionModal({
           <Button
             color="red"
             justify="space-between"
-            leftSection={<IconCash size={17} />}
-            rightSection={<IconChevronRight size={16} />}
+            leftSection={<Banknote size={17} />}
+            rightSection={<ChevronRight size={16} />}
             variant="light"
             onClick={() => onSelect('outcome')}
           >
@@ -802,7 +792,7 @@ function useTaxFreeDocumentColumns({
         cell: (row) => (
           <TaxFreeRowAction
             disabled={!row.document.Statham}
-            icon={<IconTruckDelivery size={17} />}
+            icon={<Truck size={17} />}
             label={t('Переглянути перевізника')}
             onClick={() => onOpenCarrier(row.document)}
           />
@@ -834,7 +824,7 @@ function useTaxFreeDocumentColumns({
         cell: (row) => (
           <TaxFreeRowAction
             disabled={(row.document.TaxFreeStatus ?? TaxFreeStatus.NotFormed) < TaxFreeStatus.Printed}
-            icon={<IconTimeline size={17} />}
+            icon={<ChartGantt size={17} />}
             label={t('Панель статусів')}
             onClick={() => onOpenStatus(row.document)}
           />
@@ -851,7 +841,7 @@ function useTaxFreeDocumentColumns({
           return (
             <TaxFreeRowAction
               disabled={!availability.canOpen}
-              icon={<IconCash size={17} />}
+              icon={<Banknote size={17} />}
               label={availability.label}
               onClick={() => onOpenAccounting(row.document)}
             />
@@ -873,7 +863,7 @@ function useTaxFreeDocumentColumns({
         cell: (row) => (
           <TaxFreeRowAction
             disabled={row.document.TaxFreeStatus !== TaxFreeStatus.Formed}
-            icon={<IconPrinter size={17} />}
+            icon={<Printer size={17} />}
             label={t('Попередній перегляд друку')}
             onClick={() => onOpenPreview(row.document)}
           />
@@ -885,7 +875,7 @@ function useTaxFreeDocumentColumns({
       },
       {
         cell: (row) => (
-          <TaxFreeRowAction icon={<IconEye size={17} />} label={t('Деталі')} onClick={() => onOpenView(row.document)} />
+          <TaxFreeRowAction icon={<Eye size={17} />} label={t('Деталі')} onClick={() => onOpenView(row.document)} />
         ),
         enableSorting: false,
         header: '',
@@ -1253,7 +1243,7 @@ function TaxFreeDocumentDetailsTab({
         </SimpleGrid>
 
         {carrierError && (
-          <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
             {carrierError}
           </Alert>
         )}
@@ -1275,7 +1265,7 @@ function TaxFreeDocumentDetailsTab({
           </Button>
           <Button
             disabled={document.TaxFreeStatus !== TaxFreeStatus.Formed}
-            leftSection={<IconPrinter size={17} />}
+            leftSection={<Printer size={17} />}
             variant="default"
             onClick={() => onPreview(document)}
           >
@@ -1403,7 +1393,7 @@ function TaxFreePrintPreviewModal({
             <Button variant="default" onClick={onClose}>
               {t('Скасувати')}
             </Button>
-            <Button leftSection={<IconPrinter size={17} />} loading={isPrinting} onClick={() => onPrint(document)}>
+            <Button leftSection={<Printer size={17} />} loading={isPrinting} onClick={() => onPrint(document)}>
               {t('Друк')}
             </Button>
           </Group>

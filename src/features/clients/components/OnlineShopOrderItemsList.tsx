@@ -1,5 +1,5 @@
 import { Badge, Box, Group, Image, Stack, Text, ThemeIcon } from '@mantine/core'
-import { IconPhoto } from '@tabler/icons-react'
+import { Image as ImageIcon } from 'lucide-react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import {
   getRetailItemImage,
@@ -56,7 +56,7 @@ function CartItemRow({ item }: { item: RetailCartItem }) {
         <Image className="online-shop-order-item-image" h={56} radius="sm" src={image} w={56} />
       ) : (
         <ThemeIcon className="online-shop-order-item-image" color="gray" h={56} radius="sm" variant="light" w={56}>
-          <IconPhoto size={22} />
+          <ImageIcon size={22} />
         </ThemeIcon>
       )}
       <Box className="online-shop-order-item-copy" flex={1}>

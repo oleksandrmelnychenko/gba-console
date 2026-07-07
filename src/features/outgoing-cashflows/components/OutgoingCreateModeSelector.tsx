@@ -1,5 +1,5 @@
 import { Card, Group, SimpleGrid, Stack, Text, UnstyledButton } from '@mantine/core'
-import { IconCash, IconChevronRight } from '@tabler/icons-react'
+import { Banknote, ChevronRight } from 'lucide-react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { OUTGOING_CREATE_MODE, type OutgoingCreateMode } from '../outgoingCreateTypes'
 
@@ -65,7 +65,7 @@ export function OutgoingCreateModeSelector({ onSelect }: OutgoingCreateModeSelec
             <Card withBorder opacity={definition.enabled ? 1 : 0.6} radius="md" shadow="sm">
               <Group align="flex-start" justify="space-between" wrap="nowrap">
                 <Group align="flex-start" gap="sm" wrap="nowrap">
-                  <IconCash size={28} />
+                  <Banknote size={28} />
                   <Stack gap={4}>
                     <Group gap="xs">
                       <Text fw={600}>{definition.label}</Text>
@@ -75,7 +75,7 @@ export function OutgoingCreateModeSelector({ onSelect }: OutgoingCreateModeSelec
                     </Text>
                   </Stack>
                 </Group>
-                {definition.enabled && <IconChevronRight size={20} />}
+                {definition.enabled && <ChevronRight size={20} />}
               </Group>
             </Card>
           </UnstyledButton>

@@ -9,7 +9,7 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
-import { IconAlertCircle, IconRefresh, IconRestore } from '@tabler/icons-react'
+import { CircleAlert, RefreshCw, RotateCcw } from 'lucide-react'
 import { useEffect, useMemo, useReducer, useRef } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -208,12 +208,12 @@ export function VatReportsPage() {
             <div className="app-filter-actions">
               <Tooltip label={t('Скинути')}>
                 <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
-                  <IconRestore size={17} />
+                  <RotateCcw size={17} />
                 </ActionIcon>
               </Tooltip>
               <Tooltip label={t('Оновити')}>
                 <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={34} variant="light" onClick={refreshReports}>
-                  <IconRefresh size={18} />
+                  <RefreshCw size={18} />
                 </ActionIcon>
               </Tooltip>
               <DataTableDensityToggle density={density} size={34} onToggle={toggleDensity} />
@@ -222,13 +222,13 @@ export function VatReportsPage() {
         </div>
 
         {error && (
-          <Alert className="vat-reports-alert" color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert className="vat-reports-alert" color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}
 
         {filterError && (
-          <Alert className="vat-reports-alert" color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert className="vat-reports-alert" color="yellow" icon={<CircleAlert size={18} />} variant="light">
             {filterError}
           </Alert>
         )}

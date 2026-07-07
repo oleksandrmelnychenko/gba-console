@@ -10,20 +10,7 @@ import {
   TextInput,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import {
-  IconAlertCircle,
-  IconBuildingBank,
-  IconCalendar,
-  IconClock,
-  IconCoins,
-  IconDeviceFloppy,
-  IconHash,
-  IconNotes,
-  IconPackage,
-  IconPlus,
-  IconReceipt,
-  IconWallet,
-} from '@tabler/icons-react'
+import { Calendar, CircleAlert, Clock, Coins, Hash, Landmark, NotebookText, Package, Plus, Receipt, Save, Wallet } from 'lucide-react'
 import { type FormEvent, type ReactNode, useEffect, useMemo } from 'react'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
@@ -395,7 +382,7 @@ export function ConsumableOrderPayPage() {
           color={CREATE_ACTION_COLOR}
           disabled={isLoading || isSaving || isOrderPaid}
           form="consumable-order-pay-form"
-          leftSection={<IconDeviceFloppy size={16} />}
+          leftSection={<Save size={16} />}
           loading={isSaving}
           styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
           type="submit"
@@ -434,13 +421,13 @@ export function ConsumableOrderPayPage() {
           </section>
 
           {error && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
             </Alert>
           )}
 
           {isOrderPaid && (
-            <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
               {t('Накладна вже оплачена. Повторна оплата недоступна.')}
             </Alert>
           )}
@@ -451,7 +438,7 @@ export function ConsumableOrderPayPage() {
                 <Button
                   className="consumable-order-pay-add-movement"
                   disabled={isLoading || isSaving || isOrderPaid}
-                  leftSection={<IconPlus size={14} />}
+                  leftSection={<Plus size={14} />}
                   size="xs"
                   type="button"
                   variant="outline"
@@ -467,7 +454,7 @@ export function ConsumableOrderPayPage() {
               className="consumable-order-pay-control is-compact is-date"
               disabled={isLoading || isSaving || isOrderPaid}
               label={t('Дата')}
-              leftSection={<IconCalendar size={15} />}
+              leftSection={<Calendar size={15} />}
               type="date"
               value={form.date}
               onChange={(event) => updateForm({ date: event.currentTarget.value })}
@@ -476,7 +463,7 @@ export function ConsumableOrderPayPage() {
               className="consumable-order-pay-control is-compact is-time"
               disabled={isLoading || isSaving || isOrderPaid}
               label={t('Час')}
-              leftSection={<IconClock size={15} />}
+              leftSection={<Clock size={15} />}
               type="time"
               value={form.time}
               onChange={(event) => updateForm({ time: event.currentTarget.value })}
@@ -487,7 +474,7 @@ export function ConsumableOrderPayPage() {
               decimalScale={2}
               disabled={isLoading || isSaving || isOrderPaid}
               label={t('Сума')}
-              leftSection={<IconCoins size={15} />}
+              leftSection={<Coins size={15} />}
               min={0}
               value={form.amount}
               onChange={(value) => updateForm({ amount: toNumber(value) })}
@@ -497,7 +484,7 @@ export function ConsumableOrderPayPage() {
               data={organizationOptions}
               disabled={isLoading || isSaving || isOrderPaid}
               label={t('Організація')}
-              leftSection={<IconReceipt size={15} />}
+              leftSection={<Receipt size={15} />}
               searchable
               value={form.organizationValue || null}
               onChange={(value) => updateForm({ organizationValue: value || '' })}
@@ -507,7 +494,7 @@ export function ConsumableOrderPayPage() {
               data={registerOptions}
               disabled={isLoading || isSaving || isOrderPaid}
               label={t('Каса / рахунок')}
-              leftSection={<IconBuildingBank size={15} />}
+              leftSection={<Landmark size={15} />}
               searchable
               value={form.paymentRegisterValue || null}
               onChange={handleRegisterChanged}
@@ -517,7 +504,7 @@ export function ConsumableOrderPayPage() {
               data={currencyOptions}
               disabled={!selectedRegister || isLoading || isSaving || isOrderPaid}
               label={t('Валюта')}
-              leftSection={<IconWallet size={15} />}
+              leftSection={<Wallet size={15} />}
               searchable
               value={form.selectedCurrencyRegisterValue || null}
               onChange={(value) => updateForm({ selectedCurrencyRegisterValue: value || '' })}
@@ -527,7 +514,7 @@ export function ConsumableOrderPayPage() {
               data={movementOptions}
               disabled={isLoading || isSaving || isOrderPaid}
               label={t('Стаття руху коштів')}
-              leftSection={<IconReceipt size={15} />}
+              leftSection={<Receipt size={15} />}
               value={form.movementSearch}
               onChange={(value) => updateForm({ movementSearch: value, selectedMovementValue: '' })}
               onOptionSubmit={handleMovementSubmit}
@@ -536,7 +523,7 @@ export function ConsumableOrderPayPage() {
               className="consumable-order-pay-control is-comment"
               disabled={isLoading || isSaving || isOrderPaid}
               label={t('Коментар')}
-              leftSection={<IconNotes size={15} />}
+              leftSection={<NotebookText size={15} />}
               value={form.comment}
               onChange={(event) => updateForm({ comment: event.currentTarget.value })}
             />
@@ -613,7 +600,7 @@ function PaymentMovementModal({
             className="consumable-order-pay-control"
             disabled={isSaving}
             label={t('Назва')}
-            leftSection={<IconReceipt size={15} />}
+            leftSection={<Receipt size={15} />}
             value={value}
             onChange={(event) => onChange(event.currentTarget.value)}
           />
@@ -621,7 +608,7 @@ function PaymentMovementModal({
             <Button color="gray" disabled={isSaving} type="button" variant="subtle" onClick={onClose}>
               {t('Скасувати')}
             </Button>
-            <Button color={CREATE_ACTION_COLOR} disabled={!value.trim()} leftSection={<IconPlus size={15} />} loading={isSaving} type="submit">
+            <Button color={CREATE_ACTION_COLOR} disabled={!value.trim()} leftSection={<Plus size={15} />} loading={isSaving} type="submit">
               {t('Створити')}
             </Button>
           </div>
@@ -677,13 +664,13 @@ function PaymentItemRow({ item }: { item: ConsumablesOrderItem }) {
     <div className="consumable-order-pay-item-row">
       <div className="consumable-order-pay-item-code">
         <span aria-hidden>
-          <IconHash size={13} />
+          <Hash size={13} />
         </span>
         <strong>{displayValue(item.ConsumableProduct?.VendorCode)}</strong>
       </div>
       <div className="consumable-order-pay-item-product">
         <span className="consumable-order-pay-item-product__icon" aria-hidden>
-          <IconPackage size={15} />
+          <Package size={15} />
         </span>
         <span className="consumable-order-pay-item-product__copy">
           <strong>{productName}</strong>
@@ -692,7 +679,7 @@ function PaymentItemRow({ item }: { item: ConsumablesOrderItem }) {
       </div>
       <div className="consumable-order-pay-item-qty">
         <span aria-hidden>
-          <IconHash size={13} />
+          <Hash size={13} />
         </span>
         <strong>{formatAmount(item.Qty)}</strong>
         {unitName ? <small>{unitName}</small> : null}

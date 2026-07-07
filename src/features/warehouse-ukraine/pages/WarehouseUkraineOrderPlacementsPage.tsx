@@ -1,6 +1,6 @@
 import { ActionIcon, Alert, Badge, Button, Card, Group, NumberInput, Select, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconAlertCircle, IconColumnInsertRight, IconPlus, IconTrash } from '@tabler/icons-react'
+import { BetweenVerticalEnd, CircleAlert, Plus, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useMemo } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
@@ -753,7 +753,7 @@ export function WarehouseUkraineOrderPlacementsPage() {
                     variant="subtle"
                     onClick={() => model.handleMoveRemnants(column)}
                   >
-                    <IconColumnInsertRight size={16} />
+                    <BetweenVerticalEnd size={16} />
                   </ActionIcon>
                 </Tooltip>
                 {canDelete && (
@@ -765,7 +765,7 @@ export function WarehouseUkraineOrderPlacementsPage() {
                       variant="subtle"
                       onClick={() => model.setColumnToRemove(column)}
                     >
-                      <IconTrash size={16} />
+                      <Trash2 size={16} />
                     </ActionIcon>
                   </Tooltip>
                 )}
@@ -808,7 +808,7 @@ export function WarehouseUkraineOrderPlacementsPage() {
                     variant="subtle"
                     onClick={() => model.handleOpenPlacements(gridRow, key, row)}
                   >
-                    <IconColumnInsertRight size={16} />
+                    <BetweenVerticalEnd size={16} />
                   </ActionIcon>
                 </Group>
                 {placements.length > 0 ? (
@@ -820,7 +820,7 @@ export function WarehouseUkraineOrderPlacementsPage() {
                 ) : (
                   (row.Qty || 0) > 0 && (
                     <Tooltip label={t('Не розміщено')}>
-                      <IconPlus size={13} style={{ color: 'var(--brand-orange)' }} />
+                      <Plus size={13} style={{ color: 'var(--brand-orange)' }} />
                     </Tooltip>
                   )
                 )}
@@ -975,7 +975,7 @@ export function WarehouseUkraineOrderPlacementsPage() {
         </Card>
 
         {model.error && (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {model.error}
           </Alert>
         )}

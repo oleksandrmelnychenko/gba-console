@@ -16,7 +16,7 @@ import {
   Textarea,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconAlertCircle, IconDeviceFloppy, IconPlus } from '@tabler/icons-react'
+import { CircleAlert, Plus, Save } from 'lucide-react'
 import { type FormEvent, useCallback, useEffect, useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
@@ -627,7 +627,7 @@ export function IncomeCashflowShopFormPage() {
           color={CREATE_ACTION_COLOR}
           disabled={isLoading || isResolvingClient || isSaving}
           form="income-cashflow-shop-form"
-          leftSection={<IconDeviceFloppy size={16} />}
+          leftSection={<Save size={16} />}
           loading={isSaving}
           type="submit"
         >
@@ -642,7 +642,7 @@ export function IncomeCashflowShopFormPage() {
           </Text>
 
           {error && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
             </Alert>
           )}
@@ -734,7 +734,7 @@ export function IncomeCashflowShopFormPage() {
             />
             <Button
               disabled={Boolean(activeMovement) || !form.movementSearch.trim() || isLoading}
-              leftSection={<IconPlus size={16} />}
+              leftSection={<Plus size={16} />}
               mt={24}
               type="button"
               variant="default"
@@ -745,7 +745,7 @@ export function IncomeCashflowShopFormPage() {
           </SimpleGrid>
 
           {selectedCurrency && selectedAgreementCurrency && getEntityValue(selectedCurrency) !== getEntityValue(selectedAgreementCurrency) && (
-            <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
               {t('Валюта рахунку відрізняється від валюти договору')}
             </Alert>
           )}

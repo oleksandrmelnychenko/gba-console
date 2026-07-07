@@ -1,5 +1,5 @@
 import { Anchor, Button, Checkbox, Group, Select, Stack, Text, TextInput } from '@mantine/core'
-import { IconFileTypePdf, IconReportAnalytics } from '@tabler/icons-react'
+import { FileChartColumn, FileText } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { type ReactNode, useEffect, useMemo, useState } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -172,7 +172,7 @@ export function ClientReturnsReportPanel({ opened, onClose }: ClientReturnsRepor
           onChange={(value) => setReportType(value === '1' ? '1' : '0')}
         />
 
-        <Button leftSection={<IconReportAnalytics size={16} />} loading={isGenerating} onClick={handleGenerate}>
+        <Button leftSection={<FileChartColumn size={16} />} loading={isGenerating} onClick={handleGenerate}>
           {t('Сформувати звіт')}
         </Button>
 
@@ -190,7 +190,7 @@ export function ClientReturnsReportPanel({ opened, onClose }: ClientReturnsRepor
               url={reportDocument.DocumentURL || reportDocument.XlsxDocument}
             />
             <ReportDownloadLink
-              icon={<IconFileTypePdf size={16} />}
+              icon={<FileText size={16} />}
               label={t('PDF')}
               url={reportDocument.PdfDocumentURL || reportDocument.PdfDocument}
             />

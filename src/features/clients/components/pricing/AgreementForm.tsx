@@ -13,7 +13,7 @@ import {
   Text,
   TextInput,
 } from '@mantine/core'
-import { IconPlus, IconTrash } from '@tabler/icons-react'
+import { Plus, Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { useAuth } from '../../../auth/useAuth'
@@ -148,13 +148,13 @@ export function AgreementForm({
                     variant="subtle"
                     onClick={handleDeleteProviderPricing}
                   >
-                    <IconTrash size={18} />
+                    <Trash2 size={18} />
                   </ActionIcon>
                 </Group>
               ) : (
                 <Button
                   color={CREATE_ACTION_COLOR}
-                  leftSection={<IconPlus size={16} />}
+                  leftSection={<Plus size={16} />}
                   size="xs"
                   variant="light"
                   onClick={openProviderPricingEditor}

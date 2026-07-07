@@ -1,5 +1,5 @@
 import { Alert, Button, Group, NumberInput, Stack, Table, Text, TextInput } from '@mantine/core'
-import { IconAlertCircle, IconCheck } from '@tabler/icons-react'
+import { Check, CircleAlert } from 'lucide-react'
 import { useMemo } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -112,7 +112,7 @@ function ProductSpecificationEditDrawerContent({
       {product && (
         <Stack gap="md">
           {error && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
             </Alert>
           )}
@@ -161,7 +161,7 @@ function ProductSpecificationEditDrawerContent({
               {t('Скасувати')}
             </Button>
             {canSave && (
-              <Button color={CREATE_ACTION_COLOR} leftSection={<IconCheck size={16} />} loading={isSaving} onClick={submit}>
+              <Button color={CREATE_ACTION_COLOR} leftSection={<Check size={16} />} loading={isSaving} onClick={submit}>
                 {t('Змінити')}
               </Button>
             )}

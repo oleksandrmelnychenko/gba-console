@@ -10,7 +10,7 @@ import {
   Stack,
   Text,
 } from '@mantine/core'
-import { IconAlertCircle, IconPlus, IconTrash } from '@tabler/icons-react'
+import { CircleAlert, Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { AppModal } from '../../../../shared/ui/AppModal'
 import { useI18n } from '../../../../shared/i18n/useI18n'
@@ -103,7 +103,7 @@ export function WorkplacesPanel({
         <Button
           color={CREATE_ACTION_COLOR}
           disabled={isSaving}
-          leftSection={<IconPlus size={16} />}
+          leftSection={<Plus size={16} />}
           size="xs"
           onClick={openCreate}
         >
@@ -112,7 +112,7 @@ export function WorkplacesPanel({
       </Group>
 
       {error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {error}
         </Alert>
       )}
@@ -218,7 +218,7 @@ export function WorkplacesPanel({
             </Button>
             <Button
               color="red"
-              leftSection={<IconTrash size={16} />}
+              leftSection={<Trash2 size={16} />}
               loading={isRemoving}
               onClick={confirmRemove}
             >
@@ -290,7 +290,7 @@ function WorkplaceItem({
               onRemove()
             }}
           >
-            <IconTrash size={18} />
+            <Trash2 size={18} />
           </ActionIcon>
         )}
       </Group>

@@ -7,7 +7,7 @@ import {
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
-import { IconAlertCircle, IconDeviceFloppy } from '@tabler/icons-react'
+import { CircleAlert, Save } from 'lucide-react'
 import { type FormEvent, useEffect, useMemo, useReducer } from 'react'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
@@ -246,7 +246,7 @@ export function ConsumableStorageFormPage() {
           color={CREATE_ACTION_COLOR}
           disabled={isLoading || !canSave}
           form="consumable-storage-form"
-          leftSection={<IconDeviceFloppy size={16} />}
+          leftSection={<Save size={16} />}
           styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
           loading={isSaving}
           type="submit"
@@ -258,13 +258,13 @@ export function ConsumableStorageFormPage() {
       <form className="consumable-storage-form" id="consumable-storage-form" onSubmit={handleSubmit}>
         <Stack gap="md">
           {error && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
             </Alert>
           )}
 
           {!canSave && (
-            <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
               {t('Немає прав для збереження складу')}
             </Alert>
           )}

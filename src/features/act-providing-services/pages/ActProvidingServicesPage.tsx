@@ -6,13 +6,8 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
-import {
-  IconAlertCircle,
-  IconRestore,
-  IconSearch,
-} from '@tabler/icons-react'
+import { CircleAlert, ExternalLink, RotateCcw, Route, Search } from 'lucide-react'
 import { notifications } from '@mantine/notifications'
-import { ExternalLink, Route } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { SYNC_DATA_RANGE_START, formatLocalDate } from '../../../shared/date/dateTime'
@@ -328,7 +323,7 @@ function ActProvidingServicesPageView({ model }: { model: ReturnType<typeof useA
 
             <TextInput
               className="act-services-search-input"
-              leftSection={<IconSearch size={15} />}
+              leftSection={<Search size={15} />}
               label={t('Пошук')}
               placeholder={t('Номер, акт, інвойс, постачальник')}
               value={searchValue}
@@ -341,7 +336,7 @@ function ActProvidingServicesPageView({ model }: { model: ReturnType<typeof useA
             <div className="app-filter-actions">
               <Tooltip label={t('Скинути')}>
                 <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetPageFilters}>
-                  <IconRestore size={17} />
+                  <RotateCcw size={17} />
                 </ActionIcon>
               </Tooltip>
               <Paginator
@@ -362,7 +357,7 @@ function ActProvidingServicesPageView({ model }: { model: ReturnType<typeof useA
         </div>
 
         {(error || filterError) && (
-          <Alert className="console-table-alert" color={filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert className="console-table-alert" color={filterError ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">
             {filterError || error}
           </Alert>
         )}

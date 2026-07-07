@@ -1,5 +1,5 @@
 import { Box, Stack, Text, Tooltip, UnstyledButton } from '@mantine/core'
-import { IconAlertTriangle, IconCircleCheck } from '@tabler/icons-react'
+import { CircleCheck, TriangleAlert } from 'lucide-react'
 import { useEffect, useRef, useState, type RefObject } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import type { Client } from '../../../clients/types'
@@ -172,7 +172,7 @@ function ClientMiniCard({ client, hasDebt, hideName }: { client: Client; hasDebt
           )}
         </Box>
         <Box className={`new-sale-client-drum-card__state ${isDebt ? 'has-debt' : client.IsActive ? 'is-active' : ''}`}>
-          {isDebt ? <IconAlertTriangle size={14} /> : <IconCircleCheck size={14} />}
+          {isDebt ? <TriangleAlert size={14} /> : <CircleCheck size={14} />}
         </Box>
       </Box>
       {!hideName && (

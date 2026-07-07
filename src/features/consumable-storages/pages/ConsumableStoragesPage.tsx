@@ -19,18 +19,7 @@ import {
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
-import {
-  IconAlertCircle,
-  IconDeviceFloppy,
-  IconEye,
-  IconPencil,
-  IconPlus,
-  IconRefresh,
-  IconRestore,
-  IconSearch,
-  IconTrash,
-  IconX,
-} from '@tabler/icons-react'
+import { CircleAlert, Eye, Pencil, Plus, RefreshCw, RotateCcw, Save, Search, Trash2, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -213,7 +202,7 @@ export function ConsumableStoragesPage() {
           <Group align="end" gap="sm" wrap="nowrap" className="consumable-storages-filter-row">
             <TextInput
               label={t('Пошук')}
-              leftSection={<IconSearch size={16} />}
+              leftSection={<Search size={16} />}
               placeholder={t('Пошук')}
               value={searchValue}
               w={{ base: '100%', sm: 360 }}
@@ -229,7 +218,7 @@ export function ConsumableStoragesPage() {
                   variant="light"
                   onClick={reload}
                 >
-                  <IconRefresh size={17} />
+                  <RefreshCw size={17} />
                 </ActionIcon>
               </Tooltip>
             </div>
@@ -237,7 +226,7 @@ export function ConsumableStoragesPage() {
               <div className="consumable-storages-create-action">
                 <Button
                   color={CREATE_ACTION_COLOR}
-                  leftSection={<IconPlus size={16} />}
+                  leftSection={<Plus size={16} />}
                   size="sm"
                   styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
                   onClick={openCreateStorage}
@@ -251,7 +240,7 @@ export function ConsumableStoragesPage() {
 
         <Stack className="consumable-storages-card__body" gap="md">
           {error && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
             </Alert>
           )}
@@ -376,7 +365,7 @@ function useConsumableStorageColumns({
                     onDelete(storage)
                   }}
                 >
-                  <IconTrash size={16} />
+                  <Trash2 size={16} />
                 </ActionIcon>
               </Tooltip>
             </PermissionGate>
@@ -391,7 +380,7 @@ function useConsumableStorageColumns({
                   onOpen(storage)
                 }}
               >
-                <IconEye size={16} />
+                <Eye size={16} />
               </ActionIcon>
             </Tooltip>
             <PermissionGate permissionKey={CONSUMABLE_STORAGE_EDIT_PERMISSION}>
@@ -407,7 +396,7 @@ function useConsumableStorageColumns({
                     onEdit(storage)
                   }}
                 >
-                  <IconPencil size={16} />
+                  <Pencil size={16} />
                 </ActionIcon>
               </Tooltip>
             </PermissionGate>
@@ -532,7 +521,7 @@ function StorageRemnantsPanel({ products, totals }: { products: ConsumableProduc
   return (
     <Stack gap="md">
       <TextInput
-        leftSection={<IconSearch size={16} />}
+        leftSection={<Search size={16} />}
         placeholder={t('Назва або артикул')}
         value={searchValue}
         w={{ base: '100%', sm: 320 }}
@@ -815,7 +804,7 @@ function DeprecatedConsumableOrdersPanel({
           <TextInput label={t('Від')} type="date" value={fromDate} onChange={(event) => setFromDate(event.currentTarget.value)} />
           <TextInput label={t('До')} type="date" value={toDate} onChange={(event) => setToDate(event.currentTarget.value)} />
           <TextInput
-            leftSection={<IconSearch size={16} />}
+            leftSection={<Search size={16} />}
             label={t('Пошук')}
             placeholder={t('Номер, артикул, товар або отримувач')}
             value={searchValue}
@@ -824,25 +813,25 @@ function DeprecatedConsumableOrdersPanel({
           />
           <Tooltip label={t('Скинути')}>
             <ActionIcon aria-label={t('Скинути')} color="gray" size={36} variant="light" onClick={resetFilters}>
-              <IconRestore size={18} />
+              <RotateCcw size={18} />
             </ActionIcon>
           </Tooltip>
           <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />
         </Group>
 
-        <Button leftSection={<IconPlus size={16} />} onClick={() => setEditorOrder(createDeprecatedConsumableOrderDraft(storage))}>
+        <Button leftSection={<Plus size={16} />} onClick={() => setEditorOrder(createDeprecatedConsumableOrderDraft(storage))}>
           {t('Списати')}
         </Button>
       </Group>
 
       {error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {error}
         </Alert>
       )}
 
       {filterError && (
-        <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
           {filterError}
         </Alert>
       )}
@@ -1010,7 +999,7 @@ function useDeprecatedConsumableOrderColumns({
                   onEdit(row.order)
                 }}
               >
-                <IconPencil size={16} />
+                <Pencil size={16} />
               </ActionIcon>
             </Tooltip>
             <Tooltip label={t('Видалити')}>
@@ -1025,7 +1014,7 @@ function useDeprecatedConsumableOrderColumns({
                   onDelete(row.order)
                 }}
               >
-                <IconTrash size={16} />
+                <Trash2 size={16} />
               </ActionIcon>
             </Tooltip>
           </Group>
@@ -1207,7 +1196,7 @@ function DeprecatedConsumableOrderEditorModal({
     <AppModal centered opened size="80vw" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{isEditMode ? t('Редагувати списання') : t('Списати зі складу')}</span>} onClose={onClose}>
       <Stack gap="md">
         {error && (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}
@@ -1283,7 +1272,7 @@ function DeprecatedConsumableOrderEditorModal({
                   />
                   <Button
                     disabled={!productValue || isSaving}
-                    leftSection={<IconPlus size={16} />}
+                    leftSection={<Plus size={16} />}
                     variant="outline"
                     onClick={addSelectedProduct}
                   >
@@ -1315,10 +1304,10 @@ function DeprecatedConsumableOrderEditorModal({
         />
 
         <Group justify="flex-end">
-          <Button color="gray" disabled={isSaving} leftSection={<IconX size={16} />} variant="light" onClick={onClose}>
+          <Button color="gray" disabled={isSaving} leftSection={<X size={16} />} variant="light" onClick={onClose}>
             {t('Скасувати')}
           </Button>
-          <Button leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} onClick={handleSave}>
+          <Button leftSection={<Save size={16} />} loading={isSaving} onClick={handleSave}>
             {t('Зберегти')}
           </Button>
         </Group>
@@ -1353,7 +1342,7 @@ function ConsumablesOrderItemsPicker({
 
   if (rows.length === 0) {
     return (
-      <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+      <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
         {t('Приходних накладних з позиціями на цьому складі не знайдено')}
       </Alert>
     )
@@ -1397,7 +1386,7 @@ function ConsumablesOrderItemsPicker({
                 <Table.Td>
                   <Button
                     disabled={isSaving || selected}
-                    leftSection={<IconPlus size={14} />}
+                    leftSection={<Plus size={14} />}
                     size="xs"
                     variant="outline"
                     onClick={() => onAdd(order, item)}
@@ -1435,7 +1424,7 @@ function DeprecatedConsumableOrderItemsTable({
 
   if (items.length === 0) {
     return (
-      <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+      <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
         {t('Додайте хоча б одну позицію для списання')}
       </Alert>
     )
@@ -1507,7 +1496,7 @@ function DeprecatedConsumableOrderItemsTable({
                       variant="subtle"
                       onClick={() => onRemove(index)}
                     >
-                      <IconTrash size={16} />
+                      <Trash2 size={16} />
                     </ActionIcon>
                   </Tooltip>
                 </Table.Td>
@@ -1541,7 +1530,7 @@ function DeleteDeprecatedConsumableOrderModal({
           <Button color="gray" disabled={isSaving} variant="light" onClick={onClose}>
             {t('Скасувати')}
           </Button>
-          <Button color="red" leftSection={<IconTrash size={16} />} loading={isSaving} onClick={onDelete}>
+          <Button color="red" leftSection={<Trash2 size={16} />} loading={isSaving} onClick={onDelete}>
             {t('Видалити')}
           </Button>
         </Group>
@@ -1571,7 +1560,7 @@ function DeleteStorageModal({
           <Button color="gray" disabled={isSaving} variant="light" onClick={onClose}>
             {t('Скасувати')}
           </Button>
-          <Button color="red" leftSection={<IconTrash size={16} />} loading={isSaving} onClick={onDelete}>
+          <Button color="red" leftSection={<Trash2 size={16} />} loading={isSaving} onClick={onDelete}>
             {t('Видалити')}
           </Button>
         </Group>

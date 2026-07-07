@@ -11,7 +11,7 @@ import {
   Title,
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
-import { IconAlertCircle } from '@tabler/icons-react'
+import { CircleAlert } from 'lucide-react'
 import { useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import logoUrl from '../../assets/brand/gba-logo.svg'
@@ -59,7 +59,7 @@ export function LoginPage() {
               className="login-alert"
               color="red"
               variant="light"
-              icon={<IconAlertCircle size={18} />}
+              icon={<CircleAlert size={18} />}
               title={t('Перевірте дані')}
             >
               {error}

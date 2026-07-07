@@ -13,7 +13,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { IconAlertCircle, IconPencil, IconPlus, IconRefresh, IconRestore, IconSearch } from '@tabler/icons-react'
+import { CircleAlert, Pencil, Plus, RefreshCw, RotateCcw, Search } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -195,7 +195,7 @@ export function PaymentAccountsPage() {
           <Group align="end" gap="sm" wrap="nowrap" className="payment-accounts-filter-row">
             <TextInput
               size="sm"
-              leftSection={<IconSearch size={16} />}
+              leftSection={<Search size={16} />}
               label={t('Пошук')}
               placeholder={t('Введіть значення')}
               value={searchValue}
@@ -225,7 +225,7 @@ export function PaymentAccountsPage() {
             <div className="app-filter-actions">
               <Tooltip label={t('Скинути фільтри')}>
                 <ActionIcon aria-label={t('Скинути фільтри')} color="gray" size={34} variant="light" onClick={resetFilters}>
-                  <IconRestore size={17} />
+                  <RotateCcw size={17} />
                 </ActionIcon>
               </Tooltip>
               <Tooltip label={t('Оновити')}>
@@ -237,7 +237,7 @@ export function PaymentAccountsPage() {
                   variant="light"
                   onClick={reload}
                 >
-                  <IconRefresh size={17} />
+                  <RefreshCw size={17} />
                 </ActionIcon>
               </Tooltip>
               <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
@@ -245,7 +245,7 @@ export function PaymentAccountsPage() {
             <PermissionGate permissionKey={PAYMENT_ACCOUNT_CREATE_PERMISSION}>
               <Button
                 color={CREATE_ACTION_COLOR}
-                leftSection={<IconPlus size={16} />}
+                leftSection={<Plus size={16} />}
                 size="sm"
                 styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
                 onClick={() =>
@@ -265,7 +265,7 @@ export function PaymentAccountsPage() {
 
         <Stack className="payment-accounts-card__body" gap="md">
           {error && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
             </Alert>
           )}
@@ -413,7 +413,7 @@ function usePaymentAccountColumns(onOpen: (account: PaymentAccount) => void): Da
                   onOpen(account)
                 }}
               >
-                <IconPencil size={16} />
+                <Pencil size={16} />
               </ActionIcon>
             </Tooltip>
           </PermissionGate>

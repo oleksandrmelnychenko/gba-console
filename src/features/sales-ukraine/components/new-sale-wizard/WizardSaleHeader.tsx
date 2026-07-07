@@ -1,6 +1,6 @@
 import { ActionIcon, Box, Group, Paper, Popover, Stack, Text, Tooltip } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconAlertTriangle, IconArrowsExchange, IconCopy, IconFileDescription, IconSitemap, IconX } from '@tabler/icons-react'
+import { ArrowLeftRight, Copy, FileText, Network, TriangleAlert, X } from 'lucide-react'
 import { memo, useEffect, useState } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { getSaleClientDebtTotal } from '../../api/salesUkraineApi'
@@ -251,7 +251,7 @@ function WizardSaleHeaderContent({
           <Popover.Target>
             <Tooltip label={t('Договори')} position="bottom">
               <ActionIcon aria-label={t('Договори')} color="gray" size="lg" variant="subtle">
-                <IconFileDescription size={20} />
+                <FileText size={20} />
               </ActionIcon>
             </Tooltip>
           </Popover.Target>
@@ -279,7 +279,7 @@ function WizardSaleHeaderContent({
                 variant={isStructureOpen ? 'light' : 'subtle'}
                 onClick={() => void toggleStructure()}
               >
-                <IconSitemap size={20} />
+                <Network size={20} />
               </ActionIcon>
             </Tooltip>
           </Popover.Target>
@@ -289,7 +289,7 @@ function WizardSaleHeaderContent({
                 {t('Структура клієнта')}
               </Text>
               <ActionIcon aria-label={t('Закрити')} color="gray" size="sm" variant="subtle" onClick={() => setStructureOpen(false)}>
-                <IconX size={16} />
+                <X size={16} />
               </ActionIcon>
             </Group>
             <Stack gap="sm" mah={360} style={{ overflowY: 'auto' }}>
@@ -336,7 +336,7 @@ function WizardSaleHeaderContent({
                     </Text>
                   </Text>
                 )}
-                {showStructureWarning && <IconAlertTriangle color="var(--mantine-color-orange-6)" size={18} />}
+                {showStructureWarning && <TriangleAlert color="var(--mantine-color-orange-6)" size={18} />}
               </Group>
             )}
           </Popover.Dropdown>
@@ -353,7 +353,7 @@ function WizardSaleHeaderContent({
             variant="subtle"
             onClick={() => setReassignOpened(true)}
           >
-            <IconArrowsExchange size={20} />
+            <ArrowLeftRight size={20} />
           </ActionIcon>
         </Tooltip>
       )}
@@ -395,7 +395,7 @@ function WizardSaleHeaderContent({
         <Group gap={6} ml="auto" wrap="nowrap">
           <Tooltip label={t('Копіювати товари')} position="bottom">
             <ActionIcon aria-label={t('Копіювати товари')} color="gray" size="lg" variant="subtle" onClick={() => void copySaleData(sale)}>
-              <IconCopy size={18} />
+              <Copy size={18} />
             </ActionIcon>
           </Tooltip>
           <Text fw={600} size="sm" style={{ whiteSpace: 'nowrap' }}>

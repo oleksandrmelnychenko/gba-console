@@ -1,14 +1,6 @@
 import { ActionIcon, Alert, Anchor, Badge, Button, Group, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import {
-  IconAlertCircle,
-  IconDownload,
-  IconFileText,
-  IconPencil,
-  IconPlus,
-  IconPrinter,
-  IconRestore,
-} from '@tabler/icons-react'
+import { CircleAlert, Download, FileText, Pencil, Plus, Printer, RotateCcw } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useAuth } from '../../auth/useAuth'
 import { NewSaleWizard } from '../../sales-ukraine/components/new-sale-wizard/NewSaleWizard'
@@ -396,7 +388,7 @@ export function SalesTab() {
           <div className="app-filter-actions warehouse-ukraine-filter-actions">
             <Tooltip label={t('Скинути')}>
               <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={model.resetFilters}>
-                <IconRestore size={17} />
+                <RotateCcw size={17} />
               </ActionIcon>
             </Tooltip>
             <Paginator
@@ -416,7 +408,7 @@ export function SalesTab() {
             <Button
               color={CREATE_ACTION_COLOR}
               disabled={!canCreateSale}
-              leftSection={<IconPlus size={16} />}
+              leftSection={<Plus size={16} />}
               size="sm"
               onClick={() => setNewSaleOpen(true)}
             >
@@ -426,7 +418,7 @@ export function SalesTab() {
         </div>
 
         {(model.error || model.filterError) && (
-          <Alert className="console-table-alert" color={model.filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert className="console-table-alert" color={model.filterError ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">
             {model.filterError || model.error}
           </Alert>
         )}
@@ -544,7 +536,7 @@ function useSalesColumns({
                   onPrint(sale)
                 }}
               >
-                <IconPrinter size={16} />
+                <Printer size={16} />
               </ActionIcon>
             </Tooltip>
             <Tooltip label={t('Акт редагування')}>
@@ -558,7 +550,7 @@ function useSalesColumns({
                   onPrintActProtocolEdit(sale)
                 }}
               >
-                <IconFileText size={16} />
+                <FileText size={16} />
               </ActionIcon>
             </Tooltip>
             {sale.CustomersOwnTtn?.TtnPDFPath && (
@@ -569,7 +561,7 @@ function useSalesColumns({
                   rel="noopener noreferrer"
                   onClick={(event) => event.stopPropagation()}
                 >
-                  <IconDownload size={16} />
+                  <Download size={16} />
                 </Anchor>
               </Tooltip>
             )}
@@ -681,7 +673,7 @@ function useSalesColumns({
             <Group gap={6} wrap="nowrap">
               {carrierEdited && (
                 <Tooltip label={t('Перевізника редаговано')}>
-                  <IconPencil size={14} style={{ color: 'var(--mantine-color-orange-6)', flex: '0 0 auto' }} />
+                  <Pencil size={14} style={{ color: 'var(--mantine-color-orange-6)', flex: '0 0 auto' }} />
                 </Tooltip>
               )}
               <TransporterIcon cssClass={sale.Transporter.CssClass} imageUrl={sale.Transporter.ImageUrl} name={sale.Transporter.Name} size={20} />
@@ -781,7 +773,6 @@ function getResponsible(sale: Sale): string {
 function upgradeHttpToHttps(url: string): string {
   return url.replace(/^http:\/\//i, 'https://')
 }
-
 
 function getFilterError(from: string, to: string): string | null {
   if (!from || !to) {

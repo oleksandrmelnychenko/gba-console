@@ -9,7 +9,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
-import { IconAlertCircle, IconDownload, IconRefresh, IconRestore } from '@tabler/icons-react'
+import { CircleAlert, Download, RefreshCw, RotateCcw } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { translate } from '../../../shared/i18n/translate'
@@ -450,7 +450,7 @@ export function DocumentVerificationTab() {
             <div className="app-filter-actions warehouse-ukraine-filter-actions">
               <Tooltip label={t('Скинути')}>
                 <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={model.resetFilters}>
-                  <IconRestore size={17} />
+                  <RotateCcw size={17} />
                 </ActionIcon>
               </Tooltip>
               <Tooltip label={t('Оновити')}>
@@ -462,12 +462,12 @@ export function DocumentVerificationTab() {
                   variant="light"
                   onClick={() => model.reload()}
                 >
-                  <IconRefresh size={17} />
+                  <RefreshCw size={17} />
                 </ActionIcon>
               </Tooltip>
               <Button
                 color="gray"
-                leftSection={<IconDownload size={16} />}
+                leftSection={<Download size={16} />}
                 disabled={Boolean(model.exportError) || !model.storagesReady}
                 loading={model.isDownloading}
                 variant="light"
@@ -494,7 +494,7 @@ export function DocumentVerificationTab() {
             <Alert
               className="console-table-alert"
               color={model.filterError || model.storageFilterError ? 'yellow' : 'red'}
-              icon={<IconAlertCircle size={18} />}
+              icon={<CircleAlert size={18} />}
               variant="light"
             >
               {model.filterError || model.storageFilterError || model.error || model.storagesError}

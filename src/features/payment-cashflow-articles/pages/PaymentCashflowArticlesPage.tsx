@@ -10,7 +10,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { IconAlertCircle, IconPencil, IconPlus, IconRefresh, IconRestore, IconSearch } from '@tabler/icons-react'
+import { CircleAlert, Pencil, Plus, RefreshCw, RotateCcw, Search } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -107,7 +107,7 @@ export function PaymentCashflowArticlesPage() {
                 openArticle(article)
               }}
             >
-              <IconPencil size={18} />
+              <Pencil size={18} />
             </ActionIcon>
           </Tooltip>
         ),
@@ -163,7 +163,7 @@ export function PaymentCashflowArticlesPage() {
           <Group align="end" gap="sm" wrap="nowrap" className="payment-cashflow-articles-filter-row">
             <TextInput
               size="sm"
-              leftSection={<IconSearch size={16} />}
+              leftSection={<Search size={16} />}
               label={t('Пошук')}
               placeholder={t('Пошук')}
               value={searchValue}
@@ -179,7 +179,7 @@ export function PaymentCashflowArticlesPage() {
                   variant="light"
                   onClick={() => setSearchValue('')}
                 >
-                  <IconRestore size={17} />
+                  <RotateCcw size={17} />
                 </ActionIcon>
               </Tooltip>
               <Tooltip label={t('Оновити')}>
@@ -191,7 +191,7 @@ export function PaymentCashflowArticlesPage() {
                   variant="light"
                   onClick={reload}
                 >
-                  <IconRefresh size={17} />
+                  <RefreshCw size={17} />
                 </ActionIcon>
               </Tooltip>
               <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
@@ -199,7 +199,7 @@ export function PaymentCashflowArticlesPage() {
             {canCreate && (
               <Button
                 color={CREATE_ACTION_COLOR}
-                leftSection={<IconPlus size={16} />}
+                leftSection={<Plus size={16} />}
                 size="sm"
                 styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
                 onClick={() =>
@@ -219,7 +219,7 @@ export function PaymentCashflowArticlesPage() {
 
         <Stack className="payment-cashflow-articles-card__body" gap="md">
           {error && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
             </Alert>
           )}

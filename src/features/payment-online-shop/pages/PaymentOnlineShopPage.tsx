@@ -10,7 +10,7 @@ import {
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
-import { IconAlertCircle, IconReceipt, IconRefresh, IconRestore, IconSearch } from '@tabler/icons-react'
+import { CircleAlert, Receipt, RefreshCw, RotateCcw, Search } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -335,12 +335,12 @@ function PaymentShopTableCard({ model }: { model: ReturnType<typeof usePaymentOn
           <div className="app-filter-actions">
             <Tooltip label={t('Пошук')}>
               <ActionIcon aria-label={t('Пошук')} color="gray" size={34} variant="light" onClick={applyFilters}>
-                <IconSearch size={17} />
+                <Search size={17} />
               </ActionIcon>
             </Tooltip>
             <Tooltip label={t('Скинути')}>
               <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
-                <IconRestore size={17} />
+                <RotateCcw size={17} />
               </ActionIcon>
             </Tooltip>
             <Tooltip label={t('Оновити')}>
@@ -352,7 +352,7 @@ function PaymentShopTableCard({ model }: { model: ReturnType<typeof usePaymentOn
                 variant="light"
                 onClick={() => reload()}
               >
-                <IconRefresh size={17} />
+                <RefreshCw size={17} />
               </ActionIcon>
             </Tooltip>
             <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
@@ -362,7 +362,7 @@ function PaymentShopTableCard({ model }: { model: ReturnType<typeof usePaymentOn
 
       <Stack className="payment-online-shop-card__body" gap="md">
         {error && (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}
@@ -515,7 +515,7 @@ function usePaymentShopColumns(onOpenDetail: (item: PaymentShopItem) => void, on
                   onCreateIncomeOrder(item)
                 }}
               >
-                <IconReceipt size={16} />
+                <Receipt size={16} />
               </ActionIcon>
             </Tooltip>
           ) : null,
@@ -541,7 +541,7 @@ function usePaymentShopColumns(onOpenDetail: (item: PaymentShopItem) => void, on
               onOpenDetail(item)
             }}
           >
-            <IconSearch size={16} />
+            <Search size={16} />
           </ActionIcon>
         ),
       },

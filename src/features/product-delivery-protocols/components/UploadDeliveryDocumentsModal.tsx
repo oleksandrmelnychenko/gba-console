@@ -11,7 +11,7 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
-import { IconArrowBackUp, IconFileTypePdf, IconTrash, IconUpload } from '@tabler/icons-react'
+import { FileText, Trash2, Undo2, Upload } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
@@ -171,7 +171,7 @@ export function UploadDeliveryDocumentsModal({
                     variant="subtle"
                     onClick={() => onRemoveNewDocument(document)}
                   >
-                    <IconTrash size={16} />
+                    <Trash2 size={16} />
                   </ActionIcon>
                 </Tooltip>
               </Group>
@@ -193,7 +193,7 @@ export function UploadDeliveryDocumentsModal({
                         {document.contentType === 'xls' || document.contentType === 'xlsx' ? (
                           <ExcelIcon size={18} />
                         ) : (
-                          <IconFileTypePdf size={18} />
+                          <FileText size={18} />
                         )}
                         <Text size="sm" lineClamp={1} td={document.deleted ? 'line-through' : undefined}>
                           {document.fileName}
@@ -214,7 +214,7 @@ export function UploadDeliveryDocumentsModal({
                     variant="subtle"
                     onClick={() => onRemoveExistingDocument(document)}
                   >
-                    {document.deleted ? <IconArrowBackUp size={16} /> : <IconTrash size={16} />}
+                    {document.deleted ? <Undo2 size={16} /> : <Trash2 size={16} />}
                   </ActionIcon>
                 </Tooltip>
               </Group>
@@ -227,7 +227,7 @@ export function UploadDeliveryDocumentsModal({
         <Group justify="flex-end">
           <FileButton multiple accept=".xls,.xlsx,.pdf" onChange={(files) => !isSaving && files && onAddFiles(files)}>
             {(props) => (
-              <Button {...props} disabled={isSaving} leftSection={<IconUpload size={16} />} variant="outline">
+              <Button {...props} disabled={isSaving} leftSection={<Upload size={16} />} variant="outline">
                 {t('Завантажити')}
               </Button>
             )}

@@ -1,4 +1,4 @@
-import { IconBus, IconWalk } from '@tabler/icons-react'
+import { Bus, Footprints } from 'lucide-react'
 import { toProxiedAssetUrl } from '../url/proxiedAssetUrl'
 import { resolveTransporterLogo } from './transporterLogos'
 
@@ -32,11 +32,11 @@ export function TransporterIcon({ cssClass, imageUrl, name = '', size = 22 }: Tr
   const normalizedClass = cssClass?.trim()
 
   if (normalizedClass === 'bus_item_class') {
-    return <IconBus size={size} stroke={1.5} style={{ flexShrink: 0 }} />
+    return <Bus size={size} strokeWidth={1.5} style={{ flexShrink: 0 }} />
   }
 
   if (normalizedClass === 'self_checkout_item_class') {
-    return <IconWalk size={size} stroke={1.5} style={{ flexShrink: 0 }} />
+    return <Footprints size={size} strokeWidth={1.5} style={{ flexShrink: 0 }} />
   }
 
   return null

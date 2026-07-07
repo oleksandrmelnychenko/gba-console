@@ -8,7 +8,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { IconAlertCircle, IconPencil, IconPlus, IconRefresh, IconSearch } from '@tabler/icons-react'
+import { CircleAlert, Pencil, Plus, RefreshCw, Search } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -110,7 +110,7 @@ export function PaymentExpenseArticlesPage() {
                 openArticle(article)
               }}
             >
-              <IconPencil size={18} />
+              <Pencil size={18} />
             </ActionIcon>
           </Tooltip>
         ),
@@ -156,7 +156,7 @@ export function PaymentExpenseArticlesPage() {
         <div className="console-table-command-bar is-search-only">
           <TextInput
             className="console-table-search-input"
-            leftSection={<IconSearch size={16} />}
+            leftSection={<Search size={16} />}
             label={t('Пошук')}
             placeholder={t('Назва або NetUid')}
             value={searchValue}
@@ -165,14 +165,14 @@ export function PaymentExpenseArticlesPage() {
           <div className="console-table-actions app-filter-actions">
             <Tooltip label={t('Оновити')}>
               <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={34} variant="light" onClick={reload}>
-                <IconRefresh size={18} />
+                <RefreshCw size={18} />
               </ActionIcon>
             </Tooltip>
           </div>
           {canCreate && (
             <Button
               color={CREATE_ACTION_COLOR}
-              leftSection={<IconPlus size={16} />}
+              leftSection={<Plus size={16} />}
               size="sm"
               styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
               onClick={() =>
@@ -190,7 +190,7 @@ export function PaymentExpenseArticlesPage() {
         </div>
 
         {error && (
-          <Alert className="console-table-alert" color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert className="console-table-alert" color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}

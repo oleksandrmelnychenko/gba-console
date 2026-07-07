@@ -1,6 +1,6 @@
 import { ActionIcon, Alert, Anchor, Badge, Button, Checkbox, Group, Select, SimpleGrid, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconAlertCircle, IconCheck, IconRefresh, IconRestore } from '@tabler/icons-react'
+import { Check, CircleAlert, RefreshCw, RotateCcw } from 'lucide-react'
 import { type ReactNode, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -286,12 +286,12 @@ export function EditingList({ kind, layoutVersion, loader, onLoaded, onProcessed
           <div className="app-filter-actions warehouse-ukraine-filter-actions">
             <Tooltip label={t('Скинути')}>
               <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
-                <IconRestore size={17} />
+                <RotateCcw size={17} />
               </ActionIcon>
             </Tooltip>
             <Tooltip label={t('Оновити')}>
               <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={34} variant="light" onClick={() => reload()}>
-                <IconRefresh size={17} />
+                <RefreshCw size={17} />
               </ActionIcon>
             </Tooltip>
             <Select
@@ -307,7 +307,7 @@ export function EditingList({ kind, layoutVersion, loader, onLoaded, onProcessed
         </div>
 
         {(error || filterError) && (
-          <Alert className="console-table-alert" color={filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert className="console-table-alert" color={filterError ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">
             {filterError || error}
           </Alert>
         )}
@@ -503,7 +503,7 @@ function useEditingColumns({ indexMap, kind, onProcess }: EditingColumnsModel) {
           canProcessItem(item) ? (
             <Tooltip label={kind === 'carrier' ? t('Підтвердити зміну перевізника') : t('Підтвердити обробку')}>
               <ActionIcon color="green" size="sm" variant="subtle" onClick={() => onProcess(item)}>
-                <IconCheck size={16} />
+                <Check size={16} />
               </ActionIcon>
             </Tooltip>
           ) : (

@@ -1,5 +1,5 @@
 import { ActionIcon, Box, Group, Text, Tooltip } from '@mantine/core'
-import { IconPackage, IconTrash } from '@tabler/icons-react'
+import { Package, Trash2 } from 'lucide-react'
 import { memo, useMemo, useRef } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { DataTable } from '../../../../shared/ui/data-table/DataTable'
@@ -210,7 +210,7 @@ export const WizardShoppingCartGrid = memo(function WizardShoppingCartGrid({
                   onRemove(item)
                 }}
               >
-                <IconTrash size={15} />
+                <Trash2 size={15} />
               </ActionIcon>
             </Tooltip>
           </Group>
@@ -272,7 +272,7 @@ function WizardCartProductCell({ item }: { item: SalesUkraineOrderItem }) {
   return (
     <Group className="new-sale-cart__product-cell" gap={9} wrap="nowrap">
       <Box className="new-sale-cart__product-icon">
-        <IconPackage size={15} />
+        <Package size={15} />
       </Box>
       <Box className="new-sale-cart__product-copy">
         <Text className="new-sale-cart__product-code" title={code} truncate>

@@ -11,7 +11,7 @@ import {
   Text,
   Tooltip,
 } from '@mantine/core'
-import { IconAlertCircle, IconHistory, IconRefresh, IconSettings } from '@tabler/icons-react'
+import { CircleAlert, History, RefreshCw, Settings } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
@@ -261,7 +261,7 @@ function ActReconciliationViewPageView({ model }: { model: ReturnType<typeof use
               variant="light"
               onClick={() => void model.openHistory()}
             >
-              <IconHistory size={18} />
+              <History size={18} />
             </ActionIcon>
           </Tooltip>
           <Tooltip label={t('Оновити')}>
@@ -273,7 +273,7 @@ function ActReconciliationViewPageView({ model }: { model: ReturnType<typeof use
               variant="light"
               onClick={() => model.reload()}
             >
-              <IconRefresh size={18} />
+              <RefreshCw size={18} />
             </ActionIcon>
           </Tooltip>
           {model.selectedItems.length > 0 && (
@@ -286,7 +286,7 @@ function ActReconciliationViewPageView({ model }: { model: ReturnType<typeof use
       </Group>
 
       {model.error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {model.error}
         </Alert>
       )}
@@ -482,7 +482,7 @@ function useItemColumns({
                   variant="subtle"
                   onClick={() => onOpenAction(item)}
                 >
-                  <IconSettings size={18} />
+                  <Settings size={18} />
                 </ActionIcon>
               </Tooltip>
             </Box>

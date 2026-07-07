@@ -15,7 +15,7 @@ import { AppModal } from "../../../shared/ui/AppModal"
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { notifications } from '@mantine/notifications'
 import { useDebouncedValue } from '@mantine/hooks'
-import { IconAlertCircle, IconPencil, IconPlus, IconRefresh, IconRestore, IconSearch } from '@tabler/icons-react'
+import { CircleAlert, Pencil, Plus, RefreshCw, RotateCcw, Search } from 'lucide-react'
 import { type FormEvent, useCallback, useEffect, useMemo, useReducer } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -231,7 +231,7 @@ export function ProductGroupsPage() {
         <div className="app-filter-bar product-groups-filter-bar">
           <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
             <TextInput
-              leftSection={<IconSearch size={16} />}
+              leftSection={<Search size={16} />}
               label={t('Пошук')}
               placeholder={t('Назва або опис')}
               value={searchDraft}
@@ -247,7 +247,7 @@ export function ProductGroupsPage() {
                   variant="light"
                   onClick={resetSearch}
                 >
-                  <IconRestore size={17} />
+                  <RotateCcw size={17} />
                 </ActionIcon>
               </Tooltip>
               <Tooltip label={t('Оновити')}>
@@ -260,7 +260,7 @@ export function ProductGroupsPage() {
                   variant="light"
                   onClick={() => reload()}
                 >
-                  <IconRefresh size={18} />
+                  <RefreshCw size={18} />
                 </ActionIcon>
               </Tooltip>
               <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
@@ -268,7 +268,7 @@ export function ProductGroupsPage() {
             <PermissionGate permissionKey={PRODUCT_GROUPS_ADD_PERMISSION}>
               <Button
                 color={CREATE_ACTION_COLOR}
-                leftSection={<IconPlus size={16} />}
+                leftSection={<Plus size={16} />}
                 size="sm"
                 styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
                 type="button"
@@ -284,7 +284,7 @@ export function ProductGroupsPage() {
           <Alert
             className="product-groups-page__alert"
             color="red"
-            icon={<IconAlertCircle size={18} />}
+            icon={<CircleAlert size={18} />}
             variant="light"
           >
             {error}
@@ -433,7 +433,7 @@ function useProductGroupColumns(openProductGroup: (productGroup: ProductGroup) =
                 variant="subtle"
                 onClick={() => openProductGroup(productGroup)}
               >
-                <IconPencil size={18} />
+                <Pencil size={18} />
               </ActionIcon>
             </Tooltip>
           </Box>
@@ -476,7 +476,7 @@ function ProductGroupCreateModal({
       <form id="product-group-create-form" onSubmit={onSubmit}>
         <Stack gap="md">
           {createError && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {createError}
             </Alert>
           )}

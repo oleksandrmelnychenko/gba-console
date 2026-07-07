@@ -11,7 +11,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { IconAlertCircle, IconPencil, IconRefresh, IconRestore, IconSearch } from '@tabler/icons-react'
+import { CircleAlert, Pencil, RefreshCw, RotateCcw, Search } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -132,7 +132,7 @@ export function ProductGroupSubGroupsPanel({ productGroupNetId }: ProductGroupSu
                 variant="subtle"
                 onClick={() => openSubGroup(subGroup.SubProductGroup)}
               >
-                <IconPencil size={18} />
+                <Pencil size={18} />
               </ActionIcon>
             </Tooltip>
           </Box>
@@ -215,7 +215,7 @@ export function ProductGroupSubGroupsPanel({ productGroupNetId }: ProductGroupSu
     <Stack gap="md">
       <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
         <TextInput
-          leftSection={<IconSearch size={16} />}
+          leftSection={<Search size={16} />}
           label={t('Пошук')}
           placeholder={t('Назва або опис')}
           value={searchDraft}
@@ -238,7 +238,7 @@ export function ProductGroupSubGroupsPanel({ productGroupNetId }: ProductGroupSu
             variant="light"
             onClick={resetSearch}
           >
-            <IconRestore size={18} />
+            <RotateCcw size={18} />
           </ActionIcon>
         </Tooltip>
         <Tooltip label={t('Оновити')}>
@@ -251,14 +251,14 @@ export function ProductGroupSubGroupsPanel({ productGroupNetId }: ProductGroupSu
             variant="light"
             onClick={() => reload()}
           >
-            <IconRefresh size={18} />
+            <RefreshCw size={18} />
           </ActionIcon>
         </Tooltip>
         <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />
       </Group>
 
       {error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {error}
         </Alert>
       )}

@@ -17,7 +17,7 @@ import {
   Textarea,
   Tooltip,
 } from '@mantine/core'
-import { IconAlertCircle, IconDeviceFloppy, IconPencil, IconPlus, IconTrash, IconX } from '@tabler/icons-react'
+import { CircleAlert, Pencil, Plus, Save, Trash2, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { formatLocalDate, formatLocalInputDateTime } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -613,7 +613,7 @@ export function AdvanceReportConsumableOrderModal({
     <AppModal centered opened={opened} size="90vw" title={t('Додати товар / послугу')} onClose={requestClose}>
       <Stack gap="md">
         {error && (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}
@@ -700,7 +700,7 @@ export function AdvanceReportConsumableOrderModal({
                     variant="subtle"
                     onClick={() => removeDocumentFile(file)}
                   >
-                    <IconTrash size={16} />
+                    <Trash2 size={16} />
                   </ActionIcon>
                 </Tooltip>
               </Group>
@@ -717,7 +717,7 @@ export function AdvanceReportConsumableOrderModal({
               {visibleItems.length}
             </Badge>
           </Group>
-          <Button disabled={isBusy} leftSection={<IconPlus size={16} />} variant="outline" onClick={openNewItemEditor}>
+          <Button disabled={isBusy} leftSection={<Plus size={16} />} variant="outline" onClick={openNewItemEditor}>
             {t('Додати')}
           </Button>
         </Group>
@@ -765,7 +765,7 @@ export function AdvanceReportConsumableOrderModal({
                             variant="subtle"
                             onClick={() => openEditItemEditor(item, index)}
                           >
-                            <IconPencil size={16} />
+                            <Pencil size={16} />
                           </ActionIcon>
                         </Tooltip>
                         <Tooltip label={t('Видалити')}>
@@ -777,7 +777,7 @@ export function AdvanceReportConsumableOrderModal({
                             variant="subtle"
                             onClick={() => void removeItem(index)}
                           >
-                            <IconTrash size={16} />
+                            <Trash2 size={16} />
                           </ActionIcon>
                         </Tooltip>
                       </Group>
@@ -810,10 +810,10 @@ export function AdvanceReportConsumableOrderModal({
             </Badge>
           </Group>
           <Group justify="flex-end">
-            <Button color="gray" disabled={isBusy} leftSection={<IconX size={16} />} variant="light" onClick={requestClose}>
+            <Button color="gray" disabled={isBusy} leftSection={<X size={16} />} variant="light" onClick={requestClose}>
               {t('Скасувати')}
             </Button>
-            <Button disabled={isBusy} leftSection={<IconDeviceFloppy size={16} />} loading={isCalculating} onClick={submitOrder}>
+            <Button disabled={isBusy} leftSection={<Save size={16} />} loading={isCalculating} onClick={submitOrder}>
               {t('Додати')}
             </Button>
           </Group>
@@ -828,7 +828,7 @@ export function AdvanceReportConsumableOrderModal({
         >
           <Stack gap="md">
             {itemEditor.error && (
-              <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+              <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
                 {itemEditor.error}
               </Alert>
             )}
@@ -924,10 +924,10 @@ export function AdvanceReportConsumableOrderModal({
             </SimpleGrid>
 
             <Group justify="flex-end">
-              <Button color="gray" disabled={isBusy} leftSection={<IconX size={16} />} variant="light" onClick={closeItemEditor}>
+              <Button color="gray" disabled={isBusy} leftSection={<X size={16} />} variant="light" onClick={closeItemEditor}>
                 {t('Скасувати')}
               </Button>
-              <Button disabled={isBusy} leftSection={<IconDeviceFloppy size={16} />} onClick={() => void saveEditorItem()}>
+              <Button disabled={isBusy} leftSection={<Save size={16} />} onClick={() => void saveEditorItem()}>
                 {t('Зберегти')}
               </Button>
             </Group>

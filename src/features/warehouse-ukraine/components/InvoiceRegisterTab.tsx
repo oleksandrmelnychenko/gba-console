@@ -1,6 +1,6 @@
 import { ActionIcon, Alert, Badge, Button, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { IconAlertCircle, IconDownload, IconRestore } from '@tabler/icons-react'
+import { CircleAlert, Download, RotateCcw } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { translate } from '../../../shared/i18n/translate'
@@ -301,12 +301,12 @@ export function InvoiceRegisterTab() {
             <div className="app-filter-actions warehouse-ukraine-filter-actions">
               <Tooltip label={t('Скинути')}>
                 <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={model.resetFilters}>
-                  <IconRestore size={17} />
+                  <RotateCcw size={17} />
                 </ActionIcon>
               </Tooltip>
               <Button
                 color="gray"
-                leftSection={<IconDownload size={16} />}
+                leftSection={<Download size={16} />}
                 loading={model.isDownloading}
                 disabled={Boolean(model.filterError) || model.isLoading || model.isDownloading}
                 variant="light"
@@ -329,7 +329,7 @@ export function InvoiceRegisterTab() {
           </div>
 
           {(model.error || model.filterError) && (
-            <Alert className="console-table-alert" color={model.filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert className="console-table-alert" color={model.filterError ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">
               {model.filterError || model.error}
             </Alert>
           )}

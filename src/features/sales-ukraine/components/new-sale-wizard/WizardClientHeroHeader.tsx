@@ -1,9 +1,5 @@
 import { Box, Group, Popover, Stack, Text } from '@mantine/core'
-import {
-  IconAlertTriangle,
-  IconMail,
-  IconPhone,
-} from '@tabler/icons-react'
+import { Mail, Phone, TriangleAlert } from 'lucide-react'
 import { memo, useEffect, useState, type ReactNode } from 'react'
 import { formatLocalDate } from '../../../../shared/date/dateTime'
 import { useI18n } from '../../../../shared/i18n/useI18n'
@@ -187,11 +183,11 @@ export const WizardClientHeroHeader = memo(function WizardClientHeroHeader({
   const clientDebtTotal = visibleDebts.reduce((sum, debt) => sum + getWizardClientDebtTotal(debt), 0)
   const clientContactCandidates: Array<{ icon: ReactNode; value?: string | null }> = [
     {
-      icon: <IconPhone size={13} />,
+      icon: <Phone size={13} />,
       value: resolvedClient.MobileNumber || resolvedClient.SMSNumber,
     },
     {
-      icon: <IconMail size={13} />,
+      icon: <Mail size={13} />,
       value: resolvedClient.EmailAddress,
     },
     // Address/location is intentionally hidden in the compact wizard header.
@@ -230,7 +226,7 @@ export const WizardClientHeroHeader = memo(function WizardClientHeroHeader({
             </span>
             {clientDebtTotal > 0 && (
               <span className="new-sale-client-hero__debt">
-                <IconAlertTriangle size={12} />
+                <TriangleAlert size={12} />
                 {t('Є борг')}
               </span>
             )}

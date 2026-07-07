@@ -1,5 +1,5 @@
 import { Button, Group, Stack, Text } from '@mantine/core'
-import { IconPlus } from '@tabler/icons-react'
+import { Plus } from 'lucide-react'
 import { formatLocalDateTime } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -234,7 +234,7 @@ export function MergedServicesSection({
           <Button
             color={CREATE_ACTION_COLOR}
             disabled={isSaving}
-            leftSection={<IconPlus size={16} />}
+            leftSection={<Plus size={16} />}
             variant="outline"
             onClick={() => setNewOpen(true)}
           >

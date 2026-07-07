@@ -1,5 +1,5 @@
 import { Button, Group } from '@mantine/core'
-import { IconDeviceFloppy, IconRefresh } from '@tabler/icons-react'
+import { RefreshCw, Save } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
@@ -32,7 +32,7 @@ export function ActProvidingServiceDetailPage() {
         <Group gap="xs" justify="flex-end">
           <Button
             color="gray"
-            leftSection={<IconRefresh size={16} />}
+            leftSection={<RefreshCw size={16} />}
             loading={isLoading}
             styles={{ label: DETAIL_MONO_STYLE }}
             variant="light"
@@ -43,7 +43,7 @@ export function ActProvidingServiceDetailPage() {
           <Button
             color={CREATE_ACTION_COLOR}
             disabled={!act || !isDirty || isLoading}
-            leftSection={<IconDeviceFloppy size={16} />}
+            leftSection={<Save size={16} />}
             loading={isSaving}
             styles={{ label: DETAIL_MONO_STYLE }}
             onClick={save}

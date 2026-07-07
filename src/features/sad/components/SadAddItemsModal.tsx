@@ -1,5 +1,5 @@
 import { Alert, Button, Checkbox, Group, Stack, Text, TextInput } from '@mantine/core'
-import { IconAlertCircle, IconSearch } from '@tabler/icons-react'
+import { CircleAlert, Search } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -235,13 +235,13 @@ export function SadAddItemsModal({ onAdd, onClose, opened, sad }: SadAddItemsMod
     <AppModal centered opened={opened} size="xl" title={t('Додати товари з корзини постачання')} onClose={onClose}>
       <Stack>
         {error && (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}
 
         <TextInput
-          leftSection={<IconSearch size={16} />}
+          leftSection={<Search size={16} />}
           placeholder={t('Артикул, назва, оригінальний номер або постачальник')}
           value={search}
           onChange={(event) => setSearch(event.currentTarget.value)}

@@ -18,16 +18,7 @@ import {
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
-import {
-  IconAlertCircle,
-  IconCheck,
-  IconDownload,
-  IconEye,
-  IconFileTypePdf,
-  IconPlus,
-  IconSearch,
-  IconTrash,
-} from '@tabler/icons-react'
+import { Check, CircleAlert, Download, Eye, FileText, Plus, Search, Trash2 } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { ProductCardModal } from '../../products/components/ProductCardModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -649,7 +640,7 @@ export function NewUkraineSaleReturnPage() {
           <TextInput
             className="new-sale-return-search-input"
             label={t('Пошук')}
-            leftSection={<IconSearch size={15} />}
+            leftSection={<Search size={15} />}
             placeholder={t('Номер, клієнт, договір або продаж')}
             value={searchDraft}
             onChange={(event) => updateListSearch(event.currentTarget.value)}
@@ -670,14 +661,14 @@ export function NewUkraineSaleReturnPage() {
             />
           </div>
           <div className="new-sale-return-create-actions">
-            <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} onClick={() => setCreateOpened(true)}>
+            <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<Plus size={16} />} onClick={() => setCreateOpened(true)}>
               {t('Створити')}
             </Button>
           </div>
         </div>
 
         {listError ? (
-          <Alert className="console-table-alert" color="red" icon={<IconAlertCircle size={16} />} title={t('Помилка')}>
+          <Alert className="console-table-alert" color="red" icon={<CircleAlert size={16} />} title={t('Помилка')}>
             {listError}
           </Alert>
         ) : null}
@@ -708,12 +699,12 @@ export function NewUkraineSaleReturnPage() {
       <AppDrawer opened={createOpened} onClose={() => setCreateOpened(false)} position="right" size="100%" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Нове повернення')}</span>}>
         <Stack gap="md">
           {createError ? (
-            <Alert color="red" icon={<IconAlertCircle size={16} />} title={t('Помилка')}>
+            <Alert color="red" icon={<CircleAlert size={16} />} title={t('Помилка')}>
               {createError}
             </Alert>
           ) : null}
           {createWarning ? (
-            <Alert color="yellow" icon={<IconAlertCircle size={16} />} title={t('Увага')}>
+            <Alert color="yellow" icon={<CircleAlert size={16} />} title={t('Увага')}>
               {createWarning}
             </Alert>
           ) : null}
@@ -748,7 +739,7 @@ export function NewUkraineSaleReturnPage() {
             <TextInput label={t('По дату')} onChange={(event) => setSaleToDate(event.currentTarget.value)} type="date" value={saleToDate} />
           </SimpleGrid>
           <Group justify="flex-end">
-            <Button disabled={!drafts.length} leftSection={<IconEye size={16} />} onClick={openReview}>
+            <Button disabled={!drafts.length} leftSection={<Eye size={16} />} onClick={openReview}>
               {t('Перегляд')} ({drafts.length})
             </Button>
           </Group>
@@ -781,7 +772,7 @@ export function NewUkraineSaleReturnPage() {
             <Button
               color={CREATE_ACTION_COLOR}
               disabled={!drafts.length}
-              leftSection={<IconCheck size={16} />}
+              leftSection={<Check size={16} />}
               loading={isSaving}
               onClick={() => void saveReturn()}
             >
@@ -792,7 +783,7 @@ export function NewUkraineSaleReturnPage() {
       >
         <Stack gap="md">
           {reviewError ? (
-            <Alert color="red" icon={<IconAlertCircle size={16} />} title={t('Помилка')}>
+            <Alert color="red" icon={<CircleAlert size={16} />} title={t('Помилка')}>
               {reviewError}
             </Alert>
           ) : null}
@@ -859,7 +850,7 @@ export function NewUkraineSaleReturnPage() {
                         onClick={() => removeDraftByOrderItem(draft.orderItem)}
                         variant="subtle"
                       >
-                        <IconTrash size={16} />
+                        <Trash2 size={16} />
                       </ActionIcon>
                     </Tooltip>
                   </Group>
@@ -912,12 +903,12 @@ export function NewUkraineSaleReturnPage() {
               )}
             </div>
             {editorError ? (
-              <Alert color="red" icon={<IconAlertCircle size={16} />}>
+              <Alert color="red" icon={<CircleAlert size={16} />}>
                 {editorError}
               </Alert>
             ) : null}
             {editorVatWarning ? (
-              <Alert color="yellow" icon={<IconAlertCircle size={16} />}>
+              <Alert color="yellow" icon={<CircleAlert size={16} />}>
                 {editorVatWarning}
               </Alert>
             ) : null}
@@ -983,7 +974,7 @@ export function NewUkraineSaleReturnPage() {
       <AppModal opened={downloadModalOpened} onClose={() => setDownloadModalOpened(false)} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Документи')}</span>}>
         <Stack gap="sm">
           <DownloadLink icon={<ExcelIcon size={16} />} label={t('Excel')} url={downloadDocument?.DocumentURL || downloadDocument?.XlsxDocument} />
-          <DownloadLink icon={<IconFileTypePdf size={16} />} label={t('PDF')} url={downloadDocument?.PdfDocumentURL || downloadDocument?.PdfDocument} />
+          <DownloadLink icon={<FileText size={16} />} label={t('PDF')} url={downloadDocument?.PdfDocumentURL || downloadDocument?.PdfDocument} />
         </Stack>
       </AppModal>
 
@@ -1120,7 +1111,7 @@ function ReturnActionsCell({
             onExport(saleReturn)
           }}
         >
-          <IconDownload size={15} />
+          <Download size={15} />
         </ActionIcon>
       </Tooltip>
       <Tooltip label={t('Скасувати')}>
@@ -1135,7 +1126,7 @@ function ReturnActionsCell({
             onCancel(saleReturn)
           }}
         >
-          <IconTrash size={15} />
+          <Trash2 size={15} />
         </ActionIcon>
       </Tooltip>
     </div>

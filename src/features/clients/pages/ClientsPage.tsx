@@ -18,18 +18,7 @@ import {
 } from '@mantine/core'
 import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
-import {
-  IconAlertCircle,
-  IconDotsVertical,
-  IconExternalLink,
-  IconFileTypePdf,
-  IconPlus,
-  IconRestore,
-  IconSearch,
-  IconToggleLeft,
-  IconToggleRight,
-} from '@tabler/icons-react'
-import { Clock, ExternalLink, Network, Wallet } from 'lucide-react'
+import { CircleAlert, Clock, EllipsisVertical, ExternalLink, FileText, Network, Plus, RotateCcw, Search, ToggleLeft, ToggleRight, Wallet } from 'lucide-react'
 import { useDebouncedValue } from '@mantine/hooks'
 import { type FormEvent, type RefObject, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { ClientTypeRoleFilter } from '../components/ClientTypeRoleFilter'
@@ -695,7 +684,7 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
               className="clients-create-button"
               color={CREATE_ACTION_COLOR}
               size="sm"
-              leftSection={<IconPlus size={16} />}
+              leftSection={<Plus size={16} />}
               onClick={openCreateClient}
             >
               {t('Новий клієнт')}
@@ -704,12 +693,12 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
         </div>
 
         {error && (
-          <Alert className="clients-page__alert" color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert className="clients-page__alert" color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}
         {solvencyScoresError && (
-          <Alert className="clients-page__alert" color="orange" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert className="clients-page__alert" color="orange" icon={<CircleAlert size={18} />} variant="light">
             {solvencyScoresError}
           </Alert>
         )}
@@ -914,7 +903,7 @@ function ClientActionsModal({
             fullWidth
             color={isActive ? 'gray' : 'green'}
             justify="flex-start"
-            leftSection={isActive ? <IconToggleLeft size={16} /> : <IconToggleRight size={16} />}
+            leftSection={isActive ? <ToggleLeft size={16} /> : <ToggleRight size={16} />}
             loading={isActiveLoading}
             variant="light"
             onClick={() => onSwitchActive(client)}
@@ -979,7 +968,7 @@ function ClientsFilterToolbar({
       <TextInput
         ref={searchInputRef}
         size="sm"
-        leftSection={<IconSearch size={16} />}
+        leftSection={<Search size={16} />}
         label={t('Пошук')}
         placeholder={t('Введіть значення')}
         rightSection={isTableBusy ? <Loader color="orange" size={14} /> : undefined}
@@ -1027,7 +1016,7 @@ function ClientsFilterToolbar({
       <div className="app-filter-actions">
         <Tooltip label={t('Скинути')}>
           <ActionIcon variant="light" color="gray" size={34} aria-label={t('Скинути')} onClick={onReset}>
-            <IconRestore size={17} />
+            <RotateCcw size={17} />
           </ActionIcon>
         </Tooltip>
         <Tooltip label={t('Експорт в Excel')}>
@@ -1131,7 +1120,7 @@ function ClientDocumentModal({
             {document.PdfDocumentURL && (
               <Anchor href={getDocumentHref(document.PdfDocumentURL)} target="_blank" rel="noreferrer" className="document-link">
                 <span className="document-link-badge document-link-badge-pdf">
-                  <IconFileTypePdf size={22} stroke={1.8} />
+                  <FileText size={22} strokeWidth={1.8} />
                 </span>
                 <span>{t('PDF документ')}</span>
               </Anchor>
@@ -1173,7 +1162,7 @@ function ClientStructureModal({
               key={subClient.NetUid || subClient.Id || index}
               fullWidth
               justify="flex-start"
-              leftSection={<IconExternalLink size={16} />}
+              leftSection={<ExternalLink size={16} />}
               variant="outline"
               onClick={() => onOpenClient(subClient)}
             >
@@ -1349,7 +1338,7 @@ function useClientColumns(
                 variant="subtle"
                 onClick={() => onOpenActions(client)}
               >
-                <IconDotsVertical size={18} />
+                <EllipsisVertical size={18} />
               </ActionIcon>
             </Tooltip>
           </Box>

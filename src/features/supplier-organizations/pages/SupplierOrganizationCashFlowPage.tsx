@@ -12,12 +12,7 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
-import {
-  IconAlertCircle,
-  IconDownload,
-  IconFileTypePdf,
-  IconRefresh,
-} from '@tabler/icons-react'
+import { CircleAlert, Download, FileText, RefreshCw } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -256,7 +251,7 @@ export function SupplierOrganizationCashFlowPage() {
             variant="light"
             onClick={exportDocument}
           >
-            <IconDownload size={17} />
+            <Download size={17} />
           </ActionIcon>
         </Tooltip>
         <Tooltip label={t('Оновити')}>
@@ -271,19 +266,19 @@ export function SupplierOrganizationCashFlowPage() {
               void loadCashFlow()
             }}
           >
-            <IconRefresh size={17} />
+            <RefreshCw size={17} />
           </ActionIcon>
         </Tooltip>
       </Group>
 
       {error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {error}
         </Alert>
       )}
 
       {filterError && (
-        <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
           {filterError}
         </Alert>
       )}
@@ -410,7 +405,7 @@ function DocumentModal({ document, onClose }: { document: AccountingCashFlowDocu
         {document?.PdfDocumentURL && (
           <Anchor href={getDocumentHref(document.PdfDocumentURL)} target="_blank" rel="noreferrer" className="document-link">
             <Group gap="xs">
-              <IconFileTypePdf size={22} stroke={1.8} />
+              <FileText size={22} strokeWidth={1.8} />
               <span>{t('Завантажити PDF')}</span>
             </Group>
           </Anchor>

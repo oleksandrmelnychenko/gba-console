@@ -1,5 +1,5 @@
 import { Alert, Button, Group, NumberInput, Stack, Textarea } from '@mantine/core'
-import { IconAlertCircle } from '@tabler/icons-react'
+import { CircleAlert } from 'lucide-react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
@@ -61,7 +61,7 @@ function PaymentImageEditForm({ editError, isSaving, item, onClose, onConfirm }:
   return (
     <Stack gap="sm">
       {(validationError || editError) && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {validationError || editError}
         </Alert>
       )}

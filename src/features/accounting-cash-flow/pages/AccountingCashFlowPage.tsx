@@ -19,18 +19,7 @@ import {
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
-import {
-  IconArrowDownLeft,
-  IconArrowUpRight,
-  IconAlertCircle,
-  IconDownload,
-  IconFileTypePdf,
-  IconPencil,
-  IconRefresh,
-  IconRestore,
-  IconScale,
-  IconSearch,
-} from '@tabler/icons-react'
+import { ArrowDownLeft, ArrowUpRight, CircleAlert, Download, FileText, Pencil, RefreshCw, RotateCcw, Scale, Search } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { type ReactNode, useCallback, useEffect, useMemo, useReducer, useState } from 'react'
@@ -618,7 +607,7 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
   return (
     <Stack className="cash-flow-page accounting-cash-flow-page" gap={10}>
       {(counterpartyError || cashFlowError) && (
-        <Alert className="accounting-cash-flow-alert" color="red" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert className="accounting-cash-flow-alert" color="red" icon={<CircleAlert size={18} />} variant="light">
           {counterpartyError || cashFlowError}
         </Alert>
       )}
@@ -655,7 +644,7 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
             <TextInput
               className="accounting-cash-flow-search"
               label={t('Пошук')}
-              leftSection={<IconSearch size={14} />}
+              leftSection={<Search size={14} />}
               placeholder={t('Номер або документ')}
               value={itemSearch}
               onChange={(event) => setItemSearch(event.currentTarget.value)}
@@ -683,7 +672,7 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
             <div className="app-filter-actions accounting-cash-flow-filter-actions">
               <Tooltip label={t('Скинути')}>
                 <ActionIcon aria-label={t('Скинути')} color="gray" size={36} variant="light" onClick={resetFilters}>
-                  <IconRestore size={18} />
+                  <RotateCcw size={18} />
                 </ActionIcon>
               </Tooltip>
               <Tooltip label={t('Оновити')}>
@@ -696,7 +685,7 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
                   variant="light"
                   onClick={() => reload()}
                 >
-                  <IconRefresh size={17} />
+                  <RefreshCw size={17} />
                 </ActionIcon>
               </Tooltip>
               <Tooltip disabled={canExport} label={t('Експорт доступний після вибору договору')}>
@@ -705,7 +694,7 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
                     className="accounting-cash-flow-export"
                     color={CREATE_ACTION_COLOR}
                     disabled={!canExport}
-                    leftSection={<IconDownload size={15} />}
+                    leftSection={<Download size={15} />}
                     loading={isExporting}
                     size="sm"
                     styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
@@ -721,7 +710,7 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
         </div>
 
         {filterError && (
-          <Alert className="accounting-cash-flow-filter-alert" color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert className="accounting-cash-flow-filter-alert" color="yellow" icon={<CircleAlert size={18} />} variant="light">
             {filterError}
           </Alert>
         )}
@@ -804,7 +793,7 @@ function AccountingCashFlowDocumentTableCell({
           {showEditedInvoiceBadge ? (
             <Tooltip label={editedInvoiceLabel} position="right">
               <ThemeIcon className="accounting-cash-flow-document-cell__badge" color="orange" radius="xl" size="xs" variant="light">
-                <IconPencil size={11} />
+                <Pencil size={11} />
               </ThemeIcon>
             </Tooltip>
           ) : null}
@@ -886,7 +875,7 @@ function CashFlowStatementHero({
     <div className="accounting-cash-flow-statement-hero">
       <div className="accounting-cash-flow-statement-hero__identity">
         <ThemeIcon className="accounting-cash-flow-statement-hero__icon" color="gray" radius="xl" size={36} variant="light">
-          <IconScale size={18} />
+          <Scale size={18} />
         </ThemeIcon>
         <div className="accounting-cash-flow-statement-hero__title">
           <span>{t('Активний фокус')}</span>
@@ -909,13 +898,13 @@ function CashFlowStatementHero({
       <div className="accounting-cash-flow-statement-hero__flow">
         <div>
           <i className="accounting-cash-flow-statement-hero__flow-mark is-debit" style={{ height: `${debitPercent}%` }} />
-          <IconArrowDownLeft size={15} />
+          <ArrowDownLeft size={15} />
           <span>{t('Дебет')}</span>
           <strong>{formatMoney(summary.afterInAmount)}</strong>
         </div>
         <div>
           <i className="accounting-cash-flow-statement-hero__flow-mark is-credit" style={{ height: `${creditPercent}%` }} />
-          <IconArrowUpRight size={15} />
+          <ArrowUpRight size={15} />
           <span>{t('Кредит')}</span>
           <strong>{formatMoney(summary.afterOutAmount)}</strong>
         </div>
@@ -1285,7 +1274,7 @@ function DownloadDocumentModal({
       <div className="accounting-cash-flow-export-modal">
         <div className="accounting-cash-flow-export-hero">
           <ThemeIcon className="accounting-cash-flow-export-hero-icon" color="orange" radius="xl" size={42} variant="light">
-            <IconDownload size={20} />
+            <Download size={20} />
           </ThemeIcon>
           <div>
             <span>{hasDocument ? t('Готово до завантаження') : t('Документ недоступний')}</span>
@@ -1325,7 +1314,7 @@ function DownloadDocumentModal({
                 target="_blank"
               >
                 <span className="accounting-cash-flow-export-card-icon">
-                  <IconFileTypePdf size={24} stroke={1.8} />
+                  <FileText size={24} strokeWidth={1.8} />
                 </span>
                 <span className="accounting-cash-flow-export-card-text">
                   <strong>{t('PDF')}</strong>
@@ -1338,7 +1327,7 @@ function DownloadDocumentModal({
         ) : (
           <div className="accounting-cash-flow-export-empty">
             <ThemeIcon color="gray" radius="xl" size={38} variant="light">
-              <IconAlertCircle size={18} />
+              <CircleAlert size={18} />
             </ThemeIcon>
             <div>
               <strong>{t('Документ недоступний для завантаження')}</strong>

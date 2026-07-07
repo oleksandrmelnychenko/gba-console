@@ -16,17 +16,7 @@ import {
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
-import {
-  IconAlertCircle,
-  IconCheck,
-  IconCircleCheck,
-  IconEye,
-  IconReceipt,
-  IconRefresh,
-  IconRestore,
-  IconSearch,
-  IconUserPlus,
-} from '@tabler/icons-react'
+import { Check, CircleAlert, CircleCheck, Eye, Receipt, RefreshCw, RotateCcw, Search, UserPlus } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -419,7 +409,7 @@ function IncompleteSalesTableCard({
           <TextInput
             className="incomplete-sales-online-shop-search-input"
             label={t('Номер')}
-            leftSection={<IconSearch size={16} />}
+            leftSection={<Search size={16} />}
             placeholder={t('Телефон')}
             value={filterDraft.number}
             onChange={(event) => onNumberChange(event.currentTarget.value)}
@@ -433,12 +423,12 @@ function IncompleteSalesTableCard({
           <div className="app-filter-actions incomplete-sales-online-shop-filter-actions">
             <Tooltip label={t('Скинути')}>
               <ActionIcon variant="light" color="gray" size={34} aria-label={t('Скинути')} onClick={onReset}>
-                <IconRestore size={17} />
+                <RotateCcw size={17} />
               </ActionIcon>
             </Tooltip>
             <Tooltip label={t('Оновити')}>
               <ActionIcon variant="light" color="gray" size={34} aria-label={t('Оновити')} onClick={onReload}>
-                <IconRefresh size={18} />
+                <RefreshCw size={18} />
               </ActionIcon>
             </Tooltip>
           </div>
@@ -446,7 +436,7 @@ function IncompleteSalesTableCard({
       </div>
 
       {error && (
-        <Alert className="console-table-alert" color="red" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert className="console-table-alert" color="red" icon={<CircleAlert size={18} />} variant="light">
           {error}
         </Alert>
       )}
@@ -537,7 +527,7 @@ function IncompleteSaleStatusModal({
           <Button variant="subtle" color="gray" disabled={isConfirming} onClick={onClose}>
             {t('Скасувати')}
           </Button>
-          <Button color="orange" leftSection={<IconCheck size={16} />} loading={isConfirming} onClick={onConfirm}>
+          <Button color="orange" leftSection={<Check size={16} />} loading={isConfirming} onClick={onConfirm}>
             {t('Підтвердити')}
           </Button>
         </Group>
@@ -642,7 +632,7 @@ function useIncompleteSalesOnlineShopColumns({
               <Group gap={4} justify="center" wrap="nowrap">
                 <Tooltip label={t('Деталі')}>
                   <ActionIcon color="gray" variant="subtle" aria-label={t('Деталі')} onClick={() => onOpenDetail(sale)}>
-                    <IconEye size={18} />
+                    <Eye size={18} />
                   </ActionIcon>
                 </Tooltip>
 
@@ -654,7 +644,7 @@ function useIncompleteSalesOnlineShopColumns({
                       aria-label={t('Продажі клієнта')}
                       onClick={() => onOpenClientSales(sale)}
                     >
-                      <IconReceipt size={18} />
+                      <Receipt size={18} />
                     </ActionIcon>
                   </Tooltip>
                 )}
@@ -668,7 +658,7 @@ function useIncompleteSalesOnlineShopColumns({
                       aria-label={t('Закріпити за собою')}
                       onClick={() => onStatusAction({ sale, status: 1 })}
                     >
-                      <IconUserPlus size={18} />
+                      <UserPlus size={18} />
                     </ActionIcon>
                   </Tooltip>
                 )}
@@ -682,7 +672,7 @@ function useIncompleteSalesOnlineShopColumns({
                       aria-label={t('Позначити виконаним')}
                       onClick={() => onStatusAction({ sale, status: 2 })}
                     >
-                      <IconCircleCheck size={18} />
+                      <CircleCheck size={18} />
                     </ActionIcon>
                   </Tooltip>
                 )}
@@ -721,7 +711,7 @@ function IncompleteSaleDetail({ error, isLoading, sale, onOpenClientSales }: Inc
       )}
 
       {error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {error}
         </Alert>
       )}
@@ -765,7 +755,7 @@ function IncompleteSaleDetail({ error, isLoading, sale, onOpenClientSales }: Inc
             <Button
               mt="xs"
               variant="outline"
-              leftSection={<IconReceipt size={16} />}
+              leftSection={<Receipt size={16} />}
               onClick={() => onOpenClientSales(sale)}
             >
               {t('Продажі клієнта')}

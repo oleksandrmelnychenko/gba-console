@@ -1,5 +1,5 @@
 import { Box, Card, Group, Stack, Text, ThemeIcon, Title } from '@mantine/core'
-import { IconAlertTriangle, IconDatabase } from '@tabler/icons-react'
+import { Database, TriangleAlert } from 'lucide-react'
 import { useLocation } from 'react-router-dom'
 import { useNavigation } from '../../features/navigation/hooks/useNavigation'
 import { isNavigationNodeRouteTarget } from '../../features/navigation/navigationUtils'
@@ -31,7 +31,7 @@ export function ModulePage({ fallback = false, module }: ModulePageProps) {
         ? t('Маршрут є в меню, але для нього немає підключеної сторінки. Це треба доробити перед використанням.')
         : t('Для цього шляху немає сторінки у новій оболонці консолі.')
     : t('Маршрут підключений у новій оболонці консолі.')
-  const Icon = fallback && !isLoading ? IconAlertTriangle : IconDatabase
+  const Icon = fallback && !isLoading ? TriangleAlert : Database
   const label = isUnsupportedNavigationRoute ? selectedNode?.Module : module
   const iconColor = fallback && !isLoading ? 'orange' : 'cyan'
 
@@ -53,7 +53,7 @@ export function ModulePage({ fallback = false, module }: ModulePageProps) {
             )}
           </Box>
           <ThemeIcon variant="light" color={iconColor} size={48} radius="md">
-            <Icon size={24} stroke={1.8} />
+            <Icon size={24} strokeWidth={1.8} />
           </ThemeIcon>
         </Group>
       </Card>

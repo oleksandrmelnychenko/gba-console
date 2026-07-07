@@ -24,16 +24,7 @@ import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { notifications } from '@mantine/notifications'
-import {
-  IconAlertCircle,
-  IconDownload,
-  IconEye,
-  IconFileSpreadsheet,
-  IconFileTypePdf,
-  IconPlus,
-  IconRefresh,
-  IconRestore,
-} from '@tabler/icons-react'
+import { CircleAlert, Download, Eye, FileSpreadsheet, FileText, Plus, RefreshCw, RotateCcw } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { type FormEvent, useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -543,7 +534,6 @@ function ProductTransfersPageView({ model }: { model: ReturnType<typeof useProdu
   )
 }
 
-
 function ProductTransfersTableCard({ model }: { model: ReturnType<typeof useProductTransfersPageModel> }) {
   const { t } = useI18n()
   const {
@@ -573,7 +563,7 @@ function ProductTransfersTableCard({ model }: { model: ReturnType<typeof useProd
           <div className="app-filter-actions">
             <Tooltip label={t('Скинути')}>
               <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
-                <IconRestore size={17} />
+                <RotateCcw size={17} />
               </ActionIcon>
             </Tooltip>
             <Tooltip label={t('Оновити')}>
@@ -585,14 +575,14 @@ function ProductTransfersTableCard({ model }: { model: ReturnType<typeof useProd
                 variant="default"
                 onClick={() => reload()}
               >
-                <IconRefresh size={17} />
+                <RefreshCw size={17} />
               </ActionIcon>
             </Tooltip>
           </div>
           <Button
             color={CREATE_ACTION_COLOR}
             disabled={!isLoadingStorages && storageOptions.length === 0}
-            leftSection={<IconPlus size={16} />}
+            leftSection={<Plus size={16} />}
             loading={isLoadingStorages}
             size="sm"
             styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
@@ -605,7 +595,7 @@ function ProductTransfersTableCard({ model }: { model: ReturnType<typeof useProd
 
       <Stack className="product-transfers-body" gap={10}>
         {(error || filterError || storageError) && (
-          <Alert color={filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color={filterError ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">
             {filterError || error || storageError}
           </Alert>
         )}
@@ -665,7 +655,7 @@ function ProductTransferDetailDrawer({ model }: { model: ReturnType<typeof usePr
             <Button
               color={CREATE_ACTION_COLOR}
               disabled={!selectedTransfer.NetUid}
-              leftSection={<IconDownload size={16} />}
+              leftSection={<Download size={16} />}
               loading={isDownloading}
               variant="light"
               onClick={() => openDownload(selectedTransfer)}
@@ -689,7 +679,7 @@ function ProductTransferDetailDrawer({ model }: { model: ReturnType<typeof usePr
               {t('Завантаження')}
             </Text>
           ) : downloadError ? (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {downloadError}
             </Alert>
           ) : downloadDocument?.DocumentURL || downloadDocument?.PdfDocumentURL ? (
@@ -705,7 +695,7 @@ function ProductTransferDetailDrawer({ model }: { model: ReturnType<typeof usePr
               {downloadDocument.PdfDocumentURL && (
                 <Anchor href={getDocumentHref(downloadDocument.PdfDocumentURL)} target="_blank" rel="noreferrer" className="document-link">
                   <span className="document-link-badge document-link-badge-pdf">
-                    <IconFileTypePdf size={22} stroke={1.8} />
+                    <FileText size={22} strokeWidth={1.8} />
                   </span>
                   <span>{t('PDF документ')}</span>
                 </Anchor>
@@ -734,12 +724,12 @@ function ProductTransferCreateModal({ model }: { model: ReturnType<typeof usePro
       <form id="product-transfer-create-form" onSubmit={handleCreate}>
         <Stack gap="md">
           {createError && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {createError}
             </Alert>
           )}
           {storageError && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {storageError}
             </Alert>
           )}
@@ -857,7 +847,7 @@ function ProductTransferCreateModal({ model }: { model: ReturnType<typeof usePro
               clearable
               disabled={isCreating}
               label={t('Файл')}
-              leftSection={<IconFileSpreadsheet size={16} />}
+              leftSection={<FileSpreadsheet size={16} />}
               placeholder={t('XLS або XLSX')}
               value={createForm.file}
               onChange={(file) => setCreateForm((current) => ({ ...current, file }))}
@@ -896,7 +886,7 @@ function ProductTransferImportResultModal({ model }: { model: ReturnType<typeof 
       onClose={() => setExceptionMessages([])}
     >
       <Stack gap="sm">
-        <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
           {t('Частину рядків файла сервер обробив з попередженнями.')}
         </Alert>
         <ScrollArea.Autosize mah="50vh" type="auto">
@@ -1058,7 +1048,7 @@ function useProductTransferColumns(
           <Box onClick={(event) => event.stopPropagation()}>
             <Tooltip label={t('Деталі')}>
               <ActionIcon aria-label={t('Деталі')} color="gray" variant="subtle" onClick={() => onOpenDetail(transfer)}>
-                <IconEye size={18} />
+                <Eye size={18} />
               </ActionIcon>
             </Tooltip>
           </Box>
@@ -1158,7 +1148,7 @@ function TransferDetail({
   return (
     <Stack gap="md">
       {error && (
-        <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
           {error}
         </Alert>
       )}

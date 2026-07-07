@@ -9,7 +9,7 @@ import {
   TextInput,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconKey } from '@tabler/icons-react'
+import { Key } from 'lucide-react'
 import { type KeyboardEvent } from 'react'
 import { useValueState } from '../../../../shared/hooks/useValueState'
 import { useI18n } from '../../../../shared/i18n/useI18n'
@@ -109,7 +109,7 @@ export function EcommercePanel({ client, onChange }: EcommercePanelProps) {
             <Button
               color={CREATE_ACTION_COLOR}
               disabled={isChanging}
-              leftSection={<IconKey size={16} />}
+              leftSection={<Key size={16} />}
               loading={isChanging}
               onClick={() => void handleChangePassword()}
             >

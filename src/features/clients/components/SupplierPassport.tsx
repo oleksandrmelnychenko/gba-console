@@ -1,5 +1,5 @@
 import { Alert, Card, Center, Group, Loader, Stack, Text } from '@mantine/core'
-import { IconAlertCircle } from '@tabler/icons-react'
+import { CircleAlert } from 'lucide-react'
 import { useEffect } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -61,7 +61,7 @@ export function SupplierPassport({ netUid, client }: SupplierPassportProps) {
 
   if (error) {
     return (
-      <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+      <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
         {error}
       </Alert>
     )

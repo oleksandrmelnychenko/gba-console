@@ -1,6 +1,6 @@
 import { Alert, Badge, Button, Group, Stack, Text } from '@mantine/core'
 import { AppModal } from "../../../shared/ui/AppModal"
-import { IconAlertCircle, IconCheck, IconUpload } from '@tabler/icons-react'
+import { Check, CircleAlert, Upload } from 'lucide-react'
 import { useMemo } from 'react'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
@@ -78,7 +78,7 @@ export function PreviewCartItemsModal({
       <Stack gap="md">
         <Alert
           color={hasErrors ? 'red' : 'green'}
-          icon={hasErrors ? <IconAlertCircle size={16} /> : <IconCheck size={16} />}
+          icon={hasErrors ? <CircleAlert size={16} /> : <Check size={16} />}
           variant="light"
         >
           {hasErrors ? t('Файл містить помилки') : t('Файл валідний')}
@@ -105,7 +105,7 @@ export function PreviewCartItemsModal({
             </Button>
             <Button
               disabled={validCartItems.length === 0}
-              leftSection={<IconUpload size={16} />}
+              leftSection={<Upload size={16} />}
               onClick={loadValidItems}
             >
               {t('Завантажити')}

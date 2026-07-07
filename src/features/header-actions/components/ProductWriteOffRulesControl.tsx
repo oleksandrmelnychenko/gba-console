@@ -1,6 +1,6 @@
 import { ActionIcon, Box, Group, Indicator, Loader, Popover, ScrollArea, Stack, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconPackage, IconX } from '@tabler/icons-react'
+import { Package, X } from 'lucide-react'
 import { useEffect, useReducer } from 'react'
 import { useAuth } from '../../auth/useAuth'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -149,7 +149,7 @@ export function ProductWriteOffRulesControl() {
           onClick={() => dispatch({ type: 'openedChanged', opened: !state.opened })}
         >
           <Indicator label={state.items.length} size={16} color="orange" disabled={state.items.length === 0}>
-            <IconPackage size={24} stroke={1.7} />
+            <Package size={24} strokeWidth={1.7} />
           </Indicator>
         </ActionIcon>
       </Popover.Target>
@@ -199,7 +199,7 @@ export function ProductWriteOffRulesControl() {
                     loading={state.removingNetUid === rule.NetUid}
                     onClick={() => removeRule(rule)}
                   >
-                    <IconX size={15} stroke={2} />
+                    <X size={15} strokeWidth={2} />
                   </ActionIcon>
                 </Group>
               ))}

@@ -1,5 +1,5 @@
 import { ActionIcon, Anchor, Badge, Group, Text, Tooltip } from '@mantine/core'
-import { IconEdit } from '@tabler/icons-react'
+import { SquarePen } from 'lucide-react'
 import { useMemo } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -183,7 +183,7 @@ export function SpecificationProductsGrid({
                     onEditSpecification(row.item)
                   }}
                 >
-                  <IconEdit size={16} />
+                  <SquarePen size={16} />
                 </ActionIcon>
               </Tooltip>
             )}

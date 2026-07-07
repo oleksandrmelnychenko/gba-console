@@ -12,13 +12,7 @@ import {
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { AppModal } from "../../../shared/ui/AppModal"
-import {
-  IconAlertCircle,
-  IconDownload,
-  IconFileTypePdf,
-  IconRestore,
-  IconSearch,
-} from '@tabler/icons-react'
+import { CircleAlert, Download, FileText, RotateCcw, Search } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -374,7 +368,7 @@ function ProductAvailabilitiesPageView({ model }: { model: ReturnType<typeof use
               }}
             />
             <TextInput
-              leftSection={<IconSearch size={16} />}
+              leftSection={<Search size={16} />}
               label={t('Код товару')}
               placeholder={t('Пошук за кодом')}
               value={searchDraft}
@@ -389,7 +383,7 @@ function ProductAvailabilitiesPageView({ model }: { model: ReturnType<typeof use
             <div className="app-filter-actions">
               <Tooltip label={t('Скинути')}>
                 <ActionIcon variant="light" color="gray" size={34} aria-label={t('Скинути')} onClick={resetFilters}>
-                  <IconRestore size={17} />
+                  <RotateCcw size={17} />
                 </ActionIcon>
               </Tooltip>
               <Tooltip label={t('Експорт')}>
@@ -402,7 +396,7 @@ function ProductAvailabilitiesPageView({ model }: { model: ReturnType<typeof use
                   variant="light"
                   onClick={handleExport}
                 >
-                  <IconDownload size={18} />
+                  <Download size={18} />
                 </ActionIcon>
               </Tooltip>
               <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
@@ -423,7 +417,7 @@ function ProductAvailabilitiesPageView({ model }: { model: ReturnType<typeof use
           <Alert
             className="product-availabilities-page__alert"
             color={filterError ? 'yellow' : 'red'}
-            icon={<IconAlertCircle size={18} />}
+            icon={<CircleAlert size={18} />}
             variant="light"
           >
             {filterError || error || t('Складів не знайдено')}
@@ -471,7 +465,7 @@ function ProductAvailabilitiesPageView({ model }: { model: ReturnType<typeof use
               {downloadDocument.PdfDocumentURL && (
                 <Anchor href={getDocumentHref(downloadDocument.PdfDocumentURL)} target="_blank" rel="noreferrer" className="document-link">
                   <span className="document-link-badge document-link-badge-pdf">
-                    <IconFileTypePdf size={22} stroke={1.8} />
+                    <FileText size={22} strokeWidth={1.8} />
                   </span>
                   <span>{t('PDF документ')}</span>
                 </Anchor>

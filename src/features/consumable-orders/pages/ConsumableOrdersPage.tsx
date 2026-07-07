@@ -12,15 +12,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import {
-  IconAlertCircle,
-  IconCreditCard,
-  IconPencil,
-  IconPlus,
-  IconRestore,
-  IconSearch,
-} from '@tabler/icons-react'
-import { CreditCard as CreditCardIcon, Eye as EyeIcon, SquarePen as SquarePenIcon } from 'lucide-react'
+import { CircleAlert, CreditCard, CreditCard as CreditCardIcon, Eye as EyeIcon, Pencil, Plus, RotateCcw, Search, SquarePen as SquarePenIcon } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, type Location, type NavigateFunction } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -172,7 +164,6 @@ export function ConsumableOrdersPage() {
     setTotalOrders(undefined)
   }
 
-
   return (
     <Stack className="consumable-orders-page console-table-page" gap={6}>
       <div className="console-table-shell">
@@ -210,7 +201,7 @@ export function ConsumableOrdersPage() {
 
           <TextInput
             className="consumable-orders-search-input"
-            leftSection={<IconSearch size={16} />}
+            leftSection={<Search size={16} />}
             label={t('Пошук')}
             placeholder={t('Номер, постачальник, склад або коментар')}
             value={searchValue}
@@ -231,7 +222,7 @@ export function ConsumableOrdersPage() {
                 variant="light"
                 onClick={resetFilters}
               >
-                <IconRestore size={17} />
+                <RotateCcw size={17} />
               </ActionIcon>
             </Tooltip>
             <Paginator
@@ -251,7 +242,7 @@ export function ConsumableOrdersPage() {
           <div className="consumable-orders-table-toolbar-slot" ref={setTableToolbarSlot} />
           <Button
             color={CREATE_ACTION_COLOR}
-            leftSection={<IconPlus size={16} />}
+            leftSection={<Plus size={16} />}
             size="sm"
             styles={{ label: ORDERS_MONO_STYLE }}
             onClick={() => navigate('/accounting/consumable-orders/new', { state: { backgroundLocation: location, returnPath: '/accounting/consumable-orders' } })}
@@ -261,13 +252,13 @@ export function ConsumableOrdersPage() {
         </div>
 
         {error && (
-          <Alert className="console-table-alert" color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert className="console-table-alert" color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}
 
         {filterError && (
-          <Alert className="console-table-alert" color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert className="console-table-alert" color="yellow" icon={<CircleAlert size={18} />} variant="light">
             {filterError}
           </Alert>
         )}
@@ -573,11 +564,11 @@ function ConsumableOrderDetailDrawer({
       {row && order && (
         <Stack gap="md">
           <Group justify="flex-end">
-            <Button leftSection={<IconPencil size={16} />} styles={{ label: ORDERS_MONO_STYLE }} variant="outline" onClick={() => onView(row)}>
+            <Button leftSection={<Pencil size={16} />} styles={{ label: ORDERS_MONO_STYLE }} variant="outline" onClick={() => onView(row)}>
               {t('Редагувати')}
             </Button>
             {!order.IsPayed && (
-              <Button color="green" leftSection={<IconCreditCard size={16} />} styles={{ label: ORDERS_MONO_STYLE }} variant="outline" onClick={() => onPay(row)}>
+              <Button color="green" leftSection={<CreditCard size={16} />} styles={{ label: ORDERS_MONO_STYLE }} variant="outline" onClick={() => onPay(row)}>
                 {t('Оплатити')}
               </Button>
             )}

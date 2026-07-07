@@ -1,5 +1,5 @@
 import { Alert, Button, Group, Loader, Stack, Text } from '@mantine/core'
-import { IconAlertCircle, IconPlus, IconUser, IconUsersGroup } from '@tabler/icons-react'
+import { CircleAlert, Plus, User, Users } from 'lucide-react'
 import { useCallback, useEffect, useMemo } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useValueState } from '../../../../shared/hooks/useValueState'
@@ -122,7 +122,7 @@ export function SubClientsPanel({ client }: SubClientsPanelProps) {
         id: key,
         label: getSubClientName(subClient, t),
         meta: getSubClientMeta(subClient),
-        icon: childClients.length > 0 ? <IconUsersGroup size={15} /> : <IconUser size={15} />,
+        icon: childClients.length > 0 ? <Users size={15} /> : <User size={15} />,
         hasChildren: loaded ? childClients.length > 0 : true,
         loading: loadingKeys.has(key),
         onExpand: () => loadChildren(key),
@@ -138,13 +138,13 @@ export function SubClientsPanel({ client }: SubClientsPanelProps) {
   return (
     <Stack gap="sm">
       <Group justify="flex-end" align="center">
-        <Button color={CREATE_ACTION_COLOR} leftSection={<IconPlus size={16} />} size="xs" onClick={openNewUser}>
+        <Button color={CREATE_ACTION_COLOR} leftSection={<Plus size={16} />} size="xs" onClick={openNewUser}>
           {t('Новий користувач')}
         </Button>
       </Group>
 
       {error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {error}
         </Alert>
       )}

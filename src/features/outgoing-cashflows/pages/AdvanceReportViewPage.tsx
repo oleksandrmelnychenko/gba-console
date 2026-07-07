@@ -10,7 +10,7 @@ import {
   Text,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconAlertCircle, IconArrowLeft, IconDeviceFloppy, IconGasStation, IconReceipt2 } from '@tabler/icons-react'
+import { ArrowLeft, CircleAlert, Fuel, Receipt, Save } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -467,16 +467,16 @@ export function AdvanceReportViewPage() {
   return (
     <Stack gap="md">
       <Group justify="space-between" align="center">
-        <Button color="gray" disabled={model.isBusy} leftSection={<IconArrowLeft size={16} />} variant="light" onClick={model.goBack}>
+        <Button color="gray" disabled={model.isBusy} leftSection={<ArrowLeft size={16} />} variant="light" onClick={model.goBack}>
           {t('Назад')}
         </Button>
         <Group gap="xs" justify="flex-end">
           {!model.isDone && (
             <>
-              <Button disabled={model.isBusy} leftSection={<IconReceipt2 size={16} />} variant="outline" onClick={model.openConsumableModal}>
+              <Button disabled={model.isBusy} leftSection={<Receipt size={16} />} variant="outline" onClick={model.openConsumableModal}>
                 {t('Додати товар / послугу')}
               </Button>
-              <Button disabled={model.isBusy} leftSection={<IconGasStation size={16} />} variant="outline" onClick={model.openFuelModal}>
+              <Button disabled={model.isBusy} leftSection={<Fuel size={16} />} variant="outline" onClick={model.openFuelModal}>
                 {t('Додати пальне')}
               </Button>
             </>
@@ -484,7 +484,7 @@ export function AdvanceReportViewPage() {
           {model.canSave && (
             <Button
               color={CREATE_ACTION_COLOR}
-              leftSection={<IconDeviceFloppy size={16} />}
+              leftSection={<Save size={16} />}
               loading={model.isSaving || model.isRecalculating}
               onClick={() => model.save(model.createIncomeAutomatically)}
             >
@@ -495,7 +495,7 @@ export function AdvanceReportViewPage() {
       </Group>
 
       {model.error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {model.error}
         </Alert>
       )}
@@ -693,10 +693,10 @@ function DifferenceMessage({ model }: { model: ReturnType<typeof useAdvanceRepor
         </Button>
         {model.canAppendRows && (
           <>
-            <Button disabled={model.isBusy} leftSection={<IconReceipt2 size={14} />} size="xs" variant="outline" onClick={model.openConsumableModal}>
+            <Button disabled={model.isBusy} leftSection={<Receipt size={14} />} size="xs" variant="outline" onClick={model.openConsumableModal}>
               {t('Прикріпити накладну')}
             </Button>
-            <Button disabled={model.isBusy} leftSection={<IconGasStation size={14} />} size="xs" variant="outline" onClick={model.openFuelModal}>
+            <Button disabled={model.isBusy} leftSection={<Fuel size={14} />} size="xs" variant="outline" onClick={model.openFuelModal}>
               {t('Додати пальне')}
             </Button>
           </>

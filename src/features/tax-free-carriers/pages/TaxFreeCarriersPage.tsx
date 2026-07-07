@@ -12,17 +12,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import {
-  IconAlertCircle,
-  IconDownload,
-  IconEdit,
-  IconFileTypePdf,
-  IconPlus,
-  IconRefresh,
-  IconRestore,
-  IconSearch,
-  IconTrash,
-} from '@tabler/icons-react'
+import { CircleAlert, Download, FileText, Plus, RefreshCw, RotateCcw, Search, SquarePen, Trash2 } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { useEffect, useMemo, useReducer, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -255,7 +245,7 @@ function CarriersTableCard({ model }: { model: ReturnType<typeof useTaxFreeCarri
           <TextInput
             size="sm"
             label={t('Пошук')}
-            leftSection={<IconSearch size={16} />}
+            leftSection={<Search size={16} />}
             placeholder={t('Прізвище')}
             value={searchDraft}
             style={{ flex: '1 1 auto', minWidth: 180 }}
@@ -264,7 +254,7 @@ function CarriersTableCard({ model }: { model: ReturnType<typeof useTaxFreeCarri
           <div className="app-filter-actions">
             <Tooltip label={t('Скинути')}>
               <ActionIcon variant="light" color="gray" size={34} aria-label={t('Скинути')} onClick={resetSearch}>
-                <IconRestore size={17} />
+                <RotateCcw size={17} />
               </ActionIcon>
             </Tooltip>
             <Tooltip label={t('Оновити')}>
@@ -276,7 +266,7 @@ function CarriersTableCard({ model }: { model: ReturnType<typeof useTaxFreeCarri
                 variant="light"
                 onClick={reload}
               >
-                <IconRefresh size={17} />
+                <RefreshCw size={17} />
               </ActionIcon>
             </Tooltip>
             {canPrint && (
@@ -288,14 +278,14 @@ function CarriersTableCard({ model }: { model: ReturnType<typeof useTaxFreeCarri
                   loading={isDownloading}
                   onClick={exportDocument}
                 >
-                  <IconDownload size={17} />
+                  <Download size={17} />
                 </ActionIcon>
               </Tooltip>
             )}
           </div>
           {canManage && (
             <div className="tax-free-carriers-create-actions">
-              <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} onClick={openCreate}>
+              <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<Plus size={16} />} onClick={openCreate}>
                 {t('Додати')}
               </Button>
             </div>
@@ -305,7 +295,7 @@ function CarriersTableCard({ model }: { model: ReturnType<typeof useTaxFreeCarri
 
       <Stack className="tax-free-carriers-card__body" gap="md">
         {error && (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}
@@ -346,7 +336,7 @@ function CarriersDeleteModal({ model }: { model: ReturnType<typeof useTaxFreeCar
           <Button color="gray" disabled={isDeleting} variant="light" onClick={() => setCarrierToDelete(null)}>
             {t('Скасувати')}
           </Button>
-          <Button color="red" leftSection={<IconTrash size={16} />} loading={isDeleting} onClick={confirmDelete}>
+          <Button color="red" leftSection={<Trash2 size={16} />} loading={isDeleting} onClick={confirmDelete}>
             {t('Видалити')}
           </Button>
         </Group>
@@ -367,7 +357,7 @@ function CarriersDownloadModal({ model }: { model: ReturnType<typeof useTaxFreeC
             {t('Завантаження')}
           </Text>
         ) : downloadError ? (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {downloadError}
           </Alert>
         ) : downloadDocument?.DocumentURL || downloadDocument?.PdfDocumentURL ? (
@@ -383,7 +373,7 @@ function CarriersDownloadModal({ model }: { model: ReturnType<typeof useTaxFreeC
             {downloadDocument.PdfDocumentURL && (
               <Anchor href={getDocumentHref(downloadDocument.PdfDocumentURL)} target="_blank" rel="noreferrer" className="document-link">
                 <span className="document-link-badge document-link-badge-pdf">
-                  <IconFileTypePdf size={22} stroke={1.8} />
+                  <FileText size={22} strokeWidth={1.8} />
                 </span>
                 <span>{t('PDF документ')}</span>
               </Anchor>
@@ -466,13 +456,13 @@ function useCarrierColumns({
             <Group gap={4} justify="center" wrap="nowrap">
               <Tooltip label={t('Редагування Перевізника')}>
                 <ActionIcon aria-label={t('Редагування Перевізника')} color="gray" variant="subtle" onClick={() => onEdit(carrier)}>
-                  <IconEdit size={18} />
+                  <SquarePen size={18} />
                 </ActionIcon>
               </Tooltip>
               {canManage && (
                 <Tooltip label={t('Видалити')}>
                   <ActionIcon aria-label={t('Видалити')} color="red" variant="subtle" onClick={() => onDelete(carrier)}>
-                    <IconTrash size={18} />
+                    <Trash2 size={18} />
                   </ActionIcon>
                 </Tooltip>
               )}
