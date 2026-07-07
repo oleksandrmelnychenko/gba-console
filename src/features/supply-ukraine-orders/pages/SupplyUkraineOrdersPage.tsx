@@ -1239,6 +1239,14 @@ function OrdersFilterToolbar({
         placeholder={t('Назва постачальника')}
         value={filterDraft.supplier}
         onChange={(event) => onFilterDraftChange({ supplier: event.currentTarget.value })}
+        onKeyDown={(event) => {
+          // Text filters apply on refresh; a search box should also run on Enter, otherwise
+          // typing a supplier name does nothing until the user finds the refresh button.
+          if (event.key === 'Enter') {
+            event.preventDefault()
+            onRefresh()
+          }
+        }}
       />
       <Select
         clearable
