@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ApiError } from '../../../shared/api/apiClient'
 import { useValueState } from '../../../shared/hooks/useValueState'
+import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { getEscalated, getHeadTeam } from '../api/salesCockpitApi'
 import { HeadDashboardChartsPanel } from '../components/HeadDashboardChartsPanel'
@@ -138,7 +139,7 @@ export function HeadDashboardPage() {
     <Stack className="cockpit-page" gap={6}>
       <Card className="app-filter-card cockpit-toolbar-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar cockpit-command-bar cockpit-head-command-bar">
-          <div />
+          <AiFeatureBadge size="sm" tooltip={t('AI-сервіс керівника продажів')} />
           <div className="app-filter-actions cockpit-command-actions">
             <Button
               className="cockpit-toolbar-button"

@@ -3,6 +3,7 @@ import { CircleAlert, RefreshCw, Sparkles } from 'lucide-react'
 import { notifications } from '@mantine/notifications'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
+import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import {
   addTaskNote,
@@ -321,6 +322,7 @@ export function SalesCockpitPage() {
     <Stack className="cockpit-page" gap={6}>
       <Card className="app-filter-card cockpit-toolbar-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar cockpit-command-bar">
+          <AiFeatureBadge size="sm" tooltip={t('AI-сервіс завдань продажів')} />
           <TaskFilters
             taskType={taskTypeFilter}
             urgency={urgencyFilter}

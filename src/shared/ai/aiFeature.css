@@ -1,0 +1,46 @@
+.ai-feature-badge {
+  --ai-badge-bg: #f5e8ff;
+  --ai-badge-border: #e2c2ff;
+  --ai-badge-color: #7a28b8;
+
+  align-items: center;
+  background: var(--ai-badge-bg);
+  border: 1px solid var(--ai-badge-border);
+  border-radius: 999px;
+  color: var(--ai-badge-color);
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  gap: 3px;
+  letter-spacing: 0;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+.ai-feature-badge--xs {
+  font-size: 10px;
+  height: 18px;
+  padding: 0 5px;
+}
+
+.ai-feature-badge--sm {
+  font-size: 11px;
+  height: 22px;
+  padding: 0 7px;
+}
+
+.ai-feature-badge--compact {
+  aspect-ratio: 1;
+  justify-content: center;
+  padding: 0;
+  width: 18px;
+}
+
+.ai-feature-badge--sm.ai-feature-badge--compact {
+  width: 22px;
+}
+
+.ai-feature-badge__text {
+  transform: translateY(-0.5px);
+}

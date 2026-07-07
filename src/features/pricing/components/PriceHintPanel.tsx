@@ -1,9 +1,11 @@
 import { Alert, Badge, Divider, Group, Loader, Stack, Text } from '@mantine/core'
 import { CircleAlert } from 'lucide-react'
 import { useEffect, useReducer } from 'react'
+import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { MarginWaterfall, RangeBandChart } from '../../../shared/ui/charts'
-import type { RangeBandMarker } from '../../../shared/ui/charts'
+import { MarginWaterfall } from '../../../shared/ui/charts/MarginWaterfall'
+import { RangeBandChart } from '../../../shared/ui/charts/RangeBandChart'
+import type { RangeBandMarker } from '../../../shared/ui/charts/rangeBandData'
 import { getPriceRecommendation } from '../api/pricingApi'
 import type { PriceConfidence, PriceRecommendation } from '../pricingTypes'
 
@@ -147,6 +149,7 @@ function PriceHintCard({ recommendation }: { recommendation: PriceRecommendation
         <Text fw={700} size="28px">
           {formatMoney(recommendation.recommended_price, currency)}
         </Text>
+        <AiFeatureBadge tooltip={t('AI-рекомендація ціни')} />
         {showBaseline && (
           <Text c="dimmed" size="sm" td="line-through">
             {formatMoney(recommendation.baseline_price, currency)}

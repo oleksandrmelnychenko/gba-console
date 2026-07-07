@@ -1,5 +1,6 @@
 import { LineChart } from '@mantine/charts'
 import { Card, Group, Loader, SimpleGrid, Stack, Text } from '@mantine/core'
+import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { SalesPredictionChartPoint } from '../types'
 import './sales-prediction-chart.css'
@@ -36,9 +37,12 @@ export function SalesPredictionChart({
     <Card className="sales-prediction-chart-card" withBorder radius="md" padding="md">
       <Stack gap="sm">
         <Group align="flex-start" justify="space-between" wrap="nowrap">
-          <Text className="sales-prediction-chart-title">
-            {title}
-          </Text>
+          <Group gap="xs" wrap="nowrap">
+            <Text className="sales-prediction-chart-title">
+              {title}
+            </Text>
+            <AiFeatureBadge tooltip={t('AI-сервіс прогнозу продажів')} />
+          </Group>
           {isLoading && <Loader size="xs" />}
         </Group>
 
@@ -87,9 +91,12 @@ export function SalesPredictionComparisonChart({
     <Card className="sales-prediction-chart-card" withBorder radius="md" padding="md">
       <Stack gap="sm">
         <Group align="flex-start" justify="space-between" wrap="nowrap">
-          <Text className="sales-prediction-chart-title">
-            {title}
-          </Text>
+          <Group gap="xs" wrap="nowrap">
+            <Text className="sales-prediction-chart-title">
+              {title}
+            </Text>
+            <AiFeatureBadge tooltip={t('AI-сервіс прогнозу продажів')} />
+          </Group>
           {isLoading && <Loader size="xs" />}
         </Group>
 

@@ -2,6 +2,7 @@ import {
   Alert,
   Badge,
   Card,
+  Group,
   RingProgress,
   Select,
   SimpleGrid,
@@ -12,6 +13,7 @@ import {
 import { CircleAlert, MapPin } from 'lucide-react'
 import { useEffect, useMemo } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
+import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -499,7 +501,10 @@ function AssortmentHeader({
     <Card className="app-data-card assort-dash__header" withBorder radius="md" padding={0}>
       <div className="app-filter-bar assort-dash__bar">
       <div className="assort-dash__summary">
-        <Text className="app-section-title assort-dash__title">{t('Аналітика асортименту')}</Text>
+        <Group gap="xs" wrap="nowrap">
+          <Text className="app-section-title assort-dash__title">{t('Аналітика асортименту')}</Text>
+          <AiFeatureBadge tooltip={t('AI-сервіс рейтингу асортименту')} />
+        </Group>
         <Text className="assort-dash__subtitle">
           {t('Стан запасів')}
           {totalSkus == null ? '' : <> · <b>{formatInt(totalSkus)}</b> SKU</>} · {t('середнє здоровʼя')}{' '}

@@ -1,5 +1,7 @@
 import { Fragment } from 'react'
 import { useNavigation } from '../../../features/navigation/hooks/useNavigation'
+import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
+import { hasAiFeatureDescendant, isAiFeatureTarget } from '../../../shared/ai/aiFeature'
 import {
   PageHeaderActionsSlot,
   PageHeaderPanelActionsSlot,
@@ -19,6 +21,9 @@ export function ConsoleContentHeader() {
   const crumbs = [selectedModule?.Module, selectedNode?.Module, pageCrumb].filter(
     (value): value is string => Boolean(value),
   )
+  const isCurrentAi = Boolean(
+    selectedNode && (isAiFeatureTarget(selectedNode) || hasAiFeatureDescendant(selectedNode)),
+  )
 
   return (
     <div className="console-content-header">
@@ -33,6 +38,9 @@ export function ConsoleContentHeader() {
               )}
               <span className={`console-content-crumb${index === crumbs.length - 1 ? ' is-current' : ''}`}>
                 {label}
+                {index === crumbs.length - 1 && isCurrentAi && (
+                  <AiFeatureBadge compact tooltip="AI-функція" />
+                )}
               </span>
             </Fragment>
           ))}

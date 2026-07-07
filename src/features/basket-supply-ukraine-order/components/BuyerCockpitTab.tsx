@@ -19,6 +19,7 @@ import { useDisclosure } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import { Check, CircleAlert, RefreshCw, School, Settings, ThumbsDown, ThumbsUp, TriangleAlert } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { TranslateFunction } from '../../../shared/i18n/types'
 import { AppModal } from '../../../shared/ui/AppModal'
@@ -819,9 +820,12 @@ export function BuyerCockpitTab() {
           <Stack gap="sm">
             <Group justify="space-between" wrap="wrap">
               <Stack gap={2}>
-                <Text fw={600} size="lg">
-                  {plan.producer_name || `#${plan.producer_id ?? ''}`}
-                </Text>
+                <Group gap="xs" wrap="nowrap">
+                  <Text fw={600} size="lg">
+                    {plan.producer_name || `#${plan.producer_id ?? ''}`}
+                  </Text>
+                  <AiFeatureBadge tooltip={t('AI-кокпіт байера')} />
+                </Group>
                 <Group gap="xs">
                   <Text c="dimmed" size="sm">
                     {t('Час постачання')}: {qtyFormatter.format(plan.lead_time_days)} ±{' '}

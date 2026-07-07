@@ -12,17 +12,16 @@ import {
 } from '@mantine/core'
 import { CircleAlert, RefreshCw } from 'lucide-react'
 import { useEffect, useMemo, useReducer, useState } from 'react'
+import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
-import {
-  AgingBars,
-  ForecastLine,
-  UrgencyDonut,
-  type ForecastPoint,
-  type UrgencyLevel,
-  type UrgencySliceInput,
-} from '../../../shared/ui/charts'
+import { AgingBars } from '../../../shared/ui/charts/AgingBars'
+import { ForecastLine } from '../../../shared/ui/charts/ForecastLine'
+import { UrgencyDonut } from '../../../shared/ui/charts/UrgencyDonut'
+import type { UrgencyLevel } from '../../../shared/ui/charts/chartTheme'
+import type { UrgencySliceInput } from '../../../shared/ui/charts/donutData'
+import type { ForecastPoint } from '../../../shared/ui/charts/forecastData'
 import { getProcurementCharts } from '../api/procurementApi'
 import type {
   ProcurementCharts,
@@ -307,9 +306,12 @@ export function ProcureDashboardTab() {
 
       <Card className="app-section-card" padding="md" radius="md" withBorder>
         <Stack gap="md">
-          <Text className="app-section-title" fw={600} size="sm">
-            {t('Прогноз попиту')}
-          </Text>
+          <Group gap="xs" wrap="nowrap">
+            <Text className="app-section-title" fw={600} size="sm">
+              {t('Прогноз попиту')}
+            </Text>
+            <AiFeatureBadge tooltip={t('AI-сервіс закупівель')} />
+          </Group>
           {isLoading && <ForecastLine actualLabel="" data={[]} emptyLabel="" forecastLabel="" isLoading />}
           {!isLoading && (charts?.demand_series.length ?? 0) === 0 && (
             <Text c="dimmed" size="sm">

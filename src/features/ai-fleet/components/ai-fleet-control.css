@@ -1,0 +1,46 @@
+.ai-fleet-header-action {
+  color: #7a28b8;
+}
+
+.ai-fleet-header-action:hover {
+  color: #5f1798;
+}
+
+.ai-fleet-title-icon {
+  align-items: center;
+  background: #f5e8ff;
+  border: 1px solid #e2c2ff;
+  border-radius: 999px;
+  color: #7a28b8;
+  display: inline-flex;
+  height: 26px;
+  justify-content: center;
+  width: 26px;
+}
+
+.ai-fleet-row {
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.ai-fleet-row__main {
+  min-width: 0;
+}
+
+.ai-fleet-row__statuses {
+  flex: 0 0 auto;
+  max-width: 260px;
+}
+
+@media (max-width: 640px) {
+  .ai-fleet-row > .mantine-Group-root {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .ai-fleet-row__statuses {
+    justify-content: flex-start;
+    max-width: none;
+  }
+}

@@ -15,6 +15,7 @@ import {
 } from '@mantine/core'
 import { CircleAlert, Info } from 'lucide-react'
 import { useEffect, useReducer } from 'react'
+import { AiFeatureBadge } from '../../../../shared/ai/AiFeatureBadge'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { getClientSolvencyCharts, getClientSolvencyScore } from '../../api/clientSolvencyApi'
 import type {
@@ -339,6 +340,7 @@ function ScoreHeader({ score }: { score: SolvencyScore }) {
           <Title order={4} size="h4">
             {t('Платоспроможність')}
           </Title>
+          <AiFeatureBadge tooltip={t('AI-модель платоспроможності')} />
           <Badge color={ratingColor} size="lg" variant="filled">
             {score.rating}
           </Badge>

@@ -3,6 +3,8 @@ import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useNavigation } from '../../../features/navigation/hooks/useNavigation'
 import type { NavigationModule, NavigationNode } from '../../../features/navigation/types'
+import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
+import { hasAiFeatureDescendant, isAiFeatureTarget } from '../../../shared/ai/aiFeature'
 import { useI18n } from '../../../shared/i18n/useI18n'
 
 type ConsoleNavMode = 'all' | 'items' | 'modules'
@@ -117,6 +119,7 @@ export function ConsoleNav({ mode = 'all' }: ConsoleNavProps) {
           {modules.map((module) => {
             const key = module.NetUid || String(module.Id)
             const active = key === activeModuleKey
+            const hasAi = isAiFeatureTarget(module) || hasAiFeatureDescendant(module)
 
             return (
               <button
@@ -126,7 +129,8 @@ export function ConsoleNav({ mode = 'all' }: ConsoleNavProps) {
                 aria-pressed={active}
                 onClick={() => openModule(module)}
               >
-                {module.Module}
+                <span>{module.Module}</span>
+                {hasAi && <AiFeatureBadge compact tooltip={t('У модулі є AI-функції')} />}
               </button>
             )
           })}
@@ -138,6 +142,7 @@ export function ConsoleNav({ mode = 'all' }: ConsoleNavProps) {
           {items.map((node) => {
             const key = node.NetUid || String(node.Id)
             const active = activeNodeKey != null && key === activeNodeKey
+            const hasAi = isAiFeatureTarget(node) || hasAiFeatureDescendant(node)
 
             return (
               <button
@@ -148,6 +153,7 @@ export function ConsoleNav({ mode = 'all' }: ConsoleNavProps) {
                 onClick={() => openNode(node)}
               >
                 <span>{node.Module}</span>
+                {hasAi && <AiFeatureBadge compact tooltip={t('AI-функція')} />}
               </button>
             )
           })}

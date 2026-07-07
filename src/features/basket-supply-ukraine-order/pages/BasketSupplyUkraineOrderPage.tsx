@@ -24,6 +24,7 @@ import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
@@ -146,6 +147,14 @@ export function BasketSupplyUkraineOrderPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const activeTab = getActiveTab(location.pathname)
+  const tabs: Array<{ ai?: boolean; label: string; value: BasketSupplyWorkflowTab }> = [
+    { value: 'sales', label: t('Фактура') },
+    { value: 'cart', label: t('Переміщення на Україну') },
+    { value: 'recommendations', label: t('Рекомендації'), ai: true },
+    { value: 'dashboard', label: t('Дашборд'), ai: true },
+    { value: 'cockpit', label: t('Кокпіт байера'), ai: true },
+    { value: 'budget-cart', label: t('Бюджетний кошик') },
+  ]
 
   function changeTab(nextTab: string | null) {
     if (!nextTab) {
@@ -159,14 +168,7 @@ export function BasketSupplyUkraineOrderPage() {
     <Stack className="basket-supply-page" gap={6}>
       <div>
         <div className="pill-tabs">
-          {[
-            { value: 'sales', label: t('Фактура') },
-            { value: 'cart', label: t('Переміщення на Україну') },
-            { value: 'recommendations', label: t('Рекомендації') },
-            { value: 'dashboard', label: t('Дашборд') },
-            { value: 'cockpit', label: t('Кокпіт байера') },
-            { value: 'budget-cart', label: t('Бюджетний кошик') },
-          ].map((tab) => (
+          {tabs.map((tab) => (
             <button
               key={tab.value}
               type="button"
@@ -175,6 +177,7 @@ export function BasketSupplyUkraineOrderPage() {
               onClick={() => changeTab(tab.value)}
             >
               {tab.label}
+              {tab.ai && <AiFeatureBadge compact tooltip={t('AI-сервіс закупівель')} />}
             </button>
           ))}
         </div>
@@ -1432,11 +1435,14 @@ function RecommendationsTab() {
 
   const recommendationsToolbarRight = useMemo(
     () => (
-      <Tooltip label={t('Оновити')}>
-        <ActionIcon aria-label={t('Оновити')} loading={isLoading} size="sm" variant="subtle" onClick={() => reload()}>
-          <RefreshCw size={16} />
-        </ActionIcon>
-      </Tooltip>
+      <Group gap="xs" wrap="nowrap">
+        <AiFeatureBadge tooltip={t('AI-рекомендації переміщення')} />
+        <Tooltip label={t('Оновити')}>
+          <ActionIcon aria-label={t('Оновити')} loading={isLoading} size="sm" variant="subtle" onClick={() => reload()}>
+            <RefreshCw size={16} />
+          </ActionIcon>
+        </Tooltip>
+      </Group>
     ),
     [isLoading, reload, t],
   )
