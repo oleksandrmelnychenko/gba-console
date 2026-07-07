@@ -676,6 +676,15 @@
   position: relative;
 }
 
+/* Background reload with rows on screen: dim instead of swapping to the
+   skeleton — unmounting/remounting 20-100 dense rows was the dominant cost of
+   every search keystroke. */
+.sales-grid.is-reloading {
+  opacity: 0.6;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+}
+
 .sales-grid-row::before {
   background: var(--brand-orange);
   border-radius: 999px;

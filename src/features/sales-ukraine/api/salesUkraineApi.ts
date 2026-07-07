@@ -21,8 +21,9 @@ import type {
 
 const CONSIGNMENT_QUERY = { forReSale: false }
 
-export async function getSalesUkraine(filters: SalesUkraineFilters): Promise<SalesUkraineSale[]> {
+export async function getSalesUkraine(filters: SalesUkraineFilters, signal?: AbortSignal): Promise<SalesUkraineSale[]> {
   const result = await apiRequest<unknown>('/sales/all/filtered', {
+    signal,
     query: {
       clientId: filters.clientId || undefined,
       fastEcommerce: false,

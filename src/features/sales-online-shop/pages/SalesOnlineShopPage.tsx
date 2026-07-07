@@ -41,6 +41,7 @@ import {
 } from '@tabler/icons-react'
 import {
   Fragment,
+  memo,
   type ReactNode,
   useCallback,
   useEffect,
@@ -208,6 +209,15 @@ export function SalesOnlineShopPage() {
   const realtimeReloadRef = useRef<number | null>(null)
   const backgroundReloadRef = useRef(false)
   const salesRef = useRef<SalesOnlineShopSale[]>(sales)
+  // Debounces the search-text commit (the fetch trigger) — see applySearchValue.
+  const searchCommitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => () => {
+    if (searchCommitTimerRef.current) {
+      clearTimeout(searchCommitTimerRef.current)
+    }
+  }, [])
+
   const offset = (page - 1) * pageSize
   const totalRows = getTotalRows(sales)
   const totalPages = Math.max(1, Math.ceil(totalRows / pageSize))
@@ -399,6 +409,58 @@ export function SalesOnlineShopPage() {
     [setConfirmState, t],
   )
 
+  const statusSelectData = useMemo(() => STATUS_OPTIONS.map((option) => ({ ...option, label: t(option.label) })), [t])
+  const managerSelectData = useMemo(
+    () => [
+      { value: 'All', label: t('Усі менеджери') },
+      { value: 'Self', label: t('Тільки мої') },
+    ],
+    [t],
+  )
+
+  // Identity-stable row handlers: SalesOnlineShopGridRow is React.memo'd, so its
+  // callback props must never change identity. The real handlers capture fresh
+  // state each render — route the calls through a ref.
+  const rowHandlersRef = useRef({
+    openAudit,
+    openSaleDiscount,
+    openSaleSheet,
+    requestUnlock,
+    requestWillNotShip,
+    toggleSaleExpand,
+  })
+
+  rowHandlersRef.current = {
+    openAudit,
+    openSaleDiscount,
+    openSaleSheet,
+    requestUnlock,
+    requestWillNotShip,
+    toggleSaleExpand,
+  }
+
+  const handleRowToggleExpand = useCallback((key: string, sale: SalesOnlineShopSale) => {
+    void rowHandlersRef.current.toggleSaleExpand(key, sale)
+  }, [])
+  const handleRowOpenSale = useCallback((sale: SalesOnlineShopSale) => {
+    void rowHandlersRef.current.openSaleSheet(sale)
+  }, [])
+  const handleRowOpenDiscount = useCallback((sale: SalesOnlineShopSale) => {
+    void rowHandlersRef.current.openSaleDiscount(sale)
+  }, [])
+  const handleRowOpenAudit = useCallback((sale: SalesOnlineShopSale) => {
+    rowHandlersRef.current.openAudit(sale)
+  }, [])
+  const handleRowUnlock = useCallback((sale: SalesOnlineShopSale) => {
+    rowHandlersRef.current.requestUnlock(sale)
+  }, [])
+  const handleRowWillNotShip = useCallback((sale: SalesOnlineShopSale) => {
+    rowHandlersRef.current.requestWillNotShip(sale)
+  }, [])
+  const handleRowItemDiscount = useCallback((sale: SalesUkraineSale) => {
+    void rowHandlersRef.current.openSaleDiscount(sale as unknown as SalesOnlineShopSale)
+  }, [])
+
   async function runConfirm() {
     if (!confirmState) {
       return
@@ -473,6 +535,7 @@ export function SalesOnlineShopPage() {
 
   useEffect(() => {
     let cancelled = false
+    const controller = new AbortController()
 
     async function loadSales() {
       const isBackgroundReload = backgroundReloadRef.current
@@ -484,7 +547,7 @@ export function SalesOnlineShopPage() {
       }
 
       try {
-        const nextSales = await getSalesOnlineShop(activeFilters)
+        const nextSales = await getSalesOnlineShop(activeFilters, controller.signal)
 
         if (!cancelled) {
           setSales(nextSales)
@@ -509,10 +572,21 @@ export function SalesOnlineShopPage() {
 
     return () => {
       cancelled = true
+      // Abort the in-flight request — typing used to leave N concurrent
+      // requests racing (only their state writes were guarded).
+      controller.abort()
     }
   }, [activeFilters, reloadKey, setError, setLoading, setSales, t])
 
+  function clearSearchCommitTimer() {
+    if (searchCommitTimerRef.current) {
+      clearTimeout(searchCommitTimerRef.current)
+      searchCommitTimerRef.current = null
+    }
+  }
+
   function applyFilters(nextDraft: FilterDraft) {
+    clearSearchCommitTimer()
     setPage(1)
     setFilterDraft(nextDraft)
     setActiveDraft({
@@ -521,7 +595,23 @@ export function SalesOnlineShopPage() {
     })
   }
 
+  // Search text: the draft (input value) updates per keystroke, but the commit
+  // that triggers the fetch waits for a typing pause — typing «motor» used to
+  // fire 5 un-aborted requests and swap the grid to a skeleton each time.
+  function applySearchValue(value: string) {
+    const nextDraft = { ...filterDraft, value }
+
+    setFilterDraft(nextDraft)
+    clearSearchCommitTimer()
+    searchCommitTimerRef.current = setTimeout(() => {
+      searchCommitTimerRef.current = null
+      setPage(1)
+      setActiveDraft({ ...nextDraft, value: value.trim() })
+    }, 300)
+  }
+
   function resetFilters() {
+    clearSearchCommitTimer()
     setPage(1)
     setFilterDraft(initialDraft)
     setActiveDraft(initialDraft)
@@ -539,7 +629,7 @@ export function SalesOnlineShopPage() {
                 leftSection={<IconSearch size={16} />}
                 placeholder={t('Товар або номер продажу')}
                 value={filterDraft.value}
-                onChange={(event) => applyFilters({ ...filterDraft, value: event.currentTarget.value })}
+                onChange={(event) => applySearchValue(event.currentTarget.value)}
               />
               <TextInput
                 className="sales-filter-control"
@@ -560,7 +650,7 @@ export function SalesOnlineShopPage() {
               <Select
                 allowDeselect={false}
                 className="sales-filter-control"
-                data={STATUS_OPTIONS.map((option) => ({ ...option, label: t(option.label) }))}
+                data={statusSelectData}
                 label={t('Статус')}
                 value={filterDraft.status}
                 onChange={(value) =>
@@ -573,10 +663,7 @@ export function SalesOnlineShopPage() {
               <Select
                 allowDeselect={false}
                 className="sales-filter-control"
-                data={[
-                  { value: 'All', label: t('Усі менеджери') },
-                  { value: 'Self', label: t('Тільки мої') },
-                ]}
+                data={managerSelectData}
                 label={t('Менеджер')}
                 value={filterDraft.onlyMine ? 'Self' : 'All'}
                 onChange={(value) =>
@@ -621,8 +708,13 @@ export function SalesOnlineShopPage() {
             </Alert>
           )}
 
-          <div className="sales-grid sales-online-grid">
-            {isLoading ? (
+          <div
+            aria-busy={isLoading || undefined}
+            className={`sales-grid sales-online-grid${isLoading && sales.length > 0 ? ' is-reloading' : ''}`}
+          >
+            {/* Skeleton only while there is nothing to show — reloads keep the
+                current rows mounted (dimmed) instead of unmounting 20-100 rows. */}
+            {isLoading && sales.length === 0 ? (
               <div className="sales-grid-skeleton" aria-label={t('Завантаження продажів')} aria-busy="true">
                 {Array.from({ length: 10 }).map((_, rowIndex) => (
                   <div key={rowIndex} className="sales-grid-row sales-grid-skeleton-row">
@@ -662,30 +754,26 @@ export function SalesOnlineShopPage() {
                     <Fragment key={key}>
                       <SalesOnlineShopGridRow
                         sale={sale}
+                        saleKey={key}
                         canEditSale={canEditSale}
                         canUnlock={canUnlock}
                         canWillNotShip={canWillNotShip}
                         isAdmin={isAdmin}
                         canExpand={canExpand}
                         isExpanded={isExpanded}
-                        onToggleExpand={() => void toggleSaleExpand(key, sale)}
-                        onOpenSale={(target) => void openSaleSheet(target)}
+                        onToggleExpand={handleRowToggleExpand}
+                        onOpenSale={handleRowOpenSale}
                         onOpenEditor={setEditorSale}
                         onOpenDetails={setDetailsSale}
                         onOpenConsignment={setConsignmentSale}
-                        onOpenAudit={openAudit}
-                        onUnlock={requestUnlock}
-                        onWillNotShip={requestWillNotShip}
-                        onOpenDiscount={(target) => void openSaleDiscount(target)}
+                        onOpenAudit={handleRowOpenAudit}
+                        onUnlock={handleRowUnlock}
+                        onWillNotShip={handleRowWillNotShip}
+                        onOpenDiscount={handleRowOpenDiscount}
                       />
                       {isExpanded && (
                         <div className="sales-grid-expand">
-                          <SaleExpandContent
-                            sale={asUkraineSale(sale)}
-                            onOpenItemDiscount={(targetSale) =>
-                              void openSaleDiscount(targetSale as unknown as SalesOnlineShopSale)
-                            }
-                          />
+                          <SaleExpandContent sale={asUkraineSale(sale)} onOpenItemDiscount={handleRowItemDiscount} />
                         </div>
                       )}
                     </Fragment>
@@ -777,13 +865,14 @@ export function SalesOnlineShopPage() {
 
 type SalesOnlineShopGridRowProps = {
   sale: SalesOnlineShopSale
+  saleKey: string
   canEditSale: boolean
   canUnlock: boolean
   canWillNotShip: boolean
   isAdmin: boolean
   canExpand: boolean
   isExpanded: boolean
-  onToggleExpand: () => void
+  onToggleExpand: (key: string, sale: SalesOnlineShopSale) => void
   onOpenSale: (sale: SalesOnlineShopSale) => void
   onOpenEditor: (sale: SalesOnlineShopSale) => void
   onOpenDetails: (sale: SalesOnlineShopSale) => void
@@ -794,8 +883,12 @@ type SalesOnlineShopGridRowProps = {
   onOpenDiscount: (sale: SalesOnlineShopSale) => void
 }
 
-function SalesOnlineShopGridRow({
+// Memoized: the page owns ALL grid state (filters, expand, drawers), so without
+// memo every keystroke/drawer/expand re-rendered all 20-100 dense rows. All
+// callback props are identity-stable (ref-routed in the page).
+const SalesOnlineShopGridRow = memo(function SalesOnlineShopGridRow({
   sale,
+  saleKey,
   canEditSale,
   canUnlock,
   canWillNotShip,
@@ -887,7 +980,13 @@ function SalesOnlineShopGridRow({
           )}
           {canExpand && (
             <Tooltip label={isExpanded ? t('Згорнути') : t('Розгорнути')}>
-              <ActionIcon aria-label={t('Розгорнути')} color="gray" size="sm" variant="subtle" onClick={onToggleExpand}>
+              <ActionIcon
+                aria-label={t('Розгорнути')}
+                color="gray"
+                size="sm"
+                variant="subtle"
+                onClick={() => onToggleExpand(saleKey, sale)}
+              >
                 {isExpanded ? <IconChevronDown size={15} /> : <IconChevronRight size={15} />}
               </ActionIcon>
             </Tooltip>
@@ -1067,7 +1166,7 @@ function SalesOnlineShopGridRow({
       </div>
     </div>
   )
-}
+})
 
 function SaleDetail({ sale }: { sale: SalesOnlineShopSale }) {
   const { t } = useI18n()
@@ -1743,12 +1842,17 @@ function parseDate(value: unknown): Date | null {
   return Number.isNaN(parsed.getTime()) ? null : parsed
 }
 
+// Module-level formatters: toLocaleDateString/toLocaleTimeString construct a new
+// Intl.DateTimeFormat on every call — measurably slow across 20-100 rows.
+const rowDateFormatter = new Intl.DateTimeFormat('uk-UA')
+const rowTimeFormatter = new Intl.DateTimeFormat('uk-UA', { hour: '2-digit', minute: '2-digit' })
+
 function formatDate(value: Date | null): string {
-  return value ? value.toLocaleDateString('uk-UA') : ''
+  return value ? rowDateFormatter.format(value) : ''
 }
 
 function formatTime(value: Date | null): string {
-  return value ? value.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' }) : ''
+  return value ? rowTimeFormatter.format(value) : ''
 }
 
 function formatAmount(value: number | null): string {

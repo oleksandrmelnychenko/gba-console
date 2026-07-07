@@ -43,6 +43,7 @@ import {
 } from '@tabler/icons-react'
 import {
   Fragment,
+  memo,
   type ReactNode,
   useCallback,
   useEffect,
@@ -376,6 +377,23 @@ export function SalesUkrainePage() {
   const backgroundReloadRef = useRef(false)
   const salesRef = useRef<SalesUkraineSale[]>(sales)
   const expandedKeysRef = useRef<Set<string>>(expandedKeys)
+  // Debounces the search-text commit (the fetch trigger) — see applySearchValue.
+  const searchCommitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => () => {
+    if (searchCommitTimerRef.current) {
+      clearTimeout(searchCommitTimerRef.current)
+    }
+  }, [])
+
+  const statusSelectData = useMemo(() => STATUS_OPTIONS.map((option) => ({ ...option, label: t(option.label) })), [t])
+  const managerSelectData = useMemo(
+    () => [
+      { value: 'All', label: t('Усі менеджери') },
+      { value: 'Self', label: t('Тільки мої') },
+    ],
+    [t],
+  )
 
   useEffect(() => {
     salesRef.current = sales
@@ -483,6 +501,55 @@ export function SalesUkrainePage() {
     },
     [ensureSaleDetails, expandedKeys, setExpandedKeys],
   )
+
+  // Identity-stable row handlers: SaleGridRow is React.memo'd, so its callback
+  // props must never change identity. The real handlers capture fresh state each
+  // render — route the calls through a ref (requestUnlock/requestWillNotShip are
+  // hoisted function declarations; the rest are useCallbacks re-read per call).
+  const rowHandlersRef = useRef({
+    openAudit,
+    openSaleDetails,
+    openSaleDiscount,
+    openSaleSheet,
+    requestUnlock,
+    requestWillNotShip,
+    toggleSaleExpand,
+  })
+
+  rowHandlersRef.current = {
+    openAudit,
+    openSaleDetails,
+    openSaleDiscount,
+    openSaleSheet,
+    requestUnlock,
+    requestWillNotShip,
+    toggleSaleExpand,
+  }
+
+  const handleRowToggleExpand = useCallback((key: string, sale: SalesUkraineSale) => {
+    void rowHandlersRef.current.toggleSaleExpand(key, sale)
+  }, [])
+  const handleRowOpenSale = useCallback((sale: SalesUkraineSale) => {
+    void rowHandlersRef.current.openSaleSheet(sale)
+  }, [])
+  const handleRowOpenDetails = useCallback((sale: SalesUkraineSale) => {
+    void rowHandlersRef.current.openSaleDetails(sale)
+  }, [])
+  const handleRowOpenDiscount = useCallback((sale: SalesUkraineSale) => {
+    void rowHandlersRef.current.openSaleDiscount(sale)
+  }, [])
+  const handleRowOpenAudit = useCallback((sale: SalesUkraineSale) => {
+    rowHandlersRef.current.openAudit(sale)
+  }, [])
+  const handleRowUnlock = useCallback((sale: SalesUkraineSale) => {
+    rowHandlersRef.current.requestUnlock(sale)
+  }, [])
+  const handleRowWillNotShip = useCallback((sale: SalesUkraineSale) => {
+    rowHandlersRef.current.requestWillNotShip(sale)
+  }, [])
+  const handleRowItemDiscount = useCallback((sale: SalesUkraineSale, orderItem?: SalesUkraineOrderItem) => {
+    void rowHandlersRef.current.openSaleDiscount(sale, orderItem)
+  }, [])
 
   useEffect(() => {
     if (
@@ -592,6 +659,7 @@ export function SalesUkrainePage() {
 
   useEffect(() => {
     let cancelled = false
+    const controller = new AbortController()
 
     async function loadSales() {
       const isBackgroundReload = backgroundReloadRef.current
@@ -603,7 +671,7 @@ export function SalesUkrainePage() {
       }
 
       try {
-        const next = await getSalesUkraine(activeFilters)
+        const next = await getSalesUkraine(activeFilters, controller.signal)
 
         if (!cancelled) {
           const { sales: mergedSales, rehydrate } = mergeExpandedSaleDetails(next, salesRef.current, expandedKeysRef.current)
@@ -638,16 +706,43 @@ export function SalesUkrainePage() {
 
     return () => {
       cancelled = true
+      // Abort the in-flight request — typing used to leave N concurrent
+      // requests racing (only their state writes were guarded).
+      controller.abort()
     }
   }, [activeFilters, reloadKey, setError, setLoading, setSales, t])
 
+  function clearSearchCommitTimer() {
+    if (searchCommitTimerRef.current) {
+      clearTimeout(searchCommitTimerRef.current)
+      searchCommitTimerRef.current = null
+    }
+  }
+
   function applyFilters(nextDraft: FilterDraft) {
+    clearSearchCommitTimer()
     setPage(1)
     setFilterDraft(nextDraft)
     setActiveDraft({ ...nextDraft, value: nextDraft.value.trim() })
   }
 
+  // Search text: the draft (input value) updates per keystroke, but the commit
+  // that triggers the fetch waits for a typing pause — typing «motor» used to
+  // fire 5 un-aborted requests and swap the grid to a skeleton each time.
+  function applySearchValue(value: string) {
+    const nextDraft = { ...filterDraft, value }
+
+    setFilterDraft(nextDraft)
+    clearSearchCommitTimer()
+    searchCommitTimerRef.current = setTimeout(() => {
+      searchCommitTimerRef.current = null
+      setPage(1)
+      setActiveDraft({ ...nextDraft, value: value.trim() })
+    }, 300)
+  }
+
   function resetFilters() {
+    clearSearchCommitTimer()
     setPage(1)
     setFilterDraft(initialDraft)
     setActiveDraft(initialDraft)
@@ -787,7 +882,7 @@ export function SalesUkrainePage() {
                 placeholder={t('Товар або номер продажу')}
                 size="sm"
                 value={filterDraft.value}
-                onChange={(event) => applyFilters({ ...filterDraft, value: event.currentTarget.value })}
+                onChange={(event) => applySearchValue(event.currentTarget.value)}
               />
               <div className="sales-filter-period-wrap">
                 <span className="sales-filter-label">{t('Період')}</span>
@@ -853,7 +948,7 @@ export function SalesUkrainePage() {
                 allowDeselect={false}
                 className="sales-filter-control"
                 comboboxProps={SALES_FILTER_COMBOBOX_PROPS}
-                data={STATUS_OPTIONS.map((option) => ({ ...option, label: t(option.label) }))}
+                data={statusSelectData}
                 label={t('Статус')}
                 scrollAreaProps={SALES_FILTER_SCROLL_AREA_PROPS}
                 size="sm"
@@ -864,10 +959,7 @@ export function SalesUkrainePage() {
                 allowDeselect={false}
                 className="sales-filter-control"
                 comboboxProps={SALES_FILTER_COMBOBOX_PROPS}
-                data={[
-                  { value: 'All', label: t('Усі менеджери') },
-                  { value: 'Self', label: t('Тільки мої') },
-                ]}
+                data={managerSelectData}
                 label={t('Менеджер')}
                 scrollAreaProps={SALES_FILTER_SCROLL_AREA_PROPS}
                 size="sm"
@@ -991,8 +1083,14 @@ export function SalesUkrainePage() {
             </Alert>
           )}
 
-          <div className="sales-grid" style={{ '--sales-grid-columns': gridColumnsTemplate } as CSSProperties}>
-            {isLoading ? (
+          <div
+            aria-busy={isLoading || undefined}
+            className={`sales-grid${isLoading && sales.length > 0 ? ' is-reloading' : ''}`}
+            style={{ '--sales-grid-columns': gridColumnsTemplate } as CSSProperties}
+          >
+            {/* Skeleton only while there is nothing to show — reloads keep the
+                current rows mounted (dimmed) instead of unmounting 20-100 rows. */}
+            {isLoading && sales.length === 0 ? (
               <div className="sales-grid-skeleton" aria-label={t('Завантаження продажів')} aria-busy="true">
                 {Array.from({ length: 9 }, (_, rowIndex) => (
                   <div key={rowIndex} className="sales-grid-row sales-grid-skeleton-row">
@@ -1037,29 +1135,27 @@ export function SalesUkrainePage() {
                     <Fragment key={key}>
                       <SaleGridRow
                         sale={sale}
+                        saleKey={key}
                         canEditSale={canEditSale}
                         canUnlock={canUnlock}
                         canWillNotShip={canWillNotShip}
                         isAdmin={isAdmin}
                         canExpand={canExpand}
                         isExpanded={isExpanded}
-                        onToggleExpand={() => void toggleSaleExpand(key, sale)}
-                        onOpenSale={(target) => void openSaleSheet(target)}
+                        onToggleExpand={handleRowToggleExpand}
+                        onOpenSale={handleRowOpenSale}
                         onOpenEditor={setWizardEditSale}
                         onOpenEditShift={setEditShiftSale}
-                        onOpenDetails={(target) => void openSaleDetails(target)}
+                        onOpenDetails={handleRowOpenDetails}
                         onOpenConsignment={setConsignmentSale}
-                        onOpenAudit={openAudit}
-                        onUnlock={requestUnlock}
-                        onWillNotShip={requestWillNotShip}
-                        onOpenDiscount={(target) => void openSaleDiscount(target)}
+                        onOpenAudit={handleRowOpenAudit}
+                        onUnlock={handleRowUnlock}
+                        onWillNotShip={handleRowWillNotShip}
+                        onOpenDiscount={handleRowOpenDiscount}
                       />
                       {isExpanded && (
                         <div className="sales-grid-expand">
-                          <SaleExpandContent
-                            sale={sale}
-                            onOpenItemDiscount={(targetSale, orderItem) => void openSaleDiscount(targetSale, orderItem)}
-                          />
+                          <SaleExpandContent sale={sale} onOpenItemDiscount={handleRowItemDiscount} />
                         </div>
                       )}
                     </Fragment>
@@ -1191,13 +1287,14 @@ export function SalesUkrainePage() {
 
 type SaleGridRowProps = {
   sale: SalesUkraineSale
+  saleKey: string
   canEditSale: boolean
   canUnlock: boolean
   canWillNotShip: boolean
   isAdmin: boolean
   canExpand: boolean
   isExpanded: boolean
-  onToggleExpand: () => void
+  onToggleExpand: (key: string, sale: SalesUkraineSale) => void
   onOpenSale: (sale: SalesUkraineSale) => void
   onOpenEditor: (sale: SalesUkraineSale) => void
   onOpenEditShift: (sale: SalesUkraineSale) => void
@@ -1209,8 +1306,12 @@ type SaleGridRowProps = {
   onOpenDiscount: (sale: SalesUkraineSale) => void
 }
 
-function SaleGridRow({
+// Memoized: the page owns ALL grid state (filters, expand, drawers, resize), so
+// without memo every keystroke/drawer/expand re-rendered all 20-100 dense rows.
+// All callback props are identity-stable (ref-routed in the page).
+const SaleGridRow = memo(function SaleGridRow({
   sale,
+  saleKey,
   canEditSale,
   canUnlock,
   canWillNotShip,
@@ -1381,7 +1482,7 @@ function SaleGridRow({
           {canExpand ? (
             <span className="sg-action-slot">
               <Tooltip label={isExpanded ? t('Згорнути') : t('Розгорнути')}>
-                <ActionIcon aria-label={t('Розгорнути')} color="gray" size="sm" variant="subtle" onClick={onToggleExpand}>
+                <ActionIcon aria-label={t('Розгорнути')} color="gray" size="sm" variant="subtle" onClick={() => onToggleExpand(saleKey, sale)}>
                   {isExpanded ? <IconChevronDown size={15} /> : <IconChevronRight size={15} />}
                 </ActionIcon>
               </Tooltip>
@@ -1583,7 +1684,7 @@ function SaleGridRow({
       </div>
     </div>
   )
-}
+})
 
 function SaleDetail({ sale }: { sale: SalesUkraineSale }) {
   const { t } = useI18n()
@@ -2276,12 +2377,17 @@ function parseDate(value: unknown): Date | null {
   return Number.isNaN(parsed.getTime()) ? null : parsed
 }
 
+// Module-level formatters: toLocale* built a fresh Intl.DateTimeFormat per call
+// per row per render (the same pattern amountFormatter already follows).
+const rowDateFormatter = new Intl.DateTimeFormat('uk-UA')
+const rowTimeFormatter = new Intl.DateTimeFormat('uk-UA', { hour: '2-digit', minute: '2-digit' })
+
 function formatDate(value: Date | null): string {
-  return value ? value.toLocaleDateString('uk-UA') : ''
+  return value ? rowDateFormatter.format(value) : ''
 }
 
 function formatTime(value: Date | null): string {
-  return value ? value.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' }) : ''
+  return value ? rowTimeFormatter.format(value) : ''
 }
 
 function formatDateRangeFilterValue(value: string): string {

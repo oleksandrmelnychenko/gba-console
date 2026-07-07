@@ -1,6 +1,6 @@
 import { Anchor, Box, Text, Tooltip } from '@mantine/core'
 import { IconBox } from '@tabler/icons-react'
-import { useState } from 'react'
+import { memo, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { ProductCardModal } from '../../products/components/ProductCardModal'
 import {
@@ -19,7 +19,10 @@ const amountFormatter = new Intl.NumberFormat('uk-UA', {
 
 const BASE_CURRENCY_CODE = 'EUR'
 
-export function SaleExpandContent({
+// Memoized: expanding/collapsing one row (or any page-level state change) must
+// not re-render every other expanded instance. onOpenItemDiscount is ref-routed
+// in the pages, so props stay identity-stable.
+export const SaleExpandContent = memo(function SaleExpandContent({
   sale,
   onOpenItemDiscount,
 }: {
@@ -77,7 +80,7 @@ export function SaleExpandContent({
       <ProductCardModal productNetId={productCardNetId} onClose={() => setProductCardNetId(null)} />
     </>
   )
-}
+})
 
 function SaleExpandContentItem({
   canEditDiscount,

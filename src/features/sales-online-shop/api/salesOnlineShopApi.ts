@@ -1,8 +1,12 @@
 import { apiRequest } from '../../../shared/api/apiClient'
 import type { SalesOnlineShopFilters, SalesOnlineShopSale } from '../types'
 
-export async function getSalesOnlineShop(filters: SalesOnlineShopFilters): Promise<SalesOnlineShopSale[]> {
+export async function getSalesOnlineShop(
+  filters: SalesOnlineShopFilters,
+  signal?: AbortSignal,
+): Promise<SalesOnlineShopSale[]> {
   const result = await apiRequest<unknown>('/sales/all/filtered', {
+    signal,
     query: {
       fastEcommerce: true,
       forEcommerce: true,
