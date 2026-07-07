@@ -2,6 +2,7 @@ import { Box, Group, Loader, Stack, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
+import { splitProductSearchResults } from '../../../products/utils'
 import type { WizardSaleProduct } from './wizardSaleProduct'
 
 // Keystrokes are settled locally for this long before the value is lifted to the
@@ -82,9 +83,13 @@ export function WizardProductCarousel({
   }
 
   const focused = hasFocus && focusedIndex >= 0 ? products[focusedIndex] ?? null : null
-  const topProducts = focused ? products.slice(0, focusedIndex) : []
-  const bottomProducts = focused ? products.slice(focusedIndex + 1) : products
-  const bottomOffset = focused ? focusedIndex + 1 : 0
+  // No focused product: mirror the assortment drum («барабанчик» on /products) —
+  // the search results split in half around the centered search slot instead of
+  // all stacking below it. Shared helper: splitProductSearchResults.
+  const searchSplit = focused ? null : splitProductSearchResults(products)
+  const topProducts = focused ? products.slice(0, focusedIndex) : searchSplit?.topProducts ?? []
+  const bottomProducts = focused ? products.slice(focusedIndex + 1) : searchSplit?.bottomProducts ?? []
+  const bottomOffset = focused ? focusedIndex + 1 : topProducts.length
   const showInput = searchMode || !focused
 
   return (
