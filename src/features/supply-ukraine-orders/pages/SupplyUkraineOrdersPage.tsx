@@ -283,6 +283,7 @@ function ordersUiReducer(state: OrdersUiState, action: OrdersUiAction): OrdersUi
       return {
         ...state,
         activeFilters: action.filters,
+        page: 1,
       }
     case 'resetFilters':
       return {
