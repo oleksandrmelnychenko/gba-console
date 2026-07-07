@@ -15,12 +15,14 @@ import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
   IconArchive,
+  IconBus,
   IconDeviceFloppy,
   IconPlus,
   IconRefresh,
   IconRestore,
   IconSearch,
   IconUpload,
+  IconWalk,
 } from '@tabler/icons-react'
 import { ExternalLink } from 'lucide-react'
 import { useEffect, useMemo, useReducer, useState, type ReactNode } from 'react'
@@ -32,6 +34,7 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { toProxiedAssetUrl } from '../../../shared/url/proxiedAssetUrl'
+import { resolveTransporterLogo } from '../../../shared/transporter-icons/transporterLogos'
 import {
   archiveTransporter,
   createTransporter,
@@ -726,17 +729,40 @@ function TransporterSetting({
 }
 
 function TransporterImagePreview({ transporter }: { transporter: Transporter }) {
-  const imageUrl = toProxiedAssetUrl(transporter.ImageUrl?.trim())
+  const name = getTransporterName(transporter)
+  // Prefer the bundled logo mapped from the legacy CssClass (the per-transporter ImageUrl often points at
+  // a dead asset host and 404s). Fall back to a custom uploaded ImageUrl, then to the icon-font carriers.
+  const bundledLogo = resolveTransporterLogo(transporter.CssClass)
 
-  if (!imageUrl) {
-    return null
+  if (bundledLogo) {
+    return (
+      <span className="transporters-image-preview is-filled" title={nativeTitle(name)}>
+        <img alt={name} src={bundledLogo} />
+      </span>
+    )
   }
 
-  return (
-    <span className="transporters-image-preview is-filled" title={nativeTitle(imageUrl)}>
-      <img alt={getTransporterName(transporter)} src={imageUrl} />
-    </span>
-  )
+  const imageUrl = toProxiedAssetUrl(transporter.ImageUrl?.trim())
+
+  if (imageUrl) {
+    return (
+      <span className="transporters-image-preview is-filled" title={nativeTitle(imageUrl)}>
+        <img alt={name} src={imageUrl} />
+      </span>
+    )
+  }
+
+  const cssClass = transporter.CssClass?.trim()
+
+  if (cssClass === 'bus_item_class' || cssClass === 'self_checkout_item_class') {
+    return (
+      <span className="transporters-image-preview is-filled" title={nativeTitle(name)}>
+        {cssClass === 'bus_item_class' ? <IconBus size={28} stroke={1.5} /> : <IconWalk size={28} stroke={1.5} />}
+      </span>
+    )
+  }
+
+  return null
 }
 
 function TransporterStatusTag({ transporter }: { transporter: Transporter }) {
