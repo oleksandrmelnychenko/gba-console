@@ -3,6 +3,11 @@ import type { KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { AppModal } from '../../../../shared/ui/AppModal'
 
+const actionButtonStyle = {
+  outline: 'none',
+  outlineOffset: 0,
+} as const
+
 export function WizardConfirmModal({
   busy = false,
   message,
@@ -55,10 +60,17 @@ export function WizardConfirmModal({
         <Divider className="new-sale-confirm-modal__divider" />
 
         <Group className="new-sale-confirm-modal__actions" gap="sm" justify="flex-end">
-          <Button className="new-sale-confirm-modal__cancel" color="gray" disabled={busy} variant="light" onClick={onCancel}>
+          <Button
+            className="new-sale-confirm-modal__cancel"
+            color="gray"
+            disabled={busy}
+            style={actionButtonStyle}
+            variant="light"
+            onClick={onCancel}
+          >
             {t('Скасувати')}
           </Button>
-          <Button autoFocus className="new-sale-confirm-modal__confirm" data-autofocus loading={busy} onClick={onConfirm}>
+          <Button className="new-sale-confirm-modal__confirm" loading={busy} style={actionButtonStyle} onClick={onConfirm}>
             {t('Так')}
           </Button>
         </Group>

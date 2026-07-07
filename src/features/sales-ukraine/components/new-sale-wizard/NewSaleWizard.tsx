@@ -590,7 +590,7 @@ function NewSaleWizardContent({
             onEditMergedSale={(sale, unionSale) => void openMergedSaleEdit(sale, unionSale)}
             onInvoiceMergedSale={openMergedSaleInvoice}
             onOpenSale={(sale) => void openRegistrySale(sale)}
-            onRequestClose={onClose}
+            onRequestClose={requestExit}
           />
         )}
         {active === 1 && (
@@ -602,7 +602,7 @@ function NewSaleWizardContent({
             sale={productsCart}
             onBusyChange={setProductsBusy}
             onCartChanged={reloadCart}
-            onRequestClose={onClose}
+            onRequestClose={requestExit}
           />
         )}
         {active === 2 && (

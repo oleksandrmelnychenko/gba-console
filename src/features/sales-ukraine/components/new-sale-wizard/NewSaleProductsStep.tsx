@@ -215,7 +215,6 @@ export function NewSaleProductsStep({
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [removeConfirmOpen, setRemoveConfirmOpen] = useState(false)
   const [removeRowItem, setRemoveRowItem] = useState<SalesUkraineOrderItem | null>(null)
-  const [closeConfirmOpen, setCloseConfirmOpen] = useState(false)
   const [editingDescription, setEditingDescription] = useState(false)
   // The description draft lives in a ref (the TextInput inside
   // ProductFullDetailPanel keeps its own local state): typing must not re-render
@@ -1494,7 +1493,7 @@ export function NewSaleProductsStep({
     }
 
     if (hotkey === 'Escape') {
-      setCloseConfirmOpen(true)
+      onRequestClose?.()
 
       return true
     }
@@ -1951,7 +1950,7 @@ export function NewSaleProductsStep({
   }
 
   function handleProductKey(event: WizardKeyEvent): boolean {
-    if (qtyModal || shiftRow || futureProduct || removeConfirmOpen || removeRowItem || closeConfirmOpen) {
+    if (qtyModal || shiftRow || futureProduct || removeConfirmOpen || removeRowItem) {
       return false
     }
 
@@ -2476,23 +2475,6 @@ export function NewSaleProductsStep({
 
           if (item) {
             void removeItem(item)
-          }
-        }}
-      />
-
-      <WizardConfirmModal
-        message={t('Закрити вікно?')}
-        opened={closeConfirmOpen}
-        onCancel={() => {
-          setCloseConfirmOpen(false)
-          keyboard.consumeNextEscape()
-          focusSearchInput()
-        }}
-        onConfirm={() => {
-          setCloseConfirmOpen(false)
-
-          if (onRequestClose) {
-            onRequestClose()
           }
         }}
       />

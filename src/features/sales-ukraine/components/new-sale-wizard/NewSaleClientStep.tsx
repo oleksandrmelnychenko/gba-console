@@ -1,4 +1,4 @@
-import { Anchor, Box, Button, Group, Loader, Stack, Text } from '@mantine/core'
+import { Anchor, Box, Loader, Stack, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { IconExternalLink, IconFileCheck, IconFileExcel, IconFileTypePdf, IconUserSearch } from '@tabler/icons-react'
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
@@ -84,7 +84,7 @@ export function NewSaleClientStep({
   const { t } = useI18n()
   const { hasPermission } = useAuth()
   const canEdit = hasPermission(SALES_UKRAINE_EDIT_PERMISSION)
-  const { state: keyboardState, setState: setKeyboardState, consumeNextEscape } = useWizardKeyboard(0)
+  const { state: keyboardState, setState: setKeyboardState } = useWizardKeyboard(0)
 
   const [query, setQuery] = useState('')
   const [carousel, setCarousel] = useState<WizardClientCarouselState>(WIZARD_CLIENT_CAROUSEL_INITIAL)
@@ -107,7 +107,6 @@ export function NewSaleClientStep({
   const [isAuditLoading, setAuditLoading] = useState(false)
   const [auditError, setAuditError] = useState<string | null>(null)
   const [printState, setPrintState] = useState<WizardPrintState | null>(null)
-  const [isExitConfirmOpen, setExitConfirmOpen] = useState(false)
 
   const searchInputRef = useRef<HTMLInputElement>(null)
   const searchTimerRef = useRef<number | null>(null)
@@ -603,8 +602,7 @@ export function NewSaleClientStep({
         detailsSale ||
         mergedSale ||
         isOrderedProductsOpen ||
-        printState ||
-        isExitConfirmOpen
+        printState
       ) {
         return
       }
@@ -621,7 +619,7 @@ export function NewSaleClientStep({
         } else if (keyboardState === 'ClientAgreementSelection') {
           setKeyboardState('ClientSelection')
         } else {
-          setExitConfirmOpen(true)
+          onRequestClose?.()
         }
 
         return
@@ -748,7 +746,7 @@ export function NewSaleClientStep({
           return true
         }
 
-        setExitConfirmOpen(true)
+        onRequestClose?.()
 
         return true
       }
@@ -961,25 +959,6 @@ export function NewSaleClientStep({
     if (shifted) {
       await refreshRegistryRow(shifted, false)
     }
-  }
-
-  function confirmExitYes() {
-    setExitConfirmOpen(false)
-    setQuery('')
-    setCarousel(WIZARD_CLIENT_CAROUSEL_INITIAL)
-    unselectClient()
-    setKeyboardState('ClientSearch')
-    focusSearchInput()
-
-    if (onRequestClose) {
-      onRequestClose()
-    }
-  }
-
-  function confirmExitCancel() {
-    setExitConfirmOpen(false)
-    consumeNextEscape()
-    focusSearchInput()
   }
 
   const scheduleRealtimeRegister = useCallback(() => {
@@ -1206,42 +1185,6 @@ export function NewSaleClientStep({
       />
 
       <WizardPrintDocumentModal opened={Boolean(printState)} printState={printState} onClose={closePrint} />
-
-      <AppModal
-        centered
-        closeOnEscape={false}
-        opened={isExitConfirmOpen}
-        size="sm"
-        title={t('Підтвердження')}
-        withCloseButton={false}
-        onClose={confirmExitCancel}
-      >
-        <Box
-          onKeyDown={(event) => {
-            if (event.key === 'Enter') {
-              event.preventDefault()
-              event.stopPropagation()
-              confirmExitYes()
-            } else if (event.key === 'Escape') {
-              event.preventDefault()
-              event.stopPropagation()
-              confirmExitCancel()
-            }
-          }}
-        >
-          <Stack gap="md">
-            <Text>{t('Закрити вікно?')}</Text>
-            <Group justify="flex-end">
-              <Button color="gray" variant="subtle" onClick={confirmExitCancel}>
-                {t('Скасувати')}
-              </Button>
-              <Button data-autofocus onClick={confirmExitYes}>
-                {t('Так')}
-              </Button>
-            </Group>
-          </Stack>
-        </Box>
-      </AppModal>
     </>
   )
 }
