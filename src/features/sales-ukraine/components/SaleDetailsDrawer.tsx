@@ -551,15 +551,14 @@ function didLatestHistoryStepChange(
 ): boolean {
   const currentColumnIndex = columns.findIndex((column) => column.isCurrent)
   const latestHistoryColumn = currentColumnIndex > 0 ? columns[currentColumnIndex - 1] : null
-  const previousHistoryColumn = currentColumnIndex > 1 ? columns[currentColumnIndex - 2] : null
 
-  if (!latestHistoryColumn || !previousHistoryColumn) {
+  if (!latestHistoryColumn) {
     return false
   }
 
   const compareFn = row.compare ?? row.render
 
-  return historyValueChanged(compareFn(latestHistoryColumn.entry), compareFn(previousHistoryColumn.entry))
+  return historyValueChanged(compareFn(columns[currentColumnIndex].entry), compareFn(latestHistoryColumn.entry))
 }
 
 // Compact label/value pair for the client info block — left-aligned (not stretched) so the value
