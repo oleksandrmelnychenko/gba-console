@@ -13,8 +13,8 @@ import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
-import type { EditingItemsResponse, EditingActItem, WarehouseUkraineUser } from '../types'
-import { displayValue, formatDate, formatDateTime, getDateShiftedByDays, toDateString } from './dateHelpers'
+import type { EditingItemsResponse, EditingActItem, WarehouseUkraineShipmentDetails, WarehouseUkraineUpdateDataCarrier, WarehouseUkraineUser } from '../types'
+import { displayValue, formatDateTime, getDateShiftedByDays, toDateString } from './dateHelpers'
 
 const DEFAULT_PAGE_SIZE = 20
 const PAGE_SIZE_OPTIONS = ['20', '40', '60', '100']
@@ -565,7 +565,7 @@ function buildCarrierChangesText(item: EditingActItem, t: TranslateFunction): st
 }
 
 function buildCarrierChangeItems(item: EditingActItem, t: TranslateFunction): CarrierChangeItem[] {
-  const previous = item.Sale?.WarehousesShipment
+  const previous = getCarrierComparisonBase(item)
 
   return [
     {
@@ -588,9 +588,9 @@ function buildCarrierChangeItems(item: EditingActItem, t: TranslateFunction): Ca
     },
     {
       label: t('Дата відвантаження'),
-      before: formatDateOrEmpty(previous?.ShipmentDate),
-      after: formatDateOrEmpty(readRawValue(item, 'ShipmentDate')),
-      changed: isShipmentDayChanged(readRawValue(item, 'ShipmentDate'), previous?.ShipmentDate),
+      before: formatDateTimeOrEmpty(previous?.ShipmentDate),
+      after: formatDateTimeOrEmpty(readRawValue(item, 'ShipmentDate')),
+      changed: isShipmentDateTimeChanged(readRawValue(item, 'ShipmentDate'), previous?.ShipmentDate),
     },
     {
       label: t("Повне ім'я"),
@@ -643,19 +643,77 @@ function buildCarrierChangeItems(item: EditingActItem, t: TranslateFunction): Ca
   ]
 }
 
+function getCarrierComparisonBase(item: EditingActItem): WarehouseUkraineShipmentDetails | WarehouseUkraineUpdateDataCarrier | undefined {
+  const historyEntries = getCarrierHistoryEntries(item)
+  const currentIndex = historyEntries.findIndex((entry) => isSameCarrierHistoryEntry(entry, item))
+
+  if (currentIndex > 0) {
+    return historyEntries[currentIndex - 1]
+  }
+
+  return item.Sale?.WarehousesShipment ?? undefined
+}
+
+function getCarrierHistoryEntries(item: EditingActItem): WarehouseUkraineUpdateDataCarrier[] {
+  const saleEntries = Array.isArray(item.Sale?.UpdateDataCarrier) ? item.Sale.UpdateDataCarrier : []
+  const entries = saleEntries.some((entry) => isSameCarrierHistoryEntry(entry, item))
+    ? saleEntries
+    : [...saleEntries, item]
+
+  return entries.toSorted(compareCarrierHistoryEntries)
+}
+
+function isSameCarrierHistoryEntry(left: WarehouseUkraineUpdateDataCarrier, right: WarehouseUkraineUpdateDataCarrier): boolean {
+  if (left.NetUid && right.NetUid) {
+    return left.NetUid === right.NetUid
+  }
+
+  if (left.Id != null && right.Id != null) {
+    return left.Id === right.Id
+  }
+
+  return left === right
+}
+
+function compareCarrierHistoryEntries(left: WarehouseUkraineUpdateDataCarrier, right: WarehouseUkraineUpdateDataCarrier): number {
+  const dateCompare = getHistoryTime(left.Created) - getHistoryTime(right.Created)
+
+  if (dateCompare !== 0) {
+    return dateCompare
+  }
+
+  return getHistoryId(left) - getHistoryId(right)
+}
+
+function getHistoryTime(value?: Date | string): number {
+  if (!value) {
+    return 0
+  }
+
+  const time = new Date(value).getTime()
+
+  return Number.isNaN(time) ? 0 : time
+}
+
+function getHistoryId(entry: WarehouseUkraineUpdateDataCarrier): number {
+  const id = Number(entry.Id)
+
+  return Number.isFinite(id) ? id : 0
+}
+
 function displayChangeValue(value: string): string {
   return value.trim() || '—'
 }
 
 function CarrierChangeSummary({ item }: { item: EditingActItem }) {
   const { t } = useI18n()
-  const previous = item.Sale?.WarehousesShipment
+  const previous = getCarrierComparisonBase(item)
 
   return (
     <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
       <Stack gap={4}>
         <Text fw={700} size="sm">
-          {t('Поточні дані')}
+          {t('Попередні дані')}
         </Text>
         <SummaryLine label={t('Перевізник')} value={previous?.Transporter?.Name} />
         <SummaryLine label={t('Місто')} value={previous?.City} />
@@ -692,8 +750,8 @@ function CarrierChangeSummary({ item }: { item: EditingActItem }) {
         />
         <SummaryLine
           label={t('Дата відвантаження')}
-          value={formatDateOrEmpty(readRawValue(item, 'ShipmentDate'))}
-          changed={isShipmentDayChanged(readRawValue(item, 'ShipmentDate'), previous?.ShipmentDate)}
+          value={formatDateTimeOrEmpty(readRawValue(item, 'ShipmentDate'))}
+          changed={isShipmentDateTimeChanged(readRawValue(item, 'ShipmentDate'), previous?.ShipmentDate)}
         />
         <SummaryLine
           label={t("Повне ім'я")}
@@ -776,13 +834,8 @@ function isCarrierTextFieldChanged(nextRaw: unknown, previousRaw: unknown): bool
   return normalize(nextRaw) !== normalize(previousRaw)
 }
 
-// ShipmentDate diff is by calendar day only (legacy compared date strings, ignoring time-of-day).
-function isShipmentDayChanged(nextRaw: unknown, previousRaw?: Date | string): boolean {
-  return formatDateOrEmpty(nextRaw) !== formatDateOrEmpty(previousRaw)
-}
-
-function formatDateOrEmpty(value: unknown): string {
-  return value == null || value === '' ? '' : formatDate(value as Date | string)
+function isShipmentDateTimeChanged(nextRaw: unknown, previousRaw?: Date | string): boolean {
+  return formatDateTimeOrEmpty(nextRaw) !== formatDateTimeOrEmpty(previousRaw)
 }
 
 function readStringField(item: EditingActItem, field: string): string {

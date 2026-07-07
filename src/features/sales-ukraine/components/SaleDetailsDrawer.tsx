@@ -369,7 +369,7 @@ function DetailsView({ sale }: { sale: SalesUkraineSale }) {
         <div className="sale-carrier-rows">
           <Row changed={changed(sale.DeliveryRecipientAddress?.City, last?.City)} label={t('Місто')} value={sale.DeliveryRecipientAddress?.City} />
           <Row changed={changed(sale.DeliveryRecipientAddress?.Department, last?.Department)} label={t('Відділення')} value={sale.DeliveryRecipientAddress?.Department} />
-          <Row changed={changed(formatDate(sale.ShipmentDate), formatDate(last?.ShipmentDate))} label={t('Дата відгрузки')} mono value={formatDate(sale.ShipmentDate)} />
+          <Row changed={changed(formatDateTime(sale.ShipmentDate), formatDateTime(last?.ShipmentDate))} label={t('Дата відгрузки')} mono value={formatDateTime(sale.ShipmentDate)} />
           {sale.IsPrinted && <Row label={t('Номер декларації')} mono value={sale.TTN} />}
           <Row changed={changed(sale.DeliveryRecipient?.FullName, last?.FullName)} label={t('Отримувач товару')} value={sale.DeliveryRecipient?.FullName} />
           <Row changed={changed(sale.DeliveryRecipient?.MobilePhone, last?.MobilePhone)} label={t('Мобільний телефон')} mono value={sale.DeliveryRecipient?.MobilePhone} />
@@ -441,7 +441,7 @@ function CarrierHistory({ current, entries }: { current: SalesUkraineUpdateDataC
     { compare: (entry) => entry.Transporter?.Name ?? null, label: t('Перевізник'), render: (entry) => entry.Transporter?.Name || '' },
     { compare: (entry) => entry.City ?? null, label: t('Місто'), render: (entry) => entry.City || '' },
     { compare: (entry) => entry.Department ?? null, label: t('Відділення'), render: (entry) => entry.Department || '' },
-    { label: t('Дата відгрузки'), render: (entry) => formatDate(entry.ShipmentDate) },
+    { label: t('Дата відгрузки'), render: (entry) => formatDateTime(entry.ShipmentDate) },
     { compare: (entry) => entry.FullName ?? null, label: t('Отримувач товару'), render: (entry) => entry.FullName || '' },
     { compare: (entry) => entry.MobilePhone ?? null, label: t('Мобільний телефон'), render: (entry) => entry.MobilePhone || '' },
     { compare: (entry) => entry.Comment ?? null, label: t('Коментар'), render: (entry) => entry.Comment || '' },
@@ -476,14 +476,8 @@ function CarrierHistory({ current, entries }: { current: SalesUkraineUpdateDataC
                   const compareFn = row.compare ?? row.render
                   const currentRaw = compareFn(col.entry)
                   const previousRaw = index > 0 ? compareFn(columns[index - 1].entry) : currentRaw
-<<<<<<< Updated upstream
                   const isChanged = index > 0 && historyValueChanged(currentRaw, previousRaw)
-=======
-                  // A changed value gets a subtle brand-orange wash (§4 — «зміна»),
-                  // so the version where the change happened is obvious at a glance.
-                  const isChanged = !col.isCurrent && index > 0 && historyValueChanged(currentRaw, previousRaw)
                   const cellClass = [col.isCurrent ? 'is-current-col' : '', isChanged ? 'is-changed' : ''].filter(Boolean).join(' ')
->>>>>>> Stashed changes
 
                   return (
                     <Table.Td key={`${row.label}-${col.key}`} className={cellClass || undefined}>

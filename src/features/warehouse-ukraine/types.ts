@@ -70,6 +70,14 @@ export type WarehouseUkraineShipmentDetails = EntityFields & {
   User?: WarehouseUkraineUser | null
 }
 
+export type WarehouseUkraineUpdateDataCarrier = WarehouseUkraineShipmentDetails & {
+  ApproveUpdate?: boolean
+  IsDevelopment?: boolean
+  IsEditTransporter?: boolean
+  SaleId?: number
+  TotalRowsQty?: number
+}
+
 export type WarehouseUkraineOrderItem = EntityFields & {
   Qty?: number
 }
@@ -91,7 +99,7 @@ export type Sale = EntityFields & {
   Transporter?: WarehouseUkraineTransporter | null
   UpdateUser?: WarehouseUkraineUser | null
   User?: WarehouseUkraineUser | null
-  UpdateDataCarrier?: unknown[]
+  UpdateDataCarrier?: WarehouseUkraineUpdateDataCarrier[]
   CustomersOwnTtn?: WarehouseUkraineCustomersOwnTtn | null
   HistoryInvoiceEdit?: WarehouseUkraineHistoryInvoiceEdit[]
   WarehousesShipment?: WarehouseUkraineShipmentDetails | null
@@ -167,7 +175,7 @@ export type DocumentVerificationResponse = {
   totalQty: number
 }
 
-export type EditingActItem = EntityFields & {
+export type EditingActItem = WarehouseUkraineUpdateDataCarrier & {
   Sale?: Sale | null
   IsDevelopment?: boolean
   ApproveUpdate?: boolean
