@@ -949,9 +949,9 @@ function AgreementScopePicker({
           type="button"
           onClick={() => onSelectAgreement(null)}
         >
-          <span className="accounting-cash-flow-agreement-card__body">
-            <span className="accounting-cash-flow-agreement-card__label">{t('Загальні взаєморозрахунки')}</span>
-            <span className="accounting-cash-flow-agreement-card__meta">{t('Всі договори')}</span>
+          <span className="accounting-cash-flow-agreement-card__content">
+            <span className="accounting-cash-flow-agreement-card__label">{t('Всі договори')}</span>
+            <span className="accounting-cash-flow-agreement-card__meta">{t('Загальні взаєморозрахунки')}</span>
           </span>
         </button>
         {agreements.map((agreement, index) => (
@@ -985,39 +985,48 @@ function AgreementDebtTile({
   const debt = useMemo(() => getAgreementDebtSummary(agreement), [agreement])
   const currency = getAgreementCurrency(agreement)
   const tooltip = getAgreementTooltip(agreement)
+  const hasAmountControl = debt.isControlAmountDebt
+  const hasDaysControl = debt.isControlNumberDaysDebt
+  const isInactive = agreement.Agreement?.IsActive === false
+  const statusLabel = debt.isOverdue ? t('Прострочено') : isInactive ? t('Неактивний') : t('Активний')
 
   return (
     <Tooltip label={tooltip} disabled={!tooltip}>
       <button
-        className={`accounting-cash-flow-agreement-card${isSelected ? ' is-selected' : ''}${debt.isOverdue ? ' is-overdue' : ''}`}
+        className={`accounting-cash-flow-agreement-card${isSelected ? ' is-selected' : ''}${debt.isOverdue ? ' is-overdue' : ''}${isInactive ? ' is-inactive' : ''}`}
         type="button"
         onClick={onSelect}
       >
-        <span className="accounting-cash-flow-agreement-card__body">
-          <span className="accounting-cash-flow-agreement-card__top">
-            <span className="accounting-cash-flow-agreement-card__label">
-              {stringValue(agreement.Agreement?.Name) || '-'}
+        <Badge className="accounting-cash-flow-agreement-card__status" variant="light">
+          {statusLabel}
+        </Badge>
+        <span className="accounting-cash-flow-agreement-card__content">
+          <span className="accounting-cash-flow-agreement-card__head">
+            <span className="accounting-cash-flow-agreement-card__title-row">
+              <span className="accounting-cash-flow-agreement-card__label">
+                {stringValue(agreement.Agreement?.Name) || '-'}
+              </span>
+              {currency ? <span className="accounting-cash-flow-currency">{currency}</span> : null}
             </span>
-            {currency ? <span className="accounting-cash-flow-currency">{currency}</span> : null}
           </span>
           <span className="accounting-cash-flow-agreement-card__meta">
             {stringValue(agreement.Agreement?.Organization?.Name) || stringValue(agreement.OriginalClientName) || '—'}
           </span>
         </span>
         <span className="accounting-cash-flow-agreement-card__stats">
-          {debt.isOverdue ? (
-            <Badge className="app-role-pill is-red accounting-cash-flow-agreement-card__status" variant="light">
-              {t('Прострочено')}
-            </Badge>
+          {hasAmountControl ? (
+            <>
+              <span className={`accounting-cash-flow-agreement-card__stat${debt.totalOverdueDebt > 0 ? ' is-danger' : ''}`}>
+                <small>{t('Борг')}</small>
+                <strong>{formatMoney(debt.totalOverdueDebt)}</strong>
+              </span>
+              <span className={`accounting-cash-flow-agreement-card__stat${Math.abs(debt.accountBalance) > debt.debtLimit ? ' is-danger' : ''}`}>
+                <small>Баланс</small>
+                <strong>{formatMoney(debt.accountBalance)}</strong>
+              </span>
+            </>
           ) : null}
-          {debt.isControlAmountDebt ? (
-            <span className={`accounting-cash-flow-agreement-card__stat${debt.totalOverdueDebt > 0 ? ' is-danger' : ''}`}>
-              <small>{t('Борг')}</small>
-              <strong>{formatMoney(debt.totalOverdueDebt)}</strong>
-              <em>{formatMoney(debt.accountBalance)}</em>
-            </span>
-          ) : null}
-          {debt.isControlNumberDaysDebt ? (
+          {hasDaysControl ? (
             <span className={`accounting-cash-flow-agreement-card__stat${debt.overdueDays > 0 ? ' is-danger' : ''}`}>
               <small>{t('Дні')}</small>
               <strong>{debt.overdueDays} / {debt.allowedDays}</strong>

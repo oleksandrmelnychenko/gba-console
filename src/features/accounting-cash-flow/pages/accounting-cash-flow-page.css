@@ -404,7 +404,7 @@
   display: grid;
   flex: 0 0 auto;
   gap: 12px;
-  grid-template-columns: minmax(0, 1.45fr) minmax(420px, 1.28fr);
+  grid-template-columns: minmax(0, 780px) minmax(420px, 1fr);
   min-width: 0;
   padding: 12px;
 }
@@ -428,7 +428,7 @@
 
 .accounting-cash-flow-agreement-picker {
   display: grid;
-  gap: 12px;
+  gap: 0;
   min-height: 0;
   min-width: 0;
 }
@@ -653,6 +653,247 @@
 
 .accounting-cash-flow-agreement-card__status::before {
   display: none;
+}
+
+.accounting-cash-flow-agreement-list {
+  align-items: stretch;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-height: none;
+  overflow: visible;
+  padding: 0;
+  scrollbar-color: var(--mantine-color-gray-4) transparent;
+  scrollbar-gutter: auto;
+  scrollbar-width: thin;
+}
+
+.accounting-cash-flow-agreement-list::-webkit-scrollbar {
+  display: none;
+  height: 0;
+  width: auto;
+}
+
+.accounting-cash-flow-agreement-card {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
+  box-shadow: none;
+  color: inherit;
+  cursor: pointer;
+  display: grid;
+  flex: 0 0 380px;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, auto) auto;
+  min-height: 104px;
+  overflow: visible;
+  padding: 0;
+  position: relative;
+  text-align: left;
+  transition:
+    border-color 140ms ease,
+    background 140ms ease;
+}
+
+.accounting-cash-flow-agreement-card:hover,
+.accounting-cash-flow-agreement-card:focus-visible {
+  background: var(--mantine-color-white);
+  border-color: var(--mantine-color-gray-3);
+  box-shadow: none;
+  transform: none;
+}
+
+.accounting-cash-flow-agreement-card.is-selected {
+  background: var(--mantine-color-white);
+  border-color: var(--brand-orange);
+}
+
+.accounting-cash-flow-agreement-card.is-selected::before {
+  content: none;
+}
+
+.accounting-cash-flow-agreement-card.is-selected::after {
+  background: var(--brand-orange);
+  border-radius: 999px;
+  bottom: 5px;
+  content: '';
+  display: block;
+  height: 6px;
+  position: absolute;
+  right: 5px;
+  top: auto;
+  width: 6px;
+}
+
+.accounting-cash-flow-agreement-card.is-overdue:not(.is-selected) {
+  border-color: var(--mantine-color-gray-2);
+}
+
+.accounting-cash-flow-agreement-card.is-general {
+  flex: 1 0 100%;
+  min-height: 52px;
+}
+
+.accounting-cash-flow-agreement-card__content {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-width: 0;
+  padding: 14px 14px 0;
+  row-gap: 5px;
+}
+
+.accounting-cash-flow-agreement-card.is-general .accounting-cash-flow-agreement-card__content {
+  align-content: start;
+  padding: 12px 14px;
+}
+
+.accounting-cash-flow-agreement-card__head {
+  display: block;
+  min-width: 0;
+  padding-right: 108px;
+}
+
+.accounting-cash-flow-agreement-card__title-row {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+}
+
+.accounting-cash-flow-agreement-card__label {
+  color: var(--mantine-color-gray-7);
+  font-family: var(--font-mono);
+  font-size: 13.5px;
+  font-weight: 700;
+  line-height: 1.1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.accounting-cash-flow-agreement-card.is-selected .accounting-cash-flow-agreement-card__label {
+  color: var(--mantine-color-gray-7);
+}
+
+.accounting-cash-flow-agreement-card__meta {
+  color: var(--mantine-color-gray-7);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 550;
+  line-height: 1.12;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.accounting-cash-flow-currency {
+  background: var(--mantine-color-teal-0);
+  border: 1px solid var(--mantine-color-teal-2);
+  border-radius: 7px;
+  color: var(--mantine-color-teal-8);
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  font-weight: 650;
+  height: auto;
+  min-width: auto;
+  padding: 3px 6px;
+}
+
+.accounting-cash-flow-agreement-card__stats {
+  align-items: end;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  min-height: 28px;
+  min-width: 0;
+  padding: 8px 14px 11px;
+}
+
+.accounting-cash-flow-agreement-card__stats > .accounting-cash-flow-agreement-card__status {
+  display: none;
+}
+
+.accounting-cash-flow-agreement-card__stat {
+  align-items: flex-start;
+  background: var(--mantine-color-gray-0);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 3px;
+  justify-content: end;
+  min-height: 32px;
+  min-width: 0;
+  padding: 5px 10px;
+  white-space: nowrap;
+}
+
+.accounting-cash-flow-agreement-card__stat small {
+  color: var(--mantine-color-gray-7);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1;
+}
+
+.accounting-cash-flow-agreement-card__stat strong {
+  color: var(--mantine-color-gray-8);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.accounting-cash-flow-agreement-card__stat em {
+  display: none;
+}
+
+.accounting-cash-flow-agreement-card__stat.is-danger {
+  background: var(--mantine-color-gray-0);
+  border-color: var(--mantine-color-gray-2);
+}
+
+.accounting-cash-flow-agreement-card__stat.is-danger small {
+  color: var(--mantine-color-gray-7);
+}
+
+.accounting-cash-flow-agreement-card__stat.is-danger strong {
+  color: var(--mantine-color-red-6);
+}
+
+.accounting-cash-flow-agreement-card__status {
+  background: var(--mantine-color-teal-0);
+  border: 1px solid var(--mantine-color-teal-2);
+  border-radius: var(--mantine-radius-sm);
+  color: var(--mantine-color-teal-8);
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  font-weight: 600;
+  justify-content: flex-start;
+  letter-spacing: 0;
+  min-height: 18px;
+  padding: 0 7px;
+  position: absolute;
+  right: 14px;
+  top: 10px;
+  text-transform: uppercase;
+  width: max-content;
+  z-index: 1;
+}
+
+.accounting-cash-flow-agreement-card.is-overdue .accounting-cash-flow-agreement-card__status {
+  background: var(--mantine-color-red-0);
+  border-color: var(--mantine-color-red-2);
+  color: var(--mantine-color-red-8);
+}
+
+.accounting-cash-flow-agreement-card.is-inactive .accounting-cash-flow-agreement-card__status {
+  background: var(--mantine-color-blue-0);
+  border-color: var(--mantine-color-blue-2);
+  color: var(--mantine-color-blue-8);
 }
 
 .accounting-cash-flow-statement-hero {
@@ -1092,7 +1333,7 @@
   }
 
   .accounting-cash-flow-stage {
-    grid-template-columns: minmax(0, 1.25fr) minmax(360px, 1.15fr);
+    grid-template-columns: minmax(0, 720px) minmax(360px, 1fr);
   }
 
   .accounting-cash-flow-summary .mantine-SimpleGrid-root {
@@ -1120,7 +1361,7 @@
   }
 
   .accounting-cash-flow-agreement-card {
-    flex: 1 1 260px;
+    flex: 0 0 320px;
   }
 
   .accounting-cash-flow-stage {
