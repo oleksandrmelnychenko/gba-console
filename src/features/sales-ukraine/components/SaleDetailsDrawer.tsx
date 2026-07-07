@@ -16,7 +16,7 @@ import {
   Textarea,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { Check, Pencil, X } from 'lucide-react'
+import { Check, Download, Pencil, X } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { TranslateFunction } from '../../../shared/i18n/types'
@@ -413,6 +413,7 @@ function DetailsView({ sale }: { sale: SalesUkraineSale }) {
       )}
       {sale.CustomersOwnTtn?.TtnPDFPath && (
             <Anchor className="sale-carrier-document-link" href={toSecure(sale.CustomersOwnTtn.TtnPDFPath)} target="_blank" rel="noopener noreferrer">
+          <Download size={14} style={{ verticalAlign: 'text-bottom', marginRight: 4 }} />
           {t('Завантажити ТТН')}
         </Anchor>
       )}
@@ -527,6 +528,7 @@ function CarrierHistory({ current, entries }: { current: SalesUkraineUpdateDataC
                 <Table.Td key={`doc-${col.key}`}>
                   {col.entry.TtnPDFPath ? (
                     <Anchor href={toSecure(col.entry.TtnPDFPath)} target="_blank" rel="noopener noreferrer">
+                      <Download size={14} style={{ verticalAlign: 'text-bottom', marginRight: 4 }} />
                       {t('Завантажити')}
                     </Anchor>
                   ) : (

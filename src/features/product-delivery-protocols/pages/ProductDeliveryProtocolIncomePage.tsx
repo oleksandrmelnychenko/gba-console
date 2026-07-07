@@ -1697,6 +1697,15 @@ function ProductIncomeControlsCard({
 
         {/* Right: actions — secondary tools first, then the green primary actions (legacy look) */}
         <Group className="product-income-actions" gap="sm" align="end" justify="flex-end" wrap="wrap">
+          <Button
+            disabled={!model.invoice}
+            leftSection={<FileText size={16} />}
+            loading={model.pzDownload.isLoading}
+            variant="default"
+            onClick={() => void model.handleDownloadPzDocument()}
+          >
+            {t('Документ PZ')}
+          </Button>
           {!isPlaced && hasItemsNotReadyToPlace && (
             <Button
               disabled={!canUseIncome || model.isDirty || model.isSaving}

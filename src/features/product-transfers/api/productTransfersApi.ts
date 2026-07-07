@@ -155,7 +155,12 @@ function normalizeExportDocument(result: unknown): ProductTransferExportDocument
 
   return {
     DocumentURL: typeof payload.DocumentURL === 'string' ? payload.DocumentURL : '',
-    PdfDocumentURL: typeof payload.PdfDocumentURL === 'string' ? payload.PdfDocumentURL : '',
+    PdfDocumentURL:
+      typeof payload.PdfDocumentURL === 'string'
+        ? payload.PdfDocumentURL
+        : typeof payload.PdfDocument === 'string'
+          ? payload.PdfDocument
+          : '',
   }
 }
 
