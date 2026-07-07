@@ -36,6 +36,7 @@ import {
   getReportProductGroups,
   getReportProductTop,
   getReportRegions,
+  getReportRegionCodes,
   searchReportClients,
   searchReportProducts,
   searchReportUsers,
@@ -44,6 +45,7 @@ import {
 } from '../api/reportsApi'
 import {
   REPORT_FILTER_CONDITIONS,
+  isMultiValueReportCondition,
   REPORT_FILTER_FIELD_GROUPS,
   REPORT_FILTER_FIELD_TYPES,
   createDefaultMeasurementGroups,
@@ -381,7 +383,12 @@ export function ReportsStocksPage() {
                       w={180}
                       onChange={(value) => {
                         const condition = REPORT_FILTER_CONDITIONS.find((item) => String(item.Type) === value) || defaultCondition
-                        updateSelection(selections, index, setSelections, { FilterCondition: condition })
+                        // Switching to a single-value condition drops the extra accumulated values.
+                        const nextValues =
+                          !isMultiValueReportCondition(condition.Type) && selection.Values.length > 1
+                            ? selection.Values.slice(0, 1)
+                            : selection.Values
+                        updateSelection(selections, index, setSelections, { FilterCondition: condition, Values: nextValues })
                       }}
                     />
                     <SelectionValuePicker
@@ -616,6 +623,13 @@ function SelectionValuePicker({ from, label, selection, selections, to, onChange
     const key = getReportEntityKey(entity, getEntityDisplayName(entity))
 
     if (selection.Values.some((value) => getReportEntityKey(value.Data, value.Name) === key)) {
+      return
+    }
+
+    // Equals/NotEquals (and single-group) conditions hold exactly one value — replace rather than accumulate;
+    // only the list conditions build up multiple values (legacy parity).
+    if (!isMultiValueReportCondition(selection.FilterCondition.Type)) {
+      onChange([createSelectedValue(entity)])
       return
     }
 
@@ -952,8 +966,9 @@ async function loadSelectionLookupOptions(
     case REPORT_FILTER_FIELD_TYPES.customer:
       return getReportClientTypes()
     case REPORT_FILTER_FIELD_TYPES.customerRegion:
-    case REPORT_FILTER_FIELD_TYPES.customerRegionCode:
       return getReportRegions()
+    case REPORT_FILTER_FIELD_TYPES.customerRegionCode:
+      return getReportRegionCodes()
     case REPORT_FILTER_FIELD_TYPES.customerPriceType:
       return getReportPricings()
     case REPORT_FILTER_FIELD_TYPES.productTop:

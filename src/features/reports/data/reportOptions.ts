@@ -89,6 +89,19 @@ export const REPORT_FILTER_CONDITIONS: ReportFilterCondition[] = [
   { Name: 'Не у групі', Type: REPORT_CONDITION_TYPES.notInGroup },
 ]
 
+// Legacy accepted multiple filter values only for the list conditions; Equals/NotEquals (and the single-group
+// conditions) take exactly one value.
+const MULTI_VALUE_CONDITION_TYPES = new Set<number>([
+  REPORT_CONDITION_TYPES.inList,
+  REPORT_CONDITION_TYPES.inGroupFromList,
+  REPORT_CONDITION_TYPES.notInList,
+  REPORT_CONDITION_TYPES.notInGroupFromList,
+])
+
+export function isMultiValueReportCondition(type: number): boolean {
+  return MULTI_VALUE_CONDITION_TYPES.has(type)
+}
+
 const REPORT_GROUPING_GROUPS: ReportGroupingGroup[] = [
   {
     categoryKey: 'Date',
