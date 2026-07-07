@@ -418,13 +418,16 @@ function CarrierHistory({ current, entries }: { current: SalesUkraineUpdateDataC
   }
 
   const sortedEntries = sortCarrierHistoryEntries(entries)
+  // Legacy order (sale.details.view.tsx): oldest change first … newest change … ActualData (current) LAST.
+  // Each column diffs against the column to its left, so the oldest is the baseline (no highlight) and the
+  // current column highlights against the newest change.
   const columns: Array<{ entry: SalesUkraineUpdateDataCarrier; header: string; isCurrent?: boolean; key: string }> = [
-    { entry: current, header: t('Актуальні дані'), isCurrent: true, key: 'current' },
     ...sortedEntries.map((entry, index) => ({
       entry,
       header: formatHistoryHeader(entry, index, t),
       key: getHistoryColumnKey(entry),
     })),
+    { entry: current, header: t('Актуальні дані'), isCurrent: true, key: 'current' },
   ]
 
   // `render` builds the displayed text; `compare` (text fields) returns the RAW value so the diff
@@ -476,7 +479,7 @@ function CarrierHistory({ current, entries }: { current: SalesUkraineUpdateDataC
                   const compareFn = row.compare ?? row.render
                   const currentRaw = compareFn(col.entry)
                   const previousRaw = index > 0 ? compareFn(columns[index - 1].entry) : currentRaw
-                  const isChanged = !col.isCurrent && index > 0 && historyValueChanged(currentRaw, previousRaw)
+                  const isChanged = index > 0 && historyValueChanged(currentRaw, previousRaw)
 
                   return (
                     <Table.Td
