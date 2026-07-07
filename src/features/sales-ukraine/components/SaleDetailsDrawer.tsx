@@ -476,7 +476,9 @@ function CarrierHistory({ current, entries }: { current: SalesUkraineUpdateDataC
                   const compareFn = row.compare ?? row.render
                   const currentRaw = compareFn(col.entry)
                   const previousRaw = index > 0 ? compareFn(columns[index - 1].entry) : currentRaw
-                  const isChanged = index > 0 && historyValueChanged(currentRaw, previousRaw)
+                  // A changed value gets a subtle brand-orange wash (§4 — «зміна»),
+                  // so the version where the change happened is obvious at a glance.
+                  const isChanged = !col.isCurrent && index > 0 && historyValueChanged(currentRaw, previousRaw)
                   const cellClass = [col.isCurrent ? 'is-current-col' : '', isChanged ? 'is-changed' : ''].filter(Boolean).join(' ')
 
                   return (

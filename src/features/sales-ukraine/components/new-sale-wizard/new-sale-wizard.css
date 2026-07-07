@@ -2733,10 +2733,28 @@
   grid-template-rows: minmax(0, 1fr) auto minmax(0, 1fr);
 }
 
-.new-sale-product-picker.is-search-mode .new-sale-product-picker__upper,
+/* Default (wheel / selection mode): the upper rail clips — only the items near
+   the focused one show. */
+.new-sale-product-picker__upper {
+  overflow: hidden;
+}
+
 .new-sale-product-picker.is-search-mode .new-sale-product-picker__lower {
   min-height: 0;
   overflow: hidden;
+}
+
+/* Search mode: the top half of the split results must never be clipped away —
+   make the upper rail scroll (hidden scrollbar) so «товари зверху не пропадають». */
+.new-sale-product-picker.is-search-mode .new-sale-product-picker__upper {
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.new-sale-product-picker.is-search-mode .new-sale-product-picker__upper::-webkit-scrollbar {
+  display: none;
 }
 
 .new-sale-product-picker.is-search-mode .new-sale-product-picker__focus {
@@ -2823,9 +2841,11 @@
 }
 
 .new-sale-product-picker-row__code {
-  color: var(--mantine-color-gray-9);
+  /* §5.1 — code is mono gray-8 (was near-black gray-9 Onest). */
+  color: var(--mantine-color-gray-8);
+  font-family: var(--font-mono);
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0;
   line-height: 1.08;
   min-width: 0;
@@ -2847,7 +2867,8 @@
 .new-sale-product-picker-row__name {
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
-  color: var(--mantine-color-gray-6);
+  /* §5.1 — name is Onest gray-8, not the muted gray-6. */
+  color: var(--mantine-color-gray-8);
   display: -webkit-box;
   font-size: 12px;
   font-weight: 600;
@@ -7224,7 +7245,9 @@
 }
 
 .new-sale-product-picker-row__code {
-  color: var(--mantine-color-gray-4);
+  /* §5.1 — code is mono gray-8 (was a washed-out gray-4 that read as invisible). */
+  color: var(--mantine-color-gray-8);
+  font-family: var(--font-mono);
   font-size: 10.5px;
   font-weight: 600;
   line-height: 1.15;
@@ -7232,7 +7255,8 @@
 
 .new-sale-product-picker-row__name {
   -webkit-line-clamp: 1;
-  color: var(--mantine-color-gray-6);
+  /* §5.1 — name reads gray-8, not the muted gray-6. */
+  color: var(--mantine-color-gray-8);
   font-family: var(--font-mono);
   font-size: 13px;
   font-weight: 600;

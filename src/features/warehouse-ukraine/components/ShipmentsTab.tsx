@@ -6,7 +6,6 @@ import {
   Button,
   Card,
   Checkbox,
-  Divider,
   Group,
   Select,
   Box,
@@ -18,8 +17,6 @@ import {
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
-  IconCircleCheck,
-  IconCircleDashed,
   IconDeviceFloppy,
   IconDownload,
   IconEdit,
@@ -1808,88 +1805,96 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
 
       <AppDrawer
         opened={Boolean(shipmentDraft)}
-        size="min(1180px, 100vw)"
-        title={activeShipmentNumber ? `${t('Відвантаження')} ${activeShipmentNumber}` : t('Відвантаження')}
+        size="wide"
+        title={
+          <span className="warehouse-shipment-edit-title">
+            {activeShipmentNumber ? `${t('Відвантаження')} ${activeShipmentNumber}` : t('Відвантаження')}
+          </span>
+        }
         onClose={requestCloseShipment}
       >
-        <Stack gap="md">
-          <Group align="end" gap="sm" wrap="wrap">
+        <Stack className="warehouse-shipment-edit-shell" gap={8}>
+          <div className="app-filter-bar warehouse-shipment-edit-toolbar">
             {shipmentDraft && (
               <Badge
-                color={shipmentDraft.IsSent ? 'green' : 'gray'}
-                leftSection={shipmentDraft.IsSent ? <IconCircleCheck size={12} /> : <IconCircleDashed size={12} />}
+                className={`app-role-pill warehouse-shipment-status-pill ${shipmentDraft.IsSent ? 'is-green' : 'is-gray'}`}
                 variant="light"
               >
                 {shipmentDraft.IsSent ? t('Проведено') : t('Не проведено')}
               </Badge>
             )}
             <TextInput
+              className="warehouse-ukraine-filter-input warehouse-shipment-edit-comment"
               disabled={!canEditShipment || isSaving}
               label={t('Коментар')}
               value={shipmentDraft?.Comment || ''}
-              w={280}
               onChange={(event) => updateDraftField('Comment', event.currentTarget.value)}
             />
             <TextInput
+              className="warehouse-ukraine-filter-input warehouse-shipment-edit-date"
               disabled={!canEditShipment || isSaving}
               label={t('Дата від')}
               type="datetime-local"
               value={toDateTimeLocalValue(shipmentDraft?.FromDate)}
               onChange={(event) => updateDraftField('FromDate', event.currentTarget.value)}
             />
-            <Button
-              leftSection={<IconPlus size={18} />}
-              variant="outline"
-              onClick={openManualPicker}
-              disabled={!canEditShipment || isSaving}
-            >
-              {t('Додати накладні')}
-            </Button>
-            <Tooltip disabled={!printSelectedShipmentDisabledReason} label={printSelectedShipmentDisabledReason || ''}>
-              <Box component="span">
-                <Button
-                  leftSection={<IconPrinter size={18} />}
-                  variant="outline"
-                  onClick={printSelectedShipment}
-                  disabled={Boolean(printSelectedShipmentDisabledReason)}
-                >
-                  {t('Роздрукувати')}
-                </Button>
-              </Box>
-            </Tooltip>
-            <Button
-              color="green"
-              leftSection={<IconDeviceFloppy size={18} />}
-              disabled={!canEditShipment || !hasShipmentDraftChanges}
-              loading={isSaving}
-              onClick={saveSelectedShipment}
-            >
-              {t('Зберегти')}
-            </Button>
-            <Button color="gray" leftSection={<IconX size={18} />} variant="light" onClick={requestCloseShipment}>
-              {t('Скасувати')}
-            </Button>
-          </Group>
+            <div className="warehouse-shipment-edit-actions">
+              <Button
+                color={CREATE_ACTION_COLOR}
+                leftSection={<IconPlus size={18} />}
+                variant="outline"
+                onClick={openManualPicker}
+                disabled={!canEditShipment || isSaving}
+              >
+                {t('Додати накладні')}
+              </Button>
+              <Tooltip disabled={!printSelectedShipmentDisabledReason} label={printSelectedShipmentDisabledReason || ''}>
+                <Box component="span">
+                  <Button
+                    color={CREATE_ACTION_COLOR}
+                    leftSection={<IconPrinter size={18} />}
+                    variant="outline"
+                    onClick={printSelectedShipment}
+                    disabled={Boolean(printSelectedShipmentDisabledReason)}
+                  >
+                    {t('Роздрукувати')}
+                  </Button>
+                </Box>
+              </Tooltip>
+              <Button
+                color={CREATE_ACTION_COLOR}
+                leftSection={<IconDeviceFloppy size={18} />}
+                disabled={!canEditShipment || !hasShipmentDraftChanges}
+                loading={isSaving}
+                onClick={saveSelectedShipment}
+              >
+                {t('Зберегти')}
+              </Button>
+              <Button color="gray" leftSection={<IconX size={18} />} variant="light" onClick={requestCloseShipment}>
+                {t('Скасувати')}
+              </Button>
+            </div>
+          </div>
 
           {editError && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert className="console-table-alert warehouse-shipment-edit-alert" color="red" icon={<IconAlertCircle size={18} />} variant="light">
               {editError}
             </Alert>
           )}
 
-          <Divider />
-
-          <DataTable
-            columns={editColumns}
-            data={draftItems}
-            defaultLayout={EDIT_SHIPMENT_TABLE_DEFAULT_LAYOUT}
-            emptyText={t('Накладних не знайдено')}
-            getRowId={getRowId}
-            layoutVersion="warehouse-ukraine-edit-shipment-1"
-            maxHeight="calc(100vh - 330px)"
-            minWidth={1650}
-            tableId="warehouse-ukraine-edit-shipment"
-          />
+          <div className="warehouse-shipment-edit-table console-table-body">
+            <DataTable
+              columns={editColumns}
+              data={draftItems}
+              defaultLayout={EDIT_SHIPMENT_TABLE_DEFAULT_LAYOUT}
+              emptyText={t('Накладних не знайдено')}
+              getRowId={getRowId}
+              height="100%"
+              layoutVersion="warehouse-ukraine-edit-shipment-2"
+              minWidth={1650}
+              tableId="warehouse-ukraine-edit-shipment"
+            />
+          </div>
         </Stack>
       </AppDrawer>
 
@@ -2064,7 +2069,7 @@ function useAllShipmentColumns(indexMap: Map<ShipmentList, number>): DataTableCo
         accessor: (item) => hasEditingMarker(item),
         cell: (item) =>
           hasEditingMarker(item) ? (
-            <Badge color="yellow" size="sm" variant="light">
+            <Badge className="app-role-pill is-yellow" size="sm" variant="light">
               {t('Змінено')}
             </Badge>
           ) : (
@@ -2077,7 +2082,11 @@ function useAllShipmentColumns(indexMap: Map<ShipmentList, number>): DataTableCo
         width: 150,
         minWidth: 120,
         accessor: (item) => item.Number,
-        cell: (item) => <Text fw={700}>{displayValue(item.Number)}</Text>,
+        cell: (item) => (
+          <Text className="warehouse-shipment-cell-mono is-strong" fw={700}>
+            {displayValue(item.Number).toLocaleUpperCase('uk-UA')}
+          </Text>
+        ),
       },
       {
         id: 'qtyPlaces',
@@ -2086,7 +2095,11 @@ function useAllShipmentColumns(indexMap: Map<ShipmentList, number>): DataTableCo
         minWidth: 100,
         align: 'right',
         accessor: (item) => sumQtyPlaces(item.ShipmentListItems),
-        cell: (item) => displayValue(sumQtyPlaces(item.ShipmentListItems)),
+        cell: (item) => (
+          <Text className="warehouse-shipment-cell-mono" ta="right">
+            {displayValue(sumQtyPlaces(item.ShipmentListItems))}
+          </Text>
+        ),
       },
       {
         id: 'transporter',
@@ -2124,11 +2137,7 @@ function useAllShipmentColumns(indexMap: Map<ShipmentList, number>): DataTableCo
         minWidth: 120,
         accessor: (item) => item.IsSent,
         cell: (item) => (
-          <Badge
-            color={item.IsSent ? 'green' : 'gray'}
-            leftSection={item.IsSent ? <IconCircleCheck size={12} /> : <IconCircleDashed size={12} />}
-            variant="light"
-          >
+          <Badge className={`app-role-pill ${item.IsSent ? 'is-green' : 'is-gray'}`} variant="light">
             {item.IsSent ? t('Проведено') : t('Не проведено')}
           </Badge>
         ),
@@ -2213,8 +2222,11 @@ function useManualShipmentSalesColumns(model: ManualShipmentSalesColumnsModel): 
         minWidth: 110,
         accessor: (sale) => sale.SaleNumber?.Value,
         cell: (sale) => (
-          <Text fw={700} c={model.existingSaleKeys.has(getShipmentSaleKey(sale)) ? 'dimmed' : undefined}>
-            {displayValue(sale.SaleNumber?.Value)}
+          <Text
+            className={`warehouse-shipment-cell-mono is-strong ${model.existingSaleKeys.has(getShipmentSaleKey(sale)) ? 'is-muted' : ''}`}
+            fw={700}
+          >
+            {displayValue(sale.SaleNumber?.Value).toLocaleUpperCase('uk-UA')}
           </Text>
         ),
       },
@@ -2224,7 +2236,7 @@ function useManualShipmentSalesColumns(model: ManualShipmentSalesColumnsModel): 
         width: 160,
         minWidth: 140,
         accessor: (sale) => sale.ChangedToInvoice,
-        cell: (sale) => formatDateTime(sale.ChangedToInvoice),
+        cell: (sale) => <span className="warehouse-shipment-cell-mono">{formatDateTime(sale.ChangedToInvoice)}</span>,
       },
       {
         id: 'client',
@@ -2246,6 +2258,7 @@ function useManualShipmentSalesColumns(model: ManualShipmentSalesColumnsModel): 
 
           return (
             <TextInput
+              className="warehouse-shipment-inline-number"
               disabled={disabled}
               error={saleKey ? !isValidManualQtyPlaces(model.qtyPlaces[saleKey]) : false}
               size="xs"
@@ -2272,7 +2285,11 @@ function useManualShipmentSalesColumns(model: ManualShipmentSalesColumnsModel): 
         minWidth: 100,
         align: 'right',
         accessor: (sale) => sale.TotalAmount,
-        cell: (sale) => displayValue(sale.TotalAmount),
+        cell: (sale) => (
+          <Text className="warehouse-shipment-cell-mono" ta="right">
+            {displayValue(sale.TotalAmount)}
+          </Text>
+        ),
       },
       {
         id: 'responsible',
@@ -2297,7 +2314,7 @@ function useManualShipmentSalesColumns(model: ManualShipmentSalesColumnsModel): 
         accessor: getShipmentSaleKey,
         cell: (sale) =>
           model.existingSaleKeys.has(getShipmentSaleKey(sale)) ? (
-            <Badge color="gray" size="sm" variant="light">
+            <Badge className="app-role-pill is-gray" size="sm" variant="light">
               {t('Вже додано')}
             </Badge>
           ) : (
@@ -2371,7 +2388,7 @@ function useEditShipmentColumns(model: EditShipmentColumnsModel): DataTableColum
         minWidth: 140,
         accessor: (item) => item.Sale.ChangedToInvoice,
         cell: (item) => (
-          <Text size="sm" td={getChangedTransporterDecoration(item)}>
+          <Text className="warehouse-shipment-cell-mono" size="sm" td={getChangedTransporterDecoration(item)}>
             {formatDateTime(item.Sale.ChangedToInvoice)}
           </Text>
         ),
@@ -2384,7 +2401,7 @@ function useEditShipmentColumns(model: EditShipmentColumnsModel): DataTableColum
         accessor: (item) => Boolean(item.Sale.HistoryInvoiceEdit?.length),
         cell: (item) =>
           item.Sale.HistoryInvoiceEdit?.length ? (
-            <Badge color="yellow" size="sm" variant="light">
+            <Badge className="app-role-pill is-yellow" size="sm" variant="light">
               {t('Змінено')}
             </Badge>
           ) : (
@@ -2398,8 +2415,8 @@ function useEditShipmentColumns(model: EditShipmentColumnsModel): DataTableColum
         minWidth: 110,
         accessor: (item) => item.Sale.SaleNumber?.Value,
         cell: (item) => (
-          <Text fw={700} td={getChangedTransporterDecoration(item)}>
-            {displayValue(item.Sale.SaleNumber?.Value)}
+          <Text className="warehouse-shipment-cell-mono is-strong" fw={700} td={getChangedTransporterDecoration(item)}>
+            {displayValue(item.Sale.SaleNumber?.Value).toLocaleUpperCase('uk-UA')}
           </Text>
         ),
       },
@@ -2412,6 +2429,7 @@ function useEditShipmentColumns(model: EditShipmentColumnsModel): DataTableColum
         accessor: (item) => item.QtyPlaces,
         cell: (item) => (
           <TextInput
+            className="warehouse-shipment-inline-number"
             size="xs"
             disabled={!model.canEdit}
             type="number"
@@ -2436,6 +2454,7 @@ function useEditShipmentColumns(model: EditShipmentColumnsModel): DataTableColum
         accessor: (item) => item.Sale.ShippingAmount,
         cell: (item) => (
           <TextInput
+            className="warehouse-shipment-inline-number"
             size="xs"
             disabled={!model.canEdit}
             type="number"
@@ -2463,6 +2482,7 @@ function useEditShipmentColumns(model: EditShipmentColumnsModel): DataTableColum
         accessor: (item) => item.Sale.TTN,
         cell: (item) => (
           <TextInput
+            className="warehouse-shipment-inline-code"
             size="xs"
             disabled={!model.canEdit}
             value={item.Sale.TTN || ''}
@@ -2644,7 +2664,7 @@ function useShipmentColumns(model: ShipmentColumnsModel): DataTableColumn<Shipme
         width: 160,
         minWidth: 140,
         accessor: (item) => item.Sale.ChangedToInvoice,
-        cell: (item) => formatDateTime(item.Sale.ChangedToInvoice),
+        cell: (item) => <span className="warehouse-shipment-cell-mono">{formatDateTime(item.Sale.ChangedToInvoice)}</span>,
       },
       {
         id: 'saleNumber',
@@ -2652,7 +2672,11 @@ function useShipmentColumns(model: ShipmentColumnsModel): DataTableColumn<Shipme
         width: 120,
         minWidth: 90,
         accessor: (item) => item.Sale.SaleNumber?.Value,
-        cell: (item) => <Text fw={700}>{displayValue(item.Sale.SaleNumber?.Value)}</Text>,
+        cell: (item) => (
+          <Text className="warehouse-shipment-cell-mono is-strong" fw={700}>
+            {displayValue(item.Sale.SaleNumber?.Value).toLocaleUpperCase('uk-UA')}
+          </Text>
+        ),
       },
       {
         id: 'totalAmount',
@@ -2661,7 +2685,11 @@ function useShipmentColumns(model: ShipmentColumnsModel): DataTableColumn<Shipme
         minWidth: 90,
         align: 'right',
         accessor: (item) => item.Sale.TotalAmountLocal,
-        cell: (item) => displayValue(item.Sale.TotalAmountLocal),
+        cell: (item) => (
+          <Text className="warehouse-shipment-cell-mono" ta="right">
+            {displayValue(item.Sale.TotalAmountLocal)}
+          </Text>
+        ),
       },
       {
         id: 'currency',
@@ -2669,7 +2697,7 @@ function useShipmentColumns(model: ShipmentColumnsModel): DataTableColumn<Shipme
         width: 80,
         minWidth: 60,
         accessor: (item) => item.Sale.ClientAgreement?.Agreement?.Currency?.Code,
-        cell: (item) => displayValue(item.Sale.ClientAgreement?.Agreement?.Currency?.Code),
+        cell: (item) => <span className="warehouse-shipment-cell-currency">{displayValue(item.Sale.ClientAgreement?.Agreement?.Currency?.Code)}</span>,
       },
       {
         id: 'responsible',
@@ -2710,7 +2738,11 @@ function useShipmentColumns(model: ShipmentColumnsModel): DataTableColumn<Shipme
         cell: (item) => {
           const amount = getCashOnDeliveryAmount(item.Sale)
 
-          return amount === undefined || amount === null ? '' : displayValue(amount)
+          return amount === undefined || amount === null ? '' : (
+            <Text className="warehouse-shipment-cell-mono" ta="right">
+              {displayValue(amount)}
+            </Text>
+          )
         },
       },
       {
@@ -2719,7 +2751,7 @@ function useShipmentColumns(model: ShipmentColumnsModel): DataTableColumn<Shipme
         width: 130,
         minWidth: 100,
         accessor: (item) => getTtnNumber(item.Sale),
-        cell: (item) => displayValue(getTtnNumber(item.Sale)),
+        cell: (item) => <span className="warehouse-shipment-cell-mono">{displayValue(getTtnNumber(item.Sale)).toLocaleUpperCase('uk-UA')}</span>,
       },
       {
         id: 'ttn',

@@ -157,6 +157,113 @@
   font-weight: 700;
 }
 
+.warehouse-shipment-edit-title {
+  color: var(--mantine-color-gray-9);
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.warehouse-shipment-edit-shell {
+  min-height: min(720px, calc(100vh - 118px));
+}
+
+.warehouse-shipment-edit-toolbar {
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 10px;
+  grid-template-columns: max-content minmax(220px, 1fr) minmax(210px, 230px) max-content;
+}
+
+.warehouse-shipment-status-pill {
+  align-self: end;
+  height: 30px;
+  padding-inline: 10px;
+}
+
+.warehouse-shipment-edit-actions {
+  align-items: center;
+  align-self: end;
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.warehouse-shipment-edit-actions .mantine-Button-root {
+  flex: 0 0 auto;
+}
+
+.warehouse-shipment-edit-actions .mantine-Button-label {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+.warehouse-shipment-edit-alert {
+  margin: 0;
+}
+
+.warehouse-shipment-edit-table {
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  min-height: 360px;
+  overflow: hidden;
+}
+
+.warehouse-shipment-edit-table .data-table {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.warehouse-shipment-edit-table .data-table-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.warehouse-shipment-cell-mono {
+  color: var(--mantine-color-gray-8);
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.warehouse-shipment-cell-mono.is-strong {
+  font-weight: 700;
+}
+
+.warehouse-shipment-cell-mono.is-muted {
+  color: var(--mantine-color-gray-6);
+}
+
+.warehouse-shipment-cell-currency {
+  color: var(--mantine-color-gray-6);
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.warehouse-shipment-inline-number .mantine-Input-input {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0;
+  text-align: right;
+}
+
+.warehouse-shipment-inline-code .mantine-Input-input {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
 @media (max-width: 1180px) {
   .warehouse-ukraine-filter-bar.is-sales,
   .warehouse-ukraine-filter-bar.is-orders,
@@ -172,6 +279,15 @@
   .warehouse-ukraine-table-toolbar-slot,
   .warehouse-ukraine-command-actions {
     grid-column: auto;
+    justify-content: flex-start;
+  }
+
+  .warehouse-shipment-edit-toolbar {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .warehouse-shipment-edit-actions {
+    grid-column: 1 / -1;
     justify-content: flex-start;
   }
 }
@@ -197,6 +313,15 @@
   .warehouse-ukraine-filter-bar.is-auto-shipments,
   .warehouse-ukraine-filter-bar.is-all-shipments {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .warehouse-shipment-edit-toolbar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .warehouse-shipment-edit-actions {
+    flex-wrap: wrap;
+    grid-column: auto;
   }
 }
 

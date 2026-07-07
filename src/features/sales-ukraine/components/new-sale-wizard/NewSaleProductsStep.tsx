@@ -1464,7 +1464,15 @@ export function NewSaleProductsStep({
         return true
       }
 
-      focusMain(Math.min(mainIndex, results.length - 1))
+      // Enter selection at the split centre (the first item just below the search
+      // input) rather than index 0 — otherwise the carousel's top half (slice
+      // before the focused index) would be empty and the upper list «пропадав».
+      // ArrowDown lands on the first item below the input; ArrowUp on the last
+      // item above it, keeping the barabanchik populated on both sides.
+      const splitCentre = Math.floor(results.length / 2)
+      const target = hotkey === 'ArrowDown' ? splitCentre : Math.max(splitCentre - 1, 0)
+
+      focusMain(Math.min(target, results.length - 1))
       keyboard.setState('ProductSelection')
 
       return true

@@ -102,7 +102,6 @@ export function WizardProductCarousel({
           flexDirection: 'column',
           justifyContent: 'flex-end',
           minHeight: 0,
-          overflow: 'hidden',
         }}
       >
         <Stack className="new-sale-product-picker__list" gap={0}>
