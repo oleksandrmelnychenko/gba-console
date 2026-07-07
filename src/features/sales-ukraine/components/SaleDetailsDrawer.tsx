@@ -19,6 +19,7 @@ import { notifications } from '@mantine/notifications'
 import { IconCheck, IconPencil, IconX } from '@tabler/icons-react'
 import { useState, type ReactNode } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import type { TranslateFunction } from '../../../shared/i18n/types'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { getSaleTransporterTypes, getSaleTransportersByType, updateSaleFromData } from '../api/salesUkraineApi'
@@ -47,7 +48,7 @@ export function SaleDetailsDrawer({
       opened={Boolean(sale)}
       position="right"
       size="min(1080px, 100vw)"
-      title={t('Перевізник')}
+      title={t('Перевізник накладної')}
       onClose={onClose}
     >
       {sale && <SaleDetailsContent key={sale.NetUid || sale.Id} sale={sale} onSaved={onSaved} />}
@@ -88,7 +89,7 @@ function SaleDetailsContent({ sale, onSaved }: { onSaved: () => void; sale: Sale
 
   const selectedTransporter = transporters.find((item) => getTransporterValue(item) === transporterId) || sale.Transporter
 
-  // Live "current data" snapshot for the right-most history column (diffs against the last saved entry).
+  // Live sale/shipment state used as the baseline for transporter edit history.
   const currentCarrier = {
     CashOnDeliveryAmount: isCashOnDelivery ? Number(cashOnDeliveryAmount) || 0 : 0,
     City: city,
@@ -349,9 +350,8 @@ function SaleDetailsContent({ sale, onSaved }: { onSaved: () => void; sale: Sale
 function DetailsView({ sale }: { sale: SalesUkraineSale }) {
   const { t } = useI18n()
 
-  // Highlight fields that differ from the last recorded change (sd_error in the legacy panel).
   const entries = Array.isArray(sale.UpdateDataCarrier) ? sale.UpdateDataCarrier : []
-  const last = entries.length > 0 ? entries[entries.length - 1] : null
+  const last = getLatestHistoryEntry(entries)
   const changed = (current: unknown, previous: unknown) => last != null && normalizeCompare(current) !== normalizeCompare(previous)
 
   return (
@@ -409,18 +409,22 @@ function CarrierHistory({ current, entries }: { current: SalesUkraineUpdateDataC
   if (entries.length === 0) {
     return (
       <section className="sale-carrier-section">
-      <Text className="app-section-title sale-carrier-section-title">{t('Історія змін')}</Text>
+      <Text className="app-section-title sale-carrier-section-title">{t('Історія змін перевізника')}</Text>
       <Text className="sale-carrier-empty-history" size="sm">
-        {t('Історія змін відсутня')}
+        {t('Історія змін перевізника відсутня')}
       </Text>
       </section>
     )
   }
 
-  // Snapshots first, then a live "current data" column that diffs against the last saved snapshot.
-  const columns: Array<{ entry: SalesUkraineUpdateDataCarrier; header: string; isCurrent?: boolean }> = [
-    ...entries.map((entry) => ({ entry, header: formatDateTime(entry.Created) })),
-    { entry: current, header: t('Актуальні дані'), isCurrent: true },
+  const sortedEntries = sortCarrierHistoryEntries(entries)
+  const columns: Array<{ entry: SalesUkraineUpdateDataCarrier; header: string; isCurrent?: boolean; key: string }> = [
+    { entry: current, header: t('Актуальні дані'), isCurrent: true, key: 'current' },
+    ...sortedEntries.map((entry, index) => ({
+      entry,
+      header: formatHistoryHeader(entry, index, t),
+      key: getHistoryColumnKey(entry),
+    })),
   ]
 
   // `render` builds the displayed text; `compare` (text fields) returns the RAW value so the diff
@@ -447,15 +451,15 @@ function CarrierHistory({ current, entries }: { current: SalesUkraineUpdateDataC
 
   return (
     <section className="sale-carrier-section sale-carrier-history-section">
-      <Text className="app-section-title sale-carrier-section-title">{t('Історія змін')}</Text>
+      <Text className="app-section-title sale-carrier-section-title">{t('Історія змін перевізника')}</Text>
       <ScrollArea type="auto">
         <Table className="sales-drawer-table sale-carrier-history-table" withColumnBorders withRowBorders striped>
           <Table.Thead>
             <Table.Tr>
               <Table.Th />
-              {columns.map((col, index) => (
+              {columns.map((col) => (
                 <Table.Th
-                  key={`head-${index}`}
+                  key={col.key}
                   style={{ whiteSpace: 'nowrap', color: col.isCurrent ? 'var(--brand-orange)' : undefined }}
                 >
                   {col.header}
@@ -472,11 +476,11 @@ function CarrierHistory({ current, entries }: { current: SalesUkraineUpdateDataC
                   const compareFn = row.compare ?? row.render
                   const currentRaw = compareFn(col.entry)
                   const previousRaw = index > 0 ? compareFn(columns[index - 1].entry) : currentRaw
-                  const isChanged = index > 0 && historyValueChanged(currentRaw, previousRaw)
+                  const isChanged = !col.isCurrent && index > 0 && historyValueChanged(currentRaw, previousRaw)
 
                   return (
                     <Table.Td
-                      key={`${row.label}-${index}`}
+                      key={`${row.label}-${col.key}`}
                       style={{
                         whiteSpace: 'nowrap',
                         // Highlight a changed value with a filled pink cell (like the legacy history
@@ -493,8 +497,8 @@ function CarrierHistory({ current, entries }: { current: SalesUkraineUpdateDataC
             ))}
             <Table.Tr>
               <Table.Td style={{ whiteSpace: 'nowrap', fontWeight: 600 }}>{t('Документ')}</Table.Td>
-              {columns.map((col, index) => (
-                <Table.Td key={`doc-${index}`}>
+              {columns.map((col) => (
+                <Table.Td key={`doc-${col.key}`}>
                   {col.entry.TtnPDFPath ? (
                     <Anchor href={toSecure(col.entry.TtnPDFPath)} target="_blank" rel="noopener noreferrer">
                       {t('Завантажити')}
@@ -579,6 +583,60 @@ function historyValueChanged(value: unknown, previous: unknown): boolean {
   const normalize = (input: unknown) => (input == null ? null : input)
 
   return normalize(value) !== normalize(previous)
+}
+
+function sortCarrierHistoryEntries(entries: SalesUkraineUpdateDataCarrier[]): SalesUkraineUpdateDataCarrier[] {
+  return entries.toSorted(compareCarrierHistoryEntries)
+}
+
+function getLatestHistoryEntry(entries: SalesUkraineUpdateDataCarrier[]): SalesUkraineUpdateDataCarrier | null {
+  return sortCarrierHistoryEntries(entries).at(-1) ?? null
+}
+
+function compareCarrierHistoryEntries(left: SalesUkraineUpdateDataCarrier, right: SalesUkraineUpdateDataCarrier): number {
+  const dateCompare = getHistoryTime(left.Created) - getHistoryTime(right.Created)
+
+  if (dateCompare !== 0) {
+    return dateCompare
+  }
+
+  return getHistoryId(left) - getHistoryId(right)
+}
+
+function getHistoryTime(value?: Date | string): number {
+  if (!value) {
+    return 0
+  }
+
+  const time = new Date(value).getTime()
+
+  return Number.isNaN(time) ? 0 : time
+}
+
+function getHistoryId(entry: SalesUkraineUpdateDataCarrier): number {
+  const id = Number(entry.Id)
+
+  return Number.isFinite(id) ? id : 0
+}
+
+function formatHistoryHeader(entry: SalesUkraineUpdateDataCarrier, index: number, t: TranslateFunction): string {
+  const created = formatDateTime(entry.Created)
+
+  return created || `${t('Зміна')} ${index + 1}`
+}
+
+function getHistoryColumnKey(entry: SalesUkraineUpdateDataCarrier): string {
+  if (entry.NetUid) {
+    return `history-${entry.NetUid}`
+  }
+
+  const id = getHistoryId(entry)
+
+  if (id > 0) {
+    return `history-${id}`
+  }
+
+  return `history-${getHistoryTime(entry.Created)}`
 }
 
 function getTransporterValue(transporter?: SalesUkraineTransporter | null): string {

@@ -6,7 +6,9 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { translate } from '../../../shared/i18n/translate'
 import type { TranslateFunction } from '../../../shared/i18n/types'
-import { SaleAuditDetail, getSaleStatisticBySaleId, type SaleAuditStatistic } from '../../../shared/sale-audit'
+import { SaleAuditDetail } from '../../../shared/sale-audit/SaleAuditDetail'
+import { getSaleStatisticBySaleId } from '../../../shared/sale-audit/saleAuditApi'
+import type { SaleAuditStatistic } from '../../../shared/sale-audit/saleAuditTypes'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
@@ -34,11 +36,12 @@ type EditingListProps = {
     offset: number
     isDevelopment: boolean
   }) => Promise<EditingItemsResponse>
+  onLoaded?: () => void
   processor: (netId: string) => Promise<void>
   onProcessed?: () => void
 }
 
-export function EditingList({ kind, layoutVersion, loader, onProcessed, processor, tableId }: EditingListProps) {
+export function EditingList({ kind, layoutVersion, loader, onLoaded, onProcessed, processor, tableId }: EditingListProps) {
   const { t } = useI18n()
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const initialFilters = useMemo<FilterDraft>(
@@ -98,6 +101,7 @@ export function EditingList({ kind, layoutVersion, loader, onProcessed, processo
           setItems(result.items)
           setTotalQty(result.totalQty)
           setHasMore(result.items.length === pageSize)
+          onLoaded?.()
         }
       } catch (loadError) {
         if (!cancelled) {
@@ -118,7 +122,7 @@ export function EditingList({ kind, layoutVersion, loader, onProcessed, processo
     return () => {
       cancelled = true
     }
-  }, [activeFilters, filterError, loader, pageSize, reloadKey, setError, setHasMore, setItems, setLoading, setTotalQty, t])
+  }, [activeFilters, filterError, loader, onLoaded, pageSize, reloadKey, setError, setHasMore, setItems, setLoading, setTotalQty, t])
 
   const columns = useEditingColumns({
     indexMap: itemIndexMap,
@@ -422,6 +426,17 @@ function useEditingColumns({ indexMap, kind, onProcess }: EditingColumnsModel) {
           </Text>
         ),
       },
+      ...(kind === 'carrier'
+        ? [
+            {
+              id: 'changes',
+              header: t('Зміни'),
+              minWidth: 360,
+              accessor: (item: EditingActItem) => buildCarrierChangesText(item, t),
+              cell: (item: EditingActItem) => <CarrierChangesCell item={item} />,
+            } satisfies DataTableColumn<EditingActItem>,
+          ]
+        : []),
       {
         id: 'isPrinted',
         header: t('Роздруковано'),
@@ -493,6 +508,135 @@ function useEditingColumns({ indexMap, kind, onProcess }: EditingColumnsModel) {
 
 function canProcessItem(item: EditingActItem): boolean {
   return !item.IsDevelopment && Boolean(item.ApproveUpdate)
+}
+
+type CarrierChangeItem = {
+  after: string
+  before: string
+  changed: boolean
+  label: string
+}
+
+function CarrierChangesCell({ item }: { item: EditingActItem }) {
+  const { t } = useI18n()
+  const changes = buildCarrierChangeItems(item, t).filter((change) => change.changed)
+
+  if (changes.length === 0) {
+    return (
+      <Text c="dimmed" size="xs">
+        {t('Змін не знайдено')}
+      </Text>
+    )
+  }
+
+  return (
+    <Stack gap={3}>
+      {changes.map((change) => (
+        <Text key={change.label} size="xs" lineClamp={2}>
+          <Text span c="red" fw={700}>
+            {change.label}
+          </Text>
+          {': '}
+          {displayChangeValue(change.before)}
+          {' → '}
+          <Text span fw={600}>
+            {displayChangeValue(change.after)}
+          </Text>
+        </Text>
+      ))}
+    </Stack>
+  )
+}
+
+function buildCarrierChangesText(item: EditingActItem, t: TranslateFunction): string {
+  const changes = buildCarrierChangeItems(item, t).filter((change) => change.changed)
+
+  return changes
+    .map((change) => `${change.label}: ${displayChangeValue(change.before)} -> ${displayChangeValue(change.after)}`)
+    .join('; ')
+}
+
+function buildCarrierChangeItems(item: EditingActItem, t: TranslateFunction): CarrierChangeItem[] {
+  const previous = item.Sale?.WarehousesShipment
+
+  return [
+    {
+      label: t('Перевізник'),
+      before: previous?.Transporter?.Name || '',
+      after: readNestedString(item, ['Transporter', 'Name']),
+      changed: isCarrierTextFieldChanged(readNestedRaw(item, ['Transporter', 'Name']), previous?.Transporter?.Name),
+    },
+    {
+      label: t('Місто'),
+      before: previous?.City || '',
+      after: readStringField(item, 'City'),
+      changed: isCarrierTextFieldChanged(readRawValue(item, 'City'), previous?.City),
+    },
+    {
+      label: t('Відділення'),
+      before: previous?.Department || '',
+      after: readStringField(item, 'Department'),
+      changed: isCarrierTextFieldChanged(readRawValue(item, 'Department'), previous?.Department),
+    },
+    {
+      label: t('Дата відвантаження'),
+      before: formatDateOrEmpty(previous?.ShipmentDate),
+      after: formatDateOrEmpty(readRawValue(item, 'ShipmentDate')),
+      changed: isShipmentDayChanged(readRawValue(item, 'ShipmentDate'), previous?.ShipmentDate),
+    },
+    {
+      label: t("Повне ім'я"),
+      before: previous?.FullName || '',
+      after: readStringField(item, 'FullName'),
+      changed: isCarrierTextFieldChanged(readRawValue(item, 'FullName'), previous?.FullName),
+    },
+    {
+      label: t('Мобільний телефон'),
+      before: previous?.MobilePhone || '',
+      after: readStringField(item, 'MobilePhone'),
+      changed: isCarrierTextFieldChanged(readRawValue(item, 'MobilePhone'), previous?.MobilePhone),
+    },
+    {
+      label: t('Коментар'),
+      before: previous?.Comment || '',
+      after: readStringField(item, 'Comment'),
+      changed: isCarrierFieldChanged(readStringField(item, 'Comment'), previous?.Comment),
+    },
+    {
+      label: t('Накладений платіж'),
+      before: formatBoolean(t, previous?.IsCashOnDelivery),
+      after: formatBoolean(t, readBooleanField(item, 'IsCashOnDelivery')),
+      changed: isCarrierFieldChanged(formatBoolean(t, readBooleanField(item, 'IsCashOnDelivery')), formatBoolean(t, previous?.IsCashOnDelivery)),
+    },
+    {
+      label: t('Сума накладеного платежу'),
+      before: formatAmount(previous?.CashOnDeliveryAmount),
+      after: formatAmount(readNumberField(item, 'CashOnDeliveryAmount')),
+      changed: isCarrierFieldChanged(formatAmount(readNumberField(item, 'CashOnDeliveryAmount')), formatAmount(previous?.CashOnDeliveryAmount)),
+    },
+    {
+      label: t('Наявність документів'),
+      before: formatBoolean(t, previous?.HasDocument),
+      after: formatBoolean(t, readBooleanField(item, 'HasDocument')),
+      changed: isCarrierFieldChanged(formatBoolean(t, readBooleanField(item, 'HasDocument')), formatBoolean(t, previous?.HasDocument)),
+    },
+    {
+      label: t('ТТН'),
+      before: previous?.Number || '',
+      after: readStringField(item, 'Number'),
+      changed: isCarrierFieldChanged(readStringField(item, 'Number'), previous?.Number),
+    },
+    {
+      label: t('Документ'),
+      before: previous?.TtnPDFPath || '',
+      after: readStringField(item, 'TtnPDFPath'),
+      changed: isCarrierFieldChanged(readStringField(item, 'TtnPDFPath'), previous?.TtnPDFPath ?? undefined),
+    },
+  ]
+}
+
+function displayChangeValue(value: string): string {
+  return value.trim() || '—'
 }
 
 function CarrierChangeSummary({ item }: { item: EditingActItem }) {

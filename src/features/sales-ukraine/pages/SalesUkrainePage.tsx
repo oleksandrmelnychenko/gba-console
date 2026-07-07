@@ -189,7 +189,7 @@ const STATUS_LABELS: Record<string, string> = {
   Packaging: 'Накладна',
   Received: 'Отримано',
   Shipping: 'Відправлено',
-  TransporterChanged: 'Редаговані перевізники',
+  TransporterChanged: 'Історія змін перевізника',
 }
 
 const PAYMENT_STATUS_LABELS: Record<string, string> = {

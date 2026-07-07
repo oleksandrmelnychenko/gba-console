@@ -1,5 +1,5 @@
 import { Badge, Box, Group, Stack } from '@mantine/core'
-import { useEffect, useReducer } from 'react'
+import { useCallback, useEffect, useReducer } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import {
@@ -25,6 +25,9 @@ export function EditingTab({ onCountChanged }: { onCountChanged?: () => void }) 
     reloadCounts()
     onCountChanged?.()
   }
+  const handleListLoaded = useCallback(() => {
+    reloadCounts()
+  }, [])
   const [activeTab, setActiveTab] = useValueState(ACT_TAB)
 
   useEffect(() => {
@@ -76,7 +79,7 @@ export function EditingTab({ onCountChanged }: { onCountChanged?: () => void }) 
           onClick={() => setActiveTab(CARRIER_TAB)}
         >
           <Group gap={6} wrap="nowrap" align="center">
-            {t('Редаговані перевізники')}
+            {t('Історія змін перевізника')}
             <Badge className="app-role-pill is-orange" size="sm" variant="light">
               {carrierQty}
             </Badge>
@@ -90,6 +93,7 @@ export function EditingTab({ onCountChanged }: { onCountChanged?: () => void }) 
             kind="act"
             layoutVersion="warehouse-ukraine-editing-act-1"
             loader={getEditingActList}
+            onLoaded={handleListLoaded}
             processor={approveEditingAct}
             tableId="warehouse-ukraine-editing-act"
             onProcessed={handleProcessed}
@@ -99,6 +103,7 @@ export function EditingTab({ onCountChanged }: { onCountChanged?: () => void }) 
             kind="carrier"
             layoutVersion="warehouse-ukraine-editing-carrier-1"
             loader={getEditingCarrierList}
+            onLoaded={handleListLoaded}
             processor={approveEditingCarrier}
             tableId="warehouse-ukraine-editing-carrier"
             onProcessed={handleProcessed}
