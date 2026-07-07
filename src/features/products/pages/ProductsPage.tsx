@@ -23,7 +23,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { ArrowLeftRight, Box as BoxIcon, CircleAlert, ClipboardList, Download, FileText, History, Image as ImageIcon, Package, Plus, RefreshCw, Save, Search, Settings, SquarePen, Star, Trash2, Upload } from 'lucide-react'
+import { ArrowLeftRight, Box as BoxIcon, ChevronDown, CircleAlert, ClipboardList, Download, FileText, History, Image as ImageIcon, Package, Plus, RefreshCw, Save, Search, Settings, SquarePen, Star, Trash2, Upload } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { type KeyboardEvent, type ReactNode, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
@@ -2001,9 +2001,9 @@ function ProductUploadDocumentToolbar({
       <PermissionGate permissionKey={PRODUCT_UPLOAD_DOCUMENT_PERMISSION}>
         <Menu position="bottom-start" shadow="md" width={260} withinPortal>
           <Menu.Target>
-            <ActionIcon variant="default" size={36} aria-label={t('Завантажити')}>
-              <ExcelIcon size={22} />
-            </ActionIcon>
+            <Button variant="default" size="xs" leftSection={<ExcelIcon size={16} />} rightSection={<ChevronDown size={14} />}>
+              {t('Завантаження')}
+            </Button>
           </Menu.Target>
           <Menu.Dropdown>
             <Menu.Label>{t('Асортимент')}</Menu.Label>
