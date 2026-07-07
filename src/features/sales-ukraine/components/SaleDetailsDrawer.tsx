@@ -418,9 +418,9 @@ function CarrierHistory({ current, entries }: { current: SalesUkraineUpdateDataC
   }
 
   const sortedEntries = sortCarrierHistoryEntries(entries)
-  // Legacy order (sale.details.view.tsx): oldest change first … newest change … ActualData (current) LAST.
-  // Each column diffs against the column to its left, so the oldest is the baseline (no highlight) and the
-  // current column highlights against the newest change.
+  // Oldest change first ... newest change ... ActualData (current) last.
+  // History cells show the fields changed by that history step. The current column repeats only the
+  // latest step's changed fields, so it does not light up unrelated current values.
   const columns: Array<{ entry: SalesUkraineUpdateDataCarrier; header: string; isCurrent?: boolean; key: string }> = [
     ...sortedEntries.map((entry, index) => ({
       entry,
@@ -476,9 +476,9 @@ function CarrierHistory({ current, entries }: { current: SalesUkraineUpdateDataC
                   const compareFn = row.compare ?? row.render
                   const currentRaw = compareFn(col.entry)
                   const previousRaw = index > 0 ? compareFn(columns[index - 1].entry) : currentRaw
-                  // A changed value gets a subtle brand-orange wash (§4 — «зміна»),
-                  // so the version where the change happened is obvious at a glance.
-                  const isChanged = !col.isCurrent && index > 0 && historyValueChanged(currentRaw, previousRaw)
+                  const isChanged = col.isCurrent
+                    ? didLatestHistoryStepChange(row, columns)
+                    : index > 0 && historyValueChanged(currentRaw, previousRaw)
                   const cellClass = [col.isCurrent ? 'is-current-col' : '', isChanged ? 'is-changed' : ''].filter(Boolean).join(' ')
 
                   return (
@@ -508,6 +508,26 @@ function CarrierHistory({ current, entries }: { current: SalesUkraineUpdateDataC
       </ScrollArea>
     </section>
   )
+}
+
+function didLatestHistoryStepChange(
+  row: {
+    compare?: (entry: SalesUkraineUpdateDataCarrier) => unknown
+    render: (entry: SalesUkraineUpdateDataCarrier) => string
+  },
+  columns: Array<{ entry: SalesUkraineUpdateDataCarrier; isCurrent?: boolean }>,
+): boolean {
+  const currentColumnIndex = columns.findIndex((column) => column.isCurrent)
+  const latestHistoryColumn = currentColumnIndex > 0 ? columns[currentColumnIndex - 1] : null
+  const previousHistoryColumn = currentColumnIndex > 1 ? columns[currentColumnIndex - 2] : null
+
+  if (!latestHistoryColumn || !previousHistoryColumn) {
+    return false
+  }
+
+  const compareFn = row.compare ?? row.render
+
+  return historyValueChanged(compareFn(latestHistoryColumn.entry), compareFn(previousHistoryColumn.entry))
 }
 
 // Compact label/value pair for the client info block — left-aligned (not stretched) so the value
