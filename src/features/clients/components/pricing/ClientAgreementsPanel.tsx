@@ -12,7 +12,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { Check, CircleAlert, CircleHelp, FileText, Pencil, Plus, Printer, ShieldCheck, Trash2 } from 'lucide-react'
-import { ExcelIcon } from '../../../../shared/ui/ExcelIcon'
+import { WordIcon } from '../../../../shared/ui/WordIcon'
 import { useMemo, useReducer } from 'react'
 import { AppModal } from '../../../../shared/ui/AppModal'
 import { useI18n } from '../../../../shared/i18n/useI18n'
@@ -370,10 +370,10 @@ export function ClientAgreementsPanel({
                   rel="noreferrer"
                   target="_blank"
                 >
-                  <span className="document-link-badge document-link-badge-excel">
-                    <ExcelIcon size={22} />
+                  <span className="document-link-badge document-link-badge-word">
+                    <WordIcon size={22} />
                   </span>
-                  <span>{t('Excel документ')}</span>
+                  <span>{t('Word документ')}</span>
                 </Anchor>
               )}
               {exportDocument.PdfDocumentURL && (

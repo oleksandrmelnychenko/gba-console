@@ -711,6 +711,12 @@
   box-shadow: 0 2px 6px rgba(177, 25, 30, 0.32);
 }
 
+.document-link-badge-word {
+  background: linear-gradient(135deg, #2b579a, #1b3d70);
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(27, 61, 112, 0.32);
+}
+
 .sync-modal .mantine-Modal-body {
   padding-top: 8px;
 }
