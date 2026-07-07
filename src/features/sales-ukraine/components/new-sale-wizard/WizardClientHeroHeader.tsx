@@ -4,7 +4,7 @@ import {
   IconMail,
   IconPhone,
 } from '@tabler/icons-react'
-import { useEffect, useState, type ReactNode } from 'react'
+import { memo, useEffect, useState, type ReactNode } from 'react'
 import { formatLocalDate } from '../../../../shared/date/dateTime'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import type { Client, ClientAgreement, ClientInDebt } from '../../../clients/types'
@@ -21,7 +21,7 @@ import { getWizardHeaderClient } from './wizardSaleHeaderApi'
 
 const metricCountFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 0 })
 
-export function WizardClientHeroHeader({
+export const WizardClientHeroHeader = memo(function WizardClientHeroHeader({
   activeAgreementNetId,
   agreements,
   client,
@@ -289,7 +289,7 @@ export function WizardClientHeroHeader({
       </Box>
     </Box>
   )
-}
+})
 
 function getHeroAgreementKey(agreement: ClientAgreement): string {
   return String(agreement.NetUid || agreement.Id || '')

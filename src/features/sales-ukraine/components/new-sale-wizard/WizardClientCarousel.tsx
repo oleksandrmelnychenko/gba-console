@@ -1,9 +1,14 @@
 import { Box, Stack, Text, Tooltip, UnstyledButton } from '@mantine/core'
 import { IconAlertTriangle, IconCircleCheck } from '@tabler/icons-react'
-import type { RefObject } from 'react'
+import { useEffect, useRef, useState, type RefObject } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import type { Client } from '../../../clients/types'
 import type { WizardClientCarouselState } from './wizardClientStepModel'
+
+// Keystrokes settle locally for this long before the value is lifted to the
+// parent step — re-rendering the 1300-line client step per keystroke is what
+// made typing feel laggy.
+const SEARCH_LIFT_DEBOUNCE_MS = 160
 
 export function WizardClientCarousel({
   carousel,
@@ -27,6 +32,41 @@ export function WizardClientCarousel({
   onSearchChange: (value: string) => void
 }) {
   const { t } = useI18n()
+  // Local input text: typing re-renders only the drum; the parent step receives
+  // the value once per SEARCH_LIFT_DEBOUNCE_MS pause.
+  const [text, setText] = useState(searchValue)
+  const lastLiftedRef = useRef(searchValue)
+  const liftTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Adopt external resets (e.g. the step clears the query on client pick).
+  if (searchValue !== lastLiftedRef.current) {
+    lastLiftedRef.current = searchValue
+
+    if (text !== searchValue) {
+      setText(searchValue)
+    }
+  }
+
+  useEffect(() => () => {
+    if (liftTimerRef.current) {
+      clearTimeout(liftTimerRef.current)
+    }
+  }, [])
+
+  function handleTextChange(value: string) {
+    setText(value)
+
+    if (liftTimerRef.current) {
+      clearTimeout(liftTimerRef.current)
+    }
+
+    liftTimerRef.current = setTimeout(() => {
+      liftTimerRef.current = null
+      lastLiftedRef.current = value
+      onSearchChange(value)
+    }, SEARCH_LIFT_DEBOUNCE_MS)
+  }
+
   const showInput = searchMode || !carousel.selected
 
   return (
@@ -52,8 +92,8 @@ export function WizardClientCarousel({
           className={`new-sale-client-drum__search ${showInput ? '' : 'is-hidden'}`}
           placeholder={t('Місце вводу для пошуку')}
           type="text"
-          value={searchValue}
-          onChange={(event) => onSearchChange(event.currentTarget.value)}
+          value={text}
+          onChange={(event) => handleTextChange(event.currentTarget.value)}
         />
         {!showInput && carousel.selected && (
           <ClientMiniCard client={carousel.selected} hasDebt={hasDebt} hideName={hideName} />

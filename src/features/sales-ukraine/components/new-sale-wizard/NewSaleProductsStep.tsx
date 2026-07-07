@@ -1,7 +1,7 @@
 import { Box, Group, Select, Stack, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { IconBox, IconSearch, IconSettings } from '@tabler/icons-react'
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useAuth } from '../../../auth/useAuth'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { toProxiedAssetUrl } from '../../../../shared/url/proxiedAssetUrl'
@@ -217,7 +217,13 @@ export function NewSaleProductsStep({
   const [removeRowItem, setRemoveRowItem] = useState<SalesUkraineOrderItem | null>(null)
   const [closeConfirmOpen, setCloseConfirmOpen] = useState(false)
   const [editingDescription, setEditingDescription] = useState(false)
-  const [descriptionDraft, setDescriptionDraft] = useState('')
+  // The description draft lives in a ref (the TextInput inside
+  // ProductFullDetailPanel keeps its own local state): typing must not re-render
+  // this 2600-line step. The ref is read on save (panel toggle or keyboard F2).
+  const descriptionDraftRef = useRef('')
+  const handleDescriptionDraftChange = useCallback((value: string) => {
+    descriptionDraftRef.current = value
+  }, [])
   const [productCardNetId, setProductCardNetId] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [refreshTick, setRefreshTick] = useState(0)
@@ -242,7 +248,24 @@ export function NewSaleProductsStep({
     values: Map<string, ProductPricingSnapshot>
   }>({ agreementNetId: null, values: EMPTY_PRODUCT_PRICING })
 
-  const orderItems = getOrderItemsNewestFirst(sale)
+  // Memoized: the sort clones + Date.parses per comparison; unmemoized it also
+  // returned a fresh array identity every render, invalidating the cart grid's
+  // column defs and TanStack row model on every search keystroke.
+  const orderItems = useMemo(() => getOrderItemsNewestFirst(sale), [sale])
+
+  // Stable cart-grid handlers: the grid is React.memo'd, so its callback props
+  // must keep identity across renders. onEditOrderItem is a plain body function
+  // capturing fresh state each render — route the call through a ref.
+  const onEditOrderItemRef = useRef<(item: SalesUkraineOrderItem) => Promise<void>>(async () => {})
+
+  // (onEditOrderItem is a hoisted function declaration below — this captures the
+  // current-render closure, refreshed every render.)
+  onEditOrderItemRef.current = onEditOrderItem
+
+  const handleCartRowClick = useCallback((item: SalesUkraineOrderItem) => {
+    void onEditOrderItemRef.current(item)
+  }, [])
+  const handleCartRowRemove = useCallback((item: SalesUkraineOrderItem) => setRemoveRowItem(item), [])
   const isVatSale = Boolean(sale?.IsVatSale)
   const isSaleLifecycleNew = getSaleLifecycleTypeKey(sale?.BaseLifeCycleStatus?.SaleLifeCycleType) === '0'
   const useEurToUah = isNonVatEurSale(sale)
@@ -251,7 +274,10 @@ export function NewSaleProductsStep({
   const productPricing = productPricingState.agreementNetId === agreementNetId ? productPricingState.values : EMPTY_PRODUCT_PRICING
   const reservations = reservationsState.agreementNetId === agreementNetId ? reservationsState.values : EMPTY_RESERVATIONS
 
-  const componentEntries = sortComponentCarouselEntries(getComponentCarouselEntries(componentParent), isVatSale)
+  const componentEntries = useMemo(
+    () => sortComponentCarouselEntries(getComponentCarouselEntries(componentParent), isVatSale),
+    [componentParent, isVatSale],
+  )
   const activeProduct = active?.product ?? null
   const mainProduct = results[mainIndex] ?? null
   const focusedAnalogue = analogueIndex !== null ? analogueState.items[analogueIndex] ?? null : null
@@ -1239,7 +1265,7 @@ export function NewSaleProductsStep({
     }
 
     if (!editingDescription) {
-      setDescriptionDraft(product.Description ?? '')
+      descriptionDraftRef.current = product.Description ?? ''
       setEditingDescription(true)
       keyboard.setState('EditProductDescription')
 
@@ -1248,7 +1274,7 @@ export function NewSaleProductsStep({
 
     setEditingDescription(false)
     keyboard.restorePreviousProductState()
-    const updated: WizardSaleProduct = { ...product, Description: descriptionDraft }
+    const updated: WizardSaleProduct = { ...product, Description: descriptionDraftRef.current }
     applyProductPatch(updated)
 
     try {
@@ -2048,12 +2074,15 @@ export function NewSaleProductsStep({
   const focusedComponentSnapshot = getProductDetailSnapshot(focusedComponent)
   const focusedAnalogueChipIndex = focusedAnalogue ? (detail?.chipIndex ?? getDefaultMainDetailChipIndex()) : null
   const focusedComponentChipIndex = focusedComponent ? (detail?.chipIndex ?? getDefaultMainDetailChipIndex()) : null
+  // Built only in Ctrl+Enter full-detail mode — the render site (cart column)
+  // shows it only then anyway, and building chips/rows for a hidden panel costs
+  // real work on every keystroke.
   const selectedMainProductPanel =
-    selectedMainProduct ? (
+    selectedMainProduct && isMainFullDetail ? (
       <ProductFullDetailPanel
         canEditDescription={canEditMainDescription && active?.source === 'main'}
         chips={getMainChips(selectedMainSnapshot?.availabilities)}
-        descriptionDraft={descriptionDraft}
+        descriptionDraft={descriptionDraftRef.current}
         displayQty={getDisplayedAvailableQty(selectedMainProduct) ?? 0}
         isFullDetail={isMainFullDetail}
         isEditingDescription={editingDescription && active?.source === 'main'}
@@ -2066,7 +2095,7 @@ export function NewSaleProductsStep({
         selectedChipIndex={selectedMainChipIndex}
         selectedRowIndex={active?.source === 'main' ? (detail?.rowIndex ?? null) : null}
         showRowDetails={selectedMainChipIndex === 0}
-        onDescriptionDraftChange={setDescriptionDraft}
+        onDescriptionDraftChange={handleDescriptionDraftChange}
         onSelectChip={(chipIndex) => {
           setDetail({ chipIndex, rowIndex: null })
 
@@ -2312,7 +2341,7 @@ export function NewSaleProductsStep({
                 <ProductFullDetailPanel
                   canEditDescription
                   chips={getMainChips(focusedAnalogueSnapshot?.availabilities)}
-                  descriptionDraft={descriptionDraft}
+                  descriptionDraft={descriptionDraftRef.current}
                   displayQty={getDisplayedAvailableQty(focusedAnalogue) ?? 0}
                   isFullDetail
                   isEditingDescription={editingDescription && active?.source === 'analogue'}
@@ -2325,7 +2354,7 @@ export function NewSaleProductsStep({
                   selectedChipIndex={focusedAnalogueChipIndex}
                   selectedRowIndex={detail?.rowIndex ?? null}
                   showRowDetails={focusedAnalogueChipIndex === 0}
-                  onDescriptionDraftChange={setDescriptionDraft}
+                  onDescriptionDraftChange={handleDescriptionDraftChange}
                   onSelectChip={(chipIndex) => setDetail({ chipIndex, rowIndex: null })}
                   onToggleDescription={() => void toggleDescriptionEdit()}
                 />
@@ -2335,7 +2364,7 @@ export function NewSaleProductsStep({
                 <ProductFullDetailPanel
                   canEditDescription
                   chips={getMainChips(focusedComponentSnapshot?.availabilities)}
-                  descriptionDraft={descriptionDraft}
+                  descriptionDraft={descriptionDraftRef.current}
                   displayQty={getDisplayedAvailableQty(focusedComponent) ?? 0}
                   isFullDetail
                   isEditingDescription={editingDescription && active?.source === 'component'}
@@ -2348,7 +2377,7 @@ export function NewSaleProductsStep({
                   selectedChipIndex={focusedComponentChipIndex}
                   selectedRowIndex={detail?.rowIndex ?? null}
                   showRowDetails={focusedComponentChipIndex === 0}
-                  onDescriptionDraftChange={setDescriptionDraft}
+                  onDescriptionDraftChange={handleDescriptionDraftChange}
                   onSelectChip={(chipIndex) => setDetail({ chipIndex, rowIndex: null })}
                   onToggleDescription={() => void toggleDescriptionEdit()}
                 />
@@ -2368,8 +2397,8 @@ export function NewSaleProductsStep({
                 items={orderItems}
                 localCurrencyCode={localCurrencyCode}
                 useEurToUah={useEurToUah}
-                onRemove={isSaleLifecycleNew ? (item) => setRemoveRowItem(item) : undefined}
-                onRowClick={(item) => void onEditOrderItem(item)}
+                onRemove={isSaleLifecycleNew ? handleCartRowRemove : undefined}
+                onRowClick={handleCartRowClick}
               />
               {isVatSale && orderItems.length > 0 && (
                 <Group justify="flex-end">
@@ -2510,7 +2539,11 @@ function isInteractiveTarget(target: EventTarget | null): boolean {
 function getOrderItemsNewestFirst(sale: SalesUkraineSale | null): SalesUkraineOrderItem[] {
   const items = Array.isArray(sale?.Order?.OrderItems) ? sale.Order.OrderItems : []
 
-  return [...items].sort((a, b) => getCreatedTime(b) - getCreatedTime(a))
+  // Parse each Created once (Date.parse per comparator call is O(n log n) parses).
+  return items
+    .map((item) => [getCreatedTime(item), item] as const)
+    .sort((a, b) => b[0] - a[0])
+    .map(([, item]) => item)
 }
 
 function getCreatedTime(item: SalesUkraineOrderItem): number {

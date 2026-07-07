@@ -1,8 +1,13 @@
 import { Box, Group, Loader, Stack, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import type { ReactNode, RefObject } from 'react'
+import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import type { WizardSaleProduct } from './wizardSaleProduct'
+
+// Keystrokes are settled locally for this long before the value is lifted to the
+// parent step — the step is ~2600 lines, so re-rendering it per keystroke is the
+// single biggest source of typing lag.
+const SEARCH_LIFT_DEBOUNCE_MS = 160
 
 // Vertical product picker that mirrors the client carousel on step 1: a "wheel" with the
 // products above the focused one on top, the focused product (or the search input) in the
@@ -35,6 +40,47 @@ export function WizardProductCarousel({
   searchValue: string
 }) {
   const { t } = useI18n()
+  // The input text is local state: typing re-renders only this carousel, and the
+  // (huge) parent step receives the value once per SEARCH_LIFT_DEBOUNCE_MS pause.
+  const [text, setText] = useState(searchValue)
+  const lastLiftedRef = useRef(searchValue)
+  const liftTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Adopt external resets (e.g. the step clears the query after adding to cart).
+  if (searchValue !== lastLiftedRef.current) {
+    lastLiftedRef.current = searchValue
+
+    if (text !== searchValue) {
+      setText(searchValue)
+    }
+  }
+
+  useEffect(() => () => {
+    if (liftTimerRef.current) {
+      clearTimeout(liftTimerRef.current)
+    }
+  }, [])
+
+  function handleTextChange(value: string) {
+    // Mirror the parent's guard (it ignores query changes outside ProductSearch
+    // mode) — otherwise the local text would drift from the parent query.
+    if (!searchMode) {
+      return
+    }
+
+    setText(value)
+
+    if (liftTimerRef.current) {
+      clearTimeout(liftTimerRef.current)
+    }
+
+    liftTimerRef.current = setTimeout(() => {
+      liftTimerRef.current = null
+      lastLiftedRef.current = value
+      onSearchChange(value)
+    }, SEARCH_LIFT_DEBOUNCE_MS)
+  }
+
   const focused = hasFocus && focusedIndex >= 0 ? products[focusedIndex] ?? null : null
   const topProducts = focused ? products.slice(0, focusedIndex) : []
   const bottomProducts = focused ? products.slice(focusedIndex + 1) : products
@@ -76,8 +122,8 @@ export function WizardProductCarousel({
           className={`new-sale-product-picker__search ${showInput ? '' : 'is-hidden'}`}
           placeholder={t('Пошук товару')}
           type="text"
-          value={searchValue}
-          onChange={(event) => onSearchChange(event.currentTarget.value)}
+          value={text}
+          onChange={(event) => handleTextChange(event.currentTarget.value)}
         />
         {!showInput && focused && !detailSlot && (
           <ProductMiniCard

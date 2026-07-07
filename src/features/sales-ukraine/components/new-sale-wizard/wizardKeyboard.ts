@@ -145,6 +145,13 @@ export function initializeWizardKeyboard(step: WizardStepIndex): void {
 export function setWizardKeyboardState(state: WizardKeyboardState): void {
   const step = findStepForState(state)
 
+  // No-op bail: re-asserting the current state must not notify — every notify
+  // rebuilds the snapshot and re-renders every subscriber (the wizard host and
+  // the active step), and several call sites re-assert defensively.
+  if (store.stepStates[step] === state) {
+    return
+  }
+
   if (step === 1) {
     store.previousProductState = store.stepStates[1] as WizardProductKeyboardState
   }
@@ -174,6 +181,10 @@ export function getPreviousProductKeyboardState(): WizardProductKeyboardState {
 }
 
 export function restorePreviousProductKeyboardState(): void {
+  if (store.stepStates[1] === store.previousProductState) {
+    return
+  }
+
   store.stepStates[1] = store.previousProductState
   notify()
 }

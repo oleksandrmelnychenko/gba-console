@@ -1,6 +1,6 @@
 import { ActionIcon, Box, Group, Text, Tooltip } from '@mantine/core'
 import { IconPackage, IconTrash } from '@tabler/icons-react'
-import { useMemo } from 'react'
+import { memo, useMemo, useRef } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { DataTable } from '../../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../../shared/ui/data-table/types'
@@ -45,7 +45,7 @@ function displayValue(value: unknown): string {
   return text || '-'
 }
 
-export function WizardShoppingCartGrid({
+export const WizardShoppingCartGrid = memo(function WizardShoppingCartGrid({
   busy = false,
   items,
   localCurrencyCode,
@@ -61,17 +61,34 @@ export function WizardShoppingCartGrid({
   onRowClick?: (item: SalesUkraineOrderItem) => void
 }) {
   const { t } = useI18n()
-  const totalQty = items.reduce((sum, item) => sum + (getWizardProductNumber(item.Qty) ?? 0), 0)
-  const totalAmount = roundMoney(items.reduce((sum, item) => sum + (getWizardProductNumber(item.TotalAmount) ?? 0), 0))
-  const totalAmountLocal = roundMoney(items.reduce((sum, item) => sum + getOrderItemLocalTotal(item, useEurToUah), 0))
+  const totals = useMemo(() => {
+    let qty = 0
+    let amount = 0
+    let amountLocal = 0
+
+    for (const item of items) {
+      qty += getWizardProductNumber(item.Qty) ?? 0
+      amount += getWizardProductNumber(item.TotalAmount) ?? 0
+      amountLocal += getOrderItemLocalTotal(item, useEurToUah)
+    }
+
+    return { amount: roundMoney(amount), amountLocal: roundMoney(amountLocal), qty }
+  }, [items, useEurToUah])
+
+  // The '#' column reads the row index through a ref-backed map so the column
+  // defs don't depend on `items` — otherwise every cart change (and, before
+  // memoization, every parent render) rebuilt all TanStack column defs.
+  const indexByItemRef = useRef<Map<SalesUkraineOrderItem, number>>(new Map())
+
+  indexByItemRef.current = useMemo(() => new Map(items.map((item, index) => [item, index])), [items])
 
   const columns = useMemo<DataTableColumn<SalesUkraineOrderItem>[]>(() => {
     const result: DataTableColumn<SalesUkraineOrderItem>[] = [
       {
         id: 'index',
         header: '#',
-        accessor: (item) => items.indexOf(item),
-        cell: (item) => <Text className="new-sale-cart__index">{items.indexOf(item) + 1}</Text>,
+        accessor: (item) => indexByItemRef.current.get(item) ?? 0,
+        cell: (item) => <Text className="new-sale-cart__index">{(indexByItemRef.current.get(item) ?? 0) + 1}</Text>,
         width: 42,
         minWidth: 42,
         enableSorting: false,
@@ -205,7 +222,7 @@ export function WizardShoppingCartGrid({
     }
 
     return result
-  }, [busy, items, localCurrencyCode, onRemove, t, useEurToUah])
+  }, [busy, localCurrencyCode, onRemove, t, useEurToUah])
 
   return (
     <div className="new-sale-cart">
@@ -232,21 +249,21 @@ export function WizardShoppingCartGrid({
         <div className="new-sale-cart__totals">
           <div className="new-sale-cart__total">
             <span>{t('К-сть')}</span>
-            <strong>{qtyFormatter.format(totalQty)}</strong>
+            <strong>{qtyFormatter.format(totals.qty)}</strong>
           </div>
           <div className="new-sale-cart__total">
             <span>EUR</span>
-            <strong>{priceFormatter.format(totalAmount)}</strong>
+            <strong>{priceFormatter.format(totals.amount)}</strong>
           </div>
           <div className="new-sale-cart__total is-strong">
             <span>{localCurrencyCode}</span>
-            <strong>{priceFormatter.format(totalAmountLocal)}</strong>
+            <strong>{priceFormatter.format(totals.amountLocal)}</strong>
           </div>
         </div>
       )}
     </div>
   )
-}
+})
 
 function WizardCartProductCell({ item }: { item: SalesUkraineOrderItem }) {
   const code = displayValue(item.Product?.VendorCode || item.Product?.Articul)

@@ -9,6 +9,7 @@ import {
   IconRulerMeasure,
   IconTruckDelivery,
 } from '@tabler/icons-react'
+import { useRef, useState } from 'react'
 import { formatLocalDate } from '../../../../shared/date/dateTime'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { getProductMainImage, getProductShopImageUrl, getRelatedProductRowColor } from '../../../products/utils'
@@ -73,6 +74,17 @@ export function ProductFullDetailPanel({
   onToggleDescription: () => void
 }) {
   const { t } = useI18n()
+  // The draft is local so typing re-renders only this panel; the parent step
+  // tracks the value through onDescriptionDraftChange (a ref write, no render).
+  // Re-sync from the incoming draft each time editing (re)starts.
+  const [draft, setDraft] = useState(descriptionDraft)
+  const wasEditingRef = useRef(isEditingDescription)
+
+  if (isEditingDescription && !wasEditingRef.current && draft !== descriptionDraft) {
+    setDraft(descriptionDraft)
+  }
+
+  wasEditingRef.current = isEditingDescription
   const mainImage = getProductMainImage(product)
   const shopImageUrl = getProductShopImageUrl(product)
   // Fall back to the shop image when the sparse search payload carries no
@@ -274,8 +286,13 @@ export function ProductFullDetailPanel({
                 autoFocus
                 className="new-sale-product-card__description-input"
                 size="xs"
-                value={descriptionDraft}
-                onChange={(event) => onDescriptionDraftChange(event.currentTarget.value)}
+                value={draft}
+                onChange={(event) => {
+                  const value = event.currentTarget.value
+
+                  setDraft(value)
+                  onDescriptionDraftChange(value)
+                }}
               />
             ) : (
               <Text className="new-sale-product-card__description-text" lineClamp={2}>

@@ -1,7 +1,7 @@
 import { ActionIcon, Box, Button, Group, Modal, Text, UnstyledButton } from '@mantine/core'
 import { IconX } from '@tabler/icons-react'
 import { notifications } from '@mantine/notifications'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -103,6 +103,27 @@ export function NewSaleWizard({
 
 const WIZARD_STEPS: { index: WizardStepIndex }[] = [{ index: 0 }, { index: 1 }, { index: 2 }]
 
+// Leaf subscriber to the keyboard-mode store: only these ~4 DOM nodes re-render
+// on a mode transition instead of the whole wizard host (which used to recreate
+// header tools and re-render the mounted step on every transition).
+function WizardKeyboardStateLabel() {
+  const { t } = useI18n()
+  const keyboard = useWizardKeyboardSnapshot()
+
+  return (
+    <Group className="new-sale-wizard-keyboard-state" gap={6} wrap="nowrap">
+      <Text className="new-sale-wizard-keyboard-state__label">
+        {t('Стан режиму клавіатури')}:
+      </Text>
+      {keyboard.label && (
+        <Text className="new-sale-wizard-keyboard-state__value">
+          {keyboard.label}
+        </Text>
+      )}
+    </Group>
+  )
+}
+
 function NewSaleWizardContent({
   initialSale,
   onBusyChange,
@@ -141,7 +162,6 @@ function NewSaleWizardContent({
     setExitConfirmOpen(false)
     onClose()
   }
-  const keyboard = useWizardKeyboardSnapshot()
   const reviewSubmitRef = useRef<(() => Promise<void>) | null>(null)
 
   const registerReviewSubmit = useCallback((submit: (() => Promise<void>) | null) => {
@@ -490,25 +510,33 @@ function NewSaleWizardContent({
       <IconX size={20} />
     </ActionIcon>
   )
-  const wizardHeaderTools = (
-    <Group gap={6} justify="flex-end" wrap="nowrap">
-      <WizardSaleHeader
-        clientNetId={state.clientNetId}
-        hideAgreementsAction
-        mode="inline"
-        reassignDisabled={shellBusy || productsBusy}
-        sale={state.sale}
-        withVatAccounting={withVatAccounting}
-        onReassignOpenChange={setReassignOpen}
-        onSaleReassigned={(movedSale) => {
-          clearWizardSplitOrderItems()
-          clearWizardMergedSale()
-          setState((current) => ({ ...current, sale: movedSale ?? current.sale }))
-          bumpWizardDebtRefresh()
-          setActive(0)
-        }}
-      />
-    </Group>
+  const onSaleReassigned = useCallback((movedSale: SalesUkraineSale | null) => {
+    clearWizardSplitOrderItems()
+    clearWizardMergedSale()
+    setState((current) => ({ ...current, sale: movedSale ?? current.sale }))
+    bumpWizardDebtRefresh()
+    setActive(0)
+  }, [])
+
+  // Memoized: this element is passed into every step — rebuilding it each host
+  // render re-rendered the 490-line WizardSaleHeader (and the receiving step)
+  // on every keystroke that touched host state.
+  const wizardHeaderTools = useMemo(
+    () => (
+      <Group gap={6} justify="flex-end" wrap="nowrap">
+        <WizardSaleHeader
+          clientNetId={state.clientNetId}
+          hideAgreementsAction
+          mode="inline"
+          reassignDisabled={shellBusy || productsBusy}
+          sale={state.sale}
+          withVatAccounting={withVatAccounting}
+          onReassignOpenChange={setReassignOpen}
+          onSaleReassigned={onSaleReassigned}
+        />
+      </Group>
+    ),
+    [onSaleReassigned, productsBusy, shellBusy, state.clientNetId, state.sale, withVatAccounting],
   )
 
   return (
@@ -545,13 +573,18 @@ function NewSaleWizardContent({
               clearWizardSplitOrderItems()
               clearWizardMergedSale()
               setReview(NEW_SALE_REVIEW_INITIAL)
-              setState((current) => ({ ...current, agreement, agreementNetId }))
+              // Bail on no-change: returning the same object skips the host re-render.
+              setState((current) =>
+                current.agreementNetId === agreementNetId && current.agreement === agreement
+                  ? current
+                  : { ...current, agreement, agreementNetId },
+              )
             }}
             onClientChange={(clientNetId) => {
               clearWizardSplitOrderItems()
               clearWizardMergedSale()
               setReview(NEW_SALE_REVIEW_INITIAL)
-              setState((current) => ({ ...current, clientNetId }))
+              setState((current) => (current.clientNetId === clientNetId ? current : { ...current, clientNetId }))
             }}
             onCreateMergedMainClientSale={startMergedMainClientSale}
             onEditMergedSale={(sale, unionSale) => void openMergedSaleEdit(sale, unionSale)}
@@ -590,16 +623,7 @@ function NewSaleWizardContent({
       </Box>
 
       <Box className="new-sale-wizard-footer">
-        <Group className="new-sale-wizard-keyboard-state" gap={6} wrap="nowrap">
-          <Text className="new-sale-wizard-keyboard-state__label">
-            {t('Стан режиму клавіатури')}:
-          </Text>
-          {keyboard.label && (
-            <Text className="new-sale-wizard-keyboard-state__value">
-              {keyboard.label}
-            </Text>
-          )}
-        </Group>
+        <WizardKeyboardStateLabel />
 
         <Group className="new-sale-wizard-step-list" gap={4} justify="center" wrap="nowrap">
           {WIZARD_STEPS.map((step, index) => {

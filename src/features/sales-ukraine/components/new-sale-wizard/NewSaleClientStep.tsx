@@ -312,6 +312,13 @@ export function NewSaleClientStep({
   }, [initialClient])
 
   function unselectClient() {
+    // Runs on EVERY search keystroke: bail when nothing is selected — otherwise
+    // onClientChange(null)/onAgreementChange(null, null) build a fresh host
+    // state object per key and the entire wizard re-renders per keystroke.
+    if (!selectedClient && !selectedAgreementKey && agreements.length === 0 && groupedDebts.length === 0 && registryItems.length === 0) {
+      return
+    }
+
     setSelectedClient(null)
     onClientResolved?.(null)
     setGroupedDebts([])

@@ -1,7 +1,7 @@
 import { ActionIcon, Box, Group, Paper, Popover, Stack, Text, Tooltip } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { IconAlertTriangle, IconArrowsExchange, IconCopy, IconFileDescription, IconSitemap, IconX } from '@tabler/icons-react'
-import { useEffect, useState } from 'react'
+import { memo, useEffect, useState } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { getSaleClientDebtTotal } from '../../api/salesUkraineApi'
 import type { SaleClientDebtTotal, SalesUkraineOrderItem, SalesUkraineSale } from '../../types'
@@ -36,7 +36,7 @@ const SALE_LIFE_CYCLE_STATUS_NAMES: Record<number, string> = {
   5: 'Очікування',
 }
 
-export function WizardSaleHeader({
+export const WizardSaleHeader = memo(function WizardSaleHeader({
   clientNetId,
   hideAgreementsAction = false,
   mode = 'strip',
@@ -72,7 +72,7 @@ export function WizardSaleHeader({
       onSaleReassigned={onSaleReassigned}
     />
   )
-}
+})
 
 function WizardSaleHeaderContent({
   clientNetId,
