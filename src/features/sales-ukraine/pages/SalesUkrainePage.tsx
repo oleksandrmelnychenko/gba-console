@@ -16,7 +16,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { ArrowLeftRight, Check, ChevronDown, ChevronRight, CircleAlert, Ellipsis, Globe, History, Lock, LockOpen, Pencil, Percent, Plus, Printer, Receipt, ReceiptText, RotateCcw, Search, Tag, TriangleAlert, Truck, X } from 'lucide-react'
+import { ArrowLeftRight, Check, ChevronDown, ChevronRight, CircleAlert, ClipboardList, Ellipsis, FileText, Globe, History, Lock, LockOpen, Pencil, Percent, Plus, Printer, Receipt, RotateCcw, Search, Tag, TriangleAlert, Truck, X } from 'lucide-react'
 import {
   Fragment,
   isValidElement,
@@ -480,10 +480,56 @@ export function SalesUkrainePage() {
     [ensureSaleDetails, expandedKeys, setExpandedKeys],
   )
 
+  const requestUnlock = useCallback(
+    (sale: SalesUkraineSale) => {
+      const netId = sale.NetUid
+
+      if (!netId) {
+        return
+      }
+
+      setConfirmState({
+        color: 'red',
+        confirmLabel: t('Розблокувати'),
+        message: t('Розблокувати рахунок?'),
+        title: t('Розблокування'),
+        onConfirm: async () => {
+          await unlockSale(netId)
+          notifications.show({ color: 'green', message: t('Продаж розблоковано') })
+        },
+      })
+    },
+    [setConfirmState, t],
+  )
+
+  const requestWillNotShip = useCallback(
+    (sale: SalesUkraineSale) => {
+      if (!sale.NetUid) {
+        return
+      }
+
+      setConfirmState({
+        confirmLabel: t('Підтвердити'),
+        message: t('Розблокувати продаж для відвантаження?'),
+        title: t('Підтвердження відвантаження'),
+        onConfirm: async () => {
+          const next = await ensureSaleDetails(sale, { force: true })
+
+          if (!next) {
+            throw new Error(t('Не вдалося завантажити продаж'))
+          }
+
+          await updateSale({ ...next, IsAcceptedToPacking: true })
+          notifications.show({ color: 'green', message: t('Збережено') })
+        },
+      })
+    },
+    [ensureSaleDetails, setConfirmState, t],
+  )
+
   // Identity-stable row handlers: SaleGridRow is React.memo'd, so its callback
   // props must never change identity. The real handlers capture fresh state each
-  // render — route the calls through a ref (requestUnlock/requestWillNotShip are
-  // hoisted function declarations; the rest are useCallbacks re-read per call).
+  // render — route the calls through a ref.
   const rowHandlersRef = useRef({
     openAudit,
     openSaleDetails,
@@ -494,15 +540,17 @@ export function SalesUkrainePage() {
     toggleSaleExpand,
   })
 
-  rowHandlersRef.current = {
-    openAudit,
-    openSaleDetails,
-    openSaleDiscount,
-    openSaleSheet,
-    requestUnlock,
-    requestWillNotShip,
-    toggleSaleExpand,
-  }
+  useLayoutEffect(() => {
+    rowHandlersRef.current = {
+      openAudit,
+      openSaleDetails,
+      openSaleDiscount,
+      openSaleSheet,
+      requestUnlock,
+      requestWillNotShip,
+      toggleSaleExpand,
+    }
+  }, [openAudit, openSaleDetails, openSaleDiscount, openSaleSheet, requestUnlock, requestWillNotShip, toggleSaleExpand])
 
   const handleRowToggleExpand = useCallback((key: string, sale: SalesUkraineSale) => {
     void rowHandlersRef.current.toggleSaleExpand(key, sale)
@@ -724,47 +772,6 @@ export function SalesUkrainePage() {
     setPage(1)
     setFilterDraft(initialDraft)
     setActiveDraft(initialDraft)
-  }
-
-  function requestUnlock(sale: SalesUkraineSale) {
-    const netId = sale.NetUid
-
-    if (!netId) {
-      return
-    }
-
-    setConfirmState({
-      color: 'red',
-      confirmLabel: t('Розблокувати'),
-      message: t('Розблокувати рахунок?'),
-      title: t('Розблокування'),
-      onConfirm: async () => {
-        await unlockSale(netId)
-        notifications.show({ color: 'green', message: t('Продаж розблоковано') })
-      },
-    })
-  }
-
-  function requestWillNotShip(sale: SalesUkraineSale) {
-    if (!sale.NetUid) {
-      return
-    }
-
-    setConfirmState({
-      confirmLabel: t('Підтвердити'),
-      message: t('Розблокувати продаж для відвантаження?'),
-      title: t('Підтвердження відвантаження'),
-      onConfirm: async () => {
-        const next = await ensureSaleDetails(sale, { force: true })
-
-        if (!next) {
-          throw new Error(t('Не вдалося завантажити продаж'))
-        }
-
-        await updateSale({ ...next, IsAcceptedToPacking: true })
-        notifications.show({ color: 'green', message: t('Збережено') })
-      },
-    })
   }
 
   async function runConfirm() {
@@ -1317,6 +1324,7 @@ const SaleGridRow = memo(function SaleGridRow({
   const manager = getSaleUserName(sale)
   const contract = sale.ClientAgreement?.Agreement?.Name
   const transporter = getSaleTransporterName(sale)
+  const transporterCssClass = getTransporterCssClass(sale)
   const transporterImageUrl = getTransporterImageUrl(sale)
   const unpaid = isUnpaidSale(sale)
   const localAmount = getNumber(sale.TotalAmountLocal) ?? getNumber(sale.TotalAmount)
@@ -1590,7 +1598,7 @@ const SaleGridRow = memo(function SaleGridRow({
               aria-label={transporter || t('Перевізник')}
               onClick={() => onOpenDetails(sale)}
             >
-              <TransporterLogo className="sg-transporter-logo" imageUrl={transporterImageUrl} />
+              <TransporterLogo className="sg-transporter-logo" cssClass={transporterCssClass} iconSize={20} imageUrl={transporterImageUrl} name={transporter} />
             </button>
           </Tooltip>
         )}
@@ -2104,12 +2112,12 @@ function SaleSourceIcon({ sale }: { sale: SalesUkraineSale }) {
 
   const indicator =
     source === 0
-      ? { icon: <Globe size={14} />, label: t('Інтернет-магазин') }
+      ? { icon: <Globe size={16} />, label: t('Інтернет-магазин') }
       : source === 2
-        ? { icon: <Tag size={14} />, label: t('Оферта') }
+        ? { icon: <Tag size={16} />, label: t('Оферта') }
         : isInvoiceStage
-          ? { icon: <ReceiptText size={14} />, label: t('Накладна') }
-          : { icon: <Receipt size={14} />, label: t('Рахунок') }
+          ? { icon: <ClipboardList size={16} />, label: t('Накладна') }
+          : { icon: <FileText size={16} />, label: t('Рахунок') }
 
   return (
     <Tooltip label={indicator.label}>
@@ -2340,6 +2348,10 @@ function getTransporterImageUrl(sale: SalesUkraineSale): string {
   }
 
   return sale.Transporter?.ImageUrl?.trim() || sale.UpdateDataCarrier?.[0]?.Transporter?.ImageUrl?.trim() || ''
+}
+
+function getTransporterCssClass(sale: SalesUkraineSale): string {
+  return sale.Transporter?.CssClass?.trim() || sale.UpdateDataCarrier?.[0]?.Transporter?.CssClass?.trim() || ''
 }
 
 function isSelfCheckoutTransporter(transporter: { CssClass?: string | null } | null | undefined): boolean {

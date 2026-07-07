@@ -1,4 +1,4 @@
-import { Bus, Footprints } from 'lucide-react'
+import { Bus, PackageCheck } from 'lucide-react'
 import { toProxiedAssetUrl } from '../url/proxiedAssetUrl'
 import { resolveTransporterLogo } from './transporterLogos'
 
@@ -10,11 +10,11 @@ type TransporterIconProps = {
 }
 
 // Renders a carrier's icon: the bundled logo mapped from its legacy CssClass first (per-transporter
-// ImageUrl often 404s against the dead asset host), then a custom uploaded ImageUrl, then a Tabler icon
-// for the icon-font carriers (bus / self-checkout). Returns null when there is nothing to show (e.g. a
+// ImageUrl often 404s against the dead asset host), then a custom uploaded ImageUrl, then a lucide icon
+// for the icon-font carriers (bus / self-pickup). Returns null when there is nothing to show (e.g. a
 // driver row with no logo), so callers can render it inline before the name without reserving space.
 export function TransporterIcon({ cssClass, imageUrl, name = '', size = 22 }: TransporterIconProps) {
-  const bundled = resolveTransporterLogo(cssClass)
+  const bundled = resolveTransporterLogo(cssClass, name)
   const imageSrc = bundled || toProxiedAssetUrl(imageUrl?.trim())
 
   if (imageSrc) {
@@ -36,7 +36,7 @@ export function TransporterIcon({ cssClass, imageUrl, name = '', size = 22 }: Tr
   }
 
   if (normalizedClass === 'self_checkout_item_class') {
-    return <Footprints size={size} strokeWidth={1.5} style={{ flexShrink: 0 }} />
+    return <PackageCheck size={size} strokeWidth={1.5} style={{ flexShrink: 0 }} />
   }
 
   return null

@@ -2,6 +2,7 @@ import { Truck } from 'lucide-react'
 import { useState, type CSSProperties } from 'react'
 import { upgradeHttpToHttps } from '../url/upgradeHttpToHttps'
 import { toProxiedAssetUrl } from '../url/proxiedAssetUrl'
+import { resolveTransporterLogo } from '../transporter-icons/transporterLogos'
 
 const TRUCK_ICON_STYLE = { color: 'var(--mantine-color-gray-6)', flex: '0 0 auto' } as const
 
@@ -15,16 +16,21 @@ const TRUCK_ICON_STYLE = { color: 'var(--mantine-color-gray-6)', flex: '0 0 auto
  */
 export function TransporterLogo({
   className,
+  cssClass,
   iconSize = 15,
   imageUrl,
+  name,
   style,
 }: {
   className?: string
+  cssClass?: string | null
   iconSize?: number
   imageUrl?: string | null
+  name?: string | null
   style?: CSSProperties
 }) {
-  const src = upgradeHttpToHttps(toProxiedAssetUrl(imageUrl?.trim()))
+  const bundled = resolveTransporterLogo(cssClass, name)
+  const src = bundled || upgradeHttpToHttps(toProxiedAssetUrl(imageUrl?.trim()))
   // Keyed by src so a new row's image clears a previous row's failure.
   const [failedSrc, setFailedSrc] = useState<string | null>(null)
 

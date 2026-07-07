@@ -21,10 +21,55 @@ export const CARRIER_LOGO_BY_CSS_CLASS: Record<string, string> = {
   meest_express_item_class: meestExpress,
 }
 
-export function resolveTransporterLogo(cssClass?: string | null): string | undefined {
-  if (!cssClass) {
+const CARRIER_LOGO_BY_NAME: Record<string, string> = {
+  автолюкс: autolux,
+  autolux: autolux,
+  delivery: delivery,
+  деливери: delivery,
+  делівері: delivery,
+  гюнсел: gunsel,
+  gunsel: gunsel,
+  інтайм: intime,
+  интайм: intime,
+  intime: intime,
+  meest: meestExpress,
+  meestexpress: meestExpress,
+  містекспрес: meestExpress,
+  мистэкспресс: meestExpress,
+  нічнийекспрес: nightExpress,
+  ночнойэкспресс: nightExpress,
+  nightexpress: nightExpress,
+  новапошта: novaPosta,
+  новапочта: novaPosta,
+  novaposhta: novaPosta,
+  novaposta: novaPosta,
+  sat: sat,
+  сат: sat,
+}
+
+export function resolveTransporterLogo(cssClass?: string | null, name?: string | null): string | undefined {
+  const className = cssClass?.trim()
+
+  if (className) {
+    const byClass = CARRIER_LOGO_BY_CSS_CLASS[className]
+
+    if (byClass) {
+      return byClass
+    }
+  }
+
+  const normalizedName = normalizeTransporterLogoName(name)
+
+  if (!normalizedName) {
     return undefined
   }
 
-  return CARRIER_LOGO_BY_CSS_CLASS[cssClass.trim()]
+  return CARRIER_LOGO_BY_NAME[normalizedName]
+}
+
+function normalizeTransporterLogoName(value?: string | null): string {
+  return (value || '')
+    .trim()
+    .toLocaleLowerCase('uk-UA')
+    .replace(/[\s\-_'".,`’«»()]+/g, '')
 }

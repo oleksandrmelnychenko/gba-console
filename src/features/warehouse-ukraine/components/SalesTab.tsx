@@ -14,6 +14,7 @@ import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/event
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
+import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { TransporterIcon } from '../../../shared/transporter-icons/TransporterIcon'
 import {
@@ -33,14 +34,12 @@ import {
   printWarehouseDocumentUrl,
 } from './openWarehouseDocument'
 
-const DEFAULT_LIMIT = 500
+const DEFAULT_LIMIT = DEFAULT_PAGINATOR_PAGE_SIZE
 
 const salesMoneyFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 2,
   minimumFractionDigits: 2,
 })
-
-const PAGE_SIZE_OPTIONS = ['100', '200', '500', '1000']
 
 const TABLE_DEFAULT_LAYOUT = {
   columnPinning: { left: ['index', 'fromDate'] },
@@ -396,7 +395,6 @@ export function SalesTab() {
               isLoading={model.isLoading}
               page={model.page}
               pageSize={model.pageSize}
-              pageSizeOptions={PAGE_SIZE_OPTIONS}
               totalPages={model.totalQty > 0 ? Math.ceil(model.totalQty / model.pageSize) : undefined}
               onPageChange={model.setPage}
               onPageSizeChange={model.changePageSize}
@@ -440,14 +438,6 @@ export function SalesTab() {
             toolbarPortalTarget={tableToolbarSlot}
           />
         </div>
-        {model.totalQty > 0 && (
-          <div className="console-table-footer warehouse-ukraine-table-footer">
-            <Text c="dimmed" size="sm">
-              {t('Показано')} {(model.page - 1) * model.pageSize + 1}-{Math.min(model.page * model.pageSize, model.totalQty)} {t('з')}{' '}
-              {model.totalQty}
-            </Text>
-          </div>
-        )}
       </div>
 
       <SaleDetailsDrawer
@@ -670,10 +660,22 @@ function useSalesColumns({
           const carrierEdited = Boolean(sale.UpdateDataCarrier?.length)
 
           return (
-            <Group gap={6} wrap="nowrap">
+            <Group gap={6} wrap="nowrap" style={{ position: 'relative' }}>
               {carrierEdited && (
                 <Tooltip label={t('Перевізника редаговано')}>
-                  <Pencil size={14} style={{ color: 'var(--mantine-color-orange-6)', flex: '0 0 auto' }} />
+                  <span
+                    style={{
+                      alignItems: 'center',
+                      color: 'var(--mantine-color-orange-6)',
+                      display: 'inline-flex',
+                      left: -20,
+                      position: 'absolute',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                    }}
+                  >
+                    <Pencil size={14} />
+                  </span>
                 </Tooltip>
               )}
               <TransporterIcon cssClass={sale.Transporter.CssClass} imageUrl={sale.Transporter.ImageUrl} name={sale.Transporter.Name} size={20} />

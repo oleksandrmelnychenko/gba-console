@@ -409,14 +409,16 @@ export function SalesOnlineShopPage() {
     toggleSaleExpand,
   })
 
-  rowHandlersRef.current = {
-    openAudit,
-    openSaleDiscount,
-    openSaleSheet,
-    requestUnlock,
-    requestWillNotShip,
-    toggleSaleExpand,
-  }
+  useLayoutEffect(() => {
+    rowHandlersRef.current = {
+      openAudit,
+      openSaleDiscount,
+      openSaleSheet,
+      requestUnlock,
+      requestWillNotShip,
+      toggleSaleExpand,
+    }
+  }, [openAudit, openSaleDiscount, openSaleSheet, requestUnlock, requestWillNotShip, toggleSaleExpand])
 
   const handleRowToggleExpand = useCallback((key: string, sale: SalesOnlineShopSale) => {
     void rowHandlersRef.current.toggleSaleExpand(key, sale)
@@ -891,6 +893,7 @@ const SalesOnlineShopGridRow = memo(function SalesOnlineShopGridRow({
   const manager = getSaleUserName(sale)
   const contract = sale.ClientAgreement?.Agreement?.Name
   const transporter = getSaleTransporterName(sale)
+  const transporterCssClass = getTransporterCssClass(sale)
   const transporterImageUrl = getTransporterImageUrl(sale)
   const localAmount = getNumber(sale.TotalAmountLocal) ?? getNumber(sale.TotalAmount)
   const vat = getNumber(sale.Order?.TotalVat)
@@ -1078,7 +1081,7 @@ const SalesOnlineShopGridRow = memo(function SalesOnlineShopGridRow({
             aria-label={transporter || t('Перевізник')}
             onClick={() => onOpenDetails(sale)}
           >
-            <TransporterLogo className="sg-transporter-logo" imageUrl={transporterImageUrl} />
+            <TransporterLogo className="sg-transporter-logo" cssClass={transporterCssClass} iconSize={20} imageUrl={transporterImageUrl} name={transporter} />
           </button>
         </Tooltip>
       </div>
@@ -1754,6 +1757,10 @@ function getTransporterImageUrl(sale: SalesOnlineShopSale): string {
   }
 
   return sale.Transporter?.ImageUrl?.trim() || ''
+}
+
+function getTransporterCssClass(sale: SalesOnlineShopSale): string {
+  return sale.Transporter?.CssClass?.trim() || ''
 }
 
 function getSaleDeliveryAddress(sale: SalesOnlineShopSale): string {

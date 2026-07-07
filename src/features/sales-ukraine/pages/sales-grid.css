@@ -995,7 +995,7 @@
   /* Outline circle, no fill (§5.2/§7.1): transparent bg + hairline border, glyph
      gray-7, hover → orange. */
   background: transparent;
-  border: 1px solid var(--mantine-color-gray-3);
+  border: 1px solid transparent;
   border-radius: 50%;
   color: var(--mantine-color-gray-7);
   cursor: pointer;
@@ -1021,8 +1021,8 @@
   background-repeat: no-repeat;
   background-size: contain;
   display: block;
-  height: 18px;
-  width: 24px;
+  height: 22px;
+  width: 26px;
 }
 
 .sg-doc-actions {
