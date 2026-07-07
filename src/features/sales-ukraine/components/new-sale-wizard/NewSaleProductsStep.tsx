@@ -149,6 +149,19 @@ const EMPTY_PRODUCT_PRICING = new Map<string, ProductPricingSnapshot>()
 const EMPTY_PRODUCT_DETAILS = new Map<string, ProductDetailSnapshot>()
 const EMPTY_RESERVATIONS = new Map<string, WizardProductReservation>()
 
+async function loadPricingSnapshot(productNetUid: string, clientAgreementNetId: string): Promise<ProductPricingSnapshot | null> {
+  try {
+    const [currentPrice, calculatedPricings] = await Promise.all([
+      getProductCurrentPriceByAgreement(productNetUid, clientAgreementNetId),
+      getProductCalculatedPricingsByAgreement(productNetUid, clientAgreementNetId),
+    ])
+
+    return { calculatedPricings, currentPrice }
+  } catch {
+    return null
+  }
+}
+
 export function NewSaleProductsStep({
   agreementNetId,
   client,
@@ -359,6 +372,38 @@ export function NewSaleProductsStep({
     }
   }, [query, agreementNetId, searchMode, sortMode, clearActiveProductData])
 
+  function storePricingSnapshot(
+    productNetUid: string,
+    clientAgreementNetId: string,
+    snapshot: ProductPricingSnapshot,
+    productReservations: WizardProductReservation[],
+  ) {
+    const reservation =
+      productReservations.find((item) => item.ProductNetUid === productNetUid) ??
+      (productReservations.length === 1 ? productReservations[0] : undefined)
+    const stored: ProductPricingSnapshot = { ...snapshot }
+
+    if (reservation) {
+      stored.reservation = reservation
+    }
+
+    setProductPricingState((previous) => {
+      const next = new Map(previous.agreementNetId === clientAgreementNetId ? previous.values : EMPTY_PRODUCT_PRICING)
+      next.set(productNetUid, stored)
+
+      return { agreementNetId: clientAgreementNetId, values: next }
+    })
+
+    if (reservation) {
+      setReservationsState((previous) => {
+        const next = new Map(previous.agreementNetId === clientAgreementNetId ? previous.values : EMPTY_RESERVATIONS)
+        next.set(productNetUid, { ...reservation, ProductNetUid: reservation.ProductNetUid || productNetUid })
+
+        return { agreementNetId: clientAgreementNetId, values: next }
+      })
+    }
+  }
+
   useEffect(() => {
     const netUid = activeProduct?.NetUid
     const source = active?.source
@@ -426,51 +471,6 @@ export function NewSaleProductsStep({
       clearTimeout(handle)
     }
   }, [activeProduct, active?.source, agreementNetId, isVatSale, refreshTick, sale?.NetUid])
-
-  async function loadPricingSnapshot(productNetUid: string, clientAgreementNetId: string): Promise<ProductPricingSnapshot | null> {
-    try {
-      const [currentPrice, calculatedPricings] = await Promise.all([
-        getProductCurrentPriceByAgreement(productNetUid, clientAgreementNetId),
-        getProductCalculatedPricingsByAgreement(productNetUid, clientAgreementNetId),
-      ])
-
-      return { calculatedPricings, currentPrice }
-    } catch {
-      return null
-    }
-  }
-
-  function storePricingSnapshot(
-    productNetUid: string,
-    clientAgreementNetId: string,
-    snapshot: ProductPricingSnapshot,
-    productReservations: WizardProductReservation[],
-  ) {
-    const reservation =
-      productReservations.find((item) => item.ProductNetUid === productNetUid) ??
-      (productReservations.length === 1 ? productReservations[0] : undefined)
-    const stored: ProductPricingSnapshot = { ...snapshot }
-
-    if (reservation) {
-      stored.reservation = reservation
-    }
-
-    setProductPricingState((previous) => {
-      const next = new Map(previous.agreementNetId === clientAgreementNetId ? previous.values : EMPTY_PRODUCT_PRICING)
-      next.set(productNetUid, stored)
-
-      return { agreementNetId: clientAgreementNetId, values: next }
-    })
-
-    if (reservation) {
-      setReservationsState((previous) => {
-        const next = new Map(previous.agreementNetId === clientAgreementNetId ? previous.values : EMPTY_RESERVATIONS)
-        next.set(productNetUid, { ...reservation, ProductNetUid: reservation.ProductNetUid || productNetUid })
-
-        return { agreementNetId: clientAgreementNetId, values: next }
-      })
-    }
-  }
 
   const getProductDetailSnapshot = useCallback(
     (product: WizardSaleProduct | null): ProductDetailSnapshot | null => {

@@ -255,7 +255,8 @@ export type SalesUkraineSale = SalesUkraineEntity & {
   CustomersOwnTtnId?: number
   DeliveryRecipient?: SalesUkraineDeliveryRecipient | null
   DeliveryRecipientAddress?: SalesUkraineDeliveryRecipientAddress | null
-  DeliveryRecipientAddressId?: number
+  DeliveryRecipientAddressId?: number | null
+  DeliveryRecipientId?: number | null
   FromDate?: Date | string
   HasDocuments?: boolean
   HasDetails?: boolean
@@ -283,6 +284,8 @@ export type SalesUkraineSale = SalesUkraineEntity & {
   IsEdited?: boolean
   OneTimeDiscountUniform?: number | null
   OneTimeDiscountAverage?: number | null
+  BaseDiscountUniform?: number | null
+  BaseDiscountAverage?: number | null
   DiscountUpdatedByLastName?: string | null
   TotalAmount?: number
   TotalAmountEurToUah?: number

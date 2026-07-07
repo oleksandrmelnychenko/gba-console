@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { getVisibleOrderItemBaseDiscount, isOrderItemBaseDiscountSuppressed } from './saleDiscounts'
+import {
+  getAverageBaseDiscount,
+  getUniformBaseDiscount,
+  getVisibleOrderItemBaseDiscount,
+  isOrderItemBaseDiscountSuppressed,
+} from './saleDiscounts'
 import type { SalesUkraineOrderItem } from './types'
 
 describe('sale discount helpers', () => {
@@ -21,5 +26,14 @@ describe('sale discount helpers', () => {
 
   it('does not invent base discount when backend did not send it', () => {
     expect(getVisibleOrderItemBaseDiscount({ Product: { Top: 'A' } } as SalesUkraineOrderItem)).toBeNull()
+  })
+
+  it('returns uniform base discount for the main sales grid', () => {
+    expect(getUniformBaseDiscount([{ Discount: 12 }, { Discount: 12 }] as SalesUkraineOrderItem[])).toBe(12)
+  })
+
+  it('returns average base discount only when all positions have a base discount', () => {
+    expect(getAverageBaseDiscount([{ Discount: 10 }, { Discount: 20 }] as SalesUkraineOrderItem[])).toBe(15)
+    expect(getAverageBaseDiscount([{ Discount: 10 }, { Discount: 0 }] as SalesUkraineOrderItem[])).toBeNull()
   })
 })

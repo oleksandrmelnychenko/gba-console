@@ -930,6 +930,7 @@
 .sg-slot {
   display: flex;
   align-items: center;
+  gap: 6px;
   justify-content: center;
 }
 
@@ -959,6 +960,10 @@
 
 .sg-discount-badge.is-static {
   cursor: default;
+}
+
+.sg-discount-badge-base {
+  color: var(--mantine-color-blue-7);
 }
 
 .sg-client-retail {

@@ -78,7 +78,12 @@ import {
   unlockSale,
   updateSale,
 } from '../api/salesUkraineApi'
-import { getAverageOneTimeDiscount, getUniformOneTimeDiscount } from '../saleDiscounts'
+import {
+  getAverageBaseDiscount,
+  getAverageOneTimeDiscount,
+  getUniformBaseDiscount,
+  getUniformOneTimeDiscount,
+} from '../saleDiscounts'
 import { getSaleLifecycleStatusKey, getStatusTypeKey, isDiscountEditableSaleLifecycle, isStatusType } from '../saleStatus'
 import { useGridColumnResize } from './useGridColumnResize'
 import type { CSSProperties } from 'react'
@@ -1253,16 +1258,30 @@ function SaleGridRow({
   const bangClickable = Boolean(sale.ChangedToInvoice) && canWillNotShip
   const discountEditable = isNewOrPackagingStatus(sale) && positions > 0
   const rowOrderItems = Array.isArray(sale.Order?.OrderItems) ? sale.Order.OrderItems : []
-  const uniformDiscount = rowOrderItems.length ? getUniformOneTimeDiscount(rowOrderItems) : getNumber(sale.OneTimeDiscountUniform)
-  const averageDiscount =
-    uniformDiscount == null
+  const uniformOneTimeDiscount = rowOrderItems.length ? getUniformOneTimeDiscount(rowOrderItems) : getNumber(sale.OneTimeDiscountUniform)
+  const averageOneTimeDiscount =
+    uniformOneTimeDiscount == null
       ? rowOrderItems.length
         ? getAverageOneTimeDiscount(rowOrderItems)
         : getNumber(sale.OneTimeDiscountAverage)
       : null
-  const saleDiscountBadge = uniformDiscount != null || averageDiscount != null ? formatCompactPercent(uniformDiscount ?? averageDiscount ?? 0) : null
+  const oneTimeDiscountBadge =
+    uniformOneTimeDiscount != null || averageOneTimeDiscount != null
+      ? formatCompactPercent(uniformOneTimeDiscount ?? averageOneTimeDiscount ?? 0)
+      : null
+  const uniformBaseDiscount = rowOrderItems.length ? getUniformBaseDiscount(rowOrderItems) : getNumber(sale.BaseDiscountUniform)
+  const averageBaseDiscount =
+    uniformBaseDiscount == null
+      ? rowOrderItems.length
+        ? getAverageBaseDiscount(rowOrderItems)
+        : getNumber(sale.BaseDiscountAverage)
+      : null
+  const baseDiscountBadge =
+    uniformBaseDiscount != null || averageBaseDiscount != null
+      ? formatCompactPercent(uniformBaseDiscount ?? averageBaseDiscount ?? 0)
+      : null
   const saleDiscountUpdater =
-    uniformDiscount != null
+    uniformOneTimeDiscount != null
       ? (rowOrderItems[0]?.DiscountUpdatedBy?.LastName ?? sale.DiscountUpdatedByLastName)?.trim() || ''
       : ''
   const isEdited = Boolean(sale.IsEdited) || (Array.isArray(sale.HistoryInvoiceEdit) && sale.HistoryInvoiceEdit.length > 0)
@@ -1423,14 +1442,19 @@ function SaleGridRow({
       <div className="sg-positions">{positions}</div>
 
       <div className="sg-slot" data-row-stop="true">
-        {saleDiscountBadge != null ? (
-          <Tooltip label={saleDiscountUpdater ? `${t('Знижка')}: ${saleDiscountUpdater}` : t('Знижка')}>
-            {discountEditable && uniformDiscount != null ? (
+        {baseDiscountBadge != null && (
+          <Tooltip label={averageBaseDiscount != null ? t('Середня базова знижка') : t('Базова знижка')}>
+            <span className="sg-discount-badge sg-discount-badge-base is-static">{baseDiscountBadge}</span>
+          </Tooltip>
+        )}
+        {oneTimeDiscountBadge != null ? (
+          <Tooltip label={saleDiscountUpdater ? `${t('Разова знижка')}: ${saleDiscountUpdater}` : t('Разова знижка')}>
+            {discountEditable && uniformOneTimeDiscount != null ? (
               <button className="sg-discount-badge" type="button" onClick={() => onOpenDiscount(sale)}>
-                {saleDiscountBadge}
+                {oneTimeDiscountBadge}
               </button>
             ) : (
-              <span className="sg-discount-badge is-static">{saleDiscountBadge}</span>
+              <span className="sg-discount-badge is-static">{oneTimeDiscountBadge}</span>
             )}
           </Tooltip>
         ) : discountEditable ? (
@@ -2098,7 +2122,15 @@ function getSaleTransporterName(sale: SalesUkraineSale): string {
 }
 
 function getTransporterImageUrl(sale: SalesUkraineSale): string {
+  if (isSelfCheckoutTransporter(sale.Transporter) || isSelfCheckoutTransporter(sale.UpdateDataCarrier?.[0]?.Transporter)) {
+    return ''
+  }
+
   return sale.Transporter?.ImageUrl?.trim() || sale.UpdateDataCarrier?.[0]?.Transporter?.ImageUrl?.trim() || ''
+}
+
+function isSelfCheckoutTransporter(transporter: { CssClass?: string | null } | null | undefined): boolean {
+  return transporter?.CssClass === 'self_checkout_item_class'
 }
 
 function getSaleDeliveryAddress(sale: SalesUkraineSale): string {

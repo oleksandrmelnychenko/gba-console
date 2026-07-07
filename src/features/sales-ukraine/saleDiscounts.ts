@@ -12,34 +12,20 @@ export function getVisibleOrderItemBaseDiscount(orderItem: SalesUkraineOrderItem
   return isOrderItemBaseDiscountSuppressed(orderItem) ? 0 : discount
 }
 
+export function getUniformBaseDiscount(orderItems: SalesUkraineOrderItem[]): number | null {
+  return getUniformPositiveDiscount(orderItems.map((item) => item.Discount))
+}
+
+export function getAverageBaseDiscount(orderItems: SalesUkraineOrderItem[]): number | null {
+  return getAveragePositiveDiscount(orderItems.map((item) => item.Discount))
+}
+
 export function getUniformOneTimeDiscount(orderItems: SalesUkraineOrderItem[]): number | null {
-  if (!orderItems.length) {
-    return null
-  }
-
-  const first = getNumber(orderItems[0]?.OneTimeDiscount)
-
-  if (typeof first !== 'number' || first === 0) {
-    return null
-  }
-
-  return orderItems.every((item) => getNumber(item.OneTimeDiscount) === first) ? first : null
+  return getUniformPositiveDiscount(orderItems.map((item) => item.OneTimeDiscount))
 }
 
 export function getAverageOneTimeDiscount(orderItems: SalesUkraineOrderItem[]): number | null {
-  if (!orderItems.length) {
-    return null
-  }
-
-  const discounts = orderItems.map((item) => getNumber(item.OneTimeDiscount))
-
-  if (discounts.some((value) => typeof value !== 'number' || value <= 0)) {
-    return null
-  }
-
-  const sum = (discounts as number[]).reduce((acc, value) => acc + value, 0)
-
-  return Math.round((sum / discounts.length) * 100) / 100
+  return getAveragePositiveDiscount(orderItems.map((item) => item.OneTimeDiscount))
 }
 
 export function isOrderItemBaseDiscountSuppressed(orderItem: SalesUkraineOrderItem): boolean {
@@ -64,4 +50,34 @@ function getNumber(value: unknown): number | null {
   }
 
   return null
+}
+
+function getUniformPositiveDiscount(values: unknown[]): number | null {
+  if (!values.length) {
+    return null
+  }
+
+  const first = getNumber(values[0])
+
+  if (typeof first !== 'number' || first === 0) {
+    return null
+  }
+
+  return values.every((value) => getNumber(value) === first) ? first : null
+}
+
+function getAveragePositiveDiscount(values: unknown[]): number | null {
+  if (!values.length) {
+    return null
+  }
+
+  const discounts = values.map((value) => getNumber(value))
+
+  if (discounts.some((value) => typeof value !== 'number' || value <= 0)) {
+    return null
+  }
+
+  const sum = (discounts as number[]).reduce((acc, value) => acc + value, 0)
+
+  return Math.round((sum / discounts.length) * 100) / 100
 }

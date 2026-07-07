@@ -1573,6 +1573,10 @@ function getSaleTransporterName(sale: SalesOnlineShopSale): string {
 }
 
 function getTransporterImageUrl(sale: SalesOnlineShopSale): string {
+  if (sale.Transporter?.CssClass === 'self_checkout_item_class') {
+    return ''
+  }
+
   return sale.Transporter?.ImageUrl?.trim() || ''
 }
 

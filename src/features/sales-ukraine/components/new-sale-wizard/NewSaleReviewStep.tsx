@@ -479,19 +479,27 @@ export function NewSaleReviewStep({
   }
 
   function buildPayload(mode: 'create' | 'save', current: SalesUkraineSale): SalesUkraineSale & { IsEdited?: boolean } {
-    const addressId = value.address?.Id ?? 0
+    const selfCheckoutPayload = isSelfCheckout(value.transporter)
+    const recipientId = selfCheckoutPayload ? null : getPositiveId(value.recipient?.Id)
+    const addressId = selfCheckoutPayload ? null : getPositiveId(value.address?.Id)
     const payload: SalesUkraineSale & { IsEdited?: boolean } = {
       ...current,
-      CashOnDeliveryAmount: Number(value.codAmount),
+      CashOnDeliveryAmount: selfCheckoutPayload ? 0 : Number(value.codAmount),
       Comment: value.comment,
-      DeliveryRecipient: { ...(value.recipient ?? {}), MobilePhone: value.mobilePhone } as SalesUkraineSale['DeliveryRecipient'],
-      DeliveryRecipientAddress: {
-        ...(value.address ?? {}),
-        City: value.city,
-        Department: value.department,
-        Id: addressId,
-      } as SalesUkraineSale['DeliveryRecipientAddress'],
-      IsCashOnDelivery: value.isCashOnDelivery,
+      DeliveryRecipient: selfCheckoutPayload
+        ? null
+        : ({ ...(value.recipient ?? {}), ...(recipientId ? { Id: recipientId } : {}), MobilePhone: value.mobilePhone } as SalesUkraineSale['DeliveryRecipient']),
+      DeliveryRecipientAddress: selfCheckoutPayload
+        ? null
+        : ({
+            ...(value.address ?? {}),
+            City: value.city,
+            Department: value.department,
+            ...(addressId ? { Id: addressId } : {}),
+          } as SalesUkraineSale['DeliveryRecipientAddress']),
+      DeliveryRecipientAddressId: addressId,
+      DeliveryRecipientId: recipientId,
+      IsCashOnDelivery: selfCheckoutPayload ? false : value.isCashOnDelivery,
       Transporter: value.transporter ?? current.Transporter,
     }
 
@@ -505,7 +513,6 @@ export function NewSaleReviewStep({
       payload.BaseSalePaymentStatus = { Deleted: false, Id: 0, NetUid: EMPTY_GUID, SalePaymentStatusType: 0 }
       payload.IsPrintedPaymentInvoice = true
     } else {
-      payload.DeliveryRecipientAddressId = addressId
       payload.IsEdited = true
     }
 
@@ -550,7 +557,6 @@ export function NewSaleReviewStep({
           } else {
             const payload = buildPayload('create', sale)
             payload.Order = { ...(sale.Order ?? {}), OrderItems: mergedSale?.orderItems ?? sale.Order?.OrderItems ?? [] }
-            payload.DeliveryRecipientAddressId = value.address?.Id ?? 0
 
             await updateMergedSale(payload)
             notifications.show({ color: 'green', message: t('Рахунок створено') })
@@ -886,6 +892,10 @@ function applyRecipientSelection(
   patch.addressValue = ''
   patch.city = address?.City || ''
   patch.department = address?.Department || ''
+}
+
+function getPositiveId(value: number | null | undefined): number | null {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : null
 }
 
 function getSaleLifeCycleStatusName(sale: SalesUkraineSale): string {
