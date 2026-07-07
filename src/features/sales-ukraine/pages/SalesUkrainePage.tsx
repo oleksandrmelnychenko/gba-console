@@ -1571,7 +1571,7 @@ function SaleGridRow({
       </div>
 
       <div className="sg-status">
-        <Badge color={STATUS_COLORS[getSaleStatusKey(sale)] || 'gray'} size="sm" variant="light">
+        <Badge className={`app-role-pill ${getSaleStatusPillClass(sale)}`} size="sm" variant="light">
           {getSaleStatusLabel(sale)}
         </Badge>
         <span
