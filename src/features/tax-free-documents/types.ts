@@ -150,3 +150,8 @@ export type TaxFreeStatusOption = {
 export type PrintTaxFreeResponse = {
   Message?: string
 }
+
+export type TaxFreePrintDocument = {
+  DocumentURL?: string
+  PdfDocumentURL?: string
+}

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
-import { getTaxFreeCarrier, getTaxFreeDocuments } from './taxFreeDocumentsApi'
+import { getTaxFreeCarrier, getTaxFreeDocuments, getTaxFreePrintDocument } from './taxFreeDocumentsApi'
 
 vi.mock('../../../shared/api/apiClient', () => ({
   apiRequest: vi.fn(),
@@ -72,5 +72,24 @@ describe('taxFreeDocumentsApi', () => {
       },
     })
     expect(result).toEqual({ NetUid: 'carrier-1', LastName: 'Driver' })
+  })
+
+  it('normalizes tax free print document links from wrapped payloads', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      Body: {
+        DocumentURL: ' http://example.test/tax-free.xlsx ',
+        PdfDocumentURL: 'http://example.test/tax-free.pdf',
+      },
+    })
+
+    await expect(getTaxFreePrintDocument('tax-free-1')).resolves.toEqual({
+      DocumentURL: 'http://example.test/tax-free.xlsx',
+      PdfDocumentURL: 'http://example.test/tax-free.pdf',
+    })
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/ukraine/order/taxfree/documents/printing/get', {
+      query: {
+        netId: 'tax-free-1',
+      },
+    })
   })
 })

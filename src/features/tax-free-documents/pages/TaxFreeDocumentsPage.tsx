@@ -18,11 +18,13 @@ import {
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
-import { Banknote, ChartGantt, ChevronRight, CircleAlert, Eye, Printer, RotateCcw, Search, Truck } from 'lucide-react'
+import { Banknote, ChartGantt, ChevronRight, CircleAlert, Download, Eye, FileSpreadsheet, FileText, Printer, RotateCcw, Search, Truck } from 'lucide-react'
 import { type ReactNode, useCallback, useEffect, useMemo, useReducer } from 'react'
 import { formatLocalDate, SYNC_DATA_RANGE_START } from '../../../shared/date/dateTime'
+import { hasExportDocumentUrl } from '../../../shared/documents/exportDocument'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import { DocumentOutcomePaymentModal } from '../../document-outcome-payment/components/DocumentOutcomePaymentModal'
 import type { DocumentOutcomePaymentSource } from '../../document-outcome-payment/types'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -32,6 +34,7 @@ import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/pagina
 import {
   getTaxFreeCarrier,
   getTaxFreeDocuments,
+  getTaxFreePrintDocument,
   printTaxFreeDocument,
   searchTaxFreeCarriers,
   updateTaxFreeDocument,
@@ -40,7 +43,7 @@ import {
   TaxFreePaymentFromTaxFreeModal,
   type TaxFreePaymentAction,
 } from '../components/TaxFreePaymentFromTaxFreeModal'
-import type { Statham, StathamPassport, TaxFreeDocument, TaxFreeItem } from '../types'
+import type { Statham, StathamPassport, TaxFreeDocument, TaxFreeItem, TaxFreePrintDocument } from '../types'
 import { TaxFreeStatus } from '../types'
 import {
   formatTaxFreeAmountPl,
@@ -159,10 +162,13 @@ function useTaxFreeDocumentsPageModel() {
   const [error, setError] = useValueState<string | null>(null)
   const [selectedDocument, setSelectedDocument] = useValueState<TaxFreeDocument | null>(null)
   const [previewDocument, setPreviewDocument] = useValueState<TaxFreeDocument | null>(null)
+  const [downloadDocument, setDownloadDocument] = useValueState<TaxFreePrintDocument | null>(null)
+  const [downloadSourceTitle, setDownloadSourceTitle] = useValueState('')
   const [accountingDocument, setAccountingDocument] = useValueState<TaxFreeDocument | null>(null)
   const [paymentAction, setPaymentAction] = useValueState<{ action: TaxFreePaymentAction; document: TaxFreeDocument } | null>(null)
   const [outcomeSource, setOutcomeSource] = useValueState<DocumentOutcomePaymentSource | null>(null)
   const [printingId, setPrintingId] = useValueState<string | number | null>(null)
+  const [downloadingId, setDownloadingId] = useValueState<string | number | null>(null)
   const [isSaving, setSaving] = useValueState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const { documents, isLoading, total } = documentsState
@@ -201,8 +207,10 @@ function useTaxFreeDocumentsPageModel() {
   )
   const itemColumns = useTaxFreeItemColumns(selectedDocument?.TaxFreeItems ?? EMPTY_TAX_FREE_ITEMS)
   const columns = useTaxFreeDocumentColumns({
+    downloadingId,
     onOpenCarrier: openDocument,
     onOpenAccounting: openAccounting,
+    onOpenDownload: downloadTaxFreeDocument,
     onOpenPreview: setPreviewDocument,
     onOpenStatus: openDocument,
     onOpenView: openDocument,
@@ -381,6 +389,35 @@ function useTaxFreeDocumentsPageModel() {
     }
   }
 
+  async function downloadTaxFreeDocument(document: TaxFreeDocument) {
+    const documentId = document.NetUid || document.Id
+
+    if (!document.NetUid || !documentId) {
+      notifications.show({ color: 'orange', message: t('Документ не має NetUid для формування файлів') })
+      return
+    }
+
+    setDownloadingId(documentId)
+    setError(null)
+
+    try {
+      const nextDocument = await getTaxFreePrintDocument(document.NetUid)
+
+      if (!hasExportDocumentUrl(nextDocument)) {
+        notifications.show({ color: 'orange', message: t('Документ не повернув посилання') })
+        return
+      }
+
+      setDownloadSourceTitle(document.Number || String(documentId))
+      setDownloadDocument(nextDocument)
+      notifications.show({ color: 'green', message: t('Документ готовий') })
+    } catch (downloadError) {
+      setError(downloadError instanceof Error ? downloadError.message : t('Не вдалося сформувати документ'))
+    } finally {
+      setDownloadingId(null)
+    }
+  }
+
   return {
     canMoveForward,
     accountingDocument,
@@ -389,6 +426,8 @@ function useTaxFreeDocumentsPageModel() {
     columns,
     dateFrom,
     dateTo,
+    downloadDocument,
+    downloadSourceTitle,
     error,
     filterError,
     isLoading,
@@ -407,6 +446,7 @@ function useTaxFreeDocumentsPageModel() {
     statusOptions,
     statusValue,
     closeDetails: () => setSelectedDocument(null),
+    closeDownload: () => setDownloadDocument(null),
     closeAccounting: () => setAccountingDocument(null),
     closeOutcome: () => setOutcomeSource(null),
     closePaymentAction: () => setPaymentAction(null),
@@ -444,6 +484,8 @@ function TaxFreeDocumentsPageView({ model }: { model: ReturnType<typeof useTaxFr
     columns,
     dateFrom,
     dateTo,
+    downloadDocument,
+    downloadSourceTitle,
     error,
     filterError,
     isLoading,
@@ -461,6 +503,7 @@ function TaxFreeDocumentsPageView({ model }: { model: ReturnType<typeof useTaxFr
     selectedDocument,
     statusOptions,
     statusValue,
+    closeDownload,
     closeAccounting,
     closeDetails,
     closeOutcome,
@@ -612,6 +655,12 @@ function TaxFreeDocumentsPageView({ model }: { model: ReturnType<typeof useTaxFr
         onPrint={printDocument}
       />
 
+      <TaxFreeDownloadDocumentModal
+        document={downloadDocument}
+        title={downloadSourceTitle}
+        onClose={closeDownload}
+      />
+
       <TaxFreeAccountingActionModal
         document={accountingDocument}
         opened={Boolean(accountingDocument)}
@@ -705,14 +754,18 @@ function TaxFreeAccountingActionModal({
 }
 
 function useTaxFreeDocumentColumns({
+  downloadingId,
   onOpenCarrier,
   onOpenAccounting,
+  onOpenDownload,
   onOpenPreview,
   onOpenStatus,
   onOpenView,
 }: {
+  downloadingId: string | number | null
   onOpenCarrier: (document: TaxFreeDocument) => void
   onOpenAccounting: (document: TaxFreeDocument) => void
+  onOpenDownload: (document: TaxFreeDocument) => void
   onOpenPreview: (document: TaxFreeDocument) => void
   onOpenStatus: (document: TaxFreeDocument) => void
   onOpenView: (document: TaxFreeDocument) => void
@@ -874,6 +927,24 @@ function useTaxFreeDocumentColumns({
         width: 54,
       },
       {
+        cell: (row) => {
+          const documentId = row.document.NetUid || row.document.Id
+
+          return (
+            <TaxFreeRowAction
+              disabled={!row.document.NetUid || downloadingId === documentId}
+              icon={<Download size={17} />}
+              label={t('Завантажити документи')}
+              onClick={() => onOpenDownload(row.document)}
+            />
+          )
+        },
+        enableSorting: false,
+        header: '',
+        id: 'downloadAction',
+        width: 54,
+      },
+      {
         cell: (row) => (
           <TaxFreeRowAction icon={<Eye size={17} />} label={t('Деталі')} onClick={() => onOpenView(row.document)} />
         ),
@@ -883,7 +954,7 @@ function useTaxFreeDocumentColumns({
         width: 54,
       },
     ],
-    [onOpenAccounting, onOpenCarrier, onOpenPreview, onOpenStatus, onOpenView, t],
+    [downloadingId, onOpenAccounting, onOpenCarrier, onOpenDownload, onOpenPreview, onOpenStatus, onOpenView, t],
   )
 }
 
@@ -1341,6 +1412,73 @@ function TaxFreeStatusPanel({
         ))}
       </Stack>
     </Stack>
+  )
+}
+
+function TaxFreeDownloadDocumentModal({
+  document,
+  title,
+  onClose,
+}: {
+  document: TaxFreePrintDocument | null
+  title: string
+  onClose: () => void
+}) {
+  const { t } = useI18n()
+  const hasExcel = Boolean(document?.DocumentURL)
+  const hasPdf = Boolean(document?.PdfDocumentURL)
+
+  return (
+    <AppModal centered opened={Boolean(document)} size="sm" title={t('Документи')} onClose={onClose}>
+      <Stack gap="sm">
+        {title ? (
+          <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)' }}>
+            {title}
+          </Text>
+        ) : null}
+
+        {hasExcel || hasPdf ? (
+          <Group gap="xs">
+            {document?.DocumentURL ? (
+              <Button
+                color="teal"
+                component="a"
+                href={getDocumentHref(document.DocumentURL)}
+                leftSection={<FileSpreadsheet size={16} />}
+                rel="noopener noreferrer"
+                target="_blank"
+                variant="outline"
+              >
+                Excel
+              </Button>
+            ) : null}
+            {document?.PdfDocumentURL ? (
+              <Button
+                color="red"
+                component="a"
+                href={getDocumentHref(document.PdfDocumentURL)}
+                leftSection={<FileText size={16} />}
+                rel="noopener noreferrer"
+                target="_blank"
+                variant="light"
+              >
+                PDF
+              </Button>
+            ) : null}
+          </Group>
+        ) : (
+          <Text c="dimmed" size="sm">
+            {t('Документ не повернув посилання')}
+          </Text>
+        )}
+
+        <Group justify="flex-end" mt="xs">
+          <Button color="orange" variant="subtle" onClick={onClose}>
+            {t('Закрити')}
+          </Button>
+        </Group>
+      </Stack>
+    </AppModal>
   )
 }
 

@@ -1,6 +1,7 @@
 import { apiRequest } from '../../../shared/api/apiClient'
 import { PRINTER_API_BASE_URL } from '../../../shared/config/env'
 import { toDateTimeQuery } from '../../../shared/date/dateTime'
+import { normalizeExportDocument } from '../../../shared/documents/exportDocument'
 import type {
   IncomePaymentOrder,
 } from '../../income-cashflows/types'
@@ -10,6 +11,7 @@ import type {
   TaxFreeDocument,
   TaxFreeDocumentsResponse,
   TaxFreeDocumentsSearchParams,
+  TaxFreePrintDocument,
   TaxFreeItem,
 } from '../types'
 
@@ -65,6 +67,16 @@ export async function printTaxFreeDocument(document: TaxFreeDocument): Promise<P
   return {
     Message: readMessage(result),
   }
+}
+
+export async function getTaxFreePrintDocument(netId: string): Promise<TaxFreePrintDocument> {
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/taxfree/documents/printing/get', {
+    query: {
+      netId,
+    },
+  })
+
+  return normalizeExportDocument(unwrapPayload(result))
 }
 
 export async function searchTaxFreeCarriers(value: string): Promise<Statham[]> {

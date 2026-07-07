@@ -38,6 +38,7 @@ import { MoveTaxFreeItemsModal } from '../components/MoveTaxFreeItemsModal'
 import { TaxFreeBreakModal } from '../components/TaxFreeBreakModal'
 import { TaxFreeCarrierModal } from '../components/TaxFreeCarrierModal'
 import { TaxFreeDocumentsPanel } from '../components/TaxFreeDocumentsPanel'
+import { hasTaxFreePrintDocumentUrl, TaxFreePrintDocumentModal } from '../components/TaxFreePrintDocumentModal'
 import type {
   Client,
   ClientAgreement,
@@ -47,6 +48,7 @@ import type {
   TaxFreeItem,
   TaxFreePackList,
   TaxFreePackListOrderItem,
+  TaxFreePrintDocument,
   TaxFreeStatus,
 } from '../types'
 import { TaxFreeStatus as TaxFreeStatusValue } from '../types'
@@ -64,7 +66,6 @@ import {
   getTaxFreeItemUnitPrice,
   getTaxFreeTotalQty,
   normalizePackList,
-  openDocumentUrl,
   parseTaxFreeStatus,
 } from '../utils'
 import './taxFreePackLists.css'
@@ -94,6 +95,11 @@ type EditState = {
   packList: TaxFreePackList | null
 }
 
+type PrintDocumentModalState = {
+  document: TaxFreePrintDocument
+  title: string
+}
+
 export function EditTaxFreePackListPage() {
   const { t } = useI18n()
   const { id } = useParams()
@@ -111,6 +117,7 @@ export function EditTaxFreePackListPage() {
   const [isMoveModalOpen, setMoveModalOpen] = useState(false)
   const [isBreakModalOpen, setBreakModalOpen] = useState(false)
   const [documentTaxFree, setDocumentTaxFree] = useState<TaxFree | null>(null)
+  const [printDocumentModal, setPrintDocumentModal] = useState<PrintDocumentModalState | null>(null)
   const [carrierTaxFree, setCarrierTaxFree] = useState<TaxFree | null>(null)
   const [deleteTaxFree, setDeleteTaxFree] = useState<TaxFree | null>(null)
   const [pendingDirtyAction, setPendingDirtyAction] = useState<'reload' | null>(null)
@@ -409,9 +416,12 @@ export function EditTaxFreePackListPage() {
 
     try {
       const document = await getTaxFreePrintDocuments(selectedIds)
-      if (!openDocumentUrl(document)) {
+      if (!hasTaxFreePrintDocumentUrl(document)) {
         notifications.show({ color: 'yellow', message: t('Документ не містить посилання для відкриття') })
+        return
       }
+
+      setPrintDocumentModal({ document, title: t('Обрані Tax Free') })
     } catch (printError) {
       setError(printError instanceof Error ? printError.message : t('Не вдалося отримати документ'))
     } finally {
@@ -721,9 +731,12 @@ export function EditTaxFreePackListPage() {
                     setPrinting(true)
                     try {
                       const document = await getTaxFreePrintDocument(taxFree.NetUid)
-                      if (!openDocumentUrl(document)) {
+                      if (!hasTaxFreePrintDocumentUrl(document)) {
                         notifications.show({ color: 'yellow', message: t('Документ не містить посилання для відкриття') })
+                        return
                       }
+
+                      setPrintDocumentModal({ document, title: `TF ${taxFree.Number || taxFree.NetUid}` })
                     } catch (printError) {
                       setError(printError instanceof Error ? printError.message : t('Не вдалося отримати документ'))
                     } finally {
@@ -831,6 +844,12 @@ export function EditTaxFreePackListPage() {
           />
         )}
       </AppDrawer>
+
+      <TaxFreePrintDocumentModal
+        document={printDocumentModal?.document ?? null}
+        title={printDocumentModal?.title ?? ''}
+        onClose={() => setPrintDocumentModal(null)}
+      />
 
       <AppModal
         centered

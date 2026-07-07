@@ -163,17 +163,6 @@ export function normalizePackList(packList: TaxFreePackList): TaxFreePackList {
   }
 }
 
-export function openDocumentUrl(document: { DocumentURL?: string, PdfDocumentURL?: string } | null): boolean {
-  const url = document?.PdfDocumentURL || document?.DocumentURL
-
-  if (!url) {
-    return false
-  }
-
-  window.open(url.replace(/^http:\/\//i, 'https://'), '_blank', 'noopener,noreferrer')
-  return true
-}
-
 export function getTaxFreeTotalQty(taxFree: TaxFree): number {
   return (taxFree.TaxFreeItems || []).reduce((total, item) => total + (item.Qty || 0), 0)
 }

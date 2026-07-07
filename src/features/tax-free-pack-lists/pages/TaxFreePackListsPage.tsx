@@ -27,13 +27,13 @@ import {
   getTaxFreePackLists,
 } from '../api/taxFreePackListsApi'
 import { CreateSupplyOrderModal } from '../components/CreateSupplyOrderModal'
-import type { TaxFreePackList } from '../types'
+import { hasTaxFreePrintDocumentUrl, TaxFreePrintDocumentModal } from '../components/TaxFreePrintDocumentModal'
+import type { TaxFreePackList, TaxFreePrintDocument } from '../types'
 import {
   displayValue,
   formatDateTime,
   getEntityName,
   getPackListAgreementName,
-  openDocumentUrl,
 } from '../utils'
 import './taxFreePackLists.css'
 
@@ -104,6 +104,7 @@ export function TaxFreePackListsPage() {
   const [selectedPackList, setSelectedPackList] = useState<TaxFreePackList | null>(null)
   const [deleteCandidate, setDeleteCandidate] = useState<TaxFreePackList | null>(null)
   const [orderPackList, setOrderPackList] = useState<TaxFreePackList | null>(null)
+  const [downloadDocument, setDownloadDocument] = useState<TaxFreePrintDocument | null>(null)
   const [isExporting, setExporting] = useState(false)
   const { error, filters, isLoading, packLists, page, pageSize, reloadKey, totalQty } = listState
   const filterError = filters.from > filters.to ? t('Початкова дата має бути не пізніше кінцевої') : null
@@ -196,9 +197,12 @@ export function TaxFreePackListsPage() {
         to: filters.to,
       })
 
-      if (!openDocumentUrl(document)) {
+      if (!hasTaxFreePrintDocumentUrl(document)) {
         notifications.show({ color: 'yellow', message: t('Документ не містить посилання для відкриття') })
+        return
       }
+
+      setDownloadDocument(document)
     } catch (exportError) {
       dispatchList({
         type: 'errorChanged',
@@ -350,6 +354,12 @@ export function TaxFreePackListsPage() {
             navigate(`/orders/ukraine/view/${netUid}`)
           }
         }}
+      />
+
+      <TaxFreePrintDocumentModal
+        document={downloadDocument}
+        title={t('Пакувальні листи Tax Free')}
+        onClose={() => setDownloadDocument(null)}
       />
     </Stack>
   )
