@@ -353,6 +353,19 @@ function useSupplyUkraineOrdersPageController() {
     pageSize,
     selectedRow,
   } = uiState
+
+  // Debounced supplier search: the «Постачальник» box filters as you type. After a short pause we
+  // commit the typed name to the active filters (which re-fetches), so the search runs without the
+  // user hunting for a refresh button. Enter still applies immediately.
+  const [debouncedSupplier] = useDebouncedValue(filterDraft.supplier, 400)
+  useEffect(() => {
+    if (debouncedSupplier === activeFilters.supplier) {
+      return
+    }
+
+    dispatchUi({ filters: { ...activeFilters, supplier: debouncedSupplier }, type: 'setActiveFilters' })
+  }, [debouncedSupplier, activeFilters])
+
   const requestIdRef = useRef(0)
   const downloadRequestRef = useRef(0)
   const filterError = getFilterError(activeFilters)
