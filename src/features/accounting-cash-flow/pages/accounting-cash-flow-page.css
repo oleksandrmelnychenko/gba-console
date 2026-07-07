@@ -933,6 +933,15 @@
   z-index: 3;
 }
 
+.accounting-cash-flow-grid-card .data-table-resizer::after {
+  display: none;
+}
+
+.accounting-cash-flow-grid-card .data-table-th[style*='position: sticky'],
+.accounting-cash-flow-grid-card .data-table-cell[style*='position: sticky'] {
+  box-shadow: none !important;
+}
+
 .accounting-cash-flow-document-cell {
   align-items: center;
   display: inline-flex;
