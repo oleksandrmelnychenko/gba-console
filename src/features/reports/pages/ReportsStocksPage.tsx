@@ -10,9 +10,11 @@ import {
   Divider,
   Group,
   Loader,
+  MultiSelect,
   Select,
   SimpleGrid,
   Stack,
+  Switch,
   Table,
   Text,
   TextInput,
@@ -76,6 +78,15 @@ import {
 const STORAGE_KEY = 'app_configs_reports_template'
 const LOOKUP_SEARCH_DEBOUNCE_MS = 300
 const LOOKUP_SEARCH_LIMIT = 30
+
+const SALE_DOCUMENT_STATUS_OPTIONS: Array<{ label: string; value: string }> = [
+  { value: 'All', label: 'Всі' },
+  { value: 'New', label: 'SaleLifeCycleNew' },
+  { value: 'Packaging', label: 'SaleLifeCyclePackaging' },
+  { value: 'InvoiceChanged', label: 'InvoiceChanged' },
+  { value: 'TransporterChanged', label: 'TransporterChanged' },
+  { value: 'OrderClosed', label: 'OrderClosed' },
+]
 
 const defaultCondition = REPORT_FILTER_CONDITIONS[0]
 
@@ -538,8 +549,28 @@ function SelectionValuePicker({ from, label, selection, selections, to, onChange
   const [manualValue, setManualValue] = useValueState('')
   const [options, setOptions] = useValueState<ReportEntity[]>([])
   const [isLoading, setLoading] = useValueState(false)
+  const [docStatus, setDocStatus] = useValueState('All')
+  const [docOrganisationIds, setDocOrganisationIds] = useValueState<string[]>([])
+  const [docSelfSales, setDocSelfSales] = useValueState(false)
+  const [organizationOptions, setOrganizationOptions] = useValueState<ReportEntity[]>([])
   const [debouncedSearch] = useDebouncedValue(search, LOOKUP_SEARCH_DEBOUNCE_MS)
   const lookupMode = getSelectionLookupMode(selection.SelectedField.Type)
+  const isSaleDocumentFilter = selection.SelectedField.Type === REPORT_FILTER_FIELD_TYPES.saleDocumentNumberDate
+  const saleDocumentFilters = useMemo(
+    () => ({
+      organisationIds: docOrganisationIds.map((id) => Number(id)),
+      status: docStatus,
+      type: docSelfSales ? ('Self' as const) : ('All' as const),
+    }),
+    [docOrganisationIds, docSelfSales, docStatus],
+  )
+  const organizationSelectData = useMemo(
+    () =>
+      organizationOptions
+        .filter((organization) => typeof organization.Id === 'number')
+        .map((organization) => ({ label: getEntityDisplayName(organization), value: String(organization.Id) })),
+    [organizationOptions],
+  )
   const normalizedSearch = lookupMode === 'search' ? debouncedSearch.trim() : ''
   const minSearchLength = getSelectionLookupMinLength(selection.SelectedField.Type)
   const dependentClientNetId = lookupMode === 'dependent' ? getDependentClientNetId(selections) : ''
@@ -551,6 +582,34 @@ function SelectionValuePicker({ from, label, selection, selections, to, onChange
       })),
     [options, selection.Values],
   )
+
+  useEffect(() => {
+    if (!isSaleDocumentFilter) {
+      return
+    }
+
+    let cancelled = false
+
+    async function loadOrganizations() {
+      try {
+        const organizations = await getReportOrganizations()
+
+        if (!cancelled) {
+          setOrganizationOptions(organizations)
+        }
+      } catch {
+        if (!cancelled) {
+          setOrganizationOptions([])
+        }
+      }
+    }
+
+    void loadOrganizations()
+
+    return () => {
+      cancelled = true
+    }
+  }, [isSaleDocumentFilter, setOrganizationOptions])
 
   useEffect(() => {
     if (!selection.SelectedField.Name || lookupMode === 'manual') {
@@ -584,7 +643,14 @@ function SelectionValuePicker({ from, label, selection, selections, to, onChange
         const nextOptions =
           lookupMode === 'dependent'
             ? await getReportClientAgreements(dependentClientNetId)
-            : await loadSelectionLookupOptions(selection.SelectedField.Type, normalizedSearch, from, to, controller.signal)
+            : await loadSelectionLookupOptions(
+                selection.SelectedField.Type,
+                normalizedSearch,
+                from,
+                to,
+                controller.signal,
+                saleDocumentFilters,
+              )
 
         if (!cancelled) {
           setOptions(nextOptions)
@@ -612,6 +678,7 @@ function SelectionValuePicker({ from, label, selection, selections, to, onChange
     lookupMode,
     minSearchLength,
     normalizedSearch,
+    saleDocumentFilters,
     selection.SelectedField.Name,
     selection.SelectedField.Type,
     setLoading,
@@ -665,6 +732,31 @@ function SelectionValuePicker({ from, label, selection, selections, to, onChange
 
   return (
     <Stack gap={4} w={320}>
+      {isSaleDocumentFilter ? (
+        <Stack gap={6}>
+          <Select
+            allowDeselect={false}
+            data={SALE_DOCUMENT_STATUS_OPTIONS.map((option) => ({ label: t(option.label), value: option.value }))}
+            label={t('Статус')}
+            value={docStatus}
+            onChange={(value) => setDocStatus(value || 'All')}
+          />
+          <MultiSelect
+            clearable
+            searchable
+            data={organizationSelectData}
+            label={t('Організація')}
+            placeholder={t('Всі')}
+            value={docOrganisationIds}
+            onChange={setDocOrganisationIds}
+          />
+          <Switch
+            checked={docSelfSales}
+            label={t('Власні продажі')}
+            onChange={(event) => setDocSelfSales(event.currentTarget.checked)}
+          />
+        </Stack>
+      ) : null}
       {lookupMode === 'manual' ? (
         <Group align="end" gap={6} wrap="nowrap">
           <TextInput
@@ -953,12 +1045,19 @@ function getDependentClientNetId(selections: ReportSelection[]): string {
   return clientValue?.Data.NetUid ? String(clientValue.Data.NetUid) : ''
 }
 
+type SaleDocumentLookupFilters = {
+  organisationIds: number[]
+  status: string
+  type: 'All' | 'Self'
+}
+
 async function loadSelectionLookupOptions(
   fieldType: number,
   value: string,
   from: string,
   to: string,
   signal?: AbortSignal,
+  saleDocumentFilters?: SaleDocumentLookupFilters,
 ): Promise<ReportEntity[]> {
   switch (fieldType) {
     case REPORT_FILTER_FIELD_TYPES.organization:
@@ -988,10 +1087,10 @@ async function loadSelectionLookupOptions(
         from,
         limit: LOOKUP_SEARCH_LIMIT,
         offset: 0,
-        organisationIds: [],
-        status: '',
+        organisationIds: saleDocumentFilters?.organisationIds ?? [],
+        status: saleDocumentFilters?.status ?? 'All',
         to,
-        type: 'All',
+        type: saleDocumentFilters?.type ?? 'All',
         value,
       })
     case REPORT_FILTER_FIELD_TYPES.saleReturnDocument:
