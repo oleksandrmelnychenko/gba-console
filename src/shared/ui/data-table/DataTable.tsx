@@ -76,11 +76,13 @@ export function DataTable<TData>({
   emptyText,
   labels: labelsOverride,
   showLayoutControls = false,
+  enablePinning = true,
   showDensityToggle = true,
   density: controlledDensity,
   onDensityChange,
   toolbarLeft,
   toolbarRight,
+  footer,
   toolbarPortalTarget,
   onRowClick,
   rowClassName,
@@ -117,6 +119,16 @@ export function DataTable<TData>({
     () => ({ ...createDefaultLabels(t), ...labelsOverride }),
     [labelsOverride, t],
   )
+  const effectiveDefaultLayout = useMemo(
+    () =>
+      enablePinning
+        ? defaultLayout
+        : {
+            ...defaultLayout,
+            columnPinning: { left: [], right: [] },
+          },
+    [defaultLayout, enablePinning],
+  )
   const normalizedLayoutVersion = normalizeLayoutVersion(layoutVersion)
   const columnIds = useMemo(() => columns.map((column) => column.id), [columns])
   const [internalSorting, setInternalSorting] = useState<SortingState>([])
@@ -127,7 +139,7 @@ export function DataTable<TData>({
     normalizeDataTableLayout(
       readCompatibleDataTableLayout(tableId, normalizedLayoutVersion),
       columnIds,
-      defaultLayout,
+      effectiveDefaultLayout,
     ),
   )
   const columnSignature = useMemo(() => columnIds.join('::'), [columnIds])
@@ -141,7 +153,7 @@ export function DataTable<TData>({
       const nextLayout = normalizeDataTableLayout(
         readCompatibleDataTableLayout(tableId, normalizedLayoutVersion),
         columnIds,
-        defaultLayout,
+        effectiveDefaultLayout,
       )
 
       // On a plain mount this recomputes exactly what the useState initializer
@@ -151,13 +163,13 @@ export function DataTable<TData>({
         ? currentLayout
         : nextLayout
     })
-    // defaultLayout is intentionally keyed by layoutVersion; depending on its
+    // effectiveDefaultLayout is intentionally keyed by layoutVersion; depending on its
     // object identity would reset pages that build it inline on every render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [columnSignature, normalizedLayoutVersion, tableId])
   const normalizedLayout = useMemo(
-    () => normalizeDataTableLayout(layout, columnIds, defaultLayout),
-    [columnIds, defaultLayout, layout],
+    () => normalizeDataTableLayout(layout, columnIds, effectiveDefaultLayout),
+    [columnIds, effectiveDefaultLayout, layout],
   )
 
   const columnTitles = useMemo(() => {
@@ -187,7 +199,7 @@ export function DataTable<TData>({
             ? column.cell(context.row.original)
             : formatCellValue(context.getValue(), labels),
         enableHiding: column.enableHiding !== false,
-        enablePinning: column.enablePinning !== false,
+        enablePinning: enablePinning && column.enablePinning !== false,
         enableResizing: column.enableResizing !== false,
         enableSorting: column.enableSorting ?? Boolean(column.accessor),
         maxSize: column.maxWidth,
@@ -196,7 +208,7 @@ export function DataTable<TData>({
         size: column.width,
       }
     })
-  }, [columns, labels, t])
+  }, [columns, enablePinning, labels, t])
 
   // Persist write-through on USER changes only. A watch-effect used to mirror the
   // layout state into storage, but on a layoutVersion bump it raced the reset
@@ -207,9 +219,9 @@ export function DataTable<TData>({
   ) {
     setLayout((currentLayout) => {
       const nextLayout = normalizeDataTableLayout(
-        updater(normalizeDataTableLayout(currentLayout, columnIds, defaultLayout)),
+        updater(normalizeDataTableLayout(currentLayout, columnIds, effectiveDefaultLayout)),
         columnIds,
-        defaultLayout,
+        effectiveDefaultLayout,
       )
 
       writeDataTableLayout(tableId, { ...nextLayout, version: normalizedLayoutVersion })
@@ -451,7 +463,7 @@ export function DataTable<TData>({
 
   function handleResetLayout() {
     clearDataTableLayout(tableId)
-    setLayout(createDefaultDataTableLayout(columnIds, defaultLayout))
+    setLayout(createDefaultDataTableLayout(columnIds, effectiveDefaultLayout))
   }
 
   const toolbarNode =
@@ -570,6 +582,7 @@ export function DataTable<TData>({
           </div>
         ) : null}
       </div>
+      {footer ? <div className="data-table-footer">{footer}</div> : null}
     </div>
   )
 }

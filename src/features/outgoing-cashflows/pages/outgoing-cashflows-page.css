@@ -1,6 +1,14 @@
 /* Outgoing cashflows list — chrome aligned with the «Продажі» reference.
    The page keeps its load-more (infinite-scroll) mechanism and the table's
    own maxHeight scroll model; only the filter strip + card shell are aligned. */
+.outgoing-cashflows-page {
+  box-sizing: border-box;
+  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 20px);
+  min-height: 0;
+  overflow: hidden;
+  padding: 0 4px;
+}
+
 .outgoing-cashflows-filter-bar {
   overflow-x: auto;
 }
@@ -8,26 +16,63 @@
 .outgoing-cashflows-filter-row {
   align-items: end;
   display: grid;
-  gap: 10px;
+  gap: 8px;
   grid-template-columns:
-    minmax(140px, 150px)
-    minmax(140px, 150px)
-    minmax(320px, 340px)
-    minmax(180px, 190px)
-    minmax(230px, 250px)
-    minmax(260px, 280px)
-    minmax(340px, 360px)
-    minmax(32px, 1fr)
+    minmax(124px, 132px)
+    minmax(124px, 132px)
+    minmax(250px, 1fr)
+    minmax(108px, 120px)
+    minmax(148px, 176px)
+    minmax(162px, 196px)
+    minmax(300px, 340px)
     auto
     auto;
-  min-width: max-content;
+  min-width: 0;
   width: 100%;
+}
+
+.outgoing-cashflows-filter-row > .mantine-InputWrapper-root {
+  min-width: 0;
+}
+
+.outgoing-cashflows-filter-row .mantine-Input-input,
+.outgoing-cashflows-filter-row .mantine-PillsInput-input {
+  min-width: 0;
+}
+
+.outgoing-cashflows-organization-filter .mantine-PillsInput-input {
+  align-items: center;
+  min-height: 36px;
+  padding-bottom: 0;
+  padding-top: 0;
+}
+
+.outgoing-cashflows-organization-filter .mantine-PillsInput-field {
+  align-self: center;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  height: 100%;
+  line-height: 36px;
+  margin: 0;
+  padding: 0;
+}
+
+.outgoing-cashflows-organization-filter .mantine-PillsInput-field::placeholder {
+  color: var(--mantine-color-gray-6);
+}
+
+.outgoing-cashflows-organization-filter .mantine-Pill-root {
+  max-width: 190px;
+}
+
+.outgoing-cashflows-organization-filter .mantine-Pill-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Pin the reset / refresh / density cluster to the trailing edge of the
    wrapping filter row. */
 .outgoing-cashflows-filter-actions {
-  grid-column: 9;
   margin-left: auto;
 }
 
@@ -46,5 +91,90 @@
 /* Body below the flush filter strip carries its own padding (the card is
    padding={0} so the strip can sit flush). */
 .outgoing-cashflows-card__body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
   padding: 12px;
+}
+
+.outgoing-cashflows-card .data-table {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.outgoing-cashflows-card .data-table-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.outgoing-cashflows-card .data-table-footer {
+  align-items: center;
+  display: flex;
+  flex: 0 0 auto;
+  min-height: 30px;
+  overflow-x: auto;
+  padding: 4px 12px;
+}
+
+.outgoing-cashflows-table-footer {
+  min-width: max-content;
+  width: 100%;
+}
+
+.outgoing-cashflows-table-footer .mantine-Badge-root {
+  height: 20px;
+}
+
+.outgoing-cashflows-card .data-table-density-compact .data-table-th {
+  padding: 5px 8px;
+}
+
+.outgoing-cashflows-card .data-table-density-compact .data-table-cell {
+  font-size: 13px;
+  line-height: 1.3;
+  padding: 8px;
+}
+
+.outgoing-cashflows-card .data-table-cell {
+  white-space: nowrap;
+}
+
+.outgoing-cashflows-card .data-table-cell > * {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.outgoing-cashflows-card .data-table-cell .mantine-Group-root {
+  flex-wrap: nowrap;
+  max-width: 100%;
+}
+
+.outgoing-cashflows-card .data-table-cell .mantine-Text-root {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.outgoing-cashflows-card .data-table-cell .mantine-Badge-root,
+.outgoing-cashflows-card .data-table-cell .mantine-ActionIcon-root {
+  flex: 0 0 auto;
+}
+
+.outgoing-cashflows-card .outgoing-cashflows-row-actions {
+  margin-right: 10px;
+  overflow: visible;
+}
+
+.outgoing-cashflows-card .outgoing-cashflows-actions-column {
+  padding-right: 10px;
+}
+
+.outgoing-cashflows-card .data-table-th.outgoing-cashflows-actions-column .data-table-header-inner {
+  padding-right: 10px;
 }

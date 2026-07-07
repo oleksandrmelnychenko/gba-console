@@ -1,4 +1,4 @@
-import {
+﻿import {
   ActionIcon,
   Alert,
   Badge,
@@ -15,7 +15,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { CircleAlert, Eye, Network, Plus, RefreshCw, RotateCcw, Search, SquarePen, X } from 'lucide-react'
+import { Ban, CircleAlert, Eye, Network, Plus, RefreshCw, RotateCcw, Search, SquarePen } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -59,11 +59,7 @@ const MAX_ORGANIZATION_QUERY_FILTER_IDS = 1800
 const ADVANCE_REPORT_ROUTE = '/accounting/outgoing-cashflow'
 
 const TABLE_DEFAULT_LAYOUT = {
-  columnPinning: {
-    left: ['fromDate', 'number'],
-    right: ['documentStructure', 'editReport', 'cancel', 'actions'],
-  },
-  density: 'compact',
+  density: 'normal',
 } satisfies DataTableDefaultLayout
 
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
@@ -553,7 +549,7 @@ function OutgoingCashflowsContent({ model }: { model: OutgoingCashflowsPageModel
   const location = useLocation()
 
   return (
-    <Stack gap="md">
+    <Stack className="outgoing-cashflows-page" gap="md">
       <Card className="app-data-card outgoing-cashflows-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar outgoing-cashflows-filter-bar">
           <Group align="end" gap="sm" wrap="nowrap" className="outgoing-cashflows-filter-row">
@@ -564,7 +560,7 @@ function OutgoingCashflowsContent({ model }: { model: OutgoingCashflowsPageModel
               label={t('Пошук')}
               placeholder={t('Номер, отримувач, рахунок або коментар')}
               value={searchValue}
-              w={340}
+              w="100%"
               onChange={(event) => onSetSearchValue(event.currentTarget.value)}
             />
             <Select
@@ -574,7 +570,7 @@ function OutgoingCashflowsContent({ model }: { model: OutgoingCashflowsPageModel
               label={t('Валюта')}
               placeholder={t('Усі')}
               value={currencyNetId || null}
-              w={190}
+              w="100%"
               onChange={(value) => onSetCurrencyNetId(value || '')}
             />
             <Select
@@ -584,7 +580,7 @@ function OutgoingCashflowsContent({ model }: { model: OutgoingCashflowsPageModel
               label={t('Рахунок')}
               placeholder={t('Усі')}
               value={paymentRegisterNetId || null}
-              w={250}
+              w="100%"
               onChange={(value) => onSetPaymentRegisterNetId(value || '')}
             />
             <Select
@@ -594,17 +590,18 @@ function OutgoingCashflowsContent({ model }: { model: OutgoingCashflowsPageModel
               label={t('Стаття руху')}
               placeholder={t('Усі')}
               value={paymentMovementNetId || null}
-              w={280}
+              w="100%"
               onChange={(value) => onSetPaymentMovementNetId(value || '')}
             />
             <MultiSelect
               clearable
+              className="outgoing-cashflows-organization-filter"
               searchable
               data={organizationOptions}
               label={t('Організації')}
               placeholder={t('Без фільтра')}
               value={selectedOrganizationIds}
-              w={360}
+              w="100%"
               onChange={onSetSelectedOrganizationIds}
             />
             <div className="app-filter-actions outgoing-cashflows-filter-actions">
@@ -657,43 +654,43 @@ function OutgoingCashflowsContent({ model }: { model: OutgoingCashflowsPageModel
             </Alert>
           )}
 
-          <Group gap="xs">
-            <Badge className="app-role-pill" variant="light">
-              {t('Завантажено')}: {cashflows.Collection.length}
-            </Badge>
-            <Badge className="app-role-pill is-gray" variant="light">
-              {t('Рядків')}: {rows.length}
-            </Badge>
-            <Badge className="app-role-pill is-green" variant="light">
-              {t('Кредиторська заборгованість')}: {formatMoney(cashflows.PositiveDifferenceAmount)}
-            </Badge>
-            <Badge className="app-role-pill is-red" variant="light">
-              {t('Дебіторська заборгованість')}: {formatMoney(cashflows.NegativeDifferenceAmount)}
-            </Badge>
-          </Group>
-
           <DataTable
             columns={columns}
             data={rows}
             defaultLayout={TABLE_DEFAULT_LAYOUT}
             density={density}
+            enablePinning={false}
             emptyText={t('Видаткових ордерів не знайдено')}
             getRowId={(row) => row.id}
             isLoading={isTableBusy}
-            layoutVersion="outgoing-cashflows-1"
-            maxHeight="calc(100vh - 365px)"
+            layoutVersion="outgoing-cashflows-actions-1"
             minWidth={1860}
             tableId="outgoing-cashflows"
+            footer={
+              <Group className="outgoing-cashflows-table-footer" gap="md" justify="flex-end" wrap="nowrap">
+                <Group gap="xs" wrap="nowrap">
+                  <Badge className="app-role-pill" variant="light">
+                    {t('Завантажено')}: {cashflows.Collection.length}
+                  </Badge>
+                  <Badge className="app-role-pill is-gray" variant="light">
+                    {t('Рядків')}: {rows.length}
+                  </Badge>
+                  <Badge className="app-role-pill is-green" variant="light">
+                    {t('Кредиторська заборгованість')}: {formatMoney(cashflows.PositiveDifferenceAmount)}
+                  </Badge>
+                  <Badge className="app-role-pill is-red" variant="light">
+                    {t('Дебіторська заборгованість')}: {formatMoney(cashflows.NegativeDifferenceAmount)}
+                  </Badge>
+                </Group>
+                {hasMore && (
+                  <Button loading={isLoadingMore} size="xs" variant="outline" onClick={() => void onLoadCashflows(cashflows.Collection.length, true)}>
+                    {t('Завантажити ще')}
+                  </Button>
+                )}
+              </Group>
+            }
             onRowClick={onOpenDetails}
           />
-
-          {hasMore && (
-            <Group justify="center">
-              <Button loading={isLoadingMore} variant="outline" onClick={() => void onLoadCashflows(cashflows.Collection.length, true)}>
-                {t('Завантажити ще')}
-              </Button>
-            </Group>
-          )}
         </Stack>
       </Card>
 
@@ -856,115 +853,81 @@ function useOutgoingCashflowColumns({
         cell: (row) => displayValue(row.comment),
       },
       {
-        id: 'documentStructure',
-        header: '',
-        width: 62,
-        minWidth: 58,
-        align: 'right',
-        enableSorting: false,
-        enableHiding: false,
-        enablePinning: false,
-        enableReorder: false,
-        cell: (row) =>
-          row.hasDocumentStructure ? (
-            <Tooltip label={t('Структура документів')}>
-              <ActionIcon
-                aria-label={t('Структура документів')}
-                color="gray"
-                size="sm"
-                variant="subtle"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  onOpenDocumentStructure(row)
-                }}
-              >
-                <Network size={16} />
-              </ActionIcon>
-            </Tooltip>
-          ) : null,
-      },
-      {
-        id: 'editReport',
-        header: '',
-        width: 62,
-        minWidth: 58,
-        align: 'right',
-        enableSorting: false,
-        enableHiding: false,
-        enablePinning: false,
-        enableReorder: false,
-        cell: (row) =>
-          row.isUnderReport ? (
-            <Tooltip label={t('Редагувати звіт')}>
-              <ActionIcon
-                aria-label={t('Редагувати звіт')}
-                color="gray"
-                disabled={!row.order.NetUid}
-                size="sm"
-                variant="subtle"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  onEditReport(row)
-                }}
-              >
-                <SquarePen size={16} />
-              </ActionIcon>
-            </Tooltip>
-          ) : null,
-      },
-      {
-        id: 'cancel',
-        header: '',
-        width: 62,
-        minWidth: 58,
-        align: 'right',
-        enableSorting: false,
-        enableHiding: false,
-        enablePinning: false,
-        enableReorder: false,
-        cell: (row) => (
-          <Tooltip label={row.isCanceled ? t('Уже скасовано') : t('Скасувати')}>
-            <ActionIcon
-              aria-label={t('Скасувати')}
-              color="red"
-              disabled={row.isCanceled || !row.order.NetUid}
-              size="sm"
-              variant="subtle"
-              onClick={(event) => {
-                event.stopPropagation()
-                onCancel(row)
-              }}
-            >
-              <X size={16} />
-            </ActionIcon>
-          </Tooltip>
-        ),
-      },
-      {
         id: 'actions',
-        header: '',
-        width: 62,
-        minWidth: 58,
+        header: t('Дії'),
+        width: 104,
+        minWidth: 100,
         align: 'right',
+        className: 'outgoing-cashflows-actions-column',
         enableSorting: false,
         enableHiding: false,
         enablePinning: false,
         enableReorder: false,
         cell: (row) => (
-          <Tooltip label={t('Деталі')}>
-            <ActionIcon
-              aria-label={t('Деталі')}
-              color="gray"
-              size="sm"
-              variant="subtle"
-              onClick={(event) => {
-                event.stopPropagation()
-                onOpen(row)
-              }}
-            >
-              <Eye size={16} />
-            </ActionIcon>
-          </Tooltip>
+          <Group className="outgoing-cashflows-row-actions" gap={2} justify="flex-end" wrap="nowrap">
+            {row.hasDocumentStructure && (
+              <Tooltip label={t('Структура документів')}>
+                <ActionIcon
+                  aria-label={t('Структура документів')}
+                  color="gray"
+                  size={20}
+                  variant="subtle"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    onOpenDocumentStructure(row)
+                  }}
+                >
+                  <Network size={14} />
+                </ActionIcon>
+              </Tooltip>
+            )}
+            {row.isUnderReport && (
+              <Tooltip label={t('Редагувати звіт')}>
+                <ActionIcon
+                  aria-label={t('Редагувати звіт')}
+                  color="gray"
+                  disabled={!row.order.NetUid}
+                  size={20}
+                  variant="subtle"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    onEditReport(row)
+                  }}
+                >
+                  <SquarePen size={14} />
+                </ActionIcon>
+              </Tooltip>
+            )}
+            <Tooltip label={row.isCanceled ? t('Уже скасовано') : t('Скасувати')}>
+              <ActionIcon
+                aria-label={t('Скасувати')}
+                color="red"
+                disabled={row.isCanceled || !row.order.NetUid}
+                size={20}
+                variant="subtle"
+                onClick={(event) => {
+                  event.stopPropagation()
+                  onCancel(row)
+                }}
+              >
+                <Ban size={14} />
+              </ActionIcon>
+            </Tooltip>
+            <Tooltip label={t('Деталі')}>
+              <ActionIcon
+                aria-label={t('Деталі')}
+                color="gray"
+                size={20}
+                variant="subtle"
+                onClick={(event) => {
+                  event.stopPropagation()
+                  onOpen(row)
+                }}
+              >
+                <Eye size={14} />
+              </ActionIcon>
+            </Tooltip>
+          </Group>
         ),
       },
     ],

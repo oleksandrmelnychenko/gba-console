@@ -50,6 +50,12 @@
   text-align: center;
 }
 
+.data-table-footer {
+  background: var(--mantine-color-white);
+  border-top: 1px solid var(--mantine-color-gray-2);
+  padding: 8px 12px;
+}
+
 .data-table-scroll::-webkit-scrollbar {
   height: 10px;
   width: 6px;

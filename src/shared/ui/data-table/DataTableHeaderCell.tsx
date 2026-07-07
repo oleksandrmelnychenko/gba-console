@@ -194,7 +194,7 @@ function DataTableHeaderCellInner<TData>({
     <Table.Th
       ref={setNodeRef}
       ta={align}
-      className={`data-table-th ${isDragging ? 'is-dragging' : ''}`}
+      className={`data-table-th ${meta?.className ?? ''} ${isDragging ? 'is-dragging' : ''}`}
       data-align={align}
       style={{
         ...createPinnedStyle(pinned, pinnedLeftPx, pinnedRightPx),

@@ -77,6 +77,8 @@ export type DataTableProps<TData> = {
   loadingText?: ReactNode
   labels?: DataTableLabels
   showLayoutControls?: boolean
+  /** Allows table columns to be pinned left/right. Defaults to true. */
+  enablePinning?: boolean
   /** Shows a built-in compact/normal density toggle in the toolbar. Defaults to true. */
   showDensityToggle?: boolean
   /** Controlled row density. When set, overrides the stored/default layout density. */
@@ -84,6 +86,7 @@ export type DataTableProps<TData> = {
   onDensityChange?: (density: DataTableDensity) => void
   toolbarLeft?: ReactNode
   toolbarRight?: ReactNode
+  footer?: ReactNode
   /** Render the toolbar into this element (via portal) instead of inline above the
    *  table — used to lift the columns/density controls into a page's own toolbar. */
   toolbarPortalTarget?: Element | null
