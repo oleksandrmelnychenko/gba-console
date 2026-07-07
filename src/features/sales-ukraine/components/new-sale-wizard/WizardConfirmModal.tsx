@@ -1,4 +1,4 @@
-import { Button, Group, Stack, Text } from '@mantine/core'
+import { Box, Button, Divider, Group, Stack, Text } from '@mantine/core'
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { AppModal } from '../../../../shared/ui/AppModal'
@@ -34,14 +34,31 @@ export function WizardConfirmModal({
   }
 
   return (
-    <AppModal centered opened={opened} size="xs" title={t('Підтвердження')} onClose={onCancel}>
-      <Stack gap="md" onKeyDown={handleKeyDown}>
-        <Text size="sm">{message}</Text>
-        <Group justify="flex-end" gap="sm">
-          <Button color="gray" disabled={busy} variant="light" onClick={onCancel}>
+    <AppModal
+      centered
+      classNames={{ body: 'new-sale-confirm-modal__body' }}
+      opened={opened}
+      size={420}
+      title={
+        <span className="new-sale-confirm-modal__title">
+          <span className="new-sale-confirm-modal__title-dot" />
+          {t('Підтвердження')}
+        </span>
+      }
+      onClose={onCancel}
+    >
+      <Stack className="new-sale-confirm-modal" gap={0} onKeyDown={handleKeyDown}>
+        <Box className="new-sale-confirm-modal__content">
+          <Text className="new-sale-confirm-modal__text">{message}</Text>
+        </Box>
+
+        <Divider className="new-sale-confirm-modal__divider" />
+
+        <Group className="new-sale-confirm-modal__actions" gap="sm" justify="flex-end">
+          <Button className="new-sale-confirm-modal__cancel" color="gray" disabled={busy} variant="light" onClick={onCancel}>
             {t('Скасувати')}
           </Button>
-          <Button autoFocus data-autofocus loading={busy} onClick={onConfirm}>
+          <Button autoFocus className="new-sale-confirm-modal__confirm" data-autofocus loading={busy} onClick={onConfirm}>
             {t('Так')}
           </Button>
         </Group>
