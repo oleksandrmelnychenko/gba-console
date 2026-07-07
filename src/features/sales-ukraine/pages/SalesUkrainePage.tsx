@@ -1078,8 +1078,8 @@ export function SalesUkrainePage() {
         }}
         opened={Boolean(selectedSale)}
         position="right"
-        size="min(820px, 100vw)"
-        title={t('Деталі продажу')}
+        size="full"
+        title={<span className="app-sheet-title-mono">{t('Деталі продажу')}</span>}
         onClose={closeSelectedSale}
       >
         {selectedSale && <SaleDetail sale={selectedSale} />}
@@ -1589,7 +1589,6 @@ function SaleDetail({ sale }: { sale: SalesUkraineSale }) {
   const { t } = useI18n()
   const orderItems = Array.isArray(sale.Order?.OrderItems) ? sale.Order.OrderItems : []
   const date = getSaleDate(sale)
-  const paymentTone = getPaymentStatusTone(sale)
   const primaryAmount = getNumber(sale.TotalAmountLocal) ?? getNumber(sale.TotalAmount)
   const secondaryAmount = getSecondaryAmount(sale)
   const vatAmount = sale.IsVatSale ? getNumber(sale.Order?.TotalVat) : null
@@ -1620,27 +1619,26 @@ function SaleDetail({ sale }: { sale: SalesUkraineSale }) {
           <OverflowTooltipText className="sale-detail-subtitle">
             {displayValue(sale.ClientAgreement?.Agreement?.Name)}
           </OverflowTooltipText>
+          <div className="sale-detail-status-strip">
+            <Badge className={`app-role-pill sale-detail-pill ${getSaleStatusPillClass(sale)}`} variant="light">
+              {getSaleStatusLabel(sale)}
+            </Badge>
+            <span className={`app-role-pill sale-detail-pill ${getPaymentStatusPillClass(sale)}`}>
+              {displayValue(`${getPaymentStatusLabel(sale)}${getRetailPaymentSuffix(sale)}`)}
+            </span>
+            {sale.IsFullPayment && <span className="app-role-pill sale-detail-pill is-green">{t('Повна оплата')}</span>}
+            {sale.IsVatSale && <span className="app-role-pill sale-detail-pill">{t('ПДВ')}</span>}
+            {sale.IsLocked && <span className="app-role-pill sale-detail-pill is-red">{t('Заблоковано')}</span>}
+            {sale.IsPrinted && <span className="app-role-pill sale-detail-pill is-gray">{t('Друковано')}</span>}
+          </div>
         </div>
 
         <div className={`sale-detail-total${isUnpaidSale(sale) ? ' is-unpaid' : ''}`}>
           <span className="sale-detail-total-label">{t('Сума')}</span>
-          <strong>{formatAmount(primaryAmount)}</strong>
-          <span>{displayValue(currencyCode)}</span>
+          <strong className="app-money">{formatAmount(primaryAmount)}</strong>
+          <span className="app-money-meta">{displayValue(currencyCode)}</span>
         </div>
       </section>
-
-      <div className="sale-detail-status-strip">
-        <Badge color={STATUS_COLORS[getSaleStatusKey(sale)] || 'gray'} variant="light">
-          {getSaleStatusLabel(sale)}
-        </Badge>
-        <span className={`sale-detail-payment-pill is-${paymentTone}`}>
-          {displayValue(`${getPaymentStatusLabel(sale)}${getRetailPaymentSuffix(sale)}`)}
-        </span>
-        {sale.IsFullPayment && <span className="sale-detail-soft-pill is-success">{t('Повна оплата')}</span>}
-        {sale.IsVatSale && <span className="sale-detail-soft-pill is-info">{t('ПДВ')}</span>}
-        {sale.IsLocked && <span className="sale-detail-soft-pill is-danger">{t('Заблоковано')}</span>}
-        {sale.IsPrinted && <span className="sale-detail-soft-pill">{t('Друковано')}</span>}
-      </div>
 
       <div className="sale-detail-metrics">
         <SaleDetailMetric label={t('Позиції')} value={displayValue(orderItems.length)} />
@@ -1842,7 +1840,7 @@ function SaleDetailSection({
           {icon}
         </span>
         <div>
-          <Text className="sale-detail-section-title">{title}</Text>
+          <Text className="app-section-title sale-detail-section-title">{title}</Text>
         </div>
       </div>
 
@@ -1850,7 +1848,7 @@ function SaleDetailSection({
         {rows.map(([label, value]) => (
           <div key={label} className="sale-detail-row">
             <span>{label}</span>
-            <strong>{displayValue(value)}</strong>
+            <OverflowTooltipText strong>{displayValue(value)}</OverflowTooltipText>
           </div>
         ))}
       </div>
@@ -1890,16 +1888,16 @@ function SaleDetailProductRow({
           </OverflowTooltipText>
         </div>
       </div>
-      <span className="sale-detail-product-value">{displayValue(qty)}</span>
-      <span className="sale-detail-product-value">
+      <span className="sale-detail-product-value is-numeric">{displayValue(qty)}</span>
+      <span className="app-money sale-detail-product-value">
         {formatAmount(unitPrice)}
       </span>
       {showUah && (
-        <span className="sale-detail-product-value is-uah">
+        <span className="app-money sale-detail-product-value is-uah">
           {formatAmount(uahUnitPrice)} <small>UAH</small>
         </span>
       )}
-      <span className="sale-detail-product-amount">
+      <span className="app-money sale-detail-product-amount">
         {formatAmount(amount)} <small>{displayValue(currencyCode)}</small>
         {uahAmount != null && <small className="sale-detail-product-uah">{formatAmount(uahAmount)} грн</small>}
       </span>
@@ -2055,6 +2053,47 @@ function getPaymentStatusTone(sale: SalesUkraineSale): string {
       return 'info'
     default:
       return 'neutral'
+  }
+}
+
+function getSaleStatusPillClass(sale: SalesUkraineSale): string {
+  return getPillClassFromColor(STATUS_COLORS[getSaleStatusKey(sale)])
+}
+
+function getPaymentStatusPillClass(sale: SalesUkraineSale): string {
+  return getPillClassFromTone(getPaymentStatusTone(sale))
+}
+
+function getPillClassFromTone(tone: string): string {
+  switch (tone) {
+    case 'danger':
+      return 'is-red'
+    case 'success':
+      return 'is-green'
+    case 'warning':
+      return 'is-orange'
+    case 'info':
+      return ''
+    default:
+      return 'is-gray'
+  }
+}
+
+function getPillClassFromColor(color?: string): string {
+  switch (color) {
+    case 'green':
+    case 'teal':
+      return 'is-green'
+    case 'orange':
+      return 'is-orange'
+    case 'yellow':
+      return 'is-yellow'
+    case 'red':
+      return 'is-red'
+    case 'gray':
+      return 'is-gray'
+    default:
+      return ''
   }
 }
 
