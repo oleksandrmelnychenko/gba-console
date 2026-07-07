@@ -10,6 +10,7 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
+import { useDebouncedValue } from '@mantine/hooks'
 import { AppModal } from "../../../shared/ui/AppModal"
 import {
   IconAlertCircle,
@@ -68,6 +69,7 @@ function useProductAvailabilitiesPageModel() {
   const [dateTo, setDateTo] = useValueState(getDefaultDateTo)
   const [searchDraft, setSearchDraft] = useValueState('')
   const [searchValue, setSearchValue] = useValueState('')
+  const [debouncedSearch] = useDebouncedValue(searchDraft, 400)
   const [total, setTotal] = useValueState(0)
   const [page, setPage] = useValueState(1)
   const [pageSize, setPageSize] = useValueState(readProductAvailabilityTablePageSize)
@@ -195,10 +197,30 @@ function useProductAvailabilitiesPageModel() {
     }
   }, [dateFrom, dateTo, filterError, offset, pageSize, reloadKey, resetAvailabilities, searchValue, selectedStorageNetId, setAvailabilities, setError, setLoading, setTotal, t])
 
-  function updateSearch(nextValue: string) {
+  useEffect(() => {
+    const nextSearchValue = debouncedSearch.trim()
+
+    if (nextSearchValue === searchValue) {
+      return
+    }
+
     setPage(1)
+    setSearchValue(nextSearchValue)
+  }, [debouncedSearch, searchValue, setPage, setSearchValue])
+
+  function updateSearch(nextValue: string) {
     setSearchDraft(nextValue)
-    setSearchValue(nextValue.trim())
+  }
+
+  function applySearch() {
+    const nextSearchValue = searchDraft.trim()
+
+    if (nextSearchValue === searchValue) {
+      return
+    }
+
+    setPage(1)
+    setSearchValue(nextSearchValue)
   }
 
   function resetFilters() {
@@ -256,6 +278,7 @@ function useProductAvailabilitiesPageModel() {
     storageOptions,
     toolbarLeft,
     totalPages,
+    applySearch,
     handleExport,
     reload,
     resetFilters,
@@ -298,6 +321,7 @@ function ProductAvailabilitiesPageView({ model }: { model: ReturnType<typeof use
     storageOptions,
     toolbarLeft,
     totalPages,
+    applySearch,
     handleExport,
     reload,
     resetFilters,
@@ -356,6 +380,11 @@ function ProductAvailabilitiesPageView({ model }: { model: ReturnType<typeof use
               value={searchDraft}
               style={{ flex: '1 1 220px' }}
               onChange={(event) => updateSearch(event.currentTarget.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  applySearch()
+                }
+              }}
             />
             <div className="app-filter-actions">
               <Tooltip label={t('Скинути')}>

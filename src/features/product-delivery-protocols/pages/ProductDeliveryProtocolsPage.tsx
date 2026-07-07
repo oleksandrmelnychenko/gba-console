@@ -9,6 +9,7 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
+import { useDebouncedValue } from '@mantine/hooks'
 import {
   IconAlertCircle,
   IconDownload,
@@ -155,6 +156,28 @@ function useProtocolsPageModel() {
     setTotalQty,
   })
 
+  const setSupplierFilter = useCallback(
+    (value: string) => {
+      setFilterDraft((current) => ({ ...current, supplier: value }))
+    },
+    [setFilterDraft],
+  )
+
+  const [debouncedSupplier] = useDebouncedValue(filterDraft.supplier, 400)
+
+  useEffect(() => {
+    if (debouncedSupplier !== filterDraft.supplier) {
+      return
+    }
+
+    if (debouncedSupplier === activeFilters.supplier) {
+      return
+    }
+
+    setActiveFilters((current) => ({ ...current, supplier: debouncedSupplier }))
+    setPage(1)
+  }, [activeFilters, debouncedSupplier, filterDraft.supplier, setActiveFilters, setPage])
+
   function applyFilters(nextFilters: FilterDraft) {
     setFilterDraft(nextFilters)
     setActiveFilters(nextFilters)
@@ -284,7 +307,7 @@ function useProtocolsPageModel() {
     downloadOpened, error, exportDocument, filterDraft, filterError, handleCreate, isCreateModalOpen,
     exportScopeWarning, incomeProtocol, isCreating, isDownloading, isLoading, navigateToIncome, navigateToLogisticPath,
     navigateToSpecifications, openCreateModal, openOptions, optionsProtocol, organizations, organizationsError,
-    page, pageSize, protocols, applyFilters, reload, resetFilters, setPage, setPageSize,
+    page, pageSize, protocols, applyFilters, reload, resetFilters, setPage, setPageSize, setSupplierFilter,
     totalPages, totalQty,
   }
 }
@@ -466,7 +489,7 @@ function ProtocolsTableCard({ model }: { model: ReturnType<typeof useProtocolsPa
   const {
     applyFilters, canCreate, canExport, canOpenOptions, error, exportDocument, filterDraft,
     filterError, isDownloading, isLoading, openOptions, organizations, page, pageSize, protocols, reload,
-    openCreateModal, resetFilters, setPage, setPageSize, totalPages,
+    openCreateModal, resetFilters, setPage, setPageSize, setSupplierFilter, totalPages,
   } = model
   const columns = useProductDeliveryProtocolColumns()
   const organizationOptions = useMemo(
@@ -519,7 +542,12 @@ function ProtocolsTableCard({ model }: { model: ReturnType<typeof useProtocolsPa
           label={t('Постачальник')}
           placeholder={t('Пошук постачальника')}
           value={filterDraft.supplier}
-          onChange={(event) => applyFilters({ ...filterDraft, supplier: event.currentTarget.value })}
+          onChange={(event) => setSupplierFilter(event.currentTarget.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') {
+              applyFilters(filterDraft)
+            }
+          }}
         />
 
         <Select

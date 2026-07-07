@@ -11,6 +11,7 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
+import { useDebouncedValue } from '@mantine/hooks'
 import { IconAlertCircle, IconChevronDown, IconChevronRight, IconDownload } from '@tabler/icons-react'
 import { useEffect, useMemo, useReducer, useState } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -111,6 +112,8 @@ export function ClientProductMovementPage() {
   const [downloadModalOpened, setDownloadModalOpened] = useValueState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
+
+  const [debouncedArticle] = useDebouncedValue(filterDraft.article, 400)
 
   const offset = (page - 1) * pageSize
   const totalRows = getTotalRows(documents)
@@ -233,6 +236,17 @@ export function ClientProductMovementPage() {
     }
   }, [activeFilters, reloadKey, setDocuments, setError, setExpandedKeys, setLoading, t])
 
+  useEffect(() => {
+    const nextArticle = debouncedArticle.trim()
+
+    if (nextArticle === activeDraft.article) {
+      return
+    }
+
+    setPage(1)
+    setActiveDraft((current) => ({ ...current, article: nextArticle }))
+  }, [activeDraft.article, debouncedArticle, setActiveDraft, setPage])
+
   function applyFilters(nextDraft: FilterDraft) {
     setPage(1)
     setFilterDraft(nextDraft)
@@ -334,7 +348,12 @@ export function ClientProductMovementPage() {
               label={t('Артикул')}
               value={filterDraft.article}
               w={180}
-              onChange={(event) => applyFilters({ ...filterDraft, article: event.currentTarget.value })}
+              onChange={(event) => setFilterDraft({ ...filterDraft, article: event.currentTarget.value })}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  applyFilters({ ...filterDraft, article: event.currentTarget.value })
+                }
+              }}
             />
             <TextInput
               label={t('З')}

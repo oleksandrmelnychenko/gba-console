@@ -8,6 +8,7 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
+import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import { IconAlertCircle, IconReceipt, IconRefresh, IconRestore, IconSearch } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
@@ -68,6 +69,29 @@ function usePaymentOnlineShopModel() {
   const { density, toggleDensity } = useDataTableDensity('payment-online-shop', PAYMENT_SHOP_TABLE_DEFAULT_LAYOUT.density)
 
   usePaymentShopLoader({ activeFilters, reloadKey, setError, setItems, setLoading })
+
+  const [debouncedSaleNumber] = useDebouncedValue(filterDraft.saleNumber, 400)
+  const [debouncedPhoneNumber] = useDebouncedValue(filterDraft.phoneNumber, 400)
+
+  useEffect(() => {
+    if (debouncedSaleNumber !== filterDraft.saleNumber || debouncedPhoneNumber !== filterDraft.phoneNumber) {
+      return
+    }
+
+    if (debouncedSaleNumber === activeFilters.saleNumber && debouncedPhoneNumber === activeFilters.phoneNumber) {
+      return
+    }
+
+    setActiveFilters((current) => ({ ...current, phoneNumber: debouncedPhoneNumber, saleNumber: debouncedSaleNumber }))
+  }, [
+    activeFilters.phoneNumber,
+    activeFilters.saleNumber,
+    debouncedPhoneNumber,
+    debouncedSaleNumber,
+    filterDraft.phoneNumber,
+    filterDraft.saleNumber,
+    setActiveFilters,
+  ])
 
   const openDetail = useCallback(
     (item: PaymentShopItem) => {
@@ -273,6 +297,11 @@ function PaymentShopTableCard({ model }: { model: ReturnType<typeof usePaymentOn
             placeholder={t('Номер')}
             value={filterDraft.saleNumber}
             onChange={(event) => setFilterDraft({ ...filterDraft, saleNumber: event.currentTarget.value })}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                applyFilters()
+              }
+            }}
             style={{ flex: '1 1 auto', minWidth: 180 }}
           />
           <TextInput
@@ -297,6 +326,11 @@ function PaymentShopTableCard({ model }: { model: ReturnType<typeof usePaymentOn
             placeholder={t('Телефон')}
             value={filterDraft.phoneNumber}
             onChange={(event) => setFilterDraft({ ...filterDraft, phoneNumber: event.currentTarget.value })}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                applyFilters()
+              }
+            }}
           />
           <div className="app-filter-actions">
             <Tooltip label={t('Пошук')}>

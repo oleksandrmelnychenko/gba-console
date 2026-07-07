@@ -17,6 +17,7 @@ import {
 } from '@mantine/core'
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
+import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
@@ -894,6 +895,7 @@ function SalesWorkflowTab() {
     'basket-supply-ukraine-order-sales',
     BASKET_SALES_TABLE_DEFAULT_LAYOUT.density,
   )
+  const [debouncedSearchValue] = useDebouncedValue(filterDraft.value, 400)
   const destinationSaleIds = useMemo(() => new Set(destinationSales.map(getBasketSaleKey)), [destinationSales])
   const selectedSourceSales = useMemo(
     () => sales.filter((sale) => selectedSourceSaleIds.has(getBasketSaleKey(sale))),
@@ -1027,6 +1029,17 @@ function SalesWorkflowTab() {
       cancelled = true
     }
   }, [destinationSales])
+
+  useEffect(() => {
+    const trimmedSearch = debouncedSearchValue.trim()
+
+    if (trimmedSearch === activeFilters.value) {
+      return
+    }
+
+    setSelectedSourceSaleIds(new Set())
+    setActiveFilters((current) => ({ ...current, value: trimmedSearch }))
+  }, [activeFilters.value, debouncedSearchValue])
 
   function applyFilters(nextFilters: BasketSupplySalesFilters) {
     setFilterDraft(nextFilters)
@@ -1206,7 +1219,15 @@ function SalesWorkflowTab() {
               label={t('Пошук')}
               leftSection={<IconSearch size={16} />}
               value={filterDraft.value}
-              onChange={(event) => applyFilters({ ...filterDraft, value: event.currentTarget.value })}
+              onChange={(event) => {
+                const nextValue = event.currentTarget.value
+                setFilterDraft((current) => ({ ...current, value: nextValue }))
+              }}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  applyFilters(filterDraft)
+                }
+              }}
             />
             <Button leftSection={<IconRestore size={16} />} variant="subtle" onClick={resetFilters}>
               {t('Скинути')}
