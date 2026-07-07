@@ -405,7 +405,11 @@ function useEditingColumns({ indexMap, kind, onProcess }: EditingColumnsModel) {
         width: 170,
         minWidth: 140,
         accessor: (item) => item.Created,
-        cell: (item) => <Text fw={600}>{formatDateTime(item.Created)}</Text>,
+        cell: (item) => (
+          <Text className="warehouse-ukraine-editing-cell-mono" fw={600}>
+            {formatDateTime(item.Created)}
+          </Text>
+        ),
       },
       {
         id: 'number',
@@ -413,7 +417,11 @@ function useEditingColumns({ indexMap, kind, onProcess }: EditingColumnsModel) {
         width: 200,
         minWidth: 150,
         accessor: (item) => item.Sale?.SaleNumber?.Value,
-        cell: (item) => <Text fw={700}>{displayValue(item.Sale?.SaleNumber?.Value)}</Text>,
+        cell: (item) => (
+          <Text className="warehouse-ukraine-editing-cell-mono is-strong" fw={700}>
+            {displayValue(item.Sale?.SaleNumber?.Value)}
+          </Text>
+        ),
       },
       {
         id: 'buyer',
@@ -445,7 +453,7 @@ function useEditingColumns({ indexMap, kind, onProcess }: EditingColumnsModel) {
         accessor: (item) => item.Sale?.IsPrinted,
         cell: (item) =>
           item.Sale?.IsPrinted ? (
-            <Badge color="teal" variant="light">
+            <Badge className="app-role-pill is-green" variant="light">
               {t('Так')}
             </Badge>
           ) : (
@@ -461,7 +469,7 @@ function useEditingColumns({ indexMap, kind, onProcess }: EditingColumnsModel) {
         cell: (item) => {
           if (item.IsDevelopment) {
             return (
-              <Badge color="teal" variant="light">
+              <Badge className="app-role-pill is-green" variant="light">
                 {t('Так')}
               </Badge>
             )
@@ -469,14 +477,14 @@ function useEditingColumns({ indexMap, kind, onProcess }: EditingColumnsModel) {
 
           if (item.ApproveUpdate) {
             return (
-              <Badge color="yellow" variant="light">
+              <Badge className="app-role-pill is-yellow" variant="light">
                 {t('Очікує')}
               </Badge>
             )
           }
 
           return (
-            <Badge color="gray" variant="light">
+            <Badge className="app-role-pill is-gray" variant="light">
               {t('Ні')}
             </Badge>
           )
