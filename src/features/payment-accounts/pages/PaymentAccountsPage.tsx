@@ -52,6 +52,7 @@ export function PaymentAccountsPage() {
   const location = useLocation()
   const [searchParams, setSearchParams] = useSearchParams()
   const [accounts, setAccounts] = useValueState<PaymentAccount[]>([])
+  const [totalEuroAmount, setTotalEuroAmount] = useValueState(0)
   const [organizations, setOrganizations] = useValueState<Organization[]>([])
   const [searchValue, setSearchValue] = useValueState(() => searchParams.get('value') || '')
   const [debouncedSearchValue] = useDebouncedValue(searchValue, SEARCH_DEBOUNCE_MS)
@@ -148,10 +149,12 @@ export function PaymentAccountsPage() {
 
         if (isActive) {
           setAccounts(response.paymentRegisters)
+          setTotalEuroAmount(response.totalEuroAmount)
         }
       } catch (loadError) {
         if (isActive) {
           setAccounts([])
+          setTotalEuroAmount(0)
           setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити рахунки'))
         }
       } finally {
@@ -284,6 +287,15 @@ export function PaymentAccountsPage() {
             tableId="payment-accounts"
             onRowClick={openAccount}
           />
+
+          <Group justify="flex-end" gap="xs" className="payment-accounts-total-footer">
+            <Text size="sm" fw={600}>
+              {t('Всього в EUR')}:
+            </Text>
+            <Text size="sm" fw={700}>
+              {formatMoney(totalEuroAmount)}
+            </Text>
+          </Group>
         </Stack>
       </Card>
     </Stack>
