@@ -129,7 +129,7 @@
 }
 
 .sales-drawer-table .mantine-Table-tbody .mantine-Table-tr:hover .mantine-Table-td {
-  background: #fffaf5;
+  background: var(--mantine-color-gray-1);
 }
 
 .sales-drawer-table .mantine-NumberInput-input {
@@ -621,11 +621,34 @@
   min-width: 620px;
 }
 
+/* Compare matrix: all cells mono (codes/phones/amounts/labels) so the diff reads
+   uniform — a technical version-by-version comparison. */
+.sale-carrier-history-table .mantine-Table-td {
+  font-family: var(--font-mono);
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
 .sale-carrier-history-table .mantine-Table-td:first-child {
   color: var(--mantine-color-gray-8);
-  font-family: var(--font-mono);
   font-weight: 600;
-  letter-spacing: 0;
+}
+
+/* «Актуальні дані» column — current data: orange header + emphasised value
+   (mirrors the §4 orange accent, not a colour-by-sign). */
+.sale-carrier-history-table .is-current-col {
+  color: var(--brand-orange);
+}
+
+.sale-carrier-history-table .mantine-Table-td.is-current-col {
+  color: var(--mantine-color-gray-8);
+  font-weight: 600;
+}
+
+/* A value that changed vs the previous version — subtle brand-orange wash
+   («увага/зміна», §4), replacing the legacy pink/red-2 fill. */
+.sale-carrier-history-table .mantine-Table-td.is-changed {
+  background: rgba(var(--brand-orange-rgb), 0.1);
 }
 
 @media (max-width: 980px) {

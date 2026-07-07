@@ -461,10 +461,7 @@ function CarrierHistory({ current, entries }: { current: SalesUkraineUpdateDataC
             <Table.Tr>
               <Table.Th />
               {columns.map((col) => (
-                <Table.Th
-                  key={col.key}
-                  style={{ whiteSpace: 'nowrap', color: col.isCurrent ? 'var(--brand-orange)' : undefined }}
-                >
+                <Table.Th key={col.key} className={col.isCurrent ? 'is-current-col' : undefined}>
                   {col.header}
                 </Table.Th>
               ))}
@@ -473,25 +470,23 @@ function CarrierHistory({ current, entries }: { current: SalesUkraineUpdateDataC
           <Table.Tbody>
             {rows.map((row) => (
               <Table.Tr key={row.label}>
-                <Table.Td style={{ whiteSpace: 'nowrap', fontWeight: 600 }}>{row.label}</Table.Td>
+                <Table.Td>{row.label}</Table.Td>
                 {columns.map((col, index) => {
                   const value = row.render(col.entry)
                   const compareFn = row.compare ?? row.render
                   const currentRaw = compareFn(col.entry)
                   const previousRaw = index > 0 ? compareFn(columns[index - 1].entry) : currentRaw
+<<<<<<< Updated upstream
                   const isChanged = index > 0 && historyValueChanged(currentRaw, previousRaw)
+=======
+                  // A changed value gets a subtle brand-orange wash (§4 — «зміна»),
+                  // so the version where the change happened is obvious at a glance.
+                  const isChanged = !col.isCurrent && index > 0 && historyValueChanged(currentRaw, previousRaw)
+                  const cellClass = [col.isCurrent ? 'is-current-col' : '', isChanged ? 'is-changed' : ''].filter(Boolean).join(' ')
+>>>>>>> Stashed changes
 
                   return (
-                    <Table.Td
-                      key={`${row.label}-${col.key}`}
-                      style={{
-                        whiteSpace: 'nowrap',
-                        // Highlight a changed value with a filled pink cell (like the legacy history
-                        // grid) so the column where the change happened is immediately obvious.
-                        backgroundColor: isChanged ? 'var(--mantine-color-red-2)' : undefined,
-                        fontWeight: col.isCurrent ? 600 : undefined,
-                      }}
-                    >
+                    <Table.Td key={`${row.label}-${col.key}`} className={cellClass || undefined}>
                       {value}
                     </Table.Td>
                   )
@@ -499,7 +494,7 @@ function CarrierHistory({ current, entries }: { current: SalesUkraineUpdateDataC
               </Table.Tr>
             ))}
             <Table.Tr>
-              <Table.Td style={{ whiteSpace: 'nowrap', fontWeight: 600 }}>{t('Документ')}</Table.Td>
+              <Table.Td>{t('Документ')}</Table.Td>
               {columns.map((col) => (
                 <Table.Td key={`doc-${col.key}`}>
                   {col.entry.TtnPDFPath ? (

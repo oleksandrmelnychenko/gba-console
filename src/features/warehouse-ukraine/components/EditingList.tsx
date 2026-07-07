@@ -419,7 +419,7 @@ function useEditingColumns({ indexMap, kind, onProcess }: EditingColumnsModel) {
         accessor: (item) => item.Sale?.SaleNumber?.Value,
         cell: (item) => (
           <Text className="warehouse-ukraine-editing-cell-mono is-strong" fw={700}>
-            {displayValue(item.Sale?.SaleNumber?.Value)}
+            {displayValue(item.Sale?.SaleNumber?.Value).toLocaleUpperCase('uk-UA')}
           </Text>
         ),
       },
