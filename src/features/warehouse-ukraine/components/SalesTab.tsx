@@ -23,7 +23,7 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
-import { TransporterLogo } from '../../../shared/ui/TransporterLogo'
+import { TransporterIcon } from '../../../shared/transporter-icons/TransporterIcon'
 import {
   getSaleActProtocolEditDocument,
   getSalePrintDocument,
@@ -42,15 +42,6 @@ import {
 } from './openWarehouseDocument'
 
 const DEFAULT_LIMIT = 500
-const TRANSPORTER_LOGO_STYLE = {
-  backgroundPosition: 'center',
-  backgroundRepeat: 'no-repeat',
-  backgroundSize: 'contain',
-  display: 'block',
-  flex: '0 0 auto',
-  height: 18,
-  width: 24,
-} as const
 
 const salesMoneyFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 2,
@@ -693,7 +684,7 @@ function useSalesColumns({
                   <IconPencil size={14} style={{ color: 'var(--mantine-color-orange-6)', flex: '0 0 auto' }} />
                 </Tooltip>
               )}
-              <TransporterLogo imageUrl={sale.Transporter.ImageUrl} style={TRANSPORTER_LOGO_STYLE} />
+              <TransporterIcon cssClass={sale.Transporter.CssClass} imageUrl={sale.Transporter.ImageUrl} name={sale.Transporter.Name} size={20} />
               <Anchor
                 c="dark.6"
                 component="button"

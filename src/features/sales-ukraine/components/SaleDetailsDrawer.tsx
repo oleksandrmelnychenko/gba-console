@@ -21,6 +21,7 @@ import { useState, type ReactNode } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { TranslateFunction } from '../../../shared/i18n/types'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { TransporterNameWithIcon } from '../../../shared/transporter-icons/TransporterIcon'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { getSaleTransporterTypes, getSaleTransportersByType, updateSaleFromData } from '../api/salesUkraineApi'
 import { getSaleLifecycleStatusKey } from '../saleStatus'
@@ -220,6 +221,17 @@ function SaleDetailsContent({ sale, onSaved }: { onSaved: () => void; sale: Sale
             data={transporterData}
             label={t('Перевізник')}
             placeholder={t('Оберіть перевізника')}
+            renderOption={({ option }) => {
+              const transporter = transporters.find((item) => getTransporterValue(item) === option.value)
+              return (
+                <TransporterNameWithIcon
+                  cssClass={transporter?.CssClass}
+                  imageUrl={transporter?.ImageUrl}
+                  name={option.label}
+                  size={18}
+                />
+              )
+            }}
             value={transporterId || null}
             onChange={(value) => setTransporterId(value || '')}
           />
@@ -359,7 +371,14 @@ function DetailsView({ sale }: { sale: SalesUkraineSale }) {
       <section className="sale-carrier-section">
         <Text className="app-section-title sale-carrier-section-title">{t('Перевезення')}</Text>
         <div className="sale-carrier-rows">
-          <Row changed={changed(sale.Transporter?.Name, last?.Transporter?.Name)} label={t('Перевізник')} value={sale.Transporter?.Name || sale.Transporter?.Title} />
+          <Row changed={changed(sale.Transporter?.Name, last?.Transporter?.Name)} label={t('Перевізник')} value={sale.Transporter?.Name || sale.Transporter?.Title}>
+            <TransporterNameWithIcon
+              cssClass={sale.Transporter?.CssClass}
+              imageUrl={sale.Transporter?.ImageUrl}
+              name={sale.Transporter?.Name || sale.Transporter?.Title}
+              size={18}
+            />
+          </Row>
           <ClientInfo sale={sale} />
         </div>
       </section>
@@ -436,9 +455,22 @@ function CarrierHistory({ current, entries }: { current: SalesUkraineUpdateDataC
   const rows: Array<{
     compare?: (entry: SalesUkraineUpdateDataCarrier) => unknown
     label: string
+    node?: (entry: SalesUkraineUpdateDataCarrier) => ReactNode
     render: (entry: SalesUkraineUpdateDataCarrier) => string
   }> = [
-    { compare: (entry) => entry.Transporter?.Name ?? null, label: t('Перевізник'), render: (entry) => entry.Transporter?.Name || '' },
+    {
+      compare: (entry) => entry.Transporter?.Name ?? null,
+      label: t('Перевізник'),
+      node: (entry) => (
+        <TransporterNameWithIcon
+          cssClass={entry.Transporter?.CssClass}
+          imageUrl={entry.Transporter?.ImageUrl}
+          name={entry.Transporter?.Name}
+          size={18}
+        />
+      ),
+      render: (entry) => entry.Transporter?.Name || '',
+    },
     { compare: (entry) => entry.City ?? null, label: t('Місто'), render: (entry) => entry.City || '' },
     { compare: (entry) => entry.Department ?? null, label: t('Відділення'), render: (entry) => entry.Department || '' },
     { label: t('Дата відгрузки'), render: (entry) => formatDateTime(entry.ShipmentDate) },
@@ -483,7 +515,7 @@ function CarrierHistory({ current, entries }: { current: SalesUkraineUpdateDataC
 
                   return (
                     <Table.Td key={`${row.label}-${col.key}`} className={cellClass || undefined}>
-                      {value}
+                      {row.node ? row.node(col.entry) : value}
                     </Table.Td>
                   )
                 })}

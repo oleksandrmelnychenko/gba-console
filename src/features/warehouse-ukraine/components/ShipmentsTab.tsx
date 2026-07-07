@@ -32,6 +32,7 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { translate } from '../../../shared/i18n/translate'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
+import { TransporterIcon, TransporterNameWithIcon } from '../../../shared/transporter-icons/TransporterIcon'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -2108,14 +2109,19 @@ function useAllShipmentColumns(indexMap: Map<ShipmentList, number>): DataTableCo
         accessor: getShipmentListTransporterName,
         cell: (item) => {
           const transporterName = displayValue(getShipmentListTransporterName(item))
+          // Icon from the shipment-list transporter (WarehouseUkraineTransporter carries CssClass/ImageUrl);
+          // the leaner Sale.Transporter projection has no logo fields, so it is not used as an icon source.
+          const transporterImageUrl = item.Transporter?.ImageUrl
+          const transporterCssClass = item.Transporter?.CssClass
 
           if (!hasCarrierUpdateMarker(item)) {
-            return transporterName
+            return <TransporterNameWithIcon cssClass={transporterCssClass} imageUrl={transporterImageUrl} name={transporterName} size={18} />
           }
 
           return (
             <Group gap={6} wrap="nowrap">
               <IconEdit size={14} />
+              <TransporterIcon cssClass={transporterCssClass} imageUrl={transporterImageUrl} name={transporterName} size={18} />
               <Text size="sm" truncate>
                 {transporterName}
               </Text>

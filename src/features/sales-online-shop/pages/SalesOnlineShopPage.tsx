@@ -41,6 +41,7 @@ import {
 } from '@tabler/icons-react'
 import {
   Fragment,
+  isValidElement,
   memo,
   type ReactNode,
   useCallback,
@@ -59,6 +60,7 @@ import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/event
 import { AppModal } from '../../../shared/ui/AppModal'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { TransporterLogo } from '../../../shared/ui/TransporterLogo'
+import { TransporterNameWithIcon } from '../../../shared/transporter-icons/TransporterIcon'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
 import { SaleAuditDetail, getSaleStatisticBySaleId, type SaleAuditStatistic } from '../../../shared/sale-audit'
 import { UserRoleType } from '../../../shared/auth/types'
@@ -1263,7 +1265,15 @@ function SaleDetail({ sale }: { sale: SalesOnlineShopSale }) {
           icon={<IconTruckDelivery size={15} />}
           title={t('Доставка')}
           rows={[
-            [t('Перевізник'), getSaleTransporterName(sale)],
+            [
+              t('Перевізник'),
+              <TransporterNameWithIcon
+                cssClass={sale.Transporter?.CssClass}
+                imageUrl={sale.Transporter?.ImageUrl}
+                name={getSaleTransporterName(sale)}
+                size={18}
+              />,
+            ],
             [t('Отримувач'), deliverySale.DeliveryRecipient?.FullName],
             [t('Телефон'), deliverySale.DeliveryRecipient?.MobilePhone],
             [t('Адреса'), getSaleDeliveryAddress(sale)],
@@ -1435,7 +1445,11 @@ function SaleDetailSection({
         {rows.map(([label, value]) => (
           <div key={label} className="sale-detail-row">
             <span>{label}</span>
-            <OverflowTooltipText strong>{displayValue(value)}</OverflowTooltipText>
+            {isValidElement(value) ? (
+              value
+            ) : (
+              <OverflowTooltipText strong>{displayValue(value)}</OverflowTooltipText>
+            )}
           </div>
         ))}
       </div>

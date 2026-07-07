@@ -1,7 +1,7 @@
 import { ActionIcon, Alert, Anchor, Badge, Button, Checkbox, Group, Select, SimpleGrid, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { IconAlertCircle, IconCheck, IconRefresh, IconRestore } from '@tabler/icons-react'
-import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import { type ReactNode, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { translate } from '../../../shared/i18n/translate'
@@ -12,6 +12,7 @@ import type { SaleAuditStatistic } from '../../../shared/sale-audit/saleAuditTyp
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
+import { TransporterIcon } from '../../../shared/transporter-icons/TransporterIcon'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import type { EditingItemsResponse, EditingActItem, WarehouseUkraineShipmentDetails, WarehouseUkraineUpdateDataCarrier, WarehouseUkraineUser } from '../types'
 import { displayValue, formatDateTime, getDateShiftedByDays, toDateString } from './dateHelpers'
@@ -528,6 +529,8 @@ type CarrierChangeItem = {
 function CarrierChangesCell({ item }: { item: EditingActItem }) {
   const { t } = useI18n()
   const changes = buildCarrierChangeItems(item, t).filter((change) => change.changed)
+  const previous = getCarrierComparisonBase(item)
+  const transporterLabel = t('Перевізник')
 
   if (changes.length === 0) {
     return (
@@ -539,19 +542,37 @@ function CarrierChangesCell({ item }: { item: EditingActItem }) {
 
   return (
     <Stack gap={3}>
-      {changes.map((change) => (
-        <Text key={change.label} size="xs" lineClamp={2}>
-          <Text span c="red" fw={700}>
-            {change.label}
+      {changes.map((change) => {
+        const isTransporter = change.label === transporterLabel
+
+        return (
+          <Text key={change.label} size="xs" lineClamp={2}>
+            <Text span c="red" fw={700}>
+              {change.label}
+            </Text>
+            {': '}
+            {isTransporter ? (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, verticalAlign: 'middle' }}>
+                <TransporterIcon cssClass={previous?.Transporter?.CssClass} imageUrl={previous?.Transporter?.ImageUrl} name={change.before} size={16} />
+                {displayChangeValue(change.before)}
+              </span>
+            ) : (
+              displayChangeValue(change.before)
+            )}
+            {' → '}
+            <Text span fw={600}>
+              {isTransporter ? (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, verticalAlign: 'middle' }}>
+                  <TransporterIcon cssClass={item.Transporter?.CssClass} imageUrl={item.Transporter?.ImageUrl} name={change.after} size={16} />
+                  {displayChangeValue(change.after)}
+                </span>
+              ) : (
+                displayChangeValue(change.after)
+              )}
+            </Text>
           </Text>
-          {': '}
-          {displayChangeValue(change.before)}
-          {' → '}
-          <Text span fw={600}>
-            {displayChangeValue(change.after)}
-          </Text>
-        </Text>
-      ))}
+        )
+      })}
     </Stack>
   )
 }
@@ -715,7 +736,11 @@ function CarrierChangeSummary({ item }: { item: EditingActItem }) {
         <Text fw={700} size="sm">
           {t('Попередні дані')}
         </Text>
-        <SummaryLine label={t('Перевізник')} value={previous?.Transporter?.Name} />
+        <SummaryLine
+          label={t('Перевізник')}
+          value={previous?.Transporter?.Name}
+          icon={<TransporterIcon cssClass={previous?.Transporter?.CssClass} imageUrl={previous?.Transporter?.ImageUrl} name={previous?.Transporter?.Name} size={18} />}
+        />
         <SummaryLine label={t('Місто')} value={previous?.City} />
         <SummaryLine label={t('Відділення')} value={previous?.Department} />
         <SummaryLine label={t('Дата відвантаження')} value={formatDateTimeOrEmpty(previous?.ShipmentDate)} />
@@ -737,6 +762,7 @@ function CarrierChangeSummary({ item }: { item: EditingActItem }) {
           label={t('Перевізник')}
           value={readNestedString(item, ['Transporter', 'Name'])}
           changed={isCarrierTextFieldChanged(readNestedRaw(item, ['Transporter', 'Name']), previous?.Transporter?.Name)}
+          icon={<TransporterIcon cssClass={item.Transporter?.CssClass} imageUrl={item.Transporter?.ImageUrl} name={item.Transporter?.Name} size={18} />}
         />
         <SummaryLine
           label={t('Місто')}
@@ -798,7 +824,7 @@ function CarrierChangeSummary({ item }: { item: EditingActItem }) {
   )
 }
 
-function SummaryLine({ changed, label, link, value }: { changed?: boolean; label: string; link?: boolean; value?: string }) {
+function SummaryLine({ changed, icon, label, link, value }: { changed?: boolean; icon?: ReactNode; label: string; link?: boolean; value?: string }) {
   return (
     <Group
       gap={6}
@@ -813,6 +839,11 @@ function SummaryLine({ changed, label, link, value }: { changed?: boolean; label
         <Anchor href={upgradeHttpToHttps(value)} target="_blank" rel="noreferrer" size="xs">
           {translate('Завантажити')}
         </Anchor>
+      ) : icon ? (
+        <Group gap={4} wrap="nowrap" align="center" style={{ minWidth: 0 }}>
+          {icon}
+          <Text size="xs">{displayValue(value)}</Text>
+        </Group>
       ) : (
         <Text size="xs">{displayValue(value)}</Text>
       )}

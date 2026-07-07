@@ -10,6 +10,8 @@ export type ShipmentTransporterType = EntityFields & {
 }
 
 export type ShipmentTransporter = EntityFields & {
+  CssClass?: string | null
+  ImageUrl?: string | null
   Name?: string
 }
 

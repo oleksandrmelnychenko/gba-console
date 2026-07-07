@@ -35,6 +35,7 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { TransporterNameWithIcon } from '../../../shared/transporter-icons/TransporterIcon'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import {
@@ -1233,7 +1234,19 @@ function ClientTab({ canEdit, sale, onSwitched }: { canEdit: boolean; onSwitched
         <DetailRow label={t('Організація')} value={sale.ClientAgreement?.Agreement?.Organization?.Name} />
         <DetailRow label={t('Валюта')} value={sale.ClientAgreement?.Agreement?.Currency?.Code} />
         <DetailRow label={t('Менеджер')} value={getUserName(sale)} />
-        <DetailRow label={t('Перевізник')} value={sale.Transporter?.Name || sale.Transporter?.Title} />
+        <Group justify="space-between" align="flex-start" gap="lg" wrap="nowrap">
+          <Text size="sm" c="dimmed">
+            {t('Перевізник')}
+          </Text>
+          <Text size="sm" ta="right" component="div">
+            <TransporterNameWithIcon
+              cssClass={sale.Transporter?.CssClass}
+              imageUrl={sale.Transporter?.ImageUrl}
+              name={sale.Transporter?.Name || sale.Transporter?.Title}
+              size={18}
+            />
+          </Text>
+        </Group>
         <DetailRow label={t('Коментар')} value={sale.Comment} />
         {debt && (
           <>

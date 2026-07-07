@@ -43,6 +43,7 @@ import {
 } from '@tabler/icons-react'
 import {
   Fragment,
+  isValidElement,
   memo,
   type ReactNode,
   useCallback,
@@ -60,6 +61,7 @@ import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/Page
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
 import { TransporterLogo } from '../../../shared/ui/TransporterLogo'
+import { TransporterIcon } from '../../../shared/transporter-icons/TransporterIcon'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
@@ -1697,6 +1699,30 @@ function SaleDetail({ sale }: { sale: SalesUkraineSale }) {
   const secondaryCurrencyCode = getSecondaryAmountCode(sale)
   const showUahPrices = currencyCode !== 'UAH'
   const uahRate = getSaleUahRate(sale)
+  const transporterName = getSaleTransporterName(sale)
+  const transporter = sale.Transporter ?? sale.UpdateDataCarrier?.[0]?.Transporter
+  const transporterValue: ReactNode = transporterName ? (
+    <span
+      style={{
+        alignItems: 'center',
+        display: 'inline-flex',
+        gap: 6,
+        gridColumn: 3,
+        justifyContent: 'flex-end',
+        minWidth: 0,
+      }}
+    >
+      <TransporterIcon
+        cssClass={transporter?.CssClass}
+        imageUrl={getTransporterImageUrl(sale)}
+        name={transporterName}
+        size={18}
+      />
+      <OverflowTooltipText strong>{transporterName}</OverflowTooltipText>
+    </span>
+  ) : (
+    transporterName
+  )
 
   return (
     <div className="sale-detail-sheet">
@@ -1783,7 +1809,7 @@ function SaleDetail({ sale }: { sale: SalesUkraineSale }) {
           icon={<IconTruckDelivery size={15} />}
           title={t('Доставка')}
           rows={[
-            [t('Перевізник'), getSaleTransporterName(sale)],
+            [t('Перевізник'), transporterValue],
             [t('Отримувач'), sale.DeliveryRecipient?.FullName],
             [t('Телефон'), sale.DeliveryRecipient?.MobilePhone],
             [t('Адреса'), getSaleDeliveryAddress(sale)],
@@ -1955,7 +1981,7 @@ function SaleDetailSection({
         {rows.map(([label, value]) => (
           <div key={label} className="sale-detail-row">
             <span>{label}</span>
-            <OverflowTooltipText strong>{displayValue(value)}</OverflowTooltipText>
+            {isValidElement(value) ? value : <OverflowTooltipText strong>{displayValue(value)}</OverflowTooltipText>}
           </div>
         ))}
       </div>
