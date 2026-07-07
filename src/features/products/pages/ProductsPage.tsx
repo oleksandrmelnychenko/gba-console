@@ -5,6 +5,7 @@ import {
   Badge,
   Box,
   Button,
+  Card,
   Checkbox,
   Divider,
   FileInput,
@@ -2232,7 +2233,7 @@ function ProductPlacementStorageUploadModal({
   }
 
   return (
-    <AppModal centered opened={opened} size="min(960px, 96vw)" title={t('Завантаження місць зберігання')} onClose={closeModal}>
+    <AppModal centered opened={opened} size="min(960px, 96vw)" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Завантаження місць зберігання')}</span>} onClose={closeModal}>
       <Stack gap="md">
         {(error || storagesError) ? (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">{error || storagesError}</Alert>
@@ -2240,40 +2241,52 @@ function ProductPlacementStorageUploadModal({
 
         {notPassedRows.length === 0 ? (
           <>
-            <Select
-              data={storageOptions}
-              disabled={isLoadingStorages || storageOptions.length === 0}
-              label={t('Склад')}
-              placeholder={isLoadingStorages ? t('Завантаження') : t('Оберіть склад')}
-              value={storageId}
-              onChange={(value) => updateCorrectionState({ storageId: value })}
-            />
-            <FileInput
-              clearable
-              accept=".xls,.xlsx,.csv"
-              label={t('Файл')}
-              placeholder={t('Оберіть файл')}
-              value={file}
-              onChange={setFile}
-            />
-            <SimpleGrid cols={{ base: 2, sm: 5 }} spacing="sm">
-              <NumberInput label={t('Початковий рядок')} min={1} value={startRow} onChange={(value) => setStartRow(Number(value) || 0)} />
-              <NumberInput label={t('Кінцевий рядок')} min={0} value={endRow} onChange={(value) => setEndRow(Number(value) || 0)} />
-              <NumberInput label={t('Колонка коду')} min={1} value={columnVendorCode} onChange={(value) => setColumnVendorCode(Number(value) || 0)} />
-              <NumberInput label={t('Колонка кількості')} min={1} value={columnQty} onChange={(value) => setColumnQty(Number(value) || 0)} />
-              <NumberInput label={t('Колонка місця')} min={1} value={columnPlacement} onChange={(value) => setColumnPlacement(Number(value) || 0)} />
-            </SimpleGrid>
+            <Card className="app-section-card" withBorder radius="md" padding="md">
+              <Stack gap="md">
+                <Text className="app-section-title" fw={600} size="sm">{t('Файл і склад')}</Text>
+                <Select
+                  data={storageOptions}
+                  disabled={isLoadingStorages || storageOptions.length === 0}
+                  label={t('Склад')}
+                  placeholder={isLoadingStorages ? t('Завантаження') : t('Оберіть склад')}
+                  value={storageId}
+                  onChange={(value) => updateCorrectionState({ storageId: value })}
+                />
+                <FileInput
+                  clearable
+                  accept=".xls,.xlsx,.csv"
+                  label={t('Файл')}
+                  placeholder={t('Оберіть файл')}
+                  value={file}
+                  onChange={setFile}
+                />
+              </Stack>
+            </Card>
+            <Card className="app-section-card" withBorder radius="md" padding="md">
+              <Stack gap="md">
+                <Text className="app-section-title" fw={600} size="sm">{t('Колонки та рядки')}</Text>
+                <SimpleGrid cols={{ base: 2, sm: 5 }} spacing="sm" style={{ alignItems: 'end' }}>
+                  <NumberInput label={t('Початковий рядок')} min={1} value={startRow} onChange={(value) => setStartRow(Number(value) || 0)} />
+                  <NumberInput label={t('Кінцевий рядок')} min={0} value={endRow} onChange={(value) => setEndRow(Number(value) || 0)} />
+                  <NumberInput label={t('Колонка коду')} min={1} value={columnVendorCode} onChange={(value) => setColumnVendorCode(Number(value) || 0)} />
+                  <NumberInput label={t('Колонка кількості')} min={1} value={columnQty} onChange={(value) => setColumnQty(Number(value) || 0)} />
+                  <NumberInput label={t('Колонка місця')} min={1} value={columnPlacement} onChange={(value) => setColumnPlacement(Number(value) || 0)} />
+                </SimpleGrid>
+              </Stack>
+            </Card>
             <Group justify="flex-end">
-              <Button color={CREATE_ACTION_COLOR} disabled={!canUpload} leftSection={<Upload size={16} />} loading={isUploading} onClick={() => void uploadFile()}>
+              <Button color={CREATE_ACTION_COLOR} disabled={!canUpload} leftSection={<Upload size={16} />} loading={isUploading} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} onClick={() => void uploadFile()}>
                 {t('Завантажити')}
               </Button>
             </Group>
           </>
         ) : (
           <>
-            <Text fw={600} size="sm">{t('Не пройшли позиції')}</Text>
-            <ScrollArea mah={420}>
-              <Table withTableBorder miw={760}>
+            <Card className="app-section-card" withBorder radius="md" padding="md">
+              <Stack gap="md">
+                <Text className="app-section-title" fw={600} size="sm">{t('Не пройшли позиції')}</Text>
+                <ScrollArea mah={420}>
+                  <Table withTableBorder miw={760}>
                 <Table.Thead>
                   <Table.Tr>
                     <Table.Th>{t('Назва')}</Table.Th>
@@ -2299,12 +2312,14 @@ function ProductPlacementStorageUploadModal({
                   ))}
                 </Table.Tbody>
               </Table>
-            </ScrollArea>
+                </ScrollArea>
+              </Stack>
+            </Card>
             <Group justify="flex-end">
-              <Button color="gray" variant="light" disabled={isSavingReturn} onClick={closeModal}>
+              <Button color="gray" variant="light" disabled={isSavingReturn} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} onClick={closeModal}>
                 {t('Закрити')}
               </Button>
-              <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSavingReturn} onClick={() => void saveNotPassedRows()}>
+              <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSavingReturn} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} onClick={() => void saveNotPassedRows()}>
                 {t('Зберегти')}
               </Button>
             </Group>
@@ -2474,8 +2489,8 @@ function ProductFileUploadModal({
   }
 
   return (
-    <AppModal centered opened={opened} size="min(960px, 96vw)" title={t('Завантаження товарів')} onClose={closeModal}>
-      <Stack gap="sm">
+    <AppModal centered opened={opened} size="min(960px, 96vw)" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Завантаження товарів')}</span>} onClose={closeModal}>
+      <Stack gap="md">
         {(error || pricingState.error) ? (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error || pricingState.error}
@@ -2487,96 +2502,109 @@ function ProductFileUploadModal({
           </Alert>
         ) : null}
 
-        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
-          <Select
-            allowDeselect={false}
-            data={productFileUploadModeOptions.map((option) => ({ ...option, label: t(option.label) }))}
-            label={t('Операція')}
-            value={String(form.mode)}
-            onChange={(value) => setField('mode', readProductUploadNumber(value || 0) as ProductFileUploadMode)}
-          />
-          <FileInput
-            clearable
-            label={t('Файл')}
-            placeholder={t('Оберіть файл')}
-            value={form.file}
-            onChange={(nextFile) => setField('file', nextFile)}
-          />
-        </SimpleGrid>
-
-        <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing="sm">
-          {productFileUploadFieldLabels.map((item) => (
-            <NumberInput
-              key={item.field}
-              label={t(item.label)}
-              min={0}
-              required={item.required}
-              value={form[item.field]}
-              onChange={(value) => setColumnField(item.field, value)}
-            />
-          ))}
-        </SimpleGrid>
-
-        <Divider />
-
-        <Group justify="space-between">
-          <Text fw={700}>{t('Ціни')}</Text>
-          <Button
-            disabled={pricingState.isLoading || pricingOptions.length === 0}
-            leftSection={<Plus size={16} />}
-            size="xs"
-            variant="outline"
-            onClick={addPriceRow}
-          >
-            {t('Додати ціну')}
-          </Button>
-        </Group>
-
-        {pricingState.isLoading ? (
-          <Group justify="center" py="sm">
-            <Loader size="sm" />
-          </Group>
-        ) : form.prices.length > 0 ? (
-          <Stack gap="xs">
-            {form.prices.map((priceRow) => {
-              const isDuplicatePricing = isDuplicateProductUploadPricingId(form.prices, priceRow.pricingId)
-
-              return (
-                <Group key={priceRow.key} gap="xs" wrap="nowrap" align="flex-end">
-                  <Select
-                    allowDeselect={false}
-                    data={pricingOptions}
-                    error={isDuplicatePricing ? t('Дубль типу ціни') : undefined}
-                    label={t('Тип ціни')}
-                    style={{ flex: '1 1 240px' }}
-                    value={priceRow.pricingId}
-                    onChange={(value) => updatePriceRow(priceRow.key, { pricingId: value || '' })}
-                  />
-                  <NumberInput
-                    label={t('Колонка')}
-                    min={0}
-                    style={{ flex: '0 0 130px' }}
-                    value={priceRow.columnNumber}
-                    onChange={(value) => updatePriceRow(priceRow.key, { columnNumber: readProductUploadNumber(value) })}
-                  />
-                  <Tooltip label={t('Видалити')}>
-                    <ActionIcon aria-label={t('Видалити')} color="red" variant="light" onClick={() => removePriceRow(priceRow.key)}>
-                      <Trash2 size={16} />
-                    </ActionIcon>
-                  </Tooltip>
-                </Group>
-              )
-            })}
+        <Card className="app-section-card" withBorder radius="md" padding="md">
+          <Stack gap="md">
+            <Text className="app-section-title" fw={600} size="sm">{t('Файл і операція')}</Text>
+            <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm" style={{ alignItems: 'end' }}>
+              <Select
+                allowDeselect={false}
+                data={productFileUploadModeOptions.map((option) => ({ ...option, label: t(option.label) }))}
+                label={t('Операція')}
+                value={String(form.mode)}
+                onChange={(value) => setField('mode', readProductUploadNumber(value || 0) as ProductFileUploadMode)}
+              />
+              <FileInput
+                clearable
+                label={t('Файл')}
+                placeholder={t('Оберіть файл')}
+                value={form.file}
+                onChange={(nextFile) => setField('file', nextFile)}
+              />
+            </SimpleGrid>
           </Stack>
-        ) : (
-          <Text c="dimmed" size="sm">{t('Ціни не додані')}</Text>
-        )}
+        </Card>
+
+        <Card className="app-section-card" withBorder radius="md" padding="md">
+          <Stack gap="md">
+            <Text className="app-section-title" fw={600} size="sm">{t('Колонки')}</Text>
+            <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing="sm" style={{ alignItems: 'end' }}>
+              {productFileUploadFieldLabels.map((item) => (
+                <NumberInput
+                  key={item.field}
+                  label={t(item.label)}
+                  min={0}
+                  required={item.required}
+                  value={form[item.field]}
+                  onChange={(value) => setColumnField(item.field, value)}
+                />
+              ))}
+            </SimpleGrid>
+          </Stack>
+        </Card>
+
+        <Card className="app-section-card" withBorder radius="md" padding="md">
+          <Stack gap="md">
+            <Group justify="space-between">
+              <Text className="app-section-title" fw={600} size="sm">{t('Ціни')}</Text>
+              <Button
+                disabled={pricingState.isLoading || pricingOptions.length === 0}
+                leftSection={<Plus size={16} />}
+                size="xs"
+                styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
+                variant="outline"
+                onClick={addPriceRow}
+              >
+                {t('Додати ціну')}
+              </Button>
+            </Group>
+
+            {pricingState.isLoading ? (
+              <Group justify="center" py="sm">
+                <Loader size="sm" />
+              </Group>
+            ) : form.prices.length > 0 ? (
+              <Stack gap="xs">
+                {form.prices.map((priceRow) => {
+                  const isDuplicatePricing = isDuplicateProductUploadPricingId(form.prices, priceRow.pricingId)
+
+                  return (
+                    <Group key={priceRow.key} gap="xs" wrap="nowrap" align="flex-end">
+                      <Select
+                        allowDeselect={false}
+                        data={pricingOptions}
+                        error={isDuplicatePricing ? t('Дубль типу ціни') : undefined}
+                        label={t('Тип ціни')}
+                        style={{ flex: '1 1 240px' }}
+                        value={priceRow.pricingId}
+                        onChange={(value) => updatePriceRow(priceRow.key, { pricingId: value || '' })}
+                      />
+                      <NumberInput
+                        label={t('Колонка')}
+                        min={0}
+                        style={{ flex: '0 0 130px' }}
+                        value={priceRow.columnNumber}
+                        onChange={(value) => updatePriceRow(priceRow.key, { columnNumber: readProductUploadNumber(value) })}
+                      />
+                      <Tooltip label={t('Видалити')}>
+                        <ActionIcon aria-label={t('Видалити')} color="red" variant="light" onClick={() => removePriceRow(priceRow.key)}>
+                          <Trash2 size={16} />
+                        </ActionIcon>
+                      </Tooltip>
+                    </Group>
+                  )
+                })}
+              </Stack>
+            ) : (
+              <Text c="dimmed" size="sm">{t('Ціни не додані')}</Text>
+            )}
+          </Stack>
+        </Card>
 
         <Group justify="flex-end">
-          <Button color="gray" disabled={isUploading} variant="light" onClick={closeModal}>
+          <Button color="gray" disabled={isUploading} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} variant="light" onClick={closeModal}>
             {t('Скасувати')}
           </Button>
-          <Button color={CREATE_ACTION_COLOR} leftSection={<Upload size={16} />} loading={isUploading} disabled={!canSubmit} onClick={() => void submitUpload()}>
+          <Button color={CREATE_ACTION_COLOR} leftSection={<Upload size={16} />} loading={isUploading} disabled={!canSubmit} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} onClick={() => void submitUpload()}>
             {t('Завантажити')}
           </Button>
         </Group>
@@ -2699,66 +2727,72 @@ function ProductUploadDocumentModal({
   }
 
   return (
-    <AppModal centered opened={opened} title={t(labels.title)} onClose={closeModal}>
-      <Stack gap="sm" onKeyDown={handleUploadKeyDown}>
+    <AppModal centered opened={opened} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t(labels.title)}</span>} onClose={closeModal}>
+      <Stack gap="md" onKeyDown={handleUploadKeyDown}>
         {error ? (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         ) : null}
 
-        <FileInput
-          clearable
-          label={t('Файл')}
-          placeholder={t('Оберіть файл')}
-          value={form.file}
-          onChange={(nextFile) => setField('file', nextFile)}
-        />
+        <Card className="app-section-card" withBorder radius="md" padding="md">
+          <Stack gap="md">
+            <Text className="app-section-title" fw={600} size="sm">{t('Дані завантаження')}</Text>
 
-        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
-          <TextInput
-            label={t('Артикул товару')}
-            value={form.vendorCode}
-            onChange={(event) => setField('vendorCode', event.currentTarget.value)}
-          />
-          <TextInput
-            label={t(labels.articleLabel)}
-            value={form.article}
-            onChange={(event) => setField('article', event.currentTarget.value)}
-          />
-          <NumberInput
-            label={t('З')}
-            value={form.from}
-            onChange={(value) => setField('from', readProductUploadNumber(value))}
-          />
-          <NumberInput
-            label={t('По')}
-            value={form.to}
-            onChange={(value) => setField('to', readProductUploadNumber(value))}
-          />
-          {type === 'components' ? (
-            <NumberInput
-              label={t('Кількість')}
-              min={0}
-              value={form.quantity}
-              onChange={(value) => setField('quantity', readProductUploadNumber(value))}
+            <FileInput
+              clearable
+              label={t('Файл')}
+              placeholder={t('Оберіть файл')}
+              value={form.file}
+              onChange={(nextFile) => setField('file', nextFile)}
             />
-          ) : null}
-        </SimpleGrid>
 
-        {type === 'originalNumbers' ? (
-          <Checkbox
-            checked={form.isCleanBeforeLoading}
-            label={t('Очистити перед завантаженням')}
-            onChange={(event) => setField('isCleanBeforeLoading', event.currentTarget.checked)}
-          />
-        ) : null}
+            <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm" style={{ alignItems: 'end' }}>
+              <TextInput
+                label={t('Артикул товару')}
+                value={form.vendorCode}
+                onChange={(event) => setField('vendorCode', event.currentTarget.value)}
+              />
+              <TextInput
+                label={t(labels.articleLabel)}
+                value={form.article}
+                onChange={(event) => setField('article', event.currentTarget.value)}
+              />
+              <NumberInput
+                label={t('З')}
+                value={form.from}
+                onChange={(value) => setField('from', readProductUploadNumber(value))}
+              />
+              <NumberInput
+                label={t('По')}
+                value={form.to}
+                onChange={(value) => setField('to', readProductUploadNumber(value))}
+              />
+              {type === 'components' ? (
+                <NumberInput
+                  label={t('Кількість')}
+                  min={0}
+                  value={form.quantity}
+                  onChange={(value) => setField('quantity', readProductUploadNumber(value))}
+                />
+              ) : null}
+            </SimpleGrid>
+
+            {type === 'originalNumbers' ? (
+              <Checkbox
+                checked={form.isCleanBeforeLoading}
+                label={t('Очистити перед завантаженням')}
+                onChange={(event) => setField('isCleanBeforeLoading', event.currentTarget.checked)}
+              />
+            ) : null}
+          </Stack>
+        </Card>
 
         <Group justify="flex-end">
-          <Button color="gray" disabled={isUploading} variant="light" onClick={closeModal}>
+          <Button color="gray" disabled={isUploading} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} variant="light" onClick={closeModal}>
             {t('Скасувати')}
           </Button>
-          <Button color={CREATE_ACTION_COLOR} leftSection={<Upload size={16} />} loading={isUploading} disabled={!canSubmit} onClick={() => void submitUpload()}>
+          <Button color={CREATE_ACTION_COLOR} leftSection={<Upload size={16} />} loading={isUploading} disabled={!canSubmit} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} onClick={() => void submitUpload()}>
             {t('Завантажити')}
           </Button>
         </Group>
