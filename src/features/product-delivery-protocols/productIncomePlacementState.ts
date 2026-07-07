@@ -1,4 +1,24 @@
-import type { IncomePackingList, IncomeSupplyInvoice } from './productIncomeTypes'
+import type {
+  DynamicProductPlacementColumn,
+  IncomePackingList,
+  IncomeSupplyInvoice,
+} from './productIncomeTypes'
+
+export function createIncomeDynamicPlacementColumn(
+  packingList: IncomePackingList,
+  fromDate: string,
+): DynamicProductPlacementColumn {
+  return {
+    FromDate: fromDate,
+    PackingListId: packingList.Id,
+    DynamicProductPlacementRows: packingList.PackingListPackageOrderItems.map((item) => ({
+      Qty: 0,
+      PackingListPackageOrderItemId: item.Id,
+      PackingListPackageOrderItem: item,
+      DynamicProductPlacements: [],
+    })),
+  }
+}
 
 export function isInvoiceAllNotPlaced(
   invoice: IncomeSupplyInvoice | null,

@@ -1441,11 +1441,14 @@ function getRetailClientLine(sale: SalesOnlineShopSale): string {
 
 function getSaleUserName(sale: SalesOnlineShopSale): string {
   const user = sale.UpdateUser || sale.User
+  // Consistent «Прізвище Ім'я» from structured fields (drop patronymic); the
+  // backend FullName arrives in mixed orders, so it's only a fallback.
+  const surnameFirst = [user?.LastName, user?.FirstName].filter(Boolean).join(' ').trim()
 
   return (
-    user?.FullName?.trim()
+    surnameFirst
+    || user?.FullName?.trim()
     || user?.Name?.trim()
-    || [user?.LastName, user?.FirstName, user?.MiddleName].filter(Boolean).join(' ').trim()
     || user?.Abbreviation?.trim()
     || ''
   )

@@ -599,10 +599,11 @@
 }
 
 .sales-grid-head {
-  background: var(--mantine-color-gray-0);
+  /* Match the shared DataTable header (§5): white bg, regular Onest (NOT mono),
+     13/600 gray-7, hairline gray-2 bottom border. */
+  background: var(--mantine-color-white);
   border-bottom: 1px solid var(--mantine-color-gray-2);
   color: var(--mantine-color-gray-7);
-  font-family: var(--font-mono);
   font-size: 13px;
   font-weight: 600;
   letter-spacing: 0;
@@ -675,10 +676,6 @@
   position: relative;
 }
 
-.sales-grid-head ~ .sales-grid-row:nth-of-type(odd) {
-  background: var(--mantine-color-gray-0);
-}
-
 .sales-grid-row::before {
   background: var(--brand-orange);
   border-radius: 999px;
@@ -703,17 +700,7 @@
 
 .sales-grid-row:hover,
 .sales-grid-row.is-expanded {
-  background: #fffaf5;
-}
-
-.sales-grid-head ~ .sales-grid-row:nth-of-type(odd):hover,
-.sales-grid-head ~ .sales-grid-row:nth-of-type(odd).is-expanded {
-  background: #fffaf5;
-}
-
-.sales-grid-row:hover::before,
-.sales-grid-row.is-expanded::before {
-  opacity: 1;
+  background: var(--mantine-color-gray-1);
 }
 
 /* Edited sale (has invoice-edit history): a persistent left accent stripe — the new-design take on
@@ -817,7 +804,8 @@
   font-size: 13px;
   font-weight: 600;
   line-height: 1.2;
-  color: var(--mantine-color-gray-9);
+  /* §5.1 — names are Onest 600 gray-8, not near-black gray-9 */
+  color: var(--mantine-color-gray-8);
 }
 
 /* Matches the shared .app-role-pill (is-gray) pattern: 7px radius, mono, gray-3. */
@@ -864,7 +852,18 @@
 
 .sg-meta-sale-number {
   color: var(--mantine-color-gray-8);
-  font-weight: 700;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+/* Date in the meta row is a value → mono (§5.1), a touch stronger than the
+   gray-6 labels around it. */
+.sg-meta-date {
+  color: var(--mantine-color-gray-7);
+  font-family: var(--font-mono);
+  letter-spacing: 0;
 }
 
 .sg-meta-contract {
@@ -1141,11 +1140,11 @@
 }
 
 .sale-expand-content-item:hover {
-  background: #fffaf5;
+  background: var(--mantine-color-gray-1);
 }
 
 .sale-expand-content-head ~ .sale-expand-content-item:nth-of-type(odd):hover {
-  background: #fffaf5;
+  background: var(--mantine-color-gray-1);
 }
 
 .sale-expand-content-item:hover::before,

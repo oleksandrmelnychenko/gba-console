@@ -66,7 +66,7 @@ import type {
   IncomeSupplyInvoice,
   PackingListPackageOrderItem,
 } from '../productIncomeTypes'
-import { isInvoiceAllNotPlaced } from '../productIncomePlacementState'
+import { createIncomeDynamicPlacementColumn, isInvoiceAllNotPlaced } from '../productIncomePlacementState'
 import './product-income-page.css'
 
 const DEFAULT_VAT_PERCENT = 23
@@ -813,11 +813,7 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
 
       setColumnModalOpen(false)
 
-      const nextColumn: DynamicProductPlacementColumn = {
-        FromDate: toIso(columnFromDate),
-        PackingListId: packingList.Id,
-        DynamicProductPlacementRows: [],
-      }
+      const nextColumn = createIncomeDynamicPlacementColumn(packingList, toIso(columnFromDate))
 
       void persistPackingList({
         ...packingList,

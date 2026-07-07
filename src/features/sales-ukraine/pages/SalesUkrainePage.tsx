@@ -1425,7 +1425,7 @@ function SaleGridRow({
             {date && (
               <>
                 <span className="sg-meta-sep">·</span>
-                <span>
+                <span className="sg-meta-date">
                   {formatDate(date)} {formatTime(date)}
                 </span>
               </>
@@ -1957,11 +1957,16 @@ function getRetailClientLine(sale: SalesUkraineSale): string {
 
 function getSaleUserName(sale: SalesUkraineSale): string {
   const user = sale.UpdateUser || sale.User
+  // Always render a consistent «Прізвище Ім'я»: the backend FullName arrives in
+  // mixed orders (sometimes Ім'я-По-батькові-Прізвище), so build it from the
+  // structured fields and drop the patronymic. FullName/Name/abbr are fallbacks
+  // only when surname+name are unavailable.
+  const surnameFirst = [user?.LastName, user?.FirstName].filter(Boolean).join(' ').trim()
 
   return (
-    user?.FullName?.trim()
+    surnameFirst
+    || user?.FullName?.trim()
     || user?.Name?.trim()
-    || [user?.LastName, user?.FirstName, user?.MiddleName].filter(Boolean).join(' ').trim()
     || user?.Abbreviation?.trim()
     || ''
   )
