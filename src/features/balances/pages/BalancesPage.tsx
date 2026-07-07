@@ -1,7 +1,6 @@
 import {
   ActionIcon,
   Alert,
-  Button,
   Card,
   Group,
   Select,
@@ -10,8 +9,8 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
-import { CircleAlert, RefreshCw, RotateCcw } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
+import { CircleAlert, RotateCcw } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { formatDateInputForQuery, formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -19,6 +18,7 @@ import { translate } from '../../../shared/i18n/translate'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
+import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { getSyncDocuments } from '../api/balancesApi'
 import { ContractorType, type ContractorTypeValue, type SyncDocument } from '../types'
@@ -32,7 +32,6 @@ type FilterDraft = {
 }
 
 const DEFAULT_PAGE_SIZE = 20
-const PAGE_SIZE_OPTIONS = ['20', '40', '60', '100']
 
 const BALANCES_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -63,36 +62,29 @@ function useBalancesPageModel() {
   const [totalQty, setTotalQty] = useValueState(0)
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
-  const [isLoadingMore, setLoadingMore] = useValueState(false)
   const [pageSize, setPageSize] = useValueState(DEFAULT_PAGE_SIZE)
-  const [hasMore, setHasMore] = useValueState(false)
+  const [page, setPage] = useValueState(1)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const filterError = getFilterError(activeFilters.from, activeFilters.to)
-  const listRequestKey = `${activeFilters.from}|${activeFilters.to}|${activeFilters.name}|${activeFilters.type}|${pageSize}`
-  const listRequestKeyRef = useRef(listRequestKey)
   const columns = useBalancesColumns()
   const { density, toggleDensity } = useDataTableDensity('balances', BALANCES_TABLE_DEFAULT_LAYOUT.density)
-
-  useEffect(() => {
-    listRequestKeyRef.current = listRequestKey
-  }, [listRequestKey])
+  const totalPages = Math.max(1, Math.ceil(totalQty / pageSize))
 
   const resetDocuments = useCallback(() => {
     setDocuments([])
     setTotalQty(0)
-    setHasMore(false)
     setLoading(false)
-  }, [setDocuments, setHasMore, setLoading, setTotalQty])
+  }, [setDocuments, setLoading, setTotalQty])
 
   useBalancesLoader({
     activeFilters,
     filterError,
+    page,
     pageSize,
     reloadKey,
     resetDocuments,
     setDocuments,
     setError,
-    setHasMore,
     setLoading,
     setTotalQty,
   })
@@ -100,43 +92,13 @@ function useBalancesPageModel() {
   function applyFilters(nextFilters: FilterDraft) {
     setFilterDraft(nextFilters)
     setActiveFilters(nextFilters)
+    setPage(1)
   }
 
   function resetFilters() {
     setFilterDraft(initialFilters)
     setActiveFilters(initialFilters)
-  }
-
-  async function loadMoreDocuments() {
-    const requestKey = listRequestKeyRef.current
-    const requestOffset = documents.length
-    setLoadingMore(true)
-    setError(null)
-
-    try {
-      const result = await getSyncDocuments({
-        from: toIsoString(activeFilters.from),
-        limit: pageSize,
-        name: activeFilters.name,
-        offset: requestOffset,
-        to: toIsoString(activeFilters.to),
-        type: activeFilters.type,
-      })
-
-      if (listRequestKeyRef.current === requestKey) {
-        setDocuments((current) => (current.length === requestOffset ? [...current, ...result.items] : current))
-        setTotalQty(result.totalQty)
-        setHasMore(requestOffset + result.items.length < result.totalQty && result.items.length > 0)
-      }
-    } catch (loadError) {
-      if (listRequestKeyRef.current === requestKey) {
-        setError(loadError instanceof Error ? loadError.message : t('Не вдалося виконати запит'))
-      }
-    } finally {
-      if (listRequestKeyRef.current === requestKey) {
-        setLoadingMore(false)
-      }
-    }
+    setPage(1)
   }
 
   const toolbarLeft = useMemo(
@@ -149,31 +111,31 @@ function useBalancesPageModel() {
   )
 
   return {
-    applyFilters, columns, density, documents, error, filterDraft, filterError, hasMore, isLoading, isLoadingMore,
-    loadMoreDocuments, pageSize, reload, resetFilters, setPageSize, toggleDensity, toolbarLeft, totalQty,
+    applyFilters, columns, density, documents, error, filterDraft, filterError, isLoading,
+    page, pageSize, reload, resetFilters, setPage, setPageSize, toggleDensity, toolbarLeft, totalPages, totalQty,
   }
 }
 
 function useBalancesLoader({
   activeFilters,
   filterError,
+  page,
   pageSize,
   reloadKey,
   resetDocuments,
   setDocuments,
   setError,
-  setHasMore,
   setLoading,
   setTotalQty,
 }: {
   activeFilters: FilterDraft
   filterError: string | null
+  page: number
   pageSize: number
   reloadKey: number
   resetDocuments: () => void
   setDocuments: (value: SyncDocument[]) => void
   setError: (value: string | null) => void
-  setHasMore: (value: boolean) => void
   setLoading: (value: boolean) => void
   setTotalQty: (value: number) => void
 }) {
@@ -196,7 +158,7 @@ function useBalancesLoader({
           from: toIsoString(activeFilters.from),
           limit: pageSize,
           name: activeFilters.name,
-          offset: 0,
+          offset: (page - 1) * pageSize,
           to: toIsoString(activeFilters.to),
           type: activeFilters.type,
         })
@@ -204,13 +166,11 @@ function useBalancesLoader({
         if (!cancelled) {
           setDocuments(result.items)
           setTotalQty(result.totalQty)
-          setHasMore(result.items.length < result.totalQty && result.items.length > 0)
         }
       } catch (loadError) {
         if (!cancelled) {
           setDocuments([])
           setTotalQty(0)
-          setHasMore(false)
           setError(loadError instanceof Error ? loadError.message : t('Не вдалося виконати запит'))
         }
       } finally {
@@ -228,12 +188,12 @@ function useBalancesLoader({
   }, [
     activeFilters,
     filterError,
+    page,
     pageSize,
     reloadKey,
     resetDocuments,
     setDocuments,
     setError,
-    setHasMore,
     setLoading,
     setTotalQty,
     t,
@@ -264,8 +224,8 @@ function BalancesHeader({ model }: { model: ReturnType<typeof useBalancesPageMod
 function BalancesTableCard({ model }: { model: ReturnType<typeof useBalancesPageModel> }) {
   const { t } = useI18n()
   const {
-    applyFilters, columns, density, documents, error, filterDraft, filterError, hasMore, isLoading, isLoadingMore,
-    loadMoreDocuments, pageSize, reload, resetFilters, setPageSize, toggleDensity, toolbarLeft,
+    applyFilters, columns, density, documents, error, filterDraft, filterError, isLoading,
+    page, pageSize, reload, resetFilters, setPage, setPageSize, toggleDensity, toolbarLeft, totalPages,
   } = model
 
   const typeOptions = useMemo(
@@ -319,29 +279,18 @@ function BalancesTableCard({ model }: { model: ReturnType<typeof useBalancesPage
                 <RotateCcw size={17} />
               </ActionIcon>
             </Tooltip>
-            <Tooltip label={t('Оновити')}>
-              <ActionIcon
-                aria-label={t('Оновити')}
-                color="gray"
-                loading={isLoading}
-                size={34}
-                variant="light"
-                onClick={() => reload()}
-              >
-                <RefreshCw size={17} />
-              </ActionIcon>
-            </Tooltip>
             <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
-            <Select
-              aria-label={t('Кількість рядків')}
-              data={PAGE_SIZE_OPTIONS}
-              size="xs"
-              value={String(pageSize)}
-              w={88}
-              onChange={(value) => {
-                setPageSize(Number(value || DEFAULT_PAGE_SIZE))
-                reload()
+            <Paginator
+              isLoading={isLoading}
+              page={page}
+              pageSize={pageSize}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              onPageSizeChange={(nextPageSize) => {
+                setPage(1)
+                setPageSize(nextPageSize)
               }}
+              onRefresh={() => reload()}
             />
           </div>
         </Group>
@@ -369,14 +318,6 @@ function BalancesTableCard({ model }: { model: ReturnType<typeof useBalancesPage
           tableId="balances"
           toolbarLeft={toolbarLeft}
         />
-
-        {hasMore && (
-          <Group justify="center">
-            <Button color="gray" loading={isLoadingMore} variant="light" onClick={loadMoreDocuments}>
-              {t('Завантажити ще')}
-            </Button>
-          </Group>
-        )}
       </Stack>
     </Card>
   )
