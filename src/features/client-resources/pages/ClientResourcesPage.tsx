@@ -9,6 +9,8 @@ import {
   FileInput,
   Group,
   Loader,
+  NumberInput,
+  Popover,
   Select,
   SimpleGrid,
   Stack,
@@ -42,6 +44,7 @@ import {
   createClientResourcePricing,
   createClientResourceRegion,
   createClientResourceRegionCode,
+  createClientResourceVatRate,
   createClientResourceStorage,
   createClientResourceTaxInspection,
   createClientResourceTransporter,
@@ -2490,6 +2493,34 @@ function OrganizationEditorModal({
     }))
   }
 
+  // Inline VAT-rate creation (legacy parity: the organization VAT-rate dropdown could add a new rate value).
+  const [extraVatRates, setExtraVatRates] = useValueState<ClientResourceVatRate[]>([])
+  const [newVatRateValue, setNewVatRateValue] = useValueState<number | ''>('')
+  const [isVatPopoverOpen, setVatPopoverOpen] = useValueState(false)
+  const [isCreatingVatRate, setCreatingVatRate] = useValueState(false)
+  const availableVatRates = useMemo(() => [...vatRates, ...extraVatRates], [vatRates, extraVatRates])
+
+  async function handleCreateVatRate() {
+    if (typeof newVatRateValue !== 'number' || Number.isNaN(newVatRateValue)) {
+      return
+    }
+
+    setCreatingVatRate(true)
+
+    try {
+      const created = await createClientResourceVatRate(newVatRateValue)
+
+      if (created?.NetUid) {
+        setExtraVatRates((current) => [...current, created])
+        setField('VatRateId', created.NetUid)
+        setNewVatRateValue('')
+        setVatPopoverOpen(false)
+      }
+    } finally {
+      setCreatingVatRate(false)
+    }
+  }
+
   return (
     <AppModal centered className="client-resources-modal" opened={opened} size="xl" title={<span style={RESOURCE_MONO_STYLE}>{title}</span>} onClose={onClose}>
       <form
@@ -2565,14 +2596,46 @@ function OrganizationEditorModal({
               value={values.TypeTaxation}
               onChange={(value) => setField('TypeTaxation', value || '0')}
             />
-            <Select
-              clearable
-              data={toEntityOptions(vatRates, (vatRate) => formatVatRate(vatRate))}
-              label={translate("Ставка ПДВ")}
-              placeholder={translate("Без ставки")}
-              value={values.VatRateId}
-              onChange={(value) => setField('VatRateId', value || '')}
-            />
+            <Group align="end" gap="xs" wrap="nowrap">
+              <Select
+                clearable
+                searchable
+                style={{ flex: 1 }}
+                data={toEntityOptions(availableVatRates, (vatRate) => formatVatRate(vatRate))}
+                label={translate("Ставка ПДВ")}
+                placeholder={translate("Без ставки")}
+                value={values.VatRateId}
+                onChange={(value) => setField('VatRateId', value || '')}
+              />
+              <Popover opened={isVatPopoverOpen} position="bottom-end" shadow="md" withArrow onChange={setVatPopoverOpen}>
+                <Popover.Target>
+                  <ActionIcon aria-label={translate('Додати ставку ПДВ')} size={36} variant="light" onClick={() => setVatPopoverOpen((open) => !open)}>
+                    <Plus size={16} />
+                  </ActionIcon>
+                </Popover.Target>
+                <Popover.Dropdown>
+                  <Group align="end" gap="xs" wrap="nowrap">
+                    <NumberInput
+                      label={translate('Нова ставка ПДВ, %')}
+                      max={100}
+                      min={0}
+                      value={newVatRateValue}
+                      w={150}
+                      onChange={(value) => setNewVatRateValue(typeof value === 'number' ? value : '')}
+                    />
+                    <Button
+                      color={CREATE_ACTION_COLOR}
+                      disabled={typeof newVatRateValue !== 'number'}
+                      loading={isCreatingVatRate}
+                      size="sm"
+                      onClick={() => void handleCreateVatRate()}
+                    >
+                      {translate('Додати')}
+                    </Button>
+                  </Group>
+                </Popover.Dropdown>
+              </Popover>
+            </Group>
             {organization?.Id && organization.PaymentRegisters?.length ? (
               <Select
                 allowDeselect={false}

@@ -383,6 +383,24 @@ export async function getClientResourceVatRates(): Promise<ClientResourceVatRate
   return getResourceList<ClientResourceVatRate>('/vat/rates/all/get')
 }
 
+export async function createClientResourceVatRate(value: number): Promise<ClientResourceVatRate | null> {
+  // The endpoint returns the FULL rate list (not the single created row), so pick the newest rate that
+  // matches the requested value.
+  const result = await apiRequest<unknown>('/vat/rates/new', {
+    method: 'POST',
+    body: { Value: value },
+  })
+
+  const rates = normalizeResourceList<ClientResourceVatRate>(result)
+  const matches = rates.filter((rate) => Math.abs((rate.Value ?? 0) - value) < 0.0001)
+
+  if (matches.length === 0) {
+    return null
+  }
+
+  return matches.reduce((newest, rate) => ((rate.Id ?? 0) > (newest.Id ?? 0) ? rate : newest))
+}
+
 export async function getClientResourceTransporters(typeNetId: string): Promise<ClientResourceTransporter[]> {
   const result = await apiRequest<unknown>('/transporters/all/type', {
     query: {
