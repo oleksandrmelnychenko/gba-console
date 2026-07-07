@@ -48,6 +48,7 @@ export function CashFlowBalanceChart({
         )}
       </Group>
       <AreaChart
+        areaChartProps={{ margin: { bottom: 0, left: 10, right: 8, top: 4 } }}
         curveType="linear"
         data={data}
         dataKey="label"
@@ -59,6 +60,7 @@ export function CashFlowBalanceChart({
         valueFormatter={(value) => formatMoney(value)}
         withDots={false}
         xAxisProps={{ minTickGap: 48 }}
+        yAxisProps={{ tickMargin: 8, width: 78 }}
       />
     </Card>
   )

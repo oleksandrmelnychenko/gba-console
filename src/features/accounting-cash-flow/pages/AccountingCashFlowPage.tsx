@@ -865,7 +865,6 @@ function CashFlowStatementHero({
   summary: CashFlowViewSummary
 }) {
   const { t } = useI18n()
-  const debt = useMemo(() => (selectedAgreement ? getAgreementDebtSummary(selectedAgreement) : null), [selectedAgreement])
   const currency = selectedAgreement ? getAgreementCurrency(selectedAgreement) : null
   const title = selectedAgreement
     ? stringValue(selectedAgreement.Agreement?.Name) || t('Договір')
@@ -898,24 +897,24 @@ function CashFlowStatementHero({
 
       <div className="accounting-cash-flow-statement-hero__balance">
         <span>{t('Кінцевий баланс')}</span>
-        <strong className={balanceClassName}>{formatMoney(closingBalance)}</strong>
+        <strong className={balanceClassName}>
+          {formatMoney(closingBalance)}
+          {currency ? <em>{currency}</em> : null}
+        </strong>
         <small className={periodDelta < 0 ? 'is-negative' : 'is-positive'}>
           {periodDelta >= 0 ? '+' : ''}{formatMoney(periodDelta)} {t('за період')}
         </small>
       </div>
 
-      <div className="accounting-cash-flow-statement-hero__meter" aria-hidden="true">
-        <span style={{ height: `${debitPercent}%` }} />
-        <strong style={{ height: `${creditPercent}%` }} />
-      </div>
-
       <div className="accounting-cash-flow-statement-hero__flow">
         <div>
+          <i className="accounting-cash-flow-statement-hero__flow-mark is-debit" style={{ height: `${debitPercent}%` }} />
           <IconArrowDownLeft size={15} />
           <span>{t('Дебет')}</span>
           <strong>{formatMoney(summary.afterInAmount)}</strong>
         </div>
         <div>
+          <i className="accounting-cash-flow-statement-hero__flow-mark is-credit" style={{ height: `${creditPercent}%` }} />
           <IconArrowUpRight size={15} />
           <span>{t('Кредит')}</span>
           <strong>{formatMoney(summary.afterOutAmount)}</strong>
@@ -923,8 +922,6 @@ function CashFlowStatementHero({
       </div>
 
       <div className="accounting-cash-flow-statement-hero__chips">
-        <span>{currency || t('Всі валюти')}</span>
-        {debt?.isOverdue ? <strong>{t('Прострочено')}</strong> : <span>{t('Без прострочки')}</span>}
         <span>{t('Вхідний баланс')}: {formatMoney(openingBalance)}</span>
       </div>
     </div>
@@ -1008,19 +1005,25 @@ function AgreementDebtTile({
           </span>
         </span>
         <span className="accounting-cash-flow-agreement-card__stats">
+          {debt.isOverdue ? (
+            <Badge className="app-role-pill is-red accounting-cash-flow-agreement-card__status" variant="light">
+              {t('Прострочено')}
+            </Badge>
+          ) : null}
           {debt.isControlAmountDebt ? (
-            <span className={debt.totalOverdueDebt > 0 ? 'is-danger' : undefined}>
-              {formatMoney(debt.totalOverdueDebt)}
-              <small>/ {formatMoney(debt.accountBalance)}</small>
+            <span className={`accounting-cash-flow-agreement-card__stat${debt.totalOverdueDebt > 0 ? ' is-danger' : ''}`}>
+              <small>{t('Борг')}</small>
+              <strong>{formatMoney(debt.totalOverdueDebt)}</strong>
+              <em>{formatMoney(debt.accountBalance)}</em>
             </span>
           ) : null}
           {debt.isControlNumberDaysDebt ? (
-            <span className={debt.overdueDays > 0 ? 'is-danger' : undefined}>
-              {debt.overdueDays}
-              <small>/ {debt.allowedDays} {t('днів')}</small>
+            <span className={`accounting-cash-flow-agreement-card__stat${debt.overdueDays > 0 ? ' is-danger' : ''}`}>
+              <small>{t('Дні')}</small>
+              <strong>{debt.overdueDays} / {debt.allowedDays}</strong>
+              <em>{t('днів')}</em>
             </span>
           ) : null}
-          {debt.isOverdue ? <strong>{t('Прострочено')}</strong> : null}
         </span>
       </button>
     </Tooltip>
