@@ -19,16 +19,16 @@
 }
 
 .sale-detail-hero {
-  align-items: stretch;
+  align-items: center;
   background: var(--mantine-color-white);
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 8px;
   display: grid;
-  gap: 18px;
+  gap: 14px;
   grid-template-columns: minmax(0, 1fr) auto;
   min-width: 0;
   overflow: hidden;
-  padding: 14px 16px;
+  padding: 10px 14px;
   position: relative;
 }
 
@@ -38,13 +38,13 @@
 
 .sale-detail-hero-copy {
   display: grid;
-  gap: 7px;
+  gap: 4px;
   min-width: 0;
 }
 
 .sale-detail-kicker {
   align-items: center;
-  color: var(--mantine-color-gray-5);
+  color: var(--mantine-color-gray-8);
   display: flex;
   flex-wrap: wrap;
   font-family: var(--font-mono);
@@ -53,6 +53,25 @@
   gap: 6px;
   line-height: 1.2;
   min-width: 0;
+}
+
+/* Title + agreement name on one line — keeps the hero compact. */
+.sale-detail-headline {
+  align-items: baseline;
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+}
+
+.sale-detail-headline .sale-detail-title,
+.sale-detail-headline .sale-detail-subtitle {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.sale-detail-headline-sep {
+  color: var(--mantine-color-gray-4);
+  flex: 0 0 auto;
 }
 
 .sale-detail-kicker > span {

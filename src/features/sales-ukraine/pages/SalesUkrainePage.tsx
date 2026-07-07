@@ -1364,18 +1364,18 @@ function SaleGridRow({
                     style={{ opacity: 1 }}
                     onClick={() => onWillNotShip(sale)}
                   >
-                    !
+                    <IconAlertTriangle size={14} />
                   </button>
                 ) : (
-                  <span className="sg-bang" style={{ opacity: sale.ChangedToInvoice ? 1 : 0.4 }}>
-                    !
+                  <span className="sg-bang" style={{ opacity: sale.ChangedToInvoice ? 1 : 0.55 }}>
+                    <IconAlertTriangle size={14} />
                   </span>
                 )}
               </Tooltip>
             </span>
           ) : (
             <span className="sg-action-slot is-bang" aria-hidden="true">
-              <span className="sg-bang sg-bang-placeholder">!</span>
+              <span className="sg-bang sg-bang-placeholder"><IconAlertTriangle size={14} /></span>
             </span>
           )}
           {canExpand ? (
@@ -1602,7 +1602,6 @@ function SaleDetail({ sale }: { sale: SalesUkraineSale }) {
       <section className="sale-detail-hero">
         <div className="sale-detail-hero-copy">
           <div className="sale-detail-kicker">
-            <SaleSourceIcon sale={sale} />
             <span>{displayValue(sale.SaleNumber?.Value)}</span>
             {date && (
               <>
@@ -1613,12 +1612,19 @@ function SaleDetail({ sale }: { sale: SalesUkraineSale }) {
               </>
             )}
           </div>
-          <OverflowTooltipText className="sale-detail-title">
-            {displayValue(getSaleClientDisplayName(sale))}
-          </OverflowTooltipText>
-          <OverflowTooltipText className="sale-detail-subtitle">
-            {displayValue(sale.ClientAgreement?.Agreement?.Name)}
-          </OverflowTooltipText>
+          <div className="sale-detail-headline">
+            <OverflowTooltipText className="sale-detail-title">
+              {displayValue(getSaleClientDisplayName(sale))}
+            </OverflowTooltipText>
+            {sale.ClientAgreement?.Agreement?.Name?.trim() ? (
+              <>
+                <span className="sale-detail-headline-sep" aria-hidden="true">·</span>
+                <OverflowTooltipText className="sale-detail-subtitle">
+                  {sale.ClientAgreement.Agreement.Name}
+                </OverflowTooltipText>
+              </>
+            ) : null}
+          </div>
           <div className="sale-detail-status-strip">
             <Badge className={`app-role-pill sale-detail-pill ${getSaleStatusPillClass(sale)}`} variant="light">
               {getSaleStatusLabel(sale)}
@@ -1894,7 +1900,7 @@ function SaleDetailProductRow({
       </span>
       {showUah && (
         <span className="app-money sale-detail-product-value is-uah">
-          {formatAmount(uahUnitPrice)} <small>UAH</small>
+          {formatAmount(uahUnitPrice)}
         </span>
       )}
       <span className="app-money sale-detail-product-amount">

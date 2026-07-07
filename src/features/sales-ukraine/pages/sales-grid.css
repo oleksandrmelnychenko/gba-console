@@ -983,26 +983,28 @@
 
 .sg-transporter-button {
   align-items: center;
-  background: var(--mantine-color-gray-0);
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 8px;
-  color: var(--mantine-color-gray-5);
+  /* Outline circle, no fill (§5.2/§7.1): transparent bg + hairline border, glyph
+     gray-7, hover → orange. */
+  background: transparent;
+  border: 1px solid var(--mantine-color-gray-3);
+  border-radius: 50%;
+  color: var(--mantine-color-gray-7);
   cursor: pointer;
   display: inline-flex;
-  height: 28px;
+  height: 30px;
   justify-content: center;
   padding: 0;
   transition:
     background-color 140ms var(--tx-ease-smooth),
     border-color 140ms var(--tx-ease-smooth),
-    box-shadow 140ms var(--tx-ease-smooth);
-  width: 34px;
+    color 140ms var(--tx-ease-smooth);
+  width: 30px;
 }
 
 .sg-transporter-button:hover {
-  background: var(--mantine-color-white);
-  border-color: rgba(var(--brand-orange-rgb), 0.38);
-  box-shadow: 0 4px 12px rgba(20, 28, 38, 0.08);
+  background: transparent;
+  border-color: var(--brand-orange);
+  color: var(--brand-orange);
 }
 
 .sg-transporter-logo {
