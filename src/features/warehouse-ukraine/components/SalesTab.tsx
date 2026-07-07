@@ -374,7 +374,6 @@ export function SalesTab() {
   const { hasPermission } = useAuth()
   const canCreateSale = hasPermission(SALES_UKRAINE_EDIT_PERMISSION)
   const [isNewSaleOpen, setNewSaleOpen] = useState(false)
-  const [wizardEditSale, setWizardEditSale] = useState<SalesUkraineSale | null>(null)
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
 
   return (
@@ -456,7 +455,6 @@ export function SalesTab() {
             showLayoutControls
             tableId="warehouse-ukraine-sales"
             toolbarPortalTarget={tableToolbarSlot}
-            onRowClick={(sale) => setWizardEditSale(sale as unknown as SalesUkraineSale)}
           />
         </div>
         {model.totalQty > 0 && (
@@ -485,16 +483,13 @@ export function SalesTab() {
         onClose={model.closeDownload}
       />
       <NewSaleWizard
-        editSale={wizardEditSale}
-        opened={(canCreateSale && isNewSaleOpen) || Boolean(wizardEditSale)}
+        opened={canCreateSale && isNewSaleOpen}
         onClose={() => {
           setNewSaleOpen(false)
-          setWizardEditSale(null)
           model.reload()
         }}
         onCreated={() => {
           setNewSaleOpen(false)
-          setWizardEditSale(null)
           model.reload()
         }}
       />
