@@ -912,6 +912,8 @@ function CashFlowStatementHero({
 
       <div className="accounting-cash-flow-statement-hero__chips">
         <span>{t('Вхідний баланс')}: {formatMoney(openingBalance)}</span>
+        <span>{t('Вхідний дебет')}: {formatMoney(summary.beforeInAmount)}</span>
+        <span>{t('Вхідний кредит')}: {formatMoney(summary.beforeOutAmount)}</span>
       </div>
     </div>
   )
