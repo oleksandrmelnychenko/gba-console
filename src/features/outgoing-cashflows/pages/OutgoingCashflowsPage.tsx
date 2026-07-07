@@ -1118,6 +1118,7 @@ function OutgoingDetailRow({
   return (
     <div className={`outgoing-detail-row${wide ? ' is-wide' : ''}`}>
       <span className="outgoing-detail-row__label">{label}</span>
+      <span className="outgoing-detail-row__line" aria-hidden />
       <span className={`outgoing-detail-row__value${tone ? ` is-${tone}` : ''}`}>{displayValue(value) || '-'}</span>
     </div>
   )

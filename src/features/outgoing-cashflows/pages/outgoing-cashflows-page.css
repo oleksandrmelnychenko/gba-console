@@ -320,22 +320,6 @@
   z-index: 1;
 }
 
-.outgoing-detail-section + .outgoing-detail-section::after {
-  background:
-    radial-gradient(circle, var(--mantine-color-orange-5) 0 2px, transparent 2.5px),
-    linear-gradient(90deg, var(--mantine-color-white), var(--mantine-color-gray-0));
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 999px;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
-  content: '';
-  height: 9px;
-  left: 50%;
-  position: absolute;
-  top: -14px;
-  transform: translateX(-50%);
-  width: 42px;
-}
-
 .outgoing-detail-section + .outgoing-detail-section .outgoing-detail-section__head::before {
   background: linear-gradient(
     90deg,
@@ -386,32 +370,62 @@
 }
 
 .outgoing-detail-row {
-  align-items: start;
-  border-top: 1px solid var(--mantine-color-gray-1);
+  align-items: center;
   display: grid;
-  gap: 12px;
-  grid-template-columns: minmax(120px, 36%) minmax(0, 1fr);
-  min-height: 38px;
-  padding: 8px 0;
-}
-
-.outgoing-detail-row:first-child {
-  border-top-color: var(--mantine-color-gray-2);
+  gap: 8px;
+  grid-template-columns: max-content minmax(42px, 1fr) fit-content(45%);
+  min-height: 34px;
+  padding: 6px 0;
 }
 
 .outgoing-detail-row.is-wide {
-  grid-template-columns: minmax(140px, 28%) minmax(0, 1fr);
+  grid-template-columns: max-content minmax(42px, 1fr) fit-content(56%);
 }
 
 .outgoing-detail-row__label {
-  padding-top: 1px;
+  max-width: 220px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.outgoing-detail-row__line {
+  align-self: center;
+  background: var(--mantine-color-gray-3);
+  display: block;
+  height: 1px;
+  min-width: 24px;
+  position: relative;
+  width: 100%;
+}
+
+.outgoing-detail-row__line::before,
+.outgoing-detail-row__line::after {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-3);
+  border-radius: 999px;
+  content: '';
+  height: 7px;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 7px;
+}
+
+.outgoing-detail-row__line::before {
+  left: -3px;
+}
+
+.outgoing-detail-row__line::after {
+  right: -3px;
 }
 
 .outgoing-detail-row__value {
   color: var(--mantine-color-gray-9);
+  display: block;
   font-size: 13px;
   font-weight: 600;
-  line-height: 1.35;
+  line-height: 1.25;
+  max-width: 100%;
   min-width: 0;
   overflow-wrap: anywhere;
   text-align: right;
@@ -522,6 +536,10 @@
   .outgoing-detail-row,
   .outgoing-detail-row.is-wide {
     grid-template-columns: 1fr;
+  }
+
+  .outgoing-detail-row__line {
+    display: none;
   }
 
   .outgoing-detail-row__value {
