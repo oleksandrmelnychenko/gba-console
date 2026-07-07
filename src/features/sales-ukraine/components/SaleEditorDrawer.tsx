@@ -52,7 +52,11 @@ import {
   updateSaleFromData,
 } from '../api/salesUkraineApi'
 import { getSaleReviewIssues, type SaleReviewIssueCode } from '../saleReviewGuards'
-import { getVisibleOrderItemBaseDiscount } from '../saleDiscounts'
+import {
+  getOrderItemBaseDiscountSuppressionReason,
+  getVisibleOrderItemBaseDiscount,
+  type OrderItemBaseDiscountSuppressionReason,
+} from '../saleDiscounts'
 import { getSaleLocalCurrencyCode, isNonVatEurSale, roundMoney } from '../saleMoney'
 import { isStatusType } from '../saleStatus'
 import { MergedSalesDrawer } from './MergedSalesDrawer'
@@ -647,7 +651,7 @@ function useItemColumns({
       width: 132,
       align: 'right',
       accessor: (item) => getVisibleOrderItemBaseDiscount(item),
-      cell: (item) => formatPercent(getVisibleOrderItemBaseDiscount(item)),
+      cell: (item) => <BaseDiscountCell item={item} t={t} />,
     },
     {
       id: 'discount',
@@ -693,6 +697,44 @@ function useItemColumns({
         ) : null,
     },
   ]
+}
+
+function BaseDiscountCell({
+  item,
+  t,
+}: {
+  item: SalesUkraineOrderItem
+  t: (value: string) => string
+}) {
+  const reason = getOrderItemBaseDiscountSuppressionReason(item)
+  const value = formatPercent(getVisibleOrderItemBaseDiscount(item))
+
+  if (!reason) {
+    return value
+  }
+
+  return (
+    <Tooltip label={getBaseDiscountSuppressionTooltip(reason, t)}>
+      <Text c="red.7" component="span" fw={700} size="sm">
+        {value}
+      </Text>
+    </Tooltip>
+  )
+}
+
+function getBaseDiscountSuppressionTooltip(
+  reason: OrderItemBaseDiscountSuppressionReason,
+  t: (value: string) => string,
+): string {
+  if (reason === 'x9') {
+    return t('Базова знижка не показується для товарів Top X9')
+  }
+
+  if (reason === 'zero-sale') {
+    return t('Базова знижка не показується для товарів з нульовим продажем')
+  }
+
+  return t('Базова знижка не показується для акційних товарів')
 }
 
 function OrderItemQtyModal({

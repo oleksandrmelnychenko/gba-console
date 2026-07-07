@@ -1,9 +1,14 @@
-import { Anchor, Box, Text } from '@mantine/core'
+import { Anchor, Box, Text, Tooltip } from '@mantine/core'
 import { IconBox } from '@tabler/icons-react'
 import { useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { ProductCardModal } from '../../products/components/ProductCardModal'
-import { getUniformOneTimeDiscount, getVisibleOrderItemBaseDiscount } from '../saleDiscounts'
+import {
+  getOrderItemBaseDiscountSuppressionReason,
+  getUniformOneTimeDiscount,
+  getVisibleOrderItemBaseDiscount,
+  type OrderItemBaseDiscountSuppressionReason,
+} from '../saleDiscounts'
 import { isDiscountEditableSaleLifecycle } from '../saleStatus'
 import type { SalesUkraineOrderItem, SalesUkraineSale, SalesUkraineUser } from '../types'
 
@@ -95,6 +100,7 @@ function SaleExpandContentItem({
   const oneTimeDiscount = getNumber(orderItem.OneTimeDiscount)
   const hasOneTimeDiscount = typeof oneTimeDiscount === 'number' && oneTimeDiscount !== 0
   const baseDiscount = getVisibleOrderItemBaseDiscount(orderItem)
+  const baseDiscountSuppressionReason = getOrderItemBaseDiscountSuppressionReason(orderItem)
   const productNetId = orderItem.Product?.NetUid
   const openProductCard = productNetId
     ? (event: { stopPropagation: () => void }) => {
@@ -199,7 +205,13 @@ function SaleExpandContentItem({
       <div className="sale-expand-discount-cell" role="cell">
         <div className="sale-expand-discount-line">
           <span>{t('База')}</span>
-          <strong>{formatPercent(baseDiscount)}</strong>
+          {baseDiscountSuppressionReason ? (
+            <Tooltip label={getBaseDiscountSuppressionTooltip(baseDiscountSuppressionReason, t)}>
+              <strong className="is-suppressed">{formatPercent(baseDiscount)}</strong>
+            </Tooltip>
+          ) : (
+            <strong>{formatPercent(baseDiscount)}</strong>
+          )}
         </div>
         <div className="sale-expand-discount-line">
           <span>{t('Разова')}</span>
@@ -229,6 +241,21 @@ function SaleExpandContentItem({
       </div>
     </div>
   )
+}
+
+function getBaseDiscountSuppressionTooltip(
+  reason: OrderItemBaseDiscountSuppressionReason,
+  t: (value: string) => string,
+): string {
+  if (reason === 'x9') {
+    return t('Базова знижка не показується для товарів Top X9')
+  }
+
+  if (reason === 'zero-sale') {
+    return t('Базова знижка не показується для товарів з нульовим продажем')
+  }
+
+  return t('Базова знижка не показується для акційних товарів')
 }
 
 function ValueBlock({

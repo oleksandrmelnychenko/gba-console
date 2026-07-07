@@ -1346,6 +1346,10 @@
   color: var(--mantine-color-red-7);
 }
 
+.sale-expand-discount-line strong.is-suppressed {
+  color: var(--mantine-color-red-7);
+}
+
 .sale-expand-discount-cell {
   display: grid;
   gap: 3px;

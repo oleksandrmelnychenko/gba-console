@@ -2,6 +2,8 @@ import type { SalesUkraineOrderItem } from './types'
 
 const BASE_DISCOUNT_SUPPRESSED_TOPS = new Set(['x9', 'х9'])
 
+export type OrderItemBaseDiscountSuppressionReason = 'sale' | 'x9' | 'zero-sale'
+
 export function getVisibleOrderItemBaseDiscount(orderItem: SalesUkraineOrderItem): number | null {
   const discount = getNumber(orderItem.Discount)
 
@@ -9,7 +11,27 @@ export function getVisibleOrderItemBaseDiscount(orderItem: SalesUkraineOrderItem
     return null
   }
 
-  return isOrderItemBaseDiscountSuppressed(orderItem) ? 0 : discount
+  return getOrderItemBaseDiscountSuppressionReason(orderItem) ? 0 : discount
+}
+
+export function getOrderItemBaseDiscountSuppressionReason(
+  orderItem: SalesUkraineOrderItem,
+): OrderItemBaseDiscountSuppressionReason | null {
+  const top = orderItem.Product?.Top?.trim().toLowerCase()
+
+  if (top && BASE_DISCOUNT_SUPPRESSED_TOPS.has(top)) {
+    return 'x9'
+  }
+
+  if (orderItem.Product?.IsForZeroSale) {
+    return 'zero-sale'
+  }
+
+  if (orderItem.Product?.IsForSale) {
+    return 'sale'
+  }
+
+  return null
 }
 
 export function getUniformBaseDiscount(orderItems: SalesUkraineOrderItem[]): number | null {
@@ -34,16 +56,6 @@ export function getUniformOneTimeDiscount(orderItems: SalesUkraineOrderItem[]): 
 
 export function getAverageOneTimeDiscount(orderItems: SalesUkraineOrderItem[]): number | null {
   return getAveragePositiveDiscount(orderItems.map((item) => item.OneTimeDiscount))
-}
-
-export function isOrderItemBaseDiscountSuppressed(orderItem: SalesUkraineOrderItem): boolean {
-  const top = orderItem.Product?.Top?.trim().toLowerCase()
-
-  return (
-    Boolean(top && BASE_DISCOUNT_SUPPRESSED_TOPS.has(top))
-    || Boolean(orderItem.Product?.IsForZeroSale)
-    || Boolean(orderItem.Product?.IsForSale)
-  )
 }
 
 function getNumber(value: unknown): number | null {
