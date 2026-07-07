@@ -250,6 +250,19 @@
   text-transform: uppercase;
 }
 
+/* Row-click-isolation wrappers for the manual picker's select checkbox and qty
+   input (stopPropagation so focusing them no longer toggles the row). Keep the
+   cell layout unchanged. */
+.warehouse-shipment-inline-number-wrap {
+  width: 100%;
+}
+
+.warehouse-shipment-select-wrap {
+  align-items: center;
+  display: inline-flex;
+  justify-content: center;
+}
+
 .warehouse-shipment-inline-number .mantine-Input-input {
   font-family: var(--font-mono);
   font-weight: 600;

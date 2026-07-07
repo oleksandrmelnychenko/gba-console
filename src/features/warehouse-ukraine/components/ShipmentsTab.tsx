@@ -2199,19 +2199,27 @@ function useManualShipmentSalesColumns(model: ManualShipmentSalesColumnsModel): 
           const disabled = !saleKey || model.existingSaleKeys.has(saleKey)
 
           return (
-            <Checkbox
-              checked={Boolean(saleKey && model.selectedSaleKeys[saleKey])}
-              disabled={disabled}
-              onChange={(event) => {
-                if (!saleKey) {
-                  return
-                }
+            // Isolate from onRowClick — clicking the box must toggle only via its
+            // own onChange, not also flip the row-click selection (double toggle).
+            <div
+              className="warehouse-shipment-select-wrap"
+              onClick={(event) => event.stopPropagation()}
+              onMouseDown={(event) => event.stopPropagation()}
+            >
+              <Checkbox
+                checked={Boolean(saleKey && model.selectedSaleKeys[saleKey])}
+                disabled={disabled}
+                onChange={(event) => {
+                  if (!saleKey) {
+                    return
+                  }
 
-                const checked = event.currentTarget.checked
+                  const checked = event.currentTarget.checked
 
-                model.setSelectedSaleKeys((current) => ({ ...current, [saleKey]: checked }))
-              }}
-            />
+                  model.setSelectedSaleKeys((current) => ({ ...current, [saleKey]: checked }))
+                }}
+              />
+            </div>
           )
         },
       },
@@ -2257,24 +2265,33 @@ function useManualShipmentSalesColumns(model: ManualShipmentSalesColumnsModel): 
           const disabled = !saleKey || model.existingSaleKeys.has(saleKey)
 
           return (
-            <TextInput
-              className="warehouse-shipment-inline-number"
-              disabled={disabled}
-              error={saleKey ? !isValidManualQtyPlaces(model.qtyPlaces[saleKey]) : false}
-              size="xs"
-              type="number"
-              value={saleKey ? model.qtyPlaces[saleKey] || '' : ''}
-              onChange={(event) => {
-                if (!saleKey) {
-                  return
-                }
+            // Stop the click/focus from bubbling to the DataTable row's onRowClick
+            // (which toggles selection) — otherwise focusing the field re-toggled
+            // the row, the input jumped and the digit didn't register.
+            <div
+              className="warehouse-shipment-inline-number-wrap"
+              onClick={(event) => event.stopPropagation()}
+              onMouseDown={(event) => event.stopPropagation()}
+            >
+              <TextInput
+                className="warehouse-shipment-inline-number"
+                disabled={disabled}
+                error={saleKey ? !isValidManualQtyPlaces(model.qtyPlaces[saleKey]) : false}
+                size="xs"
+                type="number"
+                value={saleKey ? model.qtyPlaces[saleKey] || '' : ''}
+                onChange={(event) => {
+                  if (!saleKey) {
+                    return
+                  }
 
-                const value = event.currentTarget.value
+                  const value = event.currentTarget.value
 
-                model.setQtyPlaces((current) => ({ ...current, [saleKey]: value }))
-                model.setSelectedSaleKeys((current) => ({ ...current, [saleKey]: true }))
-              }}
-            />
+                  model.setQtyPlaces((current) => ({ ...current, [saleKey]: value }))
+                  model.setSelectedSaleKeys((current) => ({ ...current, [saleKey]: true }))
+                }}
+              />
+            </div>
           )
         },
       },

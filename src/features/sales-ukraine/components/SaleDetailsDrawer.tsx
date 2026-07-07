@@ -614,9 +614,12 @@ function getHistoryId(entry: SalesUkraineUpdateDataCarrier): number {
 }
 
 function formatHistoryHeader(entry: SalesUkraineUpdateDataCarrier, index: number, t: TranslateFunction): string {
-  const created = formatDateTime(entry.Created)
+  // Show the change timestamp in the column header (legacy parity). The record's
+  // date can arrive as Created or Updated depending on the snapshot; only when
+  // neither is set do we fall back to a plain «Зміна N» label.
+  const changedAt = formatDateTime(entry.Created) || formatDateTime(entry.Updated)
 
-  return created || `${t('Зміна')} ${index + 1}`
+  return changedAt || `${t('Зміна')} ${index + 1}`
 }
 
 function getHistoryColumnKey(entry: SalesUkraineUpdateDataCarrier): string {
