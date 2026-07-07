@@ -15,10 +15,7 @@
 }
 
 .accounting-cash-flow-export-modal-content {
-  background:
-    linear-gradient(135deg, rgba(var(--brand-orange-rgb), 0.08), transparent 34%),
-    linear-gradient(180deg, rgba(248, 249, 250, 0.86), transparent 160px),
-    var(--mantine-color-white);
+  background: var(--mantine-color-white);
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 14px;
   box-shadow: 0 24px 58px rgba(20, 28, 38, 0.18);
@@ -64,11 +61,7 @@
 
 .accounting-cash-flow-export-hero {
   align-items: center;
-  background:
-    linear-gradient(90deg, rgba(var(--brand-orange-rgb), 0.08), transparent 52%),
-    linear-gradient(90deg, rgba(20, 28, 38, 0.035) 1px, transparent 1px),
-    var(--mantine-color-white);
-  background-size: auto, 28px 28px, auto;
+  background: var(--mantine-color-white);
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 12px;
   display: flex;
@@ -118,9 +111,7 @@
 
 .accounting-cash-flow-export-card {
   align-items: center;
-  background:
-    linear-gradient(90deg, rgba(248, 249, 250, 0.72), transparent 64%),
-    var(--mantine-color-white);
+  background: var(--mantine-color-white);
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 12px;
   color: inherit;
@@ -234,9 +225,7 @@
 }
 
 .accounting-cash-flow-shell {
-  background:
-    linear-gradient(180deg, rgba(248, 249, 250, 0.88), transparent 120px),
-    var(--mantine-color-white);
+  background: var(--mantine-color-white);
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 10px;
   box-shadow: var(--app-card-shadow);
@@ -390,9 +379,7 @@
 }
 
 .accounting-cash-flow-command {
-  background:
-    linear-gradient(180deg, rgba(248, 249, 250, 0.88), transparent 220px),
-    var(--mantine-color-white);
+  background: var(--mantine-color-white);
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
@@ -402,24 +389,18 @@
 }
 
 .accounting-cash-flow-agreements {
-  background:
-    linear-gradient(180deg, rgba(255, 122, 24, 0.09), transparent 34%),
-    linear-gradient(90deg, rgba(20, 28, 38, 0.035) 1px, transparent 1px),
-    #fbfcfd;
-  background-size: auto, 28px 28px, auto;
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 12px;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
   min-height: 0;
   min-width: 0;
-  padding: 12px;
+  padding: 0;
 }
 
 .accounting-cash-flow-stage {
   align-items: stretch;
-  background:
-    linear-gradient(90deg, rgba(16, 24, 40, 0.03), rgba(var(--brand-orange-rgb), 0.045) 52%, transparent),
-    var(--mantine-color-white);
-  border-bottom: 1px solid var(--mantine-color-gray-2);
+  background: var(--mantine-color-white);
+  border-bottom: 0;
   display: grid;
   flex: 0 0 auto;
   gap: 12px;
@@ -489,9 +470,7 @@
 }
 
 .accounting-cash-flow-agreement-card {
-  background:
-    linear-gradient(135deg, rgba(255, 247, 240, 0.78), transparent 46%),
-    var(--mantine-color-white);
+  background: var(--mantine-color-white);
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 10px;
   color: inherit;
@@ -511,13 +490,7 @@
 }
 
 .accounting-cash-flow-agreement-card::after {
-  background: repeating-linear-gradient(
-    90deg,
-    rgba(20, 28, 38, 0.12) 0,
-    rgba(20, 28, 38, 0.12) 4px,
-    transparent 4px,
-    transparent 9px
-  );
+  background: rgba(20, 28, 38, 0.12);
   bottom: 5px;
   content: '';
   height: 1px;
@@ -534,17 +507,14 @@
 }
 
 .accounting-cash-flow-agreement-card.is-selected {
-  background:
-    linear-gradient(135deg, rgba(255, 122, 24, 0.14), transparent 40%),
-    linear-gradient(90deg, rgba(240, 253, 250, 0.76), transparent 72%),
-    var(--mantine-color-white);
+  background: var(--mantine-color-white);
   border-color: #ffc59a;
   box-shadow: 0 0 0 1px rgba(var(--brand-orange-rgb), 0.14), 0 16px 32px rgba(20, 28, 38, 0.08);
   transform: translateY(-2px);
 }
 
 .accounting-cash-flow-agreement-card.is-selected::before {
-  background: linear-gradient(180deg, var(--brand-orange), var(--mantine-color-teal-5));
+  background: var(--brand-orange);
   border-radius: 999px;
   bottom: 10px;
   content: '';
@@ -659,12 +629,8 @@
 }
 
 .accounting-cash-flow-statement-hero {
-  background:
-    linear-gradient(135deg, rgba(255, 122, 24, 0.16), transparent 30%),
-    linear-gradient(90deg, rgba(20, 28, 38, 0.05) 1px, transparent 1px),
-    linear-gradient(180deg, #ffffff, #f7fafc);
-  background-size: auto, 28px 28px, auto;
-  border: 1px solid #ffd8bd;
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
   border-radius: 12px;
   box-shadow: 0 18px 36px rgba(20, 28, 38, 0.09);
   color: var(--mantine-color-gray-9);
@@ -678,7 +644,7 @@
 }
 
 .accounting-cash-flow-statement-hero::after {
-  background: linear-gradient(90deg, var(--brand-orange), var(--mantine-color-teal-5));
+  background: var(--mantine-color-gray-2);
   bottom: 0;
   content: '';
   height: 3px;
@@ -802,12 +768,12 @@
 }
 
 .accounting-cash-flow-statement-hero__meter span {
-  background: linear-gradient(180deg, #77e2c0, rgba(119, 226, 192, 0.22));
+  background: rgba(20, 184, 166, 0.28);
   height: 66%;
 }
 
 .accounting-cash-flow-statement-hero__meter strong {
-  background: linear-gradient(180deg, #ff9a4a, rgba(255, 154, 74, 0.22));
+  background: rgba(var(--brand-orange-rgb), 0.22);
   height: 48%;
 }
 
@@ -876,9 +842,7 @@
 }
 
 .accounting-cash-flow-summary {
-  background:
-    linear-gradient(90deg, rgba(248, 249, 250, 0.86), transparent 54%),
-    var(--mantine-color-white);
+  background: var(--mantine-color-white);
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 10px;
   min-width: 0;
@@ -892,9 +856,7 @@
 }
 
 .accounting-cash-flow-page .cash-flow-summary-tile.mantine-Card-root {
-  background:
-    linear-gradient(90deg, transparent, rgba(248, 249, 250, 0.74) 48%, transparent),
-    var(--mantine-color-white);
+  background: var(--mantine-color-white);
   border-color: var(--mantine-color-gray-2);
   border-radius: 8px;
   box-shadow: none;
@@ -928,11 +890,7 @@
 }
 
 .accounting-cash-flow-chart .mantine-Card-root {
-  background:
-    linear-gradient(135deg, rgba(124, 229, 195, 0.18), transparent 36%),
-    linear-gradient(90deg, rgba(20, 28, 38, 0.04) 1px, transparent 1px),
-    var(--mantine-color-white);
-  background-size: auto, 28px 28px, auto;
+  background: var(--mantine-color-white);
   border-color: var(--mantine-color-gray-2);
   border-radius: 12px;
   box-shadow: 0 18px 36px rgba(20, 28, 38, 0.08);
@@ -953,248 +911,45 @@
 }
 
 .accounting-cash-flow-grid-card {
-  background:
-    linear-gradient(180deg, rgba(255, 122, 24, 0.045), transparent 150px),
-    linear-gradient(90deg, rgba(20, 28, 38, 0.028) 1px, transparent 1px),
-    var(--mantine-color-white);
-  background-size: auto, 30px 30px, auto;
+  background: var(--mantine-color-white);
   flex: 0 0 auto;
   overflow: visible;
-  padding: 12px;
+  padding: 0 12px 12px;
 }
 
-.accounting-cash-flow-ledger-head {
-  align-items: center;
-  background:
-    linear-gradient(90deg, rgba(255, 122, 24, 0.13), transparent 34%),
-    linear-gradient(90deg, rgba(124, 229, 195, 0.12), transparent 86%),
-    var(--mantine-color-white);
-  border: 1px solid var(--mantine-color-gray-2);
-  border-bottom: 0;
-  border-radius: 12px 12px 0 0;
-  display: flex;
-  flex: 0 0 auto;
-  gap: 12px;
-  justify-content: space-between;
-  min-height: 52px;
-  min-width: 0;
-  padding: 0 13px;
-  position: relative;
-}
-
-.accounting-cash-flow-ledger-head::after {
-  background: linear-gradient(90deg, var(--brand-orange), var(--mantine-color-teal-5));
-  bottom: 0;
-  content: '';
-  height: 2px;
-  left: 13px;
-  position: absolute;
-  right: 13px;
-}
-
-.accounting-cash-flow-ledger-head div {
-  display: grid;
-  gap: 2px;
-  min-width: 0;
-}
-
-.accounting-cash-flow-ledger-head span {
-  color: var(--mantine-color-gray-5);
-  font-size: 10.5px;
-  font-weight: 500;
-  line-height: 1.15;
-  text-transform: uppercase;
-}
-
-.accounting-cash-flow-ledger-head strong {
-  color: var(--mantine-color-gray-9);
-  font-size: 14px;
-  font-weight: 700;
-  line-height: 1.15;
-}
-
-.accounting-cash-flow-ledger-head small {
-  align-items: center;
-  background: var(--mantine-color-gray-0);
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 999px;
-  color: var(--mantine-color-gray-6);
-  display: inline-flex;
-  flex: 0 0 auto;
-  font-size: 11px;
-  font-weight: 600;
-  height: 24px;
-  line-height: 1;
-  padding: 0 10px;
-}
-
-.accounting-cash-flow-page .cfg-grid {
-  background: var(--mantine-color-white);
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 0 0 12px 12px;
-  box-shadow: 0 18px 36px rgba(20, 28, 38, 0.06);
-  flex: 0 0 auto;
-  font-size: 12.5px;
-  height: auto;
-  overflow: hidden;
-}
-
-.accounting-cash-flow-page .cfg-row {
-  min-height: 44px;
-}
-
-.accounting-cash-flow-grid-card .cfg-scroll {
-  flex: 0 1 auto;
-  max-height: min(52vh, 560px) !important;
+.accounting-cash-flow-grid-card .data-table {
+  flex: 1 1 auto;
   min-height: 0;
 }
 
-.accounting-cash-flow-page .cfg-top,
-.accounting-cash-flow-page .cfg-bottom {
-  background:
-    linear-gradient(90deg, rgba(248, 249, 250, 0.96), rgba(255, 250, 245, 0.58) 46%, rgba(248, 249, 250, 0.88)),
-    var(--mantine-color-white);
-  color: var(--mantine-color-gray-5);
+.accounting-cash-flow-grid-card .data-table-scroll {
+  max-height: min(56vh, 620px);
+  padding-right: 10px;
 }
 
-.accounting-cash-flow-page .cfg-top {
-  border-bottom: 1px solid var(--mantine-color-gray-2);
-  padding-right: 8px;
+.accounting-cash-flow-grid-card .data-table-th {
   position: sticky;
   top: 0;
-  z-index: 2;
-}
-
-.accounting-cash-flow-page .cfg-bottom {
-  border-top: 1px solid var(--mantine-color-gray-2);
-  color: var(--mantine-color-gray-8);
-  padding-right: 8px;
-}
-
-.accounting-cash-flow-page .cfg-cell {
-  padding: 8px 10px;
-}
-
-.accounting-cash-flow-page .cfg-sub {
-  color: var(--mantine-color-gray-5);
-  font-size: 10.5px;
-  font-weight: 500;
-  letter-spacing: 0;
-}
-
-.accounting-cash-flow-page .cfg-data-row {
-  background:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.98), rgba(248, 249, 250, 0.7) 46%, rgba(255, 255, 255, 0.98)),
-    var(--mantine-color-white);
-  border-bottom: 1px solid #edf0f3;
-  box-shadow: none;
-  min-height: 62px;
-  position: relative;
-  transition:
-    background 140ms ease,
-    box-shadow 140ms ease,
-    transform 140ms ease;
-}
-
-.accounting-cash-flow-page .cfg-data-row:nth-child(even) {
-  background:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.94), rgba(248, 249, 250, 0.88) 46%, rgba(255, 255, 255, 0.94)),
-    var(--mantine-color-white);
-}
-
-.accounting-cash-flow-page .cfg-data-row:hover,
-.accounting-cash-flow-page .cfg-data-row.cfg-active,
-.accounting-cash-flow-page .cfg-data-row.cfg-active:hover {
-  background:
-    linear-gradient(90deg, rgba(255, 247, 240, 0.96), rgba(255, 250, 245, 0.54) 42%, rgba(240, 253, 250, 0.3)),
-    var(--mantine-color-white);
-  box-shadow: inset 0 0 0 1px rgba(var(--brand-orange-rgb), 0.16), 0 12px 24px rgba(20, 28, 38, 0.06);
-  transform: translateX(3px);
-}
-
-.accounting-cash-flow-page .cfg-data-row.cfg-debit:not(:hover):not(.cfg-active),
-.accounting-cash-flow-page .cfg-data-row.cfg-credit:not(:hover):not(.cfg-active) {
-  box-shadow: none;
-}
-
-.accounting-cash-flow-page .cfg-data-row.cfg-debit::before,
-.accounting-cash-flow-page .cfg-data-row.cfg-credit::before {
-  border-radius: 999px;
-  content: '';
-  left: 12px;
-  position: absolute;
-  top: 14px;
-  bottom: 14px;
-  width: 4px;
-}
-
-.accounting-cash-flow-page .cfg-data-row.cfg-debit::before {
-  background: linear-gradient(180deg, #7ce5c3, var(--mantine-color-teal-6));
-}
-
-.accounting-cash-flow-page .cfg-data-row.cfg-credit::before {
-  background: linear-gradient(180deg, #ffb47a, var(--brand-orange));
-}
-
-.accounting-cash-flow-page .cfg-cell-value {
-  color: var(--mantine-color-gray-8);
-  font-weight: 600;
-}
-
-.accounting-cash-flow-page .cfg-label {
-  gap: 9px;
-  padding-left: 24px;
-}
-
-.accounting-cash-flow-page .cfg-label-name {
-  display: block;
-  flex: 1 1 auto;
-  min-width: 0;
-  white-space: normal;
-}
-
-.accounting-cash-flow-page .cfg-top .cfg-cell:nth-last-child(3),
-.accounting-cash-flow-page .cfg-bottom .cfg-cell:nth-last-child(3),
-.accounting-cash-flow-page .cfg-data-row .cfg-cell:nth-last-child(3) {
-  border-left: 1px dashed var(--mantine-color-gray-2);
-}
-
-.accounting-cash-flow-page .cfg-label-name .mantine-Text-root {
-  color: var(--mantine-color-gray-9);
-  font-size: 12.5px;
-  font-weight: 700;
+  z-index: 3;
 }
 
 .accounting-cash-flow-document-cell {
   align-items: center;
   display: inline-flex;
-  gap: 10px;
+  gap: 0;
   min-width: 0;
   width: 100%;
 }
 
 .accounting-cash-flow-document-cell__icon {
-  align-items: center;
-  background: var(--mantine-color-gray-0);
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 10px;
-  color: var(--mantine-color-gray-5);
-  display: inline-flex;
-  flex: 0 0 auto;
-  height: 32px;
-  justify-content: center;
-  width: 32px;
+  display: none;
 }
 
 .accounting-cash-flow-document-cell.is-debit .accounting-cash-flow-document-cell__icon {
-  background: rgba(20, 184, 166, 0.08);
-  border-color: rgba(20, 184, 166, 0.2);
   color: var(--mantine-color-teal-7);
 }
 
 .accounting-cash-flow-document-cell.is-credit .accounting-cash-flow-document-cell__icon {
-  background: rgba(var(--brand-orange-rgb), 0.08);
-  border-color: rgba(var(--brand-orange-rgb), 0.22);
   color: var(--brand-orange);
 }
 
@@ -1209,12 +964,23 @@
   color: var(--mantine-color-gray-9);
   display: block;
   font-size: 12.5px;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.18;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.accounting-cash-flow-document-cell__title {
+  align-items: center;
+  display: inline-flex;
+  gap: 6px;
+  max-width: 100%;
+}
+
+.accounting-cash-flow-document-cell__badge {
+  flex: 0 0 auto;
 }
 
 .accounting-cash-flow-document-cell__meta {
@@ -1235,55 +1001,34 @@
   margin-left: 6px;
 }
 
-.accounting-cash-flow-page .cfg-data-row .cfg-cell:nth-last-child(-n+3) .cfg-cell-value:not(:empty) {
-  align-items: center;
-  background: rgba(248, 249, 250, 0.86);
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 999px;
+.accounting-cash-flow-money {
+  align-items: flex-end;
   display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  line-height: 1.1;
+  min-width: 0;
+}
+
+.accounting-cash-flow-money strong {
+  color: var(--mantine-color-gray-8);
   font-size: 12.5px;
-  font-weight: 700;
-  height: 28px;
-  justify-content: flex-end;
-  min-width: 84px;
-  padding: 0 10px;
+  font-weight: 600;
 }
 
-.accounting-cash-flow-page .cfg-data-row.cfg-debit .cfg-cell:nth-last-child(3) .cfg-cell-value:not(:empty) {
-  background: rgba(20, 184, 166, 0.08);
-  border-color: rgba(20, 184, 166, 0.2);
-  color: var(--mantine-color-teal-8);
+.accounting-cash-flow-money small {
+  color: var(--mantine-color-gray-5);
+  font-size: 10.5px;
+  font-weight: 600;
 }
 
-.accounting-cash-flow-page .cfg-data-row.cfg-credit .cfg-cell:nth-last-child(2) .cfg-cell-value:not(:empty) {
-  background: rgba(var(--brand-orange-rgb), 0.08);
-  border-color: rgba(var(--brand-orange-rgb), 0.22);
-  color: #b84d12;
-}
-
-.accounting-cash-flow-page .cfg-data-row .cfg-cell:last-child .cfg-cell-value:not(:empty) {
-  background: rgba(255, 245, 245, 0.85);
-  border-color: #ffd6d6;
-  min-width: 92px;
-}
-
-.accounting-cash-flow-page .cfg-positive {
+.accounting-cash-flow-money.is-debit strong,
+.accounting-cash-flow-money.is-positive strong {
   color: var(--mantine-color-teal-7);
 }
 
-.accounting-cash-flow-page .cfg-negative {
-  color: var(--mantine-color-red-7);
-}
-
-.accounting-cash-flow-page .cfg-data-row .cfg-cell:last-child .cfg-positive:not(:empty) {
-  background: rgba(20, 184, 166, 0.08);
-  border-color: rgba(20, 184, 166, 0.2);
-  color: var(--mantine-color-teal-8);
-}
-
-.accounting-cash-flow-page .cfg-data-row .cfg-cell:last-child .cfg-negative:not(:empty) {
-  background: rgba(255, 245, 245, 0.9);
-  border-color: #ffd6d6;
+.accounting-cash-flow-money.is-credit strong,
+.accounting-cash-flow-money.is-negative strong {
   color: var(--mantine-color-red-7);
 }
 
@@ -1317,10 +1062,6 @@
   .accounting-cash-flow-kind-toggle,
   .accounting-cash-flow-filter-actions {
     grid-column: 1 / -1;
-  }
-
-  .accounting-cash-flow-agreements {
-    border-bottom: 1px solid var(--mantine-color-gray-2);
   }
 
   .accounting-cash-flow-agreement-list {

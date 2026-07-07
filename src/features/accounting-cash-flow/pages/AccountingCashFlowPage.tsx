@@ -38,8 +38,8 @@ import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { getDocumentHref } from '../../../shared/url/getDocumentHref'
-import { CashFlowGrid } from '../../../shared/ui/cash-flow-grid/CashFlowGrid'
-import type { CashFlowGridLeadColumn } from '../../../shared/ui/cash-flow-grid/types'
+import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import {
   exportAccountingCashFlowDocument,
   getAccountingCashFlow,
@@ -92,6 +92,16 @@ const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
   dateStyle: 'short',
   timeStyle: 'short',
 })
+
+const ACCOUNTING_CASH_FLOW_TABLE_MIN_WIDTH = 1180
+
+const ACCOUNTING_CASH_FLOW_TABLE_LAYOUT = {
+  columnOrder: ['document', 'exchangeRate', 'organization', 'debit', 'credit', 'balance'],
+  columnPinning: {
+    left: ['document'],
+  },
+  density: 'normal',
+} satisfies DataTableDefaultLayout
 
 const TYPE_LABELS: Record<number, string> = {
   0: 'Протокол оплати постачання',
@@ -493,31 +503,30 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
     return !selectedAgreement || currency.toLowerCase() !== 'uah'
   }, [mode, selectedAgreement])
 
-  const leadColumns = useMemo<CashFlowGridLeadColumn<AccountingCashFlowHeadItem>[]>(() => {
-    const columns: CashFlowGridLeadColumn<AccountingCashFlowHeadItem>[] = [
+  const tableColumns = useMemo<DataTableColumn<AccountingCashFlowHeadItem>[]>(() => {
+    const editedInvoiceLabel = t('Накладна була редагована')
+    const columns: DataTableColumn<AccountingCashFlowHeadItem>[] = [
       {
-        id: 'name',
-        isLabel: true,
+        id: 'document',
         header: t('Документ'),
+        width: 500,
+        minWidth: 360,
+        fill: true,
+        accessor: (item) => `${item.Name ?? ''} ${item.Number ?? ''} ${item.FromDate ?? ''}`,
         cell: (item) => (
-          <span className={`accounting-cash-flow-document-cell${item.IsCreditValue ? ' is-credit' : ' is-debit'}`}>
-            <span className="accounting-cash-flow-document-cell__icon">
-              {item.IsCreditValue ? <IconArrowUpRight size={14} /> : <IconArrowDownLeft size={14} />}
-            </span>
-            <span className="accounting-cash-flow-document-cell__content">
-              <span className="accounting-cash-flow-document-cell__title">{displayValue(item.Name)}</span>
-              <span className="accounting-cash-flow-document-cell__meta">
-                <span>{formatDateTime(item.FromDate)}</span>
-                <span>{getCashFlowTypeLabel(item.Type)}</span>
-              </span>
-            </span>
-          </span>
+          <AccountingCashFlowDocumentTableCell
+            item={item}
+            editedInvoiceLabel={editedInvoiceLabel}
+            showEditedInvoiceBadge={mode === 'client' && (item.Sale?.HistoryInvoiceEdit?.length ?? 0) > 0}
+          />
         ),
       },
       {
         id: 'organization',
         header: t('Організація'),
         width: 250,
+        minWidth: 200,
+        accessor: (item) => item.OrganizationName,
         cell: (item) => (
           <span className="accounting-cash-flow-organization-cell">
             {displayValue(item.OrganizationName)}
@@ -531,6 +540,13 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
         id: 'exchangeRate',
         header: t('Курс'),
         width: 110,
+        minWidth: 90,
+        accessor: (item) => {
+          const order = toRecord(item.IncomePaymentOrder)
+          const currency = stringValue(toRecord(order?.Currency)?.Code)
+
+          return order && currency.toLowerCase() === 'uah' ? numberValue(order.ExchangeRate) ?? '' : ''
+        },
         cell: (item) => {
           const order = toRecord(item.IncomePaymentOrder)
           const currency = stringValue(toRecord(order?.Currency)?.Code)
@@ -550,8 +566,44 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
       })
     }
 
+    columns.push(
+      {
+        id: 'debit',
+        header: t('Дебет'),
+        width: 132,
+        minWidth: 120,
+        align: 'right',
+        accessor: (item) => (item.IsCreditValue ? undefined : item.CurrentValue),
+        cell: (item) => item.IsCreditValue ? null : (
+          <AccountingCashFlowMoneyCell localValue={item.CurrentValueLocal} tone="debit" value={item.CurrentValue} />
+        ),
+      },
+      {
+        id: 'credit',
+        header: t('Кредит'),
+        width: 132,
+        minWidth: 120,
+        align: 'right',
+        accessor: (item) => (item.IsCreditValue ? item.CurrentValue : undefined),
+        cell: (item) => item.IsCreditValue ? (
+          <AccountingCashFlowMoneyCell localValue={item.CurrentValueLocal} tone="credit" value={item.CurrentValue} />
+        ) : null,
+      },
+      {
+        id: 'balance',
+        header: t('Баланс'),
+        width: 132,
+        minWidth: 120,
+        align: 'right',
+        accessor: (item) => item.CurrentBalance,
+        cell: (item) => (
+          <AccountingCashFlowMoneyCell tone={getMoneyTone(item.CurrentBalance)} value={item.CurrentBalance} />
+        ),
+      },
+    )
+
     return columns
-  }, [showExchangeRateColumn, t])
+  }, [mode, showExchangeRateColumn, t])
   const summary = useMemo(
     () => ({
       afterInAmount: cashFlow?.AfterRangeInAmount,
@@ -563,21 +615,6 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
     }),
     [cashFlow, lastItem],
   )
-  const renderRowBadge = useMemo(
-    () =>
-      mode === 'client'
-        ? (item: AccountingCashFlowHeadItem) =>
-            (item.Sale?.HistoryInvoiceEdit?.length ?? 0) > 0 ? (
-              <Tooltip label={t('Накладна була редагована')} position="right">
-                <ThemeIcon color="orange" radius="xl" size="xs" variant="filled">
-                  <IconPencil size={12} />
-                </ThemeIcon>
-              </Tooltip>
-            ) : null
-        : undefined,
-    [mode, t],
-  )
-
   return (
     <Stack className="cash-flow-page accounting-cash-flow-page" gap={10}>
       {(counterpartyError || cashFlowError) && (
@@ -714,26 +751,20 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
           </div>
 
           <div className="cash-flow-page__grid-card accounting-cash-flow-grid-card">
-            <div className="accounting-cash-flow-ledger-head">
-              <div>
-                <span>{t('Взаєморозрахунки')}</span>
-                <strong>{t('Фінансова стрічка')}</strong>
-              </div>
-              <small>{filteredItems.length} {t('операцій')}</small>
-            </div>
-            <CashFlowGrid
-              items={filteredItems}
-              leadColumns={leadColumns}
-              summary={summary}
+            <DataTable
+              columns={tableColumns}
+              data={filteredItems}
+              defaultLayout={ACCOUNTING_CASH_FLOW_TABLE_LAYOUT}
+              distributeAvailableWidth
               emptyText={t('Взаєморозрахунків не знайдено')}
-              formatMoney={formatMoney}
-              getRowKey={(item, index) => `${item.Type || 'type'}-${item.Id || item.Number || item.Name || 'row'}-${item.FromDate || index}`}
+              getRowId={(item, index) => `${item.Type || 'type'}-${item.Id || item.Number || item.Name || 'row'}-${item.FromDate || index}`}
+              height="100%"
               isLoading={isCashFlowLoading}
-              isRowActive={(item) => item === selectedItem}
+              layoutVersion={`accounting-cash-flow-ledger-${showExchangeRateColumn ? 'exchange' : 'base'}-1`}
               loadingText={t('Завантаження взаєморозрахунків')}
-              columnWidth={132}
-              maxHeight="100%"
-              renderRowBadge={renderRowBadge}
+              minWidth={ACCOUNTING_CASH_FLOW_TABLE_MIN_WIDTH}
+              rowClassName={(item) => item === selectedItem ? 'is-selected' : undefined}
+              tableId={`accounting-cash-flow-ledger-${mode}`}
               onRowClick={handleCashFlowRowClick}
             />
           </div>
@@ -754,6 +785,74 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
       />
     </Stack>
   )
+}
+
+function AccountingCashFlowDocumentTableCell({
+  editedInvoiceLabel,
+  item,
+  showEditedInvoiceBadge,
+}: {
+  editedInvoiceLabel: string
+  item: AccountingCashFlowHeadItem
+  showEditedInvoiceBadge: boolean
+}) {
+  return (
+    <span className={`accounting-cash-flow-document-cell${item.IsCreditValue ? ' is-credit' : ' is-debit'}`}>
+      <span className="accounting-cash-flow-document-cell__content">
+        <span className="accounting-cash-flow-document-cell__title">
+          {displayValue(item.Name)}
+          {showEditedInvoiceBadge ? (
+            <Tooltip label={editedInvoiceLabel} position="right">
+              <ThemeIcon className="accounting-cash-flow-document-cell__badge" color="orange" radius="xl" size="xs" variant="light">
+                <IconPencil size={11} />
+              </ThemeIcon>
+            </Tooltip>
+          ) : null}
+        </span>
+        <span className="accounting-cash-flow-document-cell__meta">
+          <span>{formatDateTime(item.FromDate)}</span>
+          <span>{getCashFlowTypeLabel(item.Type)}</span>
+        </span>
+      </span>
+    </span>
+  )
+}
+
+function AccountingCashFlowMoneyCell({
+  localValue,
+  tone,
+  value,
+}: {
+  localValue?: number
+  tone?: 'credit' | 'debit' | 'negative' | 'positive'
+  value?: number
+}) {
+  return (
+    <span className={`accounting-cash-flow-money${tone ? ` is-${tone}` : ''}`}>
+      <strong>{formatMoney(value)}</strong>
+      {shouldShowLocalMoneyValue(value, localValue) ? (
+        <small>UAH {formatMoney(localValue)}</small>
+      ) : null}
+    </span>
+  )
+}
+
+function getMoneyTone(value?: number): 'negative' | 'positive' | undefined {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    return undefined
+  }
+
+  return value < 0 ? 'negative' : 'positive'
+}
+
+function shouldShowLocalMoneyValue(value: number | undefined, localValue: number | undefined): localValue is number {
+  if (typeof localValue !== 'number' || !Number.isFinite(localValue)) {
+    return false
+  }
+
+  return typeof value !== 'number' ||
+    !Number.isFinite(value) ||
+    Math.abs(localValue - value) >= 0.005
 }
 
 function CashFlowStatementHero({
