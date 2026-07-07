@@ -681,7 +681,7 @@ function useSupplyUkraineDirectOrderSpecificationsPageModel() {
     error,
     existingDocuments,
     filteredPackingList,
-    goBack: () => navigate(`/orders/ukraine/all/edit/${id || ''}`),
+    goBack: () => navigate('/orders/ukraine/all', { replace: true }),
     invoices,
     isActionBusy,
     isDocumentsCloseConfirmOpen,
