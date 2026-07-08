@@ -38,6 +38,7 @@ import {
 } from '../api/supplyUkraineOrdersApi'
 import { DirectOrderPaymentTasksCard } from '../components/DirectOrderPaymentTasksCard'
 import { DirectSupplyOrderProFormCard } from '../components/DirectSupplyOrderProFormCard'
+import { canOpenDirectProductIncomeFromOrder } from '../directOrderActions'
 import type {
   CreditNoteDocument,
   DirectSupplyOrder,
@@ -237,14 +238,16 @@ export function SupplyUkraineDirectOrderDetailPage() {
     isModalOpen: creditNoteModalOpen,
     number: creditNoteNumber,
   } = creditNoteState
-  const hasInvoices = (order?.SupplyInvoices?.length || 0) > 0
   const isLocked = Boolean(order?.IsOrderShipped) || Boolean(order?.IsCompleted)
   const areDeliveryDocumentActionsLocked = Boolean(order?.IsCompleted)
   const canApproveOrder = hasPermission(PERMISSION_APPROVE_ORDER)
   const canOpenCreditNotes = hasPermission(PERMISSION_CREDIT_NOTES)
   const canEditAmount = hasPermission(PERMISSION_EDIT_ORDER_AMOUNT)
   const canOpenInvoices = hasPermission(PERMISSION_OPEN_DIRECT_INVOICES) && hasSupplyProForm(order)
-  const canOpenProductIncome = hasPermission(PERMISSION_OPEN_DIRECT_PRODUCT_INCOME) && hasInvoices
+  const canOpenProductIncome = canOpenDirectProductIncomeFromOrder(
+    order,
+    hasPermission(PERMISSION_OPEN_DIRECT_PRODUCT_INCOME),
+  )
 
   useEffect(() => {
     let cancelled = false
@@ -786,7 +789,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
                   variant="default"
                   onClick={() => navigate(`/orders/ukraine/all/edit/${order.NetUid}/product-income`)}
                 >
-                  {t('Розміщення приходу')}
+                  {t('Оприходування')}
                 </Button>
               )}
             </Group>

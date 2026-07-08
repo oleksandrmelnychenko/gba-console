@@ -44,6 +44,7 @@ import {
   searchSupplyOrderServiceOrganizations,
   updateSupplyOrderUkraineDeliveryExpense,
 } from '../api/supplyUkraineOrdersApi'
+import { canOpenDirectProductIncomeFromRow } from '../directOrderActions'
 import type {
   Currency,
   DirectSupplyOrder,
@@ -1156,7 +1157,7 @@ function OrderMetaLine({
   return (
     <div className="supply-order-main-meta">
       {items.map((item, index) => (
-        <Fragment key={`${item.label}-${index}`}>
+        <Fragment key={item.label}>
           {index > 0 ? <OrderMetaSeparator /> : null}
           <OrderMetaValue label={item.label} strong={item.strong} value={item.value} />
         </Fragment>
@@ -1416,7 +1417,6 @@ function OrderActionsModal({
     canOpenToUkraineProtocols,
     canOpenToUkraineView,
   } = permissions
-  const directHasInvoices = (row?.directOrder?.SupplyInvoices?.length || 0) > 0
   const directHasProForma = hasSupplyProForm(row?.directOrder)
 
   return (
@@ -1485,10 +1485,10 @@ function OrderActionsModal({
             />
           )}
 
-          {row.kind === 'direct' && canOpenDirectProductIncome && directHasInvoices && row.netUid && (
+          {canOpenDirectProductIncomeFromRow(row, canOpenDirectProductIncome) && (
             <OrderActionButton
               icon={<PackageCheck size={20} color="var(--mantine-color-gray-7)" />}
-              label={t('Розміщення приходу')}
+              label={t('Оприходування')}
               onClick={() => onNavigate(`/orders/ukraine/all/edit/${row.netUid}/product-income`)}
             />
           )}
