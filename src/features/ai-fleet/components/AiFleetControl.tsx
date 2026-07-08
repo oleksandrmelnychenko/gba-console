@@ -1,6 +1,7 @@
-import { ActionIcon, Badge, Button, Group, Loader, SegmentedControl, SimpleGrid, Stack, Text, Tooltip } from '@mantine/core'
+import { DonutChart } from '@mantine/charts'
+import { ActionIcon, Badge, Button, Group, Loader, Progress, SegmentedControl, SimpleGrid, Stack, Text, Tooltip } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { ClipboardCopy, Clock3, ExternalLink, Play, RefreshCw, Sparkles } from 'lucide-react'
+import { AlertTriangle, ClipboardCopy, Clock3, ExternalLink, Gauge, Play, RefreshCw, Sparkles } from 'lucide-react'
 import { useCallback, useEffect, useEffectEvent, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -9,9 +10,13 @@ import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/Page
 import { AI_FLEET_SERVICES, getAiFleetServicesStatus, triggerAiFleetWarmup } from '../api/aiFleetApi'
 import type { AiFleetOperationState, AiFleetServiceDefinition, AiFleetServiceStatus, AiFleetState, AiFleetWarmupState } from '../types'
 import {
+  buildAiFleetAnalytics,
   buildAiFleetDiagnosticText,
   buildAiFleetServiceViews,
   buildAiFleetSummary,
+  type AiFleetAnalytics,
+  type AiFleetReadinessRow,
+  type AiFleetStateDistribution,
   type AiFleetServiceView,
 } from '../utils/aiFleetView'
 import './ai-fleet-control.css'
@@ -59,6 +64,7 @@ export function AiFleetControl() {
     () => state.statuses.find((status) => status.operation)?.operation,
     [state.statuses],
   )
+  const analytics = useMemo(() => buildAiFleetAnalytics(serviceRows, operation), [operation, serviceRows])
   const lastUpdatedLabel = lastUpdated ? aiFleetDateTimeFormatter.format(new Date(lastUpdated)) : ''
 
   const loadStatuses = useCallback(async (signal?: AbortSignal) => {
@@ -169,7 +175,7 @@ export function AiFleetControl() {
       <AppModal
         centered
         opened={opened}
-        size="xl"
+        size="70rem"
         title={
           <Group gap="xs" wrap="nowrap">
             <AiGlyph size={20} />
@@ -227,6 +233,8 @@ export function AiFleetControl() {
 
           <AiFleetSummaryTiles summary={summary} />
 
+          <AiFleetAnalyticsPanel analytics={analytics} isLoading={state.isLoading && state.statuses.length === 0} />
+
           <Group justify="space-between" wrap="wrap">
             <SegmentedControl
               data={[
@@ -261,6 +269,172 @@ export function AiFleetControl() {
         </Stack>
       </AppModal>
     </>
+  )
+}
+
+function AiFleetAnalyticsPanel({ analytics, isLoading }: { analytics: AiFleetAnalytics; isLoading: boolean }) {
+  const { t } = useI18n()
+
+  return (
+    <div className="ai-fleet-analytics">
+      <Group justify="space-between" wrap="wrap">
+        <Group gap="xs" wrap="nowrap">
+          <Gauge size={18} />
+          <Text fw={700} size="sm">{t('Операційна аналітика AI')}</Text>
+        </Group>
+        <Badge color={analytics.totalReadinessPercent >= 90 ? 'green' : analytics.totalReadinessPercent >= 60 ? 'orange' : 'red'} variant="light">
+          {t('Готовність')}: {analytics.totalReadinessPercent}%
+        </Badge>
+      </Group>
+
+      <SimpleGrid cols={{ base: 1, md: 4 }} spacing="xs">
+        <AiFleetMetric
+          label={t('Тривалість 05:00 задачі')}
+          tone={analytics.operationDurationMinutes !== null && analytics.operationDurationMinutes <= 30 ? 'success' : 'neutral'}
+          value={formatDurationMinutes(analytics.operationDurationMinutes)}
+        />
+        <AiFleetMetric
+          label={t('Вік останнього фінішу')}
+          tone={analytics.operationAgeHours !== null && analytics.operationAgeHours <= 30 ? 'success' : 'danger'}
+          value={formatHours(analytics.operationAgeHours)}
+        />
+        <AiFleetMetric
+          label={t('Застарілий 05:00 статус')}
+          tone={analytics.staleWarmupCount > 0 ? 'danger' : 'success'}
+          value={String(analytics.staleWarmupCount)}
+        />
+        <AiFleetMetric
+          label={t('Дії для перевірки')}
+          tone={analytics.nextActions.some((action) => action.severity === 'danger') ? 'danger' : 'neutral'}
+          value={String(analytics.nextActions.length)}
+        />
+      </SimpleGrid>
+
+      <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
+        <AiFleetDistributionChart
+          distribution={analytics.healthDistribution}
+          isLoading={isLoading}
+          title={t('Розподіл health-статусів')}
+          totalLabel={`${analytics.healthDistribution.healthy}/${analytics.healthDistribution.healthy + analytics.healthDistribution.down + analytics.healthDistribution.unknown}`}
+        />
+        <AiFleetDistributionChart
+          distribution={analytics.warmupDistribution}
+          isLoading={isLoading}
+          title={t('Розподіл 05:00 статусів')}
+          totalLabel={`${analytics.warmupDistribution.healthy}/${analytics.warmupDistribution.healthy + analytics.warmupDistribution.down + analytics.warmupDistribution.unknown}`}
+        />
+      </SimpleGrid>
+
+      <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
+        <AiFleetReadinessList rows={analytics.readinessRows} />
+        <AiFleetNextActions actions={analytics.nextActions} />
+      </SimpleGrid>
+    </div>
+  )
+}
+
+function AiFleetDistributionChart({
+  distribution,
+  isLoading,
+  title,
+  totalLabel,
+}: {
+  distribution: AiFleetStateDistribution
+  isLoading: boolean
+  title: string
+  totalLabel: string
+}) {
+  const { t } = useI18n()
+  const data = [
+    { color: 'green.6', name: t('OK'), value: distribution.healthy },
+    { color: 'red.6', name: t('Down'), value: distribution.down },
+    { color: 'gray.5', name: t('Немає даних'), value: distribution.unknown },
+  ].filter((item) => item.value > 0)
+
+  return (
+    <div className="ai-fleet-chart-panel">
+      <Text className="ai-fleet-panel-title">{title}</Text>
+      {isLoading ? (
+        <div className="ai-fleet-chart-loading">
+          <Loader size="sm" />
+        </div>
+      ) : (
+        <DonutChart
+          chartLabel={totalLabel}
+          data={data}
+          size={150}
+          thickness={24}
+          valueFormatter={(value) => `${value} ${t('сервісів')}`}
+          withLabels={false}
+          withTooltip
+        />
+      )}
+      <div className="ai-fleet-chart-legend">
+        {data.map((item) => (
+          <span key={item.name}>
+            {item.name}: <b>{item.value}</b>
+          </span>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function AiFleetReadinessList({ rows }: { rows: AiFleetReadinessRow[] }) {
+  const { t } = useI18n()
+
+  return (
+    <div className="ai-fleet-chart-panel">
+      <Group justify="space-between" wrap="nowrap">
+        <Text className="ai-fleet-panel-title">{t('Готовність сервісів')}</Text>
+        <Text c="dimmed" size="xs">{t('health + 05:00')}</Text>
+      </Group>
+      <Stack gap={8}>
+        {rows.map((row) => (
+          <div className="ai-fleet-readiness-row" key={row.serviceId}>
+            <Group justify="space-between" gap="xs" wrap="nowrap">
+              <Stack gap={0} className="ai-fleet-readiness-row__name">
+                <Text fw={650} size="xs">{row.serviceName}</Text>
+                <Text c="dimmed" size="xs">
+                  {row.source} · {row.warmupAgeHours === null ? t('05:00 без часу') : `05:00 ${formatHours(row.warmupAgeHours)}`}
+                </Text>
+              </Stack>
+              <Badge color={readinessColor(row)} variant="light">
+                {row.readinessPercent}%
+              </Badge>
+            </Group>
+            <Progress color={readinessColor(row)} radius="xl" size="sm" value={row.readinessPercent} />
+          </div>
+        ))}
+      </Stack>
+    </div>
+  )
+}
+
+function AiFleetNextActions({ actions }: { actions: AiFleetAnalytics['nextActions'] }) {
+  const { t } = useI18n()
+
+  return (
+    <div className="ai-fleet-chart-panel">
+      <Text className="ai-fleet-panel-title">{t('Що перевірити далі')}</Text>
+      {actions.length === 0 ? (
+        <div className="ai-fleet-actions-empty">
+          <Text c="dimmed" size="sm">{t('Критичних дій немає')}</Text>
+        </div>
+      ) : (
+        <Stack gap={8}>
+          {actions.map((action) => (
+            <div className={`ai-fleet-action is-${action.severity}`} key={`${action.serviceId}-${action.message}`}>
+              <AlertTriangle size={16} />
+              <Stack gap={1}>
+                <Text fw={650} size="xs">{action.serviceName}</Text>
+                <Text size="xs">{t(action.message)}</Text>
+              </Stack>
+            </div>
+          ))}
+        </Stack>
+      )}
+    </div>
   )
 }
 
@@ -451,4 +625,36 @@ function formatDateTime(value: string | undefined): string {
   }
 
   return aiFleetDateTimeFormatter.format(date)
+}
+
+function formatDurationMinutes(value: number | null): string {
+  if (value === null) {
+    return '—'
+  }
+
+  return `${value} хв`
+}
+
+function formatHours(value: number | null): string {
+  if (value === null) {
+    return '—'
+  }
+
+  if (value < 1) {
+    return '<1 год'
+  }
+
+  return `${value.toLocaleString('uk-UA', { maximumFractionDigits: 1 })} год`
+}
+
+function readinessColor(row: AiFleetReadinessRow): string {
+  if (row.healthState === 'down' || row.warmupState === 'down' || row.readinessPercent < 50) {
+    return 'red'
+  }
+
+  if (row.isStaleWarmup || row.readinessPercent < 100) {
+    return 'orange'
+  }
+
+  return 'green'
 }

@@ -24,6 +24,43 @@ export type AiFleetSummary = {
   warmupHealthy: number
 }
 
+export type AiFleetStateDistribution = {
+  down: number
+  healthy: number
+  unknown: number
+}
+
+export type AiFleetReadinessRow = {
+  healthState: AiFleetState
+  isStaleWarmup: boolean
+  readinessPercent: number
+  serviceId: string
+  serviceName: string
+  source: string
+  warmupAgeHours: number | null
+  warmupState: AiFleetState
+}
+
+export type AiFleetNextAction = {
+  message: string
+  serviceId: string
+  serviceName: string
+  severity: 'danger' | 'warning'
+}
+
+export type AiFleetAnalytics = {
+  healthDistribution: AiFleetStateDistribution
+  nextActions: AiFleetNextAction[]
+  operationAgeHours: number | null
+  operationDurationMinutes: number | null
+  readinessRows: AiFleetReadinessRow[]
+  staleWarmupCount: number
+  totalReadinessPercent: number
+  warmupDistribution: AiFleetStateDistribution
+}
+
+const WARMUP_STALE_HOURS = 30
+
 export function buildAiFleetServiceViews(
   services: AiFleetServiceDefinition[],
   statuses: AiFleetServiceStatus[],
@@ -86,6 +123,40 @@ export function buildAiFleetSummary(rows: AiFleetServiceView[]): AiFleetSummary 
   }
 }
 
+export function buildAiFleetAnalytics(
+  rows: AiFleetServiceView[],
+  operation?: AiFleetOperationState,
+  nowMs = Date.now(),
+): AiFleetAnalytics {
+  const healthDistribution = buildStateDistribution(rows, (row) => row.healthState)
+  const warmupDistribution = buildStateDistribution(rows, (row) => row.warmupState)
+  const readinessRows = rows
+    .map((row) => buildReadinessRow(row, nowMs))
+    .toSorted((left, right) => {
+      if (left.readinessPercent !== right.readinessPercent) {
+        return left.readinessPercent - right.readinessPercent
+      }
+
+      return (right.warmupAgeHours ?? -1) - (left.warmupAgeHours ?? -1)
+    })
+  const staleWarmupCount = readinessRows.filter((row) => row.isStaleWarmup).length
+  const totalReadinessPercent =
+    readinessRows.length === 0
+      ? 0
+      : Math.round(readinessRows.reduce((sum, row) => sum + row.readinessPercent, 0) / readinessRows.length)
+
+  return {
+    healthDistribution,
+    nextActions: buildNextActions(readinessRows),
+    operationAgeHours: diffHours(operation?.lastFinishedAtUtc, undefined, nowMs),
+    operationDurationMinutes: diffMinutes(operation?.lastStartedAtUtc, operation?.lastFinishedAtUtc),
+    readinessRows,
+    staleWarmupCount,
+    totalReadinessPercent,
+    warmupDistribution,
+  }
+}
+
 export function getAiFleetPrimaryRoute(location: string): string | null {
   const route = location
     .split(',')
@@ -118,4 +189,117 @@ export function buildAiFleetDiagnosticText(
   ].filter((line): line is string => Boolean(line))
 
   return lines.join('\n')
+}
+
+function buildStateDistribution(
+  rows: AiFleetServiceView[],
+  readState: (row: AiFleetServiceView) => AiFleetState,
+): AiFleetStateDistribution {
+  const distribution: AiFleetStateDistribution = {
+    down: 0,
+    healthy: 0,
+    unknown: 0,
+  }
+
+  for (const row of rows) {
+    distribution[readState(row)] += 1
+  }
+
+  return distribution
+}
+
+function buildReadinessRow(row: AiFleetServiceView, nowMs: number): AiFleetReadinessRow {
+  const warmupAgeHours = diffHours(row.status?.warmup.lastFinishedAtUtc, undefined, nowMs)
+  const isStaleWarmup = warmupAgeHours !== null && warmupAgeHours > WARMUP_STALE_HOURS
+  const healthyChecks = Number(row.healthState === 'healthy') + Number(row.warmupState === 'healthy' && !isStaleWarmup)
+
+  return {
+    healthState: row.healthState,
+    isStaleWarmup,
+    readinessPercent: healthyChecks * 50,
+    serviceId: row.service.id,
+    serviceName: row.service.name,
+    source: row.service.source,
+    warmupAgeHours,
+    warmupState: row.warmupState,
+  }
+}
+
+function buildNextActions(rows: AiFleetReadinessRow[]): AiFleetNextAction[] {
+  const actions: AiFleetNextAction[] = []
+
+  for (const row of rows) {
+    if (row.healthState === 'down') {
+      actions.push({
+        message: 'Health check не проходить. Перевірити проксі, ключі та upstream сервіс.',
+        serviceId: row.serviceId,
+        serviceName: row.serviceName,
+        severity: 'danger',
+      })
+      continue
+    }
+
+    if (row.warmupState === 'down') {
+      actions.push({
+        message: '05:00 warmup завершився помилкою. Відкрити лог і перезапустити warmup.',
+        serviceId: row.serviceId,
+        serviceName: row.serviceName,
+        severity: 'danger',
+      })
+      continue
+    }
+
+    if (row.isStaleWarmup) {
+      actions.push({
+        message: 'Статус 05:00 застарів. Перевірити scheduler або вручну запустити warmup.',
+        serviceId: row.serviceId,
+        serviceName: row.serviceName,
+        severity: 'warning',
+      })
+      continue
+    }
+
+    if (row.healthState === 'unknown' || row.warmupState === 'unknown') {
+      actions.push({
+        message: 'Немає повного статусу. Дотягнути health/warmup telemetry для сервісу.',
+        serviceId: row.serviceId,
+        serviceName: row.serviceName,
+        severity: 'warning',
+      })
+    }
+  }
+
+  return actions.slice(0, 5)
+}
+
+function diffMinutes(start: string | undefined, end: string | undefined): number | null {
+  const startMs = parseDateMs(start)
+  const endMs = parseDateMs(end)
+
+  if (startMs === null || endMs === null || endMs < startMs) {
+    return null
+  }
+
+  return Math.round((endMs - startMs) / 60_000)
+}
+
+function diffHours(start: string | undefined, end: string | undefined, nowMs: number): number | null {
+  const startMs = parseDateMs(start)
+  const endMs = end ? parseDateMs(end) : nowMs
+
+  if (startMs === null || endMs === null || endMs < startMs) {
+    return null
+  }
+
+  return Math.round(((endMs - startMs) / 3_600_000) * 10) / 10
+}
+
+function parseDateMs(value: string | undefined): number | null {
+  if (!value) {
+    return null
+  }
+
+  const ms = new Date(value).getTime()
+
+  return Number.isNaN(ms) ? null : ms
 }
