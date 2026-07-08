@@ -7,11 +7,16 @@
   box-sizing: border-box;
   flex: 1 1 auto;
   min-height: 0;
-  padding: 0 4px 8px;
+  padding: 4px 4px 8px;
 }
 
 .product-remains-card {
+  background: var(--mantine-color-white);
   min-height: 0;
+}
+
+.console-frame .mantine-Card-root.product-remains-card {
+  border: 1px solid var(--mantine-color-gray-2);
 }
 
 .product-remains-tabs {
