@@ -411,55 +411,59 @@ export function AssortmentDashboardPage() {
   const columns = useAssortmentColumns(t, filters.regionId != null)
 
   return (
-    <Stack className="assort-dash" gap="md">
-      <AssortmentHeader
-        avgHealth={avgHealth}
-        filters={filters}
-        regionOptions={regionOptions}
-        sortOptions={sortOptions}
-        totalSkus={body?.total_skus}
-        onFiltersChange={setFilters}
-      />
+    <Stack className="assort-dash" gap={0}>
+      <div className="assort-dash__shell">
+        <AssortmentHeader
+          avgHealth={avgHealth}
+          filters={filters}
+          regionOptions={regionOptions}
+          sortOptions={sortOptions}
+          totalSkus={body?.total_skus}
+          onFiltersChange={setFilters}
+        />
 
-      {error && (
-        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
-          {error}
-        </Alert>
-      )}
+        <div className="assort-dash__body">
+          {error && (
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
+              {error}
+            </Alert>
+          )}
 
-      <AssortmentKpis
-        body={body}
-        negativeMarginSkus={negativeMarginSkus}
-        overallReturnRate={overallReturnRate}
-        weightedMargin={weightedMargin}
-      />
+          <AssortmentKpis
+            body={body}
+            negativeMarginSkus={negativeMarginSkus}
+            overallReturnRate={overallReturnRate}
+            weightedMargin={weightedMargin}
+          />
 
-      {selectedRegion && <RegionSummary region={selectedRegion} />}
+          {selectedRegion && <RegionSummary region={selectedRegion} />}
 
-      <AssortmentStructure
-        avgHealth={avgHealth}
-        bandSegments={bandSegments}
-        body={body}
-        visibleBandSegments={visibleBandSegments}
-      />
+          <AssortmentStructure
+            avgHealth={avgHealth}
+            bandSegments={bandSegments}
+            body={body}
+            visibleBandSegments={visibleBandSegments}
+          />
 
-      <AssortmentRatings
-        margin={margin}
-        returns={returns}
-        rows={rows}
-        stock={stock}
-        onPick={setSelectedProductId}
-      />
+          <AssortmentRatings
+            margin={margin}
+            returns={returns}
+            rows={rows}
+            stock={stock}
+            onPick={setSelectedProductId}
+          />
 
-      <AssortmentDetailTable
-        columns={columns}
-        filters={filters}
-        isLoading={isLoading}
-        rows={rows}
-        sortOptions={sortOptions}
-        onFiltersChange={setFilters}
-        onPick={setSelectedProductId}
-      />
+          <AssortmentDetailTable
+            columns={columns}
+            filters={filters}
+            isLoading={isLoading}
+            rows={rows}
+            sortOptions={sortOptions}
+            onFiltersChange={setFilters}
+            onPick={setSelectedProductId}
+          />
+        </div>
+      </div>
 
       <AppDrawer
         opened={selectedProductId != null}
@@ -498,8 +502,8 @@ function AssortmentHeader({
   const { t } = useI18n()
 
   return (
-    <Card className="app-data-card assort-dash__header" withBorder radius="md" padding={0}>
-      <div className="app-filter-bar assort-dash__bar">
+    <Card className="assort-dash__header" withBorder radius="md" padding={0}>
+      <div className="assort-dash__bar">
       <div className="assort-dash__summary">
         <Group gap="xs" wrap="nowrap">
           <Text className="app-section-title assort-dash__title">{t('Аналітика асортименту')}</Text>
@@ -568,7 +572,7 @@ function AssortmentKpis({
   const { t } = useI18n()
 
   return (
-    <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="md">
+    <SimpleGrid className="assort-kpis" cols={{ base: 1, sm: 2, lg: 4 }} spacing="md">
       <KpiTile
         label={t('Вартість запасів')}
         sub={body?.total_skus == null ? undefined : `${formatInt(body.total_skus)} SKU`}
@@ -782,7 +786,7 @@ function AssortmentDetailTable({
         isLoading={isLoading}
         layoutVersion="assortment-detail-1"
         loadingText={t('Завантаження')}
-        maxHeight="calc(100vh - 320px)"
+        maxHeight={800}
         minWidth={filters.regionId == null ? 820 : 1180}
         tableId="assortment-detail"
         onRowClick={(row) => onPick(row.product_id)}

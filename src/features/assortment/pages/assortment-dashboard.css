@@ -6,30 +6,75 @@
    language. Cards keep the .app-section-card shell but drop its shadow. */
 
 .assort-dash {
-  padding: 0 4px 8px;
+  box-sizing: border-box;
+  flex: 1 1 auto;
+  height: 100%;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 4px 4px 12px;
+}
+
+.assort-dash__shell {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: var(--mantine-radius-md);
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  min-width: 0;
+  overflow: visible;
+}
+
+.assort-dash__body {
+  flex: 1 1 auto;
+  display: grid;
+  gap: 12px;
+  min-height: max-content;
+  padding: 12px;
 }
 
 .assort-dash .app-section-card {
   box-shadow: none;
+  border-color: var(--mantine-color-gray-2);
+}
+
+.console-frame .assort-dash .mantine-Card-root.kpi-tile,
+.console-frame .assort-dash .mantine-Card-root.assort-card,
+.console-frame .assort-dash .mantine-Card-root.assort-region,
+.console-frame .assort-dash .mantine-Card-root.assort-table-card {
+  border: 1px solid var(--mantine-color-gray-2);
+}
+
+.console-frame .assort-dash .mantine-Card-root.kpi-tile {
+  border-color: #dde3ea;
 }
 
 /* Header ------------------------------------------------------------------- */
 .assort-dash__header {
+  background: var(--app-filter-glow), #f8f9fa;
+  border: 0;
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+  border-radius: 0;
+  flex: 0 0 auto;
   overflow: visible;
 }
 
 .assort-dash__bar {
   align-items: end;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px 16px;
-  justify-content: space-between;
+  box-sizing: border-box;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(280px, 1fr) auto;
+  min-height: 86px;
+  padding: 12px 8px 14px;
 }
 
 .assort-dash__summary {
-  align-self: center;
+  align-self: end;
   display: grid;
   gap: 3px;
+  min-width: 0;
 }
 
 .assort-dash__title {
@@ -54,7 +99,10 @@
 .assort-dash__controls {
   display: flex;
   align-items: flex-end;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 8px;
+  min-width: 0;
 }
 
 /* Toolbar-language controls (§5.3): mono near-black labels, 36px fields,
@@ -100,35 +148,91 @@
   color: var(--mantine-color-gray-9);
 }
 
-/* KPI tiles (§7.2 metric): gray mono label with the orange dot, large mono
-   value, small meta under it. No icon circles, no colored strips. */
+/* KPI tiles: compact metric cards, still in the shared table/page language. */
+.assort-kpis {
+  align-items: stretch;
+}
+
 .kpi-tile {
+  background:
+    linear-gradient(180deg, rgba(248, 249, 250, 0.72), rgba(255, 255, 255, 0) 76%),
+    var(--mantine-color-white);
+  border-color: #dde3ea;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.88);
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 14px 16px;
+  gap: 6px;
+  justify-content: center;
+  min-height: 92px;
+  overflow: hidden;
+  padding: 14px 16px 13px;
+  position: relative;
+  transition:
+    border-color 140ms var(--tx-ease-smooth),
+    background-color 140ms var(--tx-ease-smooth);
+}
+
+.kpi-tile::after {
+  background: var(--brand-orange);
+  border-radius: 999px;
+  bottom: 12px;
+  content: '';
+  height: 3px;
+  opacity: 0.28;
+  position: absolute;
+  right: 16px;
+  width: 48px;
+}
+
+.kpi-tile:nth-child(1)::after {
+  background: var(--mantine-color-teal-5);
+}
+
+.kpi-tile:nth-child(2)::after {
+  background: var(--brand-orange);
+}
+
+.kpi-tile:nth-child(3)::after {
+  background: var(--mantine-color-yellow-6);
+}
+
+.kpi-tile:nth-child(4)::after {
+  background: var(--mantine-color-red-5);
+}
+
+.kpi-tile:hover {
+  border-color: #cfd7e1;
 }
 
 .kpi-tile__label {
+  align-items: center;
+  color: var(--mantine-color-gray-7);
+  display: inline-flex;
   font-size: 12px;
   font-weight: 600;
+  min-width: 0;
 }
 
 .kpi-tile__value {
-  font-family: var(--font-mono);
-  font-size: 18px;
-  font-weight: 600;
-  letter-spacing: 0;
-  line-height: 1.15;
   color: var(--mantine-color-gray-9);
-  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.05;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .kpi-tile__sub {
-  font-size: 12px;
   color: var(--mantine-color-gray-6);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1.2;
+  min-height: 15px;
 }
 
 /* Regional lens ------------------------------------------------------------- */
@@ -469,7 +573,16 @@
 .assort-table-card {
   display: flex;
   flex-direction: column;
-  padding: 16px;
+  overflow: hidden;
+  padding: 0;
+}
+
+.assort-table-card .assort-card__head {
+  align-items: center;
+  min-height: 42px;
+  margin: 0;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--mantine-color-gray-2);
 }
 
 .assort-filter {
@@ -477,7 +590,17 @@
   align-items: flex-end;
   flex-wrap: wrap;
   gap: 10px;
-  margin: 0 -16px 12px;
+  margin: 0;
+  padding: 12px;
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+  background:
+    linear-gradient(180deg, rgba(var(--brand-orange-rgb), 0.035), rgba(255, 255, 255, 0) 58px),
+    var(--mantine-color-white);
+}
+
+.assort-table-card .data-table {
+  border: 0;
+  border-radius: 0;
 }
 
 /* Numeric table cell — bare mono number (§5.1), no chips. */
