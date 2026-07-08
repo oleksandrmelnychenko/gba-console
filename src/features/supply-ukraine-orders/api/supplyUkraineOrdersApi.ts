@@ -344,7 +344,7 @@ export async function getSupplyOrderSuppliers(): Promise<Client[]> {
   const result = await apiRequest<unknown>('/clients/all/manufacturers')
   const suppliers = readArrayPayload(result, ['Items', 'Clients', 'Data']) as Client[]
 
-  return suppliers.map((supplier) => ({
+  const normalizedSuppliers = suppliers.map((supplier) => ({
     ...supplier,
     ClientAgreements: (supplier.ClientAgreements || []).filter((clientAgreement) => {
       const culture = clientAgreement.Agreement?.Organization?.Culture
@@ -352,6 +352,8 @@ export async function getSupplyOrderSuppliers(): Promise<Client[]> {
       return !culture || isTargetOrganizationCulture(culture)
     }),
   }))
+
+  return dedupeSupplyOrderSuppliers(normalizedSuppliers)
 }
 
 export async function searchSupplyOrderServiceOrganizations(value: string): Promise<SupplyServiceOrganization[]> {
@@ -384,6 +386,51 @@ export async function getSupplyOrderServiceConsumableProducts(value = ''): Promi
   }
 
   return readArrayPayload(result, ['ConsumableProducts', 'Items', 'Data']) as SupplyServiceConsumableProduct[]
+}
+
+function dedupeSupplyOrderSuppliers(suppliers: Client[]): Client[] {
+  const suppliersByVisibleKey = new Map<string, Client>()
+
+  suppliers.forEach((supplier) => {
+    const visibleKey = getSupplyOrderSupplierVisibleKey(supplier)
+    const fallbackKey = supplier.NetUid || (supplier.Id ? String(supplier.Id) : '')
+    const key = visibleKey || (fallbackKey ? `entity:${fallbackKey}` : '')
+
+    if (!key) {
+      return
+    }
+
+    const current = suppliersByVisibleKey.get(key)
+
+    if (!current || getSupplyOrderSupplierRank(supplier) > getSupplyOrderSupplierRank(current)) {
+      suppliersByVisibleKey.set(key, supplier)
+    }
+  })
+
+  return Array.from(suppliersByVisibleKey.values())
+}
+
+function getSupplyOrderSupplierVisibleKey(supplier: Client): string {
+  const legalCode = normalizeSupplierKeyPart(supplier.USREOU)
+
+  if (legalCode) {
+    return `code:${legalCode}`
+  }
+
+  const label = normalizeSupplierKeyPart(supplier.FullName || supplier.Name || supplier.Code)
+
+  return label ? `label:${label}` : ''
+}
+
+function getSupplyOrderSupplierRank(supplier: Client): number {
+  const agreementCount = supplier.ClientAgreements?.length || 0
+  const hasStableKey = supplier.NetUid || supplier.Id ? 1 : 0
+
+  return agreementCount * 10 + hasStableKey
+}
+
+function normalizeSupplierKeyPart(value?: string): string {
+  return (value || '').trim().replace(/\s+/g, ' ').toLocaleLowerCase('uk-UA')
 }
 
 export async function getSupplyPaymentDeliveryProtocolKeys(): Promise<SupplyOrderPaymentDeliveryProtocolKey[]> {

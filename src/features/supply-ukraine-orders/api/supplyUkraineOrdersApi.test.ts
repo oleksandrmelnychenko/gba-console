@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import {
   deleteSupplyProformDocument,
+  getSupplyOrderSuppliers,
   searchSupplyOrderServiceOrganizations,
   uploadDirectSupplyOrderFromFile,
   uploadPackingListFile,
@@ -245,6 +246,59 @@ describe('supplyUkraineOrdersApi', () => {
     await expect(searchSupplyOrderServiceOrganizations('   ')).resolves.toEqual([])
 
     expect(apiRequestMock).not.toHaveBeenCalled()
+  })
+
+  it('deduplicates manufacturer dictionary rows by visible supplier identity', async () => {
+    const polishAgreement: ClientAgreement = {
+      NetUid: 'agreement-pl',
+      Agreement: {
+        NetUid: 'agreement-entity-pl',
+        Organization: { NetUid: 'org-pl', Culture: 'pl', Name: 'Poland' },
+      },
+    }
+    const ukrainianAgreement: ClientAgreement = {
+      NetUid: 'agreement-uk',
+      Agreement: {
+        NetUid: 'agreement-entity-uk',
+        Organization: { NetUid: 'org-uk', Culture: 'uk', Name: 'Ukraine' },
+      },
+    }
+
+    apiRequestMock.mockResolvedValueOnce([
+      {
+        NetUid: 'supplier-without-uk-agreement',
+        FullName: 'SEM OTOMOTIV',
+        ClientAgreements: [polishAgreement],
+      },
+      {
+        NetUid: 'supplier-with-uk-agreement',
+        FullName: ' sem   otomotiv ',
+        ClientAgreements: [ukrainianAgreement],
+      },
+      {
+        NetUid: 'supplier-third-copy',
+        FullName: 'SEM OTOMOTIV',
+        ClientAgreements: [],
+      },
+      {
+        NetUid: 'different-supplier',
+        FullName: 'Other supplier',
+        ClientAgreements: [ukrainianAgreement],
+      },
+    ])
+
+    await expect(getSupplyOrderSuppliers()).resolves.toEqual([
+      {
+        NetUid: 'supplier-with-uk-agreement',
+        FullName: ' sem   otomotiv ',
+        ClientAgreements: [ukrainianAgreement],
+      },
+      {
+        NetUid: 'different-supplier',
+        FullName: 'Other supplier',
+        ClientAgreements: [ukrainianAgreement],
+      },
+    ])
   })
 })
 
