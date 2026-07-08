@@ -416,6 +416,8 @@ function normalizeCartPlan(result: unknown): CartPlan {
     value_captured_eur: toNumber(data.value_captured_eur, 0),
     selected_count: toNumber(data.selected_count, 0),
     deferred_count: toNumber(data.deferred_count, 0),
+    method_used: normalizeCartMethod(data.method_used),
+    model_version: typeof data.model_version === 'string' ? data.model_version : '',
   }
 }
 
@@ -429,7 +431,15 @@ function emptyCartPlan(): CartPlan {
     value_captured_eur: 0,
     selected_count: 0,
     deferred_count: 0,
+    method_used: null,
+    model_version: '',
   }
+}
+
+function normalizeCartMethod(value: unknown): CartOptimizeMethod | null {
+  return typeof value === 'string' && KNOWN_CART_METHODS.includes(value as CartOptimizeMethod)
+    ? (value as CartOptimizeMethod)
+    : null
 }
 
 function normalizeReorderSuggestions(value: unknown): ReorderSuggestion[] {

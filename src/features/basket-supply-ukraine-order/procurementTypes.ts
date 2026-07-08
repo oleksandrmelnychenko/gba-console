@@ -116,6 +116,8 @@ export type CartPlan = {
   value_captured_eur: number
   selected_count: number
   deferred_count: number
+  method_used: CartOptimizeMethod | null
+  model_version: string
 }
 
 export type CartPlanQuery = {

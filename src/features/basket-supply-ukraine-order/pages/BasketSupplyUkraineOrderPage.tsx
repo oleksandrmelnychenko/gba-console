@@ -153,7 +153,7 @@ export function BasketSupplyUkraineOrderPage() {
     { value: 'recommendations', label: t('Рекомендації'), ai: true },
     { value: 'dashboard', label: t('Дашборд'), ai: true },
     { value: 'cockpit', label: t('Робоче місце закупівельника'), ai: true },
-    { value: 'budget-cart', label: t('Бюджетний кошик') },
+    { value: 'budget-cart', label: t('Бюджетний кошик'), ai: true },
   ]
 
   function changeTab(nextTab: string | null) {

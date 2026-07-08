@@ -580,6 +580,8 @@ describe('getBudgetCartPlan', () => {
     expect(plan.deferred_count).toBe(1)
     expect(plan.item_count).toBe(3)
     expect(plan.as_of_date).toBe('2026-06-15')
+    expect(plan.method_used).toBe('milp')
+    expect(plan.model_version).toBe('procure-hist120-v1')
     expect(plan.items).toHaveLength(3)
 
     const [first] = plan.items
@@ -709,6 +711,8 @@ describe('getBudgetCartPlan', () => {
       value_captured_eur: 0,
       selected_count: 0,
       deferred_count: 0,
+      method_used: null,
+      model_version: '',
     })
   })
 })
@@ -722,6 +726,8 @@ function buildFullCartPlan() {
     value_captured_eur: 8120.25,
     selected_count: 2,
     deferred_count: 1,
+    method_used: 'milp',
+    model_version: 'procure-hist120-v1',
     items: [
       {
         product_id: 100,

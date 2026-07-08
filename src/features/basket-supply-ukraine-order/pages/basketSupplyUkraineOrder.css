@@ -75,6 +75,66 @@
   background: transparent;
 }
 
+.budget-cart-guide {
+  display: grid;
+  grid-template-columns: minmax(240px, 1.2fr) minmax(220px, 1fr) minmax(220px, 1fr) minmax(220px, 1fr);
+  gap: 8px;
+}
+
+.budget-cart-guide__tile,
+.budget-cart-guide__status {
+  min-height: 84px;
+  padding: 10px 12px;
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
+  background: var(--mantine-color-gray-0);
+}
+
+.budget-cart-guide__tile {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  gap: 8px;
+  align-items: start;
+}
+
+.budget-cart-guide__tile.is-active {
+  border-color: var(--mantine-color-violet-3);
+  background: rgba(124, 58, 237, 0.08);
+}
+
+.budget-cart-guide__icon {
+  display: inline-flex;
+  width: 28px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  color: var(--mantine-color-violet-7);
+  background: var(--mantine-color-violet-0);
+}
+
+.budget-cart-guide__status {
+  display: flex;
+  align-items: center;
+}
+
+.budget-cart-signals {
+  min-width: 210px;
+  max-width: 300px;
+}
+
+@media (max-width: 1180px) {
+  .budget-cart-guide {
+    grid-template-columns: repeat(2, minmax(220px, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .budget-cart-guide {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* §5.3 bar на табах кошика: фільтри в один рядок по низу. */
 .basket-supply-command-bar {
   align-items: end;
