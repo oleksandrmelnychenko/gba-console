@@ -9,7 +9,6 @@ import {
   Popover,
   ScrollArea,
   Stack,
-  Table,
   Text,
   TextInput,
   Tooltip,
@@ -502,38 +501,51 @@ function StorageAvailabilityHistory({
     () => groupAvailabilityPlacements(availability.ProductPlacementDataHistory || []),
     [availability.ProductPlacementDataHistory],
   )
+  const storageName = availability.Storage?.Name || t('Склад')
+  const totalQuantity = formatAmount(availability.Amount)
 
   return (
-    <Popover withArrow shadow="md" opened={opened} position="bottom-end" width={520} onChange={setOpened}>
+    <Popover
+      withArrow
+      withinPortal
+      classNames={{ dropdown: 'product-history-placement-popover' }}
+      opened={opened}
+      position="bottom-end"
+      shadow="lg"
+      width={560}
+      onChange={setOpened}
+    >
       <Popover.Target>
         <Badge
-          color="gray"
-          size="lg"
-          style={{ cursor: 'pointer' }}
+          className="app-role-pill product-history-placement-trigger"
           variant="light"
           onClick={() => setOpened((current) => !current)}
         >
-          {`${availability.Storage?.Name || t('Склад')}: ${formatAmount(availability.Amount)}`}
+          {`${storageName}: ${totalQuantity}`}
         </Badge>
       </Popover.Target>
-      <Popover.Dropdown p="xs">
-        <ScrollArea.Autosize mah={320} type="auto">
-          <Table withColumnBorders withTableBorder striped horizontalSpacing="xs" verticalSpacing={4}>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>{t('Прихід')}</Table.Th>
-                <Table.Th>{t('Склад')}</Table.Th>
-                <Table.Th>{t('Ряд')}</Table.Th>
-                <Table.Th>{t('Полиця')}</Table.Th>
-                <Table.Th ta="right">{t('Кількість')}</Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              {placementGroups.map((group, groupIndex) => (
+      <Popover.Dropdown>
+        <div className="product-history-placement-popover__header">
+          <div className="product-history-placement-popover__title">
+            <span>{storageName}</span>
+            <small>{t('Розміщення товару')}</small>
+          </div>
+          <div className="product-history-placement-popover__total">
+            <span>{totalQuantity}</span>
+            <small>{t('К-сть')}</small>
+          </div>
+        </div>
+
+        <ScrollArea.Autosize mah={360} type="auto" className="product-history-placement-popover__scroll">
+          <div className="product-history-placement-list">
+            {placementGroups.length === 0 ? (
+              <Text className="product-history-placement-empty">{t('Позицій не знайдено')}</Text>
+            ) : (
+              placementGroups.map((group, groupIndex) => (
                 <PlacementGroupRows key={`${group.storageNumber}-${group.rowNumber}-${group.cellNumber}-${groupIndex}`} group={group} t={t} />
-              ))}
-            </Table.Tbody>
-          </Table>
+              ))
+            )}
+          </div>
         </ScrollArea.Autosize>
       </Popover.Dropdown>
     </Popover>
@@ -542,29 +554,41 @@ function StorageAvailabilityHistory({
 
 function PlacementGroupRows({ group, t }: { group: PlacementGroup; t: (key: string) => string }) {
   return (
-    <>
-      <Table.Tr>
-        <Table.Td colSpan={4}>
-          <Text fw={700} size="sm">
-            {`${displayValue(group.storageNumber)} / ${displayValue(group.rowNumber)} / ${displayValue(group.cellNumber)}`}
-          </Text>
-        </Table.Td>
-        <Table.Td ta="right">
-          <Text fw={700} size="sm">
-            {Number.isNaN(group.quantity) ? '' : formatAmount(group.quantity)}
-          </Text>
-        </Table.Td>
-      </Table.Tr>
-      {group.items.map((placement, itemIndex) => (
-        <Table.Tr key={placement.NetUid || `${placement.StorageNumber}-${placement.RowNumber}-${placement.CellNumber}-${itemIndex}`}>
-          <Table.Td>{getPlacementIncomeNumber(placement, t)}</Table.Td>
-          <Table.Td>{displayValue(placement.StorageNumber)}</Table.Td>
-          <Table.Td>{displayValue(placement.RowNumber)}</Table.Td>
-          <Table.Td>{displayValue(placement.CellNumber)}</Table.Td>
-          <Table.Td ta="right">{formatAmount(placement.Qty)}</Table.Td>
-        </Table.Tr>
-      ))}
-    </>
+    <section className="product-history-placement-group">
+      <div className="product-history-placement-group__head">
+        <div className="product-history-placement-address">
+          <span>{t('Склад')}</span>
+          <strong>{displayValue(group.storageNumber)}</strong>
+        </div>
+        <div className="product-history-placement-address">
+          <span>{t('Ряд')}</span>
+          <strong>{displayValue(group.rowNumber)}</strong>
+        </div>
+        <div className="product-history-placement-address">
+          <span>{t('Полиця')}</span>
+          <strong>{displayValue(group.cellNumber)}</strong>
+        </div>
+        <div className="product-history-placement-group__qty">
+          <strong>{Number.isNaN(group.quantity) ? '' : formatAmount(group.quantity)}</strong>
+          <span>{t('К-сть')}</span>
+        </div>
+      </div>
+      <div className="product-history-placement-rows">
+        <div className="product-history-placement-row is-header">
+          <span>{t('Прихід')}</span>
+          <span>{t('К-сть')}</span>
+        </div>
+        {group.items.map((placement, itemIndex) => (
+          <div
+            className="product-history-placement-row"
+            key={placement.NetUid || `${placement.StorageNumber}-${placement.RowNumber}-${placement.CellNumber}-${itemIndex}`}
+          >
+            <span>{getPlacementIncomeNumber(placement, t)}</span>
+            <strong>{formatAmount(placement.Qty)}</strong>
+          </div>
+        ))}
+      </div>
+    </section>
   )
 }
 
