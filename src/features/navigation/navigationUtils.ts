@@ -99,7 +99,9 @@ export function normalizeNavigation(modules: NavigationModule[] | null | undefin
     })
   }
 
-  return normalizedModules.sort((left, right) => left.Module.localeCompare(right.Module, 'uk'))
+  // Preserve the server order (DashboardNodeModule.OrderIndex via the menu query) instead of re-sorting
+  // alphabetically, so the curated module order is respected.
+  return normalizedModules
 }
 
 function normalizeNavigationNodes(nodes: NavigationNode[] | null | undefined): NavigationNode[] {
@@ -117,7 +119,8 @@ function normalizeNavigationNodes(nodes: NavigationNode[] | null | undefined): N
     })
   }
 
-  return normalizedNodes.sort((left, right) => left.Module.localeCompare(right.Module, 'uk'))
+  // Preserve the server order (DashboardNode.OrderIndex) rather than alphabetical.
+  return normalizedNodes
 }
 
 export function getModuleKey(module: NavigationModule): string {
