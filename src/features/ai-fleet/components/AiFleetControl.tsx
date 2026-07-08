@@ -1,11 +1,12 @@
 import { ActionIcon, Badge, Button, Group, Loader, Stack, Text, Tooltip } from '@mantine/core'
-import { RefreshCw, Sparkles } from 'lucide-react'
+import { notifications } from '@mantine/notifications'
+import { Clock3, Play, RefreshCw, Sparkles } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
-import { AI_FLEET_SERVICES, getAiFleetServicesStatus } from '../api/aiFleetApi'
-import type { AiFleetServiceDefinition, AiFleetServiceStatus, AiFleetState } from '../types'
+import { AI_FLEET_SERVICES, getAiFleetServicesStatus, triggerAiFleetWarmup } from '../api/aiFleetApi'
+import type { AiFleetOperationState, AiFleetServiceDefinition, AiFleetServiceStatus, AiFleetState, AiFleetWarmupState } from '../types'
 import './ai-fleet-control.css'
 
 type AiFleetLoadState = {
@@ -18,6 +19,13 @@ const initialLoadState: AiFleetLoadState = {
   statuses: [],
 }
 
+const aiFleetDateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  month: '2-digit',
+})
+
 // The AI marker: a filled sparkle cluster (one large + two small 4-point stars)
 // in brand orange — the classic "AI" glyph.
 function AiGlyph({ size }: { size: number }) {
@@ -27,9 +35,14 @@ function AiGlyph({ size }: { size: number }) {
 export function AiFleetControl() {
   const { t } = useI18n()
   const [opened, setOpened] = useState(false)
+  const [isTriggering, setTriggering] = useState(false)
   const [state, setState] = useState<AiFleetLoadState>(initialLoadState)
   const statusesByServiceId = useMemo(
     () => new Map(state.statuses.map((status) => [status.serviceId, status])),
+    [state.statuses],
+  )
+  const operation = useMemo(
+    () => state.statuses.find((status) => status.operation)?.operation,
     [state.statuses],
   )
   const healthyCount = state.statuses.filter((status) => status.health.state === 'healthy').length
@@ -67,6 +80,28 @@ export function AiFleetControl() {
     setState((current) => ({ ...current, isLoading: true }))
     const statuses = await getAiFleetServicesStatus()
     setState({ isLoading: false, statuses })
+  }
+
+  async function runWarmup() {
+    setTriggering(true)
+
+    try {
+      await triggerAiFleetWarmup()
+      notifications.show({
+        color: 'green',
+        message: t('AI warmup поставлено в чергу. Статус оновиться після обробки.'),
+        title: t('AI флот'),
+      })
+      await reload()
+    } catch (error) {
+      notifications.show({
+        color: 'red',
+        message: error instanceof Error ? error.message : t('Не вдалося запустити AI warmup'),
+        title: t('AI флот'),
+      })
+    } finally {
+      setTriggering(false)
+    }
   }
 
   return (
@@ -109,6 +144,19 @@ export function AiFleetControl() {
               <Badge color={checkedCount > 0 && healthyCount === checkedCount ? 'green' : 'orange'} variant="light">
                 {healthyCount}/{checkedCount || AI_FLEET_SERVICES.length} {t('healthy')}
               </Badge>
+              <Tooltip label={t('Поставити AI warmup у чергу scheduler-а')}>
+                <Button
+                  color="violet"
+                  leftSection={isTriggering ? <Loader size={14} /> : <Play size={14} />}
+                  loading={isTriggering}
+                  size="xs"
+                  styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
+                  variant="light"
+                  onClick={runWarmup}
+                >
+                  {t('Запустити')}
+                </Button>
+              </Tooltip>
               <Button
                 color={CREATE_ACTION_COLOR}
                 leftSection={state.isLoading ? <Loader size={14} /> : <RefreshCw size={14} />}
@@ -121,6 +169,8 @@ export function AiFleetControl() {
               </Button>
             </Group>
           </Group>
+
+          <AiFleetOperationSummary operation={operation} />
 
           <Stack gap="xs">
             {AI_FLEET_SERVICES.map((service) => (
@@ -138,6 +188,33 @@ export function AiFleetControl() {
   )
 }
 
+function AiFleetOperationSummary({ operation }: { operation?: AiFleetOperationState }) {
+  const { t } = useI18n()
+  const state = operation?.state ?? 'unknown'
+  const color = state === 'healthy' ? 'green' : state === 'down' ? 'red' : 'gray'
+
+  return (
+    <div className="ai-fleet-operation">
+      <Group gap="xs" wrap="wrap">
+        <Badge color={color} leftSection={<Clock3 size={13} />} variant="light">
+          {t('Останній 05:00 job')}: {stateLabel(state, t)}
+        </Badge>
+        <Badge className="app-role-pill is-gray" variant="light">
+          {t('старт')}: {formatDateTime(operation?.lastStartedAtUtc) || '—'}
+        </Badge>
+        <Badge className="app-role-pill is-gray" variant="light">
+          {t('фініш')}: {formatDateTime(operation?.lastFinishedAtUtc) || '—'}
+        </Badge>
+      </Group>
+      {operation?.logFilePath && (
+        <Text c="dimmed" size="xs">
+          {t('Лог')}: {operation.logFilePath}
+        </Text>
+      )}
+    </div>
+  )
+}
+
 function AiFleetServiceRow({
   isLoading,
   service,
@@ -150,6 +227,7 @@ function AiFleetServiceRow({
   const { t } = useI18n()
   const health = status?.health
   const warmup = status?.warmup
+  const warmupMessage = buildWarmupMessage(warmup, service, t)
 
   return (
     <div className="ai-fleet-row">
@@ -175,7 +253,7 @@ function AiFleetServiceRow({
               />
               <StatusBadge
                 label="05:00"
-                message={warmup?.message}
+                message={warmupMessage}
                 state={warmup?.state ?? 'unknown'}
               />
               <Tooltip label={`${service.location}. ${service.description}`} multiline openDelay={250} w={280}>
@@ -192,10 +270,9 @@ function AiFleetServiceRow({
 function StatusBadge({ label, message, state }: { label: string; message?: string; state: AiFleetState }) {
   const { t } = useI18n()
   const color = state === 'healthy' ? 'green' : state === 'down' ? 'red' : 'gray'
-  const text = state === 'healthy' ? t('OK') : state === 'down' ? t('Down') : t('Немає даних')
   const badge = (
     <Badge color={color} size="sm" variant="light">
-      {label}: {text}
+      {label}: {stateLabel(state, t)}
     </Badge>
   )
 
@@ -208,4 +285,45 @@ function StatusBadge({ label, message, state }: { label: string; message?: strin
       {badge}
     </Tooltip>
   )
+}
+
+function stateLabel(state: AiFleetState, t: (key: string) => string): string {
+  if (state === 'healthy') {
+    return t('OK')
+  }
+
+  if (state === 'down') {
+    return t('Down')
+  }
+
+  return t('Немає даних')
+}
+
+function buildWarmupMessage(
+  warmup: AiFleetWarmupState | undefined,
+  service: AiFleetServiceDefinition,
+  t: (key: string) => string,
+): string {
+  const parts = [
+    warmup?.message,
+    warmup?.lastStartedAtUtc ? `${t('Старт')}: ${formatDateTime(warmup.lastStartedAtUtc)}` : undefined,
+    warmup?.lastFinishedAtUtc ? `${t('Фініш')}: ${formatDateTime(warmup.lastFinishedAtUtc)}` : undefined,
+    `${t('Де')}: ${service.location}`,
+    service.description,
+  ].filter(Boolean)
+
+  return parts.join('\n')
+}
+
+function formatDateTime(value: string | undefined): string {
+  if (!value) {
+    return ''
+  }
+
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) {
+    return ''
+  }
+
+  return aiFleetDateTimeFormatter.format(date)
 }

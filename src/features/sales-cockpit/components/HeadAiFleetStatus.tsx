@@ -8,6 +8,12 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 
 const NBA_SERVICE_ID = 'nba'
 const REFRESH_INTERVAL_MS = 60_000
+const cockpitAiDateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  month: '2-digit',
+})
 
 export function HeadAiFleetStatus() {
   const { t } = useI18n()
@@ -51,6 +57,7 @@ export function HeadAiFleetStatus() {
 
   const health = status?.health
   const warmup = status?.warmup
+  const finishedAtLabel = formatDateTime(warmup?.lastFinishedAtUtc)
 
   return (
     <Card className="app-section-card cockpit-ai-status" withBorder radius="md" padding="md">
@@ -77,9 +84,12 @@ export function HeadAiFleetStatus() {
           <StateBadge
             icon={<Clock3 size={13} />}
             label="05:00"
-            message={warmup?.message}
+            message={buildWarmupMessage(warmup?.message, warmup?.lastStartedAtUtc, warmup?.lastFinishedAtUtc, t)}
             state={isLoading && !warmup ? 'unknown' : warmup?.state ?? 'unknown'}
           />
+          <Badge className="app-role-pill is-gray" variant="light">
+            {finishedAtLabel ? `${t('фініш')} ${finishedAtLabel}` : t('05:00 ще не фіксувався')}
+          </Badge>
           <Badge className="app-role-pill is-gray" variant="light">
             {lastUpdated ? relativeUpdatedLabel(lastUpdated, t) : t('оновлення')}
           </Badge>
@@ -128,4 +138,32 @@ function relativeUpdatedLabel(lastUpdated: number, t: (key: string, params?: Rec
   }
 
   return t('{seconds} с тому', { seconds })
+}
+
+function buildWarmupMessage(
+  message: string | undefined,
+  startedAt: string | undefined,
+  finishedAt: string | undefined,
+  t: (key: string) => string,
+): string | undefined {
+  const parts = [
+    message,
+    startedAt ? `${t('Старт')}: ${formatDateTime(startedAt)}` : undefined,
+    finishedAt ? `${t('Фініш')}: ${formatDateTime(finishedAt)}` : undefined,
+  ].filter(Boolean)
+
+  return parts.length > 0 ? parts.join('\n') : undefined
+}
+
+function formatDateTime(value: string | undefined): string {
+  if (!value) {
+    return ''
+  }
+
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) {
+    return ''
+  }
+
+  return cockpitAiDateTimeFormatter.format(date)
 }

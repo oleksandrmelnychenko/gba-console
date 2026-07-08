@@ -10,6 +10,15 @@
   padding: 10px 12px;
 }
 
+.ai-fleet-operation {
+  background: color-mix(in srgb, var(--mantine-color-violet-0) 72%, white);
+  border: 1px solid var(--mantine-color-violet-1);
+  border-radius: 8px;
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px;
+}
+
 .ai-fleet-row__main {
   min-width: 0;
 }

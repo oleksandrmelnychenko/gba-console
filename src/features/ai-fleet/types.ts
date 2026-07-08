@@ -15,12 +15,24 @@ export type AiFleetHealthState = {
 }
 
 export type AiFleetWarmupState = {
+  lastFinishedAtUtc?: string
+  lastStartedAtUtc?: string
   message?: string
+  source?: string
+  state: AiFleetState
+}
+
+export type AiFleetOperationState = {
+  generatedAtUtc?: string
+  lastFinishedAtUtc?: string
+  lastStartedAtUtc?: string
+  logFilePath?: string
   state: AiFleetState
 }
 
 export type AiFleetServiceStatus = {
   health: AiFleetHealthState
+  operation?: AiFleetOperationState
   serviceId: string
   warmup: AiFleetWarmupState
 }

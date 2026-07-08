@@ -2,6 +2,7 @@ import {
   ActionIcon,
   Alert,
   Badge,
+  Button,
   Card,
   Group,
   Pagination,
@@ -10,12 +11,13 @@ import {
   Text,
   Tooltip,
 } from '@mantine/core'
-import { CircleAlert, CircleDashed, RefreshCw } from 'lucide-react'
+import { notifications } from '@mantine/notifications'
+import { CircleAlert, CircleDashed, RefreshCw, Sparkles } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { ApiError } from '../../../shared/api/apiClient'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { getHeadTasks } from '../api/salesCockpitApi'
+import { getHeadTasks, regenerateCockpit } from '../api/salesCockpitApi'
 import type { HeadTask, HeadTaskByStatus, HeadTaskManager, HeadTasksResponse } from '../types'
 
 const POLL_INTERVAL_MS = 7_000
@@ -73,6 +75,7 @@ export function HeadTaskBoard() {
   const [page, setPage] = useState(1)
   const [error, setError] = useValueState<string | null>(null)
   const [forbidden, setForbidden] = useState(false)
+  const [isGenerating, setGenerating] = useState(false)
   const [isLoading, setLoading] = useState(true)
   const [lastUpdated, setLastUpdated] = useState<number | null>(null)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
@@ -193,6 +196,29 @@ export function HeadTaskBoard() {
     [setUrgency],
   )
 
+  const handleGenerate = useCallback(async () => {
+    setGenerating(true)
+
+    try {
+      await regenerateCockpit()
+      notifications.show({
+        color: 'green',
+        message: t('AI задачі поставлено на перерахунок. Борд оновиться автоматично.'),
+        title: t('AI задачі продажів'),
+      })
+      setLoading(true)
+      reload()
+    } catch (generateError) {
+      notifications.show({
+        color: 'red',
+        message: generateError instanceof Error ? generateError.message : t('Не вдалося перегенерувати задачі'),
+        title: t('AI задачі продажів'),
+      })
+    } finally {
+      setGenerating(false)
+    }
+  }, [t])
+
   if (forbidden) {
     return null
   }
@@ -257,6 +283,16 @@ export function HeadTaskBoard() {
           onChange={handleUrgencyChange}
         />
         <div className="app-filter-actions cockpit-command-actions">
+          <Button
+            color="violet"
+            leftSection={<Sparkles size={16} fill="currentColor" strokeWidth={0} />}
+            loading={isGenerating}
+            size="sm"
+            variant="light"
+            onClick={handleGenerate}
+          >
+            {t('Перерахувати AI задачі')}
+          </Button>
           <Tooltip label={t('Оновити')}>
             <ActionIcon
               aria-label={t('Оновити')}

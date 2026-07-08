@@ -1,6 +1,7 @@
 import { ApiError, apiRequest } from '../../../shared/api/apiClient'
 import type {
   AiFleetHealthState,
+  AiFleetOperationState,
   AiFleetServiceDefinition,
   AiFleetServiceStatus,
   AiFleetWarmupState,
@@ -66,18 +67,19 @@ export const AI_FLEET_SERVICES: AiFleetServiceDefinition[] = [
 ]
 
 export async function getAiFleetServicesStatus(signal?: AbortSignal): Promise<AiFleetServiceStatus[]> {
-  const [statuses, warmupStatuses] = await Promise.all([
+  const [statuses, warmupSnapshot] = await Promise.all([
     Promise.all(AI_FLEET_SERVICES.map((service) => getAiServiceStatus(service, signal))),
-    getAiFleetWarmupStatuses(signal),
+    getAiFleetWarmupSnapshot(signal),
   ])
 
-  if (warmupStatuses.size === 0) {
+  if (warmupSnapshot.statuses.size === 0 && !warmupSnapshot.operation) {
     return statuses
   }
 
   return statuses.map((status) => ({
     ...status,
-    warmup: warmupStatuses.get(status.serviceId) ?? status.warmup,
+    operation: warmupSnapshot.operation,
+    warmup: warmupSnapshot.statuses.get(status.serviceId) ?? status.warmup,
   }))
 }
 
@@ -91,22 +93,31 @@ export async function getAiFleetServiceStatus(
     return null
   }
 
-  const [status, warmupStatuses] = await Promise.all([
+  const [status, warmupSnapshot] = await Promise.all([
     getAiServiceStatus(service, signal),
-    getAiFleetWarmupStatuses(signal),
+    getAiFleetWarmupSnapshot(signal),
   ])
 
   return {
     ...status,
-    warmup: warmupStatuses.get(status.serviceId) ?? status.warmup,
+    operation: warmupSnapshot.operation,
+    warmup: warmupSnapshot.statuses.get(status.serviceId) ?? status.warmup,
   }
 }
 
-async function getAiFleetWarmupStatuses(signal?: AbortSignal): Promise<Map<string, AiFleetWarmupState>> {
+export async function triggerAiFleetWarmup(): Promise<void> {
+  await apiRequest<unknown>('/tasks/scheduler/ai/warmup')
+}
+
+async function getAiFleetWarmupSnapshot(signal?: AbortSignal): Promise<{
+  operation?: AiFleetOperationState
+  statuses: Map<string, AiFleetWarmupState>
+}> {
   try {
     const payload = await apiRequest<unknown>('/ai/fleet/status', { signal })
     const services = readArray(readProperty(payload, 'Services') ?? readProperty(payload, 'services'))
     const statuses = new Map<string, AiFleetWarmupState>()
+    const operation = normalizeOperation(payload)
 
     for (const service of services) {
       if (!service || typeof service !== 'object') {
@@ -121,14 +132,17 @@ async function getAiFleetWarmupStatuses(signal?: AbortSignal): Promise<Map<strin
       }
 
       statuses.set(serviceId, {
+        lastFinishedAtUtc: readDateString(record.LastFinishedAtUtc ?? record.lastFinishedAtUtc),
+        lastStartedAtUtc: readDateString(record.LastStartedAtUtc ?? record.lastStartedAtUtc),
         message: readString(record.Message ?? record.message) || undefined,
+        source: readString(record.Source ?? record.source) || undefined,
         state: normalizeState(readString(record.State ?? record.state)),
       })
     }
 
-    return statuses
+    return { operation, statuses }
   } catch {
-    return new Map()
+    return { statuses: new Map() }
   }
 }
 
@@ -207,6 +221,23 @@ function normalizeHealth(payload: unknown): AiFleetHealthState {
   }
 }
 
+function normalizeOperation(payload: unknown): AiFleetOperationState | undefined {
+  if (!payload || typeof payload !== 'object') {
+    return undefined
+  }
+
+  const record = payload as Record<string, unknown>
+  const state = normalizeState(readString(record.OperationState ?? record.operationState))
+
+  return {
+    generatedAtUtc: readDateString(record.GeneratedAtUtc ?? record.generatedAtUtc),
+    lastFinishedAtUtc: readDateString(record.LastFinishedAtUtc ?? record.lastFinishedAtUtc),
+    lastStartedAtUtc: readDateString(record.LastStartedAtUtc ?? record.lastStartedAtUtc),
+    logFilePath: readString(record.LogFilePath ?? record.logFilePath) || undefined,
+    state,
+  }
+}
+
 function normalizeState(value: string): AiFleetWarmupState['state'] {
   const normalized = value.toLowerCase()
 
@@ -241,4 +272,9 @@ function readProperty(payload: unknown, key: string): unknown {
 
 function readString(value: unknown): string {
   return typeof value === 'string' ? value.trim() : ''
+}
+
+function readDateString(value: unknown): string | undefined {
+  const date = readString(value)
+  return date ? date : undefined
 }
