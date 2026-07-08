@@ -19,6 +19,11 @@
   background: var(--mantine-color-orange-0);
 }
 
+.basket-supply-row-ai-focus {
+  background: rgba(124, 58, 237, 0.1);
+  box-shadow: inset 3px 0 0 var(--mantine-color-violet-6);
+}
+
 .basket-supply-totals {
   padding-top: 4px;
 }

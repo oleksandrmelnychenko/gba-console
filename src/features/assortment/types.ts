@@ -27,8 +27,16 @@ export type AssortmentRow = {
   lifecycle: AssortmentLifecycle
   health: number
   health_components?: Record<string, number>
+  demand_score?: number
+  demand_components?: Record<string, number>
+  margin_score?: number
+  margin_components?: Record<string, number>
+  action_label?: string
+  action_reasons?: string[]
   abc: AssortmentAbc
   name?: string | null
+  primary_producer_id?: number | null
+  primary_producer_name?: string | null
   region_id?: number | null
   region_name?: string | null
   regional_client_count?: number

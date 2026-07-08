@@ -19,6 +19,7 @@ import { useDisclosure } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import { Check, CircleAlert, RefreshCw, School, Settings, ThumbsDown, ThumbsUp, TriangleAlert } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { TranslateFunction } from '../../../shared/i18n/types'
@@ -140,11 +141,14 @@ const percentFormatter = new Intl.NumberFormat('uk-UA', {
 
 export function BuyerCockpitTab() {
   const { t } = useI18n()
+  const [searchParams] = useSearchParams()
+  const routeProducerId = searchParams.get('producerId')
+  const routeProductId = searchParams.get('productId')
   const [state, dispatch] = useReducer(cockpitReducer, initialState)
   const [producers, setProducers] = useState<Client[]>([])
   const [producersError, setProducersError] = useState<string | null>(null)
   const [areProducersLoading, setProducersLoading] = useState(true)
-  const [selectedProducerId, setSelectedProducerId] = useState<string | null>(null)
+  const [selectedProducerId, setSelectedProducerId] = useState<string | null>(() => normalizeRouteId(routeProducerId))
   const [draftQty, setDraftQty] = useState<Record<number, number>>({})
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const [termsDraft, setTermsDraft] = useState<Record<number, TermsDraft>>({})
@@ -159,6 +163,8 @@ export function BuyerCockpitTab() {
   const [isConfirmOpen, { open: openConfirm, close: closeConfirm }] = useDisclosure(false)
   const [isCreatingOrder, setCreatingOrder] = useState(false)
   const { plan, error, isLoading } = state
+
+  const focusedProductId = useMemo(() => normalizeRouteNumber(routeProductId), [routeProductId])
 
   useEffect(() => {
     let cancelled = false
@@ -291,7 +297,7 @@ export function BuyerCockpitTab() {
   const producerOptions = useMemo(() => buildProducerOptions(producers), [producers])
 
   const sortedItems = useMemo(
-    () => (plan ? [...plan.items].sort((left, right) => URGENCY_RANK[left.urgency] - URGENCY_RANK[right.urgency]) : []),
+    () => (plan ? plan.items.toSorted((left, right) => URGENCY_RANK[left.urgency] - URGENCY_RANK[right.urgency]) : []),
     [plan],
   )
 
@@ -929,6 +935,7 @@ export function BuyerCockpitTab() {
               isLoading={isLoading}
               maxHeight={560}
               minWidth={1510}
+              rowClassName={(item) => (item.product_id === focusedProductId ? 'basket-supply-row-ai-focus' : undefined)}
               tableId="basket-supply-ukraine-order-buyer-cockpit"
               toolbarRight={toolbarRight}
             />
@@ -1005,6 +1012,18 @@ function SummaryItem({ color, label, value }: { color?: string; label: string; v
       </Text>
     </Stack>
   )
+}
+
+function normalizeRouteNumber(value: string | null): number | null {
+  const numericValue = Number(value)
+
+  return Number.isFinite(numericValue) && numericValue > 0 ? numericValue : null
+}
+
+function normalizeRouteId(value: string | null): string | null {
+  const numericValue = normalizeRouteNumber(value)
+
+  return numericValue === null ? null : String(numericValue)
 }
 
 function buildProducerOptions(producers: Client[]) {
