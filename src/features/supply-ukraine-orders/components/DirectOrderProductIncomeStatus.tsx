@@ -3,7 +3,7 @@ import { CircleAlert, PackageCheck } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { getDirectOrderProductIncome } from '../api/directOrderProductIncomeApi'
+import { getSupplyOrderProductIncome, type SupplyOrderProductIncomeSource } from '../api/directOrderProductIncomeApi'
 import type { DirectOrderProductIncome, User } from '../types'
 
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
@@ -20,9 +20,11 @@ type ProductIncomeState = {
 export function DirectOrderProductIncomeStatus({
   compact = false,
   orderNetId,
+  source = 'direct',
 }: {
   compact?: boolean
   orderNetId?: string | null
+  source?: SupplyOrderProductIncomeSource
 }) {
   const { t } = useI18n()
   const [state, setState] = useState<ProductIncomeState>({
@@ -38,7 +40,7 @@ export function DirectOrderProductIncomeStatus({
 
     let cancelled = false
 
-    void getDirectOrderProductIncome(orderNetId)
+    void getSupplyOrderProductIncome(orderNetId, source)
       .then((income) => {
         if (!cancelled) {
           setState({ error: null, income, isLoading: false })
@@ -57,7 +59,7 @@ export function DirectOrderProductIncomeStatus({
     return () => {
       cancelled = true
     }
-  }, [orderNetId, t])
+  }, [orderNetId, source, t])
 
   if (!orderNetId) {
     return null

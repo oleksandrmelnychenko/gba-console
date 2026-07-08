@@ -1,8 +1,22 @@
 import { apiRequest } from '../../../shared/api/apiClient'
 import type { DirectOrderProductIncome } from '../types'
 
+export type SupplyOrderProductIncomeSource = 'direct' | 'toUkraine'
+
+const productIncomeEndpointBySource: Record<SupplyOrderProductIncomeSource, string> = {
+  direct: '/products/incomes/get/supply/order',
+  toUkraine: '/products/incomes/supply/order/ukraine/get',
+}
+
 export async function getDirectOrderProductIncome(orderNetId: string): Promise<DirectOrderProductIncome | null> {
-  const result = await apiRequest<unknown>('/products/incomes/get/supply/order', {
+  return getSupplyOrderProductIncome(orderNetId, 'direct')
+}
+
+export async function getSupplyOrderProductIncome(
+  orderNetId: string,
+  source: SupplyOrderProductIncomeSource,
+): Promise<DirectOrderProductIncome | null> {
+  const result = await apiRequest<unknown>(productIncomeEndpointBySource[source], {
     query: { netId: orderNetId },
     errorMessages: {
       default: 'Не вдалося завантажити оприходування',

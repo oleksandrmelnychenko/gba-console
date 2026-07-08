@@ -1431,7 +1431,16 @@ function OrderActionsModal({
       {row && (
         <Stack className="app-modal-actions" gap="xs">
           {row.kind === 'direct' && row.netUid && (
-            <DirectOrderProductIncomeStatus key={row.netUid} compact orderNetId={row.netUid} />
+            <DirectOrderProductIncomeStatus key={`direct:${row.netUid}`} compact orderNetId={row.netUid} />
+          )}
+
+          {row.kind === 'toUkraine' && row.netUid && (
+            <DirectOrderProductIncomeStatus
+              key={`toUkraine:${row.netUid}`}
+              compact
+              orderNetId={row.netUid}
+              source="toUkraine"
+            />
           )}
 
           {row.kind === 'toUkraine' && canOpenToUkrainePlacement && row.netUid && (
@@ -1439,6 +1448,14 @@ function OrderActionsModal({
               icon={<PackageOpen size={20} color="var(--mantine-color-gray-7)" />}
               label={t('Розміщення товару')}
               onClick={() => onNavigate(`/orders/ukraine/placement/${row.netUid}`)}
+            />
+          )}
+
+          {row.kind === 'toUkraine' && canOpenToUkrainePlacement && row.netUid && (
+            <OrderActionButton
+              icon={<PackageCheck size={20} color="var(--mantine-color-gray-7)" />}
+              label={t('Оприходування')}
+              onClick={() => onNavigate(`/orders/ukraine/${row.netUid}/product-income`)}
             />
           )}
 
