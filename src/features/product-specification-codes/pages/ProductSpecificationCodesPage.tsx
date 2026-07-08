@@ -13,21 +13,24 @@ import {
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
-import { CircleAlert, RefreshCw, RotateCcw, Search, Upload } from 'lucide-react'
-import { useEffect, useMemo, useReducer, useRef } from 'react'
+import { CircleAlert, RotateCcw, Search } from 'lucide-react'
+import { useEffect, useMemo, useReducer, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
-import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
+import { Paginator } from '../../../shared/ui/paginator/Paginator'
+import { DEFAULT_PAGINATOR_PAGE_SIZE, PAGINATOR_PAGE_SIZE_OPTIONS } from '../../../shared/ui/paginator/paginatorPageSize'
 import { getProductSpecifications, uploadSpecificationCodesFile } from '../api/productSpecificationCodesApi'
 import { ChangeProductSpecificationPanel } from '../components/ChangeProductSpecificationPanel'
-import type { ProductSpecification, ProductSpecificationRegion, SpecificationCodeUploadResult } from '../types'
+import type { ProductSpecification, SpecificationCodeUploadResult } from '../types'
 import './product-specification-codes-page.css'
 
-const BATCH_SIZE = 30
+const pageSizeOptions = PAGINATOR_PAGE_SIZE_OPTIONS
+const PRODUCT_SPECIFICATION_CODES_PAGE_SIZE_STORAGE_KEY = 'gba-data-table:product-specification-codes:page-size'
+const DEFAULT_PRODUCT_SPECIFICATION_CODES_PAGE_SIZE = DEFAULT_PAGINATOR_PAGE_SIZE
 const SEARCH_DEBOUNCE_MS = 250
 
 const TABLE_DEFAULT_LAYOUT = {
@@ -46,7 +49,6 @@ const amountFormatter = new Intl.NumberFormat('uk-UA', {
 
 function useProductSpecificationCodesModel() {
   const { t } = useI18n()
-  const [region, setRegion] = useValueState<ProductSpecificationRegion>('uk')
   const [vendorCodeDraft, setVendorCodeDraft] = useValueState('')
   const [specificationCodeDraft, setSpecificationCodeDraft] = useValueState('')
   const [debouncedVendorCode] = useDebouncedValue(vendorCodeDraft, SEARCH_DEBOUNCE_MS)
@@ -57,17 +59,11 @@ function useProductSpecificationCodesModel() {
   const [hasMore, setHasMore] = useValueState(false)
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(false)
-  const [isLoadingMore, setLoadingMore] = useValueState(false)
   const [selected, setSelected] = useValueState<ProductSpecification | null>(null)
+  const [page, setPage] = useValueState(1)
+  const [pageSize, setPageSize] = useValueState(readProductSpecificationCodesPageSize)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
-  const { density, toggleDensity } = useDataTableDensity('product-specification-codes', TABLE_DEFAULT_LAYOUT.density)
-
-  const listRequestKey = `${region}|${vendorCode}|${specificationCode}`
-  const listRequestKeyRef = useRef(listRequestKey)
-
-  useEffect(() => {
-    listRequestKeyRef.current = listRequestKey
-  }, [listRequestKey])
+  const offset = (page - 1) * pageSize
 
   useEffect(() => {
     let cancelled = false
@@ -78,16 +74,16 @@ function useProductSpecificationCodesModel() {
 
       try {
         const nextSpecifications = await getProductSpecifications({
-          limit: BATCH_SIZE,
-          locale: region,
-          offset: 0,
+          limit: pageSize,
+          locale: 'uk',
+          offset,
           specificationCode,
           vendorCode,
         })
 
         if (!cancelled) {
           setSpecifications(nextSpecifications)
-          setHasMore(nextSpecifications.length === BATCH_SIZE)
+          setHasMore(nextSpecifications.length === pageSize)
         }
       } catch (loadError) {
         if (!cancelled) {
@@ -107,68 +103,37 @@ function useProductSpecificationCodesModel() {
     return () => {
       cancelled = true
     }
-  }, [region, reloadKey, specificationCode, vendorCode, setError, setHasMore, setLoading, setSpecifications, t])
+  }, [offset, pageSize, reloadKey, specificationCode, vendorCode, setError, setHasMore, setLoading, setSpecifications, t])
 
-  async function loadMore() {
-    if (isLoadingMore || isLoading) {
-      return
-    }
-
-    const requestKey = listRequestKeyRef.current
-    const requestOffset = specifications.length
-    setLoadingMore(true)
-    setError(null)
-
-    try {
-      const nextSpecifications = await getProductSpecifications({
-        limit: BATCH_SIZE,
-        locale: region,
-        offset: requestOffset,
-        specificationCode,
-        vendorCode,
-      })
-
-      if (listRequestKeyRef.current === requestKey) {
-        setSpecifications((current) =>
-          current.length === requestOffset ? [...current, ...nextSpecifications] : current,
-        )
-        setHasMore(nextSpecifications.length === BATCH_SIZE)
-      }
-    } catch (loadError) {
-      if (listRequestKeyRef.current === requestKey) {
-        setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити наступні митні коди'))
-      }
-    } finally {
-      if (listRequestKeyRef.current === requestKey) {
-        setLoadingMore(false)
-      }
-    }
+  function changePageSize(nextPageSize: number) {
+    setPage(1)
+    setPageSize(nextPageSize)
+    writeProductSpecificationCodesPageSize(nextPageSize)
   }
 
   function resetFilters() {
+    setPage(1)
     setVendorCodeDraft('')
     setSpecificationCodeDraft('')
   }
 
   return {
-    density,
     error,
     hasMore,
     isLoading,
-    isLoadingMore,
-    region,
+    page,
+    pageSize,
     selected,
     specificationCodeDraft,
     specifications,
     vendorCodeDraft,
-    loadMore,
+    changePageSize,
     reload,
     resetFilters,
-    setRegion,
+    setPage,
     setSelected,
     setSpecificationCodeDraft,
     setVendorCodeDraft,
-    toggleDensity,
   }
 }
 
@@ -176,6 +141,7 @@ export function ProductSpecificationCodesPage() {
   const { t } = useI18n()
   const model = useProductSpecificationCodesModel()
   const columns = useProductSpecificationColumns(model.specifications)
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const [uploadResult, setUploadResult] = useValueState<SpecificationCodeUploadResult | null>(null)
   const [isUploading, setUploading] = useValueState(false)
 
@@ -201,32 +167,46 @@ export function ProductSpecificationCodesPage() {
   }
 
   return (
-    <Stack gap="lg">
-      <Card className="app-data-card" withBorder radius="md" padding={0}>
+    <div className="product-specification-codes-page">
+      <Card className="app-data-card product-specification-codes-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar product-specification-codes-filter-bar">
-          <Group align="end" gap="sm" wrap="nowrap" className="product-specification-codes-filter-row">
+          <div className="product-specification-codes-filter-row">
             <TextInput
+              className="product-specification-codes-search"
               label={t('Код товару')}
               leftSection={<Search size={16} />}
               placeholder={t('Місце вводу для пошуку')}
-              style={{ flex: '1 1 240px' }}
               value={model.vendorCodeDraft}
-              onChange={(event) => model.setVendorCodeDraft(event.currentTarget.value)}
+              onChange={(event) => {
+                model.setPage(1)
+                model.setVendorCodeDraft(event.currentTarget.value)
+              }}
             />
             <TextInput
+              className="product-specification-codes-search"
               label={t('Митний код')}
               leftSection={<Search size={16} />}
               placeholder={t('Місце вводу для пошуку')}
-              style={{ flex: '1 1 240px' }}
               value={model.specificationCodeDraft}
-              onChange={(event) => model.setSpecificationCodeDraft(event.currentTarget.value)}
+              onChange={(event) => {
+                model.setPage(1)
+                model.setSpecificationCodeDraft(event.currentTarget.value)
+              }}
             />
             <div className="app-filter-actions">
               <FileButton accept=".xlsx,.xls,.csv" onChange={handleUpload}>
                 {(props) => (
-                  <Button {...props} color={CREATE_ACTION_COLOR} leftSection={<Upload size={16} />} loading={isUploading} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} variant="outline">
-                    {t('Завантажити Excel')}
-                  </Button>
+                  <Tooltip label={t('Завантажити Excel')}>
+                    <ActionIcon
+                      {...props}
+                      aria-label={t('Завантажити Excel')}
+                      loading={isUploading}
+                      size={34}
+                      variant="default"
+                    >
+                      <ExcelIcon size={22} />
+                    </ActionIcon>
+                  </Tooltip>
                 )}
               </FileButton>
               <Tooltip label={t('Скинути')}>
@@ -234,62 +214,46 @@ export function ProductSpecificationCodesPage() {
                   <RotateCcw size={17} />
                 </ActionIcon>
               </Tooltip>
-              <Tooltip label={t('Оновити')}>
-                <ActionIcon
-                  aria-label={t('Оновити')}
-                  color="gray"
-                  loading={model.isLoading}
-                  size={34}
-                  variant="light"
-                  onClick={() => model.reload()}
-                >
-                  <RefreshCw size={18} />
-                </ActionIcon>
-              </Tooltip>
-              <DataTableDensityToggle density={model.density} onToggle={model.toggleDensity} size={34} />
+              <div ref={setTableToolbarSlot} className="product-specification-codes-table-toolbar-slot" />
+              <Paginator
+                hasNext={model.hasMore}
+                isLoading={model.isLoading}
+                page={model.page}
+                pageSize={model.pageSize}
+                pageSizeOptions={pageSizeOptions}
+                onPageChange={model.setPage}
+                onPageSizeChange={model.changePageSize}
+                onRefresh={model.reload}
+              />
             </div>
-          </Group>
+          </div>
         </div>
 
-        <Stack gap={10} className="product-specification-codes-body">
+        <div className="product-specification-codes-body">
           {model.error && (
             <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {model.error}
             </Alert>
           )}
 
-          <Group justify="space-between" gap="sm">
-            <Text size="sm" c="dimmed">
-              {t('Завантажено')} {model.specifications.length}
-            </Text>
-            <Button
-              color="gray"
-              disabled={!model.hasMore || model.isLoading || model.isLoadingMore}
-              styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
-              loading={model.isLoadingMore}
-              variant="light"
-              onClick={model.loadMore}
-            >
-              {t('Завантажити ще')}
-            </Button>
-          </Group>
-
           <DataTable
             columns={columns}
             data={model.specifications}
             defaultLayout={TABLE_DEFAULT_LAYOUT}
-            density={model.density}
             emptyText={t('Митних кодів не знайдено')}
             getRowId={(specification, index) => String(specification.NetUid || specification.Id || index)}
+            height="100%"
             isLoading={model.isLoading}
-            layoutVersion="product-specification-codes-table-1"
+            layoutVersion="product-specification-codes-table-2"
             loadingText={t('Завантаження митних кодів')}
-            maxHeight="calc(100vh - 320px)"
-            minWidth={1320}
+            minWidth={1180}
+            showLayoutControls
             tableId="product-specification-codes"
+            toolbarPortalTarget={tableToolbarSlot}
+            distributeAvailableWidth
             onRowClick={(specification) => model.setSelected(specification)}
           />
-        </Stack>
+        </div>
       </Card>
 
       <ChangeProductSpecificationPanel
@@ -299,7 +263,7 @@ export function ProductSpecificationCodesPage() {
       />
 
       <SpecificationUploadResultModal result={uploadResult} onClose={() => setUploadResult(null)} />
-    </Stack>
+    </div>
   )
 }
 
@@ -316,11 +280,11 @@ function SpecificationUploadResultModal({
     <AppModal centered opened={Boolean(result)} title={t('Результат завантаження')} onClose={onClose}>
       {result && (
         <Stack gap="md">
-          <Group grow>
+          <div className="product-specification-codes-upload-stats">
             <UploadStat label={t('Розпізнано')} value={result.ParsedCount} />
             <UploadStat color="teal" label={t('Оновлено')} value={result.SuccessfullyUpdatedCount} />
             <UploadStat label={t('Не потребує оновлення')} value={result.UpdateWasNotRequiredCount} />
-          </Group>
+          </div>
 
           {result.InvalidVendorCodes.length > 0 && (
             <Stack gap="xs">
@@ -350,7 +314,7 @@ function SpecificationUploadResultModal({
 
 function UploadStat({ color, label, value }: { color?: string; label: string; value: number }) {
   return (
-    <Card withBorder padding="sm" radius="md">
+    <Card className="product-specification-codes-upload-stat" withBorder padding="sm" radius="md">
       <Text c="dimmed" size="xs">
         {label}
       </Text>
@@ -381,7 +345,11 @@ function useProductSpecificationColumns(
         width: 200,
         minWidth: 150,
         accessor: (specification) => specification.Product?.VendorCode,
-        cell: (specification) => <Text fw={700}>{displayValue(specification.Product?.VendorCode)}</Text>,
+        cell: (specification) => (
+          <span className="product-specification-code-cell">
+            {displayValue(specification.Product?.VendorCode)}
+          </span>
+        ),
       },
       {
         id: 'specificationCode',
@@ -389,7 +357,11 @@ function useProductSpecificationColumns(
         width: 200,
         minWidth: 150,
         accessor: (specification) => specification.SpecificationCode,
-        cell: (specification) => <Text fw={600}>{displayValue(specification.SpecificationCode)}</Text>,
+        cell: (specification) => (
+          <span className="product-specification-code-cell">
+            {displayValue(specification.SpecificationCode)}
+          </span>
+        ),
       },
       {
         id: 'specificationName',
@@ -398,7 +370,9 @@ function useProductSpecificationColumns(
         minWidth: 220,
         accessor: (specification) => specification.Name,
         cell: (specification) => (
-          <Text lineClamp={2}>{displayValue(specification.Name)}</Text>
+          <Text className="product-specification-name-cell" lineClamp={2}>
+            {displayValue(specification.Name)}
+          </Text>
         ),
       },
       {
@@ -408,7 +382,9 @@ function useProductSpecificationColumns(
         minWidth: 100,
         align: 'right',
         accessor: (specification) => specification.DutyPercent,
-        cell: (specification) => formatPercent(specification.DutyPercent),
+        cell: (specification) => (
+          <span className="product-specification-percent-cell">{formatPercent(specification.DutyPercent)}</span>
+        ),
       },
       {
         id: 'responsible',
@@ -416,7 +392,11 @@ function useProductSpecificationColumns(
         width: 200,
         minWidth: 160,
         accessor: getResponsibleName,
-        cell: (specification) => displayValue(getResponsibleName(specification)),
+        cell: (specification) => (
+          <span className="product-specification-responsible-cell">
+            {displayValue(getResponsibleName(specification))}
+          </span>
+        ),
       },
       {
         id: 'capitalizedQty',
@@ -425,7 +405,11 @@ function useProductSpecificationColumns(
         minWidth: 150,
         align: 'right',
         accessor: (specification) => getCapitalizedQty(specification),
-        cell: (specification) => formatAmount(getCapitalizedQty(specification)),
+        cell: (specification) => (
+          <span className="product-specification-amount-cell">
+            {formatAmount(getCapitalizedQty(specification))}
+          </span>
+        ),
       },
       {
         id: 'invoiceNumber',
@@ -433,7 +417,11 @@ function useProductSpecificationColumns(
         width: 250,
         minWidth: 180,
         accessor: (specification) => getInvoiceNumber(specification),
-        cell: (specification) => displayValue(getInvoiceNumber(specification)),
+        cell: (specification) => (
+          <span className="product-specification-plain-cell">
+            {displayValue(getInvoiceNumber(specification))}
+          </span>
+        ),
       },
     ],
     [specifications],
@@ -488,4 +476,26 @@ function displayValue(value: unknown): string {
   return String(value)
 }
 
-import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+function readProductSpecificationCodesPageSize(): number {
+  if (typeof window === 'undefined') {
+    return DEFAULT_PRODUCT_SPECIFICATION_CODES_PAGE_SIZE
+  }
+
+  return normalizeProductSpecificationCodesPageSize(
+    window.localStorage.getItem(PRODUCT_SPECIFICATION_CODES_PAGE_SIZE_STORAGE_KEY),
+  )
+}
+
+function writeProductSpecificationCodesPageSize(pageSize: number) {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  window.localStorage.setItem(PRODUCT_SPECIFICATION_CODES_PAGE_SIZE_STORAGE_KEY, String(pageSize))
+}
+
+function normalizeProductSpecificationCodesPageSize(value?: string | null): number {
+  return pageSizeOptions.includes(value ?? '')
+    ? Number(value)
+    : DEFAULT_PRODUCT_SPECIFICATION_CODES_PAGE_SIZE
+}
