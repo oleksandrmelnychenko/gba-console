@@ -733,8 +733,8 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
   const isWarningAlert = Boolean(filterError || (!resourceError && activeTab === 'products' && productStorageError))
 
   return (
-    <Stack gap="md">
-      <Card className="app-data-card" withBorder radius="md" padding={0}>
+    <Stack className="product-remains-page" gap={0}>
+      <Card className="app-data-card product-remains-card" withBorder radius="md" padding={0}>
         <div className="product-remains-tabs pill-tabs">
           {([
             { value: 'batches', label: t('Партії') },

@@ -3,7 +3,19 @@
    canonical .app-data-card / .app-filter-bar / .app-filter-actions rules in
    shared/ui/filter-bar.css. */
 
+.product-remains-page {
+  box-sizing: border-box;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 0 4px 8px;
+}
+
+.product-remains-card {
+  min-height: 0;
+}
+
 .product-remains-tabs {
+  flex: 0 0 auto;
   border-radius: 0;
   padding-bottom: 4px;
 }
@@ -16,7 +28,11 @@
    a single toolbar row. The tabs are a separate full-width strip above, so the
    controls no longer steal horizontal space from the header. */
 .product-remains-filter-bar {
+  flex: 0 0 auto;
+  min-height: 86px;
   overflow-x: auto;
+  overflow-y: hidden;
+  z-index: 2;
 }
 
 .product-remains-filter-row {
@@ -60,11 +76,17 @@
 /* The card is padding-0 (so the filter strip is flush); the body below
    carries its own padding. */
 .product-remains-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
   padding: 14px 8px 8px;
 }
 
 .product-remains-tab-content {
+  flex: 1 1 auto;
   min-width: 0;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .product-remains-tab-content > .data-table {
