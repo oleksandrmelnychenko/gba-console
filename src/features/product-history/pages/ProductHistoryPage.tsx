@@ -346,6 +346,7 @@ function ProductHistoryPageView({ model }: { model: ReturnType<typeof useProduct
             <MultiSelect
               searchable
               clearable
+              className="product-history-storage-filter"
               data={storageOptions}
               disabled={isLoadingStorages || storageOptions.length === 0}
               label={t('Склади')}
