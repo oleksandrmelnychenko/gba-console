@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
-import { addTaskNote, getCockpitCount, getCockpitInbox, getCockpitTarget, getDashboard, getEscalated, getHeadDashboard, getHeadTeam, regenerateCockpit, setTaskStatus } from './salesCockpitApi'
+import { addTaskNote, getCockpitCount, getCockpitInbox, getCockpitTarget, getDashboard, getEscalated, getHeadDashboard, getHeadTasks, getHeadTeam, regenerateCockpit, setTaskStatus } from './salesCockpitApi'
 import type { CockpitTask } from '../types'
 
 vi.mock('../../../shared/api/apiClient', () => ({
@@ -201,6 +201,72 @@ describe('salesCockpitApi', () => {
     expect(apiRequestMock).toHaveBeenCalledWith('/sales/cockpit/head/team', {
       query: {
         asOfDate: undefined,
+      },
+    })
+  })
+
+  it('loads head tasks with combined ready statuses and normalizes the live board payload', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      Total: 2,
+      Tasks: [
+        {
+          TaskKey: 'manager|client|reorder_due|week',
+          ManagerId: 7,
+          ManagerName: 'Олена',
+          ClientId: 42,
+          ClientName: 'Тест клієнт',
+          TaskType: 'reorder_due',
+          Title: 'Повторити продаж',
+          Status: 'open',
+          Urgency: 'high',
+          Priority: 90,
+          POutcome: 0.7,
+          ExpectedValue: 1200,
+          EvScore: 840,
+          InProgressSince: null,
+          GeneratedAt: '2026-07-08T08:00:00',
+          UpdatedAt: '2026-07-08T09:00:00',
+          SlaBreached: false,
+        },
+        null,
+      ],
+      ByStatus: { Open: 1, InProgress: 1, Done: 3, Snoozed: 2, Dismissed: 1 },
+      Managers: [{ ManagerId: 7, Name: 'Олена' }, null],
+    })
+
+    await expect(getHeadTasks({ statuses: 'open,in_progress', managerId: 7, urgency: 'high', skip: 50, limit: 50 })).resolves.toEqual({
+      Total: 2,
+      Tasks: [
+        {
+          TaskKey: 'manager|client|reorder_due|week',
+          ManagerId: 7,
+          ManagerName: 'Олена',
+          ClientId: 42,
+          ClientName: 'Тест клієнт',
+          TaskType: 'reorder_due',
+          Title: 'Повторити продаж',
+          Status: 'open',
+          Urgency: 'high',
+          Priority: 90,
+          POutcome: 0.7,
+          ExpectedValue: 1200,
+          EvScore: 840,
+          InProgressSince: null,
+          GeneratedAt: '2026-07-08T08:00:00',
+          UpdatedAt: '2026-07-08T09:00:00',
+          SlaBreached: false,
+        },
+      ],
+      ByStatus: { Open: 1, InProgress: 1, Done: 3, Snoozed: 2, Dismissed: 1 },
+      Managers: [{ ManagerId: 7, Name: 'Олена' }],
+    })
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/cockpit/head/tasks', {
+      query: {
+        statuses: 'open,in_progress',
+        managerId: 7,
+        urgency: 'high',
+        skip: 50,
+        limit: 50,
       },
     })
   })

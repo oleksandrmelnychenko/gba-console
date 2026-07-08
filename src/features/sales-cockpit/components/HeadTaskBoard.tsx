@@ -11,23 +11,24 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { CircleAlert, CircleDashed, RefreshCw } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { ApiError } from '../../../shared/api/apiClient'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { getHeadTasks } from '../api/salesCockpitApi'
-import type { HeadTask, HeadTaskManager, HeadTasksResponse } from '../types'
+import type { HeadTask, HeadTaskByStatus, HeadTaskManager, HeadTasksResponse } from '../types'
 
 const POLL_INTERVAL_MS = 7_000
 const PAGE_SIZE = 50
 
-type BoardStatus = 'open' | 'in_progress' | 'done'
+type BoardStatus = 'ready' | 'open' | 'in_progress' | 'done'
 type TFn = (key: string, params?: Record<string, number | string>) => string
 
-const STATUS_TABS: { value: BoardStatus; label: string; countKey: keyof HeadTasksResponse['ByStatus'] }[] = [
-  { value: 'open', label: 'Відкриті', countKey: 'Open' },
-  { value: 'in_progress', label: 'В роботі', countKey: 'InProgress' },
-  { value: 'done', label: 'Виконано', countKey: 'Done' },
+const STATUS_TABS: { value: BoardStatus; label: string; count: (status: HeadTaskByStatus) => number }[] = [
+  { value: 'ready', label: 'Готові', count: (status) => status.Open + status.InProgress },
+  { value: 'open', label: 'Нові', count: (status) => status.Open },
+  { value: 'in_progress', label: 'В роботі', count: (status) => status.InProgress },
+  { value: 'done', label: 'Виконано', count: (status) => status.Done },
 ]
 
 const URGENCY_COLOR: Record<string, string> = {
@@ -66,7 +67,7 @@ const EMPTY_RESPONSE: HeadTasksResponse = {
 export function HeadTaskBoard() {
   const { t } = useI18n()
   const [data, setData] = useValueState<HeadTasksResponse>(EMPTY_RESPONSE)
-  const [status, setStatus] = useValueState<BoardStatus>('in_progress')
+  const [status, setStatus] = useValueState<BoardStatus>('ready')
   const [managerId, setManagerId] = useValueState<string | null>(null)
   const [urgency, setUrgency] = useValueState<string | null>(null)
   const [page, setPage] = useState(1)
@@ -74,9 +75,11 @@ export function HeadTaskBoard() {
   const [forbidden, setForbidden] = useState(false)
   const [isLoading, setLoading] = useState(true)
   const [lastUpdated, setLastUpdated] = useState<number | null>(null)
+  const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const [, setTick] = useState(0)
 
   const skip = (page - 1) * PAGE_SIZE
+  const statusesQuery = getStatusesQuery(status)
 
   useEffect(() => {
     let active = true
@@ -85,7 +88,7 @@ export function HeadTaskBoard() {
     async function load() {
       try {
         const result = await getHeadTasks({
-          statuses: status,
+          statuses: statusesQuery,
           managerId: managerId ? Number(managerId) : undefined,
           urgency: urgency ?? undefined,
           skip,
@@ -153,7 +156,7 @@ export function HeadTaskBoard() {
       stopInterval()
       document.removeEventListener('visibilitychange', handleVisibility)
     }
-  }, [status, managerId, urgency, skip, setData, setError, t])
+  }, [statusesQuery, managerId, urgency, skip, reloadKey, setData, setError, t])
 
   useEffect(() => {
     const id = setInterval(() => setTick((value) => value + 1), 1_000)
@@ -224,11 +227,13 @@ export function HeadTaskBoard() {
           >
             {t(tab.label)}
             <Badge className={`app-role-pill ${tab.value === status ? 'is-orange' : 'is-gray'}`} size="sm" variant="light">
-              {data.ByStatus[tab.countKey]}
+              {tab.count(data.ByStatus)}
             </Badge>
           </button>
         ))}
       </div>
+
+      <HeadTaskProgressSummary byStatus={data.ByStatus} />
 
       <div className="app-filter-bar cockpit-board-filter">
         <Select
@@ -253,7 +258,15 @@ export function HeadTaskBoard() {
         />
         <div className="app-filter-actions cockpit-command-actions">
           <Tooltip label={t('Оновити')}>
-            <ActionIcon aria-label={t('Оновити')} size={34} variant="light" onClick={() => setLoading(true)}>
+            <ActionIcon
+              aria-label={t('Оновити')}
+              size={34}
+              variant="light"
+              onClick={() => {
+                setLoading(true)
+                reload()
+              }}
+            >
               <RefreshCw size={18} />
             </ActionIcon>
           </Tooltip>
@@ -284,6 +297,7 @@ export function HeadTaskBoard() {
                 <Table.Th>{t('Статус')}</Table.Th>
                 <Table.Th style={{ textAlign: 'right' }}>{t('Очікувана цінність')}</Table.Th>
                 <Table.Th>{t('SLA')}</Table.Th>
+                <Table.Th>{t('Оновлено')}</Table.Th>
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
@@ -312,6 +326,84 @@ export function HeadTaskBoard() {
         </Group>
       )}
     </Card>
+  )
+}
+
+function HeadTaskProgressSummary({ byStatus }: { byStatus: HeadTaskByStatus }) {
+  const { t } = useI18n()
+  const ready = byStatus.Open + byStatus.InProgress
+  const terminal = byStatus.Done + byStatus.Dismissed
+  const paused = byStatus.Snoozed
+  const knownTotal = ready + terminal + paused
+  const activeFlow = byStatus.Open + byStatus.InProgress + byStatus.Done
+  const completion = activeFlow > 0 ? byStatus.Done / activeFlow : 0
+  const adoption = ready > 0 ? byStatus.InProgress / ready : 0
+
+  return (
+    <div className="cockpit-progress-panel">
+      <div className="cockpit-progress-grid">
+        <ProgressMetric
+          accent="brand"
+          label={t('Готові до дії')}
+          subLabel={t('нові + в роботі')}
+          value={String(ready)}
+        />
+        <ProgressMetric
+          accent="info"
+          label={t('В роботі зараз')}
+          subLabel={`${formatPercent(adoption)} ${t('від готових')}`}
+          value={String(byStatus.InProgress)}
+        />
+        <ProgressMetric
+          accent="success"
+          label={t('Виконано')}
+          subLabel={`${formatPercent(completion)} ${t('закриття активного потоку')}`}
+          value={String(byStatus.Done)}
+        />
+        <ProgressMetric
+          accent={paused > 0 ? 'warning' : 'muted'}
+          label={t('Відкладені')}
+          subLabel={t('не в активній черзі')}
+          value={String(paused)}
+        />
+      </div>
+
+      <div className="cockpit-progress-track" aria-label={t('Прогрес задач')}>
+        <span className="is-open" style={{ width: percentWidth(byStatus.Open, knownTotal) }} />
+        <span className="is-progress" style={{ width: percentWidth(byStatus.InProgress, knownTotal) }} />
+        <span className="is-done" style={{ width: percentWidth(byStatus.Done, knownTotal) }} />
+        <span className="is-paused" style={{ width: percentWidth(paused + byStatus.Dismissed, knownTotal) }} />
+      </div>
+
+      <Group gap="xs" justify="space-between" wrap="wrap">
+        <Text c="dimmed" size="xs">
+          {t('AI сформував операційну чергу')}: {knownTotal}
+        </Text>
+        <Text c="dimmed" size="xs">
+          {t('Закриті або відхилені')}: {terminal}
+        </Text>
+      </Group>
+    </div>
+  )
+}
+
+function ProgressMetric({
+  accent,
+  label,
+  subLabel,
+  value,
+}: {
+  accent: 'brand' | 'info' | 'muted' | 'success' | 'warning'
+  label: string
+  subLabel: string
+  value: string
+}) {
+  return (
+    <div className={`cockpit-progress-metric is-${accent}`}>
+      <span className="cockpit-progress-metric__label">{label}</span>
+      <span className="cockpit-progress-metric__value">{value}</span>
+      <span className="cockpit-progress-metric__sub">{subLabel}</span>
+    </div>
   )
 }
 
@@ -377,6 +469,11 @@ function HeadTaskRow({ task }: { task: HeadTask }) {
           </Text>
         )}
       </Table.Td>
+      <Table.Td>
+        <Text c="dimmed" size="sm">
+          {relativeTaskDateLabel(task.UpdatedAt || task.GeneratedAt, t)}
+        </Text>
+      </Table.Td>
     </Table.Tr>
   )
 }
@@ -386,7 +483,7 @@ function HeadTaskBoardSkeleton({ label }: { label: string }) {
     <div className="cockpit-table-skeleton is-board" aria-busy="true" aria-label={label}>
       {Array.from({ length: 6 }).map((_, rowIndex) => (
         <div key={rowIndex} className="cockpit-table-skeleton-row">
-          {Array.from({ length: 7 }).map((__, columnIndex) => (
+          {Array.from({ length: 8 }).map((__, columnIndex) => (
             <span
               key={columnIndex}
               className={`cockpit-table-skeleton-line${columnIndex === 2 ? ' is-title' : ''}`}
@@ -399,6 +496,10 @@ function HeadTaskBoardSkeleton({ label }: { label: string }) {
 }
 
 const URGENCY_OPTIONS = ['critical', 'high', 'normal', 'low']
+
+function getStatusesQuery(status: BoardStatus): string {
+  return status === 'ready' ? 'open,in_progress' : status
+}
 
 function buildManagerOptions(managers: HeadTaskManager[]): { value: string; label: string }[] {
   return managers.map((manager) => ({
@@ -492,10 +593,23 @@ function relativeUpdatedLabel(lastUpdated: number | null, t: TFn): string {
   return t('оновлено {seconds} с тому', { seconds })
 }
 
+function relativeTaskDateLabel(value: string | null, t: TFn): string {
+  const elapsed = formatElapsed(value)
+  return elapsed ? `${elapsed} ${t('тому')}` : '—'
+}
+
 function formatMoney(value: number): string {
   return `€${moneyFormatter.format(value)}`
 }
 
 function formatPercent(value: number): string {
   return `${Math.round(value * 100)}%`
+}
+
+function percentWidth(value: number, total: number): string {
+  if (total <= 0 || value <= 0) {
+    return '0%'
+  }
+
+  return `${Math.max(2, Math.round((value / total) * 100))}%`
 }

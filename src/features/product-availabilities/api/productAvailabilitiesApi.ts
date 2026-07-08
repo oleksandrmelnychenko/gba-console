@@ -96,7 +96,12 @@ function normalizeExportDocument(result: unknown): ProductAvailabilityExportDocu
   const payload = result as Record<string, unknown>
 
   return {
-    DocumentURL: typeof payload.DocumentURL === 'string' ? payload.DocumentURL : '',
+    DocumentURL:
+      typeof payload.DocumentURL === 'string'
+        ? payload.DocumentURL
+        : typeof payload.XlsxDocument === 'string'
+          ? payload.XlsxDocument
+          : '',
     PdfDocumentURL:
       typeof payload.PdfDocumentURL === 'string'
         ? payload.PdfDocumentURL

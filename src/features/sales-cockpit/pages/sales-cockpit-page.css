@@ -171,6 +171,22 @@
   border-radius: 8px;
 }
 
+.cockpit-ai-status {
+  flex: 0 0 auto;
+}
+
+.cockpit-ai-status__icon {
+  align-items: center;
+  background: color-mix(in srgb, var(--brand-orange) 12%, white);
+  border: 1px solid color-mix(in srgb, var(--brand-orange) 28%, white);
+  border-radius: 8px;
+  color: var(--brand-orange);
+  display: inline-flex;
+  height: 34px;
+  justify-content: center;
+  width: 34px;
+}
+
 /* ---- Task cards -------------------------------------------------------- */
 .cockpit-task {
   border: 1px solid var(--mantine-color-gray-2);
@@ -329,7 +345,8 @@
 .cockpit-board-empty,
 .cockpit-board-alert,
 .cockpit-board-table,
-.cockpit-board-pagination {
+.cockpit-board-pagination,
+.cockpit-progress-panel {
   margin: 12px;
 }
 
@@ -340,7 +357,7 @@
 }
 
 .cockpit-table-skeleton.is-board .cockpit-table-skeleton-row {
-  grid-template-columns: minmax(120px, 0.8fr) minmax(150px, 1fr) minmax(220px, 1.4fr) repeat(4, minmax(96px, 0.7fr));
+  grid-template-columns: minmax(120px, 0.8fr) minmax(150px, 1fr) minmax(220px, 1.4fr) repeat(5, minmax(96px, 0.7fr));
 }
 
 .cockpit-table-skeleton-line {
@@ -375,6 +392,120 @@
   display: grid;
   gap: 10px;
   grid-template-columns: minmax(180px, 220px) minmax(170px, 200px) minmax(0, 1fr) auto;
+}
+
+.cockpit-progress-panel {
+  background: var(--mantine-color-gray-0);
+  border: 1px solid var(--mantine-color-gray-1);
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  padding: 10px;
+}
+
+.cockpit-progress-grid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.cockpit-progress-metric {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
+  min-width: 0;
+  padding: 10px 11px;
+  position: relative;
+}
+
+.cockpit-progress-metric::before {
+  background: var(--mantine-color-gray-3);
+  border-radius: 999px;
+  bottom: 10px;
+  content: '';
+  left: 0;
+  position: absolute;
+  top: 10px;
+  width: 3px;
+}
+
+.cockpit-progress-metric.is-brand::before {
+  background: var(--brand-orange);
+}
+
+.cockpit-progress-metric.is-info::before {
+  background: var(--mantine-color-blue-6);
+}
+
+.cockpit-progress-metric.is-success::before {
+  background: #2fbd57;
+}
+
+.cockpit-progress-metric.is-warning::before {
+  background: var(--mantine-color-yellow-6);
+}
+
+.cockpit-progress-metric__label,
+.cockpit-progress-metric__sub {
+  display: block;
+  font-family: var(--font-mono);
+  letter-spacing: 0;
+  min-width: 0;
+}
+
+.cockpit-progress-metric__label {
+  color: var(--mantine-color-gray-7);
+  font-size: 11.5px;
+  font-weight: 650;
+  line-height: 1.2;
+}
+
+.cockpit-progress-metric__value {
+  color: var(--mantine-color-gray-9);
+  display: block;
+  font-size: 22px;
+  font-weight: 720;
+  line-height: 1.05;
+  margin-top: 5px;
+}
+
+.cockpit-progress-metric__sub {
+  color: var(--mantine-color-gray-5);
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1.2;
+  margin-top: 4px;
+}
+
+.cockpit-progress-track {
+  background: var(--mantine-color-gray-2);
+  border-radius: 999px;
+  display: flex;
+  height: 9px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.cockpit-progress-track span {
+  display: block;
+  min-width: 0;
+  transition: width 180ms ease;
+}
+
+.cockpit-progress-track .is-open {
+  background: var(--brand-orange);
+}
+
+.cockpit-progress-track .is-progress {
+  background: var(--mantine-color-blue-6);
+}
+
+.cockpit-progress-track .is-done {
+  background: #2fbd57;
+}
+
+.cockpit-progress-track .is-paused {
+  background: var(--mantine-color-gray-5);
 }
 
 .cockpit-inline-loading {
@@ -412,7 +543,17 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
+  .cockpit-progress-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .cockpit-command-actions {
     justify-content: flex-start;
+  }
+}
+
+@media (max-width: 560px) {
+  .cockpit-progress-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

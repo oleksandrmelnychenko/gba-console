@@ -81,6 +81,27 @@ export async function getAiFleetServicesStatus(signal?: AbortSignal): Promise<Ai
   }))
 }
 
+export async function getAiFleetServiceStatus(
+  serviceId: string,
+  signal?: AbortSignal,
+): Promise<AiFleetServiceStatus | null> {
+  const service = AI_FLEET_SERVICES.find((item) => item.id === serviceId)
+
+  if (!service) {
+    return null
+  }
+
+  const [status, warmupStatuses] = await Promise.all([
+    getAiServiceStatus(service, signal),
+    getAiFleetWarmupStatuses(signal),
+  ])
+
+  return {
+    ...status,
+    warmup: warmupStatuses.get(status.serviceId) ?? status.warmup,
+  }
+}
+
 async function getAiFleetWarmupStatuses(signal?: AbortSignal): Promise<Map<string, AiFleetWarmupState>> {
   try {
     const payload = await apiRequest<unknown>('/ai/fleet/status', { signal })

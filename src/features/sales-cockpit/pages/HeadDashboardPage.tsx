@@ -7,6 +7,7 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { getEscalated, getHeadTeam } from '../api/salesCockpitApi'
+import { HeadAiFleetStatus } from '../components/HeadAiFleetStatus'
 import { HeadDashboardChartsPanel } from '../components/HeadDashboardChartsPanel'
 import { HeadTaskBoard } from '../components/HeadTaskBoard'
 import type { CockpitUrgency, EscalatedResponse, EscalatedTask, HeadPaceStatus, HeadTeam, HeadTeamRow } from '../types'
@@ -173,6 +174,8 @@ export function HeadDashboardPage() {
               {error}
             </Alert>
           )}
+
+          <HeadAiFleetStatus />
 
           <SimpleGrid cols={{ base: 1, sm: 2, lg: 5 }} spacing="md">
             <TotalCard
