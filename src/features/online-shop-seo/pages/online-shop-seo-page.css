@@ -1761,7 +1761,7 @@
   align-self: center;
   display: grid;
   gap: 8px;
-  grid-template-columns: max-content minmax(42px, 1fr) minmax(120px, 45%);
+  grid-template-columns: max-content minmax(42px, 1fr) fit-content(45%);
   justify-self: start;
   max-width: 100%;
   min-width: 0;
@@ -1779,7 +1779,15 @@
 
 .seo-settings-tree-field-line::before,
 .seo-settings-tree-field-line::after {
-  display: none;
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-3);
+  border-radius: 999px;
+  content: '';
+  height: 7px;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 7px;
 }
 
 .seo-settings-tree-field-line::before {
