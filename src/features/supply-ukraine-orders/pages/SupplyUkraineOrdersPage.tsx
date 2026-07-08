@@ -44,6 +44,7 @@ import {
   searchSupplyOrderServiceOrganizations,
   updateSupplyOrderUkraineDeliveryExpense,
 } from '../api/supplyUkraineOrdersApi'
+import { DirectOrderProductIncomeStatus } from '../components/DirectOrderProductIncomeStatus'
 import { canOpenDirectProductIncomeFromRow } from '../directOrderActions'
 import type {
   Currency,
@@ -1429,6 +1430,10 @@ function OrderActionsModal({
     >
       {row && (
         <Stack className="app-modal-actions" gap="xs">
+          {row.kind === 'direct' && row.netUid && (
+            <DirectOrderProductIncomeStatus key={row.netUid} compact orderNetId={row.netUid} />
+          )}
+
           {row.kind === 'toUkraine' && canOpenToUkrainePlacement && row.netUid && (
             <OrderActionButton
               icon={<PackageOpen size={20} color="var(--mantine-color-gray-7)" />}
@@ -2043,7 +2048,7 @@ function mapDirectOrderRow(order: DirectSupplyOrder): SupplyUkraineOrderRow {
     directOrder: order,
     grossPrice: grossPrice && isResident ? grossPrice + (order.TotalVat || 0) : grossPrice,
     index: 0,
-    isPlaced: Boolean(order.IsFullyPlaced),
+    isPlaced: Boolean(order.IsFullyPlaced || order.IsPlaced),
     kind: 'direct',
     netUid: order.NetUid,
     number: getDirectOrderDisplayNumber(order),

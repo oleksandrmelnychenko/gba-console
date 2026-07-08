@@ -328,6 +328,13 @@ export type DirectSupplyOrder = EntityFields & {
   TransportationType?: SupplyTransportationTypeValue
 }
 
+export type DirectOrderProductIncome = EntityFields & {
+  FromDate?: Date | string
+  Number?: string
+  Storage?: NamedEntity | null
+  User?: User | null
+}
+
 export type SupplyOrderUkraineItem = EntityFields & Record<string, unknown> & {
   VatPercent?: number
   VatPercentStore?: number

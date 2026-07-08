@@ -36,6 +36,7 @@ import {
   updateDirectSupplyOrder,
   uploadSupplyOrderDocument,
 } from '../api/supplyUkraineOrdersApi'
+import { DirectOrderProductIncomeStatus } from '../components/DirectOrderProductIncomeStatus'
 import { DirectOrderPaymentTasksCard } from '../components/DirectOrderPaymentTasksCard'
 import { DirectSupplyOrderProFormCard } from '../components/DirectSupplyOrderProFormCard'
 import { canOpenDirectProductIncomeFromOrder } from '../directOrderActions'
@@ -645,8 +646,10 @@ export function SupplyUkraineDirectOrderDetailPage() {
             {statusPill(t('Відправлено'), t, order.IsOrderShipped)}
             {statusPill(t('Прибуло'), t, order.IsOrderArrived)}
             {statusPill(t('Завершено'), t, order.IsCompleted)}
-            {statusPill(t('Розміщено'), t, order.IsFullyPlaced)}
+            {statusPill(t('Розміщено'), t, Boolean(order.IsFullyPlaced || order.IsPlaced))}
           </Group>
+
+          <DirectOrderProductIncomeStatus key={order.NetUid} orderNetId={order.NetUid} />
 
           {/* Block 1 — Вибір постачальника */}
           <Card className="supply-detail-card" withBorder radius="md" padding="lg">
