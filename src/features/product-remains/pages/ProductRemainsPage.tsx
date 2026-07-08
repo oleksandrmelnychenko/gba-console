@@ -860,7 +860,7 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
                 isLoading={isLoadingBatches}
                 layoutVersion="product-remains-batches-table-1"
                 loadingText={t('Завантаження залишків за партіями')}
-                maxHeight="calc(100vh - 410px)"
+                height="100%"
                 minWidth={1390}
                 showLayoutControls
                 tableId="product-remains-batches"
@@ -894,7 +894,7 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
                 isLoading={isLoadingProducts}
                 layoutVersion="product-remains-products-table-1"
                 loadingText={t('Завантаження залишків за товарами')}
-                maxHeight="calc(100vh - 470px)"
+                height="100%"
                 minWidth={1600}
                 showLayoutControls
                 tableId="product-remains-products"
