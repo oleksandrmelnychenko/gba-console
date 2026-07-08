@@ -1445,16 +1445,16 @@ function OrderActionsModal({
 
           {row.kind === 'toUkraine' && canOpenToUkrainePlacement && row.netUid && (
             <OrderActionButton
-              icon={<PackageOpen size={20} color="var(--mantine-color-gray-7)" />}
-              label={t('Розміщення товару')}
+              icon={<PackageCheck size={20} color="var(--mantine-color-gray-7)" />}
+              label={t('Оприходування')}
               onClick={() => onNavigate(`/orders/ukraine/placement/${row.netUid}`)}
             />
           )}
 
           {row.kind === 'toUkraine' && canOpenToUkrainePlacement && row.netUid && (
             <OrderActionButton
-              icon={<PackageCheck size={20} color="var(--mantine-color-gray-7)" />}
-              label={t('Оприходування')}
+              icon={<PackageOpen size={20} color="var(--mantine-color-gray-7)" />}
+              label={t('Документ оприходування')}
               onClick={() => onNavigate(`/orders/ukraine/${row.netUid}/product-income`)}
             />
           )}
