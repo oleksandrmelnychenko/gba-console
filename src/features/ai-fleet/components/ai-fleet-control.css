@@ -19,13 +19,67 @@
   padding: 10px 12px;
 }
 
+.ai-fleet-metric {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
+  display: grid;
+  gap: 4px;
+  min-height: 70px;
+  padding: 11px 12px;
+  position: relative;
+}
+
+.ai-fleet-metric::before {
+  background: var(--mantine-color-gray-4);
+  border-radius: 99px;
+  bottom: 10px;
+  content: '';
+  left: 0;
+  position: absolute;
+  top: 10px;
+  width: 3px;
+}
+
+.ai-fleet-metric.is-success::before {
+  background: var(--mantine-color-green-6);
+}
+
+.ai-fleet-metric.is-danger::before {
+  background: var(--mantine-color-red-6);
+}
+
+.ai-fleet-metric span {
+  color: var(--mantine-color-gray-7);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.ai-fleet-metric b {
+  color: var(--mantine-color-gray-9);
+  font-family: var(--font-mono);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.1;
+}
+
 .ai-fleet-row__main {
   min-width: 0;
 }
 
 .ai-fleet-row__statuses {
   flex: 0 0 auto;
-  max-width: 260px;
+  max-width: 330px;
+}
+
+.ai-fleet-empty {
+  border: 1px dashed var(--mantine-color-gray-3);
+  border-radius: 8px;
+  padding: 18px 12px;
+  text-align: center;
 }
 
 @media (max-width: 640px) {

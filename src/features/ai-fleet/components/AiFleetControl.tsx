@@ -1,13 +1,22 @@
-import { ActionIcon, Badge, Button, Group, Loader, Stack, Text, Tooltip } from '@mantine/core'
+import { ActionIcon, Badge, Button, Group, Loader, SegmentedControl, SimpleGrid, Stack, Text, Tooltip } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { Clock3, Play, RefreshCw, Sparkles } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { ClipboardCopy, Clock3, ExternalLink, Play, RefreshCw, Sparkles } from 'lucide-react'
+import { useCallback, useEffect, useEffectEvent, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { AI_FLEET_SERVICES, getAiFleetServicesStatus, triggerAiFleetWarmup } from '../api/aiFleetApi'
 import type { AiFleetOperationState, AiFleetServiceDefinition, AiFleetServiceStatus, AiFleetState, AiFleetWarmupState } from '../types'
+import {
+  buildAiFleetDiagnosticText,
+  buildAiFleetServiceViews,
+  buildAiFleetSummary,
+  type AiFleetServiceView,
+} from '../utils/aiFleetView'
 import './ai-fleet-control.css'
+
+const AI_FLEET_REFRESH_MS = 30_000
 
 type AiFleetLoadState = {
   isLoading: boolean
@@ -34,19 +43,43 @@ function AiGlyph({ size }: { size: number }) {
 
 export function AiFleetControl() {
   const { t } = useI18n()
+  const navigate = useNavigate()
   const [opened, setOpened] = useState(false)
   const [isTriggering, setTriggering] = useState(false)
+  const [filter, setFilter] = useState<'all' | 'issues'>('all')
+  const [lastUpdated, setLastUpdated] = useState<number | null>(null)
   const [state, setState] = useState<AiFleetLoadState>(initialLoadState)
-  const statusesByServiceId = useMemo(
-    () => new Map(state.statuses.map((status) => [status.serviceId, status])),
-    [state.statuses],
+  const serviceRows = useMemo(() => buildAiFleetServiceViews(AI_FLEET_SERVICES, state.statuses), [state.statuses])
+  const summary = useMemo(() => buildAiFleetSummary(serviceRows), [serviceRows])
+  const visibleRows = useMemo(
+    () => (filter === 'issues' ? serviceRows.filter((row) => row.isProblem) : serviceRows),
+    [filter, serviceRows],
   )
   const operation = useMemo(
     () => state.statuses.find((status) => status.operation)?.operation,
     [state.statuses],
   )
-  const healthyCount = state.statuses.filter((status) => status.health.state === 'healthy').length
-  const checkedCount = state.statuses.length
+  const lastUpdatedLabel = lastUpdated ? aiFleetDateTimeFormatter.format(new Date(lastUpdated)) : ''
+
+  const loadStatuses = useCallback(async (signal?: AbortSignal) => {
+    setState((current) => ({ ...current, isLoading: true }))
+
+    try {
+      const statuses = await getAiFleetServicesStatus(signal)
+
+      if (!signal?.aborted) {
+        setState({ isLoading: false, statuses })
+        setLastUpdated(Date.now())
+      }
+    } catch {
+      if (!signal?.aborted) {
+        setState({ isLoading: false, statuses: [] })
+      }
+    }
+  }, [])
+  const loadStatusesFromEffect = useEffectEvent((signal: AbortSignal) => {
+    void loadStatuses(signal)
+  })
 
   useEffect(() => {
     if (!opened) {
@@ -54,32 +87,25 @@ export function AiFleetControl() {
     }
 
     const controller = new AbortController()
+    const initialLoad = setTimeout(() => {
+      loadStatusesFromEffect(controller.signal)
+    }, 0)
 
-    async function loadStatuses() {
-      setState((current) => ({ ...current, isLoading: true }))
-
-      try {
-        const statuses = await getAiFleetServicesStatus(controller.signal)
-
-        if (!controller.signal.aborted) {
-          setState({ isLoading: false, statuses })
-        }
-      } catch {
-        if (!controller.signal.aborted) {
-          setState({ isLoading: false, statuses: [] })
-        }
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        loadStatusesFromEffect(controller.signal)
       }
+    }, AI_FLEET_REFRESH_MS)
+
+    return () => {
+      controller.abort()
+      clearTimeout(initialLoad)
+      clearInterval(interval)
     }
-
-    void loadStatuses()
-
-    return () => controller.abort()
   }, [opened])
 
   async function reload() {
-    setState((current) => ({ ...current, isLoading: true }))
-    const statuses = await getAiFleetServicesStatus()
-    setState({ isLoading: false, statuses })
+    await loadStatuses()
   }
 
   async function runWarmup() {
@@ -104,6 +130,28 @@ export function AiFleetControl() {
     }
   }
 
+  function openServiceRoute(route: string) {
+    setOpened(false)
+    navigate(route)
+  }
+
+  async function copyDiagnostic(row: AiFleetServiceView) {
+    try {
+      await navigator.clipboard.writeText(buildAiFleetDiagnosticText(row, operation))
+      notifications.show({
+        color: 'green',
+        message: t('Діагностику AI-сервісу скопійовано'),
+        title: t('AI флот'),
+      })
+    } catch (error) {
+      notifications.show({
+        color: 'red',
+        message: error instanceof Error ? error.message : t('Не вдалося скопіювати діагностику'),
+        title: t('AI флот'),
+      })
+    }
+  }
+
   return (
     <>
       <Tooltip label={t('AI флот')} openDelay={300}>
@@ -121,7 +169,7 @@ export function AiFleetControl() {
       <AppModal
         centered
         opened={opened}
-        size="lg"
+        size="xl"
         title={
           <Group gap="xs" wrap="nowrap">
             <AiGlyph size={20} />
@@ -141,9 +189,14 @@ export function AiFleetControl() {
               </Text>
             </Stack>
             <Group gap="xs" wrap="nowrap">
-              <Badge color={checkedCount > 0 && healthyCount === checkedCount ? 'green' : 'orange'} variant="light">
-                {healthyCount}/{checkedCount || AI_FLEET_SERVICES.length} {t('healthy')}
+              <Badge color={summary.checked > 0 && summary.problemCount === 0 ? 'green' : 'orange'} variant="light">
+                {summary.healthHealthy}/{summary.total} {t('health OK')}
               </Badge>
+              {lastUpdatedLabel && (
+                <Badge className="app-role-pill is-gray" variant="light">
+                  {t('оновлено')}: {lastUpdatedLabel}
+                </Badge>
+              )}
               <Tooltip label={t('Поставити AI warmup у чергу scheduler-а')}>
                 <Button
                   color="violet"
@@ -172,19 +225,71 @@ export function AiFleetControl() {
 
           <AiFleetOperationSummary operation={operation} />
 
+          <AiFleetSummaryTiles summary={summary} />
+
+          <Group justify="space-between" wrap="wrap">
+            <SegmentedControl
+              data={[
+                { label: t('Усі сервіси'), value: 'all' },
+                { label: `${t('Проблемні')} (${summary.problemCount})`, value: 'issues' },
+              ]}
+              size="xs"
+              value={filter}
+              onChange={(value) => setFilter(value as 'all' | 'issues')}
+            />
+            <Text c="dimmed" size="xs">
+              {t('Автооновлення кожні')} {AI_FLEET_REFRESH_MS / 1000} {t('сек.')}
+            </Text>
+          </Group>
+
           <Stack gap="xs">
-            {AI_FLEET_SERVICES.map((service) => (
+            {visibleRows.map((row) => (
               <AiFleetServiceRow
-                key={service.id}
-                isLoading={state.isLoading && !statusesByServiceId.has(service.id)}
-                service={service}
-                status={statusesByServiceId.get(service.id)}
+                key={row.service.id}
+                isLoading={state.isLoading && !row.status}
+                row={row}
+                onCopyDiagnostic={copyDiagnostic}
+                onOpenRoute={openServiceRoute}
               />
             ))}
+            {visibleRows.length === 0 && (
+              <div className="ai-fleet-empty">
+                <Text c="dimmed" size="sm">{t('Проблемних AI-сервісів немає')}</Text>
+              </div>
+            )}
           </Stack>
         </Stack>
       </AppModal>
     </>
+  )
+}
+
+function AiFleetSummaryTiles({ summary }: { summary: ReturnType<typeof buildAiFleetSummary> }) {
+  const { t } = useI18n()
+
+  return (
+    <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="xs">
+      <AiFleetMetric label={t('Health OK')} value={`${summary.healthHealthy}/${summary.total}`} />
+      <AiFleetMetric
+        label={t('05:00 warmup OK')}
+        tone={summary.warmupDown > 0 ? 'danger' : 'success'}
+        value={`${summary.warmupHealthy}/${summary.total}`}
+      />
+      <AiFleetMetric
+        label={t('Потребують уваги')}
+        tone={summary.problemCount > 0 ? 'danger' : 'success'}
+        value={String(summary.problemCount)}
+      />
+    </SimpleGrid>
+  )
+}
+
+function AiFleetMetric({ label, value, tone = 'neutral' }: { label: string; value: string; tone?: 'danger' | 'neutral' | 'success' }) {
+  return (
+    <div className={`ai-fleet-metric is-${tone}`}>
+      <span>{label}</span>
+      <b>{value}</b>
+    </div>
   )
 }
 
@@ -217,14 +322,17 @@ function AiFleetOperationSummary({ operation }: { operation?: AiFleetOperationSt
 
 function AiFleetServiceRow({
   isLoading,
-  service,
-  status,
+  row,
+  onCopyDiagnostic,
+  onOpenRoute,
 }: {
   isLoading: boolean
-  service: AiFleetServiceDefinition
-  status?: AiFleetServiceStatus
+  row: AiFleetServiceView
+  onCopyDiagnostic: (row: AiFleetServiceView) => void
+  onOpenRoute: (route: string) => void
 }) {
   const { t } = useI18n()
+  const { service, status } = row
   const health = status?.health
   const warmup = status?.warmup
   const warmupMessage = buildWarmupMessage(warmup, service, t)
@@ -259,6 +367,23 @@ function AiFleetServiceRow({
               <Tooltip label={`${service.location}. ${service.description}`} multiline openDelay={250} w={280}>
                 <Badge color="gray" size="sm" variant="outline">{t('де')}</Badge>
               </Tooltip>
+              <Tooltip label={t('Скопіювати діагностику')}>
+                <ActionIcon aria-label={t('Скопіювати діагностику')} size="sm" variant="light" onClick={() => onCopyDiagnostic(row)}>
+                  <ClipboardCopy size={15} />
+                </ActionIcon>
+              </Tooltip>
+              {row.primaryRoute && (
+                <Tooltip label={t('Відкрити модуль')}>
+                  <ActionIcon
+                    aria-label={t('Відкрити модуль')}
+                    size="sm"
+                    variant="light"
+                    onClick={() => row.primaryRoute && onOpenRoute(row.primaryRoute)}
+                  >
+                    <ExternalLink size={15} />
+                  </ActionIcon>
+                </Tooltip>
+              )}
             </>
           )}
         </Group>
