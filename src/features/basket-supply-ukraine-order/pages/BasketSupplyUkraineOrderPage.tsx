@@ -1028,8 +1028,14 @@ function SalesWorkflowTab() {
       return
     }
 
-    setSelectedSourceSaleIds(new Set())
-    setActiveFilters((current) => ({ ...current, value: trimmedSearch }))
+    const timeoutId = window.setTimeout(() => {
+      setSelectedSourceSaleIds(new Set())
+      setActiveFilters((current) => ({ ...current, value: trimmedSearch }))
+    }, 0)
+
+    return () => {
+      window.clearTimeout(timeoutId)
+    }
   }, [activeFilters.value, debouncedSearchValue])
 
   function applyFilters(nextFilters: BasketSupplySalesFilters) {

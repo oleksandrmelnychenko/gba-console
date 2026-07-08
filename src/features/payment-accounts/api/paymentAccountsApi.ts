@@ -2,6 +2,7 @@ import { apiRequest } from '../../../shared/api/apiClient'
 import type {
   BankItem,
   Currency,
+  CurrencyTrader,
   Organization,
   PaymentAccountActivitySearchParams,
   PaymentAccount,
@@ -98,6 +99,38 @@ export async function getPaymentAccountPaymentMovements(): Promise<PaymentMoveme
   const result = await apiRequest<unknown>('/payments/movements/all')
 
   return readArrayPayload(result, ['Items', 'PaymentMovements', 'Data']) as PaymentMovement[]
+}
+
+export async function getPaymentAccountCurrencyTraders(paymentCurrencyRegisterNetId: string): Promise<CurrencyTrader[]> {
+  const result = await apiRequest<unknown>('/currencies/traders/find/currency', {
+    query: {
+      netId: paymentCurrencyRegisterNetId,
+    },
+  })
+
+  return readArrayPayload(result, ['Items', 'CurrencyTraders', 'Traders', 'Data', 'Collection'])
+    .map(normalizeCurrencyTrader)
+    .filter((trader): trader is CurrencyTrader => Boolean(trader))
+}
+
+export async function calculatePaymentAccountExchange(params: {
+  amount: number
+  currencyCode: string
+  exchangeRate: number
+}): Promise<number> {
+  const result = await apiRequest<unknown>('/payments/registers/exchanges/calculate', {
+    query: {
+      amount: params.amount,
+      currencyCode: params.currencyCode,
+      exchangeRate: params.exchangeRate,
+    },
+  })
+
+  if (!result || typeof result !== 'object') {
+    return 0
+  }
+
+  return readNumber((result as Record<string, unknown>).Amount)
 }
 
 export async function createPaymentAccountTransfer(
@@ -267,6 +300,19 @@ function normalizePaymentCurrencyRegister(result: unknown): PaymentCurrencyRegis
       : paymentRegister,
     PaymentRegisterCurrencyExchanges: normalizeArray<PaymentRegisterCurrencyExchange>(register.PaymentRegisterCurrencyExchanges),
     PaymentRegisterTransfers: normalizeArray<PaymentRegisterTransfer>(register.PaymentRegisterTransfers),
+  }
+}
+
+function normalizeCurrencyTrader(result: unknown): CurrencyTrader | null {
+  if (!result || typeof result !== 'object') {
+    return null
+  }
+
+  const trader = result as CurrencyTrader
+
+  return {
+    ...trader,
+    CurrencyTraderExchangeRates: Array.isArray(trader.CurrencyTraderExchangeRates) ? trader.CurrencyTraderExchangeRates : [],
   }
 }
 

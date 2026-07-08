@@ -1,4 +1,5 @@
 import { apiRequest } from '../../../shared/api/apiClient'
+import { requireExportDocument } from '../../../shared/documents/exportDocument'
 import type {
   AccountingCashFlow,
   AccountingCashFlowCounterparty,
@@ -44,7 +45,7 @@ export async function exportAccountingCashFlowDocument(
     },
   })
 
-  return normalizeDocument(result)
+  return requireExportDocument(result, 'Не вдалося сформувати документ взаєморозрахунків')
 }
 
 function normalizeCounterparty(result: unknown): AccountingCashFlowCounterparty | null {
@@ -78,17 +79,4 @@ function normalizeHeadItem(item: unknown): AccountingCashFlowHeadItem {
   }
 
   return item as AccountingCashFlowHeadItem
-}
-
-function normalizeDocument(result: unknown): AccountingCashFlowDocument {
-  if (!result || typeof result !== 'object') {
-    return {}
-  }
-
-  const payload = result as Record<string, unknown>
-
-  return {
-    DocumentURL: typeof payload.DocumentURL === 'string' ? payload.DocumentURL : '',
-    PdfDocumentURL: typeof payload.PdfDocumentURL === 'string' ? payload.PdfDocumentURL : '',
-  }
 }

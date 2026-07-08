@@ -31,6 +31,7 @@ import type { DataTableColumn, DataTableDefaultLayout, DataTableDensity } from '
 import { calculateAdvanceReportOrder } from '../api/advanceReportApi'
 import {
   cancelOutgoingCashflow,
+  getOutgoingCashflowByNetId,
   getOutgoingCashflowCurrencies,
   getOutgoingCashflowOrganizations,
   getOutgoingCashflowPaymentMovements,
@@ -113,6 +114,7 @@ function useOutgoingCashflowsPageModel(): OutgoingCashflowsPageModel {
   const structureCalculationRequestRef = useRef(0)
   const didInitOrganizationsRef = useRef(false)
   const dismissedFocusedOrderNetIdRef = useRef('')
+  const focusedOrderRequestRef = useRef('')
 
   const organizationOptions = useMemo(() => toOrganizationOptions(organizations), [organizations])
   const selectedOrganizationFilterIds = useMemo(
@@ -352,8 +354,38 @@ function useOutgoingCashflowsPageModel(): OutgoingCashflowsPageModel {
 
     if (focusedRow) {
       openCashflowDetails(focusedRow)
+      return
     }
-  }, [focusedOrderNetId, isLoading, openCashflowDetails, rows, selectedRow?.order.NetUid])
+
+    if (isLoading || focusedOrderRequestRef.current === focusedOrderNetId) {
+      return
+    }
+
+    focusedOrderRequestRef.current = focusedOrderNetId
+    const controller = new AbortController()
+
+    void getOutgoingCashflowByNetId(focusedOrderNetId, controller.signal)
+      .then((outcomeOrder) => {
+        if (controller.signal.aborted || !outcomeOrder || dismissedFocusedOrderNetIdRef.current === focusedOrderNetId) {
+          return
+        }
+
+        const focusedLoadedRow = buildCashflowRows([outcomeOrder])[0]
+
+        if (focusedLoadedRow) {
+          openCashflowDetails(focusedLoadedRow)
+        }
+      })
+      .catch((focusLoadError: unknown) => {
+        if (!controller.signal.aborted) {
+          setError(focusLoadError instanceof Error ? focusLoadError.message : t('Не вдалося завантажити видатковий ордер'))
+        }
+      })
+
+    return () => {
+      controller.abort()
+    }
+  }, [focusedOrderNetId, isLoading, openCashflowDetails, rows, selectedRow?.order.NetUid, setError, t])
 
   const resetFilters = useCallback(() => {
     setFromDate(shiftDate(-7))

@@ -29,6 +29,17 @@ export async function getOutgoingCashflows(params: OutgoingCashflowsSearchParams
   return normalizeOutgoingCashflowsResponse(result)
 }
 
+export async function getOutgoingCashflowByNetId(netId: string, signal?: AbortSignal): Promise<OutcomePaymentOrder | null> {
+  const result = await apiRequest<unknown>('/payments/orders/outcome/get', {
+    query: {
+      netId,
+    },
+    ...(signal ? { signal } : {}),
+  })
+
+  return normalizeOutcomePaymentOrder(result)
+}
+
 export async function cancelOutgoingCashflow(netId: string): Promise<OutcomePaymentOrder | null> {
   const result = await apiRequest<unknown>('/payments/orders/outcome/cancel', {
     method: 'PUT',

@@ -1,6 +1,6 @@
 import { ActionIcon, Box, Group, Image, Paper, ScrollArea, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import { Barcode, Box as BoxIcon, Check, Image as ImageIcon, Info, Pencil, Ruler, Truck } from 'lucide-react'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { formatLocalDate } from '../../../../shared/date/dateTime'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { getProductMainImage, getProductShopImageUrl, getRelatedProductRowColor } from '../../../products/utils'
@@ -71,11 +71,13 @@ export function ProductFullDetailPanel({
   const [draft, setDraft] = useState(descriptionDraft)
   const wasEditingRef = useRef(isEditingDescription)
 
-  if (isEditingDescription && !wasEditingRef.current && draft !== descriptionDraft) {
-    setDraft(descriptionDraft)
-  }
+  useEffect(() => {
+    if (isEditingDescription && !wasEditingRef.current) {
+      setDraft(descriptionDraft)
+    }
 
-  wasEditingRef.current = isEditingDescription
+    wasEditingRef.current = isEditingDescription
+  }, [descriptionDraft, isEditingDescription])
   const mainImage = getProductMainImage(product)
   const shopImageUrl = getProductShopImageUrl(product)
   // Fall back to the shop image when the sparse search payload carries no

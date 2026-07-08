@@ -220,6 +220,7 @@ export function NewSaleProductsStep({
   // ProductFullDetailPanel keeps its own local state): typing must not re-render
   // this 2600-line step. The ref is read on save (panel toggle or keyboard F2).
   const descriptionDraftRef = useRef('')
+  const [descriptionDraftSnapshot, setDescriptionDraftSnapshot] = useState('')
   const handleDescriptionDraftChange = useCallback((value: string) => {
     descriptionDraftRef.current = value
   }, [])
@@ -259,7 +260,9 @@ export function NewSaleProductsStep({
 
   // (onEditOrderItem is a hoisted function declaration below — this captures the
   // current-render closure, refreshed every render.)
-  onEditOrderItemRef.current = onEditOrderItem
+  useEffect(() => {
+    onEditOrderItemRef.current = onEditOrderItem
+  })
 
   const handleCartRowClick = useCallback((item: SalesUkraineOrderItem) => {
     void onEditOrderItemRef.current(item)
@@ -1264,7 +1267,9 @@ export function NewSaleProductsStep({
     }
 
     if (!editingDescription) {
-      descriptionDraftRef.current = product.Description ?? ''
+      const nextDescriptionDraft = product.Description ?? ''
+      descriptionDraftRef.current = nextDescriptionDraft
+      setDescriptionDraftSnapshot(nextDescriptionDraft)
       setEditingDescription(true)
       keyboard.setState('EditProductDescription')
 
@@ -1274,6 +1279,7 @@ export function NewSaleProductsStep({
     setEditingDescription(false)
     keyboard.restorePreviousProductState()
     const updated: WizardSaleProduct = { ...product, Description: descriptionDraftRef.current }
+    setDescriptionDraftSnapshot(updated.Description ?? '')
     applyProductPatch(updated)
 
     try {
@@ -2089,7 +2095,7 @@ export function NewSaleProductsStep({
       <ProductFullDetailPanel
         canEditDescription={canEditMainDescription && active?.source === 'main'}
         chips={getMainChips(selectedMainSnapshot?.availabilities)}
-        descriptionDraft={descriptionDraftRef.current}
+        descriptionDraft={descriptionDraftSnapshot}
         displayQty={getDisplayedAvailableQty(selectedMainProduct) ?? 0}
         isFullDetail={isMainFullDetail}
         isEditingDescription={editingDescription && active?.source === 'main'}
@@ -2348,7 +2354,7 @@ export function NewSaleProductsStep({
                 <ProductFullDetailPanel
                   canEditDescription
                   chips={getMainChips(focusedAnalogueSnapshot?.availabilities)}
-                  descriptionDraft={descriptionDraftRef.current}
+                  descriptionDraft={descriptionDraftSnapshot}
                   displayQty={getDisplayedAvailableQty(focusedAnalogue) ?? 0}
                   isFullDetail
                   isEditingDescription={editingDescription && active?.source === 'analogue'}
@@ -2371,7 +2377,7 @@ export function NewSaleProductsStep({
                 <ProductFullDetailPanel
                   canEditDescription
                   chips={getMainChips(focusedComponentSnapshot?.availabilities)}
-                  descriptionDraft={descriptionDraftRef.current}
+                  descriptionDraft={descriptionDraftSnapshot}
                   displayQty={getDisplayedAvailableQty(focusedComponent) ?? 0}
                   isFullDetail
                   isEditingDescription={editingDescription && active?.source === 'component'}

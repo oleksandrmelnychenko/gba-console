@@ -33,6 +33,17 @@ export async function getIncomeCashflows(params: IncomeCashflowsSearchParams): P
   return normalizeIncomePaymentOrders(result)
 }
 
+export async function getIncomeCashflowByNetId(netId: string, signal?: AbortSignal): Promise<IncomePaymentOrder | null> {
+  const result = await apiRequest<unknown>('/payments/orders/income/get', {
+    query: {
+      netId,
+    },
+    ...(signal ? { signal } : {}),
+  })
+
+  return normalizeIncomePaymentOrder(result)
+}
+
 export async function cancelIncomeCashflow(netId: string): Promise<IncomePaymentOrder | null> {
   const result = await apiRequest<unknown>('/payments/orders/income/cancel', {
     method: 'PUT',

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildPaymentPayload } from './paymentPayload'
+import { buildConsumableOrderPaymentLinks, buildPaymentPayload } from './paymentPayload'
 import type { ConsumablesOrder, Organization, PaymentCurrencyRegister, PaymentMovement, PaymentRegister } from './types'
 
 const basePaymentInput = {
@@ -55,6 +55,16 @@ describe('consumable order payment payload', () => {
 
     expect(payload.ConsumableProductOrganization).toBe(supplier)
     expect(payload.SupplyOrganizationAgreement).toBe(agreement)
+  })
+
+  it('closes only consumable orders covered by a multi-order payment amount', () => {
+    const firstOrder = createOrder({ NetUid: 'order-1', TotalAmount: 100, TotalPaidAmount: 20 })
+    const secondOrder = createOrder({ NetUid: 'order-2', TotalAmount: 90, TotalPaidAmount: 0 })
+
+    const links = buildConsumableOrderPaymentLinks([firstOrder, secondOrder], 100)
+
+    expect(links?.[0]?.ConsumablesOrder?.IsPayed).toBe(true)
+    expect(links?.[1]?.ConsumablesOrder?.IsPayed).toBe(false)
   })
 })
 

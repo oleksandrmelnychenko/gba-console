@@ -48,13 +48,14 @@ export function WizardProductCarousel({
   const liftTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Adopt external resets (e.g. the step clears the query after adding to cart).
-  if (searchValue !== lastLiftedRef.current) {
-    lastLiftedRef.current = searchValue
-
-    if (text !== searchValue) {
-      setText(searchValue)
+  useEffect(() => {
+    if (searchValue === lastLiftedRef.current) {
+      return
     }
-  }
+
+    lastLiftedRef.current = searchValue
+    setText((current) => (current === searchValue ? current : searchValue))
+  }, [searchValue])
 
   useEffect(() => () => {
     if (liftTimerRef.current) {

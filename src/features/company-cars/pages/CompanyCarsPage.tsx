@@ -18,8 +18,13 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { PermissionGate } from '../../auth/components/PermissionGate'
+import { useAuth } from '../../auth/useAuth'
 import { getCompanyCars, searchCompanyCars } from '../api/companyCarsApi'
-import { COMPANY_CAR_CREATE_PERMISSION } from '../permissions'
+import {
+  COMPANY_CAR_CREATE_PERMISSION,
+  COMPANY_CAR_EDIT_PERMISSION,
+  COMPANY_CAR_ROAD_LIST_MANAGE_PERMISSION,
+} from '../permissions'
 import type { CompanyCar } from '../types'
 import './company-cars-page.css'
 import '../../../shared/ui/console-table-page.css'
@@ -54,6 +59,7 @@ const initialCompanyCarsPageState: CompanyCarsPageState = {
 
 export function CompanyCarsPage() {
   const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [pageState, dispatchPageState] = useReducer(companyCarsPageReducer, initialCompanyCarsPageState)
@@ -65,6 +71,8 @@ export function CompanyCarsPage() {
   const normalizedSearchValue = debouncedSearchValue.trim()
   const isSearchSettling = searchValue.trim() !== normalizedSearchValue
   const isTableBusy = isLoading || isSearchSettling
+  const canEditCompanyCars = hasPermission(COMPANY_CAR_EDIT_PERMISSION)
+  const canOpenRoadLists = hasPermission(COMPANY_CAR_ROAD_LIST_MANAGE_PERMISSION)
 
   const openEditor = useCallback(
     (companyCar: CompanyCar) => {
@@ -97,7 +105,12 @@ export function CompanyCarsPage() {
     [location, navigate],
   )
 
-  const columns = useCompanyCarColumns({ onEdit: openEditor, onRoadLists: openRoadLists })
+  const columns = useCompanyCarColumns({
+    canEdit: canEditCompanyCars,
+    canOpenRoadLists,
+    onEdit: openEditor,
+    onRoadLists: openRoadLists,
+  })
 
   useEffect(() => {
     const controller = new AbortController()
@@ -208,7 +221,7 @@ export function CompanyCarsPage() {
             showLayoutControls
             tableId="company-cars"
             toolbarPortalTarget={tableToolbarSlot}
-            onRowClick={openEditor}
+            onRowClick={canEditCompanyCars ? openEditor : undefined}
           />
         </div>
       </div>
@@ -242,9 +255,13 @@ function companyCarsPageReducer(state: CompanyCarsPageState, action: CompanyCars
 }
 
 function useCompanyCarColumns({
+  canEdit,
+  canOpenRoadLists,
   onEdit,
   onRoadLists,
 }: {
+  canEdit: boolean
+  canOpenRoadLists: boolean
   onEdit: (companyCar: CompanyCar) => void
   onRoadLists: (companyCar: CompanyCar) => void
 }): DataTableColumn<CompanyCar>[] {
@@ -345,7 +362,7 @@ function useCompanyCarColumns({
               <ActionIcon
                 aria-label={t('Шляхові листи автомобіля')}
                 color="gray"
-                disabled={!companyCar.NetUid}
+                disabled={!canOpenRoadLists || !companyCar.NetUid}
                 size="sm"
                 variant="subtle"
                 onClick={(event) => {
@@ -360,7 +377,7 @@ function useCompanyCarColumns({
               <ActionIcon
                 aria-label={t('Редагувати')}
                 color="gray"
-                disabled={!companyCar.NetUid}
+                disabled={!canEdit || !companyCar.NetUid}
                 size="sm"
                 variant="subtle"
                 onClick={(event) => {
@@ -375,7 +392,7 @@ function useCompanyCarColumns({
         ),
       },
     ],
-    [onEdit, onRoadLists, t],
+    [canEdit, canOpenRoadLists, onEdit, onRoadLists, t],
   )
 }
 

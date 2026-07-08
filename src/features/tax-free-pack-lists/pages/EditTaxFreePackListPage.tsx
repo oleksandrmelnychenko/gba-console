@@ -38,7 +38,7 @@ import { MoveTaxFreeItemsModal } from '../components/MoveTaxFreeItemsModal'
 import { TaxFreeBreakModal } from '../components/TaxFreeBreakModal'
 import { TaxFreeCarrierModal } from '../components/TaxFreeCarrierModal'
 import { TaxFreeDocumentsPanel } from '../components/TaxFreeDocumentsPanel'
-import { hasTaxFreePrintDocumentUrl, TaxFreePrintDocumentModal } from '../components/TaxFreePrintDocumentModal'
+import { TaxFreePrintDocumentModal } from '../components/TaxFreePrintDocumentModal'
 import type {
   Client,
   ClientAgreement,
@@ -52,6 +52,7 @@ import type {
   TaxFreeStatus,
 } from '../types'
 import { TaxFreeStatus as TaxFreeStatusValue } from '../types'
+import { hasTaxFreePrintDocumentUrl } from '../utils/taxFreePrintDocuments'
 import {
   clonePackList,
   displayValue,

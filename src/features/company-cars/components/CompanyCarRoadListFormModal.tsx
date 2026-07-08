@@ -73,12 +73,14 @@ type RoadListModalAction =
   | { type: 'user-search-changed'; userSearchValue: string }
 
 export function CompanyCarRoadListFormModal({
+  canSave = true,
   companyCar,
   onClose,
   opened,
   roadList,
   onSaved,
 }: {
+  canSave?: boolean
   companyCar: CompanyCar
   onClose: () => void
   opened: boolean
@@ -108,7 +110,7 @@ export function CompanyCarRoadListFormModal({
     removeDriver,
     selectOutcome,
     setUserSearchValue,
-  } = useRoadListFormModel({ companyCar, onSaved, opened, roadList: roadList || null })
+  } = useRoadListFormModel({ canSave, companyCar, onSaved, opened, roadList: roadList || null })
 
   return (
     <AppModal
@@ -122,6 +124,12 @@ export function CompanyCarRoadListFormModal({
         {error && (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
+          </Alert>
+        )}
+
+        {!canSave && (
+          <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
+            {t('Немає прав для зміни шляхового листа')}
           </Alert>
         )}
 
@@ -161,7 +169,7 @@ export function CompanyCarRoadListFormModal({
 
         <RoadListFormFooter
           calculated={calculated}
-          isSaveDisabled={Boolean(outcomeError) || !calculated}
+          isSaveDisabled={!canSave || Boolean(outcomeError) || !calculated}
           isSaving={isSaving}
           onClose={onClose}
           onSave={handleSave}
@@ -172,11 +180,13 @@ export function CompanyCarRoadListFormModal({
 }
 
 function useRoadListFormModel({
+  canSave,
   companyCar,
   onSaved,
   opened,
   roadList,
 }: {
+  canSave: boolean
   companyCar: CompanyCar
   onSaved: (roadList: CompanyCarRoadList) => void
   opened: boolean
@@ -371,6 +381,11 @@ function useRoadListFormModel({
   }
 
   async function handleSave() {
+    if (!canSave) {
+      dispatchState({ error: t('Немає прав для зміни шляхового листа'), type: 'failed' })
+      return
+    }
+
     if (!companyCarNetUid) {
       return
     }

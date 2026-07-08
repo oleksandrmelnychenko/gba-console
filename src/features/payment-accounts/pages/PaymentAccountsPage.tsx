@@ -176,6 +176,7 @@ export function PaymentAccountsPage() {
     setAccounts,
     setError,
     setLoading,
+    setTotalEuroAmount,
     t,
     typeFilter,
   ])
@@ -372,7 +373,7 @@ function usePaymentAccountColumns(onOpen: (account: PaymentAccount) => void): Da
         minWidth: 112,
         align: 'right',
         accessor: (account) => getCurrencyAmount(account.PaymentCurrencyRegisters, 'EUR'),
-        cell: (account) => formatMoney(getCurrencyAmount(account.PaymentCurrencyRegisters, 'EUR')),
+        cell: (account) => formatCurrencyCell(account.PaymentCurrencyRegisters, 'EUR'),
       },
       {
         id: 'usd',
@@ -381,7 +382,7 @@ function usePaymentAccountColumns(onOpen: (account: PaymentAccount) => void): Da
         minWidth: 112,
         align: 'right',
         accessor: (account) => getCurrencyAmount(account.PaymentCurrencyRegisters, 'USD'),
-        cell: (account) => formatMoney(getCurrencyAmount(account.PaymentCurrencyRegisters, 'USD')),
+        cell: (account) => formatCurrencyCell(account.PaymentCurrencyRegisters, 'USD'),
       },
       {
         id: 'uah',
@@ -390,7 +391,7 @@ function usePaymentAccountColumns(onOpen: (account: PaymentAccount) => void): Da
         minWidth: 112,
         align: 'right',
         accessor: (account) => getCurrencyAmount(account.PaymentCurrencyRegisters, 'UAH'),
-        cell: (account) => formatMoney(getCurrencyAmount(account.PaymentCurrencyRegisters, 'UAH')),
+        cell: (account) => formatCurrencyCell(account.PaymentCurrencyRegisters, 'UAH'),
       },
       {
         id: 'totalEuroAmount',
@@ -448,6 +449,12 @@ function getPrimaryCurrencyCode(account: PaymentAccount): string | undefined {
 
 function getCurrencyAmount(registers: PaymentCurrencyRegister[] | undefined, code: string): number {
   return registers?.find((register) => register.Currency?.Code === code)?.Amount || 0
+}
+
+function formatCurrencyCell(registers: PaymentCurrencyRegister[] | undefined, code: string): string {
+  const register = registers?.find((item) => item.Currency?.Code === code)
+
+  return register ? formatMoney(register.Amount || 0) : ''
 }
 
 function getPaymentRegisterTypeLabel(type: PaymentRegisterType | undefined, t: (value: string) => string): string {

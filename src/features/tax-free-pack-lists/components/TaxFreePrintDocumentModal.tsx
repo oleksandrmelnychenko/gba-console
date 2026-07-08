@@ -5,14 +5,7 @@ import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { TaxFreePrintDocument } from '../types'
-
-type TaxFreePrintDocumentWithUrl = TaxFreePrintDocument & (
-  { DocumentURL: string } | { PdfDocumentURL: string }
-)
-
-export function hasTaxFreePrintDocumentUrl(document: TaxFreePrintDocument | null): document is TaxFreePrintDocumentWithUrl {
-  return Boolean(document?.DocumentURL || document?.PdfDocumentURL)
-}
+import { hasTaxFreePrintDocumentUrl } from '../utils/taxFreePrintDocuments'
 
 export function TaxFreePrintDocumentModal({
   document,

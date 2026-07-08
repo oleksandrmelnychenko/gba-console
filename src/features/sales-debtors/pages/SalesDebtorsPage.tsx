@@ -187,6 +187,7 @@ export function SalesDebtorsPage() {
 
     try {
       const result = await exportDebtorsDocument({
+        days,
         organizationNetId,
         typeAgreement,
         typeCurrency,

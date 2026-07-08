@@ -62,6 +62,30 @@ export function buildPaymentPayload({
   }
 }
 
+export function buildConsumableOrderPaymentLinks(
+  orders: ConsumablesOrder[],
+  paymentAmount: number,
+): OutcomePaymentOrder['OutcomePaymentOrderConsumablesOrders'] {
+  let remainingPaymentAmount = Math.max(paymentAmount, 0)
+
+  return orders.map((order) => {
+    const outstandingAmount = getRemainingPaymentAmount(order)
+    const allocatedAmount = Math.min(remainingPaymentAmount, outstandingAmount)
+    remainingPaymentAmount = Math.max(remainingPaymentAmount - allocatedAmount, 0)
+
+    return {
+      ConsumablesOrder: {
+        ...order,
+        ConsumablesOrderItems: (order.ConsumablesOrderItems || []).map((item) => ({
+          ...item,
+          ConsumableProductOrganization: order.ConsumableProductOrganization,
+        })),
+        IsPayed: isPaymentCoveringOutstandingAmount(order, allocatedAmount),
+      },
+    }
+  })
+}
+
 export function calculateLocalTotal(items: ConsumablesOrderItem[]): number {
   return items.reduce((total, item) => total + (item.TotalPriceWithVAT || 0), 0)
 }

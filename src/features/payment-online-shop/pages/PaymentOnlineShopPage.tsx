@@ -19,8 +19,10 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { Paginator } from '../../../shared/ui/paginator/Paginator'
+import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
 import { useAuth } from '../../auth/useAuth'
-import { addPaymentImage, editPaymentImage, getPaymentShopItems } from '../api/paymentOnlineShopApi'
+import { addPaymentImage, editPaymentImage, getPaymentShopItemsPage } from '../api/paymentOnlineShopApi'
 import { PaymentImageEditModal } from '../components/PaymentImageEditModal'
 import { PaymentShopDetailDrawer } from '../components/PaymentShopDetailDrawer'
 import { RetailPaymentStatusType } from '../types'
@@ -57,6 +59,9 @@ function usePaymentOnlineShopModel() {
   const [filterDraft, setFilterDraft] = useValueState<PaymentShopFilters>(EMPTY_FILTERS)
   const [activeFilters, setActiveFilters] = useValueState<PaymentShopFilters>(EMPTY_FILTERS)
   const [items, setItems] = useValueState<PaymentShopItem[]>([])
+  const [page, setPage] = useValueState(1)
+  const [pageSize, setPageSize] = useValueState(DEFAULT_PAGINATOR_PAGE_SIZE)
+  const [totalRowsQty, setTotalRowsQty] = useValueState(0)
   const [selectedItem, setSelectedItem] = useValueState<PaymentShopItem | null>(null)
   const [editItem, setEditItem] = useValueState<RetailClientPaymentImageItem | null>(null)
   const [error, setError] = useValueState<string | null>(null)
@@ -68,7 +73,7 @@ function usePaymentOnlineShopModel() {
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const { density, toggleDensity } = useDataTableDensity('payment-online-shop', PAYMENT_SHOP_TABLE_DEFAULT_LAYOUT.density)
 
-  usePaymentShopLoader({ activeFilters, reloadKey, setError, setItems, setLoading })
+  usePaymentShopLoader({ activeFilters, page, pageSize, reloadKey, setError, setItems, setLoading, setTotalRowsQty })
 
   const [debouncedSaleNumber] = useDebouncedValue(filterDraft.saleNumber, 400)
   const [debouncedPhoneNumber] = useDebouncedValue(filterDraft.phoneNumber, 400)
@@ -82,6 +87,7 @@ function usePaymentOnlineShopModel() {
       return
     }
 
+    setPage(1)
     setActiveFilters((current) => ({ ...current, phoneNumber: debouncedPhoneNumber, saleNumber: debouncedSaleNumber }))
   }, [
     activeFilters.phoneNumber,
@@ -91,6 +97,7 @@ function usePaymentOnlineShopModel() {
     filterDraft.phoneNumber,
     filterDraft.saleNumber,
     setActiveFilters,
+    setPage,
   ])
 
   const openDetail = useCallback(
@@ -119,10 +126,12 @@ function usePaymentOnlineShopModel() {
   )
 
   function applyFilters() {
+    setPage(1)
     setActiveFilters(filterDraft)
   }
 
   function resetFilters() {
+    setPage(1)
     setFilterDraft(EMPTY_FILTERS)
     setActiveFilters(EMPTY_FILTERS)
   }
@@ -181,55 +190,60 @@ function usePaymentOnlineShopModel() {
   }
 
   const columns = usePaymentShopColumns(openDetail, createIncomeOrder)
+  const totalPages = totalRowsQty > 0 ? Math.max(1, Math.ceil(totalRowsQty / pageSize)) : undefined
+  const hasNext = totalPages ? page < totalPages : items.length === pageSize
 
   return {
     activeFilters, applyFilters, closeDetail, columns, createError, density, editError, editItem, error, filterDraft,
-    handleAddPayment, handleEditPayment, isCreating, isLoading, isSaving, items, openDetail, reload, resetFilters,
-    selectedItem, setEditItem, setFilterDraft, toggleDensity,
+    handleAddPayment, handleEditPayment, hasNext, isCreating, isLoading, isSaving, items, openDetail, page, pageSize,
+    reload, resetFilters, selectedItem, setEditItem, setFilterDraft, setPage, setPageSize, toggleDensity,
+    totalPages,
   }
 }
 
 function usePaymentShopLoader({
   activeFilters,
+  page,
+  pageSize,
   reloadKey,
   setError,
   setItems,
   setLoading,
+  setTotalRowsQty,
 }: {
   activeFilters: PaymentShopFilters
+  page: number
+  pageSize: number
   reloadKey: number
   setError: (value: string | null) => void
   setItems: (value: PaymentShopItem[]) => void
   setLoading: (value: boolean) => void
+  setTotalRowsQty: (value: number) => void
 }) {
   const { t } = useI18n()
 
   useEffect(() => {
     let cancelled = false
 
-    if (!hasPaymentShopFilters(activeFilters)) {
-      setItems([])
-      setError(null)
-      setLoading(false)
-
-      return () => {
-        cancelled = true
-      }
-    }
-
     async function loadItems() {
       setLoading(true)
       setError(null)
 
       try {
-        const nextItems = await getPaymentShopItems(activeFilters)
+        const nextPage = await getPaymentShopItemsPage({
+          ...activeFilters,
+          limit: pageSize,
+          offset: (page - 1) * pageSize,
+        })
 
         if (!cancelled) {
-          setItems(nextItems)
+          setItems(nextPage.items)
+          setTotalRowsQty(nextPage.totalRowsQty ?? 0)
         }
       } catch (loadError) {
         if (!cancelled) {
           setItems([])
+          setTotalRowsQty(0)
           setError(loadError instanceof Error ? loadError.message : t('Не вдалося виконати запит'))
         }
       } finally {
@@ -244,16 +258,7 @@ function usePaymentShopLoader({
     return () => {
       cancelled = true
     }
-  }, [activeFilters, reloadKey, setError, setItems, setLoading, t])
-}
-
-function hasPaymentShopFilters(filters: PaymentShopFilters) {
-  return Boolean(
-    filters.saleDateFrom
-      || filters.saleDateTo
-      || filters.saleNumber.trim()
-      || filters.phoneNumber.trim(),
-  )
+  }, [activeFilters, page, pageSize, reloadKey, setError, setItems, setLoading, setTotalRowsQty, t])
 }
 
 export function PaymentOnlineShopPage() {
@@ -284,7 +289,8 @@ export function PaymentOnlineShopPage() {
 function PaymentShopTableCard({ model }: { model: ReturnType<typeof usePaymentOnlineShopModel> }) {
   const { t } = useI18n()
   const {
-    applyFilters, columns, density, error, filterDraft, isLoading, items, openDetail, reload, resetFilters, setFilterDraft, toggleDensity,
+    applyFilters, columns, density, error, filterDraft, hasNext, isLoading, items, openDetail, page, pageSize, reload,
+    resetFilters, setFilterDraft, setPage, setPageSize, toggleDensity, totalPages,
   } = model
 
   return (
@@ -356,6 +362,18 @@ function PaymentShopTableCard({ model }: { model: ReturnType<typeof usePaymentOn
               </ActionIcon>
             </Tooltip>
             <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
+            <Paginator
+              hasNext={hasNext}
+              isLoading={isLoading}
+              page={page}
+              pageSize={pageSize}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              onPageSizeChange={(nextPageSize) => {
+                setPage(1)
+                setPageSize(nextPageSize)
+              }}
+            />
           </div>
         </Group>
       </div>

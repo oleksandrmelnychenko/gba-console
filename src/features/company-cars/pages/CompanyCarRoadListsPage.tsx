@@ -23,12 +23,14 @@ import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableD
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { useAuth } from '../../auth/useAuth'
 import {
   deleteCompanyCarRoadList,
   getCompanyCar,
   getCompanyCarRoadLists,
 } from '../api/companyCarsApi'
 import { CompanyCarRoadListFormModal } from '../components/CompanyCarRoadListFormModal'
+import { COMPANY_CAR_ROAD_LIST_MANAGE_PERMISSION } from '../permissions'
 import type { CompanyCar, CompanyCarRoadList } from '../types'
 import './company-car-road-lists-page.css'
 
@@ -75,6 +77,7 @@ const initialRoadListsState: CompanyCarRoadListsState = {
 
 export function CompanyCarRoadListsPage() {
   const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const { id } = useParams<{ id?: string }>()
@@ -91,8 +94,9 @@ export function CompanyCarRoadListsPage() {
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const { density, toggleDensity } = useDataTableDensity('company-car-road-lists', TABLE_DEFAULT_LAYOUT.density)
   const filterError = getDateRangeError(fromDate, toDate)
+  const canManageRoadLists = hasPermission(COMPANY_CAR_ROAD_LIST_MANAGE_PERMISSION)
 
-  const columns = useRoadListColumns({ onDelete: setDeleteTarget, onEdit: setEditTarget })
+  const columns = useRoadListColumns({ canManage: canManageRoadLists, onDelete: setDeleteTarget, onEdit: setEditTarget })
 
   useEffect(() => {
     if (!id) {
@@ -146,6 +150,11 @@ export function CompanyCarRoadListsPage() {
   )
 
   function openCreateForm() {
+    if (!canManageRoadLists) {
+      dispatchLoadState({ error: t('Немає прав для зміни шляхових листів'), type: 'set-error' })
+      return
+    }
+
     setEditTarget(null)
     setFormOpen(true)
   }
@@ -156,6 +165,11 @@ export function CompanyCarRoadListsPage() {
   }
 
   async function handleDelete() {
+    if (!canManageRoadLists) {
+      dispatchLoadState({ error: t('Немає прав для видалення шляхового листа'), type: 'set-error' })
+      return
+    }
+
     if (!deleteTarget?.NetUid) {
       return
     }
@@ -231,7 +245,7 @@ export function CompanyCarRoadListsPage() {
             </div>
             <Button
               color={CREATE_ACTION_COLOR}
-              disabled={!companyCar?.NetUid}
+              disabled={!canManageRoadLists || !companyCar?.NetUid}
               leftSection={<Plus size={16} />}
               size="sm"
               styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
@@ -276,6 +290,7 @@ export function CompanyCarRoadListsPage() {
           companyCar={companyCar}
           opened={isFormOpen || Boolean(editTarget)}
           roadList={editTarget}
+          canSave={canManageRoadLists}
           onClose={closeForm}
           onSaved={handleSaved}
         />
@@ -369,9 +384,11 @@ function roadListsReducer(
 }
 
 function useRoadListColumns({
+  canManage,
   onDelete,
   onEdit,
 }: {
+  canManage: boolean
   onDelete: (roadList: CompanyCarRoadList) => void
   onEdit: (roadList: CompanyCarRoadList) => void
 }): DataTableColumn<CompanyCarRoadList>[] {
@@ -471,7 +488,7 @@ function useRoadListColumns({
             <Tooltip label={t('Редагувати')}>
               <ActionIcon
                 aria-label={t('Редагувати')}
-                disabled={!roadList.NetUid && !roadList.Id}
+                disabled={!canManage || (!roadList.NetUid && !roadList.Id)}
                 size="sm"
                 variant="subtle"
                 onClick={(event) => {
@@ -486,7 +503,7 @@ function useRoadListColumns({
               <ActionIcon
                 aria-label={t('Видалити')}
                 color="red"
-                disabled={!roadList.NetUid}
+                disabled={!canManage || !roadList.NetUid}
                 size="sm"
                 variant="subtle"
                 onClick={(event) => {
@@ -501,7 +518,7 @@ function useRoadListColumns({
         ),
       },
     ],
-    [onDelete, onEdit, t],
+    [canManage, onDelete, onEdit, t],
   )
 }
 

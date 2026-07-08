@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
-import { getOutgoingCashflows } from './outgoingCashflowsApi'
+import { getOutgoingCashflowByNetId, getOutgoingCashflows } from './outgoingCashflowsApi'
 
 vi.mock('../../../shared/api/apiClient', () => ({
   apiRequest: vi.fn(),
@@ -31,6 +31,26 @@ describe('outgoingCashflowsApi', () => {
     })).resolves.toMatchObject({
       Collection: [{ NetUid: 'order-1', TotalQty: 45 }],
       TotalRowsQty: 45,
+    })
+  })
+
+  it('loads a focused outcome payment order by NetUid for cash-flow drilldown', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      NetUid: 'outcome-order-1',
+      Number: 'ВКО-1',
+      OutcomePaymentOrderConsumablesOrders: null,
+    })
+
+    await expect(getOutgoingCashflowByNetId('outcome-order-1')).resolves.toEqual({
+      NetUid: 'outcome-order-1',
+      Number: 'ВКО-1',
+      OutcomePaymentOrderConsumablesOrders: [],
+    })
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/payments/orders/outcome/get', {
+      query: {
+        netId: 'outcome-order-1',
+      },
     })
   })
 })

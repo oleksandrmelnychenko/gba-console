@@ -23,7 +23,11 @@ import {
   getCompanyCarOrganizations,
   updateCompanyCar,
 } from '../api/companyCarsApi'
-import { COMPANY_CAR_CREATE_PERMISSION } from '../permissions'
+import {
+  COMPANY_CAR_CREATE_PERMISSION,
+  COMPANY_CAR_DELETE_PERMISSION,
+  COMPANY_CAR_EDIT_PERMISSION,
+} from '../permissions'
 import type { CompanyCar, CompanyCarPayload, Organization } from '../types'
 
 type LocationState = {
@@ -73,7 +77,8 @@ export function CompanyCarFormPage() {
   const { companyCar, error, form, isLoading, organizations } = pageState
   const [isSaving, setSaving] = useValueState(false)
   const [isDeleting, setDeleting] = useValueState(false)
-  const canSave = isEditMode || hasPermission(COMPANY_CAR_CREATE_PERMISSION)
+  const canSave = hasPermission(isEditMode ? COMPANY_CAR_EDIT_PERMISSION : COMPANY_CAR_CREATE_PERMISSION)
+  const canDelete = isEditMode && hasPermission(COMPANY_CAR_DELETE_PERMISSION)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -193,6 +198,11 @@ export function CompanyCarFormPage() {
   }
 
   async function handleDelete() {
+    if (!canDelete) {
+      dispatchPageState({ error: t('Немає прав для видалення автомобіля компанії'), type: 'set-error' })
+      return
+    }
+
     if (!companyCar.NetUid) {
       return
     }
@@ -226,7 +236,7 @@ export function CompanyCarFormPage() {
           {isEditMode && (
             <Button
               color="red"
-              disabled={isLoading || !companyCar.NetUid}
+              disabled={isLoading || !canDelete || !companyCar.NetUid}
               leftSection={<Trash2 size={16} />}
               loading={isDeleting}
               type="button"

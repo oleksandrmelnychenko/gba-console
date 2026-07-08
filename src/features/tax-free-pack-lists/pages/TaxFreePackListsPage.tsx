@@ -27,7 +27,7 @@ import {
   getTaxFreePackLists,
 } from '../api/taxFreePackListsApi'
 import { CreateSupplyOrderModal } from '../components/CreateSupplyOrderModal'
-import { hasTaxFreePrintDocumentUrl, TaxFreePrintDocumentModal } from '../components/TaxFreePrintDocumentModal'
+import { TaxFreePrintDocumentModal } from '../components/TaxFreePrintDocumentModal'
 import type { TaxFreePackList, TaxFreePrintDocument } from '../types'
 import {
   displayValue,
@@ -35,6 +35,7 @@ import {
   getEntityName,
   getPackListAgreementName,
 } from '../utils'
+import { hasTaxFreePrintDocumentUrl } from '../utils/taxFreePrintDocuments'
 import './taxFreePackLists.css'
 
 const PAGE_SIZE_OPTIONS = PAGINATOR_PAGE_SIZE_OPTIONS

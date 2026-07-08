@@ -58,6 +58,20 @@ export async function getConsumableOrder(netId: string): Promise<ConsumablesOrde
   return normalizeConsumablesOrder(result)
 }
 
+export async function getUnpaidConsumableOrdersByOrganization(organizationNetId: string): Promise<ConsumablesOrder[]> {
+  if (!organizationNetId.trim()) {
+    return []
+  }
+
+  const result = await apiRequest<unknown>('/consumables/orders/all/unpaid', {
+    query: {
+      organizationNetId,
+    },
+  })
+
+  return normalizeConsumablesOrders(result)
+}
+
 export async function createConsumableOrder(order: ConsumablesOrder, documents: File[]): Promise<ConsumablesOrder | null> {
   const result = await apiRequest<unknown>('/consumables/orders/upload/new', {
     method: 'POST',

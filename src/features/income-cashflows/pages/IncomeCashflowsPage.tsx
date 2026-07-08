@@ -34,6 +34,7 @@ import { getAccountingCashFlowRecordPaymentStatus } from '../../accounting-cash-
 import { calculateAdvanceReportOrder } from '../../outgoing-cashflows/api/advanceReportApi'
 import {
   cancelIncomeCashflow,
+  getIncomeCashflowByNetId,
   getIncomeCashflowClientAgreements,
   getIncomeCashflowCurrencies,
   getIncomeCashflowOrganizations,
@@ -132,6 +133,7 @@ function useIncomeCashflowsPageModel(): IncomeCashflowsPageModel {
   const structureCalculationRequestRef = useRef(0)
   const didInitOrganizationsRef = useRef(false)
   const dismissedFocusedOrderNetIdRef = useRef('')
+  const focusedOrderRequestRef = useRef('')
 
   const organizationOptions = useMemo(
     () =>
@@ -325,8 +327,38 @@ function useIncomeCashflowsPageModel(): IncomeCashflowsPageModel {
 
     if (focusedRow) {
       openIncomeDetails(focusedRow)
+      return
     }
-  }, [focusedOrderNetId, isLoading, openIncomeDetails, rows, selectedRow?.income.NetUid])
+
+    if (isLoading || focusedOrderRequestRef.current === focusedOrderNetId) {
+      return
+    }
+
+    focusedOrderRequestRef.current = focusedOrderNetId
+    const controller = new AbortController()
+
+    void getIncomeCashflowByNetId(focusedOrderNetId, controller.signal)
+      .then((incomeOrder) => {
+        if (controller.signal.aborted || !incomeOrder || dismissedFocusedOrderNetIdRef.current === focusedOrderNetId) {
+          return
+        }
+
+        const focusedLoadedRow = buildIncomeCashflowRows([incomeOrder])[0]
+
+        if (focusedLoadedRow) {
+          openIncomeDetails(focusedLoadedRow)
+        }
+      })
+      .catch((focusLoadError: unknown) => {
+        if (!controller.signal.aborted) {
+          setError(focusLoadError instanceof Error ? focusLoadError.message : t('Не вдалося завантажити прибутковий ордер'))
+        }
+      })
+
+    return () => {
+      controller.abort()
+    }
+  }, [focusedOrderNetId, isLoading, openIncomeDetails, rows, selectedRow?.income.NetUid, setError, t])
 
   const resetFilters = useCallback(() => {
     setFromDate(shiftDate(-7))

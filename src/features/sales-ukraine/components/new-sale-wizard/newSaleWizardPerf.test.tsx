@@ -104,7 +104,6 @@ describe('new-sale wizard performance', () => {
     const started = performance.now()
 
     for (let index = 1; index <= QUERY.length; index += 1) {
-      // eslint-disable-next-line no-await-in-loop
       await act(async () => {
         fireEvent.change(input, { target: { value: QUERY.slice(0, index) } })
       })

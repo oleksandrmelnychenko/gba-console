@@ -23,6 +23,9 @@ import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { getUnpaidConsumableOrdersByOrganization } from '../../consumable-orders/api/consumableOrdersApi'
+import { buildConsumableOrderPaymentLinks } from '../../consumable-orders/paymentPayload'
+import type { ConsumablesOrder } from '../../consumable-orders/types'
 import {
   createIncomeCashflowPaymentMovement,
   getIncomeCashflowClientAgreements,
@@ -70,6 +73,11 @@ import {
   toTimeValue,
   toUniqueLabels,
 } from './outgoingModeShared'
+import { SupplierUnpaidConsumableOrdersPicker } from './SupplierUnpaidConsumableOrdersPicker'
+import {
+  getConsumableOrdersRemainingAmount,
+  getSelectedConsumableOrders,
+} from './supplierUnpaidConsumableOrders'
 
 type OutgoingPaymentGroupFormProps = {
   onCancel: () => void
@@ -118,9 +126,12 @@ export function OutgoingPaymentGroupForm({ onCancel, onCreated }: OutgoingPaymen
   const [selectedSupplyOrganization, setSelectedSupplyOrganization] = useValueState<SupplyOrganization | null>(null)
   const [clientAgreements, setClientAgreements] = useValueState<ClientAgreement[]>([])
   const [supplyAgreements, setSupplyAgreements] = useValueState<SupplyOrganizationAgreement[]>([])
+  const [unpaidConsumableOrders, setUnpaidConsumableOrders] = useValueState<ConsumablesOrder[]>([])
+  const [selectedUnpaidOrderValues, setSelectedUnpaidOrderValues] = useValueState<string[]>([])
   const [form, setForm] = useValueState<FormState>(() => createInitialForm(initialOperationType, initialRegisterType))
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
+  const [isLoadingUnpaidOrders, setLoadingUnpaidOrders] = useValueState(false)
   const [isResolvingCounterparty, setResolvingCounterparty] = useValueState(false)
   const [isSaving, setSaving] = useValueState(false)
 
@@ -164,6 +175,14 @@ export function OutgoingPaymentGroupForm({ onCancel, onCreated }: OutgoingPaymen
   const activeMovement = useMemo(
     () => selectedMovement || paymentMovements.find((movement) => getEntityName(movement) === form.movementSearch.trim()) || null,
     [form.movementSearch, paymentMovements, selectedMovement],
+  )
+  const selectedUnpaidOrders = useMemo(
+    () => getSelectedConsumableOrders(unpaidConsumableOrders, selectedUnpaidOrderValues),
+    [selectedUnpaidOrderValues, unpaidConsumableOrders],
+  )
+  const selectedUnpaidOrdersAmount = useMemo(
+    () => getConsumableOrdersRemainingAmount(selectedUnpaidOrders),
+    [selectedUnpaidOrders],
   )
 
   const operationOptions = useMemo(() => getOperationOptions(t), [t])
@@ -284,6 +303,47 @@ export function OutgoingPaymentGroupForm({ onCancel, onCreated }: OutgoingPaymen
 
     return () => window.clearTimeout(timeoutId)
   }, [form.movementSearch, setPaymentMovements])
+
+  useEffect(() => {
+    const organizationNetId = selectedSupplyOrganization?.NetUid || ''
+
+    setSelectedUnpaidOrderValues([])
+
+    if (!isSupplierSearch || !organizationNetId) {
+      setUnpaidConsumableOrders([])
+      return
+    }
+
+    let cancelled = false
+
+    setLoadingUnpaidOrders(true)
+    void getUnpaidConsumableOrdersByOrganization(organizationNetId)
+      .then((orders) => {
+        if (!cancelled) {
+          setUnpaidConsumableOrders(orders)
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setUnpaidConsumableOrders([])
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoadingUnpaidOrders(false)
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [
+    isSupplierSearch,
+    selectedSupplyOrganization?.NetUid,
+    setLoadingUnpaidOrders,
+    setSelectedUnpaidOrderValues,
+    setUnpaidConsumableOrders,
+  ])
 
   useEffect(() => {
     const fromCurrencyNetId = selectedCurrency?.NetUid
@@ -519,6 +579,20 @@ export function OutgoingPaymentGroupForm({ onCancel, onCreated }: OutgoingPaymen
     })
   }
 
+  function handleUnpaidOrdersChanged(values: string[]) {
+    const nextOrders = getSelectedConsumableOrders(unpaidConsumableOrders, values)
+    const nextAmount = getConsumableOrdersRemainingAmount(nextOrders)
+
+    setSelectedUnpaidOrderValues(values)
+
+    if (nextAmount > 0) {
+      updateForm({
+        amount: nextAmount,
+        vatAmount: calculateVat(nextAmount, form.vatRate),
+      })
+    }
+  }
+
   function handleMovementSubmit(value: string) {
     const movement = paymentMovements.find((item) => getEntityName(item) === value)
 
@@ -595,6 +669,7 @@ export function OutgoingPaymentGroupForm({ onCancel, onCreated }: OutgoingPaymen
       selectedRegister: selectedRegister as CreatePaymentRegister,
       selectedSupplyAgreement,
       selectedSupplyOrganization,
+      selectedUnpaidOrders: isSupplierSearch ? selectedUnpaidOrders : [],
     })
 
     setSaving(true)
@@ -812,6 +887,18 @@ export function OutgoingPaymentGroupForm({ onCancel, onCreated }: OutgoingPaymen
             />
           </SimpleGrid>
 
+          {isSupplierSearch && selectedSupplyOrganization && (
+            <SupplierUnpaidConsumableOrdersPicker
+              disabled={isLoading || isSaving}
+              isLoading={isLoadingUnpaidOrders}
+              orders={unpaidConsumableOrders}
+              selectedAmount={selectedUnpaidOrdersAmount}
+              selectedCount={selectedUnpaidOrders.length}
+              selectedValues={selectedUnpaidOrderValues}
+              onChange={handleUnpaidOrdersChanged}
+            />
+          )}
+
           <Group gap="lg">
             <Checkbox
               checked={form.isManagementAccounting}
@@ -871,6 +958,7 @@ function buildOutcomePayload({
   selectedRegister,
   selectedSupplyAgreement,
   selectedSupplyOrganization,
+  selectedUnpaidOrders,
 }: {
   form: FormState
   isOtherOutcome: boolean
@@ -883,6 +971,7 @@ function buildOutcomePayload({
   selectedRegister: CreatePaymentRegister
   selectedSupplyAgreement: SupplyOrganizationAgreement | null
   selectedSupplyOrganization: SupplyOrganization | null
+  selectedUnpaidOrders: ConsumablesOrder[]
 }): OutcomePaymentOrderCreatePayload {
   const payload: OutcomePaymentOrderCreatePayload = {
     Amount: form.amount,
@@ -907,6 +996,9 @@ function buildOutcomePayload({
   if (isOtherOutcome) {
     if (selectedSupplyOrganization && !selectedClient) {
       payload.ConsumableProductOrganization = selectedSupplyOrganization
+      if (selectedUnpaidOrders.length > 0) {
+        payload.OutcomePaymentOrderConsumablesOrders = buildConsumableOrderPaymentLinks(selectedUnpaidOrders, form.amount)
+      }
     } else if (selectedClient && !selectedSupplyOrganization) {
       payload.Client = selectedClient
     }
@@ -917,6 +1009,9 @@ function buildOutcomePayload({
   if (selectedSupplyOrganization) {
     payload.ConsumableProductOrganization = selectedSupplyOrganization
     payload.SupplyOrganizationAgreement = selectedSupplyAgreement || undefined
+    if (selectedUnpaidOrders.length > 0) {
+      payload.OutcomePaymentOrderConsumablesOrders = buildConsumableOrderPaymentLinks(selectedUnpaidOrders, form.amount)
+    }
   } else if (selectedClient) {
     payload.ClientAgreement = selectedClientAgreement || undefined
   }

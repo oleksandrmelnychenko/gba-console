@@ -82,6 +82,7 @@ function useAvailablePaymentsPageModel() {
   const { t } = useI18n()
   const [searchParams] = useSearchParams()
   const isOutcomeMode = isOutcomePaymentTasksMode(searchParams)
+  const onlyAvailableForPayment = isOutcomeMode
   const initialAccountingType = parseAvailablePaymentsAccountingType(searchParams)
   const initialFilters = useMemo<FilterDraft>(
     () => ({
@@ -119,7 +120,7 @@ function useAvailablePaymentsPageModel() {
     AVAILABLE_PAYMENTS_TABLE_DEFAULT_LAYOUT.density,
   )
   const filterError = getFilterError(activeFilters.from, activeFilters.to)
-  const listRequestKey = `${activeFilters.from}|${activeFilters.to}|${activeFilters.organizationNetId}|${activeFilters.type}|${pageSize}|${isOutcomeMode}`
+  const listRequestKey = `${activeFilters.from}|${activeFilters.to}|${activeFilters.organizationNetId}|${activeFilters.type}|${pageSize}|${onlyAvailableForPayment}`
   const listRequestKeyRef = useRef(listRequestKey)
   const groupsRef = useRef(groups)
   const groupIndexMap = useMemo(() => buildIndexMap(groups), [groups])
@@ -185,6 +186,7 @@ function useAvailablePaymentsPageModel() {
   useAvailablePaymentsLoader({
     activeFilters,
     filterError,
+    onlyAvailableForPayment,
     pageSize,
     reloadKey,
     resetGroups,
@@ -224,7 +226,7 @@ function useAvailablePaymentsPageModel() {
         from: toQueryDate(activeFilters.from),
         limit: pageSize,
         offset: requestOffset,
-        onlyAvailableForPayment: false,
+        onlyAvailableForPayment,
         organizationNetId: activeFilters.organizationNetId || undefined,
         to: toQueryDate(activeFilters.to),
         typePaymentTask: activeFilters.type,
@@ -499,6 +501,7 @@ function useAvailablePaymentsOrganizationsLoader({
 function useAvailablePaymentsLoader({
   activeFilters,
   filterError,
+  onlyAvailableForPayment,
   pageSize,
   reloadKey,
   resetGroups,
@@ -512,6 +515,7 @@ function useAvailablePaymentsLoader({
 }: {
   activeFilters: FilterDraft
   filterError: string | null
+  onlyAvailableForPayment: boolean
   pageSize: number
   reloadKey: number
   resetGroups: () => void
@@ -542,7 +546,7 @@ function useAvailablePaymentsLoader({
           from: toQueryDate(activeFilters.from),
           limit: pageSize,
           offset: 0,
-          onlyAvailableForPayment: false,
+          onlyAvailableForPayment,
           organizationNetId: activeFilters.organizationNetId || undefined,
           to: toQueryDate(activeFilters.to),
           typePaymentTask: activeFilters.type,
@@ -579,6 +583,7 @@ function useAvailablePaymentsLoader({
   }, [
     activeFilters,
     filterError,
+    onlyAvailableForPayment,
     pageSize,
     reloadKey,
     resetGroups,
@@ -1039,6 +1044,7 @@ function renderTasksCell(
 
 function countMarkedModels(group: GroupedPaymentTask, markedModels: AvailablePaymentTaskModel[]): number {
   const tasks = group.SupplyPaymentTasks || []
+  const taskRefs = new Set(tasks)
   const taskKeys = new Set(tasks.flatMap((task) => {
     const taskKey = getSupplyPaymentTaskKey(task)
 
@@ -1048,7 +1054,7 @@ function countMarkedModels(group: GroupedPaymentTask, markedModels: AvailablePay
   return markedModels.filter((model) => {
     const taskKey = getSupplyPaymentTaskKey(model.task)
 
-    return tasks.includes(model.task) || Boolean(taskKey && taskKeys.has(taskKey))
+    return taskRefs.has(model.task) || Boolean(taskKey && taskKeys.has(taskKey))
   }).length
 }
 

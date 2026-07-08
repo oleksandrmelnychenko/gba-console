@@ -116,7 +116,14 @@ export type PaymentShopItem = EntityFields & {
   SaleId?: number
 }
 
+export type PaymentShopItemsResponse = {
+  items: PaymentShopItem[]
+  totalRowsQty?: number
+}
+
 export type PaymentShopFilters = {
+  limit?: number
+  offset?: number
   saleDateFrom: string
   saleDateTo: string
   saleNumber: string

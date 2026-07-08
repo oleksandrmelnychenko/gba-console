@@ -1,6 +1,6 @@
 import { ActionIcon, Box, Group, Text, Tooltip } from '@mantine/core'
 import { Package, Trash2 } from 'lucide-react'
-import { memo, useMemo, useRef } from 'react'
+import { memo, useMemo } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { DataTable } from '../../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../../shared/ui/data-table/types'
@@ -75,20 +75,15 @@ export const WizardShoppingCartGrid = memo(function WizardShoppingCartGrid({
     return { amount: roundMoney(amount), amountLocal: roundMoney(amountLocal), qty }
   }, [items, useEurToUah])
 
-  // The '#' column reads the row index through a ref-backed map so the column
-  // defs don't depend on `items` — otherwise every cart change (and, before
-  // memoization, every parent render) rebuilt all TanStack column defs.
-  const indexByItemRef = useRef<Map<SalesUkraineOrderItem, number>>(new Map())
-
-  indexByItemRef.current = useMemo(() => new Map(items.map((item, index) => [item, index])), [items])
+  const indexByItem = useMemo(() => new Map(items.map((item, index) => [item, index])), [items])
 
   const columns = useMemo<DataTableColumn<SalesUkraineOrderItem>[]>(() => {
     const result: DataTableColumn<SalesUkraineOrderItem>[] = [
       {
         id: 'index',
         header: '#',
-        accessor: (item) => indexByItemRef.current.get(item) ?? 0,
-        cell: (item) => <Text className="new-sale-cart__index">{(indexByItemRef.current.get(item) ?? 0) + 1}</Text>,
+        accessor: (item) => indexByItem.get(item) ?? 0,
+        cell: (item) => <Text className="new-sale-cart__index">{(indexByItem.get(item) ?? 0) + 1}</Text>,
         width: 42,
         minWidth: 42,
         enableSorting: false,
@@ -222,7 +217,7 @@ export const WizardShoppingCartGrid = memo(function WizardShoppingCartGrid({
     }
 
     return result
-  }, [busy, localCurrencyCode, onRemove, t, useEurToUah])
+  }, [busy, indexByItem, localCurrencyCode, onRemove, t, useEurToUah])
 
   return (
     <div className="new-sale-cart">

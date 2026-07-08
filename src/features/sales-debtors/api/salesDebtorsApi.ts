@@ -27,10 +27,11 @@ export async function getFilteredDebtors(filters: DebtorsFilters): Promise<Clien
 }
 
 export async function exportDebtorsDocument(
-  filters: Pick<DebtorsFilters, 'typeAgreement' | 'userNetId' | 'organizationNetId' | 'typeCurrency'>,
+  filters: Pick<DebtorsFilters, 'days' | 'typeAgreement' | 'userNetId' | 'organizationNetId' | 'typeCurrency'>,
 ): Promise<DebtorsDocumentResult> {
   const result = await apiRequest<unknown>('/debtors/document/export', {
     query: {
+      days: filters.days,
       organizationNetId: filters.organizationNetId || undefined,
       typeAgreement: filters.typeAgreement,
       typeCurrency: filters.typeCurrency || undefined,

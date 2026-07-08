@@ -30,6 +30,7 @@ import { useAuth } from '../../auth/useAuth'
 import {
   cancelPaymentAccountExchange,
   cancelPaymentAccountTransfer,
+  calculatePaymentAccountExchange,
   createPaymentAccountExchange,
   createPaymentAccount,
   createPaymentAccountTransfer,
@@ -38,6 +39,7 @@ import {
   getPaymentAccountBanks,
   getPaymentAccountCurrencyActivity,
   getPaymentAccountCurrencies,
+  getPaymentAccountCurrencyTraders,
   getPaymentAccountExchanges,
   getPaymentAccountOrganizations,
   getPaymentAccountPaymentMovements,
@@ -50,6 +52,7 @@ import { PAYMENT_ACCOUNT_CREATE_PERMISSION, PAYMENT_ACCOUNT_EDIT_PERMISSION } fr
 import type {
   BankItem,
   Currency,
+  CurrencyTrader,
   NamedEntity,
   Organization,
   PaymentAccount,
@@ -162,6 +165,7 @@ type PaymentAccountTransferDraft = {
 type PaymentAccountExchangeDraft = {
   amount: string
   comment: string
+  currencyTraderNetId: string
   exchangeRate: string
   fromDate: string
   fromPaymentCurrencyRegisterNetId: string
@@ -1573,16 +1577,31 @@ function PaymentAccountExchangeModal({
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(false)
   const [isSubmitting, setSubmitting] = useValueState(false)
+  const [isLoadingTraders, setLoadingTraders] = useValueState(false)
+  const [isCalculatingExchange, setCalculatingExchange] = useValueState(false)
   const [bankAccounts, setBankAccounts] = useValueState<PaymentAccount[]>([])
   const [movements, setMovements] = useValueState<PaymentMovement[]>([])
+  const [currencyTraders, setCurrencyTraders] = useValueState<CurrencyTrader[]>([])
   const currencyRegisters = getVisibleCurrencyRegisters(account)
   const selectedFromRegister = findCurrencyRegister(currencyRegisters, draft.fromPaymentCurrencyRegisterNetId)
   const destinationRegisters = getExchangeDestinationRegisters([account, ...bankAccounts], selectedFromRegister)
   const selectedToRegister = findCurrencyRegister(destinationRegisters, draft.toPaymentCurrencyRegisterNetId)
+  const selectedFromRegisterNetId = getEntityValue(selectedFromRegister)
+  const selectedToRegisterNetId = getEntityValue(selectedToRegister)
+  const traderLookupRegisterNetId = selectedToRegisterNetId || selectedFromRegisterNetId
   const selectedMovement = findEntity(movements, draft.movementNetId)
+  const selectedTrader = findCurrencyTrader(currencyTraders, draft.currencyTraderNetId)
   const amount = parseAmount(draft.amount)
   const exchangeRate = parseAmount(draft.exchangeRate)
-  const convertedAmount = amount > 0 && exchangeRate > 0 ? formatMoney(getConvertedExchangeAmount(amount, exchangeRate, selectedFromRegister)) : '—'
+  const exchangeCurrencyCode = selectedFromRegister?.Currency?.Code || ''
+  const exchangeRateCurrencyCode = getExchangeRateCurrencyCode(selectedFromRegister, selectedToRegister)
+  const exchangeTraderOptions = toCurrencyTraderSelectOptions(currencyTraders, exchangeRateCurrencyCode)
+  const [convertedAmount, setConvertedAmount] = useValueState<number | null>(null)
+  const convertedAmountLabel = isCalculatingExchange
+    ? t('Рахується')
+    : convertedAmount !== null
+      ? formatMoney(convertedAmount)
+      : '—'
 
   useEffect(() => {
     if (!opened) {
@@ -1605,6 +1624,7 @@ function PaymentAccountExchangeModal({
 
         setBankAccounts(nextBankAccounts)
         setMovements(nextMovements)
+        setCurrencyTraders([])
         setDraft(createExchangeDraft(account, nextMovements))
       })
       .catch((loadError: unknown) => {
@@ -1621,7 +1641,108 @@ function PaymentAccountExchangeModal({
     return () => {
       isActive = false
     }
-  }, [account, opened, setBankAccounts, setDraft, setError, setLoading, setMovements, t])
+  }, [account, opened, setBankAccounts, setCurrencyTraders, setDraft, setError, setLoading, setMovements, t])
+
+  useEffect(() => {
+    if (!opened) {
+      return
+    }
+
+    if (!traderLookupRegisterNetId) {
+      setCurrencyTraders([])
+      return
+    }
+
+    let isActive = true
+
+    setLoadingTraders(true)
+
+    void getPaymentAccountCurrencyTraders(traderLookupRegisterNetId)
+      .then((traders) => {
+        if (!isActive) {
+          return
+        }
+
+        setCurrencyTraders(traders)
+        setDraft((current) => {
+          if (!current.currencyTraderNetId || traders.some((trader) => getEntityValue(trader) === current.currencyTraderNetId)) {
+            return current
+          }
+
+          return { ...current, currencyTraderNetId: '' }
+        })
+      })
+      .catch((loadError: unknown) => {
+        if (isActive) {
+          setCurrencyTraders([])
+          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити курси трейдерів'))
+        }
+      })
+      .finally(() => {
+        if (isActive) {
+          setLoadingTraders(false)
+        }
+      })
+
+    return () => {
+      isActive = false
+    }
+  }, [
+    opened,
+    setCurrencyTraders,
+    setDraft,
+    setError,
+    setLoadingTraders,
+    t,
+    traderLookupRegisterNetId,
+  ])
+
+  useEffect(() => {
+    if (!opened || !amount || amount <= 0 || !exchangeRate || exchangeRate <= 0 || !exchangeCurrencyCode) {
+      setConvertedAmount(null)
+      setCalculatingExchange(false)
+      return
+    }
+
+    let isActive = true
+
+    setCalculatingExchange(true)
+
+    void calculatePaymentAccountExchange({
+      amount,
+      currencyCode: exchangeCurrencyCode,
+      exchangeRate,
+    })
+      .then((nextAmount) => {
+        if (isActive) {
+          setConvertedAmount(nextAmount)
+        }
+      })
+      .catch((calculateError: unknown) => {
+        if (isActive) {
+          setConvertedAmount(null)
+          setError(calculateError instanceof Error ? calculateError.message : t('Не вдалося перерахувати суму після конвертації'))
+        }
+      })
+      .finally(() => {
+        if (isActive) {
+          setCalculatingExchange(false)
+        }
+      })
+
+    return () => {
+      isActive = false
+    }
+  }, [
+    amount,
+    exchangeCurrencyCode,
+    exchangeRate,
+    opened,
+    setCalculatingExchange,
+    setConvertedAmount,
+    setError,
+    t,
+  ])
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -1640,6 +1761,7 @@ function PaymentAccountExchangeModal({
       await createPaymentAccountExchange({
         Amount: amount,
         Comment: draft.comment.trim(),
+        CurrencyTrader: selectedTrader,
         ExchangeRate: exchangeRate,
         FromDate: toLocalIsoDateTime(draft.fromDate, draft.time),
         FromPaymentCurrencyRegister: selectedFromRegister,
@@ -1678,6 +1800,8 @@ function PaymentAccountExchangeModal({
               value={draft.fromPaymentCurrencyRegisterNetId || null}
               onChange={(value) => setDraft((current) => ({
                 ...current,
+                currencyTraderNetId: '',
+                exchangeRate: '',
                 fromPaymentCurrencyRegisterNetId: value || '',
                 toPaymentCurrencyRegisterNetId: '',
               }))}
@@ -1689,7 +1813,12 @@ function PaymentAccountExchangeModal({
               required
               searchable
               value={draft.toPaymentCurrencyRegisterNetId || null}
-              onChange={(value) => setDraft((current) => ({ ...current, toPaymentCurrencyRegisterNetId: value || '' }))}
+              onChange={(value) => setDraft((current) => ({
+                ...current,
+                currencyTraderNetId: '',
+                exchangeRate: '',
+                toPaymentCurrencyRegisterNetId: value || '',
+              }))}
             />
             <TextInput
               disabled={isSubmitting}
@@ -1699,15 +1828,36 @@ function PaymentAccountExchangeModal({
               value={draft.amount}
               onChange={(event) => setDraft((current) => ({ ...current, amount: event.currentTarget.value }))}
             />
+            <Select
+              data={exchangeTraderOptions}
+              disabled={!selectedFromRegister || !selectedToRegister || isLoading || isLoadingTraders || isSubmitting}
+              label={t('Курс трейдера')}
+              searchable
+              value={draft.currencyTraderNetId || null}
+              onChange={(value) => {
+                const nextTrader = findCurrencyTrader(currencyTraders, value || '')
+                const nextRate = getTraderExchangeRate(nextTrader, exchangeRateCurrencyCode)
+
+                setDraft((current) => ({
+                  ...current,
+                  currencyTraderNetId: value || '',
+                  exchangeRate: nextRate ? String(nextRate.ExchangeRate) : current.exchangeRate,
+                }))
+              }}
+            />
             <TextInput
               disabled={isSubmitting}
               inputMode="decimal"
               label={t('Курс')}
               required
               value={draft.exchangeRate}
-              onChange={(event) => setDraft((current) => ({ ...current, exchangeRate: event.currentTarget.value }))}
+              onChange={(event) => setDraft((current) => ({
+                ...current,
+                currencyTraderNetId: '',
+                exchangeRate: event.currentTarget.value,
+              }))}
             />
-            <InfoCell label={t('Сума після конвертації')} value={convertedAmount} />
+            <InfoCell label={t('Сума після конвертації')} value={convertedAmountLabel} />
             <TextInput
               disabled={isSubmitting}
               label={t('Вхідний номер')}
@@ -2142,6 +2292,7 @@ function createExchangeDraft(
   return {
     amount: '',
     comment: '',
+    currencyTraderNetId: '',
     exchangeRate: '',
     fromDate: formatLocalDate(now),
     fromPaymentCurrencyRegisterNetId: getEntityValue(selectedFromRegister),
@@ -2229,6 +2380,10 @@ function findCurrencyRegister(registers: PaymentCurrencyRegister[], value: strin
   return findEntity(registers, value)
 }
 
+function findCurrencyTrader(traders: CurrencyTrader[], value: string): CurrencyTrader | null {
+  return findEntity(traders, value)
+}
+
 function findEntity<T extends { Id?: number; NetUid?: string }>(items: T[], value: string): T | null {
   if (!value) {
     return null
@@ -2257,6 +2412,52 @@ function toCurrencyRegisterSelectOptions(registers: PaymentCurrencyRegister[]): 
 
     return options
   }, [])
+}
+
+function toCurrencyTraderSelectOptions(
+  traders: CurrencyTrader[],
+  currencyCode: string,
+): Array<{ label: string; value: string }> {
+  return traders.reduce<Array<{ label: string; value: string }>>((options, trader) => {
+    const value = getEntityValue(trader)
+    const rate = getTraderExchangeRate(trader, currencyCode)
+
+    if (value && rate?.ExchangeRate) {
+      options.push({
+        label: `${getCurrencyTraderName(trader)} · ${rate.CurrencyName || currencyCode} ${formatMoney(rate.ExchangeRate)}`,
+        value,
+      })
+    }
+
+    return options
+  }, [])
+}
+
+function getTraderExchangeRate(
+  trader: CurrencyTrader | null,
+  currencyCode: string,
+): NonNullable<CurrencyTrader['CurrencyTraderExchangeRates']>[number] | null {
+  if (!trader || !currencyCode) {
+    return null
+  }
+
+  return (trader.CurrencyTraderExchangeRates || []).find(
+    (rate) => rate.CurrencyName?.toLowerCase() === currencyCode.toLowerCase() && typeof rate.ExchangeRate === 'number',
+  ) || null
+}
+
+function getCurrencyTraderName(trader: CurrencyTrader): string {
+  return [trader.FirstName, trader.LastName, trader.MiddleName].filter(Boolean).join(' ') || getEntityValue(trader) || '—'
+}
+
+function getExchangeRateCurrencyCode(
+  selectedFromRegister: PaymentCurrencyRegister | null,
+  selectedToRegister: PaymentCurrencyRegister | null,
+): string {
+  const fromCode = selectedFromRegister?.Currency?.Code || ''
+  const toCode = selectedToRegister?.Currency?.Code || ''
+
+  return toCode.toLowerCase() === 'uah' ? fromCode : toCode
 }
 
 function toPaymentMovementOptions(movements: PaymentMovement[]): Array<{ label: string; value: string }> {
@@ -2351,20 +2552,6 @@ function validateExchangeDraft(
   }
 
   return null
-}
-
-function getConvertedExchangeAmount(
-  amount: number,
-  exchangeRate: number,
-  selectedFromRegister: PaymentCurrencyRegister | null,
-): number {
-  if (!amount || !exchangeRate) {
-    return 0
-  }
-
-  return selectedFromRegister?.Currency?.Code?.toLowerCase() === 'uah'
-    ? amount / exchangeRate
-    : amount * exchangeRate
 }
 
 function toLocalIsoDateTime(date: string, time: string): string {

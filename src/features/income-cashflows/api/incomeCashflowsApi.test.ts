@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import { IncomeCounterpartySearchType } from '../types'
-import { searchIncomeCashflowCounterparties } from './incomeCashflowsApi'
+import { getIncomeCashflowByNetId, searchIncomeCashflowCounterparties } from './incomeCashflowsApi'
 
 vi.mock('../../../shared/api/apiClient', () => ({
   apiRequest: vi.fn(),
@@ -56,6 +56,26 @@ describe('income cashflow API lookup contracts', () => {
         limit: 20,
         offset: 0,
         value: 'dhl',
+      },
+    })
+  })
+
+  it('loads a focused income payment order by NetUid for cash-flow drilldown', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      AssignedPaymentOrders: null,
+      NetUid: 'income-order-1',
+      Number: 'ПКО-1',
+    })
+
+    await expect(getIncomeCashflowByNetId('income-order-1')).resolves.toEqual({
+      AssignedPaymentOrders: [],
+      NetUid: 'income-order-1',
+      Number: 'ПКО-1',
+    })
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/payments/orders/income/get', {
+      query: {
+        netId: 'income-order-1',
       },
     })
   })

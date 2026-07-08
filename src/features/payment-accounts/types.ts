@@ -18,6 +18,20 @@ export type Currency = NamedEntity
 
 export type Organization = NamedEntity
 
+export type CurrencyTraderExchangeRate = EntityFields & {
+  CurrencyName?: string
+  ExchangeRate?: number
+  FromDate?: string
+}
+
+export type CurrencyTrader = EntityFields & {
+  CurrencyTraderExchangeRates?: CurrencyTraderExchangeRate[]
+  FirstName?: string
+  LastName?: string
+  MiddleName?: string
+  PhoneNumber?: string
+}
+
 export const PaymentRegisterType = {
   Cash: 0,
   Card: 1,
@@ -126,6 +140,7 @@ export type PaymentRegisterTransfer = EntityFields & {
 export type PaymentRegisterCurrencyExchange = EntityFields & {
   Amount?: number
   Comment?: string
+  CurrencyTrader?: CurrencyTrader | null
   ExchangeRate?: number
   FromDate?: string
   FromPaymentCurrencyRegister?: PaymentCurrencyRegister | null

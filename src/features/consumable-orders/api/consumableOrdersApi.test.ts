@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
-import { calculateConsumableOrder, updateConsumableOrder } from './consumableOrdersApi'
+import { calculateConsumableOrder, getUnpaidConsumableOrdersByOrganization, updateConsumableOrder } from './consumableOrdersApi'
 import type { ConsumablesOrder } from '../types'
 
 vi.mock('../../../shared/api/apiClient', () => ({
@@ -61,6 +61,40 @@ describe('consumableOrdersApi', () => {
     expect(payload.ConsumablesOrderItems?.[0]?.NetUid).toBe('2d11197c-d74e-4d15-b87a-4074750d79c9')
     expect(payload.ConsumablesOrderItems?.[1]).not.toHaveProperty('NetUid')
     expect(payload.ConsumablesOrderItems?.[1]?.PaymentCostMovementOperation?.PaymentCostMovement).not.toHaveProperty('NetUid')
+  })
+
+  it('loads unpaid consumable orders for a supplier organization', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      Collection: [
+        {
+          NetUid: 'order-1',
+          ConsumablesOrderItems: null,
+          OutcomePaymentOrderConsumablesOrders: null,
+        },
+      ],
+    })
+
+    const result = await getUnpaidConsumableOrdersByOrganization('supplier-1')
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/consumables/orders/all/unpaid', {
+      query: {
+        organizationNetId: 'supplier-1',
+      },
+    })
+    expect(result).toEqual([
+      expect.objectContaining({
+        ConsumablesOrderItems: [],
+        NetUid: 'order-1',
+        OutcomePaymentOrderConsumablesOrders: [],
+      }),
+    ])
+  })
+
+  it('does not call the unpaid orders endpoint without supplier organization id', async () => {
+    const result = await getUnpaidConsumableOrdersByOrganization('')
+
+    expect(apiRequestMock).not.toHaveBeenCalled()
+    expect(result).toEqual([])
   })
 })
 
