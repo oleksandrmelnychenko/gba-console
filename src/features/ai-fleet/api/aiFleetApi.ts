@@ -8,7 +8,7 @@ import type {
 
 export const AI_FLEET_SERVICES: AiFleetServiceDefinition[] = [
   {
-    description: 'Рейтинги асортименту, здоровʼя SKU, залишки, маржа, повернення та картка товару 360.',
+    description: 'Рейтинги асортименту, стан товарних позицій, залишки, маржа, повернення та повна картка товару.',
     healthPath: '/products/intelligence/health',
     id: 'products',
     location: '/products/assortment',
@@ -16,7 +16,7 @@ export const AI_FLEET_SERVICES: AiFleetServiceDefinition[] = [
     source: 'ProductsApi',
   },
   {
-    description: 'Прогноз продажів по клієнту/товару, графіки очікуваного попиту.',
+    description: 'Прогноз продажів за клієнтом і товаром, графіки очікуваного попиту.',
     healthPath: '/sales/prediction/health',
     id: 'forecast',
     location: '/sales/ukraine/prediction',
@@ -24,7 +24,7 @@ export const AI_FLEET_SERVICES: AiFleetServiceDefinition[] = [
     source: 'ForecastApi',
   },
   {
-    description: 'AI-завдання продажів, пріоритети менеджерів, cockpit керівника.',
+    description: 'Завдання для відділу продажів, пріоритети менеджерів та панель керівника.',
     healthPath: '/sales/cockpit/health',
     id: 'nba',
     location: '/sales/cockpit, /sales/cockpit/head',
@@ -32,7 +32,7 @@ export const AI_FLEET_SERVICES: AiFleetServiceDefinition[] = [
     source: 'GbaNbaApi',
   },
   {
-    description: 'Кокпіт байера, план закупівель, графіки попиту та бюджетний кошик.',
+    description: 'Робоче місце закупівельника, план закупівель, графіки попиту та бюджетний кошик.',
     healthPath: '/procurement/health',
     id: 'procurement',
     location: '/basket-supply-ukraine-order/dashboard, /basket-supply-ukraine-order/cockpit',
@@ -40,7 +40,7 @@ export const AI_FLEET_SERVICES: AiFleetServiceDefinition[] = [
     source: 'ProcurementApi',
   },
   {
-    description: 'Оцінка платоспроможності клієнта та ризикові сигнали в картці клієнта.',
+    description: 'Оцінка платоспроможності клієнта та сигнали ризику в його картці.',
     healthPath: '/solvency/health',
     id: 'solvency',
     location: 'Картка клієнта -> Платоспроможність',
@@ -48,7 +48,7 @@ export const AI_FLEET_SERVICES: AiFleetServiceDefinition[] = [
     source: 'SolvencyApi',
   },
   {
-    description: 'Рекомендації до переміщення на Україну та доповнення кошика.',
+    description: 'Рекомендації щодо переміщення на Україну та доповнення кошика.',
     healthPath: '/recommendations/health',
     id: 'recommendations',
     location: '/basket-supply-ukraine-order/recommendations',
@@ -56,7 +56,7 @@ export const AI_FLEET_SERVICES: AiFleetServiceDefinition[] = [
     source: 'RecommendationApi',
   },
   {
-    description: 'Рекомендації ціни та підказки по прайсу для клієнтських сценаріїв.',
+    description: 'Рекомендації цін та підказки з ціноутворення для клієнтських сценаріїв.',
     healthPath: '/pricing/health',
     id: 'pricing',
     location: 'Прайси / підказки ціноутворення',

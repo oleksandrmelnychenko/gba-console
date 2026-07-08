@@ -34,13 +34,18 @@ import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableD
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { notifications } from '@mantine/notifications'
-import { ArrowLeft, ArrowLeftRight, Check, ChevronLeft, ChevronRight, CircleAlert, ClipboardList, Download, FileText, History, Image as ImageIcon, Package, Plus, RefreshCw, Save, SquarePen, Trash2 } from 'lucide-react'
+import { ArrowLeft, ArrowLeftRight, Check, ChevronLeft, ChevronRight, CircleAlert, ClipboardList, FileDown, FileText, History, Image as ImageIcon, Package, Plus, RefreshCw, Save, SquarePen, Trash2 } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { type FormEvent, useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import './products.css'
 import { getDocumentHref } from '../../../shared/url/getDocumentHref'
+import {
+  closePendingExportDocumentWindow,
+  openExportDocumentInWindow,
+  openPendingExportDocumentWindow,
+} from '../../../shared/documents/openExportDocument'
 import { toProxiedAssetUrl } from '../../../shared/url/proxiedAssetUrl'
 import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
@@ -1866,6 +1871,8 @@ function ProductMovementPanel({ product }: { product: Product }) {
     setExporting(true)
     setError(null)
 
+    const pendingWindow = openPendingExportDocumentWindow(t('Друк PDF'))
+
     try {
       const nextDocument = await exportProductMovementsDocument({
         from: dateFrom,
@@ -1875,8 +1882,15 @@ function ProductMovementPanel({ product }: { product: Product }) {
         types: selectedTypes,
       })
 
+      if (nextDocument.PdfDocumentURL && openExportDocumentInWindow(pendingWindow, nextDocument.PdfDocumentURL)) {
+        setExportDocument(null)
+        return
+      }
+
+      closePendingExportDocumentWindow(pendingWindow)
       setExportDocument(nextDocument)
     } catch (exportError) {
+      closePendingExportDocumentWindow(pendingWindow)
       setError(exportError instanceof Error ? exportError.message : t('Не вдалося сформувати документ руху товару'))
     } finally {
       setExporting(false)
@@ -1915,8 +1929,8 @@ function ProductMovementPanel({ product }: { product: Product }) {
         <Button disabled={Boolean(filterError) || Boolean(typesError)} leftSection={<RefreshCw size={18} />} loading={isLoading} variant="outline" onClick={() => reload()}>
           {t('Оновити')}
         </Button>
-        <Button disabled={!productNetUid || Boolean(filterError) || Boolean(typesError)} leftSection={<Download size={18} />} loading={isExporting} variant="default" onClick={() => void exportMovements()}>
-          {t('Друк')}
+        <Button disabled={!productNetUid || Boolean(filterError) || Boolean(typesError)} leftSection={<FileDown size={18} />} loading={isExporting} variant="default" onClick={() => void exportMovements()}>
+          {t('Друк PDF')}
         </Button>
       </Group>
       <div className="product-movement-type-filters">
@@ -1956,7 +1970,7 @@ function ProductMovementPanel({ product }: { product: Product }) {
       )}
       <ProductDocumentDownloadModal
         document={exportDocument}
-        title={t('Документ руху товару')}
+        title={t('Друк PDF')}
         onClose={() => setExportDocument(null)}
       />
     </Stack>
@@ -1979,20 +1993,20 @@ function ProductDocumentDownloadModal({
       <Stack gap="sm">
         {document?.DocumentURL || document?.PdfDocumentURL ? (
           <>
-            {document.DocumentURL ? (
-              <Anchor href={getDocumentHref(document.DocumentURL)} target="_blank" rel="noreferrer" className="document-link">
-                <span className="document-link-badge document-link-badge-excel">
-                  <ExcelIcon size={22} />
-                </span>
-                <span>{t('Excel документ')}</span>
-              </Anchor>
-            ) : null}
             {document.PdfDocumentURL ? (
               <Anchor href={getDocumentHref(document.PdfDocumentURL)} target="_blank" rel="noreferrer" className="document-link">
                 <span className="document-link-badge document-link-badge-pdf">
                   <FileText size={22} strokeWidth={1.8} />
                 </span>
                 <span>{t('PDF документ')}</span>
+              </Anchor>
+            ) : null}
+            {document.DocumentURL ? (
+              <Anchor href={getDocumentHref(document.DocumentURL)} target="_blank" rel="noreferrer" className="document-link">
+                <span className="document-link-badge document-link-badge-excel">
+                  <ExcelIcon size={22} />
+                </span>
+                <span>{t('Excel документ')}</span>
               </Anchor>
             ) : null}
           </>

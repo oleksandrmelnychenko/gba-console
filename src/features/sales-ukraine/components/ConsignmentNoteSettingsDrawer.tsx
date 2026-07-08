@@ -8,6 +8,7 @@ import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import {
   addSaleConsignmentNoteSetting,
   getSaleConsignmentNoteSettings,
@@ -230,6 +231,31 @@ export function ConsignmentNoteSettingsDrawer({
 
   return (
     <AppDrawer
+      classNames={{ body: 'app-form-sheet consignment-note-settings-body', title: 'app-sheet-title-mono' }}
+      footer={(
+        <Group className="consignment-note-settings-footer" justify="flex-end" wrap="nowrap">
+          <Button disabled={!noteState.isEdited || isSaving} variant="default" onClick={resetChanges}>
+            {t('Скасувати')}
+          </Button>
+          {hasExistingSetting && (
+            <Button color="red" disabled={isSaving || isPrinting} variant="light" onClick={deleteSetting}>
+              {t('Видалити')}
+            </Button>
+          )}
+          <Button
+            color={CREATE_ACTION_COLOR}
+            disabled={!noteState.isEdited || isPrinting}
+            loading={isSaving}
+            variant={hasExistingSetting ? 'filled' : 'outline'}
+            onClick={saveSetting}
+          >
+            {hasExistingSetting ? t('Зберегти') : t('Створити')}
+          </Button>
+          <Button color={CREATE_ACTION_COLOR} leftSection={<Truck size={16} />} loading={isPrinting} onClick={printDocument}>
+            {t('Друк')}
+          </Button>
+        </Group>
+      )}
       offset={8}
       opened={opened}
       padding="lg"
@@ -239,147 +265,133 @@ export function ConsignmentNoteSettingsDrawer({
       title={t('Друк ТТН')}
       onClose={onClose}
     >
-      <Stack gap="lg">
+      <Stack className="consignment-note-settings" gap="md">
         {noteState.error && (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {noteState.error}
           </Alert>
         )}
 
-        <Group className="sales-drawer-hero" align="end" gap="sm">
-          <Box style={{ flex: '1 1 260px' }}>
-            <Text className="sales-drawer-document-label">
+        <Box className="consignment-note-settings-hero">
+          <Box className="consignment-note-settings-document">
+            <Text className="app-section-title consignment-note-settings-eyebrow">
               {t('По документу')}
             </Text>
-            <Text className="sales-drawer-document-title">
+            <Text className="consignment-note-settings-document-title">
               {t('Накладна')} {displayValue(sale?.SaleNumber?.Value)} {t('від')} {formatDateTime(getConsignmentNoteDate(sale))}
             </Text>
           </Box>
           <Select
+            className="consignment-note-settings-select"
             clearable
             searchable
             data={settingOptions}
             disabled={isLoading}
             label={t('Існуючі налаштування')}
             placeholder={t('Обрати')}
-            style={{ flex: '1 1 260px' }}
             value={noteState.selectedSettingKey}
             onChange={selectSetting}
           />
-        </Group>
+        </Box>
 
-        <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
-          <TextInput
-            label={t('Назва')}
-            maxLength={200}
-            value={noteState.setting.Name || ''}
-            onChange={(event) => updateTextField('Name', event.currentTarget.value)}
-          />
-          <TextInput
-            label={t('Номер')}
-            value={noteState.setting.Number || ''}
-            onChange={(event) => updateTextField('Number', event.currentTarget.value)}
-          />
-          <TextInput
-            label={t('Марка та номер автомобіля')}
-            maxLength={200}
-            value={noteState.setting.BrandAndNumberCar || ''}
-            onChange={(event) => updateTextField('BrandAndNumberCar', event.currentTarget.value)}
-          />
-          <TextInput
-            label={t('Номер причепа')}
-            maxLength={200}
-            value={noteState.setting.TrailerNumber || ''}
-            onChange={(event) => updateTextField('TrailerNumber', event.currentTarget.value)}
-          />
-          <TextInput
-            label={t('Замовник')}
-            maxLength={200}
-            value={noteState.setting.Customer || ''}
-            onChange={(event) => updateTextField('Customer', event.currentTarget.value)}
-          />
-          <TextInput
-            label={t('Водій')}
-            maxLength={200}
-            value={noteState.setting.Driver || ''}
-            onChange={(event) => updateTextField('Driver', event.currentTarget.value)}
-          />
-          <TextInput
-            label={t('Перевізник')}
-            maxLength={200}
-            value={noteState.setting.Carrier || ''}
-            onChange={(event) => updateTextField('Carrier', event.currentTarget.value)}
-          />
-          <TextInput
-            label={t('Вид перевозки')}
-            maxLength={200}
-            value={noteState.setting.TypeTransportation || ''}
-            onChange={(event) => updateTextField('TypeTransportation', event.currentTarget.value)}
-          />
-          <TextInput
-            label={t('Пункт розвантаження')}
-            maxLength={500}
-            value={noteState.setting.UnloadingPoint || ''}
-            onChange={(event) => updateTextField('UnloadingPoint', event.currentTarget.value)}
-          />
-          <TextInput
-            label={t('Пункт завантаження')}
-            maxLength={500}
-            value={noteState.setting.LoadingPoint || ''}
-            onChange={(event) => updateTextField('LoadingPoint', event.currentTarget.value)}
-          />
-        </SimpleGrid>
+        <Box className="app-section-card consignment-note-settings-section">
+          <Text className="app-section-title" fw={600}>{t('Дані ТТН')}</Text>
+          <SimpleGrid className="consignment-note-settings-grid" cols={{ base: 1, md: 2 }} spacing="sm">
+            <TextInput
+              label={t('Назва')}
+              maxLength={200}
+              value={noteState.setting.Name || ''}
+              onChange={(event) => updateTextField('Name', event.currentTarget.value)}
+            />
+            <TextInput
+              label={t('Номер')}
+              value={noteState.setting.Number || ''}
+              onChange={(event) => updateTextField('Number', event.currentTarget.value)}
+            />
+            <TextInput
+              label={t('Марка та номер автомобіля')}
+              maxLength={200}
+              value={noteState.setting.BrandAndNumberCar || ''}
+              onChange={(event) => updateTextField('BrandAndNumberCar', event.currentTarget.value)}
+            />
+            <TextInput
+              label={t('Номер причепа')}
+              maxLength={200}
+              value={noteState.setting.TrailerNumber || ''}
+              onChange={(event) => updateTextField('TrailerNumber', event.currentTarget.value)}
+            />
+            <TextInput
+              label={t('Замовник')}
+              maxLength={200}
+              value={noteState.setting.Customer || ''}
+              onChange={(event) => updateTextField('Customer', event.currentTarget.value)}
+            />
+            <TextInput
+              label={t('Водій')}
+              maxLength={200}
+              value={noteState.setting.Driver || ''}
+              onChange={(event) => updateTextField('Driver', event.currentTarget.value)}
+            />
+            <TextInput
+              label={t('Перевізник')}
+              maxLength={200}
+              value={noteState.setting.Carrier || ''}
+              onChange={(event) => updateTextField('Carrier', event.currentTarget.value)}
+            />
+            <TextInput
+              label={t('Вид перевезення')}
+              maxLength={200}
+              value={noteState.setting.TypeTransportation || ''}
+              onChange={(event) => updateTextField('TypeTransportation', event.currentTarget.value)}
+            />
+            <TextInput
+              label={t('Пункт розвантаження')}
+              maxLength={500}
+              value={noteState.setting.UnloadingPoint || ''}
+              onChange={(event) => updateTextField('UnloadingPoint', event.currentTarget.value)}
+            />
+            <TextInput
+              label={t('Пункт завантаження')}
+              maxLength={500}
+              value={noteState.setting.LoadingPoint || ''}
+              onChange={(event) => updateTextField('LoadingPoint', event.currentTarget.value)}
+            />
+          </SimpleGrid>
+        </Box>
 
-        <Stack gap="sm">
-          <Text fw={700}>{t('Автомобіль')}</Text>
+        <Box className="app-section-card consignment-note-settings-section">
+          <Text className="app-section-title" fw={600}>{t('Автомобіль')}</Text>
           <TextInput
             label={t('Заголовок')}
             maxLength={200}
             value={noteState.setting.CarLabel || ''}
             onChange={(event) => updateTextField('CarLabel', event.currentTarget.value)}
           />
-          <SimpleGrid cols={{ base: 2, md: 5 }} spacing="sm">
+          <SimpleGrid className="consignment-note-settings-dimensions" cols={{ base: 2, md: 5 }} spacing="sm">
             <NumberInput label={t('Довжина, мм')} value={noteState.setting.CarLength || 0} onChange={(value) => updateNumberField('CarLength', value)} />
             <NumberInput label={t('Ширина, мм')} value={noteState.setting.CarWidth || 0} onChange={(value) => updateNumberField('CarWidth', value)} />
             <NumberInput label={t('Висота, мм')} value={noteState.setting.CarHeight || 0} onChange={(value) => updateNumberField('CarHeight', value)} />
             <NumberInput label={t('Вага нетто, т')} value={noteState.setting.CarNetWeight || 0} onChange={(value) => updateNumberField('CarNetWeight', value)} />
             <NumberInput label={t('Вага брутто, т')} value={noteState.setting.CarGrossWeight || 0} onChange={(value) => updateNumberField('CarGrossWeight', value)} />
           </SimpleGrid>
-        </Stack>
+        </Box>
 
-        <Stack gap="sm">
-          <Text fw={700}>{t('Причіп')}</Text>
+        <Box className="app-section-card consignment-note-settings-section">
+          <Text className="app-section-title" fw={600}>{t('Причіп')}</Text>
           <TextInput
             label={t('Заголовок')}
             maxLength={200}
             value={noteState.setting.TrailerLabel || ''}
             onChange={(event) => updateTextField('TrailerLabel', event.currentTarget.value)}
           />
-          <SimpleGrid cols={{ base: 2, md: 5 }} spacing="sm">
+          <SimpleGrid className="consignment-note-settings-dimensions" cols={{ base: 2, md: 5 }} spacing="sm">
             <NumberInput label={t('Довжина, мм')} value={noteState.setting.TrailerLength || 0} onChange={(value) => updateNumberField('TrailerLength', value)} />
             <NumberInput label={t('Ширина, мм')} value={noteState.setting.TrailerWidth || 0} onChange={(value) => updateNumberField('TrailerWidth', value)} />
             <NumberInput label={t('Висота, мм')} value={noteState.setting.TrailerHeight || 0} onChange={(value) => updateNumberField('TrailerHeight', value)} />
             <NumberInput label={t('Вага нетто, т')} value={noteState.setting.TrailerNetWeight || 0} onChange={(value) => updateNumberField('TrailerNetWeight', value)} />
             <NumberInput label={t('Вага брутто, т')} value={noteState.setting.TrailerGrossWeight || 0} onChange={(value) => updateNumberField('TrailerGrossWeight', value)} />
           </SimpleGrid>
-        </Stack>
-
-        <Group justify="flex-end">
-          <Button color="gray" disabled={!noteState.isEdited || isSaving} variant="light" onClick={resetChanges}>
-            {t('Скасувати')}
-          </Button>
-          {hasExistingSetting && (
-            <Button color="red" disabled={isSaving || isPrinting} variant="light" onClick={deleteSetting}>
-              {t('Видалити')}
-            </Button>
-          )}
-          <Button disabled={!noteState.isEdited || isPrinting} loading={isSaving} variant="outline" onClick={saveSetting}>
-            {hasExistingSetting ? t('Зберегти') : t('Створити')}
-          </Button>
-          <Button leftSection={<Truck size={16} />} loading={isPrinting} onClick={printDocument}>
-            {t('Друк')}
-          </Button>
-        </Group>
+        </Box>
       </Stack>
 
       <DownloadDocumentModal

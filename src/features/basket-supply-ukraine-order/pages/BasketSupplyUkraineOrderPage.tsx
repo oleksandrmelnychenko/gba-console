@@ -152,7 +152,7 @@ export function BasketSupplyUkraineOrderPage() {
     { value: 'cart', label: t('Переміщення на Україну') },
     { value: 'recommendations', label: t('Рекомендації'), ai: true },
     { value: 'dashboard', label: t('Дашборд'), ai: true },
-    { value: 'cockpit', label: t('Кокпіт байера'), ai: true },
+    { value: 'cockpit', label: t('Робоче місце закупівельника'), ai: true },
     { value: 'budget-cart', label: t('Бюджетний кошик') },
   ]
 

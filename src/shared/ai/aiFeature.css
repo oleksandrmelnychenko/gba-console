@@ -1,7 +1,7 @@
 .ai-feature-badge {
-  --ai-badge-bg: #f5e8ff;
-  --ai-badge-border: #e2c2ff;
-  --ai-badge-color: #7a28b8;
+  --ai-badge-bg: transparent;
+  --ai-badge-border: transparent;
+  --ai-badge-color: var(--brand-orange);
 
   align-items: center;
   background: var(--ai-badge-bg);

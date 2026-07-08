@@ -3,6 +3,7 @@ import { RefreshCw, Sparkles } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { AI_FLEET_SERVICES, getAiFleetServicesStatus } from '../api/aiFleetApi'
 import type { AiFleetServiceDefinition, AiFleetServiceStatus, AiFleetState } from '../types'
 import './ai-fleet-control.css'
@@ -15,6 +16,12 @@ type AiFleetLoadState = {
 const initialLoadState: AiFleetLoadState = {
   isLoading: false,
   statuses: [],
+}
+
+// The AI marker: a filled sparkle cluster (one large + two small 4-point stars)
+// in brand orange — the classic "AI" glyph.
+function AiGlyph({ size }: { size: number }) {
+  return <Sparkles className="ai-fleet-glyph" size={size} fill="currentColor" strokeWidth={0} />
 }
 
 export function AiFleetControl() {
@@ -67,12 +74,12 @@ export function AiFleetControl() {
       <Tooltip label={t('AI флот')} openDelay={300}>
         <ActionIcon
           aria-label={t('AI флот')}
-          className="console-header-action ai-fleet-header-action"
+          className="console-header-action"
           size="lg"
           variant="subtle"
           onClick={() => setOpened(true)}
         >
-          <Sparkles size={23} strokeWidth={1.9} />
+          <AiGlyph size={22} />
         </ActionIcon>
       </Tooltip>
 
@@ -82,10 +89,8 @@ export function AiFleetControl() {
         size="lg"
         title={
           <Group gap="xs" wrap="nowrap">
-            <span className="ai-fleet-title-icon">
-              <Sparkles size={16} strokeWidth={2.1} />
-            </span>
-            <Text fw={700}>{t('AI флот')}</Text>
+            <AiGlyph size={20} />
+            <Text fw={700} style={{ fontFamily: 'var(--font-mono)' }}>{t('AI флот')}</Text>
           </Group>
         }
         onClose={() => setOpened(false)}
@@ -101,12 +106,14 @@ export function AiFleetControl() {
               </Text>
             </Stack>
             <Group gap="xs" wrap="nowrap">
-              <Badge color={checkedCount > 0 && healthyCount === checkedCount ? 'green' : 'violet'} variant="light">
+              <Badge color={checkedCount > 0 && healthyCount === checkedCount ? 'green' : 'orange'} variant="light">
                 {healthyCount}/{checkedCount || AI_FLEET_SERVICES.length} {t('healthy')}
               </Badge>
               <Button
+                color={CREATE_ACTION_COLOR}
                 leftSection={state.isLoading ? <Loader size={14} /> : <RefreshCw size={14} />}
                 size="xs"
+                styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
                 variant="light"
                 onClick={reload}
               >
@@ -150,7 +157,7 @@ function AiFleetServiceRow({
         <Stack gap={3} className="ai-fleet-row__main">
           <Group gap="xs" wrap="wrap">
             <Text fw={700} size="sm">{service.name}</Text>
-            <Badge color="violet" size="xs" variant="light">{service.source}</Badge>
+            <Badge className="app-role-pill is-gray" size="xs" variant="light">{service.source}</Badge>
           </Group>
           <Text c="dimmed" size="xs">{service.location}</Text>
           <Text size="sm">{service.description}</Text>

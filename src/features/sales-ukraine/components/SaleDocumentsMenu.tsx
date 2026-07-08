@@ -1,6 +1,6 @@
 import { ActionIcon, Button, Group, Menu, Stack, Tooltip } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { FileText } from 'lucide-react'
+import { ClipboardList, FileText, Printer, Receipt } from 'lucide-react'
 import { useMemo } from 'react'
 import { useAuth } from '../../auth/useAuth'
 import { UserRoleType } from '../../../shared/auth/types'
@@ -13,6 +13,7 @@ import {
   getSaleInvoiceDocument,
   getSaleInvoiceHistoryDocument,
   getSalePaymentDocument,
+  getSalePzDocument,
   getSaleShipmentListDocument,
   getSaleShipmentListHistoryDocument,
 } from '../api/salesUkraineApi'
@@ -116,7 +117,7 @@ export function SaleDocumentsMenu({ sale }: { sale: SalesUkraineSale }) {
         <Menu.Dropdown>
           {actions.length ? (
             actions.map((action) => (
-              <Menu.Item key={action.key} onClick={() => runAction(action)}>
+              <Menu.Item key={action.key} leftSection={documentActionIcon(action.key)} onClick={() => runAction(action)}>
                 {action.label}
               </Menu.Item>
             ))
@@ -146,6 +147,25 @@ export function SaleDocumentsMenu({ sale }: { sale: SalesUkraineSale }) {
       </AppModal>
     </>
   )
+}
+
+// Monochrome (grey) icon per document type — kept neutral, not the brand colour.
+function documentActionIcon(key: string) {
+  const color = 'var(--mantine-color-gray-6)'
+
+  if (key === 'shipment') {
+    return <ClipboardList size={16} color={color} />
+  }
+
+  if (key === 'payment') {
+    return <Receipt size={16} color={color} />
+  }
+
+  if (key === 'pdf-print') {
+    return <Printer size={16} color={color} />
+  }
+
+  return <FileText size={16} color={color} />
 }
 
 // Label for a bundled revision entry, e.g. "Правка 1 документа" / "Поточна правка документа".
@@ -219,6 +239,8 @@ function buildDocumentActions(sale: SalesUkraineSale, t: (key: string) => string
   if (isVat && withVatAccounting) {
     actions.push({ bundlesInvoice: true, fetch: () => getSalePaymentDocument(netId), key: 'payment', label: t('Рахунок на оплату') })
   }
+
+  actions.push({ fetch: () => getSalePzDocument(netId), key: 'pdf-print', label: t('Друк PDF') })
 
   return actions
 }

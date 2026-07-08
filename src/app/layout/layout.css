@@ -1419,6 +1419,14 @@
   color: var(--mantine-color-orange-light-color);
 }
 
+/* AI marker as a superscript hugging the text's top-right corner. */
+.console-subnav-pill .ai-feature-badge {
+  align-self: center;
+  margin-left: -3px;
+  transform: translateY(-5px) scale(0.8);
+  transform-origin: bottom left;
+}
+
 .console-subnav-item:hover {
   color: var(--mantine-color-orange-light-color);
 }

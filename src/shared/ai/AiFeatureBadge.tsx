@@ -33,7 +33,7 @@ export function AiFeatureBadge({
         ].filter(Boolean).join(' ')}
         role="img"
       >
-        <Sparkles size={size === 'sm' ? 13 : 11} strokeWidth={2.2} />
+        <Sparkles size={size === 'sm' ? 16 : 14} fill="currentColor" strokeWidth={0} />
         {!compact && <span className="ai-feature-badge__text">AI</span>}
       </span>
     </Tooltip>

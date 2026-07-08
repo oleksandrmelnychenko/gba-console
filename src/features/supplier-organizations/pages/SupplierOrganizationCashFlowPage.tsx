@@ -12,7 +12,7 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
-import { CircleAlert, Download, FileText, RefreshCw } from 'lucide-react'
+import { CircleAlert, FileDown, FileText, RefreshCw } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -29,6 +29,11 @@ import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { getDocumentHref } from '../../../shared/url/getDocumentHref'
+import {
+  closePendingExportDocumentWindow,
+  openExportDocumentInWindow,
+  openPendingExportDocumentWindow,
+} from '../../../shared/documents/openExportDocument'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { CashFlowGrid } from '../../../shared/ui/cash-flow-grid/CashFlowGrid'
@@ -189,14 +194,24 @@ export function SupplierOrganizationCashFlowPage() {
     setExporting(true)
     setError(null)
 
+    const pendingWindow = openPendingExportDocumentWindow(t('Друк PDF'))
+
     try {
       const document = await exportAccountingCashFlowDocument({
         from: fromDate,
         netId,
         to: toDate,
       })
+
+      if (document.PdfDocumentURL && openExportDocumentInWindow(pendingWindow, document.PdfDocumentURL)) {
+        setDownloadDocument(null)
+        return
+      }
+
+      closePendingExportDocumentWindow(pendingWindow)
       setDownloadDocument(document)
     } catch (exportError) {
+      closePendingExportDocumentWindow(pendingWindow)
       setError(exportError instanceof Error ? exportError.message : t('Не вдалося сформувати документ'))
     } finally {
       setExporting(false)
@@ -241,17 +256,17 @@ export function SupplierOrganizationCashFlowPage() {
     >
     <Stack className="cash-flow-page" gap="sm">
       <Group gap="xs" justify="flex-end">
-        <Tooltip label={t('Друк')}>
+        <Tooltip label={t('Друк PDF')}>
           <ActionIcon
-            aria-label={t('Друк')}
-            color="gray"
+            aria-label={t('Друк PDF')}
+            color={CREATE_ACTION_COLOR}
             disabled={Boolean(filterError)}
             loading={isExporting}
             size={34}
             variant="light"
-            onClick={exportDocument}
+            onClick={() => void exportDocument()}
           >
-            <Download size={17} />
+            <FileDown size={17} />
           </ActionIcon>
         </Tooltip>
         <Tooltip label={t('Оновити')}>
@@ -392,21 +407,21 @@ function DocumentModal({ document, onClose }: { document: AccountingCashFlowDocu
   const { t } = useI18n()
 
   return (
-    <AppModal centered opened={Boolean(document)} title={t('Документ')} onClose={onClose}>
+    <AppModal centered opened={Boolean(document)} title={t('Друк PDF')} onClose={onClose}>
       <Stack gap="sm">
-        {document?.DocumentURL && (
-          <Anchor href={getDocumentHref(document.DocumentURL)} target="_blank" rel="noreferrer" className="document-link">
-            <Group gap="xs">
-              <ExcelIcon size={22} />
-              <span>{t('Завантажити Excel')}</span>
-            </Group>
-          </Anchor>
-        )}
         {document?.PdfDocumentURL && (
           <Anchor href={getDocumentHref(document.PdfDocumentURL)} target="_blank" rel="noreferrer" className="document-link">
             <Group gap="xs">
               <FileText size={22} strokeWidth={1.8} />
               <span>{t('Завантажити PDF')}</span>
+            </Group>
+          </Anchor>
+        )}
+        {document?.DocumentURL && (
+          <Anchor href={getDocumentHref(document.DocumentURL)} target="_blank" rel="noreferrer" className="document-link">
+            <Group gap="xs">
+              <ExcelIcon size={22} />
+              <span>{t('Завантажити Excel')}</span>
             </Group>
           </Anchor>
         )}

@@ -15,7 +15,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { AppModal } from "../../../shared/ui/AppModal"
-import { CircleAlert, FileText, RotateCcw, Search } from 'lucide-react'
+import { CircleAlert, FileDown, FileText, RotateCcw, Search } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { useDebouncedValue } from '@mantine/hooks'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
@@ -23,12 +23,18 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { getDocumentHref } from '../../../shared/url/getDocumentHref'
+import {
+  closePendingExportDocumentWindow,
+  openExportDocumentInWindow,
+  openPendingExportDocumentWindow,
+} from '../../../shared/documents/openExportDocument'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { toDateTimeQuery } from '../../../shared/date/dateTime'
 import { exportProductHistory, getProductHistory, getProductHistoryStorages } from '../api/productHistoryApi'
 import type {
@@ -231,6 +237,8 @@ function useProductHistoryPageModel() {
     setExporting(true)
     setError(null)
 
+    const pendingWindow = openPendingExportDocumentWindow(t('Друк PDF'))
+
     try {
       const document = await exportProductHistory({
         from: toStartOfDayQuery(dateTo),
@@ -241,9 +249,17 @@ function useProductHistoryPageModel() {
         value: searchValue,
       })
 
+      if (document.PdfDocumentURL && openExportDocumentInWindow(pendingWindow, document.PdfDocumentURL)) {
+        setDownloadDocument(null)
+        setDownloadModalOpened(false)
+        return
+      }
+
+      closePendingExportDocumentWindow(pendingWindow)
       setDownloadDocument(document)
       setDownloadModalOpened(true)
     } catch (exportError) {
+      closePendingExportDocumentWindow(pendingWindow)
       setError(exportError instanceof Error ? exportError.message : t('Не вдалося сформувати експорт історії товарів'))
     } finally {
       setExporting(false)
@@ -367,16 +383,17 @@ function ProductHistoryPageView({ model }: { model: ReturnType<typeof useProduct
                 </ActionIcon>
               </Tooltip>
               <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
-              <Tooltip label={t('Експорт')}>
+              <Tooltip label={t('Друк PDF')}>
                 <ActionIcon
-                  aria-label={t('Експорт')}
-                  variant="default"
+                  aria-label={t('Друк PDF')}
+                  color={CREATE_ACTION_COLOR}
+                  variant="light"
                   size={34}
                   disabled={Boolean(filterError)}
                   loading={isExporting}
-                  onClick={handleExport}
+                  onClick={() => void handleExport()}
                 >
-                  <ExcelIcon size={22} />
+                  <FileDown size={18} />
                 </ActionIcon>
               </Tooltip>
               <Paginator
@@ -430,26 +447,26 @@ function ProductHistoryPageView({ model }: { model: ReturnType<typeof useProduct
       <AppModal
         centered
         opened={downloadModalOpened}
-        title={t('Експорт історії товарів')}
+        title={t('Друк PDF')}
         onClose={() => setDownloadModalOpened(false)}
       >
         <Stack gap="sm">
           {downloadDocument?.DocumentURL || downloadDocument?.PdfDocumentURL ? (
             <>
-              {downloadDocument.DocumentURL && (
-                <Anchor href={getDocumentHref(downloadDocument.DocumentURL)} target="_blank" rel="noreferrer" className="document-link">
-                  <span className="document-link-badge document-link-badge-excel">
-                    <ExcelIcon size={22} />
-                  </span>
-                  <span>{t('Excel документ')}</span>
-                </Anchor>
-              )}
               {downloadDocument.PdfDocumentURL && (
                 <Anchor href={getDocumentHref(downloadDocument.PdfDocumentURL)} target="_blank" rel="noreferrer" className="document-link">
                   <span className="document-link-badge document-link-badge-pdf">
                     <FileText size={22} strokeWidth={1.8} />
                   </span>
                   <span>{t('PDF документ')}</span>
+                </Anchor>
+              )}
+              {downloadDocument.DocumentURL && (
+                <Anchor href={getDocumentHref(downloadDocument.DocumentURL)} target="_blank" rel="noreferrer" className="document-link">
+                  <span className="document-link-badge document-link-badge-excel">
+                    <ExcelIcon size={22} />
+                  </span>
+                  <span>{t('Excel документ')}</span>
                 </Anchor>
               )}
             </>

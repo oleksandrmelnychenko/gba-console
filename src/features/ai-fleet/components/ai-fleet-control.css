@@ -1,21 +1,7 @@
-.ai-fleet-header-action {
-  color: #7a28b8;
-}
-
-.ai-fleet-header-action:hover {
-  color: #5f1798;
-}
-
-.ai-fleet-title-icon {
-  align-items: center;
-  background: #f5e8ff;
-  border: 1px solid #e2c2ff;
-  border-radius: 999px;
-  color: #7a28b8;
+/* AI marker — a filled sparkle cluster in brand orange. */
+.ai-fleet-glyph {
+  color: var(--brand-orange);
   display: inline-flex;
-  height: 26px;
-  justify-content: center;
-  width: 26px;
 }
 
 .ai-fleet-row {

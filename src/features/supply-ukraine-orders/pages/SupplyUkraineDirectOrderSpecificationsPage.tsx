@@ -9,7 +9,7 @@ import {
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
-import { CircleAlert, Download, FileInput, FileX } from 'lucide-react'
+import { CircleAlert, FileDown, FileInput, FileX } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import './supply-order-detail.css'
@@ -834,12 +834,12 @@ function SpecificationActionButtons({ model }: { model: DirectOrderSpecification
             color={CREATE_ACTION_COLOR}
             className="supply-order-spec-action-button"
             disabled={model.isActionBusy}
-            leftSection={<Download size={16} />}
+            leftSection={<FileDown size={16} />}
             loading={model.isDownloading}
             variant="outline"
             onClick={model.openDownload}
           >
-            {t('Завантажити')}
+            {t('Друк PDF')}
           </Button>
         )}
       </Group>

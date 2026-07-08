@@ -1,4 +1,5 @@
 import { apiRequest } from '../../../shared/api/apiClient'
+import { normalizeExportDocument } from '../../../shared/documents/exportDocument'
 import {
   getClientResourceOrganizations,
   getClientResourceStorages,
@@ -188,27 +189,6 @@ function readArrayPayload(result: unknown, keys: string[]): unknown[] {
   }
 
   return []
-}
-
-function normalizeExportDocument(result: unknown): ProductCapitalizationsExportDocument {
-  if (!result || typeof result !== 'object') {
-    return {}
-  }
-
-  const payload = result as Record<string, unknown>
-
-  return {
-    DocumentURL:
-      readString(payload.DocumentURL)
-      || readString(payload.XlsxDocument)
-      || readString(payload.URL)
-      || readString(payload.url),
-    PdfDocumentURL: readString(payload.PdfDocumentURL) || readString(payload.PdfDocument),
-  }
-}
-
-function readString(value: unknown): string {
-  return typeof value === 'string' ? value : ''
 }
 
 function readOptionalNumber(value: unknown): number | null {

@@ -1,5 +1,6 @@
 import { Box, Button, Group, Paper, Stack, Text } from '@mantine/core'
 import { FileSpreadsheet, FileText } from 'lucide-react'
+import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 
 export type SaleDocumentDownload = {
   excelUrl: string | null
@@ -29,11 +30,25 @@ export function SaleDocumentDownloads({ documents }: { documents: SaleDocumentDo
               </Text>
             </Group>
             <Group gap="xs">
+              {document.pdfUrl && (
+                <Button
+                  color="red"
+                  component="a"
+                  href={getDocumentHref(document.pdfUrl)}
+                  leftSection={<FileText size={16} />}
+                  rel="noopener noreferrer"
+                  size="xs"
+                  target="_blank"
+                  variant="light"
+                >
+                  PDF
+                </Button>
+              )}
               {document.excelUrl && (
                 <Button
                   color="teal"
                   component="a"
-                  href={document.excelUrl}
+                  href={getDocumentHref(document.excelUrl)}
                   leftSection={<FileSpreadsheet size={16} />}
                   rel="noopener noreferrer"
                   size="xs"
@@ -41,20 +56,6 @@ export function SaleDocumentDownloads({ documents }: { documents: SaleDocumentDo
                   variant="outline"
                 >
                   Excel
-                </Button>
-              )}
-              {document.pdfUrl && (
-                <Button
-                  color="red"
-                  component="a"
-                  href={document.pdfUrl}
-                  leftSection={<FileText size={16} />}
-                  rel="noopener noreferrer"
-                  size="xs"
-                  target="_blank"
-                  variant="light"
-                >
-                  Pdf
                 </Button>
               )}
             </Group>

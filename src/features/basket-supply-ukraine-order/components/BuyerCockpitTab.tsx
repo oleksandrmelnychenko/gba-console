@@ -824,7 +824,7 @@ export function BuyerCockpitTab() {
                   <Text fw={600} size="lg">
                     {plan.producer_name || `#${plan.producer_id ?? ''}`}
                   </Text>
-                  <AiFeatureBadge tooltip={t('AI-кокпіт байера')} />
+                  <AiFeatureBadge tooltip={t('AI-помічник закупівельника')} />
                 </Group>
                 <Group gap="xs">
                   <Text c="dimmed" size="sm">
@@ -1056,7 +1056,7 @@ function SuggestedQtyCell({ item, t }: { item: ReorderSuggestion; t: TranslateFu
         </Badge>
       )}
       {hasLearned && (
-        <Tooltip label={t('Кількість скориговано на основі попередніх рішень байера')} withinPortal>
+        <Tooltip label={t('Кількість скориговано на основі попередніх рішень закупівельника')} withinPortal>
           <Badge
             color="orange"
             leftSection={<School size={11} />}

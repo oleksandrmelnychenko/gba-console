@@ -66,6 +66,117 @@
   letter-spacing: 0;
 }
 
+.consignment-note-settings-body .app-sheet-scroll {
+  background: var(--mantine-color-gray-0);
+  padding: 12px 18px 18px;
+}
+
+.consignment-note-settings {
+  min-width: 0;
+}
+
+.consignment-note-settings-hero,
+.consignment-note-settings-section {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+.consignment-note-settings-hero {
+  align-items: flex-end;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 0.95fr);
+  padding: 14px 16px;
+}
+
+.consignment-note-settings-document {
+  min-width: 0;
+}
+
+.consignment-note-settings-eyebrow {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+  margin-bottom: 7px;
+}
+
+.consignment-note-settings-document-title {
+  color: var(--mantine-color-gray-9);
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.consignment-note-settings-select {
+  min-width: 0;
+}
+
+.consignment-note-settings-section {
+  padding: 14px 16px 16px;
+}
+
+.consignment-note-settings-section .app-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+  margin-bottom: 12px;
+}
+
+.consignment-note-settings-grid,
+.consignment-note-settings-dimensions {
+  align-items: end;
+}
+
+.consignment-note-settings-section > .mantine-InputWrapper-root + .consignment-note-settings-dimensions {
+  margin-top: 10px;
+}
+
+.consignment-note-settings-body .mantine-InputWrapper-label {
+  color: var(--mantine-color-gray-9);
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.consignment-note-settings-body .mantine-Input-input {
+  min-height: 38px;
+}
+
+.consignment-note-settings-body .mantine-NumberInput-input,
+.consignment-note-settings-body .mantine-Select-input {
+  font-weight: 500;
+}
+
+.consignment-note-settings-footer {
+  max-width: 100%;
+}
+
+.consignment-note-settings-footer .mantine-Button-root {
+  min-width: 118px;
+}
+
+@media (max-width: 900px) {
+  .consignment-note-settings-hero {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .consignment-note-settings-body .app-sheet-scroll {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .consignment-note-settings-footer {
+    flex-wrap: wrap;
+  }
+}
+
 .sales-merge-card {
   box-shadow: none;
 }

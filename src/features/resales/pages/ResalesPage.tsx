@@ -22,7 +22,7 @@ import {
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { notifications } from '@mantine/notifications'
-import { ArrowRight, CircleAlert, Download, FileText, Plus, RefreshCw, RotateCcw, Search, Trash2, Truck } from 'lucide-react'
+import { ArrowRight, CircleAlert, Download, FileDown, FileText, Plus, RefreshCw, RotateCcw, Search, Trash2, Truck } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { formatLocalDate, formatLocalDateTime } from '../../../shared/date/dateTime'
@@ -30,6 +30,11 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { getDocumentHref } from '../../../shared/url/getDocumentHref'
+import {
+  closePendingExportDocumentWindow,
+  openExportDocumentInWindow,
+  openPendingExportDocumentWindow,
+} from '../../../shared/documents/openExportDocument'
 import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
 import { ProductCardModal } from '../../products/components/ProductCardModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -685,12 +690,22 @@ export function NewResalePage() {
     setExporting(true)
     setError(null)
 
+    const pendingWindow = openPendingExportDocumentWindow(t('Друк PDF'))
+
     try {
       const document = await exportResaleAvailabilities(payload)
 
+      if (document.PdfDocumentURL && openExportDocumentInWindow(pendingWindow, document.PdfDocumentURL)) {
+        setDownloadDocument(null)
+        setDownloadModalOpened(false)
+        return
+      }
+
+      closePendingExportDocumentWindow(pendingWindow)
       setDownloadDocument(document)
       setDownloadModalOpened(true)
     } catch (exportError) {
+      closePendingExportDocumentWindow(pendingWindow)
       setError(exportError instanceof Error ? exportError.message : t('Не вдалося сформувати документ'))
     } finally {
       setExporting(false)
@@ -1079,7 +1094,7 @@ export function NewResalePage() {
                 className="resales-new-action"
                 color={CREATE_ACTION_COLOR}
                 disabled={!payload || isLoadingOptions || isLoadingAvailabilities}
-                leftSection={<Download size={16} />}
+                leftSection={<FileDown size={16} />}
                 loading={isExporting}
                 variant="light"
                 onClick={exportAvailabilities}
@@ -2992,20 +3007,20 @@ function DownloadDocumentModal({
       <Stack gap="sm">
         {document?.DocumentURL || document?.PdfDocumentURL ? (
           <>
-            {document.DocumentURL && (
-              <Anchor href={getDocumentHref(document.DocumentURL)} target="_blank" rel="noreferrer" className="document-link">
-                <span className="document-link-badge document-link-badge-excel">
-                  <ExcelIcon size={22} />
-                </span>
-                <span>{t('Excel документ')}</span>
-              </Anchor>
-            )}
             {document.PdfDocumentURL && (
               <Anchor href={getDocumentHref(document.PdfDocumentURL)} target="_blank" rel="noreferrer" className="document-link">
                 <span className="document-link-badge document-link-badge-pdf">
                   <FileText size={22} strokeWidth={1.8} />
                 </span>
                 <span>{t('PDF документ')}</span>
+              </Anchor>
+            )}
+            {document.DocumentURL && (
+              <Anchor href={getDocumentHref(document.DocumentURL)} target="_blank" rel="noreferrer" className="document-link">
+                <span className="document-link-badge document-link-badge-excel">
+                  <ExcelIcon size={22} />
+                </span>
+                <span>{t('Excel документ')}</span>
               </Anchor>
             )}
           </>

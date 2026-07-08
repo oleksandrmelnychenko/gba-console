@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
-import { getProductCapitalizations } from './productCapitalizationsApi'
+import { exportProductCapitalization, getProductCapitalizations } from './productCapitalizationsApi'
 
 vi.mock('../../../shared/api/apiClient', () => ({
   apiRequest: vi.fn(),
@@ -45,5 +45,23 @@ describe('productCapitalizationsApi', () => {
 
     expect(result.Items).toHaveLength(1)
     expect(result.Total).toBe(42)
+  })
+
+  it('exports capitalization documents with PDF-first aliases preserved', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      PdfDocument: 'https://example.test/capitalization.pdf',
+      XlsxDocument: 'https://example.test/capitalization.xlsx',
+    })
+
+    await expect(exportProductCapitalization('capitalization-1')).resolves.toEqual({
+      DocumentURL: 'https://example.test/capitalization.xlsx',
+      PdfDocumentURL: 'https://example.test/capitalization.pdf',
+    })
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/products/capitalizations/document/export', {
+      query: {
+        netId: 'capitalization-1',
+      },
+    })
   })
 })

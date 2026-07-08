@@ -427,6 +427,16 @@ async function fetchSaleDocument(path: string, query: Record<string, string>): P
   return extractDocumentResult(result)
 }
 
+async function fetchSalePdfDocument(path: string, query: Record<string, string>): Promise<SaleDocumentResult> {
+  const document = await fetchSaleDocument(path, query)
+
+  return {
+    ...document,
+    excelUrl: null,
+    pdfUrl: document.pdfUrl || document.excelUrl,
+  }
+}
+
 export function getSaleInvoiceDocument(netId: string): Promise<SaleDocumentResult> {
   return fetchSaleDocument('/sales/get/last/document', { netId })
 }
@@ -440,7 +450,7 @@ export function getSalePaymentDocument(netId: string): Promise<SaleDocumentResul
 }
 
 export function getSalePzDocument(netId: string): Promise<SaleDocumentResult> {
-  return fetchSaleDocument('/sales/get/document/pz', { netId })
+  return fetchSalePdfDocument('/sales/get/document/pz', { netId })
 }
 
 export function getSaleInvoiceHistoryDocument(netId: string, historyNetId: string): Promise<SaleDocumentResult> {
@@ -472,10 +482,10 @@ function extractDocumentResult(result: unknown): SaleDocumentResult {
 
   if (result && typeof result === 'object') {
     const record = result as Record<string, unknown>
-    const excel = record.DocumentURL ?? record.DocumentUrl ?? record.Url ?? record.url
-    const pdf = record.PdfDocumentURL ?? record.PdfDocumentUrl
-    const invoiceExcel = record.InvoiceDocumentURL ?? record.InvoiceDocumentUrl
-    const invoicePdf = record.PdfInvoiceDocumentURL ?? record.PdfInvoiceDocumentUrl
+    const excel = record.DocumentURL ?? record.DocumentUrl ?? record.XlsxDocument ?? record.Url ?? record.url
+    const pdf = record.PdfDocumentURL ?? record.PdfDocumentUrl ?? record.PdfDocument
+    const invoiceExcel = record.InvoiceDocumentURL ?? record.InvoiceDocumentUrl ?? record.InvoiceDocument ?? record.XlsxInvoiceDocument
+    const invoicePdf = record.PdfInvoiceDocumentURL ?? record.PdfInvoiceDocumentUrl ?? record.PdfInvoiceDocument
 
     return {
       excelUrl: typeof excel === 'string' ? toSecureUrl(excel.trim() || null) : null,

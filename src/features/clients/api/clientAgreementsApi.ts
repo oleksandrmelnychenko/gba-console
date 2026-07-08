@@ -1,4 +1,5 @@
 import { apiRequest } from '../../../shared/api/apiClient'
+import { hasExportDocumentUrl, normalizeExportDocument } from '../../../shared/documents/exportDocument'
 import { getAllProductGroups, getRootProductGroups } from '../../product-groups/api/productGroupsApi'
 import type { ProductGroup } from '../../product-groups/types'
 import { updateClient } from './clientFormApi'
@@ -282,9 +283,7 @@ function normalizeAgreementList(result: unknown): ClientAgreement[] {
 }
 
 function normalizeDocument(result: unknown): ClientPrintDocument | null {
-  if (result && typeof result === 'object') {
-    return result as ClientPrintDocument
-  }
+  const document = normalizeExportDocument(result)
 
-  return null
+  return hasExportDocumentUrl(document) ? document : null
 }

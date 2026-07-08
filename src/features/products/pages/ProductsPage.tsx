@@ -24,7 +24,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { ArrowLeftRight, Box as BoxIcon, ChevronDown, CircleAlert, ClipboardList, Download, FileText, History, Image as ImageIcon, Package, Plus, RefreshCw, Save, Search, Settings, SquarePen, Star, Trash2, Upload } from 'lucide-react'
+import { ArrowLeftRight, Box as BoxIcon, ChevronDown, CircleAlert, ClipboardList, FileDown, FileText, History, Image as ImageIcon, Package, Plus, RefreshCw, Save, Search, Settings, SquarePen, Star, Trash2, Upload } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { type KeyboardEvent, type ReactNode, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
@@ -34,6 +34,11 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { translate } from '../../../shared/i18n/translate'
 import { getDocumentHref } from '../../../shared/url/getDocumentHref'
+import {
+  closePendingExportDocumentWindow,
+  openExportDocumentInWindow,
+  openPendingExportDocumentWindow,
+} from '../../../shared/documents/openExportDocument'
 import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
 import {
   createProductOriginalNumber,
@@ -226,6 +231,7 @@ type InlineMovementAction =
   | { type: 'export-clear' }
   | { type: 'export-error'; error: string }
   | { type: 'export-loading' }
+  | { type: 'export-opened' }
   | { type: 'export-success'; document: ProductMovementExportDocument }
   | { type: 'error'; error: string }
   | { type: 'loading' }
@@ -3027,6 +3033,8 @@ function ProductInlineMovementsTab({
       return
     }
 
+    const pendingWindow = openPendingExportDocumentWindow(t('Друк PDF'))
+
     dispatch({ type: 'export-loading' })
 
     try {
@@ -3039,8 +3047,15 @@ function ProductInlineMovementsTab({
         ? await exportProductIncomeMovementsDocument(params)
         : await exportProductOutcomeMovementsDocument(params)
 
+      if (document.PdfDocumentURL && openExportDocumentInWindow(pendingWindow, document.PdfDocumentURL)) {
+        dispatch({ type: 'export-opened' })
+        return
+      }
+
+      closePendingExportDocumentWindow(pendingWindow)
       dispatch({ document, type: 'export-success' })
     } catch (exportError) {
+      closePendingExportDocumentWindow(pendingWindow)
       dispatch({
         error: exportError instanceof Error ? exportError.message : t('Не вдалося сформувати документ'),
         type: 'export-error',
@@ -3060,12 +3075,12 @@ function ProductInlineMovementsTab({
           className="product-movement-toolbar__button"
           color={CREATE_ACTION_COLOR}
           disabled={!productNetUid}
-          leftSection={<Download size={16} />}
+          leftSection={<FileDown size={16} />}
           loading={state.isExporting}
           variant="outline"
           onClick={() => void exportRows()}
         >
-          {t('Завантажити')}
+          {t('Друк PDF')}
         </Button>
       </Group>
 
@@ -3089,7 +3104,7 @@ function ProductInlineMovementsTab({
 
       <ProductMovementDownloadModal
         document={state.document}
-        title={labels.exportTitle}
+        title={t('Друк PDF')}
         onClose={() => dispatch({ type: 'export-clear' })}
       />
     </Stack>
@@ -3417,24 +3432,24 @@ function ProductMovementDownloadModal({
   const { t } = useI18n()
 
   return (
-    <AppModal centered opened={Boolean(document)} title={t(title)} onClose={onClose}>
+    <AppModal centered opened={Boolean(document)} title={title} onClose={onClose}>
       <Stack gap="sm">
         {document?.DocumentURL || document?.PdfDocumentURL ? (
           <>
-            {document.DocumentURL ? (
-              <Anchor href={getDocumentHref(document.DocumentURL)} target="_blank" rel="noreferrer" className="document-link">
-                <span className="document-link-badge document-link-badge-excel">
-                  <ExcelIcon size={22} />
-                </span>
-                <span>{t('Excel документ')}</span>
-              </Anchor>
-            ) : null}
             {document.PdfDocumentURL ? (
               <Anchor href={getDocumentHref(document.PdfDocumentURL)} target="_blank" rel="noreferrer" className="document-link">
                 <span className="document-link-badge document-link-badge-pdf">
                   <FileText size={22} strokeWidth={1.8} />
                 </span>
                 <span>{t('PDF документ')}</span>
+              </Anchor>
+            ) : null}
+            {document.DocumentURL ? (
+              <Anchor href={getDocumentHref(document.DocumentURL)} target="_blank" rel="noreferrer" className="document-link">
+                <span className="document-link-badge document-link-badge-excel">
+                  <ExcelIcon size={22} />
+                </span>
+                <span>{t('Excel документ')}</span>
               </Anchor>
             ) : null}
           </>
@@ -3466,6 +3481,13 @@ function inlineMovementReducer(state: InlineMovementState, action: InlineMovemen
         ...state,
         exportError: null,
         isExporting: true,
+      }
+    case 'export-opened':
+      return {
+        ...state,
+        document: null,
+        exportError: null,
+        isExporting: false,
       }
     case 'export-success':
       return {

@@ -3,7 +3,7 @@ import { apiRequest } from '../../../shared/api/apiClient'
 import { getDocumentVerification } from './documentVerificationApi'
 import { getWarehouseUkraineOrders } from './ordersApi'
 import { getSaleActProtocolEditDocument, getSalePrintDocument } from './salesApi'
-import { getAllShipmentLists, getManualShipmentSales } from './shipmentsApi'
+import { getAllShipmentLists, getManualShipmentSales, getShipmentDocument } from './shipmentsApi'
 
 vi.mock('../../../shared/api/apiClient', () => ({
   apiRequest: vi.fn(),
@@ -118,6 +118,24 @@ describe('warehouse Ukraine migrated gap request contracts', () => {
         netId: 'transporter-net-id',
         from: '2026-06-01T00:00:00.000Z',
         to: '2026-06-08T00:00:00.000Z',
+      },
+    })
+  })
+
+  it('normalizes shipment print documents with PDF-first aliases', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      PdfDocument: 'https://example.test/shipment.pdf',
+      XlsxDocument: 'https://example.test/shipment.xlsx',
+    })
+
+    await expect(getShipmentDocument('shipment-net-id')).resolves.toEqual({
+      DocumentURL: 'https://example.test/shipment.xlsx',
+      PdfDocumentURL: 'https://example.test/shipment.pdf',
+    })
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/shipments/document/export', {
+      query: {
+        netId: 'shipment-net-id',
       },
     })
   })

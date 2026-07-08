@@ -1180,22 +1180,26 @@
 .sale-expand-product-cell {
   align-items: flex-start;
   display: flex;
-  gap: 0;
+  gap: 9px;
   min-width: 0;
 }
 
 .sale-expand-product-icon {
   align-items: center;
-  background: var(--mantine-color-gray-0);
+  background: var(--mantine-color-white);
   border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 7px;
-  color: var(--mantine-color-gray-5);
-  display: none;
-  flex: 0 0 auto;
-  height: 26px;
+  border-radius: 999px;
+  color: var(--mantine-color-gray-7);
+  display: inline-flex;
+  flex: 0 0 28px;
+  height: 28px;
   justify-content: center;
   margin-top: 1px;
-  width: 26px;
+  width: 28px;
+}
+
+.sale-expand-product-icon svg {
+  stroke-width: 1.7;
 }
 
 .sale-expand-product-copy {

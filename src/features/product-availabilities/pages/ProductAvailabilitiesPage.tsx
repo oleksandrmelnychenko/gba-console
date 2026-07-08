@@ -12,19 +12,25 @@ import {
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { AppModal } from "../../../shared/ui/AppModal"
-import { CircleAlert, Download, FileText, RotateCcw, Search } from 'lucide-react'
+import { CircleAlert, FileDown, FileText, RotateCcw, Search } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { getDocumentHref } from '../../../shared/url/getDocumentHref'
+import {
+  closePendingExportDocumentWindow,
+  openExportDocumentInWindow,
+  openPendingExportDocumentWindow,
+} from '../../../shared/documents/openExportDocument'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE, PAGINATOR_PAGE_SIZE_OPTIONS } from '../../../shared/ui/paginator/paginatorPageSize'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import {
   exportProductAvailabilities,
   getProductAvailabilities,
@@ -234,6 +240,8 @@ function useProductAvailabilitiesPageModel() {
     setExporting(true)
     setError(null)
 
+    const pendingWindow = openPendingExportDocumentWindow(t('Друк PDF'))
+
     try {
       const document = await exportProductAvailabilities({
         from: toDateFromBound(dateFrom),
@@ -242,9 +250,17 @@ function useProductAvailabilitiesPageModel() {
         vendorCode: searchValue,
       })
 
+      if (document.PdfDocumentURL && openExportDocumentInWindow(pendingWindow, document.PdfDocumentURL)) {
+        setDownloadDocument(null)
+        setDownloadModalOpened(false)
+        return
+      }
+
+      closePendingExportDocumentWindow(pendingWindow)
       setDownloadDocument(document)
       setDownloadModalOpened(true)
     } catch (exportError) {
+      closePendingExportDocumentWindow(pendingWindow)
       setError(exportError instanceof Error ? exportError.message : t('Не вдалося сформувати експорт доступності партій'))
     } finally {
       setExporting(false)
@@ -386,17 +402,17 @@ function ProductAvailabilitiesPageView({ model }: { model: ReturnType<typeof use
                   <RotateCcw size={17} />
                 </ActionIcon>
               </Tooltip>
-              <Tooltip label={t('Експорт')}>
+              <Tooltip label={t('Друк PDF')}>
                 <ActionIcon
-                  aria-label={t('Експорт')}
-                  color="gray"
+                  aria-label={t('Друк PDF')}
+                  color={CREATE_ACTION_COLOR}
                   disabled={!selectedStorageNetId || Boolean(filterError)}
                   loading={isExporting}
                   size={34}
                   variant="light"
-                  onClick={handleExport}
+                  onClick={() => void handleExport()}
                 >
-                  <Download size={18} />
+                  <FileDown size={18} />
                 </ActionIcon>
               </Tooltip>
               <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
@@ -448,26 +464,26 @@ function ProductAvailabilitiesPageView({ model }: { model: ReturnType<typeof use
       <AppModal
         centered
         opened={downloadModalOpened}
-        title={t('Експорт доступності партій')}
+        title={t('Друк PDF')}
         onClose={() => setDownloadModalOpened(false)}
       >
         <Stack gap="sm">
           {downloadDocument?.DocumentURL || downloadDocument?.PdfDocumentURL ? (
             <>
-              {downloadDocument.DocumentURL && (
-                <Anchor href={getDocumentHref(downloadDocument.DocumentURL)} target="_blank" rel="noreferrer" className="document-link">
-                  <span className="document-link-badge document-link-badge-excel">
-                    <ExcelIcon size={22} />
-                  </span>
-                  <span>{t('Excel документ')}</span>
-                </Anchor>
-              )}
               {downloadDocument.PdfDocumentURL && (
                 <Anchor href={getDocumentHref(downloadDocument.PdfDocumentURL)} target="_blank" rel="noreferrer" className="document-link">
                   <span className="document-link-badge document-link-badge-pdf">
                     <FileText size={22} strokeWidth={1.8} />
                   </span>
                   <span>{t('PDF документ')}</span>
+                </Anchor>
+              )}
+              {downloadDocument.DocumentURL && (
+                <Anchor href={getDocumentHref(downloadDocument.DocumentURL)} target="_blank" rel="noreferrer" className="document-link">
+                  <span className="document-link-badge document-link-badge-excel">
+                    <ExcelIcon size={22} />
+                  </span>
+                  <span>{t('Excel документ')}</span>
                 </Anchor>
               )}
             </>

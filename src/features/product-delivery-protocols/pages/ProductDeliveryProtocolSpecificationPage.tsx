@@ -11,7 +11,7 @@ import {
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
-import { CircleAlert, Download, FileInput, FileX, Layers } from 'lucide-react'
+import { CircleAlert, FileDown, FileInput, FileX, Layers } from 'lucide-react'
 import { useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { formatLocalDate, formatLocalInputDateTime } from '../../../shared/date/dateTime'
@@ -998,12 +998,12 @@ export function ProductDeliveryProtocolSpecificationPage() {
                     {canDownload && (
                       <Button
                         disabled={model.isActionBusy}
-                        leftSection={<Download size={16} />}
+                        leftSection={<FileDown size={16} />}
                         loading={model.isDownloading}
                         variant="default"
                         onClick={model.openDownload}
                       >
-                        {t('Завантажити')}
+                        {t('Друк PDF')}
                       </Button>
                     )}
                   </Group>

@@ -1,19 +1,27 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+vi.mock('../../../shared/api/apiClient', () => ({
+  apiRequest: vi.fn(),
+}))
+
 vi.mock('../../product-groups/api/productGroupsApi', () => ({
   getAllProductGroups: vi.fn(),
   getRootProductGroups: vi.fn(),
   getProductGroups: vi.fn(),
 }))
 
+import { apiRequest } from '../../../shared/api/apiClient'
 import { getAllProductGroups, getRootProductGroups } from '../../product-groups/api/productGroupsApi'
-import { getAgreementProductGroupDiscounts, mergeProductGroupDiscounts } from './clientAgreementsApi'
+import { exportAgreementDocument, getAgreementProductGroupDiscounts, mergeProductGroupDiscounts } from './clientAgreementsApi'
 import type { ProductGroup } from '../../product-groups/types'
 import type { ProductGroupDiscount } from '../types'
+
+const apiRequestMock = vi.mocked(apiRequest)
 
 describe('getAgreementProductGroupDiscounts', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    apiRequestMock.mockReset()
   })
 
   it('loads the full product-group catalog (all-groups endpoint) and builds discount rows', async () => {
@@ -42,6 +50,32 @@ describe('getAgreementProductGroupDiscounts', () => {
     expect(getAllProductGroups).not.toHaveBeenCalled()
     expect(result).toHaveLength(1)
     expect(result[0]).toMatchObject({ ProductGroupId: 3 })
+  })
+})
+
+describe('exportAgreementDocument', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    apiRequestMock.mockReset()
+  })
+
+  it('exports agreement documents with PDF-first aliases preserved', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      PdfDocument: 'https://example.test/agreement.pdf',
+      XlsxDocument: 'https://example.test/agreement.xlsx',
+    })
+
+    await expect(exportAgreementDocument('agreement-net')).resolves.toEqual({
+      DocumentURL: 'https://example.test/agreement.xlsx',
+      PdfDocumentURL: 'https://example.test/agreement.pdf',
+    })
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/agreements/get/document', {
+      query: {
+        netId: 'agreement-net',
+        type: 0,
+      },
+    })
   })
 })
 

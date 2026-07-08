@@ -43,8 +43,11 @@ describe('product history API contracts', () => {
     })
   })
 
-  it('exports product history with the same bounded date range contract', async () => {
-    apiRequestMock.mockResolvedValueOnce({ DocumentURL: '/report.xlsx' })
+  it('exports product history with PDF-first aliases preserved', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      PdfDocument: 'https://example.test/product-history.pdf',
+      XlsxDocument: 'https://example.test/product-history.xlsx',
+    })
 
     await expect(
       exportProductHistory({
@@ -55,7 +58,10 @@ describe('product history API contracts', () => {
         to: '2026-06-24T23:59:59.999',
         value: '',
       }),
-    ).resolves.toEqual({ DocumentURL: '/report.xlsx', PdfDocumentURL: '' })
+    ).resolves.toEqual({
+      DocumentURL: 'https://example.test/product-history.xlsx',
+      PdfDocumentURL: 'https://example.test/product-history.pdf',
+    })
 
     expect(apiRequestMock).toHaveBeenCalledWith('/history/order/item/document/create/export', {
       query: {

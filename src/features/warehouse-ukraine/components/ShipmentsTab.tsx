@@ -15,7 +15,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { CircleAlert, Download, Plus, Printer, RefreshCw, RotateCcw, Save, SquarePen, Trash2, X } from 'lucide-react'
+import { CircleAlert, Download, FileDown, Plus, RefreshCw, RotateCcw, Save, SquarePen, Trash2, X } from 'lucide-react'
 import { useEffect, useMemo, useReducer, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -937,11 +937,12 @@ function AutoShipmentsPanel({ onCarriedOut }: AutoShipmentsPanelProps) {
               <Button
                 color={CREATE_ACTION_COLOR}
                 disabled={!model.selectedTransporterNetId || Boolean(model.filterError)}
+                leftSection={<FileDown size={18} />}
                 styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
                 variant="outline"
                 onClick={() => model.printShipments()}
               >
-                {t('Роздрукувати')}
+                {t('Друк PDF')}
               </Button>
             </div>
           </div>
@@ -1842,12 +1843,12 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
                 <Box component="span">
                   <Button
                     color={CREATE_ACTION_COLOR}
-                    leftSection={<Printer size={18} />}
+                    leftSection={<FileDown size={18} />}
                     variant="outline"
                     onClick={printSelectedShipment}
                     disabled={Boolean(printSelectedShipmentDisabledReason)}
                   >
-                    {t('Роздрукувати')}
+                    {t('Друк PDF')}
                   </Button>
                 </Box>
               </Tooltip>
@@ -2536,9 +2537,9 @@ function useEditShipmentColumns(model: EditShipmentColumnsModel): DataTableColum
         accessor: (item) => item.Sale.IsVatSale,
         cell: (item) =>
           item.Sale.IsVatSale ? (
-            <Tooltip label={t('Роздрукувати')}>
-              <ActionIcon color="gray" size="sm" variant="subtle" onClick={() => model.onPrintSale(item)}>
-                <Printer size={16} />
+            <Tooltip label={t('Друк PDF')}>
+              <ActionIcon aria-label={t('Друк PDF')} color="gray" size="sm" variant="subtle" onClick={() => model.onPrintSale(item)}>
+                <FileDown size={16} />
               </ActionIcon>
             </Tooltip>
           ) : (

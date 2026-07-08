@@ -14,6 +14,7 @@ import {
 import { CircleAlert, Upload, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
+import type { ExportDocument } from '../../../../shared/documents/exportDocument'
 import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
 import { upgradeHttpToHttps } from '../../../../shared/url/upgradeHttpToHttps'
 import {
@@ -326,29 +327,33 @@ export function PricingPanel({
     })
   }
 
-  async function handleExportAgreementDocument(netId: string) {
+  async function handleExportAgreementDocument(netId: string): Promise<ExportDocument | null> {
     setIsExporting(true)
     setExportDocument(null)
 
     try {
       const document = await exportAgreementDocument(netId)
       setExportDocument(document)
+      return document
     } catch {
       setExportDocument(null)
+      return null
     } finally {
       setIsExporting(false)
     }
   }
 
-  async function handleExportAgreementWarranty(netId: string) {
+  async function handleExportAgreementWarranty(netId: string): Promise<ExportDocument | null> {
     setIsExporting(true)
     setExportDocument(null)
 
     try {
       const document = await exportAgreementWarrantyConditions(netId)
       setExportDocument(document)
+      return document
     } catch {
       setExportDocument(null)
+      return null
     } finally {
       setIsExporting(false)
     }

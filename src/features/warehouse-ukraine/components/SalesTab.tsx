@@ -1,6 +1,6 @@
 import { ActionIcon, Alert, Anchor, Badge, Button, Group, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { CircleAlert, Download, FileText, Pencil, Plus, Printer, RotateCcw } from 'lucide-react'
+import { CircleAlert, Download, FileDown, Pencil, Plus, Printer, RotateCcw } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useAuth } from '../../auth/useAuth'
 import { NewSaleWizard } from '../../sales-ukraine/components/new-sale-wizard/NewSaleWizard'
@@ -515,9 +515,9 @@ function useSalesColumns({
         enableSorting: false,
         cell: (sale) => (
           <Group gap={4} wrap="nowrap">
-            <Tooltip label={t('Підтвердження на друк і Друк пакета документів')}>
+            <Tooltip label={t('Підтвердження на друк і PDF пакет документів')}>
               <ActionIcon
-                aria-label={t('Роздрукувати')}
+                aria-label={t('PDF пакет документів')}
                 color="gray"
                 size="sm"
                 variant="subtle"
@@ -529,9 +529,9 @@ function useSalesColumns({
                 <Printer size={16} />
               </ActionIcon>
             </Tooltip>
-            <Tooltip label={t('Акт редагування')}>
+            <Tooltip label={t('PDF акт редагування')}>
               <ActionIcon
-                aria-label={t('Акт редагування')}
+                aria-label={t('PDF акт редагування')}
                 color={sale.IsPrintedActProtocolEdit ? 'teal' : 'gray'}
                 size="sm"
                 variant="subtle"
@@ -540,7 +540,7 @@ function useSalesColumns({
                   onPrintActProtocolEdit(sale)
                 }}
               >
-                <FileText size={16} />
+                <FileDown size={16} />
               </ActionIcon>
             </Tooltip>
             {sale.CustomersOwnTtn?.TtnPDFPath && (

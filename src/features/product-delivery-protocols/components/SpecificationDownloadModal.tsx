@@ -29,7 +29,7 @@ export function SpecificationDownloadModal({
       className="app-form-sheet"
       opened={opened}
       size="sm"
-      title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Завантажити')}</span>}
+      title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Друк PDF')}</span>}
       onClose={onClose}
     >
       <Stack gap="sm">
@@ -43,19 +43,19 @@ export function SpecificationDownloadModal({
           </Alert>
         ) : document?.DocumentURL || document?.PdfDocumentURL ? (
           <>
-            {document.DocumentURL && (
-              <Anchor href={upgradeHttpToHttps(document.DocumentURL)} target="_blank" rel="noreferrer">
-                <Stack gap={2}>
-                  <ExcelIcon size={22} />
-                  <Text size="sm">{t('Excel документ')}</Text>
-                </Stack>
-              </Anchor>
-            )}
             {document.PdfDocumentURL && (
               <Anchor href={upgradeHttpToHttps(document.PdfDocumentURL)} target="_blank" rel="noreferrer">
                 <Stack gap={2}>
                   <FileText size={22} strokeWidth={1.8} />
                   <Text size="sm">{t('PDF документ')}</Text>
+                </Stack>
+              </Anchor>
+            )}
+            {document.DocumentURL && (
+              <Anchor href={upgradeHttpToHttps(document.DocumentURL)} target="_blank" rel="noreferrer">
+                <Stack gap={2}>
+                  <ExcelIcon size={22} />
+                  <Text size="sm">{t('Excel документ')}</Text>
                 </Stack>
               </Anchor>
             )}

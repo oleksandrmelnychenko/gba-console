@@ -1,6 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
-import { exportProductIncomeMovementsDocument, updateProduct, updateProductWithImages, uploadProductsFromFile } from './productsApi'
+import {
+  exportProductIncomeMovementsDocument,
+  exportProductMovementsDocument,
+  exportProductOutcomeMovementsDocument,
+  updateProduct,
+  updateProductWithImages,
+  uploadProductsFromFile,
+} from './productsApi'
 import type { Product, ProductFileUploadConfiguration } from '../types'
 
 vi.mock('../../../shared/api/apiClient', () => ({
@@ -97,6 +104,66 @@ describe('products API upload contracts', () => {
     })).resolves.toEqual({
       DocumentURL: 'https://example.test/income.xlsx',
       PdfDocumentURL: 'https://example.test/income.pdf',
+    })
+  })
+
+  it('requests product movement export documents and keeps the PDF alias', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      PdfDocument: 'https://example.test/movement.pdf',
+      XlsxDocument: 'https://example.test/movement.xlsx',
+    })
+
+    await expect(exportProductMovementsDocument({
+      from: '2026-06-01',
+      movementType: 0,
+      productNetId: 'product-1',
+      to: '2026-06-08',
+      types: [0, 3, 5],
+    })).resolves.toEqual({
+      DocumentURL: 'https://example.test/movement.xlsx',
+      PdfDocumentURL: 'https://example.test/movement.pdf',
+    })
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/consignments/info/movement/document/export', {
+      errorMessages: {
+        default: 'Не вдалося сформувати документ руху товару',
+        network: 'Сервер експорту руху товару недоступний',
+      },
+      query: {
+        from: '2026-06-01',
+        movementType: 0,
+        productNetId: 'product-1',
+        to: '2026-06-08',
+        types: [0, 3, 5],
+      },
+    })
+  })
+
+  it('requests product outcome export documents and keeps the PDF alias', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      PdfDocument: 'https://example.test/outcome.pdf',
+      XlsxDocument: 'https://example.test/outcome.xlsx',
+    })
+
+    await expect(exportProductOutcomeMovementsDocument({
+      from: '2026-07-07',
+      productNetId: 'product-1',
+      to: '2026-07-07',
+    })).resolves.toEqual({
+      DocumentURL: 'https://example.test/outcome.xlsx',
+      PdfDocumentURL: 'https://example.test/outcome.pdf',
+    })
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/consignments/info/outcome/document/export', {
+      errorMessages: {
+        default: 'Не вдалося сформувати документ виходу',
+        network: 'Сервер експорту виходу недоступний',
+      },
+      query: {
+        from: '2026-07-07',
+        productNetId: 'product-1',
+        to: '2026-07-07',
+      },
     })
   })
 })

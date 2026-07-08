@@ -14,7 +14,7 @@ import {
 } from '@mantine/core'
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
-import { CircleAlert, Download, Eye, FileText, Plus, RotateCcw } from 'lucide-react'
+import { CircleAlert, Eye, FileDown, FileText, Plus, RotateCcw } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { type FormEvent, useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
@@ -29,6 +29,11 @@ import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/pagina
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
+import {
+  closePendingExportDocumentWindow,
+  openExportDocumentInWindow,
+  openPendingExportDocumentWindow,
+} from '../../../shared/documents/openExportDocument'
 import {
   exportProductCapitalization,
   getProductCapitalization,
@@ -206,14 +211,29 @@ function useProductCapitalizationsPageModel() {
     setError(null)
     setDetailError(null)
 
+    const pendingWindow = openPendingExportDocumentWindow(t('Друк PDF'))
+
     try {
       const document = await exportProductCapitalization(capitalization.NetUid)
 
+      if (!isCurrentExport()) {
+        closePendingExportDocumentWindow(pendingWindow)
+        return
+      }
+
+      if (document.PdfDocumentURL && openExportDocumentInWindow(pendingWindow, document.PdfDocumentURL)) {
+        setDownloadDocument(null)
+        setDownloadModalOpened(false)
+        return
+      }
+
+      closePendingExportDocumentWindow(pendingWindow)
       if (isCurrentExport()) {
         setDownloadDocument(document)
         setDownloadModalOpened(true)
       }
     } catch (exportError) {
+      closePendingExportDocumentWindow(pendingWindow)
       if (isCurrentExport()) {
         const message = exportError instanceof Error ? exportError.message : t('Не вдалося сформувати експорт оприбуткування')
 
@@ -503,25 +523,12 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
       <AppModal
         centered
         opened={downloadModalOpened}
-        title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Експорт оприбуткування')}</span>}
+        title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Друк PDF')}</span>}
         onClose={() => setDownloadModalOpened(false)}
       >
         <Stack gap="sm">
           {downloadDocument?.DocumentURL || downloadDocument?.PdfDocumentURL ? (
             <>
-              {downloadDocument.DocumentURL && (
-                <Anchor
-                  href={upgradeHttpToHttps(downloadDocument.DocumentURL)}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="document-link"
-                >
-                  <span className="document-link-badge document-link-badge-excel">
-                    <ExcelIcon size={22} />
-                  </span>
-                  <span>{t('Excel документ')}</span>
-                </Anchor>
-              )}
               {downloadDocument.PdfDocumentURL && (
                 <Anchor
                   href={upgradeHttpToHttps(downloadDocument.PdfDocumentURL)}
@@ -533,6 +540,19 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
                     <FileText size={22} strokeWidth={1.8} />
                   </span>
                   <span>{t('PDF документ')}</span>
+                </Anchor>
+              )}
+              {downloadDocument.DocumentURL && (
+                <Anchor
+                  href={upgradeHttpToHttps(downloadDocument.DocumentURL)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="document-link"
+                >
+                  <span className="document-link-badge document-link-badge-excel">
+                    <ExcelIcon size={22} />
+                  </span>
+                  <span>{t('Excel документ')}</span>
                 </Anchor>
               )}
             </>
@@ -594,14 +614,14 @@ function ProductCapitalizationDetailDrawer({
             </div>
             <Button
               className="product-capitalization-detail-export"
-              color="gray"
+              color={CREATE_ACTION_COLOR}
               disabled={!capitalization.NetUid || Boolean(exportingNetId)}
-              leftSection={<Download size={16} />}
+              leftSection={<FileDown size={16} />}
               loading={exportingNetId === capitalization.NetUid}
               variant="light"
               onClick={() => onExport(capitalization)}
             >
-              {t('Експорт')}
+              {t('Друк PDF')}
             </Button>
           </div>
 
@@ -787,17 +807,17 @@ function useProductCapitalizationColumns(
                   <Eye size={16} />
                 </ActionIcon>
               </Tooltip>
-              <Tooltip label="Експорт">
+              <Tooltip label="Друк PDF">
                 <ActionIcon
-                  aria-label="Експорт"
-                  color="gray"
+                  aria-label="Друк PDF"
+                  color={CREATE_ACTION_COLOR}
                   disabled={!capitalization.NetUid || Boolean(exportingNetId)}
                   loading={exportingNetId === capitalization.NetUid}
                   size="sm"
                   variant="subtle"
                   onClick={() => onExport(capitalization)}
                 >
-                  <Download size={16} />
+                  <FileDown size={16} />
                 </ActionIcon>
               </Tooltip>
             </Group>

@@ -82,6 +82,53 @@ describe('sales Ukraine document request contracts', () => {
     })
   })
 
+  it('normalizes bundled invoice document aliases returned without URL suffix', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      DocumentURL: 'http://example.test/payment.xlsx',
+      PdfDocumentURL: 'http://example.test/payment.pdf',
+      InvoiceDocument: 'http://example.test/invoice.xlsx',
+      PdfInvoiceDocument: 'http://example.test/invoice.pdf',
+      IsAcceptedToPacking: true,
+    })
+
+    await expect(getSalePaymentDocument('sale-net-id')).resolves.toEqual({
+      excelUrl: 'https://example.test/payment.xlsx',
+      invoiceExcelUrl: 'https://example.test/invoice.xlsx',
+      invoicePdfUrl: 'https://example.test/invoice.pdf',
+      isAcceptedToPacking: true,
+      pdfUrl: 'https://example.test/payment.pdf',
+    })
+  })
+
+  it('normalizes PZ document aliases returned by the PDF print endpoint', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      PdfDocument: 'http://example.test/pz.pdf',
+      XlsxDocument: 'http://example.test/pz.xlsx',
+    })
+
+    await expect(getSalePzDocument('sale-net-id')).resolves.toEqual({
+      excelUrl: null,
+      invoiceExcelUrl: null,
+      invoicePdfUrl: null,
+      isAcceptedToPacking: false,
+      pdfUrl: 'https://example.test/pz.pdf',
+    })
+  })
+
+  it('treats the generic PZ document URL as PDF because the endpoint is PDF-only in the UI', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      DocumentURL: 'http://example.test/pz.pdf',
+    })
+
+    await expect(getSalePzDocument('sale-net-id')).resolves.toEqual({
+      excelUrl: null,
+      invoiceExcelUrl: null,
+      invoicePdfUrl: null,
+      isAcceptedToPacking: false,
+      pdfUrl: 'https://example.test/pz.pdf',
+    })
+  })
+
   it('loads the edit-shift sale through the shifted legacy endpoint', async () => {
     apiRequestMock.mockResolvedValueOnce({
       Sale: {
