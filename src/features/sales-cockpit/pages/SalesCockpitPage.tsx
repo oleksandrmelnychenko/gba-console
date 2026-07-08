@@ -1,9 +1,8 @@
-import { ActionIcon, Alert, Badge, Card, SegmentedControl, SimpleGrid, Stack, Text, Tooltip } from '@mantine/core'
-import { CircleAlert, RefreshCw, Sparkles } from 'lucide-react'
+import { Alert, Stack } from '@mantine/core'
+import { CircleAlert } from 'lucide-react'
 import { notifications } from '@mantine/notifications'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
-import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import {
   addTaskNote,
@@ -13,12 +12,15 @@ import {
   setTaskStatus,
 } from '../api/salesCockpitApi'
 import { CockpitDashboardPanel } from '../components/CockpitDashboardPanel'
+import { CockpitQueueSummary } from '../components/CockpitQueueSummary'
+import { CockpitTargetCard } from '../components/CockpitTargetCard'
+import { CockpitTaskList } from '../components/CockpitTaskList'
+import { CockpitToolbar, type CockpitDayFilter } from '../components/CockpitToolbar'
 import { DoneModal } from '../components/DoneModal'
 import { NoteModal } from '../components/NoteModal'
 import { SnoozeModal } from '../components/SnoozeModal'
-import { TaskCard } from '../components/TaskCard'
-import { TaskFilters } from '../components/TaskFilters'
-import type { CockpitTarget, CockpitTask, CockpitTaskType, CockpitUrgency, HeadPaceStatus } from '../types'
+import type { CockpitTarget, CockpitTask, CockpitTaskType, CockpitUrgency } from '../types'
+import { buildCockpitTaskInsights, isCockpitTaskToday, kyivDayKey } from '../utils/taskInsights'
 import './sales-cockpit-page.css'
 
 const INBOX_LIMIT = 50
@@ -33,65 +35,6 @@ const TYPE_RANK: Record<CockpitTaskType, number> = {
   churn_winback: 2,
   cross_sell: 3,
   new_client_activation: 4,
-}
-
-const PACE_COLOR: Record<HeadPaceStatus, string> = {
-  ahead: 'green',
-  on: 'blue',
-  behind: 'red',
-  no_target: 'gray',
-}
-
-const PACE_LABEL: Record<HeadPaceStatus, string> = {
-  ahead: 'Випереджає',
-  on: 'У графіку',
-  behind: 'Відстає',
-  no_target: 'Немає цілі',
-}
-
-// Maps a pace status to the metric tile's left-accent variant in sales-cockpit-page.css.
-const PACE_ACCENT: Record<HeadPaceStatus, string> = {
-  ahead: 'success',
-  on: 'info',
-  behind: 'danger',
-  no_target: 'neutral',
-}
-
-const moneyFormatter = new Intl.NumberFormat('uk-UA', {
-  maximumFractionDigits: 0,
-})
-
-type DayFilter = 'all' | 'today'
-
-const KYIV_TZ = 'Europe/Kyiv'
-
-// Compares two instants by their calendar day in Europe/Kyiv, so "Сьогодні"
-// means "today in Kyiv" regardless of the viewer's local timezone.
-const kyivDayFormatter = new Intl.DateTimeFormat('en-CA', {
-  timeZone: KYIV_TZ,
-  year: 'numeric',
-  month: '2-digit',
-  day: '2-digit',
-})
-
-function kyivDayKey(value: Date): string {
-  return kyivDayFormatter.format(value)
-}
-
-// A task is "today" when its due_date (preferred when present) or generated_at
-// falls on today's Kyiv calendar day. Tasks without a usable date are excluded.
-function isTaskToday(task: CockpitTask, todayKey: string): boolean {
-  const raw = task.due_date ?? task.generated_at
-  if (!raw) {
-    return false
-  }
-
-  const parsed = Date.parse(raw)
-  if (Number.isNaN(parsed)) {
-    return false
-  }
-
-  return kyivDayKey(new Date(parsed)) === todayKey
 }
 
 function inboxOrder(left: CockpitTask, right: CockpitTask): number {
@@ -116,7 +59,7 @@ export function SalesCockpitPage() {
   const [target, setTarget] = useValueState<CockpitTarget | null>(null)
   const [taskTypeFilter, setTaskTypeFilter] = useValueState<CockpitTaskType | null>(null)
   const [urgencyFilter, setUrgencyFilter] = useValueState<CockpitUrgency | null>(null)
-  const [dayFilter, setDayFilter] = useValueState<DayFilter>('all')
+  const [dayFilter, setDayFilter] = useValueState<CockpitDayFilter>('all')
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useState(true)
   const [isRegenerating, setRegenerating] = useState(false)
@@ -174,16 +117,18 @@ export function SalesCockpitPage() {
   const todayKey = kyivDayKey(new Date())
 
   const todayCount = useMemo(
-    () => tasks.reduce((count, task) => (isTaskToday(task, todayKey) ? count + 1 : count), 0),
+    () => tasks.reduce((count, task) => (isCockpitTaskToday(task, todayKey) ? count + 1 : count), 0),
     [tasks, todayKey],
   )
+
+  const queueInsights = useMemo(() => buildCockpitTaskInsights(tasks, todayKey), [tasks, todayKey])
 
   const visibleTasks = useMemo(() => {
     const filtered = tasks.filter(
       (task) =>
         (!taskTypeFilter || task.task_type === taskTypeFilter) &&
         (!urgencyFilter || task.urgency === urgencyFilter) &&
-        (dayFilter === 'all' || isTaskToday(task, todayKey)),
+        (dayFilter === 'all' || isCockpitTaskToday(task, todayKey)),
     )
 
     return filtered.toSorted(inboxOrder)
@@ -320,48 +265,20 @@ export function SalesCockpitPage() {
 
   return (
     <Stack className="cockpit-page" gap={6}>
-      <Card className="app-filter-card cockpit-toolbar-card" withBorder radius="md" padding={0}>
-        <div className="app-filter-bar cockpit-command-bar">
-          <AiFeatureBadge size="sm" tooltip={t('AI-сервіс завдань продажів')} />
-          <TaskFilters
-            taskType={taskTypeFilter}
-            urgency={urgencyFilter}
-            onTaskTypeChange={setTaskTypeFilter}
-            onUrgencyChange={setUrgencyFilter}
-          />
-          <SegmentedControl
-            className="cockpit-day-filter"
-            data={[
-              { label: t('Усі'), value: 'all' },
-              { label: `${t('Сьогодні')} (${todayCount})`, value: 'today' },
-            ]}
-            size="sm"
-            value={dayFilter}
-            onChange={(value) => setDayFilter(value as DayFilter)}
-          />
-          <div className="app-filter-actions cockpit-command-actions">
-            <Text className="cockpit-toolbar-count">
-              {t('Завдань')}: <strong>{visibleTasks.length}</strong>
-            </Text>
-            <Tooltip label={t('Згенерувати завдання')}>
-              <ActionIcon
-                aria-label={t('Згенерувати завдання')}
-                loading={isRegenerating}
-                size={34}
-                variant="light"
-                onClick={handleRegenerate}
-              >
-                <Sparkles size={17} />
-              </ActionIcon>
-            </Tooltip>
-            <Tooltip label={t('Оновити')}>
-              <ActionIcon aria-label={t('Оновити')} loading={isLoading} size={34} variant="light" onClick={handleReload}>
-                <RefreshCw size={18} />
-              </ActionIcon>
-            </Tooltip>
-          </div>
-        </div>
-      </Card>
+      <CockpitToolbar
+        dayFilter={dayFilter}
+        isLoading={isLoading}
+        isRegenerating={isRegenerating}
+        taskType={taskTypeFilter}
+        todayCount={todayCount}
+        urgency={urgencyFilter}
+        visibleCount={visibleTasks.length}
+        onDayFilterChange={setDayFilter}
+        onRegenerate={handleRegenerate}
+        onReload={handleReload}
+        onTaskTypeChange={setTaskTypeFilter}
+        onUrgencyChange={setUrgencyFilter}
+      />
 
       {error && (
         <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
@@ -369,34 +286,22 @@ export function SalesCockpitPage() {
         </Alert>
       )}
 
-      {target && <TargetCard target={target} />}
+      {target && <CockpitTargetCard target={target} />}
+
+      <CockpitQueueSummary insights={queueInsights} isLoading={isLoading} visibleCount={visibleTasks.length} />
 
       <CockpitDashboardPanel reloadKey={reloadKey} />
 
-      {isLoading ? (
-        <CockpitTaskSkeleton label={t('Завантаження завдань')} />
-      ) : visibleTasks.length === 0 ? (
-        <Card withBorder radius="md" padding="xl">
-          <Text c="dimmed" fw={600} ta="center">
-            {t('Активних завдань немає')}
-          </Text>
-        </Card>
-      ) : (
-        <Stack gap="sm">
-          {visibleTasks.map((task) => (
-            <TaskCard
-              key={task.task_key}
-              pending={pendingTaskKey === task.task_key}
-              task={task}
-              onAddNote={setNoteTask}
-              onDismiss={handleDismiss}
-              onDone={setDoneTask}
-              onSnooze={setSnoozeTask}
-              onTakeInProgress={handleTakeInProgress}
-            />
-          ))}
-        </Stack>
-      )}
+      <CockpitTaskList
+        isLoading={isLoading}
+        pendingTaskKey={pendingTaskKey}
+        tasks={visibleTasks}
+        onAddNote={setNoteTask}
+        onDismiss={handleDismiss}
+        onDone={setDoneTask}
+        onSnooze={setSnoozeTask}
+        onTakeInProgress={handleTakeInProgress}
+      />
 
       <NoteModal
         saving={Boolean(noteTask && pendingTaskKey === noteTask.task_key)}
@@ -420,75 +325,6 @@ export function SalesCockpitPage() {
       />
     </Stack>
   )
-}
-
-function TargetCard({ target }: { target: CockpitTarget }) {
-  const { t } = useI18n()
-
-  return (
-    <Card className="app-section-card" withBorder radius="md">
-      <Stack gap="sm">
-        <Text className="app-section-title" fw={600}>{t('Моя ціль (місяць)')}</Text>
-
-        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
-          <TargetMetric label={t('Відвантаження')} metric={target.shipped} t={t} />
-          <TargetMetric label={t('Оплати')} metric={target.paid} t={t} />
-        </SimpleGrid>
-      </Stack>
-    </Card>
-  )
-}
-
-function CockpitTaskSkeleton({ label }: { label: string }) {
-  return (
-    <div className="cockpit-task-skeleton" aria-busy="true" aria-label={label}>
-      {Array.from({ length: 6 }).map((_, index) => (
-        <div key={index} className="cockpit-task-skeleton-card">
-          <span className="cockpit-task-skeleton-line is-title" />
-          <span className="cockpit-task-skeleton-line" />
-          <span className="cockpit-task-skeleton-line is-short" />
-        </div>
-      ))}
-    </div>
-  )
-}
-
-function TargetMetric({
-  label,
-  metric,
-  t,
-}: {
-  label: string
-  metric: CockpitTarget['shipped']
-  t: (key: string) => string
-}) {
-  return (
-    <div className={`cockpit-metric is-${PACE_ACCENT[metric.pace_status]}`}>
-      <div className="cockpit-metric-head">
-        <span className="cockpit-metric-label">{label}</span>
-        <Badge color={PACE_COLOR[metric.pace_status]} size="sm" variant="light">
-          {t(PACE_LABEL[metric.pace_status])}
-        </Badge>
-      </div>
-      <div className="cockpit-target-row">
-        <span className="cockpit-metric-value">{formatMoney(metric.mtd)}</span>
-        <span className="cockpit-target-of">
-          / {formatMoney(metric.target)} · {formatPercent(metric.attainment_pct)}
-        </span>
-      </div>
-      <span className="cockpit-metric-sub">
-        {t('Сьогодні потрібно')}: {formatMoney(metric.today_needed)}
-      </span>
-    </div>
-  )
-}
-
-function formatMoney(value: number): string {
-  return `€${moneyFormatter.format(value)}`
-}
-
-function formatPercent(value: number): string {
-  return `${value}%`
 }
 
 function isAbortError(error: unknown): boolean {

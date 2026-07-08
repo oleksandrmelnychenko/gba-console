@@ -1,0 +1,85 @@
+import { ActionIcon, Card, SegmentedControl, Text, Tooltip } from '@mantine/core'
+import { RefreshCw, Sparkles } from 'lucide-react'
+import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
+import { useI18n } from '../../../shared/i18n/useI18n'
+import type { CockpitTaskType, CockpitUrgency } from '../types'
+import { TaskFilters } from './TaskFilters'
+
+export type CockpitDayFilter = 'all' | 'today'
+
+type CockpitToolbarProps = {
+  taskType: CockpitTaskType | null
+  urgency: CockpitUrgency | null
+  dayFilter: CockpitDayFilter
+  todayCount: number
+  visibleCount: number
+  isLoading: boolean
+  isRegenerating: boolean
+  onTaskTypeChange: (value: CockpitTaskType | null) => void
+  onUrgencyChange: (value: CockpitUrgency | null) => void
+  onDayFilterChange: (value: CockpitDayFilter) => void
+  onRegenerate: () => void
+  onReload: () => void
+}
+
+export function CockpitToolbar({
+  taskType,
+  urgency,
+  dayFilter,
+  todayCount,
+  visibleCount,
+  isLoading,
+  isRegenerating,
+  onTaskTypeChange,
+  onUrgencyChange,
+  onDayFilterChange,
+  onRegenerate,
+  onReload,
+}: CockpitToolbarProps) {
+  const { t } = useI18n()
+
+  return (
+    <Card className="app-filter-card cockpit-toolbar-card" withBorder radius="md" padding={0}>
+      <div className="app-filter-bar cockpit-command-bar">
+        <AiFeatureBadge size="sm" tooltip={t('AI-сервіс завдань продажів')} />
+        <TaskFilters
+          taskType={taskType}
+          urgency={urgency}
+          onTaskTypeChange={onTaskTypeChange}
+          onUrgencyChange={onUrgencyChange}
+        />
+        <SegmentedControl
+          className="cockpit-day-filter"
+          data={[
+            { label: t('Усі'), value: 'all' },
+            { label: `${t('Сьогодні')} (${todayCount})`, value: 'today' },
+          ]}
+          size="sm"
+          value={dayFilter}
+          onChange={(value) => onDayFilterChange(value as CockpitDayFilter)}
+        />
+        <div className="app-filter-actions cockpit-command-actions">
+          <Text className="cockpit-toolbar-count">
+            {t('Завдань')}: <strong>{visibleCount}</strong>
+          </Text>
+          <Tooltip label={t('Згенерувати завдання')}>
+            <ActionIcon
+              aria-label={t('Згенерувати завдання')}
+              loading={isRegenerating}
+              size={34}
+              variant="light"
+              onClick={onRegenerate}
+            >
+              <Sparkles size={17} />
+            </ActionIcon>
+          </Tooltip>
+          <Tooltip label={t('Оновити')}>
+            <ActionIcon aria-label={t('Оновити')} loading={isLoading} size={34} variant="light" onClick={onReload}>
+              <RefreshCw size={18} />
+            </ActionIcon>
+          </Tooltip>
+        </div>
+      </div>
+    </Card>
+  )
+}
