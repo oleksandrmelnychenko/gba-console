@@ -1,4 +1,4 @@
-import { ActionIcon, Alert, Badge, Button, Card, Group, SimpleGrid, Stack, Table, Text, Tooltip } from '@mantine/core'
+import { ActionIcon, Alert, Badge, Button, Card, Group, SimpleGrid, Stack, Table, Text, TextInput, Tooltip } from '@mantine/core'
 import { CircleAlert, Map, RefreshCw } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -78,6 +78,7 @@ export function HeadDashboardPage() {
   const [team, setTeam] = useValueState<HeadTeam>(EMPTY_TEAM)
   const [escalated, setEscalated] = useValueState<EscalatedResponse>(EMPTY_ESCALATED)
   const [error, setError] = useValueState<string | null>(null)
+  const [asOfDate, setAsOfDate] = useValueState<string | undefined>(undefined)
   const [forbidden, setForbidden] = useState(false)
   const [isLoading, setLoading] = useState(true)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
@@ -87,7 +88,7 @@ export function HeadDashboardPage() {
 
     async function loadTeam() {
       try {
-        const [result, escalatedResult] = await Promise.all([getHeadTeam(), getEscalated()])
+        const [result, escalatedResult] = await Promise.all([getHeadTeam(asOfDate), getEscalated()])
 
         if (active) {
           setTeam(result)
@@ -124,7 +125,7 @@ export function HeadDashboardPage() {
       active = false
       clearInterval(interval)
     }
-  }, [reloadKey, setError, setEscalated, setTeam, t])
+  }, [asOfDate, reloadKey, setError, setEscalated, setTeam, t])
 
   const rows = useMemo(
     () => team.team.toSorted((left, right) => attainment(right) - attainment(left)),
@@ -136,11 +137,27 @@ export function HeadDashboardPage() {
     reload()
   }, [])
 
+  const handleAsOfDateChange = useCallback(
+    (value: string | undefined) => {
+      setAsOfDate(value)
+      setLoading(true)
+    },
+    [setAsOfDate],
+  )
+
   return (
     <Stack className="cockpit-page" gap={6}>
       <Card className="app-filter-card cockpit-toolbar-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar cockpit-command-bar cockpit-head-command-bar">
           <AiFeatureBadge size="sm" tooltip={t('AI-сервіс керівника продажів')} />
+          <TextInput
+            className="cockpit-date-filter"
+            label={t('Дата зрізу')}
+            type="date"
+            value={asOfDate ?? ''}
+            w={170}
+            onChange={(event) => handleAsOfDateChange(event.currentTarget.value || undefined)}
+          />
           <div className="app-filter-actions cockpit-command-actions">
             <Button
               className="cockpit-toolbar-button"
@@ -191,7 +208,7 @@ export function HeadDashboardPage() {
               label={t('Виконано / Продано за місяць')}
               value={`${team.totals.done_month} / ${team.totals.sold_month}`}
             />
-            <TotalCard accent="brand" label={t('Виторг за місяць')} value={formatMoney(team.totals.revenue_month)} />
+            <TotalCard accent="brand" label={t('AI-виручка задач')} value={formatMoney(team.totals.revenue_month)} />
             <TotalCard
               accent="info"
               label={t('Закриття / Конверсія')}
@@ -199,7 +216,7 @@ export function HeadDashboardPage() {
             />
           </SimpleGrid>
 
-          <HeadDashboardChartsPanel reloadKey={reloadKey} rows={rows} />
+          <HeadDashboardChartsPanel asOfDate={asOfDate} reloadKey={reloadKey} rows={rows} />
 
           {isLoading && rows.length === 0 ? (
             <CockpitTableSkeleton label={t('Завантаження дашборду')} />
@@ -224,7 +241,7 @@ export function HeadDashboardPage() {
                       <Table.Th style={{ textAlign: 'right' }}>{t('Продано')}</Table.Th>
                       <Table.Th style={{ textAlign: 'right' }}>{t('Закриття')}</Table.Th>
                       <Table.Th style={{ textAlign: 'right' }}>{t('Конверсія')}</Table.Th>
-                      <Table.Th style={{ textAlign: 'right' }}>{t('Виторг')}</Table.Th>
+                      <Table.Th style={{ textAlign: 'right' }}>{t('AI-виручка')}</Table.Th>
                     </Table.Tr>
                   </Table.Thead>
                   <Table.Tbody>

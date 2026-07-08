@@ -60,6 +60,7 @@ export function SalesCockpitPage() {
   const [taskTypeFilter, setTaskTypeFilter] = useValueState<CockpitTaskType | null>(null)
   const [urgencyFilter, setUrgencyFilter] = useValueState<CockpitUrgency | null>(null)
   const [dayFilter, setDayFilter] = useValueState<CockpitDayFilter>('all')
+  const [asOfDate, setAsOfDate] = useValueState<string | undefined>(undefined)
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useState(true)
   const [isRegenerating, setRegenerating] = useState(false)
@@ -81,7 +82,10 @@ export function SalesCockpitPage() {
       setError(null)
 
       try {
-        const [inbox, cockpitTarget] = await Promise.all([getCockpitInbox({ limit: INBOX_LIMIT }), getCockpitTarget()])
+        const [inbox, cockpitTarget] = await Promise.all([
+          getCockpitInbox({ limit: INBOX_LIMIT }),
+          getCockpitTarget(asOfDate),
+        ])
 
         if (!controller.signal.aborted) {
           setTasks(inbox.tasks)
@@ -110,7 +114,7 @@ export function SalesCockpitPage() {
       controller.abort()
       clearInterval(interval)
     }
-  }, [reloadKey, setError, setTarget, setTasks, t])
+  }, [asOfDate, reloadKey, setError, setTarget, setTasks, t])
 
   // Recomputed each render (a single cheap formatter call) so the "today" window
   // stays current across a midnight boundary without an extra dependency.
@@ -245,7 +249,7 @@ export function SalesCockpitPage() {
     setRegenerating(true)
 
     try {
-      await regenerateCockpit()
+      await regenerateCockpit(asOfDate)
       notifications.show({ color: 'green', message: t('Завдання оновлено') })
       reload()
     } catch (actionError) {
@@ -256,16 +260,25 @@ export function SalesCockpitPage() {
     } finally {
       setRegenerating(false)
     }
-  }, [t])
+  }, [asOfDate, t])
 
   const handleReload = useCallback(() => {
     setLoading(true)
     reload()
   }, [])
 
+  const handleAsOfDateChange = useCallback(
+    (value: string | undefined) => {
+      setAsOfDate(value)
+      setLoading(true)
+    },
+    [setAsOfDate],
+  )
+
   return (
     <Stack className="cockpit-page" gap={6}>
       <CockpitToolbar
+        asOfDate={asOfDate}
         dayFilter={dayFilter}
         isLoading={isLoading}
         isRegenerating={isRegenerating}
@@ -273,6 +286,7 @@ export function SalesCockpitPage() {
         todayCount={todayCount}
         urgency={urgencyFilter}
         visibleCount={visibleTasks.length}
+        onAsOfDateChange={handleAsOfDateChange}
         onDayFilterChange={setDayFilter}
         onRegenerate={handleRegenerate}
         onReload={handleReload}
@@ -290,7 +304,7 @@ export function SalesCockpitPage() {
 
       <CockpitQueueSummary insights={queueInsights} isLoading={isLoading} visibleCount={visibleTasks.length} />
 
-      <CockpitDashboardPanel reloadKey={reloadKey} />
+      <CockpitDashboardPanel asOfDate={asOfDate} reloadKey={reloadKey} />
 
       <CockpitTaskList
         isLoading={isLoading}

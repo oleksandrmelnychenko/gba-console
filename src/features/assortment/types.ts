@@ -141,14 +141,28 @@ export type AssortmentMargin = {
   leaders: AssortmentMarginRow[]
   laggards: AssortmentMarginRow[]
   negative: AssortmentMarginRow[]
-  summary: Record<string, unknown>
+  summary: AssortmentMarginSummary
+}
+
+export type AssortmentMarginSummary = {
+  [key: string]: unknown
+  total_skus?: number
+  skus_with_known_margin?: number
+  skus_unknown_margin?: number
+  weighted_avg_margin_pct?: number | null
+  negative_margin_skus?: number
+  eur_at_negative_margin?: number
+  revenue_eur_known_margin?: number
+  total_annual_units?: number
+  total_returned_units?: number
+  overall_return_rate?: number
 }
 
 export type AssortmentReturns = {
   as_of?: string | null
   min_rate?: number
   high_returns: AssortmentMarginRow[]
-  summary: Record<string, unknown>
+  summary: AssortmentMarginSummary
 }
 
 export type ProductDetail = AssortmentRow & { as_of?: string | null; found: boolean }

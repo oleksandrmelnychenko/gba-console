@@ -1,4 +1,4 @@
-import { ActionIcon, Card, SegmentedControl, Text, Tooltip } from '@mantine/core'
+import { ActionIcon, Card, SegmentedControl, Text, TextInput, Tooltip } from '@mantine/core'
 import { RefreshCw, Sparkles } from 'lucide-react'
 import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -11,6 +11,7 @@ type CockpitToolbarProps = {
   taskType: CockpitTaskType | null
   urgency: CockpitUrgency | null
   dayFilter: CockpitDayFilter
+  asOfDate?: string
   todayCount: number
   visibleCount: number
   isLoading: boolean
@@ -18,6 +19,7 @@ type CockpitToolbarProps = {
   onTaskTypeChange: (value: CockpitTaskType | null) => void
   onUrgencyChange: (value: CockpitUrgency | null) => void
   onDayFilterChange: (value: CockpitDayFilter) => void
+  onAsOfDateChange: (value: string | undefined) => void
   onRegenerate: () => void
   onReload: () => void
 }
@@ -26,6 +28,7 @@ export function CockpitToolbar({
   taskType,
   urgency,
   dayFilter,
+  asOfDate,
   todayCount,
   visibleCount,
   isLoading,
@@ -33,6 +36,7 @@ export function CockpitToolbar({
   onTaskTypeChange,
   onUrgencyChange,
   onDayFilterChange,
+  onAsOfDateChange,
   onRegenerate,
   onReload,
 }: CockpitToolbarProps) {
@@ -42,6 +46,14 @@ export function CockpitToolbar({
     <Card className="app-filter-card cockpit-toolbar-card" withBorder radius="md" padding={0}>
       <div className="app-filter-bar cockpit-command-bar">
         <AiFeatureBadge size="sm" tooltip={t('AI-сервіс завдань продажів')} />
+        <TextInput
+          className="cockpit-date-filter"
+          label={t('Дата зрізу')}
+          type="date"
+          value={asOfDate ?? ''}
+          w={170}
+          onChange={(event) => onAsOfDateChange(event.currentTarget.value || undefined)}
+        />
         <TaskFilters
           taskType={taskType}
           urgency={urgency}

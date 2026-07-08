@@ -2,7 +2,7 @@ import { Alert, Badge, Card, Group, SimpleGrid, Stack, Text } from '@mantine/cor
 import { CircleAlert } from 'lucide-react'
 import { useEffect, useMemo, useReducer } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AgingBars, type AgingSeries } from '../../../shared/ui/charts'
+import { AgingBars, type AgingSeries } from '../../../shared/ui/charts/AgingBars'
 import { getHeadDashboard } from '../api/salesCockpitApi'
 import type { HeadDashboard, HeadTeamRow } from '../types'
 
@@ -38,7 +38,15 @@ function chartsReducer(state: ChartsState, action: ChartsAction): ChartsState {
   }
 }
 
-export function HeadDashboardChartsPanel({ reloadKey, rows }: { reloadKey: number; rows: HeadTeamRow[] }) {
+export function HeadDashboardChartsPanel({
+  asOfDate,
+  reloadKey,
+  rows,
+}: {
+  asOfDate?: string
+  reloadKey: number
+  rows: HeadTeamRow[]
+}) {
   const { t } = useI18n()
   const [state, dispatch] = useReducer(chartsReducer, initialState)
   const { dashboard, error, isLoading } = state
@@ -50,7 +58,7 @@ export function HeadDashboardChartsPanel({ reloadKey, rows }: { reloadKey: numbe
       dispatch({ type: 'loading' })
 
       try {
-        const result = await getHeadDashboard()
+        const result = await getHeadDashboard(asOfDate)
 
         if (!cancelled) {
           dispatch({ dashboard: result, type: 'loaded' })
@@ -70,7 +78,7 @@ export function HeadDashboardChartsPanel({ reloadKey, rows }: { reloadKey: numbe
     return () => {
       cancelled = true
     }
-  }, [reloadKey, t])
+  }, [asOfDate, reloadKey, t])
 
   const nameById = useMemo(() => {
     const map = new Map<number, string>()

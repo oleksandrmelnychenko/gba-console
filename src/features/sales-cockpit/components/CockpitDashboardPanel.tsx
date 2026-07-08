@@ -2,14 +2,10 @@ import { Alert, Card, Group, SimpleGrid, Stack, Text } from '@mantine/core'
 import { CircleAlert } from 'lucide-react'
 import { useEffect, useMemo, useReducer } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import {
-  AgingBars,
-  TaskTypeDonut,
-  UrgencyDonut,
-  type AgingSeries,
-  type TaskTypeSliceInput,
-  type UrgencySliceInput,
-} from '../../../shared/ui/charts'
+import { AgingBars, type AgingSeries } from '../../../shared/ui/charts/AgingBars'
+import { TaskTypeDonut } from '../../../shared/ui/charts/TaskTypeDonut'
+import { UrgencyDonut } from '../../../shared/ui/charts/UrgencyDonut'
+import type { TaskTypeSliceInput, UrgencySliceInput } from '../../../shared/ui/charts/donutData'
 import { getDashboard } from '../api/salesCockpitApi'
 import type { CockpitDashboard, CockpitTaskType, CockpitUrgency } from '../types'
 
@@ -60,7 +56,7 @@ function dashboardReducer(state: DashboardState, action: DashboardAction): Dashb
   }
 }
 
-export function CockpitDashboardPanel({ reloadKey }: { reloadKey: number }) {
+export function CockpitDashboardPanel({ asOfDate, reloadKey }: { asOfDate?: string; reloadKey: number }) {
   const { t } = useI18n()
   const [state, dispatch] = useReducer(dashboardReducer, initialState)
   const { dashboard, error, isLoading } = state
@@ -72,7 +68,7 @@ export function CockpitDashboardPanel({ reloadKey }: { reloadKey: number }) {
       dispatch({ type: 'loading' })
 
       try {
-        const result = await getDashboard()
+        const result = await getDashboard(asOfDate)
 
         if (!cancelled) {
           dispatch({ dashboard: result, type: 'loaded' })
@@ -92,7 +88,7 @@ export function CockpitDashboardPanel({ reloadKey }: { reloadKey: number }) {
     return () => {
       cancelled = true
     }
-  }, [reloadKey, t])
+  }, [asOfDate, reloadKey, t])
 
   const urgencyData = useMemo<UrgencySliceInput[]>(
     () =>

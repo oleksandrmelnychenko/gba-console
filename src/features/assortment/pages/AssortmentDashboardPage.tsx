@@ -47,6 +47,11 @@ const money = new Intl.NumberFormat('uk-UA', { currency: 'EUR', maximumFractionD
 const RATING_LIMIT = 8
 const REGION_LIMIT = 50
 const REGION_WINDOW_DAYS = 365
+const REGION_PERIOD_OPTIONS = [
+  { value: '90', label: '90 днів' },
+  { value: '180', label: '180 днів' },
+  { value: '365', label: '365 днів' },
+]
 
 /* color paints the band bar/legend swatches (chart colors); pill is the
    app-role-pill variant (§4) for the same band rendered as a badge. */
@@ -360,7 +365,10 @@ export function AssortmentDashboardPage() {
   const returnsSummary = returns?.summary
   const weightedMargin = getSummaryNumber(marginSummary, 'weighted_avg_margin_pct')
   const negativeMarginSkus = getSummaryNumber(marginSummary, 'negative_margin_skus')
+  const knownMarginRevenue = getSummaryNumber(marginSummary, 'revenue_eur_known_margin')
+  const negativeMarginRevenue = getSummaryNumber(marginSummary, 'eur_at_negative_margin')
   const overallReturnRate = getSummaryNumber(returnsSummary, 'overall_return_rate')
+  const marginProfit = weightedMargin == null || knownMarginRevenue == null ? null : knownMarginRevenue * weightedMargin
   const avgHealth = Math.round(body?.avg_health ?? 0)
   const regionOptions = useMemo(
     () => (regions?.regions ?? []).map((region) => ({
@@ -431,12 +439,17 @@ export function AssortmentDashboardPage() {
 
           <AssortmentKpis
             body={body}
+            knownMarginRevenue={knownMarginRevenue}
+            marginProfit={marginProfit}
             negativeMarginSkus={negativeMarginSkus}
+            negativeMarginRevenue={negativeMarginRevenue}
             overallReturnRate={overallReturnRate}
             weightedMargin={weightedMargin}
           />
 
-          {selectedRegion && <RegionSummary region={selectedRegion} />}
+          {selectedRegion && (
+            <RegionSummary region={selectedRegion} windowDays={filters.regionWindowDays ?? REGION_WINDOW_DAYS} />
+          )}
 
           <AssortmentStructure
             avgHealth={avgHealth}
@@ -511,17 +524,26 @@ function AssortmentHeader({
         </Group>
         <Text className="assort-dash__subtitle">
           {t('Стан запасів')}
-          {totalSkus == null ? '' : <> · <b>{formatInt(totalSkus)}</b> SKU</>} · {t('середнє здоровʼя')}{' '}
+          {totalSkus == null ? '' : <> · {t('товарних позицій')}: <b>{formatInt(totalSkus)}</b></>} · {t('середнє здоровʼя')}{' '}
           <b>{avgHealth}</b>
         </Text>
       </div>
       <div className="assort-dash__controls">
         <TextInput
-          label={t('Станом на')}
+          label={t('Дата зрізу')}
           type="date"
           value={filters.asOfDate ?? ''}
           w={170}
           onChange={(event) => onFiltersChange({ ...filters, asOfDate: event.currentTarget.value || undefined })}
+        />
+        <Select
+          allowDeselect={false}
+          comboboxProps={ASSORT_COMBOBOX_PROPS}
+          data={REGION_PERIOD_OPTIONS.map((option) => ({ value: option.value, label: t(option.label) }))}
+          label={t('Період регіонів')}
+          value={String(filters.regionWindowDays ?? REGION_WINDOW_DAYS)}
+          w={170}
+          onChange={(value) => onFiltersChange({ ...filters, regionWindowDays: Number(value ?? REGION_WINDOW_DAYS) })}
         />
         <Select
           clearable
@@ -560,31 +582,55 @@ function AssortmentHeader({
 
 function AssortmentKpis({
   body,
+  knownMarginRevenue,
+  marginProfit,
   negativeMarginSkus,
+  negativeMarginRevenue,
   overallReturnRate,
   weightedMargin,
 }: {
   body?: AssortmentOverview['overview']
+  knownMarginRevenue: number | null
+  marginProfit: number | null
   negativeMarginSkus: number | null
+  negativeMarginRevenue: number | null
   overallReturnRate: number | null
   weightedMargin: number | null
 }) {
   const { t } = useI18n()
 
   return (
-    <SimpleGrid className="assort-kpis" cols={{ base: 1, sm: 2, lg: 4 }} spacing="md">
+    <SimpleGrid className="assort-kpis" cols={{ base: 1, sm: 2, lg: 3, xl: 6 }} spacing="md">
       <KpiTile
         label={t('Вартість запасів')}
-        sub={body?.total_skus == null ? undefined : `${formatInt(body.total_skus)} SKU`}
+        sub={body?.total_skus == null ? undefined : `${t('Товарних позицій')}: ${formatInt(body.total_skus)}`}
         value={formatMoney(body?.total_eur_value)}
       />
-      <KpiTile label={t('Річна виручка')} value={formatMoney(body?.total_revenue_eur)} />
+      <KpiTile
+        label={t('Оборот за 12 міс.')}
+        sub={t('сумарна виручка продажів')}
+        value={formatMoney(body?.total_revenue_eur)}
+      />
+      <KpiTile
+        label={t('Виручка з відомою собівартістю')}
+        sub={t('база для розрахунку маржі')}
+        value={formatMoney(knownMarginRevenue)}
+      />
+      <KpiTile
+        label={t('Валовий заробіток')}
+        sub={weightedMargin == null ? t('маржа невідома') : `${t('виручка × маржа')} ${pct(weightedMargin)}`}
+        value={formatMoney(marginProfit)}
+      />
       <KpiTile
         label={t('Середня маржа')}
-        sub={negativeMarginSkus ? `${formatInt(negativeMarginSkus)} ${t('у мінусі')}` : undefined}
+        sub={
+          negativeMarginSkus
+            ? `${formatInt(negativeMarginSkus)} ${t('у мінусі')} · ${formatMoney(negativeMarginRevenue)}`
+            : undefined
+        }
         value={pct(weightedMargin)}
       />
-      <KpiTile label={t('Повернення')} value={pct(overallReturnRate)} />
+      <KpiTile label={t('Повернення')} sub={t('частка повернених одиниць')} value={pct(overallReturnRate)} />
     </SimpleGrid>
   )
 }
@@ -608,7 +654,7 @@ function AssortmentStructure({
         <div className="assort-card__head">
           <span className="assort-card__title app-section-title">{t('Структура запасів за станом')}</span>
           <span className="assort-card__hint">
-            {body?.total_skus == null ? '' : `${formatInt(body.total_skus)} SKU`}
+            {body?.total_skus == null ? '' : `${t('Товарних позицій')}: ${formatInt(body.total_skus)}`}
           </span>
         </div>
         <div className="band-bar">
@@ -795,7 +841,7 @@ function AssortmentDetailTable({
   )
 }
 
-function RegionSummary({ region }: { region: AssortmentRegionRow }) {
+function RegionSummary({ region, windowDays }: { region: AssortmentRegionRow; windowDays: number }) {
   const { t } = useI18n()
 
   return (
@@ -806,14 +852,16 @@ function RegionSummary({ region }: { region: AssortmentRegionRow }) {
         </span>
         <div>
           <span>{regionName(region)}</span>
-          <small>{t('регіональний зріз за 365 днів')}</small>
+          <small>
+            {t('регіональний зріз за')} {formatInt(windowDays)} {t('днів')}
+          </small>
         </div>
       </div>
       <div className="assort-region__metrics">
         <RegionMetric label={t('Виручка')} value={formatMoney(region.revenue_eur)} />
         <RegionMetric label={t('Штуки')} value={formatInt(region.units)} />
         <RegionMetric label={t('Клієнти')} value={formatInt(region.client_count)} />
-        <RegionMetric label="SKU" value={formatInt(region.product_count)} />
+        <RegionMetric label={t('Товарні позиції')} value={formatInt(region.product_count)} />
       </div>
     </Card>
   )
