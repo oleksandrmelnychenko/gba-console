@@ -1,7 +1,7 @@
-import { ActionIcon, Alert, Anchor, Badge, Button, Card, Group, SimpleGrid, Stack, Text, Title, Tooltip } from '@mantine/core'
-import { ArrowLeft, CircleAlert, FileText, MapPin } from 'lucide-react'
+import { ActionIcon, Alert, Anchor, Badge, Button, Card, Group, SimpleGrid, Stack, Text, Tooltip } from '@mantine/core'
+import { CircleAlert, FileText, MapPin } from 'lucide-react'
 import { useEffect, useMemo } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams, type Location } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
@@ -69,7 +69,21 @@ function SupplyOrderProductPlacementContent({
 }) {
   const { t } = useI18n()
   const navigate = useNavigate()
+  const location = useLocation()
   const { id } = useParams<{ id: string }>()
+  const backgroundLocation = (location.state as { backgroundLocation?: Location } | null)?.backgroundLocation
+  const returnPath = backgroundLocation
+    ? `${backgroundLocation.pathname}${backgroundLocation.search}${backgroundLocation.hash}`
+    : null
+  const returnState = backgroundLocation?.state
+
+  function handleClose() {
+    if (returnPath) {
+      navigate(returnPath, { state: returnState })
+    } else {
+      navigate(-1)
+    }
+  }
   const [income, setIncome] = useValueState<ProductIncomeInfo | null>(null)
   const [isLoading, setLoading] = useValueState(false)
   const [error, setError] = useValueState<string | null>(null)
@@ -156,27 +170,36 @@ function SupplyOrderProductPlacementContent({
   }
 
   return (
-    <Stack gap="lg">
-      <Group justify="space-between" align="center">
-        <Group gap="sm" align="center">
-          <Button color="gray" leftSection={<ArrowLeft size={16} />} variant="subtle" onClick={() => navigate(-1)}>
-            {t('Назад')}
-          </Button>
+    <AppDrawer
+      closeOnClickOutside={false}
+      opened
+      position="right"
+      size="full"
+      title={
+        <Group gap="sm" wrap="nowrap">
+          <span style={{ fontFamily: 'var(--font-mono)' }}>{t(title)}</span>
+          <Badge color={status.color} variant="light">
+            {status.label}
+          </Badge>
+        </Group>
+      }
+      onClose={handleClose}
+    >
+      <Stack gap="lg">
+        <Group justify="space-between" align="center">
+          {order?.SupplyOrderNumber?.Number || ukraineOrder?.Number || income?.Number ? (
+            <Text c="dimmed" size="sm">
+              {order?.SupplyOrderNumber?.Number || ukraineOrder?.Number || income?.Number}
+            </Text>
+          ) : (
+            <span />
+          )}
           {firstUkraineItem && income?.NetUid && (
             <Button color={CREATE_ACTION_COLOR} loading={isExporting} onClick={() => void handleExport()}>
               {t('Експорт')}
             </Button>
           )}
         </Group>
-        <Stack gap={2} align="flex-end">
-          <Text fw={700} size="lg">
-            {t(title)}
-          </Text>
-          <Text c="dimmed" size="sm">
-            {order?.SupplyOrderNumber?.Number || ukraineOrder?.Number || income?.Number || id}
-          </Text>
-        </Stack>
-      </Group>
 
       {error && (
         <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
@@ -186,12 +209,9 @@ function SupplyOrderProductPlacementContent({
 
       <Card className="app-section-card" withBorder radius="md" padding="md">
         <Stack gap="md">
-          <Group justify="space-between" align="center">
-            <Title order={4}>{firstUkraineItem ? t('Замовлення Україна') : t('Замовлення постачальника')}</Title>
-            <Badge color={status.color} variant="light">
-              {status.label}
-            </Badge>
-          </Group>
+          <Text className="app-section-title" fw={600} size="sm">
+            {firstUkraineItem ? t('Замовлення Україна') : t('Замовлення постачальника')}
+          </Text>
 
           <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="md">
             <DetailValue label={t('Номер замовлення')} value={order?.SupplyOrderNumber?.Number || ukraineOrder?.Number} />
@@ -217,9 +237,7 @@ function SupplyOrderProductPlacementContent({
 
       <Card className="app-section-card" withBorder radius="md" padding="md">
         <Stack gap="md">
-          <Group justify="space-between" align="center">
-            <Title order={4}>{t('Позиції')}</Title>
-          </Group>
+          <Text className="app-section-title" fw={600} size="sm">{t('Позиції')}</Text>
 
           <DataTable
             columns={columns}
@@ -294,7 +312,8 @@ function SupplyOrderProductPlacementContent({
           )}
         </Stack>
       </AppModal>
-    </Stack>
+      </Stack>
+    </AppDrawer>
   )
 }
 

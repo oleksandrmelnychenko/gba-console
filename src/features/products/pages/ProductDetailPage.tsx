@@ -835,8 +835,8 @@ function ProductPlacementEditor({
       ) : null}
 
       {isEditing ? (
-        <Stack gap="xs">
-          <ScrollArea mah={320}>
+        <Stack className="product-placement-editor__edit-shell" gap="xs">
+          <ScrollArea.Autosize className="product-placement-editor__scroll" mah="min(320px, calc(100vh - 360px))" type="auto">
             <Table className="product-placement-editor__table" miw={680}>
               <Table.Thead>
                 <Table.Tr>
@@ -902,7 +902,7 @@ function ProductPlacementEditor({
                 ))}
               </Table.Tbody>
             </Table>
-          </ScrollArea>
+          </ScrollArea.Autosize>
           <Group className="product-placement-editor__footer" justify="space-between" gap="sm">
             <Button color={CREATE_ACTION_COLOR} size="xs" variant="outline" leftSection={<Plus size={14} />} onClick={addPlacement}>
               {t('Додати місце')}
@@ -918,7 +918,7 @@ function ProductPlacementEditor({
           </Group>
         </Stack>
       ) : (
-        <ScrollArea mah={300}>
+        <ScrollArea.Autosize className="product-placement-editor__scroll" mah="min(300px, calc(100vh - 320px))" type="auto">
           <Table className="product-placement-editor__table product-placement-editor__table--readonly" miw={540}>
             <Table.Thead>
               <Table.Tr>
@@ -937,7 +937,7 @@ function ProductPlacementEditor({
               ))}
             </Table.Tbody>
           </Table>
-        </ScrollArea>
+        </ScrollArea.Autosize>
       )}
     </Stack>
   )

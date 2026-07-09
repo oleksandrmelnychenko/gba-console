@@ -21,6 +21,7 @@ import {
   PaymentExpenseArticleFormPage,
   ProductGroupDetailPage,
   SupplierOrganizationEditPage,
+  SupplyOrderUkraineProductPlacementPage,
   SupplyUkraineDirectOrderCreatePage,
   SupplyUkraineToUkraineOrderCreatePage,
   TaxFreeCarrierFormPage,
@@ -103,6 +104,7 @@ export function App() {
             <Route path="/orders/ukraine/all/new" element={lazyRoute(<SupplyUkraineDirectOrderCreatePage />)} />
             <Route path="/orders/ukraine/to-ukraine/new" element={lazyRoute(<SupplyUkraineToUkraineOrderCreatePage />)} />
             <Route path="/orders/ukraine/placement/:id" element={lazyRoute(<WarehouseUkraineOrderPlacementsPage />)} />
+            <Route path="/orders/ukraine/:id/product-income" element={lazyRoute(<SupplyOrderUkraineProductPlacementPage />)} />
             <Route path="/warehouse/ukraine/orders/:id/placements" element={lazyRoute(<WarehouseUkraineOrderPlacementsPage />)} />
             <Route path="/product-groups/:id" element={lazyRoute(<ProductGroupDetailPage />)} />
             <Route path="/resales/new" element={lazyRoute(<NewResalePage />)} />

@@ -532,7 +532,7 @@ function useSupplyUkraineOrdersPageController() {
   function navigateFromModal(path: string) {
     dispatchUi({ row: null, type: 'setSelectedRow' })
 
-    if (path.startsWith('/orders/ukraine/placement/')) {
+    if (path.startsWith('/orders/ukraine/placement/') || /^\/orders\/ukraine\/[^/]+\/product-income$/.test(path)) {
       navigate(path, { state: { backgroundLocation: location } })
       return
     }
