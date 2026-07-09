@@ -24,7 +24,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { ArrowLeftRight, Box as BoxIcon, ChevronDown, CircleAlert, ClipboardList, FileDown, FileText, History, Image as ImageIcon, Package, Plus, RefreshCw, Save, Search, Settings, SquarePen, Star, Trash2, Upload } from 'lucide-react'
+import { ArrowLeftRight, Box as BoxIcon, ChevronDown, CircleAlert, ClipboardList, FileDown, FileText, History, Image as ImageIcon, Package, Plus, RefreshCw, Save, Settings, SquarePen, Star, Trash2, Upload } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { type KeyboardEvent, type ReactNode, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
@@ -1002,22 +1002,36 @@ function ProductAssortmentCarousel({
         <ProductUploadDocumentToolbar product={selectedProduct} onUploadSuccess={onUploadSuccess} />
       </Group>
 
-      <Group gap={6} grow mb="xs">
+      <Stack className="product-assortment-filter" gap={8}>
         <Select
           aria-label={t('Поле пошуку')}
+          allowDeselect={false}
+          classNames={{
+            input: 'product-assortment-filter-input',
+            label: 'product-assortment-filter-label',
+            option: 'product-assortment-filter-option',
+          }}
           size="xs"
           data={SEARCH_MODE_OPTION_VALUES.map((value) => ({ label: t(SEARCH_MODE_LABELS[value]), value }))}
+          label={t('Місце вводу для пошуку')}
           value={searchMode}
           onChange={(value) => onSearchModeChange((value as ProductSearchMode) || DEFAULT_SEARCH_MODE)}
         />
         <Select
           aria-label={t('Сортування')}
+          allowDeselect={false}
+          classNames={{
+            input: 'product-assortment-filter-input',
+            label: 'product-assortment-filter-label',
+            option: 'product-assortment-filter-option',
+          }}
           size="xs"
           data={SORT_MODE_OPTION_VALUES.map((value) => ({ label: t(SORT_MODE_LABELS[value]), value }))}
+          label={t('Сортувати За')}
           value={sortMode}
           onChange={(value) => onSortModeChange((value as ProductSortMode) || DEFAULT_SORT_MODE)}
         />
-      </Group>
+      </Stack>
 
       <Box className={`product-assortment-carousel ${isSelectionMode ? 'is-selection-mode' : ''}`}>
       <Box className="product-assortment-rail product-assortment-rail-top">
@@ -1040,7 +1054,7 @@ function ProductAssortmentCarousel({
         {isSelectionMode && selectedProduct ? (
           <button
             type="button"
-            className="product-assortment-selected"
+            className={`product-assortment-selected ${getProductRowToneClass(selectedProduct)}`}
             title={t('Скопіювати код')}
             onClick={() => copyToClipboard(getProductCode(selectedProduct))}
           >
@@ -1051,7 +1065,6 @@ function ProductAssortmentCarousel({
           <TextInput
             autoFocus
             aria-label={t('Введіть товар')}
-            leftSection={<Search size={17} />}
             placeholder={t('Введіть артикул або назву товару')}
             size="md"
             value={searchDraft}
@@ -1093,7 +1106,9 @@ function ProductCarouselRow({
       className={`product-carousel-row ${getProductRowToneClass(product)}`}
       onClick={() => onSelect(product)}
     >
-      <BoxIcon size={16} strokeWidth={1.7} className="product-carousel-row-icon" />
+      <span className="product-carousel-row-status" aria-hidden="true">
+        <span className="product-carousel-row-dot" />
+      </span>
       <span className="product-carousel-row-body">
         <span className="product-carousel-row-code">{getProductCode(product)}</span>
         <span className="product-carousel-row-name">{getProductTitle(product)}</span>
