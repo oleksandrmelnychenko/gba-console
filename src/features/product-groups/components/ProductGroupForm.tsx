@@ -107,6 +107,7 @@ export function ProductGroupForm({
 
       <Switch
         checked={productGroup.IsActive !== false}
+        color="green"
         disabled={disabled}
         label={t('Активна')}
         onChange={(event) => onFieldChange('IsActive', event.currentTarget.checked)}

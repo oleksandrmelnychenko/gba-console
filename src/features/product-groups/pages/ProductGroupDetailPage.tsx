@@ -204,15 +204,16 @@ export function ProductGroupDetailPage() {
       keepMounted={false}
       position="right"
       size="min(900px, 100vw)"
+      title={<span style={{ fontFamily: 'var(--font-mono)' }}>{productGroup?.Name || t('Товарна група')}</span>}
       onClose={closeSheet}
     >
     <Stack gap="lg">
-      <Group justify="space-between" align="start">
-        <div />
+      <Group justify="flex-end" align="start">
         <Group gap="xs">
           <Button
             color="gray"
             leftSection={<ChevronLeft size={16} />}
+            styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
             type="button"
             variant="light"
             onClick={closeSheet}
@@ -223,6 +224,7 @@ export function ProductGroupDetailPage() {
             color="gray"
             disabled={!isEdited || isSaving}
             leftSection={<RotateCcw size={16} />}
+            styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
             type="button"
             variant="light"
             onClick={resetEdits}
@@ -235,6 +237,7 @@ export function ProductGroupDetailPage() {
             form="product-group-edit-form"
             leftSection={<Save size={16} />}
             loading={isSaving}
+            styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
             type="submit"
           >
             {t('Зберегти')}
