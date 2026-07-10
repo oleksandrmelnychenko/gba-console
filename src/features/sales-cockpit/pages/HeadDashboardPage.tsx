@@ -345,7 +345,7 @@ function TeamMonitor({
           <Text c="dimmed" size="xs">{t('План, оплати та активні задачі')}</Text>
         </div>
         {selectedManagerId !== null ? (
-          <Button compact size="xs" variant="subtle" onClick={() => onSelect(null)}>{t('Усі')}</Button>
+          <Button size="compact-xs" variant="subtle" onClick={() => onSelect(null)}>{t('Усі')}</Button>
         ) : null}
       </Group>
 

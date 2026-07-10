@@ -1,4 +1,4 @@
-import { ActionIcon, Box, Button, Group, Select, Stack, Text } from '@mantine/core'
+import { Box, Button, Group, Select, Stack, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { Box as BoxIcon, Search, Settings, Sparkles } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
