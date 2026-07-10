@@ -25,6 +25,11 @@ import { formatLocalDateTime } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { EXCEL_FILE_ACCEPT, isExcelFile } from '../excelFiles'
 import {
+  prepareSupplyUkraineOrderCreateNavigation,
+  type SupplyUkraineOrderCreateMode,
+  type SupplyUkraineOrderUploadResponse,
+} from '../supplyUkraineOrderCreateSuccess'
+import {
   getSupplyOrderOrganizations,
   getSupplyOrderSuppliers,
   uploadDirectSupplyOrderFromFile,
@@ -44,9 +49,9 @@ import type {
 } from '../types'
 
 type NumberFieldValue = number | ''
-type CreateMode = 'direct' | 'toUkraine'
+type CreateMode = SupplyUkraineOrderCreateMode
 type SelectOption = { label: string, value: string }
-type UploadResponse = SupplyOrderFromFileResponse | SupplyOrderUkraineFromFileResponse
+type UploadResponse = SupplyUkraineOrderUploadResponse
 
 type DirectOrderForm = {
   clientAgreementKey: string
@@ -395,14 +400,16 @@ function SupplyUkraineOrderFileCreatePage({ mode }: { mode: CreateMode }) {
             selectedSupplier,
           })
 
-      if (response.HasError) {
+      const successNavigation = prepareSupplyUkraineOrderCreateNavigation(response, mode)
+
+      if (!successNavigation) {
         dispatchPage({ type: 'setUploadResponse', uploadResponse: response })
         notifications.show({ color: 'red', message: t('Файл містить помилки') })
         return
       }
 
       notifications.show({ color: 'green', message: t('Замовлення створено') })
-      navigate(getSuccessPath(response, mode))
+      navigate(successNavigation.path, { state: successNavigation.state })
     } catch (saveError) {
       dispatchPage({
         type: 'setError',
@@ -928,18 +935,6 @@ async function createToUkraineOrderFromFile({
     orderUkraine,
     parseConfiguration,
   })
-}
-
-function getSuccessPath(response: UploadResponse, mode: CreateMode): string {
-  if (mode === 'toUkraine' && 'SupplyOrderUkraine' in response && response.SupplyOrderUkraine?.NetUid) {
-    return `/orders/ukraine/view/${response.SupplyOrderUkraine.NetUid}`
-  }
-
-  if (mode === 'direct' && 'SupplyOrder' in response && response.SupplyOrder?.NetUid) {
-    return `/orders/ukraine/all/edit/${response.SupplyOrder.NetUid}`
-  }
-
-  return '/orders/ukraine/all'
 }
 
 function toDirectParseConfiguration(form: ParseForm): SupplyOrderDocumentParseConfiguration | null {

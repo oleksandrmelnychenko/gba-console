@@ -44,6 +44,13 @@ import {
   searchSupplyOrderServiceOrganizations,
   updateSupplyOrderUkraineDeliveryExpense,
 } from '../api/supplyUkraineOrdersApi'
+import {
+  clearAllOrdersUkraineFilterAfterCreateState,
+  createDefaultAllOrdersUkraineFilter,
+  readAllOrdersUkraineFilter,
+  readAllOrdersUkraineFilterAfterCreateState,
+  saveAllOrdersUkraineFilter,
+} from '../allOrdersUkraineFilter'
 import { DirectOrderProductIncomeStatus } from '../components/DirectOrderProductIncomeStatus'
 import { canOpenDirectProductIncomeFromRow } from '../directOrderActions'
 import type {
@@ -65,7 +72,6 @@ import { hasSupplyProForm } from '../proFormHelpers'
 import '../../../shared/ui/console-table-page.css'
 import './supply-ukraine-orders.css'
 
-const FILTER_STORAGE_KEY = 'allOrdersUkraineFilter'
 const DEFAULT_PAGE_SIZE = DEFAULT_PAGINATOR_PAGE_SIZE
 const SUPPLY_ORGANIZATION_SEARCH_DEBOUNCE_MS = 300
 const ORDERS_TABLE_MIN_WIDTH = 1280
@@ -247,7 +253,7 @@ function currenciesReducer(_state: CurrenciesState, action: CurrenciesAction): C
 }
 
 function createInitialOrdersUiState(defaultFilters: SupplyUkraineOrdersFilter): OrdersUiState {
-  const savedFilters = readSavedFilters(defaultFilters)
+  const savedFilters = readAllOrdersUkraineFilter(defaultFilters)
 
   return {
     activeFilters: savedFilters,
@@ -324,7 +330,7 @@ function useSupplyUkraineOrdersPageController() {
   const navigate = useNavigate()
   const location = useLocation()
   const { hasPermission } = useAuth()
-  const defaultFilters = useMemo(() => createDefaultFilters(), [])
+  const defaultFilters = useMemo(() => createDefaultAllOrdersUkraineFilter(), [])
   const [uiState, dispatchUi] = useReducer(ordersUiReducer, defaultFilters, createInitialOrdersUiState)
   const [state, dispatchOrders] = useReducer(ordersReducer, initialState)
   const [currenciesState, dispatchCurrencies] = useReducer(currenciesReducer, initialCurrenciesState)
@@ -343,18 +349,32 @@ function useSupplyUkraineOrdersPageController() {
     pageSize,
     selectedRow,
   } = uiState
+  const filtersAfterCreate = readAllOrdersUkraineFilterAfterCreateState(location.state)
+
+  useEffect(() => {
+    if (!filtersAfterCreate) {
+      return
+    }
+
+    dispatchUi({ filters: filtersAfterCreate, type: 'resetFilters' })
+    saveAllOrdersUkraineFilter(filtersAfterCreate)
+    navigate(`${location.pathname}${location.search}${location.hash}`, {
+      replace: true,
+      state: clearAllOrdersUkraineFilterAfterCreateState(location.state),
+    })
+  }, [filtersAfterCreate, location.hash, location.pathname, location.search, location.state, navigate])
 
   // Debounced supplier search: the «Постачальник» box filters as you type. After a short pause we
   // commit the typed name to the active filters (which re-fetches), so the search runs without the
   // user hunting for a refresh button. Enter still applies immediately.
   const [debouncedSupplier] = useDebouncedValue(filterDraft.supplier, 400)
   useEffect(() => {
-    if (debouncedSupplier === activeFilters.supplier) {
+    if (debouncedSupplier !== filterDraft.supplier || debouncedSupplier === activeFilters.supplier) {
       return
     }
 
     dispatchUi({ filters: { ...activeFilters, supplier: debouncedSupplier }, type: 'setActiveFilters' })
-  }, [debouncedSupplier, activeFilters])
+  }, [debouncedSupplier, filterDraft.supplier, activeFilters])
 
   const requestIdRef = useRef(0)
   const downloadRequestRef = useRef(0)
@@ -406,7 +426,7 @@ function useSupplyUkraineOrdersPageController() {
   }, [t])
 
   useEffect(() => {
-    saveFilters(activeFilters)
+    saveAllOrdersUkraineFilter(activeFilters)
   }, [activeFilters])
 
   useEffect(() => {
@@ -512,7 +532,7 @@ function useSupplyUkraineOrdersPageController() {
 
   function resetFilters() {
     dispatchUi({ filters: defaultFilters, type: 'resetFilters' })
-    saveFilters(defaultFilters)
+    saveAllOrdersUkraineFilter(defaultFilters)
   }
 
   function changePageSize(value: string | null) {
@@ -2105,55 +2125,6 @@ function compareRows(left: SupplyUkraineOrderRow, right: SupplyUkraineOrderRow):
   return toTimestamp(right.orderDate) - toTimestamp(left.orderDate)
 }
 
-function createDefaultFilters(): SupplyUkraineOrdersFilter {
-  return {
-    currencyId: '',
-    from: getDateShiftedByDays(-7),
-    supplier: '',
-    to: formatLocalDate(new Date()),
-    type: 'all',
-  }
-}
-
-function readSavedFilters(fallback: SupplyUkraineOrdersFilter): SupplyUkraineOrdersFilter {
-  if (typeof window === 'undefined') {
-    return fallback
-  }
-
-  try {
-    const rawValue = window.localStorage.getItem(FILTER_STORAGE_KEY)
-
-    if (!rawValue) {
-      return fallback
-    }
-
-    const savedValue = JSON.parse(rawValue) as Partial<SupplyUkraineOrdersFilter>
-
-    return {
-      currencyId: typeof savedValue.currencyId === 'string' ? savedValue.currencyId : fallback.currencyId,
-      from: isDateInputValue(savedValue.from) ? savedValue.from : fallback.from,
-      supplier: typeof savedValue.supplier === 'string' ? savedValue.supplier : fallback.supplier,
-      to: isDateInputValue(savedValue.to) ? savedValue.to : fallback.to,
-      type: isOrderKind(savedValue.type) ? savedValue.type : fallback.type,
-    }
-  } catch {
-    return fallback
-  }
-}
-
-function saveFilters(filters: SupplyUkraineOrdersFilter) {
-  if (typeof window !== 'undefined') {
-    window.localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify(filters))
-  }
-}
-
-function getDateShiftedByDays(days: number): string {
-  const date = new Date()
-  date.setDate(date.getDate() + days)
-
-  return formatLocalDate(date)
-}
-
 function getFilterError(filters: SupplyUkraineOrdersFilter): string | null {
   if (!filters.from || !filters.to) {
     return 'Вкажіть період'
@@ -2164,14 +2135,6 @@ function getFilterError(filters: SupplyUkraineOrdersFilter): string | null {
   }
 
   return null
-}
-
-function isDateInputValue(value: unknown): value is string {
-  return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)
-}
-
-function isOrderKind(value: unknown): value is SupplyUkraineOrderKind {
-  return value === 'all' || value === 'direct' || value === 'toUkraine'
 }
 
 function getDirectOrderDisplayNumber(order: DirectSupplyOrder): string | undefined {
