@@ -620,7 +620,7 @@ export function IncomeCashflowShopFormPage() {
       opened
       position="right"
       size="wide"
-      title={t('Магазин')}
+      title={<span style={{ fontFamily: 'var(--font-mono)' }}>t('Магазин')</span>}
       onClose={() => navigate(INCOME_CASHFLOWS_PATH)}
       footer={
         <Button
@@ -790,7 +790,7 @@ export function IncomeCashflowShopFormPage() {
 
               <Group justify="space-between" wrap="wrap">
                 <div>
-                  <Text fw={700}>{t('Рахунки клієнта')}</Text>
+                  <Text className="app-section-title" fw={600} size="sm">{t('Рахунки клієнта')}</Text>
                   <Text c="dimmed" size="sm">
                     {getEntityName(selectedPaymentClient)}
                   </Text>

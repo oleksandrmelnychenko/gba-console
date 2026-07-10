@@ -350,7 +350,7 @@ export function IncomeCashflowUserFormPage() {
       opened
       position="right"
       size="standard"
-      title={t('Повернення від колеги')}
+      title={<span style={{ fontFamily: 'var(--font-mono)' }}>t('Повернення від колеги')</span>}
       onClose={() => navigate(INCOME_CASHFLOWS_PATH)}
       footer={
         <Button

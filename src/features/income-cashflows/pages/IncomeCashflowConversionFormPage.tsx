@@ -383,7 +383,7 @@ export function IncomeCashflowConversionFormPage() {
       opened
       position="right"
       size="standard"
-      title={title}
+      title={<span style={{ fontFamily: 'var(--font-mono)' }}>title</span>}
       onClose={() => navigate(INCOME_CASHFLOWS_PATH)}
       footer={
         <Button
