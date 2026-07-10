@@ -36,3 +36,8 @@ export type AiFleetServiceStatus = {
   serviceId: string
   warmup: AiFleetWarmupState
 }
+
+export type AiFleetServicesSnapshot = {
+  statuses: AiFleetServiceStatus[]
+  telemetryError?: string
+}

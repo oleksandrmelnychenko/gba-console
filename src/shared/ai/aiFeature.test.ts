@@ -6,6 +6,7 @@ describe('ai feature marker helpers', () => {
     expect(isAiFeatureRoute('/products/assortment')).toBe(true)
     expect(isAiFeatureRoute('sales/ukraine/prediction')).toBe(true)
     expect(isAiFeatureRoute('/basket-supply-ukraine-order/cockpit')).toBe(true)
+    expect(isAiFeatureRoute('/basket-supply-ukraine-order/budget-cart')).toBe(true)
     expect(isAiFeatureRoute('/sales/ukraine/all')).toBe(false)
   })
 

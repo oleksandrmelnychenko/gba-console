@@ -4,6 +4,7 @@ import type { ComponentType } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
 import { AiFleetControl } from '../../ai-fleet/components/AiFleetControl'
+import { canRunAiFleetWarmup } from '../../ai-fleet/utils/aiFleetAccess'
 import { UserRoleType } from '../../../shared/auth/types'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { ProductWriteOffRulesControl } from './ProductWriteOffRulesControl'
@@ -25,7 +26,7 @@ export function HeaderActionBar() {
 
   return (
     <Group gap={4} wrap="nowrap" className="console-header-tool-actions">
-      <AiFleetControl />
+      <AiFleetControl canRunWarmup={canRunAiFleetWarmup(user)} />
       {canOpenSync && <SyncControl />}
       <ProductWriteOffRulesControl />
       <HeaderActionButton icon={ShoppingBasket} label={t('Кошик')} onClick={() => navigate('/basket-supply-ukraine-order')} />

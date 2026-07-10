@@ -77,7 +77,7 @@ export function HeadAiFleetStatus() {
         <Group gap="xs" wrap="wrap">
           <StateBadge
             icon={<CircleCheck size={13} />}
-            label={t('Health')}
+            label={t('API')}
             message={health?.message}
             state={isLoading && !health ? 'unknown' : health?.state ?? 'unknown'}
           />

@@ -7,7 +7,7 @@ type AiFeatureTarget = {
 const aiRoutePatterns = [
   /^\/?products\/assortment(?:\/|$)/i,
   /^\/?recommendations(?:\/|$)/i,
-  /^\/?basket-supply-ukraine-order\/(?:recommendations|dashboard|cockpit)(?:\/|$)/i,
+  /^\/?basket-supply-ukraine-order\/(?:recommendations|dashboard|cockpit|budget-cart)(?:\/|$)/i,
   /^\/?sales\/cockpit(?:\/|$)/i,
   /^\/?sales\/ukraine\/prediction(?:\/|$)/i,
 ]

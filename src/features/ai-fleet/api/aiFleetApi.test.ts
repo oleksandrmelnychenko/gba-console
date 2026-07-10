@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
-import { getAiFleetServiceStatus, triggerAiFleetWarmup } from './aiFleetApi'
+import { AI_FLEET_SERVICES, getAiFleetServicesSnapshot, getAiFleetServiceStatus, triggerAiFleetWarmup } from './aiFleetApi'
 
 vi.mock('../../../shared/api/apiClient', () => ({
   apiRequest: vi.fn(),
@@ -14,6 +14,12 @@ const apiRequestMock = vi.mocked(apiRequest)
 describe('aiFleetApi', () => {
   beforeEach(() => {
     apiRequestMock.mockReset()
+  })
+
+  it('keeps every procurement AI entry point in the fleet catalog', () => {
+    const procurement = AI_FLEET_SERVICES.find((service) => service.id === 'procurement')
+
+    expect(procurement?.location).toContain('/basket-supply-ukraine-order/budget-cart')
   })
 
   it('loads one service health and merges the 05:00 warmup status', async () => {
@@ -68,6 +74,63 @@ describe('aiFleetApi', () => {
   it('returns null for an unknown service without network calls', async () => {
     await expect(getAiFleetServiceStatus('missing')).resolves.toBeNull()
     expect(apiRequestMock).not.toHaveBeenCalled()
+  })
+
+  it('keeps live API statuses and exposes a fleet telemetry failure', async () => {
+    apiRequestMock.mockImplementation(async (path) => {
+      if (path === '/ai/fleet/status') {
+        throw new Error('503 from fleet status')
+      }
+
+      return { healthy: true }
+    })
+
+    const snapshot = await getAiFleetServicesSnapshot()
+
+    expect(snapshot.telemetryError).toContain('503 from fleet status')
+    expect(snapshot.statuses).toHaveLength(7)
+    expect(snapshot.statuses.every((status) => status.health.state === 'healthy')).toBe(true)
+    expect(snapshot.statuses.every((status) => status.warmup.state === 'unknown')).toBe(true)
+    expect(snapshot.statuses[0].warmup.message).toContain('Статус 05:00 недоступний')
+    expect(apiRequestMock.mock.calls.map(([path]) => path)).toEqual([
+      '/products/intelligence/health',
+      '/sales/prediction/health',
+      '/sales/cockpit/health',
+      '/procurement/health',
+      '/solvency/health',
+      '/recommendations/health',
+      '/pricing/health',
+      '/ai/fleet/status',
+    ])
+  })
+
+  it('treats a malformed successful fleet response as a telemetry failure', async () => {
+    apiRequestMock.mockImplementation(async (path) => (
+      path === '/ai/fleet/status' ? {} : { healthy: true }
+    ))
+
+    const snapshot = await getAiFleetServicesSnapshot()
+
+    expect(snapshot.telemetryError).toBe('Статус 05:00 повернув некоректну відповідь.')
+    expect(snapshot.statuses.every((status) => status.health.state === 'healthy')).toBe(true)
+    expect(snapshot.statuses.every((status) => status.warmup.state === 'unknown')).toBe(true)
+  })
+
+  it('treats a partial successful fleet response as a telemetry failure', async () => {
+    apiRequestMock.mockImplementation(async (path) => (
+      path === '/ai/fleet/status'
+        ? {
+            OperationState: 'healthy',
+            Services: [{ ServiceId: 'nba', State: 'healthy' }],
+          }
+        : { healthy: true }
+    ))
+
+    const snapshot = await getAiFleetServicesSnapshot()
+
+    expect(snapshot.telemetryError).toContain('немає сервісів')
+    expect(snapshot.statuses.find((status) => status.serviceId === 'nba')?.warmup.state).toBe('healthy')
+    expect(snapshot.statuses.find((status) => status.serviceId === 'products')?.warmup.state).toBe('unknown')
   })
 
   it('starts the scheduler AI warmup endpoint', async () => {
