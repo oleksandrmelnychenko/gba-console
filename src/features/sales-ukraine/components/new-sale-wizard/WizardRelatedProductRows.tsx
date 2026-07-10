@@ -1,7 +1,8 @@
 import { ActionIcon, Box, Stack, Text, Tooltip } from '@mantine/core'
-import { Info, Star } from 'lucide-react'
+import { Info, Package, Star } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
+import { getProductMainImage, getProductShopImageUrl } from '../../../products/utils'
 import type { WizardSaleProduct } from './wizardSaleProduct'
 
 export function WizardRelatedProductRows({
@@ -65,6 +66,8 @@ function WizardRelatedProductRow({
   const code = product.VendorCode || product.Articul || '-'
   const name = product.NameUA || product.Name || ''
   const extra = renderExtra?.(product)
+  // Mini photo (shop image fallback for sparse payloads) — rounded mask per request.
+  const imageUrl = getProductMainImage(product)?.ImageUrl || getProductShopImageUrl(product)
 
   return (
     <Box
@@ -74,15 +77,20 @@ function WizardRelatedProductRow({
       onClick={onPick}
     >
       <Box className="new-sale-related-row__content">
-        <Box className="new-sale-related-row__headline">
-          <Text c={color} className="new-sale-related-row__code" truncate>
-            {code}
-          </Text>
-          <RelatedInlineFacts product={product} />
+        <Box className="new-sale-related-row__thumb" aria-hidden="true">
+          {imageUrl ? <img alt="" loading="lazy" src={imageUrl} /> : <Package size={16} strokeWidth={1.6} />}
         </Box>
-        <Text className="new-sale-related-row__name" title={name}>
-          {name}
-        </Text>
+        <Box className="new-sale-related-row__copy">
+          <Box className="new-sale-related-row__headline">
+            <Text c={color} className="new-sale-related-row__code" truncate>
+              {code}
+            </Text>
+            <RelatedInlineFacts product={product} />
+          </Box>
+          <Text className="new-sale-related-row__name" title={name}>
+            {name}
+          </Text>
+        </Box>
       </Box>
       <Box className="new-sale-related-row__side">
         {extra && <Box className="new-sale-related-row__extra">{extra}</Box>}

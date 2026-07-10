@@ -2,7 +2,7 @@ import { Box, Group, Loader, Stack, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
-import { splitProductSearchResults } from '../../../products/utils'
+import { getProductMainImage, getProductShopImageUrl, splitProductSearchResults } from '../../../products/utils'
 import type { WizardSaleProduct } from './wizardSaleProduct'
 
 // Keystrokes are settled locally for this long before the value is lifted to the
@@ -24,6 +24,7 @@ export function WizardProductCarousel({
   searchMode,
   searchValue,
   getItemColor,
+  getItemQty,
   onPick,
   onSearchChange,
 }: {
@@ -31,6 +32,7 @@ export function WizardProductCarousel({
   detailSlot?: ReactNode
   focusedIndex: number
   getItemColor?: (product: WizardSaleProduct) => string | undefined
+  getItemQty?: (product: WizardSaleProduct) => number | undefined
   hasFocus: boolean
   isLoading?: boolean
   onPick: (index: number) => void
@@ -111,6 +113,7 @@ export function WizardProductCarousel({
               key={getProductKey(product, index)}
               color={getItemColor?.(product)}
               product={product}
+              qty={getItemQty?.(product)}
               onPick={() => onPick(index)}
             />
           ))}
@@ -135,6 +138,7 @@ export function WizardProductCarousel({
             active={active}
             color={getItemColor?.(focused)}
             product={focused}
+            qty={getItemQty?.(focused)}
             searchInputRef={searchInputRef}
           />
         )}
@@ -152,6 +156,7 @@ export function WizardProductCarousel({
                 key={getProductKey(product, index)}
                 color={getItemColor?.(product)}
                 product={product}
+                qty={getItemQty?.(product)}
                 onPick={() => onPick(bottomOffset + index)}
               />
             ))}
@@ -173,11 +178,13 @@ export function WizardProductCarousel({
 function ProductViewerRow({
   color,
   product,
+  qty,
   onPick,
 }: {
   color?: string
   onPick: () => void
   product: WizardSaleProduct
+  qty?: number
 }) {
   const code = product.VendorCode || product.Articul || ''
   const name = product.NameUA || product.Name || ''
@@ -205,6 +212,9 @@ function ProductViewerRow({
             {name}
           </Text>
         </Box>
+        {typeof qty === 'number' && (
+          <span className="new-sale-product-picker-row__qty">{qty}</span>
+        )}
       </Box>
     </Box>
   )
@@ -214,16 +224,21 @@ function ProductMiniCard({
   active,
   color,
   product,
+  qty,
   searchInputRef,
 }: {
   active: boolean
   color?: string
   product: WizardSaleProduct
+  qty?: number
   searchInputRef: RefObject<HTMLInputElement | null>
 }) {
   const { t } = useI18n()
   const code = product.VendorCode || product.Articul || ''
   const name = product.NameUA || product.Name || ''
+  // Product photo right in the drum card (falls back to the shop image when the
+  // sparse search payload carries no ProductImages) — same width as the card.
+  const imageUrl = getProductMainImage(product)?.ImageUrl || getProductShopImageUrl(product)
 
   function copyCode() {
     // Clicking the card blurs the (hidden) search input → keyboard events stop reaching the
@@ -249,10 +264,18 @@ function ProductMiniCard({
       title={t('Скопіювати код')}
       onClick={copyCode}
     >
+      {imageUrl && (
+        <Box className="new-sale-product-picker-card__media">
+          <img alt={code} loading="lazy" src={imageUrl} />
+        </Box>
+      )}
       <Box className="new-sale-product-picker-card__top">
         <Text c={color} className="new-sale-product-picker-card__code" title={name} truncate>
           {code}
         </Text>
+        {typeof qty === 'number' && (
+          <span className="new-sale-product-picker-card__qty">{qty}</span>
+        )}
       </Box>
       <Text className="new-sale-product-picker-card__name" title={name}>
         {name}

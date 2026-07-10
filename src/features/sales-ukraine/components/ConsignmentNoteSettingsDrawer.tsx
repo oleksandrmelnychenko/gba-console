@@ -278,7 +278,7 @@ export function ConsignmentNoteSettingsDrawer({
               {t('По документу')}
             </Text>
             <Text className="consignment-note-settings-document-title">
-              {t('Накладна')} {displayValue(sale?.SaleNumber?.Value)} {t('від')} {formatDateTime(getConsignmentNoteDate(sale))}
+              {t('Накладна')} <span className="consignment-note-settings-document-number">{displayValue(sale?.SaleNumber?.Value)}</span> {t('від')} {formatDateTime(getConsignmentNoteDate(sale))}
             </Text>
           </Box>
           <Select

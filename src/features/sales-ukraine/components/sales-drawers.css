@@ -335,6 +335,12 @@
   font-size: 18px;
   font-weight: 700;
   line-height: 1.2;
+  text-transform: uppercase; /* invoice numbers read as codes: ИЛ00629922, not Ил00629922 */
+}
+
+/* Invoice number inside composed titles («Накладна <№ > від …») — uppercase just the number. */
+.consignment-note-settings-document-number {
+  text-transform: uppercase;
 }
 
 .sale-edit-metrics {

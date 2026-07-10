@@ -2343,6 +2343,7 @@ export function NewSaleProductsStep({
               active={mainStatesActive}
               focusedIndex={mainIndex}
               getItemColor={(product) => getRelatedProductRowColor(product)}
+              getItemQty={(product) => getWizardSellableQty(product, isVatSale)}
               // Keep the selected main product pinned on the left while drilling into its
               // analogues/components (active.source switches to 'analogue'/'component'); otherwise
               // the carousel reverts to the search list and the chosen product visually drops out.
@@ -2448,7 +2449,7 @@ export function NewSaleProductsStep({
 
           {/* Pinned cart — stays put regardless of how many analogues/components are shown */}
           <Box className="new-sale-products-step__cart-slot">
-            <Stack gap={4}>
+            <Stack gap={4} h="100%">
               <Text fw={600} size="sm">
                 {t('Кошик')}
               </Text>

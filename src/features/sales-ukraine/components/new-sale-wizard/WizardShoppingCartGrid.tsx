@@ -231,7 +231,7 @@ export const WizardShoppingCartGrid = memo(function WizardShoppingCartGrid({
           getRowId={(item, index) => String(item.NetUid || item.Id || index)}
           isLoading={busy && items.length === 0}
           layoutVersion="new-sale-wizard-cart-1"
-          maxHeight={280}
+          height="100%"
           minWidth={WIZARD_CART_TABLE_MIN_WIDTH}
           showDensityToggle={false}
           showLayoutControls={false}
