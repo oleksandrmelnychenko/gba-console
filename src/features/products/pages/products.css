@@ -26,8 +26,9 @@
   padding: 10px 12px 12px 10px;
   border-right: 1px solid rgba(226, 232, 240, 0.92);
   background: var(--mantine-color-white);
-  overflow-x: visible; /* let the selected plate float out over the detail panel, not clip at the column edge */
-  overflow-y: clip; /* still contain the carousel rails vertically (clip keeps the sticky scroll container on the page) */
+  overflow: visible; /* let the selected plate float out over the detail panel — the rails self-clip
+                        (.product-assortment-rail overflow:hidden), so nothing spills. A mixed
+                        overflow-x:visible / overflow-y:clip still clipped the plate in Chrome. */
   position: sticky; /* stays in view while the detail panel scrolls past */
   top: 0;
   align-self: start; /* don't stretch to the tall workspace — sticky needs travel room */
@@ -167,19 +168,20 @@
 }
 
 .product-assortment-selected-code {
-  flex: none;
-  font-size: 26px;
+  align-self: stretch;
+  font-size: 18px; /* smaller — was 26px */
   font-weight: 800;
-  line-height: 1.05;
+  line-height: 1.1;
   letter-spacing: 0;
   color: #20252a;
-  white-space: nowrap;
+  white-space: normal; /* long OE codes wrap within the plate instead of clipping */
+  overflow-wrap: anywhere;
 }
 
 .product-assortment-selected-name {
   align-self: stretch;
   min-width: 0;
-  font-size: 18px;
+  font-size: 14px; /* smaller — was 18px */
   font-weight: 700;
   line-height: 1.2;
   color: #20252a;
@@ -360,36 +362,6 @@
   box-shadow:
     0 1px 2px rgba(16, 24, 40, 0.05),
     0 14px 32px -18px rgba(16, 24, 40, 0.16);
-}
-
-.product-inline-content {
-  transition: opacity 140ms ease;
-}
-
-.product-inline-view.is-loading .product-inline-content {
-  opacity: 0.38;
-}
-
-.product-inline-loading-overlay {
-  position: absolute;
-  inset: 0;
-  z-index: 20;
-  border-radius: inherit;
-  background: rgba(255, 255, 255, 0.38);
-  cursor: progress;
-}
-
-.product-inline-loading-status {
-  position: sticky;
-  top: 16px;
-  width: max-content;
-  margin: 16px auto 0;
-  padding: 9px 13px;
-  border: 1px solid rgba(var(--brand-orange-rgb), 0.22);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.96);
-  box-shadow: 0 10px 28px -16px rgba(15, 23, 42, 0.38);
-  color: var(--mantine-color-gray-8);
 }
 
 .product-inline-view-empty {
@@ -1087,9 +1059,7 @@
   padding: 9px 9px 10px 18px;
   border: 1px solid rgba(226, 232, 240, 0.94);
   border-radius: 12px;
-  background:
-    linear-gradient(135deg, rgba(var(--brand-orange-rgb), 0.055), rgba(255, 255, 255, 0.96) 46%, rgba(248, 250, 252, 0.88)),
-    var(--mantine-color-white);
+  background: var(--mantine-color-white); /* flat — no gradient wash */
   box-shadow: 0 8px 16px rgba(15, 23, 42, 0.028);
 }
 
@@ -1120,9 +1090,7 @@
   min-height: 31px;
   border-color: rgba(203, 213, 225, 0.92);
   border-radius: 9px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.92)),
-    var(--mantine-color-white);
+  background: var(--mantine-color-white); /* flat — no gradient */
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
   color: var(--mantine-color-gray-9);
   font-size: 12px;

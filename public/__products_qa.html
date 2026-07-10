@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="uk">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Products CSS QA</title>
+    <link rel="stylesheet" href="/src/features/products/pages/products.css">
+    <style>
+      :root {
+        --brand-orange: #f26b21;
+        --brand-orange-rgb: 242, 107, 33;
+        --font-mono: "JetBrains Mono", monospace;
+        --mantine-color-blue-6: #228be6;
+        --mantine-color-gray-2: #e9ecef;
+        --mantine-color-gray-3: #dee2e6;
+        --mantine-color-gray-5: #adb5bd;
+        --mantine-color-gray-6: #868e96;
+        --mantine-color-gray-7: #495057;
+        --mantine-color-gray-8: #343a40;
+        --mantine-color-gray-9: #212529;
+        --mantine-color-green-5: #40c057;
+        --mantine-color-green-6: #2f9e44;
+        --mantine-color-red-5: #fa5252;
+        --mantine-color-red-6: #e03131;
+        --mantine-color-white: #fff;
+        --tx-ease-spring: cubic-bezier(0.2, 0.8, 0.2, 1);
+      }
+
+      * { box-sizing: border-box; }
+      body { margin: 0; color: #20252a; font-family: sans-serif; }
+      button, input { font: inherit; }
+      .products-page { height: 900px; }
+      .product-assortment-carousel-header { font-size: 12px; }
+      .product-assortment-filter { font-size: 11px; }
+      .product-assortment-filter-input { display: block; width: 100%; margin-top: 8px; }
+      .product-inline-main { min-height: 270px; }
+      .product-inline-info,
+      .product-inline-description,
+      .product-inline-prices,
+      .product-inline-stock-bar,
+      .product-inline-tabs { border: 1px solid #e9ecef; padding: 16px; }
+    </style>
+  </head>
+  <body>
+    <main class="products-page">
+      <section class="product-assortment-workspace">
+        <aside class="product-assortment-column">
+          <header class="product-assortment-carousel-header">Весь асортимент</header>
+          <div class="product-assortment-filter">
+            Місце вводу для пошуку
+            <input class="product-assortment-filter-input" value="Всі">
+          </div>
+          <div class="product-assortment-carousel is-selection-mode">
+            <div class="product-assortment-rail product-assortment-rail-top">
+              <button class="product-carousel-row">
+                <span class="product-carousel-row-body">
+                  <span class="product-carousel-row-code">UP-001</span>
+                  <span class="product-carousel-row-name">Попередній товар</span>
+                </span>
+              </button>
+            </div>
+            <div class="product-assortment-drum">
+              <button class="product-assortment-selected is-critical" aria-label="Скопіювати код: X9-LONG-001">
+                <span class="product-assortment-selected-code">X9-LONG-001</span>
+                <span class="product-assortment-selected-name">Надзвичайно довга повна назва товару для перевірки перенесення рядків без обрізання та без накладання на нижню рейку асортименту</span>
+              </button>
+            </div>
+            <div class="product-assortment-rail product-assortment-rail-bottom">
+              <button class="product-carousel-row">
+                <span class="product-carousel-row-body">
+                  <span class="product-carousel-row-code">DOWN-001</span>
+                  <span class="product-carousel-row-name">Наступний товар</span>
+                </span>
+              </button>
+            </div>
+          </div>
+        </aside>
+        <article class="product-inline-view is-loading" aria-busy="true">
+          <div class="product-inline-loading-overlay" role="status">
+            <div class="product-inline-loading-status">Завантаження товару</div>
+          </div>
+          <div class="product-inline-content" inert>
+            <div class="product-inline-title">
+              <strong class="product-inline-code">OLD-001</strong>
+              Попередній товар
+            </div>
+            <div class="product-inline-main">
+              <div class="product-inline-info">Фото</div>
+              <div class="product-inline-description">Стабільний старий вміст заблоковано</div>
+              <div class="product-inline-prices">Ціни</div>
+            </div>
+            <div class="product-inline-stock-bar">Залишки</div>
+            <div class="product-inline-tabs">Прихід · Розхід · Повʼязані товари</div>
+          </div>
+        </article>
+      </section>
+    </main>
+  </body>
+</html>

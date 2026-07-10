@@ -4,8 +4,8 @@ import {
   Badge,
   Box,
   Group,
-  Loader,
   SegmentedControl,
+  Skeleton,
   Stack,
   Text,
   Tooltip,
@@ -146,9 +146,15 @@ export function ProductPriceSourcePanel({
       {viewMode === 'effective' ? (
         <EffectivePricesView prices={effectivePrices} />
       ) : isLoading && !currentComparison ? (
-        <Group justify="center" py="lg">
-          <Loader size="sm" />
-        </Group>
+        <Stack gap={10} py={4}>
+          {Array.from({ length: 8 }, (_, index) => (
+            <Group gap="sm" key={index} wrap="nowrap">
+              <Skeleton height={14} radius="sm" style={{ flex: 1 }} />
+              <Skeleton height={14} radius="sm" width={80} />
+              <Skeleton height={14} radius="sm" width={80} />
+            </Group>
+          ))}
+        </Stack>
       ) : hasError ? (
         <Alert color="red" icon={<CircleAlert size={16} />} variant="light">
           {t('Не вдалося завантажити ціни з джерел')}
@@ -335,8 +341,8 @@ function PriceHeader({ localCurrencyCode }: { localCurrencyCode: string }) {
   return (
     <Group gap="sm" wrap="nowrap">
       <Text className="app-section-title" fw={600} size="sm" style={{ flex: 1, minWidth: 0 }}>{t('Тип ціни')}</Text>
-      <Text c="dimmed" size="sm" ta="right" style={{ flexShrink: 0, width: 80 }}>EUR</Text>
-      <Text c="dimmed" size="sm" ta="right" style={{ flexShrink: 0, width: 80 }}>{localCurrencyCode}</Text>
+      <Text c="gray.9" fw={600} size="sm" ta="right" style={{ flexShrink: 0, width: 80 }}>EUR</Text>
+      <Text c="gray.9" fw={600} size="sm" ta="right" style={{ flexShrink: 0, width: 80 }}>{localCurrencyCode}</Text>
     </Group>
   )
 }

@@ -17,6 +17,7 @@ import {
   ScrollArea,
   Select,
   SimpleGrid,
+  Skeleton,
   Stack,
   Table,
   Text,
@@ -1004,7 +1005,7 @@ function ProductAssortmentCarousel({
         <ProductUploadDocumentToolbar product={selectedProduct} onUploadSuccess={onUploadSuccess} />
       </Group>
 
-      <Stack className="product-assortment-filter" gap={8}>
+      <Group className="product-assortment-filter" gap={8} grow align="flex-start" wrap="nowrap">
         <Select
           aria-label={t('Поле пошуку')}
           allowDeselect={false}
@@ -1033,13 +1034,18 @@ function ProductAssortmentCarousel({
           value={sortMode}
           onChange={(value) => onSortModeChange((value as ProductSortMode) || DEFAULT_SORT_MODE)}
         />
-      </Stack>
+      </Group>
 
       <Box className={`product-assortment-carousel ${isSelectionMode ? 'is-selection-mode' : ''}`}>
       <Box className="product-assortment-rail product-assortment-rail-top">
         {isLoading && !isVirtualLoad ? (
-          <Stack align="center" justify="center" h="100%">
-            <Loader size="sm" />
+          <Stack gap={12} justify="flex-end" h="100%" p="xs">
+            {Array.from({ length: 6 }, (_, index) => (
+              <Box key={index}>
+                <Skeleton height={11} mb={6} radius="sm" width="45%" />
+                <Skeleton height={10} radius="sm" width="75%" />
+              </Box>
+            ))}
           </Stack>
         ) : (
           topProducts.slice(-10).map((product) => (
@@ -1086,9 +1092,10 @@ function ProductAssortmentCarousel({
           />
         ))}
         {isVirtualLoad ? (
-          <Group justify="center" py="xs">
-            <Loader size="xs" />
-          </Group>
+          <Box p="xs">
+            <Skeleton height={11} mb={6} radius="sm" width="45%" />
+            <Skeleton height={10} radius="sm" width="75%" />
+          </Box>
         ) : null}
       </Box>
       </Box>
@@ -1152,24 +1159,17 @@ function ProductInlineView({
     )
   }
 
+  if (isLoading) {
+    return <ProductInlineViewSkeleton />
+  }
+
   const mainImage = getProductMainImage(product)
   const productImages = product.ProductImages?.filter((image) => image.ImageUrl && !image.Deleted) || []
   const prices = product.CalculatedPrices || []
 
   return (
-    <Box
-      aria-busy={isLoading}
-      className={`product-inline-view ${isLoading ? 'is-loading' : ''}`}
-    >
-      {isLoading ? (
-        <Box aria-live="polite" className="product-inline-loading-overlay" role="status">
-          <Group className="product-inline-loading-status" gap="xs">
-            <Loader size="sm" />
-            <Text size="sm" fw={650}>{t('Завантаження товару')}</Text>
-          </Group>
-        </Box>
-      ) : null}
-      <Box className="product-inline-content" inert={isLoading ? true : undefined}>
+    <Box className="product-inline-view">
+      <Box className="product-inline-content">
       <Group align="flex-start" justify="space-between" gap="sm" wrap="nowrap" className="product-inline-title">
         <Box className="product-inline-title-text">
           <Text component="span" fw={800} className="product-inline-code">{getProductCode(product)}</Text>
@@ -1272,6 +1272,70 @@ function ProductInlineView({
         onClose={() => setPreviewImageUrl(null)}
       />
       </Box>
+    </Box>
+  )
+}
+
+/* Shimmer placeholder mirroring the inline-view layout (title / image / info grid /
+   prices / stock bar / tabs) — shown while the product detail loads instead of
+   "Завантаження…" texts, so the panel keeps its shape and nothing jumps. */
+function ProductInlineViewSkeleton() {
+  return (
+    <Box aria-busy className="product-inline-view">
+      <Group align="flex-start" justify="space-between" gap="sm" wrap="nowrap" className="product-inline-title">
+        <Group gap={10} wrap="nowrap" style={{ flex: 1, minWidth: 0 }}>
+          <Skeleton height={24} radius="sm" width={130} />
+          <Skeleton height={20} radius="sm" width="min(340px, 40%)" />
+        </Group>
+        <Group gap="xs" wrap="nowrap">
+          {Array.from({ length: 8 }, (_, index) => (
+            <Skeleton height={38} key={index} radius="sm" width={38} />
+          ))}
+        </Group>
+      </Group>
+
+      <Box className="product-inline-main">
+        <Box className="product-inline-info">
+          <Skeleton height={190} radius="md" />
+        </Box>
+        <Box className="product-inline-description">
+          {Array.from({ length: 12 }, (_, index) => (
+            <Box className="product-inline-info-block" key={index}>
+              <Skeleton height={10} mb={8} radius="sm" width="55%" />
+              <Skeleton height={14} radius="sm" width="80%" />
+            </Box>
+          ))}
+        </Box>
+        <Box className="product-inline-prices">
+          <Stack gap={10}>
+            {Array.from({ length: 9 }, (_, index) => (
+              <Group gap="sm" key={index} wrap="nowrap">
+                <Skeleton height={14} radius="sm" style={{ flex: 1 }} />
+                <Skeleton height={14} radius="sm" width={80} />
+                <Skeleton height={14} radius="sm" width={80} />
+              </Group>
+            ))}
+          </Stack>
+        </Box>
+      </Box>
+
+      <Box className="product-inline-stock-bar">
+        <Group gap="xl" wrap="nowrap">
+          {Array.from({ length: 5 }, (_, index) => (
+            <Box key={index}>
+              <Skeleton height={22} mb={8} radius="sm" width={64} />
+              <Skeleton height={10} radius="sm" width={96} />
+            </Box>
+          ))}
+        </Group>
+      </Box>
+
+      <Group gap="xs" mt="md">
+        {Array.from({ length: 5 }, (_, index) => (
+          <Skeleton height={30} key={index} radius="xl" width={index === 0 ? 150 : 110} />
+        ))}
+      </Group>
+      <Skeleton height={200} mt="sm" radius="md" />
     </Box>
   )
 }
@@ -3101,10 +3165,16 @@ function ProductInlineMovementsTab({
         <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {state.exportError}
         </Alert>
+      ) : state.isLoading ? (
+        <Stack gap={10} py={4}>
+          {Array.from({ length: 8 }, (_, index) => (
+            <Skeleton height={26} key={index} radius="sm" />
+          ))}
+        </Stack>
       ) : direction === 'income' ? (
-        <ProductIncomeMovementsGrid emptyText={t(labels.empty)} isLoading={state.isLoading} rows={state.rows as ProductIncomeMovement[]} />
+        <ProductIncomeMovementsGrid emptyText={t(labels.empty)} isLoading={false} rows={state.rows as ProductIncomeMovement[]} />
       ) : (
-        <ProductOutcomeMovementsGrid emptyText={t(labels.empty)} isLoading={state.isLoading} rows={state.rows as ProductOutcomeMovement[]} />
+        <ProductOutcomeMovementsGrid emptyText={t(labels.empty)} isLoading={false} rows={state.rows as ProductOutcomeMovement[]} />
       )}
 
       <ProductMovementDownloadModal
