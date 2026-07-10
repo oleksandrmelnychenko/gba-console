@@ -20,6 +20,9 @@ import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableD
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { ConsoleTableEntityCell } from '../../../shared/ui/console-table-cells'
+import { createConsoleTableMarker } from '../../../shared/ui/console-table-utils'
+import '../../../shared/ui/console-table-page.css'
 import { useAuth } from '../../auth/useAuth'
 import { getPaymentCashflowArticles, searchPaymentCashflowArticles } from '../api/paymentCashflowArticlesApi'
 import type { PaymentCashflowArticle } from '../types'
@@ -78,15 +81,24 @@ export function PaymentCashflowArticlesPage() {
         header: t('Назва'),
         minWidth: 260,
         accessor: (article) => article.OperationName,
-        cell: (article) => <Text fw={600}>{displayValue(article.OperationName)}</Text>,
+        cell: (article) => (
+          <ConsoleTableEntityCell
+            marker={createConsoleTableMarker(article.OperationName || '')}
+            title={displayValue(article.OperationName)}
+          />
+        ),
       },
       {
         id: 'netUid',
         header: 'NetUid',
-        width: 280,
-        minWidth: 220,
+        width: 320,
+        minWidth: 300,
         accessor: (article) => article.NetUid,
-        cell: (article) => <Text c="dimmed">{displayValue(article.NetUid)}</Text>,
+        cell: (article) => (
+          <Text c="dimmed" size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0, whiteSpace: 'nowrap' }}>
+            {displayValue(article.NetUid)}
+          </Text>
+        ),
       },
       {
         id: 'actions',

@@ -1,7 +1,6 @@
 import {
   ActionIcon,
   Alert,
-  Button,
   Card,
   Group,
   Stack,
@@ -18,6 +17,7 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { getVatReports } from '../api/vatReportsApi'
 import type { VatReport } from '../types'
 import './vat-reports-page.css'
@@ -45,24 +45,19 @@ type VatReportsLoadState = {
   error: string | null
   hasMore: boolean
   isLoading: boolean
-  isLoadingMore: boolean
   reports: VatReport[]
 }
 
 type VatReportsLoadAction =
   | { type: 'failed'; error: string }
   | { type: 'invalid-filter' }
-  | { type: 'loaded'; reports: VatReport[] }
-  | { type: 'load-more-failed'; error: string }
-  | { type: 'load-more-loaded'; reports: VatReport[] }
-  | { type: 'load-more-start' }
+  | { type: 'loaded'; hasMore: boolean; reports: VatReport[] }
   | { type: 'start-loading' }
 
 const INITIAL_VAT_REPORTS_LOAD_STATE: VatReportsLoadState = {
   error: null,
   hasMore: false,
   isLoading: true,
-  isLoadingMore: false,
   reports: [],
 }
 
@@ -70,8 +65,10 @@ export function VatReportsPage() {
   const { t } = useI18n()
   const [fromDate, setFromDate] = useValueState(() => shiftDate(-7))
   const [toDate, setToDate] = useValueState(() => formatLocalDate(new Date()))
+  const [page, setPage] = useValueState(1)
+  const [pageSize, setPageSize] = useValueState(DEFAULT_LIMIT)
   const [loadState, dispatchLoadState] = useReducer(vatReportsLoadReducer, INITIAL_VAT_REPORTS_LOAD_STATE)
-  const { error, hasMore, isLoading, isLoadingMore, reports } = loadState
+  const { error, hasMore, isLoading, reports } = loadState
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const filterError = getDateRangeError(fromDate, toDate)
   const requestRef = useRef(0)
@@ -99,13 +96,13 @@ export function VatReportsPage() {
       try {
         const nextReports = await getVatReports({
           from: fromDate,
-          limit: DEFAULT_LIMIT,
-          offset: 0,
+          limit: pageSize,
+          offset: (page - 1) * pageSize,
           to: toDate,
         })
 
         if (isActive && requestRef.current === requestId) {
-          dispatchLoadState({ reports: nextReports, type: 'loaded' })
+          dispatchLoadState({ hasMore: nextReports.length >= pageSize, reports: nextReports, type: 'loaded' })
         }
       } catch (loadError) {
         if (isActive && requestRef.current === requestId) {
@@ -122,7 +119,7 @@ export function VatReportsPage() {
     return () => {
       isActive = false
     }
-  }, [filterError, fromDate, reloadKey, t, toDate])
+  }, [filterError, fromDate, page, pageSize, reloadKey, t, toDate])
 
   function prepareReportsLoad() {
     requestRef.current += 1
@@ -134,37 +131,6 @@ export function VatReportsPage() {
     reload()
   }
 
-  async function loadMore() {
-    if (filterError) {
-      dispatchLoadState({ type: 'invalid-filter' })
-      return
-    }
-
-    dispatchLoadState({ type: 'load-more-start' })
-    const requestId = requestRef.current + 1
-    requestRef.current = requestId
-
-    try {
-      const nextReports = await getVatReports({
-        from: fromDate,
-        limit: DEFAULT_LIMIT,
-        offset: reports.length,
-        to: toDate,
-      })
-
-      if (requestRef.current === requestId) {
-        dispatchLoadState({ reports: nextReports, type: 'load-more-loaded' })
-      }
-    } catch (loadError) {
-      if (requestRef.current === requestId) {
-        dispatchLoadState({
-          error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити наступні записи'),
-          type: 'load-more-failed',
-        })
-      }
-    }
-  }
-
   function resetFilters() {
     const nextFromDate = shiftDate(-7)
     const nextToDate = formatLocalDate(new Date())
@@ -174,6 +140,7 @@ export function VatReportsPage() {
     }
 
     prepareReportsLoad()
+    setPage(1)
     setFromDate(nextFromDate)
     setToDate(nextToDate)
   }
@@ -184,6 +151,7 @@ export function VatReportsPage() {
     }
 
     prepareReportsLoad()
+    setPage(1)
     setFromDate(value)
   }
 
@@ -193,6 +161,7 @@ export function VatReportsPage() {
     }
 
     prepareReportsLoad()
+    setPage(1)
     setToDate(value)
   }
 
@@ -247,13 +216,19 @@ export function VatReportsPage() {
           tableId="vat-reports"
         />
 
-        {hasMore && (
-          <Group className="vat-reports-footer" justify="center">
-            <Button color="gray" disabled={Boolean(filterError)} loading={isLoadingMore} variant="light" onClick={loadMore}>
-              {t('Завантажити ще')}
-            </Button>
-          </Group>
-        )}
+        <Group className="vat-reports-footer" justify="flex-end">
+          <Paginator
+            hasNext={hasMore}
+            isLoading={isLoading}
+            page={page}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={(nextPageSize) => {
+              setPageSize(nextPageSize)
+              setPage(1)
+            }}
+          />
+        </Group>
       </Card>
     </Stack>
   )
@@ -279,14 +254,22 @@ function useVatReportColumns(indexMap: Map<VatReport, number>): DataTableColumn<
         width: 160,
         minWidth: 140,
         accessor: (report) => report.FromDate,
-        cell: (report) => formatDateTime(report.FromDate),
+        cell: (report) => (
+          <Text size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>
+            {formatDateTime(report.FromDate)}
+          </Text>
+        ),
       },
       {
         id: 'number',
         header: t('Номер'),
         minWidth: 220,
         accessor: getReportNumber,
-        cell: (report) => <Text fw={600}>{displayValue(getReportNumber(report))}</Text>,
+        cell: (report) => (
+          <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0, textTransform: 'uppercase' }}>
+            {displayValue(getReportNumber(report))}
+          </Text>
+        ),
       },
       {
         id: 'type',
@@ -303,7 +286,11 @@ function useVatReportColumns(indexMap: Map<VatReport, number>): DataTableColumn<
         minWidth: 110,
         align: 'right',
         accessor: (report) => report.VatPercent,
-        cell: (report) => formatPercent(report.VatPercent),
+        cell: (report) => (
+          <Text className="app-money" size="sm" ta="right">
+            {formatPercent(report.VatPercent)}
+          </Text>
+        ),
       },
       {
         id: 'amount',
@@ -312,7 +299,11 @@ function useVatReportColumns(indexMap: Map<VatReport, number>): DataTableColumn<
         minWidth: 130,
         align: 'right',
         accessor: (report) => report.VatAmountEU,
-        cell: (report) => formatMoney(report.VatAmountEU),
+        cell: (report) => (
+          <Text className="app-money" size="sm" ta="right">
+            {formatMoney(report.VatAmountEU)}
+          </Text>
+        ),
       },
       {
         id: 'amountPln',
@@ -321,7 +312,11 @@ function useVatReportColumns(indexMap: Map<VatReport, number>): DataTableColumn<
         minWidth: 130,
         align: 'right',
         accessor: (report) => report.VatAmountPL,
-        cell: (report) => formatMoney(report.VatAmountPL),
+        cell: (report) => (
+          <Text className="app-money" size="sm" ta="right">
+            {formatMoney(report.VatAmountPL)}
+          </Text>
+        ),
       },
     ],
     [indexMap, t],
@@ -343,7 +338,6 @@ function vatReportsLoadReducer(state: VatReportsLoadState, action: VatReportsLoa
         error: action.error,
         hasMore: false,
         isLoading: false,
-        isLoadingMore: false,
         reports: [],
       }
     case 'invalid-filter':
@@ -351,36 +345,14 @@ function vatReportsLoadReducer(state: VatReportsLoadState, action: VatReportsLoa
         error: null,
         hasMore: false,
         isLoading: false,
-        isLoadingMore: false,
         reports: [],
       }
     case 'loaded':
       return {
         error: null,
-        hasMore: action.reports.length >= DEFAULT_LIMIT,
+        hasMore: action.hasMore,
         isLoading: false,
-        isLoadingMore: false,
         reports: action.reports,
-      }
-    case 'load-more-failed':
-      return {
-        ...state,
-        error: action.error,
-        isLoadingMore: false,
-      }
-    case 'load-more-loaded':
-      return {
-        ...state,
-        error: null,
-        hasMore: action.reports.length >= DEFAULT_LIMIT,
-        isLoadingMore: false,
-        reports: [...state.reports, ...action.reports],
-      }
-    case 'load-more-start':
-      return {
-        ...state,
-        error: null,
-        isLoadingMore: true,
       }
     case 'start-loading':
       return {
@@ -388,7 +360,6 @@ function vatReportsLoadReducer(state: VatReportsLoadState, action: VatReportsLoa
         error: null,
         hasMore: false,
         isLoading: true,
-        isLoadingMore: false,
       }
     default:
       return state

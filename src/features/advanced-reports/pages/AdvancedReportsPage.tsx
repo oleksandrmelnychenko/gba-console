@@ -537,7 +537,11 @@ function useAdvancedReportColumns({
         width: 145,
         minWidth: 130,
         accessor: (row) => row.fromDate,
-        cell: (row) => formatDateTime(row.fromDate),
+        cell: (row) => (
+          <Text size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>
+            {formatDateTime(row.fromDate)}
+          </Text>
+        ),
       },
       {
         id: 'number',
@@ -545,7 +549,11 @@ function useAdvancedReportColumns({
         width: 130,
         minWidth: 110,
         accessor: (row) => row.number,
-        cell: (row) => <Text fw={600}>{displayValue(row.number)}</Text>,
+        cell: (row) => (
+          <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0, textTransform: 'uppercase' }}>
+            {displayValue(row.number)}
+          </Text>
+        ),
       },
       {
         id: 'organization',
@@ -570,7 +578,11 @@ function useAdvancedReportColumns({
         minWidth: 100,
         align: 'right',
         accessor: (row) => row.amount,
-        cell: (row) => formatMoney(row.amount),
+        cell: (row) => (
+          <Text className="app-money" size="sm" ta="right">
+            {formatMoney(row.amount)}
+          </Text>
+        ),
       },
       {
         id: 'currency',
@@ -713,23 +725,23 @@ function AdvancedReportDetailDrawer({ row, onClose }: { row: AdvancedReportRow |
       {row && (
         <Stack gap="md">
           <SimpleGrid cols={{ base: 1, sm: 2 }}>
-            <DetailItem label={t('Дата')} value={formatDateTime(row.fromDate)} />
+            <DetailItem label={t('Дата')} mono value={formatDateTime(row.fromDate)} />
             <DetailItem label={t('Номер')} value={displayValue(row.number)} />
             <DetailItem label={t('Видатковий ордер')} value={displayValue(row.order.Number || row.order.CustomNumber)} />
             <DetailItem label={t('Організація')} value={displayValue(row.organization)} />
             <DetailItem label={t('Склад')} value={displayValue(row.storage)} />
-            <DetailItem label={t('Сума')} value={formatMoney(row.amount)} />
+            <DetailItem label={t('Сума')} mono value={formatMoney(row.amount)} />
             <DetailItem label={t('Валюта')} value={displayValue(row.currency)} />
             <DetailItem label={t('Курс')} value={displayValue(row.order.ExchangeRate)} />
-            <DetailItem label={t('Сума в EUR')} value={hasNumber(row.order.AfterExchangeAmount) ? formatMoney(row.order.AfterExchangeAmount) : displayValue(undefined)} />
+            <DetailItem label={t('Сума в EUR')} mono value={hasNumber(row.order.AfterExchangeAmount) ? formatMoney(row.order.AfterExchangeAmount) : displayValue(undefined)} />
             <DetailItem label={t('ПДВ %')} value={hasNumber(row.order.VatPercent) ? displayValue(row.order.VatPercent) : displayValue(undefined)} />
-            <DetailItem label={t('ПДВ')} value={hasNumber(row.order.VAT) ? formatMoney(row.order.VAT) : displayValue(undefined)} />
+            <DetailItem label={t('ПДВ')} mono value={hasNumber(row.order.VAT) ? formatMoney(row.order.VAT) : displayValue(undefined)} />
             <DetailItem label={t('Кому видано')} value={displayValue(row.payedTo)} />
             <DetailItem label={t('Роль')} value={displayValue(row.role)} />
             <DetailItem label={t('Рахунок')} value={displayValue(row.paymentRegister)} />
             <DetailItem label={t('Стаття руху')} value={displayValue(row.paymentMovement)} />
             <DetailItem label={t('Відповідальний')} value={displayValue(row.responsible)} />
-            <DetailItem label={t('Різниця')} value={formatMoney(row.differenceAmount)} />
+            <DetailItem label={t('Різниця')} mono value={formatMoney(row.differenceAmount)} />
             <DetailItem label={t('Підзвіт')} value={row.isUnderReport ? t('Так') : t('Ні')} />
             <DetailItem label={t('Закрито')} value={row.order.IsUnderReportDone ? t('Так') : t('Ні')} />
             <DetailItem label={t('Бухгалтерський')} value={row.order.IsAccounting ? t('Так') : t('Ні')} />
@@ -758,11 +770,11 @@ function AdvancedReportDetailDrawer({ row, onClose }: { row: AdvancedReportRow |
                   <SimpleGrid key={getRelatedOrderKey(item, index)} cols={{ base: 1, sm: 2 }}>
                     <DetailItem label={t('Документ')} value={displayValue(order?.Number)} />
                     <DetailItem label={t('Номер організації')} value={displayValue(order?.OrganizationNumber)} />
-                    <DetailItem label={t('Дата організації')} value={formatDateTime(order?.OrganizationFromDate)} />
+                    <DetailItem label={t('Дата організації')} mono value={formatDateTime(order?.OrganizationFromDate)} />
                     <DetailItem label={t('Постачальник/отримувач')} value={displayValue(getEntityName(order?.ConsumableProductOrganization))} />
                     <DetailItem label={t('Склад')} value={displayValue(getEntityName(order?.ConsumablesStorage))} />
                     <DetailItem label={t('Позицій')} value={String(itemsCount)} />
-                    <DetailItem label={t('Сума без ПДВ')} value={formatMoney(order?.TotalAmountWithoutVAT)} />
+                    <DetailItem label={t('Сума без ПДВ')} mono value={formatMoney(order?.TotalAmountWithoutVAT)} />
                     <DetailItem label={t('Сума з ПДВ')} value={formatMoney(order?.TotalAmount)} />
                   </SimpleGrid>
                 )
@@ -816,17 +828,17 @@ function AdvancedReportDocumentStructureDrawer({
           <SimpleGrid cols={{ base: 1, sm: 2 }}>
             <DetailItem label={t('Документ')} value={getOutcomePaymentOrderTypeLabel(row.order, t)} />
             <DetailItem label={t('Видатковий ордер')} value={displayValue(row.order.Number || row.order.CustomNumber || row.number)} />
-            <DetailItem label={t('Дата')} value={formatDateTime(row.fromDate)} />
-            <DetailItem label={t('Сума')} value={formatMoney(row.amount)} />
+            <DetailItem label={t('Дата')} mono value={formatDateTime(row.fromDate)} />
+            <DetailItem label={t('Сума')} mono value={formatMoney(row.amount)} />
             <DetailItem
               label={t('Перерахована сума')}
               value={hasNumber(calculatedTotal) ? formatMoneyWithCurrency(calculatedTotal, row.currency) : displayValue(undefined)}
             />
             <DetailItem label={t('Валюта')} value={displayValue(row.currency)} />
             <DetailItem label={t('Курс')} value={displayValue(row.order.ExchangeRate)} />
-            <DetailItem label={t('Сума в EUR')} value={hasNumber(row.order.AfterExchangeAmount) ? formatMoney(row.order.AfterExchangeAmount) : displayValue(undefined)} />
+            <DetailItem label={t('Сума в EUR')} mono value={hasNumber(row.order.AfterExchangeAmount) ? formatMoney(row.order.AfterExchangeAmount) : displayValue(undefined)} />
             <DetailItem label={t('ПДВ %')} value={hasNumber(row.order.VatPercent) ? displayValue(row.order.VatPercent) : displayValue(undefined)} />
-            <DetailItem label={t('ПДВ')} value={hasNumber(row.order.VAT) ? formatMoney(row.order.VAT) : displayValue(undefined)} />
+            <DetailItem label={t('ПДВ')} mono value={hasNumber(row.order.VAT) ? formatMoney(row.order.VAT) : displayValue(undefined)} />
             <DetailItem label={t('Організація')} value={displayValue(row.organization)} />
             <DetailItem label={t('Рахунок')} value={displayValue(row.paymentRegister)} />
             <DetailItem label={t('Стаття руху')} value={displayValue(row.paymentMovement)} />
@@ -969,13 +981,16 @@ function AssignedIncomeOrderView({ order }: { order: AssignedIncomePaymentOrder 
   )
 }
 
-function DetailItem({ label, value }: { label: string; value: string }) {
+/* §5.1: dates, numbers and money render mono — pass `mono` for those values. */
+function DetailItem({ label, mono, value }: { label: string; mono?: boolean; value: string }) {
   return (
     <Stack gap={2}>
       <Text c="dimmed" size="xs" tt="uppercase">
         {label}
       </Text>
-      <Text size="sm">{value}</Text>
+      <Text fw={mono ? 600 : undefined} size="sm" style={mono ? { fontFamily: 'var(--font-mono)', letterSpacing: 0 } : undefined}>
+        {value}
+      </Text>
     </Stack>
   )
 }
