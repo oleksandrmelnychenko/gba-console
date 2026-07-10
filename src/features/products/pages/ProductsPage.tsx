@@ -710,7 +710,10 @@ export function ProductsPage() {
     setTopProducts((currentProducts) => currentProducts.filter((item) => getProductIdentity(item) !== productId))
     setBottomProducts((currentProducts) => currentProducts.filter((item) => getProductIdentity(item) !== productId))
     setSelectedProduct(product)
-    dispatchDetail({ type: 'clear' })
+    // Keep the previously loaded detail on screen while the new product loads (the 'loading'
+    // action retains state.product), so the prices + stock + tabs block doesn't collapse to an
+    // empty lightweight render and jump when the full product arrives. Feedback is immediate via
+    // the left-rail plate (selectedProduct) and the spinning refresh icon.
     setActivePanel(null)
     setCarouselMode('selection')
     setSearchDraft('')
@@ -732,7 +735,8 @@ export function ProductsPage() {
     setBottomProducts(getNextSearchedProducts(nextProduct))
     setLoadedProductsCount(1)
     setSelectedProduct(nextProduct)
-    dispatchDetail({ type: 'clear' })
+    // Keep the current detail on screen while the related product loads (see selectProduct) —
+    // prevents the prices + stock + tabs block from collapsing and jumping during the fetch.
     setActivePanel(null)
     setCarouselMode('selection')
     setSearchDraft('')
@@ -1217,7 +1221,7 @@ function ProductInlineView({
         <Box className="product-inline-description">
           <InfoBlock label="Опис" value={product.DescriptionUA || product.Description} wide />
           <InfoBlock label="Нотатки" value={product.NotesUA || product.Notes} wide />
-          <InfoBlock label="Top" value={product.Top} />
+          <InfoBlock danger={isCriticalTop(product.Top)} label="Top" value={product.Top} />
           <InfoBlock mono label="Вага" value={formatAmount(product.Weight)} />
           <InfoBlock label="Розмір" value={product.Size} />
           <InfoBlock mono label="Об'єм" value={product.Volume} />
@@ -1318,11 +1322,13 @@ function ProductInlineActions({
 }
 
 function InfoBlock({
+  danger,
   label,
   mono,
   value,
   wide,
 }: {
+  danger?: boolean
   label: string
   mono?: boolean
   value?: ReactNode
@@ -1336,9 +1342,9 @@ function InfoBlock({
     <Box className={`product-inline-info-block ${wide ? 'is-wide' : ''}`}>
       <Text c="dimmed" size="xs">{t(label)}</Text>
       {isPrimitive ? (
-        <Text className={mono ? 'app-money' : undefined} size="sm" fw={600}>{displayValue(value as boolean | number | string)}</Text>
+        <Text className={mono ? 'app-money' : undefined} c={danger ? 'red.7' : undefined} size="sm" fw={600}>{displayValue(value as boolean | number | string)}</Text>
       ) : (
-        <Text size="sm" fw={600} component="div">{value ?? '-'}</Text>
+        <Text c={danger ? 'red.7' : undefined} size="sm" fw={600} component="div">{value ?? '-'}</Text>
       )}
     </Box>
   )
@@ -1626,10 +1632,10 @@ function ProductOriginalNumbersTab({
             <Tooltip label={t('Зробити основним')}>
               <ActionIcon
                 aria-label={t('Зробити основним')}
-                color="yellow"
+                color="gray"
                 disabled={Boolean(item.IsMainOriginalNumber) || isSaving}
                 size="sm"
-                variant="light"
+                variant="subtle"
                 onClick={(event) => {
                   event.stopPropagation()
                   void makeMainOriginalNumber(item)
@@ -1641,10 +1647,10 @@ function ProductOriginalNumbersTab({
             <Tooltip label={t('Видалити')}>
               <ActionIcon
                 aria-label={t('Видалити')}
-                color="red"
+                color="gray"
                 disabled={Boolean(item.IsMainOriginalNumber) || isSaving}
                 size="sm"
-                variant="light"
+                variant="subtle"
                 onClick={(event) => {
                   event.stopPropagation()
                   void removeOriginalNumber(item)
@@ -1892,10 +1898,10 @@ function ProductRelatedProductsTab({
           <Tooltip label={t('Видалити')}>
             <ActionIcon
               aria-label={t('Видалити')}
-              color="red"
+              color="gray"
               loading={removingNetUid === row.product.NetUid}
               size="sm"
-              variant="light"
+              variant="subtle"
               onClick={(event) => {
                 event.stopPropagation()
                 void removeRelatedProduct(row)
@@ -3593,10 +3599,14 @@ function getProductIdentity(product: Product): string {
   return String(product.NetUid || product.Id || product.VendorCode || product.Name || 'product')
 }
 
-function getProductRowToneClass(product: Product): string {
-  const top = product.Top?.trim().toLowerCase()
+function isCriticalTop(top?: string | null): boolean {
+  const value = top?.trim().toLowerCase()
 
-  if (top === 'x9' || top === 'х9') {
+  return value === 'x9' || value === 'х9'
+}
+
+function getProductRowToneClass(product: Product): string {
+  if (isCriticalTop(product.Top)) {
     return 'is-critical'
   }
 
