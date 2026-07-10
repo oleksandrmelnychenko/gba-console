@@ -84,7 +84,9 @@ const DETAIL_ITEMS_TABLE_LAYOUT = {
 const RETURNS_TABLE_LAYOUT = {
   columnPinning: {
     left: ['number', 'client'],
-    right: ['actions'],
+    // Pin the amount together with the actions — otherwise «Сума» slid under
+    // the pinned actions on horizontal scroll and its tail was cut off.
+    right: ['total', 'actions'],
   },
   density: 'normal',
 } satisfies DataTableDefaultLayout
@@ -683,7 +685,7 @@ export function NewUkraineSaleReturnPage() {
             getRowId={(saleReturn, index) => saleReturn.NetUid || String(saleReturn.Id || index)}
             height="100%"
             isLoading={isLoading}
-            layoutVersion="sales-return-new-returns-1"
+            layoutVersion="sales-return-new-returns-2"
             minWidth={1260}
             tableId="sales-return-new-returns"
             onRowClick={setSelectedReturn}
@@ -1060,8 +1062,8 @@ function useReturnColumns({
         accessor: (saleReturn) => readNumber(saleReturn.TotalAmountLocal) ?? 0,
         align: 'right',
         cell: (saleReturn) => <ReturnAmountCell saleReturn={saleReturn} />,
-        width: 130,
-        minWidth: 110,
+        width: 150,
+        minWidth: 130,
       },
       {
         id: 'actions',

@@ -8859,3 +8859,16 @@
 .new-sale-cart__totals {
   flex: 0 0 auto;
 }
+
+/* ── Cart money alignment: digits right-aligned, currency codes in a fixed
+   column — «5,42 EUR / 10,84 USD» lines up instead of ragged left text. ── */
+.new-sale-cart__value-cell:not(.is-inline) .mantine-Group-root {
+  align-items: baseline;
+  display: grid;
+  gap: 4px;
+  grid-template-columns: minmax(0, 1fr) 26px;
+}
+
+.new-sale-cart__value-cell:not(.is-inline) .mantine-Group-root .mantine-Text-root:first-child {
+  text-align: right;
+}
