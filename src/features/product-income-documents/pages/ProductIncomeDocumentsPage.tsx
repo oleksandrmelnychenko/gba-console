@@ -823,35 +823,64 @@ function ProductIncomeOptionsModal({
 }) {
   const { t } = useI18n()
   const row = document ? mapDocumentRow(document) : null
-  const title = document ? `${displayValue(row?.type)} ${displayValue(document.Number)}`.trim() : t('Виберіть опцію')
+  const title = document ? `${displayValue(row?.type)} ${displayValue(document.Number)}`.trim() : ''
   const primarySourceLink = document ? getPrimaryProductIncomeSourceLink(document) : null
 
   return (
-    <AppModal centered opened={Boolean(document)} title={t('Виберіть опцію')} onClose={onClose}>
+    <AppModal
+      centered
+      opened={Boolean(document)}
+      size={496}
+      title={<span style={{ fontFamily: 'var(--font-mono)' }}>{title || t('Виберіть опцію')}</span>}
+      onClose={onClose}
+    >
       {document && (
-        <Stack gap="sm">
-          <Text c="dimmed" size="sm">
-            {title}
-          </Text>
+        <Stack className="app-modal-actions" gap="xs">
           {primarySourceLink && (
             <Button
               component={Link}
+              fullWidth
               justify="flex-start"
-              leftSection={<ExternalLink size={18} />}
+              color="dark"
+              size="md"
+              leftSection={
+                <span className="app-action-icon">
+                  <ExternalLink size={20} color="var(--mantine-color-gray-7)" />
+                </span>
+              }
               to={primarySourceLink}
-              variant="outline"
+              variant="subtle"
             >
               {t('Відкрити джерело')}
             </Button>
           )}
-          <Button justify="flex-start" leftSection={<Eye size={18} />} variant="outline" onClick={() => onOverview(document)}>
+          <Button
+            fullWidth
+            justify="flex-start"
+            color="dark"
+            size="md"
+            leftSection={
+              <span className="app-action-icon">
+                <Eye size={20} color="var(--mantine-color-gray-7)" />
+              </span>
+            }
+            variant="subtle"
+            onClick={() => onOverview(document)}
+          >
             {t('Деталі документа')}
           </Button>
           <Button
             disabled={!document.NetUid}
+            fullWidth
             justify="flex-start"
-            leftSection={<Layers size={18} />}
-            variant="outline"
+            color="dark"
+            size="md"
+            leftSection={
+              <span className="app-action-icon">
+                <Layers size={20} color="var(--mantine-color-gray-7)" />
+              </span>
+            }
+            variant="subtle"
             onClick={() => onRemainings(document)}
           >
             {t('Залишки по партіям')}
