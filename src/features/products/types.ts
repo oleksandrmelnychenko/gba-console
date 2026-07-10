@@ -141,6 +141,36 @@ export type CalculatedProductPrice = {
   RetailPriceLocal?: number
 }
 
+export type ProductSourcePrice = {
+  BasePriceEur?: number | null
+  ExtraChargePercent?: number | null
+  ForVat?: boolean
+  IsCalculated?: boolean
+  PriceEur?: number | null
+  PriceLocal?: number | null
+  PricingName?: string
+  RootPricingName?: string | null
+}
+
+export type ProductSourcePriceSet = {
+  ErrorCode?: string | null
+  IsAvailable?: boolean
+  IsLinked?: boolean
+  Prices?: ProductSourcePrice[]
+  ProductCode?: number | null
+  Source?: 'amg' | 'fenix' | string
+}
+
+export type ProductSourcePriceComparison = {
+  Amg?: ProductSourcePriceSet | null
+  Fenix?: ProductSourcePriceSet | null
+  LocalCurrencyCode?: string
+  LocalCurrencyRate?: number | null
+  ProductNetId?: string
+  RetrievedAtUtc?: string
+  VendorCode?: string
+}
+
 export type Product = EntityFields & {
   AnalogueProducts?: unknown[]
   AvailableDefectiveQtyUk?: number

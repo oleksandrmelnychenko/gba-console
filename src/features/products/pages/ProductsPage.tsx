@@ -66,7 +66,6 @@ import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/Page
 import { PermissionGate } from '../../auth/components/PermissionGate'
 import { useAuth } from '../../auth/useAuth'
 import type {
-  CalculatedProductPrice,
   Product,
   ProductFileUploadConfiguration,
   ProductFileUploadMode,
@@ -100,11 +99,11 @@ import {
 import {
   buildProductUploadPriceConfigurations,
   getDuplicateProductUploadPricingIds,
-  getProductPriceBreakdown,
   hasDuplicateProductUploadPricings,
   isDuplicateProductUploadPricingId,
 } from '../productPricing'
 import { ShopImageGallery } from '../components/ShopImageGallery'
+import { ProductPriceSourcePanel } from '../components/ProductPriceSourcePanel'
 import {
   PRODUCT_BALANCES_PERMISSION,
   PRODUCT_EDIT_PERMISSION,
@@ -1231,20 +1230,7 @@ function ProductInlineView({
         </Box>
 
         <Box className="product-inline-prices">
-          <Group gap="sm" mb="xs" wrap="nowrap">
-            <Text className="app-section-title" fw={600} size="sm" style={{ flex: 1, minWidth: 0 }}>{t('Тип ціни')}</Text>
-            <Text c="dimmed" size="sm" ta="right" style={{ flexShrink: 0, width: 80 }}>{t('EUR')}</Text>
-            <Text c="dimmed" size="sm" ta="right" style={{ flexShrink: 0, width: 80 }}>{t('UAH')}</Text>
-          </Group>
-          <Stack gap={2} style={{ maxHeight: 230, overflowY: 'auto' }}>
-            {prices.length > 0 ? (
-              prices.map((price, index) => (
-                <ProductInlinePriceRow key={`${price.Pricing?.NetUid || price.Pricing?.Name || index}`} price={price} />
-              ))
-            ) : (
-              <Text c="dimmed" size="sm">{t('Цін не знайдено')}</Text>
-            )}
-          </Stack>
+          <ProductPriceSourcePanel effectivePrices={prices} productNetId={product.NetUid} />
           <Divider my={8} />
           <Group gap="xs">
             <Badge className={`app-role-pill ${product.IsForZeroSale ? 'is-green' : 'is-gray'}`} variant="light">{t('Нульовий продаж')}</Badge>
@@ -1269,35 +1255,6 @@ function ProductInlineView({
         title={getProductTitle(product)}
         onClose={() => setPreviewImageUrl(null)}
       />
-    </Box>
-  )
-}
-
-function ProductInlinePriceRow({ price }: { price: CalculatedProductPrice }) {
-  const { t } = useI18n()
-  const breakdown = getProductPriceBreakdown(price)
-  const showBase = breakdown.hasBasePrice && breakdown.basePriceEUR !== 0
-
-  return (
-    <Box className="product-inline-price-row">
-      <Group gap="sm" wrap="nowrap">
-        <Text size="sm" lineClamp={1} style={{ flex: 1, minWidth: 0 }}>{displayValue(breakdown.pricingName)}</Text>
-        <Text className="app-money" size="sm" fw={650} ta="right" style={{ flexShrink: 0, width: 80 }}>{formatPrice(breakdown.retailPriceEUR)}</Text>
-        <Text className="app-money" size="sm" fw={650} ta="right" style={{ flexShrink: 0, width: 80 }}>{formatPrice(breakdown.retailPriceLocal)}</Text>
-      </Group>
-      {(showBase || breakdown.hasDiscount) ? (
-        <Group gap={6} mt={1} wrap="wrap">
-          {showBase ? (
-            <Text c="dimmed" lh={1.1} style={{ fontSize: 12 }}>{t('База EUR')}: {formatPrice(breakdown.basePriceEUR)}</Text>
-          ) : null}
-          {breakdown.discountPriceEUR !== undefined ? (
-            <Text c="teal.8" fw={650} lh={1.1} style={{ fontSize: 12 }}>{t('Після знижки EUR')}: {formatPrice(breakdown.discountPriceEUR)}</Text>
-          ) : null}
-          {breakdown.discountRate !== undefined ? (
-            <Badge size="xs" variant="light" color="teal">{t('Знижка')} {formatAmount(breakdown.discountRate)}%</Badge>
-          ) : null}
-        </Group>
-      ) : null}
     </Box>
   )
 }

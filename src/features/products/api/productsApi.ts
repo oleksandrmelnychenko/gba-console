@@ -22,6 +22,7 @@ import type {
   ProductReservation,
   ProductSearchParams,
   ProductSpecification,
+  ProductSourcePriceComparison,
   ProductStorageLocationHistory,
   ProductStorageLocationHistoryParams,
   ProductUploadDocumentPayload,
@@ -84,6 +85,24 @@ export async function getProductByNetId(netId: string, signal?: AbortSignal): Pr
   })
 
   return normalizeProduct(result)
+}
+
+export async function getProductSourcePriceComparison(
+  netId: string,
+  signal?: AbortSignal,
+): Promise<ProductSourcePriceComparison | null> {
+  const result = await apiRequest<unknown>('/products/pricings/sources', {
+    query: { netId },
+    signal,
+    errorMessages: {
+      default: 'Не вдалося завантажити ціни з джерел',
+      network: 'Джерела цін недоступні',
+    },
+  })
+
+  return result && typeof result === 'object'
+    ? result as ProductSourcePriceComparison
+    : null
 }
 
 export async function getProductAuditEntities(netId: string, fieldName: ProductAuditField): Promise<AuditEntity[]> {

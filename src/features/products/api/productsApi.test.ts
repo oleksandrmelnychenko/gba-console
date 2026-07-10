@@ -4,6 +4,7 @@ import {
   exportProductIncomeMovementsDocument,
   exportProductMovementsDocument,
   exportProductOutcomeMovementsDocument,
+  getProductSourcePriceComparison,
   updateProduct,
   updateProductWithImages,
   uploadProductsFromFile,
@@ -104,6 +105,27 @@ describe('products API upload contracts', () => {
     })).resolves.toEqual({
       DocumentURL: 'https://example.test/income.xlsx',
       PdfDocumentURL: 'https://example.test/income.pdf',
+    })
+  })
+
+  it('requests source-aware product prices without changing the product endpoint', async () => {
+    const controller = new AbortController()
+    const comparison = {
+      Amg: { IsAvailable: true, Prices: [{ PriceEur: 1.4, PricingName: 'ЦО2' }] },
+      Fenix: { IsAvailable: true, Prices: [{ PriceEur: 1.54, PricingName: 'ЦО2' }] },
+      ProductNetId: 'product-1',
+    }
+
+    apiRequestMock.mockResolvedValueOnce(comparison)
+
+    await expect(getProductSourcePriceComparison('product-1', controller.signal)).resolves.toEqual(comparison)
+    expect(apiRequestMock).toHaveBeenCalledWith('/products/pricings/sources', {
+      errorMessages: {
+        default: 'Не вдалося завантажити ціни з джерел',
+        network: 'Джерела цін недоступні',
+      },
+      query: { netId: 'product-1' },
+      signal: controller.signal,
     })
   })
 
