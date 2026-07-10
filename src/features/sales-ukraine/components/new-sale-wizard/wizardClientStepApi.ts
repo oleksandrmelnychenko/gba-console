@@ -90,5 +90,13 @@ export async function getWizardClientGroupedDebts(clientNetId: string): Promise<
 }
 
 export async function getWizardClientAgreements(clientNetId: string): Promise<ClientAgreement[]> {
-  return (await getSaleClientAgreements(clientNetId)) as unknown as ClientAgreement[]
+  const agreements = (await getSaleClientAgreements(clientNetId)) as unknown as ClientAgreement[]
+
+  return agreements.filter(isSalesAgreement)
+}
+
+function isSalesAgreement(clientAgreement: ClientAgreement): boolean {
+  const agreement = clientAgreement.Agreement
+
+  return Boolean(agreement?.Pricing?.Id || agreement?.PricingId)
 }

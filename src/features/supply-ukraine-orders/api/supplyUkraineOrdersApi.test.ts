@@ -300,6 +300,40 @@ describe('supplyUkraineOrdersApi', () => {
       },
     ])
   })
+
+  it('deduplicates manufacturer rows by the final select label when source keys differ', async () => {
+    const ukrainianAgreement: ClientAgreement = {
+      NetUid: 'agreement-uk',
+      Agreement: {
+        NetUid: 'agreement-entity-uk',
+        Organization: { NetUid: 'org-uk', Culture: 'uk', Name: 'Ukraine' },
+      },
+    }
+
+    apiRequestMock.mockResolvedValueOnce([
+      {
+        NetUid: 'supplier-with-code',
+        FullName: 'Берешвілі Вадим Вікторович',
+        USREOU: '3100401117',
+        ClientAgreements: [ukrainianAgreement],
+      },
+      {
+        NetUid: 'supplier-without-code',
+        FullName: 'Берешвілі Вадим Вікторович',
+        USREOU: '',
+        ClientAgreements: [ukrainianAgreement],
+      },
+    ])
+
+    await expect(getSupplyOrderSuppliers()).resolves.toEqual([
+      {
+        NetUid: 'supplier-with-code',
+        FullName: 'Берешвілі Вадим Вікторович',
+        USREOU: '3100401117',
+        ClientAgreements: [ukrainianAgreement],
+      },
+    ])
+  })
 })
 
 function createParseConfiguration(): UkraineOrderFromSupplierParseConfiguration {

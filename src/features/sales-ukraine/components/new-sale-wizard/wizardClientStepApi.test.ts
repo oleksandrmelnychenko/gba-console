@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../../shared/api/apiClient'
 import {
+  getWizardClientAgreements,
   getWizardClientGroupedDebts,
   getWizardSalesRegister,
   mapWizardSaleRegisterItems,
@@ -83,6 +84,43 @@ describe('wizard client step API contracts', () => {
 
     await expect(getWizardClientGroupedDebts('client-1')).resolves.toEqual([{ Id: 1 }])
     expect(apiRequestMock).toHaveBeenCalledWith('/clients/get/debt/grouped', {
+      query: { netId: 'client-1' },
+    })
+  })
+
+  it('keeps only agreements with sales pricing for the sale wizard', async () => {
+    apiRequestMock.mockResolvedValueOnce([
+      {
+        NetUid: 'provider-only-agreement',
+        Agreement: {
+          NetUid: 'agreement-provider-only',
+          IsActive: true,
+          ProviderPricing: { Id: 48682, Name: 'ЦЗ' },
+        },
+      },
+      {
+        NetUid: 'sales-agreement',
+        Agreement: {
+          NetUid: 'agreement-sales',
+          IsActive: true,
+          PricingId: 849,
+          Pricing: { Id: 849, Name: 'ЦО2' },
+        },
+      },
+    ])
+
+    await expect(getWizardClientAgreements('client-1')).resolves.toEqual([
+      {
+        NetUid: 'sales-agreement',
+        Agreement: {
+          NetUid: 'agreement-sales',
+          IsActive: true,
+          PricingId: 849,
+          Pricing: { Id: 849, Name: 'ЦО2' },
+        },
+      },
+    ])
+    expect(apiRequestMock).toHaveBeenCalledWith('/agreements/client/all', {
       query: { netId: 'client-1' },
     })
   })

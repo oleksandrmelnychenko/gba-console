@@ -407,7 +407,7 @@ function dedupeSupplyOrderSuppliers(suppliers: Client[]): Client[] {
     }
   })
 
-  return Array.from(suppliersByVisibleKey.values())
+  return dedupeSupplyOrderSuppliersByLabel(Array.from(suppliersByVisibleKey.values()))
 }
 
 function getSupplyOrderSupplierVisibleKey(supplier: Client): string {
@@ -424,13 +424,35 @@ function getSupplyOrderSupplierVisibleKey(supplier: Client): string {
 
 function getSupplyOrderSupplierRank(supplier: Client): number {
   const agreementCount = supplier.ClientAgreements?.length || 0
+  const hasLegalCode = normalizeSupplierKeyPart(supplier.USREOU) ? 1 : 0
   const hasStableKey = supplier.NetUid || supplier.Id ? 1 : 0
 
-  return agreementCount * 10 + hasStableKey
+  return agreementCount * 100 + hasLegalCode * 10 + hasStableKey
 }
 
 function normalizeSupplierKeyPart(value?: string): string {
   return (value || '').trim().replace(/\s+/g, ' ').toLocaleLowerCase('uk-UA')
+}
+
+function dedupeSupplyOrderSuppliersByLabel(suppliers: Client[]): Client[] {
+  const suppliersByLabel = new Map<string, Client>()
+
+  suppliers.forEach((supplier) => {
+    const label = normalizeSupplierKeyPart(supplier.FullName || supplier.Name || supplier.Code)
+    const key = label || `entity:${supplier.NetUid || supplier.Id || ''}`
+
+    if (!key) {
+      return
+    }
+
+    const current = suppliersByLabel.get(key)
+
+    if (!current || getSupplyOrderSupplierRank(supplier) > getSupplyOrderSupplierRank(current)) {
+      suppliersByLabel.set(key, supplier)
+    }
+  })
+
+  return Array.from(suppliersByLabel.values())
 }
 
 export async function getSupplyPaymentDeliveryProtocolKeys(): Promise<SupplyOrderPaymentDeliveryProtocolKey[]> {
