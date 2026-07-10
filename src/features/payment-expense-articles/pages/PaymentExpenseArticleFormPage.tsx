@@ -205,8 +205,12 @@ export function PaymentExpenseArticleFormPage() {
     <AppDrawer
       opened
       position="right"
-      size="standard"
-      title={isEditMode ? t('Редагування статті витрат') : t('Нова стаття витрат')}
+      size="compact"
+      title={
+        <span style={{ fontFamily: 'var(--font-mono)' }}>
+          {isEditMode ? t('Редагування статті витрат') : t('Нова стаття витрат')}
+        </span>
+      }
       onClose={handleCancel}
       footer={
         <Group gap="xs">

@@ -8,7 +8,6 @@ import {
   Divider,
   Group,
   Menu,
-  MultiSelect,
   Select,
   SimpleGrid,
   Stack,
@@ -26,6 +25,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
@@ -587,14 +587,12 @@ function IncomeCashflowsContent({ model }: { model: IncomeCashflowsPageModel }) 
               w={250}
               onChange={(value) => onSetPaymentRegisterNetId(value || '')}
             />
-            <MultiSelect
-              clearable
-              searchable
+            <CheckboxMultiSelect
               data={organizationOptions}
               label={t('Організації')}
               placeholder={t('Без фільтра')}
               value={selectedOrganizationIds}
-              w={360}
+              w={220}
               onChange={onSetSelectedOrganizationIds}
             />
 

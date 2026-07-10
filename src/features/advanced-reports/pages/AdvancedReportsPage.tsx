@@ -16,7 +16,7 @@ import {
 import { useDebouncedValue } from '@mantine/hooks'
 import { CircleAlert, EllipsisVertical, Eye, Network, RotateCcw, Search, SquarePen } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -74,6 +74,7 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
 export function AdvancedReportsPage() {
   const { t } = useI18n()
   const navigate = useNavigate()
+  const location = useLocation()
   const [reports, setReports] = useValueState<AdvancedReportsResponse>({
     Collection: [],
     NegativeDifferenceAmount: 0,
@@ -238,10 +239,15 @@ export function AdvancedReportsPage() {
   const openAdvanceReport = useCallback(
     (row: AdvancedReportRow) => {
       if (row.order.NetUid) {
-        navigate(`${OUTGOING_CASHFLOW_ROUTE}/${encodeURIComponent(row.order.NetUid)}/advanced-report/view`)
+        navigate(`${OUTGOING_CASHFLOW_ROUTE}/${encodeURIComponent(row.order.NetUid)}/advanced-report/view`, {
+          state: {
+            backgroundLocation: location,
+            returnPath: `${location.pathname}${location.search}`,
+          },
+        })
       }
     },
-    [navigate],
+    [location, navigate],
   )
 
   const handleRowClick = useCallback(

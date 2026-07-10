@@ -16,6 +16,7 @@ import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { searchCompanyCars } from '../../company-cars/api/companyCarsApi'
 import { searchPaymentCostMovements } from '../../consumable-orders/api/consumableOrdersApi'
 import {
@@ -358,7 +359,13 @@ export function AdvanceReportFuelModal({
   }
 
   return (
-    <AppModal centered opened={opened} size="xl" title={t('Додати пальне')} onClose={requestClose}>
+    <AppModal
+      centered
+      opened={opened}
+      size="xl"
+      title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Додати пальне')}</span>}
+      onClose={requestClose}
+    >
       <Stack gap="md">
         {error && (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
@@ -454,13 +461,13 @@ export function AdvanceReportFuelModal({
         </SimpleGrid>
 
         <Group gap="xs">
-          <Badge color="gray" variant="light">
+          <Badge className="app-role-pill is-gray" variant="light">
             {t('Сума')}: {formatMoney(previewFueling.TotalPrice)}
           </Badge>
-          <Badge color="gray" variant="light">
+          <Badge className="app-role-pill is-gray" variant="light">
             {t('ПДВ')}: {formatMoney(previewFueling.VatAmount)}
           </Badge>
-          <Badge color="blue" variant="light">
+          <Badge className="app-role-pill" variant="light">
             {t('Разом')}: {formatMoney(previewFueling.TotalPriceWithVat)}
           </Badge>
         </Group>
@@ -469,7 +476,7 @@ export function AdvanceReportFuelModal({
           <Button color="gray" disabled={isSaving} leftSection={<X size={16} />} variant="light" onClick={requestClose}>
             {t('Скасувати')}
           </Button>
-          <Button leftSection={<Save size={16} />} loading={isSaving} onClick={() => void submitFueling()}>
+          <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSaving} onClick={() => void submitFueling()}>
             {t('Додати')}
           </Button>
         </Group>

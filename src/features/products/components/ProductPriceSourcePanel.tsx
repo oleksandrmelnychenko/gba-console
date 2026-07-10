@@ -95,9 +95,15 @@ export function ProductPriceSourcePanel({
     return () => controller.abort()
   }, [productNetId, reloadVersion, shouldLoadSources])
 
+  // The «У GBA» list is the reference: source views reuse its row order so all
+  // four views read the same, and rows with no price at all are dropped (no «-»).
+  const effectiveOrder = useMemo(() => buildEffectivePricingOrder(effectivePrices), [effectivePrices])
   const comparisonRows = useMemo(
-    () => buildProductSourceComparisonRows(currentComparison?.Amg, currentComparison?.Fenix),
-    [currentComparison?.Amg, currentComparison?.Fenix],
+    () =>
+      buildProductSourceComparisonRows(currentComparison?.Amg, currentComparison?.Fenix)
+        .filter((row) => hasSourcePriceValue(row.amg) || hasSourcePriceValue(row.fenix))
+        .sort((left, right) => compareByEffectiveOrder(left.pricingName, right.pricingName, effectiveOrder)),
+    [currentComparison?.Amg, currentComparison?.Fenix, effectiveOrder],
   )
 
   const refreshSourcePrices = () => {
@@ -143,35 +149,38 @@ export function ProductPriceSourcePanel({
         ) : null}
       </Group>
 
-      {viewMode === 'effective' ? (
-        <EffectivePricesView prices={effectivePrices} />
-      ) : isLoading && !currentComparison ? (
-        <Stack gap={10} py={4}>
-          {Array.from({ length: 8 }, (_, index) => (
-            <Group gap="sm" key={index} wrap="nowrap">
-              <Skeleton height={14} radius="sm" style={{ flex: 1 }} />
-              <Skeleton height={14} radius="sm" width={80} />
-              <Skeleton height={14} radius="sm" width={80} />
-            </Group>
-          ))}
-        </Stack>
-      ) : hasError ? (
-        <Alert color="red" icon={<CircleAlert size={16} />} variant="light">
-          {t('Не вдалося завантажити ціни з джерел')}
-        </Alert>
-      ) : viewMode === 'compare' ? (
-        <ComparisonPricesView
-          amg={currentComparison?.Amg}
-          fenix={currentComparison?.Fenix}
-          rows={comparisonRows}
-        />
-      ) : (
-        <SourcePricesView
-          currencyCode={currentComparison?.LocalCurrencyCode || 'UAH'}
-          label={viewMode === 'amg' ? 'AMG' : t('Контех')}
-          source={viewMode === 'amg' ? currentComparison?.Amg : currentComparison?.Fenix}
-        />
-      )}
+      <div className="product-price-source-pane">
+        {viewMode === 'effective' ? (
+          <EffectivePricesView prices={effectivePrices} />
+        ) : isLoading && !currentComparison ? (
+          <Stack gap={10} py={4}>
+            {Array.from({ length: 8 }, (_, index) => (
+              <Group gap="sm" key={index} wrap="nowrap">
+                <Skeleton height={14} radius="sm" style={{ flex: 1 }} />
+                <Skeleton height={14} radius="sm" width={80} />
+                <Skeleton height={14} radius="sm" width={80} />
+              </Group>
+            ))}
+          </Stack>
+        ) : hasError ? (
+          <Alert color="red" icon={<CircleAlert size={16} />} variant="light">
+            {t('Не вдалося завантажити ціни з джерел')}
+          </Alert>
+        ) : viewMode === 'compare' ? (
+          <ComparisonPricesView
+            amg={currentComparison?.Amg}
+            fenix={currentComparison?.Fenix}
+            rows={comparisonRows}
+          />
+        ) : (
+          <SourcePricesView
+            currencyCode={currentComparison?.LocalCurrencyCode || 'UAH'}
+            effectiveOrder={effectiveOrder}
+            label={viewMode === 'amg' ? 'AMG' : t('Контех')}
+            source={viewMode === 'amg' ? currentComparison?.Amg : currentComparison?.Fenix}
+          />
+        )}
+      </div>
     </Stack>
   )
 }
@@ -227,10 +236,12 @@ function EffectivePriceRow({ price }: { price: CalculatedProductPrice }) {
 
 function SourcePricesView({
   currencyCode,
+  effectiveOrder,
   label,
   source,
 }: {
   currencyCode: string
+  effectiveOrder: Map<string, number>
   label: string
   source?: ProductSourcePriceSet | null
 }) {
@@ -244,7 +255,10 @@ function SourcePricesView({
     return <SourceState color="red" text={`${label}: ${t('Джерело цін недоступне')}`} />
   }
 
-  const prices = (source.Prices || []).filter((price) => !isPolishPricingName(price.PricingName))
+  const prices = (source.Prices || [])
+    .filter((price) => !isPolishPricingName(price.PricingName))
+    .filter(hasSourcePriceValue) // no price at all → hide the row instead of showing «-»
+    .sort((left, right) => compareByEffectiveOrder(left.PricingName || '', right.PricingName || '', effectiveOrder))
 
   return (
     <>
@@ -410,6 +424,37 @@ function cacheSourcePrices(productNetId: string, value: ProductSourcePriceCompar
 
 function isAbortError(error: unknown): boolean {
   return error instanceof DOMException && error.name === 'AbortError'
+}
+
+/* «У GBA» row order (CalculatedPrices as the API returns them) is the canonical
+   ordering for every price view. */
+function buildEffectivePricingOrder(prices: CalculatedProductPrice[]): Map<string, number> {
+  const order = new Map<string, number>()
+
+  prices.forEach((price, index) => {
+    const name = price.Pricing?.Name?.trim().toLocaleLowerCase('uk')
+
+    if (name && !order.has(name)) {
+      order.set(name, index)
+    }
+  })
+
+  return order
+}
+
+function compareByEffectiveOrder(leftName: string, rightName: string, order: Map<string, number>): number {
+  const left = order.get(leftName.trim().toLocaleLowerCase('uk')) ?? Number.MAX_SAFE_INTEGER
+  const right = order.get(rightName.trim().toLocaleLowerCase('uk')) ?? Number.MAX_SAFE_INTEGER
+
+  return left === right ? leftName.localeCompare(rightName, 'uk', { sensitivity: 'base' }) : left - right
+}
+
+function hasSourcePriceValue(price?: ProductSourcePrice): boolean {
+  return isFinitePrice(price?.PriceEur) || isFinitePrice(price?.PriceLocal)
+}
+
+function isFinitePrice(value?: number | null): value is number {
+  return typeof value === 'number' && Number.isFinite(value)
 }
 
 function formatDifference(value?: number): string {

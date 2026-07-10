@@ -20,7 +20,9 @@
 }
 
 .console-table-command-bar.is-search-only {
-  grid-template-columns: minmax(320px, 1fr) auto;
+  /* search | refresh actions | create button — all in ONE row (a third child
+     used to fall onto an implicit full-width grid row) */
+  grid-template-columns: minmax(320px, 1fr) auto auto;
 }
 
 .console-table-search-input,

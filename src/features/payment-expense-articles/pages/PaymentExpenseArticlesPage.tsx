@@ -79,17 +79,20 @@ export function PaymentExpenseArticlesPage() {
           <ConsoleTableEntityCell
             marker={createConsoleTableMarker(article.OperationName)}
             title={displayValue(article.OperationName)}
-            subtitle={displayValue(article.NetUid)}
           />
         ),
       },
       {
         id: 'netUid',
         header: 'NetUid',
-        width: 280,
-        minWidth: 220,
+        width: 320,
+        minWidth: 300,
         accessor: (article) => article.NetUid,
-        cell: (article) => <Text c="dimmed">{displayValue(article.NetUid)}</Text>,
+        cell: (article) => (
+          <Text c="dimmed" size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0, whiteSpace: 'nowrap' }}>
+            {displayValue(article.NetUid)}
+          </Text>
+        ),
       },
       {
         id: 'actions',

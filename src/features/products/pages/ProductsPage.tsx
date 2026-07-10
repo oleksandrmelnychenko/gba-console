@@ -1357,13 +1357,12 @@ function ProductInlineActions({
     <Group gap="xs" justify="flex-end" wrap="nowrap" className="product-inline-actions">
       <Button
         aria-label={t('AI-аналітика товару')}
-        color="orange"
         disabled={disabled || analyticsDisabled}
         h={38}
         leftSection={<Sparkles fill="currentColor" size={16} strokeWidth={0} />}
         px="sm"
         size="xs"
-        variant="light"
+        variant="filled"
         onClick={() => onOpenPanel('analytics')}
       >
         {t('AI-аналітика')}
@@ -1454,7 +1453,7 @@ function ProductInlineTabs({
   product: Product
 }) {
   const { t } = useI18n()
-  const [activeTab, setActiveTab] = useState<'numbers' | 'analogues' | 'components' | 'income' | 'outcome'>('numbers')
+  const [activeTab, setActiveTab] = useState<ProductInlineTab>('numbers')
 
   return (
     <div className="product-inline-tabs">
@@ -1478,46 +1477,50 @@ function ProductInlineTabs({
         ))}
       </div>
 
-      {activeTab === 'numbers' && (
-        <Box pt="sm">
-          <ProductOriginalNumbersTab product={product} onProductChanged={onProductChanged} />
-        </Box>
-      )}
-      {activeTab === 'analogues' && (
-        <Box pt="sm">
-          <ProductRelatedProductsTab
-            emptyLabel={t('Аналогів не знайдено')}
-            product={product}
-            type="analogues"
-            onProductChanged={onProductChanged}
-            onSelectProduct={onSelectRelatedProduct}
-          />
-        </Box>
-      )}
-      {activeTab === 'components' && (
-        <Box pt="sm">
-          <ProductRelatedProductsTab
-            emptyLabel={t('Комплектуючих не знайдено')}
-            product={product}
-            type="components"
-            onProductChanged={onProductChanged}
-            onSelectProduct={onSelectRelatedProduct}
-          />
-        </Box>
-      )}
-      {activeTab === 'income' && (
-        <Box pt="sm">
-          <ProductInlineMovementsTab direction="income" product={product} />
-        </Box>
-      )}
-      {activeTab === 'outcome' && (
-        <Box pt="sm">
-          <ProductInlineMovementsTab direction="outcome" product={product} />
-        </Box>
-      )}
+      <div className="product-inline-tab-pane">
+        {activeTab === 'numbers' && (
+          <Box pt="sm">
+            <ProductOriginalNumbersTab product={product} onProductChanged={onProductChanged} />
+          </Box>
+        )}
+        {activeTab === 'analogues' && (
+          <Box pt="sm">
+            <ProductRelatedProductsTab
+              emptyLabel={t('Аналогів не знайдено')}
+              product={product}
+              type="analogues"
+              onProductChanged={onProductChanged}
+              onSelectProduct={onSelectRelatedProduct}
+            />
+          </Box>
+        )}
+        {activeTab === 'components' && (
+          <Box pt="sm">
+            <ProductRelatedProductsTab
+              emptyLabel={t('Комплектуючих не знайдено')}
+              product={product}
+              type="components"
+              onProductChanged={onProductChanged}
+              onSelectProduct={onSelectRelatedProduct}
+            />
+          </Box>
+        )}
+        {activeTab === 'income' && (
+          <Box pt="sm">
+            <ProductInlineMovementsTab direction="income" product={product} />
+          </Box>
+        )}
+        {activeTab === 'outcome' && (
+          <Box pt="sm">
+            <ProductInlineMovementsTab direction="outcome" product={product} />
+          </Box>
+        )}
+      </div>
     </div>
   )
 }
+
+type ProductInlineTab = 'numbers' | 'analogues' | 'components' | 'income' | 'outcome'
 
 function ProductOriginalNumbersTab({
   onProductChanged,

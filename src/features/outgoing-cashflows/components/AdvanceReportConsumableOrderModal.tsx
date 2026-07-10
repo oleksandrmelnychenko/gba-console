@@ -23,6 +23,7 @@ import { formatLocalDate, formatLocalInputDateTime } from '../../../shared/date/
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { calculateConsumableOrderItemTotals } from '../../consumable-orders/consumableOrderCalculations'
 import {
   calculateAdvanceReportConsumableOrder,
@@ -610,7 +611,13 @@ export function AdvanceReportConsumableOrderModal({
   }
 
   return (
-    <AppModal centered opened={opened} size="90vw" title={t('Додати товар / послугу')} onClose={requestClose}>
+    <AppModal
+      centered
+      opened={opened}
+      size="min(1120px, 96vw)"
+      title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Додати товар / послугу')}</span>}
+      onClose={requestClose}
+    >
       <Stack gap="md">
         {error && (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
@@ -712,7 +719,7 @@ export function AdvanceReportConsumableOrderModal({
 
         <Group justify="space-between">
           <Group gap="xs">
-            <Text fw={700}>{t('Позиції')}</Text>
+            <Text className="app-section-title" fw={600} size="sm">{t('Позиції')}</Text>
             <Badge color="gray" variant="light">
               {visibleItems.length}
             </Badge>
@@ -799,13 +806,13 @@ export function AdvanceReportConsumableOrderModal({
 
         <Group justify="space-between" wrap="wrap">
           <Group gap="xs">
-            <Badge color="gray" variant="light">
+            <Badge className="app-role-pill is-gray" variant="light">
               {t('Сума')}: {formatMoney(order.TotalAmountWithoutVAT ?? totals.totalWithoutVat)}
             </Badge>
-            <Badge color="gray" variant="light">
+            <Badge className="app-role-pill is-gray" variant="light">
               {t('ПДВ')}: {formatMoney(totals.vat)}
             </Badge>
-            <Badge color="blue" variant="light">
+            <Badge className="app-role-pill" variant="light">
               {t('Разом')}: {formatMoney(order.TotalAmount ?? totals.totalWithVat)}
             </Badge>
           </Group>
@@ -813,7 +820,7 @@ export function AdvanceReportConsumableOrderModal({
             <Button color="gray" disabled={isBusy} leftSection={<X size={16} />} variant="light" onClick={requestClose}>
               {t('Скасувати')}
             </Button>
-            <Button disabled={isBusy} leftSection={<Save size={16} />} loading={isCalculating} onClick={submitOrder}>
+            <Button color={CREATE_ACTION_COLOR} disabled={isBusy} leftSection={<Save size={16} />} loading={isCalculating} onClick={submitOrder}>
               {t('Додати')}
             </Button>
           </Group>
@@ -823,7 +830,11 @@ export function AdvanceReportConsumableOrderModal({
           centered
           opened={itemEditor.opened}
           size="xl"
-          title={itemEditor.mode === 'edit' ? t('Редагувати позицію') : t('Додати позицію')}
+          title={
+            <span style={{ fontFamily: 'var(--font-mono)' }}>
+              {itemEditor.mode === 'edit' ? t('Редагувати позицію') : t('Додати позицію')}
+            </span>
+          }
           onClose={closeItemEditor}
         >
           <Stack gap="md">
@@ -927,7 +938,7 @@ export function AdvanceReportConsumableOrderModal({
               <Button color="gray" disabled={isBusy} leftSection={<X size={16} />} variant="light" onClick={closeItemEditor}>
                 {t('Скасувати')}
               </Button>
-              <Button disabled={isBusy} leftSection={<Save size={16} />} onClick={() => void saveEditorItem()}>
+              <Button color={CREATE_ACTION_COLOR} disabled={isBusy} leftSection={<Save size={16} />} onClick={() => void saveEditorItem()}>
                 {t('Зберегти')}
               </Button>
             </Group>

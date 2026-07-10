@@ -465,7 +465,11 @@ function SupplyReturnDetailDrawer({ model }: { model: ReturnType<typeof useSuppl
       opened={Boolean(selectedReturn)}
       position="right"
       size="min(920px, 100vw)"
-      title={selectedReturn ? buildDrawerTitle(selectedReturn, t) : t('Повернення постачальнику')}
+      title={
+        <span style={{ fontFamily: 'var(--font-mono)' }}>
+          {selectedReturn ? buildDrawerTitle(selectedReturn, t) : t('Повернення постачальнику')}
+        </span>
+      }
       onClose={closeDetail}
     >
       {selectedReturn && (
@@ -476,7 +480,7 @@ function SupplyReturnDetailDrawer({ model }: { model: ReturnType<typeof useSuppl
               disabled={!selectedReturn.NetUid}
               leftSection={<Download size={16} />}
               loading={isDownloading}
-              variant="light"
+              variant="outline"
               onClick={() => openDownload(selectedReturn)}
             >
               {t('Завантажити')}
@@ -798,7 +802,7 @@ function SupplyReturnDetail({
 
       <Stack gap="xs">
         <Group justify="space-between">
-          <Text fw={600}>{t('Назва товару')}</Text>
+          <Text className="app-section-title" fw={600} size="sm">{t('Назва товару')}</Text>
           <Badge color="gray" variant="light">
             {items.length}
           </Badge>
@@ -819,6 +823,7 @@ function SupplyReturnDetail({
       <Divider />
 
       <DetailRows
+        mono
         rows={[
           [t('Всього товарів'), items.length],
           [t('Вся кількість'), formatAmount(getReturnQty(supplyReturn))],
@@ -829,18 +834,15 @@ function SupplyReturnDetail({
   )
 }
 
-function DetailRows({ rows }: { rows: Array<[string, unknown]> }) {
+/* §7.2 leader rows: «label ——— value»; mono for numeric totals. */
+function DetailRows({ mono, rows }: { mono?: boolean; rows: Array<[string, unknown]> }) {
   return (
     <Stack gap={6}>
       {rows.map(([label, value]) => (
-        <Group key={label} justify="space-between" align="flex-start" gap="lg" wrap="nowrap">
-          <Text size="sm" c="dimmed">
-            {label}
-          </Text>
-          <Text size="sm" ta="right">
-            {displayValue(value)}
-          </Text>
-        </Group>
+        <span className="app-leader-row" key={label}>
+          <span className="app-leader-row-label">{label}</span>
+          <span className={`app-leader-row-value${mono ? ' is-mono' : ''}`}>{displayValue(value)}</span>
+        </span>
       ))}
     </Stack>
   )

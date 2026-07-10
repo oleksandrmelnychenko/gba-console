@@ -1,6 +1,7 @@
 import { Route, Routes, useLocation, type Location } from 'react-router-dom'
 import { ConsoleLayout } from './layout/ConsoleLayout'
 import {
+  AdvanceReportViewPage,
   ClientEditPage,
   ClientNewPage,
   CompanyCarFormPage,
@@ -93,6 +94,7 @@ export function App() {
             <Route path="/accounting/outgoing-cashflow/new/client-return" element={lazyRoute(<OutgoingCashflowCreatePage />)} />
             <Route path="/accounting/outgoing-cashflow/new/group" element={lazyRoute(<OutgoingCashflowCreatePage />)} />
             <Route path="/accounting/outgoing-cashflow/new/payment-tasks" element={<OutgoingPaymentTasksRedirect />} />
+            <Route path="/accounting/outgoing-cashflow/:id/advanced-report/view" element={lazyRoute(<AdvanceReportViewPage />)} />
             <Route path="/accounting/payment-accounts/new" element={lazyRoute(<PaymentAccountFormPage />)} />
             <Route path="/accounting/payment-accounts/edit/:id" element={lazyRoute(<PaymentAccountFormPage />)} />
             <Route path="/accounting/payment-cashflow-articles/new" element={lazyRoute(<PaymentCashflowArticleFormPage />)} />

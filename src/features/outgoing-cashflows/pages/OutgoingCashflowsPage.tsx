@@ -6,7 +6,6 @@
   Card,
   Divider,
   Group,
-  MultiSelect,
   Select,
   SimpleGrid,
   Stack,
@@ -24,6 +23,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
@@ -76,6 +76,7 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
 function useOutgoingCashflowsPageModel(): OutgoingCashflowsPageModel {
   const { t } = useI18n()
   const navigate = useNavigate()
+  const location = useLocation()
   const [searchParams] = useSearchParams()
   const focusedOrderNetId = searchParams.get('orderNetId') || searchParams.get('netId') || ''
   const [cashflows, setCashflows] = useValueState<OutgoingCashflowsResponse>({
@@ -256,10 +257,15 @@ function useOutgoingCashflowsPageModel(): OutgoingCashflowsPageModel {
   const openAdvanceReport = useCallback(
     (row: OutgoingCashflowRow) => {
       if (row.order.NetUid) {
-        navigate(`${ADVANCE_REPORT_ROUTE}/${encodeURIComponent(row.order.NetUid)}/advanced-report/view`)
+        navigate(`${ADVANCE_REPORT_ROUTE}/${encodeURIComponent(row.order.NetUid)}/advanced-report/view`, {
+          state: {
+            backgroundLocation: location,
+            returnPath: `${location.pathname}${location.search}`,
+          },
+        })
       }
     },
-    [navigate],
+    [location, navigate],
   )
 
   const openDocumentStructure = useCallback(
@@ -625,10 +631,7 @@ function OutgoingCashflowsContent({ model }: { model: OutgoingCashflowsPageModel
               w="100%"
               onChange={(value) => onSetPaymentMovementNetId(value || '')}
             />
-            <MultiSelect
-              clearable
-              className="outgoing-cashflows-organization-filter"
-              searchable
+            <CheckboxMultiSelect
               data={organizationOptions}
               label={t('Організації')}
               placeholder={t('Без фільтра')}

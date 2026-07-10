@@ -10,11 +10,12 @@ import {
   Text,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { ArrowLeft, CircleAlert, Fuel, Receipt, Save } from 'lucide-react'
+import { CircleAlert, Fuel, Receipt, Save } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
@@ -73,6 +74,9 @@ function useAdvanceReportViewModel() {
   const { t } = useI18n()
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const routeLocation = useLocation()
+  const locationState = routeLocation.state as { returnPath?: string } | null
+  const returnPath = locationState?.returnPath || OUTGOING_CASHFLOW_ROUTE
   const [viewState, setViewState] = useValueState<AdvanceReportViewState>(INITIAL_ADVANCE_REPORT_VIEW_STATE)
   const [isSaving, setSaving] = useValueState(false)
   const [isRecalculating, setRecalculating] = useValueState(false)
@@ -160,8 +164,8 @@ function useAdvanceReportViewModel() {
       return
     }
 
-    navigate(OUTGOING_CASHFLOW_ROUTE)
-  }, [hasPendingChanges, isBusy, navigate, setConfirmLeaveOpen])
+    navigate(returnPath, { replace: true })
+  }, [hasPendingChanges, isBusy, navigate, returnPath, setConfirmLeaveOpen])
 
   const confirmLeave = useCallback(() => {
     if (isBusy) {
@@ -169,8 +173,8 @@ function useAdvanceReportViewModel() {
     }
 
     setConfirmLeaveOpen(false)
-    navigate(OUTGOING_CASHFLOW_ROUTE)
-  }, [isBusy, navigate, setConfirmLeaveOpen])
+    navigate(returnPath, { replace: true })
+  }, [isBusy, navigate, returnPath, setConfirmLeaveOpen])
 
   useEffect(() => {
     if (!hasPendingChanges) {
@@ -356,7 +360,7 @@ function useAdvanceReportViewModel() {
           hasLocalChanges: false,
         }))
         notifications.show({ color: 'green', message: t('Оновлення видаткового ордера') })
-        navigate(OUTGOING_CASHFLOW_ROUTE)
+        navigate(returnPath, { replace: true })
       } catch (saveError) {
         setViewState((current) => ({
           ...current,
@@ -371,6 +375,7 @@ function useAdvanceReportViewModel() {
       isBusy,
       navigate,
       order,
+      returnPath,
       setSaving,
       setViewState,
       t,
@@ -394,7 +399,7 @@ function useAdvanceReportViewModel() {
         hasLocalChanges: false,
       }))
       notifications.show({ color: 'green', message: t('Оновлення видаткового ордера') })
-      navigate(OUTGOING_CASHFLOW_ROUTE)
+      navigate(returnPath, { replace: true })
     } catch (saveError) {
       setViewState((current) => ({
         ...current,
@@ -408,6 +413,7 @@ function useAdvanceReportViewModel() {
     isBusy,
     navigate,
     order,
+    returnPath,
     setSaving,
     setViewState,
     t,
@@ -465,33 +471,35 @@ export function AdvanceReportViewPage() {
   const { t } = useI18n()
 
   return (
+    <AppDrawer
+      opened
+      position="right"
+      size="wide"
+      title={<span style={{ fontFamily: 'var(--font-mono)' }}>{model.reportTitle || t('Авансовий звіт')}</span>}
+      onClose={model.goBack}
+    >
     <Stack gap="md">
-      <Group justify="space-between" align="center">
-        <Button color="gray" disabled={model.isBusy} leftSection={<ArrowLeft size={16} />} variant="light" onClick={model.goBack}>
-          {t('Назад')}
-        </Button>
-        <Group gap="xs" justify="flex-end">
-          {!model.isDone && (
-            <>
-              <Button disabled={model.isBusy} leftSection={<Receipt size={16} />} variant="outline" onClick={model.openConsumableModal}>
-                {t('Додати товар / послугу')}
-              </Button>
-              <Button disabled={model.isBusy} leftSection={<Fuel size={16} />} variant="outline" onClick={model.openFuelModal}>
-                {t('Додати пальне')}
-              </Button>
-            </>
-          )}
-          {model.canSave && (
-            <Button
-              color={CREATE_ACTION_COLOR}
-              leftSection={<Save size={16} />}
-              loading={model.isSaving || model.isRecalculating}
-              onClick={() => model.save(model.createIncomeAutomatically)}
-            >
-              {t('Зберегти')}
+      <Group gap="xs" justify="flex-end">
+        {!model.isDone && (
+          <>
+            <Button disabled={model.isBusy} leftSection={<Receipt size={16} />} variant="outline" onClick={model.openConsumableModal}>
+              {t('Додати товар / послугу')}
             </Button>
-          )}
-        </Group>
+            <Button disabled={model.isBusy} leftSection={<Fuel size={16} />} variant="outline" onClick={model.openFuelModal}>
+              {t('Додати пальне')}
+            </Button>
+          </>
+        )}
+        {model.canSave && (
+          <Button
+            color={CREATE_ACTION_COLOR}
+            leftSection={<Save size={16} />}
+            loading={model.isSaving || model.isRecalculating}
+            onClick={() => model.save(model.createIncomeAutomatically)}
+          >
+            {t('Зберегти')}
+          </Button>
+        )}
       </Group>
 
       {model.error && (
@@ -556,6 +564,7 @@ export function AdvanceReportViewPage() {
         </Stack>
       </AppModal>
     </Stack>
+    </AppDrawer>
   )
 }
 

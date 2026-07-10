@@ -415,7 +415,7 @@
 .product-inline-main {
   /* Legacy 3-column layout: image | dense info grid | price list, all in one compact row. */
   display: grid;
-  grid-template-columns: 250px minmax(0, 1fr) 400px;
+  grid-template-columns: 250px minmax(0, 1fr) 440px;
   gap: 14px;
   align-items: start;
 }
@@ -438,7 +438,7 @@
 
 .product-inline-prices {
   grid-column: 3;
-  max-width: 400px;
+  max-width: 440px;
 }
 
 .product-price-source-control {
@@ -768,6 +768,19 @@
   margin-top: 12px;
 }
 
+/* Stable frame: tab panes have very different natural heights (tall tables vs
+   empty states), which made the page bottom jump on every switch. Reserve a
+   constant minimum so the layout below never collapses/expands. */
+.product-inline-tab-pane {
+  min-height: 420px;
+}
+
+/* Same for the price-source pane (У GBA / AMG / Контех / Порівняти): lists,
+   skeleton and alerts differ in height — keep the slot steady. */
+.product-price-source-pane {
+  min-height: 300px;
+}
+
 .product-inline-tabs .mantine-InputWrapper-label,
 .product-inline-tabs .mantine-Checkbox-label,
 .product-inline-tabs .mantine-Radio-label,
@@ -924,7 +937,7 @@
 
 @media (max-width: 1280px) {
   .product-inline-main {
-    grid-template-columns: 230px minmax(0, 1fr) 320px;
+    grid-template-columns: 230px minmax(0, 1fr) 360px;
   }
 
   .product-inline-description {
