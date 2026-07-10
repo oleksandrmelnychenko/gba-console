@@ -161,10 +161,14 @@ export function getBooleanBadgeColor(value?: boolean): string {
   return value ? 'green' : 'gray'
 }
 
-export function getRelatedProductRowColor(product?: Partial<Product> | null): string | undefined {
-  const top = product?.Top?.trim().toLowerCase()
+export function isCriticalProductTop(top?: string | null): boolean {
+  const value = top?.trim().toLowerCase()
 
-  if (top === 'x9' || top === 'х9') {
+  return value === 'x9' || value === 'х9'
+}
+
+export function getRelatedProductRowColor(product?: Partial<Product> | null): string | undefined {
+  if (isCriticalProductTop(product?.Top)) {
     return 'red.7'
   }
 

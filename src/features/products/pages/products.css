@@ -43,7 +43,7 @@
 
 .product-assortment-carousel {
   display: grid;
-  grid-template-rows: minmax(0, 1fr) 52px minmax(0, 1fr); /* rail / fixed focus slot / rail */
+  grid-template-rows: minmax(0, 1fr) minmax(52px, auto) minmax(0, 1fr); /* rail / content-aware focus slot / rail */
   flex: 1; /* fills the column under the controls → drum centred in remaining space */
   min-height: 0;
   border: 0;
@@ -55,7 +55,7 @@
 .product-assortment-carousel.is-selection-mode {
   /* Bias the focus slot upward so the selected plate floats in the upper zone —
      visually above the detail tabs (Прихід/Розхід), not level with them. */
-  grid-template-rows: minmax(0, 0.5fr) 52px minmax(0, 1.5fr);
+  grid-template-rows: minmax(0, 0.5fr) minmax(52px, auto) minmax(0, 1.5fr);
 }
 
 .product-assortment-carousel-header {
@@ -158,7 +158,8 @@
 }
 
 .product-assortment-selected:focus-visible {
-  outline: none; /* keep the plate identical when focused — no border/shadow flash on select */
+  outline: 3px solid rgba(var(--brand-orange-rgb), 0.2);
+  outline-offset: 2px;
 }
 
 .product-assortment-selected:active {
@@ -349,6 +350,7 @@
 }
 
 .product-inline-view {
+  position: relative;
   min-width: 0;
   min-height: calc(100vh - 128px);
   padding: 18px 20px 20px;
@@ -358,6 +360,36 @@
   box-shadow:
     0 1px 2px rgba(16, 24, 40, 0.05),
     0 14px 32px -18px rgba(16, 24, 40, 0.16);
+}
+
+.product-inline-content {
+  transition: opacity 140ms ease;
+}
+
+.product-inline-view.is-loading .product-inline-content {
+  opacity: 0.38;
+}
+
+.product-inline-loading-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  border-radius: inherit;
+  background: rgba(255, 255, 255, 0.38);
+  cursor: progress;
+}
+
+.product-inline-loading-status {
+  position: sticky;
+  top: 16px;
+  width: max-content;
+  margin: 16px auto 0;
+  padding: 9px 13px;
+  border: 1px solid rgba(var(--brand-orange-rgb), 0.22);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 10px 28px -16px rgba(15, 23, 42, 0.38);
+  color: var(--mantine-color-gray-8);
 }
 
 .product-inline-view-empty {
@@ -962,13 +994,13 @@
   }
 
   .product-assortment-carousel {
-    grid-template-rows: minmax(96px, 1fr) 84px minmax(96px, 1fr);
+    grid-template-rows: minmax(96px, 1fr) minmax(84px, auto) minmax(96px, 1fr);
     flex: none;
     height: 60vh;
   }
 
   .product-assortment-carousel.is-selection-mode {
-    grid-template-rows: minmax(96px, 1fr) 84px minmax(96px, 1fr);
+    grid-template-rows: minmax(96px, 1fr) minmax(84px, auto) minmax(96px, 1fr);
   }
 
   .product-assortment-selected {
@@ -1153,78 +1185,6 @@
 .product-assortment-search-input input::placeholder {
   color: var(--mantine-color-gray-5);
   opacity: 1;
-}
-
-.product-assortment-selected {
-  display: block;
-  box-sizing: border-box;
-  width: 100%;
-  max-width: 100%;
-  height: 52px;
-  min-height: 52px;
-  justify-self: stretch;
-  align-self: center;
-  padding: 7px 30px 7px 12px;
-  border: 1px solid var(--brand-orange);
-  border-radius: 8px;
-  background: var(--mantine-color-white);
-  box-shadow: none;
-  color: var(--mantine-color-gray-8);
-  transform: none;
-  transition:
-    border-color 160ms var(--tx-ease-spring),
-    color 160ms var(--tx-ease-spring);
-  animation: none;
-}
-
-.product-assortment-selected::after {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 9px;
-  height: 9px;
-  border: 2px solid var(--mantine-color-white);
-  border-radius: 999px;
-  background: var(--brand-orange);
-  content: '';
-}
-
-.product-assortment-selected:active {
-  transform: none !important;
-}
-
-.product-assortment-selected-code {
-  display: block;
-  max-width: calc(100% - 22px);
-  overflow: hidden;
-  color: var(--brand-orange);
-  font-size: 13px;
-  font-weight: 700;
-  line-height: 1.15;
-  text-overflow: ellipsis;
-}
-
-.product-assortment-selected-name {
-  display: block;
-  max-width: calc(100% - 22px);
-  margin-top: 6px;
-  color: var(--mantine-color-gray-9);
-  font-size: 13px;
-  font-weight: 700;
-  line-height: 1.2;
-}
-
-.product-assortment-selected.is-critical .product-assortment-selected-code,
-.product-assortment-selected.is-critical .product-assortment-selected-name {
-  color: var(--mantine-color-red-6);
-}
-
-.product-assortment-selected.is-sale .product-assortment-selected-code {
-  color: var(--mantine-color-blue-6);
-}
-
-.product-assortment-selected.is-zero-sale .product-assortment-selected-code {
-  color: var(--mantine-color-green-6);
 }
 
 .product-carousel-row {

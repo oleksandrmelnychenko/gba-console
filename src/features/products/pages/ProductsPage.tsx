@@ -93,6 +93,7 @@ import {
   getProductOriginalNumbers,
   getProductTitle,
   getRelatedProductRowColor,
+  isCriticalProductTop,
   isProductRealtimePayloadForProduct,
   splitProductSearchResults,
 } from '../utils'
@@ -709,11 +710,10 @@ export function ProductsPage() {
 
     setTopProducts((currentProducts) => currentProducts.filter((item) => getProductIdentity(item) !== productId))
     setBottomProducts((currentProducts) => currentProducts.filter((item) => getProductIdentity(item) !== productId))
+    dispatchDetail({ type: 'loading' })
     setSelectedProduct(product)
-    // Keep the previously loaded detail on screen while the new product loads (the 'loading'
-    // action retains state.product), so the prices + stock + tabs block doesn't collapse to an
-    // empty lightweight render and jump when the full product arrives. Feedback is immediate via
-    // the left-rail plate (selectedProduct) and the spinning refresh icon.
+    // The loading state retains the previous detail to preserve page height; ProductInlineView
+    // makes that stale content inert until the newly selected product arrives.
     setActivePanel(null)
     setCarouselMode('selection')
     setSearchDraft('')
@@ -734,9 +734,8 @@ export function ProductsPage() {
     setTopProducts([])
     setBottomProducts(getNextSearchedProducts(nextProduct))
     setLoadedProductsCount(1)
+    dispatchDetail({ type: 'loading' })
     setSelectedProduct(nextProduct)
-    // Keep the current detail on screen while the related product loads (see selectProduct) —
-    // prevents the prices + stock + tabs block from collapsing and jumping during the fetch.
     setActivePanel(null)
     setCarouselMode('selection')
     setSearchDraft('')
@@ -755,8 +754,8 @@ export function ProductsPage() {
     }
 
     setTopProducts((currentProducts) => currentProducts.slice(0, -1))
+    dispatchDetail({ type: 'loading' })
     setSelectedProduct(nextProduct)
-    dispatchDetail({ type: 'clear' })
     setActivePanel(null)
     setCarouselMode('selection')
     setSearchDraft('')
@@ -775,8 +774,8 @@ export function ProductsPage() {
     }
 
     setBottomProducts((currentProducts) => currentProducts.slice(1))
+    dispatchDetail({ type: 'loading' })
     setSelectedProduct(nextProduct)
-    dispatchDetail({ type: 'clear' })
     setActivePanel(null)
     setCarouselMode('selection')
     setSearchDraft('')
@@ -1057,6 +1056,7 @@ function ProductAssortmentCarousel({
         {isSelectionMode && selectedProduct ? (
           <button
             type="button"
+            aria-label={`${t('Скопіювати код')}: ${getProductCode(selectedProduct)}`}
             className={`product-assortment-selected ${getProductRowToneClass(selectedProduct)}`}
             title={t('Скопіювати код')}
             onClick={() => copyToClipboard(getProductCode(selectedProduct))}
@@ -1157,7 +1157,19 @@ function ProductInlineView({
   const prices = product.CalculatedPrices || []
 
   return (
-    <Box className="product-inline-view">
+    <Box
+      aria-busy={isLoading}
+      className={`product-inline-view ${isLoading ? 'is-loading' : ''}`}
+    >
+      {isLoading ? (
+        <Box aria-live="polite" className="product-inline-loading-overlay" role="status">
+          <Group className="product-inline-loading-status" gap="xs">
+            <Loader size="sm" />
+            <Text size="sm" fw={650}>{t('Завантаження товару')}</Text>
+          </Group>
+        </Box>
+      ) : null}
+      <Box className="product-inline-content" inert={isLoading ? true : undefined}>
       <Group align="flex-start" justify="space-between" gap="sm" wrap="nowrap" className="product-inline-title">
         <Box className="product-inline-title-text">
           <Text component="span" fw={800} className="product-inline-code">{getProductCode(product)}</Text>
@@ -1221,7 +1233,7 @@ function ProductInlineView({
         <Box className="product-inline-description">
           <InfoBlock label="Опис" value={product.DescriptionUA || product.Description} wide />
           <InfoBlock label="Нотатки" value={product.NotesUA || product.Notes} wide />
-          <InfoBlock danger={isCriticalTop(product.Top)} label="Top" value={product.Top} />
+          <InfoBlock danger={isCriticalProductTop(product.Top)} label="Top" value={product.Top} />
           <InfoBlock mono label="Вага" value={formatAmount(product.Weight)} />
           <InfoBlock label="Розмір" value={product.Size} />
           <InfoBlock mono label="Об'єм" value={product.Volume} />
@@ -1259,6 +1271,7 @@ function ProductInlineView({
         title={getProductTitle(product)}
         onClose={() => setPreviewImageUrl(null)}
       />
+      </Box>
     </Box>
   )
 }
@@ -3599,14 +3612,8 @@ function getProductIdentity(product: Product): string {
   return String(product.NetUid || product.Id || product.VendorCode || product.Name || 'product')
 }
 
-function isCriticalTop(top?: string | null): boolean {
-  const value = top?.trim().toLowerCase()
-
-  return value === 'x9' || value === 'х9'
-}
-
 function getProductRowToneClass(product: Product): string {
-  if (isCriticalTop(product.Top)) {
+  if (isCriticalProductTop(product.Top)) {
     return 'is-critical'
   }
 

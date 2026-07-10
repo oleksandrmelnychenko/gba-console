@@ -5,6 +5,7 @@ import {
   getProductMainOriginalNumber,
   getProductOriginalNumbers,
   getProductWriteOffRuleLocaleLabel,
+  isCriticalProductTop,
   splitProductSearchResults,
 } from './utils'
 import type { Product } from './types'
@@ -37,6 +38,14 @@ describe('product utils', () => {
     expect(getProductWriteOffRuleLocaleLabel('uk')).toBe('Україна')
     expect(getProductWriteOffRuleLocaleLabel('pl')).toBe('Польща')
     expect(getProductWriteOffRuleLocaleLabel(undefined)).toBe('Невідомий регіон')
+  })
+
+  it('recognises Latin and Cyrillic X9 product ranks as critical', () => {
+    expect(isCriticalProductTop('x9')).toBe(true)
+    expect(isCriticalProductTop(' X9 ')).toBe(true)
+    expect(isCriticalProductTop('Х9')).toBe(true)
+    expect(isCriticalProductTop('A9')).toBe(false)
+    expect(isCriticalProductTop(undefined)).toBe(false)
   })
 
   it('splits searched products around the assortment drum search slot', () => {
