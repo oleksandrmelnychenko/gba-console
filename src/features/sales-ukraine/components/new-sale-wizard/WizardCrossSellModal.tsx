@@ -18,6 +18,7 @@ export function WizardCrossSellModal({
   isVatSale,
   localCurrencyCode,
   opened,
+  seedProduct,
   useEurToUah,
   onClose,
   onPick,
@@ -28,6 +29,7 @@ export function WizardCrossSellModal({
   isVatSale: boolean
   localCurrencyCode: string
   opened: boolean
+  seedProduct: WizardSaleProduct | null
   useEurToUah: boolean
   onClose: () => void
   onPick: (product: WizardSaleProduct) => void
@@ -46,7 +48,7 @@ export function WizardCrossSellModal({
     setLoading(true)
     setError(null)
 
-    getProductCoPurchaseRecommendations('', clientNetId, false, {
+    getProductCoPurchaseRecommendations(seedProduct?.NetUid ?? '', clientNetId, false, {
       clientAgreementNetId: agreementNetId ?? undefined,
       signal: controller.signal,
     })
@@ -67,7 +69,7 @@ export function WizardCrossSellModal({
       })
 
     return () => controller.abort()
-  }, [opened, clientNetId, agreementNetId, t])
+  }, [opened, clientNetId, agreementNetId, seedProduct?.NetUid, t])
 
   const visibleProducts = products.filter((product) => !product.NetUid || !excludeNetUids.has(product.NetUid))
 
@@ -79,7 +81,11 @@ export function WizardCrossSellModal({
       title={
         <Group gap={8} wrap="nowrap">
           <Sparkles size={16} />
-          <Text fw={600}>{t('Кросс-продажі для клієнта')}</Text>
+          <Text fw={600}>
+            {seedProduct?.VendorCode
+              ? `${t('З цим товаром купують')} · ${seedProduct.VendorCode}`
+              : t('Кросс-продажі для клієнта')}
+          </Text>
         </Group>
       }
       onClose={onClose}
@@ -95,7 +101,7 @@ export function WizardCrossSellModal({
         </Alert>
       ) : visibleProducts.length === 0 ? (
         <Text c="dimmed" py="md" ta="center">
-          {t('Кросс-продажів для клієнта не знайдено')}
+          {t('З цим товаром поки нічого разом не купували')}
         </Text>
       ) : (
         <Stack gap={6}>

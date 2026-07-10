@@ -1,5 +1,5 @@
 import { ActionIcon, Box, Group, Text, Tooltip } from '@mantine/core'
-import { Package, Trash2 } from 'lucide-react'
+import { Package, Sparkles, Trash2 } from 'lucide-react'
 import { memo, useMemo } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { DataTable } from '../../../../shared/ui/data-table/DataTable'
@@ -24,7 +24,7 @@ const WIZARD_CART_TABLE_LAYOUT: DataTableDefaultLayout = {
     right: ['actions'],
   },
   columnSizing: {
-    actions: 48,
+    actions: 76,
     addedBy: 112,
     comment: 128,
     discount: 124,
@@ -50,6 +50,7 @@ export const WizardShoppingCartGrid = memo(function WizardShoppingCartGrid({
   items,
   localCurrencyCode,
   useEurToUah,
+  onCrossSell,
   onRemove,
   onRowClick,
 }: {
@@ -57,6 +58,7 @@ export const WizardShoppingCartGrid = memo(function WizardShoppingCartGrid({
   items: SalesUkraineOrderItem[]
   localCurrencyCode: string
   useEurToUah: boolean
+  onCrossSell?: (item: SalesUkraineOrderItem) => void
   onRemove?: (item: SalesUkraineOrderItem) => void
   onRowClick?: (item: SalesUkraineOrderItem) => void
 }) {
@@ -186,12 +188,30 @@ export const WizardShoppingCartGrid = memo(function WizardShoppingCartGrid({
       },
     ]
 
-    if (onRemove) {
+    if (onRemove || onCrossSell) {
       result.push({
         id: 'actions',
         header: '',
         cell: (item) => (
           <Group className="new-sale-cart__actions" gap={2} justify="flex-start" wrap="nowrap">
+            {onCrossSell && (
+              <Tooltip label={t('Кросс-продажі до товару')}>
+                <ActionIcon
+                  aria-label={t('Кросс-продажі до товару')}
+                  disabled={busy}
+                  size="sm"
+                  variant="subtle"
+                  onClick={(event) => {
+                    event.preventDefault()
+                    event.stopPropagation()
+                    onCrossSell(item)
+                  }}
+                >
+                  <Sparkles size={15} />
+                </ActionIcon>
+              </Tooltip>
+            )}
+            {onRemove && (
             <Tooltip label={t('Видалити')}>
               <ActionIcon
                 aria-label={t('Видалити')}
@@ -202,22 +222,23 @@ export const WizardShoppingCartGrid = memo(function WizardShoppingCartGrid({
                 onClick={(event) => {
                   event.preventDefault()
                   event.stopPropagation()
-                  onRemove(item)
+                  onRemove?.(item)
                 }}
               >
                 <Trash2 size={15} />
               </ActionIcon>
             </Tooltip>
+            )}
           </Group>
         ),
-        width: 48,
-        minWidth: 44,
+        width: 76,
+        minWidth: 72,
         enableSorting: false,
       })
     }
 
     return result
-  }, [busy, indexByItem, localCurrencyCode, onRemove, t, useEurToUah])
+  }, [busy, indexByItem, localCurrencyCode, onCrossSell, onRemove, t, useEurToUah])
 
   return (
     <div className="new-sale-cart">
