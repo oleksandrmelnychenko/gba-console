@@ -16,7 +16,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { ChevronDown, CircleAlert, Eye, Plus, RefreshCw, RotateCcw, Search, Share2, X } from 'lucide-react'
+import { Banknote, ChevronDown, CircleAlert, Eye, Landmark, Plus, RefreshCw, RotateCcw, Search, Share2, Store, Users, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -620,7 +620,7 @@ function IncomeCashflowsContent({ model }: { model: IncomeCashflowsPageModel }) 
               <DataTableDensityToggle density={density} onToggle={onToggleDensity} size={34} />
             </div>
             <div className="income-cashflows-create-actions">
-              <Menu position="bottom-end" shadow="md" width={300} withinPortal>
+              <Menu classNames={{ dropdown: 'income-cashflows-create-menu' }} position="bottom-end" shadow="md" width={300} withinPortal>
                 <Menu.Target>
                   <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<Plus size={16} />} rightSection={<ChevronDown size={14} />} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}>
                     {t('Новий')}
@@ -628,40 +628,40 @@ function IncomeCashflowsContent({ model }: { model: IncomeCashflowsPageModel }) 
                 </Menu.Target>
                 <Menu.Dropdown>
                   <Menu.Label>{t('Каса')}</Menu.Label>
-                  <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/conversion?type=0', { state: { backgroundLocation: location } })}>
+                  <Menu.Item leftSection={<Banknote size={15} />} onClick={() => navigate('/accounting/income-cashflows/new/conversion?type=0', { state: { backgroundLocation: location } })}>
                     {t('Інший касовий прихід')}
                   </Menu.Item>
-                  <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/client?type=0&operationType=0', { state: { backgroundLocation: location } })}>
+                  <Menu.Item leftSection={<Banknote size={15} />} onClick={() => navigate('/accounting/income-cashflows/new/client?type=0&operationType=0', { state: { backgroundLocation: location } })}>
                     {t('Оплата покупця')}
                   </Menu.Item>
-                  <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/client?type=0&operationType=1', { state: { backgroundLocation: location } })}>
+                  <Menu.Item leftSection={<Banknote size={15} />} onClick={() => navigate('/accounting/income-cashflows/new/client?type=0&operationType=1', { state: { backgroundLocation: location } })}>
                     {t('Повернення постачальника')}
                   </Menu.Item>
-                  <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/client?type=0&operationType=2', { state: { backgroundLocation: location } })}>
+                  <Menu.Item leftSection={<Banknote size={15} />} onClick={() => navigate('/accounting/income-cashflows/new/client?type=0&operationType=2', { state: { backgroundLocation: location } })}>
                     {t('Інші з контрагентами')}
                   </Menu.Item>
                   <Menu.Divider />
                   <Menu.Label>{t('Банк')}</Menu.Label>
-                  <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/conversion?type=2', { state: { backgroundLocation: location } })}>
+                  <Menu.Item leftSection={<Landmark size={15} />} onClick={() => navigate('/accounting/income-cashflows/new/conversion?type=2', { state: { backgroundLocation: location } })}>
                     {t('Інші надходження на рахунок')}
                   </Menu.Item>
-                  <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/client?type=2&operationType=0', { state: { backgroundLocation: location } })}>
+                  <Menu.Item leftSection={<Landmark size={15} />} onClick={() => navigate('/accounting/income-cashflows/new/client?type=2&operationType=0', { state: { backgroundLocation: location } })}>
                     {t('Оплата покупця')}
                   </Menu.Item>
-                  <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/client?type=2&operationType=1', { state: { backgroundLocation: location } })}>
+                  <Menu.Item leftSection={<Landmark size={15} />} onClick={() => navigate('/accounting/income-cashflows/new/client?type=2&operationType=1', { state: { backgroundLocation: location } })}>
                     {t('Повернення постачальника')}
                   </Menu.Item>
-                  <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/client?type=2&operationType=2', { state: { backgroundLocation: location } })}>
+                  <Menu.Item leftSection={<Landmark size={15} />} onClick={() => navigate('/accounting/income-cashflows/new/client?type=2&operationType=2', { state: { backgroundLocation: location } })}>
                     {t('Інші з контрагентами')}
                   </Menu.Item>
                   <Menu.Divider />
                   <Menu.Label>{t('Колеги')}</Menu.Label>
-                  <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/user', { state: { backgroundLocation: location } })}>
+                  <Menu.Item leftSection={<Users size={15} />} onClick={() => navigate('/accounting/income-cashflows/new/user', { state: { backgroundLocation: location } })}>
                     {t('Повернення від колеги')}
                   </Menu.Item>
                   <Menu.Divider />
                   <Menu.Label>{t('Магазин')}</Menu.Label>
-                  <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/shop', { state: { backgroundLocation: location } })}>
+                  <Menu.Item leftSection={<Store size={15} />} onClick={() => navigate('/accounting/income-cashflows/new/shop', { state: { backgroundLocation: location } })}>
                     {t('Оплата магазину')}
                   </Menu.Item>
                 </Menu.Dropdown>
@@ -776,7 +776,11 @@ function useIncomeCashflowColumns({
         width: 145,
         minWidth: 130,
         accessor: (row) => row.fromDate,
-        cell: (row) => formatDateTime(row.fromDate),
+        cell: (row) => (
+          <Text size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>
+            {formatDateTime(row.fromDate)}
+          </Text>
+        ),
       },
       {
         id: 'number',
@@ -786,7 +790,9 @@ function useIncomeCashflowColumns({
         accessor: (row) => row.number,
         cell: (row) => (
           <Group gap={6} wrap="nowrap">
-            <Text fw={600} size="sm">{displayValue(row.number)}</Text>
+            <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0, textTransform: 'uppercase' }}>
+              {displayValue(row.number)}
+            </Text>
             {row.isCanceled && (
               <Badge className="app-role-pill is-red" size="xs" variant="light">
                 {t('Скасовано')}
@@ -818,7 +824,11 @@ function useIncomeCashflowColumns({
         minWidth: 100,
         align: 'right',
         accessor: (row) => row.amount,
-        cell: (row) => formatMoney(row.amount),
+        cell: (row) => (
+          <Text className="app-money" size="sm" ta="right">
+            {formatMoney(row.amount)}
+          </Text>
+        ),
       },
       {
         id: 'currency',
@@ -976,7 +986,13 @@ function IncomeCashflowDetailDrawer({
   const orderSales = income?.IncomePaymentOrderSales || []
 
   return (
-    <AppDrawer opened={Boolean(row)} padding="md" size="xl" title={getIncomePaymentOrderTitle(income, t)} onClose={onClose}>
+    <AppDrawer
+      opened={Boolean(row)}
+      padding="md"
+      size="xl"
+      title={<span style={{ fontFamily: 'var(--font-mono)' }}>{getIncomePaymentOrderTitle(income, t)}</span>}
+      onClose={onClose}
+    >
       {row && income && (
         <Stack gap="md">
           {isClientPaymentReassignable(income) && (
@@ -993,8 +1009,8 @@ function IncomeCashflowDetailDrawer({
           )}
 
           <SimpleGrid cols={{ base: 1, sm: 2 }}>
-            <DetailItem label={t('Дата')} value={formatDateTime(income.FromDate)} />
-            <DetailItem label={t('Номер')} value={displayValue(income.Number)} />
+            <DetailItem label={t('Дата')} mono value={formatDateTime(income.FromDate)} />
+            <DetailItem label={t('Номер')} mono value={displayValue(income.Number)} />
             <DetailItem
               label={t('Платник')}
               value={displayValue(
@@ -1004,16 +1020,16 @@ function IncomeCashflowDetailDrawer({
               )}
             />
             <DetailItem label={t('Тип операції')} value={displayValue(row.operationType)} />
-            <DetailItem label={t('Сума')} value={formatMoney(income.Amount)} />
+            <DetailItem label={t('Сума')} mono value={formatMoney(income.Amount)} />
             <DetailItem label={t('Валюта')} value={displayValue(income.Currency?.Code || income.Currency?.Name)} />
             <DetailItem label={t('Стаття руху')} value={displayValue(row.paymentMovement)} />
             <DetailItem label={t('Організація')} value={displayValue(row.organization)} />
             <DetailItem label={t('Рахунок')} value={displayValue(row.paymentRegister)} />
             <DetailItem label={t('Відповідальний')} value={displayValue(row.responsible)} />
-            <DetailItem label={t('Курс')} value={displayValue(income.ExchangeRate)} />
-            <DetailItem label={t('Сума в EUR')} value={hasNumber(income.EuroAmount) ? formatMoney(income.EuroAmount) : displayValue(undefined)} />
-            <DetailItem label={t('ПДВ %')} value={hasNumber(income.VatPercent) ? displayValue(income.VatPercent) : displayValue(undefined)} />
-            <DetailItem label={t('ПДВ')} value={hasNumber(income.VAT) ? formatMoney(income.VAT) : displayValue(undefined)} />
+            <DetailItem label={t('Курс')} mono value={displayValue(income.ExchangeRate)} />
+            <DetailItem label={t('Сума в EUR')} mono value={hasNumber(income.EuroAmount) ? formatMoney(income.EuroAmount) : displayValue(undefined)} />
+            <DetailItem label={t('ПДВ %')} mono value={hasNumber(income.VatPercent) ? displayValue(income.VatPercent) : displayValue(undefined)} />
+            <DetailItem label={t('ПДВ')} mono value={hasNumber(income.VAT) ? formatMoney(income.VAT) : displayValue(undefined)} />
             <DetailItem label={t('Бухгалтерський')} value={income.IsAccounting ? t('Так') : t('Ні')} />
             <DetailItem label={t('Управлінський')} value={income.IsManagementAccounting ? t('Так') : t('Ні')} />
             <DetailItem label={t('Скасовано')} value={income.IsCanceled ? t('Так') : t('Ні')} />
@@ -1022,6 +1038,7 @@ function IncomeCashflowDetailDrawer({
             <DetailItem label={t('Договір')} value={displayValue(getIncomeAgreementName(income))} />
             <DetailItem
               label={t('Сума у валюті договору')}
+              mono
               value={hasNumber(income.AgreementExchangedAmount) ? formatMoney(income.AgreementExchangedAmount) : displayValue(undefined)}
             />
           </SimpleGrid>
@@ -1089,9 +1106,9 @@ function IncomeOrderSaleBlock({
   return (
     <SimpleGrid cols={{ base: 1, sm: 2 }}>
       <DetailItem label={t('Тип')} value={sale.ReSale ? t('Ресейл') : t('Продаж')} />
-      <DetailItem label={t('Дата')} value={formatDateTime(sale.Created || saleDocument?.Created)} />
-      <DetailItem label={t('Номер рахунку')} value={displayValue(saleDocument?.SaleNumber?.Value)} />
-      <DetailItem label={t('Сума')} value={formatMoneyWithCurrency(amount, currency)} />
+      <DetailItem label={t('Дата')} mono value={formatDateTime(sale.Created || saleDocument?.Created)} />
+      <DetailItem label={t('Номер рахунку')} mono value={displayValue(saleDocument?.SaleNumber?.Value)} />
+      <DetailItem label={t('Сума')} mono value={formatMoneyWithCurrency(amount, currency)} />
       <Stack gap={2}>
         <Text c="dimmed" size="xs" tt="uppercase">
           {t('Оплата')}
@@ -1194,7 +1211,7 @@ function IncomeDocumentStructure({
 
       <SimpleGrid cols={{ base: 1, sm: 2 }}>
         <DetailItem label={t('Прибутковий ордер')} value={displayValue(income.Number)} />
-        <DetailItem label={t('Дата')} value={formatDateTime(income.FromDate)} />
+        <DetailItem label={t('Дата')} mono value={formatDateTime(income.FromDate)} />
         <DetailItem label={t('Сума')} value={formatMoneyWithCurrency(income.Amount, income.Currency?.Code || income.Currency?.Name)} />
         <DetailItem
           label={t('Перерахована сума')}
@@ -1459,13 +1476,17 @@ function ReassignIncomeClientModal({
   }, [handleSaved, row, selectedAgreementValue, selectedClientValue, setError, setSaving, t])
 
   return (
-    <AppModal centered opened={opened} title={t('Переназначити клієнта')} onClose={handleClose}>
+    <AppModal
+      centered
+      opened={opened}
+      title={
+        <span style={{ fontFamily: 'var(--font-mono)' }}>
+          {row?.number ? `${t('Переназначити клієнта')} — ${row.number}` : t('Переназначити клієнта')}
+        </span>
+      }
+      onClose={handleClose}
+    >
       <Stack gap="md">
-        {row && (
-          <Text c="dimmed" size="sm">
-            {t('Ордер')}: <Text span fw={600}>{row.number || t('Без номера')}</Text>
-          </Text>
-        )}
 
         <Autocomplete
           data={counterpartyOptions.map((option) => option.label)}
@@ -1500,10 +1521,11 @@ function ReassignIncomeClientModal({
         )}
 
         <Group justify="flex-end">
-          <Button disabled={isSaving} variant="default" onClick={handleClose}>
+          <Button color="gray" disabled={isSaving} variant="light" onClick={handleClose}>
             {t('Скасувати')}
           </Button>
           <Button
+            color={CREATE_ACTION_COLOR}
             disabled={!selectedClientValue || !selectedAgreementValue}
             leftSection={<Share2 size={16} />}
             loading={isSaving}
@@ -1548,13 +1570,16 @@ function PayerCell({ row }: { row: IncomeCashflowRow }) {
   )
 }
 
-function DetailItem({ label, value }: { label: string; value: string }) {
+/* §5.1: dates, numbers and money render mono — pass `mono` for those values. */
+function DetailItem({ label, mono, value }: { label: string; mono?: boolean; value: string }) {
   return (
     <Stack gap={2}>
       <Text c="dimmed" size="xs" tt="uppercase">
         {label}
       </Text>
-      <Text size="sm">{value}</Text>
+      <Text fw={mono ? 600 : undefined} size="sm" style={mono ? { fontFamily: 'var(--font-mono)', letterSpacing: 0 } : undefined}>
+        {value}
+      </Text>
     </Stack>
   )
 }

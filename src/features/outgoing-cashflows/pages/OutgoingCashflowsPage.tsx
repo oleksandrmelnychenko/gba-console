@@ -24,6 +24,7 @@ import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/Page
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
+import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
@@ -97,9 +98,11 @@ function useOutgoingCashflowsPageModel(): OutgoingCashflowsPageModel {
   const [paymentMovementNetId, setPaymentMovementNetId] = useValueState('')
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(false)
-  const [isLoadingMore, setLoadingMore] = useValueState(false)
   const [isLoadingLookups, setLoadingLookups] = useValueState(false)
   const [hasMore, setHasMore] = useValueState(false)
+  const [page, setPage] = useValueState(1)
+  const [pageSize, setPageSize] = useValueState(PAGE_SIZE)
+  const [totalRowsQty, setTotalRowsQty] = useValueState<number | null>(null)
   const [selectedRow, setSelectedRow] = useValueState<OutgoingCashflowRow | null>(null)
   const [structureRow, setStructureRow] = useValueState<OutgoingCashflowRow | null>(null)
   const [structureCalculatedOrder, setStructureCalculatedOrder] = useValueState<OutcomePaymentOrder | null>(null)
@@ -160,40 +163,33 @@ function useOutgoingCashflowsPageModel(): OutgoingCashflowsPageModel {
     t,
   ])
 
-  const loadCashflows = useCallback(async (offset: number, append: boolean) => {
+  const loadCashflows = useCallback(async (nextPage: number) => {
     if (filterError) {
       requestRef.current += 1
-
-      if (!append) {
-        setCashflows({
-          Collection: [],
-          NegativeDifferenceAmount: 0,
-          PositiveDifferenceAmount: 0,
-        })
-      }
-
+      setCashflows({
+        Collection: [],
+        NegativeDifferenceAmount: 0,
+        PositiveDifferenceAmount: 0,
+      })
       setError(null)
       setHasMore(false)
+      setTotalRowsQty(null)
       setLoading(false)
-      setLoadingMore(false)
       return
     }
 
     const requestId = requestRef.current + 1
     requestRef.current = requestId
+    const offset = (nextPage - 1) * pageSize
 
-    if (append) {
-      setLoadingMore(true)
-    } else {
-      setLoading(true)
-    }
+    setLoading(true)
     setError(null)
 
     try {
       const nextCashflows = await getOutgoingCashflows({
         currencyNetId,
         from: fromDate,
-        limit: PAGE_SIZE,
+        limit: pageSize,
         offset,
         organizationIds: selectedOrganizationFilterIds,
         paymentMovementNetId,
@@ -203,30 +199,28 @@ function useOutgoingCashflowsPageModel(): OutgoingCashflowsPageModel {
       })
 
       if (requestRef.current === requestId) {
-        setCashflows((current) => mergeCashflowResponses(current, nextCashflows, append))
+        setCashflows(nextCashflows)
         const loadedQty = offset + nextCashflows.Collection.length
         const responseTotalRowsQty = nextCashflows.TotalRowsQty
         const nextTotalQty =
           typeof responseTotalRowsQty === 'number' && Number.isFinite(responseTotalRowsQty)
             ? responseTotalRowsQty
             : null
-        setHasMore(nextCashflows.Collection.length === PAGE_SIZE && (nextTotalQty === null || loadedQty < nextTotalQty))
+        setTotalRowsQty(nextTotalQty)
+        setHasMore(nextCashflows.Collection.length === pageSize && (nextTotalQty === null || loadedQty < nextTotalQty))
       }
     } catch (loadError) {
       if (requestRef.current === requestId) {
-        if (!append) {
-          setCashflows({
-            Collection: [],
-            NegativeDifferenceAmount: 0,
-            PositiveDifferenceAmount: 0,
-          })
-        }
+        setCashflows({
+          Collection: [],
+          NegativeDifferenceAmount: 0,
+          PositiveDifferenceAmount: 0,
+        })
         setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити видаткові ордери'))
       }
     } finally {
       if (requestRef.current === requestId) {
         setLoading(false)
-        setLoadingMore(false)
       }
     }
   }, [
@@ -234,6 +228,7 @@ function useOutgoingCashflowsPageModel(): OutgoingCashflowsPageModel {
     filterError,
     fromDate,
     normalizedSearchValue,
+    pageSize,
     paymentMovementNetId,
     paymentRegisterNetId,
     selectedOrganizationFilterIds,
@@ -241,7 +236,7 @@ function useOutgoingCashflowsPageModel(): OutgoingCashflowsPageModel {
     setError,
     setHasMore,
     setLoading,
-    setLoadingMore,
+    setTotalRowsQty,
     t,
     toDate,
   ])
@@ -250,9 +245,14 @@ function useOutgoingCashflowsPageModel(): OutgoingCashflowsPageModel {
     void loadLookups()
   }, [loadLookups])
 
+  // Any filter change restarts from the first page (loadCashflows identity change reloads).
   useEffect(() => {
-    void loadCashflows(0, false)
-  }, [loadCashflows])
+    setPage(1)
+  }, [currencyNetId, fromDate, normalizedSearchValue, paymentMovementNetId, paymentRegisterNetId, selectedOrganizationFilterIds, setPage, toDate])
+
+  useEffect(() => {
+    void loadCashflows(page)
+  }, [loadCashflows, page])
 
   const openAdvanceReport = useCallback(
     (row: OutgoingCashflowRow) => {
@@ -423,13 +423,13 @@ function useOutgoingCashflowsPageModel(): OutgoingCashflowsPageModel {
     try {
       await cancelOutgoingCashflow(cancelRow.order.NetUid)
       setCancelRow(null)
-      void loadCashflows(0, false)
+      void loadCashflows(page)
     } catch (cancelError) {
       setError(cancelError instanceof Error ? cancelError.message : t('Не вдалося скасувати видатковий ордер'))
     } finally {
       setCanceling(false)
     }
-  }, [cancelRow, isCanceling, loadCashflows, setCancelRow, setCanceling, setError, t])
+  }, [cancelRow, isCanceling, loadCashflows, page, setCancelRow, setCanceling, setError, t])
 
   return {
     cancelRow,
@@ -446,8 +446,10 @@ function useOutgoingCashflowsPageModel(): OutgoingCashflowsPageModel {
     isCanceling,
     isLoading,
     isLoadingLookups,
-    isLoadingMore,
     isTableBusy,
+    page,
+    pageSize,
+    totalRowsQty,
     organizationOptions,
     paymentMovementNetId,
     paymentMovements,
@@ -467,6 +469,11 @@ function useOutgoingCashflowsPageModel(): OutgoingCashflowsPageModel {
     onCloseDocumentStructure: closeDocumentStructure,
     onLoadCashflows: loadCashflows,
     onLoadLookups: loadLookups,
+    onSetPage: setPage,
+    onSetPageSize: (nextPageSize: number) => {
+      setPageSize(nextPageSize)
+      setPage(1)
+    },
     onOpenDetails: openCashflowDetails,
     onResetFilters: resetFilters,
     onSetCurrencyNetId: setCurrencyNetId,
@@ -501,8 +508,10 @@ type OutgoingCashflowsPageModel = {
   isCanceling: boolean
   isLoading: boolean
   isLoadingLookups: boolean
-  isLoadingMore: boolean
   isTableBusy: boolean
+  page: number
+  pageSize: number
+  totalRowsQty: number | null
   organizationOptions: Array<{ label: string; value: string }>
   paymentMovementNetId: string
   paymentMovements: PaymentMovement[]
@@ -520,8 +529,10 @@ type OutgoingCashflowsPageModel = {
   onCloseCancel: () => void
   onCloseDetails: () => void
   onCloseDocumentStructure: () => void
-  onLoadCashflows: (offset: number, append: boolean) => Promise<void>
+  onLoadCashflows: (page: number) => Promise<void>
   onLoadLookups: () => Promise<void>
+  onSetPage: (page: number) => void
+  onSetPageSize: (pageSize: number) => void
   onOpenDetails: (row: OutgoingCashflowRow) => void
   onResetFilters: () => void
   onSetCurrencyNetId: (value: string) => void
@@ -550,8 +561,10 @@ function OutgoingCashflowsContent({ model }: { model: OutgoingCashflowsPageModel
     isCanceling,
     isLoading,
     isLoadingLookups,
-    isLoadingMore,
     isTableBusy,
+    page,
+    pageSize,
+    totalRowsQty,
     organizationOptions,
     paymentMovementNetId,
     paymentMovements,
@@ -571,6 +584,8 @@ function OutgoingCashflowsContent({ model }: { model: OutgoingCashflowsPageModel
     onCloseDocumentStructure,
     onLoadCashflows,
     onLoadLookups,
+    onSetPage,
+    onSetPageSize,
     onOpenDetails,
     onResetFilters,
     onSetCurrencyNetId,
@@ -654,7 +669,7 @@ function OutgoingCashflowsContent({ model }: { model: OutgoingCashflowsPageModel
                   variant="light"
                   onClick={() => {
                     void onLoadLookups()
-                    void onLoadCashflows(0, false)
+                    void onLoadCashflows(page)
                   }}
                 >
                   <RefreshCw size={17} />
@@ -704,9 +719,6 @@ function OutgoingCashflowsContent({ model }: { model: OutgoingCashflowsPageModel
             footer={
               <Group className="outgoing-cashflows-table-footer" gap="md" justify="flex-end" wrap="nowrap">
                 <Group gap="xs" wrap="nowrap">
-                  <Badge className="app-role-pill" variant="light">
-                    {t('Завантажено')}: {cashflows.Collection.length}
-                  </Badge>
                   <Badge className="app-role-pill is-gray" variant="light">
                     {t('Рядків')}: {rows.length}
                   </Badge>
@@ -717,11 +729,15 @@ function OutgoingCashflowsContent({ model }: { model: OutgoingCashflowsPageModel
                     {t('Дебіторська заборгованість')}: {formatMoney(cashflows.NegativeDifferenceAmount)}
                   </Badge>
                 </Group>
-                {hasMore && (
-                  <Button loading={isLoadingMore} size="xs" variant="outline" onClick={() => void onLoadCashflows(cashflows.Collection.length, true)}>
-                    {t('Завантажити ще')}
-                  </Button>
-                )}
+                <Paginator
+                  hasNext={hasMore}
+                  isLoading={isLoading}
+                  page={page}
+                  pageSize={pageSize}
+                  totalPages={typeof totalRowsQty === 'number' ? Math.max(1, Math.ceil(totalRowsQty / pageSize)) : undefined}
+                  onPageChange={onSetPage}
+                  onPageSizeChange={onSetPageSize}
+                />
               </Group>
             }
             onRowClick={onOpenDetails}
@@ -786,7 +802,11 @@ function useOutgoingCashflowColumns({
         width: 145,
         minWidth: 130,
         accessor: (row) => row.fromDate,
-        cell: (row) => formatDateTime(row.fromDate),
+        cell: (row) => (
+          <Text size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>
+            {formatDateTime(row.fromDate)}
+          </Text>
+        ),
       },
       {
         id: 'number',
@@ -796,7 +816,9 @@ function useOutgoingCashflowColumns({
         accessor: (row) => row.number,
         cell: (row) => (
           <Group gap={6} wrap="nowrap">
-            <Text fw={600} size="sm">{displayValue(row.number)}</Text>
+            <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0, textTransform: 'uppercase' }}>
+              {displayValue(row.number)}
+            </Text>
             {row.isCanceled && (
               <Badge className="app-role-pill is-red" size="xs" variant="light">
                 {t('Скасовано')}
@@ -812,7 +834,11 @@ function useOutgoingCashflowColumns({
         minWidth: 100,
         align: 'right',
         accessor: (row) => row.amount,
-        cell: (row) => formatMoney(row.amount),
+        cell: (row) => (
+          <Text className="app-money" size="sm" ta="right">
+            {formatMoney(row.amount)}
+          </Text>
+        ),
       },
       {
         id: 'currency',
@@ -877,7 +903,11 @@ function useOutgoingCashflowColumns({
         minWidth: 90,
         align: 'right',
         accessor: (row) => row.totalRowsQty,
-        cell: (row) => formatOptionalNumber(row.totalRowsQty),
+        cell: (row) => (
+          <Text className="app-money" size="sm" ta="right">
+            {formatOptionalNumber(row.totalRowsQty)}
+          </Text>
+        ),
       },
       {
         id: 'comment',
@@ -1587,21 +1617,6 @@ function getOrganizationFilterError(selectedFilterCount: number, t: (value: stri
   }
 
   return t('Забагато організацій у фільтрі. Оберіть усі організації або звузьте вибір.')
-}
-
-function mergeCashflowResponses(
-  current: OutgoingCashflowsResponse,
-  next: OutgoingCashflowsResponse,
-  append: boolean,
-): OutgoingCashflowsResponse {
-  if (!append) {
-    return next
-  }
-
-  return {
-    ...next,
-    Collection: [...current.Collection, ...next.Collection],
-  }
 }
 
 function getRelatedOrderKey(row: OutgoingCashflowRow, item: { NetUid?: string; Id?: number; ConsumablesOrder?: { NetUid?: string; Id?: number } | null }, index: number): string {

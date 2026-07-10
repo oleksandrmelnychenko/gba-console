@@ -12,7 +12,7 @@
     minmax(320px, 340px)
     minmax(180px, 190px)
     minmax(230px, 250px)
-    minmax(340px, 360px)
+    minmax(200px, 220px) /* Організації — compact CheckboxMultiSelect, was 340-360 for the pill MultiSelect */
     minmax(32px, 1fr)
     auto
     auto;
@@ -35,4 +35,27 @@
 
 .income-cashflows-create-actions .mantine-Button-root {
   white-space: nowrap;
+}
+
+/* «Новий» dropdown per ui-patterns: mono uppercase group labels, mono items
+   with the group icon in gray. */
+.income-cashflows-create-menu .mantine-Menu-label {
+  color: var(--mantine-color-gray-6);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.income-cashflows-create-menu .mantine-Menu-item {
+  color: var(--mantine-color-gray-8);
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.income-cashflows-create-menu .mantine-Menu-itemSection svg {
+  color: var(--mantine-color-gray-6);
 }
