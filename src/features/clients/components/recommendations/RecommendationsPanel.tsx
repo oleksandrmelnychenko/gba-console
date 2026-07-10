@@ -125,7 +125,7 @@ export function RecommendationsPanel({ client, productNetId }: RecommendationsPa
             dispatch({ products: coPurchase, selectedProduct: product, type: 'loadedProductRecommendations' })
           }
         } else {
-          const mostPurchased = await getMostPurchasedProductsByClientId(clientNetId, isByRegion, controller.signal)
+          const mostPurchased = await getMostPurchasedProductsByClientId(clientNetId, isByRegion, { signal: controller.signal })
 
           if (!cancelled) {
             dispatch({ products: mostPurchased, type: 'loadedMostPurchased' })

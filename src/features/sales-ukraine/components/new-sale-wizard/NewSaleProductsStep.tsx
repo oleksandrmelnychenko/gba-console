@@ -731,7 +731,9 @@ export function NewSaleProductsStep({
     setSearching(true)
 
     try {
-      const recommended = (await getMostPurchasedProductsByClientId(clientNetId, false)) as unknown as WizardSaleProduct[]
+      const recommended = (await getMostPurchasedProductsByClientId(clientNetId, false, {
+        clientAgreementNetId: agreementNetId ?? undefined,
+      })) as unknown as WizardSaleProduct[]
 
       setQuery('')
       setResults(recommended)

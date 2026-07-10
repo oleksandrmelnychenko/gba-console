@@ -6,14 +6,17 @@ import type {
 export async function getMostPurchasedProductsByClientId(
   clientNetId: string,
   byRegion: boolean,
-  signal?: AbortSignal,
+  options?: { clientAgreementNetId?: string; signal?: AbortSignal },
 ): Promise<RecommendationProduct[]> {
   const result = await apiRequest<unknown>('/recommendations/get', {
     query: {
       clientNetId,
       byRegion,
+      // With an agreement the server hydrates availability (AvailableQty* + rows),
+      // so the sale wizard shows real quantities on recommendations.
+      ...(options?.clientAgreementNetId ? { clientAgreementNetId: options.clientAgreementNetId } : {}),
     },
-    ...(signal ? { signal } : {}),
+    ...(options?.signal ? { signal: options.signal } : {}),
   })
 
   return normalizeRecommendationProducts(result)
