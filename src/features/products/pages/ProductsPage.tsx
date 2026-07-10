@@ -999,12 +999,9 @@ function ProductAssortmentCarousel({
 
   return (
     <Box className="product-assortment-column" role="region" onKeyDown={onKeyDown}>
-      <Group justify="space-between" className="product-assortment-carousel-header">
-        <Text size="xs" c="dimmed" fw={600}>
-          {t('Весь асортимент')}
-        </Text>
+      <Box className="product-assortment-carousel-header">
         <ProductUploadDocumentToolbar product={selectedProduct} onUploadSuccess={onUploadSuccess} />
-      </Group>
+      </Box>
 
       <Group className="product-assortment-filter" gap={8} grow align="flex-start" wrap="nowrap">
         <Select
@@ -2097,7 +2094,7 @@ function ProductUploadDocumentToolbar({
       <PermissionGate permissionKey={PRODUCT_UPLOAD_DOCUMENT_PERMISSION}>
         <Menu position="bottom-start" shadow="md" width={260} withinPortal>
           <Menu.Target>
-            <Button variant="default" size="xs" leftSection={<ExcelIcon size={16} />} rightSection={<ChevronDown size={14} />}>
+            <Button fullWidth variant="default" size="xs" leftSection={<ExcelIcon size={16} />} rightSection={<ChevronDown size={14} />}>
               {t('Завантаження')}
             </Button>
           </Menu.Target>

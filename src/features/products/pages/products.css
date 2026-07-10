@@ -31,6 +31,8 @@
                         overflow-x:visible / overflow-y:clip still clipped the plate in Chrome. */
   position: sticky; /* stays in view while the detail panel scrolls past */
   top: 0;
+  z-index: 6; /* paint above the detail panel — sticky forms a stacking context, and without
+                 this the (later-in-DOM) white inline view covers the plate's overflowing part */
   align-self: start; /* don't stretch to the tall workspace — sticky needs travel room */
   outline: none; /* it's a keyboard-handling wrapper, not a control — no focus ring stripe */
 }
@@ -54,9 +56,9 @@
 }
 
 .product-assortment-carousel.is-selection-mode {
-  /* Bias the focus slot upward so the selected plate floats in the upper zone —
-     visually above the detail tabs (Прихід/Розхід), not level with them. */
-  grid-template-rows: minmax(0, 0.5fr) minmax(52px, auto) minmax(0, 1.5fr);
+  /* Same geometry as the base carousel — the selected plate lives ABOVE the carousel
+     (top of the column), the drum keeps the search input between the two rails. */
+  grid-template-rows: minmax(0, 1fr) minmax(52px, auto) minmax(0, 1fr);
 }
 
 .product-assortment-carousel-header {
@@ -70,23 +72,24 @@
 }
 
 .product-assortment-filter .mantine-InputWrapper-label {
-  margin-bottom: 6px;
-  color: var(--mantine-color-gray-6);
+  margin-bottom: 5px;
+  color: var(--mantine-color-gray-9); /* black */
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 9px;
   font-weight: 600;
   letter-spacing: 0;
   line-height: 1;
 }
 
 .product-assortment-filter .mantine-Input-input {
-  min-height: 36px;
+  height: 26px;
+  min-height: 26px;
   border-color: var(--mantine-color-gray-3);
   border-radius: 8px;
-  color: var(--mantine-color-gray-8);
+  color: var(--mantine-color-gray-9); /* black value text */
   font-family: var(--font-mono);
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 11px;
+  font-weight: 600;
 }
 
 .product-assortment-rail {
@@ -1088,8 +1091,8 @@
 .product-assortment-filter-label {
   margin-bottom: 5px;
   padding-left: 1px;
-  color: var(--mantine-color-gray-5);
-  font-size: 10px;
+  color: var(--mantine-color-gray-9); /* black */
+  font-size: 9px;
   font-weight: 600;
   letter-spacing: 0;
   line-height: 1.05;
@@ -1097,15 +1100,15 @@
 }
 
 .product-assortment-filter-input {
-  height: 31px;
-  min-height: 31px;
+  height: 26px;
+  min-height: 26px;
   border-color: rgba(203, 213, 225, 0.92);
   border-radius: 9px;
   background: var(--mantine-color-white); /* flat — no gradient */
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
-  color: var(--mantine-color-gray-9);
-  font-size: 12px;
-  font-weight: 500;
+  color: var(--mantine-color-gray-9); /* black value text */
+  font-size: 11px;
+  font-weight: 600;
   line-height: 1;
   padding-left: 11px;
   transition:
