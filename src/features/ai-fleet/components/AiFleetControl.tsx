@@ -222,7 +222,7 @@ export function AiFleetControl({ canRunWarmup = false }: { canRunWarmup?: boolea
                 {t('Доступність API перевіряється наживо через gba-server; 05:00 читається з останнього AI warmup логу.')}
               </Text>
             </Stack>
-            <Group gap="xs" wrap="nowrap">
+            <Group gap="xs" wrap="wrap">
               <Badge color={summary.total > 0 && summary.healthHealthy === summary.total ? 'green' : 'orange'} variant="light">
                 {summary.healthHealthy}/{summary.total} {t('API доступні')}
               </Badge>

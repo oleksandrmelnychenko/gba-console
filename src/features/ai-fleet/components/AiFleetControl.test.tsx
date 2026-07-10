@@ -10,7 +10,7 @@ const getAiFleetServicesSnapshot = vi.fn<() => Promise<AiFleetServicesSnapshot>>
 const triggerAiFleetWarmup = vi.fn<() => Promise<void>>()
 
 vi.mock('@mantine/charts', () => ({
-  DonutChart: ({ chartLabel }: { chartLabel?: string }) => <div data-testid="fleet-chart">{chartLabel}</div>,
+  AreaChart: () => <div data-testid="fleet-chart" />,
 }))
 
 vi.mock('../api/aiFleetApi', async (importOriginal) => {
@@ -102,5 +102,28 @@ describe('AiFleetControl', () => {
     await waitFor(() => expect(getAiFleetServicesSnapshot).toHaveBeenCalledTimes(2))
     expect(await screen.findByText('Статус 05:00 не оновлено')).toBeTruthy()
     expect(screen.getAllByText('05:00: OK')).toHaveLength(7)
+  })
+
+  it('does not record cached warmup telemetry as a new live observation', async () => {
+    const firstCaptureMs = new Date('2026-07-10T12:00:00.000Z').getTime()
+    const dateNow = vi.spyOn(Date, 'now').mockReturnValue(firstCaptureMs)
+
+    try {
+      renderControl(false)
+      fireEvent.click(screen.getByRole('button', { name: 'AI флот' }))
+
+      expect(await screen.findByText('1 знімків')).toBeTruthy()
+
+      dateNow.mockReturnValue(firstCaptureMs + 31_000)
+      getAiFleetServicesSnapshot.mockResolvedValue(buildSnapshot('Статус 05:00 повернув неповні дані.'))
+      fireEvent.click(screen.getByRole('button', { name: 'Оновити' }))
+
+      await waitFor(() => expect(getAiFleetServicesSnapshot).toHaveBeenCalledTimes(2))
+      expect(screen.getByText('1 знімків')).toBeTruthy()
+      expect(screen.getByText('Збираємо live-історію')).toBeTruthy()
+      expect(screen.queryByTestId('fleet-chart')).toBeNull()
+    } finally {
+      dateNow.mockRestore()
+    }
   })
 })

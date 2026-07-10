@@ -992,6 +992,17 @@
 }
 
 @media (max-width: 760px) {
+  .product-inline-title {
+    align-items: stretch !important;
+    flex-direction: column;
+  }
+
+  .product-inline-title-actions,
+  .product-inline-actions {
+    flex-wrap: wrap !important;
+    justify-content: flex-start !important;
+  }
+
   .product-inline-main {
     grid-template-columns: 1fr;
   }

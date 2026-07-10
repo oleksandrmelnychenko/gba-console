@@ -25,7 +25,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { ArrowLeftRight, Box as BoxIcon, ChevronDown, CircleAlert, ClipboardList, FileDown, FileText, History, Image as ImageIcon, Package, Plus, RefreshCw, Save, Settings, SquarePen, Star, Trash2, Upload } from 'lucide-react'
+import { ArrowLeftRight, Box as BoxIcon, ChevronDown, CircleAlert, ClipboardList, FileDown, FileText, History, Image as ImageIcon, Package, Plus, RefreshCw, Save, Settings, Sparkles, SquarePen, Star, Trash2, Upload } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { type KeyboardEvent, type ReactNode, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
@@ -106,6 +106,7 @@ import {
 } from '../productPricing'
 import { ShopImageGallery } from '../components/ShopImageGallery'
 import { ProductPriceSourcePanel } from '../components/ProductPriceSourcePanel'
+import { getProductAnalyticsId } from '../components/ProductAnalyticsPanel'
 import {
   PRODUCT_BALANCES_PERMISSION,
   PRODUCT_EDIT_PERMISSION,
@@ -1178,7 +1179,11 @@ function ProductInlineView({
           </Tooltip>
         </Box>
         <Group gap="xs" justify="flex-end" wrap="nowrap" className="product-inline-title-actions">
-          <ProductInlineActions disabled={isLoading} onOpenPanel={onOpenPanel} />
+          <ProductInlineActions
+            analyticsDisabled={getProductAnalyticsId(product) === null}
+            disabled={isLoading}
+            onOpenPanel={onOpenPanel}
+          />
           <Tooltip label={t('Оновити')}>
             <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} variant="light" onClick={onReload}>
               <RefreshCw size={18} />
@@ -1341,9 +1346,11 @@ function ProductInlineViewSkeleton() {
 }
 
 function ProductInlineActions({
+  analyticsDisabled,
   disabled,
   onOpenPanel,
 }: {
+  analyticsDisabled: boolean
   disabled: boolean
   onOpenPanel: (panel: ProductDetailPanel) => void
 }) {
@@ -1351,6 +1358,19 @@ function ProductInlineActions({
 
   return (
     <Group gap="xs" justify="flex-end" wrap="nowrap" className="product-inline-actions">
+      <Button
+        aria-label={t('AI-аналітика товару')}
+        color="orange"
+        disabled={disabled || analyticsDisabled}
+        h={38}
+        leftSection={<Sparkles fill="currentColor" size={16} strokeWidth={0} />}
+        px="sm"
+        size="xs"
+        variant="light"
+        onClick={() => onOpenPanel('analytics')}
+      >
+        {t('AI-аналітика')}
+      </Button>
       <Tooltip label={t('Історія місця зберігання')}>
         <ActionIcon aria-label={t('Історія місця зберігання')} color="gray" size={38} variant="light" disabled={disabled} onClick={() => onOpenPanel('storage-history')}>
           <History size={18} />

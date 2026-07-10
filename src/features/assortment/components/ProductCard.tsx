@@ -16,8 +16,10 @@ import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { getProduct, getProductRegions, getProductSubstitutes } from '../api/assortmentApi'
-import type { ProductDetail, ProductRegions, ProductSubstitutes } from '../types'
+import { getProduct, getProductAnalytics, getProductRegions, getProductSubstitutes } from '../api/assortmentApi'
+import type { ProductAnalytics, ProductDetail, ProductRegions, ProductSubstitutes } from '../types'
+import { ProductSalesAnalytics } from './ProductSalesAnalytics'
+import './product-card.css'
 
 const integer = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 0 })
 const decimal = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2, minimumFractionDigits: 0 })
@@ -168,9 +170,11 @@ export function ProductCard({
 }) {
   const { t } = useI18n()
   const [detail, setDetail] = useValueState<ProductDetail | null>(null)
+  const [analytics, setAnalytics] = useValueState<ProductAnalytics | null>(null)
   const [subs, setSubs] = useValueState<ProductSubstitutes | null>(null)
   const [productRegions, setProductRegions] = useValueState<ProductRegions | null>(null)
   const [error, setError] = useValueState<string | null>(null)
+  const [analyticsError, setAnalyticsError] = useValueState<string | null>(null)
   const [subsError, setSubsError] = useValueState<string | null>(null)
   const [regionsError, setRegionsError] = useValueState<string | null>(null)
   const [loading, setLoading] = useValueState<boolean>(true)
@@ -181,9 +185,11 @@ export function ProductCard({
     async function load() {
       setLoading(true)
       setError(null)
+      setAnalyticsError(null)
       setSubsError(null)
       setRegionsError(null)
       setDetail(null)
+      setAnalytics(null)
       setSubs(null)
       setProductRegions(null)
 
@@ -195,9 +201,10 @@ export function ProductCard({
         }
 
         if (d.found && !controller.signal.aborted) {
-          const [substitutesResult, regionsResult] = await Promise.allSettled([
+          const [substitutesResult, regionsResult, analyticsResult] = await Promise.allSettled([
             getProductSubstitutes(productId, asOfDate, 20, controller.signal),
             getProductRegions(productId, asOfDate, regionWindowDays, 8, controller.signal),
+            getProductAnalytics(productId, asOfDate, 12, controller.signal),
           ])
 
           if (!controller.signal.aborted) {
@@ -214,6 +221,16 @@ export function ProductCard({
             } else {
               setRegionsError(
                 regionsResult.reason instanceof Error ? regionsResult.reason.message : t('Регіональний попит недоступний'),
+              )
+            }
+
+            if (analyticsResult.status === 'fulfilled') {
+              setAnalytics(analyticsResult.value)
+            } else {
+              setAnalyticsError(
+                analyticsResult.reason instanceof Error
+                  ? analyticsResult.reason.message
+                  : t('Динаміка продажів недоступна'),
               )
             }
           }
@@ -235,6 +252,8 @@ export function ProductCard({
     productId,
     asOfDate,
     regionWindowDays,
+    setAnalytics,
+    setAnalyticsError,
     setDetail,
     setError,
     setLoading,
@@ -247,8 +266,9 @@ export function ProductCard({
 
   if (loading) {
     return (
-      <Group justify="center" py="xl">
-        <Loader />
+      <Group aria-live="polite" justify="center" py="xl" role="status">
+        <Loader aria-hidden="true" />
+        <Text size="sm">{t('Завантаження аналітики товару…')}</Text>
       </Group>
     )
   }
@@ -260,7 +280,7 @@ export function ProductCard({
             {error}
           </Alert>
         ) : (
-          <Text c="dimmed">{t('Товар не знайдено')}</Text>
+          <Text c="dimmed">{t('Недостатньо даних для аналітики цього товару')}</Text>
         )}
       </Card>
     )
@@ -284,6 +304,8 @@ export function ProductCard({
         <Stat label={t('Маржа %')} value={formatPercent(detail.margin_pct)} />
         <Stat label={t('Покриття, дн.')} value={detail.cover_days == null ? '' : String(Math.round(detail.cover_days))} />
       </SimpleGrid>
+
+      <ProductSalesAnalytics analytics={analytics} error={analyticsError} />
 
       <SimpleGrid cols={{ base: 1, md: 3 }}>
         <ScoreCard label={t('Health')} score={detail.health} components={detail.health_components} />
@@ -409,7 +431,7 @@ function CommercialProfile({ detail, t }: { detail: ProductDetail; t: ProductCar
         </Text>
         <SimpleGrid cols={{ base: 2, md: 4 }}>
           <Stat label={t('Продажі за 12 міс.')} value={formatNullableNumber(detail.annual_units)} />
-          <Stat label={t('Виручка')} value={money.format(detail.revenue_eur)} />
+          <Stat label={t('Оціночна виручка')} value={money.format(detail.revenue_eur)} />
           <Stat label={t('Собівартість / шт.')} value={detail.unit_cost_eur == null ? '' : preciseMoney.format(detail.unit_cost_eur)} />
           <Stat label={t('Сер. ціна продажу')} value={detail.avg_price_eur == null ? '' : preciseMoney.format(detail.avg_price_eur)} />
         </SimpleGrid>

@@ -3644,6 +3644,20 @@
   position: relative;
 }
 
+.new-sale-products-step__recommendations-btn {
+  background: rgba(var(--brand-orange-rgb), 0.08);
+  border: 1px solid rgba(var(--brand-orange-rgb), 0.24);
+  border-radius: 9px;
+  color: var(--brand-orange);
+  font-size: 12px;
+  font-weight: 600;
+  height: 31px;
+}
+
+.new-sale-products-step__recommendations-btn:hover:not(:disabled) {
+  background: rgba(var(--brand-orange-rgb), 0.14);
+}
+
 .new-sale-products-step__search-controls::before {
   background: linear-gradient(180deg, rgba(var(--brand-orange-rgb), 0.9), rgba(var(--brand-orange-rgb), 0.12));
   border-radius: 999px;

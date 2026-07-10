@@ -70,6 +70,12 @@ const STATE_LABEL: Record<AiFleetEffectiveState, string> = {
   warning: 'Застаріло',
 }
 
+const STATE_ICON_PROPS = {
+  'aria-hidden': true,
+  size: 13,
+  strokeWidth: 2.2,
+} as const
+
 export function AiFleetAnalyticsDashboard({
   analytics,
   history,
@@ -372,7 +378,13 @@ function SessionTrendChart({
             withDots={false}
             withGradient={false}
             xAxisProps={{ minTickGap: 42 }}
-            yAxisProps={{ allowDecimals: false, domain: [0, chartMaximum], tickMargin: 8, width: 28 }}
+            yAxisProps={{
+              allowDecimals: false,
+              domain: [0, chartMaximum],
+              tickFormatter: (value: number) => String(value),
+              tickMargin: 8,
+              width: 28,
+            }}
           />
           <div className="ai-fleet-session-legend" aria-hidden="true">
             <span><i className="is-pass" />{t('OK')}</span>
@@ -521,21 +533,19 @@ function CheckStatePill({ label, state }: { label: string; state: AiFleetEffecti
 }
 
 function StateIcon({ state }: { state: AiFleetEffectiveState }) {
-  const iconProps = { 'aria-hidden': true, size: 13, strokeWidth: 2.2 }
-
   if (state === 'pass') {
-    return <CheckCircle2 {...iconProps} />
+    return <CheckCircle2 {...STATE_ICON_PROPS} />
   }
 
   if (state === 'warning') {
-    return <AlertTriangle {...iconProps} />
+    return <AlertTriangle {...STATE_ICON_PROPS} />
   }
 
   if (state === 'fail') {
-    return <XCircle {...iconProps} />
+    return <XCircle {...STATE_ICON_PROPS} />
   }
 
-  return <CircleHelp {...iconProps} />
+  return <CircleHelp {...STATE_ICON_PROPS} />
 }
 
 function RankedActions({ actions }: { actions: AiFleetAnalytics['nextActions'] }) {

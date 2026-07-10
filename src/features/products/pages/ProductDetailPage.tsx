@@ -34,7 +34,7 @@ import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableD
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { notifications } from '@mantine/notifications'
-import { ArrowLeft, ArrowLeftRight, Check, ChevronLeft, ChevronRight, CircleAlert, ClipboardList, FileDown, FileText, History, Image as ImageIcon, Package, Plus, RefreshCw, Save, SquarePen, Trash2 } from 'lucide-react'
+import { ArrowLeft, ArrowLeftRight, Check, ChevronLeft, ChevronRight, CircleAlert, ClipboardList, FileDown, FileText, History, Image as ImageIcon, Package, Plus, RefreshCw, Save, Sparkles, SquarePen, Trash2 } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { type FormEvent, useCallback, useEffect, useMemo, useReducer, useState } from 'react'
@@ -100,8 +100,18 @@ import {
   isProductRealtimePayloadForProduct,
 } from '../utils'
 import { getProductPriceBreakdown } from '../productPricing'
+import { getProductAnalyticsId, ProductAnalyticsPanel } from '../components/ProductAnalyticsPanel'
 
-export type ProductDetailPanel = 'audit' | 'edit' | 'images' | 'movement' | 'remains' | 'specification' | 'storage-history' | 'writeoff'
+export type ProductDetailPanel =
+  | 'analytics'
+  | 'audit'
+  | 'edit'
+  | 'images'
+  | 'movement'
+  | 'remains'
+  | 'specification'
+  | 'storage-history'
+  | 'writeoff'
 
 export const PRODUCT_BALANCES_PERMISSION = 'Product_Entire_Assortment_BalancesOnParties_Btn_PKEY'
 export const PRODUCT_EDIT_PERMISSION = 'Product_Entire_Assortment_EditBtn_PKEY'
@@ -152,6 +162,7 @@ type ProductPlacementDraft = ProductPlacement & {
 }
 
 const panelValues = new Set<ProductDetailPanel>([
+  'analytics',
   'audit',
   'edit',
   'images',
@@ -357,7 +368,12 @@ export function ProductDetailPage() {
           </Box>
         </Group>
         <Group gap="xs" justify="flex-end">
-          {product && <ProductActionToolbar openPanel={openPanel} />}
+          {product && (
+            <ProductActionToolbar
+              analyticsDisabled={getProductAnalyticsId(product) === null}
+              openPanel={openPanel}
+            />
+          )}
           <Tooltip label={t('Оновити')}>
             <ActionIcon
               aria-label={t('Оновити')}
@@ -533,11 +549,30 @@ export function ProductDetailPage() {
   )
 }
 
-function ProductActionToolbar({ openPanel }: { openPanel: (panel: ProductDetailPanel) => void }) {
+function ProductActionToolbar({
+  analyticsDisabled,
+  openPanel,
+}: {
+  analyticsDisabled: boolean
+  openPanel: (panel: ProductDetailPanel) => void
+}) {
   const { t } = useI18n()
 
   return (
     <Group gap="xs" justify="flex-end">
+      <Button
+        aria-label={t('AI-аналітика товару')}
+        color="orange"
+        disabled={analyticsDisabled}
+        h={38}
+        leftSection={<Sparkles fill="currentColor" size={16} strokeWidth={0} />}
+        px="sm"
+        size="xs"
+        variant="light"
+        onClick={() => openPanel('analytics')}
+      >
+        {t('AI-аналітика')}
+      </Button>
       <Tooltip label={t('Історія місця зберігання')}>
         <ActionIcon aria-label={t('Історія місця зберігання')} color="gray" size={38} variant="light" onClick={() => openPanel('storage-history')}>
           <History size={18} />
@@ -981,14 +1016,17 @@ export function ProductActionDrawer({
       opened={Boolean(activePanel)}
       position="right"
       // The edit form is a narrow single/two-column form — give it a compact sheet (~half width);
-      // the grid panels (movement / remains / write-off) keep the wide sheet.
-      size={activePanel === 'edit' ? 'compact' : 'min(1180px, 100vw)'}
+      // Product Intelligence is designed for the standard analytics sheet; data grids stay wide.
+      size={activePanel === 'edit' ? 'compact' : activePanel === 'analytics' ? 'standard' : 'min(1180px, 100vw)'}
       // Shared form/detail-sheet scope: mono button captions, §9 field chrome,
       // orange checkboxes, mono combos/numbers/dates, borderless-shadow cards.
       classNames={{ body: 'app-form-sheet' }}
       title={activePanel ? <span className="app-sheet-title-mono">{getPanelTitle(activePanel, t)}</span> : ''}
       onClose={onClose}
     >
+      {activePanel === 'analytics' && (
+        <ProductAnalyticsPanel key={getProductPanelKey(product)} product={product} />
+      )}
       {activePanel === 'audit' && <ProductAuditPanel key={getProductPanelKey(product)} product={product} />}
       {activePanel === 'edit' && (
         <PermissionGate permissionKey={PRODUCT_EDIT_PERMISSION} fallback={<ProductPermissionDeniedAlert />}>
@@ -2594,6 +2632,8 @@ function getProductPanelKey(product: Product): string {
 
 function getPanelTitle(panel: ProductDetailPanel, t: (key: string) => string): string {
   switch (panel) {
+    case 'analytics':
+      return t('AI-аналітика товару')
     case 'audit':
       return t('Історія змін полів')
     case 'edit':

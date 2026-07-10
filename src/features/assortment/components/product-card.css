@@ -1,0 +1,165 @@
+/* Product card (drawer, §7.2) ---------------------------------------------- */
+.assort-product-hero {
+  padding: 14px 16px;
+}
+
+.assort-product-hero__name {
+  font-family: var(--font-mono);
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--mantine-color-gray-9);
+}
+
+.assort-product-hero__code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0;
+  color: var(--mantine-color-gray-6);
+}
+
+.assort-ai-action {
+  padding: 14px 16px;
+}
+
+.assort-ai-action__icon {
+  color: var(--brand-orange);
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+
+.assort-score-card {
+  padding: 14px 16px;
+}
+
+.assort-score-row {
+  display: grid;
+  gap: 4px;
+}
+
+.assort-score-row__value {
+  color: var(--mantine-color-gray-8);
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+/* Meta-row numbers (§5.1): mono values inside Onest dimmed meta text. */
+.assort-meta-num {
+  color: var(--mantine-color-gray-7);
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+/* §7.2 metric: mono label with the orange dot + large mono value, no boxes. */
+.assort-stat__label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.assort-stat__value {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--mantine-color-gray-9);
+}
+
+.assort-sales-analytics {
+  padding: 14px 16px;
+}
+
+.assort-sales-insight {
+  align-items: center;
+  border: 1px solid var(--mantine-color-gray-2);
+  border-left: 3px solid var(--mantine-color-gray-5);
+  border-radius: 7px;
+  color: var(--mantine-color-gray-8);
+  display: flex;
+  gap: 7px;
+  padding: 8px 10px;
+}
+
+.assort-sales-insight.is-positive {
+  border-left-color: var(--mantine-color-teal-6);
+  color: var(--mantine-color-teal-9);
+}
+
+.assort-sales-insight.is-negative {
+  border-left-color: var(--mantine-color-red-6);
+  color: var(--mantine-color-red-9);
+}
+
+.assort-sales-stat {
+  border-left: 3px solid var(--mantine-color-orange-5);
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  padding: 5px 8px;
+}
+
+.assort-sales-stat > span {
+  color: var(--mantine-color-gray-6);
+  font-size: 10px;
+  font-weight: 650;
+  text-transform: uppercase;
+}
+
+.assort-sales-stat > b {
+  color: var(--mantine-color-gray-9);
+  font-family: var(--font-mono);
+  font-size: 16px;
+  letter-spacing: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.assort-sales-stat small {
+  color: var(--mantine-color-gray-6);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.assort-sales-chart {
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
+  margin: 0;
+  min-width: 0;
+  padding: 11px 9px 7px;
+}
+
+.assort-sales-chart figcaption {
+  align-items: baseline;
+  display: flex;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  gap: 8px;
+  justify-content: space-between;
+  margin: 0 3px 6px;
+}
+
+.assort-sales-chart figcaption small {
+  color: var(--mantine-color-gray-6);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.assort-sales-analytics__caption {
+  border-top: 1px solid var(--mantine-color-gray-2);
+  line-height: 1.45;
+  padding-top: 9px;
+}
+
+@media (max-width: 560px) {
+  .assort-sales-analytics {
+    padding: 12px;
+  }
+
+  .assort-sales-chart {
+    margin-inline: -4px;
+  }
+}

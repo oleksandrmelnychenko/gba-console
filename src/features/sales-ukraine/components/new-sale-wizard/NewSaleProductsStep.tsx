@@ -1,11 +1,12 @@
-import { Box, Group, Select, Stack, Text } from '@mantine/core'
+import { Box, Button, Group, Select, Stack, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { Box as BoxIcon, Search, Settings } from 'lucide-react'
+import { Box as BoxIcon, Search, Settings, Sparkles } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useAuth } from '../../../auth/useAuth'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { toProxiedAssetUrl } from '../../../../shared/url/proxiedAssetUrl'
 import { realtimeEvents, useRealtimeEvent } from '../../../../shared/realtime/events'
+import { getMostPurchasedProductsByClientId } from '../../../clients/api/clientRecommendationsApi'
 import type { Client } from '../../../clients/types'
 import { updateProduct } from '../../../products/api/productsApi'
 import type { Product } from '../../../products/types'
@@ -192,6 +193,7 @@ export function NewSaleProductsStep({
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<WizardSaleProduct[]>([])
   const [isSearching, setSearching] = useState(false)
+  const [isLoadingRecommendations, setLoadingRecommendations] = useState(false)
   const [mainIndex, setMainIndex] = useState(0)
   const [active, setActive] = useState<{ product: WizardSaleProduct; source: ActiveProductSource } | null>(null)
   const [analogueState, setAnalogueState] = useState<{ items: WizardSaleProduct[]; parentNetUid: string | null }>({
@@ -717,6 +719,35 @@ export function NewSaleProductsStep({
     if (query.trim().length >= PRODUCT_SEARCH_MIN_QUERY_LENGTH) {
       forceSearchRef.current = true
       setSearching(true)
+    }
+  }
+
+  async function loadClientRecommendations() {
+    if (!clientNetId || isLoadingRecommendations) {
+      return
+    }
+
+    setLoadingRecommendations(true)
+    setSearching(true)
+
+    try {
+      const recommended = (await getMostPurchasedProductsByClientId(clientNetId, false)) as unknown as WizardSaleProduct[]
+
+      setQuery('')
+      setResults(recommended)
+      setMainIndex(0)
+      clearActiveProductData()
+      keyboard.setState('ProductSearch')
+      focusSearchInput()
+
+      if (recommended.length === 0) {
+        notifications.show({ color: 'orange', message: t('Рекомендацій для клієнта не знайдено') })
+      }
+    } catch {
+      notifications.show({ color: 'red', message: t('Не вдалося завантажити рекомендації') })
+    } finally {
+      setSearching(false)
+      setLoadingRecommendations(false)
     }
   }
 
@@ -2263,30 +2294,44 @@ export function NewSaleProductsStep({
         {/* LEFT: search controls + vertical product carousel (mirrors the client step layout) */}
         <Box className="new-sale-products-step__picker-rail">
           <Stack className="new-sale-products-step__search-controls" gap={8}>
-            <Select
-              allowDeselect={false}
-              classNames={{
-                input: 'new-sale-products-step__search-select-input',
-                label: 'new-sale-products-step__search-select-label',
-                option: 'new-sale-products-step__search-select-option',
-              }}
-              data={SEARCH_MODE_OPTIONS.map((option) => ({ label: t(option.label), value: option.value }))}
-              label={t('Місце вводу для пошуку')}
-              value={searchMode}
-              onChange={(value) => handleSearchSettingsChange(value, null)}
-            />
-            <Select
-              allowDeselect={false}
-              classNames={{
-                input: 'new-sale-products-step__search-select-input',
-                label: 'new-sale-products-step__search-select-label',
-                option: 'new-sale-products-step__search-select-option',
-              }}
-              data={SORT_MODE_OPTIONS.map((option) => ({ label: t(option.label), value: option.value }))}
-              label={t('Сортувати За')}
-              value={sortMode}
-              onChange={(value) => handleSearchSettingsChange(null, value)}
-            />
+            <Group align="flex-end" gap={8} grow wrap="nowrap">
+              <Select
+                allowDeselect={false}
+                classNames={{
+                  input: 'new-sale-products-step__search-select-input',
+                  label: 'new-sale-products-step__search-select-label',
+                  option: 'new-sale-products-step__search-select-option',
+                }}
+                data={SEARCH_MODE_OPTIONS.map((option) => ({ label: t(option.label), value: option.value }))}
+                label={t('Місце вводу для пошуку')}
+                value={searchMode}
+                onChange={(value) => handleSearchSettingsChange(value, null)}
+              />
+              <Select
+                allowDeselect={false}
+                classNames={{
+                  input: 'new-sale-products-step__search-select-input',
+                  label: 'new-sale-products-step__search-select-label',
+                  option: 'new-sale-products-step__search-select-option',
+                }}
+                data={SORT_MODE_OPTIONS.map((option) => ({ label: t(option.label), value: option.value }))}
+                label={t('Сортувати За')}
+                value={sortMode}
+                onChange={(value) => handleSearchSettingsChange(null, value)}
+              />
+            </Group>
+            <Button
+              className="new-sale-products-step__recommendations-btn"
+              disabled={!clientNetId}
+              fullWidth
+              leftSection={<Sparkles size={14} />}
+              loading={isLoadingRecommendations}
+              size="xs"
+              variant="light"
+              onClick={() => void loadClientRecommendations()}
+            >
+              {t('Рекомендації для клієнта')}
+            </Button>
           </Stack>
 
           <Box

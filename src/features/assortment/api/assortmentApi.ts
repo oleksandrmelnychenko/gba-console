@@ -8,6 +8,7 @@ import type {
   AssortmentReturns,
   AssortmentStock,
   ProductDetail,
+  ProductAnalytics,
   ProductRegions,
   ProductSubstitutes,
 } from '../types'
@@ -81,6 +82,18 @@ export async function getAssortmentReturns(
 
 export async function getProduct(productId: number, asOfDate?: string, signal?: AbortSignal): Promise<ProductDetail> {
   return apiRequest<ProductDetail>(`${PREFIX}/product/${productId}`, { query: { asOfDate }, signal })
+}
+
+export async function getProductAnalytics(
+  productId: number,
+  asOfDate?: string,
+  months = 12,
+  signal?: AbortSignal,
+): Promise<ProductAnalytics> {
+  return apiRequest<ProductAnalytics>(`${PREFIX}/product/${productId}/analytics`, {
+    query: { asOfDate, months },
+    signal,
+  })
 }
 
 export async function getProductRegions(

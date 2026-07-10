@@ -194,3 +194,39 @@ export type ProductRegions = {
   count: number
   regions: ProductRegionRow[]
 }
+
+export type ProductSalesSeriesPoint = {
+  avg_price_eur: number | null
+  is_complete: boolean
+  month: string
+  order_count: number
+  period_end_exclusive: string
+  period_start: string
+  revenue_eur: number
+  units: number
+}
+
+export type ProductAnalytics = {
+  as_of: string
+  data_quality: {
+    avg_price_basis: string
+    revenue_basis: string
+    sales_date_field: string
+    sales_validity_filter: string
+    sales_window_end: string
+    stock_history_available: boolean
+    stock_is_current: boolean
+    stock_note: string
+    zero_months_filled: boolean
+  }
+  model_version?: string | null
+  product_id: number
+  sales_series: ProductSalesSeriesPoint[]
+  snapshot: Partial<ProductDetail> & Pick<ProductDetail, 'found' | 'product_id'>
+  window: {
+    end_exclusive: string
+    includes_partial_current_month: boolean
+    months: number
+    start: string
+  }
+}
