@@ -26,15 +26,17 @@ export async function getProductCoPurchaseRecommendations(
   productNetId: string,
   clientNetId: string,
   byRegion: boolean,
-  signal?: AbortSignal,
+  options?: { clientAgreementNetId?: string; signal?: AbortSignal },
 ): Promise<RecommendationProduct[]> {
   const result = await apiRequest<unknown>('/recommendations/get/product', {
     query: {
       clientNetId,
-      productNetId,
       byRegion,
+      // Empty productNetId must be omitted — the server binds it as Guid?.
+      ...(productNetId ? { productNetId } : {}),
+      ...(options?.clientAgreementNetId ? { clientAgreementNetId: options.clientAgreementNetId } : {}),
     },
-    ...(signal ? { signal } : {}),
+    ...(options?.signal ? { signal: options.signal } : {}),
   })
 
   return normalizeRecommendationProducts(result)

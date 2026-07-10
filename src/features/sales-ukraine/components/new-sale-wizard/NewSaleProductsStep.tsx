@@ -1,4 +1,4 @@
-import { Box, Button, Group, Select, Stack, Text } from '@mantine/core'
+import { ActionIcon, Box, Button, Group, Select, Stack, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { Box as BoxIcon, Search, Settings, Sparkles } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
@@ -49,6 +49,7 @@ import { ProductFullDetailPanel, type WizardDetailChip, type WizardDetailRow } f
 import { ProductImageViewModal } from './ProductImageViewModal'
 import { ShiftOrderItemModal } from './ShiftOrderItemModal'
 import { WizardConfirmModal } from './WizardConfirmModal'
+import { WizardCrossSellModal } from './WizardCrossSellModal'
 import { WizardProductCarousel } from './WizardProductCarousel'
 import { WizardProductPriceStrip } from './WizardProductPriceStrip'
 import { WizardRelatedProductRows } from './WizardRelatedProductRows'
@@ -194,6 +195,7 @@ export function NewSaleProductsStep({
   const [results, setResults] = useState<WizardSaleProduct[]>([])
   const [isSearching, setSearching] = useState(false)
   const [isLoadingRecommendations, setLoadingRecommendations] = useState(false)
+  const [isCrossSellOpen, setCrossSellOpen] = useState(false)
   const [mainIndex, setMainIndex] = useState(0)
   const [active, setActive] = useState<{ product: WizardSaleProduct; source: ActiveProductSource } | null>(null)
   const [analogueState, setAnalogueState] = useState<{ items: WizardSaleProduct[]; parentNetUid: string | null }>({
@@ -2449,10 +2451,23 @@ export function NewSaleProductsStep({
 
           {/* Pinned cart — stays put regardless of how many analogues/components are shown */}
           <Box className="new-sale-products-step__cart-slot">
-            <Stack gap={4} h="100%">
-              <Text fw={600} size="sm">
-                {t('Кошик')}
-              </Text>
+<Stack gap={4} h="100%">
+              <Group gap={8} justify="space-between" wrap="nowrap">
+                <Text fw={600} size="sm">
+                  {t('Кошик')}
+                </Text>
+                <ActionIcon
+                  aria-label={t('Кросс-продажі для клієнта')}
+                  className="new-sale-products-step__cross-sell-icon"
+                  disabled={!clientNetId}
+                  size="sm"
+                  title={t('Кросс-продажі для клієнта')}
+                  variant="light"
+                  onClick={() => setCrossSellOpen(true)}
+                >
+                  <Sparkles size={14} />
+                </ActionIcon>
+              </Group>
               <WizardShoppingCartGrid
                 busy={busy}
                 items={orderItems}
@@ -2478,6 +2493,21 @@ export function NewSaleProductsStep({
           </Box>
         </Box>
       </Box>
+
+      <WizardCrossSellModal
+        agreementNetId={agreementNetId}
+        clientNetId={clientNetId}
+        excludeNetUids={new Set(orderItems.map((item) => item.Product?.NetUid).filter(Boolean) as string[])}
+        isVatSale={isVatSale}
+        localCurrencyCode={localCurrencyCode}
+        opened={isCrossSellOpen}
+        useEurToUah={useEurToUah}
+        onClose={() => setCrossSellOpen(false)}
+        onPick={(product) => {
+          setCrossSellOpen(false)
+          void prepareAddToCart(product)
+        }}
+      />
 
       {editCart && (
         <EditShoppingCartOverlay

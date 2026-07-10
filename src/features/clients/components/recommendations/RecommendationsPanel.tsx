@@ -118,7 +118,7 @@ export function RecommendationsPanel({ client, productNetId }: RecommendationsPa
         if (productNetId) {
           const [product, coPurchase] = await Promise.all([
             getProductById(productNetId, controller.signal),
-            getProductCoPurchaseRecommendations(productNetId, clientNetId, isByRegion, controller.signal),
+            getProductCoPurchaseRecommendations(productNetId, clientNetId, isByRegion, { signal: controller.signal }),
           ])
 
           if (!cancelled) {
