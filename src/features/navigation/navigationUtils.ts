@@ -136,15 +136,25 @@ export function getNavigationNodePath(node: NavigationNode): string {
 }
 
 export function findNavigationMatch(modules: NavigationModule[], pathname: string): NavigationMatch | null {
+  let activeMatch: NavigationMatch | null = null
+  let activeScore = -1
+
   for (const module of modules) {
     const node = findActiveNode(module.Children, pathname)
 
-    if (node) {
-      return { module, node }
+    if (!node) {
+      continue
+    }
+
+    const score = getActiveNodeScore(node, pathname)
+
+    if (score > activeScore) {
+      activeMatch = { module, node }
+      activeScore = score
     }
   }
 
-  return null
+  return activeMatch
 }
 
 export function isNavigationPathAllowed(modules: NavigationModule[], pathname: string): boolean {
@@ -248,10 +258,23 @@ function findActiveNode(nodes: NavigationNode[], pathname: string): NavigationNo
 }
 
 function getActiveNodeScore(node: NavigationNode, pathname: string): number {
-  const routeLength = splitPath(node.Route).length
+  const routeSegments = splitPath(node.Route)
+  const currentSegments = splitPath(pathname)
+  const literalMatches = routeSegments.reduce(
+    (count, segment, index) => count + (segment === currentSegments[index] ? 1 : 0),
+    0,
+  )
+  const wildcardCount = routeSegments.filter((segment) => wildcardRouteSegments.has(segment)).length
+  const exactLengthScore = routeSegments.length === currentSegments.length ? 10 : 0
   const queryScore = getRouteQueryScore(node.Route, pathname)
 
-  return routeLength * 1000 + queryScore
+  return (
+    routeSegments.length * 10_000
+    + literalMatches * 100
+    + exactLengthScore
+    - wildcardCount
+    + queryScore
+  )
 }
 
 function getRouteQueryScore(route: string | undefined, currentPath: string): number {

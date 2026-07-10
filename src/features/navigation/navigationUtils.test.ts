@@ -238,6 +238,47 @@ describe('findNavigationMatch', () => {
 
     expect(findNavigationMatch(modules, '/accounting/payment-accounts/edit/1')?.node.Module).toBe('Каси')
   })
+
+  it('prefers an exact route in another module over an earlier wildcard route', () => {
+    const modules: NavigationModule[] = [
+      {
+        Id: 1,
+        Module: 'Товари',
+        Children: [
+          {
+            Id: 11,
+            Module: 'Весь асортимент',
+            Route: '/products/all',
+          },
+        ],
+      },
+      {
+        Id: 2,
+        Module: 'Складський облік',
+        Children: [
+          {
+            Id: 21,
+            Module: 'Документи приходу',
+            Route: '/products/income/documents',
+          },
+          {
+            Id: 22,
+            Module: 'Складські позиції',
+            Route: '/products/storages',
+          },
+        ],
+      },
+    ]
+
+    expect(findNavigationMatch(modules, '/products/storages')).toMatchObject({
+      module: { Module: 'Складський облік' },
+      node: { Module: 'Складські позиції' },
+    })
+    expect(findNavigationMatch(modules, '/products/income/documents')).toMatchObject({
+      module: { Module: 'Складський облік' },
+      node: { Module: 'Документи приходу' },
+    })
+  })
 })
 
 describe('isNavigationPathAllowed', () => {
