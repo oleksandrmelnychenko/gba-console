@@ -1,4 +1,4 @@
-import { Alert, Badge, Card, Group, SimpleGrid, Stack, Text } from '@mantine/core'
+import { Alert, Stack, Text } from '@mantine/core'
 import { CircleAlert } from 'lucide-react'
 import { useEffect, useMemo, useReducer } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -124,12 +124,13 @@ export function HeadDashboardChartsPanel({
     [t],
   )
 
-  const escalatedCount = dashboard?.escalated_count ?? 0
-
   return (
-    <Card className="app-section-card" withBorder radius="md">
+    <section className="app-section-card cockpit-analytics-panel">
       <Stack gap="md">
-        <Text className="app-section-title" fw={600}>{t('Дашборд команди')}</Text>
+        <div>
+          <Text className="app-section-title" fw={700}>{t('Аналітика навантаження')}</Text>
+          <Text c="dimmed" size="xs">{t('Ризик і активні задачі за менеджерами')}</Text>
+        </div>
 
         {error && (
           <Alert color="orange" icon={<CircleAlert size={18} />} variant="light">
@@ -137,26 +138,8 @@ export function HeadDashboardChartsPanel({
           </Alert>
         )}
 
-        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
-          <StatCard
-            accent="danger"
-            label={t('Сума під ризиком (відділ)')}
-            value={formatMoney(dashboard?.total_value_at_risk_eur ?? 0)}
-          />
-          <div className={`cockpit-metric${escalatedCount > 0 ? ' is-danger' : ''}`}>
-            <span className="cockpit-metric-label">{t('Ескальовані задачі')}</span>
-            <Group align="center" gap="xs">
-              <span className="cockpit-metric-value">{escalatedCount}</span>
-              {escalatedCount > 0 && (
-                <Badge color="red" variant="light">
-                  {t('Потребують уваги')}
-                </Badge>
-              )}
-            </Group>
-          </div>
-        </SimpleGrid>
-
-        <Card className="cockpit-chart-card" padding="md" radius="md">
+        <div className="cockpit-analytics-grid">
+          <div className="cockpit-chart-card">
           <Stack gap="xs">
             <Text className="cockpit-subtitle">{t('Сума під ризиком за менеджером')}</Text>
             <AgingBars
@@ -169,9 +152,9 @@ export function HeadDashboardChartsPanel({
               valueFormatter={formatMoney}
             />
           </Stack>
-        </Card>
+          </div>
 
-        <Card className="cockpit-chart-card" padding="md" radius="md">
+          <div className="cockpit-chart-card">
           <Stack gap="xs">
             <Text className="cockpit-subtitle">{t('Завдання за менеджером')}</Text>
             <AgingBars
@@ -184,18 +167,10 @@ export function HeadDashboardChartsPanel({
               withLegend
             />
           </Stack>
-        </Card>
+          </div>
+        </div>
       </Stack>
-    </Card>
-  )
-}
-
-function StatCard({ label, value, accent }: { label: string; value: string; accent?: string }) {
-  return (
-    <div className={`cockpit-metric${accent ? ` is-${accent}` : ''}`}>
-      <span className="cockpit-metric-label">{label}</span>
-      <span className="cockpit-metric-value">{value}</span>
-    </div>
+    </section>
   )
 }
 

@@ -33,6 +33,7 @@ const hubPaths = {
   exchangeRates: '/hubs/exchangerates',
   productReservation: '/hubs/products/reservation',
   resale: '/hubs/resale',
+  salesCockpit: '/hubs/sales/cockpit',
   supplyOrders: '/hubs/supplies/orders',
 } as const
 
@@ -59,6 +60,7 @@ export function RealtimeProvider({ children }: PropsWithChildren) {
       createSupplyOrdersConnection(t),
       createExchangeRatesConnection(),
       createResaleConnection(),
+      createSalesCockpitConnection(),
       createDataSyncConnection(t, user),
     ]
     const stopManagedConnections = manageConnections(connections, () => disposed)
@@ -145,6 +147,16 @@ function createResaleConnection(): HubConnection {
       realtimeEvents.resaleAvailabilitiesUpdated,
       Array.isArray(availabilities) ? availabilities : [],
     )
+  })
+
+  return connection
+}
+
+function createSalesCockpitConnection(): HubConnection {
+  const connection = createConnection(hubPaths.salesCockpit)
+
+  connection.on('CockpitTasksChanged', (payload: unknown) => {
+    realtimeBus.emit(realtimeEvents.salesCockpitTasksChanged, parseRealtimePayload(payload))
   })
 
   return connection

@@ -21,10 +21,11 @@ import { NoteModal } from '../components/NoteModal'
 import { SnoozeModal } from '../components/SnoozeModal'
 import type { CockpitTarget, CockpitTask, CockpitTaskType, CockpitUrgency } from '../types'
 import { buildCockpitTaskInsights, isCockpitTaskToday, kyivDayKey } from '../utils/taskInsights'
+import { useCockpitRealtimeReload } from '../hooks/useCockpitRealtimeReload'
 import './sales-cockpit-page.css'
 
 const INBOX_LIMIT = 50
-const POLL_INTERVAL_MS = 20_000
+const POLL_INTERVAL_MS = 60_000
 
 // Inbox ordering: triage by urgency band, then business tier (debt = cash at risk first), then score.
 // Mirrors the gba-nba inbox ordering so the cockpit shows the same queue order.
@@ -69,6 +70,12 @@ export function SalesCockpitPage() {
   const [snoozeTask, setSnoozeTask] = useState<CockpitTask | null>(null)
   const [doneTask, setDoneTask] = useState<CockpitTask | null>(null)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+
+  const triggerReload = useCallback(() => {
+    setLoading(true)
+    reload()
+  }, [])
+  const scheduleReload = useCockpitRealtimeReload(triggerReload)
 
   const busyRef = useRef(false)
   useEffect(() => {
@@ -150,7 +157,7 @@ export function SalesCockpitPage() {
         })
         notifications.show({ color: 'green', message: t('Завдання виконано') })
         setDoneTask(null)
-        reload()
+        scheduleReload()
       } catch (actionError) {
         notifications.show({
           color: 'red',
@@ -160,7 +167,7 @@ export function SalesCockpitPage() {
         setPendingTaskKey(null)
       }
     },
-    [t],
+    [scheduleReload, t],
   )
 
   const handleDismiss = useCallback(
@@ -170,7 +177,7 @@ export function SalesCockpitPage() {
       try {
         await setTaskStatus(task.task_key, { To: 'dismissed' })
         notifications.show({ color: 'green', message: t('Завдання відхилено') })
-        reload()
+        scheduleReload()
       } catch (actionError) {
         notifications.show({
           color: 'red',
@@ -180,7 +187,7 @@ export function SalesCockpitPage() {
         setPendingTaskKey(null)
       }
     },
-    [t],
+    [scheduleReload, t],
   )
 
   const handleTakeInProgress = useCallback(
@@ -190,7 +197,7 @@ export function SalesCockpitPage() {
       try {
         await setTaskStatus(task.task_key, { To: 'in_progress' })
         notifications.show({ color: 'green', message: t('Завдання взято в роботу') })
-        reload()
+        scheduleReload()
       } catch (actionError) {
         notifications.show({
           color: 'red',
@@ -200,7 +207,7 @@ export function SalesCockpitPage() {
         setPendingTaskKey(null)
       }
     },
-    [t],
+    [scheduleReload, t],
   )
 
   const handleSnoozeSubmit = useCallback(
@@ -211,7 +218,7 @@ export function SalesCockpitPage() {
         await setTaskStatus(task.task_key, { To: 'snoozed', SnoozeUntil: snoozeUntil })
         notifications.show({ color: 'green', message: t('Завдання відкладено') })
         setSnoozeTask(null)
-        reload()
+        scheduleReload()
       } catch (actionError) {
         notifications.show({
           color: 'red',
@@ -221,7 +228,7 @@ export function SalesCockpitPage() {
         setPendingTaskKey(null)
       }
     },
-    [t],
+    [scheduleReload, t],
   )
 
   const handleNoteSubmit = useCallback(
@@ -232,7 +239,7 @@ export function SalesCockpitPage() {
         await addTaskNote(task.task_key, { Text: text })
         notifications.show({ color: 'green', message: t('Нотатку додано') })
         setNoteTask(null)
-        reload()
+        scheduleReload()
       } catch (actionError) {
         notifications.show({
           color: 'red',
@@ -242,7 +249,7 @@ export function SalesCockpitPage() {
         setPendingTaskKey(null)
       }
     },
-    [t],
+    [scheduleReload, t],
   )
 
   const handleRegenerate = useCallback(async () => {
@@ -251,7 +258,7 @@ export function SalesCockpitPage() {
     try {
       await regenerateCockpit(asOfDate)
       notifications.show({ color: 'green', message: t('Завдання оновлено') })
-      reload()
+      scheduleReload()
     } catch (actionError) {
       notifications.show({
         color: 'red',
@@ -260,12 +267,9 @@ export function SalesCockpitPage() {
     } finally {
       setRegenerating(false)
     }
-  }, [asOfDate, t])
+  }, [asOfDate, scheduleReload, t])
 
-  const handleReload = useCallback(() => {
-    setLoading(true)
-    reload()
-  }, [])
+  const handleReload = triggerReload
 
   const handleAsOfDateChange = useCallback(
     (value: string | undefined) => {

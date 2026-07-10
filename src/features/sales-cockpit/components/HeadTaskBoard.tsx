@@ -7,7 +7,6 @@ import {
   Group,
   Pagination,
   Select,
-  Table,
   Text,
   Tooltip,
 } from '@mantine/core'
@@ -19,8 +18,10 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { getHeadTasks, regenerateCockpit } from '../api/salesCockpitApi'
 import type { HeadTask, HeadTaskByStatus, HeadTaskManager, HeadTasksResponse } from '../types'
+import { useCockpitRealtimeReload } from '../hooks/useCockpitRealtimeReload'
 
-const POLL_INTERVAL_MS = 7_000
+const POLL_INTERVAL_MS = 60_000
+const RELATIVE_TIME_TICK_MS = 30_000
 const PAGE_SIZE = 50
 
 type BoardStatus = 'ready' | 'open' | 'in_progress' | 'done'
@@ -66,11 +67,16 @@ const EMPTY_RESPONSE: HeadTasksResponse = {
   Managers: [],
 }
 
-export function HeadTaskBoard() {
+export function HeadTaskBoard({
+  managerId,
+  onManagerChange,
+}: {
+  managerId: number | null
+  onManagerChange: (managerId: number | null) => void
+}) {
   const { t } = useI18n()
   const [data, setData] = useValueState<HeadTasksResponse>(EMPTY_RESPONSE)
   const [status, setStatus] = useValueState<BoardStatus>('ready')
-  const [managerId, setManagerId] = useValueState<string | null>(null)
   const [urgency, setUrgency] = useValueState<string | null>(null)
   const [page, setPage] = useState(1)
   const [error, setError] = useValueState<string | null>(null)
@@ -80,6 +86,12 @@ export function HeadTaskBoard() {
   const [lastUpdated, setLastUpdated] = useState<number | null>(null)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const [, setTick] = useState(0)
+
+  const triggerReload = useCallback(() => {
+    setLoading(true)
+    reload()
+  }, [])
+  const scheduleReload = useCockpitRealtimeReload(triggerReload)
 
   const skip = (page - 1) * PAGE_SIZE
   const statusesQuery = getStatusesQuery(status)
@@ -92,7 +104,7 @@ export function HeadTaskBoard() {
       try {
         const result = await getHeadTasks({
           statuses: statusesQuery,
-          managerId: managerId ? Number(managerId) : undefined,
+          managerId: managerId ?? undefined,
           urgency: urgency ?? undefined,
           skip,
           limit: PAGE_SIZE,
@@ -162,7 +174,7 @@ export function HeadTaskBoard() {
   }, [statusesQuery, managerId, urgency, skip, reloadKey, setData, setError, t])
 
   useEffect(() => {
-    const id = setInterval(() => setTick((value) => value + 1), 1_000)
+    const id = setInterval(() => setTick((value) => value + 1), RELATIVE_TIME_TICK_MS)
     return () => clearInterval(id)
   }, [])
 
@@ -180,11 +192,11 @@ export function HeadTaskBoard() {
 
   const handleManagerChange = useCallback(
     (value: string | null) => {
-      setManagerId(value)
+      onManagerChange(value ? Number(value) : null)
       setPage(1)
       setLoading(true)
     },
-    [setManagerId],
+    [onManagerChange],
   )
 
   const handleUrgencyChange = useCallback(
@@ -206,8 +218,7 @@ export function HeadTaskBoard() {
         message: t('AI задачі поставлено на перерахунок. Борд оновиться автоматично.'),
         title: t('AI задачі продажів'),
       })
-      setLoading(true)
-      reload()
+      scheduleReload()
     } catch (generateError) {
       notifications.show({
         color: 'red',
@@ -217,7 +228,7 @@ export function HeadTaskBoard() {
     } finally {
       setGenerating(false)
     }
-  }, [t])
+  }, [scheduleReload, t])
 
   if (forbidden) {
     return null
@@ -227,7 +238,7 @@ export function HeadTaskBoard() {
     <Card className="app-section-card cockpit-board-card" withBorder radius="md" padding={0}>
       <Group align="center" className="cockpit-board-header" gap="sm" justify="space-between" wrap="wrap">
         <Group gap="xs">
-          <Text className="app-section-title" fw={600}>{t('Усі задачі (live)')}</Text>
+          <Text className="app-section-title" fw={600}>{t('Черга задач')}</Text>
           <Badge color="orange" leftSection={<CircleDashed size={12} />} variant="light">
             {t('наживо')}
           </Badge>
@@ -268,7 +279,7 @@ export function HeadTaskBoard() {
           label={t('Менеджер')}
           placeholder={t('Усі менеджери')}
           size="sm"
-          value={managerId}
+          value={managerId === null ? null : String(managerId)}
           w={220}
           onChange={handleManagerChange}
         />
@@ -299,8 +310,7 @@ export function HeadTaskBoard() {
               size={34}
               variant="light"
               onClick={() => {
-                setLoading(true)
-                reload()
+                triggerReload()
               }}
             >
               <RefreshCw size={18} />
@@ -322,27 +332,9 @@ export function HeadTaskBoard() {
           {t('Задач за цим фільтром немає')}
         </Text>
       ) : (
-        <Table.ScrollContainer className="cockpit-board-table" minWidth={920}>
-          <Table className="cockpit-team-table" highlightOnHover striped withColumnBorders>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>{t('Менеджер')}</Table.Th>
-                <Table.Th>{t('Клієнт')}</Table.Th>
-                <Table.Th>{t('Задача')}</Table.Th>
-                <Table.Th>{t('Терміновість')}</Table.Th>
-                <Table.Th>{t('Статус')}</Table.Th>
-                <Table.Th style={{ textAlign: 'right' }}>{t('Очікувана цінність')}</Table.Th>
-                <Table.Th>{t('SLA')}</Table.Th>
-                <Table.Th>{t('Оновлено')}</Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              {data.Tasks.map((task) => (
-                <HeadTaskRow key={task.TaskKey} task={task} />
-              ))}
-            </Table.Tbody>
-          </Table>
-        </Table.ScrollContainer>
+        <div className="cockpit-board-list">
+          {data.Tasks.map((task) => <HeadTaskRow key={task.TaskKey} task={task} />)}
+        </div>
       )}
 
       {totalPages > 1 && (
@@ -413,7 +405,7 @@ function HeadTaskProgressSummary({ byStatus }: { byStatus: HeadTaskByStatus }) {
 
       <Group gap="xs" justify="space-between" wrap="wrap">
         <Text c="dimmed" size="xs">
-          {t('AI сформував операційну чергу')}: {knownTotal}
+          {t('Усього задач у поточному циклі')}: {knownTotal}
         </Text>
         <Text c="dimmed" size="xs">
           {t('Закриті або відхилені')}: {terminal}
@@ -447,70 +439,54 @@ function HeadTaskRow({ task }: { task: HeadTask }) {
   const { t } = useI18n()
 
   return (
-    <Table.Tr>
-      <Table.Td className="cockpit-team-manager">{task.ManagerName?.trim() || `#${task.ManagerId}`}</Table.Td>
-      <Table.Td>{task.ClientName?.trim() || `#${task.ClientId}`}</Table.Td>
-      <Table.Td>
-        <Group gap={6} wrap="nowrap">
-          <Text size="sm">{task.Title?.trim() || t('Завдання')}</Text>
+    <div className={`cockpit-board-row${task.SlaBreached ? ' is-breached' : ''}`}>
+      <div className="cockpit-board-row__task">
+        <Group gap={6} wrap="wrap">
+          <Text className="cockpit-board-row__title">{task.Title?.trim() || t('Завдання')}</Text>
           {task.TaskType && (
             <Badge color="gray" size="sm" variant="light">
               {taskTypeLabel(task.TaskType, t)}
             </Badge>
           )}
         </Group>
-      </Table.Td>
-      <Table.Td>
-        <Badge color={urgencyColor(task.Urgency)} variant="light">
+        <Group gap={6} mt={4} wrap="wrap">
+          <Text c="dimmed" size="xs">{task.ClientName?.trim() || `#${task.ClientId}`}</Text>
+          <span className="cockpit-board-row__separator" aria-hidden="true" />
+          <Text c="dimmed" size="xs">{task.ManagerName?.trim() || `#${task.ManagerId}`}</Text>
+        </Group>
+      </div>
+
+      <div className="cockpit-board-row__value">
+        <span className="cockpit-board-row__label">{t('Очікувана виручка')}</span>
+        <strong>{task.ExpectedValue !== null ? formatMoney(task.ExpectedValue) : '—'}</strong>
+        <span>{task.POutcome !== null ? `${t('Шанс результату')} ${formatPercent(task.POutcome)}` : `${t('Пріоритет')} ${Math.round(task.Priority)}`}</span>
+      </div>
+
+      <div className="cockpit-board-row__badges">
+        <Badge color={urgencyColor(task.Urgency)} size="sm" variant="light">
           {urgencyLabel(task.Urgency, t)}
         </Badge>
-      </Table.Td>
-      <Table.Td>
         {task.Status === 'in_progress' ? (
-          <Badge color="orange" leftSection={<CircleDashed size={12} />} variant="light">
+          <Badge color="orange" leftSection={<CircleDashed size={12} />} size="sm" variant="light">
             {inProgressLabel(task.InProgressSince, t)}
           </Badge>
         ) : (
-          <Badge color={statusColor(task.Status)} variant="light">
+          <Badge color={statusColor(task.Status)} size="sm" variant="light">
             {statusLabel(task.Status, t)}
           </Badge>
         )}
-      </Table.Td>
-      <Table.Td style={{ textAlign: 'right' }}>
-        {task.ExpectedValue !== null ? (
-          <Group gap={6} justify="flex-end" wrap="nowrap">
-            <Text className="cockpit-task-ev" size="sm">
-              {formatMoney(task.ExpectedValue)}
-            </Text>
-            {task.POutcome !== null && (
-              <Badge color="teal" size="sm" variant="light">
-                {t('шанс')} {formatPercent(task.POutcome)}
-              </Badge>
-            )}
-          </Group>
-        ) : (
-          <Text c="dimmed" size="sm">
-            —
-          </Text>
-        )}
-      </Table.Td>
-      <Table.Td>
         {task.SlaBreached ? (
-          <Badge color="red" variant="filled">
+          <Badge color="red" size="sm" variant="filled">
             {t('Прострочено SLA')}
           </Badge>
-        ) : (
-          <Text c="dimmed" size="sm">
-            —
-          </Text>
-        )}
-      </Table.Td>
-      <Table.Td>
-        <Text c="dimmed" size="sm">
-          {relativeTaskDateLabel(task.UpdatedAt || task.GeneratedAt, t)}
-        </Text>
-      </Table.Td>
-    </Table.Tr>
+        ) : null}
+      </div>
+
+      <div className="cockpit-board-row__updated">
+        <span className="cockpit-board-row__label">{t('Оновлено')}</span>
+        <span>{relativeTaskDateLabel(task.UpdatedAt || task.GeneratedAt, t)}</span>
+      </div>
+    </div>
   )
 }
 

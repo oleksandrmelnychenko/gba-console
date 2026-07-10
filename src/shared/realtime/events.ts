@@ -10,6 +10,7 @@ export const realtimeEvents = {
   resaleAvailabilitiesUpdated: 'resaleAvailabilitiesUpdated',
   saleAdded: 'saleAdded',
   saleUpdated: 'saleUpdated',
+  salesCockpitTasksChanged: 'salesCockpitTasksChanged',
   supplyOrderAdded: 'supplyOrderAdded',
   supplyOrderNotification: 'supplyOrderNotification',
   supplyPaymentTaskNotification: 'supplyPaymentTaskNotification',
@@ -25,6 +26,7 @@ export type RealtimeEventPayloads = {
   [realtimeEvents.resaleAvailabilitiesUpdated]: unknown[]
   [realtimeEvents.saleAdded]: unknown
   [realtimeEvents.saleUpdated]: unknown
+  [realtimeEvents.salesCockpitTasksChanged]: SalesCockpitTasksChangedNotification
   [realtimeEvents.supplyOrderAdded]: unknown
   [realtimeEvents.supplyOrderNotification]: SupplyOrderNotification
   [realtimeEvents.supplyPaymentTaskNotification]: SupplyPaymentTaskNotification
@@ -50,6 +52,11 @@ export type SupplyPaymentTaskNotification = {
   OrganisationName?: string
   PayToDate?: string
   PaymentForm?: string
+}
+
+export type SalesCockpitTasksChangedNotification = {
+  ChangedAtUtc?: string
+  changedAtUtc?: string
 }
 
 type RealtimeListener<TPayload> = (payload: TPayload) => void

@@ -1,33 +1,34 @@
-import { ActionIcon, Alert, Badge, Button, Card, Group, SimpleGrid, Stack, Table, Text, TextInput, Tooltip } from '@mantine/core'
-import { CircleAlert, Map, RefreshCw } from 'lucide-react'
+import {
+  ActionIcon,
+  Alert,
+  Badge,
+  Button,
+  Card,
+  Group,
+  Progress,
+  SimpleGrid,
+  Stack,
+  Text,
+  TextInput,
+  Tooltip,
+  UnstyledButton,
+} from '@mantine/core'
+import { Banknote, CircleAlert, CircleCheckBig, Map, Radio, RefreshCw, Truck, Users } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ApiError } from '../../../shared/api/apiClient'
-import { useValueState } from '../../../shared/hooks/useValueState'
 import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
+import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { getEscalated, getHeadTeam } from '../api/salesCockpitApi'
 import { HeadAiFleetStatus } from '../components/HeadAiFleetStatus'
 import { HeadDashboardChartsPanel } from '../components/HeadDashboardChartsPanel'
 import { HeadTaskBoard } from '../components/HeadTaskBoard'
-import type { CockpitUrgency, EscalatedResponse, EscalatedTask, HeadPaceStatus, HeadTeam, HeadTeamRow } from '../types'
+import { useCockpitRealtimeReload } from '../hooks/useCockpitRealtimeReload'
+import type { CockpitUrgency, EscalatedResponse, EscalatedTask, HeadTeam, HeadTeamRow } from '../types'
 import './sales-cockpit-page.css'
 
 const POLL_INTERVAL_MS = 60_000
-
-const PACE_COLOR: Record<HeadPaceStatus, string> = {
-  ahead: 'green',
-  on: 'blue',
-  behind: 'red',
-  no_target: 'gray',
-}
-
-const PACE_LABEL: Record<HeadPaceStatus, string> = {
-  ahead: 'Випереджає',
-  on: 'У графіку',
-  behind: 'Відстає',
-  no_target: 'Немає цілі',
-}
 
 const URGENCY_COLOR: Record<CockpitUrgency, string> = {
   critical: 'red',
@@ -77,11 +78,18 @@ export function HeadDashboardPage() {
   const navigate = useNavigate()
   const [team, setTeam] = useValueState<HeadTeam>(EMPTY_TEAM)
   const [escalated, setEscalated] = useValueState<EscalatedResponse>(EMPTY_ESCALATED)
+  const [selectedManagerId, setSelectedManagerId] = useState<number | null>(null)
   const [error, setError] = useValueState<string | null>(null)
   const [asOfDate, setAsOfDate] = useValueState<string | undefined>(undefined)
   const [forbidden, setForbidden] = useState(false)
   const [isLoading, setLoading] = useState(true)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+
+  const triggerReload = useCallback(() => {
+    setLoading(true)
+    reload()
+  }, [])
+  useCockpitRealtimeReload(triggerReload)
 
   useEffect(() => {
     let active = true
@@ -93,13 +101,11 @@ export function HeadDashboardPage() {
         if (active) {
           setTeam(result)
           setEscalated(escalatedResult)
-          setForbidden(result.is_head === false)   // gba-nba returns 200 {is_head:false} for non-heads
+          setForbidden(result.is_head === false)
           setError(null)
         }
       } catch (loadError) {
-        if (!active) {
-          return
-        }
+        if (!active) return
 
         if (loadError instanceof ApiError && loadError.status === 403) {
           setForbidden(true)
@@ -109,33 +115,28 @@ export function HeadDashboardPage() {
           setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити дашборд'))
         }
       } finally {
-        if (active) {
-          setLoading(false)
-        }
+        if (active) setLoading(false)
       }
     }
 
     void loadTeam()
-
-    const interval = setInterval(() => {
-      void loadTeam()
-    }, POLL_INTERVAL_MS)
+    const interval = window.setInterval(() => void loadTeam(), POLL_INTERVAL_MS)
 
     return () => {
       active = false
-      clearInterval(interval)
+      window.clearInterval(interval)
     }
   }, [asOfDate, reloadKey, setError, setEscalated, setTeam, t])
 
   const rows = useMemo(
-    () => team.team.toSorted((left, right) => attainment(right) - attainment(left)),
+    () => team.team.toSorted((left, right) => priorityScore(right) - priorityScore(left)),
     [team.team],
   )
 
-  const handleReload = useCallback(() => {
-    setLoading(true)
-    reload()
-  }, [])
+  const selectedManager = useMemo(
+    () => rows.find((row) => row.manager_id === selectedManagerId) ?? null,
+    [rows, selectedManagerId],
+  )
 
   const handleAsOfDateChange = useCallback(
     (value: string | undefined) => {
@@ -146,10 +147,17 @@ export function HeadDashboardPage() {
   )
 
   return (
-    <Stack className="cockpit-page" gap={6}>
+    <Stack className="cockpit-page cockpit-head-page" gap="sm">
       <Card className="app-filter-card cockpit-toolbar-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar cockpit-command-bar cockpit-head-command-bar">
-          <AiFeatureBadge size="sm" tooltip={t('AI-сервіс керівника продажів')} />
+          <Group gap="xs" wrap="nowrap">
+            <AiFeatureBadge size="sm" tooltip={t('AI-сервіс керівника продажів')} />
+            <Stack gap={0}>
+              <Text fw={700} size="sm">{t('Дашборд відділу продажів')}</Text>
+              <Text c="dimmed" size="xs">{t('Поточний стан команди та задач')}</Text>
+            </Stack>
+          </Group>
+
           <TextInput
             className="cockpit-date-filter"
             label={t('Дата зрізу')}
@@ -158,7 +166,11 @@ export function HeadDashboardPage() {
             w={170}
             onChange={(event) => handleAsOfDateChange(event.currentTarget.value || undefined)}
           />
-          <div className="app-filter-actions cockpit-command-actions">
+
+          <Group className="cockpit-command-actions" gap="xs" justify="flex-end">
+            <Badge color={asOfDate ? 'gray' : 'green'} leftSection={<Radio size={12} />} variant="light">
+              {asOfDate ? t('Історичний зріз') : t('Наживо')}
+            </Badge>
             <Button
               className="cockpit-toolbar-button"
               color="orange"
@@ -167,163 +179,231 @@ export function HeadDashboardPage() {
               variant="outline"
               onClick={() => navigate('/sales/geography')}
             >
-              {t('Карта продажів/боргу')}
+              {t('Карта продажів і боргу')}
             </Button>
             <Tooltip label={t('Оновити')}>
-              <ActionIcon aria-label={t('Оновити')} loading={isLoading} size={34} variant="light" onClick={handleReload}>
+              <ActionIcon aria-label={t('Оновити')} loading={isLoading} size={34} variant="light" onClick={triggerReload}>
                 <RefreshCw size={18} />
               </ActionIcon>
             </Tooltip>
-          </div>
+          </Group>
         </div>
       </Card>
 
       {forbidden ? (
         <Card className="app-section-card" withBorder radius="md" padding="xl">
-          <Text c="dimmed" fw={600} ta="center">
-            {t('Доступ лише для керівника відділу')}
-          </Text>
+          <Text c="dimmed" fw={600} ta="center">{t('Доступ лише для керівника відділу')}</Text>
         </Card>
       ) : (
         <>
-          {error && (
-            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
-              {error}
-            </Alert>
-          )}
+          {error ? (
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">{error}</Alert>
+          ) : null}
 
-          <HeadAiFleetStatus />
-
-          <SimpleGrid cols={{ base: 1, sm: 2, lg: 5 }} spacing="md">
-            <TotalCard
-              label={t('Відвантаження (план / факт)')}
-              value={`${formatMoney(team.totals.shipped_target)} / ${formatMoney(team.totals.shipped_mtd)}`}
+          <SimpleGrid className="cockpit-head-kpis" cols={{ base: 1, sm: 2, lg: 4 }} spacing="sm">
+            <DepartmentMetric
+              accent="brand"
+              icon={<Truck size={17} />}
+              label={t('Відвантажено цього місяця')}
+              target={team.totals.shipped_target}
+              value={team.totals.shipped_mtd}
             />
-            <TotalCard
-              label={t('Оплати (план / факт)')}
-              value={`${formatMoney(team.totals.paid_target)} / ${formatMoney(team.totals.paid_mtd)}`}
-            />
-            <TotalCard
-              accent="success"
-              label={t('Виконано / Продано за місяць')}
-              value={`${team.totals.done_month} / ${team.totals.sold_month}`}
-            />
-            <TotalCard accent="brand" label={t('AI-виручка задач')} value={formatMoney(team.totals.revenue_month)} />
-            <TotalCard
+            <DepartmentMetric
               accent="info"
-              label={t('Закриття / Конверсія')}
-              value={`${formatRate(team.totals.close_rate)} / ${formatRate(team.totals.conversion_rate)}`}
+              icon={<Banknote size={17} />}
+              label={t('Отримано оплат цього місяця')}
+              target={team.totals.paid_target}
+              value={team.totals.paid_mtd}
+            />
+            <OutcomeMetric
+              icon={<CircleCheckBig size={17} />}
+              label={t('Результат AI-задач за місяць')}
+              primary={`${team.totals.done_month} ${t('виконано')}`}
+              secondary={`${team.totals.sold_month} ${t('з продажем')} · ${formatRate(team.totals.conversion_rate)} ${t('конверсія')}`}
+            />
+            <OutcomeMetric
+              accent="success"
+              icon={<Users size={17} />}
+              label={t('Виручка з виконаних AI-задач')}
+              primary={formatMoney(team.totals.revenue_month)}
+              secondary={`${team.totals.generated_month} ${t('задач сформовано за місяць')}`}
             />
           </SimpleGrid>
 
-          <HeadDashboardChartsPanel asOfDate={asOfDate} reloadKey={reloadKey} rows={rows} />
+          <div className="cockpit-head-workspace">
+            <HeadTaskBoard
+              managerId={selectedManagerId}
+              onManagerChange={setSelectedManagerId}
+            />
 
-          {isLoading && rows.length === 0 ? (
-            <CockpitTableSkeleton label={t('Завантаження дашборду')} />
-          ) : rows.length === 0 ? (
-            <Card className="app-section-card" withBorder radius="md" padding="xl">
-              <Text c="dimmed" fw={600} ta="center">
-                {t('Немає менеджерів для відображення')}
-              </Text>
-            </Card>
-          ) : (
-            <Card className="app-section-card" withBorder radius="md" padding={0}>
-              <Table.ScrollContainer minWidth={960}>
-                <Table className="cockpit-team-table" highlightOnHover striped withColumnBorders>
-                  <Table.Thead>
-                    <Table.Tr>
-                      <Table.Th>{t('Менеджер')}</Table.Th>
-                      <Table.Th style={{ textAlign: 'right' }}>{t('Відвантаження план')}</Table.Th>
-                      <Table.Th style={{ textAlign: 'right' }}>{t('Відвантаження факт')}</Table.Th>
-                      <Table.Th style={{ textAlign: 'right' }}>{t('Виконання відвантаження')}</Table.Th>
-                      <Table.Th style={{ textAlign: 'right' }}>{t('Виконання оплат')}</Table.Th>
-                      <Table.Th style={{ textAlign: 'right' }}>{t('Виконано')}</Table.Th>
-                      <Table.Th style={{ textAlign: 'right' }}>{t('Продано')}</Table.Th>
-                      <Table.Th style={{ textAlign: 'right' }}>{t('Закриття')}</Table.Th>
-                      <Table.Th style={{ textAlign: 'right' }}>{t('Конверсія')}</Table.Th>
-                      <Table.Th style={{ textAlign: 'right' }}>{t('AI-виручка')}</Table.Th>
-                    </Table.Tr>
-                  </Table.Thead>
-                  <Table.Tbody>
-                    {rows.map((row) => (
-                      <Table.Tr key={row.manager_id}>
-                        <Table.Td className="cockpit-team-manager">{row.manager_name?.trim() || `#${row.manager_id}`}</Table.Td>
-                        <Table.Td style={{ textAlign: 'right' }}>{formatMoney(row.target.shipped.target)}</Table.Td>
-                        <Table.Td style={{ textAlign: 'right' }}>{formatMoney(row.target.shipped.mtd)}</Table.Td>
-                        <Table.Td style={{ textAlign: 'right' }}>
-                          <Group gap="xs" justify="flex-end" wrap="nowrap">
-                            <Text size="sm">{formatPercent(row.target.shipped.attainment_pct)}</Text>
-                            <Badge color={PACE_COLOR[row.target.shipped.pace_status]} variant="light">
-                              {t(PACE_LABEL[row.target.shipped.pace_status])}
-                            </Badge>
-                          </Group>
-                        </Table.Td>
-                        <Table.Td style={{ textAlign: 'right' }}>
-                          <Group gap="xs" justify="flex-end" wrap="nowrap">
-                            <Text size="sm">{formatPercent(row.target.paid.attainment_pct)}</Text>
-                            <Badge color={PACE_COLOR[row.target.paid.pace_status]} variant="light">
-                              {t(PACE_LABEL[row.target.paid.pace_status])}
-                            </Badge>
-                          </Group>
-                        </Table.Td>
-                        <Table.Td style={{ textAlign: 'right' }}>{row.tasks.done_month}</Table.Td>
-                        <Table.Td style={{ textAlign: 'right' }}>{row.tasks.sold_month}</Table.Td>
-                        <Table.Td style={{ textAlign: 'right' }}>{formatRate(row.tasks.close_rate)}</Table.Td>
-                        <Table.Td style={{ textAlign: 'right' }}>{formatRate(row.tasks.conversion_rate)}</Table.Td>
-                        <Table.Td style={{ textAlign: 'right' }}>{formatMoney(row.tasks.revenue_month)}</Table.Td>
-                      </Table.Tr>
-                    ))}
-                  </Table.Tbody>
-                </Table>
-              </Table.ScrollContainer>
-            </Card>
-          )}
-
-          <HeadTaskBoard />
-
-          <Card className="app-section-card" withBorder radius="md">
-            <Stack gap="sm">
-              <Group gap="xs">
-                <Text className="app-section-title" fw={600}>{t('Ескальовані задачі')}</Text>
-                <Badge color={escalated.count > 0 ? 'red' : 'gray'} variant="light">
-                  {escalated.count}
-                </Badge>
-              </Group>
-
-              {escalated.tasks.length === 0 ? (
-                <Text c="dimmed" size="sm">
-                  {t('Ескальованих задач немає')}
-                </Text>
-              ) : (
-                <Stack gap="xs">
-                  {escalated.tasks.map((task) => (
-                    <EscalatedRow key={task.task_key} task={task} />
-                  ))}
-                </Stack>
-              )}
+            <Stack className="cockpit-head-sidebar" gap="sm">
+              <TeamMonitor
+                isLoading={isLoading}
+                rows={rows}
+                selectedManagerId={selectedManagerId}
+                onSelect={setSelectedManagerId}
+              />
+              <EscalationsPanel escalated={escalated} />
+              <HeadAiFleetStatus />
             </Stack>
-          </Card>
+          </div>
+
+          {selectedManager ? (
+            <Alert color="blue" variant="light">
+              {t('Черга відфільтрована за менеджером')}: <strong>{managerName(selectedManager)}</strong>
+            </Alert>
+          ) : null}
+
+          <HeadDashboardChartsPanel asOfDate={asOfDate} reloadKey={reloadKey} rows={rows} />
         </>
       )}
     </Stack>
   )
 }
 
-function CockpitTableSkeleton({ label }: { label: string }) {
+function DepartmentMetric({
+  accent,
+  icon,
+  label,
+  target,
+  value,
+}: {
+  accent: 'brand' | 'info'
+  icon: React.ReactNode
+  label: string
+  target: number
+  value: number
+}) {
+  const { t } = useI18n()
+  const percent = target > 0 ? Math.round((value / target) * 100) : 0
+  const progressColor = target <= 0 ? 'gray' : percent >= 100 ? 'green' : percent >= 80 ? 'orange' : 'red'
+
   return (
-    <Card className="app-section-card" withBorder radius="md" padding="md">
-      <div className="cockpit-table-skeleton" aria-busy="true" aria-label={label}>
-        {Array.from({ length: 7 }).map((_, rowIndex) => (
-          <div key={rowIndex} className="cockpit-table-skeleton-row">
-            {Array.from({ length: 6 }).map((__, columnIndex) => (
-              <span
-                key={columnIndex}
-                className={`cockpit-table-skeleton-line${columnIndex === 0 ? ' is-title' : ''}`}
-              />
-            ))}
-          </div>
-        ))}
-      </div>
+    <div className={`cockpit-head-kpi is-${accent}`}>
+      <Group gap="xs" justify="space-between" wrap="nowrap">
+        <Group gap={7} wrap="nowrap">
+          <span className="cockpit-head-kpi__icon">{icon}</span>
+          <span className="cockpit-head-kpi__label">{label}</span>
+        </Group>
+        <Badge color={progressColor} size="sm" variant="light">
+          {target > 0 ? `${percent}% ${t('плану')}` : t('План не задано')}
+        </Badge>
+      </Group>
+      <div className="cockpit-head-kpi__value">{formatMoney(value)}</div>
+      <Group gap="xs" justify="space-between" wrap="nowrap">
+        <span className="cockpit-head-kpi__sub">{t('План')}: {formatMoney(target)}</span>
+        <strong className="cockpit-head-kpi__percent">{target > 0 ? `${percent}%` : '—'}</strong>
+      </Group>
+      <Progress color={progressColor} radius="xl" size={6} value={Math.min(percent, 100)} />
+    </div>
+  )
+}
+
+function OutcomeMetric({
+  accent = 'brand',
+  icon,
+  label,
+  primary,
+  secondary,
+}: {
+  accent?: 'brand' | 'success'
+  icon: React.ReactNode
+  label: string
+  primary: string
+  secondary: string
+}) {
+  return (
+    <div className={`cockpit-head-kpi is-${accent}`}>
+      <Group gap={7} wrap="nowrap">
+        <span className="cockpit-head-kpi__icon">{icon}</span>
+        <span className="cockpit-head-kpi__label">{label}</span>
+      </Group>
+      <div className="cockpit-head-kpi__value">{primary}</div>
+      <span className="cockpit-head-kpi__sub">{secondary}</span>
+    </div>
+  )
+}
+
+function TeamMonitor({
+  isLoading,
+  onSelect,
+  rows,
+  selectedManagerId,
+}: {
+  isLoading: boolean
+  onSelect: (managerId: number | null) => void
+  rows: HeadTeamRow[]
+  selectedManagerId: number | null
+}) {
+  const { t } = useI18n()
+
+  return (
+    <Card className="app-section-card cockpit-team-monitor" withBorder radius="md" padding={0}>
+      <Group className="cockpit-side-header" gap="xs" justify="space-between">
+        <div>
+          <Text className="app-section-title" fw={700}>{t('Команда')}</Text>
+          <Text c="dimmed" size="xs">{t('План, оплати та активні задачі')}</Text>
+        </div>
+        {selectedManagerId !== null ? (
+          <Button compact size="xs" variant="subtle" onClick={() => onSelect(null)}>{t('Усі')}</Button>
+        ) : null}
+      </Group>
+
+      {isLoading && rows.length === 0 ? (
+        <div className="cockpit-side-empty">{t('Завантаження')}</div>
+      ) : rows.length === 0 ? (
+        <div className="cockpit-side-empty">{t('Менеджерів немає')}</div>
+      ) : (
+        <div className="cockpit-manager-list">
+          {rows.map((row) => {
+            const selected = selectedManagerId === row.manager_id
+            return (
+              <UnstyledButton
+                key={row.manager_id}
+                aria-pressed={selected}
+                className={`cockpit-manager-row${selected ? ' is-selected' : ''}`}
+                onClick={() => onSelect(selected ? null : row.manager_id)}
+              >
+                <Group gap="xs" justify="space-between" wrap="nowrap">
+                  <Text className="cockpit-manager-row__name">{managerName(row)}</Text>
+                  <Badge color={row.tasks.active > 0 ? 'orange' : 'gray'} size="sm" variant="light">
+                    {row.tasks.active} {t('активних')}
+                  </Badge>
+                </Group>
+                <div className="cockpit-manager-row__metrics">
+                  <span>{t('Відвантаження')} <strong>{formatPercent(row.target.shipped.attainment_pct)}</strong></span>
+                  <span>{t('Оплати')} <strong>{formatPercent(row.target.paid.attainment_pct)}</strong></span>
+                  <span>{t('Продано')} <strong>{row.tasks.sold_month}</strong></span>
+                </div>
+              </UnstyledButton>
+            )
+          })}
+        </div>
+      )}
+    </Card>
+  )
+}
+
+function EscalationsPanel({ escalated }: { escalated: EscalatedResponse }) {
+  const { t } = useI18n()
+
+  return (
+    <Card className="app-section-card" withBorder radius="md" padding={0}>
+      <Group className="cockpit-side-header" gap="xs" justify="space-between">
+        <div>
+          <Text className="app-section-title" fw={700}>{t('Потребують уваги')}</Text>
+          <Text c="dimmed" size="xs">{t('Прострочені та ескальовані задачі')}</Text>
+        </div>
+        <Badge color={escalated.count > 0 ? 'red' : 'gray'} variant="light">{escalated.count}</Badge>
+      </Group>
+
+      {escalated.tasks.length === 0 ? (
+        <div className="cockpit-side-empty">{t('Ескалацій немає')}</div>
+      ) : (
+        <div className="cockpit-escalated-list">
+          {escalated.tasks.slice(0, 6).map((task) => <EscalatedRow key={task.task_key} task={task} />)}
+        </div>
+      )}
     </Card>
   )
 }
@@ -332,24 +412,24 @@ function EscalatedRow({ task }: { task: EscalatedTask }) {
   const { t } = useI18n()
 
   return (
-    <Group align="center" className="cockpit-escalated-row" gap="sm" justify="space-between" wrap="nowrap">
-      <Stack gap={2}>
+    <div className="cockpit-escalated-row">
+      <Group gap="xs" justify="space-between" wrap="nowrap">
         <Text className="cockpit-escalated-title">{task.title || t('Завдання')}</Text>
-        {task.client_name && <Text className="cockpit-escalated-client">{task.client_name}</Text>}
-      </Stack>
-
-      <Group gap="xs" wrap="nowrap">
-        <Badge color={urgencyColor(task.urgency)} variant="filled">
+        <Badge color={urgencyColor(task.urgency)} size="sm" variant="filled">
           {urgencyLabel(task.urgency, t)}
         </Badge>
-        {typeof task.manager_id === 'number' && (
-          <Badge color="gray" variant="light">
-            {t('Менеджер')} #{task.manager_id}
-          </Badge>
-        )}
       </Group>
-    </Group>
+      <Text className="cockpit-escalated-client">{task.client_name || t('Клієнт не вказаний')}</Text>
+    </div>
   )
+}
+
+function priorityScore(row: HeadTeamRow): number {
+  return row.tasks.active * 10_000 + Math.max(0, 100 - row.target.shipped.attainment_pct)
+}
+
+function managerName(row: HeadTeamRow): string {
+  return row.manager_name?.trim() || `#${row.manager_id}`
 }
 
 function urgencyColor(urgency?: CockpitUrgency): string {
@@ -360,27 +440,14 @@ function urgencyLabel(urgency: CockpitUrgency | undefined, t: (key: string) => s
   return t(urgency ? URGENCY_LABEL[urgency] : URGENCY_LABEL.normal)
 }
 
-function TotalCard({ label, value, accent }: { label: string; value: string; accent?: string }) {
-  return (
-    <div className={`cockpit-metric${accent ? ` is-${accent}` : ''}`}>
-      <span className="cockpit-metric-label">{label}</span>
-      <span className="cockpit-metric-value">{value}</span>
-    </div>
-  )
-}
-
-function attainment(row: HeadTeamRow): number {
-  return row.target.shipped.attainment_pct
-}
-
 function formatMoney(value: number): string {
   return `€${moneyFormatter.format(value)}`
 }
 
 function formatRate(value: number): string {
-  return `${Math.round(value * 100)}%`   // close_rate / conversion_rate are 0..1 ratios
+  return `${Math.round(value * 100)}%`
 }
 
 function formatPercent(value: number): string {
-  return `${value}%`
+  return `${Math.round(value)}%`
 }
