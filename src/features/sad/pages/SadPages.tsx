@@ -2414,6 +2414,7 @@ function SadActionModal({
     <AppModal
       centered
       opened={Boolean(sad)}
+      size={496}
       title={
         <span style={{ alignItems: 'center', display: 'inline-flex', fontFamily: 'var(--font-mono)', gap: 8 }}>
           <span
@@ -2431,23 +2432,49 @@ function SadActionModal({
       }
       onClose={onClose}
     >
-      <Stack>
-        <Button justify="space-between" rightSection={<Eye size={16} />} variant="outline" onClick={() => onNavigate(editPath)}>
+      <Stack className="app-modal-actions" gap="xs">
+        <Button
+          fullWidth
+          justify="flex-start"
+          color="dark"
+          size="md"
+          leftSection={
+            <span className="app-action-icon">
+              <Eye size={20} color="var(--mantine-color-gray-7)" />
+            </span>
+          }
+          variant="subtle"
+          onClick={() => onNavigate(editPath)}
+        >
           {t('Перегляд / редагування')}
         </Button>
         <Button
-          justify="space-between"
-          rightSection={<SquarePen size={16} />}
-          variant="outline"
+          fullWidth
+          justify="flex-start"
+          color="dark"
+          size="md"
+          leftSection={
+            <span className="app-action-icon">
+              <SquarePen size={20} color="var(--mantine-color-gray-7)" />
+            </span>
+          }
+          variant="subtle"
           onClick={() => sad.NetUid && onNavigate(`/sad/edit/${sad.NetUid}/specifications`)}
         >
           {t('Коди специфікацій')}
         </Button>
         {canCreateSupplyOrder && (
           <Button
-            justify="space-between"
-            rightSection={<ArrowRight size={16} />}
-            variant="outline"
+            fullWidth
+            justify="flex-start"
+            color="dark"
+            size="md"
+            leftSection={
+              <span className="app-action-icon">
+                <ArrowRight size={20} color="var(--mantine-color-gray-7)" />
+              </span>
+            }
+            variant="subtle"
             onClick={() => onCreateSupplyOrder(sad)}
           >
             {t('Створити замовлення постачання')}
@@ -2456,13 +2483,49 @@ function SadActionModal({
         {sad.IsSend && sad.Client && (
           <>
             <Divider />
-            <Button justify="space-between" variant="subtle" onClick={() => onCreateAdvancePayment(sad)}>
+            <Button
+              fullWidth
+              justify="flex-start"
+              color="dark"
+              size="md"
+              leftSection={
+                <span className="app-action-icon">
+                  <Banknote size={20} color="var(--mantine-color-gray-7)" />
+                </span>
+              }
+              variant="subtle"
+              onClick={() => onCreateAdvancePayment(sad)}
+            >
               {t('Авансовий платіж')}
             </Button>
-            <Button justify="space-between" variant="subtle" onClick={() => onCreateIncomePayment(sad)}>
+            <Button
+              fullWidth
+              justify="flex-start"
+              color="dark"
+              size="md"
+              leftSection={
+                <span className="app-action-icon">
+                  <Banknote size={20} color="var(--mantine-color-gray-7)" />
+                </span>
+              }
+              variant="subtle"
+              onClick={() => onCreateIncomePayment(sad)}
+            >
               {t('Прибутковий касовий ордер')}
             </Button>
-            <Button justify="space-between" variant="subtle" onClick={() => onCreateOutcomePayment(sad)}>
+            <Button
+              fullWidth
+              justify="flex-start"
+              color="dark"
+              size="md"
+              leftSection={
+                <span className="app-action-icon">
+                  <Banknote size={20} color="var(--mantine-color-gray-7)" />
+                </span>
+              }
+              variant="subtle"
+              onClick={() => onCreateOutcomePayment(sad)}
+            >
               {t('Видатковий касовий ордер')}
             </Button>
           </>

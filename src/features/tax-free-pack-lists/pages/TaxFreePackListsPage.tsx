@@ -302,12 +302,29 @@ export function TaxFreePackListsPage() {
         </div>
       </Card>
 
-      <AppModal centered opened={Boolean(selectedPackList)} title={t('Оберіть дію')} onClose={() => setSelectedPackList(null)}>
+      <AppModal
+        centered
+        opened={Boolean(selectedPackList)}
+        size={496}
+        title={
+          <span style={{ fontFamily: 'var(--font-mono)' }}>
+            {selectedPackList ? `${t('Пакувальний лист')} ${selectedPackList.Number || ''}`.trim() : t('Оберіть дію')}
+          </span>
+        }
+        onClose={() => setSelectedPackList(null)}
+      >
         {selectedPackList && (
-          <Stack gap="xs">
+          <Stack className="app-modal-actions" gap="xs">
             <Button
+              fullWidth
               justify="flex-start"
-              leftSection={<SquarePen size={16} />}
+              color="dark"
+              size="md"
+              leftSection={
+                <span className="app-action-icon">
+                  <SquarePen size={20} color="var(--mantine-color-gray-7)" />
+                </span>
+              }
               variant="subtle"
               onClick={() => navigate(`/tax-free/pack-list/edit/${selectedPackList.NetUid}`)}
             >
@@ -315,8 +332,15 @@ export function TaxFreePackListsPage() {
             </Button>
             <Button
               disabled={!selectedPackList.IsSent || Boolean(selectedPackList.SupplyOrderUkraineId)}
+              fullWidth
               justify="flex-start"
-              leftSection={<PackageMinus size={16} />}
+              color="dark"
+              size="md"
+              leftSection={
+                <span className="app-action-icon">
+                  <PackageMinus size={20} color="var(--mantine-color-gray-7)" />
+                </span>
+              }
               variant="subtle"
               onClick={() => {
                 setOrderPackList(selectedPackList)

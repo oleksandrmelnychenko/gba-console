@@ -18,7 +18,7 @@ import {
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
-import { Banknote, ChartGantt, ChevronRight, CircleAlert, Download, Eye, FileSpreadsheet, FileText, Printer, RotateCcw, Search, Truck } from 'lucide-react'
+import { Banknote, ChartGantt, CircleAlert, Download, Eye, FileSpreadsheet, FileText, Printer, RotateCcw, Search, Truck } from 'lucide-react'
 import { type ReactNode, useCallback, useEffect, useMemo, useReducer } from 'react'
 import { formatLocalDate, SYNC_DATA_RANGE_START } from '../../../shared/date/dateTime'
 import { hasExportDocumentUrl } from '../../../shared/documents/exportDocument'
@@ -46,7 +46,6 @@ import {
 import type { Statham, StathamPassport, TaxFreeDocument, TaxFreeItem, TaxFreePrintDocument } from '../types'
 import { TaxFreeStatus } from '../types'
 import {
-  formatTaxFreeAmountPl,
   getPersonName,
   getTaxFreeClient,
   getTaxFreeItemProduct,
@@ -55,7 +54,6 @@ import {
   getTaxFreeStatusOptions,
 } from '../utils'
 import './tax-free-documents-page.css'
-import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 
 const FILTER_STORAGE_KEY = 'taxFreeDocumentFilters:v2'
 
@@ -700,54 +698,63 @@ function TaxFreeAccountingActionModal({
   const { t } = useI18n()
 
   return (
-    <AppModal centered opened={opened} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Бухгалтерська дія')}</span>} onClose={onClose}>
-      <Stack gap="md">
-        {document ? (
-          <Stack gap={2}>
-            <Text size="sm">
-              {t('Клієнт')}: {getTaxFreeClient(document)}
-            </Text>
-            <Text size="sm" c="dimmed">
-              {t('Tax Free')}: {document.Number || document.NetUid}
-            </Text>
-            <Text size="sm">
-              {t('Сума')}: {formatTaxFreeAmountPl(document.VatAmountPl)}
-            </Text>
-          </Stack>
-        ) : null}
-
-        <Stack gap="xs">
-          <Button
-            color={CREATE_ACTION_COLOR}
-            justify="space-between"
-            leftSection={<Banknote size={17} />}
-            rightSection={<ChevronRight size={16} />}
-            variant="light"
-            onClick={() => onSelect('advance')}
-          >
-            {t('Авансовий платіж')}
-          </Button>
-          <Button
-            color="green"
-            justify="space-between"
-            leftSection={<Banknote size={17} />}
-            rightSection={<ChevronRight size={16} />}
-            variant="outline"
-            onClick={() => onSelect('income')}
-          >
-            {t('Прибутковий касовий ордер')}
-          </Button>
-          <Button
-            color="red"
-            justify="space-between"
-            leftSection={<Banknote size={17} />}
-            rightSection={<ChevronRight size={16} />}
-            variant="light"
-            onClick={() => onSelect('outcome')}
-          >
-            {t('Видатковий касовий ордер')}
-          </Button>
-        </Stack>
+    <AppModal
+      centered
+      opened={opened}
+      size={496}
+      title={
+        <span style={{ fontFamily: 'var(--font-mono)' }}>
+          {document ? `${t('Tax Free')} ${document.Number || document.NetUid}` : t('Бухгалтерська дія')}
+        </span>
+      }
+      onClose={onClose}
+    >
+      <Stack className="app-modal-actions" gap="xs">
+        <Button
+          fullWidth
+          justify="flex-start"
+          color="dark"
+          size="md"
+          leftSection={
+            <span className="app-action-icon">
+              <Banknote size={20} color="var(--mantine-color-gray-7)" />
+            </span>
+          }
+          variant="subtle"
+          onClick={() => onSelect('advance')}
+        >
+          {t('Авансовий платіж')}
+        </Button>
+        <Button
+          fullWidth
+          justify="flex-start"
+          color="dark"
+          size="md"
+          leftSection={
+            <span className="app-action-icon">
+              <Banknote size={20} color="var(--mantine-color-gray-7)" />
+            </span>
+          }
+          variant="subtle"
+          onClick={() => onSelect('income')}
+        >
+          {t('Прибутковий касовий ордер')}
+        </Button>
+        <Button
+          fullWidth
+          justify="flex-start"
+          color="dark"
+          size="md"
+          leftSection={
+            <span className="app-action-icon">
+              <Banknote size={20} color="var(--mantine-color-gray-7)" />
+            </span>
+          }
+          variant="subtle"
+          onClick={() => onSelect('outcome')}
+        >
+          {t('Видатковий касовий ордер')}
+        </Button>
       </Stack>
     </AppModal>
   )

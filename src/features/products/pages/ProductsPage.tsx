@@ -1269,35 +1269,49 @@ function ProductInlineActions({
   const { t } = useI18n()
 
   return (
-    <Group gap={6} className="product-inline-actions">
-      <Button size="xs" variant="outline" disabled={disabled} leftSection={<History size={15} />} onClick={() => onOpenPanel('storage-history')}>
-        {t('Історія місця зберігання')}
-      </Button>
-      <Button size="xs" variant="outline" disabled={disabled} leftSection={<FileText size={15} />} onClick={() => onOpenPanel('specification')}>
-        {t('Специфікація')}
-      </Button>
-      <Button size="xs" variant="outline" disabled={disabled} leftSection={<ImageIcon size={15} />} onClick={() => onOpenPanel('images')}>
-        {t('Зображення')}
-      </Button>
+    <Group gap="xs" justify="flex-end" wrap="nowrap" className="product-inline-actions">
+      <Tooltip label={t('Історія місця зберігання')}>
+        <ActionIcon aria-label={t('Історія місця зберігання')} color="gray" size={38} variant="light" disabled={disabled} onClick={() => onOpenPanel('storage-history')}>
+          <History size={18} />
+        </ActionIcon>
+      </Tooltip>
+      <Tooltip label={t('Специфікація')}>
+        <ActionIcon aria-label={t('Специфікація')} color="gray" size={38} variant="light" disabled={disabled} onClick={() => onOpenPanel('specification')}>
+          <FileText size={18} />
+        </ActionIcon>
+      </Tooltip>
+      <Tooltip label={t('Зображення')}>
+        <ActionIcon aria-label={t('Зображення')} color="gray" size={38} variant="light" disabled={disabled} onClick={() => onOpenPanel('images')}>
+          <ImageIcon size={18} />
+        </ActionIcon>
+      </Tooltip>
       <PermissionGate permissionKey={PRODUCT_BALANCES_PERMISSION}>
-        <Button size="xs" variant="outline" disabled={disabled} leftSection={<Package size={15} />} onClick={() => onOpenPanel('remains')}>
-          {t('Залишки по партіям')}
-        </Button>
+        <Tooltip label={t('Залишки по партіям')}>
+          <ActionIcon aria-label={t('Залишки по партіям')} color="gray" size={38} variant="light" disabled={disabled} onClick={() => onOpenPanel('remains')}>
+            <Package size={18} />
+          </ActionIcon>
+        </Tooltip>
       </PermissionGate>
       <PermissionGate permissionKey={PRODUCT_EDIT_PERMISSION}>
-        <Button size="xs" variant="outline" disabled={disabled} leftSection={<SquarePen size={15} />} onClick={() => onOpenPanel('edit')}>
-          {t('Редагувати')}
-        </Button>
+        <Tooltip label={t('Редагувати')}>
+          <ActionIcon aria-label={t('Редагувати')} color="gray" size={38} variant="light" disabled={disabled} onClick={() => onOpenPanel('edit')}>
+            <SquarePen size={18} />
+          </ActionIcon>
+        </Tooltip>
       </PermissionGate>
       <PermissionGate permissionKey={PRODUCT_MOVEMENT_PERMISSION}>
-        <Button size="xs" variant="outline" disabled={disabled} leftSection={<ArrowLeftRight size={15} />} onClick={() => onOpenPanel('movement')}>
-          {t('Рух товару')}
-        </Button>
+        <Tooltip label={t('Рух товару')}>
+          <ActionIcon aria-label={t('Рух товару')} color="gray" size={38} variant="light" disabled={disabled} onClick={() => onOpenPanel('movement')}>
+            <ArrowLeftRight size={18} />
+          </ActionIcon>
+        </Tooltip>
       </PermissionGate>
       <PermissionGate permissionKey={PRODUCT_WRITE_OFF_PERMISSION}>
-        <Button size="xs" variant="outline" disabled={disabled} leftSection={<ClipboardList size={15} />} onClick={() => onOpenPanel('writeoff')}>
-          {t('Правила списання')}
-        </Button>
+        <Tooltip label={t('Правила списання')}>
+          <ActionIcon aria-label={t('Правила списання')} color="gray" size={38} variant="light" disabled={disabled} onClick={() => onOpenPanel('writeoff')}>
+            <ClipboardList size={18} />
+          </ActionIcon>
+        </Tooltip>
       </PermissionGate>
     </Group>
   )
