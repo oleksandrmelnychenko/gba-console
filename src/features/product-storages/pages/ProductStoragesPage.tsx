@@ -47,6 +47,11 @@ import {
   getProductStorageAvailableConsignments,
   getProductStorageStorages,
 } from '../api/productStoragesApi'
+import {
+  formatProductStorageDateTimeInput,
+  isValidProductStorageDateTimeInput,
+  toProductStorageApiDateTime,
+} from '../dateTime'
 import type {
   ProductStorageAvailableConsignment,
   ProductStorageAvailability,
@@ -683,6 +688,7 @@ function useProductStoragesPageModel() {
 
     const fromStorage = actionFromStorage
     const selectedToStorage = storages.find((storage) => storage.NetUid === effectiveToStorageNetUid) || null
+    const actionFromDate = toProductStorageApiDateTime(actionForm.fromDate)
 
     if (!fromStorage) {
       setActionError(t('Не вдалося визначити склад'))
@@ -705,7 +711,7 @@ function useProductStoragesPageModel() {
           storageNumber: actionModal.scope === 'single' ? actionForm.storageNumber.trim() : '',
           productTransfer: {
             Comment: actionForm.comment.trim(),
-            FromDate: actionForm.fromDate,
+            FromDate: actionFromDate,
             FromStorage: fromStorage,
             IsManagement: actionForm.isManagement && isAdmin,
             Organization:
@@ -720,7 +726,7 @@ function useProductStoragesPageModel() {
         await createProductStorageWriteOff({
           Comment: actionForm.comment.trim(),
           DepreciatedOrderItems: buildWriteOffItems(actionModal, actionForm),
-          FromDate: actionForm.fromDate,
+          FromDate: actionFromDate,
           IsManagement: actionForm.isManagement && isAdmin,
           Organization: fromStorage.Organization || null,
           Storage: fromStorage,
@@ -731,7 +737,7 @@ function useProductStoragesPageModel() {
         await createProductStorageSupplyReturn({
           ClientAgreement: selectedReturnConsignment.ClientAgreement || null,
           Comment: actionForm.comment.trim(),
-          FromDate: actionForm.fromDate,
+          FromDate: actionFromDate,
           IsManagement: actionForm.isManagement && isAdmin,
           Organization: selectedReturnConsignment.Organization || null,
           Storage: fromStorage,
@@ -1493,7 +1499,7 @@ function ProductStorageActionModal({
           <TextInput
             disabled={isSubmitting}
             label={t('Дата')}
-            type="date"
+            type="datetime-local"
             value={form.fromDate}
             onChange={(event) => { const nextValue = event.currentTarget.value; onChangeForm((current) => ({ ...current, fromDate: nextValue })) }}
           />
@@ -2010,7 +2016,7 @@ function createActionForm(qty?: number): ProductStorageActionForm {
     cellNumber: '',
     comment: '',
     consignmentId: '',
-    fromDate: formatLocalDate(new Date()),
+    fromDate: formatProductStorageDateTimeInput(new Date()),
     isManagement: false,
     qty: typeof qty === 'number' && Number.isFinite(qty) ? qty : '',
     reason: '',
@@ -2085,7 +2091,7 @@ function validateAction(
     return 'Вкажіть дату операції'
   }
 
-  if (!isValidDateInputValue(form.fromDate)) {
+  if (!isValidProductStorageDateTimeInput(form.fromDate)) {
     return 'Вкажіть коректну дату операції'
   }
 
@@ -2132,16 +2138,6 @@ function isValidActionRow(row: ProductStorageActionRow): boolean {
   const availableQty = getQuantity(row.availability)
 
   return row.changedQty > 0 && (typeof availableQty !== 'number' || row.changedQty <= availableQty)
-}
-
-function isValidDateInputValue(value: string): boolean {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    return false
-  }
-
-  const date = new Date(`${value}T00:00:00`)
-
-  return !Number.isNaN(date.getTime()) && formatLocalDate(date) === value
 }
 
 function getReturnMaxQty(
