@@ -110,6 +110,7 @@
   .role-dashboard-toolbar {
     align-items: stretch;
     flex-direction: column;
+    flex-wrap: nowrap;
   }
 
   .role-dashboard-selector {
