@@ -77,14 +77,6 @@ export function BudgetCartTab() {
   const [isSheetOpen, setSheetOpen] = useState(false)
   const { plan, error, isLoading } = state
 
-  // iOS-style bottom sheet: as soon as a plan finishes loading, slide it up
-  // over the page (half screen); the user can close and reopen it.
-  useEffect(() => {
-    if (plan && plan.items.length > 0) {
-      setSheetOpen(true)
-    }
-  }, [plan])
-
   useEffect(() => {
     let cancelled = false
 
@@ -148,6 +140,7 @@ export function BudgetCartTab() {
 
         if (!cancelled) {
           dispatch({ plan: loaded, type: 'loaded' })
+          setSheetOpen(loaded.items.length > 0)
         }
       } catch (loadError) {
         if (controller.signal.aborted) {
@@ -453,4 +446,3 @@ function calculateBudgetCartFinancials(plan: CartPlan | null): BudgetCartFinanci
 function normalizeDateFilter(value: string): string | undefined {
   return /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : undefined
 }
-
