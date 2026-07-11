@@ -1,145 +1,162 @@
-import {
-  Box,
-  Card,
-  Group,
-  SimpleGrid,
-  Stack,
-  Text,
-  ThemeIcon,
-  Title,
-  UnstyledButton,
-} from '@mantine/core'
-import { ChartBar, ChevronRight, FileChartColumn, Package, ShoppingBasket, Store, Truck, Users } from 'lucide-react'
-import { useMemo, type ComponentType } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useNavigation } from '../../features/navigation/hooks/useNavigation'
-import { isNavigationPathAllowed } from '../../features/navigation/navigationUtils'
+import { Alert, Box, Group, Loader, Select, Stack, Text, TextInput } from '@mantine/core'
+import { Bot, CircleAlert, LayoutDashboard } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { AiFeatureBadge } from '../../shared/ai/AiFeatureBadge'
 import { useI18n } from '../../shared/i18n/useI18n'
-import type { TranslationKey } from '../../shared/i18n/types'
-
-type DashboardAction = {
-  color: string
-  description: TranslationKey
-  icon: ComponentType<{ size?: number; strokeWidth?: number }>
-  label: TranslationKey
-  route: string
-}
-
-const dashboardActions: DashboardAction[] = [
-  {
-    color: 'teal',
-    description: 'Рахунки, відвантаження, повернення',
-    icon: ShoppingBasket,
-    label: 'Продажі Україна',
-    route: '/sales/ukraine/all',
-  },
-  {
-    color: 'cyan',
-    description: 'Наявність, розміщення, історія руху',
-    icon: Package,
-    label: 'Товари',
-    route: '/products',
-  },
-  {
-    color: 'indigo',
-    description: 'Прихід, інвойси, специфікації',
-    icon: Truck,
-    label: 'Замовлення постачання',
-    route: '/orders/ukraine/all',
-  },
-  {
-    color: 'grape',
-    description: 'Приймання, пакування, склади',
-    icon: Store,
-    label: 'Склад Україна',
-    route: '/warehouse/ukraine',
-  },
-  {
-    color: 'blue',
-    description: 'Клієнти, виробники, організації',
-    icon: Users,
-    label: 'Клієнти',
-    route: '/clients',
-  },
-  {
-    color: 'orange',
-    description: 'Рейтинги, запас, маржа, повернення',
-    icon: ChartBar,
-    label: 'Аналітика асортименту',
-    route: '/products/assortment',
-  },
-  {
-    color: 'gray',
-    description: 'Платежі, звіти, взаєморозрахунки',
-    icon: FileChartColumn,
-    label: 'Облік',
-    route: '/accounting/available-payments',
-  },
-]
+import { RoleDashboardWorkspace } from '../../features/role-dashboards/components/RoleDashboardWorkspace'
+import { getDashboardWorkspaceCatalog } from '../../features/role-dashboards/api/dashboardWorkspacesApi'
+import type { DashboardWorkspaceCatalog } from '../../features/role-dashboards/types'
+import { resolveDashboardWorkspace } from '../../features/role-dashboards/utils/dashboardWorkspaceSelection'
+import '../../features/role-dashboards/role-dashboards.css'
 
 export function DashboardPage() {
   const { t } = useI18n()
-  const navigate = useNavigate()
-  const { error, isLoading, modules } = useNavigation()
-  const visibleActions = useMemo(
-    () => dashboardActions.filter((action) => isNavigationPathAllowed(modules, action.route)),
-    [modules],
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [catalog, setCatalog] = useState<DashboardWorkspaceCatalog | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [from, setFrom] = useState(() => firstDayOfCurrentMonth())
+  const [to, setTo] = useState(() => localDateValue(new Date()))
+  const today = useMemo(() => localDateValue(new Date()), [])
+
+  useEffect(() => {
+    const controller = new AbortController()
+
+    async function loadCatalog() {
+      setError(null)
+
+      try {
+        const loaded = await getDashboardWorkspaceCatalog(controller.signal)
+
+        if (!controller.signal.aborted) {
+          setCatalog(loaded)
+        }
+      } catch (loadError) {
+        if (!controller.signal.aborted) {
+          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити дашборд'))
+        }
+      }
+    }
+
+    void loadCatalog()
+    return () => controller.abort()
+  }, [t])
+
+  const selectedWorkspace = catalog
+    ? resolveDashboardWorkspace(catalog, searchParams.get('view'))
+    : null
+  const selectedDescriptor = catalog?.workspaces.find((workspace) => workspace.key === selectedWorkspace)
+  const showsSharedPeriod = selectedWorkspace ? !['sales-manager', 'sales-head', 'buyer', 'buyer-head'].includes(selectedWorkspace) : false
+  const period = useMemo(() => ({ from, toExclusive: addDays(to, 1) }), [from, to])
+  const selectOptions = useMemo(
+    () => catalog?.workspaces.map((workspace) => ({
+      group: t(workspace.group),
+      label: t(workspace.name),
+      value: workspace.key,
+    })) ?? [],
+    [catalog, t],
   )
 
+  function selectWorkspace(value: string | null) {
+    if (!catalog?.canSwitchWorkspace || !value || !catalog.workspaces.some((workspace) => workspace.key === value)) {
+      return
+    }
+
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current)
+      next.set('view', value)
+      return next
+    }, { replace: true })
+  }
+
+  if (error) {
+    return (
+      <Alert color="red" icon={<CircleAlert size={17} />} title={t('Дашборд недоступний')} variant="light">
+        {error}
+      </Alert>
+    )
+  }
+
+  if (!catalog) {
+    return <Group justify="center" py="xl"><Loader size="sm" /></Group>
+  }
+
+  if (!selectedWorkspace || !selectedDescriptor || catalog.workspaces.length === 0) {
+    return (
+      <Alert color="gray" icon={<LayoutDashboard size={17} />} title={t('Дашборд не налаштовано')} variant="light">
+        {t('Для цієї ролі немає доступного робочого дашборда')}
+      </Alert>
+    )
+  }
+
   return (
-    <Stack className="dashboard-page" gap="md">
-      <Group className="dashboard-heading" justify="space-between" align="flex-end">
-        <Box className="dashboard-heading-copy">
-          <Title order={1}>{t('Робочий простір')}</Title>
-          <Text c="dimmed" size="sm">
-            {t('Основні розділи консолі')}
-          </Text>
-        </Box>
+    <Stack className="role-dashboard-page" gap="sm">
+      <Group className="role-dashboard-toolbar" justify="space-between" wrap="wrap">
+        <Group className="role-dashboard-title" gap="xs" wrap="nowrap">
+          {selectedDescriptor.isAi ? <Bot size={20} /> : <LayoutDashboard size={20} />}
+          <Box>
+            <Group gap={6} wrap="nowrap">
+              <Text fw={750}>{t(selectedDescriptor.name)}</Text>
+              {selectedDescriptor.isAi && <AiFeatureBadge compact tooltip={t('AI-функція')} />}
+            </Group>
+            <Text c="dimmed" size="xs">{t(selectedDescriptor.group)}</Text>
+          </Box>
+        </Group>
+
+        {catalog.canSwitchWorkspace && (
+          <Select
+            aria-label={t('Вибрати дашборд')}
+            className="role-dashboard-selector"
+            data={selectOptions}
+            searchable
+            value={selectedWorkspace}
+            onChange={selectWorkspace}
+          />
+        )}
+
+        {showsSharedPeriod && (
+          <Group className="role-dashboard-period" gap={6} wrap="nowrap">
+            <TextInput
+              aria-label={t('Від')}
+              max={to}
+              required
+              type="date"
+              value={from}
+              onChange={(event) => event.currentTarget.value && setFrom(event.currentTarget.value)}
+            />
+            <TextInput
+              aria-label={t('До')}
+              max={today}
+              min={from}
+              required
+              type="date"
+              value={to}
+              onChange={(event) => event.currentTarget.value && setTo(event.currentTarget.value)}
+            />
+          </Group>
+        )}
       </Group>
 
-      {isLoading ? (
-        <DashboardStateCard title={t('Меню завантажується')} />
-      ) : error ? (
-        <DashboardStateCard title={t('Меню недоступне')} />
-      ) : visibleActions.length === 0 ? (
-        <DashboardStateCard title={t('Немає доступних розділів')} />
-      ) : (
-        <SimpleGrid className="dashboard-actions-grid" cols={{ base: 1, sm: 2, lg: 3 }} spacing="md">
-          {visibleActions.map((action) => (
-            <UnstyledButton
-              key={action.route}
-              className="dashboard-action-card"
-              type="button"
-              onClick={() => navigate(action.route)}
-            >
-              <Group align="flex-start" justify="space-between" gap="md" wrap="nowrap">
-                <Group align="flex-start" gap="sm" wrap="nowrap" className="dashboard-action-main">
-                  <ThemeIcon color={action.color} radius="md" size={42} variant="light">
-                    <action.icon size={22} strokeWidth={1.8} />
-                  </ThemeIcon>
-                  <Box className="dashboard-action-copy">
-                    <Text fw={700}>{t(action.label)}</Text>
-                    <Text c="dimmed" size="sm">
-                      {t(action.description)}
-                    </Text>
-                  </Box>
-                </Group>
-                <ThemeIcon className="dashboard-action-arrow" color="gray" radius="xl" size={30} variant="subtle">
-                  <ChevronRight size={18} strokeWidth={1.9} />
-                </ThemeIcon>
-              </Group>
-            </UnstyledButton>
-          ))}
-        </SimpleGrid>
-      )}
+      <Box className="role-dashboard-content">
+        <RoleDashboardWorkspace period={period} workspaceKey={selectedWorkspace} />
+      </Box>
     </Stack>
   )
 }
 
-function DashboardStateCard({ title }: { title: string }) {
-  return (
-    <Card className="dashboard-state-card" withBorder radius="md" padding="lg">
-      <Text fw={700}>{title}</Text>
-    </Card>
-  )
+function firstDayOfCurrentMonth(): string {
+  const today = new Date()
+  return localDateValue(new Date(today.getFullYear(), today.getMonth(), 1))
+}
+
+function addDays(value: string, days: number): string {
+  const [year, month, day] = value.split('-').map(Number)
+  return localDateValue(new Date(year, month - 1, day + days))
+}
+
+function localDateValue(value: Date): string {
+  const year = value.getFullYear()
+  const month = String(value.getMonth() + 1).padStart(2, '0')
+  const day = String(value.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
 }

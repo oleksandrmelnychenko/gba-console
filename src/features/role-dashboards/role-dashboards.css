@@ -1,0 +1,124 @@
+.role-dashboard-page {
+  width: 100%;
+  min-width: 0;
+}
+
+.role-dashboard-toolbar {
+  min-height: 48px;
+  padding: 7px 10px;
+  background: #fff;
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: var(--mantine-radius-sm);
+}
+
+.role-dashboard-title {
+  min-width: 0;
+}
+
+.role-dashboard-title .mantine-Text-root {
+  overflow-wrap: anywhere;
+}
+
+.role-dashboard-selector {
+  width: min(360px, 100%);
+}
+
+.role-dashboard-period .mantine-TextInput-root {
+  width: 142px;
+}
+
+.role-dashboard-content {
+  min-width: 0;
+}
+
+.role-dashboard-service {
+  min-width: 0;
+  border-radius: var(--mantine-radius-sm);
+}
+
+.role-dashboard-kpi-button {
+  display: block;
+  min-width: 0;
+  text-align: left;
+}
+
+.role-dashboard-kpi {
+  min-width: 0;
+  min-height: 76px;
+  border-left: 3px solid var(--mantine-color-gray-4);
+}
+
+.role-dashboard-kpi.is-positive {
+  border-left-color: var(--mantine-color-teal-6);
+}
+
+.role-dashboard-kpi.is-warning {
+  border-left-color: var(--mantine-color-orange-6);
+}
+
+.role-dashboard-kpi.is-critical {
+  border-left-color: var(--mantine-color-red-6);
+}
+
+.role-dashboard-kpi-button:hover .role-dashboard-kpi,
+.role-dashboard-kpi-button:focus-visible .role-dashboard-kpi {
+  background: var(--mantine-color-gray-0);
+  border-top-color: var(--mantine-color-gray-4);
+  border-right-color: var(--mantine-color-gray-4);
+  border-bottom-color: var(--mantine-color-gray-4);
+}
+
+.role-dashboard-kpi-button:focus-visible {
+  outline: 2px solid var(--mantine-color-blue-5);
+  outline-offset: 2px;
+}
+
+.role-dashboard-kpi-value {
+  margin-top: 5px;
+  font-family: var(--font-mono);
+  font-size: 1.2rem;
+  letter-spacing: 0;
+}
+
+.role-dashboard-action {
+  min-width: 0;
+  min-height: 58px;
+  padding: 10px 12px;
+  color: inherit;
+  background: #fff;
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: var(--mantine-radius-sm);
+  transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+.role-dashboard-action:hover,
+.role-dashboard-action:focus-visible {
+  background: var(--mantine-color-gray-0);
+  border-color: var(--mantine-color-gray-4);
+}
+
+.role-dashboard-action:focus-visible {
+  outline: 2px solid var(--mantine-color-blue-5);
+  outline-offset: 2px;
+}
+
+@media (max-width: 48em) {
+  .role-dashboard-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .role-dashboard-selector {
+    width: 100%;
+  }
+
+  .role-dashboard-period {
+    width: 100%;
+  }
+
+  .role-dashboard-period .mantine-TextInput-root {
+    flex: 1 1 0;
+    width: auto;
+    min-width: 0;
+  }
+}
