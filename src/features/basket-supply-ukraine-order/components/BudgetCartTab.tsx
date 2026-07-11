@@ -225,8 +225,8 @@ export function BudgetCartTab() {
           </Text>
           <SegmentedControl
             data={[
-              { label: t('Жадібний'), value: 'greedy' },
-              { label: t('MILP оптимум'), value: 'milp' },
+              { label: t('Швидкий'), value: 'greedy' },
+              { label: t('Оптимальний'), value: 'milp' },
             ]}
             onChange={(value) => setMethod(value as CartOptimizeMethod)}
             value={method}

@@ -13,8 +13,8 @@ type BudgetCartGuideProps = {
 }
 
 const methodTitle: Record<CartOptimizeMethod, string> = {
-  greedy: 'Жадібний',
-  milp: 'MILP',
+  greedy: 'Швидкий',
+  milp: 'Оптимальний',
 }
 
 export function BudgetCartGuide({
@@ -31,21 +31,21 @@ export function BudgetCartGuide({
     <div className="budget-cart-guide">
       <GuideTile
         icon={<Sparkles size={18} />}
-        title={t('Бюджетний кошик')}
+        title={t('Закупівля під бюджет')}
         value={t('AI підбирає товари в закупівлю під заданий EUR-ліміт')}
         meta={t('Кандидати беруться з дефіциту, прогнозу попиту, залишків і правил закупівлі')}
       />
       <GuideTile
         active={method === 'greedy'}
         icon={<Gauge size={18} />}
-        title={t('Жадібний')}
+        title={t('Швидкий')}
         value={t('Швидкий відбір')}
         meta={t('Бере рядки з найбільшою цінністю на 1 EUR, поки бюджет не закінчиться')}
       />
       <GuideTile
         active={method === 'milp'}
         icon={<Scale size={18} />}
-        title={t('MILP')}
+        title={t('Оптимальний')}
         value={t('Оптимальна комбінація')}
         meta={t('Рахує весь набір позицій разом і максимізує цінність у межах бюджету')}
       />

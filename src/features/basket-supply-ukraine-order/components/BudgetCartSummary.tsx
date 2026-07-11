@@ -141,11 +141,11 @@ function formatNullableEuro(value: number | null): string {
 
 function getMethodLabel(plan: CartPlan, t: (value: string) => string): string {
   if (plan.method_used === 'milp') {
-    return t('MILP')
+    return t('Оптимальний')
   }
 
   if (plan.method_used === 'greedy') {
-    return t('Жадібний')
+    return t('Швидкий')
   }
 
   return t('Не вказано')
