@@ -101,6 +101,7 @@ import {
   rowsShareSingleStorage,
   type ResaleAvailabilityForm,
 } from '../resalesFlowHelpers'
+import { useResaleClientAgreements } from '../hooks/useResaleClientAgreements'
 import './resales-page.css'
 
 const PAGE_SIZE = DEFAULT_PAGINATOR_PAGE_SIZE
@@ -2680,6 +2681,12 @@ function ResaleProcessDrawer({
   const [productCardNetId, setProductCardNetId] = useValueState<string | null>(null)
   const recalculateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const recalculateRequestRef = useRef(0)
+  const {
+    agreements: clientAgreements,
+    error: clientAgreementsError,
+    isLoading: isLoadingClientAgreements,
+    loadForClient: loadClientAgreements,
+  } = useResaleClientAgreements(processForm.activeProcessData?.Organization?.Id)
   const getProductNetId = useCallback(
     (row: ResaleAvailabilityItemModel) => productNetIdByProductId.get(row.ProductId) || null,
     [productNetIdByProductId],
@@ -2860,6 +2867,16 @@ function ResaleProcessDrawer({
             {t('Перерахуйте позиції перед створенням')}
           </Alert>
         )}
+        {clientAgreementsError && (
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
+            {t('Не вдалося завантажити угоди клієнта')}: {clientAgreementsError}
+          </Alert>
+        )}
+        {processForm.client && !isLoadingClientAgreements && !clientAgreementsError && clientAgreements.length === 0 && (
+          <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
+            {t('Для клієнта немає активної угоди перепродажу цієї організації')}
+          </Alert>
+        )}
         <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
           <ResaleClientSelect
             label={t('Клієнт')}
@@ -2870,18 +2887,24 @@ function ResaleProcessDrawer({
                 client: nextClient,
                 clientAgreement: null,
               }))
+              void loadClientAgreements(nextClient?.NetUid)
             }}
           />
           <Select
             searchable
-            disabled={!processForm.client}
-            data={buildClientAgreementOptions(processForm.client, processForm.activeProcessData?.Organization || undefined)}
+            data={buildClientAgreementOptionsFromList(
+              clientAgreements,
+              processForm.activeProcessData?.Organization || undefined,
+            )}
+            disabled={!processForm.client || isLoadingClientAgreements}
             label={t('Угода')}
+            nothingFoundMessage={t('Активних угод перепродажу не знайдено')}
+            rightSection={isLoadingClientAgreements ? <Text size="xs">...</Text> : undefined}
             value={processForm.clientAgreement?.NetUid || processForm.clientAgreement?.Id ? String(processForm.clientAgreement.NetUid || processForm.clientAgreement.Id) : null}
             onChange={(value) => {
               setProcessForm((currentForm) => ({
                 ...currentForm,
-                clientAgreement: findClientAgreement(currentForm.client, value),
+                clientAgreement: findClientAgreementInList(clientAgreements, value),
               }))
             }}
           />
@@ -3666,15 +3689,24 @@ function buildClientAgreementOptions(
   organization?: { Id?: number } | null,
   requireForReSale = true,
 ): { label: string; value: string }[] {
-  if (!client?.ClientAgreements) {
-    return []
-  }
+  return buildClientAgreementOptionsFromList(client?.ClientAgreements || [], organization, requireForReSale)
+}
 
-  return client.ClientAgreements
+function buildClientAgreementOptionsFromList(
+  clientAgreements: ResaleClientAgreement[],
+  organization?: { Id?: number } | null,
+  requireForReSale = true,
+): { label: string; value: string }[] {
+  return clientAgreements
     .filter((clientAgreement) => {
       const agreement = clientAgreement.Agreement
 
-      if (requireForReSale && !agreement?.ForReSale) {
+      if (requireForReSale && (
+        clientAgreement.Deleted === true
+        || agreement?.Deleted === true
+        || agreement?.IsActive !== true
+        || agreement?.ForReSale !== true
+      )) {
         return false
       }
 
@@ -3695,11 +3727,18 @@ function buildClientAgreementOptions(
 }
 
 function findClientAgreement(client: ResaleClient | null, value: string | null): ResaleClientAgreement | null {
-  if (!client?.ClientAgreements || !value) {
+  return findClientAgreementInList(client?.ClientAgreements || [], value)
+}
+
+function findClientAgreementInList(
+  clientAgreements: ResaleClientAgreement[],
+  value: string | null,
+): ResaleClientAgreement | null {
+  if (!value) {
     return null
   }
 
-  return client.ClientAgreements.find((agreement) => agreement.NetUid === value || String(agreement.Id) === value) || null
+  return clientAgreements.find((agreement) => agreement.NetUid === value || String(agreement.Id) === value) || null
 }
 
 function getResaleStatusLabel(resale: ReSale): string {

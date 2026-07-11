@@ -15,7 +15,38 @@ type TransporterIconProps = {
 // driver row with no logo), so callers can render it inline before the name without reserving space.
 export function TransporterIcon({ cssClass, imageUrl, name = '', size = 22 }: TransporterIconProps) {
   const bundled = resolveTransporterLogo(cssClass, name)
-  const imageSrc = bundled || toProxiedAssetUrl(imageUrl?.trim())
+
+  if (bundled) {
+    return (
+      <img
+        alt={name}
+        src={bundled}
+        width={size}
+        height={size}
+        style={{ objectFit: 'contain', verticalAlign: 'middle', flexShrink: 0 }}
+      />
+    )
+  }
+
+  const normalizedClass = cssClass?.trim()
+  const normalizedName = normalizeTransporterName(name)
+
+  // Legacy records for these two transporters can still carry an ImageUrl from the retired
+  // asset host. Prefer their semantic icons so a stale URL cannot render as a broken image.
+  if (normalizedClass === 'bus_item_class' || normalizedName === 'автобус' || normalizedName === 'bus') {
+    return <Bus size={size} strokeWidth={1.5} style={{ flexShrink: 0 }} />
+  }
+
+  if (
+    normalizedClass === 'self_checkout_item_class'
+    || normalizedName === 'самовивіз'
+    || normalizedName === 'самовывоз'
+    || normalizedName === 'selfpickup'
+  ) {
+    return <PackageCheck size={size} strokeWidth={1.5} style={{ flexShrink: 0 }} />
+  }
+
+  const imageSrc = toProxiedAssetUrl(imageUrl?.trim())
 
   if (imageSrc) {
     return (
@@ -29,17 +60,14 @@ export function TransporterIcon({ cssClass, imageUrl, name = '', size = 22 }: Tr
     )
   }
 
-  const normalizedClass = cssClass?.trim()
-
-  if (normalizedClass === 'bus_item_class') {
-    return <Bus size={size} strokeWidth={1.5} style={{ flexShrink: 0 }} />
-  }
-
-  if (normalizedClass === 'self_checkout_item_class') {
-    return <PackageCheck size={size} strokeWidth={1.5} style={{ flexShrink: 0 }} />
-  }
-
   return null
+}
+
+function normalizeTransporterName(value: string): string {
+  return value
+    .trim()
+    .toLocaleLowerCase('uk-UA')
+    .replace(/[\s\-_'".,`’«»()]+/g, '')
 }
 
 // Convenience wrapper: the carrier icon inline before its name. Renders just the name when there is no

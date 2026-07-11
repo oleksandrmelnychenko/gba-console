@@ -3,6 +3,7 @@ import { notifications } from '@mantine/notifications'
 import { ClipboardList, FileText, Printer, Receipt } from 'lucide-react'
 import { useMemo } from 'react'
 import { useAuth } from '../../auth/useAuth'
+import { getApiLanguage } from '../../../shared/api/apiClient'
 import { UserRoleType } from '../../../shared/auth/types'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -63,7 +64,8 @@ export function SaleDocumentsMenu({ sale }: { sale: SalesUkraineSale }) {
     return roleType !== undefined && INVOICE_BUNDLE_ROLES.includes(roleType)
   }, [user])
 
-  const actions = useMemo(() => buildDocumentActions(sale, t), [sale, t])
+  const apiLanguage = getApiLanguage()
+  const actions = useMemo(() => buildDocumentActions(sale, apiLanguage, t), [apiLanguage, sale, t])
 
   async function runAction(action: DocumentAction) {
     const notificationId = `sale-document-${action.key}`
@@ -74,18 +76,23 @@ export function SaleDocumentsMenu({ sale }: { sale: SalesUkraineSale }) {
 
       if (action.parts) {
         // Bundled entry: fetch every part in parallel and merge their files under one title.
-        const settled = await Promise.all(
-          action.parts.map((part) =>
-            part
-              .fetch()
-              .then((result) => ({ label: part.label, result }))
-              .catch(() => null),
-          ),
+        const settled = await Promise.allSettled(
+          action.parts.map((part) => part.fetch().then((result) => ({ label: part.label, result }))),
         )
 
-        documents = settled
-          .filter((entry): entry is { label: string; result: SaleDocumentResult } => entry !== null)
-          .flatMap((entry) => buildDocumentFiles({ key: action.key, label: entry.label }, entry.result, isAbleToInvoiceDocument, t))
+        documents = settled.flatMap((entry) =>
+          entry.status === 'fulfilled'
+            ? buildDocumentFiles({ key: action.key, label: entry.value.label }, entry.value.result, isAbleToInvoiceDocument, t)
+            : [],
+        )
+
+        if (!documents.length) {
+          const failedPart = settled.find((entry): entry is PromiseRejectedResult => entry.status === 'rejected')
+
+          if (failedPart) {
+            throw failedPart.reason
+          }
+        }
       } else if (action.fetch) {
         const result = await action.fetch()
         documents = buildDocumentFiles(action, result, isAbleToInvoiceDocument, t)
@@ -99,8 +106,11 @@ export function SaleDocumentsMenu({ sale }: { sale: SalesUkraineSale }) {
       } else {
         notifications.update({ id: notificationId, autoClose: 3000, color: 'orange', loading: false, message: t('Документ недоступний') })
       }
-    } catch {
-      notifications.update({ id: notificationId, autoClose: 3500, color: 'red', loading: false, message: t('Не вдалося сформувати документ') })
+    } catch (error) {
+      const fallbackMessage = t('Не вдалося сформувати документ')
+      const message = error instanceof Error && error.message.trim() ? error.message : fallbackMessage
+
+      notifications.update({ id: notificationId, autoClose: 3500, color: 'red', loading: false, message })
     }
   }
 
@@ -161,7 +171,7 @@ function documentActionIcon(key: string) {
     return <Receipt size={16} color={color} />
   }
 
-  if (key === 'pdf-print') {
+  if (key === 'pz') {
     return <Printer size={16} color={color} />
   }
 
@@ -177,7 +187,7 @@ function revisionDocumentsLabel(revision: number, isCurrent: boolean, t: (key: s
   return `${t('Правка')} ${revision} ${t('документа')}`
 }
 
-function buildDocumentActions(sale: SalesUkraineSale, t: (key: string) => string): DocumentAction[] {
+function buildDocumentActions(sale: SalesUkraineSale, apiLanguage: string, t: (key: string) => string): DocumentAction[] {
   const netId = sale.NetUid
 
   if (!netId) {
@@ -186,6 +196,8 @@ function buildDocumentActions(sale: SalesUkraineSale, t: (key: string) => string
 
   const lifecycleStatusKey = getSaleLifecycleStatusKey(sale.BaseLifeCycleStatus?.SaleLifeCycleType ?? sale.BaseLifeCycleStatus?.Name)
   const isPackaging = lifecycleStatusKey === 'Packaging' || lifecycleStatusKey === 'Packaged'
+  const isInvoiceStatus = lifecycleStatusKey === 'Packaging'
+  const isPolishRegion = apiLanguage.toLowerCase() === 'pl'
   const hasTransporter = Boolean(sale.TransporterId)
   const isVat = Boolean(sale.IsVatSale)
   const withVatAccounting = Boolean(sale.ClientAgreement?.Agreement?.WithVATAccounting)
@@ -240,7 +252,9 @@ function buildDocumentActions(sale: SalesUkraineSale, t: (key: string) => string
     actions.push({ bundlesInvoice: true, fetch: () => getSalePaymentDocument(netId), key: 'payment', label: t('Рахунок на оплату') })
   }
 
-  actions.push({ fetch: () => getSalePzDocument(netId), key: 'pdf-print', label: t('Друк PDF') })
+  if (isPolishRegion && isInvoiceStatus) {
+    actions.push({ fetch: () => getSalePzDocument(netId), key: 'pz', label: t('PZ') })
+  }
 
   return actions
 }

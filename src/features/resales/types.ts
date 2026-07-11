@@ -27,6 +27,7 @@ export type ResaleAgreement = NamedEntity & {
   Currency?: ResaleCurrency | null
   ForReSale?: boolean
   FullName?: string
+  IsActive?: boolean
   Organization?: ResaleOrganization | null
   OrganizationId?: number
 }

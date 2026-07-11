@@ -13,6 +13,7 @@ import type {
   ResaleAvailabilityWithTotals,
   ResaleBackendWarning,
   ResaleClient,
+  ResaleClientAgreement,
   ResaleConsignmentNoteSetting,
   ResaleCreatePayload,
   ResaleDownloadDocumentType,
@@ -263,6 +264,21 @@ export async function searchResaleClients(value: string, signal?: AbortSignal): 
   }, signal)
 
   return clients as unknown as ResaleClient[]
+}
+
+export async function getResaleClientAgreements(
+  netId: string,
+  signal?: AbortSignal,
+): Promise<ResaleClientAgreement[]> {
+  const result = await apiRequest<unknown>('/agreements/client/all', {
+    query: {
+      includeDebts: false,
+      netId,
+    },
+    ...(signal ? { signal } : {}),
+  })
+
+  return readArrayPayload(result, ['Items', 'ClientAgreements', 'Agreements', 'Data', 'Collection']) as ResaleClientAgreement[]
 }
 
 function normalizeResales(result: unknown): ReSale[] {

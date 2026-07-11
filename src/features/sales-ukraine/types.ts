@@ -135,15 +135,18 @@ export type SalesUkraineCustomersOwnTtn = SalesUkraineEntity & {
 
 export type SalesUkraineUpdateDataCarrier = SalesUkraineEntity & {
   CashOnDeliveryAmount?: number
+  ChangedFields?: number | null
   City?: string
   Comment?: string
   Department?: string
   FullName?: string
   HasDocument?: boolean
+  HistoryFormatVersion?: number
   IsCashOnDelivery?: boolean
   MobilePhone?: string
   Number?: string
   ShipmentDate?: Date | string
+  TTN?: string
   Transporter?: SalesUkraineTransporter
   TtnPDFPath?: string
   User?: SalesUkraineUser

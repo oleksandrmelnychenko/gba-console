@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
-import { exportResaleAvailabilities } from './resalesApi'
+import { exportResaleAvailabilities, getResaleClientAgreements } from './resalesApi'
 
 vi.mock('../../../shared/api/apiClient', () => ({
   apiRequest: vi.fn(),
@@ -39,6 +39,30 @@ describe('resales API contracts', () => {
     expect(apiRequestMock).toHaveBeenCalledWith('/resales/document/resale', {
       body: payload,
       method: 'POST',
+    })
+  })
+
+  it('loads selected client agreements without debt aggregates', async () => {
+    const controller = new AbortController()
+    const agreement = {
+      Id: 361078,
+      NetUid: 'bfb9f4ab-7868-45af-8cde-ab9ee74a68b1',
+      Agreement: {
+        ForReSale: true,
+        IsActive: true,
+        OrganizationId: 365,
+      },
+    }
+
+    apiRequestMock.mockResolvedValueOnce({ Items: [agreement] })
+
+    await expect(getResaleClientAgreements('client-net-id', controller.signal)).resolves.toEqual([agreement])
+    expect(apiRequestMock).toHaveBeenCalledWith('/agreements/client/all', {
+      query: {
+        includeDebts: false,
+        netId: 'client-net-id',
+      },
+      signal: controller.signal,
     })
   })
 })

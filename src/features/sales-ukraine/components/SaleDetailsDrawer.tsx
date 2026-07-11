@@ -28,6 +28,24 @@ import { getSaleLifecycleStatusKey } from '../saleStatus'
 import type { SalesUkraineSale, SalesUkraineTransporter, SalesUkraineUpdateDataCarrier } from '../types'
 import './sales-drawers.css'
 
+export const CARRIER_HISTORY_CHANGED_FIELD = {
+  transporter: 1 << 0,
+  city: 1 << 1,
+  department: 1 << 2,
+  shipmentDate: 1 << 3,
+  fullName: 1 << 4,
+  mobilePhone: 1 << 5,
+  comment: 1 << 6,
+  isCashOnDelivery: 1 << 7,
+  cashOnDeliveryAmount: 1 << 8,
+  hasDocument: 1 << 9,
+  ownTtnNumber: 1 << 10,
+  ttnDocument: 1 << 11,
+  ttn: 1 << 12,
+} as const
+
+type CarrierHistoryChangedField = (typeof CARRIER_HISTORY_CHANGED_FIELD)[keyof typeof CARRIER_HISTORY_CHANGED_FIELD]
+
 export function SaleDetailsDrawer({
   sale,
   onClose,
@@ -103,6 +121,7 @@ function SaleDetailsContent({ sale, onSaved }: { onSaved: () => void; sale: Sale
     Number: hasOwnTtn ? ownTtnNumber : '',
     ShipmentDate: shipmentDate ? new Date(shipmentDate).toISOString() : sale.ShipmentDate,
     Transporter: selectedTransporter,
+    TTN: ttn,
     TtnPDFPath: sale.CustomersOwnTtn?.TtnPDFPath,
     // Responsible for the "Актуальні дані" column comes from the sale's UpdateUser (legacy parity),
     // not the carrier snapshot — otherwise the cell is empty and shows as a spurious change.
@@ -364,14 +383,15 @@ function DetailsView({ sale }: { sale: SalesUkraineSale }) {
 
   const entries = Array.isArray(sale.UpdateDataCarrier) ? sale.UpdateDataCarrier : []
   const last = getLatestHistoryEntry(entries)
-  const changed = (current: unknown, previous: unknown) => last != null && normalizeCompare(current) !== normalizeCompare(previous)
+  const changed = (field: CarrierHistoryChangedField, current: unknown, previous: unknown) =>
+    last != null && (hasCarrierHistoryMask(last) ? hasCarrierHistoryField(last, field) : normalizeCompare(current) !== normalizeCompare(previous))
 
   return (
     <Stack className="sale-carrier-details" gap="sm">
       <section className="sale-carrier-section">
         <Text className="app-section-title sale-carrier-section-title">{t('Перевезення')}</Text>
         <div className="sale-carrier-rows">
-          <Row changed={changed(sale.Transporter?.Name, last?.Transporter?.Name)} label={t('Перевізник')} value={sale.Transporter?.Name || sale.Transporter?.Title}>
+          <Row changed={changed(CARRIER_HISTORY_CHANGED_FIELD.transporter, sale.Transporter?.Name, last?.Transporter?.Name)} label={t('Перевізник')} value={sale.Transporter?.Name || sale.Transporter?.Title}>
             <TransporterNameWithIcon
               cssClass={sale.Transporter?.CssClass}
               imageUrl={sale.Transporter?.ImageUrl}
@@ -386,30 +406,30 @@ function DetailsView({ sale }: { sale: SalesUkraineSale }) {
       <section className="sale-carrier-section">
         <Text className="app-section-title sale-carrier-section-title">{t('Адреса і отримувач')}</Text>
         <div className="sale-carrier-rows">
-          <Row changed={changed(sale.DeliveryRecipientAddress?.City, last?.City)} label={t('Місто')} value={sale.DeliveryRecipientAddress?.City} />
-          <Row changed={changed(sale.DeliveryRecipientAddress?.Department, last?.Department)} label={t('Відділення')} value={sale.DeliveryRecipientAddress?.Department} />
-          <Row changed={changed(formatDateTime(sale.ShipmentDate), formatDateTime(last?.ShipmentDate))} label={t('Дата відгрузки')} mono value={formatDateTime(sale.ShipmentDate)} />
-          {sale.IsPrinted && <Row label={t('Номер декларації')} mono value={sale.TTN} />}
-          <Row changed={changed(sale.DeliveryRecipient?.FullName, last?.FullName)} label={t('Отримувач товару')} value={sale.DeliveryRecipient?.FullName} />
-          <Row changed={changed(sale.DeliveryRecipient?.MobilePhone, last?.MobilePhone)} label={t('Мобільний телефон')} mono value={sale.DeliveryRecipient?.MobilePhone} />
-          <Row changed={changed(sale.Comment, last?.Comment)} label={t('Коментар')} value={sale.Comment} />
+          <Row changed={changed(CARRIER_HISTORY_CHANGED_FIELD.city, sale.DeliveryRecipientAddress?.City, last?.City)} label={t('Місто')} value={sale.DeliveryRecipientAddress?.City} />
+          <Row changed={changed(CARRIER_HISTORY_CHANGED_FIELD.department, sale.DeliveryRecipientAddress?.Department, last?.Department)} label={t('Відділення')} value={sale.DeliveryRecipientAddress?.Department} />
+          <Row changed={changed(CARRIER_HISTORY_CHANGED_FIELD.shipmentDate, formatDateTime(sale.ShipmentDate), formatDateTime(last?.ShipmentDate))} label={t('Дата відгрузки')} mono value={formatDateTime(sale.ShipmentDate)} />
+          {sale.IsPrinted && <Row changed={changed(CARRIER_HISTORY_CHANGED_FIELD.ttn, sale.TTN, last?.TTN)} label={t('Номер декларації')} mono value={sale.TTN} />}
+          <Row changed={changed(CARRIER_HISTORY_CHANGED_FIELD.fullName, sale.DeliveryRecipient?.FullName, last?.FullName)} label={t('Отримувач товару')} value={sale.DeliveryRecipient?.FullName} />
+          <Row changed={changed(CARRIER_HISTORY_CHANGED_FIELD.mobilePhone, sale.DeliveryRecipient?.MobilePhone, last?.MobilePhone)} label={t('Мобільний телефон')} mono value={sale.DeliveryRecipient?.MobilePhone} />
+          <Row changed={changed(CARRIER_HISTORY_CHANGED_FIELD.comment, sale.Comment, last?.Comment)} label={t('Коментар')} value={sale.Comment} />
         </div>
       </section>
 
       <section className="sale-carrier-section">
         <Text className="app-section-title sale-carrier-section-title">{t('Оплата і документи')}</Text>
         <div className="sale-carrier-rows">
-          <Row changed={changed(Boolean(sale.IsCashOnDelivery), Boolean(last?.IsCashOnDelivery))} label={t('Наложений платіж')}>
+          <Row changed={changed(CARRIER_HISTORY_CHANGED_FIELD.isCashOnDelivery, Boolean(sale.IsCashOnDelivery), Boolean(last?.IsCashOnDelivery))} label={t('Наложений платіж')}>
             <BooleanPill active={Boolean(sale.IsCashOnDelivery)} />
           </Row>
       {sale.IsCashOnDelivery && (
-            <Row changed={changed(sale.CashOnDeliveryAmount, last?.CashOnDeliveryAmount)} label={t('Сума накладеного платежу')} mono value={sale.CashOnDeliveryAmount} />
+            <Row changed={changed(CARRIER_HISTORY_CHANGED_FIELD.cashOnDeliveryAmount, sale.CashOnDeliveryAmount, last?.CashOnDeliveryAmount)} label={t('Сума накладеного платежу')} mono value={sale.CashOnDeliveryAmount} />
       )}
-          <Row changed={changed(Boolean(sale.HasDocuments), Boolean(last?.HasDocument))} label={t('Є документи')}>
+          <Row changed={changed(CARRIER_HISTORY_CHANGED_FIELD.hasDocument, Boolean(sale.HasDocuments), Boolean(last?.HasDocument))} label={t('Є документи')}>
             <BooleanPill active={Boolean(sale.HasDocuments)} />
           </Row>
       {sale.CustomersOwnTtn?.Number && (
-            <Row changed={changed(sale.CustomersOwnTtn.Number, last?.Number)} label={t('Власне ТТН')} mono value={sale.CustomersOwnTtn.Number} />
+            <Row changed={changed(CARRIER_HISTORY_CHANGED_FIELD.ownTtnNumber, sale.CustomersOwnTtn.Number, last?.Number)} label={t('Власне ТТН')} mono value={sale.CustomersOwnTtn.Number} />
       )}
       {sale.CustomersOwnTtn?.TtnPDFPath && (
             <Anchor className="sale-carrier-document-link" href={toSecure(sale.CustomersOwnTtn.TtnPDFPath)} target="_blank" rel="noopener noreferrer">
@@ -423,7 +443,7 @@ function DetailsView({ sale }: { sale: SalesUkraineSale }) {
   )
 }
 
-function CarrierHistory({ current, entries }: { current: SalesUkraineUpdateDataCarrier; entries: SalesUkraineUpdateDataCarrier[] }) {
+export function CarrierHistory({ current, entries }: { current: SalesUkraineUpdateDataCarrier; entries: SalesUkraineUpdateDataCarrier[] }) {
   const { t } = useI18n()
 
   if (entries.length === 0) {
@@ -455,12 +475,16 @@ function CarrierHistory({ current, entries }: { current: SalesUkraineUpdateDataC
   // null → '' transition (e.g. a recipient cleared) is flagged even though both cells look blank.
   const rows: Array<{
     compare?: (entry: SalesUkraineUpdateDataCarrier) => unknown
+    field?: CarrierHistoryChangedField
+    key: string
     label: string
     node?: (entry: SalesUkraineUpdateDataCarrier) => ReactNode
     render: (entry: SalesUkraineUpdateDataCarrier) => string
   }> = [
     {
       compare: (entry) => entry.Transporter?.Name ?? null,
+      field: CARRIER_HISTORY_CHANGED_FIELD.transporter,
+      key: 'transporter',
       label: t('Перевізник'),
       node: (entry) => (
         <TransporterNameWithIcon
@@ -472,17 +496,18 @@ function CarrierHistory({ current, entries }: { current: SalesUkraineUpdateDataC
       ),
       render: (entry) => entry.Transporter?.Name || '',
     },
-    { compare: (entry) => entry.City ?? null, label: t('Місто'), render: (entry) => entry.City || '' },
-    { compare: (entry) => entry.Department ?? null, label: t('Відділення'), render: (entry) => entry.Department || '' },
-    { label: t('Дата відгрузки'), render: (entry) => formatDateTime(entry.ShipmentDate) },
-    { compare: (entry) => entry.FullName ?? null, label: t('Отримувач товару'), render: (entry) => entry.FullName || '' },
-    { compare: (entry) => entry.MobilePhone ?? null, label: t('Мобільний телефон'), render: (entry) => entry.MobilePhone || '' },
-    { compare: (entry) => entry.Comment ?? null, label: t('Коментар'), render: (entry) => entry.Comment || '' },
-    { label: t('Наложений платіж'), render: (entry) => (entry.IsCashOnDelivery ? t('Так') : t('Ні')) },
-    { label: t('Сума накладеного платежу'), render: (entry) => formatNumber(entry.CashOnDeliveryAmount) },
-    { label: t('Є документи'), render: (entry) => (entry.HasDocument ? t('Так') : t('Ні')) },
-    { compare: (entry) => entry.Number ?? null, label: t('Власне ТТН'), render: (entry) => entry.Number || '' },
-    { compare: (entry) => getUserName(entry) || null, label: t('Відповідальний'), render: (entry) => getUserName(entry) },
+    { compare: (entry) => entry.City ?? null, field: CARRIER_HISTORY_CHANGED_FIELD.city, key: 'city', label: t('Місто'), render: (entry) => entry.City || '' },
+    { compare: (entry) => entry.Department ?? null, field: CARRIER_HISTORY_CHANGED_FIELD.department, key: 'department', label: t('Відділення'), render: (entry) => entry.Department || '' },
+    { field: CARRIER_HISTORY_CHANGED_FIELD.shipmentDate, key: 'shipmentDate', label: t('Дата відгрузки'), render: (entry) => formatDateTime(entry.ShipmentDate) },
+    { compare: (entry) => entry.TTN ?? null, field: CARRIER_HISTORY_CHANGED_FIELD.ttn, key: 'ttn', label: t('Номер декларації'), render: (entry) => entry.TTN || '' },
+    { compare: (entry) => entry.FullName ?? null, field: CARRIER_HISTORY_CHANGED_FIELD.fullName, key: 'fullName', label: t('Отримувач товару'), render: (entry) => entry.FullName || '' },
+    { compare: (entry) => entry.MobilePhone ?? null, field: CARRIER_HISTORY_CHANGED_FIELD.mobilePhone, key: 'mobilePhone', label: t('Мобільний телефон'), render: (entry) => entry.MobilePhone || '' },
+    { compare: (entry) => entry.Comment ?? null, field: CARRIER_HISTORY_CHANGED_FIELD.comment, key: 'comment', label: t('Коментар'), render: (entry) => entry.Comment || '' },
+    { field: CARRIER_HISTORY_CHANGED_FIELD.isCashOnDelivery, key: 'isCashOnDelivery', label: t('Наложений платіж'), render: (entry) => (entry.IsCashOnDelivery ? t('Так') : t('Ні')) },
+    { field: CARRIER_HISTORY_CHANGED_FIELD.cashOnDeliveryAmount, key: 'cashOnDeliveryAmount', label: t('Сума накладеного платежу'), render: (entry) => formatNumber(entry.CashOnDeliveryAmount) },
+    { field: CARRIER_HISTORY_CHANGED_FIELD.hasDocument, key: 'hasDocument', label: t('Є документи'), render: (entry) => (entry.HasDocument ? t('Так') : t('Ні')) },
+    { compare: (entry) => entry.Number ?? null, field: CARRIER_HISTORY_CHANGED_FIELD.ownTtnNumber, key: 'ownTtnNumber', label: t('Власне ТТН'), render: (entry) => entry.Number || '' },
+    { compare: (entry) => getUserName(entry) || null, key: 'responsible', label: t('Відповідальний'), render: (entry) => getUserName(entry) },
   ]
 
   return (
@@ -502,20 +527,28 @@ function CarrierHistory({ current, entries }: { current: SalesUkraineUpdateDataC
           </Table.Thead>
           <Table.Tbody>
             {rows.map((row) => (
-              <Table.Tr key={row.label}>
+              <Table.Tr key={row.key}>
                 <Table.Td>{row.label}</Table.Td>
                 {columns.map((col, index) => {
                   const value = row.render(col.entry)
                   const compareFn = row.compare ?? row.render
                   const currentRaw = compareFn(col.entry)
                   const previousRaw = index > 0 ? compareFn(columns[index - 1].entry) : currentRaw
-                  const isChanged = col.isCurrent
-                    ? didLatestHistoryStepChange(row, columns)
-                    : index > 0 && historyValueChanged(currentRaw, previousRaw)
+                  const hasPersistedMask = hasCarrierHistoryMask(col.isCurrent ? sortedEntries.at(-1) : col.entry)
+                  const isChanged = hasPersistedMask
+                    ? row.field != null && hasCarrierHistoryField(col.isCurrent ? sortedEntries.at(-1) : col.entry, row.field)
+                    : col.isCurrent
+                      ? didLatestHistoryStepChange(row, columns)
+                      : index > 0 && historyValueChanged(currentRaw, previousRaw)
                   const cellClass = [col.isCurrent ? 'is-current-col' : '', isChanged ? 'is-changed' : ''].filter(Boolean).join(' ')
 
                   return (
-                    <Table.Td key={`${row.label}-${col.key}`} className={cellClass || undefined}>
+                    <Table.Td
+                      key={`${row.key}-${col.key}`}
+                      className={cellClass || undefined}
+                      data-history-column={col.key}
+                      data-history-field={row.key}
+                    >
                       {row.node ? row.node(col.entry) : value}
                     </Table.Td>
                   )
@@ -524,8 +557,11 @@ function CarrierHistory({ current, entries }: { current: SalesUkraineUpdateDataC
             ))}
             <Table.Tr>
               <Table.Td>{t('Документ')}</Table.Td>
-              {columns.map((col) => (
-                <Table.Td key={`doc-${col.key}`}>
+              {columns.map((col) => {
+                const latest = col.isCurrent ? sortedEntries.at(-1) : col.entry
+                const isChanged = hasCarrierHistoryMask(latest) && hasCarrierHistoryField(latest, CARRIER_HISTORY_CHANGED_FIELD.ttnDocument)
+
+                return <Table.Td key={`doc-${col.key}`} className={isChanged ? 'is-changed' : undefined} data-history-column={col.key} data-history-field="ttnDocument">
                   {col.entry.TtnPDFPath ? (
                     <Anchor href={toSecure(col.entry.TtnPDFPath)} target="_blank" rel="noopener noreferrer">
                       <Download size={14} style={{ verticalAlign: 'text-bottom', marginRight: 4 }} />
@@ -535,7 +571,7 @@ function CarrierHistory({ current, entries }: { current: SalesUkraineUpdateDataC
                     ''
                   )}
                 </Table.Td>
-              ))}
+              })}
             </Table.Tr>
           </Table.Tbody>
         </Table>
@@ -630,6 +666,23 @@ function historyValueChanged(value: unknown, previous: unknown): boolean {
   const normalize = (input: unknown) => (input == null ? null : input)
 
   return normalize(value) !== normalize(previous)
+}
+
+export function hasCarrierHistoryField(
+  entry: SalesUkraineUpdateDataCarrier | null | undefined,
+  field: CarrierHistoryChangedField,
+): boolean {
+  if (!hasCarrierHistoryMask(entry)) {
+    return false
+  }
+
+  return (Number(entry.ChangedFields) & field) === field
+}
+
+function hasCarrierHistoryMask(entry: SalesUkraineUpdateDataCarrier | null | undefined): boolean {
+  const value = entry?.ChangedFields
+
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0
 }
 
 function sortCarrierHistoryEntries(entries: SalesUkraineUpdateDataCarrier[]): SalesUkraineUpdateDataCarrier[] {
