@@ -247,6 +247,7 @@ function ProtocolIncomePlacementDrawerContent({
           {`${t('Доступна К-сть')} ${Math.max(maxQty - placedQty, 0)}`}
         </Text>
 
+        <Table.ScrollContainer minWidth={484}>
         <Table className="protocol-income-placement-table" withTableBorder withColumnBorders>
           <colgroup>
             <col style={{ width: PLACEMENT_INDEX_COLUMN_WIDTH }} />
@@ -263,7 +264,7 @@ function ProtocolIncomePlacementDrawerContent({
               <Table.Th>{t('Ряд')}</Table.Th>
               <Table.Th>{t('Полиця')}</Table.Th>
               <Table.Th className="protocol-income-placement-qty-cell">{t('К-сть')}</Table.Th>
-              <Table.Th />
+              <Table.Th className="protocol-income-placement-action-cell" />
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
@@ -278,7 +279,7 @@ function ProtocolIncomePlacementDrawerContent({
                 <Table.Td>{placement.RowNumber}</Table.Td>
                 <Table.Td>{placement.CellNumber}</Table.Td>
                 <Table.Td className="protocol-income-placement-qty-cell">{placement.Qty ?? 0}</Table.Td>
-                <Table.Td>
+                <Table.Td className="protocol-income-placement-action-cell">
                   {!placement.IsApplied && (
                     <ActionIcon
                       aria-label={t('Видалити')}
@@ -297,6 +298,7 @@ function ProtocolIncomePlacementDrawerContent({
             ))}
           </Table.Tbody>
         </Table>
+        </Table.ScrollContainer>
 
         {!draft && (
           <Group>

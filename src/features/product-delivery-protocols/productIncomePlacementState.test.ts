@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import {
   createIncomeDynamicPlacementColumn,
+  getPlacementRowCapacity,
   getProductIncomePlacementState,
   isInvoiceAllNotPlaced,
+  mergeSavedPlacementRow,
   selectIncomePackingList,
 } from './productIncomePlacementState'
 import type { IncomePackingList, IncomeSupplyInvoice } from './productIncomeTypes'
@@ -108,5 +110,44 @@ describe('product income placement state', () => {
     const carriedOut = { ...packingList('carried-out', [false]), IsPlaced: true }
 
     expect(selectIncomePackingList(invoice([draft, carriedOut]), 'carried-out')).toBe(carriedOut)
+  })
+
+  it('does not subtract applied placements twice when calculating editable capacity', () => {
+    const rows = new Map([
+      ['current', {
+        Qty: 6,
+        DynamicProductPlacements: [
+          { Qty: 4, IsApplied: true },
+          { Qty: 2, IsApplied: false },
+        ],
+      }],
+      ['other', {
+        Qty: 1,
+        DynamicProductPlacements: [{ Qty: 1, IsApplied: false }],
+      }],
+    ])
+
+    expect(getPlacementRowCapacity(10, 4, rows, 'current')).toBe(9)
+  })
+
+  it('keeps the submitted quantity when the row endpoint returns a stale zero', () => {
+    const payload = {
+      Qty: 10,
+      PackingListPackageOrderItemId: 7,
+      DynamicProductPlacements: [{ Qty: 10, IsApplied: false }],
+    }
+    const saved = {
+      Id: 99,
+      Qty: 0,
+      PackingListPackageOrderItemId: 7,
+      DynamicProductPlacements: [],
+    }
+
+    expect(mergeSavedPlacementRow(payload, saved)).toMatchObject({
+      Id: 99,
+      Qty: 10,
+      PackingListPackageOrderItemId: 7,
+      DynamicProductPlacements: [{ Qty: 10, IsApplied: false }],
+    })
   })
 })

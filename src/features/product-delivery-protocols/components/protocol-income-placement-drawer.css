@@ -11,9 +11,20 @@
 }
 
 .protocol-income-placement-qty-cell {
+  background: var(--mantine-color-body);
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
+  position: sticky;
+  right: 52px;
   text-align: right;
+  z-index: 1;
+}
+
+.protocol-income-placement-action-cell {
+  background: var(--mantine-color-body);
+  position: sticky;
+  right: 0;
+  z-index: 1;
 }
 
 .protocol-income-placement-qty-input {

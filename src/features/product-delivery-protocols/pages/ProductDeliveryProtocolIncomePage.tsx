@@ -63,8 +63,10 @@ import type {
 } from '../productIncomeTypes'
 import {
   createIncomeDynamicPlacementColumn,
+  getPlacementRowCapacity,
   getProductIncomePlacementState,
   isInvoiceAllNotPlaced,
+  mergeSavedPlacementRow,
   selectIncomePackingList,
 } from '../productIncomePlacementState'
 import './product-income-page.css'
@@ -613,12 +615,12 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
         return
       }
 
-      const itemQty = gridRow.item.Qty || 0
-      const otherColumnsTotal = Array.from(gridRow.rowsByColumn.entries()).reduce(
-        (total, [key, otherRow]) => total + (key === columnId ? 0 : otherRow.Qty || 0),
-        0,
+      const maxQty = getPlacementRowCapacity(
+        gridRow.item.Qty || 0,
+        gridRow.item.PlacedQty || 0,
+        gridRow.rowsByColumn,
+        columnId,
       )
-      const maxQty = Math.max(itemQty - (gridRow.item.PlacedQty || 0) - otherColumnsTotal, 0)
 
       setDrawer({ item: gridRow.item, row, columnId, maxQty })
     },
@@ -728,10 +730,7 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
           ? await updateDynamicPlacementRow(payload)
           : await addDynamicPlacementRow(payload)
 
-        const nextRow: DynamicProductPlacementRow = {
-          ...savedRow,
-          PackingListPackageOrderItemId: savedRow.PackingListPackageOrderItemId || item.Id,
-        }
+        const nextRow = mergeSavedPlacementRow(payload, savedRow)
 
         setPackingList((current) => {
           if (!current) {
