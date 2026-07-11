@@ -3060,7 +3060,9 @@ function ProductInlineMovementsTab({
 }) {
   const { t } = useI18n()
   const productNetUid = product.NetUid?.trim()
-  const [dateFrom, setDateFrom] = useState(() => (direction === 'income' ? getDateDaysAgo(30) : getTodayDate()))
+  // Both directions default to the last 30 days — outcome (sales) previously defaulted to
+  // today-only, so the tab was almost always empty out of the box (no sales today).
+  const [dateFrom, setDateFrom] = useState(() => getDateDaysAgo(30))
   const [dateTo, setDateTo] = useState(getTodayDate)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const [state, dispatch] = useReducer(inlineMovementReducer, {
