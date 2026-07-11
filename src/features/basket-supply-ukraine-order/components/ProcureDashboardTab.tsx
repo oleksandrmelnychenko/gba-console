@@ -76,6 +76,8 @@ const URGENCY_TO_LEVEL: Record<string, UrgencyLevel> = {
   low: 'low',
 }
 
+const MONO_STYLE = { fontFamily: 'var(--font-mono)', letterSpacing: 0 } as const
+
 const qtyFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 2,
 })
@@ -165,7 +167,7 @@ export function ProcureDashboardTab() {
         id: 'product',
         header: t('Товар'),
         accessor: (item) => item.product_id,
-        cell: (item) => `#${item.product_id}`,
+        cell: (item) => <span style={MONO_STYLE}>{`#${item.product_id}`}</span>,
         width: 120,
       },
       {
@@ -322,7 +324,7 @@ export function ProcureDashboardTab() {
             (charts?.demand_series ?? []).map((series) => (
               <Stack gap={4} key={series.product_id}>
                 <Text c="dimmed" size="xs">
-                  {t('Товар')} #{series.product_id}
+                  {t('Товар')} <span style={MONO_STYLE}>#{series.product_id}</span>
                 </Text>
                 <ForecastLine
                   actualLabel={t('Факт')}

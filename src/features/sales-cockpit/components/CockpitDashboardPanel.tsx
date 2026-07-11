@@ -134,7 +134,7 @@ export function CockpitDashboardPanel({ asOfDate, reloadKey }: { asOfDate?: stri
   return (
     <Card className="app-section-card" withBorder radius="md">
       <Stack gap="md">
-        <Text className="app-section-title" fw={600}>{t('Дашборд завдань')}</Text>
+        <Text className="app-section-title" fw={600} size="sm">{t('Дашборд завдань')}</Text>
 
         {error && (
           <Alert color="orange" icon={<CircleAlert size={18} />} variant="light">
@@ -180,7 +180,7 @@ export function CockpitDashboardPanel({ asOfDate, reloadKey }: { asOfDate?: stri
             <Group justify="space-between" wrap="wrap">
               <Text className="cockpit-subtitle">{t('Старіння заборгованості')}</Text>
               <Text c="dimmed" size="xs">
-                {t('Сума під ризиком')}: {formatMoney(dashboard?.value_at_risk_eur ?? 0)}
+                {t('Сума під ризиком')}: <span className="app-money">{formatMoney(dashboard?.value_at_risk_eur ?? 0)}</span>
               </Text>
             </Group>
             <AgingBars

@@ -22,7 +22,7 @@ export function WhyThisTask({ task }: { task: CockpitTask }) {
           {t('Чому це завдання')}
         </Text>
         {typeof confidence === 'number' && (
-          <Badge color="gray" size="xs" variant="light">
+          <Badge className="app-role-pill is-gray" size="xs" variant="light">
             {t('Впевненість')}: {formatConfidence(confidence)}
           </Badge>
         )}

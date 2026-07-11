@@ -122,6 +122,8 @@ const LEAD_TIME_SOURCE_LABEL: Record<string, string> = {
   default: 'за замовч.',
 }
 
+const MONO_STYLE = { fontFamily: 'var(--font-mono)', letterSpacing: 0 } as const
+
 const qtyFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 2,
 })
@@ -567,7 +569,7 @@ export function BuyerCockpitTab() {
         id: 'product',
         header: t('Товар'),
         accessor: (item) => item.product_id,
-        cell: (item) => `#${item.product_id}`,
+        cell: (item) => <span style={MONO_STYLE}>{`#${item.product_id}`}</span>,
         width: 110,
       },
       {
@@ -705,7 +707,11 @@ export function BuyerCockpitTab() {
         header: t('Рівень сервісу'),
         accessor: (item) => item.applied_service_level ?? 0,
         cell: (item) =>
-          item.applied_service_level === null ? '' : `${percentFormatter.format(item.applied_service_level * 100)}%`,
+          item.applied_service_level === null ? (
+            ''
+          ) : (
+            <span style={MONO_STYLE}>{`${percentFormatter.format(item.applied_service_level * 100)}%`}</span>
+          ),
         width: 130,
         align: 'right',
       },
@@ -849,7 +855,7 @@ export function BuyerCockpitTab() {
                   <Text c="dimmed" size="xs">
                     {t('Чернетка замовлення')} (EUR)
                   </Text>
-                  <Text fw={700} size="lg">
+                  <Text className="app-money" fw={600} size="lg">
                     €{eurFormatter.format(totalDraftCost)}
                   </Text>
                 </Stack>
@@ -861,7 +867,7 @@ export function BuyerCockpitTab() {
                   </Popover.Target>
                   <Popover.Dropdown p="md">
                     <Stack gap="sm" w={260}>
-                      <Text fw={600} size="sm">
+                      <Text className="app-section-title" fw={600} size="sm">
                         {t('Налаштування виробника')}
                       </Text>
                       <NumberInput
@@ -1077,7 +1083,7 @@ function SuggestedQtyCell({ item, t }: { item: ReorderSuggestion; t: TranslateFu
       {hasLearned && (
         <Tooltip label={t('Кількість скориговано на основі попередніх рішень закупівельника')} withinPortal>
           <Badge
-            color="orange"
+            className="app-role-pill is-orange"
             leftSection={<School size={11} />}
             size="xs"
             variant="light"

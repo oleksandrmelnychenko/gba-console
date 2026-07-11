@@ -49,24 +49,24 @@ export function BudgetCartSummary({
       <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
         <Stack gap="md">
           <SimpleGrid cols={{ base: 2, sm: 3 }} spacing="sm">
-            <SummaryItem label={`${t('Бюджет')} (EUR)`} value={`€${eurFormatter.format(plan.budget_eur)}`} />
-            <SummaryItem label={`${t('Використано')} (EUR)`} value={`€${eurFormatter.format(plan.budget_used_eur)}`} />
+            <SummaryItem label={`${t('Бюджет')} (EUR)`} money value={`€${eurFormatter.format(plan.budget_eur)}`} />
+            <SummaryItem label={`${t('Використано')} (EUR)`} money value={`€${eurFormatter.format(plan.budget_used_eur)}`} />
             <SummaryItem
-              color="teal"
               hint={t('Оцінка маржі/попиту, яку AI вважає втраченою без закупівлі')}
               label={`${t('Цінність під ризиком')} (EUR)`}
+              money
               value={`€${eurFormatter.format(plan.value_captured_eur)}`}
             />
             <SummaryItem
-              color="blue"
               hint={t('Потенційна виручка по рядках, які потрапили в бюджет')}
               label={`${t('Потенційна виручка')} (EUR)`}
+              money
               value={formatNullableEuro(financials.expectedRevenueEur)}
             />
             <SummaryItem
-              color="green"
               hint={t('Потенційна маржа по рядках, які потрапили в бюджет')}
               label={`${t('Потенційна маржа')} (EUR)`}
+              money
               value={formatNullableEuro(financials.expectedMarginEur)}
             />
             <SummaryItem color="green" label={t('В бюджеті')} value={countFormatter.format(plan.selected_count)} />
@@ -90,7 +90,7 @@ export function BudgetCartSummary({
         </Stack>
 
         <Stack align="center" gap="xs">
-          <Text fw={600} size="sm">
+          <Text className="app-section-title" fw={600} size="sm">
             {t('Розподіл позицій')}
           </Text>
           <UrgencyDonut
@@ -109,11 +109,13 @@ function SummaryItem({
   color,
   hint,
   label,
+  money,
   value,
 }: {
   color?: string
   hint?: string
   label: string
+  money?: boolean
   value: string
 }) {
   return (
@@ -128,7 +130,7 @@ function SummaryItem({
           </Tooltip>
         )}
       </Group>
-      <Text c={color} fw={700}>
+      <Text c={color} className={money ? 'app-money' : undefined} fw={money ? 600 : 700}>
         {value}
       </Text>
     </Stack>

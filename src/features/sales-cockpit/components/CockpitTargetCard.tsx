@@ -2,11 +2,13 @@ import { Badge, Card, SimpleGrid, Stack, Text } from '@mantine/core'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { CockpitTarget, HeadPaceStatus } from '../types'
 
-const PACE_COLOR: Record<HeadPaceStatus, string> = {
-  ahead: 'green',
-  on: 'blue',
-  behind: 'red',
-  no_target: 'gray',
+// Pace status → shared outlined-pill variant (docs/ui-patterns.md §4);
+// "on" keeps the default blue pill.
+const PACE_PILL: Record<HeadPaceStatus, string> = {
+  ahead: 'is-green',
+  on: '',
+  behind: 'is-red',
+  no_target: 'is-gray',
 }
 
 const PACE_LABEL: Record<HeadPaceStatus, string> = {
@@ -34,7 +36,7 @@ export function CockpitTargetCard({ target }: { target: CockpitTarget }) {
   return (
     <Card className="app-section-card" withBorder radius="md">
       <Stack gap="sm">
-        <Text className="app-section-title" fw={600}>
+        <Text className="app-section-title" fw={600} size="sm">
           {t('Моя ціль (місяць)')}
         </Text>
 
@@ -60,7 +62,7 @@ function TargetMetric({
     <div className={`cockpit-metric is-${PACE_ACCENT[metric.pace_status]}`}>
       <div className="cockpit-metric-head">
         <span className="cockpit-metric-label">{label}</span>
-        <Badge color={PACE_COLOR[metric.pace_status]} size="sm" variant="light">
+        <Badge className={`app-role-pill ${PACE_PILL[metric.pace_status]}`.trim()} size="sm" variant="light">
           {t(PACE_LABEL[metric.pace_status])}
         </Badge>
       </div>
@@ -71,7 +73,7 @@ function TargetMetric({
         </span>
       </div>
       <span className="cockpit-metric-sub">
-        {t('Сьогодні потрібно')}: {formatMoney(metric.today_needed)}
+        {t('Сьогодні потрібно')}: <span className="app-money">{formatMoney(metric.today_needed)}</span>
       </span>
     </div>
   )

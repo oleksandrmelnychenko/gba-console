@@ -30,11 +30,13 @@ import './sales-cockpit-page.css'
 
 const POLL_INTERVAL_MS = 60_000
 
-const URGENCY_COLOR: Record<CockpitUrgency, string> = {
-  critical: 'red',
-  high: 'orange',
-  normal: 'blue',
-  low: 'gray',
+// Maps urgency to the shared outlined-pill variant (docs/ui-patterns.md §4);
+// normal keeps the default blue pill.
+const URGENCY_PILL: Record<CockpitUrgency, string> = {
+  critical: 'is-red',
+  high: 'is-orange',
+  normal: '',
+  low: 'is-gray',
 }
 
 const URGENCY_LABEL: Record<CockpitUrgency, string> = {
@@ -42,6 +44,14 @@ const URGENCY_LABEL: Record<CockpitUrgency, string> = {
   high: 'Високий',
   normal: 'Звичайний',
   low: 'Низький',
+}
+
+// Progress color (green/orange/red/gray) → shared pill variant for the plan chip.
+const PROGRESS_PILL: Record<string, string> = {
+  gray: 'is-gray',
+  green: 'is-green',
+  orange: 'is-orange',
+  red: 'is-red',
 }
 
 const moneyFormatter = new Intl.NumberFormat('uk-UA', {
@@ -153,7 +163,7 @@ export function HeadDashboardPage() {
           <Group gap="xs" wrap="nowrap">
             <AiFeatureBadge size="sm" tooltip={t('AI-сервіс керівника продажів')} />
             <Stack gap={0}>
-              <Text fw={700} size="sm">{t('Дашборд відділу продажів')}</Text>
+              <Text className="app-section-title" fw={600} size="sm">{t('Дашборд відділу продажів')}</Text>
               <Text c="dimmed" size="xs">{t('Поточний стан команди та задач')}</Text>
             </Stack>
           </Group>
@@ -168,7 +178,7 @@ export function HeadDashboardPage() {
           />
 
           <Group className="cockpit-command-actions" gap="xs" justify="flex-end">
-            <Badge color={asOfDate ? 'gray' : 'green'} leftSection={<Radio size={12} />} variant="light">
+            <Badge className={`app-role-pill ${asOfDate ? 'is-gray' : 'is-green'}`} leftSection={<Radio size={12} />} variant="light">
               {asOfDate ? t('Історичний зріз') : t('Наживо')}
             </Badge>
             <Button
@@ -285,7 +295,7 @@ function DepartmentMetric({
           <span className="cockpit-head-kpi__icon">{icon}</span>
           <span className="cockpit-head-kpi__label">{label}</span>
         </Group>
-        <Badge color={progressColor} size="sm" variant="light">
+        <Badge className={`app-role-pill ${PROGRESS_PILL[progressColor] ?? 'is-gray'}`} size="sm" variant="light">
           {target > 0 ? `${percent}% ${t('плану')}` : t('План не задано')}
         </Badge>
       </Group>
@@ -341,7 +351,7 @@ function TeamMonitor({
     <Card className="app-section-card cockpit-team-monitor" withBorder radius="md" padding={0}>
       <Group className="cockpit-side-header" gap="xs" justify="space-between">
         <div>
-          <Text className="app-section-title" fw={700}>{t('Команда')}</Text>
+          <Text className="app-section-title" fw={600} size="sm">{t('Команда')}</Text>
           <Text c="dimmed" size="xs">{t('План, оплати та активні задачі')}</Text>
         </div>
         {selectedManagerId !== null ? (
@@ -366,7 +376,7 @@ function TeamMonitor({
               >
                 <Group gap="xs" justify="space-between" wrap="nowrap">
                   <Text className="cockpit-manager-row__name">{managerName(row)}</Text>
-                  <Badge color={row.tasks.active > 0 ? 'orange' : 'gray'} size="sm" variant="light">
+                  <Badge className={`app-role-pill ${row.tasks.active > 0 ? 'is-orange' : 'is-gray'}`} size="sm" variant="light">
                     {row.tasks.active} {t('активних')}
                   </Badge>
                 </Group>
@@ -391,10 +401,10 @@ function EscalationsPanel({ escalated }: { escalated: EscalatedResponse }) {
     <Card className="app-section-card" withBorder radius="md" padding={0}>
       <Group className="cockpit-side-header" gap="xs" justify="space-between">
         <div>
-          <Text className="app-section-title" fw={700}>{t('Потребують уваги')}</Text>
+          <Text className="app-section-title" fw={600} size="sm">{t('Потребують уваги')}</Text>
           <Text c="dimmed" size="xs">{t('Прострочені та ескальовані задачі')}</Text>
         </div>
-        <Badge color={escalated.count > 0 ? 'red' : 'gray'} variant="light">{escalated.count}</Badge>
+        <Badge className={`app-role-pill ${escalated.count > 0 ? 'is-red' : 'is-gray'}`} variant="light">{escalated.count}</Badge>
       </Group>
 
       {escalated.tasks.length === 0 ? (
@@ -415,7 +425,7 @@ function EscalatedRow({ task }: { task: EscalatedTask }) {
     <div className="cockpit-escalated-row">
       <Group gap="xs" justify="space-between" wrap="nowrap">
         <Text className="cockpit-escalated-title">{task.title || t('Завдання')}</Text>
-        <Badge color={urgencyColor(task.urgency)} size="sm" variant="filled">
+        <Badge className={`app-role-pill ${urgencyPill(task.urgency)}`.trim()} size="sm" variant="light">
           {urgencyLabel(task.urgency, t)}
         </Badge>
       </Group>
@@ -432,8 +442,8 @@ function managerName(row: HeadTeamRow): string {
   return row.manager_name?.trim() || `#${row.manager_id}`
 }
 
-function urgencyColor(urgency?: CockpitUrgency): string {
-  return urgency ? URGENCY_COLOR[urgency] : 'blue'
+function urgencyPill(urgency?: CockpitUrgency): string {
+  return urgency ? URGENCY_PILL[urgency] : ''
 }
 
 function urgencyLabel(urgency: CockpitUrgency | undefined, t: (key: string) => string): string {

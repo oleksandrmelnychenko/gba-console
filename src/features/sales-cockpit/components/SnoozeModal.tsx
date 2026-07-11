@@ -4,6 +4,7 @@ import { formatLocalDateTime } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import type { CockpitTask } from '../types'
 
 export function SnoozeModal({
@@ -27,7 +28,7 @@ export function SnoozeModal({
   return (
     <AppModal
       opened={Boolean(task)}
-      title={t('Відкласти завдання')}
+      title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Відкласти завдання')}</span>}
       onClose={() => {
         if (!saving) {
           onClose()
@@ -47,6 +48,7 @@ export function SnoozeModal({
             {t('Скасувати')}
           </Button>
           <Button
+            color={CREATE_ACTION_COLOR}
             disabled={!snoozeUntil}
             loading={saving}
             onClick={() => {

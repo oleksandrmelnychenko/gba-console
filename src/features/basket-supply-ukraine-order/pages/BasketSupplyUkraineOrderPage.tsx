@@ -117,6 +117,8 @@ const EMPTY_TOTALS: CartItemsTotals = {
   TotalWeight: 0,
 }
 
+const MONO_STYLE = { fontFamily: 'var(--font-mono)', letterSpacing: 0 } as const
+
 const amountFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 2,
   minimumFractionDigits: 2,
@@ -1342,7 +1344,7 @@ function SalesWorkflowTab() {
         opened={Boolean(selectedSale)}
         position="right"
         size="xl"
-        title={`${t('Фактура')} ${selectedSale?.SaleNumber?.Value || ''}`}
+        title={<span style={{ fontFamily: 'var(--font-mono)' }}>{`${t('Фактура')} ${selectedSale?.SaleNumber?.Value || ''}`}</span>}
         onClose={() => setSelectedSale(null)}
       >
         <SaleItemsList items={selectedSale?.Order?.OrderItems || []} />
@@ -1396,11 +1398,11 @@ function SaleItemsList({ items }: { items: BasketOrderItem[] }) {
                 {item.Product?.VendorCode} {item.Product?.Name}
               </Text>
               <Text c="dimmed" size="xs">
-                {t('Від')} {formatDateTime(item.Created)} {item.User?.LastName || ''}
+                {t('Від')} <span style={MONO_STYLE}>{formatDateTime(item.Created)}</span> {item.User?.LastName || ''}
               </Text>
             </Box>
             <Stack align="flex-end" gap={2}>
-              <Text fw={700} size="sm">
+              <Text className="app-money" fw={600} size="sm">
                 {formatAmount(item.TotalAmount)} EUR
               </Text>
               <Text c="dimmed" size="xs">
@@ -1448,12 +1450,14 @@ function useBasketSalesColumns({
         id: 'date',
         header: t('Від якої дати'),
         accessor: (sale) => formatDateTime(sale.ChangedToInvoice || sale.FromDate),
+        cell: (sale) => <span style={MONO_STYLE}>{formatDateTime(sale.ChangedToInvoice || sale.FromDate)}</span>,
         width: 150,
       },
       {
         id: 'number',
         header: t('Номер'),
         accessor: (sale) => sale.SaleNumber?.Value || sale.NetUid || '',
+        cell: (sale) => <span style={MONO_STYLE}>{sale.SaleNumber?.Value || sale.NetUid || ''}</span>,
         width: 140,
       },
       {
@@ -1558,6 +1562,7 @@ function useCartSourceColumns({
         id: 'vendorCode',
         header: t('Код Виробника'),
         accessor: (item) => item.Product?.VendorCode || '',
+        cell: (item) => <span style={MONO_STYLE}>{item.Product?.VendorCode || ''}</span>,
         width: 140,
       },
       {
@@ -1580,6 +1585,7 @@ function useCartSourceColumns({
         id: 'fromDate',
         header: t('Від якої дати'),
         accessor: (item) => formatDate(item.FromDate),
+        cell: (item) => <span style={MONO_STYLE}>{formatDate(item.FromDate)}</span>,
         width: 130,
       },
       {
@@ -1649,12 +1655,14 @@ function useCartDestinationColumns({
         id: 'vendorCode',
         header: t('Код Виробника'),
         accessor: (item) => item.Product?.VendorCode || '',
+        cell: (item) => <span style={MONO_STYLE}>{item.Product?.VendorCode || ''}</span>,
         width: 140,
       },
       {
         id: 'fromDate',
         header: t('Від якої дати'),
         accessor: (item) => formatDate(item.FromDate),
+        cell: (item) => <span style={MONO_STYLE}>{formatDate(item.FromDate)}</span>,
         width: 130,
       },
       {

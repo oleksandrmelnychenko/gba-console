@@ -84,8 +84,10 @@
 
 .cockpit-head-kpi__value {
   color: var(--mantine-color-gray-9);
+  font-family: var(--font-mono);
   font-size: 22px;
   font-weight: 720;
+  letter-spacing: 0;
   line-height: 1.08;
 }
 
@@ -285,6 +287,7 @@
 .cockpit-metric-value {
   color: var(--mantine-color-gray-9);
   display: block;
+  font-family: var(--font-mono);
   font-size: 20px;
   font-weight: 600;
   letter-spacing: 0;
@@ -322,8 +325,10 @@
 
 .cockpit-target-of {
   color: var(--mantine-color-gray-5);
+  font-family: var(--font-mono);
   font-size: 12.5px;
   font-weight: 600;
+  letter-spacing: 0;
   line-height: 1.2;
 }
 
@@ -342,10 +347,10 @@
 
 .cockpit-queue-summary__icon {
   align-items: center;
-  background: color-mix(in srgb, var(--mantine-color-violet-1) 76%, white);
-  border: 1px solid var(--mantine-color-violet-2);
+  background: color-mix(in srgb, var(--brand-orange) 12%, white);
+  border: 1px solid color-mix(in srgb, var(--brand-orange) 28%, white);
   border-radius: 8px;
-  color: var(--mantine-color-violet-7);
+  color: var(--brand-orange);
   display: inline-flex;
   height: 34px;
   justify-content: center;
@@ -411,6 +416,7 @@
 
 .cockpit-queue-metric__value {
   color: var(--mantine-color-gray-9);
+  font-family: var(--font-mono);
   font-size: 20px;
   font-weight: 720;
   letter-spacing: 0;
@@ -541,7 +547,7 @@
 }
 
 .cockpit-task-ev {
-  color: var(--mantine-color-teal-7);
+  color: var(--mantine-color-gray-6);
   font-weight: 650;
   line-height: 1.2;
 }
@@ -767,7 +773,7 @@
 }
 
 .cockpit-board-row__value strong {
-  color: var(--mantine-color-teal-8);
+  color: var(--mantine-color-gray-8);
   font-size: 13px;
 }
 
@@ -859,8 +865,10 @@
 .cockpit-progress-metric__value {
   color: var(--mantine-color-gray-9);
   display: block;
+  font-family: var(--font-mono);
   font-size: 22px;
   font-weight: 720;
+  letter-spacing: 0;
   line-height: 1.05;
   margin-top: 5px;
 }

@@ -128,7 +128,7 @@ export function HeadDashboardChartsPanel({
     <section className="app-section-card cockpit-analytics-panel">
       <Stack gap="md">
         <div>
-          <Text className="app-section-title" fw={700}>{t('Аналітика навантаження')}</Text>
+          <Text className="app-section-title" fw={600} size="sm">{t('Аналітика навантаження')}</Text>
           <Text c="dimmed" size="xs">{t('Ризик і активні задачі за менеджерами')}</Text>
         </div>
 

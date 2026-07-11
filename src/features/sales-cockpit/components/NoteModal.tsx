@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import type { CockpitTask } from '../types'
 
 const noteDateFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short', timeStyle: 'short' })
@@ -36,7 +37,7 @@ export function NoteModal({
   return (
     <AppModal
       opened={Boolean(task)}
-      title={t('Додати нотатку')}
+      title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Додати нотатку')}</span>}
       onClose={() => {
         if (!saving) {
           onClose()
@@ -55,7 +56,7 @@ export function NoteModal({
                   {note.text}
                 </Text>
                 {note.created_at && (
-                  <Text c="dimmed" size="xs">
+                  <Text c="dimmed" size="xs" style={{ fontFamily: 'var(--font-mono)' }}>
                     {formatNoteDate(note.created_at)}
                   </Text>
                 )}
@@ -78,6 +79,7 @@ export function NoteModal({
             {t('Скасувати')}
           </Button>
           <Button
+            color={CREATE_ACTION_COLOR}
             disabled={!trimmedText}
             loading={saving}
             onClick={() => {

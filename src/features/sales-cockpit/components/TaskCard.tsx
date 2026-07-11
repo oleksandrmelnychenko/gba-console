@@ -1,6 +1,7 @@
 import { ActionIcon, Anchor, Badge, Button, Card, Group, Stack, Text, Tooltip } from '@mantine/core'
 import { Check, CircleDashed, Clock, Mail, MessageCircle, MessageSquarePlus, Phone, Play, X } from 'lucide-react'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { WhyThisTask } from './WhyThisTask'
 import type { CockpitTask, CockpitTaskType, CockpitUrgency } from '../types'
 
@@ -8,11 +9,13 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 0,
 })
 
-const URGENCY_COLOR: Record<CockpitUrgency, string> = {
-  critical: 'red',
-  high: 'orange',
-  normal: 'blue',
-  low: 'gray',
+// Urgency → shared outlined-pill variant (docs/ui-patterns.md §4);
+// normal keeps the default blue pill.
+const URGENCY_PILL: Record<CockpitUrgency, string> = {
+  critical: 'is-red',
+  high: 'is-orange',
+  normal: '',
+  low: 'is-gray',
 }
 
 const URGENCY_LABEL: Record<CockpitUrgency, string> = {
@@ -64,21 +67,21 @@ export function TaskCard({
         <Group align="flex-start" gap="sm" justify="space-between" wrap="nowrap">
           <Stack gap={4}>
             <Group gap="xs" wrap="nowrap">
-              <Badge color={urgencyColor(task.urgency)} variant="filled">
+              <Badge className={`app-role-pill ${urgencyPill(task.urgency)}`.trim()} variant="light">
                 {urgencyLabel(task.urgency, t)}
               </Badge>
               {task.task_type && (
-                <Badge color="gray" variant="light">
+                <Badge className="app-role-pill is-gray" variant="light">
                   {taskTypeLabel(task.task_type, t)}
                 </Badge>
               )}
               {task.sla_breached && (
-                <Badge color="red" variant="light">
+                <Badge className="app-role-pill is-red" variant="light">
                   {t('Прострочено SLA')}
                 </Badge>
               )}
               {isInProgress && (
-                <Badge color="orange" leftSection={<CircleDashed size={12} />} variant="light">
+                <Badge className="app-role-pill is-orange" leftSection={<CircleDashed size={12} />} variant="light">
                   {inProgressLabel}
                 </Badge>
               )}
@@ -118,11 +121,11 @@ export function TaskCard({
           <Group gap="xs" wrap="nowrap">
             {expectedValue !== null && (
               <Text className="cockpit-task-ev" size="xs">
-                {t('Очікувана цінність')}: {formatMoney(expectedValue)}
+                {t('Очікувана цінність')}: <span className="app-money">{formatMoney(expectedValue)}</span>
               </Text>
             )}
             {pOutcome !== null && (
-              <Badge color="teal" size="sm" variant="light">
+              <Badge className="app-role-pill is-green" size="sm" variant="light">
                 {t('шанс')} {formatPercent(pOutcome)}
               </Badge>
             )}
@@ -140,7 +143,7 @@ export function TaskCard({
         <Group gap="xs" justify="flex-end">
           {canTakeInProgress && (
             <Button
-              color="orange"
+              color={CREATE_ACTION_COLOR}
               disabled={pending}
               leftSection={<Play size={16} />}
               size="xs"
@@ -167,8 +170,8 @@ export function TaskCard({
   )
 }
 
-function urgencyColor(urgency?: CockpitUrgency): string {
-  return urgency ? URGENCY_COLOR[urgency] : 'blue'
+function urgencyPill(urgency?: CockpitUrgency): string {
+  return urgency ? URGENCY_PILL[urgency] : ''
 }
 
 function urgencyLabel(urgency: CockpitUrgency | undefined, t: (key: string) => string): string {

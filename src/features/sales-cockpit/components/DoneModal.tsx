@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import type { CockpitTask } from '../types'
 
 export function DoneModal({
@@ -28,7 +29,7 @@ export function DoneModal({
   return (
     <AppModal
       opened={Boolean(task)}
-      title={t('Завершити завдання')}
+      title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Завершити завдання')}</span>}
       onClose={() => {
         if (!saving) {
           onClose()
@@ -63,7 +64,7 @@ export function DoneModal({
           <Button color="gray" disabled={saving} variant="light" onClick={onClose}>
             {t('Скасувати')}
           </Button>
-          <Button loading={saving} onClick={() => task && onSubmit(task, { amount: toAmount(amount), sold })}>
+          <Button color={CREATE_ACTION_COLOR} loading={saving} onClick={() => task && onSubmit(task, { amount: toAmount(amount), sold })}>
             {t('Підтвердити')}
           </Button>
         </Group>

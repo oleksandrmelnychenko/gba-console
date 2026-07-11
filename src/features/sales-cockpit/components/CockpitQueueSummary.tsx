@@ -37,13 +37,13 @@ export function CockpitQueueSummary({
               <Sparkles size={18} fill="currentColor" strokeWidth={0} />
             </span>
             <Stack gap={1}>
-              <Text className="app-section-title" fw={700}>{t('AI черга менеджера')}</Text>
+              <Text className="app-section-title" fw={600} size="sm">{t('AI черга менеджера')}</Text>
               <Text c="dimmed" size="xs">
                 {t('Операційний зріз уже сформованих задач')}
               </Text>
             </Stack>
           </Group>
-          <Badge color={isLoading ? 'gray' : 'violet'} leftSection={isLoading ? undefined : <ListChecks size={13} />} variant="light">
+          <Badge className={`app-role-pill ${isLoading ? 'is-gray' : 'is-orange'}`} leftSection={isLoading ? undefined : <ListChecks size={13} />} variant="light">
             {t('у поточному фільтрі')}: {visibleCount}
           </Badge>
         </Group>
@@ -92,7 +92,10 @@ export function CockpitQueueSummary({
             </Text>
           </Stack>
           {topTask?.urgency && (
-            <Badge color={topTask.urgency === 'critical' ? 'red' : topTask.urgency === 'high' ? 'orange' : 'blue'} variant="light">
+            <Badge
+              className={`app-role-pill ${topTask.urgency === 'critical' ? 'is-red' : topTask.urgency === 'high' ? 'is-orange' : ''}`.trim()}
+              variant="light"
+            >
               {t(QUEUE_URGENCY_LABEL[topTask.urgency])}
             </Badge>
           )}

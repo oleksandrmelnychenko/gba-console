@@ -5,8 +5,8 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import type { ProcurementUrgency, ReorderSuggestion } from '../procurementTypes'
 
 type DecisionSignal = {
-  color: string
   label: string
+  pillClass: string
 }
 
 type BudgetCartTableProps = {
@@ -28,6 +28,8 @@ const URGENCY_PILL_CLASS: Record<ProcurementUrgency, string> = {
   normal: 'app-role-pill is-yellow',
   none: 'app-role-pill is-gray',
 }
+
+const MONO_STYLE = { fontFamily: 'var(--font-mono)', letterSpacing: 0 } as const
 
 const qtyFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 2,
@@ -111,7 +113,7 @@ function BudgetCartRow({
       </td>
       <td>
         <Stack gap={1}>
-          <Text fw={600} size="sm">#{item.product_id}</Text>
+          <Text fw={600} size="sm" style={MONO_STYLE}>#{item.product_id}</Text>
           <Text c="dimmed" size="xs">{item.forecast.method || t('історичний прогноз')}</Text>
         </Stack>
       </td>
@@ -184,11 +186,11 @@ function BudgetCartRow({
         >
           <Group className="budget-cart-signals" gap={4} wrap="wrap">
             {signals.map((signal) => (
-              <Badge key={signal.label} color={signal.color} size="xs" variant="light">
+              <Badge className={signal.pillClass} key={signal.label} size="xs" variant="light">
                 {signal.label}
               </Badge>
             ))}
-            <Badge color="violet" leftSection={<Info size={11} />} size="xs" variant="light">
+            <Badge className="app-role-pill is-gray" leftSection={<Info size={11} />} size="xs" variant="light">
               {t('причина')}
             </Badge>
           </Group>
@@ -207,30 +209,33 @@ function buildDecisionSignals(item: ReorderSuggestion, t: (value: string) => str
   const signals: DecisionSignal[] = []
 
   if (item.inventory.available <= item.reorder_point) {
-    signals.push({ color: 'red', label: t('нижче точки') })
+    signals.push({ label: t('нижче точки'), pillClass: 'app-role-pill is-red' })
   }
 
   if (item.days_of_cover > 0) {
     signals.push({
-      color: item.days_of_cover <= 14 ? 'orange' : 'gray',
       label: `${t('покриття')} ${qtyFormatter.format(item.days_of_cover)}${t('д')}`,
+      pillClass: item.days_of_cover <= 14 ? 'app-role-pill is-orange' : 'app-role-pill is-gray',
     })
   }
 
   if (item.moq !== null && item.moq > 0) {
-    signals.push({ color: 'blue', label: `MOQ ${qtyFormatter.format(item.moq)}` })
+    signals.push({ label: `MOQ ${qtyFormatter.format(item.moq)}`, pillClass: 'app-role-pill' })
   }
 
   if (item.order_multiple !== null && item.order_multiple > 0) {
-    signals.push({ color: 'blue', label: `${t('кратно')} ${qtyFormatter.format(item.order_multiple)}` })
+    signals.push({ label: `${t('кратно')} ${qtyFormatter.format(item.order_multiple)}`, pillClass: 'app-role-pill' })
   }
 
   if (item.applied_service_level !== null) {
-    signals.push({ color: 'teal', label: `SL ${percentFormatter.format(item.applied_service_level * 100)}%` })
+    signals.push({
+      label: `SL ${percentFormatter.format(item.applied_service_level * 100)}%`,
+      pillClass: 'app-role-pill is-green',
+    })
   }
 
   if (item.cheaper_alt) {
-    signals.push({ color: 'yellow', label: t('є дешевший аналог') })
+    signals.push({ label: t('є дешевший аналог'), pillClass: 'app-role-pill is-yellow' })
   }
 
   return signals.slice(0, 5)

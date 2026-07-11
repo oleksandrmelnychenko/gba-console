@@ -16,6 +16,7 @@ import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { ApiError } from '../../../shared/api/apiClient'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { getHeadTasks, regenerateCockpit } from '../api/salesCockpitApi'
 import type { HeadTask, HeadTaskByStatus, HeadTaskManager, HeadTasksResponse } from '../types'
 import { useCockpitRealtimeReload } from '../hooks/useCockpitRealtimeReload'
@@ -34,11 +35,13 @@ const STATUS_TABS: { value: BoardStatus; label: string; count: (status: HeadTask
   { value: 'done', label: 'Виконано', count: (status) => status.Done },
 ]
 
-const URGENCY_COLOR: Record<string, string> = {
-  critical: 'red',
-  high: 'orange',
-  normal: 'blue',
-  low: 'gray',
+// Urgency → shared outlined-pill variant (docs/ui-patterns.md §4);
+// normal keeps the default blue pill.
+const URGENCY_PILL: Record<string, string> = {
+  critical: 'is-red',
+  high: 'is-orange',
+  normal: '',
+  low: 'is-gray',
 }
 
 const URGENCY_LABEL: Record<string, string> = {
@@ -238,8 +241,8 @@ export function HeadTaskBoard({
     <Card className="app-section-card cockpit-board-card" withBorder radius="md" padding={0}>
       <Group align="center" className="cockpit-board-header" gap="sm" justify="space-between" wrap="wrap">
         <Group gap="xs">
-          <Text className="app-section-title" fw={600}>{t('Черга задач')}</Text>
-          <Badge color="orange" leftSection={<CircleDashed size={12} />} variant="light">
+          <Text className="app-section-title" fw={600} size="sm">{t('Черга задач')}</Text>
+          <Badge className="app-role-pill is-orange" leftSection={<CircleDashed size={12} />} variant="light">
             {t('наживо')}
           </Badge>
         </Group>
@@ -295,11 +298,11 @@ export function HeadTaskBoard({
         />
         <div className="app-filter-actions cockpit-command-actions">
           <Button
-            color="violet"
+            color={CREATE_ACTION_COLOR}
             leftSection={<Sparkles size={16} fill="currentColor" strokeWidth={0} />}
             loading={isGenerating}
             size="sm"
-            variant="light"
+            variant="outline"
             onClick={handleGenerate}
           >
             {t('Перерахувати AI задачі')}
@@ -444,7 +447,7 @@ function HeadTaskRow({ task }: { task: HeadTask }) {
         <Group gap={6} wrap="wrap">
           <Text className="cockpit-board-row__title">{task.Title?.trim() || t('Завдання')}</Text>
           {task.TaskType && (
-            <Badge color="gray" size="sm" variant="light">
+            <Badge className="app-role-pill is-gray" size="sm" variant="light">
               {taskTypeLabel(task.TaskType, t)}
             </Badge>
           )}
@@ -463,20 +466,20 @@ function HeadTaskRow({ task }: { task: HeadTask }) {
       </div>
 
       <div className="cockpit-board-row__badges">
-        <Badge color={urgencyColor(task.Urgency)} size="sm" variant="light">
+        <Badge className={`app-role-pill ${urgencyPill(task.Urgency)}`.trim()} size="sm" variant="light">
           {urgencyLabel(task.Urgency, t)}
         </Badge>
         {task.Status === 'in_progress' ? (
-          <Badge color="orange" leftSection={<CircleDashed size={12} />} size="sm" variant="light">
+          <Badge className="app-role-pill is-orange" leftSection={<CircleDashed size={12} />} size="sm" variant="light">
             {inProgressLabel(task.InProgressSince, t)}
           </Badge>
         ) : (
-          <Badge color={statusColor(task.Status)} size="sm" variant="light">
+          <Badge className={`app-role-pill ${statusPill(task.Status)}`.trim()} size="sm" variant="light">
             {statusLabel(task.Status, t)}
           </Badge>
         )}
         {task.SlaBreached ? (
-          <Badge color="red" size="sm" variant="filled">
+          <Badge className="app-role-pill is-red" size="sm" variant="light">
             {t('Прострочено SLA')}
           </Badge>
         ) : null}
@@ -520,8 +523,8 @@ function buildManagerOptions(managers: HeadTaskManager[]): { value: string; labe
   }))
 }
 
-function urgencyColor(urgency: string | null): string {
-  return (urgency && URGENCY_COLOR[urgency]) || 'blue'
+function urgencyPill(urgency: string | null): string {
+  return (urgency && URGENCY_PILL[urgency]) || ''
 }
 
 function urgencyLabel(urgency: string | null, t: (key: string) => string): string {
@@ -532,13 +535,14 @@ function taskTypeLabel(taskType: string, t: (key: string) => string): string {
   return t(TASK_TYPE_LABEL[taskType] ?? taskType)
 }
 
-const STATUS_COLOR: Record<string, string> = {
-  open: 'blue',
-  in_progress: 'orange',
-  done: 'green',
-  snoozed: 'gray',
-  dismissed: 'gray',
-  generated: 'blue',
+// Status → shared outlined-pill variant; open/generated keep the default blue pill.
+const STATUS_PILL: Record<string, string> = {
+  open: '',
+  in_progress: 'is-orange',
+  done: 'is-green',
+  snoozed: 'is-gray',
+  dismissed: 'is-gray',
+  generated: '',
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -550,8 +554,8 @@ const STATUS_LABEL: Record<string, string> = {
   generated: 'Нова',
 }
 
-function statusColor(status: string | null): string {
-  return (status && STATUS_COLOR[status]) || 'gray'
+function statusPill(status: string | null): string {
+  return (status && STATUS_PILL[status]) ?? 'is-gray'
 }
 
 function statusLabel(status: string | null, t: (key: string) => string): string {

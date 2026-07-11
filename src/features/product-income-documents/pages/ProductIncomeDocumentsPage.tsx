@@ -11,7 +11,6 @@ import {
   Stack,
   Text,
   TextInput,
-  Title,
   Tooltip,
 } from '@mantine/core'
 import { ArrowLeftRight, CircleAlert, Download, ExternalLink, Eye, FileText, History, Layers, RotateCcw, Search } from 'lucide-react'
@@ -948,13 +947,17 @@ function ProductIncomeDocumentDrawer({
       position="right"
       radius="md"
       size="min(1120px, 96vw)"
-      title={document?.Number ? `${t('Документ')} ${document.Number}` : t('Документ приходу')}
+      title={
+        <span style={{ fontFamily: 'var(--font-mono)', textTransform: 'uppercase' }}>
+          {document?.Number ? `${t('Документ')} ${document.Number}` : t('Документ приходу')}
+        </span>
+      }
       onClose={onClose}
     >
       {document && row && (
         <Stack gap="lg">
           <Group justify="space-between" align="start" gap="sm">
-            <Badge color={CREATE_ACTION_COLOR} variant="light">
+            <Badge className="app-role-pill is-orange" variant="light">
               {displayValue(row.type)}
             </Badge>
             <Group gap="xs">
@@ -988,18 +991,18 @@ function ProductIncomeDocumentDrawer({
             </Group>
           </Group>
 
-          <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="sm">
+          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={28} verticalSpacing={12}>
             <DetailValue label={t('Постачальник / клієнт')} value={row.client} />
             <DetailValue label={t('Організація')} value={row.organization} />
             <DetailValue label={t('Склад')} value={document.Storage?.Name} />
             <DetailValue label={t('Відповідальний')} value={getEntityName(document.User)} />
-            <DetailValue label={t('Кількість')} value={formatAmount(row.qty)} />
-            <DetailValue label={t('Сума')} value={formatMoney(row.amount)} />
+            <DetailValue label={t('Кількість')} mono value={formatAmount(row.qty)} />
+            <DetailValue label={t('Сума')} mono value={formatMoney(row.amount)} />
             <DetailValue label={t('Валюта')} value={row.currency} />
             <DetailValue label={t('Стан')} value={row.docState} />
-            <DetailValue label={t('Номер інвойсу')} value={row.invNumber} />
-            <DetailValue label={t('Дата інвойсу')} value={formatDateTime(row.invDate)} />
-            <DetailValue label={t('Дата МД')} value={formatDateTime(row.specificationDate)} />
+            <DetailValue label={t('Номер інвойсу')} mono value={row.invNumber} />
+            <DetailValue label={t('Дата інвойсу')} mono value={formatDateTime(row.invDate)} />
+            <DetailValue label={t('Дата МД')} mono value={formatDateTime(row.specificationDate)} />
             <DetailValue label={t('Коментар')} value={row.comment || document.Comment} />
           </SimpleGrid>
 
@@ -1028,7 +1031,7 @@ function ProductIncomeDocumentDrawer({
 
           {detailMode === 'view' && (
             <Stack gap="sm">
-              <Title order={4}>{t('Позиції документа')}</Title>
+              <Text className="app-section-title" fw={600} size="sm">{t('Позиції документа')}</Text>
               {documentInfoError && (
                 <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
                   {documentInfoError}
@@ -1052,7 +1055,7 @@ function ProductIncomeDocumentDrawer({
 
           {detailMode === 'remainings' && (
             <Stack gap="sm">
-              <Title order={4}>{t('Залишки по партіям')}</Title>
+              <Text className="app-section-title" fw={600} size="sm">{t('Залишки по партіям')}</Text>
               {documentInfoError && (
                 <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
                   {documentInfoError}
@@ -1086,16 +1089,13 @@ function ProductIncomeDocumentDrawer({
   )
 }
 
-function DetailValue({ label, value }: { label: string; value?: string | number }) {
+/* §7.2 leader row: «label ——— value»; mono for numbers/money/dates. */
+function DetailValue({ label, mono, value }: { label: string; mono?: boolean; value?: string | number }) {
   return (
-    <Card withBorder radius="sm" padding="sm">
-      <Text c="dimmed" size="xs" tt="uppercase">
-        {label}
-      </Text>
-      <Text fw={600} size="sm" lineClamp={2}>
-        {displayValue(value)}
-      </Text>
-    </Card>
+    <span className="app-leader-row">
+      <span className="app-leader-row-label">{label}</span>
+      <span className={`app-leader-row-value${mono ? ' is-mono' : ''}`}>{displayValue(value)}</span>
+    </span>
   )
 }
 
@@ -1119,7 +1119,7 @@ function CapitalizationOverview({
     <Card withBorder radius="md" padding="md">
       <Stack gap="sm">
         <Group justify="space-between" align="start">
-          <Title order={4}>{t('Прихідна накладна (Оприходування)')}</Title>
+          <Text className="app-section-title" fw={600} size="sm">{t('Прихідна накладна (Оприходування)')}</Text>
           <Text c="dimmed" size="sm">
             {displayValue(capitalization?.Number)} · {formatMoney(capitalization?.TotalAmount)}
           </Text>
@@ -1143,9 +1143,9 @@ function CapitalizationOverview({
         />
 
         <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="sm">
-          <DetailValue label={t('Вся кількість')} value={formatAmount(sumRows(items, (item) => item.Qty))} />
-          <DetailValue label={t('Загальна сума')} value={formatMoney(sumRows(items, (item) => item.TotalAmount))} />
-          <DetailValue label={t('Загальна вага')} value={formatAmount(sumRows(items, (item) => (item.Weight || 0) * (item.Qty || 0)))} />
+          <DetailValue label={t('Вся кількість')} mono value={formatAmount(sumRows(items, (item) => item.Qty))} />
+          <DetailValue label={t('Загальна сума')} mono value={formatMoney(sumRows(items, (item) => item.TotalAmount))} />
+          <DetailValue label={t('Загальна вага')} mono value={formatAmount(sumRows(items, (item) => (item.Weight || 0) * (item.Qty || 0)))} />
         </SimpleGrid>
       </Stack>
     </Card>
@@ -1184,7 +1184,7 @@ function useCapitalizationOverviewColumns(): DataTableColumn<CapitalizationOverv
         minWidth: 104,
         align: 'right',
         accessor: (item) => item.Weight,
-        cell: (item) => formatAmount(item.Weight),
+        cell: (item) => <Text className="app-money" size="sm" ta="right">{formatAmount(item.Weight)}</Text>,
       },
       {
         id: 'qty',
@@ -1193,7 +1193,7 @@ function useCapitalizationOverviewColumns(): DataTableColumn<CapitalizationOverv
         minWidth: 96,
         align: 'right',
         accessor: (item) => item.Qty,
-        cell: (item) => formatAmount(item.Qty),
+        cell: (item) => <Text className="app-money" size="sm" ta="right">{formatAmount(item.Qty)}</Text>,
       },
       {
         id: 'unitPrice',
@@ -1202,7 +1202,7 @@ function useCapitalizationOverviewColumns(): DataTableColumn<CapitalizationOverv
         minWidth: 104,
         align: 'right',
         accessor: (item) => item.UnitPrice,
-        cell: (item) => formatMoney(item.UnitPrice),
+        cell: (item) => <Text className="app-money" size="sm" ta="right">{formatMoney(item.UnitPrice)}</Text>,
       },
       {
         id: 'amount',
@@ -1211,7 +1211,7 @@ function useCapitalizationOverviewColumns(): DataTableColumn<CapitalizationOverv
         minWidth: 108,
         align: 'right',
         accessor: (item) => item.TotalAmount,
-        cell: (item) => formatMoney(item.TotalAmount),
+        cell: (item) => <Text className="app-money" size="sm" ta="right">{formatMoney(item.TotalAmount)}</Text>,
       },
       {
         id: 'remainingQty',
@@ -1220,7 +1220,7 @@ function useCapitalizationOverviewColumns(): DataTableColumn<CapitalizationOverv
         minWidth: 104,
         align: 'right',
         accessor: (item) => item.RemainingQty,
-        cell: (item) => formatAmount(item.RemainingQty),
+        cell: (item) => <Text className="app-money" size="sm" ta="right">{formatAmount(item.RemainingQty)}</Text>,
       },
     ],
     [t],
@@ -1242,16 +1242,16 @@ function SaleReturnOverview({ document }: { document: ProductIncomeDocument }) {
     <Card withBorder radius="md" padding="md">
       <Stack gap="sm">
         <Group justify="space-between" align="start">
-          <Title order={4}>{t('Прихідна накладна (повернення)')}</Title>
+          <Text className="app-section-title" fw={600} size="sm">{t('Прихідна накладна (повернення)')}</Text>
           <Text c="dimmed" size="sm">
             {displayValue(firstItem?.SaleReturn?.Number)} · {displayValue(getEntityName(firstItem?.SaleReturn?.Client))}
           </Text>
         </Group>
 
-        <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="sm">
+        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={28} verticalSpacing={12}>
           <DetailValue label={t('Угода')} value={agreement?.Name} />
           <DetailValue label={t('Валюта')} value={currencyCode} />
-          <DetailValue label={t('Дата інвойсу')} value={formatDateTime(firstItem?.SaleReturn?.FromDate)} />
+          <DetailValue label={t('Дата інвойсу')} mono value={formatDateTime(firstItem?.SaleReturn?.FromDate)} />
           <DetailValue label={t('Коментар')} value={firstItem?.Comment || document.Comment} />
         </SimpleGrid>
 
@@ -1273,11 +1273,11 @@ function SaleReturnOverview({ document }: { document: ProductIncomeDocument }) {
           />
         )}
 
-        <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="sm">
-          <DetailValue label={t('Всього позицій')} value={String(items.length)} />
-          <DetailValue label={t('Вся кількість')} value={formatAmount(document.TotalQty || sumRows(items, (item) => item.SaleReturnItem?.Qty ?? item.Qty))} />
-          <DetailValue label={t('Загальна сума')} value={formatMoney(totalAmount)} />
-          {isVat && <DetailValue label={t('ПДВ')} value={formatMoney(totalVat)} />}
+        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={28} verticalSpacing={12}>
+          <DetailValue label={t('Всього позицій')} mono value={String(items.length)} />
+          <DetailValue label={t('Вся кількість')} mono value={formatAmount(document.TotalQty || sumRows(items, (item) => item.SaleReturnItem?.Qty ?? item.Qty))} />
+          <DetailValue label={t('Загальна сума')} mono value={formatMoney(totalAmount)} />
+          {isVat && <DetailValue label={t('ПДВ')} mono value={formatMoney(totalVat)} />}
         </SimpleGrid>
       </Stack>
     </Card>
@@ -1327,7 +1327,7 @@ function getSaleReturnOverviewColumns(
       minWidth: 96,
       align: 'right',
       accessor: (item) => item.SaleReturnItem?.Qty ?? item.Qty,
-      cell: (item) => formatAmount(item.SaleReturnItem?.Qty ?? item.Qty),
+      cell: (item) => <Text className="app-money" size="sm" ta="right">{formatAmount(item.SaleReturnItem?.Qty ?? item.Qty)}</Text>,
     },
     {
       id: 'amount',
@@ -1336,7 +1336,7 @@ function getSaleReturnOverviewColumns(
       minWidth: 108,
       align: 'right',
       accessor: (item) => item.SaleReturnItem?.Amount,
-      cell: (item) => formatMoney(item.SaleReturnItem?.Amount),
+      cell: (item) => <Text className="app-money" size="sm" ta="right">{formatMoney(item.SaleReturnItem?.Amount)}</Text>,
     },
     {
       id: 'amountLocal',
@@ -1345,7 +1345,7 @@ function getSaleReturnOverviewColumns(
       minWidth: 118,
       align: 'right',
       accessor: (item) => item.SaleReturnItem?.AmountLocal,
-      cell: (item) => formatMoney(item.SaleReturnItem?.AmountLocal),
+      cell: (item) => <Text className="app-money" size="sm" ta="right">{formatMoney(item.SaleReturnItem?.AmountLocal)}</Text>,
     },
     ...(isVat
       ? [
@@ -1356,7 +1356,7 @@ function getSaleReturnOverviewColumns(
             minWidth: 108,
             align: 'right' as const,
             accessor: (item: ProductIncomeItem) => item.SaleReturnItem?.VatAmount,
-            cell: (item: ProductIncomeItem) => formatMoney(item.SaleReturnItem?.VatAmount),
+            cell: (item: ProductIncomeItem) => <Text className="app-money" size="sm" ta="right">{formatMoney(item.SaleReturnItem?.VatAmount)}</Text>,
           },
         ]
       : []),
@@ -1412,7 +1412,7 @@ function ActReconciliationOverview({
         minWidth: 96,
         align: 'right',
         accessor: (row) => row.qty,
-        cell: (row) => formatAmount(row.qty),
+        cell: (row) => <Text className="app-money" size="sm" ta="right">{formatAmount(row.qty)}</Text>,
       },
       {
         id: 'unitPrice',
@@ -1421,7 +1421,7 @@ function ActReconciliationOverview({
         minWidth: 104,
         align: 'right',
         accessor: (row) => row.unitPrice,
-        cell: (row) => formatMoney(row.unitPrice),
+        cell: (row) => <Text className="app-money" size="sm" ta="right">{formatMoney(row.unitPrice)}</Text>,
       },
       {
         id: 'netWeight',
@@ -1430,7 +1430,7 @@ function ActReconciliationOverview({
         minWidth: 108,
         align: 'right',
         accessor: (row) => row.netWeight,
-        cell: (row) => formatAmount(row.netWeight),
+        cell: (row) => <Text className="app-money" size="sm" ta="right">{formatAmount(row.netWeight)}</Text>,
       },
       {
         id: 'amount',
@@ -1439,7 +1439,7 @@ function ActReconciliationOverview({
         minWidth: 108,
         align: 'right',
         accessor: (row) => row.amount,
-        cell: (row) => formatMoney(row.amount),
+        cell: (row) => <Text className="app-money" size="sm" ta="right">{formatMoney(row.amount)}</Text>,
       },
     ],
     [t],
@@ -1449,7 +1449,7 @@ function ActReconciliationOverview({
     <Card withBorder radius="md" padding="md">
       <Stack gap="sm">
         <Group justify="space-between" align="start">
-          <Title order={4}>{t('Прихідна накладна (акт звірки)')}</Title>
+          <Text className="app-section-title" fw={600} size="sm">{t('Прихідна накладна (акт звірки)')}</Text>
           <Text c="dimmed" size="sm">
             {displayValue(document.Number)} · {formatMoney(document.TotalNetPrice)}
           </Text>
@@ -1470,7 +1470,7 @@ function ActReconciliationOverview({
 
         <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="sm">
           <DetailValue label={t('Всього товарів')} value={rows.length} />
-          <DetailValue label={t('Вся кількість')} value={formatAmount(document.TotalQty)} />
+          <DetailValue label={t('Вся кількість')} mono value={formatAmount(document.TotalQty)} />
           <DetailValue label={t('Вага нетто')} value={formatAmount(document.TotalNetWeight || sumRows(rows, (row) => row.netWeight))} />
           <DetailValue label={t('Сума')} value={formatMoney(document.TotalNetPrice)} />
         </SimpleGrid>
@@ -1560,7 +1560,7 @@ function useProductIncomeDocumentColumns({
         minWidth: 104,
         align: 'right',
         accessor: (row) => row.amount,
-        cell: (row) => formatMoney(row.amount),
+        cell: (row) => <Text className="app-money" size="sm" ta="right">{formatMoney(row.amount)}</Text>,
       },
       {
         id: 'currency',
@@ -1739,7 +1739,7 @@ function useProductIncomeItemColumns({
         minWidth: 96,
         align: 'right',
         accessor: (item) => item.Qty ?? item.PackingListPackageOrderItem?.Qty,
-        cell: (item) => formatAmount(item.Qty ?? item.PackingListPackageOrderItem?.Qty),
+        cell: (item) => <Text className="app-money" size="sm" ta="right">{formatAmount(item.Qty ?? item.PackingListPackageOrderItem?.Qty)}</Text>,
       },
       {
         id: 'comment',
@@ -1845,7 +1845,7 @@ function useRemainingConsignmentColumns({
         minWidth: 96,
         align: 'right',
         accessor: (item) => item.RemainingQty,
-        cell: (item) => formatAmount(item.RemainingQty),
+        cell: (item) => <Text className="app-money" size="sm" ta="right">{formatAmount(item.RemainingQty)}</Text>,
       },
       {
         id: 'netPrice',
@@ -1854,7 +1854,7 @@ function useRemainingConsignmentColumns({
         minWidth: 104,
         align: 'right',
         accessor: (item) => item.NetPrice,
-        cell: (item) => formatMoney(item.NetPrice),
+        cell: (item) => <Text className="app-money" size="sm" ta="right">{formatMoney(item.NetPrice)}</Text>,
       },
       {
         id: 'totalNetPrice',
@@ -1863,7 +1863,7 @@ function useRemainingConsignmentColumns({
         minWidth: 112,
         align: 'right',
         accessor: (item) => item.TotalNetPrice,
-        cell: (item) => formatMoney(item.TotalNetPrice),
+        cell: (item) => <Text className="app-money" size="sm" ta="right">{formatMoney(item.TotalNetPrice)}</Text>,
       },
       {
         id: 'grossUnitPrice',
@@ -1872,7 +1872,7 @@ function useRemainingConsignmentColumns({
         minWidth: 112,
         align: 'right',
         accessor: (item) => item.GrossPrice,
-        cell: (item) => formatMoney(item.GrossPrice),
+        cell: (item) => <Text className="app-money" size="sm" ta="right">{formatMoney(item.GrossPrice)}</Text>,
       },
       {
         id: 'accountingGrossPrice',
@@ -1881,7 +1881,7 @@ function useRemainingConsignmentColumns({
         minWidth: 112,
         align: 'right',
         accessor: (item) => item.AccountingGrossPrice,
-        cell: (item) => formatMoney(item.AccountingGrossPrice),
+        cell: (item) => <Text className="app-money" size="sm" ta="right">{formatMoney(item.AccountingGrossPrice)}</Text>,
       },
       {
         id: 'currency',
@@ -1914,7 +1914,7 @@ function useRemainingConsignmentColumns({
         minWidth: 82,
         align: 'right',
         accessor: (item) => item.Weight,
-        cell: (item) => formatAmount(item.Weight),
+        cell: (item) => <Text className="app-money" size="sm" ta="right">{formatAmount(item.Weight)}</Text>,
       },
       {
         id: 'actions',
