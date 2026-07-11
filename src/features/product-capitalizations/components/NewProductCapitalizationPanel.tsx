@@ -20,6 +20,7 @@ import { AppModal } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useValueState } from '../../../shared/hooks/useValueState'
+import { formatExcelArticleColumnError } from '../../../shared/excel/excelImportError'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import type { ClientResourceOrganization, ClientResourceStorage } from '../../client-resources/types'
@@ -700,7 +701,11 @@ function useNewProductCapitalizationModel(opened: boolean, onClose: () => void, 
         })
         .catch((parseError: unknown) => {
           if (isCurrentParse()) {
-            setUploadError(parseError instanceof Error ? parseError.message : t('Не вдалося розпізнати файл'))
+            setUploadError(formatExcelArticleColumnError(
+              parseError,
+              parseConfiguration.VendorCodeColumnNumber,
+              t('Не вдалося розпізнати файл'),
+            ))
           }
         })
         .finally(() => {

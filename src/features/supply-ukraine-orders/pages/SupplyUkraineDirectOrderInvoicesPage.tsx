@@ -27,6 +27,7 @@ import { useEffect, useMemo, useReducer, useState, type CSSProperties, type Disp
 import { useNavigate, useParams } from 'react-router-dom'
 import './supply-order-detail.css'
 import { formatLocalDateTime } from '../../../shared/date/dateTime'
+import { formatExcelArticleColumnError } from '../../../shared/excel/excelImportError'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
@@ -593,7 +594,14 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
         mergeUploadedInvoice(invoice)
       }
     } catch (saveError) {
-      notifications.show({ color: 'red', message: saveError instanceof Error ? saveError.message : t('Не вдалося виконати запит') })
+      notifications.show({
+        color: 'red',
+        message: formatExcelArticleColumnError(
+          saveError,
+          parseConfiguration.VendorCodeColumnNumber,
+          t('Не вдалося виконати запит'),
+        ),
+      })
     } finally {
       setPageState({ isSaving: false })
     }
@@ -652,7 +660,14 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
         mergeUploadedPackList(selectedInvoice.NetUid, packList)
       }
     } catch (saveError) {
-      notifications.show({ color: 'red', message: saveError instanceof Error ? saveError.message : t('Не вдалося виконати запит') })
+      notifications.show({
+        color: 'red',
+        message: formatExcelArticleColumnError(
+          saveError,
+          parseConfiguration.VendorCodeColumnNumber,
+          t('Не вдалося виконати запит'),
+        ),
+      })
     } finally {
       setPageState({ isSaving: false })
     }
@@ -1479,6 +1494,7 @@ function InvoiceUploadModal({
           accept={EXCEL_FILE_ACCEPT}
           disabled={isSaving}
           label={t('Файл')}
+          placeholder={t('Оберіть файл')}
           value={form.file}
           onChange={(file) => setForm((current) => ({ ...current, file }))}
         />
@@ -1554,6 +1570,7 @@ function PackListUploadModal({
           accept={EXCEL_FILE_ACCEPT}
           disabled={isSaving}
           label={t('Файл')}
+          placeholder={t('Оберіть файл')}
           value={form.file}
           onChange={(file) => setForm((current) => ({ ...current, file }))}
         />

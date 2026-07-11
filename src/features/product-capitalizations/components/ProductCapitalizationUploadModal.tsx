@@ -102,7 +102,7 @@ export function ProductCapitalizationUploadModal({
           label={t('Завантажити файли')}
           leftSection={<FileSpreadsheet size={16} />}
           multiple
-          placeholder={t('Оберіть файли')}
+          placeholder={t('Оберіть файл')}
           value={form.files}
           onChange={(files) => setForm((current) => ({ ...current, files: files || [] }))}
         />
