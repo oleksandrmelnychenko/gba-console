@@ -26,25 +26,13 @@ import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/Page
 import { getSaleTransporterTypes, getSaleTransportersByType, updateSaleFromData } from '../api/salesUkraineApi'
 import { getSaleLifecycleStatusKey } from '../saleStatus'
 import type { SalesUkraineSale, SalesUkraineTransporter, SalesUkraineUpdateDataCarrier } from '../types'
+import {
+  CARRIER_HISTORY_CHANGED_FIELD,
+  hasCarrierHistoryField,
+  hasCarrierHistoryMask,
+  type CarrierHistoryChangedField,
+} from './carrierHistoryFields'
 import './sales-drawers.css'
-
-export const CARRIER_HISTORY_CHANGED_FIELD = {
-  transporter: 1 << 0,
-  city: 1 << 1,
-  department: 1 << 2,
-  shipmentDate: 1 << 3,
-  fullName: 1 << 4,
-  mobilePhone: 1 << 5,
-  comment: 1 << 6,
-  isCashOnDelivery: 1 << 7,
-  cashOnDeliveryAmount: 1 << 8,
-  hasDocument: 1 << 9,
-  ownTtnNumber: 1 << 10,
-  ttnDocument: 1 << 11,
-  ttn: 1 << 12,
-} as const
-
-type CarrierHistoryChangedField = (typeof CARRIER_HISTORY_CHANGED_FIELD)[keyof typeof CARRIER_HISTORY_CHANGED_FIELD]
 
 export function SaleDetailsDrawer({
   sale,
@@ -666,23 +654,6 @@ function historyValueChanged(value: unknown, previous: unknown): boolean {
   const normalize = (input: unknown) => (input == null ? null : input)
 
   return normalize(value) !== normalize(previous)
-}
-
-export function hasCarrierHistoryField(
-  entry: SalesUkraineUpdateDataCarrier | null | undefined,
-  field: CarrierHistoryChangedField,
-): boolean {
-  if (!hasCarrierHistoryMask(entry)) {
-    return false
-  }
-
-  return (Number(entry.ChangedFields) & field) === field
-}
-
-function hasCarrierHistoryMask(entry: SalesUkraineUpdateDataCarrier | null | undefined): boolean {
-  const value = entry?.ChangedFields
-
-  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0
 }
 
 function sortCarrierHistoryEntries(entries: SalesUkraineUpdateDataCarrier[]): SalesUkraineUpdateDataCarrier[] {

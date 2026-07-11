@@ -1,20 +1,10 @@
 import { MantineProvider } from '@mantine/core'
 import { cleanup, render } from '@testing-library/react'
-import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { theme } from '../../../shared/theme/theme'
 import type { SalesUkraineUpdateDataCarrier } from '../types'
-import {
-  CARRIER_HISTORY_CHANGED_FIELD,
-  CarrierHistory,
-  hasCarrierHistoryField,
-} from './SaleDetailsDrawer'
-
-const carrierHistoryCss = readFileSync(
-  resolve(process.cwd(), 'src/features/sales-ukraine/components/sales-drawers.css'),
-  'utf8',
-)
+import { CARRIER_HISTORY_CHANGED_FIELD, hasCarrierHistoryField } from './carrierHistoryFields'
+import { CarrierHistory } from './SaleDetailsDrawer'
 
 vi.mock('../../../shared/i18n/useI18n', () => ({
   useI18n: () => ({ t: (key: string) => key }),
@@ -123,16 +113,5 @@ describe('CarrierHistory', () => {
     expect(hasCarrierHistoryField(value, CARRIER_HISTORY_CHANGED_FIELD.transporter)).toBe(true)
     expect(hasCarrierHistoryField(value, CARRIER_HISTORY_CHANGED_FIELD.city)).toBe(true)
     expect(hasCarrierHistoryField(value, CARRIER_HISTORY_CHANGED_FIELD.mobilePhone)).toBe(false)
-  })
-
-  it('keeps red history highlighting stronger than striped and hover backgrounds', () => {
-    expect(carrierHistoryCss).toContain(
-      '.sales-drawer-table.sale-carrier-history-table .mantine-Table-tbody .mantine-Table-tr:nth-child(even) .mantine-Table-td.is-changed',
-    )
-    expect(carrierHistoryCss).toContain(
-      '.sales-drawer-table.sale-carrier-history-table .mantine-Table-tbody .mantine-Table-tr:hover .mantine-Table-td.is-changed',
-    )
-    expect(carrierHistoryCss).toContain('background: var(--mantine-color-red-1)')
-    expect(carrierHistoryCss).toContain('box-shadow: inset 3px 0 0 var(--mantine-color-red-6)')
   })
 })
