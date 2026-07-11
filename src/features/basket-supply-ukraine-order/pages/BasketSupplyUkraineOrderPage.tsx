@@ -37,7 +37,6 @@ import {
   addOrUpdateTaxFreePackList,
   calculateTotalsByCartItems,
   calculateTotalsBySales,
-  getCartItemRecommendations,
   getNotSentSads,
   getNotSentSaleSads,
   getNotSentSaleTaxFreePackLists,
@@ -105,13 +104,6 @@ const BASKET_SALES_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['date', 'number'],
     right: ['actions'],
-  },
-  density: 'normal',
-} satisfies DataTableDefaultLayout
-
-const BASKET_RECOMMENDATIONS_TABLE_DEFAULT_LAYOUT = {
-  columnPinning: {
-    left: ['vendorCode'],
   },
   density: 'normal',
 } satisfies DataTableDefaultLayout
@@ -1355,124 +1347,6 @@ function SalesWorkflowTab() {
       >
         <SaleItemsList items={selectedSale?.Order?.OrderItems || []} />
       </AppDrawer>
-    </Stack>
-  )
-}
-
-function RecommendationsTab() {
-  const { t } = useI18n()
-  const [recommendations, setRecommendations] = useState<SupplyOrderUkraineCartItem[]>([])
-  const [error, setError] = useState<string | null>(null)
-  const [isLoading, setLoading] = useState(true)
-  const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
-  const columns = useMemo<Array<DataTableColumn<SupplyOrderUkraineCartItem>>>(
-    () => [
-      {
-        id: 'vendorCode',
-        header: t('Код Виробника'),
-        accessor: (item) => item.Product?.VendorCode || '',
-        width: 160,
-      },
-      {
-        id: 'recommendedQty',
-        header: t('Рекомендована К-сть'),
-        accessor: (item) => toNumber(item.UploadedQty),
-        cell: (item) => formatQty(item.UploadedQty),
-        width: 150,
-        align: 'right',
-      },
-      {
-        id: 'availableQty',
-        header: t('Доступна К-сть'),
-        accessor: (item) => toNumber(item.AvailableQty),
-        cell: (item) => formatQty(item.AvailableQty),
-        width: 140,
-        align: 'right',
-      },
-      {
-        id: 'fromDate',
-        header: t('Від якої дати'),
-        accessor: (item) => formatDate(item.FromDate),
-        width: 130,
-      },
-      {
-        id: 'product',
-        header: t('Назва товару'),
-        accessor: (item) => item.Product?.Name || '',
-        minWidth: 320,
-      },
-    ],
-    [t],
-  )
-
-  useEffect(() => {
-    let cancelled = false
-
-    async function loadRecommendations() {
-      setLoading(true)
-      setError(null)
-
-      try {
-        const nextRecommendations = await getCartItemRecommendations()
-
-        if (!cancelled) {
-          setRecommendations(nextRecommendations)
-        }
-      } catch (loadError) {
-        if (!cancelled) {
-          setRecommendations([])
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити рекомендації'))
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false)
-        }
-      }
-    }
-
-    void loadRecommendations()
-
-    return () => {
-      cancelled = true
-    }
-  }, [reloadKey, t])
-
-  const recommendationsToolbarRight = useMemo(
-    () => (
-      <Group gap="xs" wrap="nowrap">
-        <AiFeatureBadge tooltip={t('AI-рекомендації переміщення')} />
-        <Tooltip label={t('Оновити')}>
-          <ActionIcon aria-label={t('Оновити')} loading={isLoading} size="sm" variant="subtle" onClick={() => reload()}>
-            <RefreshCw size={16} />
-          </ActionIcon>
-        </Tooltip>
-      </Group>
-    ),
-    [isLoading, reload, t],
-  )
-
-  return (
-    <Stack gap="md">
-      {error && (
-        <Alert color="red" icon={ALERT_CIRCLE_ICON} variant="light">
-          {error}
-        </Alert>
-      )}
-
-      <Card className="app-section-card" withBorder padding="md" radius="md">
-        <DataTable
-          columns={columns}
-          data={recommendations}
-          defaultLayout={BASKET_RECOMMENDATIONS_TABLE_DEFAULT_LAYOUT}
-          emptyText={t('Даних не знайдено')}
-          getRowId={(item, index) => getCartItemKey(item, index)}
-          isLoading={isLoading}
-          maxHeight={620}
-          minWidth={960}
-          tableId="basket-supply-ukraine-order-recommendations"
-          toolbarRight={recommendationsToolbarRight}
-        />
-      </Card>
     </Stack>
   )
 }

@@ -20,8 +20,8 @@ import { notifications } from '@mantine/notifications'
 import { ChevronDown, ChevronRight, Plus, Sparkles, Trash2, Truck } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import type { Client } from '../../clients/types'
 import { getSupplyOrderSuppliers } from '../../supply-ukraine-orders/api/supplyUkraineOrdersApi'
+import type { Client } from '../../supply-ukraine-orders/types'
 import {
   createCockpitDraftOrder,
   getBudgetCartPlan,
