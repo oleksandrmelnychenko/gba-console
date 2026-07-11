@@ -1,13 +1,16 @@
+import { BarChart, DonutChart, LineChart } from '@mantine/charts'
 import {
   ActionIcon,
   Badge,
   Box,
   Button,
+  Card,
   Group,
   Loader,
   NumberInput,
   SegmentedControl,
   Select,
+  SimpleGrid,
   Stack,
   Table,
   Text,
@@ -129,6 +132,8 @@ export function ProcurementConstructor() {
       ),
     [rows],
   )
+
+  const overview = useMemo(() => computeOverview(sortedRows), [sortedRows])
 
   const demandByProduct = useMemo(() => {
     const map = new Map<number, number[]>()
@@ -261,7 +266,7 @@ export function ProcurementConstructor() {
         </Button>
       </Group>
 
-      {charts && <ChartsStrip charts={charts} t={t} />}
+      {sortedRows.length > 0 && <OverviewPanel overview={overview} t={t} />}
 
       <Group align="flex-start" gap={12} wrap="nowrap" style={{ minHeight: 0 }}>
         <Box style={{ flex: 1, minWidth: 0 }}>
@@ -482,17 +487,22 @@ function ProofPanel({
         </Text>
       </Stack>
 
-      <Stack gap={4} style={{ flex: '1 1 240px', minWidth: 220 }}>
-        <Text fw={600} size="xs">
-          {t('Прогноз попиту')}
-        </Text>
-        {demand && demand.length > 0 ? (
-          <Sparkline values={demand} />
-        ) : (
-          <Text c="dimmed" size="xs">
-            {t('Історія продажів у графіках зверху')}
-          </Text>
+      <Stack gap={6} style={{ flex: '1 1 300px', minWidth: 260 }}>
+        <DepletionChart row={row} t={t} />
+        {demand && demand.length > 0 && (
+          <Box>
+            <Text fw={600} size="xs">
+              {t('Історія попиту')}
+            </Text>
+            <Sparkline values={demand} />
+          </Box>
         )}
+      </Stack>
+
+      <Stack gap={4} style={{ flex: '1 1 200px', minWidth: 180 }}>
+        <Text fw={600} size="xs">
+          {t('Прогноз')}
+        </Text>
         <ProofFact label={t('Попит/день')} value={`${amount.format(row.forecast.mean_daily)} ± ${amount.format(row.forecast.std_daily)}`} />
         <ProofFact label={t('Метод')} value={row.forecast.method} />
         <ProofFact label={t('Рівень сервісу')} value={row.applied_service_level ? `${(row.applied_service_level * 100).toFixed(1)}%` : '—'} />
@@ -577,53 +587,190 @@ function Sparkline({ values }: { values: number[] }) {
   )
 }
 
-function ChartsStrip({ charts, t }: { charts: ProcurementCharts; t: (key: string) => string }) {
-  const totalUrgency = charts.urgency_mix.reduce((sum, bucket) => sum + bucket.count, 0) || 1
+type Overview = {
+  count: number
+  criticalCount: number
+  totalValue: number
+  valueAtRisk: number
+  urgencyDonut: Array<{ name: string; value: number; color: string }>
+  coverHist: Array<{ bucket: string; count: number }>
+  producerValue: Array<{ producer: string; value: number }>
+}
+
+function computeOverview(rows: ReorderSuggestion[]): Overview {
+  const urgencyCounts: Record<string, number> = {}
+  const coverBuckets = { '<0': 0, '0-7': 0, '8-30': 0, '31-90': 0, '90+': 0 }
+  const producerTotals = new Map<string, number>()
+  let totalValue = 0
+  let valueAtRisk = 0
+  let criticalCount = 0
+
+  rows.forEach((row) => {
+    urgencyCounts[row.urgency] = (urgencyCounts[row.urgency] ?? 0) + 1
+    const value = row.line_cost_eur ?? 0
+    totalValue += value
+    if (row.urgency === 'critical' || row.urgency === 'high') {
+      valueAtRisk += value
+    }
+    if (row.urgency === 'critical') {
+      criticalCount += 1
+    }
+    const cover = row.days_of_cover
+    if (cover <= 0) {
+      coverBuckets['<0'] += 1
+    } else if (cover <= 7) {
+      coverBuckets['0-7'] += 1
+    } else if (cover <= 30) {
+      coverBuckets['8-30'] += 1
+    } else if (cover <= 90) {
+      coverBuckets['31-90'] += 1
+    } else {
+      coverBuckets['90+'] += 1
+    }
+    const producer = row.producer_name || `#${row.producer_id}`
+    producerTotals.set(producer, (producerTotals.get(producer) ?? 0) + value)
+  })
+
+  const urgencyDonut = (['critical', 'high', 'normal', 'none'] as ProcurementUrgency[])
+    .filter((urgency) => urgencyCounts[urgency])
+    .map((urgency) => ({
+      name: URGENCY_META[urgency].label,
+      value: urgencyCounts[urgency],
+      color: `${URGENCY_META[urgency].color}.5`,
+    }))
+
+  const producerValue = [...producerTotals.entries()]
+    .map(([producer, value]) => ({ producer, value: Math.round(value) }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 8)
+
+  return {
+    count: rows.length,
+    criticalCount,
+    totalValue,
+    valueAtRisk,
+    urgencyDonut,
+    coverHist: Object.entries(coverBuckets).map(([bucket, count]) => ({ bucket, count })),
+    producerValue,
+  }
+}
+
+function OverviewPanel({ overview, t }: { overview: Overview; t: (key: string) => string }) {
+  return (
+    <Stack gap={10}>
+      <SimpleGrid cols={{ base: 2, sm: 4 }} spacing={10}>
+        <KpiTile label={t('Позицій до замовлення')} value={qty.format(overview.count)} />
+        <KpiTile color="red" label={t('Критичних')} value={qty.format(overview.criticalCount)} />
+        <KpiTile label={t('Сума потреби, EUR')} value={amount.format(overview.totalValue)} />
+        <KpiTile color="orange" label={t('Під ризиком, EUR')} value={amount.format(overview.valueAtRisk)} />
+      </SimpleGrid>
+
+      <SimpleGrid cols={{ base: 1, md: 3 }} spacing={10}>
+        <Card padding="sm" radius="md" withBorder>
+          <Text c="dimmed" mb={6} size="xs">
+            {t('Терміновість позицій')}
+          </Text>
+          {overview.urgencyDonut.length > 0 ? (
+            <Group justify="center">
+              <DonutChart
+                chartLabel={String(overview.count)}
+                data={overview.urgencyDonut}
+                size={140}
+                thickness={20}
+                withTooltip
+              />
+            </Group>
+          ) : null}
+        </Card>
+
+        <Card padding="sm" radius="md" withBorder>
+          <Text c="dimmed" mb={6} size="xs">
+            {t('Потреба €, топ виробників')}
+          </Text>
+          <BarChart
+            data={overview.producerValue}
+            dataKey="producer"
+            h={150}
+            series={[{ color: 'orange.6', name: 'value', label: t('EUR') }]}
+            tickLine="none"
+            valueFormatter={(value) => amount.format(value)}
+            withXAxis={false}
+          />
+        </Card>
+
+        <Card padding="sm" radius="md" withBorder>
+          <Text c="dimmed" mb={6} size="xs">
+            {t('Розподіл днів покриття')}
+          </Text>
+          <BarChart
+            data={overview.coverHist}
+            dataKey="bucket"
+            h={150}
+            series={[{ color: 'blue.5', name: 'count', label: t('Позицій') }]}
+            tickLine="y"
+          />
+        </Card>
+      </SimpleGrid>
+    </Stack>
+  )
+}
+
+function KpiTile({ color, label, value }: { color?: string; label: string; value: string }) {
+  return (
+    <Card padding="sm" radius="md" withBorder>
+      <Text c="dimmed" size="xs">
+        {label}
+      </Text>
+      <Text c={color} fw={700} size="xl">
+        {value}
+      </Text>
+    </Card>
+  )
+}
+
+// Project the stock position declining at forecast demand to show WHEN it runs out
+// and WHEN it crosses the reorder point — the visual proof that an order is due now.
+function DepletionChart({ row, t }: { row: ReorderSuggestion; t: (key: string) => string }) {
+  const meanDaily = row.forecast.mean_daily
+  if (meanDaily <= 0) {
+    return null
+  }
+
+  const leadTimeDays = row.lead_demand != null ? Math.round(row.lead_demand / meanDaily) : 0
+  const stockoutDay = Math.max(0, Math.round(row.inventory.position / meanDaily))
+  const horizon = Math.max(stockoutDay + leadTimeDays + 7, 30)
+  const step = Math.max(1, Math.round(horizon / 30))
+
+  const data: Array<{ day: number; stock: number; reorder: number }> = []
+  for (let day = 0; day <= horizon; day += step) {
+    data.push({
+      day,
+      stock: Math.max(0, Math.round(row.inventory.position - meanDaily * day)),
+      reorder: Math.round(row.reorder_point),
+    })
+  }
 
   return (
-    <Group gap={20} wrap="wrap">
-      <Box>
-        <Text c="dimmed" mb={4} size="xs">
-          {t('Терміновість позицій')}
-        </Text>
-        <Group gap={4} wrap="nowrap">
-          {charts.urgency_mix.map((bucket) => {
-            const meta = URGENCY_META[bucket.urgency as ProcurementUrgency] ?? URGENCY_META.none
-
-            return (
-              <Tooltip key={bucket.urgency} label={`${t(meta.label)}: ${bucket.count}`}>
-                <Box
-                  style={{
-                    background: `var(--mantine-color-${meta.color}-5)`,
-                    borderRadius: 3,
-                    height: 18,
-                    width: `${Math.max(6, (bucket.count / totalUrgency) * 180)}px`,
-                  }}
-                />
-              </Tooltip>
-            )
-          })}
-        </Group>
-      </Box>
-      <Box>
-        <Text c="dimmed" mb={4} size="xs">
-          {t('Днів покриття')}
-        </Text>
-        <Group align="flex-end" gap={3} h={22}>
-          {charts.days_of_cover_hist.map((bucket) => (
-            <Tooltip key={bucket.bucket} label={`${bucket.bucket}: ${bucket.count}`}>
-              <Box
-                style={{
-                  background: 'var(--mantine-color-blue-4)',
-                  borderRadius: 2,
-                  height: `${Math.max(4, bucket.count)}px`,
-                  width: 16,
-                }}
-              />
-            </Tooltip>
-          ))}
-        </Group>
-      </Box>
-    </Group>
+    <Stack gap={4}>
+      <Text fw={600} size="xs">
+        {t('Коли закінчиться склад')}
+      </Text>
+      <LineChart
+        data={data}
+        dataKey="day"
+        h={130}
+        series={[
+          { color: 'blue.6', name: 'stock', label: t('Запас') },
+          { color: 'orange.5', name: 'reorder', label: t('Точка замовлення') },
+        ]}
+        valueFormatter={(value) => qty.format(value)}
+        withDots={false}
+        xAxisLabel={t('дні')}
+      />
+      <Text c={stockoutDay <= leadTimeDays ? 'red' : 'dimmed'} size="xs">
+        {t('Закінчиться через')} {qty.format(stockoutDay)} {t('дн')}; {t('логістика')} {qty.format(leadTimeDays)} {t('дн')} →{' '}
+        {stockoutDay <= leadTimeDays ? t('замовляти треба вже зараз') : t('замовити до дефіциту')}
+      </Text>
+    </Stack>
   )
 }
