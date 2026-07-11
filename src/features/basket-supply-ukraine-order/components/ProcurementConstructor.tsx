@@ -8,6 +8,7 @@ import {
   Group,
   Image,
   Loader,
+  Menu,
   NumberInput,
   SegmentedControl,
   Select,
@@ -18,7 +19,18 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { ChevronDown, ChevronRight, FileSpreadsheet, ImageOff, Plus, Sparkles, Trash2, Truck } from 'lucide-react'
+import {
+  Bookmark,
+  ChevronDown,
+  ChevronRight,
+  FileSpreadsheet,
+  ImageOff,
+  Plus,
+  Save,
+  Sparkles,
+  Trash2,
+  Truck,
+} from 'lucide-react'
 import * as XLSX from 'xlsx'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -26,6 +38,12 @@ import { getProductAnalytics } from '../../assortment/api/assortmentApi'
 import type { ProductSalesSeriesPoint } from '../../assortment/types'
 import { getSupplyOrderSuppliers } from '../../supply-ukraine-orders/api/supplyUkraineOrdersApi'
 import type { Client } from '../../supply-ukraine-orders/types'
+import {
+  listSessions,
+  removeSession,
+  saveSession,
+  type ProcurementSession,
+} from '../procurementSessions'
 import {
   createCockpitDraftOrder,
   getBudgetCartPlan,
@@ -139,6 +157,41 @@ export function ProcurementConstructor() {
     (row: ReorderSuggestion) => draftQty[row.product_id] ?? row.suggested_qty,
     [draftQty],
   )
+
+  const [sessions, setSessions] = useState<ProcurementSession[]>(() => listSessions())
+
+  function persistSession() {
+    const name = window.prompt(t('Назва сесії'))?.trim()
+    if (!name) {
+      return
+    }
+    saveSession({
+      name,
+      lens,
+      producerId: selectedProducerId,
+      draftQty,
+      basket: [...basket.values()],
+    })
+    setSessions(listSessions())
+    notifications.show({ color: 'green', message: t('Сесію збережено') })
+  }
+
+  function restoreSession(id: string) {
+    const session = sessions.find((item) => item.id === id)
+    if (!session) {
+      return
+    }
+    setLens(session.lens)
+    setSelectedProducerId(session.producerId)
+    setDraftQty(session.draftQty ?? {})
+    setBasket(new Map(session.basket.map((line) => [line.suggestion.product_id, line])))
+    notifications.show({ color: 'blue', message: `${t('Відновлено')}: ${session.name}` })
+  }
+
+  function deleteSession(id: string) {
+    removeSession(id)
+    setSessions(listSessions())
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -346,6 +399,46 @@ export function ProcurementConstructor() {
           )}
         </Group>
         <Group gap={8} wrap="nowrap">
+          <Menu position="bottom-end" shadow="md" width={280}>
+            <Menu.Target>
+              <Button leftSection={<Bookmark size={15} />} size="xs" variant="default">
+                {t('Сесії')}
+              </Button>
+            </Menu.Target>
+            <Menu.Dropdown>
+              <Menu.Item leftSection={<Save size={14} />} onClick={persistSession}>
+                {t('Зберегти поточний стан')}
+              </Menu.Item>
+              {sessions.length > 0 && <Menu.Divider />}
+              {sessions.map((session) => (
+                <Menu.Item
+                  key={session.id}
+                  rightSection={
+                    <ActionIcon
+                      color="red"
+                      component="div"
+                      size="sm"
+                      variant="subtle"
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        deleteSession(session.id)
+                      }}
+                    >
+                      <Trash2 size={13} />
+                    </ActionIcon>
+                  }
+                  onClick={() => restoreSession(session.id)}
+                >
+                  <Text size="sm" truncate>
+                    {session.name}
+                  </Text>
+                  <Text c="dimmed" size="xs">
+                    {new Date(session.savedAt).toLocaleString('uk-UA')} · {session.basket.length} {t('поз.')}
+                  </Text>
+                </Menu.Item>
+              ))}
+            </Menu.Dropdown>
+          </Menu>
           <Button
             disabled={sortedRows.length === 0}
             leftSection={<FileSpreadsheet size={15} />}
