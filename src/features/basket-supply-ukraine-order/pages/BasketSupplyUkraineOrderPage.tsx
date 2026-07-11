@@ -52,8 +52,8 @@ import { BasketSupplyUploadModal } from '../components/BasketSupplyUploadModal'
 import { DocumentTargetControls } from '../components/DocumentTargetControls'
 import { PreviewCartItemsModal } from '../components/PreviewCartItemsModal'
 import { BudgetCartTab } from '../components/BudgetCartTab'
-import { BuyerCockpitTab } from '../components/BuyerCockpitTab'
 import { ProcureDashboardTab } from '../components/ProcureDashboardTab'
+import { ProcurementConstructor } from '../components/ProcurementConstructor'
 import type {
   BasketOrderItem,
   BasketSale,
@@ -150,9 +150,8 @@ export function BasketSupplyUkraineOrderPage() {
   const tabs: Array<{ ai?: boolean; label: string; value: BasketSupplyWorkflowTab }> = [
     { value: 'sales', label: t('Фактура') },
     { value: 'cart', label: t('Переміщення на Україну') },
-    { value: 'recommendations', label: t('Рекомендації'), ai: true },
+    { value: 'cockpit', label: t('Конструктор закупівель'), ai: true },
     { value: 'dashboard', label: t('Дашборд'), ai: true },
-    { value: 'cockpit', label: t('Робоче місце закупівельника'), ai: true },
     { value: 'budget-cart', label: t('Бюджетний кошик'), ai: true },
   ]
 
@@ -185,9 +184,8 @@ export function BasketSupplyUkraineOrderPage() {
         <div style={{ paddingTop: 'var(--mantine-spacing-md)' }}>
           {activeTab === 'cart' && <BasketCartWorkflow />}
           {activeTab === 'sales' && <SalesWorkflowTab />}
-          {activeTab === 'recommendations' && <RecommendationsTab />}
+          {(activeTab === 'cockpit' || activeTab === 'recommendations') && <ProcurementConstructor />}
           {activeTab === 'dashboard' && <ProcureDashboardTab />}
-          {activeTab === 'cockpit' && <BuyerCockpitTab />}
           {activeTab === 'budget-cart' && <BudgetCartTab />}
         </div>
       </div>
