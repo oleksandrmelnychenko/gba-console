@@ -61,7 +61,12 @@ import type {
   IncomeSupplyInvoice,
   PackingListPackageOrderItem,
 } from '../productIncomeTypes'
-import { createIncomeDynamicPlacementColumn, isInvoiceAllNotPlaced } from '../productIncomePlacementState'
+import {
+  createIncomeDynamicPlacementColumn,
+  getProductIncomePlacementState,
+  isInvoiceAllNotPlaced,
+  selectIncomePackingList,
+} from '../productIncomePlacementState'
 import './product-income-page.css'
 
 const DEFAULT_VAT_PERCENT = 23
@@ -272,7 +277,7 @@ function getIncomeSourceNumber(source: ProductIncomeSource, protocol?: IncomePro
 }
 
 function isPlacementLocked(invoice: IncomeSupplyInvoice | null, packingList: IncomePackingList | null): boolean {
-  return Boolean(invoice?.IsFullyPlaced || packingList?.IsPlaced)
+  return getProductIncomePlacementState(invoice, packingList) === 'received'
 }
 
 function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) {
@@ -302,6 +307,7 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
   const [pendingDirtyAction, setPendingDirtyAction] = useValueState<PendingDirtyAction | null>(null)
   const [pzDownload, setPzDownload] = useValueState<DownloadState>(CLOSED_DOWNLOAD_STATE)
   const packingListRequestRef = useRef(0)
+  const selectedPackingListNetUidRef = useRef<string | null>(null)
   const pzDownloadRequestRef = useRef(0)
 
   useEffect(() => {
@@ -385,6 +391,7 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
 
   const applyLoadedPackingList = useCallback(
     (loadedPackList: IncomePackingList) => {
+      selectedPackingListNetUidRef.current = loadedPackList.NetUid || null
       setPackingList(loadedPackList)
     },
     [setPackingList],
@@ -419,17 +426,17 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
 
         applyLoadedInvoice(loadedInvoice)
 
-        const firstPackList = loadedInvoice.PackingLists[0]
+        const selectedPackList = selectIncomePackingList(loadedInvoice, selectedPackingListNetUidRef.current)
 
-        if (firstPackList?.NetUid) {
+        if (selectedPackList?.NetUid) {
           const requestId = packingListRequestRef.current + 1
           packingListRequestRef.current = requestId
-          const loadedPackList = await getPackingListSpecificationProducts(firstPackList.NetUid)
+          const loadedPackList = await getPackingListSpecificationProducts(selectedPackList.NetUid)
 
           if (!cancelled && packingListRequestRef.current === requestId) {
             applyLoadedPackingList({
               ...loadedPackList,
-              DynamicProductPlacementColumns: firstPackList.DynamicProductPlacementColumns || [],
+              DynamicProductPlacementColumns: selectedPackList.DynamicProductPlacementColumns || [],
             })
           }
         }
@@ -465,7 +472,7 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
         if (packingListRequestRef.current === requestId) {
           const columns =
             invoice?.PackingLists.find((list) => list.NetUid === netId)?.DynamicProductPlacementColumns || []
-          setPackingList({ ...loadedPackList, DynamicProductPlacementColumns: columns })
+          applyLoadedPackingList({ ...loadedPackList, DynamicProductPlacementColumns: columns })
           setDirty(false)
         }
       } catch (loadError) {
@@ -474,7 +481,7 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
         }
       }
     },
-    [invoice, setDirty, setError, setPackingList, t],
+    [applyLoadedPackingList, invoice, setDirty, setError, setPackingList, t],
   )
 
   const gridRows = useMemo(() => (packingList ? buildGridRows(packingList) : []), [packingList])
@@ -660,7 +667,7 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
           refreshedInvoice.PackingLists.find((list) => list.NetUid === nextPackingList.NetUid)
             ?.DynamicProductPlacementColumns || []
 
-        setPackingList({ ...refreshedPackList, DynamicProductPlacementColumns: columns })
+        applyLoadedPackingList({ ...refreshedPackList, DynamicProductPlacementColumns: columns })
         setDirty(false)
       } catch (saveError) {
         setError(saveError instanceof Error ? saveError.message : t('Не вдалося зберегти зміни'))
@@ -668,7 +675,7 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
         setSaving(false)
       }
     },
-    [canUseIncome, invoice, isSaving, selectedInvoiceId, setDirty, setError, setInvoice, setPackingList, setSaving, t],
+    [applyLoadedPackingList, canUseIncome, invoice, isSaving, selectedInvoiceId, setDirty, setError, setInvoice, setSaving, t],
   )
 
   const handleSave = useCallback(() => {
@@ -1074,11 +1081,13 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
   ])
 
   const placementStatus = useMemo(() => {
-    if (packingList?.IsPlaced || invoice?.IsFullyPlaced) {
+    const placementState = getProductIncomePlacementState(invoice, packingList)
+
+    if (placementState === 'received') {
       return t('Оприходуваний')
     }
 
-    if (invoice?.IsPartiallyPlaced) {
+    if (placementState === 'partially-received') {
       return t('Частково оприходуваний')
     }
 

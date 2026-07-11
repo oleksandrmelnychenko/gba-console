@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { createIncomeDynamicPlacementColumn, isInvoiceAllNotPlaced } from './productIncomePlacementState'
+import {
+  createIncomeDynamicPlacementColumn,
+  getProductIncomePlacementState,
+  isInvoiceAllNotPlaced,
+  selectIncomePackingList,
+} from './productIncomePlacementState'
 import type { IncomePackingList, IncomeSupplyInvoice } from './productIncomeTypes'
 
 function packingList(NetUid: string, isPlacedItems: boolean[]): IncomePackingList {
@@ -65,5 +70,43 @@ describe('product income placement state', () => {
     const loadedPackingList = packingList('pl-1', [true])
 
     expect(isInvoiceAllNotPlaced(staleInvoice, loadedPackingList)).toBe(false)
+  })
+
+  it('keeps a draft without receipt evidence as not received', () => {
+    expect(getProductIncomePlacementState(
+      { IsFullyPlaced: false, IsPartiallyPlaced: false, PackingLists: [] },
+      packingList('draft', [false]),
+    )).toBe('draft')
+  })
+
+  it('derives a partial receipt from persisted item quantities when invoice flags are stale', () => {
+    const partiallyReceived = packingList('partial', [false])
+    partiallyReceived.PackingListPackageOrderItems[0].PlacedQty = 1
+
+    expect(getProductIncomePlacementState(
+      { IsFullyPlaced: false, IsPartiallyPlaced: false, PackingLists: [partiallyReceived] },
+      partiallyReceived,
+    )).toBe('partially-received')
+  })
+
+  it('keeps capitalize as a partial receipt until the invoice is fully placed', () => {
+    expect(getProductIncomePlacementState(
+      { IsFullyPlaced: false, IsPartiallyPlaced: true, PackingLists: [] },
+      packingList('capitalized', [false]),
+    )).toBe('partially-received')
+  })
+
+  it('treats carry-out as received even when no product income was created', () => {
+    expect(getProductIncomePlacementState(
+      { IsFullyPlaced: false, IsPartiallyPlaced: false, PackingLists: [] },
+      { ...packingList('carried-out', [false]), IsPlaced: true },
+    )).toBe('received')
+  })
+
+  it('preserves the selected packing list when an action reloads its invoice', () => {
+    const draft = packingList('draft', [false])
+    const carriedOut = { ...packingList('carried-out', [false]), IsPlaced: true }
+
+    expect(selectIncomePackingList(invoice([draft, carriedOut]), 'carried-out')).toBe(carriedOut)
   })
 })
