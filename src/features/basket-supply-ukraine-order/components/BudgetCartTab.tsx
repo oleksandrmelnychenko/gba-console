@@ -3,6 +3,7 @@ import {
   Alert,
   Button,
   Card,
+  Drawer,
   Group,
   Loader,
   NumberInput,
@@ -12,9 +13,8 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
-import { CircleAlert, RefreshCw } from 'lucide-react'
+import { ChevronUp, CircleAlert, RefreshCw } from 'lucide-react'
 import { useEffect, useMemo, useReducer, useState } from 'react'
-import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { TranslateFunction } from '../../../shared/i18n/types'
@@ -74,7 +74,16 @@ export function BudgetCartTab() {
   const [request, setRequest] = useState<BudgetCartRequest | null>(null)
   const [hasRequested, setHasRequested] = useState(false)
   const [producers, setProducers] = useState<Client[]>([])
+  const [isSheetOpen, setSheetOpen] = useState(false)
   const { plan, error, isLoading } = state
+
+  // iOS-style bottom sheet: as soon as a plan finishes loading, slide it up
+  // over the page (half screen); the user can close and reopen it.
+  useEffect(() => {
+    if (plan && plan.items.length > 0) {
+      setSheetOpen(true)
+    }
+  }, [plan])
 
   useEffect(() => {
     let cancelled = false
@@ -147,7 +156,7 @@ export function BudgetCartTab() {
 
         if (!cancelled) {
           dispatch({
-            error: loadError instanceof Error ? loadError.message : t('Не вдалося оптимізувати кошик'),
+            error: loadError instanceof Error ? loadError.message : t('Не вдалося сформувати план закупівлі'),
             type: 'failed',
           })
         }
@@ -165,8 +174,6 @@ export function BudgetCartTab() {
   const producerNameById = useMemo(() => buildProducerNameMap(producers), [producers])
 
   const sortedItems = useMemo(() => (plan ? sortWithinBudgetFirst(plan.items) : []), [plan])
-
-  const firstDeferredIndex = useMemo(() => sortedItems.findIndex((item) => item.within_budget === false), [sortedItems])
 
   const utilization = useMemo(() => {
     if (!plan || plan.budget_eur <= 0) {
@@ -197,67 +204,87 @@ export function BudgetCartTab() {
 
   return (
     <Stack gap="lg">
-      <Group align="flex-end" gap="md" wrap="wrap">
-        <AiFeatureBadge size="sm" tooltip={t('AI-сервіс закупівель: прогноз попиту, дефіцит і бюджетний відбір')} />
-        <NumberInput
-          allowNegative={false}
-          decimalScale={0}
-          description={t('Ліміт закупівлі')}
-          label={`${t('Бюджет')} (EUR)`}
-          min={0}
-          onChange={(value) => setBudgetInput(typeof value === 'number' ? value : '')}
-          step={1000}
-          thousandSeparator=" "
-          value={budgetInput}
-          w={220}
-        />
-        <TextInput
-          description={t('На яку дату рахувати прогноз і залишки')}
-          label={t('Дата зрізу')}
-          type="date"
-          value={asOfDate}
-          w={170}
-          onChange={(event) => setAsOfDate(event.currentTarget.value)}
-        />
-        <Stack gap={4}>
-          <Text fw={500} size="sm">
-            {t('Метод')}
-          </Text>
-          <SegmentedControl
-            data={[
-              { label: t('Швидкий'), value: 'greedy' },
-              { label: t('Оптимальний'), value: 'milp' },
-            ]}
-            onChange={(value) => setMethod(value as CartOptimizeMethod)}
-            value={method}
-          />
-        </Stack>
-        <Button color={CREATE_ACTION_COLOR} disabled={!isBudgetValid} loading={isLoading} onClick={triggerOptimize}>
-          {t('Оптимізувати')}
-        </Button>
-        {hasRequested && (
-          <Tooltip label={t('Оновити')}>
-            <ActionIcon
-              aria-label={t('Оновити')}
+      <Card className="app-data-card" padding={0} radius="md" withBorder>
+        <div className="app-filter-bar budget-cart-filter-bar">
+          <Group align="flex-end" gap="sm" wrap="nowrap" className="budget-cart-filter-row">
+            <Stack className="budget-cart-filter-note" gap={2}>
+              <Text c="gray.8" fw={600} size="sm">
+                {t('AI підбирає товари до закупівлі в межах заданого ліміту в EUR')}
+              </Text>
+              <Text c="gray.9" size="xs">
+                {t('Кандидати відбираються на основі дефіциту, прогнозу попиту, залишків і правил закупівлі')}
+              </Text>
+            </Stack>
+            <Tooltip label={t('Ліміт закупівлі')}>
+              <NumberInput
+                allowNegative={false}
+                decimalScale={0}
+                label={`${t('Бюджет')} (EUR)`}
+                min={0}
+                onChange={(value) => setBudgetInput(typeof value === 'number' ? value : '')}
+                size="sm"
+                step={1000}
+                thousandSeparator=" "
+                value={budgetInput}
+                w={180}
+              />
+            </Tooltip>
+            <Tooltip label={t('На яку дату рахувати прогноз і залишки')}>
+              <TextInput
+                label={t('Дата зрізу')}
+                size="sm"
+                type="date"
+                value={asOfDate}
+                w={160}
+                onChange={(event) => setAsOfDate(event.currentTarget.value)}
+              />
+            </Tooltip>
+            <Stack gap={4}>
+              <Text c="gray.6" fw={600} size="xs">
+                {t('Метод')}
+              </Text>
+              <SegmentedControl
+                data={[
+                  { label: t('Швидкий'), value: 'greedy' },
+                  { label: t('Оптимальний'), value: 'milp' },
+                ]}
+                size="sm"
+                onChange={(value) => setMethod(value as CartOptimizeMethod)}
+                value={method}
+              />
+            </Stack>
+            <div className="app-filter-actions budget-cart-filter-actions">
+              {hasRequested && (
+                <Tooltip label={t('Оновити')}>
+                  <ActionIcon
+                    aria-label={t('Оновити')}
+                    color="gray"
+                    disabled={!isBudgetValid}
+                    loading={isLoading}
+                    size={34}
+                    variant="light"
+                    onClick={triggerOptimize}
+                  >
+                    <RefreshCw size={17} />
+                  </ActionIcon>
+                </Tooltip>
+              )}
+            </div>
+            <Button
+              color={CREATE_ACTION_COLOR}
               disabled={!isBudgetValid}
               loading={isLoading}
-              size="lg"
-              variant="subtle"
+              size="sm"
+              styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
               onClick={triggerOptimize}
             >
-              <RefreshCw size={18} />
-            </ActionIcon>
-          </Tooltip>
-        )}
-      </Group>
+              {t('Сформувати план')}
+            </Button>
+          </Group>
+        </div>
+      </Card>
 
-      <BudgetCartGuide
-        asOfDate={normalizeDateFilter(asOfDate)}
-        hasPlan={hasPlan}
-        method={method}
-        methodUsed={plan?.method_used}
-        modelVersion={plan?.model_version}
-      />
+      <BudgetCartGuide method={method} />
 
       {error && (
         <Alert color="red" icon={<CircleAlert size={16} />} variant="light">
@@ -268,7 +295,7 @@ export function BudgetCartTab() {
       {!hasRequested && !error && (
         <Card className="app-section-card" padding="lg" radius="md" withBorder>
           <Text c="dimmed" size="sm" ta="center">
-            {t('Введіть бюджет та натисніть «Оптимізувати»')}
+            {t('Введіть бюджет та натисніть «Сформувати план»')}
           </Text>
         </Card>
       )}
@@ -293,15 +320,41 @@ export function BudgetCartTab() {
         />
       )}
 
-      {hasPlan && !isEmpty && (
-        <Card className="app-section-card" padding="md" radius="md" withBorder>
-          <BudgetCartTable
-            firstDeferredIndex={firstDeferredIndex}
-            items={sortedItems}
-            producerNameById={producerNameById}
-          />
+      {hasPlan && !isEmpty && !isSheetOpen && (
+        <Card className="app-section-card" padding="sm" radius="md" withBorder>
+          <Group justify="space-between" wrap="nowrap">
+            <Text c="gray.8" fw={600} size="sm">
+              {t('План закупівлі')} · <Text className="app-money" component="span" size="sm">{sortedItems.length}</Text> {t('позицій')}
+            </Text>
+            <Button
+              leftSection={<ChevronUp size={16} />}
+              size="xs"
+              variant="outline"
+              onClick={() => setSheetOpen(true)}
+            >
+              {t('Показати план')}
+            </Button>
+          </Group>
         </Card>
       )}
+
+      <Drawer
+        classNames={{ content: 'budget-cart-sheet', header: 'budget-cart-sheet__header' }}
+        opened={isSheetOpen && hasPlan && !isEmpty}
+        overlayProps={{ backgroundOpacity: 0.25, blur: 2 }}
+        padding="md"
+        position="bottom"
+        size="55%"
+        title={
+          <span style={{ fontFamily: 'var(--font-mono)' }}>
+            {t('План закупівлі')} · {sortedItems.length} {t('позицій')}
+          </span>
+        }
+        withinPortal
+        onClose={() => setSheetOpen(false)}
+      >
+        <BudgetCartTable items={sortedItems} maxHeight="calc(55vh - 130px)" producerNameById={producerNameById} />
+      </Drawer>
 
       {isEmpty && (
         <Card className="app-section-card" padding="lg" radius="md" withBorder>
@@ -400,3 +453,4 @@ function calculateBudgetCartFinancials(plan: CartPlan | null): BudgetCartFinanci
 function normalizeDateFilter(value: string): string | undefined {
   return /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : undefined
 }
+

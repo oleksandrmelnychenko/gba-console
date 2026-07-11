@@ -1,6 +1,7 @@
 import { Card, Group, Progress, SimpleGrid, Stack, Text, Tooltip } from '@mantine/core'
 import { Info } from 'lucide-react'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { UrgencyDonut } from '../../../shared/ui/charts/UrgencyDonut'
 import type { UrgencySliceInput } from '../../../shared/ui/charts/donutData'
 import type { CartPlan } from '../procurementTypes'
@@ -69,23 +70,23 @@ export function BudgetCartSummary({
               money
               value={formatNullableEuro(financials.expectedMarginEur)}
             />
-            <SummaryItem color="green" label={t('В бюджеті')} value={countFormatter.format(plan.selected_count)} />
-            <SummaryItem color="gray" label={t('Відкладено')} value={countFormatter.format(plan.deferred_count)} />
-            <SummaryItem label={t('Одиниць товару')} value={qtyFormatter.format(financials.selectedUnits)} />
-            <SummaryItem label={t('Виробників')} value={countFormatter.format(financials.selectedProducerCount)} />
+            <SummaryItem label={t('В бюджеті')} money value={countFormatter.format(plan.selected_count)} />
+            <SummaryItem label={t('Відкладено')} money value={countFormatter.format(plan.deferred_count)} />
+            <SummaryItem label={t('Одиниць товару')} money value={qtyFormatter.format(financials.selectedUnits)} />
+            <SummaryItem label={t('Виробників')} money value={countFormatter.format(financials.selectedProducerCount)} />
             <SummaryItem label={t('Метод')} value={getMethodLabel(plan, t)} />
-            <SummaryItem label={t('Позицій')} value={countFormatter.format(plan.item_count)} />
+            <SummaryItem label={t('Позицій')} money value={countFormatter.format(plan.item_count)} />
           </SimpleGrid>
           <Stack gap={4}>
             <Group justify="space-between">
-              <Text c="dimmed" size="xs">
+              <Text c="gray.9" size="xs">
                 {t('Використання бюджету')}
               </Text>
-              <Text fw={600} size="xs">
+              <Text className="app-money" fw={600} size="xs">
                 {percentFormatter.format(utilization)}%
               </Text>
             </Group>
-            <Progress color={utilization >= 99 ? 'orange' : 'teal'} radius="xl" size="lg" value={utilization} />
+            <Progress color={CREATE_ACTION_COLOR} radius="xl" size="lg" value={utilization} />
           </Stack>
         </Stack>
 
@@ -106,13 +107,11 @@ export function BudgetCartSummary({
 }
 
 function SummaryItem({
-  color,
   hint,
   label,
   money,
   value,
 }: {
-  color?: string
   hint?: string
   label: string
   money?: boolean
@@ -121,7 +120,7 @@ function SummaryItem({
   return (
     <Stack gap={2}>
       <Group gap={4} wrap="nowrap">
-        <Text c="dimmed" size="xs">
+        <Text c="gray.9" size="xs">
           {label}
         </Text>
         {hint && (
@@ -130,7 +129,7 @@ function SummaryItem({
           </Tooltip>
         )}
       </Group>
-      <Text c={color} className={money ? 'app-money' : undefined} fw={money ? 600 : 700}>
+      <Text c="gray.8" className={money ? 'app-money' : undefined} fw={600}>
         {value}
       </Text>
     </Stack>

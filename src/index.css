@@ -485,3 +485,32 @@ select {
     animation: none;
   }
 }
+
+/* Panel reveal (transitions.dev style): the block slides up from below with
+   fade + soft blur when it opens. Render the panel with data-open="true" a
+   frame after mount (or toggle it) — pair with a keyed remount to replay. */
+.t-panel-reveal {
+  filter: blur(2px);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(94px);
+  transition:
+    transform 350ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 350ms cubic-bezier(0.22, 1, 0.36, 1),
+    filter 350ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform, opacity, filter;
+}
+
+.t-panel-reveal[data-open='true'] {
+  filter: blur(0);
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+  transition-duration: 400ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-panel-reveal {
+    transition: none !important;
+  }
+}

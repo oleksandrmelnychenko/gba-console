@@ -20,8 +20,8 @@
 }
 
 .basket-supply-row-ai-focus {
-  background: rgba(124, 58, 237, 0.1);
-  box-shadow: inset 3px 0 0 var(--mantine-color-violet-6);
+  background: rgba(var(--brand-orange-rgb), 0.08);
+  box-shadow: inset 3px 0 0 var(--brand-orange);
 }
 
 .basket-supply-totals {
@@ -42,52 +42,18 @@
   }
 }
 
-.budget-cart-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: var(--mantine-font-size-sm);
-}
-
-.budget-cart-table thead th {
-  padding: 8px 12px;
-  font-weight: 600;
-  color: var(--mantine-color-gray-7);
-  border-bottom: 1px solid var(--mantine-color-gray-3);
-  white-space: nowrap;
-}
-
-.budget-cart-table tbody td {
-  padding: 8px 12px;
-  border-bottom: 1px solid var(--mantine-color-gray-1);
-  vertical-align: middle;
-}
-
-.budget-cart-table tbody tr:hover td {
-  background: var(--mantine-color-gray-0);
-}
-
-.budget-cart-table .budget-cart-divider-row td {
-  padding: 0 12px;
-  border-bottom: none;
-}
-
-.budget-cart-table .budget-cart-divider-row:hover td {
-  background: transparent;
-}
-
 .budget-cart-guide {
   display: grid;
-  grid-template-columns: minmax(240px, 1.2fr) minmax(220px, 1fr) minmax(220px, 1fr) minmax(220px, 1fr);
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
   gap: 8px;
 }
 
-.budget-cart-guide__tile,
-.budget-cart-guide__status {
+.budget-cart-guide__tile {
   min-height: 84px;
   padding: 10px 12px;
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 8px;
-  background: var(--mantine-color-gray-0);
+  background: var(--mantine-color-white); /* flat per ui-patterns */
 }
 
 .budget-cart-guide__tile {
@@ -98,8 +64,8 @@
 }
 
 .budget-cart-guide__tile.is-active {
-  border-color: var(--mantine-color-violet-3);
-  background: rgba(124, 58, 237, 0.08);
+  border-color: rgba(var(--brand-orange-rgb), 0.5); /* brand accent, not violet */
+  background: rgba(var(--brand-orange-rgb), 0.05);
 }
 
 .budget-cart-guide__icon {
@@ -109,13 +75,15 @@
   align-items: center;
   justify-content: center;
   border-radius: 8px;
-  color: var(--mantine-color-violet-7);
-  background: var(--mantine-color-violet-0);
+  color: var(--mantine-color-gray-7);
+  background: var(--mantine-color-gray-0);
+  border: 1px solid var(--mantine-color-gray-2);
 }
 
-.budget-cart-guide__status {
-  display: flex;
-  align-items: center;
+.budget-cart-guide__tile.is-active .budget-cart-guide__icon {
+  color: var(--brand-orange);
+  background: rgba(var(--brand-orange-rgb), 0.08);
+  border-color: rgba(var(--brand-orange-rgb), 0.3);
 }
 
 .budget-cart-signals {
@@ -150,4 +118,52 @@
 .basket-supply-command-bar .basket-supply-filters {
   flex: 1 1 auto;
   max-width: 760px;
+}
+
+/* «Закупівля під бюджет» filter strip — inputs left, refresh cluster pushed to
+   the trailing edge, «Сформувати план» as the create-slot CTA. */
+.budget-cart-filter-row {
+  width: 100%;
+}
+
+.budget-cart-filter-actions {
+  margin-left: auto;
+}
+
+/* Explainer moved from the guide tile into the filter strip — takes the free
+   left space, truncates gracefully on narrow screens. */
+.budget-cart-filter-note {
+  align-self: center;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.budget-cart-filter-note .mantine-Text-root {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* iOS-style bottom sheet for the procurement plan: rounded top, grabber bar. */
+.budget-cart-sheet {
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+  overflow: hidden;
+}
+
+.budget-cart-sheet__header {
+  position: relative;
+  padding-top: 18px;
+}
+
+.budget-cart-sheet__header::before {
+  background: var(--mantine-color-gray-3);
+  border-radius: 999px;
+  content: '';
+  height: 4px;
+  left: 50%;
+  position: absolute;
+  top: 8px;
+  transform: translateX(-50%);
+  width: 44px;
 }

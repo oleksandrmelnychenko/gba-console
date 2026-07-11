@@ -1,7 +1,9 @@
-import { Badge, Divider, Group, Stack, Text, Tooltip } from '@mantine/core'
+import { Badge, Group, Stack, Text, Tooltip } from '@mantine/core'
 import { Info } from 'lucide-react'
-import { Fragment } from 'react'
+import { useMemo } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import type { ProcurementUrgency, ReorderSuggestion } from '../procurementTypes'
 
 type DecisionSignal = {
@@ -10,8 +12,8 @@ type DecisionSignal = {
 }
 
 type BudgetCartTableProps = {
-  firstDeferredIndex: number
   items: ReorderSuggestion[]
+  maxHeight?: string
   producerNameById: Map<number, string>
 }
 
@@ -48,160 +50,241 @@ const percentFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 1,
 })
 
-export function BudgetCartTable({
-  firstDeferredIndex,
-  items,
-  producerNameById,
-}: BudgetCartTableProps) {
+export function BudgetCartTable({ items, maxHeight = 'calc(100vh - 300px)', producerNameById }: BudgetCartTableProps) {
   const { t } = useI18n()
+  const columns = useMemo(() => buildColumns(t, producerNameById), [producerNameById, t])
 
   return (
-    <div style={{ overflowX: 'auto' }}>
-      <table className="budget-cart-table">
-        <thead>
-          <tr>
-            <th style={{ textAlign: 'left' }}>{t('Виробник')}</th>
-            <th style={{ textAlign: 'left' }}>{t('Товар')}</th>
-            <th style={{ textAlign: 'left' }}>{t('Терміновість')}</th>
-            <th style={{ textAlign: 'left' }}>{t('Квадрант')}</th>
-            <th style={{ textAlign: 'right' }}>{t('Прогноз')}</th>
-            <th style={{ textAlign: 'right' }}>{t('Залишок')}</th>
-            <th style={{ textAlign: 'right' }}>{t('Рекомендовано')}</th>
-            <th style={{ textAlign: 'right' }}>{`${t('Ціна')} (EUR)`}</th>
-            <th style={{ textAlign: 'right' }}>{`${t('Маржа')} (EUR)`}</th>
-            <th style={{ textAlign: 'right' }}>{`${t('Сума')} (EUR)`}</th>
-            <th style={{ textAlign: 'right' }}>{t('Цінність/€')}</th>
-            <th style={{ textAlign: 'left' }}>{t('AI сигнали')}</th>
-            <th style={{ textAlign: 'center' }}>{t('Бюджет')}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {items.map((item, index) => (
-            <Fragment key={`${item.producer_id}-${item.product_id}`}>
-              {index === firstDeferredIndex && firstDeferredIndex > 0 && (
-                <tr className="budget-cart-divider-row">
-                  <td colSpan={13}>
-                    <Divider label={t('Поза бюджетом')} labelPosition="center" my="xs" />
-                  </td>
-                </tr>
-              )}
-              <BudgetCartRow item={item} producerNameById={producerNameById} />
-            </Fragment>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <DataTable
+      columns={columns}
+      data={items}
+      defaultLayout={{ density: 'compact' }}
+      distributeAvailableWidth
+      emptyText={t('Немає позицій')}
+      getRowId={(item) => `${item.producer_id}-${item.product_id}`}
+      layoutVersion="budget-cart-plan-1"
+      maxHeight={maxHeight}
+      minWidth={1520}
+      tableId="budget-cart-plan"
+    />
   )
 }
 
-function BudgetCartRow({
-  item,
-  producerNameById,
-}: {
-  item: ReorderSuggestion
-  producerNameById: Map<number, string>
-}) {
-  const { t } = useI18n()
-  const deferred = item.within_budget === false
-  const quadrant = quadrantLabel(item)
-  const signals = buildDecisionSignals(item, t)
-
-  return (
-    <tr style={deferred ? { opacity: 0.7 } : undefined}>
-      <td>
-        <Text size="sm">{producerNameById.get(item.producer_id) || `#${item.producer_id}`}</Text>
-      </td>
-      <td>
+function buildColumns(
+  t: (value: string) => string,
+  producerNameById: Map<number, string>,
+): DataTableColumn<ReorderSuggestion>[] {
+  return [
+    {
+      id: 'producer',
+      header: t('Виробник'),
+      width: 180,
+      minWidth: 140,
+      accessor: (item) => producerNameById.get(item.producer_id) || `#${item.producer_id}`,
+      cell: (item) => (
+        <Text c="gray.9" size="sm">
+          {producerNameById.get(item.producer_id) || `#${item.producer_id}`}
+        </Text>
+      ),
+    },
+    {
+      id: 'product',
+      header: t('Товар'),
+      width: 170,
+      minWidth: 140,
+      accessor: (item) => item.product_id,
+      cell: (item) => (
         <Stack gap={1}>
           <Text fw={600} size="sm" style={MONO_STYLE}>#{item.product_id}</Text>
-          <Text c="dimmed" size="xs">{item.forecast.method || t('історичний прогноз')}</Text>
+          <Text c="gray.8" size="xs">{item.forecast.method || t('історичний прогноз')}</Text>
         </Stack>
-      </td>
-      <td>
+      ),
+    },
+    {
+      id: 'urgency',
+      header: t('Терміновість'),
+      width: 118,
+      minWidth: 104,
+      accessor: (item) => item.urgency,
+      cell: (item) => (
         <Badge className={URGENCY_PILL_CLASS[item.urgency]} size="sm" variant="light">
           {t(URGENCY_LABEL[item.urgency])}
         </Badge>
-      </td>
-      <td>
-        {quadrant ? (
+      ),
+    },
+    {
+      id: 'quadrant',
+      header: t('Квадрант'),
+      width: 104,
+      minWidth: 92,
+      accessor: (item) => quadrantLabel(item),
+      cell: (item) => {
+        const quadrant = quadrantLabel(item)
+
+        return quadrant ? (
           <Badge className="app-role-pill" size="sm" variant="outline">
             {quadrant}
           </Badge>
         ) : (
-          <Text c="dimmed" size="sm">
+          <Text c="gray.8" size="sm">
             -
           </Text>
-        )}
-      </td>
-      <td style={{ textAlign: 'right' }}>
+        )
+      },
+    },
+    {
+      id: 'forecast',
+      header: t('Прогноз'),
+      width: 132,
+      minWidth: 116,
+      align: 'right',
+      accessor: (item) => item.forecast.forecast_units,
+      cell: (item) => (
         <Stack align="end" gap={1}>
-          <Text fw={600} size="sm">
+          <Text className="app-money" size="sm">
             {qtyFormatter.format(item.forecast.forecast_units)}
           </Text>
-          <Text c="dimmed" size="xs">
+          <Text c="gray.8" size="xs" style={MONO_STYLE}>
             {item.forecast.horizon_days > 0
-              ? `${qtyFormatter.format(item.forecast.mean_daily)} / ${t('день')}, ${item.forecast.horizon_days}${t('д')}`
+              ? `${qtyFormatter.format(item.forecast.mean_daily)} / ${t('день')}, ${item.forecast.horizon_days} ${t('дн.')}`
               : `${qtyFormatter.format(item.forecast.mean_daily)} / ${t('день')}`}
           </Text>
         </Stack>
-      </td>
-      <td style={{ textAlign: 'right' }}>
+      ),
+    },
+    {
+      id: 'available',
+      header: t('Залишок'),
+      width: 132,
+      minWidth: 112,
+      align: 'right',
+      accessor: (item) => item.inventory.available,
+      cell: (item) => (
         <Stack align="end" gap={1}>
-          <Text fw={600} size="sm">
+          <Text className="app-money" size="sm">
             {qtyFormatter.format(item.inventory.available)}
           </Text>
-          <Text c="dimmed" size="xs">
-            {t('на руках')}: {qtyFormatter.format(item.inventory.on_hand)}
+          <Text c="gray.8" size="xs" style={MONO_STYLE}>
+            {t('В наявності')}: {qtyFormatter.format(item.inventory.on_hand)}
           </Text>
         </Stack>
-      </td>
-      <td style={{ textAlign: 'right' }}>
-        <Text fw={600} size="sm">
+      ),
+    },
+    {
+      id: 'suggestedQty',
+      header: t('Рекомендовано'),
+      width: 128,
+      minWidth: 112,
+      align: 'right',
+      accessor: (item) => item.suggested_qty,
+      cell: (item) => (
+        <Text className="app-money" size="sm">
           {qtyFormatter.format(item.suggested_qty)}
         </Text>
-      </td>
-      <td style={{ textAlign: 'right' }}>
-        <Text className="app-money" size="sm">{item.unit_cost_eur === null ? '' : eurFormatter.format(item.unit_cost_eur)}</Text>
-      </td>
-      <td style={{ textAlign: 'right' }}>
-        {item.unit_margin_eur === null ? (
-          <Text size="sm">-</Text>
-        ) : (
-          <Text className="app-money" fw={600} size="sm">
-            {eurFormatter.format(item.unit_margin_eur)}
-          </Text>
-        )}
-      </td>
-      <td style={{ textAlign: 'right' }}>
-        <Text className="app-money" size="sm">{item.line_cost_eur === null ? '' : eurFormatter.format(item.line_cost_eur)}</Text>
-      </td>
-      <td style={{ textAlign: 'right' }}>
-        <Text size="sm">{item.value_density === null ? '' : densityFormatter.format(item.value_density)}</Text>
-      </td>
-      <td>
-        <Tooltip
-          label={item.reason || t('AI зіставив прогноз попиту, залишки, точку дозамовлення і правила закупівлі')}
-          multiline
-          maw={360}
+      ),
+    },
+    {
+      id: 'unitCost',
+      header: `${t('Ціна')} (EUR)`,
+      width: 110,
+      minWidth: 96,
+      align: 'right',
+      accessor: (item) => item.unit_cost_eur ?? 0,
+      cell: (item) => (
+        <Text className="app-money" size="sm">
+          {item.unit_cost_eur === null ? '' : eurFormatter.format(item.unit_cost_eur)}
+        </Text>
+      ),
+    },
+    {
+      id: 'unitMargin',
+      header: `${t('Маржа')} (EUR)`,
+      width: 110,
+      minWidth: 96,
+      align: 'right',
+      accessor: (item) => item.unit_margin_eur ?? 0,
+      cell: (item) => (
+        <Text className="app-money" size="sm">
+          {item.unit_margin_eur === null ? '-' : eurFormatter.format(item.unit_margin_eur)}
+        </Text>
+      ),
+    },
+    {
+      id: 'lineCost',
+      header: `${t('Сума')} (EUR)`,
+      width: 118,
+      minWidth: 104,
+      align: 'right',
+      accessor: (item) => item.line_cost_eur ?? 0,
+      cell: (item) => (
+        <Text className="app-money" size="sm">
+          {item.line_cost_eur === null ? '' : eurFormatter.format(item.line_cost_eur)}
+        </Text>
+      ),
+    },
+    {
+      id: 'valueDensity',
+      header: t('Цінність/€'),
+      width: 104,
+      minWidth: 92,
+      align: 'right',
+      accessor: (item) => item.value_density ?? 0,
+      cell: (item) => (
+        <Text className="app-money" size="sm">
+          {item.value_density === null ? '' : densityFormatter.format(item.value_density)}
+        </Text>
+      ),
+    },
+    {
+      id: 'signals',
+      header: t('AI-сигнали'),
+      width: 300,
+      minWidth: 220,
+      fill: true,
+      enableSorting: false,
+      cell: (item) => <SignalsCell item={item} />,
+    },
+    {
+      id: 'budget',
+      header: t('Бюджет'),
+      width: 118,
+      minWidth: 104,
+      align: 'center',
+      accessor: (item) => (item.within_budget === false ? 0 : 1),
+      cell: (item) => (
+        <Badge
+          className={item.within_budget === false ? 'app-role-pill is-gray' : 'app-role-pill is-green'}
+          size="sm"
+          variant="light"
         >
-          <Group className="budget-cart-signals" gap={4} wrap="wrap">
-            {signals.map((signal) => (
-              <Badge className={signal.pillClass} key={signal.label} size="xs" variant="light">
-                {signal.label}
-              </Badge>
-            ))}
-            <Badge className="app-role-pill is-gray" leftSection={<Info size={11} />} size="xs" variant="light">
-              {t('причина')}
-            </Badge>
-          </Group>
-        </Tooltip>
-      </td>
-      <td style={{ textAlign: 'center' }}>
-        <Badge className={deferred ? 'app-role-pill is-gray' : 'app-role-pill is-green'} size="sm" variant="light">
-          {deferred ? t('відкладено') : t('в бюджеті')}
+          {item.within_budget === false ? t('Відкладено') : t('В бюджеті')}
         </Badge>
-      </td>
-    </tr>
+      ),
+    },
+  ]
+}
+
+function SignalsCell({ item }: { item: ReorderSuggestion }) {
+  const { t } = useI18n()
+  const signals = buildDecisionSignals(item, t)
+
+  return (
+    <Tooltip
+      label={item.reason || t('AI зіставив прогноз попиту, залишки, точку дозамовлення і правила закупівлі')}
+      multiline
+      maw={360}
+    >
+      <Group className="budget-cart-signals" gap={4} wrap="wrap">
+        {signals.map((signal) => (
+          <Badge className={signal.pillClass} key={signal.label} size="xs" variant="light">
+            {signal.label}
+          </Badge>
+        ))}
+        <Badge className="app-role-pill is-gray" leftSection={<Info size={11} />} size="xs" variant="light">
+          {t('Причина')}
+        </Badge>
+      </Group>
+    </Tooltip>
   )
 }
 
@@ -209,12 +292,12 @@ function buildDecisionSignals(item: ReorderSuggestion, t: (value: string) => str
   const signals: DecisionSignal[] = []
 
   if (item.inventory.available <= item.reorder_point) {
-    signals.push({ label: t('нижче точки'), pillClass: 'app-role-pill is-red' })
+    signals.push({ label: t('Нижче точки замовлення'), pillClass: 'app-role-pill is-red' })
   }
 
   if (item.days_of_cover > 0) {
     signals.push({
-      label: `${t('покриття')} ${qtyFormatter.format(item.days_of_cover)}${t('д')}`,
+      label: `${t('Покриття')}: ${qtyFormatter.format(item.days_of_cover)} ${t('дн.')}`,
       pillClass: item.days_of_cover <= 14 ? 'app-role-pill is-orange' : 'app-role-pill is-gray',
     })
   }
@@ -229,7 +312,7 @@ function buildDecisionSignals(item: ReorderSuggestion, t: (value: string) => str
 
   if (item.applied_service_level !== null) {
     signals.push({
-      label: `SL ${percentFormatter.format(item.applied_service_level * 100)}%`,
+      label: `${t('Рівень сервісу')} ${percentFormatter.format(item.applied_service_level * 100)}%`,
       pillClass: 'app-role-pill is-green',
     })
   }
