@@ -12,6 +12,7 @@ import type {
   IncomeStorage,
   PackingListPackageOrderItem,
 } from '../productIncomeTypes'
+import './protocol-income-placement-drawer.css'
 
 type ProtocolIncomePlacementDrawerProps = {
   opened: boolean
@@ -37,6 +38,10 @@ type PlacementDraftState = {
 }
 
 const MAX_PLACEMENT_NAME_LENGTH = 5
+const PLACEMENT_INDEX_COLUMN_WIDTH = 48
+const PLACEMENT_ADDRESS_COLUMN_WIDTH = 96
+const PLACEMENT_QTY_COLUMN_WIDTH = 96
+const PLACEMENT_ACTION_COLUMN_WIDTH = 52
 
 function buildAddress(placement: IncomeProductPlacement): string {
   return (placement.StorageNumber || '') + '-' + (placement.RowNumber ? placement.RowNumber + '-' : '') + (placement.CellNumber || '')
@@ -242,14 +247,22 @@ function ProtocolIncomePlacementDrawerContent({
           {`${t('Доступна К-сть')} ${Math.max(maxQty - placedQty, 0)}`}
         </Text>
 
-        <Table withTableBorder withColumnBorders>
+        <Table className="protocol-income-placement-table" withTableBorder withColumnBorders>
+          <colgroup>
+            <col style={{ width: PLACEMENT_INDEX_COLUMN_WIDTH }} />
+            <col />
+            <col style={{ width: PLACEMENT_ADDRESS_COLUMN_WIDTH }} />
+            <col style={{ width: PLACEMENT_ADDRESS_COLUMN_WIDTH }} />
+            <col className="protocol-income-placement-qty-column" style={{ width: PLACEMENT_QTY_COLUMN_WIDTH }} />
+            <col style={{ width: PLACEMENT_ACTION_COLUMN_WIDTH }} />
+          </colgroup>
           <Table.Thead>
             <Table.Tr>
               <Table.Th>#</Table.Th>
               <Table.Th>{t('Склад')}</Table.Th>
               <Table.Th>{t('Ряд')}</Table.Th>
               <Table.Th>{t('Полиця')}</Table.Th>
-              <Table.Th>{t('К-сть')}</Table.Th>
+              <Table.Th className="protocol-income-placement-qty-cell">{t('К-сть')}</Table.Th>
               <Table.Th />
             </Table.Tr>
           </Table.Thead>
@@ -264,7 +277,7 @@ function ProtocolIncomePlacementDrawerContent({
                 <Table.Td>{placement.StorageNumber}</Table.Td>
                 <Table.Td>{placement.RowNumber}</Table.Td>
                 <Table.Td>{placement.CellNumber}</Table.Td>
-                <Table.Td>{placement.Qty}</Table.Td>
+                <Table.Td className="protocol-income-placement-qty-cell">{placement.Qty ?? 0}</Table.Td>
                 <Table.Td>
                   {!placement.IsApplied && (
                     <ActionIcon
@@ -335,6 +348,7 @@ function ProtocolIncomePlacementDrawerContent({
 
             <NumberInput
               allowDecimal={false}
+              className="protocol-income-placement-qty-input"
               label={t('Кількість')}
               min={1}
               value={draft.qty}

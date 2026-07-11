@@ -1,0 +1,21 @@
+.protocol-income-placement-table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.protocol-income-placement-table th,
+.protocol-income-placement-table td {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.protocol-income-placement-qty-cell {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.protocol-income-placement-qty-input {
+  width: min(160px, 100%);
+}

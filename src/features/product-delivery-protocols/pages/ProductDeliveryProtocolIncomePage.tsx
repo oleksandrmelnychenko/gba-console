@@ -68,8 +68,15 @@ const DEFAULT_VAT_PERCENT = 23
 const PERMISSION_ADD_DYNAMIC_INCOME_COLUMN = 'PRODUCT_INCOME_ordersUkraineAllEdit_NewInvoiceBtn_PKEY'
 const PERMISSION_CAPITALIZE_DYNAMIC_INCOME = 'PRODUCT_INCOME_ordersUkraineAllEdit_CapitalizeBtn_PKEY'
 const PERMISSION_CARRY_OUT_DYNAMIC_INCOME = 'PRODUCT_INCOME_ordersUkraineAllEdit_CarryOutBtn_PKEY'
+const PRODUCT_INCOME_QTY_COLUMN_WIDTH = 88
 
 const dateFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short' })
+const incomeNumberFormatters = new Map([
+  ['2:2', new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2, minimumFractionDigits: 2 })],
+  ['3:0', new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 3, minimumFractionDigits: 0 })],
+  ['3:3', new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 3, minimumFractionDigits: 3 })],
+])
+
 function formatDate(value?: Date | string): string {
   if (!value) {
     return '-'
@@ -80,11 +87,18 @@ function formatDate(value?: Date | string): string {
   return Number.isNaN(date.getTime()) ? String(value) : dateFormatter.format(date)
 }
 
-function formatIncomeNumber(value: number, fractionDigits = 2, minimumFractionDigits = fractionDigits): string {
-  return new Intl.NumberFormat('uk-UA', {
-    maximumFractionDigits: fractionDigits,
-    minimumFractionDigits,
-  }).format(value)
+function formatIncomeNumber(
+  value: number,
+  fractionDigits: 2 | 3 = 2,
+  minimumFractionDigits: 0 | 2 | 3 = fractionDigits,
+): string {
+  const formatter = incomeNumberFormatters.get(`${fractionDigits}:${minimumFractionDigits}`)
+
+  if (!formatter) {
+    throw new Error(`Unsupported income number format: ${fractionDigits}:${minimumFractionDigits}`)
+  }
+
+  return formatter.format(value)
 }
 
 function formatIncomeQty(value: number): string {
@@ -1218,9 +1232,13 @@ function useProductIncomeColumns({
       {
         id: 'qty',
         header: t('К-сть'),
-        width: 80,
+        accessor: (gridRow) => gridRow.item.Qty ?? 0,
+        width: PRODUCT_INCOME_QTY_COLUMN_WIDTH,
+        minWidth: PRODUCT_INCOME_QTY_COLUMN_WIDTH,
+        maxWidth: PRODUCT_INCOME_QTY_COLUMN_WIDTH,
         align: 'right',
-        cell: (gridRow) => <ProductIncomeNumericCell>{formatIncomeQty(gridRow.item.Qty || 0)}</ProductIncomeNumericCell>,
+        enableResizing: false,
+        cell: (gridRow) => <ProductIncomeNumericCell>{formatIncomeQty(gridRow.item.Qty ?? 0)}</ProductIncomeNumericCell>,
       },
       {
         id: 'measureUnit',
@@ -1810,7 +1828,7 @@ function ProductIncomeGridCard({
           getRowId={(gridRow) => String(gridRow.item.NetUid || gridRow.item.Id || gridRow.index)}
           height="100%"
           isLoading={model.isLoading}
-          layoutVersion="protocol-product-income-2"
+          layoutVersion="protocol-product-income-3"
           minWidth={1400}
           showLayoutControls
           tableId="protocol-product-income"
