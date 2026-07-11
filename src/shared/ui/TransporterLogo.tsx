@@ -1,5 +1,6 @@
-import { Truck } from 'lucide-react'
+import { Bus, PackageCheck, Truck } from 'lucide-react'
 import { useState, type CSSProperties } from 'react'
+import { getSemanticTransporterIcon } from '../transporter-icons/transporterSemantics'
 import { upgradeHttpToHttps } from '../url/upgradeHttpToHttps'
 import { toProxiedAssetUrl } from '../url/proxiedAssetUrl'
 import { resolveTransporterLogo } from '../transporter-icons/transporterLogos'
@@ -29,10 +30,19 @@ export function TransporterLogo({
   name?: string | null
   style?: CSSProperties
 }) {
+  const semanticIcon = getSemanticTransporterIcon(cssClass, name)
   const bundled = resolveTransporterLogo(cssClass, name)
   const src = bundled || upgradeHttpToHttps(toProxiedAssetUrl(imageUrl?.trim()))
   // Keyed by src so a new row's image clears a previous row's failure.
   const [failedSrc, setFailedSrc] = useState<string | null>(null)
+
+  if (semanticIcon === 'bus') {
+    return <Bus size={iconSize} style={TRUCK_ICON_STYLE} />
+  }
+
+  if (semanticIcon === 'self-pickup') {
+    return <PackageCheck size={iconSize} style={TRUCK_ICON_STYLE} />
+  }
 
   if (!src || failedSrc === src) {
     return <Truck size={iconSize} style={TRUCK_ICON_STYLE} />

@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
+import { TransporterLogo } from '../ui/TransporterLogo'
 import { TransporterIcon } from './TransporterIcon'
 
 describe('TransporterIcon', () => {
@@ -26,5 +27,19 @@ describe('TransporterIcon', () => {
 
     expect(screen.getByRole('img', { name: 'Custom' }).getAttribute('src'))
       .toBe('https://cdn.example.test/custom.png')
+  })
+
+  it('renders the semantic bus icon in the main sales-grid logo component', () => {
+    const { container } = render(
+      <TransporterLogo
+        cssClass="bus_item_class"
+        imageUrl="http://retired.example.test/bus.png"
+        name="Автобус"
+      />,
+    )
+
+    expect(container.querySelector('svg.lucide-bus')).not.toBeNull()
+    expect(container.querySelector('svg.lucide-truck')).toBeNull()
+    expect(container.querySelector('img')).toBeNull()
   })
 })
