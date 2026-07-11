@@ -273,15 +273,32 @@ export function ProductCard({
     )
   }
   if (!detail?.found) {
-    return (
-      <Card withBorder>
-        {error ? (
+    if (error) {
+      return (
+        <Card withBorder>
           <Alert color="orange" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
-        ) : (
-          <Text c="dimmed">{t('Недостатньо даних для аналітики цього товару')}</Text>
-        )}
+        </Card>
+      )
+    }
+
+    // found:false is the honest state for a product with no sales history AND no stock
+    // (e.g. a catalog item never sold / not in the assortment) — show its identity and the
+    // reason instead of a bare dead-end, so the buyer knows it's «no signals», not an error.
+    return (
+      <Card withBorder>
+        <Stack gap={6}>
+          <Text className="assort-product-hero__name">{detail?.name ?? `ID ${detail?.product_id ?? ''}`}</Text>
+          {detail?.vendor_code && (
+            <Text c="dimmed" size="sm">
+              {detail.vendor_code}
+            </Text>
+          )}
+          <Alert color="gray" icon={<CircleAlert size={18} />} variant="light">
+            {t('Товар ще не продавався і відсутній на складі — немає сигналів для аналітики')}
+          </Alert>
+        </Stack>
       </Card>
     )
   }
