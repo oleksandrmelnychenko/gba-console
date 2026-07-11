@@ -67,6 +67,10 @@ export type ReorderCheaperAlt = {
 
 export type ReorderSuggestion = {
   product_id: number
+  product_name: string | null
+  vendor_code: string | null
+  oe_number: string | null
+  image_url: string | null
   producer_id: number
   producer_name: string | null
   suggested_qty: number

@@ -463,6 +463,10 @@ function normalizeReorderSuggestion(value: unknown): ReorderSuggestion | null {
 
   return {
     product_id: productId,
+    product_name: normalizeNullableString(entry.product_name),
+    vendor_code: normalizeNullableString(entry.vendor_code),
+    oe_number: normalizeNullableString(entry.oe_number),
+    image_url: normalizeNullableString(entry.image_url),
     producer_id: toNumber(entry.producer_id, 0),
     producer_name: normalizeNullableString(entry.producer_name),
     suggested_qty: toNumber(entry.suggested_qty, 0),

@@ -6,6 +6,7 @@ import {
   Button,
   Card,
   Group,
+  Image,
   Loader,
   NumberInput,
   SegmentedControl,
@@ -17,7 +18,8 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { ChevronDown, ChevronRight, Plus, Sparkles, Trash2, Truck } from 'lucide-react'
+import { ChevronDown, ChevronRight, FileSpreadsheet, ImageOff, Plus, Sparkles, Trash2, Truck } from 'lucide-react'
+import * as XLSX from 'xlsx'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { getSupplyOrderSuppliers } from '../../supply-ukraine-orders/api/supplyUkraineOrdersApi'
@@ -43,6 +45,46 @@ const URGENCY_META: Record<ProcurementUrgency, { color: string; label: string; o
 }
 
 type BasketLine = { suggestion: ReorderSuggestion; qty: number }
+
+// Quadrant = ABC (revenue importance) × XYZ (demand predictability).
+const QUADRANT_HINTS: Record<string, string> = {
+  AX: 'Головні гроші + стабільний попит — тримати завжди на складі',
+  AY: 'Важливий + сезонний попит — запас під сезон',
+  AZ: 'Важливий + рваний попит — більший страховий запас',
+  BX: 'Середній + стабільний — планове поповнення',
+  BY: 'Середній + змінний попит',
+  BZ: 'Середній + непередбачуваний попит',
+  CX: 'Дрібний + стабільний',
+  CY: 'Дрібний + змінний',
+  CZ: 'Дрібний + непередбачуваний — під замовлення, не морозити склад',
+}
+
+function quadrantHint(quadrant: string, t: (key: string) => string): string {
+  return t(QUADRANT_HINTS[quadrant.toUpperCase()] ?? 'ABC×XYZ: важливість × передбачуваність попиту')
+}
+
+function exportRowsToXlsx(rows: ReorderSuggestion[], lens: Lens, t: (key: string) => string) {
+  const data = rows.map((row) => ({
+    [t('Терміновість')]: row.urgency,
+    [t('Код')]: row.vendor_code ?? '',
+    [t('Назва')]: row.product_name ?? `#${row.product_id}`,
+    OE: row.oe_number ?? '',
+    [t('Виробник')]: row.producer_name ?? `#${row.producer_id}`,
+    [t('Квадрант')]: row.quadrant ?? '',
+    [t('Наявність')]: row.inventory.on_hand,
+    [t('Позиція')]: row.inventory.position,
+    [t('Днів покриття')]: row.days_of_cover >= 9999 ? '' : row.days_of_cover,
+    [t('Замовити')]: row.suggested_qty,
+    [t('Ціна од., EUR')]: row.unit_cost_eur ?? '',
+    [t('Сума, EUR')]: row.line_cost_eur ?? '',
+    [t('Маржа од., EUR')]: row.unit_margin_eur ?? '',
+  }))
+  const sheet = XLSX.utils.json_to_sheet(data)
+  const book = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(book, sheet, lens === 'warehouse' ? 'Склад' : 'Виробник')
+  const stamp = new Date().toISOString().slice(0, 10)
+  XLSX.writeFile(book, `procurement-${lens}-${stamp}.xlsx`)
+}
 
 export function ProcurementConstructor() {
   const { t } = useI18n()
@@ -265,15 +307,26 @@ export function ProcurementConstructor() {
             />
           )}
         </Group>
-        <Button
-          disabled={sortedRows.length === 0}
-          leftSection={<Sparkles size={15} />}
-          size="xs"
-          variant="light"
-          onClick={addAllCritical}
-        >
-          {t('Додати критичні в кошик')}
-        </Button>
+        <Group gap={8} wrap="nowrap">
+          <Button
+            disabled={sortedRows.length === 0}
+            leftSection={<FileSpreadsheet size={15} />}
+            size="xs"
+            variant="default"
+            onClick={() => exportRowsToXlsx(sortedRows, lens, t)}
+          >
+            {t('Експорт Excel')}
+          </Button>
+          <Button
+            disabled={sortedRows.length === 0}
+            leftSection={<Sparkles size={15} />}
+            size="xs"
+            variant="light"
+            onClick={addAllCritical}
+          >
+            {t('Додати критичні в кошик')}
+          </Button>
+        </Group>
       </Group>
 
       {sortedRows.length > 0 && <OverviewPanel overview={overview} t={t} />}
@@ -303,6 +356,7 @@ export function ProcurementConstructor() {
                     <Table.Th w={30} />
                     <Table.Th>{t('Терміновість')}</Table.Th>
                     <Table.Th>{t('Товар')}</Table.Th>
+                    <Table.Th>{t('Квадрант')}</Table.Th>
                     {lens === 'warehouse' && <Table.Th>{t('Виробник')}</Table.Th>}
                     <Table.Th ta="right">{t('Наявн.')}</Table.Th>
                     <Table.Th ta="right">{t('Покриття')}</Table.Th>
@@ -336,11 +390,54 @@ export function ProcurementConstructor() {
                             </Badge>
                           </Table.Td>
                           <Table.Td>
-                            <Text size="sm">#{row.product_id}</Text>
-                            {row.abc && (
+                            <Group gap={8} wrap="nowrap">
+                              {row.image_url ? (
+                                <Image alt="" fit="contain" h={34} radius="sm" src={row.image_url} w={34} />
+                              ) : (
+                                <Box
+                                  style={{
+                                    alignItems: 'center',
+                                    background: 'var(--mantine-color-gray-1)',
+                                    borderRadius: 4,
+                                    color: 'var(--mantine-color-gray-5)',
+                                    display: 'flex',
+                                    height: 34,
+                                    justifyContent: 'center',
+                                    width: 34,
+                                  }}
+                                >
+                                  <ImageOff size={16} />
+                                </Box>
+                              )}
+                              <Box style={{ minWidth: 0 }}>
+                                <Text fw={500} size="sm" title={row.product_name ?? ''} truncate>
+                                  {row.product_name || `#${row.product_id}`}
+                                </Text>
+                                <Group gap={6} wrap="nowrap">
+                                  {row.vendor_code && (
+                                    <Text c="dimmed" size="xs">
+                                      {row.vendor_code}
+                                    </Text>
+                                  )}
+                                  {row.oe_number && (
+                                    <Text c="dimmed" size="xs" title={`${t('Оригінальний номер')}: ${row.oe_number}`}>
+                                      · OE {row.oe_number}
+                                    </Text>
+                                  )}
+                                </Group>
+                              </Box>
+                            </Group>
+                          </Table.Td>
+                          <Table.Td>
+                            {row.quadrant ? (
+                              <Tooltip label={quadrantHint(row.quadrant, t)}>
+                                <Badge color="grape" size="sm" variant="light">
+                                  {row.quadrant}
+                                </Badge>
+                              </Tooltip>
+                            ) : (
                               <Text c="dimmed" size="xs">
-                                {row.abc}
-                                {row.xyz ?? ''}
+                                —
                               </Text>
                             )}
                           </Table.Td>
@@ -382,7 +479,7 @@ export function ProcurementConstructor() {
                         </Table.Tr>
                         {isOpen && (
                           <Table.Tr key={`${row.product_id}-proof`}>
-                            <Table.Td colSpan={lens === 'warehouse' ? 9 : 8}>
+                            <Table.Td colSpan={lens === 'warehouse' ? 10 : 9}>
                               <ProofPanel row={row} demand={demandByProduct.get(row.product_id)} t={t} />
                             </Table.Td>
                           </Table.Tr>
