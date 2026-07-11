@@ -334,10 +334,10 @@ export function BudgetCartTab() {
       <Drawer
         classNames={{ content: 'budget-cart-sheet', header: 'budget-cart-sheet__header' }}
         opened={isSheetOpen && hasPlan && !isEmpty}
-        overlayProps={{ backgroundOpacity: 0.25, blur: 2 }}
+        overlayProps={{ backgroundOpacity: 0.06, blur: 0 }}
         padding="md"
         position="bottom"
-        size="55%"
+        size="60%"
         title={
           <span style={{ fontFamily: 'var(--font-mono)' }}>
             {t('План закупівлі')} · {sortedItems.length} {t('позицій')}
@@ -346,7 +346,7 @@ export function BudgetCartTab() {
         withinPortal
         onClose={() => setSheetOpen(false)}
       >
-        <BudgetCartTable items={sortedItems} maxHeight="calc(55vh - 130px)" producerNameById={producerNameById} />
+        <BudgetCartTable items={sortedItems} maxHeight="calc(60vh - 130px)" producerNameById={producerNameById} />
       </Drawer>
 
       {isEmpty && (
