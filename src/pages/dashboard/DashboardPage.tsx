@@ -7,7 +7,10 @@ import { useI18n } from '../../shared/i18n/useI18n'
 import { RoleDashboardWorkspace } from '../../features/role-dashboards/components/RoleDashboardWorkspace'
 import { getDashboardWorkspaceCatalog } from '../../features/role-dashboards/api/dashboardWorkspacesApi'
 import type { DashboardWorkspaceCatalog } from '../../features/role-dashboards/types'
-import { resolveDashboardWorkspace } from '../../features/role-dashboards/utils/dashboardWorkspaceSelection'
+import {
+  groupDashboardWorkspaceOptions,
+  resolveDashboardWorkspace,
+} from '../../features/role-dashboards/utils/dashboardWorkspaceSelection'
 import '../../features/role-dashboards/role-dashboards.css'
 
 export function DashboardPage() {
@@ -49,11 +52,7 @@ export function DashboardPage() {
   const showsSharedPeriod = selectedWorkspace ? !['sales-manager', 'sales-head', 'buyer', 'buyer-head'].includes(selectedWorkspace) : false
   const period = useMemo(() => ({ from, toExclusive: addDays(to, 1) }), [from, to])
   const selectOptions = useMemo(
-    () => catalog?.workspaces.map((workspace) => ({
-      group: t(workspace.group),
-      label: t(workspace.name),
-      value: workspace.key,
-    })) ?? [],
+    () => catalog ? groupDashboardWorkspaceOptions(catalog, t) : [],
     [catalog, t],
   )
 
