@@ -22,6 +22,8 @@ import { ChevronDown, ChevronRight, FileSpreadsheet, ImageOff, Plus, Sparkles, T
 import * as XLSX from 'xlsx'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { getProductAnalytics } from '../../assortment/api/assortmentApi'
+import type { ProductSalesSeriesPoint } from '../../assortment/types'
 import { getSupplyOrderSuppliers } from '../../supply-ukraine-orders/api/supplyUkraineOrdersApi'
 import type { Client } from '../../supply-ukraine-orders/types'
 import {
@@ -63,22 +65,31 @@ function quadrantHint(quadrant: string, t: (key: string) => string): string {
   return t(QUADRANT_HINTS[quadrant.toUpperCase()] ?? 'ABC×XYZ: важливість × передбачуваність попиту')
 }
 
-function exportRowsToXlsx(rows: ReorderSuggestion[], lens: Lens, t: (key: string) => string) {
-  const data = rows.map((row) => ({
-    [t('Терміновість')]: row.urgency,
-    [t('Код')]: row.vendor_code ?? '',
-    [t('Назва')]: row.product_name ?? `#${row.product_id}`,
-    OE: row.oe_number ?? '',
-    [t('Виробник')]: row.producer_name ?? `#${row.producer_id}`,
-    [t('Квадрант')]: row.quadrant ?? '',
-    [t('Наявність')]: row.inventory.on_hand,
-    [t('Позиція')]: row.inventory.position,
-    [t('Днів покриття')]: row.days_of_cover >= 9999 ? '' : row.days_of_cover,
-    [t('Замовити')]: row.suggested_qty,
-    [t('Ціна од., EUR')]: row.unit_cost_eur ?? '',
-    [t('Сума, EUR')]: row.line_cost_eur ?? '',
-    [t('Маржа од., EUR')]: row.unit_margin_eur ?? '',
-  }))
+function exportRowsToXlsx(
+  rows: ReorderSuggestion[],
+  lens: Lens,
+  t: (key: string) => string,
+  orderQty: (row: ReorderSuggestion) => number,
+) {
+  const data = rows.map((row) => {
+    const q = orderQty(row)
+
+    return {
+      [t('Терміновість')]: row.urgency,
+      [t('Код')]: row.vendor_code ?? '',
+      [t('Назва')]: row.product_name ?? `#${row.product_id}`,
+      OE: row.oe_number ?? '',
+      [t('Виробник')]: row.producer_name ?? `#${row.producer_id}`,
+      [t('Квадрант')]: row.quadrant ?? '',
+      [t('Наявність')]: row.inventory.on_hand,
+      [t('Позиція')]: row.inventory.position,
+      [t('Днів покриття')]: row.days_of_cover >= 9999 ? '' : row.days_of_cover,
+      [t('Замовити')]: q,
+      [t('Ціна од., EUR')]: row.unit_cost_eur ?? '',
+      [t('Сума, EUR')]: Math.round((row.unit_cost_eur ?? 0) * q * 100) / 100,
+      [t('Маржа од., EUR')]: row.unit_margin_eur ?? '',
+    }
+  })
   const sheet = XLSX.utils.json_to_sheet(data)
   const book = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(book, sheet, lens === 'warehouse' ? 'Склад' : 'Виробник')
@@ -101,6 +112,33 @@ export function ProcurementConstructor() {
   const [expanded, setExpanded] = useState<number | null>(null)
   const [basket, setBasket] = useState<Map<number, BasketLine>>(new Map())
   const [creatingProducer, setCreatingProducer] = useState<number | null>(null)
+  // Inline-editable order quantities keyed by product_id (default = AI suggested_qty).
+  const [draftQty, setDraftQty] = useState<Record<number, number>>({})
+  // Lazy per-product monthly sales history, fetched on row expand (works in both lenses).
+  const [history, setHistory] = useState<Record<number, ProductSalesSeriesPoint[] | 'loading'>>({})
+
+  const loadHistory = useCallback(
+    (productId: number) => {
+      setHistory((current) => {
+        if (current[productId] !== undefined) {
+          return current
+        }
+        getProductAnalytics(productId, undefined, 12)
+          .then((data) =>
+            setHistory((prev) => ({ ...prev, [productId]: data.sales_series ?? [] })),
+          )
+          .catch(() => setHistory((prev) => ({ ...prev, [productId]: [] })))
+
+        return { ...current, [productId]: 'loading' }
+      })
+    },
+    [],
+  )
+
+  const orderQtyFor = useCallback(
+    (row: ReorderSuggestion) => draftQty[row.product_id] ?? row.suggested_qty,
+    [draftQty],
+  )
 
   useEffect(() => {
     let cancelled = false
@@ -215,7 +253,7 @@ export function ProcurementConstructor() {
     const critical = sortedRows.filter((row) => row.urgency === 'critical' || row.urgency === 'high')
     setBasket((previous) => {
       const next = new Map(previous)
-      critical.forEach((row) => next.set(row.product_id, { suggestion: row, qty: row.suggested_qty }))
+      critical.forEach((row) => next.set(row.product_id, { suggestion: row, qty: orderQtyFor(row) }))
 
       return next
     })
@@ -313,7 +351,7 @@ export function ProcurementConstructor() {
             leftSection={<FileSpreadsheet size={15} />}
             size="xs"
             variant="default"
-            onClick={() => exportRowsToXlsx(sortedRows, lens, t)}
+            onClick={() => exportRowsToXlsx(sortedRows, lens, t, orderQtyFor)}
           >
             {t('Експорт Excel')}
           </Button>
@@ -379,7 +417,13 @@ export function ProcurementConstructor() {
                               aria-label={t('Пруфи')}
                               size="sm"
                               variant="subtle"
-                              onClick={() => setExpanded(isOpen ? null : row.product_id)}
+                              onClick={() => {
+                                const next = isOpen ? null : row.product_id
+                                setExpanded(next)
+                                if (next !== null) {
+                                  loadHistory(row.product_id)
+                                }
+                              }}
                             >
                               {isOpen ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
                             </ActionIcon>
@@ -457,12 +501,30 @@ export function ProcurementConstructor() {
                             </Text>
                           </Table.Td>
                           <Table.Td ta="right">
-                            <Text fw={600} size="sm">
-                              {qty.format(row.suggested_qty)}
-                            </Text>
+                            <NumberInput
+                              aria-label={t('Замовити')}
+                              hideControls
+                              min={0}
+                              size="xs"
+                              styles={{ input: { fontWeight: 600, textAlign: 'right' } }}
+                              value={orderQtyFor(row)}
+                              w={82}
+                              onChange={(value) => {
+                                const next = Number(value) || 0
+                                setDraftQty((current) => ({ ...current, [row.product_id]: next }))
+                                if (basket.has(row.product_id)) {
+                                  setBasketQty(row.product_id, next)
+                                }
+                              }}
+                            />
+                            {draftQty[row.product_id] != null && draftQty[row.product_id] !== row.suggested_qty && (
+                              <Text c="dimmed" size="xs">
+                                {t('AI')}: {qty.format(row.suggested_qty)}
+                              </Text>
+                            )}
                           </Table.Td>
                           <Table.Td ta="right">
-                            <Text size="sm">{amount.format(row.line_cost_eur ?? 0)}</Text>
+                            <Text size="sm">{amount.format((row.unit_cost_eur ?? 0) * orderQtyFor(row))}</Text>
                           </Table.Td>
                           <Table.Td ta="right">
                             <Tooltip label={inBasket ? t('У кошику') : t('Додати в кошик')}>
@@ -470,7 +532,7 @@ export function ProcurementConstructor() {
                                 color={inBasket ? 'green' : 'blue'}
                                 size="sm"
                                 variant={inBasket ? 'filled' : 'light'}
-                                onClick={() => addToBasket(row)}
+                                onClick={() => addToBasket(row, orderQtyFor(row))}
                               >
                                 <Plus size={15} />
                               </ActionIcon>
@@ -480,7 +542,12 @@ export function ProcurementConstructor() {
                         {isOpen && (
                           <Table.Tr key={`${row.product_id}-proof`}>
                             <Table.Td colSpan={lens === 'warehouse' ? 10 : 9}>
-                              <ProofPanel row={row} demand={demandByProduct.get(row.product_id)} t={t} />
+                              <ProofPanel
+                                demand={demandByProduct.get(row.product_id)}
+                                history={history[row.product_id]}
+                                row={row}
+                                t={t}
+                              />
                             </Table.Td>
                           </Table.Tr>
                         )}
@@ -564,9 +631,11 @@ export function ProcurementConstructor() {
 function ProofPanel({
   row,
   demand,
+  history,
   t,
 }: {
   demand?: number[]
+  history?: ProductSalesSeriesPoint[] | 'loading'
   row: ReorderSuggestion
   t: (key: string) => string
 }) {
@@ -596,12 +665,50 @@ function ProofPanel({
 
       <Stack gap={6} style={{ flex: '1 1 300px', minWidth: 260 }}>
         <DepletionChart row={row} t={t} />
-        {demand && demand.length > 0 && (
-          <Box>
-            <Text fw={600} size="xs">
-              {t('Історія попиту')}
+        {demand && demand.length > 0 && <Sparkline values={demand} />}
+      </Stack>
+
+      <Stack gap={4} style={{ flex: '1 1 220px', minWidth: 200 }}>
+        <Text fw={600} size="xs">
+          {t('Історія продажів по місяцях')}
+        </Text>
+        {history === 'loading' || history === undefined ? (
+          <Group gap={6}>
+            <Loader size="xs" />
+            <Text c="dimmed" size="xs">
+              {t('Завантаження…')}
             </Text>
-            <Sparkline values={demand} />
+          </Group>
+        ) : history.length === 0 ? (
+          <Text c="dimmed" size="xs">
+            {t('Немає продажів за період')}
+          </Text>
+        ) : (
+          <Box style={{ maxHeight: 150, overflowY: 'auto' }}>
+            <Table verticalSpacing={2}>
+              <Table.Tbody>
+                {[...history].reverse().map((point) => (
+                  <Table.Tr key={point.month}>
+                    <Table.Td>
+                      <Text size="xs">
+                        {point.month}
+                        {point.is_complete ? '' : ' *'}
+                      </Text>
+                    </Table.Td>
+                    <Table.Td ta="right">
+                      <Text fw={500} size="xs">
+                        {qty.format(point.units)}
+                      </Text>
+                    </Table.Td>
+                    <Table.Td ta="right">
+                      <Text c="dimmed" size="xs">
+                        {amount.format(point.revenue_eur)} €
+                      </Text>
+                    </Table.Td>
+                  </Table.Tr>
+                ))}
+              </Table.Tbody>
+            </Table>
           </Box>
         )}
       </Stack>
