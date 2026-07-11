@@ -45,30 +45,35 @@ export function WizardCrossSellModal({
     }
 
     const controller = new AbortController()
-    setLoading(true)
-    setError(null)
+    const loadTimer = window.setTimeout(() => {
+      setLoading(true)
+      setError(null)
 
-    getProductCoPurchaseRecommendations(seedProduct?.NetUid ?? '', clientNetId, false, {
-      clientAgreementNetId: agreementNetId ?? undefined,
-      signal: controller.signal,
-    })
-      .then((items) => {
-        if (!controller.signal.aborted) {
-          setProducts(items as unknown as WizardSaleProduct[])
-        }
+      getProductCoPurchaseRecommendations(seedProduct?.NetUid ?? '', clientNetId, false, {
+        clientAgreementNetId: agreementNetId ?? undefined,
+        signal: controller.signal,
       })
-      .catch(() => {
-        if (!controller.signal.aborted) {
-          setError(t('Не вдалося завантажити кросс-продажі'))
-        }
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) {
-          setLoading(false)
-        }
-      })
+        .then((items) => {
+          if (!controller.signal.aborted) {
+            setProducts(items as unknown as WizardSaleProduct[])
+          }
+        })
+        .catch(() => {
+          if (!controller.signal.aborted) {
+            setError(t('Не вдалося завантажити кросс-продажі'))
+          }
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) {
+            setLoading(false)
+          }
+        })
+    }, 0)
 
-    return () => controller.abort()
+    return () => {
+      window.clearTimeout(loadTimer)
+      controller.abort()
+    }
   }, [opened, clientNetId, agreementNetId, seedProduct?.NetUid, t])
 
   const visibleProducts = products.filter((product) => !product.NetUid || !excludeNetUids.has(product.NetUid))

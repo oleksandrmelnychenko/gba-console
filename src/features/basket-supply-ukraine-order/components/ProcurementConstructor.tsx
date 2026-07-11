@@ -118,14 +118,17 @@ export function ProcurementConstructor() {
 
   useEffect(() => {
     const controller = new AbortController()
-    loadRows(controller.signal)
+    const loadTimer = window.setTimeout(() => loadRows(controller.signal), 0)
 
-    return () => controller.abort()
+    return () => {
+      window.clearTimeout(loadTimer)
+      controller.abort()
+    }
   }, [loadRows])
 
   const sortedRows = useMemo(
     () =>
-      [...rows].sort(
+      rows.toSorted(
         (a, b) =>
           URGENCY_META[a.urgency].order - URGENCY_META[b.urgency].order ||
           (b.line_cost_eur ?? 0) - (a.line_cost_eur ?? 0),
