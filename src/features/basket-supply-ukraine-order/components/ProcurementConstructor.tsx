@@ -105,13 +105,20 @@ export function ProcurementConstructor() {
           }
         })
 
-      getProcurementCharts(producerId ? { producerId } : {}, signal)
-        .then((data) => {
-          if (!signal.aborted) {
-            setCharts(data)
-          }
-        })
-        .catch(() => undefined)
+      // Charts feed only the optional demand sparkline; the KPI/donut/bars overview is
+      // computed client-side from the plan rows. Fetch charts only in the producer lens
+      // (scoped, cheap) — the all-producer charts build is ~60s cold and would block.
+      if (producerId) {
+        getProcurementCharts({ producerId }, signal)
+          .then((data) => {
+            if (!signal.aborted) {
+              setCharts(data)
+            }
+          })
+          .catch(() => undefined)
+      } else {
+        setCharts(null)
+      }
     },
     [lens, selectedProducerId, t],
   )
