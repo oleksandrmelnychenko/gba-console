@@ -59,11 +59,13 @@ describe('dashboardWorkspacesApi', () => {
         { Key: 'bad', Label: 'Невідомий тон', Tone: 'purple', Unit: 'qty', Value: '12.5' },
       ],
     }, 'system', { from: '2026-06-01', toExclusive: '2026-06-02' })).toEqual({
+      cacheTtlSeconds: 30,
+      dataFreshness: 'live',
       from: '2026-07-01',
       generatedAtUtc: '2026-07-11T09:00:00Z',
       metrics: [
-        { key: 'receipts', label: 'Оприходувань', route: '/products/income/documents', tone: 'positive', unit: 'count', value: 4 },
-        { key: 'bad', label: 'Невідомий тон', route: undefined, tone: 'neutral', unit: 'qty', value: 12.5 },
+        { coveragePercent: 100, hasData: true, key: 'receipts', label: 'Оприходувань', route: '/products/income/documents', tone: 'positive', unit: 'count', value: 4 },
+        { coveragePercent: 100, hasData: true, key: 'bad', label: 'Невідомий тон', route: undefined, tone: 'neutral', unit: 'qty', value: 12.5 },
       ],
       to: '2026-07-12',
       workspace: 'warehouse',

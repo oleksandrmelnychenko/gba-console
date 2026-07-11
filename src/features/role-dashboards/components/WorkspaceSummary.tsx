@@ -1,4 +1,4 @@
-import { ActionIcon, Alert, Card, Group, Loader, SimpleGrid, Stack, Text, Tooltip, UnstyledButton } from '@mantine/core'
+import { ActionIcon, Alert, Badge, Card, Group, Loader, SimpleGrid, Stack, Text, Tooltip, UnstyledButton } from '@mantine/core'
 import { CircleAlert, RefreshCw } from 'lucide-react'
 import { useEffect, useReducer, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -67,7 +67,7 @@ export function WorkspaceSummary({
       if (document.visibilityState === 'visible') {
         void load(false)
       }
-    }, 60_000)
+    }, getRefreshInterval(workspaceKey))
 
     return () => {
       window.clearInterval(refreshTimer)
@@ -121,7 +121,12 @@ function MetricCard({ metric, onOpen }: { metric: DashboardWorkspaceMetric; onOp
   const content = (
     <Card className={`role-dashboard-kpi is-${metric.tone}`} padding="sm" radius="sm" withBorder>
       <Text c="dimmed" lineClamp={2} size="xs">{metric.label}</Text>
-      <Text className="role-dashboard-kpi-value" fw={750}>{formatMetricValue(metric)}</Text>
+      <Group align="flex-end" gap="xs" justify="space-between" wrap="nowrap">
+        <Text className="role-dashboard-kpi-value" fw={750}>{formatMetricValue(metric)}</Text>
+        {metric.hasData && metric.coveragePercent < 100 && (
+          <Badge color="orange" size="xs" variant="light">{metric.coveragePercent}%</Badge>
+        )}
+      </Group>
     </Card>
   )
 
@@ -131,6 +136,10 @@ function MetricCard({ metric, onOpen }: { metric: DashboardWorkspaceMetric; onOp
 }
 
 function formatMetricValue(metric: DashboardWorkspaceMetric): string {
+  if (!metric.hasData) {
+    return 'Немає даних'
+  }
+
   if (metric.unit === 'EUR' || metric.unit === 'UAH') {
     return new Intl.NumberFormat('uk-UA', {
       currency: metric.unit,
@@ -142,6 +151,12 @@ function formatMetricValue(metric: DashboardWorkspaceMetric): string {
   return new Intl.NumberFormat('uk-UA', {
     maximumFractionDigits: metric.unit === 'qty' ? 2 : 0,
   }).format(metric.value)
+}
+
+function getRefreshInterval(workspaceKey: DashboardWorkspaceKey): number {
+  return workspaceKey === 'accounting' || workspaceKey === 'finance' || workspaceKey === 'executive'
+    ? 300_000
+    : 60_000
 }
 
 function formatUpdatedAt(value: string): string {

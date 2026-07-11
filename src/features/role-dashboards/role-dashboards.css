@@ -27,6 +27,10 @@
   width: 142px;
 }
 
+.role-dashboard-period .mantine-SegmentedControl-root {
+  flex: 0 0 auto;
+}
+
 .role-dashboard-content {
   min-width: 0;
 }
@@ -113,6 +117,10 @@
   }
 
   .role-dashboard-period {
+    width: 100%;
+  }
+
+  .role-dashboard-period .mantine-SegmentedControl-root {
     width: 100%;
   }
 

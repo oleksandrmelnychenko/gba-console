@@ -58,6 +58,8 @@ export function normalizeDashboardWorkspaceSummary(
   const workspace = readString(record.Workspace ?? record.workspace)
 
   return {
+    cacheTtlSeconds: readPositiveNumber(record.CacheTtlSeconds ?? record.cacheTtlSeconds, 30),
+    dataFreshness: readString(record.DataFreshness ?? record.dataFreshness) || 'live',
     from: readString(record.From ?? record.from) || fallbackPeriod.from,
     generatedAtUtc: readString(record.GeneratedAtUtc ?? record.generatedAtUtc),
     metrics: readArray(record.Metrics ?? record.metrics)
@@ -94,6 +96,8 @@ function normalizeMetric(value: unknown): DashboardWorkspaceMetric | null {
   }
 
   return {
+    coveragePercent: clampPercent(readNumber(record.CoveragePercent ?? record.coveragePercent, 100)),
+    hasData: (record.HasData ?? record.hasData) !== false,
     key,
     label,
     route: readString(record.Route ?? record.route) || undefined,
@@ -123,7 +127,7 @@ function readString(value: unknown): string {
   return typeof value === 'string' ? value.trim() : ''
 }
 
-function readNumber(value: unknown): number {
+function readNumber(value: unknown, fallback = 0): number {
   if (typeof value === 'number' && Number.isFinite(value)) {
     return value
   }
@@ -132,7 +136,16 @@ function readNumber(value: unknown): number {
     return Number(value)
   }
 
-  return 0
+  return fallback
+}
+
+function readPositiveNumber(value: unknown, fallback: number): number {
+  const parsed = readNumber(value, fallback)
+  return parsed > 0 ? parsed : fallback
+}
+
+function clampPercent(value: number): number {
+  return Math.min(100, Math.max(0, value))
 }
 
 function readTone(value: unknown): DashboardWorkspaceMetricTone {

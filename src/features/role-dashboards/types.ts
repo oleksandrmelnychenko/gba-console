@@ -32,6 +32,8 @@ export type DashboardWorkspaceCatalog = {
 export type DashboardWorkspaceMetricTone = 'critical' | 'neutral' | 'positive' | 'warning'
 
 export type DashboardWorkspaceMetric = {
+  coveragePercent: number
+  hasData: boolean
   key: string
   label: string
   route?: string
@@ -41,6 +43,8 @@ export type DashboardWorkspaceMetric = {
 }
 
 export type DashboardWorkspaceSummary = {
+  cacheTtlSeconds: number
+  dataFreshness: string
   from: string
   generatedAtUtc: string
   metrics: DashboardWorkspaceMetric[]

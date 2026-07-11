@@ -1,4 +1,4 @@
-import { Alert, Box, Group, Loader, Select, Stack, Text, TextInput } from '@mantine/core'
+import { Alert, Box, Group, Loader, SegmentedControl, Select, Stack, Text, TextInput } from '@mantine/core'
 import { Bot, CircleAlert, LayoutDashboard } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
@@ -13,6 +13,10 @@ import {
 } from '../../features/role-dashboards/utils/dashboardWorkspaceSelection'
 import '../../features/role-dashboards/role-dashboards.css'
 
+type PeriodPreset = 'today' | '7d' | '30d' | 'month' | 'custom'
+
+const LAST_GBA_WORKSPACE_KEY = 'gba_console_last_dashboard_workspace'
+
 export function DashboardPage() {
   const { t } = useI18n()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -20,6 +24,7 @@ export function DashboardPage() {
   const [error, setError] = useState<string | null>(null)
   const [from, setFrom] = useState(() => firstDayOfCurrentMonth())
   const [to, setTo] = useState(() => localDateValue(new Date()))
+  const [periodPreset, setPeriodPreset] = useState<PeriodPreset>('month')
   const today = useMemo(() => localDateValue(new Date()), [])
 
   useEffect(() => {
@@ -46,7 +51,7 @@ export function DashboardPage() {
   }, [t])
 
   const selectedWorkspace = catalog
-    ? resolveDashboardWorkspace(catalog, searchParams.get('view'))
+    ? resolveDashboardWorkspace(catalog, searchParams.get('view') ?? readLastWorkspace())
     : null
   const selectedDescriptor = catalog?.workspaces.find((workspace) => workspace.key === selectedWorkspace)
   const showsSharedPeriod = selectedWorkspace ? !['sales-manager', 'sales-head', 'buyer', 'buyer-head'].includes(selectedWorkspace) : false
@@ -61,11 +66,31 @@ export function DashboardPage() {
       return
     }
 
+    localStorage.setItem(LAST_GBA_WORKSPACE_KEY, value)
+
     setSearchParams((current) => {
       const next = new URLSearchParams(current)
       next.set('view', value)
       return next
     }, { replace: true })
+  }
+
+  function applyPeriodPreset(value: string) {
+    const preset = value as Exclude<PeriodPreset, 'custom'>
+    const nextTo = new Date()
+    let nextFrom = new Date(nextTo.getFullYear(), nextTo.getMonth(), nextTo.getDate())
+
+    if (preset === '7d') {
+      nextFrom.setDate(nextFrom.getDate() - 6)
+    } else if (preset === '30d') {
+      nextFrom.setDate(nextFrom.getDate() - 29)
+    } else if (preset === 'month') {
+      nextFrom = new Date(nextTo.getFullYear(), nextTo.getMonth(), 1)
+    }
+
+    setFrom(localDateValue(nextFrom))
+    setTo(localDateValue(nextTo))
+    setPeriodPreset(preset)
   }
 
   if (error) {
@@ -114,14 +139,31 @@ export function DashboardPage() {
         )}
 
         {showsSharedPeriod && (
-          <Group className="role-dashboard-period" gap={6} wrap="nowrap">
+          <Group className="role-dashboard-period" gap={6} wrap="wrap">
+            <SegmentedControl
+              aria-label={t('Період')}
+              data={[
+                { label: t('Сьогодні'), value: 'today' },
+                { label: t('7 днів'), value: '7d' },
+                { label: t('30 днів'), value: '30d' },
+                { label: t('Місяць'), value: 'month' },
+              ]}
+              size="xs"
+              value={periodPreset}
+              onChange={applyPeriodPreset}
+            />
             <TextInput
               aria-label={t('Від')}
               max={to}
               required
               type="date"
               value={from}
-              onChange={(event) => event.currentTarget.value && setFrom(event.currentTarget.value)}
+              onChange={(event) => {
+                if (event.currentTarget.value) {
+                  setFrom(event.currentTarget.value)
+                  setPeriodPreset('custom')
+                }
+              }}
             />
             <TextInput
               aria-label={t('До')}
@@ -130,7 +172,12 @@ export function DashboardPage() {
               required
               type="date"
               value={to}
-              onChange={(event) => event.currentTarget.value && setTo(event.currentTarget.value)}
+              onChange={(event) => {
+                if (event.currentTarget.value) {
+                  setTo(event.currentTarget.value)
+                  setPeriodPreset('custom')
+                }
+              }}
             />
           </Group>
         )}
@@ -141,6 +188,14 @@ export function DashboardPage() {
       </Box>
     </Stack>
   )
+}
+
+function readLastWorkspace(): string | null {
+  try {
+    return localStorage.getItem(LAST_GBA_WORKSPACE_KEY)
+  } catch {
+    return null
+  }
 }
 
 function firstDayOfCurrentMonth(): string {
