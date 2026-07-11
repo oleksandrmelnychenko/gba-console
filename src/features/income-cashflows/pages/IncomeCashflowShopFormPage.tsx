@@ -620,7 +620,7 @@ export function IncomeCashflowShopFormPage() {
       opened
       position="right"
       size="wide"
-      title={<span style={{ fontFamily: 'var(--font-mono)' }}>t('Магазин')</span>}
+      title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Магазин')}</span>}
       onClose={() => navigate(INCOME_CASHFLOWS_PATH)}
       footer={
         <Button

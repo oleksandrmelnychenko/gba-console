@@ -1,4 +1,4 @@
-import { ActionIcon, Box, Group, Paper, Popover, Stack, Text, Tooltip } from '@mantine/core'
+import { ActionIcon, Badge, Box, Group, Paper, Popover, Stack, Text, Tooltip } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { ArrowLeftRight, Copy, FileText, Network, TriangleAlert, X } from 'lucide-react'
 import { memo, useEffect, useState } from 'react'
@@ -398,8 +398,12 @@ function WizardSaleHeaderContent({
               <Copy size={18} />
             </ActionIcon>
           </Tooltip>
-          <Text fw={600} size="sm" style={{ whiteSpace: 'nowrap' }}>
-            {`${withVatAccounting ? `(${t('ПДВ')}) ` : ''}${getSaleLifeCycleStatusName(sale)} ${sale.SaleNumber?.Value ?? ''}`.trim()}
+          {/* Lifecycle as the main-grid chip + mono uppercase invoice number */}
+          <Badge className="app-role-pill" size="sm" variant="light">
+            {`${withVatAccounting ? `(${t('ПДВ')}) ` : ''}${getSaleLifeCycleStatusName(sale)}`.trim()}
+          </Badge>
+          <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+            {sale.SaleNumber?.Value ?? ''}
           </Text>
         </Group>
       )}

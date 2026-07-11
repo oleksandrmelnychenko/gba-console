@@ -7314,20 +7314,28 @@
   font-weight: 700;
   letter-spacing: 0;
   margin-left: auto;
+  margin-right: 18px; /* clear the orange status dot (card ::after at right:10px) */
   white-space: nowrap;
 }
 
-/* Product photo inside the selected drum card — full card width, fixed height. */
+/* Product photo floats ABOVE the selected drum card (the card itself keeps its
+   compact 52px tile look) — same width as the card, portal-free overlay. */
 .new-sale-product-picker-card__media {
   align-items: center;
-  background: var(--mantine-color-gray-0);
-  border-radius: 8px;
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 10px;
+  bottom: calc(100% + 8px);
+  box-shadow: 0 14px 30px -14px rgba(15, 23, 42, 0.28);
   display: flex;
-  height: 96px;
+  height: 150px;
   justify-content: center;
-  margin-bottom: 8px;
+  left: 0;
   overflow: hidden;
-  width: 100%;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+  z-index: 20;
 }
 
 .new-sale-product-picker-card__media img {
@@ -8871,4 +8879,40 @@
 
 .new-sale-cart__value-cell:not(.is-inline) .mantine-Group-root .mantine-Text-root:first-child {
   text-align: right;
+}
+
+/* Hover-zoom preview for the analogue/component thumbnails (HoverCard portal —
+   escapes the row's overflow:hidden). */
+.new-sale-related-row__thumb-preview {
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 12px;
+  overflow: hidden;
+  padding: 6px;
+}
+
+.new-sale-related-row__thumb-preview img {
+  border-radius: 8px;
+  display: block;
+  height: 240px;
+  object-fit: contain;
+  width: 240px;
+}
+
+/* AI (cross-sell) icon in the cart product cell — same 28px circle as the
+   product icon, sparkles in brand orange. */
+.new-sale-cart__ai-icon {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 999px;
+  color: var(--brand-orange);
+  flex: 0 0 auto;
+  height: 28px;
+  min-height: 28px;
+  min-width: 28px;
+  width: 28px;
+}
+
+.new-sale-cart__ai-icon:hover {
+  background: var(--mantine-color-gray-0);
+  color: var(--brand-orange);
 }

@@ -302,7 +302,9 @@ function SaleEditContent({
             <ArrowLeftRight size={23} strokeWidth={1.8} />
           </span>
           <Box className="sale-edit-hero__copy">
-            <Text className="sale-edit-hero__eyebrow">{isNew ? t('Рахунок') : t('Накладна')}</Text>
+            <Badge className="app-role-pill" size="sm" variant="light">
+              {isNew ? t('Рахунок') : t('Накладна')}
+            </Badge>
             <Text className="sale-edit-hero__number">{sale.SaleNumber?.Value || '-'}</Text>
           </Box>
         </Box>
@@ -433,6 +435,7 @@ function createSaleEditColumns({
     {
       id: 'amount',
       header: t('Сума'),
+      align: 'right',
       accessor: (row) => getNumber(row.item.TotalAmount) ?? 0,
       cell: (row) => (
         <span className="sale-edit-money">{amountFormatter.format(getNumber(row.item.TotalAmount) ?? 0)}</span>
@@ -453,6 +456,7 @@ function createSaleEditColumns({
     {
       id: 'qty',
       header: t('К-сть'),
+      align: 'right',
       accessor: (row) => row.qty,
       cell: (row) => <span className="sale-edit-qty">{displayValue(row.qty)}</span>,
       width: 86,

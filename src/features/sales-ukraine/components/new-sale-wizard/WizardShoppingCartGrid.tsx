@@ -94,7 +94,7 @@ export const WizardShoppingCartGrid = memo(function WizardShoppingCartGrid({
         id: 'product',
         header: t('Товар'),
         accessor: (item) => item.Product?.VendorCode || item.Product?.Articul || item.Product?.NameUA || item.Product?.Name || '',
-        cell: (item) => <WizardCartProductCell item={item} />,
+        cell: (item) => <WizardCartProductCell busy={busy} item={item} onCrossSell={onCrossSell} />,
         width: 260,
         minWidth: 230,
         fill: true,
@@ -188,30 +188,12 @@ export const WizardShoppingCartGrid = memo(function WizardShoppingCartGrid({
       },
     ]
 
-    if (onRemove || onCrossSell) {
+    if (onRemove) {
       result.push({
         id: 'actions',
         header: '',
         cell: (item) => (
           <Group className="new-sale-cart__actions" gap={2} justify="flex-start" wrap="nowrap">
-            {onCrossSell && (
-              <Tooltip label={t('Кросс-продажі до товару')}>
-                <ActionIcon
-                  aria-label={t('Кросс-продажі до товару')}
-                  disabled={busy}
-                  size="sm"
-                  variant="subtle"
-                  onClick={(event) => {
-                    event.preventDefault()
-                    event.stopPropagation()
-                    onCrossSell(item)
-                  }}
-                >
-                  <Sparkles size={15} />
-                </ActionIcon>
-              </Tooltip>
-            )}
-            {onRemove && (
             <Tooltip label={t('Видалити')}>
               <ActionIcon
                 aria-label={t('Видалити')}
@@ -228,11 +210,10 @@ export const WizardShoppingCartGrid = memo(function WizardShoppingCartGrid({
                 <Trash2 size={15} />
               </ActionIcon>
             </Tooltip>
-            )}
           </Group>
         ),
-        width: 76,
-        minWidth: 72,
+        width: 56,
+        minWidth: 52,
         enableSorting: false,
       })
     }
@@ -281,7 +262,16 @@ export const WizardShoppingCartGrid = memo(function WizardShoppingCartGrid({
   )
 })
 
-function WizardCartProductCell({ item }: { item: SalesUkraineOrderItem }) {
+function WizardCartProductCell({
+  busy,
+  item,
+  onCrossSell,
+}: {
+  busy?: boolean
+  item: SalesUkraineOrderItem
+  onCrossSell?: (item: SalesUkraineOrderItem) => void
+}) {
+  const { t } = useI18n()
   const code = displayValue(item.Product?.VendorCode || item.Product?.Articul)
   const name = displayValue(item.Product?.NameUA || item.Product?.Name)
 
@@ -290,6 +280,24 @@ function WizardCartProductCell({ item }: { item: SalesUkraineOrderItem }) {
       <Box className="new-sale-cart__product-icon">
         <Package size={15} />
       </Box>
+      {onCrossSell && (
+        <Tooltip label={t('Кросс-продажі до товару')}>
+          <ActionIcon
+            aria-label={t('Кросс-продажі до товару')}
+            className="new-sale-cart__ai-icon"
+            disabled={busy}
+            size="sm"
+            variant="subtle"
+            onClick={(event) => {
+              event.preventDefault()
+              event.stopPropagation()
+              onCrossSell(item)
+            }}
+          >
+            <Sparkles size={15} />
+          </ActionIcon>
+        </Tooltip>
+      )}
       <Box className="new-sale-cart__product-copy">
         <Text className="new-sale-cart__product-code" title={code} truncate>
           {code}

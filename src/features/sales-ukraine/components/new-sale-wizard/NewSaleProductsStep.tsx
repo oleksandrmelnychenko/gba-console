@@ -1,9 +1,10 @@
 import { Box, Button, Group, Select, Stack, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { Box as BoxIcon, Search, Settings, Sparkles } from 'lucide-react'
+import { Box as BoxIcon, FileSignature, Hash, Search, Settings, Sparkles, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useAuth } from '../../../auth/useAuth'
 import { useI18n } from '../../../../shared/i18n/useI18n'
+import { AppModal } from '../../../../shared/ui/AppModal'
 import { toProxiedAssetUrl } from '../../../../shared/url/proxiedAssetUrl'
 import { realtimeEvents, useRealtimeEvent } from '../../../../shared/realtime/events'
 import { getMostPurchasedProductsByClientId } from '../../../clients/api/clientRecommendationsApi'
@@ -17,6 +18,7 @@ import { addOrderItem, deleteOrderItem, updateOrderItem } from '../../api/salesU
 import { getSaleLocalCurrencyCode, isNonVatEurSale, roundMoney } from '../../saleMoney'
 import { getSaleLifecycleTypeKey } from '../../saleStatus'
 import type { SalesUkraineOrderItem, SalesUkraineSale, SalesUkraineUser } from '../../types'
+import { SaleEditDrawer } from '../SaleEditDrawer'
 import { ChangeQtyModal } from './ChangeQtyModal'
 import { EditShoppingCartOverlay, type WizardCartSelection, type WizardSplitOrderItem } from './EditShoppingCartOverlay'
 import { FutureReservationModal } from './FutureReservationModal'
@@ -268,8 +270,12 @@ export function NewSaleProductsStep({
     onEditOrderItemRef.current = onEditOrderItem
   })
 
+  // Row click opens the §7.1 row-actions chooser (change qty / remove) instead
+  // of jumping straight into the qty editor.
+  const [cartActionItem, setCartActionItem] = useState<SalesUkraineOrderItem | null>(null)
+  const [isActEditOpen, setActEditOpen] = useState(false)
   const handleCartRowClick = useCallback((item: SalesUkraineOrderItem) => {
-    void onEditOrderItemRef.current(item)
+    setCartActionItem(item)
   }, [])
   const handleCartRowRemove = useCallback((item: SalesUkraineOrderItem) => setRemoveRowItem(item), [])
   const handleCartCrossSell = useCallback((item: SalesUkraineOrderItem) => {
@@ -972,6 +978,9 @@ export function NewSaleProductsStep({
           return
         }
       } else {
+        // Was a silent return — from the row-actions popup that read as "nothing works".
+        notifications.show({ color: 'red', message: t('Неможливо редагувати накладну') })
+
         return
       }
     }
@@ -2006,7 +2015,7 @@ export function NewSaleProductsStep({
   }
 
   function handleProductKey(event: WizardKeyEvent): boolean {
-    if (qtyModal || shiftRow || futureProduct || removeConfirmOpen || removeRowItem) {
+    if (qtyModal || shiftRow || futureProduct || removeConfirmOpen || removeRowItem || cartActionItem || isActEditOpen) {
       return false
     }
 
@@ -2515,6 +2524,34 @@ export function NewSaleProductsStep({
         />
       )}
 
+      <CartRowActionsModal
+        isInvoice={!isSaleLifecycleNew}
+        item={cartActionItem}
+        onActEdit={() => {
+          setCartActionItem(null)
+          setActEditOpen(true)
+        }}
+        onChangeQty={(item) => {
+          setCartActionItem(null)
+          void onEditOrderItemRef.current(item)
+        }}
+        onClose={() => setCartActionItem(null)}
+        onRemove={(item) => {
+          setCartActionItem(null)
+          handleCartRowRemove(item)
+        }}
+      />
+
+      {/* «Накладна» is editable only through the edit act — the popup routes here. */}
+      <SaleEditDrawer
+        sale={isActEditOpen ? sale : null}
+        onClose={() => setActEditOpen(false)}
+        onSaved={() => {
+          setActEditOpen(false)
+          void onCartChanged()
+        }}
+      />
+
       <ChangeQtyModal
         availableQty={qtyModal?.available ?? 0}
         busy={busy}
@@ -2738,4 +2775,96 @@ function sortComponentCarouselEntries(
   const bottom = items.sort(byAvailabilityAsc)
 
   return { ...source, entries: [...top, ...bottom] }
+}
+
+/* Row-actions popup per docs/ui-patterns.md §7.1 for a cart row: mono title
+   (code — name), subtle buttons with the icon in an outlined circle. */
+function CartRowActionsModal({
+  isInvoice,
+  item,
+  onActEdit,
+  onChangeQty,
+  onClose,
+  onRemove,
+}: {
+  isInvoice: boolean
+  item: SalesUkraineOrderItem | null
+  onActEdit: () => void
+  onChangeQty: (item: SalesUkraineOrderItem) => void
+  onClose: () => void
+  onRemove: (item: SalesUkraineOrderItem) => void
+}) {
+  const { t } = useI18n()
+  const code = item?.Product?.VendorCode || item?.Product?.Articul || ''
+  const name = item?.Product?.NameUA || item?.Product?.Name || ''
+
+  return (
+    <AppModal
+      centered
+      opened={Boolean(item)}
+      size={496}
+      title={
+        <span style={{ fontFamily: 'var(--font-mono)' }}>
+          {[code, name].filter(Boolean).join(' — ') || t('Виберіть опцію')}
+        </span>
+      }
+      onClose={onClose}
+    >
+      {item && (
+        <Stack className="app-modal-actions" gap="xs">
+          {isInvoice ? (
+            /* Invoice rows are edited only through the edit act. */
+            <Button
+              fullWidth
+              justify="flex-start"
+              color="dark"
+              size="md"
+              leftSection={
+                <span className="app-action-icon">
+                  <FileSignature size={20} color="var(--mantine-color-gray-7)" />
+                </span>
+              }
+              variant="subtle"
+              onClick={onActEdit}
+            >
+              {t('Акт редагування накладної')}
+            </Button>
+          ) : (
+            <>
+              <Button
+                fullWidth
+                justify="flex-start"
+                color="dark"
+                size="md"
+                leftSection={
+                  <span className="app-action-icon">
+                    <Hash size={20} color="var(--mantine-color-gray-7)" />
+                  </span>
+                }
+                variant="subtle"
+                onClick={() => onChangeQty(item)}
+              >
+                {t('Змінити кількість')}
+              </Button>
+              <Button
+                fullWidth
+                justify="flex-start"
+                color="dark"
+                size="md"
+                leftSection={
+                  <span className="app-action-icon">
+                    <Trash2 size={20} color="var(--mantine-color-gray-7)" />
+                  </span>
+                }
+                variant="subtle"
+                onClick={() => onRemove(item)}
+              >
+                {t('Видалити')}
+              </Button>
+            </>
+          )}
+        </Stack>
+      )}
+    </AppModal>
+  )
 }

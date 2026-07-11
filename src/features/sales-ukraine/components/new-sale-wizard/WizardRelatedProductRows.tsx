@@ -1,4 +1,4 @@
-import { ActionIcon, Box, Stack, Text, Tooltip } from '@mantine/core'
+import { ActionIcon, Box, HoverCard, Stack, Text, Tooltip } from '@mantine/core'
 import { Info, Package, Star } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
@@ -77,9 +77,22 @@ function WizardRelatedProductRow({
       onClick={onPick}
     >
       <Box className="new-sale-related-row__content">
-        <Box className="new-sale-related-row__thumb" aria-hidden="true">
-          {imageUrl ? <img alt="" loading="lazy" src={imageUrl} /> : <Package size={16} strokeWidth={1.6} />}
-        </Box>
+        {imageUrl ? (
+          <HoverCard openDelay={160} position="right-start" shadow="md" withinPortal>
+            <HoverCard.Target>
+              <Box className="new-sale-related-row__thumb" aria-hidden="true">
+                <img alt="" loading="lazy" src={imageUrl} />
+              </Box>
+            </HoverCard.Target>
+            <HoverCard.Dropdown className="new-sale-related-row__thumb-preview">
+              <img alt={code} src={imageUrl} />
+            </HoverCard.Dropdown>
+          </HoverCard>
+        ) : (
+          <Box className="new-sale-related-row__thumb" aria-hidden="true">
+            <Package size={16} strokeWidth={1.6} />
+          </Box>
+        )}
         <Box className="new-sale-related-row__copy">
           <Box className="new-sale-related-row__headline">
             <Text c={color} className="new-sale-related-row__code" truncate>
