@@ -522,11 +522,14 @@ export function CarrierHistory({ current, entries }: { current: SalesUkraineUpda
                   const compareFn = row.compare ?? row.render
                   const currentRaw = compareFn(col.entry)
                   const previousRaw = index > 0 ? compareFn(columns[index - 1].entry) : currentRaw
-                  const hasPersistedMask = hasCarrierHistoryMask(col.isCurrent ? sortedEntries.at(-1) : col.entry)
-                  const isChanged = hasPersistedMask
-                    ? row.field != null && hasCarrierHistoryField(col.isCurrent ? sortedEntries.at(-1) : col.entry, row.field)
-                    : col.isCurrent
-                      ? didLatestHistoryStepChange(row, columns)
+                  // Highlight the change only in the history column where it actually happened, not
+                  // also in the «Актуальні дані» column (it mirrors the latest event's mask, so the
+                  // edited field lit up twice and read as «highlighting the wrong thing» — bug 74).
+                  const hasPersistedMask = !col.isCurrent && hasCarrierHistoryMask(col.entry)
+                  const isChanged = col.isCurrent
+                    ? false
+                    : hasPersistedMask
+                      ? row.field != null && hasCarrierHistoryField(col.entry, row.field)
                       : index > 0 && historyValueChanged(currentRaw, previousRaw)
                   const cellClass = [col.isCurrent ? 'is-current-col' : '', isChanged ? 'is-changed' : ''].filter(Boolean).join(' ')
 
@@ -566,25 +569,6 @@ export function CarrierHistory({ current, entries }: { current: SalesUkraineUpda
       </ScrollArea>
     </section>
   )
-}
-
-function didLatestHistoryStepChange(
-  row: {
-    compare?: (entry: SalesUkraineUpdateDataCarrier) => unknown
-    render: (entry: SalesUkraineUpdateDataCarrier) => string
-  },
-  columns: Array<{ entry: SalesUkraineUpdateDataCarrier; isCurrent?: boolean }>,
-): boolean {
-  const currentColumnIndex = columns.findIndex((column) => column.isCurrent)
-  const latestHistoryColumn = currentColumnIndex > 0 ? columns[currentColumnIndex - 1] : null
-
-  if (!latestHistoryColumn) {
-    return false
-  }
-
-  const compareFn = row.compare ?? row.render
-
-  return historyValueChanged(compareFn(columns[currentColumnIndex].entry), compareFn(latestHistoryColumn.entry))
 }
 
 // Compact label/value pair for the client info block — left-aligned (not stretched) so the value
