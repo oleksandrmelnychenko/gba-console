@@ -31,8 +31,6 @@
                         overflow-x:visible / overflow-y:clip still clipped the plate in Chrome. */
   position: sticky; /* stays in view while the detail panel scrolls past */
   top: 0;
-  z-index: 6; /* paint above the detail panel — sticky forms a stacking context, and without
-                 this the (later-in-DOM) white inline view covers the plate's overflowing part */
   align-self: start; /* don't stretch to the tall workspace — sticky needs travel room */
   outline: none; /* it's a keyboard-handling wrapper, not a control — no focus ring stripe */
 }
@@ -139,7 +137,8 @@
   position: relative;
   z-index: 5;
   width: max-content; /* sized to its content — compact, grows only for long names */
-  max-width: min(680px, calc(100vw - 400px));
+  max-width: 100%; /* stay INSIDE the column: the old overhang floated over the detail
+                      panel and swallowed clicks (date pickers etc.); long names wrap */
   min-height: 36px;
   justify-self: start; /* anchor left, extend right only as far as the name needs */
   padding: 6px 16px 8px 14px;
