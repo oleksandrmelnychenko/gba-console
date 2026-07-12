@@ -1,7 +1,6 @@
 import {
   Alert,
   Badge,
-  Button,
   Card,
   Group,
   Loader,
@@ -9,11 +8,9 @@ import {
   SimpleGrid,
   Stack,
   Text,
-  Tooltip,
 } from '@mantine/core'
-import { Brain, CircleAlert, Factory, ShoppingCart } from 'lucide-react'
+import { Brain, CircleAlert, Factory } from 'lucide-react'
 import { useEffect } from 'react'
-import { Link } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { getProduct, getProductAnalytics, getProductRegions, getProductSubstitutes } from '../api/assortmentApi'
@@ -146,15 +143,6 @@ function formatPercent(value: number | null | undefined): string {
 
 function formatNullableNumber(value: number | null | undefined): string {
   return value == null ? '' : decimal.format(value)
-}
-
-function productCockpitLink(producerId: number, productId: number): string {
-  const params = new URLSearchParams({
-    producerId: String(producerId),
-    productId: String(productId),
-  })
-
-  return `/basket-supply-ukraine-order/cockpit?${params.toString()}`
 }
 
 export function ProductCard({
@@ -313,7 +301,7 @@ export function ProductCard({
   return (
     <Stack gap="md">
       <ProductHero detail={detail} producerId={producerId} producerName={producerName} t={t} />
-      <ProductAiAction actionLabel={actionLabel} actionReasons={actionReasons} detail={detail} producerId={producerId} t={t} />
+      <ProductAiAction actionLabel={actionLabel} actionReasons={actionReasons} t={t} />
 
       <SimpleGrid cols={{ base: 2, md: 4 }}>
         <Stat label={t('Запас')} value={formatNullableNumber(detail.qty_on_hand)} />
@@ -378,14 +366,10 @@ function ProductHero({
 function ProductAiAction({
   actionLabel,
   actionReasons,
-  detail,
-  producerId,
   t,
 }: {
   actionLabel: string
   actionReasons: string[]
-  detail: ProductDetail
-  producerId: number | null
   t: ProductCardTranslate
 }) {
   return (
@@ -417,23 +401,6 @@ function ProductAiAction({
             </Group>
           </Stack>
         </Group>
-        {producerId === null ? (
-          <Tooltip label={t('У товару ще немає знайденого виробника в історії замовлень')} withArrow>
-            <Button disabled leftSection={<ShoppingCart size={16} />} size="xs" variant="default">
-              {t('Конструктор')}
-            </Button>
-          </Tooltip>
-        ) : (
-          <Button
-            component={Link}
-            leftSection={<ShoppingCart size={16} />}
-            size="xs"
-            to={productCockpitLink(producerId, detail.product_id)}
-            variant="default"
-          >
-            {t('Конструктор')}
-          </Button>
-        )}
       </Group>
     </Card>
   )
