@@ -730,22 +730,27 @@ function TransporterImagePreview({ transporter }: { transporter: Transporter }) 
     )
   }
 
+  // Semantic carriers (bus / self-pickup) BEFORE the raw ImageUrl: their ImageUrl points at the
+  // dead :20001 host and 404s, so an ImageUrl-first order left the row blank (bug 75). Match by
+  // CssClass or name, mirroring TransporterIcon.
+  const cssClass = transporter.CssClass?.trim()
+  const isBus = cssClass === 'bus_item_class' || /автобус|bus/i.test(name)
+  const isSelfPickup = cssClass === 'self_checkout_item_class' || /самовивіз|self/i.test(name)
+
+  if (isBus || isSelfPickup) {
+    return (
+      <span className="transporters-image-preview is-filled" title={nativeTitle(name)}>
+        {isBus ? <Bus size={28} strokeWidth={1.5} /> : <Footprints size={28} strokeWidth={1.5} />}
+      </span>
+    )
+  }
+
   const imageUrl = toProxiedAssetUrl(transporter.ImageUrl?.trim())
 
   if (imageUrl) {
     return (
       <span className="transporters-image-preview is-filled" title={nativeTitle(imageUrl)}>
         <img alt={name} src={imageUrl} />
-      </span>
-    )
-  }
-
-  const cssClass = transporter.CssClass?.trim()
-
-  if (cssClass === 'bus_item_class' || cssClass === 'self_checkout_item_class') {
-    return (
-      <span className="transporters-image-preview is-filled" title={nativeTitle(name)}>
-        {cssClass === 'bus_item_class' ? <Bus size={28} strokeWidth={1.5} /> : <Footprints size={28} strokeWidth={1.5} />}
       </span>
     )
   }

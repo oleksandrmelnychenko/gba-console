@@ -637,10 +637,29 @@
 
 .sale-carrier-row {
   align-items: baseline;
+  border-radius: 4px;
   display: flex;
   gap: 8px;
+  margin: 0 -6px;
   min-height: 22px;
   min-width: 0;
+  padding: 1px 6px;
+  transition: background-color 0.12s ease;
+}
+
+.sale-carrier-row:hover {
+  background: var(--mantine-color-gray-1);
+}
+
+/* A changed field: red-tinted background + left bar + red hover — not just red text,
+   so the highlight is visible on hover too (bug 74). */
+.sale-carrier-row.is-changed {
+  background: rgba(255, 227, 227, 0.55);
+  box-shadow: inset 2px 0 0 var(--mantine-color-red-5);
+}
+
+.sale-carrier-row.is-changed:hover {
+  background: var(--mantine-color-red-1);
 }
 
 .sale-carrier-row::before {
