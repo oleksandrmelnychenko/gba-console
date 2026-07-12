@@ -204,6 +204,10 @@ type NewResaleRouteState = {
   returnPath?: string
 }
 
+type ResalesRouteState = {
+  mutated?: boolean
+}
+
 export function ResalesPage() {
   const { t } = useI18n()
   const navigate = useNavigate()
@@ -242,6 +246,23 @@ export function ResalesPage() {
     onOpenConsignmentNote: setConsignmentNoteSale,
   })
   const filterError = getDateRangeError(fromDate, toDate)
+
+  useEffect(() => {
+    const routeState = location.state as ResalesRouteState | null
+
+    if (!routeState?.mutated) {
+      return
+    }
+
+    // The create page is rendered over this still-mounted list. Explicitly consume its mutation
+    // signal and return to a range where the newly created draft is guaranteed to be visible.
+    navigate(`${location.pathname}${location.search}`, { replace: true, state: null })
+    setPage(1)
+    setStatus('0')
+    setFromDate(shiftDateInput(-DEFAULT_RESALES_LOOKBACK_DAYS))
+    setToDate(shiftDateInput(1))
+    reload()
+  }, [location.pathname, location.search, location.state, navigate, reload, setFromDate, setPage, setStatus, setToDate])
 
   useEffect(() => {
     if (filterError) {
@@ -894,7 +915,7 @@ export function NewResalePage() {
         color: 'green',
         message: t('Перепродаж створено'),
       })
-      navigate(returnPath, { replace: true })
+      navigate(returnPath, { replace: true, state: { mutated: true } satisfies ResalesRouteState })
     } catch (createError) {
       setError(createError instanceof Error ? createError.message : t('Не вдалося створити перепродаж'))
     } finally {

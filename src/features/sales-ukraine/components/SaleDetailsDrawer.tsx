@@ -522,15 +522,13 @@ export function CarrierHistory({ current, entries }: { current: SalesUkraineUpda
                   const compareFn = row.compare ?? row.render
                   const currentRaw = compareFn(col.entry)
                   const previousRaw = index > 0 ? compareFn(columns[index - 1].entry) : currentRaw
-                  // Highlight the change only in the history column where it actually happened, not
-                  // also in the «Актуальні дані» column (it mirrors the latest event's mask, so the
-                  // edited field lit up twice and read as «highlighting the wrong thing» — bug 74).
-                  const hasPersistedMask = !col.isCurrent && hasCarrierHistoryMask(col.entry)
-                  const isChanged = col.isCurrent
-                    ? false
-                    : hasPersistedMask
-                      ? row.field != null && hasCarrierHistoryField(col.entry, row.field)
-                      : index > 0 && historyValueChanged(currentRaw, previousRaw)
+                  // Historical columns show their own persisted mask. The current column mirrors only
+                  // the latest save's mask, so unrelated values are never highlighted by comparison.
+                  const changeSource = col.isCurrent ? sortedEntries.at(-1) : col.entry
+                  const hasPersistedMask = hasCarrierHistoryMask(changeSource)
+                  const isChanged = hasPersistedMask
+                    ? row.field != null && hasCarrierHistoryField(changeSource, row.field)
+                    : !col.isCurrent && index > 0 && historyValueChanged(currentRaw, previousRaw)
                   const cellClass = [col.isCurrent ? 'is-current-col' : '', isChanged ? 'is-changed' : ''].filter(Boolean).join(' ')
 
                   return (
