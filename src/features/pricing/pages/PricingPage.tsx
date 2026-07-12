@@ -1,6 +1,7 @@
 import { Card, Group, Loader, Select, SimpleGrid, Stack, Text, Title } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import {
@@ -63,12 +64,16 @@ function toOptions<T extends { NetUid?: string }>(
 
 export function PricingPage() {
   const { t } = useI18n()
+  const [searchParams] = useSearchParams()
 
   const [productQuery, setProductQuery] = useState('')
   const [debouncedProductQuery] = useDebouncedValue(productQuery, 400)
   const [productResults, setProductResults] = useState<SalesUkraineProduct[]>([])
   const [productLoading, setProductLoading] = useState(false)
-  const [selectedProduct, setSelectedProduct] = useState<SalesUkraineProduct | null>(null)
+  const [selectedProduct, setSelectedProduct] = useState<SalesUkraineProduct | null>(() => {
+    const netId = searchParams.get('productNetId')
+    return netId ? ({ NetUid: netId } as SalesUkraineProduct) : null
+  })
 
   const [clientQuery, setClientQuery] = useState('')
   const [debouncedClientQuery] = useDebouncedValue(clientQuery, 400)
@@ -78,7 +83,9 @@ export function PricingPage() {
 
   const [agreements, setAgreements] = useState<SalesUkraineClientAgreement[]>([])
   const [agreementsLoading, setAgreementsLoading] = useState(false)
-  const [selectedAgreementNetId, setSelectedAgreementNetId] = useState<string | null>(null)
+  const [selectedAgreementNetId, setSelectedAgreementNetId] = useState<string | null>(
+    () => searchParams.get('clientAgreementNetId'),
+  )
 
   useEffect(() => {
     const value = debouncedProductQuery.trim()
@@ -147,11 +154,13 @@ export function PricingPage() {
   useEffect(() => {
     const clientNetId = selectedClient?.NetUid
     setAgreements([])
-    setSelectedAgreementNetId(null)
 
     if (!clientNetId) {
+      // Keep any deep-linked agreement (?clientAgreementNetId=) when no client is picked yet.
       return
     }
+
+    setSelectedAgreementNetId(null)
 
     let cancelled = false
     setAgreementsLoading(true)

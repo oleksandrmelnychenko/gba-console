@@ -5,6 +5,7 @@ import { formatLocalDate } from '../../../../shared/date/dateTime'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { getProductMainImage, getProductShopImageUrl, getRelatedProductRowColor } from '../../../products/utils'
 import type { WizardCalculatedProductPricing, WizardNearestSupplyOrder } from './newSaleWizardApi'
+import { WizardAiPriceHint } from './WizardAiPriceHint'
 import { WizardProductPriceStrip } from './WizardProductPriceStrip'
 import { getWizardProductNumber, type WizardSaleProduct } from './wizardSaleProduct'
 
@@ -28,6 +29,7 @@ export type WizardDetailRow = {
 export function ProductFullDetailPanel({
   canEditDescription,
   chips,
+  clientAgreementNetId,
   descriptionDraft,
   isFullDetail,
   isEditingDescription,
@@ -47,6 +49,7 @@ export function ProductFullDetailPanel({
 }: {
   canEditDescription: boolean
   chips: WizardDetailChip[]
+  clientAgreementNetId?: string | null
   descriptionDraft: string
   isFullDetail: boolean
   isEditingDescription: boolean
@@ -189,6 +192,12 @@ export function ProductFullDetailPanel({
             </Box>
           )}
         </Group>
+
+        <WizardAiPriceHint
+          clientAgreementNetId={clientAgreementNetId}
+          productNetId={product.NetUid}
+          withVat={isVatSale}
+        />
 
         {isFullDetail && (legacyFacts.length > 0 || legacyLines.length > 0) && (
           <Box className="new-sale-product-card__legacy">

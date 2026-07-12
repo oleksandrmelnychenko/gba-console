@@ -2152,6 +2152,7 @@ export function NewSaleProductsStep({
         isEditingDescription={editingDescription && active?.source === 'main'}
         isVatSale={isVatSale}
         localCurrencyCode={localCurrencyCode}
+        clientAgreementNetId={agreementNetId}
         nearestSupplyOrder={selectedMainSnapshot?.nearestOrder}
         pricing={detailPricingFor(selectedMainProduct)}
         product={selectedMainProduct}
@@ -2426,6 +2427,7 @@ export function NewSaleProductsStep({
                   isEditingDescription={editingDescription && active?.source === 'analogue'}
                   isVatSale={isVatSale}
                   localCurrencyCode={localCurrencyCode}
+                  clientAgreementNetId={agreementNetId}
                   nearestSupplyOrder={focusedAnalogueSnapshot?.nearestOrder}
                   pricing={detailPricingFor(focusedAnalogue)}
                   product={focusedAnalogue}
@@ -2449,6 +2451,7 @@ export function NewSaleProductsStep({
                   isEditingDescription={editingDescription && active?.source === 'component'}
                   isVatSale={isVatSale}
                   localCurrencyCode={localCurrencyCode}
+                  clientAgreementNetId={agreementNetId}
                   nearestSupplyOrder={focusedComponentSnapshot?.nearestOrder}
                   pricing={detailPricingFor(focusedComponent)}
                   product={focusedComponent}
