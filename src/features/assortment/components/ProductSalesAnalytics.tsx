@@ -2,6 +2,7 @@ import { AreaChart, BarChart } from '@mantine/charts'
 import { Alert, Badge, Card, Group, SimpleGrid, Stack, Text } from '@mantine/core'
 import { AlertTriangle, ArrowDownRight, ArrowUpRight, Minus } from 'lucide-react'
 import { useMemo } from 'react'
+import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { ProductAnalytics, ProductSalesSeriesPoint } from '../types'
 
@@ -79,7 +80,10 @@ export function ProductSalesAnalytics({ analytics, error }: ProductSalesAnalytic
       <Stack gap="md">
         <Group align="flex-start" justify="space-between" wrap="wrap">
           <Stack gap={2}>
-            <Text className="app-section-title" fw={600} size="sm">{t('Фактична динаміка продажів')}</Text>
+            <Group align="center" gap="xs">
+              <Text className="app-section-title" fw={600} size="sm">{t('Фактична динаміка продажів')}</Text>
+              <AiFeatureBadge compact size="xs" tooltip={t('AI-аналітика продажів товару')} />
+            </Group>
             <Text c="dimmed" size="xs">
               {t('Щомісячні продажі з валідних замовлень; залишок на складі не історизується.')}
             </Text>

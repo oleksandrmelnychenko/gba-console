@@ -18,6 +18,7 @@ import {
 } from '@mantine/core'
 import { CircleAlert, Image as ImageIcon, LayoutGrid, List } from 'lucide-react'
 import { useEffect, useReducer } from 'react'
+import { AiFeatureBadge } from '../../../../shared/ai/AiFeatureBadge'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { toProxiedAssetUrl } from '../../../../shared/url/proxiedAssetUrl'
 import { AppModal } from '../../../../shared/ui/AppModal'
@@ -160,10 +161,13 @@ export function RecommendationsPanel({ client, productNetId }: RecommendationsPa
       <Card className="app-section-card" withBorder radius="md" padding="md">
         <Stack gap="md">
           <Group justify="space-between" align="center" wrap="wrap">
-            <Title order={4} size="h4">
-              {t('Рекомендації')}
-              {selectedProduct?.VendorCode ? ` - ${selectedProduct.VendorCode}` : ''}
-            </Title>
+            <Group align="center" gap="xs" wrap="nowrap">
+              <Title order={4} size="h4">
+                {t('Рекомендації')}
+                {selectedProduct?.VendorCode ? ` - ${selectedProduct.VendorCode}` : ''}
+              </Title>
+              <AiFeatureBadge size="sm" tooltip={t('AI-рекомендації для клієнта')} />
+            </Group>
 
             <Group gap="sm">
               <SegmentedControl
