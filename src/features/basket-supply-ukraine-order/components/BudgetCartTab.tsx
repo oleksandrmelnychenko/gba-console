@@ -3,7 +3,6 @@ import {
   Alert,
   Button,
   Card,
-  Drawer,
   Group,
   Loader,
   NumberInput,
@@ -18,6 +17,7 @@ import { useEffect, useMemo, useReducer, useState } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { TranslateFunction } from '../../../shared/i18n/types'
+import { AppBottomSheet } from '../../../shared/ui/AppBottomSheet'
 import type { UrgencySliceInput } from '../../../shared/ui/charts/donutData'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { getSupplyOrderSuppliers } from '../../supply-ukraine-orders/api/supplyUkraineOrdersApi'
@@ -331,23 +331,26 @@ export function BudgetCartTab() {
         </Card>
       )}
 
-      <Drawer
-        classNames={{ content: 'budget-cart-sheet', header: 'budget-cart-sheet__header' }}
+      <AppBottomSheet
+        bodyClassName="budget-cart-sheet__body"
+        closeLabel={t('Закрити план закупівлі')}
+        collapseLabel={t('Згорнути план закупівлі')}
+        contentClassName="budget-cart-sheet"
+        expandLabel={t('Розгорнути план закупівлі')}
         opened={isSheetOpen && hasPlan && !isEmpty}
-        overlayProps={{ backgroundOpacity: 0.06, blur: 0 }}
-        padding="md"
-        position="bottom"
-        size="60%"
         title={
-          <span style={{ fontFamily: 'var(--font-mono)' }}>
+          <span>
             {t('План закупівлі')} · {sortedItems.length} {t('позицій')}
           </span>
         }
-        withinPortal
         onClose={() => setSheetOpen(false)}
       >
-        <BudgetCartTable items={sortedItems} maxHeight="calc(60vh - 130px)" producerNameById={producerNameById} />
-      </Drawer>
+        <BudgetCartTable
+          items={sortedItems}
+          maxHeight="calc(var(--drawer-size) - 118px - env(safe-area-inset-bottom))"
+          producerNameById={producerNameById}
+        />
+      </AppBottomSheet>
 
       {isEmpty && (
         <Card className="app-section-card" padding="lg" radius="md" withBorder>

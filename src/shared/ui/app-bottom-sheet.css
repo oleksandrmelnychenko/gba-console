@@ -1,0 +1,152 @@
+.mantine-Drawer-content.app-bottom-sheet {
+  display: flex;
+  flex-direction: column;
+  height: var(--drawer-size);
+  margin: 0;
+  max-height: calc(100dvh - 8px);
+  max-width: 100vw;
+  overflow: hidden;
+  border: 1px solid rgba(226, 232, 240, 0.94);
+  border-bottom: 0;
+  border-radius: 20px 20px 0 0;
+  background: rgba(255, 255, 255, 0.985);
+  box-shadow:
+    0 -1px 0 rgba(255, 255, 255, 0.95),
+    0 -20px 50px -26px rgba(15, 23, 42, 0.42);
+  /* Mantine applies transform/opacity transition properties inline. Include
+     height explicitly so detent changes settle with the same native spring. */
+  transition-duration: 360ms, 360ms, 320ms !important;
+  transition-property: transform, opacity, height !important;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1) !important;
+  will-change: height;
+}
+
+.mantine-Drawer-content.app-bottom-sheet[data-dragging='true'] {
+  cursor: grabbing;
+  transition-property: none !important;
+}
+
+.app-bottom-sheet__header {
+  position: relative;
+  z-index: 2;
+  flex: 0 0 auto;
+  min-height: 62px;
+  padding: 6px 16px 10px;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: saturate(1.35) blur(18px);
+}
+
+.app-bottom-sheet__title {
+  width: 100%;
+  min-width: 0;
+  margin-right: 44px;
+}
+
+.app-bottom-sheet__heading {
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  cursor: grab;
+  touch-action: none;
+}
+
+.app-bottom-sheet__header .mantine-Drawer-close {
+  position: absolute;
+  top: 22px;
+  right: 14px;
+}
+
+.app-bottom-sheet__heading:active {
+  cursor: grabbing;
+}
+
+.app-bottom-sheet__grabber-button {
+  display: flex;
+  width: 104px;
+  height: 44px;
+  margin: -6px auto -10px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  cursor: grab;
+  touch-action: none;
+}
+
+.app-bottom-sheet__grabber-button:active {
+  cursor: grabbing;
+}
+
+.app-bottom-sheet__grabber-button:focus-visible {
+  outline: 3px solid rgba(var(--brand-orange-rgb), 0.18);
+  outline-offset: 1px;
+}
+
+.app-bottom-sheet__grabber {
+  width: 42px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--mantine-color-gray-4);
+  transition:
+    width 160ms ease,
+    background-color 160ms ease;
+}
+
+.app-bottom-sheet__grabber-button:hover .app-bottom-sheet__grabber,
+.app-bottom-sheet__grabber-button:focus-visible .app-bottom-sheet__grabber {
+  width: 48px;
+  background: var(--mantine-color-gray-5);
+}
+
+.app-bottom-sheet__title-text {
+  overflow: hidden;
+  color: var(--mantine-color-gray-9);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-bottom-sheet__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  padding: 12px 16px max(16px, env(safe-area-inset-bottom));
+  overscroll-behavior: contain;
+}
+
+.app-bottom-sheet__body > div {
+  min-height: 0;
+}
+
+@media (max-width: 640px) {
+  .mantine-Drawer-content.app-bottom-sheet {
+    border-radius: 18px 18px 0 0;
+  }
+
+  .app-bottom-sheet__header {
+    min-height: 58px;
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  .app-bottom-sheet__body {
+    padding-right: 10px;
+    padding-left: 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mantine-Drawer-content.app-bottom-sheet {
+    transition: none !important;
+  }
+
+  .app-bottom-sheet__grabber {
+    transition: none;
+  }
+}

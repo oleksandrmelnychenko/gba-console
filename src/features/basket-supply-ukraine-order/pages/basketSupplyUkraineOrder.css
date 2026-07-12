@@ -144,26 +144,7 @@
   white-space: nowrap;
 }
 
-/* iOS-style bottom sheet for the procurement plan: rounded top, grabber bar. */
-.budget-cart-sheet {
-  border-top-left-radius: 16px;
-  border-top-right-radius: 16px;
-  overflow: hidden;
-}
-
-.budget-cart-sheet__header {
-  position: relative;
-  padding-top: 18px;
-}
-
-.budget-cart-sheet__header::before {
-  background: var(--mantine-color-gray-3);
-  border-radius: 999px;
-  content: '';
-  height: 4px;
-  left: 50%;
-  position: absolute;
-  top: 8px;
-  transform: translateX(-50%);
-  width: 44px;
+/* The plan table owns its scroll inside the shared draggable bottom sheet. */
+.budget-cart-sheet__body > div {
+  height: 100%;
 }
