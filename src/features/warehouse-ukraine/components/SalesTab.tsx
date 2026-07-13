@@ -27,12 +27,7 @@ import { getInvoicePrintStatus, hasApprovedInvoiceEdits } from '../invoicePrintS
 import type { Sale, WarehouseUkraineExportDocument } from '../types'
 import { DownloadDocumentModal } from './DownloadDocumentModal'
 import { displayValue, formatDateTime, getDateShiftedByDays, toDateString } from './dateHelpers'
-import {
-  getPreferredWarehousePrintUrl,
-  hasWarehouseDocumentUrl,
-  openWarehouseDocumentUrl,
-  printWarehouseDocumentUrl,
-} from './openWarehouseDocument'
+import { hasWarehouseDocumentUrl } from './openWarehouseDocument'
 
 const DEFAULT_LIMIT = DEFAULT_PAGINATOR_PAGE_SIZE
 
@@ -214,22 +209,8 @@ function useSalesTabModel() {
         const document = await loader()
 
         if (downloadRequestRef.current === requestId) {
-          const documentUrl = getPreferredWarehousePrintUrl(document)
-          // Prefer legacy's direct print dialog; fall back to a new tab, then the download modal.
-          const printed = documentUrl ? await printWarehouseDocumentUrl(documentUrl) : false
-
-          if (downloadRequestRef.current !== requestId) {
-            return
-          }
-
-          if (printed || (documentUrl && openWarehouseDocumentUrl(documentUrl))) {
-            setDownloadOpened(false)
-            setDownloadDocument(null)
-            setDownloadError(null)
-          } else {
-            setDownloadDocument(hasWarehouseDocumentUrl(document) ? document : null)
-            setDownloadError(hasWarehouseDocumentUrl(document) ? null : t('Немає документів для завантаження'))
-          }
+          setDownloadDocument(hasWarehouseDocumentUrl(document) ? document : null)
+          setDownloadError(hasWarehouseDocumentUrl(document) ? null : t('Немає документів для завантаження'))
         }
       } catch (exportError) {
         if (downloadRequestRef.current === requestId) {
