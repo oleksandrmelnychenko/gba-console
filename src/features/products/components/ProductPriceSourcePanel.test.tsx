@@ -17,7 +17,7 @@ afterEach(() => {
 })
 
 describe('ProductPriceSourcePanel', () => {
-  it('loads source prices only after a source mode is selected', async () => {
+  it('loads the AMG/Fenix comparison immediately', async () => {
     getProductSourcePriceComparison.mockResolvedValue({
       Amg: {
         IsAvailable: true,
@@ -35,10 +35,6 @@ describe('ProductPriceSourcePanel', () => {
 
     const view = renderPanel('product-source-panel-1')
 
-    expect(getProductSourcePriceComparison).not.toHaveBeenCalled()
-
-    fireEvent.click(view.getByText('Порівняти'))
-
     await waitFor(() => {
       expect(getProductSourcePriceComparison).toHaveBeenCalledWith(
         'product-source-panel-1',
@@ -48,14 +44,32 @@ describe('ProductPriceSourcePanel', () => {
     expect(await view.findByText('+0,25')).toBeTruthy()
     expect(await view.findByText('AMG: актуальне')).toBeTruthy()
     expect(await view.findByText('Контех: актуальне')).toBeTruthy()
+    expect(view.queryByText('У GBA')).toBeNull()
   })
 
-  it('keeps the effective prices visible without a source response', () => {
+  it('switches between each source and the comparison', async () => {
+    getProductSourcePriceComparison.mockResolvedValue({
+      Amg: {
+        IsAvailable: true,
+        IsLinked: true,
+        Prices: [{ PriceEur: 1.4, PricingName: 'ЦО2' }],
+      },
+      Fenix: {
+        IsAvailable: true,
+        IsLinked: true,
+        Prices: [{ PriceEur: 1.54, PricingName: 'ЦО2' }],
+      },
+      LocalCurrencyCode: 'UAH',
+      ProductNetId: 'product-source-panel-2',
+    })
+
     const view = renderPanel('product-source-panel-2')
 
-    expect(view.getByText('ЦО2')).toBeTruthy()
-    expect(view.getByText('1,40')).toBeTruthy()
-    expect(getProductSourcePriceComparison).not.toHaveBeenCalled()
+    await view.findByText('+0,14')
+    fireEvent.click(view.getByRole('radio', { name: 'AMG' }))
+    expect(await view.findByText('1,40')).toBeTruthy()
+    fireEvent.click(view.getByRole('radio', { name: 'Контех' }))
+    expect(await view.findByText('1,54')).toBeTruthy()
   })
 })
 

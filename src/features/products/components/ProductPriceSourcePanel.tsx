@@ -82,7 +82,7 @@ export function ProductPriceSourcePanel({
         }
 
         cacheSourcePrices(productNetId, result)
-        setComparison(result)
+        setComparison({ ...result })
         setFailedProductNetId(null)
       })
       .catch((error: unknown) => {
@@ -94,8 +94,7 @@ export function ProductPriceSourcePanel({
     return () => controller.abort()
   }, [productNetId, reloadVersion, shouldLoadSources])
 
-  // The «У GBA» list is the reference: source views reuse its row order so all
-  // four views read the same, and rows with no price at all are dropped (no «-»).
+  // Keep the established GBA price-type order while showing only source data.
   const effectiveOrder = useMemo(() => buildEffectivePricingOrder(effectivePrices), [effectivePrices])
   const comparisonRows = useMemo(
     () =>
@@ -201,8 +200,7 @@ function SourcePricesView({
   }
 
   const prices = (source.Prices || [])
-    .filter((price) => !isPolishPricingName(price.PricingName))
-    .filter(hasSourcePriceValue) // no price at all → hide the row instead of showing «-»
+    .filter((price) => !isPolishPricingName(price.PricingName) && hasSourcePriceValue(price))
     .sort((left, right) => compareByEffectiveOrder(left.PricingName || '', right.PricingName || '', effectiveOrder))
 
   return (
@@ -371,8 +369,7 @@ function isAbortError(error: unknown): boolean {
   return error instanceof DOMException && error.name === 'AbortError'
 }
 
-/* «У GBA» row order (CalculatedPrices as the API returns them) is the canonical
-   ordering for every price view. */
+/* CalculatedPrices preserve the established business order of price types. */
 function buildEffectivePricingOrder(prices: CalculatedProductPrice[]): Map<string, number> {
   const order = new Map<string, number>()
 
