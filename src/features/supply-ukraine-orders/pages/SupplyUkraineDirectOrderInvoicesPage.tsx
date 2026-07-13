@@ -38,6 +38,7 @@ import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/Page
 import { useAuth } from '../../auth/useAuth'
 import { ProductCardModal } from '../../products/components/ProductCardModal'
 import { EXCEL_FILE_ACCEPT, isExcelFile } from '../excelFiles'
+import { createPackListMetadataSavePlan } from '../packListDocumentSavePlan'
 import {
   deletePackingList,
   deleteSupplyInvoice,
@@ -935,22 +936,34 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
       return
     }
 
-    const draft = createPackListMetadataDraft(packListEditor?.packList, form)
-    const invoiceForMetadata = upsertPackListMetadata(selectedInvoice, draft)
+    const savePlan = createPackListMetadataSavePlan(
+      createPackListMetadataDraft(packListEditor?.packList, form),
+    )
+    const invoiceForMetadata = upsertPackListMetadata(selectedInvoice, savePlan.metadataDraft)
 
     setPageState({ isSaving: true })
 
     try {
       const updatedInvoice = await updatePackingLists(toPackingListsPayload(invoiceForMetadata))
       const invoiceAfterMetadata = updatedInvoice || selectedInvoice
-      const savedPackList = findSavedPackList(invoiceAfterMetadata, draft)
+      const savedPackList = findSavedPackList(invoiceAfterMetadata, savePlan.metadataDraft)
 
       if (form.files.length > 0) {
         if (!savedPackList) {
           throw new Error(t('Не вдалося знайти збережений пак лист для документів'))
         }
 
-        await uploadPackingListDocuments(savedPackList, form.files)
+        if (savePlan.pendingDocuments.length !== form.files.length) {
+          throw new Error(t('Не вдалося зіставити вибрані файли з документами пак листа'))
+        }
+
+        await uploadPackingListDocuments({
+          ...savedPackList,
+          InvoiceDocuments: savePlan.pendingDocuments.map((document) => ({
+            ...document,
+            PackingListId: savedPackList.Id,
+          })),
+        }, form.files)
       }
 
       notifications.show({ color: 'green', message: t('Пак лист збережено') })
@@ -1773,7 +1786,7 @@ function PackListMetadataModal({
   )
 }
 
-function PackListMetadataModalBody({
+export function PackListMetadataModalBody({
   editor,
   isSaving,
   onClose,
@@ -1786,6 +1799,13 @@ function PackListMetadataModalBody({
 }) {
   const { t } = useI18n()
   const [form, setForm] = useState<PackListMetadataForm>(() => createPackListMetadataForm(editor.packList))
+
+  function updateTextField(
+    field: 'comment' | 'dateFrom' | 'invNo' | 'markNumber' | 'no' | 'plNo' | 'refNo',
+    value: string,
+  ) {
+    setForm((current) => ({ ...current, [field]: value }))
+  }
 
   function addFiles(files: File[] | null) {
     if (!files?.length) {
@@ -1835,12 +1855,12 @@ function PackListMetadataModalBody({
   return (
     <Stack gap="md">
         <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
-          <TextInput disabled={isSaving} label="INV.NO" value={form.invNo} onChange={(event) => setForm((current) => ({ ...current, invNo: event.currentTarget.value }))} />
-          <TextInput disabled={isSaving} label="REF.NO" value={form.refNo} onChange={(event) => setForm((current) => ({ ...current, refNo: event.currentTarget.value }))} />
-          <TextInput disabled={isSaving} label="PL.NO" value={form.plNo} onChange={(event) => setForm((current) => ({ ...current, plNo: event.currentTarget.value }))} />
-          <TextInput disabled={isSaving} label="Mark" value={form.markNumber} onChange={(event) => setForm((current) => ({ ...current, markNumber: event.currentTarget.value }))} />
-          <TextInput disabled={isSaving} label="No" value={form.no} onChange={(event) => setForm((current) => ({ ...current, no: event.currentTarget.value }))} />
-          <TextInput disabled={isSaving} label={t('Дата')} type="datetime-local" value={form.dateFrom} onChange={(event) => setForm((current) => ({ ...current, dateFrom: event.currentTarget.value }))} />
+          <TextInput disabled={isSaving} label="INV.NO" value={form.invNo} onChange={(event) => updateTextField('invNo', event.currentTarget.value)} />
+          <TextInput disabled={isSaving} label="REF.NO" value={form.refNo} onChange={(event) => updateTextField('refNo', event.currentTarget.value)} />
+          <TextInput disabled={isSaving} label="PL.NO" value={form.plNo} onChange={(event) => updateTextField('plNo', event.currentTarget.value)} />
+          <TextInput disabled={isSaving} label="Mark" value={form.markNumber} onChange={(event) => updateTextField('markNumber', event.currentTarget.value)} />
+          <TextInput disabled={isSaving} label="No" value={form.no} onChange={(event) => updateTextField('no', event.currentTarget.value)} />
+          <TextInput disabled={isSaving} label={t('Дата')} type="datetime-local" value={form.dateFrom} onChange={(event) => updateTextField('dateFrom', event.currentTarget.value)} />
         </SimpleGrid>
         <Textarea
           autosize
@@ -1848,7 +1868,7 @@ function PackListMetadataModalBody({
           label={t('Коментар')}
           minRows={2}
           value={form.comment}
-          onChange={(event) => setForm((current) => ({ ...current, comment: event.currentTarget.value }))}
+          onChange={(event) => updateTextField('comment', event.currentTarget.value)}
         />
         <FileInput
           clearable
@@ -2486,7 +2506,21 @@ function createNewInvoiceDocuments(files: File[]): SupplyInvoiceDeliveryDocument
     ContentType: file.type,
     Deleted: false,
     FileName: file.name,
+    NetUid: createNetUid(),
   }))
+}
+
+function createNetUid(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID()
+  }
+
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (character) => {
+    const random = (Math.random() * 16) | 0
+    const value = character === 'x' ? random : (random & 0x3) | 0x8
+
+    return value.toString(16)
+  })
 }
 
 function upsertPackListMetadata(invoice: SupplyInvoice, packList: PackingList): SupplyInvoice {

@@ -68,8 +68,10 @@ export function PricingPage() {
 
   const [productQuery, setProductQuery] = useState('')
   const [debouncedProductQuery] = useDebouncedValue(productQuery, 400)
-  const [productResults, setProductResults] = useState<SalesUkraineProduct[]>([])
-  const [productLoading, setProductLoading] = useState(false)
+  const [productSearchResult, setProductSearchResult] = useState<{
+    query: string
+    items: SalesUkraineProduct[]
+  }>({ query: '', items: [] })
   const [selectedProduct, setSelectedProduct] = useState<SalesUkraineProduct | null>(() => {
     const netId = searchParams.get('productNetId')
     return netId ? ({ NetUid: netId } as SalesUkraineProduct) : null
@@ -77,71 +79,90 @@ export function PricingPage() {
 
   const [clientQuery, setClientQuery] = useState('')
   const [debouncedClientQuery] = useDebouncedValue(clientQuery, 400)
-  const [clientResults, setClientResults] = useState<SalesUkraineClientOption[]>([])
-  const [clientLoading, setClientLoading] = useState(false)
+  const [clientSearchResult, setClientSearchResult] = useState<{
+    query: string
+    items: SalesUkraineClientOption[]
+  }>({ query: '', items: [] })
   const [selectedClient, setSelectedClient] = useState<SalesUkraineClientOption | null>(null)
 
-  const [agreements, setAgreements] = useState<SalesUkraineClientAgreement[]>([])
-  const [agreementsLoading, setAgreementsLoading] = useState(false)
+  const [agreementResult, setAgreementResult] = useState<{
+    clientNetId: string
+    items: SalesUkraineClientAgreement[]
+  }>({ clientNetId: '', items: [] })
   const [selectedAgreementNetId, setSelectedAgreementNetId] = useState<string | null>(
     () => searchParams.get('clientAgreementNetId'),
   )
 
+  const normalizedProductQuery = debouncedProductQuery.trim()
+  const hasProductQuery = normalizedProductQuery.length >= MIN_QUERY_LENGTH
+  const productResults = useMemo(
+    () => hasProductQuery && productSearchResult.query === normalizedProductQuery
+      ? productSearchResult.items
+      : [],
+    [hasProductQuery, normalizedProductQuery, productSearchResult],
+  )
+  const productLoading = hasProductQuery && productSearchResult.query !== normalizedProductQuery
+
+  const normalizedClientQuery = debouncedClientQuery.trim()
+  const hasClientQuery = normalizedClientQuery.length >= MIN_QUERY_LENGTH
+  const clientResults = useMemo(
+    () => hasClientQuery && clientSearchResult.query === normalizedClientQuery
+      ? clientSearchResult.items
+      : [],
+    [clientSearchResult, hasClientQuery, normalizedClientQuery],
+  )
+  const clientLoading = hasClientQuery && clientSearchResult.query !== normalizedClientQuery
+
+  const selectedClientNetId = selectedClient?.NetUid ?? ''
+  const agreements = useMemo(
+    () => selectedClientNetId && agreementResult.clientNetId === selectedClientNetId
+      ? agreementResult.items
+      : [],
+    [agreementResult, selectedClientNetId],
+  )
+  const agreementsLoading = Boolean(selectedClientNetId) && agreementResult.clientNetId !== selectedClientNetId
+
   useEffect(() => {
-    const value = debouncedProductQuery.trim()
+    const value = normalizedProductQuery
     if (value.length < MIN_QUERY_LENGTH) {
-      setProductResults([])
       return
     }
 
     let cancelled = false
-    setProductLoading(true)
     searchSaleProducts(value)
       .then((list) => {
         if (!cancelled) {
-          setProductResults(list)
+          setProductSearchResult({ query: value, items: list })
         }
       })
       .catch(() => {
         if (!cancelled) {
-          setProductResults([])
-        }
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setProductLoading(false)
+          setProductSearchResult({ query: value, items: [] })
         }
       })
 
     return () => {
       cancelled = true
     }
-  }, [debouncedProductQuery])
+  }, [normalizedProductQuery])
 
   useEffect(() => {
-    const value = debouncedClientQuery.trim()
+    const value = normalizedClientQuery
     if (value.length < MIN_QUERY_LENGTH) {
-      setClientResults([])
       return
     }
 
     let cancelled = false
     const controller = new AbortController()
-    setClientLoading(true)
     searchSalesUkraineClients(value, controller.signal)
       .then((list) => {
         if (!cancelled) {
-          setClientResults(list)
+          setClientSearchResult({ query: value, items: list })
         }
       })
       .catch(() => {
         if (!cancelled) {
-          setClientResults([])
-        }
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setClientLoading(false)
+          setClientSearchResult({ query: value, items: [] })
         }
       })
 
@@ -149,44 +170,35 @@ export function PricingPage() {
       cancelled = true
       controller.abort()
     }
-  }, [debouncedClientQuery])
+  }, [normalizedClientQuery])
 
   useEffect(() => {
-    const clientNetId = selectedClient?.NetUid
-    setAgreements([])
+    const clientNetId = selectedClientNetId
 
     if (!clientNetId) {
       // Keep any deep-linked agreement (?clientAgreementNetId=) when no client is picked yet.
       return
     }
 
-    setSelectedAgreementNetId(null)
-
     let cancelled = false
-    setAgreementsLoading(true)
     getSaleClientAgreements(clientNetId)
       .then((list) => {
         if (cancelled) {
           return
         }
-        setAgreements(list)
+        setAgreementResult({ clientNetId, items: list })
         setSelectedAgreementNetId(list.find((agreement) => agreement.NetUid)?.NetUid ?? null)
       })
       .catch(() => {
         if (!cancelled) {
-          setAgreements([])
-        }
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setAgreementsLoading(false)
+          setAgreementResult({ clientNetId, items: [] })
         }
       })
 
     return () => {
       cancelled = true
     }
-  }, [selectedClient])
+  }, [selectedClientNetId])
 
   const productOptions = useMemo(
     () => toOptions(productResults, selectedProduct, productLabel),
@@ -197,10 +209,17 @@ export function PricingPage() {
     [clientResults, selectedClient],
   )
   const agreementOptions = useMemo<SelectOption[]>(
-    () =>
-      agreements
-        .filter((agreement) => agreement.NetUid)
-        .map((agreement) => ({ value: agreement.NetUid as string, label: agreementLabel(agreement) })),
+    () => {
+      const options: SelectOption[] = []
+
+      for (const agreement of agreements) {
+        if (agreement.NetUid) {
+          options.push({ value: agreement.NetUid, label: agreementLabel(agreement) })
+        }
+      }
+
+      return options
+    },
     [agreements],
   )
 
@@ -219,6 +238,7 @@ export function PricingPage() {
       return
     }
     const found = clientResults.find((client) => client.NetUid === value)
+    setSelectedAgreementNetId(null)
     setSelectedClient(found ?? (selectedClient?.NetUid === value ? selectedClient : null))
   }
 

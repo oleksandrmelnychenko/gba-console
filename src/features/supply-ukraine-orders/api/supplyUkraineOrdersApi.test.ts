@@ -5,6 +5,7 @@ import {
   getSupplyOrderSuppliers,
   searchSupplyOrderServiceOrganizations,
   uploadDirectSupplyOrderFromFile,
+  uploadPackingListDocuments,
   uploadPackingListFile,
   uploadSupplyInvoiceFile,
   uploadSupplyOrderProformDocuments,
@@ -215,6 +216,37 @@ describe('supplyUkraineOrdersApi', () => {
 
     expect(response?.NetUid).toBe('pack-wrapper')
     expect(response?.No).toBe('PL-WRAP')
+  })
+
+  it('uploads packing-list documents with the legacy multipart field names', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      Id: 42,
+      NetUid: 'pack-42',
+      InvoiceDocuments: [{ FileName: 'packing-list.pdf' }],
+    })
+
+    const file = new File(['pdf'], 'packing-list.pdf', { type: 'application/pdf' })
+    const packingList = {
+      Id: 42,
+      NetUid: 'pack-42',
+      InvoiceDocuments: [{
+        ContentType: 'application/pdf',
+        FileName: 'packing-list.pdf',
+      }],
+    }
+
+    const response = await uploadPackingListDocuments(packingList, [file])
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/packinglists/upload/documents', {
+      body: expect.any(FormData),
+      method: 'POST',
+    })
+
+    const formData = apiRequestMock.mock.calls[0]?.[1]?.body as FormData
+
+    expect(JSON.parse(String(formData.get('entity')))).toMatchObject(packingList)
+    expect(formData.getAll('documents')).toEqual([file])
+    expect(response?.InvoiceDocuments).toEqual([{ FileName: 'packing-list.pdf' }])
   })
 
   it('deletes direct-order proform documents through the proforms document endpoint', async () => {

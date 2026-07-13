@@ -1,6 +1,6 @@
 import { Alert, Anchor, Button, Divider, Group, Stack, Text, TextInput } from '@mantine/core'
 import { ExternalLink, Globe, Info } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { SalesUkraineProduct } from '../../sales-ukraine/types'
 
@@ -44,12 +44,14 @@ function buildDefaultQuery(product: SalesUkraineProduct | null): string {
 }
 
 export function CompetitorWebSearchPanel({ product }: CompetitorWebSearchPanelProps) {
-  const { t } = useI18n()
-  const [query, setQuery] = useState('')
+  const initialQuery = buildDefaultQuery(product)
 
-  useEffect(() => {
-    setQuery(buildDefaultQuery(product))
-  }, [product])
+  return <CompetitorWebSearchPanelContent key={initialQuery} initialQuery={initialQuery} />
+}
+
+function CompetitorWebSearchPanelContent({ initialQuery }: { initialQuery: string }) {
+  const { t } = useI18n()
+  const [query, setQuery] = useState(initialQuery)
 
   const trimmedQuery = query.trim()
   const disabled = trimmedQuery.length === 0
