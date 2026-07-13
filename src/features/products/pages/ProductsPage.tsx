@@ -1003,7 +1003,7 @@ function ProductAssortmentCarousel({
         <ProductUploadDocumentToolbar product={selectedProduct} onUploadSuccess={onUploadSuccess} />
       </Box>
 
-      <Group className="product-assortment-filter" gap={8} grow align="flex-start" wrap="nowrap">
+      <Box className="product-assortment-filter">
         <Select
           aria-label={t('Поле пошуку')}
           allowDeselect={false}
@@ -1032,7 +1032,7 @@ function ProductAssortmentCarousel({
           value={sortMode}
           onChange={(value) => onSortModeChange((value as ProductSortMode) || DEFAULT_SORT_MODE)}
         />
-      </Group>
+      </Box>
 
       <Box className={`product-assortment-carousel ${isSelectionMode ? 'is-selection-mode' : ''}`}>
       <Box className="product-assortment-rail product-assortment-rail-top">
@@ -1072,7 +1072,7 @@ function ProductAssortmentCarousel({
           <TextInput
             autoFocus
             aria-label={t('Введіть товар')}
-            placeholder={t('Введіть артикул або назву товару')}
+            placeholder={t('Пошук товару')}
             size="md"
             value={searchDraft}
             className="product-assortment-search-input"
