@@ -1,0 +1,7 @@
+.payment-expense-articles-page {
+  box-sizing: border-box;
+  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px);
+  min-height: 0;
+  overflow: hidden;
+  padding-top: 6px;
+}

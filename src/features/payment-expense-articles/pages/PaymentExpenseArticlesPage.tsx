@@ -22,6 +22,7 @@ import { useAuth } from '../../auth/useAuth'
 import { getPaymentExpenseArticles, searchPaymentExpenseArticles } from '../api/paymentExpenseArticlesApi'
 import type { PaymentExpenseArticle } from '../types'
 import '../../../shared/ui/console-table-page.css'
+import './payment-expense-articles-page.css'
 
 const PERMISSION_CREATE_EXPENSE_ARTICLE = 'Accounting_Payment_Expense_Articles_ADDBtn_PKEY'
 
@@ -154,7 +155,7 @@ export function PaymentExpenseArticlesPage() {
   }, [normalizedSearchValue, reloadKey, setArticles, setError, setLoading, t])
 
   return (
-    <Stack className="payment-expense-articles-page console-table-page" gap="md">
+    <Stack className="payment-expense-articles-page console-table-page" gap={6}>
       <div className="console-table-shell">
         <div className="console-table-command-bar is-search-only">
           <TextInput
