@@ -81,52 +81,15 @@
 }
 
 .income-cashflows-summary {
-  align-items: center;
   border-top: 1px solid var(--mantine-color-gray-2);
-  display: flex;
   flex: 0 0 auto;
-  gap: 8px;
-  justify-content: flex-end;
-  min-height: 48px;
+  min-height: 30px;
   overflow-x: auto;
-  padding: 8px 12px;
+  padding: 4px 12px;
 }
 
-.income-cashflows-summary-item {
-  align-items: center;
-  background: var(--mantine-color-gray-0);
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 999px;
-  color: var(--mantine-color-gray-5);
-  display: inline-flex;
-  flex: 0 0 auto;
-  font-size: 11px;
-  font-weight: 700;
-  gap: 7px;
-  height: 30px;
-  line-height: 1;
-  padding: 0 10px;
-  white-space: nowrap;
-}
-
-.income-cashflows-summary-item > span {
-  color: var(--mantine-color-gray-6);
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0;
-}
-
-.income-cashflows-summary-item > strong {
-  color: var(--mantine-color-gray-9);
-  font-family: var(--font-mono);
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0;
-}
-
-.income-cashflows-summary-item.is-danger > strong {
-  color: var(--mantine-color-red-7);
+.income-cashflows-summary .mantine-Badge-root {
+  height: 20px;
 }
 
 .income-cashflows-card .data-table-cell {

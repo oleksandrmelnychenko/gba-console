@@ -745,20 +745,17 @@ function IncomeCashflowsSummary({
   const { t } = useI18n()
 
   return (
-    <div className="income-cashflows-summary">
-      <span className="income-cashflows-summary-item is-loaded">
-        <span>{t('Завантажено')}</span>
-        <strong>{loadedQty}</strong>
-      </span>
-      <span className="income-cashflows-summary-item is-total">
-        <span>{t('Всього')}</span>
-        <strong>{totalQty}</strong>
-      </span>
-      <span className={`income-cashflows-summary-item${canceledQty > 0 ? ' is-danger' : ''}`}>
-        <span>{t('Скасовано')}</span>
-        <strong>{canceledQty}</strong>
-      </span>
-    </div>
+    <Group className="income-cashflows-summary" gap="xs" justify="flex-end" wrap="nowrap">
+      <Badge className="app-role-pill is-gray" variant="light">
+        {t('Завантажено')}: {loadedQty}
+      </Badge>
+      <Badge className="app-role-pill is-gray" variant="light">
+        {t('Всього')}: {totalQty}
+      </Badge>
+      <Badge className={`app-role-pill ${canceledQty > 0 ? 'is-red' : 'is-gray'}`} variant="light">
+        {t('Скасовано')}: {canceledQty}
+      </Badge>
+    </Group>
   )
 }
 
