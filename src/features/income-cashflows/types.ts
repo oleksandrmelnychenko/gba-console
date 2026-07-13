@@ -236,7 +236,7 @@ export type IncomePaymentOrder = EntityFields & {
   IsAccounting?: boolean
   IsCanceled?: boolean
   IsManagementAccounting?: boolean
-  IncomeCashOrderType?: IncomePaymentOrderType
+  IncomePaymentOrderType?: IncomePaymentOrderType
   IncomePaymentOrderSales?: IncomePaymentOrderSale[]
   Number?: string
   OperationTypeName?: string

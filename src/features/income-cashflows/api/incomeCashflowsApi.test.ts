@@ -40,7 +40,7 @@ describe('income cashflow API lookup contracts', () => {
         filterSql: 'RegionCode.Value/Client.FullName',
         limit: 20,
         offset: 0,
-        typeRoleFilter: String(IncomeCounterpartySearchType.Manufacturer),
+        typeRoleFilter: '4',
         value: 'sem',
       },
     })

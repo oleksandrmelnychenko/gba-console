@@ -977,7 +977,7 @@ function buildIncomePaymentOrder({
     Currency: selectedCurrency,
     ExchangeRate: form.exchangeRate || undefined,
     FromDate: toIsoDateTime(form.date, form.time),
-    IncomeCashOrderType: selectedRegister.Type === PaymentRegisterType.Cash ? IncomePaymentOrderType.Cash : IncomePaymentOrderType.Transfer,
+    IncomePaymentOrderType: selectedRegister.Type === PaymentRegisterType.Cash ? IncomePaymentOrderType.Cash : IncomePaymentOrderType.Transfer,
     IncomePaymentOrderSales: buildIncomePaymentOrderSales(debts, form),
     IsAccounting: form.isAccounting,
     IsManagementAccounting: form.isManagementAccounting,

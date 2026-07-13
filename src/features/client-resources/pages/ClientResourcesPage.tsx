@@ -3778,10 +3778,18 @@ function StoragesPanel({ section }: { section: ClientResourceSection }) {
               {
                 id: 'resale',
                 header: 'Перепродаж',
-                accessor: (storage) => storage.IsResale || storage.AvailableForReSale,
-                cell: (storage) => <BooleanBadge value={storage.IsResale || storage.AvailableForReSale} />,
+                accessor: (storage) => storage.AvailableForReSale,
+                cell: (storage) => <BooleanBadge value={storage.AvailableForReSale} />,
                 maxWidth: 120,
                 width: 120,
+              },
+              {
+                id: 'returns',
+                header: 'Склад повернень',
+                accessor: (storage) => storage.IsResale,
+                cell: (storage) => <BooleanBadge value={storage.IsResale} />,
+                maxWidth: 140,
+                width: 140,
               },
               {
                 id: 'actions',

@@ -254,10 +254,16 @@ export function OutgoingCashOrderForm({ onCancel, onCreated }: OutgoingCashOrder
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
+    const typedColleague = form.userSearch.trim()
+    const resolvedColleague =
+      selectedColleague ??
+      users.find((user) => getUserLabel(user) === typedColleague || getEntityValue(user) === typedColleague) ??
+      null
+
     const validationError = validateForm({
       amount: form.amount,
       isUnderReport: form.isUnderReport,
-      selectedColleague,
+      selectedColleague: resolvedColleague,
       selectedCurrencyRegister,
       selectedMovement,
       selectedOrganization,
@@ -271,7 +277,7 @@ export function OutgoingCashOrderForm({ onCancel, onCreated }: OutgoingCashOrder
     }
 
     const payload = buildPayload({
-      colleague: selectedColleague,
+      colleague: resolvedColleague,
       form,
       selectedCurrencyRegister: selectedCurrencyRegister as CreatePaymentCurrencyRegister,
       selectedMovement: selectedMovement as PaymentMovement,

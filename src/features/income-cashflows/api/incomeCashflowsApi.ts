@@ -16,6 +16,8 @@ import type {
   SupplyOrganizationAgreement,
 } from '../types'
 
+const MANUFACTURER_CLIENT_TYPE_ROLE_ID = 4
+
 export async function getIncomeCashflows(params: IncomeCashflowsSearchParams): Promise<IncomePaymentOrder[]> {
   const result = await apiRequest<unknown>('/payments/orders/income/all', {
     query: {
@@ -350,7 +352,7 @@ function getCounterpartySearchQuery(value: string, type: IncomeCounterpartySearc
     filterSql: 'RegionCode.Value/Client.FullName',
     limit: 20,
     offset: 0,
-    typeRoleFilter: type === IncomeCounterpartySearchType.Manufacturer ? String(IncomeCounterpartySearchType.Manufacturer) : '',
+    typeRoleFilter: type === IncomeCounterpartySearchType.Manufacturer ? String(MANUFACTURER_CLIENT_TYPE_ROLE_ID) : '',
     value,
   }
 }

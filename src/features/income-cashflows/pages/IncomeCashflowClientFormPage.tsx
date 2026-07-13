@@ -1133,7 +1133,7 @@ function buildIncomePaymentOrder({
     Currency: selectedCurrency,
     ExchangeRate: form.exchangeRate || undefined,
     FromDate: toIsoDateTime(form.date, form.time),
-    IncomeCashOrderType: registerType === PaymentRegisterType.Cash ? IncomePaymentOrderType.Cash : IncomePaymentOrderType.Transfer,
+    IncomePaymentOrderType: registerType === PaymentRegisterType.Cash ? IncomePaymentOrderType.Cash : IncomePaymentOrderType.Transfer,
     IncomePaymentOrderSales: isSupplierSearch ? [] : buildIncomePaymentOrderSales(debts, form),
     IsAccounting: form.isAccounting,
     IsManagementAccounting: form.isManagementAccounting,
@@ -1183,7 +1183,10 @@ function buildIncomePaymentOrderSales(debts: ClientInDebt[], form: FormState): I
     return []
   }
 
-  return pickSelectedDebts(debts, form).map((debt) => {
+  const selectedDebts = pickSelectedDebts(debts, form)
+  const targetDebts = selectedDebts.length ? selectedDebts : debts
+
+  return targetDebts.map((debt) => {
     const debtValue = getDebtValue(debt)
 
     return {
@@ -1274,7 +1277,7 @@ function validateDebtSelection({
   }
 
   if (!selectedDebtValues.length) {
-    return t('Оберіть рахунок для оплати')
+    return null
   }
 
   const visibleDebtValues = new Set(visibleDebts.map(getDebtValue))
