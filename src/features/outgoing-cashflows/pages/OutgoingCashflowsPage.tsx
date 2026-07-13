@@ -3,7 +3,6 @@
   Alert,
   Badge,
   Button,
-  Card,
   Divider,
   Group,
   Select,
@@ -52,6 +51,7 @@ import type {
   PaymentMovement,
   PaymentRegister,
 } from '../types'
+import '../../../shared/ui/console-table-page.css'
 import './outgoing-cashflows-page.css'
 
 const PAGE_SIZE = 40
@@ -602,8 +602,8 @@ function OutgoingCashflowsContent({ model }: { model: OutgoingCashflowsPageModel
   const location = useLocation()
 
   return (
-    <Stack className="outgoing-cashflows-page" gap="md">
-      <Card className="app-data-card outgoing-cashflows-card" withBorder radius="md" padding={0}>
+    <Stack className="outgoing-cashflows-page console-table-page" gap={6}>
+      <div className="console-table-shell outgoing-cashflows-card">
         <div className="app-filter-bar outgoing-cashflows-filter-bar">
           <Group align="end" gap="sm" wrap="nowrap" className="outgoing-cashflows-filter-row">
             <TextInput label={t('Від')} type="date" value={fromDate} onChange={(event) => onSetFromDate(event.currentTarget.value)} />
@@ -676,6 +676,15 @@ function OutgoingCashflowsContent({ model }: { model: OutgoingCashflowsPageModel
                 </ActionIcon>
               </Tooltip>
               <DataTableDensityToggle density={density} onToggle={onToggleDensity} size={34} />
+              <Paginator
+                hasNext={hasMore}
+                isLoading={isLoading}
+                page={page}
+                pageSize={pageSize}
+                totalPages={typeof totalRowsQty === 'number' ? Math.max(1, Math.ceil(totalRowsQty / pageSize)) : undefined}
+                onPageChange={onSetPage}
+                onPageSizeChange={onSetPageSize}
+              />
             </div>
             <div className="outgoing-cashflows-create-actions">
               <Button
@@ -691,19 +700,19 @@ function OutgoingCashflowsContent({ model }: { model: OutgoingCashflowsPageModel
           </Group>
         </div>
 
-        <Stack className="outgoing-cashflows-card__body" gap="md">
-          {error && (
-            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
-              {error}
-            </Alert>
-          )}
+        {error && (
+          <Alert className="console-table-alert" color="red" icon={<CircleAlert size={18} />} variant="light">
+            {error}
+          </Alert>
+        )}
 
-          {filterError && (
-            <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
-              {filterError}
-            </Alert>
-          )}
+        {filterError && (
+          <Alert className="console-table-alert" color="yellow" icon={<CircleAlert size={18} />} variant="light">
+            {filterError}
+          </Alert>
+        )}
 
+        <div className="outgoing-cashflows-page__table console-table-body">
           <DataTable
             columns={columns}
             data={rows}
@@ -717,33 +726,22 @@ function OutgoingCashflowsContent({ model }: { model: OutgoingCashflowsPageModel
             minWidth={1860}
             tableId="outgoing-cashflows"
             footer={
-              <Group className="outgoing-cashflows-table-footer" gap="md" justify="flex-end" wrap="nowrap">
-                <Group gap="xs" wrap="nowrap">
-                  <Badge className="app-role-pill is-gray" variant="light">
-                    {t('Рядків')}: {rows.length}
-                  </Badge>
-                  <Badge className="app-role-pill is-green" variant="light">
-                    {t('Кредиторська заборгованість')}: {formatMoney(cashflows.PositiveDifferenceAmount)}
-                  </Badge>
-                  <Badge className="app-role-pill is-red" variant="light">
-                    {t('Дебіторська заборгованість')}: {formatMoney(cashflows.NegativeDifferenceAmount)}
-                  </Badge>
-                </Group>
-                <Paginator
-                  hasNext={hasMore}
-                  isLoading={isLoading}
-                  page={page}
-                  pageSize={pageSize}
-                  totalPages={typeof totalRowsQty === 'number' ? Math.max(1, Math.ceil(totalRowsQty / pageSize)) : undefined}
-                  onPageChange={onSetPage}
-                  onPageSizeChange={onSetPageSize}
-                />
+              <Group className="outgoing-cashflows-table-footer" gap="xs" justify="flex-end" wrap="nowrap">
+                <Badge className="app-role-pill is-gray" variant="light">
+                  {t('Рядків')}: {rows.length}
+                </Badge>
+                <Badge className="app-role-pill is-green" variant="light">
+                  {t('Кредиторська заборгованість')}: {formatMoney(cashflows.PositiveDifferenceAmount)}
+                </Badge>
+                <Badge className="app-role-pill is-red" variant="light">
+                  {t('Дебіторська заборгованість')}: {formatMoney(cashflows.NegativeDifferenceAmount)}
+                </Badge>
               </Group>
             }
             onRowClick={onOpenDetails}
           />
-        </Stack>
-      </Card>
+        </div>
+      </div>
 
       <OutgoingCashflowDetailDrawer row={selectedRow} onClose={onCloseDetails} />
       <OutgoingCashflowDocumentStructureDrawer
