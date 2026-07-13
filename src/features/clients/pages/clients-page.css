@@ -1,9 +1,20 @@
 .clients-page {
   box-sizing: border-box;
-  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 24px);
+  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px);
   min-height: 0;
   overflow: hidden;
-  padding: 0 4px;
+  padding: 6px 4px 0;
+}
+
+/* .console-frame .mantine-Card-root strips border/box-shadow globally (layout.css)
+   so plain-div console-table-shell pages can own their own chrome. This page still
+   renders a real Mantine <Card withBorder>, so restore its chrome explicitly —
+   invisible before because the card sat flush with zero gap; now that it floats
+   with breathing room, a borderless card reads as broken. */
+.clients-card {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2) !important;
+  box-shadow: var(--app-card-shadow) !important;
 }
 
 /* Filter strip pinned at the top of the card; the table below it scrolls.
