@@ -1,7 +1,11 @@
-/* Payment cashflow articles registry — chrome aligned with the «Продажі»
-   reference. The page loads all articles and filters server-side by search term
-   (no pagination), so it keeps the table's own maxHeight scroll model; only the
-   filter strip + card shell are converged onto the shared primitives. */
+.payment-cashflow-articles-page {
+  box-sizing: border-box;
+  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px);
+  min-height: 0;
+  overflow: hidden;
+  padding-top: 6px;
+}
+
 .payment-cashflow-articles-filter-row {
   width: 100%;
 }
@@ -9,10 +13,4 @@
 /* Push the reset / refresh / density cluster to the trailing edge of the row. */
 .payment-cashflow-articles-filter-row .app-filter-actions {
   margin-left: auto;
-}
-
-/* Body below the flush filter strip carries its own padding (the card is
-   padding={0} so the strip sits flush). */
-.payment-cashflow-articles-card__body {
-  padding: 12px;
 }

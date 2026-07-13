@@ -2,7 +2,6 @@ import {
   ActionIcon,
   Alert,
   Button,
-  Card,
   Group,
   Stack,
   Text,
@@ -169,8 +168,8 @@ export function PaymentCashflowArticlesPage() {
   }, [normalizedSearchValue, reloadKey, setArticles, setError, setLoading, t])
 
   return (
-    <Stack gap="md">
-      <Card className="app-data-card payment-cashflow-articles-card" withBorder radius="md" padding={0}>
+    <Stack className="payment-cashflow-articles-page console-table-page" gap={6}>
+      <div className="console-table-shell payment-cashflow-articles-card">
         <div className="app-filter-bar payment-cashflow-articles-filter-bar">
           <Group align="end" gap="sm" wrap="nowrap" className="payment-cashflow-articles-filter-row">
             <TextInput
@@ -229,13 +228,13 @@ export function PaymentCashflowArticlesPage() {
           </Group>
         </div>
 
-        <Stack className="payment-cashflow-articles-card__body" gap="md">
-          {error && (
-            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
-              {error}
-            </Alert>
-          )}
+        {error && (
+          <Alert className="console-table-alert" color="red" icon={<CircleAlert size={18} />} variant="light">
+            {error}
+          </Alert>
+        )}
 
+        <div className="payment-cashflow-articles-page__table console-table-body">
           <DataTable
             columns={columns}
             data={articles}
@@ -243,16 +242,16 @@ export function PaymentCashflowArticlesPage() {
             density={density}
             emptyText={t('Статей руху коштів не знайдено')}
             getRowId={(article, index) => String(article.NetUid || article.Id || index)}
+            height="100%"
             isLoading={isTableBusy}
             layoutVersion="payment-cashflow-articles-table-1"
             loadingText={t('Завантаження статей руху коштів')}
-            maxHeight="calc(100vh - 260px)"
             minWidth={720}
             tableId="payment-cashflow-articles"
             onRowClick={openArticle}
           />
-        </Stack>
-      </Card>
+        </div>
+      </div>
     </Stack>
   )
 }
