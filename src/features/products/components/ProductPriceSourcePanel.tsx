@@ -14,7 +14,6 @@ import { CircleAlert, RefreshCw } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { getProductSourcePriceComparison } from '../api/productsApi'
-import { getProductPriceBreakdown } from '../productPricing'
 import { buildProductSourceComparisonRows, isPolishPricingName } from '../productSourcePricing'
 import type {
   CalculatedProductPrice,
@@ -24,7 +23,7 @@ import type {
 } from '../types'
 import { formatAmount, formatPrice } from '../utils'
 
-type PriceViewMode = 'effective' | 'amg' | 'fenix' | 'compare'
+type PriceViewMode = 'amg' | 'fenix' | 'compare'
 
 type SourcePriceCacheEntry = {
   expiresAt: number
@@ -49,11 +48,11 @@ export function ProductPriceSourcePanel({
   productNetId?: string
 }) {
   const { t } = useI18n()
-  const [viewMode, setViewMode] = useState<PriceViewMode>('effective')
+  const [viewMode, setViewMode] = useState<PriceViewMode>('compare')
   const [comparison, setComparison] = useState<ProductSourcePriceComparison | null>(null)
   const [failedProductNetId, setFailedProductNetId] = useState<string | null>(null)
   const [reloadVersion, setReloadVersion] = useState(0)
-  const shouldLoadSources = viewMode !== 'effective' && Boolean(productNetId)
+  const shouldLoadSources = Boolean(productNetId)
   const currentComparison = comparison?.ProductNetId === productNetId
     ? comparison
     : productNetId
@@ -123,7 +122,6 @@ export function ProductPriceSourcePanel({
           aria-label={t('Джерело цін')}
           className="product-price-source-control"
           data={[
-            { label: t('У GBA'), value: 'effective' },
             { label: 'AMG', value: 'amg' },
             { label: t('Контех'), value: 'fenix' },
             { label: t('Порівняти'), value: 'compare' },
@@ -133,26 +131,22 @@ export function ProductPriceSourcePanel({
           value={viewMode}
           onChange={(value) => setViewMode(value as PriceViewMode)}
         />
-        {viewMode !== 'effective' ? (
-          <Tooltip label={t('Оновити ціни з джерел')}>
-            <ActionIcon
-              aria-label={t('Оновити ціни з джерел')}
-              color="gray"
-              loading={isLoading}
-              size="sm"
-              variant="subtle"
-              onClick={refreshSourcePrices}
-            >
-              <RefreshCw size={15} />
-            </ActionIcon>
-          </Tooltip>
-        ) : null}
+        <Tooltip label={t('Оновити ціни з джерел')}>
+          <ActionIcon
+            aria-label={t('Оновити ціни з джерел')}
+            color="gray"
+            loading={isLoading}
+            size="sm"
+            variant="subtle"
+            onClick={refreshSourcePrices}
+          >
+            <RefreshCw size={15} />
+          </ActionIcon>
+        </Tooltip>
       </Group>
 
       <div className="product-price-source-pane">
-        {viewMode === 'effective' ? (
-          <EffectivePricesView prices={effectivePrices} />
-        ) : isLoading && !currentComparison ? (
+        {isLoading && !currentComparison ? (
           <Stack gap={10} py={4}>
             {Array.from({ length: 8 }, (_, index) => (
               <Group gap="sm" key={index} wrap="nowrap">
@@ -182,55 +176,6 @@ export function ProductPriceSourcePanel({
         )}
       </div>
     </Stack>
-  )
-}
-
-function EffectivePricesView({ prices }: { prices: CalculatedProductPrice[] }) {
-  const { t } = useI18n()
-  const visiblePrices = prices.filter((price) => !isPolishPricingName(price.Pricing?.Name))
-
-  return (
-    <>
-      <PriceHeader localCurrencyCode="UAH" />
-      <Stack className="product-price-source-list" gap={2}>
-        {visiblePrices.length > 0 ? (
-          visiblePrices.map((price, index) => (
-            <EffectivePriceRow key={`${price.Pricing?.NetUid || price.Pricing?.Name || index}`} price={price} />
-          ))
-        ) : (
-          <Text c="dimmed" size="sm">{t('Цін не знайдено')}</Text>
-        )}
-      </Stack>
-    </>
-  )
-}
-
-function EffectivePriceRow({ price }: { price: CalculatedProductPrice }) {
-  const { t } = useI18n()
-  const breakdown = getProductPriceBreakdown(price)
-  const showBase = breakdown.hasBasePrice && breakdown.basePriceEUR !== 0
-
-  return (
-    <Box className="product-inline-price-row">
-      <Group gap="sm" wrap="nowrap">
-        <Text lineClamp={1} size="sm" style={{ flex: 1, minWidth: 0 }}>{breakdown.pricingName || '-'}</Text>
-        <PriceValue value={breakdown.retailPriceEUR} />
-        <PriceValue value={breakdown.retailPriceLocal} />
-      </Group>
-      {showBase || breakdown.hasDiscount ? (
-        <Group gap={6} mt={1} wrap="wrap">
-          {showBase ? (
-            <Text c="dimmed" lh={1.1} style={{ fontSize: 12 }}>{t('База EUR')}: {formatPrice(breakdown.basePriceEUR)}</Text>
-          ) : null}
-          {breakdown.discountPriceEUR !== undefined ? (
-            <Text c="teal.8" fw={650} lh={1.1} style={{ fontSize: 12 }}>{t('Після знижки EUR')}: {formatPrice(breakdown.discountPriceEUR)}</Text>
-          ) : null}
-          {breakdown.discountRate !== undefined ? (
-            <Badge color="teal" size="xs" variant="light">{t('Знижка')} {formatAmount(breakdown.discountRate)}%</Badge>
-          ) : null}
-        </Group>
-      ) : null}
-    </Box>
   )
 }
 
