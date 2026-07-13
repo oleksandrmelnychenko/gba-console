@@ -4,7 +4,6 @@ import {
   Autocomplete,
   Badge,
   Button,
-  Card,
   Divider,
   Group,
   Menu,
@@ -44,6 +43,7 @@ import {
   updateIncomeCashflowClient,
 } from '../api/incomeCashflowsApi'
 import { IncomePaymentOperationType, PaymentRegisterType } from '../types'
+import '../../../shared/ui/console-table-page.css'
 import './income-cashflows-page.css'
 import type {
   AssignedPaymentOrder,
@@ -552,9 +552,8 @@ function IncomeCashflowsContent({ model }: { model: IncomeCashflowsPageModel }) 
   const location = useLocation()
 
   return (
-    <Stack gap="lg">
-
-      <Card className="app-data-card income-cashflows-card" withBorder radius="md" padding={0}>
+    <Stack className="income-cashflows-page console-table-page" gap={6}>
+      <div className="console-table-shell income-cashflows-card">
         <div className="app-filter-bar income-cashflows-filter-bar">
           <Group align="end" gap="sm" wrap="nowrap" className="income-cashflows-filter-row">
             <TextInput label={t('Від')} type="date" value={fromDate} onChange={(event) => onSetFromDate(event.currentTarget.value)} />
@@ -671,52 +670,47 @@ function IncomeCashflowsContent({ model }: { model: IncomeCashflowsPageModel }) 
         </div>
 
         {error && (
-          <Alert m="md" color="red" icon={<CircleAlert size={18} />} variant="light">
+          <Alert className="console-table-alert" color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}
 
         {filterError && (
-          <Alert m="md" color="yellow" icon={<CircleAlert size={18} />} variant="light">
+          <Alert className="console-table-alert" color="yellow" icon={<CircleAlert size={18} />} variant="light">
             {filterError}
           </Alert>
         )}
 
-        <Group gap="xs" px="md" pt="md">
-          <Badge className="app-role-pill" variant="light">
-            {t('Завантажено')}: {incomeOrders.length}
-          </Badge>
-          <Badge className="app-role-pill is-gray" variant="light">
-            {t('Всього')}: {totalQty}
-          </Badge>
-          <Badge className="app-role-pill is-gray" variant="light">
-            {t('Скасовано')}: {incomeOrders.filter((order) => order.IsCanceled).length}
-          </Badge>
-        </Group>
+        <div className="income-cashflows-page__table console-table-body">
+          <DataTable
+            columns={columns}
+            data={rows}
+            defaultLayout={TABLE_DEFAULT_LAYOUT}
+            density={density}
+            emptyText={t('Прибуткових ордерів не знайдено')}
+            getRowId={(row) => row.id}
+            isLoading={isTableBusy}
+            layoutVersion="income-cashflows-1"
+            minWidth={1680}
+            tableId="income-cashflows"
+            onRowClick={onOpenDetails}
+          />
+        </div>
 
-        <DataTable
-          columns={columns}
-          data={rows}
-          defaultLayout={TABLE_DEFAULT_LAYOUT}
-          density={density}
-          emptyText={t('Прибуткових ордерів не знайдено')}
-          getRowId={(row) => row.id}
-          isLoading={isTableBusy}
-          layoutVersion="income-cashflows-1"
-          maxHeight="calc(100vh - 365px)"
-          minWidth={1680}
-          tableId="income-cashflows"
-          onRowClick={onOpenDetails}
+        <IncomeCashflowsSummary
+          canceledQty={incomeOrders.filter((order) => order.IsCanceled).length}
+          loadedQty={incomeOrders.length}
+          totalQty={totalQty}
         />
 
         {hasMore && (
-          <Group justify="center" p="md">
-            <Button loading={isLoadingMore} variant="outline" onClick={() => void onLoadIncomeOrders(incomeOrders.length, true)}>
+          <Group className="income-cashflows-load-more" justify="center" p={0}>
+            <Button loading={isLoadingMore} size="xs" variant="subtle" onClick={() => void onLoadIncomeOrders(incomeOrders.length, true)}>
               {t('Завантажити ще')}
             </Button>
           </Group>
         )}
-      </Card>
+      </div>
 
       <IncomeCashflowDetailDrawer
         row={selectedRow}
@@ -736,6 +730,35 @@ function IncomeCashflowsContent({ model }: { model: IncomeCashflowsPageModel }) 
         onSaved={onReassignSaved}
       />
     </Stack>
+  )
+}
+
+function IncomeCashflowsSummary({
+  canceledQty,
+  loadedQty,
+  totalQty,
+}: {
+  canceledQty: number
+  loadedQty: number
+  totalQty: number
+}) {
+  const { t } = useI18n()
+
+  return (
+    <div className="income-cashflows-summary">
+      <span className="income-cashflows-summary-item is-loaded">
+        <span>{t('Завантажено')}</span>
+        <strong>{loadedQty}</strong>
+      </span>
+      <span className="income-cashflows-summary-item is-total">
+        <span>{t('Всього')}</span>
+        <strong>{totalQty}</strong>
+      </span>
+      <span className={`income-cashflows-summary-item${canceledQty > 0 ? ' is-danger' : ''}`}>
+        <span>{t('Скасовано')}</span>
+        <strong>{canceledQty}</strong>
+      </span>
+    </div>
   )
 }
 

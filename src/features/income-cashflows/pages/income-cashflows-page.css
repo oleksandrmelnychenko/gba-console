@@ -1,3 +1,11 @@
+.income-cashflows-page {
+  box-sizing: border-box;
+  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px);
+  min-height: 0;
+  overflow: hidden;
+  padding-top: 6px;
+}
+
 .income-cashflows-filter-bar {
   overflow-x: auto;
 }
@@ -58,4 +66,76 @@
 
 .income-cashflows-create-menu .mantine-Menu-itemSection svg {
   color: var(--mantine-color-gray-6);
+}
+
+.income-cashflows-page__table {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.income-cashflows-load-more {
+  border-top: 1px solid var(--mantine-color-gray-1);
+  flex: 0 0 auto;
+  padding: 8px 12px;
+}
+
+.income-cashflows-summary {
+  align-items: center;
+  border-top: 1px solid var(--mantine-color-gray-2);
+  display: flex;
+  flex: 0 0 auto;
+  gap: 8px;
+  justify-content: flex-end;
+  min-height: 48px;
+  overflow-x: auto;
+  padding: 8px 12px;
+}
+
+.income-cashflows-summary-item {
+  align-items: center;
+  background: var(--mantine-color-gray-0);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 999px;
+  color: var(--mantine-color-gray-5);
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: 11px;
+  font-weight: 700;
+  gap: 7px;
+  height: 30px;
+  line-height: 1;
+  padding: 0 10px;
+  white-space: nowrap;
+}
+
+.income-cashflows-summary-item > span {
+  color: var(--mantine-color-gray-6);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.income-cashflows-summary-item > strong {
+  color: var(--mantine-color-gray-9);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.income-cashflows-summary-item.is-danger > strong {
+  color: var(--mantine-color-red-7);
+}
+
+.income-cashflows-card .data-table-cell {
+  white-space: nowrap;
+}
+
+.income-cashflows-card .data-table-cell > * {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
