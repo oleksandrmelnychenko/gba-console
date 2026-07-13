@@ -7556,6 +7556,17 @@
   padding-right: 0;
 }
 
+.new-sale-products-step__related-scroll.is-empty {
+  display: flex;
+  overflow: hidden;
+}
+
+.new-sale-products-step__related-scroll.is-empty .new-sale-products-step__related-empty {
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 0;
+}
+
 .new-sale-products-step__related-title,
 .new-sale-product-card__section-title {
   color: var(--mantine-color-gray-7);

@@ -2224,14 +2224,16 @@ export function NewSaleProductsStep({
   const productSearchEmptyDescription = isSearchPristine
     ? t('Введіть мінімум 3 символи у пошуку, щоб побачити доступні товари.')
     : t('Змініть запит або поле пошуку, щоб знайти потрібний товар.')
+  const hasAnalogueRows = Boolean(selectedMainProduct && analogueState.items.length > 0)
+  const hasComponentRows = Boolean(selectedMainProduct && componentEntries.entries.length > 0)
   const analoguePanel = (
     <Stack className="new-sale-products-step__related-panel" gap={7}>
       <Group className="new-sale-products-step__related-head" justify="space-between" wrap="nowrap">
         <Text className="new-sale-products-step__related-title">{t('Аналоги')}</Text>
         <span>{analogueState.items.length}</span>
       </Group>
-      <Box className="new-sale-products-step__related-scroll">
-        {selectedMainProduct && analogueState.items.length > 0 ? (
+      <Box className={`new-sale-products-step__related-scroll ${hasAnalogueRows ? '' : 'is-empty'}`}>
+        {hasAnalogueRows ? (
           <WizardRelatedProductRows
             active={analogueStatesActive}
             focusedIndex={analogueIndex ?? -1}
@@ -2262,8 +2264,8 @@ export function NewSaleProductsStep({
         <Text className="new-sale-products-step__related-title">{t('Комплектуючі')}</Text>
         <span>{componentEntries.entries.length}</span>
       </Group>
-      <Box className="new-sale-products-step__related-scroll">
-        {selectedMainProduct && componentEntries.entries.length > 0 ? (
+      <Box className={`new-sale-products-step__related-scroll ${hasComponentRows ? '' : 'is-empty'}`}>
+        {hasComponentRows ? (
           <WizardRelatedProductRows
             active={componentStatesActive}
             focusedIndex={componentIndex ?? -1}
