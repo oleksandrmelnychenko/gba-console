@@ -96,7 +96,8 @@ describe('CarrierHistory', () => {
     expect(historyCell(container, 'responsible', 'history-event-2').classList).not.toContain('is-changed')
     expect(historyCell(container, 'city', 'history-event-3').classList).toContain('is-changed')
 
-    expect(historyCell(container, 'city', 'current').classList).toContain('is-changed')
+    // Current-data column never repeats the change highlight (aa881723).
+    expect(historyCell(container, 'city', 'current').classList).not.toContain('is-changed')
     expect(historyCell(container, 'transporter', 'current').classList).not.toContain('is-changed')
     expect(historyCell(container, 'mobilePhone', 'current').classList).not.toContain('is-changed')
     expect(historyCell(container, 'responsible', 'current').classList).not.toContain('is-changed')

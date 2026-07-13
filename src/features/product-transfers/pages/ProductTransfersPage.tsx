@@ -6,7 +6,6 @@ import {
   Box,
   Button,
   Card,
-  Divider,
   FileInput,
   Group,
   NumberInput,
@@ -650,21 +649,13 @@ function ProductTransferDetailDrawer({ model }: { model: ReturnType<typeof usePr
       onClose={closeDetail}
     >
       {selectedTransfer && (
-        <>
-          <Group justify="flex-end" mb="md">
-            <Button
-              color={CREATE_ACTION_COLOR}
-              disabled={!selectedTransfer.NetUid}
-              leftSection={<Download size={16} />}
-              loading={isDownloading}
-              variant="light"
-              onClick={() => openDownload(selectedTransfer)}
-            >
-              {t('Завантажити')}
-            </Button>
-          </Group>
-          <TransferDetail error={detailError} isLoading={isDetailLoading} transfer={selectedTransfer} />
-        </>
+        <TransferDetail
+          error={detailError}
+          isDownloading={isDownloading}
+          isLoading={isDetailLoading}
+          transfer={selectedTransfer}
+          onDownload={() => openDownload(selectedTransfer)}
+        />
       )}
 
       <AppModal
@@ -1069,12 +1060,16 @@ function buildTransferIndexMap(transfers: ProductTransfer[], offset = 0): Map<Pr
 
 function TransferDetail({
   error,
+  isDownloading,
   isLoading,
   transfer,
+  onDownload,
 }: {
   error: string | null
+  isDownloading: boolean
   isLoading: boolean
   transfer: ProductTransfer
+  onDownload: () => void
 }) {
   const { t } = useI18n()
   const items = useMemo(() => transfer.ProductTransferItems || [], [transfer.ProductTransferItems])
@@ -1145,6 +1140,9 @@ function TransferDetail({
     [itemIndexMap],
   )
 
+  const transferDate = formatDate(parseDate(transfer.FromDate))
+  const routeLine = [transfer.FromStorage?.Name, transfer.ToStorage?.Name].filter(Boolean).join(' → ')
+
   return (
     <Stack gap="md">
       {error && (
@@ -1153,51 +1151,76 @@ function TransferDetail({
         </Alert>
       )}
 
-      <Group gap="xs">
-        {transfer.IsManagement && (
-          <Badge className="app-role-pill" variant="light">
-            {t('Управлінське')}
-          </Badge>
+      <div className="app-detail-hero">
+        <div>
+          <span className="app-detail-eyebrow">{t('Переміщення')}</span>
+          <div className="app-detail-title">
+            <strong>
+              {transfer.Number ? `№ ${transfer.Number}` : t('Переміщення')}
+              {transferDate ? ` · ${t('Від')} ${transferDate}` : ''}
+            </strong>
+            {routeLine && <span>{routeLine}</span>}
+          </div>
+          {(transfer.IsManagement || isLoading) && (
+            <div className="app-detail-badges">
+              {transfer.IsManagement && (
+                <Badge className="app-role-pill" variant="light">
+                  {t('Управлінське')}
+                </Badge>
+              )}
+              {isLoading && (
+                <Badge className="app-role-pill is-gray" variant="light">
+                  {t('Завантаження деталей')}
+                </Badge>
+              )}
+            </div>
+          )}
+        </div>
+        <div className="app-detail-hero__side">
+          <Button
+            disabled={!transfer.NetUid}
+            leftSection={<Download size={16} />}
+            loading={isDownloading}
+            variant="default"
+            onClick={onDownload}
+          >
+            {t('Завантажити')}
+          </Button>
+          <div className="app-detail-metrics">
+            <div className="app-detail-metric">
+              <span>{t('Позицій')}</span>
+              <strong>{items.length}</strong>
+            </div>
+            <div className="app-detail-metric">
+              <span>{t('Кількість')}</span>
+              <strong>{formatAmount(getTransferQty(transfer))}</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="app-detail-grid">
+        <DetailField label={t('Організація')} value={transfer.Organization?.Name} />
+        <DetailField label={t('Відповідальний')} value={getResponsibleName(transfer)} />
+        <DetailField label={t('Зі складу')} value={transfer.FromStorage?.Name} />
+        <DetailField label={t('На склад')} value={transfer.ToStorage?.Name} />
+        {transfer.Comment && (
+          <div className="app-detail-field" style={{ gridColumn: '1 / -1' }}>
+            <span>{t('Коментар')}</span>
+            <strong>{transfer.Comment}</strong>
+          </div>
         )}
-        {isLoading && (
-          <Badge className="app-role-pill is-gray" variant="light">
-            {t('Завантаження деталей')}
-          </Badge>
-        )}
-      </Group>
-
-      <DetailRows
-        rows={[
-          [t('Організація'), transfer.Organization?.Name],
-          [t('Зі складу'), transfer.FromStorage?.Name],
-          [t('На склад'), transfer.ToStorage?.Name],
-          [t('Відповідальний'), getResponsibleName(transfer)],
-          [t('Позицій'), items.length],
-          [t('Кількість'), formatAmount(getTransferQty(transfer))],
-        ]}
-      />
-
-      {transfer.Comment && (
-        <>
-          <Divider />
-          <Box>
-            <Text size="xs" c="dimmed" tt="uppercase">
-              {t('Коментар')}
-            </Text>
-            <Text size="sm">{transfer.Comment}</Text>
-          </Box>
-        </>
-      )}
-
-      <Divider />
+      </div>
 
       <Stack gap="xs">
-        <Group justify="space-between">
-          <Text fw={600}>{t('Позиції')}</Text>
+        <div className="app-detail-section-head">
+          <Text className="app-section-title" fw={600} size="sm">
+            {t('Позиції')}
+          </Text>
           <Badge className="app-role-pill is-gray" variant="light">
             {items.length}
           </Badge>
-        </Group>
+        </div>
         <DataTable
           columns={itemColumns}
           data={items}
@@ -1214,20 +1237,12 @@ function TransferDetail({
   )
 }
 
-function DetailRows({ rows }: { rows: Array<[string, unknown]> }) {
+function DetailField({ label, value }: { label: string; value: unknown }) {
   return (
-    <Stack gap={6}>
-      {rows.map(([label, value]) => (
-        <Group key={label} justify="space-between" align="flex-start" gap="lg" wrap="nowrap">
-          <Text size="sm" c="dimmed">
-            {label}
-          </Text>
-          <Text size="sm" ta="right">
-            {displayValue(value)}
-          </Text>
-        </Group>
-      ))}
-    </Stack>
+    <div className="app-detail-field">
+      <span>{label}</span>
+      <strong>{displayValue(value)}</strong>
+    </div>
   )
 }
 

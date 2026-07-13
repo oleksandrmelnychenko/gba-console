@@ -7,6 +7,7 @@ import './index.css'
 import '@mantine/charts/styles.css'
 import './shared/transitions/transitions.css'
 import './shared/ui/filter-bar.css'
+import './shared/ui/detail-sheet.css'
 
 // Guard React reconciliation against browser translation / extensions that mutate
 // the DOM (otherwise a stray removeChild/insertBefore white-screens the whole app).

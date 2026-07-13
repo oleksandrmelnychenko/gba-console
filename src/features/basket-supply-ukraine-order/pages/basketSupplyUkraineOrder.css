@@ -1,5 +1,25 @@
+/* Сторінка кошика живе всередині .console-frame (overflow hidden), тому висоту
+   тримає сама: таб-стрічка зверху, контент таба скролиться у своїй зоні. */
 .basket-supply-page {
+  box-sizing: border-box;
+  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 24px);
+  min-height: 0;
   min-width: 0;
+  overflow: hidden;
+  padding: 0 4px;
+}
+
+.basket-supply-page .pill-tabs {
+  flex: 0 0 auto;
+}
+
+.basket-supply-tab-content {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  overflow-y: auto;
+  padding-top: 10px;
 }
 
 .basket-supply-filters {
@@ -147,4 +167,232 @@
 /* The plan table owns its scroll inside the shared draggable bottom sheet. */
 .budget-cart-sheet__body > div {
   height: 100%;
+}
+
+/* ---- Кокпіт закупівель (конструктор): картка на всю висоту таба; скрол живе
+   в таблиці плану і в рейці кошика, не на сторінці. ---- */
+.procure-cockpit {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+}
+
+.procure-cockpit-bar {
+  align-items: end;
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.procure-cockpit-bar__actions {
+  flex: 1 1 auto;
+}
+
+/* Слот під ▦ ☰ DataTable-тулбара, піднятий у фільтр-бар (§5.3). */
+.procure-cockpit-bar__slot {
+  align-items: center;
+  align-self: end;
+  display: flex;
+  flex: 0 0 auto;
+  min-height: 36px;
+}
+
+.procure-cockpit-bar__slot .data-table-toolbar {
+  gap: 6px;
+  margin: 0;
+  min-height: 0;
+}
+
+.procure-cockpit__alert {
+  border-radius: 0;
+  flex: 0 0 auto;
+}
+
+.procure-cockpit__thumb-fallback {
+  align-items: center;
+  background: var(--mantine-color-gray-1);
+  border-radius: 4px;
+  color: var(--mantine-color-gray-5);
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: 34px;
+  justify-content: center;
+  width: 34px;
+}
+
+.procure-proof-history {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.procure-proof-history td {
+  border-bottom: 1px solid var(--mantine-color-gray-1);
+  font-size: 12px;
+  padding: 2px 6px;
+}
+
+.procure-proof-history td + td {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.procure-cockpit-bar .mantine-Button-label,
+.procure-cockpit__basket-group .mantine-Button-label {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+/* Смужка підсумків плану — патерн метрик деталки: сірий моно-лейбл з оранжевою
+   крапкою + велике моно-значення, без коробок і кольорових смуг. */
+.procure-cockpit__overview {
+  align-items: center;
+  border-bottom: 1px solid var(--mantine-color-gray-1);
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  gap: 12px 28px;
+  justify-content: space-between;
+  padding: 12px 14px;
+}
+
+.procure-cockpit__metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 28px;
+  min-width: 0;
+}
+
+.procure-metric {
+  min-width: 0;
+}
+
+.procure-metric span {
+  color: var(--mantine-color-gray-7);
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.2;
+}
+
+.procure-metric span::before {
+  background: var(--brand-orange);
+  border-radius: 999px;
+  content: '';
+  display: inline-block;
+  height: 6px;
+  margin-right: 6px;
+  vertical-align: 1px;
+  width: 6px;
+}
+
+.procure-metric strong {
+  color: var(--mantine-color-gray-9);
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.15;
+  margin-top: 4px;
+  white-space: nowrap;
+}
+
+.procure-metric.is-critical strong {
+  color: var(--mantine-color-red-7);
+}
+
+.procure-cockpit__charts {
+  flex: 0 0 auto;
+  padding: 12px 14px 4px;
+}
+
+.procure-cockpit__workspace {
+  display: flex;
+  flex: 1 1 auto;
+  gap: 12px;
+  min-height: 0;
+  padding: 10px 8px 8px;
+}
+
+/* Грід плану в рамці (§6.2): DataTable заповнює рамку, скрол всередині. */
+.procure-cockpit__table {
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 10px;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.procure-cockpit__table .data-table {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.procure-cockpit__table .data-table-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* Рейка замовлення праворуч: шапка фіксована, список груп скролиться. */
+.procure-cockpit__basket {
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 10px;
+  display: flex;
+  flex: 0 0 320px;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.procure-cockpit__basket-head {
+  align-items: center;
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+  display: flex;
+  flex: 0 0 auto;
+  gap: 8px;
+  justify-content: space-between;
+  padding: 10px 12px;
+}
+
+.procure-cockpit__basket-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 10px 12px;
+  scrollbar-width: thin;
+}
+
+.procure-cockpit__basket-group {
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
+  padding: 10px;
+}
+
+@media (max-width: 1100px) {
+  .procure-cockpit__workspace {
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .procure-cockpit__table {
+    flex: 0 0 auto;
+    max-height: 60vh;
+    min-height: 320px;
+  }
+
+  .procure-cockpit__basket {
+    flex: 0 0 auto;
+    max-height: 44vh;
+  }
 }

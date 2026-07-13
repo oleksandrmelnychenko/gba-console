@@ -1,0 +1,207 @@
+/* Спільна деталка сутності в шиті/модалці (docs/ui-patterns.md §7.2, еталон —
+   Підзвітна витрата). Узагальнення .accountable-expense-detail-* під
+   загальні .app-detail-* класи, щоб нові деталки не копіювали CSS.
+   Globally imported in main.tsx (як filter-bar.css). */
+
+/* Hero: копія (eyebrow + моно-тайтл + пілси) зліва, метрики праворуч. */
+.app-detail-hero {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
+  box-shadow: none;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  min-width: 0;
+  padding: 14px;
+}
+
+.app-detail-eyebrow {
+  color: var(--mantine-color-gray-6);
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.app-detail-title {
+  display: grid;
+  margin-top: 7px;
+  min-width: 0;
+}
+
+.app-detail-title strong {
+  color: var(--mantine-color-gray-9);
+  font-family: var(--font-mono);
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-detail-title span {
+  color: var(--mantine-color-gray-6);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
+  margin-top: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-detail-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.app-detail-hero__side {
+  align-items: flex-end;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+/* Метрики — патерн підсумків: без коробок і смуг, сірий моно-лейбл з оранжевою
+   крапкою + велике моно-значення. */
+.app-detail-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 28px;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.app-detail-metric {
+  min-width: 0;
+}
+
+.app-detail-metric span,
+.app-detail-metric small {
+  color: var(--mantine-color-gray-7);
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.2;
+}
+
+.app-detail-metric span::before {
+  background: var(--brand-orange);
+  border-radius: 999px;
+  content: '';
+  display: inline-block;
+  height: 6px;
+  margin-right: 6px;
+  vertical-align: 1px;
+  width: 6px;
+}
+
+.app-detail-metric strong {
+  color: var(--mantine-color-gray-9);
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.15;
+  margin-top: 4px;
+  white-space: nowrap;
+}
+
+.app-detail-metric small {
+  color: var(--mantine-color-gray-6);
+  font-size: 10px;
+  font-weight: 500;
+  margin-top: 3px;
+}
+
+/* Сітка пар «лейбл ——— значення» — leader-рядки у 2 колонки. */
+.app-detail-grid {
+  column-gap: 28px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  min-width: 0;
+  row-gap: 12px;
+}
+
+.app-detail-field {
+  align-items: baseline;
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+}
+
+.app-detail-field::before {
+  border-bottom: 1px solid var(--mantine-color-gray-3);
+  content: '';
+  flex: 1 1 auto;
+  min-width: 24px;
+  order: 2;
+  transform: translateY(-3px);
+}
+
+.app-detail-field span {
+  color: var(--mantine-color-gray-8);
+  flex: 0 1 auto;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.3;
+  order: 1;
+  white-space: nowrap;
+}
+
+.app-detail-field strong {
+  color: var(--mantine-color-gray-9);
+  flex: 0 1 auto;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+  min-width: 0;
+  order: 3;
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+
+.app-detail-field.is-mono strong {
+  font-family: var(--font-mono);
+  letter-spacing: 0;
+}
+
+/* Заголовок секції з лічильником праворуч. */
+.app-detail-section-head {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+@media (max-width: 640px) {
+  .app-detail-hero {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .app-detail-hero__side {
+    align-items: flex-start;
+  }
+
+  .app-detail-metrics {
+    justify-content: flex-start;
+  }
+
+  .app-detail-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

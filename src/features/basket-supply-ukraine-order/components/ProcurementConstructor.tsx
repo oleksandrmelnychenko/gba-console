@@ -1,10 +1,12 @@
 import { BarChart, DonutChart, LineChart } from '@mantine/charts'
 import {
   ActionIcon,
+  Alert,
   Badge,
   Box,
   Button,
   Card,
+  Collapse,
   Group,
   Image,
   Loader,
@@ -14,7 +16,6 @@ import {
   Select,
   SimpleGrid,
   Stack,
-  Table,
   Text,
   Tooltip,
 } from '@mantine/core'
@@ -22,18 +23,23 @@ import { notifications } from '@mantine/notifications'
 import {
   Bookmark,
   ChevronDown,
-  ChevronRight,
+  ChevronUp,
+  CircleAlert,
   FileSpreadsheet,
   ImageOff,
   Plus,
+  RefreshCw,
   Save,
   Sparkles,
   Trash2,
   Truck,
 } from 'lucide-react'
 import * as XLSX from 'xlsx'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { getProductAnalytics } from '../../assortment/api/assortmentApi'
 import type { ProductSalesSeriesPoint } from '../../assortment/types'
 import { getSupplyOrderSuppliers } from '../../supply-ukraine-orders/api/supplyUkraineOrdersApi'
@@ -65,6 +71,10 @@ const URGENCY_META: Record<ProcurementUrgency, { color: string; label: string; o
 }
 
 type BasketLine = { suggestion: ReorderSuggestion; qty: number }
+
+const PLAN_TABLE_DEFAULT_LAYOUT = {
+  density: 'normal',
+} satisfies DataTableDefaultLayout
 
 // Quadrant = ABC (revenue importance) × XYZ (demand predictability).
 const QUADRANT_HINTS: Record<string, string> = {
@@ -126,32 +136,14 @@ export function ProcurementConstructor() {
   const [isLoading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [charts, setCharts] = useState<ProcurementCharts | null>(null)
+  const [isAnalyticsOpen, setAnalyticsOpen] = useState(false)
+  const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
 
-  const [expanded, setExpanded] = useState<number | null>(null)
   const [basket, setBasket] = useState<Map<number, BasketLine>>(new Map())
   const [creatingProducer, setCreatingProducer] = useState<number | null>(null)
   // Inline-editable order quantities keyed by product_id (default = AI suggested_qty).
   const [draftQty, setDraftQty] = useState<Record<number, number>>({})
-  // Lazy per-product monthly sales history, fetched on row expand (works in both lenses).
-  const [history, setHistory] = useState<Record<number, ProductSalesSeriesPoint[] | 'loading'>>({})
-
-  const loadHistory = useCallback(
-    (productId: number) => {
-      setHistory((current) => {
-        if (current[productId] !== undefined) {
-          return current
-        }
-        getProductAnalytics(productId, undefined, 12)
-          .then((data) =>
-            setHistory((prev) => ({ ...prev, [productId]: data.sales_series ?? [] })),
-          )
-          .catch(() => setHistory((prev) => ({ ...prev, [productId]: [] })))
-
-        return { ...current, [productId]: 'loading' }
-      })
-    },
-    [],
-  )
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
 
   const orderQtyFor = useCallback(
     (row: ReorderSuggestion) => draftQty[row.product_id] ?? row.suggested_qty,
@@ -264,7 +256,7 @@ export function ProcurementConstructor() {
       window.clearTimeout(loadTimer)
       controller.abort()
     }
-  }, [loadRows])
+  }, [loadRows, reloadKey])
 
   const sortedRows = useMemo(
     () =>
@@ -290,7 +282,7 @@ export function ProcurementConstructor() {
     return map
   }, [charts])
 
-  function addToBasket(suggestion: ReorderSuggestion, quantity?: number) {
+  const addToBasket = useCallback((suggestion: ReorderSuggestion, quantity?: number) => {
     setBasket((previous) => {
       const next = new Map(previous)
       next.set(suggestion.product_id, {
@@ -300,7 +292,7 @@ export function ProcurementConstructor() {
 
       return next
     })
-  }
+  }, [])
 
   function addAllCritical() {
     const critical = sortedRows.filter((row) => row.urgency === 'critical' || row.urgency === 'high')
@@ -313,7 +305,7 @@ export function ProcurementConstructor() {
     notifications.show({ color: 'blue', message: t('Додано {n} позицій у кошик').replace('{n}', String(critical.length)) })
   }
 
-  function setBasketQty(productId: number, value: number) {
+  const setBasketQty = useCallback((productId: number, value: number) => {
     setBasket((previous) => {
       const line = previous.get(productId)
       if (!line) {
@@ -329,7 +321,28 @@ export function ProcurementConstructor() {
 
       return next
     })
-  }
+  }, [])
+
+  const setDraftQtyFor = useCallback(
+    (productId: number, value: number) => {
+      setDraftQty((current) => ({ ...current, [productId]: value }))
+      setBasket((previous) => {
+        if (!previous.has(productId)) {
+          return previous
+        }
+        const next = new Map(previous)
+        const line = next.get(productId) as BasketLine
+        if (value <= 0) {
+          next.delete(productId)
+        } else {
+          next.set(productId, { ...line, qty: value })
+        }
+
+        return next
+      })
+    },
+    [],
+  )
 
   const basketByProducer = useMemo(() => {
     const groups = new Map<number, { name: string; lines: BasketLine[]; total: number }>()
@@ -370,11 +383,24 @@ export function ProcurementConstructor() {
   }
 
   const basketCount = basket.size
+  const planColumns = usePlanColumns({
+    basket,
+    draftQty,
+    lens,
+    onAddToBasket: addToBasket,
+    onDraftQtyChange: setDraftQtyFor,
+    orderQtyFor,
+    t,
+  })
+  const renderProofPanel = useCallback(
+    (row: ReorderSuggestion) => <ProofPanel demand={demandByProduct.get(row.product_id)} row={row} t={t} />,
+    [demandByProduct, t],
+  )
 
   return (
-    <Stack gap={10}>
-      <Group justify="space-between" wrap="wrap">
-        <Group gap={10} wrap="nowrap">
+    <div className="procure-cockpit">
+      <Card className="app-data-card" padding={0} radius="md" withBorder>
+        <div className="app-filter-bar procure-cockpit-bar">
           <SegmentedControl
             data={[
               { label: t('Склад'), value: 'warehouse' },
@@ -397,347 +423,445 @@ export function ProcurementConstructor() {
               onChange={setSelectedProducerId}
             />
           )}
-        </Group>
-        <Group gap={8} wrap="nowrap">
-          <Menu position="bottom-end" shadow="md" width={280}>
-            <Menu.Target>
-              <Button leftSection={<Bookmark size={15} />} size="xs" variant="default">
-                {t('Сесії')}
-              </Button>
-            </Menu.Target>
-            <Menu.Dropdown>
-              <Menu.Item leftSection={<Save size={14} />} onClick={persistSession}>
-                {t('Зберегти поточний стан')}
-              </Menu.Item>
-              {sessions.length > 0 && <Menu.Divider />}
-              {sessions.map((session) => (
-                <Menu.Item
-                  key={session.id}
-                  rightSection={
-                    <ActionIcon
-                      color="red"
-                      component="div"
-                      size="sm"
-                      variant="subtle"
-                      onClick={(event) => {
-                        event.stopPropagation()
-                        deleteSession(session.id)
-                      }}
-                    >
-                      <Trash2 size={13} />
-                    </ActionIcon>
-                  }
-                  onClick={() => restoreSession(session.id)}
-                >
-                  <Text size="sm" truncate>
-                    {session.name}
-                  </Text>
-                  <Text c="dimmed" size="xs">
-                    {new Date(session.savedAt).toLocaleString('uk-UA')} · {session.basket.length} {t('поз.')}
-                  </Text>
+
+          <div className="app-filter-actions procure-cockpit-bar__actions">
+            <Tooltip label={t('Оновити')}>
+              <ActionIcon aria-label={t('Оновити')} loading={isLoading} size={34} variant="light" onClick={() => reload()}>
+                <RefreshCw size={16} />
+              </ActionIcon>
+            </Tooltip>
+            <Menu position="bottom-end" shadow="md" width={280}>
+              <Menu.Target>
+                <Button leftSection={<Bookmark size={15} />} variant="default">
+                  {t('Сесії')}
+                </Button>
+              </Menu.Target>
+              <Menu.Dropdown>
+                <Menu.Item leftSection={<Save size={14} />} onClick={persistSession}>
+                  {t('Зберегти поточний стан')}
                 </Menu.Item>
-              ))}
-            </Menu.Dropdown>
-          </Menu>
+                {sessions.length > 0 && <Menu.Divider />}
+                {sessions.map((session) => (
+                  <Menu.Item
+                    key={session.id}
+                    rightSection={
+                      <ActionIcon
+                        color="red"
+                        component="div"
+                        size="sm"
+                        variant="subtle"
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          deleteSession(session.id)
+                        }}
+                      >
+                        <Trash2 size={13} />
+                      </ActionIcon>
+                    }
+                    onClick={() => restoreSession(session.id)}
+                  >
+                    <Text size="sm" truncate>
+                      {session.name}
+                    </Text>
+                    <Text c="dimmed" size="xs">
+                      {new Date(session.savedAt).toLocaleString('uk-UA')} · {session.basket.length} {t('поз.')}
+                    </Text>
+                  </Menu.Item>
+                ))}
+              </Menu.Dropdown>
+            </Menu>
+            <Button
+              disabled={sortedRows.length === 0}
+              leftSection={<FileSpreadsheet size={15} />}
+              variant="default"
+              onClick={() => exportRowsToXlsx(sortedRows, lens, t, orderQtyFor)}
+            >
+              {t('Excel')}
+            </Button>
+            <div ref={setTableToolbarSlot} className="procure-cockpit-bar__slot" />
+            <Button
+              color={CREATE_ACTION_COLOR}
+              disabled={sortedRows.length === 0}
+              leftSection={<Sparkles size={15} />}
+              variant="outline"
+              onClick={addAllCritical}
+            >
+              {t('Критичні в кошик')}
+            </Button>
+          </div>
+        </div>
+
+        {error && (
+          <Alert className="procure-cockpit__alert" color="red" icon={<CircleAlert size={16} />} variant="light">
+            {error}
+          </Alert>
+        )}
+
+        <div className="procure-cockpit__overview">
+          <div className="procure-cockpit__metrics">
+            <div className="procure-metric">
+              <span>{t('Позицій до замовлення')}</span>
+              <strong>{qty.format(overview.count)}</strong>
+            </div>
+            <div className={`procure-metric${overview.criticalCount > 0 ? ' is-critical' : ''}`}>
+              <span>{t('Критичних')}</span>
+              <strong>{qty.format(overview.criticalCount)}</strong>
+            </div>
+            <div className="procure-metric">
+              <span>{t('Сума потреби, EUR')}</span>
+              <strong>{amount.format(overview.totalValue)}</strong>
+            </div>
+            <div className="procure-metric">
+              <span>{t('Під ризиком, EUR')}</span>
+              <strong>{amount.format(overview.valueAtRisk)}</strong>
+            </div>
+          </div>
           <Button
-            disabled={sortedRows.length === 0}
-            leftSection={<FileSpreadsheet size={15} />}
+            rightSection={isAnalyticsOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
             size="xs"
-            variant="default"
-            onClick={() => exportRowsToXlsx(sortedRows, lens, t, orderQtyFor)}
+            variant="subtle"
+            onClick={() => setAnalyticsOpen((open) => !open)}
           >
-            {t('Експорт Excel')}
+            {t('Аналітика')}
           </Button>
-          <Button
-            disabled={sortedRows.length === 0}
-            leftSection={<Sparkles size={15} />}
-            size="xs"
-            variant="light"
-            onClick={addAllCritical}
-          >
-            {t('Додати критичні в кошик')}
-          </Button>
-        </Group>
-      </Group>
+        </div>
 
-      {sortedRows.length > 0 && <OverviewPanel overview={overview} t={t} />}
+        <Collapse expanded={isAnalyticsOpen}>
+          <div className="procure-cockpit__charts">
+            <OverviewCharts overview={overview} t={t} />
+          </div>
+        </Collapse>
 
-      <Group align="flex-start" gap={12} wrap="nowrap" style={{ minHeight: 0 }}>
-        <Box style={{ flex: 1, minWidth: 0 }}>
-          {isLoading ? (
-            <Group justify="center" py="xl">
-              <Loader size="sm" />
-              <Text size="sm">{t('Розрахунок потреби…')}</Text>
-            </Group>
-          ) : error ? (
-            <Text c="red" py="md" size="sm">
-              {error}
-            </Text>
-          ) : sortedRows.length === 0 ? (
-            <Text c="dimmed" py="md" ta="center">
-              {lens === 'producer' && !selectedProducerId
-                ? t('Оберіть виробника, щоб побачити потребу')
-                : t('Немає позицій, що потребують замовлення')}
-            </Text>
-          ) : (
-            <Box className="procure-constructor__table" style={{ overflowX: 'auto' }}>
-              <Table highlightOnHover stickyHeader verticalSpacing={5}>
-                <Table.Thead>
-                  <Table.Tr>
-                    <Table.Th w={30} />
-                    <Table.Th>{t('Терміновість')}</Table.Th>
-                    <Table.Th>{t('Товар')}</Table.Th>
-                    <Table.Th>{t('Квадрант')}</Table.Th>
-                    {lens === 'warehouse' && <Table.Th>{t('Виробник')}</Table.Th>}
-                    <Table.Th ta="right">{t('Наявн.')}</Table.Th>
-                    <Table.Th ta="right">{t('Покриття')}</Table.Th>
-                    <Table.Th ta="right">{t('Замовити')}</Table.Th>
-                    <Table.Th ta="right">{t('Сума EUR')}</Table.Th>
-                    <Table.Th />
-                  </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>
-                  {sortedRows.map((row) => {
-                    const meta = URGENCY_META[row.urgency]
-                    const isOpen = expanded === row.product_id
-                    const inBasket = basket.has(row.product_id)
+        <div className="procure-cockpit__workspace">
+          <div className="procure-cockpit__table">
+            <DataTable
+              columns={planColumns}
+              data={sortedRows}
+              defaultLayout={PLAN_TABLE_DEFAULT_LAYOUT}
+              emptyText={
+                lens === 'producer' && !selectedProducerId
+                  ? t('Оберіть виробника, щоб побачити потребу')
+                  : t('Немає позицій, що потребують замовлення')
+              }
+              getRowId={(row) => String(row.product_id)}
+              height="100%"
+              isLoading={isLoading}
+              loadingText={t('Розрахунок потреби…')}
+              minWidth={1060}
+              renderExpandedRow={renderProofPanel}
+              showLayoutControls
+              tableId="procure-cockpit-plan"
+              toolbarPortalTarget={tableToolbarSlot}
+            />
+          </div>
 
-                    return (
-                      <>
-                        <Table.Tr key={row.product_id}>
-                          <Table.Td>
-                            <ActionIcon
-                              aria-label={t('Пруфи')}
-                              size="sm"
-                              variant="subtle"
-                              onClick={() => {
-                                const next = isOpen ? null : row.product_id
-                                setExpanded(next)
-                                if (next !== null) {
-                                  loadHistory(row.product_id)
-                                }
-                              }}
+          <aside className="procure-cockpit__basket">
+            <div className="procure-cockpit__basket-head">
+              <Group gap={8} wrap="nowrap">
+                <Truck size={16} />
+                <Text className="app-section-title" fw={600} size="sm">
+                  {t('Замовлення')}
+                </Text>
+              </Group>
+              <Badge className={`app-role-pill${basketCount > 0 ? ' is-orange' : ' is-gray'}`} variant="light">
+                {basketCount}
+              </Badge>
+            </div>
+            <div className="procure-cockpit__basket-body">
+              {basketByProducer.length === 0 ? (
+                <Text c="dimmed" size="sm">
+                  {t('Кошик порожній. Додайте позиції з таблиці.')}
+                </Text>
+              ) : (
+                <Stack gap={10}>
+                  {basketByProducer.map((group) => (
+                    <Box key={group.producerId} className="procure-cockpit__basket-group">
+                      <Group justify="space-between" mb={4} wrap="nowrap">
+                        <Text fw={600} size="xs" title={group.name} truncate>
+                          {group.name}
+                        </Text>
+                        <Text c="dimmed" size="xs">
+                          {amount.format(group.total)} EUR
+                        </Text>
+                      </Group>
+                      <Stack gap={3}>
+                        {group.lines.map((line) => (
+                          <Group key={line.suggestion.product_id} gap={4} wrap="nowrap">
+                            <Text
+                              size="xs"
+                              style={{ flex: 1 }}
+                              title={line.suggestion.product_name ?? ''}
+                              truncate
                             >
-                              {isOpen ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
-                            </ActionIcon>
-                          </Table.Td>
-                          <Table.Td>
-                            <Badge color={meta.color} size="sm" variant="light">
-                              {t(meta.label)}
-                            </Badge>
-                          </Table.Td>
-                          <Table.Td>
-                            <Group gap={8} wrap="nowrap">
-                              {row.image_url ? (
-                                <Image alt="" fit="contain" h={34} radius="sm" src={row.image_url} w={34} />
-                              ) : (
-                                <Box
-                                  style={{
-                                    alignItems: 'center',
-                                    background: 'var(--mantine-color-gray-1)',
-                                    borderRadius: 4,
-                                    color: 'var(--mantine-color-gray-5)',
-                                    display: 'flex',
-                                    height: 34,
-                                    justifyContent: 'center',
-                                    width: 34,
-                                  }}
-                                >
-                                  <ImageOff size={16} />
-                                </Box>
-                              )}
-                              <Box style={{ minWidth: 0 }}>
-                                <Text fw={500} size="sm" title={row.product_name ?? ''} truncate>
-                                  {row.product_name || `#${row.product_id}`}
-                                </Text>
-                                <Group gap={6} wrap="nowrap">
-                                  {row.vendor_code && (
-                                    <Text c="dimmed" size="xs">
-                                      {row.vendor_code}
-                                    </Text>
-                                  )}
-                                  {row.oe_number && (
-                                    <Text c="dimmed" size="xs" title={`${t('Оригінальний номер')}: ${row.oe_number}`}>
-                                      · OE {row.oe_number}
-                                    </Text>
-                                  )}
-                                </Group>
-                              </Box>
-                            </Group>
-                          </Table.Td>
-                          <Table.Td>
-                            {row.quadrant ? (
-                              <Tooltip label={quadrantHint(row.quadrant, t)}>
-                                <Badge color="grape" size="sm" variant="light">
-                                  {row.quadrant}
-                                </Badge>
-                              </Tooltip>
-                            ) : (
-                              <Text c="dimmed" size="xs">
-                                —
-                              </Text>
-                            )}
-                          </Table.Td>
-                          {lens === 'warehouse' && (
-                            <Table.Td>
-                              <Text size="sm" title={row.producer_name ?? ''} truncate>
-                                {row.producer_name || `#${row.producer_id}`}
-                              </Text>
-                            </Table.Td>
-                          )}
-                          <Table.Td ta="right">
-                            <Text size="sm">{qty.format(row.inventory.on_hand)}</Text>
-                          </Table.Td>
-                          <Table.Td ta="right">
-                            <Text c={row.days_of_cover < 30 ? 'red' : undefined} size="sm">
-                              {row.days_of_cover >= 9999 ? '∞' : `${qty.format(row.days_of_cover)} ${t('дн')}`}
+                              {line.suggestion.vendor_code || line.suggestion.product_name || `#${line.suggestion.product_id}`}
                             </Text>
-                          </Table.Td>
-                          <Table.Td ta="right">
                             <NumberInput
-                              aria-label={t('Замовити')}
                               hideControls
                               min={0}
                               size="xs"
-                              styles={{ input: { fontWeight: 600, textAlign: 'right' } }}
-                              value={orderQtyFor(row)}
-                              w={82}
-                              onChange={(value) => {
-                                const next = Number(value) || 0
-                                setDraftQty((current) => ({ ...current, [row.product_id]: next }))
-                                if (basket.has(row.product_id)) {
-                                  setBasketQty(row.product_id, next)
-                                }
-                              }}
+                              value={line.qty}
+                              w={72}
+                              onChange={(value) => setBasketQty(line.suggestion.product_id, Number(value) || 0)}
                             />
-                            {draftQty[row.product_id] != null && draftQty[row.product_id] !== row.suggested_qty && (
-                              <Text c="dimmed" size="xs">
-                                {t('AI')}: {qty.format(row.suggested_qty)}
-                              </Text>
-                            )}
-                          </Table.Td>
-                          <Table.Td ta="right">
-                            <Text size="sm">{amount.format((row.unit_cost_eur ?? 0) * orderQtyFor(row))}</Text>
-                          </Table.Td>
-                          <Table.Td ta="right">
-                            <Tooltip label={inBasket ? t('У кошику') : t('Додати в кошик')}>
-                              <ActionIcon
-                                color={inBasket ? 'green' : 'blue'}
-                                size="sm"
-                                variant={inBasket ? 'filled' : 'light'}
-                                onClick={() => addToBasket(row, orderQtyFor(row))}
-                              >
-                                <Plus size={15} />
-                              </ActionIcon>
-                            </Tooltip>
-                          </Table.Td>
-                        </Table.Tr>
-                        {isOpen && (
-                          <Table.Tr key={`${row.product_id}-proof`}>
-                            <Table.Td colSpan={lens === 'warehouse' ? 10 : 9}>
-                              <ProofPanel
-                                demand={demandByProduct.get(row.product_id)}
-                                history={history[row.product_id]}
-                                row={row}
-                                t={t}
-                              />
-                            </Table.Td>
-                          </Table.Tr>
-                        )}
-                      </>
-                    )
-                  })}
-                </Table.Tbody>
-              </Table>
-            </Box>
-          )}
-        </Box>
+                            <ActionIcon
+                              color="red"
+                              size="sm"
+                              variant="subtle"
+                              onClick={() => setBasketQty(line.suggestion.product_id, 0)}
+                            >
+                              <Trash2 size={14} />
+                            </ActionIcon>
+                          </Group>
+                        ))}
+                      </Stack>
+                      <Button
+                        color={CREATE_ACTION_COLOR}
+                        fullWidth
+                        loading={creatingProducer === group.producerId}
+                        mt={6}
+                        size="compact-xs"
+                        variant="light"
+                        onClick={() => void createDraft(group.producerId, group.lines)}
+                      >
+                        {t('Створити чернетку')}
+                      </Button>
+                    </Box>
+                  ))}
+                </Stack>
+              )}
+            </div>
+          </aside>
+        </div>
+      </Card>
+    </div>
+  )
+}
 
-        <Box className="procure-constructor__basket" style={{ flex: '0 0 340px', minWidth: 300 }}>
-          <Group gap={8} mb={6}>
-            <Truck size={16} />
-            <Text fw={600} size="sm">
-              {t('Замовлення')} {basketCount > 0 ? `(${basketCount})` : ''}
-            </Text>
+function usePlanColumns({
+  basket,
+  draftQty,
+  lens,
+  onAddToBasket,
+  onDraftQtyChange,
+  orderQtyFor,
+  t,
+}: {
+  basket: Map<number, BasketLine>
+  draftQty: Record<number, number>
+  lens: Lens
+  onAddToBasket: (row: ReorderSuggestion, quantity?: number) => void
+  onDraftQtyChange: (productId: number, value: number) => void
+  orderQtyFor: (row: ReorderSuggestion) => number
+  t: (key: string) => string
+}) {
+  return useMemo<Array<DataTableColumn<ReorderSuggestion>>>(
+    () => [
+      {
+        id: 'urgency',
+        header: t('Терміновість'),
+        accessor: (row) => URGENCY_META[row.urgency].order,
+        cell: (row) => {
+          const meta = URGENCY_META[row.urgency]
+
+          return (
+            <Badge color={meta.color} size="sm" variant="light">
+              {t(meta.label)}
+            </Badge>
+          )
+        },
+        width: 118,
+      },
+      {
+        id: 'product',
+        header: t('Товар'),
+        accessor: (row) => row.product_name || `#${row.product_id}`,
+        cell: (row) => (
+          <Group gap={8} wrap="nowrap">
+            {row.image_url ? (
+              <Image alt="" fit="contain" h={34} radius="sm" src={row.image_url} w={34} />
+            ) : (
+              <span className="procure-cockpit__thumb-fallback">
+                <ImageOff size={16} />
+              </span>
+            )}
+            <Box style={{ minWidth: 0 }}>
+              <Text fw={500} size="sm" title={row.product_name ?? ''} truncate>
+                {row.product_name || `#${row.product_id}`}
+              </Text>
+              <Group gap={6} wrap="nowrap">
+                {row.vendor_code && (
+                  <Text c="dimmed" size="xs">
+                    {row.vendor_code}
+                  </Text>
+                )}
+                {row.oe_number && (
+                  <Text c="dimmed" size="xs" title={`${t('Оригінальний номер')}: ${row.oe_number}`} truncate>
+                    · OE {row.oe_number}
+                  </Text>
+                )}
+              </Group>
+            </Box>
           </Group>
-          {basketByProducer.length === 0 ? (
-            <Text c="dimmed" size="sm">
-              {t('Кошик порожній. Додайте позиції з таблиці.')}
-            </Text>
+        ),
+        fill: true,
+        minWidth: 260,
+      },
+      {
+        id: 'quadrant',
+        header: t('Квадрант'),
+        accessor: (row) => row.quadrant ?? '',
+        cell: (row) =>
+          row.quadrant ? (
+            <Tooltip label={quadrantHint(row.quadrant, t)}>
+              <Badge color="grape" size="sm" variant="light">
+                {row.quadrant}
+              </Badge>
+            </Tooltip>
           ) : (
-            <Stack gap={10}>
-              {basketByProducer.map((group) => (
-                <Box key={group.producerId} className="procure-constructor__basket-group">
-                  <Group justify="space-between" mb={4} wrap="nowrap">
-                    <Text fw={600} size="xs" title={group.name} truncate>
-                      {group.name}
-                    </Text>
-                    <Text c="dimmed" size="xs">
-                      {amount.format(group.total)} EUR
-                    </Text>
-                  </Group>
-                  <Stack gap={3}>
-                    {group.lines.map((line) => (
-                      <Group key={line.suggestion.product_id} gap={4} wrap="nowrap">
-                        <Text size="xs" style={{ flex: 1 }} truncate>
-                          #{line.suggestion.product_id}
-                        </Text>
-                        <NumberInput
-                          hideControls
-                          min={0}
-                          size="xs"
-                          value={line.qty}
-                          w={72}
-                          onChange={(value) => setBasketQty(line.suggestion.product_id, Number(value) || 0)}
-                        />
-                        <ActionIcon
-                          color="red"
-                          size="sm"
-                          variant="subtle"
-                          onClick={() => setBasketQty(line.suggestion.product_id, 0)}
-                        >
-                          <Trash2 size={14} />
-                        </ActionIcon>
-                      </Group>
-                    ))}
-                  </Stack>
-                  <Button
-                    fullWidth
-                    loading={creatingProducer === group.producerId}
-                    mt={6}
-                    size="compact-xs"
-                    variant="light"
-                    onClick={() => void createDraft(group.producerId, group.lines)}
-                  >
-                    {t('Створити чернетку')}
-                  </Button>
-                </Box>
-              ))}
-            </Stack>
-          )}
-        </Box>
-      </Group>
-    </Stack>
+            <Text c="dimmed" size="xs">
+              —
+            </Text>
+          ),
+        width: 104,
+      },
+      ...(lens === 'warehouse'
+        ? [
+            {
+              id: 'producer',
+              header: t('Виробник'),
+              accessor: (row) => row.producer_name || `#${row.producer_id}`,
+              cell: (row) => (
+                <Text size="sm" title={row.producer_name ?? ''} truncate>
+                  {row.producer_name || `#${row.producer_id}`}
+                </Text>
+              ),
+              minWidth: 140,
+              width: 170,
+            } satisfies DataTableColumn<ReorderSuggestion>,
+          ]
+        : []),
+      {
+        id: 'onHand',
+        header: t('Наявн.'),
+        accessor: (row) => row.inventory.on_hand,
+        cell: (row) => qty.format(row.inventory.on_hand),
+        align: 'right',
+        width: 92,
+      },
+      {
+        id: 'cover',
+        header: t('Покриття'),
+        accessor: (row) => row.days_of_cover,
+        cell: (row) => (
+          <Text c={row.days_of_cover < 30 ? 'red' : undefined} size="sm">
+            {row.days_of_cover >= 9999 ? '∞' : `${qty.format(row.days_of_cover)} ${t('дн')}`}
+          </Text>
+        ),
+        align: 'right',
+        width: 108,
+      },
+      {
+        id: 'orderQty',
+        header: t('Замовити'),
+        accessor: (row) => orderQtyFor(row),
+        cell: (row) => (
+          <Box>
+            <NumberInput
+              aria-label={t('Замовити')}
+              hideControls
+              min={0}
+              size="xs"
+              styles={{ input: { fontWeight: 600, textAlign: 'right' } }}
+              value={orderQtyFor(row)}
+              w={82}
+              onChange={(value) => onDraftQtyChange(row.product_id, Number(value) || 0)}
+            />
+            {draftQty[row.product_id] != null && draftQty[row.product_id] !== row.suggested_qty && (
+              <Text c="dimmed" size="xs">
+                {t('AI')}: {qty.format(row.suggested_qty)}
+              </Text>
+            )}
+          </Box>
+        ),
+        align: 'right',
+        enableSorting: false,
+        width: 112,
+      },
+      {
+        id: 'lineCost',
+        header: t('Сума EUR'),
+        accessor: (row) => (row.unit_cost_eur ?? 0) * orderQtyFor(row),
+        cell: (row) => <span className="app-money">{amount.format((row.unit_cost_eur ?? 0) * orderQtyFor(row))}</span>,
+        align: 'right',
+        width: 118,
+      },
+      {
+        id: 'actions',
+        header: '',
+        cell: (row) => {
+          const inBasket = basket.has(row.product_id)
+
+          return (
+            <Tooltip label={inBasket ? t('У кошику') : t('Додати в кошик')}>
+              <ActionIcon
+                aria-label={inBasket ? t('У кошику') : t('Додати в кошик')}
+                color={inBasket ? 'green' : CREATE_ACTION_COLOR}
+                size="sm"
+                variant={inBasket ? 'filled' : 'light'}
+                onClick={() => onAddToBasket(row, orderQtyFor(row))}
+              >
+                <Plus size={15} />
+              </ActionIcon>
+            </Tooltip>
+          )
+        },
+        align: 'center',
+        enableHiding: false,
+        enableSorting: false,
+        width: 64,
+      },
+    ],
+    [basket, draftQty, lens, onAddToBasket, onDraftQtyChange, orderQtyFor, t],
   )
 }
 
 function ProofPanel({
   row,
   demand,
-  history,
   t,
 }: {
   demand?: number[]
-  history?: ProductSalesSeriesPoint[] | 'loading'
   row: ReorderSuggestion
   t: (key: string) => string
 }) {
+  // Lazy per-product monthly sales history — fetched when the row is expanded.
+  const [history, setHistory] = useState<ProductSalesSeriesPoint[] | 'loading'>('loading')
+
+  useEffect(() => {
+    let cancelled = false
+    getProductAnalytics(row.product_id, undefined, 12)
+      .then((data) => {
+        if (!cancelled) {
+          setHistory(data.sales_series ?? [])
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setHistory([])
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [row.product_id])
+
   const leadDemand = row.lead_demand ?? Math.max(0, row.reorder_point - row.safety_stock)
   const orderUpTo = row.order_up_to ?? row.reorder_point + row.suggested_qty
   const scaleMax = Math.max(orderUpTo, row.reorder_point, row.inventory.position, 1)
 
   return (
-    <Group align="flex-start" gap={20} wrap="wrap" py={4}>
+    <Group align="flex-start" gap={20} px="sm" py={8} wrap="wrap">
       <Stack gap={6} style={{ flex: '1 1 320px', minWidth: 280 }}>
         <Text fw={600} size="xs">
           {t('Чому саме стільки')}
@@ -765,7 +889,7 @@ function ProofPanel({
         <Text fw={600} size="xs">
           {t('Історія продажів по місяцях')}
         </Text>
-        {history === 'loading' || history === undefined ? (
+        {history === 'loading' ? (
           <Group gap={6}>
             <Loader size="xs" />
             <Text c="dimmed" size="xs">
@@ -778,30 +902,20 @@ function ProofPanel({
           </Text>
         ) : (
           <Box style={{ maxHeight: 150, overflowY: 'auto' }}>
-            <Table verticalSpacing={2}>
-              <Table.Tbody>
+            <table className="procure-proof-history">
+              <tbody>
                 {[...history].reverse().map((point) => (
-                  <Table.Tr key={point.month}>
-                    <Table.Td>
-                      <Text size="xs">
-                        {point.month}
-                        {point.is_complete ? '' : ' *'}
-                      </Text>
-                    </Table.Td>
-                    <Table.Td ta="right">
-                      <Text fw={500} size="xs">
-                        {qty.format(point.units)}
-                      </Text>
-                    </Table.Td>
-                    <Table.Td ta="right">
-                      <Text c="dimmed" size="xs">
-                        {amount.format(point.revenue_eur)} €
-                      </Text>
-                    </Table.Td>
-                  </Table.Tr>
+                  <tr key={point.month}>
+                    <td>
+                      {point.month}
+                      {point.is_complete ? '' : ' *'}
+                    </td>
+                    <td>{qty.format(point.units)}</td>
+                    <td>{amount.format(point.revenue_eur)} €</td>
+                  </tr>
                 ))}
-              </Table.Tbody>
-            </Table>
+              </tbody>
+            </table>
           </Box>
         )}
       </Stack>
@@ -962,76 +1076,54 @@ function computeOverview(rows: ReorderSuggestion[]): Overview {
   }
 }
 
-function OverviewPanel({ overview, t }: { overview: Overview; t: (key: string) => string }) {
+function OverviewCharts({ overview, t }: { overview: Overview; t: (key: string) => string }) {
   return (
-    <Stack gap={10}>
-      <SimpleGrid cols={{ base: 2, sm: 4 }} spacing={10}>
-        <KpiTile label={t('Позицій до замовлення')} value={qty.format(overview.count)} />
-        <KpiTile color="red" label={t('Критичних')} value={qty.format(overview.criticalCount)} />
-        <KpiTile label={t('Сума потреби, EUR')} value={amount.format(overview.totalValue)} />
-        <KpiTile color="orange" label={t('Під ризиком, EUR')} value={amount.format(overview.valueAtRisk)} />
-      </SimpleGrid>
+    <SimpleGrid cols={{ base: 1, md: 3 }} spacing={10}>
+      <Card padding="sm" radius="md" withBorder>
+        <Text c="dimmed" mb={6} size="xs">
+          {t('Терміновість позицій')}
+        </Text>
+        {overview.urgencyDonut.length > 0 ? (
+          <Group justify="center">
+            <DonutChart
+              chartLabel={String(overview.count)}
+              data={overview.urgencyDonut}
+              size={140}
+              thickness={20}
+              withTooltip
+            />
+          </Group>
+        ) : null}
+      </Card>
 
-      <SimpleGrid cols={{ base: 1, md: 3 }} spacing={10}>
-        <Card padding="sm" radius="md" withBorder>
-          <Text c="dimmed" mb={6} size="xs">
-            {t('Терміновість позицій')}
-          </Text>
-          {overview.urgencyDonut.length > 0 ? (
-            <Group justify="center">
-              <DonutChart
-                chartLabel={String(overview.count)}
-                data={overview.urgencyDonut}
-                size={140}
-                thickness={20}
-                withTooltip
-              />
-            </Group>
-          ) : null}
-        </Card>
+      <Card padding="sm" radius="md" withBorder>
+        <Text c="dimmed" mb={6} size="xs">
+          {t('Потреба €, топ виробників')}
+        </Text>
+        <BarChart
+          data={overview.producerValue}
+          dataKey="producer"
+          h={150}
+          series={[{ color: 'orange.6', name: 'value', label: t('EUR') }]}
+          tickLine="none"
+          valueFormatter={(value) => amount.format(value)}
+          withXAxis={false}
+        />
+      </Card>
 
-        <Card padding="sm" radius="md" withBorder>
-          <Text c="dimmed" mb={6} size="xs">
-            {t('Потреба €, топ виробників')}
-          </Text>
-          <BarChart
-            data={overview.producerValue}
-            dataKey="producer"
-            h={150}
-            series={[{ color: 'orange.6', name: 'value', label: t('EUR') }]}
-            tickLine="none"
-            valueFormatter={(value) => amount.format(value)}
-            withXAxis={false}
-          />
-        </Card>
-
-        <Card padding="sm" radius="md" withBorder>
-          <Text c="dimmed" mb={6} size="xs">
-            {t('Розподіл днів покриття')}
-          </Text>
-          <BarChart
-            data={overview.coverHist}
-            dataKey="bucket"
-            h={150}
-            series={[{ color: 'blue.5', name: 'count', label: t('Позицій') }]}
-            tickLine="y"
-          />
-        </Card>
-      </SimpleGrid>
-    </Stack>
-  )
-}
-
-function KpiTile({ color, label, value }: { color?: string; label: string; value: string }) {
-  return (
-    <Card padding="sm" radius="md" withBorder>
-      <Text c="dimmed" size="xs">
-        {label}
-      </Text>
-      <Text c={color} fw={700} size="xl">
-        {value}
-      </Text>
-    </Card>
+      <Card padding="sm" radius="md" withBorder>
+        <Text c="dimmed" mb={6} size="xs">
+          {t('Розподіл днів покриття')}
+        </Text>
+        <BarChart
+          data={overview.coverHist}
+          dataKey="bucket"
+          h={150}
+          series={[{ color: 'blue.5', name: 'count', label: t('Позицій') }]}
+          tickLine="y"
+        />
+      </Card>
+    </SimpleGrid>
   )
 }
 

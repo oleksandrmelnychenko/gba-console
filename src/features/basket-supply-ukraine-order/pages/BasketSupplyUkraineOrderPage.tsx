@@ -159,29 +159,27 @@ export function BasketSupplyUkraineOrderPage() {
 
   return (
     <Stack className="basket-supply-page" gap={6}>
-      <div>
-        <div className="pill-tabs">
-          {tabs.map((tab) => (
-            <button
-              key={tab.value}
-              type="button"
-              className={`pill-tab${activeTab === tab.value ? ' is-active' : ''}`}
-              aria-pressed={activeTab === tab.value}
-              onClick={() => changeTab(tab.value)}
-            >
-              {tab.label}
-              {tab.ai && <AiFeatureBadge compact tooltip={t('AI-сервіс закупівель')} />}
-            </button>
-          ))}
-        </div>
+      <div className="pill-tabs">
+        {tabs.map((tab) => (
+          <button
+            key={tab.value}
+            type="button"
+            className={`pill-tab${activeTab === tab.value ? ' is-active' : ''}`}
+            aria-pressed={activeTab === tab.value}
+            onClick={() => changeTab(tab.value)}
+          >
+            {tab.label}
+            {tab.ai && <AiFeatureBadge compact tooltip={t('AI-сервіс закупівель')} />}
+          </button>
+        ))}
+      </div>
 
-        <div style={{ paddingTop: 'var(--mantine-spacing-md)' }}>
-          {activeTab === 'cart' && <BasketCartWorkflow />}
-          {activeTab === 'sales' && <SalesWorkflowTab />}
-          {(activeTab === 'cockpit' || activeTab === 'recommendations') && <ProcurementConstructor />}
-          {activeTab === 'dashboard' && <ProcureDashboardTab />}
-          {activeTab === 'budget-cart' && <BudgetCartTab />}
-        </div>
+      <div className="basket-supply-tab-content">
+        {activeTab === 'cart' && <BasketCartWorkflow />}
+        {activeTab === 'sales' && <SalesWorkflowTab />}
+        {(activeTab === 'cockpit' || activeTab === 'recommendations') && <ProcurementConstructor />}
+        {activeTab === 'dashboard' && <ProcureDashboardTab />}
+        {activeTab === 'budget-cart' && <BudgetCartTab />}
       </div>
     </Stack>
   )
