@@ -114,6 +114,19 @@
   min-height: 0;
 }
 
+/* Keep every value on one line so long product, supplier and storage names do
+   not make individual rows taller than the selected table density. */
+.product-remains-tab-content .data-table-cell {
+  white-space: nowrap;
+}
+
+.product-remains-tab-content .data-table-cell > * {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .product-remains-search-row {
   max-width: 100%;
   overflow-x: auto;

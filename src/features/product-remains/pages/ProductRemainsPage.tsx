@@ -1042,7 +1042,7 @@ function useProductRemainBatchColumns() {
       minWidth: 190,
       accessor: (batch) => batch.SupplierName,
       cell: (batch) => (
-        <Text fw={600} lineClamp={2}>
+        <Text fw={600} lineClamp={1}>
           {displayValue(batch.SupplierName)}
         </Text>
       ),
@@ -1133,7 +1133,7 @@ function useProductRemainProductColumns(onOpenMovement: (row: RemainingConsignme
       minWidth: 240,
       accessor: (row) => getProductName(row.Product),
       cell: (row) => (
-        <Text fw={600} lineClamp={2}>
+        <Text fw={600} lineClamp={1}>
           {getProductName(row.Product)}
         </Text>
       ),
@@ -1254,7 +1254,7 @@ function useProductRemainBatchDetailColumns() {
       minWidth: 220,
       accessor: (item) => getProductName(item.Product),
       cell: (item) => (
-        <Text fw={600} lineClamp={2}>
+        <Text fw={600} lineClamp={1}>
           {getProductName(item.Product)}
         </Text>
       ),
