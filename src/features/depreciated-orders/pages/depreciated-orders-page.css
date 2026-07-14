@@ -1,3 +1,28 @@
+.depreciated-orders-page {
+  padding: 6px 4px 0;
+}
+
+/* .console-frame .mantine-Card-root strips border/box-shadow globally
+   (layout.css) so plain-div console-table-shell pages can own their own
+   chrome. This page still renders a real Mantine <Card withBorder>, so
+   restore its chrome explicitly. */
+.depreciated-orders-card {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2) !important;
+  box-shadow: var(--app-card-shadow) !important;
+}
+
+.depreciated-orders-card .data-table-cell {
+  white-space: nowrap;
+}
+
+.depreciated-orders-card .data-table-cell > * {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .depreciated-orders-filter-bar {
   overflow-x: auto;
 }

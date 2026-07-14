@@ -446,7 +446,7 @@ export function DepreciatedOrdersPage() {
 
 function DepreciatedOrdersPageView({ model }: { model: ReturnType<typeof useDepreciatedOrdersPageModel> }) {
   return (
-    <Stack gap="lg">
+    <Stack className="depreciated-orders-page" gap={6}>
       <DepreciatedOrdersTableCard model={model} />
       <DepreciatedOrderDetailDrawer
         detailError={model.detailError}
@@ -488,7 +488,7 @@ function DepreciatedOrdersTableCard({ model }: { model: ReturnType<typeof useDep
   } = model
 
   return (
-    <Card className="app-data-card" withBorder radius="md" padding={0}>
+    <Card className="app-data-card depreciated-orders-card" withBorder radius="md" padding={0}>
       <div className="app-filter-bar depreciated-orders-filter-bar">
         <Group align="end" gap="sm" wrap="nowrap" justify="space-between" className="depreciated-orders-filter-row">
           <Group align="end" gap="sm" wrap="nowrap">
@@ -673,7 +673,7 @@ function useDepreciatedOrderColumns(
         minWidth: 220,
         accessor: (order) => order.Comment,
         cell: (order) => (
-          <Text size="sm" lineClamp={2}>
+          <Text size="sm" title={displayValue(order.Comment)}>
             {displayValue(order.Comment)}
           </Text>
         ),
