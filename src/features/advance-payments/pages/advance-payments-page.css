@@ -1,26 +1,46 @@
 .advance-payments-page {
-  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 24px);
+  box-sizing: border-box;
+  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px);
   min-height: 0;
   overflow: hidden;
+  padding: 6px 4px 0;
+}
+
+.advance-payments-card {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2) !important;
+  box-shadow: var(--app-card-shadow) !important;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
 }
 
 /* Filter strip pinned at the top of the card; the table below it scrolls. */
 .advance-payments-filter-bar {
   flex: 0 0 auto;
+  overflow-x: auto;
 }
 
 .advance-payments-filter-row {
+  display: grid;
+  grid-template-columns: max-content max-content minmax(16px, 1fr) max-content;
+  min-width: max-content;
   width: 100%;
 }
 
 /* Push the actions cluster (reset / density / paginator) to the trailing edge. */
 .advance-payments-filter-row .app-filter-actions {
-  margin-left: auto;
+  grid-column: 4;
 }
 
 .advance-payments-page__table {
+  display: flex;
   flex: 1 1 auto;
+  flex-direction: column;
   min-height: 0;
+  min-width: 0;
 }
 
 .advance-payments-page__table .data-table {
