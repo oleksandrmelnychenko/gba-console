@@ -196,7 +196,7 @@ export function ConsumableStoragesPage() {
   }
 
   return (
-    <Stack gap="md">
+    <Stack className="consumable-storages-page" gap={6}>
       <Card className="app-data-card consumable-storages-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar consumable-storages-filter-bar">
           <Group align="end" gap="sm" wrap="nowrap" className="consumable-storages-filter-row">
@@ -238,25 +238,28 @@ export function ConsumableStoragesPage() {
           </Group>
         </div>
 
-        <Stack className="consumable-storages-card__body" gap="md">
+        <Stack className="consumable-storages-card__body" gap={0}>
           {error && (
             <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
             </Alert>
           )}
 
-          <DataTable
-            columns={columns}
-            data={visibleStorages}
-            defaultLayout={TABLE_DEFAULT_LAYOUT}
-            emptyText={t('Складів не знайдено')}
-            getRowId={(storage) => String(storage.NetUid || storage.Id || storage.Name)}
-            isLoading={isTableBusy}
-            layoutVersion="consumable-storages-compact-2"
-            minWidth={960}
-            tableId="consumable-storages"
-            onRowClick={setSelectedStorage}
-          />
+          <div className="consumable-storages-page__table">
+            <DataTable
+              columns={columns}
+              data={visibleStorages}
+              defaultLayout={TABLE_DEFAULT_LAYOUT}
+              emptyText={t('Складів не знайдено')}
+              getRowId={(storage) => String(storage.NetUid || storage.Id || storage.Name)}
+              height="100%"
+              isLoading={isTableBusy}
+              layoutVersion="consumable-storages-compact-2"
+              minWidth={960}
+              tableId="consumable-storages"
+              onRowClick={setSelectedStorage}
+            />
+          </div>
         </Stack>
       </Card>
 
@@ -434,6 +437,7 @@ function TruncatedCell({ fw, value }: { fw?: number; value?: number | string | n
       <Text
         component="span"
         fw={fw}
+        title={text}
         style={{
           display: 'block',
           minWidth: 0,

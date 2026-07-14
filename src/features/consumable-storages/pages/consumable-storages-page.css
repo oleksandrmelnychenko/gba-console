@@ -1,7 +1,30 @@
-/* Consumable storages list — chrome aligned with the «Продажі» reference.
-   The page loads all storages and filters them client-side (no pagination),
-   so only the filter strip + card shell are aligned; the table keeps its own
-   natural scroll model. */
+/* Consumable storages registry — full-height console shell pattern. */
+.consumable-storages-page {
+  box-sizing: border-box;
+  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px);
+  min-height: 0;
+  overflow: hidden;
+  padding: 6px 4px 0;
+}
+
+/* layout.css strips Mantine Card chrome inside .console-frame. This registry
+   still uses <Card withBorder>, so restore the intended shell explicitly. */
+.consumable-storages-card {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2) !important;
+  box-shadow: var(--app-card-shadow) !important;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+}
+
+.consumable-storages-filter-bar {
+  flex: 0 0 auto;
+  overflow-x: auto;
+}
+
 .consumable-storages-filter-row {
   --storages-label-height: 17px;
   --storages-label-gap: 4px;
@@ -11,6 +34,7 @@
   display: grid;
   gap: 10px;
   grid-template-columns: minmax(260px, 360px) minmax(0, 1fr) auto auto;
+  min-width: max-content;
   width: 100%;
 }
 
@@ -47,11 +71,46 @@
 /* Тіло під смужкою: таблиця впритул до країв картки (падінги дає сама
    таблиця — 8px у th/td), алерти зі своїм відступом. */
 .consumable-storages-card__body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   padding: 0;
 }
 
 .consumable-storages-card__body > .mantine-Alert-root {
   margin: 12px 12px 0;
+}
+
+.consumable-storages-page__table {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+}
+
+.consumable-storages-page__table .data-table {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.consumable-storages-page__table .data-table-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.consumable-storages-page__table .data-table-cell {
+  white-space: nowrap;
+}
+
+.consumable-storages-page__table .data-table-cell > * {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Storage form sheet follows the sheet-form pattern (§9): mono labels and
