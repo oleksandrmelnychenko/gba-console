@@ -237,7 +237,7 @@ export function PreordersInterestPage() {
 
   return (
     <Stack className="preorders-interest-page" gap={6}>
-      <Card className="app-data-card" withBorder radius="md" padding={0}>
+      <Card className="app-data-card preorders-interest-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar preorders-interest-command-bar">
           <div className="app-filter-actions preorders-interest-command-actions">
             <Tooltip label={t('Оновити')}>

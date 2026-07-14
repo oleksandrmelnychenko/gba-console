@@ -1,7 +1,9 @@
 .sales-debtors-page {
-  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 20px);
+  flex: 1 1 auto;
+  height: 100%;
   min-height: 0;
   overflow: hidden;
+  padding: 0;
 }
 
 .sales-debtors-page__table {
@@ -17,6 +19,7 @@
 
   align-items: end;
   display: grid;
+  flex: 0 0 auto;
   gap: 10px;
   grid-template-columns:
     minmax(170px, 220px)

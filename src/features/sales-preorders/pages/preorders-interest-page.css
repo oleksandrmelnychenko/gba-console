@@ -8,6 +8,12 @@
   overflow: hidden;
 }
 
+.preorders-interest-card {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2) !important;
+  box-shadow: var(--app-card-shadow) !important;
+}
+
 .preorders-interest-page__table {
   flex: 1 1 auto;
   min-height: 0;
@@ -16,6 +22,7 @@
 .preorders-interest-command-bar {
   align-items: end;
   display: grid;
+  flex: 0 0 auto;
   gap: 10px;
   grid-template-columns: minmax(0, 1fr) auto;
   min-height: 62px;
