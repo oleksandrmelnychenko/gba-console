@@ -411,14 +411,14 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
         <div className="app-filter-bar product-capitalizations-filter-bar">
           <Group align="end" gap="sm" wrap="nowrap" className="product-capitalizations-filter-row">
             <TextInput
-              label={t('З')}
+              label={t('Від')}
               type="date"
               value={activeFilters.from}
               w={150}
               onChange={(event) => updateFilters({ from: event.currentTarget.value })}
             />
             <TextInput
-              label={t('По')}
+              label={t('До')}
               type="date"
               value={activeFilters.to}
               w={150}

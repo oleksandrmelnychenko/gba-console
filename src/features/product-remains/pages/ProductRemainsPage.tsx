@@ -769,18 +769,20 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
               }}
             />
             <TextInput
-              label={t('З')}
+              label={t('Від')}
               type="date"
               value={dateFrom}
+              w={150}
               onChange={(event) => {
                 resetAllData()
                 setDateFrom(event.currentTarget.value)
               }}
             />
             <TextInput
-              label={t('По')}
+              label={t('До')}
               type="date"
               value={dateTo}
+              w={150}
               onChange={(event) => {
                 resetAllData()
                 setDateTo(event.currentTarget.value)
@@ -1566,14 +1568,14 @@ function ProductRemainMovementsPanel({ row }: { row: RemainingConsignment }) {
       </SimpleGrid>
       <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
         <TextInput
-          label={t('З')}
+          label={t('Від')}
           type="date"
           value={dateFrom}
           w={150}
           onChange={(event) => dispatch({ type: 'dateFromChanged', value: event.currentTarget.value })}
         />
         <TextInput
-          label={t('По')}
+          label={t('До')}
           type="date"
           value={dateTo}
           w={150}

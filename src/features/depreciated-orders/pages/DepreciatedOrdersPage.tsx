@@ -493,17 +493,19 @@ function DepreciatedOrdersTableCard({ model }: { model: ReturnType<typeof useDep
         <Group align="end" gap="sm" wrap="nowrap" justify="space-between" className="depreciated-orders-filter-row">
           <Group align="end" gap="sm" wrap="nowrap">
             <TextInput
-              label={t('Від якої дати')}
+              label={t('Від')}
               max={filterDraft.to || undefined}
               type="date"
               value={filterDraft.from}
+              w={150}
               onChange={(event) => applyFilters({ ...filterDraft, from: event.currentTarget.value })}
             />
             <TextInput
-              label={t('До якої дати')}
+              label={t('До')}
               min={filterDraft.from || undefined}
               type="date"
               value={filterDraft.to}
+              w={150}
               onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
             />
           </Group>

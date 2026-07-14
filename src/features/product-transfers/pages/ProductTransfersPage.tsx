@@ -546,17 +546,19 @@ function ProductTransfersTableCard({ model }: { model: ReturnType<typeof useProd
       <div className="app-filter-bar product-transfers-filter-bar">
         <Group align="end" gap="sm" wrap="nowrap" className="product-transfers-filter-row">
           <TextInput
-            label={t('З')}
+            label={t('Від')}
             max={filterDraft.to || undefined}
             type="date"
             value={filterDraft.from}
+            w={150}
             onChange={(event) => applyFilters({ ...filterDraft, from: event.currentTarget.value })}
           />
           <TextInput
-            label={t('По')}
+            label={t('До')}
             min={filterDraft.from || undefined}
             type="date"
             value={filterDraft.to}
+            w={150}
             onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
           />
           <div className="app-filter-actions">

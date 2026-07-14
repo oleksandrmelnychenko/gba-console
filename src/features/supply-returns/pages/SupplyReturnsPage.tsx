@@ -382,17 +382,19 @@ function SupplyReturnsTableCard({ model }: { model: ReturnType<typeof useSupplyR
       <div className="app-filter-bar supply-returns-filter-bar">
         <Group align="end" gap="sm" wrap="nowrap" className="supply-returns-filter-row">
           <TextInput
-            label={t('Від якої дати')}
+            label={t('Від')}
             max={filterDraft.to || undefined}
             type="date"
             value={filterDraft.from}
+            w={150}
             onChange={(event) => applyFilters({ ...filterDraft, from: event.currentTarget.value })}
           />
           <TextInput
-            label={t('До якої дати')}
+            label={t('До')}
             min={filterDraft.from || undefined}
             type="date"
             value={filterDraft.to}
+            w={150}
             onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
           />
           <div className="app-filter-actions">
