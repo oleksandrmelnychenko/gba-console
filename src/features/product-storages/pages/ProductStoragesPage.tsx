@@ -924,14 +924,6 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
 
   return (
     <Stack className="product-storages-page" gap={6}>
-      {canOpenPreview && selectedAvailabilities.length > 0 ? (
-        <Group justify="flex-end" align="end">
-          <Button disabled={Boolean(filterError)} leftSection={<Eye size={16} />} variant="outline" onClick={openPreview}>
-            {t('Preview')} ({selectedAvailabilities.length})
-          </Button>
-        </Group>
-      ) : null}
-
       <Card className="app-data-card product-storages-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar product-storages-filter-bar">
           <Group align="end" gap="sm" wrap="nowrap" className="product-storages-filter-row">
@@ -1004,6 +996,19 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
                 }}
               />
             </div>
+            {canOpenPreview ? (
+              <Button
+                className="product-storages-preview-action"
+                color={CREATE_ACTION_COLOR}
+                disabled={selectedAvailabilities.length === 0 || Boolean(filterError)}
+                leftSection={<Eye size={16} />}
+                size="sm"
+                styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
+                onClick={openPreview}
+              >
+                {t('Preview')} ({selectedAvailabilities.length})
+              </Button>
+            ) : null}
           </Group>
         </div>
 
