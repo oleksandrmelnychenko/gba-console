@@ -5,8 +5,12 @@
   min-height: 0;
 }
 
-/* .sales-ukraine-card shell lives in the shared filter-bar.css now (grouped with
-   .app-data-card / .console-table-shell) — single source of truth. */
+.sales-ukraine-card {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2) !important;
+  box-shadow: var(--app-card-shadow) !important;
+}
+
 .sales-ukraine-content {
   flex: 1 1 auto;
   min-height: 0;
@@ -16,6 +20,10 @@
 /* .sales-filter-bar strip chrome lives in the shared filter-bar.css now (grouped
    with .app-filter-bar / .console-table-command-bar). The grid layout below is
    reference-specific and stays here. */
+.sales-filter-bar {
+  flex: 0 0 auto;
+}
+
 .sales-filter-row {
   align-items: end;
   display: grid;

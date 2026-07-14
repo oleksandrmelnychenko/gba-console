@@ -7,11 +7,15 @@
 .shopping-cart-reserve-command-bar {
   align-items: end;
   display: flex;
+  flex: 0 0 auto;
   justify-content: flex-end;
   min-height: 62px;
 }
 
 .shopping-cart-reserve-card {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2) !important;
+  box-shadow: var(--app-card-shadow) !important;
   min-height: 0;
 }
 
