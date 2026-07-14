@@ -193,7 +193,7 @@ export function PaymentAccountsPage() {
   }
 
   return (
-    <Stack gap="md">
+    <Stack className="payment-accounts-page" gap={6}>
       <Card className="app-data-card payment-accounts-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar payment-accounts-filter-bar">
           <Group align="end" gap="sm" wrap="nowrap" className="payment-accounts-filter-row">
@@ -274,20 +274,22 @@ export function PaymentAccountsPage() {
             </Alert>
           )}
 
-          <DataTable
-            columns={columns}
-            data={accounts}
-            defaultLayout={PAYMENT_ACCOUNTS_TABLE_DEFAULT_LAYOUT}
-            density={density}
-            emptyText={t('Рахунків не знайдено')}
-            getRowId={(account, index) => String(account.NetUid || account.Id || index)}
-            isLoading={isTableBusy}
-            layoutVersion="payment-accounts-table-1"
-            maxHeight="calc(100vh - 330px)"
-            minWidth={1120}
-            tableId="payment-accounts"
-            onRowClick={openAccount}
-          />
+          <div className="payment-accounts-page__table">
+            <DataTable
+              columns={columns}
+              data={accounts}
+              defaultLayout={PAYMENT_ACCOUNTS_TABLE_DEFAULT_LAYOUT}
+              density={density}
+              emptyText={t('Рахунків не знайдено')}
+              getRowId={(account, index) => String(account.NetUid || account.Id || index)}
+              height="100%"
+              isLoading={isTableBusy}
+              layoutVersion="payment-accounts-table-1"
+              minWidth={1120}
+              tableId="payment-accounts"
+              onRowClick={openAccount}
+            />
+          </div>
 
           <Group justify="flex-end" gap="xs" className="payment-accounts-total-footer">
             <Text size="sm" fw={600}>

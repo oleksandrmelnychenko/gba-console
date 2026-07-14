@@ -1,13 +1,65 @@
 /* Payment accounts registry — chrome aligned with the «Продажі» reference.
    The page loads all accounts and filters server-side without page-based
-   pagination, so it keeps the table's own maxHeight scroll model; only the
-   filter strip + card shell are converged onto the shared primitives. */
+   pagination; the shell still uses the canonical full-height flex chain. */
+.payment-accounts-page {
+  box-sizing: border-box;
+  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px);
+  min-height: 0;
+  overflow: hidden;
+  padding: 6px 4px 0;
+}
+
+.payment-accounts-card {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2) !important;
+  box-shadow: var(--app-card-shadow) !important;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+}
+
+.payment-accounts-filter-bar {
+  flex: 0 0 auto;
+  overflow-x: auto;
+}
+
 .payment-accounts-filter-row {
+  min-width: max-content;
   width: 100%;
 }
 
 /* Body below the flush filter strip carries its own padding (the card is
    padding={0} so the strip sits flush). */
 .payment-accounts-card__body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
   padding: 12px;
+}
+
+.payment-accounts-page__table {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+}
+
+.payment-accounts-page__table .data-table {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.payment-accounts-page__table .data-table-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.payment-accounts-total-footer {
+  flex: 0 0 auto;
 }
