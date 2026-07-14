@@ -25,6 +25,12 @@
   width: 100%;
 }
 
+/* Push the reset/paginator cluster flush to the trailing edge of the bar —
+   there's no search field here to grow and do it. */
+.supply-returns-filter-row > .app-filter-actions {
+  margin-left: auto;
+}
+
 .supply-returns-page__alert {
   margin: 12px 12px 0;
 }
