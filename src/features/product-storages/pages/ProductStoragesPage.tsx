@@ -23,7 +23,7 @@ import {
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
-import { ArrowLeftRight, Check, CircleAlert, ClipboardList, Download, Eye, FileSpreadsheet, FileText, RefreshCw, RotateCcw, Search, Trash2 } from 'lucide-react'
+import { ArrowLeftRight, Check, CircleAlert, ClipboardList, Download, Eye, FileSpreadsheet, FileText, RotateCcw, Search, Trash2 } from 'lucide-react'
 import { useDebouncedValue } from '@mantine/hooks'
 import { useCallback, useEffect, useMemo, useReducer, useRef, type CSSProperties, type Dispatch, type ReactNode, type SetStateAction } from 'react'
 import { UserRoleType } from '../../../shared/auth/types'
@@ -33,6 +33,7 @@ import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
+import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import { useAuth } from '../../auth/useAuth'
@@ -107,7 +108,6 @@ type ReturnConsignmentsState = {
 }
 
 type AvailabilityListState = {
-  hasMore: boolean
   items: ProductStorageAvailability[]
   total: number
 }
@@ -118,7 +118,6 @@ function useProductStoragesPageModel() {
   const isAdmin =
     user?.UserRole?.UserRoleType === UserRoleType.Administrator || user?.UserRole?.UserRoleType === UserRoleType.GBA
   const [availabilityList, setAvailabilityList] = useValueState<AvailabilityListState>({
-    hasMore: false,
     items: [],
     total: 0,
   })
@@ -130,13 +129,13 @@ function useProductStoragesPageModel() {
   const searchValue = debouncedSearchDraft.trim()
   const [fromDate, setFromDate] = useValueState(() => formatLocalDate(new Date()))
   const [toDate, setToDate] = useValueState(() => formatLocalDate(new Date()))
+  const [page, setPage] = useValueState(1)
   const [pageSize, setPageSize] = useValueState(50)
   const [error, setError] = useValueState<string | null>(null)
   const [downloadDocument, setDownloadDocument] = useValueState<ProductStoragesExportDocument | null>(null)
   const [downloadModalOpened, setDownloadModalOpened] = useValueState(false)
   const [isExporting, setExporting] = useValueState(false)
   const [isLoading, setLoading] = useValueState(false)
-  const [isLoadingMore, setLoadingMore] = useValueState(false)
   const [isLoadingStorages, setLoadingStorages] = useValueState(true)
   const [previewOpened, setPreviewOpened] = useValueState(false)
   const [previewRows, setPreviewRows] = useValueState<ProductStorageActionRow[]>([])
@@ -150,15 +149,13 @@ function useProductStoragesPageModel() {
     items: [],
   })
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
-  const listRequestKey = `${selectedStorageNetId}|${fromDate}|${toDate}|${searchValue}|${pageSize}`
   const exportScopeKey = `${selectedStorageNetId}|${fromDate}|${toDate}`
-  const listRequestKeyRef = useRef(listRequestKey)
   const exportScopeKeyRef = useRef(exportScopeKey)
   const exportRequestRef = useRef(0)
   const filterError = getDateRangeError(fromDate, toDate)
   const availabilities = availabilityList.items
-  const hasMore = availabilityList.hasMore
   const totalAvailabilities = availabilityList.total
+  const totalPages = Math.max(1, Math.ceil(totalAvailabilities / pageSize))
   const canOpenAction = hasPermission(PRODUCT_STORAGES_ACTION_PERMISSION)
   const canOpenPreview = hasPermission(PRODUCT_STORAGES_PREVIEW_PERMISSION)
   const storageOptions = useMemo(() => buildStorageOptions(storages), [storages])
@@ -223,7 +220,7 @@ function useProductStoragesPageModel() {
   const toolbarLeft = useMemo(
     () => (
       <Text size="xs" c="dimmed">
-        {t('Завантажено')} {availabilities.length}
+        {t('Показано')} {availabilities.length}
         {totalAvailabilities > availabilities.length ? ` ${t('з')} ${totalAvailabilities}` : ''}
         {selectedAvailabilities.length ? `, ${t('обрано')}: ${selectedAvailabilities.length}` : ''}
         {searchValue ? `, ${t('пошук')}: ${searchValue}` : ''}
@@ -273,18 +270,13 @@ function useProductStoragesPageModel() {
   }, [reloadKey, setError, setLoadingStorages, setSelectedStorageNetId, setStorages, t])
 
   useEffect(() => {
-    listRequestKeyRef.current = listRequestKey
-  }, [listRequestKey])
-
-  useEffect(() => {
     exportScopeKeyRef.current = exportScopeKey
   }, [exportScopeKey])
 
   const resetAvailabilityLoad = useCallback(() => {
-    setAvailabilityList({ hasMore: false, items: [], total: 0 })
+    setAvailabilityList({ items: [], total: 0 })
     setLoading(false)
-    setLoadingMore(false)
-  }, [setAvailabilityList, setLoading, setLoadingMore])
+  }, [setAvailabilityList, setLoading])
 
   const startAvailabilityLoad = useCallback(() => {
     setLoading(true)
@@ -294,7 +286,6 @@ function useProductStoragesPageModel() {
   const completeAvailabilityLoad = useCallback(
     (result: { items: ProductStorageAvailability[]; totalQty: number }) => {
       setAvailabilityList({
-        hasMore: result.items.length < result.totalQty && result.items.length > 0,
         items: result.items,
         total: result.totalQty,
       })
@@ -305,7 +296,7 @@ function useProductStoragesPageModel() {
 
   const failAvailabilityLoad = useCallback(
     (loadError: unknown) => {
-      setAvailabilityList({ hasMore: false, items: [], total: 0 })
+      setAvailabilityList({ items: [], total: 0 })
       setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити товари складу'))
       setLoading(false)
     },
@@ -327,7 +318,7 @@ function useProductStoragesPageModel() {
         const result = await getAvailableProductsByStorage({
           from: fromDate,
           limit: pageSize,
-          offset: 0,
+          offset: (page - 1) * pageSize,
           storageNetId: selectedStorageNetId,
           to: toDate,
           value: searchValue,
@@ -351,6 +342,7 @@ function useProductStoragesPageModel() {
   }, [
     fromDate,
     filterError,
+    page,
     pageSize,
     reloadKey,
     completeAvailabilityLoad,
@@ -448,6 +440,7 @@ function useProductStoragesPageModel() {
       closeStorageActions()
     }
 
+    setPage(1)
     setSelectedStorageNetId(nextStorageNetId)
   }
 
@@ -456,6 +449,7 @@ function useProductStoragesPageModel() {
       closeStorageActions()
     }
 
+    setPage(1)
     setSearchDraft(nextValue)
   }
 
@@ -464,6 +458,7 @@ function useProductStoragesPageModel() {
       closeStorageActions()
     }
 
+    setPage(1)
     setFromDate(nextFromDate)
   }
 
@@ -472,6 +467,7 @@ function useProductStoragesPageModel() {
       closeStorageActions()
     }
 
+    setPage(1)
     setToDate(nextToDate)
   }
 
@@ -480,11 +476,13 @@ function useProductStoragesPageModel() {
       closeStorageActions()
     }
 
+    setPage(1)
     setPageSize(nextPageSize)
   }
 
   function resetFilters() {
     closeStorageActions()
+    setPage(1)
     setSearchDraft('')
     setFromDate(formatLocalDate(new Date()))
     setToDate(formatLocalDate(new Date()))
@@ -765,52 +763,6 @@ function useProductStoragesPageModel() {
     }
   }
 
-  async function loadMore() {
-    if (!selectedStorageNetId || filterError || isLoadingMore) {
-      return
-    }
-
-    const requestKey = listRequestKeyRef.current
-    const requestOffset = availabilities.length
-    setLoadingMore(true)
-    setError(null)
-
-    try {
-      const result = await getAvailableProductsByStorage({
-        from: fromDate,
-        limit: pageSize,
-        offset: requestOffset,
-        storageNetId: selectedStorageNetId,
-        to: toDate,
-        value: searchValue,
-      })
-
-      if (listRequestKeyRef.current === requestKey) {
-        setAvailabilityList((currentList) => {
-          if (currentList.items.length !== requestOffset) {
-            return currentList
-          }
-
-          const nextItems = [...currentList.items, ...result.items]
-
-          return {
-            hasMore: nextItems.length < result.totalQty && result.items.length > 0,
-            items: nextItems,
-            total: result.totalQty,
-          }
-        })
-      }
-    } catch (loadError) {
-      if (listRequestKeyRef.current === requestKey) {
-        setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити наступні товари'))
-      }
-    } finally {
-      if (listRequestKeyRef.current === requestKey) {
-        setLoadingMore(false)
-      }
-    }
-  }
-
   async function handleExport() {
     if (!selectedStorageNetId || filterError || isExporting) {
       return
@@ -860,14 +812,13 @@ function useProductStoragesPageModel() {
     error,
     filterError,
     fromDate,
-    hasMore,
     isActionSubmitting,
     isAdmin,
     isExporting,
     isLoading,
-    isLoadingMore,
     isLoadingStorages,
     isLoadingReturnConsignments: returnConsignmentsState.isLoading,
+    page,
     pageSize,
     previewOpened,
     previewRows,
@@ -883,13 +834,13 @@ function useProductStoragesPageModel() {
     toDate,
     toolbarLeft,
     toStorageOptions,
+    totalPages,
     canOpenPreview,
     canOpenAction,
     changeActionMode,
     closeActionModal,
     closeStorageActions,
     handleExport,
-    loadMore,
     openGroupAction,
     openPreview,
     reload,
@@ -898,6 +849,7 @@ function useProductStoragesPageModel() {
     selectStorageNetId,
     setActionForm,
     setDownloadModalOpened,
+    setPage,
     setPreviewOpened,
     submitAction,
     toggleAvailability,
@@ -930,14 +882,13 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
     error,
     filterError,
     fromDate,
-    hasMore,
     isActionSubmitting,
     isAdmin,
     isExporting,
     isLoading,
-    isLoadingMore,
     isLoadingStorages,
     isLoadingReturnConsignments,
+    page,
     pageSize,
     previewOpened,
     previewRows,
@@ -953,13 +904,13 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
     toDate,
     toolbarLeft,
     toStorageOptions,
+    totalPages,
     canOpenAction,
     canOpenPreview,
     changeActionMode,
     closeActionModal,
     closeStorageActions,
     handleExport,
-    loadMore,
     openGroupAction,
     openPreview,
     reload,
@@ -968,6 +919,7 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
     selectStorageNetId,
     setActionForm,
     setDownloadModalOpened,
+    setPage,
     setPreviewOpened,
     submitAction,
     toggleAvailability,
@@ -979,7 +931,7 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
   } = model
 
   return (
-    <Stack gap="lg">
+    <Stack className="product-storages-page" gap={6}>
       {canOpenPreview && selectedAvailabilities.length > 0 ? (
         <Group justify="flex-end" align="end">
           <Button disabled={Boolean(filterError)} leftSection={<Eye size={16} />} variant="outline" onClick={openPreview}>
@@ -988,7 +940,7 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
         </Group>
       ) : null}
 
-      <Card className="app-data-card" withBorder radius="md" padding={0}>
+      <Card className="app-data-card product-storages-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar product-storages-filter-bar">
           <Group align="end" gap="sm" wrap="nowrap" className="product-storages-filter-row">
             <Select
@@ -1003,17 +955,19 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
               onChange={(value) => selectStorageNetId(value || '')}
             />
             <TextInput
-              label={t('Від якої дати')}
+              label={t('Від')}
               max={toDate || undefined}
               type="date"
               value={fromDate}
+              w={150}
               onChange={(event) => updateFromDate(event.currentTarget.value)}
             />
             <TextInput
-              label={t('До якої дати')}
+              label={t('До')}
               min={fromDate || undefined}
               type="date"
               value={toDate}
+              w={150}
               onChange={(event) => updateToDate(event.currentTarget.value)}
             />
             <TextInput
@@ -1038,26 +992,24 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
                   <Download size={18} />
                 </ActionIcon>
               </Tooltip>
-              <Tooltip label={t('Оновити')}>
-                <ActionIcon
-                  aria-label={t('Оновити')}
-                  color="gray"
-                  loading={isLoading || isLoadingStorages}
-                  size={34}
-                  variant="light"
-                  onClick={() => {
-                    closeStorageActions()
-                    reload()
-                  }}
-                >
-                  <RefreshCw size={18} />
-                </ActionIcon>
-              </Tooltip>
               <Tooltip label={t('Скинути')}>
                 <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
                   <RotateCcw size={17} />
                 </ActionIcon>
               </Tooltip>
+              <Paginator
+                isLoading={isLoading || isLoadingStorages}
+                page={page}
+                pageSize={pageSize}
+                pageSizeOptions={pageSizeOptions}
+                totalPages={totalPages}
+                onPageChange={setPage}
+                onPageSizeChange={updatePageSize}
+                onRefresh={() => {
+                  closeStorageActions()
+                  reload()
+                }}
+              />
             </div>
           </Group>
         </div>
@@ -1068,31 +1020,6 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
               {filterError ? t(filterError) : error || t('Складів не знайдено')}
             </Alert>
           )}
-
-          <Group justify="space-between" gap="sm">
-            <Text size="sm" c="dimmed">
-              {t('Завантажено')} {availabilities.length}
-              {selectedAvailabilities.length > 0 ? ` · ${t('Обрано')} ${selectedAvailabilities.length}` : ''}
-            </Text>
-            <Group gap="xs">
-              <Select
-                aria-label={t('Розмір сторінки')}
-                data={pageSizeOptions}
-                value={String(pageSize)}
-                w={88}
-                onChange={(value) => updatePageSize(Number(value || 50))}
-              />
-              <Button
-                color="gray"
-                disabled={Boolean(filterError) || !hasMore || isLoading || isLoadingMore}
-                loading={isLoadingMore}
-                variant="light"
-                onClick={loadMore}
-              >
-                {t('Завантажити ще')}
-              </Button>
-            </Group>
-          </Group>
 
           {toolbarLeft}
 
@@ -1107,7 +1034,6 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
             getRowId={(availability, index) => getAvailabilityKey(availability) || String(index)}
             isLoading={isLoading || isLoadingStorages}
             loadingText={t('Завантаження товарів складу')}
-            maxHeight="calc(100vh - 320px)"
             minWidth={1180}
             onRowClick={(availability) => toggleAvailability(availability)}
           />
@@ -1904,7 +1830,6 @@ function StoragesRosterTable<TData>({
   getRowId,
   isLoading,
   loadingText,
-  maxHeight,
   minWidth,
   onRowClick,
 }: {
@@ -1916,7 +1841,6 @@ function StoragesRosterTable<TData>({
   getRowId: (row: TData, index: number) => string
   isLoading?: boolean
   loadingText: ReactNode
-  maxHeight: string
   minWidth: number
   onRowClick?: (row: TData) => void
 }) {
@@ -1927,7 +1851,7 @@ function StoragesRosterTable<TData>({
 
   return (
     <div className="seo-roster-table product-storages-roster" style={tableStyle}>
-      <ScrollArea.Autosize mah={maxHeight} type="auto">
+      <ScrollArea className="product-storages-roster-scroll" type="auto">
         <div className="seo-roster-head">
           {columns.map((column) => (
             <span
@@ -1996,7 +1920,7 @@ function StoragesRosterTable<TData>({
             <div className="seo-roster-empty">{emptyText}</div>
           )}
         </div>
-      </ScrollArea.Autosize>
+      </ScrollArea>
     </div>
   )
 }

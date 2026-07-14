@@ -1,3 +1,25 @@
+.product-storages-page {
+  box-sizing: border-box;
+  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px);
+  min-height: 0;
+  overflow: hidden;
+  padding: 6px 4px 0;
+}
+
+/* .console-frame .mantine-Card-root strips border/box-shadow globally
+   (layout.css) so plain-div console-table-shell pages can own their own
+   chrome. This page still renders a real Mantine <Card withBorder>, so
+   restore its chrome explicitly. */
+.product-storages-card {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2) !important;
+  box-shadow: var(--app-card-shadow) !important;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
 /* Body region below the shared filter bar keeps the original card padding. */
 .product-storages-filter-bar {
   overflow-x: auto;
@@ -24,10 +46,28 @@
 }
 
 .product-storages-body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
   padding: 10px 8px 8px;
 }
 
-/* Storages grid styled with the shared SEO roster look (online-shop-seo-page.css). */
+/* Storages grid styled with the shared SEO roster look (online-shop-seo-page.css).
+   Stretches to fill the remaining body height instead of a hand-picked
+   maxHeight — the "Завантажено N" summary row and toolbar above it keep
+   their natural height, only the roster itself grows. */
+.product-storages-roster {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.product-storages-roster-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+}
 
 /* Keep the header aligned with the body during horizontal scroll and pinned on vertical scroll. */
 .product-storages-roster .seo-roster-head {
