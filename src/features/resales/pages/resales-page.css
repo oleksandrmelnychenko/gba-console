@@ -8,6 +8,12 @@
   overflow: hidden;
 }
 
+.resales-card {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2) !important;
+  box-shadow: var(--app-card-shadow) !important;
+}
+
 /* Filter strip pinned at the top of the card; the table below it scrolls. */
 .resales-filter-bar {
   flex: 0 0 auto;
