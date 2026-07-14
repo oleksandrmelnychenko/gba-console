@@ -57,8 +57,11 @@
   border-bottom: 1px solid var(--mantine-color-gray-2);
   /* The pattern padding (docs/ui-patterns.md §5.3) — pages must NOT override.
      Horizontal 8px lines the bar content up with the table text (th/td padding
-     is 8px), so the filter labels and the first column start on one vertical. */
-  padding: 12px 8px 14px;
+     is 8px), so the filter labels and the first column start on one vertical.
+     Vertical 8/8 (was 12/14 — too much dead air above/below the 57px-tall
+     label+input stack, made every registry page's filter strip read as
+     oversized). */
+  padding: 8px;
 }
 
 /* When the strip is the only/last thing in its card (e.g. a chart page with no
