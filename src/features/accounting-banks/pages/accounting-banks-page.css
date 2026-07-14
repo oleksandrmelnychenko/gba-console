@@ -1,18 +1,67 @@
-/* Accounting banks registry — chrome aligned with the «Продажі» reference.
-   The page loads all banks and filters client-side (no pagination), so it keeps
-   the table's own maxHeight scroll model; only the filter strip + card shell are
-   converged onto the shared primitives. */
-.accounting-banks-filter-row {
+.accounting-banks-page {
+  box-sizing: border-box;
+  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px);
+  min-height: 0;
+  overflow: hidden;
+  padding: 6px 4px 0;
+}
+
+.accounting-banks-card {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2) !important;
+  box-shadow: var(--app-card-shadow) !important;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+}
+
+.accounting-banks-filter-bar {
+  flex: 0 0 auto;
+  overflow-x: auto;
+}
+
+.accounting-banks-filter-bar .accounting-banks-filter-row {
+  align-items: end;
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) max-content max-content;
+  min-width: max-content;
   width: 100%;
 }
 
-/* Push the reset / refresh / density cluster to the trailing edge of the row. */
-.accounting-banks-filter-row .app-filter-actions {
-  margin-left: auto;
+.accounting-banks-filter-row > .app-filter-actions {
+  grid-column: 2;
 }
 
-/* Body below the flush filter strip carries its own padding (the card is
-   padding={0} so the strip sits flush). */
+.accounting-banks-filter-row > .mantine-Button-root {
+  grid-column: 3;
+}
+
 .accounting-banks-card__body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
   padding: 12px;
+}
+
+.accounting-banks-page__table {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+}
+
+.accounting-banks-page__table .data-table {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.accounting-banks-page__table .data-table-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
 }

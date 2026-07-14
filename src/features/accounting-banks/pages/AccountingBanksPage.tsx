@@ -193,7 +193,7 @@ export function AccountingBanksPage() {
   }
 
   return (
-    <Stack gap="lg">
+    <Stack className="accounting-banks-page" gap={6}>
       <Card className="app-data-card accounting-banks-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar accounting-banks-filter-bar">
           <Group align="end" gap="sm" wrap="nowrap" className="accounting-banks-filter-row">
@@ -248,21 +248,23 @@ export function AccountingBanksPage() {
             </Alert>
           )}
 
-          <DataTable
-            columns={columns}
-            data={visibleBanks}
-            defaultLayout={ACCOUNTING_BANKS_TABLE_DEFAULT_LAYOUT}
-            density={density}
-            emptyText={t('Банків не знайдено')}
-            getRowId={(bank, index) => String(bank.NetUid || bank.Id || index)}
-            isLoading={isLoading}
-            layoutVersion="accounting-banks-table-1"
-            loadingText={t('Завантаження банків')}
-            maxHeight="calc(100vh - 320px)"
-            minWidth={1180}
-            tableId="accounting-banks"
-            onRowClick={openEditor}
-          />
+          <div className="accounting-banks-page__table">
+            <DataTable
+              columns={columns}
+              data={visibleBanks}
+              defaultLayout={ACCOUNTING_BANKS_TABLE_DEFAULT_LAYOUT}
+              density={density}
+              emptyText={t('Банків не знайдено')}
+              getRowId={(bank, index) => String(bank.NetUid || bank.Id || index)}
+              height="100%"
+              isLoading={isLoading}
+              layoutVersion="accounting-banks-table-1"
+              loadingText={t('Завантаження банків')}
+              minWidth={1180}
+              tableId="accounting-banks"
+              onRowClick={openEditor}
+            />
+          </div>
         </Stack>
       </Card>
 
