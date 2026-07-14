@@ -53,6 +53,25 @@
   padding: 10px 8px 8px;
 }
 
+.product-storages-table {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.product-storages-table .data-table {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.product-storages-table .data-table-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
 /* Storages grid styled with the shared SEO roster look (online-shop-seo-page.css).
    Stretches to fill the remaining body height instead of a hand-picked
    maxHeight — the "Завантажено N" summary row and toolbar above it keep

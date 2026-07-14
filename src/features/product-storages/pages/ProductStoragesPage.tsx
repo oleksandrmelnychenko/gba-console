@@ -25,19 +25,20 @@ import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
 import { ArrowLeftRight, Check, CircleAlert, ClipboardList, Download, Eye, FileSpreadsheet, FileText, RotateCcw, Search, Trash2 } from 'lucide-react'
 import { useDebouncedValue } from '@mantine/hooks'
-import { useCallback, useEffect, useMemo, useReducer, useRef, type CSSProperties, type Dispatch, type ReactNode, type SetStateAction } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef, type Dispatch, type SetStateAction } from 'react'
 import { UserRoleType } from '../../../shared/auth/types'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
+import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import { useAuth } from '../../auth/useAuth'
-import '../../online-shop-seo/pages/online-shop-seo-page.css'
 import './product-storages.css'
 import {
   createProductStorageSupplyReturn,
@@ -62,8 +63,7 @@ import type {
   ProductStoragesExportDocument,
 } from '../types'
 
-const PRODUCT_STORAGES_ROSTER_TEMPLATE =
-  '54px 56px minmax(132px, 0.7fr) minmax(260px, 1.7fr) minmax(220px, 1.3fr) 120px minmax(180px, 0.9fr) 64px'
+const PRODUCT_STORAGES_TABLE_DEFAULT_LAYOUT = { density: 'compact' as const }
 
 const pageSizeOptions = ['50', '100', '150']
 const PRODUCT_STORAGES_SEARCH_DEBOUNCE_MS = 200
@@ -115,6 +115,10 @@ type AvailabilityListState = {
 function useProductStoragesPageModel() {
   const { t } = useI18n()
   const { hasPermission, user } = useAuth()
+  const { density, toggleDensity } = useDataTableDensity(
+    'product-storages',
+    PRODUCT_STORAGES_TABLE_DEFAULT_LAYOUT.density,
+  )
   const isAdmin =
     user?.UserRole?.UserRoleType === UserRoleType.Administrator || user?.UserRole?.UserRoleType === UserRoleType.GBA
   const [availabilityList, setAvailabilityList] = useValueState<AvailabilityListState>({
@@ -177,9 +181,7 @@ function useProductStoragesPageModel() {
   const isSomeVisibleSelected =
     visibleSelectableAvailabilities.some((availability) => selectedAvailabilityKeys.has(getAvailabilityKey(availability))) &&
     !isAllVisibleSelected
-  const availabilityIndexMap = useMemo(() => buildAvailabilityIndexMap(availabilities), [availabilities])
   const columns = useProductStoragesColumns({
-    availabilityIndexMap,
     canOpenAction,
     isAllVisibleSelected,
     isSomeVisibleSelected,
@@ -217,18 +219,6 @@ function useProductStoragesPageModel() {
     () => availableReturnConsignments.find((consignment) => getConsignmentKey(consignment) === actionForm.consignmentId) || null,
     [actionForm.consignmentId, availableReturnConsignments],
   )
-  const toolbarLeft = useMemo(
-    () => (
-      <Text size="xs" c="dimmed">
-        {t('Показано')} {availabilities.length}
-        {totalAvailabilities > availabilities.length ? ` ${t('з')} ${totalAvailabilities}` : ''}
-        {selectedAvailabilities.length ? `, ${t('обрано')}: ${selectedAvailabilities.length}` : ''}
-        {searchValue ? `, ${t('пошук')}: ${searchValue}` : ''}
-      </Text>
-    ),
-    [availabilities.length, searchValue, selectedAvailabilities.length, t, totalAvailabilities],
-  )
-
   useEffect(() => {
     let cancelled = false
 
@@ -806,6 +796,7 @@ function useProductStoragesPageModel() {
     actionFromStorage,
     actionModal,
     columns,
+    density,
     downloadDocument,
     downloadModalOpened,
     effectiveToStorageNetUid,
@@ -832,7 +823,6 @@ function useProductStoragesPageModel() {
     selectedReturnConsignment,
     storageOptions,
     toDate,
-    toolbarLeft,
     toStorageOptions,
     totalPages,
     canOpenPreview,
@@ -853,6 +843,7 @@ function useProductStoragesPageModel() {
     setPreviewOpened,
     submitAction,
     toggleAvailability,
+    toggleDensity,
     updateFromDate,
     updatePageSize,
     updatePreviewQty,
@@ -876,6 +867,7 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
     actionFromStorage,
     actionModal,
     columns,
+    density,
     downloadDocument,
     downloadModalOpened,
     effectiveToStorageNetUid,
@@ -902,7 +894,6 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
     selectedReturnConsignment,
     storageOptions,
     toDate,
-    toolbarLeft,
     toStorageOptions,
     totalPages,
     canOpenAction,
@@ -923,6 +914,7 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
     setPreviewOpened,
     submitAction,
     toggleAvailability,
+    toggleDensity,
     updateFromDate,
     updatePageSize,
     updatePreviewQty,
@@ -997,6 +989,7 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
                   <RotateCcw size={17} />
                 </ActionIcon>
               </Tooltip>
+              <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
               <Paginator
                 isLoading={isLoading || isLoadingStorages}
                 page={page}
@@ -1021,22 +1014,27 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
             </Alert>
           )}
 
-          {toolbarLeft}
-
-          <StoragesRosterTable
-            columns={columns}
-            columnsTemplate={PRODUCT_STORAGES_ROSTER_TEMPLATE}
-            data={availabilities}
-            emptyText={t('Товарів на складі не знайдено')}
-            getRowClassName={(availability) =>
-              selectedAvailabilityKeys.has(getAvailabilityKey(availability)) ? 'is-selected' : undefined
-            }
-            getRowId={(availability, index) => getAvailabilityKey(availability) || String(index)}
-            isLoading={isLoading || isLoadingStorages}
-            loadingText={t('Завантаження товарів складу')}
-            minWidth={1180}
-            onRowClick={(availability) => toggleAvailability(availability)}
-          />
+          <div className="product-storages-table">
+            <DataTable
+              columns={columns}
+              data={availabilities}
+              defaultLayout={PRODUCT_STORAGES_TABLE_DEFAULT_LAYOUT}
+              density={density}
+              emptyText={t('Товарів на складі не знайдено')}
+              rowClassName={(availability) =>
+                selectedAvailabilityKeys.has(getAvailabilityKey(availability)) ? 'is-selected' : undefined
+              }
+              getRowId={(availability, index) => getAvailabilityKey(availability) || String(index)}
+              height="100%"
+              isLoading={isLoading || isLoadingStorages}
+              loadingText={t('Завантаження товарів складу')}
+              minWidth={1180}
+              layoutVersion="product-storages-table-3"
+              showDensityToggle={false}
+              tableId="product-storages"
+              onRowClick={(availability) => toggleAvailability(availability)}
+            />
+          </div>
         </Stack>
       </Card>
 
@@ -1644,7 +1642,6 @@ function ReturnConsignmentDetail({ label, value }: { label: string; value?: stri
 }
 
 function useProductStoragesColumns({
-  availabilityIndexMap,
   canOpenAction,
   isAllVisibleSelected,
   isSomeVisibleSelected,
@@ -1653,7 +1650,6 @@ function useProductStoragesColumns({
   onToggleAvailability,
   onToggleVisible,
 }: {
-  availabilityIndexMap: Map<ProductStorageAvailability, number>
   canOpenAction: boolean
   isAllVisibleSelected: boolean
   isSomeVisibleSelected: boolean
@@ -1689,23 +1685,6 @@ function useProductStoragesColumns({
             onClick={(event) => event.stopPropagation()}
             onChange={(event) => onToggleAvailability(availability, event.currentTarget.checked)}
           />
-        ),
-      },
-      {
-        id: 'index',
-        header: '#',
-        width: 56,
-        minWidth: 48,
-        align: 'right',
-        enableSorting: false,
-        enableHiding: false,
-        enableReorder: false,
-        enableResizing: false,
-        accessor: (availability) => availabilityIndexMap.get(availability) || 0,
-        cell: (availability) => (
-          <Text c="dimmed" size="sm">
-            {availabilityIndexMap.get(availability) || ''}
-          </Text>
         ),
       },
       {
@@ -1792,7 +1771,6 @@ function useProductStoragesColumns({
       },
     ],
     [
-      availabilityIndexMap,
       canOpenAction,
       isAllVisibleSelected,
       isSomeVisibleSelected,
@@ -1803,136 +1781,6 @@ function useProductStoragesColumns({
       t,
     ],
   )
-}
-
-function getRosterCellAlignStyle(align?: 'left' | 'center' | 'right'): CSSProperties | undefined {
-  if (align === 'right') {
-    return { justifySelf: 'end', textAlign: 'right' }
-  }
-
-  if (align === 'center') {
-    return { justifySelf: 'center', textAlign: 'center' }
-  }
-
-  return undefined
-}
-
-function isRosterActionCellEventTarget(target: EventTarget | null) {
-  return target instanceof Element && Boolean(target.closest('.seo-table-action-cell'))
-}
-
-function StoragesRosterTable<TData>({
-  columns,
-  columnsTemplate,
-  data,
-  emptyText,
-  getRowClassName,
-  getRowId,
-  isLoading,
-  loadingText,
-  minWidth,
-  onRowClick,
-}: {
-  columns: DataTableColumn<TData>[]
-  columnsTemplate: string
-  data: TData[]
-  emptyText: ReactNode
-  getRowClassName?: (row: TData, index: number) => string | undefined
-  getRowId: (row: TData, index: number) => string
-  isLoading?: boolean
-  loadingText: ReactNode
-  minWidth: number
-  onRowClick?: (row: TData) => void
-}) {
-  const tableStyle = {
-    '--seo-roster-columns': columnsTemplate,
-    '--seo-roster-min-width': `${minWidth}px`,
-  } as CSSProperties
-
-  return (
-    <div className="seo-roster-table product-storages-roster" style={tableStyle}>
-      <ScrollArea className="product-storages-roster-scroll" type="auto">
-        <div className="seo-roster-head">
-          {columns.map((column) => (
-            <span
-              className={`seo-roster-head-cell is-${column.id}`}
-              key={column.id}
-              style={getRosterCellAlignStyle(column.align)}
-            >
-              {column.header}
-            </span>
-          ))}
-        </div>
-
-        <div className="seo-roster-body">
-          {isLoading ? (
-            <div className="seo-roster-empty">
-              <Group gap="xs">
-                <Loader size="sm" />
-                <span>{loadingText}</span>
-              </Group>
-            </div>
-          ) : data.length ? (
-            data.map((row, index) => {
-              const rowId = getRowId(row, index)
-              const rowClassNames = ['seo-roster-row', 'is-clickable', getRowClassName?.(row, index)]
-                .filter(Boolean)
-                .join(' ')
-
-              return (
-                <div className="seo-roster-row-frame" key={rowId}>
-                  <div
-                    className={rowClassNames}
-                    role="button"
-                    tabIndex={0}
-                    onClick={(event) => {
-                      if (isRosterActionCellEventTarget(event.target)) {
-                        return
-                      }
-
-                      onRowClick?.(row)
-                    }}
-                    onKeyDown={(event) => {
-                      if (isRosterActionCellEventTarget(event.target)) {
-                        return
-                      }
-
-                      if (event.key === 'Enter' || event.key === ' ') {
-                        event.preventDefault()
-                        onRowClick?.(row)
-                      }
-                    }}
-                  >
-                    {columns.map((column) => (
-                      <div
-                        className={`seo-roster-cell is-${column.id}`}
-                        key={column.id}
-                        style={getRosterCellAlignStyle(column.align)}
-                      >
-                        {column.cell ? column.cell(row) : null}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )
-            })
-          ) : (
-            <div className="seo-roster-empty">{emptyText}</div>
-          )}
-        </div>
-      </ScrollArea>
-    </div>
-  )
-}
-
-function buildAvailabilityIndexMap(
-  availabilities: ProductStorageAvailability[],
-): Map<ProductStorageAvailability, number> {
-  return availabilities.reduce((indexMap, availability, index) => {
-    indexMap.set(availability, index + 1)
-
-    return indexMap
-  }, new Map<ProductStorageAvailability, number>())
 }
 
 function createActionForm(qty?: number): ProductStorageActionForm {
