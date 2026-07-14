@@ -649,7 +649,7 @@ function useSupplyReturnColumns(
         minWidth: 160,
         accessor: (supplyReturn) => supplyReturn.Comment,
         cell: (supplyReturn) => (
-          <Text size="sm" lineClamp={2}>
+          <Text size="sm" title={displayValue(supplyReturn.Comment)}>
             {displayValue(supplyReturn.Comment)}
           </Text>
         ),
