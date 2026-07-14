@@ -1,8 +1,12 @@
 .sales-dashboard-shell {
+  box-sizing: border-box;
   flex: 1 1 auto;
-  height: 100%;
+  height: calc(
+    100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px
+  );
   min-height: 0;
   overflow: hidden;
+  padding: 6px 4px 0;
 }
 
 .sales-dashboard-shell > .pill-tabs {
