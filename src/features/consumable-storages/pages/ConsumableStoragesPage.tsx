@@ -250,6 +250,7 @@ export function ConsumableStoragesPage() {
               columns={columns}
               data={visibleStorages}
               defaultLayout={TABLE_DEFAULT_LAYOUT}
+              distributeAvailableWidth
               emptyText={t('Складів не знайдено')}
               getRowId={(storage) => String(storage.NetUid || storage.Id || storage.Name)}
               height="100%"
