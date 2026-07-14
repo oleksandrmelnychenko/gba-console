@@ -12,7 +12,7 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
-import { CircleAlert, ListTree, RefreshCw, RotateCcw, X } from 'lucide-react'
+import { CircleAlert, ListTree, RotateCcw, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { formatDateInputForQuery, formatLocalDate } from '../../../shared/date/dateTime'
@@ -25,6 +25,7 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import {
   getAvailablePaymentsOrganizations,
   getGroupedPaymentTasks,
@@ -111,7 +112,7 @@ function useAvailablePaymentsPageModel() {
   const [confirmCloseDetailOpen, setConfirmCloseDetailOpen] = useValueState(false)
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
-  const [isLoadingMore, setLoadingMore] = useValueState(false)
+  const [page, setPage] = useValueState(1)
   const [pageSize, setPageSize] = useValueState(DEFAULT_PAGE_SIZE)
   const [hasMore, setHasMore] = useValueState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
@@ -120,10 +121,8 @@ function useAvailablePaymentsPageModel() {
     AVAILABLE_PAYMENTS_TABLE_DEFAULT_LAYOUT.density,
   )
   const filterError = getFilterError(activeFilters.from, activeFilters.to)
-  const listRequestKey = `${activeFilters.from}|${activeFilters.to}|${activeFilters.organizationNetId}|${activeFilters.type}|${pageSize}|${onlyAvailableForPayment}`
-  const listRequestKeyRef = useRef(listRequestKey)
-  const groupsRef = useRef(groups)
-  const groupIndexMap = useMemo(() => buildIndexMap(groups), [groups])
+  const pageOffset = (page - 1) * pageSize
+  const groupIndexMap = useMemo(() => buildIndexMap(groups, pageOffset), [groups, pageOffset])
   const markedTaskIds = useMemo(() => markedModels.map((model) => model.id), [markedModels])
   const hasPendingFiles = useMemo(() => Object.values(filesByTaskId).some((files) => files.length > 0), [filesByTaskId])
   const hasPendingDocumentChanges = useMemo(
@@ -133,27 +132,22 @@ function useAvailablePaymentsPageModel() {
   const hasPendingChanges = hasPendingFiles || hasPendingDocumentChanges
 
   useEffect(() => {
-    listRequestKeyRef.current = listRequestKey
-  }, [listRequestKey])
-
-  useEffect(() => {
-    groupsRef.current = groups
-  }, [groups])
-
-  useEffect(() => {
     setFilterDraft(initialFilters)
     setActiveFilters(initialFilters)
     setSelectedGroup(null)
     setMarkedModels([])
     setFilesByTaskId({})
     setDocumentDeleteOverridesByTaskId({})
+    setPage(1)
   }, [
     initialFilters,
+    onlyAvailableForPayment,
     setActiveFilters,
     setDocumentDeleteOverridesByTaskId,
     setFilesByTaskId,
     setFilterDraft,
     setMarkedModels,
+    setPage,
     setSelectedGroup,
   ])
 
@@ -187,6 +181,7 @@ function useAvailablePaymentsPageModel() {
     activeFilters,
     filterError,
     onlyAvailableForPayment,
+    page,
     pageSize,
     reloadKey,
     resetGroups,
@@ -197,6 +192,7 @@ function useAvailablePaymentsPageModel() {
     setPriceTotals,
     setTotalGrossPrice,
     setTotalNotDoneTasks,
+    setPage,
   })
 
   const handleRealtimePaymentTask = useCallback(() => {
@@ -208,51 +204,13 @@ function useAvailablePaymentsPageModel() {
   function applyFilters(nextFilters: FilterDraft) {
     setFilterDraft(nextFilters)
     setActiveFilters(nextFilters)
+    setPage(1)
   }
 
   function resetFilters() {
     setFilterDraft(initialFilters)
     setActiveFilters(initialFilters)
-  }
-
-  async function loadMoreGroups() {
-    const requestKey = listRequestKeyRef.current
-    const requestOffset = groupsRef.current.length
-    setLoadingMore(true)
-    setError(null)
-
-    try {
-      const result = await getGroupedPaymentTasks({
-        from: toQueryDate(activeFilters.from),
-        limit: pageSize,
-        offset: requestOffset,
-        onlyAvailableForPayment,
-        organizationNetId: activeFilters.organizationNetId || undefined,
-        to: toQueryDate(activeFilters.to),
-        typePaymentTask: activeFilters.type,
-      })
-
-      if (listRequestKeyRef.current === requestKey) {
-        const currentGroups = groupsRef.current
-
-        if (currentGroups.length === requestOffset) {
-          const nextGroups = [...currentGroups, ...result.GroupedPaymentTasks]
-          setGroups(nextGroups)
-          setPriceTotals(result.PriceTotals)
-          setTotalGrossPrice(result.TotalGrossPrice)
-          setTotalNotDoneTasks(countNotDoneTasks(nextGroups, t))
-          setHasMore(result.GroupedPaymentTasks.length === pageSize)
-        }
-      }
-    } catch (loadError) {
-      if (listRequestKeyRef.current === requestKey) {
-        setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити платіжні задачі'))
-      }
-    } finally {
-      if (listRequestKeyRef.current === requestKey) {
-        setLoadingMore(false)
-      }
-    }
+    setPage(1)
   }
 
   const openDetail = useCallback(
@@ -430,8 +388,6 @@ function useAvailablePaymentsPageModel() {
     hasMore,
     isOutcomePaymentTasksMode: isOutcomeMode,
     isLoading,
-    isLoadingMore,
-    loadMoreGroups,
     markedModels,
     markedTaskIds,
     openDetail,
@@ -439,6 +395,7 @@ function useAvailablePaymentsPageModel() {
     outcomeRequest,
     organizations,
     organizationsError,
+    page,
     pageSize,
     selectedGroup,
     toolbarLeft,
@@ -453,7 +410,11 @@ function useAvailablePaymentsPageModel() {
     handleTaskUpdated,
     reload,
     resetFilters,
-    setPageSize,
+    setPage,
+    setPageSize: (nextPageSize: number) => {
+      setPageSize(nextPageSize)
+      setPage(1)
+    },
     toggleDensity,
     toggleMarked,
   }
@@ -502,6 +463,7 @@ function useAvailablePaymentsLoader({
   activeFilters,
   filterError,
   onlyAvailableForPayment,
+  page,
   pageSize,
   reloadKey,
   resetGroups,
@@ -509,6 +471,7 @@ function useAvailablePaymentsLoader({
   setGroups,
   setHasMore,
   setLoading,
+  setPage,
   setPriceTotals,
   setTotalGrossPrice,
   setTotalNotDoneTasks,
@@ -516,6 +479,7 @@ function useAvailablePaymentsLoader({
   activeFilters: FilterDraft
   filterError: string | null
   onlyAvailableForPayment: boolean
+  page: number
   pageSize: number
   reloadKey: number
   resetGroups: () => void
@@ -523,11 +487,24 @@ function useAvailablePaymentsLoader({
   setGroups: (value: GroupedPaymentTask[]) => void
   setHasMore: (value: boolean) => void
   setLoading: (value: boolean) => void
+  setPage: (value: number) => void
   setPriceTotals: (value: PriceTotal[]) => void
   setTotalGrossPrice: (value: number) => void
   setTotalNotDoneTasks: (value: number) => void
 }) {
   const { t } = useI18n()
+  const lastPopulatedPageRef = useRef(1)
+
+  useEffect(() => {
+    lastPopulatedPageRef.current = 1
+  }, [
+    activeFilters.from,
+    activeFilters.organizationNetId,
+    activeFilters.to,
+    activeFilters.type,
+    onlyAvailableForPayment,
+    pageSize,
+  ])
 
   useEffect(() => {
     if (filterError) {
@@ -544,8 +521,8 @@ function useAvailablePaymentsLoader({
       try {
         const result = await getGroupedPaymentTasks({
           from: toQueryDate(activeFilters.from),
-          limit: pageSize,
-          offset: 0,
+          limit: pageSize + 1,
+          offset: (page - 1) * pageSize,
           onlyAvailableForPayment,
           organizationNetId: activeFilters.organizationNetId || undefined,
           to: toQueryDate(activeFilters.to),
@@ -553,11 +530,23 @@ function useAvailablePaymentsLoader({
         })
 
         if (!cancelled) {
-          setGroups(result.GroupedPaymentTasks)
+          const pageGroups = result.GroupedPaymentTasks.slice(0, pageSize)
+
+          if (pageGroups.length === 0 && page > 1) {
+            const fallbackPage = lastPopulatedPageRef.current === page ? 1 : lastPopulatedPageRef.current
+
+            lastPopulatedPageRef.current = fallbackPage
+            setPage(fallbackPage)
+
+            return
+          }
+
+          lastPopulatedPageRef.current = page
+          setGroups(pageGroups)
           setPriceTotals(result.PriceTotals)
           setTotalGrossPrice(result.TotalGrossPrice)
-          setTotalNotDoneTasks(countNotDoneTasks(result.GroupedPaymentTasks, t))
-          setHasMore(result.GroupedPaymentTasks.length === pageSize)
+          setTotalNotDoneTasks(countNotDoneTasks(pageGroups, t))
+          setHasMore(result.GroupedPaymentTasks.length > pageSize)
         }
       } catch (loadError) {
         if (!cancelled) {
@@ -584,6 +573,7 @@ function useAvailablePaymentsLoader({
     activeFilters,
     filterError,
     onlyAvailableForPayment,
+    page,
     pageSize,
     reloadKey,
     resetGroups,
@@ -591,6 +581,7 @@ function useAvailablePaymentsLoader({
     setGroups,
     setHasMore,
     setLoading,
+    setPage,
     setPriceTotals,
     setTotalGrossPrice,
     setTotalNotDoneTasks,
@@ -602,7 +593,7 @@ export function AvailablePaymentsPage() {
   const model = useAvailablePaymentsPageModel()
 
   return (
-    <Stack gap="lg">
+    <Stack className="available-payments-page" gap={6}>
       <AvailablePaymentsTableCard model={model} />
       <AvailablePaymentsDetailDrawer
         key={String(model.selectedGroup?.NetUid || model.selectedGroup?.Id || 'closed')}
@@ -655,16 +646,16 @@ function AvailablePaymentsTableCard({ model }: { model: ReturnType<typeof useAva
     groups,
     hasMore,
     isLoading,
-    isLoadingMore,
-    loadMoreGroups,
     markedModels,
     openMarkedOutcome,
     openDetail,
     organizations,
     organizationsError,
+    page,
     pageSize,
     reload,
     resetFilters,
+    setPage,
     setPageSize,
     toggleDensity,
     toggleMarked,
@@ -702,7 +693,7 @@ function AvailablePaymentsTableCard({ model }: { model: ReturnType<typeof useAva
   )
 
   return (
-    <Card className="app-filter-card" withBorder radius="md" padding={0}>
+    <Card className="app-filter-card available-payments-card" withBorder radius="md" padding={0}>
       <div className="app-filter-bar available-payments-filter-bar">
         <Group align="end" gap="sm" wrap="nowrap" className="available-payments-filter-row">
           <Select
@@ -750,19 +741,17 @@ function AvailablePaymentsTableCard({ model }: { model: ReturnType<typeof useAva
                 <RotateCcw size={17} />
               </ActionIcon>
             </Tooltip>
-            <Tooltip label={t('Оновити')}>
-              <ActionIcon
-                aria-label={t('Оновити')}
-                color="gray"
-                loading={isLoading}
-                size={34}
-                variant="light"
-                onClick={() => reload()}
-              >
-                <RefreshCw size={18} />
-              </ActionIcon>
-            </Tooltip>
             <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
+            <Paginator
+              hasNext={hasMore}
+              isLoading={isLoading}
+              page={page}
+              pageSize={pageSize}
+              pageSizeOptions={PAGE_SIZE_OPTIONS}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+              onRefresh={reload}
+            />
           </div>
         </Group>
       </div>
@@ -810,36 +799,24 @@ function AvailablePaymentsTableCard({ model }: { model: ReturnType<typeof useAva
           </Alert>
         )}
 
-        <Group justify="flex-end" gap="xs">
-          <Select
-            aria-label={t('Кількість рядків')}
-            data={PAGE_SIZE_OPTIONS}
-            size="xs"
-            value={String(pageSize)}
-            w={88}
-            onChange={(value) => {
-              setPageSize(Number(value || DEFAULT_PAGE_SIZE))
-              reload()
-            }}
+        <div className="available-payments-page__table">
+          <DataTable
+            columns={columns}
+            data={groups}
+            defaultLayout={AVAILABLE_PAYMENTS_TABLE_DEFAULT_LAYOUT}
+            density={density}
+            emptyText={t('Платіжних задач не знайдено')}
+            getRowId={(group, index) => String(group.NetUid || group.Id || index)}
+            height="100%"
+            isLoading={isLoading}
+            layoutVersion="available-payments-table-1"
+            loadingText={t('Завантаження')}
+            minWidth={1080}
+            tableId="available-payments"
+            toolbarLeft={toolbarLeft}
+            onRowClick={openDetail}
           />
-        </Group>
-
-        <DataTable
-          columns={columns}
-          data={groups}
-          defaultLayout={AVAILABLE_PAYMENTS_TABLE_DEFAULT_LAYOUT}
-          density={density}
-          emptyText={t('Платіжних задач не знайдено')}
-          getRowId={(group, index) => String(group.NetUid || group.Id || index)}
-          isLoading={isLoading}
-          layoutVersion="available-payments-table-1"
-          loadingText={t('Завантаження')}
-          maxHeight="calc(100vh - 420px)"
-          minWidth={1080}
-          tableId="available-payments"
-          toolbarLeft={toolbarLeft}
-          onRowClick={openDetail}
-        />
+        </div>
 
         {groups.length > 0 && (
           <AvailablePaymentsTotalsRow
@@ -849,13 +826,6 @@ function AvailablePaymentsTableCard({ model }: { model: ReturnType<typeof useAva
           />
         )}
 
-        {hasMore && (
-          <Group justify="center">
-            <Button color="gray" loading={isLoadingMore} variant="light" onClick={loadMoreGroups}>
-              {t('Завантажити ще')}
-            </Button>
-          </Group>
-        )}
       </Stack>
     </Card>
   )
@@ -1062,9 +1032,9 @@ function getSupplyPaymentTaskKey(task: SupplyPaymentTask): string {
   return String(task.NetUid || task.Id || '')
 }
 
-function buildIndexMap(groups: GroupedPaymentTask[]): Map<GroupedPaymentTask, number> {
+function buildIndexMap(groups: GroupedPaymentTask[], offset = 0): Map<GroupedPaymentTask, number> {
   return groups.reduce((indexMap, group, index) => {
-    indexMap.set(group, index + 1)
+    indexMap.set(group, offset + index + 1)
 
     return indexMap
   }, new Map<GroupedPaymentTask, number>())
