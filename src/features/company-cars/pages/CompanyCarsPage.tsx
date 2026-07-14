@@ -26,8 +26,8 @@ import {
   COMPANY_CAR_ROAD_LIST_MANAGE_PERMISSION,
 } from '../permissions'
 import type { CompanyCar } from '../types'
-import './company-cars-page.css'
 import '../../../shared/ui/console-table-page.css'
+import './company-cars-page.css'
 
 const COMPANY_CARS_PATH = '/accounting/company-cars'
 const SEARCH_DEBOUNCE_MS = 350
@@ -274,7 +274,7 @@ function useCompanyCarColumns({
         header: t('Марка автомобіля'),
         minWidth: 180,
         accessor: (companyCar) => companyCar.CarBrand,
-        cell: (companyCar) => <Text fw={600}>{displayValue(companyCar.CarBrand)}</Text>,
+        cell: (companyCar) => <CompanyCarTextCell strong value={companyCar.CarBrand} />,
       },
       {
         id: 'licensePlate',
@@ -282,7 +282,7 @@ function useCompanyCarColumns({
         width: 150,
         minWidth: 120,
         accessor: (companyCar) => companyCar.LicensePlate,
-        cell: (companyCar) => displayValue(companyCar.LicensePlate),
+        cell: (companyCar) => <CompanyCarTextCell value={companyCar.LicensePlate} />,
       },
       {
         id: 'fuelAmount',
@@ -344,7 +344,7 @@ function useCompanyCarColumns({
         width: 200,
         minWidth: 140,
         accessor: (companyCar) => companyCar.Organization?.Name,
-        cell: (companyCar) => displayValue(companyCar.Organization?.Name),
+        cell: (companyCar) => <CompanyCarTextCell value={companyCar.Organization?.Name} />,
       },
       {
         id: 'actions',
@@ -393,6 +393,22 @@ function useCompanyCarColumns({
       },
     ],
     [canEdit, canOpenRoadLists, onEdit, onRoadLists, t],
+  )
+}
+
+function CompanyCarTextCell({
+  strong = false,
+  value,
+}: {
+  strong?: boolean
+  value?: string | number | null
+}) {
+  const display = displayValue(value)
+
+  return (
+    <Text className="company-cars-text-cell" fw={strong ? 600 : undefined} title={display}>
+      {display}
+    </Text>
   )
 }
 

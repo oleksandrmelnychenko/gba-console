@@ -1,3 +1,18 @@
+.company-cars-page {
+  box-sizing: border-box;
+  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px);
+  min-height: 0;
+  overflow: hidden;
+  padding: 6px 4px 0;
+}
+
+.company-cars-card {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
 .company-cars-filter-bar {
   align-items: end;
   display: grid;
@@ -36,9 +51,21 @@
 }
 
 .company-cars-page__table {
+  display: flex;
   flex: 1 1 auto;
   min-height: 0;
   min-width: 0;
+}
+
+.company-cars-page__table .data-table-cell {
+  white-space: nowrap;
+}
+
+.company-cars-page__table .data-table-cell > * {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .company-cars-page__table .data-table {
