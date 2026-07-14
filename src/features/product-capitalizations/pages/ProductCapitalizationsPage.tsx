@@ -16,7 +16,7 @@ import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
 import { CircleAlert, Eye, FileDown, FileText, Plus, RotateCcw } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
-import { type FormEvent, useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { formatLocalDate, toDateTimeQuery } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -132,7 +132,6 @@ function useProductCapitalizationsPageModel() {
     }),
     [],
   )
-  const [filterDraft, setFilterDraft] = useValueState<FilterDraft>(initialFilters)
   const [activeFilters, setActiveFilters] = useValueState<FilterDraft>(initialFilters)
   const [listState, dispatchListState] = useReducer(productCapitalizationsListReducer, initialListState)
   const [selectedCapitalization, setSelectedCapitalization] = useValueState<ProductCapitalization | null>(null)
@@ -323,15 +322,13 @@ function useProductCapitalizationsPageModel() {
     }
   }, [activeFilters.from, activeFilters.to, filterError, offset, pageSize, reloadKey, setError, t])
 
-  function submitFilters(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
+  function updateFilters(patch: Partial<FilterDraft>) {
     setPage(1)
-    setActiveFilters(filterDraft)
+    setActiveFilters((current) => ({ ...current, ...patch }))
   }
 
   function resetFilters() {
     setPage(1)
-    setFilterDraft(initialFilters)
     setActiveFilters(initialFilters)
   }
 
@@ -347,7 +344,6 @@ function useProductCapitalizationsPageModel() {
     downloadModalOpened,
     error,
     exportingNetId,
-    filterDraft,
     filterError,
     isDetailLoading,
     isLoading,
@@ -363,10 +359,9 @@ function useProductCapitalizationsPageModel() {
     resetFilters,
     setCreatePanelOpened,
     setDownloadModalOpened,
-    setFilterDraft,
     setPage,
     setPageSize,
-    submitFilters,
+    updateFilters,
   }
 }
 
@@ -379,6 +374,7 @@ export function ProductCapitalizationsPage() {
 function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof useProductCapitalizationsPageModel> }) {
   const { t } = useI18n()
   const {
+    activeFilters,
     canMoveForward,
     capitalizations,
     columns,
@@ -389,7 +385,6 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
     downloadModalOpened,
     error,
     exportingNetId,
-    filterDraft,
     filterError,
     isDetailLoading,
     isLoading,
@@ -405,38 +400,31 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
     toggleDensity,
     setCreatePanelOpened,
     setDownloadModalOpened,
-    setFilterDraft,
     setPage,
     setPageSize,
-    submitFilters,
+    updateFilters,
   } = model
 
   return (
     <Stack className="product-capitalizations-page" gap={6}>
       <Card className="app-data-card product-capitalizations-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar product-capitalizations-filter-bar">
-          <div className="product-capitalizations-filter-row">
-            <form className="product-capitalizations-filter-form" onSubmit={submitFilters}>
-              <Group align="end" gap="sm" wrap="nowrap">
-                <TextInput
-                  label={t('З')}
-                  type="date"
-                  value={filterDraft.from}
-                  w={150}
-                  onChange={(event) => { const nextValue = event.currentTarget.value; setFilterDraft((current) => ({ ...current, from: nextValue })) }}
-                />
-                <TextInput
-                  label={t('По')}
-                  type="date"
-                  value={filterDraft.to}
-                  w={150}
-                  onChange={(event) => { const nextValue = event.currentTarget.value; setFilterDraft((current) => ({ ...current, to: nextValue })) }}
-                />
-                <Button color="gray" styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} type="submit" variant="light">
-                  {t('Застосувати')}
-                </Button>
-              </Group>
-            </form>
+          <Group align="end" gap="sm" wrap="nowrap" className="product-capitalizations-filter-row">
+            <TextInput
+              label={t('З')}
+              type="date"
+              value={activeFilters.from}
+              w={150}
+              onChange={(event) => updateFilters({ from: event.currentTarget.value })}
+            />
+            <TextInput
+              label={t('По')}
+              type="date"
+              value={activeFilters.to}
+              w={150}
+              onChange={(event) => updateFilters({ to: event.currentTarget.value })}
+            />
+            <div className="product-capitalizations-filter-spacer" />
             <div className="app-filter-actions">
               <Tooltip label={t('Скинути')}>
                 <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
@@ -466,7 +454,7 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
             >
               {t('Нове оприбуткування')}
             </Button>
-          </div>
+          </Group>
         </div>
 
         {(error || filterError) && (

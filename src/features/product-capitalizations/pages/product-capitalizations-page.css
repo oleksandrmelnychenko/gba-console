@@ -22,16 +22,14 @@
 }
 
 .product-capitalizations-filter-row {
-  align-items: flex-end;
-  display: flex;
-  gap: 12px;
-  justify-content: space-between;
   width: 100%;
 }
 
-.product-capitalizations-filter-form {
-  flex: 0 1 auto;
-  min-width: 0;
+/* Pushes the reset/density/paginator cluster and the create button flush to
+   the trailing edge of the bar (no search field here to grow and do it). */
+.product-capitalizations-filter-spacer {
+  flex: 1 1 auto;
+  min-width: 16px;
 }
 
 .product-capitalizations-page__alert {
