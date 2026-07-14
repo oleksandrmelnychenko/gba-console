@@ -1,7 +1,19 @@
 .product-capitalizations-page {
-  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 24px);
+  box-sizing: border-box;
+  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px);
   min-height: 0;
   overflow: hidden;
+  padding: 6px 4px 0;
+}
+
+/* .console-frame .mantine-Card-root strips border/box-shadow globally
+   (layout.css) so plain-div console-table-shell pages can own their own
+   chrome. This page still renders a real Mantine <Card withBorder>, so
+   restore its chrome explicitly. */
+.product-capitalizations-card {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2) !important;
+  box-shadow: var(--app-card-shadow) !important;
 }
 
 /* Filter strip pinned at the top of the card; the table below it scrolls. */
@@ -41,6 +53,17 @@
 .product-capitalizations-page__table .data-table-scroll {
   flex: 1 1 auto;
   min-height: 0;
+}
+
+.product-capitalizations-page__table .data-table-cell {
+  white-space: nowrap;
+}
+
+.product-capitalizations-page__table .data-table-cell > * {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .product-capitalization-detail-drawer-title,

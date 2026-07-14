@@ -780,7 +780,7 @@ function useProductCapitalizationColumns(
         minWidth: 200,
         accessor: (capitalization) => capitalization.Comment,
         cell: (capitalization) => (
-          <Text size="sm" lineClamp={2}>
+          <Text size="sm" title={displayValue(capitalization.Comment)}>
             {displayValue(capitalization.Comment)}
           </Text>
         ),
