@@ -1577,7 +1577,7 @@ function useProductIncomeDocumentColumns({
         minWidth: 200,
         accessor: (row) => row.client,
         cell: (row) => (
-          <Text size="sm" lineClamp={2}>
+          <Text size="sm" title={displayValue(row.client)}>
             {displayValue(row.client)}
           </Text>
         ),
@@ -1645,7 +1645,7 @@ function useProductIncomeDocumentColumns({
         minWidth: 180,
         accessor: (row) => row.comment || row.document.Comment,
         cell: (row) => (
-          <Text size="sm" lineClamp={2}>
+          <Text size="sm" title={displayValue(row.comment || row.document.Comment)}>
             {displayValue(row.comment || row.document.Comment)}
           </Text>
         ),
