@@ -1,17 +1,64 @@
-/* Online-shop payment registry — chrome aligned with the «Продажі» reference.
-   The page loads all matching payments after a filter set and then filters/scrolls
-   without pagination, so it keeps the table's own maxHeight scroll model; only the
-   filter strip + card shell converge onto the shared primitives. */
+.payment-online-shop-page {
+  box-sizing: border-box;
+  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px);
+  min-height: 0;
+  overflow: hidden;
+  padding: 6px 4px 0;
+}
+
+.payment-online-shop-card {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2) !important;
+  box-shadow: var(--app-card-shadow) !important;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+}
+
+.payment-online-shop-filter-bar {
+  flex: 0 0 auto;
+  overflow-x: auto;
+}
+
 .payment-online-shop-filter-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) max-content max-content max-content minmax(16px, 1fr) max-content;
+  min-width: max-content;
   width: 100%;
 }
 
-/* Push the search / reset / refresh / density cluster to the trailing edge. */
+/* Push the search / reset / density / paginator cluster to the trailing edge. */
 .payment-online-shop-filter-row .app-filter-actions {
-  margin-left: auto;
+  grid-column: 6;
 }
 
 /* Body below the flush filter strip carries its own padding (card is padding={0}). */
 .payment-online-shop-card__body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
   padding: 12px;
+}
+
+.payment-online-shop-page__table {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+}
+
+.payment-online-shop-page__table .data-table {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.payment-online-shop-page__table .data-table-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
 }

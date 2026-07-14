@@ -10,7 +10,7 @@ import {
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
-import { CircleAlert, Receipt, RefreshCw, RotateCcw, Search } from 'lucide-react'
+import { CircleAlert, Receipt, RotateCcw, Search } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -265,7 +265,7 @@ export function PaymentOnlineShopPage() {
   const model = usePaymentOnlineShopModel()
 
   return (
-    <Stack gap="lg">
+    <Stack className="payment-online-shop-page" gap={6}>
       <PaymentShopTableCard model={model} />
       <PaymentShopDetailDrawer
         createError={model.createError}
@@ -349,18 +349,6 @@ function PaymentShopTableCard({ model }: { model: ReturnType<typeof usePaymentOn
                 <RotateCcw size={17} />
               </ActionIcon>
             </Tooltip>
-            <Tooltip label={t('Оновити')}>
-              <ActionIcon
-                aria-label={t('Оновити')}
-                color="gray"
-                loading={isLoading}
-                size={34}
-                variant="light"
-                onClick={() => reload()}
-              >
-                <RefreshCw size={17} />
-              </ActionIcon>
-            </Tooltip>
             <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
             <Paginator
               hasNext={hasNext}
@@ -373,6 +361,7 @@ function PaymentShopTableCard({ model }: { model: ReturnType<typeof usePaymentOn
                 setPage(1)
                 setPageSize(nextPageSize)
               }}
+              onRefresh={reload}
             />
           </div>
         </Group>
@@ -385,21 +374,23 @@ function PaymentShopTableCard({ model }: { model: ReturnType<typeof usePaymentOn
           </Alert>
         )}
 
-        <DataTable
-          columns={columns}
-          data={items}
-          defaultLayout={PAYMENT_SHOP_TABLE_DEFAULT_LAYOUT}
-          density={density}
-          emptyText={t('Оплата магазину')}
-          getRowId={(item, index) => String(item.NetUid || item.Id || index)}
-          isLoading={isLoading}
-          layoutVersion="payment-online-shop-table-1"
-          loadingText={t('Завантаження')}
-          maxHeight="calc(100vh - 320px)"
-          minWidth={1620}
-          tableId="payment-online-shop"
-          onRowClick={openDetail}
-        />
+        <div className="payment-online-shop-page__table">
+          <DataTable
+            columns={columns}
+            data={items}
+            defaultLayout={PAYMENT_SHOP_TABLE_DEFAULT_LAYOUT}
+            density={density}
+            emptyText={t('Оплата магазину')}
+            getRowId={(item, index) => String(item.NetUid || item.Id || index)}
+            height="100%"
+            isLoading={isLoading}
+            layoutVersion="payment-online-shop-table-1"
+            loadingText={t('Завантаження')}
+            minWidth={1620}
+            tableId="payment-online-shop"
+            onRowClick={openDetail}
+          />
+        </div>
       </Stack>
     </Card>
   )
