@@ -1,7 +1,35 @@
-/* Match the «Продажі» reference data-card shadow while keeping the page's
-   existing load-more / max-height scroll model intact. */
+.product-transfers-page {
+  box-sizing: border-box;
+  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px);
+  min-height: 0;
+  overflow: hidden;
+  padding: 6px 4px 0;
+}
+
+/* .console-frame .mantine-Card-root strips border/box-shadow globally
+   (layout.css) so plain-div console-table-shell pages can own their own
+   chrome. This page still renders a real Mantine <Card withBorder>, so
+   restore its chrome explicitly (the box-shadow-only rule here used to lose
+   to that global override — it needed !important too). */
 .product-transfers-card {
-  box-shadow: var(--app-card-shadow);
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2) !important;
+  box-shadow: var(--app-card-shadow) !important;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.product-transfers-card .data-table-cell {
+  white-space: nowrap;
+}
+
+.product-transfers-card .data-table-cell > * {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .product-transfers-filter-bar {
@@ -25,5 +53,27 @@
 }
 
 .product-transfers-body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
   padding: 10px 8px 8px;
+}
+
+.product-transfers-page__table {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.product-transfers-page__table .data-table {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.product-transfers-page__table .data-table-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
 }

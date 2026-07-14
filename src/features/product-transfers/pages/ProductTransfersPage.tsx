@@ -23,7 +23,7 @@ import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { notifications } from '@mantine/notifications'
-import { CircleAlert, Download, Eye, FileSpreadsheet, FileText, Plus, RefreshCw, RotateCcw } from 'lucide-react'
+import { CircleAlert, Download, Eye, FileSpreadsheet, FileText, Plus, RotateCcw } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { type FormEvent, useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -524,7 +524,7 @@ export function ProductTransfersPage() {
 
 function ProductTransfersPageView({ model }: { model: ReturnType<typeof useProductTransfersPageModel> }) {
   return (
-    <Stack gap="lg">
+    <Stack className="product-transfers-page" gap={6}>
       <ProductTransfersTableCard model={model} />
       <ProductTransferDetailDrawer model={model} />
       <ProductTransferCreateModal model={model} />
@@ -565,18 +565,16 @@ function ProductTransfersTableCard({ model }: { model: ReturnType<typeof useProd
                 <RotateCcw size={17} />
               </ActionIcon>
             </Tooltip>
-            <Tooltip label={t('Оновити')}>
-              <ActionIcon
-                aria-label={t('Оновити')}
-                color="gray"
-                loading={isLoading}
-                size={34}
-                variant="default"
-                onClick={() => reload()}
-              >
-                <RefreshCw size={17} />
-              </ActionIcon>
-            </Tooltip>
+            <Paginator
+              isLoading={isLoading}
+              page={page}
+              pageSize={pageSize}
+              pageSizeOptions={PAGE_SIZE_OPTIONS}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+              onRefresh={reload}
+            />
           </div>
           <Button
             color={CREATE_ACTION_COLOR}
@@ -599,35 +597,22 @@ function ProductTransfersTableCard({ model }: { model: ReturnType<typeof useProd
           </Alert>
         )}
 
-        <DataTable
-          columns={columns}
-          data={transfers}
-          defaultLayout={PRODUCT_TRANSFERS_TABLE_DEFAULT_LAYOUT}
-          emptyText={t('Переміщень не знайдено')}
-          getRowId={(transfer, index) => String(transfer.NetUid || transfer.Id || index)}
-          isLoading={isLoading}
-          layoutVersion="product-transfers-table-2"
-          loadingText={t('Завантаження переміщень')}
-          maxHeight="calc(100vh - 340px)"
-          minWidth={1780}
-          tableId="product-transfers"
-          onRowClick={openDetail}
-        />
-
-        {!filterError && (
-          <Group justify="flex-end">
-            <Paginator
-              isLoading={isLoading}
-              page={page}
-              pageSize={pageSize}
-              pageSizeOptions={PAGE_SIZE_OPTIONS}
-              totalPages={totalPages}
-              onPageChange={setPage}
-              onPageSizeChange={setPageSize}
-              onRefresh={reload}
-            />
-          </Group>
-        )}
+        <div className="product-transfers-page__table">
+          <DataTable
+            columns={columns}
+            data={transfers}
+            defaultLayout={PRODUCT_TRANSFERS_TABLE_DEFAULT_LAYOUT}
+            emptyText={t('Переміщень не знайдено')}
+            getRowId={(transfer, index) => String(transfer.NetUid || transfer.Id || index)}
+            height="100%"
+            isLoading={isLoading}
+            layoutVersion="product-transfers-table-2"
+            loadingText={t('Завантаження переміщень')}
+            minWidth={1780}
+            tableId="product-transfers"
+            onRowClick={openDetail}
+          />
+        </div>
       </Stack>
     </Card>
   )
@@ -1019,7 +1004,7 @@ function useProductTransferColumns(
         minWidth: 190,
         accessor: (transfer) => transfer.Comment,
         cell: (transfer) => (
-          <Text size="sm" lineClamp={2}>
+          <Text size="sm" title={displayValue(transfer.Comment)}>
             {displayValue(transfer.Comment)}
           </Text>
         ),
