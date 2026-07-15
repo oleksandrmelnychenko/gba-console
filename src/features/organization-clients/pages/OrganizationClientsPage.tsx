@@ -289,6 +289,7 @@ export function OrganizationClientsPage() {
             columns={columns}
             data={clients}
             defaultLayout={ORGANIZATION_CLIENT_TABLE_DEFAULT_LAYOUT}
+            distributeAvailableWidth
             emptyText={t('Організацій не знайдено')}
             getRowId={(client, index) => String(client.NetUid || client.Id || index)}
             height="100%"

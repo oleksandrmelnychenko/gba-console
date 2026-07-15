@@ -1,12 +1,13 @@
-import { Alert, Badge, Card, Stack, Text, Tooltip } from '@mantine/core'
-import { CircleAlert } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { ActionIcon, Alert, Badge, Stack, Text, Tooltip } from '@mantine/core'
+import { CircleAlert, RefreshCw } from 'lucide-react'
+import { useEffect, useMemo, useReducer, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { getNewEcommerceClients } from '../api/ecommerceClientsApi'
 import type { Client } from '../types'
+import '../../../shared/ui/console-table-page.css'
 import './new-ecommerce-clients-page.css'
 
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
@@ -24,22 +25,15 @@ const NEW_ECOMMERCE_CLIENTS_TABLE_DEFAULT_LAYOUT = {
   density: 'normal',
 } satisfies DataTableDefaultLayout
 
-const NEW_ECOMMERCE_CLIENT_TABLE_CELL_STYLE = {
-  display: 'block',
-  lineHeight: '18px',
-  maxWidth: '100%',
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap',
-} as const
-
 export function NewEcommerceClientsPage() {
   const { t } = useI18n()
   const location = useLocation()
   const navigate = useNavigate()
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const [clients, setClients] = useState<Client[]>([])
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setLoading] = useState(true)
+  const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
 
   useEffect(() => {
     let cancelled = false
@@ -71,7 +65,7 @@ export function NewEcommerceClientsPage() {
     return () => {
       cancelled = true
     }
-  }, [t])
+  }, [reloadKey, t])
 
   const columns = useMemo<DataTableColumn<Client>[]>(
     () => [
@@ -163,11 +157,29 @@ export function NewEcommerceClientsPage() {
   }
 
   return (
-    <Stack className="new-ecommerce-clients-page" gap={6}>
-      <Card className="app-data-card new-ecommerce-clients-card" withBorder radius="md" padding={0}>
+    <Stack className="new-ecommerce-clients-page console-table-page" gap={6}>
+      <div className="new-ecommerce-clients-card console-table-shell">
+        <div className="app-filter-bar new-ecommerce-clients-filter-bar">
+          <div className="app-filter-actions">
+            <Tooltip label={t('Оновити')}>
+              <ActionIcon
+                aria-label={t('Оновити')}
+                color="gray"
+                loading={isLoading}
+                size={34}
+                variant="light"
+                onClick={() => reload()}
+              >
+                <RefreshCw size={17} />
+              </ActionIcon>
+            </Tooltip>
+          </div>
+          <div ref={setTableToolbarSlot} className="new-ecommerce-clients-table-toolbar-slot" />
+        </div>
+
         {error && (
           <Alert
-            className="new-ecommerce-clients-page__alert"
+            className="console-table-alert"
             color="red"
             icon={<CircleAlert size={18} />}
             variant="light"
@@ -176,12 +188,13 @@ export function NewEcommerceClientsPage() {
           </Alert>
         )}
 
-        <div className="new-ecommerce-clients-page__table">
+        <div className="new-ecommerce-clients-page__table console-table-body">
           <DataTable
             key="new-ecommerce-clients-table-default-freeze-4"
             columns={columns}
             data={clients}
             defaultLayout={NEW_ECOMMERCE_CLIENTS_TABLE_DEFAULT_LAYOUT}
+            distributeAvailableWidth
             emptyText={t('Нових e-commerce клієнтів не знайдено')}
             getRowId={(client, index) => String(client.NetUid || client.Id || index)}
             height="100%"
@@ -189,23 +202,22 @@ export function NewEcommerceClientsPage() {
             layoutVersion="new-ecommerce-clients-table-default-freeze-4"
             loadingText={t('Завантаження клієнтів')}
             minWidth={1280}
-            showLayoutControls={false}
+            showLayoutControls
             tableId="new-ecommerce-clients"
+            toolbarPortalTarget={tableToolbarSlot}
             onRowClick={openClient}
           />
         </div>
-      </Card>
+      </div>
     </Stack>
   )
 }
 
 function NewEcommerceClientTableValue({ fw, value }: { fw?: number; value: string }) {
   return (
-    <Tooltip label={value} openDelay={350} withArrow>
-      <Text component="span" fw={fw} style={NEW_ECOMMERCE_CLIENT_TABLE_CELL_STYLE}>
-        {value}
-      </Text>
-    </Tooltip>
+    <Text className="new-ecommerce-clients-table-value" component="span" fw={fw} title={value}>
+      {value}
+    </Text>
   )
 }
 

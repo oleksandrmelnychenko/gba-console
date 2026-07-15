@@ -61,9 +61,8 @@ const SUPPLIER_TABLE_CELL_STYLE = {
   display: 'block',
   lineHeight: '18px',
   maxWidth: '100%',
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap',
+  overflowWrap: 'anywhere',
+  whiteSpace: 'normal',
 } as const
 const SUPPLIER_TABLE_MONO_STYLE = {
   fontFamily: 'var(--font-mono)',

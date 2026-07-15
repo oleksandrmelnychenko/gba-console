@@ -12,7 +12,7 @@ import {
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { useDebouncedValue } from '@mantine/hooks'
 import { CircleAlert, Receipt, RotateCcw, Search, ShoppingCart } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -57,13 +57,14 @@ export function OnlineShopClientsPage() {
   const [isLoading, setLoading] = useValueState(true)
   const [isCartLoading, setCartLoading] = useValueState(false)
   const [isSalesOpen, setSalesOpen] = useValueState(false)
+  const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const cartRequestRef = useRef(0)
   const selectedClientNetId = selectedClient ? getRetailClientNetId(selectedClient) : ''
   const normalizedSearchValue = debouncedSearchValue.trim()
   const isSearchSettling = searchValue.trim() !== normalizedSearchValue
   const isTableBusy = isLoading || isSearchSettling
   const offset = (page - 1) * pageSize
-  const totalPages = totalClients > 0 ? Math.max(1, Math.ceil(totalClients / pageSize)) : page
+  const totalPages = Math.max(1, Math.ceil(totalClients / pageSize))
   const cartTotal = useMemo(() => cartItems.reduce((total, item) => total + getRetailItemTotal(item), 0), [cartItems])
   const hasActiveSearch = Boolean(searchValue.trim())
   const visibleFrom = totalClients === 0 ? 0 : offset + 1
@@ -73,6 +74,12 @@ export function OnlineShopClientsPage() {
   useEffect(() => {
     setPage(1)
   }, [normalizedSearchValue, setPage])
+
+  useEffect(() => {
+    if (page > totalPages) {
+      setPage(totalPages)
+    }
+  }, [page, setPage, totalPages])
 
   useEffect(() => {
     let cancelled = false
@@ -113,7 +120,7 @@ export function OnlineShopClientsPage() {
     return () => {
       cancelled = true
     }
-  }, [normalizedSearchValue, offset, pageSize, setCartError, setCartItems, setCartLoading, setClients, setError, setLoading, setSelectedClient, setTotalClients, t])
+  }, [normalizedSearchValue, offset, pageSize, reloadKey, setCartError, setCartItems, setCartLoading, setClients, setError, setLoading, setSelectedClient, setTotalClients, t])
 
   async function selectClient(client: RetailClient) {
     const netId = getRetailClientNetId(client)
@@ -182,7 +189,7 @@ export function OnlineShopClientsPage() {
           />
 
           <div className="app-filter-actions online-shop-clients-filter-actions">
-            <span className="online-shop-clients-summary">
+            <span className="console-table-summary">
               {visibleFrom}-{visibleTo} / {totalClients}
             </span>
             <Tooltip label={t('Скинути')}>
@@ -190,11 +197,11 @@ export function OnlineShopClientsPage() {
                 aria-label={t('Скинути')}
                 color="gray"
                 disabled={!hasActiveSearch}
-                size={38}
+                size={34}
                 variant="light"
                 onClick={resetSearch}
               >
-                <RotateCcw size={18} />
+                <RotateCcw size={17} />
               </ActionIcon>
             </Tooltip>
             <Paginator
@@ -207,6 +214,7 @@ export function OnlineShopClientsPage() {
                 setPage(1)
                 setPageSize(nextPageSize)
               }}
+              onRefresh={reload}
             />
           </div>
           <div ref={setTableToolbarSlot} className="online-shop-clients-table-toolbar-slot" />
@@ -224,6 +232,7 @@ export function OnlineShopClientsPage() {
               columns={columns}
               data={clients}
               defaultLayout={ONLINE_SHOP_CLIENTS_TABLE_DEFAULT_LAYOUT}
+              distributeAvailableWidth
               emptyText={t('Клієнтів інтернет-магазину не знайдено')}
               getRowId={(client, index) => getRetailClientRowKey(client, index)}
               height="100%"
