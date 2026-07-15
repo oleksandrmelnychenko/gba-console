@@ -1,20 +1,32 @@
 .vat-reports-page {
   box-sizing: border-box;
-  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 24px);
+  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px);
   min-height: 0;
   overflow: hidden;
-  padding: 0 4px;
+  padding: 6px 4px 0;
+}
+
+.vat-reports-card {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2) !important;
+  box-shadow: var(--app-card-shadow) !important;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
 }
 
 .vat-reports-filter-bar {
+  flex: 0 0 auto;
   overflow-x: auto;
 }
 
 .vat-reports-filter-row {
   display: grid;
   grid-template-columns: max-content minmax(16px, 1fr) max-content;
-  width: max(100%, max-content);
-  min-width: 0;
+  min-width: max-content;
+  width: 100%;
 }
 
 .vat-reports-filter-row > .app-filter-actions {
@@ -22,9 +34,37 @@
 }
 
 .vat-reports-alert {
+  flex: 0 0 auto;
   margin: 10px 8px 0;
 }
 
-.vat-reports-footer {
-  padding: 8px;
+.vat-reports-page__table {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+}
+
+.vat-reports-page__table .data-table {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.vat-reports-page__table .data-table-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.vat-reports-page__table .data-table-cell {
+  white-space: nowrap;
+}
+
+.vat-reports-page__table .data-table-cell > * {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

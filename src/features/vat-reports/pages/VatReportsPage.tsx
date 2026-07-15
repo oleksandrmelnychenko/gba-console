@@ -8,7 +8,7 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
-import { CircleAlert, RefreshCw, RotateCcw } from 'lucide-react'
+import { CircleAlert, RotateCcw } from 'lucide-react'
 import { useEffect, useMemo, useReducer, useRef } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -135,7 +135,7 @@ export function VatReportsPage() {
     const nextFromDate = shiftDate(-7)
     const nextToDate = formatLocalDate(new Date())
 
-    if (nextFromDate === fromDate && nextToDate === toDate) {
+    if (nextFromDate === fromDate && nextToDate === toDate && page === 1) {
       return
     }
 
@@ -180,12 +180,19 @@ export function VatReportsPage() {
                   <RotateCcw size={17} />
                 </ActionIcon>
               </Tooltip>
-              <Tooltip label={t('Оновити')}>
-                <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={34} variant="light" onClick={refreshReports}>
-                  <RefreshCw size={18} />
-                </ActionIcon>
-              </Tooltip>
               <DataTableDensityToggle density={density} size={34} onToggle={toggleDensity} />
+              <Paginator
+                hasNext={hasMore}
+                isLoading={isLoading}
+                page={page}
+                pageSize={pageSize}
+                onPageChange={setPage}
+                onPageSizeChange={(nextPageSize) => {
+                  setPageSize(nextPageSize)
+                  setPage(1)
+                }}
+                onRefresh={refreshReports}
+              />
             </div>
           </Group>
         </div>
@@ -202,33 +209,21 @@ export function VatReportsPage() {
           </Alert>
         )}
 
-        <DataTable
-          columns={columns}
-          data={reports}
-          defaultLayout={VAT_REPORTS_TABLE_DEFAULT_LAYOUT}
-          density={density}
-          emptyText={t('VAT записів не знайдено')}
-          getRowId={(report, index) => `${report.FromDate || 'vat'}-${getReportNumber(report)}-${index}`}
-          isLoading={isLoading}
-          layoutVersion="vat-reports-table-1"
-          maxHeight="calc(100vh - 330px)"
-          minWidth={900}
-          tableId="vat-reports"
-        />
-
-        <Group className="vat-reports-footer" justify="flex-end">
-          <Paginator
-            hasNext={hasMore}
+        <div className="vat-reports-page__table">
+          <DataTable
+            columns={columns}
+            data={reports}
+            defaultLayout={VAT_REPORTS_TABLE_DEFAULT_LAYOUT}
+            density={density}
+            emptyText={t('VAT записів не знайдено')}
+            getRowId={(report, index) => `${report.FromDate || 'vat'}-${getReportNumber(report)}-${index}`}
+            height="100%"
             isLoading={isLoading}
-            page={page}
-            pageSize={pageSize}
-            onPageChange={setPage}
-            onPageSizeChange={(nextPageSize) => {
-              setPageSize(nextPageSize)
-              setPage(1)
-            }}
+            layoutVersion="vat-reports-table-1"
+            minWidth={900}
+            tableId="vat-reports"
           />
-        </Group>
+        </div>
       </Card>
     </Stack>
   )
@@ -255,7 +250,11 @@ function useVatReportColumns(indexMap: Map<VatReport, number>): DataTableColumn<
         minWidth: 140,
         accessor: (report) => report.FromDate,
         cell: (report) => (
-          <Text size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>
+          <Text
+            size="sm"
+            style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}
+            title={formatDateTime(report.FromDate)}
+          >
             {formatDateTime(report.FromDate)}
           </Text>
         ),
@@ -266,7 +265,12 @@ function useVatReportColumns(indexMap: Map<VatReport, number>): DataTableColumn<
         minWidth: 220,
         accessor: getReportNumber,
         cell: (report) => (
-          <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0, textTransform: 'uppercase' }}>
+          <Text
+            fw={600}
+            size="sm"
+            style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0, textTransform: 'uppercase' }}
+            title={displayValue(getReportNumber(report))}
+          >
             {displayValue(getReportNumber(report))}
           </Text>
         ),
@@ -277,7 +281,15 @@ function useVatReportColumns(indexMap: Map<VatReport, number>): DataTableColumn<
         width: 140,
         minWidth: 120,
         accessor: (report) => getReportType(report, t),
-        cell: (report) => getReportType(report, t),
+        cell: (report) => {
+          const type = getReportType(report, t)
+
+          return (
+            <Text size="sm" title={type}>
+              {type}
+            </Text>
+          )
+        },
       },
       {
         id: 'rate',
@@ -287,7 +299,7 @@ function useVatReportColumns(indexMap: Map<VatReport, number>): DataTableColumn<
         align: 'right',
         accessor: (report) => report.VatPercent,
         cell: (report) => (
-          <Text className="app-money" size="sm" ta="right">
+          <Text className="app-money" size="sm" ta="right" title={formatPercent(report.VatPercent)}>
             {formatPercent(report.VatPercent)}
           </Text>
         ),
@@ -300,7 +312,7 @@ function useVatReportColumns(indexMap: Map<VatReport, number>): DataTableColumn<
         align: 'right',
         accessor: (report) => report.VatAmountEU,
         cell: (report) => (
-          <Text className="app-money" size="sm" ta="right">
+          <Text className="app-money" size="sm" ta="right" title={formatMoney(report.VatAmountEU)}>
             {formatMoney(report.VatAmountEU)}
           </Text>
         ),
@@ -313,7 +325,7 @@ function useVatReportColumns(indexMap: Map<VatReport, number>): DataTableColumn<
         align: 'right',
         accessor: (report) => report.VatAmountPL,
         cell: (report) => (
-          <Text className="app-money" size="sm" ta="right">
+          <Text className="app-money" size="sm" ta="right" title={formatMoney(report.VatAmountPL)}>
             {formatMoney(report.VatAmountPL)}
           </Text>
         ),
