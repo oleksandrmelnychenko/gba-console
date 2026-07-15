@@ -1,6 +1,6 @@
-import { ActionIcon, Alert, Button, Select, Stack, Text, TextInput, Tooltip } from '@mantine/core'
-import { CircleAlert, RefreshCw, RotateCcw } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import { ActionIcon, Alert, Select, Stack, Text, TextInput, Tooltip } from '@mantine/core'
+import { CircleAlert, RotateCcw } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
@@ -8,6 +8,7 @@ import { getSupplyUkraineOrderDisplayNumber } from '../../../shared/supplyUkrain
 import { translate } from '../../../shared/i18n/translate'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { getWarehouseUkraineOrders } from '../api/ordersApi'
 import type { SupplyOrderUkraine } from '../types'
 import { displayValue, formatDateTime, getDateShiftedByDays, toDateTimeQuery, toIsoString } from './dateHelpers'
@@ -42,22 +43,19 @@ type OrdersTabState = {
   totalQty: number
   error: string | null
   isLoading: boolean
-  isLoadingMore: boolean
+  page: number
   pageSize: number
-  hasMore: boolean
 }
 
 type OrdersTabAction =
   | { type: 'applyFilters'; filters: FilterDraft }
   | { type: 'resetFilters'; filters: FilterDraft }
   | { type: 'setPageSize'; pageSize: number }
+  | { type: 'setPage'; page: number }
   | { type: 'invalidFilters' }
   | { type: 'loadStarted' }
-  | { type: 'loadSucceeded'; orders: SupplyOrderUkraine[]; totalQty: number; hasMore: boolean }
+  | { type: 'loadSucceeded'; orders: SupplyOrderUkraine[]; totalQty: number }
   | { type: 'loadFailed'; error: string }
-  | { type: 'loadMoreStarted' }
-  | { type: 'loadMoreSucceeded'; orders: SupplyOrderUkraine[]; totalQty: number; hasMore: boolean; requestOffset: number }
-  | { type: 'loadMoreFailed'; error: string }
 
 function createInitialOrdersState(initialFilters: FilterDraft): OrdersTabState {
   return {
@@ -67,30 +65,31 @@ function createInitialOrdersState(initialFilters: FilterDraft): OrdersTabState {
     totalQty: 0,
     error: null,
     isLoading: true,
-    isLoadingMore: false,
+    page: 1,
     pageSize: DEFAULT_PAGE_SIZE,
-    hasMore: false,
   }
 }
 
 function ordersTabReducer(state: OrdersTabState, action: OrdersTabAction): OrdersTabState {
   switch (action.type) {
     case 'applyFilters':
-      return { ...state, filterDraft: action.filters, activeFilters: action.filters }
+      return { ...state, filterDraft: action.filters, activeFilters: action.filters, page: 1 }
     case 'resetFilters':
-      return { ...state, filterDraft: action.filters, activeFilters: action.filters }
+      return { ...state, filterDraft: action.filters, activeFilters: action.filters, page: 1 }
     case 'setPageSize':
-      return { ...state, pageSize: action.pageSize }
+      return { ...state, page: 1, pageSize: action.pageSize }
+    case 'setPage':
+      return { ...state, page: action.page }
     case 'invalidFilters':
-      return { ...state, orders: [], totalQty: 0, hasMore: false, isLoading: false }
+      return { ...state, orders: [], totalQty: 0, isLoading: false }
     case 'loadStarted':
       return { ...state, isLoading: true, error: null }
     case 'loadSucceeded':
       return {
         ...state,
         orders: action.orders,
+        page: Math.min(state.page, Math.max(1, Math.ceil(action.totalQty / state.pageSize))),
         totalQty: action.totalQty,
-        hasMore: action.hasMore,
         isLoading: false,
       }
     case 'loadFailed':
@@ -98,23 +97,9 @@ function ordersTabReducer(state: OrdersTabState, action: OrdersTabAction): Order
         ...state,
         orders: [],
         totalQty: 0,
-        hasMore: false,
         error: action.error,
         isLoading: false,
       }
-    case 'loadMoreStarted':
-      return { ...state, isLoadingMore: true, error: null }
-    case 'loadMoreSucceeded':
-      return {
-        ...state,
-        orders:
-          state.orders.length === action.requestOffset ? [...state.orders, ...action.orders] : state.orders,
-        totalQty: action.totalQty,
-        hasMore: action.hasMore,
-        isLoadingMore: false,
-      }
-    case 'loadMoreFailed':
-      return { ...state, error: action.error, isLoadingMore: false }
   }
 }
 
@@ -126,26 +111,23 @@ function useOrdersTabModel() {
   const initialState = useMemo(() => createInitialOrdersState(initialFilters), [initialFilters])
   const [state, dispatchState] = useReducer(ordersTabReducer, initialState)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
-  const { activeFilters, orders, pageSize } = state
+  const { activeFilters, orders, page, pageSize, totalQty } = state
 
   useEffect(() => {
     lastOrderFilters = activeFilters
   }, [activeFilters])
 
   const filterError = getFilterError(activeFilters.from, activeFilters.to)
-  const listRequestKey = `${activeFilters.from}|${activeFilters.to}|${activeFilters.placed}|${pageSize}`
-  const listRequestKeyRef = useRef(listRequestKey)
-  const orderIndexMap = useMemo(() => buildIndexMap(orders), [orders])
+  const pageOffset = (page - 1) * pageSize
+  const hasNext = totalQty > 0 ? pageOffset + orders.length < totalQty : orders.length === pageSize
+  const totalPages = totalQty > 0 ? Math.ceil(totalQty / pageSize) : undefined
+  const orderIndexMap = useMemo(() => buildIndexMap(orders, pageOffset), [orders, pageOffset])
   const reloadFromRealtime = useCallback(() => {
     reload()
   }, [])
 
   useRealtimeEvent(realtimeEvents.supplyOrderAdded, reloadFromRealtime)
   useRealtimeEvent(realtimeEvents.supplyOrderNotification, reloadFromRealtime)
-
-  useEffect(() => {
-    listRequestKeyRef.current = listRequestKey
-  }, [listRequestKey])
 
   useEffect(() => {
     if (filterError) {
@@ -163,7 +145,7 @@ function useOrdersTabModel() {
           from: toIsoString(activeFilters.from),
           to: toDateTimeQuery(activeFilters.to, 'end'),
           limit: pageSize,
-          offset: 0,
+          offset: pageOffset,
           placed: activeFilters.placed,
         })
 
@@ -172,12 +154,6 @@ function useOrdersTabModel() {
             type: 'loadSucceeded',
             orders: result.items,
             totalQty: result.totalQty,
-            hasMore: getOrdersHasMore({
-              offset: 0,
-              itemsLength: result.items.length,
-              pageSize,
-              totalQty: result.totalQty,
-            }),
           })
         }
       } catch (loadError) {
@@ -195,45 +171,7 @@ function useOrdersTabModel() {
     return () => {
       cancelled = true
     }
-  }, [activeFilters, filterError, pageSize, reloadKey, t])
-
-  async function loadMoreOrders() {
-    const requestKey = listRequestKeyRef.current
-    const requestOffset = orders.length
-    dispatchState({ type: 'loadMoreStarted' })
-
-    try {
-      const result = await getWarehouseUkraineOrders({
-        from: toIsoString(activeFilters.from),
-        to: toDateTimeQuery(activeFilters.to, 'end'),
-        limit: pageSize,
-        offset: requestOffset,
-        placed: activeFilters.placed,
-      })
-
-      if (listRequestKeyRef.current === requestKey) {
-        dispatchState({
-          type: 'loadMoreSucceeded',
-          orders: result.items,
-          totalQty: result.totalQty,
-          hasMore: getOrdersHasMore({
-            offset: requestOffset,
-            itemsLength: result.items.length,
-            pageSize,
-            totalQty: result.totalQty,
-          }),
-          requestOffset,
-        })
-      }
-    } catch (loadError) {
-      if (listRequestKeyRef.current === requestKey) {
-        dispatchState({
-          type: 'loadMoreFailed',
-          error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити замовлення'),
-        })
-      }
-    }
-  }
+  }, [activeFilters, filterError, pageOffset, pageSize, reloadKey, t])
 
   function applyFilters(nextFilters: FilterDraft) {
     dispatchState({ type: 'applyFilters', filters: nextFilters })
@@ -245,6 +183,10 @@ function useOrdersTabModel() {
 
   function setPageSize(pageSize: number) {
     dispatchState({ type: 'setPageSize', pageSize })
+  }
+
+  function setPage(page: number) {
+    dispatchState({ type: 'setPage', page })
   }
 
   function openOrder(order: SupplyOrderUkraine) {
@@ -260,11 +202,13 @@ function useOrdersTabModel() {
     applyFilters,
     columns,
     filterError,
-    loadMoreOrders,
+    hasNext,
     openOrder,
     reload,
     resetFilters,
+    setPage,
     setPageSize,
+    totalPages,
   }
 }
 
@@ -277,22 +221,24 @@ export function OrdersTab() {
     <Stack className="warehouse-ukraine-tab" gap={6}>
       <div className="warehouse-ukraine-shell console-table-shell">
         <div className="app-filter-bar warehouse-ukraine-filter-bar is-orders">
-            <TextInput
-              className="warehouse-ukraine-filter-input"
-              label={t('Початкова дата')}
-              max={model.filterDraft.to || undefined}
-              type="date"
-              value={model.filterDraft.from}
-              onChange={(event) => model.applyFilters({ ...model.filterDraft, from: event.currentTarget.value })}
-            />
-            <TextInput
-              className="warehouse-ukraine-filter-input"
-              label={t('Кінцева дата')}
-              min={model.filterDraft.from || undefined}
-              type="date"
-              value={model.filterDraft.to}
-              onChange={(event) => model.applyFilters({ ...model.filterDraft, to: event.currentTarget.value })}
-            />
+            <div className="app-filter-date-range">
+              <TextInput
+                className="warehouse-ukraine-filter-input"
+                label={t('Від')}
+                max={model.filterDraft.to || undefined}
+                type="date"
+                value={model.filterDraft.from}
+                onChange={(event) => model.applyFilters({ ...model.filterDraft, from: event.currentTarget.value })}
+              />
+              <TextInput
+                className="warehouse-ukraine-filter-input"
+                label={t('До')}
+                min={model.filterDraft.from || undefined}
+                type="date"
+                value={model.filterDraft.to}
+                onChange={(event) => model.applyFilters({ ...model.filterDraft, to: event.currentTarget.value })}
+              />
+            </div>
             <Select
               className="warehouse-ukraine-filter-input"
               allowDeselect={false}
@@ -311,25 +257,16 @@ export function OrdersTab() {
                   <RotateCcw size={17} />
                 </ActionIcon>
               </Tooltip>
-              <Tooltip label={t('Оновити')}>
-                <ActionIcon
-                  aria-label={t('Оновити')}
-                  color="gray"
-                  loading={model.isLoading}
-                  size={34}
-                  variant="light"
-                  onClick={() => model.reload()}
-                >
-                  <RefreshCw size={17} />
-                </ActionIcon>
-              </Tooltip>
-              <Select
-                aria-label={t('Кількість рядків')}
-                data={PAGE_SIZE_OPTIONS}
-                size="xs"
-                value={String(model.pageSize)}
-                w={76}
-                onChange={(value) => model.setPageSize(Number(value || DEFAULT_PAGE_SIZE))}
+              <Paginator
+                hasNext={model.hasNext}
+                isLoading={model.isLoading}
+                page={model.page}
+                pageSize={model.pageSize}
+                pageSizeOptions={PAGE_SIZE_OPTIONS}
+                totalPages={model.totalPages}
+                onPageChange={model.setPage}
+                onPageSizeChange={model.setPageSize}
+                onRefresh={() => model.reload()}
               />
             </div>
             <div ref={setTableToolbarSlot} className="warehouse-ukraine-table-toolbar-slot" />
@@ -346,6 +283,7 @@ export function OrdersTab() {
             columns={model.columns}
             data={model.orders}
             defaultLayout={TABLE_DEFAULT_LAYOUT}
+            distributeAvailableWidth
             emptyText={t('Замовлень не знайдено')}
             getRowId={(order, index) => String(order.NetUid || order.Id || index)}
             height="100%"
@@ -358,17 +296,6 @@ export function OrdersTab() {
             onRowClick={model.openOrder}
           />
           </div>
-
-          {model.hasMore && (
-            <div className="console-table-footer warehouse-ukraine-table-footer">
-              <Text c="dimmed" size="sm">
-                {t('Показано')} {model.orders.length} / {model.totalQty}
-              </Text>
-              <Button color="gray" loading={model.isLoadingMore} variant="light" onClick={model.loadMoreOrders}>
-                {t('Завантажити ще')}
-              </Button>
-            </div>
-          )}
       </div>
     </Stack>
   )
@@ -462,30 +389,12 @@ function useOrdersColumns(indexMap: Map<SupplyOrderUkraine, number>) {
   )
 }
 
-function buildIndexMap(orders: SupplyOrderUkraine[]): Map<SupplyOrderUkraine, number> {
+function buildIndexMap(orders: SupplyOrderUkraine[], offset = 0): Map<SupplyOrderUkraine, number> {
   return orders.reduce((indexMap, order, index) => {
-    indexMap.set(order, index + 1)
+    indexMap.set(order, offset + index + 1)
 
     return indexMap
   }, new Map<SupplyOrderUkraine, number>())
-}
-
-function getOrdersHasMore({
-  offset,
-  itemsLength,
-  pageSize,
-  totalQty,
-}: {
-  offset: number
-  itemsLength: number
-  pageSize: number
-  totalQty?: number | null
-}): boolean {
-  if (typeof totalQty === 'number' && Number.isFinite(totalQty)) {
-    return offset + itemsLength < totalQty && itemsLength > 0
-  }
-
-  return itemsLength === pageSize
 }
 
 function getFilterError(from: string, to: string): string | null {

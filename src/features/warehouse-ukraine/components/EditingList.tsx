@@ -1,6 +1,6 @@
-import { ActionIcon, Alert, Anchor, Badge, Button, Checkbox, Group, Select, SimpleGrid, Stack, Text, TextInput, Tooltip } from '@mantine/core'
+import { ActionIcon, Alert, Anchor, Badge, Button, Checkbox, Group, SimpleGrid, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { Check, CircleAlert, RefreshCw, RotateCcw } from 'lucide-react'
+import { Check, CircleAlert, RotateCcw } from 'lucide-react'
 import { type ReactNode, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -12,13 +12,14 @@ import type { SaleAuditStatistic } from '../../../shared/sale-audit/saleAuditTyp
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
+import { Paginator } from '../../../shared/ui/paginator/Paginator'
+import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
 import { TransporterIcon } from '../../../shared/transporter-icons/TransporterIcon'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import type { EditingItemsResponse, EditingActItem, WarehouseUkraineShipmentDetails, WarehouseUkraineUpdateDataCarrier, WarehouseUkraineUser } from '../types'
 import { displayValue, formatDateTime, getDateShiftedByDays, toDateString } from './dateHelpers'
 
-const DEFAULT_PAGE_SIZE = 20
-const PAGE_SIZE_OPTIONS = ['20', '40', '60', '100']
+const DEFAULT_PAGE_SIZE = DEFAULT_PAGINATOR_PAGE_SIZE
 
 type FilterDraft = {
   from: string
@@ -53,11 +54,10 @@ export function EditingList({ kind, layoutVersion, loader, onLoaded, onProcessed
   const [activeFilters, setActiveFilters] = useValueState<FilterDraft>(initialFilters)
   const [items, setItems] = useValueState<EditingActItem[]>([])
   const [totalQty, setTotalQty] = useValueState(0)
-  const [hasMore, setHasMore] = useValueState(false)
   const [pageSize, setPageSize] = useValueState(DEFAULT_PAGE_SIZE)
+  const [page, setPage] = useValueState(1)
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
-  const [isLoadingMore, setLoadingMore] = useValueState(false)
   const [isProcessing, setProcessing] = useValueState(false)
   const [confirmItem, setConfirmItem] = useValueState<EditingActItem | null>(null)
   const [auditStatistic, setAuditStatistic] = useValueState<SaleAuditStatistic | null>(null)
@@ -66,19 +66,15 @@ export function EditingList({ kind, layoutVersion, loader, onLoaded, onProcessed
   const auditRequestRef = useRef(0)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const filterError = getFilterError(activeFilters.from, activeFilters.to)
-  const itemIndexMap = useMemo(() => buildIndexMap(items), [items])
-  const listRequestKey = `${activeFilters.from}|${activeFilters.to}|${activeFilters.isDevelopment}|${pageSize}`
-  const listRequestKeyRef = useRef(listRequestKey)
-
-  useEffect(() => {
-    listRequestKeyRef.current = listRequestKey
-  }, [listRequestKey])
+  const pageOffset = (page - 1) * pageSize
+  const itemIndexMap = useMemo(() => buildIndexMap(items, pageOffset), [items, pageOffset])
+  const totalPages = totalQty > 0 ? Math.ceil(totalQty / pageSize) : undefined
+  const hasNext = totalQty > 0 ? page * pageSize < totalQty : items.length === pageSize
 
   useEffect(() => {
     if (filterError) {
       setItems([])
       setTotalQty(0)
-      setHasMore(false)
       setLoading(false)
       return
     }
@@ -94,21 +90,27 @@ export function EditingList({ kind, layoutVersion, loader, onLoaded, onProcessed
           from: toDateString(activeFilters.from),
           to: toDateString(activeFilters.to),
           limit: pageSize,
-          offset: 0,
+          offset: pageOffset,
           isDevelopment: activeFilters.isDevelopment,
         })
 
         if (!cancelled) {
+          const lastPage = Math.max(1, Math.ceil(result.totalQty / pageSize))
+
+          if (page > lastPage) {
+            setPage(lastPage)
+
+            return
+          }
+
           setItems(result.items)
           setTotalQty(result.totalQty)
-          setHasMore(result.items.length === pageSize)
           onLoaded?.()
         }
       } catch (loadError) {
         if (!cancelled) {
           setItems([])
           setTotalQty(0)
-          setHasMore(false)
           setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити дані'))
         }
       } finally {
@@ -123,7 +125,7 @@ export function EditingList({ kind, layoutVersion, loader, onLoaded, onProcessed
     return () => {
       cancelled = true
     }
-  }, [activeFilters, filterError, loader, onLoaded, pageSize, reloadKey, setError, setHasMore, setItems, setLoading, setTotalQty, t])
+  }, [activeFilters, filterError, loader, onLoaded, page, pageOffset, pageSize, reloadKey, setError, setItems, setLoading, setPage, setTotalQty, t])
 
   const columns = useEditingColumns({
     indexMap: itemIndexMap,
@@ -131,45 +133,21 @@ export function EditingList({ kind, layoutVersion, loader, onLoaded, onProcessed
     onProcess: openProcessConfirm,
   })
 
-  async function loadMoreItems() {
-    const requestKey = listRequestKeyRef.current
-    const requestOffset = items.length
-    setLoadingMore(true)
-    setError(null)
-
-    try {
-      const result = await loader({
-        from: toDateString(activeFilters.from),
-        to: toDateString(activeFilters.to),
-        limit: pageSize,
-        offset: requestOffset,
-        isDevelopment: activeFilters.isDevelopment,
-      })
-
-      if (listRequestKeyRef.current === requestKey) {
-        setItems((current) => (current.length === requestOffset ? [...current, ...result.items] : current))
-        setTotalQty(result.totalQty)
-        setHasMore(result.items.length === pageSize)
-      }
-    } catch (loadError) {
-      if (listRequestKeyRef.current === requestKey) {
-        setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити дані'))
-      }
-    } finally {
-      if (listRequestKeyRef.current === requestKey) {
-        setLoadingMore(false)
-      }
-    }
-  }
-
   function applyFilters(nextFilters: FilterDraft) {
+    setPage(1)
     setFilterDraft(nextFilters)
     setActiveFilters(nextFilters)
   }
 
   function resetFilters() {
+    setPage(1)
     setFilterDraft(initialFilters)
     setActiveFilters(initialFilters)
+  }
+
+  function changePageSize(nextPageSize: number) {
+    setPage(1)
+    setPageSize(nextPageSize || DEFAULT_PAGE_SIZE)
   }
 
   function openProcessConfirm(item: EditingActItem) {
@@ -262,22 +240,24 @@ export function EditingList({ kind, layoutVersion, loader, onLoaded, onProcessed
     <Stack className="warehouse-ukraine-tab" gap={6}>
       <div className="warehouse-ukraine-shell console-table-shell">
         <div className="app-filter-bar warehouse-ukraine-filter-bar is-editing">
-          <TextInput
-            className="warehouse-ukraine-filter-input"
-            label={t('Початкова дата')}
-            max={filterDraft.to || undefined}
-            type="date"
-            value={filterDraft.from}
-            onChange={(event) => applyFilters({ ...filterDraft, from: event.currentTarget.value })}
-          />
-          <TextInput
-            className="warehouse-ukraine-filter-input"
-            label={t('Кінцева дата')}
-            min={filterDraft.from || undefined}
-            type="date"
-            value={filterDraft.to}
-            onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
-          />
+          <div className="app-filter-date-range">
+            <TextInput
+              className="warehouse-ukraine-filter-input"
+              label={t('Від')}
+              max={filterDraft.to || undefined}
+              type="date"
+              value={filterDraft.from}
+              onChange={(event) => applyFilters({ ...filterDraft, from: event.currentTarget.value })}
+            />
+            <TextInput
+              className="warehouse-ukraine-filter-input"
+              label={t('До')}
+              min={filterDraft.from || undefined}
+              type="date"
+              value={filterDraft.to}
+              onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
+            />
+          </div>
           <Checkbox
             checked={filterDraft.isDevelopment}
             label={t('Опрацьовані')}
@@ -289,18 +269,15 @@ export function EditingList({ kind, layoutVersion, loader, onLoaded, onProcessed
                 <RotateCcw size={17} />
               </ActionIcon>
             </Tooltip>
-            <Tooltip label={t('Оновити')}>
-              <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={34} variant="light" onClick={() => reload()}>
-                <RefreshCw size={17} />
-              </ActionIcon>
-            </Tooltip>
-            <Select
-              aria-label={t('Кількість рядків')}
-              data={PAGE_SIZE_OPTIONS}
-              size="xs"
-              value={String(pageSize)}
-              w={76}
-              onChange={(value) => setPageSize(Number(value || DEFAULT_PAGE_SIZE))}
+            <Paginator
+              hasNext={hasNext}
+              isLoading={isLoading}
+              page={page}
+              pageSize={pageSize}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              onPageSizeChange={changePageSize}
+              onRefresh={() => reload()}
             />
           </div>
           <div ref={setTableToolbarSlot} className="warehouse-ukraine-table-toolbar-slot" />
@@ -316,6 +293,7 @@ export function EditingList({ kind, layoutVersion, loader, onLoaded, onProcessed
           <DataTable
             columns={columns}
             data={items}
+            distributeAvailableWidth
             emptyText={t('Даних не знайдено')}
             getRowId={(item, index) => String(item.NetUid || item.Id || index)}
             height="100%"
@@ -328,16 +306,6 @@ export function EditingList({ kind, layoutVersion, loader, onLoaded, onProcessed
           />
         </div>
 
-        <div className="console-table-footer warehouse-ukraine-table-footer">
-          <Text c="dimmed" size="xs">
-            {t('Показано')} {items.length} / {totalQty}
-          </Text>
-          {hasMore && (
-            <Button color="gray" loading={isLoadingMore} variant="light" onClick={loadMoreItems}>
-              {t('Завантажити ще')}
-            </Button>
-          )}
-        </div>
       </div>
 
       <AppModal
@@ -419,7 +387,7 @@ function useEditingColumns({ indexMap, kind, onProcess }: EditingColumnsModel) {
         minWidth: 150,
         accessor: (item) => item.Sale?.SaleNumber?.Value,
         cell: (item) => (
-          <Text className="warehouse-ukraine-editing-cell-mono is-strong" fw={700}>
+          <Text className="warehouse-ukraine-editing-cell-mono is-strong">
             {displayValue(item.Sale?.SaleNumber?.Value).toLocaleUpperCase('uk-UA')}
           </Text>
         ),
@@ -430,7 +398,7 @@ function useEditingColumns({ indexMap, kind, onProcess }: EditingColumnsModel) {
         minWidth: 240,
         accessor: (item) => buildBuyer(item),
         cell: (item) => (
-          <Text size="sm" lineClamp={2}>
+          <Text size="sm" title={displayValue(buildBuyer(item))}>
             {displayValue(buildBuyer(item))}
           </Text>
         ),
@@ -458,7 +426,7 @@ function useEditingColumns({ indexMap, kind, onProcess }: EditingColumnsModel) {
               {t('Так')}
             </Badge>
           ) : (
-            '-'
+            ''
           ),
       },
       {
@@ -541,12 +509,13 @@ function CarrierChangesCell({ item }: { item: EditingActItem }) {
   }
 
   return (
-    <Stack gap={3}>
-      {changes.map((change) => {
+    <Text size="xs" title={buildCarrierChangesText(item, t)} style={{ whiteSpace: 'nowrap' }}>
+      {changes.map((change, index) => {
         const isTransporter = change.label === transporterLabel
 
         return (
-          <Text key={change.label} size="xs" lineClamp={2}>
+          <span key={change.label}>
+            {index > 0 && '; '}
             <Text span c="red" fw={700}>
               {change.label}
             </Text>
@@ -570,10 +539,10 @@ function CarrierChangesCell({ item }: { item: EditingActItem }) {
                 displayChangeValue(change.after)
               )}
             </Text>
-          </Text>
+          </span>
         )
       })}
-    </Stack>
+    </Text>
   )
 }
 
@@ -946,9 +915,9 @@ function buildBuyer(item: EditingActItem): string {
   return `${region}${client?.FullName || ''}`.trim()
 }
 
-function buildIndexMap(items: EditingActItem[]): Map<EditingActItem, number> {
+function buildIndexMap(items: EditingActItem[], pageOffset: number): Map<EditingActItem, number> {
   return items.reduce((indexMap, item, index) => {
-    indexMap.set(item, index + 1)
+    indexMap.set(item, pageOffset + index + 1)
 
     return indexMap
   }, new Map<EditingActItem, number>())

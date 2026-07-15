@@ -362,22 +362,24 @@ export function SalesTab() {
             value={model.filterDraft.value}
             onChange={(event) => model.setFilterDraft({ ...model.filterDraft, value: event.currentTarget.value })}
           />
-          <TextInput
-            className="warehouse-ukraine-filter-input"
-            label={t('Початкова дата')}
-            max={model.filterDraft.to || undefined}
-            type="date"
-            value={model.filterDraft.from}
-            onChange={(event) => model.applyFilters({ ...model.filterDraft, from: event.currentTarget.value })}
-          />
-          <TextInput
-            className="warehouse-ukraine-filter-input"
-            label={t('Кінцева дата')}
-            min={model.filterDraft.from || undefined}
-            type="date"
-            value={model.filterDraft.to}
-            onChange={(event) => model.applyFilters({ ...model.filterDraft, to: event.currentTarget.value })}
-          />
+          <div className="app-filter-date-range">
+            <TextInput
+              className="warehouse-ukraine-filter-input"
+              label={t('Від')}
+              max={model.filterDraft.to || undefined}
+              type="date"
+              value={model.filterDraft.from}
+              onChange={(event) => model.applyFilters({ ...model.filterDraft, from: event.currentTarget.value })}
+            />
+            <TextInput
+              className="warehouse-ukraine-filter-input"
+              label={t('До')}
+              min={model.filterDraft.from || undefined}
+              type="date"
+              value={model.filterDraft.to}
+              onChange={(event) => model.applyFilters({ ...model.filterDraft, to: event.currentTarget.value })}
+            />
+          </div>
           <div className="app-filter-actions warehouse-ukraine-filter-actions">
             <Tooltip label={t('Скинути')}>
               <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={model.resetFilters}>
@@ -590,7 +592,7 @@ function useSalesColumns({
         minWidth: 240,
         accessor: (sale) => buildClientName(sale),
         cell: (sale) => (
-          <Text size="sm" lineClamp={2} title={displayValue(buildClientName(sale))}>
+          <Text size="sm" title={displayValue(buildClientName(sale))}>
             {displayValue(buildClientName(sale))}
           </Text>
         ),
@@ -635,7 +637,7 @@ function useSalesColumns({
         minWidth: 200,
         accessor: (sale) => sale.Comment,
         cell: (sale) => (
-          <Text size="sm" lineClamp={2} title={displayValue(sale.Comment)}>
+          <Text size="sm" title={displayValue(sale.Comment)}>
             {displayValue(sale.Comment)}
           </Text>
         ),

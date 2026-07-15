@@ -2,19 +2,19 @@ import {
   ActionIcon,
   Alert,
   Button,
-  Select,
   Stack,
   Text,
   TextInput,
   Tooltip,
 } from '@mantine/core'
 import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
-import { CircleAlert, Download, RefreshCw, RotateCcw } from 'lucide-react'
+import { CircleAlert, Download, RotateCcw } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { translate } from '../../../shared/i18n/translate'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import {
   exportDocumentVerification,
   getDocumentVerification,
@@ -48,9 +48,8 @@ type DocumentVerificationState = {
   totalQty: number
   error: string | null
   isLoading: boolean
-  isLoadingMore: boolean
+  page: number
   pageSize: number
-  hasMore: boolean
   downloadOpened: boolean
   downloadDocument: WarehouseUkraineExportDocument | null
   downloadError: string | null
@@ -61,23 +60,15 @@ type DocumentVerificationAction =
   | { type: 'applyFilters'; filters: FilterDraft }
   | { type: 'resetFilters'; filters: FilterDraft }
   | { type: 'setPageSize'; pageSize: number }
+  | { type: 'setPage'; page: number }
   | { type: 'setSelectedStorageIds'; selectedStorageIds: string[] }
   | { type: 'storagesLoadStarted' }
   | { type: 'storagesLoadSucceeded'; storages: WarehouseUkraineStorage[]; selectedStorageIds: string[] }
   | { type: 'storagesLoadFailed'; error: string }
   | { type: 'invalidFilters' }
   | { type: 'loadStarted' }
-  | { type: 'loadSucceeded'; items: DocumentVerificationItem[]; totalQty: number; hasMore: boolean }
+  | { type: 'loadSucceeded'; items: DocumentVerificationItem[]; totalQty: number }
   | { type: 'loadFailed'; error: string }
-  | { type: 'loadMoreStarted' }
-  | {
-      type: 'loadMoreSucceeded'
-      items: DocumentVerificationItem[]
-      totalQty: number
-      hasMore: boolean
-      requestOffset: number
-    }
-  | { type: 'loadMoreFailed'; error: string }
   | { type: 'downloadStarted' }
   | { type: 'downloadSucceeded'; document: WarehouseUkraineExportDocument }
   | { type: 'downloadFailed'; error: string }
@@ -95,9 +86,8 @@ function createInitialDocumentVerificationState(initialFilters: FilterDraft): Do
     totalQty: 0,
     error: null,
     isLoading: true,
-    isLoadingMore: false,
+    page: 1,
     pageSize: DEFAULT_PAGE_SIZE,
-    hasMore: false,
     downloadOpened: false,
     downloadDocument: null,
     downloadError: null,
@@ -111,13 +101,15 @@ function documentVerificationReducer(
 ): DocumentVerificationState {
   switch (action.type) {
     case 'applyFilters':
-      return { ...state, filterDraft: action.filters, activeFilters: action.filters }
+      return { ...state, filterDraft: action.filters, activeFilters: action.filters, page: 1 }
     case 'resetFilters':
-      return { ...state, filterDraft: action.filters, activeFilters: action.filters }
+      return { ...state, filterDraft: action.filters, activeFilters: action.filters, page: 1 }
     case 'setPageSize':
-      return { ...state, pageSize: action.pageSize }
+      return { ...state, page: 1, pageSize: action.pageSize }
+    case 'setPage':
+      return { ...state, page: action.page }
     case 'setSelectedStorageIds':
-      return { ...state, selectedStorageIds: action.selectedStorageIds }
+      return { ...state, selectedStorageIds: action.selectedStorageIds, page: 1 }
     case 'storagesLoadStarted':
       return { ...state, storagesError: null }
     case 'storagesLoadSucceeded':
@@ -130,15 +122,15 @@ function documentVerificationReducer(
     case 'storagesLoadFailed':
       return { ...state, storages: [], storagesReady: true, storagesError: action.error }
     case 'invalidFilters':
-      return { ...state, items: [], totalQty: 0, hasMore: false, isLoading: false }
+      return { ...state, items: [], totalQty: 0, isLoading: false }
     case 'loadStarted':
       return { ...state, isLoading: true, error: null }
     case 'loadSucceeded':
       return {
         ...state,
         items: action.items,
+        page: Math.min(state.page, Math.max(1, Math.ceil(action.totalQty / state.pageSize))),
         totalQty: action.totalQty,
-        hasMore: action.hasMore,
         isLoading: false,
       }
     case 'loadFailed':
@@ -146,22 +138,9 @@ function documentVerificationReducer(
         ...state,
         items: [],
         totalQty: 0,
-        hasMore: false,
         error: action.error,
         isLoading: false,
       }
-    case 'loadMoreStarted':
-      return { ...state, isLoadingMore: true, error: null }
-    case 'loadMoreSucceeded':
-      return {
-        ...state,
-        items: state.items.length === action.requestOffset ? [...state.items, ...action.items] : state.items,
-        totalQty: action.totalQty,
-        hasMore: action.hasMore,
-        isLoadingMore: false,
-      }
-    case 'loadMoreFailed':
-      return { ...state, error: action.error, isLoadingMore: false }
     case 'downloadStarted':
       return {
         ...state,
@@ -195,20 +174,17 @@ function useDocumentVerificationModel() {
   const [state, dispatchState] = useReducer(documentVerificationReducer, initialState)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const downloadRequestRef = useRef(0)
-  const { activeFilters, items, pageSize, selectedStorageIds, storages, storagesReady } = state
+  const { activeFilters, items, page, pageSize, selectedStorageIds, storages, storagesReady, totalQty } = state
   const filterError = getFilterError(activeFilters.from, activeFilters.to)
   const storageIds = useMemo(() => toFiniteNumbers(selectedStorageIds), [selectedStorageIds])
   const storageFilterError = storagesReady && selectedStorageIds.length === 0
     ? t('Виберіть хоча б один склад')
     : null
   const exportError = filterError || storageFilterError
-  const listRequestKey = `${activeFilters.from}|${activeFilters.to}|${selectedStorageIds.join(',')}|${pageSize}`
-  const listRequestKeyRef = useRef(listRequestKey)
-  const itemIndexMap = useMemo(() => buildIndexMap(items), [items])
-
-  useEffect(() => {
-    listRequestKeyRef.current = listRequestKey
-  }, [listRequestKey])
+  const pageOffset = (page - 1) * pageSize
+  const totalPages = Math.max(1, Math.ceil(totalQty / pageSize))
+  const hasNext = page < totalPages
+  const itemIndexMap = useMemo(() => buildIndexMap(items, pageOffset), [items, pageOffset])
 
   useEffect(() => {
     let cancelled = false
@@ -260,7 +236,7 @@ function useDocumentVerificationModel() {
           from: toDateString(activeFilters.from),
           to: toDateString(activeFilters.to),
           limit: pageSize,
-          offset: 0,
+          offset: pageOffset,
           storageIds,
         })
 
@@ -269,7 +245,6 @@ function useDocumentVerificationModel() {
             type: 'loadSucceeded',
             items: result.items,
             totalQty: result.totalQty,
-            hasMore: result.items.length < result.totalQty && result.items.length > 0,
           })
         }
       } catch (loadError) {
@@ -290,6 +265,7 @@ function useDocumentVerificationModel() {
   }, [
     activeFilters,
     filterError,
+    pageOffset,
     pageSize,
     reloadKey,
     storageIds,
@@ -297,39 +273,6 @@ function useDocumentVerificationModel() {
     storagesReady,
     t,
   ])
-
-  async function loadMoreItems() {
-    const requestKey = listRequestKeyRef.current
-    const requestOffset = items.length
-    dispatchState({ type: 'loadMoreStarted' })
-
-    try {
-      const result = await getDocumentVerification({
-        from: toDateString(activeFilters.from),
-        to: toDateString(activeFilters.to),
-        limit: pageSize,
-        offset: requestOffset,
-        storageIds,
-      })
-
-      if (listRequestKeyRef.current === requestKey) {
-        dispatchState({
-          type: 'loadMoreSucceeded',
-          items: result.items,
-          totalQty: result.totalQty,
-          hasMore: requestOffset + result.items.length < result.totalQty && result.items.length > 0,
-          requestOffset,
-        })
-      }
-    } catch (loadError) {
-      if (listRequestKeyRef.current === requestKey) {
-        dispatchState({
-          type: 'loadMoreFailed',
-          error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити звірку'),
-        })
-      }
-    }
-  }
 
   const closeDownload = useCallback(() => {
     downloadRequestRef.current += 1
@@ -350,8 +293,8 @@ function useDocumentVerificationModel() {
       const document = await exportDocumentVerification({
         from: toDateString(activeFilters.from),
         to: toDateString(activeFilters.to),
-        limit: items.length || pageSize,
-        offset: 0,
+        limit: pageSize,
+        offset: pageOffset,
         storageIds,
       })
 
@@ -380,6 +323,10 @@ function useDocumentVerificationModel() {
     dispatchState({ type: 'setPageSize', pageSize })
   }
 
+  function setPage(page: number) {
+    dispatchState({ type: 'setPage', page })
+  }
+
   function setSelectedStorageIds(selectedStorageIds: string[]) {
     dispatchState({ type: 'setSelectedStorageIds', selectedStorageIds })
   }
@@ -405,13 +352,15 @@ function useDocumentVerificationModel() {
     exportDocument,
     exportError,
     filterError,
-    loadMoreItems,
+    hasNext,
     reload,
     resetFilters,
+    setPage,
     setPageSize,
     setSelectedStorageIds,
     storageFilterError,
     storageOptions,
+    totalPages,
   }
 }
 
@@ -431,38 +380,31 @@ export function DocumentVerificationTab() {
               w={320}
               onChange={model.setSelectedStorageIds}
             />
-            <TextInput
-              className="warehouse-ukraine-filter-input"
-              label={t('Початкова дата')}
-              max={model.filterDraft.to || undefined}
-              type="date"
-              value={model.filterDraft.from}
-              onChange={(event) => model.applyFilters({ ...model.filterDraft, from: event.currentTarget.value })}
-            />
-            <TextInput
-              className="warehouse-ukraine-filter-input"
-              label={t('Кінцева дата')}
-              min={model.filterDraft.from || undefined}
-              type="date"
-              value={model.filterDraft.to}
-              onChange={(event) => model.applyFilters({ ...model.filterDraft, to: event.currentTarget.value })}
-            />
+            <div className="app-filter-date-range">
+              <TextInput
+                className="warehouse-ukraine-filter-input"
+                label={t('Від')}
+                max={model.filterDraft.to || undefined}
+                type="date"
+                value={model.filterDraft.from}
+                onChange={(event) => model.applyFilters({ ...model.filterDraft, from: event.currentTarget.value })}
+              />
+              <TextInput
+                className="warehouse-ukraine-filter-input"
+                label={t('До')}
+                min={model.filterDraft.from || undefined}
+                type="date"
+                value={model.filterDraft.to}
+                onChange={(event) => model.applyFilters({ ...model.filterDraft, to: event.currentTarget.value })}
+              />
+            </div>
+            <Text c="dimmed" size="sm">
+              {`${t('На дату')} ${new Date().toLocaleDateString('uk-UA')} 6:00`}
+            </Text>
             <div className="app-filter-actions warehouse-ukraine-filter-actions">
               <Tooltip label={t('Скинути')}>
                 <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={model.resetFilters}>
                   <RotateCcw size={17} />
-                </ActionIcon>
-              </Tooltip>
-              <Tooltip label={t('Оновити')}>
-                <ActionIcon
-                  aria-label={t('Оновити')}
-                  color="gray"
-                  loading={model.isLoading}
-                  size={34}
-                  variant="light"
-                  onClick={() => model.reload()}
-                >
-                  <RefreshCw size={17} />
                 </ActionIcon>
               </Tooltip>
               <Button
@@ -475,18 +417,18 @@ export function DocumentVerificationTab() {
               >
                 {t('Роздрукувати')}
               </Button>
-              <Select
-                aria-label={t('Кількість рядків')}
-                data={PAGE_SIZE_OPTIONS}
-                size="xs"
-                value={String(model.pageSize)}
-                w={76}
-                onChange={(value) => model.setPageSize(Number(value || DEFAULT_PAGE_SIZE))}
+              <Paginator
+                hasNext={model.hasNext}
+                isLoading={model.isLoading}
+                page={Math.min(model.page, model.totalPages)}
+                pageSize={model.pageSize}
+                pageSizeOptions={PAGE_SIZE_OPTIONS}
+                totalPages={model.totalPages}
+                onPageChange={model.setPage}
+                onPageSizeChange={model.setPageSize}
+                onRefresh={() => model.reload()}
               />
             </div>
-            <Text c="dimmed" size="sm">
-              {`${t('На дату')} ${new Date().toLocaleDateString('uk-UA')} 6:00`}
-            </Text>
             <div ref={setTableToolbarSlot} className="warehouse-ukraine-table-toolbar-slot" />
           </div>
 
@@ -506,6 +448,7 @@ export function DocumentVerificationTab() {
             columns={model.columns}
             data={model.items}
             defaultLayout={TABLE_DEFAULT_LAYOUT}
+            distributeAvailableWidth
             emptyText={t('Даних не знайдено')}
             getRowId={(item, index) => String(item.NetUid || item.Id || index)}
             height="100%"
@@ -517,17 +460,6 @@ export function DocumentVerificationTab() {
             toolbarPortalTarget={tableToolbarSlot}
           />
           </div>
-
-          {model.hasMore && (
-            <div className="console-table-footer warehouse-ukraine-table-footer">
-              <Text c="dimmed" size="sm">
-                {t('Показано')} {model.items.length} / {model.totalQty}
-              </Text>
-              <Button color="gray" loading={model.isLoadingMore} variant="light" onClick={model.loadMoreItems}>
-                {t('Завантажити ще')}
-              </Button>
-            </div>
-          )}
       </div>
 
       <DownloadDocumentModal
@@ -590,7 +522,7 @@ function useVerificationColumns(indexMap: Map<DocumentVerificationItem, number>)
         minWidth: 240,
         accessor: (item) => item.Product?.NameUA,
         cell: (item) => (
-          <Text size="sm" lineClamp={2}>
+          <Text size="sm" title={displayValue(item.Product?.NameUA)}>
             {displayValue(item.Product?.NameUA)}
           </Text>
         ),
@@ -613,9 +545,9 @@ function buildLocation(item: DocumentVerificationItem): string {
   return `${item.StorageNumber ?? ''}-${item.RowNumber ?? ''}-${item.CellNumber ?? ''}`
 }
 
-function buildIndexMap(items: DocumentVerificationItem[]): Map<DocumentVerificationItem, number> {
+function buildIndexMap(items: DocumentVerificationItem[], offset = 0): Map<DocumentVerificationItem, number> {
   return items.reduce((indexMap, item, index) => {
-    indexMap.set(item, index + 1)
+    indexMap.set(item, offset + index + 1)
 
     return indexMap
   }, new Map<DocumentVerificationItem, number>())

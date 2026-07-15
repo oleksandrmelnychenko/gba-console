@@ -915,22 +915,24 @@ function AutoShipmentsPanel({ onCarriedOut }: AutoShipmentsPanelProps) {
               w={220}
               onChange={(value) => model.setSelectedTransporterNetId(value)}
             />
-            <TextInput
-              className="warehouse-ukraine-filter-input"
-              label={t('Початкова дата')}
-              max={model.filterDraft.to || undefined}
-              type="date"
-              value={model.filterDraft.from}
-              onChange={(event) => model.setFilterDraft({ ...model.filterDraft, from: event.currentTarget.value })}
-            />
-            <TextInput
-              className="warehouse-ukraine-filter-input"
-              label={t('Кінцева дата')}
-              min={model.filterDraft.from || undefined}
-              type="date"
-              value={model.filterDraft.to}
-              onChange={(event) => model.setFilterDraft({ ...model.filterDraft, to: event.currentTarget.value })}
-            />
+            <div className="app-filter-date-range">
+              <TextInput
+                className="warehouse-ukraine-filter-input"
+                label={t('Від')}
+                max={model.filterDraft.to || undefined}
+                type="date"
+                value={model.filterDraft.from}
+                onChange={(event) => model.setFilterDraft({ ...model.filterDraft, from: event.currentTarget.value })}
+              />
+              <TextInput
+                className="warehouse-ukraine-filter-input"
+                label={t('До')}
+                min={model.filterDraft.from || undefined}
+                type="date"
+                value={model.filterDraft.to}
+                onChange={(event) => model.setFilterDraft({ ...model.filterDraft, to: event.currentTarget.value })}
+              />
+            </div>
             <div className="app-filter-actions warehouse-ukraine-filter-actions">
               <Tooltip label={t('Скинути')}>
                 <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={model.resetFilters}>
@@ -990,6 +992,7 @@ function AutoShipmentsPanel({ onCarriedOut }: AutoShipmentsPanelProps) {
             columns={columns}
             data={model.items}
             defaultLayout={TABLE_DEFAULT_LAYOUT}
+            distributeAvailableWidth
             emptyText={`${t('Відвантажень не знайдено')}. ${t('Дані можуть бути поза вибраним періодом. Розширте дати у фільтрі.')}`}
             getRowId={getRowId}
             height="100%"
@@ -1790,22 +1793,24 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
               w={240}
               onChange={changeTransporter}
             />
-            <TextInput
-              className="warehouse-ukraine-filter-input"
-              label={t('Початкова дата')}
-              max={filterDraft.to || undefined}
-              type="date"
-              value={filterDraft.from}
-              onChange={(event) => updateListFilter({ ...filterDraft, from: event.currentTarget.value })}
-            />
-            <TextInput
-              className="warehouse-ukraine-filter-input"
-              label={t('Кінцева дата')}
-              min={filterDraft.from || undefined}
-              type="date"
-              value={filterDraft.to}
-              onChange={(event) => updateListFilter({ ...filterDraft, to: event.currentTarget.value })}
-            />
+            <div className="app-filter-date-range">
+              <TextInput
+                className="warehouse-ukraine-filter-input"
+                label={t('Від')}
+                max={filterDraft.to || undefined}
+                type="date"
+                value={filterDraft.from}
+                onChange={(event) => updateListFilter({ ...filterDraft, from: event.currentTarget.value })}
+              />
+              <TextInput
+                className="warehouse-ukraine-filter-input"
+                label={t('До')}
+                min={filterDraft.from || undefined}
+                type="date"
+                value={filterDraft.to}
+                onChange={(event) => updateListFilter({ ...filterDraft, to: event.currentTarget.value })}
+              />
+            </div>
             <div className="app-filter-actions warehouse-ukraine-filter-actions">
               <Tooltip label={t('Скинути')}>
                 <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetListFilters}>
@@ -1842,6 +1847,7 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
             columns={listColumns}
             data={shipmentLists}
             defaultLayout={ALL_SHIPMENTS_TABLE_DEFAULT_LAYOUT}
+            distributeAvailableWidth
             emptyText={`${t('Відвантажень не знайдено')}. ${t('Дані можуть бути поза вибраним періодом. Розширте дати у фільтрі.')}`}
             getRowId={getShipmentListRowId}
             height="100%"
@@ -1960,20 +1966,22 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
         <Stack gap="md">
           <Card withBorder radius="md" padding="md">
             <Group align="end" gap="sm" wrap="wrap">
-              <TextInput
-                label={t('Початкова дата')}
-                max={manualFilterDraft.to || undefined}
-                type="date"
-                value={manualFilterDraft.from}
-                onChange={(event) => setManualFilterDraft({ ...manualFilterDraft, from: event.currentTarget.value })}
-              />
-              <TextInput
-                label={t('Кінцева дата')}
-                min={manualFilterDraft.from || undefined}
-                type="date"
-                value={manualFilterDraft.to}
-                onChange={(event) => setManualFilterDraft({ ...manualFilterDraft, to: event.currentTarget.value })}
-              />
+              <div className="app-filter-date-range">
+                <TextInput
+                  label={t('Від')}
+                  max={manualFilterDraft.to || undefined}
+                  type="date"
+                  value={manualFilterDraft.from}
+                  onChange={(event) => setManualFilterDraft({ ...manualFilterDraft, from: event.currentTarget.value })}
+                />
+                <TextInput
+                  label={t('До')}
+                  min={manualFilterDraft.from || undefined}
+                  type="date"
+                  value={manualFilterDraft.to}
+                  onChange={(event) => setManualFilterDraft({ ...manualFilterDraft, to: event.currentTarget.value })}
+                />
+              </div>
               <Button
                 disabled={Boolean(manualFilterError) || isManualLoading}
                 leftSection={<RefreshCw size={18} />}

@@ -339,7 +339,15 @@ export function InvoiceRegisterTab() {
             columns={model.columns}
             data={model.invoices}
             defaultLayout={TABLE_DEFAULT_LAYOUT}
+            distributeAvailableWidth
             emptyText={t('Накладних не знайдено')}
+            footer={
+              model.totalQty > 0 ? (
+                <Text className="warehouse-ukraine-table-footer-summary" c="dimmed" size="sm">
+                  {t('Показано')} {model.pageStart}-{model.pageEnd} {t('з')} {model.totalQty}
+                </Text>
+              ) : undefined
+            }
             getRowId={(invoice, index) => String(invoice.NetUid || invoice.Id || index)}
             height="100%"
             isLoading={model.isLoading}
@@ -351,13 +359,6 @@ export function InvoiceRegisterTab() {
           />
           </div>
 
-          {model.totalQty > 0 && (
-            <div className="console-table-footer warehouse-ukraine-table-footer">
-              <Text c="dimmed" size="sm">
-                {t('Показано')} {model.pageStart}-{model.pageEnd} {t('з')} {model.totalQty}
-              </Text>
-            </div>
-          )}
       </div>
 
       <DownloadDocumentModal
@@ -396,7 +397,7 @@ function useInvoiceRegisterColumns(indexMap: Map<Sale, number>) {
         width: 220,
         minWidth: 170,
         accessor: (invoice) => invoice.SaleNumber?.Value,
-        cell: (invoice) => <Text fw={700}>{displayValue(invoice.SaleNumber?.Value)}</Text>,
+        cell: (invoice) => <Text className="sales-tab-cell-num">{displayValue(invoice.SaleNumber?.Value)}</Text>,
       },
       {
         id: 'printedStatus',
@@ -409,11 +410,11 @@ function useInvoiceRegisterColumns(indexMap: Map<Sale, number>) {
           const status = getInvoicePrintStatus(invoice)
 
           if (!status) {
-            return '-'
+            return ''
           }
 
           return (
-            <Badge color={status.color} variant="light">
+            <Badge className={`app-role-pill ${status.key === 'changed' ? 'is-yellow' : 'is-green'}`} variant="light">
               {status.label}
             </Badge>
           )
@@ -429,11 +430,11 @@ function useInvoiceRegisterColumns(indexMap: Map<Sale, number>) {
         cell: (invoice) =>
           invoice.IsPrintedActProtocolEdit
             ? (
-                <Badge color="teal" variant="light">
+                <Badge className="app-role-pill is-green" variant="light">
                   {t('Так')}
                 </Badge>
               )
-            : '-',
+            : '',
       },
       {
         id: 'clientCode',
@@ -449,7 +450,7 @@ function useInvoiceRegisterColumns(indexMap: Map<Sale, number>) {
         minWidth: 260,
         accessor: (invoice) => invoice.ClientAgreement?.Client?.FullName,
         cell: (invoice) => (
-          <Text size="sm" lineClamp={2}>
+          <Text size="sm" title={displayValue(invoice.ClientAgreement?.Client?.FullName)}>
             {displayValue(invoice.ClientAgreement?.Client?.FullName)}
           </Text>
         ),
