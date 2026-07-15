@@ -1,21 +1,49 @@
 .advanced-reports-page {
-  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 24px);
+  box-sizing: border-box;
+  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px);
   min-height: 0;
   overflow: hidden;
+  padding: 6px 4px 0;
+}
+
+.advanced-reports-card {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2) !important;
+  box-shadow: var(--app-card-shadow) !important;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
 }
 
 /* Filter strip pinned at the top of the card; the table below it scrolls. */
 .advanced-reports-filter-bar {
   flex: 0 0 auto;
+  overflow-x: auto;
 }
 
-.advanced-reports-filter-bar .advanced-reports-filter-row {
+.advanced-reports-filter-content {
+  min-width: max-content;
   width: 100%;
 }
 
+.advanced-reports-filter-bar .advanced-reports-filter-row {
+  min-width: max-content;
+  width: 100%;
+}
+
+.advanced-reports-page__alert {
+  flex: 0 0 auto;
+  margin: 10px 8px 0;
+}
+
 .advanced-reports-page__table {
+  display: flex;
   flex: 1 1 auto;
+  flex-direction: column;
   min-height: 0;
+  min-width: 0;
 }
 
 .advanced-reports-page__table .data-table {
@@ -28,4 +56,33 @@
 .advanced-reports-page__table .data-table-scroll {
   flex: 1 1 auto;
   min-height: 0;
+}
+
+.advanced-reports-card .data-table-footer {
+  align-items: center;
+  display: flex;
+  flex: 0 0 auto;
+  min-height: 30px;
+  overflow-x: auto;
+  padding: 4px 12px;
+}
+
+.advanced-reports-table-footer {
+  min-width: max-content;
+  width: 100%;
+}
+
+.advanced-reports-table-footer .mantine-Badge-root {
+  height: 20px;
+}
+
+.advanced-reports-page__table .data-table-cell {
+  white-space: nowrap;
+}
+
+.advanced-reports-page__table .data-table-cell > * {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

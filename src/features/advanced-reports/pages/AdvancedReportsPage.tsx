@@ -399,7 +399,7 @@ export function AdvancedReportsPage() {
     <Stack className="advanced-reports-page" gap={6}>
       <Card className="app-data-card advanced-reports-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar advanced-reports-filter-bar">
-          <Stack gap={8}>
+          <Stack className="advanced-reports-filter-content" gap={8}>
             <Group align="end" gap="sm" wrap="nowrap" className="advanced-reports-filter-row">
               <TextInput label={t('Від')} type="date" value={fromDate} onChange={(event) => changeFromDate(event.currentTarget.value)} />
               <TextInput label={t('До')} type="date" value={toDate} onChange={(event) => changeToDate(event.currentTarget.value)} />
@@ -410,6 +410,36 @@ export function AdvancedReportsPage() {
                 value={searchValue}
                 style={{ flex: '1 1 auto', minWidth: 220 }}
                 onChange={(event) => changeSearchValue(event.currentTarget.value)}
+              />
+              <Select
+                clearable
+                searchable
+                data={toSelectOptions(currencies, (currency) => currency.Name || currency.Code)}
+                label={t('Валюта')}
+                placeholder={t('Усі')}
+                value={currencyNetId || null}
+                w={210}
+                onChange={(value) => changeCurrencyNetId(value || '')}
+              />
+              <Select
+                clearable
+                searchable
+                data={toSelectOptions(paymentRegisters, (register) => register.Name)}
+                label={t('Грошовий рахунок')}
+                placeholder={t('Усі')}
+                value={paymentRegisterNetId || null}
+                w={260}
+                onChange={(value) => changePaymentRegisterNetId(value || '')}
+              />
+              <Select
+                clearable
+                searchable
+                data={toSelectOptions(paymentMovements, (movement) => movement.OperationName)}
+                label={t('Стаття руху')}
+                placeholder={t('Усі')}
+                value={paymentMovementNetId || null}
+                w={300}
+                onChange={(value) => changePaymentMovementNetId(value || '')}
               />
               <div className="app-filter-actions">
                 <Tooltip label={t('Скинути фільтри')}>
@@ -428,50 +458,6 @@ export function AdvancedReportsPage() {
                   onRefresh={handleRefresh}
                 />
               </div>
-            </Group>
-
-            <Group align="end" justify="space-between" gap="sm" wrap="nowrap">
-              <Group align="end" gap="sm" wrap="nowrap">
-                <Select
-                  clearable
-                  searchable
-                  data={toSelectOptions(currencies, (currency) => currency.Name || currency.Code)}
-                  label={t('Валюта')}
-                  placeholder={t('Усі')}
-                  value={currencyNetId || null}
-                  w={210}
-                  onChange={(value) => changeCurrencyNetId(value || '')}
-                />
-                <Select
-                  clearable
-                  searchable
-                  data={toSelectOptions(paymentRegisters, (register) => register.Name)}
-                  label={t('Грошовий рахунок')}
-                  placeholder={t('Усі')}
-                  value={paymentRegisterNetId || null}
-                  w={260}
-                  onChange={(value) => changePaymentRegisterNetId(value || '')}
-                />
-                <Select
-                  clearable
-                  searchable
-                  data={toSelectOptions(paymentMovements, (movement) => movement.OperationName)}
-                  label={t('Стаття руху')}
-                  placeholder={t('Усі')}
-                  value={paymentMovementNetId || null}
-                  w={300}
-                  onChange={(value) => changePaymentMovementNetId(value || '')}
-                />
-              </Group>
-
-              <Group gap="xs" wrap="nowrap">
-                <Badge className="app-role-pill is-green" variant="light">
-                  {t('Кредиторська заборгованість')}: {formatMoney(reports.PositiveDifferenceAmount)}
-                </Badge>
-                <Badge className="app-role-pill is-red" variant="light">
-                  {t('Дебіторська заборгованість')}: {formatMoney(reports.NegativeDifferenceAmount)}
-                </Badge>
-              </Group>
             </Group>
           </Stack>
         </div>
@@ -501,6 +487,16 @@ export function AdvancedReportsPage() {
             layoutVersion="advanced-reports-1"
             minWidth={1720}
             tableId="advanced-reports"
+            footer={
+              <Group className="advanced-reports-table-footer" gap="xs" justify="flex-end" wrap="nowrap">
+                <Badge className="app-role-pill is-green" variant="light">
+                  {t('Кредиторська заборгованість')}: {formatMoney(reports.PositiveDifferenceAmount)}
+                </Badge>
+                <Badge className="app-role-pill is-red" variant="light">
+                  {t('Дебіторська заборгованість')}: {formatMoney(reports.NegativeDifferenceAmount)}
+                </Badge>
+              </Group>
+            }
             onRowClick={handleRowClick}
           />
         </div>
@@ -538,7 +534,11 @@ function useAdvancedReportColumns({
         minWidth: 130,
         accessor: (row) => row.fromDate,
         cell: (row) => (
-          <Text size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>
+          <Text
+            size="sm"
+            style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}
+            title={formatDateTime(row.fromDate)}
+          >
             {formatDateTime(row.fromDate)}
           </Text>
         ),
@@ -550,7 +550,12 @@ function useAdvancedReportColumns({
         minWidth: 110,
         accessor: (row) => row.number,
         cell: (row) => (
-          <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0, textTransform: 'uppercase' }}>
+          <Text
+            fw={600}
+            size="sm"
+            style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0, textTransform: 'uppercase' }}
+            title={displayValue(row.number)}
+          >
             {displayValue(row.number)}
           </Text>
         ),
@@ -561,7 +566,7 @@ function useAdvancedReportColumns({
         width: 150,
         minWidth: 120,
         accessor: (row) => row.organization,
-        cell: (row) => displayValue(row.organization),
+        cell: (row) => renderSingleLineText(row.organization),
       },
       {
         id: 'storage',
@@ -569,7 +574,7 @@ function useAdvancedReportColumns({
         width: 145,
         minWidth: 115,
         accessor: (row) => row.storage,
-        cell: (row) => displayValue(row.storage),
+        cell: (row) => renderSingleLineText(row.storage),
       },
       {
         id: 'amount',
@@ -590,7 +595,7 @@ function useAdvancedReportColumns({
         width: 90,
         minWidth: 80,
         accessor: (row) => row.currency,
-        cell: (row) => displayValue(row.currency),
+        cell: (row) => renderSingleLineText(row.currency),
       },
       {
         id: 'payedTo',
@@ -606,7 +611,7 @@ function useAdvancedReportColumns({
         width: 180,
         minWidth: 140,
         accessor: (row) => row.role,
-        cell: (row) => displayValue(row.role),
+        cell: (row) => renderSingleLineText(row.role),
       },
       {
         id: 'paymentRegister',
@@ -614,7 +619,7 @@ function useAdvancedReportColumns({
         width: 210,
         minWidth: 160,
         accessor: (row) => row.paymentRegister,
-        cell: (row) => displayValue(row.paymentRegister),
+        cell: (row) => renderSingleLineText(row.paymentRegister),
       },
       {
         id: 'paymentMovement',
@@ -622,7 +627,7 @@ function useAdvancedReportColumns({
         width: 220,
         minWidth: 170,
         accessor: (row) => row.paymentMovement,
-        cell: (row) => displayValue(row.paymentMovement),
+        cell: (row) => renderSingleLineText(row.paymentMovement),
       },
       {
         id: 'responsible',
@@ -630,7 +635,7 @@ function useAdvancedReportColumns({
         width: 155,
         minWidth: 125,
         accessor: (row) => row.responsible,
-        cell: (row) => displayValue(row.responsible),
+        cell: (row) => renderSingleLineText(row.responsible),
       },
       {
         id: 'comment',
@@ -638,7 +643,7 @@ function useAdvancedReportColumns({
         width: 230,
         minWidth: 170,
         accessor: (row) => row.comment,
-        cell: (row) => displayValue(row.comment),
+        cell: (row) => renderSingleLineText(row.comment),
       },
       {
         id: 'operations',
@@ -693,9 +698,17 @@ function useAdvancedReportColumns({
 
 function PayedToCell({ row }: { row: AdvancedReportRow }) {
   const { t } = useI18n()
+  const title = [
+    displayValue(row.payedTo),
+    row.isUnderReport ? t('Підзвіт') : '',
+    row.rootAssigned ? t('Підзвіт') : '',
+    row.differenceAmount ? formatMoney(row.differenceAmount) : '',
+  ]
+    .filter(Boolean)
+    .join(' · ')
 
   return (
-    <Group gap={6} wrap="nowrap">
+    <Group gap={6} title={title} wrap="nowrap">
       <Text size="sm">{displayValue(row.payedTo)}</Text>
       {row.isUnderReport && (
         <Badge className="app-role-pill is-gray" size="xs" variant="light">
@@ -1224,6 +1237,16 @@ function formatMoneyWithCurrency(value?: number, currency?: string): string {
 
 function hasNumber(value?: number): value is number {
   return typeof value === 'number' && Number.isFinite(value)
+}
+
+function renderSingleLineText(value?: string | number | null) {
+  const text = displayValue(value)
+
+  return (
+    <Text size="sm" title={text}>
+      {text}
+    </Text>
+  )
 }
 
 function displayValue(value?: string | number | null): string {
