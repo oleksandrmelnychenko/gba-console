@@ -1,7 +1,8 @@
-import { ActionIcon, Box, Button, Checkbox, FileInput, Group, Text, TextInput } from '@mantine/core'
+import { ActionIcon, Alert, Box, Button, Checkbox, FileInput, Group, Text, TextInput } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { CircleX, Copy, Upload } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useAuth } from '../../../auth/useAuth'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import {
   convertVatSaleAndGetPaymentDocument,
@@ -11,10 +12,42 @@ import {
   getSaleTransportersByType,
   updateMergedSale,
   updateSaleFromData,
+  type SaleSubmitResult,
 } from '../../api/salesUkraineApi'
+import {
+  getSalesPendingMutationUserKey,
+  loadSalesPendingMutation,
+  markSalesPendingMutationCorrupt,
+  markSalesPendingMutationSubmitted,
+  markSalesPendingMutationUnknown,
+  resolveRejectedSalesPendingMutation,
+  resolveSalesPendingMutation,
+  subscribeSalesPendingMutations,
+  synchronizeSalesPendingMutationUser,
+  withSalesPendingMutationLock,
+  type SalesPendingMutationLease,
+  type SalesPendingMutationScope,
+} from '../../pendingSalesMutationRegistry'
+import {
+  advanceSaleFileMutationSession,
+  createSaleFileMutationSubmission,
+  getLegacySaleFileMutationContext,
+  getSaleFileMutationContext,
+  resumeSaleFileMutationSubmission,
+  restoreSaleFileMutationSubmission,
+  SALE_FILE_MUTATION_SURFACES,
+  type SaleFileMutationIntent,
+  type SaleFileMutationKind,
+  type SaleFileMutationSubmission,
+} from '../../saleFileMutation'
 import { getSaleLifecycleTypeKey } from '../../saleStatus'
 import type { SaleDocumentResult, SalesUkraineRetailPaymentStatus, SalesUkraineSale, SalesUkraineTransporter } from '../../types'
-import type { WizardSplitOrderItem } from './EditShoppingCartOverlay'
+import {
+  getSaleFileMutationOperationIdentity,
+  isPersistedSaleFileMutationRecord,
+  persistSaleFileMutationRecord,
+  type PersistedSaleFileMutationRecord,
+} from '../../usePersistentSaleFileMutation'
 import {
   getClientDeliveryRecipients,
   newDeliveryRecipient,
@@ -25,7 +58,13 @@ import {
 import {
   clearWizardMergedSale,
   clearWizardSplitOrderItems,
+  confirmWizardSplitFinalMutationCommitted,
+  getWizardSplitRecovery,
   isSelfCheckout,
+  markWizardSplitFinalMutationSubmitted,
+  markWizardSplitFinalMutationUnknown,
+  rejectWizardSplitFinalMutation,
+  stageWizardSplitFinalMutation,
   useWizardMergedSale,
   useWizardSplitOrderItems,
   type NewSaleReviewValue,
@@ -33,6 +72,22 @@ import {
 import { useWizardKeyboard, useWizardKeyHandler } from './wizardKeyboard'
 import { WizardReviewCombobox, type WizardReviewComboboxOption } from './WizardReviewCombobox'
 import { WizardReviewConfirmModal } from './WizardReviewConfirmModal'
+import {
+  advanceWizardCreateSaleSession,
+  createWizardCreateSaleSubmission,
+  isWizardCreateSaleSubmission,
+  type WizardCreateSaleSubmission,
+} from './wizardCreateSaleSubmit'
+import {
+  advanceWizardMergedSaleSession,
+  buildWizardMergedOrderItems,
+  createWizardMergedSaleSubmission,
+  isWizardMergedSaleSubmission,
+  type WizardMergedSaleSubmission,
+} from './wizardMergedSubmit'
+import { buildWizardSplitSale } from './wizardSplitSale'
+import { createWizardAsyncGenerationGuard } from './wizardAsyncGeneration'
+import { createWizardEnterLatch } from './wizardEnterLatch'
 
 const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
 const SALE_LIFE_CYCLE_STATUS_NAMES: Record<number, string> = {
@@ -53,6 +108,37 @@ const reviewCheckboxClassNames = {
   input: 'new-sale-review-checkbox__input',
   label: 'new-sale-review-checkbox__label',
   root: 'new-sale-review-checkbox',
+}
+
+type FinalCreateSaleFlow = 'merged-split' | 'ordinary-split'
+
+type PendingFinalCreateSale = {
+  flow: FinalCreateSaleFlow
+  submission: WizardCreateSaleSubmission
+}
+
+type PendingFinalMergedSale = {
+  submission: WizardMergedSaleSubmission
+}
+
+type FinalFileMutationMode = SaleFileMutationIntent
+
+type PendingFinalFileMutation = {
+  mode: FinalFileMutationMode
+  scope: SalesPendingMutationScope
+  submission: SaleFileMutationSubmission
+}
+
+type PersistedFinalCreateSale = {
+  flow: FinalCreateSaleFlow
+  submission: WizardCreateSaleSubmission
+}
+
+type BlockedFinalFileMutation = {
+  canResume: boolean
+  mode: FinalFileMutationMode | null
+  payload: PersistedSaleFileMutationRecord
+  scope: SalesPendingMutationScope
 }
 
 export function NewSaleReviewStep({
@@ -81,24 +167,224 @@ export function NewSaleReviewStep({
   withVatAccounting?: boolean
 }) {
   const { t } = useI18n()
+  const { session } = useAuth()
   const [transporters, setTransporters] = useState<SalesUkraineTransporter[]>([])
   const [recipients, setRecipients] = useState<WizardDeliveryRecipient[]>([])
   const [retailStatus, setRetailStatus] = useState<SalesUkraineRetailPaymentStatus | null>(null)
   const [confirmOpened, setConfirmOpened] = useState(false)
+  const [finalSubmitOutcomePending, setFinalSubmitOutcomePending] = useState(false)
+  const [mutationStorageRevision, setMutationStorageRevision] = useState(0)
   const [submitting, setSubmitting] = useState(false)
   const [saving, setSaving] = useState(false)
   const submitRef = useRef<HTMLButtonElement>(null)
   const busyRef = useRef(false)
-  const enterLatchRef = useRef(false)
+  const [enterLatch] = useState(createWizardEnterLatch)
   const transporterSeededRef = useRef(false)
   const recipientSeededRef = useRef(false)
   const flagsSeededRef = useRef(false)
+  const createSaleSubmissionRef = useRef<PendingFinalCreateSale | null>(null)
+  const mergedSaleSubmissionRef = useRef<PendingFinalMergedSale | null>(null)
+  const fileMutationSubmissionRef = useRef<PendingFinalFileMutation | null>(null)
+  const blockedFileMutationRef = useRef<BlockedFinalFileMutation | null>(null)
+  const [blockedFileMutation, setBlockedFileMutation] = useState<BlockedFinalFileMutation | null>(null)
+  const [submitGuard] = useState(createWizardAsyncGenerationGuard)
+  const mountedRef = useRef(false)
   const splitItems = useWizardSplitOrderItems()
   const mergedSale = useWizardMergedSale()
   const isMergedMode = Boolean(mergedSale)
   const retailSale = mergedSale?.unionSale ?? sale
+  const pendingMutationUserKey = getSalesPendingMutationUserKey(session)
+  const pendingMutationContext = getFinalMutationContext(clientNetId, sale)
+  const pendingFileMutationContext = getSaleFileMutationContext(
+    sale,
+    SALE_FILE_MUTATION_SURFACES.wizard,
+  )
+  const legacyPendingFileMutationContext = getLegacySaleFileMutationContext(sale)
+  const getPendingMutationScope = useCallback((
+    kind: 'create-sale' | 'merged-sale' | SaleFileMutationKind,
+  ): SalesPendingMutationScope | null => {
+    const context = kind === 'sale-update-file' || kind === 'sale-vat-document'
+      ? pendingFileMutationContext
+      : pendingMutationContext
 
+    return pendingMutationUserKey && context
+      ? { context, kind, userKey: pendingMutationUserKey }
+      : null
+  }, [pendingFileMutationContext, pendingMutationContext, pendingMutationUserKey])
+  const getLegacyFileMutationScope = useCallback((
+    kind: SaleFileMutationKind,
+  ): SalesPendingMutationScope | null => (
+    pendingMutationUserKey && legacyPendingFileMutationContext
+      ? { context: legacyPendingFileMutationContext, kind, userKey: pendingMutationUserKey }
+      : null
+  ), [legacyPendingFileMutationContext, pendingMutationUserKey])
   const latestRef = useRef({ onChange, sale, value })
+
+  useLayoutEffect(() => {
+    mountedRef.current = true
+
+    return () => {
+      mountedRef.current = false
+      submitGuard.invalidate()
+    }
+  }, [submitGuard])
+
+  useEffect(() => subscribeSalesPendingMutations(({ external }) => {
+    if (external) {
+      setMutationStorageRevision((revision) => revision + 1)
+    }
+  }), [])
+
+  useLayoutEffect(() => {
+    let cancelled = false
+    const scheduleRestoredState = (
+      pending: boolean,
+      blocked: BlockedFinalFileMutation | null = null,
+    ) => {
+      queueMicrotask(() => {
+        if (!cancelled && mountedRef.current) {
+          setBlockedFileMutation(blocked)
+          setFinalSubmitOutcomePending(pending)
+        }
+      })
+    }
+
+    submitGuard.invalidate()
+    createSaleSubmissionRef.current = null
+    mergedSaleSubmissionRef.current = null
+    fileMutationSubmissionRef.current = null
+    blockedFileMutationRef.current = null
+
+    let restoredPending = false
+    let restoredBlocked: BlockedFinalFileMutation | null = null
+
+    try {
+      synchronizeSalesPendingMutationUser(pendingMutationUserKey)
+
+      if (pendingMutationUserKey && (pendingMutationContext || pendingFileMutationContext)) {
+      const createScope = getPendingMutationScope('create-sale')
+      const createEntry = createScope
+        ? loadSalesPendingMutation<PersistedFinalCreateSale>(createScope)
+        : null
+
+      if (
+        createEntry &&
+        isPersistedFinalCreateSale(createEntry.payload) &&
+        createEntry.payload.submission.operationId === createEntry.operationId
+      ) {
+        createSaleSubmissionRef.current = createEntry.payload
+        restoredPending = true
+      } else {
+        if (createEntry && createScope) {
+          markSalesPendingMutationCorrupt(
+            createScope,
+            createEntry.operationId,
+            'Persisted create-sale payload does not match its durable scope',
+          )
+        }
+
+        const mergedScope = getPendingMutationScope('merged-sale')
+        const mergedEntry = mergedScope
+          ? loadSalesPendingMutation<WizardMergedSaleSubmission>(mergedScope)
+          : null
+
+        if (
+          mergedEntry &&
+          isWizardMergedSaleSubmission(mergedEntry.payload) &&
+          mergedEntry.payload.operationId === mergedEntry.operationId
+        ) {
+          mergedSaleSubmissionRef.current = { submission: mergedEntry.payload }
+          restoredPending = true
+        } else {
+          if (mergedEntry && mergedScope) {
+            markSalesPendingMutationCorrupt(
+              mergedScope,
+              mergedEntry.operationId,
+              'Persisted merged-sale payload does not match its durable scope',
+            )
+          }
+
+          fileKinds: for (const kind of ['sale-update-file', 'sale-vat-document'] as const) {
+            const candidates = [
+              { legacy: false, scope: getPendingMutationScope(kind) },
+              { legacy: true, scope: getLegacyFileMutationScope(kind) },
+            ]
+
+            for (const candidate of candidates) {
+              const { scope } = candidate
+              const entry = scope
+                ? loadSalesPendingMutation<PersistedSaleFileMutationRecord>(scope)
+                : null
+
+              if (!scope || !entry) {
+                continue
+              }
+
+              if (
+                !isPersistedSaleFileMutationRecord(entry.payload) ||
+                entry.payload.kind !== kind ||
+                entry.payload.operationId !== entry.operationId
+              ) {
+                markSalesPendingMutationCorrupt(
+                  scope,
+                  entry.operationId,
+                  'Persisted wizard file payload does not match its durable scope',
+                )
+              }
+
+              const mode = getWizardSaleFileMutationIntent(entry.payload, candidate.legacy)
+              const restored = mode ? restoreSaleFileMutationSubmission(entry.payload) : null
+              restoredPending = true
+
+              if (mode && restored) {
+                fileMutationSubmissionRef.current = { mode, scope, submission: restored }
+              } else {
+                const blockedEntry: BlockedFinalFileMutation = {
+                  canResume: mode !== null,
+                  mode,
+                  payload: entry.payload,
+                  scope,
+                }
+                blockedFileMutationRef.current = blockedEntry
+                restoredBlocked = blockedEntry
+              }
+
+              break fileKinds
+            }
+          }
+        }
+      }
+      }
+    } catch (storageError) {
+      restoredPending = true
+      queueMicrotask(() => {
+        if (!cancelled && mountedRef.current) {
+          notifications.show({
+            autoClose: false,
+            color: 'red',
+            message: storageError instanceof Error
+              ? storageError.message
+              : t('Журнал операції недоступний; нові запити заблоковано'),
+          })
+        }
+      })
+    }
+
+    scheduleRestoredState(restoredPending, restoredBlocked)
+
+    return () => {
+      cancelled = true
+    }
+  }, [
+    getLegacyFileMutationScope,
+    getPendingMutationScope,
+    pendingFileMutationContext,
+    pendingMutationContext,
+    pendingMutationUserKey,
+    mutationStorageRevision,
+    submitGuard,
+    t,
+  ])
 
   useEffect(() => {
     latestRef.current = { onChange, sale, value }
@@ -123,17 +409,23 @@ export function NewSaleReviewStep({
   }, [onRegisterSubmit])
 
   useEffect(() => {
-    onBusyChange?.(submitting || saving)
+    onBusyChange?.(finalSubmitOutcomePending || submitting || saving)
 
     return () => {
       onBusyChange?.(false)
     }
-  }, [onBusyChange, saving, submitting])
+  }, [finalSubmitOutcomePending, onBusyChange, saving, submitting])
 
   useWizardKeyboard(2)
 
   useWizardKeyHandler((event) => {
     if (event.hotkey === 'Escape') {
+      if (finalSubmitOutcomePending) {
+        notifications.show({ color: 'orange', message: t('Спочатку перевірте результат створення продажу') })
+
+        return true
+      }
+
       if (!confirmOpened) {
         setConfirmOpened(true)
       }
@@ -142,8 +434,7 @@ export function NewSaleReviewStep({
     }
 
     if (event.hotkey === 'Enter') {
-      if (!enterLatchRef.current) {
-        enterLatchRef.current = true
+      if (enterLatch.tryAcquire()) {
         void submitSale()
       }
 
@@ -372,15 +663,17 @@ export function NewSaleReviewStep({
   const documentTitle = sale
     ? `${withVatAccounting ? `(${t('ПДВ')}) ` : ''}${getSaleLifeCycleStatusName(sale)} ${sale.SaleNumber?.Value ?? ''}`.trim()
     : ''
-  const primaryLabel = isMergedMode
-    ? t('Створити накладну')
-    : sale
-      ? sale.IsVatSale
-        ? t('Завантажити рахунок на оплату')
-        : lifecycleKey === '0'
-          ? t('Створити накладну')
-          : t('Оновити накладну')
-      : t('Створити продаж')
+  const primaryLabel = finalSubmitOutcomePending
+    ? t('Перевірити результат')
+    : isMergedMode
+      ? t('Створити накладну')
+      : sale
+        ? sale.IsVatSale
+          ? t('Завантажити рахунок на оплату')
+          : lifecycleKey === '0'
+            ? t('Створити накладну')
+            : t('Оновити накладну')
+        : t('Створити продаж')
 
   function selectTransporter(transporter: SalesUkraineTransporter) {
     onChange({ transporter })
@@ -519,84 +812,650 @@ export function NewSaleReviewStep({
     return payload
   }
 
-  async function submitSale() {
-    if (!sale || busyRef.current) {
+  function completeMergedSubmit() {
+    clearWizardSplitOrderItems()
+    clearWizardMergedSale()
+    onCreated?.()
+    onMergedSubmitted?.()
+  }
+
+  function completeFinalCreateSale(flow: FinalCreateSaleFlow, result: SaleSubmitResult) {
+    if (flow === 'merged-split') {
+      completeMergedSubmit()
+      notifications.show({ color: 'green', message: result.message || t('Рахунок створено') })
+
       return
     }
 
-    const error = getCarrierValidationError()
+    clearWizardSplitOrderItems()
+    notifications.show({ color: 'green', message: result.message || t('Продаж створено') })
+    onCreated?.()
+    onClose?.()
+  }
 
-    if (error) {
-      notifications.show({ color: 'red', message: t(error) })
+  function stageFinalSplitMutation(
+    scope: SalesPendingMutationScope,
+    operationId: string,
+    settlesSplit = false,
+    lease?: SalesPendingMutationLease,
+  ): boolean {
+    const linkedToSplit = settlesSplit && Boolean(getWizardSplitRecovery())
 
-      return
-    }
-
-    if (retailSale?.RetailClient && retailStatus && String(retailStatus.Id ?? 0) !== '0' && (retailStatus.Amount ?? 0) <= 0) {
-      notifications.show({
-        autoClose: 990000,
-        color: 'red',
-        message: t('Замовлення не буде відвантажено (створено видаткову накладну) поки не буде здійснена оплата (передплата)'),
+    if (linkedToSplit) {
+      stageWizardSplitFinalMutation({
+        context: scope.context,
+        kind: scope.kind as 'create-sale' | 'sale-update-file' | 'sale-vat-document',
+        operationId,
+        ...(lease ? { fencingToken: lease.fencingToken, generation: lease.generation } : {}),
+        userKey: scope.userKey,
       })
-
-      return
     }
 
-    busyRef.current = true
-    setSubmitting(true)
+    return linkedToSplit
+  }
 
-    try {
-      const isSplitedSale = splitItems.length > 0
+  function isSubmitAttemptCurrent(
+    token: ReturnType<typeof submitGuard.begin>,
+  ): boolean {
+    return mountedRef.current && submitGuard.isCurrent(token, token.context)
+  }
 
-      if (isMergedMode) {
-        try {
-          if (isSplitedSale) {
-            const result = await createSale(buildPayload('create', buildSplitSale(sale, splitItems)))
+  async function runFinalCreateSale(
+    flow: FinalCreateSaleFlow,
+    payload?: SalesUkraineSale,
+  ): Promise<SaleSubmitResult | null> {
+    const pending = createSaleSubmissionRef.current
 
-            notifications.show({ color: 'green', message: result.message || t('Рахунок створено') })
-          } else {
-            const payload = buildPayload('create', sale)
-            payload.Order = { ...(sale.Order ?? {}), OrderItems: mergedSale?.orderItems ?? sale.Order?.OrderItems ?? [] }
+    if (pending && pending.flow !== flow) {
+      throw new Error('Неможливо змінити тип створення, доки попередня операція не підтверджена')
+    }
 
-            await updateMergedSale(payload)
-            notifications.show({ color: 'green', message: t('Рахунок створено') })
-          }
-        } catch {
-          notifications.show({ color: 'red', message: t('Не вдалося створити рахунок') })
+    if (!pending && !payload) {
+      throw new Error('Відсутні дані для створення продажу')
+    }
+
+    const submission = pending?.submission ?? createWizardCreateSaleSubmission(payload as SalesUkraineSale)
+    const scope = getPendingMutationScope('create-sale')
+
+    if (!scope) {
+      throw new Error('Неможливо безпечно створити продаж без авторизованого користувача')
+    }
+
+    const persisted: PersistedFinalCreateSale = { flow, submission }
+    const token = submitGuard.begin(`${scope.context}:create-sale:${submission.operationId}`)
+    const attempt = await withSalesPendingMutationLock(
+      scope,
+      submission.operationId,
+      persisted,
+      async (lease) => {
+        const frozen = lease.entry.payload
+
+        if (
+          !isPersistedFinalCreateSale(frozen) ||
+          frozen.flow !== flow ||
+          frozen.submission.operationId !== lease.operationId
+        ) {
+          markSalesPendingMutationCorrupt(
+            scope,
+            lease.operationId,
+            'Create-sale durable payload changed before submission',
+          )
         }
 
-        clearWizardSplitOrderItems()
-        clearWizardMergedSale()
-        onCreated?.()
-        onMergedSubmitted?.()
+        const linkedToSplit = stageFinalSplitMutation(
+          scope,
+          lease.operationId,
+          true,
+          lease,
+        )
+        markSalesPendingMutationSubmitted(lease)
+        createSaleSubmissionRef.current = frozen
+
+        if (linkedToSplit) {
+          markWizardSplitFinalMutationSubmitted(lease.operationId, lease)
+        }
+
+        const result = await advanceWizardCreateSaleSession({
+          createSale,
+          submission: frozen.submission,
+        })
+
+        if (result.status === 'pending-reconciliation') {
+          markSalesPendingMutationUnknown(lease)
+
+          if (linkedToSplit) {
+            markWizardSplitFinalMutationUnknown(lease.operationId, lease)
+          }
+
+          return result
+        }
+
+        if (result.status === 'definitive-failure') {
+          if (linkedToSplit) {
+            rejectWizardSplitFinalMutation(lease.operationId, lease)
+          }
+
+          resolveRejectedSalesPendingMutation(lease)
+          return result
+        }
+
+        if (linkedToSplit) {
+          confirmWizardSplitFinalMutationCommitted(lease.operationId, lease)
+        }
+
+        resolveSalesPendingMutation(lease, 'committed')
+
+        return result
+      },
+    )
+
+    if (!isSubmitAttemptCurrent(token)) {
+      return null
+    }
+
+    if (attempt.status === 'pending-reconciliation') {
+      createSaleSubmissionRef.current = { flow, submission: attempt.submission }
+      setFinalSubmitOutcomePending(true)
+      notifications.show({
+        color: 'orange',
+        message: `${getRequestErrorMessage(attempt.error, t('Сервер не підтвердив створення'))}. ${t('Повторіть перевірку результату')}`,
+      })
+
+      return null
+    }
+
+    if (attempt.status === 'definitive-failure') {
+      createSaleSubmissionRef.current = null
+      setFinalSubmitOutcomePending(false)
+      notifications.show({
+        color: 'red',
+        message: getRequestErrorMessage(attempt.error, t('Сервер відхилив створення продажу')),
+      })
+
+      return null
+    }
+
+    createSaleSubmissionRef.current = null
+    setFinalSubmitOutcomePending(false)
+
+    return attempt.result
+  }
+
+  async function runFinalMergedSale(payload?: SalesUkraineSale): Promise<boolean> {
+    const pending = mergedSaleSubmissionRef.current
+
+    if (!pending && !payload) {
+      throw new Error('Відсутні дані для обʼєднання продажу')
+    }
+
+    const submission = pending?.submission ?? createWizardMergedSaleSubmission(payload as SalesUkraineSale)
+    const scope = getPendingMutationScope('merged-sale')
+
+    if (!scope) {
+      throw new Error('Неможливо безпечно обʼєднати продаж без авторизованого користувача')
+    }
+
+    const token = submitGuard.begin(`${scope.context}:merged-sale:${submission.operationId}`)
+    const attempt = await withSalesPendingMutationLock(
+      scope,
+      submission.operationId,
+      submission,
+      async (lease) => {
+        const frozen = lease.entry.payload
+
+        if (
+          !isWizardMergedSaleSubmission(frozen) ||
+          frozen.operationId !== lease.operationId
+        ) {
+          markSalesPendingMutationCorrupt(
+            scope,
+            lease.operationId,
+            'Merged-sale durable payload changed before submission',
+          )
+        }
+
+        markSalesPendingMutationSubmitted(lease)
+        mergedSaleSubmissionRef.current = { submission: frozen }
+        const result = await advanceWizardMergedSaleSession({
+          submission: frozen,
+          updateMergedSale,
+        })
+
+        if (result.status === 'pending-reconciliation') {
+          markSalesPendingMutationUnknown(lease)
+          return result
+        }
+
+        if (result.status === 'definitive-failure') {
+          resolveRejectedSalesPendingMutation(lease)
+          return result
+        }
+
+        resolveSalesPendingMutation(lease, 'committed')
+        return result
+      },
+    )
+
+    if (!isSubmitAttemptCurrent(token)) {
+      return false
+    }
+
+    if (attempt.status === 'pending-reconciliation') {
+      mergedSaleSubmissionRef.current = { submission: attempt.submission }
+      setFinalSubmitOutcomePending(true)
+      notifications.show({
+        color: 'orange',
+        message: `${getRequestErrorMessage(attempt.error, t('Сервер не підтвердив обʼєднання'))}. ${t('Повторіть перевірку результату')}`,
+      })
+
+      return false
+    }
+
+    if (attempt.status === 'definitive-failure') {
+      mergedSaleSubmissionRef.current = null
+      setFinalSubmitOutcomePending(false)
+      notifications.show({
+        color: 'red',
+        message: getRequestErrorMessage(attempt.error, t('Сервер відхилив обʼєднання продажу')),
+      })
+
+      return false
+    }
+
+    mergedSaleSubmissionRef.current = null
+    setFinalSubmitOutcomePending(false)
+
+    return true
+  }
+
+  async function runFinalFileMutation<TResult>(
+    kind: SaleFileMutationKind,
+    mode: FinalFileMutationMode,
+    request: (
+      currentSale: SalesUkraineSale,
+      file: File | null,
+      operation: { operationId: string },
+    ) => Promise<TResult>,
+    payload?: SalesUkraineSale,
+    file?: File | null,
+  ): Promise<TResult | null> {
+    const blocked = blockedFileMutationRef.current
+    let pending = fileMutationSubmissionRef.current
+    let resumedBlockedFile = false
+
+    if (blocked) {
+      if (!blocked.canResume || blocked.mode === null) {
+        throw new Error('Незавершена файлова операція належить іншому екрану і не може бути повторена в майстрі')
+      }
+
+      if (blocked.mode !== mode || blocked.payload.kind !== kind) {
+        throw new Error('Спочатку завершіть перевірку попередньої файлової операції продажу')
+      }
+
+      if (!file) {
+        throw new Error('Повторно оберіть той самий файл для безпечного повтору з тим самим ключем')
+      }
+
+      const resumed = await resumeSaleFileMutationSubmission(blocked.payload, file)
+      pending = { mode: blocked.mode, scope: blocked.scope, submission: resumed }
+      resumedBlockedFile = true
+    }
+
+    if (pending && (pending.mode !== mode || pending.submission.kind !== kind)) {
+      throw new Error('Спочатку завершіть перевірку попередньої операції продажу')
+    }
+
+    if (!pending && !payload) {
+      throw new Error('Відсутні дані для збереження продажу')
+    }
+
+    const submission = pending?.submission ?? await createSaleFileMutationSubmission(
+      kind,
+      payload as SalesUkraineSale,
+      file ?? null,
+    )
+    const scope = pending?.scope ?? getPendingMutationScope(kind)
+
+    if (!scope) {
+      throw new Error('Неможливо безпечно зберегти продаж без авторизованого користувача')
+    }
+
+    const persisted = persistSaleFileMutationRecord(submission, {
+      intent: mode,
+      surface: SALE_FILE_MUTATION_SURFACES.wizard,
+    })
+    const stored = loadSalesPendingMutation<PersistedSaleFileMutationRecord>(scope)
+    const durablePayload = stored?.operationId === submission.operationId
+      ? stored.payload
+      : persisted
+    const legacyScope = getLegacyFileMutationScope(kind)
+    const isLegacyScope = Boolean(
+      legacyScope &&
+      legacyScope.context === scope.context &&
+      legacyScope.kind === scope.kind &&
+      legacyScope.userKey === scope.userKey,
+    )
+    const settlesSplit = mode === 'submit' && Boolean(getWizardSplitRecovery())
+    const token = submitGuard.begin(`${scope.context}:${kind}:${submission.operationId}`)
+    const attempt = await withSalesPendingMutationLock(
+      scope,
+      submission.operationId,
+      durablePayload,
+      async (lease) => {
+        const frozen = lease.entry.payload
+        const frozenMode = isPersistedSaleFileMutationRecord(frozen)
+          ? getWizardSaleFileMutationIntent(frozen, isLegacyScope)
+          : null
+
+        if (
+          !isPersistedSaleFileMutationRecord(frozen) ||
+          frozen.operationId !== lease.operationId ||
+          frozen.kind !== kind ||
+          frozenMode !== mode
+        ) {
+          markSalesPendingMutationCorrupt(
+            scope,
+            lease.operationId,
+            'Sale-file durable payload changed before submission',
+          )
+        }
+
+        if (
+          submission.operationId !== frozen.operationId ||
+          submission.kind !== frozen.kind
+        ) {
+          markSalesPendingMutationCorrupt(
+            scope,
+            lease.operationId,
+            'Runtime file submission no longer matches durable operation',
+          )
+        }
+
+        const linkedToSplit = stageFinalSplitMutation(
+          scope,
+          lease.operationId,
+          settlesSplit,
+          lease,
+        )
+        markSalesPendingMutationSubmitted(lease)
+        fileMutationSubmissionRef.current = { mode, scope, submission }
+
+        if (resumedBlockedFile) {
+          blockedFileMutationRef.current = null
+          setBlockedFileMutation(null)
+        }
+
+        if (linkedToSplit) {
+          markWizardSplitFinalMutationSubmitted(lease.operationId, lease)
+        }
+
+        const result = await advanceSaleFileMutationSession({
+          kind,
+          request,
+          submission,
+        })
+
+        if (result.status === 'pending-reconciliation') {
+          markSalesPendingMutationUnknown(lease)
+
+          if (linkedToSplit) {
+            markWizardSplitFinalMutationUnknown(lease.operationId, lease)
+          }
+
+          return result
+        }
+
+        if (result.status === 'definitive-failure') {
+          if (linkedToSplit) {
+            rejectWizardSplitFinalMutation(lease.operationId, lease)
+          }
+
+          resolveRejectedSalesPendingMutation(lease)
+          return result
+        }
+
+        if (linkedToSplit) {
+          confirmWizardSplitFinalMutationCommitted(lease.operationId, lease)
+        }
+
+        resolveSalesPendingMutation(lease, 'committed')
+        return result
+      },
+    )
+
+    if (!isSubmitAttemptCurrent(token)) {
+      return null
+    }
+
+    if (attempt.status === 'pending-reconciliation') {
+      fileMutationSubmissionRef.current = { mode, scope, submission: attempt.submission }
+      setFinalSubmitOutcomePending(true)
+      notifications.show({
+        color: 'orange',
+        message: `${getRequestErrorMessage(attempt.error, t('Сервер не підтвердив збереження'))}. ${t('Повторіть перевірку результату')}`,
+      })
+
+      return null
+    }
+
+    if (attempt.status === 'definitive-failure') {
+      fileMutationSubmissionRef.current = null
+      blockedFileMutationRef.current = null
+      setBlockedFileMutation(null)
+      setFinalSubmitOutcomePending(false)
+      notifications.show({
+        color: 'red',
+        message: getRequestErrorMessage(attempt.error, t('Сервер відхилив збереження продажу')),
+      })
+
+      return null
+    }
+
+    fileMutationSubmissionRef.current = null
+    blockedFileMutationRef.current = null
+    setBlockedFileMutation(null)
+    setFinalSubmitOutcomePending(false)
+
+    return attempt.result
+  }
+
+  async function submitSale() {
+    try {
+      if (!sale || busyRef.current) {
+        return
+      }
+
+      const pendingFinalCreateSale = createSaleSubmissionRef.current
+      const pendingFinalMergedSale = mergedSaleSubmissionRef.current
+      const pendingFinalFileMutation = fileMutationSubmissionRef.current
+      const blockedFinalFileMutation = blockedFileMutationRef.current
+      const pendingFinalFileKind = pendingFinalFileMutation?.submission.kind ?? blockedFinalFileMutation?.payload.kind
+      const pendingFinalFileMode = pendingFinalFileMutation?.mode ?? blockedFinalFileMutation?.mode
+      const hasPendingFinalSubmit = Boolean(
+        pendingFinalCreateSale ||
+        pendingFinalMergedSale ||
+        pendingFinalFileMutation ||
+        blockedFinalFileMutation,
+      )
+
+      if (blockedFinalFileMutation && !blockedFinalFileMutation.canResume) {
+        notifications.show({
+          color: 'orange',
+          message: t('Незавершена файлова операція належить іншому екрану. Завершіть її там перед продовженням'),
+        })
 
         return
       }
 
-      const payload = buildPayload('create', isSplitedSale ? buildSplitSale(sale, splitItems) : sale)
+      const error = hasPendingFinalSubmit ? null : getCarrierValidationError()
 
-      if (payload.IsVatSale) {
-        const documentResult = await convertVatSaleAndGetPaymentDocument(payload, value.ttnFile)
+      if (error) {
+        notifications.show({ color: 'red', message: t(error) })
 
-        onVatDocuments?.(documentResult)
-      } else if (isSplitedSale) {
-        const result = await createSale(payload)
-
-        notifications.show({ color: 'green', message: result.message || t('Продаж створено') })
-      } else {
-        const result = await updateSaleFromData(payload, value.ttnFile)
-
-        notifications.show({ color: 'green', message: result.message || t('Продаж створено') })
+        return
       }
 
-      clearWizardSplitOrderItems()
-      onCreated?.()
-      onClose?.()
-    } catch {
-      notifications.show({ color: 'red', message: t('Не вдалося завершити продаж') })
+      if (!hasPendingFinalSubmit && retailSale?.RetailClient && retailStatus && String(retailStatus.Id ?? 0) !== '0' && (retailStatus.Amount ?? 0) <= 0) {
+        notifications.show({
+          autoClose: 990000,
+          color: 'red',
+          message: t('Замовлення не буде відвантажено (створено видаткову накладну) поки не буде здійснена оплата (передплата)'),
+        })
+
+        return
+      }
+
+      busyRef.current = true
+      setSubmitting(true)
+
+      try {
+        if (pendingFinalCreateSale) {
+          const result = await runFinalCreateSale(pendingFinalCreateSale.flow)
+
+          if (result) {
+            completeFinalCreateSale(pendingFinalCreateSale.flow, result)
+          }
+
+          return
+        }
+
+        if (pendingFinalMergedSale) {
+          if (await runFinalMergedSale()) {
+            completeMergedSubmit()
+            notifications.show({ color: 'green', message: t('Рахунок створено') })
+          }
+
+          return
+        }
+
+        if (pendingFinalFileKind && pendingFinalFileMode) {
+          const result = pendingFinalFileKind === 'sale-vat-document'
+            ? await runFinalFileMutation(
+                'sale-vat-document',
+                pendingFinalFileMode,
+                convertVatSaleAndGetPaymentDocument,
+                undefined,
+                value.ttnFile,
+              )
+            : await runFinalFileMutation(
+                'sale-update-file',
+                pendingFinalFileMode,
+                updateSaleFromData,
+                undefined,
+                value.ttnFile,
+              )
+
+          if (!result) {
+            return
+          }
+
+          if (pendingFinalFileMode === 'save') {
+            notifications.show({ color: 'green', message: t('Збережено') })
+            onCreated?.()
+
+            return
+          }
+
+          if (pendingFinalFileKind === 'sale-vat-document') {
+            onVatDocuments?.(result as SaleDocumentResult)
+          } else {
+            notifications.show({
+              color: 'green',
+              message: (result as SaleSubmitResult).message || t('Продаж створено'),
+            })
+          }
+
+          clearWizardSplitOrderItems()
+          onCreated?.()
+          onClose?.()
+
+          return
+        }
+
+        const isSplitedSale = splitItems.length > 0
+
+      if (isMergedMode) {
+        if (isSplitedSale) {
+          const result = await runFinalCreateSale(
+            'merged-split',
+            buildPayload('create', buildWizardSplitSale(sale, splitItems)),
+          )
+
+          if (result) {
+            completeFinalCreateSale('merged-split', result)
+          }
+        } else {
+          const payload = buildPayload('create', sale)
+          payload.Order = {
+            ...(sale.Order ?? {}),
+            OrderItems: buildWizardMergedOrderItems(mergedSale?.orderItems ?? sale.Order?.OrderItems ?? []),
+          }
+
+          if (await runFinalMergedSale(payload)) {
+            completeMergedSubmit()
+            notifications.show({ color: 'green', message: t('Рахунок створено') })
+          }
+        }
+
+        return
+      }
+
+      const payload = buildPayload('create', isSplitedSale ? buildWizardSplitSale(sale, splitItems) : sale)
+
+        if (payload.IsVatSale) {
+          const documentResult = await runFinalFileMutation(
+            'sale-vat-document',
+            'submit',
+            convertVatSaleAndGetPaymentDocument,
+            payload,
+            value.ttnFile,
+          )
+
+          if (!documentResult) {
+            return
+          }
+
+          onVatDocuments?.(documentResult)
+        } else if (isSplitedSale) {
+        const result = await runFinalCreateSale('ordinary-split', payload)
+
+        if (!result) {
+          return
+        }
+
+        completeFinalCreateSale('ordinary-split', result)
+
+        return
+        } else {
+          const result = await runFinalFileMutation(
+            'sale-update-file',
+            'submit',
+            updateSaleFromData,
+            payload,
+            value.ttnFile,
+          )
+
+          if (!result) {
+            return
+          }
+
+          notifications.show({ color: 'green', message: result.message || t('Продаж створено') })
+        }
+
+        clearWizardSplitOrderItems()
+        onCreated?.()
+        onClose?.()
+      } catch (submitError) {
+        notifications.show({ color: 'red', message: getRequestErrorMessage(submitError, t('Не вдалося завершити продаж')) })
+      } finally {
+        busyRef.current = false
+
+        if (mountedRef.current) {
+          setSubmitting(false)
+        }
+      }
     } finally {
-      busyRef.current = false
-      setSubmitting(false)
+      enterLatch.release()
     }
   }
 
@@ -617,14 +1476,24 @@ export function NewSaleReviewStep({
     setSaving(true)
 
     try {
-      const result = await updateSaleFromData(buildPayload('save', sale), value.ttnFile)
+      const result = await runFinalFileMutation(
+        'sale-update-file',
+        'save',
+        updateSaleFromData,
+        buildPayload('save', sale),
+        value.ttnFile,
+      )
+
+      if (!result) {
+        return false
+      }
 
       notifications.show({ color: 'green', message: result.message || t('Збережено') })
       onCreated?.()
 
       return true
-    } catch {
-      notifications.show({ color: 'red', message: t('Не вдалося зберегти продаж') })
+    } catch (saveError) {
+      notifications.show({ color: 'red', message: getRequestErrorMessage(saveError, t('Не вдалося зберегти продаж')) })
 
       return false
     } finally {
@@ -639,10 +1508,18 @@ export function NewSaleReviewStep({
     }
   }
 
-  function handleConfirmClose() {
+  async function handleConfirmClose() {
+    if (finalSubmitOutcomePending) {
+      notifications.show({ color: 'orange', message: t('Спочатку перевірте результат створення продажу') })
+
+      return
+    }
+
     setConfirmOpened(false)
-    void saveSale()
-    onClose?.()
+
+    if (await saveSale()) {
+      onClose?.()
+    }
   }
 
   function handleCancelClose() {
@@ -652,6 +1529,34 @@ export function NewSaleReviewStep({
 
   return (
     <Box className="new-sale-review-step app-form-sheet">
+      {blockedFileMutation && (
+        <Alert color="orange" mb="sm" title={t('Потрібна звірка операції')}>
+          <Text size="sm">
+            {blockedFileMutation.canResume
+              ? t('Попередній запит із файлом міг завершитися на сервері. Повторно оберіть той самий файл: система звірить SHA-256 і повторить незмінний запит із тим самим ключем.')
+              : t('Неможливо безпечно визначити дію попереднього запиту. Завершіть файлову операцію на початковому екрані або дочекайтеся завершення строку звірки.')}
+          </Text>
+          {blockedFileMutation.canResume ? (
+            <Group align="flex-end" gap="sm" mt="sm">
+              <FileInput
+                aria-label={t('Повторно оберіть файл для звірки')}
+                leftSection={<Upload size={16} />}
+                placeholder={t('Завантажити')}
+                value={value.ttnFile}
+                onChange={(file) => onChange({ ttnFile: file })}
+              />
+              <Button
+                disabled={!value.ttnFile}
+                loading={submitting}
+                size="xs"
+                onClick={() => void submitSale()}
+              >
+                {t('Перевірити результат')}
+              </Button>
+            </Group>
+          ) : null}
+        </Alert>
+      )}
       <Box className="new-sale-review-step__body">
         <Box className="new-sale-review-form app-form-sheet">
           <Box className="new-sale-review-layout">
@@ -831,47 +1736,83 @@ export function NewSaleReviewStep({
 
           <Group className="new-sale-review-actions" gap="sm" justify="flex-end">
             {sale && !isMergedMode ? (
-              <Button className="new-sale-review-actions__secondary" color="gray" loading={saving} variant="light" onClick={() => void handleSave()}>
+              <Button className="new-sale-review-actions__secondary" color="gray" disabled={finalSubmitOutcomePending} loading={saving} variant="light" onClick={() => void handleSave()}>
                 {t('Зберегти')}
               </Button>
             ) : null}
-            <Button ref={submitRef} className="new-sale-review-actions__primary" loading={submitting} onClick={() => void submitSale()}>
+            <Button
+              ref={submitRef}
+              className="new-sale-review-actions__primary"
+              disabled={Boolean(blockedFileMutation && !blockedFileMutation.canResume)}
+              loading={submitting}
+              onClick={() => void submitSale()}
+            >
               {primaryLabel}
             </Button>
           </Group>
         </Box>
       </Box>
 
-      <WizardReviewConfirmModal opened={confirmOpened} onCancel={handleCancelClose} onConfirm={handleConfirmClose} />
+      <WizardReviewConfirmModal opened={confirmOpened} onCancel={handleCancelClose} onConfirm={() => void handleConfirmClose()} />
     </Box>
   )
 }
 
-function buildSplitSale(current: SalesUkraineSale, items: WizardSplitOrderItem[]): SalesUkraineSale {
-  return {
-    ClientAgreement: current.ClientAgreement,
-    CustomersOwnTtn: current.CustomersOwnTtn ?? null,
-    Deleted: false,
-    Id: 0,
-    NetUid: EMPTY_GUID,
-    Order: {
-      Deleted: false,
-      Id: 0,
-      NetUid: EMPTY_GUID,
-      OrderItems: items.map((item) => ({
-        Comment: item.Comment ?? '',
-        Deleted: false,
-        Id: 0,
-        NetUid: EMPTY_GUID,
-        Product: item.Product,
-        Qty: item.Qty,
-        TotalAmount: item.TotalAmount,
-        TotalAmountLocal: item.TotalAmountLocal,
-        User: item.User,
-      })),
-    },
-    TTN: current.TTN,
+function getWizardSaleFileMutationIntent(
+  record: PersistedSaleFileMutationRecord,
+  legacyContext: boolean,
+): SaleFileMutationIntent | null {
+  const identity = getSaleFileMutationOperationIdentity(record)
+
+  if (identity) {
+    return identity.surface === SALE_FILE_MUTATION_SURFACES.wizard ? identity.intent : null
   }
+
+  if (
+    legacyContext &&
+    record.surface === undefined &&
+    (record.intent === 'save' || record.intent === 'submit')
+  ) {
+    return record.intent
+  }
+
+  return null
+}
+
+function getRequestErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error && error.message.trim() ? error.message : fallback
+}
+
+function getFinalMutationContext(
+  clientNetId: string | null,
+  sale: SalesUkraineSale | null,
+): string {
+  const client = normalizeMutationIdentity(clientNetId || sale?.ClientAgreement?.Client?.NetUid)
+  const agreement = normalizeMutationIdentity(sale?.ClientAgreement?.NetUid)
+  const saleNetUid = normalizeMutationIdentity(sale?.NetUid)
+
+  return client || agreement || saleNetUid
+    ? `wizard-final:${client}:${agreement}:${saleNetUid}`
+    : ''
+}
+
+function isPersistedFinalCreateSale(value: unknown): value is PersistedFinalCreateSale {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return false
+  }
+
+  const candidate = value as Partial<PersistedFinalCreateSale>
+
+  return (
+    (candidate.flow === 'merged-split' || candidate.flow === 'ordinary-split') &&
+    isWizardCreateSaleSubmission(candidate.submission)
+  )
+}
+
+function normalizeMutationIdentity(value: string | null | undefined): string {
+  const normalized = value?.trim().toLowerCase() ?? ''
+
+  return normalized === EMPTY_GUID ? '' : normalized
 }
 
 function applyRecipientSelection(

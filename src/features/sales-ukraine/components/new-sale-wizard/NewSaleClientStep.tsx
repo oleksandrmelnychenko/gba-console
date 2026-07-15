@@ -19,6 +19,7 @@ import type { SaleDocumentResult, SalesUkraineClientAgreement, SalesUkraineSale 
 import { MergedSalesDrawer } from '../MergedSalesDrawer'
 import { SaleDetailsDrawer } from '../SaleDetailsDrawer'
 import { SaleEditDrawer } from '../SaleEditDrawer'
+import { usePersistentSaleJsonMutationRunner } from '../../usePersistentSaleJsonMutation'
 import { bumpWizardDebtRefresh } from './newSaleWizardState'
 import { WizardClientAgreementsStrip } from './WizardClientAgreementsStrip'
 import { WizardClientCarousel } from './WizardClientCarousel'
@@ -83,6 +84,7 @@ export function NewSaleClientStep({
 }) {
   const { t } = useI18n()
   const { hasPermission } = useAuth()
+  const runSaleUpdate = usePersistentSaleJsonMutationRunner('sale-update')
   const canEdit = hasPermission(SALES_UKRAINE_EDIT_PERMISSION)
   const { state: keyboardState, setState: setKeyboardState } = useWizardKeyboard(0)
 
@@ -914,7 +916,15 @@ export function NewSaleClientStep({
         const hydrated = await getSaleById(netId)
 
         if (hydrated) {
-          await updateSale({ ...hydrated, IsInvoice: true, IsPrintedActProtocolEdit: true })
+          const attempt = await runSaleUpdate(
+            `sale-update:invoice-print:${netId}`,
+            { ...hydrated, IsInvoice: true, IsPrintedActProtocolEdit: true },
+            updateSale,
+          )
+
+          if (!attempt.completed) {
+            throw attempt.error
+          }
         }
       } catch {
         // Persisting the printed flag is best-effort; never block the print itself.

@@ -209,17 +209,20 @@ export type SalesUkraineOrderItemShiftStatus = SalesUkraineEntity & {
 
 export type SalesUkraineOrderItem = SalesUkraineEntity & {
   Discount?: number
+  IsFromReSale?: boolean
+  OperationNetUid?: string
   OneTimeDiscount?: number
   OneTimeDiscountComment?: string
   PricePerItem?: number
   Product?: SalesUkraineProduct
   Qty?: number
+  SourceOrderItemNetUid?: string
   OverLoadQty?: number
   TotalAmount?: number
   TotalAmountLocal?: number
   TotalAmountEurToUah?: number
   TotalVat?: number
-  AssignedSpecification?: { SpecificationCode?: string }
+  AssignedSpecification?: { Id?: number; NetUid?: string; SpecificationCode?: string }
   DiscountUpdatedBy?: SalesUkraineUser
   Comment?: string
   ConsignmentItemMovements?: Array<{
@@ -254,6 +257,7 @@ export type SalesUkraineSale = SalesUkraineEntity & {
   ChangedToInvoice?: Date | string
   ClientAgreement?: SalesUkraineClientAgreement
   Comment?: string
+  OperationNetUid?: string
   CustomersOwnTtn?: SalesUkraineCustomersOwnTtn | null
   CustomersOwnTtnId?: number
   DeliveryRecipient?: SalesUkraineDeliveryRecipient | null

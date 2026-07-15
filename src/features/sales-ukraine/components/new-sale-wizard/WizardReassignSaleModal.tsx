@@ -4,8 +4,9 @@ import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { AppModal } from '../../../../shared/ui/AppModal'
-import { switchSale } from '../../api/salesUkraineApi'
+import { switchSale, type SwitchSalePayload } from '../../api/salesUkraineApi'
 import type { SalesUkraineSale } from '../../types'
+import { usePersistentSaleJsonMutationRunner } from '../../usePersistentSaleJsonMutation'
 import type { Client } from '../../../clients/types'
 import { getRootClientBySubClientNetId } from '../../../clients/api/clientCabinetApi'
 import { WizardAgreementItem } from './WizardAgreementItem'
@@ -57,6 +58,7 @@ function WizardReassignSaleForm({
   const [loading, setLoading] = useState(Boolean(client.NetUid))
   const [busy, setBusy] = useState(false)
   const [selectedNetUid, setSelectedNetUid] = useState<string | null>(null)
+  const runSaleSwitch = usePersistentSaleJsonMutationRunner('sale-switch')
 
   useEffect(() => {
     let cancelled = false
@@ -117,9 +119,17 @@ function WizardReassignSaleForm({
     setBusy(true)
 
     try {
-      const movedSale = await switchSale(sale.NetUid, selectedNetUid)
+      const attempt = await runSaleSwitch<SwitchSalePayload, SalesUkraineSale | null>(
+        `sale-switch:${sale.NetUid}`,
+        { ClientAgreementNetId: selectedNetUid, SaleNetId: sale.NetUid },
+        (payload, operation) => switchSale(payload.SaleNetId, payload.ClientAgreementNetId, operation),
+      )
 
-      onReassigned(movedSale)
+      if (!attempt.completed) {
+        throw attempt.error
+      }
+
+      onReassigned(attempt.result)
     } catch (switchError) {
       notifications.show({
         color: 'red',

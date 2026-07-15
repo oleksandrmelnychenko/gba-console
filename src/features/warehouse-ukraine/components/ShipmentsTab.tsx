@@ -42,7 +42,9 @@ import {
   updateDeliveryRecipientAddress,
   updateSaleComment,
   updateShipmentList,
+  type ShipmentSaleCommentMutation,
 } from '../api/shipmentsApi'
+import { usePersistentSaleJsonMutationRunner } from '../../sales-ukraine/usePersistentSaleJsonMutation'
 import type {
   ShipmentDeliveryRecipient,
   ShipmentDeliveryRecipientAddress,
@@ -399,6 +401,9 @@ let lastAutoShipmentTransporterNetId: string | null = null
 
 function useShipmentsTabModel({ onCarriedOut }: ShipmentsTabModelOptions = {}) {
   const { t } = useI18n()
+  const runRecipientMutation = usePersistentSaleJsonMutationRunner('sale-recipient')
+  const runRecipientAddressMutation = usePersistentSaleJsonMutationRunner('sale-recipient-address')
+  const runCommentMutation = usePersistentSaleJsonMutationRunner('sale-comment')
   const initialFilters = useMemo<FilterDraft>(
     () =>
       lastAutoShipmentFilters ?? { from: getDateShiftedByDays(-DEFAULT_SHIPMENT_LOOKBACK_DAYS), to: getDateShiftedByDays(0) },
@@ -668,7 +673,16 @@ function useShipmentsTabModel({ onCarriedOut }: ShipmentsTabModelOptions = {}) {
     setError(null)
 
     try {
-      await updateDeliveryRecipient(saleNetId, { ...recipient, SaleNetId: saleNetId })
+      const attempt = await runRecipientMutation<ShipmentDeliveryRecipient, void>(
+        `sale-recipient:${saleNetId}`,
+        { ...recipient, SaleNetId: saleNetId },
+        (payload, operation) => updateDeliveryRecipient(saleNetId, payload, operation),
+      )
+
+      if (!attempt.completed) {
+        throw attempt.error
+      }
+
       setActiveModal(null)
       refreshList()
     } catch (saveError) {
@@ -697,7 +711,16 @@ function useShipmentsTabModel({ onCarriedOut }: ShipmentsTabModelOptions = {}) {
     setError(null)
 
     try {
-      await updateDeliveryRecipientAddress(saleNetId, { ...address, SaleNetId: saleNetId })
+      const attempt = await runRecipientAddressMutation<ShipmentDeliveryRecipientAddress, void>(
+        `sale-recipient-address:${saleNetId}`,
+        { ...address, SaleNetId: saleNetId },
+        (payload, operation) => updateDeliveryRecipientAddress(saleNetId, payload, operation),
+      )
+
+      if (!attempt.completed) {
+        throw attempt.error
+      }
+
       setActiveModal(null)
       refreshList()
     } catch (saveError) {
@@ -726,7 +749,16 @@ function useShipmentsTabModel({ onCarriedOut }: ShipmentsTabModelOptions = {}) {
     setError(null)
 
     try {
-      await updateSaleComment(saleNetId, comment)
+      const attempt = await runCommentMutation<ShipmentSaleCommentMutation, void>(
+        `sale-comment:${saleNetId}`,
+        { Comment: comment, NetUid: saleNetId },
+        (payload, operation) => updateSaleComment(payload.NetUid, payload.Comment, operation),
+      )
+
+      if (!attempt.completed) {
+        throw attempt.error
+      }
+
       setActiveModal(null)
       refreshList()
     } catch (saveError) {
@@ -1030,6 +1062,9 @@ type AllShipmentsPanelProps = {
 
 function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
   const { t } = useI18n()
+  const runRecipientMutation = usePersistentSaleJsonMutationRunner('sale-recipient')
+  const runRecipientAddressMutation = usePersistentSaleJsonMutationRunner('sale-recipient-address')
+  const runCommentMutation = usePersistentSaleJsonMutationRunner('sale-comment')
   const initialFilters = useMemo<FilterDraft>(
     () => ({ from: getDateShiftedByDays(-DEFAULT_SHIPMENT_LOOKBACK_DAYS), to: getDateShiftedByDays(0) }),
     [],
@@ -1554,7 +1589,16 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
     setEditError(null)
 
     try {
-      await updateDeliveryRecipient(saleNetId, { ...recipient, SaleNetId: saleNetId })
+      const attempt = await runRecipientMutation<ShipmentDeliveryRecipient, void>(
+        `sale-recipient:${saleNetId}`,
+        { ...recipient, SaleNetId: saleNetId },
+        (payload, operation) => updateDeliveryRecipient(saleNetId, payload, operation),
+      )
+
+      if (!attempt.completed) {
+        throw attempt.error
+      }
+
       setActiveModal(null)
       patchShipmentDraftItem(currentItem, (item) => ({
         ...item,
@@ -1591,7 +1635,16 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
     setEditError(null)
 
     try {
-      await updateDeliveryRecipientAddress(saleNetId, { ...address, SaleNetId: saleNetId })
+      const attempt = await runRecipientAddressMutation<ShipmentDeliveryRecipientAddress, void>(
+        `sale-recipient-address:${saleNetId}`,
+        { ...address, SaleNetId: saleNetId },
+        (payload, operation) => updateDeliveryRecipientAddress(saleNetId, payload, operation),
+      )
+
+      if (!attempt.completed) {
+        throw attempt.error
+      }
+
       setActiveModal(null)
       patchShipmentDraftItem(currentItem, (item) => ({
         ...item,
@@ -1628,7 +1681,16 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
     setEditError(null)
 
     try {
-      await updateSaleComment(saleNetId, comment)
+      const attempt = await runCommentMutation<ShipmentSaleCommentMutation, void>(
+        `sale-comment:${saleNetId}`,
+        { Comment: comment, NetUid: saleNetId },
+        (payload, operation) => updateSaleComment(payload.NetUid, payload.Comment, operation),
+      )
+
+      if (!attempt.completed) {
+        throw attempt.error
+      }
+
       setActiveModal(null)
       patchShipmentDraftItem(currentItem, (item) => ({
         ...item,

@@ -409,6 +409,7 @@ export type ProductFileUploadConfiguration = {
   EndRow: number
   IsForSale: number
   IsForWeb: number
+  ImportedForAmg?: boolean | null
   MainOriginalNumber: number
   MeasureUnit: number
   Mode: ProductFileUploadMode

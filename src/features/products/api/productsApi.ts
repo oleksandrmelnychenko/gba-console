@@ -62,9 +62,10 @@ export async function getProductUploadPricings(): Promise<Pricing[]> {
 
 export async function uploadProductsFromFile(configuration: ProductFileUploadConfiguration, file: File): Promise<void> {
   const formData = new FormData()
+  const normalizedConfiguration = normalizeProductFileUploadConfiguration(configuration)
 
   formData.append('file', file)
-  formData.append('configuration', JSON.stringify(configuration))
+  formData.append('configuration', JSON.stringify(normalizedConfiguration))
 
   await apiRequest<unknown>('/products/upload/file', {
     method: 'POST',
@@ -74,6 +75,27 @@ export async function uploadProductsFromFile(configuration: ProductFileUploadCon
       network: 'Сервер завантаження товарів недоступний',
     },
   })
+}
+
+function normalizeProductFileUploadConfiguration(
+  configuration: ProductFileUploadConfiguration,
+): ProductFileUploadConfiguration {
+  const withPrices = configuration.WithPrices || configuration.PriceConfigurations.length > 0
+
+  if (withPrices && typeof configuration.ImportedForAmg !== 'boolean') {
+    throw new Error('Оберіть джерело цін: Контех (Fenix) або AMG')
+  }
+
+  const normalizedConfiguration: ProductFileUploadConfiguration = {
+    ...configuration,
+    WithPrices: withPrices,
+  }
+
+  if (!withPrices) {
+    delete normalizedConfiguration.ImportedForAmg
+  }
+
+  return normalizedConfiguration
 }
 
 export async function getProductByNetId(netId: string, signal?: AbortSignal): Promise<Product | null> {

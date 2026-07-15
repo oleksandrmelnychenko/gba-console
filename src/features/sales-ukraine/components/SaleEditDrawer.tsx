@@ -19,6 +19,7 @@ import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { getShiftedSaleById, shiftOrderItemsCurrent } from '../api/salesUkraineApi'
 import { getSaleLifecycleStatusKey } from '../saleStatus'
+import { usePersistentSaleJsonMutation } from '../usePersistentSaleJsonMutation'
 import {
   OrderItemShiftStatusType,
   type OrderItemShiftStatusTypeValue,
@@ -172,6 +173,10 @@ function SaleEditContent({
     initialSale,
     createInitialSaleEditState,
   )
+  const shiftMutation = usePersistentSaleJsonMutation(
+    `sale-shift-current:${String(initialSale.NetUid || initialSale.Id || '')}`,
+    'sale-shift-current',
+  )
 
   useEffect(() => {
     const netId = initialSale.NetUid
@@ -232,7 +237,8 @@ function SaleEditContent({
       storeNum: entry.storeTouched ? toNumber(entry.store) : getExistingShiftQty(item, OrderItemShiftStatusType.Store),
     }
   })
-  const tableColumns = createSaleEditColumns({ isNew, isSaving, t, updateEntry })
+  const isMutationLocked = isSaving || shiftMutation.hasPending
+  const tableColumns = createSaleEditColumns({ isNew, isSaving: isMutationLocked, t, updateEntry })
 
   function updateEntry(key: string, patch: Partial<ShiftDraftEntry>) {
     dispatch({ key, patch, type: 'draftEntryChanged' })
@@ -252,11 +258,21 @@ function SaleEditContent({
     dispatch({ type: 'savingStarted' })
 
     try {
-      await shiftOrderItemsCurrent(payload)
+      const result = await shiftMutation.run(payload, shiftOrderItemsCurrent)
+
+      if (!result.completed) {
+        return
+      }
+
       notifications.show({ color: 'green', message: t('Зсув виконано') })
       onSaved()
-    } catch {
-      notifications.show({ color: 'red', message: t('Не вдалося виконати зсув') })
+    } catch (shiftError) {
+      notifications.show({
+        color: 'red',
+        message: shiftError instanceof Error && shiftError.message.trim()
+          ? shiftError.message
+          : t('Не вдалося виконати зсув'),
+      })
     } finally {
       dispatch({ type: 'savingFinished' })
     }
@@ -317,6 +333,12 @@ function SaleEditContent({
         </Group>
       </Box>
 
+      {shiftMutation.pendingError && (
+        <Alert color="orange" icon={<CircleAlert size={18} />} m="md" variant="light">
+          {shiftMutation.pendingError}
+        </Alert>
+      )}
+
       <Box className="sale-edit-command">
         <Box className="sale-edit-command__copy">
           <Group gap={8} wrap="nowrap">
@@ -334,7 +356,7 @@ function SaleEditContent({
           {!isNew && (
             <Button
               className="sale-edit-bulk-action"
-              disabled={isSaving}
+              disabled={isMutationLocked}
               leftSection={<Receipt size={16} />}
               variant="outline"
               onClick={allToBill}
@@ -344,7 +366,7 @@ function SaleEditContent({
           )}
           <Button
             className="sale-edit-bulk-action"
-            disabled={isSaving}
+            disabled={isMutationLocked}
             leftSection={<Warehouse size={16} />}
             variant="outline"
             onClick={allToStore}

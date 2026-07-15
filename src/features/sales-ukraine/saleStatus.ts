@@ -71,3 +71,7 @@ export function isDiscountEditableSaleLifecycle(value: number | string | null | 
 
   return key === '0' || key === '1'
 }
+
+export function isDiscountPercentageEditableSaleLifecycle(value: number | string | null | undefined): boolean {
+  return getSaleLifecycleTypeKey(value) === '0'
+}

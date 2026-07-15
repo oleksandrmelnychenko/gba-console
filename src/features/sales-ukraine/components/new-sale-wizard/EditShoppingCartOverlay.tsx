@@ -5,8 +5,9 @@ import { useI18n } from '../../../../shared/i18n/useI18n'
 import { DataTable } from '../../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../../shared/ui/data-table/types'
 import { roundMoney } from '../../saleMoney'
-import type { SalesUkraineOrderItem, SalesUkraineUser } from '../../types'
+import type { SalesUkraineOrderItem } from '../../types'
 import { getOrderItemDiscount, getWizardProductNumber, type WizardSaleProduct } from './wizardSaleProduct'
+import type { WizardSplitOrderItem } from './wizardSplitSale'
 
 const qtyFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 3 })
 const priceFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
@@ -28,16 +29,6 @@ const CART_EDIT_TABLE_LAYOUT: DataTableDefaultLayout = {
     vendorCode: 132,
   },
   density: 'compact',
-}
-
-export type WizardSplitOrderItem = {
-  Comment?: string
-  Product: WizardSaleProduct
-  Qty: number
-  TotalAmount: number
-  TotalAmountEurToUah: number
-  TotalAmountLocal: number
-  User?: SalesUkraineUser
 }
 
 export type WizardCartSelection = {
@@ -88,10 +79,10 @@ export function EditShoppingCartOverlay({
   const splitRows = splitItems.map((item) => ({
     amountLocal: item.TotalAmountEurToUah,
     comment: item.Comment || '',
-    discount: 0,
+    discount: getWizardProductNumber(item.OneTimeDiscount) ?? 0,
     localPrice: getWizardProductNumber(item.Product.CurrentPriceEurToUah) ?? 0,
     name: item.Product.NameUA || item.Product.Name || '',
-    oneTimeDiscount: 0,
+    oneTimeDiscount: getWizardProductNumber(item.OneTimeDiscount) ?? 0,
     originalNumber: item.Product.MainOriginalNumber || '',
     price: getWizardProductNumber(item.Product.CurrentPrice) ?? 0,
     qty: item.Qty,

@@ -4,9 +4,19 @@ import { useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
-import { updateSaleDiscount } from '../api/salesUkraineApi'
-import { isDiscountEditableSaleLifecycle } from '../saleStatus'
+import { getSaleById, updateSaleDiscount } from '../api/salesUkraineApi'
+import {
+  getSaleLifecycleTypeKey,
+  isDiscountEditableSaleLifecycle,
+  isDiscountPercentageEditableSaleLifecycle,
+} from '../saleStatus'
 import type { SalesUkraineOrderItem, SalesUkraineSale } from '../types'
+import { usePersistentSaleJsonMutation } from '../usePersistentSaleJsonMutation'
+import {
+  buildSaleDiscountPayload,
+  findSaleOrderItemByIdentity,
+  hasSaleDiscountBaselineConflict,
+} from './saleDiscountPayload'
 import './sale-discount-modal.css'
 
 export function SaleDiscountModal({
@@ -56,74 +66,101 @@ function SaleDiscountForm({
   sale: SalesUkraineSale
 }) {
   const { t } = useI18n()
-  const orderItems = Array.isArray(sale.Order?.OrderItems) ? sale.Order.OrderItems : []
-  const isReadOnly = !isDiscountEditableSaleLifecycle(sale.BaseLifeCycleStatus?.SaleLifeCycleType)
-  const [amount, setAmount] = useState<number | string>(() => getInitialDiscount(sale, orderItem))
+  const lifecycle = sale.BaseLifeCycleStatus?.SaleLifeCycleType ?? sale.BaseLifeCycleStatus?.Name
+  const canEditComment = isDiscountEditableSaleLifecycle(lifecycle)
+  const canEditPercentage = isDiscountPercentageEditableSaleLifecycle(lifecycle)
+  const isPackaging = getSaleLifecycleTypeKey(lifecycle) === '1'
+  const [amount, setAmount] = useState<number | string>(() => getInitialDiscount(sale, orderItem, isPackaging))
   const [comment, setComment] = useState(() =>
     orderItem ? orderItem.OneTimeDiscountComment || '' : sale.OneTimeDiscountComment || '',
   )
   const [isSaving, setSaving] = useState(false)
+  const discountMutation = usePersistentSaleJsonMutation(
+    `sale-discount:${String(sale.NetUid || sale.Id || '')}:${String(
+      orderItem?.NetUid || orderItem?.Id || 'sale',
+    )}`,
+    'sale-discount',
+  )
 
   const numericAmount = typeof amount === 'number' ? amount : Number(String(amount).replace(',', '.'))
   const isAmountValid = Number.isFinite(numericAmount) && numericAmount > -100 && numericAmount < 100
 
   async function save() {
-    if (isReadOnly || isSaving) {
-      return
-    }
-
-    if (!comment.trim()) {
-      notifications.show({ color: 'red', message: t("Коментар обов'язковий") })
-
-      return
-    }
-
-    if (!isAmountValid) {
-      notifications.show({ color: 'red', message: t('Некоректний відсоток') })
-
+    if (!canEditComment || isSaving) {
       return
     }
 
     setSaving(true)
 
-    const matchItem = (item: SalesUkraineOrderItem) =>
-      Boolean(orderItem) &&
-      ((orderItem?.NetUid && item.NetUid === orderItem.NetUid) ||
-        (typeof orderItem?.Id === 'number' && item.Id === orderItem.Id))
-
-    const payload: SalesUkraineSale = orderItem
-      ? {
-          ...sale,
-          Order: sale.Order
-            ? {
-                ...sale.Order,
-                OrderItems: orderItems.map((item) =>
-                  matchItem(item) ? { ...item, OneTimeDiscount: numericAmount, OneTimeDiscountComment: comment } : item,
-                ),
-              }
-            : sale.Order,
-        }
-      : {
-          ...sale,
-          OneTimeDiscountComment: comment,
-          Order: sale.Order
-            ? {
-                ...sale.Order,
-                OrderItems: orderItems.map((item) => ({
-                  ...item,
-                  OneTimeDiscount: numericAmount,
-                  OneTimeDiscountComment: comment,
-                })),
-              }
-            : sale.Order,
-    }
-
     try {
-      const updatedSale = await updateSaleDiscount(payload)
-      notifications.show({ color: 'green', message: t('Знижку збережено') })
-      onSaved(updatedSale)
-    } catch {
-      notifications.show({ color: 'red', message: t('Не вдалося зберегти знижку') })
+      if (discountMutation.hasPendingOperation()) {
+        const replayPayload = buildSaleDiscountPayload(
+          sale,
+          orderItem,
+          numericAmount,
+          comment,
+          canEditPercentage,
+        )
+        const replay = await discountMutation.run(replayPayload, updateSaleDiscount)
+
+        if (!replay.completed) {
+          return
+        }
+
+        notifications.show({ color: 'green', message: t(isPackaging ? 'Коментар збережено' : 'Знижку збережено') })
+        onSaved(replay.result)
+
+        return
+      }
+
+      if (!comment.trim()) {
+        notifications.show({ color: 'red', message: t("Коментар обов'язковий") })
+
+        return
+      }
+
+      if (canEditPercentage && !isAmountValid) {
+        notifications.show({ color: 'red', message: t('Некоректний відсоток') })
+
+        return
+      }
+
+      if (!sale.NetUid) {
+        throw new Error('Продаж не має збереженого ідентифікатора')
+      }
+
+      const freshSale = await getSaleById(sale.NetUid)
+
+      if (!freshSale) {
+        throw new Error('Не вдалося повторно завантажити продаж')
+      }
+
+      if (hasSaleDiscountBaselineConflict(sale, orderItem, freshSale)) {
+        notifications.show({
+          color: 'orange',
+          message: t('Знижку вже змінив інший користувач. Закрийте форму та відкрийте її повторно'),
+        })
+
+        return
+      }
+
+      const freshOrderItem = orderItem ? findSaleOrderItemByIdentity(freshSale, orderItem) : null
+      const payload = buildSaleDiscountPayload(freshSale, freshOrderItem, numericAmount, comment, canEditPercentage)
+      const result = await discountMutation.run(payload, updateSaleDiscount)
+
+      if (!result.completed) {
+        return
+      }
+
+      notifications.show({ color: 'green', message: t(isPackaging ? 'Коментар збережено' : 'Знижку збережено') })
+      onSaved(result.result)
+    } catch (saveError) {
+      notifications.show({
+        color: 'red',
+        message: saveError instanceof Error && saveError.message.trim()
+          ? saveError.message
+          : t('Не вдалося зберегти знижку'),
+      })
     } finally {
       setSaving(false)
     }
@@ -136,15 +173,25 @@ function SaleDiscountForm({
           {orderItem.Product?.NameUA || orderItem.Product?.Name || orderItem.Product?.VendorCode || ''}
         </Text>
       )}
-      {isReadOnly && (
+      {isPackaging && (
+        <Alert color="blue" variant="light">
+          {t('Відсоток знижки зафіксовано на етапі пакування. Можна змінити лише коментар')}
+        </Alert>
+      )}
+      {!canEditComment && (
         <Alert color="gray" variant="light">
           {t('Знижку можна змінити лише для нового продажу')}
+        </Alert>
+      )}
+      {discountMutation.pendingError && (
+        <Alert color="orange" variant="light">
+          {discountMutation.pendingError}
         </Alert>
       )}
       <NumberInput
         allowDecimal
         decimalScale={2}
-        disabled={isReadOnly}
+        disabled={!canEditPercentage || discountMutation.hasPending}
         label={t('Відсоток знижки')}
         max={99}
         min={-99}
@@ -154,7 +201,7 @@ function SaleDiscountForm({
       />
       <Textarea
         autosize
-        disabled={isReadOnly}
+        disabled={!canEditComment || discountMutation.hasPending}
         label={t('Коментар')}
         minRows={2}
         value={comment}
@@ -164,7 +211,7 @@ function SaleDiscountForm({
         <Button color="gray" disabled={isSaving} variant="subtle" onClick={onCancel}>
           {t('Скасувати')}
         </Button>
-        <Button color={CREATE_ACTION_COLOR} disabled={isReadOnly} loading={isSaving} onClick={save}>
+        <Button color={CREATE_ACTION_COLOR} disabled={!canEditComment} loading={isSaving} onClick={save}>
           {t('Зберегти')}
         </Button>
       </Group>
@@ -172,8 +219,12 @@ function SaleDiscountForm({
   )
 }
 
-function getInitialDiscount(sale: SalesUkraineSale, orderItem: SalesUkraineOrderItem | null): number | string {
+function getInitialDiscount(
+  sale: SalesUkraineSale,
+  orderItem: SalesUkraineOrderItem | null,
+  showZero: boolean,
+): number | string {
   const discount = orderItem ? orderItem.OneTimeDiscount : sale.Order?.OrderItems?.[0]?.OneTimeDiscount
 
-  return typeof discount === 'number' && discount !== 0 ? discount : ''
+  return typeof discount === 'number' && (discount !== 0 || showZero) ? discount : ''
 }

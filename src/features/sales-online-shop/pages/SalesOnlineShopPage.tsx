@@ -51,6 +51,7 @@ import { SaleDiscountModal } from '../../sales-ukraine/components/SaleDiscountMo
 import { SaleDocumentsMenu } from '../../sales-ukraine/components/SaleDocumentsMenu'
 import { SaleEditorDrawer } from '../../sales-ukraine/components/SaleEditorDrawer'
 import { SaleExpandContent } from '../../sales-ukraine/components/SaleExpandContent'
+import { usePersistentSaleJsonMutationRunner } from '../../sales-ukraine/usePersistentSaleJsonMutation'
 import {
   SALES_UKRAINE_EDIT_PERMISSION,
   SALES_UKRAINE_UNLOCK_PERMISSION,
@@ -148,6 +149,7 @@ const amountFormatter = new Intl.NumberFormat('uk-UA', {
 export function SalesOnlineShopPage() {
   const { t } = useI18n()
   const { hasPermission, user } = useAuth()
+  const runSaleUpdate = usePersistentSaleJsonMutationRunner('sale-update')
   const isAdmin =
     user?.UserRole?.UserRoleType === UserRoleType.Administrator || user?.UserRole?.UserRoleType === UserRoleType.GBA
   const canEditSale = hasPermission(SALES_UKRAINE_EDIT_PERMISSION)
@@ -380,12 +382,21 @@ export function SalesOnlineShopPage() {
             throw new Error(t('Не вдалося завантажити продаж'))
           }
 
-          await updateSale({ ...hydrated, IsAcceptedToPacking: true })
+          const attempt = await runSaleUpdate(
+            `sale-update:packing-acceptance:${netId}`,
+            { ...hydrated, IsAcceptedToPacking: true },
+            updateSale,
+          )
+
+          if (!attempt.completed) {
+            throw attempt.error
+          }
+
           notifications.show({ color: 'green', message: t('Збережено') })
         },
       })
     },
-    [setConfirmState, t],
+    [runSaleUpdate, setConfirmState, t],
   )
 
   const statusSelectData = useMemo(() => STATUS_OPTIONS.map((option) => ({ ...option, label: t(option.label) })), [t])

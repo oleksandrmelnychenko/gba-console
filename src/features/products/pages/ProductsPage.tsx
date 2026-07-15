@@ -15,6 +15,7 @@ import {
   Menu,
   NumberInput,
   ScrollArea,
+  SegmentedControl,
   Select,
   SimpleGrid,
   Skeleton,
@@ -68,7 +69,6 @@ import { PermissionGate } from '../../auth/components/PermissionGate'
 import { useAuth } from '../../auth/useAuth'
 import type {
   Product,
-  ProductFileUploadConfiguration,
   ProductFileUploadMode,
   ProductIncomeMovement,
   ProductMovementExportDocument,
@@ -99,11 +99,17 @@ import {
   splitProductSearchResults,
 } from '../utils'
 import {
-  buildProductUploadPriceConfigurations,
   getDuplicateProductUploadPricingIds,
   hasDuplicateProductUploadPricings,
   isDuplicateProductUploadPricingId,
 } from '../productPricing'
+import {
+  buildProductFileUploadConfiguration,
+  createProductFileUploadForm,
+  type ProductFileUploadColumnForm,
+  type ProductFileUploadForm,
+  type ProductFileUploadPriceRow,
+} from '../productFileUpload'
 import { ShopImageGallery } from '../components/ShopImageGallery'
 import { ProductPriceSourcePanel } from '../components/ProductPriceSourcePanel'
 import { getProductAnalyticsId } from '../components/ProductAnalyticsPanel'
@@ -249,38 +255,6 @@ type RelatedProductRow = {
   product: Partial<Product>
   quantity?: number | string
   source: unknown
-}
-type ProductFileUploadColumnForm = {
-  descriptionRU: number
-  descriptionUA: number
-  endRow: number
-  isForSale: number
-  isForWeb: number
-  mainOriginalNumber: number
-  measureUnit: number
-  nameRU: number
-  nameUA: number
-  newVendorCode: number
-  orderStandard: number
-  packingStandard: number
-  productGroup: number
-  size: number
-  startRow: number
-  top: number
-  ucgfea: number
-  vendorCode: number
-  volume: number
-  weight: number
-}
-type ProductFileUploadPriceRow = {
-  columnNumber: number
-  key: string
-  pricingId: string
-}
-type ProductFileUploadForm = ProductFileUploadColumnForm & {
-  file: File | null
-  mode: ProductFileUploadMode
-  prices: ProductFileUploadPriceRow[]
 }
 type ProductPlacementStorageCorrectionState = {
   rows: ProductPlacementStorage[]
@@ -2425,7 +2399,7 @@ function ProductPlacementStorageUploadModal({
   )
 }
 
-function ProductFileUploadModal({
+export function ProductFileUploadModal({
   onClose,
   onUploadSuccess,
   opened,
@@ -2443,6 +2417,7 @@ function ProductFileUploadModal({
   })
   const [error, setError] = useState<string | null>(null)
   const [isUploading, setUploading] = useState(false)
+  const hasPriceRows = form.prices.length > 0
   const duplicatePricingIds = getDuplicateProductUploadPricingIds(form.prices)
   const hasDuplicatePricingRows = duplicatePricingIds.length > 0
   const canSubmit = Boolean(
@@ -2451,6 +2426,7 @@ function ProductFileUploadModal({
     && form.endRow > 0
     && form.vendorCode > 0
     && !hasDuplicatePricingRows
+    && (!hasPriceRows || form.priceSourceIsAmg !== null)
     && !isUploading,
   )
   const pricingOptions = pricingState.data.reduce<Array<{ label: string; value: string }>>((options, pricing) => {
@@ -2511,7 +2487,11 @@ function ProductFileUploadModal({
   }
 
   function setColumnField(field: keyof ProductFileUploadColumnForm, value: number | string) {
-    setField(field, readProductUploadNumber(value) as ProductFileUploadForm[typeof field])
+    setError(null)
+    setForm((currentForm) => ({
+      ...currentForm,
+      [field]: readProductUploadNumber(value),
+    }))
   }
 
   function addPriceRow() {
@@ -2541,15 +2521,25 @@ function ProductFileUploadModal({
 
   function removePriceRow(key: string) {
     setError(null)
-    setForm((currentForm) => ({
-      ...currentForm,
-      prices: currentForm.prices.filter((priceRow) => priceRow.key !== key),
-    }))
+    setForm((currentForm) => {
+      const prices = currentForm.prices.filter((priceRow) => priceRow.key !== key)
+
+      return {
+        ...currentForm,
+        priceSourceIsAmg: prices.length > 0 ? currentForm.priceSourceIsAmg : null,
+        prices,
+      }
+    })
   }
 
   async function submitUpload() {
     if (hasDuplicateProductUploadPricings(form.prices)) {
       setError(t('Один тип ціни вибрано кілька разів'))
+      return
+    }
+
+    if (hasPriceRows && form.priceSourceIsAmg === null) {
+      setError(t('Оберіть джерело цін: Контех (Fenix) або AMG'))
       return
     }
 
@@ -2692,6 +2682,26 @@ function ProductFileUploadModal({
             ) : (
               <Text c="dimmed" size="sm">{t('Ціни не додані')}</Text>
             )}
+
+            {hasPriceRows ? (
+              <Box component="fieldset" m={0} p={0} style={{ border: 0, minWidth: 0 }}>
+                <Text component="legend" fw={500} mb={6} size="sm">
+                  {t('Джерело цін')} <Text component="span" c="red">*</Text>
+                </Text>
+                <SegmentedControl
+                  fullWidth
+                  data={[
+                    { label: t('Контех (Fenix)'), value: 'fenix' },
+                    { label: 'AMG', value: 'amg' },
+                  ]}
+                  value={form.priceSourceIsAmg === null ? '' : form.priceSourceIsAmg ? 'amg' : 'fenix'}
+                  onChange={(value) => setField('priceSourceIsAmg', value === 'amg')}
+                />
+                {form.priceSourceIsAmg === null ? (
+                  <Text c="red" mt={4} size="xs">{t('Оберіть джерело цін перед завантаженням')}</Text>
+                ) : null}
+              </Box>
+            ) : null}
           </Stack>
         </Card>
 
@@ -2905,85 +2915,6 @@ function createProductUploadDocumentForm(product?: Product | null): ProductUploa
     quantity: 0,
     to: 0,
     vendorCode: product?.VendorCode || '',
-  }
-}
-
-function createProductFileUploadForm(): ProductFileUploadForm {
-  return {
-    descriptionRU: 0,
-    descriptionUA: 0,
-    endRow: 0,
-    file: null,
-    isForSale: 0,
-    isForWeb: 0,
-    mainOriginalNumber: 0,
-    measureUnit: 0,
-    mode: 0,
-    nameRU: 0,
-    nameUA: 0,
-    newVendorCode: 0,
-    orderStandard: 0,
-    packingStandard: 0,
-    prices: [],
-    productGroup: 0,
-    size: 0,
-    startRow: 0,
-    top: 0,
-    ucgfea: 0,
-    vendorCode: 0,
-    volume: 0,
-    weight: 0,
-  }
-}
-
-function buildProductFileUploadConfiguration(form: ProductFileUploadForm): ProductFileUploadConfiguration {
-  const priceConfigurations = buildProductUploadPriceConfigurations(form.prices)
-
-  return {
-    DescriptionPL: 0,
-    DescriptionRU: form.descriptionRU,
-    DescriptionUA: form.descriptionUA,
-    EndRow: form.endRow,
-    IsForSale: form.isForSale,
-    IsForWeb: form.isForWeb,
-    MainOriginalNumber: form.mainOriginalNumber,
-    MeasureUnit: form.measureUnit,
-    Mode: form.mode,
-    NamePL: 0,
-    NameRU: form.nameRU,
-    NameUA: form.nameUA,
-    NewVendorCode: form.newVendorCode,
-    OrderStandard: form.orderStandard,
-    PackingStandard: form.packingStandard,
-    PriceConfigurations: priceConfigurations,
-    ProductGroup: form.productGroup,
-    Size: form.size,
-    StartRow: form.startRow,
-    Top: form.top,
-    UCGFEA: form.ucgfea,
-    VendorCode: form.vendorCode,
-    Volume: form.volume,
-    Weight: form.weight,
-    WithDescriptionPL: false,
-    WithDescriptionRU: form.descriptionRU !== 0,
-    WithDescriptionUA: form.descriptionUA !== 0,
-    WithIsForSale: form.isForSale !== 0,
-    WithIsForWeb: form.isForWeb !== 0,
-    WithMainOriginalNumber: form.mainOriginalNumber !== 0,
-    WithMeasureUnit: form.measureUnit !== 0,
-    WithNamePL: false,
-    WithNameRU: form.nameRU !== 0,
-    WithNameUA: form.nameUA !== 0,
-    WithNewVendorCode: form.newVendorCode !== 0,
-    WithOrderStandard: form.orderStandard !== 0,
-    WithPackingStandard: form.packingStandard !== 0,
-    WithPrices: priceConfigurations.length > 0,
-    WithProductGroup: form.productGroup !== 0,
-    WithSize: form.size !== 0,
-    WithTop: form.top !== 0,
-    WithUCGFEA: form.ucgfea !== 0,
-    WithVolume: form.volume !== 0,
-    WithWeight: form.weight !== 0,
   }
 }
 

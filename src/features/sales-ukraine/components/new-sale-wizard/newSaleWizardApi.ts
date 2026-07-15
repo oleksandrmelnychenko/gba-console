@@ -1,4 +1,9 @@
 import { apiRequest } from '../../../../shared/api/apiClient'
+import {
+  getSalesMutationOperationHeaders,
+  withSalesMutationOperationNetUid,
+  type SalesMutationOperationOptions,
+} from '../../salesMutationOperation'
 import type { SalesUkraineOrderItem, SalesUkraineProduct, SalesUkraineSale } from '../../types'
 import type { WizardSaleProduct } from './wizardSaleProduct'
 
@@ -21,10 +26,19 @@ export type WizardDeliveryRecipient = {
   DeliveryRecipientAddresses?: WizardDeliveryRecipientAddress[]
 }
 
-export type WizardReservationOrderItem = {
-  Id?: number
-  NetUid?: string
-  Qty?: number
+export type WizardReservationOrderItem = Pick<
+  SalesUkraineOrderItem,
+  | 'Comment'
+  | 'Discount'
+  | 'Id'
+  | 'IsFromReSale'
+  | 'NetUid'
+  | 'OneTimeDiscount'
+  | 'OneTimeDiscountComment'
+  | 'PricePerItem'
+  | 'Qty'
+  | 'SourceOrderItemNetUid'
+> & {
   Order?: { Sales?: { NetUid?: string; SaleNumber?: { Value?: string } | null }[] } | null
   Product?: SalesUkraineProduct | null
   User?: { LastName?: string } | null
@@ -225,12 +239,31 @@ export async function shiftOrderItemFromSale(
   saleFromNetId: string,
   saleToNetId: string,
   orderItem: SalesUkraineOrderItem | WizardReservationOrderItem,
+  operation: SalesMutationOperationOptions,
 ): Promise<void> {
+  const sourceOrderItemNetUid = normalizePersistedNetUid(orderItem.NetUid)
+
+  if (!sourceOrderItemNetUid) {
+    throw new Error('Неможливо перемістити незбережену позицію')
+  }
+
   await apiRequest<unknown>('/orders/items/shift/specific', {
-    body: orderItem,
+    body: withSalesMutationOperationNetUid({
+      ...orderItem,
+      NetUid: sourceOrderItemNetUid,
+      SourceOrderItemNetUid: sourceOrderItemNetUid,
+    }, operation.operationId),
+    headers: getSalesMutationOperationHeaders(operation.operationId),
     method: 'POST',
     query: { saleFromNetId, saleToNetId },
+    ...(operation.signal ? { signal: operation.signal } : {}),
   })
+}
+
+function normalizePersistedNetUid(value: string | null | undefined): string {
+  const netUid = value?.trim().toLowerCase() ?? ''
+
+  return netUid === '00000000-0000-0000-0000-000000000000' ? '' : netUid
 }
 
 // --- Delivery recipients ---------------------------------------------------
@@ -263,21 +296,33 @@ export async function newDeliveryRecipientAddress(
   return result && typeof result === 'object' ? (result as WizardDeliveryRecipientAddress) : null
 }
 
-export async function updateSaleDeliveryRecipient(sale: SalesUkraineSale, saleNetId: string): Promise<SalesUkraineSale | null> {
+export async function updateSaleDeliveryRecipient(
+  sale: SalesUkraineSale,
+  saleNetId: string,
+  operation: SalesMutationOperationOptions,
+): Promise<SalesUkraineSale | null> {
   const result = await apiRequest<unknown>('/sales/update/recipient', {
-    body: sale,
+    body: withSalesMutationOperationNetUid(sale, operation.operationId),
+    headers: getSalesMutationOperationHeaders(operation.operationId),
     method: 'POST',
     query: { netId: saleNetId },
+    ...(operation.signal ? { signal: operation.signal } : {}),
   })
 
   return asSale(result)
 }
 
-export async function updateSaleDeliveryRecipientAddress(sale: SalesUkraineSale, saleNetId: string): Promise<SalesUkraineSale | null> {
+export async function updateSaleDeliveryRecipientAddress(
+  sale: SalesUkraineSale,
+  saleNetId: string,
+  operation: SalesMutationOperationOptions,
+): Promise<SalesUkraineSale | null> {
   const result = await apiRequest<unknown>('/sales/update/recipient/address', {
-    body: sale,
+    body: withSalesMutationOperationNetUid(sale, operation.operationId),
+    headers: getSalesMutationOperationHeaders(operation.operationId),
     method: 'POST',
     query: { netId: saleNetId },
+    ...(operation.signal ? { signal: operation.signal } : {}),
   })
 
   return asSale(result)

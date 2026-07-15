@@ -1,13 +1,32 @@
 import { ActionIcon, Alert, Anchor, Badge, Button, Card, Checkbox, Chip, Group, NumberInput, Stack, Table, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, Pencil, ReceiptText } from 'lucide-react'
-import { useEffect } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useAuth } from '../../auth/useAuth'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { getCurrentUnmergedSale, getMergedSales, updateMergedSale } from '../api/salesUkraineApi'
+import {
+  getSalesPendingMutationUserKey,
+  loadSalesPendingMutation,
+  markSalesPendingMutationCorrupt,
+  markSalesPendingMutationSubmitted,
+  markSalesPendingMutationUnknown,
+  resolveSalesPendingMutation,
+  subscribeSalesPendingMutations,
+  synchronizeSalesPendingMutationUser,
+  withSalesPendingMutationLock,
+} from '../pendingSalesMutationRegistry'
+import {
+  advanceWizardMergedSaleSession,
+  createWizardMergedSaleSubmission,
+  isWizardMergedSaleSubmission,
+  type WizardMergedSaleSubmission,
+} from './new-sale-wizard/wizardMergedSubmit'
+import { createWizardAsyncGenerationGuard } from './new-sale-wizard/wizardAsyncGeneration'
 import {
   buildMergedSaleInvoiceDrafts,
   buildMergedSaleInvoicePayload,
@@ -88,6 +107,7 @@ function MergedSalesContent({
   saleNetId: string
 }) {
   const { t } = useI18n()
+  const { session } = useAuth()
   const [mergedSale, setMergedSale] = useValueState<SalesUkraineSale | null>(null)
   const [isLoading, setLoading] = useValueState(true)
   const [error, setError] = useValueState<string | null>(null)
@@ -97,8 +117,72 @@ function MergedSalesContent({
   const [isConverting, setConverting] = useValueState(false)
   const [hasMainClientNewSale, setHasMainClientNewSale] = useValueState<boolean | null>(null)
   const [reloadKey, reload] = useValueState(0)
+  const pendingMergedRef = useRef<WizardMergedSaleSubmission | null>(null)
+  const [pendingMergedSubmission, setPendingMergedSubmission] = useState<WizardMergedSaleSubmission | null>(null)
+  const [storageRevision, setStorageRevision] = useState(0)
+  const mountedRef = useRef(false)
+  const [submitGuard] = useState(createWizardAsyncGenerationGuard)
+  const pendingUserKey = getSalesPendingMutationUserKey(session)
+  const pendingScope = useMemo(() => (
+    pendingUserKey
+      ? { context: `merged-drawer:${saleNetId.toLowerCase()}`, kind: 'merged-sale' as const, userKey: pendingUserKey }
+      : null
+  ), [pendingUserKey, saleNetId])
   const wantsCreateNewSale = Boolean(onCreateNewSale)
   const agreementNetUid = clientAgreementNetId || mergedSale?.ClientAgreement?.NetUid || ''
+
+  useEffect(() => subscribeSalesPendingMutations(({ external }) => {
+    if (external) {
+      setStorageRevision((revision) => revision + 1)
+    }
+  }), [])
+
+  useLayoutEffect(() => {
+    let cancelled = false
+    mountedRef.current = true
+    pendingMergedRef.current = null
+    let hydrationError: string | null = null
+
+    try {
+      synchronizeSalesPendingMutationUser(pendingUserKey)
+      const stored = pendingScope
+        ? loadSalesPendingMutation<WizardMergedSaleSubmission>(pendingScope)
+        : null
+
+      if (stored) {
+        if (
+          !isWizardMergedSaleSubmission(stored.payload) ||
+          stored.payload.operationId !== stored.operationId
+        ) {
+          markSalesPendingMutationCorrupt(
+            pendingScope as NonNullable<typeof pendingScope>,
+            stored.operationId,
+            'Persisted merged-sale payload does not match its durable scope',
+          )
+        }
+
+        pendingMergedRef.current = stored.payload
+      }
+    } catch (storageError) {
+      hydrationError = storageError instanceof Error ? storageError.message : t('Журнал операції недоступний')
+    }
+
+    queueMicrotask(() => {
+      if (!cancelled && mountedRef.current) {
+        setPendingMergedSubmission(pendingMergedRef.current)
+
+        if (hydrationError) {
+          setError(hydrationError)
+        }
+      }
+    })
+
+    return () => {
+      cancelled = true
+      mountedRef.current = false
+      submitGuard.invalidate()
+    }
+  }, [pendingScope, pendingUserKey, setError, storageRevision, submitGuard, t])
 
   useEffect(() => {
     let cancelled = false
@@ -212,6 +296,12 @@ function MergedSalesContent({
   }
 
   function requestConvert(sale: SalesUkraineSale, index: number) {
+    if (pendingMergedRef.current) {
+      notifications.show({ color: 'orange', message: t('Спочатку перевірте результат попередньої операції') })
+
+      return
+    }
+
     const payload = buildMergedSaleInvoicePayload(sale, drafts[getMergedSaleKey(sale, index)])
 
     if (!payload.Order?.OrderItems?.length) {
@@ -229,12 +319,17 @@ function MergedSalesContent({
     setConfirmSale(payload)
   }
 
-  async function convert() {
-    if (!confirmSale) {
+  async function submitSelectedSale() {
+    if (pendingMergedRef.current) {
+      setConfirmSale(null)
+      notifications.show({ color: 'orange', message: t('Спочатку перевірте результат попередньої операції') })
+
       return
     }
 
-    setConverting(true)
+    if (!confirmSale) {
+      return
+    }
 
     const payload: SalesUkraineSale = {
       ...confirmSale,
@@ -243,25 +338,114 @@ function MergedSalesContent({
       IsPrintedPaymentInvoice: true,
     }
 
+    await runMergedSaleSubmission(createWizardMergedSaleSubmission(payload))
+  }
+
+  async function reconcilePendingMergedSale() {
+    const submission = pendingMergedRef.current
+
+    if (submission) {
+      await runMergedSaleSubmission(submission)
+    }
+  }
+
+  async function runMergedSaleSubmission(submission: WizardMergedSaleSubmission) {
+    setConverting(true)
+
     try {
-      await updateMergedSale(payload)
-      notifications.show({ color: 'green', message: t('Рахунок створено') })
-      setConfirmSale(null)
-      reload((key) => key + 1)
-      onChanged()
-    } catch {
-      notifications.show({ color: 'red', message: t('Не вдалося створити рахунок') })
+      if (!pendingScope) {
+        throw new Error(t('Неможливо безпечно створити рахунок без авторизованого користувача'))
+      }
+
+      await withSalesPendingMutationLock(
+        pendingScope,
+        submission.operationId,
+        submission,
+        async (lease) => {
+          if (!isWizardMergedSaleSubmission(lease.entry.payload)) {
+            markSalesPendingMutationCorrupt(
+              pendingScope,
+              lease.operationId,
+              'Durable merged-sale payload failed schema validation',
+            )
+          }
+
+          const durableSubmission = lease.entry.payload
+          const token = submitGuard.begin(`${pendingScope.context}:${durableSubmission.operationId}`)
+          markSalesPendingMutationSubmitted(lease)
+          pendingMergedRef.current = durableSubmission
+          const result = await advanceWizardMergedSaleSession({
+            submission: durableSubmission,
+            updateMergedSale,
+          })
+
+          if (result.status === 'pending-reconciliation' || result.status === 'definitive-failure') {
+            markSalesPendingMutationUnknown(lease)
+            pendingMergedRef.current = result.status === 'pending-reconciliation'
+              ? result.submission
+              : durableSubmission
+
+            if (mountedRef.current && submitGuard.isCurrent(token, token.context)) {
+              setPendingMergedSubmission(pendingMergedRef.current)
+              setConfirmSale(null)
+              notifications.show({ color: 'orange', message: t('Результат невідомий. Повторіть перевірку тим самим ключем') })
+            }
+
+            return
+          }
+
+          resolveSalesPendingMutation(lease, 'committed')
+          pendingMergedRef.current = null
+
+          if (!mountedRef.current || !submitGuard.isCurrent(token, token.context)) {
+            return
+          }
+
+          setPendingMergedSubmission(null)
+          notifications.show({ color: 'green', message: t('Рахунок створено') })
+          setConfirmSale(null)
+          reload((key) => key + 1)
+          onChanged()
+        },
+      )
+    } catch (convertError) {
+      notifications.show({
+        color: 'red',
+        message: convertError instanceof Error ? convertError.message : t('Не вдалося створити рахунок'),
+      })
     } finally {
       setConverting(false)
     }
   }
 
+  const pendingMergedAlert = pendingMergedSubmission ? (
+    <Alert color="orange" icon={<CircleAlert size={18} />} title={t('Потрібна звірка операції')} variant="light">
+      <Stack gap="xs">
+        <Text size="sm">
+          {t('Попередня операція не підтверджена. Перевірка повторить незмінний запит із тим самим ключем.')}
+        </Text>
+        <Group>
+          <Button loading={isConverting} size="xs" variant="light" onClick={() => void reconcilePendingMergedSale()}>
+            {t('Перевірити результат')}
+          </Button>
+        </Group>
+      </Stack>
+    </Alert>
+  ) : null
+
   if (isLoading) {
-    return <SalesDrawerSkeleton />
+    return (
+      <Stack gap="md">
+        {pendingMergedAlert}
+        <SalesDrawerSkeleton />
+      </Stack>
+    )
   }
 
   return (
     <Stack gap="md">
+      {pendingMergedAlert}
+
       {error && (
         <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {error}
@@ -302,6 +486,7 @@ function MergedSalesContent({
             sale={getInputSale(merge)}
             onEdit={onEditSale}
             onInvoice={requestConvert}
+            invoiceDisabled={Boolean(pendingMergedSubmission)}
             onItemQtyChange={updateItemQty}
             onItemToggle={toggleItem}
             onSaleToggle={toggleSale}
@@ -322,7 +507,7 @@ function MergedSalesContent({
             <Button color="gray" disabled={isConverting} variant="subtle" onClick={() => setConfirmSale(null)}>
               {t('Скасувати')}
             </Button>
-            <Button color={CREATE_ACTION_COLOR} loading={isConverting} onClick={convert}>
+            <Button color={CREATE_ACTION_COLOR} loading={isConverting} onClick={() => void submitSelectedSale()}>
               {t('Зробити рахунок')}
             </Button>
           </Group>
@@ -336,6 +521,7 @@ function MergedSaleCard({
   draft,
   index,
   sale,
+  invoiceDisabled,
   onEdit,
   onInvoice,
   onItemQtyChange,
@@ -344,6 +530,7 @@ function MergedSaleCard({
 }: {
   draft?: MergedSaleInvoiceDraft
   index: number
+  invoiceDisabled: boolean
   onEdit?: (sale: SalesUkraineSale) => void
   onInvoice: (sale: SalesUkraineSale, index: number) => void
   onItemQtyChange: (sale: SalesUkraineSale, saleIndex: number, itemKey: string, qty: number | string) => void
@@ -395,7 +582,7 @@ function MergedSaleCard({
             <Button
               className="sales-drawer-action-button"
               color={CREATE_ACTION_COLOR}
-              disabled={!canInvoice}
+              disabled={invoiceDisabled || !canInvoice}
               leftSection={<ReceiptText size={16} />}
               size="xs"
               variant="outline"

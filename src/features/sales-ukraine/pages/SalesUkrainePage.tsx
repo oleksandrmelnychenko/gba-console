@@ -16,7 +16,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { ArrowLeftRight, Check, ChevronDown, ChevronRight, CircleAlert, ClipboardList, Ellipsis, FileText, Globe, History, Lock, LockOpen, Pencil, Percent, Plus, Printer, Receipt, RotateCcw, Search, Tag, TriangleAlert, Truck, X } from 'lucide-react'
+import { ArrowLeftRight, Check, ChevronDown, ChevronRight, CircleAlert, ClipboardList, Ellipsis, FileText, Globe, History, Lock, LockOpen, MessageSquareText, Pencil, Percent, Plus, Printer, Receipt, RotateCcw, Search, Tag, TriangleAlert, Truck, X } from 'lucide-react'
 import {
   Fragment,
   isValidElement,
@@ -65,7 +65,13 @@ import {
   getUniformBaseDiscount,
   getUniformOneTimeDiscount,
 } from '../saleDiscounts'
-import { getSaleLifecycleStatusKey, getStatusTypeKey, isDiscountEditableSaleLifecycle, isStatusType } from '../saleStatus'
+import {
+  getSaleLifecycleStatusKey,
+  getStatusTypeKey,
+  isDiscountEditableSaleLifecycle,
+  isDiscountPercentageEditableSaleLifecycle,
+  isStatusType,
+} from '../saleStatus'
 import { useGridColumnResize } from './useGridColumnResize'
 import type { CSSProperties } from 'react'
 import { ConsignmentNoteSettingsDrawer } from '../components/ConsignmentNoteSettingsDrawer'
@@ -73,9 +79,11 @@ import { NewSaleWizard } from '../components/new-sale-wizard/NewSaleWizard'
 import { SaleEditDrawer } from '../components/SaleEditDrawer'
 import { SaleDetailsDrawer } from '../components/SaleDetailsDrawer'
 import { SaleDiscountModal } from '../components/SaleDiscountModal'
+import { findSaleOrderItemByIdentity } from '../components/saleDiscountPayload'
 import { SaleExpandContent } from '../components/SaleExpandContent'
 import { SaleDocumentsMenu } from '../components/SaleDocumentsMenu'
 import { SalesClientSearch } from '../components/SalesClientSearch'
+import { usePersistentSaleJsonMutationRunner } from '../usePersistentSaleJsonMutation'
 import {
   SALES_UKRAINE_EDIT_PERMISSION,
   SALES_UKRAINE_UNLOCK_PERMISSION,
@@ -206,6 +214,7 @@ export function SalesUkrainePage() {
   const [searchParams] = useSearchParams()
   const focusedSaleNetId = searchParams.get('saleNetId') || ''
   const { hasPermission, user } = useAuth()
+  const runSaleUpdate = usePersistentSaleJsonMutationRunner('sale-update')
   const isAdmin =
     user?.UserRole?.UserRoleType === UserRoleType.Administrator || user?.UserRole?.UserRoleType === UserRoleType.GBA
   const canEditSale = hasPermission(SALES_UKRAINE_EDIT_PERMISSION)
@@ -442,13 +451,21 @@ export function SalesUkrainePage() {
 
   const openSaleDiscount = useCallback(
     async (sale: SalesUkraineSale, orderItem?: SalesUkraineOrderItem) => {
-      const next = await ensureSaleDetails(sale)
+      const next = await ensureSaleDetails(sale, { force: true })
 
       if (next) {
-        setDiscountTarget({ orderItem, sale: next })
+        const freshOrderItem = orderItem ? findSaleOrderItemByIdentity(next, orderItem) : null
+
+        if (orderItem && !freshOrderItem) {
+          notifications.show({ color: 'red', message: t('Позиція продажу вже змінилася. Оновіть список') })
+
+          return
+        }
+
+        setDiscountTarget({ orderItem: freshOrderItem ?? undefined, sale: next })
       }
     },
-    [ensureSaleDetails, setDiscountTarget],
+    [ensureSaleDetails, setDiscountTarget, t],
   )
 
   const toggleSaleExpand = useCallback(
@@ -519,12 +536,21 @@ export function SalesUkrainePage() {
             throw new Error(t('Не вдалося завантажити продаж'))
           }
 
-          await updateSale({ ...next, IsAcceptedToPacking: true })
+          const attempt = await runSaleUpdate(
+            `sale-update:packing-acceptance:${sale.NetUid}`,
+            { ...next, IsAcceptedToPacking: true },
+            updateSale,
+          )
+
+          if (!attempt.completed) {
+            throw attempt.error
+          }
+
           notifications.show({ color: 'green', message: t('Збережено') })
         },
       })
     },
-    [ensureSaleDetails, setConfirmState, t],
+    [ensureSaleDetails, runSaleUpdate, setConfirmState, t],
   )
 
   // Identity-stable row handlers: SaleGridRow is React.memo'd, so its callback
@@ -1346,6 +1372,10 @@ const SaleGridRow = memo(function SaleGridRow({
   const showBang = Boolean(sale.IsVatSale) && !sale.IsAcceptedToPacking
   const bangClickable = Boolean(sale.ChangedToInvoice) && canWillNotShip
   const discountEditable = isNewOrPackagingStatus(sale) && positions > 0
+  const discountPercentageEditable =
+    isDiscountPercentageEditableSaleLifecycle(
+      sale.BaseLifeCycleStatus?.SaleLifeCycleType ?? sale.BaseLifeCycleStatus?.Name,
+    ) && positions > 0
   const rowOrderItems = Array.isArray(sale.Order?.OrderItems) ? sale.Order.OrderItems : []
   const uniformOneTimeDiscount = rowOrderItems.length ? getUniformOneTimeDiscount(rowOrderItems) : getNumber(sale.OneTimeDiscountUniform)
   const averageOneTimeDiscount =
@@ -1560,16 +1590,32 @@ const SaleGridRow = memo(function SaleGridRow({
           </Tooltip>
         )}
         {oneTimeDiscountBadge != null ? (
-          <Tooltip label={saleDiscountUpdater ? `${t('Разова знижка')}: ${saleDiscountUpdater}` : t('Разова знижка')}>
-            {discountEditable && uniformOneTimeDiscount != null ? (
-              <button className="sg-discount-badge" type="button" onClick={() => onOpenDiscount(sale)}>
-                {oneTimeDiscountBadge}
-              </button>
-            ) : (
-              <span className="sg-discount-badge is-static">{oneTimeDiscountBadge}</span>
+          <>
+            <Tooltip label={saleDiscountUpdater ? `${t('Разова знижка')}: ${saleDiscountUpdater}` : t('Разова знижка')}>
+              {discountPercentageEditable && uniformOneTimeDiscount != null ? (
+                <button className="sg-discount-badge" type="button" onClick={() => onOpenDiscount(sale)}>
+                  {oneTimeDiscountBadge}
+                </button>
+              ) : (
+                <span className="sg-discount-badge is-static">{oneTimeDiscountBadge}</span>
+              )}
+            </Tooltip>
+            {discountEditable && !discountPercentageEditable && (
+              <Tooltip label={t('Редагувати коментар до знижки')}>
+                <ActionIcon
+                  aria-label={t('Редагувати коментар до знижки')}
+                  className="sg-discount-comment"
+                  color="gray"
+                  size="xs"
+                  variant="subtle"
+                  onClick={() => onOpenDiscount(sale)}
+                >
+                  <MessageSquareText size={12} />
+                </ActionIcon>
+              </Tooltip>
             )}
-          </Tooltip>
-        ) : discountEditable ? (
+          </>
+        ) : discountPercentageEditable ? (
           <Tooltip label={t('Додати знижку')}>
             <ActionIcon
               aria-label={t('Додати знижку')}
@@ -1580,6 +1626,19 @@ const SaleGridRow = memo(function SaleGridRow({
               onClick={() => onOpenDiscount(sale)}
             >
               <Percent size={15} />
+            </ActionIcon>
+          </Tooltip>
+        ) : discountEditable ? (
+          <Tooltip label={t('Редагувати коментар до знижки')}>
+            <ActionIcon
+              aria-label={t('Редагувати коментар до знижки')}
+              className="sg-discount-comment"
+              color="gray"
+              size="xs"
+              variant="subtle"
+              onClick={() => onOpenDiscount(sale)}
+            >
+              <MessageSquareText size={12} />
             </ActionIcon>
           </Tooltip>
         ) : sale.IsLocked ? (

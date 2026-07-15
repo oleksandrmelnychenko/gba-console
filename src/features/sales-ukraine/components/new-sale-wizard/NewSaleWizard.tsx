@@ -1,11 +1,13 @@
-import { ActionIcon, Box, Button, Group, Modal, Text, UnstyledButton } from '@mantine/core'
+import { ActionIcon, Alert, Box, Button, Center, FileInput, Group, Loader, Modal, Stack, Text, UnstyledButton } from '@mantine/core'
 import { X } from 'lucide-react'
 import { notifications } from '@mantine/notifications'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useEffectEvent, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
+import { useAuth } from '../../../auth/useAuth'
 import { getCurrentSaleCart, getSaleById } from '../../api/salesUkraineApi'
+import { getSalesPendingMutationUserKey } from '../../pendingSalesMutationRegistry'
 import type { Client } from '../../../clients/types'
 import type { SaleDocumentResult, SalesUkraineSale } from '../../types'
 import { NewSaleClientStep } from './NewSaleClientStep'
@@ -15,13 +17,19 @@ import {
   bumpWizardDebtRefresh,
   canAdvanceToProducts,
   canAdvanceToReview,
+  claimWizardSplitRecoveryOwnership,
   clearWizardMergedSale,
-  clearWizardSplitOrderItems,
   getCartItemCount,
   getWizardMergedSale,
+  getWizardSplitRecovery,
+  hydrateWizardSplitRecovery,
+  isWizardShellBusy,
   NEW_SALE_REVIEW_INITIAL,
   NEW_SALE_WIZARD_INITIAL,
+  refreshWizardSplitRecoveryOwnership,
+  replaceWizardMergedOrderItems,
   setWizardMergedSale,
+  useWizardSplitOrderItems,
   type NewSaleReviewValue,
   type NewSaleWizardState,
 } from './newSaleWizardState'
@@ -36,9 +44,28 @@ import { WizardConfirmModal } from './WizardConfirmModal'
 import { WizardClientHeroHeader } from './WizardClientHeroHeader'
 import { WizardDownloadDocumentsModal } from './WizardDownloadDocumentsModal'
 import { WizardSaleHeader } from './WizardSaleHeader'
+import { createWizardAsyncGenerationGuard } from './wizardAsyncGeneration'
+import {
+  getWizardMutationContextKey,
+  restorePersistedWizardSplitRecovery,
+  type WizardSplitRecoveryRunResult,
+} from './wizardSplitSale'
+import {
+  confirmLinkedWizardFinalMutationCommitted,
+  recoverLinkedWizardFinalMutation,
+  type WizardFinalSplitRecoveryResult,
+} from './wizardFinalSplitRecovery'
 import './new-sale-wizard.css'
 
 const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
+
+function getWizardRequestErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof Error && error.message.trim()) {
+    return error.message
+  }
+
+  return fallback
+}
 
 export function NewSaleWizard({
   opened,
@@ -51,8 +78,214 @@ export function NewSaleWizard({
   onCreated: () => void
   opened: boolean
 }) {
+  const { t } = useI18n()
+  const { session } = useAuth()
   const [vatDocuments, setVatDocuments] = useState<SaleDocumentResult | null>(null)
-  const [contentBusy, setContentBusy] = useState(false)
+  const [splitRecoveryStatus, setSplitRecoveryStatus] = useState<'failed' | 'loading' | 'ready'>('loading')
+  const [splitRecoveryError, setSplitRecoveryError] = useState<string | null>(null)
+  const [splitRecoveryFile, setSplitRecoveryFile] = useState<File | null>(null)
+  const [splitRecoveryNeedsManualConfirmation, setSplitRecoveryNeedsManualConfirmation] = useState(false)
+  const [splitRecoveryNeedsFile, setSplitRecoveryNeedsFile] = useState(false)
+  const contentBusyRef = useRef(false)
+  const splitRecoveryAttemptRef = useRef(0)
+  const splitRecoveryUserKey = getSalesPendingMutationUserKey(session)
+  const handleContentBusyChange = useCallback((next: boolean) => {
+    contentBusyRef.current = next
+  }, [])
+  const restoreSplit = useCallback(
+    () => restorePersistedWizardSplitRecovery(splitRecoveryUserKey),
+    [splitRecoveryUserKey],
+  )
+  const runAutomaticSplitRecovery = useCallback(async (recoveryFile: File | null = null) => {
+    const attempt = splitRecoveryAttemptRef.current + 1
+    splitRecoveryAttemptRef.current = attempt
+    const hydratedRecovery = hydrateWizardSplitRecovery(splitRecoveryUserKey)
+
+    if (!hydratedRecovery) {
+      contentBusyRef.current = false
+      setSplitRecoveryError(null)
+      setSplitRecoveryNeedsManualConfirmation(false)
+      setSplitRecoveryNeedsFile(false)
+      setSplitRecoveryStatus('ready')
+
+      return
+    }
+
+    const recovery = claimWizardSplitRecoveryOwnership(hydratedRecovery)
+
+    if (!recovery) {
+      const message = t('Це незавершене розділення зараз обробляється в іншій вкладці. Закрийте її або повторіть після звільнення координації')
+      contentBusyRef.current = false
+      setSplitRecoveryError(message)
+      setSplitRecoveryNeedsManualConfirmation(false)
+      setSplitRecoveryNeedsFile(false)
+      setSplitRecoveryStatus('failed')
+
+      return
+    }
+
+    contentBusyRef.current = true
+    setSplitRecoveryError(null)
+    setSplitRecoveryNeedsManualConfirmation(false)
+    setSplitRecoveryNeedsFile(false)
+    setSplitRecoveryStatus('loading')
+    let finalResult: WizardFinalSplitRecoveryResult
+
+    try {
+      finalResult = recovery.finalMutation
+        ? await recoverLinkedWizardFinalMutation(recovery, recoveryFile)
+        : { status: 'not-linked' as const }
+    } catch (error) {
+      if (splitRecoveryAttemptRef.current !== attempt) {
+        return
+      }
+
+      const message = getWizardRequestErrorMessage(error, t('Не вдалося звірити фінальну операцію продажу'))
+      contentBusyRef.current = false
+      setSplitRecoveryError(message)
+      setSplitRecoveryNeedsManualConfirmation(false)
+      setSplitRecoveryNeedsFile(false)
+      setSplitRecoveryStatus('failed')
+      notifications.show({ autoClose: false, color: 'red', message })
+
+      return
+    }
+
+    if (splitRecoveryAttemptRef.current !== attempt) {
+      return
+    }
+
+    if (
+      finalResult.status === 'pending' ||
+      finalResult.status === 'requires-file' ||
+      finalResult.status === 'requires-manual-confirmation'
+    ) {
+      const message = getWizardRequestErrorMessage(
+        finalResult.error,
+        t('Не вдалося звірити фінальну операцію продажу'),
+      )
+      contentBusyRef.current = false
+      setSplitRecoveryError(message)
+      setSplitRecoveryNeedsManualConfirmation(finalResult.status === 'requires-manual-confirmation')
+      setSplitRecoveryNeedsFile(finalResult.status === 'requires-file')
+      setSplitRecoveryStatus('failed')
+      notifications.show({ autoClose: false, color: 'orange', message })
+
+      return
+    }
+
+    if (finalResult.status === 'committed') {
+      contentBusyRef.current = false
+      setSplitRecoveryError(null)
+      setSplitRecoveryFile(null)
+      setSplitRecoveryNeedsManualConfirmation(false)
+      setSplitRecoveryNeedsFile(false)
+      setSplitRecoveryStatus('ready')
+
+      if (isSaleDocumentResult(finalResult.result)) {
+        setVatDocuments(finalResult.result)
+      }
+
+      notifications.show({ color: 'green', message: t('Продаж підтверджено без повторного повернення позицій') })
+      onCreated()
+      onClose()
+
+      return
+    }
+
+    const result = await restoreSplit()
+
+    if (splitRecoveryAttemptRef.current !== attempt) {
+      return
+    }
+
+    contentBusyRef.current = false
+
+    if (!result.succeeded) {
+      const message = getWizardRequestErrorMessage(result.error, t('Не вдалося відновити розділені позиції'))
+      setSplitRecoveryError(message)
+      setSplitRecoveryNeedsManualConfirmation(false)
+      setSplitRecoveryNeedsFile(false)
+      setSplitRecoveryStatus('failed')
+      notifications.show({ autoClose: false, color: 'red', message })
+
+      return
+    }
+
+    setSplitRecoveryError(null)
+    setSplitRecoveryFile(null)
+    setSplitRecoveryNeedsManualConfirmation(false)
+    setSplitRecoveryNeedsFile(false)
+    setSplitRecoveryStatus('ready')
+
+    if (result.changed) {
+      notifications.show({ color: 'green', message: t('Розділені позиції відновлено у вихідному рахунку') })
+    }
+  }, [onClose, onCreated, restoreSplit, splitRecoveryUserKey, t])
+  const confirmManualSplitDestination = useCallback(async () => {
+    const recovery = hydrateWizardSplitRecovery(splitRecoveryUserKey)
+
+    if (
+      !recovery?.finalMutation ||
+      !await confirmLinkedWizardFinalMutationCommitted(recovery)
+    ) {
+      const message = t('Не вдалося підтвердити фінальну операцію. Повторіть звірку')
+      setSplitRecoveryError(message)
+      notifications.show({ autoClose: false, color: 'red', message })
+
+      return
+    }
+
+    contentBusyRef.current = false
+    setSplitRecoveryError(null)
+    setSplitRecoveryFile(null)
+    setSplitRecoveryNeedsManualConfirmation(false)
+    setSplitRecoveryNeedsFile(false)
+    setSplitRecoveryStatus('ready')
+    notifications.show({
+      color: 'green',
+      message: t('Створення продажу підтверджено вручну; позиції у джерело не поверталися'),
+    })
+    onCreated()
+    onClose()
+  }, [onClose, onCreated, splitRecoveryUserKey, t])
+  const runAutomaticSplitRecoveryEvent = useEffectEvent(runAutomaticSplitRecovery)
+
+  useEffect(() => {
+    let cancelled = false
+
+    if (!opened) {
+      contentBusyRef.current = false
+      splitRecoveryAttemptRef.current += 1
+
+      return () => {
+        cancelled = true
+      }
+    }
+
+    queueMicrotask(() => {
+      if (!cancelled) {
+        void runAutomaticSplitRecoveryEvent()
+      }
+    })
+
+    return () => {
+      cancelled = true
+      splitRecoveryAttemptRef.current += 1
+    }
+  }, [opened])
+
+  useEffect(() => {
+    if (!opened) {
+      return
+    }
+
+    const timer = window.setInterval(() => {
+      refreshWizardSplitRecoveryOwnership()
+    }, 5_000)
+
+    return () => window.clearInterval(timer)
+  }, [opened])
 
   return (
     <>
@@ -80,25 +313,66 @@ export function NewSaleWizard({
           body: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' },
         }}
         onClose={() => {
-          if (!contentBusy) {
+          if (!contentBusyRef.current) {
             onClose()
           }
         }}
       >
-        {opened && (
+        {opened && splitRecoveryStatus === 'ready' && (
           <NewSaleWizardContent
             initialSale={editSale ?? null}
-            onBusyChange={setContentBusy}
+            onBusyChange={handleContentBusyChange}
             onClose={onClose}
             onCreated={onCreated}
+            onRestoreSplit={restoreSplit}
             onVatDocuments={setVatDocuments}
           />
+        )}
+        {opened && splitRecoveryStatus === 'loading' && (
+          <Center style={{ flex: 1 }}>
+            <Loader aria-label={t('Відновлення розділених позицій')} />
+          </Center>
+        )}
+        {opened && splitRecoveryStatus === 'failed' && (
+          <Center p="md" style={{ flex: 1 }}>
+            <Alert color="red" title={t('Не вдалося відновити розділені позиції')} w="min(520px, 100%)">
+              <Stack gap="sm">
+                <Text size="sm">{splitRecoveryError}</Text>
+                {splitRecoveryNeedsFile && (
+                  <FileInput
+                    clearable
+                    label={t('Файл для повторної звірки')}
+                    value={splitRecoveryFile}
+                    onChange={setSplitRecoveryFile}
+                  />
+                )}
+                <Group justify="flex-end">
+                  <Button variant="default" onClick={onClose}>{t('Закрити без змін')}</Button>
+                  {splitRecoveryNeedsManualConfirmation && (
+                    <Button color="orange" onClick={confirmManualSplitDestination}>
+                      {t('Продаж існує: не повертати позиції')}
+                    </Button>
+                  )}
+                  <Button
+                    disabled={splitRecoveryNeedsFile && !splitRecoveryFile}
+                    onClick={() => void runAutomaticSplitRecovery(splitRecoveryFile)}
+                  >
+                    {t('Повторити')}
+                  </Button>
+                </Group>
+              </Stack>
+            </Alert>
+          </Center>
         )}
       </Modal>
 
       <WizardDownloadDocumentsModal result={vatDocuments} onClose={() => setVatDocuments(null)} />
     </>
   )
+}
+
+function isSaleDocumentResult(value: unknown): value is SaleDocumentResult {
+  return value !== null && typeof value === 'object' && 'isAcceptedToPacking' in value
 }
 
 const WIZARD_STEPS: { index: WizardStepIndex }[] = [{ index: 0 }, { index: 1 }, { index: 2 }]
@@ -129,12 +403,14 @@ function NewSaleWizardContent({
   onBusyChange,
   onClose,
   onCreated,
+  onRestoreSplit,
   onVatDocuments,
 }: {
   initialSale?: SalesUkraineSale | null
   onBusyChange: (busy: boolean) => void
   onClose: () => void
   onCreated: () => void
+  onRestoreSplit: () => Promise<WizardSplitRecoveryRunResult>
   onVatDocuments: (result: SaleDocumentResult) => void
 }) {
   const { t } = useI18n()
@@ -146,21 +422,111 @@ function NewSaleWizardContent({
   const [busy, setBusy] = useState(false)
   const [reviewBusy, setReviewBusy] = useState(false)
   const [productsBusy, setProductsBusy] = useState(false)
+  const productsBusyRef = useRef(false)
+  const stateRef = useRef(state)
+  const [reloadGuard] = useState(createWizardAsyncGenerationGuard)
+  const [navigationGuard] = useState(createWizardAsyncGenerationGuard)
   const [reassignOpen, setReassignOpen] = useState(false)
   const [exitConfirmOpen, setExitConfirmOpen] = useState(false)
-  const shellBusy = busy || reviewBusy
+  const splitItems = useWizardSplitOrderItems()
+  const shellBusy = isWizardShellBusy(busy, productsBusy, reviewBusy)
+
+  useLayoutEffect(() => {
+    stateRef.current = state
+  }, [state])
+
+  const handleProductsBusyChange = useCallback(
+    (next: boolean) => {
+      productsBusyRef.current = next
+      setProductsBusy(next)
+
+      if (next) {
+        onBusyChange(true)
+      }
+    },
+    [onBusyChange],
+  )
+
+  function isShellBusyNow(): boolean {
+    return isWizardShellBusy(busy, productsBusyRef.current, reviewBusy)
+  }
+
+  const restoreSplitBeforeAbandonment = useCallback(async (): Promise<boolean> => {
+    if (!getWizardSplitRecovery()) {
+      return true
+    }
+
+    setBusy(true)
+    onBusyChange(true)
+
+    try {
+      const result = await onRestoreSplit()
+
+      if (!result.succeeded) {
+        notifications.show({
+          autoClose: false,
+          color: 'red',
+          message: getWizardRequestErrorMessage(result.error, t('Не вдалося відновити розділені позиції')),
+        })
+
+        return false
+      }
+
+      if (result.sale && result.source) {
+        const current = stateRef.current
+
+        if (current.sale?.NetUid?.trim().toLowerCase() === result.source.saleNetUid) {
+          const updated = { ...current, sale: result.sale }
+          stateRef.current = updated
+          setState(updated)
+
+          if (result.source.origin === 'merged') {
+            replaceWizardMergedOrderItems(result.source.saleNetUid, result.sale.Order?.OrderItems ?? [])
+          }
+
+          bumpWizardDebtRefresh()
+        }
+      }
+
+      return true
+    } finally {
+      setBusy(false)
+    }
+  }, [onBusyChange, onRestoreSplit, t])
+
+  function invalidateCartReloads() {
+    reloadGuard.invalidate()
+    navigationGuard.invalidate()
+  }
+
+  async function closeWizard() {
+    if (isShellBusyNow()) {
+      return
+    }
+
+    if (!(await restoreSplitBeforeAbandonment())) {
+      return
+    }
+
+    invalidateCartReloads()
+    onClose()
+  }
 
   // Clicking the close (X) icon or the step-0 "Скасувати" button now asks for confirmation,
   // mirroring the Esc behaviour inside the steps, instead of discarding the sale immediately.
   function requestExit() {
-    if (!shellBusy) {
+    if (!isShellBusyNow()) {
       setExitConfirmOpen(true)
     }
   }
 
-  function confirmExit() {
+  async function confirmExit() {
+    if (isShellBusyNow()) {
+      return
+    }
+
     setExitConfirmOpen(false)
-    onClose()
+    await closeWizard()
   }
   const reviewSubmitRef = useRef<(() => Promise<void>) | null>(null)
 
@@ -169,9 +535,13 @@ function NewSaleWizardContent({
   }, [])
 
   useEffect(() => {
-    clearWizardSplitOrderItems()
     clearWizardMergedSale()
-  }, [])
+
+    return () => {
+      reloadGuard.invalidate()
+      navigationGuard.invalidate()
+    }
+  }, [navigationGuard, reloadGuard])
 
   // Opened from the sales grid "Редагування" action: load the given sale and jump straight to
   // the products step (step 2) instead of starting at client selection.
@@ -185,54 +555,90 @@ function NewSaleWizardContent({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     onBusyChange(shellBusy)
-
-    return () => {
-      onBusyChange(false)
-    }
   }, [onBusyChange, shellBusy])
+
+  useEffect(() => () => onBusyChange(false), [onBusyChange])
 
   useEffect(() => {
     initializeWizardKeyboard(active as WizardStepIndex)
   }, [active])
 
-  async function reloadCart() {
-    bumpWizardDebtRefresh()
-    const netId = state.sale?.NetUid
+  async function reloadCart(): Promise<SalesUkraineSale | null> {
+    const requestState = stateRef.current
+    const netId = requestState.sale?.NetUid
+    const agreementNetId = requestState.agreementNetId
+    const context = getWizardMutationContextKey(agreementNetId, netId)
+    const token = reloadGuard.begin(context)
+    let next: SalesUkraineSale | null
 
-    if (netId) {
-      const next = await getSaleById(netId)
-
-      if (next) {
-        setState((current) => {
-          if (current.sale?.NetUid !== netId) {
-            return current
-          }
-
-          const merged = getWizardMergedSale()
-
-          return {
-            ...current,
-            sale: merged ? { ...next, Order: { ...(next.Order ?? {}), OrderItems: merged.orderItems } } : next,
-          }
-        })
+    try {
+      next = netId
+        ? await getSaleById(netId, token.signal)
+        : agreementNetId
+          ? await getCurrentSaleCart(agreementNetId, token.signal)
+          : null
+    } catch (loadError) {
+      if (token.signal.aborted) {
+        return null
       }
 
-      return
+      throw loadError
     }
 
-    const agreementNetId = state.agreementNetId
+    const currentContext = getWizardMutationContextKey(
+      stateRef.current.agreementNetId,
+      stateRef.current.sale?.NetUid,
+    )
+
+    if (!reloadGuard.isCurrent(token, currentContext)) {
+      return null
+    }
+
+    if (netId) {
+      if (next) {
+        const merged = getWizardMergedSale()
+
+        if (merged?.netUid === netId) {
+          replaceWizardMergedOrderItems(netId, next.Order?.OrderItems ?? [])
+        }
+
+        const current = stateRef.current
+        const updateContext = getWizardMutationContextKey(current.agreementNetId, current.sale?.NetUid)
+
+        if (!reloadGuard.isCurrent(token, updateContext) || current.sale?.NetUid !== netId) {
+          return null
+        }
+
+        const updated = { ...current, sale: next }
+        stateRef.current = updated
+        setState(updated)
+        bumpWizardDebtRefresh()
+      }
+
+      return next
+    }
 
     if (!agreementNetId) {
-      return
+      return null
     }
-
-    const next = await getCurrentSaleCart(agreementNetId)
 
     if (next?.NetUid) {
-      setState((current) => (current.agreementNetId === agreementNetId ? { ...current, sale: next } : current))
+      const current = stateRef.current
+      const updateContext = getWizardMutationContextKey(current.agreementNetId, current.sale?.NetUid)
+
+      if (!reloadGuard.isCurrent(token, updateContext) || current.agreementNetId !== agreementNetId) {
+        return null
+      }
+
+      const updated = { ...current, sale: next }
+      stateRef.current = updated
+      setState(updated)
+      bumpWizardDebtRefresh()
     }
+
+    return next
   }
 
   async function goToProducts() {
@@ -240,49 +646,85 @@ function NewSaleWizardContent({
       return
     }
 
+    const agreementNetId = state.agreementNetId
+    invalidateCartReloads()
+    const token = navigationGuard.begin(`products:${agreementNetId.toLowerCase()}`)
     setBusy(true)
 
     try {
-      const cart = await getCurrentSaleCart(state.agreementNetId)
+      const cart = await getCurrentSaleCart(agreementNetId, token.signal)
+
+      if (
+        !navigationGuard.isCurrent(token, token.context) ||
+        stateRef.current.agreementNetId !== agreementNetId
+      ) {
+        return
+      }
 
       clearWizardMergedSale()
-      setState((current) => ({ ...current, sale: cart?.NetUid ? cart : null }))
+      const updated = { ...stateRef.current, sale: cart?.NetUid ? cart : null }
+      stateRef.current = updated
+      setState(updated)
       bumpWizardDebtRefresh()
       setActive(1)
     } catch (loadError) {
+      if (token.signal.aborted || !navigationGuard.isCurrent(token, token.context)) {
+        return
+      }
+
       notifications.show({
         color: 'red',
         message: loadError instanceof Error ? t(loadError.message) : t('Не вдалося виконати запит'),
       })
     } finally {
-      setBusy(false)
+      if (navigationGuard.isCurrent(token, token.context)) {
+        setBusy(false)
+      }
     }
   }
 
   async function openRegistrySale(sale: SalesUkraineSale): Promise<boolean> {
-    const agreement = sale.ClientAgreement ?? null
+    if (!(await restoreSplitBeforeAbandonment())) {
+      return false
+    }
 
+    const agreement = sale.ClientAgreement ?? null
+    const targetNetUid = sale.NetUid ?? ''
+
+    invalidateCartReloads()
+    const token = navigationGuard.begin(`registry:${targetNetUid.toLowerCase()}`)
     setBusy(true)
 
     try {
-      const fresh = sale.NetUid ? await getSaleById(sale.NetUid) : null
+      const fresh = sale.NetUid ? await getSaleById(sale.NetUid, token.signal) : null
+
+      if (!navigationGuard.isCurrent(token, token.context)) {
+        return false
+      }
+
       const next = fresh ?? sale
 
-      clearWizardSplitOrderItems()
       clearWizardMergedSale()
       setReview(NEW_SALE_REVIEW_INITIAL)
-      setState((current) => ({
+      const current = stateRef.current
+      const updated = {
         ...current,
         agreement: agreement ?? current.agreement,
         agreementNetId: agreement?.NetUid ?? current.agreementNetId,
         clientNetId: next.ClientAgreement?.Client?.NetUid ?? agreement?.Client?.NetUid ?? current.clientNetId,
         sale: next,
-      }))
+      }
+      stateRef.current = updated
+      setState(updated)
       bumpWizardDebtRefresh()
       setActive(1)
 
       return true
     } catch (loadError) {
+      if (token.signal.aborted || !navigationGuard.isCurrent(token, token.context)) {
+        return false
+      }
+
       notifications.show({
         color: 'red',
         message: loadError instanceof Error ? t(loadError.message) : t('Не вдалося виконати запит'),
@@ -290,46 +732,72 @@ function NewSaleWizardContent({
 
       return false
     } finally {
-      setBusy(false)
+      if (navigationGuard.isCurrent(token, token.context)) {
+        setBusy(false)
+      }
     }
   }
 
   async function openMergedSaleEdit(sale: SalesUkraineSale, unionSale: SalesUkraineSale | null) {
-    const agreement = unionSale?.ClientAgreement ?? null
+    if (!(await restoreSplitBeforeAbandonment())) {
+      return
+    }
 
+    const agreement = unionSale?.ClientAgreement ?? null
+    const targetNetUid = sale.NetUid ?? ''
+
+    invalidateCartReloads()
+    const token = navigationGuard.begin(`merged-edit:${targetNetUid.toLowerCase()}`)
     setBusy(true)
 
     try {
-      const fresh = sale.NetUid ? await getSaleById(sale.NetUid) : null
+      const fresh = sale.NetUid ? await getSaleById(sale.NetUid, token.signal) : null
+
+      if (!navigationGuard.isCurrent(token, token.context)) {
+        return
+      }
+
       const next = fresh ?? sale
 
-      clearWizardSplitOrderItems()
       setReview(NEW_SALE_REVIEW_INITIAL)
-      setState((current) => ({
+      const current = stateRef.current
+      const updated = {
         ...current,
         agreement: agreement ?? current.agreement,
         agreementNetId: agreement?.NetUid ?? current.agreementNetId,
         sale: next,
-      }))
+      }
+      stateRef.current = updated
+      setState(updated)
       setWizardMergedSale(
         sale.NetUid ? { netUid: sale.NetUid, orderItems: next.Order?.OrderItems ?? [], unionSale } : null,
       )
       bumpWizardDebtRefresh()
       setActive(1)
     } catch (loadError) {
+      if (token.signal.aborted || !navigationGuard.isCurrent(token, token.context)) {
+        return
+      }
+
       notifications.show({
         color: 'red',
         message: loadError instanceof Error ? t(loadError.message) : t('Не вдалося виконати запит'),
       })
     } finally {
-      setBusy(false)
+      if (navigationGuard.isCurrent(token, token.context)) {
+        setBusy(false)
+      }
     }
   }
 
-  function openMergedSaleInvoice(sale: SalesUkraineSale, unionSale: SalesUkraineSale | null) {
+  async function openMergedSaleInvoice(sale: SalesUkraineSale, unionSale: SalesUkraineSale | null) {
+    if (!(await restoreSplitBeforeAbandonment())) {
+      return
+    }
+
     const agreement = unionSale?.ClientAgreement ?? null
 
-    clearWizardSplitOrderItems()
+    invalidateCartReloads()
     setReview(NEW_SALE_REVIEW_INITIAL)
     setState((current) => ({
       ...current,
@@ -342,10 +810,14 @@ function NewSaleWizardContent({
     setActive(2)
   }
 
-  function startMergedMainClientSale(unionSale: SalesUkraineSale) {
+  async function startMergedMainClientSale(unionSale: SalesUkraineSale) {
+    if (!(await restoreSplitBeforeAbandonment())) {
+      return
+    }
+
     const agreement = unionSale.ClientAgreement ?? null
 
-    clearWizardSplitOrderItems()
+    invalidateCartReloads()
     clearWizardMergedSale()
     setReview(NEW_SALE_REVIEW_INITIAL)
     setState((current) => ({
@@ -358,8 +830,12 @@ function NewSaleWizardContent({
     setActive(1)
   }
 
-  function goToClients() {
-    clearWizardSplitOrderItems()
+  async function goToClients() {
+    if (!(await restoreSplitBeforeAbandonment())) {
+      return
+    }
+
+    invalidateCartReloads()
     clearWizardMergedSale()
     setReview(NEW_SALE_REVIEW_INITIAL)
     setState((current) => ({ ...current, sale: null }))
@@ -368,11 +844,16 @@ function NewSaleWizardContent({
 
   function goToReview() {
     if (canAdvanceToReview(state)) {
+      invalidateCartReloads()
       setActive(2)
     }
   }
 
   async function handleNext() {
+    if (isShellBusyNow()) {
+      return
+    }
+
     if (active === 0) {
       await goToProducts()
     } else if (active === 1) {
@@ -395,14 +876,15 @@ function NewSaleWizardContent({
   }
 
   function onStepClick(index: number) {
-    if (shellBusy) {
+    if (isShellBusyNow()) {
       return
     }
 
     if (index < active) {
       if (index === 0) {
-        goToClients()
+        void goToClients()
       } else {
+        invalidateCartReloads()
         setActive(index)
       }
 
@@ -429,6 +911,12 @@ function NewSaleWizardContent({
     }
 
   function handleRootKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
+    if (productsBusyRef.current) {
+      event.preventDefault()
+
+      return
+    }
+
     if (reassignOpen) {
       return
     }
@@ -473,19 +961,24 @@ function NewSaleWizardContent({
       if (event.code === 'Digit1') {
         event.preventDefault()
 
-        if (!shellBusy) {
-          goToClients()
+        if (!isShellBusyNow()) {
+          void goToClients()
         }
       } else if (event.code === 'Digit2') {
         event.preventDefault()
 
-        if (!shellBusy && canAdvanceToProducts(state)) {
-          void goToProducts()
+        if (!isShellBusyNow() && canAdvanceToProducts(state)) {
+          if (active > 1) {
+            invalidateCartReloads()
+            setActive(1)
+          } else {
+            void goToProducts()
+          }
         }
       } else if (event.code === 'Digit3') {
         event.preventDefault()
 
-        if (!shellBusy && canAdvanceToProducts(state)) {
+        if (!isShellBusyNow() && canAdvanceToProducts(state)) {
           if (canAdvanceToReview(state)) {
             goToReview()
           } else {
@@ -511,12 +1004,12 @@ function NewSaleWizardContent({
     </ActionIcon>
   )
   const onSaleReassigned = useCallback((movedSale: SalesUkraineSale | null) => {
-    clearWizardSplitOrderItems()
+    reloadGuard.invalidate()
     clearWizardMergedSale()
     setState((current) => ({ ...current, sale: movedSale ?? current.sale }))
     bumpWizardDebtRefresh()
     setActive(0)
-  }, [])
+  }, [reloadGuard])
 
   // Memoized: this element is passed into every step — rebuilding it each host
   // render re-rendered the 490-line WizardSaleHeader (and the receiving step)
@@ -528,7 +1021,7 @@ function NewSaleWizardContent({
           clientNetId={state.clientNetId}
           hideAgreementsAction
           mode="inline"
-          reassignDisabled={shellBusy || productsBusy}
+          reassignDisabled={shellBusy || productsBusy || splitItems.length > 0 || Boolean(getWizardSplitRecovery())}
           sale={state.sale}
           withVatAccounting={withVatAccounting}
           onReassignOpenChange={setReassignOpen}
@@ -536,7 +1029,7 @@ function NewSaleWizardContent({
         />
       </Group>
     ),
-    [onSaleReassigned, productsBusy, shellBusy, state.clientNetId, state.sale, withVatAccounting],
+    [onSaleReassigned, productsBusy, shellBusy, splitItems.length, state.clientNetId, state.sale, withVatAccounting],
   )
 
   return (
@@ -570,7 +1063,7 @@ function NewSaleWizardContent({
             initialClient={selectedClient}
             onClientResolved={setSelectedClient}
             onAgreementChange={(agreementNetId, agreement) => {
-              clearWizardSplitOrderItems()
+              invalidateCartReloads()
               clearWizardMergedSale()
               setReview(NEW_SALE_REVIEW_INITIAL)
               // Bail on no-change: returning the same object skips the host re-render.
@@ -581,14 +1074,14 @@ function NewSaleWizardContent({
               )
             }}
             onClientChange={(clientNetId) => {
-              clearWizardSplitOrderItems()
+              invalidateCartReloads()
               clearWizardMergedSale()
               setReview(NEW_SALE_REVIEW_INITIAL)
               setState((current) => (current.clientNetId === clientNetId ? current : { ...current, clientNetId }))
             }}
-            onCreateMergedMainClientSale={startMergedMainClientSale}
+            onCreateMergedMainClientSale={(sale) => void startMergedMainClientSale(sale)}
             onEditMergedSale={(sale, unionSale) => void openMergedSaleEdit(sale, unionSale)}
-            onInvoiceMergedSale={openMergedSaleInvoice}
+            onInvoiceMergedSale={(sale, unionSale) => void openMergedSaleInvoice(sale, unionSale)}
             onOpenSale={(sale) => void openRegistrySale(sale)}
             onRequestClose={requestExit}
           />
@@ -600,9 +1093,10 @@ function NewSaleWizardContent({
             clientNetId={state.clientNetId}
             headerTools={wizardHeaderTools}
             sale={productsCart}
-            onBusyChange={setProductsBusy}
+            onBusyChange={handleProductsBusyChange}
             onCartChanged={reloadCart}
             onRequestClose={requestExit}
+            onRestoreSplitItems={restoreSplitBeforeAbandonment}
           />
         )}
         {active === 2 && (
@@ -612,9 +1106,12 @@ function NewSaleWizardContent({
             value={review}
             onBusyChange={setReviewBusy}
             onChange={(patch) => setReview((current) => ({ ...current, ...patch }))}
-            onClose={onClose}
-            onCreated={onCreated}
-            onMergedSubmitted={goToClients}
+            onClose={() => void closeWizard()}
+            onCreated={() => {
+              invalidateCartReloads()
+              onCreated()
+            }}
+            onMergedSubmitted={() => void goToClients()}
             onRegisterSubmit={registerReviewSubmit}
             onVatDocuments={onVatDocuments}
             withVatAccounting={withVatAccounting}
@@ -652,7 +1149,7 @@ function NewSaleWizardContent({
               color="gray"
               disabled={shellBusy}
               variant="default"
-              onClick={active === 0 ? requestExit : active === 1 ? goToClients : () => setActive(1)}
+              onClick={active === 0 ? requestExit : active === 1 ? () => void goToClients() : () => setActive(1)}
             >
               {active === 0 ? t('Скасувати') : t('Назад')}
             </Button>
@@ -672,10 +1169,11 @@ function NewSaleWizardContent({
       </Box>
 
       <WizardConfirmModal
+        busy={shellBusy}
         message={t('Закрити вікно?')}
         opened={exitConfirmOpen}
         onCancel={() => setExitConfirmOpen(false)}
-        onConfirm={confirmExit}
+        onConfirm={() => void confirmExit()}
       />
     </Box>
   )

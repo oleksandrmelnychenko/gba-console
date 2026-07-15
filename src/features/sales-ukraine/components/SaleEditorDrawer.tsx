@@ -27,9 +27,7 @@ import { TransporterNameWithIcon } from '../../../shared/transporter-icons/Trans
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import {
-  addOrderItem,
   convertVatSaleAndGetPaymentDocument,
-  deleteOrderItem,
   getSaleById,
   getSaleClientAgreements,
   getSaleClientDebtTotal,
@@ -37,7 +35,7 @@ import {
   searchSaleProducts,
   searchSalesUkraineClients,
   switchSale,
-  updateOrderItem,
+  type SwitchSalePayload,
   updateSaleFromData,
 } from '../api/salesUkraineApi'
 import { getSaleReviewIssues, type SaleReviewIssueCode } from '../saleReviewGuards'
@@ -47,7 +45,16 @@ import {
   type OrderItemBaseDiscountSuppressionReason,
 } from '../saleDiscounts'
 import { getSaleLocalCurrencyCode, isNonVatEurSale, roundMoney } from '../saleMoney'
+import { getSaleFileMutationContext, SALE_FILE_MUTATION_INTENTS } from '../saleFileMutation'
 import { isStatusType } from '../saleStatus'
+import {
+  createAddOrUpdateSalesCartMutation,
+  usePersistentSalesCartMutation,
+} from '../usePersistentSalesCartMutation'
+import { usePersistentSaleFileMutation } from '../usePersistentSaleFileMutation'
+import { usePersistentSaleJsonMutationRunner } from '../usePersistentSaleJsonMutation'
+import type { WizardCartMutationRequest } from './new-sale-wizard/wizardCartMutation'
+import type { WizardCartMutationExpectation } from './new-sale-wizard/wizardMutationOperation'
 import { MergedSalesDrawer } from './MergedSalesDrawer'
 import { SaleDetailsDrawer } from './SaleDetailsDrawer'
 import './sale-editor-drawer.css'
@@ -76,6 +83,11 @@ type RetailPaymentState = {
 }
 
 type SaleEditorTab = 'products' | 'client'
+type SaleCartMutationRunner = (
+  request: WizardCartMutationRequest,
+  expectation: WizardCartMutationExpectation,
+  fallbackMessage: string,
+) => Promise<boolean>
 
 export function SaleEditorDrawer({ sale, onClose }: { onClose: () => void; sale: SalesUkraineSale | null }) {
   const { t } = useI18n()
@@ -115,6 +127,19 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
   const [isReassignOpen, setReassignOpen] = useValueState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const [activeTab, setActiveTab] = useState<SaleEditorTab>('products')
+  const cartMutation = usePersistentSalesCartMutation({
+    context: `sale-editor:${String(initialSale.NetUid || initialSale.Id || '')}`,
+    onCommitted: setSale,
+    reconcile: async () => {
+      const netUid = sale.NetUid || initialSale.NetUid
+
+      return netUid ? getSaleById(netUid) : null
+    },
+  })
+  const fileMutation = usePersistentSaleFileMutation(
+    getSaleFileMutationContext(initialSale),
+    SALE_FILE_MUTATION_INTENTS.invoiceConversion,
+  )
 
   useEffect(() => {
     const netId = initialSale.NetUid
@@ -219,7 +244,20 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
     setDeleting(true)
 
     try {
-      await deleteOrderItem(deletingItem.NetUid)
+      const completed = await cartMutation.run(
+        { kind: 'delete', orderItemNetId: deletingItem.NetUid },
+        {
+          beforeQty: getNumber(deletingItem.Qty) ?? 0,
+          kind: 'row-deleted',
+          rowNetUid: deletingItem.NetUid,
+        },
+        t('Не вдалося видалити товар'),
+      )
+
+      if (!completed) {
+        return
+      }
+
       notifications.show({ color: 'green', message: t('Товар видалено') })
       setDeletingItem(null)
       reload()
@@ -233,7 +271,7 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
   async function convertToInvoice() {
     const issues = getSaleReviewIssues(sale, { isRetailPaymentLoading, retailPaymentStatus })
 
-    if (issues.length > 0) {
+    if (!fileMutation.reconciliationRequired && issues.length > 0) {
       notifications.show({ color: 'orange', message: t('Заповніть обов’язкові дані продажу') })
 
       return
@@ -241,23 +279,48 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
 
     setConverting(true)
 
-    const payload: SalesUkraineSale = {
-      ...sale,
-      BaseLifeCycleStatus: { Deleted: false, Id: 0, NetUid: EMPTY_GUID, SaleLifeCycleType: 1 },
-      BaseSalePaymentStatus: { Deleted: false, Id: 0, NetUid: EMPTY_GUID, SalePaymentStatusType: 0 },
-      IsPrintedPaymentInvoice: true,
-    }
-
     try {
-      if (sale.IsVatSale) {
-        const document = await convertVatSaleAndGetPaymentDocument(payload, invoiceTtnFile)
+      const pendingKind = fileMutation.pendingKind
+      const kind = fileMutation.reconciliationRequired
+        ? pendingKind
+        : sale.IsVatSale ? 'sale-vat-document' : 'sale-update-file'
+
+      if (!kind) {
+        throw new Error(t('Неможливо визначити файлову операцію для звірки'))
+      }
+
+      if (kind === 'sale-vat-document') {
+        const document = fileMutation.reconciliationRequired
+          ? await fileMutation.reconcile(kind, invoiceTtnFile, convertVatSaleAndGetPaymentDocument)
+          : await fileMutation.run(
+              kind,
+              createInvoicePayload(sale),
+              invoiceTtnFile,
+              convertVatSaleAndGetPaymentDocument,
+            )
+
+        if (!document) {
+          return
+        }
+
         const url = document.pdfUrl || document.excelUrl
 
         if (url) {
           window.open(url, '_blank', 'noopener,noreferrer')
         }
       } else {
-        await updateSaleFromData(payload, invoiceTtnFile)
+        const result = fileMutation.reconciliationRequired
+          ? await fileMutation.reconcile(kind, invoiceTtnFile, updateSaleFromData)
+          : await fileMutation.run(
+              kind,
+              createInvoicePayload(sale),
+              invoiceTtnFile,
+              updateSaleFromData,
+            )
+
+        if (!result) {
+          return
+        }
       }
 
       notifications.show({ color: 'green', message: t('Рахунок створено') })
@@ -307,6 +370,23 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
       {error && (
         <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {error}
+        </Alert>
+      )}
+      {cartMutation.pendingError && (
+        <Alert color="orange" icon={<TriangleAlert size={18} />} variant="light">
+          {cartMutation.pendingError}
+        </Alert>
+      )}
+      {fileMutation.pendingError && (
+        <Alert color="orange" icon={<TriangleAlert size={18} />} variant="light">
+          <Stack gap="xs">
+            <Text size="sm">{fileMutation.pendingError}</Text>
+            {!isConvertOpen && fileMutation.canReconcile && (
+              <Button size="xs" variant="light" onClick={() => setConvertOpen(true)}>
+                {t('Звірити створення рахунку')}
+              </Button>
+            )}
+          </Stack>
         </Alert>
       )}
 
@@ -371,9 +451,9 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
             {t('Доставка')}
           </Button>
         )}
-        {canConvert && (
+        {(canConvert || fileMutation.reconciliationRequired) && (
           <Button color="teal" leftSection={<ReceiptText size={16} />} onClick={() => setConvertOpen(true)}>
-            {t('Зробити рахунок')}
+            {t(fileMutation.reconciliationRequired ? 'Звірити рахунок' : 'Зробити рахунок')}
           </Button>
         )}
       </Group>
@@ -430,6 +510,7 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
 
       <AddProductModal
         opened={isAddOpen}
+        runCartMutation={cartMutation.run}
         sale={sale}
         onAdded={() => {
           setAddOpen(false)
@@ -440,6 +521,7 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
 
       <OrderItemQtyModal
         item={editingItem}
+        runCartMutation={cartMutation.run}
         onClose={() => setEditingItem(null)}
         onSaved={() => {
           setEditingItem(null)
@@ -509,10 +591,13 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
               {retailPaymentError}
             </Text>
           )}
-          {sale.CustomersOwnTtn && (
+          {(sale.CustomersOwnTtn || fileMutation.requiresFileReselection) && (
             <FileInput
               clearable
-              disabled={isConverting}
+              disabled={
+                isConverting ||
+                (fileMutation.reconciliationRequired && !fileMutation.requiresFileReselection)
+              }
               label={t('Завантажити ТТН')}
               placeholder={t('Оберіть файл')}
               value={invoiceTtnFile}
@@ -531,8 +616,15 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
             >
               {t('Скасувати')}
             </Button>
-            <Button color="teal" disabled={reviewIssues.length > 0} loading={isConverting} onClick={convertToInvoice}>
-              {t('Зробити рахунок')}
+            <Button
+              color="teal"
+              disabled={fileMutation.reconciliationRequired
+                ? !fileMutation.canReconcile || (fileMutation.requiresFileReselection && !invoiceTtnFile)
+                : reviewIssues.length > 0}
+              loading={isConverting}
+              onClick={convertToInvoice}
+            >
+              {t(fileMutation.reconciliationRequired ? 'Звірити створення' : 'Зробити рахунок')}
             </Button>
           </Group>
         </Stack>
@@ -563,6 +655,15 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
       </AppModal>
     </Stack>
   )
+}
+
+function createInvoicePayload(sale: SalesUkraineSale): SalesUkraineSale {
+  return {
+    ...sale,
+    BaseLifeCycleStatus: { Deleted: false, Id: 0, NetUid: EMPTY_GUID, SaleLifeCycleType: 1 },
+    BaseSalePaymentStatus: { Deleted: false, Id: 0, NetUid: EMPTY_GUID, SalePaymentStatusType: 0 },
+    IsPrintedPaymentInvoice: true,
+  }
 }
 
 function getReviewIssueLabel(issue: SaleReviewIssueCode, t: (message: string) => string): string {
@@ -730,16 +831,26 @@ function OrderItemQtyModal({
   item,
   onClose,
   onSaved,
+  runCartMutation,
 }: {
   item: SalesUkraineOrderItem | null
   onClose: () => void
   onSaved: () => void
+  runCartMutation: SaleCartMutationRunner
 }) {
   const { t } = useI18n()
 
   return (
     <AppModal centered opened={Boolean(item)} size="sm" title={t('Змінити кількість')} onClose={onClose}>
-      {item && <OrderItemQtyForm key={item.NetUid || item.Id} item={item} onCancel={onClose} onSaved={onSaved} />}
+      {item && (
+        <OrderItemQtyForm
+          key={item.NetUid || item.Id}
+          item={item}
+          runCartMutation={runCartMutation}
+          onCancel={onClose}
+          onSaved={onSaved}
+        />
+      )}
     </AppModal>
   )
 }
@@ -748,13 +859,15 @@ function OrderItemQtyForm({
   item,
   onCancel,
   onSaved,
+  runCartMutation,
 }: {
   item: SalesUkraineOrderItem
   onCancel: () => void
   onSaved: () => void
+  runCartMutation: SaleCartMutationRunner
 }) {
   const { t } = useI18n()
-  const [qty, setQty] = useState<number | string>(getNumber(item.Qty) ?? '')
+  const [qty, setQty] = useState<number | string>(() => getNumber(item.Qty) ?? '')
   const [isSaving, setSaving] = useState(false)
   const numericQty = typeof qty === 'number' ? qty : Number(String(qty).replace(',', '.'))
   const isValid = Number.isFinite(numericQty) && numericQty > 0
@@ -769,7 +882,25 @@ function OrderItemQtyForm({
     setSaving(true)
 
     try {
-      await updateOrderItem({ ...item, Qty: numericQty })
+      if (!item.NetUid) {
+        throw new Error(t('Позиція не має збереженого ідентифікатора'))
+      }
+
+      const completed = await runCartMutation(
+        { kind: 'update', orderItem: { ...item, Qty: numericQty } },
+        {
+          afterQty: numericQty,
+          beforeQty: getNumber(item.Qty) ?? 0,
+          kind: 'row-quantity',
+          rowNetUid: item.NetUid,
+        },
+        t('Не вдалося оновити кількість'),
+      )
+
+      if (!completed) {
+        return
+      }
+
       notifications.show({ color: 'green', message: t('Кількість оновлено') })
       onSaved()
     } catch (error) {
@@ -806,6 +937,7 @@ function OrderItemQtyForm({
 
 function AddProductModal({
   opened,
+  runCartMutation,
   sale,
   onClose,
   onAdded,
@@ -813,18 +945,36 @@ function AddProductModal({
   onAdded: () => void
   onClose: () => void
   opened: boolean
+  runCartMutation: SaleCartMutationRunner
   sale: SalesUkraineSale
 }) {
   const { t } = useI18n()
 
   return (
     <AppModal centered opened={opened} size="lg" title={t('Додати товар')} onClose={onClose}>
-      {opened && <AddProductForm sale={sale} onAdded={onAdded} onCancel={onClose} />}
+      {opened && (
+        <AddProductForm
+          runCartMutation={runCartMutation}
+          sale={sale}
+          onAdded={onAdded}
+          onCancel={onClose}
+        />
+      )}
     </AppModal>
   )
 }
 
-function AddProductForm({ sale, onCancel, onAdded }: { onAdded: () => void; onCancel: () => void; sale: SalesUkraineSale }) {
+function AddProductForm({
+  sale,
+  onCancel,
+  onAdded,
+  runCartMutation,
+}: {
+  onAdded: () => void
+  onCancel: () => void
+  runCartMutation: SaleCartMutationRunner
+  sale: SalesUkraineSale
+}) {
   const { t } = useI18n()
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<SalesUkraineProduct[]>([])
@@ -880,21 +1030,27 @@ function AddProductForm({ sale, onCancel, onAdded }: { onAdded: () => void; onCa
 
     setSaving(true)
 
-    const existing = (Array.isArray(sale.Order?.OrderItems) ? sale.Order.OrderItems : []).find(
-      (item) => item.Product?.NetUid === selected.NetUid,
-    )
-
     try {
-      if (existing) {
-        await updateOrderItem({ ...existing, Qty: (getNumber(existing.Qty) || 0) + numericQty })
-      } else {
-        await addOrderItem(agreementNetUid, saleNetUid, {
+      const mutation = createAddOrUpdateSalesCartMutation({
+        clientAgreementNetId: agreementNetUid,
+        orderItem: {
           Deleted: false,
           Id: 0,
           NetUid: EMPTY_GUID,
           Product: selected,
           Qty: numericQty,
-        })
+        },
+        orderItems: Array.isArray(sale.Order?.OrderItems) ? sale.Order.OrderItems : [],
+        saleNetId: saleNetUid,
+      })
+      const completed = await runCartMutation(
+        mutation.request,
+        mutation.expectation,
+        t('Не вдалося додати товар'),
+      )
+
+      if (!completed) {
+        return
       }
 
       notifications.show({ color: 'green', message: t('Товар додано') })
@@ -1009,6 +1165,7 @@ function ReassignSaleForm({
   const [agreements, setAgreements] = useState<SalesUkraineClientAgreement[]>([])
   const [selectedAgreement, setSelectedAgreement] = useState<string | null>(null)
   const [isReassigning, setReassigning] = useState(false)
+  const runSaleSwitch = usePersistentSaleJsonMutationRunner('sale-switch')
 
   useEffect(() => {
     const value = query.trim()
@@ -1095,7 +1252,16 @@ function ReassignSaleForm({
     setReassigning(true)
 
     try {
-      await switchSale(sale.NetUid, selectedAgreement)
+      const attempt = await runSaleSwitch<SwitchSalePayload, SalesUkraineSale | null>(
+        `sale-switch:${sale.NetUid}`,
+        { ClientAgreementNetId: selectedAgreement, SaleNetId: sale.NetUid },
+        (payload, operation) => switchSale(payload.SaleNetId, payload.ClientAgreementNetId, operation),
+      )
+
+      if (!attempt.completed) {
+        throw attempt.error
+      }
+
       notifications.show({ color: 'green', message: t('Продаж переназначено') })
       onReassigned()
     } catch (error) {
@@ -1158,6 +1324,7 @@ function ClientTab({ canEdit, sale, onSwitched }: { canEdit: boolean; onSwitched
   const [debt, setDebt] = useValueState<SaleClientDebtTotal | null>(null)
   const [selectedAgreement, setSelectedAgreement] = useValueState(currentAgreementNetUid)
   const [isSwitching, setSwitching] = useValueState(false)
+  const runSaleSwitch = usePersistentSaleJsonMutationRunner('sale-switch')
 
   useEffect(() => {
     if (!clientNetUid) {
@@ -1205,7 +1372,16 @@ function ClientTab({ canEdit, sale, onSwitched }: { canEdit: boolean; onSwitched
     setSwitching(true)
 
     try {
-      await switchSale(sale.NetUid, selectedAgreement)
+      const attempt = await runSaleSwitch<SwitchSalePayload, SalesUkraineSale | null>(
+        `sale-switch:${sale.NetUid}`,
+        { ClientAgreementNetId: selectedAgreement, SaleNetId: sale.NetUid },
+        (payload, operation) => switchSale(payload.SaleNetId, payload.ClientAgreementNetId, operation),
+      )
+
+      if (!attempt.completed) {
+        throw attempt.error
+      }
+
       notifications.show({ color: 'green', message: t('Договір змінено') })
       onSwitched()
     } catch (error) {

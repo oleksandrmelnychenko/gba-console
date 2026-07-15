@@ -1,5 +1,5 @@
-import { Anchor, Box, Text, Tooltip } from '@mantine/core'
-import { Box as BoxIcon } from 'lucide-react'
+import { ActionIcon, Anchor, Box, Text, Tooltip } from '@mantine/core'
+import { Box as BoxIcon, MessageSquareText } from 'lucide-react'
 import { memo, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { ProductCardModal } from '../../products/components/ProductCardModal'
@@ -9,7 +9,7 @@ import {
   getVisibleOrderItemBaseDiscount,
   type OrderItemBaseDiscountSuppressionReason,
 } from '../saleDiscounts'
-import { isDiscountEditableSaleLifecycle } from '../saleStatus'
+import { isDiscountEditableSaleLifecycle, isDiscountPercentageEditableSaleLifecycle } from '../saleStatus'
 import type { SalesUkraineOrderItem, SalesUkraineSale, SalesUkraineUser } from '../types'
 
 const amountFormatter = new Intl.NumberFormat('uk-UA', {
@@ -18,6 +18,7 @@ const amountFormatter = new Intl.NumberFormat('uk-UA', {
 })
 
 const BASE_CURRENCY_CODE = 'EUR'
+type DiscountEditMode = 'comment' | 'percentage' | 'readonly'
 
 // Memoized: expanding/collapsing one row (or any page-level state change) must
 // not re-render every other expanded instance. onOpenItemDiscount is ref-routed
@@ -33,7 +34,14 @@ export const SaleExpandContent = memo(function SaleExpandContent({
   const [productCardNetId, setProductCardNetId] = useState<string | null>(null)
   const orderItems = Array.isArray(sale.Order?.OrderItems) ? sale.Order.OrderItems : []
   const localCurrencyCode = sale.ClientAgreement?.Agreement?.Currency?.Code || ''
-  const canEditDiscount = isDiscountEditableSaleLifecycle(sale.BaseLifeCycleStatus?.SaleLifeCycleType)
+  const lifecycle = sale.BaseLifeCycleStatus?.SaleLifeCycleType ?? sale.BaseLifeCycleStatus?.Name
+  const canEditDiscountComment = isDiscountEditableSaleLifecycle(lifecycle)
+  const canEditDiscountPercentage = isDiscountPercentageEditableSaleLifecycle(lifecycle)
+  const discountEditMode: DiscountEditMode = canEditDiscountPercentage
+    ? 'percentage'
+    : canEditDiscountComment
+      ? 'comment'
+      : 'readonly'
   const isVatSale = Boolean(sale.IsVatSale)
   const hasUniformDiscount = getUniformOneTimeDiscount(orderItems) != null
   const useEurToUah = !isVatSale && localCurrencyCode === BASE_CURRENCY_CODE
@@ -67,7 +75,7 @@ export const SaleExpandContent = memo(function SaleExpandContent({
         {orderItems.map((orderItem, index) => (
           <SaleExpandContentItem
             key={String(orderItem.NetUid || orderItem.Id || index)}
-            canEditDiscount={canEditDiscount}
+            discountEditMode={discountEditMode}
             isVatSale={isVatSale}
             hasUniformDiscount={hasUniformDiscount}
             localCurrencyCode={localCurrencyCode}
@@ -83,7 +91,7 @@ export const SaleExpandContent = memo(function SaleExpandContent({
 })
 
 function SaleExpandContentItem({
-  canEditDiscount,
+  discountEditMode,
   hasUniformDiscount,
   isVatSale,
   localCurrencyCode,
@@ -91,7 +99,7 @@ function SaleExpandContentItem({
   orderItem,
   onOpenItemDiscount,
 }: {
-  canEditDiscount: boolean
+  discountEditMode: DiscountEditMode
   hasUniformDiscount: boolean
   isVatSale: boolean
   localCurrencyCode: string
@@ -100,6 +108,8 @@ function SaleExpandContentItem({
   onOpenItemDiscount: () => void
 }) {
   const { t } = useI18n()
+  const canEditDiscountPercentage = discountEditMode === 'percentage'
+  const canEditDiscountCommentOnly = discountEditMode === 'comment'
   const oneTimeDiscount = getNumber(orderItem.OneTimeDiscount)
   const hasOneTimeDiscount = typeof oneTimeDiscount === 'number' && oneTimeDiscount !== 0
   const baseDiscount = getVisibleOrderItemBaseDiscount(orderItem)
@@ -218,7 +228,7 @@ function SaleExpandContentItem({
         </div>
         <div className="sale-expand-discount-line">
           <span>{t('Разова')}</span>
-          {!hasUniformDiscount && canEditDiscount ? (
+          {!hasUniformDiscount && canEditDiscountPercentage ? (
             <Anchor
               className="sale-expand-discount-action"
               c="dark.8"
@@ -234,6 +244,23 @@ function SaleExpandContentItem({
             </Anchor>
           ) : (
             <strong>{formatPercent(oneTimeDiscount ?? 0)}</strong>
+          )}
+          {canEditDiscountCommentOnly && (
+            <Tooltip label={t('Редагувати коментар до знижки')}>
+              <ActionIcon
+                aria-label={t('Редагувати коментар до знижки')}
+                className="sale-expand-discount-comment"
+                color="gray"
+                size="xs"
+                variant="subtle"
+                onClick={(event) => {
+                  event.stopPropagation()
+                  onOpenItemDiscount()
+                }}
+              >
+                <MessageSquareText size={13} />
+              </ActionIcon>
+            </Tooltip>
           )}
         </div>
         {hasOneTimeDiscount && discountUpdater && (

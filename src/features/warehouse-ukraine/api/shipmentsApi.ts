@@ -1,4 +1,9 @@
 import { apiRequest } from '../../../shared/api/apiClient'
+import {
+  getSalesMutationOperationHeaders,
+  withSalesMutationOperationNetUid,
+  type SalesMutationOperationOptions,
+} from '../../sales-ukraine/salesMutationOperation'
 import type { WarehouseUkraineExportDocument } from '../types'
 import type {
   ShipmentDeliveryRecipient,
@@ -136,39 +141,56 @@ export async function getShipmentListForSaleDocument(saleNetId: string): Promise
   return normalizeExportDocument(result)
 }
 
-export async function updateSaleComment(saleNetId: string, comment: string): Promise<void> {
+export type ShipmentSaleCommentMutation = {
+  Comment: string
+  NetUid: string
+}
+
+export async function updateSaleComment(
+  saleNetId: string,
+  comment: string,
+  operation: SalesMutationOperationOptions,
+): Promise<void> {
   await apiRequest<unknown>('/sales/update/comment', {
     method: 'POST',
+    headers: getSalesMutationOperationHeaders(operation.operationId),
     query: {
       netId: saleNetId,
     },
-    body: { NetUid: saleNetId, Comment: comment },
+    body: withSalesMutationOperationNetUid({ NetUid: saleNetId, Comment: comment }, operation.operationId),
+    ...(operation.signal ? { signal: operation.signal } : {}),
   })
 }
 
 export async function updateDeliveryRecipient(
   saleNetId: string,
   recipient: ShipmentDeliveryRecipient,
+  operation: SalesMutationOperationOptions,
 ): Promise<void> {
   await apiRequest<unknown>('/sales/update/recipient', {
     method: 'POST',
+    headers: getSalesMutationOperationHeaders(operation.operationId),
     query: {
       netId: saleNetId,
     },
-    body: recipient,
+    body: withSalesMutationOperationNetUid(recipient, operation.operationId),
+    ...(operation.signal ? { signal: operation.signal } : {}),
   })
 }
 
 export async function updateDeliveryRecipientAddress(
   saleNetId: string,
   address: ShipmentDeliveryRecipientAddress,
+  operation: SalesMutationOperationOptions,
 ): Promise<void> {
   await apiRequest<unknown>('/sales/update/recipient/address', {
     method: 'POST',
+    headers: getSalesMutationOperationHeaders(operation.operationId),
     query: {
       netId: saleNetId,
     },
-    body: address,
+    body: withSalesMutationOperationNetUid(address, operation.operationId),
+    ...(operation.signal ? { signal: operation.signal } : {}),
   })
 }
 

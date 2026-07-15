@@ -42,14 +42,16 @@ export type ApiRequestOptions = Omit<RequestInit, 'body' | 'credentials'> & {
 }
 
 export class ApiError extends Error {
-  status: number
-  payload: unknown
+  readonly headers: Headers
+  readonly payload: unknown
+  readonly status: number
 
-  constructor(message: string, status: number, payload: unknown) {
+  constructor(message: string, status: number, payload: unknown, headers?: HeadersInit) {
     super(message)
     this.name = 'ApiError'
     this.status = status
     this.payload = payload
+    this.headers = new Headers(headers)
   }
 }
 
@@ -219,7 +221,12 @@ async function sendApiRequest<T>(path: string, options: ApiRequestOptions, allow
       notifyUnauthorized()
     }
 
-    throw new ApiError(getErrorMessage(payload, response.status, errorMessages), response.status, payload)
+    throw new ApiError(
+      getErrorMessage(payload, response.status, errorMessages),
+      response.status,
+      payload,
+      response.headers,
+    )
   }
 
   return unwrapApiResponse<T>(payload)

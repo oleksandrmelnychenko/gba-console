@@ -6,6 +6,7 @@ import { useAuth } from '../../auth/useAuth'
 import { NewSaleWizard } from '../../sales-ukraine/components/new-sale-wizard/NewSaleWizard'
 import { SALES_UKRAINE_EDIT_PERMISSION } from '../../sales-ukraine/permissions'
 import { SaleDetailsDrawer } from '../../sales-ukraine/components/SaleDetailsDrawer'
+import { usePersistentSaleJsonMutationRunner } from '../../sales-ukraine/usePersistentSaleJsonMutation'
 import type { SalesUkraineSale } from '../../sales-ukraine/types'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -84,6 +85,7 @@ const INITIAL_SALES_STATE: SalesListState = {
 
 function useSalesTabModel() {
   const { t } = useI18n()
+  const runSaleUpdate = usePersistentSaleJsonMutationRunner('sale-update')
   const initialFilters = useMemo<FilterDraft>(
     () => ({ from: getDateShiftedByDays(-7), to: getDateShiftedByDays(0), value: '' }),
     [],
@@ -238,7 +240,18 @@ function useSalesTabModel() {
       replaceSale(sale, optimisticSale)
 
       try {
-        const savedSale = await updateWarehouseUkraineSale(optimisticSale)
+        const printIntent = patch.IsPrintedActProtocolEdit ? 'act-protocol' : 'invoice'
+        const attempt = await runSaleUpdate(
+          `sale-update:warehouse-${printIntent}-print:${String(sale.NetUid || sale.Id || '')}`,
+          optimisticSale as unknown as SalesUkraineSale,
+          (payload, operation) => updateWarehouseUkraineSale(payload as unknown as Sale, operation),
+        )
+
+        if (!attempt.completed) {
+          throw attempt.error
+        }
+
+        const savedSale = attempt.result
         replaceSale(sale, { ...optimisticSale, ...savedSale })
         reload()
       } catch (updateError) {
@@ -249,7 +262,7 @@ function useSalesTabModel() {
         })
       }
     },
-    [reload, replaceSale, t],
+    [reload, replaceSale, runSaleUpdate, t],
   )
 
   const printSale = useCallback(

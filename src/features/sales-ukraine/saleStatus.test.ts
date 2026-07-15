@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { getSaleLifecycleStatusKey, getStatusTypeKey, isDiscountEditableSaleLifecycle, isStatusType } from './saleStatus'
+import {
+  getSaleLifecycleStatusKey,
+  getStatusTypeKey,
+  isDiscountEditableSaleLifecycle,
+  isDiscountPercentageEditableSaleLifecycle,
+  isStatusType,
+} from './saleStatus'
 
 describe('sale status helpers', () => {
   it('normalizes numeric and string enum values to the same key', () => {
@@ -25,7 +31,7 @@ describe('sale status helpers', () => {
     expect(getSaleLifecycleStatusKey(undefined)).toBe('')
   })
 
-  it('allows one-time discount editing only for lifecycle states the server accepts (New, Packaging)', () => {
+  it('allows one-time discount comments only for lifecycle states the server accepts (New, Packaging)', () => {
     expect(isDiscountEditableSaleLifecycle(0)).toBe(true)
     expect(isDiscountEditableSaleLifecycle('0')).toBe(true)
     expect(isDiscountEditableSaleLifecycle('New')).toBe(true)
@@ -39,5 +45,14 @@ describe('sale status helpers', () => {
     expect(isDiscountEditableSaleLifecycle(3)).toBe(false)
     expect(isDiscountEditableSaleLifecycle('Shipping')).toBe(false)
     expect(isDiscountEditableSaleLifecycle(undefined)).toBe(false)
+  })
+
+  it('allows percentage editing only while the sale is New', () => {
+    expect(isDiscountPercentageEditableSaleLifecycle(0)).toBe(true)
+    expect(isDiscountPercentageEditableSaleLifecycle('New')).toBe(true)
+    expect(isDiscountPercentageEditableSaleLifecycle(1)).toBe(false)
+    expect(isDiscountPercentageEditableSaleLifecycle('Packaging')).toBe(false)
+    expect(isDiscountPercentageEditableSaleLifecycle('Packaged')).toBe(false)
+    expect(isDiscountPercentageEditableSaleLifecycle(undefined)).toBe(false)
   })
 })

@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import { getDocumentVerification } from './documentVerificationApi'
 import { getWarehouseUkraineOrders } from './ordersApi'
-import { getSaleActProtocolEditDocument, getSalePrintDocument } from './salesApi'
+import { getSaleActProtocolEditDocument, getSalePrintDocument, updateWarehouseUkraineSale } from './salesApi'
 import { getAllShipmentLists, getManualShipmentSales, getShipmentDocument } from './shipmentsApi'
 
 vi.mock('../../../shared/api/apiClient', () => ({
@@ -163,6 +163,27 @@ describe('warehouse Ukraine migrated gap request contracts', () => {
         netId: 'sale-net-id',
         IsPrintedActProtocolEdit: true,
       },
+    })
+  })
+
+  it('fences warehouse full-sale updates with the same operation marker in body and header', async () => {
+    apiRequestMock.mockResolvedValueOnce({ NetUid: 'sale-net-id' })
+    const operationId = 'EEEEEEEE-EEEE-4EEE-8EEE-EEEEEEEEEEEE'
+
+    await updateWarehouseUkraineSale(
+      { IsPrinted: true, NetUid: 'sale-net-id', Order: { OrderItems: [{ NetUid: 'row-1' }] } },
+      { operationId },
+    )
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/update', {
+      body: {
+        IsPrinted: true,
+        NetUid: 'sale-net-id',
+        OperationNetUid: operationId.toLowerCase(),
+        Order: null,
+      },
+      headers: { 'Idempotency-Key': operationId.toLowerCase() },
+      method: 'POST',
     })
   })
 })

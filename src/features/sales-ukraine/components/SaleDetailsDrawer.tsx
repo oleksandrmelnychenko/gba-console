@@ -1,5 +1,6 @@
 import {
   Anchor,
+  Alert,
   Badge,
   Box,
   Button,
@@ -25,6 +26,8 @@ import { TransporterNameWithIcon } from '../../../shared/transporter-icons/Trans
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { getSaleTransporterTypes, getSaleTransportersByType, updateSaleFromData } from '../api/salesUkraineApi'
 import { getSaleLifecycleStatusKey } from '../saleStatus'
+import { getSaleFileMutationContext, SALE_FILE_MUTATION_INTENTS } from '../saleFileMutation'
+import { usePersistentSaleFileMutation } from '../usePersistentSaleFileMutation'
 import type { SalesUkraineSale, SalesUkraineTransporter, SalesUkraineUpdateDataCarrier } from '../types'
 import {
   CARRIER_HISTORY_CHANGED_FIELD,
@@ -65,6 +68,10 @@ export function SaleDetailsDrawer({
 
 function SaleDetailsContent({ sale, onSaved }: { onSaved: () => void; sale: SalesUkraineSale }) {
   const { t } = useI18n()
+  const fileMutation = usePersistentSaleFileMutation(
+    getSaleFileMutationContext(sale),
+    SALE_FILE_MUTATION_INTENTS.deliverySave,
+  )
   const lifecycleStatusKey = getSaleLifecycleStatusKey(sale.BaseLifeCycleStatus?.SaleLifeCycleType ?? sale.BaseLifeCycleStatus?.Name)
   const showShipmentDate = lifecycleStatusKey === 'Packaging' || lifecycleStatusKey === 'Packaged'
 
@@ -153,9 +160,7 @@ function SaleDetailsContent({ sale, onSaved }: { onSaved: () => void; sale: Sale
     setUploadedFile(null)
   }
 
-  async function save() {
-    setSaving(true)
-
+  function createPayload(): SalesUkraineSale {
     const payload: SalesUkraineSale = { ...sale }
 
     if (sale.IsPrinted) {
@@ -196,12 +201,33 @@ function SaleDetailsContent({ sale, onSaved }: { onSaved: () => void; sale: Sale
       payload.CustomersOwnTtn = { ...(sale.CustomersOwnTtn || {}), Number: ownTtnNumber }
     }
 
+    return payload
+  }
+
+  async function save() {
+    setSaving(true)
+
     try {
-      await updateSaleFromData(payload, uploadedFile)
+      const result = fileMutation.reconciliationRequired
+        ? await fileMutation.reconcile('sale-update-file', uploadedFile, updateSaleFromData)
+        : await fileMutation.run(
+            'sale-update-file',
+            createPayload(),
+            uploadedFile,
+            updateSaleFromData,
+          )
+
+      if (!result) {
+        return
+      }
+
       notifications.show({ color: 'green', message: t('Дані доставки збережено') })
       onSaved()
-    } catch {
-      notifications.show({ color: 'red', message: t('Не вдалося зберегти дані доставки') })
+    } catch (saveError) {
+      notifications.show({
+        color: 'red',
+        message: saveError instanceof Error ? saveError.message : t('Не вдалося зберегти дані доставки'),
+      })
     } finally {
       setSaving(false)
     }
@@ -216,6 +242,18 @@ function SaleDetailsContent({ sale, onSaved }: { onSaved: () => void; sale: Sale
 
   return (
     <Stack className="sale-carrier-sheet" gap={0}>
+      {fileMutation.pendingError && (
+        <Alert color="orange" mb="sm" title={t('Потрібна звірка операції')}>
+          <Stack gap="xs">
+            <Text size="sm">{fileMutation.pendingError}</Text>
+            {!isEditMode && fileMutation.canReconcile && (
+              <Button size="xs" variant="light" onClick={() => setEditMode(true)}>
+                {t('Звірити збереження')}
+              </Button>
+            )}
+          </Stack>
+        </Alert>
+      )}
       {/* Single panel like the legacy: data/form on the left (client info sits under the transporter,
           edit button at the bottom), the change history table on the right. */}
       <Box className="sale-carrier-layout">
@@ -224,6 +262,7 @@ function SaleDetailsContent({ sale, onSaved }: { onSaved: () => void; sale: Sale
         <Stack className="sale-carrier-edit-form" gap="sm">
           <Select
             clearable
+            disabled={fileMutation.reconciliationRequired}
             searchable
             data={transporterData}
             label={t('Перевізник')}
@@ -245,6 +284,7 @@ function SaleDetailsContent({ sale, onSaved }: { onSaved: () => void; sale: Sale
           <ClientInfo sale={sale} />
           {showShipmentDate && (
             <TextInput
+              disabled={fileMutation.reconciliationRequired}
               label={t('Дата відгрузки')}
               type="date"
               value={shipmentDate}
@@ -252,7 +292,7 @@ function SaleDetailsContent({ sale, onSaved }: { onSaved: () => void; sale: Sale
             />
           )}
           {sale.IsPrinted && (
-            <TextInput label={t('Номер декларації')} value={ttn} onChange={(event) => setTtn(event.currentTarget.value)} />
+            <TextInput disabled={fileMutation.reconciliationRequired} label={t('Номер декларації')} value={ttn} onChange={(event) => setTtn(event.currentTarget.value)} />
           )}
           {isChangedAddress && (
             <Text c="orange" size="xs">
@@ -260,8 +300,9 @@ function SaleDetailsContent({ sale, onSaved }: { onSaved: () => void; sale: Sale
             </Text>
           )}
           <Group grow>
-            <TextInput label={t('Місто')} value={city} onChange={(event) => setCity(event.currentTarget.value)} />
+            <TextInput disabled={fileMutation.reconciliationRequired} label={t('Місто')} value={city} onChange={(event) => setCity(event.currentTarget.value)} />
             <TextInput
+              disabled={fileMutation.reconciliationRequired}
               label={t('Відділення')}
               value={department}
               onChange={(event) => setDepartment(event.currentTarget.value)}
@@ -274,11 +315,13 @@ function SaleDetailsContent({ sale, onSaved }: { onSaved: () => void; sale: Sale
           )}
           <Group grow>
             <TextInput
+              disabled={fileMutation.reconciliationRequired}
               label={t('Отримувач товару')}
               value={recipientName}
               onChange={(event) => setRecipientName(event.currentTarget.value)}
             />
             <TextInput
+              disabled={fileMutation.reconciliationRequired}
               label={t('Мобільний телефон')}
               value={mobilePhone}
               onChange={(event) => setMobilePhone(event.currentTarget.value)}
@@ -286,6 +329,7 @@ function SaleDetailsContent({ sale, onSaved }: { onSaved: () => void; sale: Sale
           </Group>
           <Textarea
             autosize
+            disabled={fileMutation.reconciliationRequired}
             label={t('Коментар')}
             minRows={2}
             value={comment}
@@ -293,6 +337,7 @@ function SaleDetailsContent({ sale, onSaved }: { onSaved: () => void; sale: Sale
           />
           <Checkbox
             checked={isCashOnDelivery}
+            disabled={fileMutation.reconciliationRequired}
             label={t('Наложений платіж')}
             onChange={(event) => setCashOnDelivery(event.currentTarget.checked)}
           />
@@ -300,6 +345,7 @@ function SaleDetailsContent({ sale, onSaved }: { onSaved: () => void; sale: Sale
             <NumberInput
               allowNegative={false}
               decimalScale={2}
+              disabled={fileMutation.reconciliationRequired}
               label={t('Рекомендована покупцем сума')}
               value={cashOnDeliveryAmount}
               onChange={setCashOnDeliveryAmount}
@@ -307,23 +353,27 @@ function SaleDetailsContent({ sale, onSaved }: { onSaved: () => void; sale: Sale
           )}
           <Checkbox
             checked={hasDocuments}
+            disabled={fileMutation.reconciliationRequired}
             label={t('Є документи')}
             onChange={(event) => setHasDocuments(event.currentTarget.checked)}
           />
           <Checkbox
             checked={hasOwnTtn}
+            disabled={fileMutation.reconciliationRequired}
             label={t('Власне ТТН')}
             onChange={(event) => setHasOwnTtn(event.currentTarget.checked)}
           />
-          {hasOwnTtn && (
+          {(hasOwnTtn || fileMutation.requiresFileReselection) && (
             <Group grow align="end">
               <TextInput
+                disabled={fileMutation.reconciliationRequired}
                 label={t('Номер ТТН')}
                 value={ownTtnNumber}
                 onChange={(event) => setOwnTtnNumber(event.currentTarget.value)}
               />
               <FileInput
                 clearable
+                disabled={fileMutation.reconciliationRequired && !fileMutation.requiresFileReselection}
                 label={t('Завантажити ТТН')}
                 placeholder={t('Оберіть файл')}
                 value={uploadedFile}
@@ -335,8 +385,18 @@ function SaleDetailsContent({ sale, onSaved }: { onSaved: () => void; sale: Sale
             <Button className="sales-drawer-action-button" color="gray" disabled={isSaving} leftSection={<X size={16} />} variant="default" onClick={cancelEdit}>
               {t('Скасувати')}
             </Button>
-            <Button className="sales-drawer-action-button" color={CREATE_ACTION_COLOR} leftSection={<Check size={16} />} loading={isSaving} onClick={save}>
-              {t('Зберегти')}
+            <Button
+              className="sales-drawer-action-button"
+              color={CREATE_ACTION_COLOR}
+              disabled={
+                fileMutation.reconciliationRequired &&
+                (!fileMutation.canReconcile || (fileMutation.requiresFileReselection && !uploadedFile))
+              }
+              leftSection={<Check size={16} />}
+              loading={isSaving}
+              onClick={save}
+            >
+              {t(fileMutation.reconciliationRequired ? 'Звірити збереження' : 'Зберегти')}
             </Button>
           </Group>
         </Stack>
@@ -347,7 +407,7 @@ function SaleDetailsContent({ sale, onSaved }: { onSaved: () => void; sale: Sale
           {/* Edit button at the bottom of the left column, under "Завантажити ТТН" (legacy order). */}
           {!sale.IsSent && !isEditMode && (
             <Button className="sales-drawer-action-button sale-carrier-edit-button" color={CREATE_ACTION_COLOR} leftSection={<Pencil size={16} />} mt="md" variant="outline" onClick={enterEdit}>
-              {t('Редагувати')}
+              {t(fileMutation.reconciliationRequired ? 'Звірити операцію' : 'Редагувати')}
             </Button>
           )}
           {sale.IsSent && (

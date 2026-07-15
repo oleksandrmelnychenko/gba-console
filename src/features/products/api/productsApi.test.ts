@@ -24,6 +24,7 @@ describe('products API upload contracts', () => {
 
   it('uploads one product file with serialized configuration', async () => {
     const configuration = {
+      ImportedForAmg: false,
       PriceConfigurations: [{ ColumnNumber: 4, PricingId: 12 }],
       WithPrices: true,
     } as ProductFileUploadConfiguration
@@ -38,6 +39,50 @@ describe('products API upload contracts', () => {
     expect(body).toBeInstanceOf(FormData)
     expect(body.getAll('file')).toEqual([file])
     expect(JSON.parse(String(body.get('configuration')))).toEqual(configuration)
+  })
+
+  it('keeps the explicit AMG source for a priced product upload', async () => {
+    const configuration = {
+      ImportedForAmg: true,
+      PriceConfigurations: [{ ColumnNumber: 7, PricingId: 15 }],
+      WithPrices: true,
+    } as ProductFileUploadConfiguration
+
+    await uploadProductsFromFile(configuration, new File(['vendor'], 'products.xlsx'))
+
+    const body = apiRequestMock.mock.calls[0]?.[1]?.body as FormData
+
+    expect(JSON.parse(String(body.get('configuration')))).toMatchObject({
+      ImportedForAmg: true,
+      WithPrices: true,
+    })
+  })
+
+  it('rejects a priced product upload without an explicit source', async () => {
+    const configuration = {
+      PriceConfigurations: [{ ColumnNumber: 4, PricingId: 12 }],
+      WithPrices: true,
+    } as ProductFileUploadConfiguration
+
+    await expect(uploadProductsFromFile(configuration, new File(['vendor'], 'products.xlsx')))
+      .rejects.toThrow('Оберіть джерело цін: Контех (Fenix) або AMG')
+    expect(apiRequestMock).not.toHaveBeenCalled()
+  })
+
+  it('omits the pricing source when the upload has no price columns', async () => {
+    const configuration: Partial<ProductFileUploadConfiguration> = {
+      ImportedForAmg: true,
+      PriceConfigurations: [],
+      WithPrices: false,
+    }
+
+    await uploadProductsFromFile(configuration as ProductFileUploadConfiguration, new File(['vendor'], 'products.xlsx'))
+
+    const body = apiRequestMock.mock.calls[0]?.[1]?.body as FormData
+    const serializedConfiguration = JSON.parse(String(body.get('configuration')))
+
+    expect(serializedConfiguration.WithPrices).toBe(false)
+    expect(serializedConfiguration).not.toHaveProperty('ImportedForAmg')
   })
 
   it('updates scalar product fields without sending heavy relation collections', async () => {

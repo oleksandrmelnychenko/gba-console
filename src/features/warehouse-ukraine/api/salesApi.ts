@@ -1,5 +1,10 @@
 import { apiRequest } from '../../../shared/api/apiClient'
 import { normalizeExportDocument as normalizeSharedExportDocument } from '../../../shared/documents/exportDocument'
+import {
+  getSalesMutationOperationHeaders,
+  withSalesMutationOperationNetUid,
+  type SalesMutationOperationOptions,
+} from '../../sales-ukraine/salesMutationOperation'
 import type { Sale, SalesResponse, WarehouseUkraineExportDocument } from '../types'
 
 const PACKAGING_STATUS = 'Packaging'
@@ -57,14 +62,19 @@ export async function getSaleActProtocolEditDocument(
   return normalizeExportDocument(result)
 }
 
-export async function updateWarehouseUkraineSale(sale: Sale): Promise<Sale> {
+export async function updateWarehouseUkraineSale(
+  sale: Sale,
+  operation: SalesMutationOperationOptions,
+): Promise<Sale> {
   // The list projection loads with includeDetails=false, so Order.OrderPackages arrives empty.
   // Posting that back would make the server treat the sale as having zero packages and soft-delete
   // every real OrderPackage (RemoveAllByOrderId). Strip Order so the packing block is skipped while
   // the flag/status/TTN updates still apply.
   const result = await apiRequest<unknown>('/sales/update', {
     method: 'POST',
-    body: { ...sale, Order: null },
+    body: withSalesMutationOperationNetUid({ ...sale, Order: null }, operation.operationId),
+    headers: getSalesMutationOperationHeaders(operation.operationId),
+    ...(operation.signal ? { signal: operation.signal } : {}),
   })
 
   return result && typeof result === 'object' ? (result as Sale) : sale
