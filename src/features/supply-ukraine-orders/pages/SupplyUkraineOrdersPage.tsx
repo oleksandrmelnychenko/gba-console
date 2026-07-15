@@ -1235,8 +1235,8 @@ function OrdersFilterToolbar({
   const { t } = useI18n()
   return (
     <div className="app-filter-bar supply-ukraine-orders-filter-bar">
-      <div className="supply-ukraine-orders-period-filter">
-        <span className="supply-ukraine-orders-filter-label">{t('Період')}</span>
+      <div className="app-filter-field supply-ukraine-orders-period-filter">
+        <span className="app-filter-label supply-ukraine-orders-filter-label">{t('Період')}</span>
         <div className="supply-ukraine-orders-period-fields">
           <TextInput
             className="supply-ukraine-orders-date-input"

@@ -13,9 +13,9 @@
 }
 
 .act-services-filter-row {
-  --act-services-command-control-height: 36px;
-  --act-services-command-label-gap: 4px;
-  --act-services-command-label-height: 17px;
+  --act-services-command-control-height: var(--app-filter-control-height);
+  --act-services-command-label-gap: var(--app-filter-label-gap);
+  --act-services-command-label-height: var(--app-filter-label-height);
 
   align-items: end;
   display: grid;

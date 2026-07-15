@@ -241,7 +241,7 @@ function CarriersTableCard({ model }: { model: ReturnType<typeof useTaxFreeCarri
   return (
     <Card className="app-data-card tax-free-carriers-card" withBorder radius="md" padding={0}>
       <div className="app-filter-bar tax-free-carriers-filter-bar">
-        <Group align="end" gap="sm" wrap="nowrap" className="tax-free-carriers-filter-row">
+        <Group align="end" gap={10} wrap="nowrap" className="tax-free-carriers-filter-row">
           <TextInput
             size="sm"
             label={t('Пошук')}

@@ -7,9 +7,9 @@
 }
 
 .supply-ukraine-orders-card {
-  --supply-orders-control-height: 36px;
-  --supply-orders-label-gap: 4px;
-  --supply-orders-label-height: 17px;
+  --supply-orders-control-height: var(--app-filter-control-height);
+  --supply-orders-label-gap: var(--app-filter-label-gap);
+  --supply-orders-label-height: var(--app-filter-label-height);
 }
 
 .console-frame .supply-ukraine-orders-card.mantine-Card-root {
@@ -39,7 +39,6 @@
     auto
     auto
     auto;
-  min-height: 86px;
 }
 
 .supply-ukraine-orders-create-actions {
@@ -88,7 +87,6 @@
 
 .supply-ukraine-orders-period-filter {
   display: grid;
-  gap: 3px;
 }
 
 .supply-ukraine-orders-period-fields {

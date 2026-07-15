@@ -20,6 +20,6 @@
 .sales-prediction-filter-row {
   display: grid;
   grid-template-columns: minmax(320px, 1fr) minmax(320px, 1fr);
-  gap: 12px;
+  gap: 10px;
   width: max(100%, 720px);
 }

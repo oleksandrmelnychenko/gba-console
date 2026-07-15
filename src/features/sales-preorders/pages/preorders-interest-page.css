@@ -25,7 +25,6 @@
   flex: 0 0 auto;
   gap: 10px;
   grid-template-columns: minmax(0, 1fr) auto;
-  min-height: 62px;
 }
 
 .preorders-interest-command-actions,

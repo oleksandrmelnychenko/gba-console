@@ -238,9 +238,9 @@
 }
 
 .accounting-cash-flow-filter-bar {
-  --accounting-cash-flow-control-height: 36px;
-  --accounting-cash-flow-label-gap: 4px;
-  --accounting-cash-flow-label-height: 17px;
+  --accounting-cash-flow-control-height: var(--app-filter-control-height);
+  --accounting-cash-flow-label-gap: var(--app-filter-label-gap);
+  --accounting-cash-flow-label-height: var(--app-filter-label-height);
   align-items: end;
   flex: 0 0 auto;
 }
@@ -269,10 +269,11 @@
 .accounting-cash-flow-filter-label,
 .accounting-cash-flow-search .mantine-InputWrapper-label,
 .accounting-cash-flow-type-select .mantine-InputWrapper-label {
-  color: var(--mantine-color-gray-6);
+  color: var(--mantine-color-gray-9);
   display: block;
+  font-family: var(--font-mono);
   font-size: 12px;
-  font-weight: 400;
+  font-weight: 600;
   height: var(--accounting-cash-flow-label-height);
   letter-spacing: 0;
   line-height: 1.2;
@@ -281,7 +282,6 @@
 
 .accounting-cash-flow-period-filter {
   display: grid;
-  gap: 3px;
 }
 
 .accounting-cash-flow-period-fields {

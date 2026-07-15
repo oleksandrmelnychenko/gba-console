@@ -11,10 +11,6 @@
 }
 
 .online-shop-clients-filter-bar {
-  --online-shop-clients-filter-control-height: 36px;
-  --online-shop-clients-filter-label-gap: 4px;
-  --online-shop-clients-filter-label-height: 17px;
-
   align-items: end;
   box-sizing: border-box;
   display: flex;
@@ -30,7 +26,7 @@
   font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 600;
-  height: var(--online-shop-clients-filter-label-height);
+  height: var(--app-filter-label-height);
   letter-spacing: 0;
   line-height: 1.2;
   margin-bottom: 0;
@@ -44,26 +40,26 @@
   font-family: var(--font-mono);
   font-size: 12.5px;
   font-weight: 400;
-  height: var(--online-shop-clients-filter-control-height);
+  height: var(--app-filter-control-height);
   letter-spacing: 0;
   line-height: 1.2;
-  min-height: var(--online-shop-clients-filter-control-height);
+  min-height: var(--app-filter-control-height);
 }
 
 .online-shop-clients-search {
   display: grid;
   flex: 1 1 auto;
   grid-template-rows:
-    var(--online-shop-clients-filter-label-height)
-    var(--online-shop-clients-filter-control-height);
+    var(--app-filter-label-height)
+    var(--app-filter-control-height);
   max-width: 560px;
   min-height: calc(
-    var(--online-shop-clients-filter-label-height) +
-    var(--online-shop-clients-filter-label-gap) +
-    var(--online-shop-clients-filter-control-height)
+    var(--app-filter-label-height) +
+    var(--app-filter-label-gap) +
+    var(--app-filter-control-height)
   );
   min-width: 260px;
-  row-gap: var(--online-shop-clients-filter-label-gap);
+  row-gap: var(--app-filter-label-gap);
 }
 
 .online-shop-clients-search .mantine-Input-input::placeholder {
@@ -73,7 +69,7 @@
 
 .online-shop-clients-filter-actions {
   align-self: end;
-  min-height: var(--online-shop-clients-filter-control-height);
+  min-height: var(--app-filter-control-height);
 }
 
 .online-shop-clients-filter-actions .app-paginator-label,
@@ -87,7 +83,7 @@
   align-self: end;
   display: flex;
   flex: 0 0 auto;
-  min-height: var(--online-shop-clients-filter-control-height);
+  min-height: var(--app-filter-control-height);
 }
 
 .online-shop-clients-table-toolbar-slot .data-table-toolbar {

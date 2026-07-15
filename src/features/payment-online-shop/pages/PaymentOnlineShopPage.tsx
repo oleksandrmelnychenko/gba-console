@@ -296,7 +296,7 @@ function PaymentShopTableCard({ model }: { model: ReturnType<typeof usePaymentOn
   return (
     <Card className="app-data-card payment-online-shop-card" withBorder radius="md" padding={0}>
       <div className="app-filter-bar payment-online-shop-filter-bar">
-        <Group align="end" gap="sm" wrap="nowrap" className="payment-online-shop-filter-row">
+        <Group align="end" gap={10} wrap="nowrap" className="payment-online-shop-filter-row">
           <TextInput
             size="sm"
             label={t('Продажа')}

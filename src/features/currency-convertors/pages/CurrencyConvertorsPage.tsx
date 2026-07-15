@@ -348,7 +348,7 @@ export function CurrencyConvertorsPage() {
 
       <Card className="app-data-card currency-convertors-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar currency-convertors-filter-bar">
-          <Group align="center" gap="sm" justify="flex-end" wrap="nowrap" className="currency-convertors-filter-row">
+          <Group align="center" gap={10} justify="flex-end" wrap="nowrap" className="currency-convertors-filter-row">
             <div className="app-filter-actions">
               <Tooltip label={t('Оновити')}>
                 <ActionIcon

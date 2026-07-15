@@ -426,7 +426,7 @@ export function AllSadsPage() {
   return (
     <Stack className="sad-list-page" gap={6}>
       <div className="app-filter-bar sad-list-page__toolbar">
-        <Group align="flex-end" className="sad-list-page__filters" gap="xs" wrap="nowrap">
+        <Group align="flex-end" className="sad-list-page__filters" gap={10} wrap="nowrap">
           <TextInput
             label={t('Від')}
             type="date"

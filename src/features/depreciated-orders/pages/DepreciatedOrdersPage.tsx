@@ -490,8 +490,8 @@ function DepreciatedOrdersTableCard({ model }: { model: ReturnType<typeof useDep
   return (
     <Card className="app-data-card depreciated-orders-card" withBorder radius="md" padding={0}>
       <div className="app-filter-bar depreciated-orders-filter-bar">
-        <Group align="end" gap="sm" wrap="nowrap" justify="space-between" className="depreciated-orders-filter-row">
-          <Group align="end" gap="sm" wrap="nowrap">
+        <Group align="end" gap={10} wrap="nowrap" justify="space-between" className="depreciated-orders-filter-row">
+          <Group align="end" gap={10} wrap="nowrap">
             <TextInput
               label={t('Від')}
               max={filterDraft.to || undefined}

@@ -232,8 +232,8 @@ export function AccountableExpensesPage() {
     <Stack className="accountable-expenses-page console-table-page" gap={6}>
       <div className="accountable-expenses-shell console-table-shell">
         <div className="app-filter-bar accountable-expenses-command-bar">
-          <div className="accountable-expenses-period-filter">
-            <span className="accountable-expenses-filter-label">{t('Період')}</span>
+          <div className="app-filter-field accountable-expenses-period-filter">
+            <span className="app-filter-label accountable-expenses-filter-label">{t('Період')}</span>
             <div className="accountable-expenses-period-fields">
               <TextInput
                 className="accountable-expenses-date-input"

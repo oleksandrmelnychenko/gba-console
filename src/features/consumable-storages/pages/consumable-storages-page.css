@@ -26,10 +26,6 @@
 }
 
 .consumable-storages-filter-row {
-  --storages-label-height: 17px;
-  --storages-label-gap: 4px;
-  --storages-control-height: 36px;
-
   align-items: end;
   display: grid;
   gap: 10px;
@@ -39,16 +35,6 @@
 }
 
 /* Пошук: фіксована висота лейбла + контрола — поля рівняються по низу (§5.3). */
-.consumable-storages-filter-row .mantine-InputWrapper-label {
-  height: var(--storages-label-height);
-  margin-bottom: var(--storages-label-gap);
-}
-
-.consumable-storages-filter-row .mantine-TextInput-input {
-  height: var(--storages-control-height);
-  min-height: var(--storages-control-height);
-}
-
 /* Дії + кнопка створення — в один рядок, праворуч тулбара. */
 .consumable-storages-filter-actions {
   align-items: center;
@@ -61,7 +47,7 @@
   align-items: center;
   display: inline-flex;
   grid-column: 4;
-  min-height: var(--storages-control-height);
+  min-height: var(--app-filter-control-height);
 }
 
 .consumable-storages-create-action .mantine-Button-root {

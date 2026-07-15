@@ -27,7 +27,7 @@
 .sales-filter-row {
   align-items: end;
   display: grid;
-  gap: 8px;
+  gap: 10px;
   /* The actions column (auto) soaks up all slack; the trailing create-button
      column is max-content so the button keeps its intrinsic width flush right. */
   grid-template-columns:
@@ -55,7 +55,6 @@
 
 .sales-filter-period-wrap {
   display: grid;
-  gap: 3px;
 }
 
 .sales-filter-label {
@@ -276,7 +275,6 @@
 
 .sales-filter-organisation-picker {
   display: grid;
-  gap: 3px;
 }
 
 .sales-filter-organisation-input {

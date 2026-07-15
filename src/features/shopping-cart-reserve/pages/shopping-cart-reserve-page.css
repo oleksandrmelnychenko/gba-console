@@ -9,7 +9,6 @@
   display: flex;
   flex: 0 0 auto;
   justify-content: flex-end;
-  min-height: 62px;
 }
 
 .shopping-cart-reserve-card {

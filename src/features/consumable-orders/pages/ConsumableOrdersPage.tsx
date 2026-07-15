@@ -168,8 +168,8 @@ export function ConsumableOrdersPage() {
     <Stack className="consumable-orders-page console-table-page" gap={6}>
       <div className="console-table-shell">
         <div className="app-filter-bar consumable-orders-command-bar">
-          <div className="consumable-orders-period-filter">
-            <span className="consumable-orders-filter-label">{t('Період')}</span>
+          <div className="app-filter-field consumable-orders-period-filter">
+            <span className="app-filter-label consumable-orders-filter-label">{t('Період')}</span>
             <div className="consumable-orders-period-fields">
               <TextInput
                 className="consumable-orders-date-input"

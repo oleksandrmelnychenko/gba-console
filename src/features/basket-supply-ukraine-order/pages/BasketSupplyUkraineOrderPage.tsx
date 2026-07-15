@@ -662,7 +662,7 @@ function BasketCartWorkflow() {
 
       <Card className="app-data-card" padding={0} radius="md" withBorder>
         <div className="app-filter-bar basket-supply-command-bar is-split">
-            <SimpleGrid className="basket-supply-filters" cols={{ base: 1, md: 3 }} spacing="sm">
+            <SimpleGrid className="basket-supply-filters" cols={{ base: 1, md: 3 }} spacing={10}>
               <TextInput
                 label={t('Пошук по товару')}
                 leftSection={SEARCH_ICON}

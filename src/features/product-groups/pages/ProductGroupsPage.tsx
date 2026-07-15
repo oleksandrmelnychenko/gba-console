@@ -229,7 +229,7 @@ export function ProductGroupsPage() {
     <Stack className="product-groups-page" gap={6}>
       <Card className="app-data-card product-groups-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar product-groups-filter-bar">
-          <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
+          <Group align="end" gap={10} wrap="nowrap" className="clients-filter-row">
             <TextInput
               leftSection={<Search size={16} />}
               label={t('Пошук')}

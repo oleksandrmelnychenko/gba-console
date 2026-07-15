@@ -13,9 +13,9 @@
 }
 
 .sales-debtors-command-bar {
-  --sales-debtors-control-height: 36px;
-  --sales-debtors-label-gap: 4px;
-  --sales-debtors-label-height: 17px;
+  --sales-debtors-control-height: var(--app-filter-control-height);
+  --sales-debtors-label-gap: var(--app-filter-label-gap);
+  --sales-debtors-label-height: var(--app-filter-label-height);
 
   align-items: end;
   display: grid;
@@ -28,7 +28,6 @@
     minmax(104px, 118px)
     minmax(126px, 142px)
     minmax(250px, 1fr);
-  min-height: 85px;
 }
 
 .sales-debtors-filter {

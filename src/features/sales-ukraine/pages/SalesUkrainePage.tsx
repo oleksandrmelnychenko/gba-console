@@ -895,8 +895,8 @@ export function SalesUkrainePage() {
                 value={filterDraft.value}
                 onChange={(event) => applySearchValue(event.currentTarget.value)}
               />
-              <div className="sales-filter-period-wrap">
-                <span className="sales-filter-label">{t('Період')}</span>
+              <div className="app-filter-field sales-filter-period-wrap">
+                <span className="app-filter-label sales-filter-label">{t('Період')}</span>
                 <Popover position="bottom-start" shadow="md" width={340} withinPortal>
                   <Popover.Target>
                     <Button
@@ -979,8 +979,8 @@ export function SalesUkrainePage() {
                   applyFilters({ ...filterDraft, onlyMine: ((value as SalesUkraineUserFilter | null) || 'All') === 'Self' })
                 }
               />
-              <div className="sales-filter-control sales-filter-organisation-picker">
-                <span className="sales-filter-label">{t('Організація')}</span>
+              <div className="app-filter-field sales-filter-control sales-filter-organisation-picker">
+                <span className="app-filter-label sales-filter-label">{t('Організація')}</span>
                 <div className="sales-filter-organisation-input">
                   <Popover position="bottom-start" shadow="md" width={320} withinPortal>
                     <Popover.Target>

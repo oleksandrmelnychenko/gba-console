@@ -126,7 +126,7 @@ export function AdvancePaymentsPage() {
     <Stack className="advance-payments-page" gap={6}>
       <Card className="app-data-card advance-payments-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar advance-payments-filter-bar">
-          <Group align="end" gap="sm" wrap="nowrap" className="advance-payments-filter-row">
+          <Group align="end" gap={10} wrap="nowrap" className="advance-payments-filter-row">
             <TextInput
               label={t('Від якої дати')}
               type="date"

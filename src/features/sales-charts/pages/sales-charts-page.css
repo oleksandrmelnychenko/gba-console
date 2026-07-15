@@ -29,7 +29,6 @@
   align-items: end;
   display: grid;
   gap: 10px;
-  min-height: 85px;
   min-width: max-content;
   width: 100%;
 }

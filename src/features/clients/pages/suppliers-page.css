@@ -11,10 +11,6 @@
 }
 
 .suppliers-filter-bar {
-  --suppliers-filter-control-height: 36px;
-  --suppliers-filter-label-gap: 4px;
-  --suppliers-filter-label-height: 17px;
-
   align-items: end;
   box-sizing: border-box;
   display: flex;
@@ -38,7 +34,7 @@
   align-self: end;
   display: flex;
   flex: 0 0 auto;
-  min-height: var(--suppliers-filter-control-height);
+  min-height: var(--app-filter-control-height);
 }
 
 .suppliers-table-toolbar-slot .data-table-toolbar {
@@ -67,13 +63,13 @@
 .suppliers-filter-field,
 .suppliers-filter-status {
   display: grid;
-  grid-template-rows: var(--suppliers-filter-label-height) var(--suppliers-filter-control-height);
+  grid-template-rows: var(--app-filter-label-height) var(--app-filter-control-height);
   min-height: calc(
-    var(--suppliers-filter-label-height) +
-    var(--suppliers-filter-label-gap) +
-    var(--suppliers-filter-control-height)
+    var(--app-filter-label-height) +
+    var(--app-filter-label-gap) +
+    var(--app-filter-control-height)
   );
-  row-gap: var(--suppliers-filter-label-gap);
+  row-gap: var(--app-filter-label-gap);
 }
 
 .suppliers-filter-bar .mantine-InputWrapper-label,
@@ -83,7 +79,7 @@
   font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 600;
-  height: var(--suppliers-filter-label-height);
+  height: var(--app-filter-label-height);
   letter-spacing: 0;
   line-height: 1.2;
   margin-bottom: 0;
@@ -101,9 +97,9 @@
   border-radius: 8px;
   color: var(--mantine-color-gray-8);
   font-family: inherit;
-  height: var(--suppliers-filter-control-height);
+  height: var(--app-filter-control-height);
   line-height: 1.2;
-  min-height: var(--suppliers-filter-control-height);
+  min-height: var(--app-filter-control-height);
 }
 
 .suppliers-filter-search-input .mantine-Input-wrapper,
@@ -141,7 +137,7 @@
   display: flex;
   gap: 8px;
   justify-content: flex-end;
-  min-height: var(--suppliers-filter-control-height);
+  min-height: var(--app-filter-control-height);
   min-width: 0;
 }
 

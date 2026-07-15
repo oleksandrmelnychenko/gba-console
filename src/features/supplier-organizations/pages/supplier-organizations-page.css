@@ -4,9 +4,9 @@
 }
 
 .supplier-organizations-command-bar {
-  --supplier-organizations-command-control-height: 36px;
-  --supplier-organizations-command-label-gap: 4px;
-  --supplier-organizations-command-label-height: 17px;
+  --supplier-organizations-command-control-height: var(--app-filter-control-height);
+  --supplier-organizations-command-label-gap: var(--app-filter-label-gap);
+  --supplier-organizations-command-label-height: var(--app-filter-label-height);
 
   align-items: end;
   background: #f8f9fa;
@@ -15,7 +15,6 @@
   flex: 0 0 auto;
   gap: 10px;
   grid-template-columns: minmax(340px, 430px) minmax(300px, 1fr) auto auto auto;
-  min-height: 86px;
 }
 
 .supplier-organizations-period-filter,

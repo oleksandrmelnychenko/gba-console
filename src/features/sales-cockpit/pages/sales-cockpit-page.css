@@ -16,7 +16,6 @@
   display: grid;
   gap: 10px;
   grid-template-columns: auto auto minmax(0, 1fr) auto auto;
-  min-height: 62px;
 }
 
 .cockpit-head-command-bar {

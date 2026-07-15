@@ -196,7 +196,7 @@ export function PaymentAccountsPage() {
     <Stack className="payment-accounts-page" gap={6}>
       <Card className="app-data-card payment-accounts-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar payment-accounts-filter-bar">
-          <Group align="end" gap="sm" wrap="nowrap" className="payment-accounts-filter-row">
+          <Group align="end" gap={10} wrap="nowrap" className="payment-accounts-filter-row">
             <TextInput
               size="sm"
               leftSection={<Search size={16} />}

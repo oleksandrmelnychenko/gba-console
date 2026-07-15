@@ -5,9 +5,9 @@
 }
 
 .app-filter-bar.accountable-expenses-command-bar {
-  --accountable-expenses-command-control-height: 36px;
-  --accountable-expenses-command-label-gap: 4px;
-  --accountable-expenses-command-label-height: 17px;
+  --accountable-expenses-command-control-height: var(--app-filter-control-height);
+  --accountable-expenses-command-label-gap: var(--app-filter-label-gap);
+  --accountable-expenses-command-label-height: var(--app-filter-label-height);
 
   align-items: end;
   background: #f8f9fa;
@@ -15,7 +15,6 @@
   display: grid;
   gap: 10px;
   grid-template-columns: minmax(340px, 420px) minmax(300px, 1fr) auto auto;
-  min-height: 86px;
 }
 
 .accountable-expenses-period-filter {
@@ -40,7 +39,7 @@
   align-items: center;
   display: grid;
   gap: 0;
-  grid-template-columns: minmax(0, 1fr) 16px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) 18px minmax(0, 1fr);
 }
 
 .accountable-expenses-period-separator {

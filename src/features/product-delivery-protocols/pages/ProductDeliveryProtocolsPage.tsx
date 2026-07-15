@@ -506,8 +506,8 @@ function ProtocolsTableCard({ model }: { model: ReturnType<typeof useProtocolsPa
   return (
     <div className="console-table-shell">
       <div className="app-filter-bar product-delivery-protocols-command-bar">
-        <div className="product-delivery-protocols-period-filter">
-          <span className="product-delivery-protocols-filter-label">{t('Період')}</span>
+        <div className="app-filter-field product-delivery-protocols-period-filter">
+          <span className="app-filter-label product-delivery-protocols-filter-label">{t('Період')}</span>
           <div className="product-delivery-protocols-period-fields">
             <TextInput
               className="product-delivery-protocols-date-input"

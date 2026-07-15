@@ -11,10 +11,6 @@
 }
 
 .organization-clients-filter-bar {
-  --organization-clients-control-height: 36px;
-  --organization-clients-label-gap: 4px;
-  --organization-clients-label-height: 17px;
-
   align-items: end;
   box-sizing: border-box;
   display: grid;
@@ -27,16 +23,16 @@
 .organization-clients-search-input {
   display: grid;
   grid-template-rows:
-    var(--organization-clients-label-height)
-    var(--organization-clients-control-height);
+    var(--app-filter-label-height)
+    var(--app-filter-control-height);
   max-width: 560px;
   min-height: calc(
-    var(--organization-clients-label-height) +
-    var(--organization-clients-label-gap) +
-    var(--organization-clients-control-height)
+    var(--app-filter-label-height) +
+    var(--app-filter-label-gap) +
+    var(--app-filter-control-height)
   );
   min-width: 0;
-  row-gap: var(--organization-clients-label-gap);
+  row-gap: var(--app-filter-label-gap);
 }
 
 .organization-clients-filter-bar .mantine-InputWrapper-label {
@@ -45,7 +41,7 @@
   font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 600;
-  height: var(--organization-clients-label-height);
+  height: var(--app-filter-label-height);
   letter-spacing: 0;
   line-height: 1.2;
   margin-bottom: 0;
@@ -59,10 +55,10 @@
   font-family: var(--font-mono);
   font-size: 12.5px;
   font-weight: 400;
-  height: var(--organization-clients-control-height);
+  height: var(--app-filter-control-height);
   letter-spacing: 0;
   line-height: 1.2;
-  min-height: var(--organization-clients-control-height);
+  min-height: var(--app-filter-control-height);
 }
 
 .organization-clients-search-input .mantine-Input-input::placeholder {
@@ -77,7 +73,7 @@
   display: flex;
   gap: 8px;
   justify-content: flex-end;
-  min-height: var(--organization-clients-control-height);
+  min-height: var(--app-filter-control-height);
   min-width: 0;
 }
 
@@ -93,7 +89,7 @@
   align-self: end;
   display: flex;
   flex: 0 0 auto;
-  min-height: var(--organization-clients-control-height);
+  min-height: var(--app-filter-control-height);
 }
 
 .organization-clients-table-toolbar-slot .data-table-toolbar {

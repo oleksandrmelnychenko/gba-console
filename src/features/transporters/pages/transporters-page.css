@@ -1,7 +1,7 @@
 .transporters-shell {
-  --transporters-command-control-height: 36px;
-  --transporters-command-label-gap: 4px;
-  --transporters-command-label-height: 17px;
+  --transporters-command-control-height: var(--app-filter-control-height);
+  --transporters-command-label-gap: var(--app-filter-label-gap);
+  --transporters-command-label-height: var(--app-filter-label-height);
   --transporters-command-content-height: calc(
     var(--transporters-command-label-height) +
     var(--transporters-command-label-gap) +
@@ -16,7 +16,6 @@
   display: flex;
   flex: 0 0 auto;
   gap: 10px;
-  min-height: 86px;
 }
 
 .transporters-command-search {

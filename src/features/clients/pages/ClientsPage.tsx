@@ -964,7 +964,7 @@ function ClientsFilterToolbar({
   const { t } = useI18n()
 
   return (
-    <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
+    <Group align="end" gap={10} wrap="nowrap" className="clients-filter-row">
       <TextInput
         ref={searchInputRef}
         size="sm"

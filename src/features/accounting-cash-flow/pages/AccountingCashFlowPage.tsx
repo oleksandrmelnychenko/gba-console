@@ -615,8 +615,8 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
       <div className="accounting-cash-flow-shell">
         <div className="app-filter-bar accounting-cash-flow-filter-bar">
           <form className="accounting-cash-flow-filter-form" onSubmit={(event) => event.preventDefault()}>
-            <div className="accounting-cash-flow-period-filter">
-              <span className="accounting-cash-flow-filter-label">{t('Період')}</span>
+            <div className="app-filter-field accounting-cash-flow-period-filter">
+              <span className="app-filter-label accounting-cash-flow-filter-label">{t('Період')}</span>
               <div className="accounting-cash-flow-period-fields">
                 <TextInput
                   className="accounting-cash-flow-date-input"

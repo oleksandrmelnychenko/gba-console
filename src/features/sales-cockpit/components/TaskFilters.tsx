@@ -40,7 +40,7 @@ export function TaskFilters({
   )
 
   return (
-    <Group gap="sm" wrap="wrap">
+    <Group gap={10} wrap="wrap">
       <Select
         clearable
         data={taskTypeData}

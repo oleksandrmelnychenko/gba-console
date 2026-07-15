@@ -17,7 +17,6 @@
   display: grid;
   gap: 10px;
   grid-template-columns: minmax(0, 1fr) auto;
-  min-height: 62px;
 }
 
 .sales-return-client-command-actions,

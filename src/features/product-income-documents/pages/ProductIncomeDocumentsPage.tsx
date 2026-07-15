@@ -629,7 +629,7 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
     <Stack className="product-income-documents-page" gap={6}>
       <Card className="app-data-card product-income-documents-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar product-income-documents-filter-bar">
-          <Group align="end" gap="sm" wrap="nowrap" className="product-income-documents-filter-row">
+          <Group align="end" gap={10} wrap="nowrap" className="product-income-documents-filter-row">
             <TextInput
               size="sm"
               label={t('Від')}

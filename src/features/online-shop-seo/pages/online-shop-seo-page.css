@@ -15,9 +15,9 @@
 }
 
 .seo-page-command-bar {
-  --seo-page-command-label-height: 17px;
-  --seo-page-command-control-height: 36px;
-  --seo-page-command-label-gap: 4px;
+  --seo-page-command-label-height: var(--app-filter-label-height);
+  --seo-page-command-control-height: var(--app-filter-control-height);
+  --seo-page-command-label-gap: var(--app-filter-label-gap);
   --seo-page-command-content-height: calc(
     var(--seo-page-command-label-height) + var(--seo-page-command-label-gap) + var(--seo-page-command-control-height)
   );

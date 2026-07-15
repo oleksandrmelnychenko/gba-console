@@ -20,16 +20,15 @@
 }
 
 .new-sale-return-command-bar {
-  --new-sale-return-control-height: 36px;
-  --new-sale-return-label-gap: 4px;
-  --new-sale-return-label-height: 17px;
+  --new-sale-return-control-height: var(--app-filter-control-height);
+  --new-sale-return-label-gap: var(--app-filter-label-gap);
+  --new-sale-return-label-height: var(--app-filter-label-height);
 
   align-items: end;
   display: grid;
   flex: 0 0 auto;
-  gap: 12px;
+  gap: 10px;
   grid-template-columns: minmax(330px, 430px) minmax(320px, 1fr) auto auto auto;
-  min-height: 85px;
 }
 
 .new-sale-return-period-filter,

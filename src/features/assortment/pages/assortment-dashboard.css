@@ -123,9 +123,9 @@
   font-family: var(--font-mono);
   font-size: 12.5px;
   font-weight: 400;
-  height: 36px;
+  height: var(--app-filter-control-height, 36px);
   letter-spacing: 0;
-  min-height: 36px;
+  min-height: var(--app-filter-control-height, 36px);
 }
 
 .assort-dash__controls .mantine-Input-input::placeholder,
@@ -591,7 +591,6 @@
   flex-wrap: wrap;
   gap: 10px;
   margin: 0;
-  padding: 12px;
   border-bottom: 1px solid var(--mantine-color-gray-2);
   background:
     linear-gradient(180deg, rgba(var(--brand-orange-rgb), 0.035), rgba(255, 255, 255, 0) 58px),

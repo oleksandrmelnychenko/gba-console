@@ -23,7 +23,6 @@
   border-bottom-color: var(--mantine-color-gray-2);
   box-sizing: border-box;
   flex: 0 0 auto;
-  min-height: 86px;
   overflow-x: auto;
 }
 

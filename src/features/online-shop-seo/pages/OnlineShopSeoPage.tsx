@@ -1458,8 +1458,8 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
             {commandSearch ? (
               <div className={`seo-page-command-search${commandSearch.filterOptions ? ' has-filter' : ''}`}>
                 {commandSearch.filterOptions && commandSearch.filterValue && commandSearch.onFilterChange ? (
-                  <div className="seo-page-command-combo">
-                    <Text className="seo-page-command-combo-label">{t(commandSearch.label)}</Text>
+                  <div className="app-filter-field seo-page-command-combo">
+                    <Text className="app-filter-label seo-page-command-combo-label">{t(commandSearch.label)}</Text>
                     <div className="seo-page-command-combo-control">
                       <Select
                         allowDeselect={false}

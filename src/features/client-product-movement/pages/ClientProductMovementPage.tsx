@@ -321,7 +321,7 @@ export function ClientProductMovementPage() {
     <Stack className="client-product-movement-page" gap={6}>
       <Card className="app-data-card client-product-movement-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar client-product-movement-filter-bar">
-          <Group align="end" gap="sm" wrap="nowrap" className="client-product-movement-filter-row">
+          <Group align="end" gap={10} wrap="nowrap" className="client-product-movement-filter-row">
             <Select
               clearable
               searchable

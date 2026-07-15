@@ -3,9 +3,9 @@
 }
 
 .product-delivery-protocols-command-bar {
-  --protocols-command-control-height: 36px;
-  --protocols-command-label-gap: 4px;
-  --protocols-command-label-height: 17px;
+  --protocols-command-control-height: var(--app-filter-control-height);
+  --protocols-command-label-gap: var(--app-filter-label-gap);
+  --protocols-command-label-height: var(--app-filter-label-height);
 
   align-items: end;
   background: #f8f9fa;
@@ -21,7 +21,6 @@
     auto
     auto
     auto;
-  min-height: 86px;
 }
 
 .product-delivery-protocols-period-filter,

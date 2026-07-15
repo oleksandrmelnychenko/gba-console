@@ -40,9 +40,9 @@
   font-family: var(--font-mono);
   font-size: 12.5px;
   font-weight: 400;
-  height: 36px;
+  height: var(--app-filter-control-height);
   letter-spacing: 0;
-  min-height: 36px;
+  min-height: var(--app-filter-control-height);
 }
 
 .users-filter-bar .mantine-Input-input::placeholder {
@@ -62,7 +62,7 @@
   display: flex;
   gap: 6px;
   justify-content: flex-end;
-  min-height: 36px;
+  min-height: var(--app-filter-control-height);
   min-width: 0;
 }
 
@@ -72,7 +72,7 @@
   display: flex;
   gap: 8px;
   justify-content: flex-end;
-  min-height: 36px;
+  min-height: var(--app-filter-control-height);
   min-width: 0;
 }
 
@@ -93,7 +93,7 @@
   align-self: end;
   display: flex;
   justify-content: flex-end;
-  min-height: 36px;
+  min-height: var(--app-filter-control-height);
   min-width: 0;
 }
 

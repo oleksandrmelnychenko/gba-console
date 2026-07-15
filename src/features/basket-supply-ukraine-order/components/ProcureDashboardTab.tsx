@@ -9,6 +9,7 @@ import {
   Stack,
   Text,
   Tooltip,
+  VisuallyHidden,
 } from '@mantine/core'
 import { CircleAlert, RefreshCw } from 'lucide-react'
 import { useEffect, useMemo, useReducer, useState } from 'react'
@@ -227,17 +228,22 @@ export function ProcureDashboardTab() {
     <Stack gap={6}>
       <Card className="app-data-card" padding={0} radius="md" withBorder>
       <div className="app-filter-bar basket-supply-command-bar">
-        <NumberInput
-          allowDecimal={false}
-          allowNegative={false}
-          description={t('Порожньо — весь кошик')}
-          label={t('Виробник (ID)')}
-          min={0}
-          onChange={(value) => setProducerId(typeof value === 'number' ? value : '')}
-          placeholder={t('Весь кошик')}
-          value={producerId}
-          w={200}
-        />
+        <Tooltip label={t('Порожньо — весь кошик')}>
+          <NumberInput
+            allowDecimal={false}
+            allowNegative={false}
+            aria-describedby="procure-dashboard-producer-help"
+            label={t('Виробник (ID)')}
+            min={0}
+            onChange={(value) => setProducerId(typeof value === 'number' ? value : '')}
+            placeholder={t('Весь кошик')}
+            value={producerId}
+            w={200}
+          />
+        </Tooltip>
+        <VisuallyHidden id="procure-dashboard-producer-help">
+          {t('Порожньо — весь кошик')}
+        </VisuallyHidden>
         <NumberInput
           allowDecimal={false}
           allowNegative={false}

@@ -294,8 +294,8 @@ function ActProvidingServicesPageView({ model }: { model: ReturnType<typeof useA
       <div className="console-table-shell">
         <div className="app-filter-bar act-services-filter-bar">
           <div className="act-services-filter-row">
-            <div className="act-services-period-filter">
-              <span className="act-services-filter-label">{t('Період')}</span>
+            <div className="app-filter-field act-services-period-filter">
+              <span className="app-filter-label act-services-filter-label">{t('Період')}</span>
               <div className="act-services-period-fields">
                 <TextInput
                   className="act-services-date-input"

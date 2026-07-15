@@ -199,7 +199,7 @@ export function BudgetCartTab() {
     <Stack gap="lg">
       <Card className="app-data-card" padding={0} radius="md" withBorder>
         <div className="app-filter-bar budget-cart-filter-bar">
-          <Group align="flex-end" gap="sm" wrap="nowrap" className="budget-cart-filter-row">
+          <Group align="flex-end" gap={10} wrap="nowrap" className="budget-cart-filter-row">
             <Stack className="budget-cart-filter-note" gap={2}>
               <Text c="gray.8" fw={600} size="sm">
                 {t('AI підбирає товари до закупівлі в межах заданого ліміту в EUR')}
@@ -232,8 +232,8 @@ export function BudgetCartTab() {
                 onChange={(event) => setAsOfDate(event.currentTarget.value)}
               />
             </Tooltip>
-            <Stack gap={4}>
-              <Text c="gray.6" fw={600} size="xs">
+            <Stack className="app-filter-field" gap={4}>
+              <Text className="app-filter-label" c="gray.6" fw={600} size="xs">
                 {t('Метод')}
               </Text>
               <SegmentedControl

@@ -15,13 +15,13 @@
    .app-filter-bar (filter-bar.css). Only the page-specific grid layout for the
    period + search + actions controls stays here. */
 .consumable-orders-command-bar {
-  --consumable-orders-command-control-height: 36px;
-  --consumable-orders-command-label-gap: 4px;
-  --consumable-orders-command-label-height: 17px;
+  --consumable-orders-command-control-height: var(--app-filter-control-height);
+  --consumable-orders-command-label-gap: var(--app-filter-label-gap);
+  --consumable-orders-command-label-height: var(--app-filter-label-height);
 
   align-items: end;
   display: grid;
-  gap: 12px;
+  gap: 10px;
   grid-template-columns: minmax(320px, 400px) minmax(280px, 1fr) auto auto auto;
 }
 

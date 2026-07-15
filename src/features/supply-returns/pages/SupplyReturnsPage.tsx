@@ -380,7 +380,7 @@ function SupplyReturnsTableCard({ model }: { model: ReturnType<typeof useSupplyR
   return (
     <Card className="app-data-card supply-returns-card" withBorder radius="md" padding={0}>
       <div className="app-filter-bar supply-returns-filter-bar">
-        <Group align="end" gap="sm" wrap="nowrap" className="supply-returns-filter-row">
+        <Group align="end" gap={10} wrap="nowrap" className="supply-returns-filter-row">
           <TextInput
             label={t('Від')}
             max={filterDraft.to || undefined}

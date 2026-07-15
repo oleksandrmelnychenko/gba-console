@@ -205,8 +205,8 @@ export function SupplierOrganizationsPage() {
     <Stack className="supplier-organizations-page console-table-page" gap={6}>
       <div className="console-table-shell">
         <div className="app-filter-bar supplier-organizations-command-bar">
-          <div className="supplier-organizations-period-filter">
-            <span className="supplier-organizations-filter-label">{t('Період')}</span>
+          <div className="app-filter-field supplier-organizations-period-filter">
+            <span className="app-filter-label supplier-organizations-filter-label">{t('Період')}</span>
             <div className="supplier-organizations-period-fields">
               <TextInput
                 className="supplier-organizations-date-input"

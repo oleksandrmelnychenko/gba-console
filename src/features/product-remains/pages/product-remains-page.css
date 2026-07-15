@@ -41,7 +41,6 @@
    controls no longer steal horizontal space from the header. */
 .product-remains-filter-bar {
   flex: 0 0 auto;
-  min-height: 86px;
   overflow-x: auto;
   overflow-y: hidden;
   z-index: 2;

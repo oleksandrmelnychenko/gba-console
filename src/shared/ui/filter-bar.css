@@ -9,6 +9,13 @@
    (grids, the reference's period/organisation/dropdown controls, grid rows) stays
    in each feature's own CSS. */
 
+:root {
+  --app-filter-bar-height: 74px;
+  --app-filter-control-height: 36px;
+  --app-filter-label-gap: 4px;
+  --app-filter-label-height: 17px;
+}
+
 /* Mantine <Card padding={0}> that hosts a flush strip — clip square strip
    corners to the card radius (used by chart/standalone pages). */
 .app-filter-card {
@@ -55,12 +62,16 @@
      a gray-2 bottom edge separates the bar from the table. */
   background: var(--app-filter-glow), #f8f9fa;
   border-bottom: 1px solid var(--mantine-color-gray-2);
+  align-items: end;
+  gap: 10px;
   /* The pattern padding (docs/ui-patterns.md §5.3) — pages must NOT override.
      Horizontal 8px lines the bar content up with the table text (th/td padding
      is 8px), so the filter labels and the first column start on one vertical.
      Vertical 8/8 (was 12/14 — too much dead air above/below the 57px-tall
      label+input stack, made every registry page's filter strip read as
      oversized). */
+  box-sizing: border-box;
+  min-height: var(--app-filter-bar-height);
   padding: 8px;
 }
 
@@ -78,6 +89,7 @@
   display: flex;
   gap: 8px;
   justify-content: flex-end;
+  min-height: var(--app-filter-control-height, 36px);
   min-width: 0;
 }
 
@@ -90,6 +102,30 @@
   gap: 10px;
   grid-template-columns: repeat(2, 150px);
   width: 310px;
+}
+
+/* Fixed two-row field for compound controls (for example one "Period" label
+   above a pair of date inputs). Mantine Input.Wrapper fields get the same
+   geometry from the label/input rules below. */
+.app-filter-bar .app-filter-field,
+.sales-filter-bar .app-filter-field,
+.console-table-command-bar .app-filter-field {
+  display: grid;
+  grid-template-rows: var(--app-filter-label-height) var(--app-filter-control-height);
+  min-height: calc(
+    var(--app-filter-label-height) +
+    var(--app-filter-label-gap) +
+    var(--app-filter-control-height)
+  );
+  min-width: 0;
+  row-gap: var(--app-filter-label-gap);
+}
+
+.app-filter-bar .app-filter-field > .mantine-SegmentedControl-root,
+.sales-filter-bar .app-filter-field > .mantine-SegmentedControl-root,
+.console-table-command-bar .app-filter-field > .mantine-SegmentedControl-root {
+  height: var(--app-filter-control-height, 36px);
+  min-height: var(--app-filter-control-height, 36px);
 }
 
 /* ---- Compact labels (12px caption, near-black gray-9 per the pattern) ---- */
@@ -106,6 +142,48 @@
   line-height: 1.2;
 }
 
+.app-filter-bar .mantine-InputWrapper-label,
+.sales-filter-bar .mantine-InputWrapper-label,
+.console-table-command-bar .mantine-InputWrapper-label {
+  display: block;
+  height: var(--app-filter-label-height);
+  margin-bottom: var(--app-filter-label-gap);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Custom period/compound controls use the same fixed label slot as Mantine
+   Input.Wrapper. Add `.app-filter-label` to their visible caption and keep the
+   4px gap on the surrounding grid/stack so it is never counted twice. */
+.app-filter-bar .app-filter-label,
+.sales-filter-bar .app-filter-label,
+.console-table-command-bar .app-filter-label {
+  color: var(--mantine-color-gray-9);
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  height: var(--app-filter-label-height);
+  letter-spacing: 0;
+  line-height: 1.2;
+  margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The generic horizontally-scrollable filter row has 1px bottom padding in
+   the app shell. Inside a canonical bar that extra pixel would turn 74px into
+   75px, so the bar owns the row's vertical geometry. */
+.app-filter-bar .clients-filter-row,
+.sales-filter-bar .clients-filter-row,
+.console-table-command-bar .clients-filter-row {
+  padding-bottom: 0;
+}
+
 /* ---- Compact inputs: 36px tall, 8px radius, gray-2 border, orange focus ring ---- */
 .app-filter-bar .mantine-Input-input,
 .sales-filter-bar .mantine-Input-input,
@@ -118,7 +196,8 @@
   font-family: var(--font-mono);
   font-size: 12.5px;
   letter-spacing: 0;
-  min-height: 36px;
+  height: var(--app-filter-control-height, 36px);
+  min-height: var(--app-filter-control-height, 36px);
   transition:
     border-color 140ms var(--tx-ease-smooth),
     box-shadow 140ms var(--tx-ease-smooth);
@@ -164,8 +243,8 @@
 .sales-filter-bar .mantine-MultiSelect-input,
 .console-table-command-bar .mantine-MultiSelect-input {
   align-items: center;
-  height: 36px;
-  max-height: 36px;
+  height: var(--app-filter-control-height, 36px);
+  max-height: var(--app-filter-control-height, 36px);
   overflow: hidden;
   padding-bottom: 0;
   /* Місце під X + шеврон: пілси не заїжджають під праву секцію контрола. */

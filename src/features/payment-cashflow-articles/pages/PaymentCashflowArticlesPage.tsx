@@ -171,7 +171,7 @@ export function PaymentCashflowArticlesPage() {
     <Stack className="payment-cashflow-articles-page console-table-page" gap={6}>
       <div className="console-table-shell payment-cashflow-articles-card">
         <div className="app-filter-bar payment-cashflow-articles-filter-bar">
-          <Group align="end" gap="sm" wrap="nowrap" className="payment-cashflow-articles-filter-row">
+          <Group align="end" gap={10} wrap="nowrap" className="payment-cashflow-articles-filter-row">
             <TextInput
               size="sm"
               leftSection={<Search size={16} />}

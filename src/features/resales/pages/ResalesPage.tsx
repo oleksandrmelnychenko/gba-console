@@ -378,7 +378,7 @@ export function ResalesPage() {
     <Stack className="resales-page" gap={6}>
       <Card className="app-data-card resales-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar resales-filter-bar">
-          <Group align="end" gap="sm" wrap="nowrap" className="resales-filter-row">
+          <Group align="end" gap={10} wrap="nowrap" className="resales-filter-row">
             <TextInput
               label={t('Від')}
               type="date"

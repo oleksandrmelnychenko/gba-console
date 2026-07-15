@@ -612,8 +612,8 @@ export function NewUkraineSaleReturnPage() {
     <Box className="new-sale-return-page console-table-page">
       <div className="console-table-shell new-sale-return-shell">
         <div className="new-sale-return-command-bar app-filter-bar">
-          <div className="new-sale-return-period-filter">
-            <span className="new-sale-return-filter-label">{t('Період')}</span>
+          <div className="app-filter-field new-sale-return-period-filter">
+            <span className="app-filter-label new-sale-return-filter-label">{t('Період')}</span>
             <div className="new-sale-return-period-fields">
               <TextInput
                 aria-label={t('З дати')}
