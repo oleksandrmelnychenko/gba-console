@@ -555,9 +555,11 @@ function IncomeCashflowsContent({ model }: { model: IncomeCashflowsPageModel }) 
     <Stack className="income-cashflows-page console-table-page" gap={6}>
       <div className="console-table-shell income-cashflows-card">
         <div className="app-filter-bar income-cashflows-filter-bar">
-          <Group align="end" gap="sm" wrap="nowrap" className="income-cashflows-filter-row">
-            <TextInput label={t('Від')} type="date" value={fromDate} onChange={(event) => onSetFromDate(event.currentTarget.value)} />
-            <TextInput label={t('До')} type="date" value={toDate} onChange={(event) => onSetToDate(event.currentTarget.value)} />
+          <Group align="end" gap={10} wrap="nowrap" className="income-cashflows-filter-row">
+            <div className="app-filter-date-range">
+              <TextInput label={t('Від')} type="date" value={fromDate} onChange={(event) => onSetFromDate(event.currentTarget.value)} />
+              <TextInput label={t('До')} type="date" value={toDate} onChange={(event) => onSetToDate(event.currentTarget.value)} />
+            </div>
             <TextInput
               leftSection={<Search size={16} />}
               label={t('Пошук')}

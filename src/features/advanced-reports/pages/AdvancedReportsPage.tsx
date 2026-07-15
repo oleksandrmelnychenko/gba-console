@@ -400,9 +400,11 @@ export function AdvancedReportsPage() {
       <Card className="app-data-card advanced-reports-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar advanced-reports-filter-bar">
           <Stack className="advanced-reports-filter-content" gap={8}>
-            <Group align="end" gap="sm" wrap="nowrap" className="advanced-reports-filter-row">
-              <TextInput label={t('Від')} type="date" value={fromDate} onChange={(event) => changeFromDate(event.currentTarget.value)} />
-              <TextInput label={t('До')} type="date" value={toDate} onChange={(event) => changeToDate(event.currentTarget.value)} />
+            <Group align="end" gap={10} wrap="nowrap" className="advanced-reports-filter-row">
+              <div className="app-filter-date-range">
+                <TextInput label={t('Від')} type="date" value={fromDate} onChange={(event) => changeFromDate(event.currentTarget.value)} />
+                <TextInput label={t('До')} type="date" value={toDate} onChange={(event) => changeToDate(event.currentTarget.value)} />
+              </div>
               <TextInput
                 leftSection={<Search size={16} />}
                 label={t('Пошук')}

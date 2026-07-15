@@ -169,11 +169,11 @@ export function VatReportsPage() {
     <Stack className="vat-reports-page" gap={6}>
       <Card className="app-data-card vat-reports-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar vat-reports-filter-bar">
-          <Group align="end" gap="sm" wrap="nowrap" justify="space-between" className="vat-reports-filter-row">
-            <Group align="end" gap="sm" wrap="nowrap">
+          <Group align="end" gap={10} wrap="nowrap" justify="space-between" className="vat-reports-filter-row">
+            <div className="app-filter-date-range">
               <TextInput label={t('Від')} type="date" value={fromDate} onChange={(event) => updateFromDate(event.currentTarget.value)} />
               <TextInput label={t('До')} type="date" value={toDate} onChange={(event) => updateToDate(event.currentTarget.value)} />
-            </Group>
+            </div>
             <div className="app-filter-actions">
               <Tooltip label={t('Скинути')}>
                 <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>

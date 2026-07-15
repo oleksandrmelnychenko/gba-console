@@ -15,8 +15,7 @@
   display: grid;
   gap: 10px;
   grid-template-columns:
-    minmax(140px, 150px)
-    minmax(140px, 150px)
+    310px
     minmax(320px, 340px)
     minmax(180px, 190px)
     minmax(230px, 250px)
@@ -29,7 +28,7 @@
 }
 
 .income-cashflows-filter-actions {
-  grid-column: 8;
+  grid-column: 7;
   margin-left: auto;
 }
 
@@ -37,7 +36,7 @@
   align-items: center;
   align-self: end;
   display: flex;
-  grid-column: 9;
+  grid-column: 8;
   min-height: 36px;
 }
 

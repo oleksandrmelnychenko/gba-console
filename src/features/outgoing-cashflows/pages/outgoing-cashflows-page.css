@@ -13,10 +13,9 @@
 .outgoing-cashflows-filter-row {
   align-items: end;
   display: grid;
-  gap: 8px;
+  gap: 10px;
   grid-template-columns:
-    minmax(124px, 132px)
-    minmax(124px, 132px)
+    310px
     minmax(250px, 1fr)
     minmax(108px, 120px)
     minmax(148px, 176px)
@@ -47,7 +46,7 @@
   align-items: center;
   align-self: end;
   display: flex;
-  grid-column: 9; /* last defined track — 10 forced an implicit extra column and pushed the button out */
+  grid-column: 8; /* last defined track; an implicit extra column pushes the button out */
   min-height: 36px;
 }
 

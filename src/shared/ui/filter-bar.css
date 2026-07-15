@@ -81,6 +81,17 @@
   min-width: 0;
 }
 
+/* Keep paired date filters identical across console pages regardless of the
+   surrounding flex/grid layout. */
+.app-filter-date-range {
+  align-items: end;
+  display: grid;
+  flex: 0 0 310px;
+  gap: 10px;
+  grid-template-columns: repeat(2, 150px);
+  width: 310px;
+}
+
 /* ---- Compact labels (12px caption, near-black gray-9 per the pattern) ---- */
 .app-filter-bar .mantine-InputWrapper-label,
 .sales-filter-bar .mantine-InputWrapper-label,
