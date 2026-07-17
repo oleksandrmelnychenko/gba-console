@@ -14,6 +14,7 @@ import {
 } from '@mantine/core'
 import { ArrowLeft, CircleAlert, Plus, Save } from 'lucide-react'
 import { type FormEvent, useEffect, useMemo } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -69,9 +70,17 @@ export function OutgoingCashOrderForm({ onCancel, onCreated }: OutgoingCashOrder
     () => organizations.find((organization) => getEntityValue(organization) === form.organizationValue) || null,
     [form.organizationValue, organizations],
   )
+  const [searchParams] = useSearchParams()
+  // «Перерахування підзвітнику» відкривається з груп Банк/Каса з ?type= — префільтруємо реєстри.
+  const registerTypeFilter = parseRegisterTypeFilter(searchParams.get('type'))
   const organizationRegisters = useMemo(
-    () => paymentRegisters.filter((register) => isRegisterForOrganization(register, selectedOrganization)),
-    [paymentRegisters, selectedOrganization],
+    () =>
+      paymentRegisters.filter(
+        (register) =>
+          isRegisterForOrganization(register, selectedOrganization) &&
+          (registerTypeFilter === null || register.Type === registerTypeFilter),
+      ),
+    [paymentRegisters, registerTypeFilter, selectedOrganization],
   )
   const selectedRegister = useMemo(
     () => organizationRegisters.find((register) => getEntityValue(register) === form.paymentRegisterValue) || null,
@@ -712,4 +721,16 @@ function toNumber(value: string | number): number {
   const parsed = typeof value === 'number' ? value : Number(value.replace(',', '.'))
 
   return Number.isFinite(parsed) ? parsed : 0
+}
+
+function parseRegisterTypeFilter(value: string | null): number | null {
+  if (value === '0') {
+    return 0
+  }
+
+  if (value === '2') {
+    return 2
+  }
+
+  return null
 }

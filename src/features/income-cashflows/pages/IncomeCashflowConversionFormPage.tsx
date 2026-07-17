@@ -631,7 +631,7 @@ function buildIncomePaymentOrder({
     FromDate: toIsoDateTime(form.date, form.time),
     IsAccounting: form.isAccounting,
     IsManagementAccounting: form.isManagementAccounting,
-    OperationType: String(IncomePaymentOperationType.OtherIncome),
+    OperationType: IncomePaymentOperationType.OtherIncome,
     Organization: selectedOrganization,
     PaymentMovementOperation: {
       PaymentMovement: selectedMovement,

@@ -564,7 +564,7 @@ function buildIncomePaymentOrder({
     IncomePaymentOrderType: selectedRegister.Type === PaymentRegisterType.Cash ? IncomePaymentOrderType.Cash : IncomePaymentOrderType.Transfer,
     IsAccounting: form.isAccounting,
     IsManagementAccounting: form.isManagementAccounting,
-    OperationType: String(IncomePaymentOperationType.ReturnFromColleague),
+    OperationType: IncomePaymentOperationType.ReturnFromColleague,
     Organization: selectedOrganization,
     PaymentCurrencyRegister: selectedCurrencyRegister,
     PaymentMovementOperation: {

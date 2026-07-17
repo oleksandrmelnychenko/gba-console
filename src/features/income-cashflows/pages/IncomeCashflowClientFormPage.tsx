@@ -1137,7 +1137,7 @@ function buildIncomePaymentOrder({
     IncomePaymentOrderSales: isSupplierSearch ? [] : buildIncomePaymentOrderSales(debts, form),
     IsAccounting: form.isAccounting,
     IsManagementAccounting: form.isManagementAccounting,
-    OperationType: String(operationType),
+    OperationType: operationType,
     Organization: selectedOrganization,
     PaymentCurrencyRegister: selectedCurrencyRegister,
     PaymentMovementOperation: {

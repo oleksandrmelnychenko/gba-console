@@ -5,6 +5,7 @@
   Button,
   Divider,
   Group,
+  Menu,
   Select,
   SimpleGrid,
   Stack,
@@ -13,11 +14,16 @@
   Tooltip,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { Ban, CircleAlert, Eye, Network, Plus, RefreshCw, RotateCcw, Search, SquarePen } from 'lucide-react'
+import { Ban, Banknote, ChevronDown, CircleAlert, Eye, Landmark, ListChecks, Network, Plus, RefreshCw, RotateCcw, Search, SquarePen } from 'lucide-react'
 import { type ReactNode, useCallback, useEffect, useMemo, useRef } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
+import {
+  buildOutgoingRegisterItems,
+  buildOutgoingStandaloneItems,
+} from '../outgoingCreateMenu'
+import { PaymentRegisterType } from '../../income-cashflows/types'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
@@ -78,6 +84,7 @@ function useOutgoingCashflowsPageModel(): OutgoingCashflowsPageModel {
   const { t } = useI18n()
   const navigate = useNavigate()
   const location = useLocation()
+
   const [searchParams] = useSearchParams()
   const focusedOrderNetId = searchParams.get('orderNetId') || searchParams.get('netId') || ''
   const [cashflows, setCashflows] = useValueState<OutgoingCashflowsResponse>({
@@ -601,6 +608,15 @@ function OutgoingCashflowsContent({ model }: { model: OutgoingCashflowsPageModel
   const navigate = useNavigate()
   const location = useLocation()
 
+  function navigateToCreateItem(path: string) {
+    if (path.startsWith('/accounting/outgoing-cashflow/new')) {
+      navigate(path, { state: { backgroundLocation: location } })
+      return
+    }
+
+    navigate(path)
+  }
+
   return (
     <Stack className="outgoing-cashflows-page console-table-page" gap={6}>
       <div className="console-table-shell outgoing-cashflows-card">
@@ -689,15 +705,53 @@ function OutgoingCashflowsContent({ model }: { model: OutgoingCashflowsPageModel
               />
             </div>
             <div className="outgoing-cashflows-create-actions">
-              <Button
-                color={CREATE_ACTION_COLOR}
-                leftSection={<Plus size={16} />}
-                size="sm"
-                styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
-                onClick={() => navigate('/accounting/outgoing-cashflow/new', { state: { backgroundLocation: location } })}
-              >
-                {t('Новий')}
-              </Button>
+              <Menu position="bottom-end" shadow="md" width={340} withinPortal>
+                <Menu.Target>
+                  <Button
+                    color={CREATE_ACTION_COLOR}
+                    leftSection={<Plus size={16} />}
+                    rightSection={<ChevronDown size={14} />}
+                    size="sm"
+                    styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
+                  >
+                    {t('Новий')}
+                  </Button>
+                </Menu.Target>
+                <Menu.Dropdown>
+                  <Menu.Label>{t('Банківські операції')}</Menu.Label>
+                  {buildOutgoingRegisterItems(t, PaymentRegisterType.Bank).map((item) => (
+                    <Menu.Item
+                      key={item.path}
+                      leftSection={<Landmark size={15} />}
+                      onClick={() => navigateToCreateItem(item.path)}
+                    >
+                      {item.label}
+                    </Menu.Item>
+                  ))}
+                  <Menu.Divider />
+                  <Menu.Label>{t('Касові операції')}</Menu.Label>
+                  {buildOutgoingRegisterItems(t, PaymentRegisterType.Cash).map((item) => (
+                    <Menu.Item
+                      key={item.path}
+                      leftSection={<Banknote size={15} />}
+                      onClick={() => navigateToCreateItem(item.path)}
+                    >
+                      {item.label}
+                    </Menu.Item>
+                  ))}
+                  <Menu.Divider />
+                  <Menu.Label>{t('Інші операції (бух/упр)')}</Menu.Label>
+                  {buildOutgoingStandaloneItems(t).map((item) => (
+                    <Menu.Item
+                      key={item.path}
+                      leftSection={<ListChecks size={15} />}
+                      onClick={() => navigateToCreateItem(item.path)}
+                    >
+                      {item.label}
+                    </Menu.Item>
+                  ))}
+                </Menu.Dropdown>
+              </Menu>
             </div>
           </Group>
         </div>

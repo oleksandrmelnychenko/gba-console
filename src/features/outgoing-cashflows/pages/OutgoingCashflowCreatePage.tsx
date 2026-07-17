@@ -23,13 +23,20 @@ export function OutgoingCashflowCreatePage() {
   const [mode, setMode] = useValueState<OutgoingCreateMode | null>(null)
   const activeMode = mode || getModeFromPath(location.pathname) || (searchParams.get('operationType') ? OUTGOING_CREATE_MODE.PaymentGroup : null)
 
-  function handleSelectMode(nextMode: OutgoingCreateMode) {
-    if (nextMode === OUTGOING_CREATE_MODE.PaymentTasks) {
-      navigate(buildAvailablePaymentsPaymentTasksPath(location.search, location.hash))
+  // Deep link на /new/payment-tasks — редірект на сторінку платіжних задач.
+  if (location.pathname.endsWith('/payment-tasks')) {
+    navigate(buildAvailablePaymentsPaymentTasksPath(location.search, location.hash), { replace: true })
+  }
+
+  function handleNavigate(path: string) {
+    if (path.startsWith(OUTGOING_CASHFLOW_NEW_PATH)) {
+      // Лишаємось у тому самому drawer-оверлеї — зберігаємо backgroundLocation.
+      setMode(null)
+      navigate(path, { replace: true, state: location.state })
       return
     }
 
-    setMode(nextMode)
+    navigate(path)
   }
 
   function handleBackToSelector() {
@@ -62,7 +69,7 @@ export function OutgoingCashflowCreatePage() {
       return <OutgoingPaymentGroupForm onCancel={handleBackToSelector} onCreated={handleCreated} />
     }
 
-    return <OutgoingCreateModeSelector onSelect={handleSelectMode} />
+    return <OutgoingCreateModeSelector onNavigate={handleNavigate} />
   }
 
   return (
@@ -74,7 +81,7 @@ export function OutgoingCashflowCreatePage() {
       onClose={() => navigate(OUTGOING_CASHFLOWS_PATH)}
     >
       <Stack gap="md">
-        {activeMode ? renderActiveForm(activeMode) : <OutgoingCreateModeSelector onSelect={handleSelectMode} />}
+        {activeMode ? renderActiveForm(activeMode) : <OutgoingCreateModeSelector onNavigate={handleNavigate} />}
       </Stack>
     </AppDrawer>
   )

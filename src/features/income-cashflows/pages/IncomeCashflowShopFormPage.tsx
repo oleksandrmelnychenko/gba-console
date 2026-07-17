@@ -981,7 +981,7 @@ function buildIncomePaymentOrder({
     IncomePaymentOrderSales: buildIncomePaymentOrderSales(debts, form),
     IsAccounting: form.isAccounting,
     IsManagementAccounting: form.isManagementAccounting,
-    OperationType: String(IncomePaymentOperationType.ClientPayment),
+    OperationType: IncomePaymentOperationType.ClientPayment,
     Organization: selectedOrganization,
     PaymentCurrencyRegister: selectedCurrencyRegister,
     PaymentMovementOperation: {

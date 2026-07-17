@@ -1105,11 +1105,13 @@ function getTitle(operationType: OutcomeOperationType, registerType: PaymentRegi
   }
 
   if (operationType === OUTCOME_OPERATION_TYPE.OtherOutcomeWithCounterparts) {
-    return `${t('Інші видатки з контрагентами')}, ${registerTitle}`
+    return `${t('Інші розрахунки з контрагентами')}, ${registerTitle}`
   }
 
   if (operationType === OUTCOME_OPERATION_TYPE.OtherOutcome) {
-    return `${t('Інші видатки')}, ${registerTitle}`
+    return registerType === PaymentRegisterType.Bank
+      ? t('Інше списання безготівкових грошових коштів')
+      : t('Інші витрати грошових коштів')
   }
 
   return `${t('Оплата постачальнику')}, ${registerTitle}`

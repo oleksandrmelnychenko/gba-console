@@ -24,10 +24,11 @@ import {
   getIncomeCashflowOrganizations,
   getIncomeCashflowPaymentMovements,
   getIncomeCashflowSpecificExchangeRate,
-  searchIncomeCashflowClientPayers,
+  searchIncomeCashflowCounterparties,
   searchIncomeCashflowPaymentMovements,
   searchIncomeCashflowPaymentRegisters,
 } from '../../income-cashflows/api/incomeCashflowsApi'
+import { IncomeCounterpartySearchType } from '../../income-cashflows/types'
 import type {
   Client,
   ClientAgreement,
@@ -192,7 +193,7 @@ export function OutgoingClientReturnForm({ onCancel, onCreated }: OutgoingClient
         return
       }
 
-      void searchIncomeCashflowClientPayers(value, controller.signal).then(setPayerClients).catch(() => undefined)
+      void searchIncomeCashflowCounterparties(value, IncomeCounterpartySearchType.Client, controller.signal).then(setPayerClients).catch(() => undefined)
     }, SEARCH_DEBOUNCE_MS)
 
     return () => {
