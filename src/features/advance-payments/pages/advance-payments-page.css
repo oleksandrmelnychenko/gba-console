@@ -25,14 +25,24 @@
 
 .advance-payments-filter-row {
   display: grid;
-  grid-template-columns: max-content max-content minmax(16px, 1fr) max-content;
+  gap: 10px;
+  grid-template-columns: 310px minmax(16px, 1fr) max-content max-content;
   min-width: max-content;
   width: 100%;
 }
 
-/* Push the actions cluster (reset / density / paginator) to the trailing edge. */
+/* Push reset/paginator before the dedicated DataTable toolbar slot. */
 .advance-payments-filter-row .app-filter-actions {
+  grid-column: 3;
+}
+
+.advance-payments-filter-row > .app-filter-table-toolbar-slot {
   grid-column: 4;
+}
+
+.advance-payments-alert {
+  flex: 0 0 auto;
+  margin: 12px 12px 0;
 }
 
 .advance-payments-page__table {

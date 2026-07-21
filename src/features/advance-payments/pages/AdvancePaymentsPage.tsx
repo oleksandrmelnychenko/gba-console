@@ -9,13 +9,11 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { CircleAlert, RotateCcw } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useReducer } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
-import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE, PAGINATOR_PAGE_SIZE_OPTIONS } from '../../../shared/ui/paginator/paginatorPageSize'
@@ -65,7 +63,7 @@ export function AdvancePaymentsPage() {
   const offset = (page - 1) * pageSize
   const canMoveForward = payments.length === pageSize
   const columns = useAdvancePaymentColumns()
-  const { density, toggleDensity } = useDataTableDensity('advance-payments', 'normal')
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const changePageSize = useCallback((value: string | null) => {
     const nextPageSize = normalizeAdvancePaymentsPageSize(value)
 
@@ -127,33 +125,32 @@ export function AdvancePaymentsPage() {
       <Card className="app-data-card advance-payments-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar advance-payments-filter-bar">
           <Group align="end" gap={10} wrap="nowrap" className="advance-payments-filter-row">
-            <TextInput
-              label={t('Від якої дати')}
-              type="date"
-              value={fromDate}
-              w={170}
-              onChange={(event) => {
-                setPage(1)
-                setFromDate(event.currentTarget.value)
-              }}
-            />
-            <TextInput
-              label={t('До якої дати')}
-              type="date"
-              value={toDate}
-              w={170}
-              onChange={(event) => {
-                setPage(1)
-                setToDate(event.currentTarget.value)
-              }}
-            />
+            <div className="app-filter-date-range">
+              <TextInput
+                label={t('Від')}
+                type="date"
+                value={fromDate}
+                onChange={(event) => {
+                  setPage(1)
+                  setFromDate(event.currentTarget.value)
+                }}
+              />
+              <TextInput
+                label={t('До')}
+                type="date"
+                value={toDate}
+                onChange={(event) => {
+                  setPage(1)
+                  setToDate(event.currentTarget.value)
+                }}
+              />
+            </div>
             <div className="app-filter-actions">
               <Tooltip label={t('Скинути')}>
                 <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
                   <RotateCcw size={17} />
                 </ActionIcon>
               </Tooltip>
-              <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
               <Paginator
                 hasNext={canMoveForward}
                 isLoading={isLoading}
@@ -164,17 +161,18 @@ export function AdvancePaymentsPage() {
                 onRefresh={reload}
               />
             </div>
+            <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
           </Group>
         </div>
 
         {error && (
-          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
+          <Alert className="advance-payments-alert" color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}
 
         {filterError && (
-          <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
+          <Alert className="advance-payments-alert" color="yellow" icon={<CircleAlert size={18} />} variant="light">
             {filterError}
           </Alert>
         )}
@@ -184,14 +182,15 @@ export function AdvancePaymentsPage() {
             columns={columns}
             data={payments}
             defaultLayout={ADVANCE_PAYMENTS_TABLE_DEFAULT_LAYOUT}
-            density={density}
             emptyText={t('Немає даних за вибраний період')}
             getRowId={(payment, index) => String(payment.NetUid || payment.Id || payment.Number || index)}
             height="100%"
             isLoading={isLoading}
             layoutVersion="advance-payments-table-1"
             minWidth={1080}
+            showLayoutControls
             tableId="advance-payments"
+            toolbarPortalTarget={tableToolbarSlot}
           />
         </div>
       </Card>
