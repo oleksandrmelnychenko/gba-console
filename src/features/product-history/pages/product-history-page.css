@@ -9,6 +9,7 @@
 .product-history-card {
   background: var(--mantine-color-white);
   border: 1px solid var(--mantine-color-gray-2) !important;
+  box-shadow: var(--app-card-shadow) !important;
   display: flex;
   flex-direction: column;
   height: 100%;
