@@ -165,6 +165,24 @@ export function ManagerSalesByTopView() {
     <Card className="app-data-card sales-chart-card" withBorder radius="md" padding={0}>
       <div className="app-filter-bar">
         <div className="sales-chart-filter-row is-manager-top">
+          <div className="app-filter-date-range">
+            <TextInput
+              className="sales-chart-filter-control"
+              label={t('Від')}
+              max={to || undefined}
+              type="date"
+              value={from}
+              onChange={(event) => setFrom(event.currentTarget.value)}
+            />
+            <TextInput
+              className="sales-chart-filter-control"
+              label={t('До')}
+              min={from || undefined}
+              type="date"
+              value={to}
+              onChange={(event) => setTo(event.currentTarget.value)}
+            />
+          </div>
           <Select
             clearable
             searchable
@@ -185,23 +203,7 @@ export function ManagerSalesByTopView() {
             value={netIdOrganization}
             onChange={setNetIdOrganization}
           />
-          <TextInput
-            className="sales-chart-filter-control"
-            label={t('З')}
-            max={to || undefined}
-            type="date"
-            value={from}
-            onChange={(event) => setFrom(event.currentTarget.value)}
-          />
-          <TextInput
-            className="sales-chart-filter-control"
-            label={t('По')}
-            min={from || undefined}
-            type="date"
-            value={to}
-            onChange={(event) => setTo(event.currentTarget.value)}
-          />
-          <div ref={setTableToolbarSlot} className="sales-chart-table-toolbar-slot" />
+          <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot sales-chart-table-toolbar-slot" />
         </div>
       </div>
 

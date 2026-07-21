@@ -121,6 +121,24 @@ export function SalesByClientChart() {
     <Card className="app-data-card sales-chart-card" withBorder radius="md" padding={0}>
       <div className="app-filter-bar">
         <div className="sales-chart-filter-row is-client">
+          <div className="app-filter-date-range">
+            <TextInput
+              className="sales-chart-filter-control"
+              label={t('Від')}
+              max={to || undefined}
+              type="date"
+              value={from}
+              onChange={(event) => setFrom(event.currentTarget.value)}
+            />
+            <TextInput
+              className="sales-chart-filter-control"
+              label={t('До')}
+              min={from || undefined}
+              type="date"
+              value={to}
+              onChange={(event) => setTo(event.currentTarget.value)}
+            />
+          </div>
           <Autocomplete
             className="sales-chart-filter-control"
             data={autocompleteData}
@@ -135,22 +153,6 @@ export function SalesByClientChart() {
               const matched = clientOptions.find((option) => option.value === value)
               setNetId(matched ? matched.netId : null)
             }}
-          />
-          <TextInput
-            className="sales-chart-filter-control"
-            label={t('З')}
-            max={to || undefined}
-            type="date"
-            value={from}
-            onChange={(event) => setFrom(event.currentTarget.value)}
-          />
-          <TextInput
-            className="sales-chart-filter-control"
-            label={t('По')}
-            min={from || undefined}
-            type="date"
-            value={to}
-            onChange={(event) => setTo(event.currentTarget.value)}
           />
           <Select
             allowDeselect={false}
