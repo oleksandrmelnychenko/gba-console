@@ -605,7 +605,6 @@ function IncomeCashflowsContent({ model }: { model: IncomeCashflowsPageModel }) 
               label={t('Організації')}
               placeholder={t('Без фільтра')}
               value={selectedOrganizationIds}
-              w={220}
               onChange={onSetSelectedOrganizationIds}
             />
 
