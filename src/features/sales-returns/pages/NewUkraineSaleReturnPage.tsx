@@ -120,6 +120,7 @@ export function NewUkraineSaleReturnPage() {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(DEFAULT_PAGINATOR_PAGE_SIZE)
   const [reloadKey, setReloadKey] = useState(0)
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const [listState, setListState] = useState<ReturnsListState>({
     isLoading: false,
     items: [],
@@ -612,31 +613,29 @@ export function NewUkraineSaleReturnPage() {
     <Box className="new-sale-return-page console-table-page">
       <div className="console-table-shell new-sale-return-shell">
         <div className="new-sale-return-command-bar app-filter-bar">
-          <div className="app-filter-field new-sale-return-period-filter">
-            <span className="app-filter-label new-sale-return-filter-label">{t('Період')}</span>
-            <div className="new-sale-return-period-fields">
-              <TextInput
-                aria-label={t('З дати')}
-                className="new-sale-return-date-input"
-                type="date"
-                value={fromDate}
-                onChange={(event) => {
-                  setPage(1)
-                  setFromDate(event.currentTarget.value)
-                }}
-              />
-              <span className="new-sale-return-period-separator" />
-              <TextInput
-                aria-label={t('По дату')}
-                className="new-sale-return-date-input"
-                type="date"
-                value={toDate}
-                onChange={(event) => {
-                  setPage(1)
-                  setToDate(event.currentTarget.value)
-                }}
-              />
-            </div>
+          <div className="app-filter-date-range">
+            <TextInput
+              className="new-sale-return-date-input"
+              label={t('Від')}
+              max={toDate || undefined}
+              type="date"
+              value={fromDate}
+              onChange={(event) => {
+                setPage(1)
+                setFromDate(event.currentTarget.value)
+              }}
+            />
+            <TextInput
+              className="new-sale-return-date-input"
+              label={t('До')}
+              min={fromDate || undefined}
+              type="date"
+              value={toDate}
+              onChange={(event) => {
+                setPage(1)
+                setToDate(event.currentTarget.value)
+              }}
+            />
           </div>
 
           <TextInput
@@ -662,6 +661,7 @@ export function NewUkraineSaleReturnPage() {
               onRefresh={() => setReloadKey((value) => value + 1)}
             />
           </div>
+          <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot new-sale-return-table-toolbar-slot" />
           <div className="new-sale-return-create-actions">
             <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<Plus size={16} />} onClick={() => setCreateOpened(true)}>
               {t('Створити')}
@@ -687,7 +687,9 @@ export function NewUkraineSaleReturnPage() {
             isLoading={isLoading}
             layoutVersion="sales-return-new-returns-2"
             minWidth={1260}
+            showLayoutControls
             tableId="sales-return-new-returns"
+            toolbarPortalTarget={tableToolbarSlot}
             onRowClick={setSelectedReturn}
           />
         </div>
