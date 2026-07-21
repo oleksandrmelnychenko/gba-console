@@ -322,6 +322,22 @@ export function ClientProductMovementPage() {
       <Card className="app-data-card client-product-movement-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar client-product-movement-filter-bar">
           <Group align="end" gap={10} wrap="nowrap" className="client-product-movement-filter-row">
+            <div className="app-filter-date-range">
+              <TextInput
+                label={t('Від')}
+                max={filterDraft.to || undefined}
+                type="date"
+                value={filterDraft.from}
+                onChange={(event) => applyFilters({ ...filterDraft, from: event.currentTarget.value })}
+              />
+              <TextInput
+                label={t('До')}
+                min={filterDraft.from || undefined}
+                type="date"
+                value={filterDraft.to}
+                onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
+              />
+            </div>
             <Select
               clearable
               searchable
@@ -355,20 +371,6 @@ export function ClientProductMovementPage() {
                 }
               }}
             />
-            <TextInput
-              label={t('З')}
-              max={filterDraft.to || undefined}
-              type="date"
-              value={filterDraft.from}
-              onChange={(event) => applyFilters({ ...filterDraft, from: event.currentTarget.value })}
-            />
-            <TextInput
-              label={t('По')}
-              min={filterDraft.from || undefined}
-              type="date"
-              value={filterDraft.to}
-              onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
-            />
             <div className="app-filter-actions client-product-movement-filter-actions">
               {hasClient && (
                 <Tooltip label={t('Експорт')}>
@@ -397,7 +399,10 @@ export function ClientProductMovementPage() {
                 onRefresh={reload}
               />
             </div>
-            <div ref={setTableToolbarSlot} className="client-product-movement-table-toolbar-slot" />
+            <div
+              ref={setTableToolbarSlot}
+              className="app-filter-table-toolbar-slot client-product-movement-table-toolbar-slot"
+            />
           </Group>
         </div>
 
