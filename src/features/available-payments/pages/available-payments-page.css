@@ -119,5 +119,11 @@
 .available-payments-summary {
   border-top: 1px solid var(--mantine-color-gray-2);
   flex: 0 0 auto;
-  padding: 8px 12px;
+  min-height: 30px;
+  overflow-x: auto;
+  padding: 4px 12px;
+}
+
+.available-payments-summary .mantine-Badge-root {
+  height: 20px;
 }

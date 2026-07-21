@@ -840,7 +840,7 @@ function AvailablePaymentsTotalsRow({
   const { t } = useI18n()
 
   return (
-    <Group className="available-payments-summary" justify="flex-end" gap="lg" wrap="wrap">
+    <Group className="available-payments-summary" gap="xs" justify="flex-end" wrap="nowrap">
       <TotalCell label={t('К-сть')} value={String(totalNotDoneTasks)} />
       {CURRENCY_CODES.map((code) => (
         <TotalCell key={code} label={code} value={formatAmount(totalsByCurrency[code] || 0)} />
@@ -852,7 +852,7 @@ function AvailablePaymentsTotalsRow({
 
 function TotalCell({ label, value }: { label: string; value: string }) {
   return (
-    <Badge className="app-role-pill" variant="light">
+    <Badge className="app-role-pill is-gray" variant="light">
       {label}: {value}
     </Badge>
   )
