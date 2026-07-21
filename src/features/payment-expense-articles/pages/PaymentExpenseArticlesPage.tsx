@@ -8,8 +8,8 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { CircleAlert, Pencil, Plus, RefreshCw, Search } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useReducer } from 'react'
+import { CircleAlert, Pencil, Plus, RefreshCw, RotateCcw, Search } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -47,6 +47,7 @@ export function PaymentExpenseArticlesPage() {
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const normalizedSearchValue = debouncedSearchValue.trim()
   const isSearchSettling = searchValue.trim() !== normalizedSearchValue
   const isTableBusy = isLoading || isSearchSettling
@@ -157,7 +158,7 @@ export function PaymentExpenseArticlesPage() {
   return (
     <Stack className="payment-expense-articles-page console-table-page" gap={6}>
       <div className="console-table-shell">
-        <div className="console-table-command-bar is-search-only">
+        <div className="app-filter-bar payment-expense-articles-filter-bar">
           <TextInput
             className="console-table-search-input"
             leftSection={<Search size={16} />}
@@ -166,13 +167,26 @@ export function PaymentExpenseArticlesPage() {
             value={searchValue}
             onChange={(event) => setSearchValue(event.currentTarget.value)}
           />
-          <div className="console-table-actions app-filter-actions">
+          <div className="app-filter-actions">
+            <Tooltip label={t('Скинути')}>
+              <ActionIcon
+                aria-label={t('Скинути')}
+                color="gray"
+                disabled={!searchValue}
+                size={34}
+                variant="light"
+                onClick={() => setSearchValue('')}
+              >
+                <RotateCcw size={17} />
+              </ActionIcon>
+            </Tooltip>
             <Tooltip label={t('Оновити')}>
               <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={34} variant="light" onClick={reload}>
                 <RefreshCw size={18} />
               </ActionIcon>
             </Tooltip>
           </div>
+          <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
           {canCreate && (
             <Button
               color={CREATE_ACTION_COLOR}
@@ -209,7 +223,9 @@ export function PaymentExpenseArticlesPage() {
             isLoading={isTableBusy}
             layoutVersion="payment-expense-articles-1"
             height="100%"
+            showLayoutControls
             tableId="payment-expense-articles"
+            toolbarPortalTarget={tableToolbarSlot}
             onRowClick={openArticle}
           />
         </div>

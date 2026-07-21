@@ -3,5 +3,11 @@
   height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px);
   min-height: 0;
   overflow: hidden;
-  padding-top: 6px;
+  padding: 6px 4px 0;
+}
+
+.payment-expense-articles-filter-bar {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(320px, 1fr) auto auto auto;
 }
