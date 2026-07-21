@@ -179,7 +179,7 @@ export function CompanyCarsPage() {
               </ActionIcon>
             </Tooltip>
           </div>
-          <div ref={setTableToolbarSlot} className="company-cars-table-toolbar-slot" />
+          <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
           <div className="company-cars-create-actions">
             <PermissionGate permissionKey={COMPANY_CAR_CREATE_PERMISSION}>
               <Button
