@@ -12,7 +12,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { ChevronDown, ChevronRight, CircleAlert, Download } from 'lucide-react'
+import { ChevronDown, ChevronRight, CircleAlert, Download, RotateCcw } from 'lucide-react'
 import { useEffect, useMemo, useReducer, useState } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -237,6 +237,10 @@ export function ClientProductMovementPage() {
   }, [activeFilters, reloadKey, setDocuments, setError, setExpandedKeys, setLoading, t])
 
   useEffect(() => {
+    if (debouncedArticle !== filterDraft.article) {
+      return
+    }
+
     const nextArticle = debouncedArticle.trim()
 
     if (nextArticle === activeDraft.article) {
@@ -245,12 +249,22 @@ export function ClientProductMovementPage() {
 
     setPage(1)
     setActiveDraft((current) => ({ ...current, article: nextArticle }))
-  }, [activeDraft.article, debouncedArticle, setActiveDraft, setPage])
+  }, [activeDraft.article, debouncedArticle, filterDraft.article, setActiveDraft, setPage])
 
   function applyFilters(nextDraft: FilterDraft) {
     setPage(1)
     setFilterDraft(nextDraft)
     setActiveDraft({ ...nextDraft, article: nextDraft.article.trim() })
+  }
+
+  function resetFilters() {
+    const nextDraft = applyDefaultOrganizations(initialDraft, organizations)
+
+    setPage(1)
+    setFilterDraft(nextDraft)
+    setActiveDraft(nextDraft)
+    setClientQuery('')
+    setClientOffset(0)
   }
 
   function loadMoreClients() {
@@ -372,6 +386,17 @@ export function ClientProductMovementPage() {
               }}
             />
             <div className="app-filter-actions client-product-movement-filter-actions">
+              <Tooltip label={t('Скинути')}>
+                <ActionIcon
+                  aria-label={t('Скинути')}
+                  color="gray"
+                  size={34}
+                  variant="light"
+                  onClick={resetFilters}
+                >
+                  <RotateCcw size={17} />
+                </ActionIcon>
+              </Tooltip>
               {hasClient && (
                 <Tooltip label={t('Експорт')}>
                   <ActionIcon
