@@ -14,13 +14,11 @@ import {
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { CircleAlert, Pencil, Plus, RefreshCw, RotateCcw, Search } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useReducer } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
-import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { PermissionGate } from '../../auth/components/PermissionGate'
@@ -62,7 +60,7 @@ export function PaymentAccountsPage() {
   const [isLoading, setLoading] = useValueState(true)
   const [isLoadingLookups, setLoadingLookups] = useValueState(true)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
-  const { density, toggleDensity } = useDataTableDensity('payment-accounts', PAYMENT_ACCOUNTS_TABLE_DEFAULT_LAYOUT.density)
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const normalizedSearchValue = debouncedSearchValue.trim()
   const isSearchSettling = searchValue.trim() !== normalizedSearchValue
   const isTableBusy = isLoading || isSearchSettling
@@ -206,16 +204,19 @@ export function PaymentAccountsPage() {
               onChange={(event) => setSearchValue(event.currentTarget.value)}
               style={{ flex: '1 1 auto', minWidth: 180 }}
             />
-            <SegmentedControl
-              data={[
-                { label: t('Усі'), value: 'all' },
-                { label: t('Каса'), value: String(PaymentRegisterType.Cash) },
-                { label: t('Банківська картка'), value: String(PaymentRegisterType.Card) },
-                { label: t('Банк'), value: String(PaymentRegisterType.Bank) },
-              ]}
-              value={typeFilter}
-              onChange={(value) => setTypeFilter((value as TypeFilter | null) || 'all')}
-            />
+            <div className="app-filter-field payment-accounts-type-filter">
+              <span className="app-filter-label">{t('Тип')}</span>
+              <SegmentedControl
+                data={[
+                  { label: t('Усі'), value: 'all' },
+                  { label: t('Каса'), value: String(PaymentRegisterType.Cash) },
+                  { label: t('Банківська картка'), value: String(PaymentRegisterType.Card) },
+                  { label: t('Банк'), value: String(PaymentRegisterType.Bank) },
+                ]}
+                value={typeFilter}
+                onChange={(value) => setTypeFilter((value as TypeFilter | null) || 'all')}
+              />
+            </div>
             <Select
               clearable
               searchable
@@ -244,8 +245,8 @@ export function PaymentAccountsPage() {
                   <RefreshCw size={17} />
                 </ActionIcon>
               </Tooltip>
-              <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
             </div>
+            <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
             <PermissionGate permissionKey={PAYMENT_ACCOUNT_CREATE_PERMISSION}>
               <Button
                 color={CREATE_ACTION_COLOR}
@@ -267,9 +268,9 @@ export function PaymentAccountsPage() {
           </Group>
         </div>
 
-        <Stack className="payment-accounts-card__body" gap="md">
+        <Stack className="payment-accounts-card__body" gap={0}>
           {error && (
-            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
+            <Alert className="payment-accounts-alert" color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
             </Alert>
           )}
@@ -279,25 +280,23 @@ export function PaymentAccountsPage() {
               columns={columns}
               data={accounts}
               defaultLayout={PAYMENT_ACCOUNTS_TABLE_DEFAULT_LAYOUT}
-              density={density}
               emptyText={t('Рахунків не знайдено')}
               getRowId={(account, index) => String(account.NetUid || account.Id || index)}
               height="100%"
               isLoading={isTableBusy}
               layoutVersion="payment-accounts-table-1"
               minWidth={1120}
+              showLayoutControls
               tableId="payment-accounts"
+              toolbarPortalTarget={tableToolbarSlot}
               onRowClick={openAccount}
             />
           </div>
 
           <Group justify="flex-end" gap="xs" className="payment-accounts-total-footer">
-            <Text size="sm" fw={600}>
-              {t('Всього в EUR')}:
-            </Text>
-            <Text size="sm" fw={700}>
-              {formatMoney(totalEuroAmount)}
-            </Text>
+            <Badge className="app-role-pill" variant="light">
+              {t('Всього в EUR')}: {formatMoney(totalEuroAmount)}
+            </Badge>
           </Group>
         </Stack>
       </Card>

@@ -26,18 +26,27 @@
 }
 
 .payment-accounts-filter-row {
+  gap: 10px;
   min-width: max-content;
   width: 100%;
 }
 
-/* Body below the flush filter strip carries its own padding (the card is
-   padding={0} so the strip sits flush). */
+.payment-accounts-type-filter {
+  flex: 0 0 auto;
+}
+
+/* Body stays flush so the first table column shares the filter bar's 8px axis. */
 .payment-accounts-card__body {
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
   min-height: 0;
-  padding: 12px;
+  padding: 0;
+}
+
+.payment-accounts-alert {
+  flex: 0 0 auto;
+  margin: 12px 12px 0;
 }
 
 .payment-accounts-page__table {
@@ -61,5 +70,7 @@
 }
 
 .payment-accounts-total-footer {
+  border-top: 1px solid var(--mantine-color-gray-2);
   flex: 0 0 auto;
+  padding: 8px 12px;
 }
