@@ -9,12 +9,14 @@ const pages = [
     cssPath: 'src/features/available-payments/pages/available-payments-page.css',
     icon: '<ListTree size={18} />',
     pagePath: 'src/features/available-payments/pages/AvailablePaymentsPage.tsx',
+    summarySelector: '.available-payments-summary',
     tableSelector: '.available-payments-page__table',
   },
   {
     cssPath: 'src/features/payment-accounts/pages/payment-accounts-page.css',
     icon: '<Pencil size={18} />',
     pagePath: 'src/features/payment-accounts/pages/PaymentAccountsPage.tsx',
+    summarySelector: '.payment-accounts-total-footer',
     tableSelector: '.payment-accounts-page__table',
   },
 ]
@@ -50,6 +52,19 @@ describe('accounting payments body-row pattern', () => {
     expect(actionSource).toContain('variant="subtle"')
     expect(actionSource).toContain(icon)
     expect(actionSource).not.toContain('size="sm"')
+  })
+
+  it.each(pages)('$pagePath uses the compact table-summary footer', ({ cssPath, summarySelector }) => {
+    const root = postcss.parse(readFileSync(join(cwd(), cssPath), 'utf8'))
+    const summary = findRule(root, summarySelector)
+    const badge = findRule(root, `${summarySelector} .mantine-Badge-root`)
+
+    expect(declarations(summary)).toMatchObject({
+      'min-height': '30px',
+      'overflow-x': 'auto',
+      padding: '4px 12px',
+    })
+    expect(declarations(badge)).toMatchObject({ height: '20px' })
   })
 })
 

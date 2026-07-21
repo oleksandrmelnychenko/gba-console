@@ -72,7 +72,7 @@ describe('accounting payments filter-header pattern', () => {
       source.indexOf('function useAvailablePaymentsColumns'),
     )
 
-    expect(totalCellSource).toContain('<Badge className="app-role-pill" variant="light">')
+    expect(totalCellSource).toContain('<Badge className="app-role-pill is-gray" variant="light">')
     expect(totalCellSource).toContain('{label}: {value}')
     expect(totalCellSource).not.toContain('<Text c="dimmed"')
     expect(totalCellSource).not.toContain('<Text fw=')
@@ -84,7 +84,7 @@ describe('accounting payments filter-header pattern', () => {
     const footerSource = source.slice(footerStart, source.indexOf('</Group>', footerStart))
 
     expect(footerStart).toBeGreaterThanOrEqual(0)
-    expect(footerSource).toContain('<Badge className="app-role-pill" variant="light">')
+    expect(footerSource).toContain('<Badge className="app-role-pill is-gray" variant="light">')
     expect(footerSource).toContain("{t('Всього в EUR')}: {formatMoney(totalEuroAmount)}")
     expect(footerSource).not.toContain('<Text')
   })
