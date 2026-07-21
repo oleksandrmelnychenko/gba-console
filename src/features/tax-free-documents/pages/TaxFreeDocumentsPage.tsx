@@ -528,26 +528,26 @@ function TaxFreeDocumentsPageView({ model }: { model: ReturnType<typeof useTaxFr
       <Card className="app-data-card tax-free-documents-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar tax-free-documents-filter-bar">
           <Group align="flex-end" gap={10} wrap="nowrap" className="tax-free-documents-filter-row">
-            <TextInput
-              label={t('Від')}
-              type="date"
-              value={dateFrom}
-              w={150}
-              onChange={(event) => {
-                setPage(1)
-                setDateFrom(event.currentTarget.value)
-              }}
-            />
-            <TextInput
-              label={t('До')}
-              type="date"
-              value={dateTo}
-              w={150}
-              onChange={(event) => {
-                setPage(1)
-                setDateTo(event.currentTarget.value)
-              }}
-            />
+            <div className="app-filter-date-range">
+              <TextInput
+                label={t('Від')}
+                type="date"
+                value={dateFrom}
+                onChange={(event) => {
+                  setPage(1)
+                  setDateFrom(event.currentTarget.value)
+                }}
+              />
+              <TextInput
+                label={t('До')}
+                type="date"
+                value={dateTo}
+                onChange={(event) => {
+                  setPage(1)
+                  setDateTo(event.currentTarget.value)
+                }}
+              />
+            </div>
             <Select
               clearable={false}
               data={statusOptions}

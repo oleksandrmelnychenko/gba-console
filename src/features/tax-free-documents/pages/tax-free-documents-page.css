@@ -1,20 +1,34 @@
 .tax-free-documents-page {
-  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 24px);
+  box-sizing: border-box;
+  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px);
   min-height: 0;
   overflow: hidden;
+  padding: 6px 4px 0;
+}
+
+.tax-free-documents-card {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2) !important;
+  box-shadow: var(--app-card-shadow) !important;
 }
 
 /* Filter strip pinned at the top of the card; the table below it scrolls. */
 .tax-free-documents-filter-bar {
   flex: 0 0 auto;
+  overflow-x: auto;
 }
 
 .tax-free-documents-filter-bar .tax-free-documents-filter-row {
+  min-width: max-content;
   width: 100%;
 }
 
+.tax-free-documents-filter-row .app-filter-actions {
+  margin-left: auto;
+}
+
 .tax-free-documents-page__alert {
-  margin: 10px 12px 0;
+  margin: 12px 12px 0;
 }
 
 .tax-free-documents-page__table {
