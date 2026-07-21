@@ -303,7 +303,7 @@ export function SalesDebtorsPage() {
               onRefresh={reload}
             />
           </div>
-          <div className="sales-debtors-toolbar-slot" ref={setTableToolbarSlot} />
+          <div className="app-filter-table-toolbar-slot sales-debtors-toolbar-slot" ref={setTableToolbarSlot} />
         </div>
 
         {error && (
@@ -323,6 +323,7 @@ export function SalesDebtorsPage() {
             isLoading={isLoading}
             layoutVersion="sales-debtors-table-1"
             minWidth={1120}
+            showLayoutControls
             tableId="sales-debtors"
             toolbarPortalTarget={tableToolbarSlot}
             onRowClick={setSelectedDebtor}

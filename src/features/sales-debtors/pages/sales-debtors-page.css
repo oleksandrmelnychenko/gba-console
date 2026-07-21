@@ -27,7 +27,10 @@
     minmax(126px, 150px)
     minmax(104px, 118px)
     minmax(126px, 142px)
-    minmax(250px, 1fr);
+    minmax(250px, 1fr)
+    auto;
+  min-width: max-content;
+  overflow-x: auto;
 }
 
 .sales-debtors-filter {
@@ -62,7 +65,7 @@
 .sales-debtors-command-actions {
   align-items: center;
   display: flex;
-  gap: 7px;
+  gap: 10px;
   justify-content: flex-end;
   min-width: 0;
 }
@@ -494,22 +497,6 @@
   width: auto;
 }
 
-@media (max-width: 1440px) {
-  .sales-debtors-command-bar {
-    grid-template-columns:
-      minmax(160px, 1fr)
-      minmax(190px, 1.1fr)
-      minmax(120px, 0.65fr)
-      minmax(104px, 0.55fr)
-      minmax(126px, 0.65fr);
-  }
-
-  .sales-debtors-command-actions {
-    grid-column: 1 / -1;
-    justify-content: flex-end;
-  }
-}
-
 @media (max-width: 840px) {
   .sales-debtor-detail-hero,
   .sales-debtor-detail-metrics,
@@ -521,26 +508,6 @@
   .sales-debtor-detail-debt__amount,
   .sales-debtor-detail-debt .sales-debtors-days-cell {
     justify-self: start;
-  }
-}
-
-@media (max-width: 980px) {
-  .sales-debtors-command-bar {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .sales-debtors-command-actions {
-    justify-content: flex-start;
-  }
-}
-
-@media (max-width: 640px) {
-  .sales-debtors-command-bar {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .sales-debtors-command-actions {
-    overflow-x: auto;
   }
 }
 
