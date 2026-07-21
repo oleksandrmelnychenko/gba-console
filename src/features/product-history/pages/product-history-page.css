@@ -1,9 +1,9 @@
 .product-history-page {
   box-sizing: border-box;
-  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 24px);
+  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px);
   min-height: 0;
   overflow: hidden;
-  padding: 4px 4px 0;
+  padding: 6px 4px 0;
 }
 
 .product-history-card {
@@ -24,21 +24,11 @@
 }
 
 .product-history-filter-bar .product-history-filter-row {
-  align-items: end;
-  display: grid;
-  gap: 10px;
-  grid-template-columns:
-    minmax(300px, 320px)
-    minmax(140px, 150px)
-    minmax(220px, 240px)
-    minmax(32px, 1fr)
-    auto;
   min-width: max-content;
   width: 100%;
 }
 
 .product-history-filter-row .app-filter-actions {
-  grid-column: 5;
   margin-left: auto;
 }
 
