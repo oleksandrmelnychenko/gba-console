@@ -1,6 +1,6 @@
 import { ActionIcon, Alert, Button, Card, Group, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { CircleAlert, Plus, RefreshCw } from 'lucide-react'
+import { CircleAlert, Plus, RefreshCw, RotateCcw } from 'lucide-react'
 import { useEffect } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -88,6 +88,13 @@ export function OffersPage() {
     setApplied({ ...draft })
   }
 
+  function resetFilters() {
+    const nextFilters = buildInitialFilters()
+
+    setDraft(nextFilters)
+    setApplied({ ...nextFilters })
+  }
+
   function refresh() {
     setApplied((current) => ({ ...current }))
   }
@@ -167,25 +174,32 @@ export function OffersPage() {
     <Stack className="offers-page" gap={6}>
       <Card withBorder radius="md" padding={0} className="app-data-card offers-card">
         <div className="app-filter-bar offers-filter-bar">
-          <TextInput
-            label={t('Дата з')}
-            type="date"
-            value={draft.from}
-            onChange={(event) => {
-              const nextValue = event.currentTarget.value
-              setDraft((current) => ({ ...current, from: nextValue }))
-            }}
-          />
-          <TextInput
-            label={t('Дата по')}
-            type="date"
-            value={draft.to}
-            onChange={(event) => {
-              const nextValue = event.currentTarget.value
-              setDraft((current) => ({ ...current, to: nextValue }))
-            }}
-          />
+          <div className="app-filter-date-range">
+            <TextInput
+              label={t('Від')}
+              type="date"
+              value={draft.from}
+              onChange={(event) => {
+                const nextValue = event.currentTarget.value
+                setDraft((current) => ({ ...current, from: nextValue }))
+              }}
+            />
+            <TextInput
+              label={t('До')}
+              type="date"
+              value={draft.to}
+              onChange={(event) => {
+                const nextValue = event.currentTarget.value
+                setDraft((current) => ({ ...current, to: nextValue }))
+              }}
+            />
+          </div>
           <div className="app-filter-actions offers-filter-actions">
+            <Tooltip label={t('Скинути')}>
+              <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
+                <RotateCcw size={17} />
+              </ActionIcon>
+            </Tooltip>
             <Button color="gray" size="sm" variant="light" onClick={reload}>
               {t('Застосувати')}
             </Button>

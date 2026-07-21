@@ -16,7 +16,9 @@
   display: grid;
   flex: 0 0 auto;
   gap: 10px;
-  grid-template-columns: minmax(170px, 210px) minmax(170px, 210px) minmax(0, 1fr) auto;
+  grid-template-columns: 310px minmax(0, 1fr) auto;
+  min-width: 0;
+  overflow-x: auto;
 }
 
 .offers-filter-actions,
@@ -24,7 +26,7 @@
   align-items: center;
   align-self: end;
   display: flex;
-  gap: 8px;
+  gap: 10px;
   justify-content: flex-end;
   min-height: 36px;
   min-width: 0;
@@ -209,15 +211,6 @@
 }
 
 @media (max-width: 760px) {
-  .offers-filter-bar {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .offers-filter-actions,
-  .offers-create-actions {
-    justify-content: flex-start;
-  }
-
   .offer-line {
     grid-template-columns: minmax(0, 1fr);
   }
