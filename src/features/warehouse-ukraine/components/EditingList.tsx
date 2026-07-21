@@ -46,8 +46,10 @@ type EditingListProps = {
 export function EditingList({ kind, layoutVersion, loader, onLoaded, onProcessed, processor, tableId }: EditingListProps) {
   const { t } = useI18n()
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
+  // Акти редагування — рідкісні документи: тижневе вікно зазвичай порожнє, хоча
+  // бейджі табів рахують all-time. 30 днів — робоче вікно за замовчуванням.
   const initialFilters = useMemo<FilterDraft>(
-    () => ({ from: getDateShiftedByDays(-7), to: getDateShiftedByDays(0), isDevelopment: false }),
+    () => ({ from: getDateShiftedByDays(-30), to: getDateShiftedByDays(0), isDevelopment: false }),
     [],
   )
   const [filterDraft, setFilterDraft] = useValueState<FilterDraft>(initialFilters)
