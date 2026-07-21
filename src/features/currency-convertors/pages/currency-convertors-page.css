@@ -19,13 +19,17 @@
 
 /* Filter strip pinned at the top of the card; the table below it scrolls. */
 .currency-convertors-filter-bar {
+  align-items: end;
+  display: flex;
   flex: 0 0 auto;
   overflow-x: auto;
 }
 
 .currency-convertors-filter-bar .currency-convertors-filter-row {
   display: grid;
-  grid-template-columns: minmax(16px, 1fr) max-content max-content;
+  flex: 1 1 auto;
+  gap: 10px;
+  grid-template-columns: minmax(180px, 1fr) max-content max-content max-content;
   min-width: max-content;
   width: 100%;
 }
@@ -34,14 +38,18 @@
   grid-column: 2;
 }
 
-.currency-convertors-filter-row > .mantine-Button-root {
+.currency-convertors-filter-row > .app-filter-table-toolbar-slot {
   grid-column: 3;
+}
+
+.currency-convertors-filter-row > .mantine-Button-root {
+  grid-column: 4;
   white-space: nowrap;
 }
 
 .currency-convertors-alert {
   flex: 0 0 auto;
-  margin: 10px 8px 0;
+  margin: 12px 12px 0;
 }
 
 .currency-convertors-page__table {
@@ -51,7 +59,7 @@
   flex-direction: column;
   min-height: 0;
   min-width: 0;
-  padding: 0 8px 8px;
+  padding: 0;
 }
 
 .currency-convertors-page__table .data-table {

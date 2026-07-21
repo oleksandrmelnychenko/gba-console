@@ -1,15 +1,13 @@
-import { ActionIcon, Alert, Box, Button, Card, Group, Stack, Text, Tooltip } from '@mantine/core'
+import { ActionIcon, Alert, Box, Button, Card, Group, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { CircleAlert, Pencil, Plus, RefreshCw } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
+import { CircleAlert, Pencil, Plus, RefreshCw, RotateCcw, Search } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
-import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useAuth } from '../../auth/useAuth'
 import {
@@ -18,6 +16,7 @@ import {
   updateCurrencyTrader,
 } from '../api/currencyConvertorsApi'
 import { CurrencyTraderExchangeRatesDrawer } from '../components/CurrencyTraderExchangeRatesDrawer'
+import { filterCurrencyTraders } from '../currencyTraderSearch'
 import { CURRENCY_CONVERTOR_CREATE_PERMISSION, CURRENCY_CONVERTOR_EDIT_PERMISSION } from '../permissions'
 import { CURRENCY_ORDER } from '../types'
 import type { CurrencyTrader, CurrencyTraderExchangeRate, CurrencyTraderPayload } from '../types'
@@ -52,6 +51,7 @@ function useCurrencyConvertorsPageModel() {
   const initialTo = useMemo(() => formatLocalDate(new Date()), [])
 
   const [traders, setTraders] = useValueState<CurrencyTrader[]>([])
+  const [searchValue, setSearchValue] = useValueState('')
   const [isLoading, setLoading] = useValueState(true)
   const [error, setError] = useValueState<string | null>(null)
   const [selectedTrader, setSelectedTrader] = useValueState<CurrencyTrader | null>(null)
@@ -67,7 +67,11 @@ function useCurrencyConvertorsPageModel() {
   const [editingValue, setEditingValue] = useValueState('')
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const ratesRequestRef = useRef(0)
-  const traderIndexMap = useMemo(() => buildTraderIndexMap(traders), [traders])
+  const visibleTraders = useMemo(
+    () => filterCurrencyTraders(traders, searchValue),
+    [searchValue, traders],
+  )
+  const traderIndexMap = useMemo(() => buildTraderIndexMap(visibleTraders), [visibleTraders])
 
   useEffect(() => {
     let cancelled = false
@@ -295,14 +299,20 @@ function useCurrencyConvertorsPageModel() {
     }
   }
 
+  function changeSearch(value: string) {
+    setSearchValue(value)
+  }
+
+  function resetSearch() {
+    setSearchValue('')
+  }
+
   const columns = useCurrencyTraderColumns({ canEdit, indexMap: traderIndexMap, onEdit: goToEdit })
-  const { density, toggleDensity } = useDataTableDensity('currency-convertors', 'normal')
 
   return {
     canCreate,
     canEdit,
     columns,
-    density,
     editingRate,
     editingValue,
     error,
@@ -316,13 +326,16 @@ function useCurrencyConvertorsPageModel() {
     ratesError,
     ratesDrawerViewState,
     reload,
+    resetSearch,
+    searchValue,
     selectedTrader,
     showAddButton,
     to,
-    traders,
+    traders: visibleTraders,
     cancelAdd,
     cancelEdit,
     changeFrom,
+    changeSearch,
     changeNewRateDate,
     changeNewRateValue,
     changeTo,
@@ -335,21 +348,42 @@ function useCurrencyConvertorsPageModel() {
     setEditingValue,
     startAdd,
     startEdit,
-    toggleDensity,
   }
 }
 
 export function CurrencyConvertorsPage() {
   const model = useCurrencyConvertorsPageModel()
   const { t } = useI18n()
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
 
   return (
     <Stack className="currency-convertors-page" gap={6}>
 
       <Card className="app-data-card currency-convertors-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar currency-convertors-filter-bar">
-          <Group align="center" gap={10} justify="flex-end" wrap="nowrap" className="currency-convertors-filter-row">
+          <Group align="end" gap={10} wrap="nowrap" className="currency-convertors-filter-row">
+            <TextInput
+              leftSection={<Search size={16} />}
+              label={t('Пошук')}
+              placeholder={t("Ім'я, прізвище, по батькові або телефон")}
+              size="sm"
+              style={{ flex: '1 1 auto', minWidth: 180 }}
+              value={model.searchValue}
+              onChange={(event) => model.changeSearch(event.currentTarget.value)}
+            />
             <div className="app-filter-actions">
+              <Tooltip label={t('Скинути')}>
+                <ActionIcon
+                  aria-label={t('Скинути')}
+                  color="gray"
+                  disabled={!model.searchValue.trim()}
+                  size={34}
+                  variant="light"
+                  onClick={model.resetSearch}
+                >
+                  <RotateCcw size={17} />
+                </ActionIcon>
+              </Tooltip>
               <Tooltip label={t('Оновити')}>
                 <ActionIcon
                   aria-label={t('Оновити')}
@@ -362,8 +396,8 @@ export function CurrencyConvertorsPage() {
                   <RefreshCw size={18} />
                 </ActionIcon>
               </Tooltip>
-              <DataTableDensityToggle density={model.density} onToggle={model.toggleDensity} size={34} />
             </div>
+            <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
             {model.canCreate && (
               <Button
                 color={CREATE_ACTION_COLOR}
@@ -388,7 +422,6 @@ export function CurrencyConvertorsPage() {
           <DataTable
             columns={model.columns}
             data={model.traders}
-            density={model.density}
             emptyText={t('Валютних трейдерів не знайдено')}
             getRowId={(trader, index) => String(trader.NetUid || trader.Id || index)}
             height="100%"
@@ -396,7 +429,9 @@ export function CurrencyConvertorsPage() {
             layoutVersion="currency-convertors-table-1"
             loadingText={t('Завантаження валютних трейдерів')}
             minWidth={900}
+            showLayoutControls
             tableId="currency-convertors"
+            toolbarPortalTarget={tableToolbarSlot}
             onRowClick={model.openTrader}
           />
         </div>
