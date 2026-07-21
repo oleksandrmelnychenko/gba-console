@@ -17,7 +17,7 @@ import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { CircleAlert, Download, Eye, FileText, RotateCcw } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
-import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { translate } from '../../../shared/i18n/translate'
@@ -359,6 +359,7 @@ function SupplyReturnsPageView({ model }: { model: ReturnType<typeof useSupplyRe
 
 function SupplyReturnsTableCard({ model }: { model: ReturnType<typeof useSupplyReturnsPageModel> }) {
   const { t } = useI18n()
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const {
     changePageSize,
     columns,
@@ -381,22 +382,22 @@ function SupplyReturnsTableCard({ model }: { model: ReturnType<typeof useSupplyR
     <Card className="app-data-card supply-returns-card" withBorder radius="md" padding={0}>
       <div className="app-filter-bar supply-returns-filter-bar">
         <Group align="end" gap={10} wrap="nowrap" className="supply-returns-filter-row">
-          <TextInput
-            label={t('Від')}
-            max={filterDraft.to || undefined}
-            type="date"
-            value={filterDraft.from}
-            w={150}
-            onChange={(event) => applyFilters({ ...filterDraft, from: event.currentTarget.value })}
-          />
-          <TextInput
-            label={t('До')}
-            min={filterDraft.from || undefined}
-            type="date"
-            value={filterDraft.to}
-            w={150}
-            onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
-          />
+          <div className="app-filter-date-range">
+            <TextInput
+              label={t('Від')}
+              max={filterDraft.to || undefined}
+              type="date"
+              value={filterDraft.from}
+              onChange={(event) => applyFilters({ ...filterDraft, from: event.currentTarget.value })}
+            />
+            <TextInput
+              label={t('До')}
+              min={filterDraft.from || undefined}
+              type="date"
+              value={filterDraft.to}
+              onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
+            />
+          </div>
           <div className="app-filter-actions">
             <Tooltip label={t('Скинути')}>
               <ActionIcon variant="light" color="gray" size={34} aria-label={t('Скинути')} onClick={resetFilters}>
@@ -413,6 +414,7 @@ function SupplyReturnsTableCard({ model }: { model: ReturnType<typeof useSupplyR
               onRefresh={reload}
             />
           </div>
+          <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
         </Group>
       </div>
 
@@ -439,7 +441,9 @@ function SupplyReturnsTableCard({ model }: { model: ReturnType<typeof useSupplyR
           layoutVersion="supply-returns-table-1"
           loadingText={t('Завантаження повернень')}
           minWidth={1660}
+          showLayoutControls
           tableId="supply-returns"
+          toolbarPortalTarget={tableToolbarSlot}
           onRowClick={openDetail}
         />
       </div>
