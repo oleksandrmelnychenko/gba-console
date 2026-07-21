@@ -1,11 +1,11 @@
 .console-table-page {
   box-sizing: border-box;
-  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 20px);
+  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px);
   min-height: 0;
   overflow: hidden;
-  /* Registry page gutters (docs/ui-patterns.md §5.3): 4px sides, flush top —
-     the old 10px inset made console pages sit deeper than the other registries. */
-  padding: 0 4px;
+  /* docs/console-page-shell-spacing-pattern.md: 6px frame gap above/below the
+     card and 4px side gutters. The height formula accounts for both frame gaps. */
+  padding: 6px 4px 0;
 }
 
 /* .console-table-shell card shell + .console-table-command-bar strip chrome
@@ -181,7 +181,7 @@
 
 @media (max-width: 640px) {
   .console-table-page {
-    padding: 6px;
+    padding: 6px 4px 0;
   }
 
   .console-table-command-bar,

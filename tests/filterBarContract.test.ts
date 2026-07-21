@@ -5,6 +5,7 @@ import postcss, { type Root, type Rule } from 'postcss'
 import { describe, expect, it } from 'vitest'
 
 const filterBarCss = readFileSync(join(cwd(), 'src/shared/ui/filter-bar.css'), 'utf8')
+const consoleTablePageCss = readFileSync(join(cwd(), 'src/shared/ui/console-table-page.css'), 'utf8')
 const featureStyles = readCssFiles(join(cwd(), 'src/features'))
 
 const BAR_CLASS_PATTERN = /^(?:app-filter-bar|sales-filter-bar|console-table-command-bar|[\w-]+-filter-bar|[\w-]+-command-bar|assort-filter)$/
@@ -44,6 +45,7 @@ describe('filter-bar CSS contract', () => {
     expect(declarations(barRule)).toMatchObject({
       'align-items': 'end',
       'box-sizing': 'border-box',
+      'flex-wrap': 'nowrap',
       gap: '10px',
       'min-height': 'var(--app-filter-bar-height)',
       padding: '8px',
@@ -107,6 +109,7 @@ describe('filter-bar CSS contract', () => {
     const toolbarRule = findRule(root, 'margin', '.app-filter-table-toolbar-slot .data-table-toolbar')
 
     expect(declarations(actionsRule)).toMatchObject({
+      'flex-wrap': 'nowrap',
       gap: '10px',
     })
     expect(declarations(slotRule)).toMatchObject({
@@ -166,6 +169,22 @@ describe('filter-bar CSS contract', () => {
     })
 
     expect(conflicts).toEqual([])
+  })
+})
+
+describe('console page shell spacing contract', () => {
+  const root = postcss.parse(consoleTablePageCss)
+
+  it('keeps the registry card 6px below the console frame', () => {
+    const pageRule = findRule(root, 'height', '.console-table-page')
+
+    expect(declarations(pageRule)).toMatchObject({
+      'box-sizing': 'border-box',
+      height: 'calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px)',
+      'min-height': '0',
+      overflow: 'hidden',
+      padding: '6px 4px 0',
+    })
   })
 })
 

@@ -63,6 +63,7 @@
   background: var(--app-filter-glow), #f8f9fa;
   border-bottom: 1px solid var(--mantine-color-gray-2);
   align-items: end;
+  flex-wrap: nowrap;
   gap: 10px;
   /* The pattern padding (docs/ui-patterns.md §5.3) — pages must NOT override.
      Horizontal 8px lines the bar content up with the table text (th/td padding
@@ -87,6 +88,7 @@
 .app-filter-actions {
   align-items: center;
   display: flex;
+  flex-wrap: nowrap;
   gap: 10px;
   justify-content: flex-end;
   min-height: var(--app-filter-control-height, 36px);
