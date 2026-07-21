@@ -1421,12 +1421,13 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
       title: 'Основні налаштування',
     }
   const showCommandBar = activeTab !== 'info-payment'
+  const isPatternFilterTab = activeTab === 'pages' || activeTab === 'contacts' || activeTab === 'shop-data'
   const headerAction = activeTab === 'contacts'
     ? (
       <Button
         color={CREATE_ACTION_COLOR}
         leftSection={<Plus size={14} />}
-        size="xs"
+        size="sm"
         type="button"
         onClick={() => openContactEditor()}
       >
@@ -1438,7 +1439,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
         <Button
           color={CREATE_ACTION_COLOR}
           leftSection={<Plus size={14} />}
-          size="xs"
+          size="sm"
           type="button"
           onClick={() => setStorageDrawerOpen(true)}
         >
@@ -1451,7 +1452,10 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
     ? settings.find((entry) => entry.locale === editingGeneralLocale) || null
     : null
   return (
-    <Stack className="seo-page console-table-page" gap={6}>
+    <Stack
+      className={`seo-page console-table-page${isPatternFilterTab ? ` is-filtered is-${activeTab}` : ''}`}
+      gap={6}
+    >
       <Box className="seo-page-shell">
         {showCommandBar && (
           <div className="app-filter-bar seo-page-command-bar">
@@ -1505,7 +1509,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
                 <Text className="seo-page-command-summary-title">{t(commandSummary.title)}</Text>
               </div>
             )}
-            <div className="seo-page-toolbar-actions">
+            <div className="app-filter-actions seo-page-toolbar-actions">
               {commandSearch && (
                 <Tooltip label={t('Скинути')}>
                   <ActionIcon
@@ -1539,7 +1543,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
         )}
 
         {error && (
-          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
+          <Alert className={isPatternFilterTab ? 'console-table-alert' : undefined} color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}
@@ -1568,8 +1572,8 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
           <section className="seo-page-panel">
           <Box className="seo-page-panel-body">
             {activeTab === 'pages' && (
-              <Box pt="md">
-              <Stack gap="md">
+              <Box className="seo-page-table-view" pt="md">
+              <Stack className="seo-page-table-stack" gap="md">
                 <SeoRosterTable
                   columns={pageColumns}
                   columnsTemplate="minmax(280px, 1.25fr) minmax(180px, 0.74fr) minmax(140px, 0.64fr) 88px 138px 42px"
@@ -1579,7 +1583,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
                   getRowId={(row, index) => `${row.locale}-${row.page.NetUid || row.page.Id || index}`}
                   isLoading={isLoading}
                   loadingText={t('Завантаження сторінок')}
-                  maxHeight="calc(100vh - 340px)"
+                  fillHeight
                   minWidth={900}
                   onRowClick={openPageEditor}
                 />
@@ -1668,8 +1672,8 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
             )}
 
             {activeTab === 'contacts' && (
-              <Box pt="md">
-              <Stack gap="md">
+              <Box className="seo-page-table-view" pt="md">
+              <Stack className="seo-page-table-stack" gap="md">
                 <SeoRosterTable
                   columns={contactColumns}
                   columnsTemplate="minmax(240px, 1fr) 170px 220px 138px 94px"
@@ -1678,7 +1682,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
                   getRowId={(contact, index) => String(contact.NetUid || contact.Id || index)}
                   isLoading={isLoading}
                   loadingText={t('Завантаження контактів')}
-                  maxHeight="calc(100vh - 340px)"
+                  fillHeight
                   minWidth={862}
                   onRowClick={openContactEditor}
                 />
@@ -1701,7 +1705,6 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
                         emptyText={t('Клієнтів не знайдено')}
                         isLoading={isClientsLoading}
                         loadingText={t('Завантаження клієнтів')}
-                        maxHeight="380px"
                         onToggleClient={handleToggleOnlineShopClient}
                       />
                     </SeoShopDataSection>
@@ -1721,7 +1724,6 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
                       getRowId={(storage, index) => String(storage.NetUid || storage.Id || index)}
                         isLoading={isStoragesLoading}
                         loadingText={t('Завантаження складів')}
-                        maxHeight="360px"
                         minWidth={660}
                       />
                     </SeoShopDataSection>
@@ -1738,7 +1740,6 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
                       isLoading={isCardsLoading}
                       isSaving={isSaving}
                       loadingText={t('Завантаження карток')}
-                      maxHeight="380px"
                       onSelectCard={handleSelectPaymentRegister}
                     />
                   </SeoShopDataSection>
@@ -2168,7 +2169,7 @@ function SeoShopClientList({
   emptyText: ReactNode
   isLoading?: boolean
   loadingText: ReactNode
-  maxHeight: string
+  maxHeight?: string
   onToggleClient: (client: OnlineShopClient) => Promise<void>
 }) {
   return (
@@ -2268,7 +2269,7 @@ function SeoShopCardList({
   isLoading?: boolean
   isSaving: boolean
   loadingText: ReactNode
-  maxHeight: string
+  maxHeight?: string
   onSelectCard: (register: OnlineShopPaymentRegister) => Promise<void>
 }) {
   return (
@@ -2352,6 +2353,7 @@ function SeoRosterTable<TData>({
   columnsTemplate,
   data,
   emptyText,
+  fillHeight = false,
   getRowClassName,
   getRowId,
   isLoading,
@@ -2364,11 +2366,12 @@ function SeoRosterTable<TData>({
   columnsTemplate: string
   data: TData[]
   emptyText: ReactNode
+  fillHeight?: boolean
   getRowClassName?: (row: TData, index: number) => string | undefined
   getRowId: (row: TData, index: number) => string
   isLoading?: boolean
   loadingText: ReactNode
-  maxHeight: string
+  maxHeight?: string
   minWidth: number
   onRowClick?: (row: TData) => void
 }) {
@@ -2378,7 +2381,7 @@ function SeoRosterTable<TData>({
   } as CSSProperties
 
   return (
-    <div className="seo-roster-table" style={tableStyle}>
+    <div className={`seo-roster-table${fillHeight ? ' is-fill-height' : ''}`} style={tableStyle}>
       <div className="seo-roster-head">
         {columns.map((column) => (
           <span className={`seo-roster-head-cell is-${column.id}`} key={column.id}>
@@ -2387,7 +2390,12 @@ function SeoRosterTable<TData>({
         ))}
       </div>
 
-      <ScrollArea.Autosize mah={maxHeight} type="auto">
+      <ScrollArea.Autosize
+        className={fillHeight ? 'seo-roster-scroll is-fill-height' : undefined}
+        h={fillHeight ? '100%' : undefined}
+        mah={fillHeight ? undefined : maxHeight}
+        type="auto"
+      >
         <div className="seo-roster-body">
           {isLoading ? (
             <div className="seo-roster-empty">{loadingText}</div>

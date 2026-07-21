@@ -194,9 +194,15 @@
 .seo-page-toolbar-actions {
   align-items: center;
   display: flex;
-  gap: 8px;
+  gap: 10px;
   justify-content: flex-end;
   min-height: 36px;
+}
+
+.seo-page.is-filtered .seo-page-command-bar {
+  grid-template-columns: minmax(300px, 1fr) auto;
+  min-width: 0;
+  overflow-x: auto;
 }
 
 .seo-page-toolbar-actions .mantine-Button-root {
@@ -376,6 +382,34 @@
   min-width: 0;
   overflow: auto;
   padding: 10px;
+}
+
+.seo-page.is-pages .seo-page-panel,
+.seo-page.is-contacts .seo-page-panel,
+.seo-page.is-pages .seo-page-panel-body,
+.seo-page.is-contacts .seo-page-panel-body,
+.seo-page-table-view,
+.seo-page-table-stack,
+.seo-roster-table.is-fill-height {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.seo-page.is-pages .seo-page-panel-body,
+.seo-page.is-contacts .seo-page-panel-body {
+  overflow: hidden;
+}
+
+.seo-page.is-filtered .seo-page-shell {
+  border-radius: var(--mantine-radius-md);
+  box-shadow: var(--app-card-shadow);
+}
+
+.seo-roster-scroll.is-fill-height {
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .seo-shop-data-grid {
@@ -1896,6 +1930,10 @@
     grid-template-columns: 1fr;
   }
 
+  .seo-page.is-filtered .seo-page-command-bar {
+    grid-template-columns: minmax(300px, 1fr) auto;
+  }
+
   .seo-shop-data-grid {
     grid-template-columns: 1fr;
   }
@@ -1923,6 +1961,10 @@
     justify-content: flex-start;
   }
 
+  .seo-page.is-filtered .seo-page-toolbar-actions {
+    justify-content: flex-end;
+  }
+
   .seo-page-workspace {
     grid-template-columns: 220px minmax(0, 1fr);
   }
@@ -1931,6 +1973,10 @@
 @media (max-width: 760px) {
   .seo-page {
     padding: 0 4px;
+  }
+
+  .seo-page.is-filtered {
+    padding: 6px 4px 0;
   }
 
   .seo-page-workspace {
