@@ -205,25 +205,21 @@ export function SupplierOrganizationsPage() {
     <Stack className="supplier-organizations-page console-table-page" gap={6}>
       <div className="console-table-shell">
         <div className="app-filter-bar supplier-organizations-command-bar">
-          <div className="app-filter-field supplier-organizations-period-filter">
-            <span className="app-filter-label supplier-organizations-filter-label">{t('Період')}</span>
-            <div className="supplier-organizations-period-fields">
-              <TextInput
-                className="supplier-organizations-date-input"
-                aria-label={t('Від')}
-                type="date"
-                value={dateFrom}
-                onChange={(event) => updateDateFrom(event.currentTarget.value)}
-              />
-              <span className="supplier-organizations-period-separator" />
-              <TextInput
-                className="supplier-organizations-date-input"
-                aria-label={t('До')}
-                type="date"
-                value={dateTo}
-                onChange={(event) => updateDateTo(event.currentTarget.value)}
-              />
-            </div>
+          <div className="app-filter-date-range">
+            <TextInput
+              className="supplier-organizations-date-input"
+              label={t('Від')}
+              type="date"
+              value={dateFrom}
+              onChange={(event) => updateDateFrom(event.currentTarget.value)}
+            />
+            <TextInput
+              className="supplier-organizations-date-input"
+              label={t('До')}
+              type="date"
+              value={dateTo}
+              onChange={(event) => updateDateTo(event.currentTarget.value)}
+            />
           </div>
 
           <TextInput
@@ -270,7 +266,7 @@ export function SupplierOrganizationsPage() {
               onRefresh={() => void reloadOrganizations()}
             />
           </div>
-          <div ref={setTableToolbarSlot} className="supplier-organizations-table-toolbar-slot" />
+          <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
           <div className="supplier-organizations-create-actions">
             <PermissionGate permissionKey="SERVICE_Accounting_Supplier_Organizations_AddBtn_PKEY">
               <Button
