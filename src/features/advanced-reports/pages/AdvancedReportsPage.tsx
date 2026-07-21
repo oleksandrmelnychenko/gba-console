@@ -15,15 +15,13 @@ import {
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { CircleAlert, EllipsisVertical, Eye, Network, RotateCcw, Search, SquarePen } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
-import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
@@ -100,13 +98,13 @@ export function AdvancedReportsPage() {
   const [structureCalculationError, setStructureCalculationError] = useValueState<string | null>(null)
   const [isCalculatingStructure, setCalculatingStructure] = useValueState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const [debouncedSearchValue] = useDebouncedValue(searchValue, SEARCH_DEBOUNCE_MS)
   const normalizedSearchValue = debouncedSearchValue.trim()
   const isSearchSettling = searchValue.trim() !== normalizedSearchValue
   const filterError = getDateRangeError(fromDate, toDate)
   const lookupRequestRef = useRef(0)
   const structureCalculationRequestRef = useRef(0)
-  const { density, toggleDensity } = useDataTableDensity('advanced-reports', TABLE_DEFAULT_LAYOUT.density)
 
   const offset = (page - 1) * pageSize
   const totalRows = getTotalRows(reports)
@@ -449,7 +447,6 @@ export function AdvancedReportsPage() {
                     <RotateCcw size={17} />
                   </ActionIcon>
                 </Tooltip>
-                <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
                 <Paginator
                   isLoading={isTableBusy || isLoadingLookups}
                   page={page}
@@ -460,6 +457,7 @@ export function AdvancedReportsPage() {
                   onRefresh={handleRefresh}
                 />
               </div>
+              <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
             </Group>
           </Stack>
         </div>
@@ -481,14 +479,15 @@ export function AdvancedReportsPage() {
             columns={columns}
             data={rows}
             defaultLayout={TABLE_DEFAULT_LAYOUT}
-            density={density}
             emptyText={t('Авансових звітів не знайдено')}
             getRowId={(row) => row.id}
             height="100%"
             isLoading={isTableBusy}
             layoutVersion="advanced-reports-1"
             minWidth={1720}
+            showLayoutControls
             tableId="advanced-reports"
+            toolbarPortalTarget={tableToolbarSlot}
             footer={
               <Group className="advanced-reports-table-footer" gap="xs" justify="flex-end" wrap="nowrap">
                 <Badge className="app-role-pill is-green" variant="light">
