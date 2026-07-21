@@ -25,7 +25,8 @@
 .accounting-banks-filter-bar .accounting-banks-filter-row {
   align-items: end;
   display: grid;
-  grid-template-columns: minmax(180px, 1fr) max-content max-content;
+  gap: 10px;
+  grid-template-columns: minmax(180px, 1fr) max-content max-content max-content;
   min-width: max-content;
   width: 100%;
 }
@@ -34,8 +35,12 @@
   grid-column: 2;
 }
 
-.accounting-banks-filter-row > .mantine-Button-root {
+.accounting-banks-filter-row > .app-filter-table-toolbar-slot {
   grid-column: 3;
+}
+
+.accounting-banks-filter-row > .mantine-Button-root {
+  grid-column: 4;
 }
 
 .accounting-banks-card__body {
@@ -43,7 +48,12 @@
   flex: 1 1 auto;
   flex-direction: column;
   min-height: 0;
-  padding: 12px;
+  padding: 0;
+}
+
+.accounting-banks-alert {
+  flex: 0 0 auto;
+  margin: 12px 12px 0;
 }
 
 .accounting-banks-page__table {

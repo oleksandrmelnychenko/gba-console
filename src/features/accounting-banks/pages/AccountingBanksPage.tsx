@@ -20,8 +20,6 @@ import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
-import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { getAccountingBanks, saveAccountingBank } from '../api/accountingBanksApi'
 import type { AccountingBank, AccountingBankFormValues } from '../types'
@@ -62,7 +60,7 @@ export function AccountingBanksPage() {
   const [isLoading, setLoading] = useState(true)
   const [isSaving, setSaving] = useState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
-  const { density, toggleDensity } = useDataTableDensity('accounting-banks', 'normal')
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const visibleBanks = useMemo(() => filterBanks(banks, searchValue), [banks, searchValue])
   const openEditor = useCallback((bank?: AccountingBank) => {
     setEditingBank(bank || null)
@@ -224,8 +222,8 @@ export function AccountingBanksPage() {
                   <RefreshCw size={17} />
                 </ActionIcon>
               </Tooltip>
-              <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
             </div>
+            <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
             <PermissionGate permissionKey={ACCOUNTING_BANK_CREATE_PERMISSION}>
               <Button
                 color={CREATE_ACTION_COLOR}
@@ -241,9 +239,9 @@ export function AccountingBanksPage() {
           </Group>
         </div>
 
-        <Stack className="accounting-banks-card__body" gap="md">
+        <Stack className="accounting-banks-card__body" gap={0}>
           {error && (
-            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
+            <Alert className="accounting-banks-alert" color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
             </Alert>
           )}
@@ -253,7 +251,6 @@ export function AccountingBanksPage() {
               columns={columns}
               data={visibleBanks}
               defaultLayout={ACCOUNTING_BANKS_TABLE_DEFAULT_LAYOUT}
-              density={density}
               emptyText={t('Банків не знайдено')}
               getRowId={(bank, index) => String(bank.NetUid || bank.Id || index)}
               height="100%"
@@ -261,7 +258,9 @@ export function AccountingBanksPage() {
               layoutVersion="accounting-banks-table-1"
               loadingText={t('Завантаження банків')}
               minWidth={1180}
+              showLayoutControls
               tableId="accounting-banks"
+              toolbarPortalTarget={tableToolbarSlot}
               onRowClick={openEditor}
             />
           </div>
