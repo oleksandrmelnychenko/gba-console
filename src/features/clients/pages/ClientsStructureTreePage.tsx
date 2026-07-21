@@ -9,6 +9,8 @@ import { TreeView, type TreeViewNode } from '../../../shared/ui/tree/TreeView'
 import { getClientSubClients } from '../api/clientCabinetApi'
 import { getClients } from '../api/clientsApi'
 import type { Client } from '../types'
+import '../../../shared/ui/console-table-page.css'
+import './clients-structure-tree-page.css'
 
 const SEARCH_DEBOUNCE_MS = 300
 const CLIENTS_PAGE_SIZE = 50
@@ -133,36 +135,58 @@ export function ClientsStructureTreePage() {
   const treeNodes = useMemo(() => (selectedClient ? [buildNode(selectedClient)] : []), [buildNode, selectedClient])
 
   return (
-    <Stack gap="lg" style={{ width: '90%', marginInline: 'auto' }}>
-      <ListTreeLayout
-        list={
-          <Stack gap="md">
-            <Group align="end" gap="sm" wrap="nowrap">
-              <TextInput
-                label={t('Пошук клієнта')}
-                leftSection={<Search size={16} />}
-                style={{ flex: '1 1 auto', minWidth: 160 }}
-                value={searchDraft}
-                onChange={(event) => setSearchDraft(event.currentTarget.value)}
-              />
-              <Tooltip label={t('Скинути')}>
-                <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={() => setSearchDraft('')}>
-                  <RotateCcw size={17} />
-                </ActionIcon>
-              </Tooltip>
-              <Tooltip label={t('Оновити')}>
-                <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={34} variant="light" onClick={() => reload()}>
-                  <RefreshCw size={17} />
-                </ActionIcon>
-              </Tooltip>
-            </Group>
+    <Stack className="clients-structure-page console-table-page" gap={6}>
+      <div className="clients-structure-shell console-table-shell">
+        <div className="app-filter-bar clients-structure-filter-bar">
+          <TextInput
+            className="clients-structure-search"
+            label={t('Пошук клієнта')}
+            leftSection={<Search size={16} />}
+            placeholder={t('Назва клієнта')}
+            value={searchDraft}
+            onChange={(event) => setSearchDraft(event.currentTarget.value)}
+          />
+          <div className="app-filter-actions clients-structure-filter-actions">
+            <Tooltip label={t('Скинути')}>
+              <ActionIcon
+                aria-label={t('Скинути')}
+                color="gray"
+                disabled={!searchDraft}
+                size={34}
+                type="button"
+                variant="light"
+                onClick={() => setSearchDraft('')}
+              >
+                <RotateCcw size={17} />
+              </ActionIcon>
+            </Tooltip>
+            <Tooltip label={t('Оновити')}>
+              <ActionIcon
+                aria-label={t('Оновити')}
+                color="gray"
+                loading={isLoading}
+                size={34}
+                type="button"
+                variant="light"
+                onClick={() => reload()}
+              >
+                <RefreshCw size={17} />
+              </ActionIcon>
+            </Tooltip>
+          </div>
+        </div>
 
-            {error ? (
-              <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
-                {error}
-              </Alert>
-            ) : null}
+        {error ? (
+          <Alert className="console-table-alert" color="red" icon={<CircleAlert size={18} />} variant="light">
+            {error}
+          </Alert>
+        ) : null}
 
+        <div className="clients-structure-workspace">
+          <ListTreeLayout
+            className="clients-structure-layout"
+            list={
+              <Stack className="clients-structure-list" gap={6}>
             {isLoading ? (
               <Stack gap={5}>
                 {Array.from({ length: 7 }, (_, index) => (
@@ -189,25 +213,27 @@ export function ClientsStructureTreePage() {
                 </Text>
               </div>
             )}
-          </Stack>
-        }
-        detail={
-          selectedClient ? (
-            <TreeView
-              key={selectedNetUid}
-              defaultExpandedDepth={0}
-              emptyText={t('Немає суб-клієнтів')}
-              nodes={treeNodes}
-            />
-          ) : isLoading ? (
-            <Group justify="center" gap="xs" py="lg">
-              <Loader size="sm" />
-            </Group>
-          ) : (
-            <Text c="dimmed">{t('Оберіть клієнта зі списку')}</Text>
-          )
-        }
-      />
+              </Stack>
+            }
+            detail={
+              selectedClient ? (
+                <TreeView
+                  key={selectedNetUid}
+                  defaultExpandedDepth={0}
+                  emptyText={t('Немає суб-клієнтів')}
+                  nodes={treeNodes}
+                />
+              ) : isLoading ? (
+                <Group justify="center" gap="xs" py="lg">
+                  <Loader size="sm" />
+                </Group>
+              ) : (
+                <Text c="dimmed">{t('Оберіть клієнта зі списку')}</Text>
+              )
+            }
+          />
+        </div>
+      </div>
     </Stack>
   )
 }

@@ -1,0 +1,70 @@
+.clients-structure-page {
+  box-sizing: border-box;
+  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px);
+  min-height: 0;
+  overflow: hidden;
+  padding: 6px 4px 0;
+}
+
+.clients-structure-shell {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.clients-structure-filter-bar {
+  display: grid;
+  flex: 0 0 auto;
+  grid-template-columns: minmax(280px, 1fr) auto;
+  overflow-x: auto;
+}
+
+.clients-structure-search {
+  min-width: 280px;
+}
+
+.clients-structure-workspace {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  padding: 10px 8px 8px;
+}
+
+.clients-structure-layout {
+  flex: 1 1 auto;
+  gap: 12px;
+  min-height: 0;
+  min-width: 0;
+}
+
+.clients-structure-layout > .mantine-Card-root {
+  border: 1px solid var(--mantine-color-gray-2) !important;
+  box-shadow: none !important;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: auto;
+}
+
+.clients-structure-list {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.clients-structure-list .list-tree-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+
+@media (max-width: 992px) {
+  .clients-structure-workspace {
+    overflow: auto;
+  }
+
+  .clients-structure-layout > .mantine-Card-root {
+    min-height: 280px;
+  }
+}
