@@ -554,7 +554,6 @@ export type SupplyUkraineOrderRow = {
   currency?: string
   directOrder?: DirectSupplyOrder
   grossPrice?: number
-  landedCost?: number
   index: number
   invoice?: SupplyInvoice
   invoiceDate?: Date | string

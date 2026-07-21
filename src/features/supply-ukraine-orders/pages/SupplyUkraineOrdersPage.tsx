@@ -79,14 +79,13 @@ import './supply-ukraine-orders.css'
 
 const DEFAULT_PAGE_SIZE = DEFAULT_PAGINATOR_PAGE_SIZE
 const SUPPLY_ORGANIZATION_SEARCH_DEBOUNCE_MS = 300
-const ORDERS_TABLE_MIN_WIDTH = 1660
+const ORDERS_TABLE_MIN_WIDTH = 1520
 const ORDER_INVOICES_TABLE_MIN_WIDTH = 1080
 const ORDERS_TABLE_DEFAULT_LAYOUT: DataTableDefaultLayout = {
-  columnOrder: ['order', 'netPrice', 'vatAmount', 'grossPrice', 'landedCost', 'qty', 'additionalPercent', 'organization', 'responsible', 'isPlaced', 'kind'],
+  columnOrder: ['order', 'netPrice', 'vatAmount', 'grossPrice', 'qty', 'additionalPercent', 'organization', 'responsible', 'isPlaced', 'kind'],
   columnSizing: {
     additionalPercent: 96,
     grossPrice: 132,
-    landedCost: 132,
     isPlaced: 112,
     kind: 118,
     netPrice: 132,
@@ -917,15 +916,6 @@ function useSupplyUkraineOrderColumns(): DataTableColumn<SupplyUkraineOrderRow>[
         header: t('З ПДВ'),
         id: 'grossPrice',
         minWidth: 112,
-        width: 132,
-      },
-      {
-        accessor: (row) => row.landedCost ?? null,
-        align: 'right',
-        cell: (row) => <OrderMoneyCell currency={row.currency} value={row.landedCost} />,
-        header: t('Собівартість'),
-        id: 'landedCost',
-        minWidth: 118,
         width: 132,
       },
       {
@@ -2127,7 +2117,6 @@ function mapToUkraineOrderRow(order: SupplyOrderUkraine): SupplyUkraineOrderRow 
     invoiceNumber: order.InvNumber,
     isPlaced: Boolean(order.IsPlaced),
     kind: 'toUkraine',
-    landedCost: amounts.landedCost,
     netUid: order.NetUid,
     netPrice: amounts.net,
     number: getToUkraineOrderDisplayNumber(order),

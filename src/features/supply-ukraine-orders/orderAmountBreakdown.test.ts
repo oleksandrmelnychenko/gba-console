@@ -58,14 +58,13 @@ describe('order amount breakdowns', () => {
     })
   })
 
-  it('keeps landed cost separate for orders to Ukraine', () => {
+  it('returns comparable invoice totals for orders to Ukraine', () => {
     expect(getToUkraineOrderAmountBreakdown({
       TotalGrossPriceLocal: 11000,
       TotalNetPriceLocal: 8471.10,
       TotalNetPriceLocalWithVat: 10165.32,
       TotalVatAmount: 1694.22,
     })).toEqual({
-      landedCost: 11000,
       net: 8471.10,
       vat: 1694.22,
       withVat: 10165.32,

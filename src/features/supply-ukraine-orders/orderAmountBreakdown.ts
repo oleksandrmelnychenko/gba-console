@@ -1,7 +1,6 @@
 import type { DirectSupplyOrder, PackingList, SupplyInvoice, SupplyOrderUkraine } from './types'
 
 export type OrderAmountBreakdown = {
-  landedCost?: number
   net: number | undefined
   vat: number | undefined
   withVat: number | undefined
@@ -52,7 +51,6 @@ export function getToUkraineOrderAmountBreakdown(order: SupplyOrderUkraine): Ord
   const vat = finiteNumber(order.TotalVatAmount)
 
   return {
-    landedCost: finiteNumber(order.TotalGrossPriceLocal),
     net,
     vat,
     withVat: finiteNumber(order.TotalNetPriceLocalWithVat) ?? addDefined(net, vat),
