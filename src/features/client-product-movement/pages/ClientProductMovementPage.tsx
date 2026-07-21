@@ -371,7 +371,6 @@ export function ClientProductMovementPage() {
               label={t('Організація')}
               placeholder={t('Усі')}
               value={filterDraft.organizationIds}
-              w={240}
               onChange={(value) => applyFilters({ ...filterDraft, organizationIds: value })}
             />
             <TextInput

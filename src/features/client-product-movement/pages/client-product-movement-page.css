@@ -30,7 +30,7 @@
   grid-template-columns:
     310px
     minmax(240px, 260px)
-    minmax(220px, 240px)
+    var(--app-multi-select-width, 240px)
     minmax(160px, 180px)
     minmax(32px, 1fr)
     auto
