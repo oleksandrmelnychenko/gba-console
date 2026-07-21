@@ -22,8 +22,9 @@
   flex: 0 0 auto;
   gap: 10px;
   grid-template-columns: minmax(300px, 1fr) auto auto auto;
-  min-width: max-content;
+  min-width: 0;
   overflow-x: auto;
+  width: 100%;
 }
 
 .online-shop-cities-search-input {
@@ -93,7 +94,7 @@
   display: grid;
   gap: 10px;
   grid-template-columns: minmax(0, 1fr) auto;
-  min-height: 36px;
+  min-height: 40px;
   padding: 0 7px;
   position: relative;
   text-align: left;
@@ -117,6 +118,18 @@
   font-weight: 600;
 }
 
+.online-shop-cities-filter-option.is-active::before {
+  background: var(--brand-orange);
+  border-radius: 999px;
+  content: '';
+  height: 6px;
+  left: 7px;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+}
+
 .online-shop-cities-filter-option.is-active .online-shop-cities-filter-count {
   color: var(--mantine-color-orange-8);
 }
@@ -125,8 +138,8 @@
 .online-shop-cities-filter-name {
   align-items: center;
   display: flex;
-  font-size: 12px;
   font-family: var(--font-mono);
+  font-size: 13px;
   font-weight: 500;
   line-height: 1;
   min-height: 24px;
