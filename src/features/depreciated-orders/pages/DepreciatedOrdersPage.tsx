@@ -14,15 +14,13 @@ import {
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, Eye, Plus, RefreshCw, RotateCcw } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { UserRoleType } from '../../../shared/auth/types'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { translate } from '../../../shared/i18n/translate'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
-import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useAuth } from '../../auth/useAuth'
@@ -101,7 +99,6 @@ function useDepreciatedOrdersPageModel() {
   const [hasMore, setHasMore] = useValueState(false)
   const [, setTotalQty] = useValueState(0)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
-  const { density, toggleDensity } = useDataTableDensity('depreciated-orders', DEPRECIATED_ORDERS_TABLE_DEFAULT_LAYOUT.density)
   const detailRequestRef = useRef(0)
   const downloadRequestRef = useRef(0)
   const filterError = getFilterError(activeFilters.from, activeFilters.to)
@@ -300,11 +297,11 @@ function useDepreciatedOrdersPageModel() {
   }
 
   return {
-    columns, createError, density, detailError, downloadDocument, downloadError, downloadOpened, error, exceptionMessages,
+    columns, createError, detailError, downloadDocument, downloadError, downloadOpened, error, exceptionMessages,
     filterDraft, filterError, hasMore, isAdmin, isCreateModalOpen, isCreating, isDetailLoading, isDownloading,
     isLoading, isLoadingMore, isLoadingStorages, orders, pageSize, selectedOrder, storageError, storages,
     applyFilters, closeCreateModal, closeDetail, closeDownload, handleCreate, loadMoreOrders,
-    openCreateModal, openDetail, openDownload, reload, resetFilters, setExceptionMessages, setPageSize, toggleDensity,
+    openCreateModal, openDetail, openDownload, reload, resetFilters, setExceptionMessages, setPageSize,
   }
 }
 
@@ -481,23 +478,22 @@ function DepreciatedOrdersPageView({ model }: { model: ReturnType<typeof useDepr
 
 function DepreciatedOrdersTableCard({ model }: { model: ReturnType<typeof useDepreciatedOrdersPageModel> }) {
   const { t } = useI18n()
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const {
-    columns, density, error, filterDraft, filterError, hasMore, isLoading, isLoadingMore, isLoadingStorages,
+    columns, error, filterDraft, filterError, hasMore, isLoading, isLoadingMore, isLoadingStorages,
     loadMoreOrders, openDetail, orders, pageSize, reload, resetFilters, applyFilters, setPageSize, storageError,
-    toggleDensity,
   } = model
 
   return (
     <Card className="app-data-card depreciated-orders-card" withBorder radius="md" padding={0}>
       <div className="app-filter-bar depreciated-orders-filter-bar">
-        <Group align="end" gap={10} wrap="nowrap" justify="space-between" className="depreciated-orders-filter-row">
-          <Group align="end" gap={10} wrap="nowrap">
+        <Group align="end" gap={10} wrap="nowrap" className="depreciated-orders-filter-row">
+          <div className="app-filter-date-range">
             <TextInput
               label={t('Від')}
               max={filterDraft.to || undefined}
               type="date"
               value={filterDraft.from}
-              w={150}
               onChange={(event) => applyFilters({ ...filterDraft, from: event.currentTarget.value })}
             />
             <TextInput
@@ -505,10 +501,9 @@ function DepreciatedOrdersTableCard({ model }: { model: ReturnType<typeof useDep
               min={filterDraft.from || undefined}
               type="date"
               value={filterDraft.to}
-              w={150}
               onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
             />
-          </Group>
+          </div>
           <div className="app-filter-actions">
             <Tooltip label={t('Скинути')}>
               <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
@@ -538,8 +533,8 @@ function DepreciatedOrdersTableCard({ model }: { model: ReturnType<typeof useDep
                 reload()
               }}
             />
-            <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
           </div>
+          <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
           <Button
             color={CREATE_ACTION_COLOR}
             disabled={!model.isLoadingStorages && model.storages.length === 0}
@@ -563,7 +558,6 @@ function DepreciatedOrdersTableCard({ model }: { model: ReturnType<typeof useDep
       <DataTable
         columns={columns}
         data={orders}
-        density={density}
         defaultLayout={DEPRECIATED_ORDERS_TABLE_DEFAULT_LAYOUT}
         emptyText={t('Актів списання не знайдено')}
         getRowId={(order, index) => String(order.NetUid || order.Id || index)}
@@ -572,7 +566,9 @@ function DepreciatedOrdersTableCard({ model }: { model: ReturnType<typeof useDep
         loadingText={t('Завантаження актів списання')}
         maxHeight="calc(100vh - 340px)"
         minWidth={1320}
+        showLayoutControls
         tableId="depreciated-orders"
+        toolbarPortalTarget={tableToolbarSlot}
         onRowClick={openDetail}
       />
 

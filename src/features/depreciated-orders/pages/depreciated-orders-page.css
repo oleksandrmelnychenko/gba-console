@@ -1,4 +1,8 @@
 .depreciated-orders-page {
+  box-sizing: border-box;
+  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px);
+  min-height: 0;
+  overflow: hidden;
   padding: 6px 4px 0;
 }
 
@@ -28,18 +32,15 @@
 }
 
 .depreciated-orders-filter-row {
-  display: grid;
-  grid-template-columns: max-content minmax(16px, 1fr) max-content max-content;
-  width: max(100%, max-content);
-  min-width: 0;
+  min-width: max-content;
+  width: 100%;
 }
 
 .depreciated-orders-filter-row > .app-filter-actions {
-  grid-column: 3;
+  margin-left: auto;
 }
 
 .depreciated-orders-filter-row > .mantine-Button-root {
-  grid-column: 4;
   white-space: nowrap;
 }
 
