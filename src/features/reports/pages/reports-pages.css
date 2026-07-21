@@ -1,0 +1,156 @@
+.reports-stocks-page,
+.reports-sale-page {
+  box-sizing: border-box;
+  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px);
+  min-height: 0;
+  overflow: hidden;
+  padding: 6px 4px 0;
+}
+
+.reports-stocks-shell,
+.reports-sale-shell {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2) !important;
+  box-shadow: var(--app-card-shadow) !important;
+}
+
+.reports-stocks-form {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.reports-stocks-body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.reports-stocks-content {
+  flex: 0 0 auto;
+}
+
+.reports-page-alert {
+  border-radius: 0;
+  flex: 0 0 auto;
+}
+
+.reports-stocks-filter-bar {
+  align-items: end;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 310px minmax(0, 1fr) auto auto;
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.reports-stocks-status {
+  align-self: center;
+  justify-self: end;
+}
+
+.reports-stocks-actions {
+  justify-self: end;
+}
+
+.reports-stocks-filter-bar > .mantine-Button-root,
+.reports-sale-filter-bar > .mantine-Button-root {
+  align-self: end;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.reports-sale-filter-bar {
+  align-items: end;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 310px minmax(240px, 1fr) auto auto auto auto;
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.reports-sale-search {
+  min-width: 240px;
+}
+
+.reports-sale-actions {
+  justify-self: end;
+}
+
+.reports-sale-meta {
+  align-items: center;
+  align-self: end;
+  display: flex;
+  gap: 10px;
+  min-height: var(--app-filter-control-height, 36px);
+  white-space: nowrap;
+}
+
+.reports-sale-file-name {
+  color: var(--mantine-color-gray-7);
+  font-family: var(--font-mono);
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reports-sale-result-body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  padding: 16px;
+}
+
+.reports-sale-result-layout,
+.reports-sale-result-content,
+.reports-sale-table {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.reports-sale-table .data-table {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.reports-sale-empty-state,
+.reports-stocks-empty-state {
+  align-items: center;
+  display: flex;
+  flex: 1 1 auto;
+  justify-content: center;
+  min-height: 0;
+}
+
+.reports-stocks-result {
+  border-top: 1px solid var(--mantine-color-gray-2);
+  display: flex;
+  flex: 1 0 320px;
+  flex-direction: column;
+  min-height: 320px;
+  padding: 16px;
+}
+
+.reports-stocks-result-header {
+  flex: 0 0 auto;
+  margin-bottom: 12px;
+}
+
+.reports-stocks-preview {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+
+.reports-stocks-preview .mantine-Table-table {
+  min-width: max-content;
+}

@@ -29,6 +29,7 @@ import {
   downloadTextFile,
   parseNumericValue,
 } from '../utils'
+import './reports-pages.css'
 
 export function ReportsSalePage() {
   const { t } = useI18n()
@@ -106,59 +107,49 @@ export function ReportsSalePage() {
   }
 
   return (
-    <Stack gap="lg">
-      <Group justify="flex-end" align="center">
-        <Badge className={activeSheet ? 'app-role-pill is-gray' : 'app-role-pill is-orange'} variant="light">
-          {isLoading ? t('Читання файлу') : activeSheet ? `${t('Рядків')}: ${visibleRows.length}` : t('Файл не вибрано')}
-        </Badge>
-      </Group>
-
-      <Card withBorder radius="md" padding="md" className="app-section-card">
-        <Stack gap="md">
-          <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
-            <Button color={CREATE_ACTION_COLOR} component="label" leftSection={<Upload size={16} />} loading={isLoading}>
-              {t('Завантажити файл')}
-              <input
-                accept=".csv,.tsv,.txt,.xlsx,.xls"
-                aria-label={t('Завантажити файл')}
-                hidden
-                type="file"
-                onChange={handleFileChange}
-              />
-            </Button>
-            {fileName ? <Text size="sm" c="dimmed">{fileName}</Text> : null}
+    <Stack className="reports-sale-page" gap={6}>
+      <Card withBorder radius="md" padding={0} className="app-data-card reports-sale-shell">
+        <div className="app-filter-bar reports-sale-filter-bar">
+          <div className="app-filter-date-range">
+            <TextInput label={t('Від')} type="date" value={dateFrom} onChange={(event) => setDateFrom(event.currentTarget.value)} />
+            <TextInput label={t('До')} type="date" value={dateTo} onChange={(event) => setDateTo(event.currentTarget.value)} />
+          </div>
+          <TextInput
+            className="reports-sale-search"
+            leftSection={<Search size={16} />}
+            label={t('Пошук')}
+            placeholder={t('Текст у будь-якій колонці')}
+            value={searchDraft}
+            onChange={(event) => updateSearch(event.currentTarget.value)}
+          />
+          <div className="reports-sale-meta">
+            {fileName ? <Text className="reports-sale-file-name" size="sm">{fileName}</Text> : null}
+            <Badge className={activeSheet ? 'app-role-pill is-gray' : 'app-role-pill is-orange'} variant="light">
+              {isLoading ? t('Читання файлу') : activeSheet ? `${t('Рядків')}: ${visibleRows.length}` : t('Файл не вибрано')}
+            </Badge>
+          </div>
+          <div className="app-filter-actions reports-sale-actions">
+            <Tooltip label={t('Скинути')}>
+              <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
+                <RotateCcw size={17} />
+              </ActionIcon>
+            </Tooltip>
             <Tooltip label={t('Експорт CSV')}>
-              <ActionIcon aria-label={t('Експорт CSV')} disabled={!activeSheet} variant="subtle" onClick={exportCsv}>
-                <Download size={18} />
+              <ActionIcon aria-label={t('Експорт CSV')} color="gray" disabled={!activeSheet} size={34} variant="light" onClick={exportCsv}>
+                <Download size={17} />
               </ActionIcon>
             </Tooltip>
             <Tooltip label={t('Друк')}>
-              <ActionIcon aria-label={t('Друк')} disabled={!activeSheet} variant="subtle" onClick={() => window.print()}>
-                <Printer size={18} />
-              </ActionIcon>
-            </Tooltip>
-          </Group>
-
-          <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
-            <TextInput
-              leftSection={<Search size={16} />}
-              label={t('Пошук')}
-              placeholder={t('Текст у будь-якій колонці')}
-              value={searchDraft}
-              onChange={(event) => updateSearch(event.currentTarget.value)}
-            />
-            <TextInput label={t('Дата з')} type="date" value={dateFrom} onChange={(event) => setDateFrom(event.currentTarget.value)} />
-            <TextInput label={t('Дата по')} type="date" value={dateTo} onChange={(event) => setDateTo(event.currentTarget.value)} />
-            <Tooltip label={t('Скинути')}>
-              <ActionIcon aria-label={t('Скинути')} color="gray" variant="subtle" onClick={resetFilters}>
-                <RotateCcw size={18} />
+              <ActionIcon aria-label={t('Друк')} color="gray" disabled={!activeSheet} size={34} variant="light" onClick={() => window.print()}>
+                <Printer size={17} />
               </ActionIcon>
             </Tooltip>
             <Tooltip label={t('Очистити файл')}>
               <ActionIcon
                 aria-label={t('Очистити файл')}
                 color="gray"
-                variant="subtle"
+                size={34}
+                variant="light"
                 onClick={() => {
                   setSheets([])
                   setActiveSheetName(null)
@@ -166,44 +157,56 @@ export function ReportsSalePage() {
                   resetFilters()
                 }}
               >
-                <RefreshCw size={18} />
+                <RefreshCw size={17} />
               </ActionIcon>
             </Tooltip>
-            <DataTableDensityToggle density={density} onToggle={toggleDensity} size="md" />
-          </Group>
-        </Stack>
-      </Card>
-
-      {error ? <Alert color="red" icon={<CircleAlert size={18} />}>{error}</Alert> : null}
-
-      {activeSheet ? (
-        <Card withBorder radius="md" padding="md" className="app-section-card">
-          <div>
-            <div className="pill-tabs" style={{ width: 'fit-content' }}>
-              {sheets.map((sheet) => (
-                <button
-                  key={sheet.name}
-                  type="button"
-                  className={`pill-tab${activeSheet.name === sheet.name ? ' is-active' : ''}`}
-                  aria-pressed={activeSheet.name === sheet.name}
-                  onClick={() => setActiveSheetName(sheet.name)}
-                >
-                  {sheet.name}
-                </button>
-              ))}
-            </div>
-
-            <Stack gap="md" pt="md">
-              <TotalsBar totals={visibleTotals} />
-              <SpreadsheetTable columns={activeSheet.columns} rows={visibleRows} totals={visibleTotals} density={density} />
-            </Stack>
           </div>
-        </Card>
-      ) : (
-        <Card withBorder radius="md" padding="xl" className="app-section-card">
-          <Text c="dimmed" ta="center">{t('Завантажте CSV/TSV/TXT файл для перегляду')}</Text>
-        </Card>
-      )}
+          <div className="app-filter-table-toolbar-slot">
+            <DataTableDensityToggle density={density} onToggle={toggleDensity} size="md" />
+          </div>
+          <Button color={CREATE_ACTION_COLOR} component="label" leftSection={<Upload size={16} />} loading={isLoading}>
+            {t('Завантажити файл')}
+            <input
+              accept=".csv,.tsv,.txt,.xlsx,.xls"
+              aria-label={t('Завантажити файл')}
+              hidden
+              type="file"
+              onChange={handleFileChange}
+            />
+          </Button>
+        </div>
+
+        {error ? <Alert className="reports-page-alert" color="red" icon={<CircleAlert size={18} />}>{error}</Alert> : null}
+
+        <div className="reports-sale-result-body">
+          {activeSheet ? (
+            <div className="reports-sale-result-layout">
+              <div className="pill-tabs" style={{ width: 'fit-content' }}>
+                {sheets.map((sheet) => (
+                  <button
+                    key={sheet.name}
+                    type="button"
+                    className={`pill-tab${activeSheet.name === sheet.name ? ' is-active' : ''}`}
+                    aria-pressed={activeSheet.name === sheet.name}
+                    onClick={() => setActiveSheetName(sheet.name)}
+                  >
+                    {sheet.name}
+                  </button>
+                ))}
+              </div>
+
+              <Stack className="reports-sale-result-content" gap="md" pt="md">
+                <TotalsBar totals={visibleTotals} />
+                <SpreadsheetTable columns={activeSheet.columns} rows={visibleRows} totals={visibleTotals} density={density} />
+              </Stack>
+            </div>
+          ) : (
+            <div className="reports-sale-empty-state">
+              <Text c="dimmed" ta="center">{t('Завантажте CSV/TSV/TXT файл для перегляду')}</Text>
+            </div>
+          )}
+        </div>
+      </Card>
     </Stack>
   )
 }
@@ -287,7 +290,7 @@ function SpreadsheetTable({
   }, [hasTotals, rows])
 
   return (
-    <Box>
+    <Box className="reports-sale-table">
       <DataTable
         columns={previewColumns}
         data={previewData}
@@ -295,7 +298,7 @@ function SpreadsheetTable({
         emptyText={t('Немає рядків для перегляду')}
         getRowId={(row) => row.key}
         layoutVersion={`reports-sale-spreadsheet:${columns.join('|')}`}
-        maxHeight="calc(100vh - 320px)"
+        height="100%"
         minWidth={Math.max(640, columns.length * 160)}
         tableId="reports-sale-spreadsheet"
       />

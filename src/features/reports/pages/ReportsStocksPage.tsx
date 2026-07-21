@@ -74,6 +74,7 @@ import {
   getEntityDisplayName,
   formatDate,
 } from '../utils'
+import './reports-pages.css'
 
 const STORAGE_KEY = 'app_configs_reports_template'
 const LOOKUP_SEARCH_DEBOUNCE_MS = 300
@@ -257,35 +258,38 @@ export function ReportsStocksPage() {
   }
 
   return (
-    <Stack gap="lg">
-      <Group justify="flex-end" align="center">
-        <Badge color={isLoading ? 'blue' : 'gray'} variant="light">
-          {isLoading ? t('Формується') : `${t('Показників')}: ${checkedMeasurements}`}
-        </Badge>
-      </Group>
-
-      <Card className="app-section-card" withBorder radius="md" padding="md">
-        <form onSubmit={submitReport}>
-          <Stack gap="md">
-            <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
-              <TextInput label={t('З')} type="date" value={from} onChange={(event) => setFrom(event.currentTarget.value)} />
-              <TextInput label={t('По')} type="date" value={to} onChange={(event) => setTo(event.currentTarget.value)} />
-              <Tooltip label={t('Сформувати')}>
-                <Button color={CREATE_ACTION_COLOR} loading={isLoading} disabled={!canSubmit} type="submit">
-                  {t('Сформувати')}
-                </Button>
-              </Tooltip>
+    <Stack className="reports-stocks-page" gap={6}>
+      <Card className="app-data-card reports-stocks-shell" withBorder radius="md" padding={0}>
+        <form className="reports-stocks-form" onSubmit={submitReport}>
+          <div className="app-filter-bar reports-stocks-filter-bar">
+            <div className="app-filter-date-range">
+              <TextInput label={t('Від')} type="date" value={from} onChange={(event) => setFrom(event.currentTarget.value)} />
+              <TextInput label={t('До')} type="date" value={to} onChange={(event) => setTo(event.currentTarget.value)} />
+            </div>
+            <Badge className="reports-stocks-status" color={isLoading ? 'blue' : 'gray'} variant="light">
+              {isLoading ? t('Формується') : `${t('Показників')}: ${checkedMeasurements}`}
+            </Badge>
+            <div className="app-filter-actions reports-stocks-actions">
               <Tooltip label={t('Скинути')}>
-                <ActionIcon aria-label={t('Скинути')} variant="subtle" color="gray" onClick={resetReport}>
-                  <RotateCcw size={18} />
+                <ActionIcon aria-label={t('Скинути')} variant="light" color="gray" size={34} onClick={resetReport}>
+                  <RotateCcw size={17} />
                 </ActionIcon>
               </Tooltip>
               <Tooltip label={t('Друк')}>
-                <ActionIcon aria-label={t('Друк')} variant="subtle" color="gray" onClick={() => window.print()}>
-                  <Printer size={18} />
+                <ActionIcon aria-label={t('Друк')} variant="light" color="gray" size={34} onClick={() => window.print()}>
+                  <Printer size={17} />
                 </ActionIcon>
               </Tooltip>
-            </Group>
+            </div>
+            <Tooltip label={t('Сформувати')}>
+              <Button color={CREATE_ACTION_COLOR} loading={isLoading} disabled={!canSubmit} type="submit">
+                {t('Сформувати')}
+              </Button>
+            </Tooltip>
+          </div>
+
+          <div className="reports-stocks-body">
+            <Stack className="reports-stocks-content" gap="md" p="md">
 
             {filterError ? (
               <Alert color="red" icon={<CircleAlert size={18} />}>{filterError}</Alert>
@@ -477,42 +481,51 @@ export function ReportsStocksPage() {
                 ))}
               </Stack>
             ) : null}
-          </Stack>
+            </Stack>
+
+            {error ? <Alert className="reports-page-alert" color="red" icon={<CircleAlert size={18} />}>{error}</Alert> : null}
+
+            <section className="reports-stocks-result">
+              <Group className="reports-stocks-result-header" justify="space-between">
+                <Box>
+                  <Text fw={700}>{t('Результат')}</Text>
+                  <Text size="xs" c="dimmed">
+                    {result ? `${t('Рядків')}: ${result.table.rows.length}` : t('Після формування тут буде preview відповіді API')}
+                  </Text>
+                </Box>
+                <Group gap={6}>
+                  <Button
+                    leftSection={<Download size={16} />}
+                    disabled={!result?.table.rows.length}
+                    size="xs"
+                    type="button"
+                    variant="outline"
+                    onClick={exportPreviewCsv}
+                  >
+                    CSV
+                  </Button>
+                  <Button
+                    disabled={!result?.document.DocumentURL && !result?.document.PdfDocumentURL}
+                    size="xs"
+                    type="button"
+                    variant="outline"
+                    onClick={() => setDownloadModalOpened(true)}
+                  >
+                    {t('Файли')}
+                  </Button>
+                </Group>
+              </Group>
+
+              {result?.table.rows.length ? (
+                <ReportPreview result={result} />
+              ) : (
+                <div className="reports-stocks-empty-state">
+                  <Text c="dimmed">{t('Даних ще немає')}</Text>
+                </div>
+              )}
+            </section>
+          </div>
         </form>
-      </Card>
-
-      {error ? <Alert color="red" icon={<CircleAlert size={18} />}>{error}</Alert> : null}
-
-      <Card className="app-section-card" withBorder radius="md" padding="md">
-        <Group justify="space-between" mb="sm">
-          <Box>
-            <Text fw={700}>{t('Результат')}</Text>
-            <Text size="xs" c="dimmed">
-              {result ? `${t('Рядків')}: ${result.table.rows.length}` : t('Після формування тут буде preview відповіді API')}
-            </Text>
-          </Box>
-          <Group gap={6}>
-            <Button
-              leftSection={<Download size={16} />}
-              disabled={!result?.table.rows.length}
-              size="xs"
-              variant="outline"
-              onClick={exportPreviewCsv}
-            >
-              CSV
-            </Button>
-            <Button
-              disabled={!result?.document.DocumentURL && !result?.document.PdfDocumentURL}
-              size="xs"
-              variant="outline"
-              onClick={() => setDownloadModalOpened(true)}
-            >
-              {t('Файли')}
-            </Button>
-          </Group>
-        </Group>
-
-        {result?.table.rows.length ? <ReportPreview result={result} /> : <Text c="dimmed">{t('Даних ще немає')}</Text>}
       </Card>
 
       <AppModal centered opened={downloadModalOpened} title={t('Експорт звіту')} onClose={() => setDownloadModalOpened(false)}>
@@ -877,7 +890,7 @@ function ReportPreview({ result }: { result: ReportResult }) {
   const { t } = useI18n()
 
   return (
-    <Box style={{ overflowX: 'auto' }}>
+    <Box className="reports-stocks-preview">
       <Table striped highlightOnHover withTableBorder withColumnBorders>
         <Table.Thead>
           <Table.Tr>
