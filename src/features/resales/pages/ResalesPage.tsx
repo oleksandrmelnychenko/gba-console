@@ -1,4 +1,3 @@
-import type { ComboboxRenderPillInput } from '@mantine/core'
 import {
   ActionIcon,
   Alert,
@@ -8,9 +7,7 @@ import {
   Button,
   Card,
   Group,
-  MultiSelect,
   NumberInput,
-  Pill,
   Select,
   SimpleGrid,
   Stack,
@@ -21,6 +18,7 @@ import {
 } from '@mantine/core'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
 import { notifications } from '@mantine/notifications'
 import { ArrowRight, CircleAlert, Download, FileDown, FileText, Plus, RefreshCw, RotateCcw, Search, Trash2, Truck } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
@@ -128,8 +126,6 @@ const PROCESS_TABLE_DEFAULT_LAYOUT = {
   },
   density: 'normal',
 } satisfies DataTableDefaultLayout
-
-const MAX_VISIBLE_SPECIFICATION_PILLS = 3
 
 const PROCESS_CONFIRM_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -933,37 +929,6 @@ export function NewResalePage() {
     navigate(returnPath, { replace: true })
   }
 
-  function renderSpecificationPill({ disabled, onRemove, option, value }: ComboboxRenderPillInput<string>) {
-    const currentValue = String(value ?? option.value)
-    const pillIndex = form.specificationCodes.indexOf(currentValue)
-    const selectedCount = form.specificationCodes.length
-
-    if (pillIndex > MAX_VISIBLE_SPECIFICATION_PILLS) {
-      return null
-    }
-
-    if (pillIndex === MAX_VISIBLE_SPECIFICATION_PILLS && selectedCount > MAX_VISIBLE_SPECIFICATION_PILLS) {
-      return (
-        <Pill className="resales-new-specification-pill is-overflow" radius={7} size="sm">
-          +{selectedCount - MAX_VISIBLE_SPECIFICATION_PILLS}
-        </Pill>
-      )
-    }
-
-    return (
-      <Pill
-        className="resales-new-specification-pill"
-        disabled={disabled}
-        radius={7}
-        size="sm"
-        withRemoveButton={!disabled}
-        onRemove={onRemove}
-      >
-        {option.label}
-      </Pill>
-    )
-  }
-
   return (
     <AppDrawer
       className="resales-new-drawer"
@@ -999,11 +964,10 @@ export function NewResalePage() {
                 onChange={(value) => setForm((currentForm) => ({ ...currentForm, extraChargePercent: toNumber(value) }))}
               />
             </SimpleGrid>
-            <SimpleGrid className="resales-new-grid" cols={{ base: 1, md: 3 }} spacing="sm">
-              <MultiSelect
+            <div className="resales-new-multiselect-grid">
+              <CheckboxMultiSelect
                 searchable
                 className="resales-new-control"
-                clearable
                 data={productGroupOptions}
                 disabled={isLoadingOptions}
                 label={t('Групи товарів')}
@@ -1012,10 +976,9 @@ export function NewResalePage() {
                 value={form.productGroupIds}
                 onChange={(value) => setForm((currentForm) => ({ ...currentForm, productGroupIds: value }))}
               />
-              <MultiSelect
+              <CheckboxMultiSelect
                 searchable
                 className="resales-new-control"
-                clearable
                 data={storageOptions}
                 disabled={isLoadingOptions}
                 label={t('Склади')}
@@ -1024,20 +987,18 @@ export function NewResalePage() {
                 value={form.storageIds}
                 onChange={(value) => setForm((currentForm) => ({ ...currentForm, storageIds: value }))}
               />
-              <MultiSelect
+              <CheckboxMultiSelect
                 searchable
-                className="resales-new-control resales-new-specification-control"
-                clearable
+                className="resales-new-control"
                 data={specificationOptions}
                 disabled={isLoadingOptions}
                 label={t('Коди специфікацій')}
                 limit={80}
                 maxDropdownHeight={280}
-                renderPill={renderSpecificationPill}
                 value={form.specificationCodes}
                 onChange={(value) => setForm((currentForm) => ({ ...currentForm, specificationCodes: value }))}
               />
-            </SimpleGrid>
+            </div>
             <Group align="end" gap="sm" wrap="nowrap" className="resales-new-filter-row">
               <TextInput
                 className="resales-new-control resales-new-search-control"

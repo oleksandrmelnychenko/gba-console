@@ -79,6 +79,13 @@
   align-items: end;
 }
 
+.resales-new-multiselect-grid {
+  align-items: end;
+  display: grid;
+  gap: var(--mantine-spacing-sm);
+  grid-template-columns: repeat(3, var(--app-multi-select-width, 240px));
+}
+
 .resales-new-filter-row {
   align-items: end;
   display: grid;
@@ -112,8 +119,7 @@
   letter-spacing: 0;
 }
 
-.resales-new-filter-card .mantine-Input-input,
-.resales-new-filter-card .mantine-PillsInput-input {
+.resales-new-filter-card .mantine-Input-input {
   border-color: var(--mantine-color-gray-2);
   border-radius: 8px;
   font-family: var(--font-mono);
@@ -122,8 +128,7 @@
   min-height: 36px;
 }
 
-.resales-new-filter-card .mantine-Input-input::placeholder,
-.resales-new-filter-card .mantine-PillsInput-field::placeholder {
+.resales-new-filter-card .mantine-Input-input::placeholder {
   color: var(--mantine-color-gray-6);
   font-family: var(--font-mono);
   font-size: 12.5px;
@@ -139,31 +144,6 @@
   text-align: right;
 }
 
-.resales-new-specification-control .mantine-PillsInput-input {
-  align-items: flex-start;
-  max-height: 76px;
-  overflow-y: auto;
-  padding-bottom: 5px;
-  padding-top: 5px;
-}
-
-.resales-new-specification-control .mantine-Pill-root,
-.resales-new-specification-pill {
-  background: var(--mantine-color-gray-0);
-  border: 1px solid var(--mantine-color-gray-3);
-  color: var(--mantine-color-gray-8);
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0;
-}
-
-.resales-new-specification-pill.is-overflow {
-  background: var(--mantine-color-orange-0);
-  border-color: var(--mantine-color-orange-2);
-  color: var(--mantine-color-orange-8);
-}
-
 .resales-new-action {
   font-family: var(--font-mono);
   font-weight: 600;
@@ -175,6 +155,10 @@
   .resales-new-filter-row,
   .resales-new-filter-row:last-child {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .resales-new-multiselect-grid {
+    grid-template-columns: var(--app-multi-select-width, 240px);
   }
 
   .resales-new-search-control,
