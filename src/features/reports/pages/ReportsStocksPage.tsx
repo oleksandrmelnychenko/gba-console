@@ -10,7 +10,6 @@ import {
   Divider,
   Group,
   Loader,
-  MultiSelect,
   Select,
   SimpleGrid,
   Stack,
@@ -22,6 +21,7 @@ import {
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
 import { CircleAlert, Download, FileSpreadsheet, FileText, Plus, Printer, RefreshCw, RotateCcw, Save, Trash2 } from 'lucide-react'
 import { type FormEvent, useEffect, useMemo } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -754,9 +754,7 @@ function SelectionValuePicker({ from, label, selection, selections, to, onChange
             value={docStatus}
             onChange={(value) => setDocStatus(value || 'All')}
           />
-          <MultiSelect
-            clearable
-            searchable
+          <CheckboxMultiSelect
             data={organizationSelectData}
             label={t('Організація')}
             placeholder={t('Всі')}
