@@ -219,24 +219,24 @@ export function TaxFreePackListsPage() {
       <Card className="app-data-card tax-free-pack-lists-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar tax-free-pack-lists-filter-bar">
           <Group align="end" gap={10} wrap="nowrap" className="tax-free-pack-lists-filter-row">
-            <TextInput
-              label={t('Від')}
-              type="date"
-              value={filters.from}
-              w={150}
-              onChange={(event) => {
-                dispatchList({ type: 'filterChanged', field: 'from', value: event.currentTarget.value })
-              }}
-            />
-            <TextInput
-              label={t('До')}
-              type="date"
-              value={filters.to}
-              w={150}
-              onChange={(event) => {
-                dispatchList({ type: 'filterChanged', field: 'to', value: event.currentTarget.value })
-              }}
-            />
+            <div className="app-filter-date-range">
+              <TextInput
+                label={t('Від')}
+                type="date"
+                value={filters.from}
+                onChange={(event) => {
+                  dispatchList({ type: 'filterChanged', field: 'from', value: event.currentTarget.value })
+                }}
+              />
+              <TextInput
+                label={t('До')}
+                type="date"
+                value={filters.to}
+                onChange={(event) => {
+                  dispatchList({ type: 'filterChanged', field: 'to', value: event.currentTarget.value })
+                }}
+              />
+            </div>
             <div className="app-filter-actions" style={{ marginLeft: 'auto' }}>
               <Tooltip label={t('Скинути')}>
                 <ActionIcon
@@ -277,7 +277,7 @@ export function TaxFreePackListsPage() {
         </div>
 
         {(error || filterError) && (
-          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
+          <Alert className="tax-free-pack-lists-alert" color="red" icon={<CircleAlert size={18} />} variant="light">
             {filterError || error}
           </Alert>
         )}
