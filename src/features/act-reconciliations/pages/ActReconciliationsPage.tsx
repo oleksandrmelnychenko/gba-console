@@ -189,22 +189,24 @@ function ActReconciliationsPageView({ model }: { model: ReturnType<typeof useAct
       <div className="console-table-shell act-reconciliations-shell">
         <div className="app-filter-bar act-reconciliations-filter-bar">
           <div className="act-reconciliations-filter-row">
-            <TextInput
-              className="act-reconciliations-date-input"
-              label={t('Від')}
-              max={filterDraft.to || undefined}
-              type="date"
-              value={filterDraft.from}
-              onChange={(event) => applyFilters({ ...filterDraft, from: event.currentTarget.value })}
-            />
-            <TextInput
-              className="act-reconciliations-date-input"
-              label={t('До')}
-              min={filterDraft.from || undefined}
-              type="date"
-              value={filterDraft.to}
-              onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
-            />
+            <div className="app-filter-date-range">
+              <TextInput
+                className="act-reconciliations-date-input"
+                label={t('Від')}
+                max={filterDraft.to || undefined}
+                type="date"
+                value={filterDraft.from}
+                onChange={(event) => applyFilters({ ...filterDraft, from: event.currentTarget.value })}
+              />
+              <TextInput
+                className="act-reconciliations-date-input"
+                label={t('До')}
+                min={filterDraft.from || undefined}
+                type="date"
+                value={filterDraft.to}
+                onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
+              />
+            </div>
             <div className="app-filter-actions">
               <Tooltip label={t('Скинути')}>
                 <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
@@ -225,7 +227,7 @@ function ActReconciliationsPageView({ model }: { model: ReturnType<typeof useAct
               </Tooltip>
             </div>
           </div>
-          <div ref={setTableToolbarSlot} className="act-reconciliations-table-toolbar-slot" />
+          <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot act-reconciliations-table-toolbar-slot" />
         </div>
 
         {(error || filterError) && (
