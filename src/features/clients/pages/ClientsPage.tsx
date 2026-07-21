@@ -678,7 +678,7 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
             onSetSearchField={setSearchField}
             onSetSearchValue={setSearchValue}
           />
-          <div ref={setTableToolbarSlot} className="clients-table-toolbar-slot" />
+          <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot clients-table-toolbar-slot" />
           {canCreateClient && (
             <Button
               className="clients-create-button"
