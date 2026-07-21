@@ -293,8 +293,8 @@ export function PaymentAccountsPage() {
             />
           </div>
 
-          <Group justify="flex-end" gap="xs" className="payment-accounts-total-footer">
-            <Badge className="app-role-pill" variant="light">
+          <Group className="payment-accounts-total-footer" gap="xs" justify="flex-end" wrap="nowrap">
+            <Badge className="app-role-pill is-gray" variant="light">
               {t('Всього в EUR')}: {formatMoney(totalEuroAmount)}
             </Badge>
           </Group>
