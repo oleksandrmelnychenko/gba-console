@@ -21,8 +21,8 @@ import {
 } from '@mantine/core'
 import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
-import { ArrowDown, ArrowUp, Building, ChevronRight, CircleAlert, Coins, DatabaseX, ExternalLink, MapPin, Package, Pencil, Plus, ReceiptText, RefreshCw, Ruler, Save, Search, Star, Trash2, Truck, Upload, Users } from 'lucide-react'
-import { type ComponentType, type ReactNode, useCallback, useEffect, useMemo, useReducer } from 'react'
+import { ArrowDown, ArrowUp, Building, ChevronRight, CircleAlert, Coins, DatabaseX, ExternalLink, MapPin, Package, Pencil, Plus, ReceiptText, RefreshCw, RotateCcw, Ruler, Save, Search, Star, Trash2, Truck, Upload, Users } from 'lucide-react'
+import { createContext, type ComponentType, type ReactNode, useCallback, useContext, useEffect, useMemo, useReducer, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { translate } from '../../../shared/i18n/translate'
@@ -107,9 +107,16 @@ import type {
   ClientResourceVatRate,
 } from '../types'
 import { CLIENT_RESOURCE_STEPS } from '../types'
+import '../../../shared/ui/console-table-page.css'
 import './clientResources.css'
 
 const DEFAULT_STEP: ClientResourceStep = 'regions'
+const ClientResourcesPanelActionContext = createContext<ReactNode>(null)
+const ClientResourcesFilterPatternContext = createContext(false)
+const ClientResourcesTableToolbarContext = createContext<{
+  setTarget: (target: HTMLDivElement | null) => void
+  target: HTMLDivElement | null
+} | null>(null)
 
 const RESOURCE_MONO_STYLE = { fontFamily: 'var(--font-mono)', letterSpacing: 0 } as const
 const BUYER_CLIENT_TYPE = 0
@@ -191,8 +198,10 @@ type ResourceDataTableProps<TData extends ClientResourceEntity> = {
   data: TData[]
   density?: DataTableDensity
   emptyText?: ReactNode
+  fillHeight?: boolean
   layoutVersion?: number | string
   minWidth?: number
+  showLayoutControls?: boolean
   tableId: string
 }
 
@@ -201,24 +210,39 @@ function ResourceDataTable<TData extends ClientResourceEntity>({
   data,
   density,
   emptyText,
+  fillHeight,
   layoutVersion = 'client-resources-table-3',
   minWidth = 760,
+  showLayoutControls = true,
   tableId,
 }: ResourceDataTableProps<TData>) {
-  return (
+  const usesFilterPattern = useContext(ClientResourcesFilterPatternContext)
+  const tableToolbar = useContext(ClientResourcesTableToolbarContext)
+  const shouldFillHeight = fillHeight ?? usesFilterPattern
+
+  const table = (
     <DataTable
       columns={columns}
       data={data}
       defaultLayout={CLIENT_RESOURCE_TABLE_DEFAULT_LAYOUT}
-      density={density}
+      density={usesFilterPattern ? undefined : density}
       emptyText={emptyText}
       getRowId={(row, index) => getEntityKey(row, index)}
+      height={shouldFillHeight ? '100%' : undefined}
       layoutVersion={layoutVersion}
-      maxHeight="min(56vh, 620px)"
+      maxHeight={shouldFillHeight ? undefined : 'min(56vh, 620px)'}
       minWidth={minWidth}
+      showLayoutControls={usesFilterPattern && showLayoutControls}
       tableId={`client-resources-${normalizeTableIdPart(tableId)}`}
+      toolbarPortalTarget={usesFilterPattern ? tableToolbar?.target : undefined}
     />
   )
+
+  return usesFilterPattern ? (
+    <div className={`client-resources-table${shouldFillHeight ? ' is-fill-height' : ' is-auto-height'}`}>
+      {table}
+    </div>
+  ) : table
 }
 
 function TruncatedCell({ mono = false, value }: { mono?: boolean; value: unknown }) {
@@ -499,6 +523,7 @@ export function ClientResourcesPage() {
   const { step } = useParams<{ step?: string }>()
   const activeStep = isClientResourceStep(step) ? step : DEFAULT_STEP
   const activeSection = getSection(activeStep)
+  const usesFilterPattern = activeStep !== 'product-reserve'
 
   usePageBreadcrumb(translate(activeSection.label))
 
@@ -509,8 +534,8 @@ export function ClientResourcesPage() {
   }, [navigate, step])
 
   return (
-    <Box className="client-resources-page">
-      <Box className="client-resources-shell">
+    <Box className={`client-resources-page${usesFilterPattern ? ' console-table-page is-filtered' : ''}`}>
+      <Box className={`client-resources-shell${usesFilterPattern ? ' is-filtered' : ''}`}>
         <ClientResourcesNav activeStep={activeStep} onNavigate={(nextStep) => navigate(`/clients/resources/${nextStep}`)} />
 
         <Box className="client-resources-content">
@@ -779,7 +804,6 @@ function RegionsPanelView({ model }: { model: ReturnType<typeof useRegionsPanelM
   } = model
   const regionHeaderAction = (
     <Group gap="xs" wrap="nowrap">
-      <RefreshControl isLoading={state.isLoading} onRefresh={state.reload} />
       <PermissionGate permissionKey={REGION_CREATE_PERMISSION}>
         <Button color={CREATE_ACTION_COLOR} leftSection={<Plus size={16} />} size="xs" onClick={openCreateRegion}>
           Новий регіон
@@ -790,17 +814,17 @@ function RegionsPanelView({ model }: { model: ReturnType<typeof useRegionsPanelM
 
   return (
     <ResourcePanel action={regionHeaderAction} section={section}>
+      <PanelToolbar
+        isLoading={state.isLoading}
+        onRefresh={state.reload}
+        onSearchChange={setSearch}
+        searchFullWidth
+        searchValue={search}
+      />
       <Loadable state={state} emptyTitle="Регіонів не знайдено">
         {filteredRegions.length ? (
           <Box className="client-resources-regions-grid">
             <Stack gap={6} className="client-resources-region-master">
-              <TextInput
-                className="client-resources-region-search"
-                leftSection={<Search size={16} strokeWidth={1.8} />}
-                onChange={(event) => setSearch(event.currentTarget.value)}
-                placeholder={translate('Пошук')}
-                value={search}
-              />
               <Stack gap={2} className="client-resources-region-list">
                 {filteredRegions.map((region, index) => {
                   const key = getEntityKey(region, index)
@@ -974,6 +998,7 @@ function RegionsPanelView({ model }: { model: ReturnType<typeof useRegionsPanelM
                   ]}
                   data={selectedRegionCodes}
                   emptyText={translate("Кодів регіону немає")}
+                  fillHeight={false}
                   minWidth={620}
                   tableId="region-codes"
                 />
@@ -1322,25 +1347,20 @@ function PerfectClientsPanel({ section }: { section: ClientResourceSection }) {
     }
   }
 
+  const perfectClientFilter = (
+    <Select
+      allowDeselect={false}
+      data={roleOptions}
+      disabled={!roleOptions.length || clientTypesState.isLoading}
+      label={translate("Роль")}
+      placeholder={translate("Оберіть роль")}
+      value={effectiveRoleId}
+      w={220}
+      onChange={selectRole}
+    />
+  )
   const perfectClientAction = (
     <Group gap="xs" wrap="nowrap">
-      <Select
-        allowDeselect={false}
-        data={roleOptions}
-        disabled={!roleOptions.length || clientTypesState.isLoading}
-        placeholder={translate("Оберіть роль")}
-        size="xs"
-        value={effectiveRoleId}
-        w={220}
-        onChange={selectRole}
-      />
-      <RefreshControl
-        isLoading={clientTypesState.isLoading || perfectClientsState.isLoading}
-        onRefresh={() => {
-          clientTypesState.reload()
-          perfectClientsState.reload()
-        }}
-      />
       <PermissionGate permissionKey={PERFECT_CLIENT_CREATE_PERMISSION}>
         <Button
           color={CREATE_ACTION_COLOR}
@@ -1357,6 +1377,14 @@ function PerfectClientsPanel({ section }: { section: ClientResourceSection }) {
 
   return (
     <ResourcePanel action={perfectClientAction} section={section}>
+      <PanelToolbar
+        filter={perfectClientFilter}
+        isLoading={clientTypesState.isLoading || perfectClientsState.isLoading}
+        onRefresh={() => {
+          clientTypesState.reload()
+          perfectClientsState.reload()
+        }}
+      />
       <Loadable state={clientTypesState} emptyTitle="Ролей клієнтів не знайдено">
         <Loadable state={perfectClientsState} emptyTitle="Параметрів для ролі не знайдено">
           {selectedRole ? (
@@ -2183,7 +2211,7 @@ function OrganizationsPanel({ section }: { section: ClientResourceSection }) {
   const [deleteTarget, setDeleteTarget] = useValueState<ClientResourceDeleteTarget | null>(null)
   const [formError, setFormError] = useValueState<string | null>(null)
   const [isSaving, setSaving] = useValueState(false)
-  const { density, toggleDensity } = useDataTableDensity('client-resources-organizations', 'compact')
+  const { density } = useDataTableDensity('client-resources-organizations', 'compact')
   const filtered = useMemo(
     () =>
       state.data.filter((organization) =>
@@ -2279,13 +2307,11 @@ function OrganizationsPanel({ section }: { section: ClientResourceSection }) {
   }
   const organizationHeaderAction = (
     <Group gap="xs" wrap="nowrap">
-      <RefreshControl isLoading={state.isLoading} onRefresh={state.reload} />
       <PermissionGate permissionKey={ORGANIZATION_CREATE_PERMISSION}>
         <Button color={CREATE_ACTION_COLOR} leftSection={<Plus size={16} />} size="xs" onClick={openCreateOrganization}>
           Нова організація
         </Button>
       </PermissionGate>
-      <DataTableDensityToggle density={density} onToggle={toggleDensity} size="md" />
     </Group>
   )
 
@@ -2293,6 +2319,7 @@ function OrganizationsPanel({ section }: { section: ClientResourceSection }) {
     <ResourcePanel action={organizationHeaderAction} section={section}>
       <PanelToolbar
         isLoading={state.isLoading}
+        onRefresh={state.reload}
         onSearchChange={setSearch}
         searchFullWidth
         searchValue={search}
@@ -2741,7 +2768,7 @@ function TaxInspectionsPanel({ section }: { section: ClientResourceSection }) {
   const [deleteTarget, setDeleteTarget] = useValueState<ClientResourceDeleteTarget | null>(null)
   const [formError, setFormError] = useValueState<string | null>(null)
   const [isSaving, setSaving] = useValueState(false)
-  const { density, toggleDensity } = useDataTableDensity('client-resources-tax-inspections', 'compact')
+  const { density } = useDataTableDensity('client-resources-tax-inspections', 'compact')
   const filtered = useMemo(
     () =>
       state.data.filter((inspection) =>
@@ -2822,13 +2849,11 @@ function TaxInspectionsPanel({ section }: { section: ClientResourceSection }) {
   }
   const taxInspectionHeaderAction = (
     <Group gap="xs" wrap="nowrap">
-      <RefreshControl isLoading={state.isLoading} onRefresh={state.reload} />
       <PermissionGate permissionKey={TAX_INSPECTION_CREATE_PERMISSION}>
         <Button color={CREATE_ACTION_COLOR} leftSection={<Plus size={16} />} size="xs" onClick={openCreateTaxInspection}>
           Нова налогова інспекція
         </Button>
       </PermissionGate>
-      <DataTableDensityToggle density={density} onToggle={toggleDensity} size="md" />
     </Group>
   )
 
@@ -2836,6 +2861,7 @@ function TaxInspectionsPanel({ section }: { section: ClientResourceSection }) {
     <ResourcePanel action={taxInspectionHeaderAction} section={section}>
       <PanelToolbar
         isLoading={state.isLoading}
+        onRefresh={state.reload}
         onSearchChange={setSearch}
         searchFullWidth
         searchValue={search}
@@ -2998,7 +3024,7 @@ function PricingPanel({ section }: { section: ClientResourceSection }) {
   const [deleteTarget, setDeleteTarget] = useValueState<ClientResourceDeleteTarget | null>(null)
   const [formError, setFormError] = useValueState<string | null>(null)
   const [isSaving, setSaving] = useValueState(false)
-  const { density, toggleDensity } = useDataTableDensity('client-resources-pricing', 'compact')
+  const { density } = useDataTableDensity('client-resources-pricing', 'compact')
   const filtered = useMemo(
     () =>
       state.data.filter((pricing) =>
@@ -3138,7 +3164,6 @@ function PricingPanel({ section }: { section: ClientResourceSection }) {
   }
   const pricingHeaderAction = (
     <Group gap="xs" wrap="nowrap">
-      <RefreshControl isLoading={state.isLoading} onRefresh={state.reload} />
       <PermissionGate permissionKey={PRICING_CREATE_PERMISSION}>
         <Button
           color={CREATE_ACTION_COLOR}
@@ -3151,7 +3176,6 @@ function PricingPanel({ section }: { section: ClientResourceSection }) {
           Нове правило
         </Button>
       </PermissionGate>
-      <DataTableDensityToggle density={density} onToggle={toggleDensity} size="md" />
     </Group>
   )
 
@@ -3159,6 +3183,7 @@ function PricingPanel({ section }: { section: ClientResourceSection }) {
     <ResourcePanel action={pricingHeaderAction} section={section}>
       <PanelToolbar
         isLoading={state.isLoading}
+        onRefresh={state.reload}
         onSearchChange={setSearch}
         searchFullWidth
         searchValue={search}
@@ -3393,7 +3418,7 @@ function CurrenciesPanel({ section }: { section: ClientResourceSection }) {
   const [deleteTarget, setDeleteTarget] = useValueState<ClientResourceDeleteTarget | null>(null)
   const [formError, setFormError] = useValueState<string | null>(null)
   const [isSaving, setSaving] = useValueState(false)
-  const { density, toggleDensity } = useDataTableDensity('client-resources-currencies', 'compact')
+  const { density } = useDataTableDensity('client-resources-currencies', 'compact')
   const filtered = useMemo(
     () =>
       state.data.filter((currency) =>
@@ -3473,13 +3498,11 @@ function CurrenciesPanel({ section }: { section: ClientResourceSection }) {
   }
   const currencyHeaderAction = (
     <Group gap="xs" wrap="nowrap">
-      <RefreshControl isLoading={state.isLoading} onRefresh={state.reload} />
       <PermissionGate permissionKey={CURRENCY_CREATE_PERMISSION}>
         <Button color={CREATE_ACTION_COLOR} leftSection={<Plus size={16} />} size="xs" onClick={openCreateCurrency}>
           Нова валюта
         </Button>
       </PermissionGate>
-      <DataTableDensityToggle density={density} onToggle={toggleDensity} size="md" />
     </Group>
   )
 
@@ -3487,6 +3510,7 @@ function CurrenciesPanel({ section }: { section: ClientResourceSection }) {
     <ResourcePanel action={currencyHeaderAction} section={section}>
       <PanelToolbar
         isLoading={state.isLoading}
+        onRefresh={state.reload}
         onSearchChange={setSearch}
         searchFullWidth
         searchValue={search}
@@ -3615,7 +3639,7 @@ function StoragesPanel({ section }: { section: ClientResourceSection }) {
   const [deleteTarget, setDeleteTarget] = useValueState<ClientResourceDeleteTarget | null>(null)
   const [formError, setFormError] = useValueState<string | null>(null)
   const [isSaving, setSaving] = useValueState(false)
-  const { density, toggleDensity } = useDataTableDensity('client-resources-storages', 'compact')
+  const { density } = useDataTableDensity('client-resources-storages', 'compact')
   const filtered = useMemo(
     () =>
       state.data.filter((storage) =>
@@ -3701,13 +3725,11 @@ function StoragesPanel({ section }: { section: ClientResourceSection }) {
   }
   const storageHeaderAction = (
     <Group gap="xs" wrap="nowrap">
-      <RefreshControl isLoading={state.isLoading} onRefresh={state.reload} />
       <PermissionGate permissionKey={STORAGE_CREATE_PERMISSION}>
         <Button color={CREATE_ACTION_COLOR} leftSection={<Plus size={16} />} size="xs" onClick={openCreateStorage}>
           Новий склад
         </Button>
       </PermissionGate>
-      <DataTableDensityToggle density={density} onToggle={toggleDensity} size="md" />
     </Group>
   )
 
@@ -3715,6 +3737,7 @@ function StoragesPanel({ section }: { section: ClientResourceSection }) {
     <ResourcePanel action={storageHeaderAction} section={section}>
       <PanelToolbar
         isLoading={state.isLoading}
+        onRefresh={state.reload}
         onSearchChange={setSearch}
         searchFullWidth
         searchValue={search}
@@ -3887,7 +3910,7 @@ function MeasureUnitsPanel({ section }: { section: ClientResourceSection }) {
   const [deleteTarget, setDeleteTarget] = useValueState<ClientResourceDeleteTarget | null>(null)
   const [formError, setFormError] = useValueState<string | null>(null)
   const [isSaving, setSaving] = useValueState(false)
-  const { density, toggleDensity } = useDataTableDensity('client-resources-measure-units', 'compact')
+  const { density } = useDataTableDensity('client-resources-measure-units', 'compact')
   const filtered = useMemo(
     () =>
       state.data.filter((measureUnit) =>
@@ -3967,13 +3990,11 @@ function MeasureUnitsPanel({ section }: { section: ClientResourceSection }) {
   }
   const measureUnitHeaderAction = (
     <Group gap="xs" wrap="nowrap">
-      <RefreshControl isLoading={state.isLoading} onRefresh={state.reload} />
       <PermissionGate permissionKey={MEASURE_UNIT_CREATE_PERMISSION}>
         <Button color={CREATE_ACTION_COLOR} leftSection={<Plus size={16} />} size="xs" onClick={openCreateMeasureUnit}>
           Нова одиниця
         </Button>
       </PermissionGate>
-      <DataTableDensityToggle density={density} onToggle={toggleDensity} size="md" />
     </Group>
   )
 
@@ -3981,6 +4002,7 @@ function MeasureUnitsPanel({ section }: { section: ClientResourceSection }) {
     <ResourcePanel action={measureUnitHeaderAction} section={section}>
       <PanelToolbar
         isLoading={state.isLoading}
+        onRefresh={state.reload}
         onSearchChange={setSearch}
         searchFullWidth
         searchValue={search}
@@ -4391,13 +4413,6 @@ function CarrierPanel({ section }: { section: ClientResourceSection }) {
 
   const carrierAction = (
     <Group gap="xs" wrap="nowrap">
-      <RefreshControl
-        isLoading={typesState.isLoading || transportersState.isLoading}
-        onRefresh={() => {
-          typesState.reload()
-          transportersState.reload()
-        }}
-      />
       <Button
         color={CREATE_ACTION_COLOR}
         disabled={!selectedTransporterType}
@@ -4412,22 +4427,30 @@ function CarrierPanel({ section }: { section: ClientResourceSection }) {
 
   return (
     <ResourcePanel action={carrierAction} section={section}>
-      <Group align="flex-start" mb="md">
-        <Select
-          data={typeOptions}
-          label={translate("Тип перевізника")}
-          maw={360}
-          nothingFoundMessage={translate("Типів не знайдено")}
-          onChange={setTypeNetId}
-          placeholder={translate("Оберіть тип")}
-          value={effectiveTypeNetId}
-        />
-      </Group>
+      <PanelToolbar
+        filter={
+          <Select
+            data={typeOptions}
+            label={translate("Тип перевізника")}
+            maw={360}
+            nothingFoundMessage={translate("Типів не знайдено")}
+            onChange={setTypeNetId}
+            placeholder={translate("Оберіть тип")}
+            value={effectiveTypeNetId}
+          />
+        }
+        isLoading={typesState.isLoading || transportersState.isLoading}
+        onRefresh={() => {
+          typesState.reload()
+          transportersState.reload()
+        }}
+      />
       <Loadable state={typesState} emptyTitle="Типів перевізників не знайдено">
         <Loadable state={transportersState} emptyTitle="Перевізників не знайдено">
           <Stack gap="xl">
             <TransporterTable
               showActions
+              showLayoutControls
               title={translate("Активні")}
               transporters={activeTransporters}
               onDelete={(transporter) => {
@@ -4486,12 +4509,14 @@ function isProtectedTransporter(transporter: ClientResourceTransporter): boolean
 
 function TransporterTable({
   showActions = false,
+  showLayoutControls = false,
   title,
   transporters,
   onDelete,
   onEdit,
 }: {
   showActions?: boolean
+  showLayoutControls?: boolean
   title: string
   transporters: ClientResourceTransporter[]
   onDelete: (transporter: ClientResourceTransporter) => void
@@ -4594,8 +4619,10 @@ function TransporterTable({
           ]}
           data={transporters}
           emptyText={translate("Записів немає")}
+          fillHeight={false}
           layoutVersion="client-resources-transporters-table-2"
           minWidth={showActions ? 602 : 530}
+          showLayoutControls={showLayoutControls}
           tableId={`transporters-${title}`}
         />
       ) : (
@@ -4608,11 +4635,31 @@ function TransporterTable({
 function ResourcePanel({
   action,
   children,
+  section,
 }: {
   action?: ReactNode
   children: ReactNode
   section: ClientResourceSection
 }) {
+  const usesFilterPattern = section.step !== 'product-reserve'
+  const [tableToolbarTarget, setTableToolbarTarget] = useState<HTMLDivElement | null>(null)
+
+  if (usesFilterPattern) {
+    return (
+      <ClientResourcesFilterPatternContext.Provider value>
+        <ClientResourcesTableToolbarContext.Provider
+          value={{ setTarget: setTableToolbarTarget, target: tableToolbarTarget }}
+        >
+          <ClientResourcesPanelActionContext.Provider value={action}>
+            <section className="client-resources-panel console-table-shell is-filtered">
+              {children}
+            </section>
+          </ClientResourcesPanelActionContext.Provider>
+        </ClientResourcesTableToolbarContext.Provider>
+      </ClientResourcesFilterPatternContext.Provider>
+    )
+  }
+
   return (
     <section className="client-resources-panel">
       {action ? <div className="client-resources-panel-bar">{action}</div> : null}
@@ -4623,6 +4670,7 @@ function ResourcePanel({
 
 function PanelToolbar({
   action,
+  filter,
   isLoading,
   onRefresh,
   onSearchChange,
@@ -4630,6 +4678,7 @@ function PanelToolbar({
   searchValue,
 }: {
   action?: ReactNode
+  filter?: ReactNode
   isLoading: boolean
   onRefresh?: () => void
   onSearchChange?: (value: string) => void
@@ -4637,34 +4686,64 @@ function PanelToolbar({
   searchValue?: string
 }) {
   const { t } = useI18n()
+  const panelAction = useContext(ClientResourcesPanelActionContext)
+  const tableToolbar = useContext(ClientResourcesTableToolbarContext)
+  const visibleAction = action ?? panelAction
 
   return (
-    <Group justify="space-between" align="center" mb="md" gap="sm">
-      {onSearchChange ? (
-        <TextInput
-          className={`client-resources-search${searchFullWidth ? ' client-resources-search-full' : ''}`}
-          leftSection={<Search size={16} strokeWidth={1.8} />}
-          onChange={(event) => onSearchChange(event.currentTarget.value)}
-          placeholder={t('Пошук')}
-          value={searchValue}
-        />
-      ) : (
-        <span />
-      )}
-      <Group gap="xs">
+    <div className="app-filter-bar client-resources-filter-bar">
+      <div className="client-resources-filter-fields">
+        {filter}
+        {onSearchChange ? (
+          <TextInput
+            className={`client-resources-search${searchFullWidth ? ' client-resources-search-full' : ''}`}
+            label={t('Пошук')}
+            leftSection={<Search size={16} strokeWidth={1.8} />}
+            onChange={(event) => onSearchChange(event.currentTarget.value)}
+            placeholder={t('Назва або код')}
+            value={searchValue}
+          />
+        ) : null}
+      </div>
+      <div className="app-filter-actions client-resources-filter-actions">
+        {onSearchChange ? (
+          <Tooltip label={t('Скинути')}>
+            <ActionIcon
+              aria-label={t('Скинути')}
+              color="gray"
+              disabled={!searchValue}
+              size={34}
+              type="button"
+              variant="light"
+              onClick={() => onSearchChange('')}
+            >
+              <RotateCcw size={17} />
+            </ActionIcon>
+          </Tooltip>
+        ) : null}
         {onRefresh ? <RefreshControl isLoading={isLoading} onRefresh={onRefresh} /> : null}
-        {action}
-      </Group>
-    </Group>
+      </div>
+      <div ref={tableToolbar?.setTarget} className="app-filter-table-toolbar-slot" />
+      {visibleAction ? <div className="client-resources-create-actions">{visibleAction}</div> : null}
+    </div>
   )
 }
 
 function RefreshControl({ isLoading, onRefresh }: { isLoading: boolean; onRefresh: () => void }) {
   const { t } = useI18n()
+  const usesFilterPattern = useContext(ClientResourcesFilterPatternContext)
 
   return (
     <Tooltip label={t('Оновити')}>
-      <ActionIcon aria-label={t('Оновити')} loading={isLoading} onClick={onRefresh} variant="subtle" color="gray">
+      <ActionIcon
+        aria-label={t('Оновити')}
+        color="gray"
+        loading={isLoading}
+        size={usesFilterPattern ? 34 : undefined}
+        type="button"
+        variant={usesFilterPattern ? 'light' : 'subtle'}
+        onClick={onRefresh}
+      >
         <RefreshCw size={18} strokeWidth={1.8} />
       </ActionIcon>
     </Tooltip>
