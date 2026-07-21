@@ -134,7 +134,10 @@
   `.app-filter-field`, а для лейбла — `.app-filter-label`; локальні gap/height
   для такої пари не задавати.
 - **Дії:** іконки 34px (`variant="light"`/`default"`), паджинатор
-  (`<Paginator>`, лейбл моно), потім слот `toolbarPortalTarget` для ▦ ☰.
+  (`<Paginator>`, лейбл моно), потім
+  `<div className="app-filter-table-toolbar-slot">` як `toolbarPortalTarget`
+  для патернових ▦/☰ (`showLayoutControls`). Не дублювати density вручну в
+  `.app-filter-actions`.
 - **Кнопки створення:** `CREATE_ACTION_COLOR`, filled — головна,
   `variant="outline"` — другорядна; напис **моно 600**; сидять у самому барі
   (НЕ в хедері сторінки / PageHeaderActions).

@@ -29,6 +29,10 @@ function getDataTableStorageKey(tableId: string) {
   return `${STORAGE_PREFIX}:${tableId}:layout`
 }
 
+function getLegacyDensityStorageKey(tableId: string) {
+  return `${STORAGE_PREFIX}:${tableId}:density`
+}
+
 export function readDataTableLayout(tableId: string): DataTableLayout {
   if (typeof window === 'undefined') {
     return {}
@@ -36,10 +40,33 @@ export function readDataTableLayout(tableId: string): DataTableLayout {
 
   try {
     const value = window.localStorage.getItem(getDataTableStorageKey(tableId))
-    return value ? (JSON.parse(value) as DataTableLayout) : {}
+    const layout = value ? (JSON.parse(value) as DataTableLayout) : {}
+
+    if (layout.density === 'compact' || layout.density === 'normal') {
+      return layout
+    }
+
+    const legacyDensity = window.localStorage.getItem(getLegacyDensityStorageKey(tableId))
+
+    return legacyDensity === 'compact' || legacyDensity === 'normal'
+      ? { ...layout, density: legacyDensity }
+      : layout
   } catch {
     return {}
   }
+}
+
+export function readCompatibleDataTableLayout(tableId: string, layoutVersion?: string): DataTableLayout {
+  const storedLayout = readDataTableLayout(tableId)
+
+  if (layoutVersion && storedLayout.version !== layoutVersion) {
+    // A version bump invalidates column order/pinning/sizing, not the user's
+    // compact/normal preference. readDataTableLayout also maps the former
+    // standalone density key, so keeping this field completes that migration.
+    return storedLayout.density ? { density: storedLayout.density } : {}
+  }
+
+  return storedLayout
 }
 
 export function writeDataTableLayout(tableId: string, layout: DataTableLayout) {

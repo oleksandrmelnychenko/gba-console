@@ -35,7 +35,7 @@ import {
   clearDataTableLayout,
   createDefaultDataTableLayout,
   normalizeDataTableLayout,
-  readDataTableLayout,
+  readCompatibleDataTableLayout,
   writeDataTableLayout,
   type NormalizedDataTableLayout,
 } from './dataTableStorage'
@@ -709,16 +709,6 @@ function resolveStateUpdater<TValue>(
   return typeof updater === 'function'
     ? (updater as (currentValue: TValue) => TValue)(currentValue)
     : updater
-}
-
-function readCompatibleDataTableLayout(tableId: string, layoutVersion?: string) {
-  const storedLayout = readDataTableLayout(tableId)
-
-  if (layoutVersion && storedLayout.version !== layoutVersion) {
-    return {}
-  }
-
-  return storedLayout
 }
 
 function normalizeLayoutVersion(layoutVersion?: number | string) {

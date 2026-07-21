@@ -101,6 +101,27 @@ describe('filter-bar CSS contract', () => {
     })
   })
 
+  it('keeps DataTable layout controls on the shared filter baseline', () => {
+    const actionsRule = findRule(root, 'gap', '.app-filter-actions')
+    const slotRule = findRule(root, 'min-height', '.app-filter-table-toolbar-slot')
+    const toolbarRule = findRule(root, 'margin', '.app-filter-table-toolbar-slot .data-table-toolbar')
+
+    expect(declarations(actionsRule)).toMatchObject({
+      gap: '10px',
+    })
+    expect(declarations(slotRule)).toMatchObject({
+      'align-items': 'center',
+      'align-self': 'end',
+      display: 'flex',
+      'min-height': 'var(--app-filter-control-height, 36px)',
+    })
+    expect(declarations(toolbarRule)).toMatchObject({
+      gap: '10px',
+      margin: '0',
+      'min-height': '0',
+    })
+  })
+
   it('keeps vertical bar geometry out of feature styles', () => {
     const conflicts: string[] = []
 

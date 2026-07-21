@@ -87,10 +87,28 @@
 .app-filter-actions {
   align-items: center;
   display: flex;
-  gap: 8px;
+  gap: 10px;
   justify-content: flex-end;
   min-height: var(--app-filter-control-height, 36px);
   min-width: 0;
+}
+
+/* DataTable-owned column/density controls live after the page actions and
+   before create buttons. Keep this slot on the same 36px control baseline on
+   every registry, including action-only filter bars. */
+.app-filter-table-toolbar-slot {
+  align-items: center;
+  align-self: end;
+  display: flex;
+  flex: 0 0 auto;
+  min-height: var(--app-filter-control-height, 36px);
+  min-width: 0;
+}
+
+.app-filter-table-toolbar-slot .data-table-toolbar {
+  gap: 10px;
+  margin: 0;
+  min-height: 0;
 }
 
 /* Keep paired date filters identical across console pages regardless of the
@@ -124,7 +142,10 @@
 .app-filter-bar .app-filter-field > .mantine-SegmentedControl-root,
 .sales-filter-bar .app-filter-field > .mantine-SegmentedControl-root,
 .console-table-command-bar .app-filter-field > .mantine-SegmentedControl-root {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
   height: var(--app-filter-control-height, 36px);
+  letter-spacing: 0;
   min-height: var(--app-filter-control-height, 36px);
 }
 
