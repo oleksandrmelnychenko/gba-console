@@ -253,7 +253,7 @@ export function PreordersInterestPage() {
               </ActionIcon>
             </Tooltip>
           </div>
-          <div ref={setTableToolbarSlot} className="preorders-interest-table-toolbar-slot" />
+          <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot preorders-interest-table-toolbar-slot" />
         </div>
 
         <div className="preorders-interest-page__table">
