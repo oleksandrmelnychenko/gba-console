@@ -523,7 +523,7 @@ export function SupplyUkraineOrderOverviewPage() {
               <DetailValue mono={false} label={t('Організація')} value={getRecipientOrganizationName(order)} />
               <DetailValue mono={false} label={t('Відповідальний')} value={getEntityName(order?.Responsible)} />
               <DetailValue label={t('Кількість')} value={formatAmount(readNumber(orderRecord.TotalQty))} />
-              <DetailValue label={t('Сума')} value={formatMoney(order?.TotalGrossPriceLocal)} />
+              <DetailValue label={t('Собівартість')} value={formatMoney(order?.TotalGrossPriceLocal)} />
               <DetailValue label={currencyCode && currencyCode !== 'EUR' ? `${t('Курс')} ${currencyCode} ${t('до')} EUR` : t('Курс')} value={formatAmount(order?.ExchangeRateAmount)} />
               <DetailValue label={t('Додатковий відсоток')} value={formatAmount(order?.AdditionalPercent)} />
               <DetailValue label={t('ПДВ')} value={formatAmount(order?.VatPercent)} />

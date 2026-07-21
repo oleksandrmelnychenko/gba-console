@@ -69,35 +69,45 @@ import type {
   SupplyUkraineOrdersResponse,
 } from '../types'
 import { hasSupplyProForm } from '../proFormHelpers'
+import {
+  getDirectOrderAmountBreakdown,
+  getInvoiceAmountBreakdown,
+  getToUkraineOrderAmountBreakdown,
+} from '../orderAmountBreakdown'
 import '../../../shared/ui/console-table-page.css'
 import './supply-ukraine-orders.css'
 
 const DEFAULT_PAGE_SIZE = DEFAULT_PAGINATOR_PAGE_SIZE
 const SUPPLY_ORGANIZATION_SEARCH_DEBOUNCE_MS = 300
-const ORDERS_TABLE_MIN_WIDTH = 1280
-const ORDER_INVOICES_TABLE_MIN_WIDTH = 760
+const ORDERS_TABLE_MIN_WIDTH = 1660
+const ORDER_INVOICES_TABLE_MIN_WIDTH = 1080
 const ORDERS_TABLE_DEFAULT_LAYOUT: DataTableDefaultLayout = {
-  columnOrder: ['order', 'grossPrice', 'qty', 'additionalPercent', 'organization', 'responsible', 'isPlaced', 'kind'],
+  columnOrder: ['order', 'netPrice', 'vatAmount', 'grossPrice', 'landedCost', 'qty', 'additionalPercent', 'organization', 'responsible', 'isPlaced', 'kind'],
   columnSizing: {
     additionalPercent: 96,
     grossPrice: 132,
+    landedCost: 132,
     isPlaced: 112,
     kind: 118,
+    netPrice: 132,
     order: 420,
     organization: 260,
     qty: 104,
     responsible: 158,
+    vatAmount: 118,
   },
   density: 'normal',
 }
 const ORDER_INVOICES_TABLE_DEFAULT_LAYOUT: DataTableDefaultLayout = {
-  columnOrder: ['invoice', 'invoiceDate', 'qty', 'grossPrice', 'isPlaced'],
+  columnOrder: ['invoice', 'invoiceDate', 'qty', 'netPrice', 'vatAmount', 'grossPrice', 'isPlaced'],
   columnSizing: {
     grossPrice: 122,
     invoice: 320,
     invoiceDate: 124,
     isPlaced: 112,
+    netPrice: 122,
     qty: 86,
+    vatAmount: 112,
   },
   density: 'normal',
 }
@@ -883,12 +893,39 @@ function useSupplyUkraineOrderColumns(): DataTableColumn<SupplyUkraineOrderRow>[
         width: 420,
       },
       {
+        accessor: (row) => row.netPrice ?? null,
+        align: 'right',
+        cell: (row) => <OrderMoneyCell currency={row.currency} value={row.netPrice} />,
+        header: t('Нетто'),
+        id: 'netPrice',
+        minWidth: 112,
+        width: 132,
+      },
+      {
+        accessor: (row) => row.vatAmount ?? null,
+        align: 'right',
+        cell: (row) => <OrderMoneyCell currency={row.currency} value={row.vatAmount} />,
+        header: t('ПДВ'),
+        id: 'vatAmount',
+        minWidth: 104,
+        width: 118,
+      },
+      {
         accessor: (row) => row.grossPrice ?? null,
         align: 'right',
         cell: (row) => <OrderMoneyCell currency={row.currency} value={row.grossPrice} />,
-        header: t('Сума'),
+        header: t('З ПДВ'),
         id: 'grossPrice',
         minWidth: 112,
+        width: 132,
+      },
+      {
+        accessor: (row) => row.landedCost ?? null,
+        align: 'right',
+        cell: (row) => <OrderMoneyCell currency={row.currency} value={row.landedCost} />,
+        header: t('Собівартість'),
+        id: 'landedCost',
+        minWidth: 118,
         width: 132,
       },
       {
@@ -985,7 +1022,7 @@ function SupplyUkraineOrdersRoster({
       getRowId={getSupplyOrderRosterRowId}
       height="100%"
       isLoading={isLoading}
-      layoutVersion="supply-ukraine-orders-table-1"
+      layoutVersion="supply-ukraine-orders-table-2"
       loadingText={loadingText}
       minWidth={ORDERS_TABLE_MIN_WIDTH}
       renderExpandedRow={(row) => row.directOrder ? <SupplyOrderInvoicesExpand order={row.directOrder} /> : null}
@@ -1035,10 +1072,28 @@ function useSupplyOrderInvoiceColumns(): DataTableColumn<SupplyUkraineOrderRow>[
         width: 86,
       },
       {
+        accessor: (row) => row.netPrice ?? null,
+        align: 'right',
+        cell: (row) => <OrderMoneyCell currency={row.currency} value={row.netPrice} />,
+        header: t('Нетто'),
+        id: 'netPrice',
+        minWidth: 108,
+        width: 122,
+      },
+      {
+        accessor: (row) => row.vatAmount ?? null,
+        align: 'right',
+        cell: (row) => <OrderMoneyCell currency={row.currency} value={row.vatAmount} />,
+        header: t('ПДВ'),
+        id: 'vatAmount',
+        minWidth: 100,
+        width: 112,
+      },
+      {
         accessor: (row) => row.grossPrice ?? null,
         align: 'right',
         cell: (row) => <OrderMoneyCell currency={row.currency} value={row.grossPrice} />,
-        header: t('Сума'),
+        header: t('З ПДВ'),
         id: 'grossPrice',
         minWidth: 112,
         width: 122,
@@ -1064,6 +1119,21 @@ function getSupplyOrderRosterRowId(row: SupplyUkraineOrderRow, index: number): s
 function OrderMainGridCell({ row }: { row: SupplyUkraineOrderRow }) {
   const { t } = useI18n()
   const supplier = displayTableValue(row.supplier)
+  const metaItems: Array<{ label: string; strong?: boolean; value: string }> = [
+    { label: '№', value: displayTableValue(row.number), strong: true },
+    { label: t('ств.'), value: formatCompactDateTimeCell(row.createdDate) },
+    { label: t('від'), value: formatCompactDateTimeCell(row.orderDate) },
+    { label: t('інв.'), value: displayTableValue(row.invoiceNumber) },
+    { label: t('дата інв.'), value: formatCompactDateTimeCell(row.invoiceDate) },
+  ]
+
+  if (row.source) {
+    metaItems.push({ label: t('джерело'), value: row.source, strong: false })
+  }
+
+  if (row.storage) {
+    metaItems.push({ label: t('склад'), value: row.storage, strong: false })
+  }
 
   return (
     <div className="supply-order-main-cell">
@@ -1071,15 +1141,7 @@ function OrderMainGridCell({ row }: { row: SupplyUkraineOrderRow }) {
         <div className="supply-order-main-title-row">
           <span className="supply-order-main-title" title={nativeTitle(supplier)}>{supplier}</span>
         </div>
-        <OrderMetaLine
-          items={[
-            { label: '№', value: displayTableValue(row.number), strong: true },
-            { label: t('ств.'), value: formatCompactDateTimeCell(row.createdDate) },
-            { label: t('від'), value: formatCompactDateTimeCell(row.orderDate) },
-            { label: t('інв.'), value: displayTableValue(row.invoiceNumber) },
-            { label: t('дата інв.'), value: formatCompactDateTimeCell(row.invoiceDate) },
-          ]}
-        />
+        <OrderMetaLine items={metaItems} />
       </div>
     </div>
   )
@@ -1119,7 +1181,7 @@ function SupplyOrderInvoicesExpand({ order }: { order: DirectSupplyOrder }) {
         defaultLayout={ORDER_INVOICES_TABLE_DEFAULT_LAYOUT}
         emptyText={t('Інвойсів не знайдено')}
         getRowId={getSupplyOrderRosterRowId}
-        layoutVersion="supply-order-invoices-table-1"
+        layoutVersion="supply-order-invoices-table-2"
         minWidth={ORDER_INVOICES_TABLE_MIN_WIDTH}
         showDensityToggle={false}
         showLayoutControls={false}
@@ -2052,18 +2114,22 @@ function buildRows(
 }
 
 function mapToUkraineOrderRow(order: SupplyOrderUkraine): SupplyUkraineOrderRow {
+  const amounts = getToUkraineOrderAmountBreakdown(order)
+
   return {
     additionalPercent: positiveNumber(order.AdditionalPercent),
     agreement: order.ClientAgreement?.Agreement?.Name,
     createdDate: order.Created,
     currency: order.ClientAgreement?.Agreement?.Currency?.Code || order.ClientAgreement?.Agreement?.Currency?.Name,
-    grossPrice: positiveNumber(order.TotalGrossPriceLocal),
+    grossPrice: amounts.withVat,
     index: 0,
     invoiceDate: order.InvDate,
     invoiceNumber: order.InvNumber,
     isPlaced: Boolean(order.IsPlaced),
     kind: 'toUkraine',
+    landedCost: amounts.landedCost,
     netUid: order.NetUid,
+    netPrice: amounts.net,
     number: getToUkraineOrderDisplayNumber(order),
     order,
     orderDate: order.FromDate,
@@ -2071,12 +2137,12 @@ function mapToUkraineOrderRow(order: SupplyOrderUkraine): SupplyUkraineOrderRow 
     qty: positiveNumber(order.TotalQty),
     responsible: getEntityName(order.Responsible),
     supplier: getEntityName(order.Supplier),
+    vatAmount: amounts.vat,
   }
 }
 
 function mapDirectOrderRow(order: DirectSupplyOrder): SupplyUkraineOrderRow {
-  const isResident = !order.Client?.IsNotResident
-  const grossPrice = positiveNumber(order.TotalNetPrice)
+  const amounts = getDirectOrderAmountBreakdown(order)
 
   return {
     additionalPercent: positiveNumber(order.AdditionalPercent),
@@ -2084,28 +2150,32 @@ function mapDirectOrderRow(order: DirectSupplyOrder): SupplyUkraineOrderRow {
     createdDate: order.Created,
     currency: order.ClientAgreement?.Agreement?.Currency?.Code || order.ClientAgreement?.Agreement?.Currency?.Name,
     directOrder: order,
-    grossPrice: grossPrice && isResident ? grossPrice + (order.TotalVat || 0) : grossPrice,
+    grossPrice: amounts.withVat,
     index: 0,
     isPlaced: Boolean(order.IsFullyPlaced || order.IsPlaced),
     kind: 'direct',
     netUid: order.NetUid,
+    netPrice: amounts.net,
     number: getDirectOrderDisplayNumber(order),
     orderDate: order.DateFrom,
     organization: order.Organization?.Name,
     qty: positiveNumber(order.TotalQuantity),
     responsible: getEntityName(order.Responsible),
+    source: order.ImportedForAmg === true ? 'AMG' : order.ImportedForAmg === false ? 'Fenix' : undefined,
+    storage: order.ImportedStorageName,
     supplier: getEntityName(order.Client),
+    vatAmount: amounts.vat,
   }
 }
 
 function mapInvoiceRow(order: DirectSupplyOrder, invoice: SupplyInvoice, index: number): SupplyUkraineOrderRow {
-  const isResident = !order.Client?.IsNotResident
+  const amounts = getInvoiceAmountBreakdown(invoice)
 
   return {
     agreement: order.ClientAgreement?.Agreement?.Name,
     currency: order.ClientAgreement?.Agreement?.Currency?.Code || order.ClientAgreement?.Agreement?.Currency?.Name,
     directOrder: order,
-    grossPrice: isResident ? positiveNumber(invoice.TotalValueWithVat) : positiveNumber(invoice.TotalNetPrice),
+    grossPrice: amounts.withVat,
     index,
     invoice,
     invoiceDate: invoice.DateFrom,
@@ -2113,12 +2183,16 @@ function mapInvoiceRow(order: DirectSupplyOrder, invoice: SupplyInvoice, index: 
     isPlaced: Boolean(invoice.IsFullyPlaced),
     kind: 'invoice',
     netUid: invoice.NetUid || `${order.NetUid || ''}-${invoice.Number || index}`,
+    netPrice: amounts.net,
     number: getDirectOrderDisplayNumber(order),
     orderDate: order.DateFrom,
     organization: order.Organization?.Name,
     qty: positiveNumber(invoice.TotalQuantity),
     responsible: getEntityName(order.Responsible),
+    source: order.ImportedForAmg === true ? 'AMG' : order.ImportedForAmg === false ? 'Fenix' : undefined,
+    storage: order.ImportedStorageName,
     supplier: getEntityName(order.Client),
+    vatAmount: amounts.vat,
   }
 }
 

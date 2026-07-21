@@ -38,6 +38,7 @@ import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/Page
 import { useAuth } from '../../auth/useAuth'
 import { ProductCardModal } from '../../products/components/ProductCardModal'
 import { EXCEL_FILE_ACCEPT, isExcelFile } from '../excelFiles'
+import { getInvoiceAmountBreakdown, getPackingListAmountBreakdown } from '../orderAmountBreakdown'
 import { createPackListMetadataSavePlan } from '../packListDocumentSavePlan'
 import {
   deletePackingList,
@@ -2006,7 +2007,7 @@ function useOrderItemColumns(onOpenProductCard: (productNetId: string) => void):
       { id: 'qty', header: t('Кількість'), width: 120, align: 'right', accessor: (item) => item.Qty, cell: (item) => <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{formatNumber(item.Qty)}</Text> },
       { id: 'leftToInvoice', header: t('Залишок'), width: 120, align: 'right', accessor: (item) => item.QtyDifference, cell: (item) => <BalanceBadge value={item.QtyDifference || 0} /> },
       { id: 'price', header: t('Ціна'), width: 120, align: 'right', accessor: (item) => item.UnitPrice, cell: (item) => <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{formatMoney(item.UnitPrice)}</Text> },
-      { id: 'total', header: t('Сума'), width: 130, align: 'right', accessor: (item) => getOrderItemTotal(item), cell: (item) => <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{formatMoney(getOrderItemTotal(item))}</Text> },
+      { id: 'total', header: t('Сума нетто'), width: 130, align: 'right', accessor: (item) => getOrderItemTotal(item), cell: (item) => <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{formatMoney(getOrderItemTotal(item))}</Text> },
       { id: 'placed', header: t('Розміщено'), width: 120, accessor: (item) => item.IsPlaced, cell: (item) => <Badge className={item.IsPlaced ? 'app-role-pill is-green' : 'app-role-pill is-gray'} variant="light">{item.IsPlaced ? t('Так') : t('Ні')}</Badge> },
     ],
     [onOpenProductCard, t],
@@ -2043,7 +2044,7 @@ function useInvoiceItemColumns({
         cell: (item) => <BalanceBadge value={balanceByOrderItemKey.get(getInvoiceOrderItemOrderKey(item))?.difference || 0} />,
       },
       { id: 'price', header: t('Ціна'), width: 120, align: 'right', accessor: (item) => item.UnitPrice, cell: (item) => <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{formatMoney(item.UnitPrice)}</Text> },
-      { id: 'total', header: t('Сума'), width: 130, align: 'right', accessor: (item) => item.TotalAmount, cell: (item) => <NumberCell value={formatMoney(item.TotalAmount || (item.UnitPrice || 0) * (item.Qty || 0))} /> },
+      { id: 'total', header: t('Сума нетто'), width: 130, align: 'right', accessor: (item) => item.TotalAmount, cell: (item) => <NumberCell value={formatMoney(item.TotalAmount || (item.UnitPrice || 0) * (item.Qty || 0))} /> },
       { id: 'imported', header: t('Імпорт'), width: 110, accessor: (item) => item.ProductIsImported, cell: (item) => <Badge className={item.ProductIsImported ? 'app-role-pill is-green' : 'app-role-pill is-gray'} variant="light">{item.ProductIsImported ? t('Так') : t('Ні')}</Badge> },
     ],
     [balanceByOrderItemKey, onOpenProductCard, t],
@@ -2084,7 +2085,7 @@ function usePackListItemColumns({
       { id: 'net', header: t('Нетто'), width: 120, align: 'right', accessor: (item) => item.TotalNetWeight, cell: (item) => <NumberCell value={formatNumber(item.TotalNetWeight)} /> },
       { id: 'gross', header: t('Брутто'), width: 120, align: 'right', accessor: (item) => item.TotalGrossWeight, cell: (item) => <NumberCell value={formatNumber(item.TotalGrossWeight)} /> },
       { id: 'price', header: t('Ціна'), width: 120, align: 'right', accessor: (item) => item.UnitPrice, cell: (item) => <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{formatMoney(item.UnitPrice)}</Text> },
-      { id: 'total', header: t('Сума'), width: 130, align: 'right', accessor: (item) => getPackListItemAmount(item), cell: (item) => <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{formatMoney(getPackListItemAmount(item))}</Text> },
+      { id: 'total', header: t('Сума нетто'), width: 130, align: 'right', accessor: (item) => getPackListItemAmount(item), cell: (item) => <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{formatMoney(getPackListItemAmount(item))}</Text> },
     ],
     [balanceByInvoiceItemKey, onOpenProductCard, t],
   )
@@ -2167,15 +2168,18 @@ function InvoiceTotals({
 }) {
   const { t } = useI18n()
   const currencyCode = getInvoiceCurrencyCode(invoice, order)
+  const amounts = getInvoiceDisplayAmounts(invoice)
 
   return (
     <SummaryLine
       items={[
         [t('Позицій у пак листах'), formatNumber(countPackingListItems(invoice))],
         [t('Кількість у пак листах'), formatNumber(sumPackingListQty(invoice))],
-        [t('Сума інвойса'), formatMoney(getSupplyInvoiceAmount(invoice), currencyCode)],
-        [t('Нетто'), formatNumber(invoice.TotalNetWeight)],
-        [t('Брутто'), formatNumber(invoice.TotalGrossWeight)],
+        [t('Сума нетто'), formatMoney(amounts.net, currencyCode)],
+        [t('ПДВ'), formatMoney(amounts.vat, currencyCode)],
+        [t('Сума з ПДВ'), formatMoney(amounts.withVat, currencyCode)],
+        [t('Вага нетто'), formatNumber(invoice.TotalNetWeight)],
+        [t('Вага брутто'), formatNumber(invoice.TotalGrossWeight)],
       ]}
     />
   )
@@ -2194,14 +2198,18 @@ function PackListTotals({
   const currencyCode = getInvoiceCurrencyCode(invoice, order)
 
   if (packList) {
+    const amounts = getPackingListDisplayAmounts(packList)
+
     return (
       <SummaryLine
         items={[
           [t('Позицій'), formatNumber(packList.PackingListPackageOrderItems?.length || 0)],
           [t('Кількість'), formatNumber(packList.TotalQuantity)],
-          [t('Сума'), formatMoney(getPackingListAmount(packList), currencyCode)],
-          [t('Нетто'), formatNumber(packList.TotalNetWeight)],
-          [t('Брутто'), formatNumber(packList.TotalGrossWeight)],
+          [t('Сума нетто'), formatMoney(amounts.net, currencyCode)],
+          [t('ПДВ'), formatMoney(amounts.vat, currencyCode)],
+          [t('Сума з ПДВ'), formatMoney(amounts.withVat, currencyCode)],
+          [t('Вага нетто'), formatNumber(packList.TotalNetWeight)],
+          [t('Вага брутто'), formatNumber(packList.TotalGrossWeight)],
         ]}
       />
     )
@@ -2211,14 +2219,18 @@ function PackListTotals({
     return null
   }
 
+  const amounts = getInvoiceDisplayAmounts(invoice)
+
   return (
     <SummaryLine
       items={[
         [t('Позицій у пак листах'), formatNumber(countPackingListItems(invoice))],
         [t('Кількість'), formatNumber(invoice.TotalQuantity)],
-        [t('Сума інвойса'), formatMoney(getSupplyInvoiceAmount(invoice), currencyCode)],
-        [t('Нетто'), formatNumber(invoice.TotalNetWeight)],
-        [t('Брутто'), formatNumber(invoice.TotalGrossWeight)],
+        [t('Сума нетто'), formatMoney(amounts.net, currencyCode)],
+        [t('ПДВ'), formatMoney(amounts.vat, currencyCode)],
+        [t('Сума з ПДВ'), formatMoney(amounts.withVat, currencyCode)],
+        [t('Вага нетто'), formatNumber(invoice.TotalNetWeight)],
+        [t('Вага брутто'), formatNumber(invoice.TotalGrossWeight)],
       ]}
     />
   )
@@ -2932,6 +2944,55 @@ function getOrderCurrencyCode(order: DirectSupplyOrder | null | undefined): stri
     || ''
 }
 
+function getInvoiceDisplayAmounts(invoice: SupplyInvoice): ReturnType<typeof getInvoiceAmountBreakdown> {
+  const own = getInvoiceAmountBreakdown(invoice)
+  const merged = invoice.MergedSupplyInvoices || []
+
+  if (!merged.length) {
+    const net = own.net ?? getSupplyInvoiceAmount(invoice)
+
+    return {
+      net,
+      vat: own.vat,
+      withVat: own.withVat ?? addOptionalAmounts(net, own.vat),
+    }
+  }
+
+  const mergedAmounts = merged.map(getInvoiceDisplayAmounts)
+  const net = own.net ?? sumOptionalAmounts(mergedAmounts.map((amounts) => amounts.net))
+  const vat = own.vat ?? sumOptionalAmounts(mergedAmounts.map((amounts) => amounts.vat))
+
+  return {
+    net,
+    vat,
+    withVat:
+      own.withVat
+      ?? sumOptionalAmounts(mergedAmounts.map((amounts) => amounts.withVat))
+      ?? addOptionalAmounts(net, vat),
+  }
+}
+
+function getPackingListDisplayAmounts(packList: PackingList): ReturnType<typeof getPackingListAmountBreakdown> {
+  const own = getPackingListAmountBreakdown(packList)
+  const net = own.net ?? getPackingListAmount(packList)
+
+  return {
+    net,
+    vat: own.vat,
+    withVat: own.withVat ?? addOptionalAmounts(net, own.vat),
+  }
+}
+
+function addOptionalAmounts(left: number | undefined, right: number | undefined): number | undefined {
+  return left === undefined && right === undefined ? undefined : (left ?? 0) + (right ?? 0)
+}
+
+function sumOptionalAmounts(values: Array<number | undefined>): number | undefined {
+  const definedValues = values.filter((value): value is number => value !== undefined)
+
+  return definedValues.length ? definedValues.reduce((total, value) => total + value, 0) : undefined
+}
+
 function getSupplyInvoiceAmount(invoice: SupplyInvoice | null | undefined): number | undefined {
   const invoiceRecord = invoice as (SupplyInvoice & {
     TotalAmount?: number | string
@@ -2957,7 +3018,7 @@ function getSupplyInvoiceAmount(invoice: SupplyInvoice | null | undefined): numb
 }
 
 function getPackListItemAmount(item: PackingListPackageOrderItem): number {
-  const direct = readFiniteNumber(item.TotalGrossPrice) ?? readFiniteNumber(item.TotalNetPrice)
+  const direct = readFiniteNumber(item.TotalNetPrice) ?? readFiniteNumber(item.TotalGrossPrice)
 
   if (typeof direct === 'number' && direct !== 0) {
     return direct

@@ -162,6 +162,7 @@ export type PackingListPackageOrderItem = EntityFields & {
   TotalGrossPriceEur?: number
   TotalGrossWeight?: number
   TotalNetPrice?: number
+  TotalNetPriceWithVat?: number
   TotalNetWeight?: number
   UnitPrice?: number
   UploadedQty?: number
@@ -203,6 +204,7 @@ export type PackingList = EntityFields & {
   TotalGrossPriceEur?: number
   TotalGrossWeight?: number
   TotalNetPrice?: number
+  TotalNetPriceWithVat?: number
   TotalNetWeight?: number
   TotalQuantity?: number
   TotalVatAmount?: number
@@ -252,8 +254,10 @@ export type SupplyInvoice = EntityFields & {
   SupplyOrder?: DirectSupplyOrder | null
   TotalGrossWeight?: number
   TotalNetPrice?: number
+  TotalNetPriceWithVat?: number
   TotalNetWeight?: number
   TotalQuantity?: number
+  TotalVatAmount?: number
   TotalValueWithVat?: number
 }
 
@@ -309,6 +313,8 @@ export type DirectSupplyOrder = EntityFields & {
   IsOrderArrived?: boolean
   IsOrderShipped?: boolean
   IsPlaced?: boolean
+  ImportedForAmg?: boolean | null
+  ImportedStorageName?: string
   NetPrice?: number
   OrderArrivedDate?: Date | string
   OrderShippedDate?: Date | string
@@ -322,6 +328,7 @@ export type DirectSupplyOrder = EntityFields & {
   SupplyOrderNumber?: { Number?: string } | null
   SupplyProFormId?: number | string | null
   TotalNetPrice?: number
+  TotalNetPriceWithVat?: number
   TotalQuantity?: number
   TotalRowsQty?: number
   TotalVat?: number
@@ -547,6 +554,7 @@ export type SupplyUkraineOrderRow = {
   currency?: string
   directOrder?: DirectSupplyOrder
   grossPrice?: number
+  landedCost?: number
   index: number
   invoice?: SupplyInvoice
   invoiceDate?: Date | string
@@ -554,6 +562,7 @@ export type SupplyUkraineOrderRow = {
   isPlaced?: boolean
   kind: SupplyUkraineOrderRowKind
   netUid?: string
+  netPrice?: number
   number?: string
   order?: SupplyOrderUkraine
   orderDate?: Date | string
@@ -561,4 +570,7 @@ export type SupplyUkraineOrderRow = {
   qty?: number
   responsible?: string
   supplier?: string
+  source?: 'AMG' | 'Fenix'
+  storage?: string
+  vatAmount?: number
 }
