@@ -117,7 +117,11 @@ export function ProductInterestModal({
             label={t('Коментар')}
             minRows={2}
             value={form.comment}
-            onChange={(event) => setForm((current) => ({ ...current, comment: event.currentTarget.value }))}
+            onChange={(event) => {
+              const { value } = event.currentTarget
+
+              setForm((current) => ({ ...current, comment: value }))
+            }}
           />
           <Group justify="flex-end" gap="sm">
             <Button color="gray" disabled={isCreating} type="button" variant="light" onClick={closeModal}>

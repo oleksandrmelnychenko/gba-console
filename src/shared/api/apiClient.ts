@@ -36,6 +36,7 @@ export type ApiErrorMessages = Partial<Record<number, string>> & {
 export type ApiRequestOptions = Omit<RequestInit, 'body' | 'credentials'> & {
   auth?: boolean
   body?: unknown
+  dedupe?: boolean
   errorMessages?: ApiErrorMessages
   query?: QueryParams
   language?: string
@@ -91,7 +92,60 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
     return deduplicatedGetRequest<T>(path, options)
   }
 
+  if (shouldDeduplicateMutation(options)) {
+    return deduplicatedMutation<T>(path, options)
+  }
+
   return sendApiRequest<T>(path, options, true)
+}
+
+/* Rapid-click guard: not every form disables its submit button while saving,
+   so a double click used to fire the same POST twice and create duplicate
+   records. Identical concurrent mutations (same method+url+body) share one
+   network request; the entry clears as soon as it settles, so a deliberate
+   repeat submission afterwards still goes through. Opt out with dedupe:false. */
+const inFlightMutations = new Map<string, Promise<unknown>>()
+
+function shouldDeduplicateMutation(options: ApiRequestOptions): boolean {
+  if (options.dedupe === false || options.signal) {
+    return false
+  }
+
+  if (!isUnsafeMethod(options.method)) {
+    return false
+  }
+
+  return !(options.body instanceof FormData) && !(options.body instanceof Blob)
+}
+
+function getMutationRequestKey(path: string, options: ApiRequestOptions): string {
+  const method = (options.method || 'GET').toUpperCase()
+  const url = apiUrl(path, options.language || getApiLanguage(), options.query)
+  const bodyKey =
+    typeof options.body === 'undefined'
+      ? ''
+      : typeof options.body === 'string'
+        ? options.body
+        : JSON.stringify(options.body)
+
+  return `${method}:${url}:${bodyKey}`
+}
+
+function deduplicatedMutation<T>(path: string, options: ApiRequestOptions): Promise<T> {
+  const key = getMutationRequestKey(path, options)
+  const inFlight = inFlightMutations.get(key)
+
+  if (inFlight) {
+    return inFlight as Promise<T>
+  }
+
+  const promise = sendApiRequest<T>(path, options, true).finally(() => {
+    inFlightMutations.delete(key)
+  })
+
+  inFlightMutations.set(key, promise)
+
+  return promise
 }
 
 function deduplicatedGetRequest<T>(path: string, options: ApiRequestOptions): Promise<T> {

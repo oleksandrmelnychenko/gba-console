@@ -2,8 +2,10 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { App } from './app/App'
 import { AppProviders } from './app/providers/AppProviders'
+import { AppErrorBoundary } from './shared/ui/AppErrorBoundary'
 import { installDomMutationResilience } from './shared/dom/domMutationResilience'
 import './index.css'
+import './shared/ui/app-error-boundary.css'
 import '@mantine/charts/styles.css'
 import './shared/transitions/transitions.css'
 import './shared/ui/filter-bar.css'
@@ -27,10 +29,19 @@ window.addEventListener('vite:preloadError', (event) => {
   }
 })
 
-createRoot(document.getElementById('root')!).render(
+createRoot(document.getElementById('root')!, {
+  onUncaughtError: (error, errorInfo) => {
+    console.error('[react:uncaught]', error, errorInfo.componentStack)
+  },
+  onRecoverableError: (error, errorInfo) => {
+    console.error('[react:recoverable]', error, errorInfo.componentStack)
+  },
+}).render(
   <StrictMode>
-    <AppProviders>
-      <App />
-    </AppProviders>
+    <AppErrorBoundary>
+      <AppProviders>
+        <App />
+      </AppProviders>
+    </AppErrorBoundary>
   </StrictMode>,
 )

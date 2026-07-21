@@ -1707,14 +1707,14 @@ function InvoiceMetadataModalBody({
           disabled={isSaving}
           label={t('Номер')}
           value={form.number}
-          onChange={(event) => setForm((current) => ({ ...current, number: event.currentTarget.value }))}
+          onChange={(event) => { const nextValue = event.currentTarget.value; setForm((current) => ({ ...current, number: nextValue })) }}
         />
         <TextInput
           disabled={isSaving}
           label={t('Дата')}
           type="datetime-local"
           value={form.dateFrom}
-          onChange={(event) => setForm((current) => ({ ...current, dateFrom: event.currentTarget.value }))}
+          onChange={(event) => { const nextValue = event.currentTarget.value; setForm((current) => ({ ...current, dateFrom: nextValue })) }}
         />
         <NumberInput
           allowNegative={false}

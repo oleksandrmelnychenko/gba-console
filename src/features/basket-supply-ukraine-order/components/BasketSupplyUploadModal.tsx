@@ -160,7 +160,11 @@ export function BasketSupplyUploadModal({
                   checked={form.withWeight}
                   disabled={isSubmitting}
                   label={t('Вага нетто')}
-                  onChange={(event) => setForm((current) => ({ ...current, withWeight: event.currentTarget.checked }))}
+                  onChange={(event) => {
+                    const { checked } = event.currentTarget
+
+                    setForm((current) => ({ ...current, withWeight: checked }))
+                  }}
                 />
                 {form.withWeight && (
                   <NumberInput
@@ -178,7 +182,11 @@ export function BasketSupplyUploadModal({
                   checked={form.withGrossWeight}
                   disabled={isSubmitting}
                   label={t('Вага брутто')}
-                  onChange={(event) => setForm((current) => ({ ...current, withGrossWeight: event.currentTarget.checked }))}
+                  onChange={(event) => {
+                    const { checked } = event.currentTarget
+
+                    setForm((current) => ({ ...current, withGrossWeight: checked }))
+                  }}
                 />
                 {form.withGrossWeight && (
                   <NumberInput
@@ -196,7 +204,11 @@ export function BasketSupplyUploadModal({
                   checked={form.withSpecificationCode}
                   disabled={isSubmitting}
                   label={t('Митний код')}
-                  onChange={(event) => setForm((current) => ({ ...current, withSpecificationCode: event.currentTarget.checked }))}
+                  onChange={(event) => {
+                    const { checked } = event.currentTarget
+
+                    setForm((current) => ({ ...current, withSpecificationCode: checked }))
+                  }}
                 />
                 {form.withSpecificationCode && (
                   <NumberInput
@@ -214,7 +226,11 @@ export function BasketSupplyUploadModal({
                   checked={form.withIsImportedProduct}
                   disabled={isSubmitting}
                   label={t('Імпортний товар')}
-                  onChange={(event) => setForm((current) => ({ ...current, withIsImportedProduct: event.currentTarget.checked }))}
+                  onChange={(event) => {
+                    const { checked } = event.currentTarget
+
+                    setForm((current) => ({ ...current, withIsImportedProduct: checked }))
+                  }}
                 />
                 {form.withIsImportedProduct && (
                   <NumberInput
@@ -233,7 +249,11 @@ export function BasketSupplyUploadModal({
                 checked={form.isWeightPerItem}
                 disabled={isSubmitting}
                 label={t('Вага за одиницю')}
-                onChange={(event) => setForm((current) => ({ ...current, isWeightPerItem: event.currentTarget.checked }))}
+                onChange={(event) => {
+                  const { checked } = event.currentTarget
+
+                  setForm((current) => ({ ...current, isWeightPerItem: checked }))
+                }}
               />
             )}
           </Stack>

@@ -6,7 +6,7 @@ export function ProtectedRoute() {
   const location = useLocation()
 
   if (isLoading) {
-    return null
+    return <div className="console-route-loading">Завантаження</div>
   }
 
   if (!isAuthenticated) {

@@ -155,7 +155,7 @@ export function PaymentExpenseArticleFormPage() {
         color: 'green',
         message: isEditMode ? t('Статтю витрат оновлено') : t('Статтю витрат створено'),
       })
-      navigate(returnPath, { replace: true })
+      navigate(returnPath, { replace: true, state: { mutated: true } })
     } catch (saveError) {
       setFormState((current) => ({
         ...current,
@@ -190,7 +190,7 @@ export function PaymentExpenseArticleFormPage() {
         color: 'green',
         message: t('Статтю витрат видалено'),
       })
-      navigate(returnPath, { replace: true })
+      navigate(returnPath, { replace: true, state: { mutated: true } })
     } catch (deleteError) {
       setFormState((current) => ({
         ...current,
@@ -256,12 +256,16 @@ export function PaymentExpenseArticleFormPage() {
             placeholder={t('Вкажіть назву')}
             required
             value={operationName}
-            onChange={(event) =>
+            onChange={(event) => {
+              // Read synchronously: currentTarget is null by the time the
+              // deferred updater runs, which killed the whole tree (bug 92).
+              const { value } = event.currentTarget
+
               setFormState((current) => ({
                 ...current,
-                operationName: event.currentTarget.value,
+                operationName: value,
               }))
-            }
+            }}
           />
         </Stack>
       </form>

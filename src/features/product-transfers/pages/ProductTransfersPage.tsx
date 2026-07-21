@@ -765,12 +765,14 @@ function ProductTransferCreateModal({ model }: { model: ReturnType<typeof usePro
                 disabled={!isAdmin || isCreating}
                 label={t('Управлінське переміщення')}
                 mt={30}
-                onChange={(event) =>
+                onChange={(event) => {
+                  const { checked } = event.currentTarget
+
                   setCreateForm((current) => ({
                     ...current,
-                    isManagement: event.currentTarget.checked,
+                    isManagement: checked,
                   }))
-                }
+                }}
               />
             </SimpleGrid>
 
