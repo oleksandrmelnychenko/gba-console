@@ -15,7 +15,7 @@ import {
 } from '@mantine/core'
 import { ArrowLeftRight, CircleAlert, Download, ExternalLink, Eye, FileText, History, Layers, RotateCcw, Search } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
-import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { formatLocalDate, toDateTimeQuery } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -24,8 +24,6 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
-import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
@@ -146,7 +144,6 @@ function useProductIncomeDocumentsPageModel() {
   const [remainingsError, setRemainingsError] = useValueState<string | null>(null)
   const [isLoadingRemainings, setLoadingRemainings] = useValueState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
-  const { density, toggleDensity } = useDataTableDensity('product-income-documents', DOCUMENTS_TABLE_DEFAULT_LAYOUT.density)
   const remainingsRequestRef = useRef(0)
   const capitalizationRequestRef = useRef(0)
   const infoRequestRef = useRef(0)
@@ -519,7 +516,6 @@ function useProductIncomeDocumentsPageModel() {
     columns,
     dateFrom,
     dateTo,
-    density,
     detailMode,
     documentInfoError,
     downloadDocument,
@@ -560,7 +556,6 @@ function useProductIncomeDocumentsPageModel() {
     setPage,
     setPageSize,
     setStorageLocationHistoryProduct,
-    toggleDensity,
     updateSearch,
   }
 }
@@ -573,6 +568,7 @@ export function ProductIncomeDocumentsPage() {
 
 function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof useProductIncomeDocumentsPageModel> }) {
   const { t } = useI18n()
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const {
     capitalization,
     capitalizationError,
@@ -580,7 +576,6 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
     columns,
     dateFrom,
     dateTo,
-    density,
     detailMode,
     documentInfoError,
     downloadDocument,
@@ -621,7 +616,6 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
     setPage,
     setPageSize,
     setStorageLocationHistoryProduct,
-    toggleDensity,
     updateSearch,
   } = model
 
@@ -630,30 +624,30 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
       <Card className="app-data-card product-income-documents-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar product-income-documents-filter-bar">
           <Group align="end" gap={10} wrap="nowrap" className="product-income-documents-filter-row">
-            <TextInput
-              size="sm"
-              label={t('Від')}
-              type="date"
-              value={dateFrom}
-              w={150}
-              onChange={(event) => {
-                clearTransientSelection()
-                setPage(1)
-                setDateFrom(event.currentTarget.value)
-              }}
-            />
-            <TextInput
-              size="sm"
-              label={t('До')}
-              type="date"
-              value={dateTo}
-              w={150}
-              onChange={(event) => {
-                clearTransientSelection()
-                setPage(1)
-                setDateTo(event.currentTarget.value)
-              }}
-            />
+            <div className="app-filter-date-range">
+              <TextInput
+                size="sm"
+                label={t('Від')}
+                type="date"
+                value={dateFrom}
+                onChange={(event) => {
+                  clearTransientSelection()
+                  setPage(1)
+                  setDateFrom(event.currentTarget.value)
+                }}
+              />
+              <TextInput
+                size="sm"
+                label={t('До')}
+                type="date"
+                value={dateTo}
+                onChange={(event) => {
+                  clearTransientSelection()
+                  setPage(1)
+                  setDateTo(event.currentTarget.value)
+                }}
+              />
+            </div>
             <TextInput
               size="sm"
               leftSection={<Search size={16} />}
@@ -669,7 +663,6 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
                   <RotateCcw size={17} />
                 </ActionIcon>
               </Tooltip>
-              <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
               <Paginator
                 isLoading={isLoading}
                 page={page}
@@ -690,6 +683,7 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
                 }}
               />
             </div>
+            <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
           </Group>
         </div>
 
@@ -709,7 +703,6 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
             columns={columns}
             data={rows}
             defaultLayout={DOCUMENTS_TABLE_DEFAULT_LAYOUT}
-            density={density}
             emptyText={t('Документів не знайдено')}
             getRowId={(row, index) => String(row.document.NetUid || row.document.Id || index)}
             height="100%"
@@ -717,7 +710,9 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
             layoutVersion="product-income-documents-table-2"
             loadingText={t('Завантаження документів')}
             minWidth={1440}
+            showLayoutControls
             tableId="product-income-documents"
+            toolbarPortalTarget={tableToolbarSlot}
             onRowClick={(row) => openOptions(row.document)}
           />
         </div>
