@@ -1,9 +1,25 @@
-/* Tax-free carriers registry — chrome aligned with the «Продажі» reference.
-   The page loads all carriers (or the search result) and has no pagination, so it
-   keeps the table's own maxHeight scroll model; only the filter strip + card shell
-   are converged onto the shared primitives. */
+.tax-free-carriers-page {
+  box-sizing: border-box;
+  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px);
+  min-height: 0;
+  overflow: hidden;
+  padding: 6px 4px 0;
+}
+
+.tax-free-carriers-card {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2) !important;
+  box-shadow: var(--app-card-shadow) !important;
+}
+
+/* Tax-free carriers registry — chrome aligned with the «Продажі» reference. */
 .tax-free-carriers-filter-row {
+  min-width: max-content;
   width: 100%;
+}
+
+.tax-free-carriers-filter-bar {
+  overflow-x: auto;
 }
 
 /* Push the reset / refresh / export cluster to the trailing edge of the row. */
@@ -25,8 +41,26 @@
   white-space: nowrap;
 }
 
-/* Body below the flush filter strip carries its own padding (the card is
-   padding={0} so the strip sits flush). */
 .tax-free-carriers-card__body {
-  padding: 12px;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+}
+
+.tax-free-carriers-alert {
+  margin: 12px 12px 0;
+}
+
+.tax-free-carriers-card__body .data-table {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.tax-free-carriers-card__body .data-table-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
 }

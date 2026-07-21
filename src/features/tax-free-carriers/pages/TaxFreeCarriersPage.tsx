@@ -223,7 +223,7 @@ export function TaxFreeCarriersPage() {
   const model = useTaxFreeCarriersPageModel()
 
   return (
-    <Stack gap={6}>
+    <Stack className="tax-free-carriers-page" gap={6}>
       <CarriersTableCard model={model} />
       <CarriersDeleteModal model={model} />
       <CarriersDownloadModal model={model} />
@@ -257,18 +257,6 @@ function CarriersTableCard({ model }: { model: ReturnType<typeof useTaxFreeCarri
                 <RotateCcw size={17} />
               </ActionIcon>
             </Tooltip>
-            <Tooltip label={t('Оновити')}>
-              <ActionIcon
-                aria-label={t('Оновити')}
-                color="gray"
-                loading={isLoading}
-                size={34}
-                variant="light"
-                onClick={reload}
-              >
-                <RefreshCw size={17} />
-              </ActionIcon>
-            </Tooltip>
             {canPrint && (
               <Tooltip label={t('Завантажити')}>
                 <ActionIcon
@@ -282,6 +270,18 @@ function CarriersTableCard({ model }: { model: ReturnType<typeof useTaxFreeCarri
                 </ActionIcon>
               </Tooltip>
             )}
+            <Tooltip label={t('Оновити')}>
+              <ActionIcon
+                aria-label={t('Оновити')}
+                color="gray"
+                loading={isLoading}
+                size={34}
+                variant="light"
+                onClick={reload}
+              >
+                <RefreshCw size={17} />
+              </ActionIcon>
+            </Tooltip>
           </div>
           {canManage && (
             <div className="tax-free-carriers-create-actions">
@@ -293,9 +293,9 @@ function CarriersTableCard({ model }: { model: ReturnType<typeof useTaxFreeCarri
         </Group>
       </div>
 
-      <Stack className="tax-free-carriers-card__body" gap="md">
+      <div className="tax-free-carriers-card__body">
         {error && (
-          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
+          <Alert className="tax-free-carriers-alert" color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}
@@ -306,15 +306,15 @@ function CarriersTableCard({ model }: { model: ReturnType<typeof useTaxFreeCarri
           defaultLayout={CARRIERS_TABLE_DEFAULT_LAYOUT}
           emptyText={t('Перевізників не знайдено')}
           getRowId={(carrier, index) => String(carrier.NetUid || carrier.Id || index)}
+          height="100%"
           isLoading={isLoading}
           layoutVersion="tax-free-carriers-table-1"
           loadingText={t('Завантаження перевізників')}
-          maxHeight="calc(100vh - 320px)"
           minWidth={760}
           tableId="tax-free-carriers"
           onRowClick={openEdit}
         />
-      </Stack>
+      </div>
     </Card>
   )
 }
