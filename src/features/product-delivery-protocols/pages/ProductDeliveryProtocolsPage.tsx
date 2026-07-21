@@ -506,27 +506,23 @@ function ProtocolsTableCard({ model }: { model: ReturnType<typeof useProtocolsPa
   return (
     <div className="console-table-shell">
       <div className="app-filter-bar product-delivery-protocols-command-bar">
-        <div className="app-filter-field product-delivery-protocols-period-filter">
-          <span className="app-filter-label product-delivery-protocols-filter-label">{t('Період')}</span>
-          <div className="product-delivery-protocols-period-fields">
-            <TextInput
-              className="product-delivery-protocols-date-input"
-              aria-label={t('Від')}
-              max={filterDraft.to || undefined}
-              type="date"
-              value={filterDraft.from}
-              onChange={(event) => applyFilters({ ...filterDraft, from: event.currentTarget.value })}
-            />
-            <span className="product-delivery-protocols-period-separator" />
-            <TextInput
-              className="product-delivery-protocols-date-input"
-              aria-label={t('До')}
-              min={filterDraft.from || undefined}
-              type="date"
-              value={filterDraft.to}
-              onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
-            />
-          </div>
+        <div className="app-filter-date-range">
+          <TextInput
+            className="product-delivery-protocols-date-input"
+            label={t('Від')}
+            max={filterDraft.to || undefined}
+            type="date"
+            value={filterDraft.from}
+            onChange={(event) => applyFilters({ ...filterDraft, from: event.currentTarget.value })}
+          />
+          <TextInput
+            className="product-delivery-protocols-date-input"
+            label={t('До')}
+            min={filterDraft.from || undefined}
+            type="date"
+            value={filterDraft.to}
+            onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
+          />
         </div>
 
         <TextInput
@@ -593,7 +589,10 @@ function ProtocolsTableCard({ model }: { model: ReturnType<typeof useProtocolsPa
             onRefresh={() => reload()}
           />
         </div>
-        <div ref={setTableToolbarSlot} className="product-delivery-protocols-table-toolbar-slot" />
+        <div
+          ref={setTableToolbarSlot}
+          className="app-filter-table-toolbar-slot product-delivery-protocols-table-toolbar-slot"
+        />
         <div className="product-delivery-protocols-create-actions">
           {canCreate && (
             <Button
