@@ -14,8 +14,8 @@
   Tooltip,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { Ban, Banknote, ChevronDown, CircleAlert, Eye, Landmark, ListChecks, Network, Plus, RefreshCw, RotateCcw, Search, SquarePen } from 'lucide-react'
-import { type ReactNode, useCallback, useEffect, useMemo, useRef } from 'react'
+import { Ban, Banknote, ChevronDown, CircleAlert, Eye, Landmark, ListChecks, Network, Plus, RotateCcw, Search, SquarePen } from 'lucide-react'
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -31,9 +31,7 @@ import { AppModal } from '../../../shared/ui/AppModal'
 import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
-import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
-import type { DataTableColumn, DataTableDefaultLayout, DataTableDensity } from '../../../shared/ui/data-table/types'
+import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { calculateAdvanceReportOrder } from '../api/advanceReportApi'
 import {
   cancelOutgoingCashflow,
@@ -336,7 +334,6 @@ function useOutgoingCashflowsPageModel(): OutgoingCashflowsPageModel {
     [setSelectedRow],
   )
 
-  const { density, toggleDensity } = useDataTableDensity('outgoing-cashflows', TABLE_DEFAULT_LAYOUT.density)
   const rows = useMemo(() => buildCashflowRows(cashflows.Collection), [cashflows.Collection])
   const closeCashflowDetails = useCallback(() => {
     if (focusedOrderNetId && selectedRow?.order.NetUid === focusedOrderNetId) {
@@ -444,7 +441,6 @@ function useOutgoingCashflowsPageModel(): OutgoingCashflowsPageModel {
     columns,
     currencies,
     currencyNetId,
-    density,
     error,
     filterError,
     fromDate,
@@ -490,7 +486,6 @@ function useOutgoingCashflowsPageModel(): OutgoingCashflowsPageModel {
     onSetSearchValue: setSearchValue,
     onSetSelectedOrganizationIds: setSelectedOrganizationIds,
     onSetToDate: setToDate,
-    onToggleDensity: toggleDensity,
   }
 }
 
@@ -506,7 +501,6 @@ type OutgoingCashflowsPageModel = {
   columns: DataTableColumn<OutgoingCashflowRow>[]
   currencies: Currency[]
   currencyNetId: string
-  density: DataTableDensity
   error: string | null
   filterError: string | null
   fromDate: string
@@ -549,7 +543,6 @@ type OutgoingCashflowsPageModel = {
   onSetSearchValue: (value: string) => void
   onSetSelectedOrganizationIds: (value: string[]) => void
   onSetToDate: (value: string) => void
-  onToggleDensity: () => void
 }
 
 function OutgoingCashflowsContent({ model }: { model: OutgoingCashflowsPageModel }) {
@@ -559,7 +552,6 @@ function OutgoingCashflowsContent({ model }: { model: OutgoingCashflowsPageModel
     columns,
     currencies,
     currencyNetId,
-    density,
     error,
     filterError,
     fromDate,
@@ -602,10 +594,10 @@ function OutgoingCashflowsContent({ model }: { model: OutgoingCashflowsPageModel
     onSetSearchValue,
     onSetSelectedOrganizationIds,
     onSetToDate,
-    onToggleDensity,
   } = model
   const { t } = useI18n()
   const navigate = useNavigate()
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const location = useLocation()
 
   function navigateToCreateItem(path: string) {
@@ -678,32 +670,21 @@ function OutgoingCashflowsContent({ model }: { model: OutgoingCashflowsPageModel
                   <RotateCcw size={17} />
                 </ActionIcon>
               </Tooltip>
-              <Tooltip label={t('Оновити')}>
-                <ActionIcon
-                  aria-label={t('Оновити')}
-                  color="gray"
-                  loading={isLoading || isLoadingLookups}
-                  size={34}
-                  variant="light"
-                  onClick={() => {
-                    void onLoadLookups()
-                    void onLoadCashflows(page)
-                  }}
-                >
-                  <RefreshCw size={17} />
-                </ActionIcon>
-              </Tooltip>
-              <DataTableDensityToggle density={density} onToggle={onToggleDensity} size={34} />
               <Paginator
                 hasNext={hasMore}
-                isLoading={isLoading}
+                isLoading={isLoading || isLoadingLookups}
                 page={page}
                 pageSize={pageSize}
                 totalPages={typeof totalRowsQty === 'number' ? Math.max(1, Math.ceil(totalRowsQty / pageSize)) : undefined}
                 onPageChange={onSetPage}
                 onPageSizeChange={onSetPageSize}
+                onRefresh={() => {
+                  void onLoadLookups()
+                  void onLoadCashflows(page)
+                }}
               />
             </div>
+            <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
             <div className="outgoing-cashflows-create-actions">
               <Menu position="bottom-end" shadow="md" width={340} withinPortal>
                 <Menu.Target>
@@ -773,14 +754,15 @@ function OutgoingCashflowsContent({ model }: { model: OutgoingCashflowsPageModel
             columns={columns}
             data={rows}
             defaultLayout={TABLE_DEFAULT_LAYOUT}
-            density={density}
             enablePinning={false}
             emptyText={t('Видаткових ордерів не знайдено')}
             getRowId={(row) => row.id}
             isLoading={isTableBusy}
             layoutVersion="outgoing-cashflows-actions-1"
             minWidth={1860}
+            showLayoutControls
             tableId="outgoing-cashflows"
+            toolbarPortalTarget={tableToolbarSlot}
             footer={
               <Group className="outgoing-cashflows-table-footer" gap="xs" justify="flex-end" wrap="nowrap">
                 <Badge className="app-role-pill is-gray" variant="light">

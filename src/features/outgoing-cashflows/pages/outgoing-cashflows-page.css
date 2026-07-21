@@ -3,7 +3,7 @@
   height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px);
   min-height: 0;
   overflow: hidden;
-  padding-top: 6px;
+  padding: 6px 4px 0;
 }
 
 .outgoing-cashflows-filter-bar {
@@ -21,6 +21,7 @@
     minmax(148px, 176px)
     minmax(162px, 196px)
     minmax(200px, 220px) /* Організації — compact CheckboxMultiSelect, was 300-340 for the pill MultiSelect */
+    auto
     auto
     auto;
   min-width: 0;
@@ -46,7 +47,7 @@
   align-items: center;
   align-self: end;
   display: flex;
-  grid-column: 8; /* last defined track; an implicit extra column pushes the button out */
+  grid-column: 9;
   min-height: 36px;
 }
 
