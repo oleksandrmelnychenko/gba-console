@@ -89,7 +89,6 @@
 
 .clients-page__table .data-table-cell .mantine-Text-root {
   display: block;
-  line-height: 18px;
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
