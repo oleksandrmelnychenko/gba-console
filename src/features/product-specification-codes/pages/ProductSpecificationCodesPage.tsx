@@ -167,7 +167,7 @@ export function ProductSpecificationCodesPage() {
   }
 
   return (
-    <div className="product-specification-codes-page">
+    <Stack className="product-specification-codes-page" gap={6}>
       <Card className="app-data-card product-specification-codes-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar product-specification-codes-filter-bar">
           <div className="product-specification-codes-filter-row">
@@ -214,7 +214,6 @@ export function ProductSpecificationCodesPage() {
                   <RotateCcw size={17} />
                 </ActionIcon>
               </Tooltip>
-              <div ref={setTableToolbarSlot} className="product-specification-codes-table-toolbar-slot" />
               <Paginator
                 hasNext={model.hasMore}
                 isLoading={model.isLoading}
@@ -226,6 +225,7 @@ export function ProductSpecificationCodesPage() {
                 onRefresh={model.reload}
               />
             </div>
+            <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
           </div>
         </div>
 
@@ -263,7 +263,7 @@ export function ProductSpecificationCodesPage() {
       />
 
       <SpecificationUploadResultModal result={uploadResult} onClose={() => setUploadResult(null)} />
-    </div>
+    </Stack>
   )
 }
 
