@@ -27,8 +27,6 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
-import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import {
   addOrUpdateSad,
@@ -216,10 +214,7 @@ function BasketCartWorkflow() {
   const [isCreatingDocument, setCreatingDocument] = useState(false)
   const [isTotalsLoading, setTotalsLoading] = useState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
-  const { density: sourceDensity, toggleDensity: toggleSourceDensity } = useDataTableDensity(
-    'basket-supply-ukraine-order-source',
-    BASKET_CART_TABLE_DEFAULT_LAYOUT.density,
-  )
+  const [sourceTableToolbarSlot, setSourceTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const filteredCartItems = useMemo(() => filterCartItems(cartItems, filters), [cartItems, filters])
   const selectedSourceCount = useMemo(
     () => countItems(filteredCartItems, (item) => selectedSourceIds.has(getCartItemKey(item))),
@@ -662,7 +657,7 @@ function BasketCartWorkflow() {
 
       <Card className="app-data-card" padding={0} radius="md" withBorder>
         <div className="app-filter-bar basket-supply-command-bar is-split">
-            <SimpleGrid className="basket-supply-filters" cols={{ base: 1, md: 3 }} spacing={10}>
+          <SimpleGrid className="basket-supply-filters" cols={3} spacing={10}>
               <TextInput
                 label={t('Пошук по товару')}
                 leftSection={SEARCH_ICON}
@@ -693,11 +688,22 @@ function BasketCartWorkflow() {
                   setFilters((current) => ({ ...current, availability: (value || 'all') as CartFilterState['availability'] }))
                 }
               />
-            </SimpleGrid>
+          </SimpleGrid>
 
-            <Group gap="xs">
+          <div className="app-filter-actions">
+              <Tooltip label={t('Скинути')}>
+                <ActionIcon
+                  aria-label={t('Скинути')}
+                  color="gray"
+                  size={34}
+                  variant="light"
+                  onClick={() => setFilters({ availability: 'all', priority: 'all', search: '' })}
+                >
+                  <RotateCcw size={17} />
+                </ActionIcon>
+              </Tooltip>
               <Tooltip label={t('Оновити')}>
-                <ActionIcon aria-label={t('Оновити')} loading={isLoading} variant="subtle" onClick={() => reload()}>
+                <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={34} variant="light" onClick={() => reload()}>
                   <RefreshCw size={16} />
                 </ActionIcon>
               </Tooltip>
@@ -707,8 +713,8 @@ function BasketCartWorkflow() {
               <Button leftSection={FILE_SPREADSHEET_ICON} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} variant="outline" onClick={() => openUploadModal('preview')}>
                 {t('Вибрати для експорту')}
               </Button>
-              <DataTableDensityToggle density={sourceDensity} onToggle={toggleSourceDensity} size={36} />
-            </Group>
+          </div>
+          <div ref={setSourceTableToolbarSlot} className="app-filter-table-toolbar-slot" />
         </div>
         <Stack gap="md" p="md">
 
@@ -716,15 +722,16 @@ function BasketCartWorkflow() {
             columns={sourceColumns}
             data={filteredCartItems}
             defaultLayout={BASKET_CART_TABLE_DEFAULT_LAYOUT}
-            density={sourceDensity}
             emptyText={t('Даних не знайдено')}
             getRowId={(item, index) => getCartItemKey(item, index)}
             isLoading={isLoading}
             maxHeight={460}
             minWidth={1120}
             rowClassName={(item) => (selectedSourceIds.has(getCartItemKey(item)) ? 'basket-supply-row-selected' : undefined)}
+            showLayoutControls
             tableId="basket-supply-ukraine-order-source"
             toolbarLeft={sourceToolbarLeft}
+            toolbarPortalTarget={sourceTableToolbarSlot}
           />
         </Stack>
       </Card>
@@ -872,10 +879,7 @@ function SalesWorkflowTab() {
   const [isCreatingDocument, setCreatingDocument] = useState(false)
   const [isTotalsLoading, setTotalsLoading] = useState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
-  const { density: salesDensity, toggleDensity: toggleSalesDensity } = useDataTableDensity(
-    'basket-supply-ukraine-order-sales',
-    BASKET_SALES_TABLE_DEFAULT_LAYOUT.density,
-  )
+  const [salesTableToolbarSlot, setSalesTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const [debouncedSearchValue] = useDebouncedValue(filterDraft.value, 400)
   const destinationSaleIds = useMemo(() => new Set(destinationSales.map(getBasketSaleKey)), [destinationSales])
   const selectedSourceSales = useMemo(
@@ -1187,57 +1191,62 @@ function SalesWorkflowTab() {
         </Alert>
       )}
 
-      <Card className="app-section-card" withBorder padding="md" radius="md">
-        <Stack gap="md">
-          <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
+      <Card className="app-data-card" withBorder padding={0} radius="md">
+        <div className="app-filter-bar basket-supply-command-bar">
+          <div className="app-filter-date-range">
             <TextInput
-              label={t('З')}
+              label={t('Від')}
               type="date"
               value={filterDraft.from}
               onChange={(event) => applyFilters({ ...filterDraft, from: event.currentTarget.value })}
             />
             <TextInput
-              label={t('По')}
+              label={t('До')}
               type="date"
               value={filterDraft.to}
               onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
             />
-            <TextInput
-              label={t('Пошук')}
-              leftSection={<Search size={16} />}
-              value={filterDraft.value}
-              onChange={(event) => {
-                const nextValue = event.currentTarget.value
-                setFilterDraft((current) => ({ ...current, value: nextValue }))
-              }}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') {
-                  applyFilters(filterDraft)
-                }
-              }}
-            />
-            <Button leftSection={<RotateCcw size={16} />} variant="subtle" onClick={resetFilters}>
-              {t('Скинути')}
-            </Button>
+          </div>
+          <TextInput
+            label={t('Пошук')}
+            leftSection={<Search size={16} />}
+            value={filterDraft.value}
+            onChange={(event) => {
+              const nextValue = event.currentTarget.value
+              setFilterDraft((current) => ({ ...current, value: nextValue }))
+            }}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                applyFilters(filterDraft)
+              }
+            }}
+          />
+          <div className="app-filter-actions">
+            <Tooltip label={t('Скинути')}>
+              <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
+                <RotateCcw size={17} />
+              </ActionIcon>
+            </Tooltip>
             <Tooltip label={t('Оновити')}>
-              <ActionIcon aria-label={t('Оновити')} loading={isLoading} variant="subtle" onClick={() => reload()}>
+              <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={34} variant="light" onClick={() => reload()}>
                 <RefreshCw size={16} />
               </ActionIcon>
             </Tooltip>
-            <DataTableDensityToggle density={salesDensity} onToggle={toggleSalesDensity} size={36} />
-          </Group>
-
+          </div>
+          <div ref={setSalesTableToolbarSlot} className="app-filter-table-toolbar-slot" />
+        </div>
+        <Stack gap="md" p="md">
           <DataTable
             columns={sourceColumns}
             data={sourceSales}
             defaultLayout={BASKET_SALES_TABLE_DEFAULT_LAYOUT}
-            density={salesDensity}
             emptyText={t('Даних не знайдено')}
             getRowId={(sale, index) => sale.NetUid || String(sale.Id || index)}
             isLoading={isLoading}
             maxHeight={520}
             minWidth={1100}
             rowClassName={(sale) => (selectedSourceSaleIds.has(getBasketSaleKey(sale)) ? 'basket-supply-row-selected' : undefined)}
+            showLayoutControls
             tableId="basket-supply-ukraine-order-sales"
             toolbarLeft={
               <Group gap="xs">
@@ -1249,6 +1258,7 @@ function SalesWorkflowTab() {
                 />
               </Group>
             }
+            toolbarPortalTarget={salesTableToolbarSlot}
             onRowClick={setSelectedSale}
           />
         </Stack>

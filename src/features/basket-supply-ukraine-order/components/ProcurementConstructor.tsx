@@ -29,6 +29,7 @@ import {
   ImageOff,
   Plus,
   RefreshCw,
+  RotateCcw,
   Save,
   Sparkles,
   Trash2,
@@ -425,6 +426,20 @@ export function ProcurementConstructor() {
           )}
 
           <div className="app-filter-actions procure-cockpit-bar__actions">
+            <Tooltip label={t('Скинути')}>
+              <ActionIcon
+                aria-label={t('Скинути')}
+                color="gray"
+                size={34}
+                variant="light"
+                onClick={() => {
+                  setLens('warehouse')
+                  setSelectedProducerId(null)
+                }}
+              >
+                <RotateCcw size={17} />
+              </ActionIcon>
+            </Tooltip>
             <Tooltip label={t('Оновити')}>
               <ActionIcon aria-label={t('Оновити')} loading={isLoading} size={34} variant="light" onClick={() => reload()}>
                 <RefreshCw size={16} />
@@ -478,17 +493,17 @@ export function ProcurementConstructor() {
             >
               {t('Excel')}
             </Button>
-            <div ref={setTableToolbarSlot} className="procure-cockpit-bar__slot" />
-            <Button
-              color={CREATE_ACTION_COLOR}
-              disabled={sortedRows.length === 0}
-              leftSection={<Sparkles size={15} />}
-              variant="outline"
-              onClick={addAllCritical}
-            >
-              {t('Критичні в кошик')}
-            </Button>
           </div>
+          <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
+          <Button
+            color={CREATE_ACTION_COLOR}
+            disabled={sortedRows.length === 0}
+            leftSection={<Sparkles size={15} />}
+            variant="outline"
+            onClick={addAllCritical}
+          >
+            {t('Критичні в кошик')}
+          </Button>
         </div>
 
         {error && (

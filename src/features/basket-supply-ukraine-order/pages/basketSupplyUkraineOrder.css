@@ -2,11 +2,11 @@
    тримає сама: таб-стрічка зверху, контент таба скролиться у своїй зоні. */
 .basket-supply-page {
   box-sizing: border-box;
-  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 24px);
+  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px);
   min-height: 0;
   min-width: 0;
   overflow: hidden;
-  padding: 0 4px;
+  padding: 6px 4px 0;
 }
 
 .basket-supply-page .pill-tabs {
@@ -127,17 +127,18 @@
 .basket-supply-command-bar {
   align-items: end;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 10px;
+  overflow-x: auto;
 }
 
 .basket-supply-command-bar.is-split {
-  justify-content: space-between;
+  justify-content: flex-start;
 }
 
 .basket-supply-command-bar .basket-supply-filters {
   flex: 1 1 auto;
-  max-width: 760px;
+  min-width: 620px;
 }
 
 /* «Закупівля під бюджет» filter strip — inputs left, refresh cluster pushed to
@@ -183,27 +184,14 @@
   align-items: end;
   display: flex;
   flex: 0 0 auto;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 10px;
+  overflow-x: auto;
 }
 
 .procure-cockpit-bar__actions {
-  flex: 1 1 auto;
-}
-
-/* Слот під ▦ ☰ DataTable-тулбара, піднятий у фільтр-бар (§5.3). */
-.procure-cockpit-bar__slot {
-  align-items: center;
-  align-self: end;
-  display: flex;
   flex: 0 0 auto;
-  min-height: 36px;
-}
-
-.procure-cockpit-bar__slot .data-table-toolbar {
-  gap: 6px;
-  margin: 0;
-  min-height: 0;
+  margin-left: auto;
 }
 
 .procure-cockpit__alert {
