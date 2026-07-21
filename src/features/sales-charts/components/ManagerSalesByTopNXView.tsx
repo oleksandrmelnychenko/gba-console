@@ -1,6 +1,6 @@
 import { BarChart } from '@mantine/charts'
-import { Alert, Card, Select, Stack, Text, TextInput } from '@mantine/core'
-import { CircleAlert } from 'lucide-react'
+import { ActionIcon, Alert, Card, Select, Stack, Text, TextInput, Tooltip } from '@mantine/core'
+import { CircleAlert, RotateCcw } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -108,6 +108,12 @@ export function ManagerSalesByTopNXView() {
     [report.Managers],
   )
 
+  const resetFilters = () => {
+    setFrom(today)
+    setTo(today)
+    setTypeTop(SalesChartsTopType.TopN)
+  }
+
   return (
     <Card className="app-data-card sales-chart-card" withBorder radius="md" padding={0}>
       <div className="app-filter-bar">
@@ -138,6 +144,13 @@ export function ManagerSalesByTopNXView() {
             value={String(typeTop)}
             onChange={(value) => setTypeTop((Number(value) === SalesChartsTopType.TopX ? SalesChartsTopType.TopX : SalesChartsTopType.TopN))}
           />
+          <div className="app-filter-actions sales-chart-filter-actions">
+            <Tooltip label={t('Скинути')}>
+              <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
+                <RotateCcw size={17} />
+              </ActionIcon>
+            </Tooltip>
+          </div>
           <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot sales-chart-table-toolbar-slot" />
         </div>
       </div>

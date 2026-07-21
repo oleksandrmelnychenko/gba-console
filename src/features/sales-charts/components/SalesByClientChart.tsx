@@ -1,6 +1,6 @@
 import { LineChart } from '@mantine/charts'
-import { Alert, Autocomplete, Card, Select, Stack, Text, TextInput } from '@mantine/core'
-import { CircleAlert } from 'lucide-react'
+import { ActionIcon, Alert, Autocomplete, Card, Select, Stack, Text, TextInput, Tooltip } from '@mantine/core'
+import { CircleAlert, RotateCcw } from 'lucide-react'
 import { useEffect, useMemo } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -117,6 +117,14 @@ export function SalesByClientChart() {
 
   const periodFormatter = useMemo(() => createPeriodFormatter(typePeriod), [typePeriod])
 
+  const resetFilters = () => {
+    setFrom(today)
+    setTo(today)
+    setNetId(null)
+    setTypePeriod(SalesChartsPeriodType.Day)
+    setClientQuery('')
+  }
+
   return (
     <Card className="app-data-card sales-chart-card" withBorder radius="md" padding={0}>
       <div className="app-filter-bar">
@@ -162,6 +170,13 @@ export function SalesByClientChart() {
             value={String(typePeriod)}
             onChange={(value) => setTypePeriod(toPeriodType(value))}
           />
+          <div className="app-filter-actions sales-chart-filter-actions">
+            <Tooltip label={t('Скинути')}>
+              <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
+                <RotateCcw size={17} />
+              </ActionIcon>
+            </Tooltip>
+          </div>
         </div>
       </div>
 
