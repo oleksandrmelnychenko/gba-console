@@ -25,16 +25,14 @@ import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
 import { ArrowLeftRight, Check, CircleAlert, ClipboardList, Download, Eye, FileSpreadsheet, FileText, RotateCcw, Search, Trash2 } from 'lucide-react'
 import { useDebouncedValue } from '@mantine/hooks'
-import { useCallback, useEffect, useMemo, useReducer, useRef, type Dispatch, type SetStateAction } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type Dispatch, type SetStateAction } from 'react'
 import { UserRoleType } from '../../../shared/auth/types'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
-import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
@@ -115,10 +113,6 @@ type AvailabilityListState = {
 function useProductStoragesPageModel() {
   const { t } = useI18n()
   const { hasPermission, user } = useAuth()
-  const { density, toggleDensity } = useDataTableDensity(
-    'product-storages',
-    PRODUCT_STORAGES_TABLE_DEFAULT_LAYOUT.density,
-  )
   const isAdmin =
     user?.UserRole?.UserRoleType === UserRoleType.Administrator || user?.UserRole?.UserRoleType === UserRoleType.GBA
   const [availabilityList, setAvailabilityList] = useValueState<AvailabilityListState>({
@@ -796,7 +790,6 @@ function useProductStoragesPageModel() {
     actionFromStorage,
     actionModal,
     columns,
-    density,
     downloadDocument,
     downloadModalOpened,
     effectiveToStorageNetUid,
@@ -843,7 +836,6 @@ function useProductStoragesPageModel() {
     setPreviewOpened,
     submitAction,
     toggleAvailability,
-    toggleDensity,
     updateFromDate,
     updatePageSize,
     updatePreviewQty,
@@ -860,6 +852,7 @@ export function ProductStoragesPage() {
 
 function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProductStoragesPageModel> }) {
   const { t } = useI18n()
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const {
     availabilities,
     actionError,
@@ -867,7 +860,6 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
     actionFromStorage,
     actionModal,
     columns,
-    density,
     downloadDocument,
     downloadModalOpened,
     effectiveToStorageNetUid,
@@ -914,7 +906,6 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
     setPreviewOpened,
     submitAction,
     toggleAvailability,
-    toggleDensity,
     updateFromDate,
     updatePageSize,
     updatePreviewQty,
@@ -927,6 +918,22 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
       <Card className="app-data-card product-storages-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar product-storages-filter-bar">
           <Group align="end" gap={10} wrap="nowrap" className="product-storages-filter-row">
+            <div className="app-filter-date-range">
+              <TextInput
+                label={t('Від')}
+                max={toDate || undefined}
+                type="date"
+                value={fromDate}
+                onChange={(event) => updateFromDate(event.currentTarget.value)}
+              />
+              <TextInput
+                label={t('До')}
+                min={fromDate || undefined}
+                type="date"
+                value={toDate}
+                onChange={(event) => updateToDate(event.currentTarget.value)}
+              />
+            </div>
             <Select
               searchable
               allowDeselect={false}
@@ -937,22 +944,6 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
               value={selectedStorageNetId || null}
               w={300}
               onChange={(value) => selectStorageNetId(value || '')}
-            />
-            <TextInput
-              label={t('Від')}
-              max={toDate || undefined}
-              type="date"
-              value={fromDate}
-              w={150}
-              onChange={(event) => updateFromDate(event.currentTarget.value)}
-            />
-            <TextInput
-              label={t('До')}
-              min={fromDate || undefined}
-              type="date"
-              value={toDate}
-              w={150}
-              onChange={(event) => updateToDate(event.currentTarget.value)}
             />
             <TextInput
               leftSection={<Search size={16} />}
@@ -981,7 +972,6 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
                   <RotateCcw size={17} />
                 </ActionIcon>
               </Tooltip>
-              <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
               <Paginator
                 isLoading={isLoading || isLoadingStorages}
                 page={page}
@@ -996,6 +986,7 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
                 }}
               />
             </div>
+            <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
             {canOpenPreview ? (
               <Button
                 className="product-storages-preview-action"
@@ -1024,7 +1015,6 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
               columns={columns}
               data={availabilities}
               defaultLayout={PRODUCT_STORAGES_TABLE_DEFAULT_LAYOUT}
-              density={density}
               emptyText={t('Товарів на складі не знайдено')}
               rowClassName={(availability) =>
                 selectedAvailabilityKeys.has(getAvailabilityKey(availability)) ? 'is-selected' : undefined
@@ -1035,8 +1025,9 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
               loadingText={t('Завантаження товарів складу')}
               minWidth={1180}
               layoutVersion="product-storages-table-3"
-              showDensityToggle={false}
+              showLayoutControls
               tableId="product-storages"
+              toolbarPortalTarget={tableToolbarSlot}
               onRowClick={(availability) => toggleAvailability(availability)}
             />
           </div>

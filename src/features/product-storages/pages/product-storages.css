@@ -27,28 +27,12 @@
 }
 
 .product-storages-filter-row {
-  align-items: end;
-  display: grid;
-  gap: 10px;
-  grid-template-columns:
-    minmax(280px, 300px)
-    minmax(150px, 160px)
-    minmax(150px, 160px)
-    minmax(220px, 240px)
-    minmax(32px, 1fr)
-    auto
-    auto;
   min-width: max-content;
   width: 100%;
 }
 
 .product-storages-filter-row .app-filter-actions {
-  grid-column: 6;
   margin-left: auto;
-}
-
-.product-storages-preview-action {
-  grid-column: 7;
 }
 
 .product-storages-body {
