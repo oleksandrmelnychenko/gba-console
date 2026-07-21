@@ -16,13 +16,11 @@ import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/Page
 import { notifications } from '@mantine/notifications'
 import { useDebouncedValue } from '@mantine/hooks'
 import { CircleAlert, Pencil, Plus, RefreshCw, RotateCcw, Search } from 'lucide-react'
-import { type FormEvent, useCallback, useEffect, useMemo, useReducer } from 'react'
+import { type FormEvent, useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
-import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { PermissionGate } from '../../auth/components/PermissionGate'
 import { createProductGroup, getProductGroups, getRootProductGroups } from '../api/productGroupsApi'
@@ -70,6 +68,7 @@ export function ProductGroupsPage() {
   const [isCreating, setCreating] = useValueState(false)
   const [createModalOpened, setCreateModalOpened] = useValueState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const openProductGroup = useCallback(
     (productGroup: ProductGroup) => {
       if (!productGroup.NetUid) {
@@ -87,10 +86,6 @@ export function ProductGroupsPage() {
     [location, navigate],
   )
   const columns = useProductGroupColumns(openProductGroup)
-  const { density, toggleDensity } = useDataTableDensity(
-    'product-groups',
-    PRODUCT_GROUPS_TABLE_DEFAULT_LAYOUT.density,
-  )
 
   useEffect(() => {
     let cancelled = false
@@ -229,7 +224,7 @@ export function ProductGroupsPage() {
     <Stack className="product-groups-page" gap={6}>
       <Card className="app-data-card product-groups-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar product-groups-filter-bar">
-          <Group align="end" gap={10} wrap="nowrap" className="clients-filter-row">
+          <Group align="end" gap={10} wrap="nowrap" className="product-groups-filter-row">
             <TextInput
               leftSection={<Search size={16} />}
               label={t('Пошук')}
@@ -263,8 +258,8 @@ export function ProductGroupsPage() {
                   <RefreshCw size={18} />
                 </ActionIcon>
               </Tooltip>
-              <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
             </div>
+            <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
             <PermissionGate permissionKey={PRODUCT_GROUPS_ADD_PERMISSION}>
               <Button
                 color={CREATE_ACTION_COLOR}
@@ -296,7 +291,6 @@ export function ProductGroupsPage() {
             columns={columns}
             data={productGroups}
             defaultLayout={PRODUCT_GROUPS_TABLE_DEFAULT_LAYOUT}
-            density={density}
             emptyText="Груп товарів не знайдено"
             getRowId={(productGroup, index) => String(productGroup.NetUid || productGroup.Id || index)}
             height="100%"
@@ -304,7 +298,9 @@ export function ProductGroupsPage() {
             layoutVersion="product-groups-table-2"
             loadingText="Завантаження груп товарів"
             minWidth={1660}
+            showLayoutControls
             tableId="product-groups"
+            toolbarPortalTarget={tableToolbarSlot}
             onRowClick={openProductGroup}
           />
         </div>
