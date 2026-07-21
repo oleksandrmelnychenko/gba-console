@@ -174,7 +174,7 @@ export function NewEcommerceClientsPage() {
               </ActionIcon>
             </Tooltip>
           </div>
-          <div ref={setTableToolbarSlot} className="new-ecommerce-clients-table-toolbar-slot" />
+          <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot new-ecommerce-clients-table-toolbar-slot" />
         </div>
 
         {error && (
