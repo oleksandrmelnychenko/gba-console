@@ -83,12 +83,6 @@
   padding: 5px 8px;
 }
 
-.outgoing-cashflows-card .data-table-density-compact .data-table-cell {
-  font-size: 13px;
-  line-height: 1.3;
-  padding: 8px;
-}
-
 .outgoing-cashflows-card .data-table-cell {
   white-space: nowrap;
 }
