@@ -1,7 +1,9 @@
 .consumable-orders-page {
-  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 24px);
+  box-sizing: border-box;
+  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px);
   min-height: 0;
   overflow: hidden;
+  padding: 6px 4px 0;
 }
 
 .consumable-orders-page__table {
@@ -22,16 +24,15 @@
   align-items: end;
   display: grid;
   gap: 10px;
-  grid-template-columns: minmax(320px, 400px) minmax(280px, 1fr) auto auto auto;
+  grid-template-columns: 310px minmax(280px, 1fr) auto auto auto;
+  overflow-x: auto;
 }
 
-.consumable-orders-period-filter,
 .consumable-orders-date-input,
 .consumable-orders-search-input {
   min-width: 0;
 }
 
-.consumable-orders-filter-label,
 .consumable-orders-search-input .mantine-InputWrapper-label {
   color: var(--mantine-color-gray-9);
   display: block;
@@ -42,20 +43,6 @@
   letter-spacing: 0;
   line-height: 1.2;
   margin-bottom: var(--consumable-orders-command-label-gap);
-}
-
-.consumable-orders-period-fields {
-  align-items: center;
-  display: grid;
-  gap: 0;
-  grid-template-columns: minmax(0, 1fr) 18px minmax(0, 1fr);
-}
-
-.consumable-orders-period-separator {
-  background: var(--mantine-color-gray-3);
-  height: 1px;
-  justify-self: center;
-  width: 10px;
 }
 
 .consumable-orders-search-input {
@@ -323,23 +310,6 @@
 
 
 
-
-@media (max-width: 980px) {
-  .consumable-orders-command-bar {
-    align-items: stretch;
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .consumable-orders-command-bar .app-filter-actions {
-    justify-content: flex-start;
-  }
-}
-
-.consumable-orders-table-toolbar-slot {
-  align-items: center;
-  display: inline-flex;
-  justify-content: flex-end;
-}
 
 /* Detail leader rows (docs/ui-patterns.md §7.2). */
 .consumable-orders-detail-field {

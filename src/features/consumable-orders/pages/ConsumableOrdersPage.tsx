@@ -168,35 +168,31 @@ export function ConsumableOrdersPage() {
     <Stack className="consumable-orders-page console-table-page" gap={6}>
       <div className="console-table-shell">
         <div className="app-filter-bar consumable-orders-command-bar">
-          <div className="app-filter-field consumable-orders-period-filter">
-            <span className="app-filter-label consumable-orders-filter-label">{t('Період')}</span>
-            <div className="consumable-orders-period-fields">
-              <TextInput
-                className="consumable-orders-date-input"
-                aria-label={t('Від')}
-                type="date"
-                value={fromDate}
-                onChange={(event) => {
-                  setFromDate(event.currentTarget.value)
-                  setPage(1)
-                  setOrders([])
-                  setTotalOrders(undefined)
-                }}
-              />
-              <span className="consumable-orders-period-separator" />
-              <TextInput
-                className="consumable-orders-date-input"
-                aria-label={t('До')}
-                type="date"
-                value={toDate}
-                onChange={(event) => {
-                  setToDate(event.currentTarget.value)
-                  setPage(1)
-                  setOrders([])
-                  setTotalOrders(undefined)
-                }}
-              />
-            </div>
+          <div className="app-filter-date-range">
+            <TextInput
+              className="consumable-orders-date-input"
+              label={t('Від')}
+              type="date"
+              value={fromDate}
+              onChange={(event) => {
+                setFromDate(event.currentTarget.value)
+                setPage(1)
+                setOrders([])
+                setTotalOrders(undefined)
+              }}
+            />
+            <TextInput
+              className="consumable-orders-date-input"
+              label={t('До')}
+              type="date"
+              value={toDate}
+              onChange={(event) => {
+                setToDate(event.currentTarget.value)
+                setPage(1)
+                setOrders([])
+                setTotalOrders(undefined)
+              }}
+            />
           </div>
 
           <TextInput
@@ -239,7 +235,7 @@ export function ConsumableOrdersPage() {
               onRefresh={() => void loadOrders()}
             />
           </div>
-          <div className="consumable-orders-table-toolbar-slot" ref={setTableToolbarSlot} />
+          <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
           <Button
             color={CREATE_ACTION_COLOR}
             leftSection={<Plus size={16} />}
@@ -274,6 +270,7 @@ export function ConsumableOrdersPage() {
             isLoading={isTableBusy}
             layoutVersion="consumable-orders-table-1"
             minWidth={1080}
+            showLayoutControls
             tableId="consumable-orders"
             toolbarPortalTarget={tableToolbarSlot}
             onRowClick={setActionsRow}
