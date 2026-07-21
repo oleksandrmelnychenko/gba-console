@@ -9,6 +9,7 @@
 .product-specification-codes-card {
   background: var(--mantine-color-white);
   border: 1px solid var(--mantine-color-gray-2) !important;
+  box-shadow: var(--app-card-shadow) !important;
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -115,12 +116,12 @@
   flex-direction: column;
   gap: 8px;
   min-height: 0;
-  padding: 0 8px 8px;
+  padding: 0;
 }
 
 .product-specification-codes-body .mantine-Alert-root {
   flex: 0 0 auto;
-  margin-top: 8px;
+  margin: 8px 8px 0;
 }
 
 .product-specification-codes-body .data-table {

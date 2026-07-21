@@ -194,6 +194,11 @@ export function ProductSpecificationCodesPage() {
               }}
             />
             <div className="app-filter-actions">
+              <Tooltip label={t('Скинути')}>
+                <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={model.resetFilters}>
+                  <RotateCcw size={17} />
+                </ActionIcon>
+              </Tooltip>
               <FileButton accept=".xlsx,.xls,.csv" onChange={handleUpload}>
                 {(props) => (
                   <Tooltip label={t('Завантажити Excel')}>
@@ -209,11 +214,6 @@ export function ProductSpecificationCodesPage() {
                   </Tooltip>
                 )}
               </FileButton>
-              <Tooltip label={t('Скинути')}>
-                <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={model.resetFilters}>
-                  <RotateCcw size={17} />
-                </ActionIcon>
-              </Tooltip>
               <Paginator
                 hasNext={model.hasMore}
                 isLoading={model.isLoading}
