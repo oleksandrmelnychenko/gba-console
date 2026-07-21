@@ -78,6 +78,44 @@
   min-height: 0;
 }
 
+/* Body-only registry contract: keep rows equal and every cell on one line.
+   The selectors intentionally exclude table headers. */
+.available-payments-page__table .data-table-density-normal .data-table-row {
+  height: 45px;
+}
+
+.available-payments-page__table .data-table-density-compact .data-table-row {
+  height: 35px;
+}
+
+.available-payments-page__table .data-table-cell {
+  white-space: nowrap;
+}
+
+.available-payments-page__table .data-table-cell > * {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.available-payments-page__table .data-table-cell .mantine-Group-root {
+  flex-wrap: nowrap;
+  max-width: 100%;
+}
+
+.available-payments-page__table .data-table-cell .mantine-Text-root {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.available-payments-page__table .data-table-cell .mantine-Badge-root,
+.available-payments-page__table .data-table-cell .mantine-ActionIcon-root {
+  flex: 0 0 auto;
+}
+
 .available-payments-summary {
   border-top: 1px solid var(--mantine-color-gray-2);
   flex: 0 0 auto;

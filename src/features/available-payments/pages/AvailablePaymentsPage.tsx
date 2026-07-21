@@ -962,6 +962,7 @@ function useAvailablePaymentsColumns(
               <ActionIcon
                 aria-label={t('Деталі')}
                 color="gray"
+                size="md"
                 variant="subtle"
                 onClick={(event) => {
                   event.stopPropagation()
