@@ -608,7 +608,7 @@ function SuppliersPageView({ model }: { model: ReturnType<typeof useSuppliersPag
             onSetSearchField={setSearchField}
             onSetSearchValue={setSearchValue}
           />
-          <div ref={setTableToolbarSlot} className="suppliers-table-toolbar-slot" />
+          <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot suppliers-table-toolbar-slot" />
           <Button
             className="suppliers-create-button"
             color={CREATE_ACTION_COLOR}
