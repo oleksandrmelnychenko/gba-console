@@ -5,12 +5,10 @@
 
 .product-remains-page {
   box-sizing: border-box;
-  flex: 1 1 auto;
-  height: 100%;
+  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px);
   min-height: 0;
-  overflow-x: hidden;
-  overflow-y: hidden;
-  padding: 4px 4px 8px;
+  overflow: hidden;
+  padding: 6px 4px 0;
 }
 
 .product-remains-card {
@@ -47,41 +45,17 @@
 }
 
 .product-remains-filter-row {
-  align-items: end;
-  display: grid;
-  gap: 10px;
-  grid-template-columns:
-    minmax(170px, 260px)
-    minmax(118px, 148px)
-    minmax(118px, 148px)
-    minmax(190px, 1fr)
-    auto;
+  min-width: max-content;
   width: 100%;
 }
 
-/* Fields fill their grid tracks; the inline w={} widths were removed so the
-   tracks (not the controls) decide how the row shrinks. */
-.product-remains-filter-row .mantine-InputWrapper-root {
+/* Keep direct filter controls shrink-safe inside the single horizontal row. */
+.product-remains-filter-row > .mantine-InputWrapper-root {
   min-width: 0;
-  width: 100%;
 }
 
 .product-remains-filter-row .app-filter-actions {
   margin-left: auto;
-}
-
-.product-remains-table-toolbar-slot {
-  display: inline-flex;
-  min-height: 34px;
-}
-
-.product-remains-table-toolbar-slot .data-table-toolbar {
-  border: 0;
-  padding: 0;
-}
-
-.product-remains-table-toolbar-slot .data-table-toolbar-left {
-  gap: 4px;
 }
 
 /* The card is padding-0 (so the filter strip is flush); the body below
@@ -213,18 +187,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-@media (max-width: 1180px) {
-  .product-remains-filter-row {
-    grid-template-columns:
-      minmax(160px, 220px)
-      minmax(118px, 140px)
-      minmax(118px, 140px)
-      minmax(170px, 240px)
-      auto;
-    min-width: 960px;
-  }
 }
 
 @media (max-width: 760px) {

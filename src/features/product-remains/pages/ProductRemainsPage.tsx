@@ -23,8 +23,6 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
-import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
@@ -167,14 +165,6 @@ function useProductRemainsPageModel() {
   const productPage = getPageFromOffset(productOffset, pageSize)
   const batchTotalPages = getTotalPages(batchTotals, pageSize)
   const productTotalPages = getTotalPages(productTotals, pageSize)
-  const { density: batchDensity, toggleDensity: toggleBatchDensity } = useDataTableDensity(
-    'product-remains-batches',
-    BATCHES_TABLE_DEFAULT_LAYOUT.density,
-  )
-  const { density: productDensity, toggleDensity: toggleProductDensity } = useDataTableDensity(
-    'product-remains-products',
-    PRODUCTS_TABLE_DEFAULT_LAYOUT.density,
-  )
   useEffect(() => {
     const nextActiveTab = getProductRemainsInitialTab(routeTab)
 
@@ -387,14 +377,14 @@ function useProductRemainsPageModel() {
   }
 
   return {
-    activeError, activeTab, batchColumns, batchDensity, batchDetailColumns, batchHasMore, batchPage, batchRows, batchTotals, batchTotalPages,
+    activeError, activeTab, batchColumns, batchDetailColumns, batchHasMore, batchPage, batchRows, batchTotals, batchTotalPages,
     dateFrom, dateTo, downloadDocument, downloadModalOpened, exportingTab, filterError, isActiveLoading,
     isProductStorageSelectionInvalid,
     isLoadingBatches, isLoadingProducts, isLoadingStorages, isLoadingSuppliers, openMovement, pageSize, productColumns,
-    productDensity, productHasMore, productPage, productRows, productSearchDraft, productStorageError, productTotals, productTotalPages, resourceError,
+    productHasMore, productPage, productRows, productSearchDraft, productStorageError, productTotals, productTotalPages, resourceError,
     selectedBatch, selectedMovementRow, selectedStorageValue: storageSelectValue, selectedSupplierNetId, storageNetId, storageOptions, supplierNetId,
     supplierSearch, supplierSelectOptions, changeActivePage, changePageSize, handleExport, refreshData, resetAllData, resetFilters, selectActiveTab,
-    toggleBatchDensity, toggleProductDensity, setDateFrom, setDateTo, setDownloadModalOpened,
+    setDateFrom, setDateTo, setDownloadModalOpened,
     setSelectedBatch, setSelectedMovementRow, setSelectedStorageValue,
     setSupplierNetId, setSupplierSearch, updateProductSearch,
   }
@@ -717,14 +707,14 @@ export function ProductRemainsPage() {
 function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProductRemainsPageModel> }) {
   const { t } = useI18n()
   const {
-    activeError, activeTab, batchColumns, batchDensity, batchDetailColumns, batchHasMore, batchPage, batchRows, batchTotals, batchTotalPages,
+    activeError, activeTab, batchColumns, batchDetailColumns, batchHasMore, batchPage, batchRows, batchTotals, batchTotalPages,
     dateFrom, dateTo, downloadDocument, downloadModalOpened, exportingTab, filterError, isActiveLoading,
     isProductStorageSelectionInvalid,
     isLoadingBatches, isLoadingProducts, isLoadingStorages, isLoadingSuppliers, openMovement, pageSize, productColumns,
-    productDensity, productHasMore, productPage, productRows, productSearchDraft, productStorageError, productTotals, productTotalPages, resourceError,
+    productHasMore, productPage, productRows, productSearchDraft, productStorageError, productTotals, productTotalPages, resourceError,
     selectedBatch, selectedMovementRow, selectedStorageValue, selectedSupplierNetId, storageNetId, storageOptions, supplierNetId,
     supplierSearch, supplierSelectOptions, changeActivePage, changePageSize, handleExport, refreshData, resetAllData, resetFilters, selectActiveTab,
-    toggleBatchDensity, toggleProductDensity, setDateFrom, setDateTo, setDownloadModalOpened,
+    setDateFrom, setDateTo, setDownloadModalOpened,
     setSelectedBatch, setSelectedMovementRow, setSelectedStorageValue,
     setSupplierNetId, setSupplierSearch, updateProductSearch,
   } = model
@@ -733,7 +723,7 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
   const isWarningAlert = Boolean(filterError || (!resourceError && activeTab === 'products' && productStorageError))
 
   return (
-    <Stack className="product-remains-page" gap={0}>
+    <Stack className="product-remains-page" gap={6}>
       <Card className="app-data-card product-remains-card" withBorder radius="md" padding={0}>
         <div className="product-remains-tabs pill-tabs">
           {([
@@ -755,7 +745,27 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
         </div>
 
         <div className="app-filter-bar product-remains-filter-bar">
-          <div className="product-remains-filter-row">
+          <Group align="end" gap={10} wrap="nowrap" className="product-remains-filter-row">
+            <div className="app-filter-date-range">
+              <TextInput
+                label={t('Від')}
+                type="date"
+                value={dateFrom}
+                onChange={(event) => {
+                  resetAllData()
+                  setDateFrom(event.currentTarget.value)
+                }}
+              />
+              <TextInput
+                label={t('До')}
+                type="date"
+                value={dateTo}
+                onChange={(event) => {
+                  resetAllData()
+                  setDateTo(event.currentTarget.value)
+                }}
+              />
+            </div>
             <Select
               searchable
               allowDeselect={false}
@@ -763,29 +773,10 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
               disabled={isLoadingStorages}
               label={t('Склад')}
               value={selectedStorageValue}
+              w={220}
               onChange={(value) => {
                 resetAllData()
                 setSelectedStorageValue(value || ALL_STORAGES_VALUE)
-              }}
-            />
-            <TextInput
-              label={t('Від')}
-              type="date"
-              value={dateFrom}
-              w={150}
-              onChange={(event) => {
-                resetAllData()
-                setDateFrom(event.currentTarget.value)
-              }}
-            />
-            <TextInput
-              label={t('До')}
-              type="date"
-              value={dateTo}
-              w={150}
-              onChange={(event) => {
-                resetAllData()
-                setDateTo(event.currentTarget.value)
               }}
             />
             <Select
@@ -797,12 +788,23 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
               placeholder={t('Всі постачальники')}
               searchValue={supplierSearch}
               value={supplierNetId}
+              style={{ flex: '1 1 240px', minWidth: 220 }}
               onChange={(value) => {
                 resetAllData()
                 setSupplierNetId(value)
               }}
               onSearchChange={setSupplierSearch}
             />
+            {activeTab === 'products' && (
+              <TextInput
+                leftSection={<Search size={16} />}
+                label={t('Пошук товару')}
+                placeholder={t('Код або назва')}
+                value={productSearchDraft}
+                style={{ flex: '1 1 260px', minWidth: 220 }}
+                onChange={(event) => updateProductSearch(event.currentTarget.value)}
+              />
+            )}
             <div className="app-filter-actions">
               <Tooltip label={t('Скинути')}>
                 <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
@@ -833,14 +835,9 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
                 onPageSizeChange={changePageSize}
                 onRefresh={refreshData}
               />
-              <DataTableDensityToggle
-                density={activeTab === 'batches' ? batchDensity : productDensity}
-                onToggle={activeTab === 'batches' ? toggleBatchDensity : toggleProductDensity}
-                size={34}
-              />
-              <div ref={setTableToolbarSlot} className="product-remains-table-toolbar-slot" />
             </div>
-          </div>
+            <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
+          </Group>
         </div>
 
         <Stack className="product-remains-body" gap={10}>
@@ -856,7 +853,6 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
                 columns={batchColumns}
                 data={batchRows}
                 defaultLayout={BATCHES_TABLE_DEFAULT_LAYOUT}
-                density={batchDensity}
                 emptyText={t('Залишків за партіями не знайдено')}
                 getRowId={getBatchRowId}
                 isLoading={isLoadingBatches}
@@ -875,22 +871,10 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
 
           {activeTab === 'products' && (
             <Stack className="product-remains-tab-content" gap={12}>
-              <Group align="end" gap="sm" wrap="nowrap" className="product-remains-search-row">
-                <TextInput
-                  leftSection={<Search size={16} />}
-                  label={t('Пошук товару')}
-                  placeholder={t('Код або назва')}
-                  value={productSearchDraft}
-                  style={{ flex: '1 1 260px' }}
-                  onChange={(event) => updateProductSearch(event.currentTarget.value)}
-                />
-              </Group>
-
               <DataTable
                 columns={productColumns}
                 data={productRows}
                 defaultLayout={PRODUCTS_TABLE_DEFAULT_LAYOUT}
-                density={productDensity}
                 emptyText={isProductStorageSelectionInvalid ? t('Оберіть склад для перегляду товарів') : t('Залишків за товарами не знайдено')}
                 getRowId={getProductRowId}
                 isLoading={isLoadingProducts}
