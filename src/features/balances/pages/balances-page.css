@@ -1,3 +1,11 @@
+.balances-page {
+  box-sizing: border-box;
+  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px);
+  min-height: 0;
+  overflow: hidden;
+  padding: 6px 4px 0;
+}
+
 /* Balances list — chrome aligned with the «Продажі» reference.
    The page keeps its load-more (infinite-scroll) mechanism and the table's
    own maxHeight scroll model; only the filter strip + card shell are aligned. */
@@ -10,11 +18,11 @@
   display: grid;
   gap: 10px;
   grid-template-columns:
-    minmax(140px, 150px)
-    minmax(140px, 150px)
+    310px
     minmax(220px, 260px)
     minmax(180px, 200px)
     minmax(32px, 1fr)
+    auto
     auto;
   min-width: max-content;
   width: 100%;
@@ -23,8 +31,12 @@
 /* Pin the reset / refresh / density / page-size cluster to the trailing edge
    of the wrapping filter row. */
 .balances-filter-actions {
-  grid-column: 6;
+  grid-column: 5;
   margin-left: auto;
+}
+
+.balances-filter-row > .app-filter-table-toolbar-slot {
+  grid-column: 6;
 }
 
 /* Body below the flush filter strip carries its own padding (the card is

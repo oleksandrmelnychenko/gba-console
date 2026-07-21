@@ -10,14 +10,12 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { CircleAlert, RotateCcw } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useReducer } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { formatDateInputForQuery, formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { translate } from '../../../shared/i18n/translate'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
-import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { getSyncDocuments } from '../api/balancesApi'
@@ -67,7 +65,6 @@ function useBalancesPageModel() {
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const filterError = getFilterError(activeFilters.from, activeFilters.to)
   const columns = useBalancesColumns()
-  const { density, toggleDensity } = useDataTableDensity('balances', BALANCES_TABLE_DEFAULT_LAYOUT.density)
   const totalPages = Math.max(1, Math.ceil(totalQty / pageSize))
 
   const resetDocuments = useCallback(() => {
@@ -111,8 +108,8 @@ function useBalancesPageModel() {
   )
 
   return {
-    applyFilters, columns, density, documents, error, filterDraft, filterError, isLoading,
-    page, pageSize, reload, resetFilters, setPage, setPageSize, toggleDensity, toolbarLeft, totalPages, totalQty,
+    applyFilters, columns, documents, error, filterDraft, filterError, isLoading,
+    page, pageSize, reload, resetFilters, setPage, setPageSize, toolbarLeft, totalPages,
   }
 }
 
@@ -204,29 +201,19 @@ export function BalancesPage() {
   const model = useBalancesPageModel()
 
   return (
-    <Stack gap="lg">
-      <BalancesHeader model={model} />
+    <Stack className="balances-page" gap={6}>
       <BalancesTableCard model={model} />
     </Stack>
-  )
-}
-
-function BalancesHeader({ model }: { model: ReturnType<typeof useBalancesPageModel> }) {
-  const { t } = useI18n()
-
-  return (
-    <Text fw={700} size="lg">
-      {t('Всього')} {model.totalQty}
-    </Text>
   )
 }
 
 function BalancesTableCard({ model }: { model: ReturnType<typeof useBalancesPageModel> }) {
   const { t } = useI18n()
   const {
-    applyFilters, columns, density, documents, error, filterDraft, filterError, isLoading,
-    page, pageSize, reload, resetFilters, setPage, setPageSize, toggleDensity, toolbarLeft, totalPages,
+    applyFilters, columns, documents, error, filterDraft, filterError, isLoading,
+    page, pageSize, reload, resetFilters, setPage, setPageSize, toolbarLeft, totalPages,
   } = model
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
 
   const typeOptions = useMemo(
     () => [
@@ -242,22 +229,24 @@ function BalancesTableCard({ model }: { model: ReturnType<typeof useBalancesPage
     <Card className="app-data-card balances-card" withBorder radius="md" padding={0}>
       <div className="app-filter-bar balances-filter-bar">
         <Group align="end" gap={10} wrap="nowrap" className="balances-filter-row">
+          <div className="app-filter-date-range">
+            <TextInput
+              label={t('Від')}
+              max={filterDraft.to || undefined}
+              type="date"
+              value={filterDraft.from}
+              onChange={(event) => applyFilters({ ...filterDraft, from: event.currentTarget.value })}
+            />
+            <TextInput
+              label={t('До')}
+              min={filterDraft.from || undefined}
+              type="date"
+              value={filterDraft.to}
+              onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
+            />
+          </div>
           <TextInput
-            label={t('Від якої дати')}
-            max={filterDraft.to || undefined}
-            type="date"
-            value={filterDraft.from}
-            onChange={(event) => applyFilters({ ...filterDraft, from: event.currentTarget.value })}
-          />
-          <TextInput
-            label={t('До якої дати')}
-            min={filterDraft.from || undefined}
-            type="date"
-            value={filterDraft.to}
-            onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
-          />
-          <TextInput
-            label="Name"
+            label={t('Назва')}
             value={filterDraft.name}
             onChange={(event) => applyFilters({ ...filterDraft, name: event.currentTarget.value })}
           />
@@ -279,7 +268,6 @@ function BalancesTableCard({ model }: { model: ReturnType<typeof useBalancesPage
                 <RotateCcw size={17} />
               </ActionIcon>
             </Tooltip>
-            <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
             <Paginator
               isLoading={isLoading}
               page={page}
@@ -293,6 +281,7 @@ function BalancesTableCard({ model }: { model: ReturnType<typeof useBalancesPage
               onRefresh={() => reload()}
             />
           </div>
+          <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
         </Group>
       </div>
 
@@ -307,7 +296,6 @@ function BalancesTableCard({ model }: { model: ReturnType<typeof useBalancesPage
           columns={columns}
           data={documents}
           defaultLayout={BALANCES_TABLE_DEFAULT_LAYOUT}
-          density={density}
           emptyText={t('Відсутній')}
           getRowId={(document, index) => String(document.NetUid || document.Id || index)}
           isLoading={isLoading}
@@ -315,8 +303,10 @@ function BalancesTableCard({ model }: { model: ReturnType<typeof useBalancesPage
           loadingText={t('Завантаження')}
           maxHeight="calc(100vh - 360px)"
           minWidth={1620}
+          showLayoutControls
           tableId="balances"
           toolbarLeft={toolbarLeft}
+          toolbarPortalTarget={tableToolbarSlot}
         />
       </Stack>
     </Card>
