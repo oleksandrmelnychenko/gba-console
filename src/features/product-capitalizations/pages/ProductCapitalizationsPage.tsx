@@ -16,14 +16,12 @@ import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
 import { CircleAlert, Eye, FileDown, FileText, Plus, RotateCcw } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
-import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { formatLocalDate, toDateTimeQuery } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
-import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -145,7 +143,6 @@ function useProductCapitalizationsPageModel() {
   const [exportingNetId, setExportingNetId] = useValueState<string | null>(null)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const [createPanelOpened, setCreatePanelOpened] = useValueState(false)
-  const { density, toggleDensity } = useDataTableDensity('product-capitalizations', 'normal')
   const detailRequestRef = useRef(0)
   const exportRequestRef = useRef(0)
   const sourceCapitalizationNetIdRef = useRef('')
@@ -338,7 +335,6 @@ function useProductCapitalizationsPageModel() {
     capitalizations,
     columns,
     createPanelOpened,
-    density,
     detailError,
     downloadDocument,
     downloadModalOpened,
@@ -355,7 +351,6 @@ function useProductCapitalizationsPageModel() {
     closeDetail,
     openDetail,
     reload,
-    toggleDensity,
     resetFilters,
     setCreatePanelOpened,
     setDownloadModalOpened,
@@ -373,13 +368,13 @@ export function ProductCapitalizationsPage() {
 
 function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof useProductCapitalizationsPageModel> }) {
   const { t } = useI18n()
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const {
     activeFilters,
     canMoveForward,
     capitalizations,
     columns,
     createPanelOpened,
-    density,
     detailError,
     downloadDocument,
     downloadModalOpened,
@@ -397,7 +392,6 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
     openDetail,
     reload,
     resetFilters,
-    toggleDensity,
     setCreatePanelOpened,
     setDownloadModalOpened,
     setPage,
@@ -410,20 +404,20 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
       <Card className="app-data-card product-capitalizations-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar product-capitalizations-filter-bar">
           <Group align="end" gap={10} wrap="nowrap" className="product-capitalizations-filter-row">
-            <TextInput
-              label={t('Від')}
-              type="date"
-              value={activeFilters.from}
-              w={150}
-              onChange={(event) => updateFilters({ from: event.currentTarget.value })}
-            />
-            <TextInput
-              label={t('До')}
-              type="date"
-              value={activeFilters.to}
-              w={150}
-              onChange={(event) => updateFilters({ to: event.currentTarget.value })}
-            />
+            <div className="app-filter-date-range">
+              <TextInput
+                label={t('Від')}
+                type="date"
+                value={activeFilters.from}
+                onChange={(event) => updateFilters({ from: event.currentTarget.value })}
+              />
+              <TextInput
+                label={t('До')}
+                type="date"
+                value={activeFilters.to}
+                onChange={(event) => updateFilters({ to: event.currentTarget.value })}
+              />
+            </div>
             <div className="product-capitalizations-filter-spacer" />
             <div className="app-filter-actions">
               <Tooltip label={t('Скинути')}>
@@ -431,7 +425,6 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
                   <RotateCcw size={17} />
                 </ActionIcon>
               </Tooltip>
-              <DataTableDensityToggle density={density} size={34} onToggle={toggleDensity} />
               <Paginator
                 hasNext={canMoveForward}
                 isLoading={isLoading}
@@ -445,6 +438,7 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
                 onRefresh={reload}
               />
             </div>
+            <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
             <Button
               color={CREATE_ACTION_COLOR}
               leftSection={<Plus size={16} />}
@@ -473,7 +467,6 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
             columns={columns}
             data={capitalizations}
             defaultLayout={PRODUCT_CAPITALIZATIONS_TABLE_DEFAULT_LAYOUT}
-            density={density}
             emptyText={t('Оприбуткувань не знайдено')}
             getRowId={(capitalization, index) => String(capitalization.NetUid || capitalization.Id || index)}
             height="100%"
@@ -481,7 +474,9 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
             layoutVersion="product-capitalizations-table-1"
             loadingText={t('Завантаження оприбуткувань')}
             minWidth={1280}
+            showLayoutControls
             tableId="product-capitalizations"
+            toolbarPortalTarget={tableToolbarSlot}
             onRowClick={openDetail}
           />
         </div>

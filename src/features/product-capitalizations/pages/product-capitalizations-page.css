@@ -25,7 +25,7 @@
   width: 100%;
 }
 
-/* Pushes the reset/density/paginator cluster and the create button flush to
+/* Pushes the reset/paginator cluster, table controls and create button flush to
    the trailing edge of the bar (no search field here to grow and do it). */
 .product-capitalizations-filter-spacer {
   flex: 1 1 auto;
