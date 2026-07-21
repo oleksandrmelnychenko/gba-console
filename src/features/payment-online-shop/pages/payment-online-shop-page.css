@@ -24,23 +24,33 @@
 
 .payment-online-shop-filter-row {
   display: grid;
-  grid-template-columns: minmax(180px, 1fr) max-content max-content max-content minmax(16px, 1fr) max-content;
+  gap: 10px;
+  grid-template-columns: 310px minmax(180px, 1fr) max-content minmax(16px, 1fr) max-content max-content;
   min-width: max-content;
   width: 100%;
 }
 
-/* Push the search / reset / density / paginator cluster to the trailing edge. */
+/* Push search/reset/paginator before the dedicated DataTable toolbar slot. */
 .payment-online-shop-filter-row .app-filter-actions {
+  grid-column: 5;
+}
+
+.payment-online-shop-filter-row > .app-filter-table-toolbar-slot {
   grid-column: 6;
 }
 
-/* Body below the flush filter strip carries its own padding (card is padding={0}). */
+/* Body stays flush so the first table column shares the filter bar's 8px axis. */
 .payment-online-shop-card__body {
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
   min-height: 0;
-  padding: 12px;
+  padding: 0;
+}
+
+.payment-online-shop-alert {
+  flex: 0 0 auto;
+  margin: 12px 12px 0;
 }
 
 .payment-online-shop-page__table {

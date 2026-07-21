@@ -11,13 +11,11 @@ import {
 import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, Receipt, RotateCcw, Search } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useReducer } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
-import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
@@ -71,7 +69,6 @@ function usePaymentOnlineShopModel() {
   const [isCreating, setCreating] = useValueState(false)
   const [isSaving, setSaving] = useValueState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
-  const { density, toggleDensity } = useDataTableDensity('payment-online-shop', PAYMENT_SHOP_TABLE_DEFAULT_LAYOUT.density)
 
   usePaymentShopLoader({ activeFilters, page, pageSize, reloadKey, setError, setItems, setLoading, setTotalRowsQty })
 
@@ -194,9 +191,9 @@ function usePaymentOnlineShopModel() {
   const hasNext = totalPages ? page < totalPages : items.length === pageSize
 
   return {
-    activeFilters, applyFilters, closeDetail, columns, createError, density, editError, editItem, error, filterDraft,
+    activeFilters, applyFilters, closeDetail, columns, createError, editError, editItem, error, filterDraft,
     handleAddPayment, handleEditPayment, hasNext, isCreating, isLoading, isSaving, items, openDetail, page, pageSize,
-    reload, resetFilters, selectedItem, setEditItem, setFilterDraft, setPage, setPageSize, toggleDensity,
+    reload, resetFilters, selectedItem, setEditItem, setFilterDraft, setPage, setPageSize,
     totalPages,
   }
 }
@@ -288,18 +285,37 @@ export function PaymentOnlineShopPage() {
 
 function PaymentShopTableCard({ model }: { model: ReturnType<typeof usePaymentOnlineShopModel> }) {
   const { t } = useI18n()
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const {
-    applyFilters, columns, density, error, filterDraft, hasNext, isLoading, items, openDetail, page, pageSize, reload,
-    resetFilters, setFilterDraft, setPage, setPageSize, toggleDensity, totalPages,
+    applyFilters, columns, error, filterDraft, hasNext, isLoading, items, openDetail, page, pageSize, reload,
+    resetFilters, setFilterDraft, setPage, setPageSize, totalPages,
   } = model
 
   return (
     <Card className="app-data-card payment-online-shop-card" withBorder radius="md" padding={0}>
       <div className="app-filter-bar payment-online-shop-filter-bar">
         <Group align="end" gap={10} wrap="nowrap" className="payment-online-shop-filter-row">
+          <div className="app-filter-date-range">
+            <TextInput
+              size="sm"
+              label={t('Від')}
+              max={filterDraft.saleDateTo || undefined}
+              type="date"
+              value={filterDraft.saleDateFrom}
+              onChange={(event) => setFilterDraft({ ...filterDraft, saleDateFrom: event.currentTarget.value })}
+            />
+            <TextInput
+              size="sm"
+              label={t('До')}
+              min={filterDraft.saleDateFrom || undefined}
+              type="date"
+              value={filterDraft.saleDateTo}
+              onChange={(event) => setFilterDraft({ ...filterDraft, saleDateTo: event.currentTarget.value })}
+            />
+          </div>
           <TextInput
             size="sm"
-            label={t('Продажа')}
+            label={t('Продаж')}
             placeholder={t('Номер')}
             value={filterDraft.saleNumber}
             onChange={(event) => setFilterDraft({ ...filterDraft, saleNumber: event.currentTarget.value })}
@@ -309,22 +325,6 @@ function PaymentShopTableCard({ model }: { model: ReturnType<typeof usePaymentOn
               }
             }}
             style={{ flex: '1 1 auto', minWidth: 180 }}
-          />
-          <TextInput
-            size="sm"
-            label={t('Від якої дати')}
-            max={filterDraft.saleDateTo || undefined}
-            type="date"
-            value={filterDraft.saleDateFrom}
-            onChange={(event) => setFilterDraft({ ...filterDraft, saleDateFrom: event.currentTarget.value })}
-          />
-          <TextInput
-            size="sm"
-            label={t('До якої дати')}
-            min={filterDraft.saleDateFrom || undefined}
-            type="date"
-            value={filterDraft.saleDateTo}
-            onChange={(event) => setFilterDraft({ ...filterDraft, saleDateTo: event.currentTarget.value })}
           />
           <TextInput
             size="sm"
@@ -349,7 +349,6 @@ function PaymentShopTableCard({ model }: { model: ReturnType<typeof usePaymentOn
                 <RotateCcw size={17} />
               </ActionIcon>
             </Tooltip>
-            <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
             <Paginator
               hasNext={hasNext}
               isLoading={isLoading}
@@ -364,12 +363,13 @@ function PaymentShopTableCard({ model }: { model: ReturnType<typeof usePaymentOn
               onRefresh={reload}
             />
           </div>
+          <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
         </Group>
       </div>
 
-      <Stack className="payment-online-shop-card__body" gap="md">
+      <Stack className="payment-online-shop-card__body" gap={0}>
         {error && (
-          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
+          <Alert className="payment-online-shop-alert" color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}
@@ -379,7 +379,6 @@ function PaymentShopTableCard({ model }: { model: ReturnType<typeof usePaymentOn
             columns={columns}
             data={items}
             defaultLayout={PAYMENT_SHOP_TABLE_DEFAULT_LAYOUT}
-            density={density}
             emptyText={t('Оплата магазину')}
             getRowId={(item, index) => String(item.NetUid || item.Id || index)}
             height="100%"
@@ -387,7 +386,9 @@ function PaymentShopTableCard({ model }: { model: ReturnType<typeof usePaymentOn
             layoutVersion="payment-online-shop-table-1"
             loadingText={t('Завантаження')}
             minWidth={1620}
+            showLayoutControls
             tableId="payment-online-shop"
+            toolbarPortalTarget={tableToolbarSlot}
             onRowClick={openDetail}
           />
         </div>
