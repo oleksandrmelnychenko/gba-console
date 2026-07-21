@@ -1,0 +1,60 @@
+.organisation-services-page {
+  box-sizing: border-box;
+  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px);
+  min-height: 0;
+  overflow: hidden;
+  padding: 6px 4px 0;
+}
+
+.organisation-services-shell {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.organisation-services-filter-bar {
+  display: grid;
+  flex: 0 0 auto;
+  grid-template-columns:
+    310px
+    minmax(260px, 1fr)
+    minmax(220px, 300px)
+    minmax(180px, 220px)
+    auto
+    auto
+    auto;
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.organisation-services-filter-bar .organisation-search-control {
+  min-width: 260px;
+}
+
+.organisation-services-type-filter {
+  min-width: 220px;
+}
+
+.organisation-services-document-filter {
+  min-width: 180px;
+}
+
+.organisation-services-submit {
+  align-self: end;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+.organisation-services-table {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.organisation-services-summary {
+  min-width: max-content;
+  width: 100%;
+}

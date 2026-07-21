@@ -1,8 +1,7 @@
 import {
-  Box,
-  Button,
-  Group,
+  ActionIcon,
   Loader,
+  Popover,
   Stack,
   Text,
   TextInput,
@@ -64,7 +63,8 @@ export function OrganisationSearchControl({
 
   return (
     <Stack
-      gap={6}
+      className="organisation-search-control"
+      gap={0}
       style={CONTROL_STYLE}
       onBlur={(event) => {
         const nextTarget = event.relatedTarget
@@ -76,26 +76,35 @@ export function OrganisationSearchControl({
         onAutoSelect()
       }}
     >
-      <TextInput
-        label={t('Організація')}
-        leftSection={<Building size={16} />}
-        placeholder={t('Введіть назву')}
-        rightSection={isLoading ? <Loader color="orange" size="xs" /> : null}
-        value={value}
-        onChange={(event) => onChange(event.currentTarget.value)}
-      />
+      <Popover opened={showSuggestions} position="bottom-start" shadow="md" width="target" withinPortal>
+        <Popover.Target>
+          <TextInput
+            label={t('Організація')}
+            leftSection={<Building size={16} />}
+            placeholder={t('Введіть назву')}
+            rightSection={
+              isLoading ? (
+                <Loader color="orange" size="xs" />
+              ) : selectedOrganization ? (
+                <ActionIcon
+                  aria-label={t('Скинути')}
+                  color="gray"
+                  size="sm"
+                  type="button"
+                  variant="subtle"
+                  onClick={onClear}
+                >
+                  <X size={14} />
+                </ActionIcon>
+              ) : null
+            }
+            rightSectionPointerEvents={selectedOrganization ? 'all' : 'none'}
+            value={value}
+            onChange={(event) => onChange(event.currentTarget.value)}
+          />
+        </Popover.Target>
 
-      {showSuggestions && (
-        <Box
-          bg="var(--mantine-color-body)"
-          mah={260}
-          pos="absolute"
-          top="100%"
-          left={0}
-          right={0}
-          mt={4}
-          style={SUGGESTIONS_PANEL_STYLE}
-        >
+        <Popover.Dropdown mah={260} p={0} style={SUGGESTIONS_PANEL_STYLE}>
           {organizations.length > 0 ? (
             organizations.map((organization) => (
               <button
@@ -118,25 +127,9 @@ export function OrganisationSearchControl({
               {t('Пошук організацій')}
             </Text>
           )}
-        </Box>
-      )}
+        </Popover.Dropdown>
+      </Popover>
 
-      {selectedOrganization && (
-        <Group gap={6} justify="space-between" wrap="nowrap">
-          <Text c="dimmed" size="xs" truncate>
-            {t('Обрано')}: {selectedOrganization.Name}
-          </Text>
-          <Button
-            color="gray"
-            leftSection={<X size={14} />}
-            size="compact-xs"
-            variant="subtle"
-            onClick={onClear}
-          >
-            {t('Скинути')}
-          </Button>
-        </Group>
-      )}
     </Stack>
   )
 }

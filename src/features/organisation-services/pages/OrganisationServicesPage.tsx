@@ -4,7 +4,6 @@ import {
   Anchor,
   Badge,
   Button,
-  Card,
   Divider,
   Group,
   MultiSelect,
@@ -15,7 +14,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { CircleAlert, RefreshCw, RotateCcw } from 'lucide-react'
-import { type FormEvent, useCallback, useEffect, useMemo, useRef } from 'react'
+import { type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { getDocumentHref } from '../../../shared/url/getDocumentHref'
@@ -50,6 +49,8 @@ import type {
   TaskStatus,
 } from '../types'
 import { SERVICE_ORGANIZATION_TYPES } from '../types'
+import '../../../shared/ui/console-table-page.css'
+import './organisation-services-page.css'
 
 const ORGANISATION_SERVICES_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -188,28 +189,11 @@ function useOrganisationServicesPageModel() {
       ) : null,
     [selectedOrganization, t],
   )
-  const toolbarRight = useMemo(
-    () => (
-      <Tooltip label={t('Оновити')}>
-        <ActionIcon
-          aria-label={t('Оновити')}
-          color="gray"
-          disabled={!lastSearchParams}
-          loading={isLoadingTasks}
-          size="sm"
-          variant="subtle"
-          onClick={() => {
-            if (lastSearchParams) {
-              void loadPaymentTasks(lastSearchParams)
-            }
-          }}
-        >
-          <RefreshCw size={16} />
-        </ActionIcon>
-      </Tooltip>
-    ),
-    [isLoadingTasks, lastSearchParams, loadPaymentTasks, t],
-  )
+  const refreshPaymentTasks = useCallback(() => {
+    if (lastSearchParams) {
+      void loadPaymentTasks(lastSearchParams)
+    }
+  }, [lastSearchParams, loadPaymentTasks])
 
   useEffect(() => {
     const normalizedOrganizationSearch = organizationSearch.trim()
@@ -456,7 +440,7 @@ function useOrganisationServicesPageModel() {
     selectedServiceRow,
     selectedServiceTypes,
     toolbarLeft,
-    toolbarRight,
+    refreshPaymentTasks,
     visibleError,
     autoSelectOrganization,
     clearOrganization,
@@ -492,7 +476,7 @@ function OrganisationServicesPageView({ model }: { model: OrganisationServicesPa
     selectedServiceRow,
     selectedServiceTypes,
     toolbarLeft,
-    toolbarRight,
+    refreshPaymentTasks,
     visibleError,
     autoSelectOrganization,
     clearOrganization,
@@ -506,96 +490,105 @@ function OrganisationServicesPageView({ model }: { model: OrganisationServicesPa
     submitSearch,
     updateOrganizationSearch,
   } = model
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
 
   return (
-    <Stack gap="lg">
-      <Card className="app-section-card" withBorder radius="md" padding="md">
-        <form onSubmit={submitSearch}>
-          <Stack gap="md">
-            <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
-              <OrganisationSearchControl
-                isLoading={organizationSearchState.isLoading}
-                organizations={organizationSearchState.suggestions}
-                selectedOrganization={selectedOrganization}
-                value={organizationSearch}
-                onAutoSelect={() => {
-                  void autoSelectOrganization(true)
-                }}
-                onChange={updateOrganizationSearch}
-                onClear={clearOrganization}
-                onSelect={selectOrganization}
-              />
-
-              <TextInput
-                label={t('Від')}
-                type="date"
-                value={dateFrom}
-                onChange={(event) => setDateFrom(event.currentTarget.value)}
-                style={{ flex: '0 0 160px' }}
-              />
-              <TextInput
-                label={t('До')}
-                type="date"
-                value={dateTo}
-                onChange={(event) => setDateTo(event.currentTarget.value)}
-                style={{ flex: '0 0 160px' }}
-              />
-              <Button
-                color={CREATE_ACTION_COLOR}
-                loading={isLoadingTasks}
-                type="submit"
-                style={{ flex: '0 0 auto' }}
+    <Stack className="organisation-services-page console-table-page" gap={6}>
+      <div className="organisation-services-shell console-table-shell">
+        <form className="app-filter-bar organisation-services-filter-bar" onSubmit={submitSearch}>
+          <div className="app-filter-date-range">
+            <TextInput
+              label={t('Від')}
+              type="date"
+              value={dateFrom}
+              onChange={(event) => setDateFrom(event.currentTarget.value)}
+            />
+            <TextInput
+              label={t('До')}
+              type="date"
+              value={dateTo}
+              onChange={(event) => setDateTo(event.currentTarget.value)}
+            />
+          </div>
+          <OrganisationSearchControl
+            isLoading={organizationSearchState.isLoading}
+            organizations={organizationSearchState.suggestions}
+            selectedOrganization={selectedOrganization}
+            value={organizationSearch}
+            onAutoSelect={() => {
+              void autoSelectOrganization(true)
+            }}
+            onChange={updateOrganizationSearch}
+            onClear={clearOrganization}
+            onSelect={selectOrganization}
+          />
+          <MultiSelect
+            className="organisation-services-type-filter"
+            data={availableServiceOptions}
+            disabled={!selectedOrganization}
+            label={t('Типи послуг')}
+            placeholder={selectedOrganization ? t('Оберіть типи') : t('Оберіть організацію')}
+            searchable
+            value={selectedServiceTypes}
+            onChange={updateSelectedServiceTypes}
+          />
+          <MultiSelect
+            className="organisation-services-document-filter"
+            data={documentFilterOptions.map((option) => ({
+              value: option.value,
+              label: t(option.label),
+            }))}
+            label={t('Документи')}
+            placeholder={t('Усі')}
+            value={documentFilters}
+            onChange={(values) => setDocumentFilters(values.filter(isDocumentFilter))}
+          />
+          <div className="app-filter-actions organisation-services-filter-actions">
+            <Tooltip label={t('Скинути')}>
+              <ActionIcon
+                aria-label={t('Скинути')}
+                color="gray"
+                size={34}
+                type="button"
+                variant="light"
+                onClick={resetFilters}
               >
-                {t('Взаєморозрахунки')}
-              </Button>
-              <Tooltip label={t('Скинути')}>
-                <ActionIcon
-                  aria-label={t('Скинути')}
-                  color="gray"
-                  size={36}
-                  variant="light"
-                  onClick={resetFilters}
-                >
-                  <RotateCcw size={18} />
-                </ActionIcon>
-              </Tooltip>
-            </Group>
-
-            <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
-              <MultiSelect
-                data={availableServiceOptions}
-                disabled={!selectedOrganization}
-                label={t('Типи послуг')}
-                placeholder={selectedOrganization ? t('Оберіть типи') : t('Оберіть організацію')}
-                searchable
-                value={selectedServiceTypes}
-                onChange={updateSelectedServiceTypes}
-                style={{ flex: '1 1 320px', minWidth: 240 }}
-              />
-              <MultiSelect
-                data={documentFilterOptions.map((option) => ({
-                  value: option.value,
-                  label: t(option.label),
-                }))}
-                label={t('Документи')}
-                placeholder={t('Усі')}
-                value={documentFilters}
-                onChange={(values) => setDocumentFilters(values.filter(isDocumentFilter))}
-                style={{ flex: '0 1 260px', minWidth: 220 }}
-              />
-            </Group>
-          </Stack>
+                <RotateCcw size={17} />
+              </ActionIcon>
+            </Tooltip>
+            <Tooltip label={t('Оновити')}>
+              <ActionIcon
+                aria-label={t('Оновити')}
+                color="gray"
+                disabled={!lastSearchParams}
+                loading={isLoadingTasks}
+                size={34}
+                type="button"
+                variant="light"
+                onClick={refreshPaymentTasks}
+              >
+                <RefreshCw size={17} />
+              </ActionIcon>
+            </Tooltip>
+          </div>
+          <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
+          <Button
+            className="organisation-services-submit"
+            color={CREATE_ACTION_COLOR}
+            loading={isLoadingTasks}
+            type="submit"
+          >
+            {t('Взаєморозрахунки')}
+          </Button>
         </form>
-      </Card>
 
-      {visibleError && (
-        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
-          {visibleError}
-        </Alert>
-      )}
+        {visibleError && (
+          <Alert className="console-table-alert" color="red" icon={<CircleAlert size={18} />} variant="light">
+            {visibleError}
+          </Alert>
+        )}
 
-      <Card className="app-section-card" withBorder radius="md" padding="md">
-        <Stack gap="md">
+        <div className="organisation-services-table console-table-body">
           <DataTable
             columns={columns}
             data={rows}
@@ -605,20 +598,22 @@ function OrganisationServicesPageView({ model }: { model: OrganisationServicesPa
             isLoading={isLoadingTasks}
             layoutVersion="organisation-services-table-2"
             loadingText={t('Завантаження взаєморозрахунків')}
-            maxHeight="calc(100vh - 420px)"
+            height="100%"
             minWidth={1080}
+            showLayoutControls
             tableId="organisation-services"
             toolbarLeft={toolbarLeft}
-            toolbarRight={toolbarRight}
+            toolbarPortalTarget={tableToolbarSlot}
+            footer={
+              <Group className="organisation-services-summary" justify="flex-end" gap="lg" wrap="nowrap">
+                <SummaryValue label={t('Баланс за період')} value={paymentTasks.TotalByRange} />
+                <SummaryValue label={t('Разом')} value={paymentTasks.Total} />
+              </Group>
+            }
             onRowClick={setSelectedServiceRow}
           />
-
-          <Group justify="flex-end" gap="lg">
-            <SummaryValue label={t('Баланс за період')} value={paymentTasks.TotalByRange} />
-            <SummaryValue label={t('Разом')} value={paymentTasks.Total} />
-          </Group>
-        </Stack>
-      </Card>
+        </div>
+      </div>
 
       <OrganisationServiceDetailDrawer row={selectedServiceRow} onClose={() => setSelectedServiceRow(null)} />
     </Stack>
