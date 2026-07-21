@@ -1,5 +1,10 @@
 .online-shop-cities-page {
+  box-sizing: border-box;
+  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px);
+  min-height: 0;
   min-width: 0;
+  overflow: hidden;
+  padding: 6px 4px 0;
 }
 
 .online-shop-cities-shell {
@@ -17,6 +22,8 @@
   flex: 0 0 auto;
   gap: 10px;
   grid-template-columns: minmax(300px, 1fr) auto auto auto;
+  min-width: max-content;
+  overflow-x: auto;
 }
 
 .online-shop-cities-search-input {
@@ -84,7 +91,7 @@
   color: var(--mantine-color-gray-7);
   cursor: pointer;
   display: grid;
-  gap: 8px;
+  gap: 10px;
   grid-template-columns: minmax(0, 1fr) auto;
   min-height: 36px;
   padding: 0 7px;
@@ -167,14 +174,14 @@
   align-items: center;
   align-self: end;
   display: flex;
-  gap: 8px;
+  gap: 10px;
   justify-content: flex-end;
   min-height: 36px;
   min-width: 0;
 }
 
 .online-shop-cities-table-toolbar-slot .data-table-toolbar {
-  gap: 6px;
+  gap: 10px;
   margin: 0;
   min-height: 0;
 }
@@ -322,16 +329,6 @@
 }
 
 @media (max-width: 960px) {
-  .online-shop-cities-command-bar {
-    grid-template-columns: 1fr;
-  }
-
-  .online-shop-cities-command-bar .app-filter-actions,
-  .online-shop-cities-table-toolbar-slot,
-  .online-shop-cities-create-actions {
-    justify-content: flex-start;
-  }
-
   .online-shop-cities-layout {
     grid-template-columns: 1fr;
   }

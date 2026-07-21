@@ -372,7 +372,7 @@ function OnlineShopCitiesRegistry({
             </ActionIcon>
           </Tooltip>
         </div>
-        <div ref={setTableToolbarSlot} className="online-shop-cities-table-toolbar-slot" />
+        <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot online-shop-cities-table-toolbar-slot" />
         <div className="online-shop-cities-create-actions">
           <Button
             color={CREATE_ACTION_COLOR}
