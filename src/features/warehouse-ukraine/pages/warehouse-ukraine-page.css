@@ -61,7 +61,7 @@
 }
 
 .warehouse-ukraine-filter-bar.is-verification {
-  grid-template-columns: 310px minmax(260px, 320px) max-content minmax(0, 1fr) auto auto;
+  grid-template-columns: 310px var(--app-multi-select-width, 240px) max-content minmax(0, 1fr) auto auto;
 }
 
 .warehouse-ukraine-filter-bar.is-verification .warehouse-ukraine-filter-actions {

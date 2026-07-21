@@ -395,7 +395,6 @@ export function DocumentVerificationTab() {
               data={model.storageOptions}
               label={t('Організація')}
               value={model.selectedStorageIds}
-              w={320}
               onChange={model.setSelectedStorageIds}
             />
             <Text c="dimmed" size="sm">
