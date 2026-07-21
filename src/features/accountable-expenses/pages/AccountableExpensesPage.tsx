@@ -232,35 +232,31 @@ export function AccountableExpensesPage() {
     <Stack className="accountable-expenses-page console-table-page" gap={6}>
       <div className="accountable-expenses-shell console-table-shell">
         <div className="app-filter-bar accountable-expenses-command-bar">
-          <div className="app-filter-field accountable-expenses-period-filter">
-            <span className="app-filter-label accountable-expenses-filter-label">{t('Період')}</span>
-            <div className="accountable-expenses-period-fields">
-              <TextInput
-                className="accountable-expenses-date-input"
-                aria-label={t('Від')}
-                type="date"
-                value={fromDate}
-                onChange={(event) => {
-                  setFromDate(event.currentTarget.value)
-                  setPage(1)
-                  setOrders([])
-                  setTotalOrders(undefined)
-                }}
-              />
-              <span className="accountable-expenses-period-separator" />
-              <TextInput
-                className="accountable-expenses-date-input"
-                aria-label={t('До')}
-                type="date"
-                value={toDate}
-                onChange={(event) => {
-                  setToDate(event.currentTarget.value)
-                  setPage(1)
-                  setOrders([])
-                  setTotalOrders(undefined)
-                }}
-              />
-            </div>
+          <div className="app-filter-date-range">
+            <TextInput
+              className="accountable-expenses-date-input"
+              label={t('Від')}
+              type="date"
+              value={fromDate}
+              onChange={(event) => {
+                setFromDate(event.currentTarget.value)
+                setPage(1)
+                setOrders([])
+                setTotalOrders(undefined)
+              }}
+            />
+            <TextInput
+              className="accountable-expenses-date-input"
+              label={t('До')}
+              type="date"
+              value={toDate}
+              onChange={(event) => {
+                setToDate(event.currentTarget.value)
+                setPage(1)
+                setOrders([])
+                setTotalOrders(undefined)
+              }}
+            />
           </div>
 
           <TextInput
@@ -304,7 +300,7 @@ export function AccountableExpensesPage() {
               onRefresh={() => void loadOrders()}
             />
           </div>
-          <div ref={setTableToolbarSlot} className="accountable-expenses-table-toolbar-slot" />
+          <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
         </div>
 
         {error && (
