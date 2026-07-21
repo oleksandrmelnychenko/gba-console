@@ -9,6 +9,7 @@ import { TreeView, type TreeViewNode } from '../../../shared/ui/tree/TreeView'
 import { getProductGroupWithRoot, getProductGroups } from '../api/productGroupsApi'
 import type { ProductGroup } from '../types'
 import { getProductGroupName } from '../utils'
+import './product-groups-page.css'
 
 const SEARCH_DEBOUNCE_MS = 300
 
@@ -101,71 +102,78 @@ export function ProductGroupsTreePage() {
   const treeNodes = useMemo(() => (detail ? [buildGroupNode(detail, t)] : []), [detail, t])
 
   return (
-    <Stack gap="lg">
+    <Stack className="product-groups-tree-page" gap={6}>
       <ListTreeLayout
+        className="product-groups-tree-layout"
         list={
-          <Stack gap="md">
-            <Group align="end" gap="sm" wrap="nowrap">
-              <TextInput
-                label={t('Пошук групи')}
-                leftSection={<Search size={16} />}
-                style={{ flex: '1 1 auto', minWidth: 160 }}
-                value={searchDraft}
-                onChange={(event) => setSearchDraft(event.currentTarget.value)}
-              />
-              <Tooltip label={t('Скинути')}>
-                <ActionIcon
-                  aria-label={t('Скинути')}
-                  color="gray"
-                  size={34}
-                  variant="light"
-                  onClick={() => setSearchDraft('')}
-                >
-                  <RotateCcw size={17} />
-                </ActionIcon>
-              </Tooltip>
-              <Tooltip label={t('Оновити')}>
-                <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={34} variant="light" onClick={() => reload()}>
-                  <RefreshCw size={17} />
-                </ActionIcon>
-              </Tooltip>
-            </Group>
+          <Stack className="product-groups-tree-list-pane" gap={6}>
+            <div className="app-filter-bar product-groups-tree-filter-bar">
+              <Group align="end" gap={10} wrap="nowrap" className="product-groups-tree-filter-row">
+                <TextInput
+                  label={t('Пошук групи')}
+                  leftSection={<Search size={16} />}
+                  style={{ flex: '1 1 auto', minWidth: 160 }}
+                  value={searchDraft}
+                  onChange={(event) => setSearchDraft(event.currentTarget.value)}
+                />
+                <div className="app-filter-actions">
+                  <Tooltip label={t('Скинути')}>
+                    <ActionIcon
+                      aria-label={t('Скинути')}
+                      color="gray"
+                      size={34}
+                      variant="light"
+                      onClick={() => setSearchDraft('')}
+                    >
+                      <RotateCcw size={17} />
+                    </ActionIcon>
+                  </Tooltip>
+                  <Tooltip label={t('Оновити')}>
+                    <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={34} variant="light" onClick={() => reload()}>
+                      <RefreshCw size={17} />
+                    </ActionIcon>
+                  </Tooltip>
+                </div>
+              </Group>
+            </div>
 
-            {error ? (
-              <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
-                {error}
-              </Alert>
-            ) : null}
+            <div className="product-groups-tree-list-body">
+              {error ? (
+                <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
+                  {error}
+                </Alert>
+              ) : null}
 
-            {isLoading ? (
-              <Stack gap={5}>
-                {Array.from({ length: 6 }, (_, index) => (
-                  <Skeleton key={index} height={46} radius={7} />
-                ))}
-              </Stack>
-            ) : groups.length > 0 ? (
-              <div className="list-tree-list">
-                {groups.map((group, index) => (
-                  <ListTreeItem
-                    key={group.NetUid || group.Id || index}
-                    index={index}
-                    metrics={[
-                      { value: group.TotalProductSubGroup ?? 0, label: t('підгр.') },
-                      { value: group.TotalProduct ?? 0, label: t('тов.') },
-                    ]}
-                    name={getProductGroupName(group)}
-                    selected={group.NetUid === selectedNetUid}
-                    onSelect={() => setSelectedNetUid(group.NetUid || null)}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="list-tree-empty">
-                <Text c="dimmed" size="sm">
-                  {t('Груп товарів не знайдено')}
-                </Text>
-              </div>
-            )}
+              {isLoading ? (
+                <Stack gap={5}>
+                  {Array.from({ length: 6 }, (_, index) => (
+                    <Skeleton key={index} height={46} radius={7} />
+                  ))}
+                </Stack>
+              ) : groups.length > 0 ? (
+                <div className="list-tree-list">
+                  {groups.map((group, index) => (
+                    <ListTreeItem
+                      key={group.NetUid || group.Id || index}
+                      index={index}
+                      metrics={[
+                        { value: group.TotalProductSubGroup ?? 0, label: t('підгр.') },
+                        { value: group.TotalProduct ?? 0, label: t('тов.') },
+                      ]}
+                      name={getProductGroupName(group)}
+                      selected={group.NetUid === selectedNetUid}
+                      onSelect={() => setSelectedNetUid(group.NetUid || null)}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="list-tree-empty">
+                  <Text c="dimmed" size="sm">
+                    {t('Груп товарів не знайдено')}
+                  </Text>
+                </div>
+              )}
+            </div>
           </Stack>
         }
         detail={

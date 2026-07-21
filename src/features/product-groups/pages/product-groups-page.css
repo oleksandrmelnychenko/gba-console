@@ -9,6 +9,7 @@
 .product-groups-card {
   background: var(--mantine-color-white);
   border: 1px solid var(--mantine-color-gray-2) !important;
+  box-shadow: var(--app-card-shadow) !important;
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -55,4 +56,69 @@
 .product-groups-page__table .data-table-scroll {
   flex: 1 1 auto;
   min-height: 0;
+}
+
+.product-groups-tree-page {
+  box-sizing: border-box;
+  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px);
+  min-height: 0;
+  overflow: hidden;
+  padding: 6px 4px 0;
+}
+
+.product-groups-tree-layout {
+  flex: 1 1 auto;
+  gap: 6px;
+  grid-template-rows: minmax(0, 1fr);
+  min-height: 0;
+}
+
+.console-frame .product-groups-tree-layout > .mantine-Card-root {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2) !important;
+  box-shadow: var(--app-card-shadow) !important;
+  min-height: 0;
+  overflow: auto;
+}
+
+.console-frame .product-groups-tree-layout > .mantine-Card-root:first-child {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
+}
+
+.product-groups-tree-list-pane {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.product-groups-tree-filter-bar {
+  flex: 0 0 auto;
+  overflow-x: auto;
+}
+
+.product-groups-tree-filter-row {
+  min-width: max-content;
+  width: 100%;
+}
+
+.product-groups-tree-filter-row .app-filter-actions {
+  margin-left: auto;
+}
+
+.product-groups-tree-list-body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+@media (max-width: 992px) {
+  .product-groups-tree-layout {
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+  }
 }
