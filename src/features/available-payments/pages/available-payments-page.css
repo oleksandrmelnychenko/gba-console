@@ -24,18 +24,23 @@
 
 .available-payments-filter-row {
   display: grid;
+  gap: 10px;
   grid-template-columns:
+    310px
     minmax(260px, 1.4fr)
     minmax(190px, 0.7fr)
-    max-content
-    max-content
     minmax(16px, 1fr)
+    max-content
     max-content;
   min-width: max-content;
   width: 100%;
 }
 
 .available-payments-filter-row > .app-filter-actions {
+  grid-column: 5;
+}
+
+.available-payments-filter-row > .app-filter-table-toolbar-slot {
   grid-column: 6;
 }
 
@@ -44,7 +49,13 @@
   flex: 1 1 auto;
   flex-direction: column;
   min-height: 0;
-  padding: 10px 8px 8px;
+  padding: 0;
+}
+
+.available-payments-alert,
+.available-payments-selection {
+  flex: 0 0 auto;
+  margin: 10px 8px 0;
 }
 
 .available-payments-page__table {
@@ -65,4 +76,10 @@
 .available-payments-page__table .data-table-scroll {
   flex: 1 1 auto;
   min-height: 0;
+}
+
+.available-payments-summary {
+  border-top: 1px solid var(--mantine-color-gray-2);
+  flex: 0 0 auto;
+  padding: 8px 12px;
 }

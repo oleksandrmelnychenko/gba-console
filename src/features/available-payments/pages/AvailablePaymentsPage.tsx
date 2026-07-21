@@ -13,7 +13,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { CircleAlert, ListTree, RotateCcw, X } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { formatDateInputForQuery, formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -22,8 +22,6 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
-import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import {
@@ -116,10 +114,6 @@ function useAvailablePaymentsPageModel() {
   const [pageSize, setPageSize] = useValueState(DEFAULT_PAGE_SIZE)
   const [hasMore, setHasMore] = useValueState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
-  const { density, toggleDensity } = useDataTableDensity(
-    'available-payments',
-    AVAILABLE_PAYMENTS_TABLE_DEFAULT_LAYOUT.density,
-  )
   const filterError = getFilterError(activeFilters.from, activeFilters.to)
   const pageOffset = (page - 1) * pageSize
   const groupIndexMap = useMemo(() => buildIndexMap(groups, pageOffset), [groups, pageOffset])
@@ -378,7 +372,6 @@ function useAvailablePaymentsPageModel() {
     columns,
     confirmCloseDetail,
     confirmCloseDetailOpen,
-    density,
     error,
     filterDraft,
     filterError,
@@ -415,7 +408,6 @@ function useAvailablePaymentsPageModel() {
       setPageSize(nextPageSize)
       setPage(1)
     },
-    toggleDensity,
     toggleMarked,
   }
 }
@@ -636,10 +628,10 @@ export function AvailablePaymentsPage() {
 
 function AvailablePaymentsTableCard({ model }: { model: ReturnType<typeof useAvailablePaymentsPageModel> }) {
   const { t } = useI18n()
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const {
     applyFilters,
     columns,
-    density,
     error,
     filterDraft,
     filterError,
@@ -657,7 +649,6 @@ function AvailablePaymentsTableCard({ model }: { model: ReturnType<typeof useAva
     resetFilters,
     setPage,
     setPageSize,
-    toggleDensity,
     toggleMarked,
     toolbarLeft,
     totalGrossPrice,
@@ -693,9 +684,25 @@ function AvailablePaymentsTableCard({ model }: { model: ReturnType<typeof useAva
   )
 
   return (
-    <Card className="app-filter-card available-payments-card" withBorder radius="md" padding={0}>
+    <Card className="app-data-card available-payments-card" withBorder radius="md" padding={0}>
       <div className="app-filter-bar available-payments-filter-bar">
         <Group align="end" gap={10} wrap="nowrap" className="available-payments-filter-row">
+          <div className="app-filter-date-range">
+            <TextInput
+              label={t('Від')}
+              max={filterDraft.to || undefined}
+              type="date"
+              value={filterDraft.from}
+              onChange={(event) => applyFilters({ ...filterDraft, from: event.currentTarget.value })}
+            />
+            <TextInput
+              label={t('До')}
+              min={filterDraft.from || undefined}
+              type="date"
+              value={filterDraft.to}
+              onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
+            />
+          </div>
           <Select
             data={organizationOptions}
             label={t('Організація')}
@@ -713,22 +720,6 @@ function AvailablePaymentsTableCard({ model }: { model: ReturnType<typeof useAva
               applyFilters({ ...filterDraft, type: Number(value ?? AccountingTypeValue.All) as FilterDraft['type'] })
             }
           />
-          <TextInput
-            label={t('Від якої дати')}
-            max={filterDraft.to || undefined}
-            type="date"
-            value={filterDraft.from}
-            style={{ flex: '0 0 auto' }}
-            onChange={(event) => applyFilters({ ...filterDraft, from: event.currentTarget.value })}
-          />
-          <TextInput
-            label={t('До якої дати')}
-            min={filterDraft.from || undefined}
-            type="date"
-            value={filterDraft.to}
-            style={{ flex: '0 0 auto' }}
-            onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
-          />
           <div className="app-filter-actions">
             <Tooltip label={t('Скинути')}>
               <ActionIcon
@@ -741,7 +732,6 @@ function AvailablePaymentsTableCard({ model }: { model: ReturnType<typeof useAva
                 <RotateCcw size={17} />
               </ActionIcon>
             </Tooltip>
-            <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
             <Paginator
               hasNext={hasMore}
               isLoading={isLoading}
@@ -753,18 +743,24 @@ function AvailablePaymentsTableCard({ model }: { model: ReturnType<typeof useAva
               onRefresh={reload}
             />
           </div>
+          <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
         </Group>
       </div>
 
-      <Stack className="available-payments-body" gap={10}>
+      <Stack className="available-payments-body" gap={0}>
         {(error || filterError || organizationsError) && (
-          <Alert color={filterError ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">
+          <Alert
+            className="available-payments-alert"
+            color={filterError ? 'yellow' : 'red'}
+            icon={<CircleAlert size={18} />}
+            variant="light"
+          >
             {filterError || error || organizationsError}
           </Alert>
         )}
 
         {markedModels.length > 0 && (
-          <Alert color="orange" icon={<ListTree size={18} />} variant="light">
+          <Alert className="available-payments-selection" color="orange" icon={<ListTree size={18} />} variant="light">
             <Stack gap="xs">
               <Group justify="space-between" gap="sm">
                 <Text size="sm">
@@ -804,7 +800,6 @@ function AvailablePaymentsTableCard({ model }: { model: ReturnType<typeof useAva
             columns={columns}
             data={groups}
             defaultLayout={AVAILABLE_PAYMENTS_TABLE_DEFAULT_LAYOUT}
-            density={density}
             emptyText={t('Платіжних задач не знайдено')}
             getRowId={(group, index) => String(group.NetUid || group.Id || index)}
             height="100%"
@@ -812,8 +807,10 @@ function AvailablePaymentsTableCard({ model }: { model: ReturnType<typeof useAva
             layoutVersion="available-payments-table-1"
             loadingText={t('Завантаження')}
             minWidth={1080}
+            showLayoutControls
             tableId="available-payments"
             toolbarLeft={toolbarLeft}
+            toolbarPortalTarget={tableToolbarSlot}
             onRowClick={openDetail}
           />
         </div>
@@ -843,24 +840,21 @@ function AvailablePaymentsTotalsRow({
   const { t } = useI18n()
 
   return (
-    <Group justify="flex-end" gap="lg" wrap="wrap">
+    <Group className="available-payments-summary" justify="flex-end" gap="lg" wrap="wrap">
       <TotalCell label={t('К-сть')} value={String(totalNotDoneTasks)} />
       {CURRENCY_CODES.map((code) => (
         <TotalCell key={code} label={code} value={formatAmount(totalsByCurrency[code] || 0)} />
       ))}
-      <TotalCell label={t('Вся сума в EUR')} value={formatAmount(totalGrossPrice)} strong />
+      <TotalCell label={t('Вся сума в EUR')} value={formatAmount(totalGrossPrice)} />
     </Group>
   )
 }
 
-function TotalCell({ label, strong, value }: { label: string; strong?: boolean; value: string }) {
+function TotalCell({ label, value }: { label: string; value: string }) {
   return (
-    <Stack gap={0} align="flex-end">
-      <Text c="dimmed" size="xs">
-        {label}
-      </Text>
-      <Text fw={strong ? 700 : 600}>{value}</Text>
-    </Stack>
+    <Badge className="app-role-pill" variant="light">
+      {label}: {value}
+    </Badge>
   )
 }
 
