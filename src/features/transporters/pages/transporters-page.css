@@ -1,3 +1,11 @@
+.transporters-page {
+  box-sizing: border-box;
+  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px);
+  min-height: 0;
+  overflow: hidden;
+  padding: 6px 4px 0;
+}
+
 .transporters-shell {
   --transporters-command-control-height: var(--app-filter-control-height);
   --transporters-command-label-gap: var(--app-filter-label-gap);
@@ -16,6 +24,7 @@
   display: flex;
   flex: 0 0 auto;
   gap: 10px;
+  overflow-x: auto;
 }
 
 .transporters-command-search {
@@ -24,7 +33,8 @@
   flex: 1 1 auto;
   gap: 10px;
   grid-template-columns: minmax(280px, 1fr) 148px;
-  min-width: 0;
+  min-width: max-content;
+  width: 100%;
 }
 
 .transporters-toolbar-actions,
@@ -34,14 +44,14 @@
   align-self: end;
   display: flex;
   flex: 0 0 auto;
-  gap: 8px;
+  gap: 10px;
   justify-content: flex-end;
   min-height: var(--transporters-command-control-height);
   min-width: 0;
 }
 
 .transporters-table-toolbar-slot .data-table-toolbar {
-  gap: 6px;
+  gap: 10px;
   margin: 0;
   min-height: 0;
 }
@@ -334,21 +344,6 @@
 }
 
 @media (max-width: 980px) {
-  .transporters-command-bar {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .transporters-command-search {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .transporters-toolbar-actions,
-  .transporters-table-toolbar-slot,
-  .transporters-create-actions {
-    justify-content: flex-start;
-  }
-
   .transporters-workspace {
     grid-template-columns: 220px minmax(0, 1fr);
   }

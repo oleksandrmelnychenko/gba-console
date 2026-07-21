@@ -361,7 +361,7 @@ export function TransportersPage() {
             />
           </div>
 
-          <div className="transporters-toolbar-actions">
+          <div className="app-filter-actions transporters-toolbar-actions">
             <Tooltip label={t('Скинути')}>
               <ActionIcon
                 aria-label={t('Скинути')}
@@ -388,7 +388,7 @@ export function TransportersPage() {
               </ActionIcon>
             </Tooltip>
           </div>
-          <div ref={setTableToolbarSlot} className="transporters-table-toolbar-slot" />
+          <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot transporters-table-toolbar-slot" />
           <div className="transporters-create-actions">
             <Button
               className="transporters-create-action"
