@@ -461,42 +461,6 @@
   padding-block: 4px;
 }
 
-.product-price-compare-header,
-.product-price-compare-row {
-  display: grid;
-  grid-template-columns: minmax(78px, 1fr) repeat(3, minmax(52px, 70px));
-  gap: 8px;
-  min-width: 0;
-}
-
-.product-price-compare-header {
-  border-bottom: 1px solid var(--mantine-color-gray-2);
-  padding: 0 2px 4px;
-}
-
-.product-price-compare-row {
-  align-items: center;
-  border-bottom: 1px solid var(--mantine-color-gray-1);
-  min-height: 30px;
-  padding: 4px 2px;
-}
-
-.product-price-compare-row > * {
-  min-width: 0;
-}
-
-.product-price-compare-row .is-higher {
-  color: var(--mantine-color-red-7);
-}
-
-.product-price-compare-row .is-lower {
-  color: var(--mantine-color-teal-7);
-}
-
-.product-price-compare-row .is-equal {
-  color: var(--mantine-color-gray-6);
-}
-
 .product-inline-primary {
   display: flex;
   flex-direction: column;

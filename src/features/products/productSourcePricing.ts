@@ -1,61 +1,104 @@
-import type { ProductSourcePrice, ProductSourcePriceSet } from './types'
+import type { CalculatedProductPrice } from './types'
 
-export type ProductSourceComparisonRow = {
-  amg?: ProductSourcePrice
-  differenceEur?: number
-  fenix?: ProductSourcePrice
-  pricingName: string
+const VAT_SUFFIX_PATTERN = /\s*\((?:[НH]Д[СC]|ПД[ВB])\)\s*$/iu
+
+/* Source systems mix Latin look-alikes into Cyrillic price names (e.g. "ЦP"
+   with Latin P), so ranking keys fold homoglyphs before comparison. */
+const LATIN_TO_CYRILLIC_HOMOGLYPHS = new Map([
+  ['a', 'а'],
+  ['b', 'в'],
+  ['c', 'с'],
+  ['e', 'е'],
+  ['h', 'н'],
+  ['i', 'і'],
+  ['k', 'к'],
+  ['m', 'м'],
+  ['o', 'о'],
+  ['p', 'р'],
+  ['t', 'т'],
+  ['x', 'х'],
+  ['y', 'у'],
+])
+
+function normalizePricingKey(value: string): string {
+  return value
+    .trim()
+    .toLocaleLowerCase('uk')
+    .replace(/[a-z]/gu, (letter) => LATIN_TO_CYRILLIC_HOMOGLYPHS.get(letter) || letter)
 }
 
-export function buildProductSourceComparisonRows(
-  amg?: ProductSourcePriceSet | null,
-  fenix?: ProductSourcePriceSet | null,
-): ProductSourceComparisonRow[] {
-  const rowsByName = new Map<string, ProductSourceComparisonRow>()
-
-  appendSourcePrices(rowsByName, amg?.Prices, 'amg')
-  appendSourcePrices(rowsByName, fenix?.Prices, 'fenix')
-
-  return [...rowsByName.values()]
-    .map((row) => ({
-      ...row,
-      differenceEur: calculateDifference(row.amg?.PriceEur, row.fenix?.PriceEur),
-    }))
-    .sort((left, right) => left.pricingName.localeCompare(right.pricingName, 'uk', { sensitivity: 'base' }))
+export function getPricingBaseName(pricingName: string | null | undefined): string {
+  return (pricingName || '').replace(VAT_SUFFIX_PATTERN, '').trim()
 }
 
-function appendSourcePrices(
-  rowsByName: Map<string, ProductSourceComparisonRow>,
-  prices: ProductSourcePrice[] | undefined,
-  source: 'amg' | 'fenix',
-) {
-  for (const price of prices || []) {
-    const pricingName = price.PricingName?.trim()
-
-    if (!pricingName || isPolishPricingName(pricingName)) {
-      continue
-    }
-
-    const key = pricingName.toLocaleLowerCase('uk')
-    const row = rowsByName.get(key) || { pricingName }
-
-    row[source] = price
-    rowsByName.set(key, row)
-  }
+export function isVatPricingName(pricingName: string | null | undefined): boolean {
+  return VAT_SUFFIX_PATTERN.test(pricingName?.trim() || '')
 }
 
 export function isPolishPricingName(pricingName: string | null | undefined): boolean {
   return /^[PР]L/iu.test(pricingName?.trim() || '')
 }
 
-function calculateDifference(amgValue?: number | null, fenixValue?: number | null): number | undefined {
-  if (!isFiniteNumber(amgValue) || !isFiniteNumber(fenixValue)) {
-    return undefined
-  }
+/* CalculatedPrices preserve the established business order of price types;
+   VAT variants collapse onto their base type so base/VAT pairs stay together. */
+export function buildEffectivePricingOrder(prices: CalculatedProductPrice[]): Map<string, number> {
+  const order = new Map<string, number>()
 
-  return Number((fenixValue - amgValue).toFixed(8))
+  prices.forEach((price, index) => {
+    const key = normalizePricingKey(getPricingBaseName(price.Pricing?.Name))
+
+    if (key && !order.has(key)) {
+      order.set(key, index)
+    }
+  })
+
+  return order
 }
 
-function isFiniteNumber(value: unknown): value is number {
-  return typeof value === 'number' && Number.isFinite(value)
+/* Canonical assortment order: retail first, then bulk tiers; every other
+   price type follows the effective order after them. */
+const PRIMARY_PRICING_ORDER = ['цр', 'цо1', 'цо2']
+
+function getBaseRank(baseKey: string, baseOrder: Map<string, number>): number {
+  const primaryRank = PRIMARY_PRICING_ORDER.indexOf(baseKey)
+
+  if (primaryRank !== -1) {
+    return primaryRank
+  }
+
+  const effectiveRank = baseOrder.get(baseKey)
+
+  return effectiveRank === undefined
+    ? Number.MAX_SAFE_INTEGER
+    : PRIMARY_PRICING_ORDER.length + effectiveRank
+}
+
+export function compareSourcePricingNames(
+  leftName: string,
+  rightName: string,
+  baseOrder: Map<string, number>,
+): number {
+  const leftBaseKey = normalizePricingKey(getPricingBaseName(leftName))
+  const rightBaseKey = normalizePricingKey(getPricingBaseName(rightName))
+  const leftRank = getBaseRank(leftBaseKey, baseOrder)
+  const rightRank = getBaseRank(rightBaseKey, baseOrder)
+
+  if (leftRank !== rightRank) {
+    return leftRank - rightRank
+  }
+
+  const baseCompare = leftBaseKey.localeCompare(rightBaseKey, 'uk', { sensitivity: 'base' })
+
+  if (baseCompare !== 0) {
+    return baseCompare
+  }
+
+  const leftVat = isVatPricingName(leftName)
+  const rightVat = isVatPricingName(rightName)
+
+  if (leftVat !== rightVat) {
+    return leftVat ? 1 : -1
+  }
+
+  return leftName.localeCompare(rightName, 'uk', { sensitivity: 'base' })
 }

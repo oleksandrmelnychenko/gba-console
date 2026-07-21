@@ -14,7 +14,11 @@ import { CircleAlert, RefreshCw } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { getProductSourcePriceComparison } from '../api/productsApi'
-import { buildProductSourceComparisonRows, isPolishPricingName } from '../productSourcePricing'
+import {
+  buildEffectivePricingOrder,
+  compareSourcePricingNames,
+  isPolishPricingName,
+} from '../productSourcePricing'
 import type {
   CalculatedProductPrice,
   ProductSourcePrice,
@@ -23,7 +27,7 @@ import type {
 } from '../types'
 import { formatAmount, formatPrice } from '../utils'
 
-type PriceViewMode = 'amg' | 'fenix' | 'compare'
+type PriceViewMode = 'amg' | 'fenix'
 
 type SourcePriceCacheEntry = {
   expiresAt: number
@@ -34,12 +38,6 @@ const SOURCE_PRICE_CACHE_TTL_MS = 2 * 60 * 1000
 const SOURCE_PRICE_CACHE_LIMIT = 100
 const sourcePriceCache = new Map<string, SourcePriceCacheEntry>()
 
-const differenceFormatter = new Intl.NumberFormat('uk-UA', {
-  maximumFractionDigits: 2,
-  minimumFractionDigits: 2,
-  signDisplay: 'exceptZero',
-})
-
 export function ProductPriceSourcePanel({
   effectivePrices,
   productNetId,
@@ -48,7 +46,7 @@ export function ProductPriceSourcePanel({
   productNetId?: string
 }) {
   const { t } = useI18n()
-  const [viewMode, setViewMode] = useState<PriceViewMode>('compare')
+  const [viewMode, setViewMode] = useState<PriceViewMode>('amg')
   const [comparison, setComparison] = useState<ProductSourcePriceComparison | null>(null)
   const [failedProductNetId, setFailedProductNetId] = useState<string | null>(null)
   const [reloadVersion, setReloadVersion] = useState(0)
@@ -96,13 +94,6 @@ export function ProductPriceSourcePanel({
 
   // Keep the established GBA price-type order while showing only source data.
   const effectiveOrder = useMemo(() => buildEffectivePricingOrder(effectivePrices), [effectivePrices])
-  const comparisonRows = useMemo(
-    () =>
-      buildProductSourceComparisonRows(currentComparison?.Amg, currentComparison?.Fenix)
-        .filter((row) => hasSourcePriceValue(row.amg) || hasSourcePriceValue(row.fenix))
-        .sort((left, right) => compareByEffectiveOrder(left.pricingName, right.pricingName, effectiveOrder)),
-    [currentComparison?.Amg, currentComparison?.Fenix, effectiveOrder],
-  )
 
   const refreshSourcePrices = () => {
     if (productNetId) {
@@ -123,7 +114,6 @@ export function ProductPriceSourcePanel({
           data={[
             { label: 'AMG', value: 'amg' },
             { label: t('Контех'), value: 'fenix' },
-            { label: t('Порівняти'), value: 'compare' },
           ]}
           fullWidth
           size="xs"
@@ -159,12 +149,6 @@ export function ProductPriceSourcePanel({
           <Alert color="red" icon={<CircleAlert size={16} />} variant="light">
             {t('Не вдалося завантажити ціни з джерел')}
           </Alert>
-        ) : viewMode === 'compare' ? (
-          <ComparisonPricesView
-            amg={currentComparison?.Amg}
-            fenix={currentComparison?.Fenix}
-            rows={comparisonRows}
-          />
         ) : (
           <SourcePricesView
             currencyCode={currentComparison?.LocalCurrencyCode || 'UAH'}
@@ -201,7 +185,7 @@ function SourcePricesView({
 
   const prices = (source.Prices || [])
     .filter((price) => !isPolishPricingName(price.PricingName) && hasSourcePriceValue(price))
-    .sort((left, right) => compareByEffectiveOrder(left.PricingName || '', right.PricingName || '', effectiveOrder))
+    .sort((left, right) => compareSourcePricingNames(left.PricingName || '', right.PricingName || '', effectiveOrder))
 
   return (
     <>
@@ -246,52 +230,6 @@ function SourcePriceRow({ price }: { price: ProductSourcePrice }) {
   )
 }
 
-function ComparisonPricesView({
-  amg,
-  fenix,
-  rows,
-}: {
-  amg?: ProductSourcePriceSet | null
-  fenix?: ProductSourcePriceSet | null
-  rows: ReturnType<typeof buildProductSourceComparisonRows>
-}) {
-  const { t } = useI18n()
-
-  return (
-    <Stack gap={6}>
-      <Group gap={6} wrap="wrap">
-        <SourceStatusBadge label="AMG" source={amg} />
-        <SourceStatusBadge label={t('Контех')} source={fenix} />
-      </Group>
-      <div className="product-price-compare-header">
-        <Text c="dimmed" size="xs">{t('Тип ціни')}</Text>
-        <Text c="dimmed" size="xs" ta="right">AMG</Text>
-        <Text c="dimmed" size="xs" ta="right">{t('Контех')}</Text>
-        <Text c="dimmed" size="xs" ta="right">Δ EUR</Text>
-      </div>
-      <Stack className="product-price-source-list" gap={2}>
-        {rows.length > 0 ? rows.map((row) => (
-          <div className="product-price-compare-row" key={row.pricingName}>
-            <Text lineClamp={1} size="sm">{row.pricingName}</Text>
-            <Text className="app-money" fw={650} size="sm" ta="right">{formatPrice(row.amg?.PriceEur)}</Text>
-            <Text className="app-money" fw={650} size="sm" ta="right">{formatPrice(row.fenix?.PriceEur)}</Text>
-            <Text
-              className={`app-money ${getDifferenceClass(row.differenceEur)}`}
-              fw={650}
-              size="sm"
-              ta="right"
-            >
-              {formatDifference(row.differenceEur)}
-            </Text>
-          </div>
-        )) : (
-          <Text c="dimmed" size="sm">{t('Цін не знайдено')}</Text>
-        )}
-      </Stack>
-    </Stack>
-  )
-}
-
 function PriceHeader({ localCurrencyCode }: { localCurrencyCode: string }) {
   const { t } = useI18n()
 
@@ -309,21 +247,6 @@ function PriceValue({ value }: { value?: number | null }) {
     <Text className="app-money" fw={650} size="sm" ta="right" style={{ flexShrink: 0, width: 80 }}>
       {formatPrice(value)}
     </Text>
-  )
-}
-
-function SourceStatusBadge({ label, source }: { label: string; source?: ProductSourcePriceSet | null }) {
-  const { t } = useI18n()
-  const status = !source?.IsLinked
-    ? { color: 'gray', text: t('немає зв’язку') }
-    : !source.IsAvailable
-      ? { color: 'red', text: t('недоступне') }
-      : { color: 'teal', text: t('актуальне') }
-
-  return (
-    <Badge color={status.color} size="sm" variant="light">
-      {label}: {status.text}
-    </Badge>
   )
 }
 
@@ -369,28 +292,6 @@ function isAbortError(error: unknown): boolean {
   return error instanceof DOMException && error.name === 'AbortError'
 }
 
-/* CalculatedPrices preserve the established business order of price types. */
-function buildEffectivePricingOrder(prices: CalculatedProductPrice[]): Map<string, number> {
-  const order = new Map<string, number>()
-
-  prices.forEach((price, index) => {
-    const name = price.Pricing?.Name?.trim().toLocaleLowerCase('uk')
-
-    if (name && !order.has(name)) {
-      order.set(name, index)
-    }
-  })
-
-  return order
-}
-
-function compareByEffectiveOrder(leftName: string, rightName: string, order: Map<string, number>): number {
-  const left = order.get(leftName.trim().toLocaleLowerCase('uk')) ?? Number.MAX_SAFE_INTEGER
-  const right = order.get(rightName.trim().toLocaleLowerCase('uk')) ?? Number.MAX_SAFE_INTEGER
-
-  return left === right ? leftName.localeCompare(rightName, 'uk', { sensitivity: 'base' }) : left - right
-}
-
 function hasSourcePriceValue(price?: ProductSourcePrice): boolean {
   return isFinitePrice(price?.PriceEur) || isFinitePrice(price?.PriceLocal)
 }
@@ -399,21 +300,7 @@ function isFinitePrice(value?: number | null): value is number {
   return typeof value === 'number' && Number.isFinite(value)
 }
 
-function formatDifference(value?: number): string {
-  return typeof value === 'number' && Number.isFinite(value)
-    ? differenceFormatter.format(value)
-    : '-'
-}
-
 function formatSignedPercent(value: number): string {
   const sign = value > 0 ? '+' : ''
   return `${sign}${formatAmount(value)}%`
-}
-
-function getDifferenceClass(value?: number): string {
-  if (typeof value !== 'number' || !Number.isFinite(value) || Math.abs(value) < 0.005) {
-    return 'is-equal'
-  }
-
-  return value > 0 ? 'is-higher' : 'is-lower'
 }

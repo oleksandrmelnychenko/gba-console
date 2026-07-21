@@ -17,7 +17,7 @@ afterEach(() => {
 })
 
 describe('ProductPriceSourcePanel', () => {
-  it('loads the AMG/Fenix comparison immediately', async () => {
+  it('shows only the AMG and Контех tabs and opens on AMG', async () => {
     getProductSourcePriceComparison.mockResolvedValue({
       Amg: {
         IsAvailable: true,
@@ -41,13 +41,13 @@ describe('ProductPriceSourcePanel', () => {
         expect.any(AbortSignal),
       )
     })
-    expect(await view.findByText('+0,25')).toBeTruthy()
-    expect(await view.findByText('AMG: актуальне')).toBeTruthy()
-    expect(await view.findByText('Контех: актуальне')).toBeTruthy()
-    expect(view.queryByText('У GBA')).toBeNull()
+    expect(await view.findByText('1,75')).toBeTruthy()
+    expect(view.getByRole('radio', { name: 'AMG' })).toBeTruthy()
+    expect(view.getByRole('radio', { name: 'Контех' })).toBeTruthy()
+    expect(view.queryByRole('radio', { name: 'Порівняти' })).toBeNull()
   })
 
-  it('switches between each source and the comparison', async () => {
+  it('switches between the AMG and Контех sources', async () => {
     getProductSourcePriceComparison.mockResolvedValue({
       Amg: {
         IsAvailable: true,
@@ -65,11 +65,44 @@ describe('ProductPriceSourcePanel', () => {
 
     const view = renderPanel('product-source-panel-2')
 
-    await view.findByText('+0,14')
-    fireEvent.click(view.getByRole('radio', { name: 'AMG' }))
     expect(await view.findByText('1,40')).toBeTruthy()
     fireEvent.click(view.getByRole('radio', { name: 'Контех' }))
     expect(await view.findByText('1,54')).toBeTruthy()
+  })
+
+  it('orders prices as base/VAT pairs following the effective price order', async () => {
+    getProductSourcePriceComparison.mockResolvedValue({
+      Amg: {
+        IsAvailable: true,
+        IsLinked: true,
+        Prices: [
+          { PriceEur: 6, PricingName: 'ЦО2 (НДС)' },
+          { PriceEur: 1, PricingName: 'ЦР' },
+          { PriceEur: 3, PricingName: 'ЦО1' },
+          { PriceEur: 2, PricingName: 'ЦР (НДС)' },
+          { PriceEur: 5, PricingName: 'ЦО2' },
+          { PriceEur: 4, PricingName: 'ЦО1 (НДС)' },
+        ],
+      },
+      Fenix: { IsAvailable: true, IsLinked: true, Prices: [] },
+      LocalCurrencyCode: 'UAH',
+      ProductNetId: 'product-source-panel-3',
+    })
+
+    const view = renderPanel('product-source-panel-3')
+
+    await view.findByText('ЦР')
+    const rows = Array.from(view.container.querySelectorAll('.product-inline-price-row'))
+      .map((row) => row.querySelector('p')?.textContent?.trim() || '')
+
+    expect(rows).toEqual([
+      'ЦР',
+      'ЦР (НДС)',
+      'ЦО1',
+      'ЦО1 (НДС)',
+      'ЦО2',
+      'ЦО2 (НДС)',
+    ])
   })
 })
 
@@ -78,11 +111,11 @@ function renderPanel(productNetId: string) {
     <MantineProvider theme={theme}>
       <I18nProvider>
         <ProductPriceSourcePanel
-          effectivePrices={[{
-            Pricing: { Name: 'ЦО2' },
-            RetailPriceEUR: 1.4,
-            RetailPriceLocal: 71.61,
-          }]}
+          effectivePrices={[
+            { Pricing: { Name: 'ЦР' }, RetailPriceEUR: 1, RetailPriceLocal: 42 },
+            { Pricing: { Name: 'ЦО1' }, RetailPriceEUR: 1.2, RetailPriceLocal: 50 },
+            { Pricing: { Name: 'ЦО2' }, RetailPriceEUR: 1.4, RetailPriceLocal: 71.61 },
+          ]}
           productNetId={productNetId}
         />
       </I18nProvider>
