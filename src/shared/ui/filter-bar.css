@@ -91,6 +91,7 @@
   flex-wrap: nowrap;
   gap: 10px;
   justify-content: flex-end;
+  margin-left: auto;
   min-height: var(--app-filter-control-height, 36px);
   min-width: 0;
 }

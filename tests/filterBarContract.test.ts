@@ -111,6 +111,7 @@ describe('filter-bar CSS contract', () => {
     expect(declarations(actionsRule)).toMatchObject({
       'flex-wrap': 'nowrap',
       gap: '10px',
+      'margin-left': 'auto',
     })
     expect(declarations(slotRule)).toMatchObject({
       'align-items': 'center',
@@ -122,6 +123,19 @@ describe('filter-bar CSS contract', () => {
       gap: '10px',
       margin: '0',
       'min-height': '0',
+    })
+  })
+
+  it('owns the exact paired-date geometry', () => {
+    const dateRangeRule = findRule(root, 'grid-template-columns', '.app-filter-date-range')
+
+    expect(declarations(dateRangeRule)).toMatchObject({
+      'align-items': 'end',
+      display: 'grid',
+      flex: '0 0 310px',
+      gap: '10px',
+      'grid-template-columns': 'repeat(2, 150px)',
+      width: '310px',
     })
   })
 
@@ -165,6 +179,26 @@ describe('filter-bar CSS contract', () => {
             conflicts.push(`${file}:${rule.source?.start?.line ?? 0} ${rule.selector} -> ${declaration.prop}:${declaration.value}`)
           }
         })
+      })
+    })
+
+    expect(conflicts).toEqual([])
+  })
+
+  it('keeps horizontally scrollable bars shrinkable inside their cards', () => {
+    const conflicts: string[] = []
+
+    Object.entries(featureStyles).forEach(([file, css]) => {
+      postcss.parse(css, { from: file }).walkRules((rule) => {
+        if (!targetsFilterBar(rule)) {
+          return
+        }
+
+        const ruleDeclarations = declarations(rule)
+
+        if (ruleDeclarations['overflow-x'] === 'auto' && ruleDeclarations['min-width'] === 'max-content') {
+          conflicts.push(`${file}:${rule.source?.start?.line ?? 0} ${rule.selector}`)
+        }
       })
     })
 
