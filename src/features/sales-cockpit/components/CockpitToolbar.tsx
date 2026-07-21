@@ -45,7 +45,6 @@ export function CockpitToolbar({
   return (
     <Card className="app-filter-card cockpit-toolbar-card" withBorder radius="md" padding={0}>
       <div className="app-filter-bar cockpit-command-bar">
-        <AiFeatureBadge size="sm" tooltip={t('AI-сервіс завдань продажів')} />
         <TextInput
           className="cockpit-date-filter"
           label={t('Дата зрізу')}
@@ -60,17 +59,21 @@ export function CockpitToolbar({
           onTaskTypeChange={onTaskTypeChange}
           onUrgencyChange={onUrgencyChange}
         />
-        <SegmentedControl
-          className="cockpit-day-filter"
-          data={[
-            { label: t('Усі'), value: 'all' },
-            { label: `${t('Сьогодні')} (${todayCount})`, value: 'today' },
-          ]}
-          size="sm"
-          value={dayFilter}
-          onChange={(value) => onDayFilterChange(value as CockpitDayFilter)}
-        />
+        <div className="app-filter-field cockpit-day-filter-field">
+          <span className="app-filter-label">{t('Період')}</span>
+          <SegmentedControl
+            className="cockpit-day-filter"
+            data={[
+              { label: t('Усі'), value: 'all' },
+              { label: `${t('Сьогодні')} (${todayCount})`, value: 'today' },
+            ]}
+            size="sm"
+            value={dayFilter}
+            onChange={(value) => onDayFilterChange(value as CockpitDayFilter)}
+          />
+        </div>
         <div className="app-filter-actions cockpit-command-actions">
+          <AiFeatureBadge size="sm" tooltip={t('AI-сервіс завдань продажів')} />
           <Text className="cockpit-toolbar-count">
             {t('Завдань')}: <strong>{visibleCount}</strong>
           </Text>

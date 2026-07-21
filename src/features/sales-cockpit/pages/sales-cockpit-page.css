@@ -1,13 +1,25 @@
 .cockpit-page {
+  box-sizing: border-box;
   flex: 1 1 auto;
-  height: 100%;
+  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px);
+  min-height: 0;
+  overflow: hidden;
+  padding: 6px 4px 0;
+}
+
+.cockpit-page-content {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 6px;
   min-height: 0;
   overflow-y: auto;
-  padding: 0 4px;
-  padding-right: 2px;
 }
 
 .cockpit-toolbar-card {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2) !important;
+  box-shadow: var(--app-card-shadow) !important;
   flex: 0 0 auto;
 }
 
@@ -15,11 +27,13 @@
   align-items: end;
   display: grid;
   gap: 10px;
-  grid-template-columns: auto auto minmax(0, 1fr) auto auto;
+  grid-template-columns: 170px 450px max-content minmax(max-content, 1fr);
+  min-width: 0;
+  overflow-x: auto;
 }
 
 .cockpit-head-command-bar {
-  grid-template-columns: minmax(240px, auto) auto minmax(0, 1fr);
+  grid-template-columns: 170px minmax(240px, auto) minmax(0, 1fr);
 }
 
 .cockpit-head-kpis {
@@ -701,6 +715,8 @@
   display: grid;
   gap: 10px;
   grid-template-columns: minmax(180px, 220px) minmax(170px, 200px) minmax(0, 1fr);
+  min-width: 0;
+  overflow-x: auto;
 }
 
 .cockpit-board-filter .cockpit-command-actions {
@@ -940,12 +956,6 @@
 }
 
 @media (max-width: 860px) {
-  .cockpit-command-bar,
-  .cockpit-head-command-bar,
-  .cockpit-board-filter {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
   .cockpit-progress-grid,
   .cockpit-queue-summary__grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -965,9 +975,6 @@
     align-self: start;
   }
 
-  .cockpit-command-actions {
-    justify-content: flex-start;
-  }
 }
 
 @media (max-width: 560px) {

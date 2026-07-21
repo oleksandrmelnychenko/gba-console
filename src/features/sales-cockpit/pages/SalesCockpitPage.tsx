@@ -298,28 +298,30 @@ export function SalesCockpitPage() {
         onUrgencyChange={setUrgencyFilter}
       />
 
-      {error && (
-        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
-          {error}
-        </Alert>
-      )}
+      <div className="cockpit-page-content">
+        {error && (
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
+            {error}
+          </Alert>
+        )}
 
-      {target && <CockpitTargetCard target={target} />}
+        {target && <CockpitTargetCard target={target} />}
 
-      <CockpitQueueSummary insights={queueInsights} isLoading={isLoading} visibleCount={visibleTasks.length} />
+        <CockpitQueueSummary insights={queueInsights} isLoading={isLoading} visibleCount={visibleTasks.length} />
 
-      <CockpitDashboardPanel asOfDate={asOfDate} reloadKey={reloadKey} />
+        <CockpitDashboardPanel asOfDate={asOfDate} reloadKey={reloadKey} />
 
-      <CockpitTaskList
-        isLoading={isLoading}
-        pendingTaskKey={pendingTaskKey}
-        tasks={visibleTasks}
-        onAddNote={setNoteTask}
-        onDismiss={handleDismiss}
-        onDone={setDoneTask}
-        onSnooze={setSnoozeTask}
-        onTakeInProgress={handleTakeInProgress}
-      />
+        <CockpitTaskList
+          isLoading={isLoading}
+          pendingTaskKey={pendingTaskKey}
+          tasks={visibleTasks}
+          onAddNote={setNoteTask}
+          onDismiss={handleDismiss}
+          onDone={setDoneTask}
+          onSnooze={setSnoozeTask}
+          onTakeInProgress={handleTakeInProgress}
+        />
+      </div>
 
       <NoteModal
         saving={Boolean(noteTask && pendingTaskKey === noteTask.task_key)}

@@ -157,17 +157,9 @@ export function HeadDashboardPage() {
   )
 
   return (
-    <Stack className="cockpit-page cockpit-head-page" gap="sm">
+    <Stack className="cockpit-page cockpit-head-page" gap={6}>
       <Card className="app-filter-card cockpit-toolbar-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar cockpit-command-bar cockpit-head-command-bar">
-          <Group gap="xs" wrap="nowrap">
-            <AiFeatureBadge size="sm" tooltip={t('AI-сервіс керівника продажів')} />
-            <Stack gap={0}>
-              <Text className="app-section-title" fw={600} size="sm">{t('Дашборд відділу продажів')}</Text>
-              <Text c="dimmed" size="xs">{t('Поточний стан команди та задач')}</Text>
-            </Stack>
-          </Group>
-
           <TextInput
             className="cockpit-date-filter"
             label={t('Дата зрізу')}
@@ -177,7 +169,15 @@ export function HeadDashboardPage() {
             onChange={(event) => handleAsOfDateChange(event.currentTarget.value || undefined)}
           />
 
-          <Group className="cockpit-command-actions" gap="xs" justify="flex-end">
+          <Group gap="xs" wrap="nowrap">
+            <AiFeatureBadge size="sm" tooltip={t('AI-сервіс керівника продажів')} />
+            <Stack gap={0}>
+              <Text className="app-section-title" fw={600} size="sm">{t('Дашборд відділу продажів')}</Text>
+              <Text c="dimmed" size="xs">{t('Поточний стан команди та задач')}</Text>
+            </Stack>
+          </Group>
+
+          <Group className="app-filter-actions cockpit-command-actions" gap={10} justify="flex-end">
             <Badge className={`app-role-pill ${asOfDate ? 'is-gray' : 'is-green'}`} leftSection={<Radio size={12} />} variant="light">
               {asOfDate ? t('Історичний зріз') : t('Наживо')}
             </Badge>
