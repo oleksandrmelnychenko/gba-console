@@ -6,11 +6,15 @@
   padding: 6px 4px 0;
 }
 
-/* Balances list — chrome aligned with the «Продажі» reference.
-   The page keeps its load-more (infinite-scroll) mechanism and the table's
-   own maxHeight scroll model; only the filter strip + card shell are aligned. */
 .balances-filter-bar {
   overflow-x: auto;
+}
+
+.balances-card {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .balances-filter-row {
@@ -39,8 +43,8 @@
   grid-column: 6;
 }
 
-/* Body below the flush filter strip carries its own padding (the card is
-   padding={0} so the strip can sit flush). */
-.balances-card__body {
-  padding: 12px;
+.balances-page__table {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
 }

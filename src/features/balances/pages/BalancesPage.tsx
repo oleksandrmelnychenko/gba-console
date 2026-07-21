@@ -1,7 +1,6 @@
 import {
   ActionIcon,
   Alert,
-  Card,
   Group,
   Select,
   Stack,
@@ -20,6 +19,7 @@ import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { getSyncDocuments } from '../api/balancesApi'
 import { ContractorType, type ContractorTypeValue, type SyncDocument } from '../types'
+import '../../../shared/ui/console-table-page.css'
 import './balances-page.css'
 
 type FilterDraft = {
@@ -201,7 +201,7 @@ export function BalancesPage() {
   const model = useBalancesPageModel()
 
   return (
-    <Stack className="balances-page" gap={6}>
+    <Stack className="balances-page console-table-page" gap={6}>
       <BalancesTableCard model={model} />
     </Stack>
   )
@@ -226,7 +226,7 @@ function BalancesTableCard({ model }: { model: ReturnType<typeof useBalancesPage
   )
 
   return (
-    <Card className="app-data-card balances-card" withBorder radius="md" padding={0}>
+    <div className="balances-card console-table-shell">
       <div className="app-filter-bar balances-filter-bar">
         <Group align="end" gap={10} wrap="nowrap" className="balances-filter-row">
           <div className="app-filter-date-range">
@@ -285,13 +285,18 @@ function BalancesTableCard({ model }: { model: ReturnType<typeof useBalancesPage
         </Group>
       </div>
 
-      <Stack className="balances-card__body" gap="md">
-        {(error || filterError) && (
-          <Alert color={filterError ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">
-            {filterError || error}
-          </Alert>
-        )}
+      {(error || filterError) && (
+        <Alert
+          className="console-table-alert"
+          color={filterError ? 'yellow' : 'red'}
+          icon={<CircleAlert size={18} />}
+          variant="light"
+        >
+          {filterError || error}
+        </Alert>
+      )}
 
+      <div className="balances-page__table console-table-body">
         <DataTable
           columns={columns}
           data={documents}
@@ -301,15 +306,15 @@ function BalancesTableCard({ model }: { model: ReturnType<typeof useBalancesPage
           isLoading={isLoading}
           layoutVersion="balances-table-1"
           loadingText={t('Завантаження')}
-          maxHeight="calc(100vh - 360px)"
+          height="100%"
           minWidth={1620}
           showLayoutControls
           tableId="balances"
           toolbarLeft={toolbarLeft}
           toolbarPortalTarget={tableToolbarSlot}
         />
-      </Stack>
-    </Card>
+      </div>
+    </div>
   )
 }
 
