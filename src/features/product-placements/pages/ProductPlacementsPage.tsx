@@ -20,7 +20,7 @@ import { notifications } from '@mantine/notifications'
 import { CircleAlert, Download, FileInput as FileInputIcon, FileText, RotateCcw, Search, TriangleAlert, Upload } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { useDebouncedValue } from '@mantine/hooks'
-import { type FormEvent, useCallback, useEffect, useMemo, useReducer } from 'react'
+import { type FormEvent, useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
@@ -28,8 +28,6 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import { ProductCardModal } from '../../products/components/ProductCardModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
-import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
@@ -116,7 +114,6 @@ function useProductPlacementsPageModel() {
   const [isSubmittingReturned, setSubmittingReturned] = useValueState(false)
   const [productCardNetId, setProductCardNetId] = useValueState<string | null>(null)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
-  const { density, toggleDensity } = useDataTableDensity('product-placements', PLACEMENTS_TABLE_DEFAULT_LAYOUT.density)
   const { isLoading, placements, total } = listState
   const selectedStorageIdNumbers = useMemo(() => parseStorageIds(selectedStorageIds), [selectedStorageIds])
   const offset = (page - 1) * pageSize
@@ -416,7 +413,6 @@ function useProductPlacementsPageModel() {
     canMoveForward,
     columns,
     dateTo,
-    density,
     downloadDocument,
     downloadModalOpened,
     error,
@@ -456,7 +452,6 @@ function useProductPlacementsPageModel() {
     setReturnError,
     setReturnModalOpened,
     setSelectedStorageIds,
-    toggleDensity,
     updateSearch,
   }
 }
@@ -469,11 +464,11 @@ export function ProductPlacementsPage() {
 
 function ProductPlacementsPageView({ model }: { model: ReturnType<typeof useProductPlacementsPageModel> }) {
   const { t } = useI18n()
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const {
     canMoveForward,
     columns,
     dateTo,
-    density,
     downloadDocument,
     downloadModalOpened,
     error,
@@ -513,7 +508,6 @@ function ProductPlacementsPageView({ model }: { model: ReturnType<typeof useProd
     setReturnError,
     setReturnModalOpened,
     setSelectedStorageIds,
-    toggleDensity,
     updateSearch,
   } = model
   const noStorages = !isLoadingStorages && storageOptions.length === 0
@@ -524,6 +518,16 @@ function ProductPlacementsPageView({ model }: { model: ReturnType<typeof useProd
       <Card className="app-data-card product-placements-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar product-placements-filter-bar">
           <Group align="end" gap={10} wrap="nowrap" className="product-placements-filter-row">
+            <TextInput
+              label={t('До')}
+              type="date"
+              value={dateTo}
+              w={150}
+              onChange={(event) => {
+                setPage(1)
+                setDateTo(event.currentTarget.value)
+              }}
+            />
             <MultiSelect
               searchable
               data={storageOptions}
@@ -536,16 +540,6 @@ function ProductPlacementsPageView({ model }: { model: ReturnType<typeof useProd
               onChange={(value) => {
                 setPage(1)
                 setSelectedStorageIds(value)
-              }}
-            />
-            <TextInput
-              label={t('До')}
-              type="date"
-              value={dateTo}
-              w={150}
-              onChange={(event) => {
-                setPage(1)
-                setDateTo(event.currentTarget.value)
               }}
             />
             <TextInput
@@ -586,7 +580,6 @@ function ProductPlacementsPageView({ model }: { model: ReturnType<typeof useProd
                   <Download size={18} />
                 </ActionIcon>
               </Tooltip>
-              <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
               <Paginator
                 hasNext={canMoveForward}
                 isLoading={isLoading || isLoadingStorages}
@@ -600,6 +593,7 @@ function ProductPlacementsPageView({ model }: { model: ReturnType<typeof useProd
                 onRefresh={() => reload()}
               />
             </div>
+            <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
             {returnedRows.length > 0 && (
               <Button
                 color="red"
@@ -630,7 +624,6 @@ function ProductPlacementsPageView({ model }: { model: ReturnType<typeof useProd
             columns={columns}
             data={placements}
             defaultLayout={PLACEMENTS_TABLE_DEFAULT_LAYOUT}
-            density={density}
             emptyText={t('Розміщень не знайдено')}
             getRowId={(placement, index) =>
               String(placement.NetUid || placement.Id || `${placement.VendorCode || ''}-${placement.StorageId || ''}-${index}`)
@@ -640,8 +633,10 @@ function ProductPlacementsPageView({ model }: { model: ReturnType<typeof useProd
             layoutVersion="product-placements-table-2"
             loadingText={t('Завантаження розміщень')}
             minWidth={980}
+            showLayoutControls
             tableId="product-placements"
             toolbarLeft={toolbarLeft}
+            toolbarPortalTarget={tableToolbarSlot}
           />
         </div>
       </Card>
