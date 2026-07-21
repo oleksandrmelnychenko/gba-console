@@ -419,7 +419,7 @@ export function AssortmentDashboardPage() {
   const columns = useAssortmentColumns(t, filters.regionId != null)
 
   return (
-    <Stack className="assort-dash" gap={0}>
+    <Stack className="assort-dash" gap={6}>
       <div className="assort-dash__shell">
         <AssortmentHeader
           avgHealth={avgHealth}
@@ -516,7 +516,7 @@ function AssortmentHeader({
 
   return (
     <Card className="assort-dash__header" withBorder radius="md" padding={0}>
-      <div className="assort-dash__bar">
+      <div className="app-filter-bar assort-dash__bar">
       <div className="assort-dash__summary">
         <Group gap="xs" wrap="nowrap">
           <Text className="app-section-title assort-dash__title">{t('Аналітика асортименту')}</Text>
@@ -828,21 +828,23 @@ function AssortmentDetailTable({
           <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
         </Group>
       </div>
-      <DataTable
-        columns={columns}
-        data={rows}
-        emptyText={isLoading ? t('Завантаження') : t('Немає даних')}
-        getRowId={(row) => String(row.product_id)}
-        isLoading={isLoading}
-        layoutVersion="assortment-detail-1"
-        loadingText={t('Завантаження')}
-        maxHeight={800}
-        minWidth={filters.regionId == null ? 820 : 1180}
-        showLayoutControls
-        tableId="assortment-detail"
-        toolbarPortalTarget={tableToolbarSlot}
-        onRowClick={(row) => onPick(row.product_id)}
-      />
+      <div className="assort-table-card__table">
+        <DataTable
+          columns={columns}
+          data={rows}
+          emptyText={isLoading ? t('Завантаження') : t('Немає даних')}
+          getRowId={(row) => String(row.product_id)}
+          height="100%"
+          isLoading={isLoading}
+          layoutVersion="assortment-detail-1"
+          loadingText={t('Завантаження')}
+          minWidth={filters.regionId == null ? 820 : 1180}
+          showLayoutControls
+          tableId="assortment-detail"
+          toolbarPortalTarget={tableToolbarSlot}
+          onRowClick={(row) => onPick(row.product_id)}
+        />
+      </div>
     </Card>
   )
 }
