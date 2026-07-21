@@ -26,7 +26,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { ArrowLeftRight, Box as BoxIcon, ChevronDown, CircleAlert, ClipboardList, FileDown, FileText, History, Image as ImageIcon, Package, Plus, RefreshCw, Save, Settings, Sparkles, SquarePen, Star, Trash2, Upload } from 'lucide-react'
+import { ArrowLeftRight, Box as BoxIcon, ChevronDown, CircleAlert, ClipboardList, FileDown, FileText, History, Image as ImageIcon, Package, Plus, RefreshCw, RotateCcw, Save, Search, Settings, Sparkles, SquarePen, Star, Trash2, Upload } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { type KeyboardEvent, type ReactNode, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
@@ -302,8 +302,6 @@ export function ProductsPage() {
   const hasRouteSeededProductsRef = useRef(false)
   const selectedProductNetUid = selectedProduct?.NetUid?.trim() || ''
   const productForView = detailState.product || selectedProduct
-  const canMoveBack = topProducts.length > 0
-  const canMoveForward = bottomProducts.length > 0
 
   const clearRouteProductParam = useCallback(() => {
     routeProductRequestRef.current += 1
@@ -798,9 +796,8 @@ export function ProductsPage() {
         return
       }
 
-      // Decide from the key's ORIGIN (event.target), not document.activeElement: on the first arrow
-      // the search input unmounts (search → selection) and focus jumps to <body>, which made an
-      // activeElement-based check fire a second time and skip a product.
+      // Decide from the key's ORIGIN (event.target), not document.activeElement, so text controls
+      // outside the product search keep their native keyboard behavior.
       const origin = event.target instanceof HTMLElement ? event.target : null
       const isSearchInput = origin ? Boolean(origin.closest('.product-assortment-search-input')) : false
 
@@ -811,9 +808,9 @@ export function ProductsPage() {
       }
 
       if (event.key === 'Escape') {
-        // Already in the search input: keep the caret/focus there. Chrome blurs focused inputs on
-        // Escape by default, so preventDefault to stop the focus from flying off.
-        if (isSearchInput) {
+        // In search mode, Escape inside the permanently mounted search field should keep focus.
+        // In selection mode the same field remains mounted, so Escape must still reset the drum.
+        if (isSearchInput && carouselModeRef.current !== 'selection') {
           event.preventDefault()
           return
         }
@@ -876,47 +873,50 @@ export function ProductsPage() {
   useRealtimeEvent(realtimeEvents.productReservationUpdated, handleRealtimeProductUpdate)
 
   return (
-    <Stack gap="md" className="products-page">
+    <Stack gap={6} className="products-page">
       {error && (
         <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {error}
         </Alert>
       )}
 
-      <Box className="product-assortment-workspace">
-        <ProductAssortmentCarousel
-          bottomProducts={bottomProducts}
-          canMoveBack={canMoveBack}
-          canMoveForward={canMoveForward}
+      <Box className="product-assortment-shell console-table-shell" onKeyDown={handleCarouselKeyDown}>
+        <ProductAssortmentFilterBar
           isLoading={isLoading}
-          isSelectionMode={carouselMode === 'selection'}
-          isVirtualLoad={isVirtualLoad}
           searchDraft={searchDraft}
           searchMode={searchMode}
           sortMode={sortMode}
-          selectedProduct={selectedProduct}
-          topProducts={topProducts}
-          onKeyDown={handleCarouselKeyDown}
           onRefresh={commitSearch}
           onReset={resetSearch}
           onSearchDraftChange={updateSearchDraft}
           onSearchModeChange={setSearchMode}
           onSortModeChange={setSortMode}
-          onSelectProduct={selectProduct}
-          onUploadSuccess={handleAssortmentUploadSuccess}
         />
 
-        <ProductInlineView
-          detailError={detailState.error}
-          isLoading={detailState.isLoading}
-          product={productForView}
-          reservation={detailState.reservation}
-          reservationError={detailState.reservationError}
-          onOpenPanel={setActivePanel}
-          onProductChanged={handleProductSaved}
-          onReload={reloadProductDetail}
-          onSelectRelatedProduct={selectRelatedProduct}
-        />
+        <Box className="product-assortment-workspace console-table-body">
+          <ProductAssortmentCarousel
+            bottomProducts={bottomProducts}
+            isLoading={isLoading}
+            isSelectionMode={carouselMode === 'selection'}
+            isVirtualLoad={isVirtualLoad}
+            selectedProduct={selectedProduct}
+            topProducts={topProducts}
+            onSelectProduct={selectProduct}
+            onUploadSuccess={handleAssortmentUploadSuccess}
+          />
+
+          <ProductInlineView
+            detailError={detailState.error}
+            isLoading={detailState.isLoading}
+            product={productForView}
+            reservation={detailState.reservation}
+            reservationError={detailState.reservationError}
+            onOpenPanel={setActivePanel}
+            onProductChanged={handleProductSaved}
+            onReload={reloadProductDetail}
+            onSelectRelatedProduct={selectRelatedProduct}
+          />
+        </Box>
       </Box>
 
       {productForView && (
@@ -932,61 +932,47 @@ export function ProductsPage() {
   )
 }
 
-function ProductAssortmentCarousel({
-  bottomProducts,
+function ProductAssortmentFilterBar({
   isLoading,
-  isSelectionMode,
-  isVirtualLoad,
-  onKeyDown,
+  onRefresh,
+  onReset,
   onSearchDraftChange,
   onSearchModeChange,
   onSortModeChange,
-  onSelectProduct,
-  onUploadSuccess,
   searchDraft,
   searchMode,
   sortMode,
-  selectedProduct,
-  topProducts,
 }: {
-  bottomProducts: Product[]
-  canMoveBack: boolean
-  canMoveForward: boolean
   isLoading: boolean
-  isSelectionMode: boolean
-  isVirtualLoad: boolean
-  onKeyDown: (event: KeyboardEvent<HTMLDivElement>) => void
   onRefresh: () => void
   onReset: () => void
   onSearchDraftChange: (value: string) => void
   onSearchModeChange: (mode: ProductSearchMode) => void
   onSortModeChange: (mode: ProductSortMode) => void
-  onSelectProduct: (product: Product) => void
-  onUploadSuccess: () => void
   searchDraft: string
   searchMode: ProductSearchMode
   sortMode: ProductSortMode
-  selectedProduct: Product | null
-  topProducts: Product[]
 }) {
   const { t } = useI18n()
 
   return (
-    <Box className="product-assortment-column" role="region" onKeyDown={onKeyDown}>
-      <Box className="product-assortment-carousel-header">
-        <ProductUploadDocumentToolbar product={selectedProduct} onUploadSuccess={onUploadSuccess} />
-      </Box>
-
-      <Box className="product-assortment-filter">
+    <Box className="app-filter-bar product-assortment-filter-scroll">
+      <Group align="end" gap={10} wrap="nowrap" className="product-assortment-filter-row">
+        <TextInput
+          autoFocus
+          aria-label={t('Введіть товар')}
+          className="product-assortment-search-input"
+          label={t('Пошук')}
+          leftSection={<Search size={16} />}
+          placeholder={t('Пошук товару')}
+          value={searchDraft}
+          onChange={(event) => onSearchDraftChange(event.currentTarget.value)}
+        />
         <Select
           aria-label={t('Поле пошуку')}
           allowDeselect={false}
-          classNames={{
-            input: 'product-assortment-filter-input',
-            label: 'product-assortment-filter-label',
-            option: 'product-assortment-filter-option',
-          }}
-          size="xs"
+          className="product-assortment-filter-select"
+          classNames={{ option: 'product-assortment-filter-option' }}
           data={SEARCH_MODE_OPTION_VALUES.map((value) => ({ label: t(SEARCH_MODE_LABELS[value]), value }))}
           label={t('Місце вводу для пошуку')}
           value={searchMode}
@@ -995,17 +981,55 @@ function ProductAssortmentCarousel({
         <Select
           aria-label={t('Сортування')}
           allowDeselect={false}
-          classNames={{
-            input: 'product-assortment-filter-input',
-            label: 'product-assortment-filter-label',
-            option: 'product-assortment-filter-option',
-          }}
-          size="xs"
+          className="product-assortment-filter-select"
+          classNames={{ option: 'product-assortment-filter-option' }}
           data={SORT_MODE_OPTION_VALUES.map((value) => ({ label: t(SORT_MODE_LABELS[value]), value }))}
           label={t('Сортувати За')}
           value={sortMode}
           onChange={(value) => onSortModeChange((value as ProductSortMode) || DEFAULT_SORT_MODE)}
         />
+        <div className="app-filter-actions">
+          <Tooltip label={t('Скинути')}>
+            <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={onReset}>
+              <RotateCcw size={17} />
+            </ActionIcon>
+          </Tooltip>
+          <Tooltip label={t('Оновити')}>
+            <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={34} variant="light" onClick={onRefresh}>
+              <RefreshCw size={17} />
+            </ActionIcon>
+          </Tooltip>
+        </div>
+      </Group>
+    </Box>
+  )
+}
+
+function ProductAssortmentCarousel({
+  bottomProducts,
+  isLoading,
+  isSelectionMode,
+  isVirtualLoad,
+  onSelectProduct,
+  onUploadSuccess,
+  selectedProduct,
+  topProducts,
+}: {
+  bottomProducts: Product[]
+  isLoading: boolean
+  isSelectionMode: boolean
+  isVirtualLoad: boolean
+  onSelectProduct: (product: Product) => void
+  onUploadSuccess: () => void
+  selectedProduct: Product | null
+  topProducts: Product[]
+}) {
+  const { t } = useI18n()
+
+  return (
+    <Box className="product-assortment-column" role="region">
+      <Box className="product-assortment-carousel-header">
+        <ProductUploadDocumentToolbar product={selectedProduct} onUploadSuccess={onUploadSuccess} />
       </Box>
 
       <Box className={`product-assortment-carousel ${isSelectionMode ? 'is-selection-mode' : ''}`}>
@@ -1042,17 +1066,7 @@ function ProductAssortmentCarousel({
             <span className="product-assortment-selected-code">{getProductCode(selectedProduct)}</span>
             <span className="product-assortment-selected-name">{getProductTitle(selectedProduct)}</span>
           </button>
-        ) : (
-          <TextInput
-            autoFocus
-            aria-label={t('Введіть товар')}
-            placeholder={t('Пошук товару')}
-            size="md"
-            value={searchDraft}
-            className="product-assortment-search-input"
-            onChange={(event) => onSearchDraftChange(event.currentTarget.value)}
-          />
-        )}
+        ) : null}
       </Box>
 
       <Box className="product-assortment-rail product-assortment-rail-bottom">

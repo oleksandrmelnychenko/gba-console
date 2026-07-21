@@ -1,26 +1,33 @@
 .products-page {
-  /* The page scrolls; the left assortment column is sticky so it stays in view while the
-     detail panel scrolls past it. The layout frame itself is overflow:hidden.
-     (Page scroll — not an inner scroll on the right — so the wheel works everywhere,
-     including over the selected plate that floats out over the detail panel.) */
+  box-sizing: border-box;
+  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px);
+  min-height: 0;
+  overflow: hidden;
+  padding: 6px 4px 0;
+}
+
+.product-assortment-shell {
   flex: 1 1 auto;
   min-height: 0;
-  overflow-y: auto;
+  min-width: 0;
 }
 
 .product-assortment-workspace {
-  display: grid;
-  grid-template-columns: 360px minmax(0, 1fr);
   align-items: start; /* sticky column keeps its own height and pins while the page scrolls */
+  display: grid;
+  flex: 1 1 auto;
   gap: 0;
-  min-height: calc(100vh - 128px);
+  grid-template-columns: 360px minmax(0, 1fr);
+  min-height: 0;
+  min-width: 0;
+  overflow-y: auto;
 }
 
 .product-assortment-column {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  height: calc(100vh - 128px);
+  height: 100%;
   min-height: 0;
   width: 360px;
   padding: 10px 12px 12px 10px;
@@ -66,31 +73,6 @@
   background: transparent;
 }
 
-.product-assortment-filter {
-  margin-bottom: 6px;
-}
-
-.product-assortment-filter .mantine-InputWrapper-label {
-  margin-bottom: 5px;
-  color: var(--mantine-color-gray-9); /* black */
-  font-family: var(--font-mono);
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0;
-  line-height: 1;
-}
-
-.product-assortment-filter .mantine-Input-input {
-  height: 26px;
-  min-height: 26px;
-  border-color: var(--mantine-color-gray-3);
-  border-radius: 8px;
-  color: var(--mantine-color-gray-9); /* black value text */
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 600;
-}
-
 .product-assortment-rail {
   display: flex;
   flex-direction: column;
@@ -114,19 +96,6 @@
   background: #ffffff;
   min-height: 52px;
   padding: 0 8px;
-}
-
-.product-assortment-search-input {
-  min-width: 0;
-  width: 100%;
-  max-width: 300px;
-  justify-self: center;
-}
-
-.product-assortment-search-input input {
-  font-weight: 400;
-  font-size: 15px;
-  letter-spacing: 0;
 }
 
 /* ── Selected product: emphasised code · name · Top (no fill, tight) ── */
@@ -357,7 +326,7 @@
 .product-inline-view {
   position: relative;
   min-width: 0;
-  min-height: calc(100vh - 128px);
+  min-height: 100%;
   padding: 18px 20px 20px;
   border: 0;
   border-radius: 14px;
@@ -1034,7 +1003,7 @@
 }
 
 
-/* centre slot — no tinted rail; the selected plate / search input is the focus */
+/* Centre slot — no tinted rail; the selected product plate is the focus. */
 .product-assortment-drum {
   position: relative;
   background: transparent;
@@ -1043,81 +1012,26 @@
   box-shadow: none;
 }
 
-.product-assortment-filter {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  align-items: start;
-  column-gap: 8px;
-  row-gap: 8px;
-  position: relative;
+.product-assortment-filter-scroll {
+  flex: 0 0 auto;
+  overflow-x: auto;
+  overflow-y: hidden;
   z-index: 3;
-  margin: 0 0 10px;
-  padding: 12px 13px;
-  border: 1px solid rgba(226, 232, 240, 0.94);
-  border-radius: 10px;
-  background: var(--mantine-color-white);
-  box-shadow: none;
 }
 
-.product-assortment-filter::before {
-  display: none;
-  content: none;
-}
-
-.product-assortment-filter .mantine-InputWrapper-root {
-  display: grid;
-  grid-template-rows: 34px 36px;
-  align-items: start;
-  min-width: 0;
+.product-assortment-filter-row {
+  min-width: max-content;
   width: 100%;
 }
 
-.product-assortment-filter .product-assortment-filter-label {
-  display: flex;
-  align-items: flex-start;
-  height: 34px;
-  min-height: 34px;
-  margin-bottom: 0;
-  padding-left: 0;
-  color: var(--mantine-color-gray-9); /* black */
-  font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0;
-  line-height: 1.18;
-  text-transform: none;
-  white-space: normal;
+.product-assortment-search-input {
+  flex: 0 0 280px;
+  width: 280px;
 }
 
-.product-assortment-filter .product-assortment-filter-input {
-  width: 100%;
-  height: 36px;
-  min-height: 36px;
-  border-color: rgba(203, 213, 225, 0.92);
-  border-radius: 8px;
-  background: var(--mantine-color-white);
-  box-shadow: none;
-  color: var(--mantine-color-gray-9); /* black value text */
-  font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 500;
-  line-height: 1;
-  padding-left: 11px;
-  padding-right: 28px;
-  transition:
-    border-color 160ms ease,
-    box-shadow 160ms ease,
-    background 160ms ease;
-}
-
-.product-assortment-filter .product-assortment-filter-input:hover {
-  border-color: rgba(var(--brand-orange-rgb), 0.38);
-}
-
-.product-assortment-filter .product-assortment-filter-input:focus,
-.product-assortment-filter .product-assortment-filter-input:focus-within {
-  border-color: rgba(var(--brand-orange-rgb), 0.72);
-  box-shadow: 0 0 0 3px rgba(var(--brand-orange-rgb), 0.08);
+.product-assortment-filter-select {
+  flex: 0 0 210px;
+  width: 210px;
 }
 
 .product-assortment-filter-option {
@@ -1125,45 +1039,6 @@
   font-size: 12px;
   font-weight: 500;
   white-space: nowrap;
-}
-
-.product-assortment-search-input {
-  width: 100%;
-  max-width: none;
-  align-self: center;
-  justify-self: center;
-}
-
-.product-assortment-search-input .mantine-Input-wrapper {
-  height: 36px;
-}
-
-.product-assortment-search-input .mantine-Input-input,
-.product-assortment-search-input input {
-  box-sizing: border-box;
-  height: 36px;
-  min-height: 36px;
-  border-color: var(--mantine-color-gray-2);
-  border-radius: 8px;
-  background: var(--mantine-color-white);
-  color: var(--mantine-color-gray-9);
-  font-family: var(--font-mono);
-  font-size: 12.5px;
-  font-weight: 400;
-  letter-spacing: 0;
-  padding: 0 12px;
-}
-
-.product-assortment-search-input .mantine-Input-input:focus,
-.product-assortment-search-input input:focus {
-  border-color: var(--app-focus-border);
-  box-shadow: var(--app-focus-ring);
-}
-
-.product-assortment-search-input .mantine-Input-input::placeholder,
-.product-assortment-search-input input::placeholder {
-  color: var(--mantine-color-gray-6);
-  opacity: 1;
 }
 
 .product-carousel-row {
