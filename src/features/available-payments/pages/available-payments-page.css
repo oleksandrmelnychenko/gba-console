@@ -78,16 +78,6 @@
   min-height: 0;
 }
 
-/* Body-only registry contract: keep rows equal and every cell on one line.
-   The selectors intentionally exclude table headers. */
-.available-payments-page__table .data-table-density-normal .data-table-row {
-  height: 45px;
-}
-
-.available-payments-page__table .data-table-density-compact .data-table-row {
-  height: 35px;
-}
-
 .available-payments-page__table .data-table-cell {
   white-space: nowrap;
 }
