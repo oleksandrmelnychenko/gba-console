@@ -10,13 +10,11 @@ import {
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { CircleAlert, Pencil, Plus, RefreshCw, RotateCcw, Search } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useReducer } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
-import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { ConsoleTableEntityCell } from '../../../shared/ui/console-table-cells'
@@ -50,11 +48,11 @@ export function PaymentCashflowArticlesPage() {
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const normalizedSearchValue = debouncedSearchValue.trim()
   const isSearchSettling = searchValue.trim() !== normalizedSearchValue
   const isTableBusy = isLoading || isSearchSettling
   const canCreate = hasPermission(PERMISSION_CREATE_CASHFLOW_ARTICLE)
-  const { density, toggleDensity } = useDataTableDensity('payment-cashflow-articles', 'normal')
 
   const openArticle = useCallback(
     (article: PaymentCashflowArticle) => {
@@ -205,8 +203,8 @@ export function PaymentCashflowArticlesPage() {
                   <RefreshCw size={17} />
                 </ActionIcon>
               </Tooltip>
-              <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
             </div>
+            <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
             {canCreate && (
               <Button
                 color={CREATE_ACTION_COLOR}
@@ -239,7 +237,6 @@ export function PaymentCashflowArticlesPage() {
             columns={columns}
             data={articles}
             defaultLayout={PAYMENT_CASHFLOW_ARTICLES_TABLE_DEFAULT_LAYOUT}
-            density={density}
             emptyText={t('Статей руху коштів не знайдено')}
             getRowId={(article, index) => String(article.NetUid || article.Id || index)}
             height="100%"
@@ -247,7 +244,9 @@ export function PaymentCashflowArticlesPage() {
             layoutVersion="payment-cashflow-articles-table-1"
             loadingText={t('Завантаження статей руху коштів')}
             minWidth={720}
+            showLayoutControls
             tableId="payment-cashflow-articles"
+            toolbarPortalTarget={tableToolbarSlot}
             onRowClick={openArticle}
           />
         </div>
