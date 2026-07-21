@@ -20,7 +20,7 @@ import {
 import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, Eye, Pencil, Plus, RefreshCw, RotateCcw, Save, Search, Trash2, X } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
@@ -106,6 +106,7 @@ export function ConsumableStoragesPage() {
   const [deleteStorageTarget, setDeleteStorageTarget] = useValueState<ConsumablesStorage | null>(null)
   const [isDeleting, setDeleting] = useValueState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const normalizedSearchValue = debouncedSearchValue.trim()
   const isSearchSettling = searchValue.trim() !== normalizedSearchValue
   const isTableBusy = isLoading || isSearchSettling
@@ -209,6 +210,18 @@ export function ConsumableStoragesPage() {
               onChange={(event) => setSearchValue(event.currentTarget.value)}
             />
             <div className="app-filter-actions consumable-storages-filter-actions">
+              <Tooltip label={t('Скинути')}>
+                <ActionIcon
+                  aria-label={t('Скинути')}
+                  color="gray"
+                  disabled={!searchValue}
+                  size={34}
+                  variant="light"
+                  onClick={() => setSearchValue('')}
+                >
+                  <RotateCcw size={17} />
+                </ActionIcon>
+              </Tooltip>
               <Tooltip label={t('Оновити')}>
                 <ActionIcon
                   aria-label={t('Оновити')}
@@ -222,6 +235,7 @@ export function ConsumableStoragesPage() {
                 </ActionIcon>
               </Tooltip>
             </div>
+            <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
             <PermissionGate permissionKey={CONSUMABLE_STORAGE_CREATE_PERMISSION}>
               <div className="consumable-storages-create-action">
                 <Button
@@ -257,7 +271,9 @@ export function ConsumableStoragesPage() {
               isLoading={isTableBusy}
               layoutVersion="consumable-storages-compact-2"
               minWidth={960}
+              showLayoutControls
               tableId="consumable-storages"
+              toolbarPortalTarget={tableToolbarSlot}
               onRowClick={setSelectedStorage}
             />
           </div>

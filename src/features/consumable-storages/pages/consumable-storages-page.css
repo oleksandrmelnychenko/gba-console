@@ -29,7 +29,7 @@
   align-items: end;
   display: grid;
   gap: 10px;
-  grid-template-columns: minmax(260px, 360px) minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(260px, 360px) minmax(0, 1fr) auto auto auto;
   min-width: max-content;
   width: 100%;
 }
@@ -39,14 +39,13 @@
 .consumable-storages-filter-actions {
   align-items: center;
   display: inline-flex;
-  gap: 8px;
   grid-column: 3;
 }
 
 .consumable-storages-create-action {
   align-items: center;
   display: inline-flex;
-  grid-column: 4;
+  grid-column: 5;
   min-height: var(--app-filter-control-height);
 }
 
