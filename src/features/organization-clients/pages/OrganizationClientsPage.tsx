@@ -233,6 +233,18 @@ export function OrganizationClientsPage() {
             onChange={(event) => updateSearch(event.currentTarget.value)}
           />
           <div className="app-filter-actions organization-clients-filter-actions">
+            <Tooltip label={t('Скинути')}>
+              <ActionIcon
+                aria-label={t('Скинути')}
+                color="gray"
+                disabled={!searchDraft.trim()}
+                size={34}
+                variant="light"
+                onClick={resetSearch}
+              >
+                <RotateCcw size={17} />
+              </ActionIcon>
+            </Tooltip>
             <Tooltip label={t('Оновити')}>
               <ActionIcon
                 aria-label={t('Оновити')}
@@ -244,18 +256,6 @@ export function OrganizationClientsPage() {
                 onClick={() => reload()}
               >
                 <RefreshCw size={18} />
-              </ActionIcon>
-            </Tooltip>
-            <Tooltip label={t('Скинути')}>
-              <ActionIcon
-                aria-label={t('Скинути')}
-                color="gray"
-                disabled={!searchDraft.trim()}
-                size={34}
-                variant="light"
-                onClick={resetSearch}
-              >
-                <RotateCcw size={17} />
               </ActionIcon>
             </Tooltip>
           </div>
