@@ -259,7 +259,7 @@ export function OrganizationClientsPage() {
               </ActionIcon>
             </Tooltip>
           </div>
-          <div ref={setTableToolbarSlot} className="organization-clients-table-toolbar-slot" />
+          <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot organization-clients-table-toolbar-slot" />
           <div className="organization-clients-create-actions">
             <Button
               color={CREATE_ACTION_COLOR}
