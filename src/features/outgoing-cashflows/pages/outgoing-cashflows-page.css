@@ -20,7 +20,7 @@
     minmax(108px, 120px)
     minmax(148px, 176px)
     minmax(162px, 196px)
-    minmax(200px, 220px) /* Організації — compact CheckboxMultiSelect, was 300-340 for the pill MultiSelect */
+    var(--app-multi-select-width, 240px)
     auto
     auto
     auto;

@@ -661,7 +661,6 @@ function OutgoingCashflowsContent({ model }: { model: OutgoingCashflowsPageModel
               label={t('Організації')}
               placeholder={t('Без фільтра')}
               value={selectedOrganizationIds}
-              w="100%"
               onChange={onSetSelectedOrganizationIds}
             />
             <div className="app-filter-actions outgoing-cashflows-filter-actions">
