@@ -309,7 +309,7 @@ export function ConsumableProductsPage() {
               </ActionIcon>
             </Tooltip>
           </div>
-          <div ref={setTableToolbarSlot} className="consumable-products-table-toolbar-slot" />
+          <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
           <div className="consumable-products-create-actions">
             <PermissionGate permissionKey="SERVICE_Accounting_Consumable_Product_addSupCategoryBtn_PKEY">
               <Button
