@@ -4,6 +4,7 @@ import {
   Badge,
   Card,
   Group,
+  SegmentedControl,
   SimpleGrid,
   Stack,
   Table,
@@ -108,50 +109,42 @@ export function SalesGeographyPage() {
 
   return (
     <Stack className="sales-geography-page" gap={6}>
-      <Card className="app-filter-card" withBorder radius="md" padding={0}>
+      <Card className="app-filter-card sales-geography-filter-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar sales-geography-toolbar">
-          <div className="pill-tabs sales-geography-metric-tabs" role="tablist" aria-label={t('Метрика')}>
-            {[
-              { label: t('Продажі'), value: 'sales' },
-              { label: t('Борг'), value: 'debt' },
-            ].map((option) => (
-              <button
-                key={option.value}
-                className={`pill-tab${metric === option.value ? ' is-active' : ''}`}
-                role="tab"
-                type="button"
-                aria-selected={metric === option.value}
-                onClick={() => setMetric(option.value as GeographyMetric)}
-              >
-                {option.label}
-              </button>
-            ))}
+          <div className="app-filter-field sales-geography-filter-field">
+            <span className="app-filter-label">{t('Метрика')}</span>
+            <SegmentedControl
+              aria-label={t('Метрика')}
+              data={[
+                { label: t('Продажі'), value: 'sales' },
+                { label: t('Борг'), value: 'debt' },
+              ]}
+              value={metric}
+              onChange={(value) => setMetric(value as GeographyMetric)}
+            />
           </div>
-          {metric === 'sales' ? (
-            <div className="pill-tabs sales-geography-metric-tabs" role="tablist" aria-label={t('Період')}>
-              {[
-                { label: t('Весь час'), value: 'all' },
-                { label: t('12 міс'), value: '12' },
-                { label: t('24 міс'), value: '24' },
-                { label: t('36 міс'), value: '36' },
-              ].map((option) => (
-                <button
-                  key={option.value}
-                  className={`pill-tab${period === option.value ? ' is-active' : ''}`}
-                  role="tab"
-                  type="button"
-                  aria-selected={period === option.value}
-                  onClick={() => setPeriod(option.value as SalesGeographyPeriodKey)}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-          ) : (
-            <Badge className="app-role-pill is-gray sales-geography-pill" variant="light">
-              {t('Поточний стан')}
-            </Badge>
-          )}
+          <div className="app-filter-field sales-geography-filter-field">
+            <span className="app-filter-label">{t('Період')}</span>
+            {metric === 'sales' ? (
+              <SegmentedControl
+                aria-label={t('Період')}
+                data={[
+                  { label: t('Весь час'), value: 'all' },
+                  { label: t('12 міс'), value: '12' },
+                  { label: t('24 міс'), value: '24' },
+                  { label: t('36 міс'), value: '36' },
+                ]}
+                value={period}
+                onChange={(value) => setPeriod(value as SalesGeographyPeriodKey)}
+              />
+            ) : (
+              <div className="sales-geography-current-period">
+                <Badge className="app-role-pill is-gray sales-geography-pill" variant="light">
+                  {t('Поточний стан')}
+                </Badge>
+              </div>
+            )}
+          </div>
           <div className="app-filter-actions sales-geography-actions">
             <Tooltip label={t('Оновити')}>
               <ActionIcon aria-label={t('Оновити')} loading={isLoading} size={34} variant="light" onClick={handleReload}>
@@ -162,14 +155,15 @@ export function SalesGeographyPage() {
         </div>
       </Card>
 
-      {error && (
-        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
-          {error}
-        </Alert>
-      )}
+      <div className="sales-geography-content">
+        {error && (
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
+            {error}
+          </Alert>
+        )}
 
-      <SimpleGrid cols={{ base: 1, lg: 3 }} spacing="md">
-        <Card className="app-section-card sales-geography-map-card" padding="md" radius="md" withBorder>
+        <SimpleGrid cols={{ base: 1, lg: 3 }} spacing="md">
+          <Card className="app-section-card sales-geography-map-card" padding="md" radius="md" withBorder>
           <Stack gap="md">
             <Group gap="xs">
               <Text className="app-section-title" fw={600} size="sm">
@@ -220,14 +214,14 @@ export function SalesGeographyPage() {
               </>
             )}
           </Stack>
-        </Card>
+          </Card>
 
-        <Card
-          className="app-section-card sales-geography-rating-card"
-          padding="md"
-          radius="md"
-          withBorder
-        >
+          <Card
+            className="app-section-card sales-geography-rating-card"
+            padding="md"
+            radius="md"
+            withBorder
+          >
           <Stack gap="sm">
             <Group gap="xs">
               <Text className="app-section-title" fw={600} size="sm">
@@ -286,8 +280,9 @@ export function SalesGeographyPage() {
               </Text>
             )}
           </Stack>
-        </Card>
-      </SimpleGrid>
+          </Card>
+        </SimpleGrid>
+      </div>
     </Stack>
   )
 }

@@ -1,24 +1,53 @@
 .sales-geography-page {
+  box-sizing: border-box;
   flex: 1 1 auto;
-  height: 100%;
+  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px);
+  min-height: 0;
+  overflow: hidden;
+  padding: 6px 4px 0;
+}
+
+.sales-geography-content {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 6px;
   min-height: 0;
   overflow-y: auto;
-  padding: 0 4px;
+}
+
+.sales-geography-filter-card {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2) !important;
+  box-shadow: var(--app-card-shadow) !important;
 }
 
 .sales-geography-toolbar {
-  align-items: center;
+  align-items: end;
   display: grid;
   gap: 10px;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: max-content max-content minmax(max-content, 1fr);
+  min-width: 0;
+  overflow-x: auto;
 }
 
-.sales-geography-metric-tabs {
-  justify-content: flex-start;
+.sales-geography-filter-field {
+  min-width: max-content;
+}
+
+.sales-geography-current-period {
+  align-items: center;
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
+  display: flex;
+  height: var(--app-filter-control-height, 36px);
+  padding: 0 10px;
 }
 
 .sales-geography-actions {
-  align-self: center;
+  align-self: end;
+  justify-self: end;
 }
 
 .sales-geography-pill {
@@ -170,16 +199,7 @@
 }
 
 @media (max-width: 960px) {
-  .sales-geography-toolbar,
   .sales-geography-map-card {
     grid-column: auto;
-  }
-
-  .sales-geography-toolbar {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .sales-geography-actions {
-    justify-content: flex-start;
   }
 }
