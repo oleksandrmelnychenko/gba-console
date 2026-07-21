@@ -337,7 +337,7 @@ function ProductHistoryPageView({ model }: { model: ReturnType<typeof useProduct
         <div className="app-filter-bar product-history-filter-bar">
           <Group align="end" gap={10} wrap="nowrap" className="product-history-filter-row">
             <TextInput
-              label={t('До')}
+              label={t('Дата')}
               type="date"
               value={dateTo}
               w={150}
@@ -765,7 +765,7 @@ function toEndOfDayQuery(dateValue: string): string {
 
 function getFilterError(dateTo: string, selectedStorageIds: string[]): string | null {
   if (!dateTo) {
-    return translate('Вкажіть дату завершення')
+    return translate('Вкажіть дату')
   }
 
   if (selectedStorageIds.length === 0) {
