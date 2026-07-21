@@ -86,12 +86,6 @@
   min-height: var(--app-filter-control-height);
 }
 
-.online-shop-clients-table-toolbar-slot .data-table-toolbar {
-  gap: 6px;
-  margin: 0;
-  min-height: 0;
-}
-
 .online-shop-clients-page__layout {
   display: grid;
   flex: 1 1 auto;

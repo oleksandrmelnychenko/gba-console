@@ -217,7 +217,7 @@ export function OnlineShopClientsPage() {
               onRefresh={reload}
             />
           </div>
-          <div ref={setTableToolbarSlot} className="online-shop-clients-table-toolbar-slot" />
+          <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot online-shop-clients-table-toolbar-slot" />
         </div>
 
         {error && (
