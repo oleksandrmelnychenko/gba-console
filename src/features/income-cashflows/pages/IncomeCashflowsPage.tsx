@@ -16,7 +16,7 @@ import {
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { Banknote, ChevronDown, CircleAlert, Eye, Landmark, Plus, RefreshCw, RotateCcw, Search, Share2, Store, Users, X } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -26,9 +26,7 @@ import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
-import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
-import type { DataTableColumn, DataTableDefaultLayout, DataTableDensity } from '../../../shared/ui/data-table/types'
+import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { getAccountingCashFlowRecordPaymentStatus } from '../../accounting-cash-flow/accountingCashFlowPaymentStatus'
 import { calculateAdvanceReportOrder } from '../../outgoing-cashflows/api/advanceReportApi'
 import {
@@ -205,7 +203,6 @@ function useIncomeCashflowsPageModel(): IncomeCashflowsPageModel {
     onReassign: setReassignRow,
   })
   const isTableBusy = isLoading || isSearchSettling
-  const { density, toggleDensity } = useDataTableDensity('income-cashflows', TABLE_DEFAULT_LAYOUT.density)
 
   const loadLookups = useCallback(async () => {
     setLoadingLookups(true)
@@ -401,7 +398,6 @@ function useIncomeCashflowsPageModel(): IncomeCashflowsPageModel {
     columns,
     currencies,
     currencyNetId,
-    density,
     error,
     filterError,
     fromDate,
@@ -445,7 +441,6 @@ function useIncomeCashflowsPageModel(): IncomeCashflowsPageModel {
     onSetSearchValue: setSearchValue,
     onSetSelectedOrganizationIds: setSelectedOrganizationIds,
     onSetToDate: setToDate,
-    onToggleDensity: toggleDensity,
   }
 }
 
@@ -460,7 +455,6 @@ type IncomeCashflowsPageModel = {
   columns: DataTableColumn<IncomeCashflowRow>[]
   currencies: Currency[]
   currencyNetId: string
-  density: DataTableDensity
   error: string | null
   filterError: string | null
   fromDate: string
@@ -498,7 +492,6 @@ type IncomeCashflowsPageModel = {
   onSetSearchValue: (value: string) => void
   onSetSelectedOrganizationIds: (value: string[]) => void
   onSetToDate: (value: string) => void
-  onToggleDensity: () => void
 }
 
 function IncomeCashflowsContent({ model }: { model: IncomeCashflowsPageModel }) {
@@ -507,7 +500,6 @@ function IncomeCashflowsContent({ model }: { model: IncomeCashflowsPageModel }) 
     columns,
     currencies,
     currencyNetId,
-    density,
     error,
     filterError,
     fromDate,
@@ -545,11 +537,11 @@ function IncomeCashflowsContent({ model }: { model: IncomeCashflowsPageModel }) 
     onSetSearchValue,
     onSetSelectedOrganizationIds,
     onSetToDate,
-    onToggleDensity,
   } = model
   const { t } = useI18n()
   const navigate = useNavigate()
   const location = useLocation()
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
 
   return (
     <Stack className="income-cashflows-page console-table-page" gap={6}>
@@ -618,8 +610,8 @@ function IncomeCashflowsContent({ model }: { model: IncomeCashflowsPageModel }) 
                   <RefreshCw size={18} />
                 </ActionIcon>
               </Tooltip>
-              <DataTableDensityToggle density={density} onToggle={onToggleDensity} size={34} />
             </div>
+            <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
             <div className="income-cashflows-create-actions">
               <Menu classNames={{ dropdown: 'income-cashflows-create-menu' }} position="bottom-end" shadow="md" width={300} withinPortal>
                 <Menu.Target>
@@ -688,13 +680,14 @@ function IncomeCashflowsContent({ model }: { model: IncomeCashflowsPageModel }) 
             columns={columns}
             data={rows}
             defaultLayout={TABLE_DEFAULT_LAYOUT}
-            density={density}
             emptyText={t('Прибуткових ордерів не знайдено')}
             getRowId={(row) => row.id}
             isLoading={isTableBusy}
             layoutVersion="income-cashflows-1"
             minWidth={1680}
+            showLayoutControls
             tableId="income-cashflows"
+            toolbarPortalTarget={tableToolbarSlot}
             onRowClick={onOpenDetails}
           />
         </div>
