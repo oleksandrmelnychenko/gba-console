@@ -63,6 +63,8 @@ import {
   IncomePaymentOrderType,
   PaymentRegisterType,
 } from '../types'
+import { PaymentPurposeAutocomplete } from '../components/PaymentPurposeAutocomplete'
+import { getPaymentPurposeSuggestionScope } from '../paymentPurposeSuggestionScope'
 
 type FormState = {
   amount: number
@@ -175,6 +177,12 @@ export function IncomeCashflowClientFormPage() {
     () => selectedMovement || paymentMovements.find((movement) => getEntityName(movement) === form.movementSearch.trim()) || null,
     [form.movementSearch, paymentMovements, selectedMovement],
   )
+  const paymentPurposeSuggestionScope = getPaymentPurposeSuggestionScope({
+    clientAgreementNetId: selectedClientAgreement?.NetUid,
+    clientNetId: selectedClient?.NetUid,
+    counterpartySearch: form.counterpartySearch,
+    selectedClientName: selectedClient ? getEntityName(selectedClient) : '',
+  })
   const visibleDebts = useMemo(() => {
     if (!selectedClient || !selectedClientAgreement?.Agreement) {
       return []
@@ -183,6 +191,7 @@ export function IncomeCashflowClientFormPage() {
     return filterClientDebts(selectedClient.ClientInDebts || [], selectedOrganization, selectedClientAgreement)
   }, [selectedClient, selectedClientAgreement, selectedOrganization])
   const debtSummary = useMemo(() => summarizeClientDebts(visibleDebts), [visibleDebts])
+  const selectedDebtValueSet = useMemo(() => new Set(form.selectedDebtValues), [form.selectedDebtValues])
   const totalDebt = debtSummary.totalDebt
   const maxOverdueDays = debtSummary.maxOverdueDays
   const title = getTitle(operationType, registerType, t)
@@ -930,11 +939,12 @@ export function IncomeCashflowClientFormPage() {
           )}
 
           <SimpleGrid cols={{ base: 1, md: 2 }}>
-            <TextInput
-              disabled={isLoading || isSaving}
+            <PaymentPurposeAutocomplete
+              {...paymentPurposeSuggestionScope}
+              disabled={isLoading || isResolvingCounterparty || isSaving}
               label={t('Призначення платежу')}
               value={form.paymentPurpose}
-              onChange={(event) => updateForm({ paymentPurpose: event.currentTarget.value })}
+              onChange={(value) => updateForm({ paymentPurpose: value })}
             />
             <Textarea
               disabled={isLoading || isSaving}
@@ -1017,7 +1027,7 @@ export function IncomeCashflowClientFormPage() {
                       <Table.Tbody>
                         {visibleDebts.map((debt) => {
                           const debtValue = getDebtValue(debt)
-                          const checked = form.selectedDebtValues.includes(debtValue)
+                          const checked = selectedDebtValueSet.has(debtValue)
 
                           return (
                             <Table.Tr key={debtValue}>

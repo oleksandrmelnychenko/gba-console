@@ -1,7 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import { IncomeCounterpartySearchType } from '../types'
-import { getIncomeCashflowByNetId, searchIncomeCashflowCounterparties } from './incomeCashflowsApi'
+import {
+  getIncomeCashflowByNetId,
+  searchIncomeCashflowCounterparties,
+  searchIncomeCashflowPaymentPurposes,
+} from './incomeCashflowsApi'
 
 vi.mock('../../../shared/api/apiClient', () => ({
   apiRequest: vi.fn(),
@@ -77,6 +81,31 @@ describe('income cashflow API lookup contracts', () => {
       query: {
         netId: 'income-order-1',
       },
+    })
+  })
+
+  it('loads payment-purpose suggestions for the selected client agreement', async () => {
+    const controller = new AbortController()
+    apiRequestMock.mockResolvedValueOnce([' Оплата за товар ', null, 'За рахунком', 'Оплата за товар'])
+
+    await expect(
+      searchIncomeCashflowPaymentPurposes({
+        clientAgreementNetId: 'agreement-1',
+        clientNetId: 'client-1',
+        limit: 8,
+        signal: controller.signal,
+        value: ' рах ',
+      }),
+    ).resolves.toEqual(['Оплата за товар', 'За рахунком'])
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/payments/orders/income/payment-purpose/suggestions', {
+      query: {
+        clientAgreementNetId: 'agreement-1',
+        clientNetId: 'client-1',
+        limit: 8,
+        value: 'рах',
+      },
+      signal: controller.signal,
     })
   })
 })

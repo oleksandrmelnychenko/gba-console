@@ -194,6 +194,36 @@ export async function getIncomeCashflowClientDebtTotal(netId: string): Promise<C
   return result && typeof result === 'object' ? (result as ClientDebtTotal) : null
 }
 
+export async function searchIncomeCashflowPaymentPurposes(params: {
+  clientAgreementNetId: string
+  clientNetId: string
+  limit?: number
+  signal?: AbortSignal
+  value?: string
+}): Promise<string[]> {
+  const result = await apiRequest<unknown>('/payments/orders/income/payment-purpose/suggestions', {
+    query: {
+      clientAgreementNetId: params.clientAgreementNetId,
+      clientNetId: params.clientNetId,
+      limit: params.limit || 10,
+      value: params.value?.trim() || undefined,
+    },
+    ...(params.signal ? { signal: params.signal } : {}),
+  })
+
+  const paymentPurposes = readArrayPayload(result, ['Items', 'PaymentPurposes', 'Data', 'Collection']).flatMap((item) => {
+    if (typeof item !== 'string') {
+      return []
+    }
+
+    const paymentPurpose = item.trim()
+
+    return paymentPurpose ? [paymentPurpose] : []
+  })
+
+  return [...new Set(paymentPurposes)]
+}
+
 export async function searchIncomeCashflowUsers(value: string): Promise<NamedEntity[]> {
   const result = await apiRequest<unknown>('/usermanagement/profiles/search', {
     query: {
