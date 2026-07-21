@@ -20,7 +20,7 @@ import {
 } from '@mantine/core'
 import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
-import { ArrowLeft, ArrowRight, Banknote, CircleAlert, Download, Eye, FileUp, Package, Plus, RefreshCw, SquarePen, Trash2 } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Banknote, CircleAlert, Download, Eye, FileUp, Package, Plus, RefreshCw, RotateCcw, SquarePen, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useState, type ReactNode } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { formatDateInputForQuery, formatLocalDate, SYNC_DATA_RANGE_START } from '../../../shared/date/dateTime'
@@ -32,6 +32,7 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { SadAddItemsModal } from '../components/SadAddItemsModal'
 import { SadPaymentFromSadModal } from '../components/SadPaymentFromSadModal'
 import { SadSupplyOrderFromSadModal } from '../components/SadSupplyOrderFromSadModal'
@@ -76,6 +77,7 @@ import type {
   SadTypeValue,
 } from '../types'
 import { SAD_TYPES } from '../types'
+import '../../../shared/ui/console-table-page.css'
 import './sad-pages.css'
 
 const DEFAULT_PAGE_SIZE = 20
@@ -178,10 +180,10 @@ export function AllSadsPage() {
     to: formatLocalDate(new Date()),
   }))
   const [sads, setSads] = useState<Sad[]>([])
+  const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
   const [hasMore, setHasMore] = useState(false)
   const [isLoading, setLoading] = useState(false)
-  const [isLoadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [selectedSad, setSelectedSad] = useState<Sad | null>(null)
   const [outcomeSource, setOutcomeSource] = useState<DocumentOutcomePaymentSource | null>(null)
@@ -192,12 +194,7 @@ export function AllSadsPage() {
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
 
   const loadSads = useCallback(async (offset: number) => {
-    if (offset === 0) {
-      setLoading(true)
-    } else {
-      setLoadingMore(true)
-    }
-
+    setLoading(true)
     setError(null)
 
     try {
@@ -208,24 +205,21 @@ export function AllSadsPage() {
         to: formatDateInputForQuery(filters.to),
       })
 
-      setSads((currentRows) => offset === 0 ? rows : [...currentRows, ...rows])
+      setSads(rows)
       setHasMore(rows.length >= pageSize)
     } catch (loadError) {
       setError(getErrorMessage(loadError, t('Не вдалося завантажити SAD')))
-      if (offset === 0) {
-        setSads([])
-        setHasMore(false)
-      }
+      setSads([])
+      setHasMore(false)
     } finally {
       setLoading(false)
-      setLoadingMore(false)
     }
   }, [filters.from, filters.to, pageSize, t])
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    void loadSads(0)
-  }, [loadSads, reloadKey])
+    void loadSads((page - 1) * pageSize)
+  }, [loadSads, page, pageSize, reloadKey])
 
   const columns = useMemo<DataTableColumn<Sad>[]>(
     () => [
@@ -376,34 +370,6 @@ export function AllSadsPage() {
     [t],
   )
 
-  const toolbarRight = useMemo(
-    () => (
-      <Group gap={6} wrap="nowrap">
-        <Select
-          aria-label={t('Кількість рядків')}
-          data={PAGE_SIZE_OPTIONS}
-          size="xs"
-          value={String(pageSize)}
-          w={88}
-          onChange={(value) => {
-            setPageSize(Number(value || DEFAULT_PAGE_SIZE))
-            reload()
-          }}
-        />
-        <Button
-          disabled={!hasMore}
-          loading={isLoadingMore}
-          size="xs"
-          variant="outline"
-          onClick={() => loadSads(sads.length)}
-        >
-          {t('Ще')}
-        </Button>
-      </Group>
-    ),
-    [hasMore, isLoadingMore, loadSads, pageSize, reload, sads.length, t],
-  )
-
   async function handleDeleteSad() {
     if (!deleteTarget?.NetUid) {
       return
@@ -424,41 +390,71 @@ export function AllSadsPage() {
   }
 
   return (
-    <Stack className="sad-list-page" gap={6}>
-      <div className="app-filter-bar sad-list-page__toolbar">
-        <Group align="flex-end" className="sad-list-page__filters" gap={10} wrap="nowrap">
-          <TextInput
-            label={t('Від')}
-            type="date"
-            value={filters.from}
-            w={150}
-            onChange={(event) => { const nextValue = event.currentTarget.value; setFilters((currentFilters) => ({ ...currentFilters, from: nextValue })) }}
-          />
-          <TextInput
-            label={t('До')}
-            type="date"
-            value={filters.to}
-            w={150}
-            onChange={(event) => { const nextValue = event.currentTarget.value; setFilters((currentFilters) => ({ ...currentFilters, to: nextValue })) }}
-          />
-          <div className="app-filter-actions sad-list-page__actions">
-            <Tooltip label={t('Оновити')}>
-              <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={34} variant="light" onClick={() => reload()}>
-                <RefreshCw size={17} />
-              </ActionIcon>
-            </Tooltip>
-          </div>
-        </Group>
-      </div>
+    <Stack className="sad-list-page console-table-page" gap={6}>
+      <div className="console-table-shell sad-list-page__shell">
+        <div className="app-filter-bar sad-list-page__toolbar">
+          <Group align="flex-end" className="sad-list-page__filters" gap={10} wrap="nowrap">
+            <div className="app-filter-date-range">
+              <TextInput
+                label={t('Від')}
+                type="date"
+                value={filters.from}
+                onChange={(event) => {
+                  const nextValue = event.currentTarget.value
+                  setPage(1)
+                  setFilters((currentFilters) => ({ ...currentFilters, from: nextValue }))
+                }}
+              />
+              <TextInput
+                label={t('До')}
+                type="date"
+                value={filters.to}
+                onChange={(event) => {
+                  const nextValue = event.currentTarget.value
+                  setPage(1)
+                  setFilters((currentFilters) => ({ ...currentFilters, to: nextValue }))
+                }}
+              />
+            </div>
+            <div className="app-filter-actions sad-list-page__actions">
+              <Tooltip label={t('Скинути')}>
+                <ActionIcon
+                  aria-label={t('Скинути')}
+                  color="gray"
+                  size={34}
+                  variant="light"
+                  onClick={() => {
+                    setPage(1)
+                    setFilters({ from: SYNC_DATA_RANGE_START, to: formatLocalDate(new Date()) })
+                  }}
+                >
+                  <RotateCcw size={17} />
+                </ActionIcon>
+              </Tooltip>
+              <Paginator
+                hasNext={hasMore}
+                isLoading={isLoading}
+                page={page}
+                pageSize={pageSize}
+                pageSizeOptions={PAGE_SIZE_OPTIONS}
+                onPageChange={setPage}
+                onPageSizeChange={(nextPageSize) => {
+                  setPage(1)
+                  setPageSize(nextPageSize)
+                }}
+                onRefresh={reload}
+              />
+            </div>
+          </Group>
+        </div>
 
-      <Stack className="sad-list-page__stack" gap="xs">
         {error && (
-          <Alert color="red" icon={<CircleAlert size={18} />}>
+          <Alert className="console-table-alert" color="red" icon={<CircleAlert size={18} />}>
             {error}
           </Alert>
         )}
 
-        <div className="sad-list-page__table">
+        <div className="console-table-body sad-list-page__table">
           <DataTable
             columns={columns}
             data={sads}
@@ -472,11 +468,10 @@ export function AllSadsPage() {
             showDensityToggle={false}
             showLayoutControls={false}
             tableId="sad-all"
-            toolbarRight={toolbarRight}
             onRowClick={setSelectedSad}
           />
         </div>
-      </Stack>
+      </div>
 
       <SadActionModal
         sad={selectedSad}

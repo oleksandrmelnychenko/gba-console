@@ -1,14 +1,18 @@
 .sad-list-page {
-  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 24px);
+  box-sizing: border-box;
+  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px);
   min-height: 0;
   overflow: hidden;
+  padding: 6px 4px 0;
 }
 
 .sad-list-page__toolbar {
   flex: 0 0 auto;
+  overflow-x: auto;
 }
 
 .sad-list-page__filters {
+  min-width: max-content;
   width: 100%;
 }
 
@@ -16,9 +20,8 @@
   margin-left: auto;
 }
 
-.sad-list-page__stack {
+.sad-list-page__shell {
   flex: 1 1 auto;
-  height: 100%;
   min-height: 0;
 }
 
