@@ -24,13 +24,17 @@
 
 .vat-reports-filter-row {
   display: grid;
-  grid-template-columns: max-content minmax(16px, 1fr) max-content;
+  grid-template-columns: max-content minmax(16px, 1fr) max-content max-content;
   min-width: max-content;
   width: 100%;
 }
 
 .vat-reports-filter-row > .app-filter-actions {
   grid-column: 3;
+}
+
+.vat-reports-filter-row > .app-filter-table-toolbar-slot {
+  grid-column: 4;
 }
 
 .vat-reports-alert {

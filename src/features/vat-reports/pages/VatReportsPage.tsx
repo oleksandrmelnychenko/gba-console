@@ -9,13 +9,11 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { CircleAlert, RotateCcw } from 'lucide-react'
-import { useEffect, useMemo, useReducer, useRef } from 'react'
+import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
-import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { getVatReports } from '../api/vatReportsApi'
@@ -70,11 +68,11 @@ export function VatReportsPage() {
   const [loadState, dispatchLoadState] = useReducer(vatReportsLoadReducer, INITIAL_VAT_REPORTS_LOAD_STATE)
   const { error, hasMore, isLoading, reports } = loadState
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const filterError = getDateRangeError(fromDate, toDate)
   const requestRef = useRef(0)
   const indexMap = useMemo(() => buildIndexMap(reports), [reports])
   const columns = useVatReportColumns(indexMap)
-  const { density, toggleDensity } = useDataTableDensity('vat-reports', VAT_REPORTS_TABLE_DEFAULT_LAYOUT.density)
 
   useEffect(() => {
     let isActive = true
@@ -180,7 +178,6 @@ export function VatReportsPage() {
                   <RotateCcw size={17} />
                 </ActionIcon>
               </Tooltip>
-              <DataTableDensityToggle density={density} size={34} onToggle={toggleDensity} />
               <Paginator
                 hasNext={hasMore}
                 isLoading={isLoading}
@@ -194,6 +191,7 @@ export function VatReportsPage() {
                 onRefresh={refreshReports}
               />
             </div>
+            <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
           </Group>
         </div>
 
@@ -214,14 +212,15 @@ export function VatReportsPage() {
             columns={columns}
             data={reports}
             defaultLayout={VAT_REPORTS_TABLE_DEFAULT_LAYOUT}
-            density={density}
             emptyText={t('VAT записів не знайдено')}
             getRowId={(report, index) => `${report.FromDate || 'vat'}-${getReportNumber(report)}-${index}`}
             height="100%"
             isLoading={isLoading}
             layoutVersion="vat-reports-table-1"
             minWidth={900}
+            showLayoutControls
             tableId="vat-reports"
+            toolbarPortalTarget={tableToolbarSlot}
           />
         </div>
       </Card>
