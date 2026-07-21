@@ -39,6 +39,7 @@ import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { TransporterLogo } from '../../../shared/ui/TransporterLogo'
 import { TransporterNameWithIcon } from '../../../shared/transporter-icons/TransporterIcon'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
+import '../../../shared/ui/console-table-page.css'
 import { SaleAuditDetail, getSaleStatisticBySaleId, type SaleAuditStatistic } from '../../../shared/sale-audit'
 import { UserRoleType } from '../../../shared/auth/types'
 import '../../sales-ukraine/pages/sales-grid.css'
@@ -610,11 +611,29 @@ export function SalesOnlineShopPage() {
   }
 
   return (
-    <Stack className="sales-ukraine-page" gap="lg">
+    <Stack className="sales-online-shop-page console-table-page" gap={6}>
       <Card className="sales-ukraine-card" withBorder radius="md" padding={0}>
         <Stack className="sales-ukraine-content" gap={0}>
           <div className="sales-filter-bar">
             <div className="sales-filter-row sales-online-filter-row">
+              <div className="app-filter-date-range">
+                <TextInput
+                  className="sales-filter-date"
+                  label={t('Від')}
+                  max={filterDraft.to || undefined}
+                  type="date"
+                  value={filterDraft.from}
+                  onChange={(event) => applyFilters({ ...filterDraft, from: event.currentTarget.value })}
+                />
+                <TextInput
+                  className="sales-filter-date"
+                  label={t('До')}
+                  min={filterDraft.from || undefined}
+                  type="date"
+                  value={filterDraft.to}
+                  onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
+                />
+              </div>
               <TextInput
                 className="sales-filter-search"
                 label={t('Пошук')}
@@ -622,22 +641,6 @@ export function SalesOnlineShopPage() {
                 placeholder={t('Товар або номер продажу')}
                 value={filterDraft.value}
                 onChange={(event) => applySearchValue(event.currentTarget.value)}
-              />
-              <TextInput
-                className="sales-filter-control"
-                label={t('З')}
-                max={filterDraft.to || undefined}
-                type="date"
-                value={filterDraft.from}
-                onChange={(event) => applyFilters({ ...filterDraft, from: event.currentTarget.value })}
-              />
-              <TextInput
-                className="sales-filter-control"
-                label={t('По')}
-                min={filterDraft.from || undefined}
-                type="date"
-                value={filterDraft.to}
-                onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
               />
               <Select
                 allowDeselect={false}
