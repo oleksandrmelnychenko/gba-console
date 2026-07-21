@@ -5,7 +5,6 @@ import {
   Badge,
   Card,
   Group,
-  MultiSelect,
   Popover,
   ScrollArea,
   Stack,
@@ -14,6 +13,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { AppModal } from "../../../shared/ui/AppModal"
+import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
 import { CircleAlert, FileDown, FileText, RotateCcw, Search } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { useDebouncedValue } from '@mantine/hooks'
@@ -346,17 +346,14 @@ function ProductHistoryPageView({ model }: { model: ReturnType<typeof useProduct
                 setDateTo(event.currentTarget.value)
               }}
             />
-            <MultiSelect
+            <CheckboxMultiSelect
               searchable
-              clearable
-              className="product-history-storage-filter"
               data={storageOptions}
               disabled={isLoadingStorages || storageOptions.length === 0}
               label={t('Склади')}
               maxDropdownHeight={320}
               placeholder={isLoadingStorages ? t('Завантаження') : t('Оберіть склади')}
               value={selectedStorageIds}
-              style={{ flex: '1 1 320px', minWidth: 260 }}
               onChange={(value) => {
                 setPage(1)
                 setSelectedStorageIds(value)
