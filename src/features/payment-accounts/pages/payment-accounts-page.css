@@ -69,6 +69,44 @@
   min-height: 0;
 }
 
+/* Body-only registry contract: keep rows equal and every cell on one line.
+   The selectors intentionally exclude table headers. */
+.payment-accounts-page__table .data-table-density-normal .data-table-row {
+  height: 45px;
+}
+
+.payment-accounts-page__table .data-table-density-compact .data-table-row {
+  height: 35px;
+}
+
+.payment-accounts-page__table .data-table-cell {
+  white-space: nowrap;
+}
+
+.payment-accounts-page__table .data-table-cell > * {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.payment-accounts-page__table .data-table-cell .mantine-Group-root {
+  flex-wrap: nowrap;
+  max-width: 100%;
+}
+
+.payment-accounts-page__table .data-table-cell .mantine-Text-root {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.payment-accounts-page__table .data-table-cell .mantine-Badge-root,
+.payment-accounts-page__table .data-table-cell .mantine-ActionIcon-root {
+  flex: 0 0 auto;
+}
+
 .payment-accounts-total-footer {
   border-top: 1px solid var(--mantine-color-gray-2);
   flex: 0 0 auto;

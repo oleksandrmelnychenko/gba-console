@@ -420,14 +420,14 @@ function usePaymentAccountColumns(onOpen: (account: PaymentAccount) => void): Da
                 aria-label={t('Редагувати')}
                 color="gray"
                 disabled={!account.NetUid}
-                size="sm"
+                size="md"
                 variant="subtle"
                 onClick={(event) => {
                   event.stopPropagation()
                   onOpen(account)
                 }}
               >
-                <Pencil size={16} />
+                <Pencil size={18} />
               </ActionIcon>
             </Tooltip>
           </PermissionGate>
