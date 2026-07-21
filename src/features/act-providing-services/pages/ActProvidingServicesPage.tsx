@@ -294,31 +294,29 @@ function ActProvidingServicesPageView({ model }: { model: ReturnType<typeof useA
       <div className="console-table-shell">
         <div className="app-filter-bar act-services-filter-bar">
           <div className="act-services-filter-row">
-            <div className="app-filter-field act-services-period-filter">
-              <span className="app-filter-label act-services-filter-label">{t('Період')}</span>
-              <div className="act-services-period-fields">
-                <TextInput
-                  className="act-services-date-input"
-                  aria-label={t('Від')}
-                  type="date"
-                  value={dateFrom}
-                  onChange={(event) => {
-                    setPage(1)
-                    setDateFrom(event.currentTarget.value)
-                  }}
-                />
-                <span className="act-services-period-separator" />
-                <TextInput
-                  className="act-services-date-input"
-                  aria-label={t('До')}
-                  type="date"
-                  value={dateTo}
-                  onChange={(event) => {
-                    setPage(1)
-                    setDateTo(event.currentTarget.value)
-                  }}
-                />
-              </div>
+            <div className="app-filter-date-range">
+              <TextInput
+                className="act-services-date-input"
+                label={t('Від')}
+                max={dateTo || undefined}
+                type="date"
+                value={dateFrom}
+                onChange={(event) => {
+                  setPage(1)
+                  setDateFrom(event.currentTarget.value)
+                }}
+              />
+              <TextInput
+                className="act-services-date-input"
+                label={t('До')}
+                min={dateFrom || undefined}
+                type="date"
+                value={dateTo}
+                onChange={(event) => {
+                  setPage(1)
+                  setDateTo(event.currentTarget.value)
+                }}
+              />
             </div>
 
             <TextInput
@@ -353,7 +351,7 @@ function ActProvidingServicesPageView({ model }: { model: ReturnType<typeof useA
               />
             </div>
           </div>
-          <div ref={setTableToolbarSlot} className="act-services-table-toolbar-slot" />
+          <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot act-services-table-toolbar-slot" />
         </div>
 
         {(error || filterError) && (
