@@ -19,8 +19,8 @@
   grid-template-columns:
     310px
     minmax(260px, 1fr)
-    minmax(220px, 300px)
-    minmax(180px, 220px)
+    var(--app-multi-select-width, 240px)
+    var(--app-multi-select-width, 240px)
     auto
     auto
     auto;
@@ -30,14 +30,6 @@
 
 .organisation-services-filter-bar .organisation-search-control {
   min-width: 260px;
-}
-
-.organisation-services-type-filter {
-  min-width: 220px;
-}
-
-.organisation-services-document-filter {
-  min-width: 180px;
 }
 
 .organisation-services-submit {

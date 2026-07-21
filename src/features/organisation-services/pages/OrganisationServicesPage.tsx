@@ -6,7 +6,6 @@ import {
   Button,
   Divider,
   Group,
-  MultiSelect,
   SimpleGrid,
   Stack,
   Text,
@@ -20,6 +19,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import {
@@ -522,8 +522,7 @@ function OrganisationServicesPageView({ model }: { model: OrganisationServicesPa
             onClear={clearOrganization}
             onSelect={selectOrganization}
           />
-          <MultiSelect
-            className="organisation-services-type-filter"
+          <CheckboxMultiSelect
             data={availableServiceOptions}
             disabled={!selectedOrganization}
             label={t('Типи послуг')}
@@ -532,14 +531,14 @@ function OrganisationServicesPageView({ model }: { model: OrganisationServicesPa
             value={selectedServiceTypes}
             onChange={updateSelectedServiceTypes}
           />
-          <MultiSelect
-            className="organisation-services-document-filter"
+          <CheckboxMultiSelect
             data={documentFilterOptions.map((option) => ({
               value: option.value,
               label: t(option.label),
             }))}
             label={t('Документи')}
             placeholder={t('Усі')}
+            searchable={false}
             value={documentFilters}
             onChange={(values) => setDocumentFilters(values.filter(isDocumentFilter))}
           />
