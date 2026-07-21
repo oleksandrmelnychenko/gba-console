@@ -36,7 +36,7 @@
     minmax(180px, 1fr)
     minmax(110px, 150px)
     minmax(130px, 170px)
-    minmax(150px, 190px)
+    var(--app-multi-select-width, 240px)
     minmax(170px, 210px)
     max-content
     auto
