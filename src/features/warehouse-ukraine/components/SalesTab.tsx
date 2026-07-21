@@ -356,12 +356,6 @@ export function SalesTab() {
     <Stack className="warehouse-ukraine-tab" gap={6}>
       <div className="warehouse-ukraine-shell console-table-shell">
         <div className="app-filter-bar warehouse-ukraine-filter-bar is-sales">
-          <TextInput
-            className="warehouse-ukraine-filter-input"
-            label={t('Пошук по товару')}
-            value={model.filterDraft.value}
-            onChange={(event) => model.setFilterDraft({ ...model.filterDraft, value: event.currentTarget.value })}
-          />
           <div className="app-filter-date-range">
             <TextInput
               className="warehouse-ukraine-filter-input"
@@ -380,6 +374,12 @@ export function SalesTab() {
               onChange={(event) => model.applyFilters({ ...model.filterDraft, to: event.currentTarget.value })}
             />
           </div>
+          <TextInput
+            className="warehouse-ukraine-filter-input"
+            label={t('Пошук по товару')}
+            value={model.filterDraft.value}
+            onChange={(event) => model.setFilterDraft({ ...model.filterDraft, value: event.currentTarget.value })}
+          />
           <div className="app-filter-actions warehouse-ukraine-filter-actions">
             <Tooltip label={t('Скинути')}>
               <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={model.resetFilters}>
@@ -397,7 +397,7 @@ export function SalesTab() {
               onRefresh={() => model.reload()}
             />
           </div>
-          <div ref={setTableToolbarSlot} className="warehouse-ukraine-table-toolbar-slot" />
+          <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot warehouse-ukraine-table-toolbar-slot" />
           <div className="warehouse-ukraine-command-actions">
             <Button
               color={CREATE_ACTION_COLOR}

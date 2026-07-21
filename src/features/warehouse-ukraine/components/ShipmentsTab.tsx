@@ -897,24 +897,6 @@ function AutoShipmentsPanel({ onCarriedOut }: AutoShipmentsPanelProps) {
     <Stack className="warehouse-ukraine-tab" gap={6}>
       <div className="warehouse-ukraine-shell console-table-shell">
         <div className="app-filter-bar warehouse-ukraine-filter-bar is-auto-shipments">
-            <Select
-              className="warehouse-ukraine-filter-input"
-              data={typeOptions}
-              label={t('Перевізники')}
-              placeholder={t('Перевізники')}
-              value={model.selectedTypeNetId}
-              w={220}
-              onChange={(value) => model.setSelectedTypeNetId(value)}
-            />
-            <Select
-              className="warehouse-ukraine-filter-input"
-              data={transporterOptions}
-              label={t('Перевізники')}
-              placeholder={t('Перевізники')}
-              value={model.selectedTransporterNetId}
-              w={220}
-              onChange={(value) => model.setSelectedTransporterNetId(value)}
-            />
             <div className="app-filter-date-range">
               <TextInput
                 className="warehouse-ukraine-filter-input"
@@ -933,6 +915,24 @@ function AutoShipmentsPanel({ onCarriedOut }: AutoShipmentsPanelProps) {
                 onChange={(event) => model.setFilterDraft({ ...model.filterDraft, to: event.currentTarget.value })}
               />
             </div>
+            <Select
+              className="warehouse-ukraine-filter-input"
+              data={typeOptions}
+              label={t('Перевізники')}
+              placeholder={t('Перевізники')}
+              value={model.selectedTypeNetId}
+              w={220}
+              onChange={(value) => model.setSelectedTypeNetId(value)}
+            />
+            <Select
+              className="warehouse-ukraine-filter-input"
+              data={transporterOptions}
+              label={t('Перевізники')}
+              placeholder={t('Перевізники')}
+              value={model.selectedTransporterNetId}
+              w={220}
+              onChange={(value) => model.setSelectedTransporterNetId(value)}
+            />
             <div className="app-filter-actions warehouse-ukraine-filter-actions">
               <Tooltip label={t('Скинути')}>
                 <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={model.resetFilters}>
@@ -952,7 +952,7 @@ function AutoShipmentsPanel({ onCarriedOut }: AutoShipmentsPanelProps) {
                 </ActionIcon>
               </Tooltip>
             </div>
-            <div ref={setTableToolbarSlot} className="warehouse-ukraine-table-toolbar-slot" />
+            <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot warehouse-ukraine-table-toolbar-slot" />
             <div className="warehouse-ukraine-command-actions">
               {hasShipmentList && (
                 <Badge className={model.shipmentList.IsSent ? 'app-role-pill is-green' : 'app-role-pill is-gray'} variant="light">
@@ -1775,24 +1775,6 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
     <Stack className="warehouse-ukraine-tab" gap={6}>
       <div className="warehouse-ukraine-shell console-table-shell">
         <div className="app-filter-bar warehouse-ukraine-filter-bar is-all-shipments">
-            <Select
-              className="warehouse-ukraine-filter-input"
-              data={typeOptions}
-              label={t('Тип перевізника')}
-              placeholder={t('Тип перевізника')}
-              value={selectedTypeNetId}
-              w={220}
-              onChange={changeTransporterType}
-            />
-            <Select
-              className="warehouse-ukraine-filter-input"
-              data={transporterOptions}
-              label={t('Перевізник')}
-              placeholder={t('Перевізник')}
-              value={selectedTransporterNetId}
-              w={240}
-              onChange={changeTransporter}
-            />
             <div className="app-filter-date-range">
               <TextInput
                 className="warehouse-ukraine-filter-input"
@@ -1811,6 +1793,24 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
                 onChange={(event) => updateListFilter({ ...filterDraft, to: event.currentTarget.value })}
               />
             </div>
+            <Select
+              className="warehouse-ukraine-filter-input"
+              data={typeOptions}
+              label={t('Тип перевізника')}
+              placeholder={t('Тип перевізника')}
+              value={selectedTypeNetId}
+              w={220}
+              onChange={changeTransporterType}
+            />
+            <Select
+              className="warehouse-ukraine-filter-input"
+              data={transporterOptions}
+              label={t('Перевізник')}
+              placeholder={t('Перевізник')}
+              value={selectedTransporterNetId}
+              w={240}
+              onChange={changeTransporter}
+            />
             <div className="app-filter-actions warehouse-ukraine-filter-actions">
               <Tooltip label={t('Скинути')}>
                 <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetListFilters}>
@@ -1828,7 +1828,7 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
                 onRefresh={refreshList}
               />
             </div>
-            <div ref={setTableToolbarSlot} className="warehouse-ukraine-table-toolbar-slot" />
+            <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot warehouse-ukraine-table-toolbar-slot" />
             <div className="warehouse-ukraine-command-actions">
               <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<Plus size={18} />} onClick={onCreate}>
                 {t('Створити')}

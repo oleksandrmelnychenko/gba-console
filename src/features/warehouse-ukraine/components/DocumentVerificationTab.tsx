@@ -373,13 +373,6 @@ export function DocumentVerificationTab() {
     <Stack className="warehouse-ukraine-tab" gap={6}>
       <div className="warehouse-ukraine-shell console-table-shell">
         <div className="app-filter-bar warehouse-ukraine-filter-bar is-verification">
-            <CheckboxMultiSelect
-              data={model.storageOptions}
-              label={t('Організація')}
-              value={model.selectedStorageIds}
-              w={320}
-              onChange={model.setSelectedStorageIds}
-            />
             <div className="app-filter-date-range">
               <TextInput
                 className="warehouse-ukraine-filter-input"
@@ -398,6 +391,13 @@ export function DocumentVerificationTab() {
                 onChange={(event) => model.applyFilters({ ...model.filterDraft, to: event.currentTarget.value })}
               />
             </div>
+            <CheckboxMultiSelect
+              data={model.storageOptions}
+              label={t('Організація')}
+              value={model.selectedStorageIds}
+              w={320}
+              onChange={model.setSelectedStorageIds}
+            />
             <Text c="dimmed" size="sm">
               {`${t('На дату')} ${new Date().toLocaleDateString('uk-UA')} 6:00`}
             </Text>
@@ -429,7 +429,7 @@ export function DocumentVerificationTab() {
                 onRefresh={() => model.reload()}
               />
             </div>
-            <div ref={setTableToolbarSlot} className="warehouse-ukraine-table-toolbar-slot" />
+            <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot warehouse-ukraine-table-toolbar-slot" />
           </div>
 
           {(model.error || model.filterError || model.storageFilterError || model.storagesError) && (

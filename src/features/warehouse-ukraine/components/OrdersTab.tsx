@@ -269,7 +269,7 @@ export function OrdersTab() {
                 onRefresh={() => model.reload()}
               />
             </div>
-            <div ref={setTableToolbarSlot} className="warehouse-ukraine-table-toolbar-slot" />
+            <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot warehouse-ukraine-table-toolbar-slot" />
           </div>
 
           {(model.error || model.filterError) && (

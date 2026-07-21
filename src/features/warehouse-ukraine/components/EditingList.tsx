@@ -282,7 +282,7 @@ export function EditingList({ kind, layoutVersion, loader, onLoaded, onProcessed
               onRefresh={() => reload()}
             />
           </div>
-          <div ref={setTableToolbarSlot} className="warehouse-ukraine-table-toolbar-slot" />
+          <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot warehouse-ukraine-table-toolbar-slot" />
         </div>
 
         {(error || filterError) && (
