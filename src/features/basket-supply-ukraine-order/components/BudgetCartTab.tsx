@@ -196,18 +196,20 @@ export function BudgetCartTab() {
   const isBudgetValid = typeof budgetInput === 'number' && Number.isFinite(budgetInput) && budgetInput > 0
 
   return (
-    <Stack gap="lg">
+    <Stack className="budget-cart-tab" gap={6}>
       <Card className="app-data-card" padding={0} radius="md" withBorder>
         <div className="app-filter-bar budget-cart-filter-bar">
           <Group align="flex-end" gap={10} wrap="nowrap" className="budget-cart-filter-row">
-            <Stack className="budget-cart-filter-note" gap={2}>
-              <Text c="gray.8" fw={600} size="sm">
-                {t('AI підбирає товари до закупівлі в межах заданого ліміту в EUR')}
-              </Text>
-              <Text c="gray.9" size="xs">
-                {t('Кандидати відбираються на основі дефіциту, прогнозу попиту, залишків і правил закупівлі')}
-              </Text>
-            </Stack>
+            <Tooltip label={t('На яку дату рахувати прогноз і залишки')}>
+              <TextInput
+                label={t('Дата зрізу')}
+                size="sm"
+                type="date"
+                value={asOfDate}
+                w={160}
+                onChange={(event) => setAsOfDate(event.currentTarget.value)}
+              />
+            </Tooltip>
             <Tooltip label={t('Ліміт закупівлі')}>
               <NumberInput
                 allowNegative={false}
@@ -222,18 +224,8 @@ export function BudgetCartTab() {
                 w={180}
               />
             </Tooltip>
-            <Tooltip label={t('На яку дату рахувати прогноз і залишки')}>
-              <TextInput
-                label={t('Дата зрізу')}
-                size="sm"
-                type="date"
-                value={asOfDate}
-                w={160}
-                onChange={(event) => setAsOfDate(event.currentTarget.value)}
-              />
-            </Tooltip>
             <Stack className="app-filter-field" gap={4}>
-              <Text className="app-filter-label" c="gray.6" fw={600} size="xs">
+              <Text className="app-filter-label" fw={600} size="xs">
                 {t('Метод')}
               </Text>
               <SegmentedControl
@@ -245,6 +237,14 @@ export function BudgetCartTab() {
                 onChange={(value) => setMethod(value as CartOptimizeMethod)}
                 value={method}
               />
+            </Stack>
+            <Stack className="budget-cart-filter-note" gap={2}>
+              <Text c="gray.8" fw={600} size="sm">
+                {t('AI підбирає товари до закупівлі в межах заданого ліміту в EUR')}
+              </Text>
+              <Text c="gray.9" size="xs">
+                {t('Кандидати відбираються на основі дефіциту, прогнозу попиту, залишків і правил закупівлі')}
+              </Text>
             </Stack>
             <div className="app-filter-actions budget-cart-filter-actions">
               {hasRequested && (

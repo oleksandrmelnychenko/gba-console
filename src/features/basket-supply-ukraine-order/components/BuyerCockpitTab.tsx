@@ -759,21 +759,6 @@ export function BuyerCockpitTab() {
     [draftQty, editStatus, feedbackDecision, feedbackPending, saveTerms, submitEditFeedback, submitFeedback, termsDraft, termsStatus, t],
   )
 
-  const toolbarRight = (
-    <Tooltip label={t('Оновити')}>
-      <ActionIcon
-        aria-label={t('Оновити')}
-        disabled={selectedProducerId === null}
-        loading={isLoading}
-        size="sm"
-        variant="subtle"
-        onClick={() => reload()}
-      >
-        <RefreshCw size={16} />
-      </ActionIcon>
-    </Tooltip>
-  )
-
   const hasSelection = selectedProducerId !== null
   const hasPlan = Boolean(plan) && !isLoading
   const hasItems = sortedItems.length > 0
@@ -794,6 +779,20 @@ export function BuyerCockpitTab() {
           w={360}
           onChange={setSelectedProducerId}
         />
+        <div className="app-filter-actions">
+          <Tooltip label={t('Оновити')}>
+            <ActionIcon
+              aria-label={t('Оновити')}
+              disabled={selectedProducerId === null}
+              loading={isLoading}
+              size={34}
+              variant="light"
+              onClick={() => reload()}
+            >
+              <RefreshCw size={17} />
+            </ActionIcon>
+          </Tooltip>
+        </div>
       </div>
       <Stack gap="md" p="md">
       {producersError && (
@@ -943,7 +942,6 @@ export function BuyerCockpitTab() {
               minWidth={1510}
               rowClassName={(item) => (item.product_id === focusedProductId ? 'basket-supply-row-ai-focus' : undefined)}
               tableId="basket-supply-ukraine-order-buyer-cockpit"
-              toolbarRight={toolbarRight}
             />
 
             <Group justify="flex-end">

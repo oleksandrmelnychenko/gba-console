@@ -141,6 +141,7 @@ export function ProcureDashboardTab() {
   function applyFilters() {
     setAppliedProducerId(producerId)
     setAppliedTopN(typeof topN === 'number' && topN > 0 ? topN : 15)
+    reload()
   }
 
   const urgencyData = useMemo<UrgencySliceInput[]>(
@@ -210,20 +211,6 @@ export function ProcureDashboardTab() {
     [t],
   )
 
-  const toolbarRight = (
-    <Tooltip label={t('Оновити')}>
-      <ActionIcon
-        aria-label={t('Оновити')}
-        loading={isLoading}
-        size="sm"
-        variant="subtle"
-        onClick={() => reload()}
-      >
-        <RefreshCw size={16} />
-      </ActionIcon>
-    </Tooltip>
-  )
-
   return (
     <Stack gap={6}>
       <Card className="app-data-card" padding={0} radius="md" withBorder>
@@ -253,19 +240,19 @@ export function ProcureDashboardTab() {
           value={topN}
           w={140}
         />
-        <Group gap="xs">
+        <div className="app-filter-actions">
           <Tooltip label={t('Застосувати')}>
             <ActionIcon
               aria-label={t('Застосувати')}
               loading={isLoading}
-              size="lg"
+              size={34}
               variant="light"
               onClick={applyFilters}
             >
               <RefreshCw size={18} />
             </ActionIcon>
           </Tooltip>
-        </Group>
+        </div>
       </div>
       <Stack gap="md" p="md">
 
@@ -364,7 +351,6 @@ export function ProcureDashboardTab() {
             maxHeight={520}
             minWidth={720}
             tableId="basket-supply-ukraine-order-procure-top-items"
-            toolbarRight={toolbarRight}
           />
         </Stack>
       </Card>
