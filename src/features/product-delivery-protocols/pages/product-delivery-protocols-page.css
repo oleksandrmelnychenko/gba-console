@@ -25,7 +25,7 @@
     auto
     auto
     auto;
-  min-width: max-content;
+  min-width: 0;
   overflow-x: auto;
 }
 
