@@ -2,6 +2,9 @@ import { Checkbox, Combobox, Group, Input, InputBase, ScrollArea, useCombobox } 
 import { Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useI18n } from '../i18n/useI18n'
+import './checkbox-multi-select.css'
+
+export const CHECKBOX_MULTI_SELECT_WIDTH = 'var(--app-multi-select-width, 240px)'
 
 type CheckboxMultiSelectOption = {
   value: string
@@ -9,9 +12,8 @@ type CheckboxMultiSelectOption = {
 }
 
 /**
- * Multi-select rendered as a combobox with a "Вибрано: N" trigger and a
- * checkbox list (plus an "Всі" select-all row) — replaces the pill-style
- * Mantine MultiSelect where a compact count summary is preferred.
+ * Fixed-width multi-select: placeholder for zero values, the option label for
+ * one value, and a compact selected-count summary for multiple values.
  */
 export function CheckboxMultiSelect({
   data,
@@ -19,7 +21,9 @@ export function CheckboxMultiSelect({
   onChange,
   label,
   placeholder,
-  w,
+  className,
+  limit,
+  maxDropdownHeight = 260,
   searchable = true,
   disabled,
 }: {
@@ -28,7 +32,9 @@ export function CheckboxMultiSelect({
   onChange: (value: string[]) => void
   label?: string
   placeholder?: string
-  w?: number | string
+  className?: string
+  limit?: number
+  maxDropdownHeight?: number
   searchable?: boolean
   disabled?: boolean
 }) {
@@ -37,12 +43,18 @@ export function CheckboxMultiSelect({
   const combobox = useCombobox({ onDropdownClose: () => setSearch('') })
 
   const allValues = useMemo(() => data.map((item) => item.value), [data])
-  const allSelected = allValues.length > 0 && value.length === allValues.length
+  const selectedValues = useMemo(() => new Set(value), [value])
+  const allSelected = allValues.length > 0 && allValues.every((optionValue) => selectedValues.has(optionValue))
+  const singleSelectedLabel = value.length === 1 ? data.find((item) => item.value === value[0])?.label : undefined
+  const summary = value.length === 1
+    ? singleSelectedLabel || `${t('Вибрано')}: 1`
+    : `${t('Вибрано')}: ${value.length}`
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase()
 
     return query ? data.filter((item) => item.label.toLowerCase().includes(query)) : data
   }, [data, search])
+  const visibleOptions = typeof limit === 'number' ? filtered.slice(0, Math.max(0, limit)) : filtered
 
   function toggle(optionValue: string) {
     onChange(value.includes(optionValue) ? value.filter((item) => item !== optionValue) : [...value, optionValue])
@@ -63,17 +75,25 @@ export function CheckboxMultiSelect({
     >
       <Combobox.Target>
         <InputBase
+          className={className ? `checkbox-multi-select ${className}` : 'checkbox-multi-select'}
           component="button"
           type="button"
           pointer
           disabled={disabled}
           label={label}
-          w={w}
+          maw={CHECKBOX_MULTI_SELECT_WIDTH}
+          miw={CHECKBOX_MULTI_SELECT_WIDTH}
+          style={{ flex: `0 0 ${CHECKBOX_MULTI_SELECT_WIDTH}` }}
+          w={CHECKBOX_MULTI_SELECT_WIDTH}
           rightSection={<Combobox.Chevron />}
           rightSectionPointerEvents="none"
           onClick={() => combobox.toggleDropdown()}
         >
-          {value.length ? `${t('Вибрано')}: ${value.length}` : <Input.Placeholder>{placeholder}</Input.Placeholder>}
+          {value.length ? (
+            <span className="checkbox-multi-select__summary" title={summary}>{summary}</span>
+          ) : (
+            <Input.Placeholder>{placeholder}</Input.Placeholder>
+          )}
         </InputBase>
       </Combobox.Target>
 
@@ -87,7 +107,7 @@ export function CheckboxMultiSelect({
           />
         )}
         <Combobox.Options>
-          <ScrollArea.Autosize mah={260} type="scroll">
+          <ScrollArea.Autosize mah={maxDropdownHeight} type="scroll">
             {!search.trim() && (
               <Combobox.Option value="__all__" active={allSelected}>
                 <Group gap="sm" wrap="nowrap">
@@ -96,10 +116,10 @@ export function CheckboxMultiSelect({
                 </Group>
               </Combobox.Option>
             )}
-            {filtered.map((item) => (
+            {visibleOptions.map((item) => (
               <Combobox.Option key={item.value} value={item.value} active={value.includes(item.value)}>
                 <Group gap="sm" wrap="nowrap">
-                  <Checkbox checked={value.includes(item.value)} readOnly size="xs" tabIndex={-1} aria-hidden />
+                  <Checkbox checked={selectedValues.has(item.value)} readOnly size="xs" tabIndex={-1} aria-hidden />
                   <span>{item.label}</span>
                 </Group>
               </Combobox.Option>

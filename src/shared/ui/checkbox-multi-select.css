@@ -1,0 +1,11 @@
+.checkbox-multi-select .mantine-Input-input {
+  overflow: hidden;
+}
+
+.checkbox-multi-select__summary {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

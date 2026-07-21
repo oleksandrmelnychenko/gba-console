@@ -14,6 +14,7 @@
   --app-filter-control-height: 36px;
   --app-filter-label-gap: 4px;
   --app-filter-label-height: 17px;
+  --app-multi-select-width: 240px;
 }
 
 /* Mantine <Card padding={0}> that hosts a flush strip — clip square strip
@@ -259,34 +260,4 @@
 .console-table-command-bar .mantine-Input-input:focus-within {
   border-color: var(--app-focus-border);
   box-shadow: var(--app-focus-ring);
-}
-
-/* MultiSelect у фільтр-барі: контрол тримає 36px, вибрані пілси скроляться
-   в ОДИН рядок замість роздування бару на пів екрана. */
-.app-filter-bar .mantine-MultiSelect-input,
-.sales-filter-bar .mantine-MultiSelect-input,
-.console-table-command-bar .mantine-MultiSelect-input {
-  align-items: center;
-  height: var(--app-filter-control-height, 36px);
-  max-height: var(--app-filter-control-height, 36px);
-  overflow: hidden;
-  padding-bottom: 0;
-  /* Місце під X + шеврон: пілси не заїжджають під праву секцію контрола. */
-  padding-inline-end: 52px;
-  padding-top: 0;
-}
-
-.app-filter-bar .mantine-MultiSelect-pillsList,
-.sales-filter-bar .mantine-MultiSelect-pillsList,
-.console-table-command-bar .mantine-MultiSelect-pillsList {
-  flex-wrap: nowrap;
-  max-width: 100%;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.app-filter-bar .mantine-MultiSelect-pill,
-.sales-filter-bar .mantine-MultiSelect-pill,
-.console-table-command-bar .mantine-MultiSelect-pill {
-  flex: 0 0 auto;
 }
