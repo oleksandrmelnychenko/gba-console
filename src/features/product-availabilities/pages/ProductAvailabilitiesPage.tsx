@@ -14,7 +14,7 @@ import { useDebouncedValue } from '@mantine/hooks'
 import { AppModal } from "../../../shared/ui/AppModal"
 import { CircleAlert, FileDown, FileText, RotateCcw, Search } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
-import { useCallback, useEffect, useMemo, useReducer } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -25,8 +25,6 @@ import {
   openPendingExportDocumentWindow,
 } from '../../../shared/documents/openExportDocument'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
-import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE, PAGINATOR_PAGE_SIZE_OPTIONS } from '../../../shared/ui/paginator/paginatorPageSize'
@@ -80,10 +78,6 @@ function useProductAvailabilitiesPageModel() {
   const [isLoadingStorages, setLoadingStorages] = useValueState(true)
   const [isExporting, setExporting] = useValueState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
-  const { density, toggleDensity } = useDataTableDensity(
-    'product-availabilities',
-    PRODUCT_AVAILABILITIES_TABLE_DEFAULT_LAYOUT.density,
-  )
   const offset = (page - 1) * pageSize
   const filterError = getFilterError(dateFrom, dateTo)
   const storageOptions = useMemo(() => buildStorageOptions(storages), [storages])
@@ -273,7 +267,6 @@ function useProductAvailabilitiesPageModel() {
     columns,
     dateFrom,
     dateTo,
-    density,
     downloadDocument,
     downloadModalOpened,
     error,
@@ -297,7 +290,6 @@ function useProductAvailabilitiesPageModel() {
     setDownloadModalOpened,
     setPage,
     setSelectedStorageNetId,
-    toggleDensity,
     updateSearch,
   }
 }
@@ -310,13 +302,13 @@ export function ProductAvailabilitiesPage() {
 
 function ProductAvailabilitiesPageView({ model }: { model: ReturnType<typeof useProductAvailabilitiesPageModel> }) {
   const { t } = useI18n()
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const {
     availabilities,
     changePageSize,
     columns,
     dateFrom,
     dateTo,
-    density,
     downloadDocument,
     downloadModalOpened,
     error,
@@ -340,7 +332,6 @@ function ProductAvailabilitiesPageView({ model }: { model: ReturnType<typeof use
     setDownloadModalOpened,
     setPage,
     setSelectedStorageNetId,
-    toggleDensity,
     updateSearch,
   } = model
 
@@ -349,6 +340,26 @@ function ProductAvailabilitiesPageView({ model }: { model: ReturnType<typeof use
       <Card className="app-data-card product-availabilities-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar product-availabilities-filter-bar">
           <Group align="end" gap={10} wrap="nowrap" className="product-availabilities-filter-row">
+            <div className="app-filter-date-range">
+              <TextInput
+                label={t('Від')}
+                type="date"
+                value={dateFrom}
+                onChange={(event) => {
+                  setPage(1)
+                  setDateFrom(event.currentTarget.value)
+                }}
+              />
+              <TextInput
+                label={t('До')}
+                type="date"
+                value={dateTo}
+                onChange={(event) => {
+                  setPage(1)
+                  setDateTo(event.currentTarget.value)
+                }}
+              />
+            </div>
             <Select
               searchable
               allowDeselect={false}
@@ -361,26 +372,6 @@ function ProductAvailabilitiesPageView({ model }: { model: ReturnType<typeof use
               onChange={(value) => {
                 setPage(1)
                 setSelectedStorageNetId(value || '')
-              }}
-            />
-            <TextInput
-              label={t('З')}
-              type="date"
-              value={dateFrom}
-              w={150}
-              onChange={(event) => {
-                setPage(1)
-                setDateFrom(event.currentTarget.value)
-              }}
-            />
-            <TextInput
-              label={t('По')}
-              type="date"
-              value={dateTo}
-              w={150}
-              onChange={(event) => {
-                setPage(1)
-                setDateTo(event.currentTarget.value)
               }}
             />
             <TextInput
@@ -415,7 +406,6 @@ function ProductAvailabilitiesPageView({ model }: { model: ReturnType<typeof use
                   <FileDown size={18} />
                 </ActionIcon>
               </Tooltip>
-              <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
               <Paginator
                 isLoading={isLoading || isLoadingStorages}
                 page={page}
@@ -426,6 +416,7 @@ function ProductAvailabilitiesPageView({ model }: { model: ReturnType<typeof use
                 onRefresh={reload}
               />
             </div>
+            <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
           </Group>
         </div>
 
@@ -445,7 +436,6 @@ function ProductAvailabilitiesPageView({ model }: { model: ReturnType<typeof use
             columns={columns}
             data={availabilities}
             defaultLayout={PRODUCT_AVAILABILITIES_TABLE_DEFAULT_LAYOUT}
-            density={density}
             emptyText={t('Доступність партій не знайдено')}
             getRowId={(availability, index) =>
               String(availability.Id || `${availability.ProductNetId || 'product'}-${availability.StorageNetId || 'storage'}-${index}`)
@@ -455,8 +445,10 @@ function ProductAvailabilitiesPageView({ model }: { model: ReturnType<typeof use
             layoutVersion="product-availabilities-table-1"
             loadingText={t('Завантаження доступності партій')}
             minWidth={1680}
+            showLayoutControls
             tableId="product-availabilities"
             toolbarLeft={toolbarLeft}
+            toolbarPortalTarget={tableToolbarSlot}
           />
         </div>
       </Card>

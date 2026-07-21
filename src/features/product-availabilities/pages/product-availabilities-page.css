@@ -1,9 +1,9 @@
 .product-availabilities-page {
   box-sizing: border-box;
-  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 24px);
+  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px);
   min-height: 0;
   overflow: hidden;
-  padding: 4px 4px 0;
+  padding: 6px 4px 0;
 }
 
 .product-availabilities-card {
