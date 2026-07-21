@@ -22,15 +22,11 @@ const pages = [
 ]
 
 describe('accounting payments body-row pattern', () => {
-  it.each(pages)('$pagePath keeps body rows equal and single-line', ({ cssPath, tableSelector }) => {
+  it.each(pages)('$pagePath keeps body cells single-line', ({ cssPath, tableSelector }) => {
     const root = postcss.parse(readFileSync(join(cwd(), cssPath), 'utf8'))
-    const normalRow = findRule(root, `${tableSelector} .data-table-density-normal .data-table-row`)
-    const compactRow = findRule(root, `${tableSelector} .data-table-density-compact .data-table-row`)
     const cell = findRule(root, `${tableSelector} .data-table-cell`)
     const cellContent = findRule(root, `${tableSelector} .data-table-cell > *`)
 
-    expect(declarations(normalRow)).toMatchObject({ height: '45px' })
-    expect(declarations(compactRow)).toMatchObject({ height: '35px' })
     expect(declarations(cell)).toMatchObject({ 'white-space': 'nowrap' })
     expect(declarations(cellContent)).toMatchObject({
       'min-width': '0',

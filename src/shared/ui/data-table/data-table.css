@@ -3,6 +3,16 @@
   min-width: 0;
 }
 
+/* Row geometry belongs to the nearest DataTable root. Nested tables can use a
+   different density without inheriting the outer table's body-row height. */
+.data-table-density-compact {
+  --data-table-row-height: 35px;
+}
+
+.data-table-density-normal {
+  --data-table-row-height: 45px;
+}
+
 .data-table-toolbar {
   align-items: center;
   justify-content: space-between;
@@ -373,6 +383,7 @@
 .data-table-row {
   --data-table-cell-bg: var(--mantine-color-white);
   cursor: pointer;
+  height: var(--data-table-row-height);
 }
 
 .data-table-row.placement-row-applied {
