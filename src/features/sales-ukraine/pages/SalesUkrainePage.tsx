@@ -846,22 +846,6 @@ export function SalesUkrainePage() {
     return query ? organizationOptions.filter((option) => option.label.toLowerCase().includes(query)) : organizationOptions
   }, [organisationQuery, organizationOptions])
 
-  const dateRangeLabel = useMemo(() => {
-    if (filterDraft.from && filterDraft.to) {
-      return `${formatDateRangeFilterValue(filterDraft.from)} - ${formatDateRangeFilterValue(filterDraft.to)}`
-    }
-
-    if (filterDraft.from) {
-      return `${t('З')} ${formatDateRangeFilterValue(filterDraft.from)}`
-    }
-
-    if (filterDraft.to) {
-      return `${t('По')} ${formatDateRangeFilterValue(filterDraft.to)}`
-    }
-
-    return t('Період')
-  }, [filterDraft.from, filterDraft.to, t])
-
   const toolbarRight = useMemo(
     () => (
       <Paginator
@@ -886,6 +870,26 @@ export function SalesUkrainePage() {
         <Stack className="sales-ukraine-content" gap={0}>
           <div className="sales-filter-bar">
             <div className="sales-filter-row has-create">
+              <div className="app-filter-date-range">
+                <TextInput
+                  className="sales-filter-date"
+                  label={t('Від')}
+                  max={filterDraft.to || undefined}
+                  size="sm"
+                  type="date"
+                  value={filterDraft.from}
+                  onChange={(event) => applyFilters({ ...filterDraft, from: event.currentTarget.value })}
+                />
+                <TextInput
+                  className="sales-filter-date"
+                  label={t('До')}
+                  min={filterDraft.from || undefined}
+                  size="sm"
+                  type="date"
+                  value={filterDraft.to}
+                  onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
+                />
+              </div>
               <TextInput
                 className="sales-filter-search"
                 label={t('Пошук')}
@@ -895,66 +899,6 @@ export function SalesUkrainePage() {
                 value={filterDraft.value}
                 onChange={(event) => applySearchValue(event.currentTarget.value)}
               />
-              <div className="app-filter-field sales-filter-period-wrap">
-                <span className="app-filter-label sales-filter-label">{t('Період')}</span>
-                <Popover position="bottom-start" shadow="md" width={340} withinPortal>
-                  <Popover.Target>
-                    <Button
-                      className="sales-filter-period"
-                      color="gray"
-                      justify="space-between"
-                      rightSection={<ChevronDown size={14} />}
-                      size="sm"
-                      variant="default"
-                    >
-                      <span className="sales-filter-period-value">{dateRangeLabel}</span>
-                  </Button>
-                </Popover.Target>
-                <Popover.Dropdown className="sales-filter-period-menu">
-                  <div className="sales-filter-period-panel">
-                    <div className="sales-filter-period-range">
-                      <TextInput
-                        className="sales-filter-period-field"
-                        label={t('З')}
-                        max={filterDraft.to || undefined}
-                        size="sm"
-                        type="date"
-                        value={filterDraft.from}
-                        onChange={(event) => applyFilters({ ...filterDraft, from: event.currentTarget.value })}
-                      />
-                      <span className="sales-filter-period-separator" aria-hidden="true" />
-                      <TextInput
-                        className="sales-filter-period-field"
-                        label={t('По')}
-                        min={filterDraft.from || undefined}
-                        size="sm"
-                        type="date"
-                        value={filterDraft.to}
-                        onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
-                      />
-                    </div>
-                    <div className="sales-filter-period-presets">
-                      <Button
-                        color="gray"
-                        size="xs"
-                        variant="subtle"
-                        onClick={() => applyFilters({ ...filterDraft, from: today, to: today })}
-                      >
-                        {t('Сьогодні')}
-                      </Button>
-                      <Button
-                        color="gray"
-                        size="xs"
-                        variant="subtle"
-                        onClick={() => applyFilters({ ...filterDraft, from: '', to: '' })}
-                      >
-                        {t('Очистити')}
-                      </Button>
-                    </div>
-                  </div>
-                </Popover.Dropdown>
-                </Popover>
-              </div>
               <Select
                 allowDeselect={false}
                 className="sales-filter-control"
@@ -1060,7 +1004,7 @@ export function SalesUkrainePage() {
                 size="sm"
                 onChange={(event) => applyFilters({ ...filterDraft, forEcommerce: event.currentTarget.checked })}
               />
-              <div className="sales-filter-actions">
+              <div className="app-filter-actions sales-filter-actions">
                 <Tooltip label={t('Скинути')}>
                   <ActionIcon
                     aria-label={t('Скинути')}
@@ -1073,7 +1017,7 @@ export function SalesUkrainePage() {
                     <RotateCcw size={17} />
                   </ActionIcon>
                 </Tooltip>
-                <Box className="sales-filter-toolbar">{toolbarRight}</Box>
+                {toolbarRight}
               </div>
               <Button
                 className="sales-filter-create"
@@ -2461,16 +2405,6 @@ function formatDate(value: Date | null): string {
 
 function formatTime(value: Date | null): string {
   return value ? rowTimeFormatter.format(value) : ''
-}
-
-function formatDateRangeFilterValue(value: string): string {
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value)
-
-  if (!match) {
-    return value
-  }
-
-  return `${match[3]}.${match[2]}.${match[1].slice(2)}`
 }
 
 function formatAmount(value: number | null): string {

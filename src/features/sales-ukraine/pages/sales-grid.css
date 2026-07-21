@@ -22,32 +22,38 @@
    reference-specific and stays here. */
 .sales-filter-bar {
   flex: 0 0 auto;
+  min-width: 0;
+  overflow-x: auto;
 }
 
 .sales-filter-row {
   align-items: end;
   display: grid;
   gap: 10px;
-  /* The actions column (auto) soaks up all slack; the trailing create-button
-     column is max-content so the button keeps its intrinsic width flush right. */
+  min-width: max-content;
   grid-template-columns:
-    minmax(136px, 1.1fr)
-    132px
-    minmax(96px, 0.68fr)
-    minmax(98px, 0.7fr)
-    minmax(118px, 0.88fr)
-    minmax(132px, 1fr)
+    310px
+    minmax(180px, 1fr)
+    minmax(110px, 150px)
+    minmax(130px, 170px)
+    minmax(150px, 190px)
+    minmax(170px, 210px)
     max-content
-    max-content
+    auto
     max-content;
 }
 
 .sales-online-filter-row {
-  grid-template-columns: minmax(190px, 260px) minmax(126px, 148px) minmax(126px, 148px) minmax(150px, 180px) minmax(150px, 180px) auto;
+  grid-template-columns: 310px minmax(220px, 1fr) minmax(150px, 180px) minmax(170px, 200px) auto;
+}
+
+.sales-online-shop-page {
+  flex: 1 1 auto;
 }
 
 .sales-filter-search,
 .sales-filter-control,
+.sales-filter-date,
 .sales-filter-period-wrap,
 .sales-filter-period {
   min-width: 0;
@@ -166,7 +172,7 @@
 .sales-filter-actions {
   align-items: center;
   display: flex;
-  gap: 6px;
+  gap: 10px;
   justify-content: flex-end;
   min-width: 0;
 }
@@ -180,28 +186,6 @@
   padding-left: 10px;
   padding-right: 10px;
   white-space: nowrap;
-}
-
-.sales-filter-toolbar {
-  min-width: 0;
-}
-
-.sales-filter-toolbar .app-paginator {
-  gap: 1px;
-  padding: 1px;
-}
-
-.sales-filter-toolbar .app-paginator .mantine-Select-root {
-  width: 60px !important;
-}
-
-.sales-filter-toolbar .app-paginator-label {
-  padding: 0 2px;
-}
-
-.sales-filter-toolbar .app-paginator .mantine-ActionIcon-root {
-  min-width: 26px;
-  width: 26px;
 }
 
 .sales-filter-dropdown {
@@ -529,70 +513,6 @@
     118px
     104px
     150px;
-}
-
-@media (max-width: 1180px) {
-  .sales-filter-row {
-    grid-template-columns: minmax(170px, 240px) 176px repeat(3, minmax(142px, 1fr)) auto;
-  }
-
-  .sales-filter-client {
-    grid-column: span 2;
-  }
-
-  /* Row 2 next to the client: ecommerce, then the actions cluster over the
-     two 1fr tracks, create button flush right in the trailing auto track. */
-  .sales-filter-row.has-create .sales-filter-actions {
-    grid-column: 4 / 6;
-  }
-
-  .sales-filter-row.has-create .sales-filter-create {
-    grid-column: 6;
-    justify-self: end;
-  }
-}
-
-@media (max-width: 980px) {
-  .sales-filter-actions {
-    justify-content: space-between;
-  }
-
-  .sales-filter-row {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .sales-filter-client {
-    grid-column: auto;
-  }
-
-  .sales-filter-row.has-create .sales-filter-actions {
-    grid-column: auto;
-  }
-
-  .sales-filter-row.has-create .sales-filter-create {
-    grid-column: 1 / -1;
-    justify-self: end;
-  }
-}
-
-@media (max-width: 640px) {
-  .sales-filter-row,
-  .sales-filter-period-range {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .sales-filter-period-separator {
-    display: none;
-  }
-
-  .sales-filter-actions {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .sales-filter-row.has-create .sales-filter-create {
-    justify-self: stretch;
-  }
 }
 
 
