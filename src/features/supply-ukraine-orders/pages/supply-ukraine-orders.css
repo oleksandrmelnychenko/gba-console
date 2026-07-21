@@ -39,7 +39,7 @@
     auto
     auto
     auto;
-  min-width: max-content;
+  min-width: 0;
   overflow-x: auto;
 }
 
@@ -126,9 +126,9 @@
 }
 
 .supply-ukraine-orders-date-input .mantine-InputWrapper-label {
-  color: var(--mantine-color-gray-7);
+  color: var(--mantine-color-gray-9);
   font-size: 12px;
-  font-weight: 400;
+  font-weight: 600;
   letter-spacing: 0;
   line-height: 1.2;
 }
