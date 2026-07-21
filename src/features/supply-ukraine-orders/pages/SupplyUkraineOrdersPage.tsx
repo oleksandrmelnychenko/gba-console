@@ -1235,25 +1235,23 @@ function OrdersFilterToolbar({
   const { t } = useI18n()
   return (
     <div className="app-filter-bar supply-ukraine-orders-filter-bar">
-      <div className="app-filter-field supply-ukraine-orders-period-filter">
-        <span className="app-filter-label supply-ukraine-orders-filter-label">{t('Період')}</span>
-        <div className="supply-ukraine-orders-period-fields">
-          <TextInput
-            className="supply-ukraine-orders-date-input"
-            aria-label={t('Від')}
-            type="date"
-            value={filterDraft.from}
-            onChange={(event) => onFilterDraftChange({ from: event.currentTarget.value })}
-          />
-          <span className="supply-ukraine-orders-period-separator" />
-          <TextInput
-            className="supply-ukraine-orders-date-input"
-            aria-label={t('До')}
-            type="date"
-            value={filterDraft.to}
-            onChange={(event) => onFilterDraftChange({ to: event.currentTarget.value })}
-          />
-        </div>
+      <div className="app-filter-date-range">
+        <TextInput
+          className="supply-ukraine-orders-date-input"
+          label={t('Від')}
+          max={filterDraft.to || undefined}
+          type="date"
+          value={filterDraft.from}
+          onChange={(event) => onFilterDraftChange({ from: event.currentTarget.value })}
+        />
+        <TextInput
+          className="supply-ukraine-orders-date-input"
+          label={t('До')}
+          min={filterDraft.from || undefined}
+          type="date"
+          value={filterDraft.to}
+          onChange={(event) => onFilterDraftChange({ to: event.currentTarget.value })}
+        />
       </div>
       <TextInput
         className="supply-ukraine-orders-search-input"
@@ -1312,7 +1310,10 @@ function OrdersFilterToolbar({
           onRefresh={onRefresh}
         />
       </div>
-      <div ref={onTableToolbarSlotMount} className="supply-ukraine-orders-table-toolbar-slot" />
+      <div
+        ref={onTableToolbarSlotMount}
+        className="app-filter-table-toolbar-slot supply-ukraine-orders-table-toolbar-slot"
+      />
       <div className="supply-ukraine-orders-create-actions">
         {createPermissions.canCreateDirect && (
           <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<Plus size={16} />} onClick={onCreateDirect}>

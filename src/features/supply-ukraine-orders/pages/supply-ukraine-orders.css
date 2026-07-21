@@ -32,13 +32,15 @@
      create buttons — the buttons used to be a 7th child of a 6-column grid and
      wrapped onto a second row. */
   grid-template-columns:
-    minmax(280px, 330px)
+    310px
     minmax(180px, 1fr)
     minmax(178px, 210px)
     minmax(130px, 168px)
     auto
     auto
     auto;
+  min-width: max-content;
+  overflow-x: auto;
 }
 
 .supply-ukraine-orders-create-actions {
@@ -46,7 +48,7 @@
   align-self: end;
   display: flex;
   flex: 0 0 auto;
-  gap: 8px;
+  gap: 10px;
   justify-content: flex-end;
   min-height: var(--supply-orders-control-height);
 }
@@ -158,7 +160,7 @@
 }
 
 .supply-ukraine-orders-table-toolbar-slot .data-table-toolbar {
-  gap: 6px;
+  gap: 10px;
   margin: 0;
   min-height: 0;
 }
@@ -659,34 +661,4 @@
 
 .supply-orders-official-costs-cancel.mantine-Button-root {
   color: var(--brand-orange);
-}
-
-@media (max-width: 1320px) {
-  .supply-ukraine-orders-filter-bar {
-    grid-template-columns: minmax(300px, 1fr) minmax(260px, 1fr) auto;
-  }
-
-  .supply-ukraine-orders-filter-bar .app-filter-actions,
-  .supply-ukraine-orders-create-actions,
-  .supply-ukraine-orders-table-toolbar-slot {
-    grid-column: 1 / -1;
-    justify-content: flex-end;
-  }
-}
-
-@media (max-width: 780px) {
-  .supply-ukraine-orders-filter-bar {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .supply-ukraine-orders-filter-bar .app-filter-actions {
-    align-items: flex-start;
-    flex-wrap: wrap;
-    justify-content: flex-start;
-  }
-
-  .supply-ukraine-orders-create-actions,
-  .supply-ukraine-orders-table-toolbar-slot {
-    justify-content: flex-start;
-  }
 }
