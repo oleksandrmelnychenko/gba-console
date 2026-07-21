@@ -37,18 +37,15 @@
 }
 
 .product-transfers-filter-row {
-  display: grid;
-  grid-template-columns: max-content max-content minmax(16px, 1fr) max-content max-content;
-  width: max(100%, max-content);
-  min-width: 0;
+  min-width: max-content;
+  width: 100%;
 }
 
 .product-transfers-filter-row > .app-filter-actions {
-  grid-column: 4;
+  margin-left: auto;
 }
 
 .product-transfers-filter-row > .mantine-Button-root {
-  grid-column: 5;
   white-space: nowrap;
 }
 

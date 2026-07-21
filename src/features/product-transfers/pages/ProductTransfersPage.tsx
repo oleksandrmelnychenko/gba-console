@@ -25,7 +25,7 @@ import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/Page
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, Download, Eye, FileSpreadsheet, FileText, Plus, RotateCcw } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
-import { type FormEvent, useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
+import { type FormEvent, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { UserRoleType } from '../../../shared/auth/types'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -535,6 +535,7 @@ function ProductTransfersPageView({ model }: { model: ReturnType<typeof useProdu
 
 function ProductTransfersTableCard({ model }: { model: ReturnType<typeof useProductTransfersPageModel> }) {
   const { t } = useI18n()
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const {
     columns, error, filterDraft, filterError, isLoading, isLoadingStorages, openCreateModal, openDetail, page,
     pageSize, reload, resetFilters, applyFilters, setPage, setPageSize, storageError, storageOptions, totalPages,
@@ -545,22 +546,22 @@ function ProductTransfersTableCard({ model }: { model: ReturnType<typeof useProd
     <Card className="app-filter-card product-transfers-card" withBorder radius="md" padding={0}>
       <div className="app-filter-bar product-transfers-filter-bar">
         <Group align="end" gap={10} wrap="nowrap" className="product-transfers-filter-row">
-          <TextInput
-            label={t('Від')}
-            max={filterDraft.to || undefined}
-            type="date"
-            value={filterDraft.from}
-            w={150}
-            onChange={(event) => applyFilters({ ...filterDraft, from: event.currentTarget.value })}
-          />
-          <TextInput
-            label={t('До')}
-            min={filterDraft.from || undefined}
-            type="date"
-            value={filterDraft.to}
-            w={150}
-            onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
-          />
+          <div className="app-filter-date-range">
+            <TextInput
+              label={t('Від')}
+              max={filterDraft.to || undefined}
+              type="date"
+              value={filterDraft.from}
+              onChange={(event) => applyFilters({ ...filterDraft, from: event.currentTarget.value })}
+            />
+            <TextInput
+              label={t('До')}
+              min={filterDraft.from || undefined}
+              type="date"
+              value={filterDraft.to}
+              onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
+            />
+          </div>
           <div className="app-filter-actions">
             <Tooltip label={t('Скинути')}>
               <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
@@ -578,6 +579,7 @@ function ProductTransfersTableCard({ model }: { model: ReturnType<typeof useProd
               onRefresh={reload}
             />
           </div>
+          <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
           <Button
             color={CREATE_ACTION_COLOR}
             disabled={!isLoadingStorages && storageOptions.length === 0}
@@ -611,7 +613,9 @@ function ProductTransfersTableCard({ model }: { model: ReturnType<typeof useProd
             layoutVersion="product-transfers-table-2"
             loadingText={t('Завантаження переміщень')}
             minWidth={1780}
+            showLayoutControls
             tableId="product-transfers"
+            toolbarPortalTarget={tableToolbarSlot}
             onRowClick={openDetail}
           />
         </div>
