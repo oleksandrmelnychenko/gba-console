@@ -1,5 +1,5 @@
-import { Alert, Card, Loader, Select, Stack, Text } from '@mantine/core'
-import { CircleAlert, Search } from 'lucide-react'
+import { ActionIcon, Alert, Card, Loader, Select, Stack, Text, Tooltip } from '@mantine/core'
+import { CircleAlert, RotateCcw, Search } from 'lucide-react'
 import { useEffect } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -292,6 +292,26 @@ export function SalesPredictionPage() {
     setProductVendorCode(selected?.VendorCode?.trim() || selected?.NetUid || '')
   }
 
+  function handleResetFilters() {
+    setClientQuery('')
+    setClientOptions([])
+    setClientNetId(null)
+    setClientFullName('')
+    setProductQuery('')
+    setProductOptions([])
+    setProductNetId(null)
+    setProductVendorCode('')
+    setByClient([])
+    setByProduct([])
+    setCombined([])
+    setClientPredictionError(null)
+    setProductPredictionError(null)
+    setCombinedPredictionError(null)
+    setLoadingClient(false)
+    setLoadingProduct(false)
+    setLoadingCombined(false)
+  }
+
   return (
     <Stack className="sales-prediction-page" gap={6}>
       <PredictionFilters
@@ -307,23 +327,26 @@ export function SalesPredictionPage() {
         onClientSearchChange={setClientQuery}
         onProductChange={handleProductChange}
         onProductSearchChange={setProductQuery}
+        onReset={handleResetFilters}
       />
 
-      <PredictionCharts
-        byClient={byClient}
-        byProduct={byProduct}
-        clientFullName={clientFullName}
-        clientPredictionError={clientPredictionError}
-        clientNetId={clientNetId}
-        combinedPredictionError={combinedPredictionError}
-        combined={combined}
-        isLoadingClient={isLoadingClient}
-        isLoadingCombined={isLoadingCombined}
-        isLoadingProduct={isLoadingProduct}
-        productPredictionError={productPredictionError}
-        productNetId={productNetId}
-        productVendorCode={productVendorCode}
-      />
+      <div className="sales-prediction-content">
+        <PredictionCharts
+          byClient={byClient}
+          byProduct={byProduct}
+          clientFullName={clientFullName}
+          clientPredictionError={clientPredictionError}
+          clientNetId={clientNetId}
+          combinedPredictionError={combinedPredictionError}
+          combined={combined}
+          isLoadingClient={isLoadingClient}
+          isLoadingCombined={isLoadingCombined}
+          isLoadingProduct={isLoadingProduct}
+          productPredictionError={productPredictionError}
+          productNetId={productNetId}
+          productVendorCode={productVendorCode}
+        />
+      </div>
     </Stack>
   )
 }
@@ -341,6 +364,7 @@ function PredictionFilters({
   onClientSearchChange,
   onProductChange,
   onProductSearchChange,
+  onReset,
 }: {
   clientData: SelectOption[]
   clientNetId: string | null
@@ -354,6 +378,7 @@ function PredictionFilters({
   onClientSearchChange: (value: string) => void
   onProductChange: (value: string | null) => void
   onProductSearchChange: (value: string) => void
+  onReset: () => void
 }) {
   const { t } = useI18n()
 
@@ -393,6 +418,19 @@ function PredictionFilters({
             onChange={onProductChange}
             onSearchChange={onProductSearchChange}
           />
+        </div>
+        <div className="app-filter-actions sales-prediction-filter-actions">
+          <Tooltip label={t('Скинути')}>
+            <ActionIcon
+              aria-label={t('Скинути')}
+              color="gray"
+              size={34}
+              variant="light"
+              onClick={onReset}
+            >
+              <RotateCcw size={17} />
+            </ActionIcon>
+          </Tooltip>
         </div>
       </div>
     </Card>

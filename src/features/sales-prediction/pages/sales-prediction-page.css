@@ -2,7 +2,16 @@
   box-sizing: border-box;
   height: 100%;
   min-height: 0;
-  overflow: auto;
+  overflow: hidden;
+}
+
+.sales-prediction-content {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .sales-prediction-filter-card {
@@ -14,12 +23,20 @@
 }
 
 .sales-prediction-filter-bar {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(720px, 1fr) max-content;
+  min-width: 0;
   overflow-x: auto;
 }
 
 .sales-prediction-filter-row {
   display: grid;
-  grid-template-columns: minmax(320px, 1fr) minmax(320px, 1fr);
   gap: 10px;
-  width: max(100%, 720px);
+  grid-template-columns: repeat(2, minmax(320px, 1fr));
+  min-width: 720px;
+}
+
+.sales-prediction-filter-actions {
+  align-self: end;
 }
