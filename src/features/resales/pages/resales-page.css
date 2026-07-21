@@ -25,8 +25,7 @@
   display: grid;
   gap: 10px;
   grid-template-columns:
-    minmax(140px, 150px)
-    minmax(140px, 150px)
+    310px
     minmax(150px, 160px)
     minmax(32px, 1fr)
     auto
@@ -45,12 +44,6 @@
   align-self: end;
   display: flex;
   min-height: 36px;
-}
-
-.resales-table-toolbar-slot .data-table-toolbar {
-  gap: 6px;
-  margin: 0;
-  min-height: 0;
 }
 
 .resales-create-actions .mantine-Button-root {

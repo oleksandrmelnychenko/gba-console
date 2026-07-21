@@ -379,26 +379,28 @@ export function ResalesPage() {
       <Card className="app-data-card resales-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar resales-filter-bar">
           <Group align="end" gap={10} wrap="nowrap" className="resales-filter-row">
-            <TextInput
-              label={t('Від')}
-              type="date"
-              value={fromDate}
-              w={150}
-              onChange={(event) => {
-                setPage(1)
-                setFromDate(event.currentTarget.value)
-              }}
-            />
-            <TextInput
-              label={t('До')}
-              type="date"
-              value={toDate}
-              w={150}
-              onChange={(event) => {
-                setPage(1)
-                setToDate(event.currentTarget.value)
-              }}
-            />
+            <div className="app-filter-date-range">
+              <TextInput
+                label={t('Від')}
+                max={toDate || undefined}
+                type="date"
+                value={fromDate}
+                onChange={(event) => {
+                  setPage(1)
+                  setFromDate(event.currentTarget.value)
+                }}
+              />
+              <TextInput
+                label={t('До')}
+                min={fromDate || undefined}
+                type="date"
+                value={toDate}
+                onChange={(event) => {
+                  setPage(1)
+                  setToDate(event.currentTarget.value)
+                }}
+              />
+            </div>
             <Select
               allowDeselect={false}
               data={[
@@ -433,7 +435,7 @@ export function ResalesPage() {
                 onRefresh={reload}
               />
             </div>
-            <div ref={setTableToolbarSlot} className="resales-table-toolbar-slot" />
+            <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot resales-table-toolbar-slot" />
             <div className="resales-create-actions">
               <Button
                 color={CREATE_ACTION_COLOR}
