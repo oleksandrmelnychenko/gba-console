@@ -11,7 +11,7 @@ import {
   TextInput,
 } from '@mantine/core'
 import { CircleAlert, MapPin } from 'lucide-react'
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -797,6 +797,7 @@ function AssortmentDetailTable({
   onPick: (productId: number) => void
 }) {
   const { t } = useI18n()
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
 
   return (
     <Card className="app-section-card assort-table-card" withBorder radius="md" padding={0}>
@@ -805,24 +806,27 @@ function AssortmentDetailTable({
         <Badge className="app-role-pill is-gray" variant="light">{formatInt(rows.length)}</Badge>
       </div>
       <div className="app-filter-bar assort-filter">
-        <Select
-          clearable
-          comboboxProps={ASSORT_COMBOBOX_PROPS}
-          data={BAND_ORDER.map((key) => ({ value: key, label: bandMeta(key).label }))}
-          label={t('Стан')}
-          placeholder={t('Усі')}
-          value={filters.band ?? null}
-          w={200}
-          onChange={(value) => onFiltersChange({ ...filters, band: value ?? undefined })}
-        />
-        <Select
-          comboboxProps={ASSORT_COMBOBOX_PROPS}
-          data={sortOptions.map((option) => ({ value: option.value, label: t(option.label) }))}
-          label={t('Сортування')}
-          value={filters.sort ?? 'health_asc'}
-          w={210}
-          onChange={(value) => onFiltersChange({ ...filters, sort: value ?? 'health_asc' })}
-        />
+        <Group align="end" gap={10} wrap="nowrap" className="assort-filter-row">
+          <Select
+            clearable
+            comboboxProps={ASSORT_COMBOBOX_PROPS}
+            data={BAND_ORDER.map((key) => ({ value: key, label: bandMeta(key).label }))}
+            label={t('Стан')}
+            placeholder={t('Усі')}
+            value={filters.band ?? null}
+            w={200}
+            onChange={(value) => onFiltersChange({ ...filters, band: value ?? undefined })}
+          />
+          <Select
+            comboboxProps={ASSORT_COMBOBOX_PROPS}
+            data={sortOptions.map((option) => ({ value: option.value, label: t(option.label) }))}
+            label={t('Сортування')}
+            value={filters.sort ?? 'health_asc'}
+            w={210}
+            onChange={(value) => onFiltersChange({ ...filters, sort: value ?? 'health_asc' })}
+          />
+          <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
+        </Group>
       </div>
       <DataTable
         columns={columns}
@@ -834,7 +838,9 @@ function AssortmentDetailTable({
         loadingText={t('Завантаження')}
         maxHeight={800}
         minWidth={filters.regionId == null ? 820 : 1180}
+        showLayoutControls
         tableId="assortment-detail"
+        toolbarPortalTarget={tableToolbarSlot}
         onRowClick={(row) => onPick(row.product_id)}
       />
     </Card>

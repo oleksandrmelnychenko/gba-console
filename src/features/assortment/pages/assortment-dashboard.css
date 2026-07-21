@@ -586,15 +586,13 @@
 }
 
 .assort-filter {
-  display: flex;
-  align-items: flex-end;
-  flex-wrap: wrap;
-  gap: 10px;
   margin: 0;
-  border-bottom: 1px solid var(--mantine-color-gray-2);
-  background:
-    linear-gradient(180deg, rgba(var(--brand-orange-rgb), 0.035), rgba(255, 255, 255, 0) 58px),
-    var(--mantine-color-white);
+  overflow-x: auto;
+}
+
+.assort-filter-row {
+  min-width: max-content;
+  width: 100%;
 }
 
 .assort-table-card .data-table {
