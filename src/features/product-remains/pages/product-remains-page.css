@@ -22,6 +22,7 @@
 
 .console-frame .mantine-Card-root.product-remains-card {
   border: 1px solid var(--mantine-color-gray-2);
+  box-shadow: var(--app-card-shadow);
 }
 
 .product-remains-tabs {
