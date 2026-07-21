@@ -390,9 +390,10 @@ function IncompleteSalesTableCard({
   return (
     <div className="incomplete-sales-online-shop-shell console-table-shell">
       <div className="app-filter-bar incomplete-sales-online-shop-filter-bar">
+        <div className="app-filter-date-range">
           <TextInput
             className="incomplete-sales-online-shop-date-input"
-            label={t('З')}
+            label={t('Від')}
             max={filterDraft.to || undefined}
             type="date"
             value={filterDraft.from}
@@ -400,39 +401,43 @@ function IncompleteSalesTableCard({
           />
           <TextInput
             className="incomplete-sales-online-shop-date-input"
-            label={t('По')}
+            label={t('До')}
             min={filterDraft.from || undefined}
             type="date"
             value={filterDraft.to}
             onChange={(event) => onToChange(event.currentTarget.value)}
           />
-          <TextInput
-            className="incomplete-sales-online-shop-search-input"
-            label={t('Номер')}
-            leftSection={<Search size={16} />}
-            placeholder={t('Телефон')}
-            value={filterDraft.number}
-            onChange={(event) => onNumberChange(event.currentTarget.value)}
-          />
-          <Checkbox
-            checked={filterDraft.isAccepted}
-            className="incomplete-sales-online-shop-checkbox"
-            label={t('Тільки мої продажі')}
-            onChange={(event) => onToggleAccepted(event.currentTarget.checked)}
-          />
-          <div className="app-filter-actions incomplete-sales-online-shop-filter-actions">
-            <Tooltip label={t('Скинути')}>
-              <ActionIcon variant="light" color="gray" size={34} aria-label={t('Скинути')} onClick={onReset}>
-                <RotateCcw size={17} />
-              </ActionIcon>
-            </Tooltip>
-            <Tooltip label={t('Оновити')}>
-              <ActionIcon variant="light" color="gray" size={34} aria-label={t('Оновити')} onClick={onReload}>
-                <RefreshCw size={18} />
-              </ActionIcon>
-            </Tooltip>
-          </div>
-          <div ref={setTableToolbarSlot} className="incomplete-sales-online-shop-table-toolbar-slot" />
+        </div>
+        <TextInput
+          className="incomplete-sales-online-shop-search-input"
+          label={t('Номер')}
+          leftSection={<Search size={16} />}
+          placeholder={t('Телефон')}
+          value={filterDraft.number}
+          onChange={(event) => onNumberChange(event.currentTarget.value)}
+        />
+        <Checkbox
+          checked={filterDraft.isAccepted}
+          className="incomplete-sales-online-shop-checkbox"
+          label={t('Тільки мої продажі')}
+          onChange={(event) => onToggleAccepted(event.currentTarget.checked)}
+        />
+        <div className="app-filter-actions incomplete-sales-online-shop-filter-actions">
+          <Tooltip label={t('Скинути')}>
+            <ActionIcon variant="light" color="gray" size={34} aria-label={t('Скинути')} onClick={onReset}>
+              <RotateCcw size={17} />
+            </ActionIcon>
+          </Tooltip>
+          <Tooltip label={t('Оновити')}>
+            <ActionIcon variant="light" color="gray" size={34} aria-label={t('Оновити')} onClick={onReload}>
+              <RefreshCw size={18} />
+            </ActionIcon>
+          </Tooltip>
+        </div>
+        <div
+          ref={setTableToolbarSlot}
+          className="app-filter-table-toolbar-slot incomplete-sales-online-shop-table-toolbar-slot"
+        />
       </div>
 
       {error && (
