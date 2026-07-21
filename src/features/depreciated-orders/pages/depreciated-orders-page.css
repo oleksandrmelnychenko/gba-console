@@ -28,26 +28,28 @@
 }
 
 .depreciated-orders-filter-bar {
+  align-items: end;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 310px minmax(0, 1fr) auto auto;
+  min-width: 0;
   overflow-x: auto;
 }
 
-.depreciated-orders-filter-row {
-  min-width: max-content;
-  width: 100%;
-}
-
-.depreciated-orders-filter-row > .app-filter-actions {
-  margin-left: auto;
-}
-
-.depreciated-orders-filter-row > .mantine-Button-root {
+.depreciated-orders-filter-bar > .mantine-Button-root {
   white-space: nowrap;
+}
+
+.depreciated-orders-filter-actions {
+  justify-self: end;
+}
+
+.depreciated-orders-table {
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
 }
 
 .depreciated-orders-alert {
   margin: 10px 8px 0;
-}
-
-.depreciated-orders-footer {
-  padding: 8px;
 }

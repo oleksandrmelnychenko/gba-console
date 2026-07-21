@@ -5,15 +5,13 @@ import {
   Box,
   Button,
   Card,
-  Group,
-  Select,
   Stack,
   Text,
   TextInput,
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { CircleAlert, Eye, Plus, RefreshCw, RotateCcw } from 'lucide-react'
+import { CircleAlert, Eye, Plus, RotateCcw } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -22,6 +20,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { translate } from '../../../shared/i18n/translate'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useAuth } from '../../auth/useAuth'
 import {
@@ -93,26 +92,23 @@ function useDepreciatedOrdersPageModel() {
   const [downloadError, setDownloadError] = useValueState<string | null>(null)
   const [isDownloading, setDownloading] = useValueState(false)
   const [isLoading, setLoading] = useValueState(true)
-  const [isLoadingMore, setLoadingMore] = useValueState(false)
   const [isLoadingStorages, setLoadingStorages] = useValueState(true)
+  const [page, setPage] = useValueState(1)
   const [pageSize, setPageSize] = useValueState(DEFAULT_PAGE_SIZE)
-  const [hasMore, setHasMore] = useValueState(false)
-  const [, setTotalQty] = useValueState(0)
+  const [totalQty, setTotalQty] = useValueState(0)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const detailRequestRef = useRef(0)
   const downloadRequestRef = useRef(0)
   const filterError = getFilterError(activeFilters.from, activeFilters.to)
-  const listRequestKey = `${activeFilters.from}|${activeFilters.to}|${pageSize}`
-  const listRequestKeyRef = useRef(listRequestKey)
-  const orderIndexMap = useMemo(() => buildOrderIndexMap(orders), [orders])
+  const orderIndexMap = useMemo(() => buildOrderIndexMap(orders, (page - 1) * pageSize), [orders, page, pageSize])
+  const totalPages = Math.max(1, Math.ceil(totalQty / pageSize))
 
   const resetOrders = useCallback(() => {
     setOrders([])
-    setHasMore(false)
     setTotalQty(0)
     setLoading(false)
     setSelectedOrder(null)
-  }, [setHasMore, setLoading, setOrders, setSelectedOrder, setTotalQty])
+  }, [setLoading, setOrders, setSelectedOrder, setTotalQty])
 
   const closeDownload = useCallback(() => {
     downloadRequestRef.current += 1
@@ -200,61 +196,29 @@ function useDepreciatedOrdersPageModel() {
 
   useDepreciatedOrderStoragesLoader({ reloadKey, setLoadingStorages, setStorageError, setStorages })
 
-  useEffect(() => {
-    listRequestKeyRef.current = listRequestKey
-  }, [listRequestKey])
-
   useDepreciatedOrdersLoader({
     activeFilters,
     filterError,
+    page,
     pageSize,
     reloadKey,
     resetOrders,
     setError,
-    setHasMore,
     setLoading,
     setTotalQty,
     setOrders,
   })
 
   function applyFilters(nextFilters: FilterDraft) {
+    setPage(1)
     setFilterDraft(nextFilters)
     setActiveFilters(nextFilters)
   }
 
   function resetFilters() {
+    setPage(1)
     setFilterDraft(initialFilters)
     setActiveFilters(initialFilters)
-  }
-
-  async function loadMoreOrders() {
-    const requestKey = listRequestKeyRef.current
-    const requestOffset = orders.length
-    setLoadingMore(true)
-    setError(null)
-
-    try {
-      const result = await getDepreciatedOrders({
-        from: activeFilters.from,
-        limit: pageSize,
-        offset: requestOffset,
-        to: activeFilters.to,
-      })
-
-      if (listRequestKeyRef.current === requestKey) {
-        setOrders((current) => (current.length === requestOffset ? [...current, ...result.items] : current))
-        setTotalQty(result.totalQty)
-        setHasMore(requestOffset + result.items.length < result.totalQty && result.items.length > 0)
-      }
-    } catch (loadError) {
-      if (listRequestKeyRef.current === requestKey) {
-        setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити наступні акти списання'))
-      }
-    } finally {
-      if (listRequestKeyRef.current === requestKey) {
-        setLoadingMore(false)
-      }
-    }
   }
 
   function openCreateModal() {
@@ -298,10 +262,10 @@ function useDepreciatedOrdersPageModel() {
 
   return {
     columns, createError, detailError, downloadDocument, downloadError, downloadOpened, error, exceptionMessages,
-    filterDraft, filterError, hasMore, isAdmin, isCreateModalOpen, isCreating, isDetailLoading, isDownloading,
-    isLoading, isLoadingMore, isLoadingStorages, orders, pageSize, selectedOrder, storageError, storages,
-    applyFilters, closeCreateModal, closeDetail, closeDownload, handleCreate, loadMoreOrders,
-    openCreateModal, openDetail, openDownload, reload, resetFilters, setExceptionMessages, setPageSize,
+    filterDraft, filterError, isAdmin, isCreateModalOpen, isCreating, isDetailLoading, isDownloading,
+    isLoading, isLoadingStorages, orders, page, pageSize, selectedOrder, storageError, storages, totalPages,
+    applyFilters, closeCreateModal, closeDetail, closeDownload, handleCreate,
+    openCreateModal, openDetail, openDownload, reload, resetFilters, setExceptionMessages, setPage, setPageSize,
   }
 }
 
@@ -354,22 +318,22 @@ function useDepreciatedOrderStoragesLoader({
 function useDepreciatedOrdersLoader({
   activeFilters,
   filterError,
+  page,
   pageSize,
   reloadKey,
   resetOrders,
   setError,
-  setHasMore,
   setLoading,
   setTotalQty,
   setOrders,
 }: {
   activeFilters: FilterDraft
   filterError: string | null
+  page: number
   pageSize: number
   reloadKey: number
   resetOrders: () => void
   setError: (value: string | null) => void
-  setHasMore: (value: boolean) => void
   setLoading: (value: boolean) => void
   setTotalQty: (value: number) => void
   setOrders: (value: DepreciatedOrder[]) => void
@@ -392,19 +356,17 @@ function useDepreciatedOrdersLoader({
         const result = await getDepreciatedOrders({
           from: activeFilters.from,
           limit: pageSize,
-          offset: 0,
+          offset: (page - 1) * pageSize,
           to: activeFilters.to,
         })
 
         if (!cancelled) {
           setOrders(result.items)
           setTotalQty(result.totalQty)
-          setHasMore(result.items.length < result.totalQty && result.items.length > 0)
         }
       } catch (loadError) {
         if (!cancelled) {
           setOrders([])
-          setHasMore(false)
           setTotalQty(0)
           setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити акти списання'))
         }
@@ -423,11 +385,11 @@ function useDepreciatedOrdersLoader({
   }, [
     activeFilters,
     filterError,
+    page,
     pageSize,
     reloadKey,
     resetOrders,
     setError,
-    setHasMore,
     setLoading,
     setOrders,
     setTotalQty,
@@ -480,73 +442,61 @@ function DepreciatedOrdersTableCard({ model }: { model: ReturnType<typeof useDep
   const { t } = useI18n()
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const {
-    columns, error, filterDraft, filterError, hasMore, isLoading, isLoadingMore, isLoadingStorages,
-    loadMoreOrders, openDetail, orders, pageSize, reload, resetFilters, applyFilters, setPageSize, storageError,
+    columns, error, filterDraft, filterError, isLoading, isLoadingStorages, openDetail, orders, page, pageSize,
+    reload, resetFilters, applyFilters, setPage, setPageSize, storageError, totalPages,
   } = model
 
   return (
     <Card className="app-data-card depreciated-orders-card" withBorder radius="md" padding={0}>
       <div className="app-filter-bar depreciated-orders-filter-bar">
-        <Group align="end" gap={10} wrap="nowrap" className="depreciated-orders-filter-row">
-          <div className="app-filter-date-range">
-            <TextInput
-              label={t('Від')}
-              max={filterDraft.to || undefined}
-              type="date"
-              value={filterDraft.from}
-              onChange={(event) => applyFilters({ ...filterDraft, from: event.currentTarget.value })}
-            />
-            <TextInput
-              label={t('До')}
-              min={filterDraft.from || undefined}
-              type="date"
-              value={filterDraft.to}
-              onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
-            />
-          </div>
-          <div className="app-filter-actions">
-            <Tooltip label={t('Скинути')}>
-              <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
-                <RotateCcw size={17} />
-              </ActionIcon>
-            </Tooltip>
-            <Tooltip label={t('Оновити')}>
-              <ActionIcon
-                aria-label={t('Оновити')}
-                color="gray"
-                loading={isLoading || isLoadingStorages}
-                size={34}
-                variant="light"
-                onClick={() => reload()}
-              >
-                <RefreshCw size={18} />
-              </ActionIcon>
-            </Tooltip>
-            <Select
-              aria-label={t('Кількість рядків')}
-              data={PAGE_SIZE_OPTIONS}
-              size="xs"
-              value={String(pageSize)}
-              w={88}
-              onChange={(value) => {
-                setPageSize(Number(value || DEFAULT_PAGE_SIZE))
-                reload()
-              }}
-            />
-          </div>
-          <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
-          <Button
-            color={CREATE_ACTION_COLOR}
-            disabled={!model.isLoadingStorages && model.storages.length === 0}
-            leftSection={<Plus size={16} />}
-            loading={model.isLoadingStorages}
-            size="sm"
-            styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
-            onClick={model.openCreateModal}
-          >
-            {t('Створити акт списання')}
-          </Button>
-        </Group>
+        <div className="app-filter-date-range">
+          <TextInput
+            label={t('Від')}
+            max={filterDraft.to || undefined}
+            type="date"
+            value={filterDraft.from}
+            onChange={(event) => applyFilters({ ...filterDraft, from: event.currentTarget.value })}
+          />
+          <TextInput
+            label={t('До')}
+            min={filterDraft.from || undefined}
+            type="date"
+            value={filterDraft.to}
+            onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
+          />
+        </div>
+        <div className="app-filter-actions depreciated-orders-filter-actions">
+          <Tooltip label={t('Скинути')}>
+            <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
+              <RotateCcw size={17} />
+            </ActionIcon>
+          </Tooltip>
+          <Paginator
+            isLoading={isLoading || isLoadingStorages}
+            page={page}
+            pageSize={pageSize}
+            pageSizeOptions={PAGE_SIZE_OPTIONS}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            onPageSizeChange={(nextPageSize) => {
+              setPage(1)
+              setPageSize(nextPageSize)
+            }}
+            onRefresh={() => reload()}
+          />
+        </div>
+        <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
+        <Button
+          color={CREATE_ACTION_COLOR}
+          disabled={!model.isLoadingStorages && model.storages.length === 0}
+          leftSection={<Plus size={16} />}
+          loading={model.isLoadingStorages}
+          size="sm"
+          styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
+          onClick={model.openCreateModal}
+        >
+          {t('Створити акт списання')}
+        </Button>
       </div>
 
       {(error || filterError || storageError) && (
@@ -555,30 +505,24 @@ function DepreciatedOrdersTableCard({ model }: { model: ReturnType<typeof useDep
         </Alert>
       )}
 
-      <DataTable
-        columns={columns}
-        data={orders}
-        defaultLayout={DEPRECIATED_ORDERS_TABLE_DEFAULT_LAYOUT}
-        emptyText={t('Актів списання не знайдено')}
-        getRowId={(order, index) => String(order.NetUid || order.Id || index)}
-        isLoading={isLoading}
-        layoutVersion="depreciated-orders-table-1"
-        loadingText={t('Завантаження актів списання')}
-        maxHeight="calc(100vh - 340px)"
-        minWidth={1320}
-        showLayoutControls
-        tableId="depreciated-orders"
-        toolbarPortalTarget={tableToolbarSlot}
-        onRowClick={openDetail}
-      />
-
-      {hasMore && (
-        <Group className="depreciated-orders-footer" justify="center">
-          <Button color="gray" loading={isLoadingMore} variant="light" onClick={loadMoreOrders}>
-            {t('Завантажити ще')}
-          </Button>
-        </Group>
-      )}
+      <div className="depreciated-orders-table">
+        <DataTable
+          columns={columns}
+          data={orders}
+          defaultLayout={DEPRECIATED_ORDERS_TABLE_DEFAULT_LAYOUT}
+          emptyText={t('Актів списання не знайдено')}
+          getRowId={(order, index) => String(order.NetUid || order.Id || index)}
+          height="100%"
+          isLoading={isLoading}
+          layoutVersion="depreciated-orders-table-1"
+          loadingText={t('Завантаження актів списання')}
+          minWidth={1320}
+          showLayoutControls
+          tableId="depreciated-orders"
+          toolbarPortalTarget={tableToolbarSlot}
+          onRowClick={openDetail}
+        />
+      </div>
     </Card>
   )
 }
@@ -702,9 +646,9 @@ function useDepreciatedOrderColumns(
   )
 }
 
-function buildOrderIndexMap(orders: DepreciatedOrder[]): Map<DepreciatedOrder, number> {
+function buildOrderIndexMap(orders: DepreciatedOrder[], offset = 0): Map<DepreciatedOrder, number> {
   return orders.reduce((indexMap, order, index) => {
-    indexMap.set(order, index + 1)
+    indexMap.set(order, offset + index + 1)
 
     return indexMap
   }, new Map<DepreciatedOrder, number>())
