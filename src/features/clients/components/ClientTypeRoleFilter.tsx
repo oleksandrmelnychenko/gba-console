@@ -2,6 +2,7 @@ import { Box, Button, Checkbox, Group, Popover, ScrollArea, Stack, Text } from '
 import { ChevronDown } from 'lucide-react'
 import { useMemo } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { CHECKBOX_MULTI_SELECT_WIDTH } from '../../../shared/ui/CheckboxMultiSelect'
 import type { ClientType } from '../types'
 
 type ClientTypeRoleFilterProps = {
@@ -22,7 +23,16 @@ export function ClientTypeRoleFilter({ clientTypes, disabled, value, onChange }:
   const groups = useMemo(() => buildGroups(clientTypes), [clientTypes])
   const selected = useMemo(() => new Set(value), [value])
   const isDisabled = disabled || groups.length === 0
-  const triggerLabel = value.length > 0 ? t('Ролі: {count}', { count: value.length }) : t('Усі ролі')
+  const selectedRoleLabel =
+    value.length === 1
+      ? groups.flatMap((group) => group.roles).find((role) => role.id === value[0])?.name
+      : undefined
+  const triggerLabel =
+    value.length === 0
+      ? t('Усі ролі')
+      : value.length === 1
+        ? selectedRoleLabel || t('Ролі: {count}', { count: value.length })
+        : t('Ролі: {count}', { count: value.length })
 
   function toggleType(group: FilterGroup) {
     const roleIds = group.roles.map((role) => role.id)
@@ -60,7 +70,8 @@ export function ClientTypeRoleFilter({ clientTypes, disabled, value, onChange }:
           disabled={isDisabled}
           justify="space-between"
           rightSection={<ChevronDown size={16} />}
-          style={{ flex: '0 0 180px' }}
+          w={CHECKBOX_MULTI_SELECT_WIDTH}
+          style={{ flex: `0 0 ${CHECKBOX_MULTI_SELECT_WIDTH}` }}
         >
           <Text size="sm" truncate>
             {triggerLabel}
