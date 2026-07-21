@@ -234,7 +234,7 @@ export function UsersPage() {
               </ActionIcon>
             </Tooltip>
           </div>
-          <div ref={setTableToolbarSlot} className="users-table-toolbar-slot" />
+          <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot users-table-toolbar-slot" />
           <div className="users-create-actions">
             <Button
               className="users-roles-action"
