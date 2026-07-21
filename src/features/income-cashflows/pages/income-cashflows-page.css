@@ -74,12 +74,6 @@
   min-height: 0;
 }
 
-.income-cashflows-load-more {
-  border-top: 1px solid var(--mantine-color-gray-1);
-  flex: 0 0 auto;
-  padding: 8px 12px;
-}
-
 .income-cashflows-summary {
   border-top: 1px solid var(--mantine-color-gray-2);
   flex: 0 0 auto;

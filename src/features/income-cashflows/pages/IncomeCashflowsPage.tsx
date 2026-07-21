@@ -15,7 +15,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { Banknote, ChevronDown, CircleAlert, Eye, Landmark, Plus, RefreshCw, RotateCcw, Search, Share2, Store, Users, X } from 'lucide-react'
+import { Banknote, ChevronDown, CircleAlert, Eye, Landmark, Plus, RotateCcw, Search, Share2, Store, Users, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -27,6 +27,7 @@ import { AppModal } from '../../../shared/ui/AppModal'
 import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { getAccountingCashFlowRecordPaymentStatus } from '../../accounting-cash-flow/accountingCashFlowPaymentStatus'
 import { calculateAdvanceReportOrder } from '../../outgoing-cashflows/api/advanceReportApi'
 import {
@@ -113,9 +114,11 @@ function useIncomeCashflowsPageModel(): IncomeCashflowsPageModel {
   const [paymentRegisterNetId, setPaymentRegisterNetId] = useValueState(() => searchParams.get('registerNetId') || '')
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(false)
-  const [isLoadingMore, setLoadingMore] = useValueState(false)
   const [isLoadingLookups, setLoadingLookups] = useValueState(false)
   const [hasMore, setHasMore] = useValueState(false)
+  const [page, setPage] = useValueState(1)
+  const [pageSize, setPageSize] = useValueState(PAGE_SIZE)
+  const [totalRowsQty, setTotalRowsQty] = useValueState<number | null>(null)
   const [selectedRow, setSelectedRow] = useValueState<IncomeCashflowRow | null>(null)
   const [selectedStructureCalculationState, dispatchSelectedStructureCalculation] = useReducer(
     incomeDocumentStructureCalculationReducer,
@@ -185,7 +188,7 @@ function useIncomeCashflowsPageModel(): IncomeCashflowsPageModel {
   )
 
   const rows = useMemo(() => buildIncomeCashflowRows(incomeOrders), [incomeOrders])
-  const totalQty = incomeOrders[0]?.TotalQty || incomeOrders.length
+  const totalQty = totalRowsQty ?? incomeOrders.length
 
   const closeIncomeDetails = useCallback(() => {
     if (focusedOrderNetId && selectedRow?.income.NetUid === focusedOrderNetId) {
@@ -231,36 +234,29 @@ function useIncomeCashflowsPageModel(): IncomeCashflowsPageModel {
     }
   }, [setCurrencies, setError, setLoadingLookups, setOrganizations, setPaymentRegisters, setSelectedOrganizationIds, t])
 
-  const loadIncomeOrders = useCallback(async (offset: number, append: boolean) => {
+  const loadIncomeOrders = useCallback(async (nextPage: number) => {
     if (filterError) {
       requestRef.current += 1
-
-      if (!append) {
-        setIncomeOrders([])
-      }
-
+      setIncomeOrders([])
       setError(null)
       setHasMore(false)
+      setTotalRowsQty(null)
       setLoading(false)
-      setLoadingMore(false)
       return
     }
 
     const requestId = requestRef.current + 1
     requestRef.current = requestId
+    const offset = (nextPage - 1) * pageSize
 
-    if (append) {
-      setLoadingMore(true)
-    } else {
-      setLoading(true)
-    }
+    setLoading(true)
     setError(null)
 
     try {
       const nextOrders = await getIncomeCashflows({
         currencyNetId,
         from: fromDate,
-        limit: PAGE_SIZE,
+        limit: pageSize,
         offset,
         organizationIds: selectedOrganizationFilterIds,
         registerNetId: paymentRegisterNetId,
@@ -269,21 +265,28 @@ function useIncomeCashflowsPageModel(): IncomeCashflowsPageModel {
       })
 
       if (requestRef.current === requestId) {
-        setIncomeOrders((current) => (append ? [...current, ...nextOrders] : nextOrders))
-        const nextTotalQty = nextOrders[0]?.TotalQty || offset + nextOrders.length
-        setHasMore(nextOrders.length === PAGE_SIZE && offset + nextOrders.length < nextTotalQty)
+        setIncomeOrders(nextOrders)
+        const responseTotalQty = nextOrders[0]?.TotalQty
+        const nextTotalQty =
+          typeof responseTotalQty === 'number' && Number.isFinite(responseTotalQty)
+            ? responseTotalQty
+            : null
+        setTotalRowsQty(nextTotalQty)
+        setHasMore(
+          nextOrders.length === pageSize
+          && (nextTotalQty === null || offset + nextOrders.length < nextTotalQty),
+        )
       }
     } catch (loadError) {
       if (requestRef.current === requestId) {
-        if (!append) {
-          setIncomeOrders([])
-        }
+        setIncomeOrders([])
+        setHasMore(false)
+        setTotalRowsQty(null)
         setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити прибуткові ордери'))
       }
     } finally {
       if (requestRef.current === requestId) {
         setLoading(false)
-        setLoadingMore(false)
       }
     }
   }, [
@@ -291,13 +294,14 @@ function useIncomeCashflowsPageModel(): IncomeCashflowsPageModel {
     filterError,
     fromDate,
     normalizedSearchValue,
+    pageSize,
     paymentRegisterNetId,
     selectedOrganizationFilterIds,
     setError,
     setHasMore,
     setIncomeOrders,
     setLoading,
-    setLoadingMore,
+    setTotalRowsQty,
     t,
     toDate,
   ])
@@ -307,8 +311,12 @@ function useIncomeCashflowsPageModel(): IncomeCashflowsPageModel {
   }, [loadLookups])
 
   useEffect(() => {
-    void loadIncomeOrders(0, false)
-  }, [loadIncomeOrders])
+    setPage(1)
+  }, [currencyNetId, fromDate, normalizedSearchValue, paymentRegisterNetId, selectedOrganizationFilterIds, setPage, toDate])
+
+  useEffect(() => {
+    void loadIncomeOrders(page)
+  }, [loadIncomeOrders, page])
 
   useEffect(() => {
     if (
@@ -385,13 +393,13 @@ function useIncomeCashflowsPageModel(): IncomeCashflowsPageModel {
     try {
       await cancelIncomeCashflow(cancelRow.income.NetUid)
       setCancelRow(null)
-      void loadIncomeOrders(0, false)
+      void loadIncomeOrders(page)
     } catch (cancelError) {
       setError(cancelError instanceof Error ? cancelError.message : t('Не вдалося скасувати прибутковий ордер'))
     } finally {
       setCanceling(false)
     }
-  }, [cancelRow, loadIncomeOrders, setCancelRow, setCanceling, setError, t])
+  }, [cancelRow, loadIncomeOrders, page, setCancelRow, setCanceling, setError, t])
 
   return {
     cancelRow,
@@ -406,9 +414,10 @@ function useIncomeCashflowsPageModel(): IncomeCashflowsPageModel {
     isCanceling,
     isLoading,
     isLoadingLookups,
-    isLoadingMore,
     isTableBusy,
     organizationOptions,
+    page,
+    pageSize,
     paymentRegisterNetId,
     paymentRegisters,
     reassignRow,
@@ -419,6 +428,7 @@ function useIncomeCashflowsPageModel(): IncomeCashflowsPageModel {
     selectedStructureCalculationState,
     toDate,
     totalQty,
+    totalRowsQty,
     onCancel: handleCancel,
     onCloseCancel: () => setCancelRow(null),
     onCloseDetails: closeIncomeDetails,
@@ -432,11 +442,13 @@ function useIncomeCashflowsPageModel(): IncomeCashflowsPageModel {
     },
     onReassignSaved: () => {
       setReassignRow(null)
-      void loadIncomeOrders(0, false)
+      void loadIncomeOrders(page)
     },
     onResetFilters: resetFilters,
     onSetCurrencyNetId: setCurrencyNetId,
     onSetFromDate: setFromDate,
+    onSetPage: setPage,
+    onSetPageSize: setPageSize,
     onSetPaymentRegisterNetId: setPaymentRegisterNetId,
     onSetSearchValue: setSearchValue,
     onSetSelectedOrganizationIds: setSelectedOrganizationIds,
@@ -463,9 +475,10 @@ type IncomeCashflowsPageModel = {
   isCanceling: boolean
   isLoading: boolean
   isLoadingLookups: boolean
-  isLoadingMore: boolean
   isTableBusy: boolean
   organizationOptions: SelectOption[]
+  page: number
+  pageSize: number
   paymentRegisterNetId: string
   paymentRegisters: PaymentRegister[]
   reassignRow: IncomeCashflowRow | null
@@ -476,11 +489,12 @@ type IncomeCashflowsPageModel = {
   selectedStructureCalculationState: IncomeDocumentStructureCalculationState
   toDate: string
   totalQty: number
+  totalRowsQty: number | null
   onCancel: () => void
   onCloseCancel: () => void
   onCloseDetails: () => void
   onCloseReassign: () => void
-  onLoadIncomeOrders: (offset: number, append: boolean) => Promise<void>
+  onLoadIncomeOrders: (page: number) => Promise<void>
   onLoadLookups: () => Promise<void>
   onOpenDetails: (row: IncomeCashflowRow) => void
   onReassignFromDetails: (row: IncomeCashflowRow) => void
@@ -488,6 +502,8 @@ type IncomeCashflowsPageModel = {
   onResetFilters: () => void
   onSetCurrencyNetId: (value: string) => void
   onSetFromDate: (value: string) => void
+  onSetPage: (page: number) => void
+  onSetPageSize: (pageSize: number) => void
   onSetPaymentRegisterNetId: (value: string) => void
   onSetSearchValue: (value: string) => void
   onSetSelectedOrganizationIds: (value: string[]) => void
@@ -508,9 +524,10 @@ function IncomeCashflowsContent({ model }: { model: IncomeCashflowsPageModel }) 
     isCanceling,
     isLoading,
     isLoadingLookups,
-    isLoadingMore,
     isTableBusy,
     organizationOptions,
+    page,
+    pageSize,
     paymentRegisterNetId,
     paymentRegisters,
     reassignRow,
@@ -521,6 +538,7 @@ function IncomeCashflowsContent({ model }: { model: IncomeCashflowsPageModel }) 
     selectedStructureCalculationState,
     toDate,
     totalQty,
+    totalRowsQty,
     onCancel,
     onCloseCancel,
     onCloseDetails,
@@ -533,6 +551,8 @@ function IncomeCashflowsContent({ model }: { model: IncomeCashflowsPageModel }) 
     onResetFilters,
     onSetCurrencyNetId,
     onSetFromDate,
+    onSetPage,
+    onSetPageSize,
     onSetPaymentRegisterNetId,
     onSetSearchValue,
     onSetSelectedOrganizationIds,
@@ -595,21 +615,22 @@ function IncomeCashflowsContent({ model }: { model: IncomeCashflowsPageModel }) 
                   <RotateCcw size={17} />
                 </ActionIcon>
               </Tooltip>
-              <Tooltip label={t('Оновити')}>
-                <ActionIcon
-                  aria-label={t('Оновити')}
-                  color="gray"
-                  loading={isLoading || isLoadingLookups}
-                  size={34}
-                  variant="light"
-                  onClick={() => {
-                    void onLoadLookups()
-                    void onLoadIncomeOrders(0, false)
-                  }}
-                >
-                  <RefreshCw size={18} />
-                </ActionIcon>
-              </Tooltip>
+              <Paginator
+                hasNext={hasMore}
+                isLoading={isLoading || isLoadingLookups}
+                page={page}
+                pageSize={pageSize}
+                totalPages={typeof totalRowsQty === 'number' ? Math.max(1, Math.ceil(totalRowsQty / pageSize)) : undefined}
+                onPageChange={onSetPage}
+                onPageSizeChange={(nextPageSize) => {
+                  onSetPage(1)
+                  onSetPageSize(nextPageSize)
+                }}
+                onRefresh={() => {
+                  void onLoadLookups()
+                  void onLoadIncomeOrders(page)
+                }}
+              />
             </div>
             <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
             <div className="income-cashflows-create-actions">
@@ -697,14 +718,6 @@ function IncomeCashflowsContent({ model }: { model: IncomeCashflowsPageModel }) 
           loadedQty={incomeOrders.length}
           totalQty={totalQty}
         />
-
-        {hasMore && (
-          <Group className="income-cashflows-load-more" justify="center" p={0}>
-            <Button loading={isLoadingMore} size="xs" variant="subtle" onClick={() => void onLoadIncomeOrders(incomeOrders.length, true)}>
-              {t('Завантажити ще')}
-            </Button>
-          </Group>
-        )}
       </div>
 
       <IncomeCashflowDetailDrawer
