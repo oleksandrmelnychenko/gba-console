@@ -1364,7 +1364,7 @@ function PaymentAccountActivityPanel({
   )
 }
 
-function PaymentAccountTransferModal({
+export function PaymentAccountTransferModal({
   account,
   opened,
   onClose,
@@ -1498,7 +1498,10 @@ function PaymentAccountTransferModal({
               label={t('Сума')}
               required
               value={draft.amount}
-              onChange={(event) => setDraft((current) => ({ ...current, amount: event.currentTarget.value }))}
+              onChange={(event) => {
+                const nextAmount = event.currentTarget.value
+                setDraft((current) => ({ ...current, amount: nextAmount }))
+              }}
             />
             <Select
               data={[
@@ -1521,7 +1524,10 @@ function PaymentAccountTransferModal({
               required
               type="date"
               value={draft.fromDate}
-              onChange={(event) => setDraft((current) => ({ ...current, fromDate: event.currentTarget.value }))}
+              onChange={(event) => {
+                const nextFromDate = event.currentTarget.value
+                setDraft((current) => ({ ...current, fromDate: nextFromDate }))
+              }}
             />
             <TextInput
               disabled={isSubmitting}
@@ -1529,7 +1535,10 @@ function PaymentAccountTransferModal({
               required
               type="time"
               value={draft.time}
-              onChange={(event) => setDraft((current) => ({ ...current, time: event.currentTarget.value }))}
+              onChange={(event) => {
+                const nextTime = event.currentTarget.value
+                setDraft((current) => ({ ...current, time: nextTime }))
+              }}
             />
             <Select
               data={toPaymentMovementOptions(movements)}
@@ -1544,7 +1553,10 @@ function PaymentAccountTransferModal({
               disabled={isSubmitting}
               label={t('Коментар')}
               value={draft.comment}
-              onChange={(event) => setDraft((current) => ({ ...current, comment: event.currentTarget.value }))}
+              onChange={(event) => {
+                const nextComment = event.currentTarget.value
+                setDraft((current) => ({ ...current, comment: nextComment }))
+              }}
             />
           </SimpleGrid>
           <Group justify="flex-end">
@@ -1561,7 +1573,7 @@ function PaymentAccountTransferModal({
   )
 }
 
-function PaymentAccountExchangeModal({
+export function PaymentAccountExchangeModal({
   account,
   opened,
   onClose,
@@ -1826,7 +1838,10 @@ function PaymentAccountExchangeModal({
               label={t('Сума')}
               required
               value={draft.amount}
-              onChange={(event) => setDraft((current) => ({ ...current, amount: event.currentTarget.value }))}
+              onChange={(event) => {
+                const nextAmount = event.currentTarget.value
+                setDraft((current) => ({ ...current, amount: nextAmount }))
+              }}
             />
             <Select
               data={exchangeTraderOptions}
@@ -1851,18 +1866,24 @@ function PaymentAccountExchangeModal({
               label={t('Курс')}
               required
               value={draft.exchangeRate}
-              onChange={(event) => setDraft((current) => ({
-                ...current,
-                currencyTraderNetId: '',
-                exchangeRate: event.currentTarget.value,
-              }))}
+              onChange={(event) => {
+                const nextExchangeRate = event.currentTarget.value
+                setDraft((current) => ({
+                  ...current,
+                  currencyTraderNetId: '',
+                  exchangeRate: nextExchangeRate,
+                }))
+              }}
             />
             <InfoCell label={t('Сума після конвертації')} value={convertedAmountLabel} />
             <TextInput
               disabled={isSubmitting}
               label={t('Вхідний номер')}
               value={draft.incomeNumber}
-              onChange={(event) => setDraft((current) => ({ ...current, incomeNumber: event.currentTarget.value }))}
+              onChange={(event) => {
+                const nextIncomeNumber = event.currentTarget.value
+                setDraft((current) => ({ ...current, incomeNumber: nextIncomeNumber }))
+              }}
             />
             <TextInput
               disabled={isSubmitting}
@@ -1870,7 +1891,10 @@ function PaymentAccountExchangeModal({
               required
               type="date"
               value={draft.fromDate}
-              onChange={(event) => setDraft((current) => ({ ...current, fromDate: event.currentTarget.value }))}
+              onChange={(event) => {
+                const nextFromDate = event.currentTarget.value
+                setDraft((current) => ({ ...current, fromDate: nextFromDate }))
+              }}
             />
             <TextInput
               disabled={isSubmitting}
@@ -1878,7 +1902,10 @@ function PaymentAccountExchangeModal({
               required
               type="time"
               value={draft.time}
-              onChange={(event) => setDraft((current) => ({ ...current, time: event.currentTarget.value }))}
+              onChange={(event) => {
+                const nextTime = event.currentTarget.value
+                setDraft((current) => ({ ...current, time: nextTime }))
+              }}
             />
             <Select
               data={toPaymentMovementOptions(movements)}
@@ -1893,7 +1920,10 @@ function PaymentAccountExchangeModal({
               disabled={isSubmitting}
               label={t('Коментар')}
               value={draft.comment}
-              onChange={(event) => setDraft((current) => ({ ...current, comment: event.currentTarget.value }))}
+              onChange={(event) => {
+                const nextComment = event.currentTarget.value
+                setDraft((current) => ({ ...current, comment: nextComment }))
+              }}
             />
           </SimpleGrid>
           <Group justify="flex-end">

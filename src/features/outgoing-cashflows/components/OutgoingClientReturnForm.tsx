@@ -40,8 +40,8 @@ import { createOutgoingCashflowOrder } from '../api/outgoingCashflowCreateApi'
 import type {
   CreatePaymentCurrencyRegister,
   CreatePaymentRegister,
-  OutcomePaymentOrderCreatePayload,
 } from '../outgoingCreateTypes'
+import { buildOutgoingClientReturnPayload } from '../outgoingClientReturnPayload'
 import {
   SEARCH_DEBOUNCE_MS,
   balanceLabelOf,
@@ -376,22 +376,19 @@ export function OutgoingClientReturnForm({ onCancel, onCreated }: OutgoingClient
       return
     }
 
-    const payload: OutcomePaymentOrderCreatePayload = {
-      Amount: form.amount,
-      ClientAgreement: selectedClientAgreement,
-      Comment: form.comment.trim(),
-      ExchangeRate: form.exchangeRate || undefined,
-      FromDate: toIsoDateTime(form.date, form.time),
-      IsAccounting: form.isAccounting,
-      IsManagementAccounting: form.isManagementAccounting,
-      IsUnderReport: false,
-      Organization: selectedOrganization,
-      PaymentCurrencyRegister: selectedCurrencyRegister as CreatePaymentCurrencyRegister,
-      PaymentMovementOperation: {
-        PaymentMovement: activeMovement,
-      },
-      PaymentRegister: selectedRegister as CreatePaymentRegister,
-    }
+    const payload = buildOutgoingClientReturnPayload({
+      amount: form.amount,
+      clientAgreement: selectedClientAgreement,
+      comment: form.comment,
+      exchangeRate: form.exchangeRate,
+      fromDate: toIsoDateTime(form.date, form.time),
+      isAccounting: form.isAccounting,
+      isManagementAccounting: form.isManagementAccounting,
+      organization: selectedOrganization,
+      paymentCurrencyRegister: selectedCurrencyRegister as CreatePaymentCurrencyRegister,
+      paymentMovement: activeMovement,
+      paymentRegister: selectedRegister as CreatePaymentRegister,
+    })
 
     setSaving(true)
     setError(null)
