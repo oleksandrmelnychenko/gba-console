@@ -6,7 +6,6 @@ import {
   Card,
   FileInput,
   Group,
-  MultiSelect,
   NumberInput,
   Select,
   SimpleGrid,
@@ -16,6 +15,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { AppModal } from "../../../shared/ui/AppModal"
+import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, Download, FileInput as FileInputIcon, FileText, RotateCcw, Search, TriangleAlert, Upload } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
@@ -528,7 +528,7 @@ function ProductPlacementsPageView({ model }: { model: ReturnType<typeof useProd
                 setDateTo(event.currentTarget.value)
               }}
             />
-            <MultiSelect
+            <CheckboxMultiSelect
               searchable
               data={storageOptions}
               disabled={isLoadingStorages || storageOptions.length === 0}
@@ -536,7 +536,6 @@ function ProductPlacementsPageView({ model }: { model: ReturnType<typeof useProd
               maxDropdownHeight={320}
               placeholder={isLoadingStorages ? t('Завантаження') : t('Оберіть склади')}
               value={selectedStorageIds}
-              style={{ flex: '1 1 320px', minWidth: 260 }}
               onChange={(value) => {
                 setPage(1)
                 setSelectedStorageIds(value)
