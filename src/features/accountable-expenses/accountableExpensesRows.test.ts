@@ -85,6 +85,78 @@ describe('accountable expense rows', () => {
     ])).toEqual([])
   })
 
+  it('filters deleted items and exact identity duplicates from rows and payment totals', () => {
+    const rows = buildExpenseRows([
+      {
+        ConsumablesOrderItems: [
+          {
+            NetUid: ' SERVICE-1 ',
+            TotalPriceWithVAT: 100,
+          },
+          {
+            NetUid: 'service-1',
+            TotalPriceWithVAT: 100,
+          },
+          {
+            Deleted: true,
+            NetUid: 'service-deleted',
+            TotalPriceWithVAT: 900,
+          },
+        ],
+        NetUid: 'order-1',
+        TotalPaidAmount: 100,
+      } satisfies ConsumablesOrder,
+    ])
+
+    expect(rows).toHaveLength(1)
+    expect(rows[0]?.amount).toBe(100)
+    expect(rows[0]?.paymentStatus).toBe('paid')
+  })
+
+  it('keeps same-looking rows with distinct identities and every idless row', () => {
+    const rows = buildExpenseRows([
+      {
+        ConsumablesOrderItems: [
+          { ConsumableProduct: { Name: 'Доставка' }, Id: 7 },
+          { ConsumableProduct: { Name: 'Доставка' }, Id: 7 },
+          { ConsumableProduct: { Name: 'Доставка' }, Id: 8 },
+          { ConsumableProduct: { Name: 'Доставка' } },
+          { ConsumableProduct: { Name: 'Доставка' } },
+        ],
+        Id: 1,
+      },
+      {
+        ConsumablesOrderItems: [
+          { ConsumableProduct: { Name: 'Доставка' }, Id: 7 },
+        ],
+        Id: 2,
+      },
+      {
+        ConsumablesOrderItems: [{ Id: 9 }],
+        Deleted: true,
+        Id: 3,
+      },
+    ] satisfies ConsumablesOrder[])
+
+    expect(rows).toHaveLength(5)
+    expect(new Set(rows.map((row) => row.id)).size).toBe(5)
+  })
+
+  it('falls back to total price plus VAT when a with-VAT total is absent', () => {
+    const [row] = buildExpenseRows([
+      {
+        ConsumablesOrderItems: [
+          {
+            TotalPrice: 80,
+            VAT: 16,
+          },
+        ],
+      } satisfies ConsumablesOrder,
+    ])
+
+    expect(row.amount).toBe(96)
+  })
+
   it('builds encoded advance-report links from linked outcome payment orders', () => {
     expect(getAdvanceReportLink({ NetUid: 'report/1 2' })).toBe('/accounting/outgoing-cashflow/report%2F1%202/advanced-report/view')
     expect(getAdvanceReportLink({ NetUid: '   ' })).toBeNull()

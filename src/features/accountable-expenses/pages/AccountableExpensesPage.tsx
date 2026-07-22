@@ -427,32 +427,20 @@ function AccountableExpenseDocumentCell({ row }: { row: AccountableExpenseRow })
       <span className="accountable-expenses-document-copy">
         <span className="accountable-expenses-document-title">{title}</span>
         {meta ? <span className="accountable-expenses-document-meta">{meta}</span> : null}
-        {organization ? <span className="accountable-expenses-document-meta">{organization}</span> : null}
       </span>
     </span>
   )
 }
 
 function AccountableExpenseProductCell({ row }: { row: AccountableExpenseRow }) {
-  const { t } = useI18n()
   const title = displayValue(row.productName)
   const vendorCode = row.vendorCode?.trim()
-  const typeLabel = row.item.IsService ? t('Послуга') : t('Товар')
-  const nativeTooltip = compactStrings([title, vendorCode, typeLabel]).join('\n')
+  const nativeTooltip = compactStrings([title, vendorCode]).join('\n')
 
   return (
     <span className="accountable-expenses-product-cell" title={nativeTitle(nativeTooltip)}>
       <span className="accountable-expenses-product-copy">
-        <span className="accountable-expenses-product-title-row">
-          <span className="accountable-expenses-product-title">{title}</span>
-          <Badge
-            className={`app-role-pill accountable-expenses-type-badge${row.item.IsService ? ' is-orange' : ' is-gray'}`}
-            color={row.item.IsService ? 'orange' : 'gray'}
-            variant="light"
-          >
-            {typeLabel}
-          </Badge>
-        </span>
+        <span className="accountable-expenses-product-title">{title}</span>
         {vendorCode ? <span className="accountable-expenses-product-code">{vendorCode}</span> : null}
       </span>
     </span>
@@ -470,7 +458,7 @@ function AccountableExpenseQuantityCell({ value }: { value: string }) {
 function AccountableExpenseMoneyCell({ currency, value }: { currency?: string; value: string }) {
   return (
     <span className="accountable-expenses-money-cell" title={nativeTitle(compactStrings([value, currency]).join(' '))}>
-      <strong>{value}</strong>
+      <strong className="app-money">{value}</strong>
       {currency ? <small>{currency}</small> : null}
     </span>
   )
@@ -484,20 +472,29 @@ function AccountableExpenseResponsibleCell({ row }: { row: AccountableExpenseRow
   return (
     <span className="accountable-expenses-responsible-cell" title={nativeTitle(nativeTooltip)}>
       <span>{title}</span>
-      {comment ? <small>{comment}</small> : null}
     </span>
   )
 }
 
 function AccountableExpenseStatusCell({ row }: { row: AccountableExpenseRow }) {
   const { t } = useI18n()
+  const paymentStatus = formatPaymentStatus(row.paymentStatus, t)
+  const underReportStatus = formatUnderReportTableStatus(row.underReportStatus, t)
+  const nativeTooltip = compactStrings([
+    paymentStatus,
+    underReportStatus ? `${t('Підзвіт')}: ${underReportStatus}` : '',
+  ]).join(' · ')
 
   return (
-    <span className="accountable-expenses-status-cell">
+    <span className="accountable-expenses-status-cell" title={nativeTitle(nativeTooltip)}>
       <Badge className={`app-role-pill ${getPaymentStatusPillVariant(row.paymentStatus)}`} variant="light">
-        {formatPaymentStatus(row.paymentStatus, t)}
+        {paymentStatus}
       </Badge>
-      <small>{t('Підзвіт')}: {formatUnderReportStatus(row.underReportStatus, t)}</small>
+      {underReportStatus ? (
+        <Badge className={`app-role-pill ${getUnderReportStatusPillVariant(row.underReportStatus)}`} variant="light">
+          {underReportStatus}
+        </Badge>
+      ) : null}
     </span>
   )
 }
@@ -928,4 +925,26 @@ function getPaymentStatusPillVariant(status: Parameters<typeof getPaymentStatusC
 
   // 'orange' = частково; все інше (неоплачено) — червоний, щоб кидалось в очі.
   return color === 'orange' ? 'is-orange' : 'is-red'
+}
+
+function formatUnderReportTableStatus(
+  status: AccountableExpenseRow['underReportStatus'],
+  t: (value: string) => string,
+): string {
+  switch (status) {
+    case 'closed':
+      return t('Закрито')
+    case 'mixed':
+      return t('Частково')
+    case 'open':
+      return t('Відкрито')
+    default:
+      return ''
+  }
+}
+
+function getUnderReportStatusPillVariant(
+  status: AccountableExpenseRow['underReportStatus'],
+): string {
+  return status === 'closed' ? 'is-gray' : 'is-orange'
 }

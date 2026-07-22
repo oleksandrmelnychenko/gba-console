@@ -13,12 +13,27 @@ const MONEY_EPSILON = 0.005
 
 export function buildExpenseRows(orders: ConsumablesOrder[]): AccountableExpenseRow[] {
   const rows: AccountableExpenseRow[] = []
+  const seenRowIdentities = new Set<string>()
 
   orders.forEach((order, orderIndex) => {
+    if (order.Deleted) {
+      return
+    }
+
     const outcomeSummary = summarizeOutcomePaymentOrders(order)
-    const items = order.ConsumablesOrderItems || []
+    const items = getActiveConsumablesOrderItems(order)
 
     items.forEach((item, itemIndex) => {
+      const rowIdentity = getExpenseRowIdentity(order, item)
+
+      if (rowIdentity && seenRowIdentities.has(rowIdentity)) {
+        return
+      }
+
+      if (rowIdentity) {
+        seenRowIdentities.add(rowIdentity)
+      }
+
       const amount = getItemTotalPriceWithVat(item)
 
       rows.push({
@@ -27,7 +42,7 @@ export function buildExpenseRows(orders: ConsumablesOrder[]): AccountableExpense
         comment: order.Comment || outcomeSummary.comment,
         created: order.Created,
         currency: outcomeSummary.currency,
-        id: String(item.NetUid || item.Id || `${order.NetUid || order.Id || orderIndex}-${itemIndex}`),
+        id: rowIdentity || `row-${orderIndex}-${itemIndex}`,
         isPayed: outcomeSummary.paymentStatus === 'paid',
         isUnderReportDone: outcomeSummary.underReportStatus === 'closed',
         item,
@@ -48,6 +63,29 @@ export function buildExpenseRows(orders: ConsumablesOrder[]): AccountableExpense
   })
 
   return rows
+}
+
+export function getActiveConsumablesOrderItems(order: ConsumablesOrder): ConsumablesOrderItem[] {
+  const seenItemIdentities = new Set<string>()
+
+  return (order.ConsumablesOrderItems || []).filter((item) => {
+    if (item.Deleted) {
+      return false
+    }
+
+    const identity = getExpenseRowIdentity(order, item)
+
+    if (!identity) {
+      return true
+    }
+
+    if (seenItemIdentities.has(identity)) {
+      return false
+    }
+
+    seenItemIdentities.add(identity)
+    return true
+  })
 }
 
 export function getOutcomePaymentOrder(order?: ConsumablesOrder | null): OutcomePaymentOrder | null {
@@ -182,7 +220,8 @@ function getPaymentStatus(order: ConsumablesOrder, paidAmount: number | undefine
 }
 
 function getOrderPaymentTotal(order: ConsumablesOrder): number {
-  return order.TotalAmount || (order.ConsumablesOrderItems || []).reduce((total, item) => total + (item.TotalPriceWithVAT || 0), 0)
+  return order.TotalAmount || getActiveConsumablesOrderItems(order)
+    .reduce((total, item) => total + (item.TotalPriceWithVAT || 0), 0)
 }
 
 function getUnderReportStatus(states: boolean[]): AccountableExpenseUnderReportStatus {
@@ -213,4 +252,49 @@ function getPersonName(person?: NamedEntity | null): string | undefined {
   return [person?.LastName, person?.FirstName, person?.MiddleName].filter(Boolean).join(' ')
     || person?.FullName
     || person?.Name
+}
+
+function getExpenseRowIdentity(
+  order: ConsumablesOrder,
+  item: ConsumablesOrderItem,
+): string | null {
+  const itemNetUid = normalizeNetUid(item.NetUid)
+
+  if (itemNetUid) {
+    return `item-net:${itemNetUid}`
+  }
+
+  const itemId = getPositiveId(item.Id)
+
+  if (itemId === null) {
+    return null
+  }
+
+  const orderIdentity = getOrderIdentity(order)
+
+  return orderIdentity
+    ? `${orderIdentity}:item-id:${itemId}`
+    : `item-id:${itemId}`
+}
+
+function getOrderIdentity(order: ConsumablesOrder): string | null {
+  const netUid = normalizeNetUid(order.NetUid)
+
+  if (netUid) {
+    return `order-net:${netUid}`
+  }
+
+  const id = getPositiveId(order.Id)
+
+  return id === null ? null : `order-id:${id}`
+}
+
+function normalizeNetUid(value?: string): string {
+  return value?.trim().toLocaleLowerCase('uk-UA') || ''
+}
+
+function getPositiveId(value?: number): number | null {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0
+    ? value
+    : null
 }
