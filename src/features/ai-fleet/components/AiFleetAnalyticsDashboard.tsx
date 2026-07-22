@@ -23,6 +23,7 @@ import {
   AI_FLEET_WARMUP_STALE_HOURS,
 } from '../utils/aiFleetView'
 import './ai-fleet-analytics.css'
+import { Orb } from '../../../shared/ui/orb/Orb'
 
 type AiFleetAnalyticsDashboardProps = {
   analytics: AiFleetAnalytics
@@ -342,7 +343,7 @@ function SessionTrendChart({
 
       {observedPointCount < 2 ? (
         <div aria-live="polite" className="ai-fleet-dashboard__collecting">
-          {isLoading && observedPointCount === 0 ? <Loader size="sm" /> : <Activity aria-hidden="true" size={23} />}
+          {isLoading && observedPointCount === 0 ? <Orb size={24} variant="thinking" /> : <Activity aria-hidden="true" size={23} />}
           <Text fw={650} size="sm">{t('Збираємо live-історію')}</Text>
           <Text c="dimmed" size="xs">
             {observedPointCount}/2 {t('знімків. Графік зʼявиться після наступного успішного оновлення.')}

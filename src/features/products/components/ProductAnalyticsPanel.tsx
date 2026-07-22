@@ -1,8 +1,9 @@
-import { Alert, Center, Loader, Text } from '@mantine/core'
+import { Alert } from '@mantine/core'
 import { CircleAlert } from 'lucide-react'
 import { Component, lazy, Suspense, type ReactNode } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { Product } from '../types'
+import { OrbSplash } from '../../../shared/ui/orb/Orb'
 
 const LazyProductCard = lazy(async () => {
   const module = await import('../../assortment/components/ProductCard')
@@ -42,12 +43,7 @@ export function ProductAnalyticsPanel({ product }: { product: Product }) {
       )}
     >
       <Suspense
-        fallback={(
-          <Center aria-live="polite" py="xl" role="status">
-            <Loader aria-hidden="true" size="sm" />
-            <Text ml="sm" size="sm">{t('Завантаження аналітики товару…')}</Text>
-          </Center>
-        )}
+        fallback={<OrbSplash label={t('Завантаження аналітики товару…')} size={44} variant="thinking" />}
       >
         <LazyProductCard productId={productId} />
       </Suspense>

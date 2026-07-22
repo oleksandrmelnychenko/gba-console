@@ -1,7 +1,8 @@
 import { Suspense, type ReactNode } from 'react'
 import { AppErrorBoundary } from '../../shared/ui/AppErrorBoundary'
+import { OrbSplash } from '../../shared/ui/orb/Orb'
 
-const routeFallback = <div className="console-route-loading">Завантаження</div>
+const routeFallback = <OrbSplash label="Завантаження" />
 
 export function lazyRoute(element: ReactNode) {
   return (
