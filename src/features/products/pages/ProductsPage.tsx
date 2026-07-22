@@ -26,7 +26,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { ArrowLeftRight, Box as BoxIcon, ChevronDown, CircleAlert, ClipboardList, FileDown, FileText, History, Image as ImageIcon, Package, Plus, RefreshCw, RotateCcw, Save, Search, Settings, Sparkles, SquarePen, Star, Trash2, Upload } from 'lucide-react'
+import { ArrowLeftRight, Box as BoxIcon, ChevronDown, CircleAlert, ClipboardList, FileDown, FileText, History, Image as ImageIcon, Package, Plus, RefreshCw, RotateCcw, Save, Settings, Sparkles, SquarePen, Star, Trash2, Upload } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { type KeyboardEvent, type ReactNode, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
@@ -808,9 +808,9 @@ export function ProductsPage() {
       }
 
       if (event.key === 'Escape') {
-        // In search mode, Escape inside the permanently mounted search field should keep focus.
-        // In selection mode the same field remains mounted, so Escape must still reset the drum.
-        if (isSearchInput && carouselModeRef.current !== 'selection') {
+        // In search mode, Escape inside the drum search should keep focus. The field unmounts
+        // after a product is selected, so this branch never blocks the selection-mode reset.
+        if (isSearchInput) {
           event.preventDefault()
           return
         }
@@ -883,12 +883,10 @@ export function ProductsPage() {
       <Box className="product-assortment-shell console-table-shell" onKeyDown={handleCarouselKeyDown}>
         <ProductAssortmentFilterBar
           isLoading={isLoading}
-          searchDraft={searchDraft}
           searchMode={searchMode}
           sortMode={sortMode}
           onRefresh={commitSearch}
           onReset={resetSearch}
-          onSearchDraftChange={updateSearchDraft}
           onSearchModeChange={setSearchMode}
           onSortModeChange={setSortMode}
         />
@@ -899,8 +897,10 @@ export function ProductsPage() {
             isLoading={isLoading}
             isSelectionMode={carouselMode === 'selection'}
             isVirtualLoad={isVirtualLoad}
+            searchDraft={searchDraft}
             selectedProduct={selectedProduct}
             topProducts={topProducts}
+            onSearchDraftChange={updateSearchDraft}
             onSelectProduct={selectProduct}
             onUploadSuccess={handleAssortmentUploadSuccess}
           />
@@ -936,20 +936,16 @@ function ProductAssortmentFilterBar({
   isLoading,
   onRefresh,
   onReset,
-  onSearchDraftChange,
   onSearchModeChange,
   onSortModeChange,
-  searchDraft,
   searchMode,
   sortMode,
 }: {
   isLoading: boolean
   onRefresh: () => void
   onReset: () => void
-  onSearchDraftChange: (value: string) => void
   onSearchModeChange: (mode: ProductSearchMode) => void
   onSortModeChange: (mode: ProductSortMode) => void
-  searchDraft: string
   searchMode: ProductSearchMode
   sortMode: ProductSortMode
 }) {
@@ -958,16 +954,6 @@ function ProductAssortmentFilterBar({
   return (
     <Box className="app-filter-bar product-assortment-filter-scroll">
       <Group align="end" gap={10} wrap="nowrap" className="product-assortment-filter-row">
-        <TextInput
-          autoFocus
-          aria-label={t('Введіть товар')}
-          className="product-assortment-search-input"
-          label={t('Пошук')}
-          leftSection={<Search size={16} />}
-          placeholder={t('Пошук товару')}
-          value={searchDraft}
-          onChange={(event) => onSearchDraftChange(event.currentTarget.value)}
-        />
         <Select
           aria-label={t('Поле пошуку')}
           allowDeselect={false}
@@ -1010,8 +996,10 @@ function ProductAssortmentCarousel({
   isLoading,
   isSelectionMode,
   isVirtualLoad,
+  onSearchDraftChange,
   onSelectProduct,
   onUploadSuccess,
+  searchDraft,
   selectedProduct,
   topProducts,
 }: {
@@ -1019,8 +1007,10 @@ function ProductAssortmentCarousel({
   isLoading: boolean
   isSelectionMode: boolean
   isVirtualLoad: boolean
+  onSearchDraftChange: (value: string) => void
   onSelectProduct: (product: Product) => void
   onUploadSuccess: () => void
+  searchDraft: string
   selectedProduct: Product | null
   topProducts: Product[]
 }) {
@@ -1066,7 +1056,17 @@ function ProductAssortmentCarousel({
             <span className="product-assortment-selected-code">{getProductCode(selectedProduct)}</span>
             <span className="product-assortment-selected-name">{getProductTitle(selectedProduct)}</span>
           </button>
-        ) : null}
+        ) : (
+          <TextInput
+            autoFocus
+            aria-label={t('Введіть товар')}
+            className="product-assortment-search-input"
+            placeholder={t('Пошук товару')}
+            size="md"
+            value={searchDraft}
+            onChange={(event) => onSearchDraftChange(event.currentTarget.value)}
+          />
+        )}
       </Box>
 
       <Box className="product-assortment-rail product-assortment-rail-bottom">

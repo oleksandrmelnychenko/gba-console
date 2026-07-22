@@ -61,8 +61,8 @@
 }
 
 .product-assortment-carousel.is-selection-mode {
-  /* Same geometry as the base carousel — the selected plate lives ABOVE the carousel
-     (top of the column), the drum keeps the search input between the two rails. */
+  /* The focus slot keeps the same geometry when the search input is replaced by
+     the selected-product plate. */
   grid-template-rows: minmax(0, 1fr) minmax(52px, auto) minmax(0, 1fr);
 }
 
@@ -1025,8 +1025,10 @@
 }
 
 .product-assortment-search-input {
-  flex: 0 0 280px;
-  width: 280px;
+  justify-self: center;
+  max-width: 300px;
+  min-width: 0;
+  width: 100%;
 }
 
 .product-assortment-filter-select {

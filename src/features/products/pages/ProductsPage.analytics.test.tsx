@@ -3,7 +3,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
-import { getProductByNetId, getProductReservationByNetId } from '../api/productsApi'
+import { getProductByNetId, getProductReservationByNetId, getProducts } from '../api/productsApi'
 import type { Product } from '../types'
 
 vi.mock('../api/productsApi', async (importOriginal) => {
@@ -13,6 +13,7 @@ vi.mock('../api/productsApi', async (importOriginal) => {
     ...actual,
     getProductByNetId: vi.fn(),
     getProductReservationByNetId: vi.fn(),
+    getProducts: vi.fn(),
   }
 })
 
@@ -36,13 +37,34 @@ import { ProductsPage } from './ProductsPage'
 
 const getProductByNetIdMock = vi.mocked(getProductByNetId)
 const getProductReservationByNetIdMock = vi.mocked(getProductReservationByNetId)
+const getProductsMock = vi.mocked(getProducts)
 
 beforeEach(() => {
   getProductByNetIdMock.mockReset()
   getProductReservationByNetIdMock.mockReset()
+  getProductsMock.mockReset()
+  getProductsMock.mockResolvedValue([])
 })
 
-describe('ProductsPage product analytics action', () => {
+describe('ProductsPage', () => {
+  it('keeps the assortment search inside the product drum', () => {
+    const { container } = render(
+      <MemoryRouter initialEntries={['/products']}>
+        <MantineProvider>
+          <I18nProvider>
+            <ProductsPage />
+          </I18nProvider>
+        </MantineProvider>
+      </MemoryRouter>,
+    )
+
+    const searchInput = container.querySelector('.product-assortment-search-input')
+
+    expect(searchInput).not.toBeNull()
+    expect(searchInput?.closest('.product-assortment-drum')).not.toBeNull()
+    expect(searchInput?.closest('.app-filter-bar')).toBeNull()
+  })
+
   it('places the enabled AI analytics action first in the assortment product toolbar', async () => {
     const product = {
       Id: 42,
