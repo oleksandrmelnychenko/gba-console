@@ -95,24 +95,39 @@
 
 .warehouse-ukraine-verification-snapshot-value {
   align-items: center;
-  background: var(--mantine-color-white);
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 8px;
-  color: var(--mantine-color-gray-8);
   display: flex;
   font-family: var(--font-mono);
-  font-size: 12.5px;
-  font-weight: 600;
-  gap: 8px;
+  gap: 7px;
   height: var(--app-filter-control-height, 36px);
   letter-spacing: 0;
-  padding: 0 10px;
+  padding: 0 2px;
   white-space: nowrap;
 }
 
 .warehouse-ukraine-verification-snapshot-value svg {
-  color: var(--mantine-color-gray-6);
+  color: var(--brand-orange);
   flex: 0 0 auto;
+}
+
+.warehouse-ukraine-verification-snapshot-date,
+.warehouse-ukraine-verification-snapshot-time {
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.warehouse-ukraine-verification-snapshot-date {
+  color: var(--mantine-color-gray-8);
+}
+
+.warehouse-ukraine-verification-snapshot-divider {
+  background: var(--mantine-color-gray-3);
+  height: 14px;
+  width: 1px;
+}
+
+.warehouse-ukraine-verification-snapshot-time {
+  color: var(--mantine-color-gray-6);
 }
 
 .warehouse-ukraine-filter-bar.is-editing {

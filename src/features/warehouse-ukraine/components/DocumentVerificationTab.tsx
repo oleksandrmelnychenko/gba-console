@@ -405,7 +405,9 @@ export function DocumentVerificationTab() {
                 className="warehouse-ukraine-verification-snapshot-value"
               >
                 <CalendarClock aria-hidden size={16} strokeWidth={1.8} />
-                <span>{`${verificationDate} · 06:00`}</span>
+                <span className="warehouse-ukraine-verification-snapshot-date">{verificationDate}</span>
+                <span className="warehouse-ukraine-verification-snapshot-divider" aria-hidden />
+                <span className="warehouse-ukraine-verification-snapshot-time">06:00</span>
               </div>
             </div>
             <div className="app-filter-actions warehouse-ukraine-filter-actions">
