@@ -8,11 +8,11 @@
 
 .app-orb--whirling {
   background:
-    radial-gradient(circle at 32% 30%, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0) 42%),
-    radial-gradient(circle at 50% 55%, #ffd8a8 0%, #ffa94d 45%, #e8590c 100%);
+    radial-gradient(circle at 32% 30%, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0) 42%),
+    radial-gradient(circle at 50% 55%, #ced4da 0%, #495057 45%, #212529 100%);
   box-shadow:
-    0 0 calc(var(--orb-size) * 0.35) rgba(232, 89, 12, 0.35),
-    inset 0 0 calc(var(--orb-size) * 0.12) rgba(255, 255, 255, 0.55);
+    0 0 calc(var(--orb-size) * 0.35) rgba(33, 37, 41, 0.25),
+    inset 0 0 calc(var(--orb-size) * 0.12) rgba(255, 255, 255, 0.45);
   animation: app-orb-whirl 1.1s linear infinite;
 }
 
@@ -23,10 +23,10 @@
   border-radius: 50%;
   background: conic-gradient(
     from 0deg,
-    rgba(232, 89, 12, 0) 0deg,
-    rgba(232, 89, 12, 0.85) 120deg,
-    rgba(255, 169, 77, 0.95) 160deg,
-    rgba(232, 89, 12, 0) 220deg
+    rgba(33, 37, 41, 0) 0deg,
+    rgba(33, 37, 41, 0.85) 120deg,
+    rgba(134, 142, 150, 0.95) 160deg,
+    rgba(33, 37, 41, 0) 220deg
   );
   -webkit-mask: radial-gradient(
     farthest-side,

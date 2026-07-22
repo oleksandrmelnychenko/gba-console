@@ -11,7 +11,7 @@ type OrbProps = {
   className?: string
 }
 
-export function Orb({ variant = 'whirling', size = 44, className }: OrbProps) {
+export function Orb({ variant = 'whirling', size = 28, className }: OrbProps) {
   return (
     <span
       aria-hidden="true"
@@ -30,7 +30,7 @@ type OrbSplashProps = {
 
 /** Centered full-area loading state: the orb sits in the middle of whatever
     shell region hosts it (route outlet, panel, sheet body). */
-export function OrbSplash({ variant = 'whirling', size = 52, label, className }: OrbSplashProps) {
+export function OrbSplash({ variant = 'whirling', size = 32, label, className }: OrbSplashProps) {
   return (
     <div className={`app-orb-splash${className ? ` ${className}` : ''}`} role="status">
       <Orb size={size} variant={variant} />
