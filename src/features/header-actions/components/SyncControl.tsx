@@ -322,6 +322,11 @@ export function SyncControl() {
   const syncSourceLabel = getSyncSourceLabel(state.activeTab, state.dailyForAmg, t)
 
   async function runSyncRequest(request: () => Promise<SyncRunResponse>) {
+    if (isSyncInProgress) {
+      notifications.show({ color: 'yellow', message: t('Синхронізація вже виконується') })
+      return
+    }
+
     dispatch({ type: 'syncStarted' })
 
     try {
@@ -390,9 +395,9 @@ export function SyncControl() {
               {(state.activeTab === 'fenix' || state.activeTab === 'amg') && (
                 <Stack gap="md">
                   <RemnantsSyncSection
-                    isLoading={state.isSyncing}
+                    isLoading={isSyncInProgress}
                     selectedTypes={state.selectedSyncTypes}
-                    title={t('Залишки з 1С в GBA')}
+                    title={t('Синхронізація даних з 1С')}
                     onRun={() => runRemnantsSync(state.activeTab === 'amg')}
                     onTypeChange={(key, checked) => dispatch({ type: 'syncTypeChanged', key, checked })}
                   />
@@ -435,7 +440,7 @@ export function SyncControl() {
                         { value: String(TypeOfXmlDocument.ProductIncomes), label: t('Прихідні накладні на товар') },
                       ]}
                     />
-                    <Button color={CREATE_ACTION_COLOR} loading={state.isSyncing} onClick={runGbaToOneCSync}>
+                    <Button color={CREATE_ACTION_COLOR} loading={isSyncInProgress} onClick={runGbaToOneCSync}>
                       {t('Синхронізувати')}
                     </Button>
                   </Group>
@@ -494,7 +499,7 @@ export function SyncControl() {
                   <Group justify="flex-end">
                     <Button
                       color={CREATE_ACTION_COLOR}
-                      loading={state.isSyncing}
+                      loading={isSyncInProgress}
                       onClick={() =>
                         dispatch({
                           type: 'dailyTypesChanged',
@@ -505,7 +510,7 @@ export function SyncControl() {
                     >
                       {t(isEveryDailyTypeSelected ? 'Скинути' : 'Вибрати всі')}
                     </Button>
-                    <Button color={CREATE_ACTION_COLOR} loading={state.isSyncing} onClick={runDailySync}>
+                    <Button color={CREATE_ACTION_COLOR} loading={isSyncInProgress} onClick={runDailySync}>
                       {t('Синхронізувати')}
                     </Button>
                   </Group>
