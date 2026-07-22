@@ -6,7 +6,6 @@ import {
   Checkbox,
   Grid,
   Group,
-  Loader,
   Select,
   SimpleGrid,
   Stack,
@@ -28,6 +27,7 @@ import {
 import type { ClientResourcePerfectClient } from '../../../client-resources/types'
 import { PerfectClientType } from '../../types'
 import type { Client, ClientPerfectClientValue, PerfectClient } from '../../types'
+import { OrbSplash } from '../../../../shared/ui/orb/Orb'
 
 const PERFECT_CLIENT_CULTURE = 'uk'
 const PERFECT_CLIENT_TRANSLATION_CULTURE = 'pl'
@@ -307,12 +307,7 @@ export function PerfectClientPanel({ client, onChange }: PerfectClientPanelProps
           )}
 
           {isLoading ? (
-            <Group justify="center" py="xl">
-              <Loader color="orange" size="sm" />
-              <Text c="dimmed" size="sm">
-                {t('Завантаження ідеального клієнта')}
-              </Text>
-            </Group>
+            <OrbSplash label={t('Завантаження ідеального клієнта')} size={40} variant="thinking" />
           ) : perfectClients.length === 0 ? (
             <Text c="dimmed" size="sm">
               {t('Параметрів не додано')}

@@ -1,5 +1,5 @@
 import { Drawer, type DrawerProps } from '@mantine/core'
-import type { ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import './app-drawer.css'
 
 export type AppDrawerProps = DrawerProps & {
@@ -92,12 +92,29 @@ function resolveSheetWidth(size: DrawerProps['size']): string {
  * inner padding across the whole app. Pass size as 'compact' | 'standard' |
  * 'wide' (legacy size values are normalized to the nearest tier).
  */
+/* A click aimed at a field while the sheet is still sliding in can land on the
+   overlay and instantly close the drawer (for routed sheets it also navigates
+   back, dropping the form). Ignore outside clicks for a short window after
+   opening so the open animation can settle first. */
+const OUTSIDE_CLOSE_ARM_DELAY_MS = 350
+
 export function AppDrawer({ position = 'right', size, children, footer, ...props }: AppDrawerProps) {
   const hasFooter = footer != null
+  const [outsideCloseArmed, setOutsideCloseArmed] = useState(false)
+
+  useEffect(() => {
+    const timer = setTimeout(
+      () => setOutsideCloseArmed(Boolean(props.opened)),
+      props.opened ? OUTSIDE_CLOSE_ARM_DELAY_MS : 0,
+    )
+
+    return () => clearTimeout(timer)
+  }, [props.opened])
 
   return (
     <Drawer
       {...props}
+      closeOnClickOutside={(props.closeOnClickOutside ?? true) && outsideCloseArmed}
       padding="lg"
       position={position}
       size={resolveSheetWidth(size)}

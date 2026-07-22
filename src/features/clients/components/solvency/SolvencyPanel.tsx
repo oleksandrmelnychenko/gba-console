@@ -5,7 +5,6 @@ import {
   Card,
   Divider,
   Group,
-  Loader,
   Progress,
   RingProgress,
   SimpleGrid,
@@ -18,6 +17,7 @@ import { useEffect, useReducer } from 'react'
 import { AiFeatureBadge } from '../../../../shared/ai/AiFeatureBadge'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { getClientSolvencyCharts, getClientSolvencyScore } from '../../api/clientSolvencyApi'
+import { OrbSplash } from '../../../../shared/ui/orb/Orb'
 import type {
   Contribution,
   ForwardRisk,
@@ -165,14 +165,7 @@ export function SolvencyPanel({ clientNetId }: SolvencyPanelProps) {
   }
 
   if (isLoading) {
-    return (
-      <Group justify="center" py="xl">
-        <Loader color="orange" size="sm" />
-        <Text c="dimmed" size="sm">
-          {t('Завантаження оцінки')}
-        </Text>
-      </Group>
-    )
+    return <OrbSplash label={t('Завантаження оцінки')} size={40} variant="thinking" />
   }
 
   if (error || !score) {

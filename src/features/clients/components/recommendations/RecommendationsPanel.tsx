@@ -5,8 +5,6 @@ import {
   Card,
   Group,
   Image,
-  LoadingOverlay,
-  Loader,
   SegmentedControl,
   SimpleGrid,
   Stack,
@@ -29,6 +27,7 @@ import {
 } from '../../api/clientRecommendationsApi'
 import type { RecommendationProduct } from '../../recommendationsTypes'
 import type { Client } from '../../types'
+import { OrbSplash } from '../../../../shared/ui/orb/Orb'
 
 type RecommendationsPanelProps = {
   client: Client
@@ -156,8 +155,6 @@ export function RecommendationsPanel({ client, productNetId }: RecommendationsPa
 
   return (
     <Stack gap="md" pos="relative">
-      <LoadingOverlay visible={isLoading} overlayProps={{ blur: 1 }} loaderProps={{ color: 'orange' }} />
-
       <Card className="app-section-card" withBorder radius="md" padding="md">
         <Stack gap="md">
           <Group justify="space-between" align="center" wrap="wrap">
@@ -193,12 +190,7 @@ export function RecommendationsPanel({ client, productNetId }: RecommendationsPa
           )}
 
           {isLoading ? (
-            <Group justify="center" py="xl">
-              <Loader color="orange" size="sm" />
-              <Text c="dimmed" size="sm">
-                {t('Завантаження рекомендацій')}
-              </Text>
-            </Group>
+            <OrbSplash label={t('Завантаження рекомендацій')} size={40} variant="thinking" />
           ) : selectedProduct ? (
             <SelectedProductCard product={selectedProduct} onPreview={() => dispatch({ product: selectedProduct, type: 'previewProduct' })} />
           ) : (
