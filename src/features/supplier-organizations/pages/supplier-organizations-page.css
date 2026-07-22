@@ -125,16 +125,16 @@
 
 .supplier-organizations-name-copy,
 .supplier-organizations-two-line-cell {
-  display: block;
+  display: grid;
   min-width: 0;
+  row-gap: 2px;
 }
 
 .supplier-organizations-name-title,
 .supplier-organizations-name-subtitle,
 .supplier-organizations-two-line-cell > span,
 .supplier-organizations-two-line-cell > small,
-.supplier-organizations-date-cell > span,
-.supplier-organizations-date-cell > small {
+.supplier-organizations-date-cell > span {
   display: block;
   min-width: 0;
   overflow: hidden;
@@ -142,35 +142,12 @@
   white-space: nowrap;
 }
 
-.supplier-organizations-name-cell,
-.supplier-organizations-name-copy {
-  display: block;
-  min-width: 0;
-}
-
-.supplier-organizations-name-subtitle {
-  color: var(--mantine-color-gray-6);
-  display: block;
-  font-size: 11.5px;
-  font-weight: 500;
-  line-height: 1.2;
-  margin-top: 3px;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.supplier-organizations-name-title {
+.supplier-organizations-name-title,
+.supplier-organizations-two-line-cell > span {
   color: var(--mantine-color-gray-8);
-  display: block;
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 600;
-  line-height: 1.2;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.1;
 }
 
 .supplier-organizations-name-subtitle,
@@ -178,19 +155,7 @@
   color: var(--mantine-color-gray-6);
   font-size: 11px;
   font-weight: 500;
-  line-height: 1.2;
-  margin-top: 3px;
-}
-
-.supplier-organizations-two-line-cell > span {
-  color: var(--mantine-color-gray-8);
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1.2;
-}
-
-.supplier-organizations-two-line-cell.is-separated {
-  min-height: 32px;
+  line-height: 1.1;
 }
 
 .supplier-organizations-tags-cell {
@@ -216,6 +181,11 @@
   white-space: nowrap;
 }
 
+.supplier-organizations-residency-pill {
+  flex: 0 0 auto;
+  max-width: 96px;
+}
+
 .supplier-organizations-id-tag strong {
   color: var(--mantine-color-gray-8);
   font-family: var(--font-mono);
@@ -227,10 +197,9 @@
 }
 
 .supplier-organizations-balance-cell {
-  align-items: flex-end;
-  display: flex;
-  flex-direction: column;
-  line-height: 1.1;
+  display: grid;
+  justify-items: end;
+  row-gap: 2px;
 }
 
 .supplier-organizations-balance-cell strong {
@@ -239,6 +208,7 @@
   font-size: 13px;
   font-weight: 600;
   letter-spacing: 0;
+  line-height: 1.1;
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -251,7 +221,7 @@
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0;
-  margin-top: 3px;
+  line-height: 1.1;
   text-transform: uppercase;
 }
 
@@ -261,22 +231,7 @@
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0;
-  line-height: 1.2;
-}
-
-.supplier-organizations-date-cell > small {
-  color: var(--mantine-color-gray-6);
-  font-size: 10.5px;
-  font-weight: 500;
-  line-height: 1.15;
-  margin-top: 3px;
-}
-
-.supplier-organizations-date-cell > small.is-foreign {
-  color: var(--brand-orange);
-  font-family: var(--font-mono);
-  font-weight: 600;
-  letter-spacing: 0;
+  line-height: 1.1;
 }
 
 .supplier-organizations-action-title {
@@ -298,21 +253,6 @@
 .supplier-organizations-action-status-dot.is-active {
   background: var(--mantine-color-green-6);
   box-shadow: 0 0 0 3px rgba(64, 192, 87, 0.16);
-}
-
-.supplier-organizations-agreement-pills {
-  align-items: center;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 3px;
-  min-width: 0;
-}
-
-.supplier-organizations-agreement-pill {
-  flex: 0 1 auto;
-  max-width: 100%;
-  text-transform: none;
 }
 
 /* Гроші в грідах нейтральні: без зеленого/червоного за знаком. */

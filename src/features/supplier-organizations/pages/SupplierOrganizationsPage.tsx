@@ -29,6 +29,16 @@ import {
   getSupplyOrganizations,
   searchSupplyOrganizations,
 } from '../api/supplierOrganizationsApi'
+import {
+  deduplicateSupplyOrganizationsByIdentity,
+  getAgreementCurrencies,
+  getAgreementNames,
+  getAgreementOrganizations,
+  getSupplyOrganizationAgreementCellText,
+  getSupplyOrganizationBankCellText,
+  getSupplyOrganizationContactCellText,
+  getSupplyOrganizationNameCellText,
+} from '../model/supplierOrganizationTableModel'
 import type { SupplyOrganization, SupplyOrganizationDocumentExport } from '../types'
 import './supplier-organizations-page.css'
 import '../../../shared/ui/console-table-page.css'
@@ -49,6 +59,9 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
 const SUPPLIER_ORGANIZATIONS_TABLE_MIN_WIDTH = 1320
 const SUPPLIER_ORGANIZATIONS_TABLE_DEFAULT_LAYOUT = {
   columnOrder: ['name', 'identifiers', 'organization', 'contact', 'bank', 'balance', 'created'],
+  columnVisibility: {
+    contact: false,
+  },
   columnPinning: {
     left: ['name'],
   },
@@ -114,7 +127,9 @@ export function SupplierOrganizationsPage() {
         : await getSupplyOrganizations(paginationParams)
 
       if (requestRef.current === requestId) {
-        setOrganizations(nextOrganizations)
+        setOrganizations(deduplicateSupplyOrganizationsByIdentity(nextOrganizations))
+        // Pagination follows the raw server page size. A repeated identity must
+        // not make a full server page look like the final page.
         setHasMore(nextOrganizations.length === pageSize)
       }
     } catch (loadError) {
@@ -299,11 +314,12 @@ export function SupplierOrganizationsPage() {
             columns={columns}
             data={organizations}
             defaultLayout={SUPPLIER_ORGANIZATIONS_TABLE_DEFAULT_LAYOUT}
+            distributeAvailableWidth
             emptyText={t('Постачальників послуг не знайдено')}
             getRowId={(organization, index) => String(organization.NetUid || organization.Id || index)}
             height="100%"
             isLoading={isLoading}
-            layoutVersion="supplier-organizations-table-2"
+            layoutVersion="supplier-organizations-table-3"
             minWidth={SUPPLIER_ORGANIZATIONS_TABLE_MIN_WIDTH}
             showLayoutControls
             tableId="supplier-organizations"
@@ -407,7 +423,7 @@ function useSupplierOrganizationColumns(): DataTableColumn<SupplyOrganization>[]
         width: 138,
         minWidth: 124,
         accessor: (organization) => organization.Created || '',
-        cell: (organization) => <SupplierOrganizationDateCell organization={organization} value={formatDateTime(organization.Created)} />,
+        cell: (organization) => <SupplierOrganizationDateCell value={formatDateTime(organization.Created)} />,
       },
     ],
     [t],
@@ -415,15 +431,14 @@ function useSupplierOrganizationColumns(): DataTableColumn<SupplyOrganization>[]
 }
 
 function SupplierOrganizationNameCell({ organization }: { organization: SupplyOrganization }) {
-  const title = displayValue(organization.Name)
-  const subtitle = compactStrings([organization.ContactPersonName, getAgreementOrganizations(organization), organization.Address])[0] || ''
-  const tooltip = compactStrings([title, subtitle, organization.Address]).join('\n')
+  const { primary, secondary } = getSupplyOrganizationNameCellText(organization)
+  const tooltip = compactStrings([primary, secondary]).join('\n')
 
   return (
     <span className="supplier-organizations-name-cell" title={nativeTitle(tooltip)}>
       <span className="supplier-organizations-name-copy">
-        <span className="supplier-organizations-name-title">{title}</span>
-        <span className="supplier-organizations-name-subtitle">{subtitle}</span>
+        <span className="supplier-organizations-name-title">{primary}</span>
+        {secondary ? <small className="supplier-organizations-name-subtitle">{secondary}</small> : null}
       </span>
     </span>
   )
@@ -437,7 +452,7 @@ function SupplierOrganizationIdentifiersCell({ organization }: { organization: S
     { label: t('СВ'), value: organization.SROI },
   ].filter((item) => item.value)
 
-  if (identifiers.length === 0) {
+  if (identifiers.length === 0 && !organization.IsNotResident) {
     return null
   }
 
@@ -449,58 +464,48 @@ function SupplierOrganizationIdentifiersCell({ organization }: { organization: S
           <strong>{item.value}</strong>
         </span>
       ))}
+      {organization.IsNotResident ? (
+        <Badge className="app-role-pill is-orange supplier-organizations-residency-pill" variant="light">
+          {t('Нерезидент')}
+        </Badge>
+      ) : null}
     </span>
   )
 }
 
 function SupplierOrganizationAgreementCell({ organization }: { organization: SupplyOrganization }) {
-  const organizations = displayValue(getAgreementOrganizations(organization))
-  const agreements = displayValue(getAgreementNames(organization))
-  const currencies = getAgreementCurrencies(organization)
-  const tooltip = compactStrings([organizations, agreements, currencies]).join('\n')
+  const { primary, secondary } = getSupplyOrganizationAgreementCellText(organization)
+  const tooltip = compactStrings([primary, secondary]).join('\n')
 
   return (
-    <span className="supplier-organizations-two-line-cell is-separated" title={nativeTitle(tooltip)}>
-      <span>{organizations}</span>
-      <span className="supplier-organizations-agreement-pills">
-        {agreements ? (
-          <Badge className="app-role-pill supplier-organizations-agreement-pill" variant="light">
-            {agreements}
-          </Badge>
-        ) : null}
-        {currencies ? (
-          <Badge className="app-role-pill is-gray supplier-organizations-agreement-pill" variant="light">
-            {currencies}
-          </Badge>
-        ) : null}
-      </span>
+    <span className="supplier-organizations-two-line-cell" title={nativeTitle(tooltip)}>
+      {primary ? <span>{primary}</span> : null}
+      {secondary ? <small className="supplier-organizations-agreement-meta">{secondary}</small> : null}
     </span>
   )
 }
 
 function SupplierOrganizationContactCell({ organization }: { organization: SupplyOrganization }) {
-  const primary = displayValue(organization.ContactPersonName || organization.PhoneNumber || organization.ContactPersonPhone)
-  const secondary = displayValue(organization.ContactPersonEmail || organization.EmailAddress || organization.ContactPersonPhone || organization.PhoneNumber)
+  const { primary, secondary } = getSupplyOrganizationContactCellText(organization)
   const tooltip = compactStrings([primary, secondary, organization.ContactPersonComment]).join('\n')
 
   return (
     <span className="supplier-organizations-two-line-cell" title={nativeTitle(tooltip)}>
-      <span>{primary}</span>
-      <small>{secondary}</small>
+      {primary ? <span>{primary}</span> : null}
+      {secondary ? <small>{secondary}</small> : null}
     </span>
   )
 }
 
 function SupplierOrganizationBankCell({ organization }: { organization: SupplyOrganization }) {
-  const primary = displayValue(organization.Bank || organization.Requisites || organization.BankAccount)
-  const secondary = displayValue(organization.BankAccount || organization.BankAccountEUR || organization.SwiftBic || organization.Swift)
+  const { primary, secondary } = getSupplyOrganizationBankCellText(organization)
   const tooltip = compactStrings([primary, secondary, organization.Beneficiary, organization.BeneficiaryBank]).join('\n')
 
   return (
     <span className="supplier-organizations-bank-cell" title={nativeTitle(tooltip)}>
       <span className="supplier-organizations-two-line-cell">
-        <span>{primary}</span>
-        <small>{secondary}</small>
+        {primary ? <span>{primary}</span> : null}
+        {secondary ? <small>{secondary}</small> : null}
       </span>
     </span>
   )
@@ -520,14 +525,10 @@ function SupplierOrganizationBalanceCell({ organization }: { organization: Suppl
   )
 }
 
-function SupplierOrganizationDateCell({ organization, value }: { organization: SupplyOrganization; value: string }) {
-  const { t } = useI18n()
-  const residency = organization.IsNotResident ? t('Нерезидент') : null
-
+function SupplierOrganizationDateCell({ value }: { value: string }) {
   return (
-    <span className="supplier-organizations-date-cell" title={nativeTitle(compactStrings([value, residency]).join('\n'))}>
+    <span className="supplier-organizations-date-cell" title={nativeTitle(value)}>
       <span>{value}</span>
-      {residency ? <small className="is-foreign">{residency}</small> : null}
     </span>
   )
 }
@@ -635,22 +636,6 @@ function getDateFilterError(dateFrom: string, dateTo: string): string | null {
   }
 
   return null
-}
-
-function getAgreementOrganizations(organization: SupplyOrganization): string {
-  return uniqueStrings((organization.SupplyOrganizationAgreements || []).map((agreement) => agreement.Organization?.Name)).join(' · ')
-}
-
-function getAgreementNames(organization: SupplyOrganization): string {
-  return uniqueStrings((organization.SupplyOrganizationAgreements || []).map((agreement) => agreement.Name || agreement.Number)).join(' · ')
-}
-
-function getAgreementCurrencies(organization: SupplyOrganization): string {
-  return uniqueStrings((organization.SupplyOrganizationAgreements || []).map((agreement) => agreement.Currency?.Code || agreement.Currency?.Name)).join(' · ')
-}
-
-function uniqueStrings(values: Array<string | null | undefined>): string[] {
-  return [...new Set(compactStrings(values))]
 }
 
 function compactStrings(values: Array<string | null | undefined>): string[] {
