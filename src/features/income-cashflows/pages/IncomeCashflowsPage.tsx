@@ -577,7 +577,7 @@ function IncomeCashflowsContent({ model }: { model: IncomeCashflowsPageModel }) 
               label={t('Пошук')}
               placeholder={t('Номер, платник, рахунок або коментар')}
               value={searchValue}
-              w={340}
+              w={170}
               onChange={(event) => onSetSearchValue(event.currentTarget.value)}
             />
             <Select
@@ -597,10 +597,11 @@ function IncomeCashflowsContent({ model }: { model: IncomeCashflowsPageModel }) 
               label={t('Рахунок')}
               placeholder={t('Усі')}
               value={paymentRegisterNetId || null}
-              w={250}
+              w={220}
               onChange={(value) => onSetPaymentRegisterNetId(value || '')}
             />
             <CheckboxMultiSelect
+              className="income-cashflows-organization-filter"
               data={organizationOptions}
               label={t('Організації')}
               placeholder={t('Без фільтра')}

@@ -8,7 +8,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
-import { CircleAlert, Download, RotateCcw } from 'lucide-react'
+import { CalendarClock, CircleAlert, Download, RotateCcw } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { translate } from '../../../shared/i18n/translate'
@@ -368,6 +368,7 @@ export function DocumentVerificationTab() {
   const model = useDocumentVerificationModel()
   const { t } = useI18n()
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
+  const verificationDate = new Date().toLocaleDateString('uk-UA')
 
   return (
     <Stack className="warehouse-ukraine-tab" gap={6}>
@@ -397,9 +398,16 @@ export function DocumentVerificationTab() {
               value={model.selectedStorageIds}
               onChange={model.setSelectedStorageIds}
             />
-            <Text c="dimmed" size="sm">
-              {`${t('На дату')} ${new Date().toLocaleDateString('uk-UA')} 6:00`}
-            </Text>
+            <div className="app-filter-field warehouse-ukraine-verification-snapshot">
+              <Text className="app-filter-label">{t('На дату')}</Text>
+              <div
+                aria-label={`${t('На дату')} ${verificationDate} 06:00`}
+                className="warehouse-ukraine-verification-snapshot-value"
+              >
+                <CalendarClock aria-hidden size={16} strokeWidth={1.8} />
+                <span>{`${verificationDate} · 06:00`}</span>
+              </div>
+            </div>
             <div className="app-filter-actions warehouse-ukraine-filter-actions">
               <Tooltip label={t('Скинути')}>
                 <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={model.resetFilters}>

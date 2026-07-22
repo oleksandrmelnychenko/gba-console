@@ -16,16 +16,20 @@
   gap: 10px;
   grid-template-columns:
     310px
-    minmax(320px, 340px)
+    minmax(160px, 170px)
     minmax(180px, 190px)
-    minmax(230px, 250px)
-    var(--app-multi-select-width, 240px)
+    minmax(200px, 220px)
+    220px
     minmax(32px, 1fr)
     auto
     auto
     auto;
   min-width: max-content;
   width: 100%;
+}
+
+.income-cashflows-organization-filter {
+  --app-multi-select-width: 220px;
 }
 
 .income-cashflows-filter-actions {
