@@ -657,6 +657,7 @@ function OutgoingCashflowsContent({ model }: { model: OutgoingCashflowsPageModel
               onChange={(value) => onSetPaymentMovementNetId(value || '')}
             />
             <CheckboxMultiSelect
+              className="outgoing-cashflows-organization-filter"
               data={organizationOptions}
               label={t('Організації')}
               placeholder={t('Без фільтра')}
@@ -683,7 +684,10 @@ function OutgoingCashflowsContent({ model }: { model: OutgoingCashflowsPageModel
                 }}
               />
             </div>
-            <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
+            <div
+              ref={setTableToolbarSlot}
+              className="app-filter-table-toolbar-slot outgoing-cashflows-table-toolbar-slot"
+            />
             <div className="outgoing-cashflows-create-actions">
               <Menu position="bottom-end" shadow="md" width={340} withinPortal>
                 <Menu.Target>

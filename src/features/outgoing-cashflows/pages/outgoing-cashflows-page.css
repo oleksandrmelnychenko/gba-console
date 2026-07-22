@@ -16,16 +16,20 @@
   gap: 10px;
   grid-template-columns:
     310px
-    minmax(250px, 1fr)
+    minmax(160px, 170px)
     minmax(108px, 120px)
-    minmax(148px, 176px)
-    minmax(162px, 196px)
-    var(--app-multi-select-width, 240px)
+    minmax(145px, 160px)
+    minmax(155px, 170px)
+    220px
     auto
     auto
     auto;
-  min-width: 0;
+  min-width: max-content;
   width: 100%;
+}
+
+.outgoing-cashflows-organization-filter {
+  --app-multi-select-width: 220px;
 }
 
 .outgoing-cashflows-filter-row > .mantine-InputWrapper-root {
@@ -40,7 +44,12 @@
 /* Pin the reset / refresh / density cluster to the trailing edge of the
    wrapping filter row. */
 .outgoing-cashflows-filter-actions {
+  grid-column: 7;
   margin-left: auto;
+}
+
+.outgoing-cashflows-table-toolbar-slot {
+  grid-column: 8;
 }
 
 .outgoing-cashflows-create-actions {
