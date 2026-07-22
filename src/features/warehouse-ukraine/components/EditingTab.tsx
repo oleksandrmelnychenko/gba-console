@@ -57,7 +57,7 @@ export function EditingTab({ onCountChanged }: { onCountChanged?: () => void }) 
   }, [countsReloadKey, setActQty, setCarrierQty])
 
   return (
-    <Stack className="warehouse-ukraine-tab" gap={6}>
+    <Stack className="warehouse-ukraine-tab" gap={0}>
       <div className="pill-tabs">
         <button
           type="button"

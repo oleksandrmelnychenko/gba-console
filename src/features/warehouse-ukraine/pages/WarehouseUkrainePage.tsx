@@ -117,42 +117,44 @@ export function WarehouseUkrainePage() {
 
   return (
     <Stack className="warehouse-ukraine-page console-table-page" gap={6}>
-      <div className="pill-tabs">
-        {visibleTabs.map((tab) => {
-          const isActive = tab.value === activeTabItem?.value
+      <div className="warehouse-ukraine-shell console-table-shell">
+        <div className="warehouse-ukraine-tabs pill-tabs">
+          {visibleTabs.map((tab) => {
+            const isActive = tab.value === activeTabItem?.value
 
-          return (
-            <button
+            return (
+              <button
+                key={tab.value}
+                type="button"
+                className={`pill-tab${isActive ? ' is-active' : ''}`}
+                aria-pressed={isActive}
+                onClick={() => setActiveTab(tab.value)}
+              >
+                <Group gap={6} wrap="nowrap" align="center">
+                  {tab.label}
+                  {tab.showBadge && editingTotal > 0 && (
+                    <Badge className="app-role-pill is-orange" size="sm" variant="light">
+                      {editingTotal}
+                    </Badge>
+                  )}
+                </Group>
+              </button>
+            )
+          })}
+        </div>
+
+        {visibleTabs
+          .filter((tab) => mountedTabs.has(tab.value))
+          .map((tab) => (
+            <Box
               key={tab.value}
-              type="button"
-              className={`pill-tab${isActive ? ' is-active' : ''}`}
-              aria-pressed={isActive}
-              onClick={() => setActiveTab(tab.value)}
+              className="warehouse-ukraine-tab-panel"
+              style={tab.value === resolvedActiveValue ? undefined : { display: 'none' }}
             >
-              <Group gap={6} wrap="nowrap" align="center">
-                {tab.label}
-                {tab.showBadge && editingTotal > 0 && (
-                  <Badge className="app-role-pill is-orange" size="sm" variant="light">
-                    {editingTotal}
-                  </Badge>
-                )}
-              </Group>
-            </button>
-          )
-        })}
+              {tab.render()}
+            </Box>
+          ))}
       </div>
-
-      {visibleTabs
-        .filter((tab) => mountedTabs.has(tab.value))
-        .map((tab) => (
-          <Box
-            key={tab.value}
-            className="warehouse-ukraine-tab-panel"
-            style={tab.value === resolvedActiveValue ? undefined : { display: 'none' }}
-          >
-            {tab.render()}
-          </Box>
-        ))}
     </Stack>
   )
 }

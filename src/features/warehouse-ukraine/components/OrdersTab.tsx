@@ -219,7 +219,7 @@ export function OrdersTab() {
 
   return (
     <Stack className="warehouse-ukraine-tab" gap={6}>
-      <div className="warehouse-ukraine-shell console-table-shell">
+      <div className="warehouse-ukraine-tab-content">
         <div className="app-filter-bar warehouse-ukraine-filter-bar is-orders">
             <div className="app-filter-date-range">
               <TextInput

@@ -846,7 +846,7 @@ export function ShipmentsTab() {
   const [activeTab, setActiveTab] = useState<string | null>(SHIPMENTS_TAB_ALL)
 
   return (
-    <Stack className="warehouse-ukraine-tab" gap={6}>
+    <Stack className="warehouse-ukraine-tab" gap={0}>
       <div className="pill-tabs">
         <button
           type="button"
@@ -895,7 +895,7 @@ function AutoShipmentsPanel({ onCarriedOut }: AutoShipmentsPanelProps) {
 
   return (
     <Stack className="warehouse-ukraine-tab" gap={6}>
-      <div className="warehouse-ukraine-shell console-table-shell">
+      <div className="warehouse-ukraine-tab-content">
         <div className="app-filter-bar warehouse-ukraine-filter-bar is-auto-shipments">
             <div className="app-filter-date-range">
               <TextInput
@@ -1773,7 +1773,7 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
 
   return (
     <Stack className="warehouse-ukraine-tab" gap={6}>
-      <div className="warehouse-ukraine-shell console-table-shell">
+      <div className="warehouse-ukraine-tab-content">
         <div className="app-filter-bar warehouse-ukraine-filter-bar is-all-shipments">
             <div className="app-filter-date-range">
               <TextInput

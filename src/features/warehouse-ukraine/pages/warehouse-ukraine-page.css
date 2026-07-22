@@ -5,6 +5,7 @@
 .warehouse-ukraine-subtab-panel,
 .warehouse-ukraine-editing-panel {
   min-height: 0;
+  min-width: 0;
 }
 
 .warehouse-ukraine-page.console-table-page {
@@ -22,13 +23,29 @@
   flex-direction: column;
 }
 
-.warehouse-ukraine-page > .pill-tabs,
+.warehouse-ukraine-shell > .warehouse-ukraine-tabs,
 .warehouse-ukraine-tab > .pill-tabs {
   flex: 0 0 auto;
 }
 
 .warehouse-ukraine-shell {
   flex: 1 1 auto;
+  height: 100%;
+}
+
+.warehouse-ukraine-tab-content {
+  overflow: hidden;
+}
+
+.warehouse-ukraine-tabs,
+.warehouse-ukraine-tab > .pill-tabs {
+  border-radius: 0;
+  padding-bottom: 4px;
+}
+
+.warehouse-ukraine-tabs .pill-tab,
+.warehouse-ukraine-tab > .pill-tabs .pill-tab {
+  padding-bottom: 12px;
 }
 
 .warehouse-ukraine-filter-bar {
