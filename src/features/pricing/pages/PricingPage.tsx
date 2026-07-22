@@ -1,4 +1,4 @@
-import { Card, Group, Loader, Select, SimpleGrid, Stack, Text, Title } from '@mantine/core'
+import { Group, Loader, Select, Stack, Text } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
@@ -16,6 +16,8 @@ import type {
 } from '../../sales-ukraine/types'
 import { CompetitorWebSearchPanel } from '../components/CompetitorWebSearchPanel'
 import { PriceHintPanel } from '../components/PriceHintPanel'
+import '../../../shared/ui/console-table-page.css'
+import './pricing-page.css'
 
 const MIN_QUERY_LENGTH = 2
 
@@ -246,15 +248,11 @@ export function PricingPage() {
   const clientAgreementNetId = selectedAgreementNetId ?? ''
 
   return (
-    <Stack gap="md">
-      <Group align="center" gap="xs">
-        <Title order={3}>{t('Рекомендація ціни')}</Title>
-        <AiFeatureBadge size="sm" tooltip={t('AI-сервіс цінової оптимізації')} />
-      </Group>
-
-      <Card className="app-section-card" padding="md" radius="md" withBorder>
-        <SimpleGrid cols={{ base: 1, md: 3 }} spacing="md">
+    <Stack className="pricing-page console-table-page" gap={6}>
+      <div className="pricing-page__shell console-table-shell">
+        <div className="app-filter-bar pricing-page__filter-bar">
           <Select
+            className="pricing-page__filter"
             clearable
             data={productOptions}
             filter={({ options }) => options}
@@ -270,6 +268,7 @@ export function PricingPage() {
           />
 
           <Select
+            className="pricing-page__filter"
             clearable
             data={clientOptions}
             filter={({ options }) => options}
@@ -285,6 +284,7 @@ export function PricingPage() {
           />
 
           <Select
+            className="pricing-page__filter"
             data={agreementOptions}
             disabled={!selectedClient || agreementOptions.length === 0}
             label={t('Угода клієнта')}
@@ -294,22 +294,33 @@ export function PricingPage() {
             rightSection={agreementsLoading ? <Loader size="xs" /> : undefined}
             value={selectedAgreementNetId}
           />
-        </SimpleGrid>
-      </Card>
+        </div>
 
-      <Card className="app-section-card" padding="md" radius="md" withBorder>
-        {productNetId && clientAgreementNetId ? (
-          <PriceHintPanel clientAgreementNetId={clientAgreementNetId} productNetId={productNetId} />
-        ) : (
-          <Text c="dimmed" size="sm">
-            {t('Оберіть товар, клієнта та угоду, щоб отримати рекомендацію ціни')}
-          </Text>
-        )}
-      </Card>
+        <div className="pricing-page__content console-table-body">
+          <section className="pricing-page__section">
+            <Stack gap="sm">
+              <Group align="center" gap="xs" wrap="nowrap">
+                <Text className="app-section-title pricing-page__title" fw={600}>
+                  {t('Рекомендація ціни')}
+                </Text>
+                <AiFeatureBadge size="sm" tooltip={t('AI-сервіс цінової оптимізації')} />
+              </Group>
 
-      <Card className="app-section-card" padding="md" radius="md" withBorder>
-        <CompetitorWebSearchPanel product={selectedProduct} />
-      </Card>
+              {productNetId && clientAgreementNetId ? (
+                <PriceHintPanel clientAgreementNetId={clientAgreementNetId} productNetId={productNetId} />
+              ) : (
+                <Text c="dimmed" size="sm">
+                  {t('Оберіть товар, клієнта та угоду, щоб отримати рекомендацію ціни')}
+                </Text>
+              )}
+            </Stack>
+          </section>
+
+          <section className="pricing-page__section">
+            <CompetitorWebSearchPanel product={selectedProduct} />
+          </section>
+        </div>
+      </div>
     </Stack>
   )
 }
