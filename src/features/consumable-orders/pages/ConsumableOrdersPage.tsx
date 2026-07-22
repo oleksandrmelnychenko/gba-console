@@ -29,11 +29,19 @@ import {
   getConsumableOrders,
   searchConsumableOrders,
 } from '../api/consumableOrdersApi'
+import {
+  buildConsumableOrderRows,
+  deduplicateConsumableOrdersByIdentity,
+  getActiveConsumableOrderItems,
+  getActiveOutcomePaymentLinks,
+  getConsumableOrderSupplierCellText,
+  getEntityName,
+  isSameDisplayText,
+} from '../model/consumableOrderTableModel'
 import type {
   ConsumableOrderRow,
   ConsumablesOrder,
   ConsumablesOrderItem,
-  NamedEntity,
   OutcomePaymentOrderConsumablesOrder,
 } from '../types'
 import './consumable-orders-page.css'
@@ -129,19 +137,23 @@ export function ConsumableOrdersPage() {
     void loadOrders()
   }, [loadOrders])
 
+  const uniqueOrders = useMemo(
+    () => deduplicateConsumableOrdersByIdentity(orders),
+    [orders],
+  )
   const hasClientFallbackRows = typeof totalOrders !== 'number' && orders.length > pageSize
   const visibleOrders = useMemo(
-    () => (hasClientFallbackRows ? orders.slice(offset, offset + pageSize) : orders),
-    [hasClientFallbackRows, offset, orders, pageSize],
+    () => (hasClientFallbackRows ? uniqueOrders.slice(offset, offset + pageSize) : uniqueOrders),
+    [hasClientFallbackRows, offset, pageSize, uniqueOrders],
   )
   const rows = useMemo(() => buildConsumableOrderRows(visibleOrders), [visibleOrders])
   const columns = useConsumableOrderColumns()
   const isTableBusy = isLoading || isSearchSettling
   const canMoveForward = typeof totalOrders === 'number'
-    ? page * pageSize < totalOrders
-    : hasClientFallbackRows
-      ? offset + pageSize < orders.length
-      : orders.length === pageSize
+      ? page * pageSize < totalOrders
+      : hasClientFallbackRows
+        ? offset + pageSize < uniqueOrders.length
+        : orders.length === pageSize
   const totalPages = typeof totalOrders === 'number'
     ? Math.max(1, Math.ceil(totalOrders / pageSize))
     : page + (canMoveForward ? 1 : 0)
@@ -264,11 +276,12 @@ export function ConsumableOrdersPage() {
             columns={columns}
             data={rows}
             defaultLayout={CONSUMABLE_ORDERS_TABLE_DEFAULT_LAYOUT}
+            distributeAvailableWidth
             emptyText={t('Прибуткових накладних не знайдено')}
             getRowId={(row) => row.id}
             height="100%"
             isLoading={isTableBusy}
-            layoutVersion="consumable-orders-table-1"
+            layoutVersion="consumable-orders-table-2"
             minWidth={1080}
             showLayoutControls
             tableId="consumable-orders"
@@ -324,7 +337,12 @@ function useConsumableOrderColumns() {
         width: 250,
         minWidth: 200,
         fill: true,
-        accessor: (row) => row.serviceOrganization || '',
+        accessor: (row) => compactStrings([
+          row.serviceOrganization,
+          row.organization,
+          row.order.SupplyOrganizationAgreement?.Name,
+          row.order.SupplyOrganizationAgreement?.Number,
+        ]).join(' '),
         cell: (row) => <ConsumableOrderSupplierCell row={row} />,
       },
       {
@@ -428,49 +446,35 @@ function ConsumableOrderDocumentCell({ row }: { row: ConsumableOrderRow }) {
   const invoice = row.organizationNumber?.trim()
   const titleValue = row.order.Number || invoice
   const title = displayValue(titleValue)
-  const createdDate = formatDateTime(row.created)
+  const createdDate = row.created ? formatDateTime(row.created) : ''
   const organizationDate = row.organizationFromDate ? formatDateTime(row.organizationFromDate) : ''
-  const invoiceTooltip = invoice ? `${t('Накладна')}: ${invoice}` : ''
-  const createdTooltip = `${t('Створено')}: ${createdDate}`
-  const organizationDateTooltip = organizationDate ? `${t('Вхід')}: ${organizationDate}` : ''
-  const tooltip = compactStrings([title, invoiceTooltip, createdTooltip, organizationDateTooltip]).join('\n')
+  const distinctInvoice = invoice && !isSameDisplayText(invoice, title) ? invoice : ''
+  const meta = compactStrings([
+    createdDate ? `${t('Ств.')} ${createdDate}` : '',
+    organizationDate ? `${t('Вх.')} ${organizationDate}` : '',
+    distinctInvoice ? `${t('Накл.')} ${distinctInvoice}` : '',
+  ]).join(' · ')
+  const tooltip = compactStrings([title, meta]).join('\n')
 
   return (
-    <Tooltip label={tooltip} multiline openDelay={350} withArrow>
-      <span className="consumable-orders-document-cell">
-        <span className="consumable-orders-document-copy">
-          <span className="consumable-orders-document-title">{title}</span>
-          <span className="consumable-orders-document-dates">
-            <span><small>{t('Ств.')}</small>{createdDate}</span>
-            {organizationDate ? <span><small>{t('Вх.')}</small>{organizationDate}</span> : null}
-          </span>
-          {invoice && invoice !== title ? (
-            <span className="consumable-orders-document-invoice"><small>{t('Накл.')}</small>{invoice}</span>
-          ) : null}
-        </span>
+    <span className="consumable-orders-document-cell" title={nativeTitle(tooltip)}>
+      <span className="consumable-orders-document-copy">
+        {title ? <span className="consumable-orders-document-title">{title}</span> : null}
+        {meta ? <small className="consumable-orders-document-meta">{meta}</small> : null}
       </span>
-    </Tooltip>
+    </span>
   )
 }
 
 function ConsumableOrderSupplierCell({ row }: { row: ConsumableOrderRow }) {
-  const title = displayValue(row.serviceOrganization)
-  const organization = row.organization?.trim()
-  const agreement = getOrderAgreementName(row)
-  const tooltip = compactStrings([title, organization, agreement]).join('\n')
+  const { primary, secondary } = getConsumableOrderSupplierCellText(row)
+  const tooltip = compactStrings([primary, secondary]).join('\n')
 
   return (
-    <Tooltip label={tooltip} multiline openDelay={350} withArrow>
-      <span className="consumable-orders-two-line-cell">
-        <span>{title}</span>
-        {organization ? <small>{organization}</small> : null}
-        {agreement ? (
-          <Badge className="app-role-pill consumable-orders-agreement-pill" variant="light">
-            {agreement}
-          </Badge>
-        ) : null}
-      </span>
-    </Tooltip>
+    <span className="consumable-orders-two-line-cell" title={nativeTitle(tooltip)}>
+      {primary ? <span>{primary}</span> : null}
+      {secondary ? <small>{secondary}</small> : null}
+    </span>
   )
 }
 
@@ -481,34 +485,33 @@ function ConsumableOrderStorageCell({ row }: { row: ConsumableOrderRow }) {
   const tooltip = compactStrings([title, meta]).join('\n')
 
   return (
-    <Tooltip label={tooltip} multiline openDelay={350} withArrow>
-      <span className="consumable-orders-two-line-cell">
-        <span>{title}</span>
-        <small>{meta}</small>
-      </span>
-    </Tooltip>
+    <span className="consumable-orders-two-line-cell" title={nativeTitle(tooltip)}>
+      {title ? <span>{title}</span> : null}
+      <small>{meta}</small>
+    </span>
   )
 }
 
 function ConsumableOrderAmountCell({ row }: { row: ConsumableOrderRow }) {
   const { t } = useI18n()
-  const totalWithoutVat = formatMoney(row.totalAmountWithoutVat)
-  const totalWithVat = formatMoney(row.amount)
+  const totalWithoutVat = formatTableMoney(row.totalAmountWithoutVat)
+  const totalWithVat = formatTableMoney(row.amount)
   const currency = displayValue(row.currency)
-  const totalWithVatLabel = `${t('З ПДВ')}: ${totalWithVat}`
-  const totalWithoutVatLabel = `${t('Без ПДВ')}: ${totalWithoutVat}`
+  const hasDistinctWithoutVat = Boolean(totalWithoutVat && totalWithoutVat !== totalWithVat)
+  const totalWithVatLabel = totalWithVat ? `${t('З ПДВ')}: ${totalWithVat}` : ''
+  const totalWithoutVatLabel = hasDistinctWithoutVat ? `${t('Без ПДВ')}: ${totalWithoutVat}` : ''
   const tooltip = compactStrings([totalWithVatLabel, currency, totalWithoutVatLabel]).join('\n')
 
   return (
-    <Tooltip label={tooltip} multiline openDelay={350} withArrow>
-      <span className="consumable-orders-amount-cell">
-        <strong>{totalWithVat}</strong>
-        {totalWithoutVat !== totalWithVat ? (
-          <span><small>{t('без ПДВ')}</small>{totalWithoutVat}</span>
-        ) : null}
-        <em>{currency}</em>
+    <span className="consumable-orders-amount-cell" title={nativeTitle(tooltip)}>
+      <span className="consumable-orders-amount-primary">
+        {totalWithVat ? <strong>{totalWithVat}</strong> : null}
+        {currency ? <em>{currency}</em> : null}
       </span>
-    </Tooltip>
+      {hasDistinctWithoutVat ? (
+        <small><span>{t('без ПДВ')}</span>{totalWithoutVat}</small>
+      ) : null}
+    </span>
   )
 }
 
@@ -518,24 +521,25 @@ function ConsumableOrderResponsibleCell({ row }: { row: ConsumableOrderRow }) {
   const tooltip = compactStrings([title, comment]).join('\n')
 
   return (
-    <Tooltip label={tooltip} multiline openDelay={350} withArrow>
-      <span className="consumable-orders-responsible-cell">
-        <span>{title}</span>
-        {comment ? <small>{comment}</small> : null}
-      </span>
-    </Tooltip>
+    <span className="consumable-orders-responsible-cell" title={nativeTitle(tooltip)}>
+      {title ? <span>{title}</span> : null}
+    </span>
   )
 }
 
 function ConsumableOrderStatusCell({ row }: { row: ConsumableOrderRow }) {
   const { t } = useI18n()
+  const paymentStatus = row.isPayed ? t('Оплачено') : t('Не оплачено')
+  const workStatus = row.isDone ? t('Закрито') : t('В роботі')
 
   return (
-    <span className="consumable-orders-status-cell">
+    <span className="consumable-orders-status-cell" title={nativeTitle(`${paymentStatus} · ${workStatus}`)}>
       <Badge className={row.isPayed ? 'app-role-pill is-green' : 'app-role-pill is-red'} variant="light">
-        {row.isPayed ? t('Оплачено') : t('Не оплачено')}
+        {paymentStatus}
       </Badge>
-      <small>{row.isDone ? t('Закрито') : t('В роботі')}</small>
+      <Badge className={row.isDone ? 'app-role-pill is-gray' : 'app-role-pill is-orange'} variant="light">
+        {workStatus}
+      </Badge>
     </span>
   )
 }
@@ -553,8 +557,8 @@ function ConsumableOrderDetailDrawer({
 }) {
   const { t } = useI18n()
   const order = row?.order
-  const items = order?.ConsumablesOrderItems || []
-  const outcomes = order?.OutcomePaymentOrderConsumablesOrders || []
+  const items = order ? getActiveConsumableOrderItems(order) : []
+  const outcomes = order ? getActiveOutcomePaymentLinks(order) : []
 
   return (
     <AppDrawer opened={Boolean(row)} padding="md" size="xl" title={<span style={ORDERS_MONO_STYLE}>{t('Прибуткова накладна')}</span>} onClose={onClose}>
@@ -679,37 +683,10 @@ function DetailItem({ label, mono = false, value }: { label: string; mono?: bool
   )
 }
 
-function buildConsumableOrderRows(orders: ConsumablesOrder[]): ConsumableOrderRow[] {
-  return orders.map((order, index) => ({
-    amount: order.ConsumableProductOrganization ? order.TotalAmount : 0,
-    comment: order.Comment,
-    created: order.Created,
-    currency: order.ConsumableProductOrganization
-      ? order.SupplyOrganizationAgreement?.Currency?.Code || order.SupplyOrganizationAgreement?.Currency?.Name
-      : undefined,
-    id: String(order.NetUid || order.Id || index),
-    isDone: order.IsDone,
-    isPayed: order.IsPayed,
-    itemCount: order.ConsumablesOrderItems?.length || 0,
-    order,
-    organization: getEntityName(order.SupplyOrganizationAgreement?.Organization),
-    organizationFromDate: order.OrganizationFromDate,
-    organizationNumber: order.OrganizationNumber,
-    responsible: getEntityName(order.User),
-    serviceOrganization: getEntityName(order.ConsumableProductOrganization),
-    storage: getEntityName(order.ConsumablesStorage),
-    totalAmountWithoutVat: order.TotalAmountWithoutVAT,
-  }))
-}
-
-function getOrderAgreementName(row: ConsumableOrderRow): string {
-  return displayValue(row.order.SupplyOrganizationAgreement?.Name || row.order.SupplyOrganizationAgreement?.Number)
-}
-
 function compactStrings(values: Array<string | number | null | undefined>): string[] {
   return values
     .map((value) => (typeof value === 'number' ? String(value) : value?.trim()))
-    .filter((value): value is string => Boolean(value && value !== 'вЂ”'))
+    .filter((value): value is string => Boolean(value && value !== '—'))
 }
 
 function navigateToEdit(navigate: NavigateFunction, row: ConsumableOrderRow, backgroundLocation: Location) {
@@ -734,10 +711,6 @@ function navigateToPay(navigate: NavigateFunction, row: ConsumableOrderRow, back
 
 function getItemName(item: ConsumablesOrderItem): string | undefined {
   return item.ConsumableProduct?.Name || item.ConsumableProductCategory?.Name
-}
-
-function getEntityName(entity?: NamedEntity | null): string | undefined {
-  return entity?.LastName || entity?.FullName || entity?.Name || entity?.OperationName || entity?.Code
 }
 
 function getItemKey(item: ConsumablesOrderItem, index: number): string {
@@ -789,6 +762,10 @@ function formatMoney(value?: number): string {
   return typeof value === 'number' && Number.isFinite(value) ? moneyFormatter.format(value) : '—'
 }
 
+function formatTableMoney(value?: number): string {
+  return typeof value === 'number' && Number.isFinite(value) ? moneyFormatter.format(value) : ''
+}
+
 // Empty values render blank (docs/ui-patterns.md §5).
 function displayValue(value?: string | number | null): string {
   if (typeof value === 'number') {
@@ -796,4 +773,10 @@ function displayValue(value?: string | number | null): string {
   }
 
   return value || ''
+}
+
+function nativeTitle(value: string): string | undefined {
+  const title = value.trim()
+
+  return title ? title : undefined
 }
