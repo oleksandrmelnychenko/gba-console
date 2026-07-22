@@ -8,7 +8,7 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
-import { CircleAlert, RotateCcw } from 'lucide-react'
+import { CircleAlert, RotateCcw, Search } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { formatDateInputForQuery, formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -52,7 +52,6 @@ function getInitialFilters(): FilterDraft {
 }
 
 function useBalancesPageModel() {
-  const { t } = useI18n()
   const initialFilters = useMemo(() => getInitialFilters(), [])
   const [filterDraft, setFilterDraft] = useValueState<FilterDraft>(initialFilters)
   const [activeFilters, setActiveFilters] = useValueState<FilterDraft>(initialFilters)
@@ -66,6 +65,31 @@ function useBalancesPageModel() {
   const filterError = getFilterError(activeFilters.from, activeFilters.to)
   const columns = useBalancesColumns()
   const totalPages = Math.max(1, Math.ceil(totalQty / pageSize))
+  const hasActiveFilters = filterDraft.from !== initialFilters.from
+    || filterDraft.name !== initialFilters.name
+    || filterDraft.to !== initialFilters.to
+    || filterDraft.type !== initialFilters.type
+
+  useEffect(() => {
+    if (filterDraft.name === activeFilters.name) {
+      return undefined
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setActiveFilters((currentFilters) => currentFilters.name === filterDraft.name
+        ? currentFilters
+        : { ...currentFilters, name: filterDraft.name })
+      setPage(1)
+    }, 250)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [activeFilters.name, filterDraft.name, setActiveFilters, setPage])
+
+  useEffect(() => {
+    if (page > totalPages) {
+      setPage(totalPages)
+    }
+  }, [page, setPage, totalPages])
 
   const resetDocuments = useCallback(() => {
     setDocuments([])
@@ -98,18 +122,14 @@ function useBalancesPageModel() {
     setPage(1)
   }
 
-  const toolbarLeft = useMemo(
-    () => (
-      <Text size="xs" c="dimmed">
-        {t('Всього')} {totalQty}
-      </Text>
-    ),
-    [t, totalQty],
-  )
+  function updateNameFilter(name: string) {
+    setFilterDraft((currentFilters) => ({ ...currentFilters, name }))
+  }
 
   return {
-    applyFilters, columns, documents, error, filterDraft, filterError, isLoading,
-    page, pageSize, reload, resetFilters, setPage, setPageSize, toolbarLeft, totalPages,
+    applyFilters, columns, documents, error, filterDraft, filterError, hasActiveFilters,
+    isLoading, page, pageSize, reload, resetFilters, setPage, setPageSize, totalPages,
+    updateNameFilter,
   }
 }
 
@@ -210,8 +230,9 @@ export function BalancesPage() {
 function BalancesTableCard({ model }: { model: ReturnType<typeof useBalancesPageModel> }) {
   const { t } = useI18n()
   const {
-    applyFilters, columns, documents, error, filterDraft, filterError, isLoading,
-    page, pageSize, reload, resetFilters, setPage, setPageSize, toolbarLeft, totalPages,
+    applyFilters, columns, documents, error, filterDraft, filterError, hasActiveFilters,
+    isLoading, page, pageSize, reload, resetFilters, setPage, setPageSize, totalPages,
+    updateNameFilter,
   } = model
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
 
@@ -246,13 +267,20 @@ function BalancesTableCard({ model }: { model: ReturnType<typeof useBalancesPage
             />
           </div>
           <TextInput
-            label={t('Назва')}
+            label={t('Пошук')}
+            leftSection={<Search size={15} />}
+            placeholder={t('Назва')}
             value={filterDraft.name}
-            onChange={(event) => applyFilters({ ...filterDraft, name: event.currentTarget.value })}
+            onChange={(event) => updateNameFilter(event.currentTarget.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                applyFilters(filterDraft)
+              }
+            }}
           />
           <Select
             data={typeOptions}
-            label={t('Тип')}
+            label={t('Тип контрагента')}
             value={String(filterDraft.type)}
             w={200}
             onChange={(value) =>
@@ -264,7 +292,14 @@ function BalancesTableCard({ model }: { model: ReturnType<typeof useBalancesPage
           />
           <div className="app-filter-actions balances-filter-actions">
             <Tooltip label={t('Скинути')}>
-              <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
+              <ActionIcon
+                aria-label={t('Скинути')}
+                color="gray"
+                disabled={!hasActiveFilters}
+                size={34}
+                variant="light"
+                onClick={resetFilters}
+              >
                 <RotateCcw size={17} />
               </ActionIcon>
             </Tooltip>
@@ -310,7 +345,6 @@ function BalancesTableCard({ model }: { model: ReturnType<typeof useBalancesPage
           minWidth={1620}
           showLayoutControls
           tableId="balances"
-          toolbarLeft={toolbarLeft}
           toolbarPortalTarget={tableToolbarSlot}
         />
       </div>
@@ -341,7 +375,7 @@ function useBalancesColumns() {
       },
       {
         id: 'type',
-        header: t('Тип'),
+        header: t('Тип документа'),
         width: 220,
         minWidth: 160,
         accessor: (document) => document.Type,
@@ -365,7 +399,7 @@ function useBalancesColumns() {
       },
       {
         id: 'contractorType',
-        header: t('Тип'),
+        header: t('Тип контрагента'),
         width: 180,
         minWidth: 140,
         accessor: (document) => getContractorTypeLabel(document.ContractorType, t),
