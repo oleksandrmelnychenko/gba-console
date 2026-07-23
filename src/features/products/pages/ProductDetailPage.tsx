@@ -37,6 +37,7 @@ import { notifications } from '@mantine/notifications'
 import { ArrowLeft, ArrowLeftRight, Check, ChevronLeft, ChevronRight, CircleAlert, ClipboardList, FileDown, FileText, History, Image as ImageIcon, Package, Plus, RefreshCw, Save, Sparkles, SquarePen, Trash2 } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { type FormEvent, useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import './products.css'
@@ -920,18 +921,12 @@ function ProductPlacementEditor({
                       />
                     </Table.Td>
                     <Table.Td>
-                      <Tooltip label={t('Видалити новий рядок')}>
-                        <ActionIcon
-                          aria-label={t('Видалити новий рядок')}
-                          color="red"
-                          disabled={isPersistedPlacement(placement)}
-                          size="sm"
-                          variant="light"
-                          onClick={() => removeLocalPlacement(index)}
-                        >
-                          <Trash2 size={14} />
-                        </ActionIcon>
-                      </Tooltip>
+                      <TableRowAction
+                        action="delete"
+                        disabled={isPersistedPlacement(placement)}
+                        label={t('Видалити новий рядок')}
+                        onClick={() => removeLocalPlacement(index)}
+                      />
                     </Table.Td>
                   </Table.Tr>
                 ))}
@@ -2296,18 +2291,13 @@ function ProductWriteOffRulesPanel({ onChanged, product }: { onChanged: () => vo
       width: 64,
       accessor: () => null,
       cell: (row) => (
-        <Tooltip label={t('Видалити')}>
-          <ActionIcon
-            aria-label={t('Видалити')}
-            color="red"
-            disabled={!row.NetUid || Boolean(removingNetUid)}
-            loading={removingNetUid === row.NetUid}
-            variant="subtle"
-            onClick={() => removeRule(row)}
-          >
-            <Trash2 size={16} />
-          </ActionIcon>
-        </Tooltip>
+        <TableRowAction
+          action="delete"
+          disabled={!row.NetUid || Boolean(removingNetUid)}
+          label={t('Видалити')}
+          loading={removingNetUid === row.NetUid}
+          onClick={() => removeRule(row)}
+        />
       ),
     },
   ], [removingNetUid, removeRule, t])

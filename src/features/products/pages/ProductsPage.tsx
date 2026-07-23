@@ -26,7 +26,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { ArrowLeftRight, Box as BoxIcon, ChevronDown, CircleAlert, ClipboardList, FileDown, FileText, History, Image as ImageIcon, Package, Plus, RefreshCw, RotateCcw, Save, Settings, Sparkles, SquarePen, Star, Trash2, Upload } from 'lucide-react'
+import { ArrowLeftRight, Box as BoxIcon, ChevronDown, CircleAlert, ClipboardList, FileDown, FileText, History, Image as ImageIcon, Package, Plus, RefreshCw, RotateCcw, Save, Settings, Sparkles, SquarePen, Trash2, Upload } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { type KeyboardEvent, type ReactNode, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
@@ -34,6 +34,7 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { translate } from '../../../shared/i18n/translate'
 import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import {
@@ -1713,37 +1714,23 @@ function ProductOriginalNumbersTab({
       enableResizing: false,
       cell: (item) => (
         <PermissionGate permissionKey={PRODUCT_EDIT_PERMISSION}>
-          <Group gap={6} justify="flex-end" wrap="nowrap">
-            <Tooltip label={t('Зробити основним')}>
-              <ActionIcon
-                aria-label={t('Зробити основним')}
-                color="gray"
-                disabled={Boolean(item.IsMainOriginalNumber) || isSaving}
-                size="sm"
-                variant="subtle"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  void makeMainOriginalNumber(item)
-                }}
-              >
-                <Star size={15} />
-              </ActionIcon>
-            </Tooltip>
-            <Tooltip label={t('Видалити')}>
-              <ActionIcon
-                aria-label={t('Видалити')}
-                color="gray"
-                disabled={Boolean(item.IsMainOriginalNumber) || isSaving}
-                size="sm"
-                variant="subtle"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  void removeOriginalNumber(item)
-                }}
-              >
-                <Trash2 size={15} />
-              </ActionIcon>
-            </Tooltip>
+          <Group gap={4} justify="flex-end" wrap="nowrap">
+            <TableRowAction
+              action="set-primary"
+              disabled={Boolean(item.IsMainOriginalNumber) || isSaving}
+              label={t('Зробити основним')}
+              onClick={() => {
+                void makeMainOriginalNumber(item)
+              }}
+            />
+            <TableRowAction
+              action="delete"
+              disabled={Boolean(item.IsMainOriginalNumber) || isSaving}
+              label={t('Видалити')}
+              onClick={() => {
+                void removeOriginalNumber(item)
+              }}
+            />
           </Group>
         </PermissionGate>
       ),
@@ -1980,21 +1967,14 @@ function ProductRelatedProductsTab({
       enableResizing: false,
       cell: (row) => (
         <PermissionGate permissionKey={PRODUCT_EDIT_PERMISSION}>
-          <Tooltip label={t('Видалити')}>
-            <ActionIcon
-              aria-label={t('Видалити')}
-              color="gray"
-              loading={removingNetUid === row.product.NetUid}
-              size="sm"
-              variant="subtle"
-              onClick={(event) => {
-                event.stopPropagation()
-                void removeRelatedProduct(row)
-              }}
-            >
-              <Trash2 size={15} />
-            </ActionIcon>
-          </Tooltip>
+          <TableRowAction
+            action="delete"
+            label={t('Видалити')}
+            loading={removingNetUid === row.product.NetUid}
+            onClick={() => {
+              void removeRelatedProduct(row)
+            }}
+          />
         </PermissionGate>
       ),
     },
