@@ -18,7 +18,7 @@ import {
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
-import { Banknote, ChartGantt, CircleAlert, Download, Eye, FileSpreadsheet, FileText, Printer, RotateCcw, Search, Truck } from 'lucide-react'
+import { Banknote, CircleAlert, FileSpreadsheet, FileText, Printer, RotateCcw, Search } from 'lucide-react'
 import { type ReactNode, useCallback, useEffect, useMemo, useReducer } from 'react'
 import { formatLocalDate, SYNC_DATA_RANGE_START } from '../../../shared/date/dateTime'
 import { hasExportDocumentUrl } from '../../../shared/documents/exportDocument'
@@ -31,6 +31,7 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
+import { TableRowAction, type TableRowActionKind } from '../../../shared/ui/table-row-action'
 import {
   getTaxFreeCarrier,
   getTaxFreeDocuments,
@@ -851,8 +852,8 @@ function useTaxFreeDocumentColumns({
       {
         cell: (row) => (
           <TaxFreeRowAction
+            action="delivery"
             disabled={!row.document.Statham}
-            icon={<Truck size={17} />}
             label={t('Переглянути перевізника')}
             onClick={() => onOpenCarrier(row.document)}
           />
@@ -883,8 +884,8 @@ function useTaxFreeDocumentColumns({
       {
         cell: (row) => (
           <TaxFreeRowAction
+            action="status"
             disabled={(row.document.TaxFreeStatus ?? TaxFreeStatus.NotFormed) < TaxFreeStatus.Printed}
-            icon={<ChartGantt size={17} />}
             label={t('Панель статусів')}
             onClick={() => onOpenStatus(row.document)}
           />
@@ -900,8 +901,8 @@ function useTaxFreeDocumentColumns({
 
           return (
             <TaxFreeRowAction
+              action="payment"
               disabled={!availability.canOpen}
-              icon={<Banknote size={17} />}
               label={availability.label}
               onClick={() => onOpenAccounting(row.document)}
             />
@@ -922,8 +923,8 @@ function useTaxFreeDocumentColumns({
       {
         cell: (row) => (
           <TaxFreeRowAction
+            action="print"
             disabled={row.document.TaxFreeStatus !== TaxFreeStatus.Formed}
-            icon={<Printer size={17} />}
             label={t('Попередній перегляд друку')}
             onClick={() => onOpenPreview(row.document)}
           />
@@ -939,8 +940,8 @@ function useTaxFreeDocumentColumns({
 
           return (
             <TaxFreeRowAction
+              action="download"
               disabled={!row.document.NetUid || downloadingId === documentId}
-              icon={<Download size={17} />}
               label={t('Завантажити документи')}
               onClick={() => onOpenDownload(row.document)}
             />
@@ -953,7 +954,7 @@ function useTaxFreeDocumentColumns({
       },
       {
         cell: (row) => (
-          <TaxFreeRowAction icon={<Eye size={17} />} label={t('Деталі')} onClick={() => onOpenView(row.document)} />
+          <TaxFreeRowAction action="details" label={t('Деталі')} onClick={() => onOpenView(row.document)} />
         ),
         enableSorting: false,
         header: '',
@@ -1549,35 +1550,23 @@ function TaxFreePrintPreviewModal({
 }
 
 function TaxFreeRowAction({
+  action,
   disabled,
-  icon,
   label,
   onClick,
 }: {
+  action: TableRowActionKind
   disabled?: boolean
-  icon: ReactNode
   label: string
   onClick: () => void
 }) {
   return (
-    <Tooltip label={label}>
-      <span>
-        <ActionIcon
-          aria-label={label}
-          color="gray"
-          disabled={disabled}
-          size={30}
-          style={disabled ? { pointerEvents: 'none' } : undefined}
-          variant="subtle"
-          onClick={(event) => {
-            event.stopPropagation()
-            onClick()
-          }}
-        >
-          {icon}
-        </ActionIcon>
-      </span>
-    </Tooltip>
+    <TableRowAction
+      action={action}
+      disabled={disabled}
+      label={label}
+      onClick={onClick}
+    />
   )
 }
 
