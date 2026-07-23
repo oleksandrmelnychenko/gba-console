@@ -15,7 +15,7 @@ import {
 } from '@mantine/core'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
-import { CircleAlert, Download, Eye, FileText, RotateCcw } from 'lucide-react'
+import { CircleAlert, Download, FileText, RotateCcw } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -35,6 +35,7 @@ import {
 import type { SupplyReturn, SupplyReturnExportDocument, SupplyReturnItem } from '../types'
 import './supply-returns-page.css'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 
 type FilterDraft = {
   from: string
@@ -673,16 +674,11 @@ function useSupplyReturnColumns(
         enableSorting: false,
         cell: (supplyReturn) => (
           <Box onClick={(event) => event.stopPropagation()}>
-            <Tooltip label={t('Деталі')}>
-              <ActionIcon
-                aria-label={t('Деталі')}
-                color="gray"
-                variant="subtle"
-                onClick={() => onOpenDetail(supplyReturn)}
-              >
-                <Eye size={18} />
-              </ActionIcon>
-            </Tooltip>
+            <TableRowAction
+              action="details"
+              label={t('Деталі')}
+              onClick={() => onOpenDetail(supplyReturn)}
+            />
           </Box>
         ),
       },
