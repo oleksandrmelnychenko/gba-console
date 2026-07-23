@@ -15,6 +15,7 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import {
   createProductIncomeFromDynamicPlacements,
   getNonDefectiveStorages,
@@ -800,16 +801,12 @@ export function WarehouseUkraineOrderPlacementsPage() {
                       }
                     }}
                   />
-                  <ActionIcon
-                    aria-label={t('Оприходування')}
-                    color={CREATE_ACTION_COLOR}
+                  <TableRowAction
+                    action="placement"
                     disabled={!canEditDynamicColumn || model.isBusy}
-                    size="sm"
-                    variant="subtle"
+                    label={t('Оприходування')}
                     onClick={() => model.handleOpenPlacements(gridRow, key, row)}
-                  >
-                    <BetweenVerticalEnd size={16} />
-                  </ActionIcon>
+                  />
                 </Group>
                 {placements.length > 0 ? (
                   placements.map((placement, placementIndex) => (

@@ -1,6 +1,6 @@
 import { ActionIcon, Alert, Anchor, Badge, Button, Checkbox, Group, SimpleGrid, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { Check, CircleAlert, RotateCcw } from 'lucide-react'
+import { CircleAlert, RotateCcw } from 'lucide-react'
 import { type ReactNode, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -14,6 +14,7 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { TransporterIcon } from '../../../shared/transporter-icons/TransporterIcon'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import type { EditingItemsResponse, EditingActItem, WarehouseUkraineShipmentDetails, WarehouseUkraineUpdateDataCarrier, WarehouseUkraineUser } from '../types'
@@ -471,11 +472,11 @@ function useEditingColumns({ indexMap, kind, onProcess }: EditingColumnsModel) {
         accessor: (item) => canProcessItem(item),
         cell: (item) =>
           canProcessItem(item) ? (
-            <Tooltip label={kind === 'carrier' ? t('Підтвердити зміну перевізника') : t('Підтвердити обробку')}>
-              <ActionIcon color="green" size="sm" variant="subtle" onClick={() => onProcess(item)}>
-                <Check size={16} />
-              </ActionIcon>
-            </Tooltip>
+            <TableRowAction
+              action="confirm"
+              label={kind === 'carrier' ? t('Підтвердити зміну перевізника') : t('Підтвердити обробку')}
+              onClick={() => onProcess(item)}
+            />
           ) : (
             ''
           ),

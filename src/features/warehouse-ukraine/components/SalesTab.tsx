@@ -1,6 +1,6 @@
 import { ActionIcon, Alert, Anchor, Badge, Button, Group, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { CircleAlert, Download, FileDown, Pencil, Plus, Printer, RotateCcw } from 'lucide-react'
+import { CircleAlert, Pencil, Plus, RotateCcw } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useAuth } from '../../auth/useAuth'
 import { NewSaleWizard } from '../../sales-ukraine/components/new-sale-wizard/NewSaleWizard'
@@ -17,6 +17,7 @@ import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { TransporterIcon } from '../../../shared/transporter-icons/TransporterIcon'
 import {
   getSaleActProtocolEditDocument,
@@ -511,45 +512,27 @@ function useSalesColumns({
         enableSorting: false,
         cell: (sale) => (
           <Group gap={4} wrap="nowrap">
-            <Tooltip label={t('Підтвердження на друк і PDF пакет документів')}>
-              <ActionIcon
-                aria-label={t('PDF пакет документів')}
-                color="gray"
-                size="sm"
-                variant="subtle"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  onPrint(sale)
-                }}
-              >
-                <Printer size={16} />
-              </ActionIcon>
-            </Tooltip>
-            <Tooltip label={t('PDF акт редагування')}>
-              <ActionIcon
-                aria-label={t('PDF акт редагування')}
-                color={sale.IsPrintedActProtocolEdit ? 'teal' : 'gray'}
-                size="sm"
-                variant="subtle"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  onPrintActProtocolEdit(sale)
-                }}
-              >
-                <FileDown size={16} />
-              </ActionIcon>
-            </Tooltip>
+            <TableRowAction
+              action="print"
+              hint={t('Підтвердження на друк і PDF пакет документів')}
+              label={t('PDF пакет документів')}
+              onClick={() => onPrint(sale)}
+            />
+            <TableRowAction
+              action="download"
+              label={t('PDF акт редагування')}
+              tone={sale.IsPrintedActProtocolEdit ? 'success' : 'neutral'}
+              onClick={() => onPrintActProtocolEdit(sale)}
+            />
             {sale.CustomersOwnTtn?.TtnPDFPath && (
-              <Tooltip label={t('Завантажити ТТН')}>
-                <Anchor
-                  href={upgradeHttpToHttps(sale.CustomersOwnTtn.TtnPDFPath)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(event) => event.stopPropagation()}
-                >
-                  <Download size={16} />
-                </Anchor>
-              </Tooltip>
+              <TableRowAction
+                action="download"
+                component="a"
+                href={upgradeHttpToHttps(sale.CustomersOwnTtn.TtnPDFPath)}
+                label={t('Завантажити ТТН')}
+                rel="noopener noreferrer"
+                target="_blank"
+              />
             )}
           </Group>
         ),

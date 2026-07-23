@@ -1,5 +1,4 @@
 import {
-  ActionIcon,
   Box,
   Button,
   Group,
@@ -10,14 +9,14 @@ import {
   Table,
   Text,
   TextInput,
-  Tooltip,
   UnstyledButton,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { Plus, Search, Trash2 } from 'lucide-react'
+import { Plus, Search } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { searchPlacementProducts, updateSupplyOrderUkraine } from '../api/orderPlacementsApi'
 import type { PlacementOrderItem, PlacementProduct, PlacementSupplyOrder } from '../placementsTypes'
 
@@ -132,17 +131,12 @@ function PlacementUnorderedProductsContent({
                   <Table.Td ta="right">{formatNumber(item.UnitPrice)}</Table.Td>
                   <Table.Td ta="right">{formatNumber(item.NetWeight)}</Table.Td>
                   <Table.Td>
-                    <Tooltip label={t('Видалити')}>
-                      <ActionIcon
-                        aria-label={t('Видалити')}
-                        color="red"
-                        disabled={isSaving}
-                        variant="subtle"
-                        onClick={() => deleteItem(item)}
-                      >
-                        <Trash2 size={16} />
-                      </ActionIcon>
-                    </Tooltip>
+                    <TableRowAction
+                      action="delete"
+                      disabled={isSaving}
+                      label={t('Видалити')}
+                      onClick={() => deleteItem(item)}
+                    />
                   </Table.Td>
                 </Table.Tr>
               ))

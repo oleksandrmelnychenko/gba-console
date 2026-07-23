@@ -1,10 +1,10 @@
-import { ActionIcon, Button, Checkbox, Group, NumberInput, Select, Stack, Table, Text, TextInput } from '@mantine/core'
-import { Trash2 } from 'lucide-react'
+import { Button, Checkbox, Group, NumberInput, Select, Stack, Table, Text, TextInput } from '@mantine/core'
 import { useMemo } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import type {
   DynamicProductPlacement,
   DynamicProductPlacementRow,
@@ -287,17 +287,11 @@ export function PlacementEditDrawer({
                 <Table.Td>{placement.Qty}</Table.Td>
                 <Table.Td>
                   {!placement.IsApplied && (
-                    <ActionIcon
-                      aria-label={t('Видалити')}
-                      color="red"
-                      variant="subtle"
-                      onClick={(event) => {
-                        event.stopPropagation()
-                        removePlacement(placement)
-                      }}
-                    >
-                      <Trash2 size={16} />
-                    </ActionIcon>
+                    <TableRowAction
+                      action="delete"
+                      label={t('Видалити')}
+                      onClick={() => removePlacement(placement)}
+                    />
                   )}
                 </Table.Td>
               </Table.Tr>

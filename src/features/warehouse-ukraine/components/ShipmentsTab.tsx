@@ -1,7 +1,6 @@
 import {
   ActionIcon,
   Alert,
-  Anchor,
   Badge,
   Button,
   Card,
@@ -15,7 +14,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { CircleAlert, Download, FileDown, Plus, RefreshCw, RotateCcw, Save, SquarePen, Trash2, X } from 'lucide-react'
+import { CircleAlert, FileDown, Plus, RefreshCw, RotateCcw, Save, SquarePen, X } from 'lucide-react'
 import { useEffect, useMemo, useReducer, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -28,6 +27,7 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import {
   getAllShipmentLists,
   getAutoShipmentList,
@@ -2607,11 +2607,11 @@ function useEditShipmentColumns(model: EditShipmentColumnsModel): DataTableColum
         accessor: (item) => item.Sale.IsVatSale,
         cell: (item) =>
           item.Sale.IsVatSale ? (
-            <Tooltip label={t('Друк PDF')}>
-              <ActionIcon aria-label={t('Друк PDF')} color="gray" size="sm" variant="subtle" onClick={() => model.onPrintSale(item)}>
-                <FileDown size={16} />
-              </ActionIcon>
-            </Tooltip>
+            <TableRowAction
+              action="print"
+              label={t('Друк PDF')}
+              onClick={() => model.onPrintSale(item)}
+            />
           ) : (
             ''
           ),
@@ -2625,17 +2625,12 @@ function useEditShipmentColumns(model: EditShipmentColumnsModel): DataTableColum
         enableSorting: false,
         accessor: (item) => model.indexMap.get(item),
         cell: (item) => (
-          <Tooltip label={t('Видалити')}>
-            <ActionIcon
-              color="red"
-              disabled={!model.canEdit}
-              size="sm"
-              variant="subtle"
-              onClick={() => model.onRemoveItem(item)}
-            >
-              <Trash2 size={16} />
-            </ActionIcon>
-          </Tooltip>
+          <TableRowAction
+            action="delete"
+            disabled={!model.canEdit}
+            label={t('Видалити')}
+            onClick={() => model.onRemoveItem(item)}
+          />
         ),
       },
     ],
@@ -2852,11 +2847,14 @@ function useShipmentColumns(model: ShipmentColumnsModel): DataTableColumn<Shipme
           }
 
           return (
-            <Tooltip label={t('Завантажити ТТН')}>
-              <Anchor href={upgradeHttpToHttps(path)} target="_blank" rel="noreferrer">
-                <Download size={18} />
-              </Anchor>
-            </Tooltip>
+            <TableRowAction
+              action="download"
+              component="a"
+              href={upgradeHttpToHttps(path)}
+              label={t('Завантажити ТТН')}
+              rel="noreferrer"
+              target="_blank"
+            />
           )
         },
       },
@@ -2872,11 +2870,11 @@ type EditableTextCellProps = {
 }
 
 function EditableTextCell({ disabled = false, isCrossed = false, onEdit, text }: EditableTextCellProps) {
+  const { t } = useI18n()
+
   return (
     <Group gap={4} wrap="nowrap" align="center">
-      <ActionIcon color="gray" disabled={disabled} size="sm" variant="subtle" onClick={onEdit}>
-        <SquarePen size={14} />
-      </ActionIcon>
+      <TableRowAction action="edit" disabled={disabled} label={t('Редагувати')} onClick={onEdit} />
       <Text size="sm" td={isCrossed ? 'line-through' : undefined} truncate>
         {text}
       </Text>
