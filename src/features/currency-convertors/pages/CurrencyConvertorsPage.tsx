@@ -1,6 +1,6 @@
 import { ActionIcon, Alert, Box, Button, Card, Group, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { CircleAlert, Pencil, Plus, RefreshCw, RotateCcw, Search } from 'lucide-react'
+import { CircleAlert, Plus, RefreshCw, RotateCcw, Search } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -9,6 +9,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { useAuth } from '../../auth/useAuth'
 import {
   getAllCurrencyTraders,
@@ -542,16 +543,11 @@ function useCurrencyTraderColumns({
         enableSorting: false,
         cell: (trader) => (
           <Box onClick={(event) => event.stopPropagation()}>
-            <Tooltip label={t('Редагування валютного трейдера')}>
-              <ActionIcon
-                aria-label={t('Редагування валютного трейдера')}
-                color="gray"
-                variant="subtle"
-                onClick={() => onEdit(trader)}
-              >
-                <Pencil size={18} />
-              </ActionIcon>
-            </Tooltip>
+            <TableRowAction
+              action="edit"
+              label={t('Редагування валютного трейдера')}
+              onClick={() => onEdit(trader)}
+            />
           </Box>
         ),
       },

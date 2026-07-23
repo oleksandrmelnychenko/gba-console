@@ -1,5 +1,4 @@
 import {
-  ActionIcon,
   Alert,
   Badge,
   Button,
@@ -11,9 +10,10 @@ import {
   Text,
   TextInput,
 } from '@mantine/core'
-import { CircleAlert, Pencil, Plus, Save, Trash2, X } from 'lucide-react'
+import { CircleAlert, Plus, Save } from 'lucide-react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { CURRENCY_ORDER } from '../types'
 import type { CurrencyTrader, CurrencyTraderExchangeRate } from '../types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -187,48 +187,36 @@ export function CurrencyTraderExchangeRatesDrawer({
                     </Table.Td>
                     {canEdit && (
                       <Table.Td>
-                        <Group gap="xs" justify="flex-end" wrap="nowrap">
+                        <Group gap={4} justify="flex-end" wrap="nowrap">
                           {isEditing ? (
                             <>
-                              <ActionIcon
-                                aria-label={t('Зберегти')}
-                                color="gray"
+                              <TableRowAction
+                                action="save"
                                 loading={isSaving}
-                                variant="light"
+                                label={t('Зберегти')}
                                 onClick={onSaveEdit}
-                              >
-                                <Save size={16} />
-                              </ActionIcon>
-                              <ActionIcon
-                                aria-label={t('Скасувати')}
-                                color="gray"
+                              />
+                              <TableRowAction
+                                action="cancel"
                                 disabled={isSaving}
-                                variant="light"
+                                label={t('Скасувати')}
                                 onClick={onCancelEdit}
-                              >
-                                <X size={16} />
-                              </ActionIcon>
+                              />
                             </>
                           ) : (
                             <>
-                              <ActionIcon
-                                aria-label={t('Редагувати')}
-                                color="gray"
+                              <TableRowAction
+                                action="edit"
                                 disabled={isSaving}
-                                variant="subtle"
+                                label={t('Редагувати')}
                                 onClick={() => onStartEdit(rate)}
-                              >
-                                <Pencil size={16} />
-                              </ActionIcon>
-                              <ActionIcon
-                                aria-label={t('Видалити')}
-                                color="red"
+                              />
+                              <TableRowAction
+                                action="delete"
                                 disabled={isSaving}
-                                variant="subtle"
+                                label={t('Видалити')}
                                 onClick={() => onDelete(rate)}
-                              >
-                                <Trash2 size={16} />
-                              </ActionIcon>
+                              />
                             </>
                           )}
                         </Group>
