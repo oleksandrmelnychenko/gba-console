@@ -101,6 +101,73 @@
 
 /* Storage form sheet follows the sheet-form pattern (§9): mono labels and
    36px pattern controls. */
+/* Storage detail drawer: tabs, the active registry filter and the table share
+   one continuous card, matching the product-remains reference. */
+.consumable-storage-detail-registry {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2) !important;
+  box-shadow: var(--app-card-shadow) !important;
+  flex: 0 0 auto;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.consumable-storage-detail-tabs-root,
+.consumable-storage-detail-panel {
+  min-width: 0;
+}
+
+.consumable-storage-detail-tabs {
+  border-radius: 0;
+  padding-bottom: 4px;
+}
+
+.consumable-storage-detail-tabs::before {
+  display: none;
+}
+
+.consumable-storage-detail-tabs .mantine-Tabs-tab {
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: var(--mantine-color-gray-7);
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0;
+  margin-bottom: -1px;
+  padding: 9px 2px 12px;
+  white-space: nowrap;
+}
+
+.consumable-storage-detail-tabs .mantine-Tabs-tab:hover {
+  background: transparent;
+  color: var(--mantine-color-gray-9);
+}
+
+.consumable-storage-detail-tabs .mantine-Tabs-tab[data-active] {
+  border-bottom-color: var(--brand-orange);
+  color: var(--mantine-color-gray-9);
+  font-weight: 600;
+}
+
+.consumable-storage-detail-filter-bar {
+  flex: 0 0 auto;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.consumable-storage-detail-filter-row {
+  min-width: max-content;
+  width: 100%;
+}
+
+.consumable-storage-detail-panel__body {
+  min-width: 0;
+  padding: 10px 8px 8px;
+}
+
 .consumable-storage-form .mantine-InputWrapper-label {
   color: var(--mantine-color-gray-9);
   font-family: var(--font-mono);

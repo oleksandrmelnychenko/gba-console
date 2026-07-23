@@ -510,20 +510,27 @@ function ConsumableStorageDetailDrawer({
 
           <Divider />
 
-          <Tabs defaultValue="remnants" keepMounted={false}>
-            <Tabs.List>
+          <Card
+            className="app-data-card consumable-storage-detail-registry"
+            withBorder
+            radius="md"
+            padding={0}
+          >
+          <Tabs className="consumable-storage-detail-tabs-root" defaultValue="remnants" keepMounted={false}>
+            <Tabs.List className="pill-tabs consumable-storage-detail-tabs">
               <Tabs.Tab value="remnants">{t('Залишки')}</Tabs.Tab>
               <Tabs.Tab value="writtenGoods">{t('Списані товари')}</Tabs.Tab>
             </Tabs.List>
 
-            <Tabs.Panel pt="md" value="remnants">
+            <Tabs.Panel pt={0} value="remnants">
               <StorageRemnantsPanel products={products} totals={totals} />
             </Tabs.Panel>
 
-            <Tabs.Panel pt="md" value="writtenGoods">
+            <Tabs.Panel pt={0} value="writtenGoods">
               <DeprecatedConsumableOrdersPanel storage={storage} onChanged={handleChanged} />
             </Tabs.Panel>
           </Tabs>
+          </Card>
         </Stack>
       )}
     </AppDrawer>
@@ -540,15 +547,21 @@ function StorageRemnantsPanel({ products, totals }: { products: ConsumableProduc
   )
 
   return (
-    <Stack gap="md">
+    <Stack className="consumable-storage-detail-panel" gap={0}>
+      <div className="app-filter-bar consumable-storage-detail-filter-bar">
+        <Group align="end" gap={10} wrap="nowrap" className="consumable-storage-detail-filter-row">
       <TextInput
         leftSection={<Search size={16} />}
+        label={t('Пошук')}
         placeholder={t('Назва або артикул')}
         value={searchValue}
         w={{ base: '100%', sm: 320 }}
         onChange={(event) => setSearchValue(event.currentTarget.value)}
       />
+        </Group>
+      </div>
 
+      <Stack className="consumable-storage-detail-panel__body" gap="md">
       <DataTable
         columns={columns}
         data={filteredProducts}
@@ -573,6 +586,7 @@ function StorageRemnantsPanel({ products, totals }: { products: ConsumableProduc
           ))}
         </Stack>
       )}
+      </Stack>
     </Stack>
   )
 }
@@ -819,8 +833,9 @@ function DeprecatedConsumableOrdersPanel({
   }
 
   return (
-    <Stack gap="md">
-      <Group align="end" justify="space-between" gap="sm" wrap="wrap">
+    <Stack className="consumable-storage-detail-panel" gap={0}>
+      <div className="app-filter-bar consumable-storage-detail-filter-bar consumable-storage-detail-filter-bar--two-row">
+      <Group align="end" justify="space-between" gap={10} wrap="nowrap" className="consumable-storage-detail-filter-row">
         <Group align="end" gap="sm" wrap="wrap">
           <TextInput label={t('Від')} type="date" value={fromDate} onChange={(event) => setFromDate(event.currentTarget.value)} />
           <TextInput label={t('До')} type="date" value={toDate} onChange={(event) => setToDate(event.currentTarget.value)} />
@@ -844,7 +859,9 @@ function DeprecatedConsumableOrdersPanel({
           {t('Списати')}
         </Button>
       </Group>
+      </div>
 
+      <Stack className="consumable-storage-detail-panel__body" gap="md">
       {error && (
         <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {error}
@@ -891,6 +908,7 @@ function DeprecatedConsumableOrdersPanel({
         onClose={() => setDeleteOrderTarget(null)}
         onDelete={handleDeleteOrder}
       />
+      </Stack>
     </Stack>
   )
 }
