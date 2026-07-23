@@ -17,7 +17,7 @@ import {
 } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
-import { Check, CircleAlert, RefreshCw, School, Settings, ThumbsDown, ThumbsUp, TriangleAlert } from 'lucide-react'
+import { Check, CircleAlert, RefreshCw, School, Settings, TriangleAlert } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
@@ -27,6 +27,7 @@ import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { getSupplyOrderSuppliers } from '../../supply-ukraine-orders/api/supplyUkraineOrdersApi'
 import type { Client } from '../../supply-ukraine-orders/types'
 import {
@@ -1144,30 +1145,18 @@ function FeedbackActionsCell({
 
   return (
     <Group gap={4} justify="center" wrap="nowrap">
-      <Tooltip label={t('Прийняти')}>
-        <ActionIcon
-          aria-label={t('Прийняти')}
-          color="green"
-          disabled={isPending}
-          onClick={onAccept}
-          size="sm"
-          variant="subtle"
-        >
-          <ThumbsUp size={16} />
-        </ActionIcon>
-      </Tooltip>
-      <Tooltip label={t('Відхилити')}>
-        <ActionIcon
-          aria-label={t('Відхилити')}
-          color="red"
-          disabled={isPending}
-          onClick={onDismiss}
-          size="sm"
-          variant="subtle"
-        >
-          <ThumbsDown size={16} />
-        </ActionIcon>
-      </Tooltip>
+      <TableRowAction
+        action="approve"
+        disabled={isPending}
+        label={t('Прийняти')}
+        onClick={onAccept}
+      />
+      <TableRowAction
+        action="reject"
+        disabled={isPending}
+        label={t('Відхилити')}
+        onClick={onDismiss}
+      />
     </Group>
   )
 }

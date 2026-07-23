@@ -19,7 +19,7 @@ import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
 import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
-import { ArrowLeft, ArrowRight, Check, CircleAlert, Eye, FileInput, FileSpreadsheet, Pencil, RefreshCw, RotateCcw, Search } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Check, CircleAlert, FileInput, FileSpreadsheet, RefreshCw, RotateCcw, Search } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -28,6 +28,7 @@ import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import {
   addOrUpdateSad,
   addOrUpdateSaleSad,
@@ -1507,19 +1508,14 @@ function useBasketSalesColumns({
         id: 'actions',
         header: '',
         cell: (sale) => (
-          <Tooltip label={t('Переглянути')}>
-            <ActionIcon
-              aria-label={t('Переглянути')}
-              size="sm"
-              variant="subtle"
-              onClick={(event) => {
-                event.stopPropagation()
-                onOpen(sale)
-              }}
-            >
-              <Eye size={16} />
-            </ActionIcon>
-          </Tooltip>
+          <TableRowAction
+            action="view"
+            label={t('Переглянути')}
+            onClick={(event) => {
+              event.stopPropagation()
+              onOpen(sale)
+            }}
+          />
         ),
         width: 72,
         enableSorting: false,
@@ -1606,20 +1602,15 @@ function useCartSourceColumns({
         id: 'actions',
         header: '',
         cell: (item) => (
-          <Tooltip label={t('Резерв')}>
-            <ActionIcon
-              aria-label={t('Резерв')}
-              disabled={Boolean(item.IsDirty)}
-              size="sm"
-              variant="subtle"
-              onClick={(event) => {
-                event.stopPropagation()
-                openReserveModal(item)
-              }}
-            >
-              <Pencil size={16} />
-            </ActionIcon>
-          </Tooltip>
+          <TableRowAction
+            action="edit"
+            disabled={Boolean(item.IsDirty)}
+            label={t('Резерв')}
+            onClick={(event) => {
+              event.stopPropagation()
+              openReserveModal(item)
+            }}
+          />
         ),
         width: 72,
         enableSorting: false,

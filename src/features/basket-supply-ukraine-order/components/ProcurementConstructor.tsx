@@ -27,7 +27,6 @@ import {
   CircleAlert,
   FileSpreadsheet,
   ImageOff,
-  Plus,
   RefreshCw,
   RotateCcw,
   Save,
@@ -38,6 +37,7 @@ import {
 import * as XLSX from 'xlsx'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
@@ -817,17 +817,12 @@ function usePlanColumns({
           const inBasket = basket.has(row.product_id)
 
           return (
-            <Tooltip label={inBasket ? t('У кошику') : t('Додати в кошик')}>
-              <ActionIcon
-                aria-label={inBasket ? t('У кошику') : t('Додати в кошик')}
-                color={inBasket ? 'green' : CREATE_ACTION_COLOR}
-                size="sm"
-                variant={inBasket ? 'filled' : 'light'}
-                onClick={() => onAddToBasket(row, orderQtyFor(row))}
-              >
-                <Plus size={15} />
-              </ActionIcon>
-            </Tooltip>
+            <TableRowAction
+              action="add"
+              label={inBasket ? t('У кошику') : t('Додати в кошик')}
+              tone={inBasket ? 'success' : 'brand'}
+              onClick={() => onAddToBasket(row, orderQtyFor(row))}
+            />
           )
         },
         align: 'center',
