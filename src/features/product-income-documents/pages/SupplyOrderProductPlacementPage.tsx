@@ -1,5 +1,5 @@
-import { ActionIcon, Alert, Anchor, Badge, Button, Card, Group, SimpleGrid, Stack, Text, Tooltip } from '@mantine/core'
-import { CircleAlert, FileText, MapPin } from 'lucide-react'
+import { Alert, Anchor, Badge, Button, Card, Group, SimpleGrid, Stack, Text } from '@mantine/core'
+import { CircleAlert, FileText } from 'lucide-react'
 import { useEffect, useMemo } from 'react'
 import { useLocation, useNavigate, useParams, type Location } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -10,6 +10,7 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import {
   exportProductIncomeDocument,
@@ -499,20 +500,11 @@ function usePlacementColumns(
         enableReorder: false,
         cell: (row) =>
           row.placements.length > 0 ? (
-            <Tooltip label={t('Місця зберігання')}>
-              <ActionIcon
-                aria-label={t('Місця зберігання')}
-                color="blue"
-                size="sm"
-                variant="subtle"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  onOpenPlacementDetails(row)
-                }}
-              >
-                <MapPin size={16} />
-              </ActionIcon>
-            </Tooltip>
+            <TableRowAction
+              action="location"
+              label={t('Місця зберігання')}
+              onClick={() => onOpenPlacementDetails(row)}
+            />
           ) : null,
       },
     ],

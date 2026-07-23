@@ -13,7 +13,7 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
-import { ArrowLeftRight, CircleAlert, Download, ExternalLink, Eye, FileText, History, Layers, RotateCcw, Search } from 'lucide-react'
+import { CircleAlert, Download, ExternalLink, Eye, FileText, Layers, RotateCcw, Search } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -34,6 +34,7 @@ import {
 } from '../../../shared/ui/product-movement-history/ProductMovementHistoryDrawers'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { useAuth } from '../../auth/useAuth'
 import { getProductCapitalization } from '../../product-capitalizations/api/productCapitalizationsApi'
 import type { ProductCapitalization } from '../../product-capitalizations/types'
@@ -1656,36 +1657,14 @@ function useProductIncomeDocumentColumns({
         enableReorder: false,
         cell: (row) => (
           <Group gap={4} justify="flex-end" wrap="nowrap">
-            <Tooltip label={t('Відкрити')}>
-              <ActionIcon
-                aria-label={t('Відкрити')}
-                color="gray"
-                size={30}
-                variant="subtle"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  onOpen(row.document)
-                }}
-              >
-                <ExternalLink size={16} />
-              </ActionIcon>
-            </Tooltip>
-            <Tooltip label={t('Експорт')}>
-              <ActionIcon
-                aria-label={t('Експорт')}
-                color="gray"
-                disabled={!row.document.NetUid}
-                loading={exportingNetId === row.document.NetUid}
-                size={30}
-                variant="subtle"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  onExport(row.document)
-                }}
-              >
-                <Download size={16} />
-              </ActionIcon>
-            </Tooltip>
+            <TableRowAction action="open" label={t('Відкрити')} onClick={() => onOpen(row.document)} />
+            <TableRowAction
+              action="download"
+              disabled={!row.document.NetUid}
+              label={t('Експорт')}
+              loading={exportingNetId === row.document.NetUid}
+              onClick={() => onExport(row.document)}
+            />
           </Group>
         ),
       },
@@ -1952,37 +1931,21 @@ function ProductHistoryActionButtons({
 
   return (
     <Group gap={4} justify="flex-end" wrap="nowrap">
-      <Tooltip label={hasProductNetUid ? t('Історія місця зберігання') : missingProductLabel}>
-        <ActionIcon
-          aria-label={t('Історія місця зберігання')}
-          color="gray"
-          disabled={!hasProductNetUid}
-          size="sm"
-          variant="subtle"
-          onClick={(event) => {
-            event.stopPropagation()
-            onOpenStorageLocationHistory(product)
-          }}
-        >
-          <History size={16} />
-        </ActionIcon>
-      </Tooltip>
+      <TableRowAction
+        action="history"
+        disabled={!hasProductNetUid}
+        hint={hasProductNetUid ? undefined : missingProductLabel}
+        label={t('Історія місця зберігання')}
+        onClick={() => onOpenStorageLocationHistory(product)}
+      />
       {canOpenProductMovement ? (
-        <Tooltip label={hasProductNetUid ? t('Рух товару') : missingProductLabel}>
-          <ActionIcon
-            aria-label={t('Рух товару')}
-            color="gray"
-            disabled={!hasProductNetUid}
-            size="sm"
-            variant="subtle"
-            onClick={(event) => {
-              event.stopPropagation()
-              onOpenMovementHistory(product)
-            }}
-          >
-            <ArrowLeftRight size={16} />
-          </ActionIcon>
-        </Tooltip>
+        <TableRowAction
+          action="transfer"
+          disabled={!hasProductNetUid}
+          hint={hasProductNetUid ? undefined : missingProductLabel}
+          label={t('Рух товару')}
+          onClick={() => onOpenMovementHistory(product)}
+        />
       ) : null}
     </Group>
   )
