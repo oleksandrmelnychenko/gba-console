@@ -330,16 +330,6 @@
   white-space: nowrap;
 }
 
-.online-shop-cities-row-action {
-  color: var(--mantine-color-gray-5);
-  justify-self: end;
-}
-
-.online-shop-cities-row-action:hover {
-  background: var(--mantine-color-orange-0);
-  color: var(--mantine-color-orange-8);
-}
-
 @media (max-width: 960px) {
   .online-shop-cities-layout {
     grid-template-columns: 1fr;

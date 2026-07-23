@@ -14,7 +14,7 @@ import {
 } from '@mantine/core'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { notifications } from '@mantine/notifications'
-import { Archive, ChevronRight, CircleAlert, Plus, RefreshCw, RotateCcw, Save, Search, Trash2 } from 'lucide-react'
+import { ChevronRight, CircleAlert, Plus, RefreshCw, RotateCcw, Save, Search, Trash2 } from 'lucide-react'
 import { type FormEvent, useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
@@ -22,6 +22,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { getOnlineShopCities, saveOnlineShopCity } from '../api/onlineShopCitiesApi'
 import type { OnlineShopCity } from '../types'
 import './online-shop-cities-page.css'
@@ -541,22 +542,12 @@ function useCityColumns({
           const isArchived = city.Deleted === true
 
           return (
-            <Tooltip label={t('Архівувати')}>
-              <ActionIcon
-                aria-label={t('Архівувати')}
-                className="online-shop-cities-row-action"
-                color="gray"
-                disabled={!city.Id || isArchived}
-                size="sm"
-                variant="subtle"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  onRequestArchive(city)
-                }}
-              >
-                <Archive size={15} />
-              </ActionIcon>
-            </Tooltip>
+            <TableRowAction
+              action="archive"
+              disabled={!city.Id || isArchived}
+              label={t('Архівувати')}
+              onClick={() => onRequestArchive(city)}
+            />
           )
         },
       },
