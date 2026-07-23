@@ -516,7 +516,7 @@ export function SalesReturnClientPage() {
 
   return (
     <Box className="sales-return-client-page">
-      <Card className="app-filter-card sales-return-client-command-card" withBorder radius="md" padding={0}>
+      <div className="sales-return-client-command-card">
         <div className="app-filter-bar sales-return-client-command-bar">
           <div className="app-filter-actions sales-return-client-command-actions">
             <Button
@@ -535,7 +535,7 @@ export function SalesReturnClientPage() {
             </Button>
           </div>
         </div>
-      </Card>
+      </div>
 
       <ClientReturnsReportPanel opened={reportOpened} onClose={() => setReportOpened(false)} />
 

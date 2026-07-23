@@ -611,7 +611,7 @@ export function NewUkraineSaleReturnPage() {
 
   return (
     <Box className="new-sale-return-page console-table-page">
-      <div className="console-table-shell new-sale-return-shell">
+      <div className="sales-dashboard-tab-content new-sale-return-shell">
         <div className="new-sale-return-command-bar app-filter-bar">
           <div className="app-filter-date-range">
             <TextInput
