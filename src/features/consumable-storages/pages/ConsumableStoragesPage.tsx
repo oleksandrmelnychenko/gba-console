@@ -19,7 +19,7 @@ import {
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
-import { CircleAlert, Eye, Pencil, Plus, RefreshCw, RotateCcw, Save, Search, Trash2, X } from 'lucide-react'
+import { CircleAlert, Plus, RefreshCw, RotateCcw, Save, Search, Trash2, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -32,6 +32,7 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { PermissionGate } from '../../auth/components/PermissionGate'
 import {
   createDeprecatedConsumableOrder,
@@ -362,8 +363,8 @@ function useConsumableStorageColumns({
       {
         id: 'actions',
         header: '',
-        width: 104,
-        minWidth: 104,
+        width: 112,
+        minWidth: 112,
         maxWidth: 112,
         align: 'right',
         enableSorting: false,
@@ -373,52 +374,34 @@ function useConsumableStorageColumns({
         cell: (storage) => (
           <Group gap={4} justify="flex-end" wrap="nowrap">
             <PermissionGate permissionKey={CONSUMABLE_STORAGE_DELETE_PERMISSION}>
-              <Tooltip label={t('Видалити')}>
-                <ActionIcon
-                  aria-label={t('Видалити')}
-                  color="red"
-                  disabled={!storage.NetUid}
-                  size="sm"
-                  variant="subtle"
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    onDelete(storage)
-                  }}
-                >
-                  <Trash2 size={16} />
-                </ActionIcon>
-              </Tooltip>
-            </PermissionGate>
-            <Tooltip label={t('Деталі')}>
-              <ActionIcon
-                aria-label={t('Деталі')}
-                color="gray"
-                size="sm"
-                variant="subtle"
+              <TableRowAction
+                action="delete"
+                disabled={!storage.NetUid}
+                label={t('Видалити')}
                 onClick={(event) => {
                   event.stopPropagation()
-                  onOpen(storage)
+                  onDelete(storage)
                 }}
-              >
-                <Eye size={16} />
-              </ActionIcon>
-            </Tooltip>
+              />
+            </PermissionGate>
+            <TableRowAction
+              action="details"
+              label={t('Деталі')}
+              onClick={(event) => {
+                event.stopPropagation()
+                onOpen(storage)
+              }}
+            />
             <PermissionGate permissionKey={CONSUMABLE_STORAGE_EDIT_PERMISSION}>
-              <Tooltip label={t('Редагувати')}>
-                <ActionIcon
-                  aria-label={t('Редагувати')}
-                  color="gray"
-                  disabled={!storage.NetUid}
-                  size="sm"
-                  variant="subtle"
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    onEdit(storage)
-                  }}
-                >
-                  <Pencil size={16} />
-                </ActionIcon>
-              </Tooltip>
+              <TableRowAction
+                action="edit"
+                disabled={!storage.NetUid}
+                label={t('Редагувати')}
+                onClick={(event) => {
+                  event.stopPropagation()
+                  onEdit(storage)
+                }}
+              />
             </PermissionGate>
           </Group>
         ),
@@ -1026,36 +1009,24 @@ function useDeprecatedConsumableOrderColumns({
         enableReorder: false,
         cell: (row) => (
           <Group gap={4} justify="flex-end" wrap="nowrap">
-            <Tooltip label={t('Редагувати')}>
-              <ActionIcon
-                aria-label={t('Редагувати')}
-                color="gray"
-                disabled={!row.order.NetUid}
-                size="sm"
-                variant="subtle"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  onEdit(row.order)
-                }}
-              >
-                <Pencil size={16} />
-              </ActionIcon>
-            </Tooltip>
-            <Tooltip label={t('Видалити')}>
-              <ActionIcon
-                aria-label={t('Видалити')}
-                color="red"
-                disabled={!row.order.NetUid}
-                size="sm"
-                variant="subtle"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  onDelete(row.order)
-                }}
-              >
-                <Trash2 size={16} />
-              </ActionIcon>
-            </Tooltip>
+            <TableRowAction
+              action="edit"
+              disabled={!row.order.NetUid}
+              label={t('Редагувати')}
+              onClick={(event) => {
+                event.stopPropagation()
+                onEdit(row.order)
+              }}
+            />
+            <TableRowAction
+              action="delete"
+              disabled={!row.order.NetUid}
+              label={t('Видалити')}
+              onClick={(event) => {
+                event.stopPropagation()
+                onDelete(row.order)
+              }}
+            />
           </Group>
         ),
       },
@@ -1526,18 +1497,12 @@ function DeprecatedConsumableOrderItemsTable({
                   />
                 </Table.Td>
                 <Table.Td>
-                  <Tooltip label={t('Видалити')}>
-                    <ActionIcon
-                      aria-label={t('Видалити')}
-                      color="red"
-                      disabled={isSaving}
-                      size="sm"
-                      variant="subtle"
-                      onClick={() => onRemove(index)}
-                    >
-                      <Trash2 size={16} />
-                    </ActionIcon>
-                  </Tooltip>
+                  <TableRowAction
+                    action="delete"
+                    disabled={isSaving}
+                    label={t('Видалити')}
+                    onClick={() => onRemove(index)}
+                  />
                 </Table.Td>
               </Table.Tr>
             )
