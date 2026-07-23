@@ -16,7 +16,7 @@ import {
 } from '@mantine/core'
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
-import { ArrowLeftRight, CircleAlert, Download, FileSpreadsheet, FileText, RefreshCw, RotateCcw, Search } from 'lucide-react'
+import { CircleAlert, Download, FileSpreadsheet, FileText, RefreshCw, RotateCcw, Search } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -25,6 +25,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import {
   exportGroupedProductRemains,
@@ -1198,21 +1199,13 @@ function useProductRemainProductColumns(onOpenMovement: (row: RemainingConsignme
       minWidth: 64,
       enableSorting: false,
       cell: (row) => (
-        <Tooltip label={row.ConsignmentItemNetId ? t('Рух товару') : t('Немає ConsignmentItemNetId')}>
-          <ActionIcon
-            aria-label={t('Рух товару')}
-            color="gray"
-            disabled={!row.ConsignmentItemNetId}
-            size="sm"
-            variant="subtle"
-            onClick={(event) => {
-              event.stopPropagation()
-              onOpenMovement(row)
-            }}
-          >
-            <ArrowLeftRight size={16} />
-          </ActionIcon>
-        </Tooltip>
+        <TableRowAction
+          action="transfer"
+          disabled={!row.ConsignmentItemNetId}
+          hint={row.ConsignmentItemNetId ? undefined : t('Немає ConsignmentItemNetId')}
+          label={t('Рух товару')}
+          onClick={() => onOpenMovement(row)}
+        />
       ),
     },
     ],
