@@ -3,7 +3,6 @@ import {
   Alert,
   Anchor,
   Box,
-  Card,
   Group,
   Select,
   Stack,
@@ -332,8 +331,8 @@ export function ClientProductMovementPage() {
   )
 
   return (
-    <Stack className="client-product-movement-page" gap={6}>
-      <Card className="app-data-card client-product-movement-card" withBorder radius="md" padding={0}>
+    <Stack className="client-product-movement-page" gap={0}>
+      <div className="sales-dashboard-tab-content client-product-movement-card">
         <div className="app-filter-bar client-product-movement-filter-bar">
           <Group align="end" gap={10} wrap="nowrap" className="client-product-movement-filter-row">
             <div className="app-filter-date-range">
@@ -461,7 +460,7 @@ export function ClientProductMovementPage() {
             toolbarPortalTarget={tableToolbarSlot}
           />
         </div>
-      </Card>
+      </div>
 
       <DownloadDocumentModal
         document={downloadDocument}
