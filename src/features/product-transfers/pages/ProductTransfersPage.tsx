@@ -23,7 +23,7 @@ import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { notifications } from '@mantine/notifications'
-import { CircleAlert, Download, Eye, FileSpreadsheet, FileText, Plus, RotateCcw } from 'lucide-react'
+import { CircleAlert, Download, FileSpreadsheet, FileText, Plus, RotateCcw } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { type FormEvent, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -35,6 +35,7 @@ import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { useAuth } from '../../auth/useAuth'
 import {
   addProductTransferFromFile,
@@ -1030,11 +1031,7 @@ function useProductTransferColumns(
         enableSorting: false,
         cell: (transfer) => (
           <Box onClick={(event) => event.stopPropagation()}>
-            <Tooltip label={t('Деталі')}>
-              <ActionIcon aria-label={t('Деталі')} color="gray" variant="subtle" onClick={() => onOpenDetail(transfer)}>
-                <Eye size={18} />
-              </ActionIcon>
-            </Tooltip>
+            <TableRowAction action="details" label={t('Деталі')} onClick={() => onOpenDetail(transfer)} />
           </Box>
         ),
       },
