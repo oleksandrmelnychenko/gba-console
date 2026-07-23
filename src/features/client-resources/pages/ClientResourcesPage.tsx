@@ -21,7 +21,7 @@ import {
 } from '@mantine/core'
 import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
-import { ArrowDown, ArrowUp, Building, ChevronRight, CircleAlert, Coins, DatabaseX, ExternalLink, MapPin, Package, Pencil, Plus, ReceiptText, RefreshCw, RotateCcw, Ruler, Save, Search, Star, Trash2, Truck, Upload, Users } from 'lucide-react'
+import { Building, ChevronRight, CircleAlert, Coins, DatabaseX, ExternalLink, MapPin, Package, Plus, ReceiptText, RefreshCw, RotateCcw, Ruler, Save, Search, Star, Trash2, Truck, Upload, Users } from 'lucide-react'
 import { createContext, type ComponentType, type ReactNode, useCallback, useContext, useEffect, useMemo, useReducer, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
@@ -33,6 +33,7 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout, DataTableDensity } from '../../../shared/ui/data-table/types'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { toProxiedAssetUrl } from '../../../shared/url/proxiedAssetUrl'
 import { PermissionGate } from '../../auth/components/PermissionGate'
 import {
@@ -852,54 +853,36 @@ function RegionsPanelView({ model }: { model: ReturnType<typeof useRegionsPanelM
                           {region.RegionCodes?.length || 0}
                         </Badge>
                         <PermissionGate permissionKey={REGION_CODE_CREATE_PERMISSION}>
-                          <Tooltip label={translate("Додати код")}>
-                            <ActionIcon
-                              aria-label={translate("Додати код регіону")}
-                              color={CREATE_ACTION_COLOR}
-                              size="sm"
-                              variant="subtle"
-                              onClick={(event) => {
-                                event.stopPropagation()
-                                openCreateRegionCode(region)
-                              }}
-                            >
-                              <Plus size={16} />
-                            </ActionIcon>
-                          </Tooltip>
+                          <TableRowAction
+                            action="add"
+                            label={translate("Додати код регіону")}
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              openCreateRegionCode(region)
+                            }}
+                          />
                         </PermissionGate>
                         <PermissionGate permissionKey={REGION_EDIT_PERMISSION}>
-                          <Tooltip label={translate("Редагувати")}>
-                            <ActionIcon
-                              aria-label={translate("Редагувати регіон")}
-                              color="gray"
-                              size="sm"
-                              variant="subtle"
-                              onClick={(event) => {
-                                event.stopPropagation()
-                                openEditRegion(region)
-                              }}
-                            >
-                              <Pencil size={16} />
-                            </ActionIcon>
-                          </Tooltip>
+                          <TableRowAction
+                            action="edit"
+                            label={translate("Редагувати регіон")}
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              openEditRegion(region)
+                            }}
+                          />
                         </PermissionGate>
                         <PermissionGate permissionKey={REGION_DELETE_PERMISSION}>
-                          <Tooltip label={translate("Видалити")}>
-                            <ActionIcon
-                              aria-label={translate("Видалити регіон")}
-                              color="red"
-                              disabled={!region.NetUid}
-                              size="sm"
-                              variant="subtle"
-                              onClick={(event) => {
-                                event.stopPropagation()
-                                setFormError(null)
-                                setDeleteTarget({ type: 'region', region })
-                              }}
-                            >
-                              <Trash2 size={16} />
-                            </ActionIcon>
-                          </Tooltip>
+                          <TableRowAction
+                            action="delete"
+                            disabled={!region.NetUid}
+                            label={translate("Видалити регіон")}
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              setFormError(null)
+                              setDeleteTarget({ type: 'region', region })
+                            }}
+                          />
                         </PermissionGate>
                       </Group>
                     </div>
@@ -963,34 +946,22 @@ function RegionsPanelView({ model }: { model: ReturnType<typeof useRegionsPanelM
                       cell: (code) => (
                         <Group gap={4} justify="flex-end" wrap="nowrap">
                           <PermissionGate permissionKey={REGION_EDIT_PERMISSION}>
-                            <Tooltip label={translate("Редагувати")}>
-                              <ActionIcon
-                                aria-label={translate("Редагувати код регіону")}
-                                color="gray"
-                                size="sm"
-                                variant="subtle"
-                                onClick={() => openEditRegionCode(selectedRegion, code)}
-                              >
-                                <Pencil size={16} />
-                              </ActionIcon>
-                            </Tooltip>
+                            <TableRowAction
+                              action="edit"
+                              label={translate("Редагувати код регіону")}
+                              onClick={() => openEditRegionCode(selectedRegion, code)}
+                            />
                           </PermissionGate>
                           <PermissionGate permissionKey={REGION_DELETE_PERMISSION}>
-                            <Tooltip label={translate("Видалити")}>
-                              <ActionIcon
-                                aria-label={translate("Видалити код регіону")}
-                                color="red"
-                                disabled={!code.NetUid}
-                                size="sm"
-                                variant="subtle"
-                                onClick={() => {
-                                  setFormError(null)
-                                  setDeleteTarget({ type: 'regionCode', regionCode: code })
-                                }}
-                              >
-                                <Trash2 size={16} />
-                              </ActionIcon>
-                            </Tooltip>
+                            <TableRowAction
+                              action="delete"
+                              disabled={!code.NetUid}
+                              label={translate("Видалити код регіону")}
+                              onClick={() => {
+                                setFormError(null)
+                                setDeleteTarget({ type: 'regionCode', regionCode: code })
+                              }}
+                            />
                           </PermissionGate>
                         </Group>
                       ),
@@ -1483,33 +1454,21 @@ function PerfectClientGroup({
                     </Tooltip>
                   ) : null}
                 </Box>
-                <Group gap={6} justify="flex-end" wrap="nowrap">
+                <Group gap={4} justify="flex-end" wrap="nowrap">
                   <PermissionGate permissionKey={PERFECT_CLIENT_EDIT_PERMISSION}>
-                    <Tooltip label={translate("Редагувати")}>
-                      <ActionIcon
-                        aria-label={translate("Редагувати параметр")}
-                        color="gray"
-                        size="sm"
-                        variant="subtle"
-                        onClick={() => onEdit(item)}
-                      >
-                        <Pencil size={16} />
-                      </ActionIcon>
-                    </Tooltip>
+                    <TableRowAction
+                      action="edit"
+                      label={translate("Редагувати параметр")}
+                      onClick={() => onEdit(item)}
+                    />
                   </PermissionGate>
                   <PermissionGate permissionKey={PERFECT_CLIENT_DELETE_PERMISSION}>
-                    <Tooltip label={translate("Видалити")}>
-                      <ActionIcon
-                        aria-label={translate("Видалити параметр")}
-                        color="red"
-                        disabled={!item.NetUid}
-                        size="sm"
-                        variant="subtle"
-                        onClick={() => onDelete(item)}
-                      >
-                        <Trash2 size={16} />
-                      </ActionIcon>
-                    </Tooltip>
+                    <TableRowAction
+                      action="delete"
+                      disabled={!item.NetUid}
+                      label={translate("Видалити параметр")}
+                      onClick={() => onDelete(item)}
+                    />
                   </PermissionGate>
                 </Group>
               </Box>
@@ -2395,7 +2354,7 @@ function OrganizationsPanel({ section }: { section: ClientResourceSection }) {
                 id: 'actions',
                 header: '',
                 align: 'right',
-                width: 72,
+                width: 88,
                 enableHiding: false,
                 enableReorder: false,
                 enableResizing: false,
@@ -2403,34 +2362,22 @@ function OrganizationsPanel({ section }: { section: ClientResourceSection }) {
                 cell: (organization) => (
                   <Group gap={4} justify="flex-end" wrap="nowrap">
                     <PermissionGate permissionKey={ORGANIZATION_EDIT_PERMISSION}>
-                      <Tooltip label={translate("Редагувати")}>
-                        <ActionIcon
-                          aria-label={translate("Редагувати організацію")}
-                          color="gray"
-                          size="sm"
-                          variant="subtle"
-                          onClick={() => openEditOrganization(organization)}
-                        >
-                          <Pencil size={16} />
-                        </ActionIcon>
-                      </Tooltip>
+                      <TableRowAction
+                        action="edit"
+                        label={translate("Редагувати організацію")}
+                        onClick={() => openEditOrganization(organization)}
+                      />
                     </PermissionGate>
                     <PermissionGate permissionKey={ORGANIZATION_DELETE_PERMISSION}>
-                      <Tooltip label={translate("Видалити")}>
-                        <ActionIcon
-                          aria-label={translate("Видалити організацію")}
-                          color="red"
-                          disabled={!organization.NetUid}
-                          size="sm"
-                          variant="subtle"
-                          onClick={() => {
-                            setFormError(null)
-                            setDeleteTarget({ type: 'organization', organization })
-                          }}
-                        >
-                          <Trash2 size={16} />
-                        </ActionIcon>
-                      </Tooltip>
+                      <TableRowAction
+                        action="delete"
+                        disabled={!organization.NetUid}
+                        label={translate("Видалити організацію")}
+                        onClick={() => {
+                          setFormError(null)
+                          setDeleteTarget({ type: 'organization', organization })
+                        }}
+                      />
                     </PermissionGate>
                   </Group>
                 ),
@@ -2930,7 +2877,7 @@ function TaxInspectionsPanel({ section }: { section: ClientResourceSection }) {
                 id: 'actions',
                 header: '',
                 align: 'right',
-                width: 72,
+                width: 88,
                 enableHiding: false,
                 enableReorder: false,
                 enableResizing: false,
@@ -2938,34 +2885,22 @@ function TaxInspectionsPanel({ section }: { section: ClientResourceSection }) {
                 cell: (inspection) => (
                   <Group gap={4} justify="flex-end" wrap="nowrap">
                     <PermissionGate permissionKey={TAX_INSPECTION_EDIT_PERMISSION}>
-                      <Tooltip label={translate("Редагувати")}>
-                        <ActionIcon
-                          aria-label={translate("Редагувати налогову інспекцію")}
-                          color="gray"
-                          size="sm"
-                          variant="subtle"
-                          onClick={() => openEditTaxInspection(inspection)}
-                        >
-                          <Pencil size={16} />
-                        </ActionIcon>
-                      </Tooltip>
+                      <TableRowAction
+                        action="edit"
+                        label={translate("Редагувати налогову інспекцію")}
+                        onClick={() => openEditTaxInspection(inspection)}
+                      />
                     </PermissionGate>
                     <PermissionGate permissionKey={TAX_INSPECTION_DELETE_PERMISSION}>
-                      <Tooltip label={translate("Видалити")}>
-                        <ActionIcon
-                          aria-label={translate("Видалити налогову інспекцію")}
-                          color="red"
-                          disabled={!inspection.NetUid}
-                          size="sm"
-                          variant="subtle"
-                          onClick={() => {
-                            setFormError(null)
-                            setDeleteTarget({ type: 'taxInspection', taxInspection: inspection })
-                          }}
-                        >
-                          <Trash2 size={16} />
-                        </ActionIcon>
-                      </Tooltip>
+                      <TableRowAction
+                        action="delete"
+                        disabled={!inspection.NetUid}
+                        label={translate("Видалити налогову інспекцію")}
+                        onClick={() => {
+                          setFormError(null)
+                          setDeleteTarget({ type: 'taxInspection', taxInspection: inspection })
+                        }}
+                      />
                     </PermissionGate>
                   </Group>
                 ),
@@ -3271,31 +3206,19 @@ function PricingResourceTable({
           <Group gap={4} wrap="nowrap">
             <Text size="sm">{displayValue(pricing.SortingPriority)}</Text>
             <PermissionGate permissionKey={PRICING_PRIORITY_PERMISSION}>
-              <Group gap={2} wrap="nowrap">
-                <Tooltip label={translate("Підняти")}>
-                  <ActionIcon
-                    aria-label={translate("Підняти пріоритет")}
-                    color="gray"
-                    disabled={!pricing.Id || isSaving}
-                    size="xs"
-                    variant="subtle"
-                    onClick={() => onChangePriority(pricing, true)}
-                  >
-                    <ArrowUp size={14} />
-                  </ActionIcon>
-                </Tooltip>
-                <Tooltip label={translate("Опустити")}>
-                  <ActionIcon
-                    aria-label={translate("Опустити пріоритет")}
-                    color="gray"
-                    disabled={!pricing.Id || isSaving}
-                    size="xs"
-                    variant="subtle"
-                    onClick={() => onChangePriority(pricing, false)}
-                  >
-                    <ArrowDown size={14} />
-                  </ActionIcon>
-                </Tooltip>
+              <Group gap={4} wrap="nowrap">
+                <TableRowAction
+                  action="move-up"
+                  disabled={!pricing.Id || isSaving}
+                  label={translate("Підняти пріоритет")}
+                  onClick={() => onChangePriority(pricing, true)}
+                />
+                <TableRowAction
+                  action="move-down"
+                  disabled={!pricing.Id || isSaving}
+                  label={translate("Опустити пріоритет")}
+                  onClick={() => onChangePriority(pricing, false)}
+                />
               </Group>
             </PermissionGate>
           </Group>
@@ -3357,7 +3280,7 @@ function PricingResourceTable({
         id: 'actions',
         header: '',
         align: 'right',
-        width: 72,
+        width: 88,
         enableHiding: false,
         enableReorder: false,
         enableResizing: false,
@@ -3365,31 +3288,19 @@ function PricingResourceTable({
         cell: (pricing) => (
           <Group gap={4} justify="flex-end" wrap="nowrap">
             <PermissionGate permissionKey={PRICING_EDIT_PERMISSION}>
-              <Tooltip label={translate("Редагувати")}>
-                <ActionIcon
-                  aria-label={translate("Редагувати правило")}
-                  color="gray"
-                  size="sm"
-                  variant="subtle"
-                  onClick={() => onEdit(pricing)}
-                >
-                  <Pencil size={16} />
-                </ActionIcon>
-              </Tooltip>
+              <TableRowAction
+                action="edit"
+                label={translate("Редагувати правило")}
+                onClick={() => onEdit(pricing)}
+              />
             </PermissionGate>
             <PermissionGate permissionKey={PRICING_DELETE_PERMISSION}>
-              <Tooltip label={translate("Видалити")}>
-                <ActionIcon
-                  aria-label={translate("Видалити правило")}
-                  color="red"
-                  disabled={!pricing.NetUid}
-                  size="sm"
-                  variant="subtle"
-                  onClick={() => onDelete(pricing)}
-                >
-                  <Trash2 size={16} />
-                </ActionIcon>
-              </Tooltip>
+              <TableRowAction
+                action="delete"
+                disabled={!pricing.NetUid}
+                label={translate("Видалити правило")}
+                onClick={() => onDelete(pricing)}
+              />
             </PermissionGate>
           </Group>
         ),
@@ -3547,7 +3458,7 @@ function CurrenciesPanel({ section }: { section: ClientResourceSection }) {
                 id: 'actions',
                 header: '',
                 align: 'right',
-                width: 72,
+                width: 88,
                 enableHiding: false,
                 enableReorder: false,
                 enableResizing: false,
@@ -3555,34 +3466,22 @@ function CurrenciesPanel({ section }: { section: ClientResourceSection }) {
                 cell: (currency) => (
                   <Group gap={4} justify="flex-end" wrap="nowrap">
                     <PermissionGate permissionKey={CURRENCY_EDIT_PERMISSION}>
-                      <Tooltip label={translate("Редагувати")}>
-                        <ActionIcon
-                          aria-label={translate("Редагувати валюту")}
-                          color="gray"
-                          size="sm"
-                          variant="subtle"
-                          onClick={() => openEditCurrency(currency)}
-                        >
-                          <Pencil size={16} />
-                        </ActionIcon>
-                      </Tooltip>
+                      <TableRowAction
+                        action="edit"
+                        label={translate("Редагувати валюту")}
+                        onClick={() => openEditCurrency(currency)}
+                      />
                     </PermissionGate>
                     <PermissionGate permissionKey={CURRENCY_DELETE_PERMISSION}>
-                      <Tooltip label={translate("Видалити")}>
-                        <ActionIcon
-                          aria-label={translate("Видалити валюту")}
-                          color="red"
-                          disabled={!currency.NetUid}
-                          size="sm"
-                          variant="subtle"
-                          onClick={() => {
-                            setFormError(null)
-                            setDeleteTarget({ type: 'currency', currency })
-                          }}
-                        >
-                          <Trash2 size={16} />
-                        </ActionIcon>
-                      </Tooltip>
+                      <TableRowAction
+                        action="delete"
+                        disabled={!currency.NetUid}
+                        label={translate("Видалити валюту")}
+                        onClick={() => {
+                          setFormError(null)
+                          setDeleteTarget({ type: 'currency', currency })
+                        }}
+                      />
                     </PermissionGate>
                   </Group>
                 ),
@@ -3818,7 +3717,7 @@ function StoragesPanel({ section }: { section: ClientResourceSection }) {
                 id: 'actions',
                 header: '',
                 align: 'right',
-                width: 72,
+                width: 88,
                 enableHiding: false,
                 enableReorder: false,
                 enableResizing: false,
@@ -3826,34 +3725,22 @@ function StoragesPanel({ section }: { section: ClientResourceSection }) {
                 cell: (storage) => (
                   <Group gap={4} justify="flex-end" wrap="nowrap">
                     <PermissionGate permissionKey={STORAGE_EDIT_PERMISSION}>
-                      <Tooltip label={translate("Редагувати")}>
-                        <ActionIcon
-                          aria-label={translate("Редагувати склад")}
-                          color="gray"
-                          size="sm"
-                          variant="subtle"
-                          onClick={() => openEditStorage(storage)}
-                        >
-                          <Pencil size={16} />
-                        </ActionIcon>
-                      </Tooltip>
+                      <TableRowAction
+                        action="edit"
+                        label={translate("Редагувати склад")}
+                        onClick={() => openEditStorage(storage)}
+                      />
                     </PermissionGate>
                     <PermissionGate permissionKey={STORAGE_DELETE_PERMISSION}>
-                      <Tooltip label={translate("Видалити")}>
-                        <ActionIcon
-                          aria-label={translate("Видалити склад")}
-                          color="red"
-                          disabled={!storage.NetUid}
-                          size="sm"
-                          variant="subtle"
-                          onClick={() => {
-                            setFormError(null)
-                            setDeleteTarget({ type: 'storage', storage })
-                          }}
-                        >
-                          <Trash2 size={16} />
-                        </ActionIcon>
-                      </Tooltip>
+                      <TableRowAction
+                        action="delete"
+                        disabled={!storage.NetUid}
+                        label={translate("Видалити склад")}
+                        onClick={() => {
+                          setFormError(null)
+                          setDeleteTarget({ type: 'storage', storage })
+                        }}
+                      />
                     </PermissionGate>
                   </Group>
                 ),
@@ -4039,7 +3926,7 @@ function MeasureUnitsPanel({ section }: { section: ClientResourceSection }) {
                 id: 'actions',
                 header: '',
                 align: 'right',
-                width: 72,
+                width: 88,
                 enableHiding: false,
                 enableReorder: false,
                 enableResizing: false,
@@ -4047,34 +3934,22 @@ function MeasureUnitsPanel({ section }: { section: ClientResourceSection }) {
                 cell: (measureUnit) => (
                   <Group gap={4} justify="flex-end" wrap="nowrap">
                     <PermissionGate permissionKey={MEASURE_UNIT_EDIT_PERMISSION}>
-                      <Tooltip label={translate("Редагувати")}>
-                        <ActionIcon
-                          aria-label={translate("Редагувати одиницю")}
-                          color="gray"
-                          size="sm"
-                          variant="subtle"
-                          onClick={() => openEditMeasureUnit(measureUnit)}
-                        >
-                          <Pencil size={16} />
-                        </ActionIcon>
-                      </Tooltip>
+                      <TableRowAction
+                        action="edit"
+                        label={translate("Редагувати одиницю")}
+                        onClick={() => openEditMeasureUnit(measureUnit)}
+                      />
                     </PermissionGate>
                     <PermissionGate permissionKey={MEASURE_UNIT_DELETE_PERMISSION}>
-                      <Tooltip label={translate("Видалити")}>
-                        <ActionIcon
-                          aria-label={translate("Видалити одиницю")}
-                          color="red"
-                          disabled={!measureUnit.NetUid}
-                          size="sm"
-                          variant="subtle"
-                          onClick={() => {
-                            setFormError(null)
-                            setDeleteTarget({ type: 'measureUnit', measureUnit })
-                          }}
-                        >
-                          <Trash2 size={16} />
-                        </ActionIcon>
-                      </Tooltip>
+                      <TableRowAction
+                        action="delete"
+                        disabled={!measureUnit.NetUid}
+                        label={translate("Видалити одиницю")}
+                        onClick={() => {
+                          setFormError(null)
+                          setDeleteTarget({ type: 'measureUnit', measureUnit })
+                        }}
+                      />
                     </PermissionGate>
                   </Group>
                 ),
@@ -4244,20 +4119,14 @@ function ProductReservePanel({ section }: { section: ClientResourceSection }) {
                 enableSorting: false,
                 cell: (role) => (
                   <Group justify="flex-end" wrap="nowrap">
-                    <Tooltip label={translate("Редагувати")}>
-                      <ActionIcon
-                        aria-label={translate("Редагувати резерв")}
-                        color="gray"
-                        size="sm"
-                        variant="subtle"
-                        onClick={() => {
-                          setFormError(null)
-                          setEditor({ role })
-                        }}
-                      >
-                        <Pencil size={16} />
-                      </ActionIcon>
-                    </Tooltip>
+                    <TableRowAction
+                      action="edit"
+                      label={translate("Редагувати резерв")}
+                      onClick={() => {
+                        setFormError(null)
+                        setEditor({ role })
+                      }}
+                    />
                   </Group>
                 ),
               },
@@ -4577,7 +4446,7 @@ function TransporterTable({
                     id: 'actions',
                     header: '',
                     align: 'right' as const,
-                    width: 72,
+                    width: 88,
                     enableHiding: false,
                     enableReorder: false,
                     enableResizing: false,
@@ -4587,29 +4456,18 @@ function TransporterTable({
 
                       return (
                         <Group gap={4} justify="flex-end" wrap="nowrap">
-                          <Tooltip label={translate("Редагувати")}>
-                            <ActionIcon
-                              aria-label={translate("Редагувати перевізника")}
-                              color="gray"
-                              size="sm"
-                              variant="subtle"
-                              onClick={() => onEdit(transporter)}
-                            >
-                              <Pencil size={16} />
-                            </ActionIcon>
-                          </Tooltip>
-                          <Tooltip label={isProtected ? translate("Системного перевізника не можна архівувати") : translate("Архівувати")}>
-                            <ActionIcon
-                              aria-label={translate("Архівувати перевізника")}
-                              color="red"
-                              disabled={!transporter.NetUid || isProtected}
-                              size="sm"
-                              variant="subtle"
-                              onClick={() => onDelete(transporter)}
-                            >
-                              <Trash2 size={16} />
-                            </ActionIcon>
-                          </Tooltip>
+                          <TableRowAction
+                            action="edit"
+                            label={translate("Редагувати перевізника")}
+                            onClick={() => onEdit(transporter)}
+                          />
+                          <TableRowAction
+                            action="archive"
+                            disabled={!transporter.NetUid || isProtected}
+                            hint={isProtected ? translate('Системного перевізника не можна архівувати') : undefined}
+                            label={translate("Архівувати перевізника")}
+                            onClick={() => onDelete(transporter)}
+                          />
                         </Group>
                       )
                     },
