@@ -9,11 +9,52 @@
   padding: 6px 4px 0;
 }
 
-.sales-dashboard-shell > .pill-tabs {
-  flex: 0 0 auto;
+.sales-dashboard-shell__card {
+  flex: 1 1 auto;
+  height: 100%;
+  min-width: 0;
 }
 
-.sales-dashboard-shell > :not(.pill-tabs) {
+.sales-dashboard-shell__tabs {
+  flex: 0 0 auto;
+  border-radius: 0;
+  padding-bottom: 4px;
+}
+
+.sales-dashboard-shell__tabs .pill-tab {
+  padding-bottom: 12px;
+}
+
+.sales-dashboard-shell__content {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.sales-dashboard-shell__content > * {
   flex: 1 1 auto;
   min-height: 0;
+  min-width: 0;
+}
+
+/* Every routed page contributes only its active panel. The outer shell above
+   owns the single card border/shadow, matching ProductRemainsPage and the
+   warehouse tab shell instead of stacking a second card below the tabs. */
+.sales-dashboard-tab-content {
+  background: var(--mantine-color-white);
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.sales-dashboard-shell .sales-dashboard-tab-content {
+  border: 0 !important;
+  border-radius: 0;
+  box-shadow: none !important;
 }

@@ -32,28 +32,30 @@ export function SalesDashboardShell({ children }: { children: ReactNode }) {
 
   return (
     <Stack className="sales-dashboard-shell" gap={6}>
-      <div className="pill-tabs">
-        {SALES_DASHBOARD_TABS.map((tab) => {
-          const isActive = active === tab.value
+      <div className="sales-dashboard-shell__card console-table-shell">
+        <div className="sales-dashboard-shell__tabs pill-tabs">
+          {SALES_DASHBOARD_TABS.map((tab) => {
+            const isActive = active === tab.value
 
-          return (
-            <button
-              key={tab.value}
-              type="button"
-              className={`pill-tab${isActive ? ' is-active' : ''}`}
-              aria-pressed={isActive}
-              onClick={() => {
-                if (tab.value !== pathname) {
-                  navigate(tab.value)
-                }
-              }}
-            >
-              {t(tab.label)}
-            </button>
-          )
-        })}
+            return (
+              <button
+                key={tab.value}
+                type="button"
+                className={`pill-tab${isActive ? ' is-active' : ''}`}
+                aria-pressed={isActive}
+                onClick={() => {
+                  if (tab.value !== pathname) {
+                    navigate(tab.value)
+                  }
+                }}
+              >
+                {t(tab.label)}
+              </button>
+            )
+          })}
+        </div>
+        <div className="sales-dashboard-shell__content">{children}</div>
       </div>
-      {children}
     </Stack>
   )
 }
