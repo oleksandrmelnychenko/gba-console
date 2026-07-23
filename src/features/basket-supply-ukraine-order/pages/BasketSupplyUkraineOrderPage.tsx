@@ -156,29 +156,31 @@ export function BasketSupplyUkraineOrderPage() {
   }
 
   return (
-    <Stack className="basket-supply-page" gap={6}>
-      <div className="pill-tabs">
-        {tabs.map((tab) => (
-          <button
-            key={tab.value}
-            type="button"
-            className={`pill-tab${activeTab === tab.value ? ' is-active' : ''}`}
-            aria-pressed={activeTab === tab.value}
-            onClick={() => changeTab(tab.value)}
-          >
-            {tab.label}
-            {tab.ai && <AiFeatureBadge compact tooltip={t('AI-сервіс закупівель')} />}
-          </button>
-        ))}
-      </div>
+    <Stack className="basket-supply-page" gap={0}>
+      <Card className="app-data-card basket-supply-shell" withBorder radius="md" padding={0}>
+        <div className="basket-supply-tabs pill-tabs">
+          {tabs.map((tab) => (
+            <button
+              key={tab.value}
+              type="button"
+              className={`pill-tab${activeTab === tab.value ? ' is-active' : ''}`}
+              aria-pressed={activeTab === tab.value}
+              onClick={() => changeTab(tab.value)}
+            >
+              {tab.label}
+              {tab.ai && <AiFeatureBadge compact tooltip={t('AI-сервіс закупівель')} />}
+            </button>
+          ))}
+        </div>
 
-      <div className="basket-supply-tab-content">
-        {activeTab === 'cart' && <BasketCartWorkflow />}
-        {activeTab === 'sales' && <SalesWorkflowTab />}
-        {(activeTab === 'cockpit' || activeTab === 'recommendations') && <ProcurementConstructor />}
-        {activeTab === 'dashboard' && <ProcureDashboardTab />}
-        {activeTab === 'budget-cart' && <BudgetCartTab />}
-      </div>
+        <div className="basket-supply-tab-content">
+          {activeTab === 'cart' && <BasketCartWorkflow />}
+          {activeTab === 'sales' && <SalesWorkflowTab />}
+          {activeTab === 'cockpit' && <ProcurementConstructor />}
+          {activeTab === 'dashboard' && <ProcureDashboardTab />}
+          {activeTab === 'budget-cart' && <BudgetCartTab />}
+        </div>
+      </Card>
     </Stack>
   )
 }
@@ -634,28 +636,7 @@ function BasketCartWorkflow() {
 
   return (
     <Stack gap="md">
-      {error && (
-        <Alert color="red" icon={ALERT_CIRCLE_ICON} variant="light">
-          {error}
-        </Alert>
-      )}
-      {referenceError && (
-        <Alert color="yellow" icon={ALERT_CIRCLE_ICON} variant="light">
-          {referenceError}
-        </Alert>
-      )}
-      {createError && (
-        <Alert color="red" icon={ALERT_CIRCLE_ICON} variant="light">
-          {createError}
-        </Alert>
-      )}
-      {createdDocument && (
-        <Alert color="green" icon={CHECK_ICON} variant="light">
-          {t('Створено')} {createdDocument.kind}: {createdDocument.number || createdDocument.netUid || t('без номера')}
-        </Alert>
-      )}
-
-      <Card className="app-data-card" padding={0} radius="md" withBorder>
+      <Card className="app-data-card basket-supply-primary-card" padding={0} radius="md" withBorder>
         <div className="app-filter-bar basket-supply-command-bar is-split">
           <SimpleGrid className="basket-supply-filters" cols={3} spacing={10}>
               <TextInput
@@ -717,6 +698,26 @@ function BasketCartWorkflow() {
           <div ref={setSourceTableToolbarSlot} className="app-filter-table-toolbar-slot" />
         </div>
         <Stack gap="md" p="md">
+          {error && (
+            <Alert color="red" icon={ALERT_CIRCLE_ICON} variant="light">
+              {error}
+            </Alert>
+          )}
+          {referenceError && (
+            <Alert color="yellow" icon={ALERT_CIRCLE_ICON} variant="light">
+              {referenceError}
+            </Alert>
+          )}
+          {createError && (
+            <Alert color="red" icon={ALERT_CIRCLE_ICON} variant="light">
+              {createError}
+            </Alert>
+          )}
+          {createdDocument && (
+            <Alert color="green" icon={CHECK_ICON} variant="light">
+              {t('Створено')} {createdDocument.kind}: {createdDocument.number || createdDocument.netUid || t('без номера')}
+            </Alert>
+          )}
 
           <DataTable
             columns={sourceColumns}
@@ -1170,28 +1171,7 @@ function SalesWorkflowTab() {
 
   return (
     <Stack gap="md">
-      {error && (
-        <Alert color="red" icon={<CircleAlert size={16} />} variant="light">
-          {error}
-        </Alert>
-      )}
-      {referenceError && (
-        <Alert color="yellow" icon={<CircleAlert size={16} />} variant="light">
-          {referenceError}
-        </Alert>
-      )}
-      {createError && (
-        <Alert color="red" icon={<CircleAlert size={16} />} variant="light">
-          {createError}
-        </Alert>
-      )}
-      {createdDocument && (
-        <Alert color="green" icon={<Check size={16} />} variant="light">
-          {t('Створено')} {createdDocument.kind}: {createdDocument.number || createdDocument.netUid || t('без номера')}
-        </Alert>
-      )}
-
-      <Card className="app-data-card" withBorder padding={0} radius="md">
+      <Card className="app-data-card basket-supply-primary-card" withBorder padding={0} radius="md">
         <div className="app-filter-bar basket-supply-command-bar">
           <div className="app-filter-date-range">
             <TextInput
@@ -1236,6 +1216,26 @@ function SalesWorkflowTab() {
           <div ref={setSalesTableToolbarSlot} className="app-filter-table-toolbar-slot" />
         </div>
         <Stack gap="md" p="md">
+          {error && (
+            <Alert color="red" icon={<CircleAlert size={16} />} variant="light">
+              {error}
+            </Alert>
+          )}
+          {referenceError && (
+            <Alert color="yellow" icon={<CircleAlert size={16} />} variant="light">
+              {referenceError}
+            </Alert>
+          )}
+          {createError && (
+            <Alert color="red" icon={<CircleAlert size={16} />} variant="light">
+              {createError}
+            </Alert>
+          )}
+          {createdDocument && (
+            <Alert color="green" icon={<Check size={16} />} variant="light">
+              {t('Створено')} {createdDocument.kind}: {createdDocument.number || createdDocument.netUid || t('без номера')}
+            </Alert>
+          )}
           <DataTable
             columns={sourceColumns}
             data={sourceSales}
@@ -2056,7 +2056,7 @@ function getActiveTab(pathname: string): BasketSupplyWorkflowTab {
   }
 
   if (pathname.endsWith('/recommendations')) {
-    return 'recommendations'
+    return 'cockpit'
   }
 
   if (pathname.endsWith('/dashboard')) {

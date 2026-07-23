@@ -9,8 +9,25 @@
   padding: 6px 4px 0;
 }
 
-.basket-supply-page .pill-tabs {
+.basket-supply-shell {
+  background: var(--mantine-color-white);
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.basket-supply-tabs {
+  border-radius: 0;
   flex: 0 0 auto;
+  padding-bottom: 4px;
+}
+
+.basket-supply-tabs .pill-tab {
+  padding-bottom: 12px;
 }
 
 .basket-supply-tab-content {
@@ -26,6 +43,19 @@
   background: var(--mantine-color-white);
   border: 1px solid var(--mantine-color-gray-2) !important;
   box-shadow: var(--app-card-shadow) !important;
+}
+
+/* The page shell owns the only outer border. Each tab's leading data card keeps
+   its filter/table layout, but loses its duplicate card chrome so the tab strip
+   and active filter read as one continuous surface. */
+.basket-supply-page .basket-supply-primary-card {
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.basket-supply-page .basket-supply-primary-card > .app-filter-bar:last-child {
+  border-bottom: 1px solid var(--mantine-color-gray-2);
 }
 
 .basket-supply-filters {

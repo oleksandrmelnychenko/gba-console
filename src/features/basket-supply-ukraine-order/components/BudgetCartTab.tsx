@@ -197,7 +197,7 @@ export function BudgetCartTab() {
 
   return (
     <Stack className="budget-cart-tab" gap={6}>
-      <Card className="app-data-card" padding={0} radius="md" withBorder>
+      <Card className="app-data-card basket-supply-primary-card" padding={0} radius="md" withBorder>
         <div className="app-filter-bar budget-cart-filter-bar">
           <Group align="flex-end" gap={10} wrap="nowrap" className="budget-cart-filter-row">
             <Tooltip label={t('На яку дату рахувати прогноз і залишки')}>

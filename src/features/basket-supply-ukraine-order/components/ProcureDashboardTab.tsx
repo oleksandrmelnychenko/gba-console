@@ -213,7 +213,7 @@ export function ProcureDashboardTab() {
 
   return (
     <Stack gap={6}>
-      <Card className="app-data-card" padding={0} radius="md" withBorder>
+      <Card className="app-data-card basket-supply-primary-card" padding={0} radius="md" withBorder>
       <div className="app-filter-bar basket-supply-command-bar">
         <Tooltip label={t('Порожньо — весь кошик')}>
           <NumberInput
