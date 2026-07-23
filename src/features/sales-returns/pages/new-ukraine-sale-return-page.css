@@ -278,20 +278,6 @@
   min-width: 0;
 }
 
-.new-sale-return-actions-cell .mantine-ActionIcon-root {
-  color: var(--mantine-color-gray-5);
-}
-
-.new-sale-return-actions-cell .mantine-ActionIcon-root:hover {
-  background: var(--mantine-color-orange-0);
-  color: var(--mantine-color-orange-8);
-}
-
-.new-sale-return-actions-cell .mantine-ActionIcon-root:disabled,
-.new-sale-return-actions-cell .mantine-ActionIcon-root[data-disabled] {
-  color: var(--mantine-color-gray-3);
-}
-
 /* Leader-рядки деталки (§7.2). */
 .new-sale-return-detail-field {
   align-items: baseline;

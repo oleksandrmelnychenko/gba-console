@@ -19,12 +19,13 @@ import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { notifications } from '@mantine/notifications'
-import { CircleAlert, FileChartColumn, PackagePlus, Plus, RefreshCw, Search, Trash2 } from 'lucide-react'
+import { CircleAlert, FileChartColumn, PackagePlus, Plus, RefreshCw, Search } from 'lucide-react'
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { ClientReturnsReportPanel } from '../components/ClientReturnsReportPanel'
 import {
   type DirectReturnStorageKind,
@@ -838,11 +839,7 @@ function useDirectReturnColumns({
         id: 'actions',
         header: '',
         cell: (item) => (
-          <Tooltip label={t('Видалити')}>
-            <ActionIcon aria-label={t('Видалити')} color="red" onClick={() => onRemove(item)} variant="subtle">
-              <Trash2 size={16} />
-            </ActionIcon>
-          </Tooltip>
+          <TableRowAction action="delete" label={t('Видалити')} onClick={() => onRemove(item)} />
         ),
         enableSorting: false,
         width: 80,

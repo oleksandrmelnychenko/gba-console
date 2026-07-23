@@ -18,7 +18,7 @@ import {
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
-import { Check, CircleAlert, Download, Eye, FileText, Plus, Search, Trash2 } from 'lucide-react'
+import { Check, CircleAlert, Eye, FileText, Plus, Search, Trash2 } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { ProductCardModal } from '../../products/components/ProductCardModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -29,6 +29,7 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import '../../../shared/ui/console-table-page.css'
 import './new-ukraine-sale-return-page.css'
 import {
@@ -1103,36 +1104,18 @@ function ReturnActionsCell({
 
   return (
     <div className="new-sale-return-actions-cell">
-      <Tooltip label={t('Експорт')}>
-        <ActionIcon
-          aria-label={t('Експорт')}
-          color="gray"
-          loading={exportingNetId === saleReturn.NetUid}
-          size="sm"
-          variant="subtle"
-          onClick={(event) => {
-            event.stopPropagation()
-            onExport(saleReturn)
-          }}
-        >
-          <Download size={15} />
-        </ActionIcon>
-      </Tooltip>
-      <Tooltip label={t('Скасувати')}>
-        <ActionIcon
-          aria-label={t('Скасувати')}
-          color="gray"
-          disabled={saleReturn.IsCanceled}
-          size="sm"
-          variant="subtle"
-          onClick={(event) => {
-            event.stopPropagation()
-            onCancel(saleReturn)
-          }}
-        >
-          <Trash2 size={15} />
-        </ActionIcon>
-      </Tooltip>
+      <TableRowAction
+        action="download"
+        label={t('Експорт')}
+        loading={exportingNetId === saleReturn.NetUid}
+        onClick={() => onExport(saleReturn)}
+      />
+      <TableRowAction
+        action="cancel"
+        disabled={saleReturn.IsCanceled}
+        label={t('Скасувати')}
+        onClick={() => onCancel(saleReturn)}
+      />
     </div>
   )
 }
