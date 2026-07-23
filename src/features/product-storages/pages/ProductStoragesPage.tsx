@@ -23,7 +23,7 @@ import {
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
-import { ArrowLeftRight, Check, CircleAlert, ClipboardList, Download, Eye, FileSpreadsheet, FileText, RotateCcw, Search, Trash2 } from 'lucide-react'
+import { ArrowLeftRight, Check, CircleAlert, ClipboardList, Download, Eye, FileSpreadsheet, FileText, RotateCcw, Search } from 'lucide-react'
 import { useDebouncedValue } from '@mantine/hooks'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type Dispatch, type SetStateAction } from 'react'
 import { UserRoleType } from '../../../shared/auth/types'
@@ -35,6 +35,7 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import { useAuth } from '../../auth/useAuth'
 import './product-storages.css'
@@ -1238,20 +1239,11 @@ function ProductStoragePreviewDrawer({
         enableHiding: false,
         enableReorder: false,
         cell: (row) => (
-          <Tooltip label={t('Вилучити з Preview')}>
-            <ActionIcon
-              aria-label={t('Вилучити з Preview')}
-              color="red"
-              size="sm"
-              variant="subtle"
-              onClick={(event) => {
-                event.stopPropagation()
-                onRemoveRow(row.availability)
-              }}
-            >
-              <Trash2 size={16} />
-            </ActionIcon>
-          </Tooltip>
+          <TableRowAction
+            action="delete"
+            label={t('Вилучити з Preview')}
+            onClick={() => onRemoveRow(row.availability)}
+          />
         ),
       },
     ],
@@ -1746,20 +1738,11 @@ function useProductStoragesColumns({
           return (
             <Group className="seo-table-action-cell" gap={4} justify="center" wrap="nowrap">
               {canOpenAction ? (
-                <Tooltip label={t('Операція зі складської позиції')}>
-                  <ActionIcon
-                    aria-label={t('Операція зі складської позиції')}
-                    color="gray"
-                    size={34}
-                    variant="light"
-                    onClick={(event) => {
-                      event.stopPropagation()
-                      onOpenAction(availability)
-                    }}
-                  >
-                    <ClipboardList size={20} />
-                  </ActionIcon>
-                </Tooltip>
+                <TableRowAction
+                  action="settings"
+                  label={t('Операція зі складської позиції')}
+                  onClick={() => onOpenAction(availability)}
+                />
               ) : null}
             </Group>
           )
