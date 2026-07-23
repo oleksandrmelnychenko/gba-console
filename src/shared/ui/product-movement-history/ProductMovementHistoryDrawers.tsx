@@ -3,6 +3,7 @@ import {
   Alert,
   Anchor,
   Button,
+  Card,
   Checkbox,
   Group,
   Select,
@@ -24,6 +25,7 @@ import { AppDrawer } from '../AppDrawer'
 import { AppModal } from '../AppModal'
 import { DataTable } from '../data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../data-table/types'
+import './product-movement-history-drawers.css'
 
 export type MovementHistoryProduct = {
   Name?: string
@@ -548,23 +550,34 @@ function ProductMovementHistoryDrawerContent({
   return (
     <AppDrawer opened={opened && Boolean(product)} position="right" size="min(1280px, 98vw)" title={title} onClose={onClose}>
       {product ? (
-        <Tabs value={activeTab} onChange={(value) => setActiveTab((value as ProductMovementHistoryTab) || 'movement')}>
-          <Tabs.List>
+        <Card
+          className="app-data-card product-movement-history-shell"
+          withBorder
+          radius="md"
+          padding={0}
+        >
+        <Tabs
+          className="product-movement-history-tabs-root"
+          value={activeTab}
+          onChange={(value) => setActiveTab((value as ProductMovementHistoryTab) || 'movement')}
+        >
+          <Tabs.List className="pill-tabs product-movement-history-tabs">
             <Tabs.Tab value="movement">{t('Рух')}</Tabs.Tab>
             <Tabs.Tab value="income">{t('Прихід')}</Tabs.Tab>
             <Tabs.Tab value="outcome">{t('Вихід')}</Tabs.Tab>
           </Tabs.List>
 
-          <Tabs.Panel value="movement" pt="md">
+          <Tabs.Panel value="movement" pt={0}>
             <ProductMovementPanel active={opened && activeTab === 'movement'} product={product} />
           </Tabs.Panel>
-          <Tabs.Panel value="income" pt="md">
+          <Tabs.Panel value="income" pt={0}>
             <ProductIncomeMovementPanel active={opened && activeTab === 'income'} product={product} />
           </Tabs.Panel>
-          <Tabs.Panel value="outcome" pt="md">
+          <Tabs.Panel value="outcome" pt={0}>
             <ProductOutcomeMovementPanel active={opened && activeTab === 'outcome'} product={product} />
           </Tabs.Panel>
         </Tabs>
+        </Card>
       ) : null}
     </AppDrawer>
   )
@@ -854,8 +867,9 @@ function ProductMovementPanel({ active, product }: { active: boolean; product: M
   }
 
   return (
-    <Stack gap="md">
-      <Group align="end" gap="sm" wrap="wrap" className="clients-filter-row">
+    <Stack className="product-movement-history-panel" gap={0}>
+      <div className="app-filter-bar product-movement-history-filter-bar product-movement-history-filter-bar--extended">
+      <Group align="end" gap={10} wrap="nowrap" className="product-movement-history-filter-row">
         <TextInput
           label={t('З')}
           type="date"
@@ -877,6 +891,7 @@ function ProductMovementPanel({ active, product }: { active: boolean; product: M
           w={220}
           onChange={(value) => dispatchFilterState({ type: 'set-movement-type', value: value || '0' })}
         />
+        <div className="app-filter-actions">
         <Button
           disabled={Boolean(filterError) || Boolean(typesError)}
           leftSection={<RefreshCw size={18} />}
@@ -895,8 +910,9 @@ function ProductMovementPanel({ active, product }: { active: boolean; product: M
         >
           {t('Друк')}
         </Button>
+        </div>
       </Group>
-      <Group gap="md" wrap="wrap" align="center">
+      <Group gap="md" wrap="wrap" align="center" className="product-movement-history-types-row">
         {movementItemTypeOptions.map((option) => (
           <Checkbox
             key={option.value}
@@ -910,6 +926,8 @@ function ProductMovementPanel({ active, product }: { active: boolean; product: M
           {t('Скинути')}
         </Button>
       </Group>
+      </div>
+      <Stack className="product-movement-history-panel__body" gap="md">
       {activeError ? (
         <Alert color={filterError || missingNetUidError || typesError ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">
           {activeError}
@@ -933,6 +951,7 @@ function ProductMovementPanel({ active, product }: { active: boolean; product: M
         title={t('Документ руху товару')}
         onClose={() => dispatchExportModalState({ type: 'close-document' })}
       />
+      </Stack>
     </Stack>
   )
 }
@@ -1042,7 +1061,8 @@ function ProductIncomeMovementPanel({ active, product }: { active: boolean; prod
   }
 
   return (
-    <Stack gap="md">
+    <Stack className="product-movement-history-panel" gap={0}>
+      <div className="app-filter-bar product-movement-history-filter-bar">
       <MovementDateToolbar
         dateFrom={dateFrom}
         dateTo={dateTo}
@@ -1054,6 +1074,8 @@ function ProductIncomeMovementPanel({ active, product }: { active: boolean; prod
         onExport={() => void exportMovements()}
         onRefresh={() => reload()}
       />
+      </div>
+      <Stack className="product-movement-history-panel__body" gap="md">
       {activeError ? (
         <Alert color={filterError || missingNetUidError ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">
           {activeError}
@@ -1077,6 +1099,7 @@ function ProductIncomeMovementPanel({ active, product }: { active: boolean; prod
         title={t('Документ приходу товару')}
         onClose={() => dispatchExportModalState({ type: 'close-document' })}
       />
+      </Stack>
     </Stack>
   )
 }
@@ -1186,7 +1209,8 @@ function ProductOutcomeMovementPanel({ active, product }: { active: boolean; pro
   }
 
   return (
-    <Stack gap="md">
+    <Stack className="product-movement-history-panel" gap={0}>
+      <div className="app-filter-bar product-movement-history-filter-bar">
       <MovementDateToolbar
         dateFrom={dateFrom}
         dateTo={dateTo}
@@ -1198,6 +1222,8 @@ function ProductOutcomeMovementPanel({ active, product }: { active: boolean; pro
         onExport={() => void exportMovements()}
         onRefresh={() => reload()}
       />
+      </div>
+      <Stack className="product-movement-history-panel__body" gap="md">
       {activeError ? (
         <Alert color={filterError || missingNetUidError ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">
           {activeError}
@@ -1221,6 +1247,7 @@ function ProductOutcomeMovementPanel({ active, product }: { active: boolean; pro
         title={t('Документ виходу товару')}
         onClose={() => dispatchExportModalState({ type: 'close-document' })}
       />
+      </Stack>
     </Stack>
   )
 }
@@ -1249,15 +1276,17 @@ function MovementDateToolbar({
   const { t } = useI18n()
 
   return (
-    <Group align="end" gap="sm" wrap="wrap" className="clients-filter-row">
+    <Group align="end" gap={10} wrap="nowrap" className="product-movement-history-filter-row">
       <TextInput label={t('З')} type="date" value={dateFrom} w={150} onChange={(event) => onDateFromChange(event.currentTarget.value)} />
       <TextInput label={t('По')} type="date" value={dateTo} w={150} onChange={(event) => onDateToChange(event.currentTarget.value)} />
+      <div className="app-filter-actions">
       <Button leftSection={<RefreshCw size={18} />} loading={isLoading} variant="outline" onClick={onRefresh}>
         {t('Оновити')}
       </Button>
       <Button disabled={exportDisabled} leftSection={<Download size={18} />} loading={exportLoading} variant="outline" onClick={onExport}>
         {t('Друк')}
       </Button>
+      </div>
     </Group>
   )
 }

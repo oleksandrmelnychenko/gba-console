@@ -1,0 +1,79 @@
+.product-movement-history-shell {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2) !important;
+  box-shadow: var(--app-card-shadow) !important;
+  flex: 0 0 auto;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.product-movement-history-tabs-root,
+.product-movement-history-panel {
+  min-width: 0;
+}
+
+.product-movement-history-tabs {
+  border-radius: 0;
+  padding-bottom: 4px;
+}
+
+.product-movement-history-tabs::before {
+  display: none;
+}
+
+.product-movement-history-tabs .mantine-Tabs-tab {
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: var(--mantine-color-gray-7);
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0;
+  margin-bottom: -1px;
+  padding: 9px 2px 12px;
+  white-space: nowrap;
+}
+
+.product-movement-history-tabs .mantine-Tabs-tab:hover {
+  background: transparent;
+  color: var(--mantine-color-gray-9);
+}
+
+.product-movement-history-tabs .mantine-Tabs-tab[data-active] {
+  border-bottom-color: var(--brand-orange);
+  color: var(--mantine-color-gray-9);
+  font-weight: 600;
+}
+
+.product-movement-history-filter-bar {
+  flex: 0 0 auto;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.product-movement-history-filter-bar--extended {
+  align-items: stretch;
+  display: flex;
+  flex-direction: column;
+}
+
+.product-movement-history-filter-row {
+  min-width: max-content;
+  width: 100%;
+}
+
+.product-movement-history-filter-bar .mantine-Button-root {
+  height: var(--app-filter-control-height);
+  min-height: var(--app-filter-control-height);
+}
+
+.product-movement-history-types-row {
+  min-width: max-content;
+}
+
+.product-movement-history-panel__body {
+  min-width: 0;
+  padding: 10px 8px 8px;
+}
