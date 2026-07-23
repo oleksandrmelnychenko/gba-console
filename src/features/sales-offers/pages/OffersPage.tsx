@@ -1,4 +1,4 @@
-import { ActionIcon, Alert, Button, Card, Group, Stack, Text, TextInput, Tooltip } from '@mantine/core'
+import { ActionIcon, Alert, Button, Group, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, Plus, RefreshCw, RotateCcw } from 'lucide-react'
 import { useEffect } from 'react'
@@ -171,8 +171,8 @@ export function OffersPage() {
   }
 
   return (
-    <Stack className="offers-page" gap={6}>
-      <Card withBorder radius="md" padding={0} className="app-data-card offers-card">
+    <Stack className="offers-page" gap={0}>
+      <div className="sales-dashboard-tab-content offers-card">
         <div className="app-filter-bar offers-filter-bar">
           <div className="app-filter-date-range">
             <TextInput
@@ -253,7 +253,7 @@ export function OffersPage() {
             </Stack>
           )}
         </Stack>
-      </Card>
+      </div>
 
       <OfferReasonDrawer
         offer={reasonOffer}
