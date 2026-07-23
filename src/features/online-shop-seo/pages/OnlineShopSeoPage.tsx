@@ -28,6 +28,7 @@ import type { TranslationKey } from '../../../shared/i18n/types'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { usePageBreadcrumb } from '../../../shared/ui/page-header-actions/pageHeaderActionsContext'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import {
   addEcommerceStorage,
   createSeoContact,
@@ -374,11 +375,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         enableSorting: false,
         cell: (row) => (
           <SeoTableActionCell>
-            <Tooltip label={t('Редагувати')}>
-              <ActionIcon aria-label={t('Редагувати')} color="gray" variant="subtle" onClick={() => openPageEditor(row)}>
-                <Pencil size={18} />
-              </ActionIcon>
-            </Tooltip>
+            <TableRowAction action="edit" label={t('Редагувати')} onClick={() => openPageEditor(row)} />
           </SeoTableActionCell>
         ),
       },
@@ -437,27 +434,17 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         enableSorting: false,
         cell: (contact) => (
           <SeoTableActionCell>
-            <Tooltip label={t('Редагувати')}>
-              <ActionIcon
-                aria-label={t('Редагувати')}
-                color="gray"
-                variant="subtle"
-                onClick={() => openContactEditor(contact)}
-              >
-                <Pencil size={18} />
-              </ActionIcon>
-            </Tooltip>
-            <Tooltip label={t('Видалити')}>
-              <ActionIcon
-                aria-label={t('Видалити')}
-                color="red"
-                disabled={!contact.NetUid}
-                variant="subtle"
-                onClick={() => requestRemoveContact(contact)}
-              >
-                <Trash2 size={18} />
-              </ActionIcon>
-            </Tooltip>
+            <TableRowAction
+              action="edit"
+              label={t('Редагувати')}
+              onClick={() => openContactEditor(contact)}
+            />
+            <TableRowAction
+              action="delete"
+              disabled={!contact.NetUid}
+              label={t('Видалити')}
+              onClick={() => requestRemoveContact(contact)}
+            />
           </SeoTableActionCell>
         ),
       },
@@ -536,17 +523,12 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         enableSorting: false,
         cell: (client) => (
           <SeoTableActionCell>
-            <Tooltip label={client.IsForRetail ? t('Вимкнути') : t('Увімкнути')}>
-              <ActionIcon
-                aria-label={client.IsForRetail ? t('Вимкнути') : t('Увімкнути')}
-                color={client.IsForRetail ? 'red' : 'green'}
-                disabled={!client.NetUid || isSaving}
-                variant="subtle"
-                onClick={() => void handleToggleOnlineShopClient(client)}
-              >
-                {client.IsForRetail ? <X size={18} /> : <Check size={18} />}
-              </ActionIcon>
-            </Tooltip>
+            <TableRowAction
+              action={client.IsForRetail ? 'cancel' : 'confirm'}
+              disabled={!client.NetUid || isSaving}
+              label={client.IsForRetail ? t('Вимкнути') : t('Увімкнути')}
+              onClick={() => void handleToggleOnlineShopClient(client)}
+            />
           </SeoTableActionCell>
         ),
       },
@@ -626,17 +608,13 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         enableSorting: false,
         cell: (register) => (
           <SeoTableActionCell>
-            <Tooltip label={t('Обрати')}>
-              <ActionIcon
-                aria-label={t('Обрати')}
-                color={register.IsSelected ? 'green' : 'gray'}
-                disabled={!register.NetUid || isSaving}
-                variant="subtle"
-                onClick={() => void handleSelectPaymentRegister(register)}
-              >
-                <Check size={18} />
-              </ActionIcon>
-            </Tooltip>
+            <TableRowAction
+              action="select"
+              disabled={!register.NetUid || isSaving}
+              label={t('Обрати')}
+              tone={register.IsSelected ? 'success' : 'neutral'}
+              onClick={() => void handleSelectPaymentRegister(register)}
+            />
           </SeoTableActionCell>
         ),
       },
@@ -685,28 +663,18 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         enableSorting: false,
         cell: (storage) => (
           <SeoTableActionCell>
-            <Tooltip label={t('Змінити пріоритет')}>
-              <ActionIcon
-                aria-label={t('Змінити пріоритет')}
-                color="gray"
-                disabled={!storage.Id || isSaving}
-                variant="subtle"
-                onClick={() => openPriorityEditor(storage)}
-              >
-                <Pencil size={18} />
-              </ActionIcon>
-            </Tooltip>
-            <Tooltip label={t('Видалити зі списку')}>
-              <ActionIcon
-                aria-label={t('Видалити зі списку')}
-                color="red"
-                disabled={!storage.NetUid || isSaving}
-                variant="subtle"
-                onClick={() => requestRemoveStorage(storage)}
-              >
-                <Trash2 size={18} />
-              </ActionIcon>
-            </Tooltip>
+            <TableRowAction
+              action="edit"
+              disabled={!storage.Id || isSaving}
+              label={t('Змінити пріоритет')}
+              onClick={() => openPriorityEditor(storage)}
+            />
+            <TableRowAction
+              action="delete"
+              disabled={!storage.NetUid || isSaving}
+              label={t('Видалити зі списку')}
+              onClick={() => requestRemoveStorage(storage)}
+            />
           </SeoTableActionCell>
         ),
       },
@@ -765,17 +733,14 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
 
           return (
             <SeoTableActionCell>
-              <Tooltip label={active ? t('Вже додано') : t('Додати')}>
-                <ActionIcon
-                  aria-label={active ? t('Вже додано') : t('Додати')}
-                  color={active ? 'green' : 'gray'}
-                  disabled={active || !storage.NetUid || isSaving}
-                  variant="subtle"
-                  onClick={() => void handleAddStorage(storage)}
-                >
-                  <Plus size={18} />
-                </ActionIcon>
-              </Tooltip>
+              <TableRowAction
+                action="add"
+                disabled={active || !storage.NetUid || isSaving}
+                hint={active ? t('Вже додано') : undefined}
+                label={t('Додати')}
+                tone={active ? 'success' : 'brand'}
+                onClick={() => void handleAddStorage(storage)}
+              />
             </SeoTableActionCell>
           )
         },

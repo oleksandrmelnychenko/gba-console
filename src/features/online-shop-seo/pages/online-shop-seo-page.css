@@ -1538,15 +1538,6 @@
   justify-content: center;
 }
 
-.seo-table-action-cell .mantine-ActionIcon-root {
-  color: var(--mantine-color-gray-5);
-}
-
-.seo-table-action-cell .mantine-ActionIcon-root:hover {
-  background: var(--mantine-color-orange-0);
-  color: var(--mantine-color-orange-8);
-}
-
 .seo-general-content {
   height: 100%;
   min-width: 0;
