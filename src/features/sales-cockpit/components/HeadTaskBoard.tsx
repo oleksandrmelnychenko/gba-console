@@ -273,8 +273,6 @@ export function HeadTaskBoard({
         ))}
       </div>
 
-      <HeadTaskProgressSummary byStatus={data.ByStatus} />
-
       <div className="app-filter-bar cockpit-board-filter">
         <Select
           clearable
@@ -321,6 +319,8 @@ export function HeadTaskBoard({
           </Tooltip>
         </div>
       </div>
+
+      <HeadTaskProgressSummary byStatus={data.ByStatus} />
 
       {error && (
         <Alert className="cockpit-board-alert" color="red" icon={<CircleAlert size={18} />} variant="light">

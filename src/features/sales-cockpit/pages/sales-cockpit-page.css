@@ -702,12 +702,14 @@
   grid-template-columns: repeat(4, max-content);
   justify-content: center;
   overflow-x: auto;
+  padding-bottom: 4px;
 }
 
 .cockpit-board-tabs .pill-tab {
   align-items: center;
   display: inline-flex;
   gap: 7px;
+  padding-bottom: 12px;
 }
 
 .cockpit-board-filter {
