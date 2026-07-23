@@ -15,7 +15,7 @@ import {
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
-import { ChevronDown, ChevronRight, CircleAlert, Ellipsis, ExternalLink, Eye, Globe, History, Info, Lock, LockOpen, Pencil, Percent, Printer, Receipt, ReceiptText, RotateCcw, Search, Tag, TriangleAlert, Truck } from 'lucide-react'
+import { CircleAlert, Globe, History, Info, Lock, LockOpen, Pencil, Printer, Receipt, ReceiptText, RotateCcw, Search, Tag, TriangleAlert, Truck } from 'lucide-react'
 import {
   Fragment,
   isValidElement,
@@ -36,9 +36,9 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
-import { TransporterLogo } from '../../../shared/ui/TransporterLogo'
 import { TransporterNameWithIcon } from '../../../shared/transporter-icons/TransporterIcon'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import '../../../shared/ui/console-table-page.css'
 import { SaleAuditDetail, getSaleStatisticBySaleId, type SaleAuditStatistic } from '../../../shared/sale-audit'
 import { UserRoleType } from '../../../shared/auth/types'
@@ -907,8 +907,6 @@ const SalesOnlineShopGridRow = memo(function SalesOnlineShopGridRow({
   const manager = getSaleUserName(sale)
   const contract = sale.ClientAgreement?.Agreement?.Name
   const transporter = getSaleTransporterName(sale)
-  const transporterCssClass = getTransporterCssClass(sale)
-  const transporterImageUrl = getTransporterImageUrl(sale)
   const localAmount = getNumber(sale.TotalAmountLocal) ?? getNumber(sale.TotalAmount)
   const vat = getNumber(sale.Order?.TotalVat)
   const positions = getOrderItemCount(sale)
@@ -946,46 +944,31 @@ const SalesOnlineShopGridRow = memo(function SalesOnlineShopGridRow({
       <div className="sg-client">
         <div className="sg-client-actions" data-row-stop="true">
           {showEdit && (
-            <Tooltip label={t('Відкрити продаж')}>
-              <ActionIcon aria-label={t('Відкрити продаж')} color="gray" size="sm" variant="subtle" onClick={() => onOpenEditor(sale)}>
-                <Pencil size={15} />
-              </ActionIcon>
-            </Tooltip>
+            <TableRowAction action="edit" label={t('Відкрити продаж')} onClick={() => onOpenEditor(sale)} />
           )}
           {showBang ? (
-            <Tooltip label={t('Замовлення не буде відвантажено')}>
-              {bangClickable ? (
-                <button
-                  className="sg-bang"
-                  data-clickable="true"
-                  type="button"
-                  aria-label={t('Замовлення не буде відвантажено')}
-                  style={{ opacity: 1 }}
-                  onClick={() => onWillNotShip(sale)}
-                >
-                  !
-                </button>
-              ) : (
+            bangClickable ? (
+              <TableRowAction
+                action="will-not-ship"
+                label={t('Замовлення не буде відвантажено')}
+                onClick={() => onWillNotShip(sale)}
+              />
+            ) : (
+              <Tooltip label={t('Замовлення не буде відвантажено')}>
                 <span className="sg-bang" style={{ opacity: sale.ChangedToInvoice ? 1 : 0.4 }}>
                   !
                 </span>
-              )}
-            </Tooltip>
+              </Tooltip>
+            )
           ) : (
             <span className="sg-bang sg-bang-placeholder" aria-hidden="true" />
           )}
           {canExpand && (
-            <Tooltip label={isExpanded ? t('Згорнути') : t('Розгорнути')}>
-              <ActionIcon
-                aria-label={t('Розгорнути')}
-                color="gray"
-                size="sm"
-                variant="subtle"
-                onClick={() => onToggleExpand(saleKey, sale)}
-              >
-                {isExpanded ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
-              </ActionIcon>
-            </Tooltip>
+            <TableRowAction
+              action={isExpanded ? 'collapse' : 'expand'}
+              label={isExpanded ? t('Згорнути') : t('Розгорнути')}
+              onClick={() => onToggleExpand(saleKey, sale)}
+            />
           )}
         </div>
 
@@ -1075,11 +1058,11 @@ const SalesOnlineShopGridRow = memo(function SalesOnlineShopGridRow({
 
       <div className="sg-slot" data-row-stop="true">
         {discountEditable ? (
-          <Tooltip label={t('Знижка')}>
-            <ActionIcon aria-label={t('Знижка')} color="gray" size="sm" variant="subtle" onClick={() => onOpenDiscount(sale)}>
-              <Percent size={15} />
-            </ActionIcon>
-          </Tooltip>
+          <TableRowAction
+            action="discount"
+            label={t('Знижка')}
+            onClick={() => onOpenDiscount(sale)}
+          />
         ) : sale.IsLocked ? (
           <Tooltip label={t('Заблоковано')}>
             <Lock size={14} style={{ color: 'var(--mantine-color-gray-5)' }} />
@@ -1088,34 +1071,23 @@ const SalesOnlineShopGridRow = memo(function SalesOnlineShopGridRow({
       </div>
 
       <div className="sg-transporter-cell" data-row-stop="true">
-        <Tooltip label={transporter || t('Перевізник')}>
-          <button
-            className="sg-transporter-button"
-            type="button"
-            aria-label={transporter || t('Перевізник')}
-            onClick={() => onOpenDetails(sale)}
-          >
-            <TransporterLogo className="sg-transporter-logo" cssClass={transporterCssClass} iconSize={20} imageUrl={transporterImageUrl} name={transporter} />
-          </button>
-        </Tooltip>
+        <TableRowAction
+          action="delivery"
+          label={transporter || t('Перевізник')}
+          onClick={() => onOpenDetails(sale)}
+        />
       </div>
 
       <div className="sg-doc-actions" data-row-stop="true">
-        <Tooltip label={t('Деталі')}>
-          <ActionIcon aria-label={t('Деталі')} color="gray" size="sm" variant="subtle" onClick={() => onOpenSale(sale)}>
-            <Eye size={15} />
-          </ActionIcon>
-        </Tooltip>
+        <TableRowAction action="details" label={t('Деталі')} onClick={() => onOpenSale(sale)} />
         {!hidePrintBlock && <SaleDocumentsMenu sale={asUkraineSale(sale)} />}
         <Menu position="bottom-end" shadow="md" withinPortal>
           <Menu.Target>
-            <ActionIcon aria-label={t('Дії')} color="gray" size="sm" variant="subtle">
-              <Ellipsis size={16} />
-            </ActionIcon>
+            <TableRowAction action="more" label={t('Дії')} />
           </Menu.Target>
           <Menu.Dropdown>
             {showEdit && (
-              <Menu.Item leftSection={<ExternalLink size={16} />} onClick={() => onOpenEditor(sale)}>
+              <Menu.Item leftSection={<Pencil size={16} />} onClick={() => onOpenEditor(sale)}>
                 {t('Відкрити продаж')}
               </Menu.Item>
             )}
@@ -1763,18 +1735,6 @@ function getOrderItemProductCode(item: SalesOnlineShopOrderItem): string {
 
 function getSaleTransporterName(sale: SalesOnlineShopSale): string {
   return sale.Transporter?.Name || sale.Transporter?.Title || ''
-}
-
-function getTransporterImageUrl(sale: SalesOnlineShopSale): string {
-  if (sale.Transporter?.CssClass === 'self_checkout_item_class') {
-    return ''
-  }
-
-  return sale.Transporter?.ImageUrl?.trim() || ''
-}
-
-function getTransporterCssClass(sale: SalesOnlineShopSale): string {
-  return sale.Transporter?.CssClass?.trim() || ''
 }
 
 function getSaleDeliveryAddress(sale: SalesOnlineShopSale): string {
