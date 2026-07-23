@@ -11,7 +11,7 @@ import {
   Text,
   Tooltip,
 } from '@mantine/core'
-import { CircleAlert, History, RefreshCw, Settings } from 'lucide-react'
+import { CircleAlert, History, RefreshCw } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
@@ -23,6 +23,7 @@ import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableD
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { getActReconciliationByNetId, getAppliedActions } from '../api/actReconciliationsApi'
 import {
   ActReconciliationActionsModal,
@@ -475,16 +476,12 @@ function useItemColumns({
         cell: (item) =>
           item.HasDifference ? (
             <Box onClick={(event) => event.stopPropagation()}>
-              <Tooltip label={t('Дія')}>
-                <ActionIcon
-                  aria-label={t('Дія')}
-                  color={item.NegativeDifference ? 'red' : 'teal'}
-                  variant="subtle"
-                  onClick={() => onOpenAction(item)}
-                >
-                  <Settings size={18} />
-                </ActionIcon>
-              </Tooltip>
+              <TableRowAction
+                action="settings"
+                label={t('Дія')}
+                tone={item.NegativeDifference ? 'danger' : 'success'}
+                onClick={() => onOpenAction(item)}
+              />
             </Box>
           ) : null,
       },
