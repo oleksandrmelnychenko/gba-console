@@ -14,7 +14,7 @@
   Tooltip,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { Ban, Banknote, ChevronDown, CircleAlert, Eye, Landmark, ListChecks, Network, Plus, RotateCcw, Search, SquarePen } from 'lucide-react'
+import { Banknote, ChevronDown, CircleAlert, Landmark, ListChecks, Plus, RotateCcw, Search } from 'lucide-react'
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -32,6 +32,7 @@ import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { calculateAdvanceReportOrder } from '../api/advanceReportApi'
 import {
   cancelOutgoingCashflow,
@@ -959,8 +960,9 @@ function useOutgoingCashflowColumns({
       {
         id: 'actions',
         header: t('Дії'),
-        width: 104,
-        minWidth: 100,
+        width: 140,
+        minWidth: 140,
+        maxWidth: 140,
         align: 'right',
         className: 'outgoing-cashflows-actions-column',
         enableSorting: false,
@@ -968,69 +970,30 @@ function useOutgoingCashflowColumns({
         enablePinning: false,
         enableReorder: false,
         cell: (row) => (
-          <Group className="outgoing-cashflows-row-actions" gap={2} justify="flex-end" wrap="nowrap">
+          <Group className="outgoing-cashflows-row-actions" gap={4} justify="flex-end" wrap="nowrap">
             {row.hasDocumentStructure && (
-              <Tooltip label={t('Структура документів')}>
-                <ActionIcon
-                  aria-label={t('Структура документів')}
-                  color="gray"
-                  size={20}
-                  variant="subtle"
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    onOpenDocumentStructure(row)
-                  }}
-                >
-                  <Network size={14} />
-                </ActionIcon>
-              </Tooltip>
+              <TableRowAction
+                action="status"
+                label={t('Структура документів')}
+                onClick={() => onOpenDocumentStructure(row)}
+              />
             )}
             {row.isUnderReport && (
-              <Tooltip label={t('Редагувати звіт')}>
-                <ActionIcon
-                  aria-label={t('Редагувати звіт')}
-                  color="gray"
-                  disabled={!row.order.NetUid}
-                  size={20}
-                  variant="subtle"
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    onEditReport(row)
-                  }}
-                >
-                  <SquarePen size={14} />
-                </ActionIcon>
-              </Tooltip>
+              <TableRowAction
+                action="edit"
+                disabled={!row.order.NetUid}
+                label={t('Редагувати звіт')}
+                onClick={() => onEditReport(row)}
+              />
             )}
-            <Tooltip label={row.isCanceled ? t('Уже скасовано') : t('Скасувати')}>
-              <ActionIcon
-                aria-label={t('Скасувати')}
-                color="red"
-                disabled={row.isCanceled || !row.order.NetUid}
-                size={20}
-                variant="subtle"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  onCancel(row)
-                }}
-              >
-                <Ban size={14} />
-              </ActionIcon>
-            </Tooltip>
-            <Tooltip label={t('Деталі')}>
-              <ActionIcon
-                aria-label={t('Деталі')}
-                color="gray"
-                size={20}
-                variant="subtle"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  onOpen(row)
-                }}
-              >
-                <Eye size={14} />
-              </ActionIcon>
-            </Tooltip>
+            <TableRowAction
+              action="cancel"
+              disabled={row.isCanceled || !row.order.NetUid}
+              hint={row.isCanceled ? t('Уже скасовано') : undefined}
+              label={t('Скасувати')}
+              onClick={() => onCancel(row)}
+            />
+            <TableRowAction action="details" label={t('Деталі')} onClick={() => onOpen(row)} />
           </Group>
         ),
       },

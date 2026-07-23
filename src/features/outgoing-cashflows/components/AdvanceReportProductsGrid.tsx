@@ -1,9 +1,9 @@
-import { ActionIcon, Group, Tooltip } from '@mantine/core'
-import { FileText, Trash2 } from 'lucide-react'
+import { Group } from '@mantine/core'
 import { useMemo } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import type { AdvanceReportConsumableRow } from '../advanceReportTypes'
 
 export function AdvanceReportProductsGrid({
@@ -161,19 +161,7 @@ export function AdvanceReportProductsGrid({
         enableSorting: false,
         cell: (row) =>
           row.canRemove === false ? null : (
-            <Tooltip label={t('Видалити')}>
-              <ActionIcon
-                aria-label={t('Видалити')}
-                color="red"
-                variant="subtle"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  onRemove(row)
-                }}
-              >
-                <Trash2 size={16} />
-              </ActionIcon>
-            </Tooltip>
+            <TableRowAction action="delete" label={t('Видалити')} onClick={() => onRemove(row)} />
           ),
       })
     }
@@ -204,19 +192,15 @@ function DocumentsCell({ urls }: { urls: string[] }) {
   return (
     <Group gap={4} wrap="nowrap">
       {urls.map((url, index) => (
-        <Tooltip key={`${url}-${index}`} label={t('Відкрити документ')}>
-          <ActionIcon
-            aria-label={t('Відкрити документ')}
-            component="a"
-            href={url}
-            target="_blank"
-            rel="noreferrer"
-            size="sm"
-            variant="subtle"
-          >
-            <FileText size={16} />
-          </ActionIcon>
-        </Tooltip>
+        <TableRowAction
+          action="document"
+          component="a"
+          href={url}
+          key={`${url}-${index}`}
+          label={t('Відкрити документ')}
+          rel="noreferrer"
+          target="_blank"
+        />
       ))}
     </Group>
   )

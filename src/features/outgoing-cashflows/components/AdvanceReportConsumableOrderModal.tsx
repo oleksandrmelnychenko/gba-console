@@ -17,13 +17,14 @@ import {
   Textarea,
   Tooltip,
 } from '@mantine/core'
-import { CircleAlert, Pencil, Plus, Save, Trash2, X } from 'lucide-react'
+import { CircleAlert, Plus, Save, Trash2, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { formatLocalDate, formatLocalInputDateTime } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { calculateConsumableOrderItemTotals } from '../../consumable-orders/consumableOrderCalculations'
 import {
   calculateAdvanceReportConsumableOrder,
@@ -764,29 +765,18 @@ export function AdvanceReportConsumableOrderModal({
                     <Table.Td>{formatMoney(item.TotalPriceWithVAT)}</Table.Td>
                     <Table.Td>
                       <Group gap={4} justify="flex-end" wrap="nowrap">
-                        <Tooltip label={t('Редагувати')}>
-                          <ActionIcon
-                            aria-label={t('Редагувати')}
-                            disabled={isBusy}
-                            size="sm"
-                            variant="subtle"
-                            onClick={() => openEditItemEditor(item, index)}
-                          >
-                            <Pencil size={16} />
-                          </ActionIcon>
-                        </Tooltip>
-                        <Tooltip label={t('Видалити')}>
-                          <ActionIcon
-                            aria-label={t('Видалити')}
-                            color="red"
-                            disabled={isBusy}
-                            size="sm"
-                            variant="subtle"
-                            onClick={() => void removeItem(index)}
-                          >
-                            <Trash2 size={16} />
-                          </ActionIcon>
-                        </Tooltip>
+                        <TableRowAction
+                          action="edit"
+                          disabled={isBusy}
+                          label={t('Редагувати')}
+                          onClick={() => openEditItemEditor(item, index)}
+                        />
+                        <TableRowAction
+                          action="delete"
+                          disabled={isBusy}
+                          label={t('Видалити')}
+                          onClick={() => void removeItem(index)}
+                        />
                       </Group>
                     </Table.Td>
                   </Table.Tr>
