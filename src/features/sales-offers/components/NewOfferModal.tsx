@@ -1,10 +1,11 @@
 import { ActionIcon, Anchor, Button, Group, Loader, NumberInput, Select, Stack, Table, Text, TextInput } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { Copy, Search, Trash2 } from 'lucide-react'
+import { Copy, Search } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { ProductCardModal } from '../../products/components/ProductCardModal'
 import {
   createOffer,
@@ -468,9 +469,7 @@ function NewOfferForm({
                   />
                 </Table.Td>
                 <Table.Td>
-                  <ActionIcon color="red" variant="subtle" onClick={() => removeLine(line.key)}>
-                    <Trash2 size={16} />
-                  </ActionIcon>
+                  <TableRowAction action="delete" label={t('Видалити')} onClick={() => removeLine(line.key)} />
                 </Table.Td>
               </Table.Tr>
             ))}
