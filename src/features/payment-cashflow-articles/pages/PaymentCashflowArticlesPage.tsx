@@ -9,7 +9,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { CircleAlert, Pencil, Plus, RefreshCw, RotateCcw, Search } from 'lucide-react'
+import { CircleAlert, Plus, RefreshCw, RotateCcw, Search } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -19,6 +19,7 @@ import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { ConsoleTableEntityCell } from '../../../shared/ui/console-table-cells'
 import { createConsoleTableMarker } from '../../../shared/ui/console-table-utils'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import '../../../shared/ui/console-table-page.css'
 import { useAuth } from '../../auth/useAuth'
 import { getPaymentCashflowArticles, searchPaymentCashflowArticles } from '../api/paymentCashflowArticlesApi'
@@ -106,19 +107,7 @@ export function PaymentCashflowArticlesPage() {
         enableSorting: false,
         enableHiding: false,
         cell: (article) => (
-          <Tooltip label={t('Редагувати')}>
-            <ActionIcon
-              aria-label={t('Редагувати')}
-              color="gray"
-              variant="subtle"
-              onClick={(event) => {
-                event.stopPropagation()
-                openArticle(article)
-              }}
-            >
-              <Pencil size={18} />
-            </ActionIcon>
-          </Tooltip>
+          <TableRowAction action="edit" label={t('Редагувати')} onClick={() => openArticle(article)} />
         ),
       },
     ],
