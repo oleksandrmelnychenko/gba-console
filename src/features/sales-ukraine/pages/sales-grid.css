@@ -730,8 +730,10 @@
 .sg-client-name {
   display: flex;
   align-items: center;
+  flex-wrap: nowrap;
   gap: 6px;
   min-width: 0;
+  overflow: hidden;
   font-size: 13px;
   font-weight: 600;
   line-height: 1.2;
@@ -754,11 +756,17 @@
   padding: 3px 6px;
 }
 
-/* Client name must always be fully visible — wrap instead of truncating. */
 .sg-client-name-text {
+  flex: 1 1 auto;
   min-width: 0;
-  overflow-wrap: break-word;
-  white-space: normal;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sg-client-name > .mantine-Badge-root {
+  flex: 0 0 auto;
+  max-width: none;
 }
 
 .sg-meta {
