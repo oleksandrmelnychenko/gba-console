@@ -14,7 +14,7 @@ import {
 } from '@mantine/core'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { notifications } from '@mantine/notifications'
-import { Archive, CircleAlert, Plus, RefreshCw, RotateCcw, Save, Search, Trash2 } from 'lucide-react'
+import { Archive, ChevronRight, CircleAlert, Plus, RefreshCw, RotateCcw, Save, Search, Trash2 } from 'lucide-react'
 import { type FormEvent, useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
@@ -394,26 +394,29 @@ function OnlineShopCitiesRegistry({
 
       <div className="online-shop-cities-layout">
         <aside className="online-shop-cities-rail" aria-label={t('Міста')}>
-          <div className="online-shop-cities-rail-header">
-            <span>{t('Навігація міст')}</span>
-          </div>
-
-          <div className="online-shop-cities-filter-list">
-            {cityNavigationItems.map((item) => (
-              <button
-                key={item.value}
-                className={`online-shop-cities-filter-option${cityFilter === item.value ? ' is-active' : ''}`}
-                type="button"
-                onClick={() => onCityFilterChange(item.value)}
-              >
-                <span className="online-shop-cities-filter-name">{item.label}</span>
-                <span className="online-shop-cities-filter-count">{item.count}</span>
-              </button>
-            ))}
+          <div className="online-shop-cities-filter-scroll">
+            <div className="online-shop-cities-filter-list">
+              {cityNavigationItems.map((item) => (
+                <button
+                  key={item.value}
+                  aria-pressed={cityFilter === item.value}
+                  className={`online-shop-cities-filter-option${cityFilter === item.value ? ' is-active' : ''}`}
+                  type="button"
+                  onClick={() => onCityFilterChange(item.value)}
+                >
+                  <span className="online-shop-cities-filter-label">
+                    <span className="online-shop-cities-filter-name">{item.label}</span>
+                    <ChevronRight aria-hidden="true" className="online-shop-cities-filter-chevron" size={14} />
+                  </span>
+                  <span className="online-shop-cities-filter-count">{item.count}</span>
+                  <span aria-hidden="true" className="online-shop-cities-filter-marker" />
+                </button>
+              ))}
+            </div>
           </div>
         </aside>
 
-        <section className="online-shop-cities-roster">
+        <section className="online-shop-cities-roster console-table-body">
           <DataTable
             columns={columns}
             data={visibleCities}
