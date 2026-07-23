@@ -70,6 +70,20 @@
   `translateX`/тіней на hover рядка (продуктивність!).
 - **Пусті значення** — порожня клітинка, **не** тире.
 - **Кебаб колонки (⋮)** — завжди видимий: `.data-table-column-menu { display: inline-flex }`.
+- **Клікабельні дії рядка справа** — тільки спільний `TableRowAction` (button або
+  link): `md`/28px, гліф 16px/1.8, `variant="subtle"`, проміжок між діями 4px.
+  Базова гама нейтральна сіра з brand-hover; destructive — червона, success —
+  зелена, primary — brand. Одна семантика завжди має одну іконку з реєстру
+  компонента: edit — `Pencil`, view/details — `Eye`, open — `ExternalLink`,
+  delete — `Trash2`, archive — `Archive`, download — `Download`, print —
+  `Printer`, more — `EllipsisVertical`; approve/reject, assign/complete,
+  upload, discount, delivery та інші дії так само мають окремі canonical kinds.
+  Custom glyph escape hatch немає. Локальні `size`/`color`/`variant`,
+  `className`/`style` і альтернативні гліфи (`SquarePen`, `Search` для
+  перегляду, `FileDown` для завантаження) у row-actions не використовувати.
+  Компонент обов’язково отримує текстовий `label`, сам задає `aria-label` і
+  нативний `title` (`hint` — для пояснення disabled-стану), а за замовчуванням
+  зупиняє bubbling кліку до рядка.
 - **Тулбар таблиці** (меню колонок ▦ + щільність ☰) — портується у фільтр-бар
   через проп `toolbarPortalTarget` (слот-div у барі). Деталі бару — §5.3.
 - **Дефолтні колонки** — мінімальний робочий набір; решта прихована через
@@ -288,8 +302,8 @@ Right-drawer з даними одного запису (`/accounting/consumable-
 
 ## 11. Іконки
 
-- Основний набір — `@tabler/icons-react`; для акційних рядків у модалках —
-  `lucide-react` (ExternalLink, Wallet, IdCard...).
+- Основний набір — `@tabler/icons-react`; для `TableRowAction` і акційних рядків
+  у модалках — `lucide-react` (ExternalLink, Wallet, IdCard...).
 
 
 ## 10. Таби (в-сторінкові)

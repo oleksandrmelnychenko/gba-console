@@ -1,0 +1,46 @@
+.app-table-row-action.mantine-ActionIcon-root {
+  border: 1px solid transparent;
+  border-radius: 7px;
+  flex: 0 0 28px;
+  height: 28px;
+  min-height: 28px;
+  min-width: 28px;
+  width: 28px;
+}
+
+.app-table-row-action.mantine-ActionIcon-root svg {
+  height: 16px;
+  stroke-width: 1.8;
+  width: 16px;
+}
+
+.app-table-row-action.is-neutral:hover {
+  background: var(--mantine-color-brand-0);
+  border-color: var(--mantine-color-brand-2);
+  color: var(--mantine-color-brand-7);
+}
+
+.app-table-row-action.is-brand:hover {
+  background: var(--mantine-color-brand-0);
+  border-color: var(--mantine-color-brand-2);
+  color: var(--mantine-color-brand-7);
+}
+
+.app-table-row-action.is-danger:hover {
+  background: var(--mantine-color-red-0);
+  border-color: var(--mantine-color-red-2);
+  color: var(--mantine-color-red-7);
+}
+
+.app-table-row-action.is-success:hover {
+  background: var(--mantine-color-green-0);
+  border-color: var(--mantine-color-green-2);
+  color: var(--mantine-color-green-7);
+}
+
+.app-table-row-action.mantine-ActionIcon-root:disabled,
+.app-table-row-action.mantine-ActionIcon-root[data-disabled='true'] {
+  background: transparent;
+  border-color: transparent;
+  color: var(--mantine-color-gray-4);
+}
