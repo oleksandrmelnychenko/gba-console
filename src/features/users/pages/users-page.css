@@ -120,87 +120,117 @@
 }
 
 /* ── Layout: §6.1 role rail on the left, the roster table fills the rest. ── */
-.users-layout {
-  display: flex;
+.users-workspace {
+  display: grid;
   flex: 1 1 auto;
   gap: 12px;
+  grid-template-columns: 248px minmax(0, 1fr);
   min-height: 0;
+  min-width: 0;
   padding: 10px 8px 8px;
 }
 
 .users-role-rail {
   display: flex;
-  flex: 0 0 232px;
   flex-direction: column;
-  gap: 2px;
   min-height: 0;
-}
-
-.users-rail-title {
-  color: var(--mantine-color-gray-7);
-  font-family: var(--font-mono);
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0;
-  line-height: 1.2;
-  margin-bottom: 6px;
-  padding-left: 8px;
+  min-width: 0;
 }
 
 .users-role-scroll {
   flex: 1 1 auto;
   min-height: 0;
+  overflow: auto;
+  scrollbar-width: thin;
 }
 
 .users-role-list {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+  display: grid;
+  gap: 4px;
+  padding-right: 4px;
 }
 
-/* §6.1 item: flat mono text, no fills/borders; the active one gets the orange
+/* §6.1 item: flat mono text, no visible fills/borders; the active one gets the orange
    dot on the left + orange 600 text. The count reads as small mono meta. */
 .users-role-option {
   align-items: center;
-  background: transparent;
-  border: 0;
+  background: transparent !important;
+  border: 1px solid transparent;
   border-radius: 8px;
+  box-shadow: none;
   color: var(--mantine-color-gray-7);
   cursor: pointer;
-  display: flex;
+  display: grid;
   font-family: var(--font-mono);
   font-size: 13px;
   font-weight: 500;
   gap: 8px;
+  grid-template-columns: minmax(0, 1fr) auto 6px;
   letter-spacing: 0;
-  min-height: 34px;
-  padding: 4px 6px 4px 8px;
+  min-height: 40px;
+  padding: 0 12px;
   position: relative;
   text-align: left;
   transition:
-    color 110ms var(--tx-ease-smooth),
+    color 140ms var(--tx-ease-smooth),
     transform 140ms var(--tx-ease-smooth);
   width: 100%;
 }
 
-
-.users-role-option:hover {
+.users-role-option:hover,
+.users-role-option:focus-visible {
+  background: transparent !important;
   color: var(--mantine-color-gray-9);
   transform: translateX(3px);
 }
 
 .users-role-option.is-active {
-  color: var(--mantine-color-orange-8);
+  background: transparent !important;
+  border-color: var(--brand-orange);
+  color: var(--brand-orange);
   font-weight: 600;
 }
 
+.users-role-option-marker {
+  align-self: start;
+  background: transparent;
+  border-radius: 999px;
+  height: 6px;
+  margin-top: 7px;
+  width: 6px;
+}
+
+.users-role-option.is-active .users-role-option-marker {
+  background: var(--brand-orange);
+}
+
+.users-role-option-main {
+  align-items: center;
+  display: flex;
+  gap: 4px;
+  min-width: 0;
+}
 
 .users-role-option-name {
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.users-role-option-chevron {
+  color: var(--mantine-color-gray-4);
+  flex: 0 0 auto;
+  opacity: 0;
+  transition:
+    color 140ms var(--tx-ease-smooth),
+    opacity 140ms var(--tx-ease-smooth);
+}
+
+.users-role-option:hover .users-role-option-chevron,
+.users-role-option:focus-visible .users-role-option-chevron {
+  opacity: 1;
 }
 
 .users-role-option-count {
@@ -211,7 +241,12 @@
 }
 
 .users-role-option.is-active .users-role-option-count {
-  color: var(--mantine-color-orange-7);
+  color: var(--brand-orange);
+}
+
+.users-role-option.is-active .users-role-option-chevron {
+  color: var(--brand-orange);
+  opacity: 1;
 }
 
 /* ── Roster ── */

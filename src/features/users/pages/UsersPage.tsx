@@ -3,7 +3,6 @@ import {
   Alert,
   Badge,
   Button,
-  ScrollArea,
   Select,
   Stack,
   Text,
@@ -11,7 +10,15 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { CircleAlert, Plus, RefreshCw, RotateCcw, Search, Shield } from 'lucide-react'
+import {
+  ChevronRight,
+  CircleAlert,
+  Plus,
+  RefreshCw,
+  RotateCcw,
+  Search,
+  Shield,
+} from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -271,36 +278,52 @@ export function UsersPage() {
           </Alert>
         )}
 
-        <div className="users-layout">
+        <div className="users-workspace">
           <aside className="users-role-rail" aria-label={t('Ролі')}>
-            <Text className="users-rail-title" fw={600} size="sm">
-              {t('Ролі')}
-            </Text>
-
-            <button
-              className={`users-role-option${roleFilter === null ? ' is-active' : ''}`}
-              type="button"
-              onClick={() => setRoleFilter(null)}
-            >
-              <span className="users-role-option-name">{t('Всі користувачі')}</span>
-              <span className="users-role-option-count">{users.length}</span>
-            </button>
-
-            <ScrollArea.Autosize className="users-role-scroll" type="auto">
+            <div className="users-role-scroll">
               <div className="users-role-list">
+                <button
+                  aria-pressed={roleFilter === null}
+                  className={`users-role-option${roleFilter === null ? ' is-active' : ''}`}
+                  type="button"
+                  onClick={() => setRoleFilter(null)}
+                >
+                  <span className="users-role-option-main">
+                    <span className="users-role-option-name">{t('Всі користувачі')}</span>
+                    <ChevronRight
+                      aria-hidden="true"
+                      className="users-role-option-chevron"
+                      size={14}
+                      strokeWidth={2}
+                    />
+                  </span>
+                  <span className="users-role-option-count">{users.length}</span>
+                  <span aria-hidden="true" className="users-role-option-marker" />
+                </button>
+
                 {roleNavItems.map((item) => (
                   <button
                     key={item.value}
+                    aria-pressed={roleFilter === item.value}
                     className={`users-role-option${roleFilter === item.value ? ' is-active' : ''}`}
                     type="button"
                     onClick={() => setRoleFilter(item.value)}
                   >
-                    <span className="users-role-option-name">{item.label}</span>
+                    <span className="users-role-option-main">
+                      <span className="users-role-option-name">{item.label}</span>
+                      <ChevronRight
+                        aria-hidden="true"
+                        className="users-role-option-chevron"
+                        size={14}
+                        strokeWidth={2}
+                      />
+                    </span>
                     <span className="users-role-option-count">{item.count}</span>
+                    <span aria-hidden="true" className="users-role-option-marker" />
                   </button>
                 ))}
               </div>
-            </ScrollArea.Autosize>
+            </div>
           </aside>
 
           <section className="users-roster console-table-body">
