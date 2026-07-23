@@ -24,6 +24,7 @@ import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import {
   getAvailablePaymentsOrganizations,
   getGroupedPaymentTasks,
@@ -958,20 +959,14 @@ function useAvailablePaymentsColumns(
         enableSorting: false,
         cell: (group) => (
           <Box>
-            <Tooltip label={t('Деталі')}>
-              <ActionIcon
-                aria-label={t('Деталі')}
-                color="gray"
-                size="md"
-                variant="subtle"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  onOpen(group)
-                }}
-              >
-                <ListTree size={18} />
-              </ActionIcon>
-            </Tooltip>
+            <TableRowAction
+              action="details"
+              label={t('Деталі')}
+              onClick={(event) => {
+                event.stopPropagation()
+                onOpen(group)
+              }}
+            />
           </Box>
         ),
       },
