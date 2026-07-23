@@ -204,8 +204,8 @@ export function SalesDebtorsPage() {
   }
 
   return (
-    <Stack className="sales-debtors-page console-table-page" gap={6}>
-      <div className="console-table-shell">
+    <Stack className="sales-debtors-page console-table-page" gap={0}>
+      <div className="sales-dashboard-tab-content">
         <div className="sales-debtors-command-bar app-filter-bar">
           <Select
             clearable
