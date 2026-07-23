@@ -1,5 +1,4 @@
 import {
-  ActionIcon,
   Alert,
   Anchor,
   Badge,
@@ -11,10 +10,9 @@ import {
   Stack,
   Text,
   TextInput,
-  Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { Calculator, CircleAlert, File, FileUp, ListCheck, PackagePlus, Save, Search, X } from 'lucide-react'
+import { Calculator, CircleAlert, FileUp, ListCheck, PackagePlus, Save, Search, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
@@ -28,6 +26,7 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import {
   addVatPercentToSupplyOrderUkraine,
   getSupplyUkraineOrderById,
@@ -947,17 +946,14 @@ function useDocumentColumns(): DataTableColumn<SupplyOrderUkraineDocument>[] {
         enableSorting: false,
         accessor: (document) => document.DocumentUrl,
         cell: (document) => document.DocumentUrl ? (
-          <Tooltip label={t('Відкрити')}>
-            <ActionIcon
-              component="a"
-              href={upgradeHttpToHttps(document.DocumentUrl)}
-              rel="noreferrer"
-              target="_blank"
-              variant="subtle"
-            >
-              <File size={16} />
-            </ActionIcon>
-          </Tooltip>
+          <TableRowAction
+            action="document"
+            component="a"
+            href={upgradeHttpToHttps(document.DocumentUrl)}
+            label={t('Відкрити')}
+            rel="noreferrer"
+            target="_blank"
+          />
         ) : null,
       },
     ],

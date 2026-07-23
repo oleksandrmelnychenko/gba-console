@@ -29,6 +29,7 @@ import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { useAuth } from '../../auth/useAuth'
 import {
   createSupplyCreditNote,
@@ -539,49 +540,37 @@ export function SupplyUkraineDirectOrderDetailPage() {
         <Group gap={4} wrap="nowrap">
           <FileButton onChange={(file) => uploadDocumentFile(document, file)}>
             {(fileProps) => (
-              <ActionIcon
+              <TableRowAction
                 {...fileProps}
-                aria-label={t('Завантажити файл')}
-                color="gray"
+                action="upload"
                 disabled={
                   isSaving ||
                   areDeliveryDocumentActionsLocked ||
                   document.Deleted ||
                   Boolean(document.IsProcessed && document.IsReceived)
                 }
-                title={t('Завантажити файл')}
-                variant="light"
-              >
-                <Upload size={16} />
-              </ActionIcon>
+                label={t('Завантажити файл')}
+              />
             )}
           </FileButton>
-          <ActionIcon
-            aria-label={t('Зміна статуса документа')}
-            color="gray"
+          <TableRowAction
+            action="status"
             disabled={
               isSaving ||
               areDeliveryDocumentActionsLocked ||
               document.Deleted ||
               Boolean(document.IsProcessed && document.IsReceived)
             }
-            title={t('Зміна статуса документа')}
-            variant="light"
+            label={t('Зміна статуса документа')}
             onClick={() => openStatusModal(document)}
-          >
-            <Check size={16} />
-          </ActionIcon>
+          />
           {(document.FileName || document.DocumentUrl) && (
-            <ActionIcon
-              aria-label={t('Очистити файл')}
-              color="red"
+            <TableRowAction
+              action="delete"
               disabled={isSaving || areDeliveryDocumentActionsLocked}
-              title={t('Очистити файл')}
-              variant="light"
+              label={t('Очистити файл')}
               onClick={() => clearDocumentFile(document)}
-            >
-              <Trash2 size={16} />
-            </ActionIcon>
+            />
           )}
         </Group>
       ),

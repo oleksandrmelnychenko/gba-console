@@ -22,7 +22,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { ArrowLeft, CircleAlert, FileInput as FileInputIcon, FileUp, Package, RefreshCw, Save, SquarePen, Trash2, Undo2, X } from 'lucide-react'
+import { ArrowLeft, CircleAlert, FileInput as FileInputIcon, FileUp, Package, RefreshCw, Save, Trash2, X } from 'lucide-react'
 import { useEffect, useMemo, useReducer, useState, type CSSProperties, type Dispatch, type SetStateAction, type ReactNode } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import './supply-order-detail.css'
@@ -35,6 +35,7 @@ import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { useAuth } from '../../auth/useAuth'
 import { ProductCardModal } from '../../products/components/ProductCardModal'
 import { EXCEL_FILE_ACCEPT, isExcelFile } from '../excelFiles'
@@ -1260,7 +1261,7 @@ function InvoiceSelector({
   const { t } = useI18n()
 
   return (
-    <Group gap="xs" wrap="wrap">
+    <Group gap={4} wrap="wrap">
       {model.invoices.map((invoice) => {
         const currencyCode = getInvoiceCurrencyCode(invoice, model.order)
 
@@ -1295,18 +1296,12 @@ function InvoiceSelector({
               {invoice.Number || t('Інвойс')} ({formatDate(invoice.DateFrom)}){currencyCode ? ` ${currencyCode}` : ''}
             </Button>
             {showDelete && model.canRemoveInvoice && (
-              <Tooltip label={t('Видалити')}>
-                <ActionIcon
-                  aria-label={t('Видалити')}
-                  color="red"
-                  disabled={model.isBusy}
-                  size="xs"
-                  variant="subtle"
-                  onClick={() => model.setPageState({ deleteInvoiceCandidate: invoice })}
-                >
-                  <Trash2 size={14} />
-                </ActionIcon>
-              </Tooltip>
+              <TableRowAction
+                action="delete"
+                disabled={model.isBusy}
+                label={t('Видалити')}
+                onClick={() => model.setPageState({ deleteInvoiceCandidate: invoice })}
+              />
             )}
           </Group>
         )
@@ -1364,7 +1359,7 @@ function PackListSelector({ model }: { model: DirectOrderInvoicesPageModel }) {
   const { t } = useI18n()
 
   return (
-    <Group gap="xs" wrap="wrap">
+    <Group gap={4} wrap="wrap">
       {(model.selectedInvoice?.PackingLists || []).map((packList) => (
         <Group key={packList.NetUid || packList.Id} gap={4} wrap="nowrap">
           <Button
@@ -1376,31 +1371,20 @@ function PackListSelector({ model }: { model: DirectOrderInvoicesPageModel }) {
             {packList.No || packList.InvNo || t('Пак лист')} ({formatDate(packList.FromDate)})
           </Button>
           {model.canAddPackList && (
-            <Tooltip label={t('Редагувати')}>
-              <ActionIcon
-                aria-label={t('Редагувати')}
-                disabled={model.isBusy}
-                size="xs"
-                variant="subtle"
-                onClick={() => model.setPageState({ packListEditor: { packList } })}
-              >
-                <SquarePen size={14} />
-              </ActionIcon>
-            </Tooltip>
+            <TableRowAction
+              action="edit"
+              disabled={model.isBusy}
+              label={t('Редагувати')}
+              onClick={() => model.setPageState({ packListEditor: { packList } })}
+            />
           )}
           {model.canRemovePackList && (
-            <Tooltip label={t('Видалити')}>
-              <ActionIcon
-                aria-label={t('Видалити')}
-                color="red"
-                disabled={model.isBusy}
-                size="xs"
-                variant="subtle"
-                onClick={() => model.setPageState({ deletePackListCandidate: packList })}
-              >
-                <Trash2 size={14} />
-              </ActionIcon>
-            </Tooltip>
+            <TableRowAction
+              action="delete"
+              disabled={model.isBusy}
+              label={t('Видалити')}
+              onClick={() => model.setPageState({ deletePackListCandidate: packList })}
+            />
           )}
         </Group>
       ))}
@@ -1926,17 +1910,17 @@ function PackListDocumentsList({
             {document.Deleted && <Text c="red" size="xs">{t('Буде видалено')}</Text>}
           </Stack>
           {document.Deleted ? (
-            <Tooltip label={t('Відновити')}>
-              <ActionIcon aria-label={t('Відновити')} color="gray" variant="subtle" onClick={() => onRestore(document, index)}>
-                <Undo2 size={16} />
-              </ActionIcon>
-            </Tooltip>
+            <TableRowAction
+              action="restore"
+              label={t('Відновити')}
+              onClick={() => onRestore(document, index)}
+            />
           ) : (
-            <Tooltip label={t('Видалити')}>
-              <ActionIcon aria-label={t('Видалити')} color="red" variant="subtle" onClick={() => onRemove(document, index)}>
-                <Trash2 size={16} />
-              </ActionIcon>
-            </Tooltip>
+            <TableRowAction
+              action="delete"
+              label={t('Видалити')}
+              onClick={() => onRemove(document, index)}
+            />
           )}
         </Group>
       ))}
