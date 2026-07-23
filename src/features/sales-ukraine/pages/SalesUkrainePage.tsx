@@ -4,7 +4,6 @@ import {
   Badge,
   Box,
   Button,
-  Card,
   Checkbox,
   Group,
   Menu,
@@ -865,8 +864,8 @@ export function SalesUkrainePage() {
   )
 
   return (
-    <Stack className="sales-ukraine-page" gap={6}>
-      <Card className="sales-ukraine-card" withBorder radius="md" padding={0}>
+    <Stack className="sales-ukraine-page" gap={0}>
+      <div className="sales-dashboard-tab-content sales-ukraine-card">
         <Stack className="sales-ukraine-content" gap={0}>
           <div className="sales-filter-bar">
             <div className="sales-filter-row has-create">
@@ -1120,7 +1119,7 @@ export function SalesUkrainePage() {
             )}
           </div>
         </Stack>
-      </Card>
+      </div>
 
       <AppDrawer
         classNames={{
