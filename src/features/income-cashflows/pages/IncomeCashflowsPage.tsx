@@ -15,7 +15,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { Banknote, ChevronDown, CircleAlert, Eye, Landmark, Plus, RotateCcw, Search, Share2, Store, Users, X } from 'lucide-react'
+import { Banknote, ChevronDown, CircleAlert, Landmark, Plus, RotateCcw, Search, Share2, Store, Users, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -28,6 +28,7 @@ import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { getAccountingCashFlowRecordPaymentStatus } from '../../accounting-cash-flow/accountingCashFlowPaymentStatus'
 import { calculateAdvanceReportOrder } from '../../outgoing-cashflows/api/advanceReportApi'
 import {
@@ -918,20 +919,14 @@ function useIncomeCashflowColumns({
         enableReorder: false,
         cell: (row) =>
           isClientPaymentReassignable(row.income) ? (
-            <Tooltip label={t('Переназначити клієнта')}>
-              <ActionIcon
-                aria-label={t('Переназначити клієнта')}
-                color="gray"
-                size="sm"
-                variant="subtle"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  onReassign(row)
-                }}
-              >
-                <Share2 size={16} />
-              </ActionIcon>
-            </Tooltip>
+            <TableRowAction
+              action="reassign"
+              label={t('Переназначити клієнта')}
+              onClick={(event) => {
+                event.stopPropagation()
+                onReassign(row)
+              }}
+            />
           ) : null,
       },
       {
@@ -948,21 +943,16 @@ function useIncomeCashflowColumns({
           const cancelUnavailableReason = getIncomeCancelUnavailableReason(row.income, t)
 
           return (
-          <Tooltip label={cancelUnavailableReason || t('Скасувати')}>
-            <ActionIcon
-              aria-label={t('Скасувати')}
-              color="red"
-              disabled={Boolean(cancelUnavailableReason)}
-              size="sm"
-              variant="subtle"
-              onClick={(event) => {
-                event.stopPropagation()
-                onCancel(row)
-              }}
-            >
-              <X size={16} />
-            </ActionIcon>
-          </Tooltip>
+          <TableRowAction
+            action="cancel"
+            disabled={Boolean(cancelUnavailableReason)}
+            hint={cancelUnavailableReason || undefined}
+            label={t('Скасувати')}
+            onClick={(event) => {
+              event.stopPropagation()
+              onCancel(row)
+            }}
+          />
           )
         },
       },
@@ -977,20 +967,14 @@ function useIncomeCashflowColumns({
         enablePinning: false,
         enableReorder: false,
         cell: (row) => (
-          <Tooltip label={t('Деталі')}>
-            <ActionIcon
-              aria-label={t('Деталі')}
-              color="gray"
-              size="sm"
-              variant="subtle"
-              onClick={(event) => {
-                event.stopPropagation()
-                onOpen(row)
-              }}
-            >
-              <Eye size={16} />
-            </ActionIcon>
-          </Tooltip>
+          <TableRowAction
+            action="details"
+            label={t('Деталі')}
+            onClick={(event) => {
+              event.stopPropagation()
+              onOpen(row)
+            }}
+          />
         ),
       },
     ],
