@@ -13,7 +13,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { CircleAlert, Pencil, Plus, RefreshCw, RotateCcw, Search } from 'lucide-react'
+import { CircleAlert, Plus, RefreshCw, RotateCcw, Search } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -21,6 +21,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { PermissionGate } from '../../auth/components/PermissionGate'
 import {
   getPaymentAccountOrganizations,
@@ -415,21 +416,12 @@ function usePaymentAccountColumns(onOpen: (account: PaymentAccount) => void): Da
         enableReorder: false,
         cell: (account) => (
           <PermissionGate permissionKey={PAYMENT_ACCOUNT_EDIT_PERMISSION}>
-            <Tooltip label={t('Редагувати')}>
-              <ActionIcon
-                aria-label={t('Редагувати')}
-                color="gray"
-                disabled={!account.NetUid}
-                size="md"
-                variant="subtle"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  onOpen(account)
-                }}
-              >
-                <Pencil size={18} />
-              </ActionIcon>
-            </Tooltip>
+            <TableRowAction
+              action="edit"
+              disabled={!account.NetUid}
+              label={t('Редагувати')}
+              onClick={() => onOpen(account)}
+            />
           </PermissionGate>
         ),
       },
