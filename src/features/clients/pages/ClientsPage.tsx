@@ -18,7 +18,7 @@ import {
 } from '@mantine/core'
 import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
-import { CircleAlert, Clock, EllipsisVertical, ExternalLink, FileText, Network, Plus, RotateCcw, Search, ToggleLeft, ToggleRight, Wallet } from 'lucide-react'
+import { CircleAlert, Clock, ExternalLink, FileText, Network, Plus, RotateCcw, Search, ToggleLeft, ToggleRight, Wallet } from 'lucide-react'
 import { useDebouncedValue } from '@mantine/hooks'
 import { type FormEvent, type RefObject, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { ClientTypeRoleFilter } from '../components/ClientTypeRoleFilter'
@@ -32,6 +32,7 @@ import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE, PAGINATOR_PAGE_SIZE_OPTIONS } from '../../../shared/ui/paginator/paginatorPageSize'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import type {
   DataTableColumn,
   DataTableDefaultLayout,
@@ -1331,16 +1332,7 @@ function useClientColumns(
         enableSorting: false,
         cell: (client) => (
           <Box onClick={(event) => event.stopPropagation()}>
-            <Tooltip label={t('Дії')}>
-              <ActionIcon
-                aria-label={t('Дії')}
-                color="gray"
-                variant="subtle"
-                onClick={() => onOpenActions(client)}
-              >
-                <EllipsisVertical size={18} />
-              </ActionIcon>
-            </Tooltip>
+            <TableRowAction action="more" label={t('Дії')} onClick={() => onOpenActions(client)} />
           </Box>
         ),
       },
