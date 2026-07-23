@@ -6,7 +6,7 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
-import { CircleAlert, ExternalLink, Pencil, Plus, RefreshCw, RotateCcw, Search } from 'lucide-react'
+import { CircleAlert, ExternalLink, Plus, RefreshCw, RotateCcw, Search } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -15,6 +15,7 @@ import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { getOrganizationClients } from '../api/organizationClientsApi'
 import type { OrganizationClient } from '../types'
 import { getOrganizationClientName } from '../utils'
@@ -145,15 +146,11 @@ export function OrganizationClientsPage() {
         enableSorting: false,
         cell: (client) => (
           <div className="organization-clients-row-actions" onClick={(event) => event.stopPropagation()}>
-            <ActionIcon
-              aria-label={t('Відкрити')}
-              color="gray"
-              title={t('Відкрити')}
-              variant="subtle"
+            <TableRowAction
+              action="open"
+              label={t('Відкрити')}
               onClick={() => openClientActions(client)}
-            >
-              <Pencil size={18} />
-            </ActionIcon>
+            />
           </div>
         ),
       },

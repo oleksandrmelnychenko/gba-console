@@ -1,15 +1,13 @@
 import {
-  ActionIcon,
   Button,
   Group,
   Select,
   Stack,
   Text,
   TextInput,
-  Tooltip,
 } from '@mantine/core'
 import { AppModal } from "../../../shared/ui/AppModal"
-import { Check, Plus, Trash2 } from 'lucide-react'
+import { Check, Plus } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { Currency, OrganizationClientAgreement } from '../types'
@@ -22,6 +20,7 @@ import {
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 
 const AGREEMENTS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -111,18 +110,13 @@ export function OrganizationClientAgreementsPanel({
           const canRemove = !disabled && (allowRemovingLast || agreements.length > 1)
 
           return (
-            <Tooltip label={canRemove ? t('Видалити') : t('Має залишитися хоча б один договір')}>
-              <ActionIcon
-                aria-label={t('Видалити договір')}
-                color="red"
-                disabled={!canRemove}
-                size="sm"
-                variant="subtle"
-                onClick={() => onRemoveAgreement(row.agreement, row.index)}
-              >
-                <Trash2 size={16} />
-              </ActionIcon>
-            </Tooltip>
+            <TableRowAction
+              action="delete"
+              disabled={!canRemove}
+              hint={canRemove ? undefined : t('Має залишитися хоча б один договір')}
+              label={t('Видалити договір')}
+              onClick={() => onRemoveAgreement(row.agreement, row.index)}
+            />
           )
         },
       },
