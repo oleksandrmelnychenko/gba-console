@@ -33,6 +33,7 @@ const navigationRouteAliasRules: Array<{ source: string; targets: RegExp[] }> = 
   {
     source: '/sales/ukraine/all',
     targets: [
+      /^\/reports\/sales?$/i,
       /^\/resales(?:\/.*)?$/i,
       /^\/sales\/charts$/i,
       /^\/sales\/return\/client$/i,

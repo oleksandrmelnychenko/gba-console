@@ -356,6 +356,8 @@ describe('isNavigationPathAllowed', () => {
     expect(isNavigationPathAllowed(modules, '/orders/develop/all/edit/order-1/specifications')).toBe(true)
     expect(isNavigationPathAllowed(modules, '/sales/ukraine/offers')).toBe(true)
     expect(isNavigationPathAllowed(modules, '/resales/new')).toBe(true)
+    expect(isNavigationPathAllowed(modules, '/reports/sale')).toBe(true)
+    expect(isNavigationPathAllowed(modules, '/reports/sales')).toBe(true)
     expect(isNavigationPathAllowed(modules, '/accounting/payment-accounts')).toBe(false)
   })
 
