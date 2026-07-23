@@ -1,4 +1,4 @@
-import { ActionIcon, Alert, Card, Loader, Select, Stack, Text, Tooltip } from '@mantine/core'
+import { ActionIcon, Alert, Loader, Select, Stack, Text, Tooltip } from '@mantine/core'
 import { CircleAlert, RotateCcw, Search } from 'lucide-react'
 import { useEffect } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -313,7 +313,7 @@ export function SalesPredictionPage() {
   }
 
   return (
-    <Stack className="sales-prediction-page" gap={6}>
+    <Stack className="sales-prediction-page" gap={0}>
       <PredictionFilters
         clientData={clientData}
         clientNetId={clientNetId}
@@ -383,7 +383,7 @@ function PredictionFilters({
   const { t } = useI18n()
 
   return (
-    <Card withBorder radius="md" padding={0} className="app-filter-card sales-prediction-filter-card">
+    <div className="sales-prediction-filter-card">
       <div className="app-filter-bar sales-prediction-filter-bar">
         <div className="sales-prediction-filter-row">
           <Select
@@ -433,7 +433,7 @@ function PredictionFilters({
           </Tooltip>
         </div>
       </div>
-    </Card>
+    </div>
   )
 }
 

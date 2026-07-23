@@ -16,18 +16,21 @@
 
 .sales-prediction-filter-card {
   background: var(--mantine-color-white);
-  border: 1px solid var(--mantine-color-gray-2) !important;
-  box-shadow: var(--app-card-shadow) !important;
   flex: 0 0 auto;
   min-width: 0;
 }
 
 .sales-prediction-filter-bar {
+  border-bottom: 1px solid var(--mantine-color-gray-2);
   display: grid;
   gap: 10px;
   grid-template-columns: minmax(720px, 1fr) max-content;
   min-width: 0;
   overflow-x: auto;
+}
+
+.sales-prediction-filter-card > .sales-prediction-filter-bar:last-child {
+  border-bottom: 1px solid var(--mantine-color-gray-2);
 }
 
 .sales-prediction-filter-row {
