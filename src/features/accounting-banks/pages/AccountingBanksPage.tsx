@@ -13,7 +13,7 @@ import {
 } from '@mantine/core'
 import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
-import { CircleAlert, Pencil, Plus, RefreshCw, RotateCcw, Save, Search, Trash2 } from 'lucide-react'
+import { CircleAlert, Plus, RefreshCw, RotateCcw, Save, Search, Trash2 } from 'lucide-react'
 import { type FormEvent, useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { PermissionGate } from '../../auth/components/PermissionGate'
 import { translate } from '../../../shared/i18n/translate'
@@ -21,6 +21,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { getAccountingBanks, saveAccountingBank } from '../api/accountingBanksApi'
 import type { AccountingBank, AccountingBankFormValues } from '../types'
 import './accounting-banks-page.css'
@@ -502,28 +503,14 @@ function useAccountingBankColumns(
         enableSorting: false,
         cell: (bank) => (
           <Group gap={4} justify="center" wrap="nowrap" onClick={(event) => event.stopPropagation()}>
-            <Tooltip label={t('Редагувати')}>
-              <ActionIcon
-                aria-label={t('Редагувати')}
-                color="gray"
-                variant="subtle"
-                onClick={() => openEditor(bank)}
-              >
-                <Pencil size={18} />
-              </ActionIcon>
-            </Tooltip>
+            <TableRowAction action="edit" label={t('Редагувати')} onClick={() => openEditor(bank)} />
             <PermissionGate permissionKey={ACCOUNTING_BANK_DELETE_PERMISSION}>
-              <Tooltip label={t('Видалити')}>
-                <ActionIcon
-                  aria-label={t('Видалити')}
-                  color="red"
-                  disabled={!bank.Id}
-                  variant="subtle"
-                  onClick={() => requestDelete(bank)}
-                >
-                  <Trash2 size={18} />
-                </ActionIcon>
-              </Tooltip>
+              <TableRowAction
+                action="delete"
+                disabled={!bank.Id}
+                label={t('Видалити')}
+                onClick={() => requestDelete(bank)}
+              />
             </PermissionGate>
           </Group>
         ),
