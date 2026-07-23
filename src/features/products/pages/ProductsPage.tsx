@@ -1445,7 +1445,7 @@ function ProductInlineTabs({
 
   return (
     <div className="product-inline-tabs">
-      <div className="pill-tabs">
+      <div className="product-inline-tabs__tabs pill-tabs">
         {([
           { value: 'numbers', label: t('Оригінальні номери') },
           { value: 'analogues', label: t('Аналоги') },
@@ -1494,12 +1494,12 @@ function ProductInlineTabs({
           </Box>
         )}
         {activeTab === 'income' && (
-          <Box pt="sm">
+          <Box pt={0}>
             <ProductInlineMovementsTab direction="income" product={product} />
           </Box>
         )}
         {activeTab === 'outcome' && (
-          <Box pt="sm">
+          <Box pt={0}>
             <ProductInlineMovementsTab direction="outcome" product={product} />
           </Box>
         )}
@@ -3100,26 +3100,29 @@ function ProductInlineMovementsTab({
   }
 
   return (
-    <Stack gap="sm">
-      <Group className="product-movement-toolbar" align="end" gap="sm" wrap="wrap">
+    <Stack className="product-inline-movements" gap={0}>
+      <Group className="app-filter-bar product-movement-toolbar" align="end" gap={10} wrap="nowrap">
         <TextInput className="product-movement-toolbar__control" label={t('З')} type="date" value={dateFrom} onChange={(event) => setDateFrom(event.currentTarget.value)} />
         <TextInput className="product-movement-toolbar__control" label={t('По')} type="date" value={dateTo} onChange={(event) => setDateTo(event.currentTarget.value)} />
-        <Button className="product-movement-toolbar__button" color={CREATE_ACTION_COLOR} leftSection={<RefreshCw size={16} />} loading={state.isLoading} variant="outline" onClick={() => reload()}>
-          {t('Оновити')}
-        </Button>
-        <Button
-          className="product-movement-toolbar__button"
-          color={CREATE_ACTION_COLOR}
-          disabled={!productNetUid}
-          leftSection={<FileDown size={16} />}
-          loading={state.isExporting}
-          variant="outline"
-          onClick={() => void exportRows()}
-        >
-          {t('Друк PDF')}
-        </Button>
+        <div className="app-filter-actions">
+          <Button className="product-movement-toolbar__button" color={CREATE_ACTION_COLOR} leftSection={<RefreshCw size={16} />} loading={state.isLoading} variant="outline" onClick={() => reload()}>
+            {t('Оновити')}
+          </Button>
+          <Button
+            className="product-movement-toolbar__button"
+            color={CREATE_ACTION_COLOR}
+            disabled={!productNetUid}
+            leftSection={<FileDown size={16} />}
+            loading={state.isExporting}
+            variant="outline"
+            onClick={() => void exportRows()}
+          >
+            {t('Друк PDF')}
+          </Button>
+        </div>
       </Group>
 
+      <Stack className="product-inline-movement-body" gap="sm">
       {!productNetUid ? (
         <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
           {t('У товару немає NetUid для завантаження руху товару')}
@@ -3149,6 +3152,7 @@ function ProductInlineMovementsTab({
         title={t('Друк PDF')}
         onClose={() => dispatch({ type: 'export-clear' })}
       />
+      </Stack>
     </Stack>
   )
 }

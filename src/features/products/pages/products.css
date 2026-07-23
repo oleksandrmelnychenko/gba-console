@@ -701,6 +701,15 @@
   margin-top: 12px;
 }
 
+.product-inline-tabs__tabs {
+  border-radius: 0;
+  padding-bottom: 4px;
+}
+
+.product-inline-tabs__tabs .pill-tab {
+  padding-bottom: 12px;
+}
+
 /* Stable frame: tab panes have very different natural heights (tall tables vs
    empty states), which made the page bottom jump on every switch. Reserve a
    constant minimum so the layout below never collapses/expands. */
@@ -796,7 +805,14 @@
 
 .product-movement-toolbar {
   align-items: flex-end;
+  flex: 0 0 auto;
   gap: 10px;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.product-inline-movement-body {
+  padding: 10px 8px 8px;
 }
 
 .product-movement-toolbar__control {
