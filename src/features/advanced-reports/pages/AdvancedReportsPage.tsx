@@ -14,7 +14,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { CircleAlert, EllipsisVertical, Eye, Network, RotateCcw, Search, SquarePen } from 'lucide-react'
+import { CircleAlert, Eye, Network, Pencil, RotateCcw, Search } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -25,6 +25,7 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import {
   calculateAdvancedReportOrder,
   getAdvancedReportCurrencies,
@@ -659,15 +660,11 @@ function useAdvancedReportColumns({
         cell: (row) => (
           <Menu position="bottom-end" shadow="md" width={230} withinPortal>
             <Menu.Target>
-              <ActionIcon
-                aria-label={t('Операції')}
-                color="gray"
-                size="sm"
-                variant="subtle"
+              <TableRowAction
+                action="more"
+                label={t('Операції')}
                 onClick={(event) => event.stopPropagation()}
-              >
-                <EllipsisVertical size={16} />
-              </ActionIcon>
+              />
             </Menu.Target>
 
             <Menu.Dropdown onClick={(event) => event.stopPropagation()}>
@@ -676,7 +673,7 @@ function useAdvancedReportColumns({
               </Menu.Item>
               <Menu.Item
                 disabled={!row.isUnderReport || !row.order.NetUid}
-                leftSection={<SquarePen size={16} />}
+                leftSection={<Pencil size={16} />}
                 onClick={() => onEdit(row)}
               >
                 {t('Авансовий звіт')}
