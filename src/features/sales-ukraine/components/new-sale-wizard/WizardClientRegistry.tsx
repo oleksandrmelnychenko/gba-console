@@ -1,10 +1,11 @@
-import { ActionIcon, Box, Button, Group, Select, Stack, Text, TextInput, Tooltip } from '@mantine/core'
-import { ArrowLeftRight, History, Package, Printer, ReceiptText } from 'lucide-react'
+import { Box, Button, Group, Select, Stack, Text, TextInput, Tooltip } from '@mantine/core'
+import { Package } from 'lucide-react'
 import { useMemo } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { DataTable } from '../../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
+import { TableRowAction } from '../../../../shared/ui/table-row-action'
 import { getSaleLifecycleStatusKey, getStatusTypeKey } from '../../saleStatus'
 import type { SalesUkraineOrderItem, SalesUkraineSale } from '../../types'
 import type { WizardSaleRegisterStatistic } from './wizardClientStepApi'
@@ -374,87 +375,50 @@ function WizardSaleActionsCell({
   }
 
   return (
-    <Group className="new-sale-register-actions" gap={2} justify="flex-start" wrap="nowrap">
+    <Group className="new-sale-register-actions" gap={4} justify="flex-start" wrap="nowrap">
       {showEdit && (
-        <Tooltip label={isNew ? t('\u0410\u043a\u0442 \u0440\u0435\u0434\u0430\u0433\u0443\u0432\u0430\u043d\u043d\u044f \u0440\u0430\u0445\u0443\u043d\u043a\u0443') : t('\u0410\u043a\u0442 \u0440\u0435\u0434\u0430\u0433\u0443\u0432\u0430\u043d\u043d\u044f \u043d\u0430\u043a\u043b\u0430\u0434\u043d\u043e\u0457')}>
-          <ActionIcon
-            aria-label={t('\u0410\u043a\u0442 \u0440\u0435\u0434\u0430\u0433\u0443\u0432\u0430\u043d\u043d\u044f')}
-            color="gray"
-            size="sm"
-            variant="subtle"
-            onClick={(event) => {
-              event.preventDefault()
-              event.stopPropagation()
-              onEdit(sale)
-            }}
-          >
-            <ArrowLeftRight size={15} />
-          </ActionIcon>
-        </Tooltip>
+        <TableRowAction
+          action="edit"
+          hint={isNew
+            ? t('\u0410\u043a\u0442 \u0440\u0435\u0434\u0430\u0433\u0443\u0432\u0430\u043d\u043d\u044f \u0440\u0430\u0445\u0443\u043d\u043a\u0443')
+            : t('\u0410\u043a\u0442 \u0440\u0435\u0434\u0430\u0433\u0443\u0432\u0430\u043d\u043d\u044f \u043d\u0430\u043a\u043b\u0430\u0434\u043d\u043e\u0457')}
+          label={t('\u0410\u043a\u0442 \u0440\u0435\u0434\u0430\u0433\u0443\u0432\u0430\u043d\u043d\u044f')}
+          onClick={(event) => {
+            event.preventDefault()
+            onEdit(sale)
+          }}
+        />
       )}
       {!isNew && (
-        <Tooltip label={t('\u0414\u0440\u0443\u043a')}>
-          <ActionIcon
-            aria-label={t('\u0414\u0440\u0443\u043a')}
-            color={sale.IsPrintedActProtocolEdit ? 'teal' : 'gray'}
-            size="sm"
-            variant="subtle"
-            onClick={(event) => {
-              event.preventDefault()
-              event.stopPropagation()
-              onPrint(sale)
-            }}
-          >
-            <Printer size={15} />
-          </ActionIcon>
-        </Tooltip>
+        <TableRowAction
+          action="print"
+          label={t('\u0414\u0440\u0443\u043a')}
+          tone={sale.IsPrintedActProtocolEdit ? 'success' : 'neutral'}
+          onClick={(event) => {
+            event.preventDefault()
+            onPrint(sale)
+          }}
+        />
       )}
       {showAudit && (
-        <Tooltip label={t('\u0420\u0443\u0445 \u0442\u043e\u0432\u0430\u0440\u043d\u043e-\u043c\u0430\u0442\u0435\u0440\u0456\u0430\u043b\u044c\u043d\u0438\u0445 \u0446\u0456\u043d\u043d\u043e\u0441\u0442\u0435\u0439')}>
-          <ActionIcon
-            aria-label={t('\u0420\u0443\u0445 \u0442\u043e\u0432\u0430\u0440\u043d\u043e-\u043c\u0430\u0442\u0435\u0440\u0456\u0430\u043b\u044c\u043d\u0438\u0445 \u0446\u0456\u043d\u043d\u043e\u0441\u0442\u0435\u0439')}
-            color="gray"
-            size="sm"
-            variant="subtle"
-            onClick={(event) => {
-              event.preventDefault()
-              event.stopPropagation()
-              onAudit(sale)
-            }}
-          >
-            <History size={15} />
-          </ActionIcon>
-        </Tooltip>
+        <TableRowAction
+          action="history"
+          label={t('\u0420\u0443\u0445 \u0442\u043e\u0432\u0430\u0440\u043d\u043e-\u043c\u0430\u0442\u0435\u0440\u0456\u0430\u043b\u044c\u043d\u0438\u0445 \u0446\u0456\u043d\u043d\u043e\u0441\u0442\u0435\u0439')}
+          onClick={(event) => {
+            event.preventDefault()
+            onAudit(sale)
+          }}
+        />
       )}
       {sale.Transporter && (
-        <Tooltip label={t('\u041f\u0435\u0440\u0435\u0432\u0456\u0437\u043d\u0438\u043a')}>
-          <ActionIcon
-            aria-label={t('\u041f\u0435\u0440\u0435\u0432\u0456\u0437\u043d\u0438\u043a')}
-            color="gray"
-            size="sm"
-            variant="subtle"
-            onClick={(event) => {
-              event.preventDefault()
-              event.stopPropagation()
-              onDelivery(sale)
-            }}
-          >
-            {sale.Transporter.ImageUrl ? (
-              <Box
-                style={{
-                  backgroundImage: `url(${sale.Transporter.ImageUrl})`,
-                  backgroundPosition: 'center',
-                  backgroundRepeat: 'no-repeat',
-                  backgroundSize: 'contain',
-                  height: 15,
-                  width: 15,
-                }}
-              />
-            ) : (
-              <ReceiptText size={15} />
-            )}
-          </ActionIcon>
-        </Tooltip>
+        <TableRowAction
+          action="delivery"
+          label={t('\u041f\u0435\u0440\u0435\u0432\u0456\u0437\u043d\u0438\u043a')}
+          onClick={(event) => {
+            event.preventDefault()
+            onDelivery(sale)
+          }}
+        />
       )}
     </Group>
   )

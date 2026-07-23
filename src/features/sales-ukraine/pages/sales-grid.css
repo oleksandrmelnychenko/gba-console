@@ -655,11 +655,11 @@
 
 .sg-client-actions {
   display: grid;
-  grid-template-columns: 26px 24px 26px;
+  grid-template-columns: repeat(3, 28px);
   align-items: center;
-  column-gap: 2px;
-  flex: 0 0 86px;
-  width: 86px;
+  column-gap: 4px;
+  flex: 0 0 98px;
+  width: 98px;
   min-height: 40px;
   padding-right: 6px;
   position: relative;
@@ -678,15 +678,15 @@
 .sg-action-slot {
   align-items: center;
   display: inline-flex;
-  height: 26px;
+  height: 28px;
   justify-content: center;
   min-width: 0;
-  width: 26px;
+  width: 28px;
 }
 
 .sg-action-slot.is-bang {
-  height: 24px;
-  width: 24px;
+  height: 28px;
+  width: 28px;
 }
 
 .sg-action-slot.is-empty {
@@ -711,10 +711,6 @@
   align-self: center;
   font-family: inherit;
   width: 22px;
-}
-
-.sg-bang[data-clickable='true'] {
-  cursor: pointer;
 }
 
 .sg-bang-placeholder {
@@ -868,19 +864,6 @@
   justify-content: center;
 }
 
-/* The "add discount" affordance is a quick shortcut, not a value — keep the
-   column blank when a sale has no discount and only reveal it on row hover /
-   keyboard focus, instead of a lone "%" placeholder on every row. */
-.sg-discount-add {
-  opacity: 0;
-  transition: opacity 0.12s ease;
-}
-
-.sales-grid-row:hover .sg-discount-add,
-.sg-discount-add:focus-visible {
-  opacity: 1;
-}
-
 .sg-discount-badge {
   background: none;
   border: 0;
@@ -916,46 +899,11 @@
   min-width: 0;
 }
 
-.sg-transporter-button {
-  align-items: center;
-  /* Outline circle, no fill (§5.2/§7.1): transparent bg + hairline border, glyph
-     gray-7, hover → orange. */
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: 50%;
-  color: var(--mantine-color-gray-7);
-  cursor: pointer;
-  display: inline-flex;
-  height: 30px;
-  justify-content: center;
-  padding: 0;
-  transition:
-    background-color 140ms var(--tx-ease-smooth),
-    border-color 140ms var(--tx-ease-smooth),
-    color 140ms var(--tx-ease-smooth);
-  width: 30px;
-}
-
-.sg-transporter-button:hover {
-  background: transparent;
-  border-color: var(--brand-orange);
-  color: var(--brand-orange);
-}
-
-.sg-transporter-logo {
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: contain;
-  display: block;
-  height: 22px;
-  width: 26px;
-}
-
 .sg-doc-actions {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 2px;
+  gap: 4px;
 }
 
 .sg-status {

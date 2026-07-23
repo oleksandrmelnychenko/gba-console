@@ -1926,15 +1926,6 @@
   min-height: 28px;
 }
 
-.new-sale-register-row__actions .mantine-ActionIcon-root {
-  border-radius: 999px;
-}
-
-.new-sale-register-row__actions .mantine-ActionIcon-root:hover {
-  background: #fff4eb;
-  color: var(--brand-orange);
-}
-
 .new-sale-register-expanded {
   border-bottom: 1px solid var(--mantine-color-gray-2);
   padding: 7px 10px 12px 46px;
@@ -4483,16 +4474,7 @@
   align-items: center;
   display: flex;
   flex: 0 0 auto;
-  gap: 2px;
-}
-
-.new-sale-related-row__action {
-  border-radius: 999px;
-  flex-shrink: 0;
-}
-
-.new-sale-related-row__action:hover {
-  background: rgba(var(--brand-orange-rgb), 0.1);
+  gap: 4px;
 }
 
 .new-sale-products-step {
@@ -6220,20 +6202,6 @@
   justify-content: flex-end;
 }
 
-.new-sale-register-row__actions .mantine-ActionIcon-root {
-  background: transparent;
-  border: 0;
-  border-radius: 6px;
-  color: var(--mantine-color-gray-6);
-  height: 24px;
-  width: 24px;
-}
-
-.new-sale-register-row__actions .mantine-ActionIcon-root:hover {
-  background: var(--mantine-color-orange-0);
-  color: var(--brand-orange);
-}
-
 .new-sale-register-expanded {
   background: var(--mantine-color-white);
   border-bottom: 1px solid var(--mantine-color-gray-1);
@@ -6525,20 +6493,6 @@
   gap: 2px;
 }
 
-.new-sale-register-row__actions .mantine-ActionIcon-root {
-  background: transparent;
-  border: 0;
-  border-radius: 4px;
-  color: var(--mantine-color-gray-7);
-  height: 24px;
-  width: 24px;
-}
-
-.new-sale-register-row__actions .mantine-ActionIcon-root:hover {
-  background: transparent;
-  color: var(--brand-orange);
-}
-
 .new-sale-register-expanded {
   background: var(--mantine-color-gray-0);
   border-bottom: 1px solid var(--mantine-color-gray-2);
@@ -6687,15 +6641,6 @@
 
 .new-sale-register-actions {
   justify-content: flex-start;
-}
-
-.new-sale-register-actions .mantine-ActionIcon-root {
-  color: var(--mantine-color-gray-7);
-}
-
-.new-sale-register-actions .mantine-ActionIcon-root:hover {
-  background: transparent;
-  color: var(--brand-orange);
 }
 
 .new-sale-register-table .data-table-expanded-cell {
@@ -7072,17 +7017,6 @@
 .new-sale-cart__discount-cell .mantine-Text-root + .mantine-Text-root {
   border-left: 1px solid var(--mantine-color-gray-2);
   padding-left: 8px;
-}
-
-.new-sale-cart__actions .mantine-ActionIcon-root {
-  background: transparent;
-  border: 0;
-  color: var(--mantine-color-gray-7);
-}
-
-.new-sale-cart__actions .mantine-ActionIcon-root:hover {
-  background: transparent;
-  color: var(--brand-orange);
 }
 
 .new-sale-cart__totals {
@@ -8876,23 +8810,4 @@
   height: 240px;
   object-fit: contain;
   width: 240px;
-}
-
-/* AI (cross-sell) icon in the cart product cell — same 28px circle as the
-   product icon, sparkles in brand orange. */
-.new-sale-cart__ai-icon {
-  background: var(--mantine-color-white);
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 999px;
-  color: var(--brand-orange);
-  flex: 0 0 auto;
-  height: 28px;
-  min-height: 28px;
-  min-width: 28px;
-  width: 28px;
-}
-
-.new-sale-cart__ai-icon:hover {
-  background: var(--mantine-color-gray-0);
-  color: var(--brand-orange);
 }

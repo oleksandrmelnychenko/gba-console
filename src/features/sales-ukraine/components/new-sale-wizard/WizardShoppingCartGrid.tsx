@@ -1,9 +1,10 @@
-import { ActionIcon, Box, Group, Text, Tooltip } from '@mantine/core'
-import { Package, Sparkles, Trash2 } from 'lucide-react'
+import { Box, Group, Text } from '@mantine/core'
+import { Package } from 'lucide-react'
 import { memo, useMemo } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { DataTable } from '../../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../../shared/ui/data-table/types'
+import { TableRowAction } from '../../../../shared/ui/table-row-action'
 import { roundMoney } from '../../saleMoney'
 import type { SalesUkraineOrderItem } from '../../types'
 import {
@@ -194,22 +195,15 @@ export const WizardShoppingCartGrid = memo(function WizardShoppingCartGrid({
         header: '',
         cell: (item) => (
           <Group className="new-sale-cart__actions" gap={2} justify="flex-start" wrap="nowrap">
-            <Tooltip label={t('Видалити')}>
-              <ActionIcon
-                aria-label={t('Видалити')}
-                color="red"
-                disabled={busy}
-                size="sm"
-                variant="subtle"
-                onClick={(event) => {
-                  event.preventDefault()
-                  event.stopPropagation()
-                  onRemove?.(item)
-                }}
-              >
-                <Trash2 size={15} />
-              </ActionIcon>
-            </Tooltip>
+            <TableRowAction
+              action="delete"
+              disabled={busy}
+              label={t('Видалити')}
+              onClick={(event) => {
+                event.preventDefault()
+                onRemove?.(item)
+              }}
+            />
           </Group>
         ),
         width: 56,
@@ -281,22 +275,15 @@ function WizardCartProductCell({
         <Package size={15} />
       </Box>
       {onCrossSell && (
-        <Tooltip label={t('Кросс-продажі до товару')}>
-          <ActionIcon
-            aria-label={t('Кросс-продажі до товару')}
-            className="new-sale-cart__ai-icon"
-            disabled={busy}
-            size="sm"
-            variant="subtle"
-            onClick={(event) => {
-              event.preventDefault()
-              event.stopPropagation()
-              onCrossSell(item)
-            }}
-          >
-            <Sparkles size={15} />
-          </ActionIcon>
-        </Tooltip>
+        <TableRowAction
+          action="recommend"
+          disabled={busy}
+          label={t('Кросс-продажі до товару')}
+          onClick={(event) => {
+            event.preventDefault()
+            onCrossSell(item)
+          }}
+        />
       )}
       <Box className="new-sale-cart__product-copy">
         <Text className="new-sale-cart__product-code" title={code} truncate>

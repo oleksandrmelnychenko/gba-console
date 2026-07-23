@@ -1,7 +1,8 @@
-import { ActionIcon, Box, HoverCard, Stack, Text, Tooltip } from '@mantine/core'
-import { Info, Package, Star } from 'lucide-react'
+import { Box, HoverCard, Stack, Text } from '@mantine/core'
+import { Package } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
+import { TableRowAction } from '../../../../shared/ui/table-row-action'
 import { getProductMainImage, getProductShopImageUrl } from '../../../products/utils'
 import type { WizardSaleProduct } from './wizardSaleProduct'
 
@@ -109,38 +110,18 @@ function WizardRelatedProductRow({
         {extra && <Box className="new-sale-related-row__extra">{extra}</Box>}
         <Box className="new-sale-related-row__actions">
           {product.NetUid && onProductInterest && (
-            <Tooltip label={t('Цікавить товар')}>
-              <ActionIcon
-                aria-label={t('Цікавить товар')}
-                className="new-sale-related-row__action"
-                color="orange"
-                size="sm"
-                variant="subtle"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  onProductInterest(product)
-                }}
-              >
-                <Star size={15} />
-              </ActionIcon>
-            </Tooltip>
+            <TableRowAction
+              action="recommend"
+              label={t('Цікавить товар')}
+              onClick={() => onProductInterest(product)}
+            />
           )}
           {product.NetUid && onOpenCard && (
-            <Tooltip label={t('Картка товару')}>
-              <ActionIcon
-                aria-label={t('Картка товару')}
-                className="new-sale-related-row__action"
-                color="gray"
-                size="sm"
-                variant="subtle"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  onOpenCard(product.NetUid as string)
-                }}
-              >
-                <Info size={15} />
-              </ActionIcon>
-            </Tooltip>
+            <TableRowAction
+              action="details"
+              label={t('Картка товару')}
+              onClick={() => onOpenCard(product.NetUid as string)}
+            />
           )}
         </Box>
       </Box>

@@ -15,7 +15,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { ArrowLeftRight, Check, ChevronDown, ChevronRight, CircleAlert, ClipboardList, Ellipsis, FileText, Globe, History, Lock, LockOpen, MessageSquareText, Pencil, Percent, Plus, Printer, Receipt, RotateCcw, Search, Tag, TriangleAlert, Truck, X } from 'lucide-react'
+import { ArrowLeftRight, Check, ChevronDown, CircleAlert, ClipboardList, FileText, Globe, History, Lock, LockOpen, Pencil, Plus, Printer, Receipt, RotateCcw, Search, Tag, TriangleAlert, Truck, X } from 'lucide-react'
 import {
   Fragment,
   isValidElement,
@@ -35,7 +35,7 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
-import { TransporterLogo } from '../../../shared/ui/TransporterLogo'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { TransporterIcon } from '../../../shared/transporter-icons/TransporterIcon'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -1293,8 +1293,6 @@ const SaleGridRow = memo(function SaleGridRow({
   const manager = getSaleUserName(sale)
   const contract = sale.ClientAgreement?.Agreement?.Name
   const transporter = getSaleTransporterName(sale)
-  const transporterCssClass = getTransporterCssClass(sale)
-  const transporterImageUrl = getTransporterImageUrl(sale)
   const unpaid = isUnpaidSale(sale)
   const localAmount = getNumber(sale.TotalAmountLocal) ?? getNumber(sale.TotalAmount)
   const vat = sale.IsVatSale ? getNumber(sale.Order?.TotalVat) : null
@@ -1403,35 +1401,26 @@ const SaleGridRow = memo(function SaleGridRow({
         <div className="sg-client-actions" data-row-stop="true">
           {showEdit ? (
             <span className="sg-action-slot">
-              <Tooltip label={t('Редагування')}>
-                <ActionIcon aria-label={t('Редагування')} color="gray" size="sm" variant="subtle" onClick={() => onOpenEditor(sale)}>
-                  <Pencil size={15} />
-                </ActionIcon>
-              </Tooltip>
+              <TableRowAction action="edit" label={t('Редагування')} onClick={() => onOpenEditor(sale)} />
             </span>
           ) : (
             <span className="sg-action-slot is-empty" aria-hidden="true" />
           )}
           {showBang ? (
             <span className="sg-action-slot is-bang">
-              <Tooltip label={t('Розблокувати для відвантаження')}>
-                {bangClickable ? (
-                  <button
-                    className="sg-bang"
-                    data-clickable="true"
-                    type="button"
-                    aria-label={t('Розблокувати для відвантаження')}
-                    style={{ opacity: 1 }}
-                    onClick={() => onWillNotShip(sale)}
-                  >
-                    <TriangleAlert size={14} />
-                  </button>
-                ) : (
+              {bangClickable ? (
+                <TableRowAction
+                  action="will-not-ship"
+                  label={t('Розблокувати для відвантаження')}
+                  onClick={() => onWillNotShip(sale)}
+                />
+              ) : (
+                <Tooltip label={t('Розблокувати для відвантаження')}>
                   <span className="sg-bang" style={{ opacity: sale.ChangedToInvoice ? 1 : 0.55 }}>
                     <TriangleAlert size={14} />
                   </span>
-                )}
-              </Tooltip>
+                </Tooltip>
+              )}
             </span>
           ) : (
             <span className="sg-action-slot is-bang" aria-hidden="true">
@@ -1440,11 +1429,11 @@ const SaleGridRow = memo(function SaleGridRow({
           )}
           {canExpand ? (
             <span className="sg-action-slot">
-              <Tooltip label={isExpanded ? t('Згорнути') : t('Розгорнути')}>
-                <ActionIcon aria-label={t('Розгорнути')} color="gray" size="sm" variant="subtle" onClick={() => onToggleExpand(saleKey, sale)}>
-                  {isExpanded ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
-                </ActionIcon>
-              </Tooltip>
+              <TableRowAction
+                action={isExpanded ? 'collapse' : 'expand'}
+                label={isExpanded ? t('Згорнути') : t('Розгорнути')}
+                onClick={() => onToggleExpand(saleKey, sale)}
+              />
             </span>
           ) : (
             <span className="sg-action-slot is-empty" aria-hidden="true" />
@@ -1544,46 +1533,25 @@ const SaleGridRow = memo(function SaleGridRow({
               )}
             </Tooltip>
             {discountEditable && !discountPercentageEditable && (
-              <Tooltip label={t('Редагувати коментар до знижки')}>
-                <ActionIcon
-                  aria-label={t('Редагувати коментар до знижки')}
-                  className="sg-discount-comment"
-                  color="gray"
-                  size="xs"
-                  variant="subtle"
-                  onClick={() => onOpenDiscount(sale)}
-                >
-                  <MessageSquareText size={12} />
-                </ActionIcon>
-              </Tooltip>
+              <TableRowAction
+                action="edit"
+                label={t('Редагувати коментар до знижки')}
+                onClick={() => onOpenDiscount(sale)}
+              />
             )}
           </>
         ) : discountPercentageEditable ? (
-          <Tooltip label={t('Додати знижку')}>
-            <ActionIcon
-              aria-label={t('Додати знижку')}
-              className="sg-discount-add"
-              color="gray"
-              size="sm"
-              variant="subtle"
-              onClick={() => onOpenDiscount(sale)}
-            >
-              <Percent size={15} />
-            </ActionIcon>
-          </Tooltip>
+          <TableRowAction
+            action="discount"
+            label={t('Додати знижку')}
+            onClick={() => onOpenDiscount(sale)}
+          />
         ) : discountEditable ? (
-          <Tooltip label={t('Редагувати коментар до знижки')}>
-            <ActionIcon
-              aria-label={t('Редагувати коментар до знижки')}
-              className="sg-discount-comment"
-              color="gray"
-              size="xs"
-              variant="subtle"
-              onClick={() => onOpenDiscount(sale)}
-            >
-              <MessageSquareText size={12} />
-            </ActionIcon>
-          </Tooltip>
+          <TableRowAction
+            action="edit"
+            label={t('Редагувати коментар до знижки')}
+            onClick={() => onOpenDiscount(sale)}
+          />
         ) : sale.IsLocked ? (
           <Tooltip label={t('Заблоковано')}>
             <Lock size={14} style={{ color: 'var(--mantine-color-gray-5)' }} />
@@ -1593,16 +1561,11 @@ const SaleGridRow = memo(function SaleGridRow({
 
       <div className="sg-transporter-cell" data-row-stop="true">
         {!hideEditActActions && (
-          <Tooltip label={transporter || t('Перевізник')}>
-            <button
-              className="sg-transporter-button"
-              type="button"
-              aria-label={transporter || t('Перевізник')}
-              onClick={() => onOpenDetails(sale)}
-            >
-              <TransporterLogo className="sg-transporter-logo" cssClass={transporterCssClass} iconSize={20} imageUrl={transporterImageUrl} name={transporter} />
-            </button>
-          </Tooltip>
+          <TableRowAction
+            action="delivery"
+            label={transporter || t('Перевізник')}
+            onClick={() => onOpenDetails(sale)}
+          />
         )}
       </div>
 
@@ -1610,9 +1573,7 @@ const SaleGridRow = memo(function SaleGridRow({
         {!hidePrintBlock && !hideEditActActions && <SaleDocumentsMenu sale={sale} />}
         <Menu position="bottom-end" shadow="md" withinPortal>
           <Menu.Target>
-            <ActionIcon aria-label={t('Дії')} color="gray" size="sm" variant="subtle">
-              <Ellipsis size={16} />
-            </ActionIcon>
+            <TableRowAction action="more" label={t('Дії')} />
           </Menu.Target>
           <Menu.Dropdown>
             {showEdit && (
@@ -2350,10 +2311,6 @@ function getTransporterImageUrl(sale: SalesUkraineSale): string {
   }
 
   return sale.Transporter?.ImageUrl?.trim() || sale.UpdateDataCarrier?.[0]?.Transporter?.ImageUrl?.trim() || ''
-}
-
-function getTransporterCssClass(sale: SalesUkraineSale): string {
-  return sale.Transporter?.CssClass?.trim() || sale.UpdateDataCarrier?.[0]?.Transporter?.CssClass?.trim() || ''
 }
 
 function isSelfCheckoutTransporter(transporter: { CssClass?: string | null } | null | undefined): boolean {

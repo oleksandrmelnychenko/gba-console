@@ -1,5 +1,4 @@
 import {
-  ActionIcon,
   Alert,
   Badge,
   Button,
@@ -17,7 +16,7 @@ import {
   UnstyledButton,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { CircleAlert, Copy, Merge, Pencil, Plus, ReceiptText, Search, Share2, Trash2, TriangleAlert, Truck } from 'lucide-react'
+import { CircleAlert, Copy, Merge, Plus, ReceiptText, Search, Share2, TriangleAlert, Truck } from 'lucide-react'
 import { useEffect, useReducer, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -26,6 +25,7 @@ import { AppModal } from '../../../shared/ui/AppModal'
 import { TransporterNameWithIcon } from '../../../shared/transporter-icons/TransporterIcon'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import {
   convertVatSaleAndGetPaymentDocument,
   getSaleById,
@@ -772,17 +772,9 @@ function useItemColumns({
       enableSorting: false,
       cell: (item) =>
         canEdit ? (
-          <Group gap={2} justify="center" wrap="nowrap">
-            <Tooltip label={t('Змінити кількість')}>
-              <ActionIcon aria-label={t('Змінити кількість')} color="gray" variant="subtle" onClick={() => onEditQty(item)}>
-                <Pencil size={16} />
-              </ActionIcon>
-            </Tooltip>
-            <Tooltip label={t('Видалити')}>
-              <ActionIcon aria-label={t('Видалити')} color="red" variant="subtle" onClick={() => onDelete(item)}>
-                <Trash2 size={16} />
-              </ActionIcon>
-            </Tooltip>
+          <Group gap={4} justify="center" wrap="nowrap">
+            <TableRowAction action="edit" label={t('Змінити кількість')} onClick={() => onEditQty(item)} />
+            <TableRowAction action="delete" label={t('Видалити')} onClick={() => onDelete(item)} />
           </Group>
         ) : null,
     },

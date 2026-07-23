@@ -1,4 +1,4 @@
-import { ActionIcon, Button, Group, Menu, Stack, Tooltip } from '@mantine/core'
+import { Button, Group, Menu, Stack } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { ClipboardList, FileText, Printer, Receipt } from 'lucide-react'
 import { useMemo } from 'react'
@@ -8,6 +8,7 @@ import { UserRoleType } from '../../../shared/auth/types'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { SaleDocumentDownloads } from './SaleDocumentDownloads'
 import {
   getSaleActForEditingHistoryDocument,
@@ -118,11 +119,7 @@ export function SaleDocumentsMenu({ sale }: { sale: SalesUkraineSale }) {
     <>
       <Menu position="bottom-end" shadow="md" withinPortal>
         <Menu.Target>
-          <Tooltip label={t('Документи')}>
-            <ActionIcon aria-label={t('Документи')} color="gray" variant="subtle">
-              <FileText size={18} />
-            </ActionIcon>
-          </Tooltip>
+          <TableRowAction action="document" label={t('Документи')} />
         </Menu.Target>
         <Menu.Dropdown>
           {actions.length ? (

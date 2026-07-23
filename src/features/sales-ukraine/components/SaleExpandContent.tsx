@@ -1,7 +1,8 @@
-import { ActionIcon, Anchor, Box, Text, Tooltip } from '@mantine/core'
-import { Box as BoxIcon, MessageSquareText } from 'lucide-react'
+import { Anchor, Box, Text, Tooltip } from '@mantine/core'
+import { Box as BoxIcon } from 'lucide-react'
 import { memo, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { ProductCardModal } from '../../products/components/ProductCardModal'
 import {
   getOrderItemBaseDiscountSuppressionReason,
@@ -246,21 +247,11 @@ function SaleExpandContentItem({
             <strong>{formatPercent(oneTimeDiscount ?? 0)}</strong>
           )}
           {canEditDiscountCommentOnly && (
-            <Tooltip label={t('Редагувати коментар до знижки')}>
-              <ActionIcon
-                aria-label={t('Редагувати коментар до знижки')}
-                className="sale-expand-discount-comment"
-                color="gray"
-                size="xs"
-                variant="subtle"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  onOpenItemDiscount()
-                }}
-              >
-                <MessageSquareText size={13} />
-              </ActionIcon>
-            </Tooltip>
+            <TableRowAction
+              action="edit"
+              label={t('Редагувати коментар до знижки')}
+              onClick={() => onOpenItemDiscount()}
+            />
           )}
         </div>
         {hasOneTimeDiscount && discountUpdater && (
