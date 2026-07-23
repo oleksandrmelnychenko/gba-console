@@ -371,8 +371,8 @@ export function ResalesPage() {
   }
 
   return (
-    <Stack className="resales-page" gap={6}>
-      <Card className="app-data-card resales-card" withBorder radius="md" padding={0}>
+    <Stack className="resales-page" gap={0}>
+      <div className="sales-dashboard-tab-content resales-card">
         <div className="app-filter-bar resales-filter-bar">
           <Group align="end" gap={10} wrap="nowrap" className="resales-filter-row">
             <div className="app-filter-date-range">
@@ -486,7 +486,7 @@ export function ResalesPage() {
             }}
           />
         </div>
-      </Card>
+      </div>
 
       <AppModal
         centered
