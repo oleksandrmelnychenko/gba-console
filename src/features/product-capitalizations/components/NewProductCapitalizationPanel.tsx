@@ -1,5 +1,4 @@
 import {
-  ActionIcon,
   Alert,
   Autocomplete,
   Button,
@@ -13,7 +12,7 @@ import {
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
-import { CircleAlert, FileSpreadsheet, Plus, Trash2 } from 'lucide-react'
+import { CircleAlert, FileSpreadsheet, Plus } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
@@ -23,6 +22,7 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { formatExcelArticleColumnError } from '../../../shared/excel/excelImportError'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import type { ClientResourceOrganization, ClientResourceStorage } from '../../client-resources/types'
 import {
   createProductCapitalization,
@@ -1018,17 +1018,12 @@ function useItemColumns(
         enableSorting: false,
         enableHiding: false,
         cell: (item) => (
-          <ActionIcon
-            aria-label={t('Видалити')}
-            color="red"
+          <TableRowAction
+            action="delete"
             disabled={disabled}
-            size="sm"
-            title={t('Видалити')}
-            variant="subtle"
+            label={t('Видалити')}
             onClick={() => onRemove(item.__rowKey)}
-          >
-            <Trash2 size={16} />
-          </ActionIcon>
+          />
         ),
       },
     ],

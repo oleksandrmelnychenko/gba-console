@@ -14,7 +14,7 @@ import {
 } from '@mantine/core'
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
-import { CircleAlert, Eye, FileDown, FileText, Plus, RotateCcw } from 'lucide-react'
+import { CircleAlert, FileDown, FileText, Plus, RotateCcw } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
@@ -26,6 +26,7 @@ import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import {
   closePendingExportDocumentWindow,
@@ -779,30 +780,15 @@ function useProductCapitalizationColumns(
         cell: (capitalization) => (
           <Box onClick={(event) => event.stopPropagation()}>
             <Group gap={4} justify="center" wrap="nowrap">
-              <Tooltip label="Деталі">
-                <ActionIcon
-                  aria-label="Деталі"
-                  color="gray"
-                  size="sm"
-                  variant="subtle"
-                  onClick={() => onOpenDetail(capitalization)}
-                >
-                  <Eye size={16} />
-                </ActionIcon>
-              </Tooltip>
-              <Tooltip label="Друк PDF">
-                <ActionIcon
-                  aria-label="Друк PDF"
-                  color={CREATE_ACTION_COLOR}
-                  disabled={!capitalization.NetUid || Boolean(exportingNetId)}
-                  loading={exportingNetId === capitalization.NetUid}
-                  size="sm"
-                  variant="subtle"
-                  onClick={() => onExport(capitalization)}
-                >
-                  <FileDown size={16} />
-                </ActionIcon>
-              </Tooltip>
+              <TableRowAction action="details" label="Деталі" onClick={() => onOpenDetail(capitalization)} />
+              <TableRowAction
+                action="print"
+                disabled={!capitalization.NetUid || Boolean(exportingNetId)}
+                label="Друк PDF"
+                loading={exportingNetId === capitalization.NetUid}
+                tone="brand"
+                onClick={() => onExport(capitalization)}
+              />
             </Group>
           </Box>
         ),
