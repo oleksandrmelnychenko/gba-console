@@ -1,9 +1,9 @@
-import { ActionIcon, Anchor, Badge, Group, Text, Tooltip } from '@mantine/core'
-import { SquarePen } from 'lucide-react'
+import { Anchor, Badge, Group, Text } from '@mantine/core'
 import { useMemo } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import type {
   PackingListPackageOrderItem,
   PackingListPackageOrderItemSupplyService,
@@ -172,20 +172,11 @@ export function SpecificationProductsGrid({
               {displayText(row.specificationCode)}
             </Text>
             {canEditSpecification && onEditSpecification && (
-              <Tooltip label={t('Редагувати')}>
-                <ActionIcon
-                  aria-label={t('Редагувати митний код')}
-                  color="gray"
-                  size="sm"
-                  variant="subtle"
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    onEditSpecification(row.item)
-                  }}
-                >
-                  <SquarePen size={16} />
-                </ActionIcon>
-              </Tooltip>
+              <TableRowAction
+                action="edit"
+                label={t('Редагувати митний код')}
+                onClick={() => onEditSpecification(row.item)}
+              />
             )}
           </Group>
         ),

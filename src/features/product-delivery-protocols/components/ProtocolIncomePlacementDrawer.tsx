@@ -1,9 +1,9 @@
-import { ActionIcon, Button, Checkbox, Group, NumberInput, Select, Stack, Table, Text, TextInput } from '@mantine/core'
-import { Trash2 } from 'lucide-react'
+import { Button, Checkbox, Group, NumberInput, Select, Stack, Table, Text, TextInput } from '@mantine/core'
 import { useMemo } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import type {
   DynamicProductPlacement,
   DynamicProductPlacementRow,
@@ -281,17 +281,7 @@ function ProtocolIncomePlacementDrawerContent({
                 <Table.Td className="protocol-income-placement-qty-cell">{placement.Qty ?? 0}</Table.Td>
                 <Table.Td className="protocol-income-placement-action-cell">
                   {!placement.IsApplied && (
-                    <ActionIcon
-                      aria-label={t('Видалити')}
-                      color="red"
-                      variant="subtle"
-                      onClick={(event) => {
-                        event.stopPropagation()
-                        removePlacement(placement)
-                      }}
-                    >
-                      <Trash2 size={16} />
-                    </ActionIcon>
+                    <TableRowAction action="delete" label={t('Видалити')} onClick={() => removePlacement(placement)} />
                   )}
                 </Table.Td>
               </Table.Tr>
