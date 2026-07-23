@@ -216,54 +216,29 @@
   display: grid;
   flex: 1 1 auto;
   gap: 12px;
-  grid-template-columns: 256px minmax(0, 1fr);
+  grid-template-columns: 248px minmax(0, 1fr);
   min-height: 0;
   min-width: 0;
   padding: 10px 8px 8px;
 }
 
 .seo-page-rail {
-  background: var(--mantine-color-white);
   display: flex;
   flex-direction: column;
   min-height: 0;
   min-width: 0;
-  padding: 2px 0 0;
-}
-
-.seo-page-rail-header {
-  align-items: center;
-  color: var(--mantine-color-gray-7);
-  display: flex;
-  font-family: var(--font-mono);
-  font-size: 13px;
-  font-weight: 600;
-  justify-content: space-between;
-  letter-spacing: 0;
-  line-height: 1.2;
-  margin-bottom: 8px;
-  padding: 0 0 0 18px;
-  position: relative;
-}
-
-.seo-page-rail-header::before {
-  background: var(--brand-orange);
-  border-radius: 999px;
-  content: '';
-  height: 7px;
-  left: 8px;
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 7px;
 }
 
 .seo-page-nav {
+  align-content: start;
   display: grid;
-  gap: 5px;
+  flex: 1 1 auto;
+  gap: 4px;
+  grid-auto-rows: max-content;
   min-height: 0;
   overflow: auto;
-  padding: 0 4px 0 0;
+  padding-right: 4px;
+  scrollbar-width: thin;
 }
 
 .seo-page-nav-item {
@@ -308,37 +283,37 @@
 }
 
 
-/* Online-shop SEO rail styled as the «Ролі» polished list items: gradient
-   cards, a translate-on-hover lift, and an orange-tinted selected state.
-   Scoped to .online-shop-seo-nav-item so the shared .seo-page-nav-item base
-   (also reused by consumable-products) stays untouched. */
+/* Online-shop SEO rail follows the shared compact navigation-card pattern. */
 .seo-page-nav-item.online-shop-seo-nav-item {
-  background: transparent;
+  background: transparent !important;
   border: 1px solid transparent;
   border-radius: 8px;
+  box-shadow: none;
   color: var(--mantine-color-gray-7);
   font-family: var(--font-mono);
   font-size: 13px;
   font-weight: 500;
-  gap: 6px;
+  gap: 4px;
   justify-content: flex-start;
-  min-height: 36px;
-  padding: 5px 6px 5px 8px;
+  min-height: 40px;
+  padding: 7px 12px;
   transition:
-    color 110ms var(--tx-ease-smooth),
+    border-color 140ms var(--tx-ease-smooth),
+    color 140ms var(--tx-ease-smooth),
     transform 140ms var(--tx-ease-smooth);
+  width: 100%;
 }
 
 .seo-page-nav-item.online-shop-seo-nav-item:hover {
-  background: transparent;
+  background: transparent !important;
   border-color: transparent;
   color: var(--mantine-color-gray-9);
   transform: translateX(3px);
 }
 
 .seo-page-nav-item.online-shop-seo-nav-item.is-active {
-  background: transparent;
-  border-color: transparent;
+  background: transparent !important;
+  border-color: var(--brand-orange);
   box-shadow: none;
   color: var(--brand-orange);
   font-weight: 600;
@@ -346,25 +321,45 @@
 
 
 .online-shop-seo-nav-item-label {
+  flex: 0 1 auto;
   line-height: 1.3;
   min-width: 0;
-  overflow: visible;
-  text-overflow: clip;
-  white-space: normal;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .online-shop-seo-nav-item-chevron {
-  color: var(--mantine-color-orange-6);
+  color: var(--mantine-color-gray-4);
   flex-shrink: 0;
   opacity: 0;
-  transform: translateX(-2px);
-  transition: opacity 110ms var(--tx-ease-smooth);
+  transition:
+    color 140ms var(--tx-ease-smooth),
+    opacity 140ms var(--tx-ease-smooth);
 }
 
 .seo-page-nav-item.online-shop-seo-nav-item:hover .online-shop-seo-nav-item-chevron,
-.seo-page-nav-item.online-shop-seo-nav-item.is-active .online-shop-seo-nav-item-chevron {
+.seo-page-nav-item.online-shop-seo-nav-item:focus-visible .online-shop-seo-nav-item-chevron {
   opacity: 1;
-  transform: translateX(0);
+}
+
+.seo-page-nav-item.online-shop-seo-nav-item.is-active .online-shop-seo-nav-item-chevron {
+  color: var(--brand-orange);
+  opacity: 1;
+}
+
+.online-shop-seo-nav-item-marker {
+  align-self: flex-start;
+  background: transparent;
+  border-radius: 999px;
+  flex: 0 0 auto;
+  height: 6px;
+  margin-left: auto;
+  width: 6px;
+}
+
+.seo-page-nav-item.online-shop-seo-nav-item.is-active .online-shop-seo-nav-item-marker {
+  background: var(--brand-orange);
 }
 
 .seo-page-panel {
@@ -1966,7 +1961,7 @@
   }
 
   .seo-page-workspace {
-    grid-template-columns: 220px minmax(0, 1fr);
+    grid-template-columns: 248px minmax(0, 1fr);
   }
 }
 

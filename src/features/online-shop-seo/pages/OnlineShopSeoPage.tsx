@@ -1549,10 +1549,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
         )}
 
         <div className="seo-page-workspace">
-          <aside className="seo-page-rail">
-            <div className="seo-page-rail-header">
-              <span>{t('Розділи')}</span>
-            </div>
+          <aside className="seo-page-rail" aria-label={t('Розділи')}>
             <div className="seo-page-nav">
               {SEO_VISIBLE_TABS.map((tab) => (
                 <button
@@ -1564,6 +1561,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
                 >
                   <span className="online-shop-seo-nav-item-label">{t(tab.label)}</span>
                   <ChevronRight className="online-shop-seo-nav-item-chevron" size={16} strokeWidth={2} aria-hidden />
+                  <span aria-hidden="true" className="online-shop-seo-nav-item-marker" />
                 </button>
               ))}
             </div>
