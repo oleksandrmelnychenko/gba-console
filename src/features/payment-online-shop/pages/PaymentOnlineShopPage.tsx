@@ -10,7 +10,7 @@ import {
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
-import { CircleAlert, Receipt, RotateCcw, Search } from 'lucide-react'
+import { CircleAlert, RotateCcw, Search } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -19,6 +19,7 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { useAuth } from '../../auth/useAuth'
 import { addPaymentImage, editPaymentImage, getPaymentShopItemsPage } from '../api/paymentOnlineShopApi'
 import { PaymentImageEditModal } from '../components/PaymentImageEditModal'
@@ -515,19 +516,12 @@ function usePaymentShopColumns(onOpenDetail: (item: PaymentShopItem) => void, on
         enableSorting: false,
         cell: (item) =>
           canCreateIncomeOrder(item) ? (
-            <Tooltip label={t('Новий прибутковий ордер')} position="left">
-              <ActionIcon
-                aria-label={t('Новий прибутковий ордер')}
-                color="green"
-                variant="subtle"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  onCreateIncomeOrder(item)
-                }}
-              >
-                <Receipt size={16} />
-              </ActionIcon>
-            </Tooltip>
+            <TableRowAction
+              action="receipt"
+              label={t('Новий прибутковий ордер')}
+              tone="success"
+              onClick={() => onCreateIncomeOrder(item)}
+            />
           ) : null,
       },
       {
@@ -542,17 +536,7 @@ function usePaymentShopColumns(onOpenDetail: (item: PaymentShopItem) => void, on
         enableResizing: false,
         enableSorting: false,
         cell: (item) => (
-          <ActionIcon
-            aria-label={t('Деталі')}
-            color="gray"
-            variant="subtle"
-            onClick={(event) => {
-              event.stopPropagation()
-              onOpenDetail(item)
-            }}
-          >
-            <Search size={16} />
-          </ActionIcon>
+          <TableRowAction action="details" label={t('Деталі')} onClick={() => onOpenDetail(item)} />
         ),
       },
     ],

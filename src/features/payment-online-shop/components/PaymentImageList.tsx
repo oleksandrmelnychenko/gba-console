@@ -1,9 +1,10 @@
 import { ActionIcon, Anchor, Text, Tooltip } from '@mantine/core'
-import { Image, Lock, SquarePen } from 'lucide-react'
+import { Image, Lock } from 'lucide-react'
 import { useMemo } from 'react'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { PaymentType, type RetailClientPaymentImageItem } from '../types'
 
 export type PaymentImageListProps = {
@@ -72,9 +73,7 @@ export function PaymentImageList({ isEditing, items, onSelect }: PaymentImageLis
             </ActionIcon>
           </Tooltip>
         ) : (
-          <ActionIcon color="gray" variant="subtle" aria-label={t('Редагування')} onClick={() => onSelect(row)}>
-            <SquarePen size={16} />
-          </ActionIcon>
+          <TableRowAction action="edit" label={t('Редагування')} onClick={() => onSelect(row)} />
         ),
     },
   ], [isEditing, onSelect, t])
