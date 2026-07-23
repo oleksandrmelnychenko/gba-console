@@ -16,7 +16,7 @@ import {
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
-import { Check, CircleAlert, CircleCheck, Eye, Receipt, RefreshCw, RotateCcw, Search, UserPlus } from 'lucide-react'
+import { Check, CircleAlert, Receipt, RefreshCw, RotateCcw, Search } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -25,6 +25,7 @@ import { getIncompleteSales, updateIncompleteSale } from '../../clients/api/onli
 import { IncompleteSaleItemsList } from '../../clients/components/IncompleteSaleItemsList'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import type { RetailCartItem } from '../../clients/onlineShopTypes'
 import type { SaleOrderItem } from '../../clients/salesTypes'
 import type {
@@ -635,51 +636,34 @@ function useIncompleteSalesOnlineShopColumns({
           return (
             <Box onClick={(event) => event.stopPropagation()}>
               <Group gap={4} justify="center" wrap="nowrap">
-                <Tooltip label={t('Деталі')}>
-                  <ActionIcon color="gray" variant="subtle" aria-label={t('Деталі')} onClick={() => onOpenDetail(sale)}>
-                    <Eye size={18} />
-                  </ActionIcon>
-                </Tooltip>
+                <TableRowAction action="details" label={t('Деталі')} onClick={() => onOpenDetail(sale)} />
 
                 {hasClientSales && (
-                  <Tooltip label={t('Продажі клієнта')}>
-                    <ActionIcon
-                      color="orange"
-                      variant="subtle"
-                      aria-label={t('Продажі клієнта')}
-                      onClick={() => onOpenClientSales(sale)}
-                    >
-                      <Receipt size={18} />
-                    </ActionIcon>
-                  </Tooltip>
+                  <TableRowAction
+                    action="receipt"
+                    label={t('Продажі клієнта')}
+                    tone="brand"
+                    onClick={() => onOpenClientSales(sale)}
+                  />
                 )}
 
                 {!hasResponsible && status !== 2 && (
-                  <Tooltip label={user ? t('Закріпити за собою') : t('Користувача не визначено')}>
-                    <ActionIcon
-                      color="orange"
-                      disabled={!user || isUpdating}
-                      variant="subtle"
-                      aria-label={t('Закріпити за собою')}
-                      onClick={() => onStatusAction({ sale, status: 1 })}
-                    >
-                      <UserPlus size={18} />
-                    </ActionIcon>
-                  </Tooltip>
+                  <TableRowAction
+                    action="assign"
+                    disabled={!user || isUpdating}
+                    hint={user ? undefined : t('Користувача не визначено')}
+                    label={t('Закріпити за собою')}
+                    onClick={() => onStatusAction({ sale, status: 1 })}
+                  />
                 )}
 
                 {hasResponsible && status !== 2 && (
-                  <Tooltip label={t('Позначити виконаним')}>
-                    <ActionIcon
-                      color="green"
-                      disabled={isUpdating}
-                      variant="subtle"
-                      aria-label={t('Позначити виконаним')}
-                      onClick={() => onStatusAction({ sale, status: 2 })}
-                    >
-                      <CircleCheck size={18} />
-                    </ActionIcon>
-                  </Tooltip>
+                  <TableRowAction
+                    action="complete"
+                    disabled={isUpdating}
+                    label={t('Позначити виконаним')}
+                    onClick={() => onStatusAction({ sale, status: 2 })}
+                  />
                 )}
               </Group>
             </Box>
