@@ -11,7 +11,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { AppModal } from "../../../shared/ui/AppModal"
-import { CircleAlert, Download, PackageMinus, RotateCcw, SquarePen, Trash2 } from 'lucide-react'
+import { CircleAlert, Download, PackageMinus, RotateCcw, SquarePen } from 'lucide-react'
 import { notifications } from '@mantine/notifications'
 import { useEffect, useMemo, useReducer, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -21,6 +21,7 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE, PAGINATOR_PAGE_SIZE_OPTIONS } from '../../../shared/ui/paginator/paginatorPageSize'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import {
   deleteTaxFreePackList,
   exportTaxFreePackLists,
@@ -485,34 +486,18 @@ function usePackListColumns({
         enableSorting: false,
         cell: (packList) => (
           <Group gap={4} wrap="nowrap">
-            <Tooltip label={t('Переглянути')}>
-              <ActionIcon
-                aria-label={t('Переглянути')}
-                size="sm"
-                variant="subtle"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  onOpen(packList)
-                }}
-              >
-                <SquarePen size={16} />
-              </ActionIcon>
-            </Tooltip>
-            <Tooltip label={packList.IsSent ? t('Проведений лист не можна видалити') : t('Видалити')}>
-              <ActionIcon
-                aria-label={t('Видалити')}
-                color="red"
-                disabled={packList.IsSent}
-                size="sm"
-                variant="subtle"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  onDelete(packList)
-                }}
-              >
-                <Trash2 size={16} />
-              </ActionIcon>
-            </Tooltip>
+            <TableRowAction
+              action="view"
+              label={t('Переглянути')}
+              onClick={() => onOpen(packList)}
+            />
+            <TableRowAction
+              action="delete"
+              disabled={packList.IsSent}
+              hint={packList.IsSent ? t('Проведений лист не можна видалити') : undefined}
+              label={t('Видалити')}
+              onClick={() => onDelete(packList)}
+            />
           </Group>
         ),
       },

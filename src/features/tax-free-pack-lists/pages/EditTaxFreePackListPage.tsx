@@ -25,6 +25,7 @@ import { useParams } from 'react-router-dom'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import {
   getClientAgreements,
   getOrganizations,
@@ -1191,19 +1192,12 @@ function useSourceColumns({
         width: 54,
         enableSorting: false,
         cell: (row) => row.isOrderItem ? null : (
-          <ActionIcon
-            aria-label={t('Видалити')}
-            color="red"
+          <TableRowAction
+            action="delete"
             disabled={disabled}
-            size="sm"
-            variant="subtle"
-            onClick={(event) => {
-              event.stopPropagation()
-              onDelete(row)
-            }}
-          >
-            <Trash2 size={16} />
-          </ActionIcon>
+            label={t('Видалити')}
+            onClick={() => onDelete(row)}
+          />
         ),
       },
     ],
