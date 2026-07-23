@@ -11,7 +11,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { CircleAlert, Eye, Plus, RotateCcw } from 'lucide-react'
+import { CircleAlert, Plus, RotateCcw } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -22,6 +22,7 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { useAuth } from '../../auth/useAuth'
 import {
   createDepreciatedOrderFromFile,
@@ -633,11 +634,7 @@ function useDepreciatedOrderColumns(
         enableSorting: false,
         cell: (order) => (
           <Box onClick={(event) => event.stopPropagation()}>
-            <Tooltip label={t('Деталі')}>
-              <ActionIcon aria-label={t('Деталі')} color="gray" variant="subtle" onClick={() => onOpenDetail(order)}>
-                <Eye size={18} />
-              </ActionIcon>
-            </Tooltip>
+            <TableRowAction action="details" label={t('Деталі')} onClick={() => onOpenDetail(order)} />
           </Box>
         ),
       },
