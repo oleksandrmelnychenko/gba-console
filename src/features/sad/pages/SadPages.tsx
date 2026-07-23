@@ -33,6 +33,7 @@ import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableD
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { SadAddItemsModal } from '../components/SadAddItemsModal'
 import { SadPaymentFromSadModal } from '../components/SadPaymentFromSadModal'
 import { SadSupplyOrderFromSadModal } from '../components/SadSupplyOrderFromSadModal'
@@ -318,49 +319,21 @@ export function AllSadsPage() {
         header: '',
         cell: (sad) => (
           <Group gap={4} justify="flex-end" wrap="nowrap">
-            <Tooltip label={t('Переглянути')}>
-              <ActionIcon
-                aria-label={t('Переглянути')}
-                size="sm"
-                variant="subtle"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  setSelectedSad(sad)
-                }}
-              >
-                <Eye size={16} />
-              </ActionIcon>
-            </Tooltip>
+            <TableRowAction action="view" label={t('Переглянути')} onClick={() => setSelectedSad(sad)} />
             {sad.IsSend && sad.Client ? (
-              <Tooltip label={t('Створити видатковий ордер')}>
-                <ActionIcon
-                  aria-label={t('Створити видатковий ордер')}
-                  size="sm"
-                  variant="subtle"
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    setOutcomeSource(buildSadOutcomeSource(sad))
-                  }}
-                >
-                  <Banknote size={16} />
-                </ActionIcon>
-              </Tooltip>
+              <TableRowAction
+                action="payment"
+                label={t('Створити видатковий ордер')}
+                onClick={() => setOutcomeSource(buildSadOutcomeSource(sad))}
+              />
             ) : null}
-            <Tooltip label={sad.IsSend ? t('Проведений SAD не можна видалити') : t('Видалити')}>
-              <ActionIcon
-                aria-label={t('Видалити')}
-                color="red"
-                disabled={sad.IsSend}
-                size="sm"
-                variant="subtle"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  setDeleteTarget(sad)
-                }}
-              >
-                <Trash2 size={16} />
-              </ActionIcon>
-            </Tooltip>
+            <TableRowAction
+              action="delete"
+              disabled={sad.IsSend}
+              hint={sad.IsSend ? t('Проведений SAD не можна видалити') : undefined}
+              label={t('Видалити')}
+              onClick={() => setDeleteTarget(sad)}
+            />
           </Group>
         ),
         enableSorting: false,
@@ -1273,11 +1246,7 @@ function SadItemsPanel({
         header: '',
         cell: (item) => !readonly && mode === 'base' ? (
           <Group justify="flex-end">
-            <Tooltip label={t('Видалити')}>
-              <ActionIcon aria-label={t('Видалити')} color="red" size="sm" variant="subtle" onClick={() => onDelete(item)}>
-                <Trash2 size={16} />
-              </ActionIcon>
-            </Tooltip>
+            <TableRowAction action="delete" label={t('Видалити')} onClick={() => onDelete(item)} />
           </Group>
         ) : null,
         enableSorting: false,
@@ -1663,11 +1632,11 @@ function SadPalletsTable({
         id: 'actions',
         header: '',
         cell: (item) => !readonly ? (
-          <Tooltip label={t('Видалити палету')}>
-            <ActionIcon aria-label={t('Видалити палету')} color="red" size="sm" variant="subtle" onClick={() => onDeletePallet(item.__pallet)}>
-              <Trash2 size={16} />
-            </ActionIcon>
-          </Tooltip>
+          <TableRowAction
+            action="delete"
+            label={t('Видалити палету')}
+            onClick={() => onDeletePallet(item.__pallet)}
+          />
         ) : null,
         enableSorting: false,
         width: 70,
@@ -1960,16 +1929,11 @@ export function SadSpecificationsPage() {
 
           return product ? (
             <Group justify="flex-end">
-              <Tooltip label={t('Редагувати специфікацію')}>
-                <ActionIcon
-                  aria-label={t('Редагувати специфікацію')}
-                  size="sm"
-                  variant="subtle"
-                  onClick={() => setEditingSpec({ product, specification: getLastSpecification(product) || null })}
-                >
-                  <SquarePen size={16} />
-                </ActionIcon>
-              </Tooltip>
+              <TableRowAction
+                action="edit"
+                label={t('Редагувати специфікацію')}
+                onClick={() => setEditingSpec({ product, specification: getLastSpecification(product) || null })}
+              />
             </Group>
           ) : null
         },
