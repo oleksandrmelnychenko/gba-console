@@ -1,5 +1,5 @@
 import { LineChart } from '@mantine/charts'
-import { ActionIcon, Alert, Autocomplete, Card, Select, Stack, Text, TextInput, Tooltip } from '@mantine/core'
+import { ActionIcon, Alert, Autocomplete, Select, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import { CircleAlert, RotateCcw } from 'lucide-react'
 import { useEffect, useMemo } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -126,7 +126,7 @@ export function SalesByClientChart() {
   }
 
   return (
-    <Card className="app-data-card sales-chart-card" withBorder radius="md" padding={0}>
+    <div className="sales-dashboard-tab-content sales-chart-card">
       <div className="app-filter-bar">
         <div className="sales-chart-filter-row is-client">
           <div className="app-filter-date-range">
@@ -208,7 +208,7 @@ export function SalesByClientChart() {
           </div>
         )}
       </Stack>
-    </Card>
+    </div>
   )
 }
 

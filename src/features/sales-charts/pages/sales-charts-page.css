@@ -10,10 +10,18 @@
   min-height: 0;
 }
 
+.sales-charts-tabs {
+  flex: 0 0 auto;
+  border-radius: 0;
+  padding-bottom: 4px;
+}
+
+.sales-charts-tabs .pill-tab {
+  padding-bottom: 12px;
+}
+
 .sales-chart-card {
   background: var(--mantine-color-white);
-  border: 1px solid var(--mantine-color-gray-2) !important;
-  box-shadow: var(--app-card-shadow) !important;
   display: flex;
   flex-direction: column;
   min-height: 0;

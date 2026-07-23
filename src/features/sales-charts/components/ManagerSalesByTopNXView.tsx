@@ -1,5 +1,5 @@
 import { BarChart } from '@mantine/charts'
-import { ActionIcon, Alert, Card, Select, Stack, Text, TextInput, Tooltip } from '@mantine/core'
+import { ActionIcon, Alert, Select, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import { CircleAlert, RotateCcw } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -115,7 +115,7 @@ export function ManagerSalesByTopNXView() {
   }
 
   return (
-    <Card className="app-data-card sales-chart-card" withBorder radius="md" padding={0}>
+    <div className="sales-dashboard-tab-content sales-chart-card">
       <div className="app-filter-bar">
         <div className="sales-chart-filter-row is-topnx">
           <div className="app-filter-date-range">
@@ -199,7 +199,7 @@ export function ManagerSalesByTopNXView() {
         />
         </div>
       </Stack>
-    </Card>
+    </div>
   )
 }
 

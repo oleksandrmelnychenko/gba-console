@@ -19,8 +19,8 @@ export function SalesChartsPage() {
   const [activeTab, setActiveTab] = useState<SalesChartsTab>('topNX')
 
   return (
-    <Stack className="sales-charts-page" gap={6}>
-      <div className="pill-tabs">
+    <Stack className="sales-charts-page" gap={0}>
+      <div className="sales-charts-tabs pill-tabs">
         {SALES_CHART_TABS.map((tab) => {
           const isActive = activeTab === tab.value
 
