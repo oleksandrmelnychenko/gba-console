@@ -212,8 +212,9 @@ export function ProductGroupSubGroupsPanel({ productGroupNetId }: ProductGroupSu
   }
 
   return (
-    <Stack gap="md">
-      <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
+    <Stack className="product-group-detail-panel" gap={0}>
+      <div className="app-filter-bar product-group-detail-filter-bar">
+        <Group align="end" gap={10} wrap="nowrap" className="product-group-detail-filter-row">
         <TextInput
           leftSection={<Search size={16} />}
           label={t('Пошук')}
@@ -255,8 +256,10 @@ export function ProductGroupSubGroupsPanel({ productGroupNetId }: ProductGroupSu
           </ActionIcon>
         </Tooltip>
         <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />
-      </Group>
+        </Group>
+      </div>
 
+      <div className="product-group-detail-panel__body">
       {error && (
         <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {error}
@@ -295,6 +298,7 @@ export function ProductGroupSubGroupsPanel({ productGroupNetId }: ProductGroupSu
           {t('Завантажити ще')}
         </Button>
       </Group>
+      </div>
     </Stack>
   )
 }

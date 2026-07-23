@@ -30,6 +30,7 @@ import {
   normalizeProductGroupForSave,
   validateProductGroup,
 } from '../utils'
+import './product-group-detail-page.css'
 
 type ProductGroupContentTab = 'products' | 'subGroups'
 
@@ -281,8 +282,13 @@ export function ProductGroupDetailPage() {
       )}
 
       {productGroup?.NetUid && (
-        <Card className="app-section-card" withBorder radius="md" padding="md">
-          <div className="pill-tabs" style={{ width: 'fit-content', marginBottom: 'var(--mantine-spacing-md)' }}>
+        <Card
+          className="app-data-card product-group-detail-registry"
+          withBorder
+          radius="md"
+          padding={0}
+        >
+          <div className="pill-tabs product-group-detail-tabs">
             {([
               { value: 'subGroups', label: t('Підгрупи') },
               { value: 'products', label: t('Товари') },

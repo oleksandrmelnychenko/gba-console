@@ -1,0 +1,49 @@
+.product-group-detail-registry {
+  background: var(--mantine-color-white);
+  flex: 0 0 auto;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.console-frame .mantine-Card-root.product-group-detail-registry {
+  border: 1px solid var(--mantine-color-gray-2);
+  box-shadow: var(--app-card-shadow);
+}
+
+.product-group-detail-tabs {
+  border-radius: 0;
+  flex: 0 0 auto;
+  padding-bottom: 4px;
+}
+
+.product-group-detail-tabs .pill-tab {
+  padding-bottom: 12px;
+}
+
+.product-group-detail-panel,
+.product-group-detail-filter-bar {
+  min-width: 0;
+}
+
+.product-group-detail-filter-bar {
+  flex: 0 0 auto;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.product-group-detail-filter-row {
+  min-width: max-content;
+  width: 100%;
+}
+
+.product-group-detail-filter-row > .mantine-InputWrapper-root {
+  min-width: 240px;
+}
+
+.product-group-detail-panel__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mantine-spacing-md);
+  min-width: 0;
+  padding: 10px 8px 8px;
+}
