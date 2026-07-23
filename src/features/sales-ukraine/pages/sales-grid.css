@@ -30,21 +30,28 @@
   align-items: end;
   display: grid;
   gap: 10px;
-  min-width: max-content;
+  min-width: 0;
+  width: 100%;
   grid-template-columns:
-    310px
+    280px
     minmax(180px, 1fr)
     minmax(110px, 150px)
     minmax(130px, 170px)
-    var(--app-multi-select-width, 240px)
+    200px
     minmax(170px, 210px)
     max-content
-    auto
+    max-content
     max-content;
 }
 
 .sales-online-filter-row {
   grid-template-columns: 310px minmax(220px, 1fr) minmax(150px, 180px) minmax(170px, 200px) auto;
+}
+
+.sales-filter-row:not(.sales-online-filter-row) > .app-filter-date-range {
+  flex-basis: 280px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: 280px;
 }
 
 .sales-online-shop-page {
