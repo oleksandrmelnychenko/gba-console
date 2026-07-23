@@ -508,11 +508,6 @@
   justify-content: flex-end;
 }
 
-.consumable-order-form-row-actions .mantine-ActionIcon-root,
-.consumable-order-form-document-row .mantine-ActionIcon-root {
-  color: var(--mantine-color-gray-5);
-}
-
 .consumable-order-form-totals {
   border-top: 1px solid var(--mantine-color-gray-1);
   display: grid;

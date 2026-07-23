@@ -1,5 +1,4 @@
 import {
-  ActionIcon,
   Alert,
   Anchor,
   Autocomplete,
@@ -15,10 +14,9 @@ import {
   Text,
   Textarea,
   TextInput,
-  Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { CircleAlert, FileText, Pencil, Plus, RotateCcw, Save, Trash2, Upload, X } from 'lucide-react'
+import { CircleAlert, FileText, Plus, Save, Upload, X } from 'lucide-react'
 import { type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useRef } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
@@ -27,6 +25,7 @@ import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import { calculateConsumableOrderItemTotals } from '../consumableOrderCalculations'
 import {
@@ -905,15 +904,12 @@ export function ConsumableOrderFormPage() {
                         {document.ContentType || t('Файл')}
                       </Text>
                     </div>
-                    <ActionIcon
-                      aria-label={document.Deleted ? t('Відновити файл') : t('Видалити файл')}
-                      color={document.Deleted ? 'green' : 'red'}
+                    <TableRowAction
+                      action={document.Deleted ? 'restore' : 'delete'}
                       disabled={isMutationLocked}
-                      variant="subtle"
+                      label={document.Deleted ? t('Відновити файл') : t('Видалити файл')}
                       onClick={() => toggleDocumentDeleted(document)}
-                    >
-                      {document.Deleted ? <RotateCcw size={16} /> : <Trash2 size={16} />}
-                    </ActionIcon>
+                    />
                   </div>
                 )
               }) : (
@@ -1174,24 +1170,14 @@ function OrderFormItemRow({
         </div>
         <div className="consumable-order-form-row-actions">
           {!item.Deleted ? (
-            <Tooltip label={t('Редагувати')}>
-              <ActionIcon aria-label={t('Редагувати')} disabled={disabled} size="sm" variant="subtle" onClick={onEdit}>
-                <Pencil size={16} />
-              </ActionIcon>
-            </Tooltip>
+            <TableRowAction action="edit" disabled={disabled} label={t('Редагувати')} onClick={onEdit} />
           ) : null}
-          <Tooltip label={item.Deleted ? t('Відновити') : t('Видалити')}>
-            <ActionIcon
-              aria-label={item.Deleted ? t('Відновити') : t('Видалити')}
-              color={item.Deleted ? 'green' : 'red'}
-              disabled={disabled}
-              size="sm"
-              variant="subtle"
-              onClick={onToggleDeleted}
-            >
-              {item.Deleted ? <RotateCcw size={16} /> : <Trash2 size={16} />}
-            </ActionIcon>
-          </Tooltip>
+          <TableRowAction
+            action={item.Deleted ? 'restore' : 'delete'}
+            disabled={disabled}
+            label={item.Deleted ? t('Відновити') : t('Видалити')}
+            onClick={onToggleDeleted}
+          />
         </div>
       </div>
       <div className="consumable-order-form-item-details">
