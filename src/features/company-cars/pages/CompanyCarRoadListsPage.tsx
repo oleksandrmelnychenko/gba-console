@@ -11,7 +11,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { ArrowLeft, CircleAlert, Pencil, Plus, RefreshCw, RotateCcw, Trash2 } from 'lucide-react'
+import { ArrowLeft, CircleAlert, Plus, RefreshCw, RotateCcw, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { formatDateInputForQuery, formatLocalDate } from '../../../shared/date/dateTime'
@@ -23,6 +23,7 @@ import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableD
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { useAuth } from '../../auth/useAuth'
 import {
   deleteCompanyCarRoadList,
@@ -485,35 +486,24 @@ function useRoadListColumns({
         enableReorder: false,
         cell: (roadList) => (
           <Group gap={4} justify="flex-end" wrap="nowrap">
-            <Tooltip label={t('Редагувати')}>
-              <ActionIcon
-                aria-label={t('Редагувати')}
-                disabled={!canManage || (!roadList.NetUid && !roadList.Id)}
-                size="sm"
-                variant="subtle"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  onEdit(roadList)
-                }}
-              >
-                <Pencil size={16} />
-              </ActionIcon>
-            </Tooltip>
-            <Tooltip label={t('Видалити')}>
-              <ActionIcon
-                aria-label={t('Видалити')}
-                color="red"
-                disabled={!canManage || !roadList.NetUid}
-                size="sm"
-                variant="subtle"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  onDelete(roadList)
-                }}
-              >
-                <Trash2 size={16} />
-              </ActionIcon>
-            </Tooltip>
+            <TableRowAction
+              action="edit"
+              disabled={!canManage || (!roadList.NetUid && !roadList.Id)}
+              label={t('Редагувати')}
+              onClick={(event) => {
+                event.stopPropagation()
+                onEdit(roadList)
+              }}
+            />
+            <TableRowAction
+              action="delete"
+              disabled={!canManage || !roadList.NetUid}
+              label={t('Видалити')}
+              onClick={(event) => {
+                event.stopPropagation()
+                onDelete(roadList)
+              }}
+            />
           </Group>
         ),
       },

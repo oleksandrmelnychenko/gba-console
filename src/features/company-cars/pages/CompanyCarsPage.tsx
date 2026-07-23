@@ -9,7 +9,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { CircleAlert, Pencil, Plus, RefreshCw, RotateCcw, Route, Search } from 'lucide-react'
+import { CircleAlert, Plus, RefreshCw, RotateCcw, Search } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -17,6 +17,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { PermissionGate } from '../../auth/components/PermissionGate'
 import { useAuth } from '../../auth/useAuth'
 import { getCompanyCars, searchCompanyCars } from '../api/companyCarsApi'
@@ -358,36 +359,24 @@ function useCompanyCarColumns({
         enableReorder: false,
         cell: (companyCar) => (
           <Group gap={4} justify="flex-end" wrap="nowrap">
-            <Tooltip label={t('Шляхові листи автомобіля')}>
-              <ActionIcon
-                aria-label={t('Шляхові листи автомобіля')}
-                color="gray"
-                disabled={!canOpenRoadLists || !companyCar.NetUid}
-                size="sm"
-                variant="subtle"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  onRoadLists(companyCar)
-                }}
-              >
-                <Route size={16} />
-              </ActionIcon>
-            </Tooltip>
-            <Tooltip label={t('Редагувати')}>
-              <ActionIcon
-                aria-label={t('Редагувати')}
-                color="gray"
-                disabled={!canEdit || !companyCar.NetUid}
-                size="sm"
-                variant="subtle"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  onEdit(companyCar)
-                }}
-              >
-                <Pencil size={16} />
-              </ActionIcon>
-            </Tooltip>
+            <TableRowAction
+              action="route"
+              disabled={!canOpenRoadLists || !companyCar.NetUid}
+              label={t('Шляхові листи автомобіля')}
+              onClick={(event) => {
+                event.stopPropagation()
+                onRoadLists(companyCar)
+              }}
+            />
+            <TableRowAction
+              action="edit"
+              disabled={!canEdit || !companyCar.NetUid}
+              label={t('Редагувати')}
+              onClick={(event) => {
+                event.stopPropagation()
+                onEdit(companyCar)
+              }}
+            />
           </Group>
         ),
       },
