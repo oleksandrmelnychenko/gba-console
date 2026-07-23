@@ -1,4 +1,4 @@
-import { ActionIcon, Anchor, Button, Card, Center, Stack, Text, Tooltip } from '@mantine/core'
+import { ActionIcon, Anchor, Button, Center, Stack, Text, Tooltip } from '@mantine/core'
 import { RefreshCw } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -236,8 +236,8 @@ export function PreordersInterestPage() {
   )
 
   return (
-    <Stack className="preorders-interest-page" gap={6}>
-      <Card className="app-data-card preorders-interest-card" withBorder radius="md" padding={0}>
+    <Stack className="preorders-interest-page" gap={0}>
+      <div className="sales-dashboard-tab-content preorders-interest-card">
         <div className="app-filter-bar preorders-interest-command-bar">
           <div className="app-filter-actions preorders-interest-command-actions">
             <Tooltip label={t('Оновити')}>
@@ -287,7 +287,7 @@ export function PreordersInterestPage() {
             </Button>
           </Center>
         )}
-      </Card>
+      </div>
 
       <ProductCardModal productNetId={productCardNetId} onClose={() => setProductCardNetId(null)} />
     </Stack>
