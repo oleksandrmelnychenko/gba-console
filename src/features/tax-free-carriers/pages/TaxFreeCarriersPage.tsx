@@ -12,7 +12,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { CircleAlert, Download, FileText, Plus, RefreshCw, RotateCcw, Search, SquarePen, Trash2 } from 'lucide-react'
+import { CircleAlert, Download, FileText, Plus, RefreshCw, RotateCcw, Search, Trash2 } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { useEffect, useMemo, useReducer, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -23,6 +23,7 @@ import { AppModal } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { useAuth } from '../../auth/useAuth'
 import {
   deleteTaxFreeCarrier,
@@ -454,17 +455,13 @@ function useCarrierColumns({
         cell: (carrier) => (
           <Box onClick={(event) => event.stopPropagation()}>
             <Group gap={4} justify="center" wrap="nowrap">
-              <Tooltip label={t('Редагування Перевізника')}>
-                <ActionIcon aria-label={t('Редагування Перевізника')} color="gray" variant="subtle" onClick={() => onEdit(carrier)}>
-                  <SquarePen size={18} />
-                </ActionIcon>
-              </Tooltip>
+              <TableRowAction
+                action="edit"
+                label={t('Редагування Перевізника')}
+                onClick={() => onEdit(carrier)}
+              />
               {canManage && (
-                <Tooltip label={t('Видалити')}>
-                  <ActionIcon aria-label={t('Видалити')} color="red" variant="subtle" onClick={() => onDelete(carrier)}>
-                    <Trash2 size={18} />
-                  </ActionIcon>
-                </Tooltip>
+                <TableRowAction action="delete" label={t('Видалити')} onClick={() => onDelete(carrier)} />
               )}
             </Group>
           </Box>
