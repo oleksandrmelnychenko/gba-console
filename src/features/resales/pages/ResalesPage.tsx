@@ -20,7 +20,7 @@ import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
 import { notifications } from '@mantine/notifications'
-import { ArrowRight, CircleAlert, Download, FileDown, FileText, Plus, RefreshCw, RotateCcw, Search, Trash2, Truck } from 'lucide-react'
+import { CircleAlert, Download, FileDown, FileText, Plus, RefreshCw, RotateCcw, Search, Truck } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { formatLocalDate, formatLocalDateTime } from '../../../shared/date/dateTime'
@@ -41,6 +41,7 @@ import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import {
   addResale,
   addResaleConsignmentNoteSetting,
@@ -1814,80 +1815,45 @@ function useResalesColumns({
         enableReorder: false,
         cell: (resale) => (
           <Group gap={4} justify="flex-end" wrap="nowrap">
-            <Tooltip label={t('Платіжний документ')}>
-              <ActionIcon
-                aria-label={t('Платіжний документ')}
-                color="gray"
-                disabled={!resale.NetUid}
-                loading={exportingKey === `${resale.NetUid}:${DocumentType.PaymentDocument}`}
-                size={30}
-                variant="subtle"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  onExport(resale, DocumentType.PaymentDocument)
-                }}
-              >
-                <Download size={16} />
-              </ActionIcon>
-            </Tooltip>
+            <TableRowAction
+              action="download"
+              disabled={!resale.NetUid}
+              label={t('Платіжний документ')}
+              loading={exportingKey === `${resale.NetUid}:${DocumentType.PaymentDocument}`}
+              onClick={() => onExport(resale, DocumentType.PaymentDocument)}
+            />
             {isResaleInvoice(resale) && (
               <>
-                <Tooltip label={t('Інвойс')}>
-                  <ActionIcon
-                    aria-label={t('Інвойс')}
-                    color="gray"
-                    disabled={!resale.NetUid}
-                    loading={exportingKey === `${resale.NetUid}:${DocumentType.SalesInvoice}`}
-                    size={30}
-                    variant="subtle"
-                    onClick={(event) => {
-                      event.stopPropagation()
-                      onExport(resale, DocumentType.SalesInvoice)
-                    }}
-                  >
-                    <FileText size={16} />
-                  </ActionIcon>
-                </Tooltip>
-                <Tooltip label={t('ТТН')}>
-                  <ActionIcon
-                    aria-label={t('ТТН')}
-                    color="gray"
-                    disabled={!resale.NetUid}
-                    size={30}
-                    variant="subtle"
-                    onClick={(event) => {
-                      event.stopPropagation()
-                      onOpenConsignmentNote(resale)
-                    }}
-                  >
-                    <Truck size={16} />
-                  </ActionIcon>
-                </Tooltip>
+                <TableRowAction
+                  action="download"
+                  disabled={!resale.NetUid}
+                  label={t('Інвойс')}
+                  loading={exportingKey === `${resale.NetUid}:${DocumentType.SalesInvoice}`}
+                  onClick={() => onExport(resale, DocumentType.SalesInvoice)}
+                />
+                <TableRowAction
+                  action="delivery"
+                  disabled={!resale.NetUid}
+                  label={t('ТТН')}
+                  onClick={() => onOpenConsignmentNote(resale)}
+                />
               </>
             )}
             {isResaleDraft(resale) && (
-              <Tooltip label={t('Видалити')}>
-                <ActionIcon
-                  aria-label={t('Видалити')}
-                  color="red"
-                  disabled={!resale.NetUid || removingNetId === resale.NetUid}
-                  loading={removingNetId === resale.NetUid}
-                  size={30}
-                  variant="subtle"
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    onDelete(resale)
-                  }}
-                >
-                  <Trash2 size={16} />
-                </ActionIcon>
-              </Tooltip>
+              <TableRowAction
+                action="delete"
+                disabled={!resale.NetUid || removingNetId === resale.NetUid}
+                label={t('Видалити')}
+                loading={removingNetId === resale.NetUid}
+                onClick={() => onDelete(resale)}
+              />
             )}
-            <Tooltip label={t('Відкрити')}>
-              <ActionIcon component={Link} to={`/resales/${resale.NetUid || ''}`} aria-label={t('Відкрити')} color="gray" size={30} variant="subtle">
-                <ArrowRight size={16} />
-              </ActionIcon>
-            </Tooltip>
+            <TableRowAction
+              action="open"
+              component={Link}
+              label={t('Відкрити')}
+              to={`/resales/${resale.NetUid || ''}`}
+            />
           </Group>
         ),
       },
@@ -1938,20 +1904,18 @@ function useResaleAvailabilityColumns({
         enableHiding: false,
         enablePinning: false,
         enableReorder: false,
-        cell: (row) => (
-          <ActionIcon
-            aria-label={t('Обрати')}
-            color={selectedKeys.includes(getAvailabilityKey(row)) ? 'orange' : 'gray'}
-            size={28}
-            variant={selectedKeys.includes(getAvailabilityKey(row)) ? 'filled' : 'light'}
-            onClick={(event) => {
-              event.stopPropagation()
-              onToggle(row)
-            }}
-          >
-            {selectedKeys.includes(getAvailabilityKey(row)) ? '✓' : '+'}
-          </ActionIcon>
-        ),
+        cell: (row) => {
+          const selected = selectedKeys.includes(getAvailabilityKey(row))
+
+          return (
+            <TableRowAction
+              action="select"
+              label={t('Обрати')}
+              tone={selected ? 'success' : 'neutral'}
+              onClick={() => onToggle(row)}
+            />
+          )
+        },
       },
       {
         id: 'created',
