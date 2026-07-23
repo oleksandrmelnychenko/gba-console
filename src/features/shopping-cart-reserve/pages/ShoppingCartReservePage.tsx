@@ -1,5 +1,5 @@
 import { useEffect, useReducer } from 'react'
-import { ActionIcon, Alert, Card, Stack, Text, Tooltip } from '@mantine/core'
+import { ActionIcon, Alert, Stack, Text, Tooltip } from '@mantine/core'
 import { CircleAlert, RefreshCw } from 'lucide-react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useNavigate } from 'react-router-dom'
@@ -69,8 +69,8 @@ export function ShoppingCartReservePage() {
   }
 
   return (
-    <Stack className="shopping-cart-reserve-page" gap={6}>
-      <Card className="app-data-card shopping-cart-reserve-card" withBorder radius="md" padding={0}>
+    <Stack className="shopping-cart-reserve-page" gap={0}>
+      <div className="sales-dashboard-tab-content shopping-cart-reserve-card">
         <div className="app-filter-bar shopping-cart-reserve-command-bar">
           <div className="app-filter-actions shopping-cart-reserve-command-actions">
             <Tooltip label={t('Оновити')}>
@@ -128,7 +128,7 @@ export function ShoppingCartReservePage() {
             )
           })}
         </div>
-      </Card>
+      </div>
     </Stack>
   )
 }
