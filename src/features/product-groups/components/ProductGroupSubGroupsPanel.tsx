@@ -11,7 +11,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { CircleAlert, Pencil, RefreshCw, RotateCcw, Search } from 'lucide-react'
+import { CircleAlert, RefreshCw, RotateCcw, Search } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -19,6 +19,7 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { getProductSubGroups } from '../api/productGroupsApi'
 import type { ProductGroup, ProductSubGroup } from '../types'
 import { displayValue, formatProductGroupDate, getProductGroupName } from '../utils'
@@ -124,17 +125,12 @@ export function ProductGroupSubGroupsPanel({ productGroupNetId }: ProductGroupSu
         enableSorting: false,
         cell: (subGroup) => (
           <Box onClick={(event) => event.stopPropagation()}>
-            <Tooltip label={t('Відкрити')}>
-              <ActionIcon
-                aria-label={t('Відкрити')}
-                color="gray"
-                disabled={!subGroup.SubProductGroup?.NetUid}
-                variant="subtle"
-                onClick={() => openSubGroup(subGroup.SubProductGroup)}
-              >
-                <Pencil size={18} />
-              </ActionIcon>
-            </Tooltip>
+            <TableRowAction
+              action="open"
+              disabled={!subGroup.SubProductGroup?.NetUid}
+              label={t('Відкрити')}
+              onClick={() => openSubGroup(subGroup.SubProductGroup)}
+            />
           </Box>
         ),
       },

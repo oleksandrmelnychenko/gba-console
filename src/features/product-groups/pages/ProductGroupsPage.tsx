@@ -15,13 +15,14 @@ import { AppModal } from "../../../shared/ui/AppModal"
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { notifications } from '@mantine/notifications'
 import { useDebouncedValue } from '@mantine/hooks'
-import { CircleAlert, Pencil, Plus, RefreshCw, RotateCcw, Search } from 'lucide-react'
+import { CircleAlert, Plus, RefreshCw, RotateCcw, Search } from 'lucide-react'
 import { type FormEvent, useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { PermissionGate } from '../../auth/components/PermissionGate'
 import { createProductGroup, getProductGroups, getRootProductGroups } from '../api/productGroupsApi'
 import { PRODUCT_GROUPS_ADD_PERMISSION } from '../permissions'
@@ -421,17 +422,12 @@ function useProductGroupColumns(openProductGroup: (productGroup: ProductGroup) =
         enableSorting: false,
         cell: (productGroup) => (
           <Box onClick={(event) => event.stopPropagation()}>
-            <Tooltip label={t('Відкрити')}>
-              <ActionIcon
-                aria-label={t('Відкрити')}
-                color="gray"
-                disabled={!productGroup.NetUid}
-                variant="subtle"
-                onClick={() => openProductGroup(productGroup)}
-              >
-                <Pencil size={18} />
-              </ActionIcon>
-            </Tooltip>
+            <TableRowAction
+              action="open"
+              disabled={!productGroup.NetUid}
+              label={t('Відкрити')}
+              onClick={() => openProductGroup(productGroup)}
+            />
           </Box>
         ),
       },
