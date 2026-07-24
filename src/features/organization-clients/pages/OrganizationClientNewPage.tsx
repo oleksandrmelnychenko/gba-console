@@ -148,6 +148,7 @@ export function OrganizationClientNewPage() {
       position="right"
       size="min(760px, 100vw)"
       aria-label={t('Нова організація')}
+      title={<span style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{t('Нова організація')}</span>}
       onClose={closeSheet}
       footer={
         <Button

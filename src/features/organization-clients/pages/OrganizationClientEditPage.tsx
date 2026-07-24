@@ -238,6 +238,11 @@ export function OrganizationClientEditPage() {
       keepMounted={false}
       position="right"
       size="min(900px, 100vw)"
+      title={
+        <span style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>
+          {client ? `${t('Редагування організації')} · ${getOrganizationClientName(client)}` : t('Редагування організації')}
+        </span>
+      }
       onClose={closeSheet}
       footer={
         <Group gap="xs">
