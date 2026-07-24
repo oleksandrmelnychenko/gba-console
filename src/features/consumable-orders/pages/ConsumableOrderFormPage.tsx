@@ -602,7 +602,7 @@ export function ConsumableOrderFormPage() {
         color: 'green',
         message: isEditMode ? t('Прибуткову накладну оновлено') : t('Прибуткову накладну створено'),
       })
-      navigate(returnPath, { replace: true })
+      navigate(returnPath, { replace: true, state: { mutated: true } })
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : t('Не вдалося зберегти прибуткову накладну'))
     } finally {

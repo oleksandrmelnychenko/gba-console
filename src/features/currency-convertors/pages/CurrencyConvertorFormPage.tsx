@@ -1,14 +1,15 @@
-import { Alert, Button, SimpleGrid, Stack, TextInput } from '@mantine/core'
+import { Alert, Button, Group, SimpleGrid, Stack, Text, TextInput } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { CircleAlert, Save } from 'lucide-react'
+import { CircleAlert, Save, Trash2 } from 'lucide-react'
 import { type FormEvent, useEffect, useReducer } from 'react'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { AppModal } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useAuth } from '../../auth/useAuth'
-import { createCurrencyTrader, getCurrencyTrader, updateCurrencyTrader } from '../api/currencyConvertorsApi'
+import { createCurrencyTrader, deleteCurrencyTrader, getCurrencyTrader, updateCurrencyTrader } from '../api/currencyConvertorsApi'
 import { CURRENCY_CONVERTOR_CREATE_PERMISSION, CURRENCY_CONVERTOR_EDIT_PERMISSION } from '../permissions'
 import type { CurrencyTrader, CurrencyTraderPayload } from '../types'
 
@@ -56,6 +57,8 @@ export function CurrencyConvertorFormPage() {
   )
   const { error, form, isLoading, trader } = pageState
   const [isSaving, setSaving] = useValueState(false)
+  const [isDeleting, setDeleting] = useValueState(false)
+  const [deleteModalOpened, setDeleteModalOpened] = useValueState(false)
   const canSave = hasPermission(isEditMode ? CURRENCY_CONVERTOR_EDIT_PERMISSION : CURRENCY_CONVERTOR_CREATE_PERMISSION)
 
   useEffect(() => {
@@ -115,6 +118,11 @@ export function CurrencyConvertorFormPage() {
       return
     }
 
+    if (!form.firstName.trim() || !form.lastName.trim()) {
+      dispatchPageState({ error: t("Вкажіть ім'я та прізвище трейдера"), type: 'set-error' })
+      return
+    }
+
     const payload = toPayload(trader, form)
     setSaving(true)
     dispatchPageState({ error: null, type: 'set-error' })
@@ -126,7 +134,7 @@ export function CurrencyConvertorFormPage() {
         color: 'green',
         message: isEditMode ? t('Валютного трейдера оновлено') : t('Валютного трейдера створено'),
       })
-      navigate(returnPath, { replace: true })
+      navigate(returnPath, { replace: true, state: { mutated: true } })
     } catch (saveError) {
       dispatchPageState({
         error: saveError instanceof Error ? saveError.message : t('Не вдалося зберегти валютного трейдера'),
@@ -134,6 +142,29 @@ export function CurrencyConvertorFormPage() {
       })
     } finally {
       setSaving(false)
+    }
+  }
+
+  async function handleDelete() {
+    if (!trader.NetUid) {
+      return
+    }
+
+    setDeleting(true)
+    dispatchPageState({ error: null, type: 'set-error' })
+
+    try {
+      await deleteCurrencyTrader(trader.NetUid)
+      notifications.show({ color: 'green', message: t('Валютного трейдера видалено') })
+      navigate(returnPath, { replace: true, state: { mutated: true } })
+    } catch (deleteError) {
+      dispatchPageState({
+        error: deleteError instanceof Error ? deleteError.message : t('Не вдалося видалити валютного трейдера'),
+        type: 'set-error',
+      })
+      setDeleteModalOpened(false)
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -145,16 +176,31 @@ export function CurrencyConvertorFormPage() {
       title={isEditMode ? t('Редагування валютного трейдера') : t('Створення валютного трейдера')}
       onClose={handleCancel}
       footer={
-        <Button
-          color={CREATE_ACTION_COLOR}
-          disabled={isLoading || !canSave}
-          form="currency-trader-form"
-          leftSection={<Save size={16} />}
-          loading={isSaving}
-          type="submit"
-        >
-          {t('Зберегти')}
-        </Button>
+        <Group gap="xs">
+          {isEditMode && (
+            <Button
+              color="red"
+              disabled={isLoading || !canSave || !trader.NetUid}
+              leftSection={<Trash2 size={16} />}
+              loading={isDeleting}
+              type="button"
+              variant="light"
+              onClick={() => setDeleteModalOpened(true)}
+            >
+              {t('Видалити')}
+            </Button>
+          )}
+          <Button
+            color={CREATE_ACTION_COLOR}
+            disabled={isLoading || !canSave}
+            form="currency-trader-form"
+            leftSection={<Save size={16} />}
+            loading={isSaving}
+            type="submit"
+          >
+            {t('Зберегти')}
+          </Button>
+        </Group>
       }
     >
       <form id="currency-trader-form" onSubmit={handleSubmit}>
@@ -175,12 +221,14 @@ export function CurrencyConvertorFormPage() {
             <TextInput
               disabled={isLoading || isSaving}
               label={t("Ім'я")}
+              required
               value={form.firstName}
               onChange={(event) => updateForm({ firstName: event.currentTarget.value })}
             />
             <TextInput
               disabled={isLoading || isSaving}
               label={t('Прізвище')}
+              required
               value={form.lastName}
               onChange={(event) => updateForm({ lastName: event.currentTarget.value })}
             />
@@ -199,6 +247,31 @@ export function CurrencyConvertorFormPage() {
           </SimpleGrid>
         </Stack>
       </form>
+
+      <AppModal
+        centered
+        opened={deleteModalOpened}
+        title={t('Видалити валютного трейдера')}
+        onClose={() => setDeleteModalOpened(false)}
+      >
+        <Stack gap="md">
+          <Text>
+            {t('Видалити трейдера')}{' '}
+            <Text span fw={600}>
+              {[form.lastName, form.firstName].filter(Boolean).join(' ') || t('Без назви')}
+            </Text>
+            ?
+          </Text>
+          <Group justify="flex-end">
+            <Button color="gray" disabled={isDeleting} variant="light" onClick={() => setDeleteModalOpened(false)}>
+              {t('Скасувати')}
+            </Button>
+            <Button color="red" leftSection={<Trash2 size={16} />} loading={isDeleting} onClick={handleDelete}>
+              {t('Видалити')}
+            </Button>
+          </Group>
+        </Stack>
+      </AppModal>
     </AppDrawer>
   )
 }

@@ -337,7 +337,7 @@ export function IncomeCashflowUserFormPage() {
         color: 'green',
         message: t('Повернення від колеги створено'),
       })
-      navigate(INCOME_CASHFLOWS_PATH, { replace: true })
+      navigate(INCOME_CASHFLOWS_PATH, { replace: true, state: { mutated: true } })
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : t('Не вдалося створити повернення від колеги'))
     } finally {

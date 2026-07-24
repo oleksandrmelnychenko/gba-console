@@ -28,6 +28,7 @@ import { AppModal } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { useMutatedListRefresh } from '../../../shared/router/useMutatedListRefresh'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
@@ -147,6 +148,8 @@ export function ConsumableStoragesPage() {
     onEdit: openEditor,
     onOpen: setSelectedStorage,
   })
+
+  useMutatedListRefresh(reload)
 
   useEffect(() => {
     const controller = new AbortController()

@@ -25,6 +25,7 @@ import {
 } from '../outgoingCreateMenu'
 import { PaymentRegisterType } from '../../income-cashflows/types'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { useMutatedListRefresh } from '../../../shared/router/useMutatedListRefresh'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
@@ -259,6 +260,10 @@ function useOutgoingCashflowsPageModel(): OutgoingCashflowsPageModel {
   useEffect(() => {
     void loadCashflows(page)
   }, [loadCashflows, page])
+
+  useMutatedListRefresh(useCallback(() => {
+    void loadCashflows(page)
+  }, [loadCashflows, page]))
 
   const openAdvanceReport = useCallback(
     (row: OutgoingCashflowRow) => {

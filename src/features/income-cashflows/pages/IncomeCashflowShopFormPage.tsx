@@ -607,7 +607,7 @@ export function IncomeCashflowShopFormPage() {
         color: 'green',
         message: t('Оплату магазину створено'),
       })
-      navigate(INCOME_CASHFLOWS_PATH, { replace: true })
+      navigate(INCOME_CASHFLOWS_PATH, { replace: true, state: { mutated: true } })
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : t('Не вдалося створити оплату магазину'))
     } finally {

@@ -405,6 +405,7 @@ export function ConsumableProductsPage() {
 
       <CategoryEditorModal
         editor={categoryEditor}
+        error={error}
         isSubmitting={isSaving}
         onClose={() => setCategoryEditor(null)}
         onSubmit={saveCategory}
@@ -412,6 +413,7 @@ export function ConsumableProductsPage() {
 
       <ProductEditorModal
         editor={productEditor}
+        error={error}
         isSubmitting={isSaving}
         onClose={() => setProductEditor(null)}
         onSubmit={saveProduct}
@@ -636,11 +638,13 @@ function ConsumableProductActionsModal({
 
 function CategoryEditorModal({
   editor,
+  error,
   isSubmitting,
   onClose,
   onSubmit,
 }: {
   editor: CategoryEditor | null
+  error?: string | null
   isSubmitting: boolean
   onClose: () => void
   onSubmit: (draft: ConsumableProductCategoryDraft) => void
@@ -654,6 +658,11 @@ function CategoryEditorModal({
       title={editor?.mode === 'edit' ? t('Редагувати категорію') : t('Нова категорія')}
       onClose={onClose}
     >
+      {error && (
+        <Alert color="red" icon={<CircleAlert size={18} />} mb="md" variant="light">
+          {error}
+        </Alert>
+      )}
       {editor && (
         <CategoryEditorForm
           key={getCategoryEditorKey(editor)}
@@ -709,11 +718,13 @@ function CategoryEditorForm({
 
 function ProductEditorModal({
   editor,
+  error,
   isSubmitting,
   onClose,
   onSubmit,
 }: {
   editor: ProductEditor | null
+  error?: string | null
   isSubmitting: boolean
   onClose: () => void
   onSubmit: (editor: ProductEditor, draft: ConsumableProductDraft) => void
@@ -727,6 +738,11 @@ function ProductEditorModal({
       title={editor?.mode === 'edit' ? t('Редагувати товар') : t('Новий товар')}
       onClose={onClose}
     >
+      {error && (
+        <Alert color="red" icon={<CircleAlert size={18} />} mb="md" variant="light">
+          {error}
+        </Alert>
+      )}
       {editor && (
         <ProductEditorForm
           key={getProductEditorKey(editor)}

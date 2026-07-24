@@ -362,7 +362,7 @@ export function ConsumableOrderPayPage() {
         color: 'green',
         message: t('Оплату накладної створено'),
       })
-      navigate(returnPath, { replace: true })
+      navigate(returnPath, { replace: true, state: { mutated: true } })
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : t('Не вдалося створити оплату накладної'))
     } finally {

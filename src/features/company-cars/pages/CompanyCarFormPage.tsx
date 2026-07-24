@@ -5,6 +5,7 @@ import {
   Select,
   SimpleGrid,
   Stack,
+  Text,
   TextInput,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
@@ -12,6 +13,7 @@ import { CircleAlert, Save, Trash2 } from 'lucide-react'
 import { type FormEvent, useEffect, useMemo, useReducer } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { AppModal } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -77,6 +79,7 @@ export function CompanyCarFormPage() {
   const { companyCar, error, form, isLoading, organizations } = pageState
   const [isSaving, setSaving] = useValueState(false)
   const [isDeleting, setDeleting] = useValueState(false)
+  const [deleteModalOpened, setDeleteModalOpened] = useValueState(false)
   const canSave = hasPermission(isEditMode ? COMPANY_CAR_EDIT_PERMISSION : COMPANY_CAR_CREATE_PERMISSION)
   const canDelete = isEditMode && hasPermission(COMPANY_CAR_DELETE_PERMISSION)
 
@@ -186,7 +189,7 @@ export function CompanyCarFormPage() {
         color: 'green',
         message: isEditMode ? t('Автомобіль компанії оновлено') : t('Автомобіль компанії створено'),
       })
-      navigate(returnPath, { replace: true })
+      navigate(returnPath, { replace: true, state: { mutated: true } })
     } catch (saveError) {
       dispatchPageState({
         error: saveError instanceof Error ? saveError.message : t('Не вдалося зберегти автомобіль компанії'),
@@ -213,7 +216,7 @@ export function CompanyCarFormPage() {
     try {
       await deleteCompanyCar(companyCar.NetUid)
       notifications.show({ color: 'green', message: t('Автомобіль компанії видалено') })
-      navigate(returnPath, { replace: true })
+      navigate(returnPath, { replace: true, state: { mutated: true } })
     } catch (deleteError) {
       dispatchPageState({
         error: deleteError instanceof Error ? deleteError.message : t('Не вдалося видалити автомобіль компанії'),
@@ -241,7 +244,7 @@ export function CompanyCarFormPage() {
               loading={isDeleting}
               type="button"
               variant="light"
-              onClick={handleDelete}
+              onClick={() => setDeleteModalOpened(true)}
             >
               {t('Видалити')}
             </Button>
@@ -336,6 +339,27 @@ export function CompanyCarFormPage() {
           </SimpleGrid>
         </Stack>
       </form>
+
+      <AppModal
+        centered
+        opened={deleteModalOpened}
+        title={t('Видалити автомобіль компанії')}
+        onClose={() => setDeleteModalOpened(false)}
+      >
+        <Stack gap="md">
+          <Text>
+            {t('Видалити автомобіль')} <Text span fw={600}>{form.carBrand || form.licensePlate || t('Без назви')}</Text>?
+          </Text>
+          <Group justify="flex-end">
+            <Button color="gray" disabled={isDeleting} variant="light" onClick={() => setDeleteModalOpened(false)}>
+              {t('Скасувати')}
+            </Button>
+            <Button color="red" leftSection={<Trash2 size={16} />} loading={isDeleting} onClick={handleDelete}>
+              {t('Видалити')}
+            </Button>
+          </Group>
+        </Stack>
+      </AppModal>
     </AppDrawer>
   )
 }

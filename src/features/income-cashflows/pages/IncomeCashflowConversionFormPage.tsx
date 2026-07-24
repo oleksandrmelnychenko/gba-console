@@ -370,7 +370,7 @@ export function IncomeCashflowConversionFormPage() {
         color: 'green',
         message: t('Прибутковий ордер створено'),
       })
-      navigate(INCOME_CASHFLOWS_PATH, { replace: true })
+      navigate(INCOME_CASHFLOWS_PATH, { replace: true, state: { mutated: true } })
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : t('Не вдалося створити прибутковий ордер'))
     } finally {

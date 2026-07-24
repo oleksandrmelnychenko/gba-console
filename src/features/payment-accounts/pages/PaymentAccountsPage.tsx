@@ -18,6 +18,7 @@ import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { useMutatedListRefresh } from '../../../shared/router/useMutatedListRefresh'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -61,6 +62,8 @@ export function PaymentAccountsPage() {
   const [isLoading, setLoading] = useValueState(true)
   const [isLoadingLookups, setLoadingLookups] = useValueState(true)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+
+  useMutatedListRefresh(reload)
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const normalizedSearchValue = debouncedSearchValue.trim()
   const isSearchSettling = searchValue.trim() !== normalizedSearchValue

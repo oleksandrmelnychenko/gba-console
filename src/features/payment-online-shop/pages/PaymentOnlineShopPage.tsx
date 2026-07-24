@@ -180,6 +180,9 @@ function usePaymentOnlineShopModel() {
       setSelectedItem(nextSelectedItem)
       setItems((current) => replacePaymentShopItem(current, nextSelectedItem))
       setEditItem(null)
+      // Сервер перераховує підсумки — локального патча рядка недостатньо
+      // (create-гілка вже робить reload, вирівнюємо поведінку).
+      reload()
     } catch (saveError) {
       setEditError(saveError instanceof Error ? saveError.message : t('Не вдалося виконати запит'))
     } finally {

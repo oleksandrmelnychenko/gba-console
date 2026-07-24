@@ -6,6 +6,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { useMutatedListRefresh } from '../../../shared/router/useMutatedListRefresh'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -67,6 +68,8 @@ function useCurrencyConvertorsPageModel() {
   const [editingRate, setEditingRate] = useValueState<CurrencyTraderExchangeRate | null>(null)
   const [editingValue, setEditingValue] = useValueState('')
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+
+  useMutatedListRefresh(reload)
   const ratesRequestRef = useRef(0)
   const visibleTraders = useMemo(
     () => filterCurrencyTraders(traders, searchValue),

@@ -17,6 +17,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { PermissionGate } from '../../auth/components/PermissionGate'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { useMutatedListRefresh } from '../../../shared/router/useMutatedListRefresh'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
@@ -152,6 +153,8 @@ export function SupplierOrganizationsPage() {
 
     return () => window.clearTimeout(timeoutId)
   }, [loadOrganizationsPage])
+
+  useMutatedListRefresh(loadOrganizationsPage)
 
   async function reloadOrganizations() {
     await loadOrganizationsPage()

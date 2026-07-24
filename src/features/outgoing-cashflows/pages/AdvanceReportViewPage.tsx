@@ -360,7 +360,7 @@ function useAdvanceReportViewModel() {
           hasLocalChanges: false,
         }))
         notifications.show({ color: 'green', message: t('Оновлення видаткового ордера') })
-        navigate(returnPath, { replace: true })
+        navigate(returnPath, { replace: true, state: { mutated: true } })
       } catch (saveError) {
         setViewState((current) => ({
           ...current,
@@ -399,7 +399,7 @@ function useAdvanceReportViewModel() {
         hasLocalChanges: false,
       }))
       notifications.show({ color: 'green', message: t('Оновлення видаткового ордера') })
-      navigate(returnPath, { replace: true })
+      navigate(returnPath, { replace: true, state: { mutated: true } })
     } catch (saveError) {
       setViewState((current) => ({
         ...current,

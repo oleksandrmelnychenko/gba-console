@@ -21,6 +21,7 @@ import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { useMutatedListRefresh } from '../../../shared/router/useMutatedListRefresh'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
@@ -318,6 +319,10 @@ function useIncomeCashflowsPageModel(): IncomeCashflowsPageModel {
   useEffect(() => {
     void loadIncomeOrders(page)
   }, [loadIncomeOrders, page])
+
+  useMutatedListRefresh(useCallback(() => {
+    void loadIncomeOrders(page)
+  }, [loadIncomeOrders, page]))
 
   useEffect(() => {
     if (

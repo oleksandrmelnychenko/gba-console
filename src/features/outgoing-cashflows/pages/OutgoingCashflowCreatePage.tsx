@@ -63,7 +63,7 @@ export function OutgoingCashflowCreatePage() {
       color: 'green',
       message: t('Створення нового видаткового ордера'),
     })
-    navigate(OUTGOING_CASHFLOWS_PATH, { replace: true })
+    navigate(OUTGOING_CASHFLOWS_PATH, { replace: true, state: { mutated: true } })
   }
 
   function renderActiveForm(nextMode: OutgoingCreateMode) {

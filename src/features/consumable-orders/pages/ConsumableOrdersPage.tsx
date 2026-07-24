@@ -18,6 +18,7 @@ import { useLocation, useNavigate, type Location, type NavigateFunction } from '
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { useMutatedListRefresh } from '../../../shared/router/useMutatedListRefresh'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -136,6 +137,8 @@ export function ConsumableOrdersPage() {
   useEffect(() => {
     void loadOrders()
   }, [loadOrders])
+
+  useMutatedListRefresh(loadOrders)
 
   const uniqueOrders = useMemo(
     () => deduplicateConsumableOrdersByIdentity(orders),

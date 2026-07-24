@@ -54,6 +54,13 @@ export async function updateCurrencyTrader(payload: CurrencyTraderPayload): Prom
   return normalizeCurrencyTrader(result)
 }
 
+export async function deleteCurrencyTrader(netId: string): Promise<void> {
+  await apiRequest<unknown>('/currencies/traders/delete', {
+    method: 'DELETE',
+    query: { netId },
+  })
+}
+
 function normalizeCurrencyTraders(result: unknown): CurrencyTrader[] {
   if (Array.isArray(result)) {
     return result.map(ensureCurrencyTrader)

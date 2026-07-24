@@ -18,7 +18,7 @@ import {
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { ArrowLeft, ArrowLeftRight, CircleAlert, Pencil, RefreshCw, Save, Trash2, X } from 'lucide-react'
-import { type FormEvent, type ReactNode, useEffect, useMemo, useReducer } from 'react'
+import { type FormEvent, type ReactNode, useEffect, useMemo, useReducer, useRef } from 'react'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -266,6 +266,9 @@ export function PaymentAccountFormPage() {
   const [pageState, dispatchPageState] = useReducer(pageStateReducer, true, createInitialPageState)
   const [isEditing, setEditing] = useValueState(!isEditMode)
   const [isSaving, setSaving] = useValueState(false)
+  // Створення редіректить у edit-оверлей, тож список дізнається про мутацію
+  // лише при фінальному закритті — прапорець переживає цей проміжок.
+  const hasMutatedRef = useRef(false)
   const [isDeleting, setDeleting] = useValueState(false)
   const [deleteModalOpened, setDeleteModalOpened] = useValueState(false)
   const { account, banks, currencyDrafts, error, form, hiddenCurrencyRegisters, isLoading, organizations } = pageState
@@ -397,7 +400,7 @@ export function PaymentAccountFormPage() {
       return
     }
 
-    navigate(returnPath, { replace: true })
+    navigate(returnPath, { replace: true, state: hasMutatedRef.current ? { mutated: true } : null })
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -433,7 +436,11 @@ export function PaymentAccountFormPage() {
         color: 'green',
         message: isEditMode ? t('Рахунок оновлено') : t('Рахунок створено'),
       })
-      navigate(isEditMode || !nextAccount.NetUid ? returnPath : `${ACCOUNTS_PATH}/edit/${nextAccount.NetUid}`, { replace: true })
+      hasMutatedRef.current = true
+      navigate(
+        isEditMode || !nextAccount.NetUid ? returnPath : `${ACCOUNTS_PATH}/edit/${nextAccount.NetUid}`,
+        { replace: true, state: isEditMode || !nextAccount.NetUid ? { mutated: true } : undefined },
+      )
     } catch (saveError) {
       dispatchPageState({
         error: saveError instanceof Error ? saveError.message : t('Не вдалося зберегти рахунок'),
@@ -456,7 +463,7 @@ export function PaymentAccountFormPage() {
     try {
       await deletePaymentAccount(netId)
       notifications.show({ color: 'green', message: t('Рахунок видалено') })
-      navigate(returnPath, { replace: true })
+      navigate(returnPath, { replace: true, state: { mutated: true } })
     } catch (deleteError) {
       dispatchPageState({
         error: deleteError instanceof Error ? deleteError.message : t('Не вдалося видалити рахунок'),

@@ -224,7 +224,7 @@ export function ConsumableStorageFormPage() {
         color: 'green',
         message: isEditMode ? t('Склад оновлено') : t('Склад створено'),
       })
-      navigate(returnPath, { replace: true })
+      navigate(returnPath, { replace: true, state: { mutated: true } })
     } catch (saveError) {
       dispatchPageState({
         error: saveError instanceof Error ? saveError.message : t('Не вдалося зберегти склад'),

@@ -20,6 +20,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { useMutatedListRefresh } from '../../../shared/router/useMutatedListRefresh'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
@@ -99,6 +100,8 @@ export function AdvancedReportsPage() {
   const [structureCalculationError, setStructureCalculationError] = useValueState<string | null>(null)
   const [isCalculatingStructure, setCalculatingStructure] = useValueState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+
+  useMutatedListRefresh(reload)
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const [debouncedSearchValue] = useDebouncedValue(searchValue, SEARCH_DEBOUNCE_MS)
   const normalizedSearchValue = debouncedSearchValue.trim()
