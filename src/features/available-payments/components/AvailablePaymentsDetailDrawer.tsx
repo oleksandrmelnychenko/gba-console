@@ -10,7 +10,6 @@ import {
   Group,
   Loader,
   NumberInput,
-  SegmentedControl,
   Select,
   SimpleGrid,
   Stack,
@@ -927,7 +926,32 @@ function AvailablePaymentsDetailDrawerView({ model }: { model: AvailablePayments
   } = model
 
   return (
-    <AppDrawer opened={Boolean(group) || outcomeModels.length > 0} position="right" size="80vw" title={title} onClose={requestDrawerClose}>
+    <AppDrawer
+      opened={Boolean(group) || outcomeModels.length > 0}
+      position="right"
+      size="80vw"
+      title={<span style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{title}</span>}
+      onClose={requestDrawerClose}
+      footer={
+        outcomeModels.length > 0 ? (
+          <Group gap="xs">
+            <Button color="gray" disabled={isSaving} type="button" variant="light" onClick={closeOutcomeForm}>
+              {t('Скасувати')}
+            </Button>
+            <Button
+              color={CREATE_ACTION_COLOR}
+              disabled={isLoadingDictionaries}
+              form="available-payment-outcome-form"
+              leftSection={<Save size={16} />}
+              loading={isSaving}
+              type="submit"
+            >
+              {t('Створити')}
+            </Button>
+          </Group>
+        ) : null
+      }
+    >
       <Stack gap="md">
         {error && (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
@@ -980,7 +1004,6 @@ function AvailablePaymentsDetailDrawerView({ model }: { model: AvailablePayments
             selectedMovement={selectedMovement}
             selectedOrganization={selectedOrganization}
             selectedRegister={selectedRegister}
-            onCancel={closeOutcomeForm}
             onCreateMovement={handleCreateMovement}
             onMovementSearchChange={handleMovementSearchChange}
             onSubmit={handleCreateOutcome}
@@ -1194,11 +1217,24 @@ function AvailablePaymentTaskList({
                   borderRadius: '0 0 8px 8px',
                 }}
               >
-                <SegmentedControl
-                  data={tabs.map((tab) => ({ label: getTaskDetailTabLabel(tab, t), value: tab }))}
-                  value={activeTab}
-                  onChange={(value) => void onCashFlowTab(model, value)}
-                />
+                <div
+                  aria-label={t('Розділи платіжної задачі')}
+                  className="pill-tabs"
+                  role="tablist"
+                >
+                  {tabs.map((tab) => (
+                    <button
+                      key={tab}
+                      aria-selected={activeTab === tab}
+                      className={`pill-tab${activeTab === tab ? ' is-active' : ''}`}
+                      role="tab"
+                      type="button"
+                      onClick={() => void onCashFlowTab(model, tab)}
+                    >
+                      {getTaskDetailTabLabel(tab, t)}
+                    </button>
+                  ))}
+                </div>
 
                 {model.isUnsupported && (
                   <Alert color="orange" icon={<CircleAlert size={18} />} variant="light">
@@ -1288,7 +1324,6 @@ function AvailablePaymentOutcomeForm({
   selectedMovement,
   selectedOrganization,
   selectedRegister,
-  onCancel,
   onCreateMovement,
   onMovementSearchChange,
   onSubmit,
@@ -1304,7 +1339,6 @@ function AvailablePaymentOutcomeForm({
   selectedMovement: AvailablePaymentMovement | null
   selectedOrganization: AvailablePaymentsOrganization | null
   selectedRegister: AvailablePaymentRegister | null
-  onCancel: () => void
   onCreateMovement: () => void
   onMovementSearchChange: (value: string) => void
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
@@ -1327,10 +1361,12 @@ function AvailablePaymentOutcomeForm({
     (selectedRegister?.PaymentCurrencyRegisters || []).find((currencyRegister) => getEntityValue(currencyRegister) === form.selectedCurrencyValue) || null
 
   return (
-    <form onSubmit={onSubmit}>
+    <form id="available-payment-outcome-form" onSubmit={onSubmit}>
       <Stack gap="md" p="md" style={{ border: '1px solid var(--mantine-color-gray-3)', borderRadius: 8 }}>
         <Group justify="space-between">
-          <Text fw={700}>{t('Новий видатковий ордер')}</Text>
+          <Text className="app-section-title" fw={600}>
+            {t('Новий видатковий ордер')}
+          </Text>
           <Badge variant="light">{outcomeModels.length}</Badge>
         </Group>
 
@@ -1530,14 +1566,6 @@ function AvailablePaymentOutcomeForm({
               />
             </Group>
 
-            <Group justify="flex-end">
-              <Button color="gray" disabled={isSaving} type="button" variant="light" onClick={onCancel}>
-                {t('Скасувати')}
-              </Button>
-              <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSaving} type="submit">
-                {t('Створити')}
-              </Button>
-            </Group>
           </>
         )}
       </Stack>
