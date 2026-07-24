@@ -6,10 +6,11 @@ import type { KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useAuth } from '../../../auth/useAuth'
-import { getCurrentSaleCart, getSaleById } from '../../api/salesUkraineApi'
+import { addOrderItem, getCurrentSaleCart, getSaleById } from '../../api/salesUkraineApi'
 import { getSalesPendingMutationUserKey } from '../../pendingSalesMutationRegistry'
 import type { Client } from '../../../clients/types'
-import type { SaleDocumentResult, SalesUkraineSale } from '../../types'
+import { createWizardOperationId } from './wizardMutationOperation'
+import type { SaleDocumentResult, SalesUkraineProduct, SalesUkraineSale } from '../../types'
 import { NewSaleClientStep } from './NewSaleClientStep'
 import { NewSaleProductsStep } from './NewSaleProductsStep'
 import { NewSaleReviewStep } from './NewSaleReviewStep'
@@ -67,9 +68,15 @@ function getWizardRequestErrorMessage(error: unknown, fallback: string): string 
   return fallback
 }
 
+export type NewSaleWizardPrefill = {
+  clientNetId: string
+  products?: SalesUkraineProduct[]
+}
+
 export function NewSaleWizard({
   opened,
   editSale,
+  prefill,
   onClose,
   onCreated,
 }: {
@@ -77,6 +84,7 @@ export function NewSaleWizard({
   onClose: () => void
   onCreated: () => void
   opened: boolean
+  prefill?: NewSaleWizardPrefill | null
 }) {
   const { t } = useI18n()
   const { session } = useAuth()
@@ -321,6 +329,7 @@ export function NewSaleWizard({
         {opened && splitRecoveryStatus === 'ready' && (
           <NewSaleWizardContent
             initialSale={editSale ?? null}
+            prefill={prefill ?? null}
             onBusyChange={handleContentBusyChange}
             onClose={onClose}
             onCreated={onCreated}
@@ -400,6 +409,7 @@ function WizardKeyboardStateLabel() {
 
 function NewSaleWizardContent({
   initialSale,
+  prefill,
   onBusyChange,
   onClose,
   onCreated,
@@ -407,6 +417,7 @@ function NewSaleWizardContent({
   onVatDocuments,
 }: {
   initialSale?: SalesUkraineSale | null
+  prefill?: NewSaleWizardPrefill | null
   onBusyChange: (busy: boolean) => void
   onClose: () => void
   onCreated: () => void
@@ -554,6 +565,109 @@ function NewSaleWizardContent({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Opened with a prefill (e.g. client-card recommendations): seed only clientNetId — the
+  // client step bootstrap fetches the client and auto-selects the active agreement itself.
+  const prefillStartedRef = useRef(false)
+  const prefillCartAppliedRef = useRef(false)
+
+  useEffect(() => {
+    if (!initialSale && prefill?.clientNetId && !prefillStartedRef.current) {
+      prefillStartedRef.current = true
+      const seeded = { ...NEW_SALE_WIZARD_INITIAL, clientNetId: prefill.clientNetId }
+      stateRef.current = seeded
+      setState(seeded)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    if (!prefillStartedRef.current || prefillCartAppliedRef.current) {
+      return
+    }
+
+    const products = (prefill?.products ?? []).filter((product) => (product.Id ?? 0) > 0 && product.NetUid)
+
+    // Seed only while the wizard is still on the prefilled client — if the user picked
+    // another client/agreement before the bootstrap resolved, do nothing.
+    if (!prefill?.clientNetId || state.clientNetId !== prefill.clientNetId) {
+      return
+    }
+
+    if (!state.agreementNetId || !products.length) {
+      return
+    }
+
+    prefillCartAppliedRef.current = true
+    void seedPrefillCart(state.agreementNetId, products)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.agreementNetId, state.clientNetId])
+
+  async function seedPrefillCart(agreementNetId: string, products: SalesUkraineProduct[]) {
+    const isCurrentTarget = () =>
+      stateRef.current.agreementNetId === agreementNetId &&
+      stateRef.current.clientNetId === prefill?.clientNetId
+    const failedCodes: string[] = []
+
+    setBusy(true)
+
+    try {
+      let sale = await getCurrentSaleCart(agreementNetId)
+      // The draft cart persists between wizard openings — skip products already in it
+      // so reopening with the same selection does not duplicate order lines.
+      const cartProductNetUids = new Set(
+        (sale?.Order?.OrderItems ?? [])
+          .filter((item) => !item.Deleted && item.Product?.NetUid)
+          .map((item) => item.Product?.NetUid?.toLowerCase() || ''),
+      )
+
+      for (const product of products) {
+        if (!isCurrentTarget()) {
+          return
+        }
+
+        const productNetUid = product.NetUid?.toLowerCase() || ''
+
+        if (!productNetUid || cartProductNetUids.has(productNetUid)) {
+          continue
+        }
+
+        try {
+          await addOrderItem(
+            agreementNetId,
+            sale?.NetUid ?? EMPTY_GUID,
+            { Deleted: false, Id: 0, NetUid: EMPTY_GUID, Product: product, Qty: 1 },
+            { operationId: createWizardOperationId() },
+          )
+          cartProductNetUids.add(productNetUid)
+        } catch {
+          failedCodes.push(product.VendorCode || productNetUid)
+        }
+
+        if (!sale?.NetUid) {
+          sale = await getCurrentSaleCart(agreementNetId)
+        }
+      }
+    } catch (seedError) {
+      notifications.show({
+        color: 'red',
+        message: seedError instanceof Error ? t(seedError.message) : t('Не вдалося додати товар'),
+      })
+    } finally {
+      setBusy(false)
+    }
+
+    if (failedCodes.length) {
+      notifications.show({
+        color: 'red',
+        message: `${t('Не вдалося додати товар')}: ${failedCodes.join(', ')}`,
+      })
+    }
+
+    if (isCurrentTarget()) {
+      await goToProducts()
+    }
+  }
 
   useLayoutEffect(() => {
     onBusyChange(shellBusy)

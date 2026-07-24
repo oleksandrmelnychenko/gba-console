@@ -11,4 +11,12 @@ export type RecommendationProduct = {
   Image?: string
   HasImage?: boolean
   IsSelected?: boolean
+  AvailableQtyUk?: number
+  AvailableQtyUkVAT?: number
+  AvailableQtyUkReSale?: number
+  CurrentPrice?: number
+  CurrentPriceEurToUah?: number
+  RecommendationRank?: number
+  RecommendationScore?: number
+  RecommendationSource?: string
 }

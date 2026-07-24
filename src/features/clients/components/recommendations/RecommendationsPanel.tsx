@@ -1,11 +1,13 @@
 import {
   ActionIcon,
   Alert,
+  Badge,
   Box,
+  Button,
   Card,
+  Checkbox,
   Group,
   Image,
-  SegmentedControl,
   SimpleGrid,
   Stack,
   Table,
@@ -14,12 +16,18 @@ import {
   Title,
   Tooltip,
 } from '@mantine/core'
-import { CircleAlert, Image as ImageIcon, LayoutGrid, List } from 'lucide-react'
+import { CircleAlert, Image as ImageIcon, LayoutGrid, List, ShoppingCart } from 'lucide-react'
 import { useEffect, useReducer, useState } from 'react'
 import { AiFeatureBadge } from '../../../../shared/ai/AiFeatureBadge'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { toProxiedAssetUrl } from '../../../../shared/url/proxiedAssetUrl'
 import { AppModal } from '../../../../shared/ui/AppModal'
+import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
+import { useAuth } from '../../../auth/useAuth'
+import { SALES_UKRAINE_EDIT_PERMISSION } from '../../../sales-ukraine/permissions'
+import { NewSaleWizard, type NewSaleWizardPrefill } from '../../../sales-ukraine/components/new-sale-wizard/NewSaleWizard'
+import { getWizardClientAgreements } from '../../../sales-ukraine/components/new-sale-wizard/wizardClientStepApi'
+import type { SalesUkraineProduct } from '../../../sales-ukraine/types'
 import {
   getMostPurchasedProductsByClientId,
   getProductById,
@@ -37,7 +45,6 @@ type RecommendationsPanelProps = {
 
 type RecommendationsState = {
   error: string | null
-  isByRegion: boolean
   isGrid: boolean
   isLoading: boolean
   previewProduct: RecommendationProduct | null
@@ -51,12 +58,10 @@ type RecommendationsAction =
   | { type: 'loadedProductRecommendations'; products: RecommendationProduct[]; selectedProduct: RecommendationProduct | null }
   | { type: 'loading' }
   | { type: 'previewProduct'; product: RecommendationProduct | null }
-  | { type: 'setByRegion'; value: boolean }
   | { type: 'toggleGrid' }
 
 const initialRecommendationsState: RecommendationsState = {
   error: null,
-  isByRegion: false,
   isGrid: false,
   isLoading: true,
   previewProduct: null,
@@ -94,8 +99,6 @@ function recommendationsReducer(state: RecommendationsState, action: Recommendat
       return { ...state, error: null, isLoading: true }
     case 'previewProduct':
       return { ...state, previewProduct: action.product }
-    case 'setByRegion':
-      return { ...state, isByRegion: action.value }
     case 'toggleGrid':
       return { ...state, isGrid: !state.isGrid }
   }
@@ -103,14 +106,59 @@ function recommendationsReducer(state: RecommendationsState, action: Recommendat
 
 export function RecommendationsPanel({ client, productNetId }: RecommendationsPanelProps) {
   const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const [state, dispatch] = useReducer(recommendationsReducer, initialRecommendationsState)
-  const { error, isByRegion, isGrid, isLoading, previewProduct, products, selectedProduct } = state
+  const { error, isGrid, isLoading, previewProduct, products, selectedProduct } = state
+  const [agreementNetId, setAgreementNetId] = useState<string | null>(null)
+  const [agreementResolved, setAgreementResolved] = useState(false)
+  const [selectedKeys, setSelectedKeys] = useState<ReadonlySet<string>>(new Set())
+  const [wizardPrefill, setWizardPrefill] = useState<NewSaleWizardPrefill | null>(null)
 
   const clientNetId = client.NetUid || ''
+  const canCreateSale = hasPermission(SALES_UKRAINE_EDIT_PERMISSION)
+  const selectedCount = selectedKeys.size
 
   useEffect(() => {
     let cancelled = false
+
+    async function resolveAgreement() {
+      setAgreementResolved(false)
+      setAgreementNetId(null)
+
+      try {
+        const agreements = clientNetId ? await getWizardClientAgreements(clientNetId) : []
+        const active = agreements.find((item) => item.Agreement?.IsActive) ?? agreements[0]
+
+        if (!cancelled) {
+          setAgreementNetId(active?.NetUid || null)
+        }
+      } catch {
+        /* Recommendations still load without agreement pricing/availability. */
+      } finally {
+        if (!cancelled) {
+          setAgreementResolved(true)
+        }
+      }
+    }
+
+    void resolveAgreement()
+
+    return () => {
+      cancelled = true
+    }
+  }, [clientNetId])
+
+  useEffect(() => {
+    if (!agreementResolved) {
+      return
+    }
+
+    let cancelled = false
     const controller = new AbortController()
+    const options = {
+      signal: controller.signal,
+      ...(agreementNetId ? { clientAgreementNetId: agreementNetId } : {}),
+    }
 
     async function loadProducts() {
       dispatch({ type: 'loading' })
@@ -119,14 +167,14 @@ export function RecommendationsPanel({ client, productNetId }: RecommendationsPa
         if (productNetId) {
           const [product, coPurchase] = await Promise.all([
             getProductById(productNetId, controller.signal),
-            getProductCoPurchaseRecommendations(productNetId, clientNetId, isByRegion, { signal: controller.signal }),
+            getProductCoPurchaseRecommendations(productNetId, clientNetId, false, options),
           ])
 
           if (!cancelled) {
             dispatch({ products: coPurchase, selectedProduct: product, type: 'loadedProductRecommendations' })
           }
         } else {
-          const mostPurchased = await getMostPurchasedProductsByClientId(clientNetId, isByRegion, { signal: controller.signal })
+          const mostPurchased = await getMostPurchasedProductsByClientId(clientNetId, false, options)
 
           if (!cancelled) {
             dispatch({ products: mostPurchased, type: 'loadedMostPurchased' })
@@ -152,7 +200,42 @@ export function RecommendationsPanel({ client, productNetId }: RecommendationsPa
       cancelled = true
       controller.abort()
     }
-  }, [clientNetId, isByRegion, productNetId, t])
+  }, [agreementNetId, agreementResolved, clientNetId, productNetId, t])
+
+  useEffect(() => {
+    setSelectedKeys(new Set())
+  }, [products])
+
+  function toggleSelected(product: RecommendationProduct, index: number) {
+    const key = getProductKey(product, index)
+
+    setSelectedKeys((current) => {
+      const next = new Set(current)
+
+      if (next.has(key)) {
+        next.delete(key)
+      } else {
+        next.add(key)
+      }
+
+      return next
+    })
+  }
+
+  function openSaleWizard() {
+    if (!clientNetId) {
+      return
+    }
+
+    const chosen = products
+      .filter((product, index) => selectedKeys.has(getProductKey(product, index)))
+      .filter((product) => (product.Id ?? 0) > 0 && product.NetUid)
+
+    setWizardPrefill({
+      clientNetId,
+      products: chosen as unknown as SalesUkraineProduct[],
+    })
+  }
 
   return (
     <Stack gap="md" pos="relative">
@@ -168,14 +251,18 @@ export function RecommendationsPanel({ client, productNetId }: RecommendationsPa
             </Group>
 
             <Group gap="sm">
-              <SegmentedControl
-                data={[
-                  { value: 'sales', label: t('За продажами') },
-                  { value: 'region', label: t('За регіоном') },
-                ]}
-                value={isByRegion ? 'region' : 'sales'}
-                onChange={(value) => dispatch({ type: 'setByRegion', value: value === 'region' })}
-              />
+              {canCreateSale && (
+                <Button
+                  color={CREATE_ACTION_COLOR}
+                  disabled={isLoading || !clientNetId}
+                  leftSection={<ShoppingCart size={16} />}
+                  size="sm"
+                  variant="filled"
+                  onClick={openSaleWizard}
+                >
+                  {selectedCount > 0 ? `${t('Утворити продажу')} (${selectedCount})` : t('Утворити продажу')}
+                </Button>
+              )}
               <Tooltip label={isGrid ? t('Список') : t('Таблиця')}>
                 <ActionIcon color="gray" variant="light" onClick={() => dispatch({ type: 'toggleGrid' })}>
                   {isGrid ? <List size={18} /> : <LayoutGrid size={18} />}
@@ -195,12 +282,28 @@ export function RecommendationsPanel({ client, productNetId }: RecommendationsPa
           ) : selectedProduct ? (
             <SelectedProductCard product={selectedProduct} onPreview={() => dispatch({ product: selectedProduct, type: 'previewProduct' })} />
           ) : (
-            <RecommendationsList isGrid={isGrid} products={products} onPreview={(product) => dispatch({ product, type: 'previewProduct' })} />
+            <RecommendationsList
+              isGrid={isGrid}
+              products={products}
+              selectable={canCreateSale}
+              selectedKeys={selectedKeys}
+              onPreview={(product) => dispatch({ product, type: 'previewProduct' })}
+              onToggleSelect={toggleSelected}
+            />
           )}
         </Stack>
       </Card>
 
       <ProductImagePreviewModal product={previewProduct} onClose={() => dispatch({ product: null, type: 'previewProduct' })} />
+
+      {canCreateSale && (
+        <NewSaleWizard
+          opened={Boolean(wizardPrefill)}
+          prefill={wizardPrefill}
+          onClose={() => setWizardPrefill(null)}
+          onCreated={() => setWizardPrefill(null)}
+        />
+      )}
     </Stack>
   )
 }
@@ -225,11 +328,17 @@ function SelectedProductCard({
 function RecommendationsList({
   isGrid,
   products,
+  selectable,
+  selectedKeys,
   onPreview,
+  onToggleSelect,
 }: {
   isGrid: boolean
   products: RecommendationProduct[]
+  selectable: boolean
+  selectedKeys: ReadonlySet<string>
   onPreview: (product: RecommendationProduct) => void
+  onToggleSelect: (product: RecommendationProduct, index: number) => void
 }) {
   const { t } = useI18n()
 
@@ -246,20 +355,36 @@ function RecommendationsList({
       <Table striped highlightOnHover withTableBorder withColumnBorders>
         <Table.Thead>
           <Table.Tr>
+            {selectable && <Table.Th w={40} />}
             <Table.Th>{t('Артикул')}</Table.Th>
             <Table.Th>{t('Назва')}</Table.Th>
             <Table.Th>{t('Оригінальний номер')}</Table.Th>
-            <Table.Th>{t('Розмір')}</Table.Th>
+            <Table.Th>{t('Тип')}</Table.Th>
+            <Table.Th>{t('Ціна')}</Table.Th>
+            <Table.Th>{t('Наявність')}</Table.Th>
             <Table.Th>{t('Опис')}</Table.Th>
           </Table.Tr>
         </Table.Thead>
         <Table.Tbody>
           {products.map((product, index) => (
             <Table.Tr key={getProductKey(product, index)}>
+              {selectable && (
+                <Table.Td>
+                  <Checkbox
+                    aria-label={t('Вибрати товар')}
+                    checked={selectedKeys.has(getProductKey(product, index))}
+                    onChange={() => onToggleSelect(product, index)}
+                  />
+                </Table.Td>
+              )}
               <Table.Td>{displayValue(product.VendorCode)}</Table.Td>
               <Table.Td>{displayValue(product.Name)}</Table.Td>
               <Table.Td>{displayValue(product.MainOriginalNumber)}</Table.Td>
-              <Table.Td>{displayValue(product.Size)}</Table.Td>
+              <Table.Td>
+                <RecommendationSourceBadge product={product} />
+              </Table.Td>
+              <Table.Td>{formatPrice(product)}</Table.Td>
+              <Table.Td>{formatAvailability(product)}</Table.Td>
               <Table.Td>{displayValue(product.Description)}</Table.Td>
             </Table.Tr>
           ))}
@@ -273,6 +398,16 @@ function RecommendationsList({
       {products.map((product, index) => (
         <Card key={getProductKey(product, index)} className="app-section-card" withBorder radius="md" padding="md">
           <Stack gap="sm">
+            <Group justify="space-between" align="center" gap="xs">
+              <RecommendationSourceBadge product={product} />
+              {selectable && (
+                <Checkbox
+                  aria-label={t('Вибрати товар')}
+                  checked={selectedKeys.has(getProductKey(product, index))}
+                  onChange={() => onToggleSelect(product, index)}
+                />
+              )}
+            </Group>
             <ProductImage product={product} height={220} onPreview={() => onPreview(product)} />
             <ProductFields product={product} />
           </Stack>
@@ -280,6 +415,32 @@ function RecommendationsList({
       ))}
     </SimpleGrid>
   )
+}
+
+function RecommendationSourceBadge({ product }: { product: RecommendationProduct }) {
+  const { t } = useI18n()
+
+  if (product.RecommendationSource === 'repurchase') {
+    return (
+      <Tooltip label={t('Клієнт регулярно купує цей товар')}>
+        <Badge color="blue" size="sm" variant="light">
+          {t('Повторна закупівля')}
+        </Badge>
+      </Tooltip>
+    )
+  }
+
+  if (product.RecommendationSource === 'discovery') {
+    return (
+      <Tooltip label={t('Схожі клієнти купують цей товар, а цей клієнт ще ні')}>
+        <Badge color="grape" size="sm" variant="light">
+          {t('Нове для клієнта')}
+        </Badge>
+      </Tooltip>
+    )
+  }
+
+  return <span />
 }
 
 function getRecommendationImageUrl(product?: RecommendationProduct | null): string {
@@ -346,6 +507,10 @@ function ProductImage({
 }
 
 function ProductFields({ product }: { product: RecommendationProduct }) {
+  const { t } = useI18n()
+  const price = formatPrice(product)
+  const availability = formatAvailability(product)
+
   return (
     <Stack gap={2}>
       <Text fw={700}>{displayValue(product.VendorCode)}</Text>
@@ -356,6 +521,20 @@ function ProductFields({ product }: { product: RecommendationProduct }) {
       <Text c="dimmed" size="sm">
         {displayValue(product.Size)}
       </Text>
+      {(price !== '-' || availability !== '-') && (
+        <Group gap="xs" mt={4}>
+          {price !== '-' && (
+            <Text fw={600} size="sm">
+              {price}
+            </Text>
+          )}
+          {availability !== '-' && (
+            <Text c={getAvailableQty(product) > 0 ? 'teal' : 'red'} size="sm">
+              {availability === '0' ? t('Немає в наявності') : `${availability} ${t('шт')}`}
+            </Text>
+          )}
+        </Group>
+      )}
       {product.Description && (
         <Text c="dimmed" size="xs">
           {product.Description}
@@ -363,6 +542,28 @@ function ProductFields({ product }: { product: RecommendationProduct }) {
       )}
     </Stack>
   )
+}
+
+function getAvailableQty(product: RecommendationProduct): number {
+  return (product.AvailableQtyUk ?? 0) + (product.AvailableQtyUkVAT ?? 0)
+}
+
+function formatAvailability(product: RecommendationProduct): string {
+  if (typeof product.AvailableQtyUk !== 'number' && typeof product.AvailableQtyUkVAT !== 'number') {
+    return '-'
+  }
+
+  return String(getAvailableQty(product))
+}
+
+function formatPrice(product: RecommendationProduct): string {
+  const price = product.CurrentPrice
+
+  if (typeof price !== 'number' || !Number.isFinite(price) || price <= 0) {
+    return '-'
+  }
+
+  return `€${price.toFixed(2)}`
 }
 
 function ProductImagePreviewModal({

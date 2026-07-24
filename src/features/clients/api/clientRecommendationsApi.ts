@@ -12,6 +12,9 @@ export async function getMostPurchasedProductsByClientId(
     query: {
       clientNetId,
       byRegion,
+      // Legacy clients read this route as a bare product list; the metadata wrapper
+      // ({Product, Score, Rank, Source}) is opt-in via includeMeta.
+      includeMeta: true,
       // With an agreement the server hydrates availability (AvailableQty* + rows),
       // so the sale wizard shows real quantities on recommendations.
       ...(options?.clientAgreementNetId ? { clientAgreementNetId: options.clientAgreementNetId } : {}),
@@ -32,6 +35,7 @@ export async function getProductCoPurchaseRecommendations(
     query: {
       clientNetId,
       byRegion,
+      includeMeta: true,
       // Empty productNetId must be omitted — the server binds it as Guid?.
       ...(productNetId ? { productNetId } : {}),
       ...(options?.clientAgreementNetId ? { clientAgreementNetId: options.clientAgreementNetId } : {}),
@@ -57,19 +61,31 @@ export async function getProductById(
 }
 
 function normalizeRecommendationProducts(result: unknown): RecommendationProduct[] {
-  if (Array.isArray(result)) {
-    return result as RecommendationProduct[]
-  }
+  const list = Array.isArray(result)
+    ? result
+    : (result && typeof result === 'object' && Array.isArray((result as { Items?: unknown }).Items)
+      ? (result as { Items: unknown[] }).Items
+      : [])
 
-  if (result && typeof result === 'object') {
-    const items = (result as { Items?: unknown }).Items
-
-    if (Array.isArray(items)) {
-      return items as RecommendationProduct[]
+  return list.map((entry) => {
+    const wrapper = entry as {
+      Product?: RecommendationProduct
+      Rank?: number
+      Score?: number
+      Source?: string
     }
-  }
 
-  return []
+    if (wrapper && typeof wrapper === 'object' && wrapper.Product && typeof wrapper.Product === 'object') {
+      return {
+        ...wrapper.Product,
+        RecommendationRank: wrapper.Rank,
+        RecommendationScore: wrapper.Score,
+        RecommendationSource: wrapper.Source,
+      }
+    }
+
+    return entry as RecommendationProduct
+  })
 }
 
 function normalizeRecommendationProduct(result: unknown): RecommendationProduct | null {
