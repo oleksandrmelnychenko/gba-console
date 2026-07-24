@@ -472,11 +472,7 @@ function SupplyReturnDetailDrawer({ model }: { model: ReturnType<typeof useSuppl
       opened={Boolean(selectedReturn)}
       position="right"
       size="min(920px, 100vw)"
-      title={
-        <span style={{ fontFamily: 'var(--font-mono)' }}>
-          {selectedReturn ? buildDrawerTitle(selectedReturn, t) : t('Повернення постачальнику')}
-        </span>
-      }
+      title={selectedReturn ? buildDrawerTitle(selectedReturn, t) : t('Повернення постачальнику')}
       onClose={closeDetail}
     >
       {selectedReturn && (
