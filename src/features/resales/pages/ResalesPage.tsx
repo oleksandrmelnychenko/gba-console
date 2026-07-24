@@ -936,7 +936,7 @@ export function NewResalePage() {
       opened
       position="right"
       size="min(1440px, 100vw)"
-      title={<span className="resales-drawer-title">{t('Новий перепродаж')}</span>}
+      title={t('Новий перепродаж')}
       onClose={closeSheet}
     >
       <Stack className="resales-new-sheet" gap={12}>
@@ -2552,13 +2552,20 @@ function ProcessSelectionConfirmDrawer({
 
   return (
     <AppDrawer
-      offset={8}
+      footer={
+        <Group gap="sm">
+          <Button color="gray" disabled={isSaving} variant="light" onClick={onClose}>
+            {t('Скасувати')}
+          </Button>
+          <Button disabled={!rows.length} loading={isSaving} onClick={onConfirm}>
+            {t('Підтвердити')}
+          </Button>
+        </Group>
+      }
       opened={opened}
-      padding="lg"
       position="right"
-      radius="md"
       size="min(980px, 94vw)"
-      title={<span className="resales-drawer-title">{t('Підтвердження обробки')}</span>}
+      title={t('Підтвердження обробки')}
       onClose={onClose}
     >
       <Stack gap="lg">
@@ -2590,14 +2597,6 @@ function ProcessSelectionConfirmDrawer({
           tableId="resale-process-confirm-selection"
         />
 
-        <Group justify="flex-end" gap="sm">
-          <Button color="gray" disabled={isSaving} variant="light" onClick={onClose}>
-            {t('Скасувати')}
-          </Button>
-          <Button disabled={!rows.length} loading={isSaving} onClick={onConfirm}>
-            {t('Підтвердити')}
-          </Button>
-        </Group>
       </Stack>
       <ProductCardModal productNetId={productCardNetId} onClose={() => setProductCardNetId(null)} />
     </AppDrawer>
@@ -2795,13 +2794,20 @@ function ResaleProcessDrawer({
 
   return (
     <AppDrawer
-      offset={8}
+      footer={
+        <Group>
+          <Button loading={isRecalculating} variant="outline" onClick={() => void recalculateRows()}>
+            {t('Перерахувати')}
+          </Button>
+          <Button disabled={isRecalculating || processForm.isDirty} loading={isSaving} onClick={create}>
+            {t('Створити')}
+          </Button>
+        </Group>
+      }
       opened={opened}
-      padding="lg"
       position="right"
-      radius="md"
       size="min(1180px, 96vw)"
-      title={<span className="resales-drawer-title">{t('Обробка перепродажу')}</span>}
+      title={t('Обробка перепродажу')}
       onClose={closeProcessDrawer}
     >
       <Stack gap="lg">
@@ -2863,7 +2869,15 @@ function ResaleProcessDrawer({
           value={processForm.comment}
           onChange={(event) => { const nextValue = event.currentTarget.value; setProcessForm((currentForm) => ({ ...currentForm, comment: nextValue })) }}
         />
-        <DetailValue label={t('Організація')} value={processForm.activeProcessData?.Organization?.Name || processForm.activeProcessData?.Organization?.FullName} />
+        <div className="app-detail-field">
+          <span>{t('Організація')}</span>
+          <strong>
+            {displayValue(
+              processForm.activeProcessData?.Organization?.Name
+              || processForm.activeProcessData?.Organization?.FullName,
+            )}
+          </strong>
+        </div>
         <TotalsCard
           items={[
             { label: t('Кількість'), value: formatAmount(totals.qty) },
@@ -2883,14 +2897,6 @@ function ResaleProcessDrawer({
           minWidth={1120}
           tableId="resale-process"
         />
-        <Group justify="flex-end">
-          <Button loading={isRecalculating} variant="outline" onClick={() => void recalculateRows()}>
-            {t('Перерахувати')}
-          </Button>
-          <Button disabled={isRecalculating || processForm.isDirty} loading={isSaving} onClick={create}>
-            {t('Створити')}
-          </Button>
-        </Group>
       </Stack>
       <ProductCardModal productNetId={productCardNetId} onClose={() => setProductCardNetId(null)} />
     </AppDrawer>
@@ -3231,13 +3237,28 @@ function ConsignmentNoteSettingsDrawer({
 
   return (
     <AppDrawer
-      offset={8}
+      footer={
+        <Group>
+          <Button color="gray" disabled={!noteState.isEdited || isSaving} variant="light" onClick={resetChanges}>
+            {t('Скасувати')}
+          </Button>
+          {hasExistingSetting && (
+            <Button color="red" disabled={isSaving || isPrinting} variant="light" onClick={deleteSetting}>
+              {t('Видалити')}
+            </Button>
+          )}
+          <Button disabled={!noteState.isEdited || isPrinting} loading={isSaving} variant="outline" onClick={saveSetting}>
+            {hasExistingSetting ? t('Зберегти') : t('Створити')}
+          </Button>
+          <Button leftSection={<Truck size={16} />} loading={isPrinting} onClick={printDocument}>
+            {t('Друк')}
+          </Button>
+        </Group>
+      }
       opened={opened}
-      padding="lg"
       position="right"
-      radius="md"
       size="min(760px, 96vw)"
-      title={<span className="resales-drawer-title">{t('Друк ТТН')}</span>}
+      title={t('Друк ТТН')}
       onClose={onClose}
     >
       <Stack gap="lg">
@@ -3361,22 +3382,6 @@ function ConsignmentNoteSettingsDrawer({
           </SimpleGrid>
         </Stack>
 
-        <Group justify="flex-end">
-          <Button color="gray" disabled={!noteState.isEdited || isSaving} variant="light" onClick={resetChanges}>
-            {t('Скасувати')}
-          </Button>
-          {hasExistingSetting && (
-            <Button color="red" disabled={isSaving || isPrinting} variant="light" onClick={deleteSetting}>
-              {t('Видалити')}
-            </Button>
-          )}
-          <Button disabled={!noteState.isEdited || isPrinting} loading={isSaving} variant="outline" onClick={saveSetting}>
-            {hasExistingSetting ? t('Зберегти') : t('Створити')}
-          </Button>
-          <Button leftSection={<Truck size={16} />} loading={isPrinting} onClick={printDocument}>
-            {t('Друк')}
-          </Button>
-        </Group>
       </Stack>
 
       <DownloadDocumentModal
