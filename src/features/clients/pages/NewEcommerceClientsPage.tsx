@@ -1,10 +1,12 @@
-import { ActionIcon, Alert, Badge, Stack, Text, Tooltip } from '@mantine/core'
-import { CircleAlert, RefreshCw } from 'lucide-react'
+import { ActionIcon, Alert, Badge, Stack, Text, TextInput, Tooltip } from '@mantine/core'
+import { CircleAlert, RotateCcw, Search } from 'lucide-react'
 import { useEffect, useMemo, useReducer, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { Paginator } from '../../../shared/ui/paginator/Paginator'
+import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
 import { getNewEcommerceClients } from '../api/ecommerceClientsApi'
 import type { Client } from '../types'
 import '../../../shared/ui/console-table-page.css'
@@ -31,9 +33,26 @@ export function NewEcommerceClientsPage() {
   const navigate = useNavigate()
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const [clients, setClients] = useState<Client[]>([])
+  const [searchValue, setSearchValue] = useState('')
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGINATOR_PAGE_SIZE)
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setLoading] = useState(true)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  const normalizedSearchValue = normalizeSearchValue(searchValue)
+  const filteredClients = useMemo(
+    () => normalizedSearchValue
+      ? clients.filter((client) => getClientSearchText(client).includes(normalizedSearchValue))
+      : clients,
+    [clients, normalizedSearchValue],
+  )
+  const totalPages = Math.max(1, Math.ceil(filteredClients.length / pageSize))
+  const currentPage = Math.min(page, totalPages)
+  const pageOffset = (currentPage - 1) * pageSize
+  const visibleClients = filteredClients.slice(pageOffset, pageOffset + pageSize)
+  const visibleFrom = filteredClients.length === 0 ? 0 : pageOffset + 1
+  const visibleTo = filteredClients.length === 0 ? 0 : pageOffset + visibleClients.length
+  const hasActiveSearch = Boolean(searchValue.trim())
 
   useEffect(() => {
     let cancelled = false
@@ -160,19 +179,49 @@ export function NewEcommerceClientsPage() {
     <Stack className="new-ecommerce-clients-page console-table-page" gap={6}>
       <div className="new-ecommerce-clients-card console-table-shell">
         <div className="app-filter-bar new-ecommerce-clients-filter-bar">
+          <TextInput
+            className="new-ecommerce-clients-search"
+            label={t('Пошук')}
+            leftSection={<Search size={16} />}
+            placeholder={t('ПІБ, телефон або email')}
+            value={searchValue}
+            onChange={(event) => {
+              setPage(1)
+              setSearchValue(event.currentTarget.value)
+            }}
+          />
+
           <div className="app-filter-actions">
-            <Tooltip label={t('Оновити')}>
+            <span className="console-table-summary">
+              {visibleFrom}-{visibleTo} / {filteredClients.length}
+            </span>
+            <Tooltip label={t('Скинути')}>
               <ActionIcon
-                aria-label={t('Оновити')}
+                aria-label={t('Скинути')}
                 color="gray"
-                loading={isLoading}
+                disabled={!hasActiveSearch}
                 size={34}
                 variant="light"
-                onClick={() => reload()}
+                onClick={() => {
+                  setSearchValue('')
+                  setPage(1)
+                }}
               >
-                <RefreshCw size={17} />
+                <RotateCcw size={17} />
               </ActionIcon>
             </Tooltip>
+            <Paginator
+              isLoading={isLoading}
+              page={currentPage}
+              pageSize={pageSize}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              onPageSizeChange={(nextPageSize) => {
+                setPage(1)
+                setPageSize(nextPageSize)
+              }}
+              onRefresh={reload}
+            />
           </div>
           <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot new-ecommerce-clients-table-toolbar-slot" />
         </div>
@@ -192,7 +241,7 @@ export function NewEcommerceClientsPage() {
           <DataTable
             key="new-ecommerce-clients-table-default-freeze-4"
             columns={columns}
-            data={clients}
+            data={visibleClients}
             defaultLayout={NEW_ECOMMERCE_CLIENTS_TABLE_DEFAULT_LAYOUT}
             distributeAvailableWidth
             emptyText={t('Нових e-commerce клієнтів не знайдено')}
@@ -257,6 +306,23 @@ function getClientDisplayName(client: Client): string {
 
 function getClientPhone(client: Client): string {
   return client.MobileNumber?.trim() || client.ClientNumber?.trim() || ''
+}
+
+function getClientSearchText(client: Client): string {
+  return normalizeSearchValue([
+    client.FullName,
+    client.Name,
+    client.FirstName,
+    client.LastName,
+    client.MiddleName,
+    getClientPhone(client),
+    client.EmailAddress,
+    client.ClientInRole?.ClientTypeRole?.Name,
+  ].filter(Boolean).join(' '))
+}
+
+function normalizeSearchValue(value: string): string {
+  return value.trim().toLocaleLowerCase('uk-UA')
 }
 
 function displayValue(value?: number | string | null): string {

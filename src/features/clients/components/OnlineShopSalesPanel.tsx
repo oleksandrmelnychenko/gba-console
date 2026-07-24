@@ -22,10 +22,11 @@ const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
 })
 
 type OnlineShopSalesPanelProps = {
+  constrainHeight?: boolean
   netUid: string
 }
 
-export function OnlineShopSalesPanel({ netUid }: OnlineShopSalesPanelProps) {
+export function OnlineShopSalesPanel({ constrainHeight = true, netUid }: OnlineShopSalesPanelProps) {
   const { t } = useI18n()
   const [sales, setSales] = useState<RetailSale[]>([])
   const [error, setError] = useState<string | null>(null)
@@ -104,7 +105,7 @@ export function OnlineShopSalesPanel({ netUid }: OnlineShopSalesPanelProps) {
         </Text>
       </Group>
 
-      <ScrollArea.Autosize mah="calc(100vh - 220px)" type="auto">
+      <ScrollArea.Autosize mah={constrainHeight ? 'calc(100vh - 220px)' : undefined} type="auto">
         <Stack gap="sm">
           {shopSales.length > 0 ? (
             shopSales.map((sale, index) => (

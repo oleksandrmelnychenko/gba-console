@@ -611,14 +611,10 @@ function SaleCarrierDetail({ sale }: { sale: Sale }) {
 
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
-    <Group justify="space-between" align="flex-start" wrap="nowrap">
-      <Text c="dimmed" size="sm">
-        {label}
-      </Text>
-      <Text fw={500} size="sm" ta="right">
-        {value}
-      </Text>
-    </Group>
+    <div className="app-detail-field">
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
   )
 }
 

@@ -183,9 +183,14 @@ export function ClientStructurePanel({ client, onChange }: ClientStructurePanelP
         </Alert>
       )}
 
-      <Card className="app-section-card" withBorder padding="md" radius="md">
-        <Stack gap="md">
-          <Group justify="flex-end" align="center">
+      <Card className="app-section-card client-structure-card" withBorder padding={0} radius="md">
+        <Tabs className="client-structure-tabs-root" defaultValue="subClients" keepMounted={false}>
+          <Tabs.List className="pill-tabs client-structure-tabs">
+            <Tabs.Tab value="subClients">{t('Субклієнти')}</Tabs.Tab>
+            <Tabs.Tab value="workplaces">{t('Робочі місця')}</Tabs.Tab>
+          </Tabs.List>
+
+          <Group className="client-structure-toolbar" justify="flex-end" align="center">
             <Tooltip label={t('Підгрупи')}>
               <ActionIcon
                 color="gray"
@@ -208,32 +213,25 @@ export function ClientStructurePanel({ client, onChange }: ClientStructurePanelP
             </Tooltip>
           </Group>
 
-          <Tabs defaultValue="subClients" keepMounted={false} radius="xl" variant="pills">
-            <Tabs.List justify="center">
-              <Tabs.Tab value="subClients">{t('Субклієнти')}</Tabs.Tab>
-              <Tabs.Tab value="workplaces">{t('Робочі місця')}</Tabs.Tab>
-            </Tabs.List>
+          <Tabs.Panel className="client-structure-panel" value="subClients">
+            <SubClientsPanel client={client} />
+          </Tabs.Panel>
 
-            <Tabs.Panel value="subClients" pt="md">
-              <SubClientsPanel client={client} />
-            </Tabs.Panel>
-
-            <Tabs.Panel value="workplaces" pt="md">
-              <WorkplacesPanel
-                client={client}
-                error={null}
-                groups={groups}
-                isLoading={isLoading}
-                isRemoving={isRemoving}
-                isSaving={isSaving}
-                workplaces={workplaces}
-                onCreate={(workplace) => void handleCreateWorkplace(workplace)}
-                onRemove={(workplace) => void handleRemoveWorkplace(workplace)}
-                onUpdate={(workplace) => void handleUpdateWorkplace(workplace)}
-              />
-            </Tabs.Panel>
-          </Tabs>
-        </Stack>
+          <Tabs.Panel className="client-structure-panel" value="workplaces">
+            <WorkplacesPanel
+              client={client}
+              error={null}
+              groups={groups}
+              isLoading={isLoading}
+              isRemoving={isRemoving}
+              isSaving={isSaving}
+              workplaces={workplaces}
+              onCreate={(workplace) => void handleCreateWorkplace(workplace)}
+              onRemove={(workplace) => void handleRemoveWorkplace(workplace)}
+              onUpdate={(workplace) => void handleUpdateWorkplace(workplace)}
+            />
+          </Tabs.Panel>
+        </Tabs>
       </Card>
 
       <Grid gap="lg">

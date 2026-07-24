@@ -622,7 +622,7 @@ export function ClientEditPage() {
             onToggleActive={(active) => setField('IsActive', active)}
             onTypeClick={() => setTypePanelOpened(true)}
           />
-        ) : undefined
+        ) : t('Редагування клієнта')
       }
       onClose={closeSheet}
       footer={

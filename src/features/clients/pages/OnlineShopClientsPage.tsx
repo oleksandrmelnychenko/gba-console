@@ -317,7 +317,7 @@ export function OnlineShopClientsPage() {
         title={t('Продажі')}
         onClose={() => setSalesOpen(false)}
       >
-        <OnlineShopSalesPanel netUid={selectedClientNetId} />
+        <OnlineShopSalesPanel constrainHeight={false} netUid={selectedClientNetId} />
       </AppDrawer>
     </Stack>
   )
