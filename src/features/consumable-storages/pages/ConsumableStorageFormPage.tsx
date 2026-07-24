@@ -238,7 +238,7 @@ export function ConsumableStorageFormPage() {
     <AppDrawer
       opened
       position="right"
-      size="standard"
+      size="compact"
       title={<span style={{ fontFamily: 'var(--font-mono)' }}>{isEditMode ? t('Редагування складу') : t('Новий склад')}</span>}
       onClose={handleCancel}
       footer={
