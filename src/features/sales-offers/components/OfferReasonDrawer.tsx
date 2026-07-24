@@ -10,6 +10,8 @@ import type { ClientShoppingCart, OfferOrderItem } from '../types'
 import { getItemNotProcessed } from './offerHelpers'
 import './offers-modal.css'
 
+const OFFER_REASON_FORM_ID = 'offer-reason-form'
+
 export function OfferReasonDrawer({
   offer,
   onClose,
@@ -22,39 +24,71 @@ export function OfferReasonDrawer({
   opened: boolean
 }) {
   const { t } = useI18n()
+  const [isSaving, setSaving] = useState(false)
+
+  function close() {
+    setSaving(false)
+    onClose()
+  }
 
   return (
     <AppDrawer
       className="offer-reason-drawer"
+      footer={
+        opened && offer ? (
+          <Group gap="sm" justify="flex-end">
+            <Button color="gray" disabled={isSaving} type="button" variant="subtle" onClick={close}>
+              {t('Скасувати')}
+            </Button>
+            <Button
+              color={CREATE_ACTION_COLOR}
+              form={OFFER_REASON_FORM_ID}
+              loading={isSaving}
+              type="submit"
+            >
+              {t('Зберегти')}
+            </Button>
+          </Group>
+        ) : undefined
+      }
       opened={opened}
       size="lg"
-      title={<span className="offer-reason-drawer__title">{offer ? `${t('Оферта')} ${offer.Number ?? ''}` : t('Причини')}</span>}
-      onClose={onClose}
+      title={offer ? `${t('Оферта')} ${offer.Number ?? ''}` : t('Причини')}
+      onClose={close}
     >
-      {opened && offer && <OfferReasonForm key={offer.NetUid} offer={offer} onClose={onClose} onSaved={onSaved} />}
+      {opened && offer && (
+        <OfferReasonForm
+          key={offer.NetUid}
+          isSaving={isSaving}
+          offer={offer}
+          onSaved={onSaved}
+          onSavingChange={setSaving}
+        />
+      )}
     </AppDrawer>
   )
 }
 
 function OfferReasonForm({
+  isSaving,
   offer,
-  onClose,
   onSaved,
+  onSavingChange,
 }: {
+  isSaving: boolean
   offer: ClientShoppingCart
-  onClose: () => void
   onSaved: () => void
+  onSavingChange: (value: boolean) => void
 }) {
   const { t } = useI18n()
   const notProcessedItems = (offer.OrderItems ?? []).filter((item) => getItemNotProcessed(item) > 0)
   const isSingleItem = (offer.OrderItems ?? []).length === 1
   const [offerComment, setOfferComment] = useState(offer.Comment ?? '')
   const [reasons, setReasons] = useState<Record<string, string>>(() => buildInitialReasons(notProcessedItems))
-  const [isSaving, setSaving] = useState(false)
   const [productCardNetId, setProductCardNetId] = useState<string | null>(null)
 
   async function save() {
-    setSaving(true)
+    onSavingChange(true)
 
     const payload: ClientShoppingCart = {
       ...offer,
@@ -72,86 +106,90 @@ function OfferReasonForm({
     } catch {
       notifications.show({ color: 'red', message: t('Не вдалося зберегти причини') })
     } finally {
-      setSaving(false)
+      onSavingChange(false)
     }
   }
 
   return (
-    <Stack gap="md">
-      {!isSingleItem && (
-        <Textarea
-          autosize
-          label={t('Коментар')}
-          minRows={2}
-          value={offerComment}
-          onChange={(event) => setOfferComment(event.currentTarget.value)}
-        />
-      )}
+    <>
+      <Stack
+        component="form"
+        gap="md"
+        id={OFFER_REASON_FORM_ID}
+        onSubmit={(event) => {
+          event.preventDefault()
 
-      <Text className="app-section-title">
-        {t('Неопрацьовані позиції')}
-      </Text>
-
-      {notProcessedItems.length === 0 && (
-        <Text c="dimmed" size="sm">
-          {t('Немає неопрацьованих позицій')}
-        </Text>
-      )}
-
-      {notProcessedItems.map((item) => (
-        <Stack key={item.NetUid} gap={4}>
-          <Group gap="xs" justify="space-between">
-            {item.Product?.NetUid ? (
-              <Anchor
-                className="offer-reason-product-link"
-                component="button"
-                type="button"
-                underline="always"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  setProductCardNetId(item.Product?.NetUid as string)
-                }}
-              >
-                {[item.Product?.VendorCode, item.Product?.Name].filter(Boolean).join(' ')}
-              </Anchor>
-            ) : (
-              <Text className="offer-reason-product-name">
-                {[item.Product?.VendorCode, item.Product?.Name].filter(Boolean).join(' ')}
-              </Text>
-            )}
-            <Group gap="xs">
-              <Badge className="app-role-pill is-gray" variant="light">
-                {t('Замовлено')}: {item.OrderedQty ?? 0}
-              </Badge>
-              <Badge className="app-role-pill is-orange" variant="light">
-                {t('Неопрацьовано')}: {getItemNotProcessed(item)}
-              </Badge>
-            </Group>
-          </Group>
+          if (!isSaving) {
+            void save()
+          }
+        }}
+      >
+        {!isSingleItem && (
           <Textarea
             autosize
-            label={t('Причина')}
-            minRows={1}
-            value={item.NetUid ? reasons[item.NetUid] ?? '' : ''}
-            onChange={(event) => {
-              const value = event.currentTarget.value
-
-              setReasons((current) => ({ ...current, [item.NetUid ?? '']: value }))
-            }}
+            label={t('Коментар')}
+            minRows={2}
+            value={offerComment}
+            onChange={(event) => setOfferComment(event.currentTarget.value)}
           />
-        </Stack>
-      ))}
+        )}
 
-      <Group justify="flex-end">
-        <Button color="gray" disabled={isSaving} variant="subtle" onClick={onClose}>
-          {t('Скасувати')}
-        </Button>
-        <Button color={CREATE_ACTION_COLOR} loading={isSaving} onClick={save}>
-          {t('Зберегти')}
-        </Button>
-      </Group>
+        <Text className="app-section-title">
+          {t('Неопрацьовані позиції')}
+        </Text>
+
+        {notProcessedItems.length === 0 && (
+          <Text c="dimmed" size="sm">
+            {t('Немає неопрацьованих позицій')}
+          </Text>
+        )}
+
+        {notProcessedItems.map((item) => (
+          <Stack key={item.NetUid} gap={4}>
+            <Group gap="xs" justify="space-between">
+              {item.Product?.NetUid ? (
+                <Anchor
+                  className="offer-reason-product-link"
+                  component="button"
+                  type="button"
+                  underline="always"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    setProductCardNetId(item.Product?.NetUid as string)
+                  }}
+                >
+                  {[item.Product?.VendorCode, item.Product?.Name].filter(Boolean).join(' ')}
+                </Anchor>
+              ) : (
+                <Text className="offer-reason-product-name">
+                  {[item.Product?.VendorCode, item.Product?.Name].filter(Boolean).join(' ')}
+                </Text>
+              )}
+              <Group gap="xs">
+                <Badge className="app-role-pill is-gray" variant="light">
+                  {t('Замовлено')}: {item.OrderedQty ?? 0}
+                </Badge>
+                <Badge className="app-role-pill is-orange" variant="light">
+                  {t('Неопрацьовано')}: {getItemNotProcessed(item)}
+                </Badge>
+              </Group>
+            </Group>
+            <Textarea
+              autosize
+              label={t('Причина')}
+              minRows={1}
+              value={item.NetUid ? reasons[item.NetUid] ?? '' : ''}
+              onChange={(event) => {
+                const value = event.currentTarget.value
+
+                setReasons((current) => ({ ...current, [item.NetUid ?? '']: value }))
+              }}
+            />
+          </Stack>
+        ))}
+      </Stack>
       <ProductCardModal productNetId={productCardNetId} onClose={() => setProductCardNetId(null)} />
-    </Stack>
+    </>
   )
 }
 
