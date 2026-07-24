@@ -86,6 +86,8 @@ const TAX_FREE_ITEMS_TABLE_DEFAULT_LAYOUT = {
   density: 'compact',
 } satisfies DataTableDefaultLayout
 
+const TAX_FREE_DOCUMENTS_FORM_ID = 'tax-free-pack-list-documents-form'
+
 type SourceRow = {
   id: string
   entity: SupplyOrderUkraineCartItem | TaxFreePackListOrderItem
@@ -125,6 +127,7 @@ export function EditTaxFreePackListPage() {
   const [pendingDirtyAction, setPendingDirtyAction] = useState<'reload' | null>(null)
   const [documentFiles, setDocumentFiles] = useState<File[]>([])
   const [confirmCloseDocumentsOpen, setConfirmCloseDocumentsOpen] = useState(false)
+  const [isSavingDocuments, setSavingDocuments] = useState(false)
   const [isSaving, setSaving] = useState(false)
   const [isPrinting, setPrinting] = useState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
@@ -721,6 +724,7 @@ export function EditTaxFreePackListPage() {
                   onDelete={() => setDeleteTaxFree(taxFree)}
                   onDocuments={() => {
                     setDocumentFiles([])
+                    setSavingDocuments(false)
                     setDocumentTaxFree(taxFree)
                   }}
                   onItemQtyChange={(itemIndex, qty) => {
@@ -827,6 +831,18 @@ export function EditTaxFreePackListPage() {
       />
 
       <AppDrawer
+        footer={
+          documentTaxFree ? (
+            <Button
+              disabled={documentFiles.length === 0 || isSavingDocuments || !documentTaxFree.NetUid}
+              form={TAX_FREE_DOCUMENTS_FORM_ID}
+              loading={isSavingDocuments}
+              type="submit"
+            >
+              {t('Зберегти')}
+            </Button>
+          ) : undefined
+        }
         opened={Boolean(documentTaxFree)}
         position="right"
         size="min(620px, 100vw)"
@@ -836,8 +852,11 @@ export function EditTaxFreePackListPage() {
         {documentTaxFree && (
           <TaxFreeDocumentsPanel
             files={documentFiles}
+            formId={TAX_FREE_DOCUMENTS_FORM_ID}
+            isSaving={isSavingDocuments}
             taxFree={documentTaxFree}
             onFilesChange={setDocumentFiles}
+            onSavingChange={setSavingDocuments}
             onUpdated={(updatedTaxFree) => {
               setDocumentTaxFree(updatedTaxFree)
               setPackList((currentPackList) => replaceTaxFree(currentPackList, updatedTaxFree))

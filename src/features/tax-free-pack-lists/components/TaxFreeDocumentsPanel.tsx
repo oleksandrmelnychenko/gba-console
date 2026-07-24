@@ -1,4 +1,4 @@
-import { ActionIcon, Alert, Button, FileInput, Group, Stack, Text } from '@mantine/core'
+import { ActionIcon, Alert, FileInput, Group, Stack, Text } from '@mantine/core'
 import { CircleAlert, File, Trash2, Upload } from 'lucide-react'
 import { notifications } from '@mantine/notifications'
 import { useState } from 'react'
@@ -8,14 +8,24 @@ import type { TaxFree, TaxFreeDocument } from '../types'
 
 type TaxFreeDocumentsPanelProps = {
   files: File[]
+  formId: string
+  isSaving: boolean
   taxFree: TaxFree
   onFilesChange: (files: File[]) => void
+  onSavingChange: (isSaving: boolean) => void
   onUpdated: (taxFree: TaxFree) => void
 }
 
-export function TaxFreeDocumentsPanel({ files, taxFree, onFilesChange, onUpdated }: TaxFreeDocumentsPanelProps) {
+export function TaxFreeDocumentsPanel({
+  files,
+  formId,
+  isSaving,
+  taxFree,
+  onFilesChange,
+  onSavingChange,
+  onUpdated,
+}: TaxFreeDocumentsPanelProps) {
   const { t } = useI18n()
-  const [isSaving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const documents = taxFree.TaxFreeDocuments || []
 
@@ -24,7 +34,7 @@ export function TaxFreeDocumentsPanel({ files, taxFree, onFilesChange, onUpdated
       return
     }
 
-    setSaving(true)
+    onSavingChange(true)
     setError(null)
 
     try {
@@ -37,7 +47,7 @@ export function TaxFreeDocumentsPanel({ files, taxFree, onFilesChange, onUpdated
     } catch (removeError) {
       setError(removeError instanceof Error ? removeError.message : t('Не вдалося видалити документ'))
     } finally {
-      setSaving(false)
+      onSavingChange(false)
     }
   }
 
@@ -46,7 +56,7 @@ export function TaxFreeDocumentsPanel({ files, taxFree, onFilesChange, onUpdated
       return
     }
 
-    setSaving(true)
+    onSavingChange(true)
     setError(null)
 
     try {
@@ -59,12 +69,20 @@ export function TaxFreeDocumentsPanel({ files, taxFree, onFilesChange, onUpdated
     } catch (uploadError) {
       setError(uploadError instanceof Error ? uploadError.message : t('Не вдалося завантажити документи'))
     } finally {
-      setSaving(false)
+      onSavingChange(false)
     }
   }
 
   return (
-    <Stack gap="sm">
+    <Stack
+      component="form"
+      gap="sm"
+      id={formId}
+      onSubmit={(event) => {
+        event.preventDefault()
+        void uploadDocuments()
+      }}
+    >
       {error && (
         <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {error}
@@ -96,6 +114,7 @@ export function TaxFreeDocumentsPanel({ files, taxFree, onFilesChange, onUpdated
                 aria-label={t('Видалити')}
                 color="red"
                 disabled={isSaving || !document.NetUid}
+                type="button"
                 variant="subtle"
                 onClick={() => removeDocument(document)}
               >
@@ -107,12 +126,6 @@ export function TaxFreeDocumentsPanel({ files, taxFree, onFilesChange, onUpdated
       ) : (
         <Text size="sm" c="dimmed">{t('Документів немає')}</Text>
       )}
-
-      <Group justify="flex-end">
-        <Button disabled={files.length === 0 || isSaving || !taxFree.NetUid} loading={isSaving} onClick={uploadDocuments}>
-          {t('Зберегти')}
-        </Button>
-      </Group>
     </Stack>
   )
 }
