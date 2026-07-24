@@ -1353,7 +1353,7 @@ function SalesWorkflowTab() {
         opened={Boolean(selectedSale)}
         position="right"
         size="xl"
-        title={<span style={{ fontFamily: 'var(--font-mono)' }}>{`${t('Фактура')} ${selectedSale?.SaleNumber?.Value || ''}`}</span>}
+        title={`${t('Фактура')} ${selectedSale?.SaleNumber?.Value || ''}`.trim()}
         onClose={() => setSelectedSale(null)}
       >
         <SaleItemsList items={selectedSale?.Order?.OrderItems || []} />
