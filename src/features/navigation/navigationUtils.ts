@@ -180,7 +180,7 @@ export function isNavigationNodeActive(node: NavigationNode, pathname: string): 
     const segment = routeSegments[index]
 
     if (segment !== currentSegments[index] && !wildcardRouteSegments.has(segment)) {
-      return false
+      return isNavigationAliasPathAllowed(node.Route, pathname)
     }
   }
 
