@@ -7,6 +7,7 @@ import {
   Card,
   Divider,
   Group,
+  MultiSelect,
   Select,
   SimpleGrid,
   Stack,
@@ -60,7 +61,6 @@ import './product-remains-page.css'
 
 type ProductRemainsTab = 'batches' | 'products'
 
-const ALL_STORAGES_VALUE = '__all_storages__'
 const LOCAL_CURRENCY_CODE = 'UAH'
 const PAGE_SIZE = 25
 const pageSizeOptions = ['25', '50', '100']
@@ -104,7 +104,7 @@ function useProductRemainsPageModel() {
   const { tab: routeTab } = useParams()
   const [activeTab, setActiveTab] = useValueState<ProductRemainsTab>(() => getProductRemainsInitialTab(routeTab))
   const [storages, setStorages] = useValueState<ProductRemainStorage[]>([])
-  const [selectedStorageValue, setSelectedStorageValue] = useValueState(ALL_STORAGES_VALUE)
+  const [selectedStorageValues, setSelectedStorageValues] = useValueState<string[]>([])
   const [supplierOptions, setSupplierOptions] = useValueState<ProductRemainSupplier[]>([])
   const [supplierSearch, setSupplierSearch] = useValueState('')
   const [supplierNetId, setSupplierNetId] = useValueState<string | null>(null)
@@ -140,17 +140,16 @@ function useProductRemainsPageModel() {
   const [exportingTab, setExportingTab] = useValueState<ProductRemainsTab | null>(null)
 
   const filterError = getFilterError(dateFrom, dateTo)
-  const isAllStoragesSelected = selectedStorageValue === ALL_STORAGES_VALUE
-  const storageNetId = isAllStoragesSelected ? undefined : selectedStorageValue.trim() || undefined
-  const productStorageNetId = storageNetId
-  const isProductStorageSelectionInvalid = !productStorageNetId
-  const productStorageError = isProductStorageSelectionInvalid ? t('Оберіть склад для перегляду товарів') : null
+  const storageNetIds = useMemo(
+    () => selectedStorageValues.map((value) => value.trim()).filter(Boolean),
+    [selectedStorageValues],
+  )
   const selectedSupplierNetId = supplierNetId || undefined
   const exportScopeKey = [
     activeTab,
     dateFrom,
     dateTo,
-    storageNetId || '',
+    storageNetIds.join(','),
     selectedSupplierNetId || '',
     productSearchValue,
   ].join('|')
@@ -158,7 +157,6 @@ function useProductRemainsPageModel() {
   const exportRequestRef = useRef(0)
   const resourceError = storageResourceError || supplierResourceError
   const storageOptions = useMemo(() => buildStorageOptions(storages), [storages])
-  const storageSelectValue = selectedStorageValue || null
   const supplierSelectOptions = useMemo(() => buildSupplierOptions(supplierOptions), [supplierOptions])
   const batchColumns = useProductRemainBatchColumns()
   const productColumns = useProductRemainProductColumns(openMovement)
@@ -190,7 +188,7 @@ function useProductRemainsPageModel() {
     exportScopeKeyRef.current = exportScopeKey
   }, [exportScopeKey])
   const batchDetailColumns = useProductRemainBatchDetailColumns()
-  const activeError = activeTab === 'batches' ? batchError : productStorageError || productError
+  const activeError = activeTab === 'batches' ? batchError : productError
   const isActiveLoading = activeTab === 'batches' ? isLoadingBatches : isLoadingProducts
 
   useProductRemainResourcesLoader({
@@ -217,7 +215,7 @@ function useProductRemainsPageModel() {
     setBatchRows,
     setBatchTotals,
     setLoadingBatches,
-    storageNetId,
+    storageNetIds,
   })
   useProductRemainProductsLoader({
     dateFrom,
@@ -228,14 +226,13 @@ function useProductRemainsPageModel() {
     productSearchValue,
     reloadKey,
     resetProductsForInvalidFilter,
-    isStorageSelectionInvalid: isProductStorageSelectionInvalid,
     selectedSupplierNetId,
     setLoadingProducts,
     setProductError,
     setProductHasMore,
     setProductRows,
     setProductTotals,
-    storageNetId,
+    storageNetIds,
   })
 
   function resetBatchData() {
@@ -286,7 +283,7 @@ function useProductRemainsPageModel() {
   function resetFilters() {
     setDateFrom(getDefaultDateFrom())
     setDateTo(getDefaultDateTo())
-    setSelectedStorageValue(ALL_STORAGES_VALUE)
+    setSelectedStorageValues([])
     setSupplierNetId(null)
     setSupplierSearch('')
     setProductSearchDraft('')
@@ -316,7 +313,7 @@ function useProductRemainsPageModel() {
   }
 
   async function handleExport() {
-    if (exportingTab || filterError || (activeTab === 'products' && isProductStorageSelectionInvalid)) {
+    if (exportingTab || filterError) {
       return
     }
 
@@ -336,20 +333,16 @@ function useProductRemainsPageModel() {
       if (tabToExport === 'batches') {
         document = await exportGroupedProductRemains({
           from: dateFrom,
-          storageNetId,
+          storageNetIds,
           supplierNetId: selectedSupplierNetId,
           to: dateTo,
         })
       } else {
-        if (!productStorageNetId) {
-          return
-        }
-
         document = await exportCurrentProductRemains({
           from: dateFrom,
           productSearchValue,
           selectedSupplierNetId,
-          storageNetId: productStorageNetId,
+          storageNetIds,
           to: dateTo,
         })
       }
@@ -380,13 +373,12 @@ function useProductRemainsPageModel() {
   return {
     activeError, activeTab, batchColumns, batchDetailColumns, batchHasMore, batchPage, batchRows, batchTotals, batchTotalPages,
     dateFrom, dateTo, downloadDocument, downloadModalOpened, exportingTab, filterError, isActiveLoading,
-    isProductStorageSelectionInvalid,
     isLoadingBatches, isLoadingProducts, isLoadingStorages, isLoadingSuppliers, openMovement, pageSize, productColumns,
-    productHasMore, productPage, productRows, productSearchDraft, productStorageError, productTotals, productTotalPages, resourceError,
-    selectedBatch, selectedMovementRow, selectedStorageValue: storageSelectValue, selectedSupplierNetId, storageNetId, storageOptions, supplierNetId,
+    productHasMore, productPage, productRows, productSearchDraft, productTotals, productTotalPages, resourceError,
+    selectedBatch, selectedMovementRow, selectedStorageValues, selectedSupplierNetId, storageNetIds, storageOptions, supplierNetId,
     supplierSearch, supplierSelectOptions, changeActivePage, changePageSize, handleExport, refreshData, resetAllData, resetFilters, selectActiveTab,
     setDateFrom, setDateTo, setDownloadModalOpened,
-    setSelectedBatch, setSelectedMovementRow, setSelectedStorageValue,
+    setSelectedBatch, setSelectedMovementRow, setSelectedStorageValues,
     setSupplierNetId, setSupplierSearch, updateProductSearch,
   }
 }
@@ -501,7 +493,7 @@ function useProductRemainBatchesLoader({
   setBatchRows,
   setBatchTotals,
   setLoadingBatches,
-  storageNetId,
+  storageNetIds,
 }: {
   batchOffset: number
   dateFrom: string
@@ -516,7 +508,7 @@ function useProductRemainBatchesLoader({
   setBatchRows: ValueSetter<GroupedConsignment[]>
   setBatchTotals: (value: CollectionWithTotals<GroupedConsignment> | null) => void
   setLoadingBatches: (value: boolean) => void
-  storageNetId?: string
+  storageNetIds?: string[]
 }) {
   const { t } = useI18n()
 
@@ -539,7 +531,7 @@ function useProductRemainBatchesLoader({
           includeItems: false,
           limit: pageSize,
           offset: currentOffset,
-          storageNetId,
+          storageNetIds,
           supplierNetId: selectedSupplierNetId,
           to: dateTo,
         })
@@ -571,7 +563,7 @@ function useProductRemainBatchesLoader({
     return () => {
       cancelled = true
     }
-  }, [batchOffset, dateFrom, dateTo, filterError, pageSize, reloadKey, resetBatchesForInvalidFilter, selectedSupplierNetId, setBatchError, setBatchHasMore, setBatchRows, setBatchTotals, setLoadingBatches, storageNetId, t])
+  }, [batchOffset, dateFrom, dateTo, filterError, pageSize, reloadKey, resetBatchesForInvalidFilter, selectedSupplierNetId, setBatchError, setBatchHasMore, setBatchRows, setBatchTotals, setLoadingBatches, storageNetIds, t])
 }
 
 function useProductRemainProductsLoader({
@@ -583,14 +575,13 @@ function useProductRemainProductsLoader({
   productSearchValue,
   reloadKey,
   resetProductsForInvalidFilter,
-  isStorageSelectionInvalid,
   selectedSupplierNetId,
   setLoadingProducts,
   setProductError,
   setProductHasMore,
   setProductRows,
   setProductTotals,
-  storageNetId,
+  storageNetIds,
 }: {
   dateFrom: string
   dateTo: string
@@ -600,33 +591,24 @@ function useProductRemainProductsLoader({
   productSearchValue: string
   reloadKey: number
   resetProductsForInvalidFilter: () => void
-  isStorageSelectionInvalid: boolean
   selectedSupplierNetId?: string
   setLoadingProducts: (value: boolean) => void
   setProductError: (value: string | null) => void
   setProductHasMore: (value: boolean) => void
   setProductRows: ValueSetter<RemainingConsignment[]>
   setProductTotals: (value: CollectionWithTotals<RemainingConsignment> | null) => void
-  storageNetId?: string
+  storageNetIds?: string[]
 }) {
   const { t } = useI18n()
 
   useEffect(() => {
-    if (filterError || isStorageSelectionInvalid) {
+    if (filterError) {
       resetProductsForInvalidFilter()
       return
     }
 
     let cancelled = false
     const currentOffset = productOffset
-    const productStorageNetId = storageNetId?.trim()
-
-    if (!productStorageNetId) {
-      resetProductsForInvalidFilter()
-      return
-    }
-
-    const concreteProductStorageNetId = productStorageNetId
 
     async function loadProducts() {
       setLoadingProducts(true)
@@ -638,7 +620,7 @@ function useProductRemainProductsLoader({
           limit: pageSize,
           offset: currentOffset,
           searchValue: productSearchValue,
-          storageNetId: concreteProductStorageNetId,
+          storageNetIds,
           supplierNetId: selectedSupplierNetId,
           to: dateTo,
         })
@@ -670,7 +652,7 @@ function useProductRemainProductsLoader({
     return () => {
       cancelled = true
     }
-  }, [dateFrom, dateTo, filterError, isStorageSelectionInvalid, pageSize, productOffset, productSearchValue, reloadKey, resetProductsForInvalidFilter, selectedSupplierNetId, setLoadingProducts, setProductError, setProductHasMore, setProductRows, setProductTotals, storageNetId, t])
+  }, [dateFrom, dateTo, filterError, pageSize, productOffset, productSearchValue, reloadKey, resetProductsForInvalidFilter, selectedSupplierNetId, setLoadingProducts, setProductError, setProductHasMore, setProductRows, setProductTotals, storageNetIds, t])
 }
 
 function hasMoreCollectionPage<TItem>(
@@ -710,18 +692,17 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
   const {
     activeError, activeTab, batchColumns, batchDetailColumns, batchHasMore, batchPage, batchRows, batchTotals, batchTotalPages,
     dateFrom, dateTo, downloadDocument, downloadModalOpened, exportingTab, filterError, isActiveLoading,
-    isProductStorageSelectionInvalid,
     isLoadingBatches, isLoadingProducts, isLoadingStorages, isLoadingSuppliers, openMovement, pageSize, productColumns,
-    productHasMore, productPage, productRows, productSearchDraft, productStorageError, productTotals, productTotalPages, resourceError,
-    selectedBatch, selectedMovementRow, selectedStorageValue, selectedSupplierNetId, storageNetId, storageOptions, supplierNetId,
+    productHasMore, productPage, productRows, productSearchDraft, productTotals, productTotalPages, resourceError,
+    selectedBatch, selectedMovementRow, selectedStorageValues, selectedSupplierNetId, storageNetIds, storageOptions, supplierNetId,
     supplierSearch, supplierSelectOptions, changeActivePage, changePageSize, handleExport, refreshData, resetAllData, resetFilters, selectActiveTab,
     setDateFrom, setDateTo, setDownloadModalOpened,
-    setSelectedBatch, setSelectedMovementRow, setSelectedStorageValue,
+    setSelectedBatch, setSelectedMovementRow, setSelectedStorageValues,
     setSupplierNetId, setSupplierSearch, updateProductSearch,
   } = model
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const alertMessage = filterError || resourceError || activeError
-  const isWarningAlert = Boolean(filterError || (!resourceError && activeTab === 'products' && productStorageError))
+  const isWarningAlert = Boolean(filterError)
 
   return (
     <Stack className="product-remains-page" gap={6}>
@@ -767,17 +748,18 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
                 }}
               />
             </div>
-            <Select
+            <MultiSelect
+              clearable
               searchable
-              allowDeselect={false}
               data={storageOptions}
               disabled={isLoadingStorages}
               label={t('Склад')}
-              value={selectedStorageValue}
-              w={220}
+              placeholder={selectedStorageValues.length === 0 ? t('Всі склади') : undefined}
+              value={selectedStorageValues}
+              w={300}
               onChange={(value) => {
                 resetAllData()
-                setSelectedStorageValue(value || ALL_STORAGES_VALUE)
+                setSelectedStorageValues(value)
               }}
             />
             <Select
@@ -816,7 +798,7 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
                 <ActionIcon
                   aria-label={t('Експорт')}
                   color="gray"
-                  disabled={Boolean(exportingTab || filterError || (activeTab === 'products' && isProductStorageSelectionInvalid))}
+                  disabled={Boolean(exportingTab || filterError)}
                   loading={exportingTab === activeTab}
                   size={34}
                   variant="light"
@@ -876,7 +858,7 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
                 columns={productColumns}
                 data={productRows}
                 defaultLayout={PRODUCTS_TABLE_DEFAULT_LAYOUT}
-                emptyText={isProductStorageSelectionInvalid ? t('Оберіть склад для перегляду товарів') : t('Залишків за товарами не знайдено')}
+                emptyText={t('Залишків за товарами не знайдено')}
                 getRowId={getProductRowId}
                 isLoading={isLoadingProducts}
                 layoutVersion="product-remains-products-table-1"
@@ -908,7 +890,7 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
             columns={batchDetailColumns}
             dateFrom={dateFrom}
             dateTo={dateTo}
-            storageNetId={storageNetId}
+            storageNetIds={storageNetIds}
             supplierNetId={selectedSupplierNetId}
           />
         )}
@@ -975,19 +957,19 @@ function exportCurrentProductRemains({
   from,
   productSearchValue,
   selectedSupplierNetId,
-  storageNetId,
+  storageNetIds,
   to,
 }: {
   from: string
   productSearchValue: string
   selectedSupplierNetId?: string
-  storageNetId: string
+  storageNetIds?: string[]
   to: string
 }): Promise<ProductRemainsExportDocument> {
   return exportProductRemains({
     from,
     searchValue: productSearchValue,
-    storageNetId,
+    storageNetIds,
     supplierNetId: selectedSupplierNetId,
     to,
   })
@@ -1330,14 +1312,14 @@ function BatchDetails({
   columns,
   dateFrom,
   dateTo,
-  storageNetId,
+  storageNetIds,
   supplierNetId,
 }: {
   batch: GroupedConsignment
   columns: DataTableColumn<GroupedConsignmentItem>[]
   dateFrom: string
   dateTo: string
-  storageNetId?: string
+  storageNetIds?: string[]
   supplierNetId?: string
 }) {
   const { t } = useI18n()
@@ -1363,7 +1345,7 @@ function BatchDetails({
           includeItems: true,
           limit: 1,
           offset: rowOffset,
-          storageNetId,
+          storageNetIds,
           supplierNetId,
           to: dateTo,
         })
@@ -1391,7 +1373,7 @@ function BatchDetails({
     return () => {
       cancelled = true
     }
-  }, [batch, dateFrom, dateTo, storageNetId, supplierNetId, t])
+  }, [batch, dateFrom, dateTo, storageNetIds, supplierNetId, t])
 
   return (
     <Stack gap="md">
@@ -1773,12 +1755,7 @@ function DetailItem({ label, value }: { label: string; value: string }) {
 }
 
 function buildStorageOptions(storages: ProductRemainStorage[]): { label: string; value: string }[] {
-  const options: { label: string; value: string }[] = [
-    {
-      label: translate('Всі склади'),
-      value: ALL_STORAGES_VALUE,
-    },
-  ]
+  const options: { label: string; value: string }[] = []
 
   storages.forEach((storage) => {
     if (storage.NetUid) {

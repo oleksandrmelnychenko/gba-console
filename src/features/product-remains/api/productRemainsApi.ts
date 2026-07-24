@@ -53,7 +53,7 @@ export async function getGroupedProductRemains(
       includeItems: params.includeItems,
       limit: params.limit,
       offset: params.offset,
-      storageNetId: params.storageNetId,
+      ...storageQuery(params.storageNetIds),
       supplierNetId: params.supplierNetId,
       to: params.to,
     },
@@ -71,7 +71,7 @@ export async function getProductRemains(
       limit: params.limit,
       offset: params.offset,
       searchValue: params.searchValue.trim(),
-      storageNetId: params.storageNetId,
+      ...storageQuery(params.storageNetIds),
       supplierNetId: params.supplierNetId,
       to: params.to,
     },
@@ -104,7 +104,7 @@ export async function exportGroupedProductRemains(
   const result = await apiRequest<unknown>(`${REMAINING_BASE}/grouped/storage/document/export`, {
     query: {
       from: params.from,
-      storageNetId: params.storageNetId,
+      ...storageQuery(params.storageNetIds),
       supplierNetId: params.supplierNetId,
       to: params.to,
     },
@@ -120,13 +120,22 @@ export async function exportProductRemains(
     query: {
       from: params.from,
       searchValue: params.searchValue.trim(),
-      storageNetId: params.storageNetId,
+      ...storageQuery(params.storageNetIds),
       supplierNetId: params.supplierNetId,
       to: params.to,
     },
   })
 
   return normalizeExportDocument(result)
+}
+
+/* Old server builds bind a single required storageNetId — send it alongside the
+   list so the page keeps working until the multi-storage API is deployed. */
+function storageQuery(storageNetIds?: string[]): { storageNetId?: string; storageNetIds?: string[] } {
+  return {
+    storageNetId: storageNetIds?.length === 1 ? storageNetIds[0] : undefined,
+    storageNetIds,
+  }
 }
 
 function normalizeCollectionWithTotals<TItem>(

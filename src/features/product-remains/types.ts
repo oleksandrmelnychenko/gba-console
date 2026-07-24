@@ -129,14 +129,13 @@ export type ProductRemainsSearchParams = {
   includeItems?: boolean
   limit: number
   offset: number
-  storageNetId?: string
+  storageNetIds?: string[]
   supplierNetId?: string
   to: string
 }
 
 export type ProductRemainsByProductSearchParams = ProductRemainsSearchParams & {
   searchValue: string
-  storageNetId: string
 }
 
 export type ProductRemainSupplierSearchParams = {
