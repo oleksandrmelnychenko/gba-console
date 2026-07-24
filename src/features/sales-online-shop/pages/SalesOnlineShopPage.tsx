@@ -781,14 +781,10 @@ export function SalesOnlineShopPage() {
       </Card>
 
       <AppDrawer
-        classNames={{
-          body: 'sale-detail-drawer-body',
-          content: 'sale-detail-drawer-content',
-        }}
         opened={Boolean(selectedSale)}
         position="right"
         size="full"
-        title={<span className="app-sheet-title-mono">{t('Деталі продажу')}</span>}
+        title={t('Деталі продажу')}
         onClose={() => setSelectedSale(null)}
       >
         {selectedSale && <SaleDetail sale={selectedSale} />}
