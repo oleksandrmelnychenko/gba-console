@@ -10,16 +10,6 @@
   box-shadow: var(--app-card-shadow);
 }
 
-.product-group-detail-tabs {
-  border-radius: 0;
-  flex: 0 0 auto;
-  padding-bottom: 4px;
-}
-
-.product-group-detail-tabs .pill-tab {
-  padding-bottom: 12px;
-}
-
 .product-group-detail-panel,
 .product-group-detail-filter-bar {
   min-width: 0;

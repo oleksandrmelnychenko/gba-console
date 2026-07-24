@@ -202,50 +202,49 @@ export function ProductGroupDetailPage() {
     <AppDrawer
       opened
       closeOnClickOutside={!isSaving}
-      keepMounted={false}
-      position="right"
-      size="min(900px, 100vw)"
-      title={<span style={{ fontFamily: 'var(--font-mono)' }}>{productGroup?.Name || t('Товарна група')}</span>}
-      onClose={closeSheet}
-    >
-    <Stack gap="lg">
-      <Group justify="flex-end" align="start">
-        <Group gap="xs">
+      footer={
+        <>
           <Button
             color="gray"
+            disabled={isSaving}
             leftSection={<ChevronLeft size={16} />}
-            styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
             type="button"
             variant="light"
             onClick={closeSheet}
           >
             {t('Закрити')}
           </Button>
-          <Button
-            color="gray"
-            disabled={!isEdited || isSaving}
-            leftSection={<RotateCcw size={16} />}
-            styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
-            type="button"
-            variant="light"
-            onClick={resetEdits}
-          >
-            {t('Скасувати')}
-          </Button>
-          <Button
-            color={CREATE_ACTION_COLOR}
-            disabled={!formProductGroup || !isEdited}
-            form="product-group-edit-form"
-            leftSection={<Save size={16} />}
-            loading={isSaving}
-            styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
-            type="submit"
-          >
-            {t('Зберегти')}
-          </Button>
-        </Group>
-      </Group>
-
+          <Group gap="xs">
+            <Button
+              color="gray"
+              disabled={!isEdited || isSaving}
+              leftSection={<RotateCcw size={16} />}
+              type="button"
+              variant="light"
+              onClick={resetEdits}
+            >
+              {t('Скасувати')}
+            </Button>
+            <Button
+              color={CREATE_ACTION_COLOR}
+              disabled={!formProductGroup || !isEdited}
+              form="product-group-edit-form"
+              leftSection={<Save size={16} />}
+              loading={isSaving}
+              type="submit"
+            >
+              {t('Зберегти')}
+            </Button>
+          </Group>
+        </>
+      }
+      keepMounted={false}
+      position="right"
+      size="min(900px, 100vw)"
+      title={productGroup?.Name || t('Товарна група')}
+      onClose={closeSheet}
+    >
+    <Stack gap="lg">
       {error && (
         <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {error}
@@ -288,7 +287,11 @@ export function ProductGroupDetailPage() {
           radius="md"
           padding={0}
         >
-          <div className="pill-tabs product-group-detail-tabs">
+          <div
+            aria-label={t('Розділи товарної групи')}
+            className="pill-tabs product-group-detail-tabs"
+            role="tablist"
+          >
             {([
               { value: 'subGroups', label: t('Підгрупи') },
               { value: 'products', label: t('Товари') },
@@ -297,7 +300,8 @@ export function ProductGroupDetailPage() {
                 key={tab.value}
                 type="button"
                 className={`pill-tab${activeTab === tab.value ? ' is-active' : ''}`}
-                aria-pressed={activeTab === tab.value}
+                aria-selected={activeTab === tab.value}
+                role="tab"
                 onClick={() => setActiveTab(tab.value)}
               >
                 {tab.label}
