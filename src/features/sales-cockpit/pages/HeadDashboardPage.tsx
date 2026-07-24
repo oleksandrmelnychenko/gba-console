@@ -6,14 +6,13 @@ import {
   Card,
   Group,
   Progress,
-  SimpleGrid,
   Stack,
   Text,
   TextInput,
   Tooltip,
   UnstyledButton,
 } from '@mantine/core'
-import { Banknote, CircleAlert, CircleCheckBig, Map, Radio, RefreshCw, Truck, Users } from 'lucide-react'
+import { CircleAlert, Map, Radio, RefreshCw } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ApiError } from '../../../shared/api/apiClient'
@@ -143,11 +142,6 @@ export function HeadDashboardPage() {
     [team.team],
   )
 
-  const selectedManager = useMemo(
-    () => rows.find((row) => row.manager_id === selectedManagerId) ?? null,
-    [rows, selectedManagerId],
-  )
-
   const handleAsOfDateChange = useCallback(
     (value: string | undefined) => {
       setAsOfDate(value)
@@ -200,86 +194,85 @@ export function HeadDashboardPage() {
         </div>
       </Card>
 
-      {forbidden ? (
-        <Card className="app-section-card" withBorder radius="md" padding="xl">
-          <Text c="dimmed" fw={600} ta="center">{t('Доступ лише для керівника відділу')}</Text>
-        </Card>
-      ) : (
-        <>
-          {error ? (
-            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">{error}</Alert>
-          ) : null}
+      <div className="cockpit-page-content">
+        {forbidden ? (
+          <Card className="app-section-card" withBorder radius="md" padding="xl">
+            <Text c="dimmed" fw={600} ta="center">{t('Доступ лише для керівника відділу')}</Text>
+          </Card>
+        ) : (
+          <>
+            {error ? (
+              <Alert color="red" icon={<CircleAlert size={18} />} variant="light">{error}</Alert>
+            ) : null}
 
-          <SimpleGrid className="cockpit-head-kpis" cols={{ base: 1, sm: 2, lg: 4 }} spacing="sm">
-            <DepartmentMetric
-              accent="brand"
-              icon={<Truck size={17} />}
-              label={t('Відвантажено цього місяця')}
-              target={team.totals.shipped_target}
-              value={team.totals.shipped_mtd}
-            />
-            <DepartmentMetric
-              accent="info"
-              icon={<Banknote size={17} />}
-              label={t('Отримано оплат цього місяця')}
-              target={team.totals.paid_target}
-              value={team.totals.paid_mtd}
-            />
-            <OutcomeMetric
-              icon={<CircleCheckBig size={17} />}
-              label={t('Результат AI-задач за місяць')}
-              primary={`${team.totals.done_month} ${t('виконано')}`}
-              secondary={`${team.totals.sold_month} ${t('з продажем')} · ${formatRate(team.totals.conversion_rate)} ${t('конверсія')}`}
-            />
-            <OutcomeMetric
-              accent="success"
-              icon={<Users size={17} />}
-              label={t('Виручка з виконаних AI-задач')}
-              primary={formatMoney(team.totals.revenue_month)}
-              secondary={`${team.totals.generated_month} ${t('задач сформовано за місяць')}`}
-            />
-          </SimpleGrid>
+            <Card className="app-section-card cockpit-head-summary" withBorder radius="md" padding="md">
+              <Stack gap="sm">
+                <div>
+                  <Text className="app-section-title" fw={600} size="sm">{t('Результат відділу')}</Text>
+                  <Text c="dimmed" size="xs">{t('План, виконання та результат AI-задач за місяць')}</Text>
+                </div>
 
-          <div className="cockpit-head-workspace">
-            <HeadTaskBoard
-              managerId={selectedManagerId}
-              onManagerChange={setSelectedManagerId}
-            />
+                <div className="cockpit-head-kpis">
+                  <DepartmentMetric
+                    accent="brand"
+                    label={t('Відвантажено цього місяця')}
+                    target={team.totals.shipped_target}
+                    value={team.totals.shipped_mtd}
+                  />
+                  <DepartmentMetric
+                    accent="info"
+                    label={t('Отримано оплат цього місяця')}
+                    target={team.totals.paid_target}
+                    value={team.totals.paid_mtd}
+                  />
+                  <OutcomeMetric
+                    label={t('Результат AI-задач за місяць')}
+                    primary={`${team.totals.done_month} ${t('виконано')}`}
+                    secondary={`${team.totals.sold_month} ${t('з продажем')} · ${formatRate(team.totals.conversion_rate)} ${t('конверсія')}`}
+                  />
+                  <OutcomeMetric
+                    accent="success"
+                    label={t('Виручка з виконаних AI-задач')}
+                    primary={formatMoney(team.totals.revenue_month)}
+                    secondary={`${team.totals.generated_month} ${t('задач сформовано за місяць')}`}
+                  />
+                </div>
+              </Stack>
+            </Card>
 
-            <Stack className="cockpit-head-sidebar" gap="sm">
-              <TeamMonitor
-                isLoading={isLoading}
-                rows={rows}
-                selectedManagerId={selectedManagerId}
-                onSelect={setSelectedManagerId}
+            <div className="cockpit-head-workspace">
+              <HeadTaskBoard
+                managerId={selectedManagerId}
+                onManagerChange={setSelectedManagerId}
               />
-              <EscalationsPanel escalated={escalated} />
-              <HeadAiFleetStatus />
-            </Stack>
-          </div>
 
-          {selectedManager ? (
-            <Alert color="blue" variant="light">
-              {t('Черга відфільтрована за менеджером')}: <strong>{managerName(selectedManager)}</strong>
-            </Alert>
-          ) : null}
+              <Stack className="cockpit-head-sidebar" gap={6}>
+                <TeamMonitor
+                  isLoading={isLoading}
+                  rows={rows}
+                  selectedManagerId={selectedManagerId}
+                  onSelect={setSelectedManagerId}
+                />
+                <EscalationsPanel escalated={escalated} />
+                <HeadAiFleetStatus />
+              </Stack>
+            </div>
 
-          <HeadDashboardChartsPanel asOfDate={asOfDate} reloadKey={reloadKey} rows={rows} />
-        </>
-      )}
+            <HeadDashboardChartsPanel asOfDate={asOfDate} reloadKey={reloadKey} rows={rows} />
+          </>
+        )}
+      </div>
     </Stack>
   )
 }
 
 function DepartmentMetric({
   accent,
-  icon,
   label,
   target,
   value,
 }: {
   accent: 'brand' | 'info'
-  icon: React.ReactNode
   label: string
   target: number
   value: number
@@ -291,10 +284,7 @@ function DepartmentMetric({
   return (
     <div className={`cockpit-head-kpi is-${accent}`}>
       <Group gap="xs" justify="space-between" wrap="nowrap">
-        <Group gap={7} wrap="nowrap">
-          <span className="cockpit-head-kpi__icon">{icon}</span>
-          <span className="cockpit-head-kpi__label">{label}</span>
-        </Group>
+        <span className="cockpit-head-kpi__label">{label}</span>
         <Badge className={`app-role-pill ${PROGRESS_PILL[progressColor] ?? 'is-gray'}`} size="sm" variant="light">
           {target > 0 ? `${percent}% ${t('плану')}` : t('План не задано')}
         </Badge>
@@ -311,23 +301,18 @@ function DepartmentMetric({
 
 function OutcomeMetric({
   accent = 'brand',
-  icon,
   label,
   primary,
   secondary,
 }: {
   accent?: 'brand' | 'success'
-  icon: React.ReactNode
   label: string
   primary: string
   secondary: string
 }) {
   return (
     <div className={`cockpit-head-kpi is-${accent}`}>
-      <Group gap={7} wrap="nowrap">
-        <span className="cockpit-head-kpi__icon">{icon}</span>
-        <span className="cockpit-head-kpi__label">{label}</span>
-      </Group>
+      <span className="cockpit-head-kpi__label">{label}</span>
       <div className="cockpit-head-kpi__value">{primary}</div>
       <span className="cockpit-head-kpi__sub">{secondary}</span>
     </div>
@@ -355,7 +340,7 @@ function TeamMonitor({
           <Text c="dimmed" size="xs">{t('План, оплати та активні задачі')}</Text>
         </div>
         {selectedManagerId !== null ? (
-          <Button size="compact-xs" variant="subtle" onClick={() => onSelect(null)}>{t('Усі')}</Button>
+          <Button color="orange" size="compact-xs" variant="subtle" onClick={() => onSelect(null)}>{t('Усі')}</Button>
         ) : null}
       </Group>
 

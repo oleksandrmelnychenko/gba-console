@@ -11,11 +11,17 @@ export type ProcurementDaysOfCoverBucket = {
 }
 
 export type ProcurementTopItem = {
+  image_url?: string | null
+  oe_number?: string | null
+  producer_id?: number | null
+  producer_name?: string | null
   product_id: number
+  product_name?: string | null
   suggested_qty: number
   on_hand: number
   reorder_point: number
   urgency: string
+  vendor_code?: string | null
 }
 
 export type ProcurementDemandPoint = {
@@ -25,8 +31,12 @@ export type ProcurementDemandPoint = {
 }
 
 export type ProcurementDemandSeries = {
+  image_url?: string | null
+  oe_number?: string | null
   product_id: number
+  product_name?: string | null
   points: ProcurementDemandPoint[]
+  vendor_code?: string | null
 }
 
 export type ProcurementCharts = {

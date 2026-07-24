@@ -45,7 +45,7 @@ describe('ProcurementProductCell', () => {
     expect(image).not.toBeNull()
     fireEvent.error(image as HTMLImageElement)
 
-    expect(screen.getByText('#42')).not.toBeNull()
+    expect(screen.getByText('42')).not.toBeNull()
     expect(
       screen.getByRole('img', { name: 'Зображення товару відсутнє' }),
     ).not.toBeNull()

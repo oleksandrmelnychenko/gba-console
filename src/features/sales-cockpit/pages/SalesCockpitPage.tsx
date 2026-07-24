@@ -279,11 +279,24 @@ export function SalesCockpitPage() {
     [setAsOfDate],
   )
 
+  const handleResetFilters = useCallback(() => {
+    setTaskTypeFilter(null)
+    setUrgencyFilter(null)
+    setDayFilter('all')
+    setAsOfDate(undefined)
+    setLoading(true)
+  }, [setAsOfDate, setDayFilter, setTaskTypeFilter, setUrgencyFilter])
+
+  const hasActiveFilters = Boolean(
+    asOfDate || taskTypeFilter || urgencyFilter || dayFilter !== 'all',
+  )
+
   return (
     <Stack className="cockpit-page" gap={6}>
       <CockpitToolbar
         asOfDate={asOfDate}
         dayFilter={dayFilter}
+        hasActiveFilters={hasActiveFilters}
         isLoading={isLoading}
         isRegenerating={isRegenerating}
         taskType={taskTypeFilter}
@@ -294,6 +307,7 @@ export function SalesCockpitPage() {
         onDayFilterChange={setDayFilter}
         onRegenerate={handleRegenerate}
         onReload={handleReload}
+        onReset={handleResetFilters}
         onTaskTypeChange={setTaskTypeFilter}
         onUrgencyChange={setUrgencyFilter}
       />
@@ -305,11 +319,14 @@ export function SalesCockpitPage() {
           </Alert>
         )}
 
-        {target && <CockpitTargetCard target={target} />}
-
-        <CockpitQueueSummary insights={queueInsights} isLoading={isLoading} visibleCount={visibleTasks.length} />
-
-        <CockpitDashboardPanel asOfDate={asOfDate} reloadKey={reloadKey} />
+        <div className={`cockpit-overview${target ? '' : ' is-single'}`}>
+          <CockpitQueueSummary
+            insights={queueInsights}
+            isLoading={isLoading}
+            visibleCount={visibleTasks.length}
+          />
+          {target && <CockpitTargetCard target={target} />}
+        </div>
 
         <CockpitTaskList
           isLoading={isLoading}
@@ -321,6 +338,8 @@ export function SalesCockpitPage() {
           onSnooze={setSnoozeTask}
           onTakeInProgress={handleTakeInProgress}
         />
+
+        <CockpitDashboardPanel asOfDate={asOfDate} reloadKey={reloadKey} />
       </div>
 
       <NoteModal

@@ -73,6 +73,7 @@ import {
 import { calculateProcurementDecision, type ProcurementDecision } from '../procurementDecision'
 import type { ProcurementCharts, ProcurementUrgency, ReorderSuggestion } from '../procurementTypes'
 import { ProcurementProductCell } from './ProcurementProductCell'
+import { ProcurementWorkspaceState } from './ProcurementWorkspaceState'
 
 type Lens = 'warehouse' | 'producer'
 
@@ -497,6 +498,13 @@ export function ProcurementConstructor() {
   }
 
   const basketCount = basket.size
+  const emptyState = getCockpitEmptyState({
+    hasSearch: deferredSearchQuery.trim().length > 0,
+    isLoading,
+    lens,
+    selectedProducerId,
+    t,
+  })
   const planColumns = usePlanColumns({
     isInBasket,
     isQtyAdjusted,
@@ -663,14 +671,21 @@ export function ProcurementConstructor() {
               <strong>{amount.format(overview.valueAtRisk)}</strong>
             </div>
           </div>
-          <Button
-            rightSection={isAnalyticsOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-            size="xs"
-            variant="subtle"
-            onClick={() => setAnalyticsOpen((open) => !open)}
-          >
-            {t('Аналітика')}
-          </Button>
+          {visibleRows.length > 0 ? (
+            <Button
+              color="orange"
+              rightSection={isAnalyticsOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              size="xs"
+              variant="subtle"
+              onClick={() => setAnalyticsOpen((open) => !open)}
+            >
+              {t('Аналітика')}
+            </Button>
+          ) : (
+            <Badge className={`app-role-pill ${emptyState.pillClass}`} variant="light">
+              {emptyState.status}
+            </Badge>
+          )}
         </div>
 
         <Collapse expanded={isAnalyticsOpen}>
@@ -686,11 +701,11 @@ export function ProcurementConstructor() {
               data={visibleRows}
               defaultLayout={PLAN_TABLE_DEFAULT_LAYOUT}
               emptyText={
-                deferredSearchQuery.trim()
-                  ? t('За цим запитом позицій не знайдено')
-                  : lens === 'producer' && !selectedProducerId
-                  ? t('Оберіть виробника, щоб побачити потребу')
-                  : t('Немає позицій, що потребують замовлення')
+                <ProcurementWorkspaceState
+                  description={emptyState.description}
+                  isLoading={isLoading}
+                  title={emptyState.title}
+                />
               }
               fillAvailableWidth
               getRowId={procurementLineKey}
@@ -791,6 +806,54 @@ export function ProcurementConstructor() {
       </Card>
     </div>
   )
+}
+
+function getCockpitEmptyState({
+  hasSearch,
+  isLoading,
+  lens,
+  selectedProducerId,
+  t,
+}: {
+  hasSearch: boolean
+  isLoading: boolean
+  lens: Lens
+  selectedProducerId: string | null
+  t: (key: string) => string
+}) {
+  if (isLoading) {
+    return {
+      description: t('Зіставляємо прогноз попиту, залишки та правила закупівлі.'),
+      pillClass: 'is-gray',
+      status: t('Розрахунок'),
+      title: t('Розраховуємо потребу'),
+    }
+  }
+
+  if (hasSearch) {
+    return {
+      description: t('Змініть пошуковий запит або скиньте фільтри, щоб повернути весь план.'),
+      pillClass: 'is-gray',
+      status: t('Немає збігів'),
+      title: t('За цим запитом нічого не знайдено'),
+    }
+  }
+
+  if (lens === 'producer' && !selectedProducerId) {
+    return {
+      description: t('Виберіть виробника у фільтр-барі — таблиця покаже його потребу та рекомендовану кількість.'),
+      pillClass: 'is-gray',
+      status: t('Потрібен виробник'),
+      title: t('Оберіть виробника'),
+    }
+  }
+
+  return {
+    description: t('Критичних дефіцитів немає: поточні залишки покривають розраховану потребу.'),
+    pillClass: 'is-green',
+    status: t('Запас покрито'),
+    title: t('Позицій до замовлення немає'),
+  }
 }
 
 function usePlanColumns({

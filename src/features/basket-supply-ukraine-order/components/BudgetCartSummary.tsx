@@ -1,5 +1,4 @@
-import { Card, Group, Progress, SimpleGrid, Stack, Text, Tooltip } from '@mantine/core'
-import { Info } from 'lucide-react'
+import { Badge, Card, Group, Progress, Stack, Text } from '@mantine/core'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { UrgencyDonut } from '../../../shared/ui/charts/UrgencyDonut'
@@ -46,10 +45,24 @@ export function BudgetCartSummary({
   const { t } = useI18n()
 
   return (
-    <Card className="app-section-card" padding="md" radius="md" withBorder>
-      <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
+    <Card className="app-section-card budget-cart-summary" padding="md" radius="md" withBorder>
+      <Group className="budget-cart-summary__head" justify="space-between">
+        <div>
+          <Text className="app-section-title" fw={600} size="sm">
+            {t('Результат оптимізації')}
+          </Text>
+          <Text c="dimmed" size="xs">
+            {t('Як бюджет розподілено між товарами та виробниками')}
+          </Text>
+        </div>
+        <Badge className="app-role-pill is-orange" variant="light">
+          {getMethodLabel(plan, t)}
+        </Badge>
+      </Group>
+
+      <div className="budget-cart-summary__layout">
         <Stack gap="md">
-          <SimpleGrid cols={{ base: 2, sm: 3 }} spacing="sm">
+          <div className="budget-cart-summary__primary">
             <SummaryItem label={`${t('Бюджет')} (EUR)`} money value={`€${eurFormatter.format(plan.budget_eur)}`} />
             <SummaryItem label={`${t('Використано')} (EUR)`} money value={`€${eurFormatter.format(plan.budget_used_eur)}`} />
             <SummaryItem
@@ -58,6 +71,23 @@ export function BudgetCartSummary({
               money
               value={`€${eurFormatter.format(plan.value_captured_eur)}`}
             />
+            <SummaryItem label={t('В бюджеті')} money value={countFormatter.format(plan.selected_count)} />
+            <SummaryItem label={t('Відкладено')} money value={countFormatter.format(plan.deferred_count)} />
+          </div>
+
+          <Stack className="budget-cart-summary__progress" gap={5}>
+            <Group justify="space-between">
+              <Text c="gray.9" size="xs">
+                {t('Використання бюджету')}
+              </Text>
+              <Text className="app-money" fw={600} size="xs">
+                {percentFormatter.format(utilization)}%
+              </Text>
+            </Group>
+            <Progress color={CREATE_ACTION_COLOR} radius="xl" size="md" value={utilization} />
+          </Stack>
+
+          <div className="budget-cart-summary__secondary">
             <SummaryItem
               hint={t('Потенційна виручка по рядках, які потрапили в бюджет')}
               label={`${t('Потенційна виручка')} (EUR)`}
@@ -70,38 +100,25 @@ export function BudgetCartSummary({
               money
               value={formatNullableEuro(financials.expectedMarginEur)}
             />
-            <SummaryItem label={t('В бюджеті')} money value={countFormatter.format(plan.selected_count)} />
-            <SummaryItem label={t('Відкладено')} money value={countFormatter.format(plan.deferred_count)} />
             <SummaryItem label={t('Одиниць товару')} money value={qtyFormatter.format(financials.selectedUnits)} />
             <SummaryItem label={t('Виробників')} money value={countFormatter.format(financials.selectedProducerCount)} />
-            <SummaryItem label={t('Метод')} value={getMethodLabel(plan, t)} />
-            <SummaryItem label={t('Позицій')} money value={countFormatter.format(plan.item_count)} />
-          </SimpleGrid>
-          <Stack gap={4}>
-            <Group justify="space-between">
-              <Text c="gray.9" size="xs">
-                {t('Використання бюджету')}
-              </Text>
-              <Text className="app-money" fw={600} size="xs">
-                {percentFormatter.format(utilization)}%
-              </Text>
-            </Group>
-            <Progress color={CREATE_ACTION_COLOR} radius="xl" size="lg" value={utilization} />
-          </Stack>
+          </div>
         </Stack>
 
-        <Stack align="center" gap="xs">
-          <Text className="app-section-title" fw={600} size="sm">
-            {t('Розподіл позицій')}
-          </Text>
-          <UrgencyDonut
-            chartLabel={countFormatter.format(plan.item_count)}
-            data={splitSlices}
-            emptyLabel={t('Немає позицій')}
-            valueFormatter={(value) => countFormatter.format(value)}
-          />
-        </Stack>
-      </SimpleGrid>
+        {splitSlices.length > 0 ? (
+          <Stack align="center" className="budget-cart-summary__distribution" gap="xs">
+            <Text className="app-section-title" fw={600} size="sm">
+              {t('Розподіл позицій')}
+            </Text>
+            <UrgencyDonut
+              chartLabel={countFormatter.format(plan.item_count)}
+              data={splitSlices}
+              emptyLabel={t('Немає позицій')}
+              valueFormatter={(value) => countFormatter.format(value)}
+            />
+          </Stack>
+        ) : null}
+      </div>
     </Card>
   )
 }
@@ -118,17 +135,10 @@ function SummaryItem({
   value: string
 }) {
   return (
-    <Stack gap={2}>
-      <Group gap={4} wrap="nowrap">
-        <Text c="gray.9" size="xs">
-          {label}
-        </Text>
-        {hint && (
-          <Tooltip label={hint} maw={320} multiline>
-            <Info size={12} color="var(--mantine-color-gray-5)" />
-          </Tooltip>
-        )}
-      </Group>
+    <Stack className="budget-cart-summary__metric" gap={2} title={hint}>
+      <Text c="gray.9" size="xs">
+        {label}
+      </Text>
       <Text c="gray.8" className={money ? 'app-money' : undefined} fw={600}>
         {value}
       </Text>
@@ -137,7 +147,7 @@ function SummaryItem({
 }
 
 function formatNullableEuro(value: number | null): string {
-  return value === null ? '-' : `€${eurFormatter.format(value)}`
+  return value === null ? '' : `€${eurFormatter.format(value)}`
 }
 
 function getMethodLabel(plan: CartPlan, t: (value: string) => string): string {

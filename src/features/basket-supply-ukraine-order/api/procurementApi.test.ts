@@ -3,6 +3,7 @@ import { apiRequest } from '../../../shared/api/apiClient'
 import {
   createCockpitDraftOrder,
   getBudgetCartPlan,
+  getProcurementCharts,
   getProducerPlan,
   getProducerProfile,
   getProductTerms,
@@ -550,6 +551,67 @@ describe('createCockpitDraftOrder', () => {
     apiRequestMock.mockResolvedValueOnce(null)
 
     await expect(createCockpitDraftOrder(42, [{ productId: 100, qty: 30 }])).resolves.toBeNull()
+  })
+})
+
+describe('getProcurementCharts', () => {
+  beforeEach(() => {
+    apiRequestMock.mockReset()
+  })
+
+  it('preserves product identity fields used by the dashboard table and forecast', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      Body: {
+        as_of_date: '2026-07-25',
+        demand_series: [
+          {
+            image_url: 'https://cdn.example.test/product.png',
+            oe_number: 'OE-100',
+            points: [{ is_forecast: true, period: '2026-08', units: 12 }],
+            product_id: 100,
+            product_name: 'Гальмівний диск',
+            vendor_code: 'BR-100',
+          },
+        ],
+        top_items: [
+          {
+            image_url: 'https://cdn.example.test/product.png',
+            oe_number: 'OE-100',
+            on_hand: 2,
+            producer_id: 42,
+            producer_name: 'Brembo',
+            product_id: 100,
+            product_name: 'Гальмівний диск',
+            reorder_point: 10,
+            suggested_qty: 8,
+            urgency: 'critical',
+            vendor_code: 'BR-100',
+          },
+        ],
+      },
+    })
+
+    const charts = await getProcurementCharts({ producerId: 42, topN: 8 })
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/procurement/charts', {
+      query: { producerId: 42, topN: 8 },
+    })
+    expect(charts.top_items[0]).toMatchObject({
+      image_url: 'https://cdn.example.test/product.png',
+      oe_number: 'OE-100',
+      producer_id: 42,
+      producer_name: 'Brembo',
+      product_id: 100,
+      product_name: 'Гальмівний диск',
+      vendor_code: 'BR-100',
+    })
+    expect(charts.demand_series[0]).toMatchObject({
+      image_url: 'https://cdn.example.test/product.png',
+      oe_number: 'OE-100',
+      product_id: 100,
+      product_name: 'Гальмівний диск',
+      vendor_code: 'BR-100',
+    })
   })
 })
 

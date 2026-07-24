@@ -346,11 +346,17 @@ function normalizeTopItems(value: unknown) {
     const entry = item as Record<string, unknown>
 
     return {
+      image_url: normalizeNullableString(entry.image_url),
+      oe_number: normalizeNullableString(entry.oe_number),
+      producer_id: toNullableNumber(entry.producer_id),
+      producer_name: normalizeNullableString(entry.producer_name),
       product_id: toNumber(entry.product_id, 0),
+      product_name: normalizeNullableString(entry.product_name),
       suggested_qty: toNumber(entry.suggested_qty, 0),
       on_hand: toNumber(entry.on_hand, 0),
       reorder_point: toNumber(entry.reorder_point, 0),
       urgency: String(entry.urgency ?? ''),
+      vendor_code: normalizeNullableString(entry.vendor_code),
     }
   })
 }
@@ -360,7 +366,10 @@ function normalizeDemandSeries(value: unknown) {
     const series = item as Record<string, unknown>
 
     return {
+      image_url: normalizeNullableString(series.image_url),
+      oe_number: normalizeNullableString(series.oe_number),
       product_id: toNumber(series.product_id, 0),
+      product_name: normalizeNullableString(series.product_name),
       points: toArray(series.points).map((point) => {
         const entry = point as Record<string, unknown>
 
@@ -370,6 +379,7 @@ function normalizeDemandSeries(value: unknown) {
           is_forecast: Boolean(entry.is_forecast),
         }
       }),
+      vendor_code: normalizeNullableString(series.vendor_code),
     }
   })
 }

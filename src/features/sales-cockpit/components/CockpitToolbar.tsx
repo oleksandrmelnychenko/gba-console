@@ -1,7 +1,8 @@
-import { ActionIcon, Card, SegmentedControl, Text, TextInput, Tooltip } from '@mantine/core'
-import { RefreshCw, Sparkles } from 'lucide-react'
+import { ActionIcon, Button, Card, SegmentedControl, Text, TextInput, Tooltip } from '@mantine/core'
+import { RefreshCw, RotateCcw, Sparkles } from 'lucide-react'
 import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import type { CockpitTaskType, CockpitUrgency } from '../types'
 import { TaskFilters } from './TaskFilters'
 
@@ -14,6 +15,7 @@ type CockpitToolbarProps = {
   asOfDate?: string
   todayCount: number
   visibleCount: number
+  hasActiveFilters: boolean
   isLoading: boolean
   isRegenerating: boolean
   onTaskTypeChange: (value: CockpitTaskType | null) => void
@@ -22,6 +24,7 @@ type CockpitToolbarProps = {
   onAsOfDateChange: (value: string | undefined) => void
   onRegenerate: () => void
   onReload: () => void
+  onReset: () => void
 }
 
 export function CockpitToolbar({
@@ -31,6 +34,7 @@ export function CockpitToolbar({
   asOfDate,
   todayCount,
   visibleCount,
+  hasActiveFilters,
   isLoading,
   isRegenerating,
   onTaskTypeChange,
@@ -39,6 +43,7 @@ export function CockpitToolbar({
   onAsOfDateChange,
   onRegenerate,
   onReload,
+  onReset,
 }: CockpitToolbarProps) {
   const { t } = useI18n()
 
@@ -77,15 +82,15 @@ export function CockpitToolbar({
           <Text className="cockpit-toolbar-count">
             {t('Завдань')}: <strong>{visibleCount}</strong>
           </Text>
-          <Tooltip label={t('Згенерувати завдання')}>
+          <Tooltip label={t('Скинути фільтри')}>
             <ActionIcon
-              aria-label={t('Згенерувати завдання')}
-              loading={isRegenerating}
+              aria-label={t('Скинути фільтри')}
+              disabled={!hasActiveFilters}
               size={34}
               variant="light"
-              onClick={onRegenerate}
+              onClick={onReset}
             >
-              <Sparkles size={17} />
+              <RotateCcw size={17} />
             </ActionIcon>
           </Tooltip>
           <Tooltip label={t('Оновити')}>
@@ -93,6 +98,14 @@ export function CockpitToolbar({
               <RefreshCw size={18} />
             </ActionIcon>
           </Tooltip>
+          <Button
+            color={CREATE_ACTION_COLOR}
+            leftSection={<Sparkles size={16} />}
+            loading={isRegenerating}
+            onClick={onRegenerate}
+          >
+            {t('Згенерувати завдання')}
+          </Button>
         </div>
       </div>
     </Card>

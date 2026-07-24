@@ -1,9 +1,5 @@
-/* ── Assortment intelligence dashboard ──────────────────────────────────────
-   On the docs/ui-patterns.md system: §2 section titles (mono + orange dot),
-   §4 pills, §5.1 data language (Onest for names, mono for numbers, money in
-   green/red), §7.2 metric tiles (no boxes-in-boxes, no colored strips),
-   §1 — no shadows, no violet; controls follow the 36px/radius-8/mono toolbar
-   language. Cards keep the .app-section-card shell but drop its shadow. */
+/* Assortment workspace — follows docs/ui-patterns.md:
+   one flat shell, mono controls and values, Onest product names, shared table. */
 
 .assort-dash {
   box-sizing: border-box;
@@ -17,7 +13,6 @@
   background: var(--mantine-color-white);
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: var(--mantine-radius-md);
-  box-shadow: var(--app-card-shadow);
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
@@ -28,31 +23,26 @@
 }
 
 .assort-dash__body {
+  display: flex;
   flex: 1 1 auto;
-  display: grid;
-  gap: 12px;
+  flex-direction: column;
+  gap: 10px;
   min-height: 0;
   overflow-y: auto;
-  padding: 12px;
+  padding: 10px;
 }
 
-.assort-dash .app-section-card {
-  box-shadow: none;
-  border-color: var(--mantine-color-gray-2);
-}
-
+.assort-dash .app-section-card,
 .console-frame .assort-dash .mantine-Card-root.kpi-tile,
 .console-frame .assort-dash .mantine-Card-root.assort-card,
 .console-frame .assort-dash .mantine-Card-root.assort-region,
 .console-frame .assort-dash .mantine-Card-root.assort-table-card {
   border: 1px solid var(--mantine-color-gray-2);
+  box-shadow: none;
 }
 
-.console-frame .assort-dash .mantine-Card-root.kpi-tile {
-  border-color: #dde3ea;
-}
+/* Global toolbar ---------------------------------------------------------- */
 
-/* Header ------------------------------------------------------------------- */
 .assort-dash__header {
   border: 0;
   border-radius: 0;
@@ -61,16 +51,18 @@
 }
 
 .assort-dash__header > .app-filter-bar.assort-dash__bar {
+  align-items: flex-end;
   border-bottom: 1px solid var(--mantine-color-gray-2);
   display: flex;
+  gap: 14px;
   overflow-x: auto;
   width: 100%;
 }
 
 .assort-dash__summary {
-  align-self: end;
+  align-self: center;
   display: grid;
-  flex: 1 0 280px;
+  flex: 1 0 270px;
   gap: 3px;
   min-width: 0;
 }
@@ -81,31 +73,29 @@
   line-height: 1.2;
 }
 
-/* Meta row (§5.1): Onest labels in gray-6, mono values in gray-7. */
 .assort-dash__subtitle {
-  font-size: 12.5px;
   color: var(--mantine-color-gray-6);
+  font-size: 12.5px;
+  white-space: nowrap;
 }
 
 .assort-dash__subtitle b {
-  color: var(--mantine-color-gray-7);
+  color: var(--mantine-color-gray-8);
   font-family: var(--font-mono);
   font-weight: 600;
   letter-spacing: 0;
 }
 
 .assort-dash__controls {
-  display: flex;
   align-items: flex-end;
+  display: flex;
   flex: 0 0 auto;
   flex-wrap: nowrap;
+  gap: 8px;
   justify-content: flex-end;
-  gap: 10px;
   min-width: 0;
 }
 
-/* Toolbar-language controls (§5.3): mono near-black labels, 36px fields,
-   radius 8, gray-2 border, mono values. Shared by header + table filters. */
 .assort-dash__controls .mantine-InputWrapper-label,
 .assort-filter .mantine-InputWrapper-label {
   color: var(--mantine-color-gray-9);
@@ -133,7 +123,22 @@
   letter-spacing: 0;
 }
 
-/* Portal dropdowns: mono options, orange selected/hover tint (§1 — no violet). */
+.assort-reset {
+  border-radius: 8px;
+  color: var(--mantine-color-gray-7);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  height: var(--app-filter-control-height, 36px);
+  margin-bottom: 0;
+  padding-inline: 10px;
+}
+
+.assort-reset:hover {
+  background: var(--mantine-color-gray-1);
+  color: var(--mantine-color-gray-9);
+}
+
 .assort-select-dropdown [data-combobox-option] {
   font-family: var(--font-mono);
   font-size: 12.5px;
@@ -147,67 +152,40 @@
   color: var(--mantine-color-gray-9);
 }
 
-/* KPI tiles: compact metric cards, still in the shared table/page language. */
+/* Compact KPI strip ------------------------------------------------------- */
+
 .assort-kpis {
-  align-items: stretch;
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: var(--mantine-radius-md);
+  flex: 0 0 auto;
+  overflow: hidden;
+}
+
+.console-frame .assort-dash .mantine-Card-root.kpi-tile {
+  border: 0;
+  border-radius: 0;
 }
 
 .kpi-tile {
-  background:
-    linear-gradient(180deg, rgba(248, 249, 250, 0.72), rgba(255, 255, 255, 0) 76%),
-    var(--mantine-color-white);
-  border-color: #dde3ea;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.88);
+  background: var(--mantine-color-white);
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 3px;
   justify-content: center;
-  min-height: 92px;
-  overflow: hidden;
-  padding: 14px 16px 13px;
-  position: relative;
-  transition:
-    border-color 140ms var(--tx-ease-smooth),
-    background-color 140ms var(--tx-ease-smooth);
+  min-height: 76px;
+  padding: 10px 14px;
 }
 
-.kpi-tile::after {
-  background: var(--brand-orange);
-  border-radius: 999px;
-  bottom: 12px;
-  content: '';
-  height: 3px;
-  opacity: 0.28;
-  position: absolute;
-  right: 16px;
-  width: 48px;
-}
-
-.kpi-tile:nth-child(1)::after {
-  background: var(--mantine-color-teal-5);
-}
-
-.kpi-tile:nth-child(2)::after {
-  background: var(--brand-orange);
-}
-
-.kpi-tile:nth-child(3)::after {
-  background: var(--mantine-color-yellow-6);
-}
-
-.kpi-tile:nth-child(4)::after {
-  background: var(--mantine-color-red-5);
-}
-
-.kpi-tile:hover {
-  border-color: #cfd7e1;
+.kpi-tile + .kpi-tile {
+  border-left: 1px solid var(--mantine-color-gray-2) !important;
 }
 
 .kpi-tile__label {
   align-items: center;
   color: var(--mantine-color-gray-7);
   display: inline-flex;
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 600;
   min-width: 0;
 }
@@ -215,10 +193,11 @@
 .kpi-tile__value {
   color: var(--mantine-color-gray-9);
   font-family: var(--font-mono);
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
   letter-spacing: 0;
-  line-height: 1.05;
+  line-height: 1.1;
+  min-height: 20px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -227,242 +206,266 @@
 .kpi-tile__sub {
   color: var(--mantine-color-gray-6);
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
   letter-spacing: 0;
   line-height: 1.2;
-  min-height: 15px;
+  min-height: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-/* Regional lens ------------------------------------------------------------- */
+/* Selected region --------------------------------------------------------- */
+
 .assort-region {
-  display: flex;
   align-items: center;
-  justify-content: space-between;
+  display: flex;
+  flex: 0 0 auto;
   gap: 16px;
-  padding: 14px 16px;
+  justify-content: space-between;
+  padding: 10px 14px;
 }
 
 .assort-region__title {
-  min-width: 220px;
-  display: flex;
   align-items: center;
+  display: flex;
   gap: 10px;
+  min-width: 220px;
 }
 
-/* Outlined one-color circle (§7.1 icon language). */
 .assort-region__icon {
   color: var(--mantine-color-gray-7);
 }
 
 .assort-region__title div {
-  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 1px;
+  min-width: 0;
 }
 
 .assort-region__title span:not(.assort-region__icon) {
+  color: var(--mantine-color-gray-8);
   font-size: 14px;
   font-weight: 600;
-  color: var(--mantine-color-gray-8);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .assort-region__title small {
-  font-size: 12px;
   color: var(--mantine-color-gray-6);
+  font-size: 12px;
 }
 
 .assort-region__metrics {
-  flex: 1 1 auto;
-  min-width: 0;
   display: grid;
-  grid-template-columns: repeat(4, minmax(120px, 1fr));
+  flex: 1 1 auto;
   gap: 10px;
+  grid-template-columns: repeat(4, minmax(110px, 1fr));
+  min-width: 0;
 }
 
-/* §7.2 metric — no boxes or divider strips around the numbers. */
 .assort-region__metric {
   min-width: 0;
 }
 
 .assort-region__metric .app-section-title {
   display: block;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
 }
 
 .assort-region__metric b {
+  color: var(--mantine-color-gray-8);
   display: block;
   font-family: var(--font-mono);
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   letter-spacing: 0;
-  color: var(--mantine-color-gray-8);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-/* Section card scaffolding ------------------------------------------------- */
+/* Operational insights ---------------------------------------------------- */
+
+.assort-dash__insights {
+  display: grid;
+  flex: 0 0 auto;
+  gap: 10px;
+  grid-template-columns: minmax(620px, 1.35fr) minmax(420px, 0.65fr);
+  min-width: 0;
+}
+
+.assort-structure {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(350px, 1.45fr) minmax(260px, 0.55fr);
+  min-width: 0;
+}
+
 .assort-card {
-  padding: 16px;
+  min-width: 0;
+  padding: 12px;
 }
 
 .assort-card__head {
-  display: flex;
   align-items: baseline;
-  justify-content: space-between;
+  display: flex;
   gap: 12px;
-  margin-bottom: 14px;
+  justify-content: space-between;
+  margin-bottom: 10px;
 }
 
-/* Font geometry only — color/family/dot come from .app-section-title (§2). */
 .assort-card__title {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
 }
 
 .assort-card__hint {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  letter-spacing: 0;
   color: var(--mantine-color-gray-6);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0;
+  white-space: nowrap;
 }
 
-/* Segmented stock-state bar ------------------------------------------------ */
 .band-bar {
-  display: flex;
-  width: 100%;
-  height: 16px;
-  border-radius: 999px;
-  overflow: hidden;
   background: var(--mantine-color-gray-1);
+  border-radius: 999px;
+  display: flex;
+  height: 12px;
+  overflow: hidden;
+  width: 100%;
 }
 
 .band-bar__seg {
   height: 100%;
   min-width: 2px;
-  transition: opacity 120ms ease;
-}
-
-.band-bar__seg:hover {
-  opacity: 0.82;
 }
 
 .band-legend {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  margin-top: 14px;
+  display: grid;
+  gap: 0 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 9px;
 }
 
 .band-legend__row {
-  display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 6px 4px;
-  border-radius: 8px;
-}
-
-.band-legend__row + .band-legend__row {
   border-top: 1px solid var(--mantine-color-gray-1);
+  display: flex;
+  gap: 7px;
+  min-width: 0;
+  padding: 5px 2px;
 }
 
 .band-legend__swatch {
+  border-radius: 2px;
   flex: 0 0 auto;
-  width: 10px;
-  height: 10px;
-  border-radius: 3px;
+  height: 8px;
+  width: 8px;
 }
 
 .band-legend__label {
-  flex: 1 1 auto;
-  min-width: 0;
-  font-size: 13px;
-  font-weight: 500;
   color: var(--mantine-color-gray-8);
+  flex: 1 1 auto;
+  font-size: 11.5px;
+  font-weight: 500;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.band-legend__count {
-  flex: 0 0 auto;
+.band-legend__count,
+.band-legend__value {
   font-family: var(--font-mono);
-  font-size: 13px;
-  font-weight: 600;
   letter-spacing: 0;
+  white-space: nowrap;
+}
+
+.band-legend__count {
   color: var(--mantine-color-gray-8);
+  flex: 0 0 auto;
+  font-size: 11.5px;
+  font-weight: 600;
 }
 
 .band-legend__value {
-  flex: 0 0 96px;
-  text-align: right;
-  font-family: var(--font-mono);
-  font-size: 12px;
-  letter-spacing: 0;
   color: var(--mantine-color-gray-6);
+  flex: 0 0 74px;
+  font-size: 10.5px;
+  text-align: right;
 }
 
-/* Health gauge + ABC/XYZ mix ---------------------------------------------- */
+.assort-structure__health {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  grid-template-rows: auto 1fr;
+}
+
+.assort-structure__health .assort-card__head {
+  grid-column: 1 / -1;
+}
+
 .assort-gauge {
+  align-items: center;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 4px;
+  gap: 0;
+  justify-content: center;
 }
 
 .assort-gauge__caption {
-  font-size: 12px;
   color: var(--mantine-color-gray-6);
+  font-size: 10px;
+  text-align: center;
 }
 
 .assort-mix {
+  align-self: center;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin-top: 4px;
+  min-width: 0;
 }
 
 .assort-mix__group {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  gap: 6px;
+  min-width: 0;
 }
 
 .assort-mix__title {
-  flex: 0 0 42px;
+  color: var(--mantine-color-gray-6);
+  flex: 0 0 28px;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   letter-spacing: 0;
-  text-transform: uppercase;
-  color: var(--mantine-color-gray-6);
 }
 
 .assort-mix__chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 4px;
 }
 
-/* Outlined mono chip — the §4 gray pill on a bare span. */
 .assort-mix__chip {
-  display: inline-flex;
   align-items: baseline;
-  gap: 5px;
-  padding: 2px 9px;
-  border: 1px solid var(--mantine-color-gray-3);
-  border-radius: 7px;
   background: var(--mantine-color-gray-0);
-  font-family: var(--font-mono);
-  font-size: 12px;
-  letter-spacing: 0;
+  border: 1px solid var(--mantine-color-gray-3);
+  border-radius: 6px;
   color: var(--mantine-color-gray-7);
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  gap: 4px;
+  letter-spacing: 0;
+  padding: 1px 6px;
 }
 
 .assort-mix__chip b {
@@ -470,109 +473,109 @@
   font-weight: 600;
 }
 
-/* Ranked lists ------------------------------------------------------------- */
-.rank-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 12px;
-}
+/* Attention queue --------------------------------------------------------- */
 
-.rank-list__head {
+.assort-attention {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
+  flex-direction: column;
 }
 
-.rank-list__title {
-  font-size: 12.5px;
-  font-weight: 600;
-}
-
-.rank-row {
+.assort-attention__list {
   display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.assort-attention__row {
   align-items: center;
-  gap: 10px;
-  width: 100%;
-  padding: 7px 8px;
-  border: 0;
-  border-radius: 8px;
   background: transparent;
-  cursor: pointer;
-  font: inherit;
-  text-align: left;
-  transition: background-color 120ms ease;
-}
-
-.rank-row + .rank-row {
+  border: 0;
   border-top: 1px solid var(--mantine-color-gray-1);
+  cursor: pointer;
+  display: grid;
+  font: inherit;
+  gap: 8px;
+  grid-template-columns: 126px minmax(0, 1fr) auto;
+  min-height: 38px;
+  padding: 5px 2px;
+  text-align: left;
+  width: 100%;
 }
 
-.rank-row:hover {
+.assort-attention__row:hover {
   background: rgba(var(--brand-orange-rgb), 0.06);
 }
 
-.rank-row__rank {
-  flex: 0 0 20px;
+.assort-attention__row .app-role-pill {
+  justify-self: start;
+  max-width: 126px;
+}
+
+.assort-attention__product {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+  min-width: 0;
+}
+
+.assort-attention__product b {
+  color: var(--mantine-color-gray-9);
+  font-family: var(--font-sans);
+  font-size: 11.5px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.assort-attention__product span {
+  color: var(--mantine-color-gray-6);
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 10px;
+  letter-spacing: 0;
+}
+
+.assort-attention__row strong {
+  color: var(--mantine-color-gray-8);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
   font-weight: 600;
   letter-spacing: 0;
+  white-space: nowrap;
+}
+
+.assort-attention__empty {
+  align-items: center;
   color: var(--mantine-color-gray-6);
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  font-size: 12px;
+  justify-content: center;
+  min-height: 112px;
   text-align: center;
 }
 
-.rank-row__body {
-  flex: 1 1 auto;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  line-height: 1.2;
-}
-
-/* Two-line cell language (§5.1): mono code on top, Onest name under it. */
-.rank-row__code {
-  font-family: var(--font-mono);
-  font-size: 12.5px;
-  font-weight: 600;
-  letter-spacing: 0;
+.assort-attention__empty b {
   color: var(--mantine-color-gray-8);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.rank-row__name {
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--mantine-color-gray-6);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.rank-row__metric {
-  flex: 0 0 auto;
-  font-family: var(--font-mono);
-  font-size: 13px;
   font-weight: 600;
-  letter-spacing: 0;
-  color: var(--mantine-color-gray-8);
-  text-align: right;
 }
 
 .rank-empty {
+  color: var(--mantine-color-gray-6);
+  font-size: 12px;
   padding: 14px 8px;
   text-align: center;
-  font-size: 12px;
-  color: var(--mantine-color-gray-6);
 }
 
-/* Detail table card -------------------------------------------------------- */
+/* Main table -------------------------------------------------------------- */
+
 .assort-table-card {
   display: flex;
+  flex: 1 0 390px;
   flex-direction: column;
-  min-height: 100%;
+  min-height: 390px;
   min-width: 0;
   overflow: hidden;
   padding: 0;
@@ -580,10 +583,10 @@
 
 .assort-table-card .assort-card__head {
   align-items: center;
-  min-height: 42px;
-  margin: 0;
-  padding: 10px 12px;
   border-bottom: 1px solid var(--mantine-color-gray-2);
+  min-height: 40px;
+  margin: 0;
+  padding: 8px 12px;
 }
 
 .assort-filter {
@@ -595,6 +598,10 @@
 .assort-filter-row {
   min-width: max-content;
   width: 100%;
+}
+
+.assort-filter-row .app-filter-table-toolbar-slot {
+  margin-left: auto;
 }
 
 .assort-table-card__table {
@@ -617,15 +624,15 @@
   min-height: 0;
 }
 
-/* Numeric table cell — bare mono number (§5.1), no chips. */
 .assort-cell-num {
+  color: var(--mantine-color-gray-8);
   font-family: var(--font-mono);
   font-weight: 600;
   letter-spacing: 0;
-  color: var(--mantine-color-gray-8);
 }
 
-.assort-cell-product {
+.assort-cell-product,
+.assort-cell-action {
   display: flex;
   flex-direction: column;
   line-height: 1.2;
@@ -633,23 +640,77 @@
 }
 
 .assort-cell-product b {
-  font-family: var(--font-mono);
+  color: var(--mantine-color-gray-9);
+  font-family: var(--font-sans);
   font-size: 12.5px;
   font-weight: 600;
-  letter-spacing: 0;
-  color: var(--mantine-color-gray-8);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .assort-cell-product span {
-  font-size: 11px;
-  font-weight: 500;
   color: var(--mantine-color-gray-6);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.assort-cell-action b {
+  color: var(--mantine-color-gray-8);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.assort-cell-action span {
+  color: var(--mantine-color-gray-6);
+  font-family: var(--font-sans);
+  font-size: 10.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.assort-table-empty {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  justify-content: center;
+  min-height: 110px;
+}
+
+.assort-table-empty b {
+  color: var(--mantine-color-gray-8);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.assort-table-empty span {
+  color: var(--mantine-color-gray-6);
+  font-family: var(--font-sans);
+  font-size: 12px;
+}
+
+@media (max-width: 1280px) {
+  .assort-dash__insights {
+    grid-template-columns: 1fr;
+  }
+
+  .assort-attention__list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .assort-attention__row:nth-child(even) {
+    border-left: 1px solid var(--mantine-color-gray-1);
+    padding-left: 10px;
+  }
 }
 
 @media (max-width: 900px) {
@@ -658,7 +719,8 @@
     flex-direction: column;
   }
 
-  .assort-region__metrics {
+  .assort-region__metrics,
+  .assort-structure {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

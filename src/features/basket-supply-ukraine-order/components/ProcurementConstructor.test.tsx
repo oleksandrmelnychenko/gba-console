@@ -80,6 +80,32 @@ describe('ProcurementConstructor', () => {
       ).toBe(true)
     })
   })
+
+  it('explains when the current stock does not require replenishment', async () => {
+    vi.mocked(getBudgetCartPlan).mockResolvedValue({
+      as_of_date: '2026-07-24',
+      budget_eur: 0,
+      budget_used_eur: 0,
+      deferred_count: 0,
+      item_count: 0,
+      items: [],
+      method_used: 'greedy',
+      model_version: 'test',
+      selected_count: 0,
+      value_captured_eur: 0,
+    })
+
+    render(
+      <MantineProvider theme={theme}>
+        <I18nProvider>
+          <ProcurementConstructor />
+        </I18nProvider>
+      </MantineProvider>,
+    )
+
+    expect(await screen.findByText('Позицій до замовлення немає')).not.toBeNull()
+    expect(screen.getByText('Запас покрито')).not.toBeNull()
+  })
 })
 
 function suggestion(overrides: Partial<ReorderSuggestion> = {}): ReorderSuggestion {

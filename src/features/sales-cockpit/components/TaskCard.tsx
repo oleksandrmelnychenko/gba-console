@@ -62,8 +62,8 @@ export function TaskCard({
   const pOutcome = typeof task.p_outcome === 'number' ? task.p_outcome : null
 
   return (
-    <Card className={`cockpit-task is-${task.urgency ?? 'normal'}`} padding="md" radius="md" withBorder>
-      <Stack gap="sm">
+    <Card className={`cockpit-task is-${task.urgency ?? 'normal'}`} padding="sm" radius="md" withBorder>
+      <Stack gap={7}>
         <Group align="flex-start" gap="sm" justify="space-between" wrap="nowrap">
           <Stack gap={4}>
             <Group gap="xs" wrap="nowrap">

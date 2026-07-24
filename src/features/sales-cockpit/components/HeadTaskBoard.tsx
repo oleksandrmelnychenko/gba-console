@@ -297,10 +297,9 @@ export function HeadTaskBoard({
         <div className="app-filter-actions cockpit-command-actions">
           <Button
             color={CREATE_ACTION_COLOR}
-            leftSection={<Sparkles size={16} fill="currentColor" strokeWidth={0} />}
+            leftSection={<Sparkles size={16} />}
             loading={isGenerating}
             size="sm"
-            variant="outline"
             onClick={handleGenerate}
           >
             {t('Перерахувати AI задачі')}

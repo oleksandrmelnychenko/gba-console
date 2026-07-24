@@ -4,7 +4,6 @@ import {
   Button,
   Card,
   Group,
-  Loader,
   NumberInput,
   SegmentedControl,
   Stack,
@@ -24,9 +23,9 @@ import { getSupplyOrderSuppliers } from '../../supply-ukraine-orders/api/supplyU
 import type { Client } from '../../supply-ukraine-orders/types'
 import { getBudgetCartPlan } from '../api/procurementApi'
 import type { CartOptimizeMethod, CartPlan, ReorderSuggestion } from '../procurementTypes'
-import { BudgetCartGuide } from './BudgetCartGuide'
 import { BudgetCartSummary, type BudgetCartFinancials } from './BudgetCartSummary'
 import { BudgetCartTable } from './BudgetCartTable'
+import { ProcurementWorkspaceState } from './ProcurementWorkspaceState'
 
 type BudgetCartState = {
   plan: CartPlan | null
@@ -64,6 +63,9 @@ function budgetCartReducer(state: BudgetCartState, action: BudgetCartAction): Bu
 
 const DEFAULT_BUDGET_EUR = 50000
 const OPTIMIZE_DEBOUNCE_MS = 500
+const budgetFormatter = new Intl.NumberFormat('uk-UA', {
+  maximumFractionDigits: 0,
+})
 
 export function BudgetCartTab() {
   const { t } = useI18n()
@@ -243,7 +245,7 @@ export function BudgetCartTab() {
                 {t('AI підбирає товари до закупівлі в межах заданого ліміту в EUR')}
               </Text>
               <Text c="gray.9" size="xs">
-                {t('Кандидати відбираються на основі дефіциту, прогнозу попиту, залишків і правил закупівлі')}
+                {getBudgetMethodDescription(method, t)}
               </Text>
             </Stack>
             <div className="app-filter-actions budget-cart-filter-actions">
@@ -277,8 +279,6 @@ export function BudgetCartTab() {
         </div>
       </Card>
 
-      <BudgetCartGuide method={method} />
-
       {error && (
         <Alert color="red" icon={<CircleAlert size={16} />} variant="light">
           {error}
@@ -286,22 +286,29 @@ export function BudgetCartTab() {
       )}
 
       {!hasRequested && !error && (
-        <Card className="app-section-card" padding="lg" radius="md" withBorder>
-          <Text c="dimmed" size="sm" ta="center">
-            {t('Введіть бюджет та натисніть «Сформувати план»')}
-          </Text>
-        </Card>
+        <ProcurementWorkspaceState
+          description={t('Вкажіть ліміт закупівлі та запустіть розрахунок. AI розподілить бюджет між позиціями з найбільшою потребою.')}
+          facts={[
+            {
+              label: t('Поточний бюджет'),
+              value: typeof budgetInput === 'number'
+                ? `${budgetFormatter.format(budgetInput)} EUR`
+                : t('Не вказано'),
+            },
+            { label: t('Метод'), value: getMethodLabel(method, t) },
+          ]}
+          surface
+          title={t('План ще не сформовано')}
+        />
       )}
 
       {hasRequested && isLoading && (
-        <Card className="app-section-card" padding="lg" radius="md" withBorder>
-          <Group justify="center">
-            <Loader size="sm" />
-            <Text c="dimmed" size="sm">
-              {t('Завантаження…')}
-            </Text>
-          </Group>
-        </Card>
+        <ProcurementWorkspaceState
+          description={t('Зіставляємо дефіцит, прогноз попиту, правила постачальників і доступний бюджет.')}
+          isLoading
+          surface
+          title={t('Формуємо план закупівлі')}
+        />
       )}
 
       {hasPlan && plan && (
@@ -353,14 +360,45 @@ export function BudgetCartTab() {
       </AppBottomSheet>
 
       {isEmpty && (
-        <Card className="app-section-card" padding="lg" radius="md" withBorder>
-          <Text c="dimmed" size="sm" ta="center">
-            {t('Немає позицій')}
-          </Text>
-        </Card>
+        <ProcurementWorkspaceState
+          description={t('За поточними умовами немає товарів, які потрібно додати до закупівлі. Спробуйте іншу дату або збільште бюджет.')}
+          facts={[
+            {
+              label: t('Бюджет'),
+              value: plan ? `${budgetFormatter.format(plan.budget_eur)} EUR` : '',
+            },
+            { label: t('Метод'), value: plan ? getMethodLabel(plan.method_used, t) : '' },
+          ]}
+          surface
+          title={t('План не містить позицій')}
+        />
       )}
     </Stack>
   )
+}
+
+function getBudgetMethodDescription(
+  method: CartOptimizeMethod,
+  t: TranslateFunction,
+): string {
+  return method === 'milp'
+    ? t('Оптимальний метод порівнює комбінації всього набору, щоб краще використати бюджет')
+    : t('Швидкий метод спочатку бере позиції з найбільшою цінністю на 1 EUR')
+}
+
+function getMethodLabel(
+  method: CartOptimizeMethod | string | null,
+  t: TranslateFunction,
+): string {
+  if (method === 'milp') {
+    return t('Оптимальний')
+  }
+
+  if (method === 'greedy') {
+    return t('Швидкий')
+  }
+
+  return t('Не вказано')
 }
 
 function buildProducerNameMap(producers: Client[]): Map<number, string> {

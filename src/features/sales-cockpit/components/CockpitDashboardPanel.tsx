@@ -1,4 +1,4 @@
-import { Alert, Card, Group, SimpleGrid, Stack, Text } from '@mantine/core'
+import { Alert, Card, Group, Stack, Text } from '@mantine/core'
 import { CircleAlert } from 'lucide-react'
 import { useEffect, useMemo, useReducer } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -131,8 +131,14 @@ export function CockpitDashboardPanel({ asOfDate, reloadKey }: { asOfDate?: stri
     }
   }, [dashboard?.completed_vs_open])
 
+  const hasChartData =
+    urgencyData.some((item) => item.value > 0) ||
+    taskTypeData.some((item) => item.value > 0) ||
+    agingData.some((item) => item.amount > 0)
+  const showCharts = isLoading || hasChartData
+
   return (
-    <Card className="app-section-card" withBorder radius="md">
+    <Card className="app-section-card cockpit-dashboard-panel" withBorder radius="md">
       <Stack gap="md">
         <Text className="app-section-title" fw={600} size="sm">{t('Дашборд завдань')}</Text>
 
@@ -142,58 +148,64 @@ export function CockpitDashboardPanel({ asOfDate, reloadKey }: { asOfDate?: stri
           </Alert>
         )}
 
-        <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="md">
+        <div className="cockpit-dashboard-metrics">
           <StatCard accent="danger" label={t('Сума під ризиком')} value={formatMoney(dashboard?.value_at_risk_eur ?? 0)} />
           <StatCard accent="info" label={t('Активні')} value={String(completedTotals.open)} />
           <StatCard accent="success" label={t('Виконано (місяць)')} value={String(completedTotals.done)} />
           <StatCard label={t('Відхилено (місяць)')} value={String(completedTotals.dismissed)} />
-        </SimpleGrid>
+        </div>
 
-        <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
-          <Card className="cockpit-chart-card" padding="md" radius="md">
-            <Stack align="center" gap="xs">
-              <Text className="cockpit-subtitle">{t('За терміновістю')}</Text>
-              <UrgencyDonut
-                data={urgencyData}
-                emptyLabel={t('Немає активних завдань')}
-                isLoading={isLoading}
-                loadingLabel={t('Завантаження')}
-              />
-            </Stack>
-          </Card>
+        {showCharts ? (
+          <div className="cockpit-analytics-grid">
+            <Card className="cockpit-chart-card" padding="md" radius="md">
+              <Stack align="center" gap="xs">
+                <Text className="cockpit-subtitle">{t('За терміновістю')}</Text>
+                <UrgencyDonut
+                  data={urgencyData}
+                  emptyLabel={t('Немає активних завдань')}
+                  isLoading={isLoading}
+                  loadingLabel={t('Завантаження')}
+                />
+              </Stack>
+            </Card>
 
-          <Card className="cockpit-chart-card" padding="md" radius="md">
-            <Stack align="center" gap="xs">
-              <Text className="cockpit-subtitle">{t('За типом завдання')}</Text>
-              <TaskTypeDonut
-                data={taskTypeData}
-                emptyLabel={t('Немає активних завдань')}
-                isLoading={isLoading}
-                loadingLabel={t('Завантаження')}
-              />
-            </Stack>
-          </Card>
-        </SimpleGrid>
+            <Card className="cockpit-chart-card" padding="md" radius="md">
+              <Stack align="center" gap="xs">
+                <Text className="cockpit-subtitle">{t('За типом завдання')}</Text>
+                <TaskTypeDonut
+                  data={taskTypeData}
+                  emptyLabel={t('Немає активних завдань')}
+                  isLoading={isLoading}
+                  loadingLabel={t('Завантаження')}
+                />
+              </Stack>
+            </Card>
 
-        <Card className="cockpit-chart-card" padding="md" radius="md">
-          <Stack gap="xs">
-            <Group justify="space-between" wrap="wrap">
-              <Text className="cockpit-subtitle">{t('Старіння заборгованості')}</Text>
-              <Text c="dimmed" size="xs">
-                {t('Сума під ризиком')}: <span className="app-money">{formatMoney(dashboard?.value_at_risk_eur ?? 0)}</span>
-              </Text>
-            </Group>
-            <AgingBars
-              bucketKey="bucket"
-              data={agingData}
-              emptyLabel={t('Заборгованості немає')}
-              isLoading={isLoading}
-              loadingLabel={t('Завантаження')}
-              series={agingSeries}
-              valueFormatter={formatMoney}
-            />
-          </Stack>
-        </Card>
+            <Card className="cockpit-chart-card" padding="md" radius="md">
+              <Stack gap="xs">
+                <Group justify="space-between" wrap="wrap">
+                  <Text className="cockpit-subtitle">{t('Старіння заборгованості')}</Text>
+                  <Text c="dimmed" size="xs">
+                    {t('Під ризиком')}: <span className="app-money">{formatMoney(dashboard?.value_at_risk_eur ?? 0)}</span>
+                  </Text>
+                </Group>
+                <AgingBars
+                  bucketKey="bucket"
+                  data={agingData}
+                  emptyLabel={t('Заборгованості немає')}
+                  isLoading={isLoading}
+                  loadingLabel={t('Завантаження')}
+                  series={agingSeries}
+                  valueFormatter={formatMoney}
+                />
+              </Stack>
+            </Card>
+          </div>
+        ) : (
+          <Text className="cockpit-dashboard-empty" c="dimmed" size="sm">
+            {t('Аналітика з’явиться, коли будуть активні завдання або заборгованість')}
+          </Text>
+        )}
       </Stack>
     </Card>
   )

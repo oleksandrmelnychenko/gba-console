@@ -1,6 +1,7 @@
 import {
   Alert,
   Badge,
+  Button,
   Card,
   Group,
   RingProgress,
@@ -10,7 +11,7 @@ import {
   Text,
   TextInput,
 } from '@mantine/core'
-import { CircleAlert, MapPin } from 'lucide-react'
+import { CircleAlert, MapPin, RotateCcw } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
@@ -30,14 +31,12 @@ import { ProductCard } from '../components/ProductCard'
 import type {
   AssortmentHealthParams,
   AssortmentMargin,
-  AssortmentMarginRow,
   AssortmentOverview,
   AssortmentRegionRow,
   AssortmentRegions,
   AssortmentReturns,
   AssortmentRow,
   AssortmentStock,
-  AssortmentStockRow,
 } from '../types'
 import './assortment-dashboard.css'
 
@@ -47,6 +46,12 @@ const money = new Intl.NumberFormat('uk-UA', { currency: 'EUR', maximumFractionD
 const RATING_LIMIT = 8
 const REGION_LIMIT = 50
 const REGION_WINDOW_DAYS = 365
+const DEFAULT_ASSORTMENT_FILTERS: AssortmentHealthParams = {
+  limit: 100,
+  regionWindowDays: REGION_WINDOW_DAYS,
+  sort: 'health_asc',
+  stockedOnly: true,
+}
 const REGION_PERIOD_OPTIONS = [
   { value: '90', label: '90 днів' },
   { value: '180', label: '180 днів' },
@@ -76,6 +81,10 @@ const REGIONAL_SORT_OPTIONS = [
   { value: 'regional_units', label: 'Штуки в регіоні' },
 ]
 const REGIONAL_SORT_VALUES = new Set(REGIONAL_SORT_OPTIONS.map((option) => option.value))
+const STOCK_OPTIONS = [
+  { value: 'stocked', label: 'Є на складі' },
+  { value: 'all', label: 'Увесь асортимент' },
+]
 
 type BandSegment = {
   key: string
@@ -121,6 +130,33 @@ function intCell(value: number | null | undefined): string {
   return value == null ? '' : integer.format(Math.round(value))
 }
 
+function productName(row: Pick<AssortmentRow, 'name' | 'product_id'>): string {
+  return row.name?.trim() || `Товар ID ${row.product_id}`
+}
+
+function productCode(row: Pick<AssortmentRow, 'product_id' | 'vendor_code'>): string {
+  return row.vendor_code?.trim() || `ID ${row.product_id}`
+}
+
+function recommendationFor(row: AssortmentRow): { label: string; reason: string } {
+  const reason = row.action_reasons?.find(Boolean) ?? ''
+
+  switch (row.band) {
+    case 'understock':
+      return { label: 'Поповнити запас', reason: reason || 'Запас нижче розрахованої потреби' }
+    case 'overstock':
+      return { label: 'Зменшити запас', reason: reason || 'Запас перевищує поточний попит' }
+    case 'slow':
+      return { label: 'Прискорити продаж', reason: reason || 'Низька швидкість обігу' }
+    case 'dead':
+      return { label: 'Переглянути позицію', reason: reason || 'Товар не створює обороту' }
+    case 'order_to_demand':
+      return { label: 'Під замовлення', reason: reason || 'Закуповувати під підтверджений попит' }
+    default:
+      return { label: row.action_label || 'Контролювати', reason }
+  }
+}
+
 function MoneyCell({ value }: { value: number | null | undefined }) {
   if (value == null) {
     return null
@@ -164,12 +200,12 @@ function useAssortmentColumns(t: (key: string) => string, hasRegion: boolean) {
           id: 'product',
           header: t('Товар'),
           fill: true,
-          minWidth: 240,
+          minWidth: 280,
           accessor: (row) => row.vendor_code ?? row.name ?? row.product_id,
           cell: (row) => (
             <span className="assort-cell-product">
-              <b>{row.vendor_code || `#${row.product_id}`}</b>
-              <span>{row.name || `ID ${row.product_id}`}</span>
+              <b>{productName(row)}</b>
+              <span>{productCode(row)}</span>
             </span>
           ),
         },
@@ -237,6 +273,22 @@ function useAssortmentColumns(t: (key: string) => string, hasRegion: boolean) {
           accessor: (row) => row.eur_value,
           cell: (row) => <MoneyCell value={row.eur_value} />,
         },
+        {
+          id: 'action',
+          header: t('Рекомендація'),
+          minWidth: 220,
+          accessor: (row) => recommendationFor(row).label,
+          cell: (row) => {
+            const recommendation = recommendationFor(row)
+
+            return (
+              <span className="assort-cell-action">
+                <b>{recommendation.label}</b>
+                {recommendation.reason && <span>{recommendation.reason}</span>}
+              </span>
+            )
+          },
+        },
       ]
 
       if (!hasRegion) {
@@ -283,12 +335,7 @@ export function AssortmentDashboardPage() {
   const [margin, setMargin] = useValueState<AssortmentMargin | null>(null)
   const [returns, setReturns] = useValueState<AssortmentReturns | null>(null)
   const [regions, setRegions] = useValueState<AssortmentRegions | null>(null)
-  const [filters, setFilters] = useValueState<AssortmentHealthParams>({
-    sort: 'health_asc',
-    limit: 100,
-    stockedOnly: true,
-    regionWindowDays: REGION_WINDOW_DAYS,
-  })
+  const [filters, setFilters] = useValueState<AssortmentHealthParams>(DEFAULT_ASSORTMENT_FILTERS)
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState<boolean>(true)
   const [selectedProductId, setSelectedProductId] = useValueState<number | null>(null)
@@ -425,9 +472,9 @@ export function AssortmentDashboardPage() {
           avgHealth={avgHealth}
           filters={filters}
           regionOptions={regionOptions}
-          sortOptions={sortOptions}
           totalSkus={body?.total_skus}
           onFiltersChange={setFilters}
+          onReset={() => setFilters(DEFAULT_ASSORTMENT_FILTERS)}
         />
 
         <div className="assort-dash__body">
@@ -451,20 +498,22 @@ export function AssortmentDashboardPage() {
             <RegionSummary region={selectedRegion} windowDays={filters.regionWindowDays ?? REGION_WINDOW_DAYS} />
           )}
 
-          <AssortmentStructure
-            avgHealth={avgHealth}
-            bandSegments={bandSegments}
-            body={body}
-            visibleBandSegments={visibleBandSegments}
-          />
+          <div className="assort-dash__insights">
+            <AssortmentStructure
+              avgHealth={avgHealth}
+              bandSegments={bandSegments}
+              body={body}
+              visibleBandSegments={visibleBandSegments}
+            />
 
-          <AssortmentRatings
-            margin={margin}
-            returns={returns}
-            rows={rows}
-            stock={stock}
-            onPick={setSelectedProductId}
-          />
+            <AssortmentAttention
+              margin={margin}
+              returns={returns}
+              rows={rows}
+              stock={stock}
+              onPick={setSelectedProductId}
+            />
+          </div>
 
           <AssortmentDetailTable
             columns={columns}
@@ -501,80 +550,81 @@ function AssortmentHeader({
   avgHealth,
   filters,
   regionOptions,
-  sortOptions,
   totalSkus,
   onFiltersChange,
+  onReset,
 }: {
   avgHealth: number
   filters: AssortmentHealthParams
   regionOptions: SelectOption[]
-  sortOptions: SelectOption[]
   totalSkus?: number
   onFiltersChange: (filters: AssortmentHealthParams) => void
+  onReset: () => void
 }) {
   const { t } = useI18n()
 
   return (
     <Card className="assort-dash__header" withBorder radius="md" padding={0}>
       <div className="app-filter-bar assort-dash__bar">
-      <div className="assort-dash__summary">
-        <Group gap="xs" wrap="nowrap">
-          <Text className="app-section-title assort-dash__title">{t('Аналітика асортименту')}</Text>
-          <AiFeatureBadge tooltip={t('AI-сервіс рейтингу асортименту')} />
-        </Group>
-        <Text className="assort-dash__subtitle">
-          {t('Стан запасів')}
-          {totalSkus == null ? '' : <> · {t('товарних позицій')}: <b>{formatInt(totalSkus)}</b></>} · {t('середнє здоровʼя')}{' '}
-          <b>{avgHealth}</b>
-        </Text>
-      </div>
-      <div className="assort-dash__controls">
-        <TextInput
-          label={t('Дата зрізу')}
-          type="date"
-          value={filters.asOfDate ?? ''}
-          w={170}
-          onChange={(event) => onFiltersChange({ ...filters, asOfDate: event.currentTarget.value || undefined })}
-        />
-        <Select
-          allowDeselect={false}
-          comboboxProps={ASSORT_COMBOBOX_PROPS}
-          data={REGION_PERIOD_OPTIONS.map((option) => ({ value: option.value, label: t(option.label) }))}
-          label={t('Період регіонів')}
-          value={String(filters.regionWindowDays ?? REGION_WINDOW_DAYS)}
-          w={170}
-          onChange={(value) => onFiltersChange({ ...filters, regionWindowDays: Number(value ?? REGION_WINDOW_DAYS) })}
-        />
-        <Select
-          clearable
-          comboboxProps={ASSORT_COMBOBOX_PROPS}
-          data={regionOptions}
-          disabled={regionOptions.length === 0}
-          label={t('Регіон')}
-          placeholder={t('Усі регіони')}
-          searchable
-          value={filters.regionId == null ? null : String(filters.regionId)}
-          w={260}
-          onChange={(value) => {
-            const nextRegionId = value == null ? undefined : Number(value)
-            onFiltersChange({
-              ...filters,
-              regionId: nextRegionId,
-              sort: nextRegionId == null
-                ? (isRegionalSort(filters.sort) ? 'health_asc' : filters.sort ?? 'health_asc')
-                : (filters.regionId == null ? 'regional_revenue' : filters.sort ?? 'regional_revenue'),
-            })
-          }}
-        />
-        <Select
-          comboboxProps={ASSORT_COMBOBOX_PROPS}
-          data={sortOptions.map((option) => ({ value: option.value, label: t(option.label) }))}
-          label={t('Сортування')}
-          value={filters.sort ?? 'health_asc'}
-          w={210}
-          onChange={(value) => onFiltersChange({ ...filters, sort: value ?? 'health_asc' })}
-        />
-      </div>
+        <div className="assort-dash__summary">
+          <Group gap="xs" wrap="nowrap">
+            <Text className="app-section-title assort-dash__title">{t('Аналітика асортименту')}</Text>
+            <AiFeatureBadge tooltip={t('AI-сервіс рейтингу асортименту')} />
+          </Group>
+          <Text className="assort-dash__subtitle">
+            {totalSkus == null ? t('Стан запасів') : <><b>{formatInt(totalSkus)}</b> {t('товарних позицій')}</>}
+            {' · '}
+            {t('здоровʼя')} <b>{avgHealth}/100</b>
+          </Text>
+        </div>
+        <div className="assort-dash__controls">
+          <TextInput
+            label={t('Дата зрізу')}
+            type="date"
+            value={filters.asOfDate ?? ''}
+            w={160}
+            onChange={(event) => onFiltersChange({ ...filters, asOfDate: event.currentTarget.value || undefined })}
+          />
+          <Select
+            allowDeselect={false}
+            comboboxProps={ASSORT_COMBOBOX_PROPS}
+            data={REGION_PERIOD_OPTIONS.map((option) => ({ value: option.value, label: t(option.label) }))}
+            label={t('Період регіонів')}
+            value={String(filters.regionWindowDays ?? REGION_WINDOW_DAYS)}
+            w={150}
+            onChange={(value) => onFiltersChange({ ...filters, regionWindowDays: Number(value ?? REGION_WINDOW_DAYS) })}
+          />
+          <Select
+            clearable
+            comboboxProps={ASSORT_COMBOBOX_PROPS}
+            data={regionOptions}
+            disabled={regionOptions.length === 0}
+            label={t('Регіон')}
+            placeholder={t('Усі регіони')}
+            searchable
+            value={filters.regionId == null ? null : String(filters.regionId)}
+            w={230}
+            onChange={(value) => {
+              const nextRegionId = value == null ? undefined : Number(value)
+              onFiltersChange({
+                ...filters,
+                regionId: nextRegionId,
+                sort: nextRegionId == null
+                  ? (isRegionalSort(filters.sort) ? 'health_asc' : filters.sort ?? 'health_asc')
+                  : (filters.regionId == null ? 'regional_revenue' : filters.sort ?? 'regional_revenue'),
+              })
+            }}
+          />
+          <Button
+            className="assort-reset"
+            color="gray"
+            leftSection={<RotateCcw size={15} />}
+            variant="subtle"
+            onClick={onReset}
+          >
+            {t('Скинути')}
+          </Button>
+        </div>
       </div>
     </Card>
   )
@@ -600,7 +650,7 @@ function AssortmentKpis({
   const { t } = useI18n()
 
   return (
-    <SimpleGrid className="assort-kpis" cols={{ base: 1, sm: 2, lg: 3, xl: 6 }} spacing="md">
+    <SimpleGrid className="assort-kpis" cols={{ base: 1, sm: 2, xl: 4 }} spacing={0}>
       <KpiTile
         label={t('Вартість запасів')}
         sub={body?.total_skus == null ? undefined : `${t('Товарних позицій')}: ${formatInt(body.total_skus)}`}
@@ -612,25 +662,23 @@ function AssortmentKpis({
         value={formatMoney(body?.total_revenue_eur)}
       />
       <KpiTile
-        label={t('Виручка з відомою собівартістю')}
-        sub={t('база для розрахунку маржі')}
-        value={formatMoney(knownMarginRevenue)}
-      />
-      <KpiTile
         label={t('Валовий заробіток')}
-        sub={weightedMargin == null ? t('маржа невідома') : `${t('виручка × маржа')} ${pct(weightedMargin)}`}
+        sub={
+          weightedMargin == null
+            ? t('маржа невідома')
+            : `${t('маржа')} ${pct(weightedMargin)} · ${t('виручка')} ${formatMoney(knownMarginRevenue)}`
+        }
         value={formatMoney(marginProfit)}
       />
       <KpiTile
-        label={t('Середня маржа')}
+        label={t('Ризики маржі та повернень')}
         sub={
           negativeMarginSkus
-            ? `${formatInt(negativeMarginSkus)} ${t('у мінусі')} · ${formatMoney(negativeMarginRevenue)}`
-            : undefined
+            ? `${formatInt(negativeMarginSkus)} ${t('позицій у мінусі')} · ${formatMoney(negativeMarginRevenue)}`
+            : t('частка повернених одиниць')
         }
-        value={pct(weightedMargin)}
+        value={pct(overallReturnRate)}
       />
-      <KpiTile label={t('Повернення')} sub={t('частка повернених одиниць')} value={pct(overallReturnRate)} />
     </SimpleGrid>
   )
 }
@@ -649,8 +697,8 @@ function AssortmentStructure({
   const { t } = useI18n()
 
   return (
-    <SimpleGrid cols={{ base: 1, lg: 3 }} spacing="md">
-      <Card className="app-section-card assort-card" withBorder radius="md" padding={0} style={{ gridColumn: 'span 2' }}>
+    <div className="assort-structure">
+      <Card className="app-section-card assort-card assort-structure__stock" withBorder radius="md" padding={0}>
         <div className="assort-card__head">
           <span className="assort-card__title app-section-title">{t('Структура запасів за станом')}</span>
           <span className="assort-card__hint">
@@ -688,7 +736,7 @@ function AssortmentStructure({
         </div>
       </Card>
 
-      <Card className="app-section-card assort-card" withBorder radius="md" padding={0}>
+      <Card className="app-section-card assort-card assort-structure__health" withBorder radius="md" padding={0}>
         <div className="assort-card__head">
           <span className="assort-card__title app-section-title">{t('Здоровʼя та структура')}</span>
         </div>
@@ -701,8 +749,8 @@ function AssortmentStructure({
             }
             roundCaps
             sections={[{ value: avgHealth, color: healthColor(avgHealth) }]}
-            size={150}
-            thickness={12}
+            size={106}
+            thickness={10}
           />
           <span className="assort-gauge__caption">{t('середнє здоровʼя асортименту')}</span>
         </div>
@@ -711,11 +759,20 @@ function AssortmentStructure({
           <MixGroup counts={body?.by_xyz} title="XYZ" />
         </div>
       </Card>
-    </SimpleGrid>
+    </div>
   )
 }
 
-function AssortmentRatings({
+type AttentionRow = Pick<AssortmentRow, 'name' | 'product_id' | 'vendor_code'>
+type AttentionItem = {
+  key: string
+  label: string
+  metric: string
+  row: AttentionRow
+  tone: string
+}
+
+function AssortmentAttention({
   margin,
   returns,
   rows,
@@ -729,51 +786,53 @@ function AssortmentRatings({
   onPick: (productId: number) => void
 }) {
   const { t } = useI18n()
+  const attentionItems = useMemo(() => {
+    const items: AttentionItem[] = []
+    const seen = new Set<number>()
+    const frozenRows = stock?.rows ?? []
+    const lowMarginRows = margin?.laggards ?? []
+    const highReturnRows = returns?.high_returns ?? []
+
+    function add(label: string, tone: string, row: AttentionRow | undefined, metric: string) {
+      if (!row || seen.has(row.product_id)) {
+        return
+      }
+
+      seen.add(row.product_id)
+      items.push({ key: `${label}-${row.product_id}`, label, metric, row, tone })
+    }
+
+    rows.slice(0, 2).forEach((row) => add(t('Низьке здоровʼя'), healthPill(row.health), row, `${Math.round(row.health)}/100`))
+    frozenRows.slice(0, 2).forEach((row) => add(t('Надлишок запасу'), 'is-orange', row, formatMoney(row.eur_value)))
+    lowMarginRows.slice(0, 2).forEach((row) => add(t('Низька маржа'), 'is-yellow', row, pct(row.margin_pct)))
+    highReturnRows.slice(0, 2).forEach((row) => add(t('Повернення'), 'is-red', row, pct(row.return_rate)))
+
+    return items.slice(0, 5)
+  }, [margin?.laggards, returns?.high_returns, rows, stock?.rows, t])
 
   return (
-    <Card className="app-section-card assort-card" withBorder radius="md" padding={0}>
+    <Card className="app-section-card assort-card assort-attention" withBorder radius="md" padding={0}>
       <div className="assort-card__head">
-        <span className="assort-card__title app-section-title">{t('Рейтинги')}</span>
-        <span className="assort-card__hint">
-          {t('Топ')} {RATING_LIMIT} · {t('клікни для деталей')}
-        </span>
+        <span className="assort-card__title app-section-title">{t('Потребують уваги')}</span>
+        <span className="assort-card__hint">{t('відкрити картку товару')}</span>
       </div>
-      <div className="rank-grid">
-        <RankList
-          empty={t('Немає даних')}
-          metric={(row) => integer.format(Math.round(row.health))}
-          rows={rows.slice(0, RATING_LIMIT)}
-          title={t('Найнижче здоровʼя')}
-          onPick={onPick}
-        />
-        <RankList
-          empty={t('Немає даних')}
-          metric={(row: AssortmentStockRow) => formatMoney(row.eur_value)}
-          rows={stock?.rows ?? []}
-          title={t('Заморожений запас')}
-          onPick={onPick}
-        />
-        <RankList
-          empty={t('Немає даних')}
-          metric={(row: AssortmentMarginRow) => formatMoney(row.margin_eur)}
-          rows={margin?.leaders ?? []}
-          title={t('Найкраща маржа')}
-          onPick={onPick}
-        />
-        <RankList
-          empty={t('Немає даних')}
-          metric={(row: AssortmentMarginRow) => pct(row.margin_pct)}
-          rows={margin?.laggards ?? []}
-          title={t('Найнижча маржа')}
-          onPick={onPick}
-        />
-        <RankList
-          empty={t('Немає даних')}
-          metric={(row: AssortmentMarginRow) => pct(row.return_rate ?? null)}
-          rows={returns?.high_returns ?? []}
-          title={t('Проблемні повернення')}
-          onPick={onPick}
-        />
+      <div className="assort-attention__list">
+        {attentionItems.map((item) => (
+          <button key={item.key} className="assort-attention__row" type="button" onClick={() => onPick(item.row.product_id)}>
+            <Badge className={`app-role-pill ${item.tone}`} variant="light">{item.label}</Badge>
+            <span className="assort-attention__product">
+              <b>{productName(item.row)}</b>
+              <span>{productCode(item.row)}</span>
+            </span>
+            <strong>{item.metric}</strong>
+          </button>
+        ))}
+        {attentionItems.length === 0 && (
+          <div className="assort-attention__empty">
+            <b>{t('Критичних відхилень не знайдено')}</b>
+            <span>{t('Перевірте повний перелік товарів нижче')}</span>
+          </div>
+        )}
       </div>
     </Card>
   )
@@ -818,6 +877,35 @@ function AssortmentDetailTable({
             onChange={(value) => onFiltersChange({ ...filters, band: value ?? undefined })}
           />
           <Select
+            clearable
+            comboboxProps={ASSORT_COMBOBOX_PROPS}
+            data={['A', 'B', 'C']}
+            label="ABC"
+            placeholder={t('Усі')}
+            value={filters.abc ?? null}
+            w={108}
+            onChange={(value) => onFiltersChange({ ...filters, abc: value ?? undefined })}
+          />
+          <Select
+            clearable
+            comboboxProps={ASSORT_COMBOBOX_PROPS}
+            data={['X', 'Y', 'Z']}
+            label="XYZ"
+            placeholder={t('Усі')}
+            value={filters.xyz ?? null}
+            w={108}
+            onChange={(value) => onFiltersChange({ ...filters, xyz: value ?? undefined })}
+          />
+          <Select
+            allowDeselect={false}
+            comboboxProps={ASSORT_COMBOBOX_PROPS}
+            data={STOCK_OPTIONS.map((option) => ({ ...option, label: t(option.label) }))}
+            label={t('Наявність')}
+            value={filters.stockedOnly === false ? 'all' : 'stocked'}
+            w={170}
+            onChange={(value) => onFiltersChange({ ...filters, stockedOnly: value !== 'all' })}
+          />
+          <Select
             comboboxProps={ASSORT_COMBOBOX_PROPS}
             data={sortOptions.map((option) => ({ value: option.value, label: t(option.label) }))}
             label={t('Сортування')}
@@ -832,13 +920,22 @@ function AssortmentDetailTable({
         <DataTable
           columns={columns}
           data={rows}
-          emptyText={isLoading ? t('Завантаження') : t('Немає даних')}
+          emptyText={
+            isLoading
+              ? t('Завантаження')
+              : (
+                  <span className="assort-table-empty">
+                    <b>{t('За вибраними фільтрами товарів не знайдено')}</b>
+                    <span>{t('Змініть стан, класифікацію або наявність')}</span>
+                  </span>
+                )
+          }
           getRowId={(row) => String(row.product_id)}
           height="100%"
           isLoading={isLoading}
-          layoutVersion="assortment-detail-1"
+          layoutVersion="assortment-detail-2"
           loadingText={t('Завантаження')}
-          minWidth={filters.regionId == null ? 820 : 1180}
+          minWidth={filters.regionId == null ? 1080 : 1440}
           showLayoutControls
           tableId="assortment-detail"
           toolbarPortalTarget={tableToolbarSlot}
@@ -915,49 +1012,6 @@ function MixGroup({ counts, title }: { counts?: Record<string, number>; title: s
             </span>
           ))}
       </div>
-    </div>
-  )
-}
-
-type RankRow = { product_id: number; vendor_code?: string | null; name?: string | null }
-
-function RankList<T extends RankRow>({
-  empty,
-  metric,
-  rows,
-  title,
-  onPick,
-}: {
-  empty: string
-  metric: (row: T) => string
-  rows: T[]
-  title: string
-  onPick: (productId: number) => void
-}) {
-  return (
-    <div className="rank-list">
-      <div className="rank-list__head">
-        <span className="rank-list__title app-section-title">{title}</span>
-      </div>
-      {rows.length === 0 ? (
-        <div className="rank-empty">{empty}</div>
-      ) : (
-        rows.map((row, index) => (
-          <button
-            key={row.product_id}
-            className="rank-row"
-            type="button"
-            onClick={() => onPick(row.product_id)}
-          >
-            <span className="rank-row__rank">{index + 1}</span>
-            <span className="rank-row__body">
-              <span className="rank-row__code">{row.vendor_code || `#${row.product_id}`}</span>
-              <span className="rank-row__name">{row.name || `ID ${row.product_id}`}</span>
-            </span>
-            <span className="rank-row__metric">{metric(row)}</span>
-          </button>
-        ))
-      )}
     </div>
   )
 }

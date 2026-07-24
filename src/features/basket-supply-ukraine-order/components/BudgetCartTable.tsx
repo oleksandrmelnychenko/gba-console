@@ -1,10 +1,10 @@
-import { Badge, Group, Stack, Text, Tooltip } from '@mantine/core'
-import { Info } from 'lucide-react'
+import { Badge, Group, Stack, Text } from '@mantine/core'
 import { useMemo } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import type { ProcurementUrgency, ReorderSuggestion } from '../procurementTypes'
+import { ProcurementProductCell } from './ProcurementProductCell'
 
 type DecisionSignal = {
   label: string
@@ -58,13 +58,23 @@ export function BudgetCartTable({ items, maxHeight = 'calc(100vh - 300px)', prod
     <DataTable
       columns={columns}
       data={items}
-      defaultLayout={{ density: 'compact' }}
+      defaultLayout={{
+        columnPinning: { left: ['product'], right: ['budget'] },
+        columnVisibility: {
+          forecast: false,
+          quadrant: false,
+          unitMargin: false,
+          valueDensity: false,
+        },
+        density: 'compact',
+      }}
       distributeAvailableWidth
       emptyText={t('Немає позицій')}
       getRowId={(item) => `${item.producer_id}-${item.product_id}`}
-      layoutVersion="budget-cart-plan-1"
+      layoutVersion="budget-cart-plan-2"
       maxHeight={maxHeight}
       minWidth={1520}
+      showLayoutControls
       tableId="budget-cart-plan"
     />
   )
@@ -78,27 +88,23 @@ function buildColumns(
     {
       id: 'producer',
       header: t('Виробник'),
-      width: 180,
-      minWidth: 140,
-      accessor: (item) => producerNameById.get(item.producer_id) || `#${item.producer_id}`,
+      width: 210,
+      minWidth: 170,
+      accessor: (item) => producerNameById.get(item.producer_id) || String(item.producer_id),
       cell: (item) => (
-        <Text c="gray.9" size="sm">
-          {producerNameById.get(item.producer_id) || `#${item.producer_id}`}
+        <Text c="gray.8" fw={600} size="sm">
+          {producerNameById.get(item.producer_id) || item.producer_id}
         </Text>
       ),
     },
     {
       id: 'product',
       header: t('Товар'),
-      width: 170,
-      minWidth: 140,
+      width: 320,
+      minWidth: 260,
       accessor: (item) => item.product_id,
-      cell: (item) => (
-        <Stack gap={1}>
-          <Text fw={600} size="sm" style={MONO_STYLE}>#{item.product_id}</Text>
-          <Text c="gray.8" size="xs">{item.forecast.method || t('історичний прогноз')}</Text>
-        </Stack>
-      ),
+      cell: (item) => <ProcurementProductCell row={item} t={t} />,
+      fill: true,
     },
     {
       id: 'urgency',
@@ -126,9 +132,7 @@ function buildColumns(
             {quadrant}
           </Badge>
         ) : (
-          <Text c="gray.8" size="sm">
-            -
-          </Text>
+          <span aria-hidden="true" />
         )
       },
     },
@@ -205,7 +209,7 @@ function buildColumns(
       accessor: (item) => item.unit_margin_eur ?? 0,
       cell: (item) => (
         <Text className="app-money" size="sm">
-          {item.unit_margin_eur === null ? '-' : eurFormatter.format(item.unit_margin_eur)}
+          {item.unit_margin_eur === null ? '' : eurFormatter.format(item.unit_margin_eur)}
         </Text>
       ),
     },
@@ -238,9 +242,8 @@ function buildColumns(
     {
       id: 'signals',
       header: t('AI-сигнали'),
-      width: 300,
+      width: 270,
       minWidth: 220,
-      fill: true,
       enableSorting: false,
       cell: (item) => <SignalsCell item={item} />,
     },
@@ -267,24 +270,23 @@ function buildColumns(
 function SignalsCell({ item }: { item: ReorderSuggestion }) {
   const { t } = useI18n()
   const signals = buildDecisionSignals(item, t)
+  const explanation =
+    item.reason ||
+    t('AI зіставив прогноз попиту, залишки, точку дозамовлення і правила закупівлі')
 
   return (
-    <Tooltip
-      label={item.reason || t('AI зіставив прогноз попиту, залишки, точку дозамовлення і правила закупівлі')}
-      multiline
-      maw={360}
+    <Group
+      className="budget-cart-signals"
+      gap={4}
+      title={explanation}
+      wrap="wrap"
     >
-      <Group className="budget-cart-signals" gap={4} wrap="wrap">
-        {signals.map((signal) => (
-          <Badge className={signal.pillClass} key={signal.label} size="xs" variant="light">
-            {signal.label}
-          </Badge>
-        ))}
-        <Badge className="app-role-pill is-gray" leftSection={<Info size={11} />} size="xs" variant="light">
-          {t('Причина')}
+      {signals.map((signal) => (
+        <Badge className={signal.pillClass} key={signal.label} size="xs" variant="light">
+          {signal.label}
         </Badge>
-      </Group>
-    </Tooltip>
+      ))}
+    </Group>
   )
 }
 
@@ -321,7 +323,7 @@ function buildDecisionSignals(item: ReorderSuggestion, t: (value: string) => str
     signals.push({ label: t('є дешевший аналог'), pillClass: 'app-role-pill is-yellow' })
   }
 
-  return signals.slice(0, 5)
+  return signals.slice(0, 4)
 }
 
 function quadrantLabel(item: ReorderSuggestion): string {

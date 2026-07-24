@@ -1,14 +1,20 @@
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { theme } from '../../../shared/theme/theme'
+import { getSupplyOrderSuppliers } from '../../supply-ukraine-orders/api/supplyUkraineOrdersApi'
 import { getProcurementCharts } from '../api/procurementApi'
 import type { ProcurementCharts } from '../procurementTypes'
 import { ProcureDashboardTab } from './ProcureDashboardTab'
 
 vi.mock('../api/procurementApi', () => ({
   getProcurementCharts: vi.fn(),
+}))
+
+vi.mock('../../supply-ukraine-orders/api/supplyUkraineOrdersApi', () => ({
+  getSupplyOrderSuppliers: vi.fn(),
 }))
 
 const charts: ProcurementCharts = {
@@ -29,11 +35,16 @@ const charts: ProcurementCharts = {
   producer_id: null,
   top_items: [
     {
+      image_url: 'https://cdn.example.test/brake-disc.png',
       on_hand: 1,
+      producer_id: 42,
+      producer_name: 'Meyle',
       product_id: 101,
+      product_name: 'Гальмівний диск',
       reorder_point: 9,
       suggested_qty: 7.5,
       urgency: 'critical',
+      vendor_code: 'BR-101',
     },
   ],
   top_n: 15,
@@ -47,16 +58,21 @@ const charts: ProcurementCharts = {
 
 describe('ProcureDashboardTab', () => {
   beforeEach(() => {
+    vi.mocked(getSupplyOrderSuppliers).mockResolvedValue([
+      { FullName: 'Meyle GmbH', Id: 42 },
+    ])
     vi.mocked(getProcurementCharts).mockResolvedValue(charts)
   })
 
   it('renders an actionable procurement summary and applies the dashboard filters', async () => {
     render(
-      <I18nProvider>
-        <MantineProvider theme={theme}>
-          <ProcureDashboardTab />
-        </MantineProvider>
-      </I18nProvider>,
+      <MemoryRouter>
+        <I18nProvider>
+          <MantineProvider theme={theme}>
+            <ProcureDashboardTab />
+          </MantineProvider>
+        </I18nProvider>
+      </MemoryRouter>,
     )
 
     expect(await screen.findByText('Дашборд постачання')).not.toBeNull()
@@ -68,10 +84,15 @@ describe('ProcureDashboardTab', () => {
     ).toContain('7')
     expect(screen.getAllByText('Критична').length).toBeGreaterThan(0)
     expect(screen.getAllByText('Бракує до точки').length).toBeGreaterThan(0)
+    expect(screen.getByText('Гальмівний диск')).not.toBeNull()
+    expect(screen.getByText('BR-101')).not.toBeNull()
+    expect(screen.getAllByText('Meyle').length).toBeGreaterThan(0)
 
-    fireEvent.change(screen.getByLabelText('Виробник (ID)'), {
-      target: { value: '42' },
+    await waitFor(() => {
+      expect(getSupplyOrderSuppliers).toHaveBeenCalledOnce()
     })
+    fireEvent.click(screen.getByRole('combobox', { name: 'Виробник' }))
+    fireEvent.click(await screen.findByText('Meyle GmbH'))
     fireEvent.change(screen.getByLabelText('Топ позицій'), {
       target: { value: '8' },
     })
@@ -83,5 +104,35 @@ describe('ProcureDashboardTab', () => {
         expect.any(AbortSignal),
       )
     })
+  })
+
+  it('replaces empty charts with one meaningful operational state', async () => {
+    vi.mocked(getProcurementCharts).mockResolvedValue({
+      as_of_date: '2026-07-25',
+      days_of_cover_hist: [],
+      demand_series: [],
+      producer_id: null,
+      top_items: [],
+      top_n: 15,
+      urgency_mix: [],
+    })
+
+    render(
+      <MemoryRouter>
+        <I18nProvider>
+          <MantineProvider theme={theme}>
+            <ProcureDashboardTab />
+          </MantineProvider>
+        </I18nProvider>
+      </MemoryRouter>,
+    )
+
+    expect(await screen.findByText('Даних для аналізу поки немає')).not.toBeNull()
+    expect(screen.getByText(/Поточний запас покриває розраховану потребу/)).not.toBeNull()
+    expect(screen.queryByText('Терміновість поповнення')).toBeNull()
+    expect(screen.queryByText('Запас днів покриття')).toBeNull()
+    expect(
+      screen.getByRole('button', { name: 'Відкрити конструктор закупівель' }),
+    ).not.toBeNull()
   })
 })

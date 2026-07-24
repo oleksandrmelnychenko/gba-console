@@ -1,5 +1,5 @@
 import { Badge, Card, Group, Stack, Text, Tooltip } from '@mantine/core'
-import { CircleAlert, CircleCheck, Clock3, Sparkles } from 'lucide-react'
+import { CircleAlert, CircleCheck, Clock3 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { getAiFleetServiceStatus } from '../../ai-fleet/api/aiFleetApi'
@@ -60,19 +60,14 @@ export function HeadAiFleetStatus() {
   const finishedAtLabel = formatDateTime(warmup?.lastFinishedAtUtc)
 
   return (
-    <Card className="app-section-card cockpit-ai-status" withBorder radius="md" padding="md">
+    <Card className="app-section-card cockpit-ai-status" withBorder radius="md" padding={0}>
       <Group align="center" justify="space-between" gap="md" wrap="wrap">
-        <Group align="center" gap="sm" wrap="nowrap">
-          <span className="cockpit-ai-status__icon" aria-hidden="true">
-            <Sparkles size={18} fill="currentColor" strokeWidth={0} />
-          </span>
-          <Stack gap={2}>
-            <Text className="app-section-title" fw={700}>{t('AI флот продажів')}</Text>
-            <Text c="dimmed" size="xs">
-              {t('gba-nba готує задачі менеджерам, SLA і пріоритети для керівника')}
-            </Text>
-          </Stack>
-        </Group>
+        <Stack gap={2}>
+          <Text className="app-section-title" fw={700}>{t('AI флот продажів')}</Text>
+          <Text c="dimmed" size="xs">
+            {t('gba-nba готує задачі менеджерам, SLA і пріоритети для керівника')}
+          </Text>
+        </Stack>
 
         <Group gap="xs" wrap="wrap">
           <StateBadge

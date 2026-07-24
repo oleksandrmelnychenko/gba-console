@@ -34,13 +34,13 @@ export function CockpitTargetCard({ target }: { target: CockpitTarget }) {
   const { t } = useI18n()
 
   return (
-    <Card className="app-section-card" withBorder radius="md">
+    <Card className="app-section-card cockpit-target-card" withBorder radius="md">
       <Stack gap="sm">
         <Text className="app-section-title" fw={600} size="sm">
           {t('Моя ціль (місяць)')}
         </Text>
 
-        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+        <SimpleGrid cols={1} spacing={0}>
           <TargetMetric label={t('Відвантаження')} metric={target.shipped} t={t} />
           <TargetMetric label={t('Оплати')} metric={target.paid} t={t} />
         </SimpleGrid>

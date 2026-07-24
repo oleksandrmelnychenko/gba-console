@@ -3,18 +3,19 @@ import { useState } from 'react'
 import { toProxiedAssetUrl } from '../../../shared/url/proxiedAssetUrl'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import { getProductShopImageUrlByCode } from '../../products/utils'
-import type { ReorderSuggestion } from '../procurementTypes'
-
 type ProcurementProductCellProps = {
-  row: Pick<
-    ReorderSuggestion,
-    'image_url' | 'oe_number' | 'product_id' | 'product_name' | 'vendor_code'
-  >
+  row: {
+    image_url?: string | null
+    oe_number?: string | null
+    product_id: number
+    product_name?: string | null
+    vendor_code?: string | null
+  }
   t: (key: string) => string
 }
 
 export function ProcurementProductCell({ row, t }: ProcurementProductCellProps) {
-  const productName = row.product_name || row.vendor_code || `#${row.product_id}`
+  const productName = row.product_name || row.vendor_code || String(row.product_id)
   const showVendorCode = Boolean(row.vendor_code && row.vendor_code !== productName)
   const explicitImageSrc = upgradeHttpToHttps(toProxiedAssetUrl(row.image_url?.trim()))
   const shopImageSrc = getProductShopImageUrlByCode(row.vendor_code)
