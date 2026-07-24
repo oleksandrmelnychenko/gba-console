@@ -99,9 +99,13 @@ export function splitProductSearchResults<T>(products: T[]): { bottomProducts: T
 }
 
 export function getProductShopImageUrl(product?: Product | null): string {
-  const vendorCode = product?.VendorCode?.trim()
+  return getProductShopImageUrlByCode(product?.VendorCode)
+}
 
-  return vendorCode ? `${PRODUCT_SHOP_IMAGE_BASE_URL}${normalizeProductShopImageCode(vendorCode.toLowerCase())}_water.jpg` : ''
+export function getProductShopImageUrlByCode(vendorCode?: string | null): string {
+  const code = vendorCode?.trim()
+
+  return code ? `${PRODUCT_SHOP_IMAGE_BASE_URL}${normalizeProductShopImageCode(code.toLowerCase())}_water.jpg` : ''
 }
 
 export function getProductShopGalleryImageUrl(vendorCode: string, suffix: number): string {

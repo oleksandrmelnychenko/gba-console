@@ -15,7 +15,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { CircleAlert, Image as ImageIcon, LayoutGrid, List } from 'lucide-react'
-import { useEffect, useReducer } from 'react'
+import { useEffect, useReducer, useState } from 'react'
 import { AiFeatureBadge } from '../../../../shared/ai/AiFeatureBadge'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { toProxiedAssetUrl } from '../../../../shared/url/proxiedAssetUrl'
@@ -25,6 +25,7 @@ import {
   getProductById,
   getProductCoPurchaseRecommendations,
 } from '../../api/clientRecommendationsApi'
+import { getProductShopImageUrlByCode } from '../../../products/utils'
 import type { RecommendationProduct } from '../../recommendationsTypes'
 import type { Client } from '../../types'
 import { OrbSplash } from '../../../../shared/ui/orb/Orb'
@@ -281,6 +282,14 @@ function RecommendationsList({
   )
 }
 
+function getRecommendationImageUrl(product?: RecommendationProduct | null): string {
+  if (!product) {
+    return ''
+  }
+
+  return toProxiedAssetUrl(product.Image) || getProductShopImageUrlByCode(product.VendorCode)
+}
+
 function ProductImage({
   product,
   height,
@@ -290,7 +299,10 @@ function ProductImage({
   height: number
   onPreview: () => void
 }) {
-  if (!product.Image) {
+  const [failed, setFailed] = useState(false)
+  const imageUrl = getRecommendationImageUrl(product)
+
+  if (!imageUrl || failed) {
     return (
       <Box
         h={height}
@@ -326,7 +338,8 @@ function ProductImage({
         fit="contain"
         h={height}
         radius="sm"
-        src={toProxiedAssetUrl(product.Image)}
+        src={imageUrl}
+        onError={() => setFailed(true)}
       />
     </button>
   )
@@ -361,16 +374,17 @@ function ProductImagePreviewModal({
 }) {
   const { t } = useI18n()
   const title = product ? `${displayValue(product.Name)} ${displayValue(product.VendorCode)}`.trim() : ''
+  const imageUrl = getRecommendationImageUrl(product)
 
   return (
     <AppModal
       centered
-      opened={Boolean(product?.Image)}
+      opened={Boolean(imageUrl)}
       size="min(1100px, 96vw)"
       title={displayValue(title)}
       onClose={onClose}
     >
-      {product?.Image ? (
+      {imageUrl ? (
         <Box
           style={{
             alignItems: 'center',
@@ -379,7 +393,7 @@ function ProductImagePreviewModal({
             minHeight: 360,
           }}
         >
-          <Image alt={displayValue(title)} fit="contain" mah="calc(100vh - 220px)" src={toProxiedAssetUrl(product.Image)} w="100%" />
+          <Image alt={displayValue(title)} fit="contain" mah="calc(100vh - 220px)" src={imageUrl} w="100%" />
         </Box>
       ) : (
         <Text c="dimmed" size="sm">
