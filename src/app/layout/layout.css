@@ -832,6 +832,10 @@
   min-width: 220px;
 }
 
+.sync-mode-label-short {
+  display: none;
+}
+
 .sync-session-panel,
 .sync-config-panel,
 .sync-confirmation {
@@ -843,6 +847,12 @@
 
 .sync-session-panel {
   border-left-width: 3px;
+}
+
+.sync-session-panel .app-role-pill {
+  flex-shrink: 0;
+  max-width: none;
+  white-space: nowrap;
 }
 
 .sync-session-panel.is-running {
@@ -924,8 +934,13 @@
 }
 
 .sync-action-bar {
+  background: #ffffff;
   border-top: 1px solid var(--mantine-color-gray-2);
-  padding-top: 12px;
+  bottom: -16px;
+  margin: 0 -16px -16px;
+  padding: 12px 16px 16px;
+  position: sticky;
+  z-index: 2;
 }
 
 .sync-confirmation {
@@ -935,6 +950,14 @@
 @media (max-width: 48em) {
   .sync-source-control {
     min-width: 100%;
+  }
+
+  .sync-mode-label-long {
+    display: none;
+  }
+
+  .sync-mode-label-short {
+    display: inline;
   }
 }
 

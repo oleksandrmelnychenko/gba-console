@@ -325,8 +325,14 @@ export function SyncControl() {
             value={state.mode}
             onChange={(value) => dispatch({ type: 'modeChanged', mode: value as SyncMode })}
             data={[
-              { value: 'full', label: t('Повна синхронізація') },
-              { value: 'daily', label: t('Щоденна синхронізація') },
+              {
+                value: 'full',
+                label: <SyncModeLabel full={t('Повна синхронізація')} short={t('Повна')} />,
+              },
+              {
+                value: 'daily',
+                label: <SyncModeLabel full={t('Щоденна синхронізація')} short={t('Щоденна')} />,
+              },
             ]}
           />
 
@@ -481,4 +487,13 @@ function getSelectedFullSyncTypes(selectedTypes: Record<string, boolean>): strin
   }
 
   return result
+}
+
+function SyncModeLabel({ full, short }: { full: string; short: string }) {
+  return (
+    <>
+      <span className="sync-mode-label-long">{full}</span>
+      <span className="sync-mode-label-short">{short}</span>
+    </>
+  )
 }
