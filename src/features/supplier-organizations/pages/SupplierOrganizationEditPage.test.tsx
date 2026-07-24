@@ -27,16 +27,19 @@ vi.mock('../../auth/components/PermissionGate', () => ({
 vi.mock('../../../shared/ui/AppDrawer', () => ({
   AppDrawer: ({
     children,
+    footer,
     opened,
     title,
   }: {
     children: ReactNode
+    footer?: ReactNode
     opened: boolean
     title?: ReactNode
   }) => opened ? (
     <section>
       {title ? <h2>{title}</h2> : null}
       {children}
+      {footer}
     </section>
   ) : null,
 }))
