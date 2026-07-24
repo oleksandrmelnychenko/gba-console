@@ -1251,7 +1251,22 @@ function ProductStoragePreviewDrawer({
   )
 
   return (
-    <AppDrawer opened={opened} size="xl" title={`${t('Preview')} (${rows.length})`} onClose={onClose}>
+    <AppDrawer
+      footer={
+        <>
+          <Button color="gray" variant="light" onClick={onClose}>
+            {t('Скасувати')}
+          </Button>
+          <Button disabled={!canProcess || !rows.length || hasInvalidRows} leftSection={<Check size={16} />} onClick={onProcess}>
+            {t('Виконати')}
+          </Button>
+        </>
+      }
+      opened={opened}
+      size="xl"
+      title={`${t('Preview')} (${rows.length})`}
+      onClose={onClose}
+    >
       <Stack gap="md">
         {hasInvalidRows ? (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
@@ -1280,19 +1295,9 @@ function ProductStoragePreviewDrawer({
           minWidth={1160}
           tableId="product-storages-preview"
         />
-        <Group justify="space-between">
-          <Text size="sm" c="dimmed">
-            {t('Разом')} {formatAmount(sumActionRows(rows))}
-          </Text>
-          <Group gap="xs">
-            <Button color="gray" variant="light" onClick={onClose}>
-              {t('Скасувати')}
-            </Button>
-            <Button disabled={!canProcess || !rows.length || hasInvalidRows} leftSection={<Check size={16} />} onClick={onProcess}>
-              {t('Виконати')}
-            </Button>
-          </Group>
-        </Group>
+        <Text size="sm" c="dimmed">
+          {t('Разом')} {formatAmount(sumActionRows(rows))}
+        </Text>
       </Stack>
     </AppDrawer>
   )
@@ -1356,7 +1361,7 @@ function ProductStorageActionModal({
       : singleAvailableQty
   const displayedQty = isSingle ? Number(form.qty) : sumActionRows(modal.rows)
   const footer = (
-    <Group className="product-storages-action-footer" justify="flex-end">
+    <>
       <Button disabled={isSubmitting} variant="default" onClick={onClose}>
         {t('Скасувати')}
       </Button>
@@ -1369,7 +1374,7 @@ function ProductStorageActionModal({
       >
         {t(getActionSubmitLabel(modal.mode))}
       </Button>
-    </Group>
+    </>
   )
 
   return (

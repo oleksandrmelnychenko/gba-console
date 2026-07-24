@@ -112,8 +112,6 @@
 .product-storages-action-sheet-title {
   color: var(--mantine-color-gray-9);
   font-family: var(--font-mono);
-  font-size: 15px;
-  font-weight: 500;
   letter-spacing: 0;
 }
 
@@ -188,11 +186,6 @@
 
 .product-storages-action-sheet .mantine-Switch-track {
   cursor: pointer;
-}
-
-.product-storages-action-footer .mantine-Button-root {
-  border-radius: 8px;
-  min-height: 36px;
 }
 
 .product-storages-return-panel {
