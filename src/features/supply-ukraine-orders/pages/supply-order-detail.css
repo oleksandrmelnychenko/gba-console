@@ -61,8 +61,6 @@
 .supply-direct-invoices-sheet-title {
   color: var(--mantine-color-gray-9);
   font-family: var(--font-mono);
-  font-size: 15px;
-  font-weight: 700;
   letter-spacing: 0;
 }
 
@@ -235,8 +233,6 @@
   color: var(--mantine-color-gray-9);
   display: inline-flex;
   font-family: var(--font-mono);
-  font-size: 15px;
-  font-weight: 500;
   gap: 8px;
   letter-spacing: 0;
   line-height: 1.2;
@@ -626,7 +622,6 @@
 .supply-order-overview-title-main > span {
   color: var(--mantine-color-gray-9);
   font-family: var(--font-mono);
-  font-size: 18px;
   font-weight: 600;
   letter-spacing: 0;
   line-height: 1.2;
@@ -711,37 +706,6 @@
   font-size: 12px;
 }
 
-.supply-order-overview-detail-value {
-  min-width: 0;
-}
-
-.supply-order-overview-detail-label {
-  color: var(--mantine-color-gray-6);
-  font-family: var(--font-mono);
-  font-size: 10.5px;
-  font-weight: 600;
-  letter-spacing: 0;
-  line-height: 1.2;
-  text-transform: uppercase;
-}
-
-.supply-order-overview-detail-data {
-  color: var(--mantine-color-gray-8);
-  font-size: 12.5px;
-  font-weight: 600;
-  line-height: 1.2;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.supply-order-overview-detail-value.is-mono .supply-order-overview-detail-data {
-  font-family: var(--font-mono);
-  font-weight: 600;
-  letter-spacing: 0;
-}
-
 .supply-order-overview-code-link {
   color: var(--mantine-color-gray-8);
   font-family: var(--font-mono);
@@ -815,10 +779,6 @@
 @media (max-width: 640px) {
   .supply-order-fields {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .supply-order-overview-title-main > span {
-    font-size: 16px;
   }
 
   .supply-order-overview-total-value {

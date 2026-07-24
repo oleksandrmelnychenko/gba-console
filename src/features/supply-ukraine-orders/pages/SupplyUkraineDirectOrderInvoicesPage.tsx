@@ -1157,6 +1157,7 @@ function DirectOrderInvoicesBody({ model }: { model: DirectOrderInvoicesPageMode
       {/* Controlled: the reload spinner unmounts this subtree, so an uncontrolled
           Tabs would snap back to «Товари замовлення» after add-invoice/pack-list. */}
       <Tabs
+        className="app-drawer-tabs"
         keepMounted={false}
         style={{ display: 'flex', flex: 1, flexDirection: 'column', minHeight: 0 }}
         value={model.activeTab}

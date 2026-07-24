@@ -6,7 +6,6 @@ import {
   Card,
   Group,
   NumberInput,
-  SimpleGrid,
   Stack,
   Text,
   TextInput,
@@ -511,7 +510,7 @@ export function SupplyUkraineOrderOverviewPage() {
               </Badge>
             </Group>
 
-            <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="md">
+            <div className="app-detail-grid">
               <DetailValue label={t('Номер')} value={getSupplyUkraineOrderDisplayNumber(order)} />
               <DetailValue label={t('Дата')} value={formatDateTime(order?.FromDate)} />
               <DetailValue label={t('Інвойс')} value={order?.InvNumber} />
@@ -526,7 +525,7 @@ export function SupplyUkraineOrderOverviewPage() {
               <DetailValue label={currencyCode && currencyCode !== 'EUR' ? `${t('Курс')} ${currencyCode} ${t('до')} EUR` : t('Курс')} value={formatAmount(order?.ExchangeRateAmount)} />
               <DetailValue label={t('Додатковий відсоток')} value={formatAmount(order?.AdditionalPercent)} />
               <DetailValue label={t('ПДВ')} value={formatAmount(order?.VatPercent)} />
-            </SimpleGrid>
+            </div>
 
             <Group align="flex-end" justify="space-between" wrap="wrap">
               <NumberInput
@@ -963,10 +962,10 @@ function useDocumentColumns(): DataTableColumn<SupplyOrderUkraineDocument>[] {
 
 function DetailValue({ label, mono = true, value }: { label: string, mono?: boolean, value: unknown }) {
   return (
-    <Stack className={`supply-order-overview-detail-value${mono ? ' is-mono' : ''}`} gap={2}>
-      <Text className="supply-order-overview-detail-label">{label}</Text>
-      <Text className="supply-order-overview-detail-data">{displayValue(value)}</Text>
-    </Stack>
+    <div className={`app-detail-field${mono ? ' is-mono' : ''}`}>
+      <span>{label}</span>
+      <strong>{displayValue(value)}</strong>
+    </div>
   )
 }
 

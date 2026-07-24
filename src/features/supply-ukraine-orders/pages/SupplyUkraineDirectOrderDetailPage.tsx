@@ -813,7 +813,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
         className="supply-order-sheet"
         opened={creditNotesOpen}
         size="md"
-        title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Кредит ноти')}</span>}
+        title={t('Кредит ноти')}
         onClose={() => dispatchCreditNote({ type: 'setDrawerOpen', open: false })}
       >
         <Stack gap="md">
