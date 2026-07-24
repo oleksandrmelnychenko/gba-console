@@ -19,7 +19,7 @@ import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
 import { Banknote, CircleAlert, FileSpreadsheet, FileText, Printer, RotateCcw, Search } from 'lucide-react'
-import { type ReactNode, useCallback, useEffect, useMemo, useReducer } from 'react'
+import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { formatLocalDate, SYNC_DATA_RANGE_START } from '../../../shared/date/dateTime'
 import { hasExportDocumentUrl } from '../../../shared/documents/exportDocument'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -59,6 +59,8 @@ import './tax-free-documents-page.css'
 const FILTER_STORAGE_KEY = 'taxFreeDocumentFilters:v2'
 
 const EMPTY_TAX_FREE_ITEMS: TaxFreeItem[] = []
+const TAX_FREE_DOCUMENT_DETAILS_FORM_ID = 'tax-free-document-details-form'
+const TAX_FREE_DOCUMENT_STATUS_FORM_ID = 'tax-free-document-status-form'
 
 const DOCUMENTS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -1086,12 +1088,53 @@ function TaxFreeDocumentDrawer({
 }) {
   const { t } = useI18n()
   const [activeTab, setActiveTab] = useValueState<TaxFreeDocumentDrawerTab>('details')
+  const canAdvanceStatus = document ? canAdvanceTaxFreeStatus(document) : false
 
   return (
-    <AppDrawer opened={Boolean(document)} position="right" size="min(1100px, 100vw)" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{getDrawerTitle(document, t)}</span>} onClose={onClose}>
+    <AppDrawer
+      footer={
+        document && activeTab === 'details' ? (
+          <>
+            <Button variant="default" onClick={onClose}>
+              {t('Скасувати')}
+            </Button>
+            <Group gap="xs" wrap="nowrap">
+              <Button
+                disabled={document.TaxFreeStatus !== TaxFreeStatus.Formed}
+                leftSection={<Printer size={17} />}
+                variant="default"
+                onClick={() => onPreview(document)}
+              >
+                {t('Друк')}
+              </Button>
+              <Button
+                form={TAX_FREE_DOCUMENT_DETAILS_FORM_ID}
+                loading={isSaving}
+                type="submit"
+              >
+                {t('Зберегти')}
+              </Button>
+            </Group>
+          </>
+        ) : document && activeTab === 'status' && canAdvanceStatus ? (
+          <Button
+            form={TAX_FREE_DOCUMENT_STATUS_FORM_ID}
+            loading={isSaving}
+            type="submit"
+          >
+            {t('Зберегти статус')}
+          </Button>
+        ) : undefined
+      }
+      opened={Boolean(document)}
+      position="right"
+      size="min(1100px, 100vw)"
+      title={getDrawerTitle(document, t)}
+      onClose={onClose}
+    >
       {document && (
         <div>
-          <div className="pill-tabs" style={{ width: 'fit-content' }}>
+          <div aria-label={t('Розділи документа Tax Free')} className="pill-tabs" role="tablist">
             {([
               { value: 'details', label: t('Деталі') },
               { value: 'status', label: t('Статуси') },
@@ -1101,7 +1144,8 @@ function TaxFreeDocumentDrawer({
                 key={tab.value}
                 type="button"
                 className={`pill-tab${activeTab === tab.value ? ' is-active' : ''}`}
-                aria-pressed={activeTab === tab.value}
+                aria-selected={activeTab === tab.value}
+                role="tab"
                 onClick={() => setActiveTab(tab.value)}
               >
                 {tab.label}
@@ -1114,34 +1158,31 @@ function TaxFreeDocumentDrawer({
               key={getTaxFreeDocumentDetailsKey(document)}
               carrierOptions={carrierOptions}
               document={document}
-              isSaving={isSaving}
               onCarrierSearch={onCarrierSearch}
-              onClose={onClose}
-              onPreview={onPreview}
               onSave={onSave}
             />
           )}
 
           {activeTab === 'status' && (
-          <Box pt="md">
-            <TaxFreeStatusPanel document={document} isSaving={isSaving} onSave={onSave} />
-          </Box>
+            <Box pt="md">
+              <TaxFreeStatusPanel document={document} onSave={onSave} />
+            </Box>
           )}
 
           {activeTab === 'items' && (
-          <Box pt="md">
-            <DataTable
-              columns={itemColumns}
-              data={document.TaxFreeItems || []}
-              defaultLayout={ITEMS_TABLE_DEFAULT_LAYOUT}
-              emptyText={t('Товарів не знайдено')}
-              getRowId={(row, index) => String(row.NetUid || row.Id || index)}
-              layoutVersion="tax-free-items-table-1"
-              maxHeight="calc(100vh - 260px)"
-              minWidth={1120}
-              tableId="tax-free-document-items"
-            />
-          </Box>
+            <Box pt="md">
+              <DataTable
+                columns={itemColumns}
+                data={document.TaxFreeItems || []}
+                defaultLayout={ITEMS_TABLE_DEFAULT_LAYOUT}
+                emptyText={t('Товарів не знайдено')}
+                getRowId={(row, index) => String(row.NetUid || row.Id || index)}
+                layoutVersion="tax-free-items-table-1"
+                maxHeight="calc(100vh - 260px)"
+                minWidth={1120}
+                tableId="tax-free-document-items"
+              />
+            </Box>
           )}
         </div>
       )}
@@ -1152,18 +1193,12 @@ function TaxFreeDocumentDrawer({
 function TaxFreeDocumentDetailsTab({
   carrierOptions,
   document,
-  isSaving,
   onCarrierSearch,
-  onClose,
-  onPreview,
   onSave,
 }: {
   carrierOptions: { label: string; value: string }[]
   document: TaxFreeDocument
-  isSaving: boolean
   onCarrierSearch: (value: string) => void
-  onClose: () => void
-  onPreview: (document: TaxFreeDocument) => void
   onSave: (document: TaxFreeDocument) => void
 }) {
   const { t } = useI18n()
@@ -1282,13 +1317,24 @@ function TaxFreeDocumentDetailsTab({
   }
 
   return (
-    <Box pt="md">
+    <Box
+      component="form"
+      id={TAX_FREE_DOCUMENT_DETAILS_FORM_ID}
+      pt="md"
+      onSubmit={(event) => {
+        event.preventDefault()
+        handleSave()
+      }}
+    >
       <Stack gap="md">
+        <div className="app-detail-grid">
+          <TaxFreeDetailField label={t('Статус')} value={getTaxFreeStatusLabel(document.TaxFreeStatus)} />
+          <TaxFreeDetailField mono label={t('Дата підбиття')} value={formatDateTime(document.DateOfTabulation)} />
+          <TaxFreeDetailField mono label={t('Пакувальний лист')} value={document.TaxFreePackList?.Number} />
+          <TaxFreeDetailField label={t('Відповідальний')} value={getTaxFreeResponsible(document)} />
+        </div>
+
         <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
-          <ReadOnlyField label={t('Статус')} value={getTaxFreeStatusLabel(document.TaxFreeStatus)} />
-          <ReadOnlyField label={t('Дата підбиття')} value={formatDateTime(document.DateOfTabulation)} />
-          <ReadOnlyField label={t('Пакувальний лист')} value={document.TaxFreePackList?.Number} />
-          <ReadOnlyField label={t('Відповідальний')} value={getTaxFreeResponsible(document)} />
           <TextInput label={t('Код')} value={customCode} onChange={(event) => setCustomCode(event.currentTarget.value)} />
           <TextInput
             label={t('Сума відправлення')}
@@ -1329,31 +1375,18 @@ function TaxFreeDocumentDetailsTab({
 
         <Divider />
 
-        <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="sm">
-          <ReadOnlyField label={t('Клієнт')} value={getTaxFreeClient(document)} />
-          <ReadOnlyField label={t('Сума EUR')} value={formatMoney(document.TotalWithVat)} />
-          <ReadOnlyField label={t('Сума, місцева валюта')} value={formatMoney(document.TotalWithVatPl)} />
-          <ReadOnlyField label={t('ПДВ, місцева валюта')} value={formatMoney(document.VatAmountPl)} />
-          <ReadOnlyField label={t('Вага')} value={formatAmount(document.TotalNetWeight)} />
-          <ReadOnlyField label={t('Ставка ПДВ')} value={document.VatPercent ? `${document.VatPercent}%` : ''} />
-        </SimpleGrid>
-
-        <Group justify="flex-end">
-          <Button variant="default" onClick={onClose}>
-            {t('Скасувати')}
-          </Button>
-          <Button
-            disabled={document.TaxFreeStatus !== TaxFreeStatus.Formed}
-            leftSection={<Printer size={17} />}
-            variant="default"
-            onClick={() => onPreview(document)}
-          >
-            {t('Друк')}
-          </Button>
-          <Button loading={isSaving} onClick={handleSave}>
-            {t('Зберегти')}
-          </Button>
-        </Group>
+        <div className="app-detail-grid">
+          <TaxFreeDetailField label={t('Клієнт')} value={getTaxFreeClient(document)} />
+          <TaxFreeDetailField mono label={t('Сума EUR')} value={formatMoney(document.TotalWithVat)} />
+          <TaxFreeDetailField mono label={t('Сума, місцева валюта')} value={formatMoney(document.TotalWithVatPl)} />
+          <TaxFreeDetailField mono label={t('ПДВ, місцева валюта')} value={formatMoney(document.VatAmountPl)} />
+          <TaxFreeDetailField mono label={t('Вага')} value={formatAmount(document.TotalNetWeight)} />
+          <TaxFreeDetailField
+            mono
+            label={t('Ставка ПДВ')}
+            value={document.VatPercent ? `${document.VatPercent}%` : ''}
+          />
+        </div>
       </Stack>
     </Box>
   )
@@ -1361,18 +1394,16 @@ function TaxFreeDocumentDetailsTab({
 
 function TaxFreeStatusPanel({
   document,
-  isSaving,
   onSave,
 }: {
   document: TaxFreeDocument
-  isSaving: boolean
   onSave: (document: TaxFreeDocument) => void
 }) {
   const { t } = useI18n()
   const [dateValue, setDateValue] = useValueState(toDateTimeInputValue(new Date()))
   const nextStatus = getNextStatus(document.TaxFreeStatus)
   const nextStatusField = getStatusDateField(nextStatus)
-  const canAdvanceStatus = (document.TaxFreeStatus ?? TaxFreeStatus.NotFormed) >= TaxFreeStatus.Printed
+  const canAdvanceStatus = canAdvanceTaxFreeStatus(document)
 
   function handleSave() {
     onSave({
@@ -1383,12 +1414,20 @@ function TaxFreeStatusPanel({
   }
 
   return (
-    <Stack gap="md">
+    <Stack
+      component="form"
+      gap="md"
+      id={TAX_FREE_DOCUMENT_STATUS_FORM_ID}
+      onSubmit={(event) => {
+        event.preventDefault()
+        handleSave()
+      }}
+    >
       {canAdvanceStatus ? (
         <Card withBorder radius="sm" padding="md">
           <Stack gap="sm">
             <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
-              <ReadOnlyField label={t('Наступний статус')} value={getTaxFreeStatusLabel(nextStatus)} />
+              <TaxFreeDetailField label={t('Наступний статус')} value={getTaxFreeStatusLabel(nextStatus)} />
               <TextInput
                 label={t('Дата')}
                 type="datetime-local"
@@ -1396,11 +1435,6 @@ function TaxFreeStatusPanel({
                 onChange={(event) => setDateValue(event.currentTarget.value)}
               />
             </SimpleGrid>
-            <Group justify="flex-end">
-              <Button loading={isSaving} onClick={handleSave}>
-                {t('Зберегти статус')}
-              </Button>
-            </Group>
           </Stack>
         </Card>
       ) : (
@@ -1570,14 +1604,20 @@ function TaxFreeRowAction({
   )
 }
 
-function ReadOnlyField({ label, value }: { label: string; value?: ReactNode }) {
+function TaxFreeDetailField({
+  label,
+  mono = false,
+  value,
+}: {
+  label: string
+  mono?: boolean
+  value?: unknown
+}) {
   return (
-    <Stack gap={3}>
-      <Text size="xs" c="dimmed">
-        {label}
-      </Text>
-      <Text size="sm">{value || '---'}</Text>
-    </Stack>
+    <div className={`app-detail-field${mono ? ' is-mono' : ''}`}>
+      <span>{label}</span>
+      <strong>{displayValue(value)}</strong>
+    </div>
   )
 }
 
@@ -1781,6 +1821,10 @@ function getStatusPillClass(status?: TaxFreeStatus): string {
     default:
       return 'is-gray'
   }
+}
+
+function canAdvanceTaxFreeStatus(document: TaxFreeDocument): boolean {
+  return (document.TaxFreeStatus ?? TaxFreeStatus.NotFormed) >= TaxFreeStatus.Printed
 }
 
 function getNextStatus(status?: TaxFreeStatus): TaxFreeStatus {
