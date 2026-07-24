@@ -8,7 +8,6 @@ import {
   Card,
   Collapse,
   Group,
-  Image,
   Loader,
   Menu,
   NumberInput,
@@ -26,7 +25,7 @@ import {
   ChevronUp,
   CircleAlert,
   FileSpreadsheet,
-  ImageOff,
+  PackageCheck,
   RefreshCw,
   RotateCcw,
   Save,
@@ -57,12 +56,19 @@ import {
   getProcurementCharts,
   getProducerPlan,
 } from '../api/procurementApi'
+import { calculateProcurementDecision, type ProcurementDecision } from '../procurementDecision'
 import type { ProcurementCharts, ProcurementUrgency, ReorderSuggestion } from '../procurementTypes'
+import { ProcurementProductCell } from './ProcurementProductCell'
 
 type Lens = 'warehouse' | 'producer'
 
 const amount = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
 const qty = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 0 })
+const salesMonth = new Intl.DateTimeFormat('uk-UA', {
+  month: 'short',
+  timeZone: 'UTC',
+  year: 'numeric',
+})
 
 const URGENCY_META: Record<ProcurementUrgency, { color: string; label: string; order: number }> = {
   critical: { color: 'red', label: 'Критично', order: 0 },
@@ -74,6 +80,10 @@ const URGENCY_META: Record<ProcurementUrgency, { color: string; label: string; o
 type BasketLine = { suggestion: ReorderSuggestion; qty: number }
 
 const PLAN_TABLE_DEFAULT_LAYOUT = {
+  columnPinning: {
+    left: ['product'],
+    right: ['actions'],
+  },
   density: 'normal',
 } satisfies DataTableDefaultLayout
 
@@ -92,6 +102,31 @@ const QUADRANT_HINTS: Record<string, string> = {
 
 function quadrantHint(quadrant: string, t: (key: string) => string): string {
   return t(QUADRANT_HINTS[quadrant.toUpperCase()] ?? 'ABC×XYZ: важливість × передбачуваність попиту')
+}
+
+function urgencyPillClass(urgency: ProcurementUrgency): string {
+  if (urgency === 'critical') {
+    return 'app-role-pill is-red'
+  }
+
+  if (urgency === 'high') {
+    return 'app-role-pill is-orange'
+  }
+
+  if (urgency === 'none') {
+    return 'app-role-pill is-gray'
+  }
+
+  return 'app-role-pill'
+}
+
+function formatSalesMonth(value: string): string {
+  const match = /^(\d{4})-(\d{2})/.exec(value)
+  if (!match) {
+    return value
+  }
+
+  return salesMonth.format(new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, 1)))
 }
 
 function exportRowsToXlsx(
@@ -270,6 +305,14 @@ export function ProcurementConstructor() {
   )
 
   const overview = useMemo(() => computeOverview(sortedRows), [sortedRows])
+  const urgentRowsCount = useMemo(
+    () =>
+      sortedRows.reduce(
+        (count, row) => count + (row.urgency === 'critical' || row.urgency === 'high' ? 1 : 0),
+        0,
+      ),
+    [sortedRows],
+  )
 
   const demandByProduct = useMemo(() => {
     const map = new Map<number, number[]>()
@@ -394,22 +437,33 @@ export function ProcurementConstructor() {
     t,
   })
   const renderProofPanel = useCallback(
-    (row: ReorderSuggestion) => <ProofPanel demand={demandByProduct.get(row.product_id)} row={row} t={t} />,
-    [demandByProduct, t],
+    (row: ReorderSuggestion) => (
+      <ProcurementProofPanel
+        demand={demandByProduct.get(row.product_id)}
+        row={row}
+        selectedQty={orderQtyFor(row)}
+        t={t}
+      />
+    ),
+    [demandByProduct, orderQtyFor, t],
   )
 
   return (
     <div className="procure-cockpit">
       <Card className="app-data-card basket-supply-primary-card" padding={0} radius="md" withBorder>
         <div className="app-filter-bar procure-cockpit-bar">
-          <SegmentedControl
-            data={[
-              { label: t('Склад'), value: 'warehouse' },
-              { label: t('Виробник'), value: 'producer' },
-            ]}
-            value={lens}
-            onChange={(value) => setLens(value as Lens)}
-          />
+          <div className="app-filter-field procure-cockpit-bar__lens">
+            <Text className="app-filter-label">{t('План закупівлі')}</Text>
+            <SegmentedControl
+              color="orange"
+              data={[
+                { label: t('Увесь склад'), value: 'warehouse' },
+                { label: t('За виробником'), value: 'producer' },
+              ]}
+              value={lens}
+              onChange={(value) => setLens(value as Lens)}
+            />
+          </div>
           {lens === 'producer' && (
             <Select
               clearable
@@ -417,10 +471,11 @@ export function ProcurementConstructor() {
                 value: String(producer.Id),
                 label: producer.Name || producer.FullName || `#${producer.Id}`,
               }))}
+              label={t('Виробник')}
               placeholder={t('Оберіть виробника')}
               searchable
               value={selectedProducerId}
-              w={280}
+              w={300}
               onChange={setSelectedProducerId}
             />
           )}
@@ -497,12 +552,12 @@ export function ProcurementConstructor() {
           <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
           <Button
             color={CREATE_ACTION_COLOR}
-            disabled={sortedRows.length === 0}
+            disabled={urgentRowsCount === 0}
             leftSection={<Sparkles size={15} />}
             variant="outline"
             onClick={addAllCritical}
           >
-            {t('Критичні в кошик')}
+            {t('Термінові в кошик')} · {qty.format(urgentRowsCount)}
           </Button>
         </div>
 
@@ -561,8 +616,9 @@ export function ProcurementConstructor() {
               getRowId={(row) => String(row.product_id)}
               height="100%"
               isLoading={isLoading}
+              layoutVersion={3}
               loadingText={t('Розрахунок потреби…')}
-              minWidth={1060}
+              minWidth={1120}
               renderExpandedRow={renderProofPanel}
               showLayoutControls
               tableId="procure-cockpit-plan"
@@ -672,6 +728,15 @@ function usePlanColumns({
   return useMemo<Array<DataTableColumn<ReorderSuggestion>>>(
     () => [
       {
+        id: 'product',
+        header: t('Товар'),
+        accessor: (row) => row.product_name || `#${row.product_id}`,
+        cell: (row) => <ProcurementProductCell row={row} t={t} />,
+        enableHiding: false,
+        fill: true,
+        minWidth: 340,
+      },
+      {
         id: 'urgency',
         header: t('Терміновість'),
         accessor: (row) => URGENCY_META[row.urgency].order,
@@ -679,7 +744,7 @@ function usePlanColumns({
           const meta = URGENCY_META[row.urgency]
 
           return (
-            <Badge color={meta.color} size="sm" variant="light">
+            <Badge className={urgencyPillClass(row.urgency)} size="sm" variant="light">
               {t(meta.label)}
             </Badge>
           )
@@ -687,51 +752,19 @@ function usePlanColumns({
         width: 118,
       },
       {
-        id: 'product',
-        header: t('Товар'),
-        accessor: (row) => row.product_name || `#${row.product_id}`,
-        cell: (row) => (
-          <Group gap={8} wrap="nowrap">
-            {row.image_url ? (
-              <Image alt="" fit="contain" h={34} radius="sm" src={row.image_url} w={34} />
-            ) : (
-              <span className="procure-cockpit__thumb-fallback">
-                <ImageOff size={16} />
-              </span>
-            )}
-            <Box style={{ minWidth: 0 }}>
-              <Text fw={500} size="sm" title={row.product_name ?? ''} truncate>
-                {row.product_name || `#${row.product_id}`}
-              </Text>
-              <Group gap={6} wrap="nowrap">
-                {row.vendor_code && (
-                  <Text c="dimmed" size="xs">
-                    {row.vendor_code}
-                  </Text>
-                )}
-                {row.oe_number && (
-                  <Text c="dimmed" size="xs" title={`${t('Оригінальний номер')}: ${row.oe_number}`} truncate>
-                    · OE {row.oe_number}
-                  </Text>
-                )}
-              </Group>
-            </Box>
-          </Group>
-        ),
-        fill: true,
-        minWidth: 260,
-      },
-      {
         id: 'quadrant',
         header: t('Квадрант'),
         accessor: (row) => row.quadrant ?? '',
         cell: (row) =>
           row.quadrant ? (
-            <Tooltip label={quadrantHint(row.quadrant, t)}>
-              <Badge color="grape" size="sm" variant="light">
-                {row.quadrant}
-              </Badge>
-            </Tooltip>
+            <Badge
+              className="app-role-pill is-gray"
+              size="sm"
+              title={quadrantHint(row.quadrant, t)}
+              variant="light"
+            >
+              {row.quadrant}
+            </Badge>
           ) : (
             <Text c="dimmed" size="xs">
               —
@@ -746,7 +779,7 @@ function usePlanColumns({
               header: t('Виробник'),
               accessor: (row) => row.producer_name || `#${row.producer_id}`,
               cell: (row) => (
-                <Text size="sm" title={row.producer_name ?? ''} truncate>
+                <Text className="procure-table-entity" size="sm" title={row.producer_name ?? ''} truncate>
                   {row.producer_name || `#${row.producer_id}`}
                 </Text>
               ),
@@ -759,7 +792,7 @@ function usePlanColumns({
         id: 'onHand',
         header: t('Наявн.'),
         accessor: (row) => row.inventory.on_hand,
-        cell: (row) => qty.format(row.inventory.on_hand),
+        cell: (row) => <span className="procure-table-number">{qty.format(row.inventory.on_hand)}</span>,
         align: 'right',
         width: 92,
       },
@@ -768,7 +801,7 @@ function usePlanColumns({
         header: t('Покриття'),
         accessor: (row) => row.days_of_cover,
         cell: (row) => (
-          <Text c={row.days_of_cover < 30 ? 'red' : undefined} size="sm">
+          <Text className="procure-table-number" size="sm">
             {row.days_of_cover >= 9999 ? '∞' : `${qty.format(row.days_of_cover)} ${t('дн')}`}
           </Text>
         ),
@@ -786,7 +819,8 @@ function usePlanColumns({
               hideControls
               min={0}
               size="xs"
-              styles={{ input: { fontWeight: 600, textAlign: 'right' } }}
+              className="procure-table-qty-input"
+              styles={{ input: { textAlign: 'right' } }}
               value={orderQtyFor(row)}
               w={82}
               onChange={(value) => onDraftQtyChange(row.product_id, Number(value) || 0)}
@@ -835,13 +869,15 @@ function usePlanColumns({
   )
 }
 
-function ProofPanel({
+export function ProcurementProofPanel({
   row,
   demand,
+  selectedQty,
   t,
 }: {
   demand?: number[]
   row: ReorderSuggestion
+  selectedQty: number
   t: (key: string) => string
 }) {
   // Lazy per-product monthly sales history — fetched when the row is expanded.
@@ -866,133 +902,275 @@ function ProofPanel({
     }
   }, [row.product_id])
 
-  const leadDemand = row.lead_demand ?? Math.max(0, row.reorder_point - row.safety_stock)
-  const orderUpTo = row.order_up_to ?? row.reorder_point + row.suggested_qty
-  const scaleMax = Math.max(orderUpTo, row.reorder_point, row.inventory.position, 1)
+  const decision = calculateProcurementDecision(row, selectedQty)
+  const isAdjusted = selectedQty !== row.suggested_qty
+  const productName = row.product_name || row.vendor_code || `#${row.product_id}`
 
   return (
-    <Group align="flex-start" gap={20} px="sm" py={8} wrap="wrap">
-      <Stack gap={6} style={{ flex: '1 1 320px', minWidth: 280 }}>
-        <Text fw={600} size="xs">
-          {t('Чому саме стільки')}
-        </Text>
-        <ProofBar
-          color="gray"
-          label={t('Поточна позиція')}
-          note={`${qty.format(row.inventory.on_hand)} ${t('склад')} − ${qty.format(row.inventory.reserved)} ${t('резерв')} + ${qty.format(row.inventory.on_order)} ${t('в дорозі')}`}
-          scaleMax={scaleMax}
-          value={row.inventory.position}
+    <article className="procure-proof">
+      <header className="procure-proof__header">
+        <div className="procure-proof__heading">
+          <span className="procure-proof__icon" aria-hidden="true">
+            <PackageCheck size={18} strokeWidth={1.7} />
+          </span>
+          <div className="procure-proof__heading-copy">
+            <span className="procure-proof__eyebrow">{t('Рекомендація закупівлі')}</span>
+            <strong className="procure-proof__title" title={productName}>
+              {productName}
+            </strong>
+            <span className="procure-proof__summary">
+              {decisionSummary(row, decision, t)}
+            </span>
+          </div>
+        </div>
+
+        <div className="procure-proof__decision">
+          <div className="procure-proof__pills">
+            <Badge className={urgencyPillClass(row.urgency)} variant="light">
+              {t(URGENCY_META[row.urgency].label)}
+            </Badge>
+            {row.quadrant && (
+              <Badge className="app-role-pill is-gray" variant="light">
+                {row.quadrant}
+              </Badge>
+            )}
+            {isAdjusted && (
+              <Badge className="app-role-pill is-yellow" variant="light">
+                {t('Змінено вручну')}
+              </Badge>
+            )}
+          </div>
+          <div className="procure-proof__order-qty">
+            <span>{t('До замовлення')}</span>
+            <strong>
+              {qty.format(selectedQty)} <small>{t('шт.')}</small>
+            </strong>
+            {isAdjusted && (
+              <small>
+                {t('Рекомендація AI')}: {qty.format(row.suggested_qty)}
+              </small>
+            )}
+          </div>
+        </div>
+      </header>
+
+      <div className="procure-proof__metrics">
+        <DecisionMetric
+          label={t('Позиція зараз')}
+          note={`${qty.format(row.inventory.on_hand)} − ${qty.format(row.inventory.reserved)} + ${qty.format(row.inventory.on_order)}`}
+          value={qty.format(row.inventory.position)}
         />
-        <ProofBar color="orange" label={t('Точка замовлення')} note={`${t('попит за lead-time')} ${qty.format(leadDemand)} + ${t('страховий')} ${qty.format(row.safety_stock)}`} scaleMax={scaleMax} value={row.reorder_point} />
-        <ProofBar color="blue" label={t('Дозамовити до')} note={`+ ${qty.format(row.forecast.mean_daily * row.forecast.horizon_days)} ${t('на горизонт')}`} scaleMax={scaleMax} value={orderUpTo} />
-        <Text fw={600} size="xs">
-          {t('Замовити')} = {qty.format(orderUpTo)} − {qty.format(row.inventory.position)} = {qty.format(row.suggested_qty)}
-        </Text>
-      </Stack>
+        <DecisionMetric
+          label={t('Точка замовлення')}
+          note={`${t('Попит у поставці')} + ${t('страховий запас')}`}
+          value={qty.format(row.reorder_point)}
+        />
+        <DecisionMetric
+          label={t('Цільовий рівень')}
+          note={t('Запас після планового поповнення')}
+          value={qty.format(decision.orderUpTo)}
+        />
+        <DecisionMetric
+          label={t('Сума партії')}
+          note={decision.selectedCostEur !== null ? 'EUR' : ''}
+          value={decision.selectedCostEur !== null ? amount.format(decision.selectedCostEur) : ''}
+        />
+      </div>
 
-      <Stack gap={6} style={{ flex: '1 1 300px', minWidth: 260 }}>
-        <DepletionChart row={row} t={t} />
-        {demand && demand.length > 0 && <Sparkline values={demand} />}
-      </Stack>
-
-      <Stack gap={4} style={{ flex: '1 1 220px', minWidth: 200 }}>
-        <Text fw={600} size="xs">
-          {t('Історія продажів по місяцях')}
-        </Text>
-        {history === 'loading' ? (
-          <Group gap={6}>
-            <Loader size="xs" />
-            <Text c="dimmed" size="xs">
-              {t('Завантаження…')}
-            </Text>
-          </Group>
-        ) : history.length === 0 ? (
-          <Text c="dimmed" size="xs">
-            {t('Немає продажів за період')}
+      <div className="procure-proof__main">
+        <section className="procure-proof__section">
+          <Text className="app-section-title" fw={600} size="sm">
+            {t('Як отримано кількість')}
           </Text>
-        ) : (
-          <Box style={{ maxHeight: 150, overflowY: 'auto' }}>
-            <table className="procure-proof-history">
-              <tbody>
-                {[...history].reverse().map((point) => (
-                  <tr key={point.month}>
-                    <td>
-                      {point.month}
-                      {point.is_complete ? '' : ' *'}
-                    </td>
-                    <td>{qty.format(point.units)}</td>
-                    <td>{amount.format(point.revenue_eur)} €</td>
+          <div
+            aria-label={`${t('Цільовий рівень')} ${qty.format(decision.orderUpTo)}, ${t('мінус позиція зараз')} ${qty.format(row.inventory.position)}, ${t('дорівнює рекомендація')} ${qty.format(row.suggested_qty)}`}
+            className="procure-proof__equation"
+            role="img"
+          >
+            <EquationTerm
+              label={t('Цільовий рівень')}
+              value={qty.format(decision.orderUpTo)}
+            />
+            <span className="procure-proof__operator">−</span>
+            <EquationTerm
+              label={t('Позиція зараз')}
+              value={qty.format(row.inventory.position)}
+            />
+            <span className="procure-proof__operator">=</span>
+            <EquationTerm
+              accent
+              label={t('Рекомендація')}
+              value={qty.format(row.suggested_qty)}
+            />
+          </div>
+          <div className="procure-proof__facts">
+            <ProofFact label={t('На складі')} value={qty.format(row.inventory.on_hand)} />
+            <ProofFact label={t('У резерві')} value={qty.format(row.inventory.reserved)} />
+            <ProofFact label={t('У дорозі')} value={qty.format(row.inventory.on_order)} />
+            <ProofFact label={t('Попит на час поставки')} value={qty.format(decision.leadDemand)} />
+            <ProofFact label={t('Страховий запас')} value={qty.format(row.safety_stock)} />
+            <ProofFact
+              label={t('Позиція з обраною партією')}
+              value={qty.format(decision.arrivalPosition)}
+            />
+          </div>
+          {isAdjusted && (
+            <p className="procure-proof__manual-note">
+              {t('У полі «Замовити» встановлено')} {qty.format(selectedQty)} {t('шт.')} ·{' '}
+              {t('базова рекомендація')} {qty.format(row.suggested_qty)} {t('шт.')}
+            </p>
+          )}
+        </section>
+
+        <section className="procure-proof__section is-risk">
+          <Text className="app-section-title" fw={600} size="sm">
+            {t('Коли виникне дефіцит')}
+          </Text>
+          <DepletionChart decision={decision} row={row} t={t} />
+        </section>
+      </div>
+
+      <div className="procure-proof__details">
+        <section className="procure-proof__section is-history">
+          <Text className="app-section-title" fw={600} size="sm">
+            {t('Продажі за 12 місяців')}
+          </Text>
+          {history === 'loading' ? (
+            <div className="procure-proof__loading">
+              <Loader size="xs" />
+              <span>{t('Завантаження історії…')}</span>
+            </div>
+          ) : history.length === 0 ? (
+            <p className="procure-proof__empty">{t('За цей період продажів немає')}</p>
+          ) : (
+            <div className="procure-proof-history-wrap">
+              <table className="procure-proof-history">
+                <thead>
+                  <tr>
+                    <th>{t('Місяць')}</th>
+                    <th>{t('Продано, шт.')}</th>
+                    <th>{t('Виручка, EUR')}</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </Box>
-        )}
-      </Stack>
+                </thead>
+                <tbody>
+                  {[...history].reverse().map((point) => (
+                    <tr key={point.month}>
+                      <td>
+                        {formatSalesMonth(point.month)}
+                        {!point.is_complete && (
+                          <span className="procure-proof-history__current">
+                            {t('поточний')}
+                          </span>
+                        )}
+                      </td>
+                      <td>{qty.format(point.units)}</td>
+                      <td>{amount.format(point.revenue_eur)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
 
-      <Stack gap={4} style={{ flex: '1 1 200px', minWidth: 180 }}>
-        <Text fw={600} size="xs">
-          {t('Прогноз')}
-        </Text>
-        <ProofFact label={t('Попит/день')} value={`${amount.format(row.forecast.mean_daily)} ± ${amount.format(row.forecast.std_daily)}`} />
-        <ProofFact label={t('Метод')} value={row.forecast.method} />
-        <ProofFact label={t('Рівень сервісу')} value={row.applied_service_level ? `${(row.applied_service_level * 100).toFixed(1)}%` : '—'} />
-        {row.unit_margin_eur != null && (
-          <ProofFact label={t('Маржа/од')} value={`${amount.format(row.unit_margin_eur)} EUR`} />
-        )}
-        {row.cheaper_alt && (
-          <Text c="orange" size="xs">
-            {t('Дешевше в іншого виробника')}: #{row.cheaper_alt.producer_id} · {amount.format(row.cheaper_alt.cost_eur)} EUR
+        <section className="procure-proof__section is-forecast">
+          <Text className="app-section-title" fw={600} size="sm">
+            {t('Параметри прогнозу')}
           </Text>
-        )}
-      </Stack>
-    </Group>
+          <div className="procure-proof__forecast-facts">
+            <ProofFact
+              label={t('Середній попит')}
+              value={`${amount.format(row.forecast.mean_daily)} ${t('шт./день')}`}
+            />
+            <ProofFact
+              label={t('Коливання попиту')}
+              value={`± ${amount.format(row.forecast.std_daily)}`}
+            />
+            <ProofFact
+              label={t('Горизонт прогнозу')}
+              value={`${qty.format(row.forecast.horizon_days)} ${t('дн.')}`}
+            />
+            <ProofFact
+              label={t('Рівень сервісу')}
+              value={row.applied_service_level ? `${(row.applied_service_level * 100).toFixed(1)}%` : ''}
+            />
+            <ProofFact label={t('Метод прогнозу')} value={row.forecast.method} />
+            <ProofFact
+              label={t('Маржа на одиницю')}
+              value={row.unit_margin_eur !== null ? `${amount.format(row.unit_margin_eur)} EUR` : ''}
+            />
+          </div>
+          {demand && demand.length > 0 && (
+            <div className="procure-proof__demand">
+              <span>{t('Динаміка попиту')}</span>
+              <Sparkline values={demand} />
+            </div>
+          )}
+          {row.cheaper_alt && (
+            <p className="procure-proof__alternative">
+              {t('Є дешевша альтернатива у виробника')} №{row.cheaper_alt.producer_id}:{' '}
+              <strong>{amount.format(row.cheaper_alt.cost_eur)} EUR</strong>
+            </p>
+          )}
+        </section>
+      </div>
+    </article>
   )
 }
 
-function ProofBar({
-  color,
-  label,
-  note,
-  scaleMax,
-  value,
-}: {
-  color: string
-  label: string
-  note: string
-  scaleMax: number
-  value: number
-}) {
-  const pct = Math.max(2, Math.min(100, (value / scaleMax) * 100))
-
+function DecisionMetric({ label, note, value }: { label: string; note: string; value: string }) {
   return (
-    <Box>
-      <Group justify="space-between" wrap="nowrap">
-        <Text size="xs">{label}</Text>
-        <Text fw={600} size="xs">
-          {qty.format(value)}
-        </Text>
-      </Group>
-      <Box style={{ background: 'var(--mantine-color-gray-2)', borderRadius: 3, height: 8, overflow: 'hidden' }}>
-        <Box style={{ background: `var(--mantine-color-${color}-5)`, height: '100%', width: `${pct}%` }} />
-      </Box>
-      <Text c="dimmed" size="xs">
-        {note}
-      </Text>
-    </Box>
+    <div className="procure-proof__metric">
+      <span>{label}</span>
+      <strong>{value}</strong>
+      <small>{note}</small>
+    </div>
   )
+}
+
+function decisionSummary(
+  row: ReorderSuggestion,
+  decision: ProcurementDecision,
+  t: (key: string) => string,
+): string {
+  if (row.inventory.position <= 0) {
+    return t('Доступний запас уже вичерпано — позицію потрібно додати в найближче замовлення.')
+  }
+
+  if (decision.isArrivalRisk) {
+    return t('Запас може закінчитися раніше, ніж прибуде нова партія — замовляти потрібно зараз.')
+  }
+
+  if (row.inventory.position <= row.reorder_point) {
+    return t('Позиція запасу вже нижче точки замовлення — поповнення потрібне за поточним планом.')
+  }
+
+  return t('Рекомендація підтримує цільовий запас на прогнозований горизонт продажів.')
 }
 
 function ProofFact({ label, value }: { label: string; value: string }) {
   return (
-    <Group gap={6} justify="space-between" wrap="nowrap">
-      <Text c="dimmed" size="xs">
-        {label}
-      </Text>
-      <Text size="xs" title={value} truncate>
-        {value}
-      </Text>
-    </Group>
+    <div className="procure-proof__fact">
+      <span>{label}</span>
+      <strong title={value}>{value}</strong>
+    </div>
+  )
+}
+
+function EquationTerm({
+  accent = false,
+  label,
+  value,
+}: {
+  accent?: boolean
+  label: string
+  value: string
+}) {
+  return (
+    <div className={`procure-proof__equation-term${accent ? ' is-accent' : ''}`}>
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
   )
 }
 
@@ -1000,21 +1178,17 @@ function Sparkline({ values }: { values: number[] }) {
   const max = Math.max(...values, 1)
 
   return (
-    <Group align="flex-end" gap={2} h={40}>
+    <div className="procure-proof__sparkline" aria-hidden="true">
       {values.map((value, index) => (
-        <Box
+        <span
           key={index}
           style={{
-            background: 'var(--brand-orange, var(--mantine-color-orange-5))',
-            borderRadius: 1,
-            flex: 1,
             height: `${Math.max(3, (value / max) * 100)}%`,
-            minWidth: 3,
           }}
           title={String(value)}
         />
       ))}
-    </Group>
+    </div>
   )
 }
 
@@ -1139,14 +1313,26 @@ function OverviewCharts({ overview, t }: { overview: Overview; t: (key: string) 
 
 // Project the stock position declining at forecast demand to show WHEN it runs out
 // and WHEN it crosses the reorder point — the visual proof that an order is due now.
-function DepletionChart({ row, t }: { row: ReorderSuggestion; t: (key: string) => string }) {
+function DepletionChart({
+  decision,
+  row,
+  t,
+}: {
+  decision: ProcurementDecision
+  row: ReorderSuggestion
+  t: (key: string) => string
+}) {
   const meanDaily = row.forecast.mean_daily
   if (meanDaily <= 0) {
-    return null
+    return (
+      <p className="procure-proof__empty">
+        {t('Недостатньо історії продажів, щоб спрогнозувати дату дефіциту.')}
+      </p>
+    )
   }
 
-  const leadTimeDays = row.lead_demand != null ? Math.round(row.lead_demand / meanDaily) : 0
-  const stockoutDay = Math.max(0, Math.round(row.inventory.position / meanDaily))
+  const leadTimeDays = decision.leadTimeDays ?? 0
+  const stockoutDay = decision.stockoutDays ?? 0
   const horizon = Math.max(stockoutDay + leadTimeDays + 7, 30)
   const step = Math.max(1, Math.round(horizon / 30))
 
@@ -1160,14 +1346,11 @@ function DepletionChart({ row, t }: { row: ReorderSuggestion; t: (key: string) =
   }
 
   return (
-    <Stack gap={4}>
-      <Text fw={600} size="xs">
-        {t('Коли закінчиться склад')}
-      </Text>
+    <div className="procure-proof__depletion">
       <LineChart
         data={data}
         dataKey="day"
-        h={130}
+        h={168}
         series={[
           { color: 'blue.6', name: 'stock', label: t('Запас') },
           { color: 'orange.5', name: 'reorder', label: t('Точка замовлення') },
@@ -1176,10 +1359,17 @@ function DepletionChart({ row, t }: { row: ReorderSuggestion; t: (key: string) =
         withDots={false}
         xAxisLabel={t('дні')}
       />
-      <Text c={stockoutDay <= leadTimeDays ? 'red' : 'dimmed'} size="xs">
-        {t('Закінчиться через')} {qty.format(stockoutDay)} {t('дн')}; {t('логістика')} {qty.format(leadTimeDays)} {t('дн')} →{' '}
-        {stockoutDay <= leadTimeDays ? t('замовляти треба вже зараз') : t('замовити до дефіциту')}
-      </Text>
-    </Stack>
+      <div className={`procure-proof__risk-note${decision.isArrivalRisk ? ' is-danger' : ''}`}>
+        <strong>
+          {t('Запасу приблизно на')} {qty.format(stockoutDay)} {t('дн.')}
+        </strong>
+        <span>
+          {t('Орієнтовний строк поставки')} — {qty.format(leadTimeDays)} {t('дн.')} ·{' '}
+          {decision.isArrivalRisk
+            ? t('партія може прибути після вичерпання запасу')
+            : t('запас має покрити строк поставки')}
+        </span>
+      </div>
+    </div>
   )
 }
