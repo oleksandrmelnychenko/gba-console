@@ -1,5 +1,6 @@
 import { Stack } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
+import { useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -21,7 +22,17 @@ export function OutgoingCashflowCreatePage() {
   const location = useLocation()
   const [searchParams] = useSearchParams()
   const [mode, setMode] = useValueState<OutgoingCreateMode | null>(null)
+  const [paymentGroupTitle, setPaymentGroupTitle] = useState('')
   const activeMode = mode || getModeFromPath(location.pathname) || (searchParams.get('operationType') ? OUTGOING_CREATE_MODE.PaymentGroup : null)
+  const drawerTitle = activeMode === OUTGOING_CREATE_MODE.Simple
+    ? t('Створення нового видаткового ордера')
+    : activeMode === OUTGOING_CREATE_MODE.OrganizationPayment
+      ? t('Поповнити баланс постачальника послуг')
+      : activeMode === OUTGOING_CREATE_MODE.ClientReturn
+        ? t('Повернення клієнту')
+        : activeMode === OUTGOING_CREATE_MODE.PaymentGroup
+          ? paymentGroupTitle || t('Створення нового видаткового ордера')
+          : t('Створення видаткової статті бюджету')
 
   // Deep link на /new/payment-tasks — редірект на сторінку платіжних задач.
   if (location.pathname.endsWith('/payment-tasks')) {
@@ -29,6 +40,8 @@ export function OutgoingCashflowCreatePage() {
   }
 
   function handleNavigate(path: string) {
+    setPaymentGroupTitle('')
+
     if (path.startsWith(OUTGOING_CASHFLOW_NEW_PATH)) {
       // Лишаємось у тому самому drawer-оверлеї — зберігаємо backgroundLocation.
       setMode(null)
@@ -40,6 +53,7 @@ export function OutgoingCashflowCreatePage() {
   }
 
   function handleBackToSelector() {
+    setPaymentGroupTitle('')
     setMode(null)
     navigate(OUTGOING_CASHFLOW_NEW_PATH, { replace: true })
   }
@@ -66,7 +80,13 @@ export function OutgoingCashflowCreatePage() {
     }
 
     if (nextMode === OUTGOING_CREATE_MODE.PaymentGroup) {
-      return <OutgoingPaymentGroupForm onCancel={handleBackToSelector} onCreated={handleCreated} />
+      return (
+        <OutgoingPaymentGroupForm
+          onCancel={handleBackToSelector}
+          onCreated={handleCreated}
+          onTitleChange={setPaymentGroupTitle}
+        />
+      )
     }
 
     return <OutgoingCreateModeSelector onNavigate={handleNavigate} />
@@ -77,7 +97,7 @@ export function OutgoingCashflowCreatePage() {
       opened
       position="right"
       size="standard"
-      title={t('Створення видаткової статті бюджету')}
+      title={drawerTitle}
       onClose={() => navigate(OUTGOING_CASHFLOWS_PATH)}
     >
       <Stack gap="md">

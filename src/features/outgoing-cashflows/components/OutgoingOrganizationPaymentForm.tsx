@@ -9,7 +9,6 @@ import {
   Select,
   SimpleGrid,
   Stack,
-  Text,
   TextInput,
 } from '@mantine/core'
 import { ArrowLeft, CircleAlert, Plus, Save } from 'lucide-react'
@@ -17,6 +16,7 @@ import { type FormEvent, useEffect, useMemo } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { AppDrawerFooter } from '../../../shared/ui/AppDrawer'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { getUnpaidConsumableOrdersByOrganization } from '../../consumable-orders/api/consumableOrdersApi'
 import { buildConsumableOrderPaymentLinks } from '../../consumable-orders/paymentPayload'
@@ -73,6 +73,8 @@ type OutgoingOrganizationPaymentFormProps = {
   onCancel: () => void
   onCreated: () => void
 }
+
+const FORM_ID = 'outgoing-organization-payment-form'
 
 type FormState = {
   amount: number
@@ -501,29 +503,10 @@ export function OutgoingOrganizationPaymentForm({ onCancel, onCreated }: Outgoin
   const balanceLabel = balanceLabelOf(selectedCurrencyRegister, t('Залишки'))
 
   return (
-    <Card withBorder radius="md" shadow="sm">
-      <form onSubmit={handleSubmit}>
-        <Stack gap="md">
-          <Group justify="space-between" wrap="wrap">
-            <Text fw={700} size="xl">
-              {t('Поповнити баланс постачальника послуг')}
-            </Text>
-            <Group gap="xs">
-              <Button color="gray" leftSection={<ArrowLeft size={16} />} type="button" variant="light" onClick={onCancel}>
-                {t('Скасувати')}
-              </Button>
-              <Button
-                color={CREATE_ACTION_COLOR}
-                disabled={isLoading || isResolving || isSaving}
-                leftSection={<Save size={16} />}
-                loading={isSaving}
-                type="submit"
-              >
-                {t('Створити')}
-              </Button>
-            </Group>
-          </Group>
-
+    <>
+      <Card withBorder radius="md" shadow="sm">
+        <form id={FORM_ID} onSubmit={handleSubmit}>
+          <Stack gap="md">
           {error && (
             <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
@@ -665,9 +648,27 @@ export function OutgoingOrganizationPaymentForm({ onCancel, onCreated }: Outgoin
               onChange={(event) => updateForm({ isAccounting: event.currentTarget.checked })}
             />
           </Group>
-        </Stack>
-      </form>
-    </Card>
+          </Stack>
+        </form>
+      </Card>
+      <AppDrawerFooter>
+        <Group gap="xs" justify="flex-end">
+          <Button color="gray" leftSection={<ArrowLeft size={16} />} type="button" variant="light" onClick={onCancel}>
+            {t('Скасувати')}
+          </Button>
+          <Button
+            color={CREATE_ACTION_COLOR}
+            disabled={isLoading || isResolving || isSaving}
+            form={FORM_ID}
+            leftSection={<Save size={16} />}
+            loading={isSaving}
+            type="submit"
+          >
+            {t('Створити')}
+          </Button>
+        </Group>
+      </AppDrawerFooter>
+    </>
   )
 }
 

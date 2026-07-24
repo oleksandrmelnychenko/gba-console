@@ -22,6 +22,7 @@ import { useSearchParams } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { AppDrawerFooter } from '../../../shared/ui/AppDrawer'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { getUnpaidConsumableOrdersByOrganization } from '../../consumable-orders/api/consumableOrdersApi'
 import { buildConsumableOrderPaymentLinks } from '../../consumable-orders/paymentPayload'
@@ -82,7 +83,10 @@ import {
 type OutgoingPaymentGroupFormProps = {
   onCancel: () => void
   onCreated: () => void
+  onTitleChange: (title: string) => void
 }
+
+const FORM_ID = 'outgoing-payment-group-form'
 
 type FormState = {
   amount: number
@@ -112,7 +116,11 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
   minimumFractionDigits: 2,
 })
 
-export function OutgoingPaymentGroupForm({ onCancel, onCreated }: OutgoingPaymentGroupFormProps) {
+export function OutgoingPaymentGroupForm({
+  onCancel,
+  onCreated,
+  onTitleChange,
+}: OutgoingPaymentGroupFormProps) {
   const { t } = useI18n()
   const [searchParams] = useSearchParams()
   const initialOperationType = parseOperationType(searchParams.get('operationType'))
@@ -694,49 +702,35 @@ export function OutgoingPaymentGroupForm({ onCancel, onCreated }: OutgoingPaymen
     t,
   })
 
+  useEffect(() => {
+    onTitleChange(title)
+  }, [onTitleChange, title])
+
   return (
-    <Card withBorder radius="md" shadow="sm">
-      <form onSubmit={handleSubmit}>
-        <Stack gap="md">
-          <Group justify="space-between" wrap="wrap">
+    <>
+      <Card withBorder radius="md" shadow="sm">
+        <form id={FORM_ID} onSubmit={handleSubmit}>
+          <Stack gap="md">
+            <Group align="flex-end" justify="space-between" wrap="wrap">
             <div>
-              <Group gap="xs">
-                <Text fw={700} size="xl">
-                  {title}
-                </Text>
-                <Badge color={registerType === PaymentRegisterType.Bank ? 'indigo' : 'green'} variant="light">
-                  {registerType === PaymentRegisterType.Bank ? t('Банк') : t('Каса')}
-                </Badge>
-              </Group>
+              <Badge color={registerType === PaymentRegisterType.Bank ? 'indigo' : 'green'} variant="light">
+                {registerType === PaymentRegisterType.Bank ? t('Банк') : t('Каса')}
+              </Badge>
               <Text c="dimmed" size="sm">
                 {t('Новий видатковий ордер по контрагенту або іншому списанню')}
               </Text>
             </div>
 
-            <Group gap="xs">
-              <SegmentedControl
-                data={[
-                  { label: t('Каса'), value: String(PaymentRegisterType.Cash) },
-                  { label: t('Банк'), value: String(PaymentRegisterType.Bank) },
-                ]}
-                disabled={isLoading || isSaving}
-                value={String(registerType)}
-                onChange={handleRegisterTypeChanged}
-              />
-              <Button color="gray" leftSection={<ArrowLeft size={16} />} type="button" variant="light" onClick={onCancel}>
-                {t('Назад')}
-              </Button>
-              <Button
-                color={CREATE_ACTION_COLOR}
-                disabled={isLoading || isResolvingCounterparty || isSaving}
-                leftSection={<Save size={16} />}
-                loading={isSaving}
-                type="submit"
-              >
-                {t('Створити')}
-              </Button>
+            <SegmentedControl
+              data={[
+                { label: t('Каса'), value: String(PaymentRegisterType.Cash) },
+                { label: t('Банк'), value: String(PaymentRegisterType.Bank) },
+              ]}
+              disabled={isLoading || isSaving}
+              value={String(registerType)}
+              onChange={handleRegisterTypeChanged}
+            />
             </Group>
-          </Group>
 
           <SegmentedControl data={operationOptions} disabled={isLoading || isSaving} value={String(operationType)} onChange={handleOperationChanged} />
 
@@ -913,9 +907,27 @@ export function OutgoingPaymentGroupForm({ onCancel, onCreated }: OutgoingPaymen
               onChange={(event) => updateForm({ isAccounting: event.currentTarget.checked })}
             />
           </Group>
-        </Stack>
-      </form>
-    </Card>
+          </Stack>
+        </form>
+      </Card>
+      <AppDrawerFooter>
+        <Group gap="xs" justify="flex-end">
+          <Button color="gray" leftSection={<ArrowLeft size={16} />} type="button" variant="light" onClick={onCancel}>
+            {t('Назад')}
+          </Button>
+          <Button
+            color={CREATE_ACTION_COLOR}
+            disabled={isLoading || isResolvingCounterparty || isSaving}
+            form={FORM_ID}
+            leftSection={<Save size={16} />}
+            loading={isSaving}
+            type="submit"
+          >
+            {t('Створити')}
+          </Button>
+        </Group>
+      </AppDrawerFooter>
+    </>
   )
 }
 

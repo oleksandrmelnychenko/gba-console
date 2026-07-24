@@ -472,6 +472,18 @@ export function AdvanceReportViewPage() {
 
   return (
     <AppDrawer
+      footer={model.canSave ? (
+        <Group justify="flex-end">
+          <Button
+            color={CREATE_ACTION_COLOR}
+            leftSection={<Save size={16} />}
+            loading={model.isSaving || model.isRecalculating}
+            onClick={() => model.save(model.createIncomeAutomatically)}
+          >
+            {t('Зберегти')}
+          </Button>
+        </Group>
+      ) : undefined}
       opened
       position="right"
       size="wide"
@@ -489,16 +501,6 @@ export function AdvanceReportViewPage() {
               {t('Додати пальне')}
             </Button>
           </>
-        )}
-        {model.canSave && (
-          <Button
-            color={CREATE_ACTION_COLOR}
-            leftSection={<Save size={16} />}
-            loading={model.isSaving || model.isRecalculating}
-            onClick={() => model.save(model.createIncomeAutomatically)}
-          >
-            {t('Зберегти')}
-          </Button>
         )}
       </Group>
 
