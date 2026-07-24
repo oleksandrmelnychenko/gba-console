@@ -18,7 +18,7 @@ export function WizardOrderedProductsDrawer({
   const { t } = useI18n()
 
   return (
-    <AppDrawer opened={opened} position="right" size="compact" title={t('Замовлені товари')} onClose={onClose}>
+    <AppDrawer opened={opened} position="right" size="standard" title={t('Замовлені товари')} onClose={onClose}>
       {opened && clientNetId && <WizardOrderedProductsContent clientNetId={clientNetId} />}
     </AppDrawer>
   )

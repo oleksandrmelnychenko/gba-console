@@ -7,6 +7,7 @@
 
 .sale-editor-tabs > .pill-tabs {
   flex: 0 0 auto;
+  width: 100%;
 }
 
 .sale-editor-tab-panel {

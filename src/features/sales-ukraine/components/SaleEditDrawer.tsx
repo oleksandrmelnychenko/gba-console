@@ -11,7 +11,7 @@ import {
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { ArrowLeftRight, CircleAlert, Package, Receipt, Warehouse } from 'lucide-react'
-import { useEffect, useReducer } from 'react'
+import { useEffect, useReducer, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -30,6 +30,7 @@ import {
 import './sales-drawers.css'
 
 const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
+const SALE_EDIT_FORM_ID = 'sale-edit-shift-form'
 const amountFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
 const qtyFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2 })
 const SALE_EDIT_TABLE_MIN_WIDTH = 1120
@@ -68,6 +69,11 @@ type SaleEditState = {
   isSaving: boolean
   sale: SalesUkraineSale
 }
+type SaleEditFooterState = {
+  isSaving: boolean
+  saleKey: string
+  visible: boolean
+}
 type SaleEditAction =
   | { type: 'draftEntryChanged'; key: string; patch: Partial<ShiftDraftEntry> }
   | { type: 'draftReplaced'; draft: ShiftDraft }
@@ -76,6 +82,12 @@ type SaleEditAction =
   | { type: 'loadSucceeded'; sale: SalesUkraineSale }
   | { type: 'savingFinished' }
   | { type: 'savingStarted' }
+
+const HIDDEN_SALE_EDIT_FOOTER: SaleEditFooterState = {
+  isSaving: false,
+  saleKey: '',
+  visible: false,
+}
 
 export function SaleEditDrawer({
   sale,
@@ -89,25 +101,46 @@ export function SaleEditDrawer({
   const { t } = useI18n()
   const isNew = isNewSale(sale)
   const title = isNew ? t('Акт редагування рахунку') : t('Акт редагування накладної')
+  const saleKey = sale ? String(sale.NetUid || sale.Id || '') : ''
+  const [footerState, setFooterState] = useState<SaleEditFooterState>(HIDDEN_SALE_EDIT_FOOTER)
+  const activeFooterState = footerState.saleKey === saleKey ? footerState : HIDDEN_SALE_EDIT_FOOTER
 
   return (
     <AppDrawer
-      classNames={{
-        body: 'sale-edit-drawer-body',
-        content: 'sale-edit-drawer-content',
-        header: 'sale-edit-drawer-header',
-        title: 'sale-edit-drawer-title',
-      }}
-      offset={8}
+      classNames={{ body: 'sale-edit-drawer-body' }}
+      footer={
+        sale && activeFooterState.visible ? (
+          <Group gap="sm" justify="flex-end">
+            <Button color="gray" disabled={activeFooterState.isSaving} type="button" variant="subtle" onClick={onClose}>
+              {t('Скасувати')}
+            </Button>
+            <Button
+              color={CREATE_ACTION_COLOR}
+              form={SALE_EDIT_FORM_ID}
+              leftSection={<ArrowLeftRight size={16} />}
+              loading={activeFooterState.isSaving}
+              type="submit"
+            >
+              {t('Зробити зсув')}
+            </Button>
+          </Group>
+        ) : undefined
+      }
       opened={Boolean(sale)}
-      padding="lg"
       position="right"
-      radius="md"
       size="full"
       title={title}
       onClose={onClose}
     >
-      {sale && <SaleEditContent key={sale.NetUid || sale.Id} initialSale={sale} onClose={onClose} onSaved={onSaved} />}
+      {sale && (
+        <SaleEditContent
+          key={sale.NetUid || sale.Id}
+          initialSale={sale}
+          saleKey={saleKey}
+          onFooterStateChange={setFooterState}
+          onSaved={onSaved}
+        />
+      )}
     </AppDrawer>
   )
 }
@@ -160,11 +193,13 @@ function saleEditReducer(state: SaleEditState, action: SaleEditAction): SaleEdit
 
 function SaleEditContent({
   initialSale,
-  onClose,
+  saleKey,
+  onFooterStateChange,
   onSaved,
 }: {
   initialSale: SalesUkraineSale
-  onClose: () => void
+  saleKey: string
+  onFooterStateChange: (state: SaleEditFooterState) => void
   onSaved: () => void
 }) {
   const { t } = useI18n()
@@ -282,6 +317,16 @@ function SaleEditContent({
     return submitShift(buildShiftPayload(sale, draft))
   }
 
+  const showFooter = !isLoading && !error && orderItems.length > 0
+
+  useEffect(() => {
+    onFooterStateChange({
+      isSaving,
+      saleKey,
+      visible: showFooter,
+    })
+  }, [isSaving, onFooterStateChange, saleKey, showFooter])
+
   if (isLoading) {
     return <SaleEditSkeleton />
   }
@@ -305,9 +350,13 @@ function SaleEditContent({
   return (
     <Stack
       className="sale-edit-sheet"
+      component="form"
       gap={0}
-      onKeyUp={(event) => {
-        if (event.key === 'Enter' && !isSaving) {
+      id={SALE_EDIT_FORM_ID}
+      onSubmit={(event) => {
+        event.preventDefault()
+
+        if (!isSaving) {
           void doShift()
         }
       }}
@@ -391,21 +440,6 @@ function SaleEditContent({
           tableId={isNew ? 'sale-edit-new' : 'sale-edit-invoice'}
         />
       </Box>
-
-      <Group className="sale-edit-footer" justify="flex-end" gap="sm">
-        <Button className="sale-edit-cancel" color="gray" disabled={isSaving} variant="subtle" onClick={onClose}>
-          {t('Скасувати')}
-        </Button>
-        <Button
-          className="sale-edit-submit"
-          color={CREATE_ACTION_COLOR}
-          leftSection={<ArrowLeftRight size={16} />}
-          loading={isSaving}
-          onClick={doShift}
-        >
-          {t('Зробити зсув')}
-        </Button>
-      </Group>
     </Stack>
   )
 }

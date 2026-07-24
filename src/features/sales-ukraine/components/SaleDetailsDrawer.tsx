@@ -18,7 +18,7 @@ import {
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { Check, Download, Pencil, X } from 'lucide-react'
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { TranslateFunction } from '../../../shared/i18n/types'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
@@ -37,6 +37,24 @@ import {
 } from './carrierHistoryFields'
 import './sales-drawers.css'
 
+const SALE_DETAILS_FORM_ID = 'sale-details-carrier-form'
+
+type SaleDetailsFooterState = {
+  isReconciliation: boolean
+  isSaving: boolean
+  saleKey: string
+  saveDisabled: boolean
+  visible: boolean
+}
+
+const HIDDEN_SALE_DETAILS_FOOTER: SaleDetailsFooterState = {
+  isReconciliation: false,
+  isSaving: false,
+  saleKey: '',
+  saveDisabled: false,
+  visible: false,
+}
+
 export function SaleDetailsDrawer({
   sale,
   onClose,
@@ -47,26 +65,70 @@ export function SaleDetailsDrawer({
   sale: SalesUkraineSale | null
 }) {
   const { t } = useI18n()
+  const saleKey = sale ? String(sale.NetUid || sale.Id || '') : ''
+  const [footerState, setFooterState] = useState<SaleDetailsFooterState>(HIDDEN_SALE_DETAILS_FOOTER)
+  const activeFooterState = footerState.saleKey === saleKey ? footerState : HIDDEN_SALE_DETAILS_FOOTER
 
   return (
     <AppDrawer
-      classNames={{
-        body: 'sale-carrier-drawer-body',
-        content: 'sale-carrier-drawer-content',
-        title: 'sale-carrier-drawer-title',
-      }}
+      footer={
+        sale && activeFooterState.visible ? (
+          <Group gap="sm" justify="flex-end">
+            <Button
+              className="sales-drawer-action-button"
+              color="gray"
+              disabled={activeFooterState.isSaving}
+              form={SALE_DETAILS_FORM_ID}
+              leftSection={<X size={16} />}
+              type="reset"
+              variant="default"
+            >
+              {t('Скасувати')}
+            </Button>
+            <Button
+              className="sales-drawer-action-button"
+              color={CREATE_ACTION_COLOR}
+              disabled={activeFooterState.saveDisabled}
+              form={SALE_DETAILS_FORM_ID}
+              leftSection={<Check size={16} />}
+              loading={activeFooterState.isSaving}
+              type="submit"
+            >
+              {t(activeFooterState.isReconciliation ? 'Звірити збереження' : 'Зберегти')}
+            </Button>
+          </Group>
+        ) : undefined
+      }
       opened={Boolean(sale)}
       position="right"
       size="min(1080px, 100vw)"
       title={t('Перевізник накладної')}
       onClose={onClose}
     >
-      {sale && <SaleDetailsContent key={sale.NetUid || sale.Id} sale={sale} onSaved={onSaved} />}
+      {sale && (
+        <SaleDetailsContent
+          key={sale.NetUid || sale.Id}
+          sale={sale}
+          saleKey={saleKey}
+          onFooterStateChange={setFooterState}
+          onSaved={onSaved}
+        />
+      )}
     </AppDrawer>
   )
 }
 
-function SaleDetailsContent({ sale, onSaved }: { onSaved: () => void; sale: SalesUkraineSale }) {
+function SaleDetailsContent({
+  sale,
+  saleKey,
+  onFooterStateChange,
+  onSaved,
+}: {
+  onFooterStateChange: (state: SaleDetailsFooterState) => void
+  onSaved: () => void
+  sale: SalesUkraineSale
+  saleKey: string
+}) {
   const { t } = useI18n()
   const fileMutation = usePersistentSaleFileMutation(
     getSaleFileMutationContext(sale),
@@ -239,6 +301,26 @@ function SaleDetailsContent({ sale, onSaved }: { onSaved: () => void; sale: Sale
     }
     return acc
   }, [])
+  const saveDisabled =
+    fileMutation.reconciliationRequired &&
+    (!fileMutation.canReconcile || (fileMutation.requiresFileReselection && !uploadedFile))
+
+  useEffect(() => {
+    onFooterStateChange({
+      isReconciliation: fileMutation.reconciliationRequired,
+      isSaving,
+      saleKey,
+      saveDisabled,
+      visible: isEditMode,
+    })
+  }, [
+    fileMutation.reconciliationRequired,
+    isEditMode,
+    isSaving,
+    onFooterStateChange,
+    saleKey,
+    saveDisabled,
+  ])
 
   return (
     <Stack className="sale-carrier-sheet" gap={0}>
@@ -259,7 +341,23 @@ function SaleDetailsContent({ sale, onSaved }: { onSaved: () => void; sale: Sale
       <Box className="sale-carrier-layout">
         <Box className="sale-carrier-main">
           {isEditMode ? (
-        <Stack className="sale-carrier-edit-form" gap="sm">
+        <Stack
+          className="sale-carrier-edit-form"
+          component="form"
+          gap="sm"
+          id={SALE_DETAILS_FORM_ID}
+          onReset={(event) => {
+            event.preventDefault()
+            cancelEdit()
+          }}
+          onSubmit={(event) => {
+            event.preventDefault()
+
+            if (!isSaving && !saveDisabled) {
+              void save()
+            }
+          }}
+        >
           <Select
             clearable
             disabled={fileMutation.reconciliationRequired}
@@ -381,24 +479,6 @@ function SaleDetailsContent({ sale, onSaved }: { onSaved: () => void; sale: Sale
               />
             </Group>
           )}
-          <Group justify="flex-end">
-            <Button className="sales-drawer-action-button" color="gray" disabled={isSaving} leftSection={<X size={16} />} variant="default" onClick={cancelEdit}>
-              {t('Скасувати')}
-            </Button>
-            <Button
-              className="sales-drawer-action-button"
-              color={CREATE_ACTION_COLOR}
-              disabled={
-                fileMutation.reconciliationRequired &&
-                (!fileMutation.canReconcile || (fileMutation.requiresFileReselection && !uploadedFile))
-              }
-              leftSection={<Check size={16} />}
-              loading={isSaving}
-              onClick={save}
-            >
-              {t(fileMutation.reconciliationRequired ? 'Звірити збереження' : 'Зберегти')}
-            </Button>
-          </Group>
         </Stack>
           ) : (
             <DetailsView sale={sale} />

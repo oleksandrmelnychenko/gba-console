@@ -67,11 +67,8 @@ export function MergedSalesDrawer({
 
   return (
     <AppDrawer
-      offset={8}
       opened={Boolean(saleNetId)}
-      padding="lg"
       position="right"
-      radius="md"
       size="min(960px, 100vw)"
       title={t("Об'єднання продажів")}
       onClose={onClose}

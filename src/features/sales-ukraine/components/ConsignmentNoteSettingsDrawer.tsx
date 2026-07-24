@@ -231,7 +231,7 @@ export function ConsignmentNoteSettingsDrawer({
 
   return (
     <AppDrawer
-      classNames={{ body: 'app-form-sheet consignment-note-settings-body', title: 'app-sheet-title-mono' }}
+      classNames={{ body: 'consignment-note-settings-body' }}
       footer={(
         <Group className="consignment-note-settings-footer" justify="flex-end" wrap="nowrap">
           <Button disabled={!noteState.isEdited || isSaving} variant="default" onClick={resetChanges}>
@@ -256,11 +256,8 @@ export function ConsignmentNoteSettingsDrawer({
           </Button>
         </Group>
       )}
-      offset={8}
       opened={opened}
-      padding="lg"
       position="right"
-      radius="md"
       size="min(760px, 96vw)"
       title={t('Друк ТТН')}
       onClose={onClose}

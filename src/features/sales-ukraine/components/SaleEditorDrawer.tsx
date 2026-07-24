@@ -94,11 +94,8 @@ export function SaleEditorDrawer({ sale, onClose }: { onClose: () => void; sale:
 
   return (
     <AppDrawer
-      offset={8}
       opened={Boolean(sale)}
-      padding="lg"
       position="right"
-      radius="md"
       size="min(1080px, 100vw)"
       title={sale ? `${t('Продаж')} ${sale.SaleNumber?.Value || ''}`.trim() : t('Продаж')}
       onClose={onClose}
@@ -459,18 +456,20 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
       </Group>
 
       <div className="sale-editor-tabs">
-        <div className="pill-tabs">
+        <div aria-label={t('Розділи продажу')} className="pill-tabs" role="tablist">
           <button
-            aria-pressed={activeTab === 'products'}
+            aria-selected={activeTab === 'products'}
             className={`pill-tab${activeTab === 'products' ? ' is-active' : ''}`}
+            role="tab"
             type="button"
             onClick={() => setActiveTab('products')}
           >
             {t('Товари')} ({orderItems.length})
           </button>
           <button
-            aria-pressed={activeTab === 'client'}
+            aria-selected={activeTab === 'client'}
             className={`pill-tab${activeTab === 'client' ? ' is-active' : ''}`}
+            role="tab"
             type="button"
             onClick={() => setActiveTab('client')}
           >
@@ -1437,14 +1436,10 @@ function ClientTab({ canEdit, sale, onSwitched }: { canEdit: boolean; onSwitched
 
 function DetailRow({ label, value }: { label: string; value: unknown }) {
   return (
-    <Group justify="space-between" align="flex-start" gap="lg" wrap="nowrap">
-      <Text size="sm" c="dimmed">
-        {label}
-      </Text>
-      <Text size="sm" ta="right">
-        {displayValue(value)}
-      </Text>
-    </Group>
+    <div className="app-detail-field">
+      <span>{label}</span>
+      <strong>{displayValue(value)}</strong>
+    </div>
   )
 }
 
