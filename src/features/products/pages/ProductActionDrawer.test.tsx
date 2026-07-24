@@ -35,7 +35,7 @@ describe('ProductActionDrawer analytics', () => {
     const drawerRoot = document.querySelector('.mantine-Drawer-root')
 
     expect(dialog).toBeTruthy()
-    expect(drawerRoot?.getAttribute('style')).toContain('--drawer-size: min(900px, 100vw)')
+    expect(drawerRoot?.getAttribute('style')).toContain('--drawer-size: min(1200px, 100vw)')
     expect(screen.getByTestId('product-analytics-panel').textContent).toBe('Analytics for 42')
   })
 })

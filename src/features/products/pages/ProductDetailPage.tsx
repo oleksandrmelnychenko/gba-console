@@ -27,7 +27,7 @@ import {
   Title,
   Tooltip,
 } from '@mantine/core'
-import { AppDrawer } from "../../../shared/ui/AppDrawer"
+import { AppDrawer, AppDrawerFooter } from "../../../shared/ui/AppDrawer"
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
@@ -1106,8 +1106,22 @@ function ProductEditPanel({ onProductSaved, product }: { onProductSaved: (produc
   }
 
   return (
-    <form onSubmit={submitForm}>
+    <form id="product-edit-drawer-form" onSubmit={submitForm}>
       <Stack gap="md">
+        <AppDrawerFooter>
+          <Group justify="flex-end">
+            <Button
+              color={CREATE_ACTION_COLOR}
+              form="product-edit-drawer-form"
+              leftSection={<Save size={18} />}
+              loading={isSaving}
+              type="submit"
+            >
+              {t('Зберегти')}
+            </Button>
+          </Group>
+        </AppDrawerFooter>
+
         {error && (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
@@ -1129,21 +1143,6 @@ function ProductEditPanel({ onProductSaved, product }: { onProductSaved: (produc
         <Group gap="lg">
           <Switch checked={form.IsForZeroSale} label={t('Нульовий продаж')} onChange={(event) => setField('IsForZeroSale', event.currentTarget.checked)} />
           <Switch checked={form.IsForSale} label={t('Для продажу')} onChange={(event) => setField('IsForSale', event.currentTarget.checked)} />
-        </Group>
-        <Group
-          justify="flex-end"
-          style={{
-            position: 'sticky',
-            bottom: 0,
-            zIndex: 1,
-            background: 'var(--mantine-color-body)',
-            borderTop: '1px solid var(--mantine-color-gray-2)',
-            paddingTop: 'var(--mantine-spacing-sm)',
-          }}
-        >
-          <Button type="submit" color={CREATE_ACTION_COLOR} loading={isSaving} leftSection={<Save size={18} />}>
-            {t('Зберегти')}
-          </Button>
         </Group>
       </Stack>
     </form>
@@ -1244,12 +1243,23 @@ function ProductImagesPanel({ onProductSaved, product }: { onProductSaved: (prod
 
   return (
     <Stack gap="md">
+      <AppDrawerFooter>
+        <Group gap="xs" wrap="nowrap">
+          <Button variant="light" color="gray" leftSection={<RefreshCw size={18} />} disabled={!hasChanges || isSaving} onClick={resetImageChanges}>
+            {t('Скасувати')}
+          </Button>
+          <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={18} />} loading={isSaving} disabled={!hasChanges} onClick={saveImages}>
+            {t('Зберегти')}
+          </Button>
+        </Group>
+      </AppDrawerFooter>
+
       {error && (
         <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {error}
         </Alert>
       )}
-      <Group align="end" justify="space-between" gap="md">
+      <Group align="end" gap="md">
         <PermissionGate permissionKey={PRODUCT_IMAGE_ADD_PERMISSION}>
           <FileInput
             multiple
@@ -1262,14 +1272,6 @@ function ProductImagesPanel({ onProductSaved, product }: { onProductSaved: (prod
             onChange={(nextFiles) => updateSelectedFiles(nextFiles || [])}
           />
         </PermissionGate>
-        <Group gap="xs" wrap="nowrap">
-          <Button variant="light" color="gray" leftSection={<RefreshCw size={18} />} disabled={!hasChanges || isSaving} onClick={resetImageChanges}>
-            {t('Скасувати')}
-          </Button>
-          <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={18} />} loading={isSaving} disabled={!hasChanges} onClick={saveImages}>
-            {t('Зберегти')}
-          </Button>
-        </Group>
       </Group>
       {displayedImages.length === 0 && filePreviews.length === 0 ? (
         <Text c="dimmed" size="sm">
@@ -1512,6 +1514,21 @@ function ProductSpecificationPanel({
 
   return (
     <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
+      <PermissionGate permissionKey={PRODUCT_SPECIFICATION_CHANGE_PERMISSION}>
+        <AppDrawerFooter>
+          <Group justify="flex-end">
+            <Button
+              color={CREATE_ACTION_COLOR}
+              leftSection={<Save size={16} />}
+              loading={isSaving}
+              onClick={() => void saveSpecification()}
+            >
+              {t('Зберегти')}
+            </Button>
+          </Group>
+        </AppDrawerFooter>
+      </PermissionGate>
+
       <Card className="app-section-card" withBorder radius="md" padding="md">
         <Stack gap="md">
           <Stack gap="xs">
@@ -1577,16 +1594,6 @@ function ProductSpecificationPanel({
                   onChange={(value) => updateDraft('VATValue', typeof value === 'number' ? value : '')}
                 />
               </SimpleGrid>
-              <Group justify="flex-end">
-                <Button
-                  color={CREATE_ACTION_COLOR}
-                  leftSection={<Save size={16} />}
-                  loading={isSaving}
-                  onClick={() => void saveSpecification()}
-                >
-                  {t('Зберегти')}
-                </Button>
-              </Group>
             </Stack>
           </PermissionGate>
         </Stack>
