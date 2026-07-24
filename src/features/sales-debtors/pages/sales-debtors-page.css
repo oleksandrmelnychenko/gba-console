@@ -242,10 +242,7 @@
 .sales-debtor-detail {
   display: grid;
   gap: 14px;
-  max-height: calc(100vh - 112px);
   min-width: 0;
-  overflow-y: auto;
-  padding-right: 4px;
 }
 
 .sales-debtor-detail-drawer-title {

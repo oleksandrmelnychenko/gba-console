@@ -579,7 +579,7 @@ function DebtorDetailDrawer({
       opened={Boolean(debtor)}
       position="right"
       size="standard"
-      title={<span className="sales-debtor-detail-drawer-title">{t('Деталі боржника')}</span>}
+      title={t('Деталі боржника')}
       onClose={onClose}
     >
       {debtor ? (
