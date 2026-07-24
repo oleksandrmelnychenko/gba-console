@@ -995,14 +995,10 @@ function AssignedIncomeOrderView({ order }: { order: AssignedIncomePaymentOrder 
 /* §5.1: dates, numbers and money render mono — pass `mono` for those values. */
 function DetailItem({ label, mono, value }: { label: string; mono?: boolean; value: string }) {
   return (
-    <Stack gap={2}>
-      <Text c="dimmed" size="xs" tt="uppercase">
-        {label}
-      </Text>
-      <Text fw={mono ? 600 : undefined} size="sm" style={mono ? { fontFamily: 'var(--font-mono)', letterSpacing: 0 } : undefined}>
-        {value}
-      </Text>
-    </Stack>
+    <div className={`app-detail-field${mono ? ' is-mono' : ''}`}>
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
   )
 }
 
