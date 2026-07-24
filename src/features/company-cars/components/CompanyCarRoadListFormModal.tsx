@@ -52,6 +52,7 @@ type RoadListModalState = {
   form: RoadListFormState
   isSaving: boolean
   outcomeOrders: OutcomePaymentOrder[]
+  outcomeOrdersLoaded: boolean
   selectedOutcomeNetUid: string
   userSearchValue: string
   users: UserProfile[]
@@ -102,6 +103,8 @@ export function CompanyCarRoadListFormModal({
     isSaving,
     outcomeError,
     outcomeOptions,
+    outcomeOrders,
+    outcomeOrdersLoaded,
     selectedOutcomeNetUid,
     userOptions,
     userSearchValue,
@@ -124,6 +127,12 @@ export function CompanyCarRoadListFormModal({
         {error && (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
+          </Alert>
+        )}
+
+        {outcomeOrdersLoaded && outcomeOrders.length === 0 && (
+          <Alert color="blue" icon={<CircleAlert size={18} />} variant="light">
+            {t('Для цього авто немає видаткових ордерів. Шляховий лист не збережеться без видаткової статті — спершу створіть видатковий ордер на авто у «Видаткових статтях».')}
           </Alert>
         )}
 
@@ -202,6 +211,7 @@ function useRoadListFormModel({
     form,
     isSaving,
     outcomeOrders,
+    outcomeOrdersLoaded,
     selectedOutcomeNetUid,
     userSearchValue,
     users,
@@ -436,6 +446,8 @@ function useRoadListFormModel({
     isSaving,
     outcomeError,
     outcomeOptions,
+    outcomeOrders,
+    outcomeOrdersLoaded,
     selectedOutcomeNetUid,
     userOptions,
     userSearchValue,
@@ -621,6 +633,7 @@ function createRoadListModalStateFrom(roadList: CompanyCarRoadList | null): Road
     form: createFormFromRoadList(roadList),
     isSaving: false,
     outcomeOrders: roadList?.OutcomePaymentOrder ? [roadList.OutcomePaymentOrder] : [],
+    outcomeOrdersLoaded: false,
     selectedOutcomeNetUid: getRoadListOutcomeValue(roadList),
     userSearchValue: '',
     users: [],
@@ -654,6 +667,7 @@ function roadListModalReducer(state: RoadListModalState, action: RoadListModalAc
       return {
         ...state,
         outcomeOrders: action.outcomeOrders,
+        outcomeOrdersLoaded: true,
         selectedOutcomeNetUid:
           resolveOutcomeSelection(state.selectedOutcomeNetUid, action.outcomeOrders) || getEntityValue(action.outcomeOrders[0]) || '',
       }
