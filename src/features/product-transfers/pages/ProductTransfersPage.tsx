@@ -637,7 +637,7 @@ function ProductTransferDetailDrawer({ model }: { model: ReturnType<typeof usePr
       opened={Boolean(selectedTransfer)}
       position="right"
       size="min(920px, 100vw)"
-      title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Деталі переміщення')}</span>}
+      title={t('Деталі переміщення')}
       onClose={closeDetail}
     >
       {selectedTransfer && (
