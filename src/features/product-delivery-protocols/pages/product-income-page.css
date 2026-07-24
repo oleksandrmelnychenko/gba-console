@@ -42,9 +42,12 @@
 .product-delivery-protocol-income-sheet-title {
   color: var(--mantine-color-gray-9);
   font-family: var(--font-mono);
+  letter-spacing: 0;
+}
+
+.product-income-page-title {
   font-size: 15px;
   font-weight: 700;
-  letter-spacing: 0;
 }
 
 .product-income-summary-panel .app-section-title,

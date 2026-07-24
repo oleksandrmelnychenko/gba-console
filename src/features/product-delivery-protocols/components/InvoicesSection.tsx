@@ -307,7 +307,7 @@ function InvoiceExpensesDrawer({
   const mergedServices = invoice?.SupplyInvoiceMergedServices || []
 
   return (
-    <AppDrawer opened={opened} size="lg" title={<span style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{`${t('Витрати')}. ${t('Інвойс')} ${invoice?.Number || ''}`}</span>} onClose={onClose}>
+    <AppDrawer opened={opened} size="lg" title={`${t('Витрати')}. ${t('Інвойс')} ${invoice?.Number || ''}`.trim()} onClose={onClose}>
       <Stack gap="md">
         {error && (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
@@ -477,7 +477,7 @@ function AssignInvoicesDrawer({
     <AppDrawer
       opened={opened}
       size="md"
-      title={<span style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{`${t('Додати')} ${t('Інвойси').toLowerCase()}`}</span>}
+      title={`${t('Додати')} ${t('Інвойси').toLowerCase()}`}
       onClose={() => {
         if (!isSaving) {
           onClose()

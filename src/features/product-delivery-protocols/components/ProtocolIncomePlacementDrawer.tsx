@@ -3,6 +3,7 @@ import { useMemo } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import type {
   DynamicProductPlacement,
@@ -240,7 +241,24 @@ function ProtocolIncomePlacementDrawerContent({
     : ''
 
   return (
-    <AppDrawer opened={opened} size="lg" title={t('Розміщення')} onClose={onClose}>
+    <AppDrawer
+      footer={
+        draft ? undefined : (
+          <>
+            <Button color="gray" variant="light" onClick={onClose}>
+              {t('Скасувати')}
+            </Button>
+            <Button color={CREATE_ACTION_COLOR} onClick={handleApply}>
+              {t('Зберегти')}
+            </Button>
+          </>
+        )
+      }
+      opened={opened}
+      size="lg"
+      title={t('Розміщення')}
+      onClose={onClose}
+    >
       <Stack gap="md">
         <Text fw={600}>{headerText}</Text>
         <Text c="dimmed" size="sm">
@@ -362,14 +380,6 @@ function ProtocolIncomePlacementDrawerContent({
           </Stack>
         )}
 
-        {!draft && (
-          <Group justify="flex-end">
-            <Button color="gray" variant="light" onClick={onClose}>
-              {t('Скасувати')}
-            </Button>
-            <Button onClick={handleApply}>{t('Зберегти')}</Button>
-          </Group>
-        )}
       </Stack>
     </AppDrawer>
   )

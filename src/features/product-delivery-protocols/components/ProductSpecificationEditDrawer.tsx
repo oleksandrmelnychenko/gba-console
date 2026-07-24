@@ -101,12 +101,25 @@ function ProductSpecificationEditDrawerContent({
 
   return (
     <AppDrawer
+      footer={
+        product ? (
+          <>
+            <Button color="gray" disabled={isSaving} variant="light" onClick={requestClose}>
+              {t('Скасувати')}
+            </Button>
+            {canSave && (
+              <Button color={CREATE_ACTION_COLOR} leftSection={<Check size={16} />} loading={isSaving} onClick={submit}>
+                {t('Змінити')}
+              </Button>
+            )}
+          </>
+        ) : undefined
+      }
       opened={Boolean(item)}
-      padding="lg"
       position="right"
-      size="34rem"
+      size="standard"
       className="app-form-sheet"
-      title={<span style={{ fontFamily: 'var(--font-mono)' }}>{`${t('Митний код')} ${product?.VendorCode || ''}`.trim()}</span>}
+      title={`${t('Митний код')} ${product?.VendorCode || ''}`.trim()}
       onClose={requestClose}
     >
       {product && (
@@ -155,17 +168,6 @@ function ProductSpecificationEditDrawerContent({
             value={draft.vatValue}
             onChange={(value) => setDraft((current) => ({ ...current, vatValue: toNumberOrEmpty(value) }))}
           />
-
-          <Group justify="flex-end">
-            <Button color="gray" disabled={isSaving} variant="light" onClick={requestClose}>
-              {t('Скасувати')}
-            </Button>
-            {canSave && (
-              <Button color={CREATE_ACTION_COLOR} leftSection={<Check size={16} />} loading={isSaving} onClick={submit}>
-                {t('Змінити')}
-              </Button>
-            )}
-          </Group>
 
           <Stack gap="xs">
             <Text fw={700}>{t('Історія митних кодів')}</Text>

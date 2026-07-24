@@ -21,7 +21,7 @@ import { formatLocalDate, formatLocalInputDateTime } from '../../../shared/date/
 import type { ExportDocument } from '../../../shared/documents/exportDocument'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { AppDrawer, AppDrawerFooter } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
@@ -1446,7 +1446,7 @@ export function SupplyUkraineDirectOrderProductIncomePage() {
       title={<span className="product-delivery-protocol-income-sheet-title">{t('Розміщення приходу')}</span>}
       onClose={() => navigate(-1)}
     >
-      <PackingListProductIncomePage embedded showHeader source="direct-supply-order" />
+      <PackingListProductIncomePage embedded source="direct-supply-order" />
     </AppDrawer>
   )
 }
@@ -1505,6 +1505,7 @@ function PackingListProductIncomePage({
 
       <PlacedProductIncomeCard isPlaced={isPlaced} model={model} />
       <ProductIncomeControlsCard
+        useDrawerFooter={embedded}
         model={model}
         permissions={{
           canAddDynamicColumn,
@@ -1649,19 +1650,51 @@ type ProductIncomeControlsCardProps = {
   model: ProtocolIncomeModel
   permissions: ProductIncomeControlsPermissions
   state: ProductIncomeControlsState
+  useDrawerFooter: boolean
 }
 
 function ProductIncomeControlsCard({
   model,
   permissions,
   state,
+  useDrawerFooter,
 }: ProductIncomeControlsCardProps) {
   const { t } = useI18n()
   const { canAddDynamicColumn, canCapitalizeDynamicIncome, canCarryOutDynamicIncome } = permissions
   const { canUseIncome, hasColumns, hasItemsNotReadyToPlace, isPlaced } = state
+  const saveActions = (
+    <>
+      {model.isDirty && (
+        <Text c="orange" size="sm">
+          {t('Є незбережені зміни')}
+        </Text>
+      )}
+      {model.isDirty && (
+        <Button color="gray" disabled={model.isSaving} variant="light" onClick={model.reloadFromServer}>
+          {t('Скасувати')}
+        </Button>
+      )}
+      <Button
+        color={CREATE_ACTION_COLOR}
+        disabled={!canUseIncome || !model.isDirty || model.isSaving}
+        loading={model.isSaving}
+        onClick={model.handleSave}
+      >
+        {t('Зберегти')}
+      </Button>
+    </>
+  )
 
   return (
     <Box className="product-income-controls-panel">
+      {useDrawerFooter && (
+        <AppDrawerFooter>
+          <Group gap="sm" justify="flex-end" wrap="wrap">
+            {saveActions}
+          </Group>
+        </AppDrawerFooter>
+      )}
+
       <Text className="app-section-title" fw={600} size="sm">
         {t('Параметри приходу')}
       </Text>
@@ -1771,19 +1804,7 @@ function ProductIncomeControlsCard({
               {t('Провести')}
             </Button>
           )}
-          {model.isDirty && (
-            <Text c="orange" size="sm">
-              {t('Є незбережені зміни')}
-            </Text>
-          )}
-          {model.isDirty && (
-            <Button color="gray" disabled={model.isSaving} variant="light" onClick={model.reloadFromServer}>
-              {t('Скасувати')}
-            </Button>
-          )}
-          <Button color={CREATE_ACTION_COLOR} disabled={!canUseIncome || !model.isDirty || model.isSaving} loading={model.isSaving} onClick={model.handleSave}>
-            {t('Зберегти')}
-          </Button>
+          {!useDrawerFooter && saveActions}
         </Group>
       </Group>
     </Box>

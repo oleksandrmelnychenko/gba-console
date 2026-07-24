@@ -68,10 +68,9 @@
 }
 
 .product-specification-tab-row {
-  align-items: start;
   display: grid;
-  gap: 12px;
-  grid-template-columns: 92px minmax(0, 1fr);
+  gap: 4px;
+  grid-template-columns: minmax(0, 1fr);
   min-width: 0;
 }
 
@@ -82,95 +81,42 @@
   font-weight: 700;
   letter-spacing: 0;
   line-height: 1.2;
-  padding-top: 10px;
-}
-
-.product-specification-tab-label::before {
-  background: var(--brand-orange);
-  border-radius: 999px;
-  content: '';
-  display: inline-block;
-  height: 7px;
-  margin-right: 8px;
-  vertical-align: 1px;
-  width: 7px;
+  padding-inline: 8px;
 }
 
 .product-specification-tab-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
   min-width: 0;
+  width: 100%;
 }
 
-.product-specification-tab {
+.product-specification-tab.pill-tab {
   appearance: none;
-  background: var(--mantine-color-white);
-  border: 1px solid var(--mantine-color-gray-3);
-  border-radius: 8px;
-  box-sizing: border-box;
-  color: var(--mantine-color-gray-8);
-  cursor: pointer;
+  align-items: center;
   display: flex;
-  flex: 1 1 280px;
+  flex: 0 0 auto;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
   justify-content: center;
-  letter-spacing: 0;
-  max-width: 560px;
-  min-height: 54px;
-  min-width: 0;
-  padding: 8px 12px 8px 26px;
-  position: relative;
-  text-align: left;
-  transition:
-    border-color 120ms ease,
-    background-color 120ms ease,
-    box-shadow 120ms ease;
+  max-width: min(420px, 70vw);
+  min-height: 48px;
+  min-width: 220px;
+  padding: 7px 2px 8px;
+  text-align: center;
 }
 
-.product-specification-tab::before {
-  background: var(--mantine-color-gray-3);
-  border-radius: 999px;
-  content: '';
-  height: 7px;
-  left: 11px;
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 7px;
-}
-
-.product-specification-tab:hover:not(:disabled) {
-  background: var(--mantine-color-gray-0);
-  border-color: var(--mantine-color-gray-4);
-}
-
-.product-specification-tab:focus-visible {
+.product-specification-tab.pill-tab:focus-visible {
   border-color: var(--app-focus-border);
   box-shadow: var(--app-focus-ring);
   outline: none;
 }
 
-.product-specification-tab.is-selected {
-  background: var(--mantine-color-white);
-  border-color: var(--brand-orange);
-  box-shadow: 0 4px 14px rgba(var(--brand-orange-rgb), 0.1);
-}
-
-.product-specification-tab.is-selected::before {
-  background: var(--brand-orange);
-}
-
-.product-specification-tab:disabled {
+.product-specification-tab.pill-tab:disabled {
   cursor: not-allowed;
   opacity: 0.58;
 }
 
-.product-specification-tab.is-pack-list {
-  flex: 0 1 300px;
+.product-specification-tab.pill-tab.is-pack-list {
   min-height: 44px;
-  padding-block: 7px;
 }
 
 .product-specification-tab-title,

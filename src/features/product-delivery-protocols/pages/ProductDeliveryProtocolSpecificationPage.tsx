@@ -941,6 +941,78 @@ export function ProductDeliveryProtocolSpecificationPage() {
 
             <Card className="app-section-card product-specification-sheet-card" withBorder radius="md" padding="md">
               <Stack gap="md">
+                <div className="product-specification-tabs">
+                  <div className="product-specification-tab-row">
+                    <Text className="product-specification-tab-label" component="div">
+                      {t('Інвойси')}
+                    </Text>
+                    <div className="product-specification-tab-list pill-tabs" role="tablist" aria-label={t('Інвойси')}>
+                      {invoices.map((invoice) => {
+                        const isSelected = invoice.NetUid === model.selectedInvoiceNetId
+                        const mergedInvoices = (invoice.MergedSupplyInvoices || [])
+                          .map((merged) => `/${merged.Number} ${t('Від')} ${invoiceDate(merged.DateFrom)}`)
+                          .join(' ')
+
+                        return (
+                          <button
+                            key={invoice.NetUid || invoice.Id}
+                            aria-selected={isSelected}
+                            className={`product-specification-tab pill-tab${isSelected ? ' is-active' : ''}`}
+                            disabled={model.isActionBusy}
+                            role="tab"
+                            type="button"
+                            onClick={() => model.selectInvoice(invoice)}
+                          >
+                            <span className="product-specification-tab-title">
+                              {t('Інвойс')} {invoice.Number} {t('Від')} {invoiceDate(invoice.DateFrom)}
+                              {mergedInvoices ? ` ${mergedInvoices}` : ''}
+                            </span>
+                            <span className="product-specification-tab-subtitle">
+                              {t('Постачальник')}: {invoice.SupplyOrder?.Client?.FullName || t('Не вказано')}
+                            </span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  {model.selectedInvoice && (model.selectedInvoice.PackingLists?.length || 0) > 0 && (
+                    <div className="product-specification-tab-row">
+                      <Text className="product-specification-tab-label" component="div">
+                        {t('Пак листи')}
+                      </Text>
+                      <div className="product-specification-tab-list pill-tabs is-compact" role="tablist" aria-label={t('Пак листи')}>
+                        {(model.selectedInvoice.PackingLists || []).map((packList) => {
+                          const isSelected = packList.NetUid === model.selectedPackListNetId
+                          const mergedPackLists = (packList.MergedPackingLists || [])
+                            .map((merged) => `/${merged.No} ${t('Від')} ${invoiceDate(merged.FromDate)}`)
+                            .join(' ')
+
+                          return (
+                            <button
+                              key={packList.NetUid || packList.Id}
+                              aria-selected={isSelected}
+                              className={`product-specification-tab pill-tab is-pack-list${isSelected ? ' is-active' : ''}`}
+                              disabled={model.isActionBusy}
+                              role="tab"
+                              type="button"
+                              onClick={() => model.selectPackList(packList)}
+                            >
+                              <span className="product-specification-tab-title">
+                                {t('Пак ліст')} № {packList.InvNo}
+                              </span>
+                              <span className="product-specification-tab-subtitle">
+                                {t('Від')} {invoiceDate(packList.FromDate)}
+                                {mergedPackLists ? ` ${mergedPackLists}` : ''}
+                              </span>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 <div className="product-specification-sheet-header">
                   <div className="product-specification-sheet-switches">
                     <SegmentedControl
@@ -1007,78 +1079,6 @@ export function ProductDeliveryProtocolSpecificationPage() {
                       </Button>
                     )}
                   </Group>
-                </div>
-
-                <div className="product-specification-tabs">
-                  <div className="product-specification-tab-row">
-                    <Text className="product-specification-tab-label" component="div">
-                      {t('Інвойси')}
-                    </Text>
-                    <div className="product-specification-tab-list" role="tablist" aria-label={t('Інвойси')}>
-                      {invoices.map((invoice) => {
-                        const isSelected = invoice.NetUid === model.selectedInvoiceNetId
-                        const mergedInvoices = (invoice.MergedSupplyInvoices || [])
-                          .map((merged) => `/${merged.Number} ${t('Від')} ${invoiceDate(merged.DateFrom)}`)
-                          .join(' ')
-
-                        return (
-                          <button
-                            key={invoice.NetUid || invoice.Id}
-                            aria-selected={isSelected}
-                            className={`product-specification-tab${isSelected ? ' is-selected' : ''}`}
-                            disabled={model.isActionBusy}
-                            role="tab"
-                            type="button"
-                            onClick={() => model.selectInvoice(invoice)}
-                          >
-                            <span className="product-specification-tab-title">
-                              {t('Інвойс')} {invoice.Number} {t('Від')} {invoiceDate(invoice.DateFrom)}
-                              {mergedInvoices ? ` ${mergedInvoices}` : ''}
-                            </span>
-                            <span className="product-specification-tab-subtitle">
-                              {t('Постачальник')}: {invoice.SupplyOrder?.Client?.FullName || t('Не вказано')}
-                            </span>
-                          </button>
-                        )
-                      })}
-                    </div>
-                  </div>
-
-                  {model.selectedInvoice && (model.selectedInvoice.PackingLists?.length || 0) > 0 && (
-                    <div className="product-specification-tab-row">
-                      <Text className="product-specification-tab-label" component="div">
-                        {t('Пак листи')}
-                      </Text>
-                      <div className="product-specification-tab-list is-compact" role="tablist" aria-label={t('Пак листи')}>
-                        {(model.selectedInvoice.PackingLists || []).map((packList) => {
-                          const isSelected = packList.NetUid === model.selectedPackListNetId
-                          const mergedPackLists = (packList.MergedPackingLists || [])
-                            .map((merged) => `/${merged.No} ${t('Від')} ${invoiceDate(merged.FromDate)}`)
-                            .join(' ')
-
-                          return (
-                            <button
-                              key={packList.NetUid || packList.Id}
-                              aria-selected={isSelected}
-                              className={`product-specification-tab is-pack-list${isSelected ? ' is-selected' : ''}`}
-                              disabled={model.isActionBusy}
-                              role="tab"
-                              type="button"
-                              onClick={() => model.selectPackList(packList)}
-                            >
-                              <span className="product-specification-tab-title">
-                                {t('Пак ліст')} № {packList.InvNo}
-                              </span>
-                              <span className="product-specification-tab-subtitle">
-                                {t('Від')} {invoiceDate(packList.FromDate)}
-                                {mergedPackLists ? ` ${mergedPackLists}` : ''}
-                              </span>
-                            </button>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  )}
                 </div>
 
                 {model.packingListError && (
