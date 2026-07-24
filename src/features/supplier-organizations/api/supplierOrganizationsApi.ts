@@ -8,6 +8,7 @@ import type {
   SupplyOrganizationAgreement,
   SupplyOrganizationDocumentExport,
 } from '../types'
+import { hasSupplierOrganizationEntityIdentity } from '../validation'
 
 export type SupplyOrganizationsListFilters = {
   from?: string
@@ -20,6 +21,8 @@ export type SupplyOrganizationsListParams = SupplyOrganizationsListFilters & {
 }
 
 export async function getSupplyOrganizations(params: SupplyOrganizationsListParams = {}): Promise<SupplyOrganization[]> {
+  assertListParams(params)
+
   const result = await apiRequest<unknown>('/supplies/organizations/all/search', {
     query: {
       from: params.from,
@@ -38,6 +41,7 @@ export async function searchSupplyOrganizations(
   organizationNetId = '',
   params: SupplyOrganizationsListParams = {},
 ): Promise<SupplyOrganization[]> {
+  assertListParams(params)
   const searchValue = value.trim()
 
   const result = await apiRequest<unknown>('/supplies/organizations/all/search', {
@@ -45,7 +49,7 @@ export async function searchSupplyOrganizations(
       from: params.from,
       limit: params.limit,
       offset: params.offset,
-      organizationNetId,
+      organizationNetId: organizationNetId.trim(),
       to: params.to,
       value: searchValue,
     },
@@ -55,9 +59,10 @@ export async function searchSupplyOrganizations(
 }
 
 export async function getSupplyOrganization(netId: string): Promise<SupplyOrganization | null> {
+  const normalizedNetId = requireIdentifier(netId, 'постачальника')
   const result = await apiRequest<unknown>('/supplies/organizations/get', {
     query: {
-      netId,
+      netId: normalizedNetId,
     },
   })
 
@@ -65,6 +70,7 @@ export async function getSupplyOrganization(netId: string): Promise<SupplyOrgani
 }
 
 export async function createSupplyOrganization(organization: SupplyOrganization): Promise<SupplyOrganization | null> {
+  assertSupplyOrganizationPayload(organization, false)
   const result = await apiRequest<unknown>('/supplies/organizations/new', {
     method: 'POST',
     body: organization,
@@ -74,6 +80,7 @@ export async function createSupplyOrganization(organization: SupplyOrganization)
 }
 
 export async function updateSupplyOrganization(organization: SupplyOrganization): Promise<SupplyOrganization | null> {
+  assertSupplyOrganizationPayload(organization, true)
   const result = await apiRequest<unknown>('/supplies/organizations/update', {
     method: 'POST',
     body: organization,
@@ -83,10 +90,11 @@ export async function updateSupplyOrganization(organization: SupplyOrganization)
 }
 
 export async function deleteSupplyOrganization(netId: string): Promise<void> {
+  const normalizedNetId = requireIdentifier(netId, 'постачальника')
   await apiRequest<unknown>('/supplies/organizations/delete', {
     method: 'DELETE',
     query: {
-      netId,
+      netId: normalizedNetId,
     },
   })
 }
@@ -95,11 +103,12 @@ export async function exportSupplyOrganizations(
   value: string,
   filters: SupplyOrganizationsListFilters = {},
 ): Promise<SupplyOrganizationDocumentExport> {
+  assertListParams(filters)
   const result = await apiRequest<unknown>('/supplies/organizations/document', {
     query: {
       from: filters.from,
       to: filters.to,
-      value,
+      value: value.trim(),
     },
   })
 
@@ -110,6 +119,7 @@ export async function createSupplyOrganizationAgreement(
   agreement: SupplyOrganizationAgreement,
   files: File[],
 ): Promise<SupplyOrganizationAgreement | null> {
+  assertSupplyOrganizationAgreementPayload(agreement, false)
   const result = await apiRequest<unknown>('/supplies/organizations/agreement/new', {
     method: 'POST',
     body: buildAgreementFormData(agreement, files),
@@ -122,6 +132,7 @@ export async function updateSupplyOrganizationAgreement(
   agreement: SupplyOrganizationAgreement,
   files: File[] = [],
 ): Promise<SupplyOrganizationAgreement | null> {
+  assertSupplyOrganizationAgreementPayload(agreement, true)
   const result = await apiRequest<unknown>('/supplies/organizations/agreement/update', {
     method: 'POST',
     body: buildAgreementFormData(agreement, files),
@@ -145,10 +156,17 @@ export async function getSupplierOrganizationsOwners(): Promise<Organization[]> 
 export async function getSupplierOrganizationCashFlow(
   params: SupplierOrganizationCashFlowSearchParams,
 ): Promise<AccountingCashFlow> {
+  const normalizedNetId = requireIdentifier(params.netId, 'постачальника або договору')
+  assertDateRange(params.from, params.to)
+
+  if (!Number.isInteger(params.typePaymentTask) || params.typePaymentTask < 0) {
+    throw new RangeError('Тип платіжного завдання має бути невід’ємним цілим числом')
+  }
+
   const result = await apiRequest<unknown>('/accounting/cashflow/get/filtered', {
     query: {
       from: params.from,
-      netId: params.netId,
+      netId: normalizedNetId,
       to: params.to,
       typePaymentTask: params.typePaymentTask,
     },
@@ -173,11 +191,18 @@ function normalizeSupplyOrganizations(result: unknown): SupplyOrganization[] {
 }
 
 function normalizeSupplyOrganization(result: unknown): SupplyOrganization | null {
-  if (!result || typeof result !== 'object') {
+  const organization = readObjectPayload<SupplyOrganization>(
+    result,
+    ['Item', 'SupplyOrganization', 'Organization', 'Data'],
+  )
+
+  if (!organization) {
     return null
   }
 
-  const organization = result as SupplyOrganization
+  if (!hasSupplierOrganizationEntityIdentity(organization) && typeof organization.Name !== 'string') {
+    return null
+  }
 
   return {
     ...organization,
@@ -190,11 +215,18 @@ function normalizeSupplyOrganization(result: unknown): SupplyOrganization | null
 }
 
 function normalizeSupplyOrganizationAgreement(result: unknown): SupplyOrganizationAgreement | null {
-  if (!result || typeof result !== 'object') {
+  const agreement = readObjectPayload<SupplyOrganizationAgreement>(
+    result,
+    ['Item', 'Agreement', 'SupplyOrganizationAgreement', 'Data'],
+  )
+
+  if (!agreement) {
     return null
   }
 
-  const agreement = result as SupplyOrganizationAgreement
+  if (!hasSupplierOrganizationEntityIdentity(agreement) && typeof agreement.Name !== 'string') {
+    return null
+  }
 
   return {
     ...agreement,
@@ -205,11 +237,11 @@ function normalizeSupplyOrganizationAgreement(result: unknown): SupplyOrganizati
 }
 
 function normalizeDocumentExport(result: unknown): SupplyOrganizationDocumentExport {
-  if (!result || typeof result !== 'object') {
+  const payload = readObjectPayload<Record<string, unknown>>(result, ['Item', 'Document', 'Data'])
+
+  if (!payload) {
     return {}
   }
-
-  const payload = result as Record<string, unknown>
 
   return {
     DocumentURL: typeof payload.DocumentURL === 'string' ? payload.DocumentURL : '',
@@ -218,7 +250,7 @@ function normalizeDocumentExport(result: unknown): SupplyOrganizationDocumentExp
 }
 
 function normalizeAccountingCashFlow(result: unknown): AccountingCashFlow {
-  const payload = result && typeof result === 'object' ? (result as Partial<AccountingCashFlow>) : {}
+  const payload = readObjectPayload<Partial<AccountingCashFlow>>(result, ['Item', 'CashFlow', 'Data']) || {}
 
   return {
     ...payload,
@@ -246,4 +278,124 @@ function readArrayPayload(result: unknown, keys: string[]): unknown[] {
   }
 
   return []
+}
+
+function readObjectPayload<TObject extends object>(
+  result: unknown,
+  keys: string[],
+): TObject | null {
+  if (!result || typeof result !== 'object' || Array.isArray(result)) {
+    return null
+  }
+
+  const payload = result as Record<string, unknown>
+
+  for (const key of keys) {
+    const nested = payload[key]
+
+    if (nested && typeof nested === 'object' && !Array.isArray(nested)) {
+      return nested as TObject
+    }
+  }
+
+  return payload as TObject
+}
+
+function assertListParams(params: SupplyOrganizationsListParams): void {
+  if (typeof params.limit !== 'undefined' && (!Number.isInteger(params.limit) || params.limit <= 0)) {
+    throw new RangeError('Ліміт має бути додатним цілим числом')
+  }
+
+  if (typeof params.offset !== 'undefined' && (!Number.isInteger(params.offset) || params.offset < 0)) {
+    throw new RangeError('Зміщення має бути невід’ємним цілим числом')
+  }
+
+  if (params.from || params.to) {
+    assertDateRange(params.from || '', params.to || '')
+  }
+}
+
+function assertSupplyOrganizationPayload(organization: SupplyOrganization, requiresIdentity: boolean): void {
+  if (!organization.Name?.trim()) {
+    throw new Error('Вкажіть назву постачальника послуг')
+  }
+
+  if (requiresIdentity && !hasSupplierOrganizationEntityIdentity(organization)) {
+    throw new Error('Постачальник не має ідентифікатора для оновлення')
+  }
+}
+
+function assertSupplyOrganizationAgreementPayload(
+  agreement: SupplyOrganizationAgreement,
+  requiresIdentity: boolean,
+): void {
+  if (!agreement.Name?.trim()) {
+    throw new Error('Вкажіть назву договору')
+  }
+
+  if (!Number.isInteger(agreement.SupplyOrganizationId) || Number(agreement.SupplyOrganizationId) <= 0) {
+    throw new Error('Договір не прив’язано до постачальника послуг')
+  }
+
+  if (!hasSupplierOrganizationEntityIdentity(agreement.Organization)) {
+    throw new Error('Оберіть організацію договору')
+  }
+
+  if (!hasSupplierOrganizationEntityIdentity(agreement.Currency)) {
+    throw new Error('Оберіть валюту договору')
+  }
+
+  if (requiresIdentity && !hasSupplierOrganizationEntityIdentity(agreement)) {
+    throw new Error('Договір не має ідентифікатора для оновлення')
+  }
+
+  assertDateRange(agreement.ExistFrom || '', agreement.ExistTo || '')
+}
+
+function assertDateRange(from: string, to: string): void {
+  const normalizedFrom = normalizeDateForComparison(from)
+  const normalizedTo = normalizeDateForComparison(to)
+
+  if (from && !normalizedFrom) {
+    throw new Error('Некоректна дата початку')
+  }
+
+  if (to && !normalizedTo) {
+    throw new Error('Некоректна дата завершення')
+  }
+
+  if (normalizedFrom && normalizedTo && normalizedFrom > normalizedTo) {
+    throw new Error('Дата завершення не може бути раніше дати початку')
+  }
+}
+
+function requireIdentifier(value: string, entityName: string): string {
+  const normalizedValue = value.trim()
+
+  if (!normalizedValue) {
+    throw new Error(`Не вказано ідентифікатор ${entityName}`)
+  }
+
+  return normalizedValue
+}
+
+function normalizeDateForComparison(value: string): string | null {
+  if (!value) {
+    return ''
+  }
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const [year, month, day] = value.split('-').map(Number)
+    const date = new Date(Date.UTC(year, month - 1, day))
+
+    return (
+      date.getUTCFullYear() === year
+      && date.getUTCMonth() === month - 1
+      && date.getUTCDate() === day
+    ) ? date.toISOString() : null
+  }
+
+  const timestamp = Date.parse(value)
+
+  return Number.isNaN(timestamp) ? null : new Date(timestamp).toISOString()
 }

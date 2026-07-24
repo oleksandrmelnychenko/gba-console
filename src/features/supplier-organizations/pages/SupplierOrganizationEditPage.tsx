@@ -51,6 +51,17 @@ import type {
   SupplyOrganizationDocument,
   SupplyOrganizationGeneralFormValues,
 } from '../types'
+import {
+  firstSupplierOrganizationValidationError,
+  hasSupplierOrganizationEntityIdentity,
+  isPersistedSupplyOrganizationAgreement,
+  normalizeSupplierOrganizationContactForm,
+  normalizeSupplierOrganizationGeneralForm,
+  type SupplierOrganizationFormErrors,
+  validateSupplierOrganizationContactForm,
+  validateSupplierOrganizationGeneralForm,
+  validateSupplyOrganizationAgreementForm,
+} from '../validation'
 
 const AGREEMENTS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -88,6 +99,9 @@ export function SupplierOrganizationEditPage() {
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(false)
   const [isSaving, setSaving] = useValueState(false)
+  // Збереження в edit-режимі не закриває ша, тож список дізнається про
+  // мутацію лише при фінальному закритті — прапорець доносить її туди.
+  const hasMutatedRef = useRef(false)
   const [isDeleting, setDeleting] = useValueState(false)
   const [deleteOpened, setDeleteOpened] = useValueState(false)
   const [drawerOpened, setDrawerOpened] = useValueState(false)
@@ -162,14 +176,16 @@ export function SupplierOrganizationEditPage() {
   }
 
   async function saveGeneral(values: SupplyOrganizationGeneralFormValues) {
-    const validationError = validateGeneralForm(values)
+    const validationError = firstSupplierOrganizationValidationError(
+      validateSupplierOrganizationGeneralForm(values),
+    )
 
     if (validationError) {
       setError(t(validationError))
       return
     }
 
-    await saveOrganizationPayload(values)
+    await saveOrganizationPayload(normalizeSupplierOrganizationGeneralForm(values))
   }
 
   async function saveBank(values: SupplyOrganizationBankFormValues) {
@@ -177,14 +193,16 @@ export function SupplierOrganizationEditPage() {
   }
 
   async function saveContact(values: SupplyOrganizationContactFormValues) {
-    const validationError = validateContactForm(values)
+    const validationError = firstSupplierOrganizationValidationError(
+      validateSupplierOrganizationContactForm(values),
+    )
 
     if (validationError) {
       setError(t(validationError))
       return
     }
 
-    await saveOrganizationPayload(values)
+    await saveOrganizationPayload(normalizeSupplierOrganizationContactForm(values))
   }
 
   async function saveOrganizationPayload(values: Partial<SupplyOrganization>) {
@@ -198,15 +216,23 @@ export function SupplierOrganizationEditPage() {
       }
       const savedOrganization = isNew ? await createSupplyOrganization(payload) : await updateSupplyOrganization(payload)
 
+      if (isNew && !savedOrganization?.NetUid) {
+        notifications.show({
+          color: 'yellow',
+          message: t('Постачальника збережено, але сервер не повернув його ідентифікатор. Відкрийте запис зі списку.'),
+        })
+        navigate(returnPath, { replace: true, state: { mutated: true } })
+        return
+      }
+
+      const nextOrganization = savedOrganization || payload
+      setOrganization(nextOrganization)
+      setOrganizationRevision((current) => current + 1)
+      hasMutatedRef.current = true
       notifications.show({ color: 'green', message: t('Постачальника послуг збережено') })
 
-      if (savedOrganization) {
-        setOrganization(savedOrganization)
-        setOrganizationRevision((current) => current + 1)
-
-        if (isNew && savedOrganization.NetUid) {
-          navigate(`/accounting/supplier-organizations/edit/${savedOrganization.NetUid}`, { replace: true, state: routeState })
-        }
+      if (isNew && savedOrganization?.NetUid) {
+        navigate(`/accounting/supplier-organizations/edit/${savedOrganization.NetUid}`, { replace: true, state: routeState })
       }
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : t('Не вдалося зберегти постачальника послуг'))
@@ -228,7 +254,7 @@ export function SupplierOrganizationEditPage() {
     try {
       await deleteSupplyOrganization(organization.NetUid)
       notifications.show({ color: 'green', message: t('Постачальника послуг видалено') })
-      navigate(returnPath, { replace: true })
+      navigate(returnPath, { replace: true, state: { mutated: true } })
     } catch (deleteError) {
       setError(deleteError instanceof Error ? deleteError.message : t('Не вдалося видалити постачальника послуг'))
     } finally {
@@ -237,12 +263,15 @@ export function SupplierOrganizationEditPage() {
     }
   }
 
-  const tabsDisabled = !organization.Id
+  const tabsDisabled = !hasSupplierOrganizationEntityIdentity(organization)
   const organizationFormKey = `${organization.NetUid || organization.Id || 'new'}-${organizationRevision}`
 
   function closeDrawer() {
     setDrawerOpened(false)
-    window.setTimeout(() => navigate(returnPath, { replace: true }), DRAWER_TRANSITION_MS)
+    window.setTimeout(
+      () => navigate(returnPath, { replace: true, state: hasMutatedRef.current ? { mutated: true } : null }),
+      DRAWER_TRANSITION_MS,
+    )
   }
 
   return (
@@ -359,13 +388,22 @@ function GeneralInfoForm({
 }) {
   const { t } = useI18n()
   const [values, setValues] = useValueState(() => toGeneralFormValues(organization))
+  const [errors, setErrors] = useValueState<SupplierOrganizationFormErrors<SupplyOrganizationGeneralFormValues>>({})
 
   function setField<K extends keyof SupplyOrganizationGeneralFormValues>(key: K, value: SupplyOrganizationGeneralFormValues[K]) {
     setValues((current) => ({ ...current, [key]: value }))
+    setErrors((current) => ({ ...current, [key]: undefined }))
   }
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    const nextErrors = validateSupplierOrganizationGeneralForm(values)
+    setErrors(nextErrors)
+
+    if (firstSupplierOrganizationValidationError(nextErrors)) {
+      return
+    }
+
     onSubmit(values)
   }
 
@@ -373,9 +411,21 @@ function GeneralInfoForm({
     <form onSubmit={submit}>
       <Stack gap="md">
         <SimpleGrid cols={{ base: 1, md: 2 }}>
-          <TextInput label={t('Назва')} required value={values.Name} onChange={(event) => setField('Name', event.currentTarget.value)} />
+          <TextInput
+            error={errors.Name ? t(errors.Name) : undefined}
+            label={t('Назва')}
+            required
+            value={values.Name}
+            onChange={(event) => setField('Name', event.currentTarget.value)}
+          />
           <TextInput label={t('Адреса')} value={values.Address} onChange={(event) => setField('Address', event.currentTarget.value)} />
-          <TextInput label={t('Email')} type="email" value={values.EmailAddress} onChange={(event) => setField('EmailAddress', event.currentTarget.value)} />
+          <TextInput
+            error={errors.EmailAddress ? t(errors.EmailAddress) : undefined}
+            label={t('Email')}
+            type="email"
+            value={values.EmailAddress}
+            onChange={(event) => setField('EmailAddress', event.currentTarget.value)}
+          />
           <TextInput label={t('Телефон')} value={values.PhoneNumber} onChange={(event) => setField('PhoneNumber', event.currentTarget.value)} />
           <TextInput label={t('ПДВ номер')} value={values.SROI} onChange={(event) => setField('SROI', event.currentTarget.value)} />
           <TextInput label={t('ІПН')} value={values.TIN} onChange={(event) => setField('TIN', event.currentTarget.value)} />
@@ -465,13 +515,22 @@ function ContactPersonForm({
 }) {
   const { t } = useI18n()
   const [values, setValues] = useValueState(() => toContactFormValues(organization))
+  const [errors, setErrors] = useValueState<SupplierOrganizationFormErrors<SupplyOrganizationContactFormValues>>({})
 
   function setField<K extends keyof SupplyOrganizationContactFormValues>(key: K, value: SupplyOrganizationContactFormValues[K]) {
     setValues((current) => ({ ...current, [key]: value }))
+    setErrors((current) => ({ ...current, [key]: undefined }))
   }
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    const nextErrors = validateSupplierOrganizationContactForm(values)
+    setErrors(nextErrors)
+
+    if (firstSupplierOrganizationValidationError(nextErrors)) {
+      return
+    }
+
     onSubmit(values)
   }
 
@@ -481,7 +540,13 @@ function ContactPersonForm({
         <SimpleGrid cols={{ base: 1, md: 2 }}>
           <TextInput label={t('ПІБ')} value={values.ContactPersonName} onChange={(event) => setField('ContactPersonName', event.currentTarget.value)} />
           <TextInput label={t('Телефон')} value={values.ContactPersonPhone} onChange={(event) => setField('ContactPersonPhone', event.currentTarget.value)} />
-          <TextInput label={t('Email')} type="email" value={values.ContactPersonEmail} onChange={(event) => setField('ContactPersonEmail', event.currentTarget.value)} />
+          <TextInput
+            error={errors.ContactPersonEmail ? t(errors.ContactPersonEmail) : undefined}
+            label={t('Email')}
+            type="email"
+            value={values.ContactPersonEmail}
+            onChange={(event) => setField('ContactPersonEmail', event.currentTarget.value)}
+          />
           <TextInput label="Viber" value={values.ContactPersonViber} onChange={(event) => setField('ContactPersonViber', event.currentTarget.value)} />
           <TextInput label="Skype" value={values.ContactPersonSkype} onChange={(event) => setField('ContactPersonSkype', event.currentTarget.value)} />
           <TextInput label={t('Коментар')} value={values.ContactPersonComment} onChange={(event) => setField('ContactPersonComment', event.currentTarget.value)} />
@@ -518,6 +583,7 @@ function AgreementsPanel({
   const { t } = useI18n()
   const [editor, setEditorState] = useValueState<SupplyOrganizationAgreement | null>(null)
   const [editorRevision, setEditorRevision] = useValueState(0)
+  const agreementMutationRef = useRef(false)
   const agreements = organization.SupplyOrganizationAgreements || []
   const columns = useAgreementColumns((agreement) => setEditor(agreement))
 
@@ -527,8 +593,12 @@ function AgreementsPanel({
   }
 
   async function saveAgreement(values: SupplyOrganizationAgreementFormValues) {
-    if (!values.name.trim()) {
-      onError(t('Вкажіть назву договору'))
+    const validationError = firstSupplierOrganizationValidationError(
+      validateSupplyOrganizationAgreementForm(values),
+    )
+
+    if (validationError) {
+      onError(t(validationError))
       return
     }
 
@@ -540,6 +610,18 @@ function AgreementsPanel({
       return
     }
 
+    const supplyOrganizationId = organization.Id || editor?.SupplyOrganizationId
+
+    if (!Number.isInteger(supplyOrganizationId) || Number(supplyOrganizationId) <= 0) {
+      onError(t('Не вдалося визначити постачальника для договору. Оновіть картку та спробуйте ще раз.'))
+      return
+    }
+
+    if (agreementMutationRef.current) {
+      return
+    }
+
+    agreementMutationRef.current = true
     setSaving(true)
     onError(null)
 
@@ -552,11 +634,11 @@ function AgreementsPanel({
         Name: values.name.trim(),
         Number: values.number.trim(),
         Organization: selectedOrganization,
-        SupplyOrganizationId: organization.Id,
+        SupplyOrganizationId: supplyOrganizationId,
         SupplyOrganizationDocuments: editor?.SupplyOrganizationDocuments || [],
       }
 
-      if (editor?.Id) {
+      if (isPersistedSupplyOrganizationAgreement(editor)) {
         await updateSupplyOrganizationAgreement(payload, values.files)
       } else {
         await createSupplyOrganizationAgreement(payload, values.files)
@@ -568,17 +650,24 @@ function AgreementsPanel({
     } catch (saveError) {
       onError(saveError instanceof Error ? saveError.message : t('Не вдалося зберегти договір'))
     } finally {
+      agreementMutationRef.current = false
       setSaving(false)
     }
   }
 
   async function markDocumentDeleted(agreement: SupplyOrganizationAgreement, document: SupplyOrganizationDocument) {
+    if (agreementMutationRef.current) {
+      return
+    }
+
+    agreementMutationRef.current = true
     setSaving(true)
     onError(null)
 
     try {
       await updateSupplyOrganizationAgreement({
         ...agreement,
+        SupplyOrganizationId: agreement.SupplyOrganizationId || organization.Id,
         SupplyOrganizationDocuments: (agreement.SupplyOrganizationDocuments || []).map((item) =>
           documentMatches(item, document) ? { ...item, Deleted: true } : item,
         ),
@@ -588,6 +677,7 @@ function AgreementsPanel({
     } catch (deleteError) {
       onError(deleteError instanceof Error ? deleteError.message : t('Не вдалося видалити документ'))
     } finally {
+      agreementMutationRef.current = false
       setSaving(false)
     }
   }
@@ -723,16 +813,25 @@ function AgreementDrawer({
 }) {
   const { t } = useI18n()
   const [values, setValues] = useValueState(() => toAgreementFormValues(editor, ownerOrganizations, currencies, t))
+  const [errors, setErrors] = useValueState<SupplierOrganizationFormErrors<SupplyOrganizationAgreementFormValues>>({})
 
   function setField<K extends keyof SupplyOrganizationAgreementFormValues>(
     key: K,
     value: SupplyOrganizationAgreementFormValues[K],
   ) {
     setValues((current) => ({ ...current, [key]: value }))
+    setErrors((current) => ({ ...current, [key]: undefined }))
   }
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    const nextErrors = validateSupplyOrganizationAgreementForm(values)
+    setErrors(nextErrors)
+
+    if (firstSupplierOrganizationValidationError(nextErrors)) {
+      return
+    }
+
     onSubmit(values)
   }
 
@@ -743,12 +842,18 @@ function AgreementDrawer({
       opened={Boolean(editor)}
       padding="md"
       size="lg"
-      title={editor?.Id ? `${t('Редагувати договір')}: ${displayValue(editor.Name)}` : t('Новий договір')}
+      title={isPersistedSupplyOrganizationAgreement(editor) ? `${t('Редагувати договір')}: ${displayValue(editor?.Name)}` : t('Новий договір')}
       onClose={onClose}
     >
       <form onSubmit={submit}>
         <Stack gap="md">
-          <TextInput label={t('Назва')} required value={values.name} onChange={(event) => setField('name', event.currentTarget.value)} />
+          <TextInput
+            error={errors.name ? t(errors.name) : undefined}
+            label={t('Назва')}
+            required
+            value={values.name}
+            onChange={(event) => setField('name', event.currentTarget.value)}
+          />
           <TextInput label={t('Номер договору')} value={values.number} onChange={(event) => setField('number', event.currentTarget.value)} />
           <SimpleGrid cols={{ base: 1, sm: 2 }}>
             <Select
@@ -756,7 +861,9 @@ function AgreementDrawer({
                 label: displayValue(organization.Name),
                 value: entityKey(organization),
               }))}
+              error={errors.organizationId ? t(errors.organizationId) : undefined}
               label={t('Організація')}
+              required
               searchable
               value={values.organizationId || null}
               onChange={(value) => setField('organizationId', value || '')}
@@ -766,12 +873,15 @@ function AgreementDrawer({
                 label: getCurrencyLabel(currency),
                 value: entityKey(currency),
               }))}
+              error={errors.currencyId ? t(errors.currencyId) : undefined}
               label={t('Валюта')}
+              required
               searchable
               value={values.currencyId || null}
               onChange={(value) => setField('currencyId', value || '')}
             />
             <TextInput
+              error={errors.existFrom ? t(errors.existFrom) : undefined}
               label={t('Діє з')}
               max={values.existTo || undefined}
               type="date"
@@ -779,6 +889,7 @@ function AgreementDrawer({
               onChange={(event) => setField('existFrom', event.currentTarget.value)}
             />
             <TextInput
+              error={errors.existTo ? t(errors.existTo) : undefined}
               label={t('Діє до')}
               min={values.existFrom || undefined}
               type="date"
@@ -974,30 +1085,6 @@ function toAgreementFormValues(
     number: agreement?.Number || '',
     organizationId: entityKey(agreement?.Organization) || entityKey(organizations[0]),
   }
-}
-
-function validateGeneralForm(values: SupplyOrganizationGeneralFormValues): string | null {
-  if (!values.Name.trim()) {
-    return 'Вкажіть назву'
-  }
-
-  if (values.EmailAddress && !isEmail(values.EmailAddress)) {
-    return 'Некоректний email'
-  }
-
-  return null
-}
-
-function validateContactForm(values: SupplyOrganizationContactFormValues): string | null {
-  if (values.ContactPersonEmail && !isEmail(values.ContactPersonEmail)) {
-    return 'Некоректний email'
-  }
-
-  return null
-}
-
-function isEmail(value: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
 }
 
 function findEntity<TEntity extends { Id?: number; NetUid?: string }>(items: TEntity[], key: string): TEntity | null {
