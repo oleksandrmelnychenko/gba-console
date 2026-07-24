@@ -1,3 +1,128 @@
+/* Every right-side work window uses the same visual language. AppDrawer adds
+   `.app-drawer.app-form-sheet` itself, so feature code cannot accidentally
+   skip the shared title/control/button pattern. */
+.app-drawer .mantine-Drawer-title {
+  color: var(--mantine-color-gray-9);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.25;
+  min-width: 0;
+}
+
+.app-drawer .mantine-Drawer-title > * {
+  font-family: inherit;
+  letter-spacing: inherit;
+}
+
+.app-drawer .mantine-Drawer-close {
+  border-radius: 8px;
+  color: var(--mantine-color-gray-7);
+  height: 32px;
+  min-height: 32px;
+  min-width: 32px;
+  width: 32px;
+}
+
+.app-drawer .mantine-Drawer-close:hover {
+  background: var(--mantine-color-gray-1);
+  color: var(--mantine-color-gray-9);
+}
+
+.app-drawer .mantine-Drawer-close:focus-visible {
+  box-shadow: var(--app-focus-ring);
+  outline: 1px solid var(--app-focus-border);
+  outline-offset: 1px;
+}
+
+.app-drawer.app-form-sheet .mantine-InputWrapper-label {
+  color: var(--mantine-color-gray-9);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.app-drawer.app-form-sheet .mantine-Input-input {
+  min-height: 36px;
+}
+
+.app-drawer.app-form-sheet .mantine-Button-root {
+  border-radius: 8px;
+  min-height: 36px;
+}
+
+.app-drawer.app-form-sheet .mantine-ActionIcon-root {
+  border-radius: 8px;
+}
+
+.app-drawer.app-form-sheet .mantine-Alert-root,
+.app-drawer.app-form-sheet .mantine-Card-root,
+.app-drawer.app-form-sheet .mantine-Paper-root {
+  border-color: var(--mantine-color-gray-2);
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+/* Drawer tabs are the same full-width strip used above page filters:
+   gray register bar, centered mono labels, orange active underline. Feature
+   code can use the existing `.pill-tabs` markup or put
+   `.app-drawer-tabs` on a Mantine <Tabs>. */
+.app-drawer .pill-tabs {
+  gap: 12px;
+  width: 100% !important;
+}
+
+.app-drawer .app-drawer-tabs > .mantine-Tabs-list,
+.app-drawer .app-drawer-tabs .mantine-Tabs-list {
+  background: #f8f9fa;
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+  border-radius: 0 0 10px 10px;
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 12px;
+  justify-content: safe center;
+  overflow-x: auto;
+  padding: 0 8px;
+  scrollbar-width: none;
+  width: 100%;
+}
+
+.app-drawer .app-drawer-tabs > .mantine-Tabs-list::before,
+.app-drawer .app-drawer-tabs .mantine-Tabs-list::before,
+.app-drawer .mantine-Tabs-list.pill-tabs::before {
+  border: 0;
+}
+
+.app-drawer .app-drawer-tabs .mantine-Tabs-tab,
+.app-drawer .mantine-Tabs-list.pill-tabs .mantine-Tabs-tab {
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: var(--mantine-color-gray-7);
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0;
+  margin-bottom: -1px;
+  padding: 9px 2px 10px;
+  white-space: nowrap;
+}
+
+.app-drawer .app-drawer-tabs .mantine-Tabs-tab:hover,
+.app-drawer .mantine-Tabs-list.pill-tabs .mantine-Tabs-tab:hover {
+  color: var(--mantine-color-gray-9);
+}
+
+.app-drawer .app-drawer-tabs .mantine-Tabs-tab[data-active],
+.app-drawer .mantine-Tabs-list.pill-tabs .mantine-Tabs-tab[data-active] {
+  border-bottom-color: var(--brand-orange);
+  color: var(--mantine-color-gray-9);
+  font-weight: 600;
+}
+
 /* Sheet layout used whenever an AppDrawer is given a `footer`. The body turns
    into a flex column: a scrollable content region that grows, and a pinned
    action footer that always sits at the bottom of the sheet — even when the
@@ -35,4 +160,8 @@
 /* When a sheet only has trailing actions, keep them flush to the right. */
 .app-sheet-footer:has(> :only-child) {
   justify-content: flex-end;
+}
+
+.app-sheet-footer[hidden] {
+  display: none;
 }

@@ -1,8 +1,23 @@
 import { Drawer, type DrawerProps } from '@mantine/core'
-import { useEffect, useState, type ReactNode } from 'react'
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react'
+import { createPortal } from 'react-dom'
 import './app-drawer.css'
 
-export type AppDrawerProps = DrawerProps & {
+export type AppDrawerProps = Omit<DrawerProps, 'title'> & {
+  /**
+   * Every work window has a visible title in the real drawer header. Keeping
+   * it required prevents feature forms from drawing a fake heading inside the
+   * body (and leaving the sheet chrome untitled).
+   */
+  title: ReactNode
   /**
    * Optional action bar pinned to the bottom of the sheet. When provided, the
    * body becomes a scrollable region and the footer always stays in view — the
@@ -19,12 +34,33 @@ export type AppDrawerProps = DrawerProps & {
  */
 const SHEET_WIDTHS = {
   compact: 'min(560px, 100vw)',
-  standard: 'min(900px, 100vw)',
+  standard: 'min(1200px, 100vw)',
   wide: 'min(1240px, 100vw)',
   full: '90vw',
 } as const
 
 type SheetTier = keyof typeof SHEET_WIDTHS
+
+type AppDrawerFooterSlotContextValue = {
+  register: () => () => void
+  target: HTMLDivElement | null
+}
+
+const AppDrawerFooterSlotContext = createContext<AppDrawerFooterSlotContextValue | null>(null)
+
+/**
+ * Places actions owned by a nested form into the nearest AppDrawer footer.
+ * This keeps form state local while the actions remain pinned outside the
+ * drawer's scroll region.
+ */
+export function AppDrawerFooter({ children }: { children: ReactNode }) {
+  const slot = useContext(AppDrawerFooterSlotContext)
+  const register = slot?.register
+
+  useEffect(() => register?.(), [register])
+
+  return slot?.target ? createPortal(children, slot.target) : null
+}
 
 const NAMED_SIZE_TIERS: Record<string, SheetTier> = {
   xs: 'compact',
@@ -72,15 +108,17 @@ function resolveSheetWidth(size: DrawerProps['size']): string {
       return SHEET_WIDTHS[NAMED_SIZE_TIERS[size]]
     }
 
+    // A pure viewport/percentage width or a calc() expression describes a
+    // deliberately large work window. Keep min(<px>, <viewport>) values on
+    // their px cap so compact legacy sheets do not inflate to the wide tier.
+    if (/^calc\(/i.test(size.trim()) || /^\d+(?:\.\d+)?(?:vw|%)$/i.test(size.trim())) {
+      return SHEET_WIDTHS.wide
+    }
+
     const px = parseSizeToPx(size)
 
     if (px !== null) {
       return SHEET_WIDTHS[snapPxToTier(px)]
-    }
-
-    // Anything viewport/percentage/calc based is treated as a wide sheet.
-    if (/vw|%|calc/i.test(size)) {
-      return SHEET_WIDTHS.wide
     }
   }
 
@@ -98,9 +136,32 @@ function resolveSheetWidth(size: DrawerProps['size']): string {
    opening so the open animation can settle first. */
 const OUTSIDE_CLOSE_ARM_DELAY_MS = 350
 
-export function AppDrawer({ position = 'right', size, children, footer, ...props }: AppDrawerProps) {
-  const hasFooter = footer != null
+export function AppDrawer({
+  position = 'right',
+  size,
+  children,
+  className,
+  footer,
+  ...props
+}: AppDrawerProps) {
+  const [footerTarget, setFooterTarget] = useState<HTMLDivElement | null>(null)
+  const [registeredFooterCount, setRegisteredFooterCount] = useState(0)
+  const registerFooter = useCallback(() => {
+    setRegisteredFooterCount((count) => count + 1)
+
+    return () => {
+      setRegisteredFooterCount((count) => Math.max(0, count - 1))
+    }
+  }, [])
+  const footerSlot = useMemo(
+    () => ({ register: registerFooter, target: footerTarget }),
+    [footerTarget, registerFooter],
+  )
+  const hasFooter = footer != null || registeredFooterCount > 0
   const [outsideCloseArmed, setOutsideCloseArmed] = useState(false)
+  const drawerClassName = ['app-drawer', 'app-form-sheet', hasFooter ? 'app-drawer--with-footer' : '', className]
+    .filter(Boolean)
+    .join(' ')
 
   useEffect(() => {
     const timer = setTimeout(
@@ -114,6 +175,7 @@ export function AppDrawer({ position = 'right', size, children, footer, ...props
   return (
     <Drawer
       {...props}
+      className={drawerClassName}
       closeOnClickOutside={(props.closeOnClickOutside ?? true) && outsideCloseArmed}
       padding="lg"
       position={position}
@@ -137,21 +199,31 @@ export function AppDrawer({ position = 'right', size, children, footer, ...props
         // Tighten the header so the title sits close to the content (no tall
         // fixed header bar and no large bottom gap).
         header: { minHeight: 'auto', paddingBottom: 'var(--mantine-spacing-xs)' },
-        // The body grows to fill the sheet and owns the scroll. With a footer it has no padding
-        // (the inner scroll/footer divs handle it); without one it keeps the uniform inner padding.
-        body: hasFooter
-          ? { display: 'flex', flexDirection: 'column', flexGrow: 1, minHeight: 0, padding: 0, overflow: 'hidden' }
-          : { flexGrow: 1, minHeight: 0, overflowY: 'auto', padding: 'var(--mantine-spacing-lg)', paddingTop: 'var(--mantine-spacing-xs)' },
+        // Keep one stable child tree whether a contextual footer is currently
+        // visible or not. This preserves local form state when tabs switch
+        // between sections that do and do not expose primary actions.
+        body: {
+          display: 'flex',
+          flexDirection: 'column',
+          flexGrow: 1,
+          minHeight: 0,
+          overflow: 'hidden',
+          padding: 0,
+        },
       }}
     >
-      {hasFooter ? (
+      <AppDrawerFooterSlotContext.Provider value={footerSlot}>
         <div className="app-sheet-body">
           <div className="app-sheet-scroll">{children}</div>
-          <div className="app-sheet-footer">{footer}</div>
+          <div
+            ref={setFooterTarget}
+            className="app-sheet-footer"
+            hidden={!hasFooter}
+          >
+            {footer}
+          </div>
         </div>
-      ) : (
-        children
-      )}
+      </AppDrawerFooterSlotContext.Provider>
     </Drawer>
   )
 }
