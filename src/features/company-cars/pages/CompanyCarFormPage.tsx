@@ -228,7 +228,7 @@ export function CompanyCarFormPage() {
     <AppDrawer
       opened
       position="right"
-      size="standard"
+      size="compact"
       title={isEditMode ? t('Автомобіль компанії') : t('Завести нову машину компанії')}
       onClose={handleCancel}
       footer={
