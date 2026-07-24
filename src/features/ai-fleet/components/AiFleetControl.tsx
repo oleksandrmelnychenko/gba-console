@@ -214,23 +214,10 @@ export function AiFleetControl({ canRunWarmup = false }: { canRunWarmup?: boolea
       >
         <Stack gap="sm">
           <Group justify="space-between" wrap="wrap">
-            <Stack gap={2}>
-              <Text size="sm" c="dimmed">
-                {t('Сервіси, які підключені до AI-функцій консолі')}
-              </Text>
-              <Text size="xs" c="dimmed">
-                {t('Доступність API перевіряється наживо через gba-server; 05:00 читається з останнього AI warmup логу.')}
-              </Text>
-            </Stack>
+            <Badge color={summary.total > 0 && summary.healthHealthy === summary.total ? 'green' : 'orange'} variant="light">
+              {summary.healthHealthy}/{summary.total} {t('API доступні')}
+            </Badge>
             <Group gap="xs" wrap="wrap">
-              <Badge color={summary.total > 0 && summary.healthHealthy === summary.total ? 'green' : 'orange'} variant="light">
-                {summary.healthHealthy}/{summary.total} {t('API доступні')}
-              </Badge>
-              {lastUpdatedLabel && (
-                <Badge className="app-role-pill is-gray" variant="light">
-                  {t('оновлено')}: {lastUpdatedLabel}
-                </Badge>
-              )}
               {canRunWarmup ? (
                 <Tooltip label={t('Поставити AI warmup у чергу scheduler-а')}>
                   <Button
@@ -294,9 +281,11 @@ export function AiFleetControl({ canRunWarmup = false }: { canRunWarmup?: boolea
               value={filter}
               onChange={(value) => setFilter(value as 'all' | 'issues')}
             />
-            <Text c="dimmed" size="xs">
-              {t('Автооновлення кожні')} {AI_FLEET_REFRESH_MS / 1000} {t('сек.')}
-            </Text>
+            {lastUpdatedLabel && (
+              <Text c="dimmed" size="xs">
+                {t('оновлено')}: {lastUpdatedLabel}
+              </Text>
+            )}
           </Group>
 
           <Stack gap="xs">
@@ -326,23 +315,29 @@ function AiFleetOperationSummary({ operation }: { operation?: AiFleetOperationSt
   const state = operation?.state ?? 'unknown'
   const color = state === 'healthy' ? 'green' : state === 'down' ? 'red' : 'gray'
 
+  const finishedLabel = formatDateTime(operation?.lastFinishedAtUtc)
+  const tooltip = [
+    operation?.lastStartedAtUtc ? `${t('старт')}: ${formatDateTime(operation.lastStartedAtUtc)}` : null,
+    operation?.logFilePath ? `${t('Лог')}: ${operation.logFilePath}` : null,
+  ]
+    .filter(Boolean)
+    .join('\n')
+
+  const badge = (
+    <Badge color={color} leftSection={<Clock3 size={13} />} variant="light">
+      {t('Останній 05:00 job')}: {operationStateLabel(state, t)}
+      {finishedLabel ? ` · ${finishedLabel}` : ''}
+    </Badge>
+  )
+
   return (
     <div className="ai-fleet-operation">
-      <Group gap="xs" wrap="wrap">
-        <Badge color={color} leftSection={<Clock3 size={13} />} variant="light">
-          {t('Останній 05:00 job')}: {operationStateLabel(state, t)}
-        </Badge>
-        <Badge className="app-role-pill is-gray" variant="light">
-          {t('старт')}: {formatDateTime(operation?.lastStartedAtUtc) || '—'}
-        </Badge>
-        <Badge className="app-role-pill is-gray" variant="light">
-          {t('фініш')}: {formatDateTime(operation?.lastFinishedAtUtc) || '—'}
-        </Badge>
-      </Group>
-      {operation?.logFilePath && (
-        <Text c="dimmed" size="xs">
-          {t('Лог')}: {operation.logFilePath}
-        </Text>
+      {tooltip ? (
+        <Tooltip label={tooltip} multiline openDelay={250} w={340}>
+          {badge}
+        </Tooltip>
+      ) : (
+        badge
       )}
     </div>
   )
@@ -367,15 +362,17 @@ function AiFleetServiceRow({
 
   return (
     <div className="ai-fleet-row">
-      <Group align="flex-start" justify="space-between" gap="sm" wrap="nowrap">
-        <Stack gap={3} className="ai-fleet-row__main">
-          <Group gap="xs" wrap="wrap">
-            <Text fw={700} size="sm">{service.name}</Text>
-            <Badge className="app-role-pill is-gray" size="xs" variant="light">{service.source}</Badge>
-          </Group>
-          <Text c="dimmed" size="xs">{service.location}</Text>
-          <Text size="sm">{service.description}</Text>
-        </Stack>
+      <Group align="center" justify="space-between" gap="sm" wrap="nowrap">
+        <Tooltip
+          label={`${service.location}. ${service.description}`}
+          multiline
+          openDelay={300}
+          w={300}
+        >
+          <Text fw={700} size="sm" className="ai-fleet-row__main" tabIndex={0}>
+            {service.name}
+          </Text>
+        </Tooltip>
 
         <Group gap={6} justify="flex-end" wrap="wrap" className="ai-fleet-row__statuses">
           {isLoading ? (
@@ -392,17 +389,6 @@ function AiFleetServiceRow({
                 message={warmupMessage}
                 state={warmup?.state ?? 'unknown'}
               />
-              <Tooltip label={`${service.location}. ${service.description}`} multiline openDelay={250} w={280}>
-                <Badge
-                  aria-label={`${t('Де')}: ${service.location}`}
-                  color="gray"
-                  size="sm"
-                  tabIndex={0}
-                  variant="outline"
-                >
-                  {t('де')}
-                </Badge>
-              </Tooltip>
               <Tooltip label={t('Скопіювати діагностику')}>
                 <ActionIcon aria-label={t('Скопіювати діагностику')} size="sm" variant="light" onClick={() => onCopyDiagnostic(row)}>
                   <ClipboardCopy size={15} />
