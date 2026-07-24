@@ -719,26 +719,20 @@ function IncompleteSaleDetail({ error, isLoading, sale, onOpenClientSales }: Inc
             </Badge>
           </Group>
 
-          <Group gap="xl" wrap="wrap">
-            <Box>
-              <Text size="xs" c="dimmed">
-                {t('Дата')}
-              </Text>
-              <Text size="sm">{formatIncompleteSaleDate(sale)}</Text>
-            </Box>
-            <Box>
-              <Text size="xs" c="dimmed">
-                {t('Товари')}
-              </Text>
-              <Text size="sm">{getIncompleteSaleProductCount(sale)}</Text>
-            </Box>
-            <Box>
-              <Text size="xs" c="dimmed">
-                {t('Відповідальний')}
-              </Text>
-              <Text size="sm">{displayValue(responsibleName)}</Text>
-            </Box>
-          </Group>
+          <div className="app-detail-grid">
+            <div className="app-detail-field is-mono">
+              <span>{t('Дата')}</span>
+              <strong>{formatIncompleteSaleDate(sale)}</strong>
+            </div>
+            <div className="app-detail-field is-mono">
+              <span>{t('Товари')}</span>
+              <strong>{getIncompleteSaleProductCount(sale)}</strong>
+            </div>
+            <div className="app-detail-field">
+              <span>{t('Відповідальний')}</span>
+              <strong>{displayValue(responsibleName)}</strong>
+            </div>
+          </div>
 
           {hasClientSales && (
             <Button
