@@ -1,4 +1,4 @@
-import { Alert, Anchor, Badge, Button, Card, Group, SimpleGrid, Stack, Text } from '@mantine/core'
+import { Alert, Anchor, Badge, Button, Card, Group, Stack, Text } from '@mantine/core'
 import { CircleAlert, FileText } from 'lucide-react'
 import { useEffect, useMemo } from 'react'
 import { useLocation, useNavigate, useParams, type Location } from 'react-router-dom'
@@ -178,7 +178,7 @@ function SupplyOrderProductPlacementContent({
       size="full"
       title={
         <Group gap="sm" wrap="nowrap">
-          <span style={{ fontFamily: 'var(--font-mono)' }}>{t(title)}</span>
+          <span>{t(title)}</span>
           <Badge color={status.color} variant="light">
             {status.label}
           </Badge>
@@ -214,7 +214,7 @@ function SupplyOrderProductPlacementContent({
             {firstUkraineItem ? t('Замовлення Україна') : t('Замовлення постачальника')}
           </Text>
 
-          <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="md">
+          <div className="app-detail-grid">
             <DetailValue label={t('Номер замовлення')} value={order?.SupplyOrderNumber?.Number || ukraineOrder?.Number} />
             <DetailValue label={t('Постачальник')} value={getEntityName(order?.Client || ukraineOrder?.Supplier)} />
             <DetailValue label={t('Від')} value={formatDate(order?.DateFrom || ukraineOrder?.FromDate)} />
@@ -232,7 +232,7 @@ function SupplyOrderProductPlacementContent({
               label={`${t('Курс')} ${currencyCode ? `${currencyCode} ${t('до')} UAH` : ''}`.trim()}
               value={formatRate(exchangeRate)}
             />
-          </SimpleGrid>
+          </div>
         </Stack>
       </Card>
 
@@ -514,14 +514,10 @@ function usePlacementColumns(
 
 function DetailValue({ label, value }: { label: string; value?: string | number }) {
   return (
-    <Stack gap={2}>
-      <Text c="dimmed" size="xs" tt="uppercase">
-        {label}
-      </Text>
-      <Text fw={600} size="sm" lineClamp={2}>
-        {displayValue(value)}
-      </Text>
-    </Stack>
+    <div className="app-detail-field">
+      <span>{label}</span>
+      <strong>{displayValue(value)}</strong>
+    </div>
   )
 }
 
@@ -560,19 +556,18 @@ function PlacementDetailsDrawer({ row, onClose }: { row: SupplyPlacementRow | nu
   return (
     <AppDrawer
       opened={Boolean(row)}
-      padding="md"
       size="md"
       title={row ? `${displayValue(row.vendorCode)} ${displayValue(row.productName)}` : t('Місця зберігання')}
       onClose={onClose}
     >
       {row && (
         <Stack gap="md">
-          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+          <div className="app-detail-grid">
             <DetailValue label={t('Код товару')} value={row.vendorCode} />
             <DetailValue label={t('Назва товару')} value={row.productName} />
             <DetailValue label={t('Факт')} value={formatAmount(row.actualQty)} />
             <DetailValue label={t('Замовлено')} value={formatAmount(row.orderedQty)} />
-          </SimpleGrid>
+          </div>
 
           <Stack gap="xs">
             <Text fw={700}>{t('Місця зберігання')}</Text>
@@ -583,12 +578,12 @@ function PlacementDetailsDrawer({ row, onClose }: { row: SupplyPlacementRow | nu
             ) : (
               row.placements.map((placement, index) => (
                 <Card key={placement.NetUid || placement.Id || index} withBorder radius="sm" padding="sm">
-                  <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="xs">
+                  <div className="app-detail-grid">
                     <DetailValue label={t('Позиція')} value={formatPlacementAddress(placement)} />
                     <DetailValue label={t('Кількість')} value={formatAmount(placement.Qty)} />
                     <DetailValue label={t('Склад')} value={getEntityName(placement.Storage)} />
                     <DetailValue label={t('Статус')} value={placement.IsApplied ? t('Застосовано') : t('Очікує')} />
-                  </SimpleGrid>
+                  </div>
                 </Card>
               ))
             )}

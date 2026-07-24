@@ -937,17 +937,10 @@ function ProductIncomeDocumentDrawer({
 
   return (
     <AppDrawer
-      offset={8}
       opened={Boolean(document)}
-      padding="lg"
       position="right"
-      radius="md"
       size="min(1120px, 96vw)"
-      title={
-        <span style={{ fontFamily: 'var(--font-mono)', textTransform: 'uppercase' }}>
-          {document?.Number ? `${t('Документ')} ${document.Number}` : t('Документ приходу')}
-        </span>
-      }
+      title={document?.Number ? `${t('Документ')} ${document.Number}` : t('Документ приходу')}
       onClose={onClose}
     >
       {document && row && (
