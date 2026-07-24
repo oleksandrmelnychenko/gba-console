@@ -40,13 +40,44 @@ export const DailyDataSyncStockMode = {
 
 export type DailyDataSyncStockMode = (typeof DailyDataSyncStockMode)[keyof typeof DailyDataSyncStockMode]
 
-export type SyncHistoryItem = {
-  Date?: string | Date
-  Type?: number
+export type DataSyncAcceptedScope = {
+  ForAmg: boolean
+  From?: string | null
+  OperationType: string
+  StockMode?: string | null
+  SyncEntityTypes: SyncEntityType[]
+  To?: string | null
+  Types: SyncProductConsignmentType[]
+}
+
+export type DataSyncPipelineRun = {
+  AcceptedScope: DataSyncAcceptedScope
+  CompletedAtUtc?: string | null
+  FailedStep?: string | null
+  PipelineRunId: string
+  StartedAtUtc: string
+  StartedBy: string
+  Status: 'Failed' | 'Finished' | 'Running' | string
+  TerminalSequence?: number | null
+}
+
+export type DataSyncStatus = {
+  ActiveRun?: DataSyncPipelineRun | null
+  ActiveSynchronizationType?: string
+  InMemorySynchronizationInProgress: boolean
+  IsGlobalLockHeld: boolean
+  IsGlobalLockStatusAvailable: boolean
+  IsInProgress: boolean
+  LastTerminalRun?: DataSyncPipelineRun | null
+  PipelineRunId?: string | null
+  RunId?: string | null
+  StartedBy?: string
 }
 
 export type SyncRunResponse = {
+  AcceptedScope?: DataSyncAcceptedScope
   Message?: string
+  PipelineRunId?: string
 }
 
 export type ProductWriteOffRule = {

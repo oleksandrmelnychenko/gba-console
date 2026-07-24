@@ -65,4 +65,36 @@ describe('dataSyncProgressStore', () => {
       message: 'Синхронізацію запущено',
     })
   })
+
+  it('restores active progress after reload when backend status says sync is running', () => {
+    reconcileDataSyncProgress(true)
+
+    expect(getDataSyncProgressSnapshot()).toMatchObject({
+      isActive: true,
+      isError: false,
+    })
+  })
+
+  it('clears a stale hub error after the durable backend session is idle', () => {
+    applyDataSyncNotification({ DisplayMessage: '1C не відповідає', IsError: true })
+
+    reconcileDataSyncProgress(false)
+
+    expect(getDataSyncProgressSnapshot()).toMatchObject({
+      isActive: false,
+      isError: false,
+    })
+  })
+
+  it('does not reuse a previous session message when backend status discovers a new run', () => {
+    applyDataSyncNotification({ DisplayMessage: 'Попередня синхронізація завершена', StopProgressBar: true })
+
+    reconcileDataSyncProgress(true)
+
+    expect(getDataSyncProgressSnapshot()).toMatchObject({
+      isActive: true,
+      isError: false,
+      message: '',
+    })
+  })
 })

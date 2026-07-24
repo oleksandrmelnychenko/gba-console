@@ -1,14 +1,18 @@
 import { apiRequest } from '../../../shared/api/apiClient'
-import type { DailyDataSyncStockMode, SyncHistoryItem, SyncRunResponse, TypeOfXmlDocument } from '../types'
+import type { DailyDataSyncStockMode, DataSyncStatus, SyncRunResponse, TypeOfXmlDocument } from '../types'
 
-export type SyncRemnantsRequest = {
+const SYNC_OPERATION_ID_HEADER = 'X-GBA-Sync-Operation-Id'
+
+export type SyncFullRequest = {
   forAmg: boolean
+  operationId: string
   types: string[]
 }
 
 export type SyncDailyRequest = {
   forAmg: boolean
   from: Date
+  operationId: string
   stockMode: DailyDataSyncStockMode
   to: Date
   types: string[]
@@ -20,26 +24,28 @@ export type SyncDocumentsRequest = {
   typeDocument: TypeOfXmlDocument
 }
 
-export type SyncHistoryRequest = {
-  forAmg: boolean
-  from: Date
-  to: Date
+export function createSyncOperationId(): string {
+  return crypto.randomUUID().replaceAll('-', '').toLowerCase()
 }
 
-export function getSyncHistory(request: SyncHistoryRequest): Promise<SyncHistoryItem[]> {
-  return apiRequest<SyncHistoryItem[]>('/data/sync/info/get', {
-    query: request,
+export function getSyncStatus(): Promise<DataSyncStatus> {
+  return apiRequest<DataSyncStatus>('/data/sync/status', {
     errorMessages: {
-      default: 'Не вдалося завантажити історію синхронізації',
+      default: 'Не вдалося отримати статус синхронізації',
       network: 'Сервер синхронізації недоступний',
     },
   })
 }
 
-export function startRemnantsSync(request: SyncRemnantsRequest): Promise<SyncRunResponse> {
+export function startFullSync(request: SyncFullRequest): Promise<SyncRunResponse> {
+  const { operationId, ...query } = request
+
   return apiRequest<SyncRunResponse>('/data/sync/start', {
+    headers: {
+      [SYNC_OPERATION_ID_HEADER]: operationId,
+    },
     method: 'POST',
-    query: request,
+    query,
     errorMessages: {
       default: 'Не вдалося запустити синхронізацію з 1С',
       network: 'Сервер синхронізації недоступний',
@@ -58,8 +64,13 @@ export function startGbaToOneCSync(request: SyncDocumentsRequest): Promise<SyncR
 }
 
 export function startDailySync(request: SyncDailyRequest): Promise<SyncRunResponse> {
+  const { operationId, ...query } = request
+
   return apiRequest<SyncRunResponse>('/data/sync/start/daily', {
-    query: request,
+    headers: {
+      [SYNC_OPERATION_ID_HEADER]: operationId,
+    },
+    query,
     errorMessages: {
       default: 'Не вдалося запустити щоденну синхронізацію',
       network: 'Сервер синхронізації недоступний',

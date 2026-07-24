@@ -7,6 +7,7 @@ import { AiFleetControl } from '../../ai-fleet/components/AiFleetControl'
 import { canRunAiFleetWarmup } from '../../ai-fleet/utils/aiFleetAccess'
 import { UserRoleType } from '../../../shared/auth/types'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { OneCExportControl } from './OneCExportControl'
 import { ProductWriteOffRulesControl } from './ProductWriteOffRulesControl'
 import { SyncControl } from './SyncControl'
 
@@ -28,6 +29,7 @@ export function HeaderActionBar() {
     <Group gap={4} wrap="nowrap" className="console-header-tool-actions">
       <AiFleetControl canRunWarmup={canRunAiFleetWarmup(user)} />
       {canOpenSync && <SyncControl />}
+      {canOpenSync && <OneCExportControl />}
       <ProductWriteOffRulesControl />
       <HeaderActionButton icon={ShoppingBasket} label={t('Кошик')} onClick={() => navigate('/basket-supply-ukraine-order')} />
     </Group>

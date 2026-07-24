@@ -751,15 +751,6 @@
   color: var(--mantine-color-gray-9);
 }
 
-.sync-message-empty {
-  padding: 12px 4px;
-  text-align: center;
-}
-
-.sync-panel {
-  min-height: 100px;
-}
-
 /* In-page tabs (docs/ui-patterns.md §10): flat mono text on a full-width
    gray-2 baseline; the active tab gets the brand-orange 2px underline — the
    same language as the top app nav. No pills, no fills, no icons. */
@@ -815,54 +806,62 @@
   font-weight: 600;
 }
 
-.sync-messages-pulse {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--mantine-color-gray-4);
-  transition: background-color 200ms var(--tx-ease-spring), box-shadow 200ms var(--tx-ease-spring);
-}
-
-.sync-messages-pulse[data-active='true'] {
-  background: #22c55e;
-  box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
-  animation: tx-pulse 1.6s var(--tx-ease-smooth) infinite;
-}
-
-@keyframes tx-pulse {
-  0%, 100% {
-    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5);
-  }
-  50% {
-    box-shadow: 0 0 0 8px rgba(34, 197, 94, 0);
-  }
-}
-
-.sync-message {
-  font-family: var(--font-mono);
-  color: var(--mantine-color-gray-7);
-  letter-spacing: 0;
-  overflow-wrap: anywhere;
-}
-
-.sync-history-panel {
-  padding: 12px;
+.sync-mode-control,
+.sync-source-control {
+  background: var(--mantine-color-gray-0);
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 8px;
+  padding: 3px;
+}
+
+.sync-mode-control .mantine-SegmentedControl-label,
+.sync-source-control .mantine-SegmentedControl-label {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.sync-mode-control [data-active],
+.sync-source-control [data-active] {
   background: #ffffff;
-  transition: border-color 180ms var(--tx-ease-spring);
+  color: var(--mantine-color-gray-9);
 }
 
-.sync-history-panel.is-active {
-  border-color: rgba(var(--brand-orange-rgb), 0.5);
+.sync-source-control {
+  min-width: 220px;
 }
 
-.sync-history-panel.is-error {
-  border-color: var(--mantine-color-red-3);
+.sync-session-panel,
+.sync-config-panel,
+.sync-confirmation {
+  background: #ffffff;
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
+  padding: 14px;
 }
 
-/* Status glyph in an outlined one-color circle (§7.1 / §5.2 icon language). */
-.sync-status-icon {
+.sync-session-panel {
+  border-left-width: 3px;
+}
+
+.sync-session-panel.is-running {
+  border-left-color: var(--brand-orange);
+}
+
+.sync-session-panel.is-success {
+  border-left-color: var(--mantine-color-green-6);
+}
+
+.sync-session-panel.is-error {
+  border-left-color: var(--mantine-color-red-6);
+}
+
+.sync-session-panel.is-idle {
+  border-left-color: var(--mantine-color-gray-4);
+}
+
+.sync-session-icon {
   align-items: center;
   border: 1.5px solid var(--mantine-color-gray-7);
   border-radius: 50%;
@@ -874,91 +873,69 @@
   width: 36px;
 }
 
-.sync-status-icon.is-error {
+.sync-session-icon.is-running {
+  border-color: var(--brand-orange);
+  color: var(--brand-orange);
+}
+
+.sync-session-icon.is-success {
+  border-color: var(--mantine-color-green-6);
+  color: var(--mantine-color-green-7);
+}
+
+.sync-session-icon.is-error {
   border-color: var(--mantine-color-red-6);
   color: var(--mantine-color-red-6);
 }
 
-.sync-status-heading {
-  min-width: 0;
+.sync-session-meta {
+  border-top: 1px solid var(--mantine-color-gray-2);
+  padding-top: 10px;
 }
 
-.sync-status-source,
-.sync-status-value {
+.sync-session-meta-item,
+.sync-session-meta-value {
   min-width: 0;
   overflow-wrap: anywhere;
 }
 
-.sync-status-label {
-  letter-spacing: 0;
-}
-
-.sync-status-card,
-.sync-history-feed,
-.sync-message-feed {
-  padding: 10px;
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 8px;
-  background: #ffffff;
-}
-
-.sync-status-card {
-  min-height: 78px;
-}
-
-.sync-history-feed,
-.sync-message-feed {
-  min-width: 0;
-}
-
-.sync-history-state {
-  min-height: 48px;
-  padding: 10px 0;
-  text-align: center;
-}
-
-.sync-history-list {
-  padding-right: 4px;
-}
-
-.sync-history-row {
-  min-height: 28px;
-  padding: 5px 0;
-  align-items: baseline;
-  flex-wrap: nowrap;
-  border-bottom: 1px solid var(--mantine-color-gray-1);
-}
-
-.sync-history-date {
-  flex: 0 0 168px;
-  color: var(--mantine-color-gray-6);
+.sync-session-meta-value,
+.sync-session-progress {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
-  font-size: 11px;
   letter-spacing: 0;
 }
 
-.sync-history-type {
-  min-width: 0;
-  color: var(--mantine-color-gray-8);
-  font-weight: 600;
-  overflow-wrap: anywhere;
-}
-
-.sync-type-checklist {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-.sync-run-button {
-  flex: 0 0 auto;
-}
-
-.sync-messages {
-  padding: 12px;
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 10px;
+.sync-session-progress {
   background: var(--mantine-color-gray-0);
+  border-left: 2px solid var(--brand-orange);
+  color: var(--mantine-color-gray-7);
+  overflow-wrap: anywhere;
+  padding: 6px 8px;
+}
+
+.sync-type-checklist,
+.daily-sync-types {
+  min-width: 0;
+}
+
+.sync-safe-mode {
+  color: var(--mantine-color-green-8);
+}
+
+.sync-action-bar {
+  border-top: 1px solid var(--mantine-color-gray-2);
+  padding-top: 12px;
+}
+
+.sync-confirmation {
+  background: var(--mantine-color-gray-0);
+}
+
+@media (max-width: 48em) {
+  .sync-source-control {
+    min-width: 100%;
+  }
 }
 
 .write-off-rules-popover {

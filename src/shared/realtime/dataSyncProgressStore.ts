@@ -58,7 +58,23 @@ export function clearDataSyncProgress(): void {
 }
 
 export function reconcileDataSyncProgress(isInProgress: boolean): void {
-  if (isInProgress || !state.isActive) {
+  if (isInProgress) {
+    if (state.isActive && !state.isError) {
+      return
+    }
+
+    updateState({
+      ...state,
+      finishedAt: undefined,
+      isActive: true,
+      isError: false,
+      message: '',
+      updatedAt: Date.now(),
+    })
+    return
+  }
+
+  if (!state.isActive && !state.isError) {
     return
   }
 

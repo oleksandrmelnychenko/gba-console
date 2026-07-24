@@ -1,174 +1,138 @@
 import {
   ActionIcon,
-  Badge,
   Box,
   Button,
+  Divider,
   Group,
-  Select,
+  SegmentedControl,
+  SimpleGrid,
   Stack,
   Text,
   TextInput,
   Tooltip,
 } from '@mantine/core'
-import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { notifications } from '@mantine/notifications'
-import { ArrowRightLeft } from 'lucide-react'
+import { ArrowRightLeft, Play, ShieldCheck } from 'lucide-react'
 import { useCallback, useEffect, useReducer } from 'react'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { markDataSyncStarted, useDataSyncProgress } from '../../../shared/realtime/dataSyncProgressStore'
-import { realtimeEvents, useRealtimeEvent, type DataSyncNotification } from '../../../shared/realtime/events'
-import { getSyncHistory, startDailySync, startGbaToOneCSync, startRemnantsSync } from '../api/syncApi'
-import { DailyDataSyncStockMode, TypeOfXmlDocument, type SyncHistoryItem, type SyncRunResponse } from '../types'
+import {
+  markDataSyncStarted,
+  reconcileDataSyncProgress,
+  useDataSyncProgress,
+} from '../../../shared/realtime/dataSyncProgressStore'
+import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
+import { AppModal } from '../../../shared/ui/AppModal'
+import {
+  createSyncOperationId,
+  getSyncStatus,
+  startDailySync,
+  startFullSync,
+} from '../api/syncApi'
+import { allDailySyncTypes, defaultSelectedSyncTypes, syncTypeOptions } from '../syncOptions'
+import { DailyDataSyncStockMode, type DataSyncStatus, type SyncRunResponse } from '../types'
 import {
   getDefaultDailyRange,
-  getLastWeekRange,
-  parseDateInputValue,
   parseDateTimeInputValue,
-  toDateInputValue,
   toDateTimeInputValue,
 } from '../utils'
-import { allDailySyncTypes, defaultSelectedSyncTypes, syncTypeOptions } from '../syncOptions'
-import { AppModal } from '../../../shared/ui/AppModal'
 import { DailySyncTypeChecklist } from './DailySyncTypeChecklist'
+import { SyncSessionPanel } from './SyncSessionPanel'
 import { SyncTypeChecklist } from './SyncTypeChecklist'
-import { SyncHistoryPanel } from './SyncHistoryPanel'
 
-type SyncTab = 'fenix' | 'amg' | 'gba-to-1c' | 'daily'
-
-/* Select dropdowns portal to <body>, so the orange selected-option override
-   rides in on a dropdown class (same approach as the suppliers filter). */
-const SYNC_COMBOBOX_PROPS = {
-  classNames: { dropdown: 'sync-modal-dropdown' },
-}
-
-const syncTabs: { value: SyncTab; label: (t: (key: 'Вигрузка GBA в 1С' | 'Щоденна синхронізація') => string) => string }[] = [
-  { value: 'fenix', label: () => 'FENIX' },
-  { value: 'amg', label: () => 'AMG' },
-  { value: 'gba-to-1c', label: (t) => t('Вигрузка GBA в 1С') },
-  { value: 'daily', label: (t) => t('Щоденна синхронізація') },
-]
+type SyncMode = 'daily' | 'full'
+type SyncSource = 'amg' | 'fenix'
 
 type SyncState = {
-  activeTab: SyncTab
-  dailyForAmg: string
   dailyFrom: Date
   dailyTo: Date
-  documentType: string
-  fromDate: Date
-  history: SyncHistoryItem[]
-  isHistoryLoading: boolean
-  isSyncing: boolean
-  messages: string[]
+  isStarting: boolean
+  isStatusRefreshing: boolean
+  mode: SyncMode
   opened: boolean
+  pendingRun: SyncMode | null
   selectedDailyTypes: string[]
   selectedSyncTypes: Record<string, boolean>
-  toDate: Date
+  source: SyncSource
+  status: DataSyncStatus | null
+  statusError: string
 }
 
 type SyncAction =
   | { type: 'opened' }
   | { type: 'closed' }
-  | { type: 'tabChanged'; tab: SyncTab }
-  | { type: 'historyStarted' }
-  | { type: 'historySucceeded'; history: SyncHistoryItem[] }
-  | { type: 'historyFailed'; message: string }
-  | { type: 'syncNotification'; isFinished: boolean; message: string }
+  | { type: 'modeChanged'; mode: SyncMode }
+  | { type: 'sourceChanged'; source: SyncSource }
+  | { type: 'statusRefreshStarted' }
+  | { type: 'statusSucceeded'; status: DataSyncStatus }
+  | { type: 'statusFailed'; message: string }
   | { type: 'syncStarted' }
-  | { type: 'syncSucceeded'; message: string }
-  | { type: 'syncFailed'; message: string }
+  | { type: 'syncFinished' }
+  | { type: 'confirmationRequested'; mode: SyncMode }
+  | { type: 'confirmationCanceled' }
   | { type: 'syncTypeChanged'; key: string; checked: boolean }
   | { type: 'dailyTypesChanged'; types: string[] }
-  | { type: 'dailyOrganisationChanged'; value: string }
-  | { type: 'fromDateChanged'; date: Date }
-  | { type: 'toDateChanged'; date: Date }
   | { type: 'dailyFromChanged'; date: Date }
   | { type: 'dailyToChanged'; date: Date }
-  | { type: 'documentTypeChanged'; value: string }
+
+const STATUS_POLL_INTERVAL_MS = 3_000
 
 function createInitialSyncState(): SyncState {
   const dailyRange = getDefaultDailyRange()
 
   return {
-    activeTab: 'amg',
-    dailyForAmg: 'true',
     dailyFrom: dailyRange.from,
     dailyTo: dailyRange.to,
-    documentType: String(TypeOfXmlDocument.Sales),
-    fromDate: new Date(),
-    history: [],
-    isHistoryLoading: false,
-    isSyncing: false,
-    messages: [],
+    isStarting: false,
+    isStatusRefreshing: false,
+    mode: 'full',
     opened: false,
-    selectedDailyTypes: [],
+    pendingRun: null,
+    selectedDailyTypes: [...allDailySyncTypes],
     selectedSyncTypes: defaultSelectedSyncTypes,
-    toDate: new Date(),
+    source: 'amg',
+    status: null,
+    statusError: '',
   }
 }
 
 function syncReducer(state: SyncState, action: SyncAction): SyncState {
   switch (action.type) {
     case 'opened':
-      return {
-        ...state,
-        opened: true,
-      }
+      return { ...state, opened: true }
     case 'closed':
+      return { ...state, opened: false, pendingRun: null }
+    case 'modeChanged':
+      return { ...state, mode: action.mode, pendingRun: null }
+    case 'sourceChanged':
+      return { ...state, source: action.source, pendingRun: null }
+    case 'statusRefreshStarted':
+      return { ...state, isStatusRefreshing: true }
+    case 'statusSucceeded':
       return {
         ...state,
-        messages: [],
-        opened: false,
-        selectedSyncTypes: defaultSelectedSyncTypes,
+        isStatusRefreshing: false,
+        status: action.status,
+        statusError: '',
       }
-    case 'tabChanged':
+    case 'statusFailed':
       return {
         ...state,
-        activeTab: action.tab,
-      }
-    case 'historyStarted':
-      return {
-        ...state,
-        isHistoryLoading: true,
-      }
-    case 'historySucceeded':
-      return {
-        ...state,
-        history: action.history,
-        isHistoryLoading: false,
-      }
-    case 'historyFailed':
-      return {
-        ...state,
-        history: [],
-        isHistoryLoading: false,
-        messages: [action.message, ...state.messages],
-      }
-    case 'syncNotification':
-      return {
-        ...state,
-        isSyncing: !action.isFinished,
-        messages: appendSyncMessage(state.messages, action.message),
+        isStatusRefreshing: false,
+        statusError: action.message,
       }
     case 'syncStarted':
-      return {
-        ...state,
-        isSyncing: true,
-      }
-    case 'syncSucceeded':
-      return {
-        ...state,
-        isSyncing: false,
-        messages: [action.message, ...state.messages],
-      }
-    case 'syncFailed':
-      return {
-        ...state,
-        isSyncing: false,
-        messages: [action.message, ...state.messages],
-      }
+      return { ...state, isStarting: true, pendingRun: null }
+    case 'syncFinished':
+      return { ...state, isStarting: false }
+    case 'confirmationRequested':
+      return { ...state, pendingRun: action.mode }
+    case 'confirmationCanceled':
+      return { ...state, pendingRun: null }
     case 'syncTypeChanged':
       return {
         ...state,
+        pendingRun: null,
         selectedSyncTypes: {
           ...state.selectedSyncTypes,
           [action.key]: action.checked,
@@ -177,38 +141,13 @@ function syncReducer(state: SyncState, action: SyncAction): SyncState {
     case 'dailyTypesChanged':
       return {
         ...state,
+        pendingRun: null,
         selectedDailyTypes: getKnownDailyTypes(action.types),
       }
-    case 'dailyOrganisationChanged':
-      return {
-        ...state,
-        dailyForAmg: action.value,
-      }
-    case 'fromDateChanged':
-      return {
-        ...state,
-        fromDate: action.date,
-      }
-    case 'toDateChanged':
-      return {
-        ...state,
-        toDate: action.date,
-      }
     case 'dailyFromChanged':
-      return {
-        ...state,
-        dailyFrom: action.date,
-      }
+      return { ...state, dailyFrom: action.date, pendingRun: null }
     case 'dailyToChanged':
-      return {
-        ...state,
-        dailyTo: action.date,
-      }
-    case 'documentTypeChanged':
-      return {
-        ...state,
-        documentType: action.value,
-      }
+      return { ...state, dailyTo: action.date, pendingRun: null }
     default:
       return state
   }
@@ -218,111 +157,114 @@ export function SyncControl() {
   const { t } = useI18n()
   const dataSyncProgress = useDataSyncProgress()
   const [state, dispatch] = useReducer(syncReducer, undefined, createInitialSyncState)
-  const handleRealtimeSyncNotification = useCallback((notification: DataSyncNotification) => {
-    dispatch({
-      isFinished: Boolean(notification.StopProgressBar || notification.IsError),
-      message: notification.DisplayMessage || '',
-      type: 'syncNotification',
-    })
-  }, [])
+
+  const loadStatus = useCallback(async (showSpinner: boolean) => {
+    if (showSpinner) {
+      dispatch({ type: 'statusRefreshStarted' })
+    }
+
+    try {
+      const status = await getSyncStatus()
+      reconcileDataSyncProgress(status.IsInProgress || status.IsGlobalLockHeld)
+      dispatch({ type: 'statusSucceeded', status })
+    } catch (error) {
+      const message = error instanceof Error ? error.message : t('Не вдалося отримати статус синхронізації')
+      dispatch({ type: 'statusFailed', message })
+    }
+  }, [t])
+
+  const handleRealtimeSyncNotification = useCallback(
+    () => {
+      void loadStatus(false)
+    },
+    [loadStatus],
+  )
 
   useRealtimeEvent(realtimeEvents.dataSyncNotification, handleRealtimeSyncNotification)
 
   useEffect(() => {
-    if (!state.opened || state.activeTab === 'gba-to-1c') {
+    if (!state.opened) {
       return undefined
     }
 
-    let cancelled = false
-    const range = getLastWeekRange()
-    const forAmg = getHistoryForAmg(state.activeTab, state.dailyForAmg)
+    void loadStatus(true)
 
-    dispatch({ type: 'historyStarted' })
-
-    getSyncHistory({
-      forAmg,
-      from: range.from,
-      to: range.to,
-    })
-      .then((history) => {
-        if (!cancelled) {
-          dispatch({ type: 'historySucceeded', history })
-        }
-      })
-      .catch((error: Error) => {
-        if (!cancelled) {
-          dispatch({ type: 'historyFailed', message: error.message })
-        }
-      })
+    const intervalId = window.setInterval(() => {
+      void loadStatus(false)
+    }, STATUS_POLL_INTERVAL_MS)
 
     return () => {
-      cancelled = true
+      window.clearInterval(intervalId)
     }
-  }, [state.activeTab, state.dailyForAmg, state.opened])
+  }, [loadStatus, state.opened])
 
-  async function runRemnantsSync(forAmg: boolean) {
-    const types: string[] = []
+  const isServerSyncActive = Boolean(
+    state.status?.IsInProgress ||
+      state.status?.IsGlobalLockHeld ||
+      state.status?.ActiveRun?.Status === 'Running',
+  )
+  const isSyncInProgress = state.isStarting || isServerSyncActive || dataSyncProgress.isActive
+  const isStatusUnknown =
+    !state.status ||
+    state.status.IsGlobalLockStatusAvailable !== true ||
+    Boolean(state.statusError)
+  const isStartBlocked = isSyncInProgress || state.isStatusRefreshing || isStatusUnknown
+  const sourceForAmg = state.source === 'amg'
+  const selectedFullTypeCount = syncTypeOptions.filter(
+    (option) => state.selectedSyncTypes[option.value],
+  ).length
 
-    for (const option of syncTypeOptions) {
-      if (state.selectedSyncTypes[option.value]) {
-        types.push(option.value)
-      }
-    }
-
-    if (types.length === 0) {
+  function requestFullSync() {
+    if (selectedFullTypeCount === 0) {
       notifications.show({ color: 'red', message: t('Оберіть типи синхронізації') })
       return
     }
 
-    if (!confirm(t('Ви впевнені, що хочете синхронізувати?'))) {
-      return
-    }
-
-    await runSyncRequest(() => startRemnantsSync({ forAmg, types }))
+    dispatch({ type: 'confirmationRequested', mode: 'full' })
   }
 
-  async function runGbaToOneCSync() {
-    if (!confirm(t('Ви впевнені, що хочете синхронізувати?'))) {
-      return
-    }
-
-    await runSyncRequest(() =>
-      startGbaToOneCSync({
-        from: state.fromDate,
-        to: state.toDate,
-        typeDocument: Number(state.documentType) as TypeOfXmlDocument,
-      }),
-    )
-  }
-
-  async function runDailySync() {
+  function requestDailySync() {
     if (state.selectedDailyTypes.length === 0) {
       notifications.show({ color: 'red', message: t('Оберіть типи синхронізації') })
       return
     }
 
-    if (!confirm(t('Ви впевнені, що хочете синхронізувати?'))) {
+    if (state.dailyFrom.getTime() > state.dailyTo.getTime()) {
+      notifications.show({ color: 'red', message: t('Дата початку має бути раніше дати завершення') })
       return
     }
 
-    await runSyncRequest(() =>
-      startDailySync({
-        forAmg: state.dailyForAmg === 'true',
-        from: state.dailyFrom,
-        stockMode: DailyDataSyncStockMode.DocumentsOnly,
-        to: state.dailyTo,
-        types: state.selectedDailyTypes,
-      }),
-    )
+    dispatch({ type: 'confirmationRequested', mode: 'daily' })
   }
 
-  const isEveryDailyTypeSelected = state.selectedDailyTypes.length === allDailySyncTypes.length
-  const isSyncInProgress = state.isSyncing || dataSyncProgress.isActive
-  const syncMessages = mergeSyncMessages(state.messages, dataSyncProgress.messages)
-  const syncSourceLabel = getSyncSourceLabel(state.activeTab, state.dailyForAmg, t)
+  async function runConfirmedSync() {
+    if (state.pendingRun === 'full') {
+      await runSyncRequest(() =>
+        startFullSync({
+          forAmg: sourceForAmg,
+          operationId: createSyncOperationId(),
+          types: getSelectedFullSyncTypes(state.selectedSyncTypes),
+        }),
+      )
+      return
+    }
+
+    if (state.pendingRun === 'daily') {
+      await runSyncRequest(() =>
+        startDailySync({
+          forAmg: sourceForAmg,
+          from: state.dailyFrom,
+          operationId: createSyncOperationId(),
+          stockMode: DailyDataSyncStockMode.DocumentsOnly,
+          to: state.dailyTo,
+          types: state.selectedDailyTypes,
+        }),
+      )
+    }
+  }
 
   async function runSyncRequest(request: () => Promise<SyncRunResponse>) {
-    if (isSyncInProgress) {
+    if (isStartBlocked) {
       notifications.show({ color: 'yellow', message: t('Синхронізація вже виконується') })
       return
     }
@@ -333,12 +275,14 @@ export function SyncControl() {
       const response = await request()
       const message = response?.Message || t('Синхронізацію запущено')
       markDataSyncStarted(message)
-      dispatch({ type: 'syncSucceeded', message })
       notifications.show({ color: 'green', message })
+      await loadStatus(false)
     } catch (error) {
       const message = error instanceof Error ? error.message : t('Не вдалося запустити синхронізацію')
-      dispatch({ type: 'syncFailed', message })
       notifications.show({ color: 'red', message })
+      await loadStatus(false)
+    } finally {
+      dispatch({ type: 'syncFinished' })
     }
   }
 
@@ -360,265 +304,181 @@ export function SyncControl() {
       <AppModal
         opened={state.opened}
         onClose={() => dispatch({ type: 'closed' })}
-        title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Синхронізація')}</span>}
+        title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Синхронізація 1С')}</span>}
         size="xl"
         className="sync-modal"
         centered
       >
         <Stack gap="md">
-          <div className="pill-tabs">
-            {syncTabs.map((tab) => (
-              <button
-                key={tab.value}
-                type="button"
-                className={`pill-tab${state.activeTab === tab.value ? ' is-active' : ''}`}
-                onClick={() => dispatch({ type: 'tabChanged', tab: tab.value })}
-                aria-pressed={state.activeTab === tab.value}
-              >
-                {tab.label(t)}
-              </button>
-            ))}
-          </div>
+          <SyncSessionPanel
+            isRefreshing={state.isStatusRefreshing}
+            onRefresh={() => void loadStatus(true)}
+            progressMessage={isServerSyncActive ? dataSyncProgress.message : ''}
+            status={state.status}
+            statusError={state.statusError}
+          />
 
-          <Box className="sync-panel">
-            <Stack gap="md" className="sync-resizable">
-              <SyncHistoryPanel
-                history={state.history}
-                historyKind={state.activeTab === 'daily' ? 'daily' : 'entity'}
-                isLoading={state.isHistoryLoading}
-                isError={dataSyncProgress.isError}
-                isSyncing={isSyncInProgress}
-                messages={syncMessages}
-                sourceLabel={syncSourceLabel}
+          <SegmentedControl
+            aria-label={t('Режим синхронізації')}
+            className="sync-mode-control"
+            fullWidth
+            value={state.mode}
+            onChange={(value) => dispatch({ type: 'modeChanged', mode: value as SyncMode })}
+            data={[
+              { value: 'full', label: t('Повна синхронізація') },
+              { value: 'daily', label: t('Щоденна синхронізація') },
+            ]}
+          />
+
+          <Box className="sync-config-panel">
+            <Group justify="space-between" align="center" gap="md" wrap="wrap">
+              <Box>
+                <Text className="app-section-title" fw={600} size="sm">
+                  {t(state.mode === 'full' ? 'Повна синхронізація' : 'Щоденна синхронізація')}
+                </Text>
+                <Text c="dimmed" size="xs">
+                  {t('Джерело 1С')}
+                </Text>
+              </Box>
+              <SegmentedControl
+                aria-label={t('Джерело 1С')}
+                className="sync-source-control"
+                value={state.source}
+                onChange={(value) => dispatch({ type: 'sourceChanged', source: value as SyncSource })}
+                data={[
+                  { value: 'amg', label: 'AMG' },
+                  { value: 'fenix', label: 'FENIX' },
+                ]}
               />
+            </Group>
 
-              {(state.activeTab === 'fenix' || state.activeTab === 'amg') && (
-                <Stack gap="md">
-                  <RemnantsSyncSection
-                    isLoading={isSyncInProgress}
-                    selectedTypes={state.selectedSyncTypes}
-                    title={t('Синхронізація даних з 1С')}
-                    onRun={() => runRemnantsSync(state.activeTab === 'amg')}
-                    onTypeChange={(key, checked) => dispatch({ type: 'syncTypeChanged', key, checked })}
+            <Divider my="md" />
+
+            {state.mode === 'full' ? (
+              <SyncTypeChecklist
+                selectedTypes={state.selectedSyncTypes}
+                onChange={(key, checked) => dispatch({ type: 'syncTypeChanged', key, checked })}
+              />
+            ) : (
+              <Stack gap="md">
+                <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+                  <TextInput
+                    label={t('З')}
+                    type="datetime-local"
+                    value={toDateTimeInputValue(state.dailyFrom)}
+                    onChange={(event) =>
+                      dispatch({
+                        type: 'dailyFromChanged',
+                        date: parseDateTimeInputValue(event.currentTarget.value, state.dailyFrom),
+                      })
+                    }
                   />
-                </Stack>
-              )}
-
-              {state.activeTab === 'gba-to-1c' && (
-                <Stack gap="md">
-                  <SyncSectionHeader title={t('Вигрузка GBA в 1С')} />
-                  <Group gap="sm" align="end" wrap="wrap">
-                    <TextInput
-                      label={t('З')}
-                      type="date"
-                      value={toDateInputValue(state.fromDate)}
-                      onChange={(event) =>
-                        dispatch({
-                          type: 'fromDateChanged',
-                          date: parseDateInputValue(event.currentTarget.value, state.fromDate),
-                        })
-                      }
-                    />
-                    <TextInput
-                      label={t('По')}
-                      type="date"
-                      value={toDateInputValue(state.toDate)}
-                      onChange={(event) =>
-                        dispatch({
-                          type: 'toDateChanged',
-                          date: parseDateInputValue(event.currentTarget.value, state.toDate, true),
-                        })
-                      }
-                    />
-                    <Select
-                      label={t('Тип')}
-                      comboboxProps={SYNC_COMBOBOX_PROPS}
-                      value={state.documentType}
-                      onChange={(value) => value && dispatch({ type: 'documentTypeChanged', value })}
-                      data={[
-                        { value: String(TypeOfXmlDocument.Sales), label: t('Продажі') },
-                        { value: String(TypeOfXmlDocument.ProductIncomes), label: t('Прихідні накладні на товар') },
-                      ]}
-                    />
-                    <Button color={CREATE_ACTION_COLOR} loading={isSyncInProgress} onClick={runGbaToOneCSync}>
-                      {t('Синхронізувати')}
-                    </Button>
-                  </Group>
-                </Stack>
-              )}
-
-              {state.activeTab === 'daily' && (
-                <Stack gap="md">
-                  <SyncSectionHeader title={t('Щоденна синхронізація руху товарів')} />
-                  <Group gap="sm" align="end" wrap="wrap">
-                    <TextInput
-                      label={t('З')}
-                      type="datetime-local"
-                      value={toDateTimeInputValue(state.dailyFrom)}
-                      onChange={(event) =>
-                        dispatch({
-                          type: 'dailyFromChanged',
-                          date: parseDateTimeInputValue(event.currentTarget.value, state.dailyFrom),
-                        })
-                      }
-                    />
-                    <TextInput
-                      label={t('По')}
-                      type="datetime-local"
-                      value={toDateTimeInputValue(state.dailyTo)}
-                      onChange={(event) =>
-                        dispatch({
-                          type: 'dailyToChanged',
-                          date: parseDateTimeInputValue(event.currentTarget.value, state.dailyTo),
-                        })
-                      }
-                    />
-                    <Select
-                      label={t('Організація')}
-                      comboboxProps={SYNC_COMBOBOX_PROPS}
-                      value={state.dailyForAmg}
-                      onChange={(value) => value && dispatch({ type: 'dailyOrganisationChanged', value })}
-                      data={[
-                        { value: 'true', label: 'AMG' },
-                        { value: 'false', label: 'FENIX' },
-                      ]}
-                    />
-                  </Group>
-                  <Group gap="xs">
-                    <Text c="dimmed" size="sm">
-                      {t('Режим')}
-                    </Text>
-                    <Badge className="app-role-pill is-gray" variant="light">
-                      {t('Без зміни залишків')}
-                    </Badge>
-                  </Group>
-                  <DailySyncTypeChecklist
-                    selectedTypes={state.selectedDailyTypes}
-                    onChange={(types) => dispatch({ type: 'dailyTypesChanged', types })}
+                  <TextInput
+                    label={t('По')}
+                    type="datetime-local"
+                    value={toDateTimeInputValue(state.dailyTo)}
+                    onChange={(event) =>
+                      dispatch({
+                        type: 'dailyToChanged',
+                        date: parseDateTimeInputValue(event.currentTarget.value, state.dailyTo),
+                      })
+                    }
                   />
-                  <Group justify="flex-end">
-                    <Button
-                      color={CREATE_ACTION_COLOR}
-                      loading={isSyncInProgress}
-                      onClick={() =>
-                        dispatch({
-                          type: 'dailyTypesChanged',
-                          types: isEveryDailyTypeSelected ? [] : allDailySyncTypes,
-                        })
-                      }
-                      variant="outline"
-                    >
-                      {t(isEveryDailyTypeSelected ? 'Скинути' : 'Вибрати всі')}
-                    </Button>
-                    <Button color={CREATE_ACTION_COLOR} loading={isSyncInProgress} onClick={runDailySync}>
-                      {t('Синхронізувати')}
-                    </Button>
-                  </Group>
-                </Stack>
-              )}
-            </Stack>
+                </SimpleGrid>
+
+                <Group gap="xs" className="sync-safe-mode">
+                  <ShieldCheck size={17} strokeWidth={1.8} />
+                  <Text fw={600} size="xs">
+                    {t('Без зміни залишків')}
+                  </Text>
+                </Group>
+
+                <DailySyncTypeChecklist
+                  selectedTypes={state.selectedDailyTypes}
+                  onChange={(types) => dispatch({ type: 'dailyTypesChanged', types })}
+                />
+              </Stack>
+            )}
           </Box>
+
+          {state.pendingRun ? (
+            <SyncConfirmation
+              mode={state.pendingRun}
+              source={state.source}
+              onCancel={() => dispatch({ type: 'confirmationCanceled' })}
+              onConfirm={() => void runConfirmedSync()}
+              isLoading={state.isStarting}
+            />
+          ) : (
+            <Group justify="flex-end" className="sync-action-bar">
+              <Button
+                color={CREATE_ACTION_COLOR}
+                disabled={isStartBlocked}
+                leftSection={<Play size={16} strokeWidth={1.9} />}
+                loading={state.isStarting}
+                onClick={state.mode === 'full' ? requestFullSync : requestDailySync}
+              >
+                {t(state.mode === 'full' ? 'Запустити повну синхронізацію' : 'Запустити щоденну синхронізацію')}
+              </Button>
+            </Group>
+          )}
         </Stack>
       </AppModal>
     </>
   )
 }
 
-function getHistoryForAmg(activeTab: SyncTab, dailyForAmg: string): boolean {
-  return activeTab === 'daily' ? dailyForAmg === 'true' : activeTab === 'amg'
-}
-
-function getSyncSourceLabel(
-  activeTab: SyncTab,
-  dailyForAmg: string,
-  t: (key: 'Вигрузка GBA в 1С' | 'Щоденна синхронізація') => string,
-): string {
-  if (activeTab === 'amg') {
-    return 'AMG'
-  }
-
-  if (activeTab === 'fenix') {
-    return 'FENIX'
-  }
-
-  if (activeTab === 'daily') {
-    return `${t('Щоденна синхронізація')} · ${dailyForAmg === 'true' ? 'AMG' : 'FENIX'}`
-  }
-
-  return t('Вигрузка GBA в 1С')
-}
-
-function getKnownDailyTypes(types: string[]): string[] {
-  const selectedTypes = new Set(types)
-
-  return allDailySyncTypes.filter((type) => selectedTypes.has(type))
-}
-
-function appendSyncMessage(messages: string[], message: string): string[] {
-  const nextMessage = message.trim()
-
-  if (!nextMessage) {
-    return messages
-  }
-
-  return [nextMessage, ...messages]
-}
-
-function mergeSyncMessages(localMessages: string[], progressMessages: string[]): string[] {
-  const seenMessages = new Set<string>()
-  const messages: string[] = []
-
-  appendUniqueMessages(localMessages, seenMessages, messages)
-  appendUniqueMessages(progressMessages, seenMessages, messages)
-
-  return messages
-}
-
-function appendUniqueMessages(source: string[], seenMessages: Set<string>, messages: string[]): void {
-  for (const message of source) {
-    const normalizedMessage = message.trim()
-
-    if (!normalizedMessage || seenMessages.has(normalizedMessage)) {
-      continue
-    }
-
-    seenMessages.add(normalizedMessage)
-    messages.push(normalizedMessage)
-  }
-}
-
-function RemnantsSyncSection({
+function SyncConfirmation({
   isLoading,
-  onRun,
-  onTypeChange,
-  selectedTypes,
-  title,
+  mode,
+  onCancel,
+  onConfirm,
+  source,
 }: {
   isLoading: boolean
-  onRun: () => void
-  onTypeChange: (key: string, checked: boolean) => void
-  selectedTypes: Record<string, boolean>
-  title: string
+  mode: SyncMode
+  onCancel: () => void
+  onConfirm: () => void
+  source: SyncSource
 }) {
   const { t } = useI18n()
 
   return (
-    <Stack gap="md" className="sync-modal-section">
-      <SyncSectionHeader title={title} />
-      <Group align="flex-start" justify="space-between" wrap="nowrap">
-        <SyncTypeChecklist selectedTypes={selectedTypes} onChange={onTypeChange} />
-        <Button color={CREATE_ACTION_COLOR} loading={isLoading} onClick={onRun} className="sync-run-button">
-          {t('Синхронізувати')}
+    <Group justify="space-between" gap="md" className="sync-confirmation" wrap="wrap">
+      <Box>
+        <Text fw={650} size="sm">
+          {t('Підтвердити запуск')}
+        </Text>
+        <Text c="dimmed" size="xs">
+          {t(mode === 'full' ? 'Повна синхронізація' : 'Щоденна синхронізація')} ·{' '}
+          {source === 'amg' ? 'AMG' : 'FENIX'}
+        </Text>
+      </Box>
+      <Group gap="xs">
+        <Button color="gray" disabled={isLoading} onClick={onCancel} variant="subtle">
+          {t('Скасувати')}
+        </Button>
+        <Button color={CREATE_ACTION_COLOR} loading={isLoading} onClick={onConfirm}>
+          {t('Запустити')}
         </Button>
       </Group>
-    </Stack>
+    </Group>
   )
 }
 
-function SyncSectionHeader({ title }: { title: string }) {
-  return (
-    <Text className="app-section-title" fw={600} size="sm" lh={1.2}>
-      {title}
-    </Text>
-  )
+function getKnownDailyTypes(types: string[]): string[] {
+  const selectedTypes = new Set(types)
+  return allDailySyncTypes.filter((type) => selectedTypes.has(type))
+}
+
+function getSelectedFullSyncTypes(selectedTypes: Record<string, boolean>): string[] {
+  const result: string[] = []
+
+  for (const option of syncTypeOptions) {
+    if (selectedTypes[option.value]) {
+      result.push(option.value)
+    }
+  }
+
+  return result
 }
