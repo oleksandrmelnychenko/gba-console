@@ -6,6 +6,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { usePersistentCreateMutation } from '../../sales-ukraine/persistentCreateMutation'
 import { createPreorder } from '../api/salesPreordersApi'
 import './product-interest-modal.css'
 
@@ -21,6 +22,9 @@ type InterestFormState = {
   comment: string
   qty: number | ''
 }
+
+const MAX_PREORDER_COMMENT_LENGTH = 250
+const MAX_PREORDER_QUANTITY = 1_000_000_000
 
 function createInitialForm(): InterestFormState {
   return {
@@ -41,6 +45,10 @@ export function ProductInterestModal({
   const [touched, setTouched] = useValueState(false)
   const [isCreating, setCreating] = useValueState(false)
   const [previousOpened, setPreviousOpened] = useValueState(opened)
+  const runCreatePreorder = usePersistentCreateMutation(
+    'preorder',
+    `${clientAgreementNetId}:${productNetId}`,
+  )
   const qtyError = !isPositiveNumber(form.qty) ? t('Поле - обов’язкове') : null
 
   if (opened !== previousOpened) {
@@ -69,18 +77,26 @@ export function ProductInterestModal({
     setCreating(true)
 
     try {
-      const message = await createPreorder({
-        clientAgreementNetId,
-        productNetId,
-        qty: Number(form.qty),
-        comment: form.comment.trim(),
-      })
+      const message = await runCreatePreorder(
+        {
+          clientAgreementNetId,
+          productNetId,
+          qty: Number(form.qty),
+          comment: form.comment.trim(),
+        },
+        createPreorder,
+      )
 
       notifications.show({ color: 'green', message: message || t('Збережено') })
       onCreated?.()
       onClose()
-    } catch {
-      notifications.show({ color: 'red', message: t('Не вдалося зберегти') })
+    } catch (error) {
+      notifications.show({
+        color: 'red',
+        message: error instanceof Error && error.message.trim()
+          ? error.message
+          : t('Не вдалося зберегти'),
+      })
     } finally {
       setCreating(false)
     }
@@ -102,6 +118,7 @@ export function ProductInterestModal({
             allowNegative={false}
             disabled={isCreating}
             label={t('Кількість')}
+            max={MAX_PREORDER_QUANTITY}
             min={1}
             value={form.qty}
             onChange={(value) => setForm((current) => ({ ...current, qty: toNumberInputValue(value) }))}
@@ -115,6 +132,7 @@ export function ProductInterestModal({
             autosize
             disabled={isCreating}
             label={t('Коментар')}
+            maxLength={MAX_PREORDER_COMMENT_LENGTH}
             minRows={2}
             value={form.comment}
             onChange={(event) => {

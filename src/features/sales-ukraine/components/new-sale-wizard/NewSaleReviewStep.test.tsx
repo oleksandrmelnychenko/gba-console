@@ -491,4 +491,50 @@ describe('NewSaleReviewStep persistent file reconciliation', () => {
     await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1))
     expect(entryAtClose).toBe(null)
   })
+
+  it.each([
+    [
+      { codAmount: 'not-a-number', isCashOnDelivery: true },
+      'Вкажіть коректну суму наложеного платежу',
+    ],
+    [
+      { hasOwnTtn: true, ttnNumber: '' },
+      'Вкажіть номер власної ТТН',
+    ],
+    [
+      { mobilePhone: '' },
+      'Вкажіть мобільний телефон одержувача',
+    ],
+  ])('blocks an invalid final sale payload before creating a mutation', async (patch, message) => {
+    renderStep({ value: { ...reviewValue(), ...patch } })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Створити накладну' }))
+
+    await waitFor(() => expect(mocks.notificationsShow).toHaveBeenCalledWith({
+      color: 'red',
+      message,
+    }))
+    expect(mocks.updateSaleFromData).not.toHaveBeenCalled()
+    expect(loadSalesPendingMutation(wizardFileScope)).toBe(null)
+  })
+
+  it('rejects a disallowed TTN upload before creating a mutation', async () => {
+    const invalidFile = new File(['payload'], 'ttn.exe', { type: 'application/octet-stream' })
+
+    renderStep({
+      value: {
+        ...reviewValue(invalidFile),
+        ttnNumber: 'TTN-1',
+      },
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Створити накладну' }))
+
+    await waitFor(() => expect(mocks.notificationsShow).toHaveBeenCalledWith({
+      color: 'red',
+      message: 'Файл ТТН має бути у форматі PDF, JPEG або PNG',
+    }))
+    expect(mocks.updateSaleFromData).not.toHaveBeenCalled()
+    expect(loadSalesPendingMutation(wizardFileScope)).toBe(null)
+  })
 })

@@ -7,6 +7,7 @@ import { AppModal } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { ProductCardModal } from '../../products/components/ProductCardModal'
+import { usePersistentCreateMutation } from '../../sales-ukraine/persistentCreateMutation'
 import {
   createOffer,
   getOfferProductAvailableQtyUk,
@@ -120,6 +121,7 @@ function NewOfferForm({
   const [lines, setLines] = useState<OffersNewLine[]>([])
   const [isCreating, setCreating] = useState(false)
   const [productCardNetId, setProductCardNetId] = useState<string | null>(null)
+  const runCreateOffer = usePersistentCreateMutation('offer', 'new')
 
   useEffect(() => {
     const value = clientQuery.trim()
@@ -340,7 +342,7 @@ function NewOfferForm({
     }
 
     try {
-      const result = await createOffer(offer)
+      const result = await runCreateOffer(offer, createOffer)
       notifications.show({ color: 'green', message: t('Оферту успішно створено') })
 
       if (result?.NetUid) {
@@ -348,8 +350,11 @@ function NewOfferForm({
       } else {
         notifications.show({ color: 'red', message: t('Не вдалося отримати посилання на оферту') })
       }
-    } catch {
-      notifications.show({ color: 'red', message: t('Не вдалося створити оферту') })
+    } catch (error) {
+      notifications.show({
+        color: 'red',
+        message: error instanceof Error ? error.message : t('Не вдалося створити оферту'),
+      })
     } finally {
       setCreating(false)
     }

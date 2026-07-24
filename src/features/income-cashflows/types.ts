@@ -185,6 +185,14 @@ export type ClientAgreement = EntityFields & {
   Number?: string
 }
 
+export type OrganizationClientAgreement = EntityFields & {
+  Currency?: Currency | null
+  CurrencyId?: number
+  FromDate?: string
+  Number?: string
+  OrganizationClientId?: number
+}
+
 export type SupplyOrganizationAgreement = EntityFields & {
   Currency?: Currency | null
   CurrentAmount?: number
@@ -242,6 +250,7 @@ export type IncomePaymentOrder = EntityFields & {
   OperationTypeName?: string
   OperationType?: string | number
   Organization?: Organization | null
+  OrganizationClientAgreement?: OrganizationClientAgreement | null
   PaymentCurrencyRegister?: PaymentCurrencyRegister | null
   PaymentMovementOperation?: PaymentMovementOperation | null
   PaymentPurpose?: string

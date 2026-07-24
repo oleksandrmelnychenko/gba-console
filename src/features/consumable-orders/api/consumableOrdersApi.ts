@@ -1,4 +1,8 @@
 import { apiRequest } from '../../../shared/api/apiClient'
+import {
+  executeAccountingMutation,
+  type AccountingMutationOperationOptions,
+} from '../../../shared/api/accountingMutationOperation'
 import { sanitizeConsumableOrderPayload } from '../consumableOrderPayload'
 import type {
   ConsumableOrderCalculation,
@@ -202,10 +206,22 @@ export async function createPaymentMovement(operationName: string): Promise<Paym
   return result && typeof result === 'object' ? (result as PaymentMovement) : null
 }
 
-export async function createOutcomePaymentOrder(order: OutcomePaymentOrder): Promise<OutcomePaymentOrder | null> {
-  const result = await apiRequest<unknown>('/payments/orders/outcome/new', {
-    method: 'POST',
-    body: order,
+export async function createOutcomePaymentOrder(
+  order: OutcomePaymentOrder,
+  operation?: AccountingMutationOperationOptions,
+): Promise<OutcomePaymentOrder | null> {
+  const result = await executeAccountingMutation({
+    identity: order,
+    kind: 'outcome-payment:add',
+    operation,
+    payload: order,
+    request: (payload, context) => apiRequest<unknown>('/payments/orders/outcome/new', {
+      body: payload,
+      dedupe: false,
+      headers: context.headers,
+      method: 'POST',
+      ...(context.signal ? { signal: context.signal } : {}),
+    }),
   })
 
   return normalizeOutcomePaymentOrder(result)

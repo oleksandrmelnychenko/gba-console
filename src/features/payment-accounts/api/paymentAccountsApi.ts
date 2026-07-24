@@ -1,4 +1,8 @@
 import { apiRequest } from '../../../shared/api/apiClient'
+import {
+  executeAccountingMutation,
+  type AccountingMutationOperationOptions,
+} from '../../../shared/api/accountingMutationOperation'
 import type {
   BankItem,
   Currency,
@@ -56,15 +60,6 @@ export async function updatePaymentAccount(account: PaymentAccountPayload): Prom
   })
 
   return normalizePaymentAccount(result)
-}
-
-export async function deletePaymentAccount(netId: string): Promise<void> {
-  await apiRequest<unknown>('/payments/registers/delete', {
-    method: 'DELETE',
-    query: {
-      netId,
-    },
-  })
 }
 
 export async function getPaymentAccountCurrencies(): Promise<Currency[]> {
@@ -135,16 +130,31 @@ export async function calculatePaymentAccountExchange(params: {
 
 export async function createPaymentAccountTransfer(
   transfer: PaymentRegisterTransfer,
+  operation?: AccountingMutationOperationOptions,
 ): Promise<PaymentRegisterTransfer | null> {
-  const result = await apiRequest<unknown>('/payments/registers/transfers/new', {
-    method: 'POST',
-    body: transfer,
+  const result = await executeAccountingMutation({
+    identity: transfer,
+    kind: 'payment-register:transfer',
+    operation,
+    payload: transfer,
+    request: (payload, context) => apiRequest<unknown>('/payments/registers/transfers/new', {
+      body: payload,
+      dedupe: false,
+      headers: context.headers,
+      method: 'POST',
+      query: {
+        operationNetUid: context.operationId,
+      },
+      ...(context.signal ? { signal: context.signal } : {}),
+    }),
   })
 
   return result && typeof result === 'object' ? result as PaymentRegisterTransfer : null
 }
 
-export async function cancelPaymentAccountTransfer(netId: string): Promise<PaymentRegisterTransfer | null> {
+export async function cancelPaymentAccountTransfer(
+  netId: string,
+): Promise<PaymentAccountMutationResult<PaymentRegisterTransfer> | null> {
   const result = await apiRequest<unknown>('/payments/registers/transfers/cancel', {
     method: 'PUT',
     query: {
@@ -152,21 +162,38 @@ export async function cancelPaymentAccountTransfer(netId: string): Promise<Payme
     },
   })
 
-  return result && typeof result === 'object' ? result as PaymentRegisterTransfer : null
+  return result && typeof result === 'object'
+    ? result as PaymentAccountMutationResult<PaymentRegisterTransfer>
+    : null
 }
 
 export async function createPaymentAccountExchange(
   exchange: PaymentRegisterCurrencyExchange,
+  operation?: AccountingMutationOperationOptions,
 ): Promise<PaymentRegisterCurrencyExchange | null> {
-  const result = await apiRequest<unknown>('/payments/registers/exchanges/new', {
-    method: 'POST',
-    body: exchange,
+  const result = await executeAccountingMutation({
+    identity: exchange,
+    kind: 'payment-register:currency-exchange',
+    operation,
+    payload: exchange,
+    request: (payload, context) => apiRequest<unknown>('/payments/registers/exchanges/new', {
+      body: payload,
+      dedupe: false,
+      headers: context.headers,
+      method: 'POST',
+      query: {
+        operationNetUid: context.operationId,
+      },
+      ...(context.signal ? { signal: context.signal } : {}),
+    }),
   })
 
   return result && typeof result === 'object' ? result as PaymentRegisterCurrencyExchange : null
 }
 
-export async function cancelPaymentAccountExchange(netId: string): Promise<PaymentAccountMutationResult | null> {
+export async function cancelPaymentAccountExchange(
+  netId: string,
+): Promise<PaymentAccountMutationResult<PaymentRegisterCurrencyExchange> | null> {
   const result = await apiRequest<unknown>('/payments/registers/exchanges/cancel', {
     method: 'PUT',
     query: {
@@ -174,7 +201,9 @@ export async function cancelPaymentAccountExchange(netId: string): Promise<Payme
     },
   })
 
-  return result && typeof result === 'object' ? result as PaymentAccountMutationResult : null
+  return result && typeof result === 'object'
+    ? result as PaymentAccountMutationResult<PaymentRegisterCurrencyExchange>
+    : null
 }
 
 export async function getPaymentAccountTransfers(

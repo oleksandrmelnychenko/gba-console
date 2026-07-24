@@ -1,10 +1,16 @@
 import { apiRequest } from '../../../shared/api/apiClient'
+import {
+  executeAccountingMutation,
+  type AccountingMutationOperationOptions,
+} from '../../../shared/api/accountingMutationOperation'
 import { PRINTER_API_BASE_URL } from '../../../shared/config/env'
 import { toDateTimeQuery } from '../../../shared/date/dateTime'
 import { normalizeExportDocument } from '../../../shared/documents/exportDocument'
 import type {
   IncomePaymentOrder,
 } from '../../income-cashflows/types'
+import { createAdvancePayment } from '../../advance-payments/api/advancePaymentsApi'
+import type { AdvancePaymentMutationPayload } from '../../advance-payments/types'
 import type {
   PrintTaxFreeResponse,
   Statham,
@@ -15,15 +21,7 @@ import type {
   TaxFreeItem,
 } from '../types'
 
-export type TaxFreeAdvancePaymentPayload = {
-  Amount?: number
-  ClientAgreement?: unknown
-  Comment?: string
-  FromDate?: string
-  Organization?: unknown
-  VatAmount?: number
-  VatPercent?: number
-}
+export type TaxFreeAdvancePaymentPayload = AdvancePaymentMutationPayload
 
 export async function getTaxFreeDocuments(params: TaxFreeDocumentsSearchParams): Promise<TaxFreeDocumentsResponse> {
   const result = await apiRequest<unknown>('/supplies/ukraine/order/taxfree/all/filtered', {
@@ -112,13 +110,26 @@ export async function getTaxFreeCarrier(netId: string): Promise<Statham | null> 
 export async function createIncomePaymentFromTaxFree(
   taxFreeNetId: string,
   paymentIncome: IncomePaymentOrder,
+  operation?: AccountingMutationOperationOptions,
 ): Promise<IncomePaymentOrder | null> {
-  const result = await apiRequest<unknown>('/payments/orders/income/new/taxfree', {
-    method: 'POST',
-    query: {
+  const result = await executeAccountingMutation({
+    identity: paymentIncome,
+    kind: 'income-payment:add-tax-free',
+    operation,
+    payload: {
+      paymentIncome,
       taxFreeNetId,
     },
-    body: paymentIncome,
+    request: (payload, context) => apiRequest<unknown>('/payments/orders/income/new/taxfree', {
+      body: payload.paymentIncome,
+      dedupe: false,
+      headers: context.headers,
+      method: 'POST',
+      query: {
+        taxFreeNetId: payload.taxFreeNetId,
+      },
+      ...(context.signal ? { signal: context.signal } : {}),
+    }),
   })
 
   const payload = unwrapPayload(result)
@@ -129,18 +140,8 @@ export async function createIncomePaymentFromTaxFree(
 export async function createAdvancePaymentFromTaxFree(
   taxFreeNetId: string,
   advancePayment: TaxFreeAdvancePaymentPayload,
-): Promise<TaxFreeAdvancePaymentPayload | null> {
-  const result = await apiRequest<unknown>('/payments/advance/new', {
-    method: 'POST',
-    query: {
-      taxFreeNetId,
-    },
-    body: advancePayment,
-  })
-
-  const payload = unwrapPayload(result)
-
-  return payload && typeof payload === 'object' && !Array.isArray(payload) ? (payload as TaxFreeAdvancePaymentPayload) : null
+){
+  return createAdvancePayment({ taxFreeNetId }, advancePayment)
 }
 
 function normalizeTaxFreeDocumentsResponse(result: unknown): TaxFreeDocumentsResponse {

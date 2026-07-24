@@ -1,4 +1,11 @@
 import { apiRequest } from '../api/apiClient'
+import {
+  getSalesMutationOperationHeaders,
+  type SalesMutationOperationOptions,
+  type SalesMutationOperationPayload,
+  withSalesMutationOperationNetUid,
+} from '../../features/sales-ukraine/salesMutationOperation'
+import { requirePersistedGuid } from '../../features/sales-ukraine/salesPayloadGuards'
 import type { SaleAuditPrintDocument, SaleAuditStatistic } from './saleAuditTypes'
 
 export async function getSaleStatisticBySaleId(netId: string): Promise<SaleAuditStatistic | null> {
@@ -36,9 +43,27 @@ export async function getShiftedSaleHistoryDocument(
   return normalizeDocument(result)
 }
 
-export async function confirmSaleAuditHistory(historyNetId: string): Promise<void> {
+export type SaleAuditHistoryMutationPayload = {
+  NetId: string
+} & SalesMutationOperationPayload
+
+export async function confirmSaleAuditHistory(
+  payload: SaleAuditHistoryMutationPayload,
+  operation: SalesMutationOperationOptions,
+): Promise<void> {
+  const historyNetId = requirePersistedGuid(
+    payload.NetId,
+    'Не вдалося визначити акт редагування накладної',
+  )
+
   await apiRequest<unknown>('/protocol/act/invoice/set/edit/act/for/editing', {
-    query: { historyNetId },
+    body: withSalesMutationOperationNetUid(
+      { NetId: historyNetId },
+      operation.operationId,
+    ),
+    headers: getSalesMutationOperationHeaders(operation.operationId),
+    method: 'POST',
+    ...(operation.signal ? { signal: operation.signal } : {}),
   })
 }
 

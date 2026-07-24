@@ -5,6 +5,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { ProductCardModal } from '../../products/components/ProductCardModal'
+import { createWizardOperationId } from '../../sales-ukraine/components/new-sale-wizard/wizardMutationOperation'
 import { processOffer } from '../api/salesOffersApi'
 import type { ClientShoppingCart, OfferOrderItem } from '../types'
 import { getItemNotProcessed } from './offerHelpers'
@@ -86,6 +87,7 @@ function OfferReasonForm({
   const [offerComment, setOfferComment] = useState(offer.Comment ?? '')
   const [reasons, setReasons] = useState<Record<string, string>>(() => buildInitialReasons(notProcessedItems))
   const [productCardNetId, setProductCardNetId] = useState<string | null>(null)
+  const [operationId] = useState(createWizardOperationId)
 
   async function save() {
     onSavingChange(true)
@@ -100,11 +102,14 @@ function OfferReasonForm({
     }
 
     try {
-      await processOffer(payload)
+      await processOffer(payload, { operationId })
       notifications.show({ color: 'green', message: t('Оферту успішно оновлено') })
       onSaved()
-    } catch {
-      notifications.show({ color: 'red', message: t('Не вдалося зберегти причини') })
+    } catch (error) {
+      notifications.show({
+        color: 'red',
+        message: error instanceof Error ? error.message : t('Не вдалося зберегти причини'),
+      })
     } finally {
       onSavingChange(false)
     }

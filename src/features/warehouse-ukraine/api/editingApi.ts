@@ -1,4 +1,11 @@
 import { apiRequest } from '../../../shared/api/apiClient'
+import {
+  getSalesMutationOperationHeaders,
+  type SalesMutationOperationOptions,
+  type SalesMutationOperationPayload,
+  withSalesMutationOperationNetUid,
+} from '../../sales-ukraine/salesMutationOperation'
+import { requirePersistedGuid } from '../../sales-ukraine/salesPayloadGuards'
 import type { EditingActItem, EditingItemsResponse } from '../types'
 import { readArrayPayload, readNumber } from './salesApi'
 
@@ -38,19 +45,50 @@ export async function getEditingCarrierList(params: EditingListSearchParams): Pr
   return normalizeEditingResponse(result)
 }
 
-export async function approveEditingAct(historyNetId: string): Promise<void> {
+export type EditingMutationPayload = {
+  NetId: string
+}
+
+type DurableEditingMutationPayload =
+  EditingMutationPayload & SalesMutationOperationPayload
+
+export async function approveEditingAct(
+  payload: DurableEditingMutationPayload,
+  operation: SalesMutationOperationOptions,
+): Promise<void> {
+  const historyNetId = requirePersistedGuid(
+    payload.NetId,
+    'Не вдалося визначити акт редагування накладної',
+  )
+
   await apiRequest<unknown>('/protocol/act/invoice/set/edit/act/for/editing', {
-    query: {
-      historynetId: historyNetId,
-    },
+    body: withSalesMutationOperationNetUid(
+      { NetId: historyNetId },
+      operation.operationId,
+    ),
+    headers: getSalesMutationOperationHeaders(operation.operationId),
+    method: 'POST',
+    ...(operation.signal ? { signal: operation.signal } : {}),
   })
 }
 
-export async function approveEditingCarrier(updateNetId: string): Promise<void> {
+export async function approveEditingCarrier(
+  payload: DurableEditingMutationPayload,
+  operation: SalesMutationOperationOptions,
+): Promise<void> {
+  const historyNetId = requirePersistedGuid(
+    payload.NetId,
+    'Не вдалося визначити історію зміни перевізника',
+  )
+
   await apiRequest<unknown>('/protocol/act/invoice/set/warehouses/shipment/history', {
-    query: {
-      netId: updateNetId,
-    },
+    body: withSalesMutationOperationNetUid(
+      { NetId: historyNetId },
+      operation.operationId,
+    ),
+    headers: getSalesMutationOperationHeaders(operation.operationId),
+    method: 'POST',
+    ...(operation.signal ? { signal: operation.signal } : {}),
   })
 }
 

@@ -14,12 +14,23 @@ import {
   searchIncomeCashflowPaymentRegisters,
 } from '../../income-cashflows/api/incomeCashflowsApi'
 import type {
-  ClientAgreement,
   IncomePaymentOrder,
   Organization,
   PaymentMovement,
   PaymentRegister,
 } from '../../income-cashflows/types'
+import {
+  ACCOUNTING_COMMENT_MAX_LENGTH,
+  buildPartnerAgreementPayload,
+  getExternalDocumentPaymentDateBounds,
+  isSupportedAccountingAmount,
+  isSupportedVat,
+  pickExternalDocumentPaymentCurrencyRegister,
+} from '../../document-outcome-payment/externalDocumentPayment'
+import type {
+  ExternalClientAgreement,
+  ExternalOrganizationClientAgreement,
+} from '../../document-outcome-payment/types'
 import {
   createAdvancePaymentFromSad,
   createIncomePaymentFromSad,
@@ -78,7 +89,7 @@ export function SadPaymentFromSadModal({
   const [organizations, setOrganizations] = useState<Organization[]>([])
   const [paymentRegisters, setPaymentRegisters] = useState<PaymentRegister[]>([])
   const [paymentMovements, setPaymentMovements] = useState<PaymentMovement[]>([])
-  const [clientAgreements, setClientAgreements] = useState<ClientAgreement[]>([])
+  const [clientAgreements, setClientAgreements] = useState<ExternalClientAgreement[]>([])
   const [form, setForm] = useState<FormState>(() => createInitialForm())
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setLoading] = useState(false)
@@ -86,6 +97,7 @@ export function SadPaymentFromSadModal({
 
   const client = sad?.Client || null
   const isIncome = action === 'income'
+  const isOrganizationClient = Boolean(sad?.OrganizationClient)
 
   const selectedOrganization = useMemo(
     () => organizations.find((organization) => getEntityValue(organization) === form.organizationValue) || null,
@@ -95,9 +107,22 @@ export function SadPaymentFromSadModal({
     () => paymentRegisters.find((register) => getEntityValue(register) === form.paymentRegisterValue) || null,
     [form.paymentRegisterValue, paymentRegisters],
   )
-  const selectedAgreement = useMemo(
-    () => clientAgreements.find((agreement) => getEntityValue(agreement.Agreement) === form.selectedAgreementValue) || null,
+  const organizationClientAgreements = useMemo(
+    () => isOrganizationClient
+      ? dedupeAgreements([
+          sad?.OrganizationClientAgreement,
+          ...(sad?.OrganizationClient?.OrganizationClientAgreements || []),
+        ]).map(toExternalOrganizationClientAgreement)
+      : [],
+    [isOrganizationClient, sad?.OrganizationClient, sad?.OrganizationClientAgreement],
+  )
+  const selectedClientAgreement = useMemo(
+    () => clientAgreements.find((agreement) => getEntityValue(agreement) === form.selectedAgreementValue) || null,
     [clientAgreements, form.selectedAgreementValue],
+  )
+  const selectedOrganizationClientAgreement = useMemo(
+    () => organizationClientAgreements.find((agreement) => getEntityValue(agreement) === form.selectedAgreementValue) || null,
+    [form.selectedAgreementValue, organizationClientAgreements],
   )
   const selectedMovement = useMemo(
     () => paymentMovements.find((movement) => getEntityValue(movement) === form.selectedMovementValue) || null,
@@ -110,7 +135,10 @@ export function SadPaymentFromSadModal({
   const selectedCurrencyRegister = useMemo(() => pickCurrencyRegister(selectedRegister), [selectedRegister])
   const currencyLabel = selectedCurrencyRegister?.Currency?.Code || selectedCurrencyRegister?.Currency?.Name || ''
   const referenceAmount = isIncome ? sad?.TotalAmountLocal : sad?.TotalVatAmountWithMargin
-  const dateBounds = useMemo(() => getDateBounds(sad?.Created), [sad?.Created])
+  const dateBounds = useMemo(
+    () => isIncome ? getExternalDocumentPaymentDateBounds(sad?.FromDate || sad?.Created) : null,
+    [isIncome, sad?.Created, sad?.FromDate],
+  )
 
   useEffect(() => {
     if (!opened || !sad || !action) {
@@ -119,7 +147,7 @@ export function SadPaymentFromSadModal({
 
     let cancelled = false
 
-    async function loadData() {
+    async function loadData(activeSad: Sad) {
       setLoading(true)
       setError(null)
 
@@ -132,9 +160,9 @@ export function SadPaymentFromSadModal({
                   setError(agreementsError instanceof Error ? agreementsError.message : t('Не вдалося завантажити договори'))
                 }
 
-                return [] as ClientAgreement[]
+                return [] as ExternalClientAgreement[]
               })
-            : Promise.resolve([] as ClientAgreement[]),
+            : Promise.resolve([] as ExternalClientAgreement[]),
           isIncome ? searchIncomeCashflowPaymentRegisters('') : Promise.resolve([] as PaymentRegister[]),
           isIncome ? getIncomeCashflowPaymentMovements() : Promise.resolve([] as PaymentMovement[]),
         ])
@@ -143,21 +171,36 @@ export function SadPaymentFromSadModal({
           return
         }
 
+        const nextClientAgreements = dedupeAgreements([
+          isOrganizationClient ? null : activeSad.ClientAgreement,
+          ...nextAgreements,
+        ])
+        const nextOrganizationClientAgreements = isOrganizationClient
+          ? dedupeAgreements([
+              activeSad.OrganizationClientAgreement,
+              ...(activeSad.OrganizationClient?.OrganizationClientAgreements || []),
+            ]).map(toExternalOrganizationClientAgreement)
+          : []
+        const plnPaymentRegisters = nextRegisters.filter(
+          (register) =>
+            pickExternalDocumentPaymentCurrencyRegister(register) !== null,
+        )
         const defaultOrganization = nextOrganizations[0] || null
-        const defaultAgreement = nextAgreements[0] || null
-        const defaultRegister = nextRegisters[0] || null
+        const defaultAgreement = nextOrganizationClientAgreements[0] || nextClientAgreements[0] || null
+        const defaultRegister = plnPaymentRegisters[0] || null
         const defaultMovement = nextMovements[0] || null
 
         setOrganizations(nextOrganizations)
-        setClientAgreements(nextAgreements)
-        setPaymentRegisters(nextRegisters)
+        setClientAgreements(nextClientAgreements)
+        setPaymentRegisters(plnPaymentRegisters)
         setPaymentMovements(nextMovements)
         setForm({
           ...createInitialForm(),
           amount: isIncome ? 0 : 0,
+          fromDate: getInitialPaymentDate(activeSad, isIncome),
           organizationValue: defaultOrganization ? getEntityValue(defaultOrganization) : '',
           paymentRegisterValue: defaultRegister ? getEntityValue(defaultRegister) : '',
-          selectedAgreementValue: defaultAgreement?.Agreement ? getEntityValue(defaultAgreement.Agreement) : '',
+          selectedAgreementValue: getEntityValue(defaultAgreement),
           selectedMovementValue: defaultMovement ? getEntityValue(defaultMovement) : '',
           movementSearch: defaultMovement?.OperationName || '',
         })
@@ -172,12 +215,12 @@ export function SadPaymentFromSadModal({
       }
     }
 
-    void loadData()
+    void loadData(sad)
 
     return () => {
       cancelled = true
     }
-  }, [action, client?.NetUid, isIncome, opened, sad, t])
+  }, [action, client?.NetUid, isIncome, isOrganizationClient, opened, sad, t])
 
   useEffect(() => {
     if (!opened || !isIncome) {
@@ -250,8 +293,33 @@ export function SadPaymentFromSadModal({
       return
     }
 
-    if (!form.amount || form.amount <= 0) {
+    const partnerAgreement = buildPartnerAgreementPayload(
+      selectedClientAgreement,
+      selectedOrganizationClientAgreement,
+    )
+
+    if (!partnerAgreement) {
+      setError(t('Оберіть договір'))
+      return
+    }
+
+    if (!isSupportedAccountingAmount(form.amount)) {
       setError(t('Сума має бути більшою за нуль'))
+      return
+    }
+
+    if (!isIncome && !isSupportedVat(form.amount, form.vatAmount, form.vatPercent)) {
+      setError(t('Перевірте суму та відсоток ПДВ'))
+      return
+    }
+
+    if (form.comment.trim().length > ACCOUNTING_COMMENT_MAX_LENGTH) {
+      setError(t('Коментар має бути до 450 символів'))
+      return
+    }
+
+    if (isIncome && isDateOutsideRange(form.fromDate, dateBounds?.min || '', dateBounds?.max || '')) {
+      setError(t('Дата виходить за дозволений період'))
       return
     }
 
@@ -266,8 +334,8 @@ export function SadPaymentFromSadModal({
     try {
       if (isIncome) {
         const order: IncomePaymentOrder = {
+          ...partnerAgreement,
           Amount: form.amount,
-          ClientAgreement: selectedAgreement || undefined,
           Comment: form.comment.trim(),
           Currency: selectedCurrencyRegister?.Currency || undefined,
           FromDate: toIsoDate(form.fromDate),
@@ -282,8 +350,8 @@ export function SadPaymentFromSadModal({
         await createIncomePaymentFromSad(sad.NetUid, order)
       } else {
         const advancePayment: SadAdvancePaymentPayload = {
+          ...partnerAgreement,
           Amount: form.amount,
-          ClientAgreement: selectedAgreement || undefined,
           Comment: form.comment.trim(),
           FromDate: toIsoDate(form.fromDate),
           Organization: selectedOrganization,
@@ -339,8 +407,10 @@ export function SadPaymentFromSadModal({
 
           <Grid.Col span={{ base: 12, sm: 6 }}>
             <Select
-              data={toAgreementOptions(clientAgreements)}
-              disabled={!clientAgreements.length || isLoading || isSaving}
+              data={organizationClientAgreements.length
+                ? toOrganizationClientAgreementOptions(organizationClientAgreements)
+                : toAgreementOptions(clientAgreements)}
+              disabled={!(clientAgreements.length || organizationClientAgreements.length) || isLoading || isSaving}
               label={t('Договір')}
               searchable
               value={form.selectedAgreementValue || null}
@@ -398,6 +468,7 @@ export function SadPaymentFromSadModal({
                   decimalScale={2}
                   disabled={isLoading || isSaving}
                   label={t('ПДВ %')}
+                  max={100}
                   min={0}
                   value={form.vatPercent}
                   onChange={(value) => updateForm({ vatPercent: toNumber(value) })}
@@ -449,6 +520,7 @@ export function SadPaymentFromSadModal({
             <Textarea
               disabled={isLoading || isSaving}
               label={t('Коментар')}
+              maxLength={ACCOUNTING_COMMENT_MAX_LENGTH}
               minRows={2}
               value={form.comment}
               onChange={(event) => updateForm({ comment: event.currentTarget.value })}
@@ -489,11 +561,7 @@ function getTitle(action: SadPaymentAction | null, t: (key: string) => string): 
 }
 
 function pickCurrencyRegister(register: PaymentRegister | null) {
-  if (!register) {
-    return null
-  }
-
-  return register.PaymentCurrencyRegisters?.[0] || null
+  return pickExternalDocumentPaymentCurrencyRegister(register)
 }
 
 function toEntityOptions<T extends NameLikeEntity>(entities: T[]) {
@@ -511,11 +579,11 @@ function toEntityOptions<T extends NameLikeEntity>(entities: T[]) {
   }, [])
 }
 
-function toAgreementOptions(agreements: ClientAgreement[]) {
+function toAgreementOptions(agreements: ExternalClientAgreement[]) {
   return agreements.reduce<{ label: string; value: string }[]>((acc, clientAgreement) => {
     const agreement = clientAgreement.Agreement
     const currency = agreement?.Currency
-    const value = getEntityValue(agreement)
+    const value = getEntityValue(clientAgreement)
 
     const option = {
       label: [agreement?.Name || agreement?.Number || clientAgreement.Name || value, currency?.Code || currency?.Name]
@@ -530,6 +598,58 @@ function toAgreementOptions(agreements: ClientAgreement[]) {
 
     return acc
   }, [])
+}
+
+function toOrganizationClientAgreementOptions(agreements: ExternalOrganizationClientAgreement[]) {
+  return agreements.reduce<{ label: string; value: string }[]>((options, agreement) => {
+    const value = getEntityValue(agreement)
+
+    if (value) {
+      options.push({
+        label: [
+          agreement.Number || value,
+          agreement.Currency?.Code || agreement.Currency?.Name,
+        ].filter(Boolean).join(' '),
+        value,
+      })
+    }
+
+    return options
+  }, [])
+}
+
+function dedupeAgreements<TAgreement extends { Id?: number; NetUid?: string }>(
+  agreements: Array<TAgreement | null | undefined>,
+): TAgreement[] {
+  const seen = new Set<string>()
+
+  return agreements.reduce<TAgreement[]>((result, agreement) => {
+    const value = getEntityValue(agreement)
+
+    if (agreement && value && !seen.has(value)) {
+      seen.add(value)
+      result.push(agreement)
+    }
+
+    return result
+  }, [])
+}
+
+function toExternalOrganizationClientAgreement(
+  agreement: ExternalOrganizationClientAgreement,
+): ExternalOrganizationClientAgreement {
+  return {
+    Currency: agreement.Currency
+      ? {
+          Code: agreement.Currency.Code,
+          Name: agreement.Currency.Name,
+        }
+      : null,
+    Id: agreement.Id,
+    NetUid: agreement.NetUid,
+    Number: agreement.Number,
+    OrganizationClientId: agreement.OrganizationClientId,
+  }
 }
 
 function toUniqueLabels<T extends NameLikeEntity>(entities: T[]): string[] {
@@ -578,19 +698,34 @@ function formatPln(value: number): string {
   return moneyFormatter.format(value)
 }
 
-function getDateBounds(created?: Date | string): { max: string; min: string } | null {
-  if (!created) {
-    return null
+function getInitialPaymentDate(sad: Sad, withBounds: boolean): string {
+  const today = formatLocalDate(new Date())
+
+  if (!withBounds) {
+    return today
   }
 
-  const minDate = new Date(created)
+  const dateBounds = getExternalDocumentPaymentDateBounds(sad.FromDate || sad.Created)
 
-  if (Number.isNaN(minDate.getTime())) {
-    return null
+  if (dateBounds?.max && today > dateBounds.max) {
+    return dateBounds.max
   }
 
-  const maxDate = new Date(minDate)
-  maxDate.setMonth(maxDate.getMonth() + 3)
+  if (dateBounds?.min && today < dateBounds.min) {
+    return dateBounds.min
+  }
 
-  return { max: formatLocalDate(maxDate), min: formatLocalDate(minDate) }
+  return today
+}
+
+function isDateOutsideRange(value: string, minDate: string, maxDate: string): boolean {
+  if (!value) {
+    return true
+  }
+
+  if (minDate && value < minDate) {
+    return true
+  }
+
+  return Boolean(maxDate && value > maxDate)
 }

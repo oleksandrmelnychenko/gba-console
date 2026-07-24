@@ -17,7 +17,7 @@ import {
   TextInput,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { ArrowLeft, ArrowLeftRight, CircleAlert, Pencil, RefreshCw, Save, Trash2, X } from 'lucide-react'
+import { ArrowLeft, ArrowLeftRight, CircleAlert, Pencil, RefreshCw, Save, X } from 'lucide-react'
 import { type FormEvent, type ReactNode, useEffect, useMemo, useReducer, useRef } from 'react'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
@@ -34,7 +34,6 @@ import {
   createPaymentAccountExchange,
   createPaymentAccount,
   createPaymentAccountTransfer,
-  deletePaymentAccount,
   getPaymentAccount,
   getPaymentAccountBanks,
   getPaymentAccountCurrencyActivity,
@@ -82,7 +81,6 @@ type PaymentAccountFormState = {
   accountNumber: string
   bankName: string
   city: string
-  cvv: string
   fromDate: string
   isActive: boolean
   isForRetail: boolean
@@ -111,7 +109,6 @@ type PaymentAccountPageStateAction =
 
 type PaymentAccountFormHeaderState = {
   canSave: boolean
-  isDeleting: boolean
   isEditing: boolean
   isEditMode: boolean
   isLoading: boolean
@@ -126,7 +123,6 @@ type PaymentAccountFormCardState = {
   currencyDrafts: CurrencyDraft[]
   error: string | null
   form: PaymentAccountFormState
-  isDeleting: boolean
   isEditMode: boolean
   isFormDisabled: boolean
   isLoading: boolean
@@ -238,6 +234,8 @@ const SKIPPED_CURRENCY_CODE = ['P', 'L', 'N'].join('')
 const ACTIVITY_RANGE_DAYS = -7
 const DEFAULT_TRANSFER_MOVEMENT_NAME = 'Переміщення валюти'
 const DEFAULT_EXCHANGE_MOVEMENT_NAME = 'Конвертація валюти'
+const PAYMENT_COMMENT_MAX_LENGTH = 450
+const SQL_MONEY_MAX_VALUE = 922_337_203_685_477
 const EMPTY_ACTIVITY_STATE: PaymentAccountActivityState = {
   currencyActivity: null,
   error: null,
@@ -269,12 +267,10 @@ export function PaymentAccountFormPage() {
   // Створення редіректить у edit-оверлей, тож список дізнається про мутацію
   // лише при фінальному закритті — прапорець переживає цей проміжок.
   const hasMutatedRef = useRef(false)
-  const [isDeleting, setDeleting] = useValueState(false)
-  const [deleteModalOpened, setDeleteModalOpened] = useValueState(false)
   const { account, banks, currencyDrafts, error, form, hiddenCurrencyRegisters, isLoading, organizations } = pageState
   const activity = usePaymentAccountActivity({ account, id, isEditMode, t })
   const canSave = hasPermission(isEditMode ? PAYMENT_ACCOUNT_EDIT_PERMISSION : PAYMENT_ACCOUNT_CREATE_PERMISSION)
-  const isFormDisabled = isLoading || isSaving || isDeleting || (isEditMode && !isEditing)
+  const isFormDisabled = isLoading || isSaving || (isEditMode && !isEditing)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -328,13 +324,12 @@ export function PaymentAccountFormPage() {
   const headerState = useMemo<PaymentAccountFormHeaderState>(
     () => ({
       canSave,
-      isDeleting,
       isEditing,
       isEditMode,
       isLoading,
       isSaving,
     }),
-    [canSave, isDeleting, isEditing, isEditMode, isLoading, isSaving],
+    [canSave, isEditing, isEditMode, isLoading, isSaving],
   )
   const selectedOrganization = useMemo(
     () => organizations.find((organization) => getEntityValue(organization) === form.organizationNetId) || null,
@@ -396,7 +391,7 @@ export function PaymentAccountFormPage() {
   }
 
   function handleCancel() {
-    if (isSaving || isDeleting) {
+    if (isSaving) {
       return
     }
 
@@ -450,30 +445,6 @@ export function PaymentAccountFormPage() {
     }
   }
 
-  async function handleDelete() {
-    const netId = account.NetUid || id
-
-    if (!netId) {
-      return
-    }
-
-    setDeleting(true)
-    dispatchPageState({ error: null })
-
-    try {
-      await deletePaymentAccount(netId)
-      notifications.show({ color: 'green', message: t('Рахунок видалено') })
-      navigate(returnPath, { replace: true, state: { mutated: true } })
-    } catch (deleteError) {
-      dispatchPageState({
-        error: deleteError instanceof Error ? deleteError.message : t('Не вдалося видалити рахунок'),
-      })
-    } finally {
-      setDeleting(false)
-      setDeleteModalOpened(false)
-    }
-  }
-
   async function reloadAccountAfterActivityMutation() {
     const netId = account.NetUid || id
 
@@ -511,7 +482,6 @@ export function PaymentAccountFormPage() {
           onCancel={handleCancel}
           onCancelEdit={cancelEdit}
           onEdit={() => setEditing(true)}
-          onOpenDelete={() => setDeleteModalOpened(true)}
         />
       }
     >
@@ -525,7 +495,6 @@ export function PaymentAccountFormPage() {
           currencyDrafts,
           error,
           form,
-          isDeleting,
           isEditMode,
           isFormDisabled,
           isLoading,
@@ -561,27 +530,6 @@ export function PaymentAccountFormPage() {
           onToChange={activity.setActivityTo}
         />
       )}
-
-      <AppModal
-        centered
-        opened={deleteModalOpened}
-        title={t('Видалити рахунок')}
-        onClose={() => setDeleteModalOpened(false)}
-      >
-        <Stack gap="md">
-          <Text>
-            {t('Видалити рахунок')} <Text span fw={600}>{form.name || t('Без назви')}</Text>?
-          </Text>
-          <Group justify="flex-end">
-            <Button color="gray" disabled={isDeleting} variant="light" onClick={() => setDeleteModalOpened(false)}>
-              {t('Скасувати')}
-            </Button>
-            <Button color="red" leftSection={<Trash2 size={16} />} loading={isDeleting} onClick={handleDelete}>
-              {t('Видалити')}
-            </Button>
-          </Group>
-        </Stack>
-      </AppModal>
     </Stack>
     </AppDrawer>
   )
@@ -743,7 +691,6 @@ function PaymentAccountFormCard({
     currencyDrafts,
     error,
     form,
-    isDeleting,
     isEditMode,
     isFormDisabled,
     isLoading,
@@ -772,7 +719,7 @@ function PaymentAccountFormCard({
             { label: t('Банківська картка'), value: String(PaymentRegisterType.Card) },
             { label: t('Банк'), value: String(PaymentRegisterType.Bank) },
           ]}
-          disabled={isLoading || isSaving || isDeleting || isEditMode}
+          disabled={isLoading || isSaving || isEditMode}
           value={String(form.type)}
           onChange={onSetAccountType}
         />
@@ -820,7 +767,7 @@ function PaymentAccountFormCard({
           drafts={currencyDrafts}
           isEditMode={isEditMode}
           isSingle={form.type !== PaymentRegisterType.Cash}
-          isDisabled={isLoading || isSaving || isDeleting}
+          isDisabled={isLoading || isSaving}
           onChange={onChangeCurrency}
           onOpenCurrencyActivity={onOpenCurrencyActivity}
         />
@@ -841,16 +788,14 @@ function PaymentAccountFormHeader({
   onCancel,
   onCancelEdit,
   onEdit,
-  onOpenDelete,
 }: {
   state: PaymentAccountFormHeaderState
   onCancel: () => void
   onCancelEdit: () => void
   onEdit: () => void
-  onOpenDelete: () => void
 }) {
   const { t } = useI18n()
-  const { canSave, isDeleting, isEditing, isEditMode, isLoading, isSaving } = state
+  const { canSave, isEditing, isEditMode, isLoading, isSaving } = state
 
   return (
     <Group justify="flex-end" gap="xs" wrap="wrap">
@@ -860,7 +805,7 @@ function PaymentAccountFormHeader({
       {isEditMode && canSave && !isEditing && (
         <Button
           color={CREATE_ACTION_COLOR}
-          disabled={isLoading || isSaving || isDeleting}
+          disabled={isLoading || isSaving}
           leftSection={<Pencil size={16} />}
           type="button"
           onClick={onEdit}
@@ -868,21 +813,8 @@ function PaymentAccountFormHeader({
           {t('Редагувати')}
         </Button>
       )}
-      {isEditMode && canSave && isEditing && (
-        <Button
-          color="red"
-          disabled={isLoading || isSaving}
-          leftSection={<Trash2 size={16} />}
-          loading={isDeleting}
-          type="button"
-          variant="light"
-          onClick={onOpenDelete}
-        >
-          {t('Видалити')}
-        </Button>
-      )}
       {isEditMode && isEditing && (
-        <Button color="gray" disabled={isLoading || isSaving || isDeleting} type="button" variant="light" onClick={onCancelEdit}>
+        <Button color="gray" disabled={isLoading || isSaving} type="button" variant="light" onClick={onCancelEdit}>
           {t('Скасувати')}
         </Button>
       )}
@@ -997,13 +929,6 @@ function CardFields({
         type="month"
         value={toMonthInputValue(form.fromDate)}
         onChange={(event) => onChange({ fromDate: event.currentTarget.value })}
-      />
-      <TextInput
-        disabled={disabled}
-        label="CVV"
-        maxLength={3}
-        value={form.cvv}
-        onChange={(event) => onChange({ cvv: event.currentTarget.value })}
       />
       <Checkbox
         checked={form.isForRetail}
@@ -1207,20 +1132,8 @@ function PaymentAccountActivityPanel({
 
   return (
     <>
-      <Card className="app-section-card payment-account-activity" withBorder padding={0} radius="md">
-        <Tabs
-          className="payment-account-activity-tabs-root"
-          value={activeTab}
-          onChange={(value) => value && onActiveTabChange(value as PaymentAccountActivityTab)}
-        >
-          <Tabs.List className="pill-tabs payment-account-activity-tabs">
-            <Tabs.Tab value="balances">{t('Залишки')}</Tabs.Tab>
-            <Tabs.Tab value="transfers">{t('Перекази')}</Tabs.Tab>
-            <Tabs.Tab value="exchanges">{t('Обмін валют')}</Tabs.Tab>
-            <Tabs.Tab value="currency">{t('Рух валюти')}</Tabs.Tab>
-          </Tabs.List>
-
-          <Stack className="payment-account-activity-content" gap="md">
+      <Card className="app-section-card" withBorder radius="md">
+        <Stack gap="md">
           <Group justify="space-between" wrap="wrap">
             <Group gap="xs">
               <Text fw={700}>{t('Операції')}</Text>
@@ -1287,7 +1200,15 @@ function PaymentAccountActivityPanel({
             </Alert>
           )}
 
-            <Tabs.Panel value="balances" pt={0}>
+          <Tabs value={activeTab} onChange={(value) => value && onActiveTabChange(value as PaymentAccountActivityTab)}>
+            <Tabs.List>
+              <Tabs.Tab value="balances">{t('Залишки')}</Tabs.Tab>
+              <Tabs.Tab value="transfers">{t('Перекази')}</Tabs.Tab>
+              <Tabs.Tab value="exchanges">{t('Обмін валют')}</Tabs.Tab>
+              <Tabs.Tab value="currency">{t('Рух валюти')}</Tabs.Tab>
+            </Tabs.List>
+
+            <Tabs.Panel value="balances" pt="md">
               <PaymentAccountBalancesView
                 account={account}
                 selectedCurrencyRegister={selectedCurrencyRegister}
@@ -1296,7 +1217,7 @@ function PaymentAccountActivityPanel({
               />
             </Tabs.Panel>
 
-            <Tabs.Panel value="transfers" pt={0}>
+            <Tabs.Panel value="transfers" pt="md">
               <ActivityTable
                 columns={getTransferColumns(account, t, setCancelTransfer)}
                 emptyText={t('Перекази відсутні')}
@@ -1306,7 +1227,7 @@ function PaymentAccountActivityPanel({
               />
             </Tabs.Panel>
 
-            <Tabs.Panel value="exchanges" pt={0}>
+            <Tabs.Panel value="exchanges" pt="md">
               <ActivityTable
                 columns={getExchangeColumns(account, t, setCancelExchange)}
                 emptyText={t('Обмін валют відсутній')}
@@ -1316,7 +1237,7 @@ function PaymentAccountActivityPanel({
               />
             </Tabs.Panel>
 
-            <Tabs.Panel value="currency" pt={0}>
+            <Tabs.Panel value="currency" pt="md">
               <Stack gap="md">
                 <Select
                   data={currencyOptions}
@@ -1333,8 +1254,8 @@ function PaymentAccountActivityPanel({
                 />
               </Stack>
             </Tabs.Panel>
-          </Stack>
-        </Tabs>
+          </Tabs>
+        </Stack>
       </Card>
 
       <PaymentAccountTransferModal
@@ -1555,6 +1476,7 @@ export function PaymentAccountTransferModal({
             <TextInput
               disabled={isSubmitting}
               label={t('Коментар')}
+              maxLength={PAYMENT_COMMENT_MAX_LENGTH}
               value={draft.comment}
               onChange={(event) => {
                 const nextComment = event.currentTarget.value
@@ -1922,6 +1844,7 @@ export function PaymentAccountExchangeModal({
             <TextInput
               disabled={isSubmitting}
               label={t('Коментар')}
+              maxLength={PAYMENT_COMMENT_MAX_LENGTH}
               value={draft.comment}
               onChange={(event) => {
                 const nextComment = event.currentTarget.value
@@ -2532,6 +2455,18 @@ function validateTransferDraft(
     return t('Вкажіть суму')
   }
 
+  if (amount > SQL_MONEY_MAX_VALUE) {
+    return t('Сума перевищує допустиме значення')
+  }
+
+  if (typeof selectedFromRegister.Amount === 'number' && amount > selectedFromRegister.Amount) {
+    return t('Сума більша за залишок')
+  }
+
+  if (draft.comment.length > PAYMENT_COMMENT_MAX_LENGTH) {
+    return t('Коментар має бути до 450 символів')
+  }
+
   if (!selectedMovement) {
     return t('Оберіть статтю руху')
   }
@@ -2568,12 +2503,20 @@ function validateExchangeDraft(
     return t('Вкажіть суму')
   }
 
+  if (amount > SQL_MONEY_MAX_VALUE || exchangeRate > SQL_MONEY_MAX_VALUE) {
+    return t('Сума або курс перевищує допустиме значення')
+  }
+
   if (typeof selectedFromRegister.Amount === 'number' && amount > selectedFromRegister.Amount) {
     return t('Сума більша за залишок')
   }
 
   if (!exchangeRate || exchangeRate <= 0) {
     return t('Вкажіть курс')
+  }
+
+  if (draft.comment.length > PAYMENT_COMMENT_MAX_LENGTH) {
+    return t('Коментар має бути до 450 символів')
   }
 
   if (!selectedMovement) {
@@ -2749,7 +2692,6 @@ function createEmptyForm(): PaymentAccountFormState {
     accountNumber: '',
     bankName: '',
     city: '',
-    cvv: '',
     fromDate: '',
     iban: '',
     isActive: false,
@@ -2780,7 +2722,6 @@ function toFormState(account: PaymentAccount, organization: Organization | null)
     accountNumber: account.AccountNumber || '',
     bankName: account.BankName || '',
     city: account.City || '',
-    cvv: account.CVV || '',
     fromDate: normalizeDateInput(account.FromDate),
     iban: account.IBAN || '',
     isActive: Boolean(account.IsActive),
@@ -2830,7 +2771,6 @@ function toPayload(
     AccountNumber: form.accountNumber.trim(),
     BankName: form.bankName.trim(),
     City: form.city.trim(),
-    CVV: form.cvv.trim(),
     FromDate: form.type === PaymentRegisterType.Card ? fromMonthInputValue(form.fromDate) : form.fromDate,
     IBAN: form.iban.trim(),
     IsActive: form.isActive,
@@ -2876,6 +2816,10 @@ function validateForm(
     return t('Вкажіть назву рахунку')
   }
 
+  if (form.name.trim().length > 100) {
+    return t('Назва рахунку має бути до 100 символів')
+  }
+
   if (!organization) {
     return t('Оберіть організацію')
   }
@@ -2884,20 +2828,33 @@ function validateForm(
     return t('Оберіть валюту')
   }
 
+  if (!isEditMode && currencyDrafts.some((draft) => {
+    const amount = parseAmount(draft.amount)
+    return draft.selected && (amount < 0 || amount > SQL_MONEY_MAX_VALUE)
+  })) {
+    return t('Сума валюти має бути невідʼємною і в допустимих межах')
+  }
+
+  const fieldValidationError = getPaymentRegisterFieldValidationError(form, t)
+
+  if (fieldValidationError) {
+    return fieldValidationError
+  }
+
   if (form.type === PaymentRegisterType.Card) {
     if (!form.bankName.trim() || !form.accountNumber.trim() || !form.fromDate.trim()) {
       return t('Заповніть банк, номер картки і термін дії')
     }
   }
 
-  if (form.type === PaymentRegisterType.Bank) {
-    return getBankValidationError(form, t)
-  }
-
   return null
 }
 
-function getBankValidationError(form: PaymentAccountFormState, t: (value: string) => string): string | null {
+function getPaymentRegisterFieldValidationError(form: PaymentAccountFormState, t: (value: string) => string): string | null {
+  if (form.bankName.length > 100) {
+    return t('Назва банку має бути до 100 символів')
+  }
+
   if (form.sortCode.length > 20) {
     return t('BIC має бути до 20 символів')
   }

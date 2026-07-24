@@ -11,11 +11,18 @@ import { createWizardOperationId } from './components/new-sale-wizard/wizardMuta
 export type SaleJsonMutationKind =
   | 'sale-comment'
   | 'sale-discount'
+  | 'sale-payment-document'
   | 'sale-recipient'
   | 'sale-recipient-address'
   | 'sale-shift-current'
   | 'sale-switch'
+  | 'sale-unlock'
   | 'sale-update'
+  | 'protocol-carrier-edit'
+  | 'protocol-invoice-edit'
+  | 'shipment-list-auto'
+  | 'shipment-list-document-create'
+  | 'shipment-list-update'
 
 export type SaleJsonMutationSubmission<TPayload extends object = SalesUkraineSale> = {
   kind: SaleJsonMutationKind
@@ -60,11 +67,18 @@ export function isSaleJsonMutationSubmission<TPayload extends object = SalesUkra
     (
       candidate.kind === 'sale-discount' ||
       candidate.kind === 'sale-comment' ||
+      candidate.kind === 'sale-payment-document' ||
       candidate.kind === 'sale-recipient' ||
       candidate.kind === 'sale-recipient-address' ||
       candidate.kind === 'sale-shift-current' ||
       candidate.kind === 'sale-switch' ||
-      candidate.kind === 'sale-update'
+      candidate.kind === 'sale-unlock' ||
+      candidate.kind === 'sale-update' ||
+      candidate.kind === 'protocol-carrier-edit' ||
+      candidate.kind === 'protocol-invoice-edit' ||
+      candidate.kind === 'shipment-list-auto' ||
+      candidate.kind === 'shipment-list-document-create' ||
+      candidate.kind === 'shipment-list-update'
     ) &&
     typeof candidate.operationId === 'string' &&
     Boolean(candidate.operationId) &&

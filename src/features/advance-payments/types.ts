@@ -21,14 +21,35 @@ export type User = NamedEntity & {
 
 export type AdvancePayment = EntityFields & {
   Amount?: number
+  ClientAgreement?: ExternalClientAgreement | null
   Comment?: string
   FromDate?: string
   Number?: string
   Organization?: Organization | null
+  OrganizationClientAgreement?: ExternalOrganizationClientAgreement | null
   User?: User | null
   VatAmount?: number
   VatPercent?: number
 }
+
+export type AdvancePaymentMutationPayload = {
+  Amount: number
+  Comment?: string
+  FromDate: string
+  Organization: Organization
+  VatAmount: number
+  VatPercent: number
+} & PartnerAgreementPayload<ExternalClientAgreement, ExternalOrganizationClientAgreement>
+
+export type AdvancePaymentSource =
+  | {
+      sadNetId: string
+      taxFreeNetId?: never
+    }
+  | {
+      sadNetId?: never
+      taxFreeNetId: string
+    }
 
 export type AdvancePaymentsSearchParams = {
   from: string
@@ -36,3 +57,8 @@ export type AdvancePaymentsSearchParams = {
   offset: number
   to: string
 }
+import type {
+  ExternalClientAgreement,
+  ExternalOrganizationClientAgreement,
+} from '../document-outcome-payment/types'
+import type { PartnerAgreementPayload } from '../document-outcome-payment/externalDocumentPayment'

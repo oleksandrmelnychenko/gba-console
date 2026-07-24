@@ -1,4 +1,8 @@
 import { apiRequest } from '../../../shared/api/apiClient'
+import {
+  executeAccountingMutation,
+  type AccountingMutationOperationOptions,
+} from '../../../shared/api/accountingMutationOperation'
 import type {
   CreatePaymentRegister,
   OutcomePaymentOrderCreatePayload,
@@ -61,10 +65,20 @@ export async function searchOutgoingCreateUsers(value: string): Promise<OutcomeP
 
 export async function createOutgoingCashflowOrder(
   order: OutcomePaymentOrderCreatePayload,
+  operation?: AccountingMutationOperationOptions,
 ): Promise<OutcomePaymentOrder | null> {
-  const result = await apiRequest<unknown>('/payments/orders/outcome/new', {
-    method: 'POST',
-    body: order,
+  const result = await executeAccountingMutation({
+    identity: order,
+    kind: 'outcome-payment:add',
+    operation,
+    payload: order,
+    request: (payload, context) => apiRequest<unknown>('/payments/orders/outcome/new', {
+      body: payload,
+      dedupe: false,
+      headers: context.headers,
+      method: 'POST',
+      ...(context.signal ? { signal: context.signal } : {}),
+    }),
   })
 
   return result && typeof result === 'object' ? (result as OutcomePaymentOrder) : null

@@ -108,6 +108,29 @@ describe('advanceReportApi', () => {
     expect(payload.OutcomePaymentOrderConsumablesOrders?.[0]?.ConsumablesOrder?.ConsumablesOrderItems?.[0]?.NetUid)
       .toBeUndefined()
     expect(payload.CompanyCarFuelings?.[0]?.NetUid).toBeUndefined()
+    expect(options?.headers).toBeUndefined()
+    expect(options?.dedupe).toBeUndefined()
+  })
+
+  it('idempotently updates JSON advance reports but leaves multipart outside the ledger scope', async () => {
+    const operationId = '77777777-7777-4777-8777-777777777777'
+    const order: AdvanceReportOrder = {
+      Amount: 120,
+      NetUid: 'outcome-1',
+    }
+    apiRequestMock.mockResolvedValueOnce(order)
+
+    await updateAdvanceReportOrder(false, order, [], { operationId })
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/payments/orders/outcome/update', {
+      body: order,
+      dedupe: false,
+      headers: { 'Idempotency-Key': operationId },
+      method: 'POST',
+      query: {
+        auto: false,
+      },
+    })
   })
 
   it('strips invalid local NetUid values before calculating a consumable order', async () => {

@@ -1,7 +1,7 @@
 import { Button, Group, Menu, Stack } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { ClipboardList, FileText, Printer, Receipt } from 'lucide-react'
-import { useMemo } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useAuth } from '../../auth/useAuth'
 import { getApiLanguage } from '../../../shared/api/apiClient'
 import { UserRoleType } from '../../../shared/auth/types'
@@ -20,7 +20,9 @@ import {
   getSaleShipmentListHistoryDocument,
 } from '../api/salesUkraineApi'
 import { getSaleLifecycleStatusKey } from '../saleStatus'
+import type { SalesMutationOperationOptions } from '../salesMutationOperation'
 import type { SaleDocumentResult, SalesUkraineSale } from '../types'
+import { usePersistentSaleJsonMutationRunner } from '../usePersistentSaleJsonMutation'
 
 type DocumentPart = {
   fetch: () => Promise<SaleDocumentResult>
@@ -31,10 +33,11 @@ type DocumentAction = {
   bundlesInvoice?: boolean
   // A single document, or several documents bundled into one menu entry (fetched together,
   // client-side — no server change). `parts` takes precedence over `fetch`.
-  fetch?: () => Promise<SaleDocumentResult>
+  fetch?: (operation?: SalesMutationOperationOptions) => Promise<SaleDocumentResult>
   key: string
   label: string
   parts?: DocumentPart[]
+  requiresOperationId?: boolean
 }
 
 type DocumentFile = {
@@ -59,6 +62,9 @@ export function SaleDocumentsMenu({ sale }: { sale: SalesUkraineSale }) {
   const { t } = useI18n()
   const { user } = useAuth()
   const [resultState, setResultState] = useValueState<DocumentResultState | null>(null)
+  const [runningActionKey, setRunningActionKey] = useState<string | null>(null)
+  const runningActionRef = useRef(false)
+  const runPaymentDocumentMutation = usePersistentSaleJsonMutationRunner('sale-payment-document')
 
   const isAbleToInvoiceDocument = useMemo(() => {
     const roleType = user?.UserRole?.UserRoleType
@@ -69,6 +75,13 @@ export function SaleDocumentsMenu({ sale }: { sale: SalesUkraineSale }) {
   const actions = useMemo(() => buildDocumentActions(sale, apiLanguage, t), [apiLanguage, sale, t])
 
   async function runAction(action: DocumentAction) {
+    if (runningActionRef.current) {
+      return
+    }
+
+    runningActionRef.current = true
+    setRunningActionKey(action.key)
+
     const notificationId = `sale-document-${action.key}`
     notifications.show({ id: notificationId, autoClose: false, loading: true, message: t('Формування документа') })
 
@@ -95,7 +108,9 @@ export function SaleDocumentsMenu({ sale }: { sale: SalesUkraineSale }) {
           }
         }
       } else if (action.fetch) {
-        const result = await action.fetch()
+        const result = action.requiresOperationId
+          ? await runPaymentDocumentAction(sale, action, runPaymentDocumentMutation)
+          : await action.fetch()
         documents = buildDocumentFiles(action, result, isAbleToInvoiceDocument, t)
       } else {
         documents = []
@@ -112,6 +127,9 @@ export function SaleDocumentsMenu({ sale }: { sale: SalesUkraineSale }) {
       const message = error instanceof Error && error.message.trim() ? error.message : fallbackMessage
 
       notifications.update({ id: notificationId, autoClose: 3500, color: 'red', loading: false, message })
+    } finally {
+      runningActionRef.current = false
+      setRunningActionKey(null)
     }
   }
 
@@ -124,7 +142,12 @@ export function SaleDocumentsMenu({ sale }: { sale: SalesUkraineSale }) {
         <Menu.Dropdown>
           {actions.length ? (
             actions.map((action) => (
-              <Menu.Item key={action.key} leftSection={documentActionIcon(action.key)} onClick={() => runAction(action)}>
+              <Menu.Item
+                key={action.key}
+                disabled={runningActionKey !== null}
+                leftSection={documentActionIcon(action.key)}
+                onClick={() => runAction(action)}
+              >
                 {action.label}
               </Menu.Item>
             ))
@@ -154,6 +177,36 @@ export function SaleDocumentsMenu({ sale }: { sale: SalesUkraineSale }) {
       </AppModal>
     </>
   )
+}
+
+async function runPaymentDocumentAction(
+  sale: SalesUkraineSale,
+  action: DocumentAction,
+  runMutation: ReturnType<typeof usePersistentSaleJsonMutationRunner>,
+): Promise<SaleDocumentResult> {
+  const netUid = sale.NetUid?.trim()
+  const fetchDocument = action.fetch
+
+  if (!netUid) {
+    throw new Error('Продаж не має збереженого ідентифікатора')
+  }
+
+  if (!fetchDocument) {
+    throw new Error('Документ недоступний')
+  }
+
+  const normalizedNetUid = netUid.toLowerCase()
+  const attempt = await runMutation(
+    `sale-payment-document:${normalizedNetUid}`,
+    { NetUid: normalizedNetUid },
+    (_payload, operation) => fetchDocument(operation),
+  )
+
+  if (!attempt.completed) {
+    throw attempt.error
+  }
+
+  return attempt.result
 }
 
 // Monochrome (grey) icon per document type — kept neutral, not the brand colour.
@@ -246,7 +299,13 @@ function buildDocumentActions(sale: SalesUkraineSale, apiLanguage: string, t: (k
   })
 
   if (isVat && withVatAccounting) {
-    actions.push({ bundlesInvoice: true, fetch: () => getSalePaymentDocument(netId), key: 'payment', label: t('Рахунок на оплату') })
+    actions.push({
+      bundlesInvoice: true,
+      fetch: (operation) => getSalePaymentDocument(netId, operation),
+      key: 'payment',
+      label: t('Рахунок на оплату'),
+      requiresOperationId: true,
+    })
   }
 
   if (isPolishRegion && isInvoiceStatus) {

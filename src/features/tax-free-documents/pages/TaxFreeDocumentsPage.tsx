@@ -1628,7 +1628,7 @@ function buildTaxFreeOutcomeSource(document: TaxFreeDocument): DocumentOutcomePa
     amount: document.VatAmountPl || 0,
     clientName: getTaxFreeClient(document),
     clientNetId: client?.NetUid || '',
-    created: document.Created,
+    documentDate: document.FormedDate || document.Created,
     documentNetId: document.NetUid || '',
     type: 'taxfree',
   }

@@ -1,4 +1,8 @@
 import { apiRequest } from '../../../shared/api/apiClient'
+import {
+  executeAccountingMutation,
+  type AccountingMutationOperationOptions,
+} from '../../../shared/api/accountingMutationOperation'
 import { IncomeCounterpartySearchType } from '../types'
 import type {
   Client,
@@ -46,32 +50,76 @@ export async function getIncomeCashflowByNetId(netId: string, signal?: AbortSign
   return normalizeIncomePaymentOrder(result)
 }
 
-export async function cancelIncomeCashflow(netId: string): Promise<IncomePaymentOrder | null> {
-  const result = await apiRequest<unknown>('/payments/orders/income/cancel', {
-    method: 'PUT',
-    query: {
-      netId,
-    },
+export async function cancelIncomeCashflow(
+  netId: string,
+  operation?: AccountingMutationOperationOptions,
+): Promise<IncomePaymentOrder | null> {
+  const result = await executeAccountingMutation({
+    kind: 'income-payment:cancel',
+    operation,
+    payload: { netId },
+    request: (payload, context) => apiRequest<unknown>('/payments/orders/income/cancel', {
+      dedupe: false,
+      headers: context.headers,
+      method: 'PUT',
+      query: {
+        netId: payload.netId,
+      },
+      ...(context.signal ? { signal: context.signal } : {}),
+    }),
   })
 
   return normalizeCancelResult(result)
 }
 
-export async function updateIncomeCashflowClient(params: {
-  clientAgreementNetId: string
-  clientNetId: string
-  incomeNetId: string
-}): Promise<IncomePaymentOrder | null> {
-  const result = await apiRequest<unknown>('/payments/orders/income/update/client', {
-    method: 'PUT',
-    query: {
-      clientAgreementNetId: params.clientAgreementNetId,
-      clientNetId: params.clientNetId,
-      incomeNetId: params.incomeNetId,
-    },
+export async function updateIncomeCashflowClient(
+  params: {
+    clientAgreementNetId: string
+    clientNetId: string
+    incomeNetId: string
+  },
+  operation?: AccountingMutationOperationOptions,
+): Promise<IncomePaymentOrder | null> {
+  const result = await executeAccountingMutation({
+    identity: params,
+    kind: 'income-payment:change-client',
+    operation,
+    payload: params,
+    request: (payload, context) => apiRequest<unknown>('/payments/orders/income/update/client', {
+      dedupe: false,
+      headers: context.headers,
+      method: 'PUT',
+      query: {
+        clientAgreementNetId: payload.clientAgreementNetId,
+        clientNetId: payload.clientNetId,
+        incomeNetId: payload.incomeNetId,
+      },
+      ...(context.signal ? { signal: context.signal } : {}),
+    }),
   })
 
   return normalizeCancelResult(result)
+}
+
+export async function updateIncomeCashflow(
+  order: IncomePaymentOrder,
+  operation?: AccountingMutationOperationOptions,
+): Promise<IncomePaymentOrder | null> {
+  const result = await executeAccountingMutation({
+    identity: order,
+    kind: 'income-payment:update',
+    operation,
+    payload: order,
+    request: (payload, context) => apiRequest<unknown>('/payments/orders/income/update', {
+      body: payload,
+      dedupe: false,
+      headers: context.headers,
+      method: 'POST',
+      ...(context.signal ? { signal: context.signal } : {}),
+    }),
+  })
+
+  return normalizeIncomePaymentOrder(result)
 }
 
 export async function getIncomeCashflowCurrencies(): Promise<Currency[]> {
@@ -296,13 +344,29 @@ export async function calculateIncomeCashflowExchange(params: {
   return result && typeof result === 'object' ? (result as IncomeExchangeCalculation) : null
 }
 
-export async function createIncomeCashflow(order: IncomePaymentOrder, isAuto = false): Promise<IncomePaymentOrder | null> {
-  const result = await apiRequest<unknown>('/payments/orders/income/new', {
-    method: 'POST',
-    query: {
-      auto: isAuto,
+export async function createIncomeCashflow(
+  order: IncomePaymentOrder,
+  isAuto = false,
+  operation?: AccountingMutationOperationOptions,
+): Promise<IncomePaymentOrder | null> {
+  const result = await executeAccountingMutation({
+    identity: order,
+    kind: 'income-payment:add',
+    operation,
+    payload: {
+      isAuto,
+      order,
     },
-    body: order,
+    request: (payload, context) => apiRequest<unknown>('/payments/orders/income/new', {
+      body: payload.order,
+      dedupe: false,
+      headers: context.headers,
+      method: 'POST',
+      query: {
+        auto: payload.isAuto,
+      },
+      ...(context.signal ? { signal: context.signal } : {}),
+    }),
   })
 
   return normalizeIncomePaymentOrder(result)

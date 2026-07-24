@@ -224,6 +224,8 @@ export async function createAvailablePaymentOutcome({
   )
   documents.forEach((document) => formData.append('documents', document))
 
+  // Multipart accounting mutations remain outside the ledger until the server
+  // stages files and fingerprints their contents, not only their metadata.
   return apiRequest<unknown>('/payments/orders/outcome/new/supplies', {
     body: formData,
     method: 'POST',

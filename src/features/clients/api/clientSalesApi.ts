@@ -2,6 +2,11 @@ import { apiRequest } from '../../../shared/api/apiClient'
 import { formatDateForQuery, formatDateInputForQuery } from '../../../shared/date/dateTime'
 import type { ClientPrintDocument } from '../types'
 import type { ClientSalesParams, SaleStatistic } from '../salesTypes'
+import {
+  confirmSaleAuditHistory,
+  type SaleAuditHistoryMutationPayload,
+} from '../../../shared/sale-audit/saleAuditApi'
+import type { SalesMutationOperationOptions } from '../../sales-ukraine/salesMutationOperation'
 
 function toDateParam(value: Date | string): string {
   return value instanceof Date ? formatDateForQuery(value) : formatDateInputForQuery(value)
@@ -57,12 +62,11 @@ export async function getShiftedSaleHistoryDocument(
   return normalizeDocument(result)
 }
 
-export async function confirmSaleActForEditing(historyNetId: string): Promise<void> {
-  await apiRequest<unknown>('/protocol/act/invoice/set/edit/act/for/editing', {
-    query: {
-      historynetId: historyNetId,
-    },
-  })
+export async function confirmSaleActForEditing(
+  payload: SaleAuditHistoryMutationPayload,
+  operation: SalesMutationOperationOptions,
+): Promise<void> {
+  return confirmSaleAuditHistory(payload, operation)
 }
 
 function normalizeDocument(result: unknown): ClientPrintDocument | null {

@@ -4,6 +4,7 @@ import {
   classifySalesMutationFailure,
   SALES_MUTATION_LEDGER_NOT_ENTERED,
   SALES_MUTATION_LEDGER_STATE_HEADER,
+  SalesMutationPreflightValidationError,
 } from './salesMutationOperation'
 
 describe('sales mutation failure classification', () => {
@@ -34,5 +35,11 @@ describe('sales mutation failure classification', () => {
     })
 
     expect(classifySalesMutationFailure(error)).toBe('pending-reconciliation')
+  })
+
+  it('settles a client preflight rejection because no request reached the server', () => {
+    const error = new SalesMutationPreflightValidationError('invalid payload')
+
+    expect(classifySalesMutationFailure(error)).toBe('definitive-failure')
   })
 })

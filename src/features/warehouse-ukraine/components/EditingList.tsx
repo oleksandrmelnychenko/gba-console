@@ -2,6 +2,8 @@ import { ActionIcon, Alert, Anchor, Badge, Button, Checkbox, Group, SimpleGrid, 
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, RotateCcw } from 'lucide-react'
 import { type ReactNode, useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import type { SalesMutationOperationOptions, SalesMutationOperationPayload } from '../../sales-ukraine/salesMutationOperation'
+import { usePersistentSaleJsonMutationRunner } from '../../sales-ukraine/usePersistentSaleJsonMutation'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { translate } from '../../../shared/i18n/translate'
@@ -18,6 +20,7 @@ import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { TransporterIcon } from '../../../shared/transporter-icons/TransporterIcon'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import type { EditingItemsResponse, EditingActItem, WarehouseUkraineShipmentDetails, WarehouseUkraineUpdateDataCarrier, WarehouseUkraineUser } from '../types'
+import type { EditingMutationPayload } from '../api/editingApi'
 import { displayValue, formatDateTime, getDateShiftedByDays, toDateString } from './dateHelpers'
 
 const DEFAULT_PAGE_SIZE = DEFAULT_PAGINATOR_PAGE_SIZE
@@ -40,7 +43,10 @@ type EditingListProps = {
     isDevelopment: boolean
   }) => Promise<EditingItemsResponse>
   onLoaded?: () => void
-  processor: (netId: string) => Promise<void>
+  processor: (
+    payload: EditingMutationPayload & SalesMutationOperationPayload,
+    operation: SalesMutationOperationOptions,
+  ) => Promise<void>
   onProcessed?: () => void
 }
 
@@ -62,12 +68,18 @@ export function EditingList({ kind, layoutVersion, loader, onLoaded, onProcessed
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
   const [isProcessing, setProcessing] = useValueState(false)
+  const processingRef = useRef(false)
   const [confirmItem, setConfirmItem] = useValueState<EditingActItem | null>(null)
   const [auditStatistic, setAuditStatistic] = useValueState<SaleAuditStatistic | null>(null)
   const [auditLoading, setAuditLoading] = useValueState(false)
   const [auditError, setAuditError] = useValueState<string | null>(null)
   const auditRequestRef = useRef(0)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  const runMutation = usePersistentSaleJsonMutationRunner(
+    kind === 'carrier'
+      ? 'protocol-carrier-edit'
+      : 'protocol-invoice-edit',
+  )
   const filterError = getFilterError(activeFilters.from, activeFilters.to)
   const pageOffset = (page - 1) * pageSize
   const itemIndexMap = useMemo(() => buildIndexMap(items, pageOffset), [items, pageOffset])
@@ -210,6 +222,10 @@ export function EditingList({ kind, layoutVersion, loader, onLoaded, onProcessed
   }
 
   async function processConfirmedItem() {
+    if (processingRef.current) {
+      return
+    }
+
     if (!confirmItem?.NetUid) {
       setError(t('Не вдалося визначити запис для обробки'))
       closeConfirm()
@@ -217,11 +233,20 @@ export function EditingList({ kind, layoutVersion, loader, onLoaded, onProcessed
       return
     }
 
+    processingRef.current = true
     setProcessing(true)
     setError(null)
 
     try {
-      await processor(confirmItem.NetUid)
+      const mutation = await runMutation(
+        `protocol-${kind}:${confirmItem.NetUid.toLowerCase()}`,
+        { NetId: confirmItem.NetUid },
+        processor,
+      )
+      if (!mutation.completed) {
+        throw mutation.error ??
+          new Error(t('Не вдалося підтвердити результат операції'))
+      }
       notifications.show({
         color: 'green',
         message:
@@ -235,6 +260,7 @@ export function EditingList({ kind, layoutVersion, loader, onLoaded, onProcessed
     } catch (processError) {
       setError(processError instanceof Error ? processError.message : t('Не вдалося виконати запит'))
     } finally {
+      processingRef.current = false
       setProcessing(false)
     }
   }
@@ -328,7 +354,7 @@ export function EditingList({ kind, layoutVersion, loader, onLoaded, onProcessed
           )}
 
           <Group justify="flex-end" gap="sm">
-            <Button color="gray" variant="light" onClick={closeConfirm}>
+            <Button color="gray" disabled={isProcessing} variant="light" onClick={closeConfirm}>
               {t('Скасувати')}
             </Button>
             <Button

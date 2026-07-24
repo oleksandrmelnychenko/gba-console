@@ -89,6 +89,21 @@ describe('sales Ukraine document request contracts', () => {
     })
   })
 
+  it('sends a stable idempotency key when payment document generation is an explicit console operation', async () => {
+    apiRequestMock.mockResolvedValueOnce({})
+
+    await getSalePaymentDocument('sale-net-id', {
+      operationId: '9B316272-8D8C-4D6D-95A4-6EEA9A79D7D6',
+    })
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/get/payment/document', {
+      headers: {
+        'Idempotency-Key': '9b316272-8d8c-4d6d-95a4-6eea9a79d7d6',
+      },
+      query: { netId: 'sale-net-id' },
+    })
+  })
+
   it('normalizes bundled invoice document aliases returned without URL suffix', async () => {
     apiRequestMock.mockResolvedValueOnce({
       DocumentURL: 'http://example.test/payment.xlsx',
@@ -207,16 +222,18 @@ describe('sales Ukraine document request contracts', () => {
 
   it('switches a sale with the mandatory stable operation key', async () => {
     const operationId = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd'
-    apiRequestMock.mockResolvedValueOnce({ Sale: { NetUid: 'sale-net-id' } })
+    const saleNetUid = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee'
+    const agreementNetUid = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+    apiRequestMock.mockResolvedValueOnce({ Sale: { NetUid: saleNetUid } })
 
-    await expect(switchSale('sale-net-id', 'agreement-net-id', { operationId })).resolves.toEqual({
-      NetUid: 'sale-net-id',
+    await expect(switchSale(saleNetUid, agreementNetUid, { operationId })).resolves.toEqual({
+      NetUid: saleNetUid,
     })
 
     expect(apiRequestMock).toHaveBeenCalledWith('/sales/switch', {
       headers: { 'Idempotency-Key': operationId },
       method: 'PATCH',
-      query: { clientAgreementNetId: 'agreement-net-id', saleNetId: 'sale-net-id' },
+      query: { clientAgreementNetId: agreementNetUid, saleNetId: saleNetUid },
     })
   })
 
@@ -243,11 +260,18 @@ describe('sales Ukraine document request contracts', () => {
 
   it('sends one authoritative operation id in the add body and idempotency header', async () => {
     apiRequestMock.mockResolvedValueOnce({ NetUid: 'item-1' })
+    const agreementNetUid = '11111111-1111-4111-8111-111111111111'
+    const saleNetUid = '22222222-2222-4222-8222-222222222222'
+    const productNetUid = '33333333-3333-4333-8333-333333333333'
 
     await addOrderItem(
-      'agreement-1',
-      'sale-1',
-      { NetUid: '00000000-0000-0000-0000-000000000000', Product: { Id: 7 }, Qty: 2 },
+      agreementNetUid,
+      saleNetUid,
+      {
+        NetUid: '00000000-0000-0000-0000-000000000000',
+        Product: { Id: 7, NetUid: productNetUid },
+        Qty: 2,
+      },
       { operationId: 'AAAAAAAA-AAAA-4AAA-8AAA-AAAAAAAAAAAA' },
     )
 
@@ -255,12 +279,12 @@ describe('sales Ukraine document request contracts', () => {
       body: {
         NetUid: '00000000-0000-0000-0000-000000000000',
         OperationNetUid: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
-        Product: { Id: 7 },
+        Product: { Id: 7, NetUid: productNetUid },
         Qty: 2,
       },
       headers: { 'Idempotency-Key': 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' },
       method: 'POST',
-      query: { clientAgreementNetId: 'agreement-1', saleNetId: 'sale-1' },
+      query: { clientAgreementNetId: agreementNetUid, saleNetId: saleNetUid },
     })
     const request = apiRequestMock.mock.calls[0]?.[1]
 
@@ -272,13 +296,14 @@ describe('sales Ukraine document request contracts', () => {
   it('uses the same explicit operation contract for update and delete', async () => {
     apiRequestMock.mockResolvedValue(null)
     const operation = { operationId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb' }
+    const orderItemNetUid = '11111111-1111-4111-8111-111111111111'
 
-    await updateOrderItem({ NetUid: 'item-1', Qty: 3 }, operation)
-    await deleteOrderItem('item-1', operation)
+    await updateOrderItem({ NetUid: orderItemNetUid, Qty: 3 }, operation)
+    await deleteOrderItem(orderItemNetUid, operation)
 
     expect(apiRequestMock).toHaveBeenNthCalledWith(1, '/orders/items/update', {
       body: {
-        NetUid: 'item-1',
+        NetUid: orderItemNetUid,
         OperationNetUid: operation.operationId,
         Qty: 3,
       },
@@ -288,9 +313,31 @@ describe('sales Ukraine document request contracts', () => {
     expect(apiRequestMock).toHaveBeenNthCalledWith(2, '/orders/items/delete', {
       headers: { 'Idempotency-Key': operation.operationId },
       method: 'DELETE',
-      query: { orderItemNetId: 'item-1' },
+      query: { orderItemNetId: orderItemNetUid },
     })
   })
+
+  it.each([
+    [{ NetUid: '', Qty: 1 }, 'Позиція товару не має збереженого ідентифікатора'],
+    [{ NetUid: '00000000-0000-0000-0000-000000000000', Qty: 1 }, 'Позиція товару не має збереженого ідентифікатора'],
+    [{ NetUid: '11111111-1111-4111-8111-111111111111', Qty: 0 }, 'Кількість товару має бути більшою за нуль'],
+    [{ NetUid: '11111111-1111-4111-8111-111111111111', Qty: Number.NaN }, 'Кількість товару має бути більшою за нуль'],
+  ])('blocks an invalid order-item update before the API boundary', async (orderItem, message) => {
+    await expect(updateOrderItem(orderItem, {
+      operationId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+    })).rejects.toThrow(message)
+    expect(apiRequestMock).not.toHaveBeenCalled()
+  })
+
+  it.each(['', 'not-a-guid', '00000000-0000-0000-0000-000000000000'])(
+    'blocks an invalid order-item delete before the API boundary',
+    async (orderItemNetUid) => {
+      await expect(deleteOrderItem(orderItemNetUid, {
+        operationId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+      })).rejects.toThrow('Позиція товару не має збереженого ідентифікатора')
+      expect(apiRequestMock).not.toHaveBeenCalled()
+    },
+  )
 
   it('sends the canonical merged operation marker equal to the idempotency header', async () => {
     apiRequestMock.mockResolvedValueOnce(null)

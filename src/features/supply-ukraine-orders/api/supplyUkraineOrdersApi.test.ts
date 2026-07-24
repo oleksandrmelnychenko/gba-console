@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import {
   deleteSupplyProformDocument,
+  getDirectSupplyUkraineOrders,
+  getSupplyUkraineOrders,
   getSupplyOrderSuppliers,
   searchSupplyOrderServiceOrganizations,
   uploadDirectSupplyOrderFromFile,
@@ -32,6 +34,60 @@ const apiRequestMock = vi.mocked(apiRequest)
 describe('supplyUkraineOrdersApi', () => {
   beforeEach(() => {
     apiRequestMock.mockReset()
+  })
+
+  it('includes the selected end date when loading both Ukraine order sources', async () => {
+    apiRequestMock.mockResolvedValue({ Collection: [], TotalRowsQty: 0 })
+    const params = {
+      currencyId: '',
+      from: '2026-07-17',
+      limit: 20,
+      offset: 0,
+      supplierName: '',
+      to: '2026-07-24',
+    }
+
+    await getSupplyUkraineOrders(params)
+    await getDirectSupplyUkraineOrders(params)
+
+    const expectedQuery = {
+      currencyId: undefined,
+      from: '2026-07-17',
+      limit: 20,
+      offset: 0,
+      supplierName: '',
+      to: '2026-07-24T23:59:59.999',
+    }
+    expect(apiRequestMock).toHaveBeenNthCalledWith(1, '/supplies/ukraine/order/all/filtered', {
+      query: expectedQuery,
+    })
+    expect(apiRequestMock).toHaveBeenNthCalledWith(2, '/supplies/orders/all/uk/filtered', {
+      query: expectedQuery,
+    })
+  })
+
+  it('preserves an explicit end-of-range timestamp', async () => {
+    apiRequestMock.mockResolvedValue({ Collection: [], TotalRowsQty: 0 })
+
+    await getDirectSupplyUkraineOrders({
+      currencyId: '2',
+      from: '2026-07-17T00:00:00',
+      limit: 50,
+      offset: 10,
+      supplierName: '  SEM  ',
+      to: '2026-07-24T12:30:00',
+    })
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/orders/all/uk/filtered', {
+      query: {
+        currencyId: 2,
+        from: '2026-07-17T00:00:00',
+        limit: 50,
+        offset: 10,
+        supplierName: 'SEM',
+        to: '2026-07-24T12:30:00',
+      },
+    })
   })
 
   it('uploads supplier-created Ukraine orders to the Ukraine supplier file endpoint', async () => {

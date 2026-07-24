@@ -15,6 +15,7 @@ import {
   markSalesPendingMutationCorrupt,
   markSalesPendingMutationSubmitted,
   markSalesPendingMutationUnknown,
+  resolveRejectedSalesPendingMutation,
   resolveSalesPendingMutation,
   subscribeSalesPendingMutations,
   synchronizeSalesPendingMutationUser,
@@ -22,6 +23,7 @@ import {
 } from '../pendingSalesMutationRegistry'
 import {
   advanceWizardMergedSaleSession,
+  buildWizardMergedOrderItems,
   createWizardMergedSaleSubmission,
   isWizardMergedSaleSubmission,
   type WizardMergedSaleSubmission,
@@ -328,14 +330,27 @@ function MergedSalesContent({
       return
     }
 
-    const payload: SalesUkraineSale = {
-      ...confirmSale,
-      BaseLifeCycleStatus: { Deleted: false, Id: 0, NetUid: EMPTY_GUID, SaleLifeCycleType: 1 },
-      BaseSalePaymentStatus: { Deleted: false, Id: 0, NetUid: EMPTY_GUID, SalePaymentStatusType: 0 },
-      IsPrintedPaymentInvoice: true,
-    }
+    try {
+      const payload: SalesUkraineSale = {
+        ...confirmSale,
+        BaseLifeCycleStatus: { Deleted: false, Id: 0, NetUid: EMPTY_GUID, SaleLifeCycleType: 1 },
+        BaseSalePaymentStatus: { Deleted: false, Id: 0, NetUid: EMPTY_GUID, SalePaymentStatusType: 0 },
+        IsPrintedPaymentInvoice: true,
+        Order: {
+          ...(confirmSale.Order ?? {}),
+          OrderItems: buildWizardMergedOrderItems(confirmSale.Order?.OrderItems ?? []),
+        },
+      }
 
-    await runMergedSaleSubmission(createWizardMergedSaleSubmission(payload))
+      await runMergedSaleSubmission(createWizardMergedSaleSubmission(payload))
+    } catch (validationError) {
+      notifications.show({
+        color: 'red',
+        message: validationError instanceof Error
+          ? validationError.message
+          : t('Не вдалося перевірити позиції рахунку'),
+      })
+    }
   }
 
   async function reconcilePendingMergedSale() {
@@ -376,16 +391,31 @@ function MergedSalesContent({
             updateMergedSale,
           })
 
-          if (result.status === 'pending-reconciliation' || result.status === 'definitive-failure') {
+          if (result.status === 'pending-reconciliation') {
             markSalesPendingMutationUnknown(lease)
-            pendingMergedRef.current = result.status === 'pending-reconciliation'
-              ? result.submission
-              : durableSubmission
+            pendingMergedRef.current = result.submission
 
             if (mountedRef.current && submitGuard.isCurrent(token, token.context)) {
               setPendingMergedSubmission(pendingMergedRef.current)
               setConfirmSale(null)
               notifications.show({ color: 'orange', message: t('Результат невідомий. Повторіть перевірку тим самим ключем') })
+            }
+
+            return
+          }
+
+          if (result.status === 'definitive-failure') {
+            resolveRejectedSalesPendingMutation(lease)
+            pendingMergedRef.current = null
+
+            if (mountedRef.current && submitGuard.isCurrent(token, token.context)) {
+              setPendingMergedSubmission(null)
+              notifications.show({
+                color: 'red',
+                message: result.error instanceof Error
+                  ? result.error.message
+                  : t('Сервер відхилив створення рахунку'),
+              })
             }
 
             return

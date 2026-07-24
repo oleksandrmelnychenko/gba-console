@@ -1,10 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import {
+  getAutoShipmentList,
+  getShipmentCreatePageDocument,
   updateDeliveryRecipient,
   updateDeliveryRecipientAddress,
   updateSaleComment,
+  updateShipmentList,
 } from './shipmentsApi'
+import type { ShipmentList } from '../shipmentTypes'
 
 vi.mock('../../../shared/api/apiClient', () => ({
   apiRequest: vi.fn(),
@@ -56,4 +60,83 @@ describe('shipment sale mutation contracts', () => {
       query: { netId: 'sale-1' },
     })
   })
+
+  it('uses one operation id for the mutating automatic shipment request', async () => {
+    const operationId = '44444444-4444-4444-8444-444444444444'
+    const transporterNetId = '55555555-5555-4555-8555-555555555555'
+
+    await getAutoShipmentList(
+      { transporterNetId, from: '2026-07-01', to: '2026-07-08' },
+      { operationId },
+    )
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/shipments/update/filtered/auto', {
+      headers: { 'Idempotency-Key': operationId },
+      query: { netId: transporterNetId, from: '2026-07-01', to: '2026-07-08' },
+    })
+  })
+
+  it('validates and sends a shipment update with its visible date window', async () => {
+    const operationId = '66666666-6666-4666-8666-666666666666'
+    const shipmentList = buildShipmentList()
+
+    await updateShipmentList(
+      shipmentList,
+      { operationId },
+      { from: '2026-07-01T00:00:00', to: '2026-07-08T23:59:59' },
+    )
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/shipments/update', {
+      body: shipmentList,
+      headers: { 'Idempotency-Key': operationId },
+      method: 'POST',
+      query: { from: '2026-07-01T00:00:00', to: '2026-07-08T23:59:59' },
+    })
+  })
+
+  it('uses one operation id when create-page document generation mutates the shipment list', async () => {
+    const operationId = '77777777-7777-4777-8777-777777777777'
+    const transporterNetId = '88888888-8888-4888-8888-888888888888'
+
+    await getShipmentCreatePageDocument(
+      { transporterNetId, from: '2026-07-01', to: '2026-07-08' },
+      { operationId },
+    )
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/shipments/document/create/export', {
+      headers: { 'Idempotency-Key': operationId },
+      query: { netId: transporterNetId, from: '2026-07-01', to: '2026-07-08' },
+    })
+  })
+
+  it('rejects a duplicate sale in a shipment before sending it', async () => {
+    const shipmentList = buildShipmentList()
+    shipmentList.ShipmentListItems.push({
+      Id: 31,
+      NetUid: '99999999-9999-4999-8999-999999999999',
+      QtyPlaces: 1,
+      Sale: { Id: 20, NetUid: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' },
+    })
+
+    await expect(updateShipmentList(
+      shipmentList,
+      { operationId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb' },
+    )).rejects.toThrow('Один продаж не можна додати до відомості двічі')
+    expect(apiRequestMock).not.toHaveBeenCalled()
+  })
 })
+
+function buildShipmentList(): ShipmentList {
+  return {
+    Id: 10,
+    NetUid: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+    ShipmentListItems: [
+      {
+        Id: 30,
+        NetUid: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+        QtyPlaces: 2,
+        Sale: { Id: 20, NetUid: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' },
+      },
+    ],
+  }
+}

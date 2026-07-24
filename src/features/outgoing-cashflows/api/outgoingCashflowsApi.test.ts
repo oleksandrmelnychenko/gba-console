@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
-import { getOutgoingCashflowByNetId, getOutgoingCashflows } from './outgoingCashflowsApi'
+import {
+  cancelOutgoingCashflow,
+  getOutgoingCashflowByNetId,
+  getOutgoingCashflows,
+} from './outgoingCashflowsApi'
 
 vi.mock('../../../shared/api/apiClient', () => ({
   apiRequest: vi.fn(),
@@ -48,6 +52,26 @@ describe('outgoingCashflowsApi', () => {
     })
 
     expect(apiRequestMock).toHaveBeenCalledWith('/payments/orders/outcome/get', {
+      query: {
+        netId: 'outcome-order-1',
+      },
+    })
+  })
+
+  it('sends the idempotency key when canceling an outcome order', async () => {
+    const operationId = '55555555-5555-4555-8555-555555555555'
+    apiRequestMock.mockResolvedValueOnce({
+      Entity: {
+        NetUid: 'outcome-order-1',
+      },
+    })
+
+    await cancelOutgoingCashflow('outcome-order-1', { operationId })
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/payments/orders/outcome/cancel', {
+      dedupe: false,
+      headers: { 'Idempotency-Key': operationId },
+      method: 'PUT',
       query: {
         netId: 'outcome-order-1',
       },

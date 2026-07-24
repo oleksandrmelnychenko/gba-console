@@ -150,6 +150,7 @@ const amountFormatter = new Intl.NumberFormat('uk-UA', {
 export function SalesOnlineShopPage() {
   const { t } = useI18n()
   const { hasPermission, user } = useAuth()
+  const runSaleUnlock = usePersistentSaleJsonMutationRunner('sale-unlock')
   const runSaleUpdate = usePersistentSaleJsonMutationRunner('sale-update')
   const isAdmin =
     user?.UserRole?.UserRoleType === UserRoleType.Administrator || user?.UserRole?.UserRoleType === UserRoleType.GBA
@@ -356,12 +357,21 @@ export function SalesOnlineShopPage() {
         message: t('Розблокувати рахунок?'),
         title: t('Розблокування'),
         onConfirm: async () => {
-          await unlockSale(netId)
+          const attempt = await runSaleUnlock(
+            `sale-unlock:${netId.toLowerCase()}`,
+            { NetUid: netId },
+            (_payload, operation) => unlockSale(netId, operation),
+          )
+
+          if (!attempt.completed) {
+            throw attempt.error
+          }
+
           notifications.show({ color: 'green', message: t('Продаж розблоковано') })
         },
       })
     },
-    [setConfirmState, t],
+    [runSaleUnlock, setConfirmState, t],
   )
 
   const requestWillNotShip = useCallback(

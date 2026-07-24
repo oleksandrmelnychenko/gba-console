@@ -43,8 +43,11 @@ export type PaymentRegisterType = (typeof PaymentRegisterType)[keyof typeof Paym
 export type PaymentCurrencyRegister = EntityFields & {
   Amount?: number
   Currency?: Currency | null
+  CurrencyId?: number
+  InitialAmount?: number
   IsSelected?: boolean
   PaymentRegister?: PaymentAccount | null
+  PaymentRegisterId?: number
   PaymentRegisterCurrencyExchanges?: PaymentRegisterCurrencyExchange[]
   PaymentRegisterTransfers?: PaymentRegisterTransfer[]
   IncomePaymentOrders?: PaymentAccountIncomeOrder[]
@@ -55,14 +58,16 @@ export type PaymentAccount = EntityFields & {
   AccountNumber?: string
   BankName?: string
   City?: string
-  CVV?: string
   FromDate?: string
   IBAN?: string
   IncomePaymentOrders?: PaymentAccountIncomeOrder[]
   IsActive?: boolean
   IsForRetail?: boolean
+  IsMain?: boolean
+  IsSelected?: boolean
   Name?: string
   Organization?: Organization | null
+  OrganizationId?: number
   OutcomePaymentOrders?: PaymentAccountOutcomeOrder[]
   PaymentCurrencyRegisters?: PaymentCurrencyRegister[]
   SortCode?: string
@@ -128,10 +133,13 @@ export type PaymentRegisterTransfer = EntityFields & {
   Comment?: string
   FromDate?: string
   FromPaymentCurrencyRegister?: PaymentCurrencyRegister | null
+  FromPaymentCurrencyRegisterId?: number
   IsCanceled?: boolean
+  IsUpdated?: boolean
   Number?: number | string
   PaymentMovementOperation?: PaymentMovementOperation | null
   ToPaymentCurrencyRegister?: PaymentCurrencyRegister | null
+  ToPaymentCurrencyRegisterId?: number
   Type?: PaymentRegisterTransferType
   TypeOfOperation?: TransferOperationType
   User?: NamedEntity | null
@@ -144,16 +152,20 @@ export type PaymentRegisterCurrencyExchange = EntityFields & {
   ExchangeRate?: number
   FromDate?: string
   FromPaymentCurrencyRegister?: PaymentCurrencyRegister | null
+  FromPaymentCurrencyRegisterId?: number
   IncomeNumber?: number | string
   IsCanceled?: boolean
+  IsUpdated?: boolean
   Number?: number | string
   PaymentMovementOperation?: PaymentMovementOperation | null
   ToPaymentCurrencyRegister?: PaymentCurrencyRegister | null
+  ToPaymentCurrencyRegisterId?: number
   Type?: PaymentRegisterTransferType
   User?: NamedEntity | null
 }
 
-export type PaymentAccountMutationResult = EntityFields & {
+export type PaymentAccountMutationResult<TEntity = EntityFields> = {
+  Entity?: TEntity | null
   IsSuccess?: boolean
 }
 

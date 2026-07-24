@@ -18,8 +18,12 @@ export type SalesSearchParams = {
   offset: number
 }
 
-export async function getWarehouseUkraineSales(params: SalesSearchParams): Promise<SalesResponse> {
+export async function getWarehouseUkraineSales(
+  params: SalesSearchParams,
+  signal?: AbortSignal,
+): Promise<SalesResponse> {
   const result = await apiRequest<unknown>('/sales/all/filtered', {
+    signal,
     query: {
       status: PACKAGING_STATUS,
       type: QUERY_TYPE_ALL,

@@ -112,54 +112,96 @@ describe('new sale wizard pricing API contracts', () => {
   it('updates sale recipient and address by sale net id', async () => {
     const recipientOperation = '11111111-1111-4111-8111-111111111111'
     const addressOperation = '22222222-2222-4222-8222-222222222222'
-    apiRequestMock.mockResolvedValueOnce({ NetUid: 'sale-1', DeliveryRecipient: { NetUid: 'recipient-1' } })
-    apiRequestMock.mockResolvedValueOnce({ Sale: { NetUid: 'sale-1', DeliveryRecipientAddress: { NetUid: 'address-1' } } })
+    apiRequestMock.mockResolvedValueOnce({ NetUid: 'recipient-1', FullName: 'Отримувач' })
+    apiRequestMock.mockResolvedValueOnce({ NetUid: 'address-1', City: 'Київ' })
 
     await expect(updateSaleDeliveryRecipient(
-      { NetUid: 'sale-1' },
-      'sale-1',
+      { FullName: 'Отримувач', MobilePhone: '+380501112233' },
+      'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
       { operationId: recipientOperation },
     )).resolves.toEqual({
-      NetUid: 'sale-1',
-      DeliveryRecipient: { NetUid: 'recipient-1' },
+      NetUid: 'recipient-1',
+      FullName: 'Отримувач',
     })
     await expect(updateSaleDeliveryRecipientAddress(
-      { NetUid: 'sale-1' },
-      'sale-1',
+      { City: 'Київ', Department: '1' },
+      'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
       { operationId: addressOperation },
     )).resolves.toEqual({
-      NetUid: 'sale-1',
-      DeliveryRecipientAddress: { NetUid: 'address-1' },
+      NetUid: 'address-1',
+      City: 'Київ',
     })
 
     expect(apiRequestMock).toHaveBeenNthCalledWith(1, '/sales/update/recipient', {
-      body: { NetUid: 'sale-1', OperationNetUid: recipientOperation },
+      body: {
+        FullName: 'Отримувач',
+        MobilePhone: '+380501112233',
+        OperationNetUid: recipientOperation,
+      },
       headers: { 'Idempotency-Key': recipientOperation },
       method: 'POST',
-      query: { netId: 'sale-1' },
+      query: { netId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' },
     })
     expect(apiRequestMock).toHaveBeenNthCalledWith(2, '/sales/update/recipient/address', {
-      body: { NetUid: 'sale-1', OperationNetUid: addressOperation },
+      body: {
+        City: 'Київ',
+        Department: '1',
+        OperationNetUid: addressOperation,
+      },
       headers: { 'Idempotency-Key': addressOperation },
       method: 'POST',
-      query: { netId: 'sale-1' },
+      query: { netId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' },
     })
   })
 
   it('requests nearest supply order and creates future reservation', async () => {
-    apiRequestMock.mockResolvedValueOnce({ NetUID: 'supply-1' })
+    const productNetId = '11111111-1111-4111-8111-111111111111'
+    const clientNetId = '22222222-2222-4222-8222-222222222222'
+    const supplyOrderNetId = '33333333-3333-4333-8333-333333333333'
+    const operationId = '44444444-4444-4444-8444-444444444444'
+    const remindDate = '2026-08-01T12:00:00Z'
+    apiRequestMock.mockResolvedValueOnce({ NetUID: supplyOrderNetId })
     apiRequestMock.mockResolvedValueOnce(null)
 
-    await expect(getNearestSupplyOrder('product-1')).resolves.toEqual({ NetUID: 'supply-1' })
-    await createFutureReservation({ ClientNetId: 'client-1', Count: 2, ProductNetId: 'product-1' })
+    await expect(getNearestSupplyOrder(productNetId)).resolves.toEqual({ NetUID: supplyOrderNetId })
+    await createFutureReservation({
+      ClientNetId: clientNetId,
+      Count: 2,
+      ProductNetId: productNetId,
+      RemindDate: remindDate,
+      SupplyOrderNetId: supplyOrderNetId,
+    }, { operationId })
 
     expect(apiRequestMock).toHaveBeenNthCalledWith(1, '/supplies/orders/arrival/nearest/get', {
-      query: { netId: 'product-1' },
+      query: { netId: productNetId },
     })
     expect(apiRequestMock).toHaveBeenNthCalledWith(2, '/sales/reservations/new', {
-      body: { ClientNetId: 'client-1', Count: 2, ProductNetId: 'product-1' },
+      body: {
+        ClientNetId: clientNetId,
+        Count: 2,
+        OperationNetUid: operationId,
+        ProductNetId: productNetId,
+        RemindDate: remindDate,
+        SupplyOrderNetId: supplyOrderNetId,
+      },
+      headers: { 'Idempotency-Key': operationId },
       method: 'POST',
+      signal: undefined,
     })
+  })
+
+  it('rejects an invalid future reservation before calling the API', async () => {
+    await expect(createFutureReservation({
+      ClientNetId: '00000000-0000-0000-0000-000000000000',
+      Count: Number.NaN,
+      ProductNetId: '11111111-1111-4111-8111-111111111111',
+      RemindDate: '',
+      SupplyOrderNetId: '33333333-3333-4333-8333-333333333333',
+    }, {
+      operationId: '44444444-4444-4444-8444-444444444444',
+    })).rejects.toThrow()
+
+    expect(apiRequestMock).not.toHaveBeenCalled()
   })
 
   it('normalizes sub-client list responses', async () => {

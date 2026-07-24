@@ -5,6 +5,7 @@ import { ExcelIcon } from '../ui/ExcelIcon'
 import { useRef } from 'react'
 import { useValueState } from '../hooks/useValueState'
 import { useI18n } from '../i18n/useI18n'
+import { usePersistentSaleJsonMutationRunner } from '../../features/sales-ukraine/usePersistentSaleJsonMutation'
 import { getDocumentHref } from '../url/getDocumentHref'
 import { AppModal } from '../ui/AppModal'
 import { confirmSaleAuditHistory, getShiftedSaleDocument, getShiftedSaleHistoryDocument } from './saleAuditApi'
@@ -38,6 +39,8 @@ export function SaleAuditDetail({ error, isLoading, onConfirmed, showConfirm = t
   const [printError, setPrintError] = useValueState<string | null>(null)
   const [confirmHistoryNetId, setConfirmHistoryNetId] = useValueState<string | null>(null)
   const [isConfirmingHistory, setConfirmingHistory] = useValueState(false)
+  const confirmRequestRef = useRef(false)
+  const runInvoiceEdit = usePersistentSaleJsonMutationRunner('protocol-invoice-edit')
 
   function resolveHistoryNetId(orderItem: SaleAuditOrderItem): string | null {
     const historyInvoiceEditId = (orderItem.ShiftStatuses || [])[0]?.HistoryInvoiceEditId
@@ -104,20 +107,30 @@ export function SaleAuditDetail({ error, isLoading, onConfirmed, showConfirm = t
   }
 
   async function confirmProcessing() {
-    if (!confirmHistoryNetId) {
+    if (!confirmHistoryNetId || confirmRequestRef.current) {
       return
     }
 
+    confirmRequestRef.current = true
     setConfirmingHistory(true)
 
     try {
-      await confirmSaleAuditHistory(confirmHistoryNetId)
+      const mutation = await runInvoiceEdit(
+        `protocol-invoice-edit:${confirmHistoryNetId.toLowerCase()}`,
+        { NetId: confirmHistoryNetId },
+        confirmSaleAuditHistory,
+      )
+      if (!mutation.completed) {
+        throw mutation.error ??
+          new Error(t('Не вдалося підтвердити результат операції'))
+      }
       notifications.show({ color: 'green', message: t('Підтверджено') })
       setConfirmHistoryNetId(null)
       onConfirmed?.()
     } catch (confirmError) {
       notifications.show({ color: 'red', message: confirmError instanceof Error ? confirmError.message : t('Не вдалося підтвердити') })
     } finally {
+      confirmRequestRef.current = false
       setConfirmingHistory(false)
     }
   }

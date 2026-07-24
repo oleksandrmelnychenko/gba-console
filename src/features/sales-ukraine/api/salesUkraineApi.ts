@@ -1,14 +1,21 @@
 import { ApiError, apiRequest, apiUrl, getApiLanguage } from '../../../shared/api/apiClient'
-import { readSession } from '../../../shared/auth/session'
+import { clearSession, notifyUnauthorized, readSession } from '../../../shared/auth/session'
 import { getTimeZoneHeader } from '../../../shared/date/dateTime'
 import { translate } from '../../../shared/i18n/translate'
 import {
   SALES_IDEMPOTENCY_HEADER,
+  SalesMutationPreflightValidationError,
   getSalesMutationOperationHeaders,
   normalizeSalesOperationNetUid,
   withSalesMutationOperationNetUid,
   type SalesMutationOperationOptions,
 } from '../salesMutationOperation'
+import {
+  EMPTY_GUID,
+  getSalesTtnFileValidationError,
+  requirePersistedGuid,
+  requirePositiveFiniteQuantity,
+} from '../salesPayloadGuards'
 import type {
   SaleClientDebtTotal,
   SaleConsignmentDocument,
@@ -80,10 +87,20 @@ export async function searchSalesUkraineClients(
   return normalizeArray(result) as SalesUkraineClientOption[]
 }
 
-export async function unlockSale(netId: string): Promise<void> {
+export async function unlockSale(
+  netId: string,
+  operation: SalesMutationOperationOptions,
+): Promise<void> {
+  const saleNetUid = requirePersistedGuid(
+    netId,
+    'Не вдалося визначити продаж для розблокування',
+  )
+
   await apiRequest<unknown>('/sales/unlock', {
+    headers: getSalesMutationOperationHeaders(operation.operationId),
     method: 'PATCH',
-    query: { netId },
+    query: { netId: saleNetUid },
+    signal: operation.signal,
   })
 }
 
@@ -146,8 +163,17 @@ export async function updateOrderItem(
   orderItem: SalesUkraineOrderItem,
   operation: SalesMutationOperationOptions,
 ): Promise<void> {
+  const netUid = requirePersistedGuid(
+    orderItem?.NetUid,
+    translate('Позиція товару не має збереженого ідентифікатора'),
+  )
+  const quantity = requirePositiveFiniteQuantity(
+    orderItem?.Qty,
+    translate('Кількість товару має бути більшою за нуль'),
+  )
+
   await apiRequest<unknown>('/orders/items/update', {
-    body: withSalesMutationOperationNetUid(orderItem, operation.operationId),
+    body: withSalesMutationOperationNetUid({ ...orderItem, NetUid: netUid, Qty: quantity }, operation.operationId),
     headers: getSalesMutationOperationHeaders(operation.operationId),
     method: 'POST',
     ...(operation?.signal ? { signal: operation.signal } : {}),
@@ -158,10 +184,15 @@ export async function deleteOrderItem(
   orderItemNetId: string,
   operation: SalesMutationOperationOptions,
 ): Promise<void> {
+  const persistedOrderItemNetId = requirePersistedGuid(
+    orderItemNetId,
+    translate('Позиція товару не має збереженого ідентифікатора'),
+  )
+
   await apiRequest<unknown>('/orders/items/delete', {
     headers: getSalesMutationOperationHeaders(operation.operationId),
     method: 'DELETE',
-    query: { orderItemNetId },
+    query: { orderItemNetId: persistedOrderItemNetId },
     ...(operation?.signal ? { signal: operation.signal } : {}),
   })
 }
@@ -180,11 +211,44 @@ export async function addOrderItem(
   orderItem: SalesUkraineOrderItem,
   operation: SalesMutationOperationOptions,
 ): Promise<SalesUkraineOrderItem | null> {
+  const persistedClientAgreementNetId = requirePersistedGuid(
+    clientAgreementNetId,
+    translate('Договір клієнта не має збереженого ідентифікатора'),
+  )
+  const normalizedSaleNetId = saleNetId.trim().toLowerCase() || EMPTY_GUID
+  const persistedSaleNetId = normalizedSaleNetId === EMPTY_GUID
+    ? EMPTY_GUID
+    : requirePersistedGuid(
+        normalizedSaleNetId,
+        translate('Продаж не має збереженого ідентифікатора'),
+      )
+
+  if ((orderItem.Product?.Id ?? 0) <= 0) {
+    throw new SalesMutationPreflightValidationError(
+      translate('Товар не має збереженого ідентифікатора'),
+    )
+  }
+
+  requirePersistedGuid(
+    orderItem.Product?.NetUid,
+    translate('Товар не має збереженого ідентифікатора'),
+  )
+  const quantity = requirePositiveFiniteQuantity(
+    orderItem.Qty,
+    translate('Кількість товару має бути більшою за нуль'),
+  )
+
   const result = await apiRequest<unknown>('/orders/items/new', {
-    body: withSalesMutationOperationNetUid(orderItem, operation.operationId),
+    body: withSalesMutationOperationNetUid(
+      { ...orderItem, Qty: quantity },
+      operation.operationId,
+    ),
     headers: getSalesMutationOperationHeaders(operation.operationId),
     method: 'POST',
-    query: { clientAgreementNetId, saleNetId },
+    query: {
+      clientAgreementNetId: persistedClientAgreementNetId,
+      saleNetId: persistedSaleNetId,
+    },
     ...(operation?.signal ? { signal: operation.signal } : {}),
   })
 
@@ -225,10 +289,21 @@ export async function switchSale(
   clientAgreementNetId: string,
   operation: SalesMutationOperationOptions,
 ): Promise<SalesUkraineSale | null> {
+  const persistedSaleNetId = requirePersistedGuid(
+    saleNetId,
+    translate('Продаж не має збереженого ідентифікатора'),
+  )
+  const persistedClientAgreementNetId = requirePersistedGuid(
+    clientAgreementNetId,
+    translate('Договір клієнта не має збереженого ідентифікатора'),
+  )
   const result = await apiRequest<unknown>('/sales/switch', {
     headers: getSalesMutationOperationHeaders(operation.operationId),
     method: 'PATCH',
-    query: { clientAgreementNetId, saleNetId },
+    query: {
+      clientAgreementNetId: persistedClientAgreementNetId,
+      saleNetId: persistedSaleNetId,
+    },
     ...(operation.signal ? { signal: operation.signal } : {}),
   })
 
@@ -337,6 +412,12 @@ export async function convertVatSaleAndGetPaymentDocument(
 }
 
 export function buildSaleFormData(sale: SalesUkraineSale, file: File | null, operationId: string): FormData {
+  const fileValidationError = getSalesTtnFileValidationError(file)
+
+  if (fileValidationError) {
+    throw new SalesMutationPreflightValidationError(translate(fileValidationError))
+  }
+
   const formData = new FormData()
   formData.append('sale', JSON.stringify(withSalesMutationOperationNetUid(sale, operationId)))
 
@@ -390,6 +471,11 @@ async function postSaleWithMessage(
   const payload = await readResponsePayload(response)
 
   if (!response.ok) {
+    if (response.status === 401 || response.status === 403) {
+      clearSession()
+      notifyUnauthorized()
+    }
+
     throw new ApiError(
       readEnvelopeMessage(payload) ?? translate('Не вдалося виконати запит'),
       response.status,
@@ -510,8 +596,18 @@ export async function printSaleConsignmentNoteDocument(
   return (result && typeof result === 'object' ? result : {}) as SaleConsignmentDocument
 }
 
-async function fetchSaleDocument(path: string, query: Record<string, string>): Promise<SaleDocumentResult> {
-  const result = await apiRequest<unknown>(path, { query })
+async function fetchSaleDocument(
+  path: string,
+  query: Record<string, string>,
+  operation?: SalesMutationOperationOptions,
+): Promise<SaleDocumentResult> {
+  const result = await apiRequest<unknown>(path, {
+    query,
+    ...(operation
+      ? { headers: getSalesMutationOperationHeaders(operation.operationId) }
+      : {}),
+    ...(operation?.signal ? { signal: operation.signal } : {}),
+  })
 
   return extractDocumentResult(result)
 }
@@ -534,8 +630,11 @@ export function getSaleShipmentListDocument(netId: string): Promise<SaleDocument
   return fetchSaleDocument('/sales/shipment/list/print/documents', { netId })
 }
 
-export function getSalePaymentDocument(netId: string): Promise<SaleDocumentResult> {
-  return fetchSaleDocument('/sales/get/payment/document', { netId })
+export function getSalePaymentDocument(
+  netId: string,
+  operation?: SalesMutationOperationOptions,
+): Promise<SaleDocumentResult> {
+  return fetchSaleDocument('/sales/get/payment/document', { netId }, operation)
 }
 
 export function getSalePzDocument(netId: string): Promise<SaleDocumentResult> {

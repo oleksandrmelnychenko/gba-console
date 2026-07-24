@@ -1,12 +1,13 @@
 import { ActionIcon, Alert, Button, Group, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, Plus, RefreshCw, RotateCcw } from 'lucide-react'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { createWizardOperationId } from '../../sales-ukraine/components/new-sale-wizard/wizardMutationOperation'
 import { getOffers, getPublicOfferLink, processOffer, restartOfferValidity } from '../api/salesOffersApi'
 import { NewOfferModal } from '../components/NewOfferModal'
 import { OfferCard } from '../components/OfferCard'
@@ -51,6 +52,20 @@ export function OffersPage() {
   const [isNewOpen, setNewOpen] = useValueState(false)
   const [confirmState, setConfirmState] = useValueState<ConfirmState | null>(null)
   const [isConfirming, setConfirming] = useValueState(false)
+  const operationIdsRef = useRef(new Map<string, string>())
+
+  function getOperationId(key: string): string {
+    const existing = operationIdsRef.current.get(key)
+
+    if (existing) {
+      return existing
+    }
+
+    const operationId = createWizardOperationId()
+    operationIdsRef.current.set(key, operationId)
+
+    return operationId
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -131,12 +146,18 @@ export function OffersPage() {
       return
     }
 
+    const operationKey = `restart:${offer.NetUid}`
+
     try {
-      await restartOfferValidity(offer.NetUid)
+      await restartOfferValidity(offer.NetUid, { operationId: getOperationId(operationKey) })
+      operationIdsRef.current.delete(operationKey)
       notifications.show({ color: 'green', message: t('Оферту перезапущено') })
       refresh()
-    } catch {
-      notifications.show({ color: 'red', message: t('Не вдалося перезапустити оферту') })
+    } catch (error) {
+      notifications.show({
+        color: 'red',
+        message: error instanceof Error ? error.message : t('Не вдалося перезапустити оферту'),
+      })
     }
   }
 
@@ -146,7 +167,13 @@ export function OffersPage() {
       message: t('Ви впевнені, що бажаєте видалити?'),
       title: t('Видалення оферти'),
       onConfirm: async () => {
-        await processOffer({ ...offer, Deleted: true })
+        const operationKey = `delete:${offer.NetUid ?? offer.Id ?? 'unknown'}`
+
+        await processOffer(
+          { ...offer, Deleted: true },
+          { operationId: getOperationId(operationKey) },
+        )
+        operationIdsRef.current.delete(operationKey)
         notifications.show({ color: 'green', message: t('Оферту успішно видалено') })
         refresh()
       },

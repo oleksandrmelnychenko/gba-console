@@ -1,4 +1,8 @@
 import { apiRequest } from '../../../shared/api/apiClient'
+import {
+  executeAccountingMutation,
+  type AccountingMutationOperationOptions,
+} from '../../../shared/api/accountingMutationOperation'
 import type {
   ConsumablesOrderItem,
   Currency,
@@ -40,12 +44,23 @@ export async function getOutgoingCashflowByNetId(netId: string, signal?: AbortSi
   return normalizeOutcomePaymentOrder(result)
 }
 
-export async function cancelOutgoingCashflow(netId: string): Promise<OutcomePaymentOrder | null> {
-  const result = await apiRequest<unknown>('/payments/orders/outcome/cancel', {
-    method: 'PUT',
-    query: {
-      netId,
-    },
+export async function cancelOutgoingCashflow(
+  netId: string,
+  operation?: AccountingMutationOperationOptions,
+): Promise<OutcomePaymentOrder | null> {
+  const result = await executeAccountingMutation({
+    kind: 'outcome-payment:cancel',
+    operation,
+    payload: { netId },
+    request: (payload, context) => apiRequest<unknown>('/payments/orders/outcome/cancel', {
+      dedupe: false,
+      headers: context.headers,
+      method: 'PUT',
+      query: {
+        netId: payload.netId,
+      },
+      ...(context.signal ? { signal: context.signal } : {}),
+    }),
   })
 
   return normalizeCancelResult(result)

@@ -18,7 +18,8 @@ const mocks = vi.hoisted(() => ({
   notificationsUpdate: vi.fn(),
 }))
 
-vi.mock('../../../shared/api/apiClient', () => ({
+vi.mock('../../../shared/api/apiClient', async (importOriginal) => ({
+  ...await importOriginal<typeof import('../../../shared/api/apiClient')>(),
   getApiLanguage: mocks.getApiLanguage,
 }))
 
@@ -30,7 +31,10 @@ vi.mock('@mantine/notifications', () => ({
 }))
 
 vi.mock('../../auth/useAuth', () => ({
-  useAuth: () => ({ user: undefined }),
+  useAuth: () => ({
+    session: { userNetUid: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' },
+    user: undefined,
+  }),
 }))
 
 vi.mock('../../../shared/i18n/useI18n', () => ({
@@ -85,6 +89,8 @@ async function openMenu() {
 describe('SaleDocumentsMenu legacy document semantics', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    window.localStorage.clear()
+    window.sessionStorage.clear()
     mocks.getApiLanguage.mockReturnValue('uk')
     mocks.getSaleActForEditingHistoryDocument.mockResolvedValue(documentResult)
     mocks.getSaleInvoiceDocument.mockResolvedValue(documentResult)
@@ -97,6 +103,8 @@ describe('SaleDocumentsMenu legacy document semantics', () => {
 
   afterEach(() => {
     cleanup()
+    window.localStorage.clear()
+    window.sessionStorage.clear()
   })
 
   it('uses the current invoice endpoint for a Ukrainian invoice-status sale and hides PZ', async () => {
@@ -165,5 +173,73 @@ describe('SaleDocumentsMenu legacy document semantics', () => {
         }),
       ),
     )
+  })
+
+  it('prevents a second document request while the first one is still running', async () => {
+    let resolveDocument!: (value: SaleDocumentResult) => void
+    mocks.getSaleInvoiceDocument.mockReturnValueOnce(
+      new Promise<SaleDocumentResult>((resolve) => {
+        resolveDocument = resolve
+      }),
+    )
+
+    renderMenu()
+    await openMenu()
+
+    const action = screen.getByText('Видаткова накладна')
+    fireEvent.click(action)
+    fireEvent.click(action)
+
+    expect(mocks.getSaleInvoiceDocument).toHaveBeenCalledTimes(1)
+
+    resolveDocument(documentResult)
+    await waitFor(() =>
+      expect(mocks.notificationsUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          color: 'green',
+          message: 'Документ готовий',
+        }),
+      ),
+    )
+  })
+
+  it('reuses the payment-document operation id after a failed attempt', async () => {
+    mocks.getSalePaymentDocument
+      .mockRejectedValueOnce(new Error('Temporary failure'))
+      .mockResolvedValueOnce(documentResult)
+
+    const firstView = renderMenu(
+      createSale({
+        ClientAgreement: { Agreement: { WithVATAccounting: true } },
+        IsVatSale: true,
+      }),
+    )
+    await openMenu()
+    fireEvent.click(screen.getByText('Рахунок на оплату'))
+
+    await waitFor(() => expect(mocks.getSalePaymentDocument).toHaveBeenCalledTimes(1))
+    await waitFor(() =>
+      expect(mocks.notificationsUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({ color: 'red', message: 'Temporary failure' }),
+      ),
+    )
+
+    firstView.unmount()
+    renderMenu(
+      createSale({
+        ClientAgreement: { Agreement: { WithVATAccounting: true } },
+        IsVatSale: true,
+      }),
+    )
+    await openMenu()
+    fireEvent.click(screen.getByText('Рахунок на оплату'))
+
+    await waitFor(() => expect(mocks.getSalePaymentDocument).toHaveBeenCalledTimes(2))
+
+    const firstOperation = mocks.getSalePaymentDocument.mock.calls[0]?.[1]
+    const secondOperation = mocks.getSalePaymentDocument.mock.calls[1]?.[1]
+
+    expect(firstOperation?.operationId).toBeTruthy()
+    expect(secondOperation).toEqual(firstOperation)
   })
 })

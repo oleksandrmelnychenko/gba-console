@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { formatLocalDate } from '../../../../shared/date/dateTime'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { AppModal } from '../../../../shared/ui/AppModal'
+import { usePersistentCreateMutation } from '../../persistentCreateMutation'
 import type { SalesUkraineProduct } from '../../types'
 import { createFutureReservation, getNearestSupplyOrder, type WizardNearestSupplyOrder } from './newSaleWizardApi'
 
@@ -52,6 +53,10 @@ function FutureReservationForm({
   const [isLoading, setLoading] = useState(() => Boolean(product.NetUid))
   const [count, setCount] = useState<number | string>(1)
   const [isSaving, setSaving] = useState(false)
+  const runCreateFutureReservation = usePersistentCreateMutation(
+    'future-reservation',
+    `${clientNetId ?? 'no-client'}:${product.NetUid ?? product.Id ?? 'no-product'}`,
+  )
 
   useEffect(() => {
     const netId = product.NetUid
@@ -103,17 +108,23 @@ function FutureReservationForm({
     setSaving(true)
 
     try {
-      await createFutureReservation({
-        ClientNetId: clientNetId,
-        Count: numericCount,
-        ProductNetId: product.NetUid,
-        RemindDate: order?.OrderArrivedDate,
-        SupplyOrderNetId: supplyOrderNetId,
-      })
+      await runCreateFutureReservation(
+        {
+          ClientNetId: clientNetId,
+          Count: numericCount,
+          ProductNetId: product.NetUid,
+          RemindDate: order?.OrderArrivedDate,
+          SupplyOrderNetId: supplyOrderNetId,
+        },
+        createFutureReservation,
+      )
       notifications.show({ color: 'green', message: t('Зарезервовано під поставку') })
       onReserved()
-    } catch {
-      notifications.show({ color: 'red', message: t('Не вдалося зарезервувати') })
+    } catch (error) {
+      notifications.show({
+        color: 'red',
+        message: error instanceof Error ? error.message : t('Не вдалося зарезервувати'),
+      })
     } finally {
       setSaving(false)
     }

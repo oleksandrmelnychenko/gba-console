@@ -6,6 +6,14 @@ import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import {
+  ACCOUNTING_COMMENT_MAX_LENGTH,
+  buildPartnerAgreementPayload,
+  getExternalDocumentPaymentDateBounds,
+  isSupportedAccountingAmount,
+  isSupportedVat,
+  pickExternalDocumentPaymentCurrencyRegister,
+} from '../../document-outcome-payment/externalDocumentPayment'
+import {
   createIncomeCashflowPaymentMovement,
   getIncomeCashflowClientAgreements,
   getIncomeCashflowOrganizations,
@@ -27,7 +35,7 @@ import {
   type TaxFreeAdvancePaymentPayload,
 } from '../api/taxFreeDocumentsApi'
 import type { TaxFreeDocument } from '../types'
-import { TAX_FREE_CURRENCY_CODE, formatTaxFreeAmountPl, getTaxFreeClient } from '../utils'
+import { formatTaxFreeAmountPl, getTaxFreeClient } from '../utils'
 
 const SEARCH_DEBOUNCE_MS = 300
 const POLAND_CULTURE = 'pl'
@@ -94,8 +102,9 @@ export function TaxFreePaymentFromTaxFreeModal({
 
   const client = document?.TaxFreePackList?.Client || null
   const isIncome = action === 'income'
-  const minDate = isIncome ? toDateFieldValue(document?.Created) : ''
-  const maxDate = isIncome ? getMaxPaymentDate(document?.Created) : ''
+  const dateBounds = isIncome
+    ? getExternalDocumentPaymentDateBounds(document?.FormedDate || document?.Created)
+    : null
 
   const selectedOrganization = useMemo(
     () => organizations.find((organization) => getEntityValue(organization) === form.organizationValue) || null,
@@ -106,7 +115,7 @@ export function TaxFreePaymentFromTaxFreeModal({
     [form.paymentRegisterValue, paymentRegisters],
   )
   const selectedAgreement = useMemo(
-    () => clientAgreements.find((agreement) => getEntityValue(agreement.Agreement) === form.selectedAgreementValue) || null,
+    () => clientAgreements.find((agreement) => getEntityValue(agreement) === form.selectedAgreementValue) || null,
     [clientAgreements, form.selectedAgreementValue],
   )
   const selectedMovement = useMemo(
@@ -167,7 +176,7 @@ export function TaxFreePaymentFromTaxFreeModal({
           fromDate: getInitialPaymentDate(activeDocument, isIncome),
           organizationValue: defaultOrganization ? getEntityValue(defaultOrganization) : '',
           paymentRegisterValue: defaultRegister ? getEntityValue(defaultRegister) : '',
-          selectedAgreementValue: defaultAgreement?.Agreement ? getEntityValue(defaultAgreement.Agreement) : '',
+          selectedAgreementValue: getEntityValue(defaultAgreement),
           selectedMovementValue: defaultMovement ? getEntityValue(defaultMovement) : '',
           movementSearch: defaultMovement?.OperationName || '',
           vatPercent: activeDocument.VatPercent ?? 23,
@@ -260,8 +269,8 @@ export function TaxFreePaymentFromTaxFreeModal({
       activeMovement,
       form,
       isIncome,
-      maxDate,
-      minDate,
+      maxDate: dateBounds?.max || '',
+      minDate: dateBounds?.min || '',
       selectedAgreement,
       selectedCurrencyRegister,
       selectedOrganization,
@@ -278,28 +287,35 @@ export function TaxFreePaymentFromTaxFreeModal({
     setError(null)
 
     try {
+      const partnerAgreement = buildPartnerAgreementPayload(selectedAgreement, null)
+
+      if (!partnerAgreement) {
+        setError(t('Оберіть договір'))
+        return
+      }
+
       if (isIncome) {
         const order: IncomePaymentOrder = {
+          ...partnerAgreement,
           Amount: form.amount,
-          ClientAgreement: selectedAgreement || undefined,
           Comment: form.comment.trim(),
           Currency: selectedCurrencyRegister?.Currency || undefined,
           FromDate: toIsoDate(form.fromDate),
-          Organization: selectedOrganization,
+          Organization: selectedOrganization as Organization,
           PaymentMovementOperation: {
             PaymentMovement: activeMovement,
           },
-          PaymentRegister: selectedCurrencyRegister?.PaymentRegister || undefined,
+          PaymentRegister: selectedRegister || undefined,
         }
 
         await createIncomePaymentFromTaxFree(document.NetUid, order)
       } else {
         const advancePayment: TaxFreeAdvancePaymentPayload = {
+          ...partnerAgreement,
           Amount: form.amount,
-          ClientAgreement: selectedAgreement || undefined,
           Comment: form.comment.trim(),
           FromDate: toIsoDate(form.fromDate),
-          Organization: selectedOrganization,
+          Organization: selectedOrganization as Organization,
           VatAmount: form.vatAmount,
           VatPercent: form.vatPercent,
         }
@@ -397,8 +413,8 @@ export function TaxFreePaymentFromTaxFreeModal({
             <TextInput
               disabled={isLoading || isSaving}
               label={t('Дата')}
-              max={maxDate || undefined}
-              min={minDate || undefined}
+              max={dateBounds?.max}
+              min={dateBounds?.min}
               type="date"
               value={form.fromDate}
               onChange={(event) => updateForm({ fromDate: event.currentTarget.value })}
@@ -413,6 +429,7 @@ export function TaxFreePaymentFromTaxFreeModal({
                   decimalScale={2}
                   disabled={isLoading || isSaving}
                   label={t('ПДВ %')}
+                  max={100}
                   min={0}
                   value={form.vatPercent}
                   onChange={(value) => updateForm({ vatPercent: toNumber(value) })}
@@ -464,6 +481,7 @@ export function TaxFreePaymentFromTaxFreeModal({
             <Textarea
               disabled={isLoading || isSaving}
               label={t('Коментар')}
+              maxLength={ACCOUNTING_COMMENT_MAX_LENGTH}
               minRows={2}
               value={form.comment}
               onChange={(event) => updateForm({ comment: event.currentTarget.value })}
@@ -530,12 +548,16 @@ function validateForm({
     return t('Оберіть договір')
   }
 
-  if (!form.amount || form.amount <= 0) {
+  if (!isSupportedAccountingAmount(form.amount)) {
     return t('Сума має бути більшою за нуль')
   }
 
-  if (form.vatAmount < 0 || form.vatPercent < 0) {
-    return t('ПДВ не може бути відʼємним')
+  if (!isIncome && !isSupportedVat(form.amount, form.vatAmount, form.vatPercent)) {
+    return t('Перевірте суму та відсоток ПДВ')
+  }
+
+  if (form.comment.trim().length > ACCOUNTING_COMMENT_MAX_LENGTH) {
+    return t('Коментар має бути до 450 символів')
   }
 
   if (isDateOutsideRange(form.fromDate, minDate, maxDate)) {
@@ -554,23 +576,19 @@ function getTitle(action: TaxFreePaymentAction | null, t: (key: string) => strin
 }
 
 function pickCurrencyRegister(register: TaxFreePaymentRegister | null) {
-  if (!register) {
-    return null
-  }
-
-  return register.DefaultPaymentCurrencyRegister || register.PaymentCurrencyRegisters?.[0] || null
+  return register?.DefaultPaymentCurrencyRegister
+    || pickExternalDocumentPaymentCurrencyRegister(register)
 }
 
 function filterTaxFreeRegisters(registers: PaymentRegister[]): TaxFreePaymentRegister[] {
   return registers.reduce<TaxFreePaymentRegister[]>((acc, register) => {
-    if (
-      register.Type === CASH_REGISTER_TYPE
-      && (register.PaymentCurrencyRegisters || []).some((currencyRegister) => currencyRegister.Currency?.Code === TAX_FREE_CURRENCY_CODE)
-    ) {
+    const plnCurrencyRegister =
+      pickExternalDocumentPaymentCurrencyRegister(register)
+
+    if (register.Type === CASH_REGISTER_TYPE && plnCurrencyRegister) {
       acc.push({
         ...register,
-        DefaultPaymentCurrencyRegister:
-          (register.PaymentCurrencyRegisters || []).find((currencyRegister) => currencyRegister.Currency?.Code === TAX_FREE_CURRENCY_CODE) || null,
+        DefaultPaymentCurrencyRegister: plnCurrencyRegister,
       })
     }
 
@@ -593,8 +611,9 @@ function getInitialPaymentDate(document: TaxFreeDocument, withBounds: boolean): 
     return today
   }
 
-  const minDate = toDateFieldValue(document.Created)
-  const maxDate = getMaxPaymentDate(document.Created)
+  const dateBounds = getExternalDocumentPaymentDateBounds(document.FormedDate || document.Created)
+  const minDate = dateBounds?.min || ''
+  const maxDate = dateBounds?.max || ''
 
   if (maxDate && today > maxDate) {
     return maxDate
@@ -605,35 +624,6 @@ function getInitialPaymentDate(document: TaxFreeDocument, withBounds: boolean): 
   }
 
   return today
-}
-
-function getMaxPaymentDate(created?: string): string {
-  const createdDate = toValidDate(created)
-
-  if (!createdDate) {
-    return ''
-  }
-
-  const maxDate = new Date(createdDate)
-  maxDate.setMonth(maxDate.getMonth() + 3)
-
-  return formatLocalDate(maxDate)
-}
-
-function toDateFieldValue(value?: string): string {
-  const date = toValidDate(value)
-
-  return date ? formatLocalDate(date) : ''
-}
-
-function toValidDate(value?: string): Date | null {
-  if (!value) {
-    return null
-  }
-
-  const date = new Date(value)
-
-  return Number.isNaN(date.getTime()) ? null : date
 }
 
 function isDateOutsideRange(value: string, minDate: string, maxDate: string): boolean {
@@ -667,7 +657,7 @@ function toAgreementOptions(agreements: ClientAgreement[]) {
   return agreements.reduce<{ label: string; value: string }[]>((acc, clientAgreement) => {
     const agreement = clientAgreement.Agreement
     const currency = agreement?.Currency
-    const value = getEntityValue(agreement)
+    const value = getEntityValue(clientAgreement)
 
     const option = {
       label: [agreement?.Name || agreement?.Number || clientAgreement.Name || value, currency?.Code || currency?.Name]

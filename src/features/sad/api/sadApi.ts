@@ -1,4 +1,8 @@
 import { apiRequest } from '../../../shared/api/apiClient'
+import {
+  executeAccountingMutation,
+  type AccountingMutationOperationOptions,
+} from '../../../shared/api/accountingMutationOperation'
 import { toDateTimeQuery } from '../../../shared/date/dateTime'
 import type {
   Sad,
@@ -16,16 +20,10 @@ import type {
 } from '../types'
 import type { SupplyOrderUkraine } from '../../supply-ukraine-orders/types'
 import type { IncomePaymentOrder } from '../../income-cashflows/types'
+import { createAdvancePayment } from '../../advance-payments/api/advancePaymentsApi'
+import type { AdvancePaymentMutationPayload } from '../../advance-payments/types'
 
-export type SadAdvancePaymentPayload = {
-  Amount?: number
-  ClientAgreement?: unknown
-  Comment?: string
-  FromDate?: string
-  Organization?: unknown
-  VatAmount?: number
-  VatPercent?: number
-}
+export type SadAdvancePaymentPayload = AdvancePaymentMutationPayload
 
 export async function getSads(params: SadSearchParams): Promise<Sad[]> {
   const result = await apiRequest<unknown>('/supplies/ukraine/order/packlists/sad/all/filtered', {
@@ -237,13 +235,26 @@ export async function createSupplyOrderFromSad(
 export async function createIncomePaymentFromSad(
   sadNetId: string,
   paymentIncome: IncomePaymentOrder,
+  operation?: AccountingMutationOperationOptions,
 ): Promise<IncomePaymentOrder | null> {
-  const result = await apiRequest<unknown>('/payments/orders/income/new/sad', {
-    method: 'POST',
-    query: {
+  const result = await executeAccountingMutation({
+    identity: paymentIncome,
+    kind: 'income-payment:add-sad',
+    operation,
+    payload: {
+      paymentIncome,
       sadNetId,
     },
-    body: paymentIncome,
+    request: (payload, context) => apiRequest<unknown>('/payments/orders/income/new/sad', {
+      body: payload.paymentIncome,
+      dedupe: false,
+      headers: context.headers,
+      method: 'POST',
+      query: {
+        sadNetId: payload.sadNetId,
+      },
+      ...(context.signal ? { signal: context.signal } : {}),
+    }),
   })
 
   return normalizeItem<IncomePaymentOrder>(result)
@@ -252,16 +263,8 @@ export async function createIncomePaymentFromSad(
 export async function createAdvancePaymentFromSad(
   sadNetId: string,
   advancePayment: SadAdvancePaymentPayload,
-): Promise<SadAdvancePaymentPayload | null> {
-  const result = await apiRequest<unknown>('/payments/advance/new', {
-    method: 'POST',
-    query: {
-      sadNetId,
-    },
-    body: advancePayment,
-  })
-
-  return normalizeItem<SadAdvancePaymentPayload>(result)
+){
+  return createAdvancePayment({ sadNetId }, advancePayment)
 }
 
 function normalizeArray<TItem>(result: unknown): TItem[] {

@@ -42,6 +42,7 @@ import {
   updateDeliveryRecipientAddress,
   updateSaleComment,
   updateShipmentList,
+  type AutoShipmentListParams,
   type ShipmentSaleCommentMutation,
 } from '../api/shipmentsApi'
 import { usePersistentSaleJsonMutationRunner } from '../../sales-ukraine/usePersistentSaleJsonMutation'
@@ -104,6 +105,11 @@ const ALL_SHIPMENTS_PAGE_SIZE_OPTIONS = ['20', '50', '100']
 type FilterDraft = {
   from: string
   to: string
+}
+
+type ShipmentListUpdateRequest = {
+  shipmentList: ShipmentList
+  window: { from: string; to: string }
 }
 
 type ActiveModal =
@@ -404,6 +410,9 @@ function useShipmentsTabModel({ onCarriedOut }: ShipmentsTabModelOptions = {}) {
   const runRecipientMutation = usePersistentSaleJsonMutationRunner('sale-recipient')
   const runRecipientAddressMutation = usePersistentSaleJsonMutationRunner('sale-recipient-address')
   const runCommentMutation = usePersistentSaleJsonMutationRunner('sale-comment')
+  const runAutoShipmentMutation = usePersistentSaleJsonMutationRunner('shipment-list-auto')
+  const runShipmentDocumentMutation = usePersistentSaleJsonMutationRunner('shipment-list-document-create')
+  const runShipmentListMutation = usePersistentSaleJsonMutationRunner('shipment-list-update')
   const initialFilters = useMemo<FilterDraft>(
     () =>
       lastAutoShipmentFilters ?? { from: getDateShiftedByDays(-DEFAULT_SHIPMENT_LOOKBACK_DAYS), to: getDateShiftedByDays(0) },
@@ -527,10 +536,19 @@ function useShipmentsTabModel({ onCarriedOut }: ShipmentsTabModelOptions = {}) {
       setError(null)
 
       try {
-        const result = await getAutoShipmentList({ transporterNetId, from, to })
+        const request: AutoShipmentListParams = { transporterNetId, from, to }
+        const attempt = await runAutoShipmentMutation<AutoShipmentListParams, ShipmentList>(
+          `shipment-list-auto:${transporterNetId}:${from}:${to}`,
+          request,
+          (payload, operation) => getAutoShipmentList(payload, operation),
+        )
+
+        if (!attempt.completed) {
+          throw attempt.error
+        }
 
         if (!cancelled) {
-          setShipmentList(result)
+          setShipmentList(attempt.result)
           setQtyEdits({})
         }
       } catch (loadError) {
@@ -556,6 +574,7 @@ function useShipmentsTabModel({ onCarriedOut }: ShipmentsTabModelOptions = {}) {
     filterDraft.to,
     filterError,
     reloadKey,
+    runAutoShipmentMutation,
     setError,
     setLoading,
     setQtyEdits,
@@ -618,10 +637,27 @@ function useShipmentsTabModel({ onCarriedOut }: ShipmentsTabModelOptions = {}) {
     setError(null)
 
     try {
-      await updateShipmentList(nextShipmentList, {
-        from: toDateTimeQuery(filterDraft.from, 'start'),
-        to: toDateTimeQuery(filterDraft.to, 'end'),
-      })
+      const request: ShipmentListUpdateRequest = {
+        shipmentList: nextShipmentList,
+        window: {
+          from: toDateTimeQuery(filterDraft.from, 'start'),
+          to: toDateTimeQuery(filterDraft.to, 'end'),
+        },
+      }
+      const attempt = await runShipmentListMutation<ShipmentListUpdateRequest, void>(
+        `shipment-list-update:${nextShipmentList.NetUid ?? nextShipmentList.Id ?? 'unknown'}`,
+        request,
+        (payload, operation) => updateShipmentList(
+          payload.shipmentList,
+          operation,
+          payload.window,
+        ),
+      )
+
+      if (!attempt.completed) {
+        throw attempt.error
+      }
+
       refreshList()
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : t('Не вдалося виконати запит'))
@@ -641,10 +677,28 @@ function useShipmentsTabModel({ onCarriedOut }: ShipmentsTabModelOptions = {}) {
     setError(null)
 
     try {
-      await updateShipmentList({ ...shipmentList, IsSent: true }, {
-        from: toDateTimeQuery(filterDraft.from, 'start'),
-        to: toDateTimeQuery(filterDraft.to, 'end'),
-      })
+      const nextShipmentList = { ...shipmentList, IsSent: true }
+      const request: ShipmentListUpdateRequest = {
+        shipmentList: nextShipmentList,
+        window: {
+          from: toDateTimeQuery(filterDraft.from, 'start'),
+          to: toDateTimeQuery(filterDraft.to, 'end'),
+        },
+      }
+      const attempt = await runShipmentListMutation<ShipmentListUpdateRequest, void>(
+        `shipment-list-update:${nextShipmentList.NetUid ?? nextShipmentList.Id ?? 'unknown'}`,
+        request,
+        (payload, operation) => updateShipmentList(
+          payload.shipmentList,
+          operation,
+          payload.window,
+        ),
+      )
+
+      if (!attempt.completed) {
+        throw attempt.error
+      }
+
       refreshList()
       onCarriedOut?.()
     } catch (saveError) {
@@ -780,11 +834,25 @@ function useShipmentsTabModel({ onCarriedOut }: ShipmentsTabModelOptions = {}) {
     const pendingWindow = openPendingWarehouseDocumentWindow()
 
     try {
-      const result = await getShipmentCreatePageDocument({
+      const request: AutoShipmentListParams = {
         transporterNetId: selectedTransporterNetId,
         from: filterDraft.from,
         to: filterDraft.to,
-      })
+      }
+      const attempt = await runShipmentDocumentMutation<
+        AutoShipmentListParams,
+        WarehouseUkraineExportDocument
+      >(
+        `shipment-list-document:${request.transporterNetId}:${request.from}:${request.to}`,
+        request,
+        (payload, operation) => getShipmentCreatePageDocument(payload, operation),
+      )
+
+      if (!attempt.completed) {
+        throw attempt.error
+      }
+
+      const result = attempt.result
       const documentUrl = getPreferredWarehousePrintUrl(result)
 
       if (documentUrl && openWarehouseDocumentInWindow(pendingWindow, documentUrl)) {
@@ -1068,6 +1136,7 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
   const runRecipientMutation = usePersistentSaleJsonMutationRunner('sale-recipient')
   const runRecipientAddressMutation = usePersistentSaleJsonMutationRunner('sale-recipient-address')
   const runCommentMutation = usePersistentSaleJsonMutationRunner('sale-comment')
+  const runShipmentListMutation = usePersistentSaleJsonMutationRunner('shipment-list-update')
   const initialFilters = useMemo<FilterDraft>(
     () => ({ from: getDateShiftedByDays(-DEFAULT_SHIPMENT_LOOKBACK_DAYS), to: getDateShiftedByDays(0) }),
     [],
@@ -1557,7 +1626,26 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
     setEditError(null)
 
     try {
-      await updateShipmentList(shipmentDraft)
+      const request: ShipmentListUpdateRequest = {
+        shipmentList: shipmentDraft,
+        window: {
+          from: toDateTimeQuery(filterDraft.from, 'start'),
+          to: toDateTimeQuery(filterDraft.to, 'end'),
+        },
+      }
+      const attempt = await runShipmentListMutation<ShipmentListUpdateRequest, void>(
+        `shipment-list-update:${shipmentDraft.NetUid ?? shipmentDraft.Id ?? 'unknown'}`,
+        request,
+        (payload, operation) => updateShipmentList(
+          payload.shipmentList,
+          operation,
+          payload.window,
+        ),
+      )
+
+      if (!attempt.completed) {
+        throw attempt.error
+      }
 
       if (shipmentDraft.NetUid) {
         await reloadSelectedShipment(shipmentDraft.NetUid)

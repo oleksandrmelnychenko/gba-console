@@ -1,4 +1,9 @@
 import { apiRequest } from '../../../shared/api/apiClient'
+import {
+  getSalesMutationOperationHeaders,
+  type SalesMutationOperationOptions,
+} from '../../sales-ukraine/salesMutationOperation'
+import { requirePersistedGuid } from '../../sales-ukraine/salesPayloadGuards'
 import type {
   IncompleteSale,
   IncompleteSalesSearchParams,
@@ -96,10 +101,28 @@ export async function getIncompleteSales(params: IncompleteSalesSearchParams = {
   return normalizeCollection<IncompleteSale>(result)
 }
 
-export async function updateIncompleteSale(incompleteSale: IncompleteSale): Promise<IncompleteSale[]> {
+export async function updateIncompleteSale(
+  incompleteSale: IncompleteSale,
+  operation: SalesMutationOperationOptions,
+): Promise<IncompleteSale[]> {
+  const netUid = requirePersistedGuid(
+    incompleteSale.NetUid,
+    'Не вдалося визначити незавершений продаж',
+  )
+  const status = incompleteSale.MisplacedSaleStatus
+
+  if (status !== 0 && status !== 1 && status !== 2) {
+    throw new Error('Некоректний статус незавершеного продажу')
+  }
+
   const result = await apiRequest<unknown>('/sales/misplaced/update', {
     method: 'POST',
-    body: incompleteSale,
+    body: {
+      MisplacedSaleStatus: status,
+      NetUid: netUid,
+    },
+    headers: getSalesMutationOperationHeaders(operation.operationId),
+    signal: operation.signal,
   })
 
   return normalizeCollection<IncompleteSale>(result)

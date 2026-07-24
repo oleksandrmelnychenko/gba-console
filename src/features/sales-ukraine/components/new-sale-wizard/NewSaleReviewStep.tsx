@@ -1,4 +1,4 @@
-import { ActionIcon, Alert, Box, Button, Checkbox, FileInput, Group, Text, TextInput } from '@mantine/core'
+import { ActionIcon, Alert, Box, Button, Checkbox, FileInput, Group, NumberInput, Text, TextInput } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { CircleX, Copy, Upload } from 'lucide-react'
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
@@ -41,6 +41,8 @@ import {
   type SaleFileMutationSubmission,
 } from '../../saleFileMutation'
 import { getSaleLifecycleTypeKey } from '../../saleStatus'
+import { getSaleReviewIssues, type SaleReviewIssueCode } from '../../saleReviewGuards'
+import { getSalesTtnFileValidationError, SALES_TTN_FILE_ACCEPT } from '../../salesPayloadGuards'
 import type { SaleDocumentResult, SalesUkraineRetailPaymentStatus, SalesUkraineSale, SalesUkraineTransporter } from '../../types'
 import {
   getSaleFileMutationOperationIdentity,
@@ -108,6 +110,15 @@ const reviewCheckboxClassNames = {
   input: 'new-sale-review-checkbox__input',
   label: 'new-sale-review-checkbox__label',
   root: 'new-sale-review-checkbox',
+}
+const SALE_REVIEW_ISSUE_MESSAGES: Record<SaleReviewIssueCode, string> = {
+  cashOnDeliveryAmount: 'Вкажіть коректну суму наложеного платежу',
+  ownTtnNumber: 'Вкажіть номер власної ТТН',
+  recipient: 'Не вибраний одержувач',
+  recipientPhone: 'Вкажіть мобільний телефон одержувача',
+  retailPaymentAmount: 'Замовлення не можна відвантажити без передплати',
+  retailPaymentStatus: 'Не вдалося перевірити оплату роздрібного клієнта',
+  transporter: 'Не вибраний перевізник',
 }
 
 type FinalCreateSaleFlow = 'merged-split' | 'ordinary-split'
@@ -759,18 +770,6 @@ export function NewSaleReviewStep({
     }
   }
 
-  function getCarrierValidationError(): string | null {
-    if (!((value.transporter?.Id ?? 0) > 0)) {
-      return 'Не вибраний перевізник'
-    }
-
-    if (!isSelfCheckout(value.transporter) && !((value.recipient?.Id ?? 0) > 0)) {
-      return 'Не вибраний одержувач'
-    }
-
-    return null
-  }
-
   function buildPayload(mode: 'create' | 'save', current: SalesUkraineSale): SalesUkraineSale & { IsEdited?: boolean } {
     const selfCheckoutPayload = isSelfCheckout(value.transporter)
     const recipientId = selfCheckoutPayload ? null : getPositiveId(value.recipient?.Id)
@@ -796,10 +795,12 @@ export function NewSaleReviewStep({
       Transporter: value.transporter ?? current.Transporter,
     }
 
-    payload.CustomersOwnTtn =
-      current.CustomersOwnTtn || value.ttnNumber
-        ? { ...(current.CustomersOwnTtn ?? {}), Number: value.ttnNumber }
-        : current.CustomersOwnTtn ?? null
+    payload.CustomersOwnTtn = value.hasOwnTtn
+      ? { ...(current.CustomersOwnTtn ?? {}), Number: value.ttnNumber.trim() }
+      : null
+    payload.CustomersOwnTtnId = value.hasOwnTtn
+      ? current.CustomersOwnTtnId
+      : 0
 
     if (mode === 'create') {
       payload.BaseLifeCycleStatus = { Deleted: false, Id: 0, NetUid: EMPTY_GUID, SaleLifeCycleType: 1 }
@@ -810,6 +811,48 @@ export function NewSaleReviewStep({
     }
 
     return payload
+  }
+
+  function validateSelectedTtnFile(): boolean {
+    const fileError = getSalesTtnFileValidationError(value.ttnFile)
+
+    if (fileError) {
+      notifications.show({ color: 'red', message: t(fileError) })
+
+      return false
+    }
+
+    return true
+  }
+
+  function validateFinalPayload(payload: SalesUkraineSale): boolean {
+    if (!validateSelectedTtnFile()) {
+      return false
+    }
+
+    const issues = getSaleReviewIssues(payload, { retailPaymentStatus: retailStatus })
+    const firstIssue = issues[0]
+
+    if (firstIssue) {
+      notifications.show({ color: 'red', message: t(SALE_REVIEW_ISSUE_MESSAGES[firstIssue]) })
+
+      return false
+    }
+
+    return true
+  }
+
+  function selectTtnFile(file: File | null) {
+    const fileError = getSalesTtnFileValidationError(file)
+
+    if (fileError) {
+      notifications.show({ color: 'red', message: t(fileError) })
+      onChange({ ttnFile: null })
+
+      return
+    }
+
+    onChange({ ttnFile: file })
   }
 
   function completeMergedSubmit() {
@@ -1287,11 +1330,7 @@ export function NewSaleReviewStep({
         return
       }
 
-      const error = hasPendingFinalSubmit ? null : getCarrierValidationError()
-
-      if (error) {
-        notifications.show({ color: 'red', message: t(error) })
-
+      if (hasPendingFinalSubmit && !validateSelectedTtnFile()) {
         return
       }
 
@@ -1374,33 +1413,44 @@ export function NewSaleReviewStep({
 
         const isSplitedSale = splitItems.length > 0
 
-      if (isMergedMode) {
-        if (isSplitedSale) {
-          const result = await runFinalCreateSale(
-            'merged-split',
-            buildPayload('create', buildWizardSplitSale(sale, splitItems)),
-          )
+        if (isMergedMode) {
+          if (isSplitedSale) {
+            const mergedSplitPayload = buildPayload('create', buildWizardSplitSale(sale, splitItems))
 
-          if (result) {
-            completeFinalCreateSale('merged-split', result)
-          }
-        } else {
-          const payload = buildPayload('create', sale)
-          payload.Order = {
-            ...(sale.Order ?? {}),
-            OrderItems: buildWizardMergedOrderItems(mergedSale?.orderItems ?? sale.Order?.OrderItems ?? []),
+            if (!validateFinalPayload(mergedSplitPayload)) {
+              return
+            }
+
+            const result = await runFinalCreateSale('merged-split', mergedSplitPayload)
+
+            if (result) {
+              completeFinalCreateSale('merged-split', result)
+            }
+          } else {
+            const payload = buildPayload('create', sale)
+            payload.Order = {
+              ...(sale.Order ?? {}),
+              OrderItems: buildWizardMergedOrderItems(mergedSale?.orderItems ?? sale.Order?.OrderItems ?? []),
+            }
+
+            if (!validateFinalPayload(payload)) {
+              return
+            }
+
+            if (await runFinalMergedSale(payload)) {
+              completeMergedSubmit()
+              notifications.show({ color: 'green', message: t('Рахунок створено') })
+            }
           }
 
-          if (await runFinalMergedSale(payload)) {
-            completeMergedSubmit()
-            notifications.show({ color: 'green', message: t('Рахунок створено') })
-          }
+          return
         }
 
-        return
-      }
+        const payload = buildPayload('create', isSplitedSale ? buildWizardSplitSale(sale, splitItems) : sale)
 
-      const payload = buildPayload('create', isSplitedSale ? buildWizardSplitSale(sale, splitItems) : sale)
+        if (!validateFinalPayload(payload)) {
+          return
+        }
 
         if (payload.IsVatSale) {
           const documentResult = await runFinalFileMutation(
@@ -1417,15 +1467,15 @@ export function NewSaleReviewStep({
 
           onVatDocuments?.(documentResult)
         } else if (isSplitedSale) {
-        const result = await runFinalCreateSale('ordinary-split', payload)
+          const result = await runFinalCreateSale('ordinary-split', payload)
 
-        if (!result) {
+          if (!result) {
+            return
+          }
+
+          completeFinalCreateSale('ordinary-split', result)
+
           return
-        }
-
-        completeFinalCreateSale('ordinary-split', result)
-
-        return
         } else {
           const result = await runFinalFileMutation(
             'sale-update-file',
@@ -1464,11 +1514,9 @@ export function NewSaleReviewStep({
       return false
     }
 
-    const error = getCarrierValidationError()
+    const payload = buildPayload('save', sale)
 
-    if (error) {
-      notifications.show({ color: 'red', message: t(error) })
-
+    if (!validateFinalPayload(payload)) {
       return false
     }
 
@@ -1480,7 +1528,7 @@ export function NewSaleReviewStep({
         'sale-update-file',
         'save',
         updateSaleFromData,
-        buildPayload('save', sale),
+        payload,
         value.ttnFile,
       )
 
@@ -1539,11 +1587,13 @@ export function NewSaleReviewStep({
           {blockedFileMutation.canResume ? (
             <Group align="flex-end" gap="sm" mt="sm">
               <FileInput
+                accept={SALES_TTN_FILE_ACCEPT}
                 aria-label={t('Повторно оберіть файл для звірки')}
+                clearable
                 leftSection={<Upload size={16} />}
                 placeholder={t('Завантажити')}
                 value={value.ttnFile}
-                onChange={(file) => onChange({ ttnFile: file })}
+                onChange={selectTtnFile}
               />
               <Button
                 disabled={!value.ttnFile}
@@ -1669,11 +1719,14 @@ export function NewSaleReviewStep({
                       onChange={() => onChange({ isCashOnDelivery: !value.isCashOnDelivery })}
                     />
                     {value.isCashOnDelivery ? (
-                      <TextInput
+                      <NumberInput
+                        allowNegative={false}
                         classNames={reviewFieldClassNames}
+                        decimalScale={2}
                         label={t('Рекомендована покупцем')}
-                        value={String(value.codAmount)}
-                        onChange={(event) => onChange({ codAmount: event.currentTarget.value })}
+                        min={0}
+                        value={value.codAmount}
+                        onChange={(codAmount) => onChange({ codAmount })}
                       />
                     ) : null}
                   </Box>
@@ -1701,16 +1754,14 @@ export function NewSaleReviewStep({
                     <Box className="new-sale-review-option-row is-upload">
                       <Box className="new-sale-review-option-spacer" />
                       <FileInput
+                        accept={SALES_TTN_FILE_ACCEPT}
+                        clearable
                         classNames={reviewFieldClassNames}
                         label={t('Файл ТТН')}
                         leftSection={<Upload size={16} />}
                         placeholder={t('Завантажити')}
                         value={value.ttnFile}
-                        onChange={(file) => {
-                          if (file) {
-                            onChange({ ttnFile: file })
-                          }
-                        }}
+                        onChange={selectTtnFile}
                       />
                     </Box>
                   )}

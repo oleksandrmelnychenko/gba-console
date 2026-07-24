@@ -1,9 +1,11 @@
 import { apiRequest } from '../../../shared/api/apiClient'
 import {
   getSalesMutationOperationHeaders,
+  SalesMutationPreflightValidationError,
   withSalesMutationOperationNetUid,
   type SalesMutationOperationOptions,
 } from '../../sales-ukraine/salesMutationOperation'
+import { requirePersistedGuid } from '../../sales-ukraine/salesPayloadGuards'
 import type { WarehouseUkraineExportDocument } from '../types'
 import type {
   ShipmentDeliveryRecipient,
@@ -58,13 +60,19 @@ export async function getManualShipmentSales(params: AutoShipmentListParams): Pr
   return normalizeArray<ShipmentSale>(result)
 }
 
-export async function getAutoShipmentList(params: AutoShipmentListParams): Promise<ShipmentList> {
+export async function getAutoShipmentList(
+  params: AutoShipmentListParams,
+  operation: SalesMutationOperationOptions,
+): Promise<ShipmentList> {
+  const normalizedParams = validateShipmentMutationWindow(params)
   const result = await apiRequest<unknown>('/sales/shipments/update/filtered/auto', {
+    headers: getSalesMutationOperationHeaders(operation.operationId),
     query: {
-      netId: params.transporterNetId,
-      from: params.from,
-      to: params.to,
+      netId: normalizedParams.transporterNetId,
+      from: normalizedParams.from,
+      to: normalizedParams.to,
     },
+    ...(operation.signal ? { signal: operation.signal } : {}),
   })
 
   return normalizeShipmentList(result)
@@ -96,26 +104,38 @@ export async function getShipmentListById(shipmentListNetId: string): Promise<Sh
 
 export async function updateShipmentList(
   shipmentList: ShipmentList,
+  operation: SalesMutationOperationOptions,
   window?: { from: string; to: string },
 ): Promise<void> {
+  validatePersistedShipmentList(shipmentList)
+  const normalizedWindow = window
+    ? validateShipmentDateWindow(window.from, window.to)
+    : undefined
+
   await apiRequest<unknown>('/sales/shipments/update', {
     method: 'POST',
     body: shipmentList,
+    headers: getSalesMutationOperationHeaders(operation.operationId),
     // Pass the active date window so the server only reconciles (soft-deletes) items the client
     // could actually see — items outside the window are never touched.
-    query: window ? { from: window.from, to: window.to } : undefined,
+    query: normalizedWindow,
+    ...(operation.signal ? { signal: operation.signal } : {}),
   })
 }
 
 export async function getShipmentCreatePageDocument(
   params: AutoShipmentListParams,
+  operation: SalesMutationOperationOptions,
 ): Promise<WarehouseUkraineExportDocument> {
+  const normalizedParams = validateShipmentMutationWindow(params)
   const result = await apiRequest<unknown>('/sales/shipments/document/create/export', {
+    headers: getSalesMutationOperationHeaders(operation.operationId),
     query: {
-      netId: params.transporterNetId,
-      from: params.from,
-      to: params.to,
+      netId: normalizedParams.transporterNetId,
+      from: normalizedParams.from,
+      to: normalizedParams.to,
     },
+    ...(operation.signal ? { signal: operation.signal } : {}),
   })
 
   return normalizeExportDocument(result)
@@ -217,5 +237,90 @@ function normalizeShipmentList(result: unknown): ShipmentList {
   return {
     ...payload,
     ShipmentListItems: items,
+  }
+}
+
+function validateShipmentMutationWindow(params: AutoShipmentListParams): AutoShipmentListParams {
+  return {
+    transporterNetId: requirePersistedGuid(
+      params.transporterNetId,
+      'Оберіть збереженого перевізника',
+    ),
+    ...validateShipmentDateWindow(params.from, params.to),
+  }
+}
+
+function validateShipmentDateWindow(from: string, to: string): { from: string; to: string } {
+  const fromDate = new Date(from)
+  const toDate = new Date(to)
+
+  if (!from.trim() || !to.trim() || Number.isNaN(fromDate.getTime()) || Number.isNaN(toDate.getTime())) {
+    throw new SalesMutationPreflightValidationError('Вкажіть коректний період відвантаження')
+  }
+
+  if (fromDate > toDate) {
+    throw new SalesMutationPreflightValidationError(
+      'Дата початку не може бути пізнішою за дату завершення',
+    )
+  }
+
+  const spanDays = (toDate.getTime() - fromDate.getTime()) / 86_400_000
+
+  if (spanDays > 366) {
+    throw new SalesMutationPreflightValidationError(
+      'Період відвантаження не може перевищувати 366 днів',
+    )
+  }
+
+  return { from, to }
+}
+
+function validatePersistedShipmentList(shipmentList: ShipmentList): void {
+  if ((shipmentList.Id ?? 0) <= 0) {
+    throw new SalesMutationPreflightValidationError(
+      'Відомість відвантаження не має збереженого ідентифікатора',
+    )
+  }
+
+  requirePersistedGuid(
+    shipmentList.NetUid,
+    'Відомість відвантаження не має збереженого ідентифікатора',
+  )
+
+  if (!shipmentList.ShipmentListItems.length) {
+    throw new SalesMutationPreflightValidationError(
+      'Відомість відвантаження не містить продажів',
+    )
+  }
+
+  const saleNetIds = new Set<string>()
+
+  for (const item of shipmentList.ShipmentListItems) {
+    const qtyPlaces = item.QtyPlaces ?? 0
+
+    if (!Number.isFinite(qtyPlaces) || qtyPlaces < 0) {
+      throw new SalesMutationPreflightValidationError(
+        'Кількість місць має бути скінченним невід’ємним числом',
+      )
+    }
+
+    const saleNetId = requirePersistedGuid(
+      item.Sale?.NetUid,
+      'Позиція відвантаження не має збереженого продажу',
+    )
+
+    if ((item.Sale?.Id ?? 0) <= 0) {
+      throw new SalesMutationPreflightValidationError(
+        'Позиція відвантаження не має збереженого продажу',
+      )
+    }
+
+    if (saleNetIds.has(saleNetId)) {
+      throw new SalesMutationPreflightValidationError(
+        'Один продаж не можна додати до відомості двічі',
+      )
+    }
+
+    saleNetIds.add(saleNetId)
   }
 }

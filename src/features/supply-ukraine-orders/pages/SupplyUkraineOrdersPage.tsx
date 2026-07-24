@@ -526,12 +526,14 @@ function useSupplyUkraineOrdersPageController() {
     dispatchUi({ patch, type: 'patchFilterDraft' })
   }
 
-  // The Поставки/Замовлення type toggle applies immediately (unlike the range/text filters, which
-  // apply on refresh): patch the draft AND commit it to active filters in one go so the list
-  // re-fetches for the chosen kind right away.
+  function applyFilterPatch(patch: Partial<SupplyUkraineOrdersFilter>) {
+    dispatchUi({ patch, type: 'patchFilterDraft' })
+    dispatchUi({ filters: { ...filterDraft, ...patch }, type: 'setActiveFilters' })
+  }
+
+  // Type and date changes apply immediately; text/currency drafts still wait for refresh.
   function applyTypeFilter(type: SupplyUkraineOrderKind) {
-    dispatchUi({ patch: { type }, type: 'patchFilterDraft' })
-    dispatchUi({ filters: { ...filterDraft, type }, type: 'setActiveFilters' })
+    applyFilterPatch({ type })
   }
 
   function refreshOrders() {
@@ -675,6 +677,7 @@ function useSupplyUkraineOrdersPageController() {
     selectedRow,
     state,
     totalPages,
+    applyFilterPatch,
     updateFilterDraft,
     canDeleteOrder,
     requestDelete: (row: SupplyUkraineOrderRow) => dispatchUi({ row, type: 'setDeleteCandidate' }),
@@ -719,6 +722,7 @@ export function SupplyUkraineOrdersPage() {
     selectedRow,
     state,
     totalPages,
+    applyFilterPatch,
     updateFilterDraft,
   } = useSupplyUkraineOrdersPageController()
 
@@ -741,6 +745,7 @@ export function SupplyUkraineOrdersPage() {
         onChangePage={changePage}
         onChangePageSize={changePageSize}
         onDownload={downloadPrintDocument}
+        onApplyFilterPatch={applyFilterPatch}
         onApplyType={applyTypeFilter}
         onFilterDraftChange={updateFilterDraft}
         onCreateDirect={createDirect}
@@ -792,6 +797,7 @@ function OrdersListCard({
   onCreateDirect,
   onCreateToUkraine,
   onDownload,
+  onApplyFilterPatch,
   onApplyType,
   onFilterDraftChange,
   onRefresh,
@@ -816,6 +822,7 @@ function OrdersListCard({
   onCreateDirect: () => void
   onCreateToUkraine: () => void
   onDownload: () => void
+  onApplyFilterPatch: (patch: Partial<SupplyUkraineOrdersFilter>) => void
   onApplyType: (type: SupplyUkraineOrderKind) => void
   onFilterDraftChange: (patch: Partial<SupplyUkraineOrdersFilter>) => void
   onRefresh: () => void
@@ -843,6 +850,7 @@ function OrdersListCard({
         onCreateDirect={onCreateDirect}
         onCreateToUkraine={onCreateToUkraine}
         onDownload={onDownload}
+        onApplyFilterPatch={onApplyFilterPatch}
         onApplyType={onApplyType}
         onFilterDraftChange={onFilterDraftChange}
         onRefresh={onRefresh}
@@ -1258,6 +1266,7 @@ function OrdersFilterToolbar({
   onCreateDirect,
   onCreateToUkraine,
   onDownload,
+  onApplyFilterPatch,
   onApplyType,
   onFilterDraftChange,
   onRefresh,
@@ -1278,6 +1287,7 @@ function OrdersFilterToolbar({
   onCreateDirect: () => void
   onCreateToUkraine: () => void
   onDownload: () => void
+  onApplyFilterPatch: (patch: Partial<SupplyUkraineOrdersFilter>) => void
   onApplyType: (type: SupplyUkraineOrderKind) => void
   onFilterDraftChange: (patch: Partial<SupplyUkraineOrdersFilter>) => void
   onRefresh: () => void
@@ -1294,7 +1304,7 @@ function OrdersFilterToolbar({
           max={filterDraft.to || undefined}
           type="date"
           value={filterDraft.from}
-          onChange={(event) => onFilterDraftChange({ from: event.currentTarget.value })}
+          onChange={(event) => onApplyFilterPatch({ from: event.currentTarget.value })}
         />
         <TextInput
           className="supply-ukraine-orders-date-input"
@@ -1302,7 +1312,7 @@ function OrdersFilterToolbar({
           min={filterDraft.from || undefined}
           type="date"
           value={filterDraft.to}
-          onChange={(event) => onFilterDraftChange({ to: event.currentTarget.value })}
+          onChange={(event) => onApplyFilterPatch({ to: event.currentTarget.value })}
         />
       </div>
       <TextInput

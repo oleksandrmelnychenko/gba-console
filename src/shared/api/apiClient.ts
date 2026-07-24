@@ -288,8 +288,9 @@ async function sendApiRequest<T>(path: string, options: ApiRequestOptions, allow
 
 function shouldDeduplicateGetRequest(options: ApiRequestOptions): boolean {
   const method = (options.method || 'GET').toUpperCase()
+  const hasIdempotencyKey = new Headers(options.headers).has('Idempotency-Key')
 
-  return method === 'GET' && typeof options.body === 'undefined'
+  return method === 'GET' && typeof options.body === 'undefined' && !hasIdempotencyKey
 }
 
 function getGetRequestKey(path: string, options: ApiRequestOptions): string {

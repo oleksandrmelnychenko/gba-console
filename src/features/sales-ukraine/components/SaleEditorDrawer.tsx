@@ -40,6 +40,12 @@ import {
 } from '../api/salesUkraineApi'
 import { getSaleReviewIssues, type SaleReviewIssueCode } from '../saleReviewGuards'
 import {
+  SALES_TTN_FILE_ACCEPT,
+  getOrderItemQuantityLimit,
+  getSalesTtnFileValidationError,
+  normalizePersistedGuid,
+} from '../salesPayloadGuards'
+import {
   getOrderItemBaseDiscountSuppressionReason,
   getVisibleOrderItemBaseDiscount,
   type OrderItemBaseDiscountSuppressionReason,
@@ -155,8 +161,12 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
       try {
         const next = await getSaleById(id)
 
-        if (!cancelled && next) {
-          setSale(next)
+        if (!cancelled) {
+          if (!next || next.HasDetails === false || !next.Order) {
+            setError(t('Не вдалося завантажити повні дані продажу'))
+          } else {
+            setSale({ ...next, HasDetails: true })
+          }
         }
       } catch (loadError) {
         if (!cancelled) {
@@ -232,9 +242,34 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
     : getNumber(sale.TotalAmountLocal) ?? getNumber(sale.TotalAmount) ?? 0
   const itemColumns = useItemColumns({ canEdit: isEditable, onDelete: setDeletingItem, onEditQty: setEditingItem, useEurToUah })
   const reviewIssues = getSaleReviewIssues(sale, { isRetailPaymentLoading, retailPaymentStatus })
+  const hasHydratedSale = sale.HasDetails !== false && Boolean(sale.Order)
+
+  async function loadSaleForMutation(): Promise<SalesUkraineSale> {
+    const netUid = normalizePersistedGuid(sale.NetUid || initialSale.NetUid)
+
+    if (!netUid) {
+      throw new Error(t('Продаж не має збереженого ідентифікатора'))
+    }
+
+    const fresh = await getSaleById(netUid)
+
+    if (!fresh || fresh.HasDetails === false || !fresh.Order) {
+      throw new Error(t('Не вдалося завантажити повні дані продажу'))
+    }
+
+    const hydrated = { ...fresh, HasDetails: true }
+    setSale(hydrated)
+
+    return hydrated
+  }
 
   async function confirmDelete() {
-    if (!deletingItem?.NetUid) {
+    const orderItem = deletingItem
+    const orderItemNetUid = normalizePersistedGuid(orderItem?.NetUid)
+
+    if (!orderItem || !orderItemNetUid) {
+      notifications.show({ color: 'red', message: t('Позиція не має збереженого ідентифікатора') })
+
       return
     }
 
@@ -242,11 +277,11 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
 
     try {
       const completed = await cartMutation.run(
-        { kind: 'delete', orderItemNetId: deletingItem.NetUid },
+        { kind: 'delete', orderItemNetId: orderItemNetUid },
         {
-          beforeQty: getNumber(deletingItem.Qty) ?? 0,
+          beforeQty: getNumber(orderItem.Qty) ?? 0,
           kind: 'row-deleted',
-          rowNetUid: deletingItem.NetUid,
+          rowNetUid: orderItemNetUid,
         },
         t('Не вдалося видалити товар'),
       )
@@ -266,21 +301,33 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
   }
 
   async function convertToInvoice() {
-    const issues = getSaleReviewIssues(sale, { isRetailPaymentLoading, retailPaymentStatus })
-
-    if (!fileMutation.reconciliationRequired && issues.length > 0) {
-      notifications.show({ color: 'orange', message: t('Заповніть обов’язкові дані продажу') })
-
-      return
-    }
-
     setConverting(true)
 
     try {
+      const mutationSale = fileMutation.reconciliationRequired
+        ? sale
+        : await loadSaleForMutation()
+      const issues = getSaleReviewIssues(mutationSale, {
+        isRetailPaymentLoading,
+        retailPaymentStatus,
+      })
+
+      if (!fileMutation.reconciliationRequired && issues.length > 0) {
+        notifications.show({ color: 'orange', message: t('Заповніть обов’язкові дані продажу') })
+
+        return
+      }
+
+      const fileValidationError = getSalesTtnFileValidationError(invoiceTtnFile)
+
+      if (fileValidationError) {
+        throw new Error(t(fileValidationError))
+      }
+
       const pendingKind = fileMutation.pendingKind
       const kind = fileMutation.reconciliationRequired
         ? pendingKind
-        : sale.IsVatSale ? 'sale-vat-document' : 'sale-update-file'
+        : mutationSale.IsVatSale ? 'sale-vat-document' : 'sale-update-file'
 
       if (!kind) {
         throw new Error(t('Неможливо визначити файлову операцію для звірки'))
@@ -291,7 +338,7 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
           ? await fileMutation.reconcile(kind, invoiceTtnFile, convertVatSaleAndGetPaymentDocument)
           : await fileMutation.run(
               kind,
-              createInvoicePayload(sale),
+              createInvoicePayload(mutationSale),
               invoiceTtnFile,
               convertVatSaleAndGetPaymentDocument,
             )
@@ -310,7 +357,7 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
           ? await fileMutation.reconcile(kind, invoiceTtnFile, updateSaleFromData)
           : await fileMutation.run(
               kind,
-              createInvoicePayload(sale),
+              createInvoicePayload(mutationSale),
               invoiceTtnFile,
               updateSaleFromData,
             )
@@ -449,7 +496,12 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
           </Button>
         )}
         {(canConvert || fileMutation.reconciliationRequired) && (
-          <Button color="teal" leftSection={<ReceiptText size={16} />} onClick={() => setConvertOpen(true)}>
+          <Button
+            color="teal"
+            disabled={!fileMutation.reconciliationRequired && (isLoading || !hasHydratedSale)}
+            leftSection={<ReceiptText size={16} />}
+            onClick={() => setConvertOpen(true)}
+          >
             {t(fileMutation.reconciliationRequired ? 'Звірити рахунок' : 'Зробити рахунок')}
           </Button>
         )}
@@ -520,6 +572,7 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
 
       <OrderItemQtyModal
         item={editingItem}
+        maxQty={editingItem ? getOrderItemQuantityLimit(editingItem, Boolean(sale.IsVatSale)) : null}
         runCartMutation={cartMutation.run}
         onClose={() => setEditingItem(null)}
         onSaved={() => {
@@ -592,6 +645,7 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
           )}
           {(sale.CustomersOwnTtn || fileMutation.requiresFileReselection) && (
             <FileInput
+              accept={SALES_TTN_FILE_ACCEPT}
               clearable
               disabled={
                 isConverting ||
@@ -618,8 +672,13 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
             <Button
               color="teal"
               disabled={fileMutation.reconciliationRequired
-                ? !fileMutation.canReconcile || (fileMutation.requiresFileReselection && !invoiceTtnFile)
-                : reviewIssues.length > 0}
+                ? !fileMutation.canReconcile ||
+                  (fileMutation.requiresFileReselection && !invoiceTtnFile) ||
+                  Boolean(getSalesTtnFileValidationError(invoiceTtnFile))
+                : isLoading ||
+                  !hasHydratedSale ||
+                  reviewIssues.length > 0 ||
+                  Boolean(getSalesTtnFileValidationError(invoiceTtnFile))}
               loading={isConverting}
               onClick={convertToInvoice}
             >
@@ -820,11 +879,13 @@ function getBaseDiscountSuppressionTooltip(
 
 function OrderItemQtyModal({
   item,
+  maxQty,
   onClose,
   onSaved,
   runCartMutation,
 }: {
   item: SalesUkraineOrderItem | null
+  maxQty: number | null
   onClose: () => void
   onSaved: () => void
   runCartMutation: SaleCartMutationRunner
@@ -837,6 +898,7 @@ function OrderItemQtyModal({
         <OrderItemQtyForm
           key={item.NetUid || item.Id}
           item={item}
+          maxQty={maxQty}
           runCartMutation={runCartMutation}
           onCancel={onClose}
           onSaved={onSaved}
@@ -848,11 +910,13 @@ function OrderItemQtyModal({
 
 function OrderItemQtyForm({
   item,
+  maxQty,
   onCancel,
   onSaved,
   runCartMutation,
 }: {
   item: SalesUkraineOrderItem
+  maxQty: number | null
   onCancel: () => void
   onSaved: () => void
   runCartMutation: SaleCartMutationRunner
@@ -861,11 +925,15 @@ function OrderItemQtyForm({
   const [qty, setQty] = useState<number | string>(() => getNumber(item.Qty) ?? '')
   const [isSaving, setSaving] = useState(false)
   const numericQty = typeof qty === 'number' ? qty : Number(String(qty).replace(',', '.'))
-  const isValid = Number.isFinite(numericQty) && numericQty > 0
+  const exceedsAvailable = maxQty !== null && Number.isFinite(numericQty) && numericQty > maxQty
+  const isValid = Number.isFinite(numericQty) && numericQty > 0 && !exceedsAvailable
 
   async function save() {
     if (!isValid) {
-      notifications.show({ color: 'red', message: t('Вкажіть коректну кількість') })
+      notifications.show({
+        color: 'red',
+        message: t(exceedsAvailable ? 'Кількість перевищує доступний залишок' : 'Вкажіть коректну кількість'),
+      })
 
       return
     }
@@ -873,17 +941,19 @@ function OrderItemQtyForm({
     setSaving(true)
 
     try {
-      if (!item.NetUid) {
+      const orderItemNetUid = normalizePersistedGuid(item.NetUid)
+
+      if (!orderItemNetUid) {
         throw new Error(t('Позиція не має збереженого ідентифікатора'))
       }
 
       const completed = await runCartMutation(
-        { kind: 'update', orderItem: { ...item, Qty: numericQty } },
+        { kind: 'update', orderItem: { ...item, NetUid: orderItemNetUid, Qty: numericQty } },
         {
           afterQty: numericQty,
           beforeQty: getNumber(item.Qty) ?? 0,
           kind: 'row-quantity',
-          rowNetUid: item.NetUid,
+          rowNetUid: orderItemNetUid,
         },
         t('Не вдалося оновити кількість'),
       )
@@ -910,6 +980,7 @@ function OrderItemQtyForm({
         allowNegative={false}
         decimalScale={2}
         label={t('Кількість')}
+        max={maxQty ?? undefined}
         min={0}
         value={qty}
         onChange={setQty}

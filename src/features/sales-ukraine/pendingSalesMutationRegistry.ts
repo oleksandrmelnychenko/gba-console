@@ -20,16 +20,26 @@ export const SALES_MUTATION_RESOLUTION_RETENTION_MS = 30 * 24 * 60 * 60 * 1_000
 export const SALES_PENDING_MUTATION_KINDS = [
   'cart',
   'create-sale',
+  'future-reservation-create',
   'merged-sale',
+  'offer-create',
+  'preorder-create',
   'sale-discount',
   'sale-comment',
+  'sale-payment-document',
   'sale-recipient',
   'sale-recipient-address',
   'sale-shift-current',
   'sale-switch',
+  'sale-unlock',
   'sale-update',
   'sale-update-file',
   'sale-vat-document',
+  'protocol-carrier-edit',
+  'protocol-invoice-edit',
+  'shipment-list-auto',
+  'shipment-list-document-create',
+  'shipment-list-update',
 ] as const
 
 export type SalesPendingMutationKind = (typeof SALES_PENDING_MUTATION_KINDS)[number]

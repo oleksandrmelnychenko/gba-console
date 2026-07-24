@@ -1,7 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
-import { calculateConsumableOrder, getUnpaidConsumableOrdersByOrganization, updateConsumableOrder } from './consumableOrdersApi'
-import type { ConsumablesOrder } from '../types'
+import {
+  calculateConsumableOrder,
+  createOutcomePaymentOrder,
+  getUnpaidConsumableOrdersByOrganization,
+  updateConsumableOrder,
+} from './consumableOrdersApi'
+import type { ConsumablesOrder, OutcomePaymentOrder } from '../types'
 
 vi.mock('../../../shared/api/apiClient', () => ({
   apiRequest: vi.fn(),
@@ -95,6 +100,24 @@ describe('consumableOrdersApi', () => {
 
     expect(apiRequestMock).not.toHaveBeenCalled()
     expect(result).toEqual([])
+  })
+
+  it('sends an idempotency key for the JSON outcome payment mutation', async () => {
+    const operationId = '88888888-8888-4888-8888-888888888888'
+    const order: OutcomePaymentOrder = {
+      Amount: 90,
+      NetUid: 'outcome-1',
+    }
+    apiRequestMock.mockResolvedValueOnce(order)
+
+    await createOutcomePaymentOrder(order, { operationId })
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/payments/orders/outcome/new', {
+      body: order,
+      dedupe: false,
+      headers: { 'Idempotency-Key': operationId },
+      method: 'POST',
+    })
   })
 })
 

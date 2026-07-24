@@ -1,10 +1,12 @@
 import { apiRequest } from '../../../../shared/api/apiClient'
 import {
   getSalesMutationOperationHeaders,
+  SalesMutationPreflightValidationError,
   withSalesMutationOperationNetUid,
   type SalesMutationOperationOptions,
 } from '../../salesMutationOperation'
-import type { SalesUkraineOrderItem, SalesUkraineProduct, SalesUkraineSale } from '../../types'
+import { requirePersistedGuid, requirePositiveFiniteQuantity } from '../../salesPayloadGuards'
+import type { SalesUkraineOrderItem, SalesUkraineProduct } from '../../types'
 import type { WizardSaleProduct } from './wizardSaleProduct'
 
 export type WizardDeliveryRecipientAddress = {
@@ -147,21 +149,6 @@ function asArrayOrSingle<T>(result: unknown): T[] {
   return []
 }
 
-function asSale(result: unknown): SalesUkraineSale | null {
-  if (result && typeof result === 'object') {
-    const record = result as Record<string, unknown>
-    const nested = record.Sale
-
-    if (nested && typeof nested === 'object') {
-      return nested as SalesUkraineSale
-    }
-
-    return result as SalesUkraineSale
-  }
-
-  return null
-}
-
 function asNumber(result: unknown): number | null {
   if (typeof result === 'number') {
     return Number.isFinite(result) ? result : null
@@ -297,35 +284,47 @@ export async function newDeliveryRecipientAddress(
 }
 
 export async function updateSaleDeliveryRecipient(
-  sale: SalesUkraineSale,
+  recipient: WizardDeliveryRecipient,
   saleNetId: string,
   operation: SalesMutationOperationOptions,
-): Promise<SalesUkraineSale | null> {
+): Promise<WizardDeliveryRecipient | null> {
+  const persistedSaleNetId = requirePersistedGuid(
+    saleNetId,
+    'Продаж не має збереженого ідентифікатора',
+  )
   const result = await apiRequest<unknown>('/sales/update/recipient', {
-    body: withSalesMutationOperationNetUid(sale, operation.operationId),
+    body: withSalesMutationOperationNetUid(recipient, operation.operationId),
     headers: getSalesMutationOperationHeaders(operation.operationId),
     method: 'POST',
-    query: { netId: saleNetId },
+    query: { netId: persistedSaleNetId },
     ...(operation.signal ? { signal: operation.signal } : {}),
   })
 
-  return asSale(result)
+  return result && typeof result === 'object' && !Array.isArray(result)
+    ? (result as WizardDeliveryRecipient)
+    : null
 }
 
 export async function updateSaleDeliveryRecipientAddress(
-  sale: SalesUkraineSale,
+  address: WizardDeliveryRecipientAddress,
   saleNetId: string,
   operation: SalesMutationOperationOptions,
-): Promise<SalesUkraineSale | null> {
+): Promise<WizardDeliveryRecipientAddress | null> {
+  const persistedSaleNetId = requirePersistedGuid(
+    saleNetId,
+    'Продаж не має збереженого ідентифікатора',
+  )
   const result = await apiRequest<unknown>('/sales/update/recipient/address', {
-    body: withSalesMutationOperationNetUid(sale, operation.operationId),
+    body: withSalesMutationOperationNetUid(address, operation.operationId),
     headers: getSalesMutationOperationHeaders(operation.operationId),
     method: 'POST',
-    query: { netId: saleNetId },
+    query: { netId: persistedSaleNetId },
     ...(operation.signal ? { signal: operation.signal } : {}),
   })
 
-  return asSale(result)
+  return result && typeof result === 'object' && !Array.isArray(result)
+    ? (result as WizardDeliveryRecipientAddress)
+    : null
 }
 
 // --- Carousel availability / reservations ---------------------------------
@@ -386,10 +385,49 @@ export async function getNearestSupplyOrder(productNetId: string): Promise<Wizar
   return result && typeof result === 'object' ? (result as WizardNearestSupplyOrder) : null
 }
 
-export async function createFutureReservation(reservation: WizardFutureReservation): Promise<void> {
+export async function createFutureReservation(
+  reservation: WizardFutureReservation,
+  operation: SalesMutationOperationOptions,
+): Promise<void> {
+  const clientNetId = requirePersistedGuid(
+    reservation.ClientNetId,
+    'Оберіть клієнта для резервування',
+  )
+  const productNetId = requirePersistedGuid(
+    reservation.ProductNetId,
+    'Не вдалося визначити товар для резервування',
+  )
+  const supplyOrderNetId = requirePersistedGuid(
+    reservation.SupplyOrderNetId,
+    'Не вдалося визначити поставку для резервування',
+  )
+  const count = requirePositiveFiniteQuantity(
+    reservation.Count,
+    'Вкажіть коректну кількість для резервування',
+  )
+  const remindDate = reservation.RemindDate?.trim() || ''
+  const parsedDate = new Date(remindDate)
+
+  if (
+    !remindDate ||
+    Number.isNaN(parsedDate.getTime()) ||
+    parsedDate.getUTCFullYear() < 1753 ||
+    parsedDate.getUTCFullYear() > 9999
+  ) {
+    throw new SalesMutationPreflightValidationError('Не вдалося визначити дату поставки')
+  }
+
   await apiRequest<unknown>('/sales/reservations/new', {
-    body: reservation,
+    body: withSalesMutationOperationNetUid({
+      ClientNetId: clientNetId,
+      Count: count,
+      ProductNetId: productNetId,
+      RemindDate: remindDate,
+      SupplyOrderNetId: supplyOrderNetId,
+    }, operation.operationId),
+    headers: getSalesMutationOperationHeaders(operation.operationId),
     method: 'POST',
+    signal: operation.signal,
   })
 }
 

@@ -14,10 +14,18 @@ import {
   searchIncomeCashflowPaymentMovements,
   searchIncomeCashflowPaymentRegisters,
 } from '../../income-cashflows/api/incomeCashflowsApi'
-import type { ClientAgreement, NamedEntity, PaymentMovement } from '../../income-cashflows/types'
+import type { NamedEntity, PaymentMovement } from '../../income-cashflows/types'
 import { createOutcomeOrderFromSad, createOutcomeOrderFromTaxFree } from '../api/documentOutcomePaymentApi'
+import {
+  ACCOUNTING_COMMENT_MAX_LENGTH,
+  buildPartnerAgreementPayload,
+  getExternalDocumentPaymentDateBounds,
+  isSupportedAccountingAmount,
+} from '../externalDocumentPayment'
 import type {
   DocumentOutcomePaymentSource,
+  ExternalClientAgreement,
+  ExternalOrganizationClientAgreement,
   OutcomeOrganization,
   OutcomePaymentOrder,
   OutcomePaymentRegister,
@@ -52,15 +60,14 @@ export function DocumentOutcomePaymentModal({
   const [organizations, setOrganizations] = useValueState<OutcomeOrganization[]>([])
   const [paymentRegisters, setPaymentRegisters] = useValueState<OutcomePaymentRegister[]>([])
   const [paymentMovements, setPaymentMovements] = useValueState<PaymentMovement[]>([])
-  const [clientAgreements, setClientAgreements] = useValueState<ClientAgreement[]>([])
+  const [clientAgreements, setClientAgreements] = useValueState<ExternalClientAgreement[]>([])
   const [form, setForm] = useValueState<FormState>(() => createInitialForm())
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(false)
   const [isSaving, setSaving] = useValueState(false)
 
   const documentNetId = source?.documentNetId || ''
-  const minDate = getMinPaymentDate(source)
-  const maxDate = getMaxPaymentDate(source)
+  const dateBounds = getExternalDocumentPaymentDateBounds(source?.documentDate)
 
   const selectedOrganization = useMemo(
     () => organizations.find((organization) => getEntityValue(organization) === form.organizationValue) || null,
@@ -70,9 +77,22 @@ export function DocumentOutcomePaymentModal({
     () => paymentRegisters.find((register) => getEntityValue(register) === form.paymentRegisterValue) || null,
     [form.paymentRegisterValue, paymentRegisters],
   )
-  const selectedAgreement = useMemo(
-    () => clientAgreements.find((agreement) => getEntityValue(agreement.Agreement) === form.selectedAgreementValue) || null,
+  const organizationClientAgreements = useMemo(
+    () => source?.type === 'sad' && source.counterpartyKind === 'organization'
+      ? dedupeAgreements([
+          source.organizationClientAgreement,
+          ...(source.organizationClientAgreements || []),
+        ])
+      : [],
+    [source],
+  )
+  const selectedClientAgreement = useMemo(
+    () => clientAgreements.find((agreement) => getEntityValue(agreement) === form.selectedAgreementValue) || null,
     [clientAgreements, form.selectedAgreementValue],
+  )
+  const selectedOrganizationClientAgreement = useMemo(
+    () => organizationClientAgreements.find((agreement) => getEntityValue(agreement) === form.selectedAgreementValue) || null,
+    [form.selectedAgreementValue, organizationClientAgreements],
   )
   const selectedMovement = useMemo(
     () => paymentMovements.find((movement) => getEntityValue(movement) === form.selectedMovementValue) || null,
@@ -84,7 +104,12 @@ export function DocumentOutcomePaymentModal({
   )
   const organizationOptions = useMemo(() => toEntityOptions(organizations), [organizations])
   const registerOptions = useMemo(() => toEntityOptions(paymentRegisters), [paymentRegisters])
-  const agreementOptions = useMemo(() => toAgreementOptions(clientAgreements), [clientAgreements])
+  const agreementOptions = useMemo(
+    () => organizationClientAgreements.length
+      ? toOrganizationClientAgreementOptions(organizationClientAgreements)
+      : toAgreementOptions(clientAgreements),
+    [clientAgreements, organizationClientAgreements],
+  )
   const movementOptions = useMemo(() => toUniqueLabels(paymentMovements), [paymentMovements])
   const currencyRegister = useMemo(() => pickCurrencyRegister(selectedRegister), [selectedRegister])
   const currencyLabel = currencyRegister?.Currency?.Code || currencyRegister?.Currency?.Name || ''
@@ -101,19 +126,21 @@ export function DocumentOutcomePaymentModal({
       setError(null)
 
       try {
-        const [nextOrganizations, nextRegisters, nextMovements, nextAgreements] = await Promise.all([
+        const shouldLoadClientAgreements = activeSource.type === 'taxfree'
+          || activeSource.counterpartyKind === 'client'
+        const [nextOrganizations, nextRegisters, nextMovements, loadedClientAgreements] = await Promise.all([
           getIncomeCashflowOrganizations() as Promise<OutcomeOrganization[]>,
           searchIncomeCashflowPaymentRegisters('') as Promise<OutcomePaymentRegister[]>,
           getIncomeCashflowPaymentMovements(),
-          activeSource.clientNetId
+          shouldLoadClientAgreements && activeSource.clientNetId
             ? getIncomeCashflowClientAgreements(activeSource.clientNetId).catch((agreementsError) => {
                 if (!cancelled) {
                   setError(agreementsError instanceof Error ? agreementsError.message : t('Не вдалося завантажити договори'))
                 }
 
-                return [] as ClientAgreement[]
+                return [] as ExternalClientAgreement[]
               })
-            : Promise.resolve([] as ClientAgreement[]),
+            : Promise.resolve([] as ExternalClientAgreement[]),
         ])
 
         if (cancelled) {
@@ -122,19 +149,31 @@ export function DocumentOutcomePaymentModal({
 
         const defaultOrganization = pickDefaultOrganization(nextOrganizations)
         const defaultRegister = nextRegisters[0] || null
-        const defaultAgreement = nextAgreements[0] || null
+        const sourceClientAgreement = activeSource.type === 'sad' ? activeSource.clientAgreement : null
+        const nextClientAgreements = dedupeAgreements([
+          sourceClientAgreement,
+          ...loadedClientAgreements,
+        ])
+        const nextOrganizationClientAgreements = activeSource.type === 'sad'
+          && activeSource.counterpartyKind === 'organization'
+          ? dedupeAgreements([
+              activeSource.organizationClientAgreement,
+              ...(activeSource.organizationClientAgreements || []),
+            ])
+          : []
+        const defaultAgreement = nextOrganizationClientAgreements[0] || nextClientAgreements[0] || null
 
         setOrganizations(nextOrganizations)
         setPaymentRegisters(nextRegisters)
         setPaymentMovements(nextMovements)
-        setClientAgreements(nextAgreements)
+        setClientAgreements(nextClientAgreements)
         setForm(() => ({
           ...createInitialForm(),
           amount: activeSource.amount || 0,
           fromDate: getInitialPaymentDate(activeSource),
           organizationValue: defaultOrganization ? getEntityValue(defaultOrganization) : '',
           paymentRegisterValue: defaultRegister ? getEntityValue(defaultRegister) : '',
-          selectedAgreementValue: defaultAgreement?.Agreement ? getEntityValue(defaultAgreement.Agreement) : '',
+          selectedAgreementValue: getEntityValue(defaultAgreement),
         }))
       } catch (loadError) {
         if (!cancelled) {
@@ -241,17 +280,22 @@ export function DocumentOutcomePaymentModal({
       return
     }
 
-    if (source.type === 'taxfree' && !selectedAgreement) {
+    const partnerAgreement = buildPartnerAgreementPayload(
+      selectedClientAgreement,
+      selectedOrganizationClientAgreement,
+    )
+
+    if (!partnerAgreement) {
       setError(t('Оберіть договір'))
       return
     }
 
-    if (!form.amount || form.amount <= 0) {
+    if (!isSupportedAccountingAmount(form.amount) || form.amount !== source.amount) {
       setError(t('Сума має бути більшою за нуль'))
       return
     }
 
-    if (isDateOutsideRange(form.fromDate, minDate, maxDate)) {
+    if (isDateOutsideRange(form.fromDate, dateBounds?.min || '', dateBounds?.max || '')) {
       setError(t('Дата виходить за дозволений період'))
       return
     }
@@ -262,8 +306,8 @@ export function DocumentOutcomePaymentModal({
     }
 
     const order: OutcomePaymentOrder = {
+      ...partnerAgreement,
       Amount: form.amount,
-      ClientAgreement: selectedAgreement,
       Comment: form.comment.trim(),
       FromDate: toIsoDate(form.fromDate),
       Organization: selectedOrganization,
@@ -339,6 +383,7 @@ export function DocumentOutcomePaymentModal({
               disabled={isLoading || isSaving}
               label={t('Сума')}
               min={0}
+              readOnly
               value={form.amount}
               onChange={(value) => updateForm({ amount: toNumber(value) })}
             />
@@ -357,8 +402,8 @@ export function DocumentOutcomePaymentModal({
             <TextInput
               disabled={isLoading || isSaving}
               label={t('Дата')}
-              max={maxDate || undefined}
-              min={minDate || undefined}
+              max={dateBounds?.max}
+              min={dateBounds?.min}
               type="date"
               value={form.fromDate}
               onChange={(event) => updateForm({ fromDate: event.currentTarget.value })}
@@ -391,6 +436,7 @@ export function DocumentOutcomePaymentModal({
             <Textarea
               disabled={isLoading || isSaving}
               label={t('Коментар')}
+              maxLength={ACCOUNTING_COMMENT_MAX_LENGTH}
               minRows={2}
               value={form.comment}
               onChange={(event) => updateForm({ comment: event.currentTarget.value })}
@@ -430,8 +476,9 @@ function pickDefaultOrganization(organizations: OutcomeOrganization[]): OutcomeO
 
 function getInitialPaymentDate(source: DocumentOutcomePaymentSource): string {
   const today = formatLocalDate(new Date())
-  const minDate = getMinPaymentDate(source)
-  const maxDate = getMaxPaymentDate(source)
+  const dateBounds = getExternalDocumentPaymentDateBounds(source.documentDate)
+  const minDate = dateBounds?.min || ''
+  const maxDate = dateBounds?.max || ''
 
   if (maxDate && today > maxDate) {
     return maxDate
@@ -442,33 +489,6 @@ function getInitialPaymentDate(source: DocumentOutcomePaymentSource): string {
   }
 
   return today
-}
-
-function getMinPaymentDate(source: DocumentOutcomePaymentSource | null): string {
-  if (!source?.created) {
-    return ''
-  }
-
-  const createdDate = new Date(source.created)
-
-  return Number.isNaN(createdDate.getTime()) ? '' : formatLocalDate(createdDate)
-}
-
-function getMaxPaymentDate(source: DocumentOutcomePaymentSource | null): string {
-  if (source?.type !== 'taxfree' || !source.created) {
-    return ''
-  }
-
-  const createdDate = new Date(source.created)
-
-  if (Number.isNaN(createdDate.getTime())) {
-    return ''
-  }
-
-  const maxDate = new Date(createdDate)
-  maxDate.setMonth(maxDate.getMonth() + 3)
-
-  return formatLocalDate(maxDate)
 }
 
 function isDateOutsideRange(value: string, minDate: string, maxDate: string): boolean {
@@ -492,13 +512,13 @@ function pickCurrencyRegister(register: OutcomePaymentRegister | null) {
   return register.DefaultPaymentCurrencyRegister || currencyRegisters[0] || null
 }
 
-function toAgreementOptions(agreements: ClientAgreement[]) {
+function toAgreementOptions(agreements: ExternalClientAgreement[]) {
   const options: Array<{ label: string; value: string }> = []
 
   for (const clientAgreement of agreements) {
     const agreement = clientAgreement.Agreement
     const currency = agreement?.Currency
-    const value = getEntityValue(agreement)
+    const value = getEntityValue(clientAgreement)
 
     if (!value) {
       continue
@@ -514,6 +534,39 @@ function toAgreementOptions(agreements: ClientAgreement[]) {
   }
 
   return options
+}
+
+function toOrganizationClientAgreementOptions(agreements: ExternalOrganizationClientAgreement[]) {
+  return agreements.reduce<Array<{ label: string; value: string }>>((options, agreement) => {
+    const value = getEntityValue(agreement)
+
+    if (value) {
+      const currency = agreement.Currency?.Code || agreement.Currency?.Name
+      options.push({
+        label: [agreement.Number || value, currency].filter(Boolean).join(' '),
+        value,
+      })
+    }
+
+    return options
+  }, [])
+}
+
+function dedupeAgreements<TAgreement extends NamedEntity>(
+  agreements: Array<TAgreement | null | undefined>,
+): TAgreement[] {
+  const seen = new Set<string>()
+
+  return agreements.reduce<TAgreement[]>((result, agreement) => {
+    const value = getEntityValue(agreement)
+
+    if (agreement && value && !seen.has(value)) {
+      seen.add(value)
+      result.push(agreement)
+    }
+
+    return result
+  }, [])
 }
 
 function toEntityOptions<T extends NamedEntity>(entities: T[]) {

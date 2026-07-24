@@ -1,16 +1,33 @@
 import { apiRequest } from '../../../shared/api/apiClient'
+import {
+  executeAccountingMutation,
+  type AccountingMutationOperationOptions,
+} from '../../../shared/api/accountingMutationOperation'
 import type { OutcomePaymentOrder } from '../types'
 
 export async function createOutcomeOrderFromTaxFree(
   taxFreeNetId: string,
   order: OutcomePaymentOrder,
+  operation?: AccountingMutationOperationOptions,
 ): Promise<OutcomePaymentOrder | null> {
-  const result = await apiRequest<unknown>('/payments/orders/outcome/new/taxfree', {
-    method: 'POST',
-    query: {
+  const result = await executeAccountingMutation({
+    identity: order,
+    kind: 'outcome-payment:add-tax-free',
+    operation,
+    payload: {
+      order,
       taxFreeNetId,
     },
-    body: order,
+    request: (payload, context) => apiRequest<unknown>('/payments/orders/outcome/new/taxfree', {
+      body: payload.order,
+      dedupe: false,
+      headers: context.headers,
+      method: 'POST',
+      query: {
+        taxFreeNetId: payload.taxFreeNetId,
+      },
+      ...(context.signal ? { signal: context.signal } : {}),
+    }),
   })
 
   return result && typeof result === 'object' ? (result as OutcomePaymentOrder) : null
@@ -19,13 +36,26 @@ export async function createOutcomeOrderFromTaxFree(
 export async function createOutcomeOrderFromSad(
   sadNetId: string,
   order: OutcomePaymentOrder,
+  operation?: AccountingMutationOperationOptions,
 ): Promise<OutcomePaymentOrder | null> {
-  const result = await apiRequest<unknown>('/payments/orders/outcome/new/sad', {
-    method: 'POST',
-    query: {
+  const result = await executeAccountingMutation({
+    identity: order,
+    kind: 'outcome-payment:add-sad',
+    operation,
+    payload: {
+      order,
       sadNetId,
     },
-    body: order,
+    request: (payload, context) => apiRequest<unknown>('/payments/orders/outcome/new/sad', {
+      body: payload.order,
+      dedupe: false,
+      headers: context.headers,
+      method: 'POST',
+      query: {
+        sadNetId: payload.sadNetId,
+      },
+      ...(context.signal ? { signal: context.signal } : {}),
+    }),
   })
 
   return result && typeof result === 'object' ? (result as OutcomePaymentOrder) : null

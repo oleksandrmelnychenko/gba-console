@@ -2439,7 +2439,7 @@ function SadActionModal({
             {t('Створити замовлення постачання')}
           </Button>
         )}
-        {sad.IsSend && sad.Client && (
+        {sad.IsSend && (sad.Client || sad.OrganizationClient) && (
           <>
             <Divider />
             <Button
@@ -2761,16 +2761,30 @@ function getSadClientName(sad: Sad) {
 }
 
 function buildSadOutcomeSource(sad: Sad): DocumentOutcomePaymentSource {
-  const client = sad.Client || sad.OrganizationClient
+  const isOrganizationClient = Boolean(sad.OrganizationClient)
 
   return {
     amount: sad.TotalVatAmountWithMargin || 0,
+    clientAgreement: isOrganizationClient ? null : sad.ClientAgreement,
     clientName: getSadClientName(sad),
-    clientNetId: client?.NetUid || '',
-    created: typeof sad.Created === 'string' ? sad.Created : undefined,
+    clientNetId: isOrganizationClient ? '' : sad.Client?.NetUid || '',
+    counterpartyKind: isOrganizationClient ? 'organization' : 'client',
+    documentDate: toIsoDateValue(sad.FromDate) || toIsoDateValue(sad.Created),
     documentNetId: sad.NetUid || '',
+    organizationClientAgreement: isOrganizationClient ? sad.OrganizationClientAgreement : null,
+    organizationClientAgreements: isOrganizationClient
+      ? sad.OrganizationClient?.OrganizationClientAgreements || []
+      : [],
     type: 'sad',
   }
+}
+
+function toIsoDateValue(value?: Date | string): string | undefined {
+  if (!value) {
+    return undefined
+  }
+
+  return typeof value === 'string' ? value : value.toISOString()
 }
 
 function getClientName(client?: SadClient | SadOrganizationClient | null) {

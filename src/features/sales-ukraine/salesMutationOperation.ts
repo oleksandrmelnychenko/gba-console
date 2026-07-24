@@ -15,6 +15,13 @@ export type SalesMutationOperationPayload = {
   OperationNetUid: string
 }
 
+export class SalesMutationPreflightValidationError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'SalesMutationPreflightValidationError'
+  }
+}
+
 export function getSalesMutationOperationHeaders(operationId: string): HeadersInit {
   const normalized = normalizeSalesOperationNetUid(operationId)
 
@@ -60,6 +67,10 @@ export function normalizeSalesOperationNetUid(operationId: string): string {
  * `MutationLedgerState: "not-entered"` marker on a 4xx response.
  */
 export function classifySalesMutationFailure(error: unknown): SalesMutationFailureStatus {
+  if (error instanceof SalesMutationPreflightValidationError) {
+    return 'definitive-failure'
+  }
+
   if (!(error instanceof ApiError) || error.status < 400 || error.status >= 500) {
     return 'pending-reconciliation'
   }

@@ -158,28 +158,63 @@ describe('MergedSalesDrawer restored reconciliation', () => {
     expect(loadSalesPendingMutation(pendingScope)).toBe(null)
   })
 
-  it('retains a restored 4xx as unknown and blocks a new current selection', async () => {
-    const submission = seedPendingMergedSale()
-    mocks.updateMergedSale.mockRejectedValueOnce(new ApiError('selection rejected', 400, null))
+  it('settles a restored 4xx as a known rejection and exposes the server message', async () => {
+    seedPendingMergedSale()
+    mocks.updateMergedSale.mockRejectedValueOnce(new ApiError(
+      'selection rejected',
+      400,
+      { MutationLedgerState: 'not-entered' },
+    ))
     renderDrawer()
 
     await screen.findByText('CURRENT-SALE')
     fireEvent.click(screen.getByRole('button', { name: 'Перевірити результат' }))
 
-    await waitFor(() => expect(loadSalesPendingMutation(pendingScope)).toMatchObject({
-      operationId: submission.operationId,
-      phase: 'unknown',
-      payload: submission,
-    }))
-    expect(screen.getByText('Потрібна звірка операції')).toBeTruthy()
+    await waitFor(() => expect(loadSalesPendingMutation(pendingScope)).toBe(null))
+    expect(screen.queryByText('Потрібна звірка операції')).toBe(null)
     expect(mocks.updateMergedSale).toHaveBeenCalledTimes(1)
+    expect(mocks.notificationsShow).toHaveBeenCalledWith({
+      color: 'red',
+      message: 'selection rejected',
+    })
 
     const currentSelectionAction = screen.getByRole('button', { name: 'Створити накладну' }) as HTMLButtonElement
 
-    expect(currentSelectionAction.disabled).toBe(true)
-    fireEvent.click(currentSelectionAction)
+    expect(currentSelectionAction.disabled).toBe(false)
+  })
 
-    expect(screen.queryByRole('dialog')).toBe(null)
-    expect(mocks.updateMergedSale).toHaveBeenCalledTimes(1)
+  it.each([
+    [
+      [{ NetUid: '', Product: { VendorCode: 'A' }, Qty: 1 }],
+      'Обʼєднання неможливе: позиція не має збереженого ідентифікатора',
+    ],
+    [
+      [
+        { NetUid: 'duplicate-item', Product: { VendorCode: 'A' }, Qty: 1 },
+        { NetUid: 'DUPLICATE-ITEM', Product: { VendorCode: 'B' }, Qty: 1 },
+      ],
+      'Обʼєднання неможливе: одна позиція передана двічі',
+    ],
+  ])('blocks invalid merged order items before the API call', async (orderItems, message) => {
+    mocks.getMergedSales.mockResolvedValueOnce({
+      ...currentMergedSale,
+      InputSaleMerges: [{
+        InputSale: {
+          ...currentMergedSale.InputSaleMerges?.[0]?.InputSale,
+          Order: { OrderItems: orderItems },
+        },
+      }],
+    })
+    renderDrawer()
+
+    await screen.findByText('CURRENT-SALE')
+    fireEvent.click(screen.getByRole('button', { name: 'Створити накладну' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Зробити рахунок' }))
+
+    await waitFor(() => expect(mocks.notificationsShow).toHaveBeenCalledWith({
+      color: 'red',
+      message,
+    }))
+    expect(mocks.updateMergedSale).not.toHaveBeenCalled()
   })
 })

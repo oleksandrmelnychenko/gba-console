@@ -620,8 +620,14 @@ function buildSearchQuery(params: SupplyUkraineOrdersSearchParams) {
     limit: params.limit,
     offset: params.offset,
     supplierName: params.supplierName?.trim() || '',
-    to: params.to,
+    to: toInclusiveEndOfDay(params.to),
   }
+}
+
+function toInclusiveEndOfDay(value: string): string {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value)
+    ? `${value}T23:59:59.999`
+    : value
 }
 
 function normalizeOrdersResponse<TOrder>(

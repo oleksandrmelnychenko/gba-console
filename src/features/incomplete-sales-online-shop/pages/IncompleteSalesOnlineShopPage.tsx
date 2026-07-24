@@ -22,6 +22,7 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useAuth } from '../../auth/useAuth'
 import { getIncompleteSales, updateIncompleteSale } from '../../clients/api/onlineShopClientsApi'
+import { createWizardOperationId } from '../../sales-ukraine/components/new-sale-wizard/wizardMutationOperation'
 import { IncompleteSaleItemsList } from '../../clients/components/IncompleteSaleItemsList'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
@@ -57,6 +58,7 @@ type FilterDraft = {
 }
 
 type PendingStatusAction = {
+  operationId: string
   sale: IncompleteSalesOnlineShopItem
   status: 1 | 2
 }
@@ -172,7 +174,10 @@ function useIncompleteSalesOnlineShopPageModel() {
   const columns = useIncompleteSalesOnlineShopColumns({
     onOpenClientSales: openClientSales,
     onOpenDetail: openDetail,
-    onStatusAction: setPendingStatusAction,
+    onStatusAction: (action) => setPendingStatusAction({
+      ...action,
+      operationId: createWizardOperationId(),
+    }),
     updatingId,
     user,
   })
@@ -216,7 +221,7 @@ function useIncompleteSalesOnlineShopPageModel() {
       return
     }
 
-    const { sale, status } = pendingStatusAction
+    const { operationId, sale, status } = pendingStatusAction
     let nextSale: IncompleteSalesOnlineShopItem
 
     if (status === 1) {
@@ -244,7 +249,9 @@ function useIncompleteSalesOnlineShopPageModel() {
     setUpdatingId(rowKey)
 
     try {
-      const updatedSales = (await updateIncompleteSale(nextSale)) as IncompleteSalesOnlineShopItem[]
+      const updatedSales = (await updateIncompleteSale(nextSale, {
+        operationId,
+      })) as IncompleteSalesOnlineShopItem[]
       const updatedSale = findSaleByKey(updatedSales, rowKey) || nextSale
 
       if (updatedSales.length > 0) {
@@ -551,7 +558,7 @@ function useIncompleteSalesOnlineShopColumns({
 }: {
   onOpenClientSales: (sale: IncompleteSalesOnlineShopItem) => void
   onOpenDetail: (sale: IncompleteSalesOnlineShopItem) => void
-  onStatusAction: (action: PendingStatusAction) => void
+  onStatusAction: (action: Omit<PendingStatusAction, 'operationId'>) => void
   updatingId: string | null
   user: ReturnType<typeof useAuth>['user']
 }) {

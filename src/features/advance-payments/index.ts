@@ -1,2 +1,6 @@
 export { AdvancePaymentsPage } from './pages/AdvancePaymentsPage'
-export type { AdvancePayment } from './types'
+export type {
+  AdvancePayment,
+  AdvancePaymentMutationPayload,
+  AdvancePaymentSource,
+} from './types'

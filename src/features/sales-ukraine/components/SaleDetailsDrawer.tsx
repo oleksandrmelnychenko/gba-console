@@ -24,9 +24,17 @@ import type { TranslateFunction } from '../../../shared/i18n/types'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { TransporterNameWithIcon } from '../../../shared/transporter-icons/TransporterIcon'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
-import { getSaleTransporterTypes, getSaleTransportersByType, updateSaleFromData } from '../api/salesUkraineApi'
+import {
+  getSaleById,
+  getSaleTransporterTypes,
+  getSaleTransportersByType,
+  updateSaleFromData,
+  type SaleSubmitResult,
+} from '../api/salesUkraineApi'
 import { getSaleLifecycleStatusKey } from '../saleStatus'
 import { getSaleFileMutationContext, SALE_FILE_MUTATION_INTENTS } from '../saleFileMutation'
+import { SALES_TTN_FILE_ACCEPT } from '../salesPayloadGuards'
+import type { SalesMutationOperationOptions } from '../salesMutationOperation'
 import { usePersistentSaleFileMutation } from '../usePersistentSaleFileMutation'
 import type { SalesUkraineSale, SalesUkraineTransporter, SalesUkraineUpdateDataCarrier } from '../types'
 import {
@@ -222,10 +230,10 @@ function SaleDetailsContent({
     setUploadedFile(null)
   }
 
-  function createPayload(): SalesUkraineSale {
-    const payload: SalesUkraineSale = { ...sale }
+  function createPayload(baseSale: SalesUkraineSale): SalesUkraineSale {
+    const payload: SalesUkraineSale = { ...baseSale, HasDetails: true }
 
-    if (sale.IsPrinted) {
+    if (baseSale.IsPrinted) {
       payload.TTN = ttn
     }
 
@@ -239,13 +247,13 @@ function SaleDetailsContent({
     payload.CashOnDeliveryAmount = isCashOnDelivery ? Number(cashOnDeliveryAmount) || 0 : 0
     payload.HasDocuments = hasDocuments
     payload.DeliveryRecipient = {
-      ...(sale.DeliveryRecipient || {}),
+      ...(baseSale.DeliveryRecipient || {}),
       FullName: recipientName,
       MobilePhone: mobilePhone,
       ...(isChangedRecipient ? { Id: 0 } : {}),
     }
     payload.DeliveryRecipientAddress = {
-      ...(sale.DeliveryRecipientAddress || {}),
+      ...(baseSale.DeliveryRecipientAddress || {}),
       City: city,
       Department: department,
       ...(isChangedAddress ? { Id: 0 } : {}),
@@ -260,7 +268,7 @@ function SaleDetailsContent({
     }
 
     if (hasOwnTtn) {
-      payload.CustomersOwnTtn = { ...(sale.CustomersOwnTtn || {}), Number: ownTtnNumber }
+      payload.CustomersOwnTtn = { ...(baseSale.CustomersOwnTtn || {}), Number: ownTtnNumber }
     }
 
     return payload
@@ -271,10 +279,10 @@ function SaleDetailsContent({
 
     try {
       const result = fileMutation.reconciliationRequired
-        ? await fileMutation.reconcile('sale-update-file', uploadedFile, updateSaleFromData)
+        ? await fileMutation.reconcile('sale-update-file', uploadedFile, replayFrozenDeliverySale)
         : await fileMutation.run(
             'sale-update-file',
-            createPayload(),
+            createPayload(await requireHydratedDeliverySale(sale)),
             uploadedFile,
             updateSaleFromData,
           )
@@ -470,6 +478,7 @@ function SaleDetailsContent({
                 onChange={(event) => setOwnTtnNumber(event.currentTarget.value)}
               />
               <FileInput
+                accept={SALES_TTN_FILE_ACCEPT}
                 clearable
                 disabled={fileMutation.reconciliationRequired && !fileMutation.requiresFileReselection}
                 label={t('Завантажити ТТН')}
@@ -504,6 +513,36 @@ function SaleDetailsContent({
       </Box>
     </Stack>
   )
+}
+
+async function replayFrozenDeliverySale(
+  frozenSale: SalesUkraineSale,
+  file: File | null,
+  operation: SalesMutationOperationOptions,
+): Promise<SaleSubmitResult> {
+  if (frozenSale.HasDetails !== true || !frozenSale.Order) {
+    throw new Error(
+      'Збережена операція містить неповні дані продажу. Автоматичний повтор заблоковано; звірте результат вручну',
+    )
+  }
+
+  return updateSaleFromData(frozenSale, file, operation)
+}
+
+async function requireHydratedDeliverySale(sale: SalesUkraineSale): Promise<SalesUkraineSale> {
+  const netUid = sale.NetUid?.trim()
+
+  if (!netUid) {
+    throw new Error('Продаж не має збереженого ідентифікатора')
+  }
+
+  const hydratedSale = await getSaleById(netUid)
+
+  if (!hydratedSale || hydratedSale.HasDetails === false || !hydratedSale.Order) {
+    throw new Error('Не вдалося завантажити повні дані продажу. Збереження заблоковано')
+  }
+
+  return { ...hydratedSale, HasDetails: true }
 }
 
 function DetailsView({ sale }: { sale: SalesUkraineSale }) {

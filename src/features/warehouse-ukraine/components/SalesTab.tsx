@@ -4,6 +4,7 @@ import { CircleAlert, Pencil, Plus, RotateCcw } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useAuth } from '../../auth/useAuth'
 import { NewSaleWizard } from '../../sales-ukraine/components/new-sale-wizard/NewSaleWizard'
+import { getSaleById } from '../../sales-ukraine/api/salesUkraineApi'
 import { SALES_UKRAINE_EDIT_PERMISSION } from '../../sales-ukraine/permissions'
 import { SaleDetailsDrawer } from '../../sales-ukraine/components/SaleDetailsDrawer'
 import { usePersistentSaleJsonMutationRunner } from '../../sales-ukraine/usePersistentSaleJsonMutation'
@@ -25,6 +26,7 @@ import {
   getWarehouseUkraineSales,
   updateWarehouseUkraineSale,
 } from '../api/salesApi'
+import { printAfterPersistingStatus } from '../invoicePrintFlow'
 import { getInvoicePrintStatus, hasApprovedInvoiceEdits } from '../invoicePrintStatus'
 import type { Sale, WarehouseUkraineExportDocument } from '../types'
 import { DownloadDocumentModal } from './DownloadDocumentModal'
@@ -104,6 +106,7 @@ function useSalesTabModel() {
   const [isDownloading, setDownloading] = useValueState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const downloadRequestRef = useRef(0)
+  const carrierRequestRef = useRef(0)
   const realtimeReloadRef = useRef<number | null>(null)
   const filterError = getFilterError(activeFilters.from, activeFilters.to)
   const orderedSales = useMemo(() => orderWarehouseSales(salesState.sales), [salesState.sales])
@@ -157,7 +160,7 @@ function useSalesTabModel() {
       return
     }
 
-    let cancelled = false
+    const controller = new AbortController()
 
     async function loadSales() {
       dispatchSalesState({ type: 'loading' })
@@ -169,13 +172,13 @@ function useSalesTabModel() {
           value: activeFilters.value,
           limit: pageSize,
           offset: (page - 1) * pageSize,
-        })
+        }, controller.signal)
 
-        if (!cancelled) {
+        if (!controller.signal.aborted) {
           dispatchSalesState({ type: 'loaded', sales: result.items, totalQty: result.totalQty })
         }
       } catch (loadError) {
-        if (!cancelled) {
+        if (!controller.signal.aborted) {
           dispatchSalesState({
             type: 'error',
             error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити документи'),
@@ -187,7 +190,7 @@ function useSalesTabModel() {
     void loadSales()
 
     return () => {
-      cancelled = true
+      controller.abort()
     }
   }, [activeFilters, filterError, page, pageSize, reloadKey, t])
 
@@ -255,12 +258,16 @@ function useSalesTabModel() {
         const savedSale = attempt.result
         replaceSale(sale, { ...optimisticSale, ...savedSale })
         reload()
+
+        return true
       } catch (updateError) {
         replaceSale(sale, sale)
         dispatchSalesState({
           type: 'errorMessage',
           error: updateError instanceof Error ? updateError.message : t('Не вдалося оновити статус друку'),
         })
+
+        return false
       }
     },
     [reload, replaceSale, runSaleUpdate, t],
@@ -269,11 +276,11 @@ function useSalesTabModel() {
   const printSale = useCallback(
     (sale: Sale) => {
       if (sale.NetUid) {
-        if (!sale.IsPrinted || hasApprovedInvoiceEdits(sale)) {
-          void markSaleBeforePrint(sale, { IsPrinted: true })
-        }
-
-        void runPrintDocument(() => getSalePrintDocument(sale.NetUid as string))
+        void printAfterPersistingStatus({
+          loadDocument: () => runPrintDocument(() => getSalePrintDocument(sale.NetUid as string)),
+          persistStatus: () => markSaleBeforePrint(sale, { IsPrinted: true }),
+          requiresStatusUpdate: !sale.IsPrinted || hasApprovedInvoiceEdits(sale),
+        })
       }
     },
     [markSaleBeforePrint, runPrintDocument],
@@ -282,15 +289,61 @@ function useSalesTabModel() {
   const printActProtocolEdit = useCallback(
     (sale: Sale) => {
       if (sale.NetUid) {
-        if (!sale.IsPrintedActProtocolEdit) {
-          void markSaleBeforePrint(sale, { IsPrintedActProtocolEdit: true })
-        }
-
-        void runPrintDocument(() => getSaleActProtocolEditDocument(sale.NetUid as string, true))
+        void printAfterPersistingStatus({
+          loadDocument: () => runPrintDocument(
+            () => getSaleActProtocolEditDocument(sale.NetUid as string, true),
+          ),
+          persistStatus: () => markSaleBeforePrint(sale, { IsPrintedActProtocolEdit: true }),
+          requiresStatusUpdate: !sale.IsPrintedActProtocolEdit,
+        })
       }
     },
     [markSaleBeforePrint, runPrintDocument],
   )
+
+  const openCarrierSale = useCallback(
+    async (sale: Sale) => {
+      const netUid = sale.NetUid?.trim()
+
+      if (!netUid) {
+        dispatchSalesState({ type: 'errorMessage', error: t('Продаж не має збереженого ідентифікатора') })
+
+        return
+      }
+
+      const requestId = carrierRequestRef.current + 1
+      carrierRequestRef.current = requestId
+
+      try {
+        const hydratedSale = await getSaleById(netUid)
+
+        if (carrierRequestRef.current !== requestId) {
+          return
+        }
+
+        if (!hydratedSale || hydratedSale.HasDetails === false || !hydratedSale.Order) {
+          throw new Error(t('Не вдалося завантажити повні дані продажу'))
+        }
+
+        setCarrierSale({
+          ...hydratedSale,
+          HasDetails: true,
+          TotalRowsQty: sale.TotalRowsQty,
+        } as unknown as Sale)
+      } catch (loadError) {
+        if (carrierRequestRef.current === requestId) {
+          dispatchSalesState({
+            type: 'errorMessage',
+            error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити продаж'),
+          })
+        }
+      }
+    },
+    [setCarrierSale, t],
+  )
+  const requestOpenCarrierSale = useCallback((sale: Sale) => {
+    void openCarrierSale(sale)
+  }, [openCarrierSale])
 
   function applyFilters(nextFilters: FilterDraft) {
     setPage(1)
@@ -313,7 +366,12 @@ function useSalesTabModel() {
     ? page * pageSize < salesState.totalQty
     : salesState.sales.length === pageSize
 
-  const columns = useSalesColumns({ indexMap: salesIndexMap, onPrint: printSale, onPrintActProtocolEdit: printActProtocolEdit, onOpenCarrier: setCarrierSale })
+  const columns = useSalesColumns({
+    indexMap: salesIndexMap,
+    onOpenCarrier: requestOpenCarrierSale,
+    onPrint: printSale,
+    onPrintActProtocolEdit: printActProtocolEdit,
+  })
 
   return {
     activeFilters, applyFilters, canMoveForward, carrierSale, changePageSize, closeDownload, columns,

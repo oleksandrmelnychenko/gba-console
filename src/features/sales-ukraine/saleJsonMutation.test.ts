@@ -3,17 +3,24 @@ import { ApiError } from '../../shared/api/apiClient'
 import {
   advanceSaleJsonMutationSession,
   createSaleJsonMutationSubmission,
+  isSaleJsonMutationSubmission,
 } from './saleJsonMutation'
 
 describe('sale JSON mutation idempotency', () => {
   it.each([
     'sale-comment',
     'sale-discount',
+    'sale-payment-document',
     'sale-recipient',
     'sale-recipient-address',
     'sale-shift-current',
     'sale-switch',
     'sale-update',
+    'protocol-carrier-edit',
+    'protocol-invoice-edit',
+    'shipment-list-auto',
+    'shipment-list-document-create',
+    'shipment-list-update',
   ] as const)(
     'replays %s with the same key and byte-identical frozen body after a lost response',
     async (kind) => {
@@ -48,6 +55,23 @@ describe('sale JSON mutation idempotency', () => {
       expect(bodies[0]).not.toContain('edited after timeout')
     },
   )
+
+  it.each([
+    'protocol-carrier-edit',
+    'protocol-invoice-edit',
+    'sale-payment-document',
+    'shipment-list-auto',
+    'shipment-list-document-create',
+    'shipment-list-update',
+  ] as const)('restores a persisted %s submission', (kind) => {
+    const submission = createSaleJsonMutationSubmission(
+      kind,
+      { NetUid: 'shipment-1' },
+      '55555555-5555-4555-8555-555555555555',
+    )
+
+    expect(isSaleJsonMutationSubmission(submission)).toBe(true)
+  })
 
   it('settles a marked pre-ledger validation rejection so corrected data can use a new key', async () => {
     const firstKey = '22222222-2222-4222-8222-222222222222'

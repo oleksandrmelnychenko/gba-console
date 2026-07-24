@@ -143,14 +143,32 @@ describe('online-shop clients API query contracts', () => {
   })
 
   it('updates an incomplete sale with the full entity body', async () => {
-    const incompleteSale: IncompleteSale = { NetUid: 'incomplete-sale' }
+    const incompleteSale: IncompleteSale = {
+      NetUid: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      MisplacedSaleStatus: 1,
+    }
+    const operationId = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'
 
     apiRequestMock.mockResolvedValueOnce([incompleteSale])
 
-    await expect(updateIncompleteSale(incompleteSale)).resolves.toEqual([incompleteSale])
+    await expect(updateIncompleteSale(incompleteSale, { operationId })).resolves.toEqual([incompleteSale])
     expect(apiRequestMock).toHaveBeenCalledWith('/sales/misplaced/update', {
       method: 'POST',
-      body: incompleteSale,
+      body: {
+        MisplacedSaleStatus: 1,
+        NetUid: incompleteSale.NetUid,
+      },
+      headers: { 'Idempotency-Key': operationId },
+      signal: undefined,
     })
+  })
+
+  it('rejects a misplaced update without a persisted identity before the API call', async () => {
+    await expect(updateIncompleteSale(
+      { NetUid: '00000000-0000-0000-0000-000000000000', MisplacedSaleStatus: 1 },
+      { operationId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb' },
+    )).rejects.toThrow('Не вдалося визначити незавершений продаж')
+
+    expect(apiRequestMock).not.toHaveBeenCalled()
   })
 })

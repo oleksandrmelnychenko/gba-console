@@ -1,4 +1,8 @@
 import { apiRequest } from '../../../shared/api/apiClient'
+import {
+  executeAccountingMutation,
+  type AccountingMutationOperationOptions,
+} from '../../../shared/api/accountingMutationOperation'
 import { sanitizeConsumableOrderPayload } from '../../consumable-orders/consumableOrderPayload'
 import type {
   AdvanceReportConsumablesOrder,
@@ -32,6 +36,7 @@ export async function updateAdvanceReportOrder(
   createIncomeAutomatically: boolean,
   order: AdvanceReportOrder,
   documentFiles: File[] = [],
+  operation?: AccountingMutationOperationOptions,
 ): Promise<AdvanceReportOrder | null> {
   const payload = sanitizeAdvanceReportOrder(order)
 
@@ -41,6 +46,8 @@ export async function updateAdvanceReportOrder(
     formData.append('order', JSON.stringify(payload))
     documentFiles.forEach((file) => formData.append('documents', file))
 
+    // Do not attach an accounting idempotency key until uploaded content is
+    // staged and hashed by the server in the same durable mutation workflow.
     const result = await apiRequest<unknown>('/payments/orders/outcome/upload/update', {
       body: formData,
       method: 'POST',
@@ -52,12 +59,24 @@ export async function updateAdvanceReportOrder(
     return normalizeAdvanceReportOrder(result)
   }
 
-  const result = await apiRequest<unknown>('/payments/orders/outcome/update', {
-    body: payload,
-    method: 'POST',
-    query: {
-      auto: createIncomeAutomatically,
+  const result = await executeAccountingMutation({
+    identity: order,
+    kind: 'outcome-payment:update',
+    operation,
+    payload: {
+      createIncomeAutomatically,
+      order: payload,
     },
+    request: (snapshot, context) => apiRequest<unknown>('/payments/orders/outcome/update', {
+      body: snapshot.order,
+      dedupe: false,
+      headers: context.headers,
+      method: 'POST',
+      query: {
+        auto: snapshot.createIncomeAutomatically,
+      },
+      ...(context.signal ? { signal: context.signal } : {}),
+    }),
   })
 
   return normalizeAdvanceReportOrder(result)

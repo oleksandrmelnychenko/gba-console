@@ -69,6 +69,14 @@ function getWizardRequestErrorMessage(error: unknown, fallback: string): string 
   return fallback
 }
 
+function requireHydratedWizardSale(sale: SalesUkraineSale | null): SalesUkraineSale {
+  if (!sale || sale.HasDetails === false || !sale.Order) {
+    throw new Error('Не вдалося завантажити повні дані продажу. Перехід заблоковано')
+  }
+
+  return { ...sale, HasDetails: true }
+}
+
 export type NewSaleWizardPrefill = {
   agreement?: SalesUkraineClientAgreement | null
   agreementNetId?: string | null
@@ -823,7 +831,7 @@ function NewSaleWizardContent({
         return false
       }
 
-      const next = fresh ?? sale
+      const next = requireHydratedWizardSale(fresh)
 
       clearWizardMergedSale()
       setReview(NEW_SALE_REVIEW_INITIAL)
@@ -878,7 +886,7 @@ function NewSaleWizardContent({
         return
       }
 
-      const next = fresh ?? sale
+      const next = requireHydratedWizardSale(fresh)
 
       setReview(NEW_SALE_REVIEW_INITIAL)
       const current = stateRef.current

@@ -68,4 +68,19 @@ describe('apiRequest mutation dedupe (rapid-click guard)', () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(2)
   })
+
+  it('does not merge mutating GET requests carrying idempotency keys', async () => {
+    fetchMock.mockImplementation(() => Promise.resolve(okResponse()))
+
+    await Promise.all([
+      apiRequest('/sales/shipments/document/create/export', {
+        headers: { 'Idempotency-Key': '11111111-1111-4111-8111-111111111111' },
+      }),
+      apiRequest('/sales/shipments/document/create/export', {
+        headers: { 'Idempotency-Key': '22222222-2222-4222-8222-222222222222' },
+      }),
+    ])
+
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
 })
