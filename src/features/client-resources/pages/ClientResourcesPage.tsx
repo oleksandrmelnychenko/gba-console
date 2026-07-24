@@ -21,7 +21,7 @@ import {
 } from '@mantine/core'
 import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
-import { Building, ChevronRight, CircleAlert, Coins, DatabaseX, ExternalLink, MapPin, Package, Plus, ReceiptText, RefreshCw, RotateCcw, Ruler, Save, Search, Star, Trash2, Truck, Upload, Users } from 'lucide-react'
+import { Building, ChevronRight, CircleAlert, Coins, DatabaseX, MapPin, Package, Plus, ReceiptText, RefreshCw, RotateCcw, Ruler, Save, Search, Star, Trash2, Truck, Upload, Users } from 'lucide-react'
 import { createContext, type ComponentType, type ReactNode, useCallback, useContext, useEffect, useMemo, useReducer, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
@@ -29,10 +29,9 @@ import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { usePageBreadcrumb } from '../../../shared/ui/page-header-actions/pageHeaderActionsContext'
+import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
-import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
-import type { DataTableColumn, DataTableDefaultLayout, DataTableDensity } from '../../../shared/ui/data-table/types'
+import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { toProxiedAssetUrl } from '../../../shared/url/proxiedAssetUrl'
 import { PermissionGate } from '../../auth/components/PermissionGate'
@@ -123,6 +122,7 @@ const RESOURCE_MONO_STYLE = { fontFamily: 'var(--font-mono)', letterSpacing: 0 }
 const BUYER_CLIENT_TYPE = 0
 const PERFECT_CLIENT_CHECKBOX_TYPE = 1
 const PERFECT_CLIENT_TOGGLE_TYPE = 2
+const CLIENT_RESOURCE_PAGE_SIZE = 20
 const PROTECTED_TRANSPORTER_CSS_CLASS = 'self_checkout_item_class'
 const REGION_CREATE_PERMISSION = 'REGIONS_ClientsResources_NewRegionBtn_PKEY'
 const REGION_CODE_CREATE_PERMISSION = 'REGIONS_ClientsResources_NewBtn_PKEY'
@@ -197,7 +197,6 @@ const CLIENT_RESOURCE_TABLE_DEFAULT_LAYOUT = {
 type ResourceDataTableProps<TData extends ClientResourceEntity> = {
   columns: DataTableColumn<TData>[]
   data: TData[]
-  density?: DataTableDensity
   emptyText?: ReactNode
   fillHeight?: boolean
   layoutVersion?: number | string
@@ -209,7 +208,6 @@ type ResourceDataTableProps<TData extends ClientResourceEntity> = {
 function ResourceDataTable<TData extends ClientResourceEntity>({
   columns,
   data,
-  density,
   emptyText,
   fillHeight,
   layoutVersion = 'client-resources-table-3',
@@ -226,7 +224,6 @@ function ResourceDataTable<TData extends ClientResourceEntity>({
       columns={columns}
       data={data}
       defaultLayout={CLIENT_RESOURCE_TABLE_DEFAULT_LAYOUT}
-      density={usesFilterPattern ? undefined : density}
       emptyText={emptyText}
       getRowId={(row, index) => getEntityKey(row, index)}
       height={shouldFillHeight ? '100%' : undefined}
@@ -246,25 +243,53 @@ function ResourceDataTable<TData extends ClientResourceEntity>({
   ) : table
 }
 
+type ClientResourcePagination = {
+  page: number
+  pageSize: number
+  totalPages: number
+  onPageChange: (page: number) => void
+  onPageSizeChange: (pageSize: number) => void
+  onReset: () => void
+}
+
+function useClientResourcePagination<T>(items: T[]) {
+  const [requestedPage, setRequestedPage] = useState(1)
+  const [pageSize, setPageSize] = useState(CLIENT_RESOURCE_PAGE_SIZE)
+  const totalPages = Math.max(1, Math.ceil(items.length / pageSize))
+  const page = Math.min(requestedPage, totalPages)
+
+  const data = useMemo(
+    () => items.slice((page - 1) * pageSize, page * pageSize),
+    [items, page, pageSize],
+  )
+  const onPageSizeChange = useCallback((nextPageSize: number) => {
+    setRequestedPage(1)
+    setPageSize(nextPageSize)
+  }, [])
+  const onReset = useCallback(() => setRequestedPage(1), [])
+
+  return {
+    data,
+    page,
+    pageSize,
+    totalPages,
+    onPageChange: setRequestedPage,
+    onPageSizeChange,
+    onReset,
+  }
+}
+
 function TruncatedCell({ mono = false, value }: { mono?: boolean; value: unknown }) {
   const text = displayValue(value)
-  const hasTooltip = Boolean(text)
 
   return (
-    <Tooltip
-      classNames={{ tooltip: 'client-resources-cell-tooltip' }}
-      disabled={!hasTooltip}
-      label={text}
-      maw={420}
-      multiline
-      openDelay={350}
-      position="top-start"
-      withArrow
+    <Text
+      component="span"
+      className={`client-resources-truncated-cell${mono ? ' is-mono' : ''}`}
+      title={text || undefined}
     >
-      <Text component="span" className={`client-resources-truncated-cell${mono ? ' is-mono' : ''}`}>
-        {text}
-      </Text>
-    </Tooltip>
+      {text}
+    </Text>
   )
 }
 
@@ -524,7 +549,6 @@ export function ClientResourcesPage() {
   const { step } = useParams<{ step?: string }>()
   const activeStep = isClientResourceStep(step) ? step : DEFAULT_STEP
   const activeSection = getSection(activeStep)
-  const usesFilterPattern = activeStep !== 'product-reserve'
 
   usePageBreadcrumb(translate(activeSection.label))
 
@@ -535,8 +559,8 @@ export function ClientResourcesPage() {
   }, [navigate, step])
 
   return (
-    <Box className={`client-resources-page${usesFilterPattern ? ' console-table-page is-filtered' : ''}`}>
-      <Box className={`client-resources-shell${usesFilterPattern ? ' is-filtered' : ''}`}>
+    <Box className="client-resources-page console-table-page is-filtered">
+      <Box className="client-resources-shell is-filtered">
         <ClientResourcesNav activeStep={activeStep} onNavigate={(nextStep) => navigate(`/clients/resources/${nextStep}`)} />
 
         <Box className="client-resources-content">
@@ -564,12 +588,16 @@ function ClientResourcesNav({
         return (
           <button
             key={section.step}
+            aria-current={isActive ? 'page' : undefined}
             className={`client-resources-nav-item${isActive ? ' is-active' : ''}`}
             type="button"
             onClick={() => onNavigate(section.step)}
           >
-            <span>{t(section.label)}</span>
-            <ChevronRight size={14} strokeWidth={2} />
+            <span className="client-resources-nav-item-main">
+              <span className="client-resources-nav-item-name">{t(section.label)}</span>
+              <ChevronRight aria-hidden="true" className="client-resources-nav-item-chevron" size={14} strokeWidth={2} />
+            </span>
+            <span aria-hidden="true" className="client-resources-nav-item-marker" />
           </button>
         )
       })}
@@ -621,16 +649,16 @@ function useRegionsPanelModel(section: ClientResourceSection) {
           region.NetUid,
           ...(region.RegionCodes || []).flatMap((code) => [code.Value, code.City, code.District]),
         ]),
-      ),
+    ),
     [search, state.data],
   )
-  const effectiveSelectedRegionId = selectedRegionId || (state.data.length ? getEntityKey(state.data[0]) : null)
+  const pagination = useClientResourcePagination(filteredRegions)
+  const effectiveSelectedRegionId = selectedRegionId || (pagination.data.length ? getEntityKey(pagination.data[0]) : null)
   const selectedRegion = useMemo(
     () =>
-      state.data.find((region) => getEntityKey(region) === effectiveSelectedRegionId)
-      || filteredRegions[0]
-      || state.data[0],
-    [effectiveSelectedRegionId, filteredRegions, state.data],
+      pagination.data.find((region) => getEntityKey(region) === effectiveSelectedRegionId)
+      || pagination.data[0],
+    [effectiveSelectedRegionId, pagination.data],
   )
   const selectedRegionCodes = useMemo(() => {
     const codes = selectedRegion?.RegionCodes || []
@@ -783,7 +811,7 @@ function useRegionsPanelModel(section: ClientResourceSection) {
   }
 
   return {
-    deleteTarget, filteredRegions, formError, isSaving, regionCodeEditor, regionEditor, search, section,
+    deleteTarget, filteredRegions, formError, isSaving, pagination, regionCodeEditor, regionEditor, search, section,
     selectedRegion, selectedRegionCodes, state, confirmDeleteRegionTarget, openCreateRegion, openCreateRegionCode, openEditRegion,
     openEditRegionCode, saveRegion, saveRegionCode, setDeleteTarget, setFormError, setRegionCodeEditor,
     setRegionEditor, setSearch, setSelectedRegionId,
@@ -798,7 +826,7 @@ function RegionsPanel({ section }: { section: ClientResourceSection }) {
 
 function RegionsPanelView({ model }: { model: ReturnType<typeof useRegionsPanelModel> }) {
   const {
-    deleteTarget, filteredRegions, formError, isSaving, regionCodeEditor, regionEditor, search, section,
+    deleteTarget, filteredRegions, formError, isSaving, pagination, regionCodeEditor, regionEditor, search, section,
     selectedRegion, selectedRegionCodes, state, confirmDeleteRegionTarget, openCreateRegion, openCreateRegionCode, openEditRegion,
     openEditRegionCode, saveRegion, saveRegionCode, setDeleteTarget, setFormError, setRegionCodeEditor,
     setRegionEditor, setSearch, setSelectedRegionId,
@@ -819,6 +847,7 @@ function RegionsPanelView({ model }: { model: ReturnType<typeof useRegionsPanelM
         isLoading={state.isLoading}
         onRefresh={state.reload}
         onSearchChange={setSearch}
+        pagination={pagination}
         searchFullWidth
         searchValue={search}
       />
@@ -827,7 +856,7 @@ function RegionsPanelView({ model }: { model: ReturnType<typeof useRegionsPanelM
           <Box className="client-resources-regions-grid">
             <Stack gap={6} className="client-resources-region-master">
               <Stack gap={2} className="client-resources-region-list">
-                {filteredRegions.map((region, index) => {
+                {pagination.data.map((region, index) => {
                   const key = getEntityKey(region, index)
                   const isActive = getEntityKey(selectedRegion) === key
 
@@ -913,69 +942,64 @@ function RegionsPanelView({ model }: { model: ReturnType<typeof useRegionsPanelM
                   </PermissionGate>
                 ) : null}
               </Group>
-              {selectedRegion && selectedRegionCodes.length ? (
-                <ResourceDataTable
-                  columns={[
-                    {
-                      id: 'code',
-                      header: 'Код',
-                      accessor: (code) => code.Value,
-                      width: 140,
-                    },
-                    {
-                      id: 'city',
-                      header: 'Місто',
-                      accessor: (code) => code.City,
-                      minWidth: 180,
-                    },
-                    {
-                      id: 'district',
-                      header: 'Район',
-                      accessor: (code) => code.District,
-                      minWidth: 180,
-                    },
-                    {
-                      id: 'actions',
-                      header: '',
-                      align: 'right',
-                      width: 96,
-                      enableHiding: false,
-                      enableReorder: false,
-                      enableResizing: false,
-                      enableSorting: false,
-                      cell: (code) => (
-                        <Group gap={4} justify="flex-end" wrap="nowrap">
-                          <PermissionGate permissionKey={REGION_EDIT_PERMISSION}>
-                            <TableRowAction
-                              action="edit"
-                              label={translate("Редагувати код регіону")}
-                              onClick={() => openEditRegionCode(selectedRegion, code)}
-                            />
-                          </PermissionGate>
-                          <PermissionGate permissionKey={REGION_DELETE_PERMISSION}>
-                            <TableRowAction
-                              action="delete"
-                              disabled={!code.NetUid}
-                              label={translate("Видалити код регіону")}
-                              onClick={() => {
-                                setFormError(null)
-                                setDeleteTarget({ type: 'regionCode', regionCode: code })
-                              }}
-                            />
-                          </PermissionGate>
-                        </Group>
-                      ),
-                    },
-                  ]}
-                  data={selectedRegionCodes}
-                  emptyText={translate("Кодів регіону немає")}
-                  fillHeight={false}
-                  minWidth={620}
-                  tableId="region-codes"
-                />
-              ) : (
-                <EmptyState title={translate(selectedRegion?.RegionCodes?.length ? "За цим пошуком кодів немає" : "Кодів регіону немає")} />
-              )}
+              <ResourceDataTable
+                columns={[
+                  {
+                    id: 'code',
+                    header: 'Код',
+                    accessor: (code) => code.Value,
+                    width: 140,
+                  },
+                  {
+                    id: 'city',
+                    header: 'Місто',
+                    accessor: (code) => code.City,
+                    minWidth: 180,
+                  },
+                  {
+                    id: 'district',
+                    header: 'Район',
+                    accessor: (code) => code.District,
+                    minWidth: 180,
+                  },
+                  {
+                    id: 'actions',
+                    header: '',
+                    align: 'right',
+                    width: 96,
+                    enableHiding: false,
+                    enableReorder: false,
+                    enableResizing: false,
+                    enableSorting: false,
+                    cell: (code) => (
+                      <Group gap={4} justify="flex-end" wrap="nowrap">
+                        <PermissionGate permissionKey={REGION_EDIT_PERMISSION}>
+                          <TableRowAction
+                            action="edit"
+                            label={translate("Редагувати код регіону")}
+                            onClick={() => openEditRegionCode(selectedRegion, code)}
+                          />
+                        </PermissionGate>
+                        <PermissionGate permissionKey={REGION_DELETE_PERMISSION}>
+                          <TableRowAction
+                            action="delete"
+                            disabled={!code.NetUid}
+                            label={translate("Видалити код регіону")}
+                            onClick={() => {
+                              setFormError(null)
+                              setDeleteTarget({ type: 'regionCode', regionCode: code })
+                            }}
+                          />
+                        </PermissionGate>
+                      </Group>
+                    ),
+                  },
+                ]}
+                data={selectedRegionCodes}
+                emptyText={translate(selectedRegion?.RegionCodes?.length ? "За цим пошуком кодів немає" : "Кодів регіону немає")}
+                minWidth={620}
+                tableId="region-codes"
+              />
             </Box>
           </Box>
         ) : (
@@ -1201,6 +1225,7 @@ function PerfectClientsPanel({ section }: { section: ClientResourceSection }) {
   const [deleteTarget, setDeleteTarget] = useValueState<ClientResourceDeleteTarget | null>(null)
   const [formError, setFormError] = useValueState<string | null>(null)
   const [isSaving, setSaving] = useValueState(false)
+  const [search, setSearch] = useValueState('')
   const buyerRoles = useMemo(() => getBuyerRoles(clientTypesState.data), [clientTypesState.data])
   const roleOptions = useMemo(() => getRoleSelectOptions(buyerRoles), [buyerRoles])
   const queryRoleId = searchParams.get('id')
@@ -1220,12 +1245,26 @@ function PerfectClientsPanel({ section }: { section: ClientResourceSection }) {
     return getClientResourcePerfectClients(numericRoleId)
   }, [effectiveRoleId])
   const perfectClientsState = useResourceData<ClientResourcePerfectClient[]>(loadPerfectClients, [])
-  const checkboxItems = perfectClientsState.data.filter((item) => item.Type === PERFECT_CLIENT_CHECKBOX_TYPE)
-  const toggleItems = perfectClientsState.data.filter((item) => item.Type === PERFECT_CLIENT_TOGGLE_TYPE)
+  const filteredPerfectClients = useMemo(
+    () =>
+      perfectClientsState.data.filter((item) =>
+        matchesSearch(search, [
+          item.Name,
+          item.Description,
+          item.Lable,
+          ...getTranslationNames(item.PerfectClientTranslations),
+        ]),
+      ),
+    [perfectClientsState.data, search],
+  )
+  const pagination = useClientResourcePagination(filteredPerfectClients)
+  const checkboxItems = pagination.data.filter((item) => item.Type === PERFECT_CLIENT_CHECKBOX_TYPE)
+  const toggleItems = pagination.data.filter((item) => item.Type === PERFECT_CLIENT_TOGGLE_TYPE)
 
   function selectRole(nextRoleId: string | null) {
     const normalizedRoleId = nextRoleId || roleOptions[0]?.value || null
 
+    pagination.onReset()
     setFormError(null)
     setEditor(null)
     setDeleteTarget(null)
@@ -1355,6 +1394,10 @@ function PerfectClientsPanel({ section }: { section: ClientResourceSection }) {
           clientTypesState.reload()
           perfectClientsState.reload()
         }}
+        onSearchChange={setSearch}
+        pagination={pagination}
+        searchFullWidth
+        searchValue={search}
       />
       <Loadable state={clientTypesState} emptyTitle="Ролей клієнтів не знайдено">
         <Loadable state={perfectClientsState} emptyTitle="Параметрів для ролі не знайдено">
@@ -1429,8 +1472,9 @@ function PerfectClientGroup({
 }) {
   return (
     <Box className="client-resources-perfect-client-column" aria-label={title}>
+      <Text className="client-resources-perfect-client-heading">{title}</Text>
       {items.length ? (
-        <Stack gap={0}>
+        <Stack className="client-resources-perfect-client-list" gap={0}>
           {items.map((item) => {
             const baseName = displayTranslatedEntity(item.Name, item.PerfectClientTranslations)
             const baseDescription = item.Description?.trim() || displayValue(item.Lable)
@@ -1440,18 +1484,15 @@ function PerfectClientGroup({
             return (
               <Box className="client-resources-perfect-client-row" key={getEntityKey(item)}>
                 <Box className="client-resources-perfect-client-text">
-                  <Tooltip classNames={{ tooltip: 'client-resources-cell-tooltip' }} label={name} disabled={!name}>
-                    <Text className="client-resources-perfect-client-name">{name}</Text>
-                  </Tooltip>
+                  <Text className="client-resources-perfect-client-name" title={name || undefined}>{name}</Text>
                   {description ? (
-                    <Tooltip
-                      classNames={{ tooltip: 'client-resources-cell-tooltip' }}
-                      label={description}
+                    <Badge
+                      className="app-role-pill is-gray client-resources-perfect-client-description"
+                      title={description}
+                      variant="light"
                     >
-                      <Badge className="app-role-pill is-gray client-resources-perfect-client-description" variant="light">
-                        {description}
-                      </Badge>
-                    </Tooltip>
+                      {description}
+                    </Badge>
                   ) : null}
                 </Box>
                 <Group gap={4} justify="flex-end" wrap="nowrap">
@@ -2170,7 +2211,6 @@ function OrganizationsPanel({ section }: { section: ClientResourceSection }) {
   const [deleteTarget, setDeleteTarget] = useValueState<ClientResourceDeleteTarget | null>(null)
   const [formError, setFormError] = useValueState<string | null>(null)
   const [isSaving, setSaving] = useValueState(false)
-  const { density } = useDataTableDensity('client-resources-organizations', 'compact')
   const filtered = useMemo(
     () =>
       state.data.filter((organization) =>
@@ -2185,10 +2225,15 @@ function OrganizationsPanel({ section }: { section: ClientResourceSection }) {
           organization.Address,
           ...getTranslationNames(organization.OrganizationTranslations),
         ]),
-      ),
+    ),
     [search, state.data],
   )
+  const pagination = useClientResourcePagination(filtered)
   const supportError = currenciesState.error || storagesState.error || taxInspectionsState.error || vatRatesState.error
+  const isLoadingSupport = currenciesState.isLoading
+    || storagesState.isLoading
+    || taxInspectionsState.isLoading
+    || vatRatesState.isLoading
 
   function openCreateOrganization() {
     setFormError(null)
@@ -2277,122 +2322,124 @@ function OrganizationsPanel({ section }: { section: ClientResourceSection }) {
   return (
     <ResourcePanel action={organizationHeaderAction} section={section}>
       <PanelToolbar
-        isLoading={state.isLoading}
-        onRefresh={state.reload}
+        isLoading={state.isLoading || isLoadingSupport}
+        onRefresh={() => {
+          state.reload()
+          currenciesState.reload()
+          storagesState.reload()
+          taxInspectionsState.reload()
+          vatRatesState.reload()
+        }}
         onSearchChange={setSearch}
+        pagination={pagination}
         searchFullWidth
         searchValue={search}
       />
       {supportError ? (
-        <Alert color="yellow" icon={<CircleAlert size={18} strokeWidth={1.8} />} mb="md" variant="light">
+        <Alert className="console-table-alert" color="yellow" icon={<CircleAlert size={18} strokeWidth={1.8} />} variant="light">
           {supportError}
         </Alert>
       ) : null}
-      <Loadable state={state} emptyTitle="Організацій не знайдено">
-        {filtered.length ? (
-          <ResourceDataTable
-            columns={[
-              {
-                id: 'name',
-                header: 'Назва',
-                accessor: (organization) => displayTranslatedEntity(organization.Name, organization.OrganizationTranslations),
-                cell: (organization) => (
-                  <TruncatedCell value={displayTranslatedEntity(organization.Name, organization.OrganizationTranslations)} />
-                ),
-                maxWidth: 190,
-                width: 190,
-              },
-              {
-                id: 'fullName',
-                header: 'Повна назва',
-                accessor: (organization) => organization.FullName,
-                cell: (organization) => <TruncatedCell value={organization.FullName} />,
-                maxWidth: 230,
-                width: 230,
-              },
-              {
-                id: 'code',
-                header: 'Код',
-                accessor: (organization) => organization.Code,
-                cell: (organization) => <TruncatedCell mono value={organization.Code} />,
-                maxWidth: 80,
-                width: 80,
-              },
-              {
-                id: 'usreou',
-                header: 'ЄДРПОУ',
-                accessor: (organization) => organization.USREOU,
-                cell: (organization) => <TruncatedCell mono value={organization.USREOU} />,
-                maxWidth: 120,
-                width: 120,
-              },
-              {
-                id: 'tin',
-                header: 'ІПН',
-                accessor: (organization) => organization.TIN,
-                cell: (organization) => <TruncatedCell mono value={organization.TIN} />,
-                maxWidth: 120,
-                width: 120,
-              },
-              {
-                id: 'currency',
-                header: 'Валюта',
-                accessor: (organization) => displayCurrency(organization.Currency),
-                cell: (organization) => <TruncatedCell value={displayCurrency(organization.Currency)} />,
-                maxWidth: 120,
-                width: 120,
-              },
-              {
-                id: 'taxInspection',
-                header: 'Податкова',
-                accessor: (organization) => organization.TaxInspection?.InspectionName,
-                cell: (organization) => <TruncatedCell value={organization.TaxInspection?.InspectionName} />,
-                maxWidth: 170,
-                width: 170,
-              },
-              {
-                id: 'actions',
-                header: '',
-                align: 'right',
-                width: 88,
-                enableHiding: false,
-                enableReorder: false,
-                enableResizing: false,
-                enableSorting: false,
-                cell: (organization) => (
-                  <Group gap={4} justify="flex-end" wrap="nowrap">
-                    <PermissionGate permissionKey={ORGANIZATION_EDIT_PERMISSION}>
-                      <TableRowAction
-                        action="edit"
-                        label={translate("Редагувати організацію")}
-                        onClick={() => openEditOrganization(organization)}
-                      />
-                    </PermissionGate>
-                    <PermissionGate permissionKey={ORGANIZATION_DELETE_PERMISSION}>
-                      <TableRowAction
-                        action="delete"
-                        disabled={!organization.NetUid}
-                        label={translate("Видалити організацію")}
-                        onClick={() => {
-                          setFormError(null)
-                          setDeleteTarget({ type: 'organization', organization })
-                        }}
-                      />
-                    </PermissionGate>
-                  </Group>
-                ),
-              },
-            ]}
-            data={filtered}
-            density={density}
-            emptyText={translate("За цим пошуком немає організацій")}
-            layoutVersion="client-resources-organizations-table-2"
-            minWidth={1102}
-            tableId="organizations"
-          />
-        ) : (
-          <EmptyState title={translate("За цим пошуком немає організацій")} />
-        )}
+      <Loadable renderWhenEmpty state={state} emptyTitle="Організацій не знайдено">
+        <ResourceDataTable
+          columns={[
+            {
+              id: 'name',
+              header: 'Назва',
+              accessor: (organization) => displayTranslatedEntity(organization.Name, organization.OrganizationTranslations),
+              cell: (organization) => (
+                <TruncatedCell value={displayTranslatedEntity(organization.Name, organization.OrganizationTranslations)} />
+              ),
+              maxWidth: 190,
+              width: 190,
+            },
+            {
+              id: 'fullName',
+              header: 'Повна назва',
+              accessor: (organization) => organization.FullName,
+              cell: (organization) => <TruncatedCell value={organization.FullName} />,
+              maxWidth: 230,
+              width: 230,
+            },
+            {
+              id: 'code',
+              header: 'Код',
+              accessor: (organization) => organization.Code,
+              cell: (organization) => <TruncatedCell mono value={organization.Code} />,
+              maxWidth: 80,
+              width: 80,
+            },
+            {
+              id: 'usreou',
+              header: 'ЄДРПОУ',
+              accessor: (organization) => organization.USREOU,
+              cell: (organization) => <TruncatedCell mono value={organization.USREOU} />,
+              maxWidth: 120,
+              width: 120,
+            },
+            {
+              id: 'tin',
+              header: 'ІПН',
+              accessor: (organization) => organization.TIN,
+              cell: (organization) => <TruncatedCell mono value={organization.TIN} />,
+              maxWidth: 120,
+              width: 120,
+            },
+            {
+              id: 'currency',
+              header: 'Валюта',
+              accessor: (organization) => displayCurrency(organization.Currency),
+              cell: (organization) => <TruncatedCell value={displayCurrency(organization.Currency)} />,
+              maxWidth: 120,
+              width: 120,
+            },
+            {
+              id: 'taxInspection',
+              header: 'Податкова',
+              accessor: (organization) => organization.TaxInspection?.InspectionName,
+              cell: (organization) => <TruncatedCell value={organization.TaxInspection?.InspectionName} />,
+              maxWidth: 170,
+              width: 170,
+            },
+            {
+              id: 'actions',
+              header: '',
+              align: 'right',
+              width: 88,
+              enableHiding: false,
+              enableReorder: false,
+              enableResizing: false,
+              enableSorting: false,
+              cell: (organization) => (
+                <Group gap={4} justify="flex-end" wrap="nowrap">
+                  <PermissionGate permissionKey={ORGANIZATION_EDIT_PERMISSION}>
+                    <TableRowAction
+                      action="edit"
+                      label={translate("Редагувати організацію")}
+                      onClick={() => openEditOrganization(organization)}
+                    />
+                  </PermissionGate>
+                  <PermissionGate permissionKey={ORGANIZATION_DELETE_PERMISSION}>
+                    <TableRowAction
+                      action="delete"
+                      disabled={!organization.NetUid}
+                      label={translate("Видалити організацію")}
+                      onClick={() => {
+                        setFormError(null)
+                        setDeleteTarget({ type: 'organization', organization })
+                      }}
+                    />
+                  </PermissionGate>
+                </Group>
+              ),
+            },
+          ]}
+          data={pagination.data}
+          emptyText={translate("За цим пошуком немає організацій")}
+          layoutVersion="client-resources-organizations-table-2"
+          minWidth={1102}
+          tableId="organizations"
+        />
       </Loadable>
       <OrganizationEditorModal
         key={editor ? `organization-${editor.mode}-${getEntityKey(editor.organization)}` : 'organization-closed'}
@@ -2715,7 +2762,6 @@ function TaxInspectionsPanel({ section }: { section: ClientResourceSection }) {
   const [deleteTarget, setDeleteTarget] = useValueState<ClientResourceDeleteTarget | null>(null)
   const [formError, setFormError] = useValueState<string | null>(null)
   const [isSaving, setSaving] = useValueState(false)
-  const { density } = useDataTableDensity('client-resources-tax-inspections', 'compact')
   const filtered = useMemo(
     () =>
       state.data.filter((inspection) =>
@@ -2728,9 +2774,10 @@ function TaxInspectionsPanel({ section }: { section: ClientResourceSection }) {
           inspection.InspectionUSREOU,
           inspection.InspectionAddress,
         ]),
-      ),
+    ),
     [search, state.data],
   )
+  const pagination = useClientResourcePagination(filtered)
 
   function openCreateTaxInspection() {
     setFormError(null)
@@ -2810,112 +2857,108 @@ function TaxInspectionsPanel({ section }: { section: ClientResourceSection }) {
         isLoading={state.isLoading}
         onRefresh={state.reload}
         onSearchChange={setSearch}
+        pagination={pagination}
         searchFullWidth
         searchValue={search}
       />
-      <Loadable state={state} emptyTitle="Налогових інспекцій не знайдено">
-        {filtered.length ? (
-          <ResourceDataTable
-            columns={[
-              {
-                id: 'name',
-                header: 'Назва',
-                accessor: (inspection) => inspection.InspectionName,
-                cell: (inspection) => <TruncatedCell value={inspection.InspectionName} />,
-                maxWidth: 210,
-                width: 210,
-              },
-              {
-                id: 'number',
-                header: 'Код ГНИ',
-                accessor: (inspection) => inspection.InspectionNumber,
-                cell: (inspection) => <TruncatedCell value={inspection.InspectionNumber} />,
-                maxWidth: 110,
-                width: 110,
-              },
-              {
-                id: 'regionCode',
-                header: 'Код адм.района',
-                accessor: (inspection) => inspection.InspectionRegionCode,
-                cell: (inspection) => <TruncatedCell value={inspection.InspectionRegionCode} />,
-                maxWidth: 130,
-                width: 130,
-              },
-              {
-                id: 'region',
-                header: 'Назва адм.района',
-                accessor: (inspection) => inspection.InspectionRegionName,
-                cell: (inspection) => <TruncatedCell value={inspection.InspectionRegionName} />,
-                maxWidth: 180,
-                width: 180,
-              },
-              {
-                id: 'type',
-                header: 'Тип ГНИ',
-                accessor: (inspection) => inspection.InspectionType,
-                cell: (inspection) => <TruncatedCell value={inspection.InspectionType} />,
-                maxWidth: 120,
-                width: 120,
-              },
-              {
-                id: 'usreou',
-                header: 'Код по ЄДРПОУ',
-                accessor: (inspection) => inspection.InspectionUSREOU,
-                cell: (inspection) => <TruncatedCell value={inspection.InspectionUSREOU} />,
-                maxWidth: 130,
-                width: 130,
-              },
-              {
-                id: 'address',
-                header: 'Адреса',
-                accessor: (inspection) => inspection.InspectionAddress,
-                cell: (inspection) => <TruncatedCell value={inspection.InspectionAddress} />,
-                maxWidth: 180,
-                width: 180,
-              },
-              {
-                id: 'actions',
-                header: '',
-                align: 'right',
-                width: 88,
-                enableHiding: false,
-                enableReorder: false,
-                enableResizing: false,
-                enableSorting: false,
-                cell: (inspection) => (
-                  <Group gap={4} justify="flex-end" wrap="nowrap">
-                    <PermissionGate permissionKey={TAX_INSPECTION_EDIT_PERMISSION}>
-                      <TableRowAction
-                        action="edit"
-                        label={translate("Редагувати налогову інспекцію")}
-                        onClick={() => openEditTaxInspection(inspection)}
-                      />
-                    </PermissionGate>
-                    <PermissionGate permissionKey={TAX_INSPECTION_DELETE_PERMISSION}>
-                      <TableRowAction
-                        action="delete"
-                        disabled={!inspection.NetUid}
-                        label={translate("Видалити налогову інспекцію")}
-                        onClick={() => {
-                          setFormError(null)
-                          setDeleteTarget({ type: 'taxInspection', taxInspection: inspection })
-                        }}
-                      />
-                    </PermissionGate>
-                  </Group>
-                ),
-              },
-            ]}
-            data={filtered}
-            density={density}
-            emptyText={translate("За цим пошуком немає інспекцій")}
-            layoutVersion="client-resources-tax-inspections-table-2"
-            minWidth={1052}
-            tableId="tax-inspections"
-          />
-        ) : (
-          <EmptyState title={translate("За цим пошуком немає інспекцій")} />
-        )}
+      <Loadable renderWhenEmpty state={state} emptyTitle="Налогових інспекцій не знайдено">
+        <ResourceDataTable
+          columns={[
+            {
+              id: 'name',
+              header: 'Назва',
+              accessor: (inspection) => inspection.InspectionName,
+              cell: (inspection) => <TruncatedCell value={inspection.InspectionName} />,
+              maxWidth: 210,
+              width: 210,
+            },
+            {
+              id: 'number',
+              header: 'Код ГНИ',
+              accessor: (inspection) => inspection.InspectionNumber,
+              cell: (inspection) => <TruncatedCell value={inspection.InspectionNumber} />,
+              maxWidth: 110,
+              width: 110,
+            },
+            {
+              id: 'regionCode',
+              header: 'Код адм.района',
+              accessor: (inspection) => inspection.InspectionRegionCode,
+              cell: (inspection) => <TruncatedCell value={inspection.InspectionRegionCode} />,
+              maxWidth: 130,
+              width: 130,
+            },
+            {
+              id: 'region',
+              header: 'Назва адм.района',
+              accessor: (inspection) => inspection.InspectionRegionName,
+              cell: (inspection) => <TruncatedCell value={inspection.InspectionRegionName} />,
+              maxWidth: 180,
+              width: 180,
+            },
+            {
+              id: 'type',
+              header: 'Тип ГНИ',
+              accessor: (inspection) => inspection.InspectionType,
+              cell: (inspection) => <TruncatedCell value={inspection.InspectionType} />,
+              maxWidth: 120,
+              width: 120,
+            },
+            {
+              id: 'usreou',
+              header: 'Код по ЄДРПОУ',
+              accessor: (inspection) => inspection.InspectionUSREOU,
+              cell: (inspection) => <TruncatedCell value={inspection.InspectionUSREOU} />,
+              maxWidth: 130,
+              width: 130,
+            },
+            {
+              id: 'address',
+              header: 'Адреса',
+              accessor: (inspection) => inspection.InspectionAddress,
+              cell: (inspection) => <TruncatedCell value={inspection.InspectionAddress} />,
+              maxWidth: 180,
+              width: 180,
+            },
+            {
+              id: 'actions',
+              header: '',
+              align: 'right',
+              width: 88,
+              enableHiding: false,
+              enableReorder: false,
+              enableResizing: false,
+              enableSorting: false,
+              cell: (inspection) => (
+                <Group gap={4} justify="flex-end" wrap="nowrap">
+                  <PermissionGate permissionKey={TAX_INSPECTION_EDIT_PERMISSION}>
+                    <TableRowAction
+                      action="edit"
+                      label={translate("Редагувати налогову інспекцію")}
+                      onClick={() => openEditTaxInspection(inspection)}
+                    />
+                  </PermissionGate>
+                  <PermissionGate permissionKey={TAX_INSPECTION_DELETE_PERMISSION}>
+                    <TableRowAction
+                      action="delete"
+                      disabled={!inspection.NetUid}
+                      label={translate("Видалити налогову інспекцію")}
+                      onClick={() => {
+                        setFormError(null)
+                        setDeleteTarget({ type: 'taxInspection', taxInspection: inspection })
+                      }}
+                    />
+                  </PermissionGate>
+                </Group>
+              ),
+            },
+          ]}
+          data={pagination.data}
+          emptyText={translate("За цим пошуком немає інспекцій")}
+          layoutVersion="client-resources-tax-inspections-table-2"
+          minWidth={1052}
+          tableId="tax-inspections"
+        />
       </Loadable>
       <TaxInspectionEditorModal
         key={editor ? `tax-inspection-${editor.mode}-${getEntityKey(editor.taxInspection)}` : 'tax-inspection-closed'}
@@ -2959,7 +3002,6 @@ function PricingPanel({ section }: { section: ClientResourceSection }) {
   const [deleteTarget, setDeleteTarget] = useValueState<ClientResourceDeleteTarget | null>(null)
   const [formError, setFormError] = useValueState<string | null>(null)
   const [isSaving, setSaving] = useValueState(false)
-  const { density } = useDataTableDensity('client-resources-pricing', 'compact')
   const filtered = useMemo(
     () =>
       state.data.filter((pricing) =>
@@ -2970,9 +3012,10 @@ function PricingPanel({ section }: { section: ClientResourceSection }) {
           pricing.PriceType?.Name,
           ...getTranslationNames(pricing.PricingTranslations),
         ]),
-      ),
+    ),
     [search, state.data],
   )
+  const pagination = useClientResourcePagination(filtered)
   const supportError = currenciesState.error || priceTypesState.error || basePricingsState.error
   const isLoadingSupport = currenciesState.isLoading || priceTypesState.isLoading || basePricingsState.isLoading
   const isPricingSupportBlocked = Boolean(supportError) || currenciesState.data.length === 0 || priceTypesState.data.length === 0
@@ -3117,30 +3160,31 @@ function PricingPanel({ section }: { section: ClientResourceSection }) {
   return (
     <ResourcePanel action={pricingHeaderAction} section={section}>
       <PanelToolbar
-        isLoading={state.isLoading}
-        onRefresh={state.reload}
+        isLoading={state.isLoading || isLoadingSupport}
+        onRefresh={() => {
+          state.reload()
+          currenciesState.reload()
+          priceTypesState.reload()
+          basePricingsState.reload()
+        }}
         onSearchChange={setSearch}
+        pagination={pagination}
         searchFullWidth
         searchValue={search}
       />
       {supportError ? (
-        <Alert color="yellow" icon={<CircleAlert size={18} strokeWidth={1.8} />} mb="md" variant="light">
+        <Alert className="console-table-alert" color="yellow" icon={<CircleAlert size={18} strokeWidth={1.8} />} variant="light">
           {supportError}
         </Alert>
       ) : null}
-      <Loadable state={state} emptyTitle="Цінових правил не знайдено">
-        {filtered.length ? (
-          <PricingResourceTable
-            density={density}
-            isSaving={isSaving}
-            pricings={filtered}
-            onChangePriority={changePricingPriority}
-            onDelete={requestDeletePricing}
-            onEdit={openEditPricing}
-          />
-        ) : (
-          <EmptyState title={translate("За цим пошуком немає правил")} />
-        )}
+      <Loadable renderWhenEmpty state={state} emptyTitle="Цінових правил не знайдено">
+        <PricingResourceTable
+          isSaving={isSaving}
+          pricings={pagination.data}
+          onChangePriority={changePricingPriority}
+          onDelete={requestDeletePricing}
+          onEdit={openEditPricing}
+        />
       </Loadable>
       <PricingEditorModal
         key={editor ? `pricing-${editor.mode}-${getEntityKey(editor.pricing)}` : 'pricing-closed'}
@@ -3178,7 +3222,6 @@ function PricingPanel({ section }: { section: ClientResourceSection }) {
 }
 
 type PricingResourceTableProps = {
-  density?: DataTableDensity
   isSaving: boolean
   pricings: ClientResourcePricing[]
   onChangePriority: (pricing: ClientResourcePricing, raise: boolean) => void
@@ -3187,7 +3230,6 @@ type PricingResourceTableProps = {
 }
 
 function PricingResourceTable({
-  density,
   isSaving,
   pricings,
   onChangePriority,
@@ -3313,7 +3355,6 @@ function PricingResourceTable({
     <ResourceDataTable
       columns={columns}
       data={pricings}
-      density={density}
       emptyText={translate("За цим пошуком немає правил")}
       layoutVersion="client-resources-pricing-table-2"
       minWidth={1022}
@@ -3329,14 +3370,14 @@ function CurrenciesPanel({ section }: { section: ClientResourceSection }) {
   const [deleteTarget, setDeleteTarget] = useValueState<ClientResourceDeleteTarget | null>(null)
   const [formError, setFormError] = useValueState<string | null>(null)
   const [isSaving, setSaving] = useValueState(false)
-  const { density } = useDataTableDensity('client-resources-currencies', 'compact')
   const filtered = useMemo(
     () =>
       state.data.filter((currency) =>
         matchesSearch(search, [currency.Name, currency.Code, ...getTranslationNames(currency.CurrencyTranslations)]),
-      ),
+    ),
     [search, state.data],
   )
+  const pagination = useClientResourcePagination(filtered)
 
   function openCreateCurrency() {
     setFormError(null)
@@ -3423,13 +3464,13 @@ function CurrenciesPanel({ section }: { section: ClientResourceSection }) {
         isLoading={state.isLoading}
         onRefresh={state.reload}
         onSearchChange={setSearch}
+        pagination={pagination}
         searchFullWidth
         searchValue={search}
       />
-      <Loadable state={state} emptyTitle="Валют не знайдено">
-        {filtered.length ? (
-          <ResourceDataTable
-            columns={[
+      <Loadable renderWhenEmpty state={state} emptyTitle="Валют не знайдено">
+        <ResourceDataTable
+          columns={[
               {
                 id: 'code',
                 header: 'Код',
@@ -3486,17 +3527,13 @@ function CurrenciesPanel({ section }: { section: ClientResourceSection }) {
                   </Group>
                 ),
               },
-            ]}
-            data={filtered}
-            density={density}
-            emptyText={translate("За цим пошуком немає валют")}
-            layoutVersion="client-resources-currencies-table-2"
-            minWidth={532}
-            tableId="currencies"
-          />
-        ) : (
-          <EmptyState title={translate("За цим пошуком немає валют")} />
-        )}
+          ]}
+          data={pagination.data}
+          emptyText={translate("За цим пошуком немає валют")}
+          layoutVersion="client-resources-currencies-table-2"
+          minWidth={532}
+          tableId="currencies"
+        />
       </Loadable>
       <CurrencyEditorModal
         key={editor ? `currency-${editor.mode}-${getEntityKey(editor.currency)}` : 'currency-closed'}
@@ -3538,7 +3575,6 @@ function StoragesPanel({ section }: { section: ClientResourceSection }) {
   const [deleteTarget, setDeleteTarget] = useValueState<ClientResourceDeleteTarget | null>(null)
   const [formError, setFormError] = useValueState<string | null>(null)
   const [isSaving, setSaving] = useValueState(false)
-  const { density } = useDataTableDensity('client-resources-storages', 'compact')
   const filtered = useMemo(
     () =>
       state.data.filter((storage) =>
@@ -3549,9 +3585,10 @@ function StoragesPanel({ section }: { section: ClientResourceSection }) {
           storage.Locale,
           storage.NetUid,
         ]),
-      ),
+    ),
     [search, state.data],
   )
+  const pagination = useClientResourcePagination(filtered)
 
   function openCreateStorage() {
     setFormError(null)
@@ -3635,21 +3672,34 @@ function StoragesPanel({ section }: { section: ClientResourceSection }) {
   return (
     <ResourcePanel action={storageHeaderAction} section={section}>
       <PanelToolbar
-        isLoading={state.isLoading}
-        onRefresh={state.reload}
+        isLoading={state.isLoading || organizationsState.isLoading}
+        onRefresh={() => {
+          state.reload()
+          organizationsState.reload()
+        }}
         onSearchChange={setSearch}
+        pagination={pagination}
         searchFullWidth
         searchValue={search}
       />
       {organizationsState.error ? (
-        <Alert color="yellow" icon={<CircleAlert size={18} strokeWidth={1.8} />} mb="md" variant="light">
-          {organizationsState.error}
+        <Alert
+          className="console-table-alert"
+          color="yellow"
+          icon={<CircleAlert size={18} strokeWidth={1.8} />}
+          variant="light"
+        >
+          <Group gap="sm" justify="space-between">
+            <Text size="sm">{organizationsState.error}</Text>
+            <Button color="yellow" size="xs" variant="light" onClick={organizationsState.reload}>
+              Повторити
+            </Button>
+          </Group>
         </Alert>
       ) : null}
-      <Loadable state={state} emptyTitle="Складів не знайдено">
-        {filtered.length ? (
-          <ResourceDataTable
-            columns={[
+      <Loadable renderWhenEmpty state={state} emptyTitle="Складів не знайдено">
+        <ResourceDataTable
+          columns={[
               {
                 id: 'storage',
                 header: 'Склад',
@@ -3745,17 +3795,13 @@ function StoragesPanel({ section }: { section: ClientResourceSection }) {
                   </Group>
                 ),
               },
-            ]}
-            data={filtered}
-            density={density}
-            emptyText={translate("За цим пошуком немає складів")}
-            layoutVersion="client-resources-storages-table-2"
-            minWidth={1002}
-            tableId="storages"
-          />
-        ) : (
-          <EmptyState title={translate("За цим пошуком немає складів")} />
-        )}
+          ]}
+          data={pagination.data}
+          emptyText={translate("За цим пошуком немає складів")}
+          layoutVersion="client-resources-storages-table-2"
+          minWidth={1002}
+          tableId="storages"
+        />
       </Loadable>
       <StorageEditorModal
         key={editor ? `storage-${editor.mode}-${getEntityKey(editor.storage)}` : 'storage-closed'}
@@ -3797,14 +3843,14 @@ function MeasureUnitsPanel({ section }: { section: ClientResourceSection }) {
   const [deleteTarget, setDeleteTarget] = useValueState<ClientResourceDeleteTarget | null>(null)
   const [formError, setFormError] = useValueState<string | null>(null)
   const [isSaving, setSaving] = useValueState(false)
-  const { density } = useDataTableDensity('client-resources-measure-units', 'compact')
   const filtered = useMemo(
     () =>
       state.data.filter((measureUnit) =>
         matchesSearch(search, [measureUnit.CodeOneC, measureUnit.Name, measureUnit.Description, measureUnit.NetUid]),
-      ),
+    ),
     [search, state.data],
   )
+  const pagination = useClientResourcePagination(filtered)
 
   function openCreateMeasureUnit() {
     setFormError(null)
@@ -3891,13 +3937,13 @@ function MeasureUnitsPanel({ section }: { section: ClientResourceSection }) {
         isLoading={state.isLoading}
         onRefresh={state.reload}
         onSearchChange={setSearch}
+        pagination={pagination}
         searchFullWidth
         searchValue={search}
       />
-      <Loadable state={state} emptyTitle="Одиниць виміру не знайдено">
-        {filtered.length ? (
-          <ResourceDataTable
-            columns={[
+      <Loadable renderWhenEmpty state={state} emptyTitle="Одиниць виміру не знайдено">
+        <ResourceDataTable
+          columns={[
               {
                 id: 'codeOneC',
                 header: 'Код 1С',
@@ -3954,17 +4000,13 @@ function MeasureUnitsPanel({ section }: { section: ClientResourceSection }) {
                   </Group>
                 ),
               },
-            ]}
-            data={filtered}
-            density={density}
-            emptyText={translate("За цим пошуком немає одиниць")}
-            layoutVersion="client-resources-measure-units-table-2"
-            minWidth={592}
-            tableId="measure-units"
-          />
-        ) : (
-          <EmptyState title={translate("За цим пошуком немає одиниць")} />
-        )}
+          ]}
+          data={pagination.data}
+          emptyText={translate("За цим пошуком немає одиниць")}
+          layoutVersion="client-resources-measure-units-table-2"
+          minWidth={592}
+          tableId="measure-units"
+        />
       </Loadable>
       <MeasureUnitEditorModal
         key={editor ? `measure-unit-${editor.mode}-${getEntityKey(editor.measureUnit)}` : 'measure-unit-closed'}
@@ -4001,11 +4043,16 @@ function MeasureUnitsPanel({ section }: { section: ClientResourceSection }) {
 function ProductReservePanel({ section }: { section: ClientResourceSection }) {
   const navigate = useNavigate()
   const state = useResourceData<ClientResourceClientType[]>(getClientResourceClientTypes, [])
+  const [search, setSearch] = useValueState('')
   const [editor, setEditor] = useValueState<ReserveEditorState | null>(null)
   const [formError, setFormError] = useValueState<string | null>(null)
   const [isSaving, setSaving] = useValueState(false)
-  const { density, toggleDensity } = useDataTableDensity('client-resources-product-reserve', 'compact')
   const roles = useMemo(() => getBuyerRoles(state.data), [state.data])
+  const filteredRoles = useMemo(
+    () => roles.filter((role) => matchesSearch(search, [role.Name, role.Description])),
+    [roles, search],
+  )
+  const pagination = useClientResourcePagination(filteredRoles)
 
   async function saveReserveDays(daysValue: string) {
     if (!editor?.role) {
@@ -4044,18 +4091,17 @@ function ProductReservePanel({ section }: { section: ClientResourceSection }) {
   }
 
   return (
-    <ResourcePanel
-      action={
-        <Group gap="xs" wrap="nowrap">
-          <RefreshControl isLoading={state.isLoading} onRefresh={state.reload} />
-          <DataTableDensityToggle density={density} onToggle={toggleDensity} size="md" />
-        </Group>
-      }
-      section={section}
-    >
-      <Loadable state={state} emptyTitle="Ролей клієнтів не знайдено">
-        {roles.length ? (
-          <ResourceDataTable
+    <ResourcePanel section={section}>
+      <PanelToolbar
+        isLoading={state.isLoading}
+        onRefresh={state.reload}
+        onSearchChange={setSearch}
+        pagination={pagination}
+        searchFullWidth
+        searchValue={search}
+      />
+      <Loadable renderWhenEmpty state={state} emptyTitle="Ролей клієнтів не знайдено">
+        <ResourceDataTable
             columns={[
               {
                 id: 'role',
@@ -4064,28 +4110,24 @@ function ProductReservePanel({ section }: { section: ClientResourceSection }) {
                 maxWidth: 220,
                 width: 220,
                 cell: (role) => (
-                  <Tooltip
-                    classNames={{ tooltip: 'client-resources-cell-tooltip' }}
-                    disabled={!role.Name}
-                    label={displayValue(role.Name)}
-                    maw={420}
-                    multiline
-                    openDelay={350}
-                    position="top-start"
-                    withArrow
+                  <button
+                    className="client-resources-truncated-cell"
+                    disabled={!role.Id}
+                    style={{
+                      background: 'transparent',
+                      border: 0,
+                      color: 'inherit',
+                      cursor: role.Id ? 'pointer' : 'default',
+                      font: 'inherit',
+                      padding: 0,
+                      textAlign: 'left',
+                    }}
+                    title={displayValue(role.Name) || undefined}
+                    type="button"
+                    onClick={() => openClientsForRole(role)}
                   >
-                    <Button
-                      className="client-resources-truncated-action"
-                      color={CREATE_ACTION_COLOR}
-                      disabled={!role.Id}
-                      rightSection={<ExternalLink size={14} />}
-                      size="xs"
-                      variant="subtle"
-                      onClick={() => openClientsForRole(role)}
-                    >
-                      {displayValue(role.Name)}
-                    </Button>
-                  </Tooltip>
+                    {displayValue(role.Name)}
+                  </button>
                 ),
               },
               {
@@ -4102,11 +4144,7 @@ function ProductReservePanel({ section }: { section: ClientResourceSection }) {
                 accessor: (role) => role.OrderExpireDays,
                 maxWidth: 120,
                 width: 120,
-                cell: (role) => (
-                  <Badge className="app-role-pill is-orange" variant="light">
-                    {displayValue(role.OrderExpireDays)}
-                  </Badge>
-                ),
+                cell: (role) => <TruncatedCell mono value={role.OrderExpireDays} />,
               },
               {
                 id: 'actions',
@@ -4131,16 +4169,12 @@ function ProductReservePanel({ section }: { section: ClientResourceSection }) {
                 ),
               },
             ]}
-            data={roles}
-            density={density}
+            data={pagination.data}
             emptyText={translate("Ролей покупців не знайдено")}
             layoutVersion="client-resources-product-reserve-table-2"
             minWidth={672}
             tableId="product-reserve"
-          />
-        ) : (
-          <EmptyState title={translate("Ролей покупців не знайдено")} />
-        )}
+        />
       </Loadable>
       <ReserveEditorModal
         error={formError}
@@ -4162,6 +4196,7 @@ function ProductReservePanel({ section }: { section: ClientResourceSection }) {
 function CarrierPanel({ section }: { section: ClientResourceSection }) {
   const typesState = useResourceData<ClientResourceTransporterType[]>(getClientResourceTransporterTypes, [])
   const [typeNetId, setTypeNetId] = useValueState<string | null>(null)
+  const [search, setSearch] = useValueState('')
   const [editor, setEditor] = useValueState<TransporterEditorState | null>(null)
   const [deleteTarget, setDeleteTarget] = useValueState<ClientResourceDeleteTarget | null>(null)
   const [formError, setFormError] = useValueState<string | null>(null)
@@ -4193,12 +4228,25 @@ function CarrierPanel({ section }: { section: ClientResourceSection }) {
     return getClientResourceTransporters(effectiveTypeNetId)
   }, [effectiveTypeNetId])
   const transportersState = useResourceData<ClientResourceTransporter[]>(loadTransporters, [])
-  const activeTransporters = transportersState.data.filter((transporter) => !transporter.Deleted)
-  const archivedTransporters = transportersState.data.filter((transporter) => transporter.Deleted)
   const selectedTransporterType = useMemo(
     () => ukraineTransporterTypes.find((type) => type.NetUid === effectiveTypeNetId),
     [effectiveTypeNetId, ukraineTransporterTypes],
   )
+  const filteredTransporters = useMemo(
+    () =>
+      transportersState.data.filter((transporter) =>
+        matchesSearch(search, [
+          transporter.Name,
+          transporter.TransporterType?.Name,
+          selectedTransporterType?.Name,
+          transporter.Priority,
+        ]),
+    ),
+    [search, selectedTransporterType, transportersState.data],
+  )
+  const pagination = useClientResourcePagination(filteredTransporters)
+  const activeTransporters = pagination.data.filter((transporter) => !transporter.Deleted)
+  const archivedTransporters = pagination.data.filter((transporter) => transporter.Deleted)
 
   function openCreateTransporter() {
     setFormError(null)
@@ -4303,7 +4351,10 @@ function CarrierPanel({ section }: { section: ClientResourceSection }) {
             label={translate("Тип перевізника")}
             maw={360}
             nothingFoundMessage={translate("Типів не знайдено")}
-            onChange={setTypeNetId}
+            onChange={(nextTypeNetId) => {
+              pagination.onReset()
+              setTypeNetId(nextTypeNetId)
+            }}
             placeholder={translate("Оберіть тип")}
             value={effectiveTypeNetId}
           />
@@ -4313,10 +4364,13 @@ function CarrierPanel({ section }: { section: ClientResourceSection }) {
           typesState.reload()
           transportersState.reload()
         }}
+        onSearchChange={setSearch}
+        pagination={pagination}
+        searchValue={search}
       />
       <Loadable state={typesState} emptyTitle="Типів перевізників не знайдено">
-        <Loadable state={transportersState} emptyTitle="Перевізників не знайдено">
-          <Stack gap="xl">
+        <Loadable renderWhenEmpty state={transportersState} emptyTitle="Перевізників не знайдено">
+          <Stack className="client-resources-carrier-content" gap="xl">
             <TransporterTable
               showActions
               showLayoutControls
@@ -4396,9 +4450,8 @@ function TransporterTable({
       <Text fw={700} mb="xs">
         {title}
       </Text>
-      {transporters.length ? (
-        <ResourceDataTable
-          columns={[
+      <ResourceDataTable
+        columns={[
             {
               id: 'transporter',
               header: 'Перевізник',
@@ -4406,23 +4459,17 @@ function TransporterTable({
               maxWidth: 240,
               width: 240,
               cell: (transporter) => (
-                <Tooltip
-                  classNames={{ tooltip: 'client-resources-cell-tooltip' }}
-                  disabled={!transporter.Name}
-                  label={displayValue(transporter.Name)}
-                  maw={420}
-                  multiline
-                  openDelay={350}
-                  position="top-start"
-                  withArrow
+                <Group
+                  className="client-resources-transporter-cell"
+                  gap="sm"
+                  title={displayValue(transporter.Name) || undefined}
+                  wrap="nowrap"
                 >
-                  <Group gap="sm" wrap="nowrap" className="client-resources-transporter-cell">
-                    <Avatar src={toProxiedAssetUrl(transporter.ImageUrl)} alt={displayValue(transporter.Name)} size="sm" radius="sm" />
-                    <Text fw={600} className="client-resources-truncated-cell">
-                      {displayValue(transporter.Name)}
-                    </Text>
-                  </Group>
-                </Tooltip>
+                  <Avatar src={toProxiedAssetUrl(transporter.ImageUrl)} alt={displayValue(transporter.Name)} size="sm" radius="sm" />
+                  <Text fw={600} className="client-resources-truncated-cell">
+                    {displayValue(transporter.Name)}
+                  </Text>
+                </Group>
               ),
             },
             {
@@ -4474,18 +4521,15 @@ function TransporterTable({
                   },
                 ]
               : []),
-          ]}
-          data={transporters}
-          emptyText={translate("Записів немає")}
-          fillHeight={false}
-          layoutVersion="client-resources-transporters-table-2"
-          minWidth={showActions ? 602 : 530}
-          showLayoutControls={showLayoutControls}
-          tableId={`transporters-${title}`}
-        />
-      ) : (
-        <EmptyState title={translate("Записів немає")} />
-      )}
+        ]}
+        data={transporters}
+        emptyText={translate("Записів немає")}
+        fillHeight={false}
+        layoutVersion="client-resources-transporters-table-2"
+        minWidth={showActions ? 602 : 530}
+        showLayoutControls={showLayoutControls}
+        tableId={`transporters-${title}`}
+      />
     </Box>
   )
 }
@@ -4493,36 +4537,25 @@ function TransporterTable({
 function ResourcePanel({
   action,
   children,
-  section,
 }: {
   action?: ReactNode
   children: ReactNode
   section: ClientResourceSection
 }) {
-  const usesFilterPattern = section.step !== 'product-reserve'
   const [tableToolbarTarget, setTableToolbarTarget] = useState<HTMLDivElement | null>(null)
 
-  if (usesFilterPattern) {
-    return (
-      <ClientResourcesFilterPatternContext.Provider value>
-        <ClientResourcesTableToolbarContext.Provider
-          value={{ setTarget: setTableToolbarTarget, target: tableToolbarTarget }}
-        >
-          <ClientResourcesPanelActionContext.Provider value={action}>
-            <section className="client-resources-panel console-table-shell is-filtered">
-              {children}
-            </section>
-          </ClientResourcesPanelActionContext.Provider>
-        </ClientResourcesTableToolbarContext.Provider>
-      </ClientResourcesFilterPatternContext.Provider>
-    )
-  }
-
   return (
-    <section className="client-resources-panel">
-      {action ? <div className="client-resources-panel-bar">{action}</div> : null}
-      {children}
-    </section>
+    <ClientResourcesFilterPatternContext.Provider value>
+      <ClientResourcesTableToolbarContext.Provider
+        value={{ setTarget: setTableToolbarTarget, target: tableToolbarTarget }}
+      >
+        <ClientResourcesPanelActionContext.Provider value={action}>
+          <section className="client-resources-panel console-table-shell is-filtered">
+            {children}
+          </section>
+        </ClientResourcesPanelActionContext.Provider>
+      </ClientResourcesTableToolbarContext.Provider>
+    </ClientResourcesFilterPatternContext.Provider>
   )
 }
 
@@ -4532,6 +4565,7 @@ function PanelToolbar({
   isLoading,
   onRefresh,
   onSearchChange,
+  pagination,
   searchFullWidth = false,
   searchValue,
 }: {
@@ -4540,6 +4574,7 @@ function PanelToolbar({
   isLoading: boolean
   onRefresh?: () => void
   onSearchChange?: (value: string) => void
+  pagination?: ClientResourcePagination
   searchFullWidth?: boolean
   searchValue?: string
 }) {
@@ -4557,7 +4592,10 @@ function PanelToolbar({
             className={`client-resources-search${searchFullWidth ? ' client-resources-search-full' : ''}`}
             label={t('Пошук')}
             leftSection={<Search size={16} strokeWidth={1.8} />}
-            onChange={(event) => onSearchChange(event.currentTarget.value)}
+            onChange={(event) => {
+              pagination?.onReset()
+              onSearchChange(event.currentTarget.value)
+            }}
             placeholder={t('Назва або код')}
             value={searchValue}
           />
@@ -4573,13 +4611,28 @@ function PanelToolbar({
               size={34}
               type="button"
               variant="light"
-              onClick={() => onSearchChange('')}
+              onClick={() => {
+                pagination?.onReset()
+                onSearchChange('')
+              }}
             >
               <RotateCcw size={17} />
             </ActionIcon>
           </Tooltip>
         ) : null}
-        {onRefresh ? <RefreshControl isLoading={isLoading} onRefresh={onRefresh} /> : null}
+        {pagination ? (
+          <Paginator
+            isLoading={isLoading}
+            page={pagination.page}
+            pageSize={pagination.pageSize}
+            totalPages={pagination.totalPages}
+            onPageChange={pagination.onPageChange}
+            onPageSizeChange={pagination.onPageSizeChange}
+            onRefresh={onRefresh}
+          />
+        ) : onRefresh ? (
+          <RefreshControl isLoading={isLoading} onRefresh={onRefresh} />
+        ) : null}
       </div>
       <div ref={tableToolbar?.setTarget} className="app-filter-table-toolbar-slot" />
       {visibleAction ? <div className="client-resources-create-actions">{visibleAction}</div> : null}
@@ -4611,10 +4664,12 @@ function RefreshControl({ isLoading, onRefresh }: { isLoading: boolean; onRefres
 function Loadable<T>({
   children,
   emptyTitle,
+  renderWhenEmpty = false,
   state,
 }: {
   children: ReactNode
   emptyTitle: string
+  renderWhenEmpty?: boolean
   state: ResourceLoadState<T[]>
 }) {
   const { t } = useI18n()
@@ -4648,11 +4703,11 @@ function Loadable<T>({
     )
   }
 
-  if (!state.data.length) {
+  if (!renderWhenEmpty && !state.data.length) {
     return <EmptyState title={emptyTitle} />
   }
 
-  return children
+  return <Box className="client-resources-panel-body">{children}</Box>
 }
 
 function EmptyState({
