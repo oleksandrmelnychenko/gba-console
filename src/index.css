@@ -25,6 +25,7 @@
   /* Monospace stack for codes / numbers / IDs. JetBrains Mono is bundled via
      @fontsource above; falls back to the system monospace where unavailable.
      Use `font-family: var(--font-mono)` on any element that needs it. */
+  --font-sans: Onest, Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
   /* Brand accent (the «Продажі» orange). Use rgba(var(--brand-orange-rgb), a)
@@ -331,6 +332,8 @@ select {
   border-color: var(--mantine-color-red-6);
 }
 
+.app-form-sheet .mantine-Autocomplete-input,
+.app-form-sheet .mantine-MultiSelect-input,
 .app-form-sheet .mantine-NumberInput-input,
 .app-form-sheet .mantine-Select-input,
 .app-form-sheet input[type='date'],
