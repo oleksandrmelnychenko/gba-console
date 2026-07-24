@@ -251,7 +251,6 @@
 .warehouse-shipment-edit-title {
   color: var(--mantine-color-gray-9);
   font-family: var(--font-mono);
-  font-size: 18px;
   font-weight: 600;
   letter-spacing: 0;
 }
@@ -425,7 +424,6 @@
 .warehouse-order-placement-title-main > span {
   color: var(--mantine-color-gray-9);
   font-family: var(--font-mono);
-  font-size: 18px;
   font-weight: 600;
   letter-spacing: 0;
   line-height: 1.2;

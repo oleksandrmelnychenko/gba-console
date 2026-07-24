@@ -15,7 +15,7 @@ import { notifications } from '@mantine/notifications'
 import { Plus, Search } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { AppDrawer, AppDrawerFooter } from '../../../shared/ui/AppDrawer'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { searchPlacementProducts, updateSupplyOrderUkraine } from '../api/orderPlacementsApi'
 import type { PlacementOrderItem, PlacementProduct, PlacementSupplyOrder } from '../placementsTypes'
@@ -99,7 +99,7 @@ function PlacementUnorderedProductsContent({
 
   return (
     <Stack gap="md">
-      <ScrollArea.Autosize mah="calc(100vh - 280px)" type="auto">
+      <Box style={{ overflowX: 'auto' }}>
         <Table withColumnBorders highlightOnHover horizontalSpacing="sm" stickyHeader verticalSpacing={6}>
           <Table.Thead>
             <Table.Tr>
@@ -143,7 +143,7 @@ function PlacementUnorderedProductsContent({
             )}
           </Table.Tbody>
         </Table>
-      </ScrollArea.Autosize>
+      </Box>
 
       {isAdding ? (
         <AddUnorderedProductForm isSaving={isSaving} onCancel={() => setAdding(false)} onCreate={addItem} />
@@ -308,14 +308,16 @@ function AddUnorderedProductForm({
         />
       </Group>
 
-      <Group justify="flex-end">
-        <Button color="gray" disabled={isSaving} variant="subtle" onClick={onCancel}>
-          {t('Скасувати')}
-        </Button>
-        <Button disabled={!isValid} loading={isSaving} onClick={create}>
-          {t('Створити')}
-        </Button>
-      </Group>
+      <AppDrawerFooter>
+        <Group justify="flex-end">
+          <Button color="gray" disabled={isSaving} variant="subtle" onClick={onCancel}>
+            {t('Скасувати')}
+          </Button>
+          <Button disabled={!isValid} loading={isSaving} onClick={create}>
+            {t('Створити')}
+          </Button>
+        </Group>
+      </AppDrawerFooter>
     </Stack>
   )
 }

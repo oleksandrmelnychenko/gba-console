@@ -835,6 +835,32 @@ export function WarehouseUkraineOrderPlacementsPage() {
     <AppDrawer
       className="warehouse-order-placement-sheet"
       closeOnClickOutside={false}
+      footer={
+        canEditPlacement ? (
+          <>
+            {model.isDirty && (
+              <Button
+                className="warehouse-order-placement-action-button"
+                color="gray"
+                disabled={model.isBusy}
+                variant="light"
+                onClick={model.reloadFromServer}
+              >
+                {t('Скасувати')}
+              </Button>
+            )}
+            <Button
+              className="warehouse-order-placement-action-button"
+              color={CREATE_ACTION_COLOR}
+              disabled={!model.isDirty || model.isBusy}
+              loading={model.isSaving}
+              onClick={model.handleSave}
+            >
+              {t('Зберегти')}
+            </Button>
+          </>
+        ) : undefined
+      }
       opened
       position="right"
       size="full"
@@ -922,28 +948,6 @@ export function WarehouseUkraineOrderPlacementsPage() {
                 <Text className="warehouse-order-placement-dirty" c="orange" size="sm">
                   {t('Є незбережені зміни')}
                 </Text>
-              )}
-              {canEditPlacement && model.isDirty && (
-                <Button
-                  className="warehouse-order-placement-action-button"
-                  color="gray"
-                  disabled={model.isBusy}
-                  variant="light"
-                  onClick={model.reloadFromServer}
-                >
-                  {t('Скасувати')}
-                </Button>
-              )}
-              {canEditPlacement && (
-                <Button
-                  className="warehouse-order-placement-action-button"
-                  color={CREATE_ACTION_COLOR}
-                  disabled={!model.isDirty || model.isBusy}
-                  loading={model.isSaving}
-                  onClick={model.handleSave}
-                >
-                  {t('Зберегти')}
-                </Button>
               )}
               {isOpenOrder && canCarryOut && (
                 <Button

@@ -224,9 +224,14 @@ export function PlacementEditDrawer({
       onClose={onClose}
       footer={
         draft ? null : (
-          <Button color={CREATE_ACTION_COLOR} onClick={handleApply}>
-            {t('Зберегти')}
-          </Button>
+          <>
+            <Button color="gray" variant="light" onClick={onClose}>
+              {t('Скасувати')}
+            </Button>
+            <Button color={CREATE_ACTION_COLOR} onClick={handleApply}>
+              {t('Зберегти')}
+            </Button>
+          </>
         )
       }
     >

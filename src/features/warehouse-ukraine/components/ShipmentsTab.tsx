@@ -1863,6 +1863,24 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
       </div>
 
       <AppDrawer
+        footer={
+          shipmentDraft ? (
+            <>
+              <Button color="gray" leftSection={<X size={18} />} variant="light" onClick={requestCloseShipment}>
+                {t('Скасувати')}
+              </Button>
+              <Button
+                color={CREATE_ACTION_COLOR}
+                leftSection={<Save size={18} />}
+                disabled={!canEditShipment || !hasShipmentDraftChanges}
+                loading={isSaving}
+                onClick={saveSelectedShipment}
+              >
+                {t('Зберегти')}
+              </Button>
+            </>
+          ) : undefined
+        }
         opened={Boolean(shipmentDraft)}
         size="wide"
         title={
@@ -1920,18 +1938,6 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
                   </Button>
                 </Box>
               </Tooltip>
-              <Button
-                color={CREATE_ACTION_COLOR}
-                leftSection={<Save size={18} />}
-                disabled={!canEditShipment || !hasShipmentDraftChanges}
-                loading={isSaving}
-                onClick={saveSelectedShipment}
-              >
-                {t('Зберегти')}
-              </Button>
-              <Button color="gray" leftSection={<X size={18} />} variant="light" onClick={requestCloseShipment}>
-                {t('Скасувати')}
-              </Button>
             </div>
           </div>
 
@@ -1958,6 +1964,20 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
       </AppDrawer>
 
       <AppDrawer
+        footer={
+          <>
+            <Button color="gray" disabled={isManualLoading} variant="light" onClick={closeManualPicker}>
+              {t('Скасувати')}
+            </Button>
+            <Button
+              disabled={isManualLoading || manualSelectedCount === 0}
+              leftSection={<Plus size={18} />}
+              onClick={appendManualSelectedSalesToDraft}
+            >
+              {t('Додати')}
+            </Button>
+          </>
+        }
         opened={manualPickerOpen}
         size="wide"
         title={t('Додати накладні до відвантаження')}
@@ -2025,18 +2045,6 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
             }}
           />
 
-          <Group justify="flex-end" gap="sm">
-            <Button color="gray" disabled={isManualLoading} variant="light" onClick={closeManualPicker}>
-              {t('Скасувати')}
-            </Button>
-            <Button
-              disabled={isManualLoading || manualSelectedCount === 0}
-              leftSection={<Plus size={18} />}
-              onClick={appendManualSelectedSalesToDraft}
-            >
-              {t('Додати')}
-            </Button>
-          </Group>
         </Stack>
       </AppDrawer>
 
