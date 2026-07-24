@@ -16,6 +16,7 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
+import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
 import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, Clock, ExternalLink, FileText, Network, Plus, RotateCcw, Search, ToggleLeft, ToggleRight, Wallet } from 'lucide-react'
@@ -1222,7 +1223,12 @@ function useClientColumns(
       },
       {
         id: 'solvency',
-        header: t('Оцінка'),
+        header: (
+          <span style={{ alignItems: 'center', display: 'inline-flex', gap: 4 }}>
+            {t('Оцінка')}
+            <AiFeatureBadge compact tooltip={t('AI-оцінка платоспроможності')} />
+          </span>
+        ),
         width: 96,
         minWidth: 88,
         maxWidth: 110,

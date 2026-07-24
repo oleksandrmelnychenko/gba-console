@@ -10,6 +10,7 @@ import {
   Switch,
   Text,
 } from '@mantine/core'
+import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
 import { CREATE_ACTION_COLOR } from "../../../shared/ui/page-header-actions/PageHeaderActions"
@@ -75,6 +76,7 @@ const DEFAULT_UKRAINIAN_REGION_CODE = 'XM007'
 const DEFAULT_POLAND_REGION_CODE = 'PL007'
 
 type EditStep = {
+  isAi?: boolean
   label: string
   value: string
 }
@@ -908,7 +910,10 @@ function ClientEditBody({
                     variant="subtle"
                     onClick={() => onGoToStep(item.value)}
                   >
-                    <span className="client-edit-nav-label">{item.label}</span>
+                    <span className="client-edit-nav-label">
+                      {item.label}
+                      {item.isAi && <AiFeatureBadge compact tooltip={translate('AI-функція')} />}
+                    </span>
                   </Button>
                 )
               })}
@@ -1008,8 +1013,8 @@ function buildEditSteps(client: Client | null, hasPermission: (permissionKey: st
       steps.push({ value: 'e-commerce', label: translate('Інтернет-магазин') })
     }
 
-    steps.push({ value: 'most-purchased-products', label: translate('Рекомендації') })
-    steps.push({ value: 'solvency', label: translate('Платоспроможність') })
+    steps.push({ isAi: true, value: 'most-purchased-products', label: translate('Рекомендації') })
+    steps.push({ isAi: true, value: 'solvency', label: translate('Платоспроможність') })
   }
 
   if (getClientType(client) === CLIENT_TYPE_PROVIDER) {
