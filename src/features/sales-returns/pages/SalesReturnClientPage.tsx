@@ -545,7 +545,7 @@ export function SalesReturnClientPage() {
         opened={createOpened}
         position="right"
         size="min(1120px, 100vw)"
-        title={<span className="sales-return-client-drawer-title">{t('Повернення від клієнта')}</span>}
+        title={t('Повернення від клієнта')}
         onClose={closeCreateDrawer}
         footer={
           <Button

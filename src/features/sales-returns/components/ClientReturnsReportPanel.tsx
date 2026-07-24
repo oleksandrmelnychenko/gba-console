@@ -112,7 +112,18 @@ export function ClientReturnsReportPanel({ opened, onClose }: ClientReturnsRepor
   }
 
   return (
-    <AppDrawer opened={opened} position="right" size="min(460px, 100vw)" title={t('Сформувати звіт')} onClose={handleClose}>
+    <AppDrawer
+      footer={
+        <Button leftSection={<FileChartColumn size={16} />} loading={isGenerating} onClick={handleGenerate}>
+          {t('Сформувати звіт')}
+        </Button>
+      }
+      opened={opened}
+      position="right"
+      size="min(460px, 100vw)"
+      title={t('Сформувати звіт')}
+      onClose={handleClose}
+    >
       <Stack gap="md">
         <Group grow>
           <TextInput
@@ -171,10 +182,6 @@ export function ClientReturnsReportPanel({ opened, onClose }: ClientReturnsRepor
           value={reportType}
           onChange={(value) => setReportType(value === '1' ? '1' : '0')}
         />
-
-        <Button leftSection={<FileChartColumn size={16} />} loading={isGenerating} onClick={handleGenerate}>
-          {t('Сформувати звіт')}
-        </Button>
 
         {error ? (
           <Text c="red" size="sm">

@@ -695,13 +695,24 @@ export function NewUkraineSaleReturnPage() {
           />
         </div>
       </div>
-      <AppDrawer opened={Boolean(selectedReturn)} onClose={() => setSelectedReturn(null)} position="right" size="xl" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Повернення')}</span>}>
+      <AppDrawer opened={Boolean(selectedReturn)} onClose={() => setSelectedReturn(null)} position="right" size="xl" title={t('Повернення')}>
         {selectedReturn ? (
           <ReturnDetails saleReturn={selectedReturn} columns={detailColumns} />
         ) : null}
       </AppDrawer>
 
-      <AppDrawer opened={createOpened} onClose={() => setCreateOpened(false)} position="right" size="100%" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Нове повернення')}</span>}>
+      <AppDrawer
+        footer={
+          <Button disabled={!drafts.length} leftSection={<Eye size={16} />} onClick={openReview}>
+            {t('Перегляд')} ({drafts.length})
+          </Button>
+        }
+        opened={createOpened}
+        position="right"
+        size="100%"
+        title={t('Нове повернення')}
+        onClose={() => setCreateOpened(false)}
+      >
         <Stack gap="md">
           {createError ? (
             <Alert color="red" icon={<CircleAlert size={16} />} title={t('Помилка')}>
@@ -743,12 +754,6 @@ export function NewUkraineSaleReturnPage() {
             <TextInput label={t('З дати')} onChange={(event) => setSaleFromDate(event.currentTarget.value)} type="date" value={saleFromDate} />
             <TextInput label={t('По дату')} onChange={(event) => setSaleToDate(event.currentTarget.value)} type="date" value={saleToDate} />
           </SimpleGrid>
-          <Group justify="flex-end">
-            <Button disabled={!drafts.length} leftSection={<Eye size={16} />} onClick={openReview}>
-              {t('Перегляд')} ({drafts.length})
-            </Button>
-          </Group>
-
           <DataTable
             columns={saleItemColumns}
             data={saleItemRows}
@@ -768,7 +773,7 @@ export function NewUkraineSaleReturnPage() {
         position="right"
         size="standard"
         closeOnEscape={false}
-        title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Перегляд повернення')}</span>}
+        title={t('Перегляд повернення')}
         footer={
           <Group gap="sm">
             <Button variant="default" onClick={() => setReviewOpened(false)}>
