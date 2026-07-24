@@ -2075,7 +2075,6 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
             getRowId={(storage, index) => String(storage.NetUid || storage.Id || index)}
             isLoading={isStoragesLoading}
             loadingText={t('Завантаження складів')}
-            maxHeight="calc(100vh - 220px)"
             minWidth={642}
             onRowClick={(storage) => void handleAddStorage(storage)}
           />
