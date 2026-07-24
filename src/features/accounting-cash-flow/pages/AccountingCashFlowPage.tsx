@@ -9,7 +9,6 @@ import {
   Group,
   SegmentedControl,
   Select,
-  SimpleGrid,
   Stack,
   Text,
   TextInput,
@@ -1060,11 +1059,11 @@ function AccountingCashFlowDetailDrawer({
         <Stack gap="md">
           {saleReturn && <SaleReturnOverviewPanel saleReturn={saleReturn} />}
 
-          <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="sm">
+          <div className="app-detail-grid">
             {detailFields.map((field) => (
               <DetailValue key={field.label} label={field.label} value={field.value} />
             ))}
-          </SimpleGrid>
+          </div>
 
           <CashFlowDetailContent item={item} />
         </Stack>
@@ -1127,14 +1126,10 @@ function getVisibleLocalAmount(item: AccountingCashFlowHeadItem): number | undef
 
 function DetailValue({ label, value }: { label: string; value: ReactNode }) {
   return (
-    <Box style={{ minWidth: 0 }}>
-      <Text size="xs" c="dimmed">
-        {label}
-      </Text>
-      <Text size="sm" fw={600} style={{ overflowWrap: 'anywhere' }}>
-        {value || '-'}
-      </Text>
-    </Box>
+    <div className="app-detail-field">
+      <span>{label}</span>
+      <strong>{value || '-'}</strong>
+    </div>
   )
 }
 
