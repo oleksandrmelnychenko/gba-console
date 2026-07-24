@@ -256,6 +256,10 @@
   overflow: hidden;
 }
 
+.accountable-expense-detail-drawer__body .app-sheet-scroll {
+  overflow: hidden;
+}
+
 .accountable-expense-detail {
   display: grid;
   gap: var(--mantine-spacing-md);
