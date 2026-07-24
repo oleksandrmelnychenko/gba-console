@@ -27,7 +27,7 @@ import { useAuth } from '../../../auth/useAuth'
 import { SALES_UKRAINE_EDIT_PERMISSION } from '../../../sales-ukraine/permissions'
 import { NewSaleWizard, type NewSaleWizardPrefill } from '../../../sales-ukraine/components/new-sale-wizard/NewSaleWizard'
 import { getWizardClientAgreements } from '../../../sales-ukraine/components/new-sale-wizard/wizardClientStepApi'
-import type { SalesUkraineProduct } from '../../../sales-ukraine/types'
+import type { SalesUkraineClientAgreement, SalesUkraineProduct } from '../../../sales-ukraine/types'
 import {
   getMostPurchasedProductsByClientId,
   getProductById,
@@ -35,8 +35,13 @@ import {
 } from '../../api/clientRecommendationsApi'
 import { getProductShopImageUrlByCode } from '../../../products/utils'
 import type { RecommendationProduct } from '../../recommendationsTypes'
-import type { Client } from '../../types'
+import type { Client, ClientAgreement } from '../../types'
 import { OrbSplash } from '../../../../shared/ui/orb/Orb'
+import {
+  canSelectRecommendationProduct,
+  getRecommendationAvailableQty,
+  hasRecommendationAvailabilityData,
+} from './recommendationAvailability'
 
 type RecommendationsPanelProps = {
   client: Client
@@ -49,6 +54,7 @@ type RecommendationsState = {
   isLoading: boolean
   previewProduct: RecommendationProduct | null
   products: RecommendationProduct[]
+  selectedKeys: ReadonlySet<string>
   selectedProduct: RecommendationProduct | null
 }
 
@@ -59,6 +65,7 @@ type RecommendationsAction =
   | { type: 'loading' }
   | { type: 'previewProduct'; product: RecommendationProduct | null }
   | { type: 'toggleGrid' }
+  | { type: 'toggleSelected'; key: string }
 
 const initialRecommendationsState: RecommendationsState = {
   error: null,
@@ -66,6 +73,7 @@ const initialRecommendationsState: RecommendationsState = {
   isLoading: true,
   previewProduct: null,
   products: [],
+  selectedKeys: new Set(),
   selectedProduct: null,
 }
 
@@ -77,6 +85,7 @@ function recommendationsReducer(state: RecommendationsState, action: Recommendat
         error: action.error,
         isLoading: false,
         products: [],
+        selectedKeys: new Set(),
         selectedProduct: null,
       }
     case 'loadedMostPurchased':
@@ -85,6 +94,7 @@ function recommendationsReducer(state: RecommendationsState, action: Recommendat
         error: null,
         isLoading: false,
         products: action.products,
+        selectedKeys: new Set(),
         selectedProduct: null,
       }
     case 'loadedProductRecommendations':
@@ -93,14 +103,26 @@ function recommendationsReducer(state: RecommendationsState, action: Recommendat
         error: null,
         isLoading: false,
         products: action.products,
+        selectedKeys: new Set(),
         selectedProduct: action.selectedProduct,
       }
     case 'loading':
-      return { ...state, error: null, isLoading: true }
+      return { ...state, error: null, isLoading: true, selectedKeys: new Set() }
     case 'previewProduct':
       return { ...state, previewProduct: action.product }
     case 'toggleGrid':
       return { ...state, isGrid: !state.isGrid }
+    case 'toggleSelected': {
+      const selectedKeys = new Set(state.selectedKeys)
+
+      if (selectedKeys.has(action.key)) {
+        selectedKeys.delete(action.key)
+      } else {
+        selectedKeys.add(action.key)
+      }
+
+      return { ...state, selectedKeys }
+    }
   }
 }
 
@@ -108,21 +130,31 @@ export function RecommendationsPanel({ client, productNetId }: RecommendationsPa
   const { t } = useI18n()
   const { hasPermission } = useAuth()
   const [state, dispatch] = useReducer(recommendationsReducer, initialRecommendationsState)
-  const { error, isGrid, isLoading, previewProduct, products, selectedProduct } = state
+  const { error, isGrid, isLoading, previewProduct, products, selectedKeys, selectedProduct } = state
+  const [agreement, setAgreement] = useState<ClientAgreement | null>(null)
   const [agreementNetId, setAgreementNetId] = useState<string | null>(null)
   const [agreementResolved, setAgreementResolved] = useState(false)
-  const [selectedKeys, setSelectedKeys] = useState<ReadonlySet<string>>(new Set())
   const [wizardPrefill, setWizardPrefill] = useState<NewSaleWizardPrefill | null>(null)
 
   const clientNetId = client.NetUid || ''
   const canCreateSale = hasPermission(SALES_UKRAINE_EDIT_PERMISSION)
+  const isVatSale = Boolean(agreement?.Agreement?.WithVATAccounting)
   const selectedCount = selectedKeys.size
+  const createSaleDisabled = isLoading || !clientNetId || !agreementNetId || selectedCount === 0
+  const createSaleDisabledReason = !agreementResolved
+    ? t('Завантаження договору')
+    : !agreementNetId
+      ? t('Щоб створити продаж, додайте клієнту активний договір із цінами продажу')
+      : selectedCount === 0
+        ? t('Виберіть хоча б один товар')
+        : ''
 
   useEffect(() => {
     let cancelled = false
 
     async function resolveAgreement() {
       setAgreementResolved(false)
+      setAgreement(null)
       setAgreementNetId(null)
 
       try {
@@ -130,6 +162,7 @@ export function RecommendationsPanel({ client, productNetId }: RecommendationsPa
         const active = agreements.find((item) => item.Agreement?.IsActive) ?? agreements[0]
 
         if (!cancelled) {
+          setAgreement(active ?? null)
           setAgreementNetId(active?.NetUid || null)
         }
       } catch {
@@ -202,36 +235,29 @@ export function RecommendationsPanel({ client, productNetId }: RecommendationsPa
     }
   }, [agreementNetId, agreementResolved, clientNetId, productNetId, t])
 
-  useEffect(() => {
-    setSelectedKeys(new Set())
-  }, [products])
-
   function toggleSelected(product: RecommendationProduct, index: number) {
+    if (!canSelectRecommendationProduct(product, isVatSale)) {
+      return
+    }
+
     const key = getProductKey(product, index)
-
-    setSelectedKeys((current) => {
-      const next = new Set(current)
-
-      if (next.has(key)) {
-        next.delete(key)
-      } else {
-        next.add(key)
-      }
-
-      return next
-    })
+    dispatch({ key, type: 'toggleSelected' })
   }
 
   function openSaleWizard() {
-    if (!clientNetId) {
+    if (!clientNetId || !agreementNetId || !agreement) {
       return
     }
 
     const chosen = products
       .filter((product, index) => selectedKeys.has(getProductKey(product, index)))
+      .filter((product) => canSelectRecommendationProduct(product, isVatSale))
       .filter((product) => (product.Id ?? 0) > 0 && product.NetUid)
 
     setWizardPrefill({
+      agreement: agreement as unknown as SalesUkraineClientAgreement,
+      agreementNetId,
+      client,
       clientNetId,
       products: chosen as unknown as SalesUkraineProduct[],
     })
@@ -252,16 +278,20 @@ export function RecommendationsPanel({ client, productNetId }: RecommendationsPa
 
             <Group gap="sm">
               {canCreateSale && (
-                <Button
-                  color={CREATE_ACTION_COLOR}
-                  disabled={isLoading || !clientNetId}
-                  leftSection={<ShoppingCart size={16} />}
-                  size="sm"
-                  variant="filled"
-                  onClick={openSaleWizard}
-                >
-                  {selectedCount > 0 ? `${t('Утворити продажу')} (${selectedCount})` : t('Утворити продажу')}
-                </Button>
+                <Tooltip disabled={!createSaleDisabledReason} label={createSaleDisabledReason} withArrow>
+                  <span>
+                    <Button
+                      color={CREATE_ACTION_COLOR}
+                      disabled={createSaleDisabled}
+                      leftSection={<ShoppingCart size={16} />}
+                      size="sm"
+                      variant="filled"
+                      onClick={openSaleWizard}
+                    >
+                      {selectedCount > 0 ? `${t('Утворити продажу')} (${selectedCount})` : t('Утворити продажу')}
+                    </Button>
+                  </span>
+                </Tooltip>
               )}
               <Tooltip label={isGrid ? t('Список') : t('Таблиця')}>
                 <ActionIcon color="gray" variant="light" onClick={() => dispatch({ type: 'toggleGrid' })}>
@@ -280,10 +310,15 @@ export function RecommendationsPanel({ client, productNetId }: RecommendationsPa
           {isLoading ? (
             <OrbSplash label={t('Завантаження рекомендацій')} size={40} variant="thinking" />
           ) : selectedProduct ? (
-            <SelectedProductCard product={selectedProduct} onPreview={() => dispatch({ product: selectedProduct, type: 'previewProduct' })} />
+            <SelectedProductCard
+              isVatSale={isVatSale}
+              product={selectedProduct}
+              onPreview={() => dispatch({ product: selectedProduct, type: 'previewProduct' })}
+            />
           ) : (
             <RecommendationsList
               isGrid={isGrid}
+              isVatSale={isVatSale}
               products={products}
               selectable={canCreateSale}
               selectedKeys={selectedKeys}
@@ -309,9 +344,11 @@ export function RecommendationsPanel({ client, productNetId }: RecommendationsPa
 }
 
 function SelectedProductCard({
+  isVatSale,
   product,
   onPreview,
 }: {
+  isVatSale: boolean
   product: RecommendationProduct
   onPreview: () => void
 }) {
@@ -319,7 +356,7 @@ function SelectedProductCard({
     <Card className="app-section-card" withBorder radius="md" padding="md">
       <Stack gap="sm">
         <ProductImage product={product} height={380} onPreview={onPreview} />
-        <ProductFields product={product} />
+        <ProductFields isVatSale={isVatSale} product={product} />
       </Stack>
     </Card>
   )
@@ -327,6 +364,7 @@ function SelectedProductCard({
 
 function RecommendationsList({
   isGrid,
+  isVatSale,
   products,
   selectable,
   selectedKeys,
@@ -334,6 +372,7 @@ function RecommendationsList({
   onToggleSelect,
 }: {
   isGrid: boolean
+  isVatSale: boolean
   products: RecommendationProduct[]
   selectable: boolean
   selectedKeys: ReadonlySet<string>
@@ -370,9 +409,10 @@ function RecommendationsList({
             <Table.Tr key={getProductKey(product, index)}>
               {selectable && (
                 <Table.Td>
-                  <Checkbox
-                    aria-label={t('Вибрати товар')}
+                  <RecommendationCheckbox
                     checked={selectedKeys.has(getProductKey(product, index))}
+                    isVatSale={isVatSale}
+                    product={product}
                     onChange={() => onToggleSelect(product, index)}
                   />
                 </Table.Td>
@@ -384,7 +424,7 @@ function RecommendationsList({
                 <RecommendationSourceBadge product={product} />
               </Table.Td>
               <Table.Td>{formatPrice(product)}</Table.Td>
-              <Table.Td>{formatAvailability(product)}</Table.Td>
+              <Table.Td>{formatAvailability(product, isVatSale)}</Table.Td>
               <Table.Td>{displayValue(product.Description)}</Table.Td>
             </Table.Tr>
           ))}
@@ -401,19 +441,48 @@ function RecommendationsList({
             <Group justify="space-between" align="center" gap="xs">
               <RecommendationSourceBadge product={product} />
               {selectable && (
-                <Checkbox
-                  aria-label={t('Вибрати товар')}
+                <RecommendationCheckbox
                   checked={selectedKeys.has(getProductKey(product, index))}
+                  isVatSale={isVatSale}
+                  product={product}
                   onChange={() => onToggleSelect(product, index)}
                 />
               )}
             </Group>
             <ProductImage product={product} height={220} onPreview={() => onPreview(product)} />
-            <ProductFields product={product} />
+            <ProductFields isVatSale={isVatSale} product={product} />
           </Stack>
         </Card>
       ))}
     </SimpleGrid>
+  )
+}
+
+function RecommendationCheckbox({
+  checked,
+  isVatSale,
+  product,
+  onChange,
+}: {
+  checked: boolean
+  isVatSale: boolean
+  product: RecommendationProduct
+  onChange: () => void
+}) {
+  const { t } = useI18n()
+  const disabled = !canSelectRecommendationProduct(product, isVatSale)
+
+  return (
+    <Tooltip disabled={!disabled} label={t('Немає в наявності')} withArrow>
+      <span>
+        <Checkbox
+          aria-label={disabled ? t('Немає в наявності') : t('Вибрати товар')}
+          checked={!disabled && checked}
+          disabled={disabled}
+          onChange={onChange}
+        />
+      </span>
+    </Tooltip>
   )
 }
 
@@ -506,10 +575,10 @@ function ProductImage({
   )
 }
 
-function ProductFields({ product }: { product: RecommendationProduct }) {
+function ProductFields({ isVatSale, product }: { isVatSale: boolean; product: RecommendationProduct }) {
   const { t } = useI18n()
   const price = formatPrice(product)
-  const availability = formatAvailability(product)
+  const availability = formatAvailability(product, isVatSale)
 
   return (
     <Stack gap={2}>
@@ -529,7 +598,7 @@ function ProductFields({ product }: { product: RecommendationProduct }) {
             </Text>
           )}
           {availability !== '-' && (
-            <Text c={getAvailableQty(product) > 0 ? 'teal' : 'red'} size="sm">
+            <Text c={getRecommendationAvailableQty(product, isVatSale) > 0 ? 'teal' : 'red'} size="sm">
               {availability === '0' ? t('Немає в наявності') : `${availability} ${t('шт')}`}
             </Text>
           )}
@@ -544,16 +613,12 @@ function ProductFields({ product }: { product: RecommendationProduct }) {
   )
 }
 
-function getAvailableQty(product: RecommendationProduct): number {
-  return (product.AvailableQtyUk ?? 0) + (product.AvailableQtyUkVAT ?? 0)
-}
-
-function formatAvailability(product: RecommendationProduct): string {
-  if (typeof product.AvailableQtyUk !== 'number' && typeof product.AvailableQtyUkVAT !== 'number') {
+function formatAvailability(product: RecommendationProduct, isVatSale: boolean): string {
+  if (!hasRecommendationAvailabilityData(product, isVatSale)) {
     return '-'
   }
 
-  return String(getAvailableQty(product))
+  return String(getRecommendationAvailableQty(product, isVatSale))
 }
 
 function formatPrice(product: RecommendationProduct): string {

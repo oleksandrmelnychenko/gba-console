@@ -10,7 +10,7 @@ import { addOrderItem, getCurrentSaleCart, getSaleById } from '../../api/salesUk
 import { getSalesPendingMutationUserKey } from '../../pendingSalesMutationRegistry'
 import type { Client } from '../../../clients/types'
 import { createWizardOperationId } from './wizardMutationOperation'
-import type { SaleDocumentResult, SalesUkraineProduct, SalesUkraineSale } from '../../types'
+import type { SaleDocumentResult, SalesUkraineClientAgreement, SalesUkraineProduct, SalesUkraineSale } from '../../types'
 import { NewSaleClientStep } from './NewSaleClientStep'
 import { NewSaleProductsStep } from './NewSaleProductsStep'
 import { NewSaleReviewStep } from './NewSaleReviewStep'
@@ -20,13 +20,13 @@ import {
   canAdvanceToReview,
   claimWizardSplitRecoveryOwnership,
   clearWizardMergedSale,
+  createNewSaleWizardInitialState,
   getCartItemCount,
   getWizardMergedSale,
   getWizardSplitRecovery,
   hydrateWizardSplitRecovery,
   isWizardShellBusy,
   NEW_SALE_REVIEW_INITIAL,
-  NEW_SALE_WIZARD_INITIAL,
   refreshWizardSplitRecoveryOwnership,
   replaceWizardMergedOrderItems,
   setWizardMergedSale,
@@ -69,6 +69,9 @@ function getWizardRequestErrorMessage(error: unknown, fallback: string): string 
 }
 
 export type NewSaleWizardPrefill = {
+  agreement?: SalesUkraineClientAgreement | null
+  agreementNetId?: string | null
+  client?: Client | null
   clientNetId: string
   products?: SalesUkraineProduct[]
 }
@@ -426,9 +429,9 @@ function NewSaleWizardContent({
 }) {
   const { t } = useI18n()
   const [active, setActive] = useState(0)
-  const [state, setState] = useState<NewSaleWizardState>(NEW_SALE_WIZARD_INITIAL)
+  const [state, setState] = useState<NewSaleWizardState>(() => createNewSaleWizardInitialState(prefill))
   // Preserved across step switches so the client step can restore instantly on remount.
-  const [selectedClient, setSelectedClient] = useState<Client | null>(null)
+  const [selectedClient, setSelectedClient] = useState<Client | null>(() => prefill?.client ?? null)
   const [review, setReview] = useState<NewSaleReviewValue>(NEW_SALE_REVIEW_INITIAL)
   const [busy, setBusy] = useState(false)
   const [reviewBusy, setReviewBusy] = useState(false)
@@ -566,17 +569,18 @@ function NewSaleWizardContent({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Opened with a prefill (e.g. client-card recommendations): seed only clientNetId — the
-  // client step bootstrap fetches the client and auto-selects the active agreement itself.
-  const prefillStartedRef = useRef(false)
+  // Recommendation prefill can provide the resolved client and agreement for an immediate
+  // cart seed. Other callers may still provide only clientNetId and use the client-step bootstrap.
+  const prefillStartedRef = useRef(Boolean(!initialSale && prefill?.clientNetId))
   const prefillCartAppliedRef = useRef(false)
 
   useEffect(() => {
     if (!initialSale && prefill?.clientNetId && !prefillStartedRef.current) {
       prefillStartedRef.current = true
-      const seeded = { ...NEW_SALE_WIZARD_INITIAL, clientNetId: prefill.clientNetId }
+      const seeded = createNewSaleWizardInitialState(prefill)
       stateRef.current = seeded
       setState(seeded)
+      setSelectedClient(prefill.client ?? null)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

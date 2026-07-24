@@ -68,6 +68,25 @@ export const NEW_SALE_WIZARD_INITIAL: NewSaleWizardState = {
   sale: null,
 }
 
+export function createNewSaleWizardInitialState(
+  prefill?: {
+    agreement?: SalesUkraineClientAgreement | null
+    agreementNetId?: string | null
+    clientNetId?: string | null
+  } | null,
+): NewSaleWizardState {
+  if (!prefill?.clientNetId) {
+    return NEW_SALE_WIZARD_INITIAL
+  }
+
+  return {
+    ...NEW_SALE_WIZARD_INITIAL,
+    agreement: prefill.agreement ?? null,
+    agreementNetId: prefill.agreementNetId ?? prefill.agreement?.NetUid ?? null,
+    clientNetId: prefill.clientNetId,
+  }
+}
+
 export function canAdvanceToProducts(state: NewSaleWizardState): boolean {
   return Boolean(state.clientNetId && state.agreementNetId)
 }

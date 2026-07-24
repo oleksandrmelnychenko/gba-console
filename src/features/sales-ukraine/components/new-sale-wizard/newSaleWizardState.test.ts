@@ -9,6 +9,7 @@ import {
   clearWizardSplitOrderItems,
   commitWizardSplitExtraction,
   confirmWizardSplitFinalMutationManuallyCommitted,
+  createNewSaleWizardInitialState,
   getCartItemCount,
   getWizardMergedSale,
   getWizardMergedSaleNetUid,
@@ -80,6 +81,23 @@ afterEach(() => {
 })
 
 describe('new sale wizard state guards', () => {
+  it('starts a recommendation prefill with the client and agreement already selected', () => {
+    const agreement = {
+      Client: { NetUid: 'client-1' },
+      NetUid: 'agreement-1',
+    }
+
+    expect(createNewSaleWizardInitialState({
+      agreement,
+      clientNetId: 'client-1',
+    })).toEqual({
+      agreement,
+      agreementNetId: 'agreement-1',
+      clientNetId: 'client-1',
+      sale: null,
+    })
+  })
+
   it('detects self-checkout transporters by css class', () => {
     expect(isSelfCheckout({ CssClass: SELF_CHECKOUT_CLASS, Id: 7 } as SalesUkraineTransporter)).toBe(true)
     expect(isSelfCheckout({ CssClass: 'other', Id: 7 } as SalesUkraineTransporter)).toBe(false)
