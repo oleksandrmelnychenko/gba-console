@@ -2,6 +2,10 @@
   min-width: 0;
 }
 
+.user-edit-tabs {
+  border-radius: 0;
+}
+
 /* Section shell — same chrome as `.users-shell` on the roster page. */
 .user-sheet-card {
   background: var(--mantine-color-white);

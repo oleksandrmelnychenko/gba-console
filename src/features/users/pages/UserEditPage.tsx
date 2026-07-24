@@ -229,6 +229,11 @@ export function UserEditPage() {
       position="right"
       size="min(780px, 100vw)"
       aria-label={user ? getUserFullName(user) : t('Користувач')}
+      title={
+        <span style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>
+          {user ? `${t('Редагування користувача')} · ${getUserFullName(user)}` : t('Редагування користувача')}
+        </span>
+      }
       onClose={closeSheet}
       footer={
         <UserEditActions
@@ -364,7 +369,7 @@ function UserEditContent({
 
   return (
     <div>
-      <div className="pill-tabs" style={{ width: 'fit-content' }}>
+      <div className="pill-tabs user-edit-tabs">
         <button
           type="button"
           className={`pill-tab${activeTab === 'profile' ? ' is-active' : ''}`}
@@ -379,7 +384,6 @@ function UserEditContent({
           aria-pressed={activeTab === 'password'}
           onClick={() => setActiveTab('password')}
         >
-          <Key size={15} strokeWidth={1.8} style={{ marginRight: 6, verticalAlign: '-2px' }} />
           {t('Зміна пароля')}
         </button>
       </div>
