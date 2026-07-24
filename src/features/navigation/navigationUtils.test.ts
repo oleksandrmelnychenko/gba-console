@@ -393,6 +393,45 @@ describe('isNavigationPathAllowed', () => {
     expect(isNavigationPathAllowed(modules, '/accounting/payment-accounts/new')).toBe(false)
   })
 
+  it.each([
+    {
+      ownEditPath: '/accounting/payment-expense-articles/edit/expense-1',
+      ownNewPath: '/accounting/payment-expense-articles/new',
+      ownRoute: '/accounting/payment-expense-articles',
+      siblingPath: '/accounting/payment-cashflow-articles',
+    },
+    {
+      ownEditPath: '/accounting/payment-cashflow-articles/edit/cashflow-1',
+      ownNewPath: '/accounting/payment-cashflow-articles/new',
+      ownRoute: '/accounting/payment-cashflow-articles',
+      siblingPath: '/accounting/payment-expense-articles',
+    },
+  ])('keeps payment article directory access isolated for $ownRoute', ({
+    ownEditPath,
+    ownNewPath,
+    ownRoute,
+    siblingPath,
+  }) => {
+    const modules: NavigationModule[] = [
+      {
+        Id: 1,
+        Module: 'Бухгалтерія',
+        Children: [
+          {
+            Id: 11,
+            Module: 'Довідник статей',
+            Route: ownRoute,
+          },
+        ],
+      },
+    ]
+
+    expect(isNavigationPathAllowed(modules, ownRoute)).toBe(true)
+    expect(isNavigationPathAllowed(modules, ownNewPath)).toBe(true)
+    expect(isNavigationPathAllowed(modules, ownEditPath)).toBe(true)
+    expect(isNavigationPathAllowed(modules, siblingPath)).toBe(false)
+  })
+
   it('allows opening advance-report details from the advanced reports menu root', () => {
     const modules: NavigationModule[] = [
       {

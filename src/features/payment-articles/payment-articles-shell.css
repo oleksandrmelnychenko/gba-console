@@ -1,0 +1,45 @@
+.payment-articles-shell {
+  box-sizing: border-box;
+  flex: 1 1 auto;
+  height: calc(
+    100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px
+  );
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  padding: 6px 4px 0;
+}
+
+.payment-articles-shell__card {
+  flex: 1 1 auto;
+  height: 100%;
+  min-width: 0;
+}
+
+.payment-articles-shell__tabs {
+  border-radius: 0;
+  flex: 0 0 auto;
+  padding-bottom: 4px;
+}
+
+.payment-articles-shell__tabs .pill-tab {
+  padding-bottom: 12px;
+}
+
+.payment-articles-shell__content {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.payment-articles-shell__content > .payment-articles-tab-content {
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  padding: 0;
+}

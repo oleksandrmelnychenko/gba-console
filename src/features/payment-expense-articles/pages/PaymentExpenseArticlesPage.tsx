@@ -37,7 +37,11 @@ const TABLE_DEFAULT_LAYOUT = {
 
 const SEARCH_DEBOUNCE_MS = 350
 
-export function PaymentExpenseArticlesPage() {
+type PaymentExpenseArticlesPageProps = {
+  inSharedShell?: boolean
+}
+
+export function PaymentExpenseArticlesPage({ inSharedShell = false }: PaymentExpenseArticlesPageProps) {
   const { t } = useI18n()
   const { hasPermission } = useAuth()
   const location = useLocation()
@@ -153,81 +157,93 @@ export function PaymentExpenseArticlesPage() {
     return () => controller.abort()
   }, [normalizedSearchValue, reloadKey, setArticles, setError, setLoading, t])
 
+  const content = (
+    <>
+      <div className="app-filter-bar payment-expense-articles-filter-bar">
+        <TextInput
+          className="console-table-search-input"
+          leftSection={<Search size={16} />}
+          label={t('Пошук')}
+          placeholder={t('Назва або NetUid')}
+          value={searchValue}
+          onChange={(event) => setSearchValue(event.currentTarget.value)}
+        />
+        <div className="app-filter-actions">
+          <Tooltip label={t('Скинути')}>
+            <ActionIcon
+              aria-label={t('Скинути')}
+              color="gray"
+              disabled={!searchValue}
+              size={34}
+              variant="light"
+              onClick={() => setSearchValue('')}
+            >
+              <RotateCcw size={17} />
+            </ActionIcon>
+          </Tooltip>
+          <Tooltip label={t('Оновити')}>
+            <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={34} variant="light" onClick={reload}>
+              <RefreshCw size={18} />
+            </ActionIcon>
+          </Tooltip>
+        </div>
+        <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
+        {canCreate && (
+          <Button
+            color={CREATE_ACTION_COLOR}
+            leftSection={<Plus size={16} />}
+            size="sm"
+            styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
+            onClick={() =>
+              navigate('/accounting/payment-expense-articles/new', {
+                state: {
+                  backgroundLocation: location,
+                  returnPath: `${location.pathname}${location.search}`,
+                },
+              })
+            }
+          >
+            {t('Нова стаття')}
+          </Button>
+        )}
+      </div>
+
+      {error && (
+        <Alert className="console-table-alert" color="red" icon={<CircleAlert size={18} />} variant="light">
+          {error}
+        </Alert>
+      )}
+
+      <div className="payment-expense-articles-page__table console-table-body">
+        <DataTable
+          columns={columns}
+          data={articles}
+          defaultLayout={TABLE_DEFAULT_LAYOUT}
+          emptyText={t('Статей витрат не знайдено')}
+          getRowId={(article) => String(article.NetUid || article.Id || article.OperationName)}
+          isLoading={isTableBusy}
+          layoutVersion="payment-expense-articles-1"
+          height="100%"
+          showLayoutControls
+          tableId="payment-expense-articles"
+          toolbarPortalTarget={tableToolbarSlot}
+          onRowClick={openArticle}
+        />
+      </div>
+    </>
+  )
+
+  if (inSharedShell) {
+    return (
+      <Stack className="payment-expense-articles-page console-table-page payment-articles-tab-content" gap={0}>
+        {content}
+      </Stack>
+    )
+  }
+
   return (
     <Stack className="payment-expense-articles-page console-table-page" gap={6}>
-      <div className="console-table-shell">
-        <div className="app-filter-bar payment-expense-articles-filter-bar">
-          <TextInput
-            className="console-table-search-input"
-            leftSection={<Search size={16} />}
-            label={t('Пошук')}
-            placeholder={t('Назва або NetUid')}
-            value={searchValue}
-            onChange={(event) => setSearchValue(event.currentTarget.value)}
-          />
-          <div className="app-filter-actions">
-            <Tooltip label={t('Скинути')}>
-              <ActionIcon
-                aria-label={t('Скинути')}
-                color="gray"
-                disabled={!searchValue}
-                size={34}
-                variant="light"
-                onClick={() => setSearchValue('')}
-              >
-                <RotateCcw size={17} />
-              </ActionIcon>
-            </Tooltip>
-            <Tooltip label={t('Оновити')}>
-              <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={34} variant="light" onClick={reload}>
-                <RefreshCw size={18} />
-              </ActionIcon>
-            </Tooltip>
-          </div>
-          <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
-          {canCreate && (
-            <Button
-              color={CREATE_ACTION_COLOR}
-              leftSection={<Plus size={16} />}
-              size="sm"
-              styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
-              onClick={() =>
-                navigate('/accounting/payment-expense-articles/new', {
-                  state: {
-                    backgroundLocation: location,
-                    returnPath: `${location.pathname}${location.search}`,
-                  },
-                })
-              }
-            >
-              {t('Нова стаття')}
-            </Button>
-          )}
-        </div>
-
-        {error && (
-          <Alert className="console-table-alert" color="red" icon={<CircleAlert size={18} />} variant="light">
-            {error}
-          </Alert>
-        )}
-
-        <div className="payment-expense-articles-page__table console-table-body">
-          <DataTable
-            columns={columns}
-            data={articles}
-            defaultLayout={TABLE_DEFAULT_LAYOUT}
-            emptyText={t('Статей витрат не знайдено')}
-            getRowId={(article) => String(article.NetUid || article.Id || article.OperationName)}
-            isLoading={isTableBusy}
-            layoutVersion="payment-expense-articles-1"
-            height="100%"
-            showLayoutControls
-            tableId="payment-expense-articles"
-            toolbarPortalTarget={tableToolbarSlot}
-            onRowClick={openArticle}
-          />
-        </div>
-      </div>
+      <div className="console-table-shell">{content}</div>
     </Stack>
   )
 }
