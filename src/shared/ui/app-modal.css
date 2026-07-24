@@ -1,0 +1,260 @@
+/* Shared modal chrome (docs/ui-patterns.md §7/§9). AppModal adds both
+   `.app-modal` and `.app-form-sheet`, so every feature gets the same title,
+   controls and action styling without local copies. */
+.app-modal:not(.app-modal--workspace) .mantine-Modal-content {
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.app-modal:not(.app-modal--workspace) .mantine-Modal-header {
+  min-height: auto;
+  padding: 16px 20px 8px;
+}
+
+.app-modal:not(.app-modal--workspace) .mantine-Modal-body {
+  padding: 8px 20px 20px;
+}
+
+.app-modal .mantine-Modal-title {
+  color: var(--mantine-color-gray-9);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.25;
+  min-width: 0;
+}
+
+.app-modal .mantine-Modal-title > * {
+  font-family: inherit;
+  letter-spacing: inherit;
+}
+
+.app-modal .mantine-Modal-close {
+  border-radius: 8px;
+  color: var(--mantine-color-gray-7);
+  height: 32px;
+  min-height: 32px;
+  min-width: 32px;
+  width: 32px;
+}
+
+.app-modal .mantine-Modal-close:hover {
+  background: var(--mantine-color-gray-1);
+  color: var(--mantine-color-gray-9);
+}
+
+.app-modal .mantine-Modal-close:focus-visible {
+  box-shadow: var(--app-focus-ring);
+  outline: 1px solid var(--app-focus-border);
+  outline-offset: 1px;
+}
+
+.app-modal.app-form-sheet :is(
+  .mantine-InputWrapper-label,
+  .mantine-InputBase-label,
+  .mantine-Checkbox-label,
+  .mantine-Radio-label,
+  .mantine-Switch-label
+) {
+  color: var(--mantine-color-gray-9);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.2;
+}
+
+.app-modal.app-form-sheet :is(
+  .mantine-InputWrapper-description,
+  .mantine-InputWrapper-error
+) {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.app-modal.app-form-sheet .mantine-Input-input {
+  min-height: 36px;
+}
+
+.app-modal.app-form-sheet .mantine-Button-root {
+  border-radius: 8px;
+  min-height: 36px;
+}
+
+.app-modal.app-form-sheet .mantine-ActionIcon-root {
+  border-radius: 8px;
+}
+
+.app-modal.app-form-sheet .mantine-Divider-root {
+  border-color: var(--mantine-color-gray-2);
+}
+
+.app-modal.app-form-sheet .mantine-Alert-root,
+.app-modal.app-form-sheet .mantine-Card-root,
+.app-modal.app-form-sheet .mantine-Paper-root {
+  border-color: var(--mantine-color-gray-2);
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+.app-modal-resize,
+.app-modal-resize > div {
+  min-width: 0;
+}
+
+/* Modal actions use one quiet footer: a single separator, 8px action gap and
+   right-aligned buttons. AppModalFooter is the semantic API; the two legacy
+   selectors keep existing form components aligned until they are migrated. */
+.app-modal-footer,
+.app-modal .app-modal-resize > div > .mantine-Group-root:last-child:has(> .mantine-Button-root),
+.app-modal .app-modal-resize > div > .mantine-Group-root:last-child:has(> .mantine-Group-root > .mantine-Button-root),
+.app-modal .app-modal-resize :is(form, .mantine-Stack-root) > .mantine-Group-root:last-child:has(> .mantine-Button-root),
+.app-modal .app-modal-resize :is(form, .mantine-Stack-root) > .mantine-Group-root:last-child:has(> .mantine-Group-root > .mantine-Button-root) {
+  align-items: center;
+  border-top: 1px solid var(--mantine-color-gray-2);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 4px 0 0;
+  padding: 12px 0 0;
+  width: 100%;
+}
+
+.app-modal-footer,
+.app-modal .app-modal-resize > div > .mantine-Group-root:last-child:has(> .mantine-Button-root),
+.app-modal .app-modal-resize :is(form, .mantine-Stack-root) > .mantine-Group-root:last-child:has(> .mantine-Button-root) {
+  justify-content: flex-end;
+}
+
+.app-modal .app-modal-resize > div > .mantine-Group-root:last-child:has(> .mantine-Group-root > .mantine-Button-root),
+.app-modal .app-modal-resize :is(form, .mantine-Stack-root) > .mantine-Group-root:last-child:has(> .mantine-Group-root > .mantine-Button-root) {
+  justify-content: space-between;
+}
+
+.app-modal-footer > .mantine-Group-root {
+  gap: 8px;
+}
+
+.app-modal-footer:has(> .mantine-Group-root + .mantine-Group-root) {
+  justify-content: space-between;
+}
+
+.app-modal-footer > .mantine-Button-root[data-variant='light'][data-color='gray'],
+.app-modal-footer > .mantine-Button-root[data-variant='subtle'][data-color='gray'],
+.app-modal-footer > .mantine-Group-root > .mantine-Button-root[data-variant='light'][data-color='gray'],
+.app-modal-footer > .mantine-Group-root > .mantine-Button-root[data-variant='subtle'][data-color='gray'] {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-3);
+  color: var(--mantine-color-gray-8);
+}
+
+.app-modal-footer > .mantine-Button-root[data-variant='light'][data-color='gray']:hover,
+.app-modal-footer > .mantine-Button-root[data-variant='subtle'][data-color='gray']:hover,
+.app-modal-footer > .mantine-Group-root > .mantine-Button-root[data-variant='light'][data-color='gray']:hover,
+.app-modal-footer > .mantine-Group-root > .mantine-Button-root[data-variant='subtle'][data-color='gray']:hover {
+  background: var(--mantine-color-gray-0);
+}
+
+/* Tabs inside a modal are the same centered register strip used above page
+   filters and in AppDrawer. */
+.app-modal .mantine-Tabs-list {
+  background: var(--mantine-color-gray-0);
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 12px;
+  justify-content: safe center;
+  overflow-x: auto;
+  padding-inline: 8px;
+  scrollbar-width: none;
+  width: 100%;
+}
+
+.app-modal .mantine-Tabs-list::-webkit-scrollbar {
+  display: none;
+}
+
+.app-modal .mantine-Tabs-list::before {
+  border: 0;
+}
+
+.app-modal .mantine-Tabs-tab {
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: var(--mantine-color-gray-7);
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0;
+  margin-bottom: -1px;
+  min-height: 40px;
+  padding: 9px 2px 10px;
+  white-space: nowrap;
+}
+
+.app-modal .mantine-Tabs-tab:hover {
+  color: var(--mantine-color-gray-9);
+}
+
+.app-modal .mantine-Tabs-tab[data-active] {
+  border-bottom-color: var(--brand-orange);
+  color: var(--mantine-color-gray-9);
+  font-weight: 600;
+}
+
+/* Legacy Mantine tables inside work modals follow the normal DataTable
+   geometry. Real DataTable instances keep their own density-specific rules. */
+.app-modal .mantine-Table-table:not(.data-table-table) {
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.app-modal .mantine-Table-table:not(.data-table-table) :is(.mantine-Table-th, .mantine-Table-td) {
+  border-inline-end: 0;
+}
+
+.app-modal .mantine-Table-table:not(.data-table-table) .mantine-Table-th {
+  background: var(--mantine-color-white);
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+  color: var(--mantine-color-gray-8);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  height: 35px;
+  line-height: 1.2;
+  padding: 5px 8px;
+  white-space: nowrap;
+}
+
+.app-modal .mantine-Table-table:not(.data-table-table) .mantine-Table-td {
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+  color: var(--mantine-color-gray-8);
+  font-size: 13px;
+  font-weight: 500;
+  height: 45px;
+  line-height: 1.3;
+  padding: 8px;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.app-modal .mantine-Table-table:not(.data-table-table) .mantine-Table-td .mantine-Button-root {
+  min-height: 28px;
+}
+
+.app-modal .mantine-Table-table:not(.data-table-table) .mantine-Table-td .mantine-ActionIcon-root {
+  color: var(--mantine-color-gray-7);
+  height: 28px;
+  min-height: 28px;
+  min-width: 28px;
+  width: 28px;
+}
+
+.app-modal .mantine-Table-table:not(.data-table-table) .mantine-Table-td .mantine-ActionIcon-root svg {
+  height: 15px;
+  width: 15px;
+}
