@@ -6,7 +6,6 @@ import {
   Button,
   Card,
   Group,
-  SimpleGrid,
   Stack,
   Text,
   TextInput,
@@ -579,23 +578,21 @@ function ProductCapitalizationDetailDrawer({
     <AppDrawer
       className="product-capitalization-detail-drawer"
       opened={Boolean(capitalization)}
-      padding="lg"
       position="right"
       size="78rem"
-      title={<span className="product-capitalization-detail-drawer-title">{t('Оприбуткування')}</span>}
+      title={
+        capitalization?.Number
+          ? `${t('Оприбуткування')} ${displayValue(capitalization.Number)}`
+          : t('Оприбуткування')
+      }
       onClose={onClose}
     >
       {capitalization && (
         <Stack className="product-capitalization-detail-body" gap={12}>
           <div className="product-capitalization-detail-header">
-            <div className="product-capitalization-detail-heading">
-              <Text className="product-capitalization-detail-title">
-                {t('Оприбуткування')} <span>{displayValue(capitalization.Number)}</span>
-              </Text>
-              <Text className="product-capitalization-detail-date">
-                {formatDateTime(capitalization.FromDate)}
-              </Text>
-            </div>
+            <Text className="product-capitalization-detail-date">
+              {formatDateTime(capitalization.FromDate)}
+            </Text>
             <Button
               className="product-capitalization-detail-export"
               color={CREATE_ACTION_COLOR}
@@ -615,12 +612,12 @@ function ProductCapitalizationDetailDrawer({
             </Alert>
           )}
 
-          <SimpleGrid className="product-capitalization-detail-grid" cols={{ base: 1, sm: 2, lg: 4 }} spacing={8}>
+          <div className="app-detail-grid product-capitalization-detail-grid">
             <DetailValue label={t('Склад')} value={capitalization.Storage?.Name} />
             <DetailValue label={t('Організація')} value={capitalization.Organization?.Name} />
             <DetailValue label={t('Відповідальний')} value={getResponsibleName(capitalization)} />
             <DetailValue label={t('Сума')} tone="money" value={formatMoney(capitalization.TotalAmount)} />
-          </SimpleGrid>
+          </div>
 
           {capitalization.Comment && (
             <Box className="product-capitalization-detail-comment">
@@ -660,14 +657,10 @@ function ProductCapitalizationDetailDrawer({
 
 function DetailValue({ label, tone, value }: { label: string; tone?: 'money'; value: unknown }) {
   return (
-    <Box className={`product-capitalization-detail-field${tone ? ` is-${tone}` : ''}`}>
-      <Text className="product-capitalization-detail-field-label">
-        {label}
-      </Text>
-      <Text className="product-capitalization-detail-field-value" lineClamp={2}>
-        {displayValue(value)}
-      </Text>
-    </Box>
+    <div className={`app-detail-field${tone === 'money' ? ' is-mono' : ''}`}>
+      <span>{label}</span>
+      <strong>{displayValue(value)}</strong>
+    </div>
   )
 }
 

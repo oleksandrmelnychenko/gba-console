@@ -64,7 +64,6 @@
   white-space: nowrap;
 }
 
-.product-capitalization-detail-drawer-title,
 .product-capitalization-detail-export .mantine-Button-label {
   font-family: var(--font-mono);
   font-weight: 600;
@@ -84,24 +83,6 @@
   padding-bottom: 12px;
 }
 
-.product-capitalization-detail-heading {
-  min-width: 0;
-}
-
-.product-capitalization-detail-title {
-  color: var(--mantine-color-gray-8);
-  font-family: var(--font-mono);
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: 0;
-  line-height: 1.3;
-}
-
-.product-capitalization-detail-title span {
-  color: var(--mantine-color-gray-9);
-  font-weight: 700;
-}
-
 .product-capitalization-detail-date {
   color: var(--mantine-color-gray-6);
   font-family: var(--font-mono);
@@ -109,14 +90,12 @@
   font-weight: 600;
   letter-spacing: 0;
   line-height: 1.3;
-  margin-top: 2px;
 }
 
 .product-capitalization-detail-grid {
   min-width: 0;
 }
 
-.product-capitalization-detail-field,
 .product-capitalization-detail-comment,
 .product-capitalization-detail-total {
   border: 1px solid var(--mantine-color-gray-2);
@@ -124,34 +103,12 @@
   min-width: 0;
 }
 
-.product-capitalization-detail-field {
-  padding: 9px 10px;
-}
-
-.product-capitalization-detail-field-label,
 .product-capitalization-detail-comment-label,
 .product-capitalization-detail-total-label {
   color: var(--mantine-color-gray-6);
   font-size: 11px;
   font-weight: 500;
   line-height: 1.25;
-}
-
-.product-capitalization-detail-field-value {
-  color: var(--mantine-color-gray-8);
-  font-size: 12.5px;
-  font-weight: 600;
-  line-height: 1.3;
-  margin-top: 4px;
-}
-
-.product-capitalization-detail-field.is-money .product-capitalization-detail-field-value {
-  color: var(--mantine-color-gray-8);
-  font-family: var(--font-mono);
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0;
-  text-align: right;
 }
 
 .product-capitalization-detail-comment {

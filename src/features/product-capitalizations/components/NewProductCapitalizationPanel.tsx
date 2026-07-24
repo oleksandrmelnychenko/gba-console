@@ -151,10 +151,9 @@ export function NewProductCapitalizationPanel({ opened, onClose, onCreated }: Ne
         </>
       }
       opened={opened}
-      padding="lg"
       position="right"
       size="78rem"
-      title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Нове оприбуткування')}</span>}
+      title={t('Нове оприбуткування')}
       onClose={model.requestClose}
     >
       <Stack gap="md">
