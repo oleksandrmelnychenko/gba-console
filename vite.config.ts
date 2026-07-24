@@ -43,6 +43,11 @@ export default defineConfig({
               priority: 40,
             },
             {
+              name: 'vendor-xlsx',
+              test: /node_modules[\\/]xlsx[\\/]/,
+              priority: 35,
+            },
+            {
               name: 'vendor-table',
               test: /node_modules[\\/](@tanstack|@dnd-kit)[\\/]/,
               priority: 30,

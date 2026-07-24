@@ -45,8 +45,10 @@ export const SaleExpandContent = memo(function SaleExpandContent({
       : 'readonly'
   const isVatSale = Boolean(sale.IsVatSale)
   const hasUniformDiscount = getUniformOneTimeDiscount(orderItems) != null
-  const useEurToUah = !isVatSale && localCurrencyCode === BASE_CURRENCY_CODE
+  const useEurToUah =
+    !isVatSale && isSameCurrencyCode(localCurrencyCode, BASE_CURRENCY_CODE)
   const secondCode = useEurToUah ? 'UAH' : BASE_CURRENCY_CODE
+  const showSecondAmount = !isSameCurrencyCode(localCurrencyCode, secondCode)
   if (!orderItems.length) {
     return (
       <Box className="sale-expand-content is-empty">
@@ -61,6 +63,7 @@ export const SaleExpandContent = memo(function SaleExpandContent({
     <>
       <div
         className="sale-expand-content"
+        data-second-amount={showSecondAmount ? 'true' : 'false'}
         data-vat={isVatSale ? 'true' : 'false'}
         role="table"
         aria-label={t('Товари продажу')}
@@ -69,7 +72,7 @@ export const SaleExpandContent = memo(function SaleExpandContent({
           <span role="columnheader">{t('Товар')}</span>
           <span role="columnheader">{t('К-сть')}</span>
           <span role="columnheader">{localCurrencyCode || t('Сума')}</span>
-          <span role="columnheader">{secondCode}</span>
+          {showSecondAmount && <span role="columnheader">{secondCode}</span>}
           {isVatSale && <span role="columnheader">{t('ПДВ')}</span>}
           <span role="columnheader">{t('Знижки')}</span>
         </div>
@@ -80,6 +83,7 @@ export const SaleExpandContent = memo(function SaleExpandContent({
             isVatSale={isVatSale}
             hasUniformDiscount={hasUniformDiscount}
             localCurrencyCode={localCurrencyCode}
+            showSecondAmount={showSecondAmount}
             orderItem={orderItem}
             onOpenItemDiscount={() => onOpenItemDiscount(sale, orderItem)}
             onOpenProductCard={setProductCardNetId}
@@ -96,6 +100,7 @@ function SaleExpandContentItem({
   hasUniformDiscount,
   isVatSale,
   localCurrencyCode,
+  showSecondAmount,
   onOpenProductCard,
   orderItem,
   onOpenItemDiscount,
@@ -104,6 +109,7 @@ function SaleExpandContentItem({
   hasUniformDiscount: boolean
   isVatSale: boolean
   localCurrencyCode: string
+  showSecondAmount: boolean
   onOpenProductCard: (productNetId: string) => void
   orderItem: SalesUkraineOrderItem
   onOpenItemDiscount: () => void
@@ -127,7 +133,8 @@ function SaleExpandContentItem({
   const specificationCode = orderItem.AssignedSpecification?.SpecificationCode
   const created = formatDateTime(orderItem.Created)
 
-  const useEurToUah = !isVatSale && localCurrencyCode === BASE_CURRENCY_CODE
+  const useEurToUah =
+    !isVatSale && isSameCurrencyCode(localCurrencyCode, BASE_CURRENCY_CODE)
   const secondAmount = useEurToUah ? getNumber(orderItem.TotalAmountEurToUah) : getNumber(orderItem.TotalAmount)
   const localAmountText = formatAmount(getNumber(orderItem.TotalAmountLocal))
   const secondAmountText = formatAmount(secondAmount)
@@ -213,7 +220,7 @@ function SaleExpandContentItem({
 
       <ValueBlock isQuantityAccent isWarning={hasQtyOverflow} value={qtyText} />
       <ValueBlock value={localAmountText} />
-      <ValueBlock value={secondAmountText} />
+      {showSecondAmount && <ValueBlock value={secondAmountText} />}
       {isVatSale && <ValueBlock value={formatAmount(getNumber(orderItem.TotalVat))} />}
 
       <div className="sale-expand-discount-cell" role="cell">
@@ -361,4 +368,11 @@ function displayValue(value: unknown): string {
   }
 
   return ''
+}
+
+function isSameCurrencyCode(firstCode: string, secondCode: string): boolean {
+  const first = firstCode.trim().toUpperCase()
+  const second = secondCode.trim().toUpperCase()
+
+  return first !== '' && first === second
 }

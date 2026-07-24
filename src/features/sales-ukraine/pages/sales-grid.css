@@ -955,6 +955,10 @@
   --expand-grid: minmax(320px, 1fr) 76px 106px 106px 92px 138px;
 }
 
+.sale-expand-content[data-vat='true'][data-second-amount='false'] {
+  --expand-grid: minmax(320px, 1fr) 76px 106px 92px 138px;
+}
+
 .sale-expand-content.is-empty {
   align-items: center;
   border: 1px dashed var(--mantine-color-gray-2);

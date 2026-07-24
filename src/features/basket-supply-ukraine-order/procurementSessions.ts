@@ -12,7 +12,7 @@ export type ProcurementSession = {
   savedAt: string
   lens: 'warehouse' | 'producer'
   producerId: string | null
-  draftQty: Record<number, number>
+  draftQty: Record<string, number>
   basket: ProcurementSessionBasketLine[]
 }
 

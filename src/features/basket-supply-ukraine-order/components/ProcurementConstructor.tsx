@@ -16,6 +16,7 @@ import {
   SimpleGrid,
   Stack,
   Text,
+  TextInput,
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
@@ -29,11 +30,18 @@ import {
   RefreshCw,
   RotateCcw,
   Save,
+  Search,
   Sparkles,
   Trash2,
 } from 'lucide-react'
-import * as XLSX from 'xlsx'
-import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
+import {
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useReducer,
+  useState,
+} from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -55,6 +63,13 @@ import {
   getProcurementCharts,
   getProducerPlan,
 } from '../api/procurementApi'
+import {
+  filterProcurementRows,
+  getProcurementDraftQuantity,
+  getProcurementOrderQuantity,
+  procurementLineKey,
+  type ProcurementDraftQuantities,
+} from '../procurementConstructorModel'
 import { calculateProcurementDecision, type ProcurementDecision } from '../procurementDecision'
 import type { ProcurementCharts, ProcurementUrgency, ReorderSuggestion } from '../procurementTypes'
 import { ProcurementProductCell } from './ProcurementProductCell'
@@ -137,41 +152,48 @@ function formatSalesMonth(value: string): string {
   return salesMonth.format(new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, 1)))
 }
 
-function exportRowsToXlsx(
+async function exportRowsToXlsx(
   rows: ReorderSuggestion[],
   lens: Lens,
   t: (key: string) => string,
   orderQty: (row: ReorderSuggestion) => number,
 ) {
-  const data = rows.map((row) => {
-    const q = orderQty(row)
+  try {
+    const XLSX = await import('xlsx')
+    const data = rows.map((row) => {
+      const q = orderQty(row)
 
-    return {
-      [t('Терміновість')]: row.urgency,
-      [t('Код')]: row.vendor_code ?? '',
-      [t('Назва')]: row.product_name ?? `#${row.product_id}`,
-      OE: row.oe_number ?? '',
-      [t('Виробник')]: row.producer_name ?? `#${row.producer_id}`,
-      [t('Квадрант')]: row.quadrant ?? '',
-      [t('Наявність')]: row.inventory.on_hand,
-      [t('Позиція')]: row.inventory.position,
-      [t('Днів покриття')]: row.days_of_cover >= 9999 ? '' : row.days_of_cover,
-      [t('Замовити')]: q,
-      [t('Ціна од., EUR')]: row.unit_cost_eur ?? '',
-      [t('Сума, EUR')]: Math.round((row.unit_cost_eur ?? 0) * q * 100) / 100,
-      [t('Маржа од., EUR')]: row.unit_margin_eur ?? '',
-    }
-  })
-  const sheet = XLSX.utils.json_to_sheet(data)
-  const book = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(book, sheet, lens === 'warehouse' ? 'Склад' : 'Виробник')
-  const stamp = new Date().toISOString().slice(0, 10)
-  XLSX.writeFile(book, `procurement-${lens}-${stamp}.xlsx`)
+      return {
+        [t('Терміновість')]: row.urgency,
+        [t('Код')]: row.vendor_code ?? '',
+        [t('Назва')]: row.product_name ?? `#${row.product_id}`,
+        OE: row.oe_number ?? '',
+        [t('Виробник')]: row.producer_name ?? `#${row.producer_id}`,
+        [t('Квадрант')]: row.quadrant ?? '',
+        [t('Наявність')]: row.inventory.on_hand,
+        [t('Позиція')]: row.inventory.position,
+        [t('Днів покриття')]: row.days_of_cover >= 9999 ? '' : row.days_of_cover,
+        [t('Замовити')]: q,
+        [t('Ціна од., EUR')]: row.unit_cost_eur ?? '',
+        [t('Сума, EUR')]: Math.round((row.unit_cost_eur ?? 0) * q * 100) / 100,
+        [t('Маржа од., EUR')]: row.unit_margin_eur ?? '',
+      }
+    })
+    const sheet = XLSX.utils.json_to_sheet(data)
+    const book = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(book, sheet, lens === 'warehouse' ? 'Склад' : 'Виробник')
+    const stamp = new Date().toISOString().slice(0, 10)
+    XLSX.writeFile(book, `procurement-${lens}-${stamp}.xlsx`)
+  } catch {
+    notifications.show({ color: 'red', message: t('Не вдалося сформувати Excel') })
+  }
 }
 
 export function ProcurementConstructor() {
   const { t } = useI18n()
   const [lens, setLens] = useState<Lens>('warehouse')
+  const [searchQuery, setSearchQuery] = useState('')
+  const deferredSearchQuery = useDeferredValue(searchQuery)
 
   const [producers, setProducers] = useState<Client[]>([])
   const [selectedProducerId, setSelectedProducerId] = useState<string | null>(null)
@@ -183,15 +205,24 @@ export function ProcurementConstructor() {
   const [isAnalyticsOpen, setAnalyticsOpen] = useState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
 
-  const [basket, setBasket] = useState<Map<number, BasketLine>>(new Map())
+  const [basket, setBasket] = useState<Map<string, BasketLine>>(new Map())
   const [creatingProducer, setCreatingProducer] = useState<number | null>(null)
-  // Inline-editable order quantities keyed by product_id (default = AI suggested_qty).
-  const [draftQty, setDraftQty] = useState<Record<number, number>>({})
+  // Composite producer_id + product_id keys keep alternatives independent.
+  const [draftQty, setDraftQty] = useState<ProcurementDraftQuantities>({})
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
 
   const orderQtyFor = useCallback(
-    (row: ReorderSuggestion) => draftQty[row.product_id] ?? row.suggested_qty,
+    (row: ReorderSuggestion) => getProcurementOrderQuantity(draftQty, row),
     [draftQty],
+  )
+  const isQtyAdjusted = useCallback((row: ReorderSuggestion) => {
+    const draftValue = getProcurementDraftQuantity(draftQty, row)
+
+    return draftValue !== undefined && draftValue !== row.suggested_qty
+  }, [draftQty])
+  const isInBasket = useCallback(
+    (row: ReorderSuggestion) => basket.has(procurementLineKey(row)),
+    [basket],
   )
 
   const [sessions, setSessions] = useState<ProcurementSession[]>(() => listSessions())
@@ -220,7 +251,11 @@ export function ProcurementConstructor() {
     setLens(session.lens)
     setSelectedProducerId(session.producerId)
     setDraftQty(session.draftQty ?? {})
-    setBasket(new Map(session.basket.map((line) => [line.suggestion.product_id, line])))
+    setBasket(
+      new Map(
+        session.basket.map((line) => [procurementLineKey(line.suggestion), line]),
+      ),
+    )
     notifications.show({ color: 'blue', message: `${t('Відновлено')}: ${session.name}` })
   }
 
@@ -243,6 +278,15 @@ export function ProcurementConstructor() {
       cancelled = true
     }
   }, [])
+
+  const producerOptions = useMemo(
+    () =>
+      producers.map((producer) => ({
+        value: String(producer.Id),
+        label: producer.Name || producer.FullName || `#${producer.Id}`,
+      })),
+    [producers],
+  )
 
   const loadRows = useCallback(
     (signal: AbortSignal) => {
@@ -312,14 +356,20 @@ export function ProcurementConstructor() {
     [rows],
   )
 
-  const overview = useMemo(() => computeOverview(sortedRows), [sortedRows])
-  const urgentRowsCount = useMemo(
+  const visibleRows = useMemo(
+    () => filterProcurementRows(sortedRows, deferredSearchQuery),
+    [deferredSearchQuery, sortedRows],
+  )
+  const overview = useMemo(() => computeOverview(visibleRows), [visibleRows])
+  const urgentRowsToAdd = useMemo(
     () =>
-      sortedRows.reduce(
-        (count, row) => count + (row.urgency === 'critical' || row.urgency === 'high' ? 1 : 0),
-        0,
+      visibleRows.filter(
+        (row) =>
+          (row.urgency === 'critical' || row.urgency === 'high') &&
+          !basket.has(procurementLineKey(row)) &&
+          getProcurementOrderQuantity(draftQty, row) > 0,
       ),
-    [sortedRows],
+    [basket, draftQty, visibleRows],
   )
 
   const demandByProduct = useMemo(() => {
@@ -337,9 +387,10 @@ export function ProcurementConstructor() {
   const addToBasket = useCallback((suggestion: ReorderSuggestion, quantity?: number) => {
     setBasket((previous) => {
       const next = new Map(previous)
-      next.set(suggestion.product_id, {
+      const lineKey = procurementLineKey(suggestion)
+      next.set(lineKey, {
         suggestion,
-        qty: quantity ?? previous.get(suggestion.product_id)?.qty ?? suggestion.suggested_qty,
+        qty: quantity ?? previous.get(lineKey)?.qty ?? suggestion.suggested_qty,
       })
 
       return next
@@ -347,28 +398,38 @@ export function ProcurementConstructor() {
   }, [])
 
   function addAllCritical() {
-    const critical = sortedRows.filter((row) => row.urgency === 'critical' || row.urgency === 'high')
     setBasket((previous) => {
       const next = new Map(previous)
-      critical.forEach((row) => next.set(row.product_id, { suggestion: row, qty: orderQtyFor(row) }))
+      urgentRowsToAdd.forEach((row) =>
+        next.set(procurementLineKey(row), {
+          suggestion: row,
+          qty: getProcurementOrderQuantity(draftQty, row),
+        }),
+      )
 
       return next
     })
-    notifications.show({ color: 'blue', message: t('Додано {n} позицій у кошик').replace('{n}', String(critical.length)) })
+    notifications.show({
+      color: 'blue',
+      message: t('Додано {n} позицій у кошик').replace(
+        '{n}',
+        String(urgentRowsToAdd.length),
+      ),
+    })
   }
 
-  const setBasketQty = useCallback((productId: number, value: number) => {
+  const setBasketQty = useCallback((lineKey: string, value: number) => {
     setBasket((previous) => {
-      const line = previous.get(productId)
+      const line = previous.get(lineKey)
       if (!line) {
         return previous
       }
 
       const next = new Map(previous)
       if (value <= 0) {
-        next.delete(productId)
+        next.delete(lineKey)
       } else {
-        next.set(productId, { ...line, qty: value })
+        next.set(lineKey, { ...line, qty: value })
       }
 
       return next
@@ -376,18 +437,19 @@ export function ProcurementConstructor() {
   }, [])
 
   const setDraftQtyFor = useCallback(
-    (productId: number, value: number) => {
-      setDraftQty((current) => ({ ...current, [productId]: value }))
+    (row: ReorderSuggestion, value: number) => {
+      const lineKey = procurementLineKey(row)
+      setDraftQty((current) => ({ ...current, [lineKey]: value }))
       setBasket((previous) => {
-        if (!previous.has(productId)) {
+        if (!previous.has(lineKey)) {
           return previous
         }
         const next = new Map(previous)
-        const line = next.get(productId) as BasketLine
+        const line = next.get(lineKey) as BasketLine
         if (value <= 0) {
-          next.delete(productId)
+          next.delete(lineKey)
         } else {
-          next.set(productId, { ...line, qty: value })
+          next.set(lineKey, { ...line, qty: value })
         }
 
         return next
@@ -423,7 +485,7 @@ export function ProcurementConstructor() {
       notifications.show({ color: 'green', message: t('Чернетку замовлення створено') })
       setBasket((previous) => {
         const next = new Map(previous)
-        lines.forEach((line) => next.delete(line.suggestion.product_id))
+        lines.forEach((line) => next.delete(procurementLineKey(line.suggestion)))
 
         return next
       })
@@ -436,8 +498,8 @@ export function ProcurementConstructor() {
 
   const basketCount = basket.size
   const planColumns = usePlanColumns({
-    basket,
-    draftQty,
+    isInBasket,
+    isQtyAdjusted,
     lens,
     onAddToBasket: addToBasket,
     onDraftQtyChange: setDraftQtyFor,
@@ -472,13 +534,19 @@ export function ProcurementConstructor() {
               onChange={(value) => setLens(value as Lens)}
             />
           </div>
+          <TextInput
+            aria-label={t('Пошук у плані')}
+            label={t('Пошук у плані')}
+            leftSection={<Search size={15} />}
+            onChange={(event) => setSearchQuery(event.currentTarget.value)}
+            placeholder={t('Товар, код або виробник')}
+            value={searchQuery}
+            w={250}
+          />
           {lens === 'producer' && (
             <Select
               clearable
-              data={producers.map((producer) => ({
-                value: String(producer.Id),
-                label: producer.Name || producer.FullName || `#${producer.Id}`,
-              }))}
+              data={producerOptions}
               label={t('Виробник')}
               placeholder={t('Оберіть виробника')}
               searchable
@@ -498,6 +566,7 @@ export function ProcurementConstructor() {
                 onClick={() => {
                   setLens('warehouse')
                   setSelectedProducerId(null)
+                  setSearchQuery('')
                 }}
               >
                 <RotateCcw size={17} />
@@ -549,10 +618,10 @@ export function ProcurementConstructor() {
               </Menu.Dropdown>
             </Menu>
             <Button
-              disabled={sortedRows.length === 0}
+              disabled={visibleRows.length === 0}
               leftSection={<FileSpreadsheet size={15} />}
               variant="default"
-              onClick={() => exportRowsToXlsx(sortedRows, lens, t, orderQtyFor)}
+              onClick={() => void exportRowsToXlsx(visibleRows, lens, t, orderQtyFor)}
             >
               {t('Excel')}
             </Button>
@@ -560,12 +629,12 @@ export function ProcurementConstructor() {
           <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
           <Button
             color={CREATE_ACTION_COLOR}
-            disabled={urgentRowsCount === 0}
+            disabled={urgentRowsToAdd.length === 0}
             leftSection={<Sparkles size={15} />}
             variant="outline"
             onClick={addAllCritical}
           >
-            {t('Термінові в кошик')} · {qty.format(urgentRowsCount)}
+            {t('Термінові в кошик')} · {qty.format(urgentRowsToAdd.length)}
           </Button>
         </div>
 
@@ -614,15 +683,17 @@ export function ProcurementConstructor() {
           <div className="procure-cockpit__table">
             <DataTable
               columns={planColumns}
-              data={sortedRows}
+              data={visibleRows}
               defaultLayout={PLAN_TABLE_DEFAULT_LAYOUT}
               emptyText={
-                lens === 'producer' && !selectedProducerId
+                deferredSearchQuery.trim()
+                  ? t('За цим запитом позицій не знайдено')
+                  : lens === 'producer' && !selectedProducerId
                   ? t('Оберіть виробника, щоб побачити потребу')
                   : t('Немає позицій, що потребують замовлення')
               }
               fillAvailableWidth
-              getRowId={(row) => String(row.product_id)}
+              getRowId={procurementLineKey}
               height="100%"
               isLoading={isLoading}
               layoutVersion={4}
@@ -658,34 +729,46 @@ export function ProcurementConstructor() {
                         </Text>
                       </Group>
                       <Stack gap={3}>
-                        {group.lines.map((line) => (
-                          <Group key={line.suggestion.product_id} gap={4} wrap="nowrap">
-                            <Text
-                              size="xs"
-                              style={{ flex: 1 }}
-                              title={line.suggestion.product_name ?? ''}
-                              truncate
-                            >
-                              {line.suggestion.vendor_code || line.suggestion.product_name || `#${line.suggestion.product_id}`}
-                            </Text>
-                            <NumberInput
-                              hideControls
-                              min={0}
-                              size="xs"
-                              value={line.qty}
-                              w={72}
-                              onChange={(value) => setBasketQty(line.suggestion.product_id, Number(value) || 0)}
-                            />
-                            <ActionIcon
-                              color="red"
-                              size="sm"
-                              variant="subtle"
-                              onClick={() => setBasketQty(line.suggestion.product_id, 0)}
-                            >
-                              <Trash2 size={14} />
-                            </ActionIcon>
-                          </Group>
-                        ))}
+                        {group.lines.map((line) => {
+                          const lineKey = procurementLineKey(line.suggestion)
+                          const lineName =
+                            line.suggestion.vendor_code ||
+                            line.suggestion.product_name ||
+                            `#${line.suggestion.product_id}`
+
+                          return (
+                            <Group key={lineKey} gap={4} wrap="nowrap">
+                              <Text
+                                size="xs"
+                                style={{ flex: 1 }}
+                                title={line.suggestion.product_name ?? ''}
+                                truncate
+                              >
+                                {lineName}
+                              </Text>
+                              <NumberInput
+                                aria-label={`${t('Кількість')} ${lineName}`}
+                                hideControls
+                                min={0}
+                                size="xs"
+                                value={line.qty}
+                                w={72}
+                                onChange={(value) =>
+                                  setBasketQty(lineKey, Number(value) || 0)
+                                }
+                              />
+                              <ActionIcon
+                                aria-label={`${t('Видалити')} ${lineName}`}
+                                color="red"
+                                size="sm"
+                                variant="subtle"
+                                onClick={() => setBasketQty(lineKey, 0)}
+                              >
+                                <Trash2 size={14} />
+                              </ActionIcon>
+                            </Group>
+                          )
+                        })}
                       </Stack>
                       <Button
                         color={CREATE_ACTION_COLOR}
@@ -711,19 +794,19 @@ export function ProcurementConstructor() {
 }
 
 function usePlanColumns({
-  basket,
-  draftQty,
+  isInBasket,
+  isQtyAdjusted,
   lens,
   onAddToBasket,
   onDraftQtyChange,
   orderQtyFor,
   t,
 }: {
-  basket: Map<number, BasketLine>
-  draftQty: Record<number, number>
+  isInBasket: (row: ReorderSuggestion) => boolean
+  isQtyAdjusted: (row: ReorderSuggestion) => boolean
   lens: Lens
   onAddToBasket: (row: ReorderSuggestion, quantity?: number) => void
-  onDraftQtyChange: (productId: number, value: number) => void
+  onDraftQtyChange: (row: ReorderSuggestion, value: number) => void
   orderQtyFor: (row: ReorderSuggestion) => number
   t: (key: string) => string
 }) {
@@ -870,9 +953,9 @@ function usePlanColumns({
               styles={{ input: { textAlign: 'right' } }}
               value={orderQtyFor(row)}
               w={82}
-              onChange={(value) => onDraftQtyChange(row.product_id, Number(value) || 0)}
+              onChange={(value) => onDraftQtyChange(row, Number(value) || 0)}
             />
-            {draftQty[row.product_id] != null && draftQty[row.product_id] !== row.suggested_qty && (
+            {isQtyAdjusted(row) && (
               <Text c="dimmed" size="xs">
                 {t('AI')}: {qty.format(row.suggested_qty)}
               </Text>
@@ -915,7 +998,7 @@ function usePlanColumns({
         id: 'actions',
         header: '',
         cell: (row) => {
-          const inBasket = basket.has(row.product_id)
+          const inBasket = isInBasket(row)
 
           return (
             <TableRowAction
@@ -932,7 +1015,15 @@ function usePlanColumns({
         width: 56,
       },
     ],
-    [basket, draftQty, lens, onAddToBasket, onDraftQtyChange, orderQtyFor, t],
+    [
+      isInBasket,
+      isQtyAdjusted,
+      lens,
+      onAddToBasket,
+      onDraftQtyChange,
+      orderQtyFor,
+      t,
+    ],
   )
 }
 
