@@ -141,7 +141,7 @@ export function CurrencyConvertorFormPage() {
     <AppDrawer
       opened
       position="right"
-      size="standard"
+      size="compact"
       title={isEditMode ? t('Редагування валютного трейдера') : t('Створення валютного трейдера')}
       onClose={handleCancel}
       footer={
