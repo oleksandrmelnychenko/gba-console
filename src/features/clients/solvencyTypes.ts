@@ -48,6 +48,8 @@ export type SolvencyScore = {
   debt_load_source: SolvencyDebtLoadSource | null
   raw_score: number | null
   currency_breakdown: CurrencyExposure[] | null
+  data_sufficiency?: 'insufficient' | 'ok' | null
+  data_sufficiency_reason?: string | null
   as_of_date: string | null
   window_months: number
   model_version: string

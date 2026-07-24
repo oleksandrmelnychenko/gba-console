@@ -184,6 +184,14 @@ export function SolvencyPanel({ clientNetId }: SolvencyPanelProps) {
     )
   }
 
+  if (score.data_sufficiency === 'insufficient') {
+    return (
+      <Alert color="gray" icon={<Info size={18} />} variant="light">
+        {t('Недостатньо даних для оцінки — клієнт без історії продажів і боргів')}
+      </Alert>
+    )
+  }
+
   return (
     <Stack gap="lg">
       <Card className="app-section-card" padding="lg" radius="md" withBorder>

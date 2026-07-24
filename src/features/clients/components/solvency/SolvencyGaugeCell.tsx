@@ -35,14 +35,19 @@ type SolvencyGaugeCellProps = {
 
 export function SolvencyGaugeCell({ notApplicableLabel, score }: SolvencyGaugeCellProps) {
   const notApplicable = score?.applicable === false
-  const hasScore = Boolean(score) && !notApplicable && score?.score != null
+  const insufficientData = score?.data_sufficiency === 'insufficient'
+  const hasScore = Boolean(score) && !notApplicable && !insufficientData && score?.score != null
   const value = hasScore ? Math.min(100, Math.max(0, score?.score ?? 0)) : 0
-  const tooltipLabel = hasScore ? `${score?.score} / 100 · ${score?.rating}` : notApplicableLabel
+  const tooltipLabel = hasScore
+    ? `${score?.score} / 100 · ${score?.rating}`
+    : insufficientData
+      ? 'Недостатньо даних для оцінки'
+      : notApplicableLabel
   // Keep the Tooltip target a single stable <div> so the cell never swaps its
   // root element type as scores load in (which crashed React's reconciler with
   // a removeChild error in the pinned column).
   return (
-    <Tooltip disabled={!hasScore && !notApplicable} label={tooltipLabel} openDelay={300} withArrow>
+    <Tooltip disabled={!hasScore && !notApplicable && !insufficientData} label={tooltipLabel} openDelay={300} withArrow>
       <div
         style={{
           alignItems: 'center',
@@ -66,7 +71,7 @@ export function SolvencyGaugeCell({ notApplicableLabel, score }: SolvencyGaugeCe
           />
         ) : (
           <Text c="dimmed" size="xs">
-            —
+            {insufficientData ? '?' : '—'}
           </Text>
         )}
       </div>
