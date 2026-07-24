@@ -1743,14 +1743,10 @@ function DetailItem({ label, value }: { label: string; value: string }) {
   const { t } = useI18n()
 
   return (
-    <Box>
-      <Text c="dimmed" size="xs">
-        {t(label)}
-      </Text>
-      <Text size="sm" fw={600}>
-        {value}
-      </Text>
-    </Box>
+    <div className="app-detail-field">
+      <span>{t(label)}</span>
+      <strong>{value}</strong>
+    </div>
   )
 }
 
