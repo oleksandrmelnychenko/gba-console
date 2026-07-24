@@ -277,7 +277,7 @@ export function PaymentDeliveryProtocolsSection({
         className="app-form-sheet"
         opened={isFormOpen}
         size="md"
-        title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Створити платіжну задачу')}</span>}
+        title={t('Створити платіжну задачу')}
         onClose={() => setFormOpen(false)}
         footer={
           <Button color={CREATE_ACTION_COLOR} loading={isSaving} onClick={handleSubmit}>
