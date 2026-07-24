@@ -16,7 +16,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { ArrowLeft, CircleAlert, File, FileSpreadsheet, FileText, Plus, RefreshCw, Save, Trash2, Upload, X } from 'lucide-react'
+import { CircleAlert, File, FileSpreadsheet, FileText, Plus, RefreshCw, Save, Trash2, Upload, X } from 'lucide-react'
 import { type FormEvent, useEffect, useMemo, useRef } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { PermissionGate } from '../../auth/components/PermissionGate'
@@ -62,6 +62,7 @@ import {
   validateSupplierOrganizationGeneralForm,
   validateSupplyOrganizationAgreementForm,
 } from '../validation'
+import './supplier-organizations-page.css'
 
 const AGREEMENTS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -265,6 +266,14 @@ export function SupplierOrganizationEditPage() {
 
   const tabsDisabled = !hasSupplierOrganizationEntityIdentity(organization)
   const organizationFormKey = `${organization.NetUid || organization.Id || 'new'}-${organizationRevision}`
+  const activeFormId =
+    activeTab === 'general'
+      ? 'supplier-organization-general-form'
+      : activeTab === 'bank'
+        ? 'supplier-organization-bank-form'
+        : activeTab === 'contact'
+          ? 'supplier-organization-contact-form'
+          : null
 
   function closeDrawer() {
     setDrawerOpened(false)
@@ -279,52 +288,25 @@ export function SupplierOrganizationEditPage() {
       opened={drawerOpened}
       position="right"
       size="wide"
+      title={
+        <span style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>
+          {organization.Id ? t('Редагувати постачальника послуг') : t('Новий постачальник послуг')}
+          {organization.Id && organization.Name ? ` · ${organization.Name}` : ''}
+        </span>
+      }
       transitionProps={{ duration: DRAWER_TRANSITION_MS }}
       onClose={closeDrawer}
+      footer={
+        activeFormId ? (
+          <Button color={CREATE_ACTION_COLOR} form={activeFormId} leftSection={<Save size={16} />} loading={isSaving} type="submit">
+            {t('Зберегти')}
+          </Button>
+        ) : null
+      }
     >
       <Stack gap="md">
-      <Group justify="space-between" align="center" gap="sm">
-        <Group gap="xs">
-          <Tooltip label={t('Назад')}>
-            <ActionIcon aria-label={t('Назад')} color="gray" size={38} variant="light" onClick={closeDrawer}>
-              <ArrowLeft size={18} />
-            </ActionIcon>
-          </Tooltip>
-          <Stack gap={0}>
-            <Text fw={700} size="lg">
-              {organization.Id ? t('Редагувати постачальника послуг') : t('Новий постачальник послуг')}
-            </Text>
-            <Text c="dimmed" size="sm">
-              {displayValue(organization.Name)}
-            </Text>
-          </Stack>
-        </Group>
-        <Group gap="xs">
-          {!isNew && (
-            <Tooltip label={t('Оновити')}>
-              <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={38} variant="light" onClick={() => void reloadOrganization()}>
-                <RefreshCw size={18} />
-              </ActionIcon>
-            </Tooltip>
-          )}
-          <PermissionGate permissionKey="SERVICE_Accounting_Supplier_Organizations_DelBtn_PKEY">
-            {!isNew && (
-              <Button color="red" leftSection={<Trash2 size={16} />} loading={isDeleting} variant="light" onClick={() => setDeleteOpened(true)}>
-                {t('Видалити')}
-              </Button>
-            )}
-          </PermissionGate>
-        </Group>
-      </Group>
-
-      {error && (
-        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
-          {error}
-        </Alert>
-      )}
-
-      <Tabs color={CREATE_ACTION_COLOR} value={activeTab} onChange={setActiveTab}>
-        <Tabs.List>
+      <Tabs className="supplier-organization-edit-tabs-root" color={CREATE_ACTION_COLOR} value={activeTab} onChange={setActiveTab}>
+        <Tabs.List className="pill-tabs supplier-organization-edit-tabs">
           <Tabs.Tab value="general">{t('Загальна інформація')}</Tabs.Tab>
           <Tabs.Tab value="agreements" disabled={tabsDisabled}>
             {t('Договори')}
@@ -337,8 +319,29 @@ export function SupplierOrganizationEditPage() {
           </Tabs.Tab>
         </Tabs.List>
 
+        {!isNew && (
+          <Group gap="xs" justify="flex-end" mt="md">
+            <Tooltip label={t('Оновити')}>
+              <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={38} variant="light" onClick={() => void reloadOrganization()}>
+                <RefreshCw size={18} />
+              </ActionIcon>
+            </Tooltip>
+            <PermissionGate permissionKey="SERVICE_Accounting_Supplier_Organizations_DelBtn_PKEY">
+              <Button color="red" leftSection={<Trash2 size={16} />} loading={isDeleting} variant="light" onClick={() => setDeleteOpened(true)}>
+                {t('Видалити')}
+              </Button>
+            </PermissionGate>
+          </Group>
+        )}
+
+        {error && (
+          <Alert color="red" icon={<CircleAlert size={18} />} mt="md" variant="light">
+            {error}
+          </Alert>
+        )}
+
         <Tabs.Panel value="general" pt="md">
-          <GeneralInfoForm key={`general-${organizationFormKey}`} isSaving={isSaving} organization={organization} onSubmit={saveGeneral} />
+          <GeneralInfoForm key={`general-${organizationFormKey}`} organization={organization} onSubmit={saveGeneral} />
         </Tabs.Panel>
 
         <Tabs.Panel value="agreements" pt="md">
@@ -357,11 +360,11 @@ export function SupplierOrganizationEditPage() {
         </Tabs.Panel>
 
         <Tabs.Panel value="bank" pt="md">
-          <BankDetailsForm key={`bank-${organizationFormKey}`} isSaving={isSaving} organization={organization} onSubmit={saveBank} />
+          <BankDetailsForm key={`bank-${organizationFormKey}`} organization={organization} onSubmit={saveBank} />
         </Tabs.Panel>
 
         <Tabs.Panel value="contact" pt="md">
-          <ContactPersonForm key={`contact-${organizationFormKey}`} isSaving={isSaving} organization={organization} onSubmit={saveContact} />
+          <ContactPersonForm key={`contact-${organizationFormKey}`} organization={organization} onSubmit={saveContact} />
         </Tabs.Panel>
       </Tabs>
 
@@ -378,11 +381,9 @@ export function SupplierOrganizationEditPage() {
 }
 
 function GeneralInfoForm({
-  isSaving,
   organization,
   onSubmit,
 }: {
-  isSaving: boolean
   organization: SupplyOrganization
   onSubmit: (values: SupplyOrganizationGeneralFormValues) => void
 }) {
@@ -408,7 +409,7 @@ function GeneralInfoForm({
   }
 
   return (
-    <form onSubmit={submit}>
+    <form id="supplier-organization-general-form" onSubmit={submit}>
       <Stack gap="md">
         <SimpleGrid cols={{ base: 1, md: 2 }}>
           <TextInput
@@ -448,22 +449,15 @@ function GeneralInfoForm({
             onChange={(event) => setField('IsNotResident', event.currentTarget.checked)}
           />
         </Group>
-        <Group justify="flex-end">
-          <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSaving} type="submit">
-            {t('Зберегти')}
-          </Button>
-        </Group>
       </Stack>
     </form>
   )
 }
 
 function BankDetailsForm({
-  isSaving,
   organization,
   onSubmit,
 }: {
-  isSaving: boolean
   organization: SupplyOrganization
   onSubmit: (values: SupplyOrganizationBankFormValues) => void
 }) {
@@ -480,7 +474,7 @@ function BankDetailsForm({
   }
 
   return (
-    <form onSubmit={submit}>
+    <form id="supplier-organization-bank-form" onSubmit={submit}>
       <Stack gap="md">
         <SimpleGrid cols={{ base: 1, md: 2 }}>
           <TextInput label={t('Банківські реквізити')} value={values.Requisites} onChange={(event) => setField('Requisites', event.currentTarget.value)} />
@@ -494,22 +488,15 @@ function BankDetailsForm({
           <TextInput label={t('Бенефіціар')} value={values.Beneficiary} onChange={(event) => setField('Beneficiary', event.currentTarget.value)} />
           <TextInput label="BankAccountEUR" value={values.BankAccountEUR} onChange={(event) => setField('BankAccountEUR', event.currentTarget.value)} />
         </SimpleGrid>
-        <Group justify="flex-end">
-          <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSaving} type="submit">
-            {t('Зберегти')}
-          </Button>
-        </Group>
       </Stack>
     </form>
   )
 }
 
 function ContactPersonForm({
-  isSaving,
   organization,
   onSubmit,
 }: {
-  isSaving: boolean
   organization: SupplyOrganization
   onSubmit: (values: SupplyOrganizationContactFormValues) => void
 }) {
@@ -535,7 +522,7 @@ function ContactPersonForm({
   }
 
   return (
-    <form onSubmit={submit}>
+    <form id="supplier-organization-contact-form" onSubmit={submit}>
       <Stack gap="md">
         <SimpleGrid cols={{ base: 1, md: 2 }}>
           <TextInput label={t('ПІБ')} value={values.ContactPersonName} onChange={(event) => setField('ContactPersonName', event.currentTarget.value)} />
@@ -551,11 +538,6 @@ function ContactPersonForm({
           <TextInput label="Skype" value={values.ContactPersonSkype} onChange={(event) => setField('ContactPersonSkype', event.currentTarget.value)} />
           <TextInput label={t('Коментар')} value={values.ContactPersonComment} onChange={(event) => setField('ContactPersonComment', event.currentTarget.value)} />
         </SimpleGrid>
-        <Group justify="flex-end">
-          <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSaving} type="submit">
-            {t('Зберегти')}
-          </Button>
-        </Group>
       </Stack>
     </form>
   )
@@ -844,8 +826,18 @@ function AgreementDrawer({
       size="lg"
       title={isPersistedSupplyOrganizationAgreement(editor) ? `${t('Редагувати договір')}: ${displayValue(editor?.Name)}` : t('Новий договір')}
       onClose={onClose}
+      footer={
+        <Group gap="xs">
+          <Button color="gray" leftSection={<X size={16} />} variant="subtle" onClick={onClose}>
+            {t('Скасувати')}
+          </Button>
+          <Button color={CREATE_ACTION_COLOR} form="supplier-organization-agreement-form" leftSection={<Save size={16} />} loading={isSubmitting} type="submit">
+            {t('Зберегти')}
+          </Button>
+        </Group>
+      }
     >
-      <form onSubmit={submit}>
+      <form id="supplier-organization-agreement-form" onSubmit={submit}>
         <Stack gap="md">
           <TextInput
             error={errors.name ? t(errors.name) : undefined}
@@ -949,14 +941,6 @@ function AgreementDrawer({
             onChange={(files) => setField('files', files || [])}
           />
 
-          <Group justify="flex-end">
-            <Button color="gray" leftSection={<X size={16} />} variant="subtle" onClick={onClose}>
-              {t('Скасувати')}
-            </Button>
-            <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSubmitting} type="submit">
-              {t('Зберегти')}
-            </Button>
-          </Group>
         </Stack>
       </form>
     </AppDrawer>

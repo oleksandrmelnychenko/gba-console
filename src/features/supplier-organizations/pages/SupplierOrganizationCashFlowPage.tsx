@@ -394,12 +394,10 @@ function CashFlowDetailDrawer({ row, onClose }: { row: AccountingCashFlowHeadIte
 
 function DetailItem({ label, value }: { label: string; value: string }) {
   return (
-    <Stack gap={2}>
-      <Text c="dimmed" size="xs" tt="uppercase">
-        {label}
-      </Text>
-      <Text size="sm">{value}</Text>
-    </Stack>
+    <div className="app-detail-field">
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
   )
 }
 
