@@ -65,6 +65,7 @@ import type {
   PaymentRegisterTransfer,
 } from '../types'
 import { PaymentRegisterTransferType, PaymentRegisterType, TransferOperationType } from '../types'
+import './payment-accounts-page.css'
 
 type LocationState = {
   returnPath?: string
@@ -125,7 +126,6 @@ type PaymentAccountFormCardState = {
   currencyDrafts: CurrencyDraft[]
   error: string | null
   form: PaymentAccountFormState
-  headerState: PaymentAccountFormHeaderState
   isDeleting: boolean
   isEditMode: boolean
   isFormDisabled: boolean
@@ -492,8 +492,21 @@ export function PaymentAccountFormPage() {
       opened
       position="right"
       size="wide"
-      title={isEditMode ? t('Редагування рахунку') : t('Новий рахунок')}
+      title={
+        <span style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>
+          {isEditMode ? t('Редагування рахунку') : t('Новий рахунок')}
+        </span>
+      }
       onClose={handleCancel}
+      footer={
+        <PaymentAccountFormHeader
+          state={headerState}
+          onCancel={handleCancel}
+          onCancelEdit={cancelEdit}
+          onEdit={() => setEditing(true)}
+          onOpenDelete={() => setDeleteModalOpened(true)}
+        />
+      }
     >
     <Stack gap="md">
       <PaymentAccountFormCard
@@ -505,7 +518,6 @@ export function PaymentAccountFormPage() {
           currencyDrafts,
           error,
           form,
-          headerState,
           isDeleting,
           isEditMode,
           isFormDisabled,
@@ -513,16 +525,12 @@ export function PaymentAccountFormPage() {
           isSaving,
           organizationOptions,
         }}
-        onCancel={handleCancel}
-        onCancelEdit={cancelEdit}
         onChangeCurrency={updateCurrency}
         onChangeForm={updateForm}
-        onEdit={() => setEditing(true)}
         onOpenCurrencyActivity={(register) => {
           activity.setSelectedCurrencyRegisterNetId(getEntityValue(register))
           activity.setActiveActivityTab('currency')
         }}
-        onOpenDelete={() => setDeleteModalOpened(true)}
         onSetAccountType={setAccountType}
         onSubmit={handleSubmit}
       />
@@ -706,24 +714,16 @@ function usePaymentAccountActivity({
 
 function PaymentAccountFormCard({
   state,
-  onCancel,
-  onCancelEdit,
   onChangeCurrency,
   onChangeForm,
-  onEdit,
   onOpenCurrencyActivity,
-  onOpenDelete,
   onSetAccountType,
   onSubmit,
 }: {
   state: PaymentAccountFormCardState
-  onCancel: () => void
-  onCancelEdit: () => void
   onChangeCurrency: (index: number, patch: Partial<CurrencyDraft>) => void
   onChangeForm: (patch: Partial<PaymentAccountFormState>) => void
-  onEdit: () => void
   onOpenCurrencyActivity: (register: PaymentCurrencyRegister) => void
-  onOpenDelete: () => void
   onSetAccountType: (value: string) => void
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
 }) {
@@ -736,7 +736,6 @@ function PaymentAccountFormCard({
     currencyDrafts,
     error,
     form,
-    headerState,
     isDeleting,
     isEditMode,
     isFormDisabled,
@@ -746,16 +745,8 @@ function PaymentAccountFormCard({
   } = state
 
   return (
-    <form onSubmit={onSubmit}>
+    <form id="payment-account-form" onSubmit={onSubmit}>
       <Stack gap="md">
-        <PaymentAccountFormHeader
-          state={headerState}
-          onCancel={onCancel}
-          onCancelEdit={onCancelEdit}
-          onEdit={onEdit}
-          onOpenDelete={onOpenDelete}
-        />
-
         {error && (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
@@ -894,6 +885,7 @@ function PaymentAccountFormHeader({
           disabled={isLoading || !canSave}
           leftSection={<Save size={16} />}
           loading={isSaving}
+          form="payment-account-form"
           type="submit"
         >
           {t('Зберегти')}
@@ -1208,8 +1200,20 @@ function PaymentAccountActivityPanel({
 
   return (
     <>
-      <Card className="app-section-card" withBorder radius="md">
-        <Stack gap="md">
+      <Card className="app-section-card payment-account-activity" withBorder padding={0} radius="md">
+        <Tabs
+          className="payment-account-activity-tabs-root"
+          value={activeTab}
+          onChange={(value) => value && onActiveTabChange(value as PaymentAccountActivityTab)}
+        >
+          <Tabs.List className="pill-tabs payment-account-activity-tabs">
+            <Tabs.Tab value="balances">{t('Залишки')}</Tabs.Tab>
+            <Tabs.Tab value="transfers">{t('Перекази')}</Tabs.Tab>
+            <Tabs.Tab value="exchanges">{t('Обмін валют')}</Tabs.Tab>
+            <Tabs.Tab value="currency">{t('Рух валюти')}</Tabs.Tab>
+          </Tabs.List>
+
+          <Stack className="payment-account-activity-content" gap="md">
           <Group justify="space-between" wrap="wrap">
             <Group gap="xs">
               <Text fw={700}>{t('Операції')}</Text>
@@ -1276,15 +1280,7 @@ function PaymentAccountActivityPanel({
             </Alert>
           )}
 
-          <Tabs value={activeTab} onChange={(value) => value && onActiveTabChange(value as PaymentAccountActivityTab)}>
-            <Tabs.List>
-              <Tabs.Tab value="balances">{t('Залишки')}</Tabs.Tab>
-              <Tabs.Tab value="transfers">{t('Перекази')}</Tabs.Tab>
-              <Tabs.Tab value="exchanges">{t('Обмін валют')}</Tabs.Tab>
-              <Tabs.Tab value="currency">{t('Рух валюти')}</Tabs.Tab>
-            </Tabs.List>
-
-            <Tabs.Panel value="balances" pt="md">
+            <Tabs.Panel value="balances" pt={0}>
               <PaymentAccountBalancesView
                 account={account}
                 selectedCurrencyRegister={selectedCurrencyRegister}
@@ -1293,7 +1289,7 @@ function PaymentAccountActivityPanel({
               />
             </Tabs.Panel>
 
-            <Tabs.Panel value="transfers" pt="md">
+            <Tabs.Panel value="transfers" pt={0}>
               <ActivityTable
                 columns={getTransferColumns(account, t, setCancelTransfer)}
                 emptyText={t('Перекази відсутні')}
@@ -1303,7 +1299,7 @@ function PaymentAccountActivityPanel({
               />
             </Tabs.Panel>
 
-            <Tabs.Panel value="exchanges" pt="md">
+            <Tabs.Panel value="exchanges" pt={0}>
               <ActivityTable
                 columns={getExchangeColumns(account, t, setCancelExchange)}
                 emptyText={t('Обмін валют відсутній')}
@@ -1313,7 +1309,7 @@ function PaymentAccountActivityPanel({
               />
             </Tabs.Panel>
 
-            <Tabs.Panel value="currency" pt="md">
+            <Tabs.Panel value="currency" pt={0}>
               <Stack gap="md">
                 <Select
                   data={currencyOptions}
@@ -1330,8 +1326,8 @@ function PaymentAccountActivityPanel({
                 />
               </Stack>
             </Tabs.Panel>
-          </Tabs>
-        </Stack>
+          </Stack>
+        </Tabs>
       </Card>
 
       <PaymentAccountTransferModal

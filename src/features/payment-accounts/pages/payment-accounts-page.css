@@ -108,3 +108,51 @@
 .payment-accounts-total-footer .mantine-Badge-root {
   height: 20px;
 }
+
+/* Activity inside the account drawer uses the same tabs-above-filters strip
+   as registry pages. */
+.payment-account-activity {
+  overflow: hidden;
+}
+
+.payment-account-activity-tabs-root {
+  min-width: 0;
+}
+
+.payment-account-activity-tabs {
+  border-radius: 0;
+}
+
+.payment-account-activity-tabs::before {
+  display: none;
+}
+
+.payment-account-activity-tabs .mantine-Tabs-tab {
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: var(--mantine-color-gray-7);
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0;
+  margin-bottom: -1px;
+  padding: 9px 2px 10px;
+  white-space: nowrap;
+}
+
+.payment-account-activity-tabs .mantine-Tabs-tab:hover {
+  background: transparent;
+  color: var(--mantine-color-gray-9);
+}
+
+.payment-account-activity-tabs .mantine-Tabs-tab[data-active] {
+  border-bottom-color: var(--brand-orange);
+  color: var(--mantine-color-gray-9);
+  font-weight: 600;
+}
+
+.payment-account-activity-content {
+  padding: 14px;
+}
