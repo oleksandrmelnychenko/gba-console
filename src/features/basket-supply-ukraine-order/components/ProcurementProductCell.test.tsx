@@ -70,6 +70,25 @@ describe('ProcurementProductCell', () => {
     )
   })
 
+  it('uses the vendor code as the primary identity when the product name is missing', () => {
+    render(
+      <ProcurementProductCell
+        row={{
+          image_url: null,
+          oe_number: 'OE-441',
+          product_id: 42,
+          product_name: null,
+          vendor_code: 'BR-2048',
+        }}
+        t={t}
+      />,
+    )
+
+    expect(screen.getByText('BR-2048')).not.toBeNull()
+    expect(screen.getAllByText('BR-2048')).toHaveLength(1)
+    expect(screen.queryByText('#42')).toBeNull()
+  })
+
   it('falls back to the shop image when the API image cannot load', () => {
     const { container } = render(
       <ProcurementProductCell

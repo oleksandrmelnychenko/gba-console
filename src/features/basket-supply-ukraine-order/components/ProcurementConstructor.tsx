@@ -31,7 +31,6 @@ import {
   Save,
   Sparkles,
   Trash2,
-  Truck,
 } from 'lucide-react'
 import * as XLSX from 'xlsx'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
@@ -84,7 +83,16 @@ const PLAN_TABLE_DEFAULT_LAYOUT = {
     left: ['product'],
     right: ['actions'],
   },
-  density: 'normal',
+  columnVisibility: {
+    margin: false,
+    moq: false,
+    onOrder: false,
+    position: false,
+    reorderPoint: false,
+    reserved: false,
+    unitCost: false,
+  },
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 // Quadrant = ABC (revenue importance) × XYZ (demand predictability).
@@ -613,12 +621,13 @@ export function ProcurementConstructor() {
                   ? t('Оберіть виробника, щоб побачити потребу')
                   : t('Немає позицій, що потребують замовлення')
               }
+              fillAvailableWidth
               getRowId={(row) => String(row.product_id)}
               height="100%"
               isLoading={isLoading}
-              layoutVersion={3}
+              layoutVersion={4}
               loadingText={t('Розрахунок потреби…')}
-              minWidth={1120}
+              minWidth={1220}
               renderExpandedRow={renderProofPanel}
               showLayoutControls
               tableId="procure-cockpit-plan"
@@ -626,24 +635,17 @@ export function ProcurementConstructor() {
             />
           </div>
 
-          <aside className="procure-cockpit__basket">
-            <div className="procure-cockpit__basket-head">
-              <Group gap={8} wrap="nowrap">
-                <Truck size={16} />
+          {basketCount > 0 && (
+            <aside className="procure-cockpit__basket">
+              <div className="procure-cockpit__basket-head">
                 <Text className="app-section-title" fw={600} size="sm">
                   {t('Замовлення')}
                 </Text>
-              </Group>
-              <Badge className={`app-role-pill${basketCount > 0 ? ' is-orange' : ' is-gray'}`} variant="light">
-                {basketCount}
-              </Badge>
-            </div>
-            <div className="procure-cockpit__basket-body">
-              {basketByProducer.length === 0 ? (
-                <Text c="dimmed" size="sm">
-                  {t('Кошик порожній. Додайте позиції з таблиці.')}
-                </Text>
-              ) : (
+                <Badge className="app-role-pill is-orange" variant="light">
+                  {basketCount}
+                </Badge>
+              </div>
+              <div className="procure-cockpit__basket-body">
                 <Stack gap={10}>
                   {basketByProducer.map((group) => (
                     <Box key={group.producerId} className="procure-cockpit__basket-group">
@@ -699,9 +701,9 @@ export function ProcurementConstructor() {
                     </Box>
                   ))}
                 </Stack>
-              )}
-            </div>
-          </aside>
+              </div>
+            </aside>
+          )}
         </div>
       </Card>
     </div>
@@ -734,7 +736,7 @@ function usePlanColumns({
         cell: (row) => <ProcurementProductCell row={row} t={t} />,
         enableHiding: false,
         fill: true,
-        minWidth: 340,
+        minWidth: 280,
       },
       {
         id: 'urgency',
@@ -749,7 +751,7 @@ function usePlanColumns({
             </Badge>
           )
         },
-        width: 118,
+        width: 140,
       },
       {
         id: 'quadrant',
@@ -765,12 +767,8 @@ function usePlanColumns({
             >
               {row.quadrant}
             </Badge>
-          ) : (
-            <Text c="dimmed" size="xs">
-              —
-            </Text>
-          ),
-        width: 104,
+          ) : null,
+        width: 112,
       },
       ...(lens === 'warehouse'
         ? [
@@ -778,35 +776,84 @@ function usePlanColumns({
               id: 'producer',
               header: t('Виробник'),
               accessor: (row) => row.producer_name || `#${row.producer_id}`,
-              cell: (row) => (
-                <Text className="procure-table-entity" size="sm" title={row.producer_name ?? ''} truncate>
-                  {row.producer_name || `#${row.producer_id}`}
-                </Text>
-              ),
-              minWidth: 140,
-              width: 170,
+              cell: (row) => <ProcurementProducerCell row={row} />,
+              minWidth: 150,
+              width: 172,
             } satisfies DataTableColumn<ReorderSuggestion>,
           ]
         : []),
       {
         id: 'onHand',
-        header: t('Наявн.'),
+        header: t('На складі'),
         accessor: (row) => row.inventory.on_hand,
-        cell: (row) => <span className="procure-table-number">{qty.format(row.inventory.on_hand)}</span>,
+        cell: (row) => (
+          <ProcurementNumberCell
+            metaLabel={t('доступно')}
+            metaValue={qty.format(row.inventory.available)}
+            title={[
+              `${t('На складі')}: ${qty.format(row.inventory.on_hand)}`,
+              `${t('Доступно')}: ${qty.format(row.inventory.available)}`,
+              `${t('У резерві')}: ${qty.format(row.inventory.reserved)}`,
+              `${t('У дорозі')}: ${qty.format(row.inventory.on_order)}`,
+            ].join(' · ')}
+            value={qty.format(row.inventory.on_hand)}
+          />
+        ),
         align: 'right',
-        width: 92,
+        width: 124,
+      },
+      {
+        id: 'position',
+        header: t('Позиція'),
+        accessor: (row) => row.inventory.position,
+        cell: (row) => <ProcurementNumberCell value={qty.format(row.inventory.position)} />,
+        align: 'right',
+        width: 112,
+      },
+      {
+        id: 'reserved',
+        header: t('Резерв'),
+        accessor: (row) => row.inventory.reserved,
+        cell: (row) => <ProcurementNumberCell value={qty.format(row.inventory.reserved)} />,
+        align: 'right',
+        width: 104,
+      },
+      {
+        id: 'onOrder',
+        header: t('У дорозі'),
+        accessor: (row) => row.inventory.on_order,
+        cell: (row) => <ProcurementNumberCell value={qty.format(row.inventory.on_order)} />,
+        align: 'right',
+        width: 112,
       },
       {
         id: 'cover',
         header: t('Покриття'),
         accessor: (row) => row.days_of_cover,
         cell: (row) => (
-          <Text className="procure-table-number" size="sm">
-            {row.days_of_cover >= 9999 ? '∞' : `${qty.format(row.days_of_cover)} ${t('дн')}`}
-          </Text>
+          <ProcurementNumberCell
+            metaLabel={row.days_of_cover >= 9999 ? undefined : t('днів')}
+            value={row.days_of_cover >= 9999 ? '∞' : qty.format(row.days_of_cover)}
+          />
         ),
         align: 'right',
-        width: 108,
+        width: 120,
+      },
+      {
+        id: 'reorderPoint',
+        header: t('Точка замовлення'),
+        accessor: (row) => row.reorder_point,
+        cell: (row) => <ProcurementNumberCell value={qty.format(row.reorder_point)} />,
+        align: 'right',
+        width: 168,
+      },
+      {
+        id: 'moq',
+        header: 'MOQ',
+        accessor: (row) => row.moq,
+        cell: (row) => row.moq === null ? null : <ProcurementNumberCell value={qty.format(row.moq)} />,
+        align: 'right',
+        width: 96,
       },
       {
         id: 'orderQty',
@@ -834,15 +881,35 @@ function usePlanColumns({
         ),
         align: 'right',
         enableSorting: false,
-        width: 112,
+        width: 118,
+      },
+      {
+        id: 'unitCost',
+        header: t('Ціна, EUR'),
+        accessor: (row) => row.unit_cost_eur,
+        cell: (row) => <ProcurementMoneyCell value={row.unit_cost_eur} />,
+        align: 'right',
+        width: 128,
       },
       {
         id: 'lineCost',
-        header: t('Сума EUR'),
-        accessor: (row) => (row.unit_cost_eur ?? 0) * orderQtyFor(row),
-        cell: (row) => <span className="app-money">{amount.format((row.unit_cost_eur ?? 0) * orderQtyFor(row))}</span>,
+        header: t('Сума, EUR'),
+        accessor: (row) => row.unit_cost_eur === null ? null : row.unit_cost_eur * orderQtyFor(row),
+        cell: (row) => (
+          <ProcurementMoneyCell
+            value={row.unit_cost_eur === null ? null : row.unit_cost_eur * orderQtyFor(row)}
+          />
+        ),
         align: 'right',
-        width: 118,
+        width: 126,
+      },
+      {
+        id: 'margin',
+        header: t('Маржа, EUR'),
+        accessor: (row) => row.unit_margin_eur,
+        cell: (row) => <ProcurementMoneyCell value={row.unit_margin_eur} />,
+        align: 'right',
+        width: 136,
       },
       {
         id: 'actions',
@@ -862,10 +929,68 @@ function usePlanColumns({
         align: 'center',
         enableHiding: false,
         enableSorting: false,
-        width: 64,
+        width: 56,
       },
     ],
     [basket, draftQty, lens, onAddToBasket, onDraftQtyChange, orderQtyFor, t],
+  )
+}
+
+function ProcurementProducerCell({ row }: { row: ReorderSuggestion }) {
+  const producerName = row.producer_name?.trim()
+
+  return (
+    <span className="procure-table-entity-cell">
+      <span
+        className={`procure-table-entity-cell__primary${producerName ? '' : ' is-code'}`}
+        title={producerName || `#${row.producer_id}`}
+      >
+        {producerName || `#${row.producer_id}`}
+      </span>
+      {producerName && (
+        <span className="procure-table-entity-cell__meta">
+          <span>ID</span>
+          <strong>{row.producer_id}</strong>
+        </span>
+      )}
+    </span>
+  )
+}
+
+function ProcurementNumberCell({
+  value,
+  metaLabel,
+  metaValue,
+  title,
+}: {
+  value: string
+  metaLabel?: string
+  metaValue?: string
+  title?: string
+}) {
+  return (
+    <span className="procure-table-value" title={title}>
+      <span className="procure-table-value__primary">{value}</span>
+      {metaLabel && (
+        <span className="procure-table-value__meta">
+          <span>{metaLabel}</span>
+          {metaValue && <strong>{metaValue}</strong>}
+        </span>
+      )}
+    </span>
+  )
+}
+
+function ProcurementMoneyCell({ value }: { value: number | null }) {
+  if (value === null) {
+    return null
+  }
+
+  return (
+    <span className="procure-table-money">
+      <span className="app-money">{amount.format(value)}</span>
+      <span className="app-money-meta">EUR</span>
+    </span>
   )
 }
 

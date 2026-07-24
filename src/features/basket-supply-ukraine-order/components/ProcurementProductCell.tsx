@@ -14,7 +14,8 @@ type ProcurementProductCellProps = {
 }
 
 export function ProcurementProductCell({ row, t }: ProcurementProductCellProps) {
-  const productName = row.product_name || `#${row.product_id}`
+  const productName = row.product_name || row.vendor_code || `#${row.product_id}`
+  const showVendorCode = Boolean(row.vendor_code && row.vendor_code !== productName)
   const explicitImageSrc = upgradeHttpToHttps(toProxiedAssetUrl(row.image_url?.trim()))
   const shopImageSrc = getProductShopImageUrlByCode(row.vendor_code)
   const imageCandidates = [explicitImageSrc, shopImageSrc].filter(
@@ -57,9 +58,9 @@ export function ProcurementProductCell({ row, t }: ProcurementProductCellProps) 
         <span className="procure-cockpit-product__name" title={productName}>
           {productName}
         </span>
-        {(row.vendor_code || row.oe_number) && (
+        {(showVendorCode || row.oe_number) && (
           <span className="procure-cockpit-product__meta">
-            {row.vendor_code && (
+            {showVendorCode && (
               <span className="procure-cockpit-product__code">{row.vendor_code}</span>
             )}
             {row.oe_number && (
