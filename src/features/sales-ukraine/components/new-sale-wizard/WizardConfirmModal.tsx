@@ -1,12 +1,8 @@
-import { Box, Button, Divider, Group, Stack, Text } from '@mantine/core'
+import { Button, Stack, Text } from '@mantine/core'
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
-import { AppModal } from '../../../../shared/ui/AppModal'
-
-const actionButtonStyle = {
-  outline: 'none',
-  outlineOffset: 0,
-} as const
+import { AppModal, AppModalFooter } from '../../../../shared/ui/AppModal'
+import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
 
 export function WizardConfirmModal({
   busy = false,
@@ -41,39 +37,21 @@ export function WizardConfirmModal({
   return (
     <AppModal
       centered
-      classNames={{ body: 'new-sale-confirm-modal__body' }}
       opened={opened}
-      size={420}
-      title={
-        <span className="new-sale-confirm-modal__title">
-          <span className="new-sale-confirm-modal__title-dot" />
-          {t('Підтвердження')}
-        </span>
-      }
+      title={t('Підтвердження')}
       onClose={onCancel}
     >
-      <Stack className="new-sale-confirm-modal" gap={0} onKeyDown={handleKeyDown}>
-        <Box className="new-sale-confirm-modal__content">
-          <Text className="new-sale-confirm-modal__text">{message}</Text>
-        </Box>
+      <Stack gap="md" onKeyDown={handleKeyDown}>
+        <Text>{message}</Text>
 
-        <Divider className="new-sale-confirm-modal__divider" />
-
-        <Group className="new-sale-confirm-modal__actions" gap="sm" justify="flex-end">
-          <Button
-            className="new-sale-confirm-modal__cancel"
-            color="gray"
-            disabled={busy}
-            style={actionButtonStyle}
-            variant="light"
-            onClick={onCancel}
-          >
+        <AppModalFooter>
+          <Button disabled={busy} variant="default" onClick={onCancel}>
             {t('Скасувати')}
           </Button>
-          <Button className="new-sale-confirm-modal__confirm" loading={busy} style={actionButtonStyle} onClick={onConfirm}>
+          <Button color={CREATE_ACTION_COLOR} loading={busy} onClick={onConfirm}>
             {t('Так')}
           </Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )

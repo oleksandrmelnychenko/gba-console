@@ -16,7 +16,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
-import { AppModal } from "../../../shared/ui/AppModal"
+import { AppModal, AppModalFooter } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
 import { Banknote, CircleAlert, FileSpreadsheet, FileText, Printer, RotateCcw, Search } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
@@ -1569,14 +1569,14 @@ function TaxFreePrintPreviewModal({
             </Table>
           </Table.ScrollContainer>
 
-          <Group justify="flex-end">
+          <AppModalFooter>
             <Button variant="default" onClick={onClose}>
               {t('Скасувати')}
             </Button>
             <Button leftSection={<Printer size={17} />} loading={isPrinting} onClick={() => onPrint(document)}>
               {t('Друк')}
             </Button>
-          </Group>
+          </AppModalFooter>
         </Stack>
       )}
     </AppModal>

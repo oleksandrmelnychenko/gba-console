@@ -24,7 +24,7 @@ import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'r
 import { useLocation, useNavigate } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -1316,14 +1316,14 @@ function DeprecatedConsumableOrderEditorModal({
           onUpdateMovement={updateItemMovement}
         />
 
-        <Group justify="flex-end">
+        <AppModalFooter>
           <Button color="gray" disabled={isSaving} leftSection={<X size={16} />} variant="light" onClick={onClose}>
             {t('Скасувати')}
           </Button>
           <Button leftSection={<Save size={16} />} loading={isSaving} onClick={handleSave}>
             {t('Зберегти')}
           </Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )
@@ -1533,14 +1533,14 @@ function DeleteDeprecatedConsumableOrderModal({
     <AppModal centered opened={Boolean(order)} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Видалити списання')}</span>} onClose={onClose}>
       <Stack gap="md">
         <Text>{order ? t('Списання "{number}" буде видалено.', { number: displayValue(order.Number) }) : ''}</Text>
-        <Group justify="flex-end">
+        <AppModalFooter>
           <Button color="gray" disabled={isSaving} variant="light" onClick={onClose}>
             {t('Скасувати')}
           </Button>
           <Button color="red" leftSection={<Trash2 size={16} />} loading={isSaving} onClick={onDelete}>
             {t('Видалити')}
           </Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )
@@ -1563,14 +1563,14 @@ function DeleteStorageModal({
     <AppModal centered opened={Boolean(storage)} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Видалити склад')}</span>} onClose={onClose}>
       <Stack gap="md">
         <Text>{storage ? t('Склад "{name}" буде видалено.', { name: displayValue(storage.Name) }) : ''}</Text>
-        <Group justify="flex-end">
+        <AppModalFooter>
           <Button color="gray" disabled={isSaving} variant="light" onClick={onClose}>
             {t('Скасувати')}
           </Button>
           <Button color="red" leftSection={<Trash2 size={16} />} loading={isSaving} onClick={onDelete}>
             {t('Видалити')}
           </Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )

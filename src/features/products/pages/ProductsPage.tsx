@@ -63,7 +63,7 @@ import {
   uploadProductPlacementStorageReturn,
   uploadProductRelatedDocument,
 } from '../api/productsApi'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { toProxiedAssetUrl } from '../../../shared/url/proxiedAssetUrl'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { PermissionGate } from '../../auth/components/PermissionGate'
@@ -2296,7 +2296,7 @@ function ProductPlacementStorageUploadModal({
   }
 
   return (
-    <AppModal centered opened={opened} size="min(960px, 96vw)" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Завантаження місць зберігання')}</span>} onClose={closeModal}>
+    <AppModal centered opened={opened} size="min(1120px, 96vw)" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Завантаження місць зберігання')}</span>} onClose={closeModal}>
       <Stack gap="md">
         {(error || storagesError) ? (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">{error || storagesError}</Alert>
@@ -2337,11 +2337,11 @@ function ProductPlacementStorageUploadModal({
                 </SimpleGrid>
               </Stack>
             </Card>
-            <Group justify="flex-end">
+            <AppModalFooter>
               <Button color={CREATE_ACTION_COLOR} disabled={!canUpload} leftSection={<Upload size={16} />} loading={isUploading} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} onClick={() => void uploadFile()}>
                 {t('Завантажити')}
               </Button>
-            </Group>
+            </AppModalFooter>
           </>
         ) : (
           <>
@@ -2378,14 +2378,14 @@ function ProductPlacementStorageUploadModal({
                 </ScrollArea>
               </Stack>
             </Card>
-            <Group justify="flex-end">
+            <AppModalFooter>
               <Button color="gray" variant="light" disabled={isSavingReturn} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} onClick={closeModal}>
                 {t('Закрити')}
               </Button>
               <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSavingReturn} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} onClick={() => void saveNotPassedRows()}>
                 {t('Зберегти')}
               </Button>
-            </Group>
+            </AppModalFooter>
           </>
         )}
       </Stack>
@@ -2699,14 +2699,14 @@ export function ProductFileUploadModal({
           </Stack>
         </Card>
 
-        <Group justify="flex-end">
+        <AppModalFooter>
           <Button color="gray" disabled={isUploading} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} variant="light" onClick={closeModal}>
             {t('Скасувати')}
           </Button>
           <Button color={CREATE_ACTION_COLOR} leftSection={<Upload size={16} />} loading={isUploading} disabled={!canSubmit} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} onClick={() => void submitUpload()}>
             {t('Завантажити')}
           </Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )
@@ -2887,14 +2887,14 @@ function ProductUploadDocumentModal({
           </Stack>
         </Card>
 
-        <Group justify="flex-end">
+        <AppModalFooter>
           <Button color="gray" disabled={isUploading} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} variant="light" onClick={closeModal}>
             {t('Скасувати')}
           </Button>
           <Button color={CREATE_ACTION_COLOR} leftSection={<Upload size={16} />} loading={isUploading} disabled={!canSubmit} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} onClick={() => void submitUpload()}>
             {t('Завантажити')}
           </Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )

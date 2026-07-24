@@ -1,9 +1,10 @@
-import { ActionIcon, Alert, Box, Button, Center, FileInput, Group, Loader, Modal, Stack, Text, UnstyledButton } from '@mantine/core'
+import { ActionIcon, Alert, Box, Button, Center, FileInput, Group, Loader, Stack, Text, UnstyledButton } from '@mantine/core'
 import { X } from 'lucide-react'
 import { notifications } from '@mantine/notifications'
 import { useCallback, useEffect, useEffectEvent, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
+import { AppModal } from '../../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useAuth } from '../../../auth/useAuth'
 import { addOrderItem, getCurrentSaleCart, getSaleById } from '../../api/salesUkraineApi'
@@ -300,8 +301,10 @@ export function NewSaleWizard({
 
   return (
     <>
-      <Modal
+      <AppModal
         opened={opened}
+        title={null}
+        variant="workspace"
         withCloseButton={false}
         closeOnEscape={false}
         closeOnClickOutside={false}
@@ -376,7 +379,7 @@ export function NewSaleWizard({
             </Alert>
           </Center>
         )}
-      </Modal>
+      </AppModal>
 
       <WizardDownloadDocumentsModal result={vatDocuments} onClose={() => setVatDocuments(null)} />
     </>

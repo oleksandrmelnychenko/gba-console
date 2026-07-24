@@ -25,7 +25,7 @@ import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
 import { getSupplyUkraineOrderDisplayNumber, normalizeDisplayNumber } from '../../../shared/supplyUkraineOrderNumbers'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -1912,11 +1912,6 @@ function OfficialCostsModal({
   return (
     <AppModal
       centered
-      classNames={{
-        body: 'supply-orders-official-costs-body',
-        content: 'supply-orders-official-costs-content',
-        header: 'supply-orders-official-costs-header',
-      }}
       opened={Boolean(row)}
       size={1120}
       title={<span className="supply-orders-official-costs-title">{t('Офіційні витрати доставки')}</span>}
@@ -2029,12 +2024,11 @@ function OfficialCostsModal({
           </Stack>
         </Card>
 
-        <Group className="supply-orders-official-costs-footer" justify="flex-end" gap="sm">
-          <Button className="supply-orders-official-costs-cancel" disabled={isSaving} variant="subtle" onClick={onClose}>
+        <AppModalFooter>
+          <Button disabled={isSaving} variant="default" onClick={onClose}>
             {t('Скасувати')}
           </Button>
           <Button
-            className="supply-orders-official-costs-save"
             color={CREATE_ACTION_COLOR}
             leftSection={<Receipt size={16} />}
             loading={isSaving}
@@ -2042,7 +2036,7 @@ function OfficialCostsModal({
           >
             {t('Зберегти')}
           </Button>
-        </Group>
+        </AppModalFooter>
       </Stack>
     </AppModal>
   )

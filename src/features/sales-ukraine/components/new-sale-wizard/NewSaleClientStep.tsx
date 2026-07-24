@@ -1215,16 +1215,8 @@ function WizardPrintDocumentModal({
   return (
     <AppModal
       centered
-      className="new-sale-print-modal"
-      classNames={{
-        body: 'new-sale-print-modal__modal-body',
-        content: 'new-sale-print-modal__content',
-        header: 'new-sale-print-modal__header',
-        title: 'new-sale-print-modal__modal-title',
-      }}
       opened={opened}
-      size={460}
-      title={<span className="new-sale-print-modal__title">{t('Документ')}</span>}
+      title={t('Документ')}
       onClose={onClose}
     >
       <Stack className="new-sale-print-modal__body" gap={0}>

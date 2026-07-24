@@ -1,7 +1,8 @@
-import { Alert, Box, Button, Group, Loader, Modal, Stack, Table, Text } from '@mantine/core'
+import { Alert, Box, Button, Group, Loader, Stack, Table, Text } from '@mantine/core'
 import { CircleAlert, Sparkles } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
+import { AppModal } from '../../../../shared/ui/AppModal'
 import { getProductCoPurchaseRecommendations } from '../../../clients/api/clientRecommendationsApi'
 import { getWizardProductNumber, getWizardSellableQty, type WizardSaleProduct } from './wizardSaleProduct'
 
@@ -79,10 +80,10 @@ export function WizardCrossSellModal({
   const visibleProducts = products.filter((product) => !product.NetUid || !excludeNetUids.has(product.NetUid))
 
   return (
-    <Modal
+    <AppModal
       centered
       opened={opened}
-      size="xl"
+      size={1120}
       title={
         <Group gap={8} wrap="nowrap">
           <Sparkles size={16} />
@@ -166,6 +167,6 @@ export function WizardCrossSellModal({
           </Table>
         </Stack>
       )}
-    </Modal>
+    </AppModal>
   )
 }

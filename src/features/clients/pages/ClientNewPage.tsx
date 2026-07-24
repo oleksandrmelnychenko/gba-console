@@ -791,6 +791,7 @@ export function ClientNewPage() {
       opened
       padding="md"
       size="min(1120px, calc(100vw - 32px))"
+      title={routeState?.moduleTitle || t('Новий клієнт')}
       aria-label={routeState?.moduleTitle || t('Новий клієнт')}
       onClose={closeWizard}
     >

@@ -22,7 +22,7 @@ import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { formatLocalDate, formatLocalInputDateTime } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { AppModal } from '../../../shared/ui/AppModal'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { calculateConsumableOrderItemTotals } from '../../consumable-orders/consumableOrderCalculations'
@@ -794,7 +794,7 @@ export function AdvanceReportConsumableOrderModal({
           </Table>
         </Table.ScrollContainer>
 
-        <Group justify="space-between" wrap="wrap">
+        <AppModalFooter>
           <Group gap="xs">
             <Badge className="app-role-pill is-gray" variant="light">
               {t('Сума')}: {formatMoney(order.TotalAmountWithoutVAT ?? totals.totalWithoutVat)}
@@ -814,7 +814,7 @@ export function AdvanceReportConsumableOrderModal({
               {t('Додати')}
             </Button>
           </Group>
-        </Group>
+        </AppModalFooter>
 
         <AppModal
           centered
@@ -924,14 +924,14 @@ export function AdvanceReportConsumableOrderModal({
               />
             </SimpleGrid>
 
-            <Group justify="flex-end">
+            <AppModalFooter>
               <Button color="gray" disabled={isBusy} leftSection={<X size={16} />} variant="light" onClick={closeItemEditor}>
                 {t('Скасувати')}
               </Button>
               <Button color={CREATE_ACTION_COLOR} disabled={isBusy} leftSection={<Save size={16} />} onClick={() => void saveEditorItem()}>
                 {t('Зберегти')}
               </Button>
-            </Group>
+            </AppModalFooter>
           </Stack>
         </AppModal>
 
@@ -947,14 +947,14 @@ export function AdvanceReportConsumableOrderModal({
         >
           <Stack gap="md">
             <Text>{t('Якщо закрити форму, введені дані не будуть додані до авансового звіту.')}</Text>
-            <Group justify="flex-end">
+            <AppModalFooter>
               <Button color="gray" disabled={isBusy} variant="light" onClick={() => setConfirmCloseOpen(false)}>
                 {t('Залишитися')}
               </Button>
               <Button color="red" disabled={isBusy} onClick={confirmClose}>
                 {t('Закрити без збереження')}
               </Button>
-            </Group>
+            </AppModalFooter>
           </Stack>
         </AppModal>
       </Stack>

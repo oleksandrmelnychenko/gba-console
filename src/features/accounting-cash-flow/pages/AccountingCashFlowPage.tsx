@@ -1252,20 +1252,9 @@ function DownloadDocumentModal({
   return (
     <AppModal
       centered
-      classNames={{
-        body: 'accounting-cash-flow-export-modal-body',
-        content: 'accounting-cash-flow-export-modal-content',
-        header: 'accounting-cash-flow-export-modal-header',
-        title: 'accounting-cash-flow-export-modal-title',
-      }}
       opened={opened}
       size="lg"
-      title={
-        <div>
-          <span>{t('Документ')}</span>
-          <strong>{title}</strong>
-        </div>
-      }
+      title={title || t('Документ')}
       onClose={onClose}
     >
       <div className="accounting-cash-flow-export-modal">
