@@ -3244,27 +3244,7 @@ function PricingResourceTable({
         accessor: (pricing) => pricing.SortingPriority,
         maxWidth: 120,
         width: 120,
-        cell: (pricing) => (
-          <Group gap={4} wrap="nowrap">
-            <Text size="sm">{displayValue(pricing.SortingPriority)}</Text>
-            <PermissionGate permissionKey={PRICING_PRIORITY_PERMISSION}>
-              <Group gap={4} wrap="nowrap">
-                <TableRowAction
-                  action="move-up"
-                  disabled={!pricing.Id || isSaving}
-                  label={translate("Підняти пріоритет")}
-                  onClick={() => onChangePriority(pricing, true)}
-                />
-                <TableRowAction
-                  action="move-down"
-                  disabled={!pricing.Id || isSaving}
-                  label={translate("Опустити пріоритет")}
-                  onClick={() => onChangePriority(pricing, false)}
-                />
-              </Group>
-            </PermissionGate>
-          </Group>
-        ),
+        cell: (pricing) => <Text size="sm">{displayValue(pricing.SortingPriority)}</Text>,
       },
       {
         id: 'name',
@@ -3322,13 +3302,31 @@ function PricingResourceTable({
         id: 'actions',
         header: '',
         align: 'right',
-        width: 88,
+        width: 152,
+        minWidth: 152,
+        rowActions: true,
         enableHiding: false,
         enableReorder: false,
         enableResizing: false,
         enableSorting: false,
         cell: (pricing) => (
           <Group gap={4} justify="flex-end" wrap="nowrap">
+            <PermissionGate permissionKey={PRICING_PRIORITY_PERMISSION}>
+              <Group gap={4} wrap="nowrap">
+                <TableRowAction
+                  action="move-up"
+                  disabled={!pricing.Id || isSaving}
+                  label={translate("Підняти пріоритет")}
+                  onClick={() => onChangePriority(pricing, true)}
+                />
+                <TableRowAction
+                  action="move-down"
+                  disabled={!pricing.Id || isSaving}
+                  label={translate("Опустити пріоритет")}
+                  onClick={() => onChangePriority(pricing, false)}
+                />
+              </Group>
+            </PermissionGate>
             <PermissionGate permissionKey={PRICING_EDIT_PERMISSION}>
               <TableRowAction
                 action="edit"
