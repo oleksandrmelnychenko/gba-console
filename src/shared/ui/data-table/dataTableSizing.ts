@@ -129,6 +129,7 @@ export function getManuallySizedColumnIds(
   columnSizing: ColumnSizingState,
   defaultColumnSizing: ColumnSizingState = {},
 ): ReadonlySet<string> {
+  // Stored widths that differ from page defaults belong to the user.
   return new Set(
     Object.entries(columnSizing)
       .filter(([columnId, width]) => defaultColumnSizing[columnId] !== width)
