@@ -165,6 +165,9 @@ function DataTableHeaderCellInner<TData>({
   const justify = align === 'right' ? 'flex-end' : align === 'center' ? 'center' : 'flex-start'
   const canReorder = showLayoutControls && meta?.enableReorder !== false
   const canSort = header.column.getCanSort()
+  const showHeaderMenu =
+    showLayoutControls &&
+    (header.column.getCanPin() || header.column.getCanHide())
 
   const {
     attributes,
@@ -240,7 +243,7 @@ function DataTableHeaderCellInner<TData>({
           ) : null}
         </UnstyledButton>
 
-        {showLayoutControls ? (
+        {showHeaderMenu ? (
           <DataTableHeaderMenu
             column={header.column}
             isColumnDragActive={isColumnDragActive}

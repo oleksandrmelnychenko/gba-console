@@ -40,6 +40,11 @@ import {
   type NormalizedDataTableLayout,
 } from './dataTableStorage'
 import { DataTableHeaderCell } from './DataTableHeaderCell'
+import {
+  getDataTableActionColumnIds,
+  pinDataTableActionsRight,
+  prepareDataTableColumns,
+} from './dataTableActions'
 import { createRenderedColumnWidths, getFillColumnId } from './dataTableSizing'
 import { DataTableToolbar } from './DataTableToolbar'
 import { createPortal } from 'react-dom'
@@ -119,6 +124,14 @@ export function DataTable<TData>({
     () => ({ ...createDefaultLabels(t), ...labelsOverride }),
     [labelsOverride, t],
   )
+  const preparedColumns = useMemo(
+    () => prepareDataTableColumns(columns),
+    [columns],
+  )
+  const actionColumnIds = useMemo(
+    () => getDataTableActionColumnIds(preparedColumns),
+    [preparedColumns],
+  )
   const effectiveDefaultLayout = useMemo(
     () =>
       enablePinning
@@ -130,7 +143,10 @@ export function DataTable<TData>({
     [defaultLayout, enablePinning],
   )
   const normalizedLayoutVersion = normalizeLayoutVersion(layoutVersion)
-  const columnIds = useMemo(() => columns.map((column) => column.id), [columns])
+  const columnIds = useMemo(
+    () => preparedColumns.map((column) => column.id),
+    [preparedColumns],
+  )
   const [internalSorting, setInternalSorting] = useState<SortingState>([])
   const sorting = controlledSorting ?? internalSorting
   const [scrollNode, setScrollNode] = useState<HTMLDivElement | null>(null)
@@ -174,15 +190,15 @@ export function DataTable<TData>({
 
   const columnTitles = useMemo(() => {
     return new Map(
-      columns.map((column) => [
+      preparedColumns.map((column) => [
         column.id,
         typeof column.header === 'string' ? t(column.header) : column.id,
       ]),
     )
-  }, [columns, t])
+  }, [preparedColumns, t])
 
   const tableColumns = useMemo<ColumnDef<TData, unknown>[]>(() => {
-    return columns.map((column): ColumnDef<TData, unknown> => {
+    return preparedColumns.map((column): ColumnDef<TData, unknown> => {
       const meta: DataTableColumnMeta = {
         align: column.align ?? 'left',
         className: column.className,
@@ -208,7 +224,7 @@ export function DataTable<TData>({
         size: column.width,
       }
     })
-  }, [columns, enablePinning, labels, t])
+  }, [preparedColumns, enablePinning, labels, t])
 
   // Persist write-through on USER changes only. A watch-effect used to mirror the
   // layout state into storage, but on a layoutVersion bump it raced the reset
@@ -284,6 +300,14 @@ export function DataTable<TData>({
   }
 
   const effectiveDensity = controlledDensity ?? normalizedLayout.density
+  const effectiveColumnPinning = useMemo(
+    () =>
+      pinDataTableActionsRight(
+        normalizedLayout.columnPinning,
+        actionColumnIds,
+      ),
+    [actionColumnIds, normalizedLayout.columnPinning],
+  )
 
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
@@ -310,7 +334,7 @@ export function DataTable<TData>({
     onSortingChange: handleSortingChange,
     state: {
       columnOrder: normalizedLayout.columnOrder,
-      columnPinning: normalizedLayout.columnPinning,
+      columnPinning: effectiveColumnPinning,
       columnSizing: normalizedLayout.columnSizing,
       columnVisibility: normalizedLayout.columnVisibility,
       sorting,

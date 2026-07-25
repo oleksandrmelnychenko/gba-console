@@ -282,6 +282,26 @@
   padding: 8px;
 }
 
+.data-table-actions-column {
+  text-align: center !important;
+}
+
+.data-table-row-actions {
+  align-items: center;
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.data-table-row-action-slot {
+  align-items: center;
+  display: inline-flex;
+  flex: 0 0 auto;
+  justify-content: center;
+}
+
 .data-table-cell .mantine-Text-root {
   font-size: inherit;
   line-height: 1.25;

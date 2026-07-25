@@ -29,6 +29,8 @@ export type DataTableColumn<TData> = {
   className?: string
   /** Preferred stretch target when DataTable is allowed to grow a data column. */
   fill?: boolean
+  /** Marks a column as row controls. Row-control columns are merged and fixed at the far right. */
+  rowActions?: boolean
   enableSorting?: boolean
   enableHiding?: boolean
   enablePinning?: boolean
