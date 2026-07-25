@@ -242,7 +242,6 @@ function ActReconciliationsPageView({ model }: { model: ReturnType<typeof useAct
             data={reconciliations}
             defaultLayout={RECONCILIATIONS_TABLE_DEFAULT_LAYOUT}
             emptyText={t('Актів звірок не знайдено')}
-            fillAvailableWidth={false}
             getRowId={(reconciliation, index) => String(reconciliation.NetUid || reconciliation.Id || index)}
             height="100%"
             isLoading={isLoading}
