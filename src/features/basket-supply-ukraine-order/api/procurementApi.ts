@@ -583,8 +583,8 @@ function normalizeCartPlan(result: unknown, expectedBudgetEur: number): CartPlan
   if (!isTruncated) {
     const actualUnpriced = items.filter((item) => item.line_cost_eur === null).length
     const actualPricedCents = items.reduce(
-      (sum, item) => sum + (item.line_cost_eur === null ? 0 : toCents(item.line_cost_eur)),
-      0,
+      (sum, item) => sum + (item.line_cost_eur === null ? 0n : toCents(item.line_cost_eur)),
+      0n,
     )
     const actualSuggestedQty = roundToScale(
       items.reduce((sum, item) => sum + item.suggested_qty, 0),
@@ -659,8 +659,8 @@ function normalizeCartPlan(result: unknown, expectedBudgetEur: number): CartPlan
       )
     }
     const selectedCostCents = selectedItems.reduce(
-      (sum, item) => sum + (item.line_cost_eur === null ? 0 : toCents(item.line_cost_eur)),
-      0,
+      (sum, item) => sum + (item.line_cost_eur === null ? 0n : toCents(item.line_cost_eur)),
+      0n,
     )
     if (selectedCostCents !== toCents(budgetUsedEur)) {
       throw new ProcurementContractError(
@@ -744,7 +744,7 @@ function normalizeReorderSuggestion(value: unknown, path: string): ReorderSugges
   if (
     unitCostEur !== null &&
     lineCostEur !== null &&
-    toCents(unitCostEur * suggestedQty) !== toCents(lineCostEur)
+    multiplyToCents(unitCostEur, suggestedQty) !== toCents(lineCostEur)
   ) {
     throw new ProcurementContractError(
       `${path}.line_cost_eur`,
@@ -982,7 +982,7 @@ function normalizeCockpitDraftResult(
       throw new ProcurementContractError(`${path}.ProductId`, 'duplicate product')
     }
     seen.add(productId)
-    if (toCents(unitPrice * qty) !== toCents(lineNetAmount)) {
+    if (multiplyToCents(unitPrice, qty) !== toCents(lineNetAmount)) {
       throw new ProcurementContractError(
         `${path}.LineNetAmount`,
         'does not equal UnitPrice × Qty to cents',
@@ -1024,7 +1024,10 @@ function normalizeCockpitDraftResult(
     items.reduce((sum, item) => sum + item.Qty, 0),
     DRAFT_QTY_SCALE,
   )
-  const calculatedNetCents = items.reduce((sum, item) => sum + toCents(item.LineNetAmount), 0)
+  const calculatedNetCents = items.reduce(
+    (sum, item) => sum + toCents(item.LineNetAmount),
+    0n,
+  )
 
   if (totalQty !== calculatedQty) {
     throw new ProcurementContractError(
@@ -1258,8 +1261,69 @@ function requireNullableMoney(
   return requireMoney(value, path, allowZero)
 }
 
-function toCents(value: number): number {
-  return Math.round((value + Number.EPSILON) * 100)
+function toCents(value: number): bigint {
+  return roundDecimalToScale(decimalParts(value), 2)
+}
+
+function multiplyToCents(left: number, right: number): bigint {
+  // The service calculates money with Decimal ROUND_HALF_UP. Multiplying the
+  // parsed JSON numbers as IEEE-754 values makes valid half-cent ties (4.975)
+  // drift below the boundary, so multiply their decimal coefficients instead.
+  const leftParts = decimalParts(left)
+  const rightParts = decimalParts(right)
+
+  return roundDecimalToScale(
+    {
+      coefficient: leftParts.coefficient * rightParts.coefficient,
+      scale: leftParts.scale + rightParts.scale,
+    },
+    2,
+  )
+}
+
+function decimalParts(value: number): { coefficient: bigint; scale: number } {
+  if (!Number.isFinite(value)) {
+    throw new TypeError('Cannot convert a non-finite number to decimal parts')
+  }
+
+  const [mantissa, exponentPart] = value.toString().toLowerCase().split('e')
+  const exponent = exponentPart === undefined ? 0 : Number(exponentPart)
+  const negative = mantissa.startsWith('-')
+  const unsignedMantissa = negative ? mantissa.slice(1) : mantissa
+  const [integerPart, fractionPart = ''] = unsignedMantissa.split('.')
+  const digits = `${integerPart}${fractionPart}`.replace(/^0+(?=\d)/, '') || '0'
+  let coefficient = BigInt(digits)
+  let scale = fractionPart.length - exponent
+
+  if (negative) {
+    coefficient = -coefficient
+  }
+  if (scale < 0) {
+    coefficient *= 10n ** BigInt(-scale)
+    scale = 0
+  }
+
+  return { coefficient, scale }
+}
+
+function roundDecimalToScale(
+  value: { coefficient: bigint; scale: number },
+  targetScale: number,
+): bigint {
+  if (value.scale <= targetScale) {
+    return value.coefficient * 10n ** BigInt(targetScale - value.scale)
+  }
+
+  const divisor = 10n ** BigInt(value.scale - targetScale)
+  const quotient = value.coefficient / divisor
+  const remainder = value.coefficient % divisor
+  const absoluteRemainder = remainder < 0n ? -remainder : remainder
+
+  if (absoluteRemainder * 2n < divisor) {
+    return quotient
+  }
+
+  return quotient + (value.coefficient < 0n ? -1n : 1n)
 }
 
 function roundToScale(value: number, scale: number): number {

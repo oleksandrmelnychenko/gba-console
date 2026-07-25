@@ -732,6 +732,67 @@ describe('getBudgetCartPlan', () => {
     })
   })
 
+  it('accepts decimal HALF_UP line totals across live and boundary cases', async () => {
+    const items = [
+      buildSuggestion({
+        product_id: 29383589,
+        producer_id: 513935,
+        suggested_qty: 3.98,
+        unit_cost_eur: 1.25,
+        line_cost_eur: 4.98,
+      }),
+      buildSuggestion({
+        product_id: 29484594,
+        producer_id: 513935,
+        suggested_qty: 2.9,
+        unit_cost_eur: 26.15,
+        line_cost_eur: 75.84,
+      }),
+      buildSuggestion({
+        product_id: 29390942,
+        producer_id: 513935,
+        suggested_qty: 35.22,
+        unit_cost_eur: 9.25,
+        line_cost_eur: 325.79,
+      }),
+      buildSuggestion({
+        product_id: 90000001,
+        producer_id: 513935,
+        suggested_qty: 3.979,
+        unit_cost_eur: 1.25,
+        line_cost_eur: 4.97,
+      }),
+      buildSuggestion({
+        product_id: 90000002,
+        producer_id: 513935,
+        suggested_qty: 50000,
+        unit_cost_eur: 1e-7,
+        line_cost_eur: 0.01,
+      }),
+    ]
+    apiRequestMock.mockResolvedValueOnce({
+      Body: buildCartEnvelope({
+        budgetEur: 0,
+        items,
+        selectedCount: 0,
+        deferredCount: items.length,
+        totalCostEur: 411.59,
+        pricedCostEur: 411.59,
+      }),
+    })
+
+    const plan = await getBudgetCartPlan({ budgetEur: 0, method: 'greedy' })
+
+    expect(plan.items.map((item) => item.line_cost_eur)).toEqual([
+      4.98,
+      75.84,
+      325.79,
+      4.97,
+      0.01,
+    ])
+    expect(plan.priced_cost_eur).toBe(411.59)
+  })
+
   it('rejects an invalid method or non-finite budget before making a network call', async () => {
     await expect(
       getBudgetCartPlan({ budgetEur: Number.NaN, method: 'unknown' as never }),
