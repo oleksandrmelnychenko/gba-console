@@ -1,6 +1,8 @@
 import { apiRequest } from '../../../shared/api/apiClient'
 import type {
   CurrencyExposure,
+  ForwardRisk,
+  ForwardRiskStatus,
   SolvencyBatch,
   SolvencyBatchError,
   SolvencyCharts,
@@ -10,6 +12,7 @@ import type {
 } from '../solvencyTypes'
 
 const GUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
 const CENT_EPSILON = 1e-7
 
 export class SolvencyContractError extends Error {
@@ -141,18 +144,102 @@ function normalizeScore(value: unknown, expectedNetId: string | null, path: stri
   if (typeof score.applicable !== 'boolean') {
     throw new SolvencyContractError(`${path}.applicable`, 'expected a boolean')
   }
+  if (score.data_sufficiency !== 'ok' && score.data_sufficiency !== 'insufficient') {
+    throw new SolvencyContractError(
+      `${path}.data_sufficiency`,
+      'expected ok or insufficient',
+    )
+  }
+  const forwardRiskStatus = requireForwardRiskStatus(
+    score.forward_risk_status,
+    `${path}.forward_risk_status`,
+  )
+  const forwardRiskReason = score.forward_risk_reason === null
+    ? null
+    : requireNonEmptyString(score.forward_risk_reason, `${path}.forward_risk_reason`)
+  const forwardRisk = normalizeForwardRisk(score.forward_risk, `${path}.forward_risk`)
+  if (
+    forwardRiskStatus === 'available'
+      ? forwardRisk === null || forwardRiskReason !== null
+      : forwardRisk !== null || forwardRiskReason === null
+  ) {
+    throw new SolvencyContractError(
+      `${path}.forward_risk_status`,
+      'status, value, and reason disagree',
+    )
+  }
   requireNullableNumberInRange(score.score, `${path}.score`, 0, 100, true)
   requireNullableNumberInRange(score.pd, `${path}.pd`, 0, 1)
   requireNullableFiniteNumber(score.raw_score, `${path}.raw_score`)
   requirePositiveInteger(score.window_months, `${path}.window_months`)
   requireNonEmptyString(score.model_version, `${path}.model_version`)
+  const sourceHistoryStart = requireIsoDate(
+    score.source_history_start,
+    `${path}.source_history_start`,
+  )
+  const effectiveStart = requireIsoDate(score.effective_start, `${path}.effective_start`)
+  const asOfDate = requireIsoDate(score.as_of_date, `${path}.as_of_date`)
+  if (sourceHistoryStart > effectiveStart || effectiveStart > asOfDate) {
+    throw new SolvencyContractError(`${path}.effective_start`, 'history dates are inverted')
+  }
+  if (typeof score.history_complete !== 'boolean') {
+    throw new SolvencyContractError(`${path}.history_complete`, 'expected a boolean')
+  }
+  if (
+    score.applicable
+    && score.data_sufficiency === 'insufficient'
+    && (
+      score.score !== null
+      || score.rating !== null
+      || score.pd !== null
+      || score.contributions !== null
+      || forwardRisk !== null
+      || score.currency_breakdown !== null
+    )
+  ) {
+    throw new SolvencyContractError(path, 'insufficient data contains a fabricated score')
+  }
 
   return {
     ...(score as SolvencyScore),
     client_id: clientId,
     client_net_uid: clientNetUid,
     currency_breakdown: currencyBreakdown,
+    forward_risk: forwardRisk,
+    forward_risk_status: forwardRiskStatus,
+    forward_risk_reason: forwardRiskReason,
+    source_history_start: sourceHistoryStart,
+    effective_start: effectiveStart,
+    history_complete: score.history_complete,
+    as_of_date: asOfDate,
   }
+}
+
+function normalizeForwardRisk(value: unknown, path: string): ForwardRisk | null {
+  if (value === null) {
+    return null
+  }
+  const risk = requireRecord(value, path)
+  if (
+    risk.band !== 'low' &&
+    risk.band !== 'medium' &&
+    risk.band !== 'high' &&
+    risk.band !== 'very_high'
+  ) {
+    throw new SolvencyContractError(`${path}.band`, 'contains an unsupported value')
+  }
+
+  return {
+    band: risk.band,
+    pd: requireNumberInRange(risk.pd, `${path}.pd`, 0, 1),
+  }
+}
+
+function requireForwardRiskStatus(value: unknown, path: string): ForwardRiskStatus {
+  if (value !== 'available' && value !== 'not_applicable' && value !== 'model_unavailable') {
+    throw new SolvencyContractError(path, 'contains an unsupported value')
+  }
+  return value
 }
 
 function normalizeCurrencyExposure(value: unknown, path: string): CurrencyExposure {
@@ -170,6 +257,18 @@ function normalizeCharts(result: unknown, expectedClientId: number): SolvencyCha
   const clientId = requirePositiveInteger(charts.client_id, 'charts.client_id')
   if (clientId !== expectedClientId) {
     throw new SolvencyContractError('charts.client_id', 'does not echo the requested client')
+  }
+  const sourceHistoryStart = requireIsoDate(
+    charts.source_history_start,
+    'charts.source_history_start',
+  )
+  const effectiveStart = requireIsoDate(charts.effective_start, 'charts.effective_start')
+  const asOfDate = requireIsoDate(charts.as_of_date, 'charts.as_of_date')
+  if (sourceHistoryStart > effectiveStart || effectiveStart > asOfDate) {
+    throw new SolvencyContractError('charts.effective_start', 'history dates are inverted')
+  }
+  if (typeof charts.history_complete !== 'boolean') {
+    throw new SolvencyContractError('charts.history_complete', 'expected a boolean')
   }
 
   const turnoverVsExposure = requireArray(
@@ -204,6 +303,10 @@ function normalizeCharts(result: unknown, expectedClientId: number): SolvencyCha
   return {
     ...(charts as SolvencyCharts),
     client_id: clientId,
+    source_history_start: sourceHistoryStart,
+    effective_start: effectiveStart,
+    history_complete: charts.history_complete,
+    as_of_date: asOfDate,
     open_invoice_aging_bars: agingBars,
     turnover_vs_exposure: turnoverVsExposure,
     turnover_trend: turnoverTrend,
@@ -237,6 +340,22 @@ function requireRecord(value: unknown, path: string): Record<string, unknown> {
   return value as Record<string, unknown>
 }
 
+function requireIsoDate(value: unknown, path: string): string {
+  if (typeof value !== 'string' || !ISO_DATE_PATTERN.test(value)) {
+    throw new SolvencyContractError(path, 'expected an ISO date')
+  }
+  const [year, month, day] = value.split('-').map(Number)
+  const parsed = new Date(Date.UTC(year, month - 1, day))
+  if (
+    parsed.getUTCFullYear() !== year
+    || parsed.getUTCMonth() !== month - 1
+    || parsed.getUTCDate() !== day
+  ) {
+    throw new SolvencyContractError(path, 'invalid calendar date')
+  }
+  return value
+}
+
 function requireArray(value: unknown, path: string): unknown[] {
   if (!Array.isArray(value)) {
     throw new SolvencyContractError(path, 'expected an array')
@@ -265,6 +384,24 @@ function requireGuid(value: unknown, path: string): string {
 function requirePositiveInteger(value: unknown, path: string): number {
   if (typeof value !== 'number' || !Number.isSafeInteger(value) || value <= 0) {
     throw new SolvencyContractError(path, 'must be a positive integer')
+  }
+
+  return value
+}
+
+function requireNumberInRange(
+  value: unknown,
+  path: string,
+  minimum: number,
+  maximum: number,
+): number {
+  if (
+    typeof value !== 'number' ||
+    !Number.isFinite(value) ||
+    value < minimum ||
+    value > maximum
+  ) {
+    throw new SolvencyContractError(path, `must be between ${minimum} and ${maximum}`)
   }
 
   return value

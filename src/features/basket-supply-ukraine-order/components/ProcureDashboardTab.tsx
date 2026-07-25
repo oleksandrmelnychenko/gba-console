@@ -20,6 +20,7 @@ import {
 import { useEffect, useMemo, useReducer, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
+import { AiHistoryLineageNote } from '../../../shared/ai/AiHistoryLineageNote'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -97,6 +98,11 @@ const qtyFormatter = new Intl.NumberFormat('uk-UA', {
 
 const countFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 0,
+})
+const snapshotDateFormatter = new Intl.DateTimeFormat('uk-UA', {
+  day: '2-digit',
+  month: 'short',
+  year: 'numeric',
 })
 
 export function ProcureDashboardTab() {
@@ -489,6 +495,7 @@ export function ProcureDashboardTab() {
                   'Оперативний зріз потреби: від критичних залишків до кількості, яку варто замовити.',
                 )}
               </Text>
+              {charts && <AiHistoryLineageNote lineage={charts} />}
             </div>
             <div className="procure-dashboard__snapshot">
               <span>{t('Зріз даних')}</span>
@@ -1002,11 +1009,7 @@ function formatSnapshotDate(
     return value
   }
 
-  return new Intl.DateTimeFormat('uk-UA', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  }).format(date)
+  return snapshotDateFormatter.format(date)
 }
 
 function formatUkrainianCount(

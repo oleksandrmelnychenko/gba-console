@@ -1,4 +1,8 @@
 import { apiRequest } from '../../../shared/api/apiClient'
+import {
+  normalizeAiHistoryLineage,
+  requireAiIsoDate,
+} from '../../../shared/ai/aiHistoryLineage'
 import type { DiscountBand, PeerBand, PriceConfidence, PriceRecommendation } from '../pricingTypes'
 
 const GUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -51,6 +55,20 @@ function normalizeRecommendation(
   if (value.currency !== 'EUR') {
     throw new PricingContractError('recommendation.currency', 'must be EUR')
   }
+  const asOfDate = requireAiIsoDate(
+    value.as_of_date,
+    'recommendation.as_of_date',
+    createPricingContractError,
+  )
+  const historyLineage = normalizeAiHistoryLineage(
+    value,
+    'recommendation',
+    createPricingContractError,
+    {
+      asOf: asOfDate,
+      requireRequestedStart: true,
+    },
+  )
 
   const baselinePrice = requireNullableMoney(value.baseline_price, 'recommendation.baseline_price')
   const recommendedPrice = requireNullableMoney(
@@ -114,9 +132,23 @@ function normalizeRecommendation(
     ),
     elastic_optimal_price: elasticOptimalPrice,
     rationale: requireNonEmptyString(value.rationale, 'recommendation.rationale'),
-    as_of_date: requireNullableString(value.as_of_date, 'recommendation.as_of_date'),
+    ...historyLineage,
+    requested_start: historyLineage.requested_start!,
+    history_fingerprint: requireNonEmptyString(
+      value.history_fingerprint,
+      'recommendation.history_fingerprint',
+    ),
+    model_fingerprint: requireNonEmptyString(
+      value.model_fingerprint,
+      'recommendation.model_fingerprint',
+    ),
+    as_of_date: asOfDate,
     model_version: requireNonEmptyString(value.model_version, 'recommendation.model_version'),
   }
+}
+
+function createPricingContractError(path: string, reason: string): PricingContractError {
+  return new PricingContractError(path, reason)
 }
 
 function normalizePeerBand(value: unknown): PeerBand {

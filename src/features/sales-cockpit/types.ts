@@ -115,12 +115,12 @@ export type CockpitTargetMetric = {
   pace_status: HeadPaceStatus
 }
 
-export type CockpitTarget = {
+export type CockpitTarget = AiHistoryLineage & {
   manager_id?: number
   manager_net_uid?: string
   manager_name?: string | null
   month?: string | null
-  as_of?: string | null
+  as_of: string
   working_days: number
   working_days_elapsed: number
   shipped: CockpitTargetMetric
@@ -182,7 +182,7 @@ export type HeadTeamTotals = {
   conversion_rate: number
 }
 
-export type HeadTeam = {
+export type HeadTeam = Partial<AiHistoryLineage> & {
   is_head: boolean
   requested_manager_net_uid?: string
   as_of?: string | null
@@ -213,10 +213,10 @@ export type CockpitCompletedVsOpen = {
   count: number
 }
 
-export type CockpitDashboard = {
+export type CockpitDashboard = AiHistoryLineage & {
   manager_id: number
   manager_net_uid?: string
-  as_of?: string | null
+  as_of: string
   task_type_mix: CockpitTaskTypeMix[]
   urgency_mix: CockpitUrgencyMix[]
   value_at_risk_eur: number
@@ -231,7 +231,7 @@ export type HeadDashboardTeam = {
   value_at_risk_eur: number
 }
 
-export type HeadDashboard = {
+export type HeadDashboard = Partial<AiHistoryLineage> & {
   is_head: boolean
   requested_manager_net_uid?: string
   as_of?: string | null
@@ -299,7 +299,7 @@ export type HeadTasksParams = {
   limit?: number
 }
 
-export type CockpitGenerationResult = {
+export type CockpitGenerationResult = AiHistoryLineage & {
   manager_id: number
   manager_net_uid: string
   requested_as_of: string | null
@@ -314,3 +314,4 @@ export type CockpitGenerationResult = {
   refreshed: number
   crit_debt_reserved: number
 }
+import type { AiHistoryLineage } from '../../shared/ai/aiHistoryLineage'

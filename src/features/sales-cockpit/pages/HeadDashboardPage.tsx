@@ -18,6 +18,8 @@ import { useNavigate } from 'react-router-dom'
 import { ApiError } from '../../../shared/api/apiClient'
 import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
 import { useValueState } from '../../../shared/hooks/useValueState'
+import { AiHistoryLineageNote } from '../../../shared/ai/AiHistoryLineageNote'
+import { hasAiHistoryLineage } from '../../../shared/ai/aiHistoryLineage'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { getEscalated, getHeadTeam } from '../api/salesCockpitApi'
 import { HeadAiFleetStatus } from '../components/HeadAiFleetStatus'
@@ -213,6 +215,7 @@ export function HeadDashboardPage() {
                 <div>
                   <Text className="app-section-title" fw={600} size="sm">{t('Результат відділу')}</Text>
                   <Text c="dimmed" size="xs">{t('План, виконання та результат AI-задач за місяць')}</Text>
+                  {hasAiHistoryLineage(team) && <AiHistoryLineageNote lineage={team} />}
                 </div>
 
                 <div className="cockpit-head-kpis">

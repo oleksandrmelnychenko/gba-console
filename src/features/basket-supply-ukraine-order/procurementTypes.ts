@@ -39,15 +39,13 @@ export type ProcurementDemandSeries = {
   vendor_code?: string | null
 }
 
-export type ProcurementCharts = {
+export type ProcurementCharts = ProcurementHistoryContract & {
   producer_id: number | null
-  as_of_date: string | null
   top_n: number
   urgency_mix: ProcurementUrgencyBucket[]
   days_of_cover_hist: ProcurementDaysOfCoverBucket[]
   top_items: ProcurementTopItem[]
   demand_series: ProcurementDemandSeries[]
-  model_version: string
 }
 
 export type ProcurementChartsQuery = {
@@ -114,21 +112,19 @@ export type ReorderSuggestion = {
   within_budget: boolean | null
 }
 
-export type ProducerPlan = {
+export type ProducerPlan = ProcurementHistoryContract & {
   producer_id: number | null
   producer_name: string
   lead_time_days: number
   lead_time_std_days: number
   lead_time_source: string
   item_count: number
-  as_of_date: string | null
-  model_version: string
   items: ReorderSuggestion[]
 }
 
 export type CartOptimizeMethod = 'greedy' | 'milp'
 
-export type CartPlan = {
+export type CartPlan = ProcurementHistoryContract & {
   items: ReorderSuggestion[]
   item_count: number
   total_item_count: number
@@ -138,14 +134,12 @@ export type CartPlan = {
   total_cost_eur: number | null
   priced_cost_eur: number
   unpriced_item_count: number
-  as_of_date: string | null
   budget_eur: number
   budget_used_eur: number
   value_captured_eur: number
   selected_count: number
   deferred_count: number
   method_used: CartOptimizeMethod | null
-  model_version: string
 }
 
 export type CartPlanQuery = {
@@ -229,4 +223,12 @@ export type FeedbackInput = {
   suggested_qty?: number | null
   final_qty?: number | null
   abc?: string | null
+}
+import type { AiHistoryLineage } from '../../shared/ai/aiHistoryLineage'
+
+export type ProcurementHistoryContract = AiHistoryLineage & {
+  as_of_date: string
+  effective_history_days: number
+  history_not_applicable: string[]
+  model_version: string
 }

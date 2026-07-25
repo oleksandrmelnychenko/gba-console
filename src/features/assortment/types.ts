@@ -58,8 +58,7 @@ export type AssortmentStockRow = Pick<AssortmentRow, 'band' | 'cover_days' | 'eu
   vendor_code?: string | null
 }
 
-export type AssortmentStock = {
-  as_of?: string | null
+export type AssortmentStock = ProductHistoryContract & {
   model_version?: string | null
   total_skus: number
   total_qty: number
@@ -79,8 +78,7 @@ export type AssortmentOverviewBody = {
   total_skus: number
 }
 
-export type AssortmentOverview = {
-  as_of?: string | null
+export type AssortmentOverview = ProductHistoryContract & {
   model_version?: string | null
   count: number
   overview: AssortmentOverviewBody
@@ -99,8 +97,7 @@ export type AssortmentHealthParams = {
   regionWindowDays?: number
 }
 
-export type AssortmentHealth = {
-  as_of?: string | null
+export type AssortmentHealth = ProductHistoryContract & {
   sort?: string
   region_id?: number | null
   region_window_days?: number | null
@@ -118,8 +115,7 @@ export type AssortmentRegionRow = {
   revenue_eur: number
 }
 
-export type AssortmentRegions = {
-  as_of?: string | null
+export type AssortmentRegions = ProductHistoryContract & {
   window_days: number
   count: number
   regions: AssortmentRegionRow[]
@@ -136,8 +132,7 @@ export type AssortmentMarginRow = Pick<
   vendor_code?: string | null
 }
 
-export type AssortmentMargin = {
-  as_of?: string | null
+export type AssortmentMargin = ProductHistoryContract & {
   leaders: AssortmentMarginRow[]
   laggards: AssortmentMarginRow[]
   negative: AssortmentMarginRow[]
@@ -158,17 +153,15 @@ export type AssortmentMarginSummary = {
   overall_return_rate?: number
 }
 
-export type AssortmentReturns = {
-  as_of?: string | null
+export type AssortmentReturns = ProductHistoryContract & {
   min_rate?: number
   high_returns: AssortmentMarginRow[]
   summary: AssortmentMarginSummary
 }
 
-export type ProductDetail = AssortmentRow & { as_of?: string | null; found: boolean }
+export type ProductDetail = AssortmentRow & ProductHistoryContract & { found: boolean }
 
-export type ProductSubstitutes = {
-  as_of?: string | null
+export type ProductSubstitutes = ProductHistoryContract & {
   product_id: number
   found: boolean
   target?: AssortmentRow | null
@@ -187,8 +180,7 @@ export type ProductRegionRow = {
   regional_client_count: number
 }
 
-export type ProductRegions = {
-  as_of?: string | null
+export type ProductRegions = ProductHistoryContract & {
   window_days: number
   product_id: number
   count: number
@@ -206,8 +198,10 @@ export type ProductSalesSeriesPoint = {
   units: number
 }
 
-export type ProductAnalytics = {
+export type ProductAnalytics = AiHistoryLineage & {
   as_of: string
+  requested_start: string
+  history_fingerprint: string
   data_quality: {
     avg_price_basis: string
     revenue_basis: string
@@ -218,6 +212,11 @@ export type ProductAnalytics = {
     stock_is_current: boolean
     stock_note: string
     zero_months_filled: boolean
+    zero_fill_begins_at: string
+    source_history_start: string
+    requested_start: string
+    effective_start: string
+    history_complete: boolean
   }
   model_version?: string | null
   product_id: number
@@ -228,5 +227,23 @@ export type ProductAnalytics = {
     includes_partial_current_month: boolean
     months: number
     start: string
+    source_history_start: string
+    requested_start: string
+    effective_start: string
+    effective_days: number
+    history_complete: boolean
   }
+}
+import type { AiHistoryLineage } from '../../shared/ai/aiHistoryLineage'
+
+export type ProductHistoryWindow = AiHistoryLineage & {
+  requested_start: string
+  effective_days: number
+}
+
+export type ProductHistoryContract = AiHistoryLineage & {
+  as_of: string
+  requested_start: string
+  history_fingerprint: string
+  history_windows: Record<string, ProductHistoryWindow>
 }

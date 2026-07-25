@@ -1,4 +1,5 @@
 import { Badge, Card, SimpleGrid, Stack, Text } from '@mantine/core'
+import { AiHistoryLineageNote } from '../../../shared/ai/AiHistoryLineageNote'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { CockpitTarget, HeadPaceStatus } from '../types'
 
@@ -39,6 +40,7 @@ export function CockpitTargetCard({ target }: { target: CockpitTarget }) {
         <Text className="app-section-title" fw={600} size="sm">
           {t('Моя ціль (місяць)')}
         </Text>
+        <AiHistoryLineageNote lineage={target} />
 
         <SimpleGrid cols={1} spacing={0}>
           <TargetMetric label={t('Відвантаження')} metric={target.shipped} t={t} />

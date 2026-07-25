@@ -19,6 +19,11 @@ vi.mock('../../supply-ukraine-orders/api/supplyUkraineOrdersApi', () => ({
 
 const charts: ProcurementCharts = {
   as_of_date: '2026-07-24',
+  source_history_start: '2025-01-01',
+  effective_start: '2025-07-24',
+  effective_history_days: 365,
+  history_complete: true,
+  history_not_applicable: ['inventory', 'reservations'],
   model_version: 'test',
   days_of_cover_hist: [
     { bucket: '0–7', count: 7 },
@@ -110,6 +115,11 @@ describe('ProcureDashboardTab', () => {
   it('replaces empty charts with one meaningful operational state', async () => {
     vi.mocked(getProcurementCharts).mockResolvedValue({
       as_of_date: '2026-07-25',
+      source_history_start: '2025-01-01',
+      effective_start: '2025-07-25',
+      effective_history_days: 365,
+      history_complete: true,
+      history_not_applicable: ['inventory', 'reservations'],
       days_of_cover_hist: [],
       demand_series: [],
       model_version: 'test',

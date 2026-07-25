@@ -15,6 +15,7 @@ import { CircleAlert, MapPin, RotateCcw } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
+import { AiHistoryLineageNote } from '../../../shared/ai/AiHistoryLineageNote'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -478,6 +479,7 @@ export function AssortmentDashboardPage() {
         />
 
         <div className="assort-dash__body">
+          {overview && <AiHistoryLineageNote lineage={overview} />}
           {error && (
             <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}

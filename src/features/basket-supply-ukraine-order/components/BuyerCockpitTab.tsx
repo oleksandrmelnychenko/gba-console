@@ -21,6 +21,7 @@ import { Check, CircleAlert, RefreshCw, School, Settings, TriangleAlert } from '
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
+import { AiHistoryLineageNote } from '../../../shared/ai/AiHistoryLineageNote'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { TranslateFunction } from '../../../shared/i18n/types'
 import { AppModal } from '../../../shared/ui/AppModal'
@@ -850,6 +851,7 @@ export function BuyerCockpitTab() {
                     </Badge>
                   )}
                 </Group>
+                <AiHistoryLineageNote lineage={plan} />
               </Stack>
               <Group align="flex-end" gap="md" wrap="nowrap">
                 <Stack align="flex-end" gap={2}>

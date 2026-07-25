@@ -46,7 +46,7 @@ export type SalesForecastHistoryItem = {
   sufficient: boolean
 }
 
-export type SalesForecastMeta = {
+export type SalesForecastMeta = AiHistoryLineage & {
   status: SalesForecastResponseStatus
   as_of: string
   requested_as_of: string
@@ -83,3 +83,4 @@ export type SalesForecastRequestOptions = {
   signal?: AbortSignal
   useCache?: boolean
 }
+import type { AiHistoryLineage } from '../../shared/ai/aiHistoryLineage'

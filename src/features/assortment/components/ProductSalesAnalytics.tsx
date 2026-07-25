@@ -3,6 +3,7 @@ import { Alert, Badge, Card, Group, SimpleGrid, Stack, Text } from '@mantine/cor
 import { AlertTriangle, ArrowDownRight, ArrowUpRight, Minus } from 'lucide-react'
 import { useMemo } from 'react'
 import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
+import { AiHistoryLineageNote } from '../../../shared/ai/AiHistoryLineageNote'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { ProductAnalytics, ProductSalesSeriesPoint } from '../types'
 
@@ -87,6 +88,7 @@ export function ProductSalesAnalytics({ analytics, error }: ProductSalesAnalytic
             <Text c="dimmed" size="xs">
               {t('Щомісячні продажі з валідних замовлень; залишок на складі не історизується.')}
             </Text>
+            <AiHistoryLineageNote lineage={analytics} />
           </Stack>
           <Badge color="gray" variant="light">
             {analytics.window.months} {t('міс.')}

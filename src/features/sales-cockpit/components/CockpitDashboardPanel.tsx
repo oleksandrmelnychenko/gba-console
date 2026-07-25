@@ -1,6 +1,7 @@
 import { Alert, Card, Group, Stack, Text } from '@mantine/core'
 import { CircleAlert } from 'lucide-react'
 import { useEffect, useMemo, useReducer } from 'react'
+import { AiHistoryLineageNote } from '../../../shared/ai/AiHistoryLineageNote'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AgingBars, type AgingSeries } from '../../../shared/ui/charts/AgingBars'
 import { TaskTypeDonut } from '../../../shared/ui/charts/TaskTypeDonut'
@@ -141,6 +142,7 @@ export function CockpitDashboardPanel({ asOfDate, reloadKey }: { asOfDate?: stri
     <Card className="app-section-card cockpit-dashboard-panel" withBorder radius="md">
       <Stack gap="md">
         <Text className="app-section-title" fw={600} size="sm">{t('Дашборд завдань')}</Text>
+        {dashboard && <AiHistoryLineageNote lineage={dashboard} />}
 
         {error && (
           <Alert color="orange" icon={<CircleAlert size={18} />} variant="light">

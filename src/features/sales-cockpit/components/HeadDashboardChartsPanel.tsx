@@ -1,6 +1,8 @@
 import { Alert, Stack, Text } from '@mantine/core'
 import { CircleAlert } from 'lucide-react'
 import { useEffect, useMemo, useReducer } from 'react'
+import { AiHistoryLineageNote } from '../../../shared/ai/AiHistoryLineageNote'
+import { hasAiHistoryLineage } from '../../../shared/ai/aiHistoryLineage'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AgingBars, type AgingSeries } from '../../../shared/ui/charts/AgingBars'
 import { getHeadDashboard } from '../api/salesCockpitApi'
@@ -130,6 +132,9 @@ export function HeadDashboardChartsPanel({
         <div>
           <Text className="app-section-title" fw={600} size="sm">{t('Аналітика навантаження')}</Text>
           <Text c="dimmed" size="xs">{t('Ризик і активні задачі за менеджерами')}</Text>
+          {dashboard && hasAiHistoryLineage(dashboard) && (
+            <AiHistoryLineageNote lineage={dashboard} />
+          )}
         </div>
 
         {error && (

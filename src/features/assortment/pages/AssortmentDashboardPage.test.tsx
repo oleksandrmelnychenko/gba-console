@@ -46,6 +46,7 @@ const product: AssortmentRow = {
 
 function mockAssortmentData(rows: AssortmentRow[] = [product]) {
   vi.mocked(getAssortmentOverview).mockResolvedValue({
+    ...history(),
     count: rows.length,
     overview: {
       avg_health: rows.length ? 28 : 0,
@@ -58,9 +59,10 @@ function mockAssortmentData(rows: AssortmentRow[] = [product]) {
       total_skus: rows.length,
     },
   })
-  vi.mocked(getAssortmentHealth).mockResolvedValue({ count: rows.length, tasks: rows })
-  vi.mocked(getAssortmentRegions).mockResolvedValue({ count: 0, regions: [], window_days: 365 })
+  vi.mocked(getAssortmentHealth).mockResolvedValue({ ...history(), count: rows.length, tasks: rows })
+  vi.mocked(getAssortmentRegions).mockResolvedValue({ ...history(), count: 0, regions: [], window_days: 365 })
   vi.mocked(getAssortmentStock).mockResolvedValue({
+    ...history(),
     bands: rows.length ? { understock: { count: 1, eur_value: 126, qty: 3 } } : {},
     rows: rows.map((row) => ({
       band: row.band,
@@ -76,6 +78,7 @@ function mockAssortmentData(rows: AssortmentRow[] = [product]) {
     total_skus: rows.length,
   })
   vi.mocked(getAssortmentMargin).mockResolvedValue({
+    ...history(),
     laggards: rows.map((row) => ({
       ...row,
       margin_eur: row.margin_pct == null ? null : row.margin_pct * row.revenue_eur,
@@ -88,9 +91,30 @@ function mockAssortmentData(rows: AssortmentRow[] = [product]) {
     },
   })
   vi.mocked(getAssortmentReturns).mockResolvedValue({
+    ...history(),
     high_returns: [],
     summary: { overall_return_rate: rows.length ? 0.03 : 0 },
   })
+}
+
+function history() {
+  return {
+    as_of: '2026-07-10',
+    source_history_start: '2025-01-01',
+    requested_start: '2025-07-10',
+    effective_start: '2025-07-10',
+    history_complete: true,
+    history_fingerprint: 'products-history-20250101',
+    history_windows: {
+      portfolio: {
+        source_history_start: '2025-01-01',
+        requested_start: '2025-07-10',
+        effective_start: '2025-07-10',
+        effective_days: 365,
+        history_complete: true,
+      },
+    },
+  }
 }
 
 function renderPage() {

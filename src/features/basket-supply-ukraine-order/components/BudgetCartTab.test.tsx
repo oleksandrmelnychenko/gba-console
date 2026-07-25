@@ -52,6 +52,11 @@ describe('BudgetCartTab', () => {
   it('replaces zero summaries with one actionable empty result', async () => {
     vi.mocked(getBudgetCartPlan).mockResolvedValue({
       as_of_date: '2026-07-25',
+      source_history_start: '2025-01-01',
+      effective_start: '2025-07-25',
+      effective_history_days: 365,
+      history_complete: true,
+      history_not_applicable: ['inventory', 'reservations'],
       budget_eur: 50_000,
       budget_used_eur: 0,
       deferred_count: 0,

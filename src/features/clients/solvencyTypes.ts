@@ -23,6 +23,7 @@ export type CurrencyExposure = {
 }
 
 export type ForwardRiskBand = 'low' | 'medium' | 'high' | 'very_high'
+export type ForwardRiskStatus = 'available' | 'model_unavailable' | 'not_applicable'
 
 export type Contribution = {
   feature: string
@@ -44,6 +45,8 @@ export type SolvencyScore = {
   pd?: number | null
   contributions?: Contribution[] | null
   forward_risk?: ForwardRisk | null
+  forward_risk_status: ForwardRiskStatus
+  forward_risk_reason: string | null
   sub_factors: SubFactors | null
   caps_applied: string[]
   debt_load_source: SolvencyDebtLoadSource | null
@@ -51,6 +54,9 @@ export type SolvencyScore = {
   currency_breakdown: CurrencyExposure[] | null
   data_sufficiency?: 'insufficient' | 'ok' | null
   data_sufficiency_reason?: string | null
+  source_history_start: string
+  effective_start: string
+  history_complete: boolean
   as_of_date: string | null
   window_months: number
   model_version: string
@@ -112,6 +118,9 @@ export type SolvencyCharts = {
   score_sparkline: ScorePoint[]
   turnover_trend: TrendPoint[]
   aging_over_time_heatmap: string
+  source_history_start: string
+  effective_start: string
+  history_complete: boolean
   as_of_date: string | null
   window_months: number
   model_version: string

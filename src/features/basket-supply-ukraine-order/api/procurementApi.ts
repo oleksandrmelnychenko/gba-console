@@ -1,4 +1,8 @@
 import { apiRequest } from '../../../shared/api/apiClient'
+import {
+  normalizeAiHistoryLineage,
+  requireAiIsoDate,
+} from '../../../shared/ai/aiHistoryLineage'
 import type {
   CartOptimizeMethod,
   CartPlan,
@@ -54,7 +58,7 @@ export async function getProducerPlan(
     ...(signal ? { signal } : {}),
   })
 
-  return normalizeProducerPlan(result)
+  return normalizeProducerPlan(result, asOfDate)
 }
 
 export async function getBudgetCartPlan(query: CartPlanQuery, signal?: AbortSignal): Promise<CartPlan> {
@@ -76,7 +80,7 @@ export async function getBudgetCartPlan(query: CartPlanQuery, signal?: AbortSign
     ...(signal ? { signal } : {}),
   })
 
-  return normalizeCartPlan(result, budgetEur)
+  return normalizeCartPlan(result, budgetEur, query.asOfDate)
 }
 
 export async function getProcurementCharts(
@@ -329,6 +333,7 @@ function buildChartsQuery(query: ProcurementChartsQuery) {
 
 function normalizeCharts(result: unknown): ProcurementCharts {
   const data = requireRecord(unwrap(result), 'charts')
+  const history = normalizeProcurementHistory(data, 'charts')
   const producerId = requireNullableSafePositiveInteger(data.producer_id, 'charts.producer_id')
   const topN = requireIntegerInRange(data.top_n, 'charts.top_n', 1, 100)
   const urgencyMix = normalizeUrgencyMix(data.urgency_mix)
@@ -347,14 +352,13 @@ function normalizeCharts(result: unknown): ProcurementCharts {
   }
 
   return {
+    ...history,
     producer_id: producerId,
-    as_of_date: requireNonEmptyString(data.as_of_date, 'charts.as_of_date'),
     top_n: topN,
     urgency_mix: urgencyMix,
     days_of_cover_hist: daysOfCover,
     top_items: topItems,
     demand_series: demandSeries,
-    model_version: requireNonEmptyString(data.model_version, 'charts.model_version'),
   }
 }
 
@@ -487,8 +491,9 @@ function normalizeDemandSeries(value: unknown) {
   })
 }
 
-function normalizeProducerPlan(result: unknown): ProducerPlan {
+function normalizeProducerPlan(result: unknown, expectedAsOf?: string): ProducerPlan {
   const data = requireRecord(unwrap(result), 'producer_plan')
+  const history = normalizeProcurementHistory(data, 'producer_plan', expectedAsOf)
   const producerId = requireSafePositiveInteger(data.producer_id, 'producer_plan.producer_id')
   const items = normalizeReorderSuggestions(data.items, 'producer_plan.items')
   assertUniqueSuggestionProducts(items, 'producer_plan.items')
@@ -516,6 +521,7 @@ function normalizeProducerPlan(result: unknown): ProducerPlan {
   }
 
   return {
+    ...history,
     producer_id: producerId,
     producer_name: requireNullableString(data.producer_name, 'producer_plan.producer_name') ?? '',
     lead_time_days: requireNumberInRange(
@@ -535,14 +541,17 @@ function normalizeProducerPlan(result: unknown): ProducerPlan {
       'producer_plan.lead_time_source',
     ),
     item_count: itemCount,
-    as_of_date: requireNullableString(data.as_of_date, 'producer_plan.as_of_date'),
-    model_version: requireNonEmptyString(data.model_version, 'producer_plan.model_version'),
     items,
   }
 }
 
-function normalizeCartPlan(result: unknown, expectedBudgetEur: number): CartPlan {
+function normalizeCartPlan(
+  result: unknown,
+  expectedBudgetEur: number,
+  expectedAsOf?: string,
+): CartPlan {
   const data = requireRecord(unwrap(result), 'cart')
+  const history = normalizeProcurementHistory(data, 'cart', expectedAsOf)
   const items = normalizeReorderSuggestions(data.items, 'cart.items')
   assertUniqueSuggestionProducts(items, 'cart.items')
 
@@ -674,6 +683,7 @@ function normalizeCartPlan(result: unknown, expectedBudgetEur: number): CartPlan
   }
 
   return {
+    ...history,
     items,
     item_count: itemCount,
     total_item_count: totalItemCount,
@@ -688,15 +698,48 @@ function normalizeCartPlan(result: unknown, expectedBudgetEur: number): CartPlan
     total_cost_eur: totalCostEur,
     priced_cost_eur: pricedCostEur,
     unpriced_item_count: unpricedItemCount,
-    as_of_date: requireNullableString(data.as_of_date, 'cart.as_of_date'),
     budget_eur: budgetEur,
     budget_used_eur: budgetUsedEur,
     value_captured_eur: valueCapturedEur,
     selected_count: selectedCount,
     deferred_count: deferredCount,
     method_used: methodUsed,
-    model_version: requireNonEmptyString(data.model_version, 'cart.model_version'),
   }
+}
+
+function normalizeProcurementHistory(
+  data: Record<string, unknown>,
+  path: string,
+  expectedAsOf?: string,
+) {
+  const asOfDate = requireAiIsoDate(
+    data.as_of_date,
+    `${path}.as_of_date`,
+    createProcurementContractError,
+  )
+  const lineage = normalizeAiHistoryLineage(
+    data,
+    path,
+    createProcurementContractError,
+    {
+      asOf: asOfDate,
+      ...(expectedAsOf ? { expectedAsOf } : {}),
+      requireEffectiveHistoryDays: true,
+      requiredHistoryNotApplicable: ['inventory', 'reservations'],
+    },
+  )
+
+  return {
+    ...lineage,
+    effective_history_days: lineage.effective_history_days!,
+    history_not_applicable: lineage.history_not_applicable!,
+    as_of_date: asOfDate,
+    model_version: requireNonEmptyString(data.model_version, `${path}.model_version`),
+  }
+}
+
+function createProcurementContractError(path: string, reason: string): ProcurementContractError {
+  return new ProcurementContractError(path, reason)
 }
 
 function normalizeCartMethod(value: unknown): CartOptimizeMethod | null {

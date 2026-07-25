@@ -29,6 +29,11 @@ describe('ProcurementConstructor', () => {
     vi.mocked(getSupplyOrderSuppliers).mockResolvedValue([])
     vi.mocked(getBudgetCartPlan).mockResolvedValue({
       as_of_date: '2026-07-24',
+      source_history_start: '2025-01-01',
+      effective_start: '2025-07-24',
+      effective_history_days: 365,
+      history_complete: true,
+      history_not_applicable: ['inventory', 'reservations'],
       budget_eur: 0,
       budget_used_eur: 0,
       deferred_count: 0,
@@ -104,6 +109,11 @@ describe('ProcurementConstructor', () => {
   it('explains when the current stock does not require replenishment', async () => {
     vi.mocked(getBudgetCartPlan).mockResolvedValue({
       as_of_date: '2026-07-24',
+      source_history_start: '2025-01-01',
+      effective_start: '2025-07-24',
+      effective_history_days: 365,
+      history_complete: true,
+      history_not_applicable: ['inventory', 'reservations'],
       budget_eur: 0,
       budget_used_eur: 0,
       deferred_count: 0,

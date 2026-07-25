@@ -2,6 +2,7 @@ import { Alert, Badge, Divider, Group, Loader, Stack, Text } from '@mantine/core
 import { CircleAlert } from 'lucide-react'
 import { useEffect, useReducer } from 'react'
 import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
+import { AiHistoryLineageNote } from '../../../shared/ai/AiHistoryLineageNote'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { MarginWaterfall } from '../../../shared/ui/charts/MarginWaterfall'
 import { RangeBandChart } from '../../../shared/ui/charts/RangeBandChart'
@@ -191,6 +192,7 @@ function PriceHintCard({ recommendation }: { recommendation: PriceRecommendation
         </Text>
       )}
 
+      <AiHistoryLineageNote lineage={recommendation} />
       <PricePositioningCharts currency={currency} recommendation={recommendation} />
     </Stack>
   )

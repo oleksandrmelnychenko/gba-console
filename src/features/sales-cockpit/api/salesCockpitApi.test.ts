@@ -116,6 +116,7 @@ describe('salesCockpitApi', () => {
       is_head: true,
       requested_manager_net_uid: '11111111-1111-1111-1111-111111111111',
       as_of: '2026-06-08',
+      ...history('2025-06-08'),
       expected_manager_count: 1,
       returned_manager_count: 1,
       team: [
@@ -149,6 +150,7 @@ describe('salesCockpitApi', () => {
       is_head: true,
       requested_manager_net_uid: '11111111-1111-1111-1111-111111111111',
       as_of: '2026-06-08',
+      ...history('2025-06-08'),
       expected_manager_count: 1,
       returned_manager_count: 1,
       team: [
@@ -322,6 +324,7 @@ describe('salesCockpitApi', () => {
       manager_name: 'Олена',
       month: '2026-06',
       as_of: '2026-06-08',
+      ...history('2026-03-01'),
       working_days: 21,
       working_days_elapsed: 6,
       shipped: {
@@ -352,6 +355,7 @@ describe('salesCockpitApi', () => {
       manager_name: 'Олена',
       month: '2026-06',
       as_of: '2026-06-08',
+      ...history('2026-03-01'),
       working_days: 21,
       working_days_elapsed: 6,
       shipped: {
@@ -382,38 +386,10 @@ describe('salesCockpitApi', () => {
     })
   })
 
-  it('defaults the manager target to a no-target shape on a non-object response', async () => {
+  it('fails closed when the manager target omits its history proof', async () => {
     apiRequestMock.mockResolvedValueOnce(null)
 
-    await expect(getCockpitTarget()).resolves.toEqual({
-      manager_id: 0,
-      manager_net_uid: undefined,
-      manager_name: null,
-      month: null,
-      as_of: null,
-      working_days: 0,
-      working_days_elapsed: 0,
-      shipped: {
-        target: 0,
-        mtd: 0,
-        daily_pace: 0,
-        expected_to_date: 0,
-        gap: 0,
-        today_needed: 0,
-        attainment_pct: 0,
-        pace_status: 'no_target',
-      },
-      paid: {
-        target: 0,
-        mtd: 0,
-        daily_pace: 0,
-        expected_to_date: 0,
-        gap: 0,
-        today_needed: 0,
-        attainment_pct: 0,
-        pace_status: 'no_target',
-      },
-    })
+    await expect(getCockpitTarget()).rejects.toBeInstanceOf(SalesCockpitContractError)
     expect(apiRequestMock).toHaveBeenCalledWith('/sales/cockpit/target', {
       query: {
         asOfDate: undefined,
@@ -468,6 +444,7 @@ describe('salesCockpitApi', () => {
       manager_id: 7,
       manager_net_uid: '11111111-1111-1111-1111-111111111111',
       as_of: '2026-06-08',
+      ...history('2025-06-08'),
       task_type_mix: [{ type: 'debt_followup', count: 3 }, null, { type: 12, count: 1 }],
       urgency_mix: [{ urgency: 'critical', count: 2 }, { urgency: 'bogus', count: 9 }],
       value_at_risk_eur: 4200.5,
@@ -479,6 +456,7 @@ describe('salesCockpitApi', () => {
       manager_id: 7,
       manager_net_uid: '11111111-1111-1111-1111-111111111111',
       as_of: '2026-06-08',
+      ...history('2025-06-08'),
       task_type_mix: [{ type: 'debt_followup', count: 3 }],
       urgency_mix: [{ urgency: 'critical', count: 2 }],
       value_at_risk_eur: 4200.5,
@@ -492,19 +470,10 @@ describe('salesCockpitApi', () => {
     })
   })
 
-  it('defaults the manager dashboard to an empty shape on a non-object response', async () => {
+  it('fails closed when the manager dashboard omits its history proof', async () => {
     apiRequestMock.mockResolvedValueOnce(null)
 
-    await expect(getDashboard()).resolves.toEqual({
-      manager_id: 0,
-      manager_net_uid: undefined,
-      as_of: null,
-      task_type_mix: [],
-      urgency_mix: [],
-      value_at_risk_eur: 0,
-      debt_aging: [],
-      completed_vs_open: [],
-    })
+    await expect(getDashboard()).rejects.toBeInstanceOf(SalesCockpitContractError)
     expect(apiRequestMock).toHaveBeenCalledWith('/sales/cockpit/dashboard', {
       query: {
         asOfDate: undefined,
@@ -517,6 +486,7 @@ describe('salesCockpitApi', () => {
       is_head: true,
       requested_manager_net_uid: '11111111-1111-1111-1111-111111111111',
       as_of: '2026-06-08',
+      ...history('2025-06-08'),
       teams: [{ manager_id: 7, open_tasks: 4, critical: 1, value_at_risk_eur: 1200 }, null],
       escalated_count: 2,
       total_value_at_risk_eur: 9800.25,
@@ -526,6 +496,7 @@ describe('salesCockpitApi', () => {
       is_head: true,
       requested_manager_net_uid: '11111111-1111-1111-1111-111111111111',
       as_of: '2026-06-08',
+      ...history('2025-06-08'),
       teams: [{ manager_id: 7, open_tasks: 4, critical: 1, value_at_risk_eur: 1200 }],
       escalated_count: 2,
       total_value_at_risk_eur: 9800.25,
@@ -561,6 +532,7 @@ describe('salesCockpitApi', () => {
       manager_net_uid: '11111111-1111-1111-1111-111111111111',
       requested_as_of: '2026-06-06',
       as_of: '2026-06-06',
+      ...history('2025-06-06'),
       candidates: 10,
       generators_total: 4,
       generators_failed: 0,
@@ -577,6 +549,7 @@ describe('salesCockpitApi', () => {
       manager_net_uid: '11111111-1111-1111-1111-111111111111',
       requested_as_of: '2026-06-06',
       as_of: '2026-06-06',
+      ...history('2025-06-06'),
       candidates: 10,
       generators_total: 4,
       generators_failed: 0,
@@ -596,3 +569,11 @@ describe('salesCockpitApi', () => {
     })
   })
 })
+
+function history(effectiveStart: string) {
+  return {
+    source_history_start: '2025-01-01',
+    effective_start: effectiveStart,
+    history_complete: true,
+  }
+}

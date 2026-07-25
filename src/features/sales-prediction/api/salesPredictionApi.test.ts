@@ -35,6 +35,9 @@ function canonicalClientForecast() {
       status: 'ready',
       as_of: '2026-07-25',
       requested_as_of: '2026-07-25',
+      source_history_start: '2025-01-01',
+      effective_start: '2025-01-01',
+      history_complete: true,
       horizon_months: 2,
       currency: 'EUR',
       model_version: 'forecast-v1',
@@ -90,6 +93,9 @@ describe('salesPredictionApi canonical AI contract', () => {
       meta: {
         as_of: '2026-07-25',
         requested_as_of: '2026-07-25',
+        source_history_start: '2025-01-01',
+        effective_start: '2025-01-01',
+        history_complete: true,
         horizon_months: 2,
         history: {
           ByClient: {

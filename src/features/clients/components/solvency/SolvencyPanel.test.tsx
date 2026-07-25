@@ -32,12 +32,17 @@ const notApplicableScore: SolvencyScore = {
   applicable: false,
   score: null,
   rating: null,
+  forward_risk_status: 'not_applicable',
+  forward_risk_reason: 'client has no buyer role',
   sub_factors: null,
   caps_applied: [],
   debt_load_source: 'debt_table',
   raw_score: null,
   currency_breakdown: null,
-  as_of_date: null,
+  source_history_start: '2025-01-01',
+  effective_start: '2025-01-01',
+  history_complete: false,
+  as_of_date: '2025-01-01',
   window_months: 0,
   model_version: 'v1',
 }
@@ -56,11 +61,16 @@ const v3Score: SolvencyScore = {
     { feature: 'overdue_eur_180plus', value: 0, points: 0 },
   ],
   forward_risk: { band: 'very_high', pd: 0.997 },
+  forward_risk_status: 'available',
+  forward_risk_reason: null,
   sub_factors: null,
   caps_applied: [],
   debt_load_source: null,
   raw_score: null,
   currency_breakdown: null,
+  source_history_start: '2025-01-01',
+  effective_start: '2025-06-25',
+  history_complete: true,
   as_of_date: '2026-06-25',
   window_months: 12,
   model_version: 'creditscore-v3',
@@ -101,6 +111,44 @@ describe('SolvencyPanel', () => {
     // PD shown with one decimal in the headline and on the forward badge
     expect(await findByText(/PD 64\.9%/)).toBeTruthy()
     expect(await findByText(/PD 99\.7%/)).toBeTruthy()
+  })
+
+  it('shows source-bounded insufficient data and does not request charts', async () => {
+    getClientSolvencyScore.mockResolvedValue({
+      ...v3Score,
+      score: null,
+      rating: null,
+      pd: null,
+      contributions: null,
+      forward_risk: null,
+      forward_risk_status: 'not_applicable',
+      forward_risk_reason: 'no available evidence',
+      data_sufficiency: 'insufficient',
+      data_sufficiency_reason: 'no available evidence',
+    })
+
+    const { findByText, queryByText } = renderPanel(
+      <SolvencyPanel clientNetId="abc" />,
+    )
+
+    expect(await findByText(/Недостатньо даних для оцінки/i)).toBeTruthy()
+    expect(await findByText(/01\.01\.2025/)).toBeTruthy()
+    expect(queryByText('46')).toBeNull()
+    expect(getClientSolvencyCharts).not.toHaveBeenCalled()
+  })
+
+  it('explains why a null 6-month forecast is not a zero-risk prediction', async () => {
+    getClientSolvencyScore.mockResolvedValue({
+      ...v3Score,
+      forward_risk: null,
+      forward_risk_status: 'model_unavailable',
+      forward_risk_reason: '3 < 30 observations',
+    })
+    getClientSolvencyCharts.mockRejectedValue(new Error('no charts'))
+
+    const { findByText } = renderPanel(<SolvencyPanel clientNetId="abc" />)
+
+    expect(await findByText(/модель прогнозу недоступна.*3 < 30 observations/i)).toBeTruthy()
   })
 
   it('color-codes risk-increasing vs risk-reducing contributions by sign and drops zero-point ones', async () => {

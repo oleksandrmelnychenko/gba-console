@@ -1,7 +1,17 @@
 import { apiRequest } from '../../../shared/api/apiClient'
+import { requireAiIsoDate } from '../../../shared/ai/aiHistoryLineage'
 import type {
   RecommendationProduct,
+  RecommendationSource,
+  RecommendationSourceDetail,
 } from '../recommendationsTypes'
+
+export class RecommendationContractError extends Error {
+  constructor(path: string, reason: string) {
+    super(`Некоректна відповідь AI Recommendations (${path}): ${reason}`)
+    this.name = 'RecommendationContractError'
+  }
+}
 
 export async function getMostPurchasedProductsByClientId(
   clientNetId: string,
@@ -65,27 +75,102 @@ function normalizeRecommendationProducts(result: unknown): RecommendationProduct
     ? result
     : (result && typeof result === 'object' && Array.isArray((result as { Items?: unknown }).Items)
       ? (result as { Items: unknown[] }).Items
-      : [])
+      : null)
+  if (list === null) {
+    throw new RecommendationContractError('recommendations', 'expected a bare array')
+  }
 
-  return list.map((entry) => {
-    const wrapper = entry as {
-      Product?: RecommendationProduct
-      Rank?: number
-      Score?: number
-      Source?: string
+  let expectedLineage: {
+    source: string
+    effective: string
+    complete: boolean
+  } | null = null
+
+  return list.map((entry, index) => {
+    const path = `recommendations[${index}]`
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+      throw new RecommendationContractError(path, 'expected a metadata wrapper')
+    }
+    const wrapper = entry as Record<string, unknown>
+    if (!wrapper.Product || typeof wrapper.Product !== 'object' || Array.isArray(wrapper.Product)) {
+      throw new RecommendationContractError(`${path}.Product`, 'expected a hydrated product')
     }
 
-    if (wrapper && typeof wrapper === 'object' && wrapper.Product && typeof wrapper.Product === 'object') {
-      return {
-        ...wrapper.Product,
-        RecommendationRank: wrapper.Rank,
-        RecommendationScore: wrapper.Score,
-        RecommendationSource: wrapper.Source,
-      }
+    const source = requireAiIsoDate(
+      wrapper.SourceHistoryStart,
+      `${path}.SourceHistoryStart`,
+      createRecommendationContractError,
+    )
+    const effective = requireAiIsoDate(
+      wrapper.EffectiveStart,
+      `${path}.EffectiveStart`,
+      createRecommendationContractError,
+    )
+    if (source > effective) {
+      throw new RecommendationContractError(path, 'history dates are inverted')
+    }
+    if (typeof wrapper.HistoryComplete !== 'boolean') {
+      throw new RecommendationContractError(`${path}.HistoryComplete`, 'must be a boolean')
     }
 
-    return entry as RecommendationProduct
+    const lineage = { source, effective, complete: wrapper.HistoryComplete }
+    if (
+      expectedLineage !== null &&
+      (lineage.source !== expectedLineage.source ||
+        lineage.effective !== expectedLineage.effective ||
+        lineage.complete !== expectedLineage.complete)
+    ) {
+      throw new RecommendationContractError(path, 'history proof differs between rows')
+    }
+    expectedLineage ??= lineage
+
+    return {
+      ...(wrapper.Product as RecommendationProduct),
+      RecommendationRank: requireFiniteNumber(wrapper.Rank, `${path}.Rank`),
+      RecommendationScore: requireFiniteNumber(wrapper.Score, `${path}.Score`),
+      RecommendationSource: requireRecommendationSource(wrapper.Source, `${path}.Source`),
+      RecommendationSourceDetail: requireRecommendationSourceDetail(
+        wrapper.SourceDetail,
+        `${path}.SourceDetail`,
+      ),
+      RecommendationSourceHistoryStart: source,
+      RecommendationEffectiveStart: effective,
+      RecommendationHistoryComplete: wrapper.HistoryComplete,
+    }
   })
+}
+
+function createRecommendationContractError(path: string, reason: string) {
+  return new RecommendationContractError(path, reason)
+}
+
+function requireFiniteNumber(value: unknown, path: string): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    throw new RecommendationContractError(path, 'must be a finite number')
+  }
+  return value
+}
+
+function requireRecommendationSource(value: unknown, path: string): RecommendationSource {
+  if (value !== 'discovery' && value !== 'repurchase') {
+    throw new RecommendationContractError(path, 'contains an unsupported value')
+  }
+  return value
+}
+
+function requireRecommendationSourceDetail(
+  value: unknown,
+  path: string,
+): RecommendationSourceDetail {
+  if (
+    value !== 'copurchase' &&
+    value !== 'global_popular' &&
+    value !== 'repurchase_history' &&
+    value !== 'similar_clients'
+  ) {
+    throw new RecommendationContractError(path, 'contains an unsupported value')
+  }
+  return value
 }
 
 function normalizeRecommendationProduct(result: unknown): RecommendationProduct | null {

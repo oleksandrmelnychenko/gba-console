@@ -13,7 +13,7 @@ export type PeerBand = {
   n: number
 }
 
-export type PriceRecommendation = {
+export type PriceRecommendation = AiHistoryLineage & {
   product_id: number
   product_net_uid: string
   client_agreement_netuid: string
@@ -32,6 +32,10 @@ export type PriceRecommendation = {
   elasticity_source: string | null
   elastic_optimal_price: number | null
   rationale: string
-  as_of_date: string | null
+  requested_start: string
+  history_fingerprint: string
+  model_fingerprint: string
+  as_of_date: string
   model_version: string
 }
+import type { AiHistoryLineage } from '../../shared/ai/aiHistoryLineage'

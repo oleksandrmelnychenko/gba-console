@@ -118,7 +118,11 @@ export function SolvencyPanel({ clientNetId }: SolvencyPanelProps) {
         let loadedCharts: SolvencyCharts | null = null
         let loadedChartsError: string | null = null
 
-        if (loadedScore.applicable !== false && loadedScore.score != null) {
+        if (
+          loadedScore.applicable !== false
+          && loadedScore.score != null
+          && loadedScore.data_sufficiency !== 'insufficient'
+        ) {
           try {
             loadedCharts = await getClientSolvencyCharts(loadedScore.client_id, controller.signal)
           } catch (chartsLoadError) {
@@ -176,7 +180,7 @@ export function SolvencyPanel({ clientNetId }: SolvencyPanelProps) {
     )
   }
 
-  if (score.applicable === false || score.score == null) {
+  if (score.applicable === false) {
     return (
       <Alert color="gray" icon={<Info size={18} />} variant="light">
         {t('не покупець — оцінка платоспроможності незастосовна')}
@@ -187,7 +191,17 @@ export function SolvencyPanel({ clientNetId }: SolvencyPanelProps) {
   if (score.data_sufficiency === 'insufficient') {
     return (
       <Alert color="gray" icon={<Info size={18} />} variant="light">
-        {t('Недостатньо даних для оцінки — клієнт без історії продажів і боргів')}
+        {t('Недостатньо даних для оцінки — у доступних даних від')}{' '}
+        {formatIsoDate(score.source_history_start)}{' '}
+        {t('немає продажів, боргу або ненульових кредитних умов')}
+      </Alert>
+    )
+  }
+
+  if (score.score == null) {
+    return (
+      <Alert color="orange" icon={<CircleAlert size={18} />} variant="light">
+        {t('Оцінка платоспроможності недоступна')}
       </Alert>
     )
   }
@@ -197,14 +211,23 @@ export function SolvencyPanel({ clientNetId }: SolvencyPanelProps) {
       <Card className="app-section-card" padding="lg" radius="md" withBorder>
         <Stack gap="lg">
           <ScoreHeader score={score} />
-          {score.forward_risk && (
-            <Group gap="xs">
-              <Text c="dimmed" fw={600} size="sm">
-                {t('Прогноз ризику (6 міс.)')}:
-              </Text>
+          <Group gap="xs">
+            <Text c="dimmed" fw={600} size="sm">
+              {t('Прогноз ризику (6 міс.)')}:
+            </Text>
+            {score.forward_risk ? (
               <ForwardRiskBadge forwardRisk={score.forward_risk} />
-            </Group>
-          )}
+            ) : (
+              <Text c="dimmed" size="sm">
+                {t(
+                  score.forward_risk_status === 'not_applicable'
+                    ? 'не застосовується'
+                    : 'модель прогнозу недоступна',
+                )}
+                {score.forward_risk_reason ? ` · ${score.forward_risk_reason}` : ''}
+              </Text>
+            )}
+          </Group>
           <Divider />
           {score.sub_factors ? (
             <SubFactorBars subFactors={score.sub_factors} />
@@ -410,6 +433,14 @@ function ScoreNotes({ score }: { score: SolvencyScore }) {
           {t('Вікно')}: {score.window_months} {t('міс.')}
         </Badge>
       )}
+      <Badge color="gray" size="sm" variant="light">
+        {t('Дані з')}: {formatIsoDate(score.source_history_start)}
+      </Badge>
+      {!score.history_complete && (
+        <Badge color="yellow" size="sm" variant="light">
+          {t('Неповне історичне вікно')}
+        </Badge>
+      )}
       {score.caps_applied.map((cap) => (
         <Badge color="orange" key={cap} size="sm" variant="light">
           {cap}
@@ -417,6 +448,11 @@ function ScoreNotes({ score }: { score: SolvencyScore }) {
       ))}
     </Group>
   )
+}
+
+function formatIsoDate(value: string): string {
+  const [year, month, day] = value.split('-')
+  return `${day}.${month}.${year}`
 }
 
 function SolvencyChartsView({ charts }: { charts: SolvencyCharts }) {

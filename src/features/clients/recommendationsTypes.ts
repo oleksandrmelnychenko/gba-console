@@ -1,3 +1,11 @@
+export type RecommendationSource = 'discovery' | 'repurchase'
+
+export type RecommendationSourceDetail =
+  | 'copurchase'
+  | 'global_popular'
+  | 'repurchase_history'
+  | 'similar_clients'
+
 export type RecommendationProduct = {
   Id?: number
   NetUid?: string
@@ -18,5 +26,9 @@ export type RecommendationProduct = {
   CurrentPriceEurToUah?: number
   RecommendationRank?: number
   RecommendationScore?: number
-  RecommendationSource?: string
+  RecommendationSource?: RecommendationSource
+  RecommendationSourceDetail?: RecommendationSourceDetail
+  RecommendationSourceHistoryStart?: string
+  RecommendationEffectiveStart?: string
+  RecommendationHistoryComplete?: boolean
 }

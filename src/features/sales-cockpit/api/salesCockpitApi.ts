@@ -1,4 +1,8 @@
 import { apiRequest } from '../../../shared/api/apiClient'
+import {
+  normalizeAiHistoryLineage,
+  requireAiIsoDate,
+} from '../../../shared/ai/aiHistoryLineage'
 import type {
   CockpitCompletedVsOpen,
   CockpitCount,
@@ -92,7 +96,7 @@ export async function getHeadTeam(asOfDate?: string): Promise<HeadTeam> {
     },
   })
 
-  return normalizeHeadTeam(result)
+  return normalizeHeadTeam(result, asOfDate)
 }
 
 export async function getHeadTasks(params: HeadTasksParams = {}): Promise<HeadTasksResponse> {
@@ -116,7 +120,7 @@ export async function getDashboard(asOfDate?: string): Promise<CockpitDashboard>
     },
   })
 
-  return normalizeDashboard(result)
+  return normalizeDashboard(result, asOfDate)
 }
 
 export async function getHeadDashboard(asOfDate?: string): Promise<HeadDashboard> {
@@ -126,7 +130,7 @@ export async function getHeadDashboard(asOfDate?: string): Promise<HeadDashboard
     },
   })
 
-  return normalizeHeadDashboard(result)
+  return normalizeHeadDashboard(result, asOfDate)
 }
 
 export async function getCockpitTarget(asOfDate?: string): Promise<CockpitTarget> {
@@ -136,7 +140,7 @@ export async function getCockpitTarget(asOfDate?: string): Promise<CockpitTarget
     },
   })
 
-  return normalizeCockpitTarget(result)
+  return normalizeCockpitTarget(result, asOfDate)
 }
 
 export async function getEscalated(limit?: number): Promise<EscalatedResponse> {
@@ -158,7 +162,7 @@ export async function regenerateCockpit(asOfDate?: string): Promise<CockpitGener
     body: {},
   })
 
-  return normalizeGenerationResult(result)
+  return normalizeGenerationResult(result, asOfDate)
 }
 
 function normalizeInbox(result: unknown): CockpitInbox {
@@ -198,8 +202,12 @@ function normalizeByUrgency(value: Partial<CockpitCountByUrgency>): CockpitCount
   }
 }
 
-function normalizeHeadTeam(result: unknown): HeadTeam {
+function normalizeHeadTeam(result: unknown, expectedAsOf?: string): HeadTeam {
   const payload = result && typeof result === 'object' ? (result as Partial<HeadTeam>) : {}
+  const isHead = payload.is_head === true
+  const history = isHead
+    ? normalizeRequiredCockpitHistory(payload, 'head_team', expectedAsOf)
+    : {}
   const team = Array.isArray(payload.team)
     ? payload.team.reduce<HeadTeamRow[]>((acc, value) => {
         const row = normalizeHeadRow(value)
@@ -224,7 +232,8 @@ function normalizeHeadTeam(result: unknown): HeadTeam {
   }
 
   return {
-    is_head: payload.is_head === true,
+    ...history,
+    is_head: isHead,
     requested_manager_net_uid: typeof payload.requested_manager_net_uid === 'string'
       ? payload.requested_manager_net_uid
       : undefined,
@@ -307,15 +316,17 @@ function normalizeHeadTotals(value: unknown): HeadTeamTotals {
   }
 }
 
-function normalizeCockpitTarget(result: unknown): CockpitTarget {
+function normalizeCockpitTarget(result: unknown, expectedAsOf?: string): CockpitTarget {
   const payload = result && typeof result === 'object' ? (result as Partial<CockpitTarget>) : {}
+  const history = normalizeRequiredCockpitHistory(payload, 'target', expectedAsOf)
 
   return {
+    ...history,
     manager_id: typeof payload.manager_id === 'number' ? payload.manager_id : 0,
     manager_net_uid: typeof payload.manager_net_uid === 'string' ? payload.manager_net_uid : undefined,
     manager_name: typeof payload.manager_name === 'string' ? payload.manager_name : null,
     month: typeof payload.month === 'string' ? payload.month : null,
-    as_of: typeof payload.as_of === 'string' ? payload.as_of : null,
+    as_of: history.as_of,
     working_days: toNumber(payload.working_days),
     working_days_elapsed: toNumber(payload.working_days_elapsed),
     shipped: normalizeCockpitMetric(payload.shipped),
@@ -361,13 +372,15 @@ function normalizeEscalated(result: unknown): EscalatedResponse {
   }
 }
 
-function normalizeDashboard(result: unknown): CockpitDashboard {
+function normalizeDashboard(result: unknown, expectedAsOf?: string): CockpitDashboard {
   const payload = result && typeof result === 'object' ? (result as Partial<CockpitDashboard>) : {}
+  const history = normalizeRequiredCockpitHistory(payload, 'dashboard', expectedAsOf)
 
   return {
+    ...history,
     manager_id: typeof payload.manager_id === 'number' ? payload.manager_id : 0,
     manager_net_uid: typeof payload.manager_net_uid === 'string' ? payload.manager_net_uid : undefined,
-    as_of: typeof payload.as_of === 'string' ? payload.as_of : null,
+    as_of: history.as_of,
     task_type_mix: Array.isArray(payload.task_type_mix)
       ? payload.task_type_mix.reduce<CockpitTaskTypeMix[]>((acc, value) => {
           const row = normalizeTaskTypeMix(value)
@@ -456,8 +469,12 @@ function normalizeCompletedVsOpen(value: unknown): CockpitCompletedVsOpen | null
   return { status: row.status, count: toNumber(row.count) }
 }
 
-function normalizeHeadDashboard(result: unknown): HeadDashboard {
+function normalizeHeadDashboard(result: unknown, expectedAsOf?: string): HeadDashboard {
   const payload = result && typeof result === 'object' ? (result as Partial<HeadDashboard>) : {}
+  const isHead = payload.is_head === true
+  const history = isHead
+    ? normalizeRequiredCockpitHistory(payload, 'head_dashboard', expectedAsOf)
+    : {}
   const teams = Array.isArray(payload.teams)
     ? payload.teams.reduce<HeadDashboardTeam[]>((acc, value) => {
         const row = normalizeHeadDashboardTeam(value)
@@ -467,7 +484,8 @@ function normalizeHeadDashboard(result: unknown): HeadDashboard {
     : []
 
   return {
-    is_head: payload.is_head === true,
+    ...history,
+    is_head: isHead,
     requested_manager_net_uid: typeof payload.requested_manager_net_uid === 'string'
       ? payload.requested_manager_net_uid
       : undefined,
@@ -619,10 +637,14 @@ function isTask(value: CockpitTask | null): value is CockpitTask {
   return value !== null
 }
 
-function normalizeGenerationResult(result: unknown): CockpitGenerationResult {
+function normalizeGenerationResult(
+  result: unknown,
+  expectedAsOf?: string,
+): CockpitGenerationResult {
   const payload = result && typeof result === 'object'
     ? (result as Partial<CockpitGenerationResult>)
     : {}
+  const history = normalizeRequiredCockpitHistory(payload, 'generation', expectedAsOf)
   const byType = payload.by_type && typeof payload.by_type === 'object' && !Array.isArray(payload.by_type)
     ? Object.fromEntries(
         Object.entries(payload.by_type)
@@ -631,10 +653,11 @@ function normalizeGenerationResult(result: unknown): CockpitGenerationResult {
     : {}
 
   return {
+    ...history,
     manager_id: toNumber(payload.manager_id),
     manager_net_uid: typeof payload.manager_net_uid === 'string' ? payload.manager_net_uid : '',
     requested_as_of: typeof payload.requested_as_of === 'string' ? payload.requested_as_of : null,
-    as_of: typeof payload.as_of === 'string' ? payload.as_of : '',
+    as_of: history.as_of,
     candidates: toNumber(payload.candidates),
     generators_total: toNumber(payload.generators_total),
     generators_failed: toNumber(payload.generators_failed),
@@ -645,4 +668,31 @@ function normalizeGenerationResult(result: unknown): CockpitGenerationResult {
     refreshed: toNumber(payload.refreshed),
     crit_debt_reserved: toNumber(payload.crit_debt_reserved),
   }
+}
+
+function normalizeRequiredCockpitHistory(
+  payload: object,
+  path: string,
+  expectedAsOf?: string,
+) {
+  const value = payload as Record<string, unknown>
+  const asOf = requireAiIsoDate(value.as_of, `${path}.as_of`, createSalesCockpitContractError)
+  const lineage = normalizeAiHistoryLineage(
+    value,
+    path,
+    createSalesCockpitContractError,
+    {
+      asOf,
+      ...(expectedAsOf ? { expectedAsOf } : {}),
+    },
+  )
+
+  return { ...lineage, as_of: asOf }
+}
+
+function createSalesCockpitContractError(
+  path: string,
+  reason: string,
+): SalesCockpitContractError {
+  return new SalesCockpitContractError(path, reason)
 }

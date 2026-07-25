@@ -19,6 +19,7 @@ import {
 import { CircleAlert, Image as ImageIcon, LayoutGrid, List, ShoppingCart } from 'lucide-react'
 import { useEffect, useReducer, useState } from 'react'
 import { AiFeatureBadge } from '../../../../shared/ai/AiFeatureBadge'
+import { AiHistoryLineageNote } from '../../../../shared/ai/AiHistoryLineageNote'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { toProxiedAssetUrl } from '../../../../shared/url/proxiedAssetUrl'
 import { AppModal } from '../../../../shared/ui/AppModal'
@@ -42,6 +43,7 @@ import {
   getRecommendationAvailableQty,
   hasRecommendationAvailabilityData,
 } from './recommendationAvailability'
+import { getRecommendationSourcePresentation } from './recommendationSourcePresentation'
 
 type RecommendationsPanelProps = {
   client: Client
@@ -249,10 +251,13 @@ export function RecommendationsPanel({ client, productNetId }: RecommendationsPa
       return
     }
 
-    const chosen = products
-      .filter((product, index) => selectedKeys.has(getProductKey(product, index)))
-      .filter((product) => canSelectRecommendationProduct(product, isVatSale))
-      .filter((product) => (product.Id ?? 0) > 0 && product.NetUid)
+    const chosen = products.filter(
+      (product, index) =>
+        selectedKeys.has(getProductKey(product, index))
+        && canSelectRecommendationProduct(product, isVatSale)
+        && (product.Id ?? 0) > 0
+        && product.NetUid,
+    )
 
     setWizardPrefill({
       agreement: agreement as unknown as SalesUkraineClientAgreement,
@@ -262,6 +267,18 @@ export function RecommendationsPanel({ client, productNetId }: RecommendationsPa
       products: chosen as unknown as SalesUkraineProduct[],
     })
   }
+
+  const firstRecommendation = products[0]
+  const recommendationLineage =
+    firstRecommendation?.RecommendationSourceHistoryStart &&
+    firstRecommendation.RecommendationEffectiveStart &&
+    typeof firstRecommendation.RecommendationHistoryComplete === 'boolean'
+      ? {
+          source_history_start: firstRecommendation.RecommendationSourceHistoryStart,
+          effective_start: firstRecommendation.RecommendationEffectiveStart,
+          history_complete: firstRecommendation.RecommendationHistoryComplete,
+        }
+      : null
 
   return (
     <Stack gap="md" pos="relative">
@@ -300,6 +317,7 @@ export function RecommendationsPanel({ client, productNetId }: RecommendationsPa
               </Tooltip>
             </Group>
           </Group>
+          {recommendationLineage && <AiHistoryLineageNote lineage={recommendationLineage} />}
 
           {error && (
             <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
@@ -488,28 +506,19 @@ function RecommendationCheckbox({
 
 function RecommendationSourceBadge({ product }: { product: RecommendationProduct }) {
   const { t } = useI18n()
+  const presentation = getRecommendationSourcePresentation(product)
 
-  if (product.RecommendationSource === 'repurchase') {
-    return (
-      <Tooltip label={t('Клієнт регулярно купує цей товар')}>
-        <Badge color="blue" size="sm" variant="light">
-          {t('Повторна закупівля')}
-        </Badge>
-      </Tooltip>
-    )
+  if (!presentation) {
+    return <span />
   }
 
-  if (product.RecommendationSource === 'discovery') {
-    return (
-      <Tooltip label={t('Схожі клієнти купують цей товар, а цей клієнт ще ні')}>
-        <Badge color="grape" size="sm" variant="light">
-          {t('Нове для клієнта')}
-        </Badge>
-      </Tooltip>
-    )
-  }
-
-  return <span />
+  return (
+    <Tooltip label={t(presentation.tooltip)}>
+      <Badge color={presentation.color} size="sm" variant="light">
+        {t(presentation.label)}
+      </Badge>
+    </Tooltip>
+  )
 }
 
 function getRecommendationImageUrl(product?: RecommendationProduct | null): string {

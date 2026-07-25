@@ -1,17 +1,17 @@
 import { ActionIcon, Alert, Loader, Select, Stack, Text, Tooltip } from '@mantine/core'
 import { CircleAlert, RotateCcw, Search } from 'lucide-react'
 import { useEffect } from 'react'
+import { AiHistoryLineageNote } from '../../../shared/ai/AiHistoryLineageNote'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import {
-  getPredictionByClient,
-  getPredictionByClientAndProduct,
-  getPredictionByProduct,
+  getSalesForecast,
   searchPredictionClients,
   searchPredictionProducts,
 } from '../api/salesPredictionApi'
 import { SalesPredictionChart, SalesPredictionComparisonChart } from '../components/SalesPredictionChart'
 import type {
+  SalesForecastMeta,
   SalesPredictionChartPoint,
   SalesPredictionClientOption,
   SalesPredictionPoint,
@@ -63,6 +63,7 @@ export function SalesPredictionPage() {
   const [byClient, setByClient] = useValueState<SalesPredictionChartPoint[]>([])
   const [byProduct, setByProduct] = useValueState<SalesPredictionChartPoint[]>([])
   const [combined, setCombined] = useValueState<SalesPredictionChartPoint[]>([])
+  const [forecastLineage, setForecastLineage] = useValueState<SalesForecastMeta | null>(null)
   const [clientPredictionError, setClientPredictionError] = useValueState<string | null>(null)
   const [productPredictionError, setProductPredictionError] = useValueState<string | null>(null)
   const [combinedPredictionError, setCombinedPredictionError] = useValueState<string | null>(null)
@@ -139,10 +140,11 @@ export function SalesPredictionPage() {
       setClientPredictionError(null)
 
       try {
-        const next = await getPredictionByClient(id, controller.signal)
+        const response = await getSalesForecast(id, undefined, { signal: controller.signal })
 
         if (!controller.signal.aborted) {
-          setByClient(toChartPoints(next))
+          setByClient(toChartPoints(response.ByClient))
+          setForecastLineage(response.meta)
         }
       } catch (loadError) {
         if (!controller.signal.aborted && !isAbortError(loadError)) {
@@ -163,7 +165,7 @@ export function SalesPredictionPage() {
     return () => {
       controller.abort()
     }
-  }, [clientNetId, setByClient, setClientPredictionError, setLoadingClient, t])
+  }, [clientNetId, setByClient, setClientPredictionError, setForecastLineage, setLoadingClient, t])
 
   useEffect(() => {
     if (!productNetId) {
@@ -177,10 +179,11 @@ export function SalesPredictionPage() {
       setProductPredictionError(null)
 
       try {
-        const next = await getPredictionByProduct(id, controller.signal)
+        const response = await getSalesForecast(undefined, id, { signal: controller.signal })
 
         if (!controller.signal.aborted) {
-          setByProduct(toChartPoints(next))
+          setByProduct(toChartPoints(response.ByProduct))
+          setForecastLineage(response.meta)
         }
       } catch (loadError) {
         if (!controller.signal.aborted && !isAbortError(loadError)) {
@@ -201,7 +204,7 @@ export function SalesPredictionPage() {
     return () => {
       controller.abort()
     }
-  }, [productNetId, setByProduct, setLoadingProduct, setProductPredictionError, t])
+  }, [productNetId, setByProduct, setForecastLineage, setLoadingProduct, setProductPredictionError, t])
 
   useEffect(() => {
     if (!clientNetId || !productNetId) {
@@ -215,10 +218,11 @@ export function SalesPredictionPage() {
       setCombinedPredictionError(null)
 
       try {
-        const next = await getPredictionByClientAndProduct(client, product, controller.signal)
+        const response = await getSalesForecast(client, product, { signal: controller.signal })
 
         if (!controller.signal.aborted) {
-          setCombined(toChartPoints(next))
+          setCombined(toChartPoints(response.ByClientAndProduct))
+          setForecastLineage(response.meta)
         }
       } catch (loadError) {
         if (!controller.signal.aborted && !isAbortError(loadError)) {
@@ -239,7 +243,7 @@ export function SalesPredictionPage() {
     return () => {
       controller.abort()
     }
-  }, [clientNetId, productNetId, setCombined, setCombinedPredictionError, setLoadingCombined, t])
+  }, [clientNetId, productNetId, setCombined, setCombinedPredictionError, setForecastLineage, setLoadingCombined, t])
 
   const clientData = clientOptions.reduce<{ label: string; value: string }[]>((acc, client) => {
     if (client.NetUid) {
@@ -262,6 +266,7 @@ export function SalesPredictionPage() {
     setCombined([])
     setClientPredictionError(null)
     setCombinedPredictionError(null)
+    setForecastLineage(null)
 
     if (!value) {
       setClientFullName('')
@@ -280,6 +285,7 @@ export function SalesPredictionPage() {
     setCombined([])
     setProductPredictionError(null)
     setCombinedPredictionError(null)
+    setForecastLineage(null)
 
     if (!value) {
       setProductVendorCode('')
@@ -307,6 +313,7 @@ export function SalesPredictionPage() {
     setClientPredictionError(null)
     setProductPredictionError(null)
     setCombinedPredictionError(null)
+    setForecastLineage(null)
     setLoadingClient(false)
     setLoadingProduct(false)
     setLoadingCombined(false)
@@ -339,6 +346,7 @@ export function SalesPredictionPage() {
           clientNetId={clientNetId}
           combinedPredictionError={combinedPredictionError}
           combined={combined}
+          forecastLineage={forecastLineage}
           isLoadingClient={isLoadingClient}
           isLoadingCombined={isLoadingCombined}
           isLoadingProduct={isLoadingProduct}
@@ -445,6 +453,7 @@ function PredictionCharts({
   clientNetId,
   combined,
   combinedPredictionError,
+  forecastLineage,
   isLoadingClient,
   isLoadingCombined,
   isLoadingProduct,
@@ -459,6 +468,7 @@ function PredictionCharts({
   clientNetId: string | null
   combined: SalesPredictionChartPoint[]
   combinedPredictionError: string | null
+  forecastLineage: SalesForecastMeta | null
   isLoadingClient: boolean
   isLoadingCombined: boolean
   isLoadingProduct: boolean
@@ -479,6 +489,7 @@ function PredictionCharts({
 
   return (
     <>
+      {forecastLineage && <AiHistoryLineageNote lineage={forecastLineage} />}
       {clientNetId && clientPredictionError && (
         <Alert color="orange" icon={<CircleAlert size={18} />} variant="light">
           {clientPredictionError}

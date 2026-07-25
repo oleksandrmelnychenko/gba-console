@@ -1,4 +1,5 @@
 import { apiRequest } from '../../../shared/api/apiClient'
+import { normalizeAiHistoryLineage } from '../../../shared/ai/aiHistoryLineage'
 import type {
   SalesForecastHistoryItem,
   SalesForecastHistoryStatus,
@@ -159,6 +160,15 @@ function normalizeSalesForecast(result: unknown, expected: ExpectedForecastReque
   if (expected.asOfDate !== undefined && requestedAsOf !== expected.asOfDate) {
     throw new SalesForecastContractError('meta.requested_as_of', 'does not echo request.as_of_date')
   }
+  const historyLineage = normalizeAiHistoryLineage(
+    meta,
+    'meta',
+    createSalesForecastContractError,
+    {
+      asOf,
+      ...(expected.asOfDate ? { expectedAsOf: expected.asOfDate } : {}),
+    },
+  )
 
   const horizonMonths = requirePositiveInteger(meta.horizon_months, 'meta.horizon_months')
   if (expected.months !== undefined && horizonMonths !== expected.months) {
@@ -230,6 +240,7 @@ function normalizeSalesForecast(result: unknown, expected: ExpectedForecastReque
   return {
     ...series,
     meta: {
+      ...historyLineage,
       status,
       as_of: asOf,
       requested_as_of: requestedAsOf,
@@ -256,6 +267,13 @@ function normalizeSalesForecast(result: unknown, expected: ExpectedForecastReque
       history,
     },
   }
+}
+
+function createSalesForecastContractError(
+  path: string,
+  reason: string,
+): SalesForecastContractError {
+  return new SalesForecastContractError(path, reason)
 }
 
 function normalizeForecastPoints(value: unknown, path: string): SalesPredictionPoint[] {

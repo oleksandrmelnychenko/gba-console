@@ -113,6 +113,7 @@ describe('getProducerPlan', () => {
       lead_time_source: 'default',
       item_count: 1,
       as_of_date: '2026-06-15',
+      ...buildHistory('2025-06-15'),
       model_version: 'v3',
       items: [
         buildSuggestion({
@@ -194,6 +195,9 @@ describe('getProducerPlan', () => {
     apiRequestMock.mockResolvedValueOnce({
       producer_id: 42,
       producer_name: 'Acme',
+      as_of_date: '2026-06-15',
+      ...buildHistory('2025-06-15'),
+      model_version: 'v3',
       items: [
         null,
         'noise',
@@ -612,6 +616,7 @@ describe('getProcurementCharts', () => {
     apiRequestMock.mockResolvedValueOnce({
       Body: {
         as_of_date: '2026-07-25',
+        ...buildHistory('2025-07-25'),
         producer_id: 42,
         top_n: 8,
         model_version: 'procure-hist120-v1',
@@ -667,6 +672,12 @@ describe('getProcurementCharts', () => {
       vendor_code: 'BR-100',
     })
     expect(charts.model_version).toBe('procure-hist120-v1')
+    expect(charts).toMatchObject({
+      source_history_start: '2025-01-01',
+      effective_start: '2025-07-25',
+      effective_history_days: 365,
+      history_complete: true,
+    })
   })
 })
 
@@ -699,6 +710,7 @@ describe('getBudgetCartPlan', () => {
     expect(plan.as_of_date).toBe('2026-06-15')
     expect(plan.method_used).toBe('milp')
     expect(plan.model_version).toBe('procure-hist120-v1')
+    expect(plan.source_history_start).toBe('2025-01-01')
     expect(plan.items).toHaveLength(3)
 
     const [first] = plan.items
@@ -857,6 +869,9 @@ describe('getBudgetCartPlan', () => {
     apiRequestMock.mockResolvedValueOnce({
       Body: {
         budget_eur: 1000,
+        as_of_date: '2026-06-15',
+        ...buildHistory('2025-06-15'),
+        model_version: 'procure-hist120-v1',
         items: [
           null,
           'noise',
@@ -1002,6 +1017,7 @@ function buildFullPlan() {
     lead_time_source: 'empirical',
     item_count: 1,
     as_of_date: '2026-06-15',
+    ...buildHistory('2025-06-15'),
     model_version: 'v3',
     items: [
       buildSuggestion({
@@ -1178,6 +1194,7 @@ function buildCartEnvelope({
       pricedCostEur ?? Math.round(calculatedPricedCost * 100) / 100,
     unpriced_item_count: unpricedItemCount ?? calculatedUnpriced,
     as_of_date: '2026-06-15',
+    ...buildHistory('2025-06-15'),
     budget_eur: budgetEur,
     budget_used_eur: Math.round(used * 100) / 100,
     value_captured_eur: selectedCount > 0 ? 8120.25 : 0,
@@ -1186,6 +1203,16 @@ function buildCartEnvelope({
     method_used: method,
     model_version: 'procure-hist120-v1',
     items,
+  }
+}
+
+function buildHistory(effectiveStart: string) {
+  return {
+    source_history_start: '2025-01-01',
+    effective_start: effectiveStart,
+    effective_history_days: 365,
+    history_complete: true,
+    history_not_applicable: ['inventory', 'reservations'],
   }
 }
 

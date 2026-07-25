@@ -14,6 +14,7 @@ import { ChevronUp, CircleAlert } from 'lucide-react'
 import { useEffect, useMemo, useReducer, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
+import { AiHistoryLineageNote } from '../../../shared/ai/AiHistoryLineageNote'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { TranslateFunction } from '../../../shared/i18n/types'
 import { AppBottomSheet } from '../../../shared/ui/AppBottomSheet'
@@ -298,12 +299,15 @@ export function BudgetCartTab() {
       )}
 
       {hasPlan && plan && !isEmpty && (
-        <BudgetCartSummary
-          financials={financials}
-          plan={plan}
-          splitSlices={splitSlices}
-          utilization={utilization}
-        />
+        <>
+          <AiHistoryLineageNote lineage={plan} />
+          <BudgetCartSummary
+            financials={financials}
+            plan={plan}
+            splitSlices={splitSlices}
+            utilization={utilization}
+          />
+        </>
       )}
 
       {hasPlan && !isEmpty && !isSheetOpen && (

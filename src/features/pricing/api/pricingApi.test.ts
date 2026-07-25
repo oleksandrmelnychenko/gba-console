@@ -30,6 +30,12 @@ function recommendation() {
     elasticity_source: 'per-sku',
     elastic_optimal_price: 180.03,
     rationale: 'peer-median',
+    source_history_start: '2025-01-01',
+    requested_start: '2025-07-25',
+    effective_start: '2025-07-25',
+    history_complete: true,
+    history_fingerprint: 'pricing-history-20250101',
+    model_fingerprint: 'pricing-ab-v2-history-20250101',
     as_of_date: '2026-07-25',
     model_version: 'pricing-ab-v2',
   }
@@ -50,6 +56,9 @@ describe('pricingApi canonical AI contract', () => {
       recommended_price: 95.01,
       price_floor: 80.01,
       peer_band: { p25: 90.01, p50: 95.01, p75: 99.01, n: 12 },
+      source_history_start: '2025-01-01',
+      effective_start: '2025-07-25',
+      history_complete: true,
     })
     expect(apiRequestMock).toHaveBeenCalledWith('/pricing/recommend', {
       query: {

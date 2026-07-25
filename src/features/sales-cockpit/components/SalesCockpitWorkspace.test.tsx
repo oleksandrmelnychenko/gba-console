@@ -95,6 +95,9 @@ function renderWithTheme(node: React.ReactNode) {
 function dashboard(overrides: Partial<CockpitDashboard> = {}): CockpitDashboard {
   return {
     as_of: '2026-07-24',
+    source_history_start: '2025-01-01',
+    effective_start: '2025-07-24',
+    history_complete: true,
     completed_vs_open: [],
     debt_aging: [],
     manager_id: 1,

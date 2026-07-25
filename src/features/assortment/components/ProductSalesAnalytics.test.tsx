@@ -129,6 +129,11 @@ function buildAnalytics(): ProductAnalytics {
 
   return {
     as_of: '2026-07-10',
+    source_history_start: '2025-01-01',
+    requested_start: '2026-01-01',
+    effective_start: '2026-01-01',
+    history_complete: true,
+    history_fingerprint: 'products-history-20250101',
     data_quality: {
       avg_price_basis: 'revenue_eur / units (quantity-weighted)',
       revenue_basis: 'actual lines',
@@ -139,6 +144,11 @@ function buildAnalytics(): ProductAnalytics {
       stock_is_current: true,
       stock_note: 'Current snapshot',
       zero_months_filled: true,
+      zero_fill_begins_at: '2026-01-01',
+      source_history_start: '2025-01-01',
+      requested_start: '2026-01-01',
+      effective_start: '2026-01-01',
+      history_complete: true,
     },
     model_version: 'products-v2',
     product_id: 42,
@@ -166,6 +176,11 @@ function buildAnalytics(): ProductAnalytics {
       includes_partial_current_month: true,
       months: 7,
       start: '2026-01-01',
+      source_history_start: '2025-01-01',
+      requested_start: '2026-01-01',
+      effective_start: '2026-01-01',
+      effective_days: 190,
+      history_complete: true,
     },
   }
 }
