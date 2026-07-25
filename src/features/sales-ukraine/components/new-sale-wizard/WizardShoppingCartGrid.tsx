@@ -37,7 +37,7 @@ const WIZARD_CART_TABLE_LAYOUT: DataTableDefaultLayout = {
     specificationCode: 116,
     total: 132,
   },
-  density: 'compact',
+  density: 'normal',
 }
 
 function displayValue(value: unknown): string {

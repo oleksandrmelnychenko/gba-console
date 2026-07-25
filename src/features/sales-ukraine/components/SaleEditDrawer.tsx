@@ -47,7 +47,7 @@ const SALE_EDIT_TABLE_LAYOUT: DataTableDefaultLayout = {
     user: 180,
     vendorCode: 140,
   },
-  density: 'compact',
+  density: 'normal',
 }
 
 type ShiftDraftEntry = { bill: number | string; billTouched: boolean; store: number | string; storeTouched: boolean }
