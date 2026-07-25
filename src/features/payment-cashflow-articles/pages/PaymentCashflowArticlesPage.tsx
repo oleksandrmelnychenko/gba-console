@@ -4,7 +4,6 @@ import {
   Button,
   Group,
   Stack,
-  Text,
   TextInput,
   Tooltip,
 } from '@mantine/core'
@@ -88,18 +87,6 @@ export function PaymentCashflowArticlesPage({ inSharedShell = false }: PaymentCa
             marker={createConsoleTableMarker(article.OperationName || '')}
             title={displayValue(article.OperationName)}
           />
-        ),
-      },
-      {
-        id: 'netUid',
-        header: 'NetUid',
-        width: 320,
-        minWidth: 300,
-        accessor: (article) => article.NetUid,
-        cell: (article) => (
-          <Text c="dimmed" size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0, whiteSpace: 'nowrap' }}>
-            {displayValue(article.NetUid)}
-          </Text>
         ),
       },
       {

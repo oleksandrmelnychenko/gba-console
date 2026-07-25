@@ -72,6 +72,14 @@ const navigationRouteAliasRules: Array<{ source: string; targets: RegExp[] }> = 
     ],
   },
   {
+    // Both article directories live on one screen under a single menu node, so the
+    // expense URLs (list + forms) must stay reachable from the merged node.
+    source: '/accounting/payment-cashflow-articles',
+    targets: [
+      /^\/accounting\/payment-expense-articles(?:\/.*)?$/i,
+    ],
+  },
+  {
     source: '/basket-supply-ukraine-order/cockpit',
     targets: [
       /^\/basket-supply-ukraine-order(?:\/.*)?$/i,

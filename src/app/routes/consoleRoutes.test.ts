@@ -1,7 +1,7 @@
 import { isValidElement } from 'react'
 import { Navigate } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
-import { PaymentArticlesShell } from '../../features/payment-articles/PaymentArticlesShell'
+import { PaymentArticlesPage } from '../../features/payment-articles/PaymentArticlesPage'
 import { consoleRoutes } from './consoleRoutes'
 
 describe('console report routes', () => {
@@ -48,7 +48,7 @@ describe('console payment article routes', () => {
     }
   })
 
-  it.each(listPaths)('renders %s inside the shared payment articles shell', (path) => {
+  it.each(listPaths)('renders %s as the combined two-table articles screen', (path) => {
     const route = consoleRoutes.find((candidate) => candidate.path === path)
 
     expect(isValidElement(route?.element)).toBe(true)
@@ -57,6 +57,6 @@ describe('console payment article routes', () => {
       throw new Error(`Expected ${path} to render a React element`)
     }
 
-    expect(route.element.type).toBe(PaymentArticlesShell)
+    expect(route.element.type).toBe(PaymentArticlesPage)
   })
 })

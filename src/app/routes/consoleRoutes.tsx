@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { Navigate } from 'react-router-dom'
 import { OutgoingPaymentTasksRedirect } from '../../features/outgoing-cashflows/components/OutgoingPaymentTasksRedirect'
-import { PaymentArticlesShell } from '../../features/payment-articles/PaymentArticlesShell'
+import { PaymentArticlesPage } from '../../features/payment-articles/PaymentArticlesPage'
 import {
   AccountableExpensesPage,
   ActProvidingServiceDetailPage,
@@ -51,9 +51,7 @@ import {
   ProductDeliveryProtocolLogisticPathPage,
   ProductDeliveryProtocolSpecificationPage,
   ProductDeliveryProtocolIncomePage,
-  PaymentCashflowArticlesPage,
   PaymentExpenseArticleFormPage,
-  PaymentExpenseArticlesPage,
   ProductAvailabilitiesPage,
   ProductCapitalizationsPage,
   ProductSpecificationCodesPage,
@@ -251,10 +249,7 @@ const accountingMigrationRoutes: ConsoleRoute[] = [
   { path: '/accounting/supplier-organizations/new', element: lazyRoute(<SupplierOrganizationEditPage />) },
   { path: '/accounting/supplier-organizations/edit/:id', element: lazyRoute(<SupplierOrganizationEditPage />) },
   { path: '/accounting/supplier-organizations/cash-flow/:id', element: lazyRoute(<SupplierOrganizationCashFlowPage />) },
-  {
-    path: '/accounting/payment-cashflow-articles',
-    element: <PaymentArticlesShell>{lazyRoute(<PaymentCashflowArticlesPage inSharedShell />)}</PaymentArticlesShell>,
-  },
+  { path: '/accounting/payment-cashflow-articles', element: <PaymentArticlesPage /> },
   { path: '/accounting/payment-cashflow-articles/new', element: lazyRoute(<PaymentCashflowArticleFormPage />) },
   { path: '/accounting/payment-cashflow-articles/edit/:id', element: lazyRoute(<PaymentCashflowArticleFormPage />) },
   { path: '/accounting/income-cashflows', element: lazyRoute(<IncomeCashflowsPage />) },
@@ -264,10 +259,7 @@ const accountingMigrationRoutes: ConsoleRoute[] = [
   { path: '/accounting/income-cashflows/new/shop', element: lazyRoute(<IncomeCashflowShopFormPage />) },
   { path: '/accounting/income-cashflows/new/user', element: lazyRoute(<IncomeCashflowUserFormPage />) },
   { path: '/accounting/income-cashflows/new/:step', element: <Navigate to="/accounting/income-cashflows" replace /> },
-  {
-    path: '/accounting/payment-expense-articles',
-    element: <PaymentArticlesShell>{lazyRoute(<PaymentExpenseArticlesPage inSharedShell />)}</PaymentArticlesShell>,
-  },
+  { path: '/accounting/payment-expense-articles', element: <PaymentArticlesPage /> },
   { path: '/accounting/payment-expense-articles/new', element: lazyRoute(<PaymentExpenseArticleFormPage />) },
   { path: '/accounting/payment-expense-articles/edit/:id', element: lazyRoute(<PaymentExpenseArticleFormPage />) },
   { path: '/accounting/payment-accounts', element: lazyRoute(<PaymentAccountsPage />) },
