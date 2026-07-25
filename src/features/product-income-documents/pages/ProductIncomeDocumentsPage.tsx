@@ -72,7 +72,7 @@ const DOCUMENTS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['fromDate', 'number', 'type'],
   },
-  density: 'compact',
+  density: 'normal',
 } satisfies DataTableDefaultLayout
 
 const ITEMS_TABLE_DEFAULT_LAYOUT = {
@@ -80,7 +80,7 @@ const ITEMS_TABLE_DEFAULT_LAYOUT = {
     left: ['vendorCode', 'productName'],
     right: ['actions'],
   },
-  density: 'compact',
+  density: 'normal',
 } satisfies DataTableDefaultLayout
 
 const REMAININGS_TABLE_DEFAULT_LAYOUT = {
@@ -88,7 +88,7 @@ const REMAININGS_TABLE_DEFAULT_LAYOUT = {
     left: ['storage', 'productCode', 'productName'],
     right: ['actions'],
   },
-  density: 'compact',
+  density: 'normal',
 } satisfies DataTableDefaultLayout
 
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
@@ -1252,7 +1252,7 @@ function SaleReturnOverview({ document }: { document: ProductIncomeDocument }) {
           <DataTable
             columns={columns}
             data={items}
-            defaultLayout={{ density: 'compact' }}
+            defaultLayout={{ density: 'normal' }}
             emptyText={t('Позицій не знайдено')}
             getRowId={(item) => getSaleReturnIncomeItemKey(item)}
             layoutVersion="product-income-sale-return-items-1"
