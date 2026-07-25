@@ -1053,10 +1053,10 @@ function SupplyUkraineDirectOrderInvoicesView({
           {model.error}
         </Alert>
       )}
-      {model.isLoading ? (
-        <Group justify="center" py="xl"><Loader /></Group>
-      ) : model.order ? (
+      {model.order ? (
         <DirectOrderInvoicesBody model={model} />
+      ) : model.isLoading ? (
+        <Group justify="center" py="xl"><Loader /></Group>
       ) : (
         <Text c="dimmed">{t('Замовлення не знайдено')}</Text>
       )}
@@ -1187,7 +1187,9 @@ function ProductsPanel({ model }: { model: DirectOrderInvoicesPageModel }) {
               data={model.orderRows}
               emptyText={t('Товарів немає')}
               getRowId={(item, index) => item.NetUid || String(item.Id || index)}
+              isLoading={model.isLoading}
               layoutVersion="supply-direct-order-items-2"
+              loadingText={t('Завантаження товарів')}
               minWidth={980}
               rowClassName={(item) => item.IsError ? 'data-table-row-warning' : undefined}
               tableId="supply-direct-order-items"
@@ -1214,33 +1216,33 @@ function InvoicesPanel({ model }: { model: DirectOrderInvoicesPageModel }) {
       <Card className="app-section-card" withBorder radius="md" padding="md" style={CARD_FILL_STYLE}>
         <Stack gap="md" style={{ flex: 1, minHeight: 0 }}>
           <InvoiceSelector model={model} />
-          {model.isInvoiceLoading ? (
-            <Group justify="center" py="md" style={{ flex: 1 }}><Loader size="sm" /></Group>
-          ) : (
-            <Stack gap="sm" style={{ flex: 1, minHeight: 0 }}>
+          <Stack gap="sm" style={{ flex: 1, minHeight: 0 }}>
+            {!model.isInvoiceLoading && (
               <QuantityBalanceSummary
                 actualLabel={t('В інвойсах')}
                 differenceLabel={t('Залишилось')}
                 expectedLabel={t('У замовленні')}
                 rows={model.invoiceBalanceRows}
               />
-              <Box className="supply-grid-fill" style={{ flex: 1, minHeight: 0 }}>
-                <DataTable
-                  columns={model.invoiceItemColumns}
-                  data={model.selectedInvoiceItems}
-                  emptyText={t('Рядків інвойсу немає')}
-                  getRowId={getInvoiceOrderItemRowId}
-                  layoutVersion="supply-direct-invoice-items-2"
-                  minWidth={1080}
-                  rowClassName={(item) =>
-                    model.invoiceBalanceByOrderItemKey.get(getInvoiceOrderItemOrderKey(item))?.isError
-                      ? 'data-table-row-warning'
-                      : undefined}
-                  tableId="supply-direct-invoice-items"
-                />
-              </Box>
-            </Stack>
-          )}
+            )}
+            <Box className="supply-grid-fill" style={{ flex: 1, minHeight: 0 }}>
+              <DataTable
+                columns={model.invoiceItemColumns}
+                data={model.selectedInvoiceItems}
+                emptyText={t('Рядків інвойсу немає')}
+                getRowId={getInvoiceOrderItemRowId}
+                isLoading={model.isInvoiceLoading || model.isLoading}
+                layoutVersion="supply-direct-invoice-items-2"
+                loadingText={t('Завантаження інвойсу')}
+                minWidth={1080}
+                rowClassName={(item) =>
+                  model.invoiceBalanceByOrderItemKey.get(getInvoiceOrderItemOrderKey(item))?.isError
+                    ? 'data-table-row-warning'
+                    : undefined}
+                tableId="supply-direct-invoice-items"
+              />
+            </Box>
+          </Stack>
           {model.selectedInvoice && <InvoiceTotals invoice={model.selectedInvoice} order={model.order} />}
         </Stack>
       </Card>
@@ -1317,34 +1319,34 @@ function PackListsPanel({ model }: { model: DirectOrderInvoicesPageModel }) {
           {/* Legacy contract: pack lists are bound to an invoice, so the invoice
               selector is available here too (without the delete controls). */}
           <InvoiceSelector model={model} showDelete={false} />
-          {model.isInvoiceLoading ? (
-            <Group justify="center" py="md" style={{ flex: 1 }}><Loader size="sm" /></Group>
-          ) : (
-            <Stack gap="md" style={{ flex: 1, minHeight: 0 }}>
-              <PackListSelector model={model} />
+          <Stack gap="md" style={{ flex: 1, minHeight: 0 }}>
+            {!model.isInvoiceLoading && <PackListSelector model={model} />}
+            {!model.isInvoiceLoading && (
               <QuantityBalanceSummary
                 actualLabel={t('У пак листах')}
                 differenceLabel={t('Залишилось')}
                 expectedLabel={t('В інвойсі')}
                 rows={model.packListBalanceRows}
               />
-              <Box className="supply-grid-fill" style={{ flex: 1, minHeight: 0 }}>
-                <DataTable
-                  columns={model.packListItemColumns}
-                  data={model.selectedPackListItems}
-                  emptyText={t('Рядків пак листа немає')}
-                  getRowId={getPackListOrderItemRowId}
-                  layoutVersion="supply-direct-pack-list-items-2"
-                  minWidth={1260}
-                  rowClassName={(item) =>
-                    model.packListBalanceByInvoiceItemKey.get(getPackingListInvoiceItemKey(item))?.isError
-                      ? 'data-table-row-warning'
-                      : undefined}
-                  tableId="supply-direct-pack-list-items"
-                />
-              </Box>
-            </Stack>
-          )}
+            )}
+            <Box className="supply-grid-fill" style={{ flex: 1, minHeight: 0 }}>
+              <DataTable
+                columns={model.packListItemColumns}
+                data={model.selectedPackListItems}
+                emptyText={t('Рядків пак листа немає')}
+                getRowId={getPackListOrderItemRowId}
+                isLoading={model.isInvoiceLoading || model.isLoading}
+                layoutVersion="supply-direct-pack-list-items-2"
+                loadingText={t('Завантаження пак листа')}
+                minWidth={1260}
+                rowClassName={(item) =>
+                  model.packListBalanceByInvoiceItemKey.get(getPackingListInvoiceItemKey(item))?.isError
+                    ? 'data-table-row-warning'
+                    : undefined}
+                tableId="supply-direct-pack-list-items"
+              />
+            </Box>
+          </Stack>
           <PackListTotals invoice={model.selectedInvoice} order={model.order} packList={model.selectedPackList} />
         </Stack>
       </Card>

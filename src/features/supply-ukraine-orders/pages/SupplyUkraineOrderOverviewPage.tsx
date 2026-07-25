@@ -587,7 +587,9 @@ export function SupplyUkraineOrderOverviewPage() {
               density={documentsDensity}
               emptyText={t('Документів немає')}
               getRowId={(document, index) => document.NetUid || String(document.Id || index)}
+              isLoading={isLoading}
               layoutVersion="supply-ukraine-order-documents-1"
+              loadingText={t('Завантаження документів')}
               minWidth={760}
               tableId="supply-ukraine-order-documents"
             />
