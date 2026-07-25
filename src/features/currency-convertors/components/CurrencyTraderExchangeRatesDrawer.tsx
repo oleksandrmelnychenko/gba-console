@@ -14,6 +14,7 @@ import { CircleAlert, Plus, Save } from 'lucide-react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
+import { TableShimmerRows } from '../../../shared/ui/table-shimmer/TableShimmerRows'
 import { CURRENCY_ORDER } from '../types'
 import type { CurrencyTrader, CurrencyTraderExchangeRate } from '../types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -147,9 +148,7 @@ export function CurrencyTraderExchangeRatesDrawer({
           </Card>
         )}
 
-        {isLoading ? (
-          <Text c="dimmed">{t('Завантаження курсів валют')}</Text>
-        ) : rates.length === 0 ? (
+        {!isLoading && rates.length === 0 ? (
           <Text c="dimmed">{t('Курсів валют не знайдено')}</Text>
         ) : (
           <Table highlightOnHover>
@@ -161,8 +160,10 @@ export function CurrencyTraderExchangeRatesDrawer({
                 {canEdit && <Table.Th />}
               </Table.Tr>
             </Table.Thead>
-            <Table.Tbody>
-              {rates.map((rate, index) => {
+            <Table.Tbody aria-busy={isLoading}>
+              {isLoading ? (
+                <TableShimmerRows columns={canEdit ? 4 : 3} />
+              ) : rates.map((rate, index) => {
                 const isEditing = editingRate === rate
 
                 return (
