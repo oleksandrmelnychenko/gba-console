@@ -71,7 +71,7 @@ const MOVEMENT_TABLE_DEFAULT_LAYOUT = {
 } satisfies DataTableDefaultLayout
 
 const MOVEMENT_ITEMS_TABLE_DEFAULT_LAYOUT = {
-  density: 'compact',
+  density: 'normal',
 } satisfies DataTableDefaultLayout
 
 const amountFormatter = new Intl.NumberFormat('uk-UA', {
