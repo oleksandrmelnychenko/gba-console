@@ -48,7 +48,7 @@ const TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['actions', 'fromDate', 'number'],
   },
-  density: 'compact',
+  density: 'normal',
 } satisfies DataTableDefaultLayout
 
 const PACK_LIST_TABLE_CELL_STYLE = {

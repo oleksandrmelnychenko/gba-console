@@ -76,14 +76,14 @@ const SOURCE_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['selected', 'vendorCode', 'productName'],
   },
-  density: 'compact',
+  density: 'normal',
 } satisfies DataTableDefaultLayout
 
 const TAX_FREE_ITEMS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['selected', 'vendorCode', 'productName'],
   },
-  density: 'compact',
+  density: 'normal',
 } satisfies DataTableDefaultLayout
 
 const TAX_FREE_DOCUMENTS_FORM_ID = 'tax-free-pack-list-documents-form'
