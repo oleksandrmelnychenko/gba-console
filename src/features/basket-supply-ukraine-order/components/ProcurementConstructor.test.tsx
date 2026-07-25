@@ -57,6 +57,8 @@ describe('ProcurementConstructor', () => {
     )
 
     expect(await screen.findByRole('button', { name: 'Термінові в кошик · 2' })).not.toBeNull()
+    expect(screen.getByRole('button', { name: 'Експорт в Excel' })).not.toBeNull()
+    expect(screen.getByAltText('Excel')).not.toBeNull()
 
     const quantityInputs = screen.getAllByLabelText('Замовити') as HTMLInputElement[]
     expect(quantityInputs).toHaveLength(2)

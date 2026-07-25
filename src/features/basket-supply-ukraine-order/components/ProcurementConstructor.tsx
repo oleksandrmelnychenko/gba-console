@@ -25,7 +25,6 @@ import {
   ChevronDown,
   ChevronUp,
   CircleAlert,
-  FileSpreadsheet,
   PackageCheck,
   RefreshCw,
   RotateCcw,
@@ -43,6 +42,7 @@ import {
   useState,
 } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -581,8 +581,15 @@ export function ProcurementConstructor() {
               </ActionIcon>
             </Tooltip>
             <Tooltip label={t('Оновити')}>
-              <ActionIcon aria-label={t('Оновити')} loading={isLoading} size={34} variant="light" onClick={() => reload()}>
-                <RefreshCw size={16} />
+              <ActionIcon
+                aria-label={t('Оновити')}
+                color="gray"
+                loading={isLoading}
+                size={34}
+                variant="light"
+                onClick={() => reload()}
+              >
+                <RefreshCw size={17} />
               </ActionIcon>
             </Tooltip>
             <Menu position="bottom-end" shadow="md" width={280}>
@@ -625,21 +632,23 @@ export function ProcurementConstructor() {
                 ))}
               </Menu.Dropdown>
             </Menu>
-            <Button
-              disabled={visibleRows.length === 0}
-              leftSection={<FileSpreadsheet size={15} />}
-              variant="default"
-              onClick={() => void exportRowsToXlsx(visibleRows, lens, t, orderQtyFor)}
-            >
-              {t('Excel')}
-            </Button>
+            <Tooltip label={t('Експорт в Excel')}>
+              <ActionIcon
+                aria-label={t('Експорт в Excel')}
+                disabled={visibleRows.length === 0}
+                size={34}
+                variant="default"
+                onClick={() => void exportRowsToXlsx(visibleRows, lens, t, orderQtyFor)}
+              >
+                <ExcelIcon size={22} />
+              </ActionIcon>
+            </Tooltip>
           </div>
           <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
           <Button
             color={CREATE_ACTION_COLOR}
             disabled={urgentRowsToAdd.length === 0}
             leftSection={<Sparkles size={15} />}
-            variant="outline"
             onClick={addAllCritical}
           >
             {t('Термінові в кошик')} · {qty.format(urgentRowsToAdd.length)}
