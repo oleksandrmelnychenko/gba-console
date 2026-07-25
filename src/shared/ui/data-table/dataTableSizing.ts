@@ -1,11 +1,16 @@
-import type { Column } from '@tanstack/react-table'
+import type { Column, ColumnSizingState } from '@tanstack/react-table'
 import type { DataTableColumnMeta } from './types'
+
+type RenderedColumnSizingOptions = {
+  distributeAvailableWidth?: boolean
+  excludedColumnIds?: ReadonlySet<string>
+}
 
 export function getFillColumnId<TData>(
   columns: Column<TData, unknown>[],
   tableWidth: number,
   baseTableWidth: number,
-  options?: { distributeAvailableWidth?: boolean },
+  options?: RenderedColumnSizingOptions,
 ) {
   if (tableWidth <= baseTableWidth) {
     return undefined
@@ -13,7 +18,9 @@ export function getFillColumnId<TData>(
 
   // A column may opt in as the fill target via meta.fill even when pinned.
   const preferred = columns.find(
-    (column) => (column.columnDef.meta as DataTableColumnMeta | undefined)?.fill,
+    (column) =>
+      !options?.excludedColumnIds?.has(column.id) &&
+      (column.columnDef.meta as DataTableColumnMeta | undefined)?.fill,
   )
 
   if (preferred) {
@@ -24,7 +31,11 @@ export function getFillColumnId<TData>(
     return undefined
   }
 
-  const stretchableColumns = columns.filter((column) => !column.getIsPinned())
+  const stretchableColumns = columns.filter(
+    (column) =>
+      !column.getIsPinned() &&
+      !options?.excludedColumnIds?.has(column.id),
+  )
 
   if (stretchableColumns.length === 0) {
     return undefined
@@ -46,12 +57,16 @@ export function createRenderedColumnWidths<TData>(
   columns: Column<TData, unknown>[],
   fillColumnId: string | undefined,
   fillColumnExtraWidth: number,
-  options?: { distributeAvailableWidth?: boolean },
+  options?: RenderedColumnSizingOptions,
 ) {
   const widths = new Map<string, number>()
   const distributedColumns =
     options?.distributeAvailableWidth && !fillColumnId && fillColumnExtraWidth > 0
-      ? columns.filter((column) => !column.getIsPinned())
+      ? columns.filter(
+          (column) =>
+            !column.getIsPinned() &&
+            !options.excludedColumnIds?.has(column.id),
+        )
       : []
   const distributedExtraWidth =
     distributedColumns.length > 0 ? fillColumnExtraWidth / distributedColumns.length : 0
@@ -71,4 +86,52 @@ export function createRenderedColumnWidths<TData>(
   })
 
   return widths
+}
+
+/**
+ * TanStack resizes against the configured (base) width, while a fill column is
+ * rendered wider than that base. Translate the resize result back to the width
+ * the user actually grabbed so the auto-fill delta cannot cancel the drag.
+ */
+export function preserveRenderedColumnResize(
+  nextSizing: ColumnSizingState,
+  baseWidths: ReadonlyMap<string, number>,
+  renderedWidths: ReadonlyMap<string, number>,
+): ColumnSizingState {
+  let adjustedSizing: ColumnSizingState | undefined
+
+  Object.entries(nextSizing).forEach(([columnId, nextBaseWidth]) => {
+    const currentBaseWidth = baseWidths.get(columnId)
+    const currentRenderedWidth = renderedWidths.get(columnId)
+
+    if (
+      currentBaseWidth === undefined ||
+      currentRenderedWidth === undefined ||
+      nextBaseWidth === currentBaseWidth
+    ) {
+      return
+    }
+
+    const autoFillWidth = Math.max(0, currentRenderedWidth - currentBaseWidth)
+
+    if (autoFillWidth === 0) {
+      return
+    }
+
+    adjustedSizing ??= { ...nextSizing }
+    adjustedSizing[columnId] = Math.round(nextBaseWidth + autoFillWidth)
+  })
+
+  return adjustedSizing ?? nextSizing
+}
+
+export function getManuallySizedColumnIds(
+  columnSizing: ColumnSizingState,
+  defaultColumnSizing: ColumnSizingState = {},
+): ReadonlySet<string> {
+  return new Set(
+    Object.entries(columnSizing)
+      .filter(([columnId, width]) => defaultColumnSizing[columnId] !== width)
+      .map(([columnId]) => columnId),
+  )
 }

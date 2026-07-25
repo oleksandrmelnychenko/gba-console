@@ -1,6 +1,7 @@
 .data-table {
   isolation: isolate;
   min-width: 0;
+  width: 100%;
 }
 
 /* Row geometry belongs to the nearest DataTable root. Nested tables can use a

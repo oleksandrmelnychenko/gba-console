@@ -45,7 +45,12 @@ import {
   pinDataTableActionsRight,
   prepareDataTableColumns,
 } from './dataTableActions'
-import { createRenderedColumnWidths, getFillColumnId } from './dataTableSizing'
+import {
+  createRenderedColumnWidths,
+  getFillColumnId,
+  getManuallySizedColumnIds,
+  preserveRenderedColumnResize,
+} from './dataTableSizing'
 import { DataTableToolbar } from './DataTableToolbar'
 import { createPortal } from 'react-dom'
 import { useElementClientWidth } from './useElementClientWidth'
@@ -187,6 +192,16 @@ export function DataTable<TData>({
     () => normalizeDataTableLayout(layout, columnIds, effectiveDefaultLayout),
     [columnIds, effectiveDefaultLayout, layout],
   )
+  const manuallySizedColumnIds = useMemo(
+    () =>
+      getManuallySizedColumnIds(
+        normalizedLayout.columnSizing,
+        effectiveDefaultLayout?.columnSizing,
+      ),
+    [effectiveDefaultLayout?.columnSizing, normalizedLayout.columnSizing],
+  )
+  const baseColumnWidthsRef = useRef<ReadonlyMap<string, number>>(new Map())
+  const renderedColumnWidthsRef = useRef<ReadonlyMap<string, number>>(new Map())
 
   const columnTitles = useMemo(() => {
     return new Map(
@@ -273,7 +288,11 @@ export function DataTable<TData>({
   const handleColumnSizingChange: OnChangeFn<ColumnSizingState> = (updater) => {
     updateLayout((currentLayout) => ({
       ...currentLayout,
-      columnSizing: resolveStateUpdater(updater, currentLayout.columnSizing),
+      columnSizing: preserveRenderedColumnResize(
+        resolveStateUpdater(updater, currentLayout.columnSizing),
+        baseColumnWidthsRef.current,
+        renderedColumnWidthsRef.current,
+      ),
     }))
   }
 
@@ -314,7 +333,7 @@ export function DataTable<TData>({
     columns: tableColumns,
     data,
     defaultColumn: {
-      maxSize: 640,
+      maxSize: 4096,
       minSize: 72,
       size: 160,
     },
@@ -362,25 +381,46 @@ export function DataTable<TData>({
       scrollViewportWidth,
     ),
   )
-  const fillerColumnWidth = shouldFillAvailableWidth ? 0 : Math.max(0, tableWidth - baseTableWidth)
   const renderedColumnTableWidth = shouldFillAvailableWidth ? tableWidth : baseTableWidth
   // Memoized so the widths Map keeps its identity across unrelated re-renders —
   // it is a prop of every (memoized) body row.
   const { columnWidths, fillColumnId } = useMemo(() => {
-    const fillId = getFillColumnId(visibleLeafColumns, renderedColumnTableWidth, baseTableWidth, {
+    const sizingOptions = {
       distributeAvailableWidth,
-    })
+      excludedColumnIds: manuallySizedColumnIds,
+    }
+    const fillId = getFillColumnId(
+      visibleLeafColumns,
+      renderedColumnTableWidth,
+      baseTableWidth,
+      sizingOptions,
+    )
 
     return {
       columnWidths: createRenderedColumnWidths(
         visibleLeafColumns,
         fillId,
         renderedColumnTableWidth - baseTableWidth,
-        { distributeAvailableWidth },
+        sizingOptions,
       ),
       fillColumnId: fillId,
     }
-  }, [baseTableWidth, distributeAvailableWidth, renderedColumnTableWidth, visibleLeafColumns])
+  }, [
+    baseTableWidth,
+    distributeAvailableWidth,
+    manuallySizedColumnIds,
+    renderedColumnTableWidth,
+    visibleLeafColumns,
+  ])
+  baseColumnWidthsRef.current = new Map(
+    visibleLeafColumns.map((column) => [column.id, column.getSize()]),
+  )
+  renderedColumnWidthsRef.current = columnWidths
+  const renderedColumnsWidth = Array.from(columnWidths.values()).reduce(
+    (sum, width) => sum + width,
+    0,
+  )
+  const fillerColumnWidth = Math.max(0, tableWidth - renderedColumnsWidth)
   const visibleColumnCount = visibleLeafColumns.length || 1
   const scrollStyle = useMemo(
     () => createScrollStyle(height, maxHeight, scrollViewportWidth > 0),
