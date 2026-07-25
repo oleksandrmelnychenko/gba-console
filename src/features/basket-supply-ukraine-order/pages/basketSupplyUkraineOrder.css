@@ -92,9 +92,39 @@
   background: var(--mantine-color-gray-0);
 }
 
+.basket-supply-empty-workspace {
+  align-items: center;
+  flex-direction: row;
+  gap: 16px;
+  justify-content: flex-start;
+  min-height: 0 !important;
+  padding: 16px;
+  text-align: left;
+}
+
+.basket-supply-empty-workspace .procure-workspace-state__copy {
+  flex: 1 1 auto;
+  max-width: 760px;
+}
+
+.basket-supply-empty-workspace .mantine-Button-root {
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+
 @media (max-width: 760px) {
   .basket-supply-document-controls {
     max-width: none;
+  }
+
+  .basket-supply-empty-workspace {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .basket-supply-empty-workspace .mantine-Button-root {
+    margin-left: 0;
   }
 }
 

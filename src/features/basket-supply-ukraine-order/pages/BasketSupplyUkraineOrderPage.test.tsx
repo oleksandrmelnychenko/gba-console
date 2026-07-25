@@ -1,9 +1,32 @@
 import { MantineProvider } from '@mantine/core'
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
+import {
+  getNotSentSads,
+  getNotSentTaxFreePackLists,
+  getUkraineCartItems,
+} from '../api/basketSupplyUkraineOrderApi'
 import { BasketSupplyUkraineOrderPage } from './BasketSupplyUkraineOrderPage'
+
+vi.mock('../api/basketSupplyUkraineOrderApi', () => ({
+  addOrUpdateSad: vi.fn(),
+  addOrUpdateSaleSad: vi.fn(),
+  addOrUpdateSaleTaxFreePackList: vi.fn(),
+  addOrUpdateTaxFreePackList: vi.fn(),
+  calculateTotalsByCartItems: vi.fn(),
+  calculateTotalsBySales: vi.fn(),
+  getNotSentSads: vi.fn(),
+  getNotSentSaleSads: vi.fn(),
+  getNotSentSaleTaxFreePackLists: vi.fn(),
+  getNotSentTaxFreePackLists: vi.fn(),
+  getSalesForMovingToUkraine: vi.fn(),
+  getUkraineCartItems: vi.fn(),
+  updateUkraineCartItem: vi.fn(),
+  uploadPreviewUkraineCartItemsFromFile: vi.fn(),
+  uploadUkraineCartItemsFromFile: vi.fn(),
+}))
 
 vi.mock('../components/ProcurementConstructor', () => ({
   ProcurementConstructor: () => (
@@ -28,6 +51,12 @@ function renderPage(pathname: string) {
 }
 
 describe('BasketSupplyUkraineOrderPage shell', () => {
+  beforeEach(() => {
+    vi.mocked(getUkraineCartItems).mockResolvedValue([])
+    vi.mocked(getNotSentTaxFreePackLists).mockResolvedValue([])
+    vi.mocked(getNotSentSads).mockResolvedValue([])
+  })
+
   it.each(['/recommendations', '/basket-supply-ukraine-order/recommendations'])(
     'keeps the recommendations alias on the visible constructor tab at %s',
     (pathname) => {
@@ -49,4 +78,20 @@ describe('BasketSupplyUkraineOrderPage shell', () => {
       expect((tabs?.compareDocumentPosition(activeFilter) ?? 0) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0)
     },
   )
+
+  it('replaces empty transfer tables and zero totals with one useful state', async () => {
+    renderPage('/basket-supply-ukraine-order')
+
+    expect(await screen.findByText('Немає товарів для переміщення')).not.toBeNull()
+    expect(
+      screen.getByText(
+        'Завантажте файл із товарами, щоб сформувати підбірку для переміщення та створити документ.',
+      ),
+    ).not.toBeNull()
+    expect(screen.getByRole('button', { name: 'Завантажити товари' })).not.toBeNull()
+    expect(screen.queryByText('Підбірка порожня')).toBeNull()
+    expect(screen.queryByText('Заг. к-сть')).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Додати (0)' })).toBeNull()
+    expect(screen.queryByLabelText('Пошук по товару')).toBeNull()
+  })
 })

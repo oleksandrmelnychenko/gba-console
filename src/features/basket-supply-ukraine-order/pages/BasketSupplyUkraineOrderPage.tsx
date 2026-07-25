@@ -52,6 +52,7 @@ import { PreviewCartItemsModal } from '../components/PreviewCartItemsModal'
 import { BudgetCartTab } from '../components/BudgetCartTab'
 import { ProcureDashboardTab } from '../components/ProcureDashboardTab'
 import { ProcurementConstructor } from '../components/ProcurementConstructor'
+import { ProcurementWorkspaceState } from '../components/ProcurementWorkspaceState'
 import type {
   BasketOrderItem,
   BasketSale,
@@ -230,6 +231,7 @@ function BasketCartWorkflow() {
   )
   const visibleTotals = destinationItems.length ? totals : EMPTY_TOTALS
   const visibleIsTotalsLoading = destinationItems.length ? isTotalsLoading : false
+  const isCartEmpty = !isLoading && !error && cartItems.length === 0 && destinationItems.length === 0
   const sourceColumns = useCartSourceColumns({
     isSelected: (item) => selectedSourceIds.has(getCartItemKey(item)),
     openReserveModal,
@@ -638,8 +640,9 @@ function BasketCartWorkflow() {
   return (
     <Stack gap="md">
       <Card className="app-data-card basket-supply-primary-card" padding={0} radius="md" withBorder>
-        <div className="app-filter-bar basket-supply-command-bar is-split">
-          <SimpleGrid className="basket-supply-filters" cols={3} spacing={10}>
+        {!isCartEmpty && (
+          <div className="app-filter-bar basket-supply-command-bar is-split">
+            <SimpleGrid className="basket-supply-filters" cols={3} spacing={10}>
               <TextInput
                 label={t('Пошук по товару')}
                 leftSection={SEARCH_ICON}
@@ -670,9 +673,9 @@ function BasketCartWorkflow() {
                   setFilters((current) => ({ ...current, availability: (value || 'all') as CartFilterState['availability'] }))
                 }
               />
-          </SimpleGrid>
+            </SimpleGrid>
 
-          <div className="app-filter-actions">
+            <div className="app-filter-actions">
               <Tooltip label={t('Скинути')}>
                 <ActionIcon
                   aria-label={t('Скинути')}
@@ -695,9 +698,10 @@ function BasketCartWorkflow() {
               <Button leftSection={FILE_SPREADSHEET_ICON} styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }} variant="outline" onClick={() => openUploadModal('preview')}>
                 {t('Вибрати для експорту')}
               </Button>
+            </div>
+            <div ref={setSourceTableToolbarSlot} className="app-filter-table-toolbar-slot" />
           </div>
-          <div ref={setSourceTableToolbarSlot} className="app-filter-table-toolbar-slot" />
-        </div>
+        )}
         <Stack gap="md" p="md">
           {error && (
             <Alert color="red" icon={ALERT_CIRCLE_ICON} variant="light">
@@ -720,62 +724,79 @@ function BasketCartWorkflow() {
             </Alert>
           )}
 
-          <DataTable
-            columns={sourceColumns}
-            data={filteredCartItems}
-            defaultLayout={BASKET_CART_TABLE_DEFAULT_LAYOUT}
-            emptyText={t('Даних не знайдено')}
-            getRowId={(item, index) => getCartItemKey(item, index)}
-            isLoading={isLoading}
-            maxHeight={460}
-            minWidth={1120}
-            rowClassName={(item) => (selectedSourceIds.has(getCartItemKey(item)) ? 'basket-supply-row-selected' : undefined)}
-            showLayoutControls
-            tableId="basket-supply-ukraine-order-source"
-            toolbarLeft={sourceToolbarLeft}
-            toolbarPortalTarget={sourceTableToolbarSlot}
-          />
+          {isCartEmpty ? (
+            <ProcurementWorkspaceState
+              action={{
+                label: t('Завантажити товари'),
+                onClick: () => openUploadModal('load'),
+              }}
+              className="basket-supply-empty-workspace"
+              description={t('Завантажте файл із товарами, щоб сформувати підбірку для переміщення та створити документ.')}
+              surface
+              title={t('Немає товарів для переміщення')}
+            />
+          ) : (
+            <DataTable
+              columns={sourceColumns}
+              data={filteredCartItems}
+              defaultLayout={BASKET_CART_TABLE_DEFAULT_LAYOUT}
+              emptyText={t('За вибраними фільтрами нічого не знайдено')}
+              getRowId={(item, index) => getCartItemKey(item, index)}
+              isLoading={isLoading}
+              maxHeight={460}
+              minWidth={1120}
+              rowClassName={(item) => (selectedSourceIds.has(getCartItemKey(item)) ? 'basket-supply-row-selected' : undefined)}
+              showLayoutControls
+              tableId="basket-supply-ukraine-order-source"
+              toolbarLeft={sourceToolbarLeft}
+              toolbarPortalTarget={sourceTableToolbarSlot}
+            />
+          )}
         </Stack>
       </Card>
 
-      <Group align="center" className="basket-supply-transfer-controls" justify="center">
-        <Button
-          disabled={!selectedSourceCount}
-          leftSection={ARROW_RIGHT_ICON}
-          variant="outline"
-          onClick={moveSelectedRight}
-        >
-          {t('Додати')} ({selectedSourceCount})
-        </Button>
-        <Button
-          disabled={!selectedDestinationCount}
-          leftSection={ARROW_LEFT_ICON}
-          variant="outline"
-          onClick={moveSelectedLeft}
-        >
-          {t('Повернути')} ({selectedDestinationCount})
-        </Button>
-      </Group>
+      {!isCartEmpty && (
+        <>
+          <Group align="center" className="basket-supply-transfer-controls" justify="center">
+            <Button
+              disabled={!selectedSourceCount}
+              leftSection={ARROW_RIGHT_ICON}
+              variant="outline"
+              onClick={moveSelectedRight}
+            >
+              {t('Додати')} ({selectedSourceCount})
+            </Button>
+            <Button
+              disabled={!selectedDestinationCount}
+              leftSection={ARROW_LEFT_ICON}
+              variant="outline"
+              onClick={moveSelectedLeft}
+            >
+              {t('Повернути')} ({selectedDestinationCount})
+            </Button>
+          </Group>
 
-      <Card className="app-section-card" withBorder padding="md" radius="md">
-        <Stack gap="md">
-          <DataTable
-            columns={destinationColumns}
-            data={destinationItems}
-            defaultLayout={BASKET_DESTINATION_TABLE_DEFAULT_LAYOUT}
-            emptyText={t('Підбірка порожня')}
-            getRowId={(item, index) => getCartItemKey(item, index)}
-            maxHeight={420}
-            minWidth={960}
-            rowClassName={(item) => (selectedDestinationIds.has(getCartItemKey(item)) ? 'basket-supply-row-selected' : undefined)}
-            tableId="basket-supply-ukraine-order-destination"
-            toolbarLeft={destinationToolbarLeft}
-            toolbarRight={destinationToolbarRight}
-          />
+          <Card className="app-section-card" withBorder padding="md" radius="md">
+            <Stack gap="md">
+              <DataTable
+                columns={destinationColumns}
+                data={destinationItems}
+                defaultLayout={BASKET_DESTINATION_TABLE_DEFAULT_LAYOUT}
+                emptyText={t('Підбірка порожня')}
+                getRowId={(item, index) => getCartItemKey(item, index)}
+                maxHeight={420}
+                minWidth={960}
+                rowClassName={(item) => (selectedDestinationIds.has(getCartItemKey(item)) ? 'basket-supply-row-selected' : undefined)}
+                tableId="basket-supply-ukraine-order-destination"
+                toolbarLeft={destinationToolbarLeft}
+                toolbarRight={destinationToolbarRight}
+              />
 
-          <TotalsBar isLoading={visibleIsTotalsLoading} totals={visibleTotals} />
-        </Stack>
-      </Card>
+              <TotalsBar isLoading={visibleIsTotalsLoading} totals={visibleTotals} />
+            </Stack>
+          </Card>
+        </>
+      )}
 
       <BasketSupplyUploadModal
         key={`${uploadMode}-${isUploadModalOpen ? 'open' : 'closed'}`}
