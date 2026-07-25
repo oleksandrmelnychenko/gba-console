@@ -393,7 +393,7 @@ export function ProcureDashboardTab() {
           </div>
         </form>
 
-        <Stack className="procure-dashboard__content" gap="md" p="md">
+        <Stack className="procure-dashboard__content" gap={6}>
           <section
             aria-labelledby="procure-dashboard-title"
             className="procure-dashboard__intro"
@@ -507,7 +507,7 @@ export function ProcureDashboardTab() {
             <SimpleGrid
               className="procure-dashboard__chart-grid"
               cols={{ base: 1, md: hasUrgencyData && hasDaysOfCoverData ? 2 : 1 }}
-              spacing="md"
+              spacing={6}
             >
               {hasUrgencyData ? (
                 <Card
@@ -516,7 +516,7 @@ export function ProcureDashboardTab() {
                   radius="md"
                   withBorder
                 >
-                  <Stack gap="md">
+                  <Stack gap={10}>
                     <DashboardPanelHeader
                       subtitle={t('Швидко показує, де замовлення не можна відкладати.')}
                       title={t('Терміновість поповнення')}
@@ -566,7 +566,7 @@ export function ProcureDashboardTab() {
                   radius="md"
                   withBorder
                 >
-                  <Stack gap="md">
+                  <Stack gap={10}>
                     <DashboardPanelHeader
                       subtitle={t('Розподіл позицій за прогнозованим запасом у днях.')}
                       title={t('Запас днів покриття')}
@@ -593,7 +593,7 @@ export function ProcureDashboardTab() {
               radius="md"
               withBorder
             >
-              <Stack gap="md">
+              <Stack gap={10}>
                 <Group align="flex-start" justify="space-between" wrap="wrap">
                   <DashboardPanelHeader
                     subtitle={t('Факт і модель попиту для позицій у фокусі.')}
@@ -648,7 +648,7 @@ export function ProcureDashboardTab() {
               radius="md"
               withBorder
             >
-              <Stack gap="sm">
+              <Stack gap={10}>
                 <Group align="flex-start" justify="space-between" wrap="wrap">
                   <DashboardPanelHeader
                     subtitle={t('Позиції, які першими мають перейти в план закупівлі.')}

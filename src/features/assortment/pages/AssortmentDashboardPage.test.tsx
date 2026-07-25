@@ -120,6 +120,9 @@ describe('AssortmentDashboardPage', () => {
     expect(screen.getByText('Поповнити запас')).not.toBeNull()
     expect(screen.getByText('Запас нижче розрахованої потреби')).not.toBeNull()
     expect(screen.getByText('Потребують уваги')).not.toBeNull()
+    expect(
+      screen.getByText('Структура запасів за станом').closest('.assort-dash__insights')?.children,
+    ).toHaveLength(3)
     expect(screen.queryByText('#501')).toBeNull()
     expect(screen.getByRole('combobox', { name: 'ABC' })).not.toBeNull()
     expect(screen.getByRole('combobox', { name: 'XYZ' })).not.toBeNull()

@@ -236,18 +236,19 @@
 
 .budget-cart-summary {
   box-shadow: none !important;
+  padding: 14px 16px;
 }
 
 .budget-cart-summary__head {
   border-bottom: 1px solid var(--mantine-color-gray-2);
-  padding-bottom: 12px;
+  padding-bottom: 10px;
 }
 
 .budget-cart-summary__layout {
   display: grid;
-  gap: 20px;
-  grid-template-columns: minmax(0, 1fr) 240px;
-  padding-top: 14px;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) 220px;
+  padding-top: 10px;
 }
 
 .budget-cart-summary__primary,
@@ -263,7 +264,7 @@
 .budget-cart-summary__secondary {
   border-top: 1px solid var(--mantine-color-gray-2);
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  padding-top: 12px;
+  padding-top: 10px;
 }
 
 .budget-cart-summary__metric {
@@ -295,7 +296,7 @@
   border-left: 1px solid var(--mantine-color-gray-2);
   justify-content: center;
   min-width: 0;
-  padding-left: 20px;
+  padding-left: 12px;
 }
 
 /* The plan table owns its scroll inside the shared draggable bottom sheet. */
@@ -322,16 +323,17 @@
 
 .procure-dashboard__content {
   background: var(--mantine-color-white);
+  padding: 10px 8px 8px;
 }
 
 .procure-dashboard__intro {
   align-items: center;
   border-bottom: 1px solid var(--mantine-color-gray-2);
   display: flex;
-  gap: 24px;
+  gap: 18px;
   justify-content: space-between;
   min-width: 0;
-  padding: 2px 0 12px;
+  padding: 2px 2px 10px;
 }
 
 .procure-dashboard__intro-copy {
@@ -380,6 +382,7 @@
 
 .procure-dashboard__summary {
   box-shadow: none !important;
+  padding: 14px 16px;
 }
 
 .procure-dashboard__metric {
@@ -462,6 +465,7 @@
 .procure-dashboard__panel {
   box-shadow: none !important;
   min-width: 0;
+  padding: 14px 16px;
 }
 
 .procure-dashboard__panel-heading {
@@ -476,9 +480,9 @@
 .procure-dashboard__urgency-layout {
   align-items: center;
   display: grid;
-  gap: 18px;
+  gap: 12px;
   grid-template-columns: minmax(176px, 0.72fr) minmax(180px, 1fr);
-  min-height: 220px;
+  min-height: 210px;
 }
 
 .procure-dashboard__urgency-legend {
@@ -535,7 +539,7 @@
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 8px;
   min-width: 0;
-  padding: 11px 12px 4px;
+  padding: 10px 12px 4px;
 }
 
 .procure-dashboard__forecast-head {
@@ -556,22 +560,6 @@
 }
 
 @media (max-width: 900px) {
-  .budget-cart-summary__layout {
-    grid-template-columns: 1fr;
-  }
-
-  .budget-cart-summary__primary {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    row-gap: 14px;
-  }
-
-  .budget-cart-summary__distribution {
-    border-left: 0;
-    border-top: 1px solid var(--mantine-color-gray-2);
-    padding-left: 0;
-    padding-top: 16px;
-  }
-
   .procure-dashboard__intro {
     align-items: flex-start;
   }
@@ -587,6 +575,24 @@
 
   .procure-dashboard__urgency-layout {
     grid-template-columns: minmax(160px, 0.68fr) minmax(160px, 1fr);
+  }
+}
+
+@media (max-width: 760px) {
+  .budget-cart-summary__layout {
+    grid-template-columns: 1fr;
+  }
+
+  .budget-cart-summary__primary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    row-gap: 14px;
+  }
+
+  .budget-cart-summary__distribution {
+    border-left: 0;
+    border-top: 1px solid var(--mantine-color-gray-2);
+    padding-left: 0;
+    padding-top: 16px;
   }
 }
 

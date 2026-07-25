@@ -484,35 +484,37 @@ export function AssortmentDashboardPage() {
             </Alert>
           )}
 
-          <AssortmentKpis
-            body={body}
-            knownMarginRevenue={knownMarginRevenue}
-            marginProfit={marginProfit}
-            negativeMarginSkus={negativeMarginSkus}
-            negativeMarginRevenue={negativeMarginRevenue}
-            overallReturnRate={overallReturnRate}
-            weightedMargin={weightedMargin}
-          />
-
-          {selectedRegion && (
-            <RegionSummary region={selectedRegion} windowDays={filters.regionWindowDays ?? REGION_WINDOW_DAYS} />
-          )}
-
-          <div className="assort-dash__insights">
-            <AssortmentStructure
-              avgHealth={avgHealth}
-              bandSegments={bandSegments}
+          <div className="assort-dash__overview">
+            <AssortmentKpis
               body={body}
-              visibleBandSegments={visibleBandSegments}
+              knownMarginRevenue={knownMarginRevenue}
+              marginProfit={marginProfit}
+              negativeMarginSkus={negativeMarginSkus}
+              negativeMarginRevenue={negativeMarginRevenue}
+              overallReturnRate={overallReturnRate}
+              weightedMargin={weightedMargin}
             />
 
-            <AssortmentAttention
-              margin={margin}
-              returns={returns}
-              rows={rows}
-              stock={stock}
-              onPick={setSelectedProductId}
-            />
+            {selectedRegion && (
+              <RegionSummary region={selectedRegion} windowDays={filters.regionWindowDays ?? REGION_WINDOW_DAYS} />
+            )}
+
+            <div className="assort-dash__insights">
+              <AssortmentStructure
+                avgHealth={avgHealth}
+                bandSegments={bandSegments}
+                body={body}
+                visibleBandSegments={visibleBandSegments}
+              />
+
+              <AssortmentAttention
+                margin={margin}
+                returns={returns}
+                rows={rows}
+                stock={stock}
+                onPick={setSelectedProductId}
+              />
+            </div>
           </div>
 
           <AssortmentDetailTable
@@ -650,7 +652,7 @@ function AssortmentKpis({
   const { t } = useI18n()
 
   return (
-    <SimpleGrid className="assort-kpis" cols={{ base: 1, sm: 2, xl: 4 }} spacing={0}>
+    <SimpleGrid className="assort-kpis" cols={{ base: 1, sm: 2, lg: 4 }} spacing={0}>
       <KpiTile
         label={t('Вартість запасів')}
         sub={body?.total_skus == null ? undefined : `${t('Товарних позицій')}: ${formatInt(body.total_skus)}`}
@@ -697,7 +699,7 @@ function AssortmentStructure({
   const { t } = useI18n()
 
   return (
-    <div className="assort-structure">
+    <>
       <Card className="app-section-card assort-card assort-structure__stock" withBorder radius="md" padding={0}>
         <div className="assort-card__head">
           <span className="assort-card__title app-section-title">{t('Структура запасів за станом')}</span>
@@ -759,7 +761,7 @@ function AssortmentStructure({
           <MixGroup counts={body?.by_xyz} title="XYZ" />
         </div>
       </Card>
-    </div>
+    </>
   )
 }
 

@@ -713,7 +713,7 @@ export function ProcurementConstructor() {
               isLoading={isLoading}
               layoutVersion={4}
               loadingText={t('Розрахунок потреби…')}
-              minWidth={1220}
+              minWidth={1420}
               renderExpandedRow={renderProofPanel}
               showLayoutControls
               tableId="procure-cockpit-plan"

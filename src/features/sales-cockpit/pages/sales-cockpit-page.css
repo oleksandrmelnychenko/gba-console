@@ -543,7 +543,7 @@
 
 .cockpit-analytics-grid {
   display: grid;
-  gap: 12px;
+  gap: 6px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
@@ -1067,6 +1067,12 @@
   .cockpit-table-skeleton-line,
   .cockpit-inline-loading {
     animation: none;
+  }
+}
+
+@media (max-width: 960px) {
+  .cockpit-head-workspace {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
