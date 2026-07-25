@@ -43,7 +43,6 @@ import { buildTaskModels } from '../models/paymentTaskModelMapper'
 import {
   AccountingTypeValue,
   TaskStatusValue,
-  type AvailablePaymentDocumentDeleteOverrides,
   type AvailablePaymentTaskModel,
   type AvailablePaymentsOrganization,
   type GroupedPaymentTask,
@@ -105,8 +104,6 @@ function useAvailablePaymentsPageModel() {
   const [pendingDetailGroup, setPendingDetailGroup] = useValueState<GroupedPaymentTask | null>(null)
   const [markedModels, setMarkedModels] = useValueState<AvailablePaymentTaskModel[]>([])
   const [outcomeRequest, setOutcomeRequest] = useValueState<OutcomeRequest | null>(null)
-  const [documentDeleteOverridesByTaskId, setDocumentDeleteOverridesByTaskId] =
-    useValueState<AvailablePaymentDocumentDeleteOverrides>({})
   const [filesByTaskId, setFilesByTaskId] = useValueState<Record<string, File[]>>({})
   const [confirmCloseDetailOpen, setConfirmCloseDetailOpen] = useValueState(false)
   const [error, setError] = useValueState<string | null>(null)
@@ -120,11 +117,7 @@ function useAvailablePaymentsPageModel() {
   const groupIndexMap = useMemo(() => buildIndexMap(groups, pageOffset), [groups, pageOffset])
   const markedTaskIds = useMemo(() => markedModels.map((model) => model.id), [markedModels])
   const hasPendingFiles = useMemo(() => Object.values(filesByTaskId).some((files) => files.length > 0), [filesByTaskId])
-  const hasPendingDocumentChanges = useMemo(
-    () => Object.values(documentDeleteOverridesByTaskId).some((overrides) => Object.keys(overrides).length > 0),
-    [documentDeleteOverridesByTaskId],
-  )
-  const hasPendingChanges = hasPendingFiles || hasPendingDocumentChanges
+  const hasPendingChanges = hasPendingFiles
 
   useEffect(() => {
     setFilterDraft(initialFilters)
@@ -132,13 +125,11 @@ function useAvailablePaymentsPageModel() {
     setSelectedGroup(null)
     setMarkedModels([])
     setFilesByTaskId({})
-    setDocumentDeleteOverridesByTaskId({})
     setPage(1)
   }, [
     initialFilters,
     onlyAvailableForPayment,
     setActiveFilters,
-    setDocumentDeleteOverridesByTaskId,
     setFilesByTaskId,
     setFilterDraft,
     setMarkedModels,
@@ -155,10 +146,8 @@ function useAvailablePaymentsPageModel() {
     setLoading(false)
     setSelectedGroup(null)
     setFilesByTaskId({})
-    setDocumentDeleteOverridesByTaskId({})
     setMarkedModels([])
   }, [
-    setDocumentDeleteOverridesByTaskId,
     setFilesByTaskId,
     setGroups,
     setHasMore,
@@ -238,13 +227,11 @@ function useAvailablePaymentsPageModel() {
 
     setConfirmCloseDetailOpen(false)
     setFilesByTaskId({})
-    setDocumentDeleteOverridesByTaskId({})
     setPendingDetailGroup(null)
     setSelectedGroup(nextGroup)
   }, [
     pendingDetailGroup,
     setConfirmCloseDetailOpen,
-    setDocumentDeleteOverridesByTaskId,
     setFilesByTaskId,
     setPendingDetailGroup,
     setSelectedGroup,
@@ -252,8 +239,7 @@ function useAvailablePaymentsPageModel() {
   const clearMarked = useCallback(() => {
     setMarkedModels([])
     setFilesByTaskId({})
-    setDocumentDeleteOverridesByTaskId({})
-  }, [setDocumentDeleteOverridesByTaskId, setFilesByTaskId, setMarkedModels])
+  }, [setFilesByTaskId, setMarkedModels])
   const openMarkedOutcome = useCallback(() => {
     const selectionError = validateAvailablePaymentSelection(markedModels, t)
 
@@ -291,9 +277,8 @@ function useAvailablePaymentsPageModel() {
     setSelectedGroup(null)
     setMarkedModels([])
     setFilesByTaskId({})
-    setDocumentDeleteOverridesByTaskId({})
     reload()
-  }, [reload, setDocumentDeleteOverridesByTaskId, setFilesByTaskId, setMarkedModels, setSelectedGroup])
+  }, [reload, setFilesByTaskId, setMarkedModels, setSelectedGroup])
   const handleTaskUpdated = useCallback(
     (taskId: string, task: SupplyPaymentTask) => {
       const taskKey = getSupplyPaymentTaskKey(task)
@@ -311,14 +296,9 @@ function useAvailablePaymentsPageModel() {
         delete next[taskId]
         return next
       })
-      setDocumentDeleteOverridesByTaskId((current) => {
-        const next = { ...current }
-        delete next[taskId]
-        return next
-      })
       reload()
     },
-    [reload, setDocumentDeleteOverridesByTaskId, setFilesByTaskId, setGroups, setSelectedGroup],
+    [reload, setFilesByTaskId, setGroups, setSelectedGroup],
   )
   const handleFilesChanged = useCallback(
     (taskId: string, files: File[]) => {
@@ -326,32 +306,6 @@ function useAvailablePaymentsPageModel() {
     },
     [setFilesByTaskId],
   )
-  const handleDocumentDeletedChange = useCallback(
-    (taskId: string, documentKey: string, deleted: boolean, originalDeleted: boolean) => {
-      setDocumentDeleteOverridesByTaskId((current) => {
-        const currentTaskOverrides = current[taskId] || {}
-        const nextTaskOverrides = { ...currentTaskOverrides }
-
-        if (deleted === originalDeleted) {
-          delete nextTaskOverrides[documentKey]
-        } else {
-          nextTaskOverrides[documentKey] = deleted
-        }
-
-        const nextOverrides = { ...current }
-
-        if (Object.keys(nextTaskOverrides).length === 0) {
-          delete nextOverrides[taskId]
-        } else {
-          nextOverrides[taskId] = nextTaskOverrides
-        }
-
-        return nextOverrides
-      })
-    },
-    [setDocumentDeleteOverridesByTaskId],
-  )
-
   const columns = useAvailablePaymentsColumns(groupIndexMap, markedModels, openDetail)
 
   const totalsByCurrency = useMemo(() => buildCurrencyTotals(priceTotals), [priceTotals])
@@ -376,7 +330,6 @@ function useAvailablePaymentsPageModel() {
     error,
     filterDraft,
     filterError,
-    documentDeleteOverridesByTaskId,
     filesByTaskId,
     groups,
     hasMore,
@@ -399,7 +352,6 @@ function useAvailablePaymentsPageModel() {
     applyFilters,
     clearMarked,
     handlePaymentChanged,
-    handleDocumentDeletedChange,
     handleFilesChanged,
     handleTaskUpdated,
     reload,
@@ -591,7 +543,6 @@ export function AvailablePaymentsPage() {
       <AvailablePaymentsDetailDrawer
         key={String(model.selectedGroup?.NetUid || model.selectedGroup?.Id || 'closed')}
         group={model.selectedGroup}
-        documentDeleteOverridesByTaskId={model.documentDeleteOverridesByTaskId}
         filesByTaskId={model.filesByTaskId}
         markedModels={model.markedModels}
         markedTaskIds={model.markedTaskIds}
@@ -600,7 +551,6 @@ export function AvailablePaymentsPage() {
         onChanged={model.handlePaymentChanged}
         onClearMarked={model.clearMarked}
         onClose={model.closeDetail}
-        onDocumentDeletedChange={model.handleDocumentDeletedChange}
         onFilesChanged={model.handleFilesChanged}
         onTaskUpdated={model.handleTaskUpdated}
         onToggleMarked={model.toggleMarked}
@@ -612,7 +562,7 @@ export function AvailablePaymentsPage() {
         onClose={model.cancelCloseDetail}
       >
         <Stack gap="md">
-          <Text>{translate('Якщо закрити вікно, додані файли або зміни документів не будуть збережені.')}</Text>
+          <Text>{translate('Якщо закрити вікно, додані файли не будуть збережені.')}</Text>
           <Group justify="flex-end">
             <Button color="gray" variant="light" onClick={model.cancelCloseDetail}>
               {translate('Залишитися')}

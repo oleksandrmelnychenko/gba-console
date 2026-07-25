@@ -17,6 +17,7 @@ import {
   getSupplyProtocolResponsibleUsers,
   updateSupplyInvoice,
 } from '../api/supplyUkraineOrdersApi'
+import { sanitizeInvoicePaymentDeliveryProtocols } from '../invoicePaymentProtocolPayload'
 import type {
   DirectSupplyOrder,
   SupplyInformationDeliveryProtocol,
@@ -131,7 +132,10 @@ export function DirectOrderPaymentTasksCard({
     }
   }, [reportError, selectedInvoiceNetId, setInvoice, setLoading, setLocalError, t])
 
-  async function persistInvoice(nextInvoice: SupplyInvoice): Promise<void> {
+  async function persistInvoice(
+    nextInvoice: SupplyInvoice,
+    targetProtocols: SupplyOrderPaymentDeliveryProtocol[],
+  ): Promise<void> {
     if (!order.NetUid) {
       return
     }
@@ -140,7 +144,10 @@ export function DirectOrderPaymentTasksCard({
     setLocalError(null)
 
     try {
-      await updateSupplyInvoice(order.NetUid, createInvoiceProtocolsPayload(nextInvoice))
+      await updateSupplyInvoice(
+        order.NetUid,
+        createInvoiceProtocolsPayload(nextInvoice, targetProtocols),
+      )
       const reloaded = await getSupplyInvoiceItems(nextInvoice.NetUid || selectedInvoiceNetId || '')
       setInvoice(reloaded)
     } catch (cause) {
@@ -156,7 +163,14 @@ export function DirectOrderPaymentTasksCard({
       return
     }
 
-    await persistInvoice(addPaymentProtocol(invoice, values))
+    const nextInvoice = addPaymentProtocol(invoice, values)
+    const targetProtocol = nextInvoice.PaymentDeliveryProtocols?.at(-1)
+
+    if (!targetProtocol) {
+      throw new Error(t('Не вдалося підготувати платіжний протокол'))
+    }
+
+    await persistInvoice(nextInvoice, [targetProtocol])
   }
 
   async function handleRemove(protocol: SupplyOrderUkrainePaymentDeliveryProtocol): Promise<void> {
@@ -164,7 +178,19 @@ export function DirectOrderPaymentTasksCard({
       return
     }
 
-    await persistInvoice(removePaymentProtocol(invoice, protocol.NetUid, protocol.Id))
+    const nextInvoice = removePaymentProtocol(invoice, protocol.NetUid, protocol.Id)
+    const targetProtocol = nextInvoice.PaymentDeliveryProtocols?.find(
+      (candidate) =>
+        candidate.Deleted &&
+        ((protocol.NetUid && candidate.NetUid === protocol.NetUid) ||
+          (protocol.Id && candidate.Id === protocol.Id)),
+    )
+
+    if (!targetProtocol) {
+      throw new Error(t('Не вдалося знайти платіжний протокол'))
+    }
+
+    await persistInvoice(nextInvoice, [targetProtocol])
   }
 
   const displayProtocols = mapToDisplayProtocols(invoice)
@@ -321,48 +347,23 @@ function removePaymentProtocol(invoice: SupplyInvoice, netUid?: string, id?: num
 }
 
 /** Mirror the «Інвойси і пак листи» save payload so the server contract is identical. */
-function createInvoiceProtocolsPayload(invoice: SupplyInvoice): SupplyInvoice {
+function createInvoiceProtocolsPayload(
+  invoice: SupplyInvoice,
+  targetProtocols: SupplyOrderPaymentDeliveryProtocol[],
+): SupplyInvoice {
   return {
     ...stripEntityGraph(invoice),
     InformationDeliveryProtocols: sanitizeInformationDeliveryProtocols(invoice),
     InvoiceDocuments: invoice.InvoiceDocuments || [],
     PackingLists: invoice.PackingLists || [],
-    PaymentDeliveryProtocols: sanitizePaymentDeliveryProtocols(invoice),
+    PaymentDeliveryProtocols: sanitizeInvoicePaymentDeliveryProtocols(
+      invoice,
+      targetProtocols,
+    ),
     SupplyInvoiceDeliveryDocuments: invoice.SupplyInvoiceDeliveryDocuments || [],
     SupplyInvoiceOrderItems: invoice.SupplyInvoiceOrderItems || [],
     SupplyOrder: null,
   } as SupplyInvoice
-}
-
-function sanitizePaymentDeliveryProtocols(invoice: SupplyInvoice): SupplyOrderPaymentDeliveryProtocol[] {
-  return (invoice.PaymentDeliveryProtocols || []).map((protocol) => {
-    const key = protocol.SupplyOrderPaymentDeliveryProtocolKey || null
-    const task = protocol.SupplyPaymentTask || null
-    const user = task?.User || protocol.User || null
-    const value = protocol.Value || 0
-
-    return {
-      ...stripEntityGraph(protocol),
-      IsAccounting: Boolean(protocol.IsAccounting),
-      SupplyInvoiceId: protocol.SupplyInvoiceId || invoice.Id,
-      SupplyOrderPaymentDeliveryProtocolKey: key,
-      SupplyOrderPaymentDeliveryProtocolKeyId: protocol.SupplyOrderPaymentDeliveryProtocolKeyId || key?.Id,
-      SupplyPaymentTask: task
-        ? {
-            ...stripEntityGraph(task),
-            GrossPrice: task.GrossPrice ?? value,
-            IsAccounting: protocol.IsAccounting ?? task.IsAccounting,
-            NetPrice: task.NetPrice ?? value,
-            User: user,
-            UserId: task.UserId || user?.Id,
-          }
-        : null,
-      SupplyPaymentTaskId: protocol.SupplyPaymentTaskId || task?.Id,
-      User: protocol.User || user,
-      UserId: protocol.UserId || user?.Id,
-      Value: value,
-    }
-  })
 }
 
 function sanitizeInformationDeliveryProtocols(invoice: SupplyInvoice): SupplyInformationDeliveryProtocol[] {

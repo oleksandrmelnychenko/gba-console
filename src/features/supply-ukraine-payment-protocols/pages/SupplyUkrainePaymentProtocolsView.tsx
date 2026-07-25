@@ -16,6 +16,7 @@ import {
 } from '../api/paymentProtocolsApi'
 import { MergedServicesSection } from '../components/MergedServicesSection'
 import { PaymentDeliveryProtocolsSection } from '../components/PaymentDeliveryProtocolsSection'
+import { createUkrainePaymentMutationPayload } from '../paymentMutationPayload'
 import type {
   MergedService,
   NewPaymentProtocolFormValues,
@@ -158,12 +159,9 @@ export function SupplyUkrainePaymentProtocolsView() {
       rejectAction(t('Не задано замовлення'))
     }
 
-    const nextOrder: SupplyOrderUkraine = {
-      ...order,
-      MergedServices: (order.MergedServices || []).map((item) =>
-        isSameEntity(item, service) ? { ...item, Deleted: true } : item,
-      ),
-    }
+    const nextOrder = createUkrainePaymentMutationPayload(order, {
+      mergedServices: [{ ...service, Deleted: true }],
+    })
 
     await persistOrder(nextOrder)
   }
@@ -187,20 +185,12 @@ export function SupplyUkrainePaymentProtocolsView() {
       User: values.responsible,
     }
 
-    const nextOrder: SupplyOrderUkraine = {
-      ...order,
-      MergedServices: (order.MergedServices || []).map((item) => {
-        if (!isSameEntity(item, service)) {
-          return item
-        }
-
-        if (isAccounting) {
-          return { ...item, AccountingPaymentTask: paymentTask }
-        }
-
-        return { ...item, SupplyPaymentTask: paymentTask }
-      }),
-    }
+    const nextService = isAccounting
+      ? { ...service, AccountingPaymentTask: paymentTask }
+      : { ...service, SupplyPaymentTask: paymentTask }
+    const nextOrder = createUkrainePaymentMutationPayload(order, {
+      mergedServices: [nextService],
+    })
 
     await persistOrder(nextOrder)
   }
@@ -214,26 +204,19 @@ export function SupplyUkrainePaymentProtocolsView() {
       rejectAction(t('Не задано замовлення'))
     }
 
-    const nextOrder: SupplyOrderUkraine = {
-      ...order,
-      MergedServices: (order.MergedServices || []).map((item) => {
-        if (!isSameEntity(item, service)) {
-          return item
-        }
+    const nextService: MergedService = { ...service }
 
-        const next: MergedService = { ...item }
-
-        if (isSameEntity(item.SupplyPaymentTask, task)) {
-          next.SupplyPaymentTask = { ...item.SupplyPaymentTask, Deleted: true }
-        }
-
-        if (isSameEntity(item.AccountingPaymentTask, task)) {
-          next.AccountingPaymentTask = { ...item.AccountingPaymentTask, Deleted: true }
-        }
-
-        return next
-      }),
+    if (isSameEntity(service.SupplyPaymentTask, task)) {
+      nextService.SupplyPaymentTask = { ...service.SupplyPaymentTask, Deleted: true }
     }
+
+    if (isSameEntity(service.AccountingPaymentTask, task)) {
+      nextService.AccountingPaymentTask = { ...service.AccountingPaymentTask, Deleted: true }
+    }
+
+    const nextOrder = createUkrainePaymentMutationPayload(order, {
+      mergedServices: [nextService],
+    })
 
     await persistOrder(nextOrder)
   }
@@ -259,13 +242,9 @@ export function SupplyUkrainePaymentProtocolsView() {
       Value: Number(values.value) || 0,
     }
 
-    const nextOrder: SupplyOrderUkraine = {
-      ...order,
-      SupplyOrderUkrainePaymentDeliveryProtocols: [
-        ...(order.SupplyOrderUkrainePaymentDeliveryProtocols || []),
-        protocol,
-      ],
-    }
+    const nextOrder = createUkrainePaymentMutationPayload(order, {
+      paymentProtocols: [protocol],
+    })
 
     await persistOrder(nextOrder)
   }
@@ -279,12 +258,9 @@ export function SupplyUkrainePaymentProtocolsView() {
       rejectAction(t('Не задано замовлення'))
     }
 
-    const nextOrder: SupplyOrderUkraine = {
-      ...order,
-      SupplyOrderUkrainePaymentDeliveryProtocols: (order.SupplyOrderUkrainePaymentDeliveryProtocols || []).map((item) =>
-        isSameEntity(item, protocol) ? { ...item, Deleted: true } : item,
-      ),
-    }
+    const nextOrder = createUkrainePaymentMutationPayload(order, {
+      paymentProtocols: [{ ...protocol, Deleted: true }],
+    })
 
     await persistOrder(nextOrder)
   }

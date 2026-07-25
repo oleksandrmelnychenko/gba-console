@@ -20,8 +20,8 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { Banknote, CircleAlert, ExternalLink, FileUp, GitMerge, Info, Plus, RotateCcw, Save, Trash2, X } from 'lucide-react'
-import { type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useRef } from 'react'
+import { Banknote, CircleAlert, ExternalLink, FileUp, GitMerge, Info, Plus, Save, Trash2, X } from 'lucide-react'
+import { type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { formatLocalDate, formatLocalInputDateTime } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -35,6 +35,7 @@ import { getAccountingCashFlowDrilldownRoute } from '../../accounting-cash-flow/
 import type { AccountingCashFlowHeadItem } from '../../accounting-cash-flow/types'
 import { CashFlowGrid } from '../../../shared/ui/cash-flow-grid/CashFlowGrid'
 import type { CashFlowGridItem, CashFlowGridLeadColumn, CashFlowGridSummary } from '../../../shared/ui/cash-flow-grid/types'
+import { createAvailablePaymentOutcomeOperation } from '../models/availablePaymentOutcomeOperation'
 import {
   getAvailablePaymentSelectionError,
   validateAvailablePaymentSelection,
@@ -70,9 +71,9 @@ import {
   type AvailablePaymentColumn,
   type AvailablePaymentCurrencyRegister,
   type AvailablePaymentDocument,
-  type AvailablePaymentDocumentDeleteOverrides,
   type AvailablePaymentMovement,
   type AvailablePaymentOrderSummary,
+  type AvailablePaymentOutcomeRequest,
   type AvailablePaymentRegister,
   type AvailablePaymentTaskModel,
   type AvailablePaymentTaskRow,
@@ -82,7 +83,6 @@ import {
 } from '../types'
 
 type AvailablePaymentsDetailDrawerProps = {
-  documentDeleteOverridesByTaskId: AvailablePaymentDocumentDeleteOverrides
   filesByTaskId: Record<string, File[]>
   group: GroupedPaymentTask | null
   markedModels: AvailablePaymentTaskModel[]
@@ -95,7 +95,6 @@ type AvailablePaymentsDetailDrawerProps = {
   onChanged: () => void
   onClearMarked: () => void
   onClose: () => void
-  onDocumentDeletedChange: (taskId: string, documentKey: string, deleted: boolean, originalDeleted: boolean) => void
   onFilesChanged: (taskId: string, files: File[]) => void
   onTaskUpdated: (taskId: string, task: SupplyPaymentTask) => void
   onToggleMarked: (model: AvailablePaymentTaskModel) => void
@@ -143,7 +142,6 @@ type AvailablePaymentCashFlowGridItem = CashFlowGridItem & {
 type DataRecord = Record<string, unknown>
 
 const SEARCH_DEBOUNCE_MS = 300
-const EMPTY_DOCUMENT_DELETE_OVERRIDES: Record<string, boolean> = {}
 
 const dateFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short' })
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short', timeStyle: 'short' })
@@ -155,7 +153,6 @@ export function AvailablePaymentsDetailDrawer(props: AvailablePaymentsDetailDraw
 }
 
 function useAvailablePaymentsDetailDrawerModel({
-  documentDeleteOverridesByTaskId,
   filesByTaskId,
   group,
   markedModels,
@@ -165,7 +162,6 @@ function useAvailablePaymentsDetailDrawerModel({
   onChanged,
   onClearMarked,
   onClose,
-  onDocumentDeletedChange,
   onFilesChanged,
   onTaskUpdated,
   onToggleMarked,
@@ -191,6 +187,7 @@ function useAvailablePaymentsDetailDrawerModel({
   const handledOutcomeRequestKeyRef = useRef<number | null>(null)
   const movementSearchRequestRef = useRef(0)
   const movementSearchTimeoutRef = useRef<number | null>(null)
+  const [outcomeOperation] = useState(createAvailablePaymentOutcomeOperation)
 
   useEffect(() => {
     if (outcomeModels.length === 0) {
@@ -399,7 +396,13 @@ function useAvailablePaymentsDetailDrawerModel({
     }
   }, [])
 
-  function closeOutcomeForm() {
+  function closeOutcomeForm(): boolean {
+    if (outcomeOperation.hasPending()) {
+      setError(t('Неможливо закрити форму, доки результат попередньої спроби невідомий. Повторіть без змін.'))
+      setConfirmCloseOutcomeOpen(false)
+      return false
+    }
+
     resetMovementSearchState()
     setOutcomeModels([])
     setOutcomeRequiresDocuments(true)
@@ -408,10 +411,17 @@ function useAvailablePaymentsDetailDrawerModel({
     setRegisters([])
     setLoadingDictionaries(false)
     setConfirmCloseOutcomeOpen(false)
+
+    return true
   }
 
   function requestDrawerClose() {
     if (isSaving) {
+      return
+    }
+
+    if (outcomeOperation.hasPending()) {
+      setError(t('Неможливо закрити форму, доки результат попередньої спроби невідомий. Повторіть без змін.'))
       return
     }
 
@@ -429,7 +439,10 @@ function useAvailablePaymentsDetailDrawerModel({
       return
     }
 
-    closeOutcomeForm()
+    if (!closeOutcomeForm()) {
+      return
+    }
+
     setSelectedCashFlowItem(null)
     onClose()
   }
@@ -467,11 +480,10 @@ function useAvailablePaymentsDetailDrawerModel({
     const taskWithDocuments = buildTaskWithDocumentChanges(
       model,
       filesByTaskId[model.id] || [],
-      documentDeleteOverridesByTaskId[model.id],
     )
 
     return countActiveDocuments(taskWithDocuments.SupplyPaymentTaskDocuments)
-  }, [documentDeleteOverridesByTaskId, filesByTaskId])
+  }, [filesByTaskId])
 
   async function handleCreateMovement() {
     if (isSaving) {
@@ -651,7 +663,6 @@ function useAvailablePaymentsDetailDrawerModel({
     const taskWithDocuments = buildTaskWithDocumentChanges(
       model,
       localFiles,
-      documentDeleteOverridesByTaskId[model.id],
     )
 
     if (countActiveDocuments(taskWithDocuments.SupplyPaymentTaskDocuments) === 0) {
@@ -783,35 +794,45 @@ function useAvailablePaymentsDetailDrawerModel({
       task: buildTaskWithDocumentChanges(
         model,
         filesByTaskId[model.id] || [],
-        documentDeleteOverridesByTaskId[model.id],
       ),
     }))
+    const request: AvailablePaymentOutcomeRequest = {
+      amount: form.amount,
+      comment: form.comment.trim(),
+      customNumber: form.customNumber.trim(),
+      documents,
+      exchangeRate: form.exchangeRate,
+      fromDate: toIsoDateTime(form.date, form.time),
+      isAccounting: form.isAccounting,
+      isManagementAccounting: form.isManagementAccounting,
+      models: modelsWithDocuments,
+      organization: selectedOrganization as AvailablePaymentsOrganization,
+      paymentPurpose: form.paymentPurpose.trim(),
+      selectedCurrencyRegister: selectedCurrencyRegister as AvailablePaymentCurrencyRegister,
+      selectedMovement: selectedMovement as AvailablePaymentMovement,
+      selectedRegister: selectedRegister as AvailablePaymentRegister,
+    }
+    let operationId: string
+
+    try {
+      operationId = outcomeOperation.getOrCreate(request)
+    } catch {
+      setError(t('Попередня спроба має невизначений результат. Повторіть її без змін.'))
+      return
+    }
 
     setSaving(true)
     setError(null)
 
     try {
-      await createAvailablePaymentOutcome({
-        amount: form.amount,
-        comment: form.comment.trim(),
-        customNumber: form.customNumber.trim(),
-        documents,
-        exchangeRate: form.exchangeRate,
-        fromDate: toIsoDateTime(form.date, form.time),
-        isAccounting: form.isAccounting,
-        isManagementAccounting: form.isManagementAccounting,
-        models: modelsWithDocuments,
-        organization: selectedOrganization as AvailablePaymentsOrganization,
-        paymentPurpose: form.paymentPurpose.trim(),
-        selectedCurrencyRegister: selectedCurrencyRegister as AvailablePaymentCurrencyRegister,
-        selectedMovement: selectedMovement as AvailablePaymentMovement,
-        selectedRegister: selectedRegister as AvailablePaymentRegister,
-      })
+      await createAvailablePaymentOutcome(request, { operationId })
+      outcomeOperation.complete(operationId)
       notifications.show({ color: 'green', message: t('Видатковий ордер створено') })
       closeOutcomeForm()
       onClearMarked()
       onChanged()
     } catch (saveError) {
+      outcomeOperation.handleFailure(operationId, saveError)
       setError(saveError instanceof Error ? saveError.message : t('Не вдалося створити видатковий ордер'))
     } finally {
       setSaving(false)
@@ -831,7 +852,6 @@ function useAvailablePaymentsDetailDrawerModel({
     confirmCloseOutcomeOpen,
     error,
     expandedId,
-    documentDeleteOverridesByTaskId,
     filesByTaskId,
     filteredRegisters,
     form,
@@ -862,7 +882,6 @@ function useAvailablePaymentsDetailDrawerModel({
     handleRedirectToSource,
     handleToggleExpanded,
     onClearMarked,
-    onDocumentDeletedChange,
     onFilesChanged,
     onToggleMarked,
     openOutcomeForm,
@@ -884,7 +903,6 @@ function AvailablePaymentsDetailDrawerView({ model }: { model: AvailablePayments
     confirmCloseOutcomeOpen,
     error,
     expandedId,
-    documentDeleteOverridesByTaskId,
     filesByTaskId,
     filteredRegisters,
     form,
@@ -915,7 +933,6 @@ function AvailablePaymentsDetailDrawerView({ model }: { model: AvailablePayments
     handleRedirectToSource,
     handleToggleExpanded,
     onClearMarked,
-    onDocumentDeletedChange,
     onFilesChanged,
     onToggleMarked,
     openOutcomeForm,
@@ -969,7 +986,6 @@ function AvailablePaymentsDetailDrawerView({ model }: { model: AvailablePayments
               activeTabs={activeTabs}
               cashFlowFiltersByTaskId={cashFlowFiltersByTaskId}
               cashFlows={cashFlows}
-              documentDeleteOverridesByTaskId={documentDeleteOverridesByTaskId}
               expandedId={expandedId}
               filesByTaskId={filesByTaskId}
               isSaving={isSaving}
@@ -981,7 +997,6 @@ function AvailablePaymentsDetailDrawerView({ model }: { model: AvailablePayments
               onCashFlowRowClick={handleCashFlowRowClick}
               onClearMarked={onClearMarked}
               onCreateOutcome={openOutcomeForm}
-              onDocumentDeletedChange={onDocumentDeletedChange}
               onFilesChanged={onFilesChanged}
               onMergeMarked={handleMergeMarked}
               onMoveToDone={handleMoveToDone}
@@ -1047,7 +1062,6 @@ function AvailablePaymentTaskList({
   activeTabs,
   cashFlowFiltersByTaskId,
   cashFlows,
-  documentDeleteOverridesByTaskId,
   expandedId,
   filesByTaskId,
   isSaving,
@@ -1059,7 +1073,6 @@ function AvailablePaymentTaskList({
   onCashFlowRowClick,
   onClearMarked,
   onCreateOutcome,
-  onDocumentDeletedChange,
   onFilesChanged,
   onMergeMarked,
   onMoveToDone,
@@ -1070,7 +1083,6 @@ function AvailablePaymentTaskList({
   activeTabs: Record<string, TaskDetailTab>
   cashFlowFiltersByTaskId: Record<string, CashFlowFilters>
   cashFlows: Record<string, CashFlowState>
-  documentDeleteOverridesByTaskId: AvailablePaymentDocumentDeleteOverrides
   expandedId: string | null
   filesByTaskId: Record<string, File[]>
   isSaving: boolean
@@ -1082,7 +1094,6 @@ function AvailablePaymentTaskList({
   onCashFlowRowClick: (item: AccountingCashFlowHeadItem) => void
   onClearMarked: () => void
   onCreateOutcome: (models: AvailablePaymentTaskModel[], options?: OutcomeOpenOptions) => void
-  onDocumentDeletedChange: (taskId: string, documentKey: string, deleted: boolean, originalDeleted: boolean) => void
   onFilesChanged: (taskId: string, files: File[]) => void
   onMergeMarked: (models: AvailablePaymentTaskModel[]) => Promise<void>
   onMoveToDone: (model: AvailablePaymentTaskModel) => Promise<void>
@@ -1091,6 +1102,7 @@ function AvailablePaymentTaskList({
   onToggleMarked: (model: AvailablePaymentTaskModel) => void
 }) {
   const { t } = useI18n()
+  const markedTaskIdSet = new Set(markedTaskIds)
   const markedSelectionError = markedModels.length > 0 ? validateAvailablePaymentSelection(markedModels, t) : null
   const markedMergeError = markedModels.length > 0 ? validateAvailablePaymentMerge(markedModels, t) : null
 
@@ -1158,7 +1170,7 @@ function AvailablePaymentTaskList({
       {models.map((model) => {
         const activeTab = resolveTaskDetailTab(model, activeTabs[model.id])
         const tabs = getTaskDetailTabs(model)
-        const isMarked = markedTaskIds.includes(model.id)
+        const isMarked = markedTaskIdSet.has(model.id)
         const paymentSelectionError = isMarked ? null : getAvailablePaymentSelectionError(markedModels, model, t)
         const mergeSelectionError = isMarked ? null : getAvailablePaymentMergeError(markedModels, model, t)
         const selectionError = paymentSelectionError && mergeSelectionError
@@ -1255,14 +1267,10 @@ function AvailablePaymentTaskList({
                 )}
                 {activeTab === 'payment' && (
                   <PaymentTab
-                    documentDeleteOverrides={documentDeleteOverridesByTaskId[model.id] || {}}
                     files={filesByTaskId[model.id] || []}
                     isSaving={isSaving}
                     model={model}
                     onCreateOutcome={() => onCreateOutcome([model])}
-                    onDocumentDeletedChange={(documentKey, deleted, originalDeleted) =>
-                      onDocumentDeletedChange(model.id, documentKey, deleted, originalDeleted)
-                    }
                     onFilesChanged={(files) => onFilesChanged(model.id, files)}
                     onMoveToDone={() => void onMoveToDone(model)}
                   />
@@ -1868,21 +1876,17 @@ function stringOrUndefined(value: unknown): string | undefined {
 }
 
 function PaymentTab({
-  documentDeleteOverrides,
   files,
   isSaving,
   model,
   onCreateOutcome,
-  onDocumentDeletedChange,
   onFilesChanged,
   onMoveToDone,
 }: {
-  documentDeleteOverrides: Record<string, boolean>
   files: File[]
   isSaving: boolean
   model: AvailablePaymentTaskModel
   onCreateOutcome: () => void
-  onDocumentDeletedChange: (documentKey: string, deleted: boolean, originalDeleted: boolean) => void
   onFilesChanged: (files: File[]) => void
   onMoveToDone: () => void
 }) {
@@ -1937,9 +1941,6 @@ function PaymentTab({
       </Group>
       <DocumentsList
         documents={model.task.SupplyPaymentTaskDocuments || []}
-        documentDeleteOverrides={documentDeleteOverrides}
-        isSaving={isSaving}
-        onDocumentDeletedChange={onDocumentDeletedChange}
       />
       {files.length > 0 && (
         <>
@@ -2077,15 +2078,9 @@ function RedirectToSourceButton({
 }
 
 function DocumentsList({
-  documentDeleteOverrides = EMPTY_DOCUMENT_DELETE_OVERRIDES,
   documents,
-  isSaving,
-  onDocumentDeletedChange,
 }: {
-  documentDeleteOverrides?: Record<string, boolean>
   documents: AvailablePaymentDocument[]
-  isSaving?: boolean
-  onDocumentDeletedChange?: (documentKey: string, deleted: boolean, originalDeleted: boolean) => void
 }) {
   const { t } = useI18n()
 
@@ -2103,8 +2098,7 @@ function DocumentsList({
         const key = getDocumentKey(document, index)
         const label = document.FileName || document.Name || t('Документ')
         const url = getDocumentUrl(document)
-        const originalDeleted = Boolean(document.Deleted)
-        const isDeleted = documentDeleteOverrides[key] ?? originalDeleted
+        const isDeleted = Boolean(document.Deleted)
         const content = url && !isDeleted ? (
           <Anchor key={key} href={upgradeHttpToHttps(url)} rel="noreferrer" size="sm" target="_blank">
             {label}
@@ -2115,27 +2109,7 @@ function DocumentsList({
           </Text>
         )
 
-        if (!onDocumentDeletedChange) {
-          return content
-        }
-
-        return (
-          <Group key={key} gap="xs" justify="space-between" wrap="nowrap">
-            {content}
-            <Tooltip label={isDeleted ? t('Відновити') : t('Видалити')}>
-              <ActionIcon
-                aria-label={isDeleted ? t('Відновити') : t('Видалити')}
-                color={isDeleted ? 'green' : 'red'}
-                disabled={isSaving}
-                size="sm"
-                variant="subtle"
-                onClick={() => onDocumentDeletedChange(key, !isDeleted, originalDeleted)}
-              >
-                {isDeleted ? <RotateCcw size={16} /> : <Trash2 size={16} />}
-              </ActionIcon>
-            </Tooltip>
-          </Group>
-        )
+        return content
       })}
     </Stack>
   )
@@ -2179,37 +2153,17 @@ function getLocalFileKey(file: File): string {
 function buildTaskWithDocumentChanges(
   model: AvailablePaymentTaskModel,
   files: File[],
-  documentDeleteOverrides: Record<string, boolean> = {},
 ): SupplyPaymentTask {
   return {
     ...model.task,
     SupplyPaymentTaskDocuments: [
-      ...applyDocumentDeleteOverrides(model.task.SupplyPaymentTaskDocuments || [], documentDeleteOverrides),
+      ...(model.task.SupplyPaymentTaskDocuments || []),
       ...files.map((file) => ({
         ContentType: file.type,
         FileName: file.name,
       })),
     ],
   }
-}
-
-function applyDocumentDeleteOverrides(
-  documents: AvailablePaymentDocument[],
-  documentDeleteOverrides: Record<string, boolean>,
-): AvailablePaymentDocument[] {
-  return documents.map((document, index) => {
-    const key = getDocumentKey(document, index)
-    const deletedOverride = documentDeleteOverrides[key]
-
-    if (typeof deletedOverride === 'undefined') {
-      return document
-    }
-
-    return {
-      ...document,
-      Deleted: deletedOverride,
-    }
-  })
 }
 
 function uniqueOutcomeModels(models: AvailablePaymentTaskModel[]): AvailablePaymentTaskModel[] {

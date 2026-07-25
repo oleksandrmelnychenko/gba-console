@@ -39,6 +39,11 @@ import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { useAuth } from '../../auth/useAuth'
 import { ProductCardModal } from '../../products/components/ProductCardModal'
 import { EXCEL_FILE_ACCEPT, isExcelFile } from '../excelFiles'
+import {
+  createInvoiceMetadataPayload,
+  type InvoiceMetadataForm,
+} from '../invoiceMetadataPayload'
+import { sanitizeInvoicePaymentDeliveryProtocols } from '../invoicePaymentProtocolPayload'
 import { getInvoiceAmountBreakdown, getPackingListAmountBreakdown } from '../orderAmountBreakdown'
 import { createPackListMetadataSavePlan } from '../packListDocumentSavePlan'
 import {
@@ -71,7 +76,6 @@ import type {
   SupplyInvoice,
   SupplyInvoiceDeliveryDocument,
   SupplyInvoiceOrderItem,
-  SupplyOrderPaymentDeliveryProtocol,
   SupplyOrderPaymentDeliveryProtocolKey,
   SupplyOrderDocumentParseConfiguration,
   SupplyOrderInvoiceTotals,
@@ -126,14 +130,6 @@ type PackListEditorState = {
 }
 type InvoiceEditorState = {
   invoice: SupplyInvoice
-}
-type InvoiceMetadataForm = {
-  dateFrom: string
-  deliveryAmount: NumberFieldValue
-  discountAmount: NumberFieldValue
-  documents: SupplyInvoiceDeliveryDocument[]
-  files: File[]
-  number: string
 }
 type PackListMetadataForm = {
   comment: string
@@ -1897,7 +1893,7 @@ function PackListDocumentsList({
   return (
     <Stack gap="xs">
       {documents.map((document, index) => (
-        <Group key={document.NetUid || document.Id || `${document.FileName}-${index}`} justify="space-between" wrap="nowrap">
+        <Group key={document.NetUid || document.Id} justify="space-between" wrap="nowrap">
           <Stack gap={0}>
             {getDocumentUrl(document) && !document.Deleted ? (
               <Anchor c="dark.6" href={upgradeHttpToHttps(getDocumentUrl(document))} rel="noreferrer" size="sm" target="_blank" underline="always">
@@ -2385,65 +2381,17 @@ function createInvoiceMetadataForm(invoice: SupplyInvoice): InvoiceMetadataForm 
   }
 }
 
-function createInvoiceMetadataPayload(invoice: SupplyInvoice, form: InvoiceMetadataForm): SupplyInvoice {
-  return {
-    ...stripEntityGraph(invoice),
-    DateFrom: normalizeDateTimeInput(form.dateFrom),
-    DeliveryAmount: toAmountNumber(form.deliveryAmount),
-    DiscountAmount: toAmountNumber(form.discountAmount),
-    InformationDeliveryProtocols: invoice.InformationDeliveryProtocols || [],
-    InvoiceDocuments: form.documents,
-    Number: form.number.trim(),
-    PackingLists: invoice.PackingLists || [],
-    PaymentDeliveryProtocols: invoice.PaymentDeliveryProtocols || [],
-    SupplyInvoiceDeliveryDocuments: invoice.SupplyInvoiceDeliveryDocuments || [],
-    SupplyInvoiceOrderItems: invoice.SupplyInvoiceOrderItems || [],
-    SupplyOrder: null,
-  }
-}
-
 function createInvoiceProtocolsPayload(invoice: SupplyInvoice): SupplyInvoice {
   return {
     ...stripEntityGraph(invoice),
     InformationDeliveryProtocols: sanitizeInformationDeliveryProtocols(invoice),
     InvoiceDocuments: invoice.InvoiceDocuments || [],
     PackingLists: invoice.PackingLists || [],
-    PaymentDeliveryProtocols: sanitizePaymentDeliveryProtocols(invoice),
+    PaymentDeliveryProtocols: sanitizeInvoicePaymentDeliveryProtocols(invoice),
     SupplyInvoiceDeliveryDocuments: invoice.SupplyInvoiceDeliveryDocuments || [],
     SupplyInvoiceOrderItems: invoice.SupplyInvoiceOrderItems || [],
     SupplyOrder: null,
   }
-}
-
-function sanitizePaymentDeliveryProtocols(invoice: SupplyInvoice): SupplyOrderPaymentDeliveryProtocol[] {
-  return (invoice.PaymentDeliveryProtocols || []).map((protocol) => {
-    const key = protocol.SupplyOrderPaymentDeliveryProtocolKey || null
-    const task = protocol.SupplyPaymentTask || null
-    const user = task?.User || protocol.User || null
-    const value = protocol.Value || 0
-
-    return {
-      ...stripEntityGraph(protocol),
-      IsAccounting: Boolean(protocol.IsAccounting),
-      SupplyInvoiceId: protocol.SupplyInvoiceId || invoice.Id,
-      SupplyOrderPaymentDeliveryProtocolKey: key,
-      SupplyOrderPaymentDeliveryProtocolKeyId: protocol.SupplyOrderPaymentDeliveryProtocolKeyId || key?.Id,
-      SupplyPaymentTask: task
-        ? {
-            ...stripEntityGraph(task),
-            GrossPrice: task.GrossPrice ?? value,
-            IsAccounting: protocol.IsAccounting ?? task.IsAccounting,
-            NetPrice: task.NetPrice ?? value,
-            User: user,
-            UserId: task.UserId || user?.Id,
-          }
-        : null,
-      SupplyPaymentTaskId: protocol.SupplyPaymentTaskId || task?.Id,
-      User: protocol.User || user,
-      UserId: protocol.UserId || user?.Id,
-      Value: value,
-    }
-  })
 }
 
 function sanitizeInformationDeliveryProtocols(invoice: SupplyInvoice): SupplyInformationDeliveryProtocol[] {

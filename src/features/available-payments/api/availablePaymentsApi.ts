@@ -1,4 +1,8 @@
 import { apiRequest } from '../../../shared/api/apiClient'
+import {
+  getAccountingMutationHeaders,
+  type AccountingMutationOperationOptions,
+} from '../../../shared/api/accountingMutationOperation'
 import type {
   AvailablePaymentAccountingCashFlow,
   AvailablePaymentCurrencyRegister,
@@ -95,6 +99,8 @@ export async function getAvailablePaymentAccountingCashFlow(params: {
 }
 
 const GOV_EXCHANGE_RATE_ORGANIZATION_NAME = 'ТОВ «АМГ «КОНКОРД»'
+const GUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
 
 export async function getAvailablePaymentExchangeRate(params: {
   fromCurrencyNetId: string
@@ -155,7 +161,7 @@ export async function setAvailablePaymentTaskToActive(
   documents: File[],
 ): Promise<SupplyPaymentTask | null> {
   const formData = new FormData()
-  formData.append('task', JSON.stringify(task))
+  formData.append('task', JSON.stringify(toPersistedPaymentTaskPayload(task)))
   documents.forEach((document) => formData.append('documents', document))
 
   const result = await apiRequest<unknown>('/payments/tasks/available/set', {
@@ -168,7 +174,7 @@ export async function setAvailablePaymentTaskToActive(
 
 export async function mergeAvailablePaymentTasks(tasks: SupplyPaymentTask[]): Promise<SupplyPaymentTask | null> {
   const result = await apiRequest<unknown>('/payments/tasks/merge', {
-    body: tasks,
+    body: tasks.map(toPersistedPaymentTaskIdentity),
     method: 'POST',
   })
 
@@ -190,7 +196,9 @@ export async function createAvailablePaymentOutcome({
   selectedCurrencyRegister,
   selectedMovement,
   selectedRegister,
-}: AvailablePaymentOutcomeRequest): Promise<unknown> {
+}: AvailablePaymentOutcomeRequest, operation: AccountingMutationOperationOptions & {
+  operationId: string
+}): Promise<unknown> {
   const firstModel = models[0]
 
   if (!firstModel) {
@@ -211,7 +219,7 @@ export async function createAvailablePaymentOutcome({
       IsUnderReport: false,
       Organization: organization,
       OutcomePaymentOrderSupplyPaymentTasks: models.map((model) => ({
-        SupplyPaymentTask: model.task,
+        SupplyPaymentTask: toPersistedPaymentTaskPayload(model.task),
       })),
       PaymentCurrencyRegister: selectedCurrencyRegister,
       PaymentMovementOperation: {
@@ -224,12 +232,43 @@ export async function createAvailablePaymentOutcome({
   )
   documents.forEach((document) => formData.append('documents', document))
 
-  // Multipart accounting mutations remain outside the ledger until the server
-  // stages files and fingerprints their contents, not only their metadata.
   return apiRequest<unknown>('/payments/orders/outcome/new/supplies', {
     body: formData,
+    dedupe: false,
+    headers: getAccountingMutationHeaders(operation.operationId),
     method: 'POST',
   })
+}
+
+function toPersistedPaymentTaskIdentity(task: SupplyPaymentTask): SupplyPaymentTask {
+  const id = task.Id
+  const netUid = typeof task.NetUid === 'string' ? task.NetUid.trim() : ''
+
+  if (
+    !Number.isInteger(id) ||
+    Number(id) <= 0 ||
+    !GUID_PATTERN.test(netUid) ||
+    netUid.toLowerCase() === EMPTY_GUID ||
+    task.Deleted
+  ) {
+    throw new Error('Persisted payment task requires a valid Id and NetUid')
+  }
+
+  return {
+    Id: id,
+    NetUid: netUid,
+  }
+}
+
+function toPersistedPaymentTaskPayload(task: SupplyPaymentTask): SupplyPaymentTask {
+  const identity = toPersistedPaymentTaskIdentity(task)
+
+  return {
+    ...task,
+    ...identity,
+    SupplyPaymentTaskDocuments: (task.SupplyPaymentTaskDocuments || [])
+      .filter((document) => !document.Deleted),
+  }
 }
 
 function normalizeGroupedPaymentTaskWithTotals(result: unknown): GroupedPaymentTaskWithTotals {

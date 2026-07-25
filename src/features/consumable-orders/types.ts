@@ -165,6 +165,7 @@ export type ConsumablesOrder = EntityFields & {
   OrganizationNumber?: string
   OutcomePaymentOrderConsumablesOrders?: OutcomePaymentOrderConsumablesOrder[]
   SupplyPaymentTask?: SupplyPaymentTask | null
+  SupplyPaymentTaskId?: number | null
   SupplyOrganizationAgreement?: SupplyOrganizationAgreement | null
   TotalAmount?: number
   TotalAmountWithoutVAT?: number

@@ -3,6 +3,7 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import { StrictMode } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
+import { createInvoiceMetadataPayload } from '../invoiceMetadataPayload'
 import { createPackListMetadataSavePlan } from '../packListDocumentSavePlan'
 import { PackListMetadataModalBody } from './SupplyUkraineDirectOrderInvoicesPage'
 
@@ -80,5 +81,35 @@ describe('PackListMetadataModalBody', () => {
     expect(plan.pendingDocuments).toEqual([
       expect.objectContaining({ FileName: 'new.pdf', NetUid: pendingNetUid }),
     ])
+  })
+
+  it('keeps payment tasks out of an invoice metadata-only mutation', () => {
+    const payload = createInvoiceMetadataPayload(
+      {
+        Id: 42,
+        NetUid: '62d98a8e-fb19-4be7-a9ce-2fcb4f57ba9a',
+        PaymentDeliveryProtocols: [
+          {
+            Id: 31,
+            NetUid: 'b996b20b-f960-4a6d-a76b-1f064c0a703e',
+            SupplyPaymentTaskId: 91,
+            SupplyPaymentTask: {
+              Id: 91,
+              IsAvailableForPayment: true,
+            },
+          },
+        ],
+      },
+      {
+        dateFrom: '2026-07-25T12:00',
+        deliveryAmount: 0,
+        discountAmount: 0,
+        documents: [],
+        files: [],
+        number: 'INV-42',
+      },
+    )
+
+    expect(payload.PaymentDeliveryProtocols).toEqual([])
   })
 })

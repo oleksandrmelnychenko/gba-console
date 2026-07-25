@@ -37,8 +37,6 @@ export type AvailablePaymentDocument = EntityFields & {
   url?: string
 }
 
-export type AvailablePaymentDocumentDeleteOverrides = Record<string, Record<string, boolean>>
-
 export type AvailablePaymentRegister = EntityFields & {
   IsMain?: boolean
   Name?: string

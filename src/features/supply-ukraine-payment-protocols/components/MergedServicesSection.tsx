@@ -7,9 +7,9 @@ import type {
   MergedService,
   NewMergedServiceFormValues,
   ProtocolUser,
-  SupplyInformationTask,
   SupplyPaymentTask,
 } from '../types'
+import { buildUkraineMergedServiceFromForm } from '../buildUkraineMergedService'
 import { MergedServiceCard } from './MergedServiceCard'
 import { NewMergedServiceForm } from './NewMergedServiceForm'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -25,62 +25,6 @@ export type MergedServicePermissions = {
   canCreateService: boolean
   canRemovePaymentTask: boolean
   canRemoveService: boolean
-}
-
-function buildServiceFromForm(values: NewMergedServiceFormValues): MergedService {
-  const service: MergedService = {
-    AccountingGrossPrice: Number(values.grossPriceAccounting) || 0,
-    AccountingVatPercent: Number(values.percentAccounting) || 0,
-    ConsumableProduct: values.consumableProduct,
-    FromDate: values.fromDate ? values.fromDate.toISOString() : undefined,
-    GrossPrice: Number(values.grossPrice) || 0,
-    IsIncludeAccountingValue: values.isIncludeAccountingValue,
-    Name: values.name,
-    Number: values.invoiceNumber,
-    SupplyOrganization: values.supplyOrganization,
-    SupplyOrganizationAgreement: values.agreement,
-    VatPercent: Number(values.percent) || 0,
-  }
-
-  if (values.exchangeRate && Number(values.exchangeRate) > 0) {
-    service.ExchangeRate = Number(values.exchangeRate)
-  }
-
-  if (values.accountingExchangeRate && Number(values.accountingExchangeRate) > 0) {
-    service.AccountingExchangeRate = Number(values.accountingExchangeRate)
-  }
-
-  if (values.isSupplyInformationTask) {
-    const informationTask: SupplyInformationTask = {
-      Comment: values.supplyInformationTaskComment,
-      GrossPrice: Number(values.supplyInformationTaskGrossPrice) || 0,
-    }
-    service.SupplyInformationTask = informationTask
-  }
-
-  if (Number(values.grossPrice) > 0) {
-    service.ActProvidingService = {}
-  }
-
-  if (Number(values.grossPriceAccounting) > 0) {
-    service.AccountingActProvidingService = {}
-  }
-
-  const paymentTask: SupplyPaymentTask = {
-    Comment: values.comment,
-    PayToDate: values.payToDate ? values.payToDate.toISOString() : undefined,
-    User: values.responsibleForPayment,
-  }
-
-  if (Number(values.grossPrice) > 0) {
-    service.SupplyPaymentTask = paymentTask
-  }
-
-  if (Number(values.grossPriceAccounting) > 0) {
-    service.AccountingPaymentTask = paymentTask
-  }
-
-  return service
 }
 
 export function MergedServicesSection({
@@ -110,7 +54,7 @@ export function MergedServicesSection({
 
   async function handleNewSubmit(values: NewMergedServiceFormValues) {
     try {
-      await onCreateService(buildServiceFromForm(values), values.files)
+      await onCreateService(buildUkraineMergedServiceFromForm(values), values.files)
       setNewOpen(false)
     } catch {
       // Parent renders the action error; keep the drawer open so the user does not lose form context.
@@ -149,9 +93,9 @@ export function MergedServicesSection({
         </Text>
       ) : (
         <Stack gap="md">
-          {visibleServices.map((service, index) => (
+          {visibleServices.map((service) => (
             <MergedServiceCard
-              key={service.NetUid || index}
+              key={service.NetUid || service.Id}
               isSaving={isSaving}
               permissions={permissions}
               service={service}

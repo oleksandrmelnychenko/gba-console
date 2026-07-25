@@ -3,7 +3,13 @@ import type { ConsumablesOrder } from './types'
 const GUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 export function sanitizeConsumableOrderPayload(order: ConsumablesOrder): ConsumablesOrder {
-  return stripInvalidNetUids(order) as ConsumablesOrder
+  const sanitized = stripInvalidNetUids(order) as ConsumablesOrder
+
+  if (!Number.isInteger(order.Id) || Number(order.Id) <= 0) {
+    delete sanitized.SupplyPaymentTaskId
+  }
+
+  return sanitized
 }
 
 function stripInvalidNetUids(value: unknown): unknown {

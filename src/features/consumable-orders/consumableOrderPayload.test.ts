@@ -46,4 +46,40 @@ describe('consumable order payload', () => {
     expect(payload.ConsumablesOrderItems?.[1]?.PaymentCostMovementOperation).not.toHaveProperty('NetUid')
     expect(payload.ConsumablesOrderItems?.[1]?.PaymentCostMovementOperation?.PaymentCostMovement).not.toHaveProperty('NetUid')
   })
+
+  it('does not attach an existing payment-task scalar to a new consumables order', () => {
+    const order: ConsumablesOrder = {
+      SupplyPaymentTaskId: 91,
+      SupplyPaymentTask: {
+        Comment: 'Нова задача',
+      },
+    }
+
+    const payload = sanitizeConsumableOrderPayload(order)
+
+    expect(payload).not.toHaveProperty('SupplyPaymentTaskId')
+    expect(payload.SupplyPaymentTask).toEqual({
+      Comment: 'Нова задача',
+    })
+  })
+
+  it('preserves the canonical payment-task scalar for a persisted consumables order', () => {
+    const order: ConsumablesOrder = {
+      Id: 12,
+      NetUid: '2d11197c-d74e-4d15-b87a-4074750d79c9',
+      SupplyPaymentTaskId: 91,
+      SupplyPaymentTask: {
+        Id: 91,
+        NetUid: '716a634b-94e8-4f0e-a79e-91ddf403037d',
+      },
+    }
+
+    const payload = sanitizeConsumableOrderPayload(order)
+
+    expect(payload.SupplyPaymentTaskId).toBe(91)
+    expect(payload.SupplyPaymentTask).toMatchObject({
+      Id: 91,
+      NetUid: '716a634b-94e8-4f0e-a79e-91ddf403037d',
+    })
+  })
 })
