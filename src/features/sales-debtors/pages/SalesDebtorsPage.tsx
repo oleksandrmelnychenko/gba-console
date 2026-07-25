@@ -47,7 +47,7 @@ const SALES_DEBTORS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['client'],
   },
-  density: 'compact',
+  density: 'normal',
 } satisfies DataTableDefaultLayout
 
 const moneyFormatter = new Intl.NumberFormat('uk-UA', {
