@@ -754,6 +754,7 @@ export function BuyerCockpitTab() {
         ),
         width: 120,
         align: 'center',
+        rowActions: true,
         enableSorting: false,
       },
     ],
