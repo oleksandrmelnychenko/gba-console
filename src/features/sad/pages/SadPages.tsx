@@ -89,7 +89,7 @@ const SAD_LIST_TABLE_DEFAULT_LAYOUT = {
     left: ['fromDate', 'number'],
     right: ['actions'],
   },
-  density: 'compact',
+  density: 'normal',
 } satisfies DataTableDefaultLayout
 
 const SAD_LIST_TABLE_CELL_STYLE = {
