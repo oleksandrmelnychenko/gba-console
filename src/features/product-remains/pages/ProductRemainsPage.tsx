@@ -836,6 +836,7 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
                 columns={batchColumns}
                 data={batchRows}
                 defaultLayout={BATCHES_TABLE_DEFAULT_LAYOUT}
+                fillAvailableWidth
                 emptyText={t('Залишків за партіями не знайдено')}
                 getRowId={getBatchRowId}
                 isLoading={isLoadingBatches}
@@ -858,6 +859,7 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
                 columns={productColumns}
                 data={productRows}
                 defaultLayout={PRODUCTS_TABLE_DEFAULT_LAYOUT}
+                fillAvailableWidth
                 emptyText={t('Залишків за товарами не знайдено')}
                 getRowId={getProductRowId}
                 isLoading={isLoadingProducts}
@@ -1007,6 +1009,7 @@ function useProductRemainBatchColumns() {
       header: 'Постачальник',
       width: 260,
       minWidth: 190,
+      fill: true,
       accessor: (batch) => batch.SupplierName,
       cell: (batch) => (
         <Text fw={600} lineClamp={1}>
@@ -1098,6 +1101,7 @@ function useProductRemainProductColumns(onOpenMovement: (row: RemainingConsignme
       header: 'Товар',
       width: 320,
       minWidth: 240,
+      fill: true,
       accessor: (row) => getProductName(row.Product),
       cell: (row) => (
         <Text fw={600} lineClamp={1}>
