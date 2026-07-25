@@ -550,15 +550,6 @@
   padding: 8px 24px 22px;
 }
 
-.supply-orders-official-costs-title {
-  color: var(--mantine-color-gray-9);
-  font-family: var(--font-mono);
-  font-size: 18px;
-  font-weight: 500;
-  letter-spacing: 0;
-  line-height: 1.2;
-}
-
 .supply-orders-official-costs-card.mantine-Card-root {
   border-color: var(--mantine-color-gray-2);
   box-shadow: none;
