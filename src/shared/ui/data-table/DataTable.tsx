@@ -79,7 +79,7 @@ export function DataTable<TData>({
   getRowId,
   isLoading = false,
   minWidth = 960,
-  fillAvailableWidth = false,
+  fillAvailableWidth = true,
   distributeAvailableWidth = false,
   height,
   maxHeight,

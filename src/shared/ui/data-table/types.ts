@@ -69,7 +69,7 @@ export type DataTableProps<TData> = {
   getRowId?: (row: TData, index: number) => string
   isLoading?: boolean
   minWidth?: number
-  /** When true, one column stretches to fill the viewport. Defaults to false so configured column widths stay stable. */
+  /** When true, one content column stretches to fill the viewport. Defaults to true; pass false for an intentional fixed-width table. */
   fillAvailableWidth?: boolean
   /** Spreads the extra viewport width across regular columns instead of growing a single fill column. */
   distributeAvailableWidth?: boolean
