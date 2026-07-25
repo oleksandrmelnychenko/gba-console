@@ -1,5 +1,4 @@
 import { type CSSProperties, type ReactNode, useMemo } from 'react'
-import { Loader } from '@mantine/core'
 import { useI18n } from '../../i18n/useI18n'
 import type { TranslateFunction } from '../../i18n/types'
 import type {
@@ -68,8 +67,31 @@ export function CashFlowGrid<TItem extends CashFlowGridItem>({
 
       <div className="cfg-scroll" style={{ maxHeight }}>
         {isLoading ? (
-          <div className="cfg-state">
-            <Loader size="sm" /> {loadingText}
+          <div aria-busy="true" aria-label={typeof loadingText === 'string' ? loadingText : undefined}>
+            {Array.from({ length: 8 }, (_, rowIndex) => (
+              <div className="cfg-row cfg-skeleton-row" key={rowIndex}>
+                {leadColumns.map((column, columnIndex) => (
+                  <div
+                    key={column.id}
+                    className={leadCellClassName(column)}
+                    style={leadCellStyle(column, columnWidth)}
+                  >
+                    <span
+                      className="cfg-skeleton-line"
+                      style={{ width: `${52 + ((rowIndex + columnIndex) % 4) * 10}%` }}
+                    />
+                  </div>
+                ))}
+                {Array.from({ length: 3 }, (_, columnIndex) => (
+                  <div className="cfg-cell cfg-align-right" key={columnIndex} style={valueColumnStyle}>
+                    <span
+                      className="cfg-skeleton-line"
+                      style={{ width: `${48 + ((rowIndex + columnIndex) % 3) * 14}%` }}
+                    />
+                  </div>
+                ))}
+              </div>
+            ))}
           </div>
         ) : items.length === 0 ? (
           <div className="cfg-state">{emptyText}</div>

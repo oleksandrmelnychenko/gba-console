@@ -175,6 +175,45 @@
   font-size: 12px;
 }
 
+.cfg-skeleton-row {
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+}
+
+.cfg-skeleton-row:nth-child(even) {
+  background: var(--mantine-color-gray-0);
+}
+
+.cfg-skeleton-line {
+  display: block;
+  height: 10px;
+  max-width: 100%;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    var(--mantine-color-gray-2) 25%,
+    var(--mantine-color-gray-0) 50%,
+    var(--mantine-color-gray-2) 75%
+  );
+  background-size: 200% 100%;
+  animation: cfg-shimmer 1.35s ease-in-out infinite;
+}
+
+@keyframes cfg-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cfg-skeleton-line {
+    animation: none;
+  }
+}
+
 /* ── Fill-the-screen layout for «Рух коштів» pages ────────────────────────
    The page fills the frame and the ledger grid takes the remaining height
    (no fixed maxHeight), so far more rows are visible. Shared by the accounting
