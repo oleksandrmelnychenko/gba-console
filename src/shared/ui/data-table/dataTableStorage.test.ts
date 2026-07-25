@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { readCompatibleDataTableLayout, readDataTableLayout } from './dataTableStorage'
+import {
+  createDefaultDataTableLayout,
+  readCompatibleDataTableLayout,
+  readDataTableLayout,
+  writeDataTableLayout,
+} from './dataTableStorage'
 
 const TABLE_ID = 'density-migration-test'
 const LAYOUT_KEY = `gba-data-table:${TABLE_ID}:layout`
@@ -11,10 +16,15 @@ describe('readDataTableLayout density compatibility', () => {
     window.localStorage.removeItem(LEGACY_DENSITY_KEY)
   })
 
-  it('uses the legacy standalone density when layout has none', () => {
+  it('drops the legacy compact density during the standard-default migration', () => {
     window.localStorage.setItem(LEGACY_DENSITY_KEY, 'compact')
 
-    expect(readDataTableLayout(TABLE_ID)).toMatchObject({ density: 'compact' })
+    expect(readDataTableLayout(TABLE_ID).density).toBeUndefined()
+    expect(window.localStorage.getItem(LEGACY_DENSITY_KEY)).toBeNull()
+  })
+
+  it('uses normal as the central table default', () => {
+    expect(createDefaultDataTableLayout(['name']).density).toBe('normal')
   })
 
   it('prefers density already stored in the table layout', () => {
@@ -24,7 +34,7 @@ describe('readDataTableLayout density compatibility', () => {
     expect(readDataTableLayout(TABLE_ID)).toMatchObject({ density: 'normal' })
   })
 
-  it('keeps density while resetting versioned column layout state', () => {
+  it('drops stale compact density while preserving versioned column layout state', () => {
     window.localStorage.setItem(
       LAYOUT_KEY,
       JSON.stringify({
@@ -34,12 +44,15 @@ describe('readDataTableLayout density compatibility', () => {
       }),
     )
 
-    expect(readCompatibleDataTableLayout(TABLE_ID, 'new-version')).toEqual({ density: 'compact' })
+    expect(readCompatibleDataTableLayout(TABLE_ID, 'new-version').density).toBeUndefined()
   })
 
-  it('keeps legacy density when the first internal layout is versioned', () => {
-    window.localStorage.setItem(LEGACY_DENSITY_KEY, 'compact')
+  it('keeps compact when the user selects it after the migration', () => {
+    writeDataTableLayout(TABLE_ID, { density: 'compact', version: 'current-version' })
 
-    expect(readCompatibleDataTableLayout(TABLE_ID, 'current-version')).toEqual({ density: 'compact' })
+    expect(readCompatibleDataTableLayout(TABLE_ID, 'current-version')).toMatchObject({
+      density: 'compact',
+      version: 'current-version',
+    })
   })
 })

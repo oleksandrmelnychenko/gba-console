@@ -8,6 +8,7 @@ import type { DataTableDensity, DataTableDefaultLayout } from './types'
 
 export type DataTableLayout = {
   version?: string
+  densityDefaultVersion?: number
   columnOrder?: ColumnOrderState
   columnVisibility?: VisibilityState
   columnPinning?: ColumnPinningState
@@ -16,6 +17,7 @@ export type DataTableLayout = {
 }
 
 const STORAGE_PREFIX = 'gba-data-table'
+const STANDARD_DENSITY_DEFAULT_VERSION = 1
 
 export type NormalizedDataTableLayout = {
   columnOrder: ColumnOrderState
@@ -40,7 +42,8 @@ export function readDataTableLayout(tableId: string): DataTableLayout {
 
   try {
     const value = window.localStorage.getItem(getDataTableStorageKey(tableId))
-    const layout = value ? (JSON.parse(value) as DataTableLayout) : {}
+    const storedLayout = value ? (JSON.parse(value) as DataTableLayout) : {}
+    const layout = migrateStandardDensityDefault(tableId, storedLayout)
 
     if (layout.density === 'compact' || layout.density === 'normal') {
       return layout
@@ -74,7 +77,13 @@ export function writeDataTableLayout(tableId: string, layout: DataTableLayout) {
     return
   }
 
-  window.localStorage.setItem(getDataTableStorageKey(tableId), JSON.stringify(layout))
+  window.localStorage.setItem(
+    getDataTableStorageKey(tableId),
+    JSON.stringify({
+      ...layout,
+      densityDefaultVersion: STANDARD_DENSITY_DEFAULT_VERSION,
+    }),
+  )
 }
 
 export function clearDataTableLayout(tableId: string) {
@@ -202,4 +211,36 @@ export function createDefaultDataTableLayout(
 
 function normalizeDensity(density?: DataTableDensity): DataTableDensity {
   return density === 'compact' ? 'compact' : 'normal'
+}
+
+function migrateStandardDensityDefault(
+  tableId: string,
+  layout: DataTableLayout,
+): DataTableLayout {
+  if (layout.densityDefaultVersion === STANDARD_DENSITY_DEFAULT_VERSION) {
+    return layout
+  }
+
+  const migratedLayout: DataTableLayout = {
+    ...layout,
+    densityDefaultVersion: STANDARD_DENSITY_DEFAULT_VERSION,
+  }
+
+  // Compact used to be the source default on a number of screens. It was
+  // persisted together with unrelated column preferences, so changing only
+  // defaultLayout could not switch existing browsers to the new standard
+  // density. Drop that stale value once while preserving the whole column
+  // layout. Any compact choice made after this migration is written with the
+  // version marker above and remains a real user preference.
+  if (migratedLayout.density === 'compact') {
+    delete migratedLayout.density
+  }
+
+  window.localStorage.removeItem(getLegacyDensityStorageKey(tableId))
+  window.localStorage.setItem(
+    getDataTableStorageKey(tableId),
+    JSON.stringify(migratedLayout),
+  )
+
+  return migratedLayout
 }
