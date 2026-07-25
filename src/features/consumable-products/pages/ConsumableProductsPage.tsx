@@ -373,6 +373,7 @@ export function ConsumableProductsPage() {
               <ConsumableCategoryPanel
                 key={getCategoryKey(selectedCategory)}
                 category={selectedCategory}
+                isLoading={isLoading}
                 tableToolbarSlot={tableToolbarSlot}
                 onDeleteCategory={() => setDeleteTarget({ category: selectedCategory, kind: 'category' })}
                 onEditCategory={() => setCategoryEditor({ category: selectedCategory, mode: 'edit' })}
@@ -431,12 +432,14 @@ export function ConsumableProductsPage() {
 
 function ConsumableCategoryPanel({
   category,
+  isLoading,
   onDeleteCategory,
   onEditCategory,
   onOpenProduct,
   tableToolbarSlot,
 }: {
   category: ConsumableProductCategory
+  isLoading: boolean
   onDeleteCategory: () => void
   onEditCategory: () => void
   onOpenProduct: (product: ConsumableProduct) => void
@@ -482,7 +485,9 @@ function ConsumableCategoryPanel({
           emptyText={t('Товарів у категорії немає')}
           getRowId={(product, index) => String(product.NetUid || product.Id || index)}
           height="100%"
+          isLoading={isLoading}
           layoutVersion="consumable-products-category-products-4"
+          loadingText={t('Завантаження побутових товарів')}
           minWidth={800}
           showLayoutControls
           tableId={`consumable-products-${category.NetUid || category.Id || category.Name || 'category'}`}
