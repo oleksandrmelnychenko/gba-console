@@ -2360,7 +2360,22 @@ function SeoRosterTable<TData>({
       >
         <div className="seo-roster-body">
           {isLoading ? (
-            <div className="seo-roster-empty">{loadingText}</div>
+            <div aria-busy="true" aria-label={typeof loadingText === 'string' ? loadingText : undefined}>
+              {Array.from({ length: 8 }, (_, rowIndex) => (
+                <div className="seo-roster-row-frame" key={rowIndex}>
+                  <div className="seo-roster-row seo-roster-skeleton-row">
+                    {columns.map((column, columnIndex) => (
+                      <div className={`seo-roster-cell is-${column.id}`} key={column.id}>
+                        <span
+                          className="seo-roster-skeleton-line"
+                          style={{ width: `${48 + ((rowIndex + columnIndex) % 4) * 11}%` }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : data.length ? (
             data.map((row, index) => {
               const rowClassName = getRowClassName?.(row, index)
