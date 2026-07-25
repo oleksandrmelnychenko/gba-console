@@ -113,6 +113,7 @@ import './clientResources.css'
 const DEFAULT_STEP: ClientResourceStep = 'regions'
 const ClientResourcesPanelActionContext = createContext<ReactNode>(null)
 const ClientResourcesFilterPatternContext = createContext(false)
+const ClientResourcesLoadingContext = createContext(false)
 const ClientResourcesTableToolbarContext = createContext<{
   setTarget: (target: HTMLDivElement | null) => void
   target: HTMLDivElement | null
@@ -216,6 +217,7 @@ function ResourceDataTable<TData extends ClientResourceEntity>({
   tableId,
 }: ResourceDataTableProps<TData>) {
   const usesFilterPattern = useContext(ClientResourcesFilterPatternContext)
+  const isLoading = useContext(ClientResourcesLoadingContext)
   const tableToolbar = useContext(ClientResourcesTableToolbarContext)
   const shouldFillHeight = fillHeight ?? usesFilterPattern
 
@@ -227,7 +229,9 @@ function ResourceDataTable<TData extends ClientResourceEntity>({
       emptyText={emptyText}
       getRowId={(row, index) => getEntityKey(row, index)}
       height={shouldFillHeight ? '100%' : undefined}
+      isLoading={isLoading}
       layoutVersion={layoutVersion}
+      loadingText={translate('Завантаження')}
       maxHeight={shouldFillHeight ? undefined : 'min(56vh, 620px)'}
       minWidth={minWidth}
       showLayoutControls={usesFilterPattern && showLayoutControls}
@@ -4673,6 +4677,14 @@ function Loadable<T>({
   const { t } = useI18n()
 
   if (state.isLoading) {
+    if (renderWhenEmpty) {
+      return (
+        <ClientResourcesLoadingContext.Provider value>
+          <Box className="client-resources-panel-body">{children}</Box>
+        </ClientResourcesLoadingContext.Provider>
+      )
+    }
+
     return (
       <Box className="client-resources-state">
         <Loader size="sm" />
