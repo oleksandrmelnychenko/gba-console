@@ -1945,7 +1945,22 @@ export function SadSpecificationsPage() {
   )
 
   if (isLoading) {
-    return <LoadingState label={t('Завантаження специфікацій')} />
+    return (
+      <Card withBorder p={0} radius="sm">
+        <DataTable
+          columns={columns}
+          data={[]}
+          defaultLayout={SAD_SPEC_TABLE_DEFAULT_LAYOUT}
+          density={density}
+          emptyText={t('Специфікацій немає')}
+          getRowId={(_item, index) => String(index)}
+          isLoading
+          loadingText={t('Завантаження специфікацій')}
+          minWidth={1420}
+          tableId="sad-specifications"
+        />
+      </Card>
+    )
   }
 
   if (error) {
