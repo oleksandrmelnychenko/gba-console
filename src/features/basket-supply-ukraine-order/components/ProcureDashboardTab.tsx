@@ -13,7 +13,6 @@ import {
   Tooltip,
 } from '@mantine/core'
 import {
-  ChartNoAxesCombined,
   CircleAlert,
   FilterX,
   RefreshCw,
@@ -32,6 +31,7 @@ import type { UrgencyLevel } from '../../../shared/ui/charts/chartTheme'
 import type { UrgencySliceInput } from '../../../shared/ui/charts/donutData'
 import type { ForecastPoint } from '../../../shared/ui/charts/forecastData'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { getSupplyOrderSuppliers } from '../../supply-ukraine-orders/api/supplyUkraineOrdersApi'
 import type { Client } from '../../supply-ukraine-orders/types'
 import { getProcurementCharts } from '../api/procurementApi'
@@ -275,23 +275,15 @@ export function ProcureDashboardTab() {
                     : qtyFormatter.format(forecastSummary.nextForecast)}
                 </strong>
               </div>
-              <Tooltip label={t('Відкрити графік')}>
-                <ActionIcon
-                  aria-label={`${t('Відкрити графік')}: ${
-                    series.product_name ||
-                    series.vendor_code ||
-                    series.product_id
-                  }`}
-                  size={32}
-                  variant="subtle"
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    setSelectedForecastProductId(series.product_id)
-                  }}
-                >
-                  <ChartNoAxesCombined size={17} />
-                </ActionIcon>
-              </Tooltip>
+              <TableRowAction
+                action="details"
+                label={`${t('Відкрити графік')}: ${
+                  series.product_name ||
+                  series.vendor_code ||
+                  series.product_id
+                }`}
+                onClick={() => setSelectedForecastProductId(series.product_id)}
+              />
             </div>
           )
         },
