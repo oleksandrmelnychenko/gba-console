@@ -811,7 +811,9 @@ function SupplyReturnDetail({
           defaultLayout={SUPPLY_RETURN_ITEMS_TABLE_DEFAULT_LAYOUT}
           emptyText={t('Позицій не знайдено')}
           getRowId={(item, index) => String(item.NetUid || item.Id || index)}
+          isLoading={isLoading}
           layoutVersion="supply-return-items-table-1"
+          loadingText={t('Завантаження деталей')}
           maxHeight="48vh"
           minWidth={760}
           tableId="supply-return-items"
