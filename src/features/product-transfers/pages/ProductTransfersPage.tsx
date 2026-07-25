@@ -1217,7 +1217,9 @@ function TransferDetail({
           defaultLayout={PRODUCT_TRANSFER_ITEMS_TABLE_DEFAULT_LAYOUT}
           emptyText={t('Позицій не знайдено')}
           getRowId={(item, index) => String(item.NetUid || item.Id || index)}
+          isLoading={isLoading}
           layoutVersion="product-transfer-items-table-2"
+          loadingText={t('Завантаження деталей')}
           maxHeight="48vh"
           minWidth={900}
           tableId="product-transfer-items"
