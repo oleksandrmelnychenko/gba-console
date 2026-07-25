@@ -1200,7 +1200,11 @@ function PaymentAccountActivityPanel({
             </Alert>
           )}
 
-          <Tabs value={activeTab} onChange={(value) => value && onActiveTabChange(value as PaymentAccountActivityTab)}>
+          <Tabs
+            className="app-drawer-tabs"
+            value={activeTab}
+            onChange={(value) => value && onActiveTabChange(value as PaymentAccountActivityTab)}
+          >
             <Tabs.List>
               <Tabs.Tab value="balances">{t('Залишки')}</Tabs.Tab>
               <Tabs.Tab value="transfers">{t('Перекази')}</Tabs.Tab>
