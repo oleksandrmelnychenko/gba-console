@@ -472,6 +472,7 @@ function useItemColumns({
         width: 80,
         minWidth: 72,
         align: 'center',
+        rowActions: true,
         enableSorting: false,
         cell: (item) =>
           item.HasDifference ? (
