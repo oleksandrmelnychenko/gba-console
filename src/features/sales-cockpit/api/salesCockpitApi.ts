@@ -5,6 +5,7 @@ import type {
   CockpitCountByUrgency,
   CockpitDashboard,
   CockpitDebtAging,
+  CockpitGenerationResult,
   CockpitInbox,
   CockpitInboxParams,
   CockpitNoteBody,
@@ -35,6 +36,13 @@ import type {
 
 const PACE_STATUSES: HeadPaceStatus[] = ['ahead', 'on', 'behind', 'no_target']
 const URGENCY_LEVELS: CockpitUrgency[] = ['critical', 'high', 'normal', 'low']
+
+export class SalesCockpitContractError extends Error {
+  constructor(path: string, reason: string) {
+    super(`Некоректна відповідь AI NBA (${path}): ${reason}`)
+    this.name = 'SalesCockpitContractError'
+  }
+}
 
 export async function getCockpitInbox(params: CockpitInboxParams = {}): Promise<CockpitInbox> {
   const result = await apiRequest<unknown>('/sales/cockpit/inbox', {
@@ -141,7 +149,7 @@ export async function getEscalated(limit?: number): Promise<EscalatedResponse> {
   return normalizeEscalated(result)
 }
 
-export async function regenerateCockpit(asOfDate?: string): Promise<Record<string, unknown>> {
+export async function regenerateCockpit(asOfDate?: string): Promise<CockpitGenerationResult> {
   const result = await apiRequest<unknown>('/sales/cockpit/generate', {
     method: 'POST',
     query: {
@@ -150,7 +158,7 @@ export async function regenerateCockpit(asOfDate?: string): Promise<Record<strin
     body: {},
   })
 
-  return result && typeof result === 'object' ? (result as Record<string, unknown>) : {}
+  return normalizeGenerationResult(result)
 }
 
 function normalizeInbox(result: unknown): CockpitInbox {
@@ -199,10 +207,30 @@ function normalizeHeadTeam(result: unknown): HeadTeam {
         return acc
       }, [])
     : []
+  const expectedManagerCount = toNumber(payload.expected_manager_count)
+  const returnedManagerCount = toNumber(payload.returned_manager_count)
+
+  if (returnedManagerCount !== team.length) {
+    throw new SalesCockpitContractError(
+      'head_team.returned_manager_count',
+      'does not equal team.length',
+    )
+  }
+  if (payload.is_head === true && expectedManagerCount !== returnedManagerCount) {
+    throw new SalesCockpitContractError(
+      'head_team.expected_manager_count',
+      'team response is incomplete',
+    )
+  }
 
   return {
     is_head: payload.is_head === true,
+    requested_manager_net_uid: typeof payload.requested_manager_net_uid === 'string'
+      ? payload.requested_manager_net_uid
+      : undefined,
     as_of: typeof payload.as_of === 'string' ? payload.as_of : null,
+    expected_manager_count: expectedManagerCount,
+    returned_manager_count: returnedManagerCount,
     team,
     totals: normalizeHeadTotals(payload.totals),
   }
@@ -238,6 +266,7 @@ function normalizeHeadMetric(value: unknown): HeadTargetMetric {
   return {
     target: toNumber(metric.target),
     mtd: toNumber(metric.mtd),
+    expected_to_date: toNumber(metric.expected_to_date),
     attainment_pct: toNumber(metric.attainment_pct),
     pace_status: PACE_STATUSES.includes(metric.pace_status as HeadPaceStatus)
       ? (metric.pace_status as HeadPaceStatus)
@@ -283,6 +312,7 @@ function normalizeCockpitTarget(result: unknown): CockpitTarget {
 
   return {
     manager_id: typeof payload.manager_id === 'number' ? payload.manager_id : 0,
+    manager_net_uid: typeof payload.manager_net_uid === 'string' ? payload.manager_net_uid : undefined,
     manager_name: typeof payload.manager_name === 'string' ? payload.manager_name : null,
     month: typeof payload.month === 'string' ? payload.month : null,
     as_of: typeof payload.as_of === 'string' ? payload.as_of : null,
@@ -322,6 +352,10 @@ function normalizeEscalated(result: unknown): EscalatedResponse {
 
   return {
     is_head: payload.is_head === true,
+    requested_manager_net_uid: typeof payload.requested_manager_net_uid === 'string'
+      ? payload.requested_manager_net_uid
+      : undefined,
+    requested_limit: toNumber(payload.requested_limit),
     count: typeof payload.count === 'number' ? payload.count : tasks.length,
     tasks,
   }
@@ -332,6 +366,7 @@ function normalizeDashboard(result: unknown): CockpitDashboard {
 
   return {
     manager_id: typeof payload.manager_id === 'number' ? payload.manager_id : 0,
+    manager_net_uid: typeof payload.manager_net_uid === 'string' ? payload.manager_net_uid : undefined,
     as_of: typeof payload.as_of === 'string' ? payload.as_of : null,
     task_type_mix: Array.isArray(payload.task_type_mix)
       ? payload.task_type_mix.reduce<CockpitTaskTypeMix[]>((acc, value) => {
@@ -433,6 +468,9 @@ function normalizeHeadDashboard(result: unknown): HeadDashboard {
 
   return {
     is_head: payload.is_head === true,
+    requested_manager_net_uid: typeof payload.requested_manager_net_uid === 'string'
+      ? payload.requested_manager_net_uid
+      : undefined,
     as_of: typeof payload.as_of === 'string' ? payload.as_of : null,
     teams,
     escalated_count: toNumber(payload.escalated_count),
@@ -471,9 +509,31 @@ function normalizeHeadTasksResponse(result: unknown): HeadTasksResponse {
         return acc
       }, [])
     : []
+  const returnedCount = toNumber(payload.ReturnedCount)
+  const total = typeof payload.Total === 'number' ? payload.Total : tasks.length
+
+  if (returnedCount !== tasks.length) {
+    throw new SalesCockpitContractError(
+      'head_tasks.ReturnedCount',
+      'does not equal Tasks.length',
+    )
+  }
+  if (total < returnedCount) {
+    throw new SalesCockpitContractError('head_tasks.Total', 'cannot be lower than ReturnedCount')
+  }
 
   return {
-    Total: typeof payload.Total === 'number' ? payload.Total : tasks.length,
+    IsHead: payload.IsHead === true,
+    RequestedManagerNetUid: typeof payload.RequestedManagerNetUid === 'string'
+      ? payload.RequestedManagerNetUid
+      : '',
+    RequestedStatuses: normalizeStringArray(payload.RequestedStatuses),
+    RequestedManagerId: toNullableNumber(payload.RequestedManagerId),
+    RequestedUrgency: typeof payload.RequestedUrgency === 'string' ? payload.RequestedUrgency : null,
+    Skip: toNumber(payload.Skip),
+    Limit: toNumber(payload.Limit),
+    ReturnedCount: returnedCount,
+    Total: total,
     Tasks: tasks,
     ByStatus: normalizeHeadTaskByStatus(payload.ByStatus),
     Managers: managers,
@@ -491,7 +551,7 @@ function normalizeHeadTask(value: unknown): HeadTask | null {
     TaskKey: typeof row.TaskKey === 'string' ? row.TaskKey : '',
     ManagerId: typeof row.ManagerId === 'number' ? row.ManagerId : 0,
     ManagerName: typeof row.ManagerName === 'string' ? row.ManagerName : null,
-    ClientId: typeof row.ClientId === 'number' ? row.ClientId : 0,
+    ClientId: typeof row.ClientId === 'number' ? row.ClientId : null,
     ClientName: typeof row.ClientName === 'string' ? row.ClientName : null,
     TaskType: typeof row.TaskType === 'string' ? row.TaskType : null,
     Title: typeof row.Title === 'string' ? row.Title : null,
@@ -537,6 +597,12 @@ function toNullableNumber(value: unknown): number | null {
   return typeof value === 'number' && Number.isFinite(value) ? value : null
 }
 
+function normalizeStringArray(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === 'string')
+    : []
+}
+
 function toNumber(value: unknown): number {
   return typeof value === 'number' && Number.isFinite(value) ? value : 0
 }
@@ -551,4 +617,32 @@ function normalizeTask(value: unknown): CockpitTask | null {
 
 function isTask(value: CockpitTask | null): value is CockpitTask {
   return value !== null
+}
+
+function normalizeGenerationResult(result: unknown): CockpitGenerationResult {
+  const payload = result && typeof result === 'object'
+    ? (result as Partial<CockpitGenerationResult>)
+    : {}
+  const byType = payload.by_type && typeof payload.by_type === 'object' && !Array.isArray(payload.by_type)
+    ? Object.fromEntries(
+        Object.entries(payload.by_type)
+          .filter((entry): entry is [string, number] => typeof entry[1] === 'number' && Number.isFinite(entry[1])),
+      )
+    : {}
+
+  return {
+    manager_id: toNumber(payload.manager_id),
+    manager_net_uid: typeof payload.manager_net_uid === 'string' ? payload.manager_net_uid : '',
+    requested_as_of: typeof payload.requested_as_of === 'string' ? payload.requested_as_of : null,
+    as_of: typeof payload.as_of === 'string' ? payload.as_of : '',
+    candidates: toNumber(payload.candidates),
+    generators_total: toNumber(payload.generators_total),
+    generators_failed: toNumber(payload.generators_failed),
+    by_type: byType,
+    persisted: toNumber(payload.persisted),
+    skipped_muted: toNumber(payload.skipped_muted),
+    skipped_capped: toNumber(payload.skipped_capped),
+    refreshed: toNumber(payload.refreshed),
+    crit_debt_reserved: toNumber(payload.crit_debt_reserved),
+  }
 }

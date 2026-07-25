@@ -4,6 +4,7 @@ import { summarizeProcurementCharts } from './procureDashboardModel'
 
 const charts: ProcurementCharts = {
   as_of_date: '2026-07-24',
+  model_version: 'test',
   days_of_cover_hist: [
     { bucket: '0–7', count: 5 },
     { bucket: '8–30', count: 7 },

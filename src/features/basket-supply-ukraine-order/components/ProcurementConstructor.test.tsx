@@ -32,6 +32,8 @@ describe('ProcurementConstructor', () => {
       budget_eur: 0,
       budget_used_eur: 0,
       deferred_count: 0,
+      duplicate_supplier_options_removed: 0,
+      is_truncated: false,
       item_count: 2,
       items: [
         suggestion({ producer_id: 501, producer_name: 'Meyle', suggested_qty: 6 }),
@@ -39,12 +41,28 @@ describe('ProcurementConstructor', () => {
       ],
       method_used: 'greedy',
       model_version: 'test',
+      priced_cost_eur: 60,
       selected_count: 2,
+      total_cost_eur: 60,
+      total_item_count: 2,
+      total_suggested_qty: 10,
+      unpriced_item_count: 0,
       value_captured_eur: 0,
     })
     vi.mocked(getProducerPlan).mockRejectedValue(new Error('not used'))
     vi.mocked(getProcurementCharts).mockRejectedValue(new Error('not used'))
-    vi.mocked(createCockpitDraftOrder).mockResolvedValue({})
+    vi.mocked(createCockpitDraftOrder).mockResolvedValue({
+      ClientAgreementId: 20,
+      CurrencyCode: 'EUR',
+      CurrencyId: 2,
+      Items: [],
+      OrderId: 1,
+      OrderNumber: '1',
+      OrganizationId: 10,
+      SupplierId: 501,
+      TotalNetAmount: 0,
+      TotalQty: 0,
+    })
   })
 
   it('edits and bulk-adds the same product from different producers independently', async () => {
@@ -89,11 +107,18 @@ describe('ProcurementConstructor', () => {
       budget_eur: 0,
       budget_used_eur: 0,
       deferred_count: 0,
+      duplicate_supplier_options_removed: 0,
+      is_truncated: false,
       item_count: 0,
       items: [],
       method_used: 'greedy',
       model_version: 'test',
+      priced_cost_eur: 0,
       selected_count: 0,
+      total_cost_eur: 0,
+      total_item_count: 0,
+      total_suggested_qty: 0,
+      unpriced_item_count: 0,
       value_captured_eur: 0,
     })
 
@@ -117,6 +142,7 @@ function suggestion(overrides: Partial<ReorderSuggestion> = {}): ReorderSuggesti
     cheaper_alt: null,
     days_of_cover: 4,
     forecast: {
+      product_id: 42,
       forecast_units: 60,
       horizon_days: 30,
       mean_daily: 2,
@@ -125,6 +151,7 @@ function suggestion(overrides: Partial<ReorderSuggestion> = {}): ReorderSuggesti
     },
     image_url: null,
     inventory: {
+      product_id: 42,
       available: 2,
       on_hand: 2,
       on_order: 0,
@@ -157,5 +184,6 @@ function suggestion(overrides: Partial<ReorderSuggestion> = {}): ReorderSuggesti
     within_budget: null,
     xyz: 'X',
     ...overrides,
+    seasonal_factor: overrides.seasonal_factor ?? null,
   }
 }

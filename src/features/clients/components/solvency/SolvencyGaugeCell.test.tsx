@@ -6,6 +6,7 @@ import { SolvencyGaugeCell } from './SolvencyGaugeCell'
 function makeScore(overrides: Partial<SolvencyScore>): SolvencyScore {
   return {
     client_id: 1,
+    client_net_uid: null,
     applicable: true,
     score: 82,
     rating: 'A',

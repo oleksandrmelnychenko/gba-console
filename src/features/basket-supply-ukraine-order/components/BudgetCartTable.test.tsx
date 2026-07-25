@@ -36,6 +36,7 @@ function suggestion(): ReorderSuggestion {
     cheaper_alt: null,
     days_of_cover: 4,
     forecast: {
+      product_id: 42,
       forecast_units: 60,
       horizon_days: 30,
       mean_daily: 2,
@@ -44,6 +45,7 @@ function suggestion(): ReorderSuggestion {
     },
     image_url: 'https://cdn.example.com/brake-disc.jpg',
     inventory: {
+      product_id: 42,
       available: 2,
       on_hand: 2,
       on_order: 0,
@@ -66,6 +68,7 @@ function suggestion(): ReorderSuggestion {
     reason: 'Залишок нижче точки замовлення',
     reorder_point: 18,
     safety_stock: 6,
+    seasonal_factor: null,
     suggested_qty: 6,
     unit_cost_eur: 5,
     unit_margin_eur: 3,

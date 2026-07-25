@@ -17,9 +17,9 @@ export type SubFactors = {
 }
 
 export type CurrencyExposure = {
-  currency_id: number | null
+  currency_id: number
   turnover_eur: number
-  exposure_eur?: number
+  exposure_eur: number
 }
 
 export type ForwardRiskBand = 'low' | 'medium' | 'high' | 'very_high'
@@ -37,6 +37,7 @@ export type ForwardRisk = {
 
 export type SolvencyScore = {
   client_id: number
+  client_net_uid: string | null
   applicable: boolean
   score: number | null
   rating: SolvencyRating | null
@@ -53,6 +54,18 @@ export type SolvencyScore = {
   as_of_date: string | null
   window_months: number
   model_version: string
+}
+
+export type SolvencyBatchError = {
+  client_id: number
+  error: string
+}
+
+export type SolvencyBatch = {
+  results: SolvencyScore[]
+  errors: SolvencyBatchError[]
+  count: number
+  failed: number
 }
 
 export type GaugeChart = {
@@ -91,6 +104,7 @@ export type TrendPoint = {
 
 export type SolvencyCharts = {
   client_id: number
+  applicable: boolean
   limit_utilization_gauge: GaugeChart
   payment_discipline_donut: DonutSlice[]
   open_invoice_aging_bars: AgingBar[]

@@ -55,11 +55,18 @@ describe('BudgetCartTab', () => {
       budget_eur: 50_000,
       budget_used_eur: 0,
       deferred_count: 0,
+      duplicate_supplier_options_removed: 0,
+      is_truncated: false,
       item_count: 0,
       items: [],
       method_used: 'greedy',
       model_version: 'test',
+      priced_cost_eur: 0,
       selected_count: 0,
+      total_cost_eur: 0,
+      total_item_count: 0,
+      total_suggested_qty: 0,
+      unpriced_item_count: 0,
       value_captured_eur: 0,
     })
 

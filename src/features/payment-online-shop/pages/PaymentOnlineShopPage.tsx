@@ -24,6 +24,12 @@ import { useAuth } from '../../auth/useAuth'
 import { addPaymentImage, editPaymentImage, getPaymentShopItemsPage } from '../api/paymentOnlineShopApi'
 import { PaymentImageEditModal } from '../components/PaymentImageEditModal'
 import { PaymentShopDetailDrawer } from '../components/PaymentShopDetailDrawer'
+import {
+  classifyRetailPaymentImageMutationFailure,
+  createAddPaymentImageMutationPayload,
+  ensurePaymentImageReplayFileMatches,
+  isDefinitiveRetailPaymentImageConcurrencyConflict,
+} from '../paymentImageMutation'
 import { RetailPaymentStatusType } from '../types'
 import type {
   AddPaymentImagePayload,
@@ -31,6 +37,10 @@ import type {
   PaymentShopItem,
   RetailClientPaymentImageItem,
 } from '../types'
+import {
+  SalesPendingMutationRecoveredError,
+  usePersistentSalesMutation,
+} from '../../sales-ukraine/persistentSalesMutation'
 import './payment-online-shop-page.css'
 
 const EMPTY_FILTERS: PaymentShopFilters = {
@@ -70,6 +80,16 @@ function usePaymentOnlineShopModel() {
   const [isCreating, setCreating] = useValueState(false)
   const [isSaving, setSaving] = useValueState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  const runAddPaymentMutation = usePersistentSalesMutation(
+    'retail-payment-image-add',
+    'payment-online-shop:add',
+    classifyRetailPaymentImageMutationFailure,
+  )
+  const runEditPaymentMutation = usePersistentSalesMutation(
+    'retail-payment-image-update',
+    'payment-online-shop:update',
+    classifyRetailPaymentImageMutationFailure,
+  )
 
   usePaymentShopLoader({ activeFilters, page, pageSize, reloadKey, setError, setItems, setLoading, setTotalRowsQty })
 
@@ -134,25 +154,62 @@ function usePaymentOnlineShopModel() {
     setActiveFilters(EMPTY_FILTERS)
   }
 
-  async function handleAddPayment(payload: Omit<AddPaymentImagePayload, 'paymentImageId' | 'user'>) {
+  async function handleAddPayment(
+    payload: Omit<AddPaymentImagePayload, 'paymentImageId' | 'user'>,
+  ): Promise<boolean> {
     if (!selectedItem?.Id) {
-      return
+      return false
     }
 
     setCreateError(null)
     setCreating(true)
 
     try {
-      await addPaymentImage({
+      const requestPayload: AddPaymentImagePayload = {
         ...payload,
         paymentImageId: selectedItem.Id,
         user: user,
-      })
+      }
+      const mutationPayload =
+        await createAddPaymentImageMutationPayload(requestPayload)
+
+      await runAddPaymentMutation(
+        mutationPayload,
+        async (persistedPayload, operation) => {
+          ensurePaymentImageReplayFileMatches(
+            persistedPayload.file,
+            mutationPayload.file,
+          )
+
+          return addPaymentImage(
+            {
+              amount: persistedPayload.amount,
+              comment: persistedPayload.comment,
+              image: requestPayload.image,
+              paymentImageId: persistedPayload.paymentImageId,
+              paymentType: persistedPayload.paymentType,
+              user: persistedPayload.user,
+            },
+            operation,
+          )
+        },
+      )
       setSelectedItem(null)
       reload()
       notifications.show({ color: 'green', message: t('Платіж створено') })
+      return true
     } catch (addError) {
+      if (addError instanceof SalesPendingMutationRecoveredError) {
+        setSelectedItem(null)
+        reload()
+        notifications.show({
+          color: 'yellow',
+          message: t(addError.message),
+        })
+        return true
+      }
       setCreateError(addError instanceof Error ? addError.message : t('Сталася помилка, заповніть поля!'))
+      return false
     } finally {
       setCreating(false)
     }
@@ -163,28 +220,63 @@ function usePaymentOnlineShopModel() {
       return
     }
 
+    if (!editItem.RowVersion) {
+      setEditError(t('Дані платежу застаріли. Оновіть список перед редагуванням.'))
+      return
+    }
+
     setEditError(null)
     setSaving(true)
 
     try {
-      const updatedItem = await editPaymentImage({
+      const requestPayload = {
         amount,
         comment,
         item: editItem,
         paymentImageId: selectedItem.Id,
         user: user,
-      })
-      const fallbackItem = updatePaymentImageItem(selectedItem, editItem, amount, comment, user)
-      const nextSelectedItem = updatedItem?.RetailClientPaymentImageItems ? updatedItem : fallbackItem
+      }
+      const updatedItem = await runEditPaymentMutation(
+        requestPayload,
+        editPaymentImage,
+      )
 
-      setSelectedItem(nextSelectedItem)
-      setItems((current) => replacePaymentShopItem(current, nextSelectedItem))
+      if (updatedItem?.RetailClientPaymentImageItems) {
+        setSelectedItem(updatedItem)
+        setItems((current) => replacePaymentShopItem(current, updatedItem))
+      } else {
+        // Never keep the stale RowVersion after a committed update.
+        setSelectedItem(null)
+      }
       setEditItem(null)
-      // Сервер перераховує підсумки — локального патча рядка недостатньо
-      // (create-гілка вже робить reload, вирівнюємо поведінку).
       reload()
     } catch (saveError) {
-      setEditError(saveError instanceof Error ? saveError.message : t('Не вдалося виконати запит'))
+      if (saveError instanceof SalesPendingMutationRecoveredError) {
+        setEditItem(null)
+        setSelectedItem(null)
+        reload()
+        notifications.show({
+          color: 'yellow',
+          message: t(saveError.message),
+        })
+        return
+      }
+      const message =
+        saveError instanceof Error
+          ? saveError.message
+          : t('Не вдалося виконати запит')
+      setEditError(message)
+      if (isDefinitiveRetailPaymentImageConcurrencyConflict(saveError)) {
+        setEditItem(null)
+        setSelectedItem(null)
+        reload()
+        notifications.show({
+          color: 'red',
+          message: t(
+            'Платіж уже змінено іншим користувачем. Дані оновлено.',
+          ),
+        })
+      }
     } finally {
       setSaving(false)
     }
@@ -588,39 +680,8 @@ function replacePaymentShopItem(items: PaymentShopItem[], nextItem: PaymentShopI
   return items.map((item) => (isSamePaymentShopItem(item, nextItem) ? nextItem : item))
 }
 
-function updatePaymentImageItem(
-  item: PaymentShopItem,
-  imageItem: RetailClientPaymentImageItem,
-  amount: number,
-  comment: string,
-  user: RetailClientPaymentImageItem['User'],
-): PaymentShopItem {
-  return {
-    ...item,
-    RetailClientPaymentImageItems: (item.RetailClientPaymentImageItems || []).map((candidate) =>
-      isSamePaymentImageItem(candidate, imageItem)
-        ? {
-            ...candidate,
-            Amount: amount,
-            Comment: comment,
-            User: user,
-          }
-        : candidate,
-    ),
-  }
-}
-
 function isSamePaymentShopItem(first: PaymentShopItem, second: PaymentShopItem): boolean {
   return Boolean((first.NetUid && first.NetUid === second.NetUid) || (first.Id && first.Id === second.Id))
-}
-
-function isSamePaymentImageItem(first: RetailClientPaymentImageItem, second: RetailClientPaymentImageItem): boolean {
-  return Boolean(
-    (first.NetUid && first.NetUid === second.NetUid) ||
-      (first.Id && first.Id === second.Id) ||
-      (first.ImgUrl && first.ImgUrl === second.ImgUrl) ||
-      (first.RetailClientPaymentImageId && first.RetailClientPaymentImageId === second.RetailClientPaymentImageId),
-  )
 }
 
 function formatPrice(value: number | undefined): string {

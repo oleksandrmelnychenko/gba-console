@@ -18,7 +18,7 @@ import {
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
-import { Check, CircleAlert, Eye, FileText, Plus, Search, Trash2 } from 'lucide-react'
+import { Check, CircleAlert, Eye, FileChartColumn, FileText, Plus, Search, Trash2 } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { ProductCardModal } from '../../products/components/ProductCardModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -66,6 +66,11 @@ import {
   parseStatusValue,
   readNumber,
 } from '../utils'
+import {
+  SalesPendingMutationRecoveredError,
+  usePersistentSalesMutation,
+} from '../../sales-ukraine/persistentSalesMutation'
+import { ClientReturnsReportPanel } from '../components/ClientReturnsReportPanel'
 
 const SALE_ITEMS_TABLE_LAYOUT = {
   columnPinning: {
@@ -114,6 +119,14 @@ type ItemEditorState = {
 
 export function NewUkraineSaleReturnPage() {
   const { t } = useI18n()
+  const runCancelMutation = usePersistentSalesMutation(
+    'sale-return-cancel',
+    'ukraine-sale-return:cancel',
+  )
+  const runCreateMutation = usePersistentSalesMutation(
+    'sale-return-create',
+    'ukraine-sale-return:create',
+  )
   const [fromDate, setFromDate] = useState(() => shiftDateInput(-14))
   const [toDate, setToDate] = useState(() => shiftDateInput(0))
   const [searchDraft, setSearchDraft] = useState('')
@@ -121,6 +134,7 @@ export function NewUkraineSaleReturnPage() {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(DEFAULT_PAGINATOR_PAGE_SIZE)
   const [reloadKey, setReloadKey] = useState(0)
+  const [reportOpened, setReportOpened] = useState(false)
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const [listState, setListState] = useState<ReturnsListState>({
     isLoading: false,
@@ -402,7 +416,10 @@ export function NewUkraineSaleReturnPage() {
     setListError(null)
 
     try {
-      const canceledReturn = await cancelSaleReturn(cancelCandidate.NetUid)
+      const canceledReturn = await runCancelMutation(
+        { netId: cancelCandidate.NetUid },
+        ({ netId }, operation) => cancelSaleReturn(netId, operation),
+      )
 
       if (canceledReturn) {
         setListState((currentState) => ({
@@ -417,6 +434,15 @@ export function NewUkraineSaleReturnPage() {
       })
       setCancelCandidate(null)
     } catch (cancelError) {
+      if (cancelError instanceof SalesPendingMutationRecoveredError) {
+        setCancelCandidate(null)
+        setReloadKey((value) => value + 1)
+        notifications.show({
+          color: 'yellow',
+          message: t(cancelError.message),
+        })
+        return
+      }
       setListError(cancelError instanceof Error ? cancelError.message : t('Не вдалося скасувати повернення'))
     } finally {
       setCanceling(false)
@@ -540,15 +566,15 @@ export function NewUkraineSaleReturnPage() {
   }
 
   function removeDraftByOrderItem(orderItem: SalesReturnOrderItem) {
-    setDrafts((currentDrafts) => {
-      const nextDrafts = currentDrafts.filter((draft) => getOrderItemKey(draft.orderItem) !== getOrderItemKey(orderItem))
-
-      if (!nextDrafts.length) {
-        setReviewOpened(false)
-      }
-
-      return nextDrafts
-    })
+    const nextDrafts = drafts.filter(
+      (draft) =>
+        getOrderItemKey(draft.orderItem) !==
+        getOrderItemKey(orderItem),
+    )
+    setDrafts(nextDrafts)
+    if (!nextDrafts.length) {
+      setReviewOpened(false)
+    }
   }
 
   function openReview() {
@@ -585,7 +611,7 @@ export function NewUkraineSaleReturnPage() {
     setReviewError(null)
 
     try {
-      await createSaleReturn({
+      const payload = {
         Client: client,
         SaleReturnItems: drafts.map((draft) => ({
           OrderItem: draft.orderItem,
@@ -593,7 +619,12 @@ export function NewUkraineSaleReturnPage() {
           SaleReturnItemStatus: draft.status as SalesReturnItemStatusValue,
           Storage: draft.storage as SalesReturnStorage,
         })),
-      })
+      }
+
+      await runCreateMutation(
+        payload,
+        createSaleReturn,
+      )
 
       notifications.show({
         color: 'green',
@@ -604,6 +635,17 @@ export function NewUkraineSaleReturnPage() {
       setCreateOpened(false)
       setReloadKey((value) => value + 1)
     } catch (saveError) {
+      if (saveError instanceof SalesPendingMutationRecoveredError) {
+        setDrafts([])
+        setReviewOpened(false)
+        setCreateOpened(false)
+        setReloadKey((value) => value + 1)
+        notifications.show({
+          color: 'yellow',
+          message: t(saveError.message),
+        })
+        return
+      }
       setReviewError(saveError instanceof Error ? saveError.message : t('Не вдалося створити повернення'))
     } finally {
       setSaving(false)
@@ -664,6 +706,14 @@ export function NewUkraineSaleReturnPage() {
           </div>
           <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot new-sale-return-table-toolbar-slot" />
           <div className="new-sale-return-create-actions">
+            <Button
+              leftSection={<FileChartColumn size={16} />}
+              size="sm"
+              variant="default"
+              onClick={() => setReportOpened(true)}
+            >
+              {t('Сформувати звіт')}
+            </Button>
             <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<Plus size={16} />} onClick={() => setCreateOpened(true)}>
               {t('Створити')}
             </Button>
@@ -695,6 +745,10 @@ export function NewUkraineSaleReturnPage() {
           />
         </div>
       </div>
+      <ClientReturnsReportPanel
+        opened={reportOpened}
+        onClose={() => setReportOpened(false)}
+      />
       <AppDrawer opened={Boolean(selectedReturn)} onClose={() => setSelectedReturn(null)} position="right" size="xl" title={t('Повернення')}>
         {selectedReturn ? (
           <ReturnDetails saleReturn={selectedReturn} columns={detailColumns} />

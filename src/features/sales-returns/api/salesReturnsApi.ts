@@ -1,5 +1,9 @@
 import { apiRequest } from '../../../shared/api/apiClient'
 import { toDateTimeQuery } from '../../../shared/date/dateTime'
+import {
+  getSalesMutationOperationHeaders,
+  type SalesMutationOperationOptions,
+} from '../../sales-ukraine/salesMutationOperation'
 import type {
   CreateDirectSalesReturnPayload,
   CreateSalesReturnPayload,
@@ -64,33 +68,46 @@ export async function exportSaleReturnsReport(params: {
   return normalizeDocument(result)
 }
 
-export async function cancelSaleReturn(netId: string): Promise<SalesReturn | null> {
+export async function cancelSaleReturn(
+  netId: string,
+  operation: SalesMutationOperationOptions,
+): Promise<SalesReturn | null> {
   const result = await apiRequest<unknown>('/sales/returns/cancel', {
+    headers: getSalesMutationOperationHeaders(operation.operationId),
     method: 'PUT',
     query: {
       netId,
     },
+    ...(operation.signal ? { signal: operation.signal } : {}),
   })
 
   return normalizeSaleReturn(result)
 }
 
-export async function createSaleReturn(payload: CreateSalesReturnPayload): Promise<SalesReturn | null> {
+export async function createSaleReturn(
+  payload: CreateSalesReturnPayload,
+  operation: SalesMutationOperationOptions,
+): Promise<SalesReturn | null> {
   const result = await apiRequest<unknown>('/sales/returns/new', {
     body: payload,
+    headers: getSalesMutationOperationHeaders(operation.operationId),
     method: 'POST',
+    ...(operation.signal ? { signal: operation.signal } : {}),
   })
 
   return normalizeSaleReturn(result)
 }
 
-export async function createDirectSaleReturn(payload: CreateDirectSalesReturnPayload): Promise<SalesReturn | null> {
-  const result = await apiRequest<unknown>('/sales/returns/new', {
-    body: payload,
-    method: 'POST',
-  })
+export async function createDirectSaleReturn(
+  payload: CreateDirectSalesReturnPayload,
+  operation: SalesMutationOperationOptions,
+): Promise<SalesReturn | null> {
+  void payload
+  void operation
 
-  return normalizeSaleReturn(result)
+  throw new Error(
+    'Пряме повернення за партією не має серверного контракту. Використайте повернення з проведеного продажу.',
+  )
 }
 
 export async function getSalesForReturn(params: SalesForReturnSearchParams): Promise<SalesReturnSale[]> {

@@ -47,6 +47,7 @@ export type ProcurementCharts = {
   days_of_cover_hist: ProcurementDaysOfCoverBucket[]
   top_items: ProcurementTopItem[]
   demand_series: ProcurementDemandSeries[]
+  model_version: string
 }
 
 export type ProcurementChartsQuery = {
@@ -55,6 +56,7 @@ export type ProcurementChartsQuery = {
 }
 
 export type ReorderForecast = {
+  product_id: number
   mean_daily: number
   std_daily: number
   method: string
@@ -63,6 +65,7 @@ export type ReorderForecast = {
 }
 
 export type ReorderInventory = {
+  product_id: number
   on_hand: number
   reserved: number
   on_order: number
@@ -104,6 +107,7 @@ export type ReorderSuggestion = {
   abc: string | null
   xyz: string | null
   quadrant: string | null
+  seasonal_factor: number | null
   cheaper_alt: ReorderCheaperAlt | null
   learned_factor: number | null
   value_density: number | null
@@ -127,6 +131,13 @@ export type CartOptimizeMethod = 'greedy' | 'milp'
 export type CartPlan = {
   items: ReorderSuggestion[]
   item_count: number
+  total_item_count: number
+  is_truncated: boolean
+  duplicate_supplier_options_removed: number
+  total_suggested_qty: number
+  total_cost_eur: number | null
+  priced_cost_eur: number
+  unpriced_item_count: number
   as_of_date: string | null
   budget_eur: number
   budget_used_eur: number
@@ -187,6 +198,26 @@ export type ProductTermsInput = {
 export type CockpitDraftItem = {
   productId: number
   qty: number
+}
+
+export type CockpitDraftResultItem = {
+  ProductId: number
+  Qty: number
+  UnitPrice: number
+  LineNetAmount: number
+}
+
+export type CockpitDraftResult = {
+  OrderId: number
+  OrderNumber: string
+  SupplierId: number
+  OrganizationId: number
+  ClientAgreementId: number
+  CurrencyId: number
+  CurrencyCode: string
+  TotalQty: number
+  TotalNetAmount: number
+  Items: CockpitDraftResultItem[]
 }
 
 export type FeedbackAction = 'accept' | 'edit' | 'dismiss'

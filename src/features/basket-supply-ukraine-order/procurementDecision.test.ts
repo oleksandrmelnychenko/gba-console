@@ -6,8 +6,8 @@ describe('calculateProcurementDecision', () => {
   it('explains whether stock can last through the supplier lead time', () => {
     const decision = calculateProcurementDecision(
       suggestion({
-        forecast: { mean_daily: 2, std_daily: 0.4, method: 'croston', horizon_days: 30, forecast_units: 60 },
-        inventory: { on_hand: 10, reserved: 2, on_order: 0, available: 8, position: 8 },
+        forecast: { product_id: 100, mean_daily: 2, std_daily: 0.4, method: 'croston', horizon_days: 30, forecast_units: 60 },
+        inventory: { product_id: 100, on_hand: 10, reserved: 2, on_order: 0, available: 8, position: 8 },
         lead_demand: 12,
         unit_cost_eur: 4.5,
       }),
@@ -42,7 +42,7 @@ describe('calculateProcurementDecision', () => {
   it('keeps timing unknown when the forecast has no daily demand', () => {
     const decision = calculateProcurementDecision(
       suggestion({
-        forecast: { mean_daily: 0, std_daily: 0, method: 'none', horizon_days: 30, forecast_units: 0 },
+        forecast: { product_id: 100, mean_daily: 0, std_daily: 0, method: 'none', horizon_days: 30, forecast_units: 0 },
       }),
       5,
     )
@@ -60,6 +60,7 @@ function suggestion(overrides: Partial<ReorderSuggestion> = {}): ReorderSuggesti
     cheaper_alt: null,
     days_of_cover: 4,
     forecast: {
+      product_id: 100,
       forecast_units: 60,
       horizon_days: 30,
       mean_daily: 2,
@@ -68,6 +69,7 @@ function suggestion(overrides: Partial<ReorderSuggestion> = {}): ReorderSuggesti
     },
     image_url: null,
     inventory: {
+      product_id: 100,
       available: 8,
       on_hand: 10,
       on_order: 0,
@@ -100,5 +102,6 @@ function suggestion(overrides: Partial<ReorderSuggestion> = {}): ReorderSuggesti
     within_budget: null,
     xyz: 'X',
     ...overrides,
+    seasonal_factor: overrides.seasonal_factor ?? null,
   }
 }

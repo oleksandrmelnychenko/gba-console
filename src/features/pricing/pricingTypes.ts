@@ -15,9 +15,11 @@ export type PeerBand = {
 
 export type PriceRecommendation = {
   product_id: number
+  product_net_uid: string
   client_agreement_netuid: string
   currency: string
   baseline_price: number | null
+  baseline_source: string | null
   recommended_price: number | null
   price_floor: number | null
   unit_cost_eur: number | null
@@ -26,6 +28,9 @@ export type PriceRecommendation = {
   peer_band: PeerBand
   confidence: PriceConfidence
   margin_pct_at_recommended: number | null
+  elasticity: number | null
+  elasticity_source: string | null
+  elastic_optimal_price: number | null
   rationale: string
   as_of_date: string | null
   model_version: string

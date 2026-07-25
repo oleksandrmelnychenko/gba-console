@@ -28,6 +28,7 @@ function renderPanel(ui: ReactElement) {
 
 const notApplicableScore: SolvencyScore = {
   client_id: 7,
+  client_net_uid: null,
   applicable: false,
   score: null,
   rating: null,
@@ -43,6 +44,7 @@ const notApplicableScore: SolvencyScore = {
 
 const v3Score: SolvencyScore = {
   client_id: 411780,
+  client_net_uid: '11111111-1111-1111-1111-111111111111',
   applicable: true,
   score: 46,
   rating: 'D',

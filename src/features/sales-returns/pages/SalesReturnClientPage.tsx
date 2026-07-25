@@ -64,6 +64,10 @@ import {
   parseStatusValue,
   readNumber,
 } from '../utils'
+import {
+  SalesPendingMutationRecoveredError,
+  usePersistentSalesMutation,
+} from '../../sales-ukraine/persistentSalesMutation'
 
 const RETURN_ITEMS_TABLE_LAYOUT = {
   columnPinning: {
@@ -82,6 +86,10 @@ const BATCH_TABLE_LAYOUT = {
 
 export function SalesReturnClientPage() {
   const { t } = useI18n()
+  const runCreateMutation = usePersistentSalesMutation(
+    'sale-return-create',
+    'client-direct-sale-return:create',
+  )
   const [organizations, setOrganizations] = useState<SalesReturnOrganization[]>([])
   const [storages, setStorages] = useState<SalesReturnStorage[]>([])
   const [clients, setClients] = useState<SalesReturnClient[]>([])
@@ -481,7 +489,7 @@ export function SalesReturnClientPage() {
     setWarning(null)
 
     try {
-      await createDirectSaleReturn({
+      const payload = {
         ClientAgreementId: selectedAgreement?.Id || 0,
         ClientId: selectedClient?.Id || 0,
         Products: items.map((item) => ({
@@ -491,7 +499,12 @@ export function SalesReturnClientPage() {
           SpecificationQty: item.qty,
         })),
         StorageId: selectedStorage?.Id || 0,
-      })
+      }
+
+      await runCreateMutation(
+        payload,
+        createDirectSaleReturn,
+      )
 
       notifications.show({
         color: 'green',
@@ -501,6 +514,16 @@ export function SalesReturnClientPage() {
       resetProductDraft()
       setCreateOpened(false)
     } catch (saveError) {
+      if (saveError instanceof SalesPendingMutationRecoveredError) {
+        setItems([])
+        resetProductDraft()
+        setCreateOpened(false)
+        notifications.show({
+          color: 'yellow',
+          message: t(saveError.message),
+        })
+        return
+      }
       setError(saveError instanceof Error ? saveError.message : t('Не вдалося створити повернення'))
     } finally {
       setSaving(false)

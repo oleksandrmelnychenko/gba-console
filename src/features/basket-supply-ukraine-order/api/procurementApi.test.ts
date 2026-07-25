@@ -71,6 +71,7 @@ describe('getProducerPlan', () => {
       quadrant: 'AX',
     })
     expect(item.forecast).toEqual({
+      product_id: 100,
       mean_daily: 3.2,
       std_daily: 0.8,
       method: 'croston',
@@ -78,6 +79,7 @@ describe('getProducerPlan', () => {
       forecast_units: 96,
     })
     expect(item.inventory).toEqual({
+      product_id: 100,
       on_hand: 10,
       reserved: 2,
       on_order: 0,
@@ -107,10 +109,13 @@ describe('getProducerPlan', () => {
       producer_id: 42,
       producer_name: 'Acme',
       lead_time_days: 7,
+      lead_time_std_days: 0,
       lead_time_source: 'default',
       item_count: 1,
+      as_of_date: '2026-06-15',
+      model_version: 'v3',
       items: [
-        {
+        buildSuggestion({
           product_id: 200,
           producer_id: 42,
           suggested_qty: 5,
@@ -119,8 +124,22 @@ describe('getProducerPlan', () => {
           days_of_cover: 4,
           urgency: 'normal',
           reason: 'cover low',
-          forecast: { mean_daily: 1 },
-          inventory: { on_hand: 2 },
+          forecast: {
+            product_id: 200,
+            mean_daily: 1,
+            std_daily: 0,
+            method: 'naive',
+            horizon_days: 30,
+            forecast_units: 30,
+          },
+          inventory: {
+            product_id: 200,
+            on_hand: 2,
+            reserved: 0,
+            on_order: 0,
+            available: 2,
+            position: 2,
+          },
           unit_cost_eur: null,
           line_cost_eur: null,
           unit_sale_eur: null,
@@ -130,7 +149,7 @@ describe('getProducerPlan', () => {
           xyz: null,
           quadrant: null,
           cheaper_alt: null,
-        },
+        }),
       ],
     })
 
@@ -138,8 +157,8 @@ describe('getProducerPlan', () => {
     const item = plan.items[0] as ReorderSuggestion
 
     expect(plan.lead_time_std_days).toBe(0)
-    expect(plan.model_version).toBe('')
-    expect(plan.as_of_date).toBeNull()
+    expect(plan.model_version).toBe('v3')
+    expect(plan.as_of_date).toBe('2026-06-15')
     expect(item.raw_qty).toBeNull()
     expect(item.moq).toBeNull()
     expect(item.order_multiple).toBeNull()
@@ -154,22 +173,24 @@ describe('getProducerPlan', () => {
     expect(item.cheaper_alt).toBeNull()
     expect(item.learned_factor).toBeNull()
     expect(item.forecast).toEqual({
+      product_id: 200,
       mean_daily: 1,
       std_daily: 0,
-      method: '',
-      horizon_days: 0,
-      forecast_units: 0,
+      method: 'naive',
+      horizon_days: 30,
+      forecast_units: 30,
     })
     expect(item.inventory).toEqual({
+      product_id: 200,
       on_hand: 2,
       reserved: 0,
       on_order: 0,
-      available: 0,
-      position: 0,
+      available: 2,
+      position: 2,
     })
   })
 
-  it('drops malformed item rows and a malformed cheaper_alt', async () => {
+  it('fails closed for malformed item rows', async () => {
     apiRequestMock.mockResolvedValueOnce({
       producer_id: 42,
       producer_name: 'Acme',
@@ -186,29 +207,27 @@ describe('getProducerPlan', () => {
       ],
     })
 
-    const plan = await getProducerPlan(42)
-
-    expect(plan.items).toHaveLength(1)
-    expect(plan.items[0]?.product_id).toBe(9)
-    expect(plan.items[0]?.urgency).toBe('high')
-    expect(plan.items[0]?.cheaper_alt).toBeNull()
-    expect(plan.item_count).toBe(1)
+    await expect(getProducerPlan(42)).rejects.toThrow('producer_plan.items[0]')
   })
 
-  it('returns an empty plan for a null response', async () => {
+  it('fails closed for a null response', async () => {
     apiRequestMock.mockResolvedValueOnce(null)
 
-    await expect(getProducerPlan(42)).resolves.toEqual({
-      producer_id: null,
-      producer_name: '',
-      lead_time_days: 0,
-      lead_time_std_days: 0,
-      lead_time_source: '',
-      item_count: 0,
-      as_of_date: null,
-      model_version: '',
-      items: [],
-    })
+    await expect(getProducerPlan(42)).rejects.toThrow('producer_plan')
+  })
+
+  it('rejects nested product identity and inventory equation drift', async () => {
+    const wrongForecastIdentity = buildFullPlan()
+    wrongForecastIdentity.items[0].forecast.product_id = 999
+    apiRequestMock.mockResolvedValueOnce({ Body: wrongForecastIdentity })
+
+    await expect(getProducerPlan(42)).rejects.toThrow('forecast.product_id')
+
+    const wrongInventoryEquation = buildFullPlan()
+    wrongInventoryEquation.items[0].inventory.position = 999
+    apiRequestMock.mockResolvedValueOnce({ Body: wrongInventoryEquation })
+
+    await expect(getProducerPlan(42)).rejects.toThrow('inventory.position')
   })
 })
 
@@ -510,7 +529,11 @@ describe('createCockpitDraftOrder', () => {
   })
 
   it('posts the supplier id and items and unwraps the created draft', async () => {
-    apiRequestMock.mockResolvedValueOnce({ Body: { Id: 555, Number: 'SO-2026-1' } })
+    const draft = buildCockpitDraftResult(42, [
+      { productId: 100, qty: 30, unitPrice: 4.5 },
+      { productId: 101, qty: 5, unitPrice: 7.25 },
+    ])
+    apiRequestMock.mockResolvedValueOnce({ Body: draft })
 
     const created = await createCockpitDraftOrder(42, [
       { productId: 100, qty: 30 },
@@ -527,30 +550,56 @@ describe('createCockpitDraftOrder', () => {
         ],
       },
     })
-    expect(created).toEqual({ Id: 555, Number: 'SO-2026-1' })
+    expect(created).toEqual(draft)
   })
 
-  it('forwards the abort signal and posts an empty items array when none are given', async () => {
-    apiRequestMock.mockResolvedValueOnce({ Body: { Id: 1 } })
+  it('forwards the abort signal for a validated request', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      Body: buildCockpitDraftResult(42, [{ productId: 100, qty: 1, unitPrice: 4.5 }]),
+    })
     const controller = new AbortController()
 
-    await createCockpitDraftOrder(42, [], controller.signal)
+    await createCockpitDraftOrder(42, [{ productId: 100, qty: 1 }], controller.signal)
 
     expect(apiRequestMock).toHaveBeenCalledWith('/supplies/ukraine/order/new/cockpit/draft', {
       method: 'POST',
-      body: { supplierId: 42, items: [] },
+      body: { supplierId: 42, items: [{ productId: 100, qty: 1 }] },
       signal: controller.signal,
     })
   })
 
-  it('tolerates a malformed response by returning it unwrapped', async () => {
+  it('rejects an empty request before making a network call', async () => {
+    await expect(createCockpitDraftOrder(42, [])).rejects.toThrow('cockpit_draft.items')
+    expect(apiRequestMock).not.toHaveBeenCalled()
+  })
+
+  it('rejects duplicate products and excess quantity precision', async () => {
+    await expect(
+      createCockpitDraftOrder(42, [
+        { productId: 100, qty: 1 },
+        { productId: 100, qty: 2 },
+      ]),
+    ).rejects.toThrow('duplicate product')
+    await expect(
+      createCockpitDraftOrder(42, [{ productId: 100, qty: 1.0001 }]),
+    ).rejects.toThrow('decimal places')
+    expect(apiRequestMock).not.toHaveBeenCalled()
+  })
+
+  it('fails closed for a malformed or mismatched persisted result', async () => {
     apiRequestMock.mockResolvedValueOnce('noise')
 
-    await expect(createCockpitDraftOrder(42, [{ productId: 100, qty: 30 }])).resolves.toBe('noise')
+    await expect(createCockpitDraftOrder(42, [{ productId: 100, qty: 30 }])).rejects.toThrow(
+      'cockpit_draft_result',
+    )
 
-    apiRequestMock.mockResolvedValueOnce(null)
+    apiRequestMock.mockResolvedValueOnce({
+      Body: buildCockpitDraftResult(42, [{ productId: 100, qty: 29, unitPrice: 4.5 }]),
+    })
 
-    await expect(createCockpitDraftOrder(42, [{ productId: 100, qty: 30 }])).resolves.toBeNull()
+    await expect(createCockpitDraftOrder(42, [{ productId: 100, qty: 30 }])).rejects.toThrow(
+      'persisted quantity',
+    )
   })
 })
 
@@ -563,6 +612,11 @@ describe('getProcurementCharts', () => {
     apiRequestMock.mockResolvedValueOnce({
       Body: {
         as_of_date: '2026-07-25',
+        producer_id: 42,
+        top_n: 8,
+        model_version: 'procure-hist120-v1',
+        urgency_mix: [{ urgency: 'critical', count: 1 }],
+        days_of_cover_hist: [{ bucket: '0-7', count: 1 }],
         demand_series: [
           {
             image_url: 'https://cdn.example.test/product.png',
@@ -612,6 +666,7 @@ describe('getProcurementCharts', () => {
       product_name: 'Гальмівний диск',
       vendor_code: 'BR-100',
     })
+    expect(charts.model_version).toBe('procure-hist120-v1')
   })
 })
 
@@ -636,7 +691,7 @@ describe('getBudgetCartPlan', () => {
     })
 
     expect(plan.budget_eur).toBe(50000)
-    expect(plan.budget_used_eur).toBe(42350.5)
+    expect(plan.budget_used_eur).toBe(225)
     expect(plan.value_captured_eur).toBe(8120.25)
     expect(plan.selected_count).toBe(2)
     expect(plan.deferred_count).toBe(1)
@@ -663,7 +718,7 @@ describe('getBudgetCartPlan', () => {
   })
 
   it('omits as_of_date from the body when not provided', async () => {
-    apiRequestMock.mockResolvedValueOnce({ Body: buildFullCartPlan() })
+    apiRequestMock.mockResolvedValueOnce({ Body: buildFullCartPlan(25000, 'greedy') })
 
     await getBudgetCartPlan({ budgetEur: 25000, method: 'greedy' })
 
@@ -677,23 +732,15 @@ describe('getBudgetCartPlan', () => {
     })
   })
 
-  it('falls back to greedy and zero budget for an invalid method or non-finite budget', async () => {
-    apiRequestMock.mockResolvedValueOnce({ Body: buildFullCartPlan() })
-
-    await getBudgetCartPlan({ budgetEur: Number.NaN, method: 'unknown' as never })
-
-    expect(apiRequestMock).toHaveBeenCalledWith('/procurement/cart', {
-      method: 'POST',
-      body: {
-        budget_eur: 0,
-        method: 'greedy',
-        only_needed: true,
-      },
-    })
+  it('rejects an invalid method or non-finite budget before making a network call', async () => {
+    await expect(
+      getBudgetCartPlan({ budgetEur: Number.NaN, method: 'unknown' as never }),
+    ).rejects.toThrow('request.method')
+    expect(apiRequestMock).not.toHaveBeenCalled()
   })
 
   it('forwards the abort signal when provided', async () => {
-    apiRequestMock.mockResolvedValueOnce({ Body: buildFullCartPlan() })
+    apiRequestMock.mockResolvedValueOnce({ Body: buildFullCartPlan(1000, 'greedy') })
     const controller = new AbortController()
 
     await getBudgetCartPlan({ budgetEur: 1000, method: 'greedy' }, controller.signal)
@@ -705,40 +752,47 @@ describe('getBudgetCartPlan', () => {
     })
   })
 
-  it('defaults budget fields to zero and tolerates null optional item fields', async () => {
+  it('preserves explicit unpriced items and validates unpriced totals', async () => {
     apiRequestMock.mockResolvedValueOnce({
-      items: [
-        {
+      ...buildCartEnvelope({
+        budgetEur: 1000,
+        items: [
+          buildSuggestion({
           product_id: 200,
           producer_id: 42,
           suggested_qty: 5,
-          urgency: 'normal',
           line_cost_eur: null,
           unit_cost_eur: null,
           unit_margin_eur: null,
           value_density: null,
-          within_budget: null,
-        },
-      ],
+          within_budget: false,
+          }),
+        ],
+        selectedCount: 0,
+        deferredCount: 1,
+        totalCostEur: null,
+        pricedCostEur: 0,
+        unpricedItemCount: 1,
+      }),
     })
 
     const plan = await getBudgetCartPlan({ budgetEur: 1000, method: 'greedy' })
 
-    expect(plan.budget_eur).toBe(0)
+    expect(plan.budget_eur).toBe(1000)
     expect(plan.budget_used_eur).toBe(0)
     expect(plan.value_captured_eur).toBe(0)
     expect(plan.selected_count).toBe(0)
-    expect(plan.deferred_count).toBe(0)
+    expect(plan.deferred_count).toBe(1)
     expect(plan.item_count).toBe(1)
 
     const [item] = plan.items
 
     expect(item?.value_density).toBeNull()
-    expect(item?.within_budget).toBeNull()
+    expect(item?.within_budget).toBe(false)
     expect(item?.line_cost_eur).toBeNull()
   })
 
-  it('drops malformed item rows and coerces within_budget false', async () => {
+  it('fails closed for malformed rows', async () => {
     apiRequestMock.mockResolvedValueOnce({
       Body: {
         budget_eur: 1000,
@@ -752,83 +806,130 @@ describe('getBudgetCartPlan', () => {
       },
     })
 
-    const plan = await getBudgetCartPlan({ budgetEur: 1000, method: 'greedy' })
-
-    expect(plan.items).toHaveLength(1)
-    expect(plan.items[0]?.product_id).toBe(9)
-    expect(plan.items[0]?.within_budget).toBe(false)
-    expect(plan.items[0]?.value_density).toBe(0.4)
-    expect(plan.item_count).toBe(1)
+    await expect(getBudgetCartPlan({ budgetEur: 1000, method: 'greedy' })).rejects.toThrow(
+      'cart.items[0]',
+    )
   })
 
-  it('returns an empty cart plan for a null response', async () => {
+  it('fails closed for a null response', async () => {
     apiRequestMock.mockResolvedValueOnce(null)
 
-    await expect(getBudgetCartPlan({ budgetEur: 1000, method: 'greedy' })).resolves.toEqual({
-      items: [],
-      item_count: 0,
-      as_of_date: null,
-      budget_eur: 0,
-      budget_used_eur: 0,
-      value_captured_eur: 0,
-      selected_count: 0,
-      deferred_count: 0,
-      method_used: null,
-      model_version: '',
+    await expect(getBudgetCartPlan({ budgetEur: 1000, method: 'greedy' })).rejects.toThrow(
+      'cart',
+    )
+  })
+
+  it('rejects item_count drift and duplicate product options', async () => {
+    const wrongCount = buildFullCartPlan()
+    wrongCount.item_count = 4
+    apiRequestMock.mockResolvedValueOnce({ Body: wrongCount })
+
+    await expect(getBudgetCartPlan({ budgetEur: 50000, method: 'milp' })).rejects.toThrow(
+      'cart.item_count',
+    )
+
+    const duplicate = buildFullCartPlan()
+    const duplicateItem = duplicate.items[1] as Record<string, unknown>
+    const duplicateForecast = duplicateItem.forecast as Record<string, unknown>
+    const duplicateInventory = duplicateItem.inventory as Record<string, unknown>
+    duplicate.items[1] = buildSuggestion({
+      ...duplicateItem,
+      product_id: 100,
+      forecast: { ...duplicateForecast, product_id: 100 },
+      inventory: { ...duplicateInventory, product_id: 100 },
     })
+    apiRequestMock.mockResolvedValueOnce({ Body: duplicate })
+
+    await expect(getBudgetCartPlan({ budgetEur: 50000, method: 'milp' })).rejects.toThrow(
+      'duplicate product',
+    )
+  })
+
+  it('rejects line-cent and cart-total drift', async () => {
+    const wrongLine = buildFullCartPlan()
+    wrongLine.items[0].line_cost_eur = 134.99
+    apiRequestMock.mockResolvedValueOnce({ Body: wrongLine })
+
+    await expect(getBudgetCartPlan({ budgetEur: 50000, method: 'milp' })).rejects.toThrow(
+      'line_cost_eur',
+    )
+
+    const wrongTotal = buildFullCartPlan()
+    wrongTotal.priced_cost_eur = 284.99
+    apiRequestMock.mockResolvedValueOnce({ Body: wrongTotal })
+
+    await expect(getBudgetCartPlan({ budgetEur: 50000, method: 'milp' })).rejects.toThrow(
+      'priced_cost_eur',
+    )
+  })
+
+  it('rejects truncation and unpriced-summary drift', async () => {
+    const wrongTruncation = buildFullCartPlan()
+    wrongTruncation.is_truncated = true
+    apiRequestMock.mockResolvedValueOnce({ Body: wrongTruncation })
+
+    await expect(getBudgetCartPlan({ budgetEur: 50000, method: 'milp' })).rejects.toThrow(
+      'is_truncated',
+    )
+
+    const wrongUnpriced = buildFullCartPlan()
+    wrongUnpriced.unpriced_item_count = 1
+    apiRequestMock.mockResolvedValueOnce({ Body: wrongUnpriced })
+
+    await expect(getBudgetCartPlan({ budgetEur: 50000, method: 'milp' })).rejects.toThrow(
+      'unpriced_item_count',
+    )
   })
 })
 
-function buildFullCartPlan() {
-  return {
-    item_count: 3,
-    as_of_date: '2026-06-15',
-    budget_eur: 50000,
-    budget_used_eur: 42350.5,
-    value_captured_eur: 8120.25,
-    selected_count: 2,
-    deferred_count: 1,
-    method_used: 'milp',
-    model_version: 'procure-hist120-v1',
+function buildFullCartPlan(
+  budgetEur = 50000,
+  method: 'greedy' | 'milp' = 'milp',
+) {
+  return buildCartEnvelope({
+    budgetEur,
+    method,
     items: [
-      {
+      buildSuggestion({
         product_id: 100,
         producer_id: 42,
         suggested_qty: 30,
         urgency: 'critical',
-        line_cost_eur: 135,
         unit_cost_eur: 4.5,
+        line_cost_eur: 135,
         unit_margin_eur: 4.5,
         quadrant: 'AX',
         value_density: 1.25,
         within_budget: true,
-      },
-      {
+      }),
+      buildSuggestion({
         product_id: 101,
         producer_id: 42,
         suggested_qty: 12,
         urgency: 'high',
-        line_cost_eur: 90,
         unit_cost_eur: 7.5,
+        line_cost_eur: 90,
         unit_margin_eur: 2.1,
         quadrant: 'BX',
         value_density: 0.8,
         within_budget: true,
-      },
-      {
+      }),
+      buildSuggestion({
         product_id: 102,
         producer_id: 7,
         suggested_qty: 4,
         urgency: 'normal',
-        line_cost_eur: 60,
         unit_cost_eur: 15,
+        line_cost_eur: 60,
         unit_margin_eur: 1,
         quadrant: 'CZ',
         value_density: 0.2,
         within_budget: false,
-      },
+      }),
     ],
-  }
+    selectedCount: 2,
+    deferredCount: 1,
+  })
 }
 
 function buildFullPlan() {
@@ -842,7 +943,7 @@ function buildFullPlan() {
     as_of_date: '2026-06-15',
     model_version: 'v3',
     items: [
-      {
+      buildSuggestion({
         product_id: 100,
         producer_id: 42,
         suggested_qty: 30,
@@ -855,6 +956,7 @@ function buildFullPlan() {
         urgency: 'critical',
         reason: 'below reorder point',
         forecast: {
+          product_id: 100,
           mean_daily: 3.2,
           std_daily: 0.8,
           method: 'croston',
@@ -862,6 +964,7 @@ function buildFullPlan() {
           forecast_units: 96,
         },
         inventory: {
+          product_id: 100,
           on_hand: 10,
           reserved: 2,
           on_order: 0,
@@ -876,9 +979,177 @@ function buildFullPlan() {
         abc: 'A',
         xyz: 'X',
         quadrant: 'AX',
+        seasonal_factor: 1.1,
         cheaper_alt: { producer_id: 7, cost_eur: 4.1 },
         learned_factor: 1.2,
-      },
+      }),
     ],
+  }
+}
+
+function buildSuggestion(overrides: Record<string, unknown> = {}) {
+  const productId = typeof overrides.product_id === 'number' ? overrides.product_id : 100
+  const producerId = typeof overrides.producer_id === 'number' ? overrides.producer_id : 42
+  const suggestedQty =
+    typeof overrides.suggested_qty === 'number' ? overrides.suggested_qty : 1
+  const unitCost =
+    'unit_cost_eur' in overrides ? overrides.unit_cost_eur : 4.5
+  const baseForecast = {
+    product_id: productId,
+    mean_daily: 1,
+    std_daily: 0,
+    method: 'naive',
+    horizon_days: 30,
+    forecast_units: 30,
+  }
+  const baseInventory = {
+    product_id: productId,
+    on_hand: 10,
+    reserved: 2,
+    on_order: 0,
+    available: 8,
+    position: 8,
+  }
+  const forecast =
+    overrides.forecast && typeof overrides.forecast === 'object'
+      ? { ...baseForecast, ...(overrides.forecast as Record<string, unknown>) }
+      : baseForecast
+  const inventory =
+    overrides.inventory && typeof overrides.inventory === 'object'
+      ? { ...baseInventory, ...(overrides.inventory as Record<string, unknown>) }
+      : baseInventory
+
+  return {
+    product_id: productId,
+    product_name: 'Амортизатор',
+    vendor_code: `SEM${productId}`,
+    oe_number: `OE-${productId}`,
+    image_url: null,
+    producer_id: producerId,
+    producer_name: 'SEM',
+    suggested_qty: suggestedQty,
+    raw_qty: null,
+    moq: null,
+    order_multiple: null,
+    reorder_point: 12,
+    safety_stock: 5,
+    lead_demand: 7,
+    order_up_to: 20,
+    days_of_cover: 8,
+    urgency: 'normal',
+    reason: 'below reorder point',
+    unit_cost_eur: unitCost,
+    line_cost_eur:
+      'line_cost_eur' in overrides
+        ? overrides.line_cost_eur
+        : typeof unitCost === 'number'
+          ? Math.round(unitCost * suggestedQty * 100) / 100
+          : null,
+    unit_sale_eur: 9,
+    unit_margin_eur: typeof unitCost === 'number' ? 9 - unitCost : null,
+    applied_service_level: 0.95,
+    abc: 'A',
+    xyz: 'X',
+    quadrant: 'AX',
+    seasonal_factor: null,
+    cheaper_alt: null,
+    learned_factor: null,
+    value_density: null,
+    within_budget: null,
+    ...overrides,
+    forecast,
+    inventory,
+  }
+}
+
+function buildCartEnvelope({
+  budgetEur,
+  items,
+  method = 'greedy',
+  selectedCount,
+  deferredCount,
+  totalCostEur,
+  pricedCostEur,
+  unpricedItemCount,
+}: {
+  budgetEur: number
+  items: Array<Record<string, unknown>>
+  method?: 'greedy' | 'milp'
+  selectedCount: number
+  deferredCount: number
+  totalCostEur?: number | null
+  pricedCostEur?: number
+  unpricedItemCount?: number
+}) {
+  const calculatedPricedCost = items.reduce(
+    (sum, item) => sum + (typeof item.line_cost_eur === 'number' ? item.line_cost_eur : 0),
+    0,
+  )
+  const calculatedUnpriced = items.filter((item) => item.line_cost_eur === null).length
+  const used = items.reduce(
+    (sum, item) =>
+      sum +
+      (item.within_budget === true && typeof item.line_cost_eur === 'number'
+        ? item.line_cost_eur
+        : 0),
+    0,
+  )
+
+  return {
+    item_count: items.length,
+    total_item_count: items.length,
+    is_truncated: false,
+    duplicate_supplier_options_removed: 0,
+    total_suggested_qty:
+      Math.round(
+        items.reduce(
+          (sum, item) => sum + (typeof item.suggested_qty === 'number' ? item.suggested_qty : 0),
+          0,
+        ) * 100,
+      ) / 100,
+    total_cost_eur:
+      totalCostEur !== undefined
+        ? totalCostEur
+        : calculatedUnpriced > 0
+          ? null
+          : Math.round(calculatedPricedCost * 100) / 100,
+    priced_cost_eur:
+      pricedCostEur ?? Math.round(calculatedPricedCost * 100) / 100,
+    unpriced_item_count: unpricedItemCount ?? calculatedUnpriced,
+    as_of_date: '2026-06-15',
+    budget_eur: budgetEur,
+    budget_used_eur: Math.round(used * 100) / 100,
+    value_captured_eur: selectedCount > 0 ? 8120.25 : 0,
+    selected_count: selectedCount,
+    deferred_count: deferredCount,
+    method_used: method,
+    model_version: 'procure-hist120-v1',
+    items,
+  }
+}
+
+function buildCockpitDraftResult(
+  supplierId: number,
+  lines: Array<{ productId: number; qty: number; unitPrice: number }>,
+) {
+  const items = lines.map((line) => ({
+    ProductId: line.productId,
+    Qty: line.qty,
+    UnitPrice: line.unitPrice,
+    LineNetAmount: Math.round(line.qty * line.unitPrice * 100) / 100,
+  }))
+
+  return {
+    OrderId: 555,
+    OrderNumber: 'SO-2026-1',
+    SupplierId: supplierId,
+    OrganizationId: 10,
+    ClientAgreementId: 20,
+    CurrencyId: 2,
+    CurrencyCode: 'EUR',
+    TotalQty: Math.round(items.reduce((sum, item) => sum + item.Qty, 0) * 1000) / 1000,
+    TotalNetAmount:
+      Math.round(items.reduce((sum, item) => sum + item.LineNetAmount, 0) * 100) / 100,
+    Items: items,
   }
 }

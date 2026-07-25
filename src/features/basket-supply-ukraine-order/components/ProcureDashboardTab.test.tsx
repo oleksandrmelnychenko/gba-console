@@ -19,6 +19,7 @@ vi.mock('../../supply-ukraine-orders/api/supplyUkraineOrdersApi', () => ({
 
 const charts: ProcurementCharts = {
   as_of_date: '2026-07-24',
+  model_version: 'test',
   days_of_cover_hist: [
     { bucket: '0–7', count: 7 },
     { bucket: '8–30', count: 18 },
@@ -111,6 +112,7 @@ describe('ProcureDashboardTab', () => {
       as_of_date: '2026-07-25',
       days_of_cover_hist: [],
       demand_series: [],
+      model_version: 'test',
       producer_id: null,
       top_items: [],
       top_n: 15,

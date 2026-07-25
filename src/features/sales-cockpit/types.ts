@@ -37,6 +37,7 @@ export type Note = {
 export type CockpitTask = {
   task_key: string
   manager_id?: number
+  manager_net_uid?: string
   client_id?: number
   client_name?: string | null
   task_type?: CockpitTaskType
@@ -79,6 +80,7 @@ export type CockpitCountByUrgency = {
 
 export type CockpitCount = {
   manager_id?: number
+  manager_net_uid?: string
   active_count: number
   by_urgency: CockpitCountByUrgency
 }
@@ -115,6 +117,7 @@ export type CockpitTargetMetric = {
 
 export type CockpitTarget = {
   manager_id?: number
+  manager_net_uid?: string
   manager_name?: string | null
   month?: string | null
   as_of?: string | null
@@ -128,6 +131,8 @@ export type EscalatedTask = CockpitTask
 
 export type EscalatedResponse = {
   is_head: boolean
+  requested_manager_net_uid?: string
+  requested_limit: number
   count: number
   tasks: EscalatedTask[]
 }
@@ -135,6 +140,7 @@ export type EscalatedResponse = {
 export type HeadTargetMetric = {
   target: number
   mtd: number
+  expected_to_date: number
   attainment_pct: number
   pace_status: HeadPaceStatus
 }
@@ -178,7 +184,10 @@ export type HeadTeamTotals = {
 
 export type HeadTeam = {
   is_head: boolean
+  requested_manager_net_uid?: string
   as_of?: string | null
+  expected_manager_count: number
+  returned_manager_count: number
   team: HeadTeamRow[]
   totals: HeadTeamTotals
 }
@@ -206,6 +215,7 @@ export type CockpitCompletedVsOpen = {
 
 export type CockpitDashboard = {
   manager_id: number
+  manager_net_uid?: string
   as_of?: string | null
   task_type_mix: CockpitTaskTypeMix[]
   urgency_mix: CockpitUrgencyMix[]
@@ -223,6 +233,7 @@ export type HeadDashboardTeam = {
 
 export type HeadDashboard = {
   is_head: boolean
+  requested_manager_net_uid?: string
   as_of?: string | null
   teams: HeadDashboardTeam[]
   escalated_count: number
@@ -236,7 +247,7 @@ export type HeadTask = {
   TaskKey: string
   ManagerId: number
   ManagerName: string | null
-  ClientId: number
+  ClientId: number | null
   ClientName: string | null
   TaskType: string | null
   Title: string | null
@@ -266,6 +277,14 @@ export type HeadTaskManager = {
 }
 
 export type HeadTasksResponse = {
+  IsHead: boolean
+  RequestedManagerNetUid: string
+  RequestedStatuses: string[]
+  RequestedManagerId: number | null
+  RequestedUrgency: string | null
+  Skip: number
+  Limit: number
+  ReturnedCount: number
   Total: number
   Tasks: HeadTask[]
   ByStatus: HeadTaskByStatus
@@ -278,4 +297,20 @@ export type HeadTasksParams = {
   urgency?: string
   skip?: number
   limit?: number
+}
+
+export type CockpitGenerationResult = {
+  manager_id: number
+  manager_net_uid: string
+  requested_as_of: string | null
+  as_of: string
+  candidates: number
+  generators_total: number
+  generators_failed: number
+  by_type: Record<string, number>
+  persisted: number
+  skipped_muted: number
+  skipped_capped: number
+  refreshed: number
+  crit_debt_reserved: number
 }

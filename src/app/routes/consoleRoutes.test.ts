@@ -1,4 +1,5 @@
 import { isValidElement } from 'react'
+import { Navigate } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
 import { PaymentArticlesShell } from '../../features/payment-articles/PaymentArticlesShell'
 import { consoleRoutes } from './consoleRoutes'
@@ -9,6 +10,26 @@ describe('console report routes', () => {
 
     expect(paths.has('/reports/sale')).toBe(true)
     expect(paths.has('/reports/sales')).toBe(true)
+  })
+})
+
+describe('legacy client return route', () => {
+  it('redirects to the canonical order-item return workflow', () => {
+    const route = consoleRoutes.find(
+      (candidate) => candidate.path === '/sales/return/client',
+    )
+
+    expect(isValidElement(route?.element)).toBe(true)
+
+    if (!isValidElement(route?.element)) {
+      throw new Error('Expected the legacy client return route to render a redirect')
+    }
+
+    expect(route.element.type).toBe(Navigate)
+    expect(route.element.props).toMatchObject({
+      replace: true,
+      to: '/sales/ukraine/all/returns/new',
+    })
   })
 })
 

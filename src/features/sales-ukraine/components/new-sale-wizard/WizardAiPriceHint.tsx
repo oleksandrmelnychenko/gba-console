@@ -37,8 +37,22 @@ function reducer(_state: HintState, action: HintAction): HintState {
   }
 }
 
-function formatEur(value: number | null): string {
-  return value === null || !Number.isFinite(value) ? '—' : `€${value.toFixed(2)}`
+function formatMoney(value: number | null, currency: string): string {
+  if (value === null || !Number.isFinite(value)) {
+    return '—'
+  }
+
+  try {
+    return new Intl.NumberFormat('uk-UA', {
+      currency: currency || 'EUR',
+      currencyDisplay: 'narrowSymbol',
+      maximumFractionDigits: 2,
+      minimumFractionDigits: 2,
+      style: 'currency',
+    }).format(value)
+  } catch {
+    return `${value.toFixed(2)} ${currency || 'EUR'}`
+  }
 }
 
 export function WizardAiPriceHint({ productNetId, clientAgreementNetId, withVat = true }: WizardAiPriceHintProps) {
@@ -107,7 +121,7 @@ export function WizardAiPriceHint({ productNetId, clientAgreementNetId, withVat 
     <Group gap={8} wrap="wrap">
       <AiFeatureBadge compact size="xs" tooltip={t('AI-рекомендація ціни')} />
       <Text fw={600} size="sm">
-        {formatEur(recommendation.recommended_price)}
+        {formatMoney(recommendation.recommended_price, recommendation.currency)}
       </Text>
       {recommendation.margin_pct_at_recommended !== null && (
         <Text c="dimmed" size="xs">
@@ -119,7 +133,7 @@ export function WizardAiPriceHint({ productNetId, clientAgreementNetId, withVat 
           <Group gap={2} wrap="nowrap">
             {MarketIcon && <MarketIcon color={belowMarket ? 'var(--mantine-color-teal-6)' : 'var(--mantine-color-red-6)'} size={13} />}
             <Text c="dimmed" size="xs">
-              {t('ринок')} {formatEur(median)}
+              {t('ринок')} {formatMoney(median, recommendation.currency)}
             </Text>
           </Group>
         </Tooltip>

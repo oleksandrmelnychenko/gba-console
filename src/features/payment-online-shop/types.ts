@@ -104,6 +104,7 @@ export type RetailClientPaymentImageItem = EntityFields & {
   IsLocked?: boolean
   PaymentType?: PaymentTypeValue | number
   RetailClientPaymentImageId?: number
+  RowVersion?: string
   User?: PaymentShopUser | null
 }
 

@@ -55,6 +55,7 @@ function suggestion(overrides: Partial<ReorderSuggestion> = {}): ReorderSuggesti
     cheaper_alt: null,
     days_of_cover: 4,
     forecast: {
+      product_id: 42,
       forecast_units: 60,
       horizon_days: 30,
       mean_daily: 2,
@@ -63,6 +64,7 @@ function suggestion(overrides: Partial<ReorderSuggestion> = {}): ReorderSuggesti
     },
     image_url: null,
     inventory: {
+      product_id: 42,
       available: 2,
       on_hand: 2,
       on_order: 0,
@@ -95,5 +97,6 @@ function suggestion(overrides: Partial<ReorderSuggestion> = {}): ReorderSuggesti
     within_budget: null,
     xyz: 'X',
     ...overrides,
+    seasonal_factor: overrides.seasonal_factor ?? null,
   }
 }

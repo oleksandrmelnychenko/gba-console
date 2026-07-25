@@ -64,6 +64,14 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
 })
 
 const EMPTY_RESPONSE: HeadTasksResponse = {
+  IsHead: false,
+  RequestedManagerNetUid: '',
+  RequestedStatuses: [],
+  RequestedManagerId: null,
+  RequestedUrgency: null,
+  Skip: 0,
+  Limit: 50,
+  ReturnedCount: 0,
   Total: 0,
   Tasks: [],
   ByStatus: { Open: 0, InProgress: 0, Done: 0, Snoozed: 0, Dismissed: 0 },
@@ -101,7 +109,6 @@ export function HeadTaskBoard({
 
   useEffect(() => {
     let active = true
-    let interval: ReturnType<typeof setInterval> | null = null
 
     async function load() {
       try {
@@ -140,38 +147,24 @@ export function HeadTaskBoard({
       }
     }
 
-    function startInterval() {
-      if (interval || document.visibilityState === 'hidden') {
-        return
-      }
-      interval = setInterval(() => {
+    const intervalId = window.setInterval(() => {
+      if (document.visibilityState === 'visible') {
         void load()
-      }, POLL_INTERVAL_MS)
-    }
-
-    function stopInterval() {
-      if (interval) {
-        clearInterval(interval)
-        interval = null
       }
-    }
+    }, POLL_INTERVAL_MS)
 
     function handleVisibility() {
       if (document.visibilityState === 'visible') {
         void load()
-        startInterval()
-      } else {
-        stopInterval()
       }
     }
 
     void load()
-    startInterval()
     document.addEventListener('visibilitychange', handleVisibility)
 
     return () => {
       active = false
-      stopInterval()
+      window.clearInterval(intervalId)
       document.removeEventListener('visibilitychange', handleVisibility)
     }
   }, [statusesQuery, managerId, urgency, skip, reloadKey, setData, setError, t])
@@ -452,7 +445,9 @@ function HeadTaskRow({ task }: { task: HeadTask }) {
           )}
         </Group>
         <Group gap={6} mt={4} wrap="wrap">
-          <Text c="dimmed" size="xs">{task.ClientName?.trim() || `#${task.ClientId}`}</Text>
+          <Text c="dimmed" size="xs">
+            {task.ClientName?.trim() || (task.ClientId !== null ? `#${task.ClientId}` : t('Клієнт не вказаний'))}
+          </Text>
           <span className="cockpit-board-row__separator" aria-hidden="true" />
           <Text c="dimmed" size="xs">{task.ManagerName?.trim() || `#${task.ManagerId}`}</Text>
         </Group>

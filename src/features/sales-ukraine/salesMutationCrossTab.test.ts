@@ -8,6 +8,7 @@ type RegistryModule = typeof import('./pendingSalesMutationRegistry')
 type SplitStateModule = typeof import('./components/new-sale-wizard/newSaleWizardState')
 
 let harness: SalesMutationStorageHarness | null = null
+const MODULE_ISOLATION_TEST_TIMEOUT_MS = 15_000
 
 afterEach(() => {
   harness?.dispose()
@@ -53,7 +54,7 @@ describe('cross-tab sales mutation fencing', () => {
     harness.selectTab('tab-a')
     releaseLease.resolve()
     await ownerRun
-  })
+  }, MODULE_ISOLATION_TEST_TIMEOUT_MS)
 
   it('permanently fences a suspended fallback owner after takeover and tombstone', async () => {
     harness = installSalesMutationStorageHarness('tab-a', 10_000)
@@ -102,7 +103,7 @@ describe('cross-tab sales mutation fencing', () => {
       payload,
       async () => undefined,
     )).rejects.toBeInstanceOf(tabA.SalesPendingMutationFenceError)
-  })
+  }, MODULE_ISOLATION_TEST_TIMEOUT_MS)
 
   it('does not let two distinct queued operation IDs send under Web Locks', async () => {
     harness = installSalesMutationStorageHarness('tab-a')
@@ -134,7 +135,7 @@ describe('cross-tab sales mutation fencing', () => {
     expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(1)
     expect(results.filter((result) => result.status === 'rejected')).toHaveLength(1)
     expect(sends).toBe(1)
-  })
+  }, MODULE_ISOLATION_TEST_TIMEOUT_MS)
 
   it('allows only one distinct operation to send with the lease fallback', async () => {
     harness = installSalesMutationStorageHarness('tab-a')
@@ -170,7 +171,7 @@ describe('cross-tab sales mutation fencing', () => {
     const results = await Promise.allSettled([first, second])
     expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(1)
     expect(sends).toBe(1)
-  })
+  }, MODULE_ISOLATION_TEST_TIMEOUT_MS)
 
   it('retains corrupt evidence, fails storage reads closed, and dispatches real cross-tab updates', async () => {
     harness = installSalesMutationStorageHarness('tab-a')
@@ -200,10 +201,11 @@ describe('cross-tab sales mutation fencing', () => {
     harness.failNextLocalStorage('length')
     expect(() => tabA.loadSalesPendingMutation(cleanScope)).toThrow(tabA.SalesPendingMutationStorageError)
     unsubscribe()
-  })
+  }, MODULE_ISOLATION_TEST_TIMEOUT_MS)
 
   it('fences a stale split module after takeover and keeps unrelated recovery records', async () => {
-    harness = installSalesMutationStorageHarness('tab-a', 50_000)
+    const leaseStartedAt = 50_000
+    harness = installSalesMutationStorageHarness('tab-a', leaseStartedAt)
     const tabA = await importSplitForTab('tab-a')
     const tabB = await importSplitForTab('tab-b')
     const source = createSplitSource('sale-a')
@@ -218,8 +220,8 @@ describe('cross-tab sales mutation fencing', () => {
     harness.selectTab('tab-b')
     const hydrated = tabB.hydrateWizardSplitRecovery(source.userKey)
     expect(hydrated).not.toBeNull()
-    harness.advanceClock(tabB.WIZARD_SPLIT_RECOVERY_LEASE_MS + 1)
-    expect(tabB.claimWizardSplitRecoveryOwnership(hydrated!, Date.now())).not.toBeNull()
+    const expiredAt = harness.advanceClock(tabB.WIZARD_SPLIT_RECOVERY_LEASE_MS + 1)
+    expect(tabB.claimWizardSplitRecoveryOwnership(hydrated!, expiredAt)).not.toBeNull()
     tabB.clearWizardSplitOrderItems()
     tabB.setWizardSplitOrderItems([createSplitItem('product-b')], unrelated.agreementNetId, unrelated)
 
@@ -239,11 +241,13 @@ describe('cross-tab sales mutation fencing', () => {
     expect(tabB.hydrateWizardSplitRecovery(unrelated.userKey)).toMatchObject({
       saleNetUid: unrelated.saleNetUid,
     })
+    harness.selectTab('tab-a')
     unsubscribe()
-  })
+  }, MODULE_ISOLATION_TEST_TIMEOUT_MS)
 
   it('does not reuse a duplicated session as the same split recovery owner', async () => {
-    harness = installSalesMutationStorageHarness('tab-a', 80_000)
+    const leaseStartedAt = 80_000
+    harness = installSalesMutationStorageHarness('tab-a', leaseStartedAt)
     const tabA = await importSplitForTab('tab-a')
     const source = createSplitSource('duplicated-sale')
     const mutation = createSplitMutation('85555555-5555-4555-8555-555555555555')
@@ -265,16 +269,16 @@ describe('cross-tab sales mutation fencing', () => {
 
     expect(ownerB).not.toBe(ownerA)
     expect(hydrated).not.toBeNull()
-    expect(tabB.claimWizardSplitRecoveryOwnership(hydrated!, Date.now())).toBeNull()
+    expect(tabB.claimWizardSplitRecoveryOwnership(hydrated!, leaseStartedAt)).toBeNull()
 
-    harness.advanceClock(tabB.WIZARD_SPLIT_RECOVERY_LEASE_MS + 1)
-    expect(tabB.claimWizardSplitRecoveryOwnership(hydrated!, Date.now())).not.toBeNull()
+    const expiredAt = harness.advanceClock(tabB.WIZARD_SPLIT_RECOVERY_LEASE_MS + 1)
+    expect(tabB.claimWizardSplitRecoveryOwnership(hydrated!, expiredAt)).not.toBeNull()
 
     harness.selectTab('tab-a')
     expect(() => tabA.markWizardSplitExtractionSubmitted(mutation.operationId)).toThrow(
       tabA.WizardSplitRecoveryFenceError,
     )
-  })
+  }, MODULE_ISOLATION_TEST_TIMEOUT_MS)
 })
 
 async function importRegistryForTab(tabId: string): Promise<RegistryModule> {

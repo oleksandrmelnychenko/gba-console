@@ -1236,7 +1236,8 @@ function readOrderNumber(order: unknown): string {
     return ''
   }
 
-  const value = (order as Record<string, unknown>).Number
+  const record = order as Record<string, unknown>
+  const value = record.OrderNumber ?? record.orderNumber ?? record.Number
 
   if (typeof value === 'string' && value !== '') {
     return value

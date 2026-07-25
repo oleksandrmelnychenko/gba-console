@@ -60,6 +60,8 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
 const EMPTY_TEAM: HeadTeam = {
   is_head: false,
   as_of: null,
+  expected_manager_count: 0,
+  returned_manager_count: 0,
   team: [],
   totals: {
     shipped_target: 0,
@@ -78,6 +80,7 @@ const EMPTY_TEAM: HeadTeam = {
 
 const EMPTY_ESCALATED: EscalatedResponse = {
   is_head: false,
+  requested_limit: 100,
   count: 0,
   tasks: [],
 }

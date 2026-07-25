@@ -108,7 +108,13 @@ export function installSalesMutationStorageHarness(
     options?: boolean | EventListenerOptions,
   ) => {
     if (type === 'storage' && listener) {
-      getStorageListeners(activeTabId).delete(listener)
+      // Each imported module represents a distinct browser tab, but the harness
+      // necessarily exposes one shared `window`. An unsubscribe must therefore
+      // remove the exact listener from the tab where it was registered, not from
+      // whichever emulated tab happens to be active when cleanup runs.
+      for (const listeners of storageListeners.values()) {
+        listeners.delete(listener)
+      }
       return
     }
 

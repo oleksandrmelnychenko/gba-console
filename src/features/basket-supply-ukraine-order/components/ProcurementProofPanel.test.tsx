@@ -56,6 +56,7 @@ function suggestion(): ReorderSuggestion {
     cheaper_alt: { cost_eur: 4.1, producer_id: 7 },
     days_of_cover: 4,
     forecast: {
+      product_id: 100,
       forecast_units: 60,
       horizon_days: 30,
       mean_daily: 0,
@@ -64,6 +65,7 @@ function suggestion(): ReorderSuggestion {
     },
     image_url: null,
     inventory: {
+      product_id: 100,
       available: 8,
       on_hand: 10,
       on_order: 0,
@@ -86,6 +88,7 @@ function suggestion(): ReorderSuggestion {
     reason: '',
     reorder_point: 18,
     safety_stock: 6,
+    seasonal_factor: null,
     suggested_qty: 30,
     unit_cost_eur: 4.5,
     unit_margin_eur: 3,

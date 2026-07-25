@@ -32,7 +32,9 @@ export type PaymentShopDetailDrawerProps = {
   createError: string | null
   isCreating: boolean
   item: PaymentShopItem | null
-  onAddPayment: (payload: Omit<AddPaymentImagePayload, 'paymentImageId' | 'user'>) => void
+  onAddPayment: (
+    payload: Omit<AddPaymentImagePayload, 'paymentImageId' | 'user'>,
+  ) => Promise<boolean>
   onClose: () => void
   onEditItem: (item: RetailClientPaymentImageItem) => void
 }
@@ -77,20 +79,23 @@ export function PaymentShopDetailDrawer({
     onClose()
   }
 
-  function handleCreate() {
+  async function handleCreate() {
     const amount = typeof draft.amount === 'number' ? draft.amount : Number.parseFloat(String(draft.amount))
 
     if (!(amount > 0) || draft.paymentType === null || !draft.image) {
       return
     }
 
-    onAddPayment({
+    const created = await onAddPayment({
       amount,
       comment: draft.comment,
       image: draft.image,
       paymentType: draft.paymentType,
     })
-    setDraft(INITIAL_DRAFT)
+
+    if (created) {
+      setDraft(INITIAL_DRAFT)
+    }
   }
 
   return (
@@ -147,7 +152,7 @@ export function PaymentShopDetailDrawer({
                 onChange={(value) => setDraft((current) => ({ ...current, image: value }))}
               />
               <Group justify="flex-end">
-                <Button color={CREATE_ACTION_COLOR} loading={isCreating} onClick={handleCreate}>
+                <Button color={CREATE_ACTION_COLOR} loading={isCreating} onClick={() => void handleCreate()}>
                   {t('Створити')}
                 </Button>
               </Group>

@@ -1,5 +1,9 @@
 import { apiRequest } from '../../../shared/api/apiClient'
 import { formatDateInputForQuery } from '../../../shared/date/dateTime'
+import {
+  getSalesMutationOperationHeaders,
+  type SalesMutationOperationOptions,
+} from '../../sales-ukraine/salesMutationOperation'
 import type {
   AddPaymentImagePayload,
   EditPaymentImagePayload,
@@ -29,7 +33,10 @@ export async function getPaymentShopItemsPage(filters: PaymentShopFilters): Prom
   return normalizePaymentShopItemsResponse(result)
 }
 
-export async function addPaymentImage(payload: AddPaymentImagePayload): Promise<void> {
+export async function addPaymentImage(
+  payload: AddPaymentImagePayload,
+  operation: SalesMutationOperationOptions,
+): Promise<PaymentShopItem | null> {
   const formData = new FormData()
   formData.append(
     'paymentImageItem',
@@ -43,13 +50,20 @@ export async function addPaymentImage(payload: AddPaymentImagePayload): Promise<
   )
   formData.append('image', payload.image)
 
-  await apiRequest<unknown>('/retail/clients/new/payment/item', {
+  const result = await apiRequest<unknown>('/retail/clients/new/payment/item', {
     method: 'POST',
     body: formData,
+    headers: getSalesMutationOperationHeaders(operation.operationId),
+    ...(operation.signal ? { signal: operation.signal } : {}),
   })
+
+  return normalizePaymentShopItem(result)
 }
 
-export async function editPaymentImage(payload: EditPaymentImagePayload): Promise<PaymentShopItem | null> {
+export async function editPaymentImage(
+  payload: EditPaymentImagePayload,
+  operation: SalesMutationOperationOptions,
+): Promise<PaymentShopItem | null> {
   const result = await apiRequest<unknown>('/retail/clients/update/payment/item', {
     method: 'POST',
     body: {
@@ -59,6 +73,8 @@ export async function editPaymentImage(payload: EditPaymentImagePayload): Promis
       User: payload.user,
       Comment: payload.comment,
     },
+    headers: getSalesMutationOperationHeaders(operation.operationId),
+    ...(operation.signal ? { signal: operation.signal } : {}),
   })
 
   return normalizePaymentShopItem(result)
