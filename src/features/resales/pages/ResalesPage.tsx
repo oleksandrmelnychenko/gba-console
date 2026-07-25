@@ -1520,10 +1520,19 @@ export function ResalePage() {
 
   if (isLoading) {
     return (
-      <Card withBorder radius="md" padding="xl">
-        <Group justify="center">
-          <Text c="dimmed">{t('Завантаження')}</Text>
-        </Group>
+      <Card withBorder radius="md" padding="md">
+        <DataTable
+          columns={columns}
+          data={[]}
+          defaultLayout={DETAIL_TABLE_DEFAULT_LAYOUT}
+          emptyText={t('Позицій не знайдено')}
+          getRowId={(_row, index) => String(index)}
+          isLoading
+          layoutVersion="resale-detail-items-table-1"
+          loadingText={t('Завантаження перепродажу')}
+          minWidth={1360}
+          tableId="resale-detail-items"
+        />
       </Card>
     )
   }
