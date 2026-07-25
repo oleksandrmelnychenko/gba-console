@@ -513,6 +513,7 @@ function usePaymentShopColumns(onOpenDetail: (item: PaymentShopItem) => void, on
         minWidth: 56,
         maxWidth: 56,
         align: 'center',
+        rowActions: true,
         enableHiding: false,
         enableReorder: false,
         enableResizing: false,
