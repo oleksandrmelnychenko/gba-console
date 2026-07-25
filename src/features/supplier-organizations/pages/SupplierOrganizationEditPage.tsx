@@ -69,7 +69,7 @@ const AGREEMENTS_TABLE_DEFAULT_LAYOUT = {
     left: ['name'],
     right: ['documents'],
   },
-  density: 'compact',
+  density: 'normal',
 } satisfies DataTableDefaultLayout
 
 const moneyFormatter = new Intl.NumberFormat('uk-UA', {
