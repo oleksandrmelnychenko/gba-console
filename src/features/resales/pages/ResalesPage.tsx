@@ -132,7 +132,7 @@ const PROCESS_CONFIRM_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['vendorCode', 'productName'],
   },
-  density: 'compact',
+  density: 'normal',
 } satisfies DataTableDefaultLayout
 
 const DETAIL_TABLE_DEFAULT_LAYOUT = {
