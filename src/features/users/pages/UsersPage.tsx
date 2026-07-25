@@ -336,7 +336,6 @@ export function UsersPage() {
                   ? t('Користувачів за цими фільтрами не знайдено')
                   : t('Користувачів не знайдено')
               }
-              fillAvailableWidth={false}
               getRowId={(user, index) => String(user.NetUid || user.Id || index)}
               height="100%"
               isLoading={isBusy}
