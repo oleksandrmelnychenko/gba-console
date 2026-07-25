@@ -21,7 +21,7 @@ import {
 } from '../utils'
 
 const CART_ITEMS_LAYOUT = {
-  density: 'compact',
+  density: 'normal',
 } satisfies DataTableDefaultLayout
 
 type CartReserveCardProps = {
