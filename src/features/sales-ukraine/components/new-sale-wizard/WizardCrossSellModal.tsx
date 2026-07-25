@@ -1,8 +1,9 @@
-import { Alert, Box, Button, Group, Loader, Stack, Table, Text } from '@mantine/core'
+import { Alert, Box, Button, Group, Stack, Table, Text } from '@mantine/core'
 import { CircleAlert, Sparkles } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { AppModal } from '../../../../shared/ui/AppModal'
+import { TableShimmerRows } from '../../../../shared/ui/table-shimmer/TableShimmerRows'
 import { getProductCoPurchaseRecommendations } from '../../../clients/api/clientRecommendationsApi'
 import { getWizardProductNumber, getWizardSellableQty, type WizardSaleProduct } from './wizardSaleProduct'
 
@@ -96,16 +97,11 @@ export function WizardCrossSellModal({
       }
       onClose={onClose}
     >
-      {isLoading ? (
-        <Group justify="center" py="lg">
-          <Loader size="sm" />
-          <Text size="sm">{t('Завантаження кросс-продажів…')}</Text>
-        </Group>
-      ) : error ? (
+      {error ? (
         <Alert color="orange" icon={<CircleAlert size={18} />} variant="light">
           {error}
         </Alert>
-      ) : visibleProducts.length === 0 ? (
+      ) : !isLoading && visibleProducts.length === 0 ? (
         <Text c="dimmed" py="md" ta="center">
           {t('З цим товаром поки нічого разом не купували')}
         </Text>
@@ -122,8 +118,10 @@ export function WizardCrossSellModal({
                 <Table.Th />
               </Table.Tr>
             </Table.Thead>
-            <Table.Tbody>
-              {visibleProducts.map((product) => {
+            <Table.Tbody aria-busy={isLoading}>
+              {isLoading ? (
+                <TableShimmerRows columns={6} />
+              ) : visibleProducts.map((product) => {
                 const sellable = getWizardSellableQty(product, isVatSale) ?? 0
                 const localPrice =
                   (useEurToUah
