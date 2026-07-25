@@ -494,6 +494,7 @@ function usePlacementColumns(
         width: 64,
         minWidth: 58,
         align: 'right',
+        rowActions: true,
         enableSorting: false,
         enableHiding: false,
         enablePinning: false,
