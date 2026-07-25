@@ -29,17 +29,17 @@ const preciseMoney = new Intl.NumberFormat('uk-UA', {
 })
 
 const ACTION_LABELS: Record<string, string> = {
-  discount_or_redistribute: 'Знижка або перерозподіл',
-  dead_stock_review: 'Розбір мертвого запасу',
-  fix_margin: 'Виправити маржу',
-  keep_push: 'Продовжувати продавати',
-  margin_review: 'Перевірити маржу',
-  monitor: 'Моніторинг',
-  monitor_decline: 'Контроль падіння попиту',
-  quality_review: 'Перевірити якість / повернення',
-  reorder_check: 'Перевірити дозамовлення',
-  slow_mover_review: 'Розбір повільного товару',
-  to_order_candidate: 'Кандидат під замовлення',
+  discount_or_redistribute: 'Знизити ціну або перемістити запас',
+  dead_stock_review: 'Перевірити залишок без продажів',
+  fix_margin: 'Переглянути ціну: маржа занадто низька',
+  keep_push: 'Підтримувати продажі',
+  margin_review: 'Перевірити ціну та маржу',
+  monitor: 'Спостерігати за товаром',
+  monitor_decline: 'Перевірити причину падіння продажів',
+  quality_review: 'Перевірити повернення та якість',
+  reorder_check: 'Перевірити потребу в дозамовленні',
+  slow_mover_review: 'Вирішити, що робити з повільним запасом',
+  to_order_candidate: 'Продавати під замовлення',
 }
 
 const ACTION_PILLS: Record<string, string> = {
@@ -57,41 +57,53 @@ const ACTION_PILLS: Record<string, string> = {
 }
 
 const REASON_LABELS: Record<string, string> = {
-  dead_stock: 'немає живого попиту',
-  declining_demand: 'попит падає',
-  healthy_margin: 'маржа здорова',
-  high_returns: 'високі повернення',
-  negative_margin: 'відʼємна маржа',
-  no_immediate_action: 'без негайної дії',
-  overstock: 'надлишок запасу',
-  slow_mover: 'повільний товар',
-  strong_demand: 'сильний попит',
-  strong_to_order_demand: 'сильний попит без складу',
-  understock: 'дефіцит запасу',
-  unknown_margin: 'маржа невідома',
+  dead_stock: 'Товар давно не продавався',
+  declining_demand: 'Продажі знижуються',
+  healthy_margin: 'Маржа на нормальному рівні',
+  high_returns: 'Забагато повернень',
+  negative_margin: 'Продажі приносять збиток',
+  no_immediate_action: 'Термінових дій не потрібно',
+  overstock: 'На складі більше, ніж потрібно',
+  slow_mover: 'Товар продається повільно',
+  strong_demand: 'Товар добре продається',
+  strong_to_order_demand: 'Є попит, але немає запасу',
+  understock: 'Запасу може не вистачити',
+  unknown_margin: 'Недостатньо даних про маржу',
 }
 
 const COMPONENT_LABELS: Record<string, string> = {
-  abc: 'ABC',
-  margin: 'Маржа',
-  returns: 'Повернення',
-  stability: 'Стабільність',
-  stock: 'Запас',
-  trend: 'Тренд',
+  abc: 'Внесок у продажі',
+  margin: 'Прибутковість',
+  returns: 'Продажі без повернень',
+  stability: 'Стабільність попиту',
+  stock: 'Відповідність запасу попиту',
+  trend: 'Динаміка продажів',
 }
 
 const CLASS_LABELS: Record<string, string> = {
-  dead: 'мертвий',
-  declining: 'падає',
-  growing: 'росте',
-  healthy: 'здоровий',
-  mature: 'стабільний',
-  new: 'новий',
+  dead: 'без продажів',
+  declining: 'продажі знижуються',
+  growing: 'продажі зростають',
+  healthy: 'запас відповідає попиту',
+  mature: 'стабільний попит',
+  new: 'новий товар',
   order_to_demand: 'під замовлення',
-  overstock: 'надлишок',
-  slow: 'повільний',
-  understock: 'дефіцит',
-  unknown: 'невідомо',
+  overstock: 'надлишковий запас',
+  slow: 'продається повільно',
+  understock: 'запасу недостатньо',
+  unknown: 'недостатньо даних',
+}
+
+const ABC_LABELS: Record<string, string> = {
+  A: 'високий',
+  B: 'середній',
+  C: 'низький',
+}
+
+const XYZ_LABELS: Record<string, string> = {
+  X: 'стабільний',
+  Y: 'мінливий',
+  Z: 'нерегулярний',
 }
 
 function healthPill(health: number): string {
@@ -127,22 +139,46 @@ function componentEntries(value: Record<string, number> | undefined): Array<{ ke
 
 function formatClass(value: unknown): string {
   if (typeof value !== 'string' || value === '') {
-    return ''
+    return 'недостатньо даних'
   }
 
-  return CLASS_LABELS[value] ?? value
+  return CLASS_LABELS[value] ?? 'недостатньо даних'
 }
 
 function formatScore(score: number | null | undefined): string {
-  return score == null ? '' : integer.format(Math.round(score))
+  return score == null ? 'Немає даних' : `${integer.format(Math.round(score))}/100`
 }
 
 function formatPercent(value: number | null | undefined): string {
-  return value == null ? '' : `${(value * 100).toFixed(1)}%`
+  return value == null ? 'Немає даних' : `${(value * 100).toFixed(1)}%`
 }
 
 function formatNullableNumber(value: number | null | undefined): string {
-  return value == null ? '' : decimal.format(value)
+  return value == null ? 'Немає даних' : decimal.format(value)
+}
+
+function formatDays(value: number): string {
+  const rounded = Math.round(value)
+  const absolute = Math.abs(rounded)
+  const lastTwoDigits = absolute % 100
+  const lastDigit = absolute % 10
+  const unit = lastTwoDigits >= 11 && lastTwoDigits <= 14
+    ? 'днів'
+    : lastDigit === 1
+      ? 'день'
+      : lastDigit >= 2 && lastDigit <= 4
+        ? 'дні'
+        : 'днів'
+
+  return `${rounded} ${unit}`
+}
+
+function scoreStatus(score: number | null): string {
+  if (score === null) {
+    return 'Недостатньо даних'
+  }
+
+  return score < 40 ? 'Потребує уваги' : score < 70 ? 'Середній рівень' : 'Добрий рівень'
 }
 
 export function ProductCard({
@@ -304,18 +340,36 @@ export function ProductCard({
       <ProductAiAction actionLabel={actionLabel} actionReasons={actionReasons} t={t} />
 
       <SimpleGrid cols={{ base: 2, md: 4 }}>
-        <Stat label={t('Запас')} value={formatNullableNumber(detail.qty_on_hand)} />
-        <Stat label={t('Вартість запасу')} value={money.format(detail.eur_value)} />
-        <Stat label={t('Маржа %')} value={formatPercent(detail.margin_pct)} />
-        <Stat label={t('Покриття, дн.')} value={detail.cover_days == null ? '' : String(Math.round(detail.cover_days))} />
+        <Stat label={t('Залишок на складі')} value={formatNullableNumber(detail.qty_on_hand)} />
+        <Stat label={t('Вартість залишку')} value={money.format(detail.eur_value)} />
+        <Stat label={t('Маржа')} value={formatPercent(detail.margin_pct)} />
+        <Stat
+          label={t('Запасу вистачить')}
+          value={detail.cover_days == null ? t('Немає даних') : formatDays(detail.cover_days)}
+        />
       </SimpleGrid>
 
       <ProductSalesAnalytics analytics={analytics} error={analyticsError} />
 
       <SimpleGrid cols={{ base: 1, md: 3 }}>
-        <ScoreCard label={t('Health')} score={detail.health} components={detail.health_components} />
-        <ScoreCard label={t('Попит')} score={demandScore} components={detail.demand_components} />
-        <ScoreCard label={t('Маржа / якість')} score={marginScore} components={detail.margin_components} />
+        <ScoreCard
+          description={t('Наскільки товар продається та чи відповідає запас попиту.')}
+          label={t('Загальна оцінка товару')}
+          score={detail.health}
+          components={detail.health_components}
+        />
+        <ScoreCard
+          description={t('Чи купують товар регулярно та як змінюються продажі.')}
+          label={t('Попит на товар')}
+          score={demandScore}
+          components={detail.demand_components}
+        />
+        <ScoreCard
+          description={t('Маржа, внесок у продажі та рівень повернень.')}
+          label={t('Прибутковість і повернення')}
+          score={marginScore}
+          components={detail.margin_components}
+        />
       </SimpleGrid>
 
       <CommercialProfile detail={detail} t={t} />
@@ -356,7 +410,7 @@ function ProductHero({
           )}
         </Stack>
         <Badge className={`app-role-pill ${healthPill(detail.health)}`} variant="light">
-          {t('Здоровʼя')}: {Math.round(detail.health)}
+          {t('Загальна оцінка')}: {Math.round(detail.health)}/100
         </Badge>
       </Group>
     </Card>
@@ -380,21 +434,21 @@ function ProductAiAction({
           <Stack gap={8}>
             <Group gap="xs">
               <Text className="app-section-title" fw={600} size="sm">
-                {t('AI-рішення по товару')}
+                {t('Що рекомендує система')}
               </Text>
               <Badge className={`app-role-pill ${ACTION_PILLS[actionLabel] ?? 'is-gray'}`} size="sm" variant="light">
-                {t(ACTION_LABELS[actionLabel] ?? actionLabel)}
+                {t(ACTION_LABELS[actionLabel] ?? 'Перевірити товар')}
               </Badge>
             </Group>
             <Group gap={6}>
               {actionReasons.length === 0 ? (
                 <Badge className="app-role-pill is-gray" size="xs" variant="light">
-                  {t('без окремих причин')}
+                  {t('Додаткових застережень немає')}
                 </Badge>
               ) : (
                 actionReasons.map((reason) => (
                   <Badge className="app-role-pill is-gray" key={reason} size="xs" variant="light">
-                    {t(REASON_LABELS[reason] ?? reason)}
+                    {t(REASON_LABELS[reason] ?? 'Система знайшла сигнал, який потребує перевірки')}
                   </Badge>
                 ))
               )}
@@ -414,26 +468,34 @@ function CommercialProfile({ detail, t }: { detail: ProductDetail; t: ProductCar
           {t('Комерційний профіль')}
         </Text>
         <SimpleGrid cols={{ base: 2, md: 4 }}>
-          <Stat label={t('Продажі за 12 міс.')} value={formatNullableNumber(detail.annual_units)} />
-          <Stat label={t('Оціночна виручка')} value={money.format(detail.revenue_eur)} />
-          <Stat label={t('Собівартість / шт.')} value={detail.unit_cost_eur == null ? '' : preciseMoney.format(detail.unit_cost_eur)} />
-          <Stat label={t('Сер. ціна продажу')} value={detail.avg_price_eur == null ? '' : preciseMoney.format(detail.avg_price_eur)} />
+          <Stat label={t('Продано за 12 місяців')} value={formatNullableNumber(detail.annual_units)} />
+          <Stat label={t('Виручка за 12 місяців')} value={money.format(detail.revenue_eur)} />
+          <Stat
+            label={t('Собівартість одиниці')}
+            value={detail.unit_cost_eur == null ? t('Немає даних') : preciseMoney.format(detail.unit_cost_eur)}
+          />
+          <Stat
+            label={t('Середня ціна продажу')}
+            value={detail.avg_price_eur == null ? t('Немає даних') : preciseMoney.format(detail.avg_price_eur)}
+          />
         </SimpleGrid>
         <Group gap={6}>
           <Badge className="app-role-pill is-gray" variant="light">
-            ABC {detail.abc}
+            {t('Внесок у продажі')}: {t(ABC_LABELS[detail.abc] ?? 'недостатньо даних')} ({t('клас')} {detail.abc})
           </Badge>
           <Badge className="app-role-pill is-gray" variant="light">
-            XYZ {detail.xyz}
+            {t('Регулярність попиту')}: {t(XYZ_LABELS[detail.xyz] ?? 'недостатньо даних')} ({t('клас')} {detail.xyz})
           </Badge>
           <Badge className="app-role-pill is-gray" variant="light">
-            {t('Стан')}: {t(formatClass(detail.band))}
+            {t('Стан запасу')}: {t(formatClass(detail.band))}
           </Badge>
           <Badge className="app-role-pill is-gray" variant="light">
-            {t('Цикл')}: {t(formatClass(detail.lifecycle))}
+            {t('Стадія попиту')}: {t(formatClass(detail.lifecycle))}
           </Badge>
           <Badge className="app-role-pill is-gray" variant="light">
-            {t('Повернення')}: {formatPercent(detail.return_rate)}
+            {detail.return_rate === 0
+              ? t('Повернень не було')
+              : `${t('Повернення')}: ${formatPercent(detail.return_rate)}`}
           </Badge>
         </Group>
       </Stack>
@@ -454,12 +516,16 @@ function SubstitutesPanel({
     <Card radius="md" withBorder>
       <Stack gap="xs">
         <Text className="app-section-title" fw={600} size="sm">
-          {t('Замінники')} ({substitutes?.in_stock_count ?? 0} {t('в наявності')})
+          {t('Доступні замінники')}
         </Text>
         {error ? (
           <Alert color="orange" icon={<CircleAlert size={16} />} variant="light">
             {error}
           </Alert>
+        ) : (substitutes?.candidates ?? []).length === 0 ? (
+          <Text c="dimmed" size="sm">
+            {t('Замінників у наявності не знайдено.')}
+          </Text>
         ) : (
           (substitutes?.candidates ?? []).map((candidate) => (
             <Group key={candidate.product_id} justify="space-between">
@@ -492,7 +558,7 @@ function RegionsPanel({
     <Card radius="md" withBorder>
       <Stack gap="xs">
         <Text className="app-section-title" fw={600} size="sm">
-          {t('Попит за регіонами')}
+          {t('Де купують товар')}
         </Text>
         {error ? (
           <Alert color="orange" icon={<CircleAlert size={16} />} variant="light">
@@ -500,7 +566,7 @@ function RegionsPanel({
           </Alert>
         ) : (productRegions?.regions ?? []).length === 0 ? (
           <Text c="dimmed" size="sm">
-            {t('Немає даних')}
+            {t('За обраний період продажів у регіонах не було.')}
           </Text>
         ) : (
           (productRegions?.regions ?? []).map((region) => {
@@ -544,10 +610,12 @@ function RegionsPanel({
 
 function ScoreCard({
   components,
+  description,
   label,
   score,
 }: {
   components: Record<string, number> | undefined
+  description: string
   label: string
   score: number | null
 }) {
@@ -565,9 +633,17 @@ function ScoreCard({
             {formatScore(score)}
           </Badge>
         </Group>
+        <Stack gap={3}>
+          <Text c="dimmed" size="xs">
+            {description}
+          </Text>
+          <Text className={`assort-score-card__status ${scorePill(score)}`} size="xs">
+            {t(scoreStatus(score))}
+          </Text>
+        </Stack>
         {entries.length === 0 ? (
           <Text c="dimmed" size="sm">
-            {t('Немає деталізації')}
+            {t('Недостатньо даних для детальної оцінки.')}
           </Text>
         ) : (
           <Stack gap={8}>
@@ -578,7 +654,7 @@ function ScoreCard({
                     {t(COMPONENT_LABELS[entry.key] ?? entry.key)}
                   </Text>
                   <Text className="assort-score-row__value" size="xs">
-                    {integer.format(Math.round(entry.value * 100))}
+                    {integer.format(Math.round(entry.value * 100))}/100
                   </Text>
                 </Group>
                 <Progress color={entry.value < 0.4 ? 'red' : entry.value < 0.7 ? 'yellow' : 'teal'} radius="xl" size={6} value={entry.value * 100} />

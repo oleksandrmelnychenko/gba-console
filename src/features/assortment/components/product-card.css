@@ -32,6 +32,26 @@
   padding: 14px 16px;
 }
 
+.assort-score-card__status {
+  font-weight: 650;
+}
+
+.assort-score-card__status.is-red {
+  color: var(--mantine-color-red-8);
+}
+
+.assort-score-card__status.is-yellow {
+  color: var(--mantine-color-yellow-9);
+}
+
+.assort-score-card__status.is-green {
+  color: var(--mantine-color-teal-8);
+}
+
+.assort-score-card__status.is-gray {
+  color: var(--mantine-color-gray-6);
+}
+
 .assort-score-row {
   display: grid;
   gap: 4px;
@@ -146,6 +166,16 @@
   color: var(--mantine-color-gray-6);
   font-size: 10px;
   font-weight: 600;
+}
+
+.assort-sales-empty {
+  background: var(--mantine-color-gray-0);
+  border: 1px dashed var(--mantine-color-gray-3);
+  border-radius: 8px;
+  display: grid;
+  gap: 3px;
+  padding: 18px 14px;
+  text-align: center;
 }
 
 .assort-sales-analytics__caption {

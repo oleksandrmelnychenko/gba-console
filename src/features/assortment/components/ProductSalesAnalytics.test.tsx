@@ -32,9 +32,10 @@ describe('ProductSalesAnalytics', () => {
 
     expect(screen.getByText((_content, element) => element?.tagName === 'B' && element.textContent === '95 шт.')).toBeTruthy()
     expect(screen.getByText('100%')).toBeTruthy()
-    expect(screen.getByText(/Останній місяць періоду неповний.*10\.07\.2026.*не включно/)).toBeTruthy()
+    expect(screen.getByText(/У цьому розрахунку враховано продажі з 01\.01\.2026.*Дані в системі доступні з 01\.01\.2025/)).toBeTruthy()
+    expect(screen.getByText(/Останній місяць періоду ще не завершений.*09\.07\.2026 включно/)).toBeTruthy()
     expect(screen.getByRole('img', { name: /Продані одиниці по місяцях.*2026-07: 5 шт/ })).toBeTruthy()
-    expect(screen.getByRole('img', { name: /Фактична виручка по місяцях.*2026-07: 50 EUR/ })).toBeTruthy()
+    expect(screen.getByRole('img', { name: /Виручка по місяцях.*2026-07: 50 EUR/ })).toBeTruthy()
     expect(screen.getByTestId('units-chart')).toBeTruthy()
     expect(screen.getByTestId('revenue-chart')).toBeTruthy()
     expect(chartMocks.bar).toHaveBeenCalledWith(expect.objectContaining({
@@ -62,7 +63,7 @@ describe('ProductSalesAnalytics', () => {
 
     expect(screen.getByText('100%')).toBeTruthy()
     expect(screen.getByRole('img', { name: /Продані одиниці по місяцях.*2026-07: 1\s000 шт/ })).toBeTruthy()
-    expect(screen.getByText(/Останній місяць періоду неповний і не входить у порівняння тренду/)).toBeTruthy()
+    expect(screen.getByText(/Останній місяць періоду ще не завершений, тому його не враховуємо/)).toBeTruthy()
   })
 
   it('describes a resumed trend truthfully when the comparison baseline is zero', () => {
@@ -98,8 +99,29 @@ describe('ProductSalesAnalytics', () => {
     analytics.window.end_exclusive = '2024-03-15'
     renderAnalytics(analytics)
 
-    expect(screen.getByText(/дані до 15\.03\.2024, не включно/)).toBeTruthy()
+    expect(screen.getByText(/Дані враховано по 14\.03\.2024 включно/)).toBeTruthy()
     expect(screen.queryByText(/Поточний місяць/)).toBeNull()
+  })
+
+  it('does not draw misleading charts when every sales value is zero', () => {
+    const analytics = buildAnalytics()
+
+    analytics.sales_series = analytics.sales_series.map((point) => ({
+      ...point,
+      avg_price_eur: null,
+      order_count: 0,
+      revenue_eur: 0,
+      units: 0,
+    }))
+    renderAnalytics(analytics)
+
+    expect(screen.getByText('Продажів за обраний період не було.')).toBeTruthy()
+    expect(screen.getByText('Графіки не показуємо, тому що всі значення дорівнюють нулю.')).toBeTruthy()
+    expect(screen.getByText('За останні 6 повних місяців цей товар не продавався.')).toBeTruthy()
+    expect(screen.queryByTestId('units-chart')).toBeNull()
+    expect(screen.queryByTestId('revenue-chart')).toBeNull()
+    expect(chartMocks.area).not.toHaveBeenCalled()
+    expect(chartMocks.bar).not.toHaveBeenCalled()
   })
 
   it('rejects malformed chart points instead of passing NaN to charts', () => {

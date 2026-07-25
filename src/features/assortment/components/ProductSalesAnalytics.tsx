@@ -3,7 +3,6 @@ import { Alert, Badge, Card, Group, SimpleGrid, Stack, Text } from '@mantine/cor
 import { AlertTriangle, ArrowDownRight, ArrowUpRight, Minus } from 'lucide-react'
 import { useMemo } from 'react'
 import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
-import { AiHistoryLineageNote } from '../../../shared/ai/AiHistoryLineageNote'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { ProductAnalytics, ProductSalesSeriesPoint } from '../types'
 
@@ -68,13 +67,15 @@ export function ProductSalesAnalytics({ analytics, error }: ProductSalesAnalytic
   if (!analytics || points.length === 0) {
     return (
       <Card className="assort-sales-analytics" radius="md" withBorder>
-        <Text className="app-section-title" fw={600} size="sm">{t('Динаміка продажів')}</Text>
+        <Text className="app-section-title" fw={600} size="sm">{t('Продажі за обраний період')}</Text>
         <Text c="dimmed" mt="xs" size="sm">{t('За вибраний період немає даних продажів.')}</Text>
       </Card>
     )
   }
 
   const partialMonth = points.some((point) => !point.isComplete)
+  const hasChartData = summary.units > 0 || summary.revenue > 0
+  const includedThrough = formatInclusiveEndDate(analytics.window.end_exclusive)
 
   return (
     <Card className="assort-sales-analytics" radius="md" withBorder>
@@ -82,94 +83,108 @@ export function ProductSalesAnalytics({ analytics, error }: ProductSalesAnalytic
         <Group align="flex-start" justify="space-between" wrap="wrap">
           <Stack gap={2}>
             <Group align="center" gap="xs">
-              <Text className="app-section-title" fw={600} size="sm">{t('Фактична динаміка продажів')}</Text>
+              <Text className="app-section-title" fw={600} size="sm">
+                {t('Продажі за останні')} {analytics.window.months} {t('міс.')}
+              </Text>
               <AiFeatureBadge compact size="xs" tooltip={t('AI-аналітика продажів товару')} />
             </Group>
             <Text c="dimmed" size="xs">
-              {t('Щомісячні продажі з валідних замовлень; залишок на складі не історизується.')}
+              {t('Показуємо лише продажі, які система враховує у звітах. Залишок на складі — стан на сьогодні.')}
             </Text>
-            <AiHistoryLineageNote lineage={analytics} />
+            <Text c="dimmed" size="xs">
+              {t('У цьому розрахунку враховано продажі з')} {formatDate(analytics.effective_start)}.{' '}
+              {t('Дані в системі доступні з')} {formatDate(analytics.source_history_start)}.
+            </Text>
           </Stack>
           <Badge color="gray" variant="light">
-            {analytics.window.months} {t('міс.')}
+            {t('Період')}: {analytics.window.months} {t('місяців')}
           </Badge>
         </Group>
 
         <SalesInsight trend={summary.trend} />
 
         <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="xs">
-          <SalesStat label={t('Продано, факт')} value={decimalFormatter.format(summary.units)} suffix={t('шт.')} />
+          <SalesStat label={t('Продано')} value={decimalFormatter.format(summary.units)} suffix={t('шт.')} />
           <SalesStat label={t('Замовлень')} value={integerFormatter.format(summary.orders)} />
-          <SalesStat label={t('Виручка, факт')} value={euroFormatter.format(summary.revenue)} />
+          <SalesStat label={t('Виручка')} value={euroFormatter.format(summary.revenue)} />
           <SalesStat
-            label={t('Сер. ціна, факт')}
-            value={summary.averagePrice === null ? '—' : preciseEuroFormatter.format(summary.averagePrice)}
+            label={t('Середня ціна')}
+            value={summary.averagePrice === null ? t('Немає даних') : preciseEuroFormatter.format(summary.averagePrice)}
           />
         </SimpleGrid>
 
-        <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
-          <figure className="assort-sales-chart">
-            <figcaption>
-              <span>{t('Продані одиниці')}</span>
-              <small>{t('по місяцях')}</small>
-            </figcaption>
-            <div
-              aria-label={`${t('Продані одиниці по місяцях')}. ${buildAccessibleSeries(points, 'units', t('шт.'))}`}
-              role="img"
-            >
-              <BarChart
-                barProps={{ isAnimationActive: false, radius: [4, 4, 0, 0] }}
-                data={points}
-                dataKey="label"
-                gridAxis="y"
-                h={220}
-                maxBarWidth={28}
-                series={[{ color: 'teal.6', label: t('Продано'), name: 'units' }]}
-                tickLine="y"
-                tooltipAnimationDuration={0}
-                valueFormatter={(value) => `${decimalFormatter.format(value)} ${t('шт.')}`}
-                xAxisProps={{ minTickGap: 18 }}
-                yAxisProps={{ allowDecimals: false, tickFormatter: (value: number) => integerFormatter.format(value), width: 34 }}
-              />
-            </div>
-          </figure>
+        {hasChartData ? (
+          <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
+            <figure className="assort-sales-chart">
+              <figcaption>
+                <span>{t('Продані одиниці')}</span>
+                <small>{t('по місяцях')}</small>
+              </figcaption>
+              <div
+                aria-label={`${t('Продані одиниці по місяцях')}. ${buildAccessibleSeries(points, 'units', t('шт.'))}`}
+                role="img"
+              >
+                <BarChart
+                  barProps={{ isAnimationActive: false, radius: [4, 4, 0, 0] }}
+                  data={points}
+                  dataKey="label"
+                  gridAxis="y"
+                  h={220}
+                  maxBarWidth={28}
+                  series={[{ color: 'teal.6', label: t('Продано'), name: 'units' }]}
+                  tickLine="y"
+                  tooltipAnimationDuration={0}
+                  valueFormatter={(value) => `${decimalFormatter.format(value)} ${t('шт.')}`}
+                  xAxisProps={{ minTickGap: 18 }}
+                  yAxisProps={{ allowDecimals: false, tickFormatter: (value: number) => integerFormatter.format(value), width: 34 }}
+                />
+              </div>
+            </figure>
 
-          <figure className="assort-sales-chart">
-            <figcaption>
-              <span>{t('Фактична виручка')}</span>
-              <small>EUR</small>
-            </figcaption>
-            <div
-              aria-label={`${t('Фактична виручка по місяцях')}. ${buildAccessibleSeries(points, 'revenue', 'EUR')}`}
-              role="img"
-            >
-              <AreaChart
-                areaProps={{ isAnimationActive: false }}
-                connectNulls={false}
-                curveType="linear"
-                data={points}
-                dataKey="label"
-                fillOpacity={0.12}
-                gridAxis="y"
-                h={220}
-                series={[{ color: 'orange.6', label: t('Виручка'), name: 'revenue' }]}
-                tickLine="y"
-                tooltipAnimationDuration={0}
-                valueFormatter={(value) => euroFormatter.format(value)}
-                withDots={false}
-                withGradient={false}
-                xAxisProps={{ minTickGap: 18 }}
-                yAxisProps={{ tickFormatter: (value: number) => compactEuroFormatter.format(value), width: 54 }}
-              />
-            </div>
-          </figure>
-        </SimpleGrid>
+            <figure className="assort-sales-chart">
+              <figcaption>
+                <span>{t('Виручка')}</span>
+                <small>EUR</small>
+              </figcaption>
+              <div
+                aria-label={`${t('Виручка по місяцях')}. ${buildAccessibleSeries(points, 'revenue', 'EUR')}`}
+                role="img"
+              >
+                <AreaChart
+                  areaProps={{ isAnimationActive: false }}
+                  connectNulls={false}
+                  curveType="linear"
+                  data={points}
+                  dataKey="label"
+                  fillOpacity={0.12}
+                  gridAxis="y"
+                  h={220}
+                  series={[{ color: 'orange.6', label: t('Виручка'), name: 'revenue' }]}
+                  tickLine="y"
+                  tooltipAnimationDuration={0}
+                  valueFormatter={(value) => euroFormatter.format(value)}
+                  withDots={false}
+                  withGradient={false}
+                  xAxisProps={{ minTickGap: 18 }}
+                  yAxisProps={{ tickFormatter: (value: number) => compactEuroFormatter.format(value), width: 54 }}
+                />
+              </div>
+            </figure>
+          </SimpleGrid>
+        ) : (
+          <div className="assort-sales-empty">
+            <Text fw={600} size="sm">{t('Продажів за обраний період не було.')}</Text>
+            <Text c="dimmed" size="xs">
+              {t('Графіки не показуємо, тому що всі значення дорівнюють нулю.')}
+            </Text>
+          </div>
+        )}
 
         <Text c="dimmed" className="assort-sales-analytics__caption" size="xs">
           {partialMonth
-            ? `* ${t('Останній місяць періоду неповний і не входить у порівняння тренду; дані до')} ${formatDate(analytics.window.end_exclusive)}, ${t('не включно')}. `
+            ? `* ${t('Останній місяць періоду ще не завершений, тому його не враховуємо в оцінці тенденції. Дані враховано по')} ${includedThrough} ${t('включно')}. `
             : ''}
-          {t('Запас і покриття — поточний зріз, а не історичний ряд.')}
+          {t('Залишок і покриття показані на сьогодні.')}
         </Text>
       </Stack>
     </Card>
@@ -203,7 +218,7 @@ function SalesInsight({ trend }: { trend: SalesTrend }) {
     return (
       <div className="assort-sales-insight is-neutral">
         <Minus aria-hidden="true" size={16} />
-        <Text size="xs">{t('У шести останніх завершених місяцях продажів не було.')}</Text>
+        <Text size="xs">{t('За останні 6 повних місяців цей товар не продавався.')}</Text>
       </div>
     )
   }
@@ -305,6 +320,17 @@ function formatDate(value: string): string {
   return Number.isNaN(date.getTime())
     ? value
     : dateFormatter.format(date)
+}
+
+function formatInclusiveEndDate(endExclusive: string): string {
+  const date = new Date(`${endExclusive}T00:00:00Z`)
+
+  if (Number.isNaN(date.getTime())) {
+    return endExclusive
+  }
+
+  date.setUTCDate(date.getUTCDate() - 1)
+  return dateFormatter.format(date)
 }
 
 function buildAccessibleSeries(
