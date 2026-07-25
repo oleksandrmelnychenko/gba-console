@@ -70,7 +70,7 @@ const TABLE_DEFAULT_LAYOUT = {
     left: ['name'],
     right: ['products', 'actions'],
   },
-  density: 'compact',
+  density: 'normal',
 } satisfies DataTableDefaultLayout
 
 const SEARCH_DEBOUNCE_MS = 350
@@ -80,14 +80,14 @@ const DEPRECATED_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['order'],
   },
-  density: 'compact',
+  density: 'normal',
 } satisfies DataTableDefaultLayout
 
 const REMNANTS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['article'],
   },
-  density: 'compact',
+  density: 'normal',
 } satisfies DataTableDefaultLayout
 
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
