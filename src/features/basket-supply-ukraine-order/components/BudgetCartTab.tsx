@@ -1,5 +1,4 @@
 import {
-  ActionIcon,
   Alert,
   Button,
   Card,
@@ -11,8 +10,9 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
-import { ChevronUp, CircleAlert, RefreshCw } from 'lucide-react'
+import { ChevronUp, CircleAlert } from 'lucide-react'
 import { useEffect, useMemo, useReducer, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { TranslateFunction } from '../../../shared/i18n/types'
@@ -69,6 +69,7 @@ const budgetFormatter = new Intl.NumberFormat('uk-UA', {
 
 export function BudgetCartTab() {
   const { t } = useI18n()
+  const navigate = useNavigate()
   const [state, dispatch] = useReducer(budgetCartReducer, initialState)
   const [budgetInput, setBudgetInput] = useState<number | ''>(DEFAULT_BUDGET_EUR)
   const [method, setMethod] = useState<CartOptimizeMethod>('greedy')
@@ -196,6 +197,7 @@ export function BudgetCartTab() {
   const hasPlan = Boolean(plan) && !isLoading
   const isEmpty = hasPlan && sortedItems.length === 0
   const isBudgetValid = typeof budgetInput === 'number' && Number.isFinite(budgetInput) && budgetInput > 0
+  const emptyPlanContent = getEmptyPlanContent(plan, t)
 
   return (
     <Stack className="budget-cart-tab" gap={6}>
@@ -248,24 +250,8 @@ export function BudgetCartTab() {
                 {getBudgetMethodDescription(method, t)}
               </Text>
             </Stack>
-            <div className="app-filter-actions budget-cart-filter-actions">
-              {hasRequested && (
-                <Tooltip label={t('Оновити')}>
-                  <ActionIcon
-                    aria-label={t('Оновити')}
-                    color="gray"
-                    disabled={!isBudgetValid}
-                    loading={isLoading}
-                    size={34}
-                    variant="light"
-                    onClick={triggerOptimize}
-                  >
-                    <RefreshCw size={17} />
-                  </ActionIcon>
-                </Tooltip>
-              )}
-            </div>
             <Button
+              className="budget-cart-submit"
               color={CREATE_ACTION_COLOR}
               disabled={!isBudgetValid}
               loading={isLoading}
@@ -273,7 +259,7 @@ export function BudgetCartTab() {
               styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
               onClick={triggerOptimize}
             >
-              {t('Сформувати план')}
+              {hasRequested ? t('Перерахувати план') : t('Сформувати план')}
             </Button>
           </Group>
         </div>
@@ -311,7 +297,7 @@ export function BudgetCartTab() {
         />
       )}
 
-      {hasPlan && plan && (
+      {hasPlan && plan && !isEmpty && (
         <BudgetCartSummary
           financials={financials}
           plan={plan}
@@ -361,20 +347,35 @@ export function BudgetCartTab() {
 
       {isEmpty && (
         <ProcurementWorkspaceState
-          description={t('За поточними умовами немає товарів, які потрібно додати до закупівлі. Спробуйте іншу дату або збільште бюджет.')}
-          facts={[
-            {
-              label: t('Бюджет'),
-              value: plan ? `${budgetFormatter.format(plan.budget_eur)} EUR` : '',
-            },
-            { label: t('Метод'), value: plan ? getMethodLabel(plan.method_used, t) : '' },
-          ]}
+          action={{
+            label: t('Відкрити конструктор закупівель'),
+            onClick: () => navigate('/basket-supply-ukraine-order/cockpit'),
+          }}
+          className="budget-cart-empty-result"
+          description={emptyPlanContent.description}
           surface
-          title={t('План не містить позицій')}
+          title={emptyPlanContent.title}
         />
       )}
     </Stack>
   )
+}
+
+function getEmptyPlanContent(
+  plan: CartPlan | null,
+  t: TranslateFunction,
+): { description: string; title: string } {
+  if (plan && plan.deferred_count > 0) {
+    return {
+      description: t('Збільште ліміт або перейдіть до ручного відбору товарів.'),
+      title: t('Бюджету недостатньо для плану'),
+    }
+  }
+
+  return {
+    description: t('Поточні запаси покривають прогнозований попит. Можна змінити дату або вибрати товари вручну.'),
+    title: t('Закупівля на цю дату не потрібна'),
+  }
 }
 
 function getBudgetMethodDescription(

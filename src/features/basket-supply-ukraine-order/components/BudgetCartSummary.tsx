@@ -147,7 +147,7 @@ function SummaryItem({
 }
 
 function formatNullableEuro(value: number | null): string {
-  return value === null ? '' : `€${eurFormatter.format(value)}`
+  return value === null ? '—' : `€${eurFormatter.format(value)}`
 }
 
 function getMethodLabel(plan: CartPlan, t: (value: string) => string): string {

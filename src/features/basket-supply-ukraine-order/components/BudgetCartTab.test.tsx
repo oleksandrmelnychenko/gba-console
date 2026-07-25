@@ -1,5 +1,6 @@
 import { MantineProvider } from '@mantine/core'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { theme } from '../../../shared/theme/theme'
@@ -24,9 +25,11 @@ describe('BudgetCartTab', () => {
   it('explains the next action and the selected optimization method', () => {
     render(
       <MantineProvider theme={theme}>
-        <I18nProvider>
-          <BudgetCartTab />
-        </I18nProvider>
+        <MemoryRouter>
+          <I18nProvider>
+            <BudgetCartTab />
+          </I18nProvider>
+        </MemoryRouter>
       </MantineProvider>,
     )
 
@@ -44,5 +47,46 @@ describe('BudgetCartTab', () => {
         'Оптимальний метод порівнює комбінації всього набору, щоб краще використати бюджет',
       ),
     ).not.toBeNull()
+  })
+
+  it('replaces zero summaries with one actionable empty result', async () => {
+    vi.mocked(getBudgetCartPlan).mockResolvedValue({
+      as_of_date: '2026-07-25',
+      budget_eur: 50_000,
+      budget_used_eur: 0,
+      deferred_count: 0,
+      item_count: 0,
+      items: [],
+      method_used: 'greedy',
+      model_version: 'test',
+      selected_count: 0,
+      value_captured_eur: 0,
+    })
+
+    render(
+      <MantineProvider theme={theme}>
+        <MemoryRouter>
+          <I18nProvider>
+            <BudgetCartTab />
+          </I18nProvider>
+        </MemoryRouter>
+      </MantineProvider>,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Сформувати план' }))
+
+    await waitFor(() => {
+      expect(screen.getByText('Закупівля на цю дату не потрібна')).not.toBeNull()
+    })
+
+    expect(
+      screen.getByText(
+        'Поточні запаси покривають прогнозований попит. Можна змінити дату або вибрати товари вручну.',
+      ),
+    ).not.toBeNull()
+    expect(screen.getByRole('button', { name: 'Відкрити конструктор закупівель' })).not.toBeNull()
+    expect(screen.getByRole('button', { name: 'Перерахувати план' })).not.toBeNull()
+    expect(screen.queryByText('Результат оптимізації')).toBeNull()
+    expect(screen.queryByText('Дата зрізу', { selector: '.procure-workspace-state__fact span' })).toBeNull()
   })
 })
