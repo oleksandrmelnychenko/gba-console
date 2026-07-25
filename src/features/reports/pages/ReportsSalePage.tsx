@@ -181,7 +181,7 @@ export function ReportsSalePage() {
         <div className="reports-sale-result-body">
           {activeSheet ? (
             <div className="reports-sale-result-layout">
-              <div className="pill-tabs" style={{ width: 'fit-content' }}>
+              <div className="pill-tabs">
                 {sheets.map((sheet) => (
                   <button
                     key={sheet.name}
