@@ -330,6 +330,7 @@ export function BudgetCartTab() {
         collapseLabel={t('Згорнути план закупівлі')}
         contentClassName="budget-cart-sheet"
         expandLabel={t('Розгорнути план закупівлі')}
+        mediumHeightRatio={0.72}
         opened={isSheetOpen && hasPlan && !isEmpty}
         title={
           <span>

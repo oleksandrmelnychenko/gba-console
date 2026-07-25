@@ -85,8 +85,8 @@ describe('ProcureDashboardTab', () => {
     ).toContain('7')
     expect(screen.getAllByText('Критична').length).toBeGreaterThan(0)
     expect(screen.getAllByText('Бракує до точки').length).toBeGreaterThan(0)
-    expect(screen.getByText('Гальмівний диск')).not.toBeNull()
-    expect(screen.getByText('BR-101')).not.toBeNull()
+    expect(screen.getAllByText('Гальмівний диск').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('BR-101').length).toBeGreaterThan(0)
     expect(screen.getAllByText('Meyle').length).toBeGreaterThan(0)
 
     await waitFor(() => {
@@ -136,5 +136,33 @@ describe('ProcureDashboardTab', () => {
     expect(
       screen.getByRole('button', { name: 'Відкрити конструктор закупівель' }),
     ).not.toBeNull()
+  })
+
+  it('opens the selected product forecast in a right-side detail sheet', async () => {
+    render(
+      <MemoryRouter>
+        <I18nProvider>
+          <MantineProvider theme={theme}>
+            <ProcureDashboardTab />
+          </MantineProvider>
+        </I18nProvider>
+      </MemoryRouter>,
+    )
+
+    expect(await screen.findByText('Прогноз попиту')).not.toBeNull()
+    expect(screen.queryByText('Графік попиту')).toBeNull()
+
+    const openForecastButton = document.querySelector<HTMLButtonElement>(
+      '[aria-label="Відкрити графік: Гальмівний диск"]',
+    )
+
+    expect(openForecastButton).not.toBeNull()
+    fireEvent.click(openForecastButton!)
+
+    expect(await screen.findByText('Динаміка попиту')).not.toBeNull()
+    expect(screen.getByText('Графік попиту')).not.toBeNull()
+    expect(screen.getByText('Останній факт')).not.toBeNull()
+    expect(screen.getByText('Наступний прогноз')).not.toBeNull()
+    expect(screen.getByText('Горизонт')).not.toBeNull()
   })
 })

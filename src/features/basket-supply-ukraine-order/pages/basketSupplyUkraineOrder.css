@@ -352,6 +352,17 @@
 }
 
 /* The plan table owns its scroll inside the shared draggable bottom sheet. */
+.mantine-Drawer-content.app-bottom-sheet.budget-cart-sheet {
+  margin-inline: 12px;
+  max-width: calc(100vw - 24px);
+  width: calc(100vw - 24px);
+}
+
+.budget-cart-sheet__body {
+  padding-right: 20px;
+  padding-left: 20px;
+}
+
 .budget-cart-sheet__body > div {
   height: 100%;
 }
@@ -587,20 +598,147 @@
   background: var(--mantine-color-teal-6);
 }
 
-.procure-dashboard__forecast-series {
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 8px;
-  min-width: 0;
-  padding: 10px 12px 4px;
-}
-
-.procure-dashboard__forecast-head {
-  display: flex;
+.procure-dashboard__forecast-list {
+  max-width: 860px;
   min-width: 0;
 }
 
-.procure-dashboard__forecast-head .procure-cockpit-product {
-  max-width: 520px;
+.procure-dashboard__forecast-list-cell {
+  align-items: center;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(220px, 1fr) auto 32px;
+  min-width: 0;
+  width: 100%;
+}
+
+.procure-dashboard__forecast-list-meta {
+  align-items: flex-end;
+  display: grid;
+  gap: 2px;
+  justify-items: end;
+  min-width: 112px;
+}
+
+.procure-dashboard__forecast-list-meta span {
+  color: var(--mantine-color-gray-6);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.15;
+}
+
+.procure-dashboard__forecast-list-meta strong {
+  color: var(--mantine-color-gray-8);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.procure-dashboard__forecast-list-cell .mantine-ActionIcon-root {
+  color: var(--mantine-color-gray-7);
+}
+
+.procure-dashboard__forecast-list-cell .mantine-ActionIcon-root:hover {
+  background: var(--mantine-color-gray-1);
+  color: var(--mantine-color-gray-9);
+}
+
+.procure-dashboard__forecast-drawer {
+  padding: 2px 0 8px;
+}
+
+.procure-dashboard__forecast-hero {
+  align-items: center;
+}
+
+.procure-dashboard__forecast-product {
+  margin-top: 8px;
+  min-width: 0;
+}
+
+.procure-dashboard__forecast-product .procure-cockpit-product__thumb {
+  flex-basis: 40px;
+  height: 40px;
+  width: 40px;
+}
+
+.procure-dashboard__forecast-product .procure-cockpit-product__name {
+  color: var(--mantine-color-gray-9);
+  font-size: 14px;
+}
+
+.procure-dashboard__forecast-metrics {
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+  border-top: 1px solid var(--mantine-color-gray-2);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  min-width: 0;
+  padding: 12px 0;
+}
+
+.procure-dashboard__forecast-metric {
+  border-left: 1px solid var(--mantine-color-gray-2);
+  min-width: 0;
+  padding: 0 12px;
+}
+
+.procure-dashboard__forecast-metric:first-child {
+  border-left: 0;
+  padding-left: 0;
+}
+
+.procure-dashboard__forecast-metric:last-child {
+  padding-right: 0;
+}
+
+.procure-dashboard__forecast-metric span,
+.procure-dashboard__forecast-metric small {
+  color: var(--mantine-color-gray-6);
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.procure-dashboard__forecast-metric span::before {
+  background: var(--mantine-color-gray-5);
+  border-radius: 999px;
+  content: '';
+  display: inline-block;
+  height: 6px;
+  margin-right: 6px;
+  vertical-align: 1px;
+  width: 6px;
+}
+
+.procure-dashboard__forecast-metric.is-brand span::before {
+  background: var(--brand-orange);
+}
+
+.procure-dashboard__forecast-metric strong {
+  color: var(--mantine-color-gray-9);
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  line-height: 1.15;
+  margin-top: 4px;
+}
+
+.procure-dashboard__forecast-metric small {
+  font-size: 9.5px;
+  font-weight: 500;
+  margin-top: 2px;
+}
+
+.procure-dashboard__forecast-chart-card {
+  box-shadow: none !important;
 }
 
 .procure-dashboard__table-number {
@@ -640,11 +778,46 @@
     row-gap: 14px;
   }
 
+  .procure-dashboard__forecast-list-cell {
+    gap: 8px;
+    grid-template-columns: minmax(190px, 1fr) 32px;
+  }
+
+  .procure-dashboard__forecast-list-meta {
+    display: none;
+  }
+
+  .procure-dashboard__forecast-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    row-gap: 12px;
+  }
+
+  .procure-dashboard__forecast-metric:nth-child(3) {
+    border-left: 0;
+    border-top: 1px solid var(--mantine-color-gray-2);
+    grid-column: 1 / -1;
+    margin-top: 12px;
+    padding: 12px 0 0;
+  }
+
   .budget-cart-summary__distribution {
     border-left: 0;
     border-top: 1px solid var(--mantine-color-gray-2);
     padding-left: 0;
     padding-top: 16px;
+  }
+}
+
+@media (max-width: 640px) {
+  .mantine-Drawer-content.app-bottom-sheet.budget-cart-sheet {
+    margin-inline: 4px;
+    max-width: calc(100vw - 8px);
+    width: calc(100vw - 8px);
+  }
+
+  .budget-cart-sheet__body {
+    padding-right: 12px;
+    padding-left: 12px;
   }
 }
 

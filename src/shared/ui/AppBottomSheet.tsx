@@ -1,6 +1,14 @@
 import { Drawer } from '@mantine/core'
 import { useDrag, useReducedMotion } from '@mantine/hooks'
-import { type KeyboardEvent, type ReactNode, useEffect, useId, useRef, useState } from 'react'
+import {
+  type KeyboardEvent,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from 'react'
 import {
   getAppBottomSheetSnapHeight,
   resolveAppBottomSheetRelease,
@@ -16,6 +24,7 @@ type AppBottomSheetProps = {
   contentClassName?: string
   expandLabel: string
   initialSnap?: AppBottomSheetSnap
+  mediumHeightRatio?: number
   opened: boolean
   overlayOpacity?: number
   title: ReactNode
@@ -38,6 +47,7 @@ export function AppBottomSheet({
   contentClassName,
   expandLabel,
   initialSnap = 'medium',
+  mediumHeightRatio = 0.6,
   opened,
   overlayOpacity = 0.1,
   title,
@@ -53,6 +63,18 @@ export function AppBottomSheet({
   const resetDraggedTimerRef = useRef<number | null>(null)
   const bodyId = useId()
   const reduceMotion = useReducedMotion()
+  const normalizedMediumHeightRatio = Number.isFinite(mediumHeightRatio)
+    ? Math.min(0.82, Math.max(0.5, mediumHeightRatio))
+    : 0.6
+  const getSnapHeight = useCallback(
+    (nextSnap: AppBottomSheetSnap): number =>
+      getAppBottomSheetSnapHeight(
+        nextSnap,
+        getViewportHeight(),
+        normalizedMediumHeightRatio,
+      ),
+    [normalizedMediumHeightRatio],
+  )
 
   function getSheetContent(): HTMLElement | null {
     return drawerRef.current?.querySelector<HTMLElement>('.app-bottom-sheet') ?? null
@@ -65,7 +87,7 @@ export function AppBottomSheet({
   function snapTo(nextSnap: AppBottomSheetSnap) {
     snapRef.current = nextSnap
     setSnap(nextSnap)
-    applyHeight(getAppBottomSheetSnapHeight(nextSnap, getViewportHeight()))
+    applyHeight(getSnapHeight(nextSnap))
   }
 
   function toggleSnap() {
@@ -89,7 +111,11 @@ export function AppBottomSheet({
     }
 
     const viewportHeight = getViewportHeight()
-    const expandedHeight = getAppBottomSheetSnapHeight('expanded', viewportHeight)
+    const expandedHeight = getAppBottomSheetSnapHeight(
+      'expanded',
+      viewportHeight,
+      normalizedMediumHeightRatio,
+    )
     const content = getSheetContent()
 
     if (state.first) {
@@ -97,7 +123,11 @@ export function AppBottomSheet({
       dragStartSnapRef.current = snapRef.current
       lastSignedVelocityYRef.current = 0
       dragStartHeightRef.current = content?.getBoundingClientRect().height
-        || getAppBottomSheetSnapHeight(snapRef.current, viewportHeight)
+        || getAppBottomSheetSnapHeight(
+          snapRef.current,
+          viewportHeight,
+          normalizedMediumHeightRatio,
+        )
       content?.setAttribute('data-dragging', 'true')
     }
 
@@ -133,6 +163,7 @@ export function AppBottomSheet({
       startSnap: dragStartSnapRef.current,
       velocityY,
       viewportHeight,
+      mediumHeightRatio: normalizedMediumHeightRatio,
     })
 
     if (nextSnap === 'closed') {
@@ -158,7 +189,7 @@ export function AppBottomSheet({
       return
     }
 
-    const syncHeight = () => applyHeight(getAppBottomSheetSnapHeight(snapRef.current, getViewportHeight()))
+    const syncHeight = () => applyHeight(getSnapHeight(snapRef.current))
     const frameId = window.requestAnimationFrame(syncHeight)
 
     window.addEventListener('resize', syncHeight)
@@ -167,7 +198,7 @@ export function AppBottomSheet({
       window.cancelAnimationFrame(frameId)
       window.removeEventListener('resize', syncHeight)
     }
-  }, [opened])
+  }, [getSnapHeight, opened])
 
   useEffect(() => () => {
     if (resetDraggedTimerRef.current !== null) {
@@ -204,7 +235,11 @@ export function AppBottomSheet({
       opened={opened}
       padding={0}
       position="bottom"
-      size={snap === 'expanded' ? '90dvh' : '60dvh'}
+      size={
+        snap === 'expanded'
+          ? '90dvh'
+          : `${normalizedMediumHeightRatio * 100}dvh`
+      }
       transitionProps={{
         duration: reduceMotion ? 0 : 360,
         timingFunction: 'cubic-bezier(0.22, 1, 0.36, 1)',
@@ -214,7 +249,7 @@ export function AppBottomSheet({
       onExitTransitionEnd={() => {
         snapRef.current = initialSnap
         setSnap(initialSnap)
-        applyHeight(getAppBottomSheetSnapHeight(initialSnap, getViewportHeight()))
+        applyHeight(getSnapHeight(initialSnap))
       }}
     >
       <Drawer.Overlay backgroundOpacity={overlayOpacity} blur={0} />

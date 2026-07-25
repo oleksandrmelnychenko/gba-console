@@ -5,6 +5,7 @@ describe('app bottom sheet model', () => {
   it('provides medium and expanded iOS-style detents', () => {
     expect(getAppBottomSheetSnapHeight('medium', 1000)).toBe(600)
     expect(getAppBottomSheetSnapHeight('expanded', 1000)).toBe(900)
+    expect(getAppBottomSheetSnapHeight('medium', 1000, 0.72)).toBe(720)
   })
 
   it('closes a medium sheet after a quick downward swipe', () => {
