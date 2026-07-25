@@ -3331,7 +3331,7 @@ function ProductIncomeMovementsGrid({
     <DataTable
       columns={columns}
       data={rows}
-      density="compact"
+      density="normal"
       emptyText={emptyText}
       getRowId={getIncomeMovementRowKey}
       isLoading={isLoading}
@@ -3431,7 +3431,7 @@ function ProductOutcomeMovementsGrid({
     <DataTable
       columns={columns}
       data={rows}
-      density="compact"
+      density="normal"
       emptyText={emptyText}
       fillAvailableWidth
       getRowId={getOutcomeMovementRowKey}
