@@ -54,6 +54,7 @@ import {
   togglePermissionSelection,
 } from '../utils'
 import './user-roles-page.css'
+import '../../../shared/ui/console-table-page.css'
 
 type PermissionModalState = {
   node: DashboardNode | null
