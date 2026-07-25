@@ -1175,7 +1175,6 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
   const listIndexMap = useMemo(() => buildShipmentListIndexMap(shipmentLists), [shipmentLists])
   const listColumns = useAllShipmentColumns(listIndexMap)
   const draftItems = useMemo(() => shipmentDraft?.ShipmentListItems || [], [shipmentDraft])
-  const draftIndexMap = useMemo(() => buildIndexMap(draftItems), [draftItems])
   const draftSaleKeys = useMemo(
     () => new Set(draftItems.flatMap((item) => {
       const saleKey = getShipmentSaleKey(item.Sale)
@@ -1319,7 +1318,6 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
 
   const editColumns = useEditShipmentColumns({
     canEdit: canEditShipment,
-    indexMap: draftIndexMap,
     onEditAddress: (item) => {
       if (!item.Sale.DeliveryRecipient) {
         notifications.show({ color: 'yellow', message: t('Додайте одержувача для цієї накладної') })
@@ -2507,7 +2505,6 @@ function useManualShipmentSalesColumns(model: ManualShipmentSalesColumnsModel): 
 
 type EditShipmentColumnsModel = {
   canEdit: boolean
-  indexMap: Map<ShipmentListItem, number>
   onEditAddress: (item: ShipmentListItem) => void
   onEditComment: (item: ShipmentListItem) => void
   onEditRecipient: (item: ShipmentListItem) => void
@@ -2538,11 +2535,9 @@ function useEditShipmentColumns(model: EditShipmentColumnsModel): DataTableColum
         minWidth: 220,
         accessor: (item) => getRecipientInfo(item.Sale, t),
         cell: (item) => (
-          <EditableTextCell
-            disabled={!model.canEdit || isRecipientAddressReadOnly(item)}
+          <EditableTextValue
             isCrossed={Boolean(getChangedTransporterDecoration(item))}
             text={getRecipientInfo(item.Sale, t)}
-            onEdit={() => model.onEditRecipient(item)}
           />
         ),
       },
@@ -2552,11 +2547,9 @@ function useEditShipmentColumns(model: EditShipmentColumnsModel): DataTableColum
         minWidth: 220,
         accessor: (item) => getAddressInfo(item.Sale, t),
         cell: (item) => (
-          <EditableTextCell
-            disabled={!model.canEdit || isRecipientAddressReadOnly(item)}
+          <EditableTextValue
             isCrossed={Boolean(getChangedTransporterDecoration(item))}
             text={getAddressInfo(item.Sale, t)}
-            onEdit={() => model.onEditAddress(item)}
           />
         ),
       },
@@ -2685,48 +2678,54 @@ function useEditShipmentColumns(model: EditShipmentColumnsModel): DataTableColum
         minWidth: 240,
         accessor: (item) => item.Sale.WarehousesShipment?.Comment || item.Sale.Comment,
         cell: (item) => (
-          <EditableTextCell
+          <EditableTextValue
             text={item.Sale.WarehousesShipment?.Comment || item.Sale.Comment || ''}
-            disabled={!model.canEdit}
             isCrossed={Boolean(getChangedTransporterDecoration(item))}
-            onEdit={() => model.onEditComment(item)}
           />
         ),
       },
       {
-        id: 'print',
+        id: 'actions',
         header: '',
-        width: 54,
-        minWidth: 48,
+        width: 172,
+        minWidth: 172,
         align: 'center',
+        rowActions: true,
         enableSorting: false,
-        accessor: (item) => item.Sale.IsVatSale,
-        cell: (item) =>
-          item.Sale.IsVatSale ? (
+        cell: (item) => (
+          <Group gap={4} justify="center" wrap="nowrap">
             <TableRowAction
+              action="edit"
+              disabled={!model.canEdit || isRecipientAddressReadOnly(item)}
+              label={t('Редагувати одержувача')}
+              onClick={() => model.onEditRecipient(item)}
+            />
+            <TableRowAction
+              action="edit"
+              disabled={!model.canEdit || isRecipientAddressReadOnly(item)}
+              label={t('Редагувати адресу доставки')}
+              onClick={() => model.onEditAddress(item)}
+            />
+            <TableRowAction
+              action="edit"
+              disabled={!model.canEdit}
+              label={t('Редагувати коментар')}
+              onClick={() => model.onEditComment(item)}
+            />
+            {item.Sale.IsVatSale ? (
+              <TableRowAction
               action="print"
               label={t('Друк PDF')}
               onClick={() => model.onPrintSale(item)}
             />
-          ) : (
-            ''
-          ),
-      },
-      {
-        id: 'remove',
-        header: '',
-        width: 54,
-        minWidth: 48,
-        align: 'center',
-        enableSorting: false,
-        accessor: (item) => model.indexMap.get(item),
-        cell: (item) => (
-          <TableRowAction
-            action="delete"
-            disabled={!model.canEdit}
-            label={t('Видалити')}
-            onClick={() => model.onRemoveItem(item)}
-          />
+            ) : null}
+            <TableRowAction
+              action="delete"
+              disabled={!model.canEdit}
+              label={t('Видалити')}
+              onClick={() => model.onRemoveItem(item)}
+            />
+          </Group>
         ),
       },
     ],
@@ -2777,10 +2776,8 @@ function useShipmentColumns(model: ShipmentColumnsModel): DataTableColumn<Shipme
         minWidth: 220,
         accessor: (item) => getRecipientInfo(item.Sale, t),
         cell: (item) => (
-          <EditableTextCell
-            disabled={!model.canEditShipment || isRecipientAddressReadOnly(item)}
+          <EditableTextValue
             text={getRecipientInfo(item.Sale, t)}
-            onEdit={() => model.setActiveModal({ kind: 'recipient', item })}
           />
         ),
       },
@@ -2790,18 +2787,8 @@ function useShipmentColumns(model: ShipmentColumnsModel): DataTableColumn<Shipme
         minWidth: 220,
         accessor: (item) => getAddressInfo(item.Sale, t),
         cell: (item) => (
-          <EditableTextCell
-            disabled={!model.canEditShipment || isRecipientAddressReadOnly(item)}
+          <EditableTextValue
             text={getAddressInfo(item.Sale, t)}
-            onEdit={() => {
-              if (!item.Sale.DeliveryRecipient) {
-                notifications.show({ color: 'yellow', message: t('Додайте одержувача для цієї накладної') })
-
-                return
-              }
-
-              model.setActiveModal({ kind: 'address', item })
-            }}
           />
         ),
       },
@@ -2887,10 +2874,8 @@ function useShipmentColumns(model: ShipmentColumnsModel): DataTableColumn<Shipme
         minWidth: 250,
         accessor: (item) => item.Sale.WarehousesShipment?.Comment || item.Sale.Comment,
         cell: (item) => (
-          <EditableTextCell
-            disabled={!model.canEditShipment}
+          <EditableTextValue
             text={item.Sale.WarehousesShipment?.Comment || item.Sale.Comment || ''}
-            onEdit={() => model.setActiveModal({ kind: 'comment', item })}
           />
         ),
       },
@@ -2928,29 +2913,55 @@ function useShipmentColumns(model: ShipmentColumnsModel): DataTableColumn<Shipme
         cell: (item) => <span className="warehouse-shipment-cell-mono">{displayValue(getTtnNumber(item.Sale)).toLocaleUpperCase('uk-UA')}</span>,
       },
       {
-        id: 'ttn',
-        header: t('Завантажити ТТН'),
-        width: 150,
-        minWidth: 120,
+        id: 'actions',
+        header: '',
+        width: 140,
+        minWidth: 140,
         align: 'center',
+        rowActions: true,
         enableSorting: false,
-        accessor: (item) => getTtnPath(item.Sale),
         cell: (item) => {
           const path = getTtnPath(item.Sale)
 
-          if (!path) {
-            return ''
-          }
-
           return (
-            <TableRowAction
-              action="download"
-              component="a"
-              href={upgradeHttpToHttps(path)}
-              label={t('Завантажити ТТН')}
-              rel="noreferrer"
-              target="_blank"
-            />
+            <Group gap={4} justify="center" wrap="nowrap">
+              <TableRowAction
+                action="edit"
+                disabled={!model.canEditShipment || isRecipientAddressReadOnly(item)}
+                label={t('Редагувати одержувача')}
+                onClick={() => model.setActiveModal({ kind: 'recipient', item })}
+              />
+              <TableRowAction
+                action="edit"
+                disabled={!model.canEditShipment || isRecipientAddressReadOnly(item)}
+                label={t('Редагувати адресу доставки')}
+                onClick={() => {
+                  if (!item.Sale.DeliveryRecipient) {
+                    notifications.show({ color: 'yellow', message: t('Додайте одержувача для цієї накладної') })
+
+                    return
+                  }
+
+                  model.setActiveModal({ kind: 'address', item })
+                }}
+              />
+              <TableRowAction
+                action="edit"
+                disabled={!model.canEditShipment}
+                label={t('Редагувати коментар')}
+                onClick={() => model.setActiveModal({ kind: 'comment', item })}
+              />
+              {path ? (
+                <TableRowAction
+                  action="download"
+                  component="a"
+                  href={upgradeHttpToHttps(path)}
+                  label={t('Завантажити ТТН')}
+                  rel="noreferrer"
+                  target="_blank"
+                />
+              ) : null}
+            </Group>
           )
         },
       },
@@ -2958,23 +2969,16 @@ function useShipmentColumns(model: ShipmentColumnsModel): DataTableColumn<Shipme
   }, [model, t])
 }
 
-type EditableTextCellProps = {
-  disabled?: boolean
+type EditableTextValueProps = {
   isCrossed?: boolean
   text: string
-  onEdit: () => void
 }
 
-function EditableTextCell({ disabled = false, isCrossed = false, onEdit, text }: EditableTextCellProps) {
-  const { t } = useI18n()
-
+function EditableTextValue({ isCrossed = false, text }: EditableTextValueProps) {
   return (
-    <Group gap={4} wrap="nowrap" align="center">
-      <TableRowAction action="edit" disabled={disabled} label={t('Редагувати')} onClick={onEdit} />
-      <Text size="sm" td={isCrossed ? 'line-through' : undefined} truncate>
-        {text}
-      </Text>
-    </Group>
+    <Text size="sm" td={isCrossed ? 'line-through' : undefined} truncate>
+      {text}
+    </Text>
   )
 }
 
