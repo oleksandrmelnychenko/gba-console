@@ -66,7 +66,7 @@ const DOCUMENTS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['packListNumber', 'number'],
   },
-  density: 'compact',
+  density: 'normal',
 } satisfies DataTableDefaultLayout
 
 const TAX_FREE_TABLE_CELL_STYLE = {
