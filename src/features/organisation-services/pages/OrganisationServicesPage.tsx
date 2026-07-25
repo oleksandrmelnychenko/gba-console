@@ -56,7 +56,7 @@ const ORGANISATION_SERVICES_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['date', 'serviceType', 'number'],
   },
-  density: 'compact',
+  density: 'normal',
 } satisfies DataTableDefaultLayout
 
 const serviceCollections = [
@@ -687,7 +687,7 @@ function OrganisationServiceDetailDrawer({ row, onClose }: { row: PaymentTaskRow
               <DataTable
                 columns={getServiceDetailColumns(t)}
                 data={serviceDetails}
-                density="compact"
+                density="normal"
                 emptyText={t('Деталізації немає')}
                 getRowId={(detail, index) => detail.NetUid || String(detail.Id || index)}
                 layoutVersion="organisation-service-detail-items-1"
