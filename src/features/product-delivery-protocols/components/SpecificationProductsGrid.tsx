@@ -1,4 +1,4 @@
-import { Anchor, Badge, Group, Text } from '@mantine/core'
+import { Anchor, Badge, Text } from '@mantine/core'
 import { useMemo } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -167,18 +167,9 @@ export function SpecificationProductsGrid({
         minWidth: 110,
         accessor: (row) => row.specificationCode,
         cell: (row) => (
-          <Group gap={6} wrap="nowrap">
-            <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>
-              {displayText(row.specificationCode)}
-            </Text>
-            {canEditSpecification && onEditSpecification && (
-              <TableRowAction
-                action="edit"
-                label={t('Редагувати митний код')}
-                onClick={() => onEditSpecification(row.item)}
-              />
-            )}
-          </Group>
+          <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>
+            {displayText(row.specificationCode)}
+          </Text>
         ),
       },
       {
@@ -340,7 +331,27 @@ export function SpecificationProductsGrid({
       })
     }
 
-    return [...baseColumns, ...serviceColumns, ...totalColumns]
+    const actionColumns: DataTableColumn<SpecificationRow>[] =
+      canEditSpecification && onEditSpecification
+        ? [
+            {
+              id: 'actions',
+              header: '',
+              width: 56,
+              minWidth: 56,
+              rowActions: true,
+              cell: (row) => (
+                <TableRowAction
+                  action="edit"
+                  label={t('Редагувати митний код')}
+                  onClick={() => onEditSpecification(row.item)}
+                />
+              ),
+            },
+          ]
+        : []
+
+    return [...baseColumns, ...serviceColumns, ...totalColumns, ...actionColumns]
   }, [
     currencyIsEur,
     canEditSpecification,
