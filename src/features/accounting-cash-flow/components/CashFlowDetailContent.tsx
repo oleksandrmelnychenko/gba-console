@@ -17,7 +17,7 @@ const DETAIL_GRID_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['date'],
   },
-  density: 'compact',
+  density: 'normal',
 } satisfies DataTableDefaultLayout
 
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
