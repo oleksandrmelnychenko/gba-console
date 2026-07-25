@@ -32,7 +32,7 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import type { DataTableColumn } from '../../../shared/ui/data-table/types'
+import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
@@ -62,7 +62,10 @@ import type {
   ProductStoragesExportDocument,
 } from '../types'
 
-const PRODUCT_STORAGES_TABLE_DEFAULT_LAYOUT = { density: 'normal' as const }
+const PRODUCT_STORAGES_TABLE_DEFAULT_LAYOUT = {
+  columnPinning: { right: ['actions'] },
+  density: 'normal',
+} satisfies DataTableDefaultLayout
 
 const pageSizeOptions = ['50', '100', '150']
 const PRODUCT_STORAGES_SEARCH_DEBOUNCE_MS = 200
@@ -1025,7 +1028,7 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
               isLoading={isLoading || isLoadingStorages}
               loadingText={t('Завантаження товарів складу')}
               minWidth={1180}
-              layoutVersion="product-storages-table-3"
+              layoutVersion="product-storages-table-4"
               showLayoutControls
               tableId="product-storages"
               toolbarPortalTarget={tableToolbarSlot}
@@ -1669,6 +1672,7 @@ function useProductStoragesColumns({
         minWidth: 54,
         enableSorting: false,
         enableHiding: false,
+        enablePinning: false,
         enableReorder: false,
         enableResizing: false,
         cell: (availability) => (
