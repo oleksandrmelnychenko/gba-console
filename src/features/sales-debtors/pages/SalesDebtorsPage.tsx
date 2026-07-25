@@ -317,6 +317,7 @@ export function SalesDebtorsPage() {
             columns={debtorColumns}
             data={debtorRows}
             defaultLayout={SALES_DEBTORS_TABLE_DEFAULT_LAYOUT}
+            fillAvailableWidth
             emptyText={t('Боржників не знайдено')}
             getRowId={(row, index) => String(row.ClientNetId || `${row.ClientName || 'debtor'}-${index}`)}
             height="100%"
