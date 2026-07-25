@@ -666,7 +666,7 @@ export function ProcureDashboardTab() {
                 data={charts?.top_items ?? []}
                 defaultLayout={{
                   columnPinning: { left: ['product'] },
-                  density: 'compact',
+                  density: 'normal',
                 }}
                   distributeAvailableWidth
                   emptyText={t('Даних не знайдено')}

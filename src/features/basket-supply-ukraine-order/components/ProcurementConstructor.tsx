@@ -108,7 +108,7 @@ const PLAN_TABLE_DEFAULT_LAYOUT = {
     reserved: false,
     unitCost: false,
   },
-  density: 'compact',
+  density: 'normal',
 } satisfies DataTableDefaultLayout
 
 // Quadrant = ABC (revenue importance) × XYZ (demand predictability).
