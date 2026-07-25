@@ -62,7 +62,7 @@ import type {
   ProductStoragesExportDocument,
 } from '../types'
 
-const PRODUCT_STORAGES_TABLE_DEFAULT_LAYOUT = { density: 'compact' as const }
+const PRODUCT_STORAGES_TABLE_DEFAULT_LAYOUT = { density: 'normal' as const }
 
 const pageSizeOptions = ['50', '100', '150']
 const PRODUCT_STORAGES_SEARCH_DEBOUNCE_MS = 200
