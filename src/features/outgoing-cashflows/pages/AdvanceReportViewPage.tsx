@@ -2,7 +2,6 @@ import {
   Alert,
   Badge,
   Button,
-  Card,
   Checkbox,
   Group,
   Loader,
@@ -11,7 +10,7 @@ import {
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, Fuel, Receipt, Save } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef, type ReactNode } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -41,6 +40,8 @@ import { AdvanceReportConsumableOrderModal } from '../components/AdvanceReportCo
 import { AdvanceReportFuelGrid } from '../components/AdvanceReportFuelGrid'
 import { AdvanceReportFuelModal } from '../components/AdvanceReportFuelModal'
 import { AdvanceReportProductsGrid } from '../components/AdvanceReportProductsGrid'
+import './outgoing-cashflows-page.css'
+import './advance-report-view-page.css'
 
 const OUTGOING_CASHFLOW_ROUTE = '/accounting/outgoing-cashflow'
 
@@ -487,11 +488,11 @@ export function AdvanceReportViewPage() {
       opened
       position="right"
       size="wide"
-      title={<span style={{ fontFamily: 'var(--font-mono)' }}>{model.reportTitle || t('Авансовий звіт')}</span>}
+      title={t('Авансовий звіт')}
       onClose={model.goBack}
     >
-    <Stack gap="md">
-      <Group gap="xs" justify="flex-end">
+    <div className="outgoing-detail-drawer advance-report-detail-drawer">
+      <Group className="advance-report-detail-actions" gap="xs" justify="flex-end">
         {!model.isDone && (
           <>
             <Button disabled={model.isBusy} leftSection={<Receipt size={16} />} variant="outline" onClick={model.openConsumableModal}>
@@ -565,7 +566,7 @@ export function AdvanceReportViewPage() {
           </Group>
         </Stack>
       </AppModal>
-    </Stack>
+    </div>
     </AppDrawer>
   )
 }
@@ -580,63 +581,165 @@ function AdvanceReportContent({ model }: { model: ReturnType<typeof useAdvanceRe
 
   const hasConsumables = model.consumableRows.length > 0
   const hasFuel = model.fuelRows.length > 0
+  const positionsCount = model.consumableRows.length + model.fuelRows.length
+  const difference = order.DifferenceAmount ?? model.reportTotal - model.orderAmount
+  const reportNumber = order.AdvanceNumber || order.Number
+  const reportDate = order.Updated || order.Created || order.FromDate
+  const responsible = order.Colleague?.FullName || order.Colleague?.Name || order.Colleague?.LastName
 
   return (
-    <Stack gap="md">
-      <Card className="app-section-card" withBorder padding="md" radius="md">
-        <Stack gap={4}>
-          <Text fw={700}>{model.reportTitle}</Text>
-          <Group gap={8}>
-            <Text fw={600}>{model.headerTitle}</Text>
-            <Text>{displayValue(order.Number)}</Text>
-            <Text c="dimmed">{t('Від')}</Text>
-            <Text>{formatDateTime(order.FromDate)}</Text>
-            {order.Colleague?.LastName && <Text>{order.Colleague.LastName}</Text>}
-            <Text c="dimmed">{t('на сумму')}</Text>
-            <Text fw={600}>
-              {formatMoney(model.orderAmount)} {model.currencyCode || ''}
-            </Text>
-          </Group>
-        </Stack>
-      </Card>
+    <>
+      <section className="outgoing-detail-summary">
+        <div className="outgoing-detail-summary__main">
+          <span className="outgoing-detail-eyebrow">{t('Авансовий звіт')}</span>
+          <Text className="outgoing-detail-summary__title">{displayValue(reportNumber)}</Text>
+          <Text className="outgoing-detail-summary__meta">
+            {formatDateTime(reportDate)} · {model.headerTitle}
+          </Text>
+        </div>
+        <div className="outgoing-detail-summary__metrics">
+          <AdvanceReportDetailMetric
+            label={t('Сума ордера')}
+            suffix={model.currencyCode}
+            value={formatMoney(model.orderAmount)}
+          />
+          <AdvanceReportDetailMetric
+            label={t('Сума звіту')}
+            suffix={model.currencyCode}
+            value={formatMoney(model.reportTotal)}
+          />
+          <AdvanceReportDetailMetric
+            label={t('Різниця')}
+            suffix={model.currencyCode}
+            tone={difference ? 'danger' : undefined}
+            value={formatMoney(difference)}
+          />
+        </div>
+      </section>
 
-      {hasConsumables && (
-        <Card className="app-section-card" withBorder padding="md" radius="md">
-          <Stack gap="sm">
-            <Text fw={700}>
-              {t('Товари')} / {t('Послуги')}
-            </Text>
+      <div className="outgoing-detail-tree advance-report-detail-tree">
+        <AdvanceReportDetailSection subtitle={displayValue(order.Number)} title={model.headerTitle}>
+          <AdvanceReportDetailRow label={t('Дата')} value={formatDateTime(order.FromDate)} />
+          <AdvanceReportDetailRow label={t('Номер')} value={displayValue(order.Number)} />
+          <AdvanceReportDetailRow label={t('Авансовий звіт')} value={displayValue(reportNumber)} />
+          <AdvanceReportDetailRow label={t('Відповідальний')} value={displayValue(responsible)} wide />
+          <AdvanceReportDetailRow
+            label={t('Сума')}
+            value={`${formatMoney(model.orderAmount)}${model.currencyCode ? ` ${model.currencyCode}` : ''}`}
+          />
+        </AdvanceReportDetailSection>
+
+        {hasConsumables ? (
+          <AdvanceReportDetailSection
+            subtitle={`${model.consumableRows.length}`}
+            title={`${t('Товари')} / ${t('Послуги')}`}
+          >
+            <div className="advance-report-detail-section__table">
             <AdvanceReportProductsGrid
               canRemove={!model.isBusy}
               rows={model.consumableRows}
               onRemove={model.removeConsumableRow}
             />
-          </Stack>
-        </Card>
-      )}
+            </div>
+          </AdvanceReportDetailSection>
+        ) : null}
 
       {hasFuel && (
-        <Card className="app-section-card" withBorder padding="md" radius="md">
-          <Stack gap="sm">
-            <Text fw={700}>{t('Пальне')}</Text>
+          <AdvanceReportDetailSection subtitle={`${model.fuelRows.length}`} title={t('Пальне')}>
+            <div className="advance-report-detail-section__table">
             <AdvanceReportFuelGrid canRemove={!model.isBusy} rows={model.fuelRows} onRemove={model.removeFuelRow} />
-          </Stack>
-        </Card>
+            </div>
+          </AdvanceReportDetailSection>
       )}
 
-      {hasAnyRows(order) && (
-        <Card className="app-section-card" withBorder padding="md" radius="md">
-          <Stack gap="md">
+        {positionsCount === 0 ? (
+          <AdvanceReportDetailSection subtitle="0" title={t('Позиції')}>
+            <div className="outgoing-detail-empty">{t('Позицій немає')}</div>
+          </AdvanceReportDetailSection>
+        ) : null}
+
+        {hasAnyRows(order) ? (
+          <AdvanceReportDetailSection title={t('Підсумки')}>
+            <Stack className="advance-report-detail-totals" gap="md">
             <IncomeMessage model={model} />
             <DifferenceMessage model={model} />
-            <Group justify="flex-end" gap="xl">
-              <TotalItem label={t('в.т.ч ПДВ')} value={formatMoney(model.totals.totalVat)} />
-              <TotalItem label={t('Сума')} value={formatMoney(model.totals.total)} />
-            </Group>
-          </Stack>
-        </Card>
-      )}
-    </Stack>
+              <div className="advance-report-detail-totals__metrics">
+                <AdvanceReportDetailMetric
+                  label={t('в.т.ч ПДВ')}
+                  suffix={model.currencyCode}
+                  value={formatMoney(model.totals.totalVat)}
+                />
+                <AdvanceReportDetailMetric
+                  label={t('Сума')}
+                  suffix={model.currencyCode}
+                  value={formatMoney(model.totals.total)}
+                />
+              </div>
+            </Stack>
+          </AdvanceReportDetailSection>
+        ) : null}
+      </div>
+    </>
+  )
+}
+
+function AdvanceReportDetailMetric({
+  label,
+  suffix,
+  tone,
+  value,
+}: {
+  label: string
+  suffix?: string
+  tone?: 'danger'
+  value: string
+}) {
+  return (
+    <div className={`outgoing-detail-metric${tone ? ` is-${tone}` : ''}`}>
+      <span>{label}</span>
+      <strong>
+        {displayValue(value)}
+        {suffix ? <em>{suffix}</em> : null}
+      </strong>
+    </div>
+  )
+}
+
+function AdvanceReportDetailSection({
+  children,
+  subtitle,
+  title,
+}: {
+  children: ReactNode
+  subtitle?: string
+  title: string
+}) {
+  return (
+    <section className="outgoing-detail-section">
+      <div className="outgoing-detail-section__head">
+        <span className="outgoing-detail-section__title">{title}</span>
+        {subtitle ? <span className="outgoing-detail-section__subtitle">{subtitle}</span> : null}
+      </div>
+      <div className="outgoing-detail-section__body">{children}</div>
+    </section>
+  )
+}
+
+function AdvanceReportDetailRow({
+  label,
+  value,
+  wide,
+}: {
+  label: string
+  value: string
+  wide?: boolean
+}) {
+  return (
+    <div className={`outgoing-detail-row${wide ? ' is-wide' : ''}`}>
+      <span className="outgoing-detail-row__label">{label}</span>
+      <span className="outgoing-detail-row__line" aria-hidden />
+      <span className="outgoing-detail-row__value">{displayValue(value)}</span>
+    </div>
   )
 }
 
@@ -731,15 +834,6 @@ function DifferenceMessage({ model }: { model: ReturnType<typeof useAdvanceRepor
       >
         {t('Погасити борг')}
       </Button>
-    </Group>
-  )
-}
-
-function TotalItem({ label, value }: { label: string; value: string }) {
-  return (
-    <Group gap={8}>
-      <Text c="dimmed">{label}</Text>
-      <Text fw={700}>{value}</Text>
     </Group>
   )
 }
