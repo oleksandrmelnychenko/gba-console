@@ -354,6 +354,30 @@ select {
   height: fit-content;
 }
 
+/* Keep helper text visually attached to its control instead of its label. */
+.app-input-description-below {
+  display: flex;
+  flex-direction: column;
+}
+
+.app-input-description-below > .mantine-InputWrapper-label {
+  order: 0;
+}
+
+.app-input-description-below > .mantine-Input-wrapper {
+  order: 1;
+}
+
+.app-input-description-below > .mantine-InputWrapper-description {
+  margin-bottom: 0;
+  margin-top: 4px;
+  order: 2;
+}
+
+.app-input-description-below > .mantine-InputWrapper-error {
+  order: 3;
+}
+
 .app-form-sheet .mantine-SegmentedControl-label {
   font-family: var(--font-mono);
   font-size: 12.5px;
