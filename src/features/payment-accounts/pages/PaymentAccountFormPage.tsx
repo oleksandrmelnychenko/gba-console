@@ -6,12 +6,10 @@ import {
   Checkbox,
   Divider,
   Group,
-  Loader,
   Select,
   SegmentedControl,
   SimpleGrid,
   Stack,
-  Table,
   Tabs,
   Text,
   TextInput,
@@ -25,6 +23,8 @@ import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useAuth } from '../../auth/useAuth'
 import {
@@ -143,8 +143,14 @@ type PaymentAccountActivityState = {
 type ActivityColumn<T> = {
   align?: 'left' | 'right'
   cell: (item: T) => ReactNode
+  enableSorting?: boolean
+  fill?: boolean
   header: string
   key: string
+  maxWidth?: number
+  minWidth?: number
+  rowActions?: boolean
+  width?: number
 }
 
 type PaymentAccountTransferDraft = {
@@ -763,21 +769,23 @@ function PaymentAccountFormCard({
         )}
 
         <Divider />
-        <CurrencySelector
-          drafts={currencyDrafts}
-          isEditMode={isEditMode}
-          isSingle={form.type !== PaymentRegisterType.Cash}
-          isDisabled={isLoading || isSaving}
-          onChange={onChangeCurrency}
-          onOpenCurrencyActivity={onOpenCurrencyActivity}
-        />
-        {isEditMode && (
-          <SimpleGrid cols={{ base: 1, sm: 3 }}>
-            <InfoCell label={t('Всього в EUR')} value={formatMoney(account.TotalEuroAmount)} />
-            <InfoCell label={t('Тип')} value={getPaymentRegisterTypeLabel(form.type, t)} />
-            <InfoCell label={t('Статус')} value={form.isActive ? t('Основний') : t('Звичайний')} />
-          </SimpleGrid>
-        )}
+        <div className={isEditMode ? 'payment-account-overview' : undefined}>
+          <CurrencySelector
+            drafts={currencyDrafts}
+            isEditMode={isEditMode}
+            isSingle={form.type !== PaymentRegisterType.Cash}
+            isDisabled={isLoading || isSaving}
+            onChange={onChangeCurrency}
+            onOpenCurrencyActivity={onOpenCurrencyActivity}
+          />
+          {isEditMode && (
+            <SimpleGrid className="payment-account-overview__meta" cols={{ base: 1, sm: 3 }}>
+              <InfoCell label={t('Всього в EUR')} value={formatMoney(account.TotalEuroAmount)} />
+              <InfoCell label={t('Тип')} value={getPaymentRegisterTypeLabel(form.type, t)} />
+              <InfoCell label={t('Статус')} value={form.isActive ? t('Основний') : t('Звичайний')} />
+            </SimpleGrid>
+          )}
+        </div>
       </Stack>
     </form>
   )
@@ -960,7 +968,7 @@ function CurrencySelector({
   const visibleDrafts = drafts.filter((draft) => isEditMode ? shouldShowCurrencyBalance(draft) : true)
 
   return (
-    <Stack gap="sm">
+    <Stack className={isEditMode ? 'payment-account-currency-selector is-summary' : 'payment-account-currency-selector'} gap="sm">
       <Group gap="xs">
         <Text fw={700}>{t('Валюти')}</Text>
         {isSingle && (
@@ -974,7 +982,7 @@ function CurrencySelector({
           {t('Валюти відсутні')}
         </Text>
       )}
-      <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }}>
+      <SimpleGrid cols={isEditMode ? 1 : { base: 1, sm: 2, lg: 3 }}>
         {visibleDrafts.map((draft) => {
           const index = drafts.indexOf(draft)
           const label = draft.currency.Code || draft.currency.Name || t('Валюта')
@@ -982,12 +990,13 @@ function CurrencySelector({
           if (isEditMode) {
             return (
               <Card
+                className="payment-account-currency-summary"
                 key={draft.original?.NetUid || draft.original?.Id || draft.currency.NetUid || draft.currency.Id || draft.currency.Code}
                 withBorder
                 radius="sm"
                 padding="sm"
               >
-                <Group justify="space-between" gap="xs" wrap="nowrap">
+                <Group justify="space-between" gap="md" wrap="nowrap">
                   <Stack gap={2}>
                     <Text fw={600} size="sm">
                       {label}
@@ -996,21 +1005,24 @@ function CurrencySelector({
                       {draft.currency.Name || label}
                     </Text>
                   </Stack>
-                  <Text fw={700}>{formatMoney(parseAmount(draft.amount))}</Text>
+                  <Group gap="md" wrap="nowrap">
+                    <Text className="payment-account-currency-summary__amount">
+                      {formatMoney(parseAmount(draft.amount))}
+                    </Text>
+                    {draft.original?.NetUid && (
+                      <Button
+                        className="payment-account-currency-summary__action"
+                        disabled={isDisabled}
+                        size="xs"
+                        type="button"
+                        variant="outline"
+                        onClick={() => onOpenCurrencyActivity(draft.original as PaymentCurrencyRegister)}
+                      >
+                        {t('Рух валюти')}
+                      </Button>
+                    )}
+                  </Group>
                 </Group>
-                {draft.original?.NetUid && (
-                  <Button
-                    disabled={isDisabled}
-                    fullWidth
-                    mt="xs"
-                    size="xs"
-                    type="button"
-                    variant="outline"
-                    onClick={() => onOpenCurrencyActivity(draft.original as PaymentCurrencyRegister)}
-                  >
-                    {t('Рух валюти')}
-                  </Button>
-                )}
               </Card>
             )
           }
@@ -1132,16 +1144,21 @@ function PaymentAccountActivityPanel({
 
   return (
     <>
-      <Card className="app-section-card" withBorder radius="md">
+      <Card className="app-section-card payment-account-activity" withBorder radius="md">
         <Stack gap="md">
-          <Group justify="space-between" wrap="wrap">
-            <Group gap="xs">
-              <Text fw={700}>{t('Операції')}</Text>
-              <Badge color="gray" variant="light">
-                {formatDate(from)} - {formatDate(to)}
-              </Badge>
+          <Group gap="xs">
+            <Text fw={700}>{t('Операції')}</Text>
+            <Badge color="gray" variant="light">
+              {formatDate(from)} - {formatDate(to)}
+            </Badge>
+          </Group>
+
+          <Group align="end" className="payment-account-activity__toolbar" justify="space-between" wrap="wrap">
+            <Group align="end" gap="sm" wrap="wrap">
+              <TextInput label={t('З')} type="date" value={from} w={150} onChange={(event) => onFromChange(event.currentTarget.value)} />
+              <TextInput label={t('По')} type="date" value={to} w={150} onChange={(event) => onToChange(event.currentTarget.value)} />
             </Group>
-            <Group gap="xs">
+            <Group className="payment-account-activity__actions" gap="xs">
               <Button color="green" disabled={!account.NetUid} size="xs" variant="outline" onClick={onOpenIncome}>
                 {t('Прихід')}
               </Button>
@@ -1189,11 +1206,6 @@ function PaymentAccountActivityPanel({
             </Group>
           </Group>
 
-          <Group align="end" gap="sm" wrap="wrap">
-            <TextInput label={t('З')} type="date" value={from} w={150} onChange={(event) => onFromChange(event.currentTarget.value)} />
-            <TextInput label={t('По')} type="date" value={to} w={150} onChange={(event) => onToChange(event.currentTarget.value)} />
-          </Group>
-
           {state.error && (
             <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {state.error}
@@ -1228,6 +1240,7 @@ function PaymentAccountActivityPanel({
                 getRowKey={(item, index) => getEntityValue(item) || `transfer-${index}`}
                 isLoading={state.isLoading}
                 rows={state.transfers}
+                tableId="payment-account-edit-transfers"
               />
             </Tabs.Panel>
 
@@ -1238,6 +1251,7 @@ function PaymentAccountActivityPanel({
                 getRowKey={(item, index) => getEntityValue(item) || `exchange-${index}`}
                 isLoading={state.isLoading}
                 rows={state.exchanges}
+                tableId="payment-account-edit-exchanges"
               />
             </Tabs.Panel>
 
@@ -1917,20 +1931,31 @@ function PaymentAccountBalancesView({
   const registers = (account.PaymentCurrencyRegisters || []).filter((register) => !hasSkippedCurrencyCode(register))
 
   return (
-    <Stack gap="md">
-      <SimpleGrid cols={{ base: 1, sm: 3 }}>
-        <InfoCell label={t('Всього в EUR')} value={formatMoney(account.TotalEuroAmount)} />
-        <InfoCell label={t('Організація')} value={displayValue(account.Organization?.Name || account.Organization?.FullName)} />
-        <InfoCell label={t('Рахунок')} value={displayValue(account.Name)} />
-      </SimpleGrid>
+    <Stack gap={0}>
       <ActivityTable
         columns={[
-          { key: 'currency', header: t('Валюта'), cell: (register) => displayValue(getCurrencyLabel(register)) },
-          { key: 'amount', header: t('Сума'), align: 'right', cell: (register) => formatMoney(register.Amount) },
+          {
+            key: 'currency',
+            header: t('Валюта'),
+            fill: true,
+            minWidth: 180,
+            cell: (register) => displayValue(getCurrencyLabel(register)),
+          },
+          {
+            key: 'amount',
+            header: t('Сума'),
+            align: 'right',
+            width: 180,
+            minWidth: 140,
+            cell: (register) => formatMoney(register.Amount),
+          },
           {
             key: 'selected',
             header: '',
             align: 'right',
+            rowActions: true,
+            width: 104,
+            minWidth: 104,
             cell: (register) => (
               <Button
                 disabled={!register.NetUid}
@@ -1949,6 +1974,7 @@ function PaymentAccountBalancesView({
         emptyText={t('Валюти відсутні')}
         getRowKey={(item, index) => getEntityValue(item) || `currency-${index}`}
         rows={registers}
+        tableId="payment-account-edit-balances"
       />
     </Stack>
   )
@@ -1977,6 +2003,8 @@ function PaymentCurrencyActivityView({
         getRowKey={(item, index) => getEntityValue(item) || `currency-transfer-${index}`}
         isLoading={isLoading}
         rows={activity?.PaymentRegisterTransfers || []}
+        tableId="payment-account-edit-currency-transfers"
+        title={t('Перекази')}
       />
       <ActivityTable
         columns={getIncomeColumns(t)}
@@ -1984,6 +2012,7 @@ function PaymentCurrencyActivityView({
         getRowKey={(item, index) => getEntityValue(item) || `income-${index}`}
         isLoading={isLoading}
         rows={incomeOrders}
+        tableId="payment-account-edit-currency-income"
         title={t('Прихід')}
       />
       <ActivityTable
@@ -1992,6 +2021,7 @@ function PaymentCurrencyActivityView({
         getRowKey={(item, index) => getEntityValue(item) || `outcome-${index}`}
         isLoading={isLoading}
         rows={outcomeOrders}
+        tableId="payment-account-edit-currency-outcome"
         title={t('Розхід')}
       />
       <ActivityTable
@@ -2000,6 +2030,7 @@ function PaymentCurrencyActivityView({
         getRowKey={(item, index) => getEntityValue(item) || `currency-exchange-${index}`}
         isLoading={isLoading}
         rows={activity?.PaymentRegisterCurrencyExchanges || []}
+        tableId="payment-account-edit-currency-exchanges"
         title={t('Обмін валют')}
       />
     </Stack>
@@ -2012,6 +2043,7 @@ function ActivityTable<T>({
   getRowKey,
   isLoading = false,
   rows,
+  tableId,
   title,
 }: {
   columns: ActivityColumn<T>[]
@@ -2019,55 +2051,115 @@ function ActivityTable<T>({
   getRowKey: (item: T, index: number) => string
   isLoading?: boolean
   rows: T[]
+  tableId: string
   title?: string
 }) {
-  if (isLoading) {
-    return (
-      <Group justify="center" py="md">
-        <Loader size="sm" />
-      </Group>
-    )
-  }
+  const dataTableColumns = useMemo<DataTableColumn<T>[]>(
+    () =>
+      columns.map((column) => ({
+        id: column.key,
+        header: column.header,
+        accessor: (row) => column.cell(row),
+        cell: column.cell,
+        align: column.align,
+        fill: column.fill,
+        maxWidth: column.maxWidth,
+        minWidth: column.minWidth ?? getActivityColumnMinWidth(column.key),
+        rowActions: column.rowActions,
+        width: column.width ?? getActivityColumnWidth(column.key),
+        enableSorting:
+          column.enableSorting ??
+          (!column.rowActions && column.key !== 'status' && column.key !== 'selected'),
+      })),
+    [columns],
+  )
+  const defaultLayout = useMemo<DataTableDefaultLayout>(
+    () => ({
+      columnPinning: columns.some((column) => column.rowActions)
+        ? { right: columns.filter((column) => column.rowActions).map((column) => column.key) }
+        : undefined,
+      density: 'normal',
+    }),
+    [columns],
+  )
+  const minWidth = useMemo(
+    () =>
+      Math.max(
+        560,
+        columns.reduce(
+          (total, column) => total + (column.width ?? getActivityColumnWidth(column.key)),
+          0,
+        ),
+      ),
+    [columns],
+  )
 
   return (
-    <Stack gap="xs">
-      {title && <Text fw={600}>{title}</Text>}
-      <Table.ScrollContainer minWidth={760}>
-        <Table withTableBorder withColumnBorders striped>
-          <Table.Thead>
-            <Table.Tr>
-              {columns.map((column) => (
-                <Table.Th key={column.key} style={{ textAlign: column.align === 'right' ? 'right' : 'left' }}>
-                  {column.header}
-                </Table.Th>
-              ))}
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
-            {rows.length === 0 ? (
-              <Table.Tr>
-                <Table.Td colSpan={columns.length}>
-                  <Text c="dimmed" size="sm">
-                    {emptyText}
-                  </Text>
-                </Table.Td>
-              </Table.Tr>
-            ) : (
-              rows.map((row, rowIndex) => (
-                <Table.Tr key={getRowKey(row, rowIndex)}>
-                  {columns.map((column) => (
-                    <Table.Td key={column.key} style={{ textAlign: column.align === 'right' ? 'right' : 'left' }}>
-                      {column.cell(row)}
-                    </Table.Td>
-                  ))}
-                </Table.Tr>
-              ))
-            )}
-          </Table.Tbody>
-        </Table>
-      </Table.ScrollContainer>
+    <Stack className="payment-account-activity-table" gap={6}>
+      {title && <Text className="payment-account-activity-table__title">{title}</Text>}
+      <DataTable
+        columns={dataTableColumns}
+        data={rows}
+        defaultLayout={defaultLayout}
+        emptyText={emptyText}
+        getRowId={getRowKey}
+        isLoading={isLoading}
+        layoutVersion="payment-account-edit-activity-2"
+        maxHeight={360}
+        minWidth={minWidth}
+        showDensityToggle={false}
+        tableId={tableId}
+      />
     </Stack>
   )
+}
+
+function getActivityColumnWidth(key: string): number {
+  switch (key) {
+    case 'fromDate':
+      return 130
+    case 'number':
+    case 'incomeNumber':
+      return 115
+    case 'status':
+    case 'rate':
+      return 96
+    case 'currency':
+      return 84
+    case 'amount':
+      return 116
+    case 'actions':
+    case 'selected':
+      return 104
+    case 'comment':
+      return 170
+    case 'from':
+    case 'to':
+    case 'organization':
+    case 'movement':
+    case 'user':
+    case 'payer':
+    case 'payee':
+      return 155
+    default:
+      return 138
+  }
+}
+
+function getActivityColumnMinWidth(key: string): number {
+  switch (key) {
+    case 'status':
+    case 'currency':
+    case 'rate':
+      return 88
+    case 'actions':
+    case 'selected':
+      return 104
+    case 'amount':
+      return 108
+    default:
+      return Math.min(getActivityColumnWidth(key), 130)
+  }
 }
 
 function getTransferColumns(
@@ -2095,6 +2187,9 @@ function getTransferColumns(
       key: 'actions',
       header: '',
       align: 'right',
+      rowActions: true,
+      width: 116,
+      minWidth: 116,
       cell: (transfer) => (
         <Button
           color="red"
@@ -2139,6 +2234,9 @@ function getExchangeColumns(
       key: 'actions',
       header: '',
       align: 'right',
+      rowActions: true,
+      width: 116,
+      minWidth: 116,
       cell: (exchange) => (
         <Button
           color="red"

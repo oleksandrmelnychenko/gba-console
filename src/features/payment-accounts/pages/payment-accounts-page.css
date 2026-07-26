@@ -156,3 +156,102 @@
 .payment-account-activity-content {
   padding: 14px;
 }
+
+.payment-account-overview {
+  align-items: stretch;
+  background: var(--mantine-color-gray-0);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: var(--mantine-radius-md);
+  display: grid;
+  gap: 20px;
+  grid-template-columns: minmax(320px, 1.15fr) minmax(0, 1.85fr);
+  padding: 12px 14px;
+}
+
+.payment-account-currency-selector.is-summary {
+  min-width: 0;
+}
+
+.payment-account-currency-selector.is-summary > .mantine-Group-root {
+  min-height: 20px;
+}
+
+.payment-account-currency-summary {
+  background: var(--mantine-color-white);
+  min-width: 0;
+}
+
+.payment-account-currency-summary__amount {
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.payment-account-currency-summary__action {
+  flex: 0 0 auto;
+}
+
+.payment-account-overview__meta {
+  align-items: center;
+  min-width: 0;
+}
+
+.payment-account-overview__meta > * {
+  border-left: 1px solid var(--mantine-color-gray-2);
+  min-width: 0;
+  padding: 8px 16px;
+}
+
+.payment-account-overview__meta .mantine-Text-root {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.payment-account-activity__toolbar {
+  gap: 12px;
+}
+
+.payment-account-activity__actions {
+  margin-left: auto;
+}
+
+.payment-account-activity-table {
+  min-width: 0;
+}
+
+.payment-account-activity-table__title {
+  color: var(--mantine-color-gray-8);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 0 8px;
+}
+
+.payment-account-activity-table .data-table-cell {
+  white-space: nowrap;
+}
+
+.payment-account-activity-table .data-table-cell > * {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .payment-account-overview {
+    grid-template-columns: 1fr;
+  }
+
+  .payment-account-overview__meta > :first-child {
+    border-left: 0;
+    padding-left: 0;
+  }
+
+  .payment-account-activity__actions {
+    margin-left: 0;
+  }
+}
