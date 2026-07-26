@@ -1,7 +1,6 @@
 import {
   ActionIcon,
   Alert,
-  Anchor,
   Box,
   Button,
   Card,
@@ -16,18 +15,17 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
-import { AppModal } from "../../../shared/ui/AppModal"
-import { CircleAlert, Download, FileSpreadsheet, FileText, RefreshCw, RotateCcw, Search } from 'lucide-react'
+import { CircleAlert, Download, RefreshCw, RotateCcw, Search } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
-import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import {
   exportGroupedProductRemains,
   exportProductRemains,
@@ -913,44 +911,12 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
         )}
       </AppDrawer>
 
-      <AppModal centered opened={downloadModalOpened} title={t('Експорт залишків')} onClose={() => setDownloadModalOpened(false)}>
-        <Stack gap="sm">
-          {downloadDocument?.DocumentURL || downloadDocument?.PdfDocumentURL ? (
-            <>
-              {downloadDocument.DocumentURL && (
-                <Anchor
-                  href={upgradeHttpToHttps(downloadDocument.DocumentURL)}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="document-link"
-                >
-                  <span className="document-link-badge document-link-badge-excel">
-                    <FileSpreadsheet size={22} strokeWidth={1.8} />
-                  </span>
-                  <span>{t('Excel документ')}</span>
-                </Anchor>
-              )}
-              {downloadDocument.PdfDocumentURL && (
-                <Anchor
-                  href={upgradeHttpToHttps(downloadDocument.PdfDocumentURL)}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="document-link"
-                >
-                  <span className="document-link-badge document-link-badge-pdf">
-                    <FileText size={22} strokeWidth={1.8} />
-                  </span>
-                  <span>{t('PDF документ')}</span>
-                </Anchor>
-              )}
-            </>
-          ) : (
-            <Text c="dimmed" size="sm">
-              {t('Документ недоступний для завантаження')}
-            </Text>
-          )}
-        </Stack>
-      </AppModal>
+      <DocumentExportModal
+        document={downloadDocument}
+        opened={downloadModalOpened}
+        title={t('Експорт залишків')}
+        onClose={() => setDownloadModalOpened(false)}
+      />
     </Stack>
   )
 }
