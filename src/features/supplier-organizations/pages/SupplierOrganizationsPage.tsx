@@ -2,18 +2,15 @@ import {
   ActionIcon,
   Badge,
   Alert,
-  Anchor,
   Button,
-  Group,
   Stack,
-  Text,
   TextInput,
   Tooltip,
 } from '@mantine/core'
-import { CircleAlert, Download, ExternalLink, FileText, Plus, RotateCcw, Search, Wallet } from 'lucide-react'
-import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
+import { CircleAlert, Download, ExternalLink, Plus, RotateCcw, Search, Wallet } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import { PermissionGate } from '../../auth/components/PermissionGate'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -24,7 +21,6 @@ import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
-import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import {
   exportSupplyOrganizations,
   getSupplyOrganizations,
@@ -345,7 +341,12 @@ export function SupplierOrganizationsPage() {
         }}
       />
 
-      <DocumentModal document={downloadDocument} onClose={() => setDownloadDocument(null)} />
+      <DocumentExportModal
+        document={downloadDocument}
+        opened={Boolean(downloadDocument)}
+        title={t('Експорт постачальників послуг')}
+        onClose={() => setDownloadDocument(null)}
+      />
     </Stack>
   )
 }
@@ -601,34 +602,6 @@ function SupplierOrganizationActionModal({
           </PermissionGate>
         </Stack>
       )}
-    </AppModal>
-  )
-}
-
-function DocumentModal({ document, onClose }: { document: SupplyOrganizationDocumentExport | null; onClose: () => void }) {
-  const { t } = useI18n()
-
-  return (
-    <AppModal centered opened={Boolean(document)} title={t('Документ')} onClose={onClose}>
-      <Stack gap="sm">
-        {document?.DocumentURL && (
-          <Anchor href={upgradeHttpToHttps(document.DocumentURL)} target="_blank" rel="noreferrer" className="document-link">
-            <Group gap="xs">
-              <ExcelIcon size={22} />
-              <span>{t('Завантажити Excel')}</span>
-            </Group>
-          </Anchor>
-        )}
-        {document?.PdfDocumentURL && (
-          <Anchor href={upgradeHttpToHttps(document.PdfDocumentURL)} target="_blank" rel="noreferrer" className="document-link">
-            <Group gap="xs">
-              <FileText size={22} strokeWidth={1.8} />
-              <span>{t('Завантажити PDF')}</span>
-            </Group>
-          </Anchor>
-        )}
-        {!document?.DocumentURL && !document?.PdfDocumentURL && <Text c="dimmed">{t('Документ не повернув посилання')}</Text>}
-      </Stack>
     </AppModal>
   )
 }

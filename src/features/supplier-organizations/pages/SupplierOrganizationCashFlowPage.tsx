@@ -14,9 +14,9 @@ import { exportAccountingCashFlowDocument } from '../../accounting-cash-flow/api
 import { getAccountingCashFlowClosingBalance } from '../../accounting-cash-flow/cashFlowTotals'
 import { CashFlowDetailContent } from '../../accounting-cash-flow/components/CashFlowDetailContent'
 import {
-  CashFlowExportModal,
-  type CashFlowExportFormat,
-} from '../../accounting-cash-flow/components/CashFlowExportModal'
+  DocumentExportModal,
+  type DocumentExportFormat,
+} from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import type {
   AccountingCashFlow,
   AccountingCashFlowDocument,
@@ -98,7 +98,7 @@ export function SupplierOrganizationCashFlowPage() {
   const [selectedRow, setSelectedRow] = useValueState<AccountingCashFlowHeadItem | null>(null)
   const [downloadDocument, setDownloadDocument] = useValueState<AccountingCashFlowDocument | null>(null)
   const [isExportModalOpen, setExportModalOpen] = useValueState(false)
-  const [exportingFormat, setExportingFormat] = useValueState<CashFlowExportFormat | null>(null)
+  const [exportingFormat, setExportingFormat] = useValueState<DocumentExportFormat | null>(null)
   const [error, setError] = useValueState<string | null>(null)
   const [isLoadingOrganization, setLoadingOrganization] = useValueState(false)
   const [isLoadingCashFlow, setLoadingCashFlow] = useValueState(false)
@@ -184,7 +184,7 @@ export function SupplierOrganizationCashFlowPage() {
     void loadCashFlow()
   }, [loadCashFlow])
 
-  async function exportDocument(format: CashFlowExportFormat) {
+  async function exportDocument(format: DocumentExportFormat) {
     if (!netId || filterError || isExporting) {
       return
     }
@@ -432,7 +432,7 @@ export function SupplierOrganizationCashFlowPage() {
       />
 
       <CashFlowDetailDrawer row={selectedRow} onClose={() => setSelectedRow(null)} />
-      <CashFlowExportModal
+      <DocumentExportModal
         document={downloadDocument}
         loadingFormat={exportingFormat}
         opened={isExportModalOpen}
