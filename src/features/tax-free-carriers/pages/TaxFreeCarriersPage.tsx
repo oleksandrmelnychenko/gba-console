@@ -1,7 +1,6 @@
 import {
   ActionIcon,
   Alert,
-  Anchor,
   Box,
   Button,
   Card,
@@ -12,18 +11,17 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { CircleAlert, Download, FileText, Plus, RefreshCw, RotateCcw, Search, Trash2 } from 'lucide-react'
-import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
+import { CircleAlert, Download, Plus, RefreshCw, RotateCcw, Search, Trash2 } from 'lucide-react'
 import { useEffect, useMemo, useReducer, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
+import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import { useAuth } from '../../auth/useAuth'
 import {
   deleteTaxFreeCarrier,
@@ -351,42 +349,14 @@ function CarriersDownloadModal({ model }: { model: ReturnType<typeof useTaxFreeC
   const { closeDownload, downloadDocument, downloadError, downloadOpened, isDownloading } = model
 
   return (
-    <AppModal centered opened={downloadOpened} title={t('Завантажити')} onClose={closeDownload}>
-      <Stack gap="sm">
-        {isDownloading ? (
-          <Text c="dimmed" size="sm">
-            {t('Завантаження')}
-          </Text>
-        ) : downloadError ? (
-          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
-            {downloadError}
-          </Alert>
-        ) : downloadDocument?.DocumentURL || downloadDocument?.PdfDocumentURL ? (
-          <>
-            {downloadDocument.DocumentURL && (
-              <Anchor href={getDocumentHref(downloadDocument.DocumentURL)} target="_blank" rel="noreferrer" className="document-link">
-                <span className="document-link-badge document-link-badge-excel">
-                  <ExcelIcon size={22} />
-                </span>
-                <span>{t('Excel документ')}</span>
-              </Anchor>
-            )}
-            {downloadDocument.PdfDocumentURL && (
-              <Anchor href={getDocumentHref(downloadDocument.PdfDocumentURL)} target="_blank" rel="noreferrer" className="document-link">
-                <span className="document-link-badge document-link-badge-pdf">
-                  <FileText size={22} strokeWidth={1.8} />
-                </span>
-                <span>{t('PDF документ')}</span>
-              </Anchor>
-            )}
-          </>
-        ) : (
-          <Text c="dimmed" size="sm">
-            {t('Документ недоступний для завантаження')}
-          </Text>
-        )}
-      </Stack>
-    </AppModal>
+    <DocumentExportModal
+      document={downloadDocument}
+      error={downloadError}
+      isLoading={isDownloading}
+      opened={downloadOpened}
+      title={t('Завантажити')}
+      onClose={closeDownload}
+    />
   )
 }
 
