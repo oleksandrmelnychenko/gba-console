@@ -12,7 +12,7 @@ import {
   TextInput,
 } from '@mantine/core'
 import { ArrowLeft, CircleAlert, Plus, Save } from 'lucide-react'
-import { type FormEvent, useEffect, useMemo } from 'react'
+import { type FormEvent, useEffect, useMemo, useState } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -31,6 +31,8 @@ import {
   searchIncomeCashflowPaymentMovements,
   searchIncomeCashflowPaymentRegisters,
 } from '../../income-cashflows/api/incomeCashflowsApi'
+import { createAutocompleteOptionSubmitGuard } from '../../income-cashflows/autocompleteOptionSubmitGuard'
+import { createLatestRequestGuard } from '../../income-cashflows/latestRequestGuard'
 import {
   IncomeCounterpartySearchType,
   type Organization,
@@ -109,6 +111,12 @@ export function OutgoingOrganizationPaymentForm({ onCancel, onCreated }: Outgoin
   const [isLoadingUnpaidOrders, setLoadingUnpaidOrders] = useValueState(false)
   const [isResolving, setResolving] = useValueState(false)
   const [isSaving, setSaving] = useValueState(false)
+  const [counterpartySelectionRequestGuard] = useState(
+    () => createLatestRequestGuard<string>(),
+  )
+  const [counterpartyOptionSubmitGuard] = useState(
+    createAutocompleteOptionSubmitGuard,
+  )
 
   const selectedOrganization = useMemo(
     () => organizations.find((organization) => getEntityValue(organization) === form.organizationValue) || null,
@@ -212,6 +220,7 @@ export function OutgoingOrganizationPaymentForm({ onCancel, onCreated }: Outgoin
   useEffect(() => {
     const value = form.counterpartySearch.trim()
     const controller = new AbortController()
+    let cancelled = false
     const timeoutId = window.setTimeout(() => {
       if (!value) {
         setSupplyOrganizations([])
@@ -219,11 +228,16 @@ export function OutgoingOrganizationPaymentForm({ onCancel, onCreated }: Outgoin
       }
 
       void searchIncomeCashflowCounterparties(value, IncomeCounterpartySearchType.Supplier, controller.signal)
-        .then((items) => setSupplyOrganizations(items as SupplyOrganization[]))
+        .then((items) => {
+          if (!cancelled) {
+            setSupplyOrganizations(items as SupplyOrganization[])
+          }
+        })
         .catch(() => undefined)
     }, SEARCH_DEBOUNCE_MS)
 
     return () => {
+      cancelled = true
       controller.abort()
       window.clearTimeout(timeoutId)
     }
@@ -231,15 +245,25 @@ export function OutgoingOrganizationPaymentForm({ onCancel, onCreated }: Outgoin
 
   useEffect(() => {
     const value = form.movementSearch.trim()
+    let cancelled = false
     const timeoutId = window.setTimeout(() => {
       if (!value) {
         return
       }
 
-      void searchIncomeCashflowPaymentMovements(value).then(setPaymentMovements).catch(() => undefined)
+      void searchIncomeCashflowPaymentMovements(value)
+        .then((items) => {
+          if (!cancelled) {
+            setPaymentMovements(items)
+          }
+        })
+        .catch(() => undefined)
     }, SEARCH_DEBOUNCE_MS)
 
-    return () => window.clearTimeout(timeoutId)
+    return () => {
+      cancelled = true
+      window.clearTimeout(timeoutId)
+    }
   }, [form.movementSearch, setPaymentMovements])
 
   useEffect(() => {
@@ -347,6 +371,24 @@ export function OutgoingOrganizationPaymentForm({ onCancel, onCreated }: Outgoin
     }
   }
 
+  function handleCounterpartySearchChanged(value: string) {
+    if (counterpartyOptionSubmitGuard.consumeChange(value)) {
+      updateForm({ counterpartySearch: value })
+      return
+    }
+
+    counterpartySelectionRequestGuard.invalidate()
+    setResolving(false)
+    setSelectedSupplyOrganization(null)
+    setSupplyAgreements([])
+    setUnpaidConsumableOrders([])
+    setSelectedUnpaidOrderValues([])
+    updateForm({
+      counterpartySearch: value,
+      selectedAgreementValue: '',
+    })
+  }
+
   async function handleCounterpartySubmit(value: string) {
     const supplyOrganization = supplyOrganizations.find((item) => getEntityName(item) === value)
 
@@ -354,8 +396,19 @@ export function OutgoingOrganizationPaymentForm({ onCancel, onCreated }: Outgoin
       return
     }
 
+    counterpartyOptionSubmitGuard.markSubmitted(value)
+    const request = counterpartySelectionRequestGuard.start(
+      `supplier:${getEntityValue(supplyOrganization)}`,
+    )
+
     setResolving(true)
     setError(null)
+    setSelectedSupplyOrganization(null)
+    setSupplyAgreements([])
+    updateForm({
+      counterpartySearch: value,
+      selectedAgreementValue: '',
+    })
 
     try {
       const nextAgreements = supplyOrganization.Id
@@ -363,6 +416,9 @@ export function OutgoingOrganizationPaymentForm({ onCancel, onCreated }: Outgoin
             () => supplyOrganization.SupplyOrganizationAgreements || [],
           )
         : supplyOrganization.SupplyOrganizationAgreements || []
+      if (!counterpartySelectionRequestGuard.isCurrent(request)) {
+        return
+      }
       const organizationAgreements = selectedOrganization
         ? filterSupplyAgreementsByOrganization(nextAgreements, selectedOrganization)
         : []
@@ -375,9 +431,13 @@ export function OutgoingOrganizationPaymentForm({ onCancel, onCreated }: Outgoin
         selectedAgreementValue: nextAgreement ? getEntityValue(nextAgreement) : '',
       })
     } catch (selectError) {
-      setError(selectError instanceof Error ? selectError.message : t('Не вдалося виконати запит'))
+      if (counterpartySelectionRequestGuard.isCurrent(request)) {
+        setError(selectError instanceof Error ? selectError.message : t('Не вдалося виконати запит'))
+      }
     } finally {
-      setResolving(false)
+      if (counterpartySelectionRequestGuard.finish(request)) {
+        setResolving(false)
+      }
     }
   }
 
@@ -574,7 +634,7 @@ export function OutgoingOrganizationPaymentForm({ onCancel, onCreated }: Outgoin
               disabled={isLoading || isSaving}
               label={t('Постачальник послуг')}
               value={form.counterpartySearch}
-              onChange={(value) => updateForm({ counterpartySearch: value })}
+              onChange={handleCounterpartySearchChanged}
               onOptionSubmit={(value) => void handleCounterpartySubmit(value)}
             />
             <Select

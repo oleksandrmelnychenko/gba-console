@@ -17,7 +17,7 @@ import {
   TextInput,
 } from '@mantine/core'
 import { ArrowLeft, CircleAlert, Plus, Save } from 'lucide-react'
-import { type FormEvent, useEffect, useMemo } from 'react'
+import { type FormEvent, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -37,6 +37,8 @@ import {
   searchIncomeCashflowPaymentMovements,
   searchIncomeCashflowPaymentRegisters,
 } from '../../income-cashflows/api/incomeCashflowsApi'
+import { createAutocompleteOptionSubmitGuard } from '../../income-cashflows/autocompleteOptionSubmitGuard'
+import { createLatestRequestGuard } from '../../income-cashflows/latestRequestGuard'
 import {
   IncomeCounterpartySearchType,
   PaymentRegisterType,
@@ -57,6 +59,11 @@ import {
   type OutcomeOperationType,
 } from '../outgoingCreateTypes'
 import { buildOutgoingPaymentGroupPayload } from '../outgoingPaymentGroupPayload'
+import {
+  getOutgoingPaymentGroupTitle,
+  parseOutgoingPaymentOperationType,
+  parseOutgoingPaymentRegisterType,
+} from '../outgoingPaymentGroupTitle'
 import {
   SEARCH_DEBOUNCE_MS,
   balanceLabelOf,
@@ -122,8 +129,12 @@ export function OutgoingPaymentGroupForm({
 }: OutgoingPaymentGroupFormProps) {
   const { t } = useI18n()
   const [searchParams] = useSearchParams()
-  const initialOperationType = parseOperationType(searchParams.get('operationType'))
-  const initialRegisterType = parseRegisterType(searchParams.get('type'))
+  const initialOperationType =
+    parseOutgoingPaymentOperationType(
+      searchParams.get('operationType'),
+    )
+  const initialRegisterType =
+    parseOutgoingPaymentRegisterType(searchParams.get('type'))
   const [organizations, setOrganizations] = useValueState<Organization[]>([])
   const [availableOrganizations, setAvailableOrganizations] = useValueState<Organization[]>([])
   const [paymentRegisters, setPaymentRegisters] = useValueState<PaymentRegister[]>([])
@@ -141,6 +152,12 @@ export function OutgoingPaymentGroupForm({
   const [isLoadingUnpaidOrders, setLoadingUnpaidOrders] = useValueState(false)
   const [isResolvingCounterparty, setResolvingCounterparty] = useValueState(false)
   const [isSaving, setSaving] = useValueState(false)
+  const [counterpartySelectionRequestGuard] = useState(
+    () => createLatestRequestGuard<string>(),
+  )
+  const [counterpartyOptionSubmitGuard] = useState(
+    createAutocompleteOptionSubmitGuard,
+  )
 
   const operationType = form.operationType
   const registerType = form.registerType
@@ -283,16 +300,24 @@ export function OutgoingPaymentGroupForm({
   useEffect(() => {
     const value = form.counterpartySearch.trim()
     const controller = new AbortController()
+    let cancelled = false
     const timeoutId = window.setTimeout(() => {
       if (!value) {
         setCounterparties([])
         return
       }
 
-      void searchIncomeCashflowCounterparties(value, form.searchType, controller.signal).then(setCounterparties).catch(() => undefined)
+      void searchIncomeCashflowCounterparties(value, form.searchType, controller.signal)
+        .then((items) => {
+          if (!cancelled) {
+            setCounterparties(items)
+          }
+        })
+        .catch(() => undefined)
     }, SEARCH_DEBOUNCE_MS)
 
     return () => {
+      cancelled = true
       controller.abort()
       window.clearTimeout(timeoutId)
     }
@@ -300,15 +325,25 @@ export function OutgoingPaymentGroupForm({
 
   useEffect(() => {
     const value = form.movementSearch.trim()
+    let cancelled = false
     const timeoutId = window.setTimeout(() => {
       if (!value) {
         return
       }
 
-      void searchIncomeCashflowPaymentMovements(value).then(setPaymentMovements).catch(() => undefined)
+      void searchIncomeCashflowPaymentMovements(value)
+        .then((items) => {
+          if (!cancelled) {
+            setPaymentMovements(items)
+          }
+        })
+        .catch(() => undefined)
     }, SEARCH_DEBOUNCE_MS)
 
-    return () => window.clearTimeout(timeoutId)
+    return () => {
+      cancelled = true
+      window.clearTimeout(timeoutId)
+    }
   }, [form.movementSearch, setPaymentMovements])
 
   useEffect(() => {
@@ -393,11 +428,21 @@ export function OutgoingPaymentGroupForm({
       registerType: nextRegisterType,
       selectedCurrencyValue: nextCurrency ? getEntityValue(nextCurrency) : '',
     })
+    onTitleChange(
+      getOutgoingPaymentGroupTitle(
+        operationType,
+        nextRegisterType,
+        t,
+      ),
+    )
   }
 
   function handleOperationChanged(value: string) {
     const nextOperationType = Number(value) as OutcomeOperationType
 
+    counterpartyOptionSubmitGuard.clear()
+    counterpartySelectionRequestGuard.invalidate()
+    setResolvingCounterparty(false)
     updateForm({
       counterpartySearch: '',
       operationType: nextOperationType,
@@ -413,11 +458,21 @@ export function OutgoingPaymentGroupForm({
     setClientAgreements([])
     setSupplyAgreements([])
     setAvailableOrganizations(organizations)
+    onTitleChange(
+      getOutgoingPaymentGroupTitle(
+        nextOperationType,
+        registerType,
+        t,
+      ),
+    )
   }
 
   function handleSearchTypeChanged(value: string) {
     const nextSearchType = Number(value) as IncomeCounterpartySearchType
 
+    counterpartyOptionSubmitGuard.clear()
+    counterpartySelectionRequestGuard.invalidate()
+    setResolvingCounterparty(false)
     updateForm({
       counterpartySearch: '',
       searchType: nextSearchType,
@@ -431,6 +486,27 @@ export function OutgoingPaymentGroupForm({
     setAvailableOrganizations(organizations)
   }
 
+  function handleCounterpartySearchChanged(value: string) {
+    if (counterpartyOptionSubmitGuard.consumeChange(value)) {
+      updateForm({ counterpartySearch: value })
+      return
+    }
+
+    counterpartySelectionRequestGuard.invalidate()
+    setResolvingCounterparty(false)
+    setSelectedClient(null)
+    setSelectedSupplyOrganization(null)
+    setClientAgreements([])
+    setSupplyAgreements([])
+    setUnpaidConsumableOrders([])
+    setSelectedUnpaidOrderValues([])
+    setAvailableOrganizations(organizations)
+    updateForm({
+      counterpartySearch: value,
+      selectedAgreementValue: '',
+    })
+  }
+
   async function handleCounterpartySubmit(value: string) {
     const counterparty = counterparties.find((item) => getEntityName(item) === value)
 
@@ -439,21 +515,39 @@ export function OutgoingPaymentGroupForm({
     }
 
     if (form.searchType === IncomeCounterpartySearchType.Supplier) {
+      counterpartyOptionSubmitGuard.markSubmitted(value)
       await selectSupplyOrganization(counterparty as SupplyOrganization, value)
       return
     }
 
+    counterpartyOptionSubmitGuard.markSubmitted(value)
     await selectClient(counterparty, value)
   }
 
   async function selectClient(client: Client, label: string) {
+    const request = counterpartySelectionRequestGuard.start(
+      `client:${getEntityValue(client)}`,
+    )
+
     setResolvingCounterparty(true)
     setError(null)
+    setSelectedClient(null)
+    setSelectedSupplyOrganization(null)
+    setClientAgreements([])
+    setSupplyAgreements([])
+    setForm((current) => ({
+      ...current,
+      counterpartySearch: label,
+      selectedAgreementValue: '',
+    }))
 
     try {
       const nextAgreements = client.NetUid
         ? await getIncomeCashflowClientAgreements(client.NetUid).catch(() => client.ClientAgreements || [])
         : client.ClientAgreements || []
+      if (!counterpartySelectionRequestGuard.isCurrent(request)) {
+        return
+      }
       const nextOrganizations = pickOrganizationsByClientAgreements(organizations, nextAgreements)
       const nextOrganization = nextOrganizations[0] || organizations[0] || null
       const nextClientAgreements = nextOrganization ? filterClientAgreementsByOrganization(nextAgreements, nextOrganization) : nextAgreements
@@ -478,15 +572,32 @@ export function OutgoingPaymentGroupForm({
         selectedCurrencyValue: nextCurrency ? getEntityValue(nextCurrency) : '',
       }))
     } catch (selectError) {
-      setError(selectError instanceof Error ? selectError.message : t('Не вдалося завантажити контрагента'))
+      if (counterpartySelectionRequestGuard.isCurrent(request)) {
+        setError(selectError instanceof Error ? selectError.message : t('Не вдалося завантажити контрагента'))
+      }
     } finally {
-      setResolvingCounterparty(false)
+      if (counterpartySelectionRequestGuard.finish(request)) {
+        setResolvingCounterparty(false)
+      }
     }
   }
 
   async function selectSupplyOrganization(supplyOrganization: SupplyOrganization, label: string) {
+    const request = counterpartySelectionRequestGuard.start(
+      `supplier:${getEntityValue(supplyOrganization)}`,
+    )
+
     setResolvingCounterparty(true)
     setError(null)
+    setSelectedClient(null)
+    setSelectedSupplyOrganization(null)
+    setClientAgreements([])
+    setSupplyAgreements([])
+    setForm((current) => ({
+      ...current,
+      counterpartySearch: label,
+      selectedAgreementValue: '',
+    }))
 
     try {
       const nextAgreements = supplyOrganization.Id
@@ -494,6 +605,9 @@ export function OutgoingPaymentGroupForm({
             () => supplyOrganization.SupplyOrganizationAgreements || [],
           )
         : supplyOrganization.SupplyOrganizationAgreements || []
+      if (!counterpartySelectionRequestGuard.isCurrent(request)) {
+        return
+      }
       const nextOrganizations = pickOrganizationsBySupplyAgreements(organizations, nextAgreements)
       const nextOrganization = nextOrganizations[0] || organizations[0] || null
       const nextSupplyAgreements = nextOrganization ? filterSupplyAgreementsByOrganization(nextAgreements, nextOrganization) : nextAgreements
@@ -518,9 +632,13 @@ export function OutgoingPaymentGroupForm({
         selectedCurrencyValue: nextCurrency ? getEntityValue(nextCurrency) : '',
       }))
     } catch (selectError) {
-      setError(selectError instanceof Error ? selectError.message : t('Не вдалося завантажити постачальника'))
+      if (counterpartySelectionRequestGuard.isCurrent(request)) {
+        setError(selectError instanceof Error ? selectError.message : t('Не вдалося завантажити постачальника'))
+      }
     } finally {
-      setResolvingCounterparty(false)
+      if (counterpartySelectionRequestGuard.finish(request)) {
+        setResolvingCounterparty(false)
+      }
     }
   }
 
@@ -691,7 +809,6 @@ export function OutgoingPaymentGroupForm({
     }
   }
 
-  const title = getTitle(operationType, registerType, t)
   const balanceLabel = balanceLabelOf(selectedCurrencyRegister, t('Залишки'))
   const agreementBalance = getAgreementBalanceLabel({
     isSupplierSearch,
@@ -699,10 +816,6 @@ export function OutgoingPaymentGroupForm({
     selectedSupplyAgreement,
     t,
   })
-
-  useEffect(() => {
-    onTitleChange(title)
-  }, [onTitleChange, title])
 
   return (
     <>
@@ -752,7 +865,7 @@ export function OutgoingPaymentGroupForm({
               label={t('Отримувач')}
               placeholder={t('Почніть вводити назву')}
               value={form.counterpartySearch}
-              onChange={(value) => updateForm({ counterpartySearch: value })}
+              onChange={handleCounterpartySearchChanged}
               onOptionSubmit={handleCounterpartySubmit}
             />
           </SimpleGrid>
@@ -1020,46 +1133,6 @@ function validateForm({
   }
 
   return null
-}
-
-function parseRegisterType(value: string | null): PaymentRegisterType {
-  return value === String(PaymentRegisterType.Cash) ? PaymentRegisterType.Cash : PaymentRegisterType.Bank
-}
-
-function parseOperationType(value: string | null): OutcomeOperationType {
-  if (value === String(OUTCOME_OPERATION_TYPE.BuyerReturn)) {
-    return OUTCOME_OPERATION_TYPE.BuyerReturn
-  }
-
-  if (value === String(OUTCOME_OPERATION_TYPE.OtherOutcomeWithCounterparts)) {
-    return OUTCOME_OPERATION_TYPE.OtherOutcomeWithCounterparts
-  }
-
-  if (value === String(OUTCOME_OPERATION_TYPE.OtherOutcome)) {
-    return OUTCOME_OPERATION_TYPE.OtherOutcome
-  }
-
-  return OUTCOME_OPERATION_TYPE.PaymentToSupplier
-}
-
-function getTitle(operationType: OutcomeOperationType, registerType: PaymentRegisterType, t: (value: string) => string): string {
-  const registerTitle = registerType === PaymentRegisterType.Bank ? t('банківський') : t('касовий')
-
-  if (operationType === OUTCOME_OPERATION_TYPE.BuyerReturn) {
-    return `${t('Повернення клієнту')}, ${registerTitle}`
-  }
-
-  if (operationType === OUTCOME_OPERATION_TYPE.OtherOutcomeWithCounterparts) {
-    return `${t('Інші розрахунки з контрагентами')}, ${registerTitle}`
-  }
-
-  if (operationType === OUTCOME_OPERATION_TYPE.OtherOutcome) {
-    return registerType === PaymentRegisterType.Bank
-      ? t('Інше списання безготівкових грошових коштів')
-      : t('Інші витрати грошових коштів')
-  }
-
-  return `${t('Оплата постачальнику')}, ${registerTitle}`
 }
 
 function getOperationOptions(t: (value: string) => string) {

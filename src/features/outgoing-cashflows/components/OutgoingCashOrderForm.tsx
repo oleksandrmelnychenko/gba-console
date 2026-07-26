@@ -12,13 +12,14 @@ import {
   TextInput,
 } from '@mantine/core'
 import { ArrowLeft, CircleAlert, Plus, Save } from 'lucide-react'
-import { type FormEvent, useEffect, useMemo } from 'react'
+import { type FormEvent, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawerFooter } from '../../../shared/ui/AppDrawer'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { createAutocompleteOptionSubmitGuard } from '../../income-cashflows/autocompleteOptionSubmitGuard'
 import {
   createOutgoingCashflowOrder,
   createOutgoingCreatePaymentMovement,
@@ -65,6 +66,12 @@ export function OutgoingCashOrderForm({ onCancel, onCreated }: OutgoingCashOrder
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
   const [isSaving, setSaving] = useValueState(false)
+  const [movementOptionSubmitGuard] = useState(
+    createAutocompleteOptionSubmitGuard,
+  )
+  const [userOptionSubmitGuard] = useState(
+    createAutocompleteOptionSubmitGuard,
+  )
 
   const selectedOrganization = useMemo(
     () => organizations.find((organization) => getEntityValue(organization) === form.organizationValue) || null,
@@ -155,28 +162,48 @@ export function OutgoingCashOrderForm({ onCancel, onCreated }: OutgoingCashOrder
 
   useEffect(() => {
     const value = form.movementSearch.trim()
+    let cancelled = false
     const timeoutId = window.setTimeout(() => {
       if (!value) {
         return
       }
 
-      void searchOutgoingCreatePaymentMovements(value).then(setPaymentMovements).catch(() => undefined)
+      void searchOutgoingCreatePaymentMovements(value)
+        .then((items) => {
+          if (!cancelled) {
+            setPaymentMovements(items)
+          }
+        })
+        .catch(() => undefined)
     }, SEARCH_DEBOUNCE_MS)
 
-    return () => window.clearTimeout(timeoutId)
+    return () => {
+      cancelled = true
+      window.clearTimeout(timeoutId)
+    }
   }, [form.movementSearch, setPaymentMovements])
 
   useEffect(() => {
     const value = form.userSearch.trim()
+    let cancelled = false
     const timeoutId = window.setTimeout(() => {
       if (!value) {
         return
       }
 
-      void searchOutgoingCreateUsers(value).then(setUsers).catch(() => undefined)
+      void searchOutgoingCreateUsers(value)
+        .then((items) => {
+          if (!cancelled) {
+            setUsers(items)
+          }
+        })
+        .catch(() => undefined)
     }, SEARCH_DEBOUNCE_MS)
 
-    return () => window.clearTimeout(timeoutId)
+    return () => {
+      cancelled = true
+      window.clearTimeout(timeoutId)
+    }
   }, [form.userSearch, setUsers])
 
   function updateForm(patch: Partial<CreateFormState>) {
@@ -213,6 +240,7 @@ export function OutgoingCashOrderForm({ onCancel, onCreated }: OutgoingCashOrder
       return
     }
 
+    movementOptionSubmitGuard.markSubmitted(value)
     updateForm({
       movementSearch: movement.OperationName || '',
       selectedMovementValue: getEntityValue(movement),
@@ -226,9 +254,34 @@ export function OutgoingCashOrderForm({ onCancel, onCreated }: OutgoingCashOrder
       return
     }
 
+    userOptionSubmitGuard.markSubmitted(value)
     updateForm({
       selectedColleagueValue: getEntityValue(user),
       userSearch: getUserLabel(user),
+    })
+  }
+
+  function handleMovementSearchChanged(value: string) {
+    if (movementOptionSubmitGuard.consumeChange(value)) {
+      updateForm({ movementSearch: value })
+      return
+    }
+
+    updateForm({
+      movementSearch: value,
+      selectedMovementValue: '',
+    })
+  }
+
+  function handleUserSearchChanged(value: string) {
+    if (userOptionSubmitGuard.consumeChange(value)) {
+      updateForm({ userSearch: value })
+      return
+    }
+
+    updateForm({
+      selectedColleagueValue: '',
+      userSearch: value,
     })
   }
 
@@ -411,7 +464,7 @@ export function OutgoingCashOrderForm({ onCancel, onCreated }: OutgoingCashOrder
               disabled={isLoading || isSaving}
               label={t('Кому видано')}
               value={form.userSearch}
-              onChange={(value) => updateForm({ selectedColleagueValue: '', userSearch: value })}
+              onChange={handleUserSearchChanged}
               onOptionSubmit={handleUserSubmit}
             />
             <TextInput
@@ -428,7 +481,7 @@ export function OutgoingCashOrderForm({ onCancel, onCreated }: OutgoingCashOrder
               disabled={isLoading || isSaving}
               label={t('Статті руху грошових коштів')}
               value={form.movementSearch}
-              onChange={(value) => updateForm({ movementSearch: value, selectedMovementValue: '' })}
+              onChange={handleMovementSearchChanged}
               onOptionSubmit={handleMovementSubmit}
             />
             <Button

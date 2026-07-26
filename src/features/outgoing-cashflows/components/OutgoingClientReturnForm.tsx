@@ -12,7 +12,7 @@ import {
   TextInput,
 } from '@mantine/core'
 import { ArrowLeft, CircleAlert, Plus, Save } from 'lucide-react'
-import { type FormEvent, useEffect, useMemo } from 'react'
+import { type FormEvent, useEffect, useMemo, useState } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -28,6 +28,8 @@ import {
   searchIncomeCashflowPaymentMovements,
   searchIncomeCashflowPaymentRegisters,
 } from '../../income-cashflows/api/incomeCashflowsApi'
+import { createAutocompleteOptionSubmitGuard } from '../../income-cashflows/autocompleteOptionSubmitGuard'
+import { createLatestRequestGuard } from '../../income-cashflows/latestRequestGuard'
 import { IncomeCounterpartySearchType } from '../../income-cashflows/types'
 import type {
   Client,
@@ -98,6 +100,12 @@ export function OutgoingClientReturnForm({ onCancel, onCreated }: OutgoingClient
   const [isLoading, setLoading] = useValueState(true)
   const [isResolving, setResolving] = useValueState(false)
   const [isSaving, setSaving] = useValueState(false)
+  const [payerSelectionRequestGuard] = useState(
+    () => createLatestRequestGuard<string>(),
+  )
+  const [payerOptionSubmitGuard] = useState(
+    createAutocompleteOptionSubmitGuard,
+  )
 
   const selectedOrganization = useMemo(
     () => organizations.find((organization) => getEntityValue(organization) === form.organizationValue) || null,
@@ -189,16 +197,24 @@ export function OutgoingClientReturnForm({ onCancel, onCreated }: OutgoingClient
   useEffect(() => {
     const value = form.payerSearch.trim()
     const controller = new AbortController()
+    let cancelled = false
     const timeoutId = window.setTimeout(() => {
       if (!value) {
         setPayerClients([])
         return
       }
 
-      void searchIncomeCashflowCounterparties(value, IncomeCounterpartySearchType.Client, controller.signal).then(setPayerClients).catch(() => undefined)
+      void searchIncomeCashflowCounterparties(value, IncomeCounterpartySearchType.Client, controller.signal)
+        .then((items) => {
+          if (!cancelled) {
+            setPayerClients(items)
+          }
+        })
+        .catch(() => undefined)
     }, SEARCH_DEBOUNCE_MS)
 
     return () => {
+      cancelled = true
       controller.abort()
       window.clearTimeout(timeoutId)
     }
@@ -206,15 +222,25 @@ export function OutgoingClientReturnForm({ onCancel, onCreated }: OutgoingClient
 
   useEffect(() => {
     const value = form.movementSearch.trim()
+    let cancelled = false
     const timeoutId = window.setTimeout(() => {
       if (!value) {
         return
       }
 
-      void searchIncomeCashflowPaymentMovements(value).then(setPaymentMovements).catch(() => undefined)
+      void searchIncomeCashflowPaymentMovements(value)
+        .then((items) => {
+          if (!cancelled) {
+            setPaymentMovements(items)
+          }
+        })
+        .catch(() => undefined)
     }, SEARCH_DEBOUNCE_MS)
 
-    return () => window.clearTimeout(timeoutId)
+    return () => {
+      cancelled = true
+      window.clearTimeout(timeoutId)
+    }
   }, [form.movementSearch, setPaymentMovements])
 
   useEffect(() => {
@@ -270,6 +296,22 @@ export function OutgoingClientReturnForm({ onCancel, onCreated }: OutgoingClient
     })
   }
 
+  function handlePayerSearchChanged(value: string) {
+    if (payerOptionSubmitGuard.consumeChange(value)) {
+      updateForm({ payerSearch: value })
+      return
+    }
+
+    payerSelectionRequestGuard.invalidate()
+    setResolving(false)
+    setSelectedClient(null)
+    setClientAgreements([])
+    updateForm({
+      payerSearch: value,
+      selectedAgreementValue: '',
+    })
+  }
+
   async function handlePayerSubmit(value: string) {
     const client = payerClients.find((item) => getEntityName(item) === value)
 
@@ -277,13 +319,27 @@ export function OutgoingClientReturnForm({ onCancel, onCreated }: OutgoingClient
       return
     }
 
+    payerOptionSubmitGuard.markSubmitted(value)
+    const request = payerSelectionRequestGuard.start(
+      `client:${getEntityValue(client)}`,
+    )
+
     setResolving(true)
     setError(null)
+    setSelectedClient(null)
+    setClientAgreements([])
+    updateForm({
+      payerSearch: value,
+      selectedAgreementValue: '',
+    })
 
     try {
       const nextAgreements = client.NetUid
         ? await getIncomeCashflowClientAgreements(client.NetUid).catch(() => client.ClientAgreements || [])
         : client.ClientAgreements || []
+      if (!payerSelectionRequestGuard.isCurrent(request)) {
+        return
+      }
       const nextAgreement = nextAgreements[0] || null
 
       setSelectedClient(client)
@@ -293,9 +349,13 @@ export function OutgoingClientReturnForm({ onCancel, onCreated }: OutgoingClient
         selectedAgreementValue: nextAgreement?.Agreement ? getEntityValue(nextAgreement.Agreement) : '',
       })
     } catch (selectError) {
-      setError(selectError instanceof Error ? selectError.message : t('Не вдалося виконати запит'))
+      if (payerSelectionRequestGuard.isCurrent(request)) {
+        setError(selectError instanceof Error ? selectError.message : t('Не вдалося виконати запит'))
+      }
     } finally {
-      setResolving(false)
+      if (payerSelectionRequestGuard.finish(request)) {
+        setResolving(false)
+      }
     }
   }
 
@@ -482,7 +542,7 @@ export function OutgoingClientReturnForm({ onCancel, onCreated }: OutgoingClient
               disabled={isLoading || isSaving}
               label={t('Клієнт')}
               value={form.payerSearch}
-              onChange={(value) => updateForm({ payerSearch: value })}
+              onChange={handlePayerSearchChanged}
               onOptionSubmit={(value) => void handlePayerSubmit(value)}
             />
             <Select

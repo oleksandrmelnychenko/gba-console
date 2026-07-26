@@ -1,7 +1,12 @@
 import { Stack } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { useState } from 'react'
-import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import {
+  Navigate,
+  useLocation,
+  useNavigate,
+  useSearchParams,
+} from 'react-router-dom'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -11,6 +16,11 @@ import { OutgoingCreateModeSelector } from '../components/OutgoingCreateModeSele
 import { OutgoingOrganizationPaymentForm } from '../components/OutgoingOrganizationPaymentForm'
 import { OutgoingPaymentGroupForm } from '../components/OutgoingPaymentGroupForm'
 import { OUTGOING_CREATE_MODE, type OutgoingCreateMode } from '../outgoingCreateTypes'
+import {
+  getOutgoingPaymentGroupTitle,
+  parseOutgoingPaymentOperationType,
+  parseOutgoingPaymentRegisterType,
+} from '../outgoingPaymentGroupTitle'
 import { buildAvailablePaymentsPaymentTasksPath } from '../outgoingPaymentTasksRoute'
 
 const OUTGOING_CASHFLOWS_PATH = '/accounting/outgoing-cashflow'
@@ -22,7 +32,18 @@ export function OutgoingCashflowCreatePage() {
   const location = useLocation()
   const [searchParams] = useSearchParams()
   const [mode, setMode] = useValueState<OutgoingCreateMode | null>(null)
-  const [paymentGroupTitle, setPaymentGroupTitle] = useState('')
+  const [paymentGroupTitle, setPaymentGroupTitle] = useState(
+    () =>
+      getOutgoingPaymentGroupTitle(
+        parseOutgoingPaymentOperationType(
+          searchParams.get('operationType'),
+        ),
+        parseOutgoingPaymentRegisterType(
+          searchParams.get('type'),
+        ),
+        t,
+      ),
+  )
   const activeMode = mode || getModeFromPath(location.pathname) || (searchParams.get('operationType') ? OUTGOING_CREATE_MODE.PaymentGroup : null)
   const drawerTitle = activeMode === OUTGOING_CREATE_MODE.Simple
     ? t('Створення нового видаткового ордера')
@@ -36,19 +57,38 @@ export function OutgoingCashflowCreatePage() {
 
   // Deep link на /new/payment-tasks — редірект на сторінку платіжних задач.
   if (location.pathname.endsWith('/payment-tasks')) {
-    navigate(buildAvailablePaymentsPaymentTasksPath(location.search, location.hash), { replace: true })
+    return (
+      <Navigate
+        replace
+        to={buildAvailablePaymentsPaymentTasksPath(
+          location.search,
+          location.hash,
+        )}
+      />
+    )
   }
 
   function handleNavigate(path: string) {
-    setPaymentGroupTitle('')
-
     if (path.startsWith(OUTGOING_CASHFLOW_NEW_PATH)) {
+      const nextUrl = new URL(path, window.location.origin)
+      setPaymentGroupTitle(
+        getOutgoingPaymentGroupTitle(
+          parseOutgoingPaymentOperationType(
+            nextUrl.searchParams.get('operationType'),
+          ),
+          parseOutgoingPaymentRegisterType(
+            nextUrl.searchParams.get('type'),
+          ),
+          t,
+        ),
+      )
       // Лишаємось у тому самому drawer-оверлеї — зберігаємо backgroundLocation.
       setMode(null)
       navigate(path, { replace: true, state: location.state })
       return
     }
 
+    setPaymentGroupTitle('')
     navigate(path)
   }
 
