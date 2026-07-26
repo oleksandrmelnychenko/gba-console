@@ -1,20 +1,17 @@
 import {
   Alert,
-  Anchor,
   Badge,
   Button,
   Stack,
   Text,
 } from '@mantine/core'
-import { CircleAlert, Download, FileText } from 'lucide-react'
-import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
+import { CircleAlert, Download } from 'lucide-react'
 import { useMemo } from 'react'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
-import { AppModal } from '../../../shared/ui/AppModal'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import type {
   DepreciatedOrder,
@@ -165,42 +162,14 @@ export function DepreciatedOrderDetailDrawer({
         </Stack>
       )}
 
-      <AppModal centered opened={downloadOpened} title={t('Завантажити')} onClose={onCloseDownload}>
-        <Stack gap="sm">
-          {isDownloading ? (
-            <Text c="dimmed" size="sm">
-              {t('Завантаження')}
-            </Text>
-          ) : downloadError ? (
-            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
-              {downloadError}
-            </Alert>
-          ) : downloadDocument?.DocumentURL || downloadDocument?.PdfDocumentURL ? (
-            <>
-              {downloadDocument.DocumentURL && (
-                <Anchor href={getDocumentHref(downloadDocument.DocumentURL)} target="_blank" rel="noreferrer" className="document-link">
-                  <span className="document-link-badge document-link-badge-excel">
-                    <ExcelIcon size={22} />
-                  </span>
-                  <span>{t('Excel документ')}</span>
-                </Anchor>
-              )}
-              {downloadDocument.PdfDocumentURL && (
-                <Anchor href={getDocumentHref(downloadDocument.PdfDocumentURL)} target="_blank" rel="noreferrer" className="document-link">
-                  <span className="document-link-badge document-link-badge-pdf">
-                    <FileText size={22} strokeWidth={1.8} />
-                  </span>
-                  <span>{t('PDF документ')}</span>
-                </Anchor>
-              )}
-            </>
-          ) : (
-            <Text c="dimmed" size="sm">
-              {t('Документ недоступний для завантаження')}
-            </Text>
-          )}
-        </Stack>
-      </AppModal>
+      <DocumentExportModal
+        document={downloadDocument}
+        error={downloadError}
+        isLoading={isDownloading}
+        opened={downloadOpened}
+        title={t('Завантажити')}
+        onClose={onCloseDownload}
+      />
     </AppDrawer>
   )
 }
