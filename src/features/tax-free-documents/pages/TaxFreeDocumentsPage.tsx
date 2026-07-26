@@ -18,13 +18,12 @@ import {
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal, AppModalFooter } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
-import { Banknote, CircleAlert, FileSpreadsheet, FileText, Printer, RotateCcw, Search } from 'lucide-react'
+import { Banknote, CircleAlert, Printer, RotateCcw, Search } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { formatLocalDate, SYNC_DATA_RANGE_START } from '../../../shared/date/dateTime'
 import { hasExportDocumentUrl } from '../../../shared/documents/exportDocument'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import { DocumentOutcomePaymentModal } from '../../document-outcome-payment/components/DocumentOutcomePaymentModal'
 import type { DocumentOutcomePaymentSource } from '../../document-outcome-payment/types'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -32,6 +31,7 @@ import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
 import { TableRowAction, type TableRowActionKind } from '../../../shared/ui/table-row-action'
+import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import {
   getTaxFreeCarrier,
   getTaxFreeDocuments,
@@ -1467,60 +1467,14 @@ function TaxFreeDownloadDocumentModal({
   onClose: () => void
 }) {
   const { t } = useI18n()
-  const hasExcel = Boolean(document?.DocumentURL)
-  const hasPdf = Boolean(document?.PdfDocumentURL)
-
   return (
-    <AppModal centered opened={Boolean(document)} size="sm" title={t('Документи')} onClose={onClose}>
-      <Stack gap="sm">
-        {title ? (
-          <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)' }}>
-            {title}
-          </Text>
-        ) : null}
-
-        {hasExcel || hasPdf ? (
-          <Group gap="xs">
-            {document?.DocumentURL ? (
-              <Button
-                color="teal"
-                component="a"
-                href={getDocumentHref(document.DocumentURL)}
-                leftSection={<FileSpreadsheet size={16} />}
-                rel="noopener noreferrer"
-                target="_blank"
-                variant="outline"
-              >
-                Excel
-              </Button>
-            ) : null}
-            {document?.PdfDocumentURL ? (
-              <Button
-                color="red"
-                component="a"
-                href={getDocumentHref(document.PdfDocumentURL)}
-                leftSection={<FileText size={16} />}
-                rel="noopener noreferrer"
-                target="_blank"
-                variant="light"
-              >
-                PDF
-              </Button>
-            ) : null}
-          </Group>
-        ) : (
-          <Text c="dimmed" size="sm">
-            {t('Документ не повернув посилання')}
-          </Text>
-        )}
-
-        <Group justify="flex-end" mt="xs">
-          <Button color="orange" variant="subtle" onClick={onClose}>
-            {t('Закрити')}
-          </Button>
-        </Group>
-      </Stack>
-    </AppModal>
+    <DocumentExportModal
+      document={document}
+      emptyText={t('Документ не повернув посилання')}
+      opened={Boolean(document)}
+      title={title || t('Документи')}
+      onClose={onClose}
+    />
   )
 }
 
