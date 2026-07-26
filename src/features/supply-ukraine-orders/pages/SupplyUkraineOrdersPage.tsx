@@ -1,7 +1,6 @@
 import {
   ActionIcon,
   Alert,
-  Anchor,
   Badge,
   Button,
   Card,
@@ -17,7 +16,7 @@ import {
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
-import { CircleAlert, Download, Eye, FileSpreadsheet, FileText, ListChecks, PackageCheck, PackageOpen, Plus, Receipt, ReceiptText, RotateCcw, Route, Search, Trash2 } from 'lucide-react'
+import { CircleAlert, Download, Eye, FileText, ListChecks, PackageCheck, PackageOpen, Plus, Receipt, ReceiptText, RotateCcw, Route, Search, Trash2 } from 'lucide-react'
 import { Fragment, useCallback, useEffect, useMemo, useReducer, useRef, useState, type ReactNode } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
@@ -31,7 +30,7 @@ import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
-import { getDocumentHref } from '../../../shared/url/getDocumentHref'
+import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import {
   createSupplyOrderUkraineDeliveryExpense,
   deleteDirectSupplyUkraineOrder,
@@ -2068,30 +2067,15 @@ function DownloadDocumentModal({
   const { t } = useI18n()
 
   return (
-    <AppModal centered opened={opened} title={t('Завантажити')} onClose={onClose}>
-      <Stack gap="md">
-        {isLoading ? (
-          <Text c="dimmed">{t('Документ формується')}</Text>
-        ) : error ? (
-          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">{error}</Alert>
-        ) : document?.DocumentURL || document?.PdfDocumentURL ? (
-          <Group>
-            {document.DocumentURL && (
-              <Anchor href={getDocumentHref(document.DocumentURL)} target="_blank" rel="noreferrer" className="document-link">
-                <Group gap={6}><FileSpreadsheet size={16} /> XLS</Group>
-              </Anchor>
-            )}
-            {document.PdfDocumentURL && (
-              <Anchor href={getDocumentHref(document.PdfDocumentURL)} target="_blank" rel="noreferrer" className="document-link">
-                <Group gap={6}><FileText size={16} /> PDF</Group>
-              </Anchor>
-            )}
-          </Group>
-        ) : (
-          <Text c="dimmed">{t('Документ не повернув посилання')}</Text>
-        )}
-      </Stack>
-    </AppModal>
+    <DocumentExportModal
+      document={document}
+      emptyText={t('Документ не повернув посилання')}
+      error={error}
+      isLoading={isLoading}
+      opened={opened}
+      title={t('Завантажити')}
+      onClose={onClose}
+    />
   )
 }
 
