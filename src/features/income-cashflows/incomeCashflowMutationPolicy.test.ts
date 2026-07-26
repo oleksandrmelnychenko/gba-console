@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import {
+  getAllowedIncomeCounterpartySearchTypes,
   resolveIncomePaymentOrderType,
+  resolveIncomeCounterpartyPayloadKind,
   selectDefaultIncomePaymentMovement,
   shouldAllocateIncomePaymentToSales,
 } from './incomeCashflowMutationPolicy'
 import {
+  IncomeCounterpartySearchType,
   IncomePaymentOperationType,
   IncomePaymentOrderType,
   PaymentRegisterType,
@@ -49,6 +52,26 @@ describe('income cash-flow mutation policy', () => {
         shouldAllocateIncomePaymentToSales(operationType, false),
       ).toBe(false)
     }
+  })
+
+  it('allows only a supplier for SupplierReturn payloads', () => {
+    expect(
+      getAllowedIncomeCounterpartySearchTypes(
+        IncomePaymentOperationType.SupplierReturn,
+      ),
+    ).toEqual([IncomeCounterpartySearchType.Supplier])
+    expect(
+      resolveIncomeCounterpartyPayloadKind(
+        IncomePaymentOperationType.SupplierReturn,
+        IncomeCounterpartySearchType.Supplier,
+      ),
+    ).toBe('supplier')
+    expect(
+      resolveIncomeCounterpartyPayloadKind(
+        IncomePaymentOperationType.SupplierReturn,
+        IncomeCounterpartySearchType.Manufacturer,
+      ),
+    ).toBeNull()
   })
 
   it('selects the article matching the operation instead of an unrelated first row', () => {

@@ -4,6 +4,8 @@ import { readSession } from '../auth/session'
 export const ACCOUNTING_IDEMPOTENCY_HEADER = 'Idempotency-Key'
 export const ACCOUNTING_MUTATION_LEDGER_STATE_HEADER = 'X-Mutation-Ledger-State'
 export const ACCOUNTING_MUTATION_LEDGER_NOT_ENTERED = 'not-entered'
+export const ACCOUNTING_MUTATION_LEDGER_FINGERPRINT_CONFLICT =
+  'fingerprint-conflict'
 
 export type AccountingMutationFailureStatus = 'definitive-failure' | 'unknown-outcome'
 
@@ -43,18 +45,30 @@ type PendingAccountingMutation<TPayload> = {
   identities: Set<object>
   inFlight?: Promise<unknown>
   kind: string
+  mutationScope: string
+  mutationScopeSignature: string
   operationId: string
   payloadSignature: string
   payloadSnapshot: TPayload
 }
 
+type PersistedUnresolvedAccountingMutation = {
+  operationId: string
+  payloadSignature: string
+}
+
 const ACCOUNTING_MUTATION_STORAGE_KEY = 'gba:accounting-mutation-operations:v1'
+const ACCOUNTING_MUTATION_UNRESOLVED_STORAGE_FIELD = 'unresolved'
 const pendingByOperationId = new Map<string, PendingAccountingMutation<unknown>>()
 const pendingByCanonicalPayload = new Map<string, PendingAccountingMutation<unknown>>()
 const pendingByIdentity = new WeakMap<object, PendingAccountingMutation<unknown>>()
 const pendingResolutionByCanonicalPayload = new Map<
   string,
   Promise<PendingAccountingMutation<unknown>>
+>()
+const pendingStatusByOperationId = new Map<
+  string,
+  Promise<AccountingMutationStatus | null>
 >()
 
 export async function executeAccountingMutation<TPayload, TResult>({
@@ -65,13 +79,17 @@ export async function executeAccountingMutation<TPayload, TResult>({
   request,
 }: ExecuteAccountingMutationOptions<TPayload, TResult>): Promise<TResult> {
   const candidateSnapshot = snapshotImmutableAccountingPayload(payload)
-  const canonicalPayload = createCanonicalPayload(
+  const mutationScope = createAccountingMutationScope(
     kind,
-    candidateSnapshot,
     getAccountingUserScope(),
+  )
+  const canonicalPayload = createCanonicalPayload(
+    mutationScope,
+    candidateSnapshot,
   )
   const pending = await resolvePendingMutation(
     kind,
+    mutationScope,
     candidateSnapshot,
     canonicalPayload,
     identity,
@@ -120,13 +138,12 @@ export function clearPendingAccountingMutation(operationId: string): boolean {
   const normalized = normalizeAccountingOperationId(operationId)
   const pending = pendingByOperationId.get(normalized)
 
-  if (!pending) {
-    return false
+  if (pending) {
+    clearPendingMutation(pending)
+    return true
   }
 
-  clearPendingMutation(pending)
-
-  return true
+  return removePersistedAccountingMutation(normalized)
 }
 
 export async function getAccountingMutationStatus(
@@ -164,10 +181,10 @@ export function snapshotImmutableAccountingPayload<T>(payload: T): T {
   return deepFreeze(JSON.parse(serialized) as T)
 }
 
-/** A failure is definitive only when a 4xx response explicitly proves that the
- * request did not enter the accounting mutation ledger. Network failures,
- * aborts, unmarked 4xx responses, and all 5xx responses keep the operation key
- * and immutable payload snapshot pending for a safe retry.
+/** A failure is definitive only when the server explicitly proves that the
+ * request did not enter the mutation ledger. Network failures, aborts,
+ * unmarked 4xx responses, and all 5xx responses keep the operation key and
+ * immutable payload snapshot pending for a safe retry.
  */
 export function classifyAccountingMutationFailure(
   error: unknown,
@@ -189,6 +206,7 @@ export function classifyAccountingMutationFailure(
 
 async function resolvePendingMutation<TPayload>(
   kind: string,
+  mutationScope: string,
   payloadSnapshot: TPayload,
   canonicalPayload: string,
   identity: object | undefined,
@@ -224,6 +242,7 @@ async function resolvePendingMutation<TPayload>(
 
   const resolution = createPendingMutation(
     kind,
+    mutationScope,
     payloadSnapshot,
     canonicalPayload,
     identity,
@@ -250,12 +269,16 @@ async function resolvePendingMutation<TPayload>(
 
 async function createPendingMutation<TPayload>(
   kind: string,
+  mutationScope: string,
   payloadSnapshot: TPayload,
   canonicalPayload: string,
   identity: object | undefined,
   operationId: string | undefined,
 ): Promise<PendingAccountingMutation<TPayload>> {
-  const payloadSignature = await hashCanonicalPayload(canonicalPayload)
+  const [payloadSignature, mutationScopeSignature] = await Promise.all([
+    hashCanonicalPayload(canonicalPayload),
+    hashCanonicalPayload(mutationScope),
+  ])
   const concurrentlyRegistered = findPendingMutation(
     kind,
     canonicalPayload,
@@ -267,29 +290,72 @@ async function createPendingMutation<TPayload>(
     return concurrentlyRegistered as PendingAccountingMutation<TPayload>
   }
 
+  const identityConflict = identity
+    ? pendingByIdentity.get(identity)
+    : undefined
+
+  if (
+    identityConflict &&
+    identityConflict.mutationScope !== mutationScope
+  ) {
+    assertSameMutation(identityConflict, kind, canonicalPayload)
+  }
+
+  const unresolvedMutations = collectUnresolvedMutations(
+    mutationScope,
+    mutationScopeSignature,
+  )
   const persistedOperationId = readPersistedOperationId(payloadSignature)
+  const matchingUnresolved = unresolvedMutations.find(
+    (candidate) => candidate.payloadSignature === payloadSignature,
+  )
+  const reusableOperationId =
+    persistedOperationId ?? matchingUnresolved?.operationId
 
   if (
     operationId &&
-    persistedOperationId &&
-    operationId !== persistedOperationId
+    reusableOperationId &&
+    operationId !== reusableOperationId
   ) {
     throw new Error(
       'The accounting payload is already pending under a different operation id',
     )
   }
 
-  return registerPendingMutation({
+  const reconciledOperationId = await reconcileChangedPayloadMutations(
+    unresolvedMutations,
+    payloadSignature,
+    operationId,
+    mutationScopeSignature,
+  )
+
+  const registeredAfterReconciliation = findPendingMutation(
+    kind,
+    canonicalPayload,
+    identity,
+    operationId,
+  )
+
+  if (registeredAfterReconciliation) {
+    return registeredAfterReconciliation as PendingAccountingMutation<TPayload>
+  }
+
+  const pending = registerPendingMutation({
     canonicalPayload,
     identities: new Set(identity ? [identity] : []),
     kind,
+    mutationScope,
+    mutationScopeSignature,
     operationId:
       operationId ??
-      persistedOperationId ??
+      reusableOperationId ??
+      reconciledOperationId ??
       createAccountingMutationOperationId(),
     payloadSignature,
     payloadSnapshot,
   })
+
+  return pending
 }
 
 async function requestPendingAccountingMutation<TPayload, TResult>(
@@ -311,12 +377,72 @@ async function requestPendingAccountingMutation<TPayload, TResult>(
 
     return result
   } catch (error) {
+    const reconciliationError =
+      await reconcileAccountingMutationFingerprintConflict(
+        pending,
+        error,
+      )
+
+    if (reconciliationError) {
+      throw reconciliationError
+    }
+
     if (classifyAccountingMutationFailure(error) === 'definitive-failure') {
       clearPendingMutation(pending)
     }
 
     throw error
   }
+}
+
+async function reconcileAccountingMutationFingerprintConflict(
+  pending: PendingAccountingMutation<unknown>,
+  error: unknown,
+): Promise<Error | null> {
+  if (!isAccountingMutationFingerprintConflict(error)) {
+    return null
+  }
+
+  let status: AccountingMutationStatus | null
+
+  try {
+    status = await readAccountingMutationStatus(pending.operationId)
+  } catch {
+    return null
+  }
+
+  if (status?.State === 'pending') {
+    return new Error(
+      'Попередня фінансова операція ще обробляється. Оновіть список і повторіть перевірку.',
+    )
+  }
+
+  if (status?.State !== 'completed') {
+    return null
+  }
+
+  clearPendingMutation(pending)
+  return new Error(
+    'Попередню фінансову операцію вже виконано. Оновіть список перед створенням нової.',
+  )
+}
+
+function isAccountingMutationFingerprintConflict(error: unknown): boolean {
+  if (!(error instanceof ApiError) || error.status !== 409) {
+    return false
+  }
+
+  const ledgerState = normalizeLedgerState(
+    error.headers.get(ACCOUNTING_MUTATION_LEDGER_STATE_HEADER),
+  )
+
+  if (ledgerState === ACCOUNTING_MUTATION_LEDGER_FINGERPRINT_CONFLICT) {
+    return true
+  }
+
+  return error.message.toLowerCase().includes(
+    'idempotency key was already used for a different accounting mutation',
+  )
 }
 
 function registerPendingMutation<TPayload>(
@@ -350,6 +476,11 @@ function registerPendingMutation<TPayload>(
     )
   }
   persistOperationIdentity(pending.payloadSignature, pending.operationId)
+  persistUnresolvedMutation(
+    pending.mutationScopeSignature,
+    pending.payloadSignature,
+    pending.operationId,
+  )
 
   return pending
 }
@@ -373,6 +504,193 @@ function clearPendingMutation(pending: PendingAccountingMutation<unknown>) {
     pending.payloadSignature,
     pending.operationId,
   )
+  removePersistedUnresolvedMutation(
+    pending.mutationScopeSignature,
+    pending.payloadSignature,
+    pending.operationId,
+  )
+}
+
+function collectUnresolvedMutations(
+  mutationScope: string,
+  mutationScopeSignature: string,
+): PersistedUnresolvedAccountingMutation[] {
+  // The lane journal survives object replacement and page reloads without
+  // storing the financial payload or the mutation kind in clear text.
+  const unresolvedByOperationId = new Map(
+    readPersistedUnresolvedMutations(mutationScopeSignature)
+      .map((pending) => [pending.operationId, pending]),
+  )
+
+  for (const pending of pendingByOperationId.values()) {
+    if (pending.mutationScope === mutationScope) {
+      unresolvedByOperationId.set(pending.operationId, {
+        operationId: pending.operationId,
+        payloadSignature: pending.payloadSignature,
+      })
+    }
+  }
+
+  return [...unresolvedByOperationId.values()]
+}
+
+async function reconcileChangedPayloadMutations(
+  unresolvedMutations: PersistedUnresolvedAccountingMutation[],
+  payloadSignature: string,
+  requestedOperationId: string | undefined,
+  mutationScopeSignature: string,
+): Promise<string | undefined> {
+  const conflictingMutation =
+    unresolvedMutations.find(
+      (unresolved) =>
+        unresolved.payloadSignature !== payloadSignature &&
+        requestedOperationId === unresolved.operationId,
+    ) ??
+    unresolvedMutations.find(
+      (unresolved) => unresolved.payloadSignature !== payloadSignature,
+    )
+
+  if (!conflictingMutation) {
+    return undefined
+  }
+
+  if (requestedOperationId === conflictingMutation.operationId) {
+    throw new Error(
+      'The accounting operation id is already pending with a different immutable payload',
+    )
+  }
+
+  const status = await readAccountingMutationStatus(
+    conflictingMutation.operationId,
+  )
+
+  if (status?.State === 'completed') {
+    clearReconciledMutation(
+      mutationScopeSignature,
+      conflictingMutation,
+    )
+    throw new Error(
+      'Попередню фінансову операцію вже виконано. Оновіть список перед створенням нової.',
+    )
+  }
+
+  if (status?.State === 'pending') {
+    throw new Error(
+      'Попередня фінансова операція ще обробляється. Оновіть список і повторіть перевірку.',
+    )
+  }
+
+  if (requestedOperationId) {
+    throw new Error(
+      'The previous accounting mutation outcome is unresolved; retry the exact immutable payload',
+    )
+  }
+
+  clearReconciledMutation(
+    mutationScopeSignature,
+    conflictingMutation,
+  )
+
+  // Reusing the old UUID is safe even if the original request is still queued:
+  // the server binds that UUID to one immutable request fingerprint.
+  return conflictingMutation.operationId
+}
+
+function clearReconciledMutation(
+  mutationScopeSignature: string,
+  mutation: PersistedUnresolvedAccountingMutation,
+) {
+  const pending = pendingByOperationId.get(mutation.operationId)
+
+  if (
+    pending &&
+    pending.payloadSignature === mutation.payloadSignature
+  ) {
+    clearPendingMutation(pending)
+    return
+  }
+
+  removePersistedOperationIdentity(
+    mutation.payloadSignature,
+    mutation.operationId,
+  )
+  removePersistedUnresolvedMutation(
+    mutationScopeSignature,
+    mutation.payloadSignature,
+    mutation.operationId,
+  )
+}
+
+function removePersistedAccountingMutation(
+  operationId: string,
+): boolean {
+  const journal = readPersistedMutationJournal()
+  let changed = false
+
+  for (const [signature, candidateOperationId] of Object.entries(journal)) {
+    if (
+      /^[0-9a-f]{64}$/.test(signature) &&
+      candidateOperationId === operationId
+    ) {
+      delete journal[signature]
+      changed = true
+    }
+  }
+
+  const unresolvedScopes = readPersistedUnresolvedScopes(journal)
+
+  for (const [scopeSignature, unresolved] of Object.entries(
+    unresolvedScopes,
+  )) {
+    const remaining = readUnresolvedMutationList(unresolved)
+      .filter((candidate) =>
+        candidate.operationId !== operationId)
+
+    if (remaining.length ===
+        readUnresolvedMutationList(unresolved).length) {
+      continue
+    }
+
+    changed = true
+    if (remaining.length) {
+      unresolvedScopes[scopeSignature] = remaining
+    } else {
+      delete unresolvedScopes[scopeSignature]
+    }
+  }
+
+  if (Object.keys(unresolvedScopes).length) {
+    journal[ACCOUNTING_MUTATION_UNRESOLVED_STORAGE_FIELD] =
+      unresolvedScopes
+  } else {
+    delete journal[ACCOUNTING_MUTATION_UNRESOLVED_STORAGE_FIELD]
+  }
+
+  if (changed) {
+    writePersistedMutationJournal(journal)
+  }
+
+  return changed
+}
+
+async function readAccountingMutationStatus(
+  operationId: string,
+): Promise<AccountingMutationStatus | null> {
+  const existing = pendingStatusByOperationId.get(operationId)
+
+  if (existing) {
+    return existing
+  }
+
+  const status = getAccountingMutationStatus(operationId)
+    .finally(() => {
+      if (pendingStatusByOperationId.get(operationId) === status) {
+        pendingStatusByOperationId.delete(operationId)
+      }
+    })
+  pendingStatusByOperationId.set(operationId, status)
+
+  return status
 }
 
 function assertSameMutation(
@@ -411,6 +729,13 @@ function findPendingMutation(
     const byIdentity = pendingByIdentity.get(identity)
 
     if (byIdentity) {
+      if (
+        byIdentity.kind !== kind ||
+        byIdentity.canonicalPayload !== canonicalPayload
+      ) {
+        return undefined
+      }
+
       return claimPendingMutation(
         byIdentity,
         kind,
@@ -460,9 +785,8 @@ function claimPendingMutation(
   return pending
 }
 
-function createCanonicalPayload(
+function createAccountingMutationScope(
   kind: string,
-  payload: unknown,
   userScope: string,
 ): string {
   const normalizedKind = kind.trim()
@@ -474,6 +798,15 @@ function createCanonicalPayload(
   return [
     `${userScope.length}:${userScope}`,
     `${normalizedKind.length}:${normalizedKind}`,
+  ].join(':')
+}
+
+function createCanonicalPayload(
+  mutationScope: string,
+  payload: unknown,
+): string {
+  return [
+    mutationScope,
     stableStringify(payload),
   ].join(':')
 }
@@ -570,57 +903,167 @@ function persistOperationIdentity(
   payloadSignature: string,
   operationId: string,
 ) {
-  const storage = getSessionStorage()
-
-  if (!storage) {
-    return
-  }
-
-  try {
-    const identities = readPersistedOperationIdentities()
-    identities[payloadSignature] = operationId
-    storage.setItem(
-      ACCOUNTING_MUTATION_STORAGE_KEY,
-      JSON.stringify(identities),
-    )
-  } catch {
-    // Storage is an availability aid. The in-memory registry remains fail-closed.
-  }
+  const journal = readPersistedMutationJournal()
+  journal[payloadSignature] = operationId
+  writePersistedMutationJournal(journal)
 }
 
 function removePersistedOperationIdentity(
   payloadSignature: string,
   operationId: string,
 ) {
-  const storage = getSessionStorage()
+  const journal = readPersistedMutationJournal()
 
-  if (!storage) {
+  if (journal[payloadSignature] !== operationId) {
     return
   }
 
-  try {
-    const identities = readPersistedOperationIdentities()
+  delete journal[payloadSignature]
+  writePersistedMutationJournal(journal)
+}
 
-    if (identities[payloadSignature] !== operationId) {
-      return
-    }
-
-    delete identities[payloadSignature]
-
-    if (Object.keys(identities).length === 0) {
-      storage.removeItem(ACCOUNTING_MUTATION_STORAGE_KEY)
-    } else {
-      storage.setItem(
-        ACCOUNTING_MUTATION_STORAGE_KEY,
-        JSON.stringify(identities),
-      )
-    }
-  } catch {
-    // Keep the in-memory operation even when browser storage is unavailable.
+function persistUnresolvedMutation(
+  mutationScopeSignature: string,
+  payloadSignature: string,
+  operationId: string,
+) {
+  const journal = readPersistedMutationJournal()
+  const unresolvedScopes = readPersistedUnresolvedScopes(journal)
+  const unresolved = readUnresolvedMutationList(
+    unresolvedScopes[mutationScopeSignature],
+  )
+  const existingIndex = unresolved.findIndex(
+    (candidate) => candidate.operationId === operationId,
+  )
+  const candidate = {
+    operationId,
+    payloadSignature,
   }
+
+  if (existingIndex >= 0) {
+    unresolved[existingIndex] = candidate
+  } else {
+    unresolved.push(candidate)
+  }
+
+  unresolvedScopes[mutationScopeSignature] = unresolved
+  journal[ACCOUNTING_MUTATION_UNRESOLVED_STORAGE_FIELD] =
+    unresolvedScopes
+  writePersistedMutationJournal(journal)
+}
+
+function removePersistedUnresolvedMutation(
+  mutationScopeSignature: string,
+  payloadSignature: string,
+  operationId: string,
+) {
+  const journal = readPersistedMutationJournal()
+  const unresolvedScopes = readPersistedUnresolvedScopes(journal)
+  const remaining = readUnresolvedMutationList(
+    unresolvedScopes[mutationScopeSignature],
+  ).filter(
+    (candidate) =>
+      candidate.operationId !== operationId ||
+      candidate.payloadSignature !== payloadSignature,
+  )
+
+  if (remaining.length > 0) {
+    unresolvedScopes[mutationScopeSignature] = remaining
+  } else {
+    delete unresolvedScopes[mutationScopeSignature]
+  }
+
+  if (Object.keys(unresolvedScopes).length > 0) {
+    journal[ACCOUNTING_MUTATION_UNRESOLVED_STORAGE_FIELD] =
+      unresolvedScopes
+  } else {
+    delete journal[ACCOUNTING_MUTATION_UNRESOLVED_STORAGE_FIELD]
+  }
+
+  writePersistedMutationJournal(journal)
+}
+
+function readPersistedUnresolvedMutations(
+  mutationScopeSignature: string,
+): PersistedUnresolvedAccountingMutation[] {
+  const journal = readPersistedMutationJournal()
+  const unresolvedScopes = readPersistedUnresolvedScopes(journal)
+
+  return readUnresolvedMutationList(
+    unresolvedScopes[mutationScopeSignature],
+  )
+}
+
+function readPersistedUnresolvedScopes(
+  journal: Record<string, unknown>,
+): Record<string, unknown> {
+  const unresolved =
+    journal[ACCOUNTING_MUTATION_UNRESOLVED_STORAGE_FIELD]
+
+  if (!unresolved || typeof unresolved !== 'object' || Array.isArray(unresolved)) {
+    return {}
+  }
+
+  return Object.fromEntries(
+    Object.entries(unresolved).filter(
+      ([signature]) => /^[0-9a-f]{64}$/.test(signature),
+    ),
+  )
+}
+
+function readUnresolvedMutationList(
+  value: unknown,
+): PersistedUnresolvedAccountingMutation[] {
+  if (!Array.isArray(value)) {
+    return []
+  }
+
+  return value.flatMap((candidate) => {
+    if (
+      !candidate ||
+      typeof candidate !== 'object' ||
+      Array.isArray(candidate)
+    ) {
+      return []
+    }
+
+    const {
+      operationId,
+      payloadSignature,
+    } = candidate as Partial<PersistedUnresolvedAccountingMutation>
+
+    if (
+      typeof operationId !== 'string' ||
+      typeof payloadSignature !== 'string' ||
+      !/^[0-9a-f]{64}$/.test(payloadSignature)
+    ) {
+      return []
+    }
+
+    try {
+      return [{
+        operationId: normalizeAccountingOperationId(operationId),
+        payloadSignature,
+      }]
+    } catch {
+      return []
+    }
+  })
 }
 
 function readPersistedOperationIdentities(): Record<string, string> {
+  const journal = readPersistedMutationJournal()
+
+  return Object.fromEntries(
+    Object.entries(journal).filter(
+      ([signature, operationId]) =>
+        /^[0-9a-f]{64}$/.test(signature) &&
+        typeof operationId === 'string',
+    ),
+  ) as Record<string, string>
+}
+
+function readPersistedMutationJournal(): Record<string, unknown> {
   const storage = getSessionStorage()
 
   if (!storage) {
@@ -640,15 +1083,30 @@ function readPersistedOperationIdentities(): Record<string, string> {
       return {}
     }
 
-    return Object.fromEntries(
-      Object.entries(value).filter(
-        ([signature, operationId]) =>
-          /^[0-9a-f]{64}$/.test(signature) &&
-          typeof operationId === 'string',
-      ),
-    )
+    return value as Record<string, unknown>
   } catch {
     return {}
+  }
+}
+
+function writePersistedMutationJournal(journal: Record<string, unknown>) {
+  const storage = getSessionStorage()
+
+  if (!storage) {
+    return
+  }
+
+  try {
+    if (Object.keys(journal).length === 0) {
+      storage.removeItem(ACCOUNTING_MUTATION_STORAGE_KEY)
+    } else {
+      storage.setItem(
+        ACCOUNTING_MUTATION_STORAGE_KEY,
+        JSON.stringify(journal),
+      )
+    }
+  } catch {
+    // Storage is an availability aid. The in-memory registry remains fail-closed.
   }
 }
 

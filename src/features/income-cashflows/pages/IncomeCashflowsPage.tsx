@@ -44,6 +44,8 @@ import {
   updateIncomeCashflowClient,
 } from '../api/incomeCashflowsApi'
 import { IncomePaymentOperationType, PaymentRegisterType } from '../types'
+import { createLatestRequestGuard } from '../latestRequestGuard'
+import { createAutocompleteOptionSubmitGuard } from '../autocompleteOptionSubmitGuard'
 import '../../../shared/ui/console-table-page.css'
 import './income-cashflows-page.css'
 import type {
@@ -136,7 +138,9 @@ function useIncomeCashflowsPageModel(): IncomeCashflowsPageModel {
   const structureCalculationRequestRef = useRef(0)
   const didInitOrganizationsRef = useRef(false)
   const dismissedFocusedOrderNetIdRef = useRef('')
-  const focusedOrderRequestRef = useRef('')
+  const [focusedOrderRequestGuard] = useState(
+    () => createLatestRequestGuard<string>(),
+  )
 
   const organizationOptions = useMemo(
     () =>
@@ -341,16 +345,23 @@ function useIncomeCashflowsPageModel(): IncomeCashflowsPageModel {
       return
     }
 
-    if (isLoading || focusedOrderRequestRef.current === focusedOrderNetId) {
+    const requestGuard = focusedOrderRequestGuard
+
+    if (isLoading || requestGuard.isActive(focusedOrderNetId)) {
       return
     }
 
-    focusedOrderRequestRef.current = focusedOrderNetId
+    const request = requestGuard.start(focusedOrderNetId)
     const controller = new AbortController()
 
     void getIncomeCashflowByNetId(focusedOrderNetId, controller.signal)
       .then((incomeOrder) => {
-        if (controller.signal.aborted || !incomeOrder || dismissedFocusedOrderNetIdRef.current === focusedOrderNetId) {
+        if (
+          controller.signal.aborted ||
+          !requestGuard.isCurrent(request) ||
+          !incomeOrder ||
+          dismissedFocusedOrderNetIdRef.current === focusedOrderNetId
+        ) {
           return
         }
 
@@ -361,15 +372,31 @@ function useIncomeCashflowsPageModel(): IncomeCashflowsPageModel {
         }
       })
       .catch((focusLoadError: unknown) => {
-        if (!controller.signal.aborted) {
+        if (
+          !controller.signal.aborted &&
+          requestGuard.isCurrent(request)
+        ) {
           setError(focusLoadError instanceof Error ? focusLoadError.message : t('Не вдалося завантажити прибутковий ордер'))
         }
+      })
+      .finally(() => {
+        requestGuard.finish(request)
       })
 
     return () => {
       controller.abort()
+      requestGuard.finish(request)
     }
-  }, [focusedOrderNetId, isLoading, openIncomeDetails, rows, selectedRow?.income.NetUid, setError, t])
+  }, [
+    focusedOrderNetId,
+    focusedOrderRequestGuard,
+    isLoading,
+    openIncomeDetails,
+    rows,
+    selectedRow?.income.NetUid,
+    setError,
+    t,
+  ])
 
   const resetFilters = useCallback(() => {
     setFromDate(shiftDate(-7))
@@ -1345,7 +1372,7 @@ function CancelIncomeCashflowModal({
   )
 }
 
-function ReassignIncomeClientModal({
+export function ReassignIncomeClientModal({
   row,
   onClose,
   onSaved,
@@ -1363,6 +1390,12 @@ function ReassignIncomeClientModal({
   const [error, setError] = useValueState<string | null>(null)
   const [isSaving, setSaving] = useValueState(false)
   const [debouncedSearch] = useDebouncedValue(searchValue, SEARCH_DEBOUNCE_MS)
+  const [agreementRequestGuard] = useState(
+    () => createLatestRequestGuard<string>(),
+  )
+  const [clientOptionSubmitGuard] = useState(
+    createAutocompleteOptionSubmitGuard,
+  )
 
   const opened = Boolean(row)
 
@@ -1374,6 +1407,8 @@ function ReassignIncomeClientModal({
   )
 
   const resetReassignForm = useCallback(() => {
+    clientOptionSubmitGuard.clear()
+    agreementRequestGuard.invalidate()
     setSearchValue('')
     setClients([])
     setSelectedClientValue('')
@@ -1381,6 +1416,8 @@ function ReassignIncomeClientModal({
     setSelectedAgreementValue('')
     setError(null)
   }, [
+    agreementRequestGuard,
+    clientOptionSubmitGuard,
     setClientAgreements,
     setClients,
     setError,
@@ -1398,6 +1435,42 @@ function ReassignIncomeClientModal({
     resetReassignForm()
     onSaved()
   }, [onSaved, resetReassignForm])
+
+  const handleSearchValueChanged = useCallback((value: string) => {
+    if (clientOptionSubmitGuard.consumeChange(value)) {
+      setSearchValue(value)
+      return
+    }
+
+    agreementRequestGuard.invalidate()
+    setSearchValue(value)
+    setSelectedClientValue('')
+    setClientAgreements([])
+    setSelectedAgreementValue('')
+  }, [
+    agreementRequestGuard,
+    clientOptionSubmitGuard,
+    setClientAgreements,
+    setSearchValue,
+    setSelectedAgreementValue,
+    setSelectedClientValue,
+  ])
+
+  const handleClientSelected = useCallback((option: SelectOption) => {
+    clientOptionSubmitGuard.markSubmitted(option.label)
+    agreementRequestGuard.invalidate()
+    setSearchValue(option.label)
+    setSelectedClientValue(option.value)
+    setClientAgreements([])
+    setSelectedAgreementValue('')
+  }, [
+    agreementRequestGuard,
+    clientOptionSubmitGuard,
+    setClientAgreements,
+    setSearchValue,
+    setSelectedAgreementValue,
+    setSelectedClientValue,
+  ])
 
   useEffect(() => {
     if (!opened) {
@@ -1438,35 +1511,40 @@ function ReassignIncomeClientModal({
   }, [debouncedSearch, opened, setClients, setError])
 
   useEffect(() => {
-    let cancelled = false
+    if (!selectedClientValue) {
+      setClientAgreements([])
+      setSelectedAgreementValue('')
+      return
+    }
 
-    const loadAgreements = async () => {
-      if (!selectedClientValue) {
-        if (!cancelled) {
-          setClientAgreements([])
-          setSelectedAgreementValue('')
+    const requestGuard = agreementRequestGuard
+    const request = requestGuard.start(selectedClientValue)
+
+    void getIncomeCashflowClientAgreements(selectedClientValue)
+      .then((result) => {
+        if (requestGuard.isCurrent(request)) {
+          setClientAgreements(result)
         }
-        return
-      }
-
-      const result = await getIncomeCashflowClientAgreements(selectedClientValue).catch((agreementsError) => {
-        if (!cancelled) {
+      })
+      .catch((agreementsError: unknown) => {
+        if (requestGuard.isCurrent(request)) {
           setError(agreementsError instanceof Error ? agreementsError.message : 'Не вдалося завантажити договори')
         }
-
-        return []
       })
-      if (!cancelled) {
-        setClientAgreements(result)
-      }
-    }
-
-    void loadAgreements()
+      .finally(() => {
+        requestGuard.finish(request)
+      })
 
     return () => {
-      cancelled = true
+      requestGuard.finish(request)
     }
-  }, [selectedClientValue, setClientAgreements, setSelectedAgreementValue, setError])
+  }, [
+    agreementRequestGuard,
+    selectedClientValue,
+    setClientAgreements,
+    setSelectedAgreementValue,
+    setError,
+  ])
 
   const handleSubmit = useCallback(async () => {
     const incomeNetId = row?.income.NetUid
@@ -1511,12 +1589,11 @@ function ReassignIncomeClientModal({
           label={t('Клієнт')}
           placeholder={t('Почніть вводити назву')}
           value={searchValue}
-          onChange={setSearchValue}
+          onChange={handleSearchValueChanged}
           onOptionSubmit={(label) => {
             const option = counterpartyOptions.find((item) => item.label === label)
             if (option) {
-              setSelectedClientValue(option.value)
-              setSelectedAgreementValue('')
+              handleClientSelected(option)
             }
           }}
         />

@@ -17,7 +17,7 @@ import {
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, Plus, Save } from 'lucide-react'
-import { type FormEvent, useCallback, useEffect, useMemo } from 'react'
+import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -41,7 +41,6 @@ import type {
   ClientInDebt,
   Currency,
   IncomePaymentOrder,
-  IncomePaymentOrderSale,
   NamedEntity,
   Organization,
   PaymentCurrencyRegister,
@@ -54,13 +53,24 @@ import {
   resolveIncomePaymentOrderType,
   selectDefaultIncomePaymentMovement,
 } from '../incomeCashflowMutationPolicy'
+import {
+  buildIncomeCashflowSaleTargets,
+  getIncomeCashflowDebtTargetValue,
+  selectIncomeCashflowDebtTargets,
+} from '../incomeCashflowDebtTargets'
+import {
+  INCOME_CASHFLOW_TEXT_LIMITS,
+  validateIncomeCashflowContract,
+  validateIncomeCashflowMovementName,
+} from '../incomeCashflowFormValidation'
+import { createLatestRequestGuard } from '../latestRequestGuard'
+import { createAutocompleteOptionSubmitGuard } from '../autocompleteOptionSubmitGuard'
 
 type FormState = {
   amount: number
   autoAllocate: boolean
   comment: string
   date: string
-  debtAmounts: Record<string, number>
   exchangeRate: number
   isAccounting: boolean
   isManagementAccounting: boolean
@@ -128,6 +138,15 @@ export function IncomeCashflowShopFormPage() {
   const [isLoading, setLoading] = useValueState(true)
   const [isResolvingClient, setResolvingClient] = useValueState(false)
   const [isSaving, setSaving] = useValueState(false)
+  const [retailClientSelectionRequestGuard] = useState(
+    () => createLatestRequestGuard<string>(),
+  )
+  const [retailClientOptionSubmitGuard] = useState(
+    createAutocompleteOptionSubmitGuard,
+  )
+  const [movementOptionSubmitGuard] = useState(
+    createAutocompleteOptionSubmitGuard,
+  )
 
   const organizations = useMemo(() => collectOrganizations(retailAgreements), [retailAgreements])
   const selectedOrganization = useMemo(
@@ -175,10 +194,7 @@ export function IncomeCashflowShopFormPage() {
     () => paymentMovements.find((movement) => getEntityValue(movement) === form.selectedMovementValue) || null,
     [form.selectedMovementValue, paymentMovements],
   )
-  const activeMovement = useMemo(
-    () => selectedMovement || paymentMovements.find((movement) => getEntityName(movement) === form.movementSearch.trim()) || null,
-    [form.movementSearch, paymentMovements, selectedMovement],
-  )
+  const activeMovement = selectedMovement
   const organizationOptions = useMemo(() => toEntityOptions(organizations), [organizations])
   const registerOptions = useMemo(() => toEntityOptions(filteredPaymentRegisters), [filteredPaymentRegisters])
   const currencyOptions = useMemo(() => toCurrencyOptions(selectedRegister), [selectedRegister])
@@ -186,8 +202,16 @@ export function IncomeCashflowShopFormPage() {
   const movementOptions = useMemo(() => toUniqueLabels(paymentMovements), [paymentMovements])
   const retailClientOptions = useMemo(() => toRetailClientLabels(retailClients), [retailClients])
   const selectedDebts = useMemo(
-    () => visibleDebts.filter((debt) => form.selectedDebtValues.includes(getDebtValue(debt))),
+    () =>
+      selectIncomeCashflowDebtTargets(
+        visibleDebts,
+        form.selectedDebtValues,
+      ),
     [form.selectedDebtValues, visibleDebts],
+  )
+  const selectedDebtValueSet = useMemo(
+    () => new Set(form.selectedDebtValues),
+    [form.selectedDebtValues],
   )
   const debtTotal = useMemo(() => visibleDebts.reduce((sum, debt) => sum + readDebtTotal(debt), 0), [visibleDebts])
   const exchangeCalculationKey = createExchangeCalculationKey({
@@ -220,9 +244,6 @@ export function IncomeCashflowShopFormPage() {
       const nextCurrency = nextRegister?.PaymentCurrencyRegisters?.[0]?.Currency || null
       const nextDebts = filterClientDebts(collectClientDebts(readPaymentClient(nextAgreement, retailClient), agreements), nextOrganization, nextAgreement)
       const nextSelectedDebtValues = selectedSaleId ? getDebtValuesBySaleId(nextDebts, selectedSaleId) : []
-      const nextDebtAmounts = nextSelectedDebtValues.length === 1 && amount && !autoAllocate
-        ? { [nextSelectedDebtValues[0]]: amount }
-        : {}
 
       setRetailAgreements(agreements)
       setSelectedRetailClient(retailClient || null)
@@ -230,7 +251,6 @@ export function IncomeCashflowShopFormPage() {
         ...current,
         amount: amount || current.amount,
         autoAllocate: Boolean(autoAllocate),
-        debtAmounts: nextDebtAmounts,
         organizationValue: nextOrganization ? getEntityValue(nextOrganization) : '',
         paymentRegisterValue: nextRegister ? getEntityValue(nextRegister) : '',
         retailClientSearch: retailClient ? getRetailClientLabel(retailClient) : current.retailClientSearch || retailClientId,
@@ -319,28 +339,48 @@ export function IncomeCashflowShopFormPage() {
 
   useEffect(() => {
     const value = form.retailClientSearch.trim()
+    let cancelled = false
     const timeoutId = window.setTimeout(() => {
       if (!value || getRetailClientLabel(selectedRetailClient) === value) {
         return
       }
 
-      void searchIncomeCashflowRetailClients(value).then(setRetailClients).catch(() => undefined)
+      void searchIncomeCashflowRetailClients(value)
+        .then((nextClients) => {
+          if (!cancelled) {
+            setRetailClients(nextClients)
+          }
+        })
+        .catch(() => undefined)
     }, SEARCH_DEBOUNCE_MS)
 
-    return () => window.clearTimeout(timeoutId)
+    return () => {
+      cancelled = true
+      window.clearTimeout(timeoutId)
+    }
   }, [form.retailClientSearch, selectedRetailClient, setRetailClients])
 
   useEffect(() => {
     const value = form.movementSearch.trim()
+    let cancelled = false
     const timeoutId = window.setTimeout(() => {
       if (!value) {
         return
       }
 
-      void searchIncomeCashflowPaymentMovements(value).then(setPaymentMovements).catch(() => undefined)
+      void searchIncomeCashflowPaymentMovements(value)
+        .then((nextMovements) => {
+          if (!cancelled) {
+            setPaymentMovements(nextMovements)
+          }
+        })
+        .catch(() => undefined)
     }, SEARCH_DEBOUNCE_MS)
 
-    return () => window.clearTimeout(timeoutId)
+    return () => {
+      cancelled = true
+      window.clearTimeout(timeoutId)
+    }
   }, [form.movementSearch, setPaymentMovements])
 
   useEffect(() => {
@@ -413,26 +453,67 @@ export function IncomeCashflowShopFormPage() {
     setForm((current) => ({ ...current, ...patch }))
   }
 
+  function handleRetailClientSearchChanged(value: string) {
+    if (retailClientOptionSubmitGuard.consumeChange(value)) {
+      updateForm({ retailClientSearch: value })
+      return
+    }
+
+    retailClientSelectionRequestGuard.invalidate()
+    setResolvingClient(false)
+    setSelectedRetailClient(null)
+    setRetailAgreements([])
+    setForm((current) => ({
+      ...current,
+      organizationValue: '',
+      paymentRegisterValue: '',
+      retailClientSearch: value,
+      selectedAgreementValue: '',
+      selectedCurrencyValue: '',
+      selectedDebtValues: [],
+      selectedRetailClientValue: '',
+    }))
+  }
+
   async function loadRetailAgreements(netId: string, retailClient: RetailClient | null) {
     if (!netId) {
       return
     }
 
+    const request =
+      retailClientSelectionRequestGuard.start(netId)
+
     setResolvingClient(true)
     setError(null)
+    setSelectedRetailClient(null)
+    setRetailAgreements([])
+    setForm((current) => ({
+      ...current,
+      organizationValue: '',
+      paymentRegisterValue: '',
+      selectedAgreementValue: '',
+      selectedCurrencyValue: '',
+      selectedDebtValues: [],
+    }))
 
     try {
       const agreements = await getIncomeCashflowRetailClientAgreements(netId)
 
-      applyRetailAgreements({
-        agreements,
-        paymentRegisters,
-        retailClient,
-      })
+      if (retailClientSelectionRequestGuard.isCurrent(request)) {
+        applyRetailAgreements({
+          agreements,
+          paymentRegisters,
+          retailClient,
+        })
+      }
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити договори retail-клієнта'))
+      if (retailClientSelectionRequestGuard.isCurrent(request)) {
+        setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити договори retail-клієнта'))
+      }
     } finally {
-      setResolvingClient(false)
+      if (retailClientSelectionRequestGuard.finish(request)) {
+        setResolvingClient(false)
+      }
     }
   }
 
@@ -444,6 +525,7 @@ export function IncomeCashflowShopFormPage() {
       return
     }
 
+    retailClientOptionSubmitGuard.markSubmitted(value)
     updateForm({
       retailClientSearch: getRetailClientLabel(retailClient),
       selectedRetailClientValue: netId,
@@ -459,7 +541,6 @@ export function IncomeCashflowShopFormPage() {
     const currency = register?.PaymentCurrencyRegisters?.[0]?.Currency || null
 
     updateForm({
-      debtAmounts: {},
       organizationValue: value || '',
       paymentRegisterValue: register ? getEntityValue(register) : '',
       selectedAgreementValue: agreement?.Agreement ? getEntityValue(agreement.Agreement) : '',
@@ -480,7 +561,6 @@ export function IncomeCashflowShopFormPage() {
 
   function handleAgreementChanged(value: string | null) {
     updateForm({
-      debtAmounts: {},
       selectedAgreementValue: value || '',
       selectedDebtValues: [],
     })
@@ -497,9 +577,22 @@ export function IncomeCashflowShopFormPage() {
       return
     }
 
+    movementOptionSubmitGuard.markSubmitted(value)
     updateForm({
       movementSearch: getEntityName(movement),
       selectedMovementValue: getEntityValue(movement),
+    })
+  }
+
+  function handleMovementSearchChanged(value: string) {
+    if (movementOptionSubmitGuard.consumeChange(value)) {
+      updateForm({ movementSearch: value })
+      return
+    }
+
+    updateForm({
+      movementSearch: value,
+      selectedMovementValue: '',
     })
   }
 
@@ -507,6 +600,13 @@ export function IncomeCashflowShopFormPage() {
     const operationName = form.movementSearch.trim()
 
     if (!operationName) {
+      return
+    }
+
+    const validationError = validateIncomeCashflowMovementName(operationName, t)
+
+    if (validationError) {
+      setError(validationError)
       return
     }
 
@@ -531,40 +631,18 @@ export function IncomeCashflowShopFormPage() {
   }
 
   function handleDebtChecked(debt: ClientInDebt, checked: boolean) {
-    const debtValue = getDebtValue(debt)
+    const debtValue = getIncomeCashflowDebtTargetValue(debt)
 
     setForm((current) => {
       const selectedDebtValues = checked
         ? Array.from(new Set([...current.selectedDebtValues, debtValue]))
         : current.selectedDebtValues.filter((value) => value !== debtValue)
-      const debtAmounts = { ...current.debtAmounts }
-
-      if (checked && !debtAmounts[debtValue]) {
-        debtAmounts[debtValue] = Math.min(readDebtTotal(debt), current.amount || readDebtTotal(debt))
-      }
-
-      if (!checked) {
-        delete debtAmounts[debtValue]
-      }
 
       return {
         ...current,
-        debtAmounts,
         selectedDebtValues,
       }
     })
-  }
-
-  function handleDebtAmountChanged(debt: ClientInDebt, value: string | number) {
-    const debtValue = getDebtValue(debt)
-
-    setForm((current) => ({
-      ...current,
-      debtAmounts: {
-        ...current.debtAmounts,
-        [debtValue]: toNumber(value),
-      },
-    }))
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -580,9 +658,14 @@ export function IncomeCashflowShopFormPage() {
       selectedPaymentClient,
       selectedRegister,
       t,
-    }) || validateDebtSelection({
+    }) || validateIncomeCashflowContract(
+      {
+        amount: form.amount,
+        comment: form.comment,
+      },
+      t,
+    ) || validateDebtSelection({
       autoAllocate: form.autoAllocate,
-      debtAmounts: form.debtAmounts,
       selectedDebtValues: form.selectedDebtValues,
       t,
       visibleDebts,
@@ -660,7 +743,7 @@ export function IncomeCashflowShopFormPage() {
             label={t('Retail-клієнт')}
             placeholder={t('Імʼя або телефон')}
             value={form.retailClientSearch}
-            onChange={(value) => updateForm({ retailClientSearch: value, selectedRetailClientValue: '' })}
+            onChange={handleRetailClientSearchChanged}
             onOptionSubmit={handleRetailClientSubmit}
           />
 
@@ -735,8 +818,9 @@ export function IncomeCashflowShopFormPage() {
               data={movementOptions}
               disabled={isLoading || isSaving}
               label={t('Стаття руху коштів')}
+              maxLength={INCOME_CASHFLOW_TEXT_LIMITS.movementName}
               value={form.movementSearch}
-              onChange={(value) => updateForm({ movementSearch: value, selectedMovementValue: '' })}
+              onChange={handleMovementSearchChanged}
               onOptionSubmit={handleMovementSubmit}
             />
             <Button
@@ -771,6 +855,7 @@ export function IncomeCashflowShopFormPage() {
           <Textarea
             disabled={isLoading || isSaving}
             label={t('Коментар')}
+            maxLength={INCOME_CASHFLOW_TEXT_LIMITS.comment}
             minRows={2}
             value={form.comment}
             onChange={(event) => updateForm({ comment: event.currentTarget.value })}
@@ -820,7 +905,7 @@ export function IncomeCashflowShopFormPage() {
                     label={t('Автоматично рознести оплату по боргах')}
                     onChange={(event) => updateForm({ autoAllocate: event.currentTarget.checked })}
                   />
-                  <Table.ScrollContainer minWidth={860}>
+                  <Table.ScrollContainer minWidth={720}>
                     <Table highlightOnHover verticalSpacing="xs">
                       <Table.Thead>
                         <Table.Tr>
@@ -829,13 +914,12 @@ export function IncomeCashflowShopFormPage() {
                           <Table.Th>{t('Дата')}</Table.Th>
                           <Table.Th>{t('Днів')}</Table.Th>
                           <Table.Th>{t('Борг')}</Table.Th>
-                          <Table.Th>{t('Сума платежу')}</Table.Th>
                         </Table.Tr>
                       </Table.Thead>
                       <Table.Tbody>
                         {visibleDebts.map((debt) => {
-                          const debtValue = getDebtValue(debt)
-                          const checked = form.selectedDebtValues.includes(debtValue)
+                          const debtValue = getIncomeCashflowDebtTargetValue(debt)
+                          const checked = selectedDebtValueSet.has(debtValue)
 
                           return (
                             <Table.Tr key={debtValue}>
@@ -851,16 +935,6 @@ export function IncomeCashflowShopFormPage() {
                               <Table.Td>{formatDate(getDebtDate(debt))}</Table.Td>
                               <Table.Td>{debt.Debt?.Days || 0}</Table.Td>
                               <Table.Td>{formatMoney(readDebtTotal(debt))}</Table.Td>
-                              <Table.Td>
-                                <NumberInput
-                                  allowNegative={false}
-                                  decimalScale={2}
-                                  disabled={form.autoAllocate || !checked || isSaving}
-                                  min={0}
-                                  value={form.debtAmounts[debtValue] || 0}
-                                  onChange={(value) => handleDebtAmountChanged(debt, value)}
-                                />
-                              </Table.Td>
                             </Table.Tr>
                           )
                         })}
@@ -894,7 +968,6 @@ function createInitialForm(queryAmount: number): FormState {
     autoAllocate: false,
     comment: '',
     date: formatLocalDate(now),
-    debtAmounts: {},
     exchangeRate: 0,
     isAccounting: false,
     isManagementAccounting: true,
@@ -970,7 +1043,10 @@ function buildIncomePaymentOrder({
   selectedPaymentClient: Client
   selectedRegister: PaymentRegister
 }): IncomePaymentOrder {
-  const selectedClientDebts = pickSelectedDebts(debts, form)
+  const selectedClientDebts = selectIncomeCashflowDebtTargets(
+    debts,
+    form.selectedDebtValues,
+  )
 
   return {
     Amount: form.amount,
@@ -987,7 +1063,10 @@ function buildIncomePaymentOrder({
     IncomePaymentOrderType: resolveIncomePaymentOrderType(
       selectedRegister.Type,
     ),
-    IncomePaymentOrderSales: buildIncomePaymentOrderSales(debts, form),
+    IncomePaymentOrderSales: buildIncomeCashflowSaleTargets(
+      debts,
+      form.selectedDebtValues,
+    ),
     IsAccounting: form.isAccounting,
     IsManagementAccounting: form.isManagementAccounting,
     OperationType: IncomePaymentOperationType.ClientPayment,
@@ -998,22 +1077,6 @@ function buildIncomePaymentOrder({
     },
     PaymentRegister: selectedRegister,
   }
-}
-
-function buildIncomePaymentOrderSales(debts: ClientInDebt[], form: FormState): IncomePaymentOrderSale[] {
-  return pickSelectedDebts(debts, form).map((debt) => ({
-    Amount: form.autoAllocate ? 0 : form.debtAmounts[getDebtValue(debt)] || 0,
-    ReSale: debt.ReSale || undefined,
-    Sale: debt.Sale || undefined,
-  }))
-}
-
-function pickSelectedDebts(debts: ClientInDebt[], form: FormState): ClientInDebt[] {
-  if (!form.selectedDebtValues.length) {
-    return form.autoAllocate ? [] : debts
-  }
-
-  return debts.filter((debt) => form.selectedDebtValues.includes(getDebtValue(debt)))
 }
 
 function validateForm({
@@ -1070,13 +1133,11 @@ function validateForm({
 
 function validateDebtSelection({
   autoAllocate,
-  debtAmounts,
   selectedDebtValues,
   t,
   visibleDebts,
 }: {
   autoAllocate: boolean
-  debtAmounts: Record<string, number>
   selectedDebtValues: string[]
   t: (value: string) => string
   visibleDebts: ClientInDebt[]
@@ -1089,13 +1150,13 @@ function validateDebtSelection({
     return autoAllocate ? t('Оберіть рахунок для автоматичного рознесення') : t('Оберіть рахунок для оплати')
   }
 
-  if (autoAllocate) {
-    return null
-  }
+  const visibleDebtValues = new Set(
+    visibleDebts.map(getIncomeCashflowDebtTargetValue),
+  )
 
-  const totalPayment = selectedDebtValues.reduce((sum, debtValue) => sum + (debtAmounts[debtValue] || 0), 0)
-
-  return totalPayment > 0 ? null : t('Сума платежу по рахунках має бути більшою за нуль')
+  return selectedDebtValues.some((value) => visibleDebtValues.has(value))
+    ? null
+    : t('Оберіть рахунок для оплати')
 }
 
 function collectOrganizations(agreements: ClientAgreement[]): Organization[] {
@@ -1198,7 +1259,7 @@ function getDebtValuesBySaleId(debts: ClientInDebt[], saleId: string): string[] 
 
   for (const debt of debts) {
     if (matchesDebtSaleId(debt, saleId)) {
-      values.push(getDebtValue(debt))
+      values.push(getIncomeCashflowDebtTargetValue(debt))
     }
   }
 
@@ -1326,10 +1387,6 @@ function getEntityValue(entity?: NamedEntity | null): string {
 
 function getEntityName(entity?: NamedEntity | null): string {
   return joinTruthyParts(entity?.FirstName || '', entity?.LastName || '') || entity?.FullName || entity?.Name || entity?.OperationName || entity?.Code || entity?.Number || ''
-}
-
-function getDebtValue(debt: ClientInDebt): string {
-  return String(debt.NetUid || debt.Id || debt.Sale?.NetUid || debt.ReSale?.NetUid || debt.Sale?.Id || debt.ReSale?.Id || '')
 }
 
 function getDebtDocumentNumber(debt: ClientInDebt): string {

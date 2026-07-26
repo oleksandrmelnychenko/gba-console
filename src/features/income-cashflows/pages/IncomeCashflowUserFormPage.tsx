@@ -15,7 +15,7 @@ import {
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, Plus, Save } from 'lucide-react'
-import { type FormEvent, useEffect, useMemo } from 'react'
+import { type FormEvent, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -45,6 +45,12 @@ import {
   resolveIncomePaymentOrderType,
   selectDefaultIncomePaymentMovement,
 } from '../incomeCashflowMutationPolicy'
+import {
+  INCOME_CASHFLOW_TEXT_LIMITS,
+  validateIncomeCashflowContract,
+  validateIncomeCashflowMovementName,
+} from '../incomeCashflowFormValidation'
+import { createAutocompleteOptionSubmitGuard } from '../autocompleteOptionSubmitGuard'
 
 type FormState = {
   amount: number
@@ -84,6 +90,12 @@ export function IncomeCashflowUserFormPage() {
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
   const [isSaving, setSaving] = useValueState(false)
+  const [userOptionSubmitGuard] = useState(
+    createAutocompleteOptionSubmitGuard,
+  )
+  const [movementOptionSubmitGuard] = useState(
+    createAutocompleteOptionSubmitGuard,
+  )
 
   const selectedOrganization = useMemo(
     () => organizations.find((organization) => getEntityValue(organization) === form.organizationValue) || null,
@@ -109,18 +121,12 @@ export function IncomeCashflowUserFormPage() {
     () => paymentMovements.find((movement) => getEntityValue(movement) === form.selectedMovementValue) || null,
     [form.selectedMovementValue, paymentMovements],
   )
-  const activeMovement = useMemo(
-    () => selectedMovement || paymentMovements.find((movement) => getEntityName(movement) === form.movementSearch.trim()) || null,
-    [form.movementSearch, paymentMovements, selectedMovement],
-  )
+  const activeMovement = selectedMovement
   const selectedUser = useMemo(
     () => users.find((user) => getEntityValue(user) === form.selectedUserValue) || null,
     [form.selectedUserValue, users],
   )
-  const activeUser = useMemo(
-    () => selectedUser || users.find((user) => getEntityName(user) === form.userSearch.trim()) || null,
-    [form.userSearch, selectedUser, users],
-  )
+  const activeUser = selectedUser
   const organizationOptions = useMemo(() => toEntityOptions(organizations), [organizations])
   const registerOptions = useMemo(() => toEntityOptions(filteredPaymentRegisters), [filteredPaymentRegisters])
   const currencyOptions = useMemo(() => toCurrencyOptions(selectedRegister), [selectedRegister])
@@ -184,29 +190,49 @@ export function IncomeCashflowUserFormPage() {
 
   useEffect(() => {
     const value = form.movementSearch.trim()
+    let cancelled = false
     const timeoutId = window.setTimeout(() => {
       if (!value) {
         return
       }
 
-      void searchIncomeCashflowPaymentMovements(value).then(setPaymentMovements).catch(() => undefined)
+      void searchIncomeCashflowPaymentMovements(value)
+        .then((nextMovements) => {
+          if (!cancelled) {
+            setPaymentMovements(nextMovements)
+          }
+        })
+        .catch(() => undefined)
     }, SEARCH_DEBOUNCE_MS)
 
-    return () => window.clearTimeout(timeoutId)
+    return () => {
+      cancelled = true
+      window.clearTimeout(timeoutId)
+    }
   }, [form.movementSearch, setPaymentMovements])
 
   useEffect(() => {
     const value = form.userSearch.trim()
+    let cancelled = false
     const timeoutId = window.setTimeout(() => {
       if (!value) {
         setUsers([])
         return
       }
 
-      void searchIncomeCashflowUsers(value).then(setUsers).catch(() => undefined)
+      void searchIncomeCashflowUsers(value)
+        .then((nextUsers) => {
+          if (!cancelled) {
+            setUsers(nextUsers)
+          }
+        })
+        .catch(() => undefined)
     }, SEARCH_DEBOUNCE_MS)
 
-    return () => window.clearTimeout(timeoutId)
+    return () => {
+      cancelled = true
+      window.clearTimeout(timeoutId)
+    }
   }, [form.userSearch, setUsers])
 
   function updateForm(patch: Partial<FormState>) {
@@ -260,9 +286,22 @@ export function IncomeCashflowUserFormPage() {
       return
     }
 
+    movementOptionSubmitGuard.markSubmitted(value)
     updateForm({
       movementSearch: getEntityName(movement),
       selectedMovementValue: getEntityValue(movement),
+    })
+  }
+
+  function handleMovementSearchChanged(value: string) {
+    if (movementOptionSubmitGuard.consumeChange(value)) {
+      updateForm({ movementSearch: value })
+      return
+    }
+
+    updateForm({
+      movementSearch: value,
+      selectedMovementValue: '',
     })
   }
 
@@ -270,6 +309,13 @@ export function IncomeCashflowUserFormPage() {
     const operationName = form.movementSearch.trim()
 
     if (!operationName) {
+      return
+    }
+
+    const validationError = validateIncomeCashflowMovementName(operationName, t)
+
+    if (validationError) {
+      setError(validationError)
       return
     }
 
@@ -300,9 +346,22 @@ export function IncomeCashflowUserFormPage() {
       return
     }
 
+    userOptionSubmitGuard.markSubmitted(value)
     updateForm({
       selectedUserValue: getEntityValue(user),
       userSearch: getEntityName(user),
+    })
+  }
+
+  function handleUserSearchChanged(value: string) {
+    if (userOptionSubmitGuard.consumeChange(value)) {
+      updateForm({ userSearch: value })
+      return
+    }
+
+    updateForm({
+      selectedUserValue: '',
+      userSearch: value,
     })
   }
 
@@ -318,7 +377,15 @@ export function IncomeCashflowUserFormPage() {
       selectedOrganization,
       selectedRegister,
       t,
-    })
+    }) || validateIncomeCashflowContract(
+      {
+        amount: form.amount,
+        comment: form.comment,
+        vatAmount: form.vatAmount,
+        vatRate: form.vatRate,
+      },
+      t,
+    )
 
     if (validationError) {
       setError(validationError)
@@ -410,7 +477,7 @@ export function IncomeCashflowUserFormPage() {
               label={t('Колега')}
               placeholder={t('Почніть вводити імʼя')}
               value={form.userSearch}
-              onChange={(value) => updateForm({ selectedUserValue: '', userSearch: value })}
+              onChange={handleUserSearchChanged}
               onOptionSubmit={handleUserSubmit}
             />
             <Select
@@ -451,6 +518,7 @@ export function IncomeCashflowUserFormPage() {
               decimalScale={2}
               disabled={isLoading || isSaving}
               label={t('Ставка ПДВ')}
+              max={100}
               min={0}
               value={form.vatRate}
               onChange={handleVatRateChanged}
@@ -460,6 +528,7 @@ export function IncomeCashflowUserFormPage() {
               decimalScale={2}
               disabled={isLoading || isSaving}
               label={t('Сума ПДВ')}
+              max={form.amount}
               min={0}
               value={form.vatAmount}
               onChange={(value) => updateForm({ vatAmount: toNumber(value) })}
@@ -477,8 +546,9 @@ export function IncomeCashflowUserFormPage() {
               data={movementOptions}
               disabled={isLoading || isSaving}
               label={t('Стаття руху коштів')}
+              maxLength={INCOME_CASHFLOW_TEXT_LIMITS.movementName}
               value={form.movementSearch}
-              onChange={(value) => updateForm({ movementSearch: value, selectedMovementValue: '' })}
+              onChange={handleMovementSearchChanged}
               onOptionSubmit={handleMovementSubmit}
             />
             <Button
@@ -511,6 +581,7 @@ export function IncomeCashflowUserFormPage() {
           <Textarea
             disabled={isLoading || isSaving}
             label={t('Коментар')}
+            maxLength={INCOME_CASHFLOW_TEXT_LIMITS.comment}
             minRows={3}
             value={form.comment}
             onChange={(event) => updateForm({ comment: event.currentTarget.value })}

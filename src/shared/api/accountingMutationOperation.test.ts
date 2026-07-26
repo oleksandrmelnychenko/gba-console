@@ -1,6 +1,7 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from './apiClient'
 import {
+  ACCOUNTING_MUTATION_LEDGER_FINGERPRINT_CONFLICT,
   ACCOUNTING_MUTATION_LEDGER_NOT_ENTERED,
   ACCOUNTING_MUTATION_LEDGER_STATE_HEADER,
   classifyAccountingMutationFailure,
@@ -10,10 +11,27 @@ import {
   snapshotImmutableAccountingPayload,
 } from './accountingMutationOperation'
 
+const { apiRequestMock } = vi.hoisted(() => ({
+  apiRequestMock: vi.fn(),
+}))
+
+vi.mock('./apiClient', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./apiClient')>()
+
+  return {
+    ...actual,
+    apiRequest: apiRequestMock,
+  }
+})
+
 const firstOperationId = '11111111-1111-4111-8111-111111111111'
 const secondOperationId = '22222222-2222-4222-8222-222222222222'
 
 describe('accounting mutation operation', () => {
+  beforeEach(() => {
+    apiRequestMock.mockReset()
+  })
+
   afterEach(() => {
     vi.useRealTimers()
     vi.unstubAllGlobals()
@@ -48,7 +66,7 @@ describe('accounting mutation operation', () => {
     expect(Object.isFrozen(snapshot.Nested)).toBe(true)
   })
 
-  it('retains the exact key and snapshot after an unknown 5xx, then clears after success', async () => {
+  it('uses an exact retry to recover a committed mutation whose response was lost', async () => {
     const attempts: Array<{ operationId: string; payload: unknown }> = []
     const request = vi
       .fn()
@@ -101,6 +119,250 @@ describe('accounting mutation operation', () => {
     expect(attempts[2]?.operationId).not.toBe(attempts[0]?.operationId)
     expect(attempts[0]?.payload).toEqual(input)
     expect(attempts[1]?.payload).toBe(attempts[0]?.payload)
+    expect(apiRequestMock).not.toHaveBeenCalled()
+  })
+
+  it('recovers a completed response-loss operation before accepting changed payload', async () => {
+    const operationIds: string[] = []
+    const request = vi
+      .fn()
+      .mockImplementationOnce(async (_payload, context) => {
+        operationIds.push(context.operationId)
+        throw new ApiError('response lost', 503, null)
+      })
+      .mockImplementationOnce(async (_payload, context) => {
+        operationIds.push(context.operationId)
+
+        return { NetUid: 'income-replayed' }
+      })
+      .mockImplementationOnce(async (_payload, context) => {
+        operationIds.push(context.operationId)
+
+        return { NetUid: 'income-corrected' }
+      })
+
+    await expect(executeAccountingMutation({
+      kind: 'income-payment:add-reconciled',
+      payload: { Amount: 100 },
+      request,
+    })).rejects.toThrow('response lost')
+
+    apiRequestMock.mockResolvedValue({
+      OperationKind: 'income-payment:add-reconciled',
+      OperationNetUid: operationIds[0],
+      State: 'completed',
+    })
+
+    await expect(executeAccountingMutation({
+      kind: 'income-payment:add-reconciled',
+      payload: { Amount: 101 },
+      request,
+    })).rejects.toThrow(
+      'вже виконано',
+    )
+
+    expect(apiRequestMock).toHaveBeenCalledWith(
+      '/payments/mutations/status',
+      {
+        dedupe: false,
+        query: {
+          operationNetUid: operationIds[0],
+        },
+      },
+    )
+    expect(operationIds).toHaveLength(1)
+
+    await expect(executeAccountingMutation({
+      kind: 'income-payment:add-reconciled',
+      payload: { Amount: 100 },
+      request,
+    })).resolves.toEqual({ NetUid: 'income-replayed' })
+    await expect(executeAccountingMutation({
+      kind: 'income-payment:add-reconciled',
+      payload: { Amount: 101 },
+      request,
+    })).resolves.toEqual({ NetUid: 'income-corrected' })
+
+    expect(operationIds).toHaveLength(3)
+    expect(operationIds[1]).not.toBe(operationIds[0])
+    expect(operationIds[2]).not.toBe(operationIds[0])
+    expect(operationIds[2]).not.toBe(operationIds[1])
+  })
+
+  it('keeps changed payload blocked when status is pending', async () => {
+    const operationIds: string[] = []
+    const request = vi.fn(async (_payload, context) => {
+      operationIds.push(context.operationId)
+      throw new ApiError('timeout', 0, null)
+    })
+
+    await expect(executeAccountingMutation({
+      kind: 'income-payment:update-status',
+      payload: { Amount: 200 },
+      request,
+    })).rejects.toThrow('timeout')
+
+    apiRequestMock.mockResolvedValue({
+      OperationKind: 'income-payment:update-status',
+      OperationNetUid: firstOperationId,
+      State: 'pending',
+    })
+
+    await expect(executeAccountingMutation({
+      kind: 'income-payment:update-status',
+      payload: { Amount: 201 },
+      request,
+    })).rejects.toThrow(
+      'ще обробляється',
+    )
+
+    expect(request).toHaveBeenCalledOnce()
+    expect(operationIds).toHaveLength(1)
+    expect(clearPendingAccountingMutation(operationIds[0] || '')).toBe(true)
+  })
+
+  it('reuses the operation id for changed payload when status is missing', async () => {
+    const operationIds: string[] = []
+    const request = vi
+      .fn()
+      .mockImplementationOnce(async (_payload, context) => {
+        operationIds.push(context.operationId)
+        throw new ApiError('timeout', 0, null)
+      })
+      .mockImplementationOnce(async (_payload, context) => {
+        operationIds.push(context.operationId)
+        return context.operationId
+      })
+
+    await expect(executeAccountingMutation({
+      kind: 'income-payment:update-status-missing',
+      payload: { Amount: 200 },
+      request,
+    })).rejects.toThrow('timeout')
+
+    apiRequestMock.mockResolvedValue(null)
+
+    await expect(executeAccountingMutation({
+      kind: 'income-payment:update-status-missing',
+      payload: { Amount: 201 },
+      request,
+    })).resolves.toBe(operationIds[0])
+
+    expect(request).toHaveBeenCalledTimes(2)
+    expect(operationIds[1]).toBe(operationIds[0])
+    expect(clearPendingAccountingMutation(operationIds[0] || '')).toBe(false)
+  })
+
+  it('keeps changed payload blocked when reconciliation status is unknown', async () => {
+    const operationIds: string[] = []
+    const request = vi.fn(async (_payload, context) => {
+      operationIds.push(context.operationId)
+      throw new ApiError('timeout', 0, null)
+    })
+
+    await expect(executeAccountingMutation({
+      kind: 'income-payment:update-status-error',
+      payload: { Amount: 300 },
+      request,
+    })).rejects.toThrow('timeout')
+
+    apiRequestMock.mockRejectedValue(
+      new ApiError('status unavailable', 503, null),
+    )
+
+    await expect(executeAccountingMutation({
+      kind: 'income-payment:update-status-error',
+      payload: { Amount: 301 },
+      request,
+    })).rejects.toThrow('status unavailable')
+
+    expect(request).toHaveBeenCalledOnce()
+    expect(clearPendingAccountingMutation(operationIds[0] || '')).toBe(true)
+  })
+
+  it.each([
+    [
+      'validation marked not-entered',
+      new ApiError('validation', 400, {
+        MutationLedgerState: ACCOUNTING_MUTATION_LEDGER_NOT_ENTERED,
+      }),
+    ],
+    [
+      'explicit not-entered',
+      new ApiError('not entered', 409, {
+        MutationLedgerState: ACCOUNTING_MUTATION_LEDGER_NOT_ENTERED,
+      }),
+    ],
+  ])('allows changed payload after %s failure', async (_label, failure) => {
+    const operationIds: string[] = []
+    const request = vi
+      .fn()
+      .mockImplementationOnce(async (_payload, context) => {
+        operationIds.push(context.operationId)
+        throw failure
+      })
+      .mockImplementationOnce(async (_payload, context) => {
+        operationIds.push(context.operationId)
+
+        return { NetUid: 'income-after-validation' }
+      })
+
+    await expect(executeAccountingMutation({
+      kind: `income-payment:validation-${failure.status}`,
+      payload: { Amount: 400 },
+      request,
+    })).rejects.toThrow(failure.message)
+    await expect(executeAccountingMutation({
+      kind: `income-payment:validation-${failure.status}`,
+      payload: { Amount: 401 },
+      request,
+    })).resolves.toEqual({ NetUid: 'income-after-validation' })
+
+    expect(operationIds).toHaveLength(2)
+    expect(operationIds[1]).not.toBe(operationIds[0])
+    expect(apiRequestMock).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    [
+      'timeout',
+      () => new ApiError('timeout', 0, null),
+    ],
+    [
+      'abort',
+      () => new DOMException('aborted', 'AbortError'),
+    ],
+  ])('keeps the operation id for an exact retry after %s', async (
+    label,
+    createFailure,
+  ) => {
+    const operationIds: string[] = []
+    const request = vi
+      .fn()
+      .mockImplementationOnce(async (_payload, context) => {
+        operationIds.push(context.operationId)
+        throw createFailure()
+      })
+      .mockImplementationOnce(async (_payload, context) => {
+        operationIds.push(context.operationId)
+
+        return { NetUid: `income-${label}` }
+      })
+
+    await expect(executeAccountingMutation({
+      kind: `income-payment:exact-${label}`,
+      payload: { Amount: 500 },
+      request,
+    })).rejects.toThrow()
+    await expect(executeAccountingMutation({
+      kind: `income-payment:exact-${label}`,
+      payload: { Amount: 500 },
+      request,
+    })).resolves.toEqual({ NetUid: `income-${label}` })
+
+    expect(operationIds).toHaveLength(2)
+    expect(operationIds[1]).toBe(operationIds[0])
+    expect(apiRequestMock).not.toHaveBeenCalled()
   })
 
   it('coalesces simultaneous equal mutations before asynchronous hashing completes', async () => {
@@ -138,11 +400,16 @@ describe('accounting mutation operation', () => {
     expect(operationIds[0]).toBeTruthy()
   })
 
-  it('does not silently resend a stale snapshot when the same identity changes', async () => {
+  it('keeps a changed payload blocked while the previous operation is pending', async () => {
     const input = {
       Amount: 100,
     }
     let capturedOperationId = ''
+    apiRequestMock.mockResolvedValue({
+      OperationKind: 'outcome-payment:add',
+      OperationNetUid: firstOperationId,
+      State: 'pending',
+    })
     const request = vi.fn(async (_payload, context) => {
       capturedOperationId = context.operationId
       throw new ApiError('network timeout', 0, null)
@@ -163,9 +430,18 @@ describe('accounting mutation operation', () => {
       payload: input,
       request,
     })).rejects.toThrow(
-      'already pending with a different immutable payload',
+      'ще обробляється',
     )
     expect(request).toHaveBeenCalledOnce()
+    expect(apiRequestMock).toHaveBeenCalledWith(
+      '/payments/mutations/status',
+      {
+        dedupe: false,
+        query: {
+          operationNetUid: capturedOperationId,
+        },
+      },
+    )
     expect(clearPendingAccountingMutation(capturedOperationId)).toBe(true)
   })
 
@@ -192,7 +468,7 @@ describe('accounting mutation operation', () => {
     expect(clearPendingAccountingMutation(firstOperationId)).toBe(true)
   })
 
-  it('clears only after an explicit not-entered 4xx marker', async () => {
+  it('clears after an explicit not-entered 4xx marker', async () => {
     const operationIds: string[] = []
     const request = vi.fn(async (_payload, context) => {
       operationIds.push(context.operationId)
@@ -216,7 +492,13 @@ describe('accounting mutation operation', () => {
     expect(operationIds[1]).not.toBe(operationIds[0])
   })
 
-  it('keeps unmarked 4xx and network failures unknown', () => {
+  it('keeps ambiguous 4xx and network failures unknown without blocking validation', () => {
+    expect(classifyAccountingMutationFailure(
+      new ApiError('validation', 400, null),
+    )).toBe('unknown-outcome')
+    expect(classifyAccountingMutationFailure(
+      new ApiError('validation', 422, null),
+    )).toBe('unknown-outcome')
     expect(classifyAccountingMutationFailure(
       new ApiError('domain conflict', 409, null),
     )).toBe('unknown-outcome')
@@ -259,7 +541,7 @@ describe('accounting mutation operation', () => {
     expect(clearPendingAccountingMutation(operationIds[0] || '')).toBe(true)
   })
 
-  it('persists only a SHA-256 signature and operation id for reload recovery', async () => {
+  it('persists only SHA-256 signatures and operation ids for reload recovery', async () => {
     const storage = createMemoryStorage()
     vi.stubGlobal('sessionStorage', storage)
     vi.stubGlobal('localStorage', createMemoryStorage())
@@ -288,6 +570,278 @@ describe('accounting mutation operation', () => {
     )
     expect(clearPendingAccountingMutation(operationId)).toBe(true)
     expect(storage.length).toBe(0)
+  })
+
+  it('keeps a changed payload fail-closed from the persisted journal after reload', async () => {
+    const storage = createMemoryStorage()
+    let operationId = ''
+    vi.stubGlobal('sessionStorage', storage)
+
+    await expect(executeAccountingMutation({
+      kind: 'outcome-payment:reload-reconcile',
+      payload: { Amount: 600 },
+      request: async (_payload, context) => {
+        operationId = context.operationId
+        throw new ApiError('response lost', 503, null)
+      },
+    })).rejects.toThrow('response lost')
+
+    vi.resetModules()
+    apiRequestMock.mockResolvedValue({
+      OperationKind: 'outcome-payment:reload-reconcile',
+      OperationNetUid: operationId,
+      State: 'pending',
+    })
+    const restored = await import('./accountingMutationOperation')
+    const changedRequest = vi.fn()
+
+    await expect(restored.executeAccountingMutation({
+      kind: 'outcome-payment:reload-reconcile',
+      payload: { Amount: 601 },
+      request: changedRequest,
+    })).rejects.toThrow(
+      'ще обробляється',
+    )
+
+    expect(changedRequest).not.toHaveBeenCalled()
+    expect(apiRequestMock).toHaveBeenCalledWith(
+      '/payments/mutations/status',
+      {
+        dedupe: false,
+        query: {
+          operationNetUid: operationId,
+        },
+      },
+    )
+    const exactRequest = vi.fn(async (_payload, context) =>
+      context.operationId)
+
+    await expect(restored.executeAccountingMutation({
+      kind: 'outcome-payment:reload-reconcile',
+      payload: { Amount: 600 },
+      request: exactRequest,
+    })).resolves.toBe(operationId)
+
+    expect(exactRequest).toHaveBeenCalledOnce()
+    expect(storage.length).toBe(0)
+    expect(clearPendingAccountingMutation(operationId)).toBe(true)
+  })
+
+  it('reuses the unresolved operation id for a changed payload when the ledger has no record after reload', async () => {
+    const storage = createMemoryStorage()
+    let operationId = ''
+    vi.stubGlobal('sessionStorage', storage)
+
+    await expect(executeAccountingMutation({
+      kind: 'income-payment:reload-missing',
+      payload: { Amount: 700 },
+      request: async (_payload, context) => {
+        operationId = context.operationId
+        throw new ApiError('response lost', 503, null)
+      },
+    })).rejects.toThrow('response lost')
+
+    vi.resetModules()
+    apiRequestMock.mockRejectedValue(
+      new ApiError('not found', 404, null),
+    )
+    const restored = await import('./accountingMutationOperation')
+    const changedRequest = vi.fn(async (_payload, context) =>
+      context.operationId)
+
+    await expect(restored.executeAccountingMutation({
+      kind: 'income-payment:reload-missing',
+      payload: { Amount: 701 },
+      request: changedRequest,
+    })).resolves.toBe(operationId)
+
+    expect(changedRequest).toHaveBeenCalledOnce()
+    expect(storage.length).toBe(0)
+    expect(clearPendingAccountingMutation(operationId)).toBe(true)
+  })
+
+  it('recovers a delayed fingerprint conflict instead of retrying it forever', async () => {
+    const operationIds: string[] = []
+    const request = vi
+      .fn()
+      .mockImplementationOnce(async (_payload, context) => {
+        operationIds.push(context.operationId)
+        throw new ApiError('response lost', 503, null)
+      })
+      .mockImplementationOnce(async (_payload, context) => {
+        operationIds.push(context.operationId)
+        throw new ApiError(
+          'The idempotency key was already used for a different accounting mutation.',
+          409,
+          null,
+          {
+            [ACCOUNTING_MUTATION_LEDGER_STATE_HEADER]:
+              ACCOUNTING_MUTATION_LEDGER_FINGERPRINT_CONFLICT,
+          },
+        )
+      })
+      .mockImplementationOnce(async (_payload, context) => {
+        operationIds.push(context.operationId)
+        return context.operationId
+      })
+
+    await expect(executeAccountingMutation({
+      kind: 'income-payment:delayed-ledger-entry',
+      payload: { Amount: 710 },
+      request,
+    })).rejects.toThrow('response lost')
+
+    apiRequestMock
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({
+        OperationKind: 'income-payment:delayed-ledger-entry',
+        OperationNetUid: operationIds[0],
+        State: 'completed',
+      })
+
+    await expect(executeAccountingMutation({
+      kind: 'income-payment:delayed-ledger-entry',
+      payload: { Amount: 711 },
+      request,
+    })).rejects.toThrow('вже виконано')
+
+    expect(operationIds[1]).toBe(operationIds[0])
+
+    await expect(executeAccountingMutation({
+      kind: 'income-payment:delayed-ledger-entry',
+      payload: { Amount: 711 },
+      request,
+    })).resolves.not.toBe(operationIds[0])
+
+    expect(operationIds[2]).not.toBe(operationIds[0])
+  })
+
+  it('recovers an exact payload from a legacy v1 unresolved journal', async () => {
+    const storage = createMemoryStorage()
+    let operationId = ''
+    vi.stubGlobal('sessionStorage', storage)
+
+    await expect(executeAccountingMutation({
+      kind: 'income-payment:legacy-reload',
+      payload: { Amount: 800 },
+      request: async (_payload, context) => {
+        operationId = context.operationId
+        throw new ApiError('response lost', 503, null)
+      },
+    })).rejects.toThrow('response lost')
+
+    const storageKey = 'gba:accounting-mutation-operations:v1'
+    const legacyJournal = JSON.parse(
+      storage.getItem(storageKey) || '{}',
+    ) as Record<string, unknown>
+    delete legacyJournal.unresolved
+    storage.setItem(storageKey, JSON.stringify(legacyJournal))
+
+    vi.resetModules()
+    apiRequestMock.mockRejectedValue(
+      new ApiError('not found', 404, null),
+    )
+    const restored = await import('./accountingMutationOperation')
+    const exactRequest = vi.fn(async (_payload, context) =>
+      context.operationId)
+
+    await expect(restored.executeAccountingMutation({
+      kind: 'income-payment:legacy-reload',
+      payload: { Amount: 800 },
+      request: exactRequest,
+    })).resolves.toBe(operationId)
+
+    expect(exactRequest).toHaveBeenCalledOnce()
+    expect(storage.length).toBe(0)
+    expect(clearPendingAccountingMutation(operationId)).toBe(true)
+  })
+
+  it('never scans a legacy v1 journal across authenticated users', async () => {
+    const sessionStorage = createMemoryStorage()
+    const localStorage = createMemoryStorage()
+    let firstUserOperationId = ''
+    vi.stubGlobal('sessionStorage', sessionStorage)
+    vi.stubGlobal('localStorage', localStorage)
+    localStorage.setItem('gba_console_session', JSON.stringify({
+      userNetUid: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+    }))
+
+    await expect(executeAccountingMutation({
+      kind: 'income-payment:legacy-user-scope',
+      payload: { Amount: 801 },
+      request: async (_payload, context) => {
+        firstUserOperationId = context.operationId
+        throw new ApiError('response lost', 503, null)
+      },
+    })).rejects.toThrow('response lost')
+
+    const storageKey = 'gba:accounting-mutation-operations:v1'
+    const legacyJournal = JSON.parse(
+      sessionStorage.getItem(storageKey) || '{}',
+    ) as Record<string, unknown>
+    delete legacyJournal.unresolved
+    sessionStorage.setItem(storageKey, JSON.stringify(legacyJournal))
+
+    vi.resetModules()
+    localStorage.setItem('gba_console_session', JSON.stringify({
+      userNetUid: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+    }))
+    const restored = await import('./accountingMutationOperation')
+    const secondUserRequest = vi.fn(async (_payload, context) =>
+      context.operationId)
+    const secondUserOperationId =
+      await restored.executeAccountingMutation({
+        kind: 'income-payment:legacy-user-scope',
+        payload: { Amount: 801 },
+        request: secondUserRequest,
+      })
+
+    expect(secondUserOperationId).not.toBe(firstUserOperationId)
+    expect(apiRequestMock).not.toHaveBeenCalled()
+    expect(secondUserRequest).toHaveBeenCalledOnce()
+    expect(clearPendingAccountingMutation(firstUserOperationId)).toBe(true)
+  })
+
+  it('clears a completed unresolved operation and allows a fresh mutation after acknowledgement', async () => {
+    const storage = createMemoryStorage()
+    let operationId = ''
+    vi.stubGlobal('sessionStorage', storage)
+
+    await expect(executeAccountingMutation({
+      kind: 'income-payment:reload-completed',
+      payload: { Amount: 900 },
+      request: async (_payload, context) => {
+        operationId = context.operationId
+        throw new ApiError('response lost', 503, null)
+      },
+    })).rejects.toThrow('response lost')
+
+    vi.resetModules()
+    apiRequestMock.mockResolvedValue({
+      OperationKind: 'income-payment:reload-completed',
+      OperationNetUid: operationId,
+      State: 'completed',
+    })
+    const restored = await import('./accountingMutationOperation')
+    const changedRequest = vi.fn(async (_payload, context) =>
+      context.operationId)
+
+    await expect(restored.executeAccountingMutation({
+      kind: 'income-payment:reload-completed',
+      payload: { Amount: 901 },
+      request: changedRequest,
+    })).rejects.toThrow('вже виконано')
+    expect(storage.length).toBe(0)
+
+    const nextOperationId = await restored.executeAccountingMutation({
+      kind: 'income-payment:reload-completed',
+      payload: { Amount: 901 },
+      request: changedRequest,
+    })
+
+    expect(nextOperationId).not.toBe(operationId)
+    expect(changedRequest).toHaveBeenCalledOnce()
+    expect(clearPendingAccountingMutation(operationId)).toBe(true)
   })
 
   it('never reuses a pending accounting key across authenticated users', async () => {

@@ -18,7 +18,7 @@ import {
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, Plus, Save } from 'lucide-react'
-import { type FormEvent, useEffect, useMemo } from 'react'
+import { type FormEvent, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -47,7 +47,6 @@ import type {
   ClientInDebt,
   Currency,
   IncomePaymentOrder,
-  IncomePaymentOrderSale,
   NamedEntity,
   Organization,
   OrganizationWithDefaults,
@@ -64,11 +63,25 @@ import {
 } from '../types'
 import { PaymentPurposeAutocomplete } from '../components/PaymentPurposeAutocomplete'
 import {
+  getAllowedIncomeCounterpartySearchTypes,
+  resolveIncomeCounterpartyPayloadKind,
   resolveIncomePaymentOrderType,
   selectDefaultIncomePaymentMovement,
   shouldAllocateIncomePaymentToSales,
 } from '../incomeCashflowMutationPolicy'
 import { getPaymentPurposeSuggestionScope } from '../paymentPurposeSuggestionScope'
+import {
+  buildIncomeCashflowSaleTargets,
+  getIncomeCashflowDebtTargetValue,
+  selectIncomeCashflowDebtTargets,
+} from '../incomeCashflowDebtTargets'
+import {
+  INCOME_CASHFLOW_TEXT_LIMITS,
+  validateIncomeCashflowContract,
+  validateIncomeCashflowMovementName,
+} from '../incomeCashflowFormValidation'
+import { createLatestRequestGuard } from '../latestRequestGuard'
+import { createAutocompleteOptionSubmitGuard } from '../autocompleteOptionSubmitGuard'
 
 type FormState = {
   amount: number
@@ -77,7 +90,6 @@ type FormState = {
   comment: string
   counterpartySearch: string
   date: string
-  debtAmounts: Record<string, number>
   entranceNumber: string
   exchangeRate: number
   isAccounting: boolean
@@ -106,6 +118,8 @@ type DebtSummary = {
   maxOverdueDays: number
   totalDebt: number
 }
+
+type AgreementsLoadState = 'idle' | 'loading' | 'loaded' | 'failed'
 
 const INCOME_CASHFLOWS_PATH = '/accounting/income-cashflows'
 const SEARCH_DEBOUNCE_MS = 300
@@ -137,13 +151,28 @@ export function IncomeCashflowClientFormPage() {
   const [clientAgreements, setClientAgreements] = useValueState<ClientAgreement[]>([])
   const [supplyOrganizationAgreements, setSupplyOrganizationAgreements] = useValueState<SupplyOrganizationAgreement[]>([])
   const [clientDebtTotal, setClientDebtTotal] = useValueState<ClientDebtTotal | null>(null)
+  const [agreementsLoadState, setAgreementsLoadState] =
+    useValueState<AgreementsLoadState>('idle')
   const [form, setForm] = useValueState<FormState>(() => createInitialForm(operationType))
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
   const [isResolvingCounterparty, setResolvingCounterparty] = useValueState(false)
   const [isSaving, setSaving] = useValueState(false)
+  const [counterpartySelectionRequestGuard] = useState(
+    () => createLatestRequestGuard<string>(),
+  )
+  const [counterpartyOptionSubmitGuard] = useState(
+    createAutocompleteOptionSubmitGuard,
+  )
+  const [movementOptionSubmitGuard] = useState(
+    createAutocompleteOptionSubmitGuard,
+  )
 
-  const isSupplierSearch = form.searchType === IncomeCounterpartySearchType.Supplier
+  const counterpartyPayloadKind = resolveIncomeCounterpartyPayloadKind(
+    operationType,
+    form.searchType,
+  )
+  const isSupplierSearch = counterpartyPayloadKind === 'supplier'
   const selectedOrganization = useMemo(
     () => availableOrganizations.find((organization) => getEntityValue(organization) === form.organizationValue) || null,
     [availableOrganizations, form.organizationValue],
@@ -177,10 +206,7 @@ export function IncomeCashflowClientFormPage() {
     () => paymentMovements.find((movement) => getEntityValue(movement) === form.selectedMovementValue) || null,
     [form.selectedMovementValue, paymentMovements],
   )
-  const activeMovement = useMemo(
-    () => selectedMovement || paymentMovements.find((movement) => getEntityName(movement) === form.movementSearch.trim()) || null,
-    [form.movementSearch, paymentMovements, selectedMovement],
-  )
+  const activeMovement = selectedMovement
   const paymentPurposeSuggestionScope = getPaymentPurposeSuggestionScope({
     clientAgreementNetId: selectedClientAgreement?.NetUid,
     clientNetId: selectedClient?.NetUid,
@@ -255,6 +281,7 @@ export function IncomeCashflowClientFormPage() {
         setClientAgreements([])
         setSupplyOrganizationAgreements([])
         setClientDebtTotal(null)
+        setAgreementsLoadState('idle')
       } catch (loadError) {
         if (!cancelled) {
           setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити довідники для прибуткового ордера'))
@@ -285,12 +312,14 @@ export function IncomeCashflowClientFormPage() {
     setPaymentRegisters,
     setSelectedClient,
     setSelectedSupplyOrganization,
+    setAgreementsLoadState,
     setSupplyOrganizationAgreements,
     t,
   ])
 
   useEffect(() => {
     const value = form.counterpartySearch.trim()
+    let cancelled = false
     const controller = new AbortController()
     const timeoutId = window.setTimeout(() => {
       if (!value) {
@@ -298,10 +327,21 @@ export function IncomeCashflowClientFormPage() {
         return
       }
 
-      void searchIncomeCashflowCounterparties(value, form.searchType, controller.signal).then(setCounterparties).catch(() => undefined)
+      void searchIncomeCashflowCounterparties(
+        value,
+        form.searchType,
+        controller.signal,
+      )
+        .then((nextCounterparties) => {
+          if (!cancelled) {
+            setCounterparties(nextCounterparties)
+          }
+        })
+        .catch(() => undefined)
     }, SEARCH_DEBOUNCE_MS)
 
     return () => {
+      cancelled = true
       controller.abort()
       window.clearTimeout(timeoutId)
     }
@@ -313,6 +353,7 @@ export function IncomeCashflowClientFormPage() {
     }
 
     const value = form.payerSearch.trim()
+    let cancelled = false
     const controller = new AbortController()
     const timeoutId = window.setTimeout(() => {
       if (!value) {
@@ -320,10 +361,17 @@ export function IncomeCashflowClientFormPage() {
         return
       }
 
-      void searchIncomeCashflowClientPayers(value, controller.signal).then(setPayerClients).catch(() => undefined)
+      void searchIncomeCashflowClientPayers(value, controller.signal)
+        .then((nextPayers) => {
+          if (!cancelled) {
+            setPayerClients(nextPayers)
+          }
+        })
+        .catch(() => undefined)
     }, SEARCH_DEBOUNCE_MS)
 
     return () => {
+      cancelled = true
       controller.abort()
       window.clearTimeout(timeoutId)
     }
@@ -331,15 +379,25 @@ export function IncomeCashflowClientFormPage() {
 
   useEffect(() => {
     const value = form.movementSearch.trim()
+    let cancelled = false
     const timeoutId = window.setTimeout(() => {
       if (!value) {
         return
       }
 
-      void searchIncomeCashflowPaymentMovements(value).then(setPaymentMovements).catch(() => undefined)
+      void searchIncomeCashflowPaymentMovements(value)
+        .then((nextMovements) => {
+          if (!cancelled) {
+            setPaymentMovements(nextMovements)
+          }
+        })
+        .catch(() => undefined)
     }, SEARCH_DEBOUNCE_MS)
 
-    return () => window.clearTimeout(timeoutId)
+    return () => {
+      cancelled = true
+      window.clearTimeout(timeoutId)
+    }
   }, [form.movementSearch, setPaymentMovements])
 
   useEffect(() => {
@@ -404,36 +462,70 @@ export function IncomeCashflowClientFormPage() {
   }
 
   function handleRegisterTypeChanged(value: string) {
+    counterpartyOptionSubmitGuard.clear()
+    counterpartySelectionRequestGuard.invalidate()
+    setResolvingCounterparty(false)
     navigate(`${INCOME_CASHFLOWS_PATH}/new/client?type=${value}&operationType=${operationType}`, { replace: true })
   }
 
   function handleOperationChanged(value: string) {
+    counterpartyOptionSubmitGuard.clear()
+    counterpartySelectionRequestGuard.invalidate()
+    setResolvingCounterparty(false)
     navigate(`${INCOME_CASHFLOWS_PATH}/new/client?type=${registerType}&operationType=${value}`, { replace: true })
   }
 
   function handleSearchTypeChanged(value: string) {
-    updateForm({
+    counterpartyOptionSubmitGuard.clear()
+    setCounterparties([])
+    setPayerClients([])
+    clearCounterpartySelection({
       counterpartySearch: '',
       payerSearch: '',
       searchType: Number(value) as IncomeCounterpartySearchType,
     })
-    resetCounterpartyState()
   }
 
-  function resetCounterpartyState() {
-    setCounterparties([])
-    setPayerClients([])
+  function handleCounterpartySearchChanged(value: string) {
+    if (counterpartyOptionSubmitGuard.consumeChange(value)) {
+      updateForm({ counterpartySearch: value })
+      return
+    }
+
+    clearCounterpartySelection({
+      counterpartySearch: value,
+      payerSearch: '',
+    })
+  }
+
+  function handlePayerSearchChanged(value: string) {
+    if (counterpartyOptionSubmitGuard.consumeChange(value)) {
+      updateForm({ payerSearch: value })
+      return
+    }
+
+    clearCounterpartySelection({
+      counterpartySearch: '',
+      payerSearch: value,
+    })
+  }
+
+  function clearCounterpartySelection(patch: Partial<FormState> = {}) {
+    counterpartyOptionSubmitGuard.clear()
+    counterpartySelectionRequestGuard.invalidate()
+    setResolvingCounterparty(false)
     setSelectedClient(null)
     setSelectedSupplyOrganization(null)
     setClientAgreements([])
     setSupplyOrganizationAgreements([])
     setClientDebtTotal(null)
+    setAgreementsLoadState('idle')
     setAvailableOrganizations(organizations)
     setForm((current) => ({
       ...current,
-      debtAmounts: {},
       selectedAgreementValue: '',
       selectedDebtValues: [],
+      ...patch,
     }))
   }
 
@@ -444,24 +536,53 @@ export function IncomeCashflowClientFormPage() {
       return
     }
 
-    if (form.searchType === IncomeCounterpartySearchType.Supplier) {
+    const payloadKind = resolveIncomeCounterpartyPayloadKind(
+      operationType,
+      form.searchType,
+    )
+
+    if (payloadKind === 'supplier') {
+      counterpartyOptionSubmitGuard.markSubmitted(value)
       await selectSupplyOrganization(counterparty as SupplyOrganization, value)
-    } else {
+    } else if (payloadKind === 'client') {
+      counterpartyOptionSubmitGuard.markSubmitted(value)
       await selectClient(counterparty, value)
     }
   }
 
   async function selectClient(client: Client, label: string) {
     const clientNetId = client.NetUid
+    const request = counterpartySelectionRequestGuard.start(
+      `client:${getEntityValue(client)}`,
+    )
 
     setResolvingCounterparty(true)
+    setAgreementsLoadState('loading')
     setError(null)
+    setSelectedClient(null)
+    setSelectedSupplyOrganization(null)
+    setClientAgreements([])
+    setSupplyOrganizationAgreements([])
+    setClientDebtTotal(null)
+    setForm((current) => ({
+      ...current,
+      counterpartySearch: label,
+      selectedAgreementValue: '',
+      selectedDebtValues: [],
+    }))
 
     try {
       const [nextAgreements, nextDebtTotal] = await Promise.all([
-        clientNetId ? getIncomeCashflowClientAgreements(clientNetId).catch(() => client.ClientAgreements || []) : Promise.resolve(client.ClientAgreements || []),
+        clientNetId
+          ? getIncomeCashflowClientAgreements(clientNetId)
+          : Promise.resolve(client.ClientAgreements || []),
         clientNetId ? getIncomeCashflowClientDebtTotal(clientNetId).catch(() => null) : Promise.resolve(null),
       ])
+
+      if (!counterpartySelectionRequestGuard.isCurrent(request)) {
+        return
+      }
+
       const debts = collectClientDebts(client, nextAgreements)
       const nextOrganizations = pickOrganizationsByClientAgreements(organizations, nextAgreements)
       const nextOrganization = nextOrganizations[0] || organizations[0] || null
@@ -480,10 +601,10 @@ export function IncomeCashflowClientFormPage() {
       setSupplyOrganizationAgreements([])
       setAvailableOrganizations(nextOrganizations.length ? nextOrganizations : organizations)
       setClientDebtTotal(nextDebtTotal)
+      setAgreementsLoadState('loaded')
       setForm((current) => ({
         ...current,
         counterpartySearch: label,
-        debtAmounts: {},
         organizationValue: nextOrganization ? getEntityValue(nextOrganization) : '',
         paymentRegisterValue: nextRegister ? getEntityValue(nextRegister) : '',
         selectedAgreementValue: nextAgreement?.Agreement ? getEntityValue(nextAgreement.Agreement) : '',
@@ -491,22 +612,46 @@ export function IncomeCashflowClientFormPage() {
         selectedDebtValues: [],
       }))
     } catch (selectError) {
-      setError(selectError instanceof Error ? selectError.message : t('Не вдалося завантажити контрагента'))
+      if (counterpartySelectionRequestGuard.isCurrent(request)) {
+        setAgreementsLoadState('failed')
+        setError(selectError instanceof Error ? selectError.message : t('Не вдалося завантажити контрагента'))
+      }
     } finally {
-      setResolvingCounterparty(false)
+      if (counterpartySelectionRequestGuard.finish(request)) {
+        setResolvingCounterparty(false)
+      }
     }
   }
 
   async function selectSupplyOrganization(supplyOrganization: SupplyOrganization, label: string) {
+    const request = counterpartySelectionRequestGuard.start(
+      `supplier:${getEntityValue(supplyOrganization)}`,
+    )
+
     setResolvingCounterparty(true)
+    setAgreementsLoadState('loading')
     setError(null)
+    setSelectedClient(null)
+    setSelectedSupplyOrganization(null)
+    setClientAgreements([])
+    setSupplyOrganizationAgreements([])
+    setClientDebtTotal(null)
+    setForm((current) => ({
+      ...current,
+      counterpartySearch: label,
+      selectedAgreementValue: '',
+      selectedDebtValues: [],
+    }))
 
     try {
       const nextAgreements = supplyOrganization.Id
-        ? await getIncomeCashflowSupplyOrganizationAgreements(supplyOrganization.Id).catch(
-            () => supplyOrganization.SupplyOrganizationAgreements || [],
-          )
+        ? await getIncomeCashflowSupplyOrganizationAgreements(supplyOrganization.Id)
         : supplyOrganization.SupplyOrganizationAgreements || []
+
+      if (!counterpartySelectionRequestGuard.isCurrent(request)) {
+        return
+      }
+
       const nextOrganizations = pickOrganizationsBySupplyAgreements(organizations, nextAgreements)
       const nextOrganization = nextOrganizations[0] || organizations[0] || null
       const nextSupplyAgreements = nextOrganization ? filterSupplyAgreementsByOrganization(nextAgreements, nextOrganization) : nextAgreements
@@ -523,10 +668,10 @@ export function IncomeCashflowClientFormPage() {
       setSupplyOrganizationAgreements(nextSupplyAgreements)
       setAvailableOrganizations(nextOrganizations.length ? nextOrganizations : organizations)
       setClientDebtTotal(null)
+      setAgreementsLoadState('loaded')
       setForm((current) => ({
         ...current,
         counterpartySearch: label,
-        debtAmounts: {},
         organizationValue: nextOrganization ? getEntityValue(nextOrganization) : '',
         paymentRegisterValue: nextRegister ? getEntityValue(nextRegister) : '',
         selectedAgreementValue: nextAgreement ? getEntityValue(nextAgreement) : '',
@@ -534,9 +679,14 @@ export function IncomeCashflowClientFormPage() {
         selectedDebtValues: [],
       }))
     } catch (selectError) {
-      setError(selectError instanceof Error ? selectError.message : t('Не вдалося завантажити постачальника'))
+      if (counterpartySelectionRequestGuard.isCurrent(request)) {
+        setAgreementsLoadState('failed')
+        setError(selectError instanceof Error ? selectError.message : t('Не вдалося завантажити постачальника'))
+      }
     } finally {
-      setResolvingCounterparty(false)
+      if (counterpartySelectionRequestGuard.finish(request)) {
+        setResolvingCounterparty(false)
+      }
     }
   }
 
@@ -567,7 +717,6 @@ export function IncomeCashflowClientFormPage() {
     setClientAgreements(nextClientAgreements)
     setSelectedClient((current) => (current ? { ...current, ClientInDebts: nextDebts } : current))
     updateForm({
-      debtAmounts: {},
       organizationValue: value || '',
       paymentRegisterValue: nextRegister ? getEntityValue(nextRegister) : '',
       selectedAgreementValue: nextAgreement?.Agreement ? getEntityValue(nextAgreement.Agreement) : '',
@@ -599,7 +748,6 @@ export function IncomeCashflowClientFormPage() {
 
     setSelectedClient((current) => (current ? { ...current, ClientInDebts: debts } : current))
     updateForm({
-      debtAmounts: {},
       selectedAgreementValue: value || '',
       selectedDebtValues: [],
     })
@@ -624,24 +772,13 @@ export function IncomeCashflowClientFormPage() {
   }
 
   function handleDebtChecked(debt: ClientInDebt, checked: boolean) {
-    const debtValue = getDebtValue(debt)
+    const debtValue = getIncomeCashflowDebtTargetValue(debt)
     const selectedDebtValues = checked
       ? Array.from(new Set([...form.selectedDebtValues, debtValue]))
       : form.selectedDebtValues.filter((value) => value !== debtValue)
 
     updateForm({
       selectedDebtValues,
-    })
-  }
-
-  function handleDebtAmountChanged(debt: ClientInDebt, value: string | number) {
-    const debtValue = getDebtValue(debt)
-
-    updateForm({
-      debtAmounts: {
-        ...form.debtAmounts,
-        [debtValue]: toNumber(value),
-      },
     })
   }
 
@@ -652,9 +789,22 @@ export function IncomeCashflowClientFormPage() {
       return
     }
 
+    movementOptionSubmitGuard.markSubmitted(value)
     updateForm({
       movementSearch: getEntityName(movement),
       selectedMovementValue: getEntityValue(movement),
+    })
+  }
+
+  function handleMovementSearchChanged(value: string) {
+    if (movementOptionSubmitGuard.consumeChange(value)) {
+      updateForm({ movementSearch: value })
+      return
+    }
+
+    updateForm({
+      movementSearch: value,
+      selectedMovementValue: '',
     })
   }
 
@@ -662,6 +812,13 @@ export function IncomeCashflowClientFormPage() {
     const operationName = form.movementSearch.trim()
 
     if (!operationName) {
+      return
+    }
+
+    const validationError = validateIncomeCashflowMovementName(operationName, t)
+
+    if (validationError) {
+      setError(validationError)
       return
     }
 
@@ -690,18 +847,27 @@ export function IncomeCashflowClientFormPage() {
 
     const validationError = validateForm({
       activeMovement,
+      agreementsLoadState,
       amount: form.amount,
-      isSupplierSearch,
+      counterpartyPayloadKind,
       selectedClient,
       selectedCurrency,
       selectedOrganization,
       selectedRegister,
       selectedSupplyOrganization,
       t,
-    }) || validateDebtSelection({
+    }) || validateIncomeCashflowContract(
+      {
+        amount: form.amount,
+        arrivalNumber: form.entranceNumber,
+        comment: form.comment,
+        paymentPurpose: form.paymentPurpose,
+        vatAmount: form.vatAmount,
+        vatRate: form.vatRate,
+      },
+      t,
+    ) || validateDebtSelection({
       autoAllocate: form.autoAllocate,
-      debtAmounts: form.debtAmounts,
-      isSupplierSearch,
       operationType,
       selectedDebtValues: form.selectedDebtValues,
       t,
@@ -716,7 +882,7 @@ export function IncomeCashflowClientFormPage() {
     const payload = buildIncomePaymentOrder({
       debts: visibleDebts,
       form,
-      isSupplierSearch,
+      counterpartyPayloadKind,
       operationType,
       registerType,
       selectedClient,
@@ -809,7 +975,7 @@ export function IncomeCashflowClientFormPage() {
               label={t('Пошук за платниками')}
               placeholder={t('Почніть вводити платника')}
               value={form.payerSearch}
-              onChange={(value) => updateForm({ payerSearch: value })}
+              onChange={handlePayerSearchChanged}
               onOptionSubmit={handleCounterpartySubmit}
             />
           )}
@@ -822,7 +988,7 @@ export function IncomeCashflowClientFormPage() {
               label={t('Контрагент')}
               placeholder={t('Почніть вводити назву')}
               value={form.counterpartySearch}
-              onChange={(value) => updateForm({ counterpartySearch: value })}
+              onChange={handleCounterpartySearchChanged}
               onOptionSubmit={handleCounterpartySubmit}
             />
           </SimpleGrid>
@@ -833,6 +999,7 @@ export function IncomeCashflowClientFormPage() {
             <TextInput
               disabled={isLoading || isSaving}
               label={t('Вхідний номер')}
+              maxLength={INCOME_CASHFLOW_TEXT_LIMITS.arrivalNumber}
               value={form.entranceNumber}
               onChange={(event) => updateForm({ entranceNumber: event.currentTarget.value })}
             />
@@ -905,6 +1072,7 @@ export function IncomeCashflowClientFormPage() {
               decimalScale={2}
               disabled={isLoading || isSaving}
               label={t('Ставка ПДВ')}
+              max={100}
               min={0}
               value={form.vatRate}
               onChange={handleVatRateChanged}
@@ -914,6 +1082,7 @@ export function IncomeCashflowClientFormPage() {
               decimalScale={2}
               disabled={isLoading || isSaving}
               label={t('Сума ПДВ')}
+              max={form.amount}
               min={0}
               value={form.vatAmount}
               onChange={(value) => updateForm({ vatAmount: toNumber(value) })}
@@ -922,8 +1091,9 @@ export function IncomeCashflowClientFormPage() {
               data={movementOptions}
               disabled={isLoading || isSaving}
               label={t('Стаття руху коштів')}
+              maxLength={INCOME_CASHFLOW_TEXT_LIMITS.movementName}
               value={form.movementSearch}
-              onChange={(value) => updateForm({ movementSearch: value, selectedMovementValue: '' })}
+              onChange={handleMovementSearchChanged}
               onOptionSubmit={handleMovementSubmit}
             />
             <Button
@@ -960,6 +1130,7 @@ export function IncomeCashflowClientFormPage() {
             <Textarea
               disabled={isLoading || isSaving}
               label={t('Коментар')}
+              maxLength={INCOME_CASHFLOW_TEXT_LIMITS.comment}
               minRows={2}
               value={form.comment}
               onChange={(event) => updateForm({ comment: event.currentTarget.value })}
@@ -1023,7 +1194,7 @@ export function IncomeCashflowClientFormPage() {
                     label={t('Автоматично рознести оплату по боргах')}
                     onChange={(event) => updateForm({ autoAllocate: event.currentTarget.checked })}
                   />
-                  <Table.ScrollContainer minWidth={860}>
+                  <Table.ScrollContainer minWidth={720}>
                     <Table highlightOnHover verticalSpacing="xs">
                       <Table.Thead>
                         <Table.Tr>
@@ -1032,12 +1203,11 @@ export function IncomeCashflowClientFormPage() {
                           <Table.Th>{t('Дата')}</Table.Th>
                           <Table.Th>{t('Днів')}</Table.Th>
                           <Table.Th>{t('Борг')}</Table.Th>
-                          <Table.Th>{t('Сума платежу')}</Table.Th>
                         </Table.Tr>
                       </Table.Thead>
                       <Table.Tbody>
                         {visibleDebts.map((debt) => {
-                          const debtValue = getDebtValue(debt)
+                          const debtValue = getIncomeCashflowDebtTargetValue(debt)
                           const checked = selectedDebtValueSet.has(debtValue)
 
                           return (
@@ -1046,7 +1216,7 @@ export function IncomeCashflowClientFormPage() {
                                 <Checkbox
                                   aria-label={t('Вибрати борг')}
                                   checked={checked}
-                                  disabled={form.autoAllocate || isSaving}
+                                  disabled={isSaving}
                                   onChange={(event) => handleDebtChecked(debt, event.currentTarget.checked)}
                                 />
                               </Table.Td>
@@ -1054,16 +1224,6 @@ export function IncomeCashflowClientFormPage() {
                               <Table.Td>{formatDate(getDebtDate(debt))}</Table.Td>
                               <Table.Td>{debt.Debt?.Days || 0}</Table.Td>
                               <Table.Td>{formatMoney(readDebtTotal(debt))}</Table.Td>
-                              <Table.Td>
-                                <NumberInput
-                                  allowNegative={false}
-                                  decimalScale={2}
-                                  disabled={form.autoAllocate || !checked || isSaving}
-                                  min={0}
-                                  value={form.debtAmounts[debtValue] || 0}
-                                  onChange={(value) => handleDebtAmountChanged(debt, value)}
-                                />
-                              </Table.Td>
                             </Table.Tr>
                           )
                         })}
@@ -1094,7 +1254,6 @@ function createInitialForm(operationType: IncomePaymentOperationType): FormState
     comment: '',
     counterpartySearch: '',
     date: formatLocalDate(now),
-    debtAmounts: {},
     entranceNumber: '',
     exchangeRate: 0,
     isAccounting: false,
@@ -1116,9 +1275,9 @@ function createInitialForm(operationType: IncomePaymentOperationType): FormState
 }
 
 function buildIncomePaymentOrder({
+  counterpartyPayloadKind,
   debts,
   form,
-  isSupplierSearch,
   operationType,
   registerType,
   selectedClient,
@@ -1131,9 +1290,9 @@ function buildIncomePaymentOrder({
   selectedSupplyAgreement,
   selectedSupplyOrganization,
 }: {
+  counterpartyPayloadKind: 'client' | 'supplier' | null
   debts: ClientInDebt[]
   form: FormState
-  isSupplierSearch: boolean
   operationType: IncomePaymentOperationType
   registerType: PaymentRegisterType
   selectedClient: Client | null
@@ -1148,12 +1307,10 @@ function buildIncomePaymentOrder({
 }): IncomePaymentOrder {
   const shouldAllocateSales = shouldAllocateIncomePaymentToSales(
     operationType,
-    isSupplierSearch,
+    counterpartyPayloadKind !== 'client',
   )
   const selectedClientDebts = shouldAllocateSales
-    ? form.autoAllocate
-      ? debts
-      : pickSelectedDebts(debts, form)
+    ? selectIncomeCashflowDebtTargets(debts, form.selectedDebtValues)
     : []
   const order: IncomePaymentOrder = {
     Amount: form.amount,
@@ -1166,7 +1323,7 @@ function buildIncomePaymentOrder({
       selectedRegister.Type ?? registerType,
     ),
     IncomePaymentOrderSales: shouldAllocateSales
-      ? buildIncomePaymentOrderSales(debts, form)
+      ? buildIncomeCashflowSaleTargets(debts, form.selectedDebtValues)
       : [],
     IsAccounting: form.isAccounting,
     IsManagementAccounting: form.isManagementAccounting,
@@ -1182,10 +1339,10 @@ function buildIncomePaymentOrder({
     VatPercent: form.vatRate,
   }
 
-  if (isSupplierSearch && selectedSupplyOrganization) {
+  if (counterpartyPayloadKind === 'supplier' && selectedSupplyOrganization) {
     order.SupplyOrganization = selectedSupplyOrganization
     order.SupplyOrganizationAgreement = selectedSupplyAgreement || undefined
-  } else if (selectedClient) {
+  } else if (counterpartyPayloadKind === 'client' && selectedClient) {
     order.Client = {
       ...selectedClient,
       ClientAgreements: selectedClientAgreement ? [selectedClientAgreement] : selectedClient.ClientAgreements,
@@ -1211,39 +1368,11 @@ function summarizeClientDebts(debts: ClientInDebt[]): DebtSummary {
   return summary
 }
 
-function buildIncomePaymentOrderSales(debts: ClientInDebt[], form: FormState): IncomePaymentOrderSale[] {
-  if (form.autoAllocate) {
-    return []
-  }
-
-  const selectedDebts = pickSelectedDebts(debts, form)
-  const targetDebts = selectedDebts.length ? selectedDebts : debts
-
-  return targetDebts.map((debt) => {
-    const debtValue = getDebtValue(debt)
-
-    return {
-      Amount: form.debtAmounts[debtValue] || 0,
-      ReSale: debt.ReSale || undefined,
-      Sale: debt.Sale || undefined,
-    }
-  })
-}
-
-function pickSelectedDebts(debts: ClientInDebt[], form: FormState): ClientInDebt[] {
-  if (!form.selectedDebtValues.length) {
-    return []
-  }
-
-  const selectedDebtValueSet = new Set(form.selectedDebtValues)
-
-  return debts.filter((debt) => selectedDebtValueSet.has(getDebtValue(debt)))
-}
-
 function validateForm({
   activeMovement,
+  agreementsLoadState,
   amount,
-  isSupplierSearch,
+  counterpartyPayloadKind,
   selectedClient,
   selectedCurrency,
   selectedOrganization,
@@ -1252,8 +1381,9 @@ function validateForm({
   t,
 }: {
   activeMovement: PaymentMovement | null
+  agreementsLoadState: AgreementsLoadState
   amount: number
-  isSupplierSearch: boolean
+  counterpartyPayloadKind: 'client' | 'supplier' | null
   selectedClient: Client | null
   selectedCurrency: Currency | null
   selectedOrganization: Organization | null
@@ -1269,8 +1399,17 @@ function validateForm({
     return t('Оберіть статтю руху коштів')
   }
 
-  if (isSupplierSearch ? !selectedSupplyOrganization : !selectedClient) {
+  if (
+    !counterpartyPayloadKind ||
+    (counterpartyPayloadKind === 'supplier'
+      ? !selectedSupplyOrganization
+      : !selectedClient)
+  ) {
     return t('Оберіть контрагента')
+  }
+
+  if (agreementsLoadState !== 'loaded') {
+    return t('Не вдалося підтвердити договори контрагента')
   }
 
   if (!selectedOrganization) {
@@ -1290,35 +1429,50 @@ function validateForm({
 
 function validateDebtSelection({
   autoAllocate,
-  debtAmounts,
-  isSupplierSearch,
   operationType,
   selectedDebtValues,
   t,
   visibleDebts,
 }: {
   autoAllocate: boolean
-  debtAmounts: Record<string, number>
-  isSupplierSearch: boolean
   operationType: IncomePaymentOperationType
   selectedDebtValues: string[]
   t: (value: string) => string
   visibleDebts: ClientInDebt[]
 }): string | null {
-  if (isSupplierSearch || operationType !== IncomePaymentOperationType.ClientPayment || autoAllocate || !visibleDebts.length) {
+  if (
+    operationType !== IncomePaymentOperationType.ClientPayment ||
+    !visibleDebts.length
+  ) {
     return null
   }
 
   if (!selectedDebtValues.length) {
-    return null
+    return autoAllocate
+      ? t('Оберіть рахунок для автоматичного рознесення')
+      : null
   }
 
-  const visibleDebtValues = new Set(visibleDebts.map(getDebtValue))
-  const totalPayment = selectedDebtValues
-    .filter((debtValue) => visibleDebtValues.has(debtValue))
-    .reduce((sum, debtValue) => sum + (debtAmounts[debtValue] || 0), 0)
+  const visibleDebtValues = new Set(
+    visibleDebts.map(getIncomeCashflowDebtTargetValue),
+  )
 
-  return totalPayment > 0 ? null : t('Сума платежу по рахунках має бути більшою за нуль')
+  if (selectedDebtValues.some((value) => !visibleDebtValues.has(value))) {
+    return t('Оберіть рахунок для оплати')
+  }
+
+  const selectedDebts = selectIncomeCashflowDebtTargets(
+    visibleDebts,
+    selectedDebtValues,
+  )
+  const serializedTargets = buildIncomeCashflowSaleTargets(
+    visibleDebts,
+    selectedDebtValues,
+  )
+
+  return selectedDebts.length === serializedTargets.length
+    ? null
+    : t('Не вдалося визначити продаж для вибраного боргу')
 }
 
 function parseRegisterType(value: string | null): PaymentRegisterType {
@@ -1362,22 +1516,15 @@ function getOperationOptions(registerType: PaymentRegisterType, t: (value: strin
 }
 
 function getSearchTypeOptions(operationType: IncomePaymentOperationType, t: (value: string) => string) {
-  if (operationType === IncomePaymentOperationType.ClientPayment) {
-    return [{ label: t('Клієнти'), value: String(IncomeCounterpartySearchType.Client) }]
-  }
-
-  if (operationType === IncomePaymentOperationType.SupplierReturn) {
-    return [
-      { label: t('Постачальники'), value: String(IncomeCounterpartySearchType.Supplier) },
-      { label: t('Виробники'), value: String(IncomeCounterpartySearchType.Manufacturer) },
-    ]
-  }
-
-  return [
-    { label: t('Клієнти'), value: String(IncomeCounterpartySearchType.Client) },
-    { label: t('Постачальники'), value: String(IncomeCounterpartySearchType.Supplier) },
-    { label: t('Виробники'), value: String(IncomeCounterpartySearchType.Manufacturer) },
-  ]
+  return getAllowedIncomeCounterpartySearchTypes(operationType).map((searchType) => ({
+    label:
+      searchType === IncomeCounterpartySearchType.Supplier
+        ? t('Постачальники')
+        : searchType === IncomeCounterpartySearchType.Manufacturer
+          ? t('Виробники')
+          : t('Клієнти'),
+    value: String(searchType),
+  }))
 }
 
 function pickOrganizationsByClientAgreements(organizations: OrganizationWithDefaults[], agreements: ClientAgreement[]) {
@@ -1449,9 +1596,18 @@ function filterClientDebts(
   }
 
   return debts.filter(
-    (debt) =>
-      debt.AgreementId === clientAgreement.AgreementId &&
-      (debt.Agreement?.OrganizationId === organization.Id || debt.Agreement?.Organization?.Id === organization.Id),
+    (debt) => {
+      if (debt.AgreementId !== clientAgreement.AgreementId) {
+        return false
+      }
+
+      const debtOrganizationId =
+        debt.Agreement?.OrganizationId ??
+        debt.Agreement?.Organization?.Id
+
+      return debtOrganizationId == null ||
+        debtOrganizationId === organization.Id
+    },
   )
 }
 
@@ -1619,10 +1775,6 @@ function joinTruthyParts(parts: Array<string | null | undefined>, separator = ' 
   }
 
   return labels.join(separator)
-}
-
-function getDebtValue(debt: ClientInDebt): string {
-  return String(debt.NetUid || debt.Id || debt.Sale?.NetUid || debt.ReSale?.NetUid || debt.Sale?.Id || debt.ReSale?.Id || '')
 }
 
 function getDebtDocumentNumber(debt: ClientInDebt): string {

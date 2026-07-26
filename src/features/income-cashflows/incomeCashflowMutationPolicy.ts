@@ -1,4 +1,5 @@
 import {
+  IncomeCounterpartySearchType,
   IncomePaymentOperationType,
   IncomePaymentOrderType,
   PaymentRegisterType,
@@ -53,6 +54,39 @@ export function shouldAllocateIncomePaymentToSales(
     operationType === IncomePaymentOperationType.ClientPayment &&
     !isSupplierSearch
   )
+}
+
+export function getAllowedIncomeCounterpartySearchTypes(
+  operationType: IncomePaymentOperationType,
+): IncomeCounterpartySearchType[] {
+  if (operationType === IncomePaymentOperationType.ClientPayment) {
+    return [IncomeCounterpartySearchType.Client]
+  }
+
+  if (operationType === IncomePaymentOperationType.SupplierReturn) {
+    return [IncomeCounterpartySearchType.Supplier]
+  }
+
+  return [
+    IncomeCounterpartySearchType.Client,
+    IncomeCounterpartySearchType.Supplier,
+    IncomeCounterpartySearchType.Manufacturer,
+  ]
+}
+
+export function resolveIncomeCounterpartyPayloadKind(
+  operationType: IncomePaymentOperationType,
+  searchType: IncomeCounterpartySearchType,
+): 'client' | 'supplier' | null {
+  if (
+    !getAllowedIncomeCounterpartySearchTypes(operationType).includes(searchType)
+  ) {
+    return null
+  }
+
+  return searchType === IncomeCounterpartySearchType.Supplier
+    ? 'supplier'
+    : 'client'
 }
 
 export function selectDefaultIncomePaymentMovement(
