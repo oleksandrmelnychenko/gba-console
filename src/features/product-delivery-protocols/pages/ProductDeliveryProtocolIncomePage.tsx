@@ -1,7 +1,6 @@
 import {
   ActionIcon,
   Alert,
-  Anchor,
   Box,
   Button,
   Group,
@@ -25,9 +24,8 @@ import { AppDrawer, AppDrawerFooter } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
-import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
-import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
+import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import { useAuth } from '../../auth/useAuth'
 import { getDirectSupplyOrderById } from '../../supply-ukraine-orders/api/supplyUkraineOrdersApi'
 import type { DirectSupplyOrder } from '../../supply-ukraine-orders/types'
@@ -1144,52 +1142,15 @@ function PzDocumentDownloadModal({
   const { document, error, isLoading, opened } = download
 
   return (
-    <AppModal centered opened={opened} size="sm" title={t('Документ PZ')} onClose={onClose}>
-      <Stack gap="sm">
-        {isLoading ? (
-          <Text c="dimmed" size="sm">
-            {t('Завантаження')}
-          </Text>
-        ) : error ? (
-          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
-            {error}
-          </Alert>
-        ) : document?.DocumentURL || document?.PdfDocumentURL ? (
-          <>
-            {document.DocumentURL && (
-              <Anchor
-                className="document-link"
-                href={upgradeHttpToHttps(document.DocumentURL)}
-                rel="noreferrer"
-                target="_blank"
-              >
-                <span className="document-link-badge document-link-badge-excel">
-                  <ExcelIcon size={22} />
-                </span>
-                <span>{t('Excel документ')}</span>
-              </Anchor>
-            )}
-            {document.PdfDocumentURL && (
-              <Anchor
-                className="document-link"
-                href={upgradeHttpToHttps(document.PdfDocumentURL)}
-                rel="noreferrer"
-                target="_blank"
-              >
-                <span className="document-link-badge document-link-badge-pdf">
-                  <FileText size={22} strokeWidth={1.8} />
-                </span>
-                <span>{t('PDF документ')}</span>
-              </Anchor>
-            )}
-          </>
-        ) : (
-          <Text c="dimmed" size="sm">
-            {t('Документ PZ недоступний для завантаження')}
-          </Text>
-        )}
-      </Stack>
-    </AppModal>
+    <DocumentExportModal
+      document={document}
+      emptyText={t('Документ PZ недоступний для завантаження')}
+      error={error}
+      isLoading={isLoading}
+      opened={opened}
+      title={t('Документ PZ')}
+      onClose={onClose}
+    />
   )
 }
 
