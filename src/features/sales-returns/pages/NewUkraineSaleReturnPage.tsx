@@ -18,14 +18,14 @@ import {
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
-import { Check, CircleAlert, Eye, FileChartColumn, FileText, Plus, Search, Trash2 } from 'lucide-react'
-import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
+import { Check, CircleAlert, Eye, FileChartColumn, Plus, Search, Trash2 } from 'lucide-react'
 import { ProductCardModal } from '../../products/components/ProductCardModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
-import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
@@ -1035,12 +1035,15 @@ export function NewUkraineSaleReturnPage() {
         ) : null}
       </AppModal>
 
-      <AppModal opened={downloadModalOpened} onClose={() => setDownloadModalOpened(false)} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Документи')}</span>}>
-        <Stack gap="sm">
-          <DownloadLink icon={<ExcelIcon size={16} />} label={t('Excel')} url={downloadDocument?.DocumentURL || downloadDocument?.XlsxDocument} />
-          <DownloadLink icon={<FileText size={16} />} label={t('PDF')} url={downloadDocument?.PdfDocumentURL || downloadDocument?.PdfDocument} />
-        </Stack>
-      </AppModal>
+      <DocumentExportModal
+        document={downloadDocument ? {
+          DocumentURL: downloadDocument.DocumentURL || downloadDocument.XlsxDocument,
+          PdfDocumentURL: downloadDocument.PdfDocumentURL || downloadDocument.PdfDocument,
+        } : null}
+        opened={downloadModalOpened}
+        title={t('Документи')}
+        onClose={() => setDownloadModalOpened(false)}
+      />
 
       <AppModal opened={Boolean(cancelCandidate)} onClose={() => setCancelCandidate(null)} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Скасувати повернення')}</span>}>
         <Stack gap="md">
@@ -1624,29 +1627,6 @@ function ReturnDetails({
         tableId="sales-return-detail-items"
       />
     </Stack>
-  )
-}
-
-function DownloadLink({
-  icon,
-  label,
-  url,
-}: {
-  icon: ReactNode
-  label: string
-  url?: string
-}) {
-  if (!url) {
-    return <Text c="dimmed">{label}</Text>
-  }
-
-  return (
-    <Anchor c="dark.6" href={url} rel="noreferrer" target="_blank" underline="always">
-      <Group gap="xs">
-        {icon}
-        <span>{label}</span>
-      </Group>
-    </Anchor>
   )
 }
 
