@@ -1,7 +1,6 @@
 import {
   ActionIcon,
   Alert,
-  Anchor,
   Badge,
   Button,
   Card,
@@ -21,9 +20,8 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
-import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
-import { ArrowLeftRight, Check, CircleAlert, ClipboardList, Download, Eye, FileSpreadsheet, FileText, RotateCcw, Search } from 'lucide-react'
+import { ArrowLeftRight, Check, CircleAlert, ClipboardList, Download, Eye, RotateCcw, Search } from 'lucide-react'
 import { useDebouncedValue } from '@mantine/hooks'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type Dispatch, type SetStateAction } from 'react'
 import { UserRoleType } from '../../../shared/auth/types'
@@ -32,11 +30,11 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
-import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import { useAuth } from '../../auth/useAuth'
 import './product-storages.css'
 import {
@@ -1082,49 +1080,12 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
         onSubmit={submitAction}
       />
 
-      <AppModal
-        centered
+      <DocumentExportModal
+        document={downloadDocument}
         opened={downloadModalOpened}
         title={t('Експорт складу')}
         onClose={() => setDownloadModalOpened(false)}
-      >
-        <Stack gap="sm">
-          {downloadDocument?.DocumentURL || downloadDocument?.PdfDocumentURL ? (
-            <>
-              {downloadDocument.DocumentURL && (
-                <Anchor
-                  href={upgradeHttpToHttps(downloadDocument.DocumentURL)}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="document-link"
-                >
-                  <span className="document-link-badge document-link-badge-excel">
-                    <FileSpreadsheet size={22} strokeWidth={1.8} />
-                  </span>
-                  <span>{t('Excel документ')}</span>
-                </Anchor>
-              )}
-              {downloadDocument.PdfDocumentURL && (
-                <Anchor
-                  href={upgradeHttpToHttps(downloadDocument.PdfDocumentURL)}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="document-link"
-                >
-                  <span className="document-link-badge document-link-badge-pdf">
-                    <FileText size={22} strokeWidth={1.8} />
-                  </span>
-                  <span>{t('PDF документ')}</span>
-                </Anchor>
-              )}
-            </>
-          ) : (
-            <Text c="dimmed" size="sm">
-              {t('Документ недоступний для завантаження')}
-            </Text>
-          )}
-        </Stack>
-      </AppModal>
+      />
     </Stack>
   )
 }
