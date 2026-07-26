@@ -60,3 +60,11 @@ describe('console payment article routes', () => {
     expect(route.element.type).toBe(PaymentArticlesPage)
   })
 })
+
+describe('retired VAT register', () => {
+  it('no longer exposes the Poland-only VAT report screen', () => {
+    const paths = new Set(consoleRoutes.map((route) => route.path))
+
+    expect(paths.has('/accounting/vat-reports')).toBe(false)
+  })
+})

@@ -98,7 +98,6 @@ export const UserEditPage = lazy(() => import('../../features/users/pages/UserEd
 export const UserNewPage = lazy(() => import('../../features/users/pages/UserNewPage').then((module) => ({ default: module.UserNewPage })))
 export const UserRolesPage = lazy(() => import('../../features/users/pages/UserRolesPage').then((module) => ({ default: module.UserRolesPage })))
 export const UsersPage = lazy(() => import('../../features/users/pages/UsersPage').then((module) => ({ default: module.UsersPage })))
-export const VatReportsPage = lazy(() => import('../../features/vat-reports').then((module) => ({ default: module.VatReportsPage })))
 export const ProductSpecificationCodesPage = lazy(() => import('../../features/product-specification-codes/pages/ProductSpecificationCodesPage').then((module) => ({ default: module.ProductSpecificationCodesPage })))
 export const SupplyReturnsPage = lazy(() => import('../../features/supply-returns').then((module) => ({ default: module.SupplyReturnsPage })))
 export const SupplyUkraineDirectOrderCreatePage = lazy(() => import('../../features/supply-ukraine-orders').then((module) => ({ default: module.SupplyUkraineDirectOrderCreatePage })))

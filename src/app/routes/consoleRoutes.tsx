@@ -129,7 +129,6 @@ import {
   UserNewPage,
   UserRolesPage,
   UsersPage,
-  VatReportsPage,
 } from './lazyConsolePages'
 import { lazyRoute } from './lazyRoute'
 import { ProductCarouselDeepLinkRedirect } from './ProductCarouselDeepLinkRedirect'
@@ -265,7 +264,6 @@ const accountingMigrationRoutes: ConsoleRoute[] = [
   { path: '/accounting/payment-accounts', element: lazyRoute(<PaymentAccountsPage />) },
   { path: '/accounting/payment-accounts/new', element: lazyRoute(<PaymentAccountFormPage />) },
   { path: '/accounting/payment-accounts/edit/:id', element: lazyRoute(<PaymentAccountFormPage />) },
-  { path: '/accounting/vat-reports', element: lazyRoute(<VatReportsPage />) },
   { path: '/accounting/advance-payments', element: lazyRoute(<AdvancePaymentsPage />) },
   { path: '/accounting/banks', element: lazyRoute(<AccountingBanksPage />) },
   { path: '/accounting/company-cars', element: lazyRoute(<CompanyCarsPage />) },
