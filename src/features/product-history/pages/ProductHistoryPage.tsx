@@ -1,7 +1,6 @@
 import {
   ActionIcon,
   Alert,
-  Anchor,
   Badge,
   Card,
   Group,
@@ -12,22 +11,20 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
-import { AppModal } from "../../../shared/ui/AppModal"
 import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
-import { CircleAlert, FileDown, FileText, RotateCcw, Search } from 'lucide-react'
-import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
+import { CircleAlert, FileDown, RotateCcw, Search } from 'lucide-react'
 import { useDebouncedValue } from '@mantine/hooks'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import {
   closePendingExportDocumentWindow,
   openExportDocumentInWindow,
   openPendingExportDocumentWindow,
 } from '../../../shared/documents/openExportDocument'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
@@ -436,39 +433,12 @@ function ProductHistoryPageView({ model }: { model: ReturnType<typeof useProduct
         </div>
       </Card>
 
-      <AppModal
-        centered
+      <DocumentExportModal
+        document={downloadDocument}
         opened={downloadModalOpened}
         title={t('Друк PDF')}
         onClose={() => setDownloadModalOpened(false)}
-      >
-        <Stack gap="sm">
-          {downloadDocument?.DocumentURL || downloadDocument?.PdfDocumentURL ? (
-            <>
-              {downloadDocument.PdfDocumentURL && (
-                <Anchor href={getDocumentHref(downloadDocument.PdfDocumentURL)} target="_blank" rel="noreferrer" className="document-link">
-                  <span className="document-link-badge document-link-badge-pdf">
-                    <FileText size={22} strokeWidth={1.8} />
-                  </span>
-                  <span>{t('PDF документ')}</span>
-                </Anchor>
-              )}
-              {downloadDocument.DocumentURL && (
-                <Anchor href={getDocumentHref(downloadDocument.DocumentURL)} target="_blank" rel="noreferrer" className="document-link">
-                  <span className="document-link-badge document-link-badge-excel">
-                    <ExcelIcon size={22} />
-                  </span>
-                  <span>{t('Excel документ')}</span>
-                </Anchor>
-              )}
-            </>
-          ) : (
-            <Text c="dimmed" size="sm">
-              {t('Документ недоступний для завантаження')}
-            </Text>
-          )}
-        </Stack>
-      </AppModal>
+      />
     </Stack>
   )
 }
