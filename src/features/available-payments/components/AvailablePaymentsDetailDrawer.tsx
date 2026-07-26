@@ -13,14 +13,13 @@ import {
   Select,
   SimpleGrid,
   Stack,
-  Table,
   Text,
   TextInput,
   Textarea,
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { Banknote, CircleAlert, ExternalLink, FileUp, GitMerge, Info, Plus, Save, Trash2, X } from 'lucide-react'
+import { Banknote, CircleAlert, FileUp, GitMerge, Info, Plus, Save, Trash2 } from 'lucide-react'
 import { type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { formatLocalDate, formatLocalInputDateTime } from '../../../shared/date/dateTime'
@@ -28,13 +27,14 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import type { DataTableColumn } from '../../../shared/ui/data-table/types'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import { CashFlowDetailContent } from '../../accounting-cash-flow/components/CashFlowDetailContent'
 import { getAccountingCashFlowPaymentStatus } from '../../accounting-cash-flow/accountingCashFlowPaymentStatus'
 import { getAccountingCashFlowDrilldownRoute } from '../../accounting-cash-flow/cashFlowDrilldown'
 import type { AccountingCashFlowHeadItem } from '../../accounting-cash-flow/types'
-import { CashFlowGrid } from '../../../shared/ui/cash-flow-grid/CashFlowGrid'
-import type { CashFlowGridItem, CashFlowGridLeadColumn, CashFlowGridSummary } from '../../../shared/ui/cash-flow-grid/types'
 import { createAvailablePaymentOutcomeOperation } from '../models/availablePaymentOutcomeOperation'
 import {
   getAvailablePaymentSelectionError,
@@ -81,6 +81,7 @@ import {
   type GroupedPaymentTask,
   type SupplyPaymentTask,
 } from '../types'
+import './available-payments-detail-drawer.css'
 
 type AvailablePaymentsDetailDrawerProps = {
   filesByTaskId: Record<string, File[]>
@@ -135,8 +136,26 @@ type OutcomeOpenOptions = {
 
 type TaskDetailTab = 'cash-flow' | 'invoice' | 'payment' | 'transfer'
 
-type AvailablePaymentCashFlowGridItem = CashFlowGridItem & {
+type AvailablePaymentCashFlowTableItem = {
+  id: string
+  CurrentBalance?: number
+  CurrentValue?: number
+  FromDate?: string
+  IsCreditValue?: boolean
+  Name?: string
+  Number?: string
+  OrganizationName?: string
+  Type?: number
   source: AccountingCashFlowHeadItem
+}
+
+type AvailablePaymentCashFlowSummary = {
+  beforeInAmount?: number
+  beforeOutAmount?: number
+  beforeBalance?: number
+  afterInAmount?: number
+  afterOutAmount?: number
+  closingBalance?: number
 }
 
 type DataRecord = Record<string, unknown>
@@ -169,7 +188,6 @@ function useAvailablePaymentsDetailDrawerModel({
   const { t } = useI18n()
   const navigate = useNavigate()
   const models = useMemo(() => buildTaskModels(group, t), [group, t])
-  const [expandedId, setExpandedId] = useValueState<string | null>(null)
   const [activeTabs, setActiveTabs] = useValueState<Record<string, TaskDetailTab>>({})
   const [cashFlows, setCashFlows] = useValueState<Record<string, CashFlowState>>({})
   const [cashFlowFiltersByTaskId, setCashFlowFiltersByTaskId] = useValueState<Record<string, CashFlowFilters>>({})
@@ -745,17 +763,6 @@ function useAvailablePaymentsDetailDrawerModel({
     }
   }
 
-  function handleToggleExpanded(model: AvailablePaymentTaskModel) {
-    const isOpening = expandedId !== model.id
-    setExpandedId(isOpening ? model.id : null)
-
-    if (isOpening) {
-      const nextTab = resolveTaskDetailTab(model, activeTabs[model.id])
-
-      setActiveTabs((current) => ({ ...current, [model.id]: nextTab }))
-    }
-  }
-
   function handleRedirectToSource(model: AvailablePaymentTaskModel) {
     const route = getAvailablePaymentSourceRoute(model)
 
@@ -878,7 +885,6 @@ function useAvailablePaymentsDetailDrawerModel({
     cashFlows,
     confirmCloseOutcomeOpen,
     error,
-    expandedId,
     filesByTaskId,
     filteredRegisters,
     form,
@@ -907,7 +913,6 @@ function useAvailablePaymentsDetailDrawerModel({
     handleMergeMarked,
     handleMoveToDone,
     handleRedirectToSource,
-    handleToggleExpanded,
     onClearMarked,
     onFilesChanged,
     onToggleMarked,
@@ -929,7 +934,6 @@ function AvailablePaymentsDetailDrawerView({ model }: { model: AvailablePayments
     cashFlows,
     confirmCloseOutcomeOpen,
     error,
-    expandedId,
     filesByTaskId,
     filteredRegisters,
     form,
@@ -958,7 +962,6 @@ function AvailablePaymentsDetailDrawerView({ model }: { model: AvailablePayments
     handleMergeMarked,
     handleMoveToDone,
     handleRedirectToSource,
-    handleToggleExpanded,
     onClearMarked,
     onFilesChanged,
     onToggleMarked,
@@ -973,8 +976,8 @@ function AvailablePaymentsDetailDrawerView({ model }: { model: AvailablePayments
     <AppDrawer
       opened={Boolean(group) || outcomeModels.length > 0}
       position="right"
-      size="80vw"
-      title={<span style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{title}</span>}
+      size="standard"
+      title={title}
       onClose={requestDrawerClose}
       footer={
         outcomeModels.length > 0 ? (
@@ -1013,7 +1016,6 @@ function AvailablePaymentsDetailDrawerView({ model }: { model: AvailablePayments
               activeTabs={activeTabs}
               cashFlowFiltersByTaskId={cashFlowFiltersByTaskId}
               cashFlows={cashFlows}
-              expandedId={expandedId}
               filesByTaskId={filesByTaskId}
               isSaving={isSaving}
               markedModels={markedModels}
@@ -1028,7 +1030,6 @@ function AvailablePaymentsDetailDrawerView({ model }: { model: AvailablePayments
               onMergeMarked={handleMergeMarked}
               onMoveToDone={handleMoveToDone}
               onRedirectToSource={handleRedirectToSource}
-              onToggleExpanded={handleToggleExpanded}
               onToggleMarked={onToggleMarked}
             />
           )
@@ -1089,7 +1090,6 @@ function AvailablePaymentTaskList({
   activeTabs,
   cashFlowFiltersByTaskId,
   cashFlows,
-  expandedId,
   filesByTaskId,
   isSaving,
   markedModels,
@@ -1104,13 +1104,11 @@ function AvailablePaymentTaskList({
   onMergeMarked,
   onMoveToDone,
   onRedirectToSource,
-  onToggleExpanded,
   onToggleMarked,
 }: {
   activeTabs: Record<string, TaskDetailTab>
   cashFlowFiltersByTaskId: Record<string, CashFlowFilters>
   cashFlows: Record<string, CashFlowState>
-  expandedId: string | null
   filesByTaskId: Record<string, File[]>
   isSaving: boolean
   markedModels: AvailablePaymentTaskModel[]
@@ -1125,190 +1123,306 @@ function AvailablePaymentTaskList({
   onMergeMarked: (models: AvailablePaymentTaskModel[]) => Promise<void>
   onMoveToDone: (model: AvailablePaymentTaskModel) => Promise<void>
   onRedirectToSource: (model: AvailablePaymentTaskModel) => void
-  onToggleExpanded: (model: AvailablePaymentTaskModel) => void
   onToggleMarked: (model: AvailablePaymentTaskModel) => void
 }) {
   const { t } = useI18n()
-  const markedTaskIdSet = new Set(markedTaskIds)
+  const markedTaskIdSet = useMemo(() => new Set(markedTaskIds), [markedTaskIds])
   const markedSelectionError = markedModels.length > 0 ? validateAvailablePaymentSelection(markedModels, t) : null
   const markedMergeError = markedModels.length > 0 ? validateAvailablePaymentMerge(markedModels, t) : null
+  const columns = useMemo<DataTableColumn<AvailablePaymentTaskModel>[]>(
+    () => [
+      {
+        id: 'selection',
+        header: '',
+        width: 52,
+        minWidth: 52,
+        maxWidth: 52,
+        align: 'center',
+        enableHiding: false,
+        enablePinning: false,
+        enableReorder: false,
+        enableResizing: false,
+        cell: (taskModel) => {
+          const isMarked = markedTaskIdSet.has(taskModel.id)
+          const paymentSelectionError = isMarked
+            ? null
+            : getAvailablePaymentSelectionError(markedModels, taskModel, t)
+          const mergeSelectionError = isMarked
+            ? null
+            : getAvailablePaymentMergeError(markedModels, taskModel, t)
+          const selectionError = paymentSelectionError && mergeSelectionError
+            ? `${paymentSelectionError}. ${mergeSelectionError}`
+            : null
+
+          return (
+            <Tooltip disabled={!selectionError} label={selectionError}>
+              <span className="available-payment-task-list__checkbox">
+                <Checkbox
+                  checked={isMarked}
+                  aria-label={t('Вибрати платіжну задачу')}
+                  disabled={isSaving || Boolean(selectionError)}
+                  onChange={() => onToggleMarked(taskModel)}
+                />
+              </span>
+            </Tooltip>
+          )
+        },
+      },
+      {
+        id: 'counterparty',
+        header: t('Контрагент'),
+        accessor: (taskModel) => taskModel.organizationName,
+        minWidth: 360,
+        fill: true,
+        cell: (taskModel) => (
+          <div className="available-payment-task-list__identity">
+            <div className="available-payment-task-list__identity-main">
+              <TaskStatusBadge task={taskModel.task} />
+              <span
+                className="available-payment-task-list__name"
+                title={taskModel.organizationName || t('Контрагент')}
+              >
+                {taskModel.organizationName || t('Контрагент')}
+              </span>
+            </div>
+            <span
+              className="available-payment-task-list__meta"
+              title={`${taskModel.serviceName}${taskModel.serviceNumber ? ` #${taskModel.serviceNumber}` : ''}`}
+            >
+              {taskModel.serviceName}
+              {taskModel.serviceNumber ? ` #${taskModel.serviceNumber}` : ''}
+            </span>
+          </div>
+        ),
+      },
+      {
+        id: 'amount',
+        header: t('Сума'),
+        accessor: (taskModel) => getModelPaymentAmount(taskModel),
+        width: 170,
+        minWidth: 150,
+        align: 'right',
+        cell: (taskModel) => (
+          <div className="available-payment-task-list__amount">
+            <span className="app-money">{formatAmount(getModelPaymentAmount(taskModel))}</span>
+            <span className="app-money-meta">{taskModel.currencyCode}</span>
+          </div>
+        ),
+      },
+      {
+        id: 'actions',
+        header: '',
+        width: 52,
+        minWidth: 52,
+        maxWidth: 52,
+        align: 'right',
+        rowActions: true,
+        enableHiding: false,
+        enableReorder: false,
+        enableResizing: false,
+        cell: (taskModel) => (
+          <RedirectToSourceButton model={taskModel} onRedirectToSource={onRedirectToSource} />
+        ),
+      },
+    ],
+    [
+      isSaving,
+      markedModels,
+      markedTaskIdSet,
+      onRedirectToSource,
+      onToggleMarked,
+      t,
+    ],
+  )
 
   return (
-    <Stack gap="sm">
+    <Stack className="available-payment-task-list" gap="sm">
       {markedModels.length > 0 && (
-        <Alert color="blue" icon={<Info size={18} />} variant="light">
-          <Stack gap="xs">
-            <Group justify="space-between" gap="sm">
-              <Text size="sm">
+        <div className="available-payment-task-list__selection">
+          <Group gap="sm" justify="space-between" wrap="wrap">
+            <Group gap="xs">
+              <Info aria-hidden="true" size={16} />
+              <Text className="available-payment-task-list__selection-label" size="sm">
                 {t('Вибрано платіжних задач')}: {markedModels.length}
               </Text>
-              <Group gap="xs">
-                <Tooltip disabled={!markedSelectionError} label={markedSelectionError}>
-                  <span>
-                    <Button
-                      disabled={isSaving || Boolean(markedSelectionError)}
-                      size="xs"
-                      variant="outline"
-                      onClick={() => onCreateOutcome(markedModels, { requireDocuments: false })}
-                    >
-                      {t('Створити видатковий')}
-                    </Button>
-                  </span>
-                </Tooltip>
-                <Tooltip disabled={!markedMergeError} label={markedMergeError}>
-                  <span>
-                    <Button
-                      disabled={isSaving || Boolean(markedMergeError)}
-                      leftSection={<GitMerge size={16} />}
-                      size="xs"
-                      variant="outline"
-                      onClick={() => void onMergeMarked(markedModels)}
-                    >
-                      {t('Об’єднати задачі')}
-                    </Button>
-                  </span>
-                </Tooltip>
-                <Button color="gray" disabled={isSaving} size="xs" variant="subtle" onClick={onClearMarked}>
-                  {t('Очистити')}
-                </Button>
-              </Group>
             </Group>
-            <Stack gap={4}>
-              {markedModels.map((markedModel) => (
-                <Group key={markedModel.id} gap="xs" wrap="nowrap">
-                  <ActionIcon
-                    aria-label={t('Прибрати')}
-                    color="gray"
-                    disabled={isSaving}
+            <Group gap="xs" wrap="wrap">
+              <Tooltip disabled={!markedSelectionError} label={markedSelectionError}>
+                <span>
+                  <Button
+                    color={CREATE_ACTION_COLOR}
+                    disabled={isSaving || Boolean(markedSelectionError)}
                     size="xs"
-                    variant="subtle"
-                    onClick={() => onToggleMarked(markedModel)}
+                    onClick={() => onCreateOutcome(markedModels, { requireDocuments: false })}
                   >
-                    <X size={14} />
-                  </ActionIcon>
-                  <Text size="sm">{`${markedModel.serviceName} (${markedModel.organizationName})`}</Text>
-                </Group>
-              ))}
-            </Stack>
-          </Stack>
-        </Alert>
+                    {t('Створити видатковий')}
+                  </Button>
+                </span>
+              </Tooltip>
+              <Tooltip disabled={!markedMergeError} label={markedMergeError}>
+                <span>
+                  <Button
+                    disabled={isSaving || Boolean(markedMergeError)}
+                    leftSection={<GitMerge size={15} />}
+                    size="xs"
+                    variant="default"
+                    onClick={() => void onMergeMarked(markedModels)}
+                  >
+                    {t('Об’єднати задачі')}
+                  </Button>
+                </span>
+              </Tooltip>
+              <Button color="gray" disabled={isSaving} size="xs" variant="subtle" onClick={onClearMarked}>
+                {t('Очистити')}
+              </Button>
+            </Group>
+          </Group>
+        </div>
       )}
 
-      {models.map((model) => {
-        const activeTab = resolveTaskDetailTab(model, activeTabs[model.id])
-        const tabs = getTaskDetailTabs(model)
-        const isMarked = markedTaskIdSet.has(model.id)
-        const paymentSelectionError = isMarked ? null : getAvailablePaymentSelectionError(markedModels, model, t)
-        const mergeSelectionError = isMarked ? null : getAvailablePaymentMergeError(markedModels, model, t)
-        const selectionError = paymentSelectionError && mergeSelectionError
-          ? `${paymentSelectionError}. ${mergeSelectionError}`
-          : null
-        const isMarkingDisabled = isSaving || Boolean(selectionError)
-
-        return (
-          <Stack key={model.id} gap={0}>
-            <Group
-              align="center"
-              justify="space-between"
-              p="sm"
-              style={{ border: '1px solid var(--mantine-color-gray-3)', borderRadius: 8 }}
-            >
-              <Group gap="sm" wrap="nowrap">
-                <Tooltip disabled={!selectionError} label={selectionError}>
-                  <span>
-                    <Checkbox
-                      checked={isMarked}
-                      aria-label={t('Вибрати платіжну задачу')}
-                      disabled={isMarkingDisabled}
-                      onChange={() => onToggleMarked(model)}
-                    />
-                  </span>
-                </Tooltip>
-                <Stack gap={2}>
-                  <Group gap="xs">
-                    <TaskStatusBadge task={model.task} />
-                    <Text fw={600}>{model.organizationName || t('Контрагент')}</Text>
-                  </Group>
-                  <Text c="dimmed" size="sm">
-                    {model.serviceName}
-                    {model.serviceNumber ? ` #${model.serviceNumber}` : ''}
-                  </Text>
-                </Stack>
-              </Group>
-              <Group gap="sm">
-                <Text fw={700}>
-                  {formatAmount(getModelPaymentAmount(model))} {model.currencyCode}
-                </Text>
-                <RedirectToSourceButton model={model} onRedirectToSource={onRedirectToSource} />
-                <Button color="gray" size="xs" variant="light" onClick={() => onToggleExpanded(model)}>
-                  {expandedId === model.id ? t('Згорнути') : t('Деталі')}
-                </Button>
-              </Group>
-            </Group>
-
-            {expandedId === model.id && (
-              <Stack
-                gap="md"
-                p="md"
-                style={{
-                  border: '1px solid var(--mantine-color-gray-3)',
-                  borderTop: 0,
-                  borderRadius: '0 0 8px 8px',
-                }}
-              >
-                <div
-                  aria-label={t('Розділи платіжної задачі')}
-                  className="pill-tabs"
-                  role="tablist"
-                >
-                  {tabs.map((tab) => (
-                    <button
-                      key={tab}
-                      aria-selected={activeTab === tab}
-                      className={`pill-tab${activeTab === tab ? ' is-active' : ''}`}
-                      role="tab"
-                      type="button"
-                      onClick={() => void onCashFlowTab(model, tab)}
-                    >
-                      {getTaskDetailTabLabel(tab, t)}
-                    </button>
-                  ))}
-                </div>
-
-                {model.isUnsupported && (
-                  <Alert color="orange" icon={<CircleAlert size={18} />} variant="light">
-                    {t(
-                      'Немає підтриманого джерела для цієї платіжної задачі. Створення видаткового ордера заблоковано.',
-                    )}
-                  </Alert>
-                )}
-
-                {activeTab === 'invoice' && <InvoiceTab model={model} />}
-                {activeTab === 'cash-flow' && (
-                  <CashFlowTab
-                    filters={cashFlowFiltersByTaskId[model.id] || createDefaultCashFlowFilters()}
-                    state={cashFlows[model.id]}
-                    onFiltersChange={(filters) => onCashFlowFiltersChange(model, filters)}
-                    onRowClick={onCashFlowRowClick}
-                  />
-                )}
-                {activeTab === 'payment' && (
-                  <PaymentTab
-                    files={filesByTaskId[model.id] || []}
-                    isSaving={isSaving}
-                    model={model}
-                    onCreateOutcome={() => onCreateOutcome([model])}
-                    onFilesChanged={(files) => onFilesChanged(model.id, files)}
-                    onMoveToDone={() => void onMoveToDone(model)}
-                  />
-                )}
-                {activeTab === 'transfer' && <TransferTab model={model} />}
-              </Stack>
-            )}
-          </Stack>
-        )
-      })}
+      <DataTable
+        columns={columns}
+        data={models}
+        defaultLayout={{ density: 'normal' }}
+        expandColumnLabels={{
+          collapseRow: t('Згорнути деталі'),
+          expandRow: t('Розгорнути деталі'),
+        }}
+        footer={<AvailablePaymentTaskListFooter models={models} />}
+        getRowId={(taskModel) => taskModel.id}
+        layoutVersion={2}
+        maxHeight="calc(100vh - 160px)"
+        minWidth={760}
+        showDensityToggle={false}
+        showLayoutControls={false}
+        tableId="available-payments-detail-tasks"
+        renderExpandedRow={(taskModel) => (
+          <AvailablePaymentTaskDetails
+            activeTab={resolveTaskDetailTab(taskModel, activeTabs[taskModel.id])}
+            cashFlowFilters={cashFlowFiltersByTaskId[taskModel.id] || createDefaultCashFlowFilters()}
+            cashFlowState={cashFlows[taskModel.id]}
+            files={filesByTaskId[taskModel.id] || []}
+            isSaving={isSaving}
+            model={taskModel}
+            onCashFlowFiltersChange={(filters) => onCashFlowFiltersChange(taskModel, filters)}
+            onCashFlowRowClick={onCashFlowRowClick}
+            onCreateOutcome={() => onCreateOutcome([taskModel])}
+            onFilesChanged={(files) => onFilesChanged(taskModel.id, files)}
+            onMoveToDone={() => void onMoveToDone(taskModel)}
+            onTabChange={(tab) => void onCashFlowTab(taskModel, tab)}
+          />
+        )}
+      />
     </Stack>
+  )
+}
+
+function AvailablePaymentTaskDetails({
+  activeTab,
+  cashFlowFilters,
+  cashFlowState,
+  files,
+  isSaving,
+  model,
+  onCashFlowFiltersChange,
+  onCashFlowRowClick,
+  onCreateOutcome,
+  onFilesChanged,
+  onMoveToDone,
+  onTabChange,
+}: {
+  activeTab: TaskDetailTab
+  cashFlowFilters: CashFlowFilters
+  cashFlowState?: CashFlowState
+  files: File[]
+  isSaving: boolean
+  model: AvailablePaymentTaskModel
+  onCashFlowFiltersChange: (filters: CashFlowFilters) => void
+  onCashFlowRowClick: (item: AccountingCashFlowHeadItem) => void
+  onCreateOutcome: () => void
+  onFilesChanged: (files: File[]) => void
+  onMoveToDone: () => void
+  onTabChange: (tab: TaskDetailTab) => void
+}) {
+  const { t } = useI18n()
+  const tabs = getTaskDetailTabs(model)
+
+  return (
+    <div className="available-payment-task-details">
+      <div
+        aria-label={t('Розділи платіжної задачі')}
+        className="pill-tabs"
+        role="tablist"
+      >
+        {tabs.map((tab) => (
+          <button
+            key={tab}
+            aria-selected={activeTab === tab}
+            className={`pill-tab${activeTab === tab ? ' is-active' : ''}`}
+            role="tab"
+            type="button"
+            onClick={() => onTabChange(tab)}
+          >
+            {getTaskDetailTabLabel(tab, t)}
+          </button>
+        ))}
+      </div>
+
+      <div className="available-payment-task-details__content">
+        {model.isUnsupported && (
+          <Alert color="orange" icon={<CircleAlert size={18} />} variant="light">
+            {t(
+              'Немає підтриманого джерела для цієї платіжної задачі. Створення видаткового ордера заблоковано.',
+            )}
+          </Alert>
+        )}
+
+        {activeTab === 'invoice' && <InvoiceTab model={model} />}
+        {activeTab === 'cash-flow' && (
+          <CashFlowTab
+            filters={cashFlowFilters}
+            state={cashFlowState}
+            onFiltersChange={onCashFlowFiltersChange}
+            onRowClick={onCashFlowRowClick}
+          />
+        )}
+        {activeTab === 'payment' && (
+          <PaymentTab
+            files={files}
+            isSaving={isSaving}
+            model={model}
+            onCreateOutcome={onCreateOutcome}
+            onFilesChanged={onFilesChanged}
+            onMoveToDone={onMoveToDone}
+          />
+        )}
+        {activeTab === 'transfer' && <TransferTab model={model} />}
+      </div>
+    </div>
+  )
+}
+
+function AvailablePaymentTaskListFooter({ models }: { models: AvailablePaymentTaskModel[] }) {
+  const { t } = useI18n()
+  const totals = Array.from(
+    models.reduce((result, model) => {
+      const currency = model.currencyCode || ''
+      result.set(currency, (result.get(currency) || 0) + getModelPaymentAmount(model))
+      return result
+    }, new Map<string, number>()),
+  )
+
+  return (
+    <Group className="available-payment-task-list__footer" gap="xs" justify="flex-end" wrap="nowrap">
+      <Badge className="app-role-pill is-gray" size="xs" variant="light">
+        {t('Всього')}: {models.length}
+      </Badge>
+      {totals.map(([currency, amount]) => (
+        <Badge key={currency || 'total'} className="app-role-pill is-gray" size="xs" variant="light">
+          {formatAmount(amount)} {currency}
+        </Badge>
+      ))}
+    </Group>
   )
 }
 
@@ -1610,7 +1724,25 @@ function AvailablePaymentOutcomeForm({
 
 function InvoiceTab({ model }: { model: AvailablePaymentTaskModel }) {
   const { t } = useI18n()
-  const columns = model.columns
+  const columns = useMemo<DataTableColumn<AvailablePaymentTaskRow>[]>(
+    () =>
+      model.columns.map((column, columnIndex) => {
+        const isLastColumn = columnIndex === model.columns.length - 1
+        const isNumericColumn = column.align === 'right'
+
+        return {
+          id: column.key,
+          header: column.header,
+          accessor: (row) => row[column.key],
+          align: isNumericColumn ? 'right' : 'left',
+          width: isLastColumn ? 120 : isNumericColumn ? 95 : 120,
+          minWidth: isLastColumn ? 108 : isNumericColumn ? 84 : 92,
+          fill: columnIndex === Math.min(1, model.columns.length - 1),
+          cell: (row) => <InvoiceTableCell column={column} row={row} />,
+        }
+      }),
+    [model.columns],
+  )
 
   if (columns.length === 0) {
     return (
@@ -1626,43 +1758,21 @@ function InvoiceTab({ model }: { model: AvailablePaymentTaskModel }) {
   return (
     <Stack gap="md">
       <DocumentsList documents={model.documents} />
-      <Table.ScrollContainer minWidth={760}>
-        <Table withTableBorder withColumnBorders striped>
-          <Table.Thead>
-            <Table.Tr>
-              {columns.map((column) => (
-                <Table.Th key={column.key} style={{ textAlign: column.align === 'right' ? 'right' : 'left' }}>
-                  {column.header}
-                </Table.Th>
-              ))}
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
-            {model.rows.length === 0 ? (
-              <Table.Tr>
-                <Table.Td colSpan={columns.length}>
-                  <Text c="dimmed" size="sm">
-                    {t('Дані рахунку відсутні')}
-                  </Text>
-                </Table.Td>
-              </Table.Tr>
-            ) : (
-              model.rows.map((row, rowIndex) => (
-                <Table.Tr key={getInvoiceRowKey(model, row, rowIndex)}>
-                  {columns.map((column) => (
-                    <Table.Td
-                      key={column.key}
-                      style={{ textAlign: column.align === 'right' ? 'right' : 'left' }}
-                    >
-                      <InvoiceTableCell column={column} row={row} />
-                    </Table.Td>
-                  ))}
-                </Table.Tr>
-              ))
-            )}
-          </Table.Tbody>
-        </Table>
-      </Table.ScrollContainer>
+      <div className="available-payment-invoice-table">
+        <DataTable
+          columns={columns}
+          data={model.rows}
+          defaultLayout={{ density: 'normal' }}
+          emptyText={t('Дані рахунку відсутні')}
+          getRowId={(row, rowIndex) => getInvoiceRowKey(model, row, rowIndex)}
+          layoutVersion={4}
+          maxHeight={340}
+          minWidth={760}
+          showDensityToggle={false}
+          showLayoutControls={false}
+          tableId={`available-payment-invoice-${model.id}`}
+        />
+      </div>
       <InvoicePaymentSummary model={model} />
     </Stack>
   )
@@ -1689,6 +1799,10 @@ function InvoicePaymentSummary({ model }: { model: AvailablePaymentTaskModel }) 
 function InvoiceTableCell({ column, row }: { column: AvailablePaymentColumn; row: AvailablePaymentTaskRow }) {
   const value = row[column.key]
 
+  if (value === null || value === undefined || value === '') {
+    return null
+  }
+
   if (column.format === 'date') {
     return <>{formatDate(value as Date | string | undefined)}</>
   }
@@ -1713,17 +1827,94 @@ function CashFlowTab({
 }) {
   const { t } = useI18n()
   const filterError = getDateRangeError(filters.from, filters.to)
+  const items = useMemo(
+    () => extractCashFlowRows(state?.data ?? null).map(toCashFlowTableItem),
+    [state?.data],
+  )
+  const summary = useMemo(
+    () => extractCashFlowSummary(state?.data ?? null, items),
+    [items, state?.data],
+  )
+  const columns = useMemo<DataTableColumn<AvailablePaymentCashFlowTableItem>[]>(
+    () => [
+      {
+        id: 'name',
+        header: t('Назва'),
+        accessor: (item) => item.Name,
+        width: 220,
+        minWidth: 160,
+        fill: true,
+        cell: (item) => (
+          <Text title={displayValue(item.Name)} truncate style={{ minWidth: 0 }}>
+            {displayValue(item.Name)}
+          </Text>
+        ),
+      },
+      {
+        id: 'date',
+        header: t('Дата'),
+        accessor: (item) => item.FromDate,
+        width: 120,
+        minWidth: 96,
+        cell: (item) => formatDate(item.FromDate),
+      },
+      {
+        id: 'number',
+        header: t('Номер'),
+        accessor: (item) => item.Number,
+        width: 135,
+        minWidth: 108,
+        cell: (item) => displayValue(item.Number),
+      },
+      {
+        id: 'paymentStatus',
+        header: t('Статус'),
+        accessor: (item) => getAccountingCashFlowPaymentStatus(item.source)?.label,
+        width: 125,
+        minWidth: 100,
+        cell: (item) => <CashFlowPaymentStatusBadge item={item.source} />,
+      },
+      {
+        id: 'debit',
+        header: t('Дебет'),
+        accessor: (item) => item.IsCreditValue ? undefined : item.CurrentValue,
+        width: 120,
+        minWidth: 96,
+        align: 'right',
+        cell: (item) => item.IsCreditValue ? null : formatAmount(item.CurrentValue),
+      },
+      {
+        id: 'credit',
+        header: t('Кредит'),
+        accessor: (item) => item.IsCreditValue ? item.CurrentValue : undefined,
+        width: 120,
+        minWidth: 96,
+        align: 'right',
+        cell: (item) => item.IsCreditValue ? formatAmount(item.CurrentValue) : null,
+      },
+      {
+        id: 'balance',
+        header: t('Баланс'),
+        accessor: (item) => item.CurrentBalance,
+        width: 135,
+        minWidth: 108,
+        align: 'right',
+        cell: (item) => formatAmount(item.CurrentBalance),
+      },
+    ],
+    [t],
+  )
   const controls = (
-    <Group align="end" gap="sm" wrap="wrap">
+    <Group align="end" gap={10} wrap="wrap">
       <TextInput
-        label={t('З')}
+        label={t('Від')}
         type="date"
         value={filters.from}
         w={150}
         onChange={(event) => onFiltersChange({ ...filters, from: event.currentTarget.value })}
       />
       <TextInput
-        label={t('По')}
+        label={t('До')}
         type="date"
         value={filters.to}
         w={150}
@@ -1743,44 +1934,32 @@ function CashFlowTab({
     )
   }
 
-  if (!state || state.isLoading) {
-    return (
-      <Stack gap="md">
-        {controls}
-        <Group justify="center" py="md">
-          <Loader size="sm" />
-        </Group>
-      </Stack>
-    )
-  }
-
-  if (state.error) {
-    return (
-      <Stack gap="md">
-        {controls}
-        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
-          {state.error}
-        </Alert>
-      </Stack>
-    )
-  }
-
-  const items = extractCashFlowRows(state.data).map(toCashFlowGridItem)
-  const summary = extractCashFlowSummary(state.data, items)
-
   return (
     <Stack gap="md">
       {controls}
-      <CashFlowGrid
-        items={items}
-        leadColumns={CASH_FLOW_TAB_LEAD_COLUMNS}
-        summary={summary}
-        columnWidth={130}
-        maxHeight={360}
-        emptyText={t('Рух коштів відсутній')}
-        getRowKey={(item, index) => `${item.Number || item.Name || 'row'}-${index}`}
-        onRowClick={(item) => onRowClick(item.source)}
-      />
+      {state?.error && (
+        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
+          {state.error}
+        </Alert>
+      )}
+      <div className="available-payment-cash-flow-table">
+        <DataTable
+          columns={columns}
+          data={items}
+          defaultLayout={{ density: 'normal' }}
+          emptyText={t('Рух коштів відсутній')}
+          getRowId={(item) => item.id}
+          isLoading={!state || state.isLoading}
+          layoutVersion="available-payment-cash-flow-2"
+          maxHeight={340}
+          minWidth={760}
+          showDensityToggle={false}
+          showLayoutControls={false}
+          tableId="available-payment-cash-flow"
+          footer={state?.data ? <CashFlowTableFooter summary={summary} /> : undefined}
+          onRowClick={(item) => onRowClick(item.source)}
+        />
+      </div>
     </Stack>
   )
 }
@@ -1836,13 +2015,6 @@ function CashFlowDetailValue({ label, value }: { label: string; value: ReactNode
   )
 }
 
-const CASH_FLOW_TAB_LEAD_COLUMNS: CashFlowGridLeadColumn<AvailablePaymentCashFlowGridItem>[] = [
-  { id: 'name', isLabel: true, header: 'Назва', cell: (item) => displayValue(item.Name) },
-  { id: 'date', header: 'Дата', width: 150, cell: (item) => formatDate(item.FromDate) },
-  { id: 'number', header: 'Номер', width: 130, cell: (item) => displayValue(item.Number) },
-  { id: 'paymentStatus', header: 'Статус', width: 150, cell: (item) => <CashFlowPaymentStatusBadge item={item.source} /> },
-]
-
 function CashFlowPaymentStatusBadge({ item }: { item: AccountingCashFlowHeadItem }) {
   const { t } = useI18n()
   const status = getAccountingCashFlowPaymentStatus(item)
@@ -1852,20 +2024,96 @@ function CashFlowPaymentStatusBadge({ item }: { item: AccountingCashFlowHeadItem
   }
 
   return (
-    <Badge color={status.color} variant="light">
+    <Badge className={`app-role-pill ${getCashFlowStatusClassName(status.color)}`} size="xs" variant="light">
       {t(status.label)}
     </Badge>
   )
 }
 
-function toCashFlowGridItem(row: DataRecord): AvailablePaymentCashFlowGridItem {
+function CashFlowTableFooter({ summary }: { summary: AvailablePaymentCashFlowSummary }) {
+  const { t } = useI18n()
+
+  return (
+    <div aria-label={t('Підсумки руху коштів')} className="available-payment-cash-flow-table__footer">
+      <CashFlowSummaryRow
+        balance={summary.beforeBalance}
+        balanceHint={t('Баланс на початок')}
+        credit={summary.beforeOutAmount}
+        debit={summary.beforeInAmount}
+        label={t('До періоду')}
+      />
+      <CashFlowSummaryRow
+        balance={summary.closingBalance}
+        balanceHint={t('Баланс на кінець')}
+        credit={summary.afterOutAmount}
+        debit={summary.afterInAmount}
+        label={t('За період')}
+      />
+    </div>
+  )
+}
+
+function CashFlowSummaryRow({
+  balance,
+  balanceHint,
+  credit,
+  debit,
+  label,
+}: {
+  balance?: number
+  balanceHint: string
+  credit?: number
+  debit?: number
+  label: string
+}) {
+  return (
+    <div className="available-payment-cash-flow-table__summary-row">
+      <div className="available-payment-cash-flow-table__summary-label">
+        <span>{label}</span>
+        <span>{balanceHint}</span>
+      </div>
+      <span className="available-payment-cash-flow-table__summary-value">{formatAmount(debit)}</span>
+      <span className="available-payment-cash-flow-table__summary-value">{formatAmount(credit)}</span>
+      <span className={cashFlowSummaryBalanceClassName(balance)}>{formatAmount(balance)}</span>
+    </div>
+  )
+}
+
+function getCashFlowStatusClassName(color: string): string {
+  if (color === 'green') {
+    return 'is-green'
+  }
+
+  if (color === 'red') {
+    return 'is-red'
+  }
+
+  if (color === 'yellow' || color === 'orange') {
+    return 'is-orange'
+  }
+
+  return 'is-gray'
+}
+
+function cashFlowSummaryBalanceClassName(value?: number): string {
+  return [
+    'available-payment-cash-flow-table__summary-value',
+    typeof value === 'number' && value < 0 ? 'is-negative' : '',
+  ].filter(Boolean).join(' ')
+}
+
+function toCashFlowTableItem(row: DataRecord, index: number): AvailablePaymentCashFlowTableItem {
+  const number = stringOrUndefined(readUnknown(row, ['Number', 'CustomNumber']))
+  const name = stringOrUndefined(readUnknown(row, ['Name', 'Type', 'OperationTypeName']))
+
   return {
+    id: `${number || name || 'cash-flow'}-${index}`,
     CurrentBalance: readUnknownNumber(row, ['CurrentBalance']),
     CurrentValue: readUnknownNumber(row, ['CurrentValue', 'Amount', 'Total', 'GrossPrice']),
     FromDate: readUnknownDateString(row, ['FromDate', 'Date', 'Created']),
     IsCreditValue: readUnknown(row, ['IsCreditValue']) === true,
-    Name: stringOrUndefined(readUnknown(row, ['Name', 'Type', 'OperationTypeName'])),
-    Number: stringOrUndefined(readUnknown(row, ['Number', 'CustomNumber'])),
+    Name: name,
+    Number: number,
     OrganizationName: stringOrUndefined(readUnknown(row, ['OrganizationName'])),
     Type: readUnknownNumber(row, ['Type']),
     source: row as AccountingCashFlowHeadItem,
@@ -1874,8 +2122,8 @@ function toCashFlowGridItem(row: DataRecord): AvailablePaymentCashFlowGridItem {
 
 function extractCashFlowSummary(
   data: AvailablePaymentAccountingCashFlow | null,
-  items: CashFlowGridItem[],
-): CashFlowGridSummary {
+  items: AvailablePaymentCashFlowTableItem[],
+): AvailablePaymentCashFlowSummary {
   const record = asRecord(data)
 
   return {
@@ -2076,31 +2324,21 @@ function RedirectToSourceButton({
 
   if (hasPolandOrder) {
     return (
-      <Tooltip label={t('Перегляд замовлення з Польщі недоступний')}>
-        <Button
-          color="gray"
-          data-disabled
-          leftSection={<ExternalLink size={16} />}
-          size="xs"
-          variant="subtle"
-          onClick={(event) => event.preventDefault()}
-        >
-          {t('Перейти до замовлення')}
-        </Button>
-      </Tooltip>
+      <TableRowAction
+        action="open"
+        disabled
+        hint={t('Перегляд замовлення з Польщі недоступний')}
+        label={t('Перейти до замовлення')}
+      />
     )
   }
 
   return (
-    <Button
-      color="gray"
-      leftSection={<ExternalLink size={16} />}
-      size="xs"
-      variant="subtle"
+    <TableRowAction
+      action="open"
+      label={t('Перейти до замовлення')}
       onClick={() => onRedirectToSource(model)}
-    >
-      {t('Перейти до замовлення')}
-    </Button>
+    />
   )
 }
 
@@ -2220,7 +2458,7 @@ function TaskStatusBadge({ task }: { task: SupplyPaymentTask }) {
 
   if (task.TaskStatus === TaskStatusValue.Done) {
     return (
-      <Badge color="green" variant="light">
+      <Badge className="app-role-pill is-green" size="xs" variant="light">
         {t('Виконано')}
       </Badge>
     )
@@ -2228,14 +2466,14 @@ function TaskStatusBadge({ task }: { task: SupplyPaymentTask }) {
 
   if (task.TaskStatus === TaskStatusValue.PartiallyDone) {
     return (
-      <Badge color="yellow" variant="light">
+      <Badge className="app-role-pill is-orange" size="xs" variant="light">
         {t('Оплачено частково')}
       </Badge>
     )
   }
 
   return (
-    <Badge color="gray" variant="light">
+    <Badge className="app-role-pill is-gray" size="xs" variant="light">
       {t('Не завершено')}
     </Badge>
   )

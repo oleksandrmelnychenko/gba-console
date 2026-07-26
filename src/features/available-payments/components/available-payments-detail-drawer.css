@@ -1,0 +1,184 @@
+.available-payment-task-list {
+  min-width: 0;
+}
+
+.available-payment-task-list__selection {
+  background: #f8f9fa;
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.available-payment-task-list__selection-label {
+  color: var(--mantine-color-gray-8);
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+
+.available-payment-task-list__checkbox {
+  align-items: center;
+  display: inline-flex;
+  justify-content: center;
+  min-height: 28px;
+  width: 100%;
+}
+
+.available-payment-task-list__identity {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.available-payment-task-list__identity-main {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+}
+
+.available-payment-task-list__identity-main .mantine-Badge-root {
+  flex: 0 0 auto;
+}
+
+.available-payment-task-list__name {
+  color: var(--mantine-color-gray-8);
+  font-size: 13px;
+  font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.available-payment-task-list__meta {
+  color: var(--mantine-color-gray-6);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.available-payment-task-list__amount {
+  align-items: baseline;
+  display: inline-flex;
+  gap: 6px;
+  justify-content: flex-end;
+  white-space: nowrap;
+  width: 100%;
+}
+
+.available-payment-task-list__amount .app-money-meta {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.available-payment-task-list__footer {
+  min-width: max-content;
+  padding: 4px 8px;
+}
+
+.available-payment-task-details {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
+  margin: 8px 12px 12px 40px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.available-payment-task-details__content {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: 14px 16px 16px;
+}
+
+.available-payment-task-details__content .mantine-Stack-root {
+  min-width: 0;
+}
+
+.available-payment-invoice-table {
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  width: 100%;
+}
+
+.available-payment-cash-flow-table {
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  width: 100%;
+}
+
+.available-payment-cash-flow-table__footer {
+  display: grid;
+  min-width: 0;
+  width: 100%;
+}
+
+.available-payment-cash-flow-table__summary-row {
+  align-items: stretch;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 120px 120px 135px;
+  min-height: 32px;
+}
+
+.available-payment-cash-flow-table__summary-row + .available-payment-cash-flow-table__summary-row {
+  border-top: 1px solid var(--mantine-color-gray-2);
+}
+
+.available-payment-cash-flow-table__summary-label {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+  padding: 6px 8px;
+}
+
+.available-payment-cash-flow-table__summary-label span:first-child {
+  color: var(--mantine-color-gray-8);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.available-payment-cash-flow-table__summary-label span:last-child {
+  color: var(--mantine-color-gray-6);
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.available-payment-cash-flow-table__summary-value {
+  align-items: center;
+  border-left: 1px solid var(--mantine-color-gray-2);
+  color: var(--mantine-color-gray-8);
+  display: flex;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  justify-content: flex-end;
+  padding: 6px 8px;
+  white-space: nowrap;
+}
+
+.available-payment-cash-flow-table__summary-value.is-negative {
+  color: var(--mantine-color-red-6);
+}
+
+@media (max-width: 720px) {
+  .available-payment-task-details {
+    margin-left: 8px;
+    margin-right: 8px;
+  }
+}
