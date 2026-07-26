@@ -43,6 +43,10 @@ import type {
   PaymentRegister,
 } from '../types'
 import { IncomeCounterpartySearchType, IncomePaymentOperationType, PaymentRegisterType } from '../types'
+import {
+  resolveIncomePaymentOrderType,
+  selectDefaultIncomePaymentMovement,
+} from '../incomeCashflowMutationPolicy'
 
 type FormState = {
   amount: number
@@ -157,6 +161,10 @@ export function IncomeCashflowConversionFormPage() {
         const defaultOrganization = nextOrganizations[0] || null
         const defaultRegister = selectDefaultRegister(nextRegisters, defaultOrganization, registerType)
         const defaultCurrency = getRegisterCurrencies(defaultRegister)[0] || null
+        const defaultMovement = selectDefaultIncomePaymentMovement(
+          nextMovements,
+          IncomePaymentOperationType.OtherIncome,
+        )
 
         setOrganizations(nextOrganizations)
         setPaymentRegisters(nextRegisters)
@@ -170,6 +178,8 @@ export function IncomeCashflowConversionFormPage() {
           paymentRegisterValue: defaultRegister ? getEntityValue(defaultRegister) : '',
           searchType: IncomeCounterpartySearchType.Client,
           selectedCurrencyValue: defaultCurrency ? getEntityValue(defaultCurrency) : '',
+          selectedMovementValue: defaultMovement ? getEntityValue(defaultMovement) : '',
+          movementSearch: defaultMovement?.OperationName || '',
         }))
       } catch (loadError) {
         if (!cancelled) {
@@ -629,6 +639,9 @@ function buildIncomePaymentOrder({
     Currency: selectedCurrency,
     ExchangeRate: euroExchangeRate || undefined,
     FromDate: toIsoDateTime(form.date, form.time),
+    IncomePaymentOrderType: resolveIncomePaymentOrderType(
+      selectedRegister.Type,
+    ),
     IsAccounting: form.isAccounting,
     IsManagementAccounting: form.isManagementAccounting,
     OperationType: IncomePaymentOperationType.OtherIncome,

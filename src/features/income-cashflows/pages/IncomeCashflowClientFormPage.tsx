@@ -60,10 +60,14 @@ import type {
 import {
   IncomeCounterpartySearchType,
   IncomePaymentOperationType,
-  IncomePaymentOrderType,
   PaymentRegisterType,
 } from '../types'
 import { PaymentPurposeAutocomplete } from '../components/PaymentPurposeAutocomplete'
+import {
+  resolveIncomePaymentOrderType,
+  selectDefaultIncomePaymentMovement,
+  shouldAllocateIncomePaymentToSales,
+} from '../incomeCashflowMutationPolicy'
 import { getPaymentPurposeSuggestionScope } from '../paymentPurposeSuggestionScope'
 
 type FormState = {
@@ -229,7 +233,10 @@ export function IncomeCashflowClientFormPage() {
         const defaultOrganization = (nextOrganizations[0] as OrganizationWithDefaults | undefined) || null
         const defaultRegister = selectDefaultRegister(nextRegisters, defaultOrganization, registerType)
         const defaultCurrency = defaultRegister?.PaymentCurrencyRegisters?.[0]?.Currency || null
-        const defaultMovement = nextMovements.find((movement) => movement.OperationName === 'Оплата покупця') || nextMovements[0] || null
+        const defaultMovement = selectDefaultIncomePaymentMovement(
+          nextMovements,
+          operationType,
+        )
 
         setOrganizations(nextOrganizations as OrganizationWithDefaults[])
         setAvailableOrganizations(nextOrganizations as OrganizationWithDefaults[])
@@ -727,7 +734,11 @@ export function IncomeCashflowClientFormPage() {
     setError(null)
 
     try {
-      await createIncomeCashflow(payload, form.autoAllocate)
+      await createIncomeCashflow(
+        payload,
+        operationType === IncomePaymentOperationType.ClientPayment &&
+          form.autoAllocate,
+      )
       notifications.show({
         color: 'green',
         message: t('Прибутковий ордер створено'),
@@ -1135,7 +1146,15 @@ function buildIncomePaymentOrder({
   selectedSupplyAgreement: SupplyOrganizationAgreement | null
   selectedSupplyOrganization: SupplyOrganization | null
 }): IncomePaymentOrder {
-  const selectedClientDebts = form.autoAllocate ? debts : pickSelectedDebts(debts, form)
+  const shouldAllocateSales = shouldAllocateIncomePaymentToSales(
+    operationType,
+    isSupplierSearch,
+  )
+  const selectedClientDebts = shouldAllocateSales
+    ? form.autoAllocate
+      ? debts
+      : pickSelectedDebts(debts, form)
+    : []
   const order: IncomePaymentOrder = {
     Amount: form.amount,
     ArrivalNumber: form.entranceNumber.trim(),
@@ -1143,8 +1162,12 @@ function buildIncomePaymentOrder({
     Currency: selectedCurrency,
     ExchangeRate: form.exchangeRate || undefined,
     FromDate: toIsoDateTime(form.date, form.time),
-    IncomePaymentOrderType: registerType === PaymentRegisterType.Cash ? IncomePaymentOrderType.Cash : IncomePaymentOrderType.Transfer,
-    IncomePaymentOrderSales: isSupplierSearch ? [] : buildIncomePaymentOrderSales(debts, form),
+    IncomePaymentOrderType: resolveIncomePaymentOrderType(
+      selectedRegister.Type ?? registerType,
+    ),
+    IncomePaymentOrderSales: shouldAllocateSales
+      ? buildIncomePaymentOrderSales(debts, form)
+      : [],
     IsAccounting: form.isAccounting,
     IsManagementAccounting: form.isManagementAccounting,
     OperationType: operationType,

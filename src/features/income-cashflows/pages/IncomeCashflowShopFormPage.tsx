@@ -49,7 +49,11 @@ import type {
   PaymentRegister,
   RetailClient,
 } from '../types'
-import { IncomePaymentOperationType, IncomePaymentOrderType, PaymentRegisterType } from '../types'
+import { IncomePaymentOperationType } from '../types'
+import {
+  resolveIncomePaymentOrderType,
+  selectDefaultIncomePaymentMovement,
+} from '../incomeCashflowMutationPolicy'
 
 type FormState = {
   amount: number
@@ -256,7 +260,10 @@ export function IncomeCashflowShopFormPage() {
           return
         }
 
-        const defaultMovement = selectDefaultMovement(nextMovements)
+        const defaultMovement = selectDefaultIncomePaymentMovement(
+          nextMovements,
+          IncomePaymentOperationType.ClientPayment,
+        )
 
         setPaymentRegisters(nextRegisters)
         setPaymentMovements(nextMovements)
@@ -977,7 +984,9 @@ function buildIncomePaymentOrder({
     Currency: selectedCurrency,
     ExchangeRate: form.exchangeRate || undefined,
     FromDate: toIsoDateTime(form.date, form.time),
-    IncomePaymentOrderType: selectedRegister.Type === PaymentRegisterType.Cash ? IncomePaymentOrderType.Cash : IncomePaymentOrderType.Transfer,
+    IncomePaymentOrderType: resolveIncomePaymentOrderType(
+      selectedRegister.Type,
+    ),
     IncomePaymentOrderSales: buildIncomePaymentOrderSales(debts, form),
     IsAccounting: form.isAccounting,
     IsManagementAccounting: form.isManagementAccounting,
@@ -1178,10 +1187,6 @@ function matchesRegister(register: PaymentRegister, organization: Organization |
   }
 
   return getEntityValue(register.Organization) === getEntityValue(organization) || register.OrganizationId === organization.Id
-}
-
-function selectDefaultMovement(movements: PaymentMovement[]): PaymentMovement | null {
-  return movements.find((movement) => movement.OperationName === 'Оплата покупця') || movements[0] || null
 }
 
 function matchesDebtSaleId(debt: ClientInDebt, saleId: string): boolean {

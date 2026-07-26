@@ -40,7 +40,11 @@ import type {
   PaymentMovement,
   PaymentRegister,
 } from '../types'
-import { IncomePaymentOperationType, IncomePaymentOrderType, PaymentRegisterType } from '../types'
+import { IncomePaymentOperationType } from '../types'
+import {
+  resolveIncomePaymentOrderType,
+  selectDefaultIncomePaymentMovement,
+} from '../incomeCashflowMutationPolicy'
 
 type FormState = {
   amount: number
@@ -144,7 +148,10 @@ export function IncomeCashflowUserFormPage() {
         const defaultOrganization = nextOrganizations[0] || null
         const defaultRegister = selectDefaultRegister(nextRegisters, defaultOrganization)
         const defaultCurrency = defaultRegister?.PaymentCurrencyRegisters?.[0]?.Currency || null
-        const defaultMovement = nextMovements[0] || null
+        const defaultMovement = selectDefaultIncomePaymentMovement(
+          nextMovements,
+          IncomePaymentOperationType.ReturnFromColleague,
+        )
 
         setOrganizations(nextOrganizations)
         setPaymentRegisters(nextRegisters)
@@ -561,7 +568,9 @@ function buildIncomePaymentOrder({
     Currency: selectedCurrency,
     ExchangeRate: form.exchangeRate || undefined,
     FromDate: toIsoDateTime(form.date, form.time),
-    IncomePaymentOrderType: selectedRegister.Type === PaymentRegisterType.Cash ? IncomePaymentOrderType.Cash : IncomePaymentOrderType.Transfer,
+    IncomePaymentOrderType: resolveIncomePaymentOrderType(
+      selectedRegister.Type,
+    ),
     IsAccounting: form.isAccounting,
     IsManagementAccounting: form.isManagementAccounting,
     OperationType: IncomePaymentOperationType.ReturnFromColleague,
