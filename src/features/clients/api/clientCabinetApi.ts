@@ -193,7 +193,7 @@ export async function changeClientPassword(
 ): Promise<ClientUpsertResult> {
   const result = await apiRequest<unknown>('/clients/update/password', {
     method: 'PATCH',
-    query: {
+    body: {
       netId,
       password,
       mobileNumber,

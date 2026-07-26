@@ -41,18 +41,34 @@ export async function updateAdvanceReportOrder(
   const payload = sanitizeAdvanceReportOrder(order)
 
   if (documentFiles.length > 0) {
-    const formData = new FormData()
+    const fileMetadata = await Promise.all(
+      documentFiles.map(readAccountingDocumentMetadata),
+    )
+    const result = await executeAccountingMutation({
+      identity: order,
+      kind: 'outcome-payment:update',
+      operation,
+      payload: {
+        createIncomeAutomatically,
+        fileMetadata,
+        order: payload,
+      },
+      request: (snapshot, context) => {
+        const formData = new FormData()
+        formData.append('order', JSON.stringify(snapshot.order))
+        documentFiles.forEach((file) => formData.append('documents', file))
 
-    formData.append('order', JSON.stringify(payload))
-    documentFiles.forEach((file) => formData.append('documents', file))
-
-    // Do not attach an accounting idempotency key until uploaded content is
-    // staged and hashed by the server in the same durable mutation workflow.
-    const result = await apiRequest<unknown>('/payments/orders/outcome/upload/update', {
-      body: formData,
-      method: 'POST',
-      query: {
-        auto: createIncomeAutomatically,
+        return apiRequest<unknown>('/payments/orders/outcome/upload/update', {
+          body: formData,
+          dedupe: false,
+          headers: context.headers,
+          method: 'POST',
+          query: {
+            auto: snapshot.createIncomeAutomatically,
+            operationNetUid: context.operationId,
+          },
+          ...(context.signal ? { signal: context.signal } : {}),
+        })
       },
     })
 
@@ -74,12 +90,35 @@ export async function updateAdvanceReportOrder(
       method: 'POST',
       query: {
         auto: snapshot.createIncomeAutomatically,
+        operationNetUid: context.operationId,
       },
       ...(context.signal ? { signal: context.signal } : {}),
     }),
   })
 
   return normalizeAdvanceReportOrder(result)
+}
+
+async function readAccountingDocumentMetadata(file: File) {
+  if (!globalThis.crypto?.subtle) {
+    throw new Error('Браузер не підтримує SHA-256 перевірку файла')
+  }
+
+  const bytes = await file.arrayBuffer()
+  const digest = await globalThis.crypto.subtle.digest(
+    'SHA-256',
+    bytes,
+  )
+
+  return {
+    lastModified: file.lastModified,
+    name: file.name,
+    sha256: Array.from(new Uint8Array(digest))
+      .map((value) => value.toString(16).padStart(2, '0'))
+      .join(''),
+    size: file.size,
+    type: file.type,
+  }
 }
 
 export async function calculateAdvanceReportConsumableOrder(

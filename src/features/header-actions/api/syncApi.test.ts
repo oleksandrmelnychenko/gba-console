@@ -83,6 +83,7 @@ describe('sync API contracts', () => {
       headers: {
         'X-GBA-Sync-Operation-Id': operationId,
       },
+      method: 'POST',
       query: {
         forAmg: true,
         from,

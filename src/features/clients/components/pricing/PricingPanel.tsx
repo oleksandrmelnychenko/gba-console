@@ -584,7 +584,12 @@ function ContractDocumentsSection({
           </Alert>
         )}
 
-        <FileButton multiple disabled={disabled} onChange={(files) => files.length > 0 && onAdd(files)}>
+        <FileButton
+          multiple
+          accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
+          disabled={disabled}
+          onChange={(files) => files.length > 0 && onAdd(files)}
+        >
           {(buttonProps) => (
             <Button
               color="gray"
@@ -604,9 +609,9 @@ function ContractDocumentsSection({
           </Text>
         ) : (
           <Stack gap="xs">
-            {visibleDocuments.map((document, index) => (
+            {visibleDocuments.map((document) => (
               <Group
-                key={document.NetUid || document.Id || `${document.FileName}-${index}`}
+                key={document.NetUid || document.Id || document.FileName}
                 justify="space-between"
                 wrap="nowrap"
               >

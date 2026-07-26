@@ -89,7 +89,13 @@ describe('advanceReportApi', () => {
 
     apiRequestMock.mockResolvedValueOnce({ NetUid: 'order-1' })
 
-    await updateAdvanceReportOrder(true, order, [document])
+    const operationId = '66666666-6666-4666-8666-666666666666'
+    await updateAdvanceReportOrder(
+      true,
+      order,
+      [document],
+      { operationId },
+    )
 
     const [, options] = apiRequestMock.mock.calls[0]
     const body = options?.body as FormData
@@ -98,8 +104,13 @@ describe('advanceReportApi', () => {
     expect(apiRequestMock).toHaveBeenCalledWith(
       '/payments/orders/outcome/upload/update',
       expect.objectContaining({
+        dedupe: false,
+        headers: { 'Idempotency-Key': operationId },
         method: 'POST',
-        query: { auto: true },
+        query: {
+          auto: true,
+          operationNetUid: operationId,
+        },
       }),
     )
     expect(body.getAll('documents')).toEqual([document])
@@ -108,8 +119,6 @@ describe('advanceReportApi', () => {
     expect(payload.OutcomePaymentOrderConsumablesOrders?.[0]?.ConsumablesOrder?.ConsumablesOrderItems?.[0]?.NetUid)
       .toBeUndefined()
     expect(payload.CompanyCarFuelings?.[0]?.NetUid).toBeUndefined()
-    expect(options?.headers).toBeUndefined()
-    expect(options?.dedupe).toBeUndefined()
   })
 
   it('idempotently updates JSON advance reports but leaves multipart outside the ledger scope', async () => {
@@ -129,6 +138,7 @@ describe('advanceReportApi', () => {
       method: 'POST',
       query: {
         auto: false,
+        operationNetUid: operationId,
       },
     })
   })

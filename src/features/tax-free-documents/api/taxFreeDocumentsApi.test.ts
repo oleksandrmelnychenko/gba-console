@@ -113,12 +113,26 @@ describe('taxFreeDocumentsApi', () => {
 
     await createAdvancePaymentFromTaxFree('tax-free-1', payload)
 
+    const operationId = (
+      apiRequestMock.mock.calls[0]?.[1]?.query as {
+        operationNetUid?: string
+      }
+    )?.operationNetUid
+
+    expect(operationId).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+    )
     expect(apiRequestMock).toHaveBeenCalledWith('/payments/advance/new', {
+      body: payload,
+      dedupe: false,
+      headers: {
+        'Idempotency-Key': operationId,
+      },
       method: 'POST',
       query: {
+        operationNetUid: operationId,
         taxFreeNetId: 'tax-free-1',
       },
-      body: payload,
     })
   })
 

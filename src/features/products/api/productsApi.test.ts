@@ -5,11 +5,13 @@ import {
   exportProductMovementsDocument,
   exportProductOutcomeMovementsDocument,
   getProductSourcePriceComparison,
+  resetProductPlacementMutationStateForTests,
   updateProduct,
+  updateProductPlacements,
   updateProductWithImages,
   uploadProductsFromFile,
 } from './productsApi'
-import type { Product, ProductFileUploadConfiguration } from '../types'
+import type { Product, ProductFileUploadConfiguration, ProductPlacement } from '../types'
 
 vi.mock('../../../shared/api/apiClient', () => ({
   apiRequest: vi.fn(),
@@ -233,6 +235,197 @@ describe('products API upload contracts', () => {
       },
     })
   })
+})
+
+describe('product placement durable mutation', () => {
+  const ownerA = '11111111-1111-4111-8111-111111111111'
+  const ownerB = '22222222-2222-4222-8222-222222222222'
+
+  beforeEach(() => {
+    apiRequestMock.mockReset()
+    localStorage.clear()
+    resetProductPlacementMutationStateForTests()
+    setSession(ownerA)
+  })
+
+  it('aggregates multiple lineage rows in one cell and accepts the expanded server response', async () => {
+    const response = [
+      placement({ Id: 11, Qty: 2, ConsignmentItemId: 101 }),
+      placement({ Id: 12, Qty: 3, ConsignmentItemId: 102 }),
+    ]
+    apiRequestMock.mockResolvedValueOnce(response)
+
+    await expect(updateProductPlacements(response)).resolves.toEqual(response)
+
+    const [, options] = apiRequestMock.mock.calls[0]
+    const body = options?.body as ProductPlacement[]
+    const operationNetUid = new Headers(options?.headers).get('Idempotency-Key')
+
+    expect(body).toHaveLength(1)
+    expect(body[0]).toMatchObject({
+      Id: 11,
+      Qty: 5,
+      ConsignmentItemId: 101,
+      StorageNumber: 'A',
+      RowNumber: '1',
+      CellNumber: '2',
+    })
+    expect(operationNetUid).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+    )
+    expect(new Headers(options?.headers).get('X-Product-Placement-Update-Owner')).toBe(ownerA)
+    expect(options?.query).toEqual({ operationNetUid })
+    expect(readPendingOperationKeys()).toEqual([])
+  })
+
+  it.each([408, 500, 504])(
+    'retains and reuses the operation after an unknown %s outcome',
+    async (status) => {
+    apiRequestMock
+      .mockRejectedValueOnce(Object.assign(new Error('unknown'), { status }))
+      .mockResolvedValueOnce([])
+    const rows = [placement({ Id: 11, Qty: 5 })]
+
+    await expect(updateProductPlacements(rows)).rejects.toThrow('unknown')
+    await updateProductPlacements(rows)
+
+    expect(apiRequestMock).toHaveBeenCalledTimes(2)
+    expect(readOperationKey(0)).toBe(readOperationKey(1))
+    },
+  )
+
+  it.each(['not-entered', 'rolled-back'])(
+    'clears an operation only after the server proves %s',
+    async (ledgerState) => {
+    apiRequestMock
+      .mockRejectedValueOnce(createMutationError(409, ledgerState))
+      .mockResolvedValueOnce([])
+    const rows = [placement({ Id: 11, Qty: 5 })]
+
+    await expect(updateProductPlacements(rows)).rejects.toThrow('conflict')
+    await updateProductPlacements(rows)
+
+    expect(readOperationKey(0)).not.toBe(readOperationKey(1))
+    },
+  )
+
+  it('retains the key for a 4xx response without rollback proof', async () => {
+    apiRequestMock
+      .mockRejectedValueOnce(createMutationError(400))
+      .mockResolvedValueOnce([])
+    const rows = [placement({ Id: 11, Qty: 5 })]
+
+    await expect(updateProductPlacements(rows)).rejects.toThrow('conflict')
+    await updateProductPlacements(rows)
+
+    expect(readOperationKey(0)).toBe(readOperationKey(1))
+  })
+
+  it('fails closed without deleting a corrupted pending operation', async () => {
+    apiRequestMock.mockRejectedValueOnce(
+      Object.assign(new Error('unknown'), { status: 504 }),
+    )
+    const rows = [placement({ Id: 11, Qty: 5 })]
+
+    await expect(updateProductPlacements(rows)).rejects.toThrow('unknown')
+    const [storageKey] = readPendingOperationKeys()
+    localStorage.setItem(storageKey, '{')
+
+    await expect(updateProductPlacements(rows))
+      .rejects.toThrow('Збережена операція розміщення пошкоджена')
+    expect(apiRequestMock).toHaveBeenCalledTimes(1)
+    expect(localStorage.getItem(storageKey)).toBe('{')
+  })
+
+  it('does not reuse another authenticated owner operation', async () => {
+    apiRequestMock
+      .mockRejectedValueOnce(Object.assign(new Error('network'), { status: 0 }))
+      .mockResolvedValueOnce([])
+    const rows = [placement({ Id: 11, Qty: 5 })]
+
+    await expect(updateProductPlacements(rows)).rejects.toThrow('network')
+    setSession(ownerB)
+    await updateProductPlacements(rows)
+
+    expect(readOperationKey(0)).not.toBe(readOperationKey(1))
+    expect(
+      new Headers(apiRequestMock.mock.calls[0]?.[1]?.headers)
+        .get('X-Product-Placement-Update-Owner'),
+    ).toBe(ownerA)
+    expect(
+      new Headers(apiRequestMock.mock.calls[1]?.[1]?.headers)
+        .get('X-Product-Placement-Update-Owner'),
+    ).toBe(ownerB)
+    expect(readPendingOperationKeys()).toHaveLength(1)
+    expect(readPendingOperationKeys()[0]).toContain(ownerA)
+  })
+
+  it('deduplicates concurrent saves and sends an immutable snapshot', async () => {
+    let resolveRequest: ((value: unknown) => void) | undefined
+    apiRequestMock.mockImplementationOnce(
+      () => new Promise((resolve) => {
+        resolveRequest = resolve
+      }),
+    )
+    const rows = [placement({ Id: 11, Qty: 5 })]
+
+    const first = updateProductPlacements(rows)
+    const second = updateProductPlacements(rows)
+    rows[0].Qty = 99
+
+    expect(first).toBe(second)
+    await vi.waitFor(() => expect(apiRequestMock).toHaveBeenCalledTimes(1))
+    expect((apiRequestMock.mock.calls[0]?.[1]?.body as ProductPlacement[])[0].Qty).toBe(5)
+    resolveRequest?.([])
+    await expect(first).resolves.toEqual([])
+  })
+
+  function readOperationKey(callIndex: number): string | null {
+    return new Headers(apiRequestMock.mock.calls[callIndex]?.[1]?.headers).get('Idempotency-Key')
+  }
+
+  function readPendingOperationKeys(): string[] {
+    return Array.from(
+      { length: localStorage.length },
+      (_, index) => localStorage.key(index),
+    ).filter(
+      (key): key is string =>
+        Boolean(key?.startsWith('gba.products.placement-update.v1:')),
+    )
+  }
+
+  function createMutationError(status: number, ledgerState?: string): Error & {
+    headers: Headers
+    status: number
+  } {
+    return Object.assign(new Error('conflict'), {
+      headers: new Headers(
+        ledgerState
+          ? { 'X-Product-Placement-Update-Ledger-State': ledgerState }
+          : undefined,
+      ),
+      status,
+    })
+  }
+
+  function setSession(ownerNetUid: string) {
+    localStorage.setItem('gba_console_session', JSON.stringify({
+      csrfToken: 'csrf',
+      userNetUid: ownerNetUid,
+    }))
+  }
+
+  function placement(overrides: Partial<ProductPlacement>): ProductPlacement {
+    return {
+      CellNumber: '2',
+      ProductId: 41,
+      Qty: 5,
+      RowNumber: '1',
+      StorageId: 51,
+      StorageNumber: 'A',
+      ...overrides,
+    }
+  }
 })
 
 function createProductWithRelations(): Product {

@@ -44,19 +44,49 @@ export async function getPaymentAccount(netId: string): Promise<PaymentAccount |
   return normalizePaymentAccount(result)
 }
 
-export async function createPaymentAccount(account: PaymentAccountPayload): Promise<PaymentAccount | null> {
-  const result = await apiRequest<unknown>('/payments/registers/new', {
-    method: 'POST',
-    body: account,
+export async function createPaymentAccount(
+  account: PaymentAccountPayload,
+  operation?: AccountingMutationOperationOptions,
+): Promise<PaymentAccount | null> {
+  const result = await executeAccountingMutation({
+    identity: account,
+    kind: 'payment-register:add',
+    operation,
+    payload: account,
+    request: (payload, context) => apiRequest<unknown>('/payments/registers/new', {
+      body: payload,
+      dedupe: false,
+      headers: context.headers,
+      method: 'POST',
+      query: {
+        operationNetUid: context.operationId,
+      },
+      ...(context.signal ? { signal: context.signal } : {}),
+    }),
   })
 
   return normalizePaymentAccount(result)
 }
 
-export async function updatePaymentAccount(account: PaymentAccountPayload): Promise<PaymentAccount | null> {
-  const result = await apiRequest<unknown>('/payments/registers/update', {
-    method: 'POST',
-    body: account,
+export async function updatePaymentAccount(
+  account: PaymentAccountPayload,
+  operation?: AccountingMutationOperationOptions,
+): Promise<PaymentAccount | null> {
+  const result = await executeAccountingMutation({
+    identity: account,
+    kind: 'payment-register:update',
+    operation,
+    payload: account,
+    request: (payload, context) => apiRequest<unknown>('/payments/registers/update', {
+      body: payload,
+      dedupe: false,
+      headers: context.headers,
+      method: 'POST',
+      query: {
+        operationNetUid: context.operationId,
+      },
+      ...(context.signal ? { signal: context.signal } : {}),
+    }),
   })
 
   return normalizePaymentAccount(result)

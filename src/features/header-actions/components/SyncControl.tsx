@@ -13,7 +13,7 @@ import {
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { ArrowRightLeft, Play, ShieldCheck } from 'lucide-react'
-import { useCallback, useEffect, useReducer } from 'react'
+import { useCallback, useEffect, useReducer, useRef } from 'react'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import {
@@ -29,6 +29,10 @@ import {
   startDailySync,
   startFullSync,
 } from '../api/syncApi'
+import {
+  createSyncStartOperation,
+  type SyncStartDescriptor,
+} from '../syncStartOperation'
 import { allDailySyncTypes, defaultSelectedSyncTypes, syncTypeOptions } from '../syncOptions'
 import { DailyDataSyncStockMode, type DataSyncStatus, type SyncRunResponse } from '../types'
 import {
@@ -157,6 +161,9 @@ export function SyncControl() {
   const { t } = useI18n()
   const dataSyncProgress = useDataSyncProgress()
   const [state, dispatch] = useReducer(syncReducer, undefined, createInitialSyncState)
+  const syncStartOperationRef = useRef<ReturnType<typeof createSyncStartOperation> | null>(null)
+  syncStartOperationRef.current ??= createSyncStartOperation(createSyncOperationId)
+  const syncStartOperation = syncStartOperationRef.current
 
   const loadStatus = useCallback(async (showSpinner: boolean) => {
     if (showSpinner) {
@@ -165,13 +172,14 @@ export function SyncControl() {
 
     try {
       const status = await getSyncStatus()
+      syncStartOperation.reconcile(status)
       reconcileDataSyncProgress(status.IsInProgress || status.IsGlobalLockHeld)
       dispatch({ type: 'statusSucceeded', status })
     } catch (error) {
       const message = error instanceof Error ? error.message : t('Не вдалося отримати статус синхронізації')
       dispatch({ type: 'statusFailed', message })
     }
-  }, [t])
+  }, [syncStartOperation, t])
 
   const handleRealtimeSyncNotification = useCallback(
     () => {
@@ -239,22 +247,34 @@ export function SyncControl() {
 
   async function runConfirmedSync() {
     if (state.pendingRun === 'full') {
-      await runSyncRequest(() =>
+      const types = getSelectedFullSyncTypes(state.selectedSyncTypes)
+      await runSyncRequest({
+        forAmg: sourceForAmg,
+        mode: 'full',
+        types,
+      }, (operationId) =>
         startFullSync({
           forAmg: sourceForAmg,
-          operationId: createSyncOperationId(),
-          types: getSelectedFullSyncTypes(state.selectedSyncTypes),
+          operationId,
+          types,
         }),
       )
       return
     }
 
     if (state.pendingRun === 'daily') {
-      await runSyncRequest(() =>
+      await runSyncRequest({
+        forAmg: sourceForAmg,
+        from: state.dailyFrom,
+        mode: 'daily',
+        stockMode: DailyDataSyncStockMode.DocumentsOnly,
+        to: state.dailyTo,
+        types: state.selectedDailyTypes,
+      }, (operationId) =>
         startDailySync({
           forAmg: sourceForAmg,
           from: state.dailyFrom,
-          operationId: createSyncOperationId(),
+          operationId,
           stockMode: DailyDataSyncStockMode.DocumentsOnly,
           to: state.dailyTo,
           types: state.selectedDailyTypes,
@@ -263,7 +283,10 @@ export function SyncControl() {
     }
   }
 
-  async function runSyncRequest(request: () => Promise<SyncRunResponse>) {
+  async function runSyncRequest(
+    descriptor: SyncStartDescriptor,
+    request: (operationId: string) => Promise<SyncRunResponse>,
+  ) {
     if (isStartBlocked) {
       notifications.show({ color: 'yellow', message: t('Синхронізація вже виконується') })
       return
@@ -271,13 +294,19 @@ export function SyncControl() {
 
     dispatch({ type: 'syncStarted' })
 
+    let operationId = ''
     try {
-      const response = await request()
+      operationId = syncStartOperation.getOrCreate(descriptor)
+      const response = await request(operationId)
+      syncStartOperation.complete(operationId)
       const message = response?.Message || t('Синхронізацію запущено')
       markDataSyncStarted(message)
       notifications.show({ color: 'green', message })
       await loadStatus(false)
     } catch (error) {
+      if (operationId) {
+        syncStartOperation.handleFailure(operationId, error)
+      }
       const message = error instanceof Error ? error.message : t('Не вдалося запустити синхронізацію')
       notifications.show({ color: 'red', message })
       await loadStatus(false)

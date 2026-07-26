@@ -1,4 +1,5 @@
 import { apiRequest } from '../../../shared/api/apiClient'
+import { readSession } from '../../../shared/auth/session'
 import { normalizeExportDocument } from '../../../shared/documents/exportDocument'
 import type {
   AuditEntity,
@@ -511,15 +512,327 @@ export async function deleteProductWriteOffRule(netUid: string): Promise<void> {
   })
 }
 
-export async function updateProductPlacements(placements: ProductPlacement[]): Promise<void> {
-  await apiRequest<unknown>('/products/placements/storage/update', {
-    method: 'POST',
-    body: placements,
-    errorMessages: {
-      default: 'Не вдалося зберегти місця зберігання',
-      network: 'Сервер місць зберігання недоступний',
-    },
+const PRODUCT_PLACEMENT_UPDATE_STORAGE_PREFIX = 'gba.products.placement-update.v1'
+const PRODUCT_PLACEMENT_UPDATE_VERSION = 1
+const PRODUCT_PLACEMENT_UPDATE_OWNER_HEADER = 'X-Product-Placement-Update-Owner'
+const PRODUCT_PLACEMENT_UPDATE_LEDGER_STATE_HEADER =
+  'X-Product-Placement-Update-Ledger-State'
+const inFlightProductPlacementUpdates = new Map<string, Promise<ProductPlacement[]>>()
+
+type ProductPlacementUpdateSnapshot = {
+  fingerprint: string
+  operationNetUid: string
+  ownerNetUid: string
+  placements: ProductPlacement[]
+  version: typeof PRODUCT_PLACEMENT_UPDATE_VERSION
+}
+
+export function updateProductPlacements(placements: ProductPlacement[]): Promise<ProductPlacement[]> {
+  const ownerNetUid = getProductPlacementMutationOwner()
+  const snapshotRows = groupProductPlacementsForEditing(placements)
+  const canonicalPayload = canonicalizeProductPlacementTargets(snapshotRows)
+  const inFlightKey = `${ownerNetUid}:${canonicalPayload}`
+  const inFlight = inFlightProductPlacementUpdates.get(inFlightKey)
+
+  if (inFlight) {
+    return inFlight
+  }
+
+  const request = updateProductPlacementsCore(
+    ownerNetUid,
+    snapshotRows,
+    canonicalPayload,
+  ).finally(() => {
+    inFlightProductPlacementUpdates.delete(inFlightKey)
   })
+
+  inFlightProductPlacementUpdates.set(inFlightKey, request)
+  return request
+}
+
+async function updateProductPlacementsCore(
+  ownerNetUid: string,
+  placements: ProductPlacement[],
+  canonicalPayload: string,
+): Promise<ProductPlacement[]> {
+  const fingerprint = await sha256ProductPlacementPayload(canonicalPayload)
+  const storageKey = `${PRODUCT_PLACEMENT_UPDATE_STORAGE_PREFIX}:${ownerNetUid}:${fingerprint}`
+  const snapshot = readProductPlacementUpdateSnapshot(
+    storageKey,
+    ownerNetUid,
+    fingerprint,
+    canonicalPayload,
+  ) ||
+    createProductPlacementUpdateSnapshot(storageKey, ownerNetUid, fingerprint, placements)
+
+  if (getProductPlacementMutationOwner() !== snapshot.ownerNetUid) {
+    throw new Error('Користувач змінився до відправлення розміщень; запит не надіслано')
+  }
+
+  try {
+    const result = await apiRequest<unknown>('/products/placements/storage/update', {
+      method: 'POST',
+      headers: {
+        'Idempotency-Key': snapshot.operationNetUid,
+        [PRODUCT_PLACEMENT_UPDATE_OWNER_HEADER]: snapshot.ownerNetUid,
+      },
+      query: {
+        operationNetUid: snapshot.operationNetUid,
+      },
+      body: snapshot.placements,
+      errorMessages: {
+        default: 'Не вдалося зберегти місця зберігання',
+        network: 'Сервер місць зберігання недоступний',
+      },
+    })
+    removeProductPlacementUpdateSnapshot(storageKey, snapshot.operationNetUid)
+    return normalizeArray(result) as ProductPlacement[]
+  } catch (error) {
+    if (isServerProvenProductPlacementRollback(error)) {
+      removeProductPlacementUpdateSnapshot(storageKey, snapshot.operationNetUid)
+    }
+
+    throw error
+  }
+}
+
+export function groupProductPlacementsForEditing(placements: ProductPlacement[]): ProductPlacement[] {
+  if (!Array.isArray(placements) || placements.length === 0) {
+    return []
+  }
+
+  const grouped = new Map<string, ProductPlacement[]>()
+  placements.forEach((placement) => {
+    const storageNumber = String(placement.StorageNumber || '').trim()
+    const rowNumber = String(placement.RowNumber || '').trim()
+    const cellNumber = String(placement.CellNumber || '').trim()
+    const key = `${storageNumber.toUpperCase()}\u001f${rowNumber.toUpperCase()}\u001f${cellNumber.toUpperCase()}`
+    const current = grouped.get(key)
+
+    if (current) {
+      current.push(placement)
+    } else {
+      grouped.set(key, [placement])
+    }
+  })
+
+  return Array.from(grouped.entries())
+    .sort(([left], [right]) => compareProductPlacementOrdinal(left, right))
+    .map(([, rows]) => {
+      const anchor = rows.toSorted(compareProductPlacementIdentity)[0]
+      const productId = Number(anchor.ProductId || anchor.Product?.Id || 0)
+      const storageId = Number(anchor.StorageId || anchor.Storage?.Id || 0)
+
+      return {
+        Id: Number(anchor.Id || 0),
+        NetUid: anchor.NetUid || undefined,
+        Qty: rows.reduce((total, row) => total + Number(row.Qty || 0), 0),
+        StorageNumber: String(anchor.StorageNumber || '').trim(),
+        RowNumber: String(anchor.RowNumber || '').trim(),
+        CellNumber: String(anchor.CellNumber || '').trim(),
+        ProductId: productId,
+        StorageId: storageId,
+        PackingListPackageOrderItemId: anchor.PackingListPackageOrderItemId || undefined,
+        SupplyOrderUkraineItemId: anchor.SupplyOrderUkraineItemId || undefined,
+        ConsignmentItemId: anchor.ConsignmentItemId || undefined,
+      }
+    })
+}
+
+function canonicalizeProductPlacementTargets(placements: ProductPlacement[]): string {
+  return JSON.stringify(
+    placements.map((placement) => ({
+      id: Number(placement.Id || 0),
+      productId: Number(placement.ProductId || 0),
+      storageId: Number(placement.StorageId || 0),
+      storageNumber: placement.StorageNumber || '',
+      rowNumber: placement.RowNumber || '',
+      cellNumber: placement.CellNumber || '',
+      qty: Number(placement.Qty || 0),
+      netUid: placement.NetUid || '',
+      packingListPackageOrderItemId: Number(placement.PackingListPackageOrderItemId || 0),
+      supplyOrderUkraineItemId: Number(placement.SupplyOrderUkraineItemId || 0),
+      consignmentItemId: Number(placement.ConsignmentItemId || 0),
+    })),
+  )
+}
+
+function compareProductPlacementIdentity(left: ProductPlacement, right: ProductPlacement): number {
+  const leftId = Number(left.Id || Number.MAX_SAFE_INTEGER)
+  const rightId = Number(right.Id || Number.MAX_SAFE_INTEGER)
+
+  return leftId - rightId
+}
+
+function compareProductPlacementOrdinal(left: string, right: string): number {
+  return left < right ? -1 : left > right ? 1 : 0
+}
+
+function getProductPlacementMutationOwner(): string {
+  const session = readSession()
+  const ownerNetUid = session?.userNetUid || session?.user?.NetUid
+
+  if (!ownerNetUid?.trim()) {
+    throw new Error('Немає ідентифікатора користувача для збереження розміщень')
+  }
+
+  const normalizedOwnerNetUid = ownerNetUid.trim().toLowerCase()
+
+  if (!isNonEmptyGuid(normalizedOwnerNetUid)) {
+    throw new Error('Ідентифікатор користувача для збереження розміщень некоректний')
+  }
+
+  return normalizedOwnerNetUid
+}
+
+async function sha256ProductPlacementPayload(value: string): Promise<string> {
+  if (!globalThis.crypto?.subtle) {
+    throw new Error('Браузер не підтримує безпечний повтор збереження розміщень')
+  }
+
+  const digest = await globalThis.crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode(value),
+  )
+  return Array.from(
+    new Uint8Array(digest),
+    (byte) => byte.toString(16).padStart(2, '0'),
+  ).join('')
+}
+
+function createProductPlacementUpdateSnapshot(
+  storageKey: string,
+  ownerNetUid: string,
+  fingerprint: string,
+  placements: ProductPlacement[],
+): ProductPlacementUpdateSnapshot {
+  if (!globalThis.crypto?.randomUUID) {
+    throw new Error('Браузер не підтримує безпечний ключ збереження розміщень')
+  }
+
+  const snapshot: ProductPlacementUpdateSnapshot = {
+    fingerprint,
+    operationNetUid: globalThis.crypto.randomUUID(),
+    ownerNetUid,
+    placements: JSON.parse(JSON.stringify(placements)) as ProductPlacement[],
+    version: PRODUCT_PLACEMENT_UPDATE_VERSION,
+  }
+  const serializedSnapshot = JSON.stringify(snapshot)
+
+  try {
+    const storage = globalThis.localStorage
+
+    if (!storage) {
+      throw new Error('localStorage unavailable')
+    }
+
+    storage.setItem(storageKey, serializedSnapshot)
+    if (storage.getItem(storageKey) !== serializedSnapshot) {
+      throw new Error('persisted snapshot mismatch')
+    }
+  } catch {
+    throw new Error('Не вдалося надійно зберегти операцію розміщення перед відправленням')
+  }
+
+  return deepFreezeProductPlacementSnapshot(snapshot)
+}
+
+function readProductPlacementUpdateSnapshot(
+  storageKey: string,
+  expectedOwnerNetUid?: string,
+  expectedFingerprint?: string,
+  expectedCanonicalPayload?: string,
+): ProductPlacementUpdateSnapshot | null {
+  let raw: string | null
+
+  try {
+    const storage = globalThis.localStorage
+
+    if (!storage) {
+      throw new Error('localStorage unavailable')
+    }
+
+    raw = storage.getItem(storageKey)
+  } catch {
+    throw new Error('Не вдалося прочитати збережену операцію розміщення; запит не надіслано')
+  }
+
+  if (!raw) {
+    return null
+  }
+
+  let snapshot: ProductPlacementUpdateSnapshot
+  try {
+    snapshot = JSON.parse(raw) as ProductPlacementUpdateSnapshot
+  } catch {
+    throw new Error('Збережена операція розміщення пошкоджена; запит не надіслано')
+  }
+
+  if (
+    snapshot?.version !== PRODUCT_PLACEMENT_UPDATE_VERSION ||
+    !isProductPlacementOperationNetUid(snapshot.operationNetUid) ||
+    !snapshot.ownerNetUid ||
+    !/^[a-f0-9]{64}$/i.test(snapshot.fingerprint) ||
+    !Array.isArray(snapshot.placements) ||
+    (expectedOwnerNetUid && snapshot.ownerNetUid !== expectedOwnerNetUid) ||
+    (expectedFingerprint && snapshot.fingerprint !== expectedFingerprint) ||
+    (
+      expectedCanonicalPayload &&
+      canonicalizeProductPlacementTargets(snapshot.placements) !== expectedCanonicalPayload
+    )
+  ) {
+    throw new Error('Збережена операція розміщення пошкоджена; запит не надіслано')
+  }
+
+  return deepFreezeProductPlacementSnapshot(snapshot)
+}
+
+function deepFreezeProductPlacementSnapshot(
+  snapshot: ProductPlacementUpdateSnapshot,
+): ProductPlacementUpdateSnapshot {
+  snapshot.placements.forEach((placement) => Object.freeze(placement))
+  Object.freeze(snapshot.placements)
+  return Object.freeze(snapshot)
+}
+
+function removeProductPlacementUpdateSnapshot(storageKey: string, operationNetUid: string) {
+  try {
+    const current = readProductPlacementUpdateSnapshot(storageKey)
+
+    if (current?.operationNetUid === operationNetUid) {
+      globalThis.localStorage?.removeItem(storageKey)
+    }
+  } catch {
+    // The server response is authoritative when browser storage is unavailable.
+  }
+}
+
+function isProductPlacementOperationNetUid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
+}
+
+function isNonEmptyGuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value) &&
+    value !== '00000000-0000-0000-0000-000000000000'
+}
+
+function isServerProvenProductPlacementRollback(error: unknown): boolean {
+  if (!error || typeof error !== 'object' || !('headers' in error)) {
+    return false
+  }
+
+  const headers = error.headers
+  const ledgerState =
+    headers instanceof Headers
+      ? headers.get(PRODUCT_PLACEMENT_UPDATE_LEDGER_STATE_HEADER)
+      : null
+
+  return ledgerState?.toLowerCase() === 'not-entered' ||
+    ledgerState?.toLowerCase() === 'rolled-back'
+}
+
+export function resetProductPlacementMutationStateForTests() {
+  inFlightProductPlacementUpdates.clear()
 }
 
 export async function createProductOriginalNumber(

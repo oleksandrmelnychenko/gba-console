@@ -19,6 +19,10 @@ import type {
   ProductCapitalizationsResponse,
   ProductCapitalizationsSearchParams,
 } from '../types'
+import {
+  executeProductCapitalizationMutation,
+  type ProductCapitalizationMutationOperationOptions,
+} from '../productCapitalizationOperation'
 
 export async function getProductCapitalizations(
   params: ProductCapitalizationsSearchParams,
@@ -57,10 +61,22 @@ export async function exportProductCapitalization(netId: string): Promise<Produc
 
 export async function createProductCapitalization(
   payload: ProductCapitalizationCreatePayload,
+  operation?: ProductCapitalizationMutationOperationOptions,
 ): Promise<ProductCapitalization | null> {
-  const result = await apiRequest<unknown>('/products/capitalizations/new', {
-    method: 'POST',
-    body: payload,
+  const result = await executeProductCapitalizationMutation<unknown>({
+    operation,
+    payload,
+    request: (payloadSnapshot, context) =>
+      apiRequest<unknown>('/products/capitalizations/new', {
+        method: 'POST',
+        body: payloadSnapshot,
+        dedupe: false,
+        headers: context.headers,
+        query: {
+          operationNetUid: context.operationId,
+        },
+        ...(context.signal ? { signal: context.signal } : {}),
+      }),
   })
 
   return normalizeProductCapitalization(result)

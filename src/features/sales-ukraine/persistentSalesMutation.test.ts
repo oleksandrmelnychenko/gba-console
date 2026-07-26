@@ -5,6 +5,11 @@ import {
   SalesPendingMutationRecoveredError,
 } from './persistentSalesMutation'
 import { saveSalesPendingMutation } from './pendingSalesMutationRegistry'
+import { ApiError } from '../../shared/api/apiClient'
+import {
+  SALES_MUTATION_LEDGER_ROLLED_BACK,
+  SALES_MUTATION_LEDGER_STATE_HEADER,
+} from './salesMutationOperation'
 
 const operationIds = [
   '11111111-1111-4111-8111-111111111111',
@@ -165,4 +170,85 @@ describe('persistentSalesMutation', () => {
       request.mock.calls[1][1].operationId,
     )
   })
+
+  it('clears a confirmed rollback so a corrected payload can proceed', async () => {
+    const request = vi
+      .fn()
+      .mockRejectedValueOnce(
+        new ApiError('rolled back', 409, null, {
+          [SALES_MUTATION_LEDGER_STATE_HEADER]: SALES_MUTATION_LEDGER_ROLLED_BACK,
+        }),
+      )
+      .mockResolvedValueOnce('corrected')
+
+    await expect(
+      runPersistentSalesMutation({
+        context: 'return:create',
+        kind: 'sale-return-create',
+        payload: { ClientId: 7, Qty: 2 },
+        request,
+        userKey: 'net:user-1',
+      }),
+    ).rejects.toThrow('rolled back')
+
+    await expect(
+      runPersistentSalesMutation({
+        context: 'return:create',
+        kind: 'sale-return-create',
+        payload: { ClientId: 7, Qty: 3 },
+        request,
+        userKey: 'net:user-1',
+      }),
+    ).resolves.toBe('corrected')
+
+    expect(request.mock.calls[1][0]).toEqual({
+      ClientId: 7,
+      Qty: 3,
+    })
+    expect(request.mock.calls[1][1].operationId).not.toBe(
+      request.mock.calls[0][1].operationId,
+    )
+  })
+
+  it.each([503, 504])(
+    'retains the immutable payload and key after uncertain HTTP %s',
+    async (status) => {
+      const request = vi
+        .fn()
+        .mockRejectedValueOnce(
+          new ApiError('outcome unknown', status, null),
+        )
+        .mockResolvedValueOnce('recovered')
+
+      await expect(
+        runPersistentSalesMutation({
+          context: 'return:create',
+          kind: 'sale-return-create',
+          payload: { ClientId: 7, Qty: 2 },
+          request,
+          userKey: 'net:user-1',
+        }),
+      ).rejects.toThrow('outcome unknown')
+
+      await expect(
+        runPersistentSalesMutation({
+          context: 'return:create',
+          kind: 'sale-return-create',
+          payload: { ClientId: 7, Qty: 3 },
+          request,
+          userKey: 'net:user-1',
+        }),
+      ).rejects.toBeInstanceOf(
+        SalesPendingMutationRecoveredError,
+      )
+
+      expect(request.mock.calls[1][0]).toEqual({
+        ClientId: 7,
+        Qty: 2,
+      })
+      expect(request.mock.calls[1][1].operationId).toBe(
+        request.mock.calls[0][1].operationId,
+      )
+    },
+  )
 })

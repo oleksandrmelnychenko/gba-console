@@ -1,4 +1,5 @@
 import { apiRequest } from '../../../shared/api/apiClient'
+import { readSession } from '../../../shared/auth/session'
 import { normalizeDisplayNumber } from '../../../shared/supplyUkraineOrderNumbers'
 import type {
   Client,
@@ -34,6 +35,33 @@ import type {
 
 const TARGET_ORGANIZATION_CULTURE_PREFIX = 'uk'
 const SUPPLY_ORGANIZATION_LOOKUP_LIMIT = 20
+const SUPPLIER_FILE_OPERATION_STORAGE_PREFIX =
+  'gba_console:supply-ukraine-supplier-file:v1'
+const SUPPLIER_FILE_OPERATION_VERSION = 1
+const SUPPLIER_FILE_OWNER_HEADER =
+  'X-Supply-Order-Ukraine-Supplier-File-Owner'
+const inFlightSupplierFileUploads = new WeakMap<File, Map<string, Promise<SupplyOrderUkraineFromFileResponse>>>()
+const pendingSupplierFilesByOperation = new Map<string, File>()
+
+type SupplierFileSnapshot = {
+  file: {
+    digest: string
+    lastModified: number
+    name: string
+    size: number
+    type: string
+  }
+  orderUkraine: SupplyOrderUkraineSupplierCreatePayload
+  parseConfiguration: UkraineOrderFromSupplierParseConfiguration
+}
+
+type PendingSupplierFileOperation = {
+  fingerprint: string
+  operationNetUid: string
+  ownerNetUid: string
+  snapshot: SupplierFileSnapshot
+  version: number
+}
 
 export async function getSupplyUkraineOrders(
   params: SupplyUkraineOrdersSearchParams,
@@ -590,7 +618,7 @@ export async function uploadDirectSupplyOrderFromFile({
   return normalizeSupplyOrderFromFileResponse(result)
 }
 
-export async function uploadSupplyOrderUkraineFromSupplierFile({
+export function uploadSupplyOrderUkraineFromSupplierFile({
   file,
   parseConfiguration,
   orderUkraine,
@@ -599,18 +627,365 @@ export async function uploadSupplyOrderUkraineFromSupplierFile({
   parseConfiguration: UkraineOrderFromSupplierParseConfiguration
   orderUkraine: SupplyOrderUkraineSupplierCreatePayload
 }): Promise<SupplyOrderUkraineFromFileResponse> {
+  const ownerNetUid = getSupplierFileOwnerNetUid()
+  const orderSnapshot = snapshotSupplierFileOrder(orderUkraine)
+  const configurationSnapshot = snapshotJson(parseConfiguration)
+  const invocationKey = stableJson({
+    configurationSnapshot,
+    orderSnapshot,
+    ownerNetUid,
+  })
+  let fileRequests = inFlightSupplierFileUploads.get(file)
+
+  if (!fileRequests) {
+    fileRequests = new Map()
+    inFlightSupplierFileUploads.set(file, fileRequests)
+  }
+
+  const inFlight = fileRequests.get(invocationKey)
+
+  if (inFlight) {
+    return inFlight
+  }
+
+  const request = uploadSupplyOrderUkraineFromSupplierFileCore({
+    configurationSnapshot,
+    file,
+    orderSnapshot,
+    ownerNetUid,
+  }).finally(() => {
+    fileRequests?.delete(invocationKey)
+  })
+  fileRequests.set(invocationKey, request)
+
+  return request
+}
+
+async function uploadSupplyOrderUkraineFromSupplierFileCore({
+  configurationSnapshot,
+  file,
+  orderSnapshot,
+  ownerNetUid,
+}: {
+  configurationSnapshot: UkraineOrderFromSupplierParseConfiguration
+  file: File
+  orderSnapshot: SupplyOrderUkraineSupplierCreatePayload
+  ownerNetUid: string
+}): Promise<SupplyOrderUkraineFromFileResponse> {
+  const fileDigest = await sha256Bytes(await file.arrayBuffer())
+  const snapshot: SupplierFileSnapshot = {
+    file: {
+      digest: fileDigest,
+      lastModified: file.lastModified,
+      name: file.name,
+      size: file.size,
+      type: file.type,
+    },
+    orderUkraine: orderSnapshot,
+    parseConfiguration: configurationSnapshot,
+  }
+  const fingerprint = await sha256Text(stableJson({
+    kind: 'supply-order-ukraine:supplier-file:v1',
+    ownerNetUid,
+    snapshot,
+  }))
+  const pending = getOrCreateSupplierFileOperation(
+    ownerNetUid,
+    fingerprint,
+    snapshot,
+    file,
+  )
+  if (getSupplierFileOwnerNetUid() !== pending.ownerNetUid) {
+    clearSupplierFileOperation(pending)
+    throw new Error(
+      'Authenticated supplier-file order owner changed before the request was sent.',
+    )
+  }
   const formData = new FormData()
 
   formData.append('file', file)
-  formData.append('parseConfiguration', JSON.stringify(parseConfiguration))
-  formData.append('orderUkraine', JSON.stringify(orderUkraine))
+  formData.append('parseConfiguration', JSON.stringify(pending.snapshot.parseConfiguration))
+  formData.append('orderUkraine', JSON.stringify(pending.snapshot.orderUkraine))
 
-  const result = await apiRequest<unknown>('/supplies/ukraine/order/new/supplier/file', {
-    body: formData,
-    method: 'POST',
-  })
+  try {
+    const result = await apiRequest<unknown>('/supplies/ukraine/order/new/supplier/file', {
+      body: formData,
+      headers: {
+        'Idempotency-Key': pending.operationNetUid,
+        [SUPPLIER_FILE_OWNER_HEADER]: pending.ownerNetUid,
+      },
+      method: 'POST',
+      query: {
+        operationNetUid: pending.operationNetUid,
+      },
+    })
 
-  return normalizeSupplyOrderUkraineFromFileResponse(result)
+    clearSupplierFileOperation(pending)
+    return normalizeSupplyOrderUkraineFromFileResponse(result)
+  } catch (error) {
+    if (!isUnknownSupplierFileOutcome(error)) {
+      clearSupplierFileOperation(pending)
+    }
+
+    throw error
+  }
+}
+
+function getOrCreateSupplierFileOperation(
+  ownerNetUid: string,
+  fingerprint: string,
+  snapshot: SupplierFileSnapshot,
+  file: File,
+): PendingSupplierFileOperation {
+  const storage = requireSupplierFileStorage()
+  const storageKey = supplierFileStorageKey(ownerNetUid)
+  const persisted = readSupplierFileOperation(storage, storageKey)
+
+  if (persisted) {
+    if (
+      persisted.ownerNetUid !== ownerNetUid
+      || persisted.fingerprint !== fingerprint
+      || stableJson(persisted.snapshot) !== stableJson(snapshot)
+    ) {
+      throw new Error(
+        'A supplier-file order with an unknown outcome is pending. Retry its immutable payload before submitting a different order.',
+      )
+    }
+
+    const selectedFile = pendingSupplierFilesByOperation.get(persisted.operationNetUid)
+
+    if (selectedFile && selectedFile !== file) {
+      throw new Error(
+        'Retry the supplier-file order with the same selected File object.',
+      )
+    }
+
+    pendingSupplierFilesByOperation.set(persisted.operationNetUid, file)
+    return persisted
+  }
+
+  const operationNetUid = createSupplierFileOperationNetUid()
+  const pending: PendingSupplierFileOperation = {
+    fingerprint,
+    operationNetUid,
+    ownerNetUid,
+    snapshot,
+    version: SUPPLIER_FILE_OPERATION_VERSION,
+  }
+
+  try {
+    storage.setItem(storageKey, JSON.stringify(pending))
+    if (storage.getItem(storageKey) !== JSON.stringify(pending)) {
+      throw new Error('Supplier-file retry state verification failed.')
+    }
+  } catch {
+    throw new Error(
+      'Supplier-file retry state could not be persisted. The request was not sent.',
+    )
+  }
+
+  pendingSupplierFilesByOperation.set(operationNetUid, file)
+  return pending
+}
+
+function readSupplierFileOperation(
+  storage: Storage,
+  storageKey: string,
+): PendingSupplierFileOperation | null {
+  let serialized: string | null
+
+  try {
+    serialized = storage.getItem(storageKey)
+  } catch {
+    throw new Error(
+      'Supplier-file retry state could not be read. The request was not sent.',
+    )
+  }
+
+  if (!serialized) {
+    return null
+  }
+
+  try {
+    const candidate = JSON.parse(serialized) as Partial<PendingSupplierFileOperation>
+
+    if (
+      candidate.version !== SUPPLIER_FILE_OPERATION_VERSION
+      || !isNonEmptyGuid(candidate.operationNetUid)
+      || typeof candidate.ownerNetUid !== 'string'
+      || !candidate.ownerNetUid
+      || typeof candidate.fingerprint !== 'string'
+      || !/^[0-9a-f]{64}$/i.test(candidate.fingerprint)
+      || !candidate.snapshot
+      || typeof candidate.snapshot !== 'object'
+      || !candidate.snapshot.file
+      || !/^[0-9a-f]{64}$/i.test(candidate.snapshot.file.digest)
+    ) {
+      throw new Error('invalid supplier-file retry state')
+    }
+
+    return candidate as PendingSupplierFileOperation
+  } catch {
+    throw new Error(
+      'Persisted supplier-file retry state is invalid. The request was not sent.',
+    )
+  }
+}
+
+function clearSupplierFileOperation(pending: PendingSupplierFileOperation) {
+  pendingSupplierFilesByOperation.delete(pending.operationNetUid)
+
+  try {
+    const storage = requireSupplierFileStorage()
+    const storageKey = supplierFileStorageKey(pending.ownerNetUid)
+    const current = readSupplierFileOperation(storage, storageKey)
+
+    if (current?.operationNetUid === pending.operationNetUid) {
+      storage.removeItem(storageKey)
+    }
+  } catch {
+    // A definitive server response is authoritative. Stale recovery data must
+    // not turn a completed request into an apparent mutation failure.
+  }
+}
+
+function snapshotSupplierFileOrder(
+  order: SupplyOrderUkraineSupplierCreatePayload,
+): SupplyOrderUkraineSupplierCreatePayload {
+  return snapshotJson({
+    ClientAgreement: supplierFileIdentity(order.ClientAgreement),
+    Comment: order.Comment,
+    FromDate: order.FromDate,
+    InvDate: order.InvDate,
+    InvNumber: order.InvNumber,
+    IsDirectFromSupplier: order.IsDirectFromSupplier,
+    Organization: supplierFileIdentity(order.Organization),
+    Supplier: supplierFileIdentity(order.Supplier),
+  } as SupplyOrderUkraineSupplierCreatePayload)
+}
+
+function supplierFileIdentity<T>(entity: T): T {
+  const candidate = entity as Record<string, unknown>
+
+  return {
+    Id: candidate.Id,
+    NetUid: candidate.NetUid,
+  } as T
+}
+
+function snapshotJson<T>(value: T): T {
+  const serialized = JSON.stringify(value)
+
+  if (!serialized) {
+    throw new Error('The supplier-file order payload is not serializable.')
+  }
+
+  return JSON.parse(serialized) as T
+}
+
+function stableJson(value: unknown): string {
+  return JSON.stringify(sortJson(value))
+}
+
+function sortJson(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map(sortJson)
+  }
+
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value)
+        .filter(([, child]) => typeof child !== 'undefined')
+        .sort(([left], [right]) => left.localeCompare(right))
+        .map(([key, child]) => [key, sortJson(child)]),
+    )
+  }
+
+  return value
+}
+
+function getSupplierFileOwnerNetUid(): string {
+  let session
+
+  try {
+    session = readSession()
+  } catch {
+    session = null
+  }
+
+  const ownerNetUid = session?.userNetUid || session?.user?.NetUid
+
+  if (!ownerNetUid?.trim() || !isNonEmptyGuid(ownerNetUid.trim())) {
+    throw new Error(
+      'Authenticated supplier-file order owner identity is unavailable.',
+    )
+  }
+
+  return ownerNetUid.trim().toLowerCase()
+}
+
+function requireSupplierFileStorage(): Storage {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      return window.localStorage
+    }
+  } catch {
+    // Fall through to the durable-storage error.
+  }
+
+  throw new Error(
+    'Durable browser storage is required for supplier-file orders.',
+  )
+}
+
+function supplierFileStorageKey(ownerNetUid: string): string {
+  return `${SUPPLIER_FILE_OPERATION_STORAGE_PREFIX}:${ownerNetUid}`
+}
+
+function createSupplierFileOperationNetUid(): string {
+  if (!globalThis.crypto?.randomUUID) {
+    throw new Error(
+      'Secure supplier-file operation identity is unavailable.',
+    )
+  }
+
+  return globalThis.crypto.randomUUID()
+}
+
+async function sha256Text(value: string): Promise<string> {
+  return sha256Bytes(new TextEncoder().encode(value))
+}
+
+async function sha256Bytes(value: BufferSource): Promise<string> {
+  if (!globalThis.crypto?.subtle) {
+    throw new Error(
+      'Secure supplier-file payload hashing is unavailable.',
+    )
+  }
+
+  const digest = await globalThis.crypto.subtle.digest('SHA-256', value)
+
+  return Array.from(
+    new Uint8Array(digest),
+    (byte) => byte.toString(16).padStart(2, '0'),
+  ).join('')
+}
+
+function isNonEmptyGuid(value: unknown): value is string {
+  return (
+    typeof value === 'string'
+    && value !== '00000000-0000-0000-0000-000000000000'
+    && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)
+  )
+}
+
+function isUnknownSupplierFileOutcome(error: unknown): boolean {
+  if (!error || typeof error !== 'object' || !('status' in error)) {
+    return true
+  }
+
+  const status = Number(error.status)
+  return status === 0 || status === 504 || status >= 500
 }
 
 function buildSearchQuery(params: SupplyUkraineOrdersSearchParams) {

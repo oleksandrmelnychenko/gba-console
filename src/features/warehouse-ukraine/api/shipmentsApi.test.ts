@@ -109,6 +109,31 @@ describe('shipment sale mutation contracts', () => {
     })
   })
 
+  it('requires operations before active shipment mutations reach the API client', async () => {
+    const params = {
+      transporterNetId: '88888888-8888-4888-8888-888888888888',
+      from: '2026-07-01',
+      to: '2026-07-08',
+    }
+    const autoWithoutOperation = () => {
+      // @ts-expect-error Automatic shipment mutation requires an operation.
+      return getAutoShipmentList(params)
+    }
+    const updateWithoutOperation = () => {
+      // @ts-expect-error Shipment update requires an operation.
+      return updateShipmentList(buildShipmentList())
+    }
+    const documentWithoutOperation = () => {
+      // @ts-expect-error Shipment document mutation requires an operation.
+      return getShipmentCreatePageDocument(params)
+    }
+
+    await expect(autoWithoutOperation()).rejects.toThrow()
+    await expect(updateWithoutOperation()).rejects.toThrow()
+    await expect(documentWithoutOperation()).rejects.toThrow()
+    expect(apiRequestMock).not.toHaveBeenCalled()
+  })
+
   it('rejects a duplicate sale in a shipment before sending it', async () => {
     const shipmentList = buildShipmentList()
     shipmentList.ShipmentListItems.push({

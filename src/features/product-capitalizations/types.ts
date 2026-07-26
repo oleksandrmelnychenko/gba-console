@@ -87,6 +87,29 @@ export type ProductCapitalizationCreatePayload = {
   Storage: ProductCapitalizationStorage
 }
 
+export type ProductCapitalizationCreateReference = {
+  Id?: number
+  NetUid: string
+}
+
+export type ProductCapitalizationCreateWireItem = {
+  Product: ProductCapitalizationCreateReference
+  ProductId?: number
+  Qty: number
+  UnitPrice: number
+  Weight: number
+}
+
+export type ProductCapitalizationCreateWirePayload = {
+  Comment: string
+  FromDate: string
+  Organization: ProductCapitalizationCreateReference
+  OrganizationId?: number
+  ProductCapitalizationItems: ProductCapitalizationCreateWireItem[]
+  Storage: ProductCapitalizationCreateReference
+  StorageId?: number
+}
+
 export type ProductCapitalizationParseConfiguration = {
   EndRow: number
   PriceColumnNumber: number

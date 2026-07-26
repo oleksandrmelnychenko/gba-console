@@ -4,6 +4,10 @@ import {
   type AccountingMutationOperationOptions,
 } from '../../../shared/api/accountingMutationOperation'
 import { sanitizeConsumableOrderPayload } from '../consumableOrderPayload'
+import {
+  executeConsumableOrderMutation,
+  type ConsumableOrderMutationOperationOptions,
+} from './consumableOrderMutation'
 import type {
   ConsumableOrderCalculation,
   ConsumableOrdersResponse,
@@ -76,19 +80,45 @@ export async function getUnpaidConsumableOrdersByOrganization(organizationNetId:
   return normalizeConsumablesOrders(result)
 }
 
-export async function createConsumableOrder(order: ConsumablesOrder, documents: File[]): Promise<ConsumablesOrder | null> {
-  const result = await apiRequest<unknown>('/consumables/orders/upload/new', {
-    method: 'POST',
-    body: buildConsumableOrderFormData(order, documents),
+export async function createConsumableOrder(
+  order: ConsumablesOrder,
+  documents: File[],
+  operation?: ConsumableOrderMutationOperationOptions,
+): Promise<ConsumablesOrder | null> {
+  const result = await executeConsumableOrderMutation({
+    documents,
+    kind: 'add',
+    operation,
+    order,
+    request: (context) => apiRequest<unknown>('/consumables/orders/upload/new', {
+      body: context.body,
+      dedupe: false,
+      headers: context.headers,
+      method: 'POST',
+      ...(context.signal ? { signal: context.signal } : {}),
+    }),
   })
 
   return normalizeConsumablesOrder(result)
 }
 
-export async function updateConsumableOrder(order: ConsumablesOrder, documents: File[]): Promise<ConsumablesOrder | null> {
-  const result = await apiRequest<unknown>('/consumables/orders/upload/update', {
-    method: 'POST',
-    body: buildConsumableOrderFormData(order, documents),
+export async function updateConsumableOrder(
+  order: ConsumablesOrder,
+  documents: File[],
+  operation?: ConsumableOrderMutationOperationOptions,
+): Promise<ConsumablesOrder | null> {
+  const result = await executeConsumableOrderMutation({
+    documents,
+    kind: 'update',
+    operation,
+    order,
+    request: (context) => apiRequest<unknown>('/consumables/orders/upload/update', {
+      body: context.body,
+      dedupe: false,
+      headers: context.headers,
+      method: 'POST',
+      ...(context.signal ? { signal: context.signal } : {}),
+    }),
   })
 
   return normalizeConsumablesOrder(result)
@@ -235,14 +265,6 @@ export async function getFinanceDirectorUsers(): Promise<User[]> {
   })
 
   return readArrayPayload(result, ['Items', 'Users', 'Profiles', 'Data']) as User[]
-}
-
-function buildConsumableOrderFormData(order: ConsumablesOrder, documents: File[]): FormData {
-  const formData = new FormData()
-  formData.append('order', JSON.stringify(sanitizeConsumableOrderPayload(order)))
-  documents.forEach((document) => formData.append('documents', document))
-
-  return formData
 }
 
 function normalizeConsumableOrderCalculation(result: unknown): ConsumableOrderCalculation {

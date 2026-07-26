@@ -64,15 +64,16 @@ export async function getAutoShipmentList(
   params: AutoShipmentListParams,
   operation: SalesMutationOperationOptions,
 ): Promise<ShipmentList> {
+  const requiredOperation = requireShipmentMutationOperation(operation)
   const normalizedParams = validateShipmentMutationWindow(params)
   const result = await apiRequest<unknown>('/sales/shipments/update/filtered/auto', {
-    headers: getSalesMutationOperationHeaders(operation.operationId),
+    headers: getSalesMutationOperationHeaders(requiredOperation.operationId),
     query: {
       netId: normalizedParams.transporterNetId,
       from: normalizedParams.from,
       to: normalizedParams.to,
     },
-    ...(operation.signal ? { signal: operation.signal } : {}),
+    ...(requiredOperation.signal ? { signal: requiredOperation.signal } : {}),
   })
 
   return normalizeShipmentList(result)
@@ -107,6 +108,7 @@ export async function updateShipmentList(
   operation: SalesMutationOperationOptions,
   window?: { from: string; to: string },
 ): Promise<void> {
+  const requiredOperation = requireShipmentMutationOperation(operation)
   validatePersistedShipmentList(shipmentList)
   const normalizedWindow = window
     ? validateShipmentDateWindow(window.from, window.to)
@@ -115,11 +117,11 @@ export async function updateShipmentList(
   await apiRequest<unknown>('/sales/shipments/update', {
     method: 'POST',
     body: shipmentList,
-    headers: getSalesMutationOperationHeaders(operation.operationId),
+    headers: getSalesMutationOperationHeaders(requiredOperation.operationId),
     // Pass the active date window so the server only reconciles (soft-deletes) items the client
     // could actually see — items outside the window are never touched.
     query: normalizedWindow,
-    ...(operation.signal ? { signal: operation.signal } : {}),
+    ...(requiredOperation.signal ? { signal: requiredOperation.signal } : {}),
   })
 }
 
@@ -127,15 +129,16 @@ export async function getShipmentCreatePageDocument(
   params: AutoShipmentListParams,
   operation: SalesMutationOperationOptions,
 ): Promise<WarehouseUkraineExportDocument> {
+  const requiredOperation = requireShipmentMutationOperation(operation)
   const normalizedParams = validateShipmentMutationWindow(params)
   const result = await apiRequest<unknown>('/sales/shipments/document/create/export', {
-    headers: getSalesMutationOperationHeaders(operation.operationId),
+    headers: getSalesMutationOperationHeaders(requiredOperation.operationId),
     query: {
       netId: normalizedParams.transporterNetId,
       from: normalizedParams.from,
       to: normalizedParams.to,
     },
-    ...(operation.signal ? { signal: operation.signal } : {}),
+    ...(requiredOperation.signal ? { signal: requiredOperation.signal } : {}),
   })
 
   return normalizeExportDocument(result)
@@ -247,6 +250,20 @@ function validateShipmentMutationWindow(params: AutoShipmentListParams): AutoShi
       'Оберіть збереженого перевізника',
     ),
     ...validateShipmentDateWindow(params.from, params.to),
+  }
+}
+
+function requireShipmentMutationOperation(
+  operation: SalesMutationOperationOptions | undefined,
+): SalesMutationOperationOptions {
+  const operationId = requirePersistedGuid(
+    operation?.operationId,
+    'Операція відвантаження не має коректного ідентифікатора',
+  )
+
+  return {
+    operationId,
+    ...(operation?.signal ? { signal: operation.signal } : {}),
   }
 }
 

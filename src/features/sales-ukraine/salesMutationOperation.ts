@@ -3,6 +3,7 @@ import { ApiError } from '../../shared/api/apiClient'
 export const SALES_IDEMPOTENCY_HEADER = 'Idempotency-Key'
 export const SALES_MUTATION_LEDGER_STATE_HEADER = 'X-Mutation-Ledger-State'
 export const SALES_MUTATION_LEDGER_NOT_ENTERED = 'not-entered'
+export const SALES_MUTATION_LEDGER_ROLLED_BACK = 'rolled-back'
 
 export type SalesMutationFailureStatus = 'definitive-failure' | 'pending-reconciliation'
 
@@ -62,9 +63,9 @@ export function normalizeSalesOperationNetUid(operationId: string): string {
 }
 
 /** A rejection is definitive only when the server explicitly proves that the
- * request never entered its mutation ledger. The accepted response contract is
- * either `X-Mutation-Ledger-State: not-entered` or a top-level JSON
- * `MutationLedgerState: "not-entered"` marker on a 4xx response.
+ * request either never entered its mutation ledger or was fully rolled back.
+ * The accepted response contract is an `X-Mutation-Ledger-State` header or
+ * top-level `MutationLedgerState` marker on a 4xx response.
  */
 export function classifySalesMutationFailure(error: unknown): SalesMutationFailureStatus {
   if (error instanceof SalesMutationPreflightValidationError) {
@@ -78,10 +79,15 @@ export function classifySalesMutationFailure(error: unknown): SalesMutationFailu
   const headerState = normalizeLedgerState(error.headers.get(SALES_MUTATION_LEDGER_STATE_HEADER))
   const payloadState = getMutationLedgerState(error.payload)
 
-  return headerState === SALES_MUTATION_LEDGER_NOT_ENTERED ||
-    payloadState === SALES_MUTATION_LEDGER_NOT_ENTERED
+  return isDefinitiveLedgerState(headerState) ||
+    isDefinitiveLedgerState(payloadState)
     ? 'definitive-failure'
     : 'pending-reconciliation'
+}
+
+function isDefinitiveLedgerState(value: string): boolean {
+  return value === SALES_MUTATION_LEDGER_NOT_ENTERED ||
+    value === SALES_MUTATION_LEDGER_ROLLED_BACK
 }
 
 function getMutationLedgerState(payload: unknown): string {

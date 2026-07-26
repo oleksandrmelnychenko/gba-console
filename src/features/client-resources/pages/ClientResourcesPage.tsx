@@ -789,7 +789,7 @@ function useRegionsPanelModel(section: ClientResourceSection) {
           throw new Error(translate('Регіон не має NetUid'))
         }
 
-        await deleteClientResourceRegion(netId)
+        await deleteClientResourceRegion(deleteTarget.region)
         setSelectedRegionId(null)
         notifications.show({ color: 'green', message: translate('Регіон видалено') })
       }
@@ -801,7 +801,7 @@ function useRegionsPanelModel(section: ClientResourceSection) {
           throw new Error(translate('Код регіону не має NetUid'))
         }
 
-        await deleteClientResourceRegionCode(netId)
+        await deleteClientResourceRegionCode(deleteTarget.regionCode)
         notifications.show({ color: 'green', message: translate('Код регіону видалено') })
       }
 

@@ -1358,7 +1358,14 @@ export function ResalePage() {
     setWarning(null)
 
     try {
-      applyDetailResult(await updateResale(nextModel))
+      const result = await updateResale(nextModel)
+
+      if (result.warning) {
+        setWarning(result.warning)
+        return
+      }
+
+      applyDetailResult(result)
       notifications.show({
         color: 'green',
         message: t('Перепродаж збережено'),

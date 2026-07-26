@@ -1,4 +1,5 @@
 import { apiRequest } from '../../../shared/api/apiClient'
+import { executeAccountingMutation } from '../../../shared/api/accountingMutationOperation'
 import { toSaveDiscount } from '../productGroupDiscountPayload'
 import type {
   Agreement,
@@ -51,9 +52,18 @@ export async function createClient(client: Client, parentId?: string | null): Pr
 }
 
 export async function updateClient(client: Client): Promise<ClientUpsertResult> {
-  const result = await apiRequest<unknown>('/clients/update', {
-    method: 'POST',
-    body: prepareClientSavePayload(client),
+  const payload = prepareClientSavePayload(client)
+  const result = await executeAccountingMutation({
+    identity: client,
+    kind: 'clients:update',
+    payload,
+    request: (payloadSnapshot, context) => apiRequest<unknown>('/clients/update', {
+      method: 'POST',
+      body: payloadSnapshot,
+      dedupe: false,
+      headers: context.headers,
+      ...(context.signal ? { signal: context.signal } : {}),
+    }),
   })
 
   return normalizeClient(result)

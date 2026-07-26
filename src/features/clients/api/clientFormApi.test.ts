@@ -1,17 +1,31 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
+import { executeAccountingMutation } from '../../../shared/api/accountingMutationOperation'
 import type { Client } from '../types'
 import { createClient, deleteClient, getClientById, updateClient } from './clientFormApi'
 
 vi.mock('../../../shared/api/apiClient', () => ({
   apiRequest: vi.fn(),
 }))
+vi.mock('../../../shared/api/accountingMutationOperation', () => ({
+  executeAccountingMutation: vi.fn(),
+}))
 
 const apiRequestMock = vi.mocked(apiRequest)
+const executeAccountingMutationMock = vi.mocked(executeAccountingMutation)
+const clientUpdateHeaders = {
+  'Idempotency-Key': '11111111-1111-4111-8111-111111111111',
+}
 
 describe('client form API contracts', () => {
   beforeEach(() => {
     apiRequestMock.mockReset()
+    executeAccountingMutationMock.mockReset()
+    executeAccountingMutationMock.mockImplementation(async (options) =>
+      options.request(options.payload, {
+        headers: clientUpdateHeaders,
+        operationId: clientUpdateHeaders['Idempotency-Key'],
+      }))
   })
 
   it('gets a client by net id', async () => {
@@ -64,6 +78,8 @@ describe('client form API contracts', () => {
     expect(apiRequestMock).toHaveBeenCalledWith('/clients/update', {
       method: 'POST',
       body: client,
+      dedupe: false,
+      headers: clientUpdateHeaders,
     })
   })
 
@@ -200,6 +216,8 @@ describe('client form API contracts', () => {
         NetUid: 'client-net-id',
         ClientAgreements: [{ Agreement: { NetUid: 'agreement-1' } }],
       },
+      dedupe: false,
+      headers: clientUpdateHeaders,
     })
   })
 
@@ -247,6 +265,8 @@ describe('client form API contracts', () => {
           },
         ],
       },
+      dedupe: false,
+      headers: clientUpdateHeaders,
     })
   })
 

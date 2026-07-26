@@ -154,6 +154,7 @@ function useProductStoragesPageModel() {
   const exportScopeKey = `${selectedStorageNetId}|${fromDate}|${toDate}`
   const exportScopeKeyRef = useRef(exportScopeKey)
   const exportRequestRef = useRef(0)
+  const transferSubmitPromiseRef = useRef<Promise<void> | null>(null)
   const filterError = getDateRangeError(fromDate, toDate)
   const availabilities = availabilityList.items
   const totalAvailabilities = availabilityList.total
@@ -651,7 +652,11 @@ function useProductStoragesPageModel() {
   }
 
   async function submitAction() {
-    if (!actionModal || isActionSubmitting) {
+    if (
+      !actionModal ||
+      isActionSubmitting ||
+      (actionModal.mode === 'transfer' && transferSubmitPromiseRef.current)
+    ) {
       return
     }
 
@@ -691,7 +696,7 @@ function useProductStoragesPageModel() {
           return
         }
 
-        await createProductStorageTransfer({
+        const transferRequest = createProductStorageTransfer({
           cellNumber: actionModal.scope === 'single' ? actionForm.cellNumber.trim() : '',
           rowNumber: actionModal.scope === 'single' ? actionForm.rowNumber.trim() : '',
           storageNumber: actionModal.scope === 'single' ? actionForm.storageNumber.trim() : '',
@@ -708,6 +713,15 @@ function useProductStoragesPageModel() {
             ToStorage: selectedToStorage,
           },
         })
+        transferSubmitPromiseRef.current = transferRequest
+
+        try {
+          await transferRequest
+        } finally {
+          if (transferSubmitPromiseRef.current === transferRequest) {
+            transferSubmitPromiseRef.current = null
+          }
+        }
       } else if (actionModal.mode === 'writeoff') {
         await createProductStorageWriteOff({
           Comment: actionForm.comment.trim(),

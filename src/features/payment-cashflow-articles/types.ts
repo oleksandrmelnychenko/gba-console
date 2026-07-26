@@ -7,6 +7,7 @@ export type PaymentCashflowArticle = {
   [key: string]: unknown
 }
 
-export type PaymentCashflowArticlePayload = PaymentCashflowArticle & {
+export type PaymentCashflowArticlePayload = {
+  NetUid?: string
   OperationName: string
 }

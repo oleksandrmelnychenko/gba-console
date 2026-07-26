@@ -39,6 +39,7 @@ type ArticleFormState = {
 }
 
 const ARTICLES_PATH = '/accounting/payment-expense-articles'
+const ARTICLE_NAME_MAX_LENGTH = 150
 const PERMISSION_DELETE_EXPENSE_ARTICLE = 'Accounting_Payment_Expense_Articles_Edit_DeleteBtn_PKEY'
 const PERMISSION_SAVE_EXPENSE_ARTICLE = 'Accounting_Payment_Expense_Articles_Edit_SaveBtn_PKEY'
 
@@ -134,8 +135,18 @@ export function PaymentExpenseArticleFormPage() {
       return
     }
 
+    const netUid = article.NetUid || id
+
+    if (isEditMode && !netUid) {
+      setFormState((current) => ({
+        ...current,
+        error: t('Не вдалося визначити статтю витрат'),
+      }))
+      return
+    }
+
     const payload: PaymentExpenseArticlePayload = {
-      ...article,
+      ...(netUid ? { NetUid: netUid } : {}),
       OperationName: trimmedOperationName,
     }
 
@@ -253,6 +264,7 @@ export function PaymentExpenseArticleFormPage() {
           <TextInput
             disabled={isLoading || isSaving || isDeleting}
             label={t('Назва')}
+            maxLength={ARTICLE_NAME_MAX_LENGTH}
             placeholder={t('Вкажіть назву')}
             required
             value={operationName}

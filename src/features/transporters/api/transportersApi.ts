@@ -1,5 +1,6 @@
 import { apiRequest } from '../../../shared/api/apiClient'
 import type { Transporter, TransporterType } from '../types'
+import { transporterCreateOperation } from './transporterMutationOperation'
 
 export async function getTransporterTypes(): Promise<TransporterType[]> {
   const result = await apiRequest<unknown>('/transporters/types/all')
@@ -18,12 +19,23 @@ export async function getTransportersByType(transporterTypeNetId: string): Promi
 }
 
 export async function createTransporter(transporter: FormData): Promise<Transporter | null> {
-  const result = await apiRequest<unknown>('/transporters/new', {
-    method: 'POST',
-    body: transporter,
-  })
+  const operation = await transporterCreateOperation.prepare(transporter)
 
-  return normalizeTransporter(result)
+  try {
+    const result = await apiRequest<unknown>('/transporters/new', {
+      method: 'POST',
+      body: transporter,
+      headers: {
+        'Idempotency-Key': operation.operationId,
+      },
+    })
+    transporterCreateOperation.complete(operation)
+
+    return normalizeTransporter(result)
+  } catch (error) {
+    transporterCreateOperation.handleFailure(operation, error)
+    throw error
+  }
 }
 
 export async function updateTransporter(transporter: FormData): Promise<Transporter | null> {
@@ -37,6 +49,7 @@ export async function updateTransporter(transporter: FormData): Promise<Transpor
 
 export async function archiveTransporter(netId: string): Promise<void> {
   await apiRequest<unknown>('/transporters/delete', {
+    method: 'DELETE',
     query: {
       netId,
     },

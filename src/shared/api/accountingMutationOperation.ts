@@ -1,4 +1,4 @@
-import { ApiError } from './apiClient'
+import { ApiError, apiRequest } from './apiClient'
 import { readSession } from '../auth/session'
 
 export const ACCOUNTING_IDEMPOTENCY_HEADER = 'Idempotency-Key'
@@ -10,6 +10,15 @@ export type AccountingMutationFailureStatus = 'definitive-failure' | 'unknown-ou
 export type AccountingMutationOperationOptions = {
   operationId?: string
   signal?: AbortSignal
+}
+
+export type AccountingMutationStatus = {
+  OperationKind: string
+  OperationNetUid: string
+  ResultEntityKind?: string | null
+  ResultEntityNetUid?: string | null
+  State: 'completed' | 'pending'
+  Updated?: string
 }
 
 type AccountingMutationRequestContext = {
@@ -118,6 +127,31 @@ export function clearPendingAccountingMutation(operationId: string): boolean {
   clearPendingMutation(pending)
 
   return true
+}
+
+export async function getAccountingMutationStatus(
+  operationId: string,
+): Promise<AccountingMutationStatus | null> {
+  const normalizedOperationId =
+    normalizeAccountingOperationId(operationId)
+
+  try {
+    return await apiRequest<AccountingMutationStatus>(
+      '/payments/mutations/status',
+      {
+        dedupe: false,
+        query: {
+          operationNetUid: normalizedOperationId,
+        },
+      },
+    )
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) {
+      return null
+    }
+
+    throw error
+  }
 }
 
 export function snapshotImmutableAccountingPayload<T>(payload: T): T {

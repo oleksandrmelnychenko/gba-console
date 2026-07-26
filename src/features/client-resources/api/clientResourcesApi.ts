@@ -1,4 +1,10 @@
 import { apiRequest } from '../../../shared/api/apiClient'
+import { currencyCreateOperation } from './currencyMutationOperation'
+import { transporterCreateOperation } from '../../transporters/api/transporterMutationOperation'
+import {
+  regionCodeCreateOperation,
+  regionCreateOperation,
+} from './referenceCreateOperation'
 import type {
   ClientResourceClientType,
   ClientResourceClientTypeRole,
@@ -22,28 +28,45 @@ export async function getClientResourceRegions(): Promise<ClientResourceRegion[]
 }
 
 export async function createClientResourceRegion(region: ClientResourceRegion): Promise<ClientResourceRegion | null> {
-  const result = await apiRequest<unknown>('/regions/new', {
-    method: 'POST',
-    body: region,
-  })
+  const operation = await regionCreateOperation.prepare(region)
 
-  return normalizeResourceItem<ClientResourceRegion>(result)
+  try {
+    const result = await apiRequest<unknown>('/regions/new', {
+      method: 'POST',
+      body: region,
+      headers: {
+        'Idempotency-Key': operation.operationId,
+      },
+    })
+    regionCreateOperation.complete(operation)
+    return normalizeResourceItem<ClientResourceRegion>(result)
+  } catch (error) {
+    regionCreateOperation.handleFailure(operation, error)
+    throw error
+  }
 }
 
 export async function updateClientResourceRegion(region: ClientResourceRegion): Promise<ClientResourceRegion | null> {
   const result = await apiRequest<unknown>('/regions/update', {
-    method: 'POST',
+    method: 'PUT',
     body: region,
   })
 
   return normalizeResourceItem<ClientResourceRegion>(result)
 }
 
-export async function deleteClientResourceRegion(netId: string): Promise<ClientResourceRegion | null> {
+export async function deleteClientResourceRegion(
+  region: ClientResourceRegion,
+): Promise<ClientResourceRegion | null> {
+  if (!region.NetUid || !region.Updated) {
+    throw new Error('Регіон потрібно оновити перед видаленням')
+  }
+
   const result = await apiRequest<unknown>('/regions/delete', {
     method: 'DELETE',
     query: {
-      netId,
+      netId: region.NetUid,
+      expectedUpdated: region.Updated,
     },
   })
 
@@ -53,30 +76,47 @@ export async function deleteClientResourceRegion(netId: string): Promise<ClientR
 export async function createClientResourceRegionCode(
   regionCode: ClientResourceRegionCode,
 ): Promise<ClientResourceRegionCode | null> {
-  const result = await apiRequest<unknown>('/regions/codes/new', {
-    method: 'POST',
-    body: regionCode,
-  })
+  const operation = await regionCodeCreateOperation.prepare(regionCode)
 
-  return normalizeResourceItem<ClientResourceRegionCode>(result)
+  try {
+    const result = await apiRequest<unknown>('/regions/codes/new', {
+      method: 'POST',
+      body: regionCode,
+      headers: {
+        'Idempotency-Key': operation.operationId,
+      },
+    })
+    regionCodeCreateOperation.complete(operation)
+    return normalizeResourceItem<ClientResourceRegionCode>(result)
+  } catch (error) {
+    regionCodeCreateOperation.handleFailure(operation, error)
+    throw error
+  }
 }
 
 export async function updateClientResourceRegionCode(
   regionCode: ClientResourceRegionCode,
 ): Promise<ClientResourceRegionCode | null> {
   const result = await apiRequest<unknown>('/regions/codes/update', {
-    method: 'POST',
+    method: 'PUT',
     body: regionCode,
   })
 
   return normalizeResourceItem<ClientResourceRegionCode>(result)
 }
 
-export async function deleteClientResourceRegionCode(netId: string): Promise<void> {
+export async function deleteClientResourceRegionCode(
+  regionCode: ClientResourceRegionCode,
+): Promise<void> {
+  if (!regionCode.NetUid || !regionCode.Updated) {
+    throw new Error('Код регіону потрібно оновити перед видаленням')
+  }
+
   await apiRequest<unknown>('/regions/codes/delete', {
     method: 'DELETE',
     query: {
-      netId,
+      netId: regionCode.NetUid,
+      expectedUpdated: regionCode.Updated,
     },
   })
 }
@@ -88,19 +128,30 @@ export async function getClientResourceCurrencies(): Promise<ClientResourceCurre
 export async function createClientResourceCurrency(
   currency: ClientResourceCurrency,
 ): Promise<ClientResourceCurrency | null> {
-  const result = await apiRequest<unknown>('/currencies/new', {
-    method: 'POST',
-    body: currency,
-  })
+  const operation = await currencyCreateOperation.prepare(currency)
 
-  return normalizeResourceItem<ClientResourceCurrency>(result)
+  try {
+    const result = await apiRequest<unknown>('/currencies/new', {
+      method: 'POST',
+      body: currency,
+      headers: {
+        'Idempotency-Key': operation.operationId,
+      },
+    })
+    currencyCreateOperation.complete(operation)
+
+    return normalizeResourceItem<ClientResourceCurrency>(result)
+  } catch (error) {
+    currencyCreateOperation.handleFailure(operation, error)
+    throw error
+  }
 }
 
 export async function updateClientResourceCurrency(
   currency: ClientResourceCurrency,
 ): Promise<ClientResourceCurrency | null> {
   const result = await apiRequest<unknown>('/currencies/update', {
-    method: 'POST',
+    method: 'PUT',
     body: currency,
   })
 
@@ -414,12 +465,23 @@ export async function getClientResourceTransporters(typeNetId: string): Promise<
 export async function createClientResourceTransporter(
   transporter: FormData,
 ): Promise<ClientResourceTransporter | null> {
-  const result = await apiRequest<unknown>('/transporters/new', {
-    method: 'POST',
-    body: transporter,
-  })
+  const operation = await transporterCreateOperation.prepare(transporter)
 
-  return normalizeResourceItem<ClientResourceTransporter>(result)
+  try {
+    const result = await apiRequest<unknown>('/transporters/new', {
+      method: 'POST',
+      body: transporter,
+      headers: {
+        'Idempotency-Key': operation.operationId,
+      },
+    })
+    transporterCreateOperation.complete(operation)
+
+    return normalizeResourceItem<ClientResourceTransporter>(result)
+  } catch (error) {
+    transporterCreateOperation.handleFailure(operation, error)
+    throw error
+  }
 }
 
 export async function updateClientResourceTransporter(
@@ -435,6 +497,7 @@ export async function updateClientResourceTransporter(
 
 export async function deleteClientResourceTransporter(netId: string): Promise<ClientResourceTransporter | null> {
   const result = await apiRequest<unknown>('/transporters/delete', {
+    method: 'DELETE',
     query: {
       netId,
     },

@@ -190,6 +190,29 @@ function useAvailablePaymentsDetailDrawerModel({
   const [outcomeOperation] = useState(createAvailablePaymentOutcomeOperation)
 
   useEffect(() => {
+    let cancelled = false
+
+    void outcomeOperation.reconcile()
+      .then((status) => {
+        if (cancelled || status !== 'completed') {
+          return
+        }
+
+        notifications.show({
+          color: 'green',
+          message: t('Попередній видатковий ордер успішно створено'),
+        })
+        onClearMarked()
+        onChanged()
+      })
+      .catch(() => undefined)
+
+    return () => {
+      cancelled = true
+    }
+  }, [onChanged, onClearMarked, outcomeOperation, t])
+
+  useEffect(() => {
     if (outcomeModels.length === 0) {
       return
     }
@@ -420,7 +443,10 @@ function useAvailablePaymentsDetailDrawerModel({
       return
     }
 
-    if (outcomeOperation.hasPending()) {
+    if (
+      outcomeModels.length > 0 &&
+      outcomeOperation.hasPending()
+    ) {
       setError(t('Неможливо закрити форму, доки результат попередньої спроби невідомий. Повторіть без змін.'))
       return
     }
@@ -814,15 +840,16 @@ function useAvailablePaymentsDetailDrawerModel({
     }
     let operationId: string
 
-    try {
-      operationId = outcomeOperation.getOrCreate(request)
-    } catch {
-      setError(t('Попередня спроба має невизначений результат. Повторіть її без змін.'))
-      return
-    }
-
     setSaving(true)
     setError(null)
+
+    try {
+      operationId = await outcomeOperation.getOrCreate(request)
+    } catch {
+      setError(t('Попередня спроба має невизначений результат. Повторіть її без змін.'))
+      setSaving(false)
+      return
+    }
 
     try {
       await createAvailablePaymentOutcome(request, { operationId })

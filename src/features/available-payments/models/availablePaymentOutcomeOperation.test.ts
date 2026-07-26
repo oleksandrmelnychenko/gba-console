@@ -1,10 +1,19 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../../../shared/api/apiClient'
 import { createAvailablePaymentOutcomeOperation } from './availablePaymentOutcomeOperation'
 import type { AvailablePaymentOutcomeRequest } from '../types'
 
 describe('available payment outcome operation', () => {
-  it('reuses the submission id for an exact retry and resets only after success', () => {
+  beforeEach(() => {
+    sessionStorage.clear()
+    localStorage.clear()
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('reuses the submission id for an exact retry and resets only after success', async () => {
     const firstOperationId = '11111111-1111-4111-8111-111111111111'
     const secondOperationId = '22222222-2222-4222-8222-222222222222'
     const createOperationId = vi.fn()
@@ -13,8 +22,8 @@ describe('available payment outcome operation', () => {
     const operation = createAvailablePaymentOutcomeOperation(createOperationId)
     const request = createRequest(100)
 
-    const firstAttempt = operation.getOrCreate(request)
-    const retryAttempt = operation.getOrCreate(request)
+    const firstAttempt = await operation.getOrCreate(request)
+    const retryAttempt = await operation.getOrCreate(request)
 
     expect(firstAttempt).toBe(firstOperationId)
     expect(retryAttempt).toBe(firstOperationId)
@@ -22,26 +31,26 @@ describe('available payment outcome operation', () => {
 
     operation.complete(firstAttempt)
 
-    expect(operation.getOrCreate(request)).toBe(secondOperationId)
+    await expect(operation.getOrCreate(request)).resolves.toBe(secondOperationId)
     expect(createOperationId).toHaveBeenCalledTimes(2)
   })
 
-  it('blocks a changed financial payload after an unknown outcome', () => {
+  it('blocks a changed financial payload after an unknown outcome', async () => {
     const operation = createAvailablePaymentOutcomeOperation(
       () => '11111111-1111-4111-8111-111111111111',
     )
     const request = createRequest(100)
-    const operationId = operation.getOrCreate(request)
+    const operationId = await operation.getOrCreate(request)
 
     operation.handleFailure(operationId, new ApiError('response lost', 503, null))
 
     expect(operation.hasPending()).toBe(true)
-    expect(() => operation.getOrCreate(createRequest(101)))
-      .toThrow('A pending outcome-payment submission can only be retried without changes')
-    expect(operation.getOrCreate(request)).toBe(operationId)
+    await expect(operation.getOrCreate(createRequest(101)))
+      .rejects.toThrow('A pending outcome-payment submission can only be retried without changes')
+    await expect(operation.getOrCreate(request)).resolves.toBe(operationId)
   })
 
-  it('blocks replacing an attachment after an unknown outcome', () => {
+  it('blocks replacing an attachment after an unknown outcome', async () => {
     const operation = createAvailablePaymentOutcomeOperation(
       () => '11111111-1111-4111-8111-111111111111',
     )
@@ -55,20 +64,53 @@ describe('available payment outcome operation', () => {
     })
     const request = createRequest(100, [firstFile])
 
-    operation.getOrCreate(request)
+    await operation.getOrCreate(request)
 
-    expect(() => operation.getOrCreate(createRequest(100, [replacementFile])))
-      .toThrow('A pending outcome-payment submission can only be retried without changes')
+    await expect(operation.getOrCreate(createRequest(100, [replacementFile])))
+      .rejects.toThrow('A pending outcome-payment submission can only be retried without changes')
   })
 
-  it('allows a corrected submission when the server proves the ledger was not entered', () => {
+  it('restores the same operation after reload for a byte-identical reselected file', async () => {
+    const operationId = '11111111-1111-4111-8111-111111111111'
+    const originalFile = new File(['proof'], 'proof.pdf', {
+      lastModified: 1,
+      type: 'application/pdf',
+    })
+    const first = createAvailablePaymentOutcomeOperation(() => operationId)
+
+    await expect(first.getOrCreate(createRequest(100, [originalFile])))
+      .resolves.toBe(operationId)
+
+    const persisted = sessionStorage.getItem(
+      'gba:available-payment-outcome-operation:v1:anonymous',
+    ) || ''
+    expect(persisted).toContain(operationId)
+    expect(persisted).not.toContain('Оплата постачальнику')
+    expect(persisted).not.toContain('proof.pdf')
+
+    const restored = createAvailablePaymentOutcomeOperation(
+      () => '22222222-2222-4222-8222-222222222222',
+    )
+    const reselectedFile = new File(['proof'], 'proof.pdf', {
+      lastModified: 1,
+      type: 'application/pdf',
+    })
+
+    expect(restored.hasPending()).toBe(true)
+    await expect(restored.getOrCreate(createRequest(100, [reselectedFile])))
+      .resolves.toBe(operationId)
+    restored.complete(operationId)
+    expect(sessionStorage.length).toBe(0)
+  })
+
+  it('allows a corrected submission when the server proves the ledger was not entered', async () => {
     const firstOperationId = '11111111-1111-4111-8111-111111111111'
     const secondOperationId = '22222222-2222-4222-8222-222222222222'
     const createOperationId = vi.fn()
       .mockReturnValueOnce(firstOperationId)
       .mockReturnValueOnce(secondOperationId)
     const operation = createAvailablePaymentOutcomeOperation(createOperationId)
-    const operationId = operation.getOrCreate(createRequest(100))
+    const operationId = await operation.getOrCreate(createRequest(100))
 
     operation.handleFailure(
       operationId,
@@ -78,7 +120,48 @@ describe('available payment outcome operation', () => {
     )
 
     expect(operation.hasPending()).toBe(false)
-    expect(operation.getOrCreate(createRequest(101))).toBe(secondOperationId)
+    await expect(operation.getOrCreate(createRequest(101)))
+      .resolves.toBe(secondOperationId)
+  })
+
+  it('settles a persisted unknown outcome after the server confirms completion', async () => {
+    const operationId = '11111111-1111-4111-8111-111111111111'
+    const first = createAvailablePaymentOutcomeOperation(
+      () => operationId,
+    )
+    await first.getOrCreate(createRequest(100))
+
+    const getStatus = vi.fn().mockResolvedValue({
+      OperationKind: 'outcome-payment:add-supplies',
+      OperationNetUid: operationId,
+      State: 'completed',
+    })
+    const restored = createAvailablePaymentOutcomeOperation(
+      () => '22222222-2222-4222-8222-222222222222',
+      getStatus,
+    )
+
+    await expect(restored.reconcile())
+      .resolves.toBe('completed')
+    expect(getStatus).toHaveBeenCalledWith(operationId)
+    expect(restored.hasPending()).toBe(false)
+    expect(sessionStorage.length).toBe(0)
+  })
+
+  it('keeps the operation key when the ledger is not yet visible', async () => {
+    const operationId = '11111111-1111-4111-8111-111111111111'
+    const operation = createAvailablePaymentOutcomeOperation(
+      () => operationId,
+      vi.fn().mockResolvedValue(null),
+    )
+    const request = createRequest(100)
+    await operation.getOrCreate(request)
+
+    await expect(operation.reconcile())
+      .resolves.toBe('missing')
+    expect(operation.hasPending()).toBe(true)
+    await expect(operation.getOrCreate(request))
+      .resolves.toBe(operationId)
   })
 })
 

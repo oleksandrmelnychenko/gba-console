@@ -43,8 +43,33 @@ describe('consumable order payload', () => {
     expect(payload.ConsumablesOrderDocuments?.[0]).not.toHaveProperty('NetUid')
     expect(payload.ConsumablesOrderItems?.[0]?.NetUid).toBe(validNetUid)
     expect(payload.ConsumablesOrderItems?.[1]).not.toHaveProperty('NetUid')
+    expect(payload.ConsumablesOrderItems?.[1]).not.toHaveProperty('Id')
     expect(payload.ConsumablesOrderItems?.[1]?.PaymentCostMovementOperation).not.toHaveProperty('NetUid')
     expect(payload.ConsumablesOrderItems?.[1]?.PaymentCostMovementOperation?.PaymentCostMovement).not.toHaveProperty('NetUid')
+  })
+
+  it('removes nonpositive nested IDs while preserving canonical IDs', () => {
+    const payload = sanitizeConsumableOrderPayload({
+      Id: 12,
+      ConsumablesOrderDocuments: [
+        { Id: 0, FileName: 'new.pdf' },
+        { Id: 44, FileName: 'existing.pdf' },
+      ],
+      ConsumablesOrderItems: [
+        {
+          Id: -1,
+          ConsumableProduct: { Id: 71 },
+          PaymentCostMovementOperation: { Id: 0 },
+        },
+      ],
+    })
+
+    expect(payload.Id).toBe(12)
+    expect(payload.ConsumablesOrderDocuments?.[0]).not.toHaveProperty('Id')
+    expect(payload.ConsumablesOrderDocuments?.[1]?.Id).toBe(44)
+    expect(payload.ConsumablesOrderItems?.[0]).not.toHaveProperty('Id')
+    expect(payload.ConsumablesOrderItems?.[0]?.ConsumableProduct?.Id).toBe(71)
+    expect(payload.ConsumablesOrderItems?.[0]?.PaymentCostMovementOperation).not.toHaveProperty('Id')
   })
 
   it('does not attach an existing payment-task scalar to a new consumables order', () => {

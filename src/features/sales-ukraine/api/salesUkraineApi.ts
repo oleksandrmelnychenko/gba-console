@@ -401,11 +401,12 @@ export async function convertVatSaleAndGetPaymentDocument(
   file: File | null,
   operation: SalesMutationOperationOptions,
 ): Promise<SaleDocumentResult> {
+  const requiredOperation = requirePaymentDocumentOperation(operation)
   const result = await apiRequest<unknown>('/sales/update/get/payment/document', {
-    body: buildSaleFormData(sale, file, operation.operationId),
-    headers: getSalesMutationOperationHeaders(operation.operationId),
+    body: buildSaleFormData(sale, file, requiredOperation.operationId),
+    headers: getSalesMutationOperationHeaders(requiredOperation.operationId),
     method: 'POST',
-    ...(operation.signal ? { signal: operation.signal } : {}),
+    ...(requiredOperation.signal ? { signal: requiredOperation.signal } : {}),
   })
 
   return extractDocumentResult(result)
@@ -630,11 +631,13 @@ export function getSaleShipmentListDocument(netId: string): Promise<SaleDocument
   return fetchSaleDocument('/sales/shipment/list/print/documents', { netId })
 }
 
-export function getSalePaymentDocument(
+export async function getSalePaymentDocument(
   netId: string,
-  operation?: SalesMutationOperationOptions,
+  operation: SalesMutationOperationOptions | undefined,
 ): Promise<SaleDocumentResult> {
-  return fetchSaleDocument('/sales/get/payment/document', { netId }, operation)
+  const requiredOperation = requirePaymentDocumentOperation(operation)
+
+  return fetchSaleDocument('/sales/get/payment/document', { netId }, requiredOperation)
 }
 
 export function getSalePzDocument(netId: string): Promise<SaleDocumentResult> {
@@ -655,6 +658,20 @@ export function getSaleActForEditingHistoryDocument(netId: string, historyNetId:
 
 export function getSaleShipmentListHistoryDocument(netId: string, historyNetId: string): Promise<SaleDocumentResult> {
   return fetchSaleDocument('/sales/shipment/list/print/documents/history', { historyNetId, netId })
+}
+
+function requirePaymentDocumentOperation(
+  operation: SalesMutationOperationOptions | undefined,
+): SalesMutationOperationOptions {
+  const operationId = requirePersistedGuid(
+    operation?.operationId,
+    translate('Операція формування платіжного документа не має коректного ідентифікатора'),
+  )
+
+  return {
+    operationId,
+    ...(operation?.signal ? { signal: operation.signal } : {}),
+  }
 }
 
 function extractDocumentResult(result: unknown): SaleDocumentResult {

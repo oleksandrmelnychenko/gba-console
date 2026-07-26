@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import {
+  changeClientPassword,
   createClientWorkplace,
   updateClientWorkplace,
   uploadClientContract,
@@ -16,6 +17,31 @@ const apiRequestMock = vi.mocked(apiRequest)
 describe('client cabinet API contracts', () => {
   beforeEach(() => {
     apiRequestMock.mockReset()
+  })
+
+  it('sends password changes only in the request body', async () => {
+    apiRequestMock.mockResolvedValueOnce({ NetUid: 'client-1' })
+
+    await changeClientPassword(
+      'client-1',
+      'secret-value',
+      '+380000000000',
+    )
+
+    expect(apiRequestMock).toHaveBeenCalledWith(
+      '/clients/update/password',
+      {
+        method: 'PATCH',
+        body: {
+          mobileNumber: '+380000000000',
+          netId: 'client-1',
+          password: 'secret-value',
+        },
+      },
+    )
+    expect(apiRequestMock.mock.calls[0]?.[1]).not.toHaveProperty(
+      'query',
+    )
   })
 
   it('creates workplaces with compact client and agreement references', async () => {

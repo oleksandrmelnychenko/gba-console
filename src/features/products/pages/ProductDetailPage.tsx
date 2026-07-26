@@ -66,6 +66,7 @@ import {
   getProductStorageLocationHistory,
   getProductWriteOffRulesByProductGroupNetId,
   getProductWriteOffRulesByProductNetId,
+  groupProductPlacementsForEditing,
   updateProduct,
   updateProductWithImages,
   updateProductPlacements,
@@ -833,7 +834,8 @@ function ProductPlacementEditor({
     setError(null)
 
     try {
-      await updateProductPlacements(drafts.map(stripProductPlacementDraft))
+      const savedPlacements = await updateProductPlacements(drafts.map(stripProductPlacementDraft))
+      setDrafts(cloneProductPlacements(savedPlacements))
       notifications.show({ color: 'green', message: t('Місця зберігання збережено') })
       setEditing(false)
       onClose()
@@ -889,6 +891,7 @@ function ProductPlacementEditor({
                     <Table.Td>
                       <TextInput
                         className="product-placement-editor__field"
+                        maxLength={5}
                         size="xs"
                         value={placement.StorageNumber || ''}
                         onChange={(event) => updatePlacementDraft(index, 'StorageNumber', event.currentTarget.value)}
@@ -897,6 +900,7 @@ function ProductPlacementEditor({
                     <Table.Td>
                       <TextInput
                         className="product-placement-editor__field"
+                        maxLength={5}
                         size="xs"
                         value={placement.RowNumber || ''}
                         onChange={(event) => updatePlacementDraft(index, 'RowNumber', event.currentTarget.value)}
@@ -905,6 +909,7 @@ function ProductPlacementEditor({
                     <Table.Td>
                       <TextInput
                         className="product-placement-editor__field"
+                        maxLength={5}
                         size="xs"
                         value={placement.CellNumber || ''}
                         onChange={(event) => updatePlacementDraft(index, 'CellNumber', event.currentTarget.value)}
@@ -2539,7 +2544,7 @@ function revokeFilePreviewUrls(urls: string[]) {
 }
 
 function cloneProductPlacements(placements: ProductPlacement[]): ProductPlacementDraft[] {
-  return placements.map((placement) => ({
+  return groupProductPlacementsForEditing(placements).map((placement) => ({
     ...placement,
     DraftKey: createProductPlacementDraftKey(placement),
   }))

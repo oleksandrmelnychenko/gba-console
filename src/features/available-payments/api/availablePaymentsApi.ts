@@ -237,6 +237,9 @@ export async function createAvailablePaymentOutcome({
     dedupe: false,
     headers: getAccountingMutationHeaders(operation.operationId),
     method: 'POST',
+    query: {
+      operationNetUid: operation.operationId,
+    },
   })
 }
 

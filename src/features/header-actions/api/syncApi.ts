@@ -70,6 +70,7 @@ export function startDailySync(request: SyncDailyRequest): Promise<SyncRunRespon
     headers: {
       [SYNC_OPERATION_ID_HEADER]: operationId,
     },
+    method: 'POST',
     query,
     errorMessages: {
       default: 'Не вдалося запустити щоденну синхронізацію',

@@ -1,4 +1,5 @@
 import { apiRequest } from '../../../shared/api/apiClient'
+import { readSession } from '../../../shared/auth/session'
 import type {
   ProductTransfer,
   ProductTransferCreateFromFilePayload,
@@ -48,17 +49,190 @@ export async function exportProductTransferDocument(netId: string): Promise<Prod
 }
 
 export async function addProductTransferFromFile(payload: ProductTransferCreateFromFilePayload): Promise<string[]> {
-  const formData = new FormData()
-  formData.append('parseConfiguration', JSON.stringify(payload.parseConfiguration))
-  formData.append('productTransfer', JSON.stringify(payload.productTransfer))
-  formData.append('file', payload.file)
+  const snapshot = createFileImportSnapshot(payload)
+  const ownerNetUid = getProductTransferOwnerNetUid()
+  const signature = await createFileImportSignature(snapshot, ownerNetUid)
+  const inFlight = inFlightFileImports.get(signature)
 
-  const result = await apiRequest<unknown>('/products/transfers/add/file', {
-    method: 'POST',
-    body: formData,
+  if (inFlight) {
+    return inFlight
+  }
+
+  const request = executeProductTransferFileImport(snapshot, ownerNetUid, signature).finally(() => {
+    inFlightFileImports.delete(signature)
   })
+  inFlightFileImports.set(signature, request)
 
-  return normalizeMessages(result)
+  return request
+}
+
+type ProductTransferFileImportSnapshot = {
+  file: File
+  parseConfigurationJson: string
+  productTransferJson: string
+}
+
+type ProductTransferFileOperation = {
+  operationNetUid: string
+  storageKey: string
+}
+
+const PRODUCT_TRANSFER_FILE_OPERATION_STORAGE_PREFIX = 'gba:product-transfer-file-operation:v1'
+const operationNetUidPattern =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const inFlightFileImports = new Map<string, Promise<string[]>>()
+
+async function executeProductTransferFileImport(
+  snapshot: ProductTransferFileImportSnapshot,
+  ownerNetUid: string,
+  signature: string,
+): Promise<string[]> {
+  const operation = getOrCreateFileImportOperation(ownerNetUid, signature)
+  const formData = new FormData()
+  formData.append('parseConfiguration', snapshot.parseConfigurationJson)
+  formData.append('productTransfer', snapshot.productTransferJson)
+  formData.append('file', snapshot.file)
+
+  try {
+    const result = await apiRequest<unknown>('/products/transfers/add/file', {
+      method: 'POST',
+      headers: {
+        'Idempotency-Key': operation.operationNetUid,
+      },
+      query: {
+        operationNetUid: operation.operationNetUid,
+      },
+      body: formData,
+    })
+    removeFileImportOperation(operation)
+
+    return normalizeMessages(result)
+  } catch (error) {
+    if (!isUnknownFileImportOutcome(error)) {
+      removeFileImportOperation(operation)
+    }
+
+    throw error
+  }
+}
+
+function createFileImportSnapshot(
+  payload: ProductTransferCreateFromFilePayload,
+): ProductTransferFileImportSnapshot {
+  if (!(payload.file instanceof File)) {
+    throw new Error('Excel file is required for product transfer import')
+  }
+
+  return {
+    file: payload.file,
+    parseConfigurationJson: JSON.stringify(payload.parseConfiguration),
+    productTransferJson: JSON.stringify(payload.productTransfer),
+  }
+}
+
+async function createFileImportSignature(
+  snapshot: ProductTransferFileImportSnapshot,
+  ownerNetUid: string,
+): Promise<string> {
+  if (!globalThis.crypto?.subtle) {
+    throw new Error('Secure product transfer operation identity is unavailable')
+  }
+
+  const fileDigest = await sha256Bytes(await snapshot.file.arrayBuffer())
+  return sha256Text(
+    JSON.stringify({
+      fileDigest,
+      ownerNetUid,
+      parseConfiguration: snapshot.parseConfigurationJson,
+      productTransfer: snapshot.productTransferJson,
+    }),
+  )
+}
+
+function getOrCreateFileImportOperation(
+  ownerNetUid: string,
+  signature: string,
+): ProductTransferFileOperation {
+  const storageKey = `${PRODUCT_TRANSFER_FILE_OPERATION_STORAGE_PREFIX}:${ownerNetUid}:${signature}`
+  const persisted = readPersistedFileImportOperation(storageKey)
+
+  if (persisted) {
+    return {
+      operationNetUid: persisted,
+      storageKey,
+    }
+  }
+  if (!globalThis.crypto?.randomUUID) {
+    throw new Error('Secure product transfer operation identity is unavailable')
+  }
+
+  const operationNetUid = globalThis.crypto.randomUUID()
+  writePersistedFileImportOperation(storageKey, operationNetUid)
+
+  return {
+    operationNetUid,
+    storageKey,
+  }
+}
+
+function getProductTransferOwnerNetUid(): string {
+  const session = readSession()
+  const ownerNetUid = session?.userNetUid || session?.user?.NetUid
+
+  if (!ownerNetUid?.trim()) {
+    throw new Error('Authenticated product transfer owner identity is unavailable')
+  }
+
+  return ownerNetUid.trim().toLowerCase()
+}
+
+async function sha256Text(value: string): Promise<string> {
+  return sha256Bytes(new TextEncoder().encode(value))
+}
+
+async function sha256Bytes(value: BufferSource): Promise<string> {
+  if (!globalThis.crypto?.subtle) {
+    throw new Error('Secure product transfer operation identity is unavailable')
+  }
+
+  const digest = await globalThis.crypto.subtle.digest('SHA-256', value)
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('')
+}
+
+function readPersistedFileImportOperation(storageKey: string): string | null {
+  try {
+    const value = globalThis.localStorage?.getItem(storageKey)
+    return value && operationNetUidPattern.test(value) ? value : null
+  } catch {
+    return null
+  }
+}
+
+function writePersistedFileImportOperation(storageKey: string, operationNetUid: string) {
+  try {
+    globalThis.localStorage?.setItem(storageKey, operationNetUid)
+  } catch {
+    // The in-memory map still deduplicates rapid repeated submissions.
+  }
+}
+
+function removeFileImportOperation(operation: ProductTransferFileOperation) {
+  try {
+    if (globalThis.localStorage?.getItem(operation.storageKey) === operation.operationNetUid) {
+      globalThis.localStorage.removeItem(operation.storageKey)
+    }
+  } catch {
+    // A stale key can only cause a safe server replay for the same file payload.
+  }
+}
+
+function isUnknownFileImportOutcome(error: unknown): boolean {
+  if (!error || typeof error !== 'object' || !('status' in error)) {
+    return true
+  }
+
+  const status = Number(error.status)
+  return status === 0 || status === 408 || status === 504 || status >= 500
 }
 
 function normalizeProductTransfersResponse(result: unknown): ProductTransfersResponse {

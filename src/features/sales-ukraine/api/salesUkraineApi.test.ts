@@ -28,6 +28,9 @@ vi.mock('../../../shared/api/apiClient', () => ({
 }))
 
 const apiRequestMock = vi.mocked(apiRequest)
+const paymentDocumentOperation = {
+  operationId: '9b316272-8d8c-4d6d-95a4-6eea9a79d7d6',
+}
 
 describe('sales Ukraine document request contracts', () => {
   beforeEach(() => {
@@ -37,7 +40,6 @@ describe('sales Ukraine document request contracts', () => {
   it.each([
     ['current invoice', () => getSaleInvoiceDocument('sale-net-id'), '/sales/get/last/document', { netId: 'sale-net-id' }],
     ['shipment list', () => getSaleShipmentListDocument('sale-net-id'), '/sales/shipment/list/print/documents', { netId: 'sale-net-id' }],
-    ['payment document', () => getSalePaymentDocument('sale-net-id'), '/sales/get/payment/document', { netId: 'sale-net-id' }],
     ['PZ document', () => getSalePzDocument('sale-net-id'), '/sales/get/document/pz', { netId: 'sale-net-id' }],
     [
       'invoice history',
@@ -80,7 +82,7 @@ describe('sales Ukraine document request contracts', () => {
       IsAcceptedToPacking: true,
     })
 
-    await expect(getSalePaymentDocument('sale-net-id')).resolves.toEqual({
+    await expect(getSalePaymentDocument('sale-net-id', paymentDocumentOperation)).resolves.toEqual({
       excelUrl: 'https://example.test/payment.xlsx',
       invoiceExcelUrl: 'https://example.test/invoice.xlsx',
       invoicePdfUrl: 'https://example.test/invoice.pdf',
@@ -104,6 +106,21 @@ describe('sales Ukraine document request contracts', () => {
     })
   })
 
+  it('requires an operation before either payment-document request reaches the API client', async () => {
+    const getWithoutOperation = () => {
+      // @ts-expect-error Payment-document generation requires an operation.
+      return getSalePaymentDocument('sale-net-id')
+    }
+    const convertWithoutOperation = () => {
+      // @ts-expect-error Payment-document finalization requires an operation.
+      return convertVatSaleAndGetPaymentDocument({ NetUid: 'sale-net-id' }, null)
+    }
+
+    await expect(getWithoutOperation()).rejects.toThrow()
+    await expect(convertWithoutOperation()).rejects.toThrow()
+    expect(apiRequestMock).not.toHaveBeenCalled()
+  })
+
   it('normalizes bundled invoice document aliases returned without URL suffix', async () => {
     apiRequestMock.mockResolvedValueOnce({
       DocumentURL: 'http://example.test/payment.xlsx',
@@ -113,7 +130,7 @@ describe('sales Ukraine document request contracts', () => {
       IsAcceptedToPacking: true,
     })
 
-    await expect(getSalePaymentDocument('sale-net-id')).resolves.toEqual({
+    await expect(getSalePaymentDocument('sale-net-id', paymentDocumentOperation)).resolves.toEqual({
       excelUrl: 'https://example.test/payment.xlsx',
       invoiceExcelUrl: 'https://example.test/invoice.xlsx',
       invoicePdfUrl: 'https://example.test/invoice.pdf',

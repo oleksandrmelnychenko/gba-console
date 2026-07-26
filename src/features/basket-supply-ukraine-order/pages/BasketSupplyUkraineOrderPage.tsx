@@ -488,7 +488,12 @@ function BasketCartWorkflow() {
   }
 
   async function saveReserveQty() {
-    if (!reserveItem || !reserveQty || reserveQty < 0) {
+    if (
+      !reserveItem
+      || reserveQty === ''
+      || !Number.isFinite(reserveQty)
+      || reserveQty < 0
+    ) {
       return
     }
 

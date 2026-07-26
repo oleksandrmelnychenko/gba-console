@@ -5,6 +5,7 @@ import {
   createIncomePaymentFromSad,
   getSad,
   getSads,
+  updateSad,
 } from './sadApi'
 
 vi.mock('../../../shared/api/apiClient', () => ({
@@ -16,6 +17,14 @@ const apiRequestMock = vi.mocked(apiRequest)
 describe('sadApi', () => {
   beforeEach(() => {
     apiRequestMock.mockReset()
+    localStorage.clear()
+    localStorage.setItem(
+      'gba_console_session',
+      JSON.stringify({
+        userNetUid:
+          'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+      }),
+    )
   })
 
   it('loads SAD rows from wrapped rows payloads', async () => {
@@ -75,6 +84,46 @@ describe('sadApi', () => {
     expect(result).toEqual(expect.objectContaining({ NetUid: 'sad-2', SadDocuments: [] }))
   })
 
+  it('persists and sends an idempotency key for a new cart-backed SAD', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      Body: {
+        Id: 41,
+        NetUid:
+          'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+      },
+    })
+
+    await updateSad({
+      Id: 0,
+      SadItems: [],
+      SadPallets: [],
+    })
+
+    const options = apiRequestMock.mock
+      .calls[0]?.[1]
+    const operationId = new Headers(
+      options?.headers,
+    ).get('Idempotency-Key')
+    expect(operationId).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+    )
+    expect(apiRequestMock).toHaveBeenCalledWith(
+      '/supplies/ukraine/order/packlists/sad/update',
+      {
+        body: {
+          Id: 0,
+          SadItems: [],
+          SadPallets: [],
+        },
+        dedupe: false,
+        headers: {
+          'Idempotency-Key': operationId,
+        },
+        method: 'POST',
+      },
+    )
+  })
+
   it('delegates SAD advance creation with an organization-client agreement', async () => {
     const payload = {
       Amount: 100,
@@ -89,12 +138,26 @@ describe('sadApi', () => {
 
     await createAdvancePaymentFromSad('sad-1', payload)
 
+    const operationId = (
+      apiRequestMock.mock.calls[0]?.[1]?.query as {
+        operationNetUid?: string
+      }
+    )?.operationNetUid
+
+    expect(operationId).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+    )
     expect(apiRequestMock).toHaveBeenCalledWith('/payments/advance/new', {
+      body: payload,
+      dedupe: false,
+      headers: {
+        'Idempotency-Key': operationId,
+      },
       method: 'POST',
       query: {
+        operationNetUid: operationId,
         sadNetId: 'sad-1',
       },
-      body: payload,
     })
   })
 

@@ -33,6 +33,7 @@ export type ConsumableProductCategory = EntityFields & {
 
 export type ConsumableProduct = EntityFields & {
   ConsumableProductCategory?: ConsumableProductCategory | null
+  ConsumableProductCategoryId?: number | null
   MeasureUnit?: MeasureUnit | null
   Name?: string
   TotalQty?: number
@@ -140,12 +141,18 @@ export type OutcomePaymentOrderConsumablesOrder = EntityFields & {
 
 export type ConsumablesOrderItem = EntityFields & {
   ConsumableProduct?: ConsumableProduct | null
+  ConsumableProductCategoryId?: number | null
+  ConsumableProductId?: number | null
   ConsumableProductCategory?: ConsumableProductCategory | null
+  ConsumableProductOrganization?: NamedEntity | null
+  ConsumableProductOrganizationId?: number | null
+  ConsumablesOrderId?: number | null
   IsService?: boolean
   PaymentCostMovementOperation?: PaymentCostMovementOperation | null
   PricePerItem?: number
   Qty?: number
   SupplyOrganizationAgreement?: SupplyOrganizationAgreement | null
+  SupplyOrganizationAgreementId?: number | null
   TotalPrice?: number
   TotalPriceWithVAT?: number
   VAT?: number

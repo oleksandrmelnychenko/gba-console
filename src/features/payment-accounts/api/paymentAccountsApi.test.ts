@@ -2,11 +2,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import {
   calculatePaymentAccountExchange,
+  createPaymentAccount,
   createPaymentAccountExchange,
   createPaymentAccountTransfer,
   getPaymentAccountCurrencyTraders,
+  updatePaymentAccount,
 } from './paymentAccountsApi'
 import type {
+  PaymentAccountPayload,
   PaymentRegisterCurrencyExchange,
   PaymentRegisterTransfer,
 } from '../types'
@@ -71,6 +74,43 @@ describe('paymentAccountsApi', () => {
         amount: 100,
         currencyCode: 'EUR',
         exchangeRate: 42.5,
+      },
+    })
+  })
+
+  it.each([
+    ['create', createPaymentAccount, '/payments/registers/new', '33333333-3333-4333-8333-333333333333'],
+    ['update', updatePaymentAccount, '/payments/registers/update', '44444444-4444-4444-8444-444444444444'],
+  ] as const)('sends one durable operation key for account %s', async (
+    _name,
+    mutate,
+    path,
+    operationId,
+  ) => {
+    const account: PaymentAccountPayload = {
+      Name: 'Основна каса',
+      Organization: {
+        Id: 10,
+        NetUid: 'organization-10',
+      },
+      PaymentCurrencyRegisters: [],
+      Type: 0,
+    }
+    apiRequestMock.mockResolvedValueOnce({
+      ...account,
+      Id: 51,
+      NetUid: 'account-51',
+    })
+
+    await mutate(account, { operationId })
+
+    expect(apiRequestMock).toHaveBeenCalledWith(path, {
+      body: account,
+      dedupe: false,
+      headers: { 'Idempotency-Key': operationId },
+      method: 'POST',
+      query: {
+        operationNetUid: operationId,
       },
     })
   })

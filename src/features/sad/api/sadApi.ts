@@ -1,4 +1,5 @@
 import { apiRequest } from '../../../shared/api/apiClient'
+import { executeSadMutation } from '../../../shared/api/sadMutationOperation'
 import {
   executeAccountingMutation,
   type AccountingMutationOperationOptions,
@@ -59,9 +60,21 @@ export async function getSadWithSpecifications(netId: string): Promise<Sad | nul
 }
 
 export async function updateSad(sad: Sad): Promise<Sad | null> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/order/packlists/sad/update', {
-    method: 'POST',
-    body: sad,
+  const result = await executeSadMutation({
+    sad,
+    request: (payload, context) => apiRequest<unknown>(
+      '/supplies/ukraine/order/packlists/sad/update',
+      {
+        method: 'POST',
+        body: payload,
+        ...(context.isCreate
+          ? {
+              dedupe: false,
+              headers: context.headers,
+            }
+          : {}),
+      },
+    ),
   })
 
   return normalizeItem<Sad>(result, ensureSad)

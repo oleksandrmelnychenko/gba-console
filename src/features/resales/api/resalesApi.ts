@@ -1,4 +1,5 @@
 import { apiRequest } from '../../../shared/api/apiClient'
+import { readSession } from '../../../shared/auth/session'
 import { normalizeExportDocument as normalizeSharedExportDocument } from '../../../shared/documents/exportDocument'
 import { getClients } from '../../clients/api/clientsApi'
 import type {
@@ -21,6 +22,28 @@ import type {
   ResalesSearchParams,
   UpdatedResaleModel,
 } from '../types'
+
+const PENDING_RESALE_ADD_STORAGE_PREFIX =
+  'gba_console:resale-add-operation:v2'
+const PENDING_RESALE_ADD_VERSION = 2
+const RESALE_ADD_OPERATION_KIND = 'resale:add-manual'
+const RESALE_ADD_LEDGER_STATE_HEADER =
+  'X-ReSale-Add-Ledger-State'
+const RESALE_ADD_OWNER_HEADER =
+  'X-ReSale-Add-Owner'
+const RESALE_ADD_DEFINITIVE_NO_WRITE =
+  'definitive-no-write'
+const inFlightResaleAdds =
+  new Map<string, Promise<ResaleActionResult<ReSale>>>()
+
+type PendingResaleAdd = {
+  operationNetUid: string
+  ownerNetUid: string
+  payload: ResaleCreatePayload
+  payloadFingerprint: string
+  storageKey: string
+  version: typeof PENDING_RESALE_ADD_VERSION
+}
 
 export async function getResales(params: ResalesSearchParams): Promise<ReSale[]> {
   const result = await apiRequest<unknown>('/resales/all', {
@@ -58,12 +81,22 @@ export async function getResaleByNetId(
 }
 
 export async function updateResale(payload: UpdatedResaleModel): Promise<ResaleActionResult<UpdatedResaleModel>> {
-  const result = await apiRequest<unknown>('/resales/update', {
-    body: payload,
-    method: 'POST',
-  })
+  try {
+    const result = await apiRequest<unknown>('/resales/update', {
+      body: payload,
+      method: 'POST',
+    })
 
-  return normalizeActionResult(result, normalizeUpdatedResaleModel)
+    return normalizeActionResult(result, normalizeUpdatedResaleModel)
+  } catch (requestError) {
+    const warning = readMutationWarning(requestError)
+
+    if (warning) {
+      return { warning }
+    }
+
+    throw requestError
+  }
 }
 
 export async function completeResale(netId: string): Promise<UpdatedResaleModel | null> {
@@ -245,13 +278,513 @@ export async function generateAutomaticallyResale(
   return normalizeActionResult(result, normalizeCreatedResaleAvailability)
 }
 
-export async function addResale(payload: ResaleCreatePayload): Promise<ResaleActionResult<ReSale>> {
-  const result = await apiRequest<unknown>('/resales/add', {
-    body: payload,
-    method: 'POST',
+export function addResale(
+  payload: ResaleCreatePayload,
+): Promise<ResaleActionResult<ReSale>> {
+  const ownerNetUid = getResaleAddOwnerNetUid()
+  const immutablePayload = cloneCreatePayload(payload)
+  const canonicalPayload =
+    canonicalizeResaleAdd(
+      immutablePayload,
+      ownerNetUid,
+    )
+  const inFlight =
+    inFlightResaleAdds.get(canonicalPayload)
+
+  if (inFlight) {
+    return inFlight
+  }
+
+  const request = addResaleCore(
+    immutablePayload,
+    canonicalPayload,
+    ownerNetUid,
+  ).finally(() => {
+    if (
+      inFlightResaleAdds.get(canonicalPayload) ===
+      request
+    ) {
+      inFlightResaleAdds.delete(canonicalPayload)
+    }
   })
 
-  return normalizeActionResult(result, normalizeResale)
+  inFlightResaleAdds.set(canonicalPayload, request)
+  return request
+}
+
+async function addResaleCore(
+  immutablePayload: ResaleCreatePayload,
+  canonicalPayload: string,
+  ownerNetUid: string,
+): Promise<ResaleActionResult<ReSale>> {
+  const pending =
+    await getOrCreatePendingResaleAdd(
+      immutablePayload,
+      canonicalPayload,
+      ownerNetUid,
+    )
+
+  try {
+    ensureResaleAddOwnerUnchanged(
+      pending.ownerNetUid,
+    )
+  } catch (ownerError) {
+    clearPendingResaleAdd(pending)
+    throw ownerError
+  }
+
+  try {
+    const result = await apiRequest<unknown>('/resales/add', {
+      body: pending.payload,
+      headers: {
+        'Idempotency-Key': pending.operationNetUid,
+        [RESALE_ADD_OWNER_HEADER]:
+          pending.ownerNetUid,
+      },
+      method: 'POST',
+      query: {
+        operationNetUid: pending.operationNetUid,
+      },
+    })
+    const actionResult = normalizeActionResult(result, normalizeResale)
+
+    clearPendingResaleAdd(pending)
+    return actionResult
+  } catch (requestError) {
+    if (isDefinitiveNoWriteAddFailure(requestError)) {
+      clearPendingResaleAdd(pending)
+    }
+
+    const warning = readMutationWarning(requestError)
+
+    if (warning) {
+      return { warning }
+    }
+
+    throw requestError
+  }
+}
+
+async function getOrCreatePendingResaleAdd(
+  immutablePayload: ResaleCreatePayload,
+  canonicalPayload: string,
+  ownerNetUid: string,
+): Promise<PendingResaleAdd> {
+  const payloadFingerprint =
+    await sha256(canonicalPayload)
+  const storageKey =
+    `${PENDING_RESALE_ADD_STORAGE_PREFIX}:` +
+    `${ownerNetUid}:${payloadFingerprint}`
+  const existing = readPendingResaleAdd(
+    storageKey,
+    ownerNetUid,
+    payloadFingerprint,
+    canonicalPayload,
+  )
+
+  if (existing) {
+    return existing
+  }
+
+  const pending: PendingResaleAdd = {
+    operationNetUid: createOperationNetUid(),
+    ownerNetUid,
+    payload: immutablePayload,
+    payloadFingerprint,
+    storageKey,
+    version: PENDING_RESALE_ADD_VERSION,
+  }
+  const storage = requireResaleAddStorage()
+
+  try {
+    storage.setItem(
+      storageKey,
+      JSON.stringify(pending),
+    )
+  } catch {
+    throw new Error(
+      'Resale Add retry state could not be persisted. The request was not sent.',
+    )
+  }
+
+  return pending
+}
+
+function readPendingResaleAdd(
+  storageKey: string,
+  ownerNetUid: string,
+  payloadFingerprint: string,
+  canonicalPayload: string,
+): PendingResaleAdd | null {
+  const storage = requireResaleAddStorage()
+  let serialized: string | null
+
+  try {
+    serialized = storage.getItem(storageKey)
+  } catch {
+    throw new Error(
+      'Resale Add retry state could not be read. The request was not sent.',
+    )
+  }
+
+  if (!serialized) {
+    return null
+  }
+
+  try {
+    const candidate = JSON.parse(serialized) as Partial<PendingResaleAdd>
+
+    if (
+      candidate.version !== PENDING_RESALE_ADD_VERSION
+      || !isNonEmptyGuid(candidate.operationNetUid)
+      || candidate.ownerNetUid !== ownerNetUid
+      || candidate.payloadFingerprint !== payloadFingerprint
+      || candidate.storageKey !== storageKey
+      || !candidate.payload
+      || typeof candidate.payload !== 'object'
+      || !Array.isArray(candidate.payload.ReSaleAvailabilityModels)
+      || canonicalizeResaleAdd(
+        candidate.payload,
+        ownerNetUid,
+      ) !== canonicalPayload
+    ) {
+      throw new Error('invalid pending ReSale Add state')
+    }
+
+    return candidate as PendingResaleAdd
+  } catch {
+    throw new Error(
+      'Persisted Resale Add retry state is invalid. The request was not sent.',
+    )
+  }
+}
+
+function clearPendingResaleAdd(
+  pending: PendingResaleAdd,
+) {
+  const storage = requireResaleAddStorage()
+
+  try {
+    const serialized = storage.getItem(pending.storageKey)
+
+    if (!serialized) {
+      return
+    }
+
+    const candidate = JSON.parse(serialized) as Partial<PendingResaleAdd>
+
+    if (
+      candidate.operationNetUid === pending.operationNetUid
+      && candidate.ownerNetUid === pending.ownerNetUid
+      && candidate.payloadFingerprint === pending.payloadFingerprint
+    ) {
+      storage.removeItem(pending.storageKey)
+    }
+  } catch {
+    // A successful durable replay is already safe; stale local recovery data
+    // must not turn the completed request into an apparent mutation failure.
+  }
+}
+
+function cloneCreatePayload(
+  payload: ResaleCreatePayload,
+): ResaleCreatePayload {
+  const serialized = JSON.stringify(payload)
+
+  if (!serialized) {
+    throw new Error('Resale Add payload could not be persisted.')
+  }
+
+  return JSON.parse(serialized) as ResaleCreatePayload
+}
+
+function canonicalizeResaleAdd(
+  payload: ResaleCreatePayload,
+  ownerNetUid: string,
+): string {
+  const canonical: string[] = []
+
+  appendCanonicalField(
+    canonical,
+    'operation',
+    RESALE_ADD_OPERATION_KIND,
+  )
+  appendCanonicalField(
+    canonical,
+    'owner',
+    ownerNetUid,
+  )
+  appendCanonicalField(
+    canonical,
+    'client-agreement-id',
+    serverNumber(payload.ClientAgreement?.Id),
+  )
+  appendCanonicalField(
+    canonical,
+    'organization-id',
+    serverNumber(payload.Organization?.Id),
+  )
+  appendCanonicalField(
+    canonical,
+    'from-storage-id',
+    serverNumber(payload.FromStorageId),
+  )
+  appendCanonicalField(
+    canonical,
+    'comment',
+    nullableString(payload.Comment),
+  )
+
+  const items =
+    (payload.ReSaleAvailabilityModels || [])
+      .map(canonicalizeResaleAddItem)
+      .sort(compareOrdinal)
+
+  appendCanonicalField(
+    canonical,
+    'item-count',
+    String(items.length),
+  )
+  items.forEach(item =>
+    appendCanonicalField(
+      canonical,
+      'item',
+      item,
+    ))
+
+  return canonical.join('')
+}
+
+function canonicalizeResaleAddItem(
+  item: ResaleAvailabilityItemModel | null,
+): string {
+  if (!item) {
+    return '<null>'
+  }
+
+  const canonical: string[] = []
+  appendCanonicalField(
+    canonical,
+    'product-id',
+    serverNumber(item.ProductId),
+  )
+  appendCanonicalField(
+    canonical,
+    'quantity',
+    serverNumber(item.QtyToReSale),
+  )
+  appendCanonicalField(
+    canonical,
+    'source-price',
+    serverNumber(item.Price),
+  )
+  appendCanonicalField(
+    canonical,
+    'sale-price',
+    serverNumber(item.SalePrice),
+  )
+  appendCanonicalField(
+    canonical,
+    'exchange-rate',
+    serverNumber(item.ExchangeRate),
+  )
+  return canonical.join('')
+}
+
+function appendCanonicalField(
+  target: string[],
+  name: string,
+  value: string | null,
+) {
+  target.push(
+    `${name}=${
+      value === null
+        ? '-1:'
+        : `${value.length}:${value}`
+    };`,
+  )
+}
+
+function nullableString(
+  value: unknown,
+): string | null {
+  return value == null ? null : String(value)
+}
+
+function serverNumber(
+  value: number | null | undefined,
+): string {
+  return String(value ?? 0)
+}
+
+function compareOrdinal(
+  left: string,
+  right: string,
+): number {
+  return left < right ? -1 : left > right ? 1 : 0
+}
+
+function getResaleAddOwnerNetUid(): string {
+  let ownerNetUid: string | undefined
+
+  try {
+    const session = readSession()
+    ownerNetUid =
+      session?.userNetUid ||
+      session?.user?.NetUid
+  } catch {
+    ownerNetUid = undefined
+  }
+
+  const normalized =
+    ownerNetUid?.trim().toLowerCase()
+  if (!normalized || !isNonEmptyGuid(normalized)) {
+    throw new Error(
+      'Authenticated resale owner identity is unavailable.',
+    )
+  }
+
+  return normalized
+}
+
+function ensureResaleAddOwnerUnchanged(
+  expectedOwnerNetUid: string,
+) {
+  if (
+    getResaleAddOwnerNetUid() !==
+    expectedOwnerNetUid
+  ) {
+    throw new Error(
+      'Authenticated resale owner changed before the request was sent.',
+    )
+  }
+}
+
+async function sha256(
+  value: string,
+): Promise<string> {
+  if (!globalThis.crypto?.subtle) {
+    throw new Error(
+      'Secure ReSale Add operation identity is unavailable.',
+    )
+  }
+
+  const digest =
+    await globalThis.crypto.subtle.digest(
+      'SHA-256',
+      new TextEncoder().encode(value),
+    )
+
+  return Array.from(
+    new Uint8Array(digest),
+    byte => byte.toString(16).padStart(2, '0'),
+  ).join('')
+}
+
+function createOperationNetUid(): string {
+  const cryptoApi = globalThis.crypto
+
+  if (typeof cryptoApi?.randomUUID === 'function') {
+    return cryptoApi.randomUUID()
+  }
+
+  if (typeof cryptoApi?.getRandomValues !== 'function') {
+    throw new Error(
+      'A secure Resale Add operation key could not be generated.',
+    )
+  }
+
+  const bytes = cryptoApi.getRandomValues(new Uint8Array(16))
+  bytes[6] = (bytes[6] & 0x0f) | 0x40
+  bytes[8] = (bytes[8] & 0x3f) | 0x80
+  const hex = Array.from(
+    bytes,
+    (value) => value.toString(16).padStart(2, '0'),
+  ).join('')
+
+  return [
+    hex.slice(0, 8),
+    hex.slice(8, 12),
+    hex.slice(12, 16),
+    hex.slice(16, 20),
+    hex.slice(20),
+  ].join('-')
+}
+
+function isNonEmptyGuid(value: unknown): value is string {
+  return (
+    typeof value === 'string'
+    && value !== '00000000-0000-0000-0000-000000000000'
+    && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)
+  )
+}
+
+function requireResaleAddStorage(): Storage {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      return window.localStorage
+    }
+  } catch {
+    // Fall through to the durable-storage error below.
+  }
+
+  throw new Error(
+    'Durable browser storage is required to create a resale.',
+  )
+}
+
+function isDefinitiveNoWriteAddFailure(
+  error: unknown,
+): boolean {
+  if (!error || typeof error !== 'object') {
+    return false
+  }
+
+  const status =
+    Number((error as { status?: unknown }).status)
+  if (status === 409) {
+    return true
+  }
+
+  const ledgerState =
+    readErrorHeader(
+      error,
+      RESALE_ADD_LEDGER_STATE_HEADER,
+    )
+  if (ledgerState) {
+    return (
+      ledgerState.toLowerCase() ===
+      RESALE_ADD_DEFINITIVE_NO_WRITE
+    )
+  }
+
+  return (
+    status === 400
+    || status === 401
+    || status === 403
+    || status === 404
+    || status === 422
+  )
+}
+
+function readErrorHeader(
+  error: object,
+  name: string,
+): string | null {
+  const headers =
+    (error as { headers?: unknown }).headers
+
+  if (!headers) {
+    return null
+  }
+
+  try {
+    return new Headers(
+      headers as HeadersInit,
+    ).get(name)
+  } catch {
+    return null
+  }
 }
 
 export async function searchResaleClients(value: string, signal?: AbortSignal): Promise<ResaleClient[]> {
@@ -394,6 +927,27 @@ function readBackendWarning(result: unknown): ResaleBackendWarning | null {
     Message: payload.Message,
     Products: Array.isArray(payload.Products) ? payload.Products : [],
   }
+}
+
+function readMutationWarning(error: unknown): ResaleBackendWarning | null {
+  if (!error || typeof error !== 'object') {
+    return null
+  }
+
+  const apiError = error as { payload?: unknown; status?: number }
+
+  if (apiError.status !== 400) {
+    return null
+  }
+
+  const payload =
+    apiError.payload &&
+    typeof apiError.payload === 'object' &&
+    'Body' in apiError.payload
+      ? (apiError.payload as { Body?: unknown }).Body
+      : apiError.payload
+
+  return readBackendWarning(payload)
 }
 
 function normalizeExportDocument(result: unknown): ResaleExportDocument {

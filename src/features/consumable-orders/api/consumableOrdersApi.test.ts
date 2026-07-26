@@ -17,6 +17,9 @@ const apiRequestMock = vi.mocked(apiRequest)
 describe('consumableOrdersApi', () => {
   beforeEach(() => {
     apiRequestMock.mockReset()
+    localStorage.setItem('gba_console_session', JSON.stringify({
+      userNetUid: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+    }))
   })
 
   it('strips UI-only local NetUid values before calculating an order', async () => {
@@ -58,6 +61,13 @@ describe('consumableOrdersApi', () => {
 
     expect(apiRequestMock).toHaveBeenCalledWith('/consumables/orders/upload/update', {
       body,
+      dedupe: false,
+      headers: {
+        'Idempotency-Key': expect.stringMatching(
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
+        ),
+        'X-Consumables-Mutation-Owner': 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      },
       method: 'POST',
     })
     expect(body.getAll('documents')).toEqual([document])
@@ -65,6 +75,7 @@ describe('consumableOrdersApi', () => {
     expect(payload.ConsumablesOrderDocuments?.[0]).not.toHaveProperty('NetUid')
     expect(payload.ConsumablesOrderItems?.[0]?.NetUid).toBe('2d11197c-d74e-4d15-b87a-4074750d79c9')
     expect(payload.ConsumablesOrderItems?.[1]).not.toHaveProperty('NetUid')
+    expect(payload.ConsumablesOrderItems?.[1]).not.toHaveProperty('Id')
     expect(payload.ConsumablesOrderItems?.[1]?.PaymentCostMovementOperation?.PaymentCostMovement).not.toHaveProperty('NetUid')
   })
 

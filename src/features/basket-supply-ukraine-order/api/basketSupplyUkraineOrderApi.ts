@@ -1,4 +1,11 @@
 import { apiRequest } from '../../../shared/api/apiClient'
+import { executeSadMutation } from '../../../shared/api/sadMutationOperation'
+import {
+  acquireCartReservationUpdateOperation,
+  acquireCartReservationUploadOperation,
+  clearCartReservationOperation,
+  isDefinitiveCartReservationFailure,
+} from './cartReservationMutationOperation'
 import type {
   BasketSale,
   BasketSupplySalesFilters,
@@ -19,24 +26,61 @@ export async function getUkraineCartItems(): Promise<SupplyOrderUkraineCartItem[
 export async function updateUkraineCartItem(
   cartItem: SupplyOrderUkraineCartItem,
 ): Promise<SupplyOrderUkraineCartItem | null> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/order/cart/items/update', {
-    method: 'POST',
-    body: cartItem,
-  })
+  const target = toCartReservationTarget(cartItem)
+  const operation = acquireCartReservationUpdateOperation(target)
 
-  return normalizeItem<SupplyOrderUkraineCartItem>(result, ensureCartItem)
+  try {
+    const result = await apiRequest<unknown>('/supplies/ukraine/order/cart/items/update', {
+      method: 'POST',
+      body: target,
+      dedupe: false,
+      headers: {
+        'Idempotency-Key': operation.operationNetUid,
+      },
+      query: {
+        operationNetUid: operation.operationNetUid,
+      },
+    })
+
+    clearCartReservationOperation(operation)
+    return normalizeItem<SupplyOrderUkraineCartItem>(result, ensureCartItem)
+  } catch (error) {
+    if (isDefinitiveCartReservationFailure(error)) {
+      clearCartReservationOperation(operation)
+    }
+
+    throw error
+  }
 }
 
 export async function uploadUkraineCartItemsFromFile(
   file: File,
   parseConfiguration: CartItemsParseConfiguration,
 ): Promise<SupplyOrderUkraineCartItem[]> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/order/cart/items/file/upload', {
-    method: 'POST',
-    body: createCartItemsFormData(file, parseConfiguration),
-  })
+  const operation = acquireCartReservationUploadOperation(file, parseConfiguration)
 
-  return normalizeArray<SupplyOrderUkraineCartItem>(result).map(ensureCartItem)
+  try {
+    const result = await apiRequest<unknown>('/supplies/ukraine/order/cart/items/file/upload', {
+      method: 'POST',
+      body: createCartItemsFormData(file, parseConfiguration),
+      dedupe: false,
+      headers: {
+        'Idempotency-Key': operation.operationNetUid,
+      },
+      query: {
+        operationNetUid: operation.operationNetUid,
+      },
+    })
+
+    clearCartReservationOperation(operation)
+    return normalizeArray<SupplyOrderUkraineCartItem>(result).map(ensureCartItem)
+  } catch (error) {
+    if (isDefinitiveCartReservationFailure(error)) {
+      clearCartReservationOperation(operation)
+    }
+
+    throw error
+  }
 }
 
 export async function uploadPreviewUkraineCartItemsFromFile(
@@ -114,9 +158,21 @@ export async function getNotSentSaleSads(): Promise<Sad[]> {
 }
 
 export async function addOrUpdateSad(sad: Sad): Promise<Sad | null> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/order/packlists/sad/update', {
-    method: 'POST',
-    body: sad,
+  const result = await executeSadMutation({
+    sad,
+    request: (payload, context) => apiRequest<unknown>(
+      '/supplies/ukraine/order/packlists/sad/update',
+      {
+        method: 'POST',
+        body: payload,
+        ...(context.isCreate
+          ? {
+              dedupe: false,
+              headers: context.headers,
+            }
+          : {}),
+      },
+    ),
   })
 
   return normalizeItem<Sad>(result)
@@ -156,6 +212,33 @@ function createCartItemsFormData(file: File, parseConfiguration: CartItemsParseC
   formData.append('parseConfiguration', JSON.stringify(parseConfiguration))
 
   return formData
+}
+
+function toCartReservationTarget(cartItem: SupplyOrderUkraineCartItem) {
+  const id = Number(cartItem.Id)
+  const productId = Number(cartItem.ProductId)
+  const netUid = cartItem.NetUid?.trim()
+  const reservedQty = Number(cartItem.ReservedQty)
+
+  if (
+    !Number.isSafeInteger(id)
+    || id <= 0
+    || !Number.isSafeInteger(productId)
+    || productId <= 0
+    || !netUid
+    || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(netUid)
+    || !Number.isFinite(reservedQty)
+    || reservedQty < 0
+  ) {
+    throw new Error('Позиція кошика містить некоректні дані резерву.')
+  }
+
+  return {
+    Id: id,
+    NetUid: netUid.toLowerCase(),
+    ProductId: productId,
+    ReservedQty: reservedQty,
+  }
 }
 
 function normalizeArray<TItem>(result: unknown): TItem[] {

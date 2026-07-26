@@ -8,6 +8,11 @@ import type {
   ProductSubGroup,
   ProductSubGroupsWithTotal,
 } from '../types'
+import {
+  acquireProductGroupCreateOperation,
+  clearProductGroupCreateOperation,
+  isDefinitiveProductGroupCreateFailure,
+} from './productGroupCreateOperation'
 
 type ListKey = 'ProductGroups' | 'ProductProductGroups' | 'ProductSubGroups'
 
@@ -53,10 +58,33 @@ export async function getAllProductGroups(): Promise<ProductGroup[]> {
 }
 
 export async function createProductGroup(productGroup: ProductGroup): Promise<ProductGroup | null> {
-  const result = await apiRequest<unknown>('/products/groups/new', {
-    method: 'POST',
-    body: productGroup,
-  })
+  const request = {
+    ...productGroup,
+    IsActive: productGroup.IsActive !== false,
+  }
+  const operation = acquireProductGroupCreateOperation(request)
+
+  let result: unknown
+  try {
+    result = await apiRequest<unknown>('/products/groups/new', {
+      method: 'POST',
+      headers: {
+        'Idempotency-Key': operation.operationNetUid,
+      },
+      query: {
+        operationNetUid: operation.operationNetUid,
+      },
+      body: request,
+    })
+  } catch (error) {
+    if (isDefinitiveProductGroupCreateFailure(error)) {
+      clearProductGroupCreateOperation(operation.operationNetUid)
+    }
+
+    throw error
+  }
+
+  clearProductGroupCreateOperation(operation.operationNetUid)
 
   return normalizeProductGroup(result)
 }

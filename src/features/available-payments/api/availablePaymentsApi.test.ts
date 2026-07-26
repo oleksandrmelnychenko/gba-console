@@ -188,6 +188,9 @@ describe('availablePaymentsApi', () => {
         'Idempotency-Key': operationId,
       },
       method: 'POST',
+      query: {
+        operationNetUid: operationId,
+      },
     })
   })
 })

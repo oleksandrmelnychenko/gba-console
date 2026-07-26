@@ -13,6 +13,9 @@ import type {
   TaxFreePrintDocument,
 } from '../types'
 import { normalizePackList, normalizeTaxFree } from '../utils'
+import {
+  executeTaxFreeDocumentUpload,
+} from './taxFreeDocumentUploadOperation'
 
 export async function getTaxFreePackLists(params: TaxFreePackListsSearchParams): Promise<TaxFreePackListsResponse> {
   const result = await apiRequest<unknown>('/supplies/ukraine/order/packlists/taxfree/all/filtered', {
@@ -111,18 +114,35 @@ export async function getTaxFreePrintDocuments(netIds: string[]): Promise<TaxFre
 }
 
 export async function uploadTaxFreeDocuments(netId: string, files: File[]): Promise<TaxFree | null> {
-  const formData = new FormData()
-  files.forEach((file) => formData.append('files', file))
+  return executeTaxFreeDocumentUpload({
+    files,
+    taxFreeNetUid: netId,
+    request: async (
+      immutableFiles,
+      context,
+    ) => {
+      const formData = new FormData()
+      immutableFiles.forEach((file) =>
+        formData.append('files', file))
+      const result = await apiRequest<unknown>(
+        '/supplies/ukraine/order/taxfree/documents/upload',
+        {
+          body: formData,
+          dedupe: false,
+          headers: context.headers,
+          method: 'POST',
+          query: {
+            netId,
+          },
+        },
+      )
 
-  const result = await apiRequest<unknown>('/supplies/ukraine/order/taxfree/documents/upload', {
-    body: formData,
-    method: 'POST',
-    query: {
-      netId,
+      return normalizeObject<TaxFree>(
+        result,
+        normalizeTaxFree,
+      )
     },
   })
-
-  return normalizeObject<TaxFree>(result, normalizeTaxFree)
 }
 
 export async function deleteTaxFreeDocument(netId: string): Promise<void> {

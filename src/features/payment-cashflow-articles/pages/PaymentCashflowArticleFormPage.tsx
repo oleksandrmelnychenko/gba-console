@@ -29,6 +29,7 @@ type LocationState = {
 }
 
 const ARTICLES_PATH = '/accounting/payment-cashflow-articles'
+const ARTICLE_NAME_MAX_LENGTH = 150
 const PERMISSION_DELETE_CASHFLOW_ARTICLE = 'Accounting_Payment_Cashflow_Articles_DelBtn_PKEY'
 const PERMISSION_SAVE_CASHFLOW_ARTICLE = 'Accounting_Payment_Cashflow_Articles_saveBtn_PKEY'
 
@@ -151,8 +152,15 @@ export function PaymentCashflowArticleFormPage() {
       return
     }
 
+    const netUid = article.NetUid || id
+
+    if (isEditMode && !netUid) {
+      setFormState({ error: t('Не вдалося визначити статтю руху коштів') })
+      return
+    }
+
     const payload: PaymentCashflowArticlePayload = {
-      ...article,
+      ...(netUid ? { NetUid: netUid } : {}),
       OperationName: trimmedOperationName,
     }
 
@@ -263,6 +271,7 @@ export function PaymentCashflowArticleFormPage() {
           <TextInput
             disabled={isLoading || isSaving || isDeleting}
             label={t('Назва')}
+            maxLength={ARTICLE_NAME_MAX_LENGTH}
             placeholder={t('Вкажіть назву')}
             required
             value={operationName}

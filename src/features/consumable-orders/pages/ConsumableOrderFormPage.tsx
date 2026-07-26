@@ -27,7 +27,6 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
-import { calculateConsumableOrderItemTotals } from '../consumableOrderCalculations'
 import {
   calculateConsumableOrder,
   createConsumableOrder,
@@ -40,6 +39,16 @@ import {
   searchSupplyOrganizations,
   updateConsumableOrder,
 } from '../api/consumableOrdersApi'
+import {
+  buildOrderPayload,
+  EXISTING_ORDER_MUTATION_DISCLOSURE,
+  getConsumableOrderMutationLocks,
+  normalizeCalculatedItem,
+  normalizeOrderForForm,
+  validateItem,
+  validateOrderPayload,
+  type ConsumableOrderFormState as FormState,
+} from './consumableOrderFormModel'
 import type {
   ConsumableProduct,
   ConsumableProductCategory,
@@ -57,22 +66,6 @@ import './consumable-order-form-page.css'
 
 type LocationState = {
   returnPath?: string
-}
-
-type FormState = {
-  comment: string
-  invoiceDate: string
-  invoiceNumber: string
-  invoiceTime: string
-  paymentTaskComment: string
-  paymentTaskEnabled: boolean
-  paymentTaskPayToDate: string
-  responsibleUserValue: string
-  selectedAgreementValue: string
-  selectedStorageValue: string
-  selectedSupplierValue: string
-  storageSearch: string
-  supplierSearch: string
 }
 
 type ItemEditorState = {
@@ -124,6 +117,7 @@ export function ConsumableOrderFormPage() {
   const [isLoading, setLoading] = useValueState(true)
   const [isSaving, setSaving] = useValueState(false)
   const [isCalculating, setCalculating] = useValueState(false)
+  const mutationIdentityRef = useRef<object>({})
   const recalculateRequestRef = useRef(0)
   const searchRequestRef = useRef<Record<string, number>>({})
 
@@ -153,6 +147,10 @@ export function ConsumableOrderFormPage() {
   const isPaid = Boolean(order.IsPayed)
   const isFormLocked = isLoading || isSaving || isCalculating
   const isMutationLocked = isSaving || isCalculating
+  const {
+    isEconomicMutationLocked,
+    isTaskMutationLocked,
+  } = getConsumableOrderMutationLocks({ isEditMode, isPaid })
   const canSave = !isFormLocked
 
   useEffect(() => {
@@ -312,7 +310,15 @@ export function ConsumableOrderFormPage() {
       setCalculating(true)
 
       try {
-        const calculation = await calculateConsumableOrder(nextOrder)
+        const calculationPayload = buildOrderPayload({
+          form,
+          order: nextOrder,
+          selectedAgreement,
+          selectedResponsibleUser,
+          selectedStorage,
+          selectedSupplier,
+        })
+        const calculation = await calculateConsumableOrder(calculationPayload)
         const calculatedOrder = calculation.Collection[0]
         if (recalculateRequestRef.current === requestId) {
           setOrder(calculatedOrder ? normalizeOrderForForm(calculatedOrder) : nextOrder)
@@ -327,7 +333,15 @@ export function ConsumableOrderFormPage() {
         }
       }
     },
-    [setCalculating, setOrder],
+    [
+      form,
+      selectedAgreement,
+      selectedResponsibleUser,
+      selectedStorage,
+      selectedSupplier,
+      setCalculating,
+      setOrder,
+    ],
   )
 
   function updateForm(patch: Partial<FormState>) {
@@ -411,7 +425,7 @@ export function ConsumableOrderFormPage() {
   }
 
   function openNewItemEditor() {
-    if (isPaid || isMutationLocked) {
+    if (isEconomicMutationLocked || isMutationLocked) {
       return
     }
 
@@ -426,7 +440,7 @@ export function ConsumableOrderFormPage() {
   }
 
   function openEditItemEditor(item: ConsumablesOrderItem, index: number) {
-    if (isPaid || item.Deleted || isMutationLocked) {
+    if (isEconomicMutationLocked || item.Deleted || isMutationLocked) {
       return
     }
 
@@ -453,7 +467,7 @@ export function ConsumableOrderFormPage() {
   }
 
   async function saveEditorItem() {
-    if (isMutationLocked) {
+    if (isEconomicMutationLocked || isMutationLocked) {
       return
     }
 
@@ -484,7 +498,7 @@ export function ConsumableOrderFormPage() {
   }
 
   async function toggleItemDeleted(item: ConsumablesOrderItem, index: number) {
-    if (isMutationLocked) {
+    if (isEconomicMutationLocked || isMutationLocked) {
       return
     }
 
@@ -591,8 +605,8 @@ export function ConsumableOrderFormPage() {
 
     try {
       const savedOrder = isEditMode
-        ? await updateConsumableOrder(payload, newDocuments)
-        : await createConsumableOrder(payload, newDocuments)
+        ? await updateConsumableOrder(payload, newDocuments, { identity: mutationIdentityRef.current })
+        : await createConsumableOrder(payload, newDocuments, { identity: mutationIdentityRef.current })
 
       if (savedOrder) {
         setOrder(normalizeOrderForForm(savedOrder))
@@ -693,13 +707,19 @@ export function ConsumableOrderFormPage() {
             </Alert>
           )}
 
+          {isEditMode && (
+            <Alert color="orange" icon={<CircleAlert size={18} />} variant="light">
+              {t(EXISTING_ORDER_MUTATION_DISCLOSURE)}
+            </Alert>
+          )}
+
           <section className="consumable-order-form-section">
             <OrderFormSectionHeader title={t('Реквізити накладної')} />
             <div className="consumable-order-form-grid">
               <Autocomplete
                 className="consumable-order-form-control is-wide"
                 data={supplierOptions}
-                disabled={isFormLocked}
+                disabled={isEconomicMutationLocked || isFormLocked}
                 label={t('Постачальник послуг')}
                 placeholder={t('Почніть вводити назву')}
                 value={form.supplierSearch}
@@ -709,7 +729,7 @@ export function ConsumableOrderFormPage() {
               <Select
                 className="consumable-order-form-control"
                 data={agreementOptions}
-                disabled={!selectedSupplier || isFormLocked}
+                disabled={isEconomicMutationLocked || !selectedSupplier || isFormLocked}
                 label={t('Договір')}
                 placeholder={t('Оберіть договір')}
                 searchable
@@ -748,7 +768,7 @@ export function ConsumableOrderFormPage() {
               <Autocomplete
                 className="consumable-order-form-control"
                 data={storageOptions}
-                disabled={isFormLocked}
+                disabled={isEconomicMutationLocked || isFormLocked}
                 label={t('Склад')}
                 placeholder={t('Почніть вводити склад')}
                 value={form.storageSearch}
@@ -773,7 +793,7 @@ export function ConsumableOrderFormPage() {
                 <Checkbox
                   checked={form.paymentTaskEnabled}
                   className="consumable-order-form-toggle"
-                  disabled={isFormLocked || Boolean(isEditMode && order.SupplyPaymentTask?.Id)}
+                  disabled={isFormLocked || isTaskMutationLocked}
                   label={t('Новий')}
                   onChange={(event) => updateForm({ paymentTaskEnabled: event.currentTarget.checked })}
                 />
@@ -784,7 +804,7 @@ export function ConsumableOrderFormPage() {
               <div className="consumable-order-form-grid">
               <TextInput
                 className="consumable-order-form-control is-compact"
-                disabled={isFormLocked}
+                disabled={isFormLocked || isTaskMutationLocked}
                 label={t('Сплатити до')}
                 type="date"
                 value={form.paymentTaskPayToDate}
@@ -793,7 +813,7 @@ export function ConsumableOrderFormPage() {
               <Select
                 className="consumable-order-form-control"
                 data={responsibleOptions}
-                disabled={isFormLocked}
+                disabled={isFormLocked || isTaskMutationLocked}
                 label={t('Відповідальний')}
                 searchable
                 value={form.responsibleUserValue || null}
@@ -801,7 +821,7 @@ export function ConsumableOrderFormPage() {
               />
               <TextInput
                 className="consumable-order-form-control is-wide"
-                disabled={isFormLocked}
+                disabled={isFormLocked || isTaskMutationLocked}
                 label={t('Коментар до платежу')}
                 value={form.paymentTaskComment}
                 onChange={(event) => updateForm({ paymentTaskComment: event.currentTarget.value })}
@@ -820,7 +840,7 @@ export function ConsumableOrderFormPage() {
                 <Button
                   className="consumable-order-form-add-button"
                   color={CREATE_ACTION_COLOR}
-                  disabled={isPaid || isFormLocked}
+                  disabled={isEconomicMutationLocked || isFormLocked}
                   leftSection={<Plus size={15} />}
                   size="sm"
                   type="button"
@@ -838,7 +858,7 @@ export function ConsumableOrderFormPage() {
                   activeItems.map((item, index) => (
                     <OrderFormItemRow
                       key={getItemKey(item, index)}
-                      disabled={isPaid || isMutationLocked}
+                      disabled={isEconomicMutationLocked || isMutationLocked}
                       item={item}
                       onEdit={() => openEditItemEditor(item, index)}
                       onToggleDeleted={() => void toggleItemDeleted(item, index)}
@@ -1273,19 +1293,6 @@ function createClosedItemEditor(): ItemEditorState {
   }
 }
 
-function normalizeOrderForForm(order: ConsumablesOrder): ConsumablesOrder {
-  return {
-    ...order,
-    ConsumablesOrderDocuments: Array.isArray(order.ConsumablesOrderDocuments) ? order.ConsumablesOrderDocuments : [],
-    ConsumablesOrderItems: Array.isArray(order.ConsumablesOrderItems)
-      ? order.ConsumablesOrderItems.map(normalizeCalculatedItem)
-      : [],
-    OutcomePaymentOrderConsumablesOrders: Array.isArray(order.OutcomePaymentOrderConsumablesOrders)
-      ? order.OutcomePaymentOrderConsumablesOrders
-      : [],
-  }
-}
-
 function normalizeSupplyOrganization(entity?: NamedEntity | null): SupplyOrganization | null {
   if (!entity) {
     return null
@@ -1321,78 +1328,6 @@ function toFormState(
   }
 }
 
-function buildOrderPayload({
-  form,
-  order,
-  selectedAgreement,
-  selectedResponsibleUser,
-  selectedStorage,
-  selectedSupplier,
-}: {
-  form: FormState
-  order: ConsumablesOrder
-  selectedAgreement: SupplyOrganizationAgreement | null
-  selectedResponsibleUser: User | null
-  selectedStorage: ConsumablesStorage | null
-  selectedSupplier: SupplyOrganization | null
-}): ConsumablesOrder {
-  const payload: ConsumablesOrder = {
-    ...order,
-    Comment: form.comment.trim(),
-    ConsumableProductOrganization: selectedSupplier,
-    ConsumablesStorage: selectedStorage,
-    OrganizationFromDate: toIsoDateTime(form.invoiceDate, form.invoiceTime),
-    OrganizationNumber: form.invoiceNumber.trim(),
-    SupplyOrganizationAgreement: selectedAgreement,
-    TotalAmount: order.TotalAmount,
-    TotalAmountWithoutVAT: order.TotalAmountWithoutVAT,
-  }
-
-  payload.ConsumablesOrderItems = (order.ConsumablesOrderItems || []).map((item) => ({
-    ...normalizeCalculatedItem(item),
-    ConsumableProductOrganization: selectedSupplier,
-    Id: item.Id === -1 ? 0 : item.Id,
-    SupplyOrganizationAgreement: selectedAgreement,
-  }))
-
-  if (form.paymentTaskEnabled) {
-    payload.SupplyPaymentTask = {
-      ...(order.SupplyPaymentTask || {}),
-      Comment: form.paymentTaskComment.trim(),
-      PayToDate: toIsoDateTime(form.paymentTaskPayToDate, '00:00'),
-      User: selectedResponsibleUser,
-    }
-  } else if (!order.SupplyPaymentTask?.Id) {
-    payload.SupplyPaymentTask = undefined
-  }
-
-  return payload
-}
-
-function validateOrderPayload(order: ConsumablesOrder, t: (value: string) => string): string | null {
-  if (!order.ConsumableProductOrganization) {
-    return t('Оберіть постачальника послуг')
-  }
-
-  if (!order.SupplyOrganizationAgreement?.Organization) {
-    return t('Оберіть договір з організацією')
-  }
-
-  if (!order.ConsumablesStorage) {
-    return t('Оберіть склад')
-  }
-
-  if (!(order.ConsumablesOrderItems || []).some((item) => !item.Deleted)) {
-    return t('Додайте хоча б одну позицію')
-  }
-
-  if (order.SupplyPaymentTask && !order.SupplyPaymentTask.User) {
-    return t('Оберіть відповідального за платіжний протокол')
-  }
-
-  return null
-}
-
 function validateFormDates(form: FormState, t: (value: string) => string): string | null {
   if (!isValidDateInput(form.invoiceDate)) {
     return t('Вкажіть дату входу')
@@ -1407,39 +1342,6 @@ function validateFormDates(form: FormState, t: (value: string) => string): strin
   }
 
   return null
-}
-
-function validateItem(item: ConsumablesOrderItem, t: (value: string) => string): string | null {
-  if (!item.ConsumableProduct) {
-    return t('Оберіть товар або послугу')
-  }
-
-  if (!item.ConsumableProductCategory && !item.ConsumableProduct.ConsumableProductCategory) {
-    return t('Оберіть товар з категорією')
-  }
-
-  if (!item.PaymentCostMovementOperation?.PaymentCostMovement) {
-    return t('Оберіть статтю витрат')
-  }
-
-  if (!item.Qty || item.Qty <= 0) {
-    return t('Вкажіть кількість')
-  }
-
-  if (!item.TotalPriceWithVAT || item.TotalPriceWithVAT <= 0) {
-    return t('Вкажіть суму')
-  }
-
-  return null
-}
-
-function normalizeCalculatedItem(item: ConsumablesOrderItem): ConsumablesOrderItem {
-  const totals = calculateConsumableOrderItemTotals(item)
-
-  return {
-    ...item,
-    ...totals,
-  }
 }
 
 function resolveEditorItemSelections(
@@ -1845,12 +1747,6 @@ function isValidDateInput(value: string): boolean {
 
 function isValidTimeInput(value: string): boolean {
   return /^([01]\d|2[0-3]):[0-5]\d$/.test(value)
-}
-
-function toIsoDateTime(dateValue: string, timeValue: string): string {
-  const date = new Date(`${dateValue || formatLocalDate(new Date())}T${timeValue || '00:00'}`)
-
-  return Number.isNaN(date.getTime()) ? new Date().toISOString() : date.toISOString()
 }
 
 function toTimeValue(date: Date): string {

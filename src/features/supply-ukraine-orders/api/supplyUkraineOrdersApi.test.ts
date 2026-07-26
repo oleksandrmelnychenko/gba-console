@@ -30,10 +30,15 @@ vi.mock('../../../shared/api/apiClient', () => ({
 }))
 
 const apiRequestMock = vi.mocked(apiRequest)
+const TEST_USER_NET_UID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
 
 describe('supplyUkraineOrdersApi', () => {
   beforeEach(() => {
     apiRequestMock.mockReset()
+    localStorage.clear()
+    localStorage.setItem('gba_console_session', JSON.stringify({
+      userNetUid: TEST_USER_NET_UID,
+    }))
   })
 
   it('includes the selected end date when loading both Ukraine order sources', async () => {
@@ -103,12 +108,25 @@ describe('supplyUkraineOrdersApi', () => {
 
     expect(apiRequestMock).toHaveBeenCalledWith('/supplies/ukraine/order/new/supplier/file', {
       body: expect.any(FormData),
+      headers: {
+        'Idempotency-Key': expect.stringMatching(
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+        ),
+        'X-Supply-Order-Ukraine-Supplier-File-Owner':
+          TEST_USER_NET_UID,
+      },
       method: 'POST',
+      query: {
+        operationNetUid: expect.any(String),
+      },
     })
 
-    const formData = apiRequestMock.mock.calls[0]?.[1]?.body as FormData
+    const request = apiRequestMock.mock.calls[0]?.[1]
+    const formData = request?.body as FormData
+    const operationNetUid = new Headers(request?.headers).get('Idempotency-Key')
 
     expect(formData.get('file')).toBeInstanceOf(File)
+    expect(request?.query?.operationNetUid).toBe(operationNetUid)
     expect(JSON.parse(String(formData.get('parseConfiguration')))).toMatchObject({
       IsPricePerItem: true,
       UnitPriceColumnNumber: 5,
@@ -117,10 +135,143 @@ describe('supplyUkraineOrdersApi', () => {
     expect(JSON.parse(String(formData.get('orderUkraine')))).toMatchObject({
       InvNumber: 'INV-42',
       IsDirectFromSupplier: true,
-      Supplier: { NetUid: 'supplier-1' },
+      Supplier: { Id: 31, NetUid: 'supplier-1' },
     })
     expect(JSON.parse(String(formData.get('orderUkraine')))).not.toHaveProperty('TransportationType')
+    expect(JSON.parse(String(formData.get('orderUkraine'))).Supplier).not.toHaveProperty('FullName')
     expect(response.SupplyOrderUkraine?.NetUid).toBe('ukraine-order-1')
+    expect(getSupplierFileRecoveryKeys()).toEqual([])
+  })
+
+  it('rejects a supplier-file request when the authenticated owner changes before send', async () => {
+    const file = new File(['xlsx'], 'order.xlsx')
+    vi.spyOn(file, 'arrayBuffer').mockImplementationOnce(async () => {
+      localStorage.setItem('gba_console_session', JSON.stringify({
+        userNetUid: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+      }))
+      return new TextEncoder().encode('xlsx').buffer
+    })
+
+    await expect(uploadSupplyOrderUkraineFromSupplierFile({
+      file,
+      orderUkraine: createOrderUkraine(),
+      parseConfiguration: createParseConfiguration(),
+    })).rejects.toThrow(
+      'Authenticated supplier-file order owner changed before the request was sent.',
+    )
+
+    expect(apiRequestMock).not.toHaveBeenCalled()
+    expect(getSupplierFileRecoveryKeys()).toEqual([])
+  })
+
+  it('retains the immutable operation and reuses its key after a 504 unknown outcome', async () => {
+    const timeout = { status: 504 }
+    const file = new File(['same-xlsx-bytes'], 'order.xlsx', {
+      lastModified: 1234,
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    })
+    apiRequestMock
+      .mockRejectedValueOnce(timeout)
+      .mockResolvedValueOnce({
+        SupplyOrderUkraine: { NetUid: 'ukraine-order-replayed' },
+      })
+
+    const payload = {
+      file,
+      orderUkraine: createOrderUkraine(),
+      parseConfiguration: createParseConfiguration(),
+    }
+
+    await expect(
+      uploadSupplyOrderUkraineFromSupplierFile(payload),
+    ).rejects.toBe(timeout)
+
+    const recoveryKey = getSupplierFileRecoveryKeys()[0]
+    const pending = JSON.parse(localStorage.getItem(recoveryKey) || '{}') as {
+      operationNetUid: string
+      snapshot: {
+        file: { digest: string }
+        orderUkraine: Record<string, unknown>
+      }
+    }
+    const firstOperation = new Headers(
+      apiRequestMock.mock.calls[0]?.[1]?.headers,
+    ).get('Idempotency-Key')
+
+    expect(firstOperation).toBe(pending.operationNetUid)
+    expect(pending.snapshot.file.digest).toMatch(/^[0-9a-f]{64}$/)
+    expect(JSON.stringify(pending)).not.toContain('same-xlsx-bytes')
+    expect(pending.snapshot.orderUkraine).not.toHaveProperty('Responsible')
+
+    await expect(
+      uploadSupplyOrderUkraineFromSupplierFile(payload),
+    ).resolves.toMatchObject({
+      SupplyOrderUkraine: { NetUid: 'ukraine-order-replayed' },
+    })
+
+    const secondOperation = new Headers(
+      apiRequestMock.mock.calls[1]?.[1]?.headers,
+    ).get('Idempotency-Key')
+    expect(secondOperation).toBe(firstOperation)
+    expect(getSupplierFileRecoveryKeys()).toEqual([])
+  })
+
+  it('deduplicates concurrent supplier-file submissions in flight', async () => {
+    let resolveRequest: ((value: unknown) => void) | undefined
+    apiRequestMock.mockImplementationOnce(
+      () => new Promise((resolve) => {
+        resolveRequest = resolve
+      }),
+    )
+    const file = new File(['xlsx'], 'order.xlsx')
+    const payload = {
+      file,
+      orderUkraine: createOrderUkraine(),
+      parseConfiguration: createParseConfiguration(),
+    }
+
+    const first = uploadSupplyOrderUkraineFromSupplierFile(payload)
+    const second = uploadSupplyOrderUkraineFromSupplierFile(payload)
+
+    expect(second).toBe(first)
+    await vi.waitFor(() => expect(apiRequestMock).toHaveBeenCalledTimes(1))
+    resolveRequest?.({
+      SupplyOrderUkraine: { NetUid: 'ukraine-order-1' },
+    })
+    await expect(first).resolves.toMatchObject({
+      SupplyOrderUkraine: { NetUid: 'ukraine-order-1' },
+    })
+  })
+
+  it('requires the same selected File object for an in-lifecycle unknown-outcome retry', async () => {
+    apiRequestMock.mockRejectedValueOnce({ status: 500 })
+    const firstFile = new File(['same'], 'order.xlsx', { lastModified: 42 })
+
+    await expect(uploadSupplyOrderUkraineFromSupplierFile({
+      file: firstFile,
+      orderUkraine: createOrderUkraine(),
+      parseConfiguration: createParseConfiguration(),
+    })).rejects.toMatchObject({ status: 500 })
+
+    await expect(uploadSupplyOrderUkraineFromSupplierFile({
+      file: new File(['same'], 'order.xlsx', { lastModified: 42 }),
+      orderUkraine: createOrderUkraine(),
+      parseConfiguration: createParseConfiguration(),
+    })).rejects.toThrow('same selected File object')
+    expect(apiRequestMock).toHaveBeenCalledTimes(1)
+    expect(getSupplierFileRecoveryKeys()).toHaveLength(1)
+  })
+
+  it('clears supplier-file recovery state after a definitive 409 conflict', async () => {
+    apiRequestMock.mockRejectedValueOnce({ status: 409 })
+
+    await expect(uploadSupplyOrderUkraineFromSupplierFile({
+      file: new File(['xlsx'], 'order.xlsx'),
+      orderUkraine: createOrderUkraine(),
+      parseConfiguration: createParseConfiguration(),
+    })).rejects.toMatchObject({ status: 409 })
+
+    expect(getSupplierFileRecoveryKeys()).toEqual([])
   })
 
   it('keeps direct Ukraine orders on the direct supply-order file endpoint', async () => {
@@ -448,14 +599,25 @@ function createParseConfiguration(): UkraineOrderFromSupplierParseConfiguration 
 
 function createOrderUkraine(): SupplyOrderUkraineSupplierCreatePayload {
   return {
-    ClientAgreement: { NetUid: 'agreement-1' } as ClientAgreement,
+    ClientAgreement: { Id: 32, NetUid: 'agreement-1' } as ClientAgreement,
     FromDate: '2026-06-07T10:00:00.000Z',
     InvDate: '2026-06-07T10:00:00.000Z',
     InvNumber: 'INV-42',
     IsDirectFromSupplier: true,
-    Organization: { NetUid: 'organization-1' } as Organization,
-    Supplier: { NetUid: 'supplier-1' } as Client,
+    Organization: { Id: 33, NetUid: 'organization-1' } as Organization,
+    Supplier: { Id: 31, NetUid: 'supplier-1' } as Client,
   }
+}
+
+function getSupplierFileRecoveryKeys(): string[] {
+  return Array.from(
+    { length: localStorage.length },
+    (_, index) => localStorage.key(index),
+  ).filter(
+    (key): key is string => Boolean(
+      key?.startsWith('gba_console:supply-ukraine-supplier-file:v1:'),
+    ),
+  )
 }
 
 function createDirectParseConfiguration(): SupplyOrderDocumentParseConfiguration {

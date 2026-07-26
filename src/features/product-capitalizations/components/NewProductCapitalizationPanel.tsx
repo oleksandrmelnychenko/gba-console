@@ -32,6 +32,7 @@ import {
   searchProductsByVendorCode,
 } from '../api/productCapitalizationsApi'
 import { resolveProductCapitalizationSelection } from '../productCapitalizationSelection'
+import { getPendingProductCapitalizationOperation } from '../productCapitalizationOperation'
 import type {
   ProductCapitalizationItem,
   ProductCapitalizationParseConfiguration,
@@ -333,6 +334,8 @@ function useNewProductCapitalizationModel(opened: boolean, onClose: () => void, 
   const searchRequestRef = useRef(0)
   const parseRequestRef = useRef(0)
   const submitRequestRef = useRef(0)
+  const pendingStorageNetUidRef = useRef<string | null>(null)
+  const submitIdentityRef = useRef<object>({})
   const storages = storageState.items
   const selectedStorageNetId = storageState.selectedNetId
   const isLoadingStorages = storageState.isLoading
@@ -354,8 +357,49 @@ function useNewProductCapitalizationModel(opened: boolean, onClose: () => void, 
 
         setOrganizations(loadedOrganizations)
 
-        const firstNetId = loadedOrganizations.find((organization) => organization.NetUid)?.NetUid || null
-        setSelectedOrganizationNetId(firstNetId)
+        const pending =
+          getPendingProductCapitalizationOperation()
+        const selectedOrganization =
+          pending?.payload.Organization.NetUid
+          ?? loadedOrganizations.find(
+            (organization) => organization.NetUid,
+          )?.NetUid
+          ?? null
+        setSelectedOrganizationNetId(selectedOrganization)
+
+        if (pending) {
+          pendingStorageNetUidRef.current =
+            pending.payload.Storage.NetUid
+          setComment(pending.payload.Comment)
+          setFromDate(
+            toDateTimeLocal(
+              new Date(pending.payload.FromDate),
+            ),
+          )
+          setInitialFromDate(
+            toDateTimeLocal(
+              new Date(pending.payload.FromDate),
+            ),
+          )
+          setItems(
+            pending.payload.ProductCapitalizationItems.map(
+              (item) =>
+                toDraftItem(
+                  {
+                    Product: {
+                      Id: item.Product.Id,
+                      NetUid: item.Product.NetUid,
+                    },
+                    ProductId: item.ProductId,
+                    Qty: item.Qty,
+                    UnitPrice: item.UnitPrice,
+                    Weight: item.Weight,
+                  },
+                  { priceRequired: false },
+                ),
+            ),
+          )
+        }
       } catch {
         if (!cancelled) {
           setError(t('Не вдалося завантажити організації'))
@@ -368,7 +412,17 @@ function useNewProductCapitalizationModel(opened: boolean, onClose: () => void, 
     return () => {
       cancelled = true
     }
-  }, [opened, setError, setOrganizations, setSelectedOrganizationNetId, t])
+  }, [
+    opened,
+    setComment,
+    setError,
+    setFromDate,
+    setInitialFromDate,
+    setItems,
+    setOrganizations,
+    setSelectedOrganizationNetId,
+    t,
+  ])
 
   useEffect(() => {
     if (!opened || !selectedOrganizationNetId) {
@@ -393,11 +447,37 @@ function useNewProductCapitalizationModel(opened: boolean, onClose: () => void, 
           return
         }
 
+        const pendingStorageNetUid =
+          pendingStorageNetUidRef.current
+        const pendingStorageExists =
+          Boolean(
+            pendingStorageNetUid
+            && loadedStorages.some(
+              (storage) =>
+                storage.NetUid === pendingStorageNetUid,
+            ),
+          )
         setStorageState({
           items: loadedStorages,
           isLoading: false,
-          selectedNetId: loadedStorages.find((storage) => storage.NetUid)?.NetUid || null,
+          selectedNetId: pendingStorageNetUid
+            ? (
+                pendingStorageExists
+                  ? pendingStorageNetUid
+                  : null
+              )
+            : (
+                loadedStorages.find(
+                  (storage) => storage.NetUid,
+                )?.NetUid
+                ?? null
+              ),
         })
+        if (pendingStorageExists) {
+          pendingStorageNetUidRef.current = null
+        } else if (pendingStorageNetUid) {
+          setError(t('Збережена операція посилається на недоступний склад'))
+        }
       } catch {
         if (!cancelled) {
           setStorageState(EMPTY_STORAGE_SELECTION)
@@ -610,6 +690,8 @@ function useNewProductCapitalizationModel(opened: boolean, onClose: () => void, 
     parseRequestRef.current += 1
     searchRequestRef.current += 1
     submitRequestRef.current += 1
+    pendingStorageNetUidRef.current = null
+    submitIdentityRef.current = {}
     setInitialFromDate(nextFromDate)
     setComment('')
     setFromDate(nextFromDate)
@@ -785,6 +867,8 @@ function useNewProductCapitalizationModel(opened: boolean, onClose: () => void, 
         Organization: organization,
         ProductCapitalizationItems: items.map(fromDraftItem),
         Storage: storage,
+      }, {
+        identity: submitIdentityRef.current,
       })
 
       if (!productCapitalization || (!productCapitalization.NetUid && !productCapitalization.Id)) {

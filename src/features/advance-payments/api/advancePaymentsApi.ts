@@ -1,4 +1,8 @@
 import { apiRequest } from '../../../shared/api/apiClient'
+import {
+  executeAccountingMutation,
+  type AccountingMutationOperationOptions,
+} from '../../../shared/api/accountingMutationOperation'
 import { toDateTimeQuery } from '../../../shared/date/dateTime'
 import type {
   AdvancePayment,
@@ -34,13 +38,29 @@ export async function getAdvancePayment(netId: string): Promise<AdvancePayment |
 export async function createAdvancePayment(
   source: AdvancePaymentSource,
   advancePayment: AdvancePaymentMutationPayload,
+  operation?: AccountingMutationOperationOptions,
 ): Promise<AdvancePayment | null> {
-  const result = await apiRequest<unknown>('/payments/advance/new', {
-    method: 'POST',
-    query: 'taxFreeNetId' in source
-      ? { taxFreeNetId: source.taxFreeNetId }
-      : { sadNetId: source.sadNetId },
-    body: advancePayment,
+  const result = await executeAccountingMutation({
+    identity: advancePayment,
+    kind: 'advance-payment:add',
+    operation,
+    payload: {
+      advancePayment,
+      source,
+    },
+    request: (payload, context) => apiRequest<unknown>('/payments/advance/new', {
+      body: payload.advancePayment,
+      dedupe: false,
+      headers: context.headers,
+      method: 'POST',
+      query: {
+        ...('taxFreeNetId' in payload.source
+          ? { taxFreeNetId: payload.source.taxFreeNetId }
+          : { sadNetId: payload.source.sadNetId }),
+        operationNetUid: context.operationId,
+      },
+      ...(context.signal ? { signal: context.signal } : {}),
+    }),
   })
 
   return normalizeAdvancePayment(result)
@@ -48,10 +68,23 @@ export async function createAdvancePayment(
 
 export async function updateAdvancePayment(
   advancePayment: AdvancePaymentMutationPayload & Pick<AdvancePayment, 'Id' | 'NetUid'>,
+  operation?: AccountingMutationOperationOptions,
 ): Promise<AdvancePayment | null> {
-  const result = await apiRequest<unknown>('/payments/advance/update', {
-    method: 'POST',
-    body: advancePayment,
+  const result = await executeAccountingMutation({
+    identity: advancePayment,
+    kind: 'advance-payment:update',
+    operation,
+    payload: advancePayment,
+    request: (payload, context) => apiRequest<unknown>('/payments/advance/update', {
+      body: payload,
+      dedupe: false,
+      headers: context.headers,
+      method: 'POST',
+      query: {
+        operationNetUid: context.operationId,
+      },
+      ...(context.signal ? { signal: context.signal } : {}),
+    }),
   })
 
   return normalizeAdvancePayment(result)
