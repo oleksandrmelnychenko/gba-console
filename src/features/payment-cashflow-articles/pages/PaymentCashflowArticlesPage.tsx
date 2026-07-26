@@ -80,6 +80,7 @@ export function PaymentCashflowArticlesPage({ inSharedShell = false }: PaymentCa
       {
         id: 'operationName',
         header: t('Назва'),
+        fill: true,
         minWidth: 260,
         accessor: (article) => article.OperationName,
         cell: (article) => (
@@ -220,9 +221,9 @@ export function PaymentCashflowArticlesPage({ inSharedShell = false }: PaymentCa
           getRowId={(article, index) => String(article.NetUid || article.Id || index)}
           height="100%"
           isLoading={isTableBusy}
-          layoutVersion="payment-cashflow-articles-table-1"
+          layoutVersion="payment-cashflow-articles-table-2"
           loadingText={t('Завантаження статей руху коштів')}
-          minWidth={720}
+          minWidth={420}
           showLayoutControls
           tableId="payment-cashflow-articles"
           toolbarPortalTarget={tableToolbarSlot}

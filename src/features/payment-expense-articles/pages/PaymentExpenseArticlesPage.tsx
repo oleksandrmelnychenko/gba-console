@@ -79,6 +79,7 @@ export function PaymentExpenseArticlesPage({ inSharedShell = false }: PaymentExp
       {
         id: 'operationName',
         header: t('Назва'),
+        fill: true,
         minWidth: 260,
         accessor: (article) => article.OperationName,
         cell: (article) => (
@@ -209,8 +210,9 @@ export function PaymentExpenseArticlesPage({ inSharedShell = false }: PaymentExp
           emptyText={t('Статей витрат не знайдено')}
           getRowId={(article) => String(article.NetUid || article.Id || article.OperationName)}
           isLoading={isTableBusy}
-          layoutVersion="payment-expense-articles-1"
+          layoutVersion="payment-expense-articles-2"
           height="100%"
+          minWidth={420}
           showLayoutControls
           tableId="payment-expense-articles"
           toolbarPortalTarget={tableToolbarSlot}

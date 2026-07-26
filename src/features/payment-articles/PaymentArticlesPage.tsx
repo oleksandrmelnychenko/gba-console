@@ -18,16 +18,22 @@ export function PaymentArticlesPage() {
     <Stack className="payment-articles-page" gap={6}>
       <div className="payment-articles-page__grid">
         <section aria-label={t('Статті витрат')} className="payment-articles-page__panel console-table-shell">
-          <Text className="payment-articles-page__title" fw={600} size="sm">
-            {t('Статті витрат')}
-          </Text>
+          <div className="payment-articles-page__heading">
+            <span aria-hidden="true" className="payment-articles-page__heading-accent" />
+            <Text className="payment-articles-page__title" component="h2" fw={600} size="sm">
+              {t('Статті витрат')}
+            </Text>
+          </div>
           <PaymentExpenseArticlesPage inSharedShell />
         </section>
 
         <section aria-label={t('Статті руху грошових коштів')} className="payment-articles-page__panel console-table-shell">
-          <Text className="payment-articles-page__title" fw={600} size="sm">
-            {t('Статті руху грошових коштів')}
-          </Text>
+          <div className="payment-articles-page__heading">
+            <span aria-hidden="true" className="payment-articles-page__heading-accent" />
+            <Text className="payment-articles-page__title" component="h2" fw={600} size="sm">
+              {t('Статті руху грошових коштів')}
+            </Text>
+          </div>
           <PaymentCashflowArticlesPage inSharedShell />
         </section>
       </div>

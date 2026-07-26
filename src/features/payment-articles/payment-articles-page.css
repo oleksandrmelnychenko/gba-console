@@ -38,11 +38,33 @@
   overflow: hidden;
 }
 
-.payment-articles-page__title {
+.payment-articles-page__heading {
+  align-items: center;
+  background: linear-gradient(90deg, var(--mantine-color-gray-0), var(--mantine-color-white));
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+  display: flex;
   flex: 0 0 auto;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 12px;
+}
+
+.payment-articles-page__heading-accent {
+  background: var(--brand-orange);
+  border-radius: 999px;
+  flex: 0 0 auto;
+  height: 16px;
+  width: 3px;
+}
+
+.payment-articles-page__heading .payment-articles-page__title {
+  color: var(--mantine-color-gray-8);
   font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 600;
   letter-spacing: 0;
-  padding: 10px 12px 2px;
+  line-height: 1.25;
+  margin: 0;
 }
 
 .payment-articles-page__panel > .payment-articles-tab-content {
