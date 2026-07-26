@@ -17,15 +17,14 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { AppModal } from '../../../shared/ui/AppModal'
 import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
-import { CircleAlert, Download, FileText, Plus, Printer, RefreshCw, RotateCcw, Save, Trash2 } from 'lucide-react'
+import { CircleAlert, Download, Plus, Printer, RefreshCw, RotateCcw, Save, Trash2 } from 'lucide-react'
 import { type FormEvent, useEffect, useMemo, useState } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
+import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
@@ -621,48 +620,12 @@ export function ReportsStocksPage() {
         </form>
       </Card>
 
-      <AppModal
-        centered
+      <DocumentExportModal
+        document={result?.document}
         opened={downloadModalOpened}
-        title={<span className="reports-stocks-modal-title">{t('Експорт звіту')}</span>}
+        title={t('Експорт звіту')}
         onClose={() => setDownloadModalOpened(false)}
-      >
-        <Stack className="app-modal-actions" gap={6}>
-          {result?.document.DocumentURL ? (
-            <Button
-              color="gray"
-              component="a"
-              fullWidth
-              href={getDocumentHref(result.document.DocumentURL)}
-              justify="flex-start"
-              leftSection={<ExcelIcon size={18} />}
-              rel="noreferrer"
-              target="_blank"
-              variant="subtle"
-            >
-              XLSX
-            </Button>
-          ) : null}
-          {result?.document.PdfDocumentURL ? (
-            <Button
-              color="gray"
-              component="a"
-              fullWidth
-              href={getDocumentHref(result.document.PdfDocumentURL)}
-              justify="flex-start"
-              leftSection={<FileText size={18} />}
-              rel="noreferrer"
-              target="_blank"
-              variant="subtle"
-            >
-              PDF
-            </Button>
-          ) : null}
-          {!result?.document.DocumentURL && !result?.document.PdfDocumentURL ? (
-            <Text c="dimmed" size="sm">{t('Файл ще не сформовано')}</Text>
-          ) : null}
-        </Stack>
-      </AppModal>
+      />
     </Stack>
   )
 }
