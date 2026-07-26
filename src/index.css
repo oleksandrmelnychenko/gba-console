@@ -354,6 +354,10 @@ select {
   height: fit-content;
 }
 
+.mantine-Switch-body {
+  align-items: center;
+}
+
 /* Keep helper text visually attached to its control instead of its label. */
 .app-input-description-below {
   display: flex;
