@@ -20,14 +20,13 @@ import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
 import { notifications } from '@mantine/notifications'
-import { CircleAlert, Download, FileDown, FileText, Plus, RefreshCw, RotateCcw, Search, Truck } from 'lucide-react'
+import { CircleAlert, Download, FileDown, Plus, RefreshCw, RotateCcw, Search, Truck } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { formatLocalDate, formatLocalDateTime } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import {
   closePendingExportDocumentWindow,
   openExportDocumentInWindow,
@@ -36,12 +35,12 @@ import {
 import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
 import { ProductCardModal } from '../../products/components/ProductCardModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
+import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import {
   addResale,
   addResaleConsignmentNoteSetting,
@@ -2993,37 +2992,13 @@ function DownloadDocumentModal({
   title: string
   onClose: () => void
 }) {
-  const { t } = useI18n()
-
   return (
-    <AppModal centered className="resales-modal" opened={opened} title={<span className="resales-modal-title">{title}</span>} onClose={onClose}>
-      <Stack gap="sm">
-        {document?.DocumentURL || document?.PdfDocumentURL ? (
-          <>
-            {document.PdfDocumentURL && (
-              <Anchor href={getDocumentHref(document.PdfDocumentURL)} target="_blank" rel="noreferrer" className="document-link">
-                <span className="document-link-badge document-link-badge-pdf">
-                  <FileText size={22} strokeWidth={1.8} />
-                </span>
-                <span>{t('PDF документ')}</span>
-              </Anchor>
-            )}
-            {document.DocumentURL && (
-              <Anchor href={getDocumentHref(document.DocumentURL)} target="_blank" rel="noreferrer" className="document-link">
-                <span className="document-link-badge document-link-badge-excel">
-                  <ExcelIcon size={22} />
-                </span>
-                <span>{t('Excel документ')}</span>
-              </Anchor>
-            )}
-          </>
-        ) : (
-          <Text c="dimmed" size="sm">
-            {t('Документ недоступний для завантаження')}
-          </Text>
-        )}
-      </Stack>
-    </AppModal>
+    <DocumentExportModal
+      document={document}
+      opened={opened}
+      title={title}
+      onClose={onClose}
+    />
   )
 }
 
