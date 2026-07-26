@@ -420,7 +420,13 @@ export function DataTable<TData>({
     (sum, width) => sum + width,
     0,
   )
-  const fillerColumnWidth = Math.max(0, tableWidth - renderedColumnsWidth)
+  // `tableWidth` already includes the dedicated expand column. Excluding it
+  // here made expandable tables render exactly one chevron-column wider than
+  // their viewport and introduced a pointless horizontal scrollbar.
+  const fillerColumnWidth = Math.max(
+    0,
+    tableWidth - expandColumnWidth - renderedColumnsWidth,
+  )
   const visibleColumnCount = visibleLeafColumns.length || 1
   const scrollStyle = useMemo(
     () => createScrollStyle(height, maxHeight, scrollViewportWidth > 0),
