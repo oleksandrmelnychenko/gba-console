@@ -25,10 +25,13 @@ import { useCallback, useEffect, useMemo, useReducer, useState, type ReactNode }
 import { useNavigate, useParams } from 'react-router-dom'
 import { formatDateInputForQuery, formatLocalDate, SYNC_DATA_RANGE_START } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import { DocumentOutcomePaymentModal } from '../../document-outcome-payment/components/DocumentOutcomePaymentModal'
 import type { DocumentOutcomePaymentSource } from '../../document-outcome-payment/types'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import {
+  DocumentExportModal,
+  type DocumentExportItem,
+} from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
@@ -143,11 +146,6 @@ type SelectOption = {
 type PalletTableRow = SadPalletItem & {
   __pallet: SadPallet
   __rowId: string
-}
-
-type DownloadDocumentLink = {
-  label: string
-  url?: string
 }
 
 /* Native title (§5: no per-cell Mantine <Tooltip> — hundreds of them lag). */
@@ -2163,23 +2161,13 @@ function DownloadDocumentsModal({
   const links = useMemo(() => document ? createDownloadDocumentLinks(document, t) : [], [document, t])
 
   return (
-    <AppModal centered opened={opened} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Документи для друку')}</span>} onClose={onClose}>
-      <Stack>
-        {links.length === 0 && <Text c="dimmed">{t('Посилань немає')}</Text>}
-        {links.map((link) => (
-          <Button
-            key={link.label}
-            disabled={!link.url}
-            justify="space-between"
-            rightSection={<Download size={16} />}
-            variant="outline"
-            onClick={() => link.url && window.open(getDocumentHref(link.url), '_blank', 'noopener,noreferrer')}
-          >
-            {link.label}
-          </Button>
-        ))}
-      </Stack>
-    </AppModal>
+    <DocumentExportModal
+      emptyText={t('Посилань немає')}
+      items={links}
+      opened={opened}
+      title={t('Документи для друку')}
+      onClose={onClose}
+    />
   )
 }
 
@@ -2673,17 +2661,25 @@ function hasPalletItemErrors(sad: Sad): boolean {
   )
 }
 
-function createDownloadDocumentLinks(document: SadPrintDocument, t: (key: string) => string): DownloadDocumentLink[] {
+function createDownloadDocumentLinks(document: SadPrintDocument, t: (key: string) => string): DocumentExportItem[] {
   return [
-    { label: `${t('Фактура')} XLS`, url: document.FacturaDocumentURL },
-    { label: `${t('Фактура')} PDF`, url: document.FacturaPdfDocumentURL },
-    { label: `${t('Специфікація')} XLS`, url: document.SpecificationDocumentURL },
-    { label: `${t('Специфікація')} PDF`, url: document.SpecificationPdfDocumentURL },
-    { label: `${t('Фактура')} Export XLS`, url: document.ExportFacturaDocumentURL },
-    { label: `${t('Фактура')} Export PDF`, url: document.ExportFacturaPdfDocumentURL },
-    { label: `${t('Специфікація')} Export XLS`, url: document.ExportSpecificationDocumentURL },
-    { label: `${t('Специфікація')} Export PDF`, url: document.ExportSpecificationPdfDocumentURL },
-  ].filter((link) => Boolean(link.url))
+    ...createDownloadDocumentItem('excel', `${t('Фактура')} XLS`, document.FacturaDocumentURL),
+    ...createDownloadDocumentItem('pdf', `${t('Фактура')} PDF`, document.FacturaPdfDocumentURL),
+    ...createDownloadDocumentItem('excel', `${t('Специфікація')} XLS`, document.SpecificationDocumentURL),
+    ...createDownloadDocumentItem('pdf', `${t('Специфікація')} PDF`, document.SpecificationPdfDocumentURL),
+    ...createDownloadDocumentItem('excel', `${t('Фактура')} Export XLS`, document.ExportFacturaDocumentURL),
+    ...createDownloadDocumentItem('pdf', `${t('Фактура')} Export PDF`, document.ExportFacturaPdfDocumentURL),
+    ...createDownloadDocumentItem('excel', `${t('Специфікація')} Export XLS`, document.ExportSpecificationDocumentURL),
+    ...createDownloadDocumentItem('pdf', `${t('Специфікація')} Export PDF`, document.ExportSpecificationPdfDocumentURL),
+  ]
+}
+
+function createDownloadDocumentItem(
+  format: DocumentExportItem['format'],
+  label: string,
+  url?: string,
+): DocumentExportItem[] {
+  return url ? [{ format, label, url }] : []
 }
 
 function normalizeSpecificationParseConfiguration(
