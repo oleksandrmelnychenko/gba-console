@@ -385,6 +385,7 @@ export function OutgoingCashOrderForm({ onCancel, onCreated }: OutgoingCashOrder
               onChange={handleRegisterChanged}
             />
             <Select
+              className="app-input-description-below"
               data={currencyOptions}
               description={balanceLabel || undefined}
               disabled={!selectedRegister || isLoading || isSaving}

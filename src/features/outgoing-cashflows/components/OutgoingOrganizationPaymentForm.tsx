@@ -542,6 +542,7 @@ export function OutgoingOrganizationPaymentForm({ onCancel, onCreated }: Outgoin
               onChange={handleRegisterChanged}
             />
             <Select
+              className="app-input-description-below"
               data={currencyOptions}
               description={balanceLabel || undefined}
               disabled={!selectedRegister || isLoading || isSaving}
@@ -577,6 +578,7 @@ export function OutgoingOrganizationPaymentForm({ onCancel, onCreated }: Outgoin
               onOptionSubmit={(value) => void handleCounterpartySubmit(value)}
             />
             <Select
+              className="app-input-description-below"
               data={agreementOptions}
               description={
                 selectedAgreement && typeof selectedAgreement.CurrentAmount === 'number'

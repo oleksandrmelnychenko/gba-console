@@ -450,6 +450,7 @@ export function OutgoingClientReturnForm({ onCancel, onCreated }: OutgoingClient
               onChange={handleRegisterChanged}
             />
             <Select
+              className="app-input-description-below"
               data={currencyOptions}
               description={balanceLabel || undefined}
               disabled={!selectedRegister || isLoading || isSaving}
@@ -485,6 +486,7 @@ export function OutgoingClientReturnForm({ onCancel, onCreated }: OutgoingClient
               onOptionSubmit={(value) => void handlePayerSubmit(value)}
             />
             <Select
+              className="app-input-description-below"
               data={agreementOptions}
               description={
                 selectedClientAgreement && typeof selectedClientAgreement.AccountBalance === 'number'

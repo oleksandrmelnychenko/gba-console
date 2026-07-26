@@ -793,6 +793,7 @@ export function OutgoingPaymentGroupForm({
               onChange={handleRegisterChanged}
             />
             <Select
+              className="app-input-description-below"
               data={currencyOptions}
               description={balanceLabel || undefined}
               disabled={!selectedRegister || isLoading || isSaving}
@@ -803,6 +804,7 @@ export function OutgoingPaymentGroupForm({
             />
             {!isOtherOutcome && (
               <Select
+                className="app-input-description-below"
                 data={agreementOptions}
                 description={agreementBalance || undefined}
                 disabled={!agreementOptions.length || isLoading || isSaving}
