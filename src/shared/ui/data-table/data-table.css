@@ -139,14 +139,17 @@
   text-align: left;
 }
 
-.data-table-header-button {
+.data-table .data-table-header-button {
   align-items: center;
   color: inherit;
   display: flex;
   flex: 1 1 auto;
-  font: inherit;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
   gap: 4px;
   justify-content: flex-start !important;
+  line-height: inherit;
   min-width: 0;
   text-align: left;
   width: 100%;
