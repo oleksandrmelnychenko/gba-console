@@ -8,24 +8,32 @@ import type { PaymentMovement } from './types'
 const movementNamesByOperation: Partial<
   Record<IncomePaymentOperationType, string[]>
 > = {
-  [IncomePaymentOperationType.ClientPayment]: ['Оплата покупця'],
+  [IncomePaymentOperationType.ClientPayment]: [
+    'Оплата покупця',
+    'Оплата покупателя',
+  ],
   [IncomePaymentOperationType.SupplierReturn]: [
     'Повернення постачальника',
     'Повернення від постачальника',
+    'Повернення грошових коштів від постачальника',
+    'Возврат денежных средств поставщиком',
   ],
   [IncomePaymentOperationType.OtherAccountingWithCounterparts]: [
     'Інші з контрагентами',
     'Інші розрахунки із контрагентами',
     'Інші надходження з контрагентами',
+    'Прочие расчеты с контрагентами',
   ],
   [IncomePaymentOperationType.OtherIncome]: [
     'Інше надходження безготівкових грошових коштів',
     'Інші надходження на рахунок',
     'Інший касовий прихід',
+    'Прочие поступления денежных средств',
   ],
   [IncomePaymentOperationType.ReturnFromColleague]: [
     'Повернення від колеги',
     'Повернення грошових коштів підзвітником',
+    'Возврат денежных средств подотчетником',
   ],
 }
 
