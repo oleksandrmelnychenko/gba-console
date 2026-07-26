@@ -8,6 +8,7 @@ import type {
   OutcomePaymentOrderCreatePayload,
   OutcomePaymentUser,
 } from '../outgoingCreateTypes'
+import { isGeneralOutcomeOperationType } from '../outgoingCreateTypes'
 import type { Organization, OutcomePaymentOrder, PaymentMovement } from '../types'
 
 export async function getOutgoingCreateOrganizations(): Promise<Organization[]> {
@@ -67,6 +68,10 @@ export async function createOutgoingCashflowOrder(
   order: OutcomePaymentOrderCreatePayload,
   operation?: AccountingMutationOperationOptions,
 ): Promise<OutcomePaymentOrder | null> {
+  if (!isGeneralOutcomeOperationType(order.OperationType)) {
+    throw new Error('Видатковий ордер має некоректний тип операції')
+  }
+
   const result = await executeAccountingMutation({
     identity: order,
     kind: 'outcome-payment:add',

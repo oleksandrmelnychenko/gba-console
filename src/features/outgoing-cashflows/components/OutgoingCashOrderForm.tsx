@@ -32,10 +32,9 @@ import {
   type CreateFormState,
   type CreatePaymentCurrencyRegister,
   type CreatePaymentRegister,
-  OUTCOME_OPERATION_TYPE,
-  type OutcomePaymentOrderCreatePayload,
   type OutcomePaymentUser,
 } from '../outgoingCreateTypes'
+import { buildOutgoingCashOrderPayload } from '../outgoingCashOrderPayload'
 import type { Organization, PaymentMovement } from '../types'
 
 type OutgoingCashOrderFormProps = {
@@ -286,7 +285,7 @@ export function OutgoingCashOrderForm({ onCancel, onCreated }: OutgoingCashOrder
       return
     }
 
-    const payload = buildPayload({
+    const payload = buildOutgoingCashOrderPayload({
       colleague: resolvedColleague,
       form,
       selectedCurrencyRegister: selectedCurrencyRegister as CreatePaymentCurrencyRegister,
@@ -502,43 +501,6 @@ function createInitialForm(): CreateFormState {
   }
 }
 
-function buildPayload({
-  colleague,
-  form,
-  selectedCurrencyRegister,
-  selectedMovement,
-  selectedOrganization,
-  selectedRegister,
-}: {
-  colleague: OutcomePaymentUser | null
-  form: CreateFormState
-  selectedCurrencyRegister: CreatePaymentCurrencyRegister
-  selectedMovement: PaymentMovement
-  selectedOrganization: Organization
-  selectedRegister: CreatePaymentRegister
-}): OutcomePaymentOrderCreatePayload {
-  const invoiceNumber = form.invoiceNumber.trim()
-
-  return {
-    Amount: form.amount,
-    Colleague: form.isUnderReport ? colleague : null,
-    Comment: form.comment.trim(),
-    FromDate: toIsoDateTime(form.date, form.time),
-    IsAccounting: form.isAccounting,
-    IsManagementAccounting: form.isManagementAccounting,
-    IsUnderReport: form.isUnderReport,
-    OperationType: OUTCOME_OPERATION_TYPE.TransferToColleague,
-    Organization: selectedOrganization,
-    PaymentCurrencyRegister: selectedCurrencyRegister,
-    PaymentMovementOperation: {
-      PaymentMovement: selectedMovement,
-    },
-    PaymentPurpose: form.paymentPurpose.trim(),
-    PaymentRegister: selectedRegister,
-    ...(invoiceNumber ? { ArrivalNumber: invoiceNumber } : {}),
-  }
-}
-
 function validateForm({
   amount,
   isUnderReport,
@@ -702,12 +664,6 @@ function joinTruthyParts(parts: Array<string | null | undefined>): string {
   }
 
   return truthyParts.join(' ')
-}
-
-function toIsoDateTime(dateValue: string, timeValue: string): string {
-  const date = new Date(`${dateValue || formatLocalDate(new Date())}T${timeValue || '00:00'}`)
-
-  return Number.isNaN(date.getTime()) ? new Date().toISOString() : date.toISOString()
 }
 
 function toTimeValue(date: Date): string {

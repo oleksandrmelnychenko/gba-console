@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { OUTCOME_OPERATION_TYPE } from '../outgoing-cashflows/outgoingCreateTypes'
 import { buildConsumableOrderPaymentLinks, buildPaymentPayload } from './paymentPayload'
 import type { ConsumablesOrder, Organization, PaymentCurrencyRegister, PaymentMovement, PaymentRegister } from './types'
 
@@ -54,6 +55,7 @@ describe('consumable order payment payload', () => {
     })
 
     expect(payload.ConsumableProductOrganization).toBe(supplier)
+    expect(payload.OperationType).toBe(OUTCOME_OPERATION_TYPE.PaymentToSupplier)
     expect(payload.SupplyOrganizationAgreement).toBe(agreement)
   })
 

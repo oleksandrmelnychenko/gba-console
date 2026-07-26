@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
+import { OUTCOME_OPERATION_TYPE } from '../outgoingCreateTypes'
 import { createOutgoingCashflowOrder } from './outgoingCashflowCreateApi'
 
 vi.mock('../../../shared/api/apiClient', () => ({
@@ -18,6 +19,7 @@ describe('outgoingCashflowCreateApi mutation contract', () => {
     const order = {
       Amount: 450,
       Comment: 'Оплата постачальнику',
+      OperationType: OUTCOME_OPERATION_TYPE.PaymentToSupplier,
     }
     apiRequestMock.mockResolvedValueOnce({
       ...order,
@@ -32,5 +34,13 @@ describe('outgoingCashflowCreateApi mutation contract', () => {
       headers: { 'Idempotency-Key': operationId },
       method: 'POST',
     })
+  })
+
+  it('rejects an order without an explicit outcome operation type', async () => {
+    await expect(createOutgoingCashflowOrder({
+      Amount: 450,
+    })).rejects.toThrow('Видатковий ордер має некоректний тип операції')
+
+    expect(apiRequestMock).not.toHaveBeenCalled()
   })
 })

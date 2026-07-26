@@ -26,6 +26,7 @@ import type {
   SupplyOrganization,
   User,
 } from '../types'
+import { isGeneralOutcomeOperationType } from '../../outgoing-cashflows/outgoingCreateTypes'
 
 const SUPPLY_ORGANIZATION_LOOKUP_LIMIT = 20
 
@@ -240,6 +241,10 @@ export async function createOutcomePaymentOrder(
   order: OutcomePaymentOrder,
   operation?: AccountingMutationOperationOptions,
 ): Promise<OutcomePaymentOrder | null> {
+  if (!isGeneralOutcomeOperationType(order.OperationType)) {
+    throw new Error('Видатковий ордер має некоректний тип операції')
+  }
+
   const result = await executeAccountingMutation({
     identity: order,
     kind: 'outcome-payment:add',

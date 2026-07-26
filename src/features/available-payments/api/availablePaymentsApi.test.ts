@@ -165,6 +165,7 @@ describe('availablePaymentsApi', () => {
 
     const body = apiRequestMock.mock.calls[0]?.[1]?.body as FormData
     const payload = JSON.parse(String(body.get('order'))) as {
+      OperationType: number
       OutcomePaymentOrderSupplyPaymentTasks: Array<{
         SupplyPaymentTask: SupplyPaymentTask
       }>
@@ -181,6 +182,7 @@ describe('availablePaymentsApi', () => {
         NetUid: '7be42a1c-b2a6-4137-8548-2033ce5cb85d',
       }),
     ])
+    expect(payload.OperationType).toBe(4)
     expect(apiRequestMock).toHaveBeenCalledWith('/payments/orders/outcome/new/supplies', {
       body,
       dedupe: false,

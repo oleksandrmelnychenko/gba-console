@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { OUTCOME_OPERATION_TYPE } from '../../outgoing-cashflows/outgoingCreateTypes'
 import { apiRequest } from '../../../shared/api/apiClient'
 import {
   calculateConsumableOrder,
@@ -118,6 +119,7 @@ describe('consumableOrdersApi', () => {
     const order: OutcomePaymentOrder = {
       Amount: 90,
       NetUid: 'outcome-1',
+      OperationType: OUTCOME_OPERATION_TYPE.PaymentToSupplier,
     }
     apiRequestMock.mockResolvedValueOnce(order)
 

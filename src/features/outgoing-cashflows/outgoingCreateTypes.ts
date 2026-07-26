@@ -67,6 +67,14 @@ export const OUTCOME_OPERATION_TYPE = {
 
 export type OutcomeOperationType = (typeof OUTCOME_OPERATION_TYPE)[keyof typeof OUTCOME_OPERATION_TYPE]
 
+export function isGeneralOutcomeOperationType(value: unknown): value is OutcomeOperationType {
+  return value === OUTCOME_OPERATION_TYPE.PaymentToSupplier
+    || value === OUTCOME_OPERATION_TYPE.BuyerReturn
+    || value === OUTCOME_OPERATION_TYPE.OtherOutcomeWithCounterparts
+    || value === OUTCOME_OPERATION_TYPE.OtherOutcome
+    || value === OUTCOME_OPERATION_TYPE.TransferToColleague
+}
+
 export const OUTGOING_CREATE_MODE = {
   ClientReturn: 'client-return',
   OrganizationPayment: 'organization-payment',

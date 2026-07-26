@@ -16,6 +16,7 @@ import type {
   PriceTotal,
   SupplyPaymentTask,
 } from '../types'
+import { OUTCOME_OPERATION_TYPE } from '../../outgoing-cashflows/outgoingCreateTypes'
 
 export async function getGroupedPaymentTasks(
   params: AvailablePaymentsSearchParams,
@@ -217,6 +218,7 @@ export async function createAvailablePaymentOutcome({
       IsAccounting: isAccounting,
       IsManagementAccounting: isManagementAccounting,
       IsUnderReport: false,
+      OperationType: OUTCOME_OPERATION_TYPE.PaymentToSupplierByPaymentTask,
       Organization: organization,
       OutcomePaymentOrderSupplyPaymentTasks: models.map((model) => ({
         SupplyPaymentTask: toPersistedPaymentTaskPayload(model.task),

@@ -7,6 +7,7 @@ import type {
   PaymentMovement,
   PaymentRegister,
 } from './types'
+import { OUTCOME_OPERATION_TYPE } from '../outgoing-cashflows/outgoingCreateTypes'
 
 export const MONEY_EPSILON = 0.005
 
@@ -47,6 +48,8 @@ export function buildPaymentPayload({
     Comment: comment.trim(),
     ConsumableProductOrganization: supplyOrganization,
     FromDate: toIsoDateTime(date, time),
+    IsUnderReport: false,
+    OperationType: OUTCOME_OPERATION_TYPE.PaymentToSupplier,
     Organization: selectedOrganization,
     OutcomePaymentOrderConsumablesOrders: [
       {

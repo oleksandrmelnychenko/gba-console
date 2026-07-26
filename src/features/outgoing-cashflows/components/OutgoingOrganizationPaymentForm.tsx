@@ -43,7 +43,6 @@ import { createOutgoingCashflowOrder } from '../api/outgoingCashflowCreateApi'
 import type {
   CreatePaymentCurrencyRegister,
   CreatePaymentRegister,
-  OutcomePaymentOrderCreatePayload,
 } from '../outgoingCreateTypes'
 import {
   SEARCH_DEBOUNCE_MS,
@@ -63,6 +62,7 @@ import {
   toTimeValue,
   toUniqueLabels,
 } from './outgoingModeShared'
+import { buildOutgoingOrganizationPaymentPayload } from '../outgoingOrganizationPaymentPayload'
 import { SupplierUnpaidConsumableOrdersPicker } from './SupplierUnpaidConsumableOrdersPicker'
 import {
   getConsumableOrdersRemainingAmount,
@@ -465,23 +465,20 @@ export function OutgoingOrganizationPaymentForm({ onCancel, onCreated }: Outgoin
       return
     }
 
-    const payload: OutcomePaymentOrderCreatePayload = {
-      Amount: form.amount,
-      Comment: form.comment.trim(),
-      ConsumableProductOrganization: selectedSupplyOrganization,
-      ExchangeRate: form.exchangeRate || undefined,
-      FromDate: toIsoDateTime(form.date, form.time),
-      IsAccounting: form.isAccounting,
-      IsManagementAccounting: form.isManagementAccounting,
-      IsUnderReport: false,
-      Organization: selectedOrganization,
-      PaymentCurrencyRegister: selectedCurrencyRegister as CreatePaymentCurrencyRegister,
-      PaymentMovementOperation: {
-        PaymentMovement: activeMovement,
-      },
-      PaymentRegister: selectedRegister as CreatePaymentRegister,
-      SupplyOrganizationAgreement: selectedAgreement,
-    }
+    const payload = buildOutgoingOrganizationPaymentPayload({
+      amount: form.amount,
+      comment: form.comment,
+      exchangeRate: form.exchangeRate,
+      fromDate: toIsoDateTime(form.date, form.time),
+      isAccounting: form.isAccounting,
+      isManagementAccounting: form.isManagementAccounting,
+      organization: selectedOrganization,
+      paymentCurrencyRegister: selectedCurrencyRegister as CreatePaymentCurrencyRegister,
+      paymentMovement: activeMovement,
+      paymentRegister: selectedRegister as CreatePaymentRegister,
+      supplyOrganization: selectedSupplyOrganization,
+      supplyOrganizationAgreement: selectedAgreement,
+    })
 
     if (selectedUnpaidOrders.length > 0) {
       payload.OutcomePaymentOrderConsumablesOrders = buildConsumableOrderPaymentLinks(selectedUnpaidOrders, form.amount)
