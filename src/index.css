@@ -350,6 +350,10 @@ select {
   border-color: var(--brand-orange);
 }
 
+.mantine-SegmentedControl-root {
+  height: fit-content;
+}
+
 .app-form-sheet .mantine-SegmentedControl-label {
   font-family: var(--font-mono);
   font-size: 12.5px;
