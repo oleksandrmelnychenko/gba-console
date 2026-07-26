@@ -168,10 +168,10 @@ export function HeadDashboardPage() {
             onChange={(event) => handleAsOfDateChange(event.currentTarget.value || undefined)}
           />
 
-          <Group gap="xs" wrap="nowrap">
+          <Group className="cockpit-head-title" gap="xs" wrap="nowrap">
             <AiFeatureBadge size="sm" tooltip={t('AI-сервіс керівника продажів')} />
             <Stack gap={0}>
-              <Text className="app-section-title" fw={600} size="sm">{t('Дашборд відділу продажів')}</Text>
+              <Text className="app-section-title" component="h1" fw={600} size="sm">{t('Дашборд відділу продажів')}</Text>
               <Text c="dimmed" size="xs">{t('Поточний стан команди та задач')}</Text>
             </Stack>
           </Group>
@@ -213,7 +213,7 @@ export function HeadDashboardPage() {
             <Card className="app-section-card cockpit-head-summary" withBorder radius="md" padding="md">
               <Stack gap="sm">
                 <div>
-                  <Text className="app-section-title" fw={600} size="sm">{t('Результат відділу')}</Text>
+                  <Text className="app-section-title" component="h2" fw={600} size="sm">{t('Результат відділу')}</Text>
                   <Text c="dimmed" size="xs">{t('План, виконання та результат AI-задач за місяць')}</Text>
                   {hasAiHistoryLineage(team) && <AiHistoryLineageNote lineage={team} />}
                 </div>
@@ -342,7 +342,7 @@ function TeamMonitor({
     <Card className="app-section-card cockpit-team-monitor" withBorder radius="md" padding={0}>
       <Group className="cockpit-side-header" gap="xs" justify="space-between">
         <div>
-          <Text className="app-section-title" fw={600} size="sm">{t('Команда')}</Text>
+          <Text className="app-section-title" component="h2" fw={600} size="sm">{t('Команда')}</Text>
           <Text c="dimmed" size="xs">{t('План, оплати та активні задачі')}</Text>
         </div>
         {selectedManagerId !== null ? (
@@ -392,7 +392,7 @@ function EscalationsPanel({ escalated }: { escalated: EscalatedResponse }) {
     <Card className="app-section-card" withBorder radius="md" padding={0}>
       <Group className="cockpit-side-header" gap="xs" justify="space-between">
         <div>
-          <Text className="app-section-title" fw={600} size="sm">{t('Потребують уваги')}</Text>
+          <Text className="app-section-title" component="h2" fw={600} size="sm">{t('Потребують уваги')}</Text>
           <Text c="dimmed" size="xs">{t('Прострочені та ескальовані задачі')}</Text>
         </div>
         <Badge className={`app-role-pill ${escalated.count > 0 ? 'is-red' : 'is-gray'}`} variant="light">{escalated.count}</Badge>

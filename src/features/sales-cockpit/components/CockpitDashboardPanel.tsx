@@ -136,12 +136,21 @@ export function CockpitDashboardPanel({ asOfDate, reloadKey }: { asOfDate?: stri
     urgencyData.some((item) => item.value > 0) ||
     taskTypeData.some((item) => item.value > 0) ||
     agingData.some((item) => item.amount > 0)
+  const hasSummaryData =
+    (dashboard?.value_at_risk_eur ?? 0) > 0 ||
+    completedTotals.open > 0 ||
+    completedTotals.done > 0 ||
+    completedTotals.dismissed > 0
   const showCharts = isLoading || hasChartData
+
+  if (!isLoading && !error && !hasSummaryData && !hasChartData) {
+    return null
+  }
 
   return (
     <Card className="app-section-card cockpit-dashboard-panel" withBorder radius="md">
       <Stack gap="md">
-        <Text className="app-section-title" fw={600} size="sm">{t('Дашборд завдань')}</Text>
+        <Text className="app-section-title" component="h2" fw={600} size="sm">{t('Дашборд завдань')}</Text>
         {dashboard && <AiHistoryLineageNote lineage={dashboard} />}
 
         {error && (
@@ -150,12 +159,14 @@ export function CockpitDashboardPanel({ asOfDate, reloadKey }: { asOfDate?: stri
           </Alert>
         )}
 
-        <div className="cockpit-dashboard-metrics">
-          <StatCard accent="danger" label={t('Сума під ризиком')} value={formatMoney(dashboard?.value_at_risk_eur ?? 0)} />
-          <StatCard accent="info" label={t('Активні')} value={String(completedTotals.open)} />
-          <StatCard accent="success" label={t('Виконано (місяць)')} value={String(completedTotals.done)} />
-          <StatCard label={t('Відхилено (місяць)')} value={String(completedTotals.dismissed)} />
-        </div>
+        {isLoading || hasSummaryData ? (
+          <div className="cockpit-dashboard-metrics">
+            <StatCard accent="danger" label={t('Сума під ризиком')} value={formatMoney(dashboard?.value_at_risk_eur ?? 0)} />
+            <StatCard accent="info" label={t('Активні')} value={String(completedTotals.open)} />
+            <StatCard accent="success" label={t('Виконано (місяць)')} value={String(completedTotals.done)} />
+            <StatCard label={t('Відхилено (місяць)')} value={String(completedTotals.dismissed)} />
+          </div>
+        ) : null}
 
         {showCharts ? (
           <div className="cockpit-analytics-grid">

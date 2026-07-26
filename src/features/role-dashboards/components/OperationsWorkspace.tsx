@@ -1,4 +1,4 @@
-import { Group, SimpleGrid, Text, ThemeIcon, UnstyledButton } from '@mantine/core'
+import { Group, SimpleGrid, Text, UnstyledButton } from '@mantine/core'
 import {
   ArrowRight,
   Banknote,
@@ -79,13 +79,13 @@ export function OperationsWorkspace({ workspaceKey }: { workspaceKey: DashboardW
 
   return (
     <div className="role-dashboard-operations">
-      <Text className="app-section-title" fw={700} mb="sm">{t('Робочі черги')}</Text>
+      <Text component="h2" className="app-section-title" fw={600} mb="sm">{t('Робочі черги')}</Text>
       <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="sm">
         {actions.map((action) => (
           <UnstyledButton key={action.route} className="role-dashboard-action" onClick={() => navigate(action.route)}>
             <Group justify="space-between" wrap="nowrap">
               <Group gap="sm" wrap="nowrap">
-                <ThemeIcon color="gray" size={34} variant="light"><action.icon size={18} /></ThemeIcon>
+                <span className="role-dashboard-action-icon"><action.icon size={17} /></span>
                 <Text fw={650} size="sm">{t(action.label)}</Text>
               </Group>
               <ArrowRight size={17} />
@@ -94,7 +94,10 @@ export function OperationsWorkspace({ workspaceKey }: { workspaceKey: DashboardW
         ))}
       </SimpleGrid>
       {actions.length === 0 && (
-        <Group gap="xs" mt="sm"><ShieldCheck size={18} /><Text c="dimmed" size="sm">{t('Немає доступних робочих черг')}</Text></Group>
+        <Group className="role-dashboard-empty" gap="xs" mt="sm">
+          <ShieldCheck size={18} />
+          <Text size="sm">{t('Немає доступних робочих черг')}</Text>
+        </Group>
       )}
     </div>
   )

@@ -290,6 +290,13 @@ export function SalesCockpitPage() {
   const hasActiveFilters = Boolean(
     asOfDate || taskTypeFilter || urgencyFilter || dayFilter !== 'all',
   )
+  const hasTargetData = Boolean(
+    target
+      && [target.shipped, target.paid].some(
+        (metric) => metric.target > 0 || metric.mtd > 0 || metric.today_needed > 0,
+      ),
+  )
+  const showOverview = isLoading || tasks.length > 0 || hasTargetData
 
   return (
     <Stack className="cockpit-page" gap={6}>
@@ -319,14 +326,16 @@ export function SalesCockpitPage() {
           </Alert>
         )}
 
-        <div className={`cockpit-overview${target ? '' : ' is-single'}`}>
-          <CockpitQueueSummary
-            insights={queueInsights}
-            isLoading={isLoading}
-            visibleCount={visibleTasks.length}
-          />
-          {target && <CockpitTargetCard target={target} />}
-        </div>
+        {showOverview ? (
+          <div className={`cockpit-overview${hasTargetData ? '' : ' is-single'}`}>
+            <CockpitQueueSummary
+              insights={queueInsights}
+              isLoading={isLoading}
+              visibleCount={visibleTasks.length}
+            />
+            {target && hasTargetData ? <CockpitTargetCard target={target} /> : null}
+          </div>
+        ) : null}
 
         <CockpitTaskList
           isLoading={isLoading}

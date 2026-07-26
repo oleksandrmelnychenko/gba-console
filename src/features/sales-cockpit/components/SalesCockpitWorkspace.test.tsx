@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core'
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { theme } from '../../../shared/theme/theme'
 import { getDashboard } from '../api/salesCockpitApi'
@@ -57,16 +57,15 @@ describe('Sales cockpit workspace', () => {
     )
   })
 
-  it('does not render meaningless charts for an empty dashboard', async () => {
+  it('does not render a duplicate analytics section for an empty dashboard', async () => {
     vi.mocked(getDashboard).mockResolvedValue(dashboard())
 
     renderWithTheme(<CockpitDashboardPanel reloadKey={0} />)
 
-    expect(
-      await screen.findByText(
-        'Аналітика з’явиться, коли будуть активні завдання або заборгованість',
-      ),
-    ).not.toBeNull()
+    expect(screen.getByTestId('urgency-chart')).not.toBeNull()
+    await waitFor(() => expect(screen.queryByTestId('urgency-chart')).toBeNull())
+
+    expect(screen.queryByText('Дашборд завдань')).toBeNull()
     expect(screen.queryByTestId('urgency-chart')).toBeNull()
     expect(screen.queryByTestId('task-type-chart')).toBeNull()
     expect(screen.queryByTestId('aging-chart')).toBeNull()

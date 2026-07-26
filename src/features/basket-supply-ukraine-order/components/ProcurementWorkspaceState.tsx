@@ -39,7 +39,7 @@ export function ProcurementWorkspaceState({
     >
       {isLoading ? <Loader color="orange" size="sm" /> : null}
       <div className="procure-workspace-state__copy">
-        <Text className="app-section-title" fw={600} size="sm">
+        <Text className="app-section-title" component="h2" fw={600} size="sm">
           {title}
         </Text>
         <Text className="procure-workspace-state__description">

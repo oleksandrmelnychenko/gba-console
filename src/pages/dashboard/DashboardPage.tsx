@@ -1,5 +1,5 @@
 import { Alert, Box, Group, Loader, SegmentedControl, Select, Stack, Text, TextInput } from '@mantine/core'
-import { Bot, CircleAlert, LayoutDashboard } from 'lucide-react'
+import { CircleAlert, LayoutDashboard } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { AiFeatureBadge } from '../../shared/ai/AiFeatureBadge'
@@ -114,71 +114,82 @@ export function DashboardPage() {
   }
 
   return (
-    <Stack className="role-dashboard-page" gap="sm">
-      <Group className="role-dashboard-toolbar" justify="space-between" wrap="wrap">
-        <Group className="role-dashboard-title" gap="xs" wrap="nowrap">
-          {selectedDescriptor.isAi ? <Bot size={20} /> : <LayoutDashboard size={20} />}
-          <Box>
-            <Group gap={6} wrap="nowrap">
-              <Text fw={750}>{t(selectedDescriptor.name)}</Text>
-              {selectedDescriptor.isAi && <AiFeatureBadge compact tooltip={t('AI-функція')} />}
-            </Group>
-            <Text c="dimmed" size="xs">{t(selectedDescriptor.group)}</Text>
-          </Box>
-        </Group>
+    <Stack className="role-dashboard-page" gap={6}>
+      <Group className="app-filter-bar role-dashboard-toolbar" justify="space-between" wrap="nowrap">
+        <Box className="role-dashboard-title">
+          <Group gap={6} wrap="nowrap">
+            <Text component="h1" className="app-section-title role-dashboard-heading">
+              {t(selectedDescriptor.name)}
+            </Text>
+            {selectedDescriptor.isAi && <AiFeatureBadge compact tooltip={t('AI-функція')} />}
+          </Group>
+          <Text className="role-dashboard-group">{t(selectedDescriptor.group)}</Text>
+        </Box>
 
         {catalog.canSwitchWorkspace && (
-          <Select
-            aria-label={t('Вибрати дашборд')}
-            className="role-dashboard-selector"
-            data={selectOptions}
-            searchable
-            value={selectedWorkspace}
-            onChange={selectWorkspace}
-          />
+          <Box className="app-filter-field role-dashboard-selector-field">
+            <Text className="app-filter-label">{t('Дашборд')}</Text>
+            <Select
+              aria-label={t('Вибрати дашборд')}
+              className="role-dashboard-selector"
+              data={selectOptions}
+              searchable
+              value={selectedWorkspace}
+              onChange={selectWorkspace}
+            />
+          </Box>
         )}
 
         {showsSharedPeriod && (
-          <Group className="role-dashboard-period" gap={6} wrap="wrap">
-            <SegmentedControl
-              aria-label={t('Період')}
-              data={[
-                { label: t('Сьогодні'), value: 'today' },
-                { label: t('7 днів'), value: '7d' },
-                { label: t('30 днів'), value: '30d' },
-                { label: t('Місяць'), value: 'month' },
-              ]}
-              size="xs"
-              value={periodPreset}
-              onChange={applyPeriodPreset}
-            />
-            <TextInput
-              aria-label={t('Від')}
-              max={to}
-              required
-              type="date"
-              value={from}
-              onChange={(event) => {
-                if (event.currentTarget.value) {
-                  setFrom(event.currentTarget.value)
-                  setPeriodPreset('custom')
-                }
-              }}
-            />
-            <TextInput
-              aria-label={t('До')}
-              max={today}
-              min={from}
-              required
-              type="date"
-              value={to}
-              onChange={(event) => {
-                if (event.currentTarget.value) {
-                  setTo(event.currentTarget.value)
-                  setPeriodPreset('custom')
-                }
-              }}
-            />
+          <Group className="role-dashboard-period" gap={10} wrap="nowrap">
+            <Box className="app-filter-field role-dashboard-period-presets">
+              <Text className="app-filter-label">{t('Період')}</Text>
+              <SegmentedControl
+                aria-label={t('Період')}
+                data={[
+                  { label: t('Сьогодні'), value: 'today' },
+                  { label: t('7 днів'), value: '7d' },
+                  { label: t('30 днів'), value: '30d' },
+                  { label: t('Місяць'), value: 'month' },
+                ]}
+                size="xs"
+                value={periodPreset}
+                onChange={applyPeriodPreset}
+              />
+            </Box>
+            <Box className="app-filter-field role-dashboard-date-field">
+              <Text className="app-filter-label">{t('Від')}</Text>
+              <TextInput
+                aria-label={t('Від')}
+                max={to}
+                required
+                type="date"
+                value={from}
+                onChange={(event) => {
+                  if (event.currentTarget.value) {
+                    setFrom(event.currentTarget.value)
+                    setPeriodPreset('custom')
+                  }
+                }}
+              />
+            </Box>
+            <Box className="app-filter-field role-dashboard-date-field">
+              <Text className="app-filter-label">{t('До')}</Text>
+              <TextInput
+                aria-label={t('До')}
+                max={today}
+                min={from}
+                required
+                type="date"
+                value={to}
+                onChange={(event) => {
+                  if (event.currentTarget.value) {
+                    setTo(event.currentTarget.value)
+                    setPeriodPreset('custom')
+                  }
+                }}
+              />
+            </Box>
           </Group>
         )}
       </Group>

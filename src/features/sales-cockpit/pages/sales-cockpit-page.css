@@ -51,6 +51,14 @@
   grid-template-columns: 170px minmax(240px, auto) minmax(0, 1fr);
 }
 
+.role-dashboard-content .cockpit-head-title {
+  display: none;
+}
+
+.role-dashboard-content .cockpit-head-command-bar {
+  grid-template-columns: 170px minmax(0, 1fr);
+}
+
 .cockpit-head-kpis {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -578,10 +586,13 @@
 }
 
 .cockpit-dashboard-empty {
-  border-top: 1px solid var(--mantine-color-gray-2);
+  background: var(--mantine-color-gray-0);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
   font-family: var(--font-mono);
-  padding: 14px 0 2px;
-  text-align: center;
+  line-height: 1.45;
+  padding: 14px 16px;
+  text-align: left;
 }
 
 .cockpit-ai-status {

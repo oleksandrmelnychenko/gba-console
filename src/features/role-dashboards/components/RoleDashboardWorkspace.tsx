@@ -24,10 +24,10 @@ export function RoleDashboardWorkspace({
     case 'buyer-head':
       return <ProcureDashboardTab />
     case 'gba':
-      return <Stack gap="md"><WorkspaceSummary period={period} workspaceKey={workspaceKey} /><SystemWorkspace showDirectory /></Stack>
+      return <Stack gap={6}><WorkspaceSummary period={period} workspaceKey={workspaceKey} /><SystemWorkspace showDirectory /></Stack>
     case 'system':
-      return <Stack gap="md"><WorkspaceSummary period={period} workspaceKey={workspaceKey} /><SystemWorkspace /></Stack>
+      return <Stack gap={6}><WorkspaceSummary period={period} workspaceKey={workspaceKey} /><SystemWorkspace /></Stack>
     default:
-      return <Stack gap="md"><WorkspaceSummary period={period} workspaceKey={workspaceKey} /><OperationsWorkspace workspaceKey={workspaceKey} /></Stack>
+      return <Stack gap={6}><WorkspaceSummary period={period} workspaceKey={workspaceKey} /><OperationsWorkspace workspaceKey={workspaceKey} /></Stack>
   }
 }

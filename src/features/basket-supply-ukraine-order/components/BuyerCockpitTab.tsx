@@ -46,6 +46,7 @@ import type {
   ProducerPlan,
   ReorderSuggestion,
 } from '../procurementTypes'
+import { ProcurementWorkspaceState } from './ProcurementWorkspaceState'
 
 type TermsSaveStatus = 'idle' | 'saving' | 'saved'
 
@@ -811,22 +812,22 @@ export function BuyerCockpitTab() {
       )}
 
       {!hasSelection && !error && (
-        <Card className="app-section-card" padding="lg" radius="md" withBorder>
-          <Text c="dimmed" size="sm" ta="center">
-            {t('Оберіть виробника')}
-          </Text>
-        </Card>
+        <ProcurementWorkspaceState
+          className="buyer-cockpit-state"
+          description={t('Оберіть виробника у фільтрі, щоб переглянути рекомендовані позиції та підготувати чернетку замовлення.')}
+          surface
+          title={t('План закупівлі за виробником')}
+        />
       )}
 
       {hasSelection && isLoading && (
-        <Card className="app-section-card" padding="lg" radius="md" withBorder>
-          <Group justify="center">
-            <Loader size="sm" />
-            <Text c="dimmed" size="sm">
-              {t('Завантаження…')}
-            </Text>
-          </Group>
-        </Card>
+        <ProcurementWorkspaceState
+          className="buyer-cockpit-state"
+          description={t('Збираємо залишки, умови постачання та рекомендації до замовлення.')}
+          isLoading
+          surface
+          title={t('Готуємо план закупівлі')}
+        />
       )}
 
       {hasSelection && hasPlan && plan && (
@@ -835,7 +836,7 @@ export function BuyerCockpitTab() {
             <Group justify="space-between" wrap="wrap">
               <Stack gap={2}>
                 <Group gap="xs" wrap="nowrap">
-                  <Text fw={600} size="lg">
+                  <Text className="app-section-title" component="h2" fw={600} size="sm">
                     {plan.producer_name || `#${plan.producer_id ?? ''}`}
                   </Text>
                   <AiFeatureBadge tooltip={t('AI-помічник закупівельника')} />
@@ -858,11 +859,14 @@ export function BuyerCockpitTab() {
                   <Text c="dimmed" size="xs">
                     {t('Чернетка замовлення')} (EUR)
                   </Text>
-                  <Text className="app-money" fw={600} size="lg">
-                    €{eurFormatter.format(totalDraftCost)}
-                  </Text>
+                  <Group gap={5} justify="flex-end" wrap="nowrap">
+                    <Text className="app-money" fw={600} size="lg">
+                      {eurFormatter.format(totalDraftCost)}
+                    </Text>
+                    <Text className="app-money-meta" size="xs">EUR</Text>
+                  </Group>
                 </Stack>
-                <Popover position="bottom-end" shadow="md" withinPortal>
+                <Popover position="bottom-end" shadow="none" withinPortal>
                   <Popover.Target>
                     <Button leftSection={<Settings size={16} />} size="xs" variant="default">
                       {t('Налаштування виробника')}
@@ -907,7 +911,7 @@ export function BuyerCockpitTab() {
               </Group>
             </Group>
 
-            <SimpleGrid cols={{ base: 2, md: 5 }} spacing="sm">
+            <SimpleGrid className="buyer-cockpit-summary" cols={{ base: 2, md: 5 }} spacing={0}>
               <SummaryItem label={t('Позицій')} value={countFormatter.format(plan.item_count)} />
               <SummaryItem
                 color={URGENCY_BADGE_COLOR.critical}
@@ -1011,11 +1015,11 @@ export function BuyerCockpitTab() {
 
 function SummaryItem({ color, label, value }: { color?: string; label: string; value: string }) {
   return (
-    <Stack gap={2}>
-      <Text c="dimmed" size="xs">
+    <Stack className="buyer-cockpit-summary__item" gap={2}>
+      <Text className="buyer-cockpit-summary__label" size="xs">
         {label}
       </Text>
-      <Text c={color} fw={700}>
+      <Text className="buyer-cockpit-summary__value" c={color} fw={700}>
         {value}
       </Text>
     </Stack>

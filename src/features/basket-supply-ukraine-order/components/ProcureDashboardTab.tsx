@@ -482,6 +482,7 @@ export function ProcureDashboardTab() {
               <Group gap="xs" wrap="nowrap">
                 <Text
                   className="app-section-title"
+                  component="h1"
                   fw={600}
                   id="procure-dashboard-title"
                   size="sm"
@@ -510,43 +511,45 @@ export function ProcureDashboardTab() {
             </Alert>
           )}
 
-          <Card className="app-section-card procure-dashboard__summary" padding="md" radius="md" withBorder>
-            <div className="procure-dashboard__metrics">
-              <DashboardMetric
-                hint={t('у вибраному зрізі')}
-                isLoading={isLoading && !charts}
-                label={t('Всього позицій')}
-                value={countFormatter.format(summary.totalPositions)}
-              />
-              <DashboardMetric
-                hint={formatUkrainianCount(
-                  summary.criticalPositions,
-                  [t('критична позиція'), t('критичні позиції'), t('критичних позицій')],
-                )}
-                isLoading={isLoading && !charts}
-                label={t('Потребують уваги')}
-                tone="danger"
-                value={countFormatter.format(summary.attentionPositions)}
-              />
-              <DashboardMetric
-                hint={formatUkrainianCount(
-                  summary.topItems,
-                  [t('пріоритетна позиція'), t('пріоритетні позиції'), t('пріоритетних позицій')],
-                )}
-                isLoading={isLoading && !charts}
-                label={t('Рекомендовано замовити')}
-                tone="brand"
-                value={qtyFormatter.format(summary.totalSuggested)}
-              />
-              <DashboardMetric
-                hint={t('товарів із часовим рядом')}
-                isLoading={isLoading && !charts}
-                label={t('Прогнозів попиту')}
-                tone="model"
-                value={countFormatter.format(summary.forecastProducts)}
-              />
-            </div>
-          </Card>
+          {hasUsefulData ? (
+            <Card className="app-section-card procure-dashboard__summary" padding="md" radius="md" withBorder>
+              <div className="procure-dashboard__metrics">
+                <DashboardMetric
+                  hint={t('у вибраному зрізі')}
+                  isLoading={false}
+                  label={t('Всього позицій')}
+                  value={countFormatter.format(summary.totalPositions)}
+                />
+                <DashboardMetric
+                  hint={formatUkrainianCount(
+                    summary.criticalPositions,
+                    [t('критична позиція'), t('критичні позиції'), t('критичних позицій')],
+                  )}
+                  isLoading={false}
+                  label={t('Потребують уваги')}
+                  tone="danger"
+                  value={countFormatter.format(summary.attentionPositions)}
+                />
+                <DashboardMetric
+                  hint={formatUkrainianCount(
+                    summary.topItems,
+                    [t('пріоритетна позиція'), t('пріоритетні позиції'), t('пріоритетних позицій')],
+                  )}
+                  isLoading={false}
+                  label={t('Рекомендовано замовити')}
+                  tone="brand"
+                  value={qtyFormatter.format(summary.totalSuggested)}
+                />
+                <DashboardMetric
+                  hint={t('товарів із часовим рядом')}
+                  isLoading={false}
+                  label={t('Прогнозів попиту')}
+                  tone="model"
+                  value={countFormatter.format(summary.forecastProducts)}
+                />
+              </div>
+            </Card>
+          ) : null}
 
           {isLoading && !charts ? (
             <ProcurementWorkspaceState
@@ -877,7 +880,7 @@ function DashboardPanelHeader({
 }) {
   return (
     <div className="procure-dashboard__panel-heading">
-      <Text className="app-section-title" fw={600} size="sm">
+      <Text className="app-section-title" component="h2" fw={600} size="sm">
         {title}
       </Text>
       <Text c="dimmed" size="xs">

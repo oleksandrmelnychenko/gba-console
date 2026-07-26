@@ -1,4 +1,4 @@
-import { ActionIcon, Alert, Badge, Card, Group, Loader, SimpleGrid, Stack, Text, Tooltip, UnstyledButton } from '@mantine/core'
+import { ActionIcon, Alert, Badge, Group, Loader, SimpleGrid, Stack, Text, Tooltip, UnstyledButton } from '@mantine/core'
 import { CircleAlert, RefreshCw } from 'lucide-react'
 import { useEffect, useReducer, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -89,10 +89,12 @@ export function WorkspaceSummary({
         <Alert color="orange" icon={<CircleAlert size={16} />} variant="light">{error}</Alert>
       )}
       <Group justify="space-between">
-        <Text className="app-section-title" fw={700}>{t('Ключові показники')}</Text>
+        <Text component="h2" className="app-section-title" fw={600}>{t('Ключові показники')}</Text>
         <Group gap={4} wrap="nowrap">
           {summary.generatedAtUtc && (
-            <Text c="dimmed" size="xs">{t('Оновлено')}: {formatUpdatedAt(summary.generatedAtUtc)}</Text>
+            <Text className="role-dashboard-updated" aria-live="polite">
+              {t('Оновлено')}: {formatUpdatedAt(summary.generatedAtUtc)}
+            </Text>
           )}
           <Tooltip label={t('Оновити показники')}>
             <ActionIcon
@@ -107,7 +109,7 @@ export function WorkspaceSummary({
           </Tooltip>
         </Group>
       </Group>
-      <SimpleGrid cols={{ base: 1, xs: 2, md: 3, xl: 5 }} spacing="sm">
+      <SimpleGrid className="role-dashboard-kpi-grid" cols={{ base: 1, xs: 2, md: 3, xl: 5 }} spacing={0}>
         {summary.metrics.map((metric) => {
           const route = metric.route
           return <MetricCard key={metric.key} metric={metric} onOpen={route ? () => navigate(route) : undefined} />
@@ -118,39 +120,54 @@ export function WorkspaceSummary({
 }
 
 function MetricCard({ metric, onOpen }: { metric: DashboardWorkspaceMetric; onOpen?: () => void }) {
+  const formatted = formatMetricValue(metric)
   const content = (
-    <Card className={`role-dashboard-kpi is-${metric.tone}`} padding="sm" radius="sm" withBorder>
-      <Text c="dimmed" lineClamp={2} size="xs">{metric.label}</Text>
-      <Group align="flex-end" gap="xs" justify="space-between" wrap="nowrap">
-        <Text className="role-dashboard-kpi-value" fw={750}>{formatMetricValue(metric)}</Text>
+    <div className={`role-dashboard-kpi is-${metric.tone}`}>
+      <Text className="role-dashboard-kpi-label" lineClamp={2}>{metric.label}</Text>
+      <Group align="flex-end" gap={6} justify="space-between" wrap="nowrap">
+        <span className="role-dashboard-kpi-value">
+          {formatted.value}
+          {formatted.unit && <span className="role-dashboard-kpi-unit">{formatted.unit}</span>}
+        </span>
         {metric.hasData && metric.coveragePercent < 100 && (
-          <Badge color="orange" size="xs" variant="light">{metric.coveragePercent}%</Badge>
+          <Badge className="app-role-pill is-orange" size="xs" variant="light">{metric.coveragePercent}%</Badge>
         )}
       </Group>
-    </Card>
+    </div>
   )
 
   return onOpen ? (
-    <UnstyledButton className="role-dashboard-kpi-button" onClick={onOpen}>{content}</UnstyledButton>
+    <UnstyledButton
+      className="role-dashboard-kpi-button"
+      aria-label={`${metric.label}: ${formatted.value} ${formatted.unit}`.trim()}
+      onClick={onOpen}
+    >
+      {content}
+    </UnstyledButton>
   ) : content
 }
 
-function formatMetricValue(metric: DashboardWorkspaceMetric): string {
+function formatMetricValue(metric: DashboardWorkspaceMetric): { unit: string; value: string } {
   if (!metric.hasData) {
-    return 'Немає даних'
+    return { unit: '', value: 'Немає даних' }
   }
 
   if (metric.unit === 'EUR' || metric.unit === 'UAH') {
-    return new Intl.NumberFormat('uk-UA', {
-      currency: metric.unit,
-      maximumFractionDigits: 2,
-      style: 'currency',
-    }).format(metric.value)
+    return {
+      unit: metric.unit,
+      value: new Intl.NumberFormat('uk-UA', {
+        maximumFractionDigits: 2,
+        minimumFractionDigits: 2,
+      }).format(metric.value),
+    }
   }
 
-  return new Intl.NumberFormat('uk-UA', {
-    maximumFractionDigits: metric.unit === 'qty' ? 2 : 0,
-  }).format(metric.value)
+  return {
+    unit: '',
+    value: new Intl.NumberFormat('uk-UA', {
+      maximumFractionDigits: metric.unit === 'qty' ? 2 : 0,
+    }).format(metric.value),
+  }
 }
 
 function getRefreshInterval(workspaceKey: DashboardWorkspaceKey): number {

@@ -222,6 +222,67 @@
   margin-left: auto;
 }
 
+.buyer-cockpit-state {
+  align-items: flex-start;
+  flex-direction: row;
+  justify-content: flex-start;
+  min-height: 0 !important;
+  padding: 16px;
+  text-align: left;
+}
+
+.buyer-cockpit-state .procure-workspace-state__copy {
+  max-width: 720px;
+}
+
+.buyer-cockpit-summary {
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+  border-top: 1px solid var(--mantine-color-gray-2);
+  padding: 10px 0;
+}
+
+.buyer-cockpit-summary__item {
+  min-width: 0;
+  padding: 2px 14px;
+}
+
+.buyer-cockpit-summary__item + .buyer-cockpit-summary__item {
+  border-left: 1px solid var(--mantine-color-gray-2);
+}
+
+.buyer-cockpit-summary__item:first-child {
+  padding-left: 0;
+}
+
+.buyer-cockpit-summary__item:last-child {
+  padding-right: 0;
+}
+
+.buyer-cockpit-summary__label {
+  color: var(--mantine-color-gray-7);
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.buyer-cockpit-summary__label::before {
+  background: var(--mantine-color-gray-4);
+  border-radius: 999px;
+  content: '';
+  display: inline-block;
+  height: 6px;
+  margin-right: 6px;
+  vertical-align: 1px;
+  width: 6px;
+}
+
+.buyer-cockpit-summary__value {
+  font-family: var(--font-mono);
+  font-size: 17px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+
 /* «Закупівля під бюджет» filter strip — inputs left, refresh cluster pushed to
    the trailing edge, «Сформувати план» as the create-slot CTA. */
 .budget-cart-filter-row {

@@ -1,5 +1,5 @@
-import { ActionIcon, Alert, Badge, Card, Group, SimpleGrid, Stack, Text, Tooltip } from '@mantine/core'
-import { Bot, CircleAlert, RefreshCw, ServerCog } from 'lucide-react'
+import { ActionIcon, Alert, Badge, Card, Group, SimpleGrid, Skeleton, Stack, Text, Tooltip } from '@mantine/core'
+import { CircleAlert, RefreshCw } from 'lucide-react'
 import { useEffect, useMemo, useReducer, useState } from 'react'
 import { AI_FLEET_SERVICES, getAiFleetServicesSnapshot } from '../../ai-fleet/api/aiFleetApi'
 import type { AiFleetServiceStatus } from '../../ai-fleet/types'
@@ -72,10 +72,14 @@ export function SystemWorkspace({ showDirectory = false }: SystemWorkspaceProps)
     <Stack gap="sm">
       <Group justify="space-between" wrap="nowrap">
         <Group gap="xs">
-          {showDirectory ? <Bot size={20} /> : <ServerCog size={20} />}
-          <Text className="app-section-title" fw={700}>{t(showDirectory ? 'AI та системні сервіси' : 'Стан системних сервісів')}</Text>
-          <Badge color={healthyCount === AI_FLEET_SERVICES.length ? 'teal' : 'orange'} variant="light">
-            {healthyCount}/{AI_FLEET_SERVICES.length}
+          <Text component="h2" className="app-section-title" fw={600}>
+            {t(showDirectory ? 'AI та системні сервіси' : 'Стан системних сервісів')}
+          </Text>
+          <Badge
+            className={`app-role-pill ${isLoading ? 'is-orange' : healthyCount === AI_FLEET_SERVICES.length ? 'is-green' : 'is-gray'}`}
+            variant="light"
+          >
+            {isLoading ? t('Перевірка') : `${healthyCount}/${AI_FLEET_SERVICES.length}`}
           </Badge>
         </Group>
         <Tooltip label={t('Оновити')}>
@@ -97,16 +101,27 @@ export function SystemWorkspace({ showDirectory = false }: SystemWorkspaceProps)
           const state = getCombinedState(status)
 
           return (
-            <Card key={service.id} className="role-dashboard-service" padding="sm" radius="sm" withBorder>
-              <Group justify="space-between" wrap="nowrap">
-                <div>
-                  <Text fw={700} size="sm">{service.name}</Text>
-                  <Text c="dimmed" lineClamp={1} size="xs">{service.source}</Text>
-                </div>
-                <Badge color={state === 'healthy' ? 'teal' : state === 'down' ? 'red' : 'gray'} size="sm" variant="light">
-                  {t(state === 'healthy' ? 'Працює' : state === 'down' ? 'Помилка' : 'Немає даних')}
-                </Badge>
-              </Group>
+            <Card key={service.id} className="app-section-card role-dashboard-service" padding="sm" radius="md" withBorder>
+              {isLoading && statuses.length === 0 ? (
+                <Stack gap={7}>
+                  <Skeleton height={13} radius="sm" width="42%" />
+                  <Skeleton height={10} radius="sm" width="70%" />
+                </Stack>
+              ) : (
+                <Group justify="space-between" wrap="nowrap">
+                  <div>
+                    <Text className="role-dashboard-service-name">{service.name}</Text>
+                    <Text className="role-dashboard-service-source" lineClamp={1}>{service.source}</Text>
+                  </div>
+                  <Badge
+                    className={`app-role-pill ${state === 'healthy' ? 'is-green' : state === 'down' ? 'is-red' : 'is-gray'}`}
+                    size="sm"
+                    variant="light"
+                  >
+                    {t(state === 'healthy' ? 'Працює' : state === 'down' ? 'Помилка' : 'Немає даних')}
+                  </Badge>
+                </Group>
+              )}
             </Card>
           )
         })}
