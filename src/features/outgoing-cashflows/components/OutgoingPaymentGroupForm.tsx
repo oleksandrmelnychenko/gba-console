@@ -741,7 +741,13 @@ export function OutgoingPaymentGroupForm({
           )}
 
           <SimpleGrid cols={{ base: 1, md: 2 }}>
-            <SegmentedControl data={searchTypeOptions} disabled={isLoading || isSaving} value={String(form.searchType)} onChange={handleSearchTypeChanged} />
+            <SegmentedControl
+              data={searchTypeOptions}
+              disabled={isLoading || isSaving}
+              style={{ alignSelf: 'end' }}
+              value={String(form.searchType)}
+              onChange={handleSearchTypeChanged}
+            />
             <Autocomplete
               data={counterpartyOptions}
               disabled={isLoading || isSaving}
