@@ -1,7 +1,6 @@
 import {
   ActionIcon,
   Alert,
-  Anchor,
   Badge,
   Button,
   Divider,
@@ -16,11 +15,12 @@ import { AppModal } from "../../../shared/ui/AppModal"
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { notifications } from '@mantine/notifications'
 import { useDebouncedValue } from '@mantine/hooks'
-import { CircleAlert, ExternalLink, FileText, IdCard, Plus, RotateCcw, Search, ToggleLeft, ToggleRight, Wallet } from 'lucide-react'
+import { CircleAlert, ExternalLink, IdCard, Plus, RotateCcw, Search, ToggleLeft, ToggleRight, Wallet } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE, PAGINATOR_PAGE_SIZE_OPTIONS } from '../../../shared/ui/paginator/paginatorPageSize'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { type ReactNode, type RefObject, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { SupplierPassport } from '../components/SupplierPassport'
@@ -28,7 +28,6 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import {
   exportSuppliersDocument,
   getSupplierFilterItems,
@@ -926,34 +925,12 @@ function SupplierDocumentModal({
   const { t } = useI18n()
 
   return (
-    <AppModal centered opened={opened} title={t('Експорт постачальників')} onClose={onClose}>
-      <Stack gap="sm">
-        {document?.DocumentURL || document?.PdfDocumentURL ? (
-          <>
-            {document.DocumentURL && (
-              <Anchor href={getDocumentHref(document.DocumentURL)} target="_blank" rel="noreferrer" className="document-link">
-                <span className="document-link-badge document-link-badge-excel">
-                  <ExcelIcon size={22} />
-                </span>
-                <span>{t('Excel документ')}</span>
-              </Anchor>
-            )}
-            {document.PdfDocumentURL && (
-              <Anchor href={getDocumentHref(document.PdfDocumentURL)} target="_blank" rel="noreferrer" className="document-link">
-                <span className="document-link-badge document-link-badge-pdf">
-                  <FileText size={22} strokeWidth={1.8} />
-                </span>
-                <span>{t('PDF документ')}</span>
-              </Anchor>
-            )}
-          </>
-        ) : (
-          <Text c="dimmed" size="sm">
-            {t('Документ недоступний для завантаження')}
-          </Text>
-        )}
-      </Stack>
-    </AppModal>
+    <DocumentExportModal
+      document={document}
+      opened={opened}
+      title={t('Експорт постачальників')}
+      onClose={onClose}
+    />
   )
 }
 

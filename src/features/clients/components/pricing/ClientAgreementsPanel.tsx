@@ -1,7 +1,6 @@
 import {
   ActionIcon,
   Alert,
-  Anchor,
   Badge,
   Button,
   Card,
@@ -11,13 +10,12 @@ import {
   Text,
   Tooltip,
 } from '@mantine/core'
-import { Check, CircleAlert, CircleHelp, FileText, Pencil, Plus, Printer, ShieldCheck, Trash2 } from 'lucide-react'
-import { WordIcon } from '../../../../shared/ui/WordIcon'
+import { Check, CircleAlert, CircleHelp, Pencil, Plus, Printer, ShieldCheck, Trash2 } from 'lucide-react'
+import { DocumentExportModal } from '../../../../shared/ui/document-export-modal/DocumentExportModal'
 import { useMemo, useReducer } from 'react'
 import { AppModal } from '../../../../shared/ui/AppModal'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
-import { upgradeHttpToHttps } from '../../../../shared/url/upgradeHttpToHttps'
 import { useAuth } from '../../../auth/useAuth'
 import { AgreementForm } from './AgreementForm'
 import { organizationHasVat } from './organizationVat'
@@ -350,53 +348,14 @@ export function ClientAgreementsPanel({
         )}
       </AppModal>
 
-      <AppModal
-        centered
+      <DocumentExportModal
+        document={exportDocument}
+        documentFormat="word"
+        isLoading={isExporting}
         opened={downloadModalOpened}
         title={t('Друк договору')}
         onClose={() => dispatch({ type: 'closeDownload' })}
-      >
-        <Stack gap="sm">
-          {isExporting ? (
-            <Group justify="center" py="md">
-              <Loader color="orange" size="sm" />
-            </Group>
-          ) : exportDocument?.DocumentURL || exportDocument?.PdfDocumentURL ? (
-            <>
-              {exportDocument.DocumentURL && (
-                <Anchor
-                  className="document-link"
-                  href={upgradeHttpToHttps(exportDocument.DocumentURL)}
-                  rel="noreferrer"
-                  target="_blank"
-                >
-                  <span className="document-link-badge document-link-badge-word">
-                    <WordIcon size={22} />
-                  </span>
-                  <span>{t('Word документ')}</span>
-                </Anchor>
-              )}
-              {exportDocument.PdfDocumentURL && (
-                <Anchor
-                  className="document-link"
-                  href={upgradeHttpToHttps(exportDocument.PdfDocumentURL)}
-                  rel="noreferrer"
-                  target="_blank"
-                >
-                  <span className="document-link-badge document-link-badge-pdf">
-                    <FileText size={22} strokeWidth={1.8} />
-                  </span>
-                  <span>{t('PDF документ')}</span>
-                </Anchor>
-              )}
-            </>
-          ) : (
-            <Text c="dimmed" size="sm">
-              {t('Документ недоступний для завантаження')}
-            </Text>
-          )}
-        </Stack>
-      </AppModal>
+      />
     </Stack>
   )
 }

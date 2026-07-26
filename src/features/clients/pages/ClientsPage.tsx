@@ -1,7 +1,6 @@
 import {
   ActionIcon,
   Alert,
-  Anchor,
   Badge,
   Box,
   Button,
@@ -19,7 +18,7 @@ import {
 import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
 import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
-import { CircleAlert, Clock, ExternalLink, FileText, Network, Plus, RotateCcw, Search, ToggleLeft, ToggleRight, Wallet } from 'lucide-react'
+import { CircleAlert, Clock, ExternalLink, Network, Plus, RotateCcw, Search, ToggleLeft, ToggleRight, Wallet } from 'lucide-react'
 import { useDebouncedValue } from '@mantine/hooks'
 import { type FormEvent, type RefObject, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { ClientTypeRoleFilter } from '../components/ClientTypeRoleFilter'
@@ -27,13 +26,13 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE, PAGINATOR_PAGE_SIZE_OPTIONS } from '../../../shared/ui/paginator/paginatorPageSize'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
+import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import type {
   DataTableColumn,
   DataTableDefaultLayout,
@@ -1104,37 +1103,13 @@ function ClientDocumentModal({
   title: string
   onClose: () => void
 }) {
-  const { t } = useI18n()
-
   return (
-    <AppModal centered opened={opened} title={title} onClose={onClose}>
-      <Stack gap="sm">
-        {document?.DocumentURL || document?.PdfDocumentURL ? (
-          <>
-            {document.DocumentURL && (
-              <Anchor href={getDocumentHref(document.DocumentURL)} target="_blank" rel="noreferrer" className="document-link">
-                <span className="document-link-badge document-link-badge-excel">
-                  <ExcelIcon size={22} />
-                </span>
-                <span>{t('Excel документ')}</span>
-              </Anchor>
-            )}
-            {document.PdfDocumentURL && (
-              <Anchor href={getDocumentHref(document.PdfDocumentURL)} target="_blank" rel="noreferrer" className="document-link">
-                <span className="document-link-badge document-link-badge-pdf">
-                  <FileText size={22} strokeWidth={1.8} />
-                </span>
-                <span>{t('PDF документ')}</span>
-              </Anchor>
-            )}
-          </>
-        ) : (
-          <Text c="dimmed" size="sm">
-            {t('Документ недоступний для завантаження')}
-          </Text>
-        )}
-      </Stack>
-    </AppModal>
+    <DocumentExportModal
+      document={document}
+      opened={opened}
+      title={title}
+      onClose={onClose}
+    />
   )
 }
 
