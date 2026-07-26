@@ -57,7 +57,6 @@ type FormState = {
   selectedAgreementValue: string
   selectedStorageValue: string
   selectedSupplierValue: string
-  storageSearch: string
   supplierSearch: string
 }
 
@@ -116,12 +115,13 @@ export function AdvanceReportConsumableOrderModal({
   const [costMovements, setCostMovements] = useValueState<PaymentCostMovement[]>([])
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(false)
+  const [isLoadingStorages, setLoadingStorages] = useValueState(false)
   const [isCalculating, setCalculating] = useValueState(false)
   const [confirmCloseOpen, setConfirmCloseOpen] = useValueState(false)
   const calcSeq = useRef(0)
   const initialFormRef = useRef<FormState | null>(null)
   const supplierSearchSeq = useRef(0)
-  const storageSearchSeq = useRef(0)
+  const storageLoadSeq = useRef(0)
   const productSearchSeq = useRef(0)
   const costMovementSearchSeq = useRef(0)
 
@@ -174,7 +174,7 @@ export function AdvanceReportConsumableOrderModal({
   const invalidatePendingRequests = useCallback(() => {
     calcSeq.current += 1
     supplierSearchSeq.current += 1
-    storageSearchSeq.current += 1
+    storageLoadSeq.current += 1
     productSearchSeq.current += 1
     costMovementSearchSeq.current += 1
   }, [])
@@ -191,7 +191,9 @@ export function AdvanceReportConsumableOrderModal({
     setCalculating(false)
     setProductOptions([])
     setCostMovements([])
+    setStorages([])
     setLoading(true)
+    setLoadingStorages(false)
   }, [
     setCalculating,
     setConfirmCloseOpen,
@@ -201,8 +203,10 @@ export function AdvanceReportConsumableOrderModal({
     setForm,
     setItemEditor,
     setLoading,
+    setLoadingStorages,
     setOrder,
     setProductOptions,
+    setStorages,
   ])
 
   useEffect(() => {
@@ -258,28 +262,26 @@ export function AdvanceReportConsumableOrderModal({
       return undefined
     }
 
-    const value = form.storageSearch.trim()
-    const requestId = (storageSearchSeq.current += 1)
-    const timeoutId = window.setTimeout(() => {
-      if (!value) {
-        return
-      }
+    const requestId = (storageLoadSeq.current += 1)
+    setLoadingStorages(true)
 
-      void searchConsumableStorages(value)
-        .then((nextStorages) => {
-          if (storageSearchSeq.current !== requestId) {
-            return
-          }
+    void searchConsumableStorages('')
+      .then((nextStorages) => {
+        if (storageLoadSeq.current === requestId) {
+          setStorages(nextStorages)
+        }
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        if (storageLoadSeq.current === requestId) {
+          setLoadingStorages(false)
+        }
+      })
 
-          setStorages((current) =>
-            includeEntity(nextStorages, current.find((item) => getEntityValue(item) === form.selectedStorageValue) || null),
-          )
-        })
-        .catch(() => undefined)
-    }, SEARCH_DEBOUNCE_MS)
-
-    return () => window.clearTimeout(timeoutId)
-  }, [form.selectedStorageValue, form.storageSearch, opened, setStorages])
+    return () => {
+      storageLoadSeq.current += 1
+    }
+  }, [opened, setLoadingStorages, setStorages])
 
   useEffect(() => {
     if (!itemEditor.opened) {
@@ -393,19 +395,6 @@ export function AdvanceReportConsumableOrderModal({
       selectedAgreementValue: '',
       selectedSupplierValue: getEntityValue(supplier),
       supplierSearch: getEntityLabel(supplier),
-    })
-  }
-
-  function handleStorageSubmit(value: string) {
-    const storage = storages.find((item) => getEntityValue(item) === value)
-
-    if (!storage) {
-      return
-    }
-
-    updateForm({
-      selectedStorageValue: getEntityValue(storage),
-      storageSearch: getEntityLabel(storage),
     })
   }
 
@@ -666,14 +655,14 @@ export function AdvanceReportConsumableOrderModal({
             value={form.invoiceTime}
             onChange={(event) => updateForm({ invoiceTime: event.currentTarget.value })}
           />
-          <Autocomplete
+          <Select
             data={storageOptions}
-            disabled={isBusy}
+            disabled={isBusy || isLoadingStorages}
             label={t('Склад')}
-            placeholder={t('Почніть вводити склад')}
-            value={form.storageSearch}
-            onChange={(value) => updateForm({ selectedStorageValue: '', storageSearch: value })}
-            onOptionSubmit={handleStorageSubmit}
+            loading={isLoadingStorages}
+            placeholder={t('Оберіть склад')}
+            value={form.selectedStorageValue || null}
+            onChange={(value) => updateForm({ selectedStorageValue: value || '' })}
           />
           <Textarea
             autosize
@@ -979,7 +968,6 @@ function createEmptyForm(): FormState {
     selectedAgreementValue: '',
     selectedStorageValue: '',
     selectedSupplierValue: '',
-    storageSearch: '',
     supplierSearch: '',
   }
 }
@@ -998,7 +986,6 @@ function hasConsumableOrderDraft(
     Boolean(form.selectedAgreementValue) ||
     Boolean(form.selectedStorageValue) ||
     Boolean(form.selectedSupplierValue) ||
-    Boolean(form.storageSearch.trim()) ||
     Boolean(form.supplierSearch.trim()) ||
     documentFiles.length > 0 ||
     (order.ConsumablesOrderItems || []).some((item) => !item.Deleted)

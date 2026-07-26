@@ -34,7 +34,6 @@ import type {
 
 type FuelFormState = {
   companyCarSearch: string
-  costMovementSearch: string
   fuelAmount: number
   pricePerLiter: number
   selectedAgreementValue: string
@@ -83,11 +82,12 @@ export function AdvanceReportFuelModal({
   const [costMovements, setCostMovements] = useValueState<PaymentCostMovement[]>([])
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(false)
+  const [isLoadingCostMovements, setLoadingCostMovements] = useValueState(false)
   const [isSaving, setSaving] = useValueState(false)
   const [confirmCloseOpen, setConfirmCloseOpen] = useValueState(false)
   const supplierSearchSeq = useRef(0)
   const companyCarSearchSeq = useRef(0)
-  const costMovementSearchSeq = useRef(0)
+  const costMovementLoadSeq = useRef(0)
   const submitSeq = useRef(0)
 
   const selectedSupplier = useMemo(
@@ -135,7 +135,7 @@ export function AdvanceReportFuelModal({
     submitSeq.current += 1
     supplierSearchSeq.current += 1
     companyCarSearchSeq.current += 1
-    costMovementSearchSeq.current += 1
+    costMovementLoadSeq.current += 1
   }, [])
 
   const resetModalState = useCallback(() => {
@@ -146,7 +146,8 @@ export function AdvanceReportFuelModal({
     setConfirmCloseOpen(false)
     setSaving(false)
     setLoading(true)
-  }, [setCompanyCars, setConfirmCloseOpen, setCostMovements, setError, setForm, setLoading, setSaving])
+    setLoadingCostMovements(false)
+  }, [setCompanyCars, setConfirmCloseOpen, setCostMovements, setError, setForm, setLoading, setLoadingCostMovements, setSaving])
 
   useEffect(() => {
     invalidatePendingRequests()
@@ -227,24 +228,26 @@ export function AdvanceReportFuelModal({
       return undefined
     }
 
-    const value = form.costMovementSearch.trim()
-    const requestId = (costMovementSearchSeq.current += 1)
-    const timeoutId = window.setTimeout(() => {
-      if (!value) {
-        return
-      }
+    const requestId = (costMovementLoadSeq.current += 1)
+    setLoadingCostMovements(true)
 
-      void searchPaymentCostMovements(value)
-        .then((nextMovements) => {
-          if (costMovementSearchSeq.current === requestId) {
-            setCostMovements(nextMovements)
-          }
-        })
-        .catch(() => undefined)
-    }, SEARCH_DEBOUNCE_MS)
+    void searchPaymentCostMovements('')
+      .then((nextMovements) => {
+        if (costMovementLoadSeq.current === requestId) {
+          setCostMovements(nextMovements)
+        }
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        if (costMovementLoadSeq.current === requestId) {
+          setLoadingCostMovements(false)
+        }
+      })
 
-    return () => window.clearTimeout(timeoutId)
-  }, [form.costMovementSearch, opened, setCostMovements])
+    return () => {
+      costMovementLoadSeq.current += 1
+    }
+  }, [opened, setCostMovements, setLoadingCostMovements])
 
   function updateForm(patch: Partial<FuelFormState>) {
     setForm((current) => ({ ...current, ...patch }))
@@ -275,19 +278,6 @@ export function AdvanceReportFuelModal({
     updateForm({
       companyCarSearch: getCompanyCarLabel(companyCar),
       selectedCompanyCarValue: getEntityValue(companyCar),
-    })
-  }
-
-  function handleCostMovementSubmit(value: string) {
-    const movement = costMovements.find((item) => getEntityValue(item) === value)
-
-    if (!movement) {
-      return
-    }
-
-    updateForm({
-      costMovementSearch: movement.OperationName || '',
-      selectedCostMovementValue: getEntityValue(movement),
     })
   }
 
@@ -402,13 +392,14 @@ export function AdvanceReportFuelModal({
             onChange={(value) => updateForm({ companyCarSearch: value, selectedCompanyCarValue: '' })}
             onOptionSubmit={handleCompanyCarSubmit}
           />
-          <Autocomplete
+          <Select
             data={costMovementOptions}
-            disabled={isLoading}
+            disabled={isLoading || isLoadingCostMovements}
             label={t('Стаття витрат')}
-            value={form.costMovementSearch}
-            onChange={(value) => updateForm({ costMovementSearch: value, selectedCostMovementValue: '' })}
-            onOptionSubmit={handleCostMovementSubmit}
+            loading={isLoadingCostMovements}
+            placeholder={t('Оберіть статтю витрат')}
+            value={form.selectedCostMovementValue || null}
+            onChange={(value) => updateForm({ selectedCostMovementValue: value || '' })}
           />
           <NumberInput
             allowNegative={false}
@@ -511,7 +502,6 @@ export function AdvanceReportFuelModal({
 function createEmptyForm(): FuelFormState {
   return {
     companyCarSearch: '',
-    costMovementSearch: '',
     fuelAmount: 0,
     pricePerLiter: 0,
     selectedAgreementValue: '',
@@ -528,7 +518,6 @@ function createEmptyForm(): FuelFormState {
 function hasFuelDraft(form: FuelFormState): boolean {
   return (
     Boolean(form.companyCarSearch.trim()) ||
-    Boolean(form.costMovementSearch.trim()) ||
     Boolean(form.selectedAgreementValue) ||
     Boolean(form.selectedCompanyCarValue) ||
     Boolean(form.selectedCostMovementValue) ||
