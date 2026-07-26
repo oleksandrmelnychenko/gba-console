@@ -1,12 +1,11 @@
-import { ActionIcon, Alert, Anchor, Box, Button, Card, Divider, Group, Loader, Stack, Text, ThemeIcon, Tooltip } from '@mantine/core'
+import { ActionIcon, Alert, Box, Button, Card, Divider, Group, Loader, Stack, Text, ThemeIcon, Tooltip } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { ArrowLeftRight, CircleAlert, FileChartColumn, FileText, ReceiptText } from 'lucide-react'
-import { ExcelIcon } from '../ui/ExcelIcon'
+import { ArrowLeftRight, CircleAlert, FileChartColumn, ReceiptText } from 'lucide-react'
+import { DocumentExportModal } from '../ui/document-export-modal/DocumentExportModal'
 import { useRef } from 'react'
 import { useValueState } from '../hooks/useValueState'
 import { useI18n } from '../i18n/useI18n'
 import { usePersistentSaleJsonMutationRunner } from '../../features/sales-ukraine/usePersistentSaleJsonMutation'
-import { getDocumentHref } from '../url/getDocumentHref'
 import { AppModal } from '../ui/AppModal'
 import { confirmSaleAuditHistory, getShiftedSaleDocument, getShiftedSaleHistoryDocument } from './saleAuditApi'
 import {
@@ -204,47 +203,14 @@ export function SaleAuditDetail({ error, isLoading, onConfirmed, showConfirm = t
         </Stack>
       </Card>
 
-      <AppModal
-        centered
+      <DocumentExportModal
+        document={printDocument}
+        error={printError}
+        isLoading={isPrinting}
         opened={downloadOpened}
         title={printKind === 'act' ? t('Акт редагування') : t('Видаткова накладна')}
         onClose={closeDownload}
-      >
-        <Stack gap="sm">
-          {isPrinting ? (
-            <Group justify="center" py="md">
-              <Loader color="violet" size="sm" />
-            </Group>
-          ) : printError ? (
-            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
-              {printError}
-            </Alert>
-          ) : printDocument?.DocumentURL || printDocument?.PdfDocumentURL ? (
-            <>
-              {printDocument.DocumentURL && (
-                <Anchor className="document-link" href={getDocumentHref(printDocument.DocumentURL)} rel="noreferrer" target="_blank">
-                  <span className="document-link-badge document-link-badge-excel">
-                    <ExcelIcon size={22} />
-                  </span>
-                  <span>{t('Excel документ')}</span>
-                </Anchor>
-              )}
-              {printDocument.PdfDocumentURL && (
-                <Anchor className="document-link" href={getDocumentHref(printDocument.PdfDocumentURL)} rel="noreferrer" target="_blank">
-                  <span className="document-link-badge document-link-badge-pdf">
-                    <FileText size={22} strokeWidth={1.8} />
-                  </span>
-                  <span>{t('PDF документ')}</span>
-                </Anchor>
-              )}
-            </>
-          ) : (
-            <Text c="dimmed" size="sm">
-              {t('Документ недоступний для завантаження')}
-            </Text>
-          )}
-        </Stack>
-      </AppModal>
+      />
 
       <AppModal
         centered

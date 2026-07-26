@@ -1,7 +1,6 @@
 import {
   ActionIcon,
   Alert,
-  Anchor,
   Button,
   Card,
   Checkbox,
@@ -13,16 +12,14 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
-import { ChevronLeft, ChevronRight, CircleAlert, Download, FileText, Minus, Plus, RefreshCw } from 'lucide-react'
-import { ExcelIcon } from '../ExcelIcon'
+import { ChevronLeft, ChevronRight, CircleAlert, Download, Minus, Plus, RefreshCw } from 'lucide-react'
+import { DocumentExportModal } from '../document-export-modal/DocumentExportModal'
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { apiRequest } from '../../api/apiClient'
 import { formatLocalDate } from '../../date/dateTime'
 import { requireExportDocument, type ExportDocument } from '../../documents/exportDocument'
 import { useI18n } from '../../i18n/useI18n'
-import { upgradeHttpToHttps } from '../../url/upgradeHttpToHttps'
 import { AppDrawer } from '../AppDrawer'
-import { AppModal } from '../AppModal'
 import { DataTable } from '../data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../data-table/types'
 import './product-movement-history-drawers.css'
@@ -1300,37 +1297,13 @@ function ProductDocumentDownloadModal({
   onClose: () => void
   title: string
 }) {
-  const { t } = useI18n()
-
   return (
-    <AppModal centered opened={Boolean(document)} title={title} onClose={onClose}>
-      <Stack gap="sm">
-        {document?.DocumentURL || document?.PdfDocumentURL ? (
-          <>
-            {document.DocumentURL ? (
-              <Anchor href={upgradeHttpToHttps(document.DocumentURL)} target="_blank" rel="noreferrer" className="document-link">
-                <span className="document-link-badge document-link-badge-excel">
-                  <ExcelIcon size={22} />
-                </span>
-                <span>{t('Excel документ')}</span>
-              </Anchor>
-            ) : null}
-            {document.PdfDocumentURL ? (
-              <Anchor href={upgradeHttpToHttps(document.PdfDocumentURL)} target="_blank" rel="noreferrer" className="document-link">
-                <span className="document-link-badge document-link-badge-pdf">
-                  <FileText size={22} strokeWidth={1.8} />
-                </span>
-                <span>{t('PDF документ')}</span>
-              </Anchor>
-            ) : null}
-          </>
-        ) : (
-          <Text c="dimmed" size="sm">
-            {t('Документ недоступний для завантаження')}
-          </Text>
-        )}
-      </Stack>
-    </AppModal>
+    <DocumentExportModal
+      document={document}
+      opened={Boolean(document)}
+      title={title}
+      onClose={onClose}
+    />
   )
 }
 
