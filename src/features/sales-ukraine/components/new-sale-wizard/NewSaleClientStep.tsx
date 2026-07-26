@@ -1,6 +1,6 @@
-import { Anchor, Box, Loader, Stack, Text } from '@mantine/core'
+import { Box, Stack, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { ExternalLink, FileCheck, FileSpreadsheet, FileText, UserSearch } from 'lucide-react'
+import { UserSearch } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { formatLocalDate } from '../../../../shared/date/dateTime'
 import { useI18n } from '../../../../shared/i18n/useI18n'
@@ -9,7 +9,7 @@ import { SaleAuditDetail } from '../../../../shared/sale-audit/SaleAuditDetail'
 import { getSaleStatisticBySaleId } from '../../../../shared/sale-audit/saleAuditApi'
 import type { SaleAuditStatistic } from '../../../../shared/sale-audit/saleAuditTypes'
 import { AppDrawer } from '../../../../shared/ui/AppDrawer'
-import { AppModal } from '../../../../shared/ui/AppModal'
+import { DocumentExportModal } from '../../../../shared/ui/document-export-modal/DocumentExportModal'
 import { useAuth } from '../../../auth/useAuth'
 import { getClientSubClients, getRootClientBySubClientNetId } from '../../../clients/api/clientCabinetApi'
 import type { Client, ClientAgreement, ClientInDebt } from '../../../clients/types'
@@ -1210,93 +1210,16 @@ function WizardPrintDocumentModal({
 }) {
   const { t } = useI18n()
   const document = printState?.document
-  const hasDocuments = Boolean(document?.pdfUrl || document?.excelUrl)
 
   return (
-    <AppModal
-      centered
+    <DocumentExportModal
+      excelUrl={document?.excelUrl}
+      isLoading={Boolean(printState?.isLoading)}
       opened={opened}
-      title={t('Документ')}
+      pdfUrl={document?.pdfUrl}
+      title={t('Документ продажу')}
       onClose={onClose}
-    >
-      <Stack className="new-sale-print-modal__body" gap={0}>
-        <Box className="new-sale-print-modal__summary">
-          <span className="new-sale-print-modal__summary-icon">
-            <FileCheck size={22} strokeWidth={1.8} />
-          </span>
-          <Box className="new-sale-print-modal__summary-copy">
-            <Text className="new-sale-print-modal__eyebrow">{t('Друк')}</Text>
-            <Text className="new-sale-print-modal__heading">{t('Документ продажу')}</Text>
-            <Text className="new-sale-print-modal__description">
-              {printState?.isLoading
-                ? t('Формуємо файл для відкриття')
-                : hasDocuments
-                  ? t('Виберіть потрібний формат документа')
-                  : t('Документ недоступний для завантаження')}
-            </Text>
-          </Box>
-        </Box>
-
-        {printState?.isLoading ? (
-          <Box className="new-sale-print-modal__loading">
-            <Loader color="orange" size="sm" />
-            <Text>{t('Зачекайте кілька секунд')}</Text>
-          </Box>
-        ) : hasDocuments ? (
-          <Stack className="new-sale-print-modal__documents" gap={8}>
-            {document?.pdfUrl && (
-              <WizardPrintDocumentLink
-                href={document.pdfUrl}
-                icon={<FileText size={20} strokeWidth={1.8} />}
-                kind="pdf"
-                label={t('PDF')}
-                meta={t('Відкрити документ у новій вкладці')}
-              />
-            )}
-            {document?.excelUrl && (
-              <WizardPrintDocumentLink
-                href={document.excelUrl}
-                icon={<FileSpreadsheet size={20} strokeWidth={1.8} />}
-                kind="excel"
-                label={t('Excel')}
-                meta={t('Відкрити таблицю у новій вкладці')}
-              />
-            )}
-          </Stack>
-        ) : (
-          <Box className="new-sale-print-modal__empty">
-            <Text>{t('Файл не повернувся з сервера')}</Text>
-            <Text>{t('Спробуйте сформувати документ ще раз')}</Text>
-          </Box>
-        )}
-
-      </Stack>
-    </AppModal>
-  )
-}
-
-function WizardPrintDocumentLink({
-  href,
-  icon,
-  kind,
-  label,
-  meta,
-}: {
-  href: string
-  icon: ReactNode
-  kind: 'excel' | 'pdf'
-  label: string
-  meta: string
-}) {
-  return (
-    <Anchor className={`new-sale-print-document is-${kind}`} href={href} rel="noopener noreferrer" target="_blank">
-      <span className="new-sale-print-document__icon">{icon}</span>
-      <span className="new-sale-print-document__copy">
-        <span className="new-sale-print-document__label">{label}</span>
-        <span className="new-sale-print-document__meta">{meta}</span>
-      </span>
-      <ExternalLink className="new-sale-print-document__arrow" size={17} strokeWidth={1.8} />
-    </Anchor>
+    />
   )
 }
 

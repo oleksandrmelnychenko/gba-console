@@ -1,14 +1,13 @@
-import { Alert, Anchor, Box, Button, Group, NumberInput, Select, SimpleGrid, Stack, Text, TextInput } from '@mantine/core'
+import { Alert, Box, Button, Group, NumberInput, Select, SimpleGrid, Stack, Text, TextInput } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { CircleAlert, FileText, Truck } from 'lucide-react'
-import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
+import { CircleAlert, Truck } from 'lucide-react'
 import { useEffect, useMemo } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
-import { AppModal } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import {
   addSaleConsignmentNoteSetting,
   getSaleConsignmentNoteSettings,
@@ -412,39 +411,17 @@ function DownloadDocumentModal({
   opened: boolean
   title: string
 }) {
-  const { t } = useI18n()
   const excelUrl = toSecure(document?.DocumentURL)
   const pdfUrl = toSecure(document?.PdfDocumentURL)
 
   return (
-    <AppModal centered opened={opened} title={title} onClose={onClose}>
-      <Stack gap="sm">
-        {excelUrl || pdfUrl ? (
-          <>
-            {excelUrl && (
-              <Anchor href={excelUrl} target="_blank" rel="noopener noreferrer">
-                <Group gap="xs">
-                  <ExcelIcon size={20} />
-                  <Text>{t('Excel документ')}</Text>
-                </Group>
-              </Anchor>
-            )}
-            {pdfUrl && (
-              <Anchor href={pdfUrl} target="_blank" rel="noopener noreferrer">
-                <Group gap="xs">
-                  <FileText size={20} />
-                  <Text>{t('PDF документ')}</Text>
-                </Group>
-              </Anchor>
-            )}
-          </>
-        ) : (
-          <Text c="dimmed" size="sm">
-            {t('Документ недоступний для завантаження')}
-          </Text>
-        )}
-      </Stack>
-    </AppModal>
+    <DocumentExportModal
+      excelUrl={excelUrl}
+      opened={opened}
+      pdfUrl={pdfUrl}
+      title={title}
+      onClose={onClose}
+    />
   )
 }
 

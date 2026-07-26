@@ -1,10 +1,11 @@
-import { Button, Group, Stack, Text } from '@mantine/core'
 import { UserRoleType } from '../../../../shared/auth/types'
 import { useI18n } from '../../../../shared/i18n/useI18n'
-import { AppModal } from '../../../../shared/ui/AppModal'
+import {
+  DocumentExportModal,
+  type DocumentExportItem,
+} from '../../../../shared/ui/document-export-modal/DocumentExportModal'
 import { useAuth } from '../../../auth/useAuth'
 import type { SaleDocumentResult } from '../../types'
-import { SaleDocumentDownloads } from '../SaleDocumentDownloads'
 
 const INVOICE_DOCUMENT_ROLES: ReadonlyArray<UserRoleType> = [
   UserRoleType.GBA,
@@ -44,22 +45,26 @@ export function WizardDownloadDocumentsModal({
     }
   }
 
+  const items: DocumentExportItem[] = documents.flatMap((document) => [
+    ...(document.excelUrl ? [{
+      format: 'excel' as const,
+      label: `${document.label} · Excel`,
+      url: document.excelUrl,
+    }] : []),
+    ...(document.pdfUrl ? [{
+      format: 'pdf' as const,
+      label: `${document.label} · PDF`,
+      url: document.pdfUrl,
+    }] : []),
+  ])
+
   return (
-    <AppModal centered opened={Boolean(result)} size="sm" title={t('Документи')} onClose={onClose}>
-      <Stack gap="sm">
-        {documents.length === 0 ? (
-          <Text c="dimmed" size="sm">
-            {t('Документи недоступні')}
-          </Text>
-        ) : (
-          <SaleDocumentDownloads documents={documents} />
-        )}
-        <Group justify="flex-end" mt="xs">
-          <Button color="gray" variant="default" onClick={onClose}>
-            {t('Закрити')}
-          </Button>
-        </Group>
-      </Stack>
-    </AppModal>
+    <DocumentExportModal
+      emptyText={t('Документи недоступні')}
+      items={items}
+      opened={Boolean(result)}
+      title={t('Документи')}
+      onClose={onClose}
+    />
   )
 }
