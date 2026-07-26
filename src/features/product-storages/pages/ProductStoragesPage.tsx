@@ -1015,7 +1015,7 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
                 styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
                 onClick={openPreview}
               >
-                {t('Preview')} ({selectedAvailabilities.length})
+                {t('Перегляд')} ({selectedAvailabilities.length})
               </Button>
             ) : null}
           </Group>
