@@ -33,7 +33,6 @@ const navigationRouteAliasRules: Array<{ source: string; targets: RegExp[] }> = 
   {
     source: '/sales/ukraine/all',
     targets: [
-      /^\/reports\/sales?$/i,
       /^\/resales(?:\/.*)?$/i,
       /^\/sales\/charts$/i,
       /^\/sales\/return\/client$/i,
@@ -69,6 +68,14 @@ const navigationRouteAliasRules: Array<{ source: string; targets: RegExp[] }> = 
     source: '/accounting/advanced-reports',
     targets: [
       /^\/accounting\/outgoing-cashflow\/[^/]+\/advanced-report\/view$/i,
+    ],
+  },
+  {
+    // The report screens have their own menu nodes now; only the plural spelling of the
+    // sale-report URL still needs to resolve to them.
+    source: '/reports/sale',
+    targets: [
+      /^\/reports\/sales$/i,
     ],
   },
   {

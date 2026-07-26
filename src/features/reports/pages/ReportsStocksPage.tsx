@@ -156,7 +156,17 @@ export function ReportsStocksPage() {
     [colGroups, from, measurements, rowGroups, selections, to],
   )
   const checkedMeasurements = reportBody.sorted.Measurements.length
-  const canSubmit = !filterError && checkedMeasurements > 0
+  // The report engine lays the sheet out from the row groupings; without one it fails deep
+  // inside the spreadsheet writer («Column out of range»), so the form has to require it.
+  const missingRowGrouping = rowGroups.length === 0
+  const canSubmit = !filterError && checkedMeasurements > 0 && !missingRowGrouping
+  const submitBlockedReason = filterError
+    ? filterError
+    : checkedMeasurements === 0
+      ? t('Виберіть хоча б один показник')
+      : missingRowGrouping
+        ? t('Додайте хоча б одне групування рядків')
+        : ''
 
   useEffect(() => {
     setTemplates(parseTemplates(localStorage.getItem(STORAGE_KEY)))
@@ -282,7 +292,13 @@ export function ReportsStocksPage() {
               </Tooltip>
             </div>
             <Tooltip label={t('Сформувати')}>
-              <Button color={CREATE_ACTION_COLOR} loading={isLoading} disabled={!canSubmit} type="submit">
+              <Button
+                color={CREATE_ACTION_COLOR}
+                loading={isLoading}
+                disabled={!canSubmit}
+                title={submitBlockedReason}
+                type="submit"
+              >
                 {t('Сформувати')}
               </Button>
             </Tooltip>

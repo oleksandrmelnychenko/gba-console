@@ -356,9 +356,30 @@ describe('isNavigationPathAllowed', () => {
     expect(isNavigationPathAllowed(modules, '/orders/develop/all/edit/order-1/specifications')).toBe(true)
     expect(isNavigationPathAllowed(modules, '/sales/ukraine/offers')).toBe(true)
     expect(isNavigationPathAllowed(modules, '/resales/new')).toBe(true)
+    // The report screens have their own menu nodes now, so the sales node no longer
+    // has to stand in for them.
+    expect(isNavigationPathAllowed(modules, '/reports/sale')).toBe(false)
+    expect(isNavigationPathAllowed(modules, '/accounting/payment-accounts')).toBe(false)
+  })
+
+  it('resolves the plural sale-report URL from the report menu node', () => {
+    const modules: NavigationModule[] = [
+      {
+        Id: 1,
+        Module: 'Продажі',
+        Children: [
+          {
+            Id: 11,
+            Module: 'Перегляд звіту з файлу',
+            Route: '/reports/sale',
+          },
+        ],
+      },
+    ]
+
     expect(isNavigationPathAllowed(modules, '/reports/sale')).toBe(true)
     expect(isNavigationPathAllowed(modules, '/reports/sales')).toBe(true)
-    expect(isNavigationPathAllowed(modules, '/accounting/payment-accounts')).toBe(false)
+    expect(isNavigationPathAllowed(modules, '/reports/stocks')).toBe(false)
   })
 
   it('allows accounting compatibility and create routes for known menu roots', () => {
