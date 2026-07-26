@@ -1,7 +1,6 @@
 import {
   ActionIcon,
   Alert,
-  Anchor,
   Box,
   Button,
   Card,
@@ -12,21 +11,19 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
-import { AppModal } from "../../../shared/ui/AppModal"
-import { CircleAlert, FileDown, FileText, Plus, RotateCcw } from 'lucide-react'
-import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
+import { CircleAlert, FileDown, Plus, RotateCcw } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { formatLocalDate, toDateTimeQuery } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
-import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import {
   closePendingExportDocumentWindow,
   openExportDocumentInWindow,
@@ -503,49 +500,12 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
         onExport={handleExport}
       />
 
-      <AppModal
-        centered
+      <DocumentExportModal
+        document={downloadDocument}
         opened={downloadModalOpened}
-        title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Друк PDF')}</span>}
+        title={t('Друк PDF')}
         onClose={() => setDownloadModalOpened(false)}
-      >
-        <Stack gap="sm">
-          {downloadDocument?.DocumentURL || downloadDocument?.PdfDocumentURL ? (
-            <>
-              {downloadDocument.PdfDocumentURL && (
-                <Anchor
-                  href={upgradeHttpToHttps(downloadDocument.PdfDocumentURL)}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="document-link"
-                >
-                  <span className="document-link-badge document-link-badge-pdf">
-                    <FileText size={22} strokeWidth={1.8} />
-                  </span>
-                  <span>{t('PDF документ')}</span>
-                </Anchor>
-              )}
-              {downloadDocument.DocumentURL && (
-                <Anchor
-                  href={upgradeHttpToHttps(downloadDocument.DocumentURL)}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="document-link"
-                >
-                  <span className="document-link-badge document-link-badge-excel">
-                    <ExcelIcon size={22} />
-                  </span>
-                  <span>{t('Excel документ')}</span>
-                </Anchor>
-              )}
-            </>
-          ) : (
-            <Text c="dimmed" size="sm">
-              {t('Документ недоступний для завантаження')}
-            </Text>
-          )}
-        </Stack>
-      </AppModal>
+      />
     </Stack>
   )
 }
