@@ -85,7 +85,7 @@
   background: transparent;
 }
 
-.data-table-table {
+.data-table .data-table-table {
   border-collapse: separate;
   border-spacing: 0;
   table-layout: fixed;
