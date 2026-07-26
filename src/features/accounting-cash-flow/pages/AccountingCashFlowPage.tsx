@@ -31,7 +31,7 @@ import {
 } from '../api/accountingCashFlowApi'
 import { CashFlowBalanceChart } from '../components/CashFlowBalanceChart'
 import { CashFlowDetailContent } from '../components/CashFlowDetailContent'
-import { CashFlowExportModal } from '../components/CashFlowExportModal'
+import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import { getAccountingCashFlowPaymentStatus } from '../accountingCashFlowPaymentStatus'
 import { getAccountingCashFlowClosingBalance } from '../cashFlowTotals'
 import { getAccountingCashFlowDrilldownRoute } from '../cashFlowDrilldown'
@@ -762,7 +762,7 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
         onClose={() => setSelectedItem(null)}
       />
 
-      <CashFlowExportModal
+      <DocumentExportModal
         document={document}
         opened={downloadModalOpened}
         title={t('Експорт взаєморозрахунків')}
