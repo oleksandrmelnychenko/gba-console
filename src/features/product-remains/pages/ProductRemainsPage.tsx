@@ -1523,7 +1523,7 @@ function ProductRemainMovementsPanel({ row }: { row: RemainingConsignment }) {
 
   return (
     <Stack gap="md">
-      <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="sm">
+      <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
         <DetailItem label="Код товару" value={getVendorCode(row.Product)} />
         <DetailItem label="Товар" value={getProductName(row.Product)} />
         <DetailItem label="Номер приходу" value={displayValue(row.ProductIncomeNumber)} />
