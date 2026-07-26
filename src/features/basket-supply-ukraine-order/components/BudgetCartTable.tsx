@@ -3,6 +3,12 @@ import { useMemo } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
+import {
+  buildOrderableQtyHint,
+  buildReorderExplanation,
+  isOrderableQtyAdjusted,
+  toOrderableQty,
+} from '../procurementOrderQty'
 import type { ProcurementUrgency, ReorderSuggestion } from '../procurementTypes'
 import { ProcurementProductCell } from './ProcurementProductCell'
 
@@ -180,10 +186,15 @@ function buildColumns(
       width: 128,
       minWidth: 112,
       align: 'right',
-      accessor: (item) => item.suggested_qty,
+      accessor: (item) => toOrderableQty(item),
       cell: (item) => (
-        <Text className="app-money" size="sm">
-          {qtyFormatter.format(item.suggested_qty)}
+        <Text
+          className="app-money"
+          size="sm"
+          style={isOrderableQtyAdjusted(item) ? { textDecoration: 'underline dotted' } : undefined}
+          title={buildOrderableQtyHint(item, t, (value) => qtyFormatter.format(value))}
+        >
+          {qtyFormatter.format(toOrderableQty(item))}
         </Text>
       ),
     },
@@ -270,9 +281,7 @@ function buildColumns(
 function SignalsCell({ item }: { item: ReorderSuggestion }) {
   const { t } = useI18n()
   const signals = buildDecisionSignals(item, t)
-  const explanation =
-    item.reason ||
-    t('AI зіставив прогноз попиту, залишки, точку дозамовлення і правила закупівлі')
+  const explanation = buildReorderExplanation(item, t)
 
   return (
     <Group
