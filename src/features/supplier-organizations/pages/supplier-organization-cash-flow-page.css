@@ -1,0 +1,179 @@
+.supplier-cash-flow-page {
+  min-width: 0;
+}
+
+.supplier-cash-flow-filter-bar {
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: var(--mantine-radius-md);
+  display: flex;
+  flex: 0 0 auto;
+}
+
+.supplier-cash-flow-filter-bar:last-child {
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+}
+
+.supplier-cash-flow-type-filter {
+  flex: 0 0 180px;
+  width: 180px;
+}
+
+.supplier-cash-flow-agreement-filter {
+  flex: 0 1 330px;
+  min-width: 220px;
+  width: 330px;
+}
+
+.supplier-cash-flow-overview {
+  align-items: stretch;
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: var(--mantine-radius-md);
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(240px, 1.25fr) repeat(3, minmax(170px, 1fr));
+  padding: 10px;
+}
+
+.supplier-cash-flow-overview__identity,
+.supplier-cash-flow-overview__metric {
+  border-radius: 8px;
+  display: grid;
+  min-width: 0;
+  padding: 10px 12px;
+}
+
+.supplier-cash-flow-overview__identity {
+  align-content: center;
+  background: var(--app-filter-glow), var(--mantine-color-gray-0);
+  border-left: 3px solid var(--mantine-color-orange-5);
+}
+
+.supplier-cash-flow-overview__identity > span,
+.supplier-cash-flow-overview__metric > span,
+.supplier-cash-flow-overview__identity > small,
+.supplier-cash-flow-overview__metric > small {
+  color: var(--mantine-color-gray-6);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.25;
+}
+
+.supplier-cash-flow-overview__identity > strong {
+  color: var(--mantine-color-gray-9);
+  font-size: 15px;
+  line-height: 1.25;
+  margin: 4px 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.supplier-cash-flow-overview__metric {
+  align-content: center;
+  border: 1px solid var(--mantine-color-gray-2);
+  gap: 3px;
+}
+
+.supplier-cash-flow-overview__metric.is-emphasized {
+  background: var(--mantine-color-gray-0);
+}
+
+.supplier-cash-flow-overview__metric > strong {
+  color: var(--mantine-color-gray-9);
+  font-family: var(--font-mono);
+  font-size: 17px;
+  line-height: 1.2;
+}
+
+.supplier-cash-flow-overview__metric > strong.is-negative,
+.supplier-cash-flow-money.is-negative > strong,
+.supplier-cash-flow-footer .is-negative {
+  color: var(--mantine-color-red-6);
+}
+
+.supplier-cash-flow-overview__metric > strong.is-positive,
+.supplier-cash-flow-money.is-positive > strong,
+.supplier-cash-flow-footer .is-positive {
+  color: var(--mantine-color-teal-7);
+}
+
+.supplier-cash-flow-document,
+.supplier-cash-flow-money {
+  display: inline-flex;
+  min-width: 0;
+}
+
+.supplier-cash-flow-document {
+  align-items: baseline;
+  gap: 8px;
+  max-width: 100%;
+}
+
+.supplier-cash-flow-document > strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.supplier-cash-flow-document > small,
+.supplier-cash-flow-money > small {
+  color: var(--mantine-color-gray-6);
+  font-size: 10.5px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.supplier-cash-flow-money {
+  align-items: flex-end;
+  flex-direction: column;
+  font-family: var(--font-mono);
+  line-height: 1.2;
+}
+
+.supplier-cash-flow-footer {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+  width: 100%;
+}
+
+.supplier-cash-flow-footer > span {
+  background: var(--mantine-color-gray-0);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 999px;
+  color: var(--mantine-color-gray-7);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1;
+  padding: 5px 9px;
+}
+
+.supplier-cash-flow-footer strong {
+  color: currentColor;
+}
+
+@media (max-width: 980px) {
+  .supplier-cash-flow-filter-bar {
+    flex-wrap: wrap;
+  }
+
+  .supplier-cash-flow-filter-bar .app-filter-actions {
+    margin-left: 0;
+  }
+
+  .supplier-cash-flow-overview {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .supplier-cash-flow-overview {
+    grid-template-columns: 1fr;
+  }
+}

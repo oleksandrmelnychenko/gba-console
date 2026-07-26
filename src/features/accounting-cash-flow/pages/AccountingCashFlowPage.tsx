@@ -1,7 +1,6 @@
 import {
   ActionIcon,
   Alert,
-  Anchor,
   Badge,
   Box,
   Button,
@@ -16,16 +15,13 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
-import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
-import { ArrowDownLeft, ArrowUpRight, CircleAlert, Download, FileText, Pencil, RefreshCw, RotateCcw, Scale, Search } from 'lucide-react'
-import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
+import { ArrowDownLeft, ArrowUpRight, CircleAlert, Download, Pencil, RefreshCw, RotateCcw, Scale, Search } from 'lucide-react'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { type ReactNode, useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import {
@@ -35,6 +31,7 @@ import {
 } from '../api/accountingCashFlowApi'
 import { CashFlowBalanceChart } from '../components/CashFlowBalanceChart'
 import { CashFlowDetailContent } from '../components/CashFlowDetailContent'
+import { CashFlowExportModal } from '../components/CashFlowExportModal'
 import { getAccountingCashFlowPaymentStatus } from '../accountingCashFlowPaymentStatus'
 import { getAccountingCashFlowClosingBalance } from '../cashFlowTotals'
 import { getAccountingCashFlowDrilldownRoute } from '../cashFlowDrilldown'
@@ -765,7 +762,7 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
         onClose={() => setSelectedItem(null)}
       />
 
-      <DownloadDocumentModal
+      <CashFlowExportModal
         document={document}
         opened={downloadModalOpened}
         title={t('Експорт взаєморозрахунків')}
@@ -1230,99 +1227,6 @@ function SaleReturnOverviewItem({ saleReturnItem }: { saleReturnItem: Accounting
         </Group>
       </Group>
     </Card>
-  )
-}
-
-function DownloadDocumentModal({
-  document,
-  opened,
-  title,
-  onClose,
-}: {
-  document: AccountingCashFlowDocument | null
-  opened: boolean
-  title: string
-  onClose: () => void
-}) {
-  const { t } = useI18n()
-  const hasExcel = Boolean(document?.DocumentURL)
-  const hasPdf = Boolean(document?.PdfDocumentURL)
-  const hasDocument = hasExcel || hasPdf
-
-  return (
-    <AppModal
-      centered
-      opened={opened}
-      size="lg"
-      title={title || t('Документ')}
-      onClose={onClose}
-    >
-      <div className="accounting-cash-flow-export-modal">
-        <div className="accounting-cash-flow-export-hero">
-          <ThemeIcon className="accounting-cash-flow-export-hero-icon" color="orange" radius="xl" size={42} variant="light">
-            <Download size={20} />
-          </ThemeIcon>
-          <div>
-            <span>{hasDocument ? t('Готово до завантаження') : t('Документ недоступний')}</span>
-            <strong>{hasDocument ? t('Виберіть формат файлу') : t('Файл не сформовано')}</strong>
-            <small>
-              {hasDocument
-                ? t('Посилання відкриються у новій вкладці.')
-                : t('Сервер не повернув посилання для завантаження.')}
-            </small>
-          </div>
-        </div>
-
-        {hasDocument ? (
-          <div className="accounting-cash-flow-export-options">
-            {document?.DocumentURL && (
-              <Anchor
-                className="accounting-cash-flow-export-card is-excel"
-                href={getDocumentHref(document.DocumentURL)}
-                rel="noreferrer"
-                target="_blank"
-              >
-                <span className="accounting-cash-flow-export-card-icon">
-                  <ExcelIcon size={24} />
-                </span>
-                <span className="accounting-cash-flow-export-card-text">
-                  <strong>{t('Excel')}</strong>
-                  <small>{t('Табличний файл для роботи з даними')}</small>
-                </span>
-                <span className="accounting-cash-flow-export-card-action">{t('Відкрити')}</span>
-              </Anchor>
-            )}
-            {document?.PdfDocumentURL && (
-              <Anchor
-                className="accounting-cash-flow-export-card is-pdf"
-                href={getDocumentHref(document.PdfDocumentURL)}
-                rel="noreferrer"
-                target="_blank"
-              >
-                <span className="accounting-cash-flow-export-card-icon">
-                  <FileText size={24} strokeWidth={1.8} />
-                </span>
-                <span className="accounting-cash-flow-export-card-text">
-                  <strong>{t('PDF')}</strong>
-                  <small>{t('Документ для друку або перегляду')}</small>
-                </span>
-                <span className="accounting-cash-flow-export-card-action">{t('Відкрити')}</span>
-              </Anchor>
-            )}
-          </div>
-        ) : (
-          <div className="accounting-cash-flow-export-empty">
-            <ThemeIcon color="gray" radius="xl" size={38} variant="light">
-              <CircleAlert size={18} />
-            </ThemeIcon>
-            <div>
-              <strong>{t('Документ недоступний для завантаження')}</strong>
-              <span>{t('Спробуйте сформувати експорт ще раз.')}</span>
-            </div>
-          </div>
-        )}
-      </div>
-    </AppModal>
   )
 }
 
