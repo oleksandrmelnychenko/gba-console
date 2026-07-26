@@ -17,17 +17,16 @@ import {
 import { AppModal } from "../../../shared/ui/AppModal"
 import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
 import { notifications } from '@mantine/notifications'
-import { CircleAlert, Download, FileInput as FileInputIcon, FileText, RotateCcw, Search, TriangleAlert, Upload } from 'lucide-react'
-import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
+import { CircleAlert, Download, FileInput as FileInputIcon, RotateCcw, Search, TriangleAlert, Upload } from 'lucide-react'
 import { useDebouncedValue } from '@mantine/hooks'
 import { type FormEvent, useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import { ProductCardModal } from '../../products/components/ProductCardModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
@@ -667,39 +666,12 @@ function ProductPlacementsPageView({ model }: { model: ReturnType<typeof useProd
         onSubmit={handleSubmitReturned}
       />
 
-      <AppModal
-        centered
+      <DocumentExportModal
+        document={downloadDocument}
         opened={downloadModalOpened}
-        title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Документи розміщень')}</span>}
+        title={t('Документи розміщень')}
         onClose={() => setDownloadModalOpened(false)}
-      >
-        <Stack gap="sm">
-          {downloadDocument?.DocumentURL || downloadDocument?.PdfDocumentURL ? (
-            <>
-              {downloadDocument.DocumentURL && (
-                <Anchor href={getDocumentHref(downloadDocument.DocumentURL)} target="_blank" rel="noreferrer" className="document-link">
-                  <span className="document-link-badge document-link-badge-excel">
-                    <ExcelIcon size={22} />
-                  </span>
-                  <span>{t('Excel документ')}</span>
-                </Anchor>
-              )}
-              {downloadDocument.PdfDocumentURL && (
-                <Anchor href={getDocumentHref(downloadDocument.PdfDocumentURL)} target="_blank" rel="noreferrer" className="document-link">
-                  <span className="document-link-badge document-link-badge-pdf">
-                    <FileText size={22} strokeWidth={1.8} />
-                  </span>
-                  <span>{t('PDF документ')}</span>
-                </Anchor>
-              )}
-            </>
-          ) : (
-            <Text c="dimmed" size="sm">
-              {t('Документ недоступний для завантаження')}
-            </Text>
-          )}
-        </Stack>
-      </AppModal>
+      />
 
       <ProductCardModal productNetId={productCardNetId} onClose={() => setProductCardNetId(null)} />
     </Stack>
