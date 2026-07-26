@@ -25,7 +25,6 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawerFooter } from '../../../shared/ui/AppDrawer'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { getUnpaidConsumableOrdersByOrganization } from '../../consumable-orders/api/consumableOrdersApi'
-import { buildConsumableOrderPaymentLinks } from '../../consumable-orders/paymentPayload'
 import type { ConsumablesOrder } from '../../consumable-orders/types'
 import {
   createIncomeCashflowPaymentMovement,
@@ -56,8 +55,8 @@ import {
   type CreatePaymentRegister,
   OUTCOME_OPERATION_TYPE,
   type OutcomeOperationType,
-  type OutcomePaymentOrderCreatePayload,
 } from '../outgoingCreateTypes'
+import { buildOutgoingPaymentGroupPayload } from '../outgoingPaymentGroupPayload'
 import {
   SEARCH_DEBOUNCE_MS,
   balanceLabelOf,
@@ -665,9 +664,8 @@ export function OutgoingPaymentGroupForm({
       return
     }
 
-    const payload = buildOutcomePayload({
+    const payload = buildOutgoingPaymentGroupPayload({
       form,
-      isOtherOutcome,
       operationType,
       selectedClient,
       selectedClientAgreement,
@@ -964,79 +962,6 @@ function createInitialForm(operationType: OutcomeOperationType, registerType: Pa
     vatAmount: 0,
     vatRate: 0,
   }
-}
-
-function buildOutcomePayload({
-  form,
-  isOtherOutcome,
-  operationType,
-  selectedClient,
-  selectedClientAgreement,
-  selectedCurrencyRegister,
-  selectedMovement,
-  selectedOrganization,
-  selectedRegister,
-  selectedSupplyAgreement,
-  selectedSupplyOrganization,
-  selectedUnpaidOrders,
-}: {
-  form: FormState
-  isOtherOutcome: boolean
-  operationType: OutcomeOperationType
-  selectedClient: Client | null
-  selectedClientAgreement: ClientAgreement | null
-  selectedCurrencyRegister: CreatePaymentCurrencyRegister
-  selectedMovement: PaymentMovement
-  selectedOrganization: Organization
-  selectedRegister: CreatePaymentRegister
-  selectedSupplyAgreement: SupplyOrganizationAgreement | null
-  selectedSupplyOrganization: SupplyOrganization | null
-  selectedUnpaidOrders: ConsumablesOrder[]
-}): OutcomePaymentOrderCreatePayload {
-  const payload: OutcomePaymentOrderCreatePayload = {
-    Amount: form.amount,
-    Comment: form.comment.trim(),
-    ExchangeRate: form.exchangeRate || undefined,
-    FromDate: toIsoDateTime(form.date, form.time),
-    IsAccounting: form.isAccounting,
-    IsManagementAccounting: form.isManagementAccounting,
-    IsUnderReport: false,
-    OperationType: operationType,
-    Organization: selectedOrganization,
-    PaymentCurrencyRegister: selectedCurrencyRegister,
-    PaymentMovementOperation: {
-      PaymentMovement: selectedMovement,
-    },
-    PaymentPurpose: form.paymentPurpose.trim(),
-    PaymentRegister: selectedRegister,
-    VAT: form.vatAmount || 0,
-    VatPercent: form.vatRate,
-  }
-
-  if (isOtherOutcome) {
-    if (selectedSupplyOrganization && !selectedClient) {
-      payload.ConsumableProductOrganization = selectedSupplyOrganization
-      if (selectedUnpaidOrders.length > 0) {
-        payload.OutcomePaymentOrderConsumablesOrders = buildConsumableOrderPaymentLinks(selectedUnpaidOrders, form.amount)
-      }
-    } else if (selectedClient && !selectedSupplyOrganization) {
-      payload.Client = selectedClient
-    }
-
-    return payload
-  }
-
-  if (selectedSupplyOrganization) {
-    payload.ConsumableProductOrganization = selectedSupplyOrganization
-    payload.SupplyOrganizationAgreement = selectedSupplyAgreement || undefined
-    if (selectedUnpaidOrders.length > 0) {
-      payload.OutcomePaymentOrderConsumablesOrders = buildConsumableOrderPaymentLinks(selectedUnpaidOrders, form.amount)
-    }
-  } else if (selectedClient) {
-    payload.ClientAgreement = selectedClientAgreement || undefined
-  }
-
-  return payload
 }
 
 function validateForm({
