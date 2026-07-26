@@ -1,17 +1,15 @@
-import { Alert, Anchor, Badge, Button, Card, Group, Stack, Text } from '@mantine/core'
-import { CircleAlert, FileText } from 'lucide-react'
+import { Alert, Badge, Button, Card, Group, Stack, Text } from '@mantine/core'
+import { CircleAlert } from 'lucide-react'
 import { useEffect, useMemo } from 'react'
 import { useLocation, useNavigate, useParams, type Location } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
-import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
-import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
-import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import {
   exportProductIncomeDocument,
   getSupplyOrderProductIncomeByNetId,
@@ -270,49 +268,12 @@ function SupplyOrderProductPlacementContent({
 
       <PlacementDetailsDrawer row={placementDetailsRow} onClose={() => setPlacementDetailsRow(null)} />
 
-      <AppModal
-        centered
+      <DocumentExportModal
+        document={downloadDocument}
         opened={downloadModalOpened}
         title={t('Документ приходу')}
         onClose={() => setDownloadModalOpened(false)}
-      >
-        <Stack gap="sm">
-          {downloadDocument?.DocumentURL || downloadDocument?.PdfDocumentURL ? (
-            <>
-              {downloadDocument.DocumentURL && (
-                <Anchor
-                  href={upgradeHttpToHttps(downloadDocument.DocumentURL)}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="document-link"
-                >
-                  <span className="document-link-badge document-link-badge-excel">
-                    <ExcelIcon size={22} />
-                  </span>
-                  <span>{t('Excel документ')}</span>
-                </Anchor>
-              )}
-              {downloadDocument.PdfDocumentURL && (
-                <Anchor
-                  href={upgradeHttpToHttps(downloadDocument.PdfDocumentURL)}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="document-link"
-                >
-                  <span className="document-link-badge document-link-badge-pdf">
-                    <FileText size={22} strokeWidth={1.8} />
-                  </span>
-                  <span>{t('PDF документ')}</span>
-                </Anchor>
-              )}
-            </>
-          ) : (
-            <Text c="dimmed" size="sm">
-              {t('Документ недоступний для завантаження')}
-            </Text>
-          )}
-        </Stack>
-      </AppModal>
+      />
       </Stack>
     </AppDrawer>
   )
