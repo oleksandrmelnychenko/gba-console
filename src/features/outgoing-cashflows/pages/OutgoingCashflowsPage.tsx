@@ -14,14 +14,13 @@
   Tooltip,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { Banknote, ChevronDown, CircleAlert, Landmark, ListChecks, Plus, RotateCcw, Search } from 'lucide-react'
+import { Banknote, ChevronDown, CircleAlert, Landmark, Plus, RotateCcw, Search } from 'lucide-react'
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import {
   buildOutgoingRegisterItems,
-  buildOutgoingStandaloneItems,
 } from '../outgoingCreateMenu'
 import { PaymentRegisterType } from '../../income-cashflows/types'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -209,12 +208,15 @@ function useOutgoingCashflowsPageModel(): OutgoingCashflowsPageModel {
         setCashflows(nextCashflows)
         const loadedQty = offset + nextCashflows.Collection.length
         const responseTotalRowsQty = nextCashflows.TotalRowsQty
-        const nextTotalQty =
+        const nextTotalRowsQty =
           typeof responseTotalRowsQty === 'number' && Number.isFinite(responseTotalRowsQty)
             ? responseTotalRowsQty
             : null
-        setTotalRowsQty(nextTotalQty)
-        setHasMore(nextCashflows.Collection.length === pageSize && (nextTotalQty === null || loadedQty < nextTotalQty))
+        setTotalRowsQty(nextTotalRowsQty)
+        setHasMore(
+          nextCashflows.Collection.length === pageSize
+          && (nextTotalRowsQty === null || loadedQty < nextTotalRowsQty),
+        )
       }
     } catch (loadError) {
       if (requestRef.current === requestId) {
@@ -724,17 +726,6 @@ function OutgoingCashflowsContent({ model }: { model: OutgoingCashflowsPageModel
                     <Menu.Item
                       key={item.path}
                       leftSection={<Banknote size={15} />}
-                      onClick={() => navigateToCreateItem(item.path)}
-                    >
-                      {item.label}
-                    </Menu.Item>
-                  ))}
-                  <Menu.Divider />
-                  <Menu.Label>{t('Інші операції (бух/упр)')}</Menu.Label>
-                  {buildOutgoingStandaloneItems(t).map((item) => (
-                    <Menu.Item
-                      key={item.path}
-                      leftSection={<ListChecks size={15} />}
                       onClick={() => navigateToCreateItem(item.path)}
                     >
                       {item.label}

@@ -31,6 +31,7 @@ import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { getAccountingCashFlowRecordPaymentStatus } from '../../accounting-cash-flow/accountingCashFlowPaymentStatus'
+import { getAccountingOperationByPayloadType } from '../../accounting/accountingOperationCatalog'
 import { calculateAdvanceReportOrder } from '../../outgoing-cashflows/api/advanceReportApi'
 import {
   cancelIncomeCashflow,
@@ -44,6 +45,11 @@ import {
   updateIncomeCashflowClient,
 } from '../api/incomeCashflowsApi'
 import { IncomePaymentOperationType, PaymentRegisterType } from '../types'
+import {
+  buildIncomeColleagueItem,
+  buildIncomeRegisterItems,
+  buildIncomeShopItem,
+} from '../incomeCreateMenu'
 import { createLatestRequestGuard } from '../latestRequestGuard'
 import { createAutocompleteOptionSubmitGuard } from '../autocompleteOptionSubmitGuard'
 import '../../../shared/ui/console-table-page.css'
@@ -595,6 +601,10 @@ function IncomeCashflowsContent({ model }: { model: IncomeCashflowsPageModel }) 
   const navigate = useNavigate()
   const location = useLocation()
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
+  const cashCreateItems = buildIncomeRegisterItems(t, PaymentRegisterType.Cash)
+  const bankCreateItems = buildIncomeRegisterItems(t, PaymentRegisterType.Bank)
+  const colleagueCreateItem = buildIncomeColleagueItem(t)
+  const shopCreateItem = buildIncomeShopItem(t)
 
   return (
     <Stack className="income-cashflows-page console-table-page" gap={6}>
@@ -675,41 +685,41 @@ function IncomeCashflowsContent({ model }: { model: IncomeCashflowsPageModel }) 
                 </Menu.Target>
                 <Menu.Dropdown>
                   <Menu.Label>{t('Каса')}</Menu.Label>
-                  <Menu.Item leftSection={<Banknote size={15} />} onClick={() => navigate('/accounting/income-cashflows/new/conversion?type=0', { state: { backgroundLocation: location } })}>
-                    {t('Інший касовий прихід')}
-                  </Menu.Item>
-                  <Menu.Item leftSection={<Banknote size={15} />} onClick={() => navigate('/accounting/income-cashflows/new/client?type=0&operationType=0', { state: { backgroundLocation: location } })}>
-                    {t('Оплата покупця')}
-                  </Menu.Item>
-                  <Menu.Item leftSection={<Banknote size={15} />} onClick={() => navigate('/accounting/income-cashflows/new/client?type=0&operationType=1', { state: { backgroundLocation: location } })}>
-                    {t('Повернення постачальника')}
-                  </Menu.Item>
-                  <Menu.Item leftSection={<Banknote size={15} />} onClick={() => navigate('/accounting/income-cashflows/new/client?type=0&operationType=2', { state: { backgroundLocation: location } })}>
-                    {t('Інші з контрагентами')}
-                  </Menu.Item>
+                  {cashCreateItems.map((item) => (
+                    <Menu.Item
+                      key={item.path}
+                      leftSection={<Banknote size={15} />}
+                      onClick={() => navigate(item.path, { state: { backgroundLocation: location } })}
+                    >
+                      {item.label}
+                    </Menu.Item>
+                  ))}
                   <Menu.Divider />
                   <Menu.Label>{t('Банк')}</Menu.Label>
-                  <Menu.Item leftSection={<Landmark size={15} />} onClick={() => navigate('/accounting/income-cashflows/new/conversion?type=2', { state: { backgroundLocation: location } })}>
-                    {t('Інші надходження на рахунок')}
-                  </Menu.Item>
-                  <Menu.Item leftSection={<Landmark size={15} />} onClick={() => navigate('/accounting/income-cashflows/new/client?type=2&operationType=0', { state: { backgroundLocation: location } })}>
-                    {t('Оплата покупця')}
-                  </Menu.Item>
-                  <Menu.Item leftSection={<Landmark size={15} />} onClick={() => navigate('/accounting/income-cashflows/new/client?type=2&operationType=1', { state: { backgroundLocation: location } })}>
-                    {t('Повернення постачальника')}
-                  </Menu.Item>
-                  <Menu.Item leftSection={<Landmark size={15} />} onClick={() => navigate('/accounting/income-cashflows/new/client?type=2&operationType=2', { state: { backgroundLocation: location } })}>
-                    {t('Інші з контрагентами')}
-                  </Menu.Item>
+                  {bankCreateItems.map((item) => (
+                    <Menu.Item
+                      key={item.path}
+                      leftSection={<Landmark size={15} />}
+                      onClick={() => navigate(item.path, { state: { backgroundLocation: location } })}
+                    >
+                      {item.label}
+                    </Menu.Item>
+                  ))}
                   <Menu.Divider />
                   <Menu.Label>{t('Колеги')}</Menu.Label>
-                  <Menu.Item leftSection={<Users size={15} />} onClick={() => navigate('/accounting/income-cashflows/new/user', { state: { backgroundLocation: location } })}>
-                    {t('Повернення від колеги')}
+                  <Menu.Item
+                    leftSection={<Users size={15} />}
+                    onClick={() => navigate(colleagueCreateItem.path, { state: { backgroundLocation: location } })}
+                  >
+                    {colleagueCreateItem.label}
                   </Menu.Item>
                   <Menu.Divider />
                   <Menu.Label>{t('Магазин')}</Menu.Label>
-                  <Menu.Item leftSection={<Store size={15} />} onClick={() => navigate('/accounting/income-cashflows/new/shop', { state: { backgroundLocation: location } })}>
-                    {t('Оплата магазину')}
+                  <Menu.Item
+                    leftSection={<Store size={15} />}
+                    onClick={() => navigate(shopCreateItem.path, { state: { backgroundLocation: location } })}
+                  >
+                    {shopCreateItem.label}
                   </Menu.Item>
                 </Menu.Dropdown>
               </Menu>
@@ -1715,20 +1725,10 @@ function getIncomeOperationTypeName(income: IncomePaymentOrder): string {
     return income.OperationTypeName
   }
 
-  switch (Number(income.OperationType)) {
-    case IncomePaymentOperationType.ClientPayment:
-      return 'Оплата покупця'
-    case IncomePaymentOperationType.SupplierReturn:
-      return 'Повернення постачальника'
-    case IncomePaymentOperationType.OtherAccountingWithCounterparts:
-      return 'Інші з контрагентами'
-    case IncomePaymentOperationType.OtherIncome:
-      return 'Інший прихід'
-    case IncomePaymentOperationType.ReturnFromColleague:
-      return 'Повернення від колеги'
-    default:
-      return 'Невідомий тип операції'
-  }
+  return getAccountingOperationByPayloadType(
+    'income',
+    Number(income.OperationType),
+  )?.labels.list || 'Невідомий тип операції'
 }
 
 function getIncomeCancelUnavailableReason(income: IncomePaymentOrder, t: (key: string) => string): string | null {

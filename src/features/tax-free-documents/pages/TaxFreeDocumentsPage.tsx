@@ -40,10 +40,7 @@ import {
   searchTaxFreeCarriers,
   updateTaxFreeDocument,
 } from '../api/taxFreeDocumentsApi'
-import {
-  TaxFreePaymentFromTaxFreeModal,
-  type TaxFreePaymentAction,
-} from '../components/TaxFreePaymentFromTaxFreeModal'
+import { TaxFreePaymentFromTaxFreeModal } from '../components/TaxFreePaymentFromTaxFreeModal'
 import type { Statham, StathamPassport, TaxFreeDocument, TaxFreeItem, TaxFreePrintDocument } from '../types'
 import { TaxFreeStatus } from '../types'
 import {
@@ -132,7 +129,7 @@ type StoredFilters = {
 }
 
 type TaxFreeStatusDateField = 'ClosedDate' | 'DateOfIssue' | 'DateOfPrint' | 'DateOfTabulation' | 'FormedDate' | 'ReturnedDate'
-type TaxFreeAccountingAction = TaxFreePaymentAction | 'outcome'
+type TaxFreeAccountingAction = 'income' | 'outcome'
 type TaxFreeDocumentDrawerTab = 'details' | 'status' | 'items'
 type TaxFreeDocumentDetailsCarrierState = {
   carrierError: string | null
@@ -166,7 +163,7 @@ function useTaxFreeDocumentsPageModel() {
   const [downloadDocument, setDownloadDocument] = useValueState<TaxFreePrintDocument | null>(null)
   const [downloadSourceTitle, setDownloadSourceTitle] = useValueState('')
   const [accountingDocument, setAccountingDocument] = useValueState<TaxFreeDocument | null>(null)
-  const [paymentAction, setPaymentAction] = useValueState<{ action: TaxFreePaymentAction; document: TaxFreeDocument } | null>(null)
+  const [paymentAction, setPaymentAction] = useValueState<TaxFreeDocument | null>(null)
   const [outcomeSource, setOutcomeSource] = useValueState<DocumentOutcomePaymentSource | null>(null)
   const [printingId, setPrintingId] = useValueState<string | number | null>(null)
   const [downloadingId, setDownloadingId] = useValueState<string | number | null>(null)
@@ -199,7 +196,7 @@ function useTaxFreeDocumentsPageModel() {
       if (action === 'outcome') {
         setOutcomeSource(buildTaxFreeOutcomeSource(accountingDocument))
       } else {
-        setPaymentAction({ action, document: accountingDocument })
+        setPaymentAction(accountingDocument)
       }
 
       setAccountingDocument(null)
@@ -670,8 +667,7 @@ function TaxFreeDocumentsPageView({ model }: { model: ReturnType<typeof useTaxFr
       />
 
       <TaxFreePaymentFromTaxFreeModal
-        action={paymentAction?.action || null}
-        document={paymentAction?.document || null}
+        document={paymentAction}
         opened={Boolean(paymentAction)}
         onClose={closePaymentAction}
         onCreated={() => reload()}
@@ -713,21 +709,6 @@ function TaxFreeAccountingActionModal({
       onClose={onClose}
     >
       <Stack className="app-modal-actions" gap="xs">
-        <Button
-          fullWidth
-          justify="flex-start"
-          color="dark"
-          size="md"
-          leftSection={
-            <span className="app-action-icon">
-              <Banknote size={20} color="var(--mantine-color-gray-7)" />
-            </span>
-          }
-          variant="subtle"
-          onClick={() => onSelect('advance')}
-        >
-          {t('Авансовий платіж')}
-        </Button>
         <Button
           fullWidth
           justify="flex-start"

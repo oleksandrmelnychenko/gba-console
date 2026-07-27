@@ -24,18 +24,13 @@ import {
   buildPartnerAgreementPayload,
   getExternalDocumentPaymentDateBounds,
   isSupportedAccountingAmount,
-  isSupportedVat,
   pickExternalDocumentPaymentCurrencyRegister,
 } from '../../document-outcome-payment/externalDocumentPayment'
 import type {
   ExternalClientAgreement,
   ExternalOrganizationClientAgreement,
 } from '../../document-outcome-payment/types'
-import {
-  createAdvancePaymentFromSad,
-  createIncomePaymentFromSad,
-  type SadAdvancePaymentPayload,
-} from '../api/sadApi'
+import { createIncomePaymentFromSad } from '../api/sadApi'
 import type { Sad } from '../types'
 
 const SEARCH_DEBOUNCE_MS = 300
@@ -43,8 +38,6 @@ const SEARCH_DEBOUNCE_MS = 300
 const moneyFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 2,
 })
-
-type SadPaymentAction = 'advance' | 'income'
 
 type NameLikeEntity = {
   Code?: string
@@ -66,12 +59,9 @@ type FormState = {
   paymentRegisterValue: string
   selectedAgreementValue: string
   selectedMovementValue: string
-  vatAmount: number
-  vatPercent: number
 }
 
 type SadPaymentFromSadModalProps = {
-  action: SadPaymentAction | null
   opened: boolean
   sad: Sad | null
   onClose: () => void
@@ -79,7 +69,6 @@ type SadPaymentFromSadModalProps = {
 }
 
 export function SadPaymentFromSadModal({
-  action,
   onClose,
   onCreated,
   opened,
@@ -96,7 +85,6 @@ export function SadPaymentFromSadModal({
   const [isSaving, setSaving] = useState(false)
 
   const client = sad?.Client || null
-  const isIncome = action === 'income'
   const isOrganizationClient = Boolean(sad?.OrganizationClient)
 
   const selectedOrganization = useMemo(
@@ -134,14 +122,14 @@ export function SadPaymentFromSadModal({
   )
   const selectedCurrencyRegister = useMemo(() => pickCurrencyRegister(selectedRegister), [selectedRegister])
   const currencyLabel = selectedCurrencyRegister?.Currency?.Code || selectedCurrencyRegister?.Currency?.Name || ''
-  const referenceAmount = isIncome ? sad?.TotalAmountLocal : sad?.TotalVatAmountWithMargin
+  const referenceAmount = sad?.TotalAmountLocal
   const dateBounds = useMemo(
-    () => isIncome ? getExternalDocumentPaymentDateBounds(sad?.FromDate || sad?.Created) : null,
-    [isIncome, sad?.Created, sad?.FromDate],
+    () => getExternalDocumentPaymentDateBounds(sad?.FromDate || sad?.Created),
+    [sad?.Created, sad?.FromDate],
   )
 
   useEffect(() => {
-    if (!opened || !sad || !action) {
+    if (!opened || !sad) {
       return
     }
 
@@ -163,8 +151,8 @@ export function SadPaymentFromSadModal({
                 return [] as ExternalClientAgreement[]
               })
             : Promise.resolve([] as ExternalClientAgreement[]),
-          isIncome ? searchIncomeCashflowPaymentRegisters('') : Promise.resolve([] as PaymentRegister[]),
-          isIncome ? getIncomeCashflowPaymentMovements() : Promise.resolve([] as PaymentMovement[]),
+          searchIncomeCashflowPaymentRegisters(''),
+          getIncomeCashflowPaymentMovements(),
         ])
 
         if (cancelled) {
@@ -196,8 +184,8 @@ export function SadPaymentFromSadModal({
         setPaymentMovements(nextMovements)
         setForm({
           ...createInitialForm(),
-          amount: isIncome ? 0 : 0,
-          fromDate: getInitialPaymentDate(activeSad, isIncome),
+          amount: 0,
+          fromDate: getInitialPaymentDate(activeSad),
           organizationValue: defaultOrganization ? getEntityValue(defaultOrganization) : '',
           paymentRegisterValue: defaultRegister ? getEntityValue(defaultRegister) : '',
           selectedAgreementValue: getEntityValue(defaultAgreement),
@@ -220,10 +208,10 @@ export function SadPaymentFromSadModal({
     return () => {
       cancelled = true
     }
-  }, [action, client?.NetUid, isIncome, isOrganizationClient, opened, sad, t])
+  }, [client?.NetUid, isOrganizationClient, opened, sad, t])
 
   useEffect(() => {
-    if (!opened || !isIncome) {
+    if (!opened) {
       return
     }
 
@@ -237,7 +225,7 @@ export function SadPaymentFromSadModal({
     }, SEARCH_DEBOUNCE_MS)
 
     return () => window.clearTimeout(timeoutId)
-  }, [form.movementSearch, isIncome, opened])
+  }, [form.movementSearch, opened])
 
   function updateForm(patch: Partial<FormState>) {
     setForm((current) => ({ ...current, ...patch }))
@@ -284,7 +272,7 @@ export function SadPaymentFromSadModal({
   }
 
   async function handleSubmit() {
-    if (!sad?.NetUid || !action) {
+    if (!sad?.NetUid) {
       return
     }
 
@@ -308,22 +296,17 @@ export function SadPaymentFromSadModal({
       return
     }
 
-    if (!isIncome && !isSupportedVat(form.amount, form.vatAmount, form.vatPercent)) {
-      setError(t('Перевірте суму та відсоток ПДВ'))
-      return
-    }
-
     if (form.comment.trim().length > ACCOUNTING_COMMENT_MAX_LENGTH) {
       setError(t('Коментар має бути до 450 символів'))
       return
     }
 
-    if (isIncome && isDateOutsideRange(form.fromDate, dateBounds?.min || '', dateBounds?.max || '')) {
+    if (isDateOutsideRange(form.fromDate, dateBounds?.min || '', dateBounds?.max || '')) {
       setError(t('Дата виходить за дозволений період'))
       return
     }
 
-    if (isIncome && (!selectedRegister || !selectedCurrencyRegister || !activeMovement)) {
+    if (!selectedRegister || !selectedCurrencyRegister || !activeMovement) {
       setError(t('Оберіть касу / рахунок, валюту та статтю руху коштів'))
       return
     }
@@ -332,37 +315,23 @@ export function SadPaymentFromSadModal({
     setError(null)
 
     try {
-      if (isIncome) {
-        const order: IncomePaymentOrder = {
-          ...partnerAgreement,
-          Amount: form.amount,
-          Comment: form.comment.trim(),
-          Currency: selectedCurrencyRegister?.Currency || undefined,
-          FromDate: toIsoDate(form.fromDate),
-          Organization: selectedOrganization,
-          PaymentCurrencyRegister: selectedCurrencyRegister,
-          PaymentMovementOperation: {
-            PaymentMovement: activeMovement,
-          },
-          PaymentRegister: selectedRegister,
-        }
-
-        await createIncomePaymentFromSad(sad.NetUid, order)
-      } else {
-        const advancePayment: SadAdvancePaymentPayload = {
-          ...partnerAgreement,
-          Amount: form.amount,
-          Comment: form.comment.trim(),
-          FromDate: toIsoDate(form.fromDate),
-          Organization: selectedOrganization,
-          VatAmount: form.vatAmount,
-          VatPercent: form.vatPercent,
-        }
-
-        await createAdvancePaymentFromSad(sad.NetUid, advancePayment)
+      const order: IncomePaymentOrder = {
+        ...partnerAgreement,
+        Amount: form.amount,
+        Comment: form.comment.trim(),
+        Currency: selectedCurrencyRegister?.Currency || undefined,
+        FromDate: toIsoDate(form.fromDate),
+        Organization: selectedOrganization,
+        PaymentCurrencyRegister: selectedCurrencyRegister,
+        PaymentMovementOperation: {
+          PaymentMovement: activeMovement,
+        },
+        PaymentRegister: selectedRegister,
       }
 
-      notifications.show({ color: 'green', message: isIncome ? t('Прибутковий ордер створено') : t('Авансовий платіж створено') })
+      await createIncomePaymentFromSad(sad.NetUid, order)
+
+      notifications.show({ color: 'green', message: t('Прибутковий ордер створено') })
       onCreated?.()
       onClose()
     } catch (saveError) {
@@ -373,7 +342,7 @@ export function SadPaymentFromSadModal({
   }
 
   return (
-    <AppModal centered opened={opened} size="lg" title={getTitle(action, t)} onClose={onClose}>
+    <AppModal centered opened={opened} size="lg" title={t('Створити прибутковий касовий ордер')} onClose={onClose}>
       <Stack gap="md">
         {client && (
           <Text size="sm">
@@ -418,23 +387,19 @@ export function SadPaymentFromSadModal({
             />
           </Grid.Col>
 
-          {isIncome && (
-            <>
-              <Grid.Col span={{ base: 12, sm: 6 }}>
-                <Select
-                  data={toEntityOptions(paymentRegisters)}
-                  disabled={!paymentRegisters.length || isLoading || isSaving}
-                  label={t('Каса / рахунок')}
-                  searchable
-                  value={form.paymentRegisterValue || null}
-                  onChange={(value) => updateForm({ paymentRegisterValue: value || '' })}
-                />
-              </Grid.Col>
-              <Grid.Col span={{ base: 12, sm: 6 }}>
-                <TextInput disabled label={t('Валюта')} value={currencyLabel} />
-              </Grid.Col>
-            </>
-          )}
+          <Grid.Col span={{ base: 12, sm: 6 }}>
+            <Select
+              data={toEntityOptions(paymentRegisters)}
+              disabled={!paymentRegisters.length || isLoading || isSaving}
+              label={t('Каса / рахунок')}
+              searchable
+              value={form.paymentRegisterValue || null}
+              onChange={(value) => updateForm({ paymentRegisterValue: value || '' })}
+            />
+          </Grid.Col>
+          <Grid.Col span={{ base: 12, sm: 6 }}>
+            <TextInput disabled label={t('Валюта')} value={currencyLabel} />
+          </Grid.Col>
 
           <Grid.Col span={{ base: 12, sm: 6 }}>
             <NumberInput
@@ -460,61 +425,29 @@ export function SadPaymentFromSadModal({
             />
           </Grid.Col>
 
-          {!isIncome && (
-            <>
-              <Grid.Col span={{ base: 12, sm: 6 }}>
-                <NumberInput
-                  allowNegative={false}
-                  decimalScale={2}
-                  disabled={isLoading || isSaving}
-                  label={t('ПДВ %')}
-                  max={100}
-                  min={0}
-                  value={form.vatPercent}
-                  onChange={(value) => updateForm({ vatPercent: toNumber(value) })}
-                />
-              </Grid.Col>
-              <Grid.Col span={{ base: 12, sm: 6 }}>
-                <NumberInput
-                  allowNegative={false}
-                  decimalScale={2}
-                  disabled={isLoading || isSaving}
-                  label={t('Сума з ПДВ')}
-                  min={0}
-                  value={form.vatAmount}
-                  onChange={(value) => updateForm({ vatAmount: toNumber(value) })}
-                />
-              </Grid.Col>
-            </>
-          )}
-
-          {isIncome && (
-            <>
-              <Grid.Col span={{ base: 12, sm: 9 }}>
-                <Autocomplete
-                  data={toUniqueLabels(paymentMovements)}
-                  disabled={isLoading || isSaving}
-                  label={t('Стаття руху коштів')}
-                  value={form.movementSearch}
-                  onChange={(value) => updateForm({ movementSearch: value, selectedMovementValue: '' })}
-                  onOptionSubmit={handleMovementSubmit}
-                />
-              </Grid.Col>
-              <Grid.Col span={{ base: 12, sm: 3 }}>
-                <Button
-                  disabled={Boolean(activeMovement) || !form.movementSearch.trim() || isLoading || isSaving}
-                  fullWidth
-                  leftSection={<Plus size={16} />}
-                  mt={24}
-                  type="button"
-                  variant="outline"
-                  onClick={() => void handleCreateMovement()}
-                >
-                  {t('Створити статтю')}
-                </Button>
-              </Grid.Col>
-            </>
-          )}
+          <Grid.Col span={{ base: 12, sm: 9 }}>
+            <Autocomplete
+              data={toUniqueLabels(paymentMovements)}
+              disabled={isLoading || isSaving}
+              label={t('Стаття руху коштів')}
+              value={form.movementSearch}
+              onChange={(value) => updateForm({ movementSearch: value, selectedMovementValue: '' })}
+              onOptionSubmit={handleMovementSubmit}
+            />
+          </Grid.Col>
+          <Grid.Col span={{ base: 12, sm: 3 }}>
+            <Button
+              disabled={Boolean(activeMovement) || !form.movementSearch.trim() || isLoading || isSaving}
+              fullWidth
+              leftSection={<Plus size={16} />}
+              mt={24}
+              type="button"
+              variant="outline"
+              onClick={() => void handleCreateMovement()}
+            >
+              {t('Створити статтю')}
+            </Button>
+          </Grid.Col>
 
           <Grid.Col span={12}>
             <Textarea
@@ -551,13 +484,7 @@ function createInitialForm(): FormState {
     paymentRegisterValue: '',
     selectedAgreementValue: '',
     selectedMovementValue: '',
-    vatAmount: 0,
-    vatPercent: 23,
   }
-}
-
-function getTitle(action: SadPaymentAction | null, t: (key: string) => string): string {
-  return action === 'income' ? t('Створити прибутковий касовий ордер') : t('Створити авансовий платіж')
 }
 
 function pickCurrencyRegister(register: PaymentRegister | null) {
@@ -698,12 +625,8 @@ function formatPln(value: number): string {
   return moneyFormatter.format(value)
 }
 
-function getInitialPaymentDate(sad: Sad, withBounds: boolean): string {
+function getInitialPaymentDate(sad: Sad): string {
   const today = formatLocalDate(new Date())
-
-  if (!withBounds) {
-    return today
-  }
 
   const dateBounds = getExternalDocumentPaymentDateBounds(sad.FromDate || sad.Created)
 

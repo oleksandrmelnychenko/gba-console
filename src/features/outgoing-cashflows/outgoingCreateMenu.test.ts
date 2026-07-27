@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import { PaymentRegisterType } from '../income-cashflows/types'
 import {
   buildOutgoingRegisterItems,
-  buildOutgoingStandaloneItems,
 } from './outgoingCreateMenu'
 import { OUTCOME_OPERATION_TYPE } from './outgoingCreateTypes'
 
@@ -42,17 +41,5 @@ describe('outgoing create menu CRUD matrix', () => {
       `operationType=${OUTCOME_OPERATION_TYPE.OtherOutcome}`,
     )
     expect(items[5]?.path).toContain(`type=${registerType}`)
-  })
-
-  it('keeps every standalone workflow reachable', () => {
-    const items = buildOutgoingStandaloneItems(t)
-
-    expect(items.map((item) => item.label)).toEqual([
-      'По статтям витрат / під звіт',
-      'Поповнити баланс постачальника послуг',
-      'Платіжна задача',
-      'Повернення клієнту',
-    ])
-    expect(items.every((item) => item.path.startsWith('/accounting/'))).toBe(true)
   })
 })

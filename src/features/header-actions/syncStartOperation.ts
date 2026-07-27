@@ -4,10 +4,10 @@ import type { DataSyncStatus } from './types'
 
 export type SyncStartDescriptor = {
   forAmg: boolean
-  from?: Date
+  from?: Date | string
   mode: 'daily' | 'full'
   stockMode?: number
-  to?: Date
+  to?: Date | string
   types: readonly string[]
 }
 
@@ -91,12 +91,20 @@ export function createSyncStartOperation(
 function createDescriptorSignature(descriptor: SyncStartDescriptor): string {
   return JSON.stringify({
     forAmg: descriptor.forAmg,
-    from: descriptor.from?.toISOString() ?? null,
+    from: serializeDescriptorDate(descriptor.from),
     mode: descriptor.mode,
     stockMode: descriptor.stockMode ?? null,
-    to: descriptor.to?.toISOString() ?? null,
+    to: serializeDescriptorDate(descriptor.to),
     types: [...new Set(descriptor.types)].sort(compareSyncTypes),
   })
+}
+
+function serializeDescriptorDate(value?: Date | string): string | null {
+  if (value instanceof Date) {
+    return value.toISOString()
+  }
+
+  return value ?? null
 }
 
 function compareSyncTypes(left: string, right: string): number {

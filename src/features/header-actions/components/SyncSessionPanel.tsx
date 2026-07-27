@@ -1,14 +1,18 @@
-import { ActionIcon, Badge, Box, Group, Loader, SimpleGrid, Stack, Text, Tooltip } from '@mantine/core'
+import { ActionIcon, Badge, Box, Group, Loader, Progress, SimpleGrid, Stack, Text, Tooltip } from '@mantine/core'
 import { CircleAlert, CircleCheck, Clock3, RefreshCw } from 'lucide-react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import {
   cleanStartedBy,
+  getCompositeSyncProgress,
   getSyncOperationLabel,
   getSyncScopeSummary,
+  getSyncSessionModeLabel,
   getSyncSessionStatusLabel,
   getSyncSessionTone,
   getSyncSourceLabel,
   getVisibleSyncRun,
+  type CompositeSyncProgressView,
+  type CompositeSyncStageTone,
 } from '../syncSession'
 import type { DataSyncStatus } from '../types'
 
@@ -40,11 +44,16 @@ export function SyncSessionPanel({
   const run = getVisibleSyncRun(status)
   const tone = getSyncSessionTone(status)
   const isRunning = tone === 'running'
-  const isUnresolvedRunningSession = isRunning && !run
+  const compositeSession = status?.Session
+  const compositeProgress = getCompositeSyncProgress(compositeSession)
+  const isUnresolvedRunningSession = isRunning && !run && !compositeSession
   const isLockStatusUnavailable = Boolean(status && status.IsGlobalLockStatusAvailable !== true)
   const scope = run?.AcceptedScope
-  const operationLabel = getSyncOperationLabel(scope?.OperationType)
+  const operationLabel = compositeSession
+    ? getSyncSessionModeLabel(compositeSession.Mode)
+    : getSyncOperationLabel(scope?.OperationType)
   const statusLabel = getSyncSessionStatusLabel(tone)
+  const sourceForAmg = compositeSession?.ForAmg ?? scope?.ForAmg
 
   return (
     <Box className={`sync-session-panel is-${tone}`}>
@@ -55,13 +64,13 @@ export function SyncSessionPanel({
           </span>
           <Box>
             <Text fw={650} size="sm" lh={1.25}>
-              {run
+              {run || compositeSession
                 ? t(operationLabel)
                 : t(isUnresolvedRunningSession ? 'Сервер зайнятий синхронізацією' : 'Сесія синхронізації')}
             </Text>
             <Text size="xs" c="dimmed">
-              {run
-                ? getSyncSourceLabel(scope?.ForAmg)
+              {run || compositeSession
+                ? getSyncSourceLabel(sourceForAmg)
                 : t(isUnresolvedRunningSession ? 'Глобальне блокування активне' : 'Немає активної синхронізації')}
             </Text>
           </Box>
@@ -110,7 +119,7 @@ export function SyncSessionPanel({
             </Text>
           ) : null}
         </Stack>
-      ) : isUnresolvedRunningSession ? (
+      ) : compositeSession ? null : isUnresolvedRunningSession ? (
         <Text size="sm" c="dimmed" mt="sm">
           {t('Нова сесія стане доступною після завершення поточної синхронізації')}
         </Text>
@@ -119,6 +128,8 @@ export function SyncSessionPanel({
           {t('Синхронізація ще не запускалась')}
         </Text>
       )}
+
+      {compositeProgress ? <CompositeSessionProgress progress={compositeProgress} /> : null}
 
       {statusError ? (
         <Text size="xs" c="red.7" mt="xs">
@@ -131,6 +142,65 @@ export function SyncSessionPanel({
           {t('Не вдалося перевірити глобальне блокування. Запуск вимкнено')}
         </Text>
       ) : null}
+    </Box>
+  )
+}
+
+function CompositeSessionProgress({ progress }: { progress: CompositeSyncProgressView }) {
+  const { t } = useI18n()
+  const currentStageSummary =
+    progress.currentStage && progress.currentStageNumber
+      ? `${t('Етап')} ${progress.currentStageNumber} ${t('з')} ${progress.totalStages}: ${t(progress.currentStage.label)}`
+      : `${progress.completedStages} ${t('з')} ${progress.totalStages} ${t('етапів завершено')}`
+
+  return (
+    <Box className="sync-composite-progress" mt="sm">
+      <Group justify="space-between" align="baseline" gap="sm" wrap="wrap">
+        <Text fw={650} size="xs">
+          {t('Хід сесії синхронізації')}
+        </Text>
+        <Text c="dimmed" size="xs" className="sync-composite-progress-summary">
+          {currentStageSummary}
+        </Text>
+      </Group>
+      <Progress
+        aria-label={t('Завершені етапи сесії')}
+        color="var(--brand-orange)"
+        mt={7}
+        radius="xs"
+        size="sm"
+        value={progress.progressPercent}
+      />
+      <Stack className="sync-composite-stage-list" gap={0} mt={8}>
+        {progress.stages.map((stage) => (
+          <Box
+            aria-current={stage.isCurrent ? 'step' : undefined}
+            className={`sync-composite-stage is-${stage.tone}`}
+            key={stage.ordinal}
+          >
+            <Group justify="space-between" align="flex-start" gap="sm" wrap="nowrap">
+              <Box className="sync-composite-stage-content">
+                <Text fw={stage.isCurrent ? 650 : 550} size="xs">
+                  {stage.ordinal + 1}. {t(stage.label)}
+                </Text>
+                {stage.range ? (
+                  <Text c="dimmed" size="xs" className="sync-composite-stage-range">
+                    {stage.range}
+                  </Text>
+                ) : null}
+                {stage.failedStep ? (
+                  <Text c="red.7" size="xs">
+                    {t('Крок із помилкою')}: {stage.failedStep}
+                  </Text>
+                ) : null}
+              </Box>
+              <Badge color={getStageBadgeColor(stage.tone)} size="xs" variant="light">
+                {t(stage.statusLabel)}
+              </Badge>
+            </Group>
+          </Box>
+        ))}
+      </Stack>
     </Box>
   )
 }
@@ -168,6 +238,19 @@ function SyncSessionMeta({ label, value }: { label: string; value: string }) {
       </Text>
     </Box>
   )
+}
+
+function getStageBadgeColor(tone: CompositeSyncStageTone): string {
+  switch (tone) {
+    case 'running':
+      return 'orange'
+    case 'error':
+      return 'red'
+    case 'success':
+      return 'green'
+    default:
+      return 'gray'
+  }
 }
 
 function getStatusBadgeClass(

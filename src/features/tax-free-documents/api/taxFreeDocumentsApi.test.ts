@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import {
-  createAdvancePaymentFromTaxFree,
   createIncomePaymentFromTaxFree,
   getTaxFreeCarrier,
   getTaxFreeDocuments,
@@ -95,43 +94,6 @@ describe('taxFreeDocumentsApi', () => {
     expect(apiRequestMock).toHaveBeenCalledWith('/supplies/ukraine/order/taxfree/documents/printing/get', {
       query: {
         netId: 'tax-free-1',
-      },
-    })
-  })
-
-  it('delegates Tax Free advance creation with a client agreement', async () => {
-    const payload = {
-      Amount: 100,
-      ClientAgreement: { Id: 12 },
-      Comment: '',
-      FromDate: '2026-07-24T00:00:00.000Z',
-      Organization: { Id: 1 },
-      VatAmount: 20,
-      VatPercent: 20,
-    }
-    apiRequestMock.mockResolvedValueOnce({ NetUid: 'advance-1' })
-
-    await createAdvancePaymentFromTaxFree('tax-free-1', payload)
-
-    const operationId = (
-      apiRequestMock.mock.calls[0]?.[1]?.query as {
-        operationNetUid?: string
-      }
-    )?.operationNetUid
-
-    expect(operationId).toMatch(
-      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
-    )
-    expect(apiRequestMock).toHaveBeenCalledWith('/payments/advance/new', {
-      body: payload,
-      dedupe: false,
-      headers: {
-        'Idempotency-Key': operationId,
-      },
-      method: 'POST',
-      query: {
-        operationNetUid: operationId,
-        taxFreeNetId: 'tax-free-1',
       },
     })
   })

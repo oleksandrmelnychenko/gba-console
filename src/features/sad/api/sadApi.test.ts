@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import {
-  createAdvancePaymentFromSad,
   createIncomePaymentFromSad,
   getSad,
   getSads,
@@ -122,43 +121,6 @@ describe('sadApi', () => {
         method: 'POST',
       },
     )
-  })
-
-  it('delegates SAD advance creation with an organization-client agreement', async () => {
-    const payload = {
-      Amount: 100,
-      Comment: '',
-      FromDate: '2026-07-24T00:00:00.000Z',
-      Organization: { Id: 1 },
-      OrganizationClientAgreement: { Id: 22, OrganizationClientId: 33 },
-      VatAmount: 20,
-      VatPercent: 20,
-    }
-    apiRequestMock.mockResolvedValueOnce({ NetUid: 'advance-1' })
-
-    await createAdvancePaymentFromSad('sad-1', payload)
-
-    const operationId = (
-      apiRequestMock.mock.calls[0]?.[1]?.query as {
-        operationNetUid?: string
-      }
-    )?.operationNetUid
-
-    expect(operationId).toMatch(
-      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
-    )
-    expect(apiRequestMock).toHaveBeenCalledWith('/payments/advance/new', {
-      body: payload,
-      dedupe: false,
-      headers: {
-        'Idempotency-Key': operationId,
-      },
-      method: 'POST',
-      query: {
-        operationNetUid: operationId,
-        sadNetId: 'sad-1',
-      },
-    })
   })
 
   it('uses one stable idempotency key for SAD income creation', async () => {

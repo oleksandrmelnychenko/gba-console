@@ -16,7 +16,14 @@ import type {
   PriceTotal,
   SupplyPaymentTask,
 } from '../types'
+import {
+  ACCOUNTING_OPERATION_ID,
+  getAccountingOperation,
+} from '../../accounting/accountingOperationCatalog'
 import { OUTCOME_OPERATION_TYPE } from '../../outgoing-cashflows/outgoingCreateTypes'
+
+const CREATE_PAYMENT_TASK_OUTCOME_ENDPOINT =
+  getAccountingOperation(ACCOUNTING_OPERATION_ID.OutcomeSupplierPaymentByTask).endpoint
 
 export async function getGroupedPaymentTasks(
   params: AvailablePaymentsSearchParams,
@@ -234,7 +241,7 @@ export async function createAvailablePaymentOutcome({
   )
   documents.forEach((document) => formData.append('documents', document))
 
-  return apiRequest<unknown>('/payments/orders/outcome/new/supplies', {
+  return apiRequest<unknown>(CREATE_PAYMENT_TASK_OUTCOME_ENDPOINT, {
     body: formData,
     dedupe: false,
     headers: getAccountingMutationHeaders(operation.operationId),

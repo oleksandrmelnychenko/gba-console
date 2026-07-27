@@ -3,7 +3,7 @@ import { parseAvailablePaymentsAccountingType } from './availablePaymentsSearchP
 import { AccountingTypeValue } from '../types'
 
 describe('parseAvailablePaymentsAccountingType', () => {
-  it('keeps legacy type as accounting filter outside outcome-payment mode', () => {
+  it('uses standalone type as accounting filter outside outcome-payment mode', () => {
     const searchParams = new URLSearchParams('type=0')
 
     expect(parseAvailablePaymentsAccountingType(searchParams)).toBe(AccountingTypeValue.ManagementAccounting)

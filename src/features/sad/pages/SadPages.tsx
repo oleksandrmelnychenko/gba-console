@@ -187,7 +187,7 @@ export function AllSadsPage() {
   const [selectedSad, setSelectedSad] = useState<Sad | null>(null)
   const [outcomeSource, setOutcomeSource] = useState<DocumentOutcomePaymentSource | null>(null)
   const [supplyOrderSad, setSupplyOrderSad] = useState<Sad | null>(null)
-  const [paymentAction, setPaymentAction] = useState<{ action: 'advance' | 'income'; sad: Sad } | null>(null)
+  const [incomePaymentSad, setIncomePaymentSad] = useState<Sad | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Sad | null>(null)
   const [isDeleting, setDeleting] = useState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
@@ -447,13 +447,9 @@ export function AllSadsPage() {
       <SadActionModal
         sad={selectedSad}
         onClose={() => setSelectedSad(null)}
-        onCreateAdvancePayment={(sad) => {
-          setSelectedSad(null)
-          setPaymentAction({ action: 'advance', sad })
-        }}
         onCreateIncomePayment={(sad) => {
           setSelectedSad(null)
-          setPaymentAction({ action: 'income', sad })
+          setIncomePaymentSad(sad)
         }}
         onCreateOutcomePayment={(sad) => {
           setSelectedSad(null)
@@ -477,10 +473,9 @@ export function AllSadsPage() {
       />
 
       <SadPaymentFromSadModal
-        action={paymentAction?.action || null}
-        opened={Boolean(paymentAction)}
-        sad={paymentAction?.sad || null}
-        onClose={() => setPaymentAction(null)}
+        opened={Boolean(incomePaymentSad)}
+        sad={incomePaymentSad}
+        onClose={() => setIncomePaymentSad(null)}
         onCreated={reload}
       />
 
@@ -2348,7 +2343,6 @@ function SpecificationUploadModal({
 
 function SadActionModal({
   onClose,
-  onCreateAdvancePayment,
   onCreateIncomePayment,
   onCreateOutcomePayment,
   onCreateSupplyOrder,
@@ -2356,7 +2350,6 @@ function SadActionModal({
   sad,
 }: {
   onClose: () => void
-  onCreateAdvancePayment: (sad: Sad) => void
   onCreateIncomePayment: (sad: Sad) => void
   onCreateOutcomePayment: (sad: Sad) => void
   onCreateSupplyOrder: (sad: Sad) => void
@@ -2445,21 +2438,6 @@ function SadActionModal({
         {sad.IsSend && (sad.Client || sad.OrganizationClient) && (
           <>
             <Divider />
-            <Button
-              fullWidth
-              justify="flex-start"
-              color="dark"
-              size="md"
-              leftSection={
-                <span className="app-action-icon">
-                  <Banknote size={20} color="var(--mantine-color-gray-7)" />
-                </span>
-              }
-              variant="subtle"
-              onClick={() => onCreateAdvancePayment(sad)}
-            >
-              {t('Авансовий платіж')}
-            </Button>
             <Button
               fullWidth
               justify="flex-start"

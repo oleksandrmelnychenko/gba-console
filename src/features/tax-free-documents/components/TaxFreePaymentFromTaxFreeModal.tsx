@@ -10,7 +10,6 @@ import {
   buildPartnerAgreementPayload,
   getExternalDocumentPaymentDateBounds,
   isSupportedAccountingAmount,
-  isSupportedVat,
   pickExternalDocumentPaymentCurrencyRegister,
 } from '../../document-outcome-payment/externalDocumentPayment'
 import {
@@ -29,19 +28,13 @@ import type {
   PaymentMovement,
   PaymentRegister,
 } from '../../income-cashflows/types'
-import {
-  createAdvancePaymentFromTaxFree,
-  createIncomePaymentFromTaxFree,
-  type TaxFreeAdvancePaymentPayload,
-} from '../api/taxFreeDocumentsApi'
+import { createIncomePaymentFromTaxFree } from '../api/taxFreeDocumentsApi'
 import type { TaxFreeDocument } from '../types'
 import { formatTaxFreeAmountPl, getTaxFreeClient } from '../utils'
 
 const SEARCH_DEBOUNCE_MS = 300
 const POLAND_CULTURE = 'pl'
 const CASH_REGISTER_TYPE = 0
-
-export type TaxFreePaymentAction = 'advance' | 'income'
 
 type TaxFreePaymentRegister = PaymentRegister & {
   DefaultPaymentCurrencyRegister?: PaymentCurrencyRegister | null
@@ -71,12 +64,9 @@ type FormState = {
   paymentRegisterValue: string
   selectedAgreementValue: string
   selectedMovementValue: string
-  vatAmount: number
-  vatPercent: number
 }
 
 type TaxFreePaymentFromTaxFreeModalProps = {
-  action: TaxFreePaymentAction | null
   document: TaxFreeDocument | null
   opened: boolean
   onClose: () => void
@@ -84,7 +74,6 @@ type TaxFreePaymentFromTaxFreeModalProps = {
 }
 
 export function TaxFreePaymentFromTaxFreeModal({
-  action,
   document,
   onClose,
   onCreated,
@@ -101,10 +90,8 @@ export function TaxFreePaymentFromTaxFreeModal({
   const [isSaving, setSaving] = useState(false)
 
   const client = document?.TaxFreePackList?.Client || null
-  const isIncome = action === 'income'
-  const dateBounds = isIncome
-    ? getExternalDocumentPaymentDateBounds(document?.FormedDate || document?.Created)
-    : null
+  const dateBounds =
+    getExternalDocumentPaymentDateBounds(document?.FormedDate || document?.Created)
 
   const selectedOrganization = useMemo(
     () => organizations.find((organization) => getEntityValue(organization) === form.organizationValue) || null,
@@ -130,7 +117,7 @@ export function TaxFreePaymentFromTaxFreeModal({
   const currencyLabel = selectedCurrencyRegister?.Currency?.Code || selectedCurrencyRegister?.Currency?.Name || ''
 
   useEffect(() => {
-    if (!opened || !document || !action) {
+    if (!opened || !document) {
       return
     }
 
@@ -152,8 +139,8 @@ export function TaxFreePaymentFromTaxFreeModal({
                 return [] as ClientAgreement[]
               })
             : Promise.resolve([] as ClientAgreement[]),
-          isIncome ? searchIncomeCashflowPaymentRegisters('') : Promise.resolve([] as PaymentRegister[]),
-          isIncome ? getIncomeCashflowPaymentMovements() : Promise.resolve([] as PaymentMovement[]),
+          searchIncomeCashflowPaymentRegisters(''),
+          getIncomeCashflowPaymentMovements(),
         ])
 
         if (cancelled) {
@@ -173,13 +160,12 @@ export function TaxFreePaymentFromTaxFreeModal({
         setForm({
           ...createInitialForm(),
           amount: activeDocument.VatAmountPl ?? 0,
-          fromDate: getInitialPaymentDate(activeDocument, isIncome),
+          fromDate: getInitialPaymentDate(activeDocument),
           organizationValue: defaultOrganization ? getEntityValue(defaultOrganization) : '',
           paymentRegisterValue: defaultRegister ? getEntityValue(defaultRegister) : '',
           selectedAgreementValue: getEntityValue(defaultAgreement),
           selectedMovementValue: defaultMovement ? getEntityValue(defaultMovement) : '',
           movementSearch: defaultMovement?.OperationName || '',
-          vatPercent: activeDocument.VatPercent ?? 23,
         })
       } catch (loadError) {
         if (!cancelled) {
@@ -197,10 +183,10 @@ export function TaxFreePaymentFromTaxFreeModal({
     return () => {
       cancelled = true
     }
-  }, [action, client?.NetUid, document, isIncome, opened, t])
+  }, [client?.NetUid, document, opened, t])
 
   useEffect(() => {
-    if (!opened || !isIncome) {
+    if (!opened) {
       return
     }
 
@@ -214,7 +200,7 @@ export function TaxFreePaymentFromTaxFreeModal({
     }, SEARCH_DEBOUNCE_MS)
 
     return () => window.clearTimeout(timeoutId)
-  }, [form.movementSearch, isIncome, opened])
+  }, [form.movementSearch, opened])
 
   function updateForm(patch: Partial<FormState>) {
     setForm((current) => ({ ...current, ...patch }))
@@ -261,14 +247,13 @@ export function TaxFreePaymentFromTaxFreeModal({
   }
 
   async function handleSubmit() {
-    if (!document?.NetUid || !action) {
+    if (!document?.NetUid) {
       return
     }
 
     const validationError = validateForm({
       activeMovement,
       form,
-      isIncome,
       maxDate: dateBounds?.max || '',
       minDate: dateBounds?.min || '',
       selectedAgreement,
@@ -294,36 +279,22 @@ export function TaxFreePaymentFromTaxFreeModal({
         return
       }
 
-      if (isIncome) {
-        const order: IncomePaymentOrder = {
-          ...partnerAgreement,
-          Amount: form.amount,
-          Comment: form.comment.trim(),
-          Currency: selectedCurrencyRegister?.Currency || undefined,
-          FromDate: toIsoDate(form.fromDate),
-          Organization: selectedOrganization as Organization,
-          PaymentMovementOperation: {
-            PaymentMovement: activeMovement,
-          },
-          PaymentRegister: selectedRegister || undefined,
-        }
-
-        await createIncomePaymentFromTaxFree(document.NetUid, order)
-      } else {
-        const advancePayment: TaxFreeAdvancePaymentPayload = {
-          ...partnerAgreement,
-          Amount: form.amount,
-          Comment: form.comment.trim(),
-          FromDate: toIsoDate(form.fromDate),
-          Organization: selectedOrganization as Organization,
-          VatAmount: form.vatAmount,
-          VatPercent: form.vatPercent,
-        }
-
-        await createAdvancePaymentFromTaxFree(document.NetUid, advancePayment)
+      const order: IncomePaymentOrder = {
+        ...partnerAgreement,
+        Amount: form.amount,
+        Comment: form.comment.trim(),
+        Currency: selectedCurrencyRegister?.Currency || undefined,
+        FromDate: toIsoDate(form.fromDate),
+        Organization: selectedOrganization as Organization,
+        PaymentMovementOperation: {
+          PaymentMovement: activeMovement,
+        },
+        PaymentRegister: selectedRegister || undefined,
       }
 
-      notifications.show({ color: 'green', message: isIncome ? t('Прибутковий ордер створено') : t('Авансовий платіж створено') })
+      await createIncomePaymentFromTaxFree(document.NetUid, order)
+
+      notifications.show({ color: 'green', message: t('Прибутковий ордер створено') })
       onCreated?.()
       onClose()
     } catch (saveError) {
@@ -334,7 +305,7 @@ export function TaxFreePaymentFromTaxFreeModal({
   }
 
   return (
-    <AppModal centered opened={opened} size="lg" title={getTitle(action, t)} onClose={onClose}>
+    <AppModal centered opened={opened} size="lg" title={t('Створити прибутковий касовий ордер')} onClose={onClose}>
       <Stack gap="md">
         {document ? (
           <Stack gap={2}>
@@ -379,23 +350,19 @@ export function TaxFreePaymentFromTaxFreeModal({
             />
           </Grid.Col>
 
-          {isIncome && (
-            <>
-              <Grid.Col span={{ base: 12, sm: 6 }}>
-                <Select
-                  data={toEntityOptions(paymentRegisters)}
-                  disabled={!paymentRegisters.length || isLoading || isSaving}
-                  label={t('Каса / рахунок')}
-                  searchable
-                  value={form.paymentRegisterValue || null}
-                  onChange={(value) => updateForm({ paymentRegisterValue: value || '' })}
-                />
-              </Grid.Col>
-              <Grid.Col span={{ base: 12, sm: 6 }}>
-                <TextInput disabled label={t('Валюта')} value={currencyLabel} />
-              </Grid.Col>
-            </>
-          )}
+          <Grid.Col span={{ base: 12, sm: 6 }}>
+            <Select
+              data={toEntityOptions(paymentRegisters)}
+              disabled={!paymentRegisters.length || isLoading || isSaving}
+              label={t('Каса / рахунок')}
+              searchable
+              value={form.paymentRegisterValue || null}
+              onChange={(value) => updateForm({ paymentRegisterValue: value || '' })}
+            />
+          </Grid.Col>
+          <Grid.Col span={{ base: 12, sm: 6 }}>
+            <TextInput disabled label={t('Валюта')} value={currencyLabel} />
+          </Grid.Col>
 
           <Grid.Col span={{ base: 12, sm: 6 }}>
             <NumberInput
@@ -421,61 +388,29 @@ export function TaxFreePaymentFromTaxFreeModal({
             />
           </Grid.Col>
 
-          {!isIncome && (
-            <>
-              <Grid.Col span={{ base: 12, sm: 6 }}>
-                <NumberInput
-                  allowNegative={false}
-                  decimalScale={2}
-                  disabled={isLoading || isSaving}
-                  label={t('ПДВ %')}
-                  max={100}
-                  min={0}
-                  value={form.vatPercent}
-                  onChange={(value) => updateForm({ vatPercent: toNumber(value) })}
-                />
-              </Grid.Col>
-              <Grid.Col span={{ base: 12, sm: 6 }}>
-                <NumberInput
-                  allowNegative={false}
-                  decimalScale={2}
-                  disabled={isLoading || isSaving}
-                  label={t('Сума з ПДВ')}
-                  min={0}
-                  value={form.vatAmount}
-                  onChange={(value) => updateForm({ vatAmount: toNumber(value) })}
-                />
-              </Grid.Col>
-            </>
-          )}
-
-          {isIncome && (
-            <>
-              <Grid.Col span={{ base: 12, sm: 9 }}>
-                <Autocomplete
-                  data={toUniqueLabels(paymentMovements)}
-                  disabled={isLoading || isSaving}
-                  label={t('Стаття руху коштів')}
-                  value={form.movementSearch}
-                  onChange={(value) => updateForm({ movementSearch: value, selectedMovementValue: '' })}
-                  onOptionSubmit={handleMovementSubmit}
-                />
-              </Grid.Col>
-              <Grid.Col span={{ base: 12, sm: 3 }}>
-                <Button
-                  disabled={Boolean(activeMovement) || !form.movementSearch.trim() || isLoading || isSaving}
-                  fullWidth
-                  leftSection={<Plus size={16} />}
-                  mt={24}
-                  type="button"
-                  variant="outline"
-                  onClick={() => void handleCreateMovement()}
-                >
-                  {t('Створити статтю')}
-                </Button>
-              </Grid.Col>
-            </>
-          )}
+          <Grid.Col span={{ base: 12, sm: 9 }}>
+            <Autocomplete
+              data={toUniqueLabels(paymentMovements)}
+              disabled={isLoading || isSaving}
+              label={t('Стаття руху коштів')}
+              value={form.movementSearch}
+              onChange={(value) => updateForm({ movementSearch: value, selectedMovementValue: '' })}
+              onOptionSubmit={handleMovementSubmit}
+            />
+          </Grid.Col>
+          <Grid.Col span={{ base: 12, sm: 3 }}>
+            <Button
+              disabled={Boolean(activeMovement) || !form.movementSearch.trim() || isLoading || isSaving}
+              fullWidth
+              leftSection={<Plus size={16} />}
+              mt={24}
+              type="button"
+              variant="outline"
+              onClick={() => void handleCreateMovement()}
+            >
+              {t('Створити статтю')}
+            </Button>
+          </Grid.Col>
 
           <Grid.Col span={12}>
             <Textarea
@@ -512,15 +447,12 @@ function createInitialForm(): FormState {
     paymentRegisterValue: '',
     selectedAgreementValue: '',
     selectedMovementValue: '',
-    vatAmount: 0,
-    vatPercent: 23,
   }
 }
 
 function validateForm({
   activeMovement,
   form,
-  isIncome,
   maxDate,
   minDate,
   selectedAgreement,
@@ -531,7 +463,6 @@ function validateForm({
 }: {
   activeMovement: PaymentMovement | null
   form: FormState
-  isIncome: boolean
   maxDate: string
   minDate: string
   selectedAgreement: ClientAgreement | null
@@ -552,10 +483,6 @@ function validateForm({
     return t('Сума має бути більшою за нуль')
   }
 
-  if (!isIncome && !isSupportedVat(form.amount, form.vatAmount, form.vatPercent)) {
-    return t('Перевірте суму та відсоток ПДВ')
-  }
-
   if (form.comment.trim().length > ACCOUNTING_COMMENT_MAX_LENGTH) {
     return t('Коментар має бути до 450 символів')
   }
@@ -564,15 +491,11 @@ function validateForm({
     return t('Дата виходить за дозволений період')
   }
 
-  if (isIncome && (!selectedRegister || !selectedCurrencyRegister || !activeMovement)) {
+  if (!selectedRegister || !selectedCurrencyRegister || !activeMovement) {
     return t('Оберіть касу / рахунок, валюту та статтю руху коштів')
   }
 
   return null
-}
-
-function getTitle(action: TaxFreePaymentAction | null, t: (key: string) => string): string {
-  return action === 'income' ? t('Створити прибутковий касовий ордер') : t('Створити авансовий платіж')
 }
 
 function pickCurrencyRegister(register: TaxFreePaymentRegister | null) {
@@ -604,12 +527,8 @@ function pickDefaultOrganization(organizations: Organization[]): Organization | 
   )
 }
 
-function getInitialPaymentDate(document: TaxFreeDocument, withBounds: boolean): string {
+function getInitialPaymentDate(document: TaxFreeDocument): string {
   const today = formatLocalDate(new Date())
-
-  if (!withBounds) {
-    return today
-  }
 
   const dateBounds = getExternalDocumentPaymentDateBounds(document.FormedDate || document.Created)
   const minDate = dateBounds?.min || ''

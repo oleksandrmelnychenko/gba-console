@@ -4,8 +4,6 @@ import type {
   ReportDocument,
   ReportEntity,
   ReportResult,
-  ReportResultRow,
-  ReportResultTable,
   SpreadsheetCellValue,
 } from './types'
 
@@ -114,14 +112,9 @@ export function parseNumericValue(value: unknown): number | null {
 }
 
 export function normalizeReportResult(result: unknown): ReportResult {
-  const document = normalizeDocument(result)
-  const table = normalizeResultTable(result)
-
   return {
-    document,
+    document: normalizeDocument(result),
     raw: result,
-    table,
-    totals: calculateResultTotals(table),
   }
 }
 
@@ -138,37 +131,6 @@ export function normalizeDocument(result: unknown): ReportDocument {
   }
 }
 
-function normalizeResultTable(result: unknown): ReportResultTable {
-  const rows = findRows(result)
-  const columns = findColumns(result, rows)
-
-  return {
-    columns,
-    rows,
-  }
-}
-
-function calculateResultTotals(table: ReportResultTable): Record<string, number> {
-  return table.columns.reduce<Record<string, number>>((totals, column) => {
-    const values = table.rows
-      .map((row) => parseNumericValue(row[column]))
-      .filter((value): value is number => typeof value === 'number')
-
-    if (values.length > 0) {
-      totals[column] = values.reduce((sum, value) => sum + value, 0)
-    }
-
-    return totals
-  }, {})
-}
-
-export function buildCsv(columns: string[], rows: Array<Record<string, unknown>>): string {
-  return [
-    columns.map(escapeCsvValue).join(','),
-    ...rows.map((row) => columns.map((column) => escapeCsvValue(row[column])).join(',')),
-  ].join('\n')
-}
-
 export function buildSpreadsheetCsv(rows: SpreadsheetCellValue[][]): string {
   return rows.map((row) => row.map(escapeCsvValue).join(',')).join('\n')
 }
@@ -182,6 +144,22 @@ export function downloadTextFile(fileName: string, content: string, mimeType = '
   link.download = fileName
   link.click()
   URL.revokeObjectURL(url)
+}
+
+// The engine names every file it builds «Reports_MM.yyyy_<guid>.xlsx», so a folder of exports says nothing about
+// what is in them. The console's own export carries the run instead — the file it was read from, the sheet, the
+// date — so a second export does not overwrite the first and the name survives the download folder.
+export function buildReportFileName(parts: Array<string | null | undefined>, extension: string): string {
+  const name = parts.map(toFileNamePart).filter(Boolean).join('_')
+
+  return `${name || 'report'}.${extension}`
+}
+
+function toFileNamePart(value?: string | null): string {
+  return (value || '')
+    .replace(/[^\p{L}\p{N}]+/gu, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 48)
 }
 
 export function buildDateFileSuffix(date = new Date()): string {
@@ -200,103 +178,6 @@ function unwrapSingleObject(result: unknown): Record<string, unknown> | null {
   }
 
   return result as Record<string, unknown>
-}
-
-function findRows(result: unknown): ReportResultRow[] {
-  if (Array.isArray(result)) {
-    return normalizeRowArray(result)
-  }
-
-  if (!result || typeof result !== 'object') {
-    return []
-  }
-
-  const payload = result as Record<string, unknown>
-  const candidates = [
-    payload.Rows,
-    payload.rows,
-    payload.Items,
-    payload.items,
-    payload.Collection,
-    payload.collection,
-    payload.Data,
-    payload.data,
-    payload.Result,
-    payload.result,
-  ]
-
-  for (const candidate of candidates) {
-    if (Array.isArray(candidate)) {
-      return normalizeRowArray(candidate)
-    }
-  }
-
-  return []
-}
-
-function findColumns(result: unknown, rows: ReportResultRow[]): string[] {
-  const explicitColumns = readExplicitColumns(result)
-
-  if (explicitColumns.length > 0) {
-    return explicitColumns
-  }
-
-  const columnSet = new Set<string>()
-
-  rows.forEach((row) => {
-    Object.keys(row).forEach((column) => columnSet.add(column))
-  })
-
-  return Array.from(columnSet)
-}
-
-function readExplicitColumns(result: unknown): string[] {
-  if (!result || typeof result !== 'object' || Array.isArray(result)) {
-    return []
-  }
-
-  const payload = result as Record<string, unknown>
-  const candidates = [payload.Columns, payload.columns, payload.Headers, payload.headers]
-
-  for (const candidate of candidates) {
-    if (Array.isArray(candidate)) {
-      return candidate.flatMap((item) => {
-        if (typeof item === 'string') {
-          return item ? [item] : []
-        }
-
-        if (item && typeof item === 'object') {
-          const column = item as Record<string, unknown>
-          const value = column.key || column.field || column.name || column.title || column.label
-
-          return typeof value === 'string' && value ? [value] : []
-        }
-
-        return []
-      })
-    }
-  }
-
-  return []
-}
-
-function normalizeRowArray(rows: unknown[]): ReportResultRow[] {
-  return rows
-    .map((row) => {
-      if (row && typeof row === 'object' && !Array.isArray(row)) {
-        return row as ReportResultRow
-      }
-
-      if (Array.isArray(row)) {
-        return row.reduce<ReportResultRow>((record, value, index) => {
-          record[`C${index + 1}`] = value as ReportCellValue
-          return record
-        }, {})
-      }
-
-      return null
-    })
-    .filter((row): row is ReportResultRow => Boolean(row))
 }
 
 function escapeCsvValue(value: unknown): string {

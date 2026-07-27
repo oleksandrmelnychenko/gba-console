@@ -1,3 +1,10 @@
+import {
+  ACCOUNTING_PAYMENT_REGISTER_TYPE,
+  INCOME_PAYMENT_OPERATION_CODE,
+  type AccountingPaymentRegisterType,
+  type IncomePaymentOperationCode,
+} from '../accounting/accountingOperationCatalog'
+
 export type EntityFields = {
   Created?: string
   Deleted?: boolean
@@ -25,24 +32,13 @@ export type OrganizationWithDefaults = Organization & {
   MainPaymentRegister?: PaymentRegister | null
 }
 
-export const PaymentRegisterType = {
-  Cash: 0,
-  Card: 1,
-  Bank: 2,
-} as const
+export const PaymentRegisterType = ACCOUNTING_PAYMENT_REGISTER_TYPE
 
-export type PaymentRegisterType = (typeof PaymentRegisterType)[keyof typeof PaymentRegisterType]
+export type PaymentRegisterType = AccountingPaymentRegisterType
 
-export const IncomePaymentOperationType = {
-  ClientPayment: 0,
-  SupplierReturn: 1,
-  OtherAccountingWithCounterparts: 2,
-  OtherIncome: 3,
-  ReturnFromColleague: 9,
-} as const
+export const IncomePaymentOperationType = INCOME_PAYMENT_OPERATION_CODE
 
-export type IncomePaymentOperationType =
-  (typeof IncomePaymentOperationType)[keyof typeof IncomePaymentOperationType]
+export type IncomePaymentOperationType = IncomePaymentOperationCode
 
 export const IncomePaymentOrderType = {
   Cash: 0,

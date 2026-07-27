@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { ApiError } from '../../shared/api/apiClient'
+import { allDailySyncTypes } from './syncOptions'
 import { createSyncStartOperation, type SyncStartDescriptor } from './syncStartOperation'
 import type { DataSyncStatus } from './types'
 
@@ -8,8 +9,10 @@ const secondOperationId = '22222222222222222222222222222222'
 
 const fullDescriptor: SyncStartDescriptor = {
   forAmg: true,
+  from: '2025-01-01',
   mode: 'full',
-  types: ['4', '1'],
+  to: '2026-07-27',
+  types: allDailySyncTypes,
 }
 
 beforeEach(() => {
@@ -24,7 +27,7 @@ describe('sync start operation', () => {
     expect(operation.getOrCreate(fullDescriptor)).toBe(firstOperationId)
     expect(operation.getOrCreate({
       ...fullDescriptor,
-      types: ['1', '4', '1'],
+      types: [...allDailySyncTypes].reverse().concat('0'),
     })).toBe(firstOperationId)
     expect(sessionStorage).toHaveLength(1)
   })
@@ -44,6 +47,16 @@ describe('sync start operation', () => {
     expect(() => operation.getOrCreate({
       ...fullDescriptor,
       forAmg: false,
+    })).toThrow('Повторіть його без зміни параметрів')
+  })
+
+  it('treats a changed session date range as a different idempotent operation', () => {
+    const operation = createSyncStartOperation(() => firstOperationId)
+    operation.getOrCreate(fullDescriptor)
+
+    expect(() => operation.getOrCreate({
+      ...fullDescriptor,
+      from: '2025-02-01',
     })).toThrow('Повторіть його без зміни параметрів')
   })
 

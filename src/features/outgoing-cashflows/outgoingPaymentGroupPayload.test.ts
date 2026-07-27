@@ -158,4 +158,17 @@ describe('buildOutgoingPaymentGroupPayload', () => {
     expect(payload.ConsumableProductOrganization).toBeUndefined()
     expect(payload.SupplyOrganizationAgreement).toBeUndefined()
   })
+
+  it('drops a stale counterparty when switching to other expense', () => {
+    const payload = buildPayload(
+      OUTCOME_OPERATION_TYPE.OtherOutcome,
+      PaymentRegisterType.Bank,
+      'client',
+    )
+
+    expect(payload.Client).toBeUndefined()
+    expect(payload.ClientAgreement).toBeUndefined()
+    expect(payload.ConsumableProductOrganization).toBeUndefined()
+    expect(payload.SupplyOrganizationAgreement).toBeUndefined()
+  })
 })

@@ -20,6 +20,9 @@ const removedNavigationRoutePatterns = [
   /^\/?tax-free(?:\/|$)/i,
   /^\/?warehouse\/poland(?:\/|$)/i,
 ]
+const blockedApplicationPathPatterns = [
+  /^\/accounting\/outgoing-cashflow\/new\/(?:client-return|payment-tasks|supplier)$/i,
+]
 const navigationRouteAliasRules: Array<{ source: string; targets: RegExp[] }> = [
   {
     source: '/orders/ukraine/all',
@@ -60,7 +63,7 @@ const navigationRouteAliasRules: Array<{ source: string; targets: RegExp[] }> = 
   {
     source: '/accounting/outgoing-cashflow',
     targets: [
-      /^\/accounting\/outgoing-cashflow\/new(?:\/(?:simple|supplier|client-return|group|payment-tasks))?$/i,
+      /^\/accounting\/outgoing-cashflow\/new(?:\/(?:simple|group))?$/i,
       /^\/accounting\/outgoing-cashflow\/[^/]+\/advanced-report\/view$/i,
     ],
   },
@@ -175,6 +178,10 @@ export function findNavigationMatch(modules: NavigationModule[], pathname: strin
 
 export function isNavigationPathAllowed(modules: NavigationModule[], pathname: string): boolean {
   const normalizedPath = normalizePath(pathname)
+
+  if (blockedApplicationPathPatterns.some((pattern) => pattern.test(normalizedPath))) {
+    return false
+  }
 
   if (normalizedPath === '/' || normalizedPath === '/dashboard') {
     return true

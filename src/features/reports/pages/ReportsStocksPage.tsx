@@ -8,6 +8,7 @@ import {
   Checkbox,
   Group,
   Loader,
+  type OptionsFilter,
   Select,
   SimpleGrid,
   Stack,
@@ -18,16 +19,16 @@ import {
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
-import { CircleAlert, Download, Plus, Printer, RefreshCw, RotateCcw, Save, Trash2 } from 'lucide-react'
-import { type FormEvent, useEffect, useMemo, useState } from 'react'
+import { CircleAlert, Plus, RefreshCw, RotateCcw, Save, Trash2 } from 'lucide-react'
+import { type FormEvent, useEffect, useMemo } from 'react'
+import { ApiError } from '../../../shared/api/apiClient'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
+import type { TranslateFunction } from '../../../shared/i18n/types'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
-import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import {
   createStockReport,
   getReportClientAgreements,
@@ -41,7 +42,6 @@ import {
   searchReportClients,
   searchReportProducts,
   searchReportUsers,
-  searchSaleReturnReportDocuments,
   searchSalesReportDocuments,
 } from '../api/reportsApi'
 import {
@@ -53,6 +53,7 @@ import {
   flattenCheckedMeasurements,
   flattenGroupingOptions,
   getReportFieldLabel,
+  sanitizeReportTemplate,
 } from '../data/reportOptions'
 import type {
   ReportEntity,
@@ -61,16 +62,11 @@ import type {
   ReportMeasurementGroup,
   ReportRequestBody,
   ReportResult,
-  ReportResultRow,
   ReportSelection,
   ReportSelectedValue,
   ReportTemplate,
 } from '../types'
 import {
-  buildCsv,
-  buildDateFileSuffix,
-  displayValue,
-  downloadTextFile,
   getEntityDisplayName,
   formatDate,
 } from '../utils'
@@ -79,6 +75,15 @@ import './reports-pages.css'
 const STORAGE_KEY = 'app_configs_reports_template'
 const LOOKUP_SEARCH_DEBOUNCE_MS = 300
 const LOOKUP_SEARCH_LIMIT = 30
+const DATE_INPUT_DEBOUNCE_MS = 400
+// A native <input type="date"> carries no bounds of its own and reports every intermediate value while the
+// year is edited digit by digit («0002-07-18»), which the engine accepts and then walks for two millennia
+// until the request dies of a timeout. Both ends are clamped, and the same range is re-checked here because
+// min/max only style the input — they do not stop a typed value from reaching the form.
+const REPORT_MIN_DATE = '2000-01-01'
+
+// Only the sale-document lookup narrows its options by the report period; the rest ignore it.
+const PERIOD_SCOPED_FILTER_FIELD_TYPES = new Set<number>([REPORT_FILTER_FIELD_TYPES.saleDocumentNumberDate])
 
 const SALE_DOCUMENT_STATUS_OPTIONS: Array<{ label: string; value: string }> = [
   { value: 'All', label: 'Всі' },
@@ -90,6 +95,17 @@ const SALE_DOCUMENT_STATUS_OPTIONS: Array<{ label: string; value: string }> = [
 ]
 
 const defaultCondition = REPORT_FILTER_CONDITIONS[0]
+
+// What the finished run was asked for, kept because the response carries none of it back.
+type ReportRunOutcome = {
+  colGroupings: string[]
+  from: string
+  hasDocument: boolean
+  measures: string[]
+  name: string
+  rowGroupings: string[]
+  to: string
+}
 
 function createEmptySelection(): ReportSelection {
   return {
@@ -116,17 +132,30 @@ export function ReportsStocksPage() {
   const [colGroups, setColGroups] = useValueState<ReportGroupingItem[]>([])
   const [selections, setSelections] = useValueState<ReportSelection[]>([createEmptySelection()])
   const [result, setResult] = useValueState<ReportResult | null>(null)
+  const [lastRun, setLastRun] = useValueState<ReportRunOutcome | null>(null)
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(false)
   const [downloadModalOpened, setDownloadModalOpened] = useValueState(false)
   const [templateName, setTemplateName] = useValueState('')
   const [templates, setTemplates] = useValueState<ReportTemplate[]>([])
-  const [tableToolbarTarget, setTableToolbarTarget] = useState<HTMLDivElement | null>(null)
+  const [templateNotice, setTemplateNotice] = useValueState<string | null>(null)
   const groupingOptions = useMemo(() => flattenGroupingOptions(), [])
-  const groupingSelectData = groupingOptions.map((item) => ({
-    label: `${item.group}: ${getReportFieldLabel(item.key)}`,
-    value: String(item.type),
-  }))
+  // One dimension can hold one axis position only: repeated in «Рядки» it splits the sheet against itself, and
+  // in both axes at once it asks the engine to lay the same key out horizontally and vertically. Both are two
+  // clicks away, so the taken dimensions leave the picker disabled rather than merely being rejected on submit.
+  const usedGroupingTypes = useMemo(
+    () => new Set([...rowGroups, ...colGroups].map((item) => item.type)),
+    [colGroups, rowGroups],
+  )
+  const groupingSelectData = useMemo(
+    () =>
+      groupingOptions.map((item) => ({
+        disabled: usedGroupingTypes.has(item.type),
+        label: `${item.group}: ${getReportFieldLabel(item.key)}`,
+        value: String(item.type),
+      })),
+    [groupingOptions, usedGroupingTypes],
+  )
   const filterFieldOptions = useMemo(
     () =>
       REPORT_FILTER_FIELD_GROUPS.flatMap((group) =>
@@ -142,7 +171,13 @@ export function ReportsStocksPage() {
       ),
     [],
   )
-  const filterError = getFilterError(from, to)
+  const maxDate = useMemo(() => `${today.slice(0, 4)}-12-31`, [today])
+  const [debouncedFrom] = useDebouncedValue(from, DATE_INPUT_DEBOUNCE_MS)
+  const [debouncedTo] = useDebouncedValue(to, DATE_INPUT_DEBOUNCE_MS)
+  const periodError = getPeriodError(from, to, maxDate, t)
+  // The value lookups re-query on every keystroke in the date fields, half-typed years included. They follow the
+  // period on a pause, and only once it is a period the server can answer for.
+  const hasLookupPeriod = !getPeriodError(debouncedFrom, debouncedTo, maxDate, t)
   const reportBody = useMemo<ReportRequestBody>(
     () => ({
       from,
@@ -160,14 +195,33 @@ export function ReportsStocksPage() {
   // The report engine lays the sheet out from the row groupings; without one it fails deep
   // inside the spreadsheet writer («Column out of range»), so the form has to require it.
   const missingRowGrouping = rowGroups.length === 0
-  const canSubmit = !filterError && checkedMeasurements > 0 && !missingRowGrouping
-  const submitBlockedReason = filterError
-    ? filterError
+  // A row whose field is chosen but whose value list is still empty is not «no filter»: the engine compares the
+  // column against nothing, so «Дорівнює» empties the report and «Не дорівнює» drops the filter altogether. The
+  // sheet that comes back looks plausible either way, so the row has to be finished before the request goes out.
+  const incompleteSelectionIndex = selections.findIndex(isIncompleteSelection)
+  const incompleteSelectionMessage =
+    incompleteSelectionIndex < 0
+      ? ''
+      : t('Умова відбору {position} ({field}): додайте значення або зніміть галочку', {
+          field: getReportFieldLabel(selections[incompleteSelectionIndex].SelectedField.Name),
+          position: incompleteSelectionIndex + 1,
+        })
+  const canSubmit = !periodError && !incompleteSelectionMessage && checkedMeasurements > 0 && !missingRowGrouping
+  const submitBlockedReason = periodError
+    ? periodError
     : checkedMeasurements === 0
       ? t('Виберіть хоча б один показник')
       : missingRowGrouping
         ? t('Додайте хоча б одне групування рядків')
-        : ''
+        : incompleteSelectionMessage
+  const emptyRunNotice =
+    lastRun && !lastRun.hasDocument
+      ? t('За період {from} – {to} сервер не повернув файл звіту. Спробуйте інший період або послабте умови відбору.', {
+          from: formatDate(lastRun.from),
+          to: formatDate(lastRun.to),
+        })
+      : null
+  const resultPlaceholder = describeResultPlaceholder(lastRun, Boolean(error), t)
 
   useEffect(() => {
     setTemplates(parseTemplates(localStorage.getItem(STORAGE_KEY)))
@@ -182,17 +236,29 @@ export function ReportsStocksPage() {
 
     setLoading(true)
     setError(null)
+    setLastRun(null)
 
     try {
       const nextResult = await createStockReport(reportBody)
+      const outcome: ReportRunOutcome = {
+        colGroupings: colGroups.map((group) => getReportFieldLabel(group.key)),
+        from,
+        hasDocument: Boolean(nextResult.document.DocumentURL || nextResult.document.PdfDocumentURL),
+        measures: reportBody.sorted.Measurements.map((measurement) => getReportFieldLabel(measurement.Name)),
+        name: templateName.trim(),
+        rowGroupings: rowGroups.map((group) => getReportFieldLabel(group.key)),
+        to,
+      }
 
       setResult(nextResult)
-      if (nextResult.document.DocumentURL || nextResult.document.PdfDocumentURL) {
+      setLastRun(outcome)
+
+      if (outcome.hasDocument) {
         setDownloadModalOpened(true)
       }
     } catch (submitError) {
       setResult(null)
-      setError(submitError instanceof Error ? submitError.message : t('Не вдалося сформувати звіт'))
+      setError(describeReportError(submitError, t))
     } finally {
       setLoading(false)
     }
@@ -206,7 +272,9 @@ export function ReportsStocksPage() {
     setColGroups([])
     setSelections([createEmptySelection()])
     setResult(null)
+    setLastRun(null)
     setError(null)
+    setTemplateNotice(null)
   }
 
   function saveTemplate() {
@@ -248,23 +316,25 @@ export function ReportsStocksPage() {
   }
 
   function applyTemplate(template: ReportTemplate) {
+    // A template stored before an option was withdrawn would otherwise put a grouping the server projects as NULL
+    // (or a condition it drops) straight back into the request.
+    const { data, removedCount } = sanitizeReportTemplate(template.Data)
+    // A saved template can still carry the same dimension twice — the axes only started refusing duplicates now,
+    // and remapping a withdrawn grouping onto its equivalent can land on one the other axis already holds.
+    const templateRowGroups = dedupeGroupings(data.sorted.Row)
+    const templateColGroups = dedupeGroupings(data.sorted.Col, templateRowGroups)
+
     setTemplateName(template.Name)
-    setFrom(template.Data.from || today)
-    setTo(template.Data.to || today)
-    setRowGroups(template.Data.sorted?.Row || [])
-    setColGroups(template.Data.sorted?.Col || [])
-    setSelections(template.Data.selections?.length ? template.Data.selections : [createEmptySelection()])
-    setMeasurements(applyTemplateMeasurements(createDefaultMeasurementGroups(), template.Data.sorted?.Measurements || []))
-  }
-
-  function exportPreviewCsv() {
-    if (!result?.table.rows.length) {
-      return
-    }
-
-    downloadTextFile(
-      `reports-stocks-${buildDateFileSuffix()}.csv`,
-      buildCsv(result.table.columns, result.table.rows),
+    setFrom(data.from || today)
+    setTo(data.to || today)
+    setRowGroups(templateRowGroups)
+    setColGroups(templateColGroups)
+    setSelections(data.selections.length ? data.selections : [createEmptySelection()])
+    setMeasurements(applyTemplateMeasurements(createDefaultMeasurementGroups(), data.sorted.Measurements))
+    setTemplateNotice(
+      removedCount
+        ? t('З шаблону прибрано налаштування, які звіт більше не підтримує: {count}', { count: removedCount })
+        : null,
     )
   }
 
@@ -274,24 +344,44 @@ export function ReportsStocksPage() {
         <form className="reports-stocks-form" onSubmit={submitReport}>
           <div className="app-filter-bar reports-stocks-filter-bar">
             <div className="app-filter-date-range">
-              <TextInput label={t('Від')} type="date" value={from} onChange={(event) => setFrom(event.currentTarget.value)} />
-              <TextInput label={t('До')} type="date" value={to} onChange={(event) => setTo(event.currentTarget.value)} />
+              <TextInput
+                label={t('Від')}
+                max={to || maxDate}
+                min={REPORT_MIN_DATE}
+                type="date"
+                value={from}
+                onChange={(event) => setFrom(event.currentTarget.value)}
+              />
+              <TextInput
+                label={t('До')}
+                max={maxDate}
+                min={from || REPORT_MIN_DATE}
+                type="date"
+                value={to}
+                onChange={(event) => setTo(event.currentTarget.value)}
+              />
             </div>
+            <Stack className="reports-stocks-title" gap={0}>
+              <Text className="app-section-title" component="h1" fw={600} size="sm">
+                {t('Конструктор звітів')}
+              </Text>
+              <Text c="dimmed" size="xs">
+                {t('Продажі за період у розрізі обраних групувань')}
+              </Text>
+            </Stack>
             <Badge
               className={`app-role-pill reports-stocks-status ${isLoading ? 'is-orange' : 'is-gray'}`}
               variant="light"
             >
               {isLoading ? t('Формується') : `${t('Показників')}: ${checkedMeasurements}`}
             </Badge>
+            {/* «Друк» is gone: the console has no print stylesheet, so window.print() put the builder form on
+                paper rather than the report. The sheet itself is the printable artefact — «Файли» hands over the
+                engine's PDF, and CSV covers the preview. */}
             <div className="app-filter-actions reports-stocks-actions">
               <Tooltip label={t('Скинути')}>
                 <ActionIcon aria-label={t('Скинути')} variant="default" size={34} type="button" onClick={resetReport}>
                   <RotateCcw size={17} />
-                </ActionIcon>
-              </Tooltip>
-              <Tooltip label={t('Друк')}>
-                <ActionIcon aria-label={t('Друк')} variant="default" size={34} type="button" onClick={() => window.print()}>
-                  <Printer size={17} />
                 </ActionIcon>
               </Tooltip>
             </div>
@@ -310,8 +400,10 @@ export function ReportsStocksPage() {
 
           <div className="reports-stocks-body">
             <Stack className="reports-stocks-content" gap={6}>
-              {filterError ? (
-                <Alert color="red" icon={<CircleAlert size={18} />}>{filterError}</Alert>
+              {periodError || incompleteSelectionMessage ? (
+                <Alert color={periodError ? 'red' : 'yellow'} icon={<CircleAlert size={18} />}>
+                  {periodError || incompleteSelectionMessage}
+                </Alert>
               ) : null}
 
               <div className="reports-stocks-builder-grid">
@@ -387,7 +479,7 @@ export function ReportsStocksPage() {
                       title={t('Рядки')}
                       groups={rowGroups}
                       options={groupingSelectData}
-                      onAdd={(item) => setRowGroups((current) => [...current, item])}
+                      onAdd={(item) => setRowGroups((current) => addGrouping(current, item, colGroups))}
                       onRemove={(index) => setRowGroups((current) => current.filter((_, itemIndex) => itemIndex !== index))}
                       resolveItem={(value) => groupingOptions.find((item) => String(item.type) === value)}
                     />
@@ -396,7 +488,7 @@ export function ReportsStocksPage() {
                       title={t('Колонки')}
                       groups={colGroups}
                       options={groupingSelectData}
-                      onAdd={(item) => setColGroups((current) => [...current, item])}
+                      onAdd={(item) => setColGroups((current) => addGrouping(current, item, rowGroups))}
                       onRemove={(index) => setColGroups((current) => current.filter((_, itemIndex) => itemIndex !== index))}
                       resolveItem={(value) => groupingOptions.find((item) => String(item.type) === value)}
                     />
@@ -465,11 +557,12 @@ export function ReportsStocksPage() {
                             }}
                           />
                           <SelectionValuePicker
-                            from={from}
+                            error={isIncompleteSelection(selection) ? t('Додайте значення') : undefined}
+                            from={hasLookupPeriod ? debouncedFrom : ''}
                             label={t('Значення')}
                             selection={selection}
                             selections={selections}
-                            to={to}
+                            to={hasLookupPeriod ? debouncedTo : ''}
                             onChange={(values) => updateSelection(selections, index, setSelections, { Values: values })}
                           />
                           <Tooltip label={t('Видалити')}>
@@ -513,6 +606,9 @@ export function ReportsStocksPage() {
                         {t('Оновити список')}
                       </Button>
                     </Group>
+                    {templateNotice ? (
+                      <Alert color="yellow" icon={<CircleAlert size={18} />}>{templateNotice}</Alert>
+                    ) : null}
                     {templates.length ? (
                       <div className="reports-stocks-template-list">
                         {templates.map((template) => (
@@ -562,6 +658,10 @@ export function ReportsStocksPage() {
 
             {error ? <Alert className="reports-page-alert" color="red" icon={<CircleAlert size={18} />}>{error}</Alert> : null}
 
+            {emptyRunNotice ? (
+              <Alert className="reports-page-alert" color="yellow" icon={<CircleAlert size={18} />}>{emptyRunNotice}</Alert>
+            ) : null}
+
             <section className="app-section-card reports-stocks-result">
               <Group className="reports-stocks-result-header" justify="space-between" wrap="nowrap">
                 <Box>
@@ -569,24 +669,12 @@ export function ReportsStocksPage() {
                     {t('Результат')}
                   </Text>
                   <Text size="xs" c="dimmed">
-                    {result
-                      ? `${t('Рядків')}: ${result.table.rows.length}`
-                      : t('Тут з’явиться таблиця зі сформованими залишками')}
+                    {lastRun
+                      ? `${formatDate(lastRun.from)} – ${formatDate(lastRun.to)} · ${t('Показників')}: ${lastRun.measures.length}`
+                      : t('Тут з’явиться посилання на сформований файл звіту')}
                   </Text>
                 </Box>
                 <Group className="reports-stocks-result-actions" gap={6} wrap="nowrap">
-                  <div className="app-filter-table-toolbar-slot" ref={setTableToolbarTarget} />
-                  <Button
-                    color="gray"
-                    leftSection={<Download size={16} />}
-                    disabled={!result?.table.rows.length}
-                    size="compact-sm"
-                    type="button"
-                    variant="outline"
-                    onClick={exportPreviewCsv}
-                  >
-                    CSV
-                  </Button>
                   <Button
                     color={CREATE_ACTION_COLOR}
                     disabled={!result?.document.DocumentURL && !result?.document.PdfDocumentURL}
@@ -601,20 +689,19 @@ export function ReportsStocksPage() {
                 </Group>
               </Group>
 
-              {result?.table.rows.length ? (
-                <ReportPreview result={result} toolbarPortalTarget={tableToolbarTarget} />
-              ) : (
-                <div className="reports-stocks-empty-state" role="status">
-                  <Box>
-                    <Text className="reports-stocks-empty-title" fw={600}>
-                      {t('Результат ще не сформовано')}
-                    </Text>
-                    <Text c="dimmed" size="sm">
-                      {t('Оберіть показники, додайте групування рядків і сформуйте звіт.')}
-                    </Text>
-                  </Box>
-                </div>
-              )}
+              {/* «/report/get/all/filtered» answers with DocumentURL/PdfDocumentURL and nothing else, so this
+                  screen has no rows to draw. The table that used to stand here could never render; the report
+                  itself is read from the file, in «Перегляд звіту з файла». */}
+              <div className="reports-stocks-empty-state" role="status">
+                <Box>
+                  <Text className="reports-stocks-empty-title" fw={600}>
+                    {resultPlaceholder.title}
+                  </Text>
+                  <Text c="dimmed" size="sm">
+                    {resultPlaceholder.description}
+                  </Text>
+                </Box>
+              </div>
             </section>
           </div>
         </form>
@@ -622,8 +709,15 @@ export function ReportsStocksPage() {
 
       <DocumentExportModal
         document={result?.document}
+        notice={
+          lastRun ? (
+            <Text c="dimmed" size="xs">
+              {describeReportRun(lastRun, t)}
+            </Text>
+          ) : null
+        }
         opened={downloadModalOpened}
-        title={t('Експорт звіту')}
+        title={lastRun?.name || t('Звіт продажів')}
         onClose={() => setDownloadModalOpened(false)}
       />
     </Stack>
@@ -631,6 +725,7 @@ export function ReportsStocksPage() {
 }
 
 type SelectionValuePickerProps = {
+  error?: string
   from: string
   label?: string
   selection: ReportSelection
@@ -639,7 +734,7 @@ type SelectionValuePickerProps = {
   onChange: (values: ReportSelectedValue[]) => void
 }
 
-function SelectionValuePicker({ from, label, selection, selections, to, onChange }: SelectionValuePickerProps) {
+function SelectionValuePicker({ error, from, label, selection, selections, to, onChange }: SelectionValuePickerProps) {
   const { t } = useI18n()
   const [search, setSearch] = useValueState('')
   const [manualValue, setManualValue] = useValueState('')
@@ -669,6 +764,7 @@ function SelectionValuePicker({ from, label, selection, selections, to, onChange
   )
   const normalizedSearch = lookupMode === 'search' ? debouncedSearch.trim() : ''
   const minSearchLength = getSelectionLookupMinLength(selection.SelectedField.Type)
+  const needsPeriod = PERIOD_SCOPED_FILTER_FIELD_TYPES.has(selection.SelectedField.Type)
   const dependentClientNetId = lookupMode === 'dependent' ? getDependentClientNetId(selections) : ''
   const selectOptions = useMemo(
     () =>
@@ -729,6 +825,13 @@ function SelectionValuePicker({ from, label, selection, selections, to, onChange
       return
     }
 
+    if (needsPeriod && (!from || !to)) {
+      setOptions([])
+      setLoading(false)
+
+      return
+    }
+
     let cancelled = false
     const controller = new AbortController()
 
@@ -773,6 +876,7 @@ function SelectionValuePicker({ from, label, selection, selections, to, onChange
     from,
     lookupMode,
     minSearchLength,
+    needsPeriod,
     normalizedSearch,
     saleDocumentFilters,
     selection.SelectedField.Name,
@@ -854,6 +958,7 @@ function SelectionValuePicker({ from, label, selection, selections, to, onChange
       {lookupMode === 'manual' ? (
         <Group align="end" gap={6} wrap="nowrap">
           <TextInput
+            error={error}
             label={label}
             placeholder={t('Значення')}
             value={manualValue}
@@ -868,13 +973,17 @@ function SelectionValuePicker({ from, label, selection, selections, to, onChange
           clearable
           searchable
           data={selectOptions}
+          error={error}
+          filter={lookupMode === 'search' ? keepServerLookupResults : undefined}
           label={label}
           nothingFoundMessage={
-            lookupMode === 'search' && normalizedSearch.length < minSearchLength
-              ? t('Введіть мінімум 2 символи')
-              : lookupMode === 'dependent' && !dependentClientNetId
-                ? t('Спочатку оберіть клієнта')
-                : t('Нічого не знайдено')
+            needsPeriod && (!from || !to)
+              ? t('Спочатку вкажіть коректний період')
+              : lookupMode === 'search' && normalizedSearch.length < minSearchLength
+                ? t('Введіть мінімум 2 символи')
+                : lookupMode === 'dependent' && !dependentClientNetId
+                  ? t('Спочатку оберіть клієнта')
+                  : t('Нічого не знайдено')
           }
           placeholder={t('Пошук значення')}
           rightSection={isLoading ? <Loader size="xs" /> : null}
@@ -926,7 +1035,7 @@ function SelectionValuePicker({ from, label, selection, selections, to, onChange
 
 type GroupingEditorProps = {
   groups: ReportGroupingItem[]
-  options: Array<{ label: string; value: string }>
+  options: Array<{ disabled?: boolean; label: string; value: string }>
   title: string
   onAdd: (item: ReportGroupingItem) => void
   onRemove: (index: number) => void
@@ -988,103 +1097,141 @@ function GroupingEditor({ groups, options, title, onAdd, onRemove, resolveItem }
   )
 }
 
-type ReportPreviewRow = {
-  key: string
-  row: ReportResultRow
-  isTotals: boolean
-}
-
-function ReportPreview({
-  result,
-  toolbarPortalTarget,
-}: {
-  result: ReportResult
-  toolbarPortalTarget: Element | null
-}) {
-  const { t } = useI18n()
-  const hasTotals = Object.keys(result.totals).length > 0
-  const previewColumns = useMemo<DataTableColumn<ReportPreviewRow>[]>(
-    () =>
-      result.table.columns.map((column, columnIndex) => ({
-        id: `c${columnIndex}`,
-        header: column || `C${columnIndex + 1}`,
-        minWidth: 140,
-        accessor: (item) => item.isTotals ? result.totals[column] : item.row[column],
-        cell: (item) => {
-          if (item.isTotals) {
-            return (
-              <Text className="reports-stocks-preview-total" component="span" fw={600}>
-                {columnIndex === 0 ? t('Разом') : formatReportCell(result.totals[column])}
-              </Text>
-            )
-          }
-
-          return (
-            <Text
-              className={typeof item.row[column] === 'number' ? 'reports-stocks-preview-number' : undefined}
-              component="span"
-            >
-              {formatReportCell(item.row[column])}
-            </Text>
-          )
-        },
-      })),
-    [result.table.columns, result.totals, t],
-  )
-  const previewData = useMemo<ReportPreviewRow[]>(() => {
-    const rows = result.table.rows.slice(0, 100).map((row, rowIndex) => ({
-      key: getResultRowKey(result.table.columns, row, rowIndex),
-      row,
-      isTotals: false,
-    }))
-
-    if (hasTotals) {
-      rows.push({ key: '__totals__', row: {}, isTotals: true })
-    }
-
-    return rows
-  }, [hasTotals, result.table.columns, result.table.rows])
-
-  return (
-    <Box className="reports-stocks-preview">
-      <DataTable
-        columns={previewColumns}
-        data={previewData}
-        defaultLayout={{ density: 'compact' }}
-        emptyText={t('Немає рядків для перегляду')}
-        getRowId={(row) => row.key}
-        layoutVersion={`reports-stocks:${result.table.columns.join('|')}`}
-        maxHeight={460}
-        minWidth={Math.max(640, result.table.columns.length * 160)}
-        showLayoutControls
-        tableId="reports-stocks-preview"
-        toolbarPortalTarget={toolbarPortalTarget}
-      />
-      {result.table.rows.length > 100 ? (
-        <Text c="dimmed" size="xs" mt="xs">
-          {t('Показано перші 100 рядків. CSV містить усі рядки.')}
-        </Text>
-      ) : null}
-    </Box>
-  )
-}
-
-function formatReportCell(value: ReportResultRow[string]): string {
-  const formatted = displayValue(value)
-
-  return formatted === '-' ? '' : formatted
-}
-
-function getFilterError(from: string, to: string): string | null {
+function getPeriodError(from: string, to: string, maxDate: string, t: TranslateFunction): string | null {
   if (!from || !to) {
-    return 'Оберіть період'
+    return t('Оберіть період')
+  }
+
+  if (!isSupportedReportDate(from, maxDate) || !isSupportedReportDate(to, maxDate)) {
+    return t('Дата має бути в межах {min} – {max}', { max: formatDate(maxDate), min: formatDate(REPORT_MIN_DATE) })
   }
 
   if (from > to) {
-    return 'Дата початку не може бути пізніше дати завершення'
+    return t('Дата початку не може бути пізніше дати завершення')
   }
 
   return null
+}
+
+function isSupportedReportDate(value: string, maxDate: string): boolean {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value) && value >= REPORT_MIN_DATE && value <= maxDate
+}
+
+function isIncompleteSelection(selection: ReportSelection): boolean {
+  return selection.IsChecked && Boolean(selection.SelectedField.Name) && selection.Values.length === 0
+}
+
+function addGrouping(
+  current: ReportGroupingItem[],
+  item: ReportGroupingItem,
+  otherAxis: ReportGroupingItem[],
+): ReportGroupingItem[] {
+  const isTaken = [...current, ...otherAxis].some((group) => group.type === item.type)
+
+  return isTaken ? current : [...current, item]
+}
+
+function dedupeGroupings(items: ReportGroupingItem[], taken: ReportGroupingItem[] = []): ReportGroupingItem[] {
+  const seenTypes = new Set(taken.map((item) => item.type))
+  const result: ReportGroupingItem[] = []
+
+  for (const item of items) {
+    if (!seenTypes.has(item.type)) {
+      seenTypes.add(item.type)
+      result.push(item)
+    }
+  }
+
+  return result
+}
+
+// The analytics controller answers every failure — a period the engine cannot represent included — with HTTP 400
+// and the raw .NET exception text in the envelope Message. That text is English, tells the user nothing they can
+// act on, and is not ours to show, so nothing but the status is read here.
+function describeReportError(error: unknown, t: TranslateFunction): string {
+  if (error instanceof ApiError) {
+    // Status 0 is the client's own network/timeout message, already translated.
+    if (error.status === 0) {
+      return error.message
+    }
+
+    if (error.status === 401 || error.status === 403) {
+      return t('Сесію завершено. Увійдіть повторно.')
+    }
+
+    if (error.status >= 500) {
+      return t('Сервер звітів недоступний. Спробуйте ще раз пізніше.')
+    }
+
+    return t('Сервер не зміг сформувати звіт із такими параметрами. Спробуйте вужчий період або менше групувань.')
+  }
+
+  return t('Не вдалося сформувати звіт')
+}
+
+// Names the run for the export modal, where the only other identity on offer is the engine's «Reports_MM.yyyy_
+// <guid>.xlsx» file name.
+function describeReportRun(run: ReportRunOutcome, t: TranslateFunction): string {
+  const parts = [`${formatDate(run.from)} – ${formatDate(run.to)}`]
+
+  if (run.rowGroupings.length) {
+    parts.push(`${t('Рядки')}: ${run.rowGroupings.join(', ')}`)
+  }
+
+  if (run.colGroupings.length) {
+    parts.push(`${t('Колонки')}: ${run.colGroupings.join(', ')}`)
+  }
+
+  if (run.measures.length) {
+    parts.push(`${t('Показники')}: ${run.measures.join(', ')}`)
+  }
+
+  return parts.join(' · ')
+}
+
+function describeResultPlaceholder(
+  lastRun: ReportRunOutcome | null,
+  hasError: boolean,
+  t: TranslateFunction,
+): { description: string; title: string } {
+  if (hasError) {
+    return {
+      description: t('Причина — у повідомленні вище. Змініть параметри та сформуйте звіт ще раз.'),
+      title: t('Звіт не сформовано'),
+    }
+  }
+
+  if (!lastRun) {
+    return {
+      description: t('Оберіть показники, додайте групування рядків і сформуйте звіт.'),
+      title: t('Результат ще не сформовано'),
+    }
+  }
+
+  const period = `${formatDate(lastRun.from)} – ${formatDate(lastRun.to)}`
+  const measures = lastRun.measures.join(', ')
+
+  if (!lastRun.hasDocument) {
+    return {
+      description: t('Період {period}. Показники: {measures}. Спробуйте інший період або послабте умови відбору.', {
+        measures,
+        period,
+      }),
+      title: t('Файл звіту не сформовано'),
+    }
+  }
+
+  // The file itself records neither the period nor the measures it was built from, so the screen keeps them.
+  // Whether the period actually held any data is visible only inside the sheet: «/report/get/all/filtered» hands
+  // back the two file links and nothing else, and the writer closes even a data-less sheet with «Загальний
+  // підсумок», so the screen must not claim either way — it says where the answer is instead.
+  return {
+    description: t('Період {period}. Показники: {measures}. Дані — у файлі: сервер не повертає рядки для перегляду.', {
+      measures,
+      period,
+    }),
+    title: t('Звіт сформовано у файл'),
+  }
 }
 
 function setAllMeasurements(
@@ -1172,6 +1319,13 @@ function parseTemplates(raw: string | null): Array<{ Data: ReportRequestBody; Na
   return []
 }
 
+// The searched lookups match on fields the option label never shows — a user's по батькові, e-mail or phone
+// number, a client's ЄДРПОУ or code of region — and Mantine's default filter then drops those very rows because
+// the typed text is not in the label, so a hit the server just found reads as «Нічого не знайдено». Everything
+// the server returned is already the answer to the query; show it unfiltered. The static lists keep the default
+// filter — there the whole catalogue is in the browser and the filtering is the search.
+const keepServerLookupResults: OptionsFilter = ({ options }) => options
+
 function getSelectionLookupMode(fieldType: number): 'manual' | 'search' | 'static' | 'dependent' {
   switch (fieldType) {
     case REPORT_FILTER_FIELD_TYPES.organization:
@@ -1186,9 +1340,7 @@ function getSelectionLookupMode(fieldType: number): 'manual' | 'search' | 'stati
     case REPORT_FILTER_FIELD_TYPES.productArticle:
     case REPORT_FILTER_FIELD_TYPES.productGroup:
     case REPORT_FILTER_FIELD_TYPES.customerName:
-    case REPORT_FILTER_FIELD_TYPES.customerManager:
     case REPORT_FILTER_FIELD_TYPES.saleDocumentNumberDate:
-    case REPORT_FILTER_FIELD_TYPES.saleReturnDocument:
     case REPORT_FILTER_FIELD_TYPES.saleDocumentManagerInput:
     case REPORT_FILTER_FIELD_TYPES.saleDocumentManagerPosted:
       return 'search'
@@ -1244,7 +1396,6 @@ async function loadSelectionLookupOptions(
       return searchReportProducts({ limit: LOOKUP_SEARCH_LIMIT, offset: 0, value })
     case REPORT_FILTER_FIELD_TYPES.customerName:
       return searchReportClients({ limit: LOOKUP_SEARCH_LIMIT, offset: 0, value }, signal)
-    case REPORT_FILTER_FIELD_TYPES.customerManager:
     case REPORT_FILTER_FIELD_TYPES.saleDocumentManagerInput:
     case REPORT_FILTER_FIELD_TYPES.saleDocumentManagerPosted:
       return searchReportUsers({ limit: LOOKUP_SEARCH_LIMIT, offset: 0, value })
@@ -1259,8 +1410,6 @@ async function loadSelectionLookupOptions(
         type: saleDocumentFilters?.type ?? 'All',
         value,
       })
-    case REPORT_FILTER_FIELD_TYPES.saleReturnDocument:
-      return searchSaleReturnReportDocuments({ from, limit: LOOKUP_SEARCH_LIMIT, offset: 0, to, value })
     default:
       return []
   }
@@ -1325,12 +1474,6 @@ function getSelectionRenderKey(selection: ReportSelection, index: number): strin
     values,
     index,
   ].filter((value) => value !== undefined && value !== null && value !== '').join(':')
-}
-
-function getResultRowKey(columns: string[], row: ReportResult['table']['rows'][number], index: number): string {
-  const values = columns.map((column) => displayValue(row[column])).join('|')
-
-  return values ? `${values}:${index}` : `row-${index}`
 }
 
 function applyTemplateMeasurements(

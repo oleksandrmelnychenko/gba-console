@@ -91,18 +91,12 @@ export type ReportDocument = {
 
 export type ReportCellValue = boolean | number | ReactNode | string | null | undefined
 
-export type ReportResultRow = Record<string, ReportCellValue>
-
-export type ReportResultTable = {
-  columns: string[]
-  rows: ReportResultRow[]
-}
-
+// «/report/get/all/filtered» answers with the two file links and nothing else (ReportController returns
+// «new { DocumentURL, PdfDocumentURL }»), so there is no row collection to model here. The report is read
+// from the file, in «Перегляд звіту з файла».
 export type ReportResult = {
   document: ReportDocument
   raw: unknown
-  table: ReportResultTable
-  totals: Record<string, number>
 }
 
 export type ReportSearchParams = {
@@ -135,10 +129,18 @@ export type ReportTemplate = {
 
 export type SpreadsheetCellValue = boolean | number | string | null
 
+// Our own report engine writes a pivot, not a table: «Підсумок: …» closes every group and «Загальний
+// підсумок» closes the sheet. Those rows carry the same measures as the data rows, so a viewer has to
+// tell them apart before it counts or sums anything.
+export type SpreadsheetRowKind = 'data' | 'subtotal' | 'total'
+
+export type SpreadsheetRow = {
+  cells: SpreadsheetCellValue[]
+  kind: SpreadsheetRowKind
+}
+
 export type SpreadsheetSheet = {
   columns: string[]
-  dataRows: SpreadsheetCellValue[][]
   name: string
-  rows: SpreadsheetCellValue[][]
-  totals: Record<string, number>
+  rows: SpreadsheetRow[]
 }

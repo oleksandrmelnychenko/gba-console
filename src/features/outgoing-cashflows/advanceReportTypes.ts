@@ -15,14 +15,14 @@ import type {
   SupplyOrganization,
   SupplyOrganizationAgreement,
 } from '../consumable-orders/types'
+import {
+  ACCOUNTING_PAYMENT_REGISTER_TYPE,
+  type AccountingPaymentRegisterType,
+} from '../accounting/accountingOperationCatalog'
 
-export const PaymentRegisterTypeValue = {
-  Bank: 2,
-  Card: 1,
-  Cash: 0,
-} as const
+export const PaymentRegisterTypeValue = ACCOUNTING_PAYMENT_REGISTER_TYPE
 
-export type PaymentRegisterTypeValue = (typeof PaymentRegisterTypeValue)[keyof typeof PaymentRegisterTypeValue]
+export type PaymentRegisterTypeValue = AccountingPaymentRegisterType
 
 export type CompanyCar = NamedEntity & {
   CarBrand?: string

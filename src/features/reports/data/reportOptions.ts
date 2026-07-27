@@ -1,22 +1,29 @@
 import type {
   ReportFilterCondition,
+  ReportFilterField,
   ReportFilterFieldGroup,
   ReportGroupingGroup,
   ReportGroupingItem,
   ReportMeasurementGroup,
   ReportMeasurementSelection,
+  ReportRequestBody,
+  ReportSelection,
 } from '../types'
 
 const REPORT_CONDITION_TYPES = {
   equals: 0,
   notEquals: 1,
   inList: 2,
-  inGroupFromList: 3,
   notInList: 4,
-  notInGroupFromList: 5,
-  inGroup: 6,
-  notInGroup: 7,
 } as const
+
+// Codes 3/5/6/7 (InGroupFromList, NotInGroupFromList, InGroup, NotInGroup) are not offered: the report engine
+// keeps only Equals/NotEquals/InList/NotInList and drops everything else («if (!membership) continue» in
+// SalesReportProjectionRepository.BuildFilters), so the report comes back unfiltered while the screen claims it is
+// filtered — and each negative twin returns exactly the positive twin's numbers. There is no product group
+// hierarchy to implement them against either. The codes survive here only so saved templates that still carry one
+// can be recognised and dropped.
+const UNSUPPORTED_CONDITION_TYPES = new Set<number>([3, 5, 6, 7])
 
 export const REPORT_FILTER_FIELD_TYPES = {
   organization: 0,
@@ -63,13 +70,14 @@ const REPORT_GROUPING_TYPES = {
   supplier: 21,
 } as const
 
+// costVat (7) is not offered: PivotCell.Compute returns a hardcoded 0m for it, so «ПДВ собівартості» only ever
+// widens the sheet with a zero column.
 const REPORT_FIELD_TYPES = {
   salesQuantity: 0,
   salesValueWithoutVat: 2,
   salesValueVat: 3,
   salesValueWithVat: 4,
   costWithoutVat: 6,
-  costVat: 7,
   costWithVat: 8,
   markupWithoutVat: 10,
   markupVat: 11,
@@ -82,20 +90,13 @@ export const REPORT_FILTER_CONDITIONS: ReportFilterCondition[] = [
   { Name: 'Дорівнює', Type: REPORT_CONDITION_TYPES.equals },
   { Name: 'Не дорівнює', Type: REPORT_CONDITION_TYPES.notEquals },
   { Name: 'У списку', Type: REPORT_CONDITION_TYPES.inList },
-  { Name: 'У групі зі списку', Type: REPORT_CONDITION_TYPES.inGroupFromList },
   { Name: 'Не у списку', Type: REPORT_CONDITION_TYPES.notInList },
-  { Name: 'Не у групі зі списку', Type: REPORT_CONDITION_TYPES.notInGroupFromList },
-  { Name: 'У групі', Type: REPORT_CONDITION_TYPES.inGroup },
-  { Name: 'Не у групі', Type: REPORT_CONDITION_TYPES.notInGroup },
 ]
 
-// Legacy accepted multiple filter values only for the list conditions; Equals/NotEquals (and the single-group
-// conditions) take exactly one value.
+// Legacy accepted multiple filter values only for the list conditions; Equals/NotEquals take exactly one value.
 const MULTI_VALUE_CONDITION_TYPES = new Set<number>([
   REPORT_CONDITION_TYPES.inList,
-  REPORT_CONDITION_TYPES.inGroupFromList,
   REPORT_CONDITION_TYPES.notInList,
-  REPORT_CONDITION_TYPES.notInGroupFromList,
 ])
 
 export function isMultiValueReportCondition(type: number): boolean {
@@ -138,7 +139,6 @@ const REPORT_GROUPING_GROUPS: ReportGroupingGroup[] = [
       { key: 'CustomerRegion', label: 'Регіон', type: REPORT_GROUPING_TYPES.customerRegion },
       { key: 'CustomerRegionCode', label: 'Код регіону', type: REPORT_GROUPING_TYPES.customerRegionCode },
       { key: 'CustomerContract', label: 'Договір', type: REPORT_GROUPING_TYPES.customerContract },
-      { key: 'CustomerManager', label: 'Відповідальний менеджер', type: REPORT_GROUPING_TYPES.customerManager },
     ],
   },
   {
@@ -146,13 +146,34 @@ const REPORT_GROUPING_GROUPS: ReportGroupingGroup[] = [
     categoryLabel: 'Документ продажу',
     items: [
       { key: 'SaleDocument', label: 'Документ продажу', type: REPORT_GROUPING_TYPES.saleDocument },
-      { key: 'SaleReturnDocument', label: 'Повернення від клієнта', type: REPORT_GROUPING_TYPES.saleReturnDocument },
       { key: 'SaleDocumentManagerInput', label: 'Ввів документ', type: REPORT_GROUPING_TYPES.saleDocumentManagerInput },
       { key: 'SaleDocumentManagerPosted', label: 'Провів документ', type: REPORT_GROUPING_TYPES.saleDocumentManagerPosted },
-      { key: 'Supplier', label: 'Постачальник', type: REPORT_GROUPING_TYPES.supplier },
     ],
   },
 ]
+
+// Withheld options, and why — do not re-add them without a server change:
+// · SaleReturnDocument (grouping 18) and Supplier (grouping 21) are projected as «CAST(NULL AS nvarchar(50))» by
+//   SalesReportProjectionRepository.MapDimension, so grouping by either collapses the whole report into one blank
+//   row; the SaleReturnDocument filter field (14) is a no-op there too («case ...SaleReturnDocument: break»).
+// · CustomerManager (grouping 16 / filter field 10) and SaleDocumentManagerInput (19 / 15) both resolve to the
+//   very same s.UserID, so «Відповідальний менеджер» promised the client's account manager and delivered whoever
+//   keyed the document. Only the honest «Ввів документ» entry is offered; saved templates carrying the old one
+//   are remapped rather than dropped, because the server behaviour is identical.
+const UNSUPPORTED_GROUPING_TYPES = new Set<number>([
+  REPORT_GROUPING_TYPES.saleReturnDocument,
+  REPORT_GROUPING_TYPES.supplier,
+])
+
+const UNSUPPORTED_FILTER_FIELD_TYPES = new Set<number>([REPORT_FILTER_FIELD_TYPES.saleReturnDocument])
+
+const GROUPING_TYPE_REPLACEMENTS = new Map<number, number>([
+  [REPORT_GROUPING_TYPES.customerManager, REPORT_GROUPING_TYPES.saleDocumentManagerInput],
+])
+
+const FILTER_FIELD_TYPE_REPLACEMENTS = new Map<number, number>([
+  [REPORT_FILTER_FIELD_TYPES.customerManager, REPORT_FILTER_FIELD_TYPES.saleDocumentManagerInput],
+])
 
 export const REPORT_FILTER_FIELD_GROUPS: ReportFilterFieldGroup[] = [
   {
@@ -178,7 +199,6 @@ export const REPORT_FILTER_FIELD_GROUPS: ReportFilterFieldGroup[] = [
       { type: REPORT_FILTER_FIELD_TYPES.customerRegion, label: 'CustomerRegion' },
       { type: REPORT_FILTER_FIELD_TYPES.customerRegionCode, label: 'CustomerRegionCode' },
       { type: REPORT_FILTER_FIELD_TYPES.customerContract, label: 'CustomerContract' },
-      { type: REPORT_FILTER_FIELD_TYPES.customerManager, label: 'CustomerManager' },
       { type: REPORT_FILTER_FIELD_TYPES.customerPriceType, label: 'CustomerPriceType' },
     ],
   },
@@ -187,7 +207,6 @@ export const REPORT_FILTER_FIELD_GROUPS: ReportFilterFieldGroup[] = [
     label: 'SaleDocument',
     children: [
       { type: REPORT_FILTER_FIELD_TYPES.saleDocumentNumberDate, label: 'SaleDocumentNumberDate' },
-      { type: REPORT_FILTER_FIELD_TYPES.saleReturnDocument, label: 'SaleReturnDocument' },
       { type: REPORT_FILTER_FIELD_TYPES.saleDocumentManagerInput, label: 'SaleDocumentManagerInput' },
       { type: REPORT_FILTER_FIELD_TYPES.saleDocumentManagerPosted, label: 'SaleDocumentManagerPosted' },
     ],
@@ -260,7 +279,6 @@ export function createDefaultMeasurementGroups(): ReportMeasurementGroup[] {
       IsChecked: false,
       SubList: [
         { Name: 'CostWithoutVAT', IsChecked: false, Type: REPORT_FIELD_TYPES.costWithoutVat },
-        { Name: 'CostVAT', IsChecked: false, Type: REPORT_FIELD_TYPES.costVat },
         { Name: 'CostWithVAT', IsChecked: false, Type: REPORT_FIELD_TYPES.costWithVat },
       ],
     },
@@ -313,4 +331,97 @@ export function getReportFieldLabel(key?: string): string {
   }
 
   return REPORT_FIELD_LABELS[key] || key
+}
+
+const GROUPING_ITEMS_BY_TYPE = new Map<number, ReportGroupingItem>(
+  REPORT_GROUPING_GROUPS.flatMap((group) => group.items.map((item) => [item.type, item] as const)),
+)
+
+const FILTER_FIELDS_BY_TYPE = new Map<number, ReportFilterField>(
+  REPORT_FILTER_FIELD_GROUPS.flatMap((group) =>
+    group.children.map((child) =>
+      [child.type, { Name: child.label, Type: child.type, ParentType: group.label }] as const,
+    ),
+  ),
+)
+
+const SUPPORTED_MEASUREMENT_TYPES = new Set<number>(
+  createDefaultMeasurementGroups().flatMap((group) => group.SubList.map((item) => item.Type)),
+)
+
+export type SanitizedReportTemplate = {
+  data: ReportRequestBody
+  removedCount: number
+}
+
+// Templates live in localStorage and predate the withdrawal of the options above, so a saved one can still ask for
+// a grouping the server projects as NULL, a condition it silently drops or a measure it hardcodes to zero. Rebuild
+// the payload out of what the engine actually honours before it reaches the form — remapping where the withdrawn
+// option had an exact equivalent, dropping it otherwise, so the report never claims more than it did.
+export function sanitizeReportTemplate(data: ReportRequestBody): SanitizedReportTemplate {
+  let removedCount = 0
+
+  function sanitizeGroupings(items: ReportGroupingItem[]): ReportGroupingItem[] {
+    return items.reduce<ReportGroupingItem[]>((acc, item) => {
+      if (UNSUPPORTED_GROUPING_TYPES.has(item.type)) {
+        removedCount += 1
+
+        return acc
+      }
+
+      const replacementType = GROUPING_TYPE_REPLACEMENTS.get(item.type)
+      const replacement = replacementType === undefined ? undefined : GROUPING_ITEMS_BY_TYPE.get(replacementType)
+
+      acc.push(replacement ?? item)
+
+      return acc
+    }, [])
+  }
+
+  const selections = (data.selections ?? []).reduce<ReportSelection[]>((acc, selection) => {
+    const fieldType = selection.SelectedField?.Type
+    const conditionType = selection.FilterCondition?.Type
+
+    if (fieldType === undefined || UNSUPPORTED_FILTER_FIELD_TYPES.has(fieldType)) {
+      removedCount += 1
+
+      return acc
+    }
+
+    if (conditionType === undefined || UNSUPPORTED_CONDITION_TYPES.has(conditionType)) {
+      removedCount += 1
+
+      return acc
+    }
+
+    const replacementType = FILTER_FIELD_TYPE_REPLACEMENTS.get(fieldType)
+    const replacement = replacementType === undefined ? undefined : FILTER_FIELDS_BY_TYPE.get(replacementType)
+
+    acc.push(replacement ? { ...selection, SelectedField: replacement } : selection)
+
+    return acc
+  }, [])
+
+  const measurements = (data.sorted?.Measurements ?? []).filter((measurement) => {
+    if (SUPPORTED_MEASUREMENT_TYPES.has(measurement.Type)) {
+      return true
+    }
+
+    removedCount += 1
+
+    return false
+  })
+
+  return {
+    data: {
+      ...data,
+      selections,
+      sorted: {
+        Col: sanitizeGroupings(data.sorted?.Col ?? []),
+        Measurements: measurements,
+        Row: sanitizeGroupings(data.sorted?.Row ?? []),
+      },
+    },
+    removedCount,
+  }
 }

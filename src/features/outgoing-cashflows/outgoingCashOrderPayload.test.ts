@@ -9,7 +9,6 @@ const baseForm: CreateFormState = {
   invoiceNumber: '',
   isAccounting: false,
   isManagementAccounting: true,
-  isUnderReport: true,
   movementSearch: '',
   organizationValue: '',
   paymentPurpose: '  Господарські витрати  ',
@@ -36,28 +35,6 @@ describe('buildOutgoingCashOrderPayload', () => {
       Colleague: { Id: 7 },
       IsUnderReport: true,
       OperationType: OUTCOME_OPERATION_TYPE.TransferToColleague,
-    })
-  })
-
-  it('creates a partnerless expense when under-report is disabled', () => {
-    const payload = buildOutgoingCashOrderPayload({
-      colleague: { Id: 7 },
-      form: {
-        ...baseForm,
-        isUnderReport: false,
-      },
-      selectedCurrencyRegister: { Id: 2 },
-      selectedMovement: { Id: 3 },
-      selectedOrganization: { Id: 1 },
-      selectedRegister: { Id: 4 },
-    })
-
-    expect(payload).toMatchObject({
-      Colleague: null,
-      Comment: 'Витрати',
-      IsUnderReport: false,
-      OperationType: OUTCOME_OPERATION_TYPE.OtherOutcome,
-      PaymentPurpose: 'Господарські витрати',
     })
   })
 })

@@ -324,7 +324,6 @@ export function OutgoingCashOrderForm({ onCancel, onCreated }: OutgoingCashOrder
 
     const validationError = validateForm({
       amount: form.amount,
-      isUnderReport: form.isUnderReport,
       selectedColleague: resolvedColleague,
       selectedCurrencyRegister,
       selectedMovement,
@@ -400,12 +399,6 @@ export function OutgoingCashOrderForm({ onCancel, onCreated }: OutgoingCashOrder
           </SimpleGrid>
 
           <Group gap="lg">
-            <Checkbox
-              checked={form.isUnderReport}
-              disabled={isLoading || isSaving}
-              label={t('під звіт')}
-              onChange={(event) => updateForm({ isUnderReport: event.currentTarget.checked })}
-            />
             <Checkbox
               checked={form.isManagementAccounting}
               disabled={isLoading || isSaving}
@@ -542,7 +535,6 @@ function createInitialForm(): CreateFormState {
     invoiceNumber: '',
     isAccounting: false,
     isManagementAccounting: false,
-    isUnderReport: true,
     movementSearch: '',
     organizationValue: '',
     paymentPurpose: '',
@@ -557,7 +549,6 @@ function createInitialForm(): CreateFormState {
 
 function validateForm({
   amount,
-  isUnderReport,
   selectedColleague,
   selectedCurrencyRegister,
   selectedMovement,
@@ -566,7 +557,6 @@ function validateForm({
   t,
 }: {
   amount: number
-  isUnderReport: boolean
   selectedColleague: OutcomePaymentUser | null
   selectedCurrencyRegister: CreatePaymentCurrencyRegister | null
   selectedMovement: PaymentMovement | null
@@ -590,7 +580,7 @@ function validateForm({
     return t('Виберіть статтю грошових витрат')
   }
 
-  if (isUnderReport && !selectedColleague) {
+  if (!selectedColleague) {
     return t('Виберіть відповідального')
   }
 

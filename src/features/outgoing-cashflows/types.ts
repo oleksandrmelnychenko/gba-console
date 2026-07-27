@@ -121,7 +121,6 @@ export type OutcomePaymentOrder = EntityFields & {
   PaymentMovementOperation?: PaymentMovementOperation | null
   PaymentPurpose?: string
   RootAssignedPaymentOrder?: AssignedPaymentOrder | null
-  TotalQty?: number
   TotalRowsQty?: number
   User?: NamedEntity | null
   VAT?: number
@@ -132,7 +131,6 @@ export type OutgoingCashflowsResponse = {
   Collection: OutcomePaymentOrder[]
   NegativeDifferenceAmount?: number
   PositiveDifferenceAmount?: number
-  TotalQty?: number
   TotalRowsQty?: number
 }
 

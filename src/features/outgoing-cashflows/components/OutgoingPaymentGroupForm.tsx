@@ -24,6 +24,13 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawerFooter } from '../../../shared/ui/AppDrawer'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import {
+  ACCOUNTING_OPERATION_ID,
+  getAccountingOperation,
+  getAccountingOperationByPayloadType,
+  getAccountingOperationLabel,
+  type AccountingCounterpartyKind,
+} from '../../accounting/accountingOperationCatalog'
 import { getUnpaidConsumableOrdersByOrganization } from '../../consumable-orders/api/consumableOrdersApi'
 import type { ConsumablesOrder } from '../../consumable-orders/types'
 import {
@@ -851,26 +858,30 @@ export function OutgoingPaymentGroupForm({
             </Alert>
           )}
 
-          <SimpleGrid cols={{ base: 1, md: 2 }}>
-            <SegmentedControl
-              data={searchTypeOptions}
-              disabled={isLoading || isSaving}
-              style={{ alignSelf: 'end' }}
-              value={String(form.searchType)}
-              onChange={handleSearchTypeChanged}
-            />
-            <Autocomplete
-              data={counterpartyOptions}
-              disabled={isLoading || isSaving}
-              label={t('Отримувач')}
-              placeholder={t('Почніть вводити назву')}
-              value={form.counterpartySearch}
-              onChange={handleCounterpartySearchChanged}
-              onOptionSubmit={handleCounterpartySubmit}
-            />
-          </SimpleGrid>
+          {!isOtherOutcome && (
+            <>
+              <SimpleGrid cols={{ base: 1, md: 2 }}>
+                <SegmentedControl
+                  data={searchTypeOptions}
+                  disabled={isLoading || isSaving}
+                  style={{ alignSelf: 'end' }}
+                  value={String(form.searchType)}
+                  onChange={handleSearchTypeChanged}
+                />
+                <Autocomplete
+                  data={counterpartyOptions}
+                  disabled={isLoading || isSaving}
+                  label={t('Отримувач')}
+                  placeholder={t('Почніть вводити назву')}
+                  value={form.counterpartySearch}
+                  onChange={handleCounterpartySearchChanged}
+                  onOptionSubmit={handleCounterpartySubmit}
+                />
+              </SimpleGrid>
 
-          <Divider />
+              <Divider />
+            </>
+          )}
 
           <SimpleGrid cols={{ base: 1, md: 3 }}>
             <TextInput
@@ -1137,38 +1148,59 @@ function validateForm({
 
 function getOperationOptions(t: (value: string) => string) {
   return [
-    { label: t('Постачальнику'), value: String(OUTCOME_OPERATION_TYPE.PaymentToSupplier) },
-    { label: t('Повернення клієнту'), value: String(OUTCOME_OPERATION_TYPE.BuyerReturn) },
-    { label: t('Інші з контрагентами'), value: String(OUTCOME_OPERATION_TYPE.OtherOutcomeWithCounterparts) },
-    { label: t('Інші кошти'), value: String(OUTCOME_OPERATION_TYPE.OtherOutcome) },
-  ]
+    ACCOUNTING_OPERATION_ID.OutcomeSupplierPayment,
+    ACCOUNTING_OPERATION_ID.OutcomeCustomerRefund,
+    ACCOUNTING_OPERATION_ID.OutcomeOtherWithCounterparties,
+    ACCOUNTING_OPERATION_ID.OutcomeOther,
+  ].map((operationId) => {
+    const operation = getAccountingOperation(operationId)
+
+    return {
+      label: t(getAccountingOperationLabel(operationId, undefined, 'option')),
+      value: String(operation.payloadOperationTypes[0]),
+    }
+  })
 }
 
 function getSearchTypeOptions(operationType: OutcomeOperationType, t: (value: string) => string) {
-  if (operationType === OUTCOME_OPERATION_TYPE.BuyerReturn) {
-    return [{ label: t('Клієнти'), value: String(IncomeCounterpartySearchType.Client) }]
-  }
+  const operation = getAccountingOperationByPayloadType('outcome', operationType)
+  const searchTypes = operation?.counterparty.kinds.flatMap(toCounterpartySearchType) || []
 
-  if (operationType === OUTCOME_OPERATION_TYPE.PaymentToSupplier) {
-    return [
-      { label: t('Постачальники'), value: String(IncomeCounterpartySearchType.Supplier) },
-      { label: t('Виробники'), value: String(IncomeCounterpartySearchType.Manufacturer) },
-    ]
-  }
-
-  return [
-    { label: t('Клієнти'), value: String(IncomeCounterpartySearchType.Client) },
-    { label: t('Постачальники'), value: String(IncomeCounterpartySearchType.Supplier) },
-    { label: t('Виробники'), value: String(IncomeCounterpartySearchType.Manufacturer) },
-  ]
+  return [...new Set(searchTypes)].map((searchType) => ({
+    label:
+      searchType === IncomeCounterpartySearchType.Supplier
+        ? t('Постачальники')
+        : searchType === IncomeCounterpartySearchType.Manufacturer
+          ? t('Виробники')
+          : t('Клієнти'),
+    value: String(searchType),
+  }))
 }
 
 function getDefaultSearchType(operationType: OutcomeOperationType): IncomeCounterpartySearchType {
-  if (operationType === OUTCOME_OPERATION_TYPE.PaymentToSupplier) {
-    return IncomeCounterpartySearchType.Supplier
+  const operation = getAccountingOperationByPayloadType('outcome', operationType)
+
+  return operation?.counterparty.kinds.includes('service-supplier')
+    ? IncomeCounterpartySearchType.Supplier
+    : IncomeCounterpartySearchType.Client
+}
+
+function toCounterpartySearchType(
+  kind: AccountingCounterpartyKind,
+): IncomeCounterpartySearchType[] {
+  if (kind === 'client' || kind === 'organization-client') {
+    return [IncomeCounterpartySearchType.Client]
   }
 
-  return IncomeCounterpartySearchType.Client
+  if (kind === 'manufacturer') {
+    return [IncomeCounterpartySearchType.Manufacturer]
+  }
+
+  if (kind === 'supplier' || kind === 'service-supplier') {
+    return [IncomeCounterpartySearchType.Supplier]
+  }
+
+  return []
 }
 
 function pickOrganizationsByClientAgreements(organizations: Organization[], agreements: ClientAgreement[]) {

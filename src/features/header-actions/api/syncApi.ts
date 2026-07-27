@@ -1,7 +1,15 @@
 import { apiRequest } from '../../../shared/api/apiClient'
-import type { DailyDataSyncStockMode, DataSyncStatus, SyncRunResponse, TypeOfXmlDocument } from '../types'
+import {
+  DataSyncSessionMode,
+  SyncProductConsignmentType,
+  type DailyDataSyncStockMode,
+  type DataSyncStatus,
+  type SyncRunResponse,
+  type TypeOfXmlDocument,
+} from '../types'
 
 const SYNC_OPERATION_ID_HEADER = 'X-GBA-Sync-Operation-Id'
+const FULL_SESSION_DOCUMENT_TYPES = Object.values(SyncProductConsignmentType).map(String)
 
 export type SyncFullRequest = {
   forAmg: boolean
@@ -22,6 +30,15 @@ export type SyncDocumentsRequest = {
   from: Date
   to: Date
   typeDocument: TypeOfXmlDocument
+}
+
+export type SyncSessionRequest = {
+  forAmg: boolean
+  from: string
+  mode: DataSyncSessionMode
+  operationId: string
+  to: string
+  types: string[]
 }
 
 export function createSyncOperationId(): string {
@@ -74,6 +91,29 @@ export function startDailySync(request: SyncDailyRequest): Promise<SyncRunRespon
     query,
     errorMessages: {
       default: 'Не вдалося запустити щоденну синхронізацію',
+      network: 'Сервер синхронізації недоступний',
+    },
+  })
+}
+
+export function startSyncSession(request: SyncSessionRequest): Promise<SyncRunResponse> {
+  const { operationId, ...requestQuery } = request
+  const query =
+    request.mode === DataSyncSessionMode.Full
+      ? {
+          ...requestQuery,
+          types: [...FULL_SESSION_DOCUMENT_TYPES],
+        }
+      : requestQuery
+
+  return apiRequest<SyncRunResponse>('/data/sync/start/session', {
+    headers: {
+      [SYNC_OPERATION_ID_HEADER]: operationId,
+    },
+    method: 'POST',
+    query,
+    errorMessages: {
+      default: 'Не вдалося запустити сесію синхронізації',
       network: 'Сервер синхронізації недоступний',
     },
   })

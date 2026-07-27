@@ -76,16 +76,6 @@ export function buildOutgoingPaymentGroupPayload({
   }
 
   if (operationType === OUTCOME_OPERATION_TYPE.OtherOutcome) {
-    if (selectedSupplyOrganization && !selectedClient) {
-      payload.ConsumableProductOrganization = selectedSupplyOrganization
-      if (selectedUnpaidOrders.length > 0) {
-        payload.OutcomePaymentOrderConsumablesOrders =
-          buildConsumableOrderPaymentLinks(selectedUnpaidOrders, form.amount)
-      }
-    } else if (selectedClient && !selectedSupplyOrganization) {
-      payload.Client = selectedClient
-    }
-
     return payload
   }
 

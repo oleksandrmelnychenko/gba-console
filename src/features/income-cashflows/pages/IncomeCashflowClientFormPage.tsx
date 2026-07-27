@@ -26,6 +26,12 @@ import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import {
+  ACCOUNTING_OPERATION_ID,
+  getAccountingOperation,
+  getAccountingOperationByPayloadType,
+  getAccountingOperationLabel,
+} from '../../accounting/accountingOperationCatalog'
+import {
   calculateIncomeCashflowExchange,
   createIncomeCashflow,
   createIncomeCashflowPaymentMovement,
@@ -1480,12 +1486,15 @@ function parseRegisterType(value: string | null): PaymentRegisterType {
 }
 
 function parseOperationType(value: string | null): IncomePaymentOperationType {
-  if (value === String(IncomePaymentOperationType.SupplierReturn)) {
-    return IncomePaymentOperationType.SupplierReturn
-  }
+  const operationType = Number(value)
+  const operation = getAccountingOperationByPayloadType('income', operationType)
 
-  if (value === String(IncomePaymentOperationType.OtherAccountingWithCounterparts)) {
-    return IncomePaymentOperationType.OtherAccountingWithCounterparts
+  if (
+    operation?.id === ACCOUNTING_OPERATION_ID.IncomeSupplierReturn
+    || operation?.id === ACCOUNTING_OPERATION_ID.IncomeOtherWithCounterparties
+    || operation?.id === ACCOUNTING_OPERATION_ID.IncomeClientPayment
+  ) {
+    return operationType as IncomePaymentOperationType
   }
 
   return IncomePaymentOperationType.ClientPayment
@@ -1493,26 +1502,27 @@ function parseOperationType(value: string | null): IncomePaymentOperationType {
 
 function getTitle(operationType: IncomePaymentOperationType, registerType: PaymentRegisterType, t: (value: string) => string): string {
   const registerTitle = registerType === PaymentRegisterType.Bank ? t('банківський') : t('касовий')
+  const operation = getAccountingOperationByPayloadType('income', operationType)
+  const operationId = operation?.id || ACCOUNTING_OPERATION_ID.IncomeClientPayment
 
-  if (operationType === IncomePaymentOperationType.SupplierReturn) {
-    return `${t('Повернення від постачальника')}, ${registerTitle}`
-  }
-
-  if (operationType === IncomePaymentOperationType.OtherAccountingWithCounterparts) {
-    return `${t('Інші надходження з контрагентами')}, ${registerTitle}`
-  }
-
-  return `${t('Оплата покупця')}, ${registerTitle}`
+  return `${t(getAccountingOperationLabel(operationId, registerType, 'form'))}, ${registerTitle}`
 }
 
 function getOperationOptions(registerType: PaymentRegisterType, t: (value: string) => string) {
   const suffix = registerType === PaymentRegisterType.Bank ? t('банк') : t('каса')
 
   return [
-    { label: `${t('Оплата покупця')} (${suffix})`, value: String(IncomePaymentOperationType.ClientPayment) },
-    { label: `${t('Повернення постачальника')} (${suffix})`, value: String(IncomePaymentOperationType.SupplierReturn) },
-    { label: `${t('Інші з контрагентами')} (${suffix})`, value: String(IncomePaymentOperationType.OtherAccountingWithCounterparts) },
-  ]
+    ACCOUNTING_OPERATION_ID.IncomeClientPayment,
+    ACCOUNTING_OPERATION_ID.IncomeSupplierReturn,
+    ACCOUNTING_OPERATION_ID.IncomeOtherWithCounterparties,
+  ].map((operationId) => {
+    const operation = getAccountingOperation(operationId)
+
+    return {
+      label: `${t(getAccountingOperationLabel(operationId, registerType))} (${suffix})`,
+      value: String(operation.payloadOperationTypes[0]),
+    }
+  })
 }
 
 function getSearchTypeOptions(operationType: IncomePaymentOperationType, t: (value: string) => string) {

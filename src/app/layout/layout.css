@@ -924,6 +924,51 @@
   padding: 6px 8px;
 }
 
+.sync-composite-progress {
+  border-top: 1px solid var(--mantine-color-gray-2);
+  padding-top: 10px;
+}
+
+.sync-composite-progress-summary,
+.sync-composite-stage-range {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+
+.sync-composite-stage-list {
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+  border-top: 1px solid var(--mantine-color-gray-2);
+  max-height: 230px;
+  overflow-y: auto;
+}
+
+.sync-composite-stage {
+  border-bottom: 1px solid var(--mantine-color-gray-1);
+  border-left: 2px solid transparent;
+  min-width: 0;
+  padding: 7px 8px;
+}
+
+.sync-composite-stage:last-child {
+  border-bottom: 0;
+}
+
+.sync-composite-stage.is-running {
+  background: #fff7f0;
+  border-left-color: var(--brand-orange);
+}
+
+.sync-composite-stage.is-error {
+  background: var(--mantine-color-red-0);
+  border-left-color: var(--mantine-color-red-6);
+}
+
+.sync-composite-stage-content {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 .sync-type-checklist,
 .daily-sync-types {
   min-width: 0;
@@ -933,18 +978,34 @@
   color: var(--mantine-color-green-8);
 }
 
+.sync-fixed-types {
+  background: var(--mantine-color-gray-0);
+  border-left: 2px solid var(--mantine-color-green-6);
+  color: var(--mantine-color-green-8);
+  padding: 8px 10px;
+}
+
+.sync-fixed-types svg {
+  flex: 0 0 auto;
+}
+
 .sync-action-bar {
   background: #ffffff;
   border-top: 1px solid var(--mantine-color-gray-2);
-  bottom: -16px;
-  margin: 0 -16px -16px;
-  padding: 12px 16px 16px;
-  position: sticky;
-  z-index: 2;
+  padding-top: 12px;
 }
 
 .sync-confirmation {
   background: var(--mantine-color-gray-0);
+}
+
+.sync-confirmation-summary {
+  flex: 1 1 430px;
+  min-width: 0;
+}
+
+.sync-confirmation-order {
+  overflow-wrap: anywhere;
 }
 
 @media (max-width: 48em) {

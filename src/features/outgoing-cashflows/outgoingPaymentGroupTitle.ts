@@ -1,66 +1,59 @@
-import { PaymentRegisterType } from '../income-cashflows/types'
 import {
-  OUTCOME_OPERATION_TYPE,
-  type OutcomeOperationType,
-} from './outgoingCreateTypes'
+  ACCOUNTING_OPERATION_ID,
+  ACCOUNTING_PAYMENT_REGISTER_TYPE,
+  OUTCOME_PAYMENT_OPERATION_CODE,
+  getAccountingOperationByPayloadType,
+  getAccountingOperationLabel,
+  type AccountingPaymentRegisterType,
+  type OutcomePaymentOperationCode,
+} from '../accounting/accountingOperationCatalog'
 
 type Translate = (value: string) => string
 
 export function parseOutgoingPaymentRegisterType(
   value: string | null,
-): PaymentRegisterType {
-  return value === String(PaymentRegisterType.Cash)
-    ? PaymentRegisterType.Cash
-    : PaymentRegisterType.Bank
+): AccountingPaymentRegisterType {
+  return value === String(ACCOUNTING_PAYMENT_REGISTER_TYPE.Cash)
+    ? ACCOUNTING_PAYMENT_REGISTER_TYPE.Cash
+    : ACCOUNTING_PAYMENT_REGISTER_TYPE.Bank
 }
 
 export function parseOutgoingPaymentOperationType(
   value: string | null,
-): OutcomeOperationType {
-  if (value === String(OUTCOME_OPERATION_TYPE.BuyerReturn)) {
-    return OUTCOME_OPERATION_TYPE.BuyerReturn
-  }
+): OutcomePaymentOperationCode {
+  const operationType = Number(value)
+  const operation = getAccountingOperationByPayloadType('outcome', operationType)
 
   if (
-    value ===
-    String(OUTCOME_OPERATION_TYPE.OtherOutcomeWithCounterparts)
+    operation
+    && (
+      operation.id === ACCOUNTING_OPERATION_ID.OutcomeSupplierPayment
+      || operation.id === ACCOUNTING_OPERATION_ID.OutcomeCustomerRefund
+      || operation.id === ACCOUNTING_OPERATION_ID.OutcomeOtherWithCounterparties
+      || operation.id === ACCOUNTING_OPERATION_ID.OutcomeOther
+    )
   ) {
-    return OUTCOME_OPERATION_TYPE.OtherOutcomeWithCounterparts
+    return operationType as OutcomePaymentOperationCode
   }
 
-  if (value === String(OUTCOME_OPERATION_TYPE.OtherOutcome)) {
-    return OUTCOME_OPERATION_TYPE.OtherOutcome
-  }
-
-  return OUTCOME_OPERATION_TYPE.PaymentToSupplier
+  return OUTCOME_PAYMENT_OPERATION_CODE.PaymentToSupplier
 }
 
 export function getOutgoingPaymentGroupTitle(
-  operationType: OutcomeOperationType,
-  registerType: PaymentRegisterType,
+  operationType: OutcomePaymentOperationCode,
+  registerType: AccountingPaymentRegisterType,
   t: Translate,
 ): string {
   const registerTitle =
-    registerType === PaymentRegisterType.Bank
+    registerType === ACCOUNTING_PAYMENT_REGISTER_TYPE.Bank
       ? t('банківський')
       : t('касовий')
+  const operation = getAccountingOperationByPayloadType('outcome', operationType)
+  const operationId = operation?.id || ACCOUNTING_OPERATION_ID.OutcomeSupplierPayment
 
-  if (operationType === OUTCOME_OPERATION_TYPE.BuyerReturn) {
-    return `${t('Повернення клієнту')}, ${registerTitle}`
+  if (operationId === ACCOUNTING_OPERATION_ID.OutcomeOther) {
+    return t(getAccountingOperationLabel(operationId, registerType))
   }
 
-  if (
-    operationType ===
-    OUTCOME_OPERATION_TYPE.OtherOutcomeWithCounterparts
-  ) {
-    return `${t('Інші розрахунки з контрагентами')}, ${registerTitle}`
-  }
-
-  if (operationType === OUTCOME_OPERATION_TYPE.OtherOutcome) {
-    return registerType === PaymentRegisterType.Bank
-      ? t('Інше списання безготівкових грошових коштів')
-      : t('Інші витрати грошових коштів')
-  }
-
-  return `${t('Оплата постачальнику')}, ${registerTitle}`
+  return `${t(getAccountingOperationLabel(operationId, registerType, 'form'))}, ${registerTitle}`
 }

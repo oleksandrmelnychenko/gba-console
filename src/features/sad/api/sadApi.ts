@@ -21,10 +21,13 @@ import type {
 } from '../types'
 import type { SupplyOrderUkraine } from '../../supply-ukraine-orders/types'
 import type { IncomePaymentOrder } from '../../income-cashflows/types'
-import { createAdvancePayment } from '../../advance-payments/api/advancePaymentsApi'
-import type { AdvancePaymentMutationPayload } from '../../advance-payments/types'
+import {
+  ACCOUNTING_OPERATION_ID,
+  getAccountingOperation,
+} from '../../accounting/accountingOperationCatalog'
 
-export type SadAdvancePaymentPayload = AdvancePaymentMutationPayload
+const CREATE_SAD_INCOME_ENDPOINT =
+  getAccountingOperation(ACCOUNTING_OPERATION_ID.SadIncome).endpoint
 
 export async function getSads(params: SadSearchParams): Promise<Sad[]> {
   const result = await apiRequest<unknown>('/supplies/ukraine/order/packlists/sad/all/filtered', {
@@ -258,7 +261,7 @@ export async function createIncomePaymentFromSad(
       paymentIncome,
       sadNetId,
     },
-    request: (payload, context) => apiRequest<unknown>('/payments/orders/income/new/sad', {
+    request: (payload, context) => apiRequest<unknown>(CREATE_SAD_INCOME_ENDPOINT, {
       body: payload.paymentIncome,
       dedupe: false,
       headers: context.headers,
@@ -271,13 +274,6 @@ export async function createIncomePaymentFromSad(
   })
 
   return normalizeItem<IncomePaymentOrder>(result)
-}
-
-export async function createAdvancePaymentFromSad(
-  sadNetId: string,
-  advancePayment: SadAdvancePaymentPayload,
-){
-  return createAdvancePayment({ sadNetId }, advancePayment)
 }
 
 function normalizeArray<TItem>(result: unknown): TItem[] {

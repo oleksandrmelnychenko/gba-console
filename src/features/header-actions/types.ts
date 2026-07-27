@@ -40,6 +40,36 @@ export const DailyDataSyncStockMode = {
 
 export type DailyDataSyncStockMode = (typeof DailyDataSyncStockMode)[keyof typeof DailyDataSyncStockMode]
 
+export const DataSyncSessionMode = {
+  Full: 0,
+  Daily: 1,
+} as const
+
+export type DataSyncSessionMode = (typeof DataSyncSessionMode)[keyof typeof DataSyncSessionMode]
+
+export type DataSyncSessionStageProgress = {
+  AttemptCount: number
+  CompletedAtUtc?: string | null
+  FailedStep?: string | null
+  From?: string | null
+  Kind: string
+  Ordinal: number
+  StageAttemptId?: string | null
+  StartedAtUtc?: string | null
+  Status: string
+  To?: string | null
+}
+
+export type DataSyncSessionProgress = {
+  CurrentStageOrdinal?: number | null
+  ForAmg: boolean
+  From: string
+  Mode: string
+  Stages: DataSyncSessionStageProgress[]
+  To: string
+  TotalStages: number
+}
+
 export type DataSyncAcceptedScope = {
   ForAmg: boolean
   From?: string | null
@@ -71,6 +101,7 @@ export type DataSyncStatus = {
   LastTerminalRun?: DataSyncPipelineRun | null
   PipelineRunId?: string | null
   RunId?: string | null
+  Session?: DataSyncSessionProgress | null
   StartedBy?: string
 }
 

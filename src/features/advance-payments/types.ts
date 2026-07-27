@@ -32,25 +32,6 @@ export type AdvancePayment = EntityFields & {
   VatPercent?: number
 }
 
-export type AdvancePaymentMutationPayload = {
-  Amount: number
-  Comment?: string
-  FromDate: string
-  Organization: Organization
-  VatAmount: number
-  VatPercent: number
-} & PartnerAgreementPayload<ExternalClientAgreement, ExternalOrganizationClientAgreement>
-
-export type AdvancePaymentSource =
-  | {
-      sadNetId: string
-      taxFreeNetId?: never
-    }
-  | {
-      sadNetId?: never
-      taxFreeNetId: string
-    }
-
 export type AdvancePaymentsSearchParams = {
   from: string
   limit: number
@@ -61,4 +42,3 @@ import type {
   ExternalClientAgreement,
   ExternalOrganizationClientAgreement,
 } from '../document-outcome-payment/types'
-import type { PartnerAgreementPayload } from '../document-outcome-payment/externalDocumentPayment'

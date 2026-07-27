@@ -5,6 +5,10 @@ import {
   PaymentRegisterType,
 } from './types'
 import type { PaymentMovement } from './types'
+import {
+  getAccountingOperationByPayloadType,
+  type AccountingCounterpartyKind,
+} from '../accounting/accountingOperationCatalog'
 
 const movementNamesByOperation: Partial<
   Record<IncomePaymentOperationType, string[]>
@@ -59,19 +63,10 @@ export function shouldAllocateIncomePaymentToSales(
 export function getAllowedIncomeCounterpartySearchTypes(
   operationType: IncomePaymentOperationType,
 ): IncomeCounterpartySearchType[] {
-  if (operationType === IncomePaymentOperationType.ClientPayment) {
-    return [IncomeCounterpartySearchType.Client]
-  }
+  const operation = getAccountingOperationByPayloadType('income', operationType)
+  const searchTypes = operation?.counterparty.kinds.flatMap(toIncomeCounterpartySearchType) || []
 
-  if (operationType === IncomePaymentOperationType.SupplierReturn) {
-    return [IncomeCounterpartySearchType.Supplier]
-  }
-
-  return [
-    IncomeCounterpartySearchType.Client,
-    IncomeCounterpartySearchType.Supplier,
-    IncomeCounterpartySearchType.Manufacturer,
-  ]
+  return [...new Set(searchTypes)]
 }
 
 export function resolveIncomeCounterpartyPayloadKind(
@@ -110,4 +105,22 @@ export function selectDefaultIncomePaymentMovement(
 
 function normalizeMovementName(value: string | undefined): string {
   return value?.trim().toLocaleLowerCase('uk-UA') || ''
+}
+
+function toIncomeCounterpartySearchType(
+  kind: AccountingCounterpartyKind,
+): IncomeCounterpartySearchType[] {
+  if (kind === 'client' || kind === 'organization-client') {
+    return [IncomeCounterpartySearchType.Client]
+  }
+
+  if (kind === 'manufacturer') {
+    return [IncomeCounterpartySearchType.Manufacturer]
+  }
+
+  if (kind === 'supplier' || kind === 'service-supplier') {
+    return [IncomeCounterpartySearchType.Supplier]
+  }
+
+  return []
 }

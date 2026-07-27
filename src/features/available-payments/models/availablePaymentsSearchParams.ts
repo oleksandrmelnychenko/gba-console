@@ -1,8 +1,16 @@
 import { AccountingTypeValue } from '../types'
+import {
+  ACCOUNTING_OPERATION_ID,
+  getAccountingOperation,
+} from '../../accounting/accountingOperationCatalog'
 
 type ParsedAccountingTypeValue = (typeof AccountingTypeValue)[keyof typeof AccountingTypeValue]
 
-export const OUTCOME_PAYMENT_TASKS_OPERATION_TYPE = '4'
+export const OUTCOME_PAYMENT_TASKS_OPERATION_TYPE = String(
+  getAccountingOperation(
+    ACCOUNTING_OPERATION_ID.OutcomeSupplierPaymentByTask,
+  ).payloadOperationTypes[0],
+)
 
 type SearchParamsReader = {
   get: (name: string) => string | null

@@ -45,9 +45,14 @@
   align-items: end;
   display: grid;
   gap: 10px;
-  grid-template-columns: 310px minmax(0, 1fr) auto auto;
+  grid-template-columns: 310px minmax(0, 1fr) auto auto auto;
   min-width: 0;
   overflow-x: auto;
+}
+
+.reports-stocks-title {
+  align-self: center;
+  min-width: 0;
 }
 
 .reports-stocks-status {
@@ -303,6 +308,16 @@
   min-height: 0;
 }
 
+/* The engine tints its own «Підсумок: …» and «Загальний підсумок» rows; the viewer keeps them
+   readable as totals rather than as data. */
+.reports-sale-table .data-table-row.reports-sale-row-subtotal {
+  --data-table-cell-bg: var(--mantine-color-blue-0);
+}
+
+.reports-sale-table .data-table-row.reports-sale-row-total {
+  --data-table-cell-bg: var(--mantine-color-blue-1);
+}
+
 .reports-sale-empty-state {
   align-items: center;
   display: flex;
@@ -330,10 +345,6 @@
   flex: 0 0 auto;
 }
 
-.reports-stocks-result-actions .app-filter-table-toolbar-slot:empty {
-  display: none;
-}
-
 .reports-stocks-empty-state {
   align-items: center;
   border-top: 1px solid var(--mantine-color-gray-2);
@@ -348,21 +359,6 @@
   color: var(--mantine-color-gray-8);
   font-family: var(--font-mono);
   font-size: 13px;
-}
-
-.reports-stocks-preview {
-  min-height: 0;
-  overflow: hidden;
-}
-
-.reports-stocks-preview .data-table {
-  min-height: 0;
-}
-
-.reports-stocks-preview-number,
-.reports-stocks-preview-total {
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums;
 }
 
 .reports-stocks-modal-title {
@@ -385,6 +381,11 @@
 
   .reports-stocks-filter-bar {
     grid-template-columns: 310px auto auto auto;
+  }
+
+  /* Too narrow to sit beside the dates — the heading takes the first row on its own. */
+  .reports-stocks-title {
+    grid-column: 1 / -1;
   }
 
   .reports-stocks-measurement-groups {

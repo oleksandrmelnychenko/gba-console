@@ -9,8 +9,11 @@ import type {
   NamedEntity,
   Organization,
   OutcomePaymentOrder,
-  PaymentMovement,
 } from './types'
+import {
+  OUTCOME_PAYMENT_OPERATION_CODE,
+  type OutcomePaymentOperationCode,
+} from '../accounting/accountingOperationCatalog'
 
 export type CreatePaymentCurrencyRegister = {
   Amount?: number
@@ -56,16 +59,9 @@ export type OutcomePaymentOrderCreatePayload = Omit<
   VatPercent?: number
 }
 
-export const OUTCOME_OPERATION_TYPE = {
-  PaymentToSupplierByPaymentTask: 4,
-  PaymentToSupplier: 5,
-  BuyerReturn: 6,
-  OtherOutcomeWithCounterparts: 7,
-  OtherOutcome: 8,
-  TransferToColleague: 10,
-} as const
+export const OUTCOME_OPERATION_TYPE = OUTCOME_PAYMENT_OPERATION_CODE
 
-export type OutcomeOperationType = (typeof OUTCOME_OPERATION_TYPE)[keyof typeof OUTCOME_OPERATION_TYPE]
+export type OutcomeOperationType = OutcomePaymentOperationCode
 
 export function isGeneralOutcomeOperationType(value: unknown): value is OutcomeOperationType {
   return value === OUTCOME_OPERATION_TYPE.PaymentToSupplier
@@ -76,10 +72,7 @@ export function isGeneralOutcomeOperationType(value: unknown): value is OutcomeO
 }
 
 export const OUTGOING_CREATE_MODE = {
-  ClientReturn: 'client-return',
-  OrganizationPayment: 'organization-payment',
   PaymentGroup: 'payment-group',
-  PaymentTasks: 'payment-tasks',
   Simple: 'simple',
 } as const
 
@@ -92,7 +85,6 @@ export type CreateFormState = {
   invoiceNumber: string
   isAccounting: boolean
   isManagementAccounting: boolean
-  isUnderReport: boolean
   movementSearch: string
   organizationValue: string
   paymentPurpose: string
@@ -103,5 +95,3 @@ export type CreateFormState = {
   time: string
   userSearch: string
 }
-
-export type PaymentMovementOption = PaymentMovement

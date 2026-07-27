@@ -409,7 +409,10 @@ describe('isNavigationPathAllowed', () => {
 
     expect(isNavigationPathAllowed(modules, '/payments/available')).toBe(true)
     expect(isNavigationPathAllowed(modules, '/accounting/income-cashflows/new/shop')).toBe(true)
-    expect(isNavigationPathAllowed(modules, '/accounting/outgoing-cashflow/new/client-return')).toBe(true)
+    expect(isNavigationPathAllowed(modules, '/accounting/outgoing-cashflow/new/group')).toBe(true)
+    expect(isNavigationPathAllowed(modules, '/accounting/outgoing-cashflow/new/client-return')).toBe(false)
+    expect(isNavigationPathAllowed(modules, '/accounting/outgoing-cashflow/new/payment-tasks')).toBe(false)
+    expect(isNavigationPathAllowed(modules, '/accounting/outgoing-cashflow/new/supplier')).toBe(false)
     expect(isNavigationPathAllowed(modules, '/accounting/outgoing-cashflow/order-1/advanced-report/view')).toBe(true)
     expect(isNavigationPathAllowed(modules, '/accounting/payment-accounts/new')).toBe(false)
   })

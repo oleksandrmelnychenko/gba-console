@@ -3,7 +3,16 @@ import {
   executeAccountingMutation,
   type AccountingMutationOperationOptions,
 } from '../../../shared/api/accountingMutationOperation'
+import {
+  ACCOUNTING_OPERATION_ID,
+  getAccountingOperation,
+} from '../../accounting/accountingOperationCatalog'
 import type { OutcomePaymentOrder } from '../types'
+
+const CREATE_SAD_OUTCOME_ENDPOINT =
+  getAccountingOperation(ACCOUNTING_OPERATION_ID.SadOutcome).endpoint
+const CREATE_TAX_FREE_OUTCOME_ENDPOINT =
+  getAccountingOperation(ACCOUNTING_OPERATION_ID.TaxFreeOutcome).endpoint
 
 export async function createOutcomeOrderFromTaxFree(
   taxFreeNetId: string,
@@ -18,7 +27,7 @@ export async function createOutcomeOrderFromTaxFree(
       order,
       taxFreeNetId,
     },
-    request: (payload, context) => apiRequest<unknown>('/payments/orders/outcome/new/taxfree', {
+    request: (payload, context) => apiRequest<unknown>(CREATE_TAX_FREE_OUTCOME_ENDPOINT, {
       body: payload.order,
       dedupe: false,
       headers: context.headers,
@@ -46,7 +55,7 @@ export async function createOutcomeOrderFromSad(
       order,
       sadNetId,
     },
-    request: (payload, context) => apiRequest<unknown>('/payments/orders/outcome/new/sad', {
+    request: (payload, context) => apiRequest<unknown>(CREATE_SAD_OUTCOME_ENDPOINT, {
       body: payload.order,
       dedupe: false,
       headers: context.headers,

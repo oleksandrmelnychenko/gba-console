@@ -2,7 +2,6 @@ import { formatLocalInputDateTime } from '../../../shared/date/dateTime'
 import type {
   ClientAgreement,
   NamedEntity,
-  Organization,
   PaymentCurrencyRegister,
   PaymentRegister,
   SupplyOrganizationAgreement,
@@ -105,40 +104,12 @@ export function includeEntity<T extends NamedEntity>(entities: T[], entity: T): 
   return [entity, ...entities]
 }
 
-export function selectedCurrencyRegisterOf(
-  register: PaymentRegister | null,
-  currencyValue: string,
-): PaymentCurrencyRegister | null {
-  return (
-    (register?.PaymentCurrencyRegisters || []).find(
-      (currencyRegister) => getEntityValue(currencyRegister.Currency) === currencyValue,
-    ) || null
-  )
-}
-
 export function balanceLabelOf(currencyRegister: PaymentCurrencyRegister | null, prefix: string): string {
   if (!currencyRegister || typeof currencyRegister.Amount !== 'number') {
     return ''
   }
 
   return `${prefix}: ${moneyFormatter.format(currencyRegister.Amount)} ${currencyRegister.Currency?.Code || ''}`
-}
-
-export function pickRegistersForOrganization(
-  registers: PaymentRegister[],
-  organization: Organization | null,
-): PaymentRegister[] {
-  if (!organization) {
-    return registers
-  }
-
-  return registers.filter(
-    (register) => getEntityValue(register.Organization) === getEntityValue(organization) || register.OrganizationId === organization.Id,
-  )
-}
-
-export function defaultRegisterOf(registers: PaymentRegister[]): PaymentRegister | null {
-  return registers.find((register) => register.IsMain) || registers[0] || null
 }
 
 export function toIsoDateTime(dateValue: string, timeValue: string): string {

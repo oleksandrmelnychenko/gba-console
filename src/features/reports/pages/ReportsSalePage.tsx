@@ -11,6 +11,7 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
+import { useDebouncedValue } from '@mantine/hooks'
 import { CircleAlert, Download, Printer, RefreshCw, RotateCcw, Search, Upload } from 'lucide-react'
 import { type ChangeEvent, type ReactNode, useMemo } from 'react'
 import readXlsxFile from 'read-excel-file/browser'
@@ -21,37 +22,53 @@ import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableD
 import type { DataTableColumn, DataTableDensity } from '../../../shared/ui/data-table/types'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
-import type { SpreadsheetCellValue, SpreadsheetSheet } from '../types'
 import {
-  buildDateFileSuffix,
-  buildSpreadsheetCsv,
-  displayValue,
-  downloadTextFile,
-  parseNumericValue,
-} from '../utils'
+  buildSpreadsheetSheet,
+  calculateTotals,
+  detectDelimiter,
+  filterSheetRows,
+  getAdditiveColumns,
+  isFilledCell,
+  normalizeImportedCellValue,
+  parseDelimitedText,
+} from '../spreadsheet'
+import type { SpreadsheetCellValue, SpreadsheetRow, SpreadsheetRowKind, SpreadsheetSheet } from '../types'
+import { buildDateFileSuffix, buildReportFileName, buildSpreadsheetCsv, displayValue, downloadTextFile } from '../utils'
 import './reports-pages.css'
+
+const SEARCH_DEBOUNCE_MS = 400
 
 export function ReportsSalePage() {
   const { t } = useI18n()
   const [sheets, setSheets] = useValueState<SpreadsheetSheet[]>([])
   const [activeSheetName, setActiveSheetName] = useValueState<string | null>(null)
   const [fileName, setFileName] = useValueState('')
-  const [searchDraft, setSearchDraft] = useValueState('')
-  const [searchValue, setSearchValue] = useValueState('')
+  const [search, setSearch] = useValueState('')
   const [dateFrom, setDateFrom] = useValueState('')
   const [dateTo, setDateTo] = useValueState('')
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(false)
   const { density, toggleDensity } = useDataTableDensity('reports-sale-spreadsheet', 'normal')
+  const [debouncedSearch] = useDebouncedValue(search, SEARCH_DEBOUNCE_MS)
   const activeSheet = sheets.find((sheet) => sheet.name === activeSheetName) || sheets[0] || null
   const visibleRows = useMemo(
-    () => filterRows(activeSheet, searchValue, dateFrom, dateTo),
-    [activeSheet, dateFrom, dateTo, searchValue],
+    () => filterSheetRows(activeSheet, debouncedSearch, dateFrom, dateTo),
+    [activeSheet, dateFrom, dateTo, debouncedSearch],
   )
+  const visibleDataRows = useMemo(() => visibleRows.filter((row) => row.kind === 'data'), [visibleRows])
+  const additiveColumns = useMemo(() => getAdditiveColumns(activeSheet), [activeSheet])
   const visibleTotals = useMemo(
-    () => calculateTotals(activeSheet?.columns || [], visibleRows),
-    [activeSheet?.columns, visibleRows],
+    () => calculateTotals(visibleDataRows, additiveColumns),
+    [additiveColumns, visibleDataRows],
   )
+  // While the sheet still carries its own «Загальний підсумок» there is nothing to add: a second, differently
+  // computed total under it would only invite the reader to pick one. A filter drops those rows (they describe
+  // the whole sheet, not the selection), and a plain CSV never had them, so the viewer totals what is on screen.
+  // The badges and the table row must agree on whether a total exists at all, or a sheet with nothing addable
+  // gets a bold «Разом» line with no numbers in it.
+  const showComputedTotals =
+    visibleTotals.some((total) => total !== null && total !== undefined)
+    && !visibleRows.some((row) => row.kind === 'total')
 
   async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.currentTarget.files?.[0]
@@ -71,8 +88,7 @@ export function ReportsSalePage() {
       setFileName(file.name)
       setSheets(parsedSheets)
       setActiveSheetName(parsedSheets[0]?.name || null)
-      setSearchDraft('')
-      setSearchValue('')
+      setSearch('')
     } catch (parseError) {
       setFileName(file.name)
       setSheets([])
@@ -83,14 +99,8 @@ export function ReportsSalePage() {
     }
   }
 
-  function updateSearch(nextSearchValue: string) {
-    setSearchDraft(nextSearchValue)
-    setSearchValue(nextSearchValue.trim())
-  }
-
   function resetFilters() {
-    setSearchDraft('')
-    setSearchValue('')
+    setSearch('')
     setDateFrom('')
     setDateTo('')
   }
@@ -100,9 +110,16 @@ export function ReportsSalePage() {
       return
     }
 
+    // The export is what the screen shows. Under a filter the sheet's own subtotals are gone and the viewer
+    // computes a «Разом» of the selection instead — leaving it out of the file would hand the reader a column
+    // of numbers whose total is nowhere, and a different total from the one they were just looking at.
+    const totalsRow = showComputedTotals
+      ? [activeSheet.columns.map((_, columnIndex) => (columnIndex === 0 ? t('Разом') : visibleTotals[columnIndex] ?? ''))]
+      : []
+
     downloadTextFile(
-      `reports-sale-${buildDateFileSuffix()}.csv`,
-      buildSpreadsheetCsv([activeSheet.columns, ...visibleRows]),
+      buildReportFileName([fileName.replace(/\.[^.]+$/, ''), activeSheet.name, buildDateFileSuffix()], 'csv'),
+      buildSpreadsheetCsv([activeSheet.columns, ...visibleRows.map((row) => row.cells), ...totalsRow]),
     )
   }
 
@@ -119,13 +136,17 @@ export function ReportsSalePage() {
             leftSection={<Search size={16} />}
             label={t('Пошук')}
             placeholder={t('Текст у будь-якій колонці')}
-            value={searchDraft}
-            onChange={(event) => updateSearch(event.currentTarget.value)}
+            value={search}
+            onChange={(event) => setSearch(event.currentTarget.value)}
           />
           <div className="reports-sale-meta">
             {fileName ? <Text className="reports-sale-file-name" size="sm">{fileName}</Text> : null}
             <Badge className={activeSheet ? 'app-role-pill is-gray' : 'app-role-pill is-orange'} variant="light">
-              {isLoading ? t('Читання файлу') : activeSheet ? `${t('Рядків')}: ${visibleRows.length}` : t('Файл не вибрано')}
+              {isLoading
+                ? t('Читання файлу')
+                : activeSheet
+                  ? `${t('Рядків')}: ${visibleDataRows.length}`
+                  : t('Файл не вибрано')}
             </Badge>
           </div>
           <div className="app-filter-actions reports-sale-actions">
@@ -196,13 +217,19 @@ export function ReportsSalePage() {
               </div>
 
               <Stack className="reports-sale-result-content" gap="md" pt="md">
-                <TotalsBar totals={visibleTotals} />
-                <SpreadsheetTable columns={activeSheet.columns} rows={visibleRows} totals={visibleTotals} density={density} />
+                {showComputedTotals ? <TotalsBar columns={activeSheet.columns} totals={visibleTotals} /> : null}
+                <SpreadsheetTable
+                  columns={activeSheet.columns}
+                  rows={visibleRows}
+                  showComputedTotals={showComputedTotals}
+                  totals={visibleTotals}
+                  density={density}
+                />
               </Stack>
             </div>
           ) : (
             <div className="reports-sale-empty-state">
-              <Text c="dimmed" ta="center">{t('Завантажте CSV/TSV/TXT файл для перегляду')}</Text>
+              <Text c="dimmed" ta="center">{t('Завантажте файл звіту (XLSX/XLS) або CSV/TSV/TXT для перегляду')}</Text>
             </div>
           )}
         </div>
@@ -211,8 +238,11 @@ export function ReportsSalePage() {
   )
 }
 
-function TotalsBar({ totals }: { totals: Record<string, number> }) {
-  const totalEntries = Object.entries(totals).slice(0, 8)
+function TotalsBar({ columns, totals }: { columns: string[]; totals: Array<number | null> }) {
+  const totalEntries = columns
+    .map((column, columnIndex) => ({ column, total: totals[columnIndex] }))
+    .filter((entry): entry is { column: string; total: number } => entry.total !== null && entry.total !== undefined)
+    .slice(0, 8)
 
   if (!totalEntries.length) {
     return null
@@ -220,34 +250,37 @@ function TotalsBar({ totals }: { totals: Record<string, number> }) {
 
   return (
     <Group gap="xs">
-      {totalEntries.map(([column, total]) => (
-        <Badge key={column} color="gray" variant="light">
-          {column}: {displayValue(total)}
+      {totalEntries.map((entry) => (
+        <Badge key={entry.column} color="gray" variant="light">
+          {entry.column}: {displayValue(entry.total)}
         </Badge>
       ))}
     </Group>
   )
 }
 
+type SpreadsheetPreviewRowKind = SpreadsheetRowKind | 'computed'
+
 type SpreadsheetPreviewRow = {
   key: string
   cells: SpreadsheetCellValue[]
-  isTotals: boolean
+  kind: SpreadsheetPreviewRowKind
 }
 
 function SpreadsheetTable({
   columns,
   rows,
+  showComputedTotals,
   totals,
   density,
 }: {
   columns: string[]
-  rows: SpreadsheetCellValue[][]
-  totals: Record<string, number>
+  rows: SpreadsheetRow[]
+  showComputedTotals: boolean
+  totals: Array<number | null>
   density: DataTableDensity
 }) {
   const { t } = useI18n()
-  const hasTotals = Object.keys(totals).length > 0
 
   const previewColumns = useMemo<DataTableColumn<SpreadsheetPreviewRow>[]>(
     () =>
@@ -260,15 +293,23 @@ function SpreadsheetTable({
           minWidth: 140,
           accessor: (row) => row.cells[columnIndex],
           cell: (row): ReactNode => {
-            if (row.isTotals) {
+            if (row.kind === 'computed') {
               return (
                 <Text component="span" fw={600}>
-                  {columnIndex === 0 ? t('Разом') : displayValue(totals[column])}
+                  {columnIndex === 0 ? t('Разом') : formatSpreadsheetCell(totals[columnIndex] ?? null)}
                 </Text>
               )
             }
 
-            return displayValue(row.cells[columnIndex])
+            if (row.kind === 'data') {
+              return displayValue(row.cells[columnIndex])
+            }
+
+            return (
+              <Text component="span" fw={600}>
+                {formatSpreadsheetCell(row.cells[columnIndex])}
+              </Text>
+            )
           },
         }
       }),
@@ -276,18 +317,18 @@ function SpreadsheetTable({
   )
 
   const previewData = useMemo<SpreadsheetPreviewRow[]>(() => {
-    const dataRows: SpreadsheetPreviewRow[] = rows.slice(0, 500).map((row, index) => ({
-      key: `${getSpreadsheetRowKey(row)}-${index}`,
-      cells: row,
-      isTotals: false,
+    const previewRows: SpreadsheetPreviewRow[] = rows.slice(0, 500).map((row, index) => ({
+      key: `${getSpreadsheetRowKey(row.cells)}-${index}`,
+      cells: row.cells,
+      kind: row.kind,
     }))
 
-    if (hasTotals) {
-      dataRows.push({ key: '__totals__', cells: [], isTotals: true })
+    if (showComputedTotals && previewRows.length) {
+      previewRows.push({ key: '__totals__', cells: [], kind: 'computed' })
     }
 
-    return dataRows
-  }, [hasTotals, rows])
+    return previewRows
+  }, [rows, showComputedTotals])
 
   return (
     <Box className="reports-sale-table">
@@ -300,6 +341,7 @@ function SpreadsheetTable({
         layoutVersion={`reports-sale-spreadsheet:${columns.join('|')}`}
         height="100%"
         minWidth={Math.max(640, columns.length * 160)}
+        rowClassName={(row) => (row.kind === 'data' ? undefined : `reports-sale-row-${row.kind}`)}
         tableId="reports-sale-spreadsheet"
       />
       {rows.length > 500 ? (
@@ -322,7 +364,7 @@ async function parseSpreadsheetFile(file: File): Promise<SpreadsheetSheet[]> {
         sheet.sheet,
         sheet.data.map((row) => row.map(normalizeImportedCellValue)),
       )
-      if (built.dataRows.length > 0 || built.columns.length > 0) {
+      if (built.rows.length > 0 || built.columns.length > 0) {
         acc.push(built)
       }
       return acc
@@ -340,7 +382,7 @@ async function parseSpreadsheetFile(file: File): Promise<SpreadsheetSheet[]> {
         .map((row) => (Array.isArray(row) ? row.map(normalizeImportedCellValue) : []))
 
       const built = buildSpreadsheetSheet(sheetName, rows)
-      if (built.dataRows.length > 0 || built.columns.length > 0) {
+      if (built.rows.length > 0 || built.columns.length > 0) {
         acc.push(built)
       }
       return acc
@@ -354,149 +396,8 @@ async function parseSpreadsheetFile(file: File): Promise<SpreadsheetSheet[]> {
   return [buildSpreadsheetSheet(file.name, rows)]
 }
 
-function buildSpreadsheetSheet(name: string, rows: SpreadsheetCellValue[][]): SpreadsheetSheet {
-  const firstDataRowIndex = rows.findIndex((row) => row.some((cell) => String(cell || '').trim()))
-
-  if (firstDataRowIndex === -1) {
-    return { name, columns: [], dataRows: [], rows: [], totals: {} }
-  }
-
-  const columns = rows[firstDataRowIndex].map((cell, index) => String(cell || `C${index + 1}`))
-  const dataRows = rows.slice(firstDataRowIndex + 1)
-
-  return {
-    name,
-    columns,
-    dataRows,
-    rows,
-    totals: calculateTotals(columns, dataRows),
-  }
-}
-
-function detectDelimiter(text: string): ',' | '\t' | ';' {
-  const sample = text.split(/\r?\n/, 1)[0] || ''
-  const candidates: Array<',' | '\t' | ';'> = [',', '\t', ';']
-
-  return candidates.reduce((best, delimiter) =>
-    countOccurrences(sample, delimiter) > countOccurrences(sample, best) ? delimiter : best,
-  )
-}
-
-function parseDelimitedText(text: string, delimiter: string): SpreadsheetCellValue[][] {
-  return text
-    .replace(/^\uFEFF/, '')
-    .split(/\r?\n/)
-    .filter((line) => line.length > 0)
-    .map((line) => parseDelimitedLine(line, delimiter).map(normalizeCellValue))
-}
-
-function parseDelimitedLine(line: string, delimiter: string): string[] {
-  const cells: string[] = []
-  let current = ''
-  let quoted = false
-
-  for (let index = 0; index < line.length; index += 1) {
-    const char = line[index]
-    const nextChar = line[index + 1]
-
-    if (char === '"' && quoted && nextChar === '"') {
-      current += '"'
-      index += 1
-    } else if (char === '"') {
-      quoted = !quoted
-    } else if (char === delimiter && !quoted) {
-      cells.push(current)
-      current = ''
-    } else {
-      current += char
-    }
-  }
-
-  cells.push(current)
-
-  return cells
-}
-
-function normalizeCellValue(value: string): SpreadsheetCellValue {
-  const numericValue = parseNumericValue(value)
-
-  if (numericValue !== null) {
-    return numericValue
-  }
-
-  return value.trim()
-}
-
-function normalizeImportedCellValue(value: unknown): SpreadsheetCellValue {
-  if (value instanceof Date) {
-    return value.toISOString().slice(0, 10)
-  }
-
-  if (typeof value === 'boolean' || typeof value === 'number' || typeof value === 'string' || value === null) {
-    return value
-  }
-
-  return String(value || '').trim()
-}
-
-function filterRows(
-  sheet: SpreadsheetSheet | null,
-  searchValue: string,
-  dateFrom: string,
-  dateTo: string,
-): SpreadsheetCellValue[][] {
-  if (!sheet) {
-    return []
-  }
-
-  const normalizedSearch = searchValue.trim().toLowerCase()
-
-  return sheet.dataRows.filter((row) => {
-    const matchesSearch = normalizedSearch
-      ? row.some((cell) => String(cell || '').toLowerCase().includes(normalizedSearch))
-      : true
-    const rowDate = extractRowDate(row)
-    const matchesDateFrom = dateFrom && rowDate ? rowDate >= dateFrom : true
-    const matchesDateTo = dateTo && rowDate ? rowDate <= dateTo : true
-
-    return matchesSearch && matchesDateFrom && matchesDateTo
-  })
-}
-
-function calculateTotals(columns: string[], rows: SpreadsheetCellValue[][]): Record<string, number> {
-  return columns.reduce<Record<string, number>>((totals, column, columnIndex) => {
-    const values = rows
-      .map((row) => (typeof row[columnIndex] === 'number' ? row[columnIndex] : parseNumericValue(row[columnIndex])))
-      .filter((value): value is number => typeof value === 'number')
-
-    if (values.length > 0) {
-      totals[column] = values.reduce((sum, value) => sum + value, 0)
-    }
-
-    return totals
-  }, {})
-}
-
-function extractRowDate(row: SpreadsheetCellValue[]): string | null {
-  for (const cell of row) {
-    const value = String(cell || '').trim()
-    const isoMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})/)
-    const localMatch = value.match(/^(\d{2})\.(\d{2})\.(\d{4})/)
-
-    if (isoMatch) {
-      return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`
-    }
-
-    if (localMatch) {
-      return `${localMatch[3]}-${localMatch[2]}-${localMatch[1]}`
-    }
-  }
-
-  return null
-}
-
-function countOccurrences(value: string, needle: string): number {
-  return value.split(needle).length - 1
+function formatSpreadsheetCell(value: SpreadsheetCellValue): string {
+  return isFilledCell(value) ? displayValue(value) : ''
 }
 
 function getSpreadsheetRowKey(row: SpreadsheetCellValue[]): string {

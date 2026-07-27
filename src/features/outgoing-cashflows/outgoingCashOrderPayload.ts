@@ -28,15 +28,13 @@ export function buildOutgoingCashOrderPayload({
 
   return {
     Amount: form.amount,
-    Colleague: form.isUnderReport ? colleague : null,
+    Colleague: colleague,
     Comment: form.comment.trim(),
     FromDate: toIsoDateTime(form.date, form.time),
     IsAccounting: form.isAccounting,
     IsManagementAccounting: form.isManagementAccounting,
-    IsUnderReport: form.isUnderReport,
-    OperationType: form.isUnderReport
-      ? OUTCOME_OPERATION_TYPE.TransferToColleague
-      : OUTCOME_OPERATION_TYPE.OtherOutcome,
+    IsUnderReport: true,
+    OperationType: OUTCOME_OPERATION_TYPE.TransferToColleague,
     Organization: selectedOrganization,
     PaymentCurrencyRegister: selectedCurrencyRegister,
     PaymentMovementOperation: {

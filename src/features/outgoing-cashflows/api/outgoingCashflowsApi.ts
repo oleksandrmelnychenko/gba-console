@@ -106,9 +106,7 @@ function normalizeOutgoingCashflowsResponse(result: unknown): OutgoingCashflowsR
     PositiveDifferenceAmount: readNumber(payload.PositiveDifferenceAmount),
     TotalRowsQty:
       readOptionalNumber(payload.TotalRowsQty)
-      ?? readOptionalNumber(payload.TotalQty)
-      ?? readOptionalNumber(collection[0]?.TotalRowsQty)
-      ?? readOptionalNumber(collection[0]?.TotalQty),
+      ?? readOptionalNumber(collection[0]?.TotalRowsQty),
   }
 }
 

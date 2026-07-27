@@ -3,6 +3,10 @@ import {
   executeAccountingMutation,
   type AccountingMutationOperationOptions,
 } from '../../../shared/api/accountingMutationOperation'
+import {
+  ACCOUNTING_OPERATION_ID,
+  getAccountingOperation,
+} from '../../accounting/accountingOperationCatalog'
 import type {
   CreatePaymentRegister,
   OutcomePaymentOrderCreatePayload,
@@ -10,6 +14,9 @@ import type {
 } from '../outgoingCreateTypes'
 import { isGeneralOutcomeOperationType } from '../outgoingCreateTypes'
 import type { Organization, OutcomePaymentOrder, PaymentMovement } from '../types'
+
+const CREATE_OUTCOME_ENDPOINT =
+  getAccountingOperation(ACCOUNTING_OPERATION_ID.OutcomeSupplierPayment).endpoint
 
 export async function getOutgoingCreateOrganizations(): Promise<Organization[]> {
   const result = await apiRequest<unknown>('/organizations/all')
@@ -77,7 +84,7 @@ export async function createOutgoingCashflowOrder(
     kind: 'outcome-payment:add',
     operation,
     payload: order,
-    request: (payload, context) => apiRequest<unknown>('/payments/orders/outcome/new', {
+    request: (payload, context) => apiRequest<unknown>(CREATE_OUTCOME_ENDPOINT, {
       body: payload,
       dedupe: false,
       headers: context.headers,

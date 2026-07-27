@@ -3,6 +3,10 @@ import {
   executeAccountingMutation,
   type AccountingMutationOperationOptions,
 } from '../../../shared/api/accountingMutationOperation'
+import {
+  ACCOUNTING_OPERATION_ID,
+  getAccountingOperation,
+} from '../../accounting/accountingOperationCatalog'
 import { IncomeCounterpartySearchType } from '../types'
 import type {
   Client,
@@ -21,6 +25,8 @@ import type {
 } from '../types'
 
 const MANUFACTURER_CLIENT_TYPE_ROLE_ID = 4
+const CREATE_INCOME_ENDPOINT =
+  getAccountingOperation(ACCOUNTING_OPERATION_ID.IncomeClientPayment).endpoint
 
 export async function getIncomeCashflows(params: IncomeCashflowsSearchParams): Promise<IncomePaymentOrder[]> {
   const result = await apiRequest<unknown>('/payments/orders/income/all', {
@@ -357,7 +363,7 @@ export async function createIncomeCashflow(
       isAuto,
       order,
     },
-    request: (payload, context) => apiRequest<unknown>('/payments/orders/income/new', {
+    request: (payload, context) => apiRequest<unknown>(CREATE_INCOME_ENDPOINT, {
       body: payload.order,
       dedupe: false,
       headers: context.headers,

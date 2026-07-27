@@ -2,18 +2,14 @@ import { Stack } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { useState } from 'react'
 import {
-  Navigate,
   useLocation,
   useNavigate,
   useSearchParams,
 } from 'react-router-dom'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
-import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { OutgoingCashOrderForm } from '../components/OutgoingCashOrderForm'
-import { OutgoingClientReturnForm } from '../components/OutgoingClientReturnForm'
 import { OutgoingCreateModeSelector } from '../components/OutgoingCreateModeSelector'
-import { OutgoingOrganizationPaymentForm } from '../components/OutgoingOrganizationPaymentForm'
 import { OutgoingPaymentGroupForm } from '../components/OutgoingPaymentGroupForm'
 import { OUTGOING_CREATE_MODE, type OutgoingCreateMode } from '../outgoingCreateTypes'
 import {
@@ -21,7 +17,6 @@ import {
   parseOutgoingPaymentOperationType,
   parseOutgoingPaymentRegisterType,
 } from '../outgoingPaymentGroupTitle'
-import { buildAvailablePaymentsPaymentTasksPath } from '../outgoingPaymentTasksRoute'
 
 const OUTGOING_CASHFLOWS_PATH = '/accounting/outgoing-cashflow'
 const OUTGOING_CASHFLOW_NEW_PATH = `${OUTGOING_CASHFLOWS_PATH}/new`
@@ -31,7 +26,6 @@ export function OutgoingCashflowCreatePage() {
   const navigate = useNavigate()
   const location = useLocation()
   const [searchParams] = useSearchParams()
-  const [mode, setMode] = useValueState<OutgoingCreateMode | null>(null)
   const [paymentGroupTitle, setPaymentGroupTitle] = useState(
     () =>
       getOutgoingPaymentGroupTitle(
@@ -44,29 +38,13 @@ export function OutgoingCashflowCreatePage() {
         t,
       ),
   )
-  const activeMode = mode || getModeFromPath(location.pathname) || (searchParams.get('operationType') ? OUTGOING_CREATE_MODE.PaymentGroup : null)
+  const activeMode = getModeFromPath(location.pathname)
+    || (searchParams.get('operationType') ? OUTGOING_CREATE_MODE.PaymentGroup : null)
   const drawerTitle = activeMode === OUTGOING_CREATE_MODE.Simple
     ? t('Створення нового видаткового ордера')
-    : activeMode === OUTGOING_CREATE_MODE.OrganizationPayment
-      ? t('Поповнити баланс постачальника послуг')
-      : activeMode === OUTGOING_CREATE_MODE.ClientReturn
-        ? t('Повернення клієнту')
-        : activeMode === OUTGOING_CREATE_MODE.PaymentGroup
-          ? paymentGroupTitle || t('Створення нового видаткового ордера')
-          : t('Створення видаткової статті бюджету')
-
-  // Deep link на /new/payment-tasks — редірект на сторінку платіжних задач.
-  if (location.pathname.endsWith('/payment-tasks')) {
-    return (
-      <Navigate
-        replace
-        to={buildAvailablePaymentsPaymentTasksPath(
-          location.search,
-          location.hash,
-        )}
-      />
-    )
-  }
+    : activeMode === OUTGOING_CREATE_MODE.PaymentGroup
+      ? paymentGroupTitle || t('Створення нового видаткового ордера')
+      : t('Створення видаткової статті бюджету')
 
   function handleNavigate(path: string) {
     if (path.startsWith(OUTGOING_CASHFLOW_NEW_PATH)) {
@@ -83,7 +61,6 @@ export function OutgoingCashflowCreatePage() {
         ),
       )
       // Лишаємось у тому самому drawer-оверлеї — зберігаємо backgroundLocation.
-      setMode(null)
       navigate(path, { replace: true, state: location.state })
       return
     }
@@ -94,7 +71,6 @@ export function OutgoingCashflowCreatePage() {
 
   function handleBackToSelector() {
     setPaymentGroupTitle('')
-    setMode(null)
     navigate(OUTGOING_CASHFLOW_NEW_PATH, { replace: true })
   }
 
@@ -109,14 +85,6 @@ export function OutgoingCashflowCreatePage() {
   function renderActiveForm(nextMode: OutgoingCreateMode) {
     if (nextMode === OUTGOING_CREATE_MODE.Simple) {
       return <OutgoingCashOrderForm onCancel={handleBackToSelector} onCreated={handleCreated} />
-    }
-
-    if (nextMode === OUTGOING_CREATE_MODE.OrganizationPayment) {
-      return <OutgoingOrganizationPaymentForm onCancel={handleBackToSelector} onCreated={handleCreated} />
-    }
-
-    if (nextMode === OUTGOING_CREATE_MODE.ClientReturn) {
-      return <OutgoingClientReturnForm onCancel={handleBackToSelector} onCreated={handleCreated} />
     }
 
     if (nextMode === OUTGOING_CREATE_MODE.PaymentGroup) {
@@ -150,14 +118,6 @@ export function OutgoingCashflowCreatePage() {
 function getModeFromPath(pathname: string): OutgoingCreateMode | null {
   if (pathname.endsWith('/simple')) {
     return OUTGOING_CREATE_MODE.Simple
-  }
-
-  if (pathname.endsWith('/supplier')) {
-    return OUTGOING_CREATE_MODE.OrganizationPayment
-  }
-
-  if (pathname.endsWith('/client-return')) {
-    return OUTGOING_CREATE_MODE.ClientReturn
   }
 
   if (pathname.endsWith('/group')) {

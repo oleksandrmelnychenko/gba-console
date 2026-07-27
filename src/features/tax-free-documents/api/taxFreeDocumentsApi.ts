@@ -9,8 +9,10 @@ import { normalizeExportDocument } from '../../../shared/documents/exportDocumen
 import type {
   IncomePaymentOrder,
 } from '../../income-cashflows/types'
-import { createAdvancePayment } from '../../advance-payments/api/advancePaymentsApi'
-import type { AdvancePaymentMutationPayload } from '../../advance-payments/types'
+import {
+  ACCOUNTING_OPERATION_ID,
+  getAccountingOperation,
+} from '../../accounting/accountingOperationCatalog'
 import type {
   PrintTaxFreeResponse,
   Statham,
@@ -21,7 +23,8 @@ import type {
   TaxFreeItem,
 } from '../types'
 
-export type TaxFreeAdvancePaymentPayload = AdvancePaymentMutationPayload
+const CREATE_TAX_FREE_INCOME_ENDPOINT =
+  getAccountingOperation(ACCOUNTING_OPERATION_ID.TaxFreeIncome).endpoint
 
 export async function getTaxFreeDocuments(params: TaxFreeDocumentsSearchParams): Promise<TaxFreeDocumentsResponse> {
   const result = await apiRequest<unknown>('/supplies/ukraine/order/taxfree/all/filtered', {
@@ -120,7 +123,7 @@ export async function createIncomePaymentFromTaxFree(
       paymentIncome,
       taxFreeNetId,
     },
-    request: (payload, context) => apiRequest<unknown>('/payments/orders/income/new/taxfree', {
+    request: (payload, context) => apiRequest<unknown>(CREATE_TAX_FREE_INCOME_ENDPOINT, {
       body: payload.paymentIncome,
       dedupe: false,
       headers: context.headers,
@@ -135,13 +138,6 @@ export async function createIncomePaymentFromTaxFree(
   const payload = unwrapPayload(result)
 
   return payload && typeof payload === 'object' && !Array.isArray(payload) ? (payload as IncomePaymentOrder) : null
-}
-
-export async function createAdvancePaymentFromTaxFree(
-  taxFreeNetId: string,
-  advancePayment: TaxFreeAdvancePaymentPayload,
-){
-  return createAdvancePayment({ taxFreeNetId }, advancePayment)
 }
 
 function normalizeTaxFreeDocumentsResponse(result: unknown): TaxFreeDocumentsResponse {

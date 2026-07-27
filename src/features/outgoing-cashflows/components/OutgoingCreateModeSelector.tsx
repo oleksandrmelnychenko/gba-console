@@ -1,11 +1,10 @@
 import { Divider, Group, Stack, Text, UnstyledButton } from '@mantine/core'
-import { Banknote, ChevronRight, Landmark, ListChecks } from 'lucide-react'
+import { Banknote, ChevronRight, Landmark } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { PaymentRegisterType } from '../../income-cashflows/types'
 import {
   buildOutgoingRegisterItems,
-  buildOutgoingStandaloneItems,
   type OutgoingCreateMenuItem,
 } from '../outgoingCreateMenu'
 
@@ -15,8 +14,6 @@ type OutgoingCreateModeSelectorProps = {
 
 export function OutgoingCreateModeSelector({ onNavigate }: OutgoingCreateModeSelectorProps) {
   const { t } = useI18n()
-
-  const standaloneItems = buildOutgoingStandaloneItems(t)
 
   return (
     <Stack gap="md">
@@ -37,15 +34,6 @@ export function OutgoingCreateModeSelector({ onNavigate }: OutgoingCreateModeSel
         icon={<Banknote size={18} />}
         items={buildOutgoingRegisterItems(t, PaymentRegisterType.Cash)}
         title={t('Касові операції')}
-        onNavigate={onNavigate}
-      />
-
-      <Divider />
-
-      <SelectorSection
-        icon={<ListChecks size={18} />}
-        items={standaloneItems}
-        title={t('Інші операції (бух/упр)')}
         onNavigate={onNavigate}
       />
     </Stack>

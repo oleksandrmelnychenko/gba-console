@@ -17,12 +17,12 @@ describe('outgoingCashflowsApi', () => {
     apiRequestMock.mockReset()
   })
 
-  it('uses legacy TotalQty when TotalRowsQty is not returned', async () => {
+  it('uses the canonical TotalRowsQty contract', async () => {
     apiRequestMock.mockResolvedValueOnce({
       OutcomePaymentOrders: [
         {
           NetUid: 'order-1',
-          TotalQty: 45,
+          TotalRowsQty: 45,
         },
       ],
     })
@@ -33,7 +33,7 @@ describe('outgoingCashflowsApi', () => {
       offset: 0,
       to: '2026-06-08',
     })).resolves.toMatchObject({
-      Collection: [{ NetUid: 'order-1', TotalQty: 45 }],
+      Collection: [{ NetUid: 'order-1', TotalRowsQty: 45 }],
       TotalRowsQty: 45,
     })
   })

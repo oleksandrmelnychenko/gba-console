@@ -1,7 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
-import { DailyDataSyncStockMode, SyncEntityType, SyncProductConsignmentType } from '../types'
-import { createSyncOperationId, getSyncStatus, startDailySync, startFullSync } from './syncApi'
+import {
+  DailyDataSyncStockMode,
+  DataSyncSessionMode,
+  SyncEntityType,
+  SyncProductConsignmentType,
+} from '../types'
+import {
+  createSyncOperationId,
+  getSyncStatus,
+  startDailySync,
+  startFullSync,
+  startSyncSession,
+} from './syncApi'
 
 vi.mock('../../../shared/api/apiClient', () => ({
   apiRequest: vi.fn(),
@@ -93,6 +104,76 @@ describe('sync API contracts', () => {
       },
       errorMessages: {
         default: 'Не вдалося запустити щоденну синхронізацію',
+        network: 'Сервер синхронізації недоступний',
+      },
+    })
+  })
+
+  it('always sends all 12 document types for a Full session', async () => {
+    const operationId = 'fedcba0987654321fedcba0987654321'
+    const allTypes = Object.values(SyncProductConsignmentType).map(String)
+    apiRequestMock.mockResolvedValueOnce({ PipelineRunId: operationId })
+
+    await startSyncSession({
+      forAmg: false,
+      from: '2025-01-01',
+      mode: DataSyncSessionMode.Full,
+      operationId,
+      to: '2026-07-27',
+      types: [String(SyncProductConsignmentType.Sales)],
+    })
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/data/sync/start/session', {
+      headers: {
+        'X-GBA-Sync-Operation-Id': operationId,
+      },
+      method: 'POST',
+      query: {
+        forAmg: false,
+        from: '2025-01-01',
+        mode: DataSyncSessionMode.Full,
+        to: '2026-07-27',
+        types: allTypes,
+      },
+      errorMessages: {
+        default: 'Не вдалося запустити сесію синхронізації',
+        network: 'Сервер синхронізації недоступний',
+      },
+    })
+  })
+
+  it('sends the operator-selected repeated types for a Daily session', async () => {
+    const operationId = '0123456789abcdef0123456789abcdef'
+    const types = [
+      String(SyncProductConsignmentType.Order),
+      String(SyncProductConsignmentType.Sales),
+      String(SyncProductConsignmentType.InternalMovementOfFunds),
+    ]
+    apiRequestMock.mockResolvedValueOnce({ PipelineRunId: operationId })
+
+    await startSyncSession({
+      forAmg: false,
+      from: '2026-07-20',
+      mode: DataSyncSessionMode.Daily,
+      operationId,
+      to: '2026-07-27',
+      types,
+    })
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/data/sync/start/session', {
+      headers: {
+        'X-GBA-Sync-Operation-Id': operationId,
+      },
+      method: 'POST',
+      query: {
+        forAmg: false,
+        from: '2026-07-20',
+        mode: DataSyncSessionMode.Daily,
+        to: '2026-07-27',
+        types,
+      },
+      errorMessages: {
+        default: 'Не вдалося запустити сесію синхронізації',
         network: 'Сервер синхронізації недоступний',
       },
     })

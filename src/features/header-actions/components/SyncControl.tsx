@@ -2,17 +2,14 @@ import {
   ActionIcon,
   Box,
   Button,
-  Divider,
   Group,
   SegmentedControl,
-  SimpleGrid,
   Stack,
   Text,
-  TextInput,
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { ArrowRightLeft, Play, ShieldCheck } from 'lucide-react'
+import { ArrowRightLeft, Play } from 'lucide-react'
 import { useCallback, useEffect, useReducer, useRef } from 'react'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -26,136 +23,29 @@ import { AppModal } from '../../../shared/ui/AppModal'
 import {
   createSyncOperationId,
   getSyncStatus,
-  startDailySync,
-  startFullSync,
+  startSyncSession,
 } from '../api/syncApi'
 import {
   createSyncStartOperation,
   type SyncStartDescriptor,
 } from '../syncStartOperation'
-import { allDailySyncTypes, defaultSelectedSyncTypes, syncTypeOptions } from '../syncOptions'
-import { DailyDataSyncStockMode, type DataSyncStatus, type SyncRunResponse } from '../types'
 import {
-  getDefaultDailyRange,
-  parseDateTimeInputValue,
-  toDateTimeInputValue,
-} from '../utils'
-import { DailySyncTypeChecklist } from './DailySyncTypeChecklist'
+  createInitialSyncState,
+  getFirstSyncDateRangeError,
+  getSessionDocumentTypes,
+  getTodaySyncDate,
+  hasSyncDateRangeErrors,
+  syncReducer,
+  type SyncDateRange,
+  type SyncMode,
+  type SyncSource,
+  validateSyncDateRange,
+} from '../syncSessionForm'
+import { DataSyncSessionMode, type SyncRunResponse } from '../types'
 import { SyncSessionPanel } from './SyncSessionPanel'
-import { SyncTypeChecklist } from './SyncTypeChecklist'
-
-type SyncMode = 'daily' | 'full'
-type SyncSource = 'amg' | 'fenix'
-
-type SyncState = {
-  dailyFrom: Date
-  dailyTo: Date
-  isStarting: boolean
-  isStatusRefreshing: boolean
-  mode: SyncMode
-  opened: boolean
-  pendingRun: SyncMode | null
-  selectedDailyTypes: string[]
-  selectedSyncTypes: Record<string, boolean>
-  source: SyncSource
-  status: DataSyncStatus | null
-  statusError: string
-}
-
-type SyncAction =
-  | { type: 'opened' }
-  | { type: 'closed' }
-  | { type: 'modeChanged'; mode: SyncMode }
-  | { type: 'sourceChanged'; source: SyncSource }
-  | { type: 'statusRefreshStarted' }
-  | { type: 'statusSucceeded'; status: DataSyncStatus }
-  | { type: 'statusFailed'; message: string }
-  | { type: 'syncStarted' }
-  | { type: 'syncFinished' }
-  | { type: 'confirmationRequested'; mode: SyncMode }
-  | { type: 'confirmationCanceled' }
-  | { type: 'syncTypeChanged'; key: string; checked: boolean }
-  | { type: 'dailyTypesChanged'; types: string[] }
-  | { type: 'dailyFromChanged'; date: Date }
-  | { type: 'dailyToChanged'; date: Date }
+import { SyncSessionConfigurator } from './SyncSessionConfigurator'
 
 const STATUS_POLL_INTERVAL_MS = 3_000
-
-function createInitialSyncState(): SyncState {
-  const dailyRange = getDefaultDailyRange()
-
-  return {
-    dailyFrom: dailyRange.from,
-    dailyTo: dailyRange.to,
-    isStarting: false,
-    isStatusRefreshing: false,
-    mode: 'full',
-    opened: false,
-    pendingRun: null,
-    selectedDailyTypes: [...allDailySyncTypes],
-    selectedSyncTypes: defaultSelectedSyncTypes,
-    source: 'amg',
-    status: null,
-    statusError: '',
-  }
-}
-
-function syncReducer(state: SyncState, action: SyncAction): SyncState {
-  switch (action.type) {
-    case 'opened':
-      return { ...state, opened: true }
-    case 'closed':
-      return { ...state, opened: false, pendingRun: null }
-    case 'modeChanged':
-      return { ...state, mode: action.mode, pendingRun: null }
-    case 'sourceChanged':
-      return { ...state, source: action.source, pendingRun: null }
-    case 'statusRefreshStarted':
-      return { ...state, isStatusRefreshing: true }
-    case 'statusSucceeded':
-      return {
-        ...state,
-        isStatusRefreshing: false,
-        status: action.status,
-        statusError: '',
-      }
-    case 'statusFailed':
-      return {
-        ...state,
-        isStatusRefreshing: false,
-        statusError: action.message,
-      }
-    case 'syncStarted':
-      return { ...state, isStarting: true, pendingRun: null }
-    case 'syncFinished':
-      return { ...state, isStarting: false }
-    case 'confirmationRequested':
-      return { ...state, pendingRun: action.mode }
-    case 'confirmationCanceled':
-      return { ...state, pendingRun: null }
-    case 'syncTypeChanged':
-      return {
-        ...state,
-        pendingRun: null,
-        selectedSyncTypes: {
-          ...state.selectedSyncTypes,
-          [action.key]: action.checked,
-        },
-      }
-    case 'dailyTypesChanged':
-      return {
-        ...state,
-        pendingRun: null,
-        selectedDailyTypes: getKnownDailyTypes(action.types),
-      }
-    case 'dailyFromChanged':
-      return { ...state, dailyFrom: action.date, pendingRun: null }
-    case 'dailyToChanged':
-      return { ...state, dailyTo: action.date, pendingRun: null }
-    default:
-      return state
-  }
-}
 
 export function SyncControl() {
   const { t } = useI18n()
@@ -209,7 +99,8 @@ export function SyncControl() {
   const isServerSyncActive = Boolean(
     state.status?.IsInProgress ||
       state.status?.IsGlobalLockHeld ||
-      state.status?.ActiveRun?.Status === 'Running',
+      state.status?.ActiveRun?.Status === 'Running' ||
+      state.status?.Session?.Stages.some((stage) => stage.Status === 'Running'),
   )
   const isSyncInProgress = state.isStarting || isServerSyncActive || dataSyncProgress.isActive
   const isStatusUnknown =
@@ -218,69 +109,61 @@ export function SyncControl() {
     Boolean(state.statusError)
   const isStartBlocked = isSyncInProgress || state.isStatusRefreshing || isStatusUnknown
   const sourceForAmg = state.source === 'amg'
-  const selectedFullTypeCount = syncTypeOptions.filter(
-    (option) => state.selectedSyncTypes[option.value],
-  ).length
+  const today = getTodaySyncDate()
+  const activeRange = state.dateRanges[state.mode]
+  const activeRangeErrors = validateSyncDateRange(activeRange, today)
 
-  function requestFullSync() {
-    if (selectedFullTypeCount === 0) {
+  function requestSync(mode: SyncMode) {
+    const types = getSessionDocumentTypes(mode, state.selectedDailyDocumentTypes)
+    if (types.length === 0) {
       notifications.show({ color: 'red', message: t('Оберіть типи синхронізації') })
       return
     }
 
-    dispatch({ type: 'confirmationRequested', mode: 'full' })
-  }
-
-  function requestDailySync() {
-    if (state.selectedDailyTypes.length === 0) {
-      notifications.show({ color: 'red', message: t('Оберіть типи синхронізації') })
+    const errors = validateSyncDateRange(state.dateRanges[mode], today)
+    if (hasSyncDateRangeErrors(errors)) {
+      notifications.show({ color: 'red', message: t(getFirstSyncDateRangeError(errors)) })
       return
     }
 
-    if (state.dailyFrom.getTime() > state.dailyTo.getTime()) {
-      notifications.show({ color: 'red', message: t('Дата початку має бути раніше дати завершення') })
-      return
-    }
-
-    dispatch({ type: 'confirmationRequested', mode: 'daily' })
+    dispatch({ type: 'confirmationRequested', mode })
   }
 
   async function runConfirmedSync() {
-    if (state.pendingRun === 'full') {
-      const types = getSelectedFullSyncTypes(state.selectedSyncTypes)
-      await runSyncRequest({
-        forAmg: sourceForAmg,
-        mode: 'full',
-        types,
-      }, (operationId) =>
-        startFullSync({
-          forAmg: sourceForAmg,
-          operationId,
-          types,
-        }),
-      )
+    const mode = state.pendingRun
+    if (!mode) {
       return
     }
 
-    if (state.pendingRun === 'daily') {
-      await runSyncRequest({
-        forAmg: sourceForAmg,
-        from: state.dailyFrom,
-        mode: 'daily',
-        stockMode: DailyDataSyncStockMode.DocumentsOnly,
-        to: state.dailyTo,
-        types: state.selectedDailyTypes,
-      }, (operationId) =>
-        startDailySync({
-          forAmg: sourceForAmg,
-          from: state.dailyFrom,
-          operationId,
-          stockMode: DailyDataSyncStockMode.DocumentsOnly,
-          to: state.dailyTo,
-          types: state.selectedDailyTypes,
-        }),
-      )
+    const range = state.dateRanges[mode]
+    const errors = validateSyncDateRange(range, today)
+    if (hasSyncDateRangeErrors(errors)) {
+      notifications.show({ color: 'red', message: t(getFirstSyncDateRangeError(errors)) })
+      dispatch({ type: 'confirmationCanceled' })
+      return
     }
+
+    const sessionMode = mode === 'full' ? DataSyncSessionMode.Full : DataSyncSessionMode.Daily
+    const types = getSessionDocumentTypes(mode, state.selectedDailyDocumentTypes)
+
+    await runSyncRequest(
+      {
+        forAmg: sourceForAmg,
+        from: range.from,
+        mode,
+        to: range.to,
+        types,
+      },
+      (operationId) =>
+        startSyncSession({
+          forAmg: sourceForAmg,
+          from: range.from,
+          mode: sessionMode,
+          operationId,
+          to: range.to,
+          types,
+        }),
+    )
   }
 
   async function runSyncRequest(
@@ -365,80 +248,32 @@ export function SyncControl() {
             ]}
           />
 
-          <Box className="sync-config-panel">
-            <Group justify="space-between" align="center" gap="md" wrap="wrap">
-              <Box>
-                <Text className="app-section-title" fw={600} size="sm">
-                  {t(state.mode === 'full' ? 'Повна синхронізація' : 'Щоденна синхронізація')}
-                </Text>
-                <Text c="dimmed" size="xs">
-                  {t('Джерело 1С')}
-                </Text>
-              </Box>
-              <SegmentedControl
-                aria-label={t('Джерело 1С')}
-                className="sync-source-control"
-                value={state.source}
-                onChange={(value) => dispatch({ type: 'sourceChanged', source: value as SyncSource })}
-                data={[
-                  { value: 'amg', label: 'AMG' },
-                  { value: 'fenix', label: 'FENIX' },
-                ]}
-              />
-            </Group>
-
-            <Divider my="md" />
-
-            {state.mode === 'full' ? (
-              <SyncTypeChecklist
-                selectedTypes={state.selectedSyncTypes}
-                onChange={(key, checked) => dispatch({ type: 'syncTypeChanged', key, checked })}
-              />
-            ) : (
-              <Stack gap="md">
-                <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
-                  <TextInput
-                    label={t('З')}
-                    type="datetime-local"
-                    value={toDateTimeInputValue(state.dailyFrom)}
-                    onChange={(event) =>
-                      dispatch({
-                        type: 'dailyFromChanged',
-                        date: parseDateTimeInputValue(event.currentTarget.value, state.dailyFrom),
-                      })
-                    }
-                  />
-                  <TextInput
-                    label={t('По')}
-                    type="datetime-local"
-                    value={toDateTimeInputValue(state.dailyTo)}
-                    onChange={(event) =>
-                      dispatch({
-                        type: 'dailyToChanged',
-                        date: parseDateTimeInputValue(event.currentTarget.value, state.dailyTo),
-                      })
-                    }
-                  />
-                </SimpleGrid>
-
-                <Group gap="xs" className="sync-safe-mode">
-                  <ShieldCheck size={17} strokeWidth={1.8} />
-                  <Text fw={600} size="xs">
-                    {t('Без зміни залишків')}
-                  </Text>
-                </Group>
-
-                <DailySyncTypeChecklist
-                  selectedTypes={state.selectedDailyTypes}
-                  onChange={(types) => dispatch({ type: 'dailyTypesChanged', types })}
-                />
-              </Stack>
-            )}
-          </Box>
+          <SyncSessionConfigurator
+            dateErrors={activeRangeErrors}
+            mode={state.mode}
+            range={activeRange}
+            selectedDailyDocumentTypes={state.selectedDailyDocumentTypes}
+            source={state.source}
+            today={today}
+            onDailyDocumentTypesChange={(types) =>
+              dispatch({ type: 'dailyDocumentTypesChanged', types })
+            }
+            onDateChange={(boundary, value) =>
+              dispatch({ type: 'dateChanged', boundary, mode: state.mode, value })
+            }
+            onSourceChange={(source) => dispatch({ type: 'sourceChanged', source })}
+          />
 
           {state.pendingRun ? (
             <SyncConfirmation
+              documentTypeCount={
+                getSessionDocumentTypes(
+                  state.pendingRun,
+                  state.selectedDailyDocumentTypes,
+                ).length
+              }
               mode={state.pendingRun}
+              range={state.dateRanges[state.pendingRun]}
               source={state.source}
               onCancel={() => dispatch({ type: 'confirmationCanceled' })}
               onConfirm={() => void runConfirmedSync()}
@@ -451,7 +286,7 @@ export function SyncControl() {
                 disabled={isStartBlocked}
                 leftSection={<Play size={16} strokeWidth={1.9} />}
                 loading={state.isStarting}
-                onClick={state.mode === 'full' ? requestFullSync : requestDailySync}
+                onClick={() => requestSync(state.mode)}
               >
                 {t(state.mode === 'full' ? 'Запустити повну синхронізацію' : 'Запустити щоденну синхронізацію')}
               </Button>
@@ -464,29 +299,63 @@ export function SyncControl() {
 }
 
 function SyncConfirmation({
+  documentTypeCount,
   isLoading,
   mode,
   onCancel,
   onConfirm,
+  range,
   source,
 }: {
+  documentTypeCount: number
   isLoading: boolean
   mode: SyncMode
   onCancel: () => void
   onConfirm: () => void
+  range: SyncDateRange
   source: SyncSource
 }) {
   const { t } = useI18n()
+  const confirmationRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    confirmationRef.current?.scrollIntoView({ block: 'nearest' })
+  }, [])
 
   return (
-    <Group justify="space-between" gap="md" className="sync-confirmation" wrap="wrap">
-      <Box>
+    <Group
+      ref={confirmationRef}
+      justify="space-between"
+      align="flex-end"
+      gap="md"
+      className="sync-confirmation"
+      wrap="wrap"
+    >
+      <Box className="sync-confirmation-summary">
         <Text fw={650} size="sm">
           {t('Підтвердити запуск')}
         </Text>
-        <Text c="dimmed" size="xs">
-          {t(mode === 'full' ? 'Повна синхронізація' : 'Щоденна синхронізація')} ·{' '}
-          {source === 'amg' ? 'AMG' : 'FENIX'}
+        <Group gap="lg" mt={6} wrap="wrap">
+          <SyncConfirmationItem
+            label={t('Режим')}
+            value={t(mode === 'full' ? 'Повна синхронізація' : 'Щоденна синхронізація')}
+          />
+          <SyncConfirmationItem label={t('Джерело')} value={source === 'amg' ? 'AMG' : 'FENIX'} />
+          <SyncConfirmationItem label={t('Період')} value={formatConfirmationRange(range)} />
+          <SyncConfirmationItem
+            label={t('Документи')}
+            value={formatDocumentTypeCount(documentTypeCount)}
+          />
+        </Group>
+        <Text className="sync-confirmation-order" mt={8} size="xs">
+          <Text c="dimmed" component="span" size="xs">
+            {t('Порядок виконання')}:{' '}
+          </Text>
+          {t(
+            mode === 'full'
+              ? 'Довідники → історія документів → поточний стан'
+              : 'Документи за період → поточний стан',
+          )}
         </Text>
       </Box>
       <Group gap="xs">
@@ -501,21 +370,41 @@ function SyncConfirmation({
   )
 }
 
-function getKnownDailyTypes(types: string[]): string[] {
-  const selectedTypes = new Set(types)
-  return allDailySyncTypes.filter((type) => selectedTypes.has(type))
+function SyncConfirmationItem({ label, value }: { label: string; value: string }) {
+  return (
+    <Box>
+      <Text c="dimmed" size="xs">
+        {label}
+      </Text>
+      <Text fw={600} size="xs">
+        {value}
+      </Text>
+    </Box>
+  )
 }
 
-function getSelectedFullSyncTypes(selectedTypes: Record<string, boolean>): string[] {
-  const result: string[] = []
+function formatConfirmationRange(range: SyncDateRange): string {
+  return `${formatConfirmationDate(range.from)} – ${formatConfirmationDate(range.to)}`
+}
 
-  for (const option of syncTypeOptions) {
-    if (selectedTypes[option.value]) {
-      result.push(option.value)
-    }
-  }
+function formatConfirmationDate(value: string): string {
+  const [year, month, day] = value.split('-')
+  return `${day}.${month}.${year}`
+}
 
-  return result
+function formatDocumentTypeCount(count: number): string {
+  const remainder100 = count % 100
+  const remainder10 = count % 10
+  const label =
+    remainder100 >= 11 && remainder100 <= 14
+      ? 'типів документів'
+      : remainder10 === 1
+        ? 'тип документа'
+        : remainder10 >= 2 && remainder10 <= 4
+          ? 'типи документів'
+          : 'типів документів'
+
+  return `${count} ${label}`
 }
 
 function SyncModeLabel({ full, short }: { full: string; short: string }) {
