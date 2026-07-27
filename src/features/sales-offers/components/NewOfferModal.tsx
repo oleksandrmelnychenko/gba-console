@@ -54,7 +54,7 @@ export function NewOfferModal({
       centered
       className="offers-modal"
       opened={opened}
-      size="xl"
+      size="lg"
       title={<span className="offers-modal__title">{created ? t('Оферту створено') : t('Створити оферту')}</span>}
       onClose={close}
     >
