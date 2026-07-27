@@ -1116,29 +1116,50 @@ function getSupplyOrderRosterRowId(row: SupplyUkraineOrderRow, index: number): s
 function OrderMainGridCell({ row }: { row: SupplyUkraineOrderRow }) {
   const { t } = useI18n()
   const supplier = displayTableValue(row.supplier)
-  const metaItems: Array<{ label: string; strong?: boolean; value: string }> = [
-    { label: '№', value: displayTableValue(row.number), strong: true },
-    { label: t('ств.'), value: formatCompactDateTimeCell(row.createdDate) },
-    { label: t('від'), value: formatCompactDateTimeCell(row.orderDate) },
-    { label: t('інв.'), value: displayTableValue(row.invoiceNumber) },
-    { label: t('дата інв.'), value: formatCompactDateTimeCell(row.invoiceDate) },
-  ]
+  const orderNumber = displayTableValue(row.number)
+  const createdDate = formatCompactDateTimeCell(row.createdDate)
+  const orderDate = formatCompactDateTimeCell(row.orderDate)
+  const invoiceNumber = displayTableValue(row.invoiceNumber)
+  const invoiceDate = formatCompactDateTimeCell(row.invoiceDate)
+  const metaItems: Array<{ label: string; strong?: boolean; value: string }> = []
+
+  if (orderDate) {
+    metaItems.push({ label: t('від'), value: orderDate, strong: true })
+  }
+
+  if (createdDate && createdDate !== orderDate) {
+    metaItems.push({ label: t('ств.'), value: createdDate })
+  }
+
+  if (invoiceNumber) {
+    metaItems.push({ label: t('інв.'), value: invoiceNumber })
+  }
+
+  if (invoiceDate) {
+    metaItems.push({ label: t('дата інв.'), value: invoiceDate })
+  }
 
   if (row.source) {
-    metaItems.push({ label: t('джерело'), value: row.source, strong: false })
+    metaItems.push({ label: t('джерело'), value: row.source })
   }
 
   if (row.storage) {
-    metaItems.push({ label: t('склад'), value: row.storage, strong: false })
+    metaItems.push({ label: t('склад'), value: row.storage })
   }
 
   return (
     <div className="supply-order-main-cell">
       <div className="supply-order-main-body">
         <div className="supply-order-main-title-row">
+          {orderNumber ? (
+            <span className="supply-order-main-number" title={nativeTitle(orderNumber)}>
+              <span aria-hidden>№</span>
+              {orderNumber}
+            </span>
+          ) : null}
           <span className="supply-order-main-title" title={nativeTitle(supplier)}>{supplier}</span>
         </div>
-        <OrderMetaLine items={metaItems} />
+        {metaItems.length ? <OrderMetaLine items={metaItems} /> : null}
       </div>
     </div>
   )

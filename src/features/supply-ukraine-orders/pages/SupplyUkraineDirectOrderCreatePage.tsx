@@ -441,10 +441,6 @@ function SupplyUkraineOrderFileCreatePage({ mode }: { mode: CreateMode }) {
     >
       <form id="supply-ukraine-order-create-form" onSubmit={submitForm}>
         <Stack gap="md">
-          <Text c="dimmed" size="sm">
-            {isToUkraineMode ? t('Створення поставки від постачальника') : t('Створення замовлення з файлу')}
-          </Text>
-
           {error && (
             <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
@@ -463,7 +459,6 @@ function SupplyUkraineOrderFileCreatePage({ mode }: { mode: CreateMode }) {
               isSaving={isSaving}
               isToUkraineMode={isToUkraineMode}
               organizationOptions={organizationOptions}
-              selectedClientAgreement={selectedClientAgreement}
               selectedSupplier={selectedSupplier}
               supplierOptions={supplierOptions}
               supplierSearch={supplierSearch}
@@ -496,7 +491,6 @@ function OrderDetailsSection({
   isSaving,
   isToUkraineMode,
   organizationOptions,
-  selectedClientAgreement,
   selectedSupplier,
   supplierOptions,
   supplierSearch,
@@ -512,7 +506,6 @@ function OrderDetailsSection({
   isSaving: boolean
   isToUkraineMode: boolean
   organizationOptions: SelectOption[]
-  selectedClientAgreement: ClientAgreement | null
   selectedSupplier: Client | null
   supplierOptions: SelectOption[]
   supplierSearch: string
@@ -586,11 +579,6 @@ function OrderDetailsSection({
         value={form.clientAgreementKey || null}
         onChange={onAgreementChange}
       />
-      {selectedClientAgreement?.Agreement?.Currency && (
-        <Badge className="app-role-pill is-gray" variant="light">
-          {t('Валюта')}: {selectedClientAgreement.Agreement.Currency.Code || selectedClientAgreement.Agreement.Currency.Name || '-'}
-        </Badge>
-      )}
       <Textarea
         autosize
         disabled={isSaving}
@@ -692,48 +680,6 @@ function ImportConfigurationSection({
           value={parseForm.totalAmountColumnNumber}
           onChange={(value) => onParseFormChange({ totalAmountColumnNumber: toPositiveNumber(value) })}
         />
-        <Checkbox
-          checked={parseForm.withWeight}
-          disabled={isSaving}
-          label={t('Вага нетто')}
-          onChange={(event) => onParseFormChange({
-            isWeightPerItem: event.currentTarget.checked ? parseForm.isWeightPerItem : false,
-            weightColumnNumber: event.currentTarget.checked ? parseForm.weightColumnNumber : '',
-            withWeight: event.currentTarget.checked,
-          })}
-        />
-        <NumberInput
-          allowDecimal={false}
-          disabled={isSaving || !parseForm.withWeight}
-          label={t('Колонка ваги нетто')}
-          min={1}
-          value={parseForm.weightColumnNumber}
-          onChange={(value) => onParseFormChange({ weightColumnNumber: toPositiveNumber(value) })}
-        />
-        <Checkbox
-          checked={parseForm.withGrossWeight}
-          disabled={isSaving}
-          label={t('Вага брутто')}
-          onChange={(event) => onParseFormChange({
-            grossWeightColumnNumber: event.currentTarget.checked ? parseForm.grossWeightColumnNumber : '',
-            isWeightPerItem: event.currentTarget.checked ? parseForm.isWeightPerItem : false,
-            withGrossWeight: event.currentTarget.checked,
-          })}
-        />
-        <NumberInput
-          allowDecimal={false}
-          disabled={isSaving || !parseForm.withGrossWeight}
-          label={t('Колонка ваги брутто')}
-          min={1}
-          value={parseForm.grossWeightColumnNumber}
-          onChange={(value) => onParseFormChange({ grossWeightColumnNumber: toPositiveNumber(value) })}
-        />
-        <Checkbox
-          checked={parseForm.isWeightPerItem}
-          disabled={isSaving || (!parseForm.withWeight && !parseForm.withGrossWeight)}
-          label={parseForm.isWeightPerItem ? t('Вага за одиницю') : t('Вага загальна')}
-          onChange={(event) => onParseFormChange({ isWeightPerItem: event.currentTarget.checked })}
-        />
         {isToUkraineMode && (
           <SupplierImportExtraFields
             isSaving={isSaving}
@@ -741,6 +687,54 @@ function ImportConfigurationSection({
             onParseFormChange={onParseFormChange}
           />
         )}
+      </SimpleGrid>
+      <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+        <Stack gap={6} pt={4}>
+          <Checkbox
+            checked={parseForm.withWeight}
+            disabled={isSaving}
+            label={t('Вага нетто')}
+            onChange={(event) => onParseFormChange({
+              isWeightPerItem: event.currentTarget.checked ? parseForm.isWeightPerItem : false,
+              weightColumnNumber: event.currentTarget.checked ? parseForm.weightColumnNumber : '',
+              withWeight: event.currentTarget.checked,
+            })}
+          />
+          <Checkbox
+            checked={parseForm.withGrossWeight}
+            disabled={isSaving}
+            label={t('Вага брутто')}
+            onChange={(event) => onParseFormChange({
+              grossWeightColumnNumber: event.currentTarget.checked ? parseForm.grossWeightColumnNumber : '',
+              isWeightPerItem: event.currentTarget.checked ? parseForm.isWeightPerItem : false,
+              withGrossWeight: event.currentTarget.checked,
+            })}
+          />
+          <Checkbox
+            checked={parseForm.isWeightPerItem}
+            disabled={isSaving || (!parseForm.withWeight && !parseForm.withGrossWeight)}
+            label={parseForm.isWeightPerItem ? t('Вага за одиницю') : t('Вага загальна')}
+            onChange={(event) => onParseFormChange({ isWeightPerItem: event.currentTarget.checked })}
+          />
+        </Stack>
+        <Stack gap="sm">
+          <NumberInput
+            allowDecimal={false}
+            disabled={isSaving || !parseForm.withWeight}
+            label={t('Колонка ваги нетто')}
+            min={1}
+            value={parseForm.weightColumnNumber}
+            onChange={(value) => onParseFormChange({ weightColumnNumber: toPositiveNumber(value) })}
+          />
+          <NumberInput
+            allowDecimal={false}
+            disabled={isSaving || !parseForm.withGrossWeight}
+            label={t('Колонка ваги брутто')}
+            min={1}
+            value={parseForm.grossWeightColumnNumber}
+            onChange={(value) => onParseFormChange({ grossWeightColumnNumber: toPositiveNumber(value) })}
+          />
+        </Stack>
       </SimpleGrid>
     </Stack>
   )
