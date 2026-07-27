@@ -21,7 +21,7 @@ import { notifications } from '@mantine/notifications'
 import { Check, CircleAlert, Eye, FileChartColumn, Plus, Search, Trash2 } from 'lucide-react'
 import { ProductCardModal } from '../../products/components/ProductCardModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -1604,39 +1604,105 @@ function ReturnDetails({
 }) {
   const { t } = useI18n()
   const items = saleReturn.SaleReturnItems || []
+  const clientName = displayValue(saleReturn.Client?.FullName || saleReturn.Client?.Name)
+  const status = saleReturn.IsCanceled ? t('Скасовано') : t('Активне')
 
   return (
-    <Stack gap="md">
-      <SimpleGrid cols={{ base: 1, md: 2 }}>
-        <DetailValue label={t('Номер')} value={saleReturn.Number} />
-        <DetailValue label={t('Дата')} value={formatDateTime(saleReturn.FromDate)} />
-        <DetailValue label={t('Клієнт')} value={saleReturn.Client?.FullName || saleReturn.Client?.Name} />
-        <DetailValue label={t('Договір')} value={saleReturn.ClientAgreement?.Agreement?.Name} />
-        <DetailValue label={t('Організація')} value={saleReturn.ClientAgreement?.Agreement?.Organization?.Name} />
-        <DetailValue label={t('Склад')} value={saleReturn.Storage?.Name} />
-        <DetailValue label={t('Сума')} value={formatMoney(saleReturn.TotalAmountLocal)} />
-        <DetailValue label={t('Статус')} value={saleReturn.IsCanceled ? t('Скасовано') : t('Активне')} />
-      </SimpleGrid>
-      <DataTable
-        columns={columns}
-        data={items}
-        defaultLayout={DETAIL_ITEMS_TABLE_LAYOUT}
-        emptyText={t('Позиції не знайдено')}
-        getRowId={(item, index) => item.NetUid || String(item.Id || index)}
-        minWidth={900}
-        tableId="sales-return-detail-items"
-      />
-    </Stack>
+    <div className="new-sale-return-detail">
+      <section className="new-sale-return-detail-summary">
+        <div className="new-sale-return-detail-summary__main">
+          <span className="new-sale-return-detail-eyebrow">{t('Документ повернення')}</span>
+          <Text className="new-sale-return-detail-summary__title">{displayValue(saleReturn.Number)}</Text>
+          <Text className="new-sale-return-detail-summary__meta">
+            {formatDateTime(saleReturn.FromDate)} · {clientName}
+          </Text>
+        </div>
+
+        <div className="new-sale-return-detail-summary__metrics">
+          <ReturnDetailMetric label={t('Сума')} value={formatMoney(saleReturn.TotalAmountLocal)} />
+          <ReturnDetailMetric label={t('Позицій')} value={String(items.length)} />
+          <ReturnDetailMetric label={t('Статус')} tone={saleReturn.IsCanceled ? 'danger' : undefined} value={status} />
+        </div>
+      </section>
+
+      <div className="new-sale-return-detail-tree">
+        <ReturnDetailSection subtitle={displayValue(saleReturn.Number)} title={t('Документ')}>
+          <ReturnDetailRow label={t('Номер')} value={saleReturn.Number} />
+          <ReturnDetailRow label={t('Дата')} value={formatDateTime(saleReturn.FromDate)} />
+          <ReturnDetailRow label={t('Статус')} tone={saleReturn.IsCanceled ? 'danger' : undefined} value={status} />
+          <ReturnDetailRow label={t('Сума')} value={formatMoney(saleReturn.TotalAmountLocal)} />
+        </ReturnDetailSection>
+
+        <ReturnDetailSection subtitle={clientName} title={t('Учасники')}>
+          <ReturnDetailRow label={t('Клієнт')} value={clientName} wide />
+          <ReturnDetailRow label={t('Договір')} value={saleReturn.ClientAgreement?.Agreement?.Name} wide />
+          <ReturnDetailRow label={t('Організація')} value={saleReturn.ClientAgreement?.Agreement?.Organization?.Name} wide />
+          <ReturnDetailRow label={t('Склад')} value={saleReturn.Storage?.Name} wide />
+        </ReturnDetailSection>
+
+        <ReturnDetailSection subtitle={String(items.length)} title={t('Позиції повернення')}>
+          <div className="new-sale-return-detail-table">
+            <DataTable
+              columns={columns}
+              data={items}
+              defaultLayout={DETAIL_ITEMS_TABLE_LAYOUT}
+              emptyText={t('Позиції не знайдено')}
+              getRowId={(item, index) => item.NetUid || String(item.Id || index)}
+              minWidth={900}
+              tableId="sales-return-detail-items"
+            />
+          </div>
+        </ReturnDetailSection>
+      </div>
+    </div>
   )
 }
 
-function DetailValue({ label, value }: { label: string; value: unknown }) {
-  const text = displayValue(value)
-
+function ReturnDetailMetric({
+  label,
+  tone,
+  value,
+}: {
+  label: string
+  tone?: 'danger'
+  value: string
+}) {
   return (
-    <div className="new-sale-return-detail-field">
+    <div className={`new-sale-return-detail-metric${tone ? ` is-${tone}` : ''}`}>
       <span>{label}</span>
-      <strong>{text}</strong>
+      <strong>{displayValue(value)}</strong>
+    </div>
+  )
+}
+
+function ReturnDetailSection({ children, subtitle, title }: { children: ReactNode; subtitle?: string; title: string }) {
+  return (
+    <section className="new-sale-return-detail-section">
+      <div className="new-sale-return-detail-section__head">
+        <span className="new-sale-return-detail-section__title">{title}</span>
+        {subtitle ? <span className="new-sale-return-detail-section__subtitle">{subtitle}</span> : null}
+      </div>
+      <div className="new-sale-return-detail-section__body">{children}</div>
+    </section>
+  )
+}
+
+function ReturnDetailRow({
+  label,
+  tone,
+  value,
+  wide,
+}: {
+  label: string
+  tone?: 'danger'
+  value: unknown
+  wide?: boolean
+}) {
+  return (
+    <div className={`new-sale-return-detail-row${wide ? ' is-wide' : ''}`}>
+      <span className="new-sale-return-detail-row__label">{label}</span>
+      <span className="new-sale-return-detail-row__line" aria-hidden />
+      <span className={`new-sale-return-detail-row__value${tone ? ` is-${tone}` : ''}`}>{displayValue(value)}</span>
     </div>
   )
 }
