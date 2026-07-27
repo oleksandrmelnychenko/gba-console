@@ -1,6 +1,6 @@
 import { ActionIcon, Alert, Badge, Select, Stack, Text, Tooltip } from '@mantine/core'
-import { Calendar, CircleAlert, FileDown, Landmark } from 'lucide-react'
-import { useEffect, useMemo, useReducer, useState } from 'react'
+import { CircleAlert, FileDown } from 'lucide-react'
+import { useEffect, useMemo, useReducer, useState, type ReactNode } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
@@ -578,71 +578,90 @@ function DebtorDetailDrawer({
     <AppDrawer
       className="sales-debtor-detail-drawer"
       opened={Boolean(debtor)}
+      padding="md"
       position="right"
-      size="standard"
+      size="xl"
       title={t('Деталі боржника')}
       onClose={onClose}
     >
       {debtor ? (
         <div className="sales-debtor-detail">
-          <section className="sales-debtor-detail-hero">
-            <div className="sales-debtor-detail-hero__main">
-              <div className="sales-debtor-detail-hero__copy">
-                <strong>{displayValue(debtor.ClientName)}</strong>
-                <span>
-                  {displayValue(debtor.RegionCode)} · {displayValue(debtor.UserName)}
-                </span>
-              </div>
+          <section className="sales-debtor-detail-summary">
+            <div className="sales-debtor-detail-summary__main">
+              <span className="sales-debtor-detail-eyebrow">{t('Клієнт')}</span>
+              <Text className="sales-debtor-detail-summary__title">{displayValue(debtor.ClientName)}</Text>
+              <Text className="sales-debtor-detail-summary__meta">
+                {displayValue(debtor.RegionCode)} · {displayValue(debtor.UserName)}
+              </Text>
             </div>
-            <div className="sales-debtor-detail-metrics">
+            <div className="sales-debtor-detail-summary__metrics">
               <DebtorDetailMetric label={t('Залишок')} tone="neutral" unit={currencyCode} value={debtor.RemainderDebt} />
               <DebtorDetailMetric label={t('Прострочено')} tone="danger" unit={currencyCode} value={debtor.OverdueDebt} />
               <DebtorDetailMetric format="integer" label={t('Днів')} tone={(debtor.MissedDays ?? 0) < 0 ? 'danger' : 'neutral'} value={debtor.MissedDays} />
             </div>
           </section>
 
-          <section className="sales-debtor-detail-section">
-            <div className="sales-debtor-detail-section__head">
-              <Text className="app-section-title" fw={600} size="sm">
-                {t('Загальна заборгованість')}
-              </Text>
-            </div>
-            <div className="sales-debtor-detail-total-grid">
-              <DebtorDetailMetric label="EUR" unit="EUR" value={total?.TotalEuro} />
-              <DebtorDetailMetric label="UAH" unit="UAH" value={total?.TotalLocal} />
-              <DebtorDetailMetric label={t('По структурі')} unit="UAH" value={total?.TotalSubClientDebt} />
-            </div>
-          </section>
+          <div className="sales-debtor-detail-tree">
+            <DebtorDetailSection subtitle={currencyCode} title={t('Загальна заборгованість')}>
+              <DebtorDetailRow label="EUR" value={`${moneyFormatter.format(total?.TotalEuro ?? 0)} EUR`} />
+              <DebtorDetailRow label="UAH" value={`${moneyFormatter.format(total?.TotalLocal ?? 0)} UAH`} />
+              <DebtorDetailRow
+                label={t('По структурі')}
+                value={`${moneyFormatter.format(total?.TotalSubClientDebt ?? 0)} UAH`}
+              />
+            </DebtorDetailSection>
 
-          <section className="sales-debtor-detail-section">
-            <div className="sales-debtor-detail-section__head">
-              <Text className="app-section-title" fw={600} size="sm">
-                {t('Борги по клієнту')}
-              </Text>
-              <Badge className="app-role-pill is-gray sales-debtor-detail-count" variant="light">
-                {items.length}
-              </Badge>
-            </div>
-
-            {isLoading ? (
-              <div className="sales-debtor-detail-state">{t('Завантаження деталей')}</div>
-            ) : error ? (
-              <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
-                {error}
-              </Alert>
-            ) : items.length === 0 ? (
-              <div className="sales-debtor-detail-state">{t('Боргових документів не знайдено')}</div>
-            ) : (
-              <div className="sales-debtor-detail-debts">
-                {items.map((item, index) => (
-                  <DebtorDebtCard key={item.NetUid || `${item.Id || 'debt'}-${index}`} currencyCode={currencyCode} item={item} />
-                ))}
-              </div>
-            )}
-          </section>
+            <DebtorDetailSection subtitle={`${items.length}`} title={t('Борги по клієнту')}>
+              {isLoading ? (
+                <div className="sales-debtor-detail-state">{t('Завантаження деталей')}</div>
+              ) : error ? (
+                <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
+                  {error}
+                </Alert>
+              ) : items.length === 0 ? (
+                <div className="sales-debtor-detail-state">{t('Боргових документів не знайдено')}</div>
+              ) : (
+                <div className="sales-debtor-detail-related-list">
+                  {items.map((item, index) => (
+                    <DebtorDebtCard key={item.NetUid || `${item.Id || 'debt'}-${index}`} currencyCode={currencyCode} item={item} />
+                  ))}
+                </div>
+              )}
+            </DebtorDetailSection>
+          </div>
         </div>
       ) : null}
     </AppDrawer>
+  )
+}
+
+function DebtorDetailSection({
+  children,
+  subtitle,
+  title,
+}: {
+  children: ReactNode
+  subtitle?: string
+  title: string
+}) {
+  return (
+    <section className="sales-debtor-detail-section">
+      <div className="sales-debtor-detail-section__head">
+        <span className="sales-debtor-detail-section__title">{title}</span>
+        {subtitle ? <span className="sales-debtor-detail-section__subtitle">{subtitle}</span> : null}
+      </div>
+      <div className="sales-debtor-detail-section__body">{children}</div>
+    </section>
+  )
+}
+
+function DebtorDetailRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="sales-debtor-detail-row">
+      <span className="sales-debtor-detail-row__label">{label}</span>
+      <span className="sales-debtor-detail-row__line" aria-hidden />
+      <span className="sales-debtor-detail-row__value">{value}</span>
+    </div>
   )
 }
 
@@ -671,6 +690,7 @@ function DebtorDetailMetric({
 }
 
 function DebtorDebtCard({ currencyCode: fallbackCurrencyCode, item }: { currencyCode: string; item: DebtorDebtItem }) {
+  const { t } = useI18n()
   const sale = item.Sale || item.ReSale || null
   const documentNumber = getDebtDocumentNumber(item, sale)
   const documentDate = getDebtDocumentDate(item, sale)
@@ -681,28 +701,22 @@ function DebtorDebtCard({ currencyCode: fallbackCurrencyCode, item }: { currency
   const days = item.Debt?.Days ?? 0
 
   return (
-    <article className="sales-debtor-detail-debt">
-      <div className="sales-debtor-detail-debt__main">
+    <article className="sales-debtor-detail-related-card">
+      <div className="sales-debtor-detail-related-card__head">
         <Tooltip label={documentNumber}>
-          <strong>{documentNumber}</strong>
+          <span>{documentNumber || '-'}</span>
         </Tooltip>
-        <div className="sales-debtor-detail-debt__meta">
-          <span>
-            <Calendar size={13} />
-            {documentDate}
-          </span>
-          <span>
-            <Landmark size={13} />
-            {agreement}
-          </span>
-        </div>
-        {status ? <span className="sales-debtor-detail-debt__status">{status}</span> : null}
+        <span>{documentDate || '-'}</span>
       </div>
-      <div className="sales-debtor-detail-debt__amount">
-        <strong>{moneyFormatter.format(amount)}</strong>
-        {currencyCode ? <small>{currencyCode}</small> : null}
+      <div className="sales-debtor-detail-related-card__grid">
+        <DebtorDetailRow label={t('Договір')} value={agreement || '-'} />
+        <DebtorDetailRow label={t('Статус')} value={status || '-'} />
+        <DebtorDetailRow
+          label={t('Сума боргу')}
+          value={`${moneyFormatter.format(amount)}${currencyCode ? ` ${currencyCode}` : ''}`}
+        />
+        <DebtorDetailRow label={t('Днів')} value={String(days)} />
       </div>
-      <DebtorDaysCell value={days} />
     </article>
   )
 }
