@@ -44,6 +44,8 @@ export type ResaleClient = NamedEntity & {
 export type ResaleUser = NamedEntity
 
 export type ResaleStorage = EntityFields & {
+  AvailableForReSale?: boolean
+  IsResale?: boolean
   Name?: string
   NetUid?: string
   Organization?: ResaleOrganization | null

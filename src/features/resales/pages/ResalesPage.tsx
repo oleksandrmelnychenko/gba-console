@@ -878,24 +878,6 @@ export function NewResalePage() {
     })
   }
 
-  function resetFilters() {
-    if (!filterOptions) {
-      return
-    }
-
-    setForm({
-      amount: 0,
-      extraChargePercent: 0,
-      from: shiftDateTimeInput(-365, 'start'),
-      infelicity: 0,
-      productGroupIds: collectProductGroupIds(filterOptions.ProductGroups),
-      search: '',
-      specificationCodes: buildSpecificationSelection(filterOptions.SpecificationCodes),
-      storageIds: collectStorageIds(filterOptions.Storages),
-      to: getDateTimeInputValue(new Date()),
-    })
-  }
-
   async function handleCreated(payload: ResaleCreatePayload) {
     setProcessing(true)
     setError(null)
@@ -939,9 +921,9 @@ export function NewResalePage() {
       onClose={closeSheet}
     >
       <Stack className="resales-new-sheet" gap={12}>
-        <Card className="resales-new-filter-card" withBorder radius="md" padding="md">
-          <Stack gap={12}>
-            <SimpleGrid className="resales-new-grid" cols={{ base: 1, md: 3 }} spacing="sm">
+        <Card className="resales-new-filter-card" withBorder radius="md" padding="sm">
+          <Stack gap={8}>
+            <div className="resales-new-primary-grid">
               <NumberInput
                 hideControls
                 className="resales-new-control is-number"
@@ -963,8 +945,6 @@ export function NewResalePage() {
                 value={form.extraChargePercent}
                 onChange={(value) => setForm((currentForm) => ({ ...currentForm, extraChargePercent: toNumber(value) }))}
               />
-            </SimpleGrid>
-            <div className="resales-new-multiselect-grid">
               <CheckboxMultiSelect
                 searchable
                 className="resales-new-control"
@@ -1030,25 +1010,7 @@ export function NewResalePage() {
                   setForm((currentForm) => ({ ...currentForm, to: nextValue }))
                 }}
               />
-              <Button className="resales-new-action" color="gray" variant="light" onClick={resetFilters}>
-                {t('Скинути')}
-              </Button>
-              <Tooltip label={t('Оновити фільтри')}>
-                <ActionIcon
-                  aria-label={t('Оновити фільтри')}
-                  color="gray"
-                  loading={isLoadingOptions}
-                  size={36}
-                  variant="light"
-                  onClick={() => reload()}
-                >
-                  <RefreshCw size={18} />
-                </ActionIcon>
-              </Tooltip>
-            </Group>
-            <Group align="end" gap="sm" wrap="nowrap" className="resales-new-filter-row">
               <Select
-                searchable
                 className="resales-new-control resales-new-generate-storage-control"
                 data={generateStorageOptions}
                 disabled={isLoadingOptions}
@@ -1086,6 +1048,18 @@ export function NewResalePage() {
               >
                 {t('Друк')}
               </Button>
+              <Tooltip label={t('Оновити фільтри')}>
+                <ActionIcon
+                  aria-label={t('Оновити фільтри')}
+                  color="gray"
+                  loading={isLoadingOptions}
+                  size={36}
+                  variant="light"
+                  onClick={() => reload()}
+                >
+                  <RefreshCw size={18} />
+                </ActionIcon>
+              </Tooltip>
             </Group>
           </Stack>
         </Card>

@@ -4,6 +4,7 @@ import { readSession } from '../../../shared/auth/session'
 import {
   addResale,
   exportResaleAvailabilities,
+  getResaleAvailabilityFilterOptions,
   getResaleClientAgreements,
   updateResale,
 } from './resalesApi'
@@ -123,6 +124,53 @@ describe('resales API contracts', () => {
       body: payload,
       method: 'POST',
     })
+  })
+
+  it('falls back to resale-enabled storages when availability filters return none', async () => {
+    const resaleStorage = {
+      AvailableForReSale: true,
+      Id: 3,
+      Name: 'СКЛАД -3',
+      NetUid: 'storage-3',
+    }
+    const legacyResaleStorage = {
+      Id: 4,
+      IsResale: true,
+      Name: 'Склад перепродажу',
+      NetUid: 'storage-4',
+    }
+
+    apiRequestMock
+      .mockResolvedValueOnce({
+        ProductGroups: [],
+        SpecificationCodes: ['8708999798'],
+        Storages: [],
+      })
+      .mockResolvedValueOnce([
+        {
+          AvailableForReSale: false,
+          Id: 1,
+          Name: 'Автопарк',
+          NetUid: 'storage-1',
+        },
+        resaleStorage,
+        legacyResaleStorage,
+        {
+          AvailableForReSale: true,
+          Deleted: true,
+          Id: 5,
+          Name: 'Видалений склад',
+          NetUid: 'storage-5',
+        },
+      ])
+
+    await expect(getResaleAvailabilityFilterOptions()).resolves.toEqual({
+      ProductGroups: [],
+      SpecificationCodes: ['8708999798'],
+      Storages: [resaleStorage, legacyResaleStorage],
+    })
+    expect(apiRequestMock).toHaveBeenNthCalledWith(1, '/resales/availabilities/filter/options')
+    expect(apiRequestMock).toHaveBeenNthCalledWith(2, '/storages/get/all')
   })
 
   it('loads selected client agreements without debt aggregates', async () => {

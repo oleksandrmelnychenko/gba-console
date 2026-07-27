@@ -19,6 +19,7 @@ import type {
   ResaleCreatePayload,
   ResaleDownloadDocumentType,
   ResaleExportDocument,
+  ResaleStorage,
   ResalesSearchParams,
   UpdatedResaleModel,
 } from '../types'
@@ -216,15 +217,31 @@ export async function printResaleConsignmentNoteDocument(
 export async function getResaleAvailabilityFilterOptions(): Promise<ResaleAvailabilityFilterOptions> {
   const result = await apiRequest<unknown>('/resales/availabilities/filter/options')
   const options = normalizeFilterOptions(result)
-
-  if (options.SpecificationCodes.length > 0) {
-    return options
-  }
+  const [storages, specificationCodes] = await Promise.all([
+    options.Storages.length > 0
+      ? Promise.resolve(options.Storages)
+      : getResaleAvailabilityStorages(),
+    options.SpecificationCodes.length > 0
+      ? Promise.resolve(options.SpecificationCodes)
+      : getResaleAvailabilitySpecificationCodes(),
+  ])
 
   return {
     ...options,
-    SpecificationCodes: await getResaleAvailabilitySpecificationCodes(),
+    SpecificationCodes: specificationCodes,
+    Storages: storages,
   }
+}
+
+async function getResaleAvailabilityStorages(): Promise<ResaleStorage[]> {
+  const result = await apiRequest<unknown>('/storages/get/all')
+  const storages = (readArrayPayload(result, ['Items', 'Storages', 'Data']) as ResaleStorage[])
+    .filter((storage) => storage.Deleted !== true && storage.Id != null && Boolean(storage.NetUid))
+  const resaleStorages = storages.filter(
+    (storage) => storage.AvailableForReSale === true || storage.IsResale === true,
+  )
+
+  return resaleStorages.length > 0 ? resaleStorages : storages
 }
 
 export async function getResaleAvailabilitySpecificationCodes(): Promise<string[]> {
