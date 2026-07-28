@@ -99,7 +99,7 @@ describe('accounting operation catalog', () => {
     ).toEqual(['client'])
     expect(
       getAccountingOperation(ACCOUNTING_OPERATION_ID.IncomeSupplierReturn).counterparty.kinds,
-    ).toEqual(['supplier'])
+    ).toEqual(['supplier', 'manufacturer'])
     expect(
       getAccountingOperation(ACCOUNTING_OPERATION_ID.IncomeOtherWithCounterparties).counterparty.kinds,
     ).toEqual(['client', 'supplier', 'manufacturer'])

@@ -25,11 +25,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawerFooter } from '../../../shared/ui/AppDrawer'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import {
-  ACCOUNTING_OPERATION_ID,
-  getAccountingOperation,
-  getAccountingOperationByPayloadType,
   getAccountingOperationLabel,
-  type AccountingCounterpartyKind,
 } from '../../accounting/accountingOperationCatalog'
 import { getUnpaidConsumableOrdersByOrganization } from '../../consumable-orders/api/consumableOrdersApi'
 import type { ConsumablesOrder } from '../../consumable-orders/types'
@@ -51,7 +47,6 @@ import {
   PaymentRegisterType,
   type Client,
   type ClientAgreement,
-  type Currency,
   type Organization,
   type PaymentMovement,
   type PaymentRegister,
@@ -66,6 +61,13 @@ import {
   type OutcomeOperationType,
 } from '../outgoingCreateTypes'
 import { buildOutgoingPaymentGroupPayload } from '../outgoingPaymentGroupPayload'
+import {
+  getAllowedOutgoingCounterpartySearchTypes,
+  getDefaultOutgoingCounterpartySearchType,
+  getOutgoingPaymentGroupOperations,
+  resolveOutgoingCounterpartyPayloadKind,
+  validateOutgoingPaymentGroupForm,
+} from '../outgoingPaymentGroupPolicy'
 import {
   getOutgoingPaymentGroupTitle,
   parseOutgoingPaymentOperationType,
@@ -168,7 +170,11 @@ export function OutgoingPaymentGroupForm({
 
   const operationType = form.operationType
   const registerType = form.registerType
-  const isSupplierSearch = form.searchType === IncomeCounterpartySearchType.Supplier
+  const isSupplierSearch =
+    resolveOutgoingCounterpartyPayloadKind(
+      operationType,
+      form.searchType,
+    ) === 'supplier'
   const isOtherOutcome = operationType === OUTCOME_OPERATION_TYPE.OtherOutcome
   const selectedOrganization = useMemo(
     () => availableOrganizations.find((organization) => getEntityValue(organization) === form.organizationValue) || null,
@@ -455,7 +461,7 @@ export function OutgoingPaymentGroupForm({
       operationType: nextOperationType,
       organizationValue: '',
       paymentRegisterValue: '',
-      searchType: getDefaultSearchType(nextOperationType),
+      searchType: getDefaultOutgoingCounterpartySearchType(nextOperationType),
       selectedAgreementValue: '',
       selectedCurrencyValue: '',
     })
@@ -521,14 +527,21 @@ export function OutgoingPaymentGroupForm({
       return
     }
 
-    if (form.searchType === IncomeCounterpartySearchType.Supplier) {
+    const payloadKind = resolveOutgoingCounterpartyPayloadKind(
+      operationType,
+      form.searchType,
+    )
+
+    if (payloadKind === 'supplier') {
       counterpartyOptionSubmitGuard.markSubmitted(value)
       await selectSupplyOrganization(counterparty as SupplyOrganization, value)
       return
     }
 
-    counterpartyOptionSubmitGuard.markSubmitted(value)
-    await selectClient(counterparty, value)
+    if (payloadKind === 'client') {
+      counterpartyOptionSubmitGuard.markSubmitted(value)
+      await selectClient(counterparty, value)
+    }
   }
 
   async function selectClient(client: Client, label: string) {
@@ -769,11 +782,11 @@ export function OutgoingPaymentGroupForm({
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    const validationError = validateForm({
+    const validationError = validateOutgoingPaymentGroupForm({
       activeMovement,
       amount: form.amount,
-      isOtherOutcome,
-      isSupplierSearch,
+      operationType,
+      searchType: form.searchType,
       selectedClient,
       selectedClientAgreement,
       selectedCurrency,
@@ -1078,7 +1091,7 @@ function createInitialForm(operationType: OutcomeOperationType, registerType: Pa
     paymentPurpose: '',
     paymentRegisterValue: '',
     registerType,
-    searchType: getDefaultSearchType(operationType),
+    searchType: getDefaultOutgoingCounterpartySearchType(operationType),
     selectedAgreementValue: '',
     selectedCurrencyValue: '',
     selectedMovementValue: '',
@@ -1088,85 +1101,17 @@ function createInitialForm(operationType: OutcomeOperationType, registerType: Pa
   }
 }
 
-function validateForm({
-  activeMovement,
-  amount,
-  isOtherOutcome,
-  isSupplierSearch,
-  selectedClient,
-  selectedClientAgreement,
-  selectedCurrency,
-  selectedOrganization,
-  selectedRegister,
-  selectedSupplyAgreement,
-  selectedSupplyOrganization,
-  t,
-}: {
-  activeMovement: PaymentMovement | null
-  amount: number
-  isOtherOutcome: boolean
-  isSupplierSearch: boolean
-  selectedClient: Client | null
-  selectedClientAgreement: ClientAgreement | null
-  selectedCurrency: Currency | null
-  selectedOrganization: Organization | null
-  selectedRegister: PaymentRegister | null
-  selectedSupplyAgreement: SupplyOrganizationAgreement | null
-  selectedSupplyOrganization: SupplyOrganization | null
-  t: (value: string) => string
-}): string | null {
-  if (!amount || amount <= 0) {
-    return t('Сума має бути більшою за нуль')
-  }
-
-  if (!activeMovement) {
-    return t('Оберіть статтю руху коштів')
-  }
-
-  if (!isOtherOutcome && (isSupplierSearch ? !selectedSupplyOrganization : !selectedClient)) {
-    return t('Оберіть отримувача')
-  }
-
-  if (!isOtherOutcome && (isSupplierSearch ? !selectedSupplyAgreement : !selectedClientAgreement)) {
-    return t('Оберіть договір')
-  }
-
-  if (!selectedOrganization) {
-    return t('Оберіть організацію')
-  }
-
-  if (!selectedRegister) {
-    return t('Оберіть касу або рахунок')
-  }
-
-  if (!selectedCurrency) {
-    return t('Оберіть валюту')
-  }
-
-  return null
-}
-
 function getOperationOptions(t: (value: string) => string) {
-  return [
-    ACCOUNTING_OPERATION_ID.OutcomeSupplierPayment,
-    ACCOUNTING_OPERATION_ID.OutcomeCustomerRefund,
-    ACCOUNTING_OPERATION_ID.OutcomeOtherWithCounterparties,
-    ACCOUNTING_OPERATION_ID.OutcomeOther,
-  ].map((operationId) => {
-    const operation = getAccountingOperation(operationId)
-
+  return getOutgoingPaymentGroupOperations().map((operation) => {
     return {
-      label: t(getAccountingOperationLabel(operationId, undefined, 'option')),
+      label: t(getAccountingOperationLabel(operation.id, undefined, 'option')),
       value: String(operation.payloadOperationTypes[0]),
     }
   })
 }
 
 function getSearchTypeOptions(operationType: OutcomeOperationType, t: (value: string) => string) {
-  const operation = getAccountingOperationByPayloadType('outcome', operationType)
-  const searchTypes = operation?.counterparty.kinds.flatMap(toCounterpartySearchType) || []
-
-  return [...new Set(searchTypes)].map((searchType) => ({
+  return getAllowedOutgoingCounterpartySearchTypes(operationType).map((searchType) => ({
     label:
       searchType === IncomeCounterpartySearchType.Supplier
         ? t('Постачальники')
@@ -1175,32 +1120,6 @@ function getSearchTypeOptions(operationType: OutcomeOperationType, t: (value: st
           : t('Клієнти'),
     value: String(searchType),
   }))
-}
-
-function getDefaultSearchType(operationType: OutcomeOperationType): IncomeCounterpartySearchType {
-  const operation = getAccountingOperationByPayloadType('outcome', operationType)
-
-  return operation?.counterparty.kinds.includes('service-supplier')
-    ? IncomeCounterpartySearchType.Supplier
-    : IncomeCounterpartySearchType.Client
-}
-
-function toCounterpartySearchType(
-  kind: AccountingCounterpartyKind,
-): IncomeCounterpartySearchType[] {
-  if (kind === 'client' || kind === 'organization-client') {
-    return [IncomeCounterpartySearchType.Client]
-  }
-
-  if (kind === 'manufacturer') {
-    return [IncomeCounterpartySearchType.Manufacturer]
-  }
-
-  if (kind === 'supplier' || kind === 'service-supplier') {
-    return [IncomeCounterpartySearchType.Supplier]
-  }
-
-  return []
 }
 
 function pickOrganizationsByClientAgreements(organizations: Organization[], agreements: ClientAgreement[]) {

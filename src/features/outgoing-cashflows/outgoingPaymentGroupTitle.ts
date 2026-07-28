@@ -7,6 +7,7 @@ import {
   type AccountingPaymentRegisterType,
   type OutcomePaymentOperationCode,
 } from '../accounting/accountingOperationCatalog'
+import { isOutgoingPaymentGroupOperationType } from './outgoingPaymentGroupPolicy'
 
 type Translate = (value: string) => string
 
@@ -22,18 +23,9 @@ export function parseOutgoingPaymentOperationType(
   value: string | null,
 ): OutcomePaymentOperationCode {
   const operationType = Number(value)
-  const operation = getAccountingOperationByPayloadType('outcome', operationType)
 
-  if (
-    operation
-    && (
-      operation.id === ACCOUNTING_OPERATION_ID.OutcomeSupplierPayment
-      || operation.id === ACCOUNTING_OPERATION_ID.OutcomeCustomerRefund
-      || operation.id === ACCOUNTING_OPERATION_ID.OutcomeOtherWithCounterparties
-      || operation.id === ACCOUNTING_OPERATION_ID.OutcomeOther
-    )
-  ) {
-    return operationType as OutcomePaymentOperationCode
+  if (isOutgoingPaymentGroupOperationType(operationType)) {
+    return operationType
   }
 
   return OUTCOME_PAYMENT_OPERATION_CODE.PaymentToSupplier

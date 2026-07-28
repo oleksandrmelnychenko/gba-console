@@ -4,8 +4,15 @@ import { IncomeCounterpartySearchType } from '../types'
 import {
   cancelIncomeCashflow,
   createIncomeCashflow,
+  getIncomeCashflowClientAgreements,
+  getIncomeCashflowOrganizations,
+  getIncomeCashflowPaymentMovements,
+  getIncomeCashflowSpecificExchangeRate,
+  getIncomeCashflowSupplyOrganizationAgreements,
   getIncomeCashflowByNetId,
   searchIncomeCashflowCounterparties,
+  searchIncomeCashflowPaymentMovements,
+  searchIncomeCashflowPaymentRegisters,
   searchIncomeCashflowPaymentPurposes,
   updateIncomeCashflow,
   updateIncomeCashflowClient,
@@ -66,6 +73,124 @@ describe('income cashflow API lookup contracts', () => {
         value: 'dhl',
       },
     })
+  })
+
+  it('loads the organization, register, currency, and movement sources shared by income and outcome forms', async () => {
+    apiRequestMock
+      .mockResolvedValueOnce({ Items: [{ Id: 1, Name: 'Організація' }] })
+      .mockResolvedValueOnce({
+        Items: [
+          {
+            Id: 2,
+            Name: 'Рахунок',
+            PaymentCurrencyRegisters: null,
+          },
+        ],
+      })
+      .mockResolvedValueOnce([{ Id: 3, OperationName: 'Інші витрати' }])
+      .mockResolvedValueOnce({
+        Items: [{ Id: 4, OperationName: 'Оплата постачальнику' }],
+      })
+
+    await expect(getIncomeCashflowOrganizations()).resolves.toEqual([
+      { Id: 1, Name: 'Організація' },
+    ])
+    await expect(searchIncomeCashflowPaymentRegisters('рах')).resolves.toEqual([
+      {
+        Id: 2,
+        Name: 'Рахунок',
+        PaymentCurrencyRegisters: [],
+      },
+    ])
+    await expect(getIncomeCashflowPaymentMovements()).resolves.toEqual([
+      { Id: 3, OperationName: 'Інші витрати' },
+    ])
+    await expect(
+      searchIncomeCashflowPaymentMovements('постачальнику'),
+    ).resolves.toEqual([{ Id: 4, OperationName: 'Оплата постачальнику' }])
+
+    expect(apiRequestMock).toHaveBeenNthCalledWith(1, '/organizations/all')
+    expect(apiRequestMock).toHaveBeenNthCalledWith(
+      2,
+      '/payments/registers/search',
+      {
+        query: {
+          value: 'рах',
+        },
+      },
+    )
+    expect(apiRequestMock).toHaveBeenNthCalledWith(
+      3,
+      '/payments/movements/all',
+    )
+    expect(apiRequestMock).toHaveBeenNthCalledWith(
+      4,
+      '/payments/movements/all/search',
+      {
+        query: {
+          value: 'постачальнику',
+        },
+      },
+    )
+  })
+
+  it('loads client and supplier agreements from their distinct autocomplete contracts', async () => {
+    apiRequestMock
+      .mockResolvedValueOnce({
+        ClientAgreements: [{ Id: 11, Agreement: { Id: 12 } }],
+      })
+      .mockResolvedValueOnce({
+        SupplyOrganizationAgreements: [{ Id: 21 }],
+      })
+
+    await expect(
+      getIncomeCashflowClientAgreements('client-1'),
+    ).resolves.toEqual([{ Id: 11, Agreement: { Id: 12 } }])
+    await expect(
+      getIncomeCashflowSupplyOrganizationAgreements(42),
+    ).resolves.toEqual([{ Id: 21 }])
+
+    expect(apiRequestMock).toHaveBeenNthCalledWith(
+      1,
+      '/agreements/client/all',
+      {
+        query: {
+          netId: 'client-1',
+        },
+      },
+    )
+    expect(apiRequestMock).toHaveBeenNthCalledWith(
+      2,
+      '/supplies/organizations/agreements/by',
+      {
+        query: {
+          id: 42,
+        },
+      },
+    )
+  })
+
+  it('loads a specific exchange rate for the selected register and agreement currencies', async () => {
+    apiRequestMock.mockResolvedValueOnce(44.35)
+
+    await expect(
+      getIncomeCashflowSpecificExchangeRate({
+        fromCurrencyNetId: 'currency-uah',
+        fromDate: '2026-07-20T12:30:00',
+        toCurrencyNetId: 'currency-eur',
+      }),
+    ).resolves.toBe(44.35)
+
+    expect(apiRequestMock).toHaveBeenCalledWith(
+      '/exchangerates/get/specific',
+      {
+        query: {
+          fromCurrencyNetId: 'currency-uah',
+          fromDate: '2026-07-20T12:30:00',
+          toCurrencyNetId: 'currency-eur',
+        },
+      },
+    )
   })
 
   it('loads a focused income payment order by NetUid for cash-flow drilldown', async () => {

@@ -54,12 +54,15 @@ describe('income cash-flow mutation policy', () => {
     }
   })
 
-  it('allows only a supplier for SupplierReturn payloads', () => {
+  it('allows supplier organizations and manufacturer clients for SupplierReturn payloads', () => {
     expect(
       getAllowedIncomeCounterpartySearchTypes(
         IncomePaymentOperationType.SupplierReturn,
       ),
-    ).toEqual([IncomeCounterpartySearchType.Supplier])
+    ).toEqual([
+      IncomeCounterpartySearchType.Supplier,
+      IncomeCounterpartySearchType.Manufacturer,
+    ])
     expect(
       resolveIncomeCounterpartyPayloadKind(
         IncomePaymentOperationType.SupplierReturn,
@@ -70,6 +73,12 @@ describe('income cash-flow mutation policy', () => {
       resolveIncomeCounterpartyPayloadKind(
         IncomePaymentOperationType.SupplierReturn,
         IncomeCounterpartySearchType.Manufacturer,
+      ),
+    ).toBe('client')
+    expect(
+      resolveIncomeCounterpartyPayloadKind(
+        IncomePaymentOperationType.SupplierReturn,
+        IncomeCounterpartySearchType.Client,
       ),
     ).toBeNull()
   })

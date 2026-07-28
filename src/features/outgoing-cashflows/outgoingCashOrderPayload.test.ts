@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { PaymentRegisterType } from '../income-cashflows/types'
 import { OUTCOME_OPERATION_TYPE, type CreateFormState } from './outgoingCreateTypes'
 import { buildOutgoingCashOrderPayload } from './outgoingCashOrderPayload'
 
@@ -21,20 +22,46 @@ const baseForm: CreateFormState = {
 }
 
 describe('buildOutgoingCashOrderPayload', () => {
-  it('creates a transfer-to-colleague operation for an under-report payment', () => {
+  it.each([
+    ['bank', PaymentRegisterType.Bank, 'EUR'],
+    ['cash', PaymentRegisterType.Cash, 'UAH'],
+  ])('creates a %s transfer-to-colleague with its exact account and currency', (_, registerType, currencyCode) => {
     const payload = buildOutgoingCashOrderPayload({
       colleague: { Id: 7 },
       form: baseForm,
-      selectedCurrencyRegister: { Id: 2 },
+      selectedCurrencyRegister: {
+        Currency: { Code: currencyCode, Id: currencyCode === 'EUR' ? 2 : 10038 },
+        Id: 2,
+      },
       selectedMovement: { Id: 3 },
       selectedOrganization: { Id: 1 },
-      selectedRegister: { Id: 4 },
+      selectedRegister: { Id: 4, Type: registerType },
     })
 
     expect(payload).toMatchObject({
+      Amount: 150,
       Colleague: { Id: 7 },
+      Comment: 'Витрати',
+      FromDate: '2026-07-26T12:30:00',
+      IsAccounting: false,
+      IsManagementAccounting: true,
       IsUnderReport: true,
       OperationType: OUTCOME_OPERATION_TYPE.TransferToColleague,
+      Organization: { Id: 1 },
+      PaymentCurrencyRegister: {
+        Currency: { Code: currencyCode },
+        Id: 2,
+      },
+      PaymentMovementOperation: {
+        PaymentMovement: { Id: 3 },
+      },
+      PaymentPurpose: 'Господарські витрати',
+      PaymentRegister: {
+        Id: 4,
+        Type: registerType,
+      },
     })
+    expect(payload.ClientAgreement).toBeUndefined()
+    expect(payload.SupplyOrganizationAgreement).toBeUndefined()
   })
 })

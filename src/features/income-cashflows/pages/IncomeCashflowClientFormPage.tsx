@@ -75,6 +75,10 @@ import {
   selectDefaultIncomePaymentMovement,
   shouldAllocateIncomePaymentToSales,
 } from '../incomeCashflowMutationPolicy'
+import {
+  attachIncomeCounterpartyToOrder,
+  validateIncomeCounterpartySelection,
+} from '../incomeCashflowCounterpartyContract'
 import { getPaymentPurposeSuggestionScope } from '../paymentPurposeSuggestionScope'
 import {
   buildIncomeCashflowSaleTargets,
@@ -855,11 +859,14 @@ export function IncomeCashflowClientFormPage() {
       activeMovement,
       agreementsLoadState,
       amount: form.amount,
-      counterpartyPayloadKind,
+      operationType,
+      searchType: form.searchType,
       selectedClient,
+      selectedClientAgreement,
       selectedCurrency,
       selectedOrganization,
       selectedRegister,
+      selectedSupplyAgreement,
       selectedSupplyOrganization,
       t,
     }) || validateIncomeCashflowContract(
@@ -1345,19 +1352,14 @@ function buildIncomePaymentOrder({
     VatPercent: form.vatRate,
   }
 
-  if (counterpartyPayloadKind === 'supplier' && selectedSupplyOrganization) {
-    order.SupplyOrganization = selectedSupplyOrganization
-    order.SupplyOrganizationAgreement = selectedSupplyAgreement || undefined
-  } else if (counterpartyPayloadKind === 'client' && selectedClient) {
-    order.Client = {
-      ...selectedClient,
-      ClientAgreements: selectedClientAgreement ? [selectedClientAgreement] : selectedClient.ClientAgreements,
-      ClientInDebts: selectedClientDebts,
-    }
-    order.ClientAgreement = selectedClientAgreement || undefined
-  }
-
-  return order
+  return attachIncomeCounterpartyToOrder(order, {
+    counterpartyPayloadKind,
+    selectedClient,
+    selectedClientAgreement,
+    selectedClientDebts,
+    selectedSupplyAgreement,
+    selectedSupplyOrganization,
+  })
 }
 
 function summarizeClientDebts(debts: ClientInDebt[]): DebtSummary {
@@ -1378,22 +1380,28 @@ function validateForm({
   activeMovement,
   agreementsLoadState,
   amount,
-  counterpartyPayloadKind,
+  operationType,
+  searchType,
   selectedClient,
+  selectedClientAgreement,
   selectedCurrency,
   selectedOrganization,
   selectedRegister,
+  selectedSupplyAgreement,
   selectedSupplyOrganization,
   t,
 }: {
   activeMovement: PaymentMovement | null
   agreementsLoadState: AgreementsLoadState
   amount: number
-  counterpartyPayloadKind: 'client' | 'supplier' | null
+  operationType: IncomePaymentOperationType
+  searchType: IncomeCounterpartySearchType
   selectedClient: Client | null
+  selectedClientAgreement: ClientAgreement | null
   selectedCurrency: Currency | null
   selectedOrganization: Organization | null
   selectedRegister: PaymentRegister | null
+  selectedSupplyAgreement: SupplyOrganizationAgreement | null
   selectedSupplyOrganization: SupplyOrganization | null
   t: (value: string) => string
 }): string | null {
@@ -1405,17 +1413,19 @@ function validateForm({
     return t('Оберіть статтю руху коштів')
   }
 
-  if (
-    !counterpartyPayloadKind ||
-    (counterpartyPayloadKind === 'supplier'
-      ? !selectedSupplyOrganization
-      : !selectedClient)
-  ) {
-    return t('Оберіть контрагента')
-  }
+  const counterpartyError = validateIncomeCounterpartySelection({
+    agreementsLoaded: agreementsLoadState === 'loaded',
+    operationType,
+    searchType,
+    selectedClient,
+    selectedClientAgreement,
+    selectedSupplyAgreement,
+    selectedSupplyOrganization,
+    t,
+  })
 
-  if (agreementsLoadState !== 'loaded') {
-    return t('Не вдалося підтвердити договори контрагента')
+  if (counterpartyError) {
+    return counterpartyError
   }
 
   if (!selectedOrganization) {

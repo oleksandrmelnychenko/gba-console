@@ -11,7 +11,11 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { OutgoingCashOrderForm } from '../components/OutgoingCashOrderForm'
 import { OutgoingCreateModeSelector } from '../components/OutgoingCreateModeSelector'
 import { OutgoingPaymentGroupForm } from '../components/OutgoingPaymentGroupForm'
-import { OUTGOING_CREATE_MODE, type OutgoingCreateMode } from '../outgoingCreateTypes'
+import {
+  OUTGOING_CREATE_MODE,
+  resolveOutgoingCreateMode,
+  type OutgoingCreateMode,
+} from '../outgoingCreateTypes'
 import {
   getOutgoingPaymentGroupTitle,
   parseOutgoingPaymentOperationType,
@@ -38,8 +42,10 @@ export function OutgoingCashflowCreatePage() {
         t,
       ),
   )
-  const activeMode = getModeFromPath(location.pathname)
-    || (searchParams.get('operationType') ? OUTGOING_CREATE_MODE.PaymentGroup : null)
+  const activeMode = resolveOutgoingCreateMode(
+    location.pathname,
+    searchParams.get('operationType'),
+  )
   const drawerTitle = activeMode === OUTGOING_CREATE_MODE.Simple
     ? t('Створення нового видаткового ордера')
     : activeMode === OUTGOING_CREATE_MODE.PaymentGroup
@@ -113,16 +119,4 @@ export function OutgoingCashflowCreatePage() {
       </Stack>
     </AppDrawer>
   )
-}
-
-function getModeFromPath(pathname: string): OutgoingCreateMode | null {
-  if (pathname.endsWith('/simple')) {
-    return OUTGOING_CREATE_MODE.Simple
-  }
-
-  if (pathname.endsWith('/group')) {
-    return OUTGOING_CREATE_MODE.PaymentGroup
-  }
-
-  return null
 }

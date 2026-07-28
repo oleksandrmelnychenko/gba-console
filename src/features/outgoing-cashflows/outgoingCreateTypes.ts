@@ -78,6 +78,21 @@ export const OUTGOING_CREATE_MODE = {
 
 export type OutgoingCreateMode = (typeof OUTGOING_CREATE_MODE)[keyof typeof OUTGOING_CREATE_MODE]
 
+export function resolveOutgoingCreateMode(
+  pathname: string,
+  operationType: string | null,
+): OutgoingCreateMode | null {
+  if (pathname.endsWith('/simple')) {
+    return OUTGOING_CREATE_MODE.Simple
+  }
+
+  if (pathname.endsWith('/group')) {
+    return OUTGOING_CREATE_MODE.PaymentGroup
+  }
+
+  return operationType ? OUTGOING_CREATE_MODE.PaymentGroup : null
+}
+
 export type CreateFormState = {
   amount: number
   comment: string

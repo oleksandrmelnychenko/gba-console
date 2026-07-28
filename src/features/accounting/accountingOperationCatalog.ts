@@ -158,7 +158,11 @@ export const ACCOUNTING_OPERATION_CATALOG: readonly AccountingOperationDefinitio
     variant: 'manual',
   },
   {
-    counterparty: { kinds: ['supplier'], required: true, source: 'form' },
+    counterparty: {
+      kinds: ['supplier', 'manufacturer'],
+      required: true,
+      source: 'form',
+    },
     direction: 'income',
     endpoint: '/payments/orders/income/new',
     id: ACCOUNTING_OPERATION_ID.IncomeSupplierReturn,

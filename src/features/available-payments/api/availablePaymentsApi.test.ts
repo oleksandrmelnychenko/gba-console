@@ -2,11 +2,17 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import {
   createAvailablePaymentOutcome,
+  getAvailablePaymentExchangeRate,
+  getAvailablePaymentMovements,
+  getAvailablePaymentsOrganizations,
   getGroupedPaymentTasks,
   mergeAvailablePaymentTasks,
+  searchAvailablePaymentMovements,
+  searchAvailablePaymentRegisters,
   setAvailablePaymentTaskToActive,
 } from './availablePaymentsApi'
 import { AccountingTypeValue, type AvailablePaymentTaskModel, type SupplyPaymentTask } from '../types'
+import { PaymentRegisterType } from '../../income-cashflows/types'
 
 vi.mock('../../../shared/api/apiClient', () => ({
   apiRequest: vi.fn(),
@@ -76,6 +82,89 @@ describe('availablePaymentsApi', () => {
     })
   })
 
+  it('loads the organization, register, currency, and movement autocomplete sources used by the payment form', async () => {
+    apiRequestMock
+      .mockResolvedValueOnce([{ Id: 1, Name: 'Організація' }])
+      .mockResolvedValueOnce({
+        Items: [
+          {
+            Id: 2,
+            Name: 'Банк',
+            PaymentCurrencyRegisters: null,
+          },
+        ],
+      })
+      .mockResolvedValueOnce([{ Id: 3, OperationName: 'Оплата постачальнику' }])
+      .mockResolvedValueOnce({
+        Items: [{ Id: 4, OperationName: 'Оплата за інвойсом' }],
+      })
+
+    await expect(getAvailablePaymentsOrganizations()).resolves.toEqual([
+      { Id: 1, Name: 'Організація' },
+    ])
+    await expect(searchAvailablePaymentRegisters(' банк ')).resolves.toEqual([
+      {
+        Id: 2,
+        Name: 'Банк',
+        PaymentCurrencyRegisters: [],
+      },
+    ])
+    await expect(getAvailablePaymentMovements()).resolves.toEqual([
+      { Id: 3, OperationName: 'Оплата постачальнику' },
+    ])
+    await expect(
+      searchAvailablePaymentMovements('інвойс'),
+    ).resolves.toEqual([{ Id: 4, OperationName: 'Оплата за інвойсом' }])
+
+    expect(apiRequestMock).toHaveBeenNthCalledWith(1, '/organizations/all')
+    expect(apiRequestMock).toHaveBeenNthCalledWith(
+      2,
+      '/payments/registers/search',
+      {
+        query: {
+          value: ' банк ',
+        },
+      },
+    )
+    expect(apiRequestMock).toHaveBeenNthCalledWith(
+      3,
+      '/payments/movements/all',
+    )
+    expect(apiRequestMock).toHaveBeenNthCalledWith(
+      4,
+      '/payments/movements/all/search',
+      {
+        query: {
+          value: 'інвойс',
+        },
+      },
+    )
+  })
+
+  it('loads the exchange rate for the selected register and task currencies', async () => {
+    apiRequestMock.mockResolvedValueOnce({ Rate: 44.35 })
+
+    await expect(
+      getAvailablePaymentExchangeRate({
+        fromCurrencyNetId: 'currency-uah',
+        fromDate: '2026-07-20T12:30:00',
+        organizationName: 'Інша організація',
+        toCurrencyNetId: 'currency-eur',
+      }),
+    ).resolves.toBe(44.35)
+
+    expect(apiRequestMock).toHaveBeenCalledWith(
+      '/exchangerates/get/specific',
+      {
+        query: {
+          fromCurrencyNetId: 'currency-uah',
+          fromDate: '2026-07-20T12:30:00',
+          toCurrencyNetId: 'currency-eur',
+        },
+      },
+    )
+  })
+
   it('keeps the exact persisted task identity and excludes deleted documents when setting a task available', async () => {
     const task = createPersistedTask()
     const upload = new File(['proof'], 'proof.pdf', { type: 'application/pdf' })
@@ -136,64 +225,105 @@ describe('availablePaymentsApi', () => {
     expect(apiRequestMock).not.toHaveBeenCalled()
   })
 
-  it('excludes deleted persisted documents from the outcome-payment task graph', async () => {
+  it('creates bank and cash task payments with exact accounting, register, currency, and task fields', async () => {
     const task = createPersistedTask()
     const model = {
       id: 'task-42',
       task,
     } as AvailablePaymentTaskModel
-    apiRequestMock.mockResolvedValueOnce({})
-
     const operationId = '88888888-8888-4888-8888-888888888888'
 
-    await createAvailablePaymentOutcome({
-      amount: 100,
-      comment: '',
-      customNumber: '',
-      documents: [],
-      exchangeRate: 1,
-      fromDate: '2026-07-25T12:00:00',
-      isAccounting: false,
-      isManagementAccounting: true,
-      models: [model],
-      organization: { Id: 1 },
-      paymentPurpose: 'Оплата постачальнику',
-      selectedCurrencyRegister: { Id: 2 },
-      selectedMovement: { Id: 3 },
-      selectedRegister: { Id: 4 },
-    }, { operationId })
+    for (const registerType of [
+      PaymentRegisterType.Bank,
+      PaymentRegisterType.Cash,
+    ]) {
+      apiRequestMock.mockResolvedValueOnce({})
 
-    const body = apiRequestMock.mock.calls[0]?.[1]?.body as FormData
-    const payload = JSON.parse(String(body.get('order'))) as {
-      OperationType: number
-      OutcomePaymentOrderSupplyPaymentTasks: Array<{
-        SupplyPaymentTask: SupplyPaymentTask
-      }>
+      await createAvailablePaymentOutcome({
+        amount: 100,
+        comment: 'Оплата рахунку',
+        customNumber: 'PAY-42',
+        documents: [],
+        exchangeRate: 44.35,
+        fromDate: '2026-07-25T12:00:00',
+        isAccounting: true,
+        isManagementAccounting: false,
+        models: [model],
+        organization: { Id: 1 },
+        paymentPurpose: 'Оплата постачальнику',
+        selectedCurrencyRegister: {
+          Currency: { Code: 'UAH', Id: 10038 },
+          Id: 2,
+        },
+        selectedMovement: { Id: 3 },
+        selectedRegister: { Id: 4, Type: registerType },
+      }, { operationId })
+
+      const call = apiRequestMock.mock.calls.at(-1)
+      const body = call?.[1]?.body as FormData
+      const payload = JSON.parse(String(body.get('order'))) as {
+        IsAccounting: boolean
+        IsManagementAccounting: boolean
+        OperationType: number
+        OutcomePaymentOrderSupplyPaymentTasks: Array<{
+          SupplyPaymentTask: SupplyPaymentTask
+        }>
+        PaymentCurrencyRegister: {
+          Currency: { Code: string; Id: number }
+          Id: number
+        }
+        PaymentMovementOperation: {
+          PaymentMovementId: number
+        }
+        PaymentRegister: {
+          Id: number
+          Type: number
+        }
+      }
+      const outcomeTask =
+        payload.OutcomePaymentOrderSupplyPaymentTasks[0]?.SupplyPaymentTask
+
+      expect(payload).toMatchObject({
+        IsAccounting: true,
+        IsManagementAccounting: false,
+        OperationType: 4,
+        PaymentCurrencyRegister: {
+          Currency: { Code: 'UAH', Id: 10038 },
+          Id: 2,
+        },
+        PaymentMovementOperation: {
+          PaymentMovementId: 3,
+        },
+        PaymentRegister: {
+          Id: 4,
+          Type: registerType,
+        },
+      })
+      expect(outcomeTask).toMatchObject({
+        Id: 42,
+        NetUid: '6b705f30-89a3-4c57-b74c-908082528865',
+      })
+      expect(outcomeTask?.SupplyPaymentTaskDocuments).toEqual([
+        expect.objectContaining({
+          Id: 10,
+          NetUid: '7be42a1c-b2a6-4137-8548-2033ce5cb85d',
+        }),
+      ])
+      expect(apiRequestMock).toHaveBeenLastCalledWith(
+        '/payments/orders/outcome/new/supplies',
+        {
+          body,
+          dedupe: false,
+          headers: {
+            'Idempotency-Key': operationId,
+          },
+          method: 'POST',
+          query: {
+            operationNetUid: operationId,
+          },
+        },
+      )
     }
-    const outcomeTask = payload.OutcomePaymentOrderSupplyPaymentTasks[0]?.SupplyPaymentTask
-
-    expect(outcomeTask).toMatchObject({
-      Id: 42,
-      NetUid: '6b705f30-89a3-4c57-b74c-908082528865',
-    })
-    expect(outcomeTask?.SupplyPaymentTaskDocuments).toEqual([
-      expect.objectContaining({
-        Id: 10,
-        NetUid: '7be42a1c-b2a6-4137-8548-2033ce5cb85d',
-      }),
-    ])
-    expect(payload.OperationType).toBe(4)
-    expect(apiRequestMock).toHaveBeenCalledWith('/payments/orders/outcome/new/supplies', {
-      body,
-      dedupe: false,
-      headers: {
-        'Idempotency-Key': operationId,
-      },
-      method: 'POST',
-      query: {
-        operationNetUid: operationId,
-      },
-    })
   })
 })
 

@@ -36,6 +36,10 @@ import {
   type OutcomePaymentUser,
 } from '../outgoingCreateTypes'
 import { buildOutgoingCashOrderPayload } from '../outgoingCashOrderPayload'
+import {
+  parseOutgoingCashOrderRegisterType,
+  validateOutgoingCashOrderForm,
+} from '../outgoingCashOrderPolicy'
 import type { Organization, PaymentMovement } from '../types'
 
 type OutgoingCashOrderFormProps = {
@@ -79,7 +83,9 @@ export function OutgoingCashOrderForm({ onCancel, onCreated }: OutgoingCashOrder
   )
   const [searchParams] = useSearchParams()
   // «Перерахування підзвітнику» відкривається з груп Банк/Каса з ?type= — префільтруємо реєстри.
-  const registerTypeFilter = parseRegisterTypeFilter(searchParams.get('type'))
+  const registerTypeFilter = parseOutgoingCashOrderRegisterType(
+    searchParams.get('type'),
+  )
   const organizationRegisters = useMemo(
     () =>
       paymentRegisters.filter(
@@ -322,7 +328,7 @@ export function OutgoingCashOrderForm({ onCancel, onCreated }: OutgoingCashOrder
       users.find((user) => getUserLabel(user) === typedColleague || getEntityValue(user) === typedColleague) ??
       null
 
-    const validationError = validateForm({
+    const validationError = validateOutgoingCashOrderForm({
       amount: form.amount,
       selectedColleague: resolvedColleague,
       selectedCurrencyRegister,
@@ -547,50 +553,6 @@ function createInitialForm(): CreateFormState {
   }
 }
 
-function validateForm({
-  amount,
-  selectedColleague,
-  selectedCurrencyRegister,
-  selectedMovement,
-  selectedOrganization,
-  selectedRegister,
-  t,
-}: {
-  amount: number
-  selectedColleague: OutcomePaymentUser | null
-  selectedCurrencyRegister: CreatePaymentCurrencyRegister | null
-  selectedMovement: PaymentMovement | null
-  selectedOrganization: Organization | null
-  selectedRegister: CreatePaymentRegister | null
-  t: (value: string) => string
-}): string | null {
-  if (!selectedOrganization) {
-    return t('Організація')
-  }
-
-  if (!selectedRegister) {
-    return t('Грошові рахунки')
-  }
-
-  if (!selectedCurrencyRegister) {
-    return t('Валюта')
-  }
-
-  if (!selectedMovement) {
-    return t('Виберіть статтю грошових витрат')
-  }
-
-  if (!selectedColleague) {
-    return t('Виберіть відповідального')
-  }
-
-  if (!amount || amount <= 0) {
-    return t('Сума')
-  }
-
-  return null
-}
-
 function isRegisterForOrganization(register: CreatePaymentRegister, organization: Organization | null): boolean {
   if (!organization) {
     return true
@@ -721,16 +683,4 @@ function toNumber(value: string | number): number {
   const parsed = typeof value === 'number' ? value : Number(value.replace(',', '.'))
 
   return Number.isFinite(parsed) ? parsed : 0
-}
-
-function parseRegisterTypeFilter(value: string | null): number | null {
-  if (value === '0') {
-    return 0
-  }
-
-  if (value === '2') {
-    return 2
-  }
-
-  return null
 }
