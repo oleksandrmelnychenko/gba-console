@@ -949,7 +949,7 @@ function SadEditorPage({ mode, netId }: { mode: EditorMode; netId?: string }) {
             {t('Завантажити')}
           </Button>
           {!isReadonly && mode !== 'sale' && !sad.IsFromSale && (
-            <Button leftSection={<Plus size={16} />} variant="outline" onClick={() => setAddItemsOpen(true)}>
+              <Button leftSection={<Plus size={16} />} onClick={() => setAddItemsOpen(true)}>
               {t('Додати товар')}
             </Button>
           )}
