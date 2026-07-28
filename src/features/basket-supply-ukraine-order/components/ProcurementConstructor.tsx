@@ -800,8 +800,7 @@ export function ProcurementConstructor() {
                         loading={creatingProducer === group.producerId}
                         mt={6}
                         size="compact-xs"
-                        variant="light"
-                        onClick={() => void createDraft(group.producerId, group.lines)}
+              onClick={() => void createDraft(group.producerId, group.lines)}
                       >
                         {t('Створити чернетку')}
                       </Button>
