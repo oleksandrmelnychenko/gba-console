@@ -495,10 +495,10 @@ export function AdvanceReportViewPage() {
       <Group className="advance-report-detail-actions" gap="xs" justify="flex-end">
         {!model.isDone && (
           <>
-            <Button disabled={model.isBusy} leftSection={<Receipt size={16} />} variant="outline" onClick={model.openConsumableModal}>
+            <Button color={CREATE_ACTION_COLOR} disabled={model.isBusy} leftSection={<Receipt size={16} />} onClick={model.openConsumableModal}>
               {t('Додати товар / послугу')}
             </Button>
-            <Button disabled={model.isBusy} leftSection={<Fuel size={16} />} variant="outline" onClick={model.openFuelModal}>
+            <Button color={CREATE_ACTION_COLOR} disabled={model.isBusy} leftSection={<Fuel size={16} />} onClick={model.openFuelModal}>
               {t('Додати пальне')}
             </Button>
           </>
@@ -807,12 +807,12 @@ function DifferenceMessage({ model }: { model: ReturnType<typeof useAdvanceRepor
         </Button>
         {model.canAppendRows && (
           <>
-            <Button disabled={model.isBusy} leftSection={<Receipt size={14} />} size="xs" variant="outline" onClick={model.openConsumableModal}>
-              {t('Прикріпити накладну')}
-            </Button>
-            <Button disabled={model.isBusy} leftSection={<Fuel size={14} />} size="xs" variant="outline" onClick={model.openFuelModal}>
-              {t('Додати пальне')}
-            </Button>
+                <Button color={CREATE_ACTION_COLOR} disabled={model.isBusy} leftSection={<Receipt size={14} />} size="xs" onClick={model.openConsumableModal}>
+                  {t('Прикріпити накладну')}
+                </Button>
+                <Button color={CREATE_ACTION_COLOR} disabled={model.isBusy} leftSection={<Fuel size={14} />} size="xs" onClick={model.openFuelModal}>
+                  {t('Додати пальне')}
+                </Button>
           </>
         )}
       </Group>
