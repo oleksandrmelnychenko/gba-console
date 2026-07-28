@@ -1286,8 +1286,7 @@ function DeprecatedConsumableOrderEditorModal({
                   <Button
                     disabled={!productValue || isSaving}
                     leftSection={<Plus size={16} />}
-                    variant="outline"
-                    onClick={addSelectedProduct}
+            onClick={addSelectedProduct}
                   >
                     {t('Додати')}
                   </Button>
