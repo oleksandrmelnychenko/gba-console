@@ -317,7 +317,6 @@ export function ConsumableProductsPage() {
                 disabled={!selectedCategory}
                 leftSection={<Plus size={16} />}
                 size="sm"
-                variant="outline"
                 onClick={() => {
                   if (selectedCategory) {
                     setProductEditor({ category: selectedCategory, mode: 'create' })
