@@ -937,7 +937,7 @@ function ProductPlacementEditor({
             </Table>
           </ScrollArea.Autosize>
           <Group className="product-placement-editor__footer" justify="space-between" gap="sm">
-            <Button color={CREATE_ACTION_COLOR} size="xs" variant="outline" leftSection={<Plus size={14} />} onClick={addPlacement}>
+            <Button color={CREATE_ACTION_COLOR} size="xs" leftSection={<Plus size={14} />} onClick={addPlacement}>
               {t('Додати місце')}
             </Button>
             <Group gap="xs">

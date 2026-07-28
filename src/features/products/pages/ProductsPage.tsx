@@ -2629,8 +2629,7 @@ export function ProductFileUploadModal({
                 leftSection={<Plus size={16} />}
                 size="xs"
                 styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
-                variant="outline"
-                onClick={addPriceRow}
+                            onClick={addPriceRow}
               >
                 {t('Додати ціну')}
               </Button>
