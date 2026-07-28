@@ -914,7 +914,6 @@ export function WarehouseUkraineOrderPlacementsPage() {
                   className="warehouse-order-placement-action-button"
                   color={CREATE_ACTION_COLOR}
                   disabled={model.isBusy}
-                  variant="outline"
                   onClick={() => model.setColumnModalOpen(true)}
                 >
                   {t('Додати колонку')}

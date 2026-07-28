@@ -2005,8 +2005,7 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
               <Button
                 color={CREATE_ACTION_COLOR}
                 leftSection={<Plus size={18} />}
-                variant="outline"
-                onClick={openManualPicker}
+          onClick={openManualPicker}
                 disabled={!canEditShipment || isSaving}
               >
                 {t('Додати накладні')}

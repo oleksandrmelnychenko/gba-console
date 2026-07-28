@@ -306,7 +306,7 @@ export function PlacementEditDrawer({
 
         {!draft && (
           <Group>
-            <Button disabled={!canAddPlacements} variant="outline" onClick={() => openDraft(null)}>
+              <Button color={CREATE_ACTION_COLOR} disabled={!canAddPlacements} onClick={() => openDraft(null)}>
               {t('Додати')}
             </Button>
           </Group>
