@@ -750,7 +750,7 @@ export function SalesReturnClientPage() {
                       mt={{ base: 0, md: 24 }}
                       onClick={addItem}
                       type="button"
-                      variant="light"
+                      variant="filled"
                     >
                       {t('Додати позицію')}
                     </Button>
