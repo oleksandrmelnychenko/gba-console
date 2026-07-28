@@ -1,7 +1,5 @@
 import {
   Alert,
-  Badge,
-  Box,
   Button,
   Card,
   Grid,
@@ -43,6 +41,7 @@ import { applyPendingDiscountDraft } from '../components/pricing/pendingDiscount
 import type { DiscountsTreeDraft } from '../components/pricing/DiscountsTree'
 import { type ClientFormErrors, validateClientForm, validateRegionCodeSubmitState } from '../components/form/validateClientForm'
 import type { Client, ClientContractDocument, ClientType, ClientTypeRole, Currency, Region } from '../types'
+import './client-new-page.css'
 
 const CLIENT_TYPE_BUYER = 0
 const CLIENT_TYPE_PROVIDER = 1
@@ -815,22 +814,33 @@ export function ClientNewPage() {
           <form onSubmit={handleSubmit}>
             <Grid gap="md">
               <Grid.Col span={{ base: 12, md: 3 }}>
-                <Card withBorder radius="md" padding="md">
-                  <Stack gap="xs">
-                    {visibleSteps.map((item) => (
-                      <Button
+                <nav className="client-new-step-nav" aria-label={t('Кроки створення клієнта')}>
+                  {visibleSteps.map((item) => {
+                    const isActive = item === currentStep
+
+                    return (
+                      <button
                         key={item}
-                        justify="flex-start"
-                        variant={item === currentStep ? 'light' : 'subtle'}
-                        color={item === currentStep ? 'orange' : 'gray'}
+                        aria-pressed={isActive}
+                        className={`client-new-step-nav__item${isActive ? ' is-active' : ''}`}
                         disabled={item !== 'role' && !draft.ClientInRole.ClientTypeRole}
+                        type="button"
                         onClick={() => goToStep(item)}
                       >
-                        {getNewStepLabel(item)}
-                      </Button>
-                    ))}
-                  </Stack>
-                </Card>
+                        <span className="client-new-step-nav__main">
+                          <span className="client-new-step-nav__label">{getNewStepLabel(item)}</span>
+                          <ChevronRight
+                            aria-hidden="true"
+                            className="client-new-step-nav__chevron"
+                            size={14}
+                            strokeWidth={2}
+                          />
+                        </span>
+                        <span aria-hidden="true" className="client-new-step-nav__marker" />
+                      </button>
+                    )
+                  })}
+                </nav>
               </Grid.Col>
               <Grid.Col span={{ base: 12, md: 9 }}>
                 <Card withBorder radius="md" padding="md">
@@ -940,7 +950,7 @@ function NewStepContent({
         <Title order={3} size="h4">
           {t('Роль')}
         </Title>
-        <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
+        <SimpleGrid className="client-new-role-grid" cols={{ base: 1, md: 2 }} spacing="xs">
           {clientTypes.flatMap((clientType) =>
             (clientType.ClientTypeRoles || []).flatMap((clientRole) => {
               if (!canSelectRole(clientType, clientRole, hasPermission)) {
@@ -950,26 +960,21 @@ function NewStepContent({
               const isSelected = isSameRole(draft.ClientInRole.ClientTypeRole, clientRole)
 
               return [
-                <Button
+                <button
                   key={`${clientType.Id || clientType.NetUid || clientType.Name}-${clientRole.Id || clientRole.NetUid || clientRole.Name}`}
                   type="button"
-                  fullWidth
-                  h="auto"
-                  justify="space-between"
-                  color={isSelected ? 'orange' : 'gray'}
-                  variant={isSelected ? 'light' : 'default'}
+                  aria-pressed={isSelected}
+                  className={`client-new-role-card${isSelected ? ' is-selected' : ''}`}
                   onClick={() => setRole(clientType, clientRole)}
                 >
-                  <Group justify="space-between" w="100%" py={4}>
-                    <Box ta="left">
-                      <Text fw={600}>{clientRole.Name || t('Без назви')}</Text>
-                      <Text size="xs" c="dimmed">
-                        {clientType.Name || '-'}
-                      </Text>
-                    </Box>
-                    {isSelected && <Badge className="app-role-pill">{t('Обрано')}</Badge>}
-                  </Group>
-                </Button>,
+                  <span className="client-new-role-card__copy">
+                    <span className="client-new-role-card__name">
+                      {clientRole.Name || t('Без назви')}
+                    </span>
+                    <span className="client-new-role-card__type">{clientType.Name || '-'}</span>
+                  </span>
+                  <span className="client-new-role-card__marker" aria-hidden="true" />
+                </button>,
               ]
             }),
           )}
