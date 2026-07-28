@@ -509,8 +509,7 @@ export function ReportsStocksPage() {
                         leftSection={<Plus size={15} />}
                         size="compact-xs"
                         type="button"
-                        variant="outline"
-                        onClick={() => setSelections((current) => [...current, createEmptySelection()])}
+                onClick={() => setSelections((current) => [...current, createEmptySelection()])}
                       >
                         {t('Додати')}
                       </Button>
@@ -964,7 +963,7 @@ function SelectionValuePicker({ error, from, label, selection, selections, to, o
             value={manualValue}
             onChange={(event) => setManualValue(event.currentTarget.value)}
           />
-          <Button size="sm" type="button" variant="outline" onClick={addManualValue}>
+          <Button color={CREATE_ACTION_COLOR} size="sm" type="button" onClick={addManualValue}>
             {t('Додати')}
           </Button>
         </Group>
