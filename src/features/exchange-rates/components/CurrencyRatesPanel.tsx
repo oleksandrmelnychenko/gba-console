@@ -461,14 +461,14 @@ export function CurrencyRatesPanel({ group, onClose, onRefresh, style }: Currenc
             {t('Завантажити ще')}
           </Button>
         )}
-        {!isReadOnly && (
+        {!isReadOnly && !panelState.isFormOpen && (
           <Button
-            color={panelState.isFormOpen ? 'gray' : CREATE_ACTION_COLOR}
-            leftSection={panelState.isFormOpen ? <X size={16} /> : <PencilLine size={16} />}
-            variant={panelState.isFormOpen ? 'default' : 'filled'}
+            color={CREATE_ACTION_COLOR}
+            leftSection={<PencilLine size={16} />}
+            variant="filled"
             onClick={toggleForm}
           >
-            {panelState.isFormOpen ? t('Скасувати') : t('Оновити курси')}
+            {t('Оновити курси')}
           </Button>
         )}
       </Group>
@@ -479,6 +479,7 @@ export function CurrencyRatesPanel({ group, onClose, onRefresh, style }: Currenc
           formDate={panelState.formDate}
           formError={panelState.formError}
           isSaving={panelState.isSaving}
+          onCancel={toggleForm}
           onFormDateChange={(date) => dispatchPanel({ type: 'formDateChanged', date })}
           onRateAmountChange={(key, value) => dispatchPanel({ type: 'formRateChanged', key, value })}
           onSubmit={handleSubmit}
