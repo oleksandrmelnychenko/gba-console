@@ -441,8 +441,7 @@ export function ConsumableOrderPayPage() {
                   leftSection={<Plus size={14} />}
                   size="xs"
                   type="button"
-                  variant="outline"
-                  onClick={openMovementModal}
+              onClick={openMovementModal}
                 >
                   {t('Додати статтю')}
                 </Button>

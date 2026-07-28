@@ -844,7 +844,6 @@ export function ConsumableOrderFormPage() {
                   leftSection={<Plus size={15} />}
                   size="sm"
                   type="button"
-                  variant="outline"
                   onClick={openNewItemEditor}
                 >
                   {t('Додати')}
