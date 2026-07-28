@@ -3045,10 +3045,16 @@ export function NewSaleProductsStep({
     return () => document.removeEventListener('keydown', listener, true)
   }, [])
 
-  const mainStatesActive = kbState === 'ProductSearch' || kbState === 'ProductSelection' || kbState === 'FullDetail'
-  const analogueStatesActive = kbState === 'AnalogueSelection' || kbState === 'AnalogueFullDetail'
-  const componentStatesActive = kbState === 'ComponentSelection' || kbState === 'ComponentFullDetail'
-  const keepMainPickerCentered = kbState === 'ProductSearch' || kbState === 'ProductSelection' || kbState === 'FullDetail'
+  // Overlay states must not change the layout underneath them. In particular,
+  // Ctrl+B used to remove `is-search-centered` while the interest modal was
+  // opening, which made the left product carousel jump below its filter block.
+  const visualProductState = kbState === 'ViewImage' || kbState === 'Interest'
+    ? getPreviousProductKeyboardState()
+    : kbState
+  const mainStatesActive = visualProductState === 'ProductSearch' || visualProductState === 'ProductSelection' || visualProductState === 'FullDetail'
+  const analogueStatesActive = visualProductState === 'AnalogueSelection' || visualProductState === 'AnalogueFullDetail'
+  const componentStatesActive = visualProductState === 'ComponentSelection' || visualProductState === 'ComponentFullDetail'
+  const keepMainPickerCentered = visualProductState === 'ProductSearch' || visualProductState === 'ProductSelection' || visualProductState === 'FullDetail'
   const setQtyByNetUid = new Map<string, number>()
 
   componentEntries.entries.forEach((entry) => {
