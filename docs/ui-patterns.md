@@ -160,9 +160,10 @@
   `<div className="app-filter-table-toolbar-slot">` як `toolbarPortalTarget`
   для патернових ▦/☰ (`showLayoutControls`). Не дублювати density вручну в
   `.app-filter-actions`.
-- **Кнопки створення:** `CREATE_ACTION_COLOR`, filled — головна,
-  `variant="outline"` — другорядна; напис **моно 600**; сидять у самому барі
-  (НЕ в хедері сторінки / PageHeaderActions).
+- **Кнопки створення:** `CREATE_ACTION_COLOR`, тільки filled; оранжевий
+  `outline`/`light` для дій «Додати/Створити» не використовувати. Другорядні
+  дії робити нейтральними (`variant="default"`, gray). Напис **моно 600**;
+  сидять у самому барі (НЕ в хедері сторінки / PageHeaderActions).
 - Одиночні `<Tooltip>` на іконках дій — дозволені (це не пер-клітинкові).
 
 ## 6. Списки з вибором (аналітики, договори)
@@ -273,7 +274,8 @@ Right-drawer з даними одного запису (`/accounting/consumable-
 ## 8. Кнопки
 
 - Первинна дія («Добавити», «Зберегти») — filled `CREATE_ACTION_COLOR` (оранж).
-- Вторинна оранжева («Додати договір») — `variant="outline"`.
+- Дії створення/додавання («Додати договір», «Додати товар») — filled
+  `CREATE_ACTION_COLOR`; оранжевий `outline` для них не використовувати.
 - Нейтральна («Завантажити документи») — `variant="default"` (бордер, без заливки).
 - Іконкові «+» у формах — `ActionIcon variant="outline"` оранж; інлайн-редактори
   відкриваються **Popover-ом** (width 300, bottom-end, withArrow), не розпиранням рядка.
