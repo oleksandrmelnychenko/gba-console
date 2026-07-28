@@ -38,6 +38,7 @@
                         overflow-x:visible / overflow-y:clip still clipped the plate in Chrome. */
   position: sticky; /* stays in view while the detail panel scrolls past */
   top: 0;
+  z-index: 2;
   align-self: start; /* don't stretch to the tall workspace — sticky needs travel room */
   outline: none; /* it's a keyboard-handling wrapper, not a control — no focus ring stripe */
 }
@@ -1151,11 +1152,12 @@
 .product-assortment-selected {
   display: block;
   box-sizing: border-box;
-  width: 100%;
-  max-width: 100%;
-  height: 52px;
+  width: fit-content;
+  min-width: 100%;
+  max-width: min(720px, calc(100vw - 48px));
+  height: auto;
   min-height: 52px;
-  justify-self: stretch;
+  justify-self: start;
   align-self: center;
   padding: 7px 30px 7px 12px;
   border: 1px solid var(--brand-orange);
@@ -1192,7 +1194,7 @@
 
 .product-assortment-selected-code {
   display: block;
-  max-width: calc(100% - 22px);
+  max-width: min(660px, calc(100vw - 110px));
   overflow: hidden;
   color: var(--brand-orange);
   font-size: 13px;
@@ -1204,7 +1206,7 @@
 
 .product-assortment-selected-name {
   display: block;
-  max-width: calc(100% - 22px);
+  max-width: min(660px, calc(100vw - 110px));
   margin-top: 6px;
   overflow: hidden;
   color: var(--mantine-color-gray-9);
@@ -1213,6 +1215,24 @@
   line-height: 1.2;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+@media (max-width: 980px) {
+  .product-assortment-column {
+    z-index: auto;
+  }
+
+  .product-assortment-selected {
+    width: fit-content;
+    min-width: 100%;
+    max-width: 100%;
+    justify-self: start;
+  }
+
+  .product-assortment-selected-code,
+  .product-assortment-selected-name {
+    max-width: calc(100% - 22px);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

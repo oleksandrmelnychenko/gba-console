@@ -3597,7 +3597,7 @@ function getProductOriginalNumberIdentity(item: ProductOriginalNumber): string {
 }
 
 function getOriginalNumberText(item: ProductOriginalNumber): string {
-  return item.OriginalNumber?.MainNumber?.trim() || item.OriginalNumber?.Number?.trim() || ''
+  return item.OriginalNumber?.Number?.trim() || item.OriginalNumber?.MainNumber?.trim() || ''
 }
 
 function getProductRowKey(product: Product): string {
