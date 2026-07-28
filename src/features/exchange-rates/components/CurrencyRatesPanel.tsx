@@ -5,9 +5,10 @@ import {
   Group,
   Text,
   TextInput,
+  Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { RotateCcw, X } from 'lucide-react'
+import { CircleDollarSign, PencilLine, RotateCcw, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, type CSSProperties, type FormEvent } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { getExchangeRateHistory, updateExchangeRates } from '../api/exchangeRatesApi'
@@ -92,7 +93,7 @@ function createInitialPanelState(group: ExchangeRateGroup): PanelState {
     isFormOpen: false,
     isSaving: false,
     rateAmounts: getInitialRateAmounts(group.rates),
-    selectedRate: null,
+    selectedRate: group.rates[0] || null,
     toDate: new Date(),
   }
 }
@@ -374,60 +375,78 @@ export function CurrencyRatesPanel({ group, onClose, onRefresh, style }: Currenc
   return (
     <Box className="exchange-rates-panel tx-panel-reveal" style={style || undefined}>
       <Group justify="space-between" align="center" className="exchange-rates-panel-header">
-        <Box>
-          <Text fw={700} lh={1.1}>
-            {group.title}
-          </Text>
-          <Text size="xs" c="dimmed">
-            {selectedRateTitle}
-          </Text>
-        </Box>
+        <Group gap="sm" wrap="nowrap">
+          <Box className="exchange-rates-panel-heading-icon">
+            <CircleDollarSign size={19} strokeWidth={1.8} />
+          </Box>
+          <Box className="exchange-rates-panel-heading-copy">
+            <Text className="exchange-rates-panel-eyebrow">{t('Курси валют')}</Text>
+            <Group gap={8} wrap="nowrap">
+              <Text fw={700} lh={1.1} className="exchange-rates-panel-title">
+                {group.title}
+              </Text>
+              <Text size="xs" c="dimmed" className="exchange-rates-panel-current">
+                {selectedRateTitle}
+              </Text>
+            </Group>
+          </Box>
+        </Group>
         <ActionIcon variant="subtle" color="gray" aria-label={t('Закрити')} onClick={onClose}>
           <X size={18} strokeWidth={1.8} />
         </ActionIcon>
       </Group>
 
-      <Group gap="xs" wrap="nowrap" className="exchange-rates-filter">
-        <TextInput
-          label={t('З')}
-          type="date"
-          value={toDateInputValue(panelState.fromDate)}
-          onChange={(event) =>
-            dispatchPanel({
-              type: 'fromDateChanged',
-              date: parseDateInputValue(event.currentTarget.value, panelState.fromDate),
-            })
-          }
-        />
-        <TextInput
-          label={t('По')}
-          type="date"
-          value={toDateInputValue(panelState.toDate)}
-          onChange={(event) =>
-            dispatchPanel({
-              type: 'toDateChanged',
-              date: parseDateInputValue(event.currentTarget.value, panelState.toDate, true),
-            })
-          }
-        />
-        <ActionIcon variant="light" color="gray" aria-label={t('Скинути')} onClick={resetFilter}>
-          <RotateCcw size={18} strokeWidth={1.8} />
-        </ActionIcon>
-      </Group>
+      <Box className="exchange-rates-filter">
+        <Group justify="space-between" align="center" className="exchange-rates-section-heading">
+          <Text className="exchange-rates-section-title">{t('Період')}</Text>
+          <Tooltip label={t('Скинути')}>
+            <ActionIcon variant="subtle" color="gray" aria-label={t('Скинути')} onClick={resetFilter}>
+              <RotateCcw size={16} strokeWidth={1.8} />
+            </ActionIcon>
+          </Tooltip>
+        </Group>
+        <Group gap="sm" wrap="nowrap" className="exchange-rates-filter-fields">
+          <TextInput
+            label={t('Від')}
+            type="date"
+            value={toDateInputValue(panelState.fromDate)}
+            onChange={(event) =>
+              dispatchPanel({
+                type: 'fromDateChanged',
+                date: parseDateInputValue(event.currentTarget.value, panelState.fromDate),
+              })
+            }
+          />
+          <TextInput
+            label={t('До')}
+            type="date"
+            value={toDateInputValue(panelState.toDate)}
+            onChange={(event) =>
+              dispatchPanel({
+                type: 'toDateChanged',
+                date: parseDateInputValue(event.currentTarget.value, panelState.toDate, true),
+              })
+            }
+          />
+        </Group>
+      </Box>
 
-      <Group gap={6} wrap="wrap" className="exchange-rates-panel-list">
-        {group.rates.map((rate) => (
-          <button
-            key={getRateKey(rate)}
-            type="button"
-            className={`exchange-rates-panel-rate${panelState.selectedRate?.NetUid === rate.NetUid ? ' is-selected' : ''}`}
-            onClick={() => dispatchPanel({ type: 'rateSelected', rate })}
-          >
-            <span className="exchange-rates-panel-rate-code">{rate.Code}</span>
-            <span className="exchange-rates-panel-rate-value">{formatRate(rate.Amount)}</span>
-          </button>
-        ))}
-      </Group>
+      <Box className="exchange-rates-currency-section">
+        <Text className="exchange-rates-section-title">{t('Валюта')}</Text>
+        <Group gap={6} wrap="wrap" className="exchange-rates-panel-list">
+          {group.rates.map((rate) => (
+            <button
+              key={getRateKey(rate)}
+              type="button"
+              className={`exchange-rates-panel-rate${panelState.selectedRate?.NetUid === rate.NetUid ? ' is-selected' : ''}`}
+              onClick={() => dispatchPanel({ type: 'rateSelected', rate })}
+            >
+              <span className="exchange-rates-panel-rate-code">{rate.Code}</span>
+              <span className="exchange-rates-panel-rate-value">{formatRate(rate.Amount)}</span>
+            </button>
+          ))}
+        </Group>
+      </Box>
 
       <CurrencyRatesHistory
         error={historyState.error}
@@ -436,15 +455,20 @@ export function CurrencyRatesPanel({ group, onClose, onRefresh, style }: Currenc
         selectedRate={panelState.selectedRate}
       />
 
-      <Group gap="xs" className="exchange-rates-panel-controls">
+      <Group gap="xs" justify={historyState.canLoadMore ? 'space-between' : 'flex-end'} className="exchange-rates-panel-controls">
         {historyState.canLoadMore && (
-          <Button variant="light" color="gray" onClick={loadMore} loading={historyState.isMoreLoading}>
+          <Button variant="default" color="gray" onClick={loadMore} loading={historyState.isMoreLoading}>
             {t('Завантажити ще')}
           </Button>
         )}
         {!isReadOnly && (
-          <Button variant={panelState.isFormOpen ? 'outline' : 'light'} color={CREATE_ACTION_COLOR} onClick={toggleForm}>
-            {panelState.isFormOpen ? t('Скасувати') : t('Створити')}
+          <Button
+            color={panelState.isFormOpen ? 'gray' : CREATE_ACTION_COLOR}
+            leftSection={panelState.isFormOpen ? <X size={16} /> : <PencilLine size={16} />}
+            variant={panelState.isFormOpen ? 'default' : 'filled'}
+            onClick={toggleForm}
+          >
+            {panelState.isFormOpen ? t('Скасувати') : t('Оновити курси')}
           </Button>
         )}
       </Group>

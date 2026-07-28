@@ -6,7 +6,7 @@ import type { ExchangeRate, ExchangeRateGroup } from '../types'
 import { buildExchangeRateGroups, formatRate, getRateKey } from '../utils'
 import { CurrencyRatesPanel } from './CurrencyRatesPanel'
 
-const PANEL_WIDTH = 430
+const PANEL_WIDTH = 480
 const PANEL_GAP = 10
 
 export function CurrencyRatesFooter() {

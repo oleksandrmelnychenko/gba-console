@@ -1,5 +1,5 @@
-import { Badge, Group, Loader, ScrollArea, Stack, Text } from '@mantine/core'
-import { ArrowDown, ArrowUp } from 'lucide-react'
+import { Box, Group, Loader, ScrollArea, Stack, Text } from '@mantine/core'
+import { ArrowDown, ArrowUp, ChartNoAxesColumnIncreasing, CircleAlert } from 'lucide-react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { ExchangeRate } from '../types'
 import { formatHistoryDate, formatRate } from '../utils'
@@ -26,21 +26,20 @@ export function CurrencyRatesHistory({ error, isLoading, items, selectedRate }: 
       )}
 
       {!isLoading && error && (
-        <Text size="sm" c="red" className="exchange-rates-history-state">
-          {t('Історія недоступна')}
-        </Text>
+        <Stack align="center" gap={5} className="exchange-rates-history-state">
+          <Box className="exchange-rates-history-state-icon is-error">
+            <CircleAlert size={18} strokeWidth={1.8} />
+          </Box>
+          <Text size="sm" c="red">{t('Історія недоступна')}</Text>
+        </Stack>
       )}
 
       {!isLoading && !error && !selectedRate && (
-        <Text size="sm" c="dimmed" className="exchange-rates-history-state">
-          {t('Оберіть валюту')}
-        </Text>
+        <EmptyHistoryState title={t('Оберіть валюту')} />
       )}
 
       {!isLoading && !error && selectedRate && items.length === 0 && (
-        <Text size="sm" c="dimmed" className="exchange-rates-history-state">
-          {t('Немає історії')}
-        </Text>
+        <EmptyHistoryState title={t('Немає історії')} />
       )}
 
       {!isLoading && !error && items.length > 0 && (
@@ -54,21 +53,33 @@ export function CurrencyRatesHistory({ error, isLoading, items, selectedRate }: 
   )
 }
 
+function EmptyHistoryState({ title }: { title: string }) {
+  return (
+    <Stack align="center" gap={5} className="exchange-rates-history-state">
+      <Box className="exchange-rates-history-state-icon">
+        <ChartNoAxesColumnIncreasing size={18} strokeWidth={1.8} />
+      </Box>
+      <Text size="sm" c="dimmed">{title}</Text>
+    </Stack>
+  )
+}
+
 function HistoryRow({ previous, rate }: { previous?: ExchangeRate; rate: ExchangeRate }) {
   const isIncrease = !previous || previous.Amount < rate.Amount
   const Icon = isIncrease ? ArrowUp : ArrowDown
+  const [date, time] = formatHistoryDate(rate.Created).split(',').map((part) => part.trim())
 
   return (
     <Group gap="sm" wrap="nowrap" className="exchange-rates-history-row">
-      <Text size="sm" className="exchange-rates-history-date">
-        {formatHistoryDate(rate.Created)}
-      </Text>
-      <Badge color={isIncrease ? 'green' : 'red'} variant="light" radius="sm" className="exchange-rates-history-direction">
-        <Icon size={13} strokeWidth={2} />
-      </Badge>
-      <Text size="sm" className="exchange-rates-history-amount">
-        {formatRate(rate.Amount)} <span>{rate.Code}</span>
-      </Text>
+      <Box className="exchange-rates-history-date">
+        <Text component="span" className="exchange-rates-history-date-day">{date}</Text>
+        {time && <Text component="span" className="exchange-rates-history-date-time">{time}</Text>}
+      </Box>
+      <Box className={`exchange-rates-history-trend ${isIncrease ? 'is-up' : 'is-down'}`}>
+        <Icon size={11} strokeWidth={2} aria-hidden />
+        <Text component="span" className="exchange-rates-history-amount-value">{formatRate(rate.Amount)}</Text>
+        {rate.Code && <Text component="span" className="exchange-rates-history-amount-code">{rate.Code}</Text>}
+      </Box>
     </Group>
   )
 }
