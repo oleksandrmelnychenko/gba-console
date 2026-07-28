@@ -612,7 +612,6 @@ function MergedSaleCard({
               disabled={invoiceDisabled || !canInvoice}
               leftSection={<ReceiptText size={16} />}
               size="xs"
-              variant="outline"
               onClick={() => onInvoice(sale, index)}
             >
               {t('Створити накладну')}

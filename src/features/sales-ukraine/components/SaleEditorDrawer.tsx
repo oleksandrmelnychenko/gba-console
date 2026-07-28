@@ -533,7 +533,7 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
         <div className="sale-editor-tab-panel">
           {isEditable && (
             <Group justify="flex-end" mb="sm">
-              <Button leftSection={<Plus size={16} />} variant="outline" onClick={() => setAddOpen(true)}>
+            <Button leftSection={<Plus size={16} />} onClick={() => setAddOpen(true)}>
                 {t('Додати товар')}
               </Button>
             </Group>
