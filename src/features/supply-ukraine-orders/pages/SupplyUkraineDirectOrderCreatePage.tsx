@@ -53,6 +53,8 @@ type CreateMode = SupplyUkraineOrderCreateMode
 type SelectOption = { label: string, value: string }
 type UploadResponse = SupplyUkraineOrderUploadResponse
 
+const IMPORT_OPTION_LABEL_WIDTH = 168
+
 type DirectOrderForm = {
   clientAgreementKey: string
   comment: string
@@ -451,7 +453,7 @@ function SupplyUkraineOrderFileCreatePage({ mode }: { mode: CreateMode }) {
             <UploadErrorsAlert response={uploadResponse} />
           )}
 
-          <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
+          <SimpleGrid cols={isToUkraineMode ? 1 : { base: 1, md: 2 }} spacing="md">
             <OrderDetailsSection
               agreementOptions={agreementOptions}
               form={form}
@@ -517,76 +519,101 @@ function OrderDetailsSection({
 }) {
   const { t } = useI18n()
 
+  const dateField = (
+    <TextInput
+      disabled={isLoading || isSaving}
+      label={t('Дата')}
+      type="datetime-local"
+      value={form.dateFrom}
+      onChange={(event) => onFormChange({ dateFrom: event.currentTarget.value })}
+    />
+  )
+  const supplierField = (
+    <Select
+      data={supplierOptions}
+      disabled={isLoading || isSaving}
+      label={t('Постачальник')}
+      nothingFoundMessage={t('Нічого не знайдено')}
+      searchable
+      searchValue={supplierSearch}
+      value={form.supplierKey || null}
+      onChange={onSupplierChange}
+      onSearchChange={onSupplierSearchChange}
+    />
+  )
+  const organizationField = (
+    <Select
+      data={organizationOptions}
+      disabled={isLoading || isSaving || !selectedSupplier}
+      label={t('Організація')}
+      searchable
+      value={form.organizationKey || null}
+      onChange={onOrganizationChange}
+    />
+  )
+  const agreementField = (
+    <Select
+      data={agreementOptions}
+      disabled={isLoading || isSaving || !selectedSupplier}
+      label={t('Договір')}
+      searchable
+      value={form.clientAgreementKey || null}
+      onChange={onAgreementChange}
+    />
+  )
+  const commentField = (
+    <Textarea
+      autosize
+      disabled={isSaving}
+      label={t('Коментар')}
+      minRows={2}
+      value={form.comment}
+      onChange={(event) => onFormChange({ comment: event.currentTarget.value })}
+    />
+  )
+
   return (
-    <Stack gap="md">
+    <Stack gap={isToUkraineMode ? 'sm' : 'md'}>
       <Text className="app-section-title" fw={600} size="sm">{t('Замовлення')}</Text>
-      <TextInput
-        disabled={isLoading || isSaving}
-        label={t('Дата')}
-        type="datetime-local"
-        value={form.dateFrom}
-        onChange={(event) => onFormChange({ dateFrom: event.currentTarget.value })}
-      />
       {isToUkraineMode ? (
         <>
-          <TextInput
-            disabled={isLoading || isSaving}
-            label={t('Номер накладної')}
-            value={form.invNumber}
-            onChange={(event) => onFormChange({ invNumber: event.currentTarget.value })}
-          />
-          <TextInput
-            disabled={isLoading || isSaving}
-            label={t('Дата накладної')}
-            type="datetime-local"
-            value={form.invDate}
-            onChange={(event) => onFormChange({ invDate: event.currentTarget.value })}
-          />
+          <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="sm" verticalSpacing="sm">
+            {dateField}
+            <TextInput
+              disabled={isLoading || isSaving}
+              label={t('Номер накладної')}
+              value={form.invNumber}
+              onChange={(event) => onFormChange({ invNumber: event.currentTarget.value })}
+            />
+            <TextInput
+              disabled={isLoading || isSaving}
+              label={t('Дата накладної')}
+              type="datetime-local"
+              value={form.invDate}
+              onChange={(event) => onFormChange({ invDate: event.currentTarget.value })}
+            />
+            {supplierField}
+            {organizationField}
+            {agreementField}
+          </SimpleGrid>
+          {commentField}
         </>
       ) : (
-        <SegmentedControl
-          data={SUPPLY_TRANSPORTATION_TYPES.map((item) => ({ ...item, label: t(item.label) }))}
-          disabled={isLoading || isSaving}
-          fullWidth
-          value={form.transportationType}
-          onChange={(value) => onFormChange({ transportationType: value })}
-        />
+        <>
+          {dateField}
+          <SegmentedControl
+            data={SUPPLY_TRANSPORTATION_TYPES.map((item) => ({ ...item, label: t(item.label) }))}
+            disabled={isLoading || isSaving}
+            fullWidth
+            value={form.transportationType}
+            onChange={(value) => onFormChange({ transportationType: value })}
+          />
+          {supplierField}
+          {organizationField}
+          {agreementField}
+          {commentField}
+        </>
       )}
-      <Select
-        data={supplierOptions}
-        disabled={isLoading || isSaving}
-        label={t('Постачальник')}
-        nothingFoundMessage={t('Нічого не знайдено')}
-        searchable
-        searchValue={supplierSearch}
-        value={form.supplierKey || null}
-        onChange={onSupplierChange}
-        onSearchChange={onSupplierSearchChange}
-      />
-      <Select
-        data={organizationOptions}
-        disabled={isLoading || isSaving || !selectedSupplier}
-        label={t('Організація')}
-        searchable
-        value={form.organizationKey || null}
-        onChange={onOrganizationChange}
-      />
-      <Select
-        data={agreementOptions}
-        disabled={isLoading || isSaving || !selectedSupplier}
-        label={t('Договір')}
-        searchable
-        value={form.clientAgreementKey || null}
-        onChange={onAgreementChange}
-      />
-      <Textarea
-        autosize
-        disabled={isSaving}
-        label={t('Коментар')}
-        minRows={3}
-        value={form.comment}
-        onChange={(event) => onFormChange({ comment: event.currentTarget.value })}
-      />
     </Stack>
   )
 }
@@ -609,29 +636,39 @@ function ImportConfigurationSection({
   const { t } = useI18n()
 
   return (
-    <Stack gap="md">
+    <Stack gap={isToUkraineMode ? 'sm' : 'md'}>
       <Text className="app-section-title" fw={600} size="sm">{t('Імпорт')}</Text>
-      <FileInput
-        clearable
-        accept={EXCEL_FILE_ACCEPT}
-        disabled={isSaving}
-        label={t('Файл')}
-        leftSection={<FileSpreadsheet size={16} />}
-        placeholder={t('Оберіть файл')}
-        value={file}
-        onChange={onFileChange}
-      />
-      <SegmentedControl
-        data={[
-          { label: t('Ціна'), value: 'unit' },
-          { label: t('Сума'), value: 'total' },
-        ]}
-        disabled={isSaving}
-        fullWidth
-        value={parseForm.withTotalAmount ? 'total' : 'unit'}
-        onChange={(value) => onParseFormChange({ withTotalAmount: value === 'total' })}
-      />
-      <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+      <Group align="flex-end" gap="sm" grow wrap="wrap">
+        <div style={{ flex: '2 1 480px' }}>
+          <FileInput
+            clearable
+            accept={EXCEL_FILE_ACCEPT}
+            disabled={isSaving}
+            label={t('Файл')}
+            leftSection={<FileSpreadsheet size={16} />}
+            placeholder={t('Оберіть файл')}
+            value={file}
+            onChange={onFileChange}
+          />
+        </div>
+        <div style={{ flex: '1 1 280px' }}>
+          <SegmentedControl
+            data={[
+              { label: t('Ціна'), value: 'unit' },
+              { label: t('Сума'), value: 'total' },
+            ]}
+            disabled={isSaving}
+            fullWidth
+            value={parseForm.withTotalAmount ? 'total' : 'unit'}
+            onChange={(value) => onParseFormChange({ withTotalAmount: value === 'total' })}
+          />
+        </div>
+      </Group>
+      <SimpleGrid
+        cols={{ base: 1, sm: 2, lg: isToUkraineMode ? 6 : 3 }}
+        spacing="sm"
+        verticalSpacing="sm"
+      >
         <NumberInput
           allowDecimal={false}
           disabled={isSaving}
@@ -680,62 +717,74 @@ function ImportConfigurationSection({
           value={parseForm.totalAmountColumnNumber}
           onChange={(value) => onParseFormChange({ totalAmountColumnNumber: toPositiveNumber(value) })}
         />
-        {isToUkraineMode && (
-          <SupplierImportExtraFields
-            isSaving={isSaving}
-            parseForm={parseForm}
-            onParseFormChange={onParseFormChange}
-          />
-        )}
       </SimpleGrid>
-      <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
-        <Stack gap={6} pt={4}>
-          <Checkbox
-            checked={parseForm.withWeight}
-            disabled={isSaving}
-            label={t('Вага нетто')}
-            onChange={(event) => onParseFormChange({
-              isWeightPerItem: event.currentTarget.checked ? parseForm.isWeightPerItem : false,
-              weightColumnNumber: event.currentTarget.checked ? parseForm.weightColumnNumber : '',
-              withWeight: event.currentTarget.checked,
-            })}
-          />
-          <Checkbox
-            checked={parseForm.withGrossWeight}
-            disabled={isSaving}
-            label={t('Вага брутто')}
-            onChange={(event) => onParseFormChange({
-              grossWeightColumnNumber: event.currentTarget.checked ? parseForm.grossWeightColumnNumber : '',
-              isWeightPerItem: event.currentTarget.checked ? parseForm.isWeightPerItem : false,
-              withGrossWeight: event.currentTarget.checked,
-            })}
-          />
-          <Checkbox
-            checked={parseForm.isWeightPerItem}
-            disabled={isSaving || (!parseForm.withWeight && !parseForm.withGrossWeight)}
-            label={parseForm.isWeightPerItem ? t('Вага за одиницю') : t('Вага загальна')}
-            onChange={(event) => onParseFormChange({ isWeightPerItem: event.currentTarget.checked })}
-          />
-        </Stack>
-        <Stack gap="sm">
-          <NumberInput
-            allowDecimal={false}
-            disabled={isSaving || !parseForm.withWeight}
-            label={t('Колонка ваги нетто')}
-            min={1}
-            value={parseForm.weightColumnNumber}
-            onChange={(value) => onParseFormChange({ weightColumnNumber: toPositiveNumber(value) })}
-          />
-          <NumberInput
-            allowDecimal={false}
-            disabled={isSaving || !parseForm.withGrossWeight}
-            label={t('Колонка ваги брутто')}
-            min={1}
-            value={parseForm.grossWeightColumnNumber}
-            onChange={(value) => onParseFormChange({ grossWeightColumnNumber: toPositiveNumber(value) })}
-          />
-        </Stack>
-      </SimpleGrid>
+      {isToUkraineMode && (
+        <SupplierImportExtraFields
+          isSaving={isSaving}
+          parseForm={parseForm}
+          onParseFormChange={onParseFormChange}
+        />
+      )}
+      <Stack gap="sm">
+        <SimpleGrid
+          cols={{ base: 1, lg: isToUkraineMode ? 2 : 1 }}
+          spacing="sm"
+          verticalSpacing="sm"
+        >
+          <Group align="flex-end" gap="sm" wrap="nowrap">
+            <Group align="center" h={36} miw={IMPORT_OPTION_LABEL_WIDTH} w={IMPORT_OPTION_LABEL_WIDTH}>
+              <Checkbox
+                checked={parseForm.withWeight}
+                disabled={isSaving}
+                label={t('Вага нетто')}
+                onChange={(event) => onParseFormChange({
+                  isWeightPerItem: event.currentTarget.checked ? parseForm.isWeightPerItem : false,
+                  weightColumnNumber: event.currentTarget.checked ? parseForm.weightColumnNumber : '',
+                  withWeight: event.currentTarget.checked,
+                })}
+              />
+            </Group>
+            <NumberInput
+              allowDecimal={false}
+              disabled={isSaving || !parseForm.withWeight}
+              label={t('Колонка ваги нетто')}
+              min={1}
+              style={{ flex: 1 }}
+              value={parseForm.weightColumnNumber}
+              onChange={(value) => onParseFormChange({ weightColumnNumber: toPositiveNumber(value) })}
+            />
+          </Group>
+          <Group align="flex-end" gap="sm" wrap="nowrap">
+            <Group align="center" h={36} miw={IMPORT_OPTION_LABEL_WIDTH} w={IMPORT_OPTION_LABEL_WIDTH}>
+              <Checkbox
+                checked={parseForm.withGrossWeight}
+                disabled={isSaving}
+                label={t('Вага брутто')}
+                onChange={(event) => onParseFormChange({
+                  grossWeightColumnNumber: event.currentTarget.checked ? parseForm.grossWeightColumnNumber : '',
+                  isWeightPerItem: event.currentTarget.checked ? parseForm.isWeightPerItem : false,
+                  withGrossWeight: event.currentTarget.checked,
+                })}
+              />
+            </Group>
+            <NumberInput
+              allowDecimal={false}
+              disabled={isSaving || !parseForm.withGrossWeight}
+              label={t('Колонка ваги брутто')}
+              min={1}
+              style={{ flex: 1 }}
+              value={parseForm.grossWeightColumnNumber}
+              onChange={(value) => onParseFormChange({ grossWeightColumnNumber: toPositiveNumber(value) })}
+            />
+          </Group>
+        </SimpleGrid>
+        <Checkbox
+          checked={parseForm.isWeightPerItem}
+          disabled={isSaving || (!parseForm.withWeight && !parseForm.withGrossWeight)}
+          label={parseForm.isWeightPerItem ? t('Вага за одиницю') : t('Вага загальна')}
+          onChange={(event) => onParseFormChange({ isWeightPerItem: event.currentTarget.checked })}
+        />
+      </Stack>
     </Stack>
   )
 }
@@ -752,42 +801,52 @@ function SupplierImportExtraFields({
   const { t } = useI18n()
 
   return (
-    <>
-      <Checkbox
-        checked={parseForm.withSpecificationCode}
-        disabled={isSaving}
-        label={t('Код специфікації')}
-        onChange={(event) => onParseFormChange({
-          specificationCodeColumnNumber: event.currentTarget.checked ? parseForm.specificationCodeColumnNumber : '',
-          withSpecificationCode: event.currentTarget.checked,
-        })}
-      />
-      <NumberInput
-        allowDecimal={false}
-        disabled={isSaving || !parseForm.withSpecificationCode}
-        label={t('Колонка коду специфікації')}
-        min={1}
-        value={parseForm.specificationCodeColumnNumber}
-        onChange={(value) => onParseFormChange({ specificationCodeColumnNumber: toPositiveNumber(value) })}
-      />
-      <Checkbox
-        checked={parseForm.withImportedProduct}
-        disabled={isSaving}
-        label={t('Імпортний товар')}
-        onChange={(event) => onParseFormChange({
-          isImportedProductColumnNumber: event.currentTarget.checked ? parseForm.isImportedProductColumnNumber : '',
-          withImportedProduct: event.currentTarget.checked,
-        })}
-      />
-      <NumberInput
-        allowDecimal={false}
-        disabled={isSaving || !parseForm.withImportedProduct}
-        label={t('Колонка ознаки імпорту')}
-        min={1}
-        value={parseForm.isImportedProductColumnNumber}
-        onChange={(value) => onParseFormChange({ isImportedProductColumnNumber: toPositiveNumber(value) })}
-      />
-    </>
+    <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm" verticalSpacing="sm">
+      <Group align="flex-end" gap="sm" wrap="nowrap">
+        <Group align="center" h={36} miw={IMPORT_OPTION_LABEL_WIDTH} w={IMPORT_OPTION_LABEL_WIDTH}>
+          <Checkbox
+            checked={parseForm.withSpecificationCode}
+            disabled={isSaving}
+            label={t('Код специфікації')}
+            onChange={(event) => onParseFormChange({
+              specificationCodeColumnNumber: event.currentTarget.checked ? parseForm.specificationCodeColumnNumber : '',
+              withSpecificationCode: event.currentTarget.checked,
+            })}
+          />
+        </Group>
+        <NumberInput
+          allowDecimal={false}
+          disabled={isSaving || !parseForm.withSpecificationCode}
+          label={t('Колонка коду специфікації')}
+          min={1}
+          style={{ flex: 1 }}
+          value={parseForm.specificationCodeColumnNumber}
+          onChange={(value) => onParseFormChange({ specificationCodeColumnNumber: toPositiveNumber(value) })}
+        />
+      </Group>
+      <Group align="flex-end" gap="sm" wrap="nowrap">
+        <Group align="center" h={36} miw={IMPORT_OPTION_LABEL_WIDTH} w={IMPORT_OPTION_LABEL_WIDTH}>
+          <Checkbox
+            checked={parseForm.withImportedProduct}
+            disabled={isSaving}
+            label={t('Імпортний товар')}
+            onChange={(event) => onParseFormChange({
+              isImportedProductColumnNumber: event.currentTarget.checked ? parseForm.isImportedProductColumnNumber : '',
+              withImportedProduct: event.currentTarget.checked,
+            })}
+          />
+        </Group>
+        <NumberInput
+          allowDecimal={false}
+          disabled={isSaving || !parseForm.withImportedProduct}
+          label={t('Колонка ознаки імпорту')}
+          min={1}
+          style={{ flex: 1 }}
+          value={parseForm.isImportedProductColumnNumber}
+          onChange={(value) => onParseFormChange({ isImportedProductColumnNumber: toPositiveNumber(value) })}
+        />
+      </Group>
+    </SimpleGrid>
   )
 }
 
