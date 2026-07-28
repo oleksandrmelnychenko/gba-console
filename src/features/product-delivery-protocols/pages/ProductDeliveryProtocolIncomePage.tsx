@@ -1739,7 +1739,6 @@ function ProductIncomeControlsCard({
             <Button
               color={CREATE_ACTION_COLOR}
               disabled={!canUseIncome || model.isDirty || model.isSaving}
-              variant="outline"
               onClick={() => model.setColumnModalOpen(true)}
             >
               {t('Додати')}

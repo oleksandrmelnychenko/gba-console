@@ -235,8 +235,7 @@ export function MergedServicesSection({
             color={CREATE_ACTION_COLOR}
             disabled={isSaving}
             leftSection={<Plus size={16} />}
-            variant="outline"
-            onClick={() => setNewOpen(true)}
+          onClick={() => setNewOpen(true)}
           >
             {t('Додати')}
           </Button>

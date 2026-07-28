@@ -116,7 +116,7 @@ export function MergedServiceViewCard({
               </Button>
             )}
             {canAssignInvoices && (
-              <Button color={CREATE_ACTION_COLOR} disabled={isSaving} size="xs" variant="outline" onClick={onAssignInvoices}>
+              <Button color={CREATE_ACTION_COLOR} disabled={isSaving} size="xs" onClick={onAssignInvoices}>
                 {t('Додати')} {t('Інвойси')}
               </Button>
             )}
