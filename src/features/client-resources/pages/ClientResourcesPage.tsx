@@ -938,7 +938,6 @@ function RegionsPanelView({ model }: { model: ReturnType<typeof useRegionsPanelM
                       leftSection={<Plus size={15} />}
                       size="xs"
                       styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
-                      variant="outline"
                       onClick={() => openCreateRegionCode(selectedRegion)}
                     >
                       {translate('Додати код')}
