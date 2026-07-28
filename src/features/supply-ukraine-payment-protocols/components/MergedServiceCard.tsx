@@ -325,7 +325,6 @@ export function MergedServiceCard({
               className="supply-payment-action-button"
               color={CREATE_ACTION_COLOR}
               leftSection={<Plus size={16} />}
-              variant="light"
               onClick={() => setAddOpen(true)}
             >
               {t('Створити платіжну задачу')}
@@ -348,7 +347,6 @@ export function MergedServiceCard({
               className="supply-payment-action-button"
               color={CREATE_ACTION_COLOR}
               leftSection={<Plus size={16} />}
-              variant="light"
               onClick={() => setAddAccountingOpen(true)}
             >
               {`${t('Створити платіжну задачу')} (${t('Бух.')})`}

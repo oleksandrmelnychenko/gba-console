@@ -81,7 +81,7 @@ export function MergedServicesSection({
           {t('Об’єднаний сервіс')}
         </Text>
         {permissions.canCreateService && (
-          <Button className="supply-payment-action-button" color={CREATE_ACTION_COLOR} leftSection={<Plus size={16} />} variant="light" onClick={() => setNewOpen(true)}>
+          <Button className="supply-payment-action-button" color={CREATE_ACTION_COLOR} leftSection={<Plus size={16} />} onClick={() => setNewOpen(true)}>
             {t('Додати')}
           </Button>
         )}
