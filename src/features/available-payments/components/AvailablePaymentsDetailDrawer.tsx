@@ -1678,8 +1678,7 @@ function AvailablePaymentOutcomeForm({
                   leftSection={<Plus size={16} />}
                   size="xs"
                   type="button"
-                  variant="outline"
-                  onClick={onCreateMovement}
+                    onClick={onCreateMovement}
                 >
                   {t('Створити статтю')}
                 </Button>
