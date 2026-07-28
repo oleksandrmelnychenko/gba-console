@@ -215,7 +215,6 @@ export function ClientAgreementsPanel({
             color={CREATE_ACTION_COLOR}
             leftSection={<Plus size={16} />}
             size="xs"
-            variant="outline"
             onClick={openCreate}
           >
             {t('Додати договір')}

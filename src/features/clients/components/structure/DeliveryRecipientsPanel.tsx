@@ -179,7 +179,6 @@ export function DeliveryRecipientsPanel({
               disabled={isBusy}
               leftSection={<Plus size={16} />}
               size="xs"
-              variant="light"
               onClick={() => setModalOpened(true)}
             >
               {t('Додати')}

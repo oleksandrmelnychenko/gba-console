@@ -293,7 +293,6 @@ export function PerfectClientPanel({ client, onChange }: PerfectClientPanelProps
               disabled={!roleId}
               leftSection={<Plus size={16} />}
               size="xs"
-              variant="light"
               onClick={openAddModal}
             >
               {t('Додати параметр')}

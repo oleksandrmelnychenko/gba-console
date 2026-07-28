@@ -71,8 +71,7 @@ export function ServicePayersPanel({ payers, disabled = false, onChange }: Servi
               disabled={disabled}
               leftSection={<Plus size={16} />}
               size="xs"
-              variant="light"
-              onClick={openNew}
+          onClick={openNew}
             >
               {t('Додати')}
             </Button>
