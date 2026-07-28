@@ -1023,8 +1023,7 @@ export function NewResalePage() {
                 color={CREATE_ACTION_COLOR}
                 disabled={!payload || isLoadingOptions || isLoadingAvailabilities}
                 loading={isProcessing}
-                variant="light"
-                onClick={generateAutomatically}
+                  onClick={generateAutomatically}
               >
                 {t('Створити автоматично')}
               </Button>
