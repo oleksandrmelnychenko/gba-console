@@ -157,7 +157,6 @@ export function OrganizationClientAgreementsPanel({
           disabled={!canAddAgreement}
           leftSection={<Plus size={16} />}
           size="xs"
-          variant="light"
           onClick={openAddModal}
         >
           {t('Додати договір')}
