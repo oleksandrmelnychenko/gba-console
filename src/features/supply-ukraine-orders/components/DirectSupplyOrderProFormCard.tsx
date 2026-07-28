@@ -167,8 +167,7 @@ export function DirectSupplyOrderProFormCard({
               color={CREATE_ACTION_COLOR}
               leftSection={<Pencil size={16} />}
               size="xs"
-              variant="outline"
-              onClick={() => dispatch({ type: 'startEditing' })}
+          onClick={() => dispatch({ type: 'startEditing' })}
             >
               {hasProForm ? t('Редагувати') : t('Створити')}
             </Button>

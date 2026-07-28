@@ -1117,8 +1117,7 @@ function DirectOrderInvoicesHeader({
             leftSection={<FileInputIcon size={16} />}
             loading={model.isSaving}
             styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
-            variant="outline"
-            onClick={() => model.setPageState({ invoiceUploadOpen: true })}
+                onClick={() => model.setPageState({ invoiceUploadOpen: true })}
           >
             {t('Додати інвойс')}
           </Button>
@@ -1130,8 +1129,7 @@ function DirectOrderInvoicesHeader({
             leftSection={<Package size={16} />}
             loading={model.isSaving}
             styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
-            variant="outline"
-            onClick={() => model.setPageState({ packListUploadOpen: true })}
+                onClick={() => model.setPageState({ packListUploadOpen: true })}
           >
             {t('Додати пак лист')}
           </Button>

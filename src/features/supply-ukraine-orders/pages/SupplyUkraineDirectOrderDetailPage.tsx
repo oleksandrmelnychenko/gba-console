@@ -769,8 +769,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
                 <Button
                   color={CREATE_ACTION_COLOR}
                   leftSection={<Plus size={16} />}
-                  variant="outline"
-                  onClick={() => navigate(`/orders/ukraine/all/edit/${order.NetUid}/supply-invoices`)}
+              onClick={() => navigate(`/orders/ukraine/all/edit/${order.NetUid}/supply-invoices`)}
                 >
                   {t('Добавити новий інвойс')}
                 </Button>
