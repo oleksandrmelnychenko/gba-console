@@ -737,17 +737,19 @@ export function IncomeCashflowShopFormPage() {
             </Alert>
           )}
 
-          <Autocomplete
-            data={retailClientOptions}
-            disabled={isLoading || isResolvingClient || isSaving}
-            label={t('Retail-клієнт')}
-            placeholder={t('Імʼя або телефон')}
-            value={form.retailClientSearch}
-            onChange={handleRetailClientSearchChanged}
-            onOptionSubmit={handleRetailClientSubmit}
-          />
+          <Stack gap="xs">
+            <Autocomplete
+              data={retailClientOptions}
+              disabled={isLoading || isResolvingClient || isSaving}
+              label={t('Retail-клієнт')}
+              placeholder={t('Імʼя або телефон')}
+              value={form.retailClientSearch}
+              onChange={handleRetailClientSearchChanged}
+              onOptionSubmit={handleRetailClientSubmit}
+            />
 
-          <Divider />
+            <Divider />
+          </Stack>
 
           <SimpleGrid cols={{ base: 1, md: 3 }}>
             <TextInput

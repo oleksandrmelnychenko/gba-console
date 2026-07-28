@@ -482,7 +482,16 @@ export function IncomeCashflowConversionFormPage() {
     >
       <form id="income-cashflow-conversion-form" onSubmit={handleSubmit}>
         <Stack gap="md">
-          <Group justify="flex-end" gap="xs" wrap="wrap">
+          <Group align="flex-end" justify="space-between" gap="sm" wrap="wrap">
+            <Group gap="xs">
+              <Badge color={isBankIncome ? 'indigo' : 'green'} variant="light">
+                {isBankIncome ? t('Банк') : t('Каса')}
+              </Badge>
+              <Text c="dimmed" size="sm">
+                {t('Новий прибутковий ордер')}
+              </Text>
+            </Group>
+
             <SegmentedControl
               data={[
                 { label: t('Каса'), value: String(PaymentRegisterType.Cash) },
@@ -494,15 +503,6 @@ export function IncomeCashflowConversionFormPage() {
             />
           </Group>
 
-          <Group gap="xs">
-            <Badge color={isBankIncome ? 'indigo' : 'green'} variant="light">
-              {isBankIncome ? t('Банк') : t('Каса')}
-            </Badge>
-            <Text c="dimmed" size="sm">
-              {t('Новий прибутковий ордер')}
-            </Text>
-          </Group>
-
           {error && (
             <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
@@ -510,7 +510,7 @@ export function IncomeCashflowConversionFormPage() {
           )}
 
           {isBankIncome && (
-            <>
+            <Stack gap="xs">
               <SimpleGrid cols={{ base: 1, md: 2 }}>
                 <SegmentedControl
                   data={[
@@ -519,6 +519,7 @@ export function IncomeCashflowConversionFormPage() {
                     { label: t('Виробники'), value: String(IncomeCounterpartySearchType.Manufacturer) },
                   ]}
                   disabled={isLoading || isSaving}
+                  style={{ alignSelf: 'end' }}
                   value={String(form.searchType)}
                   onChange={handleSearchTypeChanged}
                 />
@@ -533,7 +534,7 @@ export function IncomeCashflowConversionFormPage() {
                 />
               </SimpleGrid>
               <Divider />
-            </>
+            </Stack>
           )}
 
           <SimpleGrid cols={{ base: 1, md: 3 }}>

@@ -952,7 +952,16 @@ export function IncomeCashflowClientFormPage() {
     >
       <form id="income-cashflow-client-form" onSubmit={handleSubmit}>
         <Stack gap="md">
-          <Group justify="flex-end" gap="xs" wrap="wrap">
+          <Group align="flex-end" justify="space-between" gap="sm" wrap="wrap">
+            <Group gap="xs">
+              <Badge color={registerType === PaymentRegisterType.Bank ? 'indigo' : 'green'} variant="light">
+                {registerType === PaymentRegisterType.Bank ? t('Банк') : t('Каса')}
+              </Badge>
+              <Text c="dimmed" size="sm">
+                {t('Новий прибутковий ордер по контрагенту')}
+              </Text>
+            </Group>
+
             <SegmentedControl
               data={[
                 { label: t('Каса'), value: String(PaymentRegisterType.Cash) },
@@ -962,15 +971,6 @@ export function IncomeCashflowClientFormPage() {
               value={String(registerType)}
               onChange={handleRegisterTypeChanged}
             />
-          </Group>
-
-          <Group gap="xs">
-            <Badge color={registerType === PaymentRegisterType.Bank ? 'indigo' : 'green'} variant="light">
-              {registerType === PaymentRegisterType.Bank ? t('Банк') : t('Каса')}
-            </Badge>
-            <Text c="dimmed" size="sm">
-              {t('Новий прибутковий ордер по контрагенту')}
-            </Text>
           </Group>
 
           <SegmentedControl data={operationOptions} disabled={isLoading || isSaving} value={String(operationType)} onChange={handleOperationChanged} />
@@ -993,20 +993,28 @@ export function IncomeCashflowClientFormPage() {
             />
           )}
 
-          <SimpleGrid cols={{ base: 1, md: 2 }}>
-            <SegmentedControl data={searchTypeOptions} disabled={isLoading || isSaving} value={String(form.searchType)} onChange={handleSearchTypeChanged} />
-            <Autocomplete
-              data={counterpartyOptions}
-              disabled={isLoading || isSaving}
-              label={t('Контрагент')}
-              placeholder={t('Почніть вводити назву')}
-              value={form.counterpartySearch}
-              onChange={handleCounterpartySearchChanged}
-              onOptionSubmit={handleCounterpartySubmit}
-            />
-          </SimpleGrid>
+          <Stack gap="xs">
+            <SimpleGrid cols={{ base: 1, md: 2 }}>
+              <SegmentedControl
+                data={searchTypeOptions}
+                disabled={isLoading || isSaving}
+                style={{ alignSelf: 'end' }}
+                value={String(form.searchType)}
+                onChange={handleSearchTypeChanged}
+              />
+              <Autocomplete
+                data={counterpartyOptions}
+                disabled={isLoading || isSaving}
+                label={t('Контрагент')}
+                placeholder={t('Почніть вводити назву')}
+                value={form.counterpartySearch}
+                onChange={handleCounterpartySearchChanged}
+                onOptionSubmit={handleCounterpartySubmit}
+              />
+            </SimpleGrid>
 
-          <Divider />
+            <Divider />
+          </Stack>
 
           <SimpleGrid cols={{ base: 1, md: 3 }}>
             <TextInput
