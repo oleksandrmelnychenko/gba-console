@@ -250,8 +250,7 @@ export function NewProductCapitalizationPanel({ opened, onClose, onCreated }: Ne
             disabled={isFormBusy}
             leftSection={<Plus size={16} />}
             mb={1}
-            variant="outline"
-            onClick={model.addItem}
+          onClick={model.addItem}
           >
             {t('Додати рядок')}
           </Button>
