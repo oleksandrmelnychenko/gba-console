@@ -16,7 +16,9 @@ import { CockpitQueueSummary } from '../components/CockpitQueueSummary'
 import { CockpitTargetCard } from '../components/CockpitTargetCard'
 import { CockpitTaskList } from '../components/CockpitTaskList'
 import { CockpitToolbar, type CockpitDayFilter } from '../components/CockpitToolbar'
+import { DismissModal } from '../components/DismissModal'
 import { DoneModal } from '../components/DoneModal'
+import { MyClientsPanel } from '../components/MyClientsPanel'
 import { NoteModal } from '../components/NoteModal'
 import { SnoozeModal } from '../components/SnoozeModal'
 import type { CockpitTarget, CockpitTask, CockpitTaskType, CockpitUrgency } from '../types'
@@ -27,10 +29,11 @@ import './sales-cockpit-page.css'
 const INBOX_LIMIT = 50
 const POLL_INTERVAL_MS = 60_000
 
-// Inbox ordering: triage by urgency band, then business tier (debt = cash at risk first), then score.
-// Mirrors the gba-nba inbox ordering so the cockpit shows the same queue order.
+// Inbox ordering: head-assigned (manual) tasks pin above the AI queue, then triage by urgency band,
+// then business tier (debt = cash at risk first), then score. Mirrors the gba-nba inbox ordering.
 const URGENCY_RANK: Record<CockpitUrgency, number> = { critical: 0, high: 1, normal: 2, low: 3 }
 const TYPE_RANK: Record<CockpitTaskType, number> = {
+  manual: -1,
   debt_followup: 0,
   reorder_due: 1,
   churn_winback: 2,
@@ -40,10 +43,15 @@ const TYPE_RANK: Record<CockpitTaskType, number> = {
 
 function inboxOrder(left: CockpitTask, right: CockpitTask): number {
   return (
+    getManualRank(left) - getManualRank(right) ||
     getUrgencyRank(left.urgency) - getUrgencyRank(right.urgency) ||
     getTaskTypeRank(left.task_type) - getTaskTypeRank(right.task_type) ||
     (right.priority ?? 0) - (left.priority ?? 0)
   )
+}
+
+function getManualRank(task: CockpitTask): number {
+  return task.task_type === 'manual' ? 0 : 1
 }
 
 function getUrgencyRank(urgency?: CockpitUrgency): number {
@@ -69,6 +77,8 @@ export function SalesCockpitPage() {
   const [noteTask, setNoteTask] = useState<CockpitTask | null>(null)
   const [snoozeTask, setSnoozeTask] = useState<CockpitTask | null>(null)
   const [doneTask, setDoneTask] = useState<CockpitTask | null>(null)
+  const [dismissTask, setDismissTask] = useState<CockpitTask | null>(null)
+  const [view, setView] = useState<'clients' | 'tasks'>('tasks')
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
 
   const triggerReload = useCallback(() => {
@@ -79,8 +89,10 @@ export function SalesCockpitPage() {
 
   const busyRef = useRef(false)
   useEffect(() => {
-    busyRef.current = Boolean(noteTask || snoozeTask || doneTask || pendingTaskKey || isRegenerating)
-  }, [noteTask, snoozeTask, doneTask, pendingTaskKey, isRegenerating])
+    busyRef.current = Boolean(
+      noteTask || snoozeTask || doneTask || dismissTask || pendingTaskKey || isRegenerating,
+    )
+  }, [noteTask, snoozeTask, doneTask, dismissTask, pendingTaskKey, isRegenerating])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -145,6 +157,16 @@ export function SalesCockpitPage() {
     return filtered.toSorted(inboxOrder)
   }, [tasks, taskTypeFilter, urgencyFilter, dayFilter, todayKey])
 
+  // Head-assigned tasks render as their own pinned section above the AI queue.
+  const manualTasks = useMemo(
+    () => visibleTasks.filter((task) => task.task_type === 'manual'),
+    [visibleTasks],
+  )
+  const aiTasks = useMemo(
+    () => visibleTasks.filter((task) => task.task_type !== 'manual'),
+    [visibleTasks],
+  )
+
   const handleDoneSubmit = useCallback(
     async (task: CockpitTask, outcome: { sold: boolean; amount: number | null }) => {
       setPendingTaskKey(task.task_key)
@@ -170,13 +192,14 @@ export function SalesCockpitPage() {
     [scheduleReload, t],
   )
 
-  const handleDismiss = useCallback(
-    async (task: CockpitTask) => {
+  const handleDismissSubmit = useCallback(
+    async (task: CockpitTask, reason: string | null) => {
       setPendingTaskKey(task.task_key)
 
       try {
-        await setTaskStatus(task.task_key, { To: 'dismissed' })
-        notifications.show({ color: 'green', message: t('Завдання відхилено') })
+        await setTaskStatus(task.task_key, { To: 'dismissed', Reason: reason ?? undefined })
+        notifications.show({ color: 'green', message: t('Завдання позначено як неактуальне') })
+        setDismissTask(null)
         scheduleReload()
       } catch (actionError) {
         notifications.show({
@@ -300,56 +323,98 @@ export function SalesCockpitPage() {
 
   return (
     <Stack className="cockpit-page" gap={6}>
-      <CockpitToolbar
-        asOfDate={asOfDate}
-        dayFilter={dayFilter}
-        hasActiveFilters={hasActiveFilters}
-        isLoading={isLoading}
-        isRegenerating={isRegenerating}
-        taskType={taskTypeFilter}
-        todayCount={todayCount}
-        urgency={urgencyFilter}
-        visibleCount={visibleTasks.length}
-        onAsOfDateChange={handleAsOfDateChange}
-        onDayFilterChange={setDayFilter}
-        onRegenerate={handleRegenerate}
-        onReload={handleReload}
-        onReset={handleResetFilters}
-        onTaskTypeChange={setTaskTypeFilter}
-        onUrgencyChange={setUrgencyFilter}
-      />
-
-      <div className="cockpit-page-content">
-        {error && (
-          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
-            {error}
-          </Alert>
-        )}
-
-        {showOverview ? (
-          <div className={`cockpit-overview${hasTargetData ? '' : ' is-single'}`}>
-            <CockpitQueueSummary
-              insights={queueInsights}
-              isLoading={isLoading}
-              visibleCount={visibleTasks.length}
-            />
-            {target && hasTargetData ? <CockpitTargetCard target={target} /> : null}
-          </div>
-        ) : null}
-
-        <CockpitTaskList
-          isLoading={isLoading}
-          pendingTaskKey={pendingTaskKey}
-          tasks={visibleTasks}
-          onAddNote={setNoteTask}
-          onDismiss={handleDismiss}
-          onDone={setDoneTask}
-          onSnooze={setSnoozeTask}
-          onTakeInProgress={handleTakeInProgress}
-        />
-
-        <CockpitDashboardPanel asOfDate={asOfDate} reloadKey={reloadKey} />
+      <div className="pill-tabs cockpit-view-tabs" role="tablist" aria-label={t('Розділи кокпіта')}>
+        {(
+          [
+            { label: 'Черга задач', value: 'tasks' },
+            { label: 'Мої клієнти', value: 'clients' },
+          ] as const
+        ).map((tab) => (
+          <button
+            aria-selected={view === tab.value}
+            className={`pill-tab${view === tab.value ? ' is-active' : ''}`}
+            key={tab.value}
+            role="tab"
+            type="button"
+            onClick={() => setView(tab.value)}
+          >
+            {t(tab.label)}
+          </button>
+        ))}
       </div>
+
+      {view === 'clients' ? (
+        <div className="cockpit-page-content">
+          <MyClientsPanel />
+        </div>
+      ) : (
+        <>
+          <CockpitToolbar
+            asOfDate={asOfDate}
+            dayFilter={dayFilter}
+            hasActiveFilters={hasActiveFilters}
+            isLoading={isLoading}
+            isRegenerating={isRegenerating}
+            taskType={taskTypeFilter}
+            todayCount={todayCount}
+            urgency={urgencyFilter}
+            visibleCount={visibleTasks.length}
+            onAsOfDateChange={handleAsOfDateChange}
+            onDayFilterChange={setDayFilter}
+            onRegenerate={handleRegenerate}
+            onReload={handleReload}
+            onReset={handleResetFilters}
+            onTaskTypeChange={setTaskTypeFilter}
+            onUrgencyChange={setUrgencyFilter}
+          />
+
+          <div className="cockpit-page-content">
+            {error && (
+              <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
+                {error}
+              </Alert>
+            )}
+
+            {showOverview ? (
+              <div className={`cockpit-overview${hasTargetData ? '' : ' is-single'}`}>
+                <CockpitQueueSummary
+                  insights={queueInsights}
+                  isLoading={isLoading}
+                  visibleCount={visibleTasks.length}
+                />
+                {target && hasTargetData ? <CockpitTargetCard target={target} /> : null}
+              </div>
+            ) : null}
+
+            {manualTasks.length > 0 && (
+              <CockpitTaskList
+                isLoading={false}
+                pendingTaskKey={pendingTaskKey}
+                tasks={manualTasks}
+                title="Задачі від керівника"
+                onAddNote={setNoteTask}
+                onDismiss={setDismissTask}
+                onDone={setDoneTask}
+                onSnooze={setSnoozeTask}
+                onTakeInProgress={handleTakeInProgress}
+              />
+            )}
+
+            <CockpitTaskList
+              isLoading={isLoading}
+              pendingTaskKey={pendingTaskKey}
+              tasks={aiTasks}
+              onAddNote={setNoteTask}
+              onDismiss={setDismissTask}
+              onDone={setDoneTask}
+              onSnooze={setSnoozeTask}
+              onTakeInProgress={handleTakeInProgress}
+            />
+
+            <CockpitDashboardPanel asOfDate={asOfDate} reloadKey={reloadKey} />
+          </div>
+        </>
+      )}
 
       <NoteModal
         saving={Boolean(noteTask && pendingTaskKey === noteTask.task_key)}
@@ -370,6 +435,13 @@ export function SalesCockpitPage() {
         task={doneTask}
         onClose={() => setDoneTask(null)}
         onSubmit={handleDoneSubmit}
+      />
+
+      <DismissModal
+        saving={Boolean(dismissTask && pendingTaskKey === dismissTask.task_key)}
+        task={dismissTask}
+        onClose={() => setDismissTask(null)}
+        onSubmit={handleDismissSubmit}
       />
     </Stack>
   )

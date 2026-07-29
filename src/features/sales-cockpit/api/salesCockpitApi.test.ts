@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
-import { addTaskNote, getCockpitCount, getCockpitInbox, getCockpitTarget, getDashboard, getEscalated, getHeadDashboard, getHeadTasks, getHeadTeam, regenerateCockpit, SalesCockpitContractError, setTaskStatus } from './salesCockpitApi'
+import { addTaskNote, createHeadTask, getCockpitClients, getCockpitCount, getCockpitInbox, getCockpitTarget, getDashboard, getEscalated, getHeadClients, getHeadDashboard, getHeadTasks, getHeadTeam, regenerateCockpit, SalesCockpitContractError, setTaskStatus } from './salesCockpitApi'
 import type { CockpitTask } from '../types'
 
 vi.mock('../../../shared/api/apiClient', () => ({
@@ -42,6 +42,80 @@ describe('salesCockpitApi', () => {
         status: undefined,
       },
     })
+  })
+
+  it('creates a head task with the PascalCase body and returns the created doc', async () => {
+    apiRequestMock.mockResolvedValueOnce({ task_key: 'manual|7|abc', task_type: 'manual', status: 'open' })
+
+    await expect(createHeadTask({
+      ManagerId: 7,
+      ClientId: 10,
+      Title: 'Зустрітись',
+      Description: 'Деталі',
+      Urgency: 'high',
+      DueDate: '2026-08-01T15:00:00Z',
+    })).resolves.toEqual({ task_key: 'manual|7|abc', task_type: 'manual', status: 'open' })
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/cockpit/head/tasks/new', {
+      method: 'POST',
+      body: {
+        ManagerId: 7,
+        ClientId: 10,
+        Title: 'Зустрітись',
+        Description: 'Деталі',
+        Urgency: 'high',
+        DueDate: '2026-08-01T15:00:00Z',
+      },
+    })
+  })
+
+  it('loads head clients and drops malformed rows', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      is_head: true,
+      manager_id: 7,
+      count: 3,
+      clients: [{ client_id: 10, full_name: 'ТОВ Акме' }, { broken: true }, null],
+    })
+
+    const result = await getHeadClients(7)
+
+    expect(result.is_head).toBe(true)
+    expect(result.clients).toEqual([{ client_id: 10, full_name: 'ТОВ Акме' }])
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/cockpit/head/clients', {
+      query: { managerId: 7 },
+    })
+  })
+
+  it('normalizes the cockpit client book and coerces numbers', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      manager_id: 7,
+      count: 2,
+      clients: [
+        {
+          client_id: 10,
+          client_net_uid: 'aaa',
+          name: 'Акме',
+          orders_cnt: 4,
+          turnover_eur: 1234.5,
+          overdue_eur: 10,
+          max_days_past_terms: 3,
+        },
+        { client_id: 11 }, // no net uid -> dropped
+        null,
+      ],
+    })
+
+    const result = await getCockpitClients()
+
+    expect(result.clients).toHaveLength(1)
+    expect(result.clients[0]).toMatchObject({
+      client_id: 10,
+      client_net_uid: 'aaa',
+      orders_cnt: 4,
+      turnover_eur: 1234.5,
+      overdue_eur: 10,
+      max_days_past_terms: 3,
+    })
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/cockpit/clients')
   })
 
   it('loads the active count and normalizes the urgency breakdown', async () => {
@@ -259,6 +333,7 @@ describe('salesCockpitApi', () => {
       RequestedStatuses: ['open', 'in_progress'],
       RequestedManagerId: 7,
       RequestedUrgency: 'high',
+      RequestedTaskType: null,
       Skip: 50,
       Limit: 50,
       ReturnedCount: 1,
@@ -282,6 +357,13 @@ describe('salesCockpitApi', () => {
           GeneratedAt: '2026-07-08T08:00:00',
           UpdatedAt: '2026-07-08T09:00:00',
           SlaBreached: false,
+          Origin: null,
+          CreatedBy: null,
+          DueDate: null,
+          Reason: null,
+          ResolutionReason: null,
+          Outcome: null,
+          Notes: [],
         },
       ],
       ByStatus: { Open: 1, InProgress: 1, Done: 3, Snoozed: 2, Dismissed: 1 },
@@ -292,6 +374,7 @@ describe('salesCockpitApi', () => {
         statuses: 'open,in_progress',
         managerId: 7,
         urgency: 'high',
+        taskType: undefined,
         skip: 50,
         limit: 50,
       },

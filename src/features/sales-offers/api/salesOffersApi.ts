@@ -1,4 +1,5 @@
 import { apiRequest } from '../../../shared/api/apiClient'
+import { SHOP_BASE_URL } from '../../../shared/config/env'
 import { formatDateForQuery } from '../../../shared/date/dateTime'
 import {
   getSalesMutationOperationHeaders,
@@ -20,10 +21,11 @@ import type {
   OffersProduct,
 } from '../types'
 
-const PUBLIC_OFFER_LINK_BASE = 'http://37.48.104.145:12202/account-security/current/offers/'
-
+// The customer-facing offer link opens the PUBLIC storefront page (/offer/{netUid}) — viewable
+// without a session (the unguessable netUid is the token); ordering leads through sign-in into
+// the account offer page with returnUrl preserved.
 export function getPublicOfferLink(netUid: string): string {
-  return `${PUBLIC_OFFER_LINK_BASE}${netUid}`
+  return `${SHOP_BASE_URL.replace(/\/+$/, '')}/offer/${netUid}`
 }
 
 export async function getOffers(filters: OffersFilters): Promise<ClientShoppingCart[]> {
@@ -68,6 +70,7 @@ export async function restartOfferValidity(
 export async function createOffer(
   offer: ClientShoppingCart,
   operation: SalesMutationOperationOptions,
+  validDays?: number,
 ): Promise<ClientShoppingCart | null> {
   validateNewOffer(offer)
 
@@ -75,6 +78,7 @@ export async function createOffer(
     body: offer,
     headers: getSalesMutationOperationHeaders(operation.operationId),
     method: 'POST',
+    query: validDays && Number.isFinite(validDays) && validDays > 0 ? { validDays } : undefined,
     signal: operation.signal,
   })
 

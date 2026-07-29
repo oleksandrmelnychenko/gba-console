@@ -4,6 +4,8 @@ import {
   requireAiIsoDate,
 } from '../../../shared/ai/aiHistoryLineage'
 import type {
+  CockpitClient,
+  CockpitClientsResponse,
   CockpitCompletedVsOpen,
   CockpitCount,
   CockpitCountByUrgency,
@@ -22,6 +24,8 @@ import type {
   CockpitUrgencyMix,
   EscalatedResponse,
   EscalatedTask,
+  HeadClient,
+  HeadClientsResponse,
   HeadDashboard,
   HeadDashboardTeam,
   HeadPaceStatus,
@@ -30,7 +34,10 @@ import type {
   HeadTargetMetric,
   HeadTask,
   HeadTaskByStatus,
+  HeadTaskCreateBody,
   HeadTaskManager,
+  HeadTaskNote,
+  HeadTaskOutcome,
   HeadTasksParams,
   HeadTasksResponse,
   HeadTeam,
@@ -105,12 +112,38 @@ export async function getHeadTasks(params: HeadTasksParams = {}): Promise<HeadTa
       statuses: params.statuses,
       managerId: params.managerId,
       urgency: params.urgency,
+      taskType: params.taskType,
       skip: params.skip,
       limit: params.limit,
     },
   })
 
   return normalizeHeadTasksResponse(result)
+}
+
+export async function createHeadTask(body: HeadTaskCreateBody): Promise<CockpitTask | null> {
+  const result = await apiRequest<unknown>('/sales/cockpit/head/tasks/new', {
+    method: 'POST',
+    body,
+  })
+
+  return normalizeTask(result)
+}
+
+export async function getHeadClients(managerId: number): Promise<HeadClientsResponse> {
+  const result = await apiRequest<unknown>('/sales/cockpit/head/clients', {
+    query: {
+      managerId,
+    },
+  })
+
+  return normalizeHeadClients(result)
+}
+
+export async function getCockpitClients(): Promise<CockpitClientsResponse> {
+  const result = await apiRequest<unknown>('/sales/cockpit/clients')
+
+  return normalizeCockpitClients(result)
 }
 
 export async function getDashboard(asOfDate?: string): Promise<CockpitDashboard> {
@@ -548,6 +581,7 @@ function normalizeHeadTasksResponse(result: unknown): HeadTasksResponse {
     RequestedStatuses: normalizeStringArray(payload.RequestedStatuses),
     RequestedManagerId: toNullableNumber(payload.RequestedManagerId),
     RequestedUrgency: typeof payload.RequestedUrgency === 'string' ? payload.RequestedUrgency : null,
+    RequestedTaskType: typeof payload.RequestedTaskType === 'string' ? payload.RequestedTaskType : null,
     Skip: toNumber(payload.Skip),
     Limit: toNumber(payload.Limit),
     ReturnedCount: returnedCount,
@@ -583,6 +617,109 @@ function normalizeHeadTask(value: unknown): HeadTask | null {
     GeneratedAt: typeof row.GeneratedAt === 'string' ? row.GeneratedAt : null,
     UpdatedAt: typeof row.UpdatedAt === 'string' ? row.UpdatedAt : null,
     SlaBreached: row.SlaBreached === true,
+    Origin: typeof row.Origin === 'string' ? row.Origin : null,
+    CreatedBy: toNullableNumber(row.CreatedBy),
+    DueDate: typeof row.DueDate === 'string' ? row.DueDate : null,
+    Reason: typeof row.Reason === 'string' ? row.Reason : null,
+    ResolutionReason: typeof row.ResolutionReason === 'string' ? row.ResolutionReason : null,
+    Outcome: normalizeHeadTaskOutcome(row.Outcome),
+    Notes: Array.isArray(row.Notes)
+      ? row.Notes.reduce<HeadTaskNote[]>((acc, value) => {
+          const note = normalizeHeadTaskNote(value)
+          if (note) acc.push(note)
+          return acc
+        }, [])
+      : [],
+  }
+}
+
+function normalizeHeadTaskOutcome(value: unknown): HeadTaskOutcome | null {
+  if (!value || typeof value !== 'object') {
+    return null
+  }
+
+  const row = value as Partial<HeadTaskOutcome>
+
+  return {
+    Sold: row.Sold === true,
+    Amount: toNullableNumber(row.Amount),
+  }
+}
+
+function normalizeHeadTaskNote(value: unknown): HeadTaskNote | null {
+  if (!value || typeof value !== 'object') {
+    return null
+  }
+
+  const row = value as Partial<HeadTaskNote>
+
+  return {
+    AuthorId: toNullableNumber(row.AuthorId),
+    AuthorName: typeof row.AuthorName === 'string' ? row.AuthorName : null,
+    Text: typeof row.Text === 'string' ? row.Text : null,
+    CreatedAt: typeof row.CreatedAt === 'string' ? row.CreatedAt : null,
+  }
+}
+
+function normalizeHeadClients(result: unknown): HeadClientsResponse {
+  const payload = result && typeof result === 'object' ? (result as Partial<HeadClientsResponse>) : {}
+  const clients = Array.isArray(payload.clients)
+    ? payload.clients.reduce<HeadClient[]>((acc, value) => {
+        if (value && typeof value === 'object' && typeof (value as HeadClient).client_id === 'number') {
+          acc.push(value as HeadClient)
+        }
+        return acc
+      }, [])
+    : []
+
+  return {
+    is_head: payload.is_head === true,
+    manager_id: toNumber(payload.manager_id),
+    count: typeof payload.count === 'number' ? payload.count : clients.length,
+    clients,
+  }
+}
+
+function normalizeCockpitClients(result: unknown): CockpitClientsResponse {
+  const payload = result && typeof result === 'object' ? (result as Partial<CockpitClientsResponse>) : {}
+  const clients = Array.isArray(payload.clients)
+    ? payload.clients.reduce<CockpitClient[]>((acc, value) => {
+        const row = normalizeCockpitClient(value)
+        if (row) acc.push(row)
+        return acc
+      }, [])
+    : []
+
+  return {
+    ...payload,
+    count: typeof payload.count === 'number' ? payload.count : clients.length,
+    clients,
+  }
+}
+
+function normalizeCockpitClient(value: unknown): CockpitClient | null {
+  if (!value || typeof value !== 'object') {
+    return null
+  }
+
+  const row = value as Partial<CockpitClient>
+
+  if (typeof row.client_id !== 'number' || typeof row.client_net_uid !== 'string') {
+    return null
+  }
+
+  return {
+    client_id: row.client_id,
+    client_net_uid: row.client_net_uid,
+    name: typeof row.name === 'string' ? row.name : null,
+    full_name: typeof row.full_name === 'string' ? row.full_name : null,
+    phone: typeof row.phone === 'string' ? row.phone : null,
+    email: typeof row.email === 'string' ? row.email : null,
+    last_order: typeof row.last_order === 'string' ? row.last_order : null,
+    orders_cnt: toNumber(row.orders_cnt),
+    turnover_eur: toNumber(row.turnover_eur),
+    overdue_eur: toNumber(row.overdue_eur),
+    max_days_past_terms: toNumber(row.max_days_past_terms),
   }
 }
 

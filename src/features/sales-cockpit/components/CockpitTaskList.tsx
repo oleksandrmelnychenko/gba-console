@@ -9,6 +9,7 @@ type CockpitTaskListProps = {
   isLoading: boolean
   pendingTaskKey: string | null
   tasks: CockpitTask[]
+  title?: string
   onAddNote: (task: CockpitTask) => void
   onDismiss: (task: CockpitTask) => void
   onDone: (task: CockpitTask) => void
@@ -20,6 +21,7 @@ export function CockpitTaskList({
   isLoading,
   pendingTaskKey,
   tasks,
+  title,
   onAddNote,
   onDismiss,
   onDone,
@@ -33,7 +35,7 @@ export function CockpitTaskList({
       <Stack gap="md">
         <Group justify="space-between" gap="sm">
           <Text className="app-section-title" fw={600} size="sm">
-            {t('Поточні завдання')}
+            {t(title ?? 'Поточні завдання')}
           </Text>
           <Badge className="app-role-pill is-gray" variant="light">
             {tasks.length}

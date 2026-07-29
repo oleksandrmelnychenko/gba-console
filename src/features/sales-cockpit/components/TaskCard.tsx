@@ -31,7 +31,10 @@ const TASK_TYPE_LABEL: Record<CockpitTaskType, string> = {
   cross_sell: 'Крос-продаж',
   churn_winback: 'Повернення клієнта',
   new_client_activation: 'Активація нового клієнта',
+  manual: 'Від керівника',
 }
+
+const dueDateFormatter = new Intl.DateTimeFormat('uk-UA', { day: '2-digit', month: '2-digit' })
 
 export function TaskCard({
   task,
@@ -55,6 +58,8 @@ export function TaskCard({
   const email = task.contact?.email?.trim()
   const viber = task.contact?.viber?.trim()
   const notesCount = task.notes?.length ?? 0
+  const isManual = task.task_type === 'manual'
+  const dueDateLabel = formatDueDate(task.due_date)
   const isInProgress = task.status === 'in_progress'
   const canTakeInProgress = task.status === 'open' || task.status === 'snoozed'
   const inProgressLabel = isInProgress ? inProgressBadgeLabel(task.in_progress_since, t) : ''
@@ -71,8 +76,13 @@ export function TaskCard({
                 {urgencyLabel(task.urgency, t)}
               </Badge>
               {task.task_type && (
-                <Badge className="app-role-pill is-gray" variant="light">
+                <Badge className={`app-role-pill${isManual ? '' : ' is-gray'}`} variant="light">
                   {taskTypeLabel(task.task_type, t)}
+                </Badge>
+              )}
+              {isManual && dueDateLabel && (
+                <Badge className="app-role-pill is-gray" variant="light">
+                  {t('Термін')}: {dueDateLabel}
                 </Badge>
               )}
               {task.sla_breached && (
@@ -162,7 +172,7 @@ export function TaskCard({
             {t('Нотатка')}
           </Button>
           <Button color="red" leftSection={<X size={16} />} size="xs" variant="subtle" onClick={() => onDismiss(task)}>
-            {t('Відхилити')}
+            {t('Не актуально')}
           </Button>
         </Group>
       </Stack>
@@ -224,4 +234,14 @@ function formatMoney(value: number): string {
 
 function formatPercent(value: number): string {
   return `${Math.round(value * 100)}%`
+}
+
+function formatDueDate(value: string | null | undefined): string | null {
+  if (!value) {
+    return null
+  }
+
+  const parsed = new Date(value)
+
+  return Number.isNaN(parsed.getTime()) ? null : dueDateFormatter.format(parsed)
 }

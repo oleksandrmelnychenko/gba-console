@@ -56,6 +56,21 @@ export async function getProductCoPurchaseRecommendations(
   return normalizeRecommendationProducts(result)
 }
 
+// «Не пропонувати» на рекомендації: negative feedback у gba-reco (Redis negatives, TTL) —
+// товар зникає з майбутніх видач discovery для цього клієнта.
+export async function sendRecommendationFeedback(
+  clientNetId: string,
+  productIds: number[],
+): Promise<void> {
+  await apiRequest<unknown>('/recommendations/feedback', {
+    method: 'POST',
+    body: {
+      ClientNetId: clientNetId,
+      ProductIds: productIds,
+    },
+  })
+}
+
 export async function getProductById(
   netId: string,
   signal?: AbortSignal,

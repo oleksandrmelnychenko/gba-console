@@ -4,6 +4,7 @@ export type CockpitTaskType =
   | 'cross_sell'
   | 'churn_winback'
   | 'new_client_activation'
+  | 'manual'
 
 export type CockpitTaskStatus =
   | 'generated'
@@ -30,6 +31,7 @@ export type Contact = {
 
 export type Note = {
   author_id?: number
+  author_name?: string | null
   text?: string
   created_at?: string
 }
@@ -61,6 +63,8 @@ export type CockpitTask = {
   p_outcome?: number | null
   expected_value?: number | null
   ev_score?: number | null
+  origin?: string | null
+  created_by?: number | null
   [key: string]: unknown
 }
 
@@ -243,6 +247,18 @@ export type HeadDashboard = Partial<AiHistoryLineage> & {
 // Live team task board (GET sales/cockpit/head/tasks). Served by gba-server (.NET),
 // so the DTO is PascalCase with NO JsonPropertyName — mirror SalesCockpitHeadTasksResponseDto.cs
 // field-for-field. This is intentionally different from the snake_case gba-nba cockpit endpoints above.
+export type HeadTaskNote = {
+  AuthorId: number | null
+  AuthorName: string | null
+  Text: string | null
+  CreatedAt: string | null
+}
+
+export type HeadTaskOutcome = {
+  Sold: boolean
+  Amount: number | null
+}
+
 export type HeadTask = {
   TaskKey: string
   ManagerId: number
@@ -261,6 +277,13 @@ export type HeadTask = {
   GeneratedAt: string | null
   UpdatedAt: string | null
   SlaBreached: boolean
+  Origin: string | null
+  CreatedBy: number | null
+  DueDate: string | null
+  Reason: string | null
+  ResolutionReason: string | null
+  Outcome: HeadTaskOutcome | null
+  Notes: HeadTaskNote[]
 }
 
 export type HeadTaskByStatus = {
@@ -282,6 +305,7 @@ export type HeadTasksResponse = {
   RequestedStatuses: string[]
   RequestedManagerId: number | null
   RequestedUrgency: string | null
+  RequestedTaskType: string | null
   Skip: number
   Limit: number
   ReturnedCount: number
@@ -295,8 +319,57 @@ export type HeadTasksParams = {
   statuses?: string
   managerId?: number
   urgency?: string
+  taskType?: string
   skip?: number
   limit?: number
+}
+
+// PascalCase body of POST sales/cockpit/head/tasks/new (gba-server SalesCockpitCreateTaskRequestDto).
+export type HeadTaskCreateBody = {
+  ManagerId: number
+  ClientId?: number
+  Title: string
+  Description?: string
+  Urgency?: CockpitUrgency
+  DueDate?: string
+}
+
+// snake_case rows passed through gba-server from gba-nba (JsonElement passthrough).
+export type HeadClient = {
+  client_id: number
+  full_name?: string | null
+  name?: string | null
+  phone?: string | null
+  email?: string | null
+}
+
+export type HeadClientsResponse = {
+  is_head: boolean
+  manager_id: number
+  count: number
+  clients: HeadClient[]
+}
+
+export type CockpitClient = {
+  client_id: number
+  client_net_uid: string
+  name?: string | null
+  full_name?: string | null
+  phone?: string | null
+  email?: string | null
+  last_order?: string | null
+  orders_cnt: number
+  turnover_eur: number
+  overdue_eur: number
+  max_days_past_terms: number
+}
+
+export type CockpitClientsResponse = {
+  manager_id?: number
+  manager_net_uid?: string
+  as_of?: string
+  count: number
+  clients: CockpitClient[]
 }
 
 export type CockpitGenerationResult = AiHistoryLineage & {

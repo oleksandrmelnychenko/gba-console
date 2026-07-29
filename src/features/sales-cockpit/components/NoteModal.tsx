@@ -55,9 +55,11 @@ export function NoteModal({
                 <Text size="sm" style={{ whiteSpace: 'pre-wrap' }}>
                   {note.text}
                 </Text>
-                {note.created_at && (
+                {(note.author_name || note.created_at) && (
                   <Text c="dimmed" size="xs" style={{ fontFamily: 'var(--font-mono)' }}>
-                    {formatNoteDate(note.created_at)}
+                    {[note.author_name, note.created_at ? formatNoteDate(note.created_at) : null]
+                      .filter(Boolean)
+                      .join(' • ')}
                   </Text>
                 )}
               </Stack>

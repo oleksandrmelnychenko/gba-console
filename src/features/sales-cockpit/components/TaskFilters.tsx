@@ -4,6 +4,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import type { CockpitTaskType, CockpitUrgency } from '../types'
 
 const TASK_TYPE_OPTIONS: { value: CockpitTaskType; label: string }[] = [
+  { value: 'manual', label: 'Від керівника' },
   { value: 'reorder_due', label: 'Час повторного замовлення' },
   { value: 'debt_followup', label: 'Контроль заборгованості' },
   { value: 'cross_sell', label: 'Крос-продаж' },

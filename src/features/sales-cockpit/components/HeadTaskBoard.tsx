@@ -11,21 +11,23 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { CircleAlert, CircleDashed, RefreshCw, Sparkles } from 'lucide-react'
+import { Ban, CircleAlert, CircleDashed, MessageSquare, MessageSquarePlus, Plus, RefreshCw, Sparkles } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { ApiError } from '../../../shared/api/apiClient'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
-import { getHeadTasks, regenerateCockpit } from '../api/salesCockpitApi'
+import { addTaskNote, getHeadTasks, regenerateCockpit, setTaskStatus } from '../api/salesCockpitApi'
 import type { HeadTask, HeadTaskByStatus, HeadTaskManager, HeadTasksResponse } from '../types'
 import { useCockpitRealtimeReload } from '../hooks/useCockpitRealtimeReload'
+import { BoardCancelModal, BoardNoteModal } from './HeadTaskBoardModals'
+import { NewHeadTaskModal } from './NewHeadTaskModal'
 
 const POLL_INTERVAL_MS = 60_000
 const RELATIVE_TIME_TICK_MS = 30_000
 const PAGE_SIZE = 50
 
-type BoardStatus = 'ready' | 'open' | 'in_progress' | 'done'
+type BoardStatus = 'ready' | 'open' | 'in_progress' | 'done' | 'dismissed'
 type TFn = (key: string, params?: Record<string, number | string>) => string
 
 const STATUS_TABS: { value: BoardStatus; label: string; count: (status: HeadTaskByStatus) => number }[] = [
@@ -33,6 +35,7 @@ const STATUS_TABS: { value: BoardStatus; label: string; count: (status: HeadTask
   { value: 'open', label: 'Нові', count: (status) => status.Open },
   { value: 'in_progress', label: 'В роботі', count: (status) => status.InProgress },
   { value: 'done', label: 'Виконано', count: (status) => status.Done },
+  { value: 'dismissed', label: 'Неактуальні', count: (status) => status.Dismissed },
 ]
 
 // Urgency → shared outlined-pill variant (docs/ui-patterns.md §4);
@@ -57,7 +60,19 @@ const TASK_TYPE_LABEL: Record<string, string> = {
   cross_sell: 'Крос-продаж',
   churn_winback: 'Повернення клієнта',
   new_client_activation: 'Активація нового клієнта',
+  manual: 'Від керівника',
 }
+
+const TASK_TYPE_FILTER_OPTIONS = [
+  { value: 'manual', label: 'Від керівника' },
+  { value: 'reorder_due', label: 'Час повторного замовлення' },
+  { value: 'debt_followup', label: 'Контроль заборгованості' },
+  { value: 'cross_sell', label: 'Крос-продаж' },
+  { value: 'churn_winback', label: 'Повернення клієнта' },
+  { value: 'new_client_activation', label: 'Активація нового клієнта' },
+]
+
+const dueDateFormatter = new Intl.DateTimeFormat('uk-UA', { day: '2-digit', month: '2-digit' })
 
 const moneyFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 0,
@@ -69,6 +84,7 @@ const EMPTY_RESPONSE: HeadTasksResponse = {
   RequestedStatuses: [],
   RequestedManagerId: null,
   RequestedUrgency: null,
+  RequestedTaskType: null,
   Skip: 0,
   Limit: 50,
   ReturnedCount: 0,
@@ -89,6 +105,11 @@ export function HeadTaskBoard({
   const [data, setData] = useValueState<HeadTasksResponse>(EMPTY_RESPONSE)
   const [status, setStatus] = useValueState<BoardStatus>('ready')
   const [urgency, setUrgency] = useValueState<string | null>(null)
+  const [taskType, setTaskType] = useValueState<string | null>(null)
+  const [isCreateOpen, setCreateOpen] = useState(false)
+  const [noteTask, setNoteTask] = useState<HeadTask | null>(null)
+  const [cancelTask, setCancelTask] = useState<HeadTask | null>(null)
+  const [isActionPending, setActionPending] = useState(false)
   const [page, setPage] = useState(1)
   const [error, setError] = useValueState<string | null>(null)
   const [forbidden, setForbidden] = useState(false)
@@ -116,6 +137,7 @@ export function HeadTaskBoard({
           statuses: statusesQuery,
           managerId: managerId ?? undefined,
           urgency: urgency ?? undefined,
+          taskType: taskType ?? undefined,
           skip,
           limit: PAGE_SIZE,
         })
@@ -167,7 +189,7 @@ export function HeadTaskBoard({
       window.clearInterval(intervalId)
       document.removeEventListener('visibilitychange', handleVisibility)
     }
-  }, [statusesQuery, managerId, urgency, skip, reloadKey, setData, setError, t])
+  }, [statusesQuery, managerId, urgency, taskType, skip, reloadKey, setData, setError, t])
 
   useEffect(() => {
     const id = setInterval(() => setTick((value) => value + 1), RELATIVE_TIME_TICK_MS)
@@ -202,6 +224,57 @@ export function HeadTaskBoard({
       setLoading(true)
     },
     [setUrgency],
+  )
+
+  const handleTaskTypeChange = useCallback(
+    (value: string | null) => {
+      setTaskType(value)
+      setPage(1)
+      setLoading(true)
+    },
+    [setTaskType],
+  )
+
+  const handleBoardNoteSubmit = useCallback(
+    async (task: HeadTask, text: string) => {
+      setActionPending(true)
+
+      try {
+        await addTaskNote(task.TaskKey, { Text: text })
+        notifications.show({ color: 'green', message: t('Коментар додано') })
+        setNoteTask(null)
+        scheduleReload()
+      } catch (noteError) {
+        notifications.show({
+          color: 'red',
+          message: noteError instanceof Error ? noteError.message : t('Не вдалося додати коментар'),
+        })
+      } finally {
+        setActionPending(false)
+      }
+    },
+    [scheduleReload, t],
+  )
+
+  const handleBoardCancelSubmit = useCallback(
+    async (task: HeadTask, reason: string | null) => {
+      setActionPending(true)
+
+      try {
+        await setTaskStatus(task.TaskKey, { To: 'dismissed', Reason: reason ?? undefined })
+        notifications.show({ color: 'green', message: t('Задачу скасовано') })
+        setCancelTask(null)
+        scheduleReload()
+      } catch (cancelError) {
+        notifications.show({
+          color: 'red',
+          message: cancelError instanceof Error ? cancelError.message : t('Не вдалося скасувати задачу'),
+        })
+      } finally {
+        setActionPending(false)
+      }
+    },
+    [scheduleReload, t],
   )
 
   const handleGenerate = useCallback(async () => {
@@ -287,12 +360,30 @@ export function HeadTaskBoard({
           w={200}
           onChange={handleUrgencyChange}
         />
+        <Select
+          clearable
+          data={TASK_TYPE_FILTER_OPTIONS.map((option) => ({ value: option.value, label: t(option.label) }))}
+          label={t('Тип задачі')}
+          placeholder={t('Усі типи')}
+          size="sm"
+          value={taskType}
+          w={220}
+          onChange={handleTaskTypeChange}
+        />
         <div className="app-filter-actions cockpit-command-actions">
           <Button
             color={CREATE_ACTION_COLOR}
+            leftSection={<Plus size={16} />}
+            size="sm"
+            onClick={() => setCreateOpen(true)}
+          >
+            {t('Нова задача')}
+          </Button>
+          <Button
             leftSection={<Sparkles size={16} />}
             loading={isGenerating}
             size="sm"
+            variant="light"
             onClick={handleGenerate}
           >
             {t('Перерахувати AI задачі')}
@@ -328,7 +419,14 @@ export function HeadTaskBoard({
         </Text>
       ) : (
         <div className="cockpit-board-list">
-          {data.Tasks.map((task) => <HeadTaskRow key={task.TaskKey} task={task} />)}
+          {data.Tasks.map((task) => (
+            <HeadTaskRow
+              key={task.TaskKey}
+              task={task}
+              onAddNote={setNoteTask}
+              onCancel={setCancelTask}
+            />
+          ))}
         </div>
       )}
 
@@ -348,6 +446,27 @@ export function HeadTaskBoard({
           />
         </Group>
       )}
+
+      <NewHeadTaskModal
+        managers={data.Managers}
+        opened={isCreateOpen}
+        onClose={() => setCreateOpen(false)}
+        onCreated={scheduleReload}
+      />
+
+      <BoardNoteModal
+        saving={isActionPending}
+        task={noteTask}
+        onClose={() => setNoteTask(null)}
+        onSubmit={handleBoardNoteSubmit}
+      />
+
+      <BoardCancelModal
+        saving={isActionPending}
+        task={cancelTask}
+        onClose={() => setCancelTask(null)}
+        onSubmit={handleBoardCancelSubmit}
+      />
     </Card>
   )
 }
@@ -430,8 +549,20 @@ function ProgressMetric({
   )
 }
 
-function HeadTaskRow({ task }: { task: HeadTask }) {
+function HeadTaskRow({
+  task,
+  onAddNote,
+  onCancel,
+}: {
+  task: HeadTask
+  onAddNote: (task: HeadTask) => void
+  onCancel: (task: HeadTask) => void
+}) {
   const { t } = useI18n()
+  const isManual = task.TaskType === 'manual'
+  const dueDate = formatDueDate(task.DueDate)
+  const lastNote = task.Notes.length > 0 ? task.Notes[task.Notes.length - 1] : null
+  const isActive = task.Status === 'open' || task.Status === 'in_progress' || task.Status === 'snoozed'
 
   return (
     <div className={`cockpit-board-row${task.SlaBreached ? ' is-breached' : ''}`}>
@@ -439,18 +570,45 @@ function HeadTaskRow({ task }: { task: HeadTask }) {
         <Group gap={6} wrap="wrap">
           <Text className="cockpit-board-row__title">{task.Title?.trim() || t('Завдання')}</Text>
           {task.TaskType && (
-            <Badge className="app-role-pill is-gray" size="sm" variant="light">
+            <Badge className={`app-role-pill${isManual ? '' : ' is-gray'}`} size="sm" variant="light">
               {taskTypeLabel(task.TaskType, t)}
+            </Badge>
+          )}
+          {isManual && dueDate && (
+            <Badge className="app-role-pill is-gray" size="sm" variant="light">
+              {t('Термін')}: {dueDate}
             </Badge>
           )}
         </Group>
         <Group gap={6} mt={4} wrap="wrap">
           <Text c="dimmed" size="xs">
-            {task.ClientName?.trim() || (task.ClientId !== null ? `#${task.ClientId}` : t('Клієнт не вказаний'))}
+            {task.ClientName?.trim() || (task.ClientId !== null && task.ClientId > 0 ? `#${task.ClientId}` : t('Клієнт не вказаний'))}
           </Text>
           <span className="cockpit-board-row__separator" aria-hidden="true" />
           <Text c="dimmed" size="xs">{task.ManagerName?.trim() || `#${task.ManagerId}`}</Text>
+          {lastNote?.Text && (
+            <>
+              <span className="cockpit-board-row__separator" aria-hidden="true" />
+              <Tooltip label={`${lastNote.AuthorName ? `${lastNote.AuthorName}: ` : ''}${lastNote.Text}`} multiline w={320}>
+                <Text c="dimmed" size="xs" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  <MessageSquare size={12} /> {task.Notes.length}
+                </Text>
+              </Tooltip>
+            </>
+          )}
         </Group>
+        {task.Status === 'dismissed' && task.ResolutionReason && (
+          <Text c="red.7" mt={4} size="xs">
+            {t('Причина')}: {task.ResolutionReason}
+          </Text>
+        )}
+        {task.Status === 'done' && task.Outcome && (
+          <Text c={task.Outcome.Sold ? 'green.7' : 'dimmed'} mt={4} size="xs">
+            {task.Outcome.Sold
+              ? `${t('Продаж відбувся')}${task.Outcome.Amount ? `: ${formatMoney(task.Outcome.Amount)}` : ''}`
+              : t('Виконано без продажу')}
+          </Text>
+        )}
       </div>
 
       <div className="cockpit-board-row__value">
@@ -483,6 +641,33 @@ function HeadTaskRow({ task }: { task: HeadTask }) {
         <span className="cockpit-board-row__label">{t('Оновлено')}</span>
         <span>{relativeTaskDateLabel(task.UpdatedAt || task.GeneratedAt, t)}</span>
       </div>
+
+      <Group gap={4} wrap="nowrap">
+        <Tooltip label={t('Коментар керівника')}>
+          <ActionIcon
+            aria-label={t('Коментар керівника')}
+            color="blue"
+            size="sm"
+            variant="subtle"
+            onClick={() => onAddNote(task)}
+          >
+            <MessageSquarePlus size={16} />
+          </ActionIcon>
+        </Tooltip>
+        {isManual && isActive && (
+          <Tooltip label={t('Скасувати задачу')}>
+            <ActionIcon
+              aria-label={t('Скасувати задачу')}
+              color="red"
+              size="sm"
+              variant="subtle"
+              onClick={() => onCancel(task)}
+            >
+              <Ban size={16} />
+            </ActionIcon>
+          </Tooltip>
+        )}
+      </Group>
     </div>
   )
 }
@@ -606,6 +791,16 @@ function relativeUpdatedLabel(lastUpdated: number | null, t: TFn): string {
 function relativeTaskDateLabel(value: string | null, t: TFn): string {
   const elapsed = formatElapsed(value)
   return elapsed ? `${elapsed} ${t('тому')}` : '—'
+}
+
+function formatDueDate(value: string | null): string | null {
+  if (!value) {
+    return null
+  }
+
+  const parsed = new Date(value)
+
+  return Number.isNaN(parsed.getTime()) ? null : dueDateFormatter.format(parsed)
 }
 
 function formatMoney(value: number): string {

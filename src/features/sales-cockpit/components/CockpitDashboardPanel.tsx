@@ -23,6 +23,7 @@ const TASK_TYPE_LABEL: Record<CockpitTaskType, string> = {
   cross_sell: 'Крос-продаж',
   churn_winback: 'Повернення клієнта',
   new_client_activation: 'Активація нового клієнта',
+  manual: 'Від керівника',
 }
 
 const moneyFormatter = new Intl.NumberFormat('uk-UA', {

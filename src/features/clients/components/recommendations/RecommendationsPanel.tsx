@@ -8,6 +8,7 @@ import {
   Checkbox,
   Group,
   Image,
+  Select,
   SimpleGrid,
   Stack,
   Table,
@@ -16,7 +17,8 @@ import {
   Title,
   Tooltip,
 } from '@mantine/core'
-import { CircleAlert, Image as ImageIcon, LayoutGrid, List, ShoppingCart } from 'lucide-react'
+import { notifications } from '@mantine/notifications'
+import { CircleAlert, Image as ImageIcon, LayoutGrid, Link as LinkIcon, List, ShoppingCart, X } from 'lucide-react'
 import { useEffect, useReducer, useState } from 'react'
 import { AiFeatureBadge } from '../../../../shared/ai/AiFeatureBadge'
 import { AiHistoryLineageNote } from '../../../../shared/ai/AiHistoryLineageNote'
@@ -29,10 +31,14 @@ import { SALES_UKRAINE_EDIT_PERMISSION } from '../../../sales-ukraine/permission
 import { NewSaleWizard, type NewSaleWizardPrefill } from '../../../sales-ukraine/components/new-sale-wizard/NewSaleWizard'
 import { getWizardClientAgreements } from '../../../sales-ukraine/components/new-sale-wizard/wizardClientStepApi'
 import type { SalesUkraineClientAgreement, SalesUkraineProduct } from '../../../sales-ukraine/types'
+import { OfferLinkModal } from '../../../sales-offers/components/OfferLinkModal'
+import { useOfferFromRecommendations } from '../../../sales-offers/useOfferFromRecommendations'
+import type { OfferClientAgreement } from '../../../sales-offers/types'
 import {
   getMostPurchasedProductsByClientId,
   getProductById,
   getProductCoPurchaseRecommendations,
+  sendRecommendationFeedback,
 } from '../../api/clientRecommendationsApi'
 import { getProductShopImageUrlByCode } from '../../../products/utils'
 import type { RecommendationProduct } from '../../recommendationsTypes'
@@ -66,6 +72,7 @@ type RecommendationsAction =
   | { type: 'loadedProductRecommendations'; products: RecommendationProduct[]; selectedProduct: RecommendationProduct | null }
   | { type: 'loading' }
   | { type: 'previewProduct'; product: RecommendationProduct | null }
+  | { type: 'removeProduct'; key: string }
   | { type: 'toggleGrid' }
   | { type: 'toggleSelected'; key: string }
 
@@ -112,6 +119,16 @@ function recommendationsReducer(state: RecommendationsState, action: Recommendat
       return { ...state, error: null, isLoading: true, selectedKeys: new Set() }
     case 'previewProduct':
       return { ...state, previewProduct: action.product }
+    case 'removeProduct': {
+      const selectedKeys = new Set(state.selectedKeys)
+      selectedKeys.delete(action.key)
+
+      return {
+        ...state,
+        products: state.products.filter((product, index) => getProductKey(product, index) !== action.key),
+        selectedKeys,
+      }
+    }
     case 'toggleGrid':
       return { ...state, isGrid: !state.isGrid }
     case 'toggleSelected': {
@@ -137,6 +154,9 @@ export function RecommendationsPanel({ client, productNetId }: RecommendationsPa
   const [agreementNetId, setAgreementNetId] = useState<string | null>(null)
   const [agreementResolved, setAgreementResolved] = useState(false)
   const [wizardPrefill, setWizardPrefill] = useState<NewSaleWizardPrefill | null>(null)
+  const [offerValidDays, setOfferValidDays] = useState('2')
+  const { clearCreatedOffer, createdOffer, createOfferFromSelection, isCreatingOffer } =
+    useOfferFromRecommendations()
 
   const clientNetId = client.NetUid || ''
   const canCreateSale = hasPermission(SALES_UKRAINE_EDIT_PERMISSION)
@@ -246,26 +266,63 @@ export function RecommendationsPanel({ client, productNetId }: RecommendationsPa
     dispatch({ key, type: 'toggleSelected' })
   }
 
-  function openSaleWizard() {
-    if (!clientNetId || !agreementNetId || !agreement) {
-      return
-    }
-
-    const chosen = products.filter(
+  function getChosenProducts(): RecommendationProduct[] {
+    return products.filter(
       (product, index) =>
         selectedKeys.has(getProductKey(product, index))
         && canSelectRecommendationProduct(product, isVatSale)
         && (product.Id ?? 0) > 0
         && product.NetUid,
     )
+  }
+
+  function openSaleWizard() {
+    if (!clientNetId || !agreementNetId || !agreement) {
+      return
+    }
 
     setWizardPrefill({
       agreement: agreement as unknown as SalesUkraineClientAgreement,
       agreementNetId,
       client,
       clientNetId,
-      products: chosen as unknown as SalesUkraineProduct[],
+      products: getChosenProducts() as unknown as SalesUkraineProduct[],
     })
+  }
+
+  async function handleCreateOffer() {
+    if (!agreement) {
+      return
+    }
+
+    const chosen = getChosenProducts()
+
+    if (chosen.length > 0) {
+      await createOfferFromSelection(
+        agreement as unknown as OfferClientAgreement,
+        chosen,
+        Number(offerValidDays) || undefined,
+      )
+    }
+  }
+
+  async function handleExcludeProduct(product: RecommendationProduct, index: number) {
+    if (!clientNetId || !(product.Id ?? 0)) {
+      return
+    }
+
+    const key = getProductKey(product, index)
+
+    try {
+      await sendRecommendationFeedback(clientNetId, [product.Id as number])
+      dispatch({ key, type: 'removeProduct' })
+      notifications.show({ color: 'green', message: t('Більше не пропонуватимемо цей товар клієнту') })
+    } catch (feedbackError) {
+      notifications.show({
+        color: 'red',
+        message: feedbackError instanceof Error ? feedbackError.message : t('Не вдалося зберегти відгук'),
+      })
+    }
   }
 
   const firstRecommendation = products[0]
@@ -310,6 +367,39 @@ export function RecommendationsPanel({ client, productNetId }: RecommendationsPa
                   </span>
                 </Tooltip>
               )}
+              {canCreateSale && (
+                <Group gap={6} wrap="nowrap">
+                  <Tooltip disabled={!createSaleDisabledReason} label={createSaleDisabledReason} withArrow>
+                    <span>
+                      <Button
+                        disabled={createSaleDisabled}
+                        leftSection={<LinkIcon size={16} />}
+                        loading={isCreatingOffer}
+                        size="sm"
+                        variant="light"
+                        onClick={handleCreateOffer}
+                      >
+                        {selectedCount > 0 ? `${t('Створити оферту')} (${selectedCount})` : t('Створити оферту')}
+                      </Button>
+                    </span>
+                  </Tooltip>
+                  <Tooltip label={t('Термін дії оферти')} withArrow>
+                    <Select
+                      allowDeselect={false}
+                      data={[
+                        { value: '1', label: `1 ${t('дн')}` },
+                        { value: '2', label: `2 ${t('дн')}` },
+                        { value: '7', label: `7 ${t('дн')}` },
+                        { value: '14', label: `14 ${t('дн')}` },
+                      ]}
+                      size="sm"
+                      value={offerValidDays}
+                      w={86}
+                      onChange={(value) => setOfferValidDays(value ?? '2')}
+                    />
+                  </Tooltip>
+                </Group>
+              )}
               <Tooltip label={isGrid ? t('Список') : t('Таблиця')}>
                 <ActionIcon color="gray" variant="light" onClick={() => dispatch({ type: 'toggleGrid' })}>
                   {isGrid ? <List size={18} /> : <LayoutGrid size={18} />}
@@ -340,6 +430,7 @@ export function RecommendationsPanel({ client, productNetId }: RecommendationsPa
               products={products}
               selectable={canCreateSale}
               selectedKeys={selectedKeys}
+              onExclude={canCreateSale ? handleExcludeProduct : undefined}
               onPreview={(product) => dispatch({ product, type: 'previewProduct' })}
               onToggleSelect={toggleSelected}
             />
@@ -348,6 +439,8 @@ export function RecommendationsPanel({ client, productNetId }: RecommendationsPa
       </Card>
 
       <ProductImagePreviewModal product={previewProduct} onClose={() => dispatch({ product: null, type: 'previewProduct' })} />
+
+      <OfferLinkModal offer={createdOffer} onClose={clearCreatedOffer} />
 
       {canCreateSale && (
         <NewSaleWizard
@@ -386,6 +479,7 @@ function RecommendationsList({
   products,
   selectable,
   selectedKeys,
+  onExclude,
   onPreview,
   onToggleSelect,
 }: {
@@ -394,6 +488,7 @@ function RecommendationsList({
   products: RecommendationProduct[]
   selectable: boolean
   selectedKeys: ReadonlySet<string>
+  onExclude?: (product: RecommendationProduct, index: number) => void
   onPreview: (product: RecommendationProduct) => void
   onToggleSelect: (product: RecommendationProduct, index: number) => void
 }) {
@@ -420,6 +515,7 @@ function RecommendationsList({
             <Table.Th>{t('Ціна')}</Table.Th>
             <Table.Th>{t('Наявність')}</Table.Th>
             <Table.Th>{t('Опис')}</Table.Th>
+            {onExclude && <Table.Th w={40} />}
           </Table.Tr>
         </Table.Thead>
         <Table.Tbody>
@@ -444,6 +540,11 @@ function RecommendationsList({
               <Table.Td>{formatPrice(product)}</Table.Td>
               <Table.Td>{formatAvailability(product, isVatSale)}</Table.Td>
               <Table.Td>{displayValue(product.Description)}</Table.Td>
+              {onExclude && (
+                <Table.Td>
+                  <ExcludeRecommendationButton onClick={() => onExclude(product, index)} />
+                </Table.Td>
+              )}
             </Table.Tr>
           ))}
         </Table.Tbody>
@@ -458,14 +559,17 @@ function RecommendationsList({
           <Stack gap="sm">
             <Group justify="space-between" align="center" gap="xs">
               <RecommendationSourceBadge product={product} />
-              {selectable && (
-                <RecommendationCheckbox
-                  checked={selectedKeys.has(getProductKey(product, index))}
-                  isVatSale={isVatSale}
-                  product={product}
-                  onChange={() => onToggleSelect(product, index)}
-                />
-              )}
+              <Group gap={6} wrap="nowrap">
+                {onExclude && <ExcludeRecommendationButton onClick={() => onExclude(product, index)} />}
+                {selectable && (
+                  <RecommendationCheckbox
+                    checked={selectedKeys.has(getProductKey(product, index))}
+                    isVatSale={isVatSale}
+                    product={product}
+                    onChange={() => onToggleSelect(product, index)}
+                  />
+                )}
+              </Group>
             </Group>
             <ProductImage product={product} height={220} onPreview={() => onPreview(product)} />
             <ProductFields isVatSale={isVatSale} product={product} />
@@ -473,6 +577,18 @@ function RecommendationsList({
         </Card>
       ))}
     </SimpleGrid>
+  )
+}
+
+function ExcludeRecommendationButton({ onClick }: { onClick: () => void }) {
+  const { t } = useI18n()
+
+  return (
+    <Tooltip label={t('Не пропонувати цей товар клієнту')} withArrow>
+      <ActionIcon aria-label={t('Не пропонувати')} color="gray" size="sm" variant="subtle" onClick={onClick}>
+        <X size={14} />
+      </ActionIcon>
+    </Tooltip>
   )
 }
 
