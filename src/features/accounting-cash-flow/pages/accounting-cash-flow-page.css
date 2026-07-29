@@ -1051,7 +1051,7 @@
   min-height: 54px;
   min-width: 0;
   overflow: hidden;
-  padding: 8px 48px 8px 9px;
+  padding: 10px 9px 8px;
   position: relative;
 }
 
@@ -1066,20 +1066,22 @@
   font-size: 13px;
   font-weight: 700;
   line-height: 1.1;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  width: 100%;
 }
 
 .accounting-cash-flow-statement-hero__flow-mark {
-  border-radius: 999px 999px 0 0;
-  bottom: 0;
+  border-radius: 0 0 999px 999px;
   display: block;
-  max-height: calc(100% - 10px);
+  max-height: 24px;
   min-height: 16px;
   pointer-events: none;
   position: absolute;
   right: 14px;
+  top: 0;
   width: 28px;
 }
 
@@ -1093,13 +1095,13 @@
 
 .accounting-cash-flow-statement-hero__chips {
   align-self: end;
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
   gap: 6px;
   grid-column: 2;
   grid-row: 2;
-  justify-content: flex-end;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   min-width: 0;
+  width: 100%;
 }
 
 .accounting-cash-flow-statement-hero__chips span {
@@ -1108,12 +1110,19 @@
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 999px;
   color: var(--mantine-color-gray-7);
-  display: inline-flex;
+  display: flex;
   font-size: 11px;
   font-weight: 600;
   height: 24px;
   line-height: 1;
+  justify-content: center;
+  min-width: 0;
   padding: 0 9px;
+  white-space: nowrap;
+}
+
+.accounting-cash-flow-statement-hero__chips span:first-child {
+  grid-column: 1 / -1;
 }
 
 .accounting-cash-flow-summary {
