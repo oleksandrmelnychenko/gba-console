@@ -1,10 +1,11 @@
 import { LineChart } from '@mantine/charts'
-import { ActionIcon, Alert, Autocomplete, Select, Stack, Text, TextInput, Tooltip } from '@mantine/core'
+import { ActionIcon, Alert, Select, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import { CircleAlert, RotateCcw } from 'lucide-react'
 import { useEffect, useMemo } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { SearchableSelect } from '../../../shared/ui/SearchableSelect'
 import { getSalesByClient, searchSalesClients } from '../api/salesChartsApi'
 import type { SalesChartsClientOption, SalesChartsClientPoint } from '../types'
 import { SalesChartsPeriodType } from '../types'
@@ -147,7 +148,7 @@ export function SalesByClientChart() {
               onChange={(event) => setTo(event.currentTarget.value)}
             />
           </div>
-          <Autocomplete
+          <SearchableSelect
             className="sales-chart-filter-control"
             data={autocompleteData}
             label={t('Клієнт')}
