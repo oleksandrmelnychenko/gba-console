@@ -1,6 +1,5 @@
 import {
   Alert,
-  Autocomplete,
   Button,
   Group,
   NumberInput,
@@ -16,6 +15,7 @@ import { CircleAlert, FileSpreadsheet, Plus } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { SearchableSelect } from '../../../shared/ui/SearchableSelect'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -206,7 +206,7 @@ export function NewProductCapitalizationPanel({ opened, onClose, onCreated }: Ne
           {t('Товари')}
         </Text>
         <Group align="end" gap="sm" wrap="nowrap">
-          <Autocomplete
+          <SearchableSelect
             comboboxProps={CAPITALIZATION_COMBOBOX_PROPS}
             data={model.vendorCodeOptions}
             disabled={isFormBusy}
