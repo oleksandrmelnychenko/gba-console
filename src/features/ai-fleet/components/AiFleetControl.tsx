@@ -226,7 +226,6 @@ export function AiFleetControl({ canRunWarmup = false }: { canRunWarmup?: boolea
                     loading={isTriggering}
                     size="xs"
                     styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
-                    variant="light"
                     onClick={runWarmup}
                   >
                     {t('Запустити')}
@@ -238,7 +237,6 @@ export function AiFleetControl({ canRunWarmup = false }: { canRunWarmup?: boolea
                 leftSection={state.isLoading ? <Loader size={14} /> : <RefreshCw size={14} />}
                 size="xs"
                 styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
-                variant="light"
                 onClick={reload}
               >
                 {t('Оновити')}
