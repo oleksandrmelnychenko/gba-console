@@ -1042,7 +1042,6 @@ export function NewResalePage() {
                 disabled={!payload || isLoadingOptions || isLoadingAvailabilities}
                 leftSection={<FileDown size={16} />}
                 loading={isExporting}
-                variant="light"
                 onClick={exportAvailabilities}
               >
                 {t('Друк')}
