@@ -1,4 +1,4 @@
-import { Alert, Autocomplete, Button, Grid, Group, NumberInput, Select, Stack, Text, TextInput, Textarea } from '@mantine/core'
+import { Alert, Button, Grid, Group, NumberInput, Select, Stack, Text, TextInput, Textarea } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, Plus } from 'lucide-react'
 import { useEffect, useMemo } from 'react'
@@ -6,6 +6,7 @@ import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { SearchableSelect } from '../../../shared/ui/SearchableSelect'
 import {
   createIncomeCashflowPaymentMovement,
   getIncomeCashflowClientAgreements,
@@ -410,7 +411,7 @@ export function DocumentOutcomePaymentModal({
             />
           </Grid.Col>
           <Grid.Col span={{ base: 12, sm: 9 }}>
-            <Autocomplete
+            <SearchableSelect
               data={movementOptions}
               disabled={isLoading || isSaving}
               label={t('Стаття руху коштів')}
