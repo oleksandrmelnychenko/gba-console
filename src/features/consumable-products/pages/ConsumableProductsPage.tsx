@@ -1,7 +1,6 @@
 import {
   ActionIcon,
   Alert,
-  Autocomplete,
   Button,
   Checkbox,
   Divider,
@@ -18,6 +17,7 @@ import { PermissionGate } from '../../auth/components/PermissionGate'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { SearchableSelect } from '../../../shared/ui/SearchableSelect'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -831,7 +831,7 @@ function ProductEditorForm({
     <Stack gap="md">
       <TextInput label={t('Назва')} value={name} onChange={(event) => setName(event.currentTarget.value)} />
       <TextInput label={t('Артикул')} value={vendorCode} onChange={(event) => setVendorCode(event.currentTarget.value)} />
-      <Autocomplete
+      <SearchableSelect
         data={measureUnitOptions}
         label={t('Одиниця виміру')}
         value={measureUnitSearch}
