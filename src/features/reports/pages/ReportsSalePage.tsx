@@ -23,6 +23,7 @@ import type { DataTableColumn, DataTableDensity } from '../../../shared/ui/data-
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import {
+  buildSheetExportRows,
   buildSpreadsheetSheet,
   calculateTotals,
   detectDelimiter,
@@ -32,7 +33,13 @@ import {
   normalizeImportedCellValue,
   parseDelimitedText,
 } from '../spreadsheet'
-import type { SpreadsheetCellValue, SpreadsheetRow, SpreadsheetRowKind, SpreadsheetSheet } from '../types'
+import type {
+  SpreadsheetCellValue,
+  SpreadsheetReportHeader,
+  SpreadsheetRow,
+  SpreadsheetRowKind,
+  SpreadsheetSheet,
+} from '../types'
 import { buildDateFileSuffix, buildReportFileName, buildSpreadsheetCsv, displayValue, downloadTextFile } from '../utils'
 import './reports-pages.css'
 
@@ -114,12 +121,12 @@ export function ReportsSalePage() {
     // computes a «Разом» of the selection instead — leaving it out of the file would hand the reader a column
     // of numbers whose total is nowhere, and a different total from the one they were just looking at.
     const totalsRow = showComputedTotals
-      ? [activeSheet.columns.map((_, columnIndex) => (columnIndex === 0 ? t('Разом') : visibleTotals[columnIndex] ?? ''))]
-      : []
+      ? activeSheet.columns.map((_, columnIndex) => (columnIndex === 0 ? t('Разом') : visibleTotals[columnIndex] ?? ''))
+      : null
 
     downloadTextFile(
       buildReportFileName([fileName.replace(/\.[^.]+$/, ''), activeSheet.name, buildDateFileSuffix()], 'csv'),
-      buildSpreadsheetCsv([activeSheet.columns, ...visibleRows.map((row) => row.cells), ...totalsRow]),
+      buildSpreadsheetCsv(buildSheetExportRows(activeSheet, visibleRows, totalsRow)),
     )
   }
 
@@ -217,9 +224,11 @@ export function ReportsSalePage() {
               </div>
 
               <Stack className="reports-sale-result-content" gap="md" pt="md">
+                {activeSheet.header ? <ReportHeaderBlock header={activeSheet.header} /> : null}
                 {showComputedTotals ? <TotalsBar columns={activeSheet.columns} totals={visibleTotals} /> : null}
                 <SpreadsheetTable
                   columns={activeSheet.columns}
+                  isReport={Boolean(activeSheet.header)}
                   rows={visibleRows}
                   showComputedTotals={showComputedTotals}
                   totals={visibleTotals}
@@ -236,6 +245,45 @@ export function ReportsSalePage() {
       </Card>
     </Stack>
   )
+}
+
+// The block the engine writes above the table, shown where the reader meets it before the numbers. The «немає
+// даних» lines are lifted out of it: they are the reason a money column on this sheet is blank, and a reader who
+// does not see them reads a blank cost as nothing sold rather than as nothing known.
+function ReportHeaderBlock({ header }: { header: SpreadsheetReportHeader }) {
+  const warnings = new Set(header.warnings)
+  const warningLines = addOccurrenceKeys(header.warnings)
+  const details = addOccurrenceKeys(header.lines.filter((line) => !warnings.has(line)))
+
+  return (
+    <Stack gap={6}>
+      {warningLines.length ? (
+        <Alert className="reports-page-alert" color="yellow" icon={<CircleAlert size={18} />}>
+          <Stack gap={2}>
+            {warningLines.map(({ key, line }) => (
+              <Text key={key} size="xs">{line}</Text>
+            ))}
+          </Stack>
+        </Alert>
+      ) : null}
+      {details.map(({ key, line }) => (
+        <Text key={key} c="dimmed" size="xs">{line}</Text>
+      ))}
+    </Stack>
+  )
+}
+
+// Two filter bullets can legitimately have the same text. Their occurrence within that text is stable while
+// unrelated lines move, unlike the array index, and still gives React a unique identity for every rendered line.
+function addOccurrenceKeys(lines: string[]): Array<{ key: string; line: string }> {
+  const occurrences = new Map<string, number>()
+
+  return lines.map((line) => {
+    const occurrence = (occurrences.get(line) ?? 0) + 1
+    occurrences.set(line, occurrence)
+
+    return { key: JSON.stringify([line, occurrence]), line }
+  })
 }
 
 function TotalsBar({ columns, totals }: { columns: string[]; totals: Array<number | null> }) {
@@ -269,12 +317,14 @@ type SpreadsheetPreviewRow = {
 
 function SpreadsheetTable({
   columns,
+  isReport,
   rows,
   showComputedTotals,
   totals,
   density,
 }: {
   columns: string[]
+  isReport: boolean
   rows: SpreadsheetRow[]
   showComputedTotals: boolean
   totals: Array<number | null>
@@ -302,7 +352,11 @@ function SpreadsheetTable({
             }
 
             if (row.kind === 'data') {
-              return displayValue(row.cells[columnIndex])
+              // On a report sheet an empty cell is a STATEMENT — the engine could not read the cost behind that
+              // measure and says so at the top of the file — and it is already printed empty on the subtotal and
+              // total rows below. A «-» in the data rows only would read as two different kinds of nothing in one
+              // column. Anywhere else «-» stays: an empty cell in an arbitrary spreadsheet says nothing at all.
+              return isReport ? formatSpreadsheetCell(row.cells[columnIndex]) : displayValue(row.cells[columnIndex])
             }
 
             return (
@@ -313,7 +367,7 @@ function SpreadsheetTable({
           },
         }
       }),
-    [columns, t, totals],
+    [columns, isReport, t, totals],
   )
 
   const previewData = useMemo<SpreadsheetPreviewRow[]>(() => {

@@ -146,26 +146,40 @@ const REPORT_GROUPING_GROUPS: ReportGroupingGroup[] = [
     categoryLabel: 'Документ продажу',
     items: [
       { key: 'SaleDocument', label: 'Документ продажу', type: REPORT_GROUPING_TYPES.saleDocument },
+      // «Повернення від клієнта» is a dimension of its own, not a subtraction: a returned line keeps its sales
+      // value where it was and appears under the document that returned it, so the report can show what was sold
+      // and what came back side by side. Sales are never netted down by it.
+      { key: 'SaleReturnDocument', label: 'Повернення від клієнта', type: REPORT_GROUPING_TYPES.saleReturnDocument },
       { key: 'SaleDocumentManagerInput', label: 'Ввів документ', type: REPORT_GROUPING_TYPES.saleDocumentManagerInput },
       { key: 'SaleDocumentManagerPosted', label: 'Провів документ', type: REPORT_GROUPING_TYPES.saleDocumentManagerPosted },
     ],
   },
+  {
+    categoryKey: 'Supplier',
+    categoryLabel: 'Постачальник',
+    items: [{ key: 'Supplier', label: 'Постачальник', type: REPORT_GROUPING_TYPES.supplier }],
+  },
 ]
 
-// Withheld options, and why — do not re-add them without a server change:
-// · SaleReturnDocument (grouping 18) and Supplier (grouping 21) are projected as «CAST(NULL AS nvarchar(50))» by
-//   SalesReportProjectionRepository.MapDimension, so grouping by either collapses the whole report into one blank
-//   row; the SaleReturnDocument filter field (14) is a no-op there too («case ...SaleReturnDocument: break»).
-// · CustomerManager (grouping 16 / filter field 10) and SaleDocumentManagerInput (19 / 15) both resolve to the
-//   very same s.UserID, so «Відповідальний менеджер» promised the client's account manager and delivered whoever
-//   keyed the document. Only the honest «Ввів документ» entry is offered; saved templates carrying the old one
-//   are remapped rather than dropped, because the server behaviour is identical.
-const UNSUPPORTED_GROUPING_TYPES = new Set<number>([
-  REPORT_GROUPING_TYPES.saleReturnDocument,
-  REPORT_GROUPING_TYPES.supplier,
-])
+// Withheld options, and why — do not re-add them without a server change.
+//
+// SaleReturnDocument (grouping 18 / filter field 14) and Supplier (grouping 21) USED to be withheld: the server
+// projected both as «CAST(NULL AS nvarchar(50))», so grouping by either collapsed the report into one blank row,
+// and the return-document filter was a no-op («case ...SaleReturnDocument: break»). All three are implemented now
+// — the grouping and the filter read the same attributed document from one OUTER APPLY, and the supplier is
+// resolved from the consignment lot a line consumed — so all three are offered again. Withholding an option the
+// server supports is the same fault as offering one it does not: the screen and the engine must agree.
+//
+// CustomerManager (grouping 16 / filter field 10) and SaleDocumentManagerInput (19 / 15) both resolve to the very
+// same s.UserID, so «Відповідальний менеджер» promised the client's account manager and delivered whoever keyed
+// the document. Only the honest «Ввів документ» entry is offered; saved templates carrying the old one are
+// remapped rather than dropped, because the server behaviour is identical.
+//
+// The two sets are deliberately kept rather than deleted: they are the mechanism by which a saved template stops
+// asking for something the engine cannot answer, and the next option to be withdrawn belongs in them.
+const UNSUPPORTED_GROUPING_TYPES = new Set<number>([])
 
-const UNSUPPORTED_FILTER_FIELD_TYPES = new Set<number>([REPORT_FILTER_FIELD_TYPES.saleReturnDocument])
+const UNSUPPORTED_FILTER_FIELD_TYPES = new Set<number>([])
 
 const GROUPING_TYPE_REPLACEMENTS = new Map<number, number>([
   [REPORT_GROUPING_TYPES.customerManager, REPORT_GROUPING_TYPES.saleDocumentManagerInput],
@@ -207,6 +221,7 @@ export const REPORT_FILTER_FIELD_GROUPS: ReportFilterFieldGroup[] = [
     label: 'SaleDocument',
     children: [
       { type: REPORT_FILTER_FIELD_TYPES.saleDocumentNumberDate, label: 'SaleDocumentNumberDate' },
+      { type: REPORT_FILTER_FIELD_TYPES.saleReturnDocument, label: 'SaleReturnDocument' },
       { type: REPORT_FILTER_FIELD_TYPES.saleDocumentManagerInput, label: 'SaleDocumentManagerInput' },
       { type: REPORT_FILTER_FIELD_TYPES.saleDocumentManagerPosted, label: 'SaleDocumentManagerPosted' },
     ],
@@ -369,10 +384,14 @@ export function sanitizeReportTemplate(data: ReportRequestBody): SanitizedReport
         return acc
       }
 
-      const replacementType = GROUPING_TYPE_REPLACEMENTS.get(item.type)
-      const replacement = replacementType === undefined ? undefined : GROUPING_ITEMS_BY_TYPE.get(replacementType)
+      // Resolved against the current option list rather than trusted as stored. A template saved while an option
+      // was withheld carries whatever key and label it had then — a bare «SaleReturnDocument» where the picker
+      // now says «Повернення від клієнта» — and the report screen labels its axes from what it is handed. The
+      // TYPE is the identity; the caption comes from the option list. An unknown type is passed through
+      // untouched, so a template is never quietly emptied by a console that has simply not heard of a grouping.
+      const canonicalType = GROUPING_TYPE_REPLACEMENTS.get(item.type) ?? item.type
 
-      acc.push(replacement ?? item)
+      acc.push(GROUPING_ITEMS_BY_TYPE.get(canonicalType) ?? item)
 
       return acc
     }, [])
@@ -394,10 +413,10 @@ export function sanitizeReportTemplate(data: ReportRequestBody): SanitizedReport
       return acc
     }
 
-    const replacementType = FILTER_FIELD_TYPE_REPLACEMENTS.get(fieldType)
-    const replacement = replacementType === undefined ? undefined : FILTER_FIELDS_BY_TYPE.get(replacementType)
+    const canonicalFieldType = FILTER_FIELD_TYPE_REPLACEMENTS.get(fieldType) ?? fieldType
+    const canonicalField = FILTER_FIELDS_BY_TYPE.get(canonicalFieldType)
 
-    acc.push(replacement ? { ...selection, SelectedField: replacement } : selection)
+    acc.push(canonicalField ? { ...selection, SelectedField: canonicalField } : selection)
 
     return acc
   }, [])

@@ -139,8 +139,25 @@ export type SpreadsheetRow = {
   kind: SpreadsheetRowKind
 }
 
+// The engine now writes the request into the file, above the table: the period, the groupings of both axes, the
+// measures, every filter that was applied — and, when a measure could not be answered, the «немає даних» line that
+// says how many cells were left empty and why. That block is the only thing in a saved workbook that says which
+// question it answers, so the viewer reads it, shows it, and carries it into its own export rather than skipping
+// past it to the numbers.
+export type SpreadsheetReportHeader = {
+  columnGroupings: string[]
+  // every line of the block, in file order, exactly as the file carries it
+  lines: string[]
+  rowGroupings: string[]
+  // the lines a reader must not scroll past: a filter that was not applied, a measure with no data behind it
+  warnings: string[]
+}
+
 export type SpreadsheetSheet = {
   columns: string[]
+  // null for anything that is not one of our report engine's files — a plain CSV, or a workbook produced before
+  // the engine started recording its request.
+  header: SpreadsheetReportHeader | null
   name: string
   rows: SpreadsheetRow[]
 }
