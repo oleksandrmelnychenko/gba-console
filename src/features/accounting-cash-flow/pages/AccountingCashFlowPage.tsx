@@ -4,7 +4,6 @@ import {
   Badge,
   Box,
   Button,
-  Card,
   Group,
   SegmentedControl,
   Select,
@@ -18,7 +17,7 @@ import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { notifications } from '@mantine/notifications'
 import { ArrowDownLeft, ArrowUpRight, CircleAlert, Download, Pencil, RefreshCw, RotateCcw, Scale, Search } from 'lucide-react'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
-import { type ReactNode, useCallback, useEffect, useMemo, useReducer, useState } from 'react'
+import { type ReactNode, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -35,6 +34,15 @@ import { DocumentExportModal } from '../../../shared/ui/document-export-modal/Do
 import { getAccountingCashFlowPaymentStatus } from '../accountingCashFlowPaymentStatus'
 import { getAccountingCashFlowClosingBalance } from '../cashFlowTotals'
 import { getAccountingCashFlowDrilldownRoute } from '../cashFlowDrilldown'
+import { getIncomeCashflowByNetId } from '../../income-cashflows/api/incomeCashflowsApi'
+import {
+  buildIncomeCashflowRow,
+  IncomeCashflowDetailDrawer,
+} from '../../income-cashflows/pages/IncomeCashflowsPage'
+import type { IncomePaymentOrder } from '../../income-cashflows/types'
+import { getSaleById } from '../../sales-ukraine/api/salesUkraineApi'
+import { SaleSummaryDrawer } from '../../sales-ukraine/pages/SalesUkrainePage'
+import type { SalesUkraineSale } from '../../sales-ukraine/types'
 import './accounting-cash-flow-page.css'
 import type {
   AccountingCashFlow,
@@ -427,6 +435,20 @@ function useAccountingCashFlowPageModel(mode: AccountingCashFlowMode, routeNetId
 function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAccountingCashFlowPageModel> }) {
   const { t } = useI18n()
   const navigate = useNavigate()
+  const [saleDetail, setSaleDetail] = useState<SalesUkraineSale | null>(null)
+  const [saleDetailError, setSaleDetailError] = useState<string | null>(null)
+  const [saleDetailLoading, setSaleDetailLoading] = useState(false)
+  const [saleDetailOpened, setSaleDetailOpened] = useState(false)
+  const saleDetailRequestRef = useRef(0)
+  const [incomeDetail, setIncomeDetail] = useState<IncomePaymentOrder | null>(null)
+  const [incomeDetailError, setIncomeDetailError] = useState<string | null>(null)
+  const [incomeDetailLoading, setIncomeDetailLoading] = useState(false)
+  const [incomeDetailOpened, setIncomeDetailOpened] = useState(false)
+  const incomeDetailRequestRef = useRef(0)
+  const incomeDetailRow = useMemo(
+    () => (incomeDetail ? buildIncomeCashflowRow(incomeDetail) : null),
+    [incomeDetail],
+  )
   const {
     agreements,
     cashFlow,
@@ -463,8 +485,126 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
     updateFilterDraft,
   } = model
   const canExport = Boolean(selectedAgreement?.NetUid)
+  const closeSaleDetail = useCallback(() => {
+    saleDetailRequestRef.current += 1
+    setSaleDetailOpened(false)
+    setSaleDetailLoading(false)
+    setSaleDetailError(null)
+    setSaleDetail(null)
+  }, [])
+  const openSaleDetail = useCallback(
+    (item: AccountingCashFlowHeadItem) => {
+      const requestId = saleDetailRequestRef.current + 1
+      const saleNetUid = getCashFlowSaleNetUid(item)
+
+      saleDetailRequestRef.current = requestId
+      setSelectedItem(null)
+      setSaleDetail(null)
+      setSaleDetailError(null)
+      setSaleDetailOpened(true)
+
+      if (!saleNetUid) {
+        setSaleDetailLoading(false)
+        setSaleDetailError(t('Не вдалося визначити продаж для цього документа'))
+        return
+      }
+
+      setSaleDetailLoading(true)
+
+      void getSaleById(saleNetUid)
+        .then((sale) => {
+          if (saleDetailRequestRef.current !== requestId) {
+            return
+          }
+
+          if (!sale) {
+            setSaleDetailError(t('Продаж не знайдено'))
+            return
+          }
+
+          setSaleDetail(sale)
+        })
+        .catch((error: unknown) => {
+          if (saleDetailRequestRef.current === requestId) {
+            setSaleDetailError(
+              error instanceof Error ? error.message : t('Не вдалося завантажити деталі продажу'),
+            )
+          }
+        })
+        .finally(() => {
+          if (saleDetailRequestRef.current === requestId) {
+            setSaleDetailLoading(false)
+          }
+        })
+    },
+    [setSelectedItem, t],
+  )
+  const closeIncomeDetail = useCallback(() => {
+    incomeDetailRequestRef.current += 1
+    setIncomeDetailOpened(false)
+    setIncomeDetailLoading(false)
+    setIncomeDetailError(null)
+    setIncomeDetail(null)
+  }, [])
+  const openIncomeDetail = useCallback(
+    (item: AccountingCashFlowHeadItem) => {
+      const requestId = incomeDetailRequestRef.current + 1
+      const incomeNetUid = getCashFlowIncomeNetUid(item)
+
+      incomeDetailRequestRef.current = requestId
+      setSelectedItem(null)
+      setIncomeDetail(null)
+      setIncomeDetailError(null)
+      setIncomeDetailOpened(true)
+
+      if (!incomeNetUid) {
+        setIncomeDetailLoading(false)
+        setIncomeDetailError(t('Не вдалося визначити прибутковий ордер для цього документа'))
+        return
+      }
+
+      setIncomeDetailLoading(true)
+
+      void getIncomeCashflowByNetId(incomeNetUid)
+        .then((income) => {
+          if (incomeDetailRequestRef.current !== requestId) {
+            return
+          }
+
+          if (!income) {
+            setIncomeDetailError(t('Прибутковий ордер не знайдено'))
+            return
+          }
+
+          setIncomeDetail(income)
+        })
+        .catch((error: unknown) => {
+          if (incomeDetailRequestRef.current === requestId) {
+            setIncomeDetailError(
+              error instanceof Error ? error.message : t('Не вдалося завантажити деталі прибуткового ордера'),
+            )
+          }
+        })
+        .finally(() => {
+          if (incomeDetailRequestRef.current === requestId) {
+            setIncomeDetailLoading(false)
+          }
+        })
+    },
+    [setSelectedItem, t],
+  )
   const handleCashFlowRowClick = useCallback(
     (item: AccountingCashFlowHeadItem) => {
+      if (item.Type === JOIN_SERVICE_TYPE.Sale) {
+        openSaleDetail(item)
+        return
+      }
+
+      if (item.Type === JOIN_SERVICE_TYPE.IncomePaymentOrder) {
+        openIncomeDetail(item)
+        return
+      }
+
       const route = getAccountingCashFlowDrilldownRoute(item)
 
       if (route) {
@@ -474,7 +614,7 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
 
       setSelectedItem(item)
     },
-    [navigate, setSelectedItem],
+    [navigate, openIncomeDetail, openSaleDetail, setSelectedItem],
   )
   // Legacy showed a per-row «Курс» (ExchangeRate) column in client mode for non-UAH agreements,
   // populated for UAH income-payment rows. Only render it in that scope.
@@ -762,6 +902,22 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
         onClose={() => setSelectedItem(null)}
       />
 
+      <SaleSummaryDrawer
+        error={saleDetailError}
+        isLoading={saleDetailLoading}
+        opened={saleDetailOpened}
+        sale={saleDetail}
+        onClose={closeSaleDetail}
+      />
+
+      <IncomeCashflowDetailDrawer
+        error={incomeDetailError}
+        isLoading={incomeDetailLoading}
+        opened={incomeDetailOpened}
+        row={incomeDetailRow}
+        onClose={closeIncomeDetail}
+      />
+
       <DocumentExportModal
         document={document}
         opened={downloadModalOpened}
@@ -1042,20 +1198,23 @@ function AccountingCashFlowDetailDrawer({
     [isSaleReturn, item?.SaleReturn],
   )
   const detailFields = useMemo(() => (item ? buildHeadItemFields(item, t) : []), [item, t])
+  const drawerTitle = saleReturn
+    ? `${t('Повернення від покупця')} · ${saleReturn.Number || item?.Number || '—'}`
+    : item?.Name || t('Деталі взаєморозрахунку')
 
   return (
     <AppDrawer
       opened={Boolean(item)}
       padding="lg"
       position="right"
-      size="min(980px, 100vw)"
-      title={item?.Name || t('Деталі взаєморозрахунку')}
+      size={saleReturn ? 'min(1200px, 100vw)' : 'min(980px, 100vw)'}
+      title={drawerTitle}
       onClose={onClose}
     >
-      {item && (
+      {item && saleReturn ? (
+        <SaleReturnDetailContent item={item} saleReturn={saleReturn} />
+      ) : item ? (
         <Stack gap="md">
-          {saleReturn && <SaleReturnOverviewPanel saleReturn={saleReturn} />}
-
           <div className="app-detail-grid">
             {detailFields.map((field) => (
               <DetailValue key={field.label} label={field.label} value={field.value} />
@@ -1064,7 +1223,7 @@ function AccountingCashFlowDetailDrawer({
 
           <CashFlowDetailContent item={item} />
         </Stack>
-      )}
+      ) : null}
     </AppDrawer>
   )
 }
@@ -1130,34 +1289,112 @@ function DetailValue({ label, value }: { label: string; value: ReactNode }) {
   )
 }
 
-function SaleReturnOverviewPanel({ saleReturn }: { saleReturn: AccountingCashFlowSaleReturn }) {
+function SaleReturnDetailContent({
+  item,
+  saleReturn,
+}: {
+  item: AccountingCashFlowHeadItem
+  saleReturn: AccountingCashFlowSaleReturn
+}) {
   const { t } = useI18n()
   const items = Array.isArray(saleReturn.SaleReturnItems) ? saleReturn.SaleReturnItems : []
-  const header = [
+  const clientName = [
     stringValue(saleReturn.Client?.RegionCode?.Value),
     stringValue(saleReturn.Client?.FullName),
-    stringValue(saleReturn.ClientAgreement?.Agreement?.Name),
   ]
     .filter(Boolean)
     .join(' ')
+  const agreementName = stringValue(saleReturn.ClientAgreement?.Agreement?.Name)
+  const totalQuantity = items.reduce((total, returnItem) => total + (numberValue(returnItem.Qty) || 0), 0)
+  const returnNumber = stringValue(saleReturn.Number) || stringValue(item.Number)
+  const requisites: DetailField[] = [
+    { label: t('Дата'), value: formatDateTime(item.FromDate) },
+    { label: t('Номер'), value: returnNumber },
+    { label: t('Організація'), value: displayValue(item.OrganizationName) },
+    { label: t('Клієнт'), value: clientName || '—' },
+    { label: t('Договір'), value: agreementName || '—' },
+    { label: t('Тип документа'), value: getCashFlowTypeLabel(item.Type) },
+    { label: t('Операція'), value: item.IsCreditValue ? t('Кредит') : t('Дебет') },
+    { label: t('Поточний баланс'), value: formatMoney(item.CurrentBalance) },
+  ]
 
   return (
-    <Card withBorder radius="md" padding="md">
-      <Stack gap="sm">
-        <Text fw={700}>{header || t('Повернення продажу')}</Text>
-        {items.length === 0 ? (
-          <Text c="dimmed" size="sm">
-            {t('Позицій не знайдено')}
+    <div className="accounting-cash-flow-return">
+      <section className="accounting-cash-flow-return__hero">
+        <div className="accounting-cash-flow-return__identity">
+          <span className="accounting-cash-flow-return__eyebrow">{t('Повернення від покупця')}</span>
+          <strong className="accounting-cash-flow-return__number">{returnNumber || '—'}</strong>
+          <span className="accounting-cash-flow-return__date">{formatDateTime(item.FromDate)}</span>
+          <div className="accounting-cash-flow-return__client">
+            <strong>{clientName || t('Клієнта не вказано')}</strong>
+            {agreementName ? <Badge className="app-role-pill is-gray">{agreementName}</Badge> : null}
+          </div>
+        </div>
+
+        <div className="accounting-cash-flow-return__summary">
+          <ReturnMetric label={t('Позиції')} value={String(items.length)} meta={`${formatAmount(totalQuantity)} ${t('шт.')}`} />
+          <ReturnMetric label={t('Сума')} value={formatMoney(item.CurrentValue)} meta="UAH" />
+          <ReturnMetric label={t('Баланс')} value={formatMoney(item.CurrentBalance)} meta="UAH" accent />
+        </div>
+      </section>
+
+      <section className="accounting-cash-flow-return__section">
+        <Text className="app-section-title accounting-cash-flow-return__section-title" fw={600}>
+          {t('Реквізити повернення')}
+        </Text>
+        <div className="accounting-cash-flow-return__requisites">
+          {requisites.map((field) => (
+            <DetailValue key={field.label} label={field.label} value={field.value} />
+          ))}
+        </div>
+      </section>
+
+      <section className="accounting-cash-flow-return__section accounting-cash-flow-return__positions">
+        <Group justify="space-between" align="center" gap="sm">
+          <Text className="app-section-title accounting-cash-flow-return__section-title" fw={600}>
+            {t('Позиції повернення')}
           </Text>
+          <Badge className="app-role-pill is-gray">{items.length}</Badge>
+        </Group>
+
+        {items.length === 0 ? (
+          <div className="accounting-cash-flow-return__empty">{t('Позицій не знайдено')}</div>
         ) : (
-          <Stack gap="xs">
+          <div className="accounting-cash-flow-return__table">
+            <div className="accounting-cash-flow-return__table-head" aria-hidden="true">
+              <span>{t('Товар')}</span>
+              <span>{t('Кількість')}</span>
+              <span>{t('Вартість')}</span>
+              <span>{t('ПДВ')}</span>
+              <span>{t('Склад / причина')}</span>
+            </div>
             {items.map((saleReturnItem) => (
               <SaleReturnOverviewItem key={getSaleReturnItemKey(saleReturnItem)} saleReturnItem={saleReturnItem} />
             ))}
-          </Stack>
+          </div>
         )}
-      </Stack>
-    </Card>
+      </section>
+    </div>
+  )
+}
+
+function ReturnMetric({
+  accent = false,
+  label,
+  meta,
+  value,
+}: {
+  accent?: boolean
+  label: string
+  meta?: string
+  value: string
+}) {
+  return (
+    <div className={`accounting-cash-flow-return__metric${accent ? ' is-accent' : ''}`}>
+      <span>{label}</span>
+      <strong>{value}</strong>
+      {meta ? <small>{meta}</small> : null}
+    </div>
   )
 }
 
@@ -1167,66 +1404,42 @@ function SaleReturnOverviewItem({ saleReturnItem }: { saleReturnItem: Accounting
   const isVatSale = Boolean(sale?.IsVatSale)
   const currency = getSaleReturnItemCurrency(saleReturnItem)
   const worthPrice = Math.round((numberValue(saleReturnItem.AmountLocal) || 0) * 100) / 100
+  const statusLabel = getSaleReturnItemStatusLabel(saleReturnItem.SaleReturnItemStatus, t)
 
   return (
-    <Card withBorder radius="sm" padding="sm">
-      <Group justify="space-between" align="flex-start" wrap="nowrap" gap="md">
-        <Stack gap={2}>
-          <Group gap={6} align="baseline" wrap="nowrap">
-            <Text c="dimmed" size="xs">
-              {stringValue(saleReturnItem.OrderItem?.Product?.VendorCode)}
-            </Text>
-            <Text fw={600} size="sm">
-              {stringValue(saleReturnItem.OrderItem?.Product?.Name)}
-            </Text>
-          </Group>
-          <Text c="dimmed" size="xs">
-            {stringValue(sale?.SaleNumber?.Value)} {`(${t('Накладна')})`}
-          </Text>
-        </Stack>
+    <div className="accounting-cash-flow-return__row">
+      <div className="accounting-cash-flow-return__product">
+        <div>
+          <span className="accounting-cash-flow-return__vendor">
+            {stringValue(saleReturnItem.OrderItem?.Product?.VendorCode) || '—'}
+          </span>
+          <strong>{stringValue(saleReturnItem.OrderItem?.Product?.Name) || '—'}</strong>
+        </div>
+        <small>
+          {stringValue(sale?.SaleNumber?.Value) || '—'} · {t('Накладна')}
+        </small>
+      </div>
 
-        <Group gap="lg" align="flex-start" wrap="nowrap">
-          <Stack gap={0} align="flex-end">
-            <Text fw={600} size="sm">
-              {formatMoney(worthPrice)} {currency}
-            </Text>
-            <Text c="dimmed" size="xs">
-              {t('Вартість')}
-            </Text>
-          </Stack>
+      <div className="accounting-cash-flow-return__cell" data-label={t('Кількість')}>
+        <strong>{formatAmount(numberValue(saleReturnItem.Qty))}</strong>
+        <small>{t('шт.')}</small>
+      </div>
 
-          {isVatSale && (
-            <Stack gap={0} align="flex-end">
-              <Text fw={600} size="sm">
-                {formatMoney(numberValue(saleReturnItem.VatAmountLocal))}
-              </Text>
-              <Text c="dimmed" size="xs">
-                {t('ПДВ')}
-              </Text>
-            </Stack>
-          )}
+      <div className="accounting-cash-flow-return__cell" data-label={t('Вартість')}>
+        <strong>{formatMoney(worthPrice)}</strong>
+        <small>{currency || 'UAH'}</small>
+      </div>
 
-          <Stack gap={0} align="flex-end">
-            <Text fw={600} size="sm">
-              {formatAmount(numberValue(saleReturnItem.Qty))}
-            </Text>
-            <Text c="dimmed" size="xs">
-              {t('штук')}
-            </Text>
-          </Stack>
+      <div className="accounting-cash-flow-return__cell" data-label={t('ПДВ')}>
+        <strong>{isVatSale ? formatMoney(numberValue(saleReturnItem.VatAmountLocal)) : '—'}</strong>
+        <small>{isVatSale ? currency || 'UAH' : t('Без ПДВ')}</small>
+      </div>
 
-          <Stack gap={0} align="flex-end">
-            <Text c="dimmed" size="xs">
-              {t('Склад')}
-            </Text>
-            <Text c="orange" fw={600} size="sm">
-              {stringValue(saleReturnItem.Storage?.Name)}
-            </Text>
-            <Text size="xs">{getSaleReturnItemStatusLabel(saleReturnItem.SaleReturnItemStatus, t)}</Text>
-          </Stack>
-        </Group>
-      </Group>
-    </Card>
+      <div className="accounting-cash-flow-return__storage" data-label={t('Склад / причина')}>
+        <strong>{stringValue(saleReturnItem.Storage?.Name) || '—'}</strong>
+        {statusLabel ? <Badge className="app-role-pill is-yellow">{statusLabel}</Badge> : null}
+      </div>
+    </div>
   )
 }
 
@@ -1377,6 +1590,26 @@ function getCashFlowTypeLabel(type: unknown): string {
   }
 
   return TYPE_LABELS[type] || `Тип ${type}`
+}
+
+function getCashFlowSaleNetUid(item: AccountingCashFlowHeadItem): string {
+  const sale = toRecord(item.Sale)
+
+  return (
+    stringValue(sale?.NetUid).trim()
+    || stringValue(sale?.NetUID).trim()
+    || stringValue(sale?.NetUidSimple).trim()
+  )
+}
+
+function getCashFlowIncomeNetUid(item: AccountingCashFlowHeadItem): string {
+  const income = toRecord(item.IncomePaymentOrder)
+
+  return (
+    stringValue(income?.NetUid).trim()
+    || stringValue(income?.NetUID).trim()
+    || stringValue(income?.NetUidSimple).trim()
+  )
 }
 
 function getDateShiftedByDays(days: number): string {

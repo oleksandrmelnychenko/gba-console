@@ -208,6 +208,46 @@ const SALES_FILTER_SCROLL_AREA_PROPS = {
   offsetScrollbars: false as const,
 }
 
+export function SaleSummaryDrawer({
+  error = null,
+  isLoading = false,
+  opened,
+  sale,
+  onClose,
+}: {
+  error?: string | null
+  isLoading?: boolean
+  opened: boolean
+  sale: SalesUkraineSale | null
+  onClose: () => void
+}) {
+  const { t } = useI18n()
+
+  return (
+    <AppDrawer
+      opened={opened}
+      position="right"
+      size="full"
+      title={t('Деталі продажу')}
+      onClose={onClose}
+    >
+      {isLoading ? (
+        <Stack align="center" justify="center" mih={220}>
+          <Text c="dimmed" size="sm">
+            {t('Завантаження деталей продажу')}
+          </Text>
+        </Stack>
+      ) : error ? (
+        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
+          {error}
+        </Alert>
+      ) : sale ? (
+        <SaleDetail sale={sale} />
+      ) : null}
+    </AppDrawer>
+  )
+}
+
 export function SalesUkrainePage() {
   const { t } = useI18n()
   const [searchParams] = useSearchParams()
@@ -1131,15 +1171,11 @@ export function SalesUkrainePage() {
         </Stack>
       </div>
 
-      <AppDrawer
+      <SaleSummaryDrawer
         opened={Boolean(selectedSale)}
-        position="right"
-        size="full"
-        title={t('Деталі продажу')}
+        sale={selectedSale}
         onClose={closeSelectedSale}
-      >
-        {selectedSale && <SaleDetail sale={selectedSale} />}
-      </AppDrawer>
+      />
 
       <SaleDiscountModal
         orderItem={discountTarget?.orderItem}
