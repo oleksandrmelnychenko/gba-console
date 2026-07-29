@@ -135,11 +135,14 @@ export async function calculateConsumableOrder(order: ConsumablesOrder): Promise
 }
 
 export async function searchConsumableStorages(value: string): Promise<ConsumablesStorage[]> {
-  const result = await apiRequest<unknown>('/consumables/storages/search', {
-    query: {
-      value,
-    },
-  })
+  const searchValue = value.trim()
+  const result = searchValue
+    ? await apiRequest<unknown>('/consumables/storages/search', {
+        query: {
+          value: searchValue,
+        },
+      })
+    : await apiRequest<unknown>('/consumables/storages/all')
 
   return readArrayPayload(result, ['Items', 'ConsumablesStorages', 'Storages', 'Data']) as ConsumablesStorage[]
 }

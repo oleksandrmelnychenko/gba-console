@@ -1,7 +1,6 @@
 import {
   Alert,
   Anchor,
-  Autocomplete,
   Badge,
   Button,
   Checkbox,
@@ -25,6 +24,7 @@ import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { SearchableSelect } from '../../../shared/ui/SearchableSelect'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import {
@@ -228,10 +228,6 @@ export function ConsumableOrderFormPage() {
     const requestId = (searchRequestRef.current.storage || 0) + 1
     searchRequestRef.current.storage = requestId
     const timeoutId = window.setTimeout(() => {
-      if (!value) {
-        return
-      }
-
       void searchConsumableStorages(value).then((nextStorages) => {
         if (searchRequestRef.current.storage === requestId) {
           setStorages((current) => includeEntity(nextStorages, current.find((item) => getEntityValue(item) === form.selectedStorageValue) || null))
@@ -715,9 +711,9 @@ export function ConsumableOrderFormPage() {
 
           <section className="consumable-order-form-section">
             <OrderFormSectionHeader title={t('Реквізити накладної')} />
-            <div className="consumable-order-form-grid">
-              <Autocomplete
-                className="consumable-order-form-control is-wide"
+            <div className="consumable-order-form-grid consumable-order-form-grid--requisites">
+              <SearchableSelect
+                className="consumable-order-form-control is-requisites-supplier"
                 data={supplierOptions}
                 disabled={isEconomicMutationLocked || isFormLocked}
                 label={t('Постачальник послуг')}
@@ -727,7 +723,7 @@ export function ConsumableOrderFormPage() {
                 onOptionSubmit={handleSupplierSubmit}
               />
               <Select
-                className="consumable-order-form-control"
+                className="consumable-order-form-control is-requisites-agreement"
                 data={agreementOptions}
                 disabled={isEconomicMutationLocked || !selectedSupplier || isFormLocked}
                 label={t('Договір')}
@@ -737,20 +733,20 @@ export function ConsumableOrderFormPage() {
                 onChange={(value) => updateForm({ selectedAgreementValue: value || '' })}
               />
               <TextInput
-                className="consumable-order-form-control"
+                className="consumable-order-form-control is-requisites-organization"
                 disabled
                 label={t('Організація')}
                 value={organizationLabel === '—' ? '' : organizationLabel}
               />
               <TextInput
-                className="consumable-order-form-control is-compact"
+                className="consumable-order-form-control is-requisites-number"
                 disabled={isFormLocked}
                 label={t('Номер накладної')}
                 value={form.invoiceNumber}
                 onChange={(event) => updateForm({ invoiceNumber: event.currentTarget.value })}
               />
               <TextInput
-                className="consumable-order-form-control is-compact"
+                className="consumable-order-form-control is-requisites-date"
                 disabled={isFormLocked}
                 label={t('Дата входу')}
                 type="date"
@@ -758,15 +754,15 @@ export function ConsumableOrderFormPage() {
                 onChange={(event) => updateForm({ invoiceDate: event.currentTarget.value })}
               />
               <TextInput
-                className="consumable-order-form-control is-compact"
+                className="consumable-order-form-control is-requisites-time"
                 disabled={isFormLocked}
                 label={t('Час')}
                 type="time"
                 value={form.invoiceTime}
                 onChange={(event) => updateForm({ invoiceTime: event.currentTarget.value })}
               />
-              <Autocomplete
-                className="consumable-order-form-control"
+              <SearchableSelect
+                className="consumable-order-form-control is-requisites-storage"
                 data={storageOptions}
                 disabled={isEconomicMutationLocked || isFormLocked}
                 label={t('Склад')}
@@ -777,7 +773,7 @@ export function ConsumableOrderFormPage() {
               />
               <Textarea
                 autosize
-                className="consumable-order-form-control is-comment"
+                className="consumable-order-form-control is-requisites-comment"
                 disabled={isFormLocked}
                 label={t('Коментар')}
                 minRows={1}

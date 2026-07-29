@@ -232,6 +232,33 @@
   grid-column: span 1;
 }
 
+.consumable-order-form-grid--requisites {
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+}
+
+.consumable-order-form-grid--requisites .is-requisites-supplier,
+.consumable-order-form-grid--requisites .is-requisites-agreement {
+  grid-column: span 6;
+}
+
+.consumable-order-form-grid--requisites .is-requisites-organization,
+.consumable-order-form-grid--requisites .is-requisites-storage {
+  grid-column: span 4;
+}
+
+.consumable-order-form-grid--requisites .is-requisites-number {
+  grid-column: span 2;
+}
+
+.consumable-order-form-grid--requisites .is-requisites-date,
+.consumable-order-form-grid--requisites .is-requisites-time {
+  grid-column: span 3;
+}
+
+.consumable-order-form-grid--requisites .is-requisites-comment {
+  grid-column: span 8;
+}
+
 .consumable-order-form-control .mantine-InputWrapper-label,
 .consumable-order-item-modal .mantine-InputWrapper-label {
   color: var(--mantine-color-gray-9);
@@ -641,7 +668,8 @@
   .consumable-order-form-control,
   .consumable-order-form-control.is-wide,
   .consumable-order-form-control.is-comment,
-  .consumable-order-form-control.is-compact {
+  .consumable-order-form-control.is-compact,
+  .consumable-order-form-grid--requisites .consumable-order-form-control {
     grid-column: auto;
   }
 

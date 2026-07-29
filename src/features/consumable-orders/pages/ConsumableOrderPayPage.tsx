@@ -1,6 +1,5 @@
 import {
   Alert,
-  Autocomplete,
   Badge,
   Button,
   NumberInput,
@@ -15,6 +14,7 @@ import { type FormEvent, type ReactNode, useEffect, useMemo } from 'react'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { SearchableSelect } from '../../../shared/ui/SearchableSelect'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -508,7 +508,7 @@ export function ConsumableOrderPayPage() {
               value={form.selectedCurrencyRegisterValue || null}
               onChange={(value) => updateForm({ selectedCurrencyRegisterValue: value || '' })}
             />
-            <Autocomplete
+            <SearchableSelect
               className="consumable-order-pay-control is-movement"
               data={movementOptions}
               disabled={isLoading || isSaving || isOrderPaid}

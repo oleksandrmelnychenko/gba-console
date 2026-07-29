@@ -5,6 +5,7 @@ import {
   calculateConsumableOrder,
   createOutcomePaymentOrder,
   getUnpaidConsumableOrdersByOrganization,
+  searchConsumableStorages,
   updateConsumableOrder,
 } from './consumableOrdersApi'
 import type { ConsumablesOrder, OutcomePaymentOrder } from '../types'
@@ -112,6 +113,34 @@ describe('consumableOrdersApi', () => {
 
     expect(apiRequestMock).not.toHaveBeenCalled()
     expect(result).toEqual([])
+  })
+
+  it('loads the full consumable storage directory before a search value is entered', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      ConsumablesStorages: [
+        { NetUid: 'storage-1', Name: 'Автомобілі компанії' },
+        { NetUid: 'storage-2', Name: 'Ввід боргів з 1С' },
+      ],
+    })
+
+    const result = await searchConsumableStorages('   ')
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/consumables/storages/all')
+    expect(result).toHaveLength(2)
+  })
+
+  it('uses the consumable storage search endpoint for entered text', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      ConsumablesStorages: [{ NetUid: 'storage-1', Name: 'Автомобілі компанії' }],
+    })
+
+    await searchConsumableStorages('  авто  ')
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/consumables/storages/search', {
+      query: {
+        value: 'авто',
+      },
+    })
   })
 
   it('sends an idempotency key for the JSON outcome payment mutation', async () => {
