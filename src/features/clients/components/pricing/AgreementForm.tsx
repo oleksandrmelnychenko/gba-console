@@ -156,7 +156,6 @@ export function AgreementForm({
                   color={CREATE_ACTION_COLOR}
                   leftSection={<Plus size={16} />}
                   size="xs"
-                  variant="light"
                   onClick={openProviderPricingEditor}
                 >
                   {t('Створіть тип цін')}

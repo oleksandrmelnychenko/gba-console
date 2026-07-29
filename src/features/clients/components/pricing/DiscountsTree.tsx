@@ -420,7 +420,7 @@ export function DiscountsTree({
                 <Button color="red" disabled={disabled} size="xs" variant="light" onClick={() => handleChangeActiveInSelected(false)}>
                   {t('Деактивувати')}
                 </Button>
-                <Button color={CREATE_ACTION_COLOR} disabled={disabled} size="xs" variant="light" onClick={() => handleChangeActiveInSelected(true)}>
+                <Button color={CREATE_ACTION_COLOR} disabled={disabled} size="xs" onClick={() => handleChangeActiveInSelected(true)}>
                   {t('Активувати')}
                 </Button>
               </Group>

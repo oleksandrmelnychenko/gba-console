@@ -646,7 +646,7 @@ function ContractDocumentsSection({
 
         {showSave && visibleDocuments.length > 0 && (
           <Group justify="flex-end">
-            <Button color={CREATE_ACTION_COLOR} disabled={disabled} loading={isUploading} variant="light" onClick={onSave}>
+            <Button color={CREATE_ACTION_COLOR} disabled={disabled} loading={isUploading} onClick={onSave}>
               {t('Зберегти')}
             </Button>
           </Group>
