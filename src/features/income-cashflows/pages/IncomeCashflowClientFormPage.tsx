@@ -1,6 +1,5 @@
 import {
   Alert,
-  Autocomplete,
   Badge,
   Button,
   Checkbox,
@@ -21,6 +20,7 @@ import { CircleAlert, Plus, Save } from 'lucide-react'
 import { type FormEvent, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { SearchableSelect } from '../../../shared/ui/SearchableSelect'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -982,7 +982,7 @@ export function IncomeCashflowClientFormPage() {
           )}
 
           {operationType === IncomePaymentOperationType.ClientPayment && (
-            <Autocomplete
+            <SearchableSelect
               data={payerOptions}
               disabled={isLoading || isSaving}
               label={t('Пошук за платниками')}
@@ -1002,7 +1002,7 @@ export function IncomeCashflowClientFormPage() {
                 value={String(form.searchType)}
                 onChange={handleSearchTypeChanged}
               />
-              <Autocomplete
+              <SearchableSelect
                 data={counterpartyOptions}
                 disabled={isLoading || isSaving}
                 label={t('Контрагент')}
@@ -1108,7 +1108,7 @@ export function IncomeCashflowClientFormPage() {
               value={form.vatAmount}
               onChange={(value) => updateForm({ vatAmount: toNumber(value) })}
             />
-            <Autocomplete
+            <SearchableSelect
               data={movementOptions}
               disabled={isLoading || isSaving}
               label={t('Стаття руху коштів')}

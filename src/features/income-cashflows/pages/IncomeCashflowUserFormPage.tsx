@@ -1,6 +1,5 @@
 import {
   Alert,
-  Autocomplete,
   Badge,
   Button,
   Checkbox,
@@ -18,6 +17,7 @@ import { CircleAlert, Plus, Save } from 'lucide-react'
 import { type FormEvent, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { SearchableSelect } from '../../../shared/ui/SearchableSelect'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -471,7 +471,7 @@ export function IncomeCashflowUserFormPage() {
               value={form.time}
               onChange={(event) => updateForm({ time: event.currentTarget.value })}
             />
-            <Autocomplete
+            <SearchableSelect
               data={userOptions}
               disabled={isLoading || isSaving}
               label={t('Колега')}
@@ -542,7 +542,7 @@ export function IncomeCashflowUserFormPage() {
               value={form.exchangeRate}
               onChange={(value) => updateForm({ exchangeRate: toNumber(value) })}
             />
-            <Autocomplete
+            <SearchableSelect
               data={movementOptions}
               disabled={isLoading || isSaving}
               label={t('Стаття руху коштів')}

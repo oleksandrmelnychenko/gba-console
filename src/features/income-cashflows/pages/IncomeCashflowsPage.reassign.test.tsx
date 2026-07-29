@@ -95,6 +95,56 @@ vi.mock('@mantine/core', async (importOriginal) => {
   }
 })
 
+vi.mock('../../../shared/ui/SearchableSelect', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../shared/ui/SearchableSelect')>()
+  const { createElement } = await import('react')
+
+  return {
+    ...actual,
+    SearchableSelect: ({
+      data = [],
+      disabled,
+      label,
+      onChange,
+      onOptionSubmit,
+      value,
+    }: {
+      data?: string[]
+      disabled?: boolean
+      label?: string
+      onChange?: (value: string) => void
+      onOptionSubmit?: (value: string) => void
+      value?: string
+    }) => createElement(
+      'div',
+      null,
+      createElement('input', {
+        'aria-label': label,
+        disabled,
+        role: 'combobox',
+        value,
+        onChange: (event: ChangeEvent<HTMLInputElement>) =>
+          onChange?.(event.currentTarget.value),
+      }),
+      ...data.map((option) =>
+        createElement(
+          'button',
+          {
+            key: option,
+            role: 'option',
+            type: 'button',
+            onClick: () => {
+              onOptionSubmit?.(option)
+              onChange?.(option)
+            },
+          },
+          option,
+        ),
+      ),
+    ),
+  }
+})
+
 vi.mock('../api/incomeCashflowsApi', async (importOriginal) => ({
   ...await importOriginal<typeof import('../api/incomeCashflowsApi')>(),
   getIncomeCashflowClientAgreements: vi.fn(),

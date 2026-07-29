@@ -1,7 +1,6 @@
 import {
   ActionIcon,
   Alert,
-  Autocomplete,
   Badge,
   Button,
   Divider,
@@ -26,6 +25,7 @@ import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/Page
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
+import { SearchableSelect } from '../../../shared/ui/SearchableSelect'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
@@ -1593,7 +1593,7 @@ export function ReassignIncomeClientModal({
     >
       <Stack gap="md">
 
-        <Autocomplete
+        <SearchableSelect
           data={counterpartyOptions.map((option) => option.label)}
           disabled={isSaving}
           label={t('Клієнт')}
