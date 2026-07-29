@@ -796,7 +796,7 @@ function AccountingCashFlowDocumentTableCell({
         </span>
         <span className="accounting-cash-flow-document-cell__meta">
           <span>{formatDateTime(item.FromDate)}</span>
-          <span>{getCashFlowTypeLabel(item.Type)}</span>
+          <span className="accounting-cash-flow-document-cell__type">{getCashFlowTypeLabel(item.Type)}</span>
         </span>
       </span>
     </span>

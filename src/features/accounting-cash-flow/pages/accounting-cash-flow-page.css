@@ -1,6 +1,22 @@
 .accounting-cash-flow-page {
+  flex: 0 0 auto;
+  height: auto;
+  max-height: none;
+  min-height: 100%;
   min-width: 0;
+  overflow: visible;
   padding: 0;
+}
+
+.console-content:has(.accounting-cash-flow-page) {
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+}
+
+.console-frame:has(> .accounting-cash-flow-page) {
+  flex: 0 0 auto;
+  min-height: 100%;
+  overflow: visible;
 }
 
 .accounting-cash-flow-icon-action {
@@ -234,7 +250,7 @@
   flex-direction: column;
   min-height: 0;
   min-width: 0;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .accounting-cash-flow-filter-bar {
@@ -381,7 +397,7 @@
 .accounting-cash-flow-command {
   background: var(--mantine-color-white);
   display: flex;
-  flex: 1 1 auto;
+  flex: 0 0 auto;
   flex-direction: column;
   gap: 0;
   min-height: 0;
@@ -731,7 +747,9 @@
 
 .accounting-cash-flow-agreement-card.is-general {
   flex: 1 0 100%;
-  min-height: 52px;
+  grid-template-rows: minmax(0, auto);
+  min-height: 48px;
+  row-gap: 0;
 }
 
 .accounting-cash-flow-agreement-card__content {
@@ -744,7 +762,7 @@
 
 .accounting-cash-flow-agreement-card.is-general .accounting-cash-flow-agreement-card__content {
   align-content: start;
-  padding: 12px 14px;
+  padding: 8px 14px 7px;
 }
 
 .accounting-cash-flow-agreement-card__head {
@@ -1202,17 +1220,22 @@
 .accounting-cash-flow-grid-card {
   background: var(--mantine-color-white);
   flex: 0 0 auto;
+  min-height: 1240px;
   overflow: visible;
   padding: 0 12px 12px;
 }
 
 .accounting-cash-flow-grid-card .data-table {
   flex: 1 1 auto;
-  min-height: 0;
+  min-height: 1240px;
 }
 
 .accounting-cash-flow-grid-card .data-table-scroll {
-  max-height: min(56vh, 620px);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 10px;
+  height: 1240px !important;
+  max-height: 1240px;
+  min-height: 1240px;
   padding-right: 10px;
 }
 
@@ -1298,6 +1321,25 @@
   color: var(--mantine-color-gray-6);
   content: '•';
   margin-left: 6px;
+}
+
+.accounting-cash-flow-document-cell__type {
+  background: var(--mantine-color-orange-0);
+  border: 1px solid var(--mantine-color-orange-3);
+  border-radius: 7px;
+  color: var(--mantine-color-orange-8);
+  flex: 0 1 auto;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1;
+  max-width: 220px;
+  min-width: 0;
+  overflow: hidden;
+  padding: 3px 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .accounting-cash-flow-money {
