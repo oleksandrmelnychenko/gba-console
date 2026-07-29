@@ -834,7 +834,6 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
                     loading={isExporting}
                     size="sm"
                     styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
-                    variant="light"
                     onClick={handleExport}
                   >
                     {t('Експорт / друк')}
