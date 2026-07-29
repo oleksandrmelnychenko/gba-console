@@ -829,7 +829,6 @@ function DifferenceMessage({ model }: { model: ReturnType<typeof useAdvanceRepor
         disabled={model.isBusy}
         loading={model.isSaving || model.isRecalculating}
         size="xs"
-        variant="light"
         onClick={model.settleDifference}
       >
         {t('Погасити борг')}
