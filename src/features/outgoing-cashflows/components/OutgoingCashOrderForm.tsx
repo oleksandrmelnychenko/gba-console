@@ -1,6 +1,5 @@
 import {
   Alert,
-  Autocomplete,
   Button,
   Card,
   Checkbox,
@@ -18,6 +17,7 @@ import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawerFooter } from '../../../shared/ui/AppDrawer'
+import { SearchableSelect } from '../../../shared/ui/SearchableSelect'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { createAutocompleteOptionSubmitGuard } from '../../income-cashflows/autocompleteOptionSubmitGuard'
 import {
@@ -458,7 +458,7 @@ export function OutgoingCashOrderForm({ onCancel, onCreated }: OutgoingCashOrder
               value={form.amount}
               onChange={(value) => updateForm({ amount: toNumber(value) })}
             />
-            <Autocomplete
+            <SearchableSelect
               data={userOptions}
               disabled={isLoading || isSaving}
               label={t('Кому видано')}
@@ -475,7 +475,7 @@ export function OutgoingCashOrderForm({ onCancel, onCreated }: OutgoingCashOrder
           </SimpleGrid>
 
           <Group align="flex-end" gap="sm" grow wrap="nowrap">
-            <Autocomplete
+            <SearchableSelect
               data={movementOptions}
               disabled={isLoading || isSaving}
               label={t('Статті руху грошових коштів')}

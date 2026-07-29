@@ -1,6 +1,5 @@
 import {
   Alert,
-  Autocomplete,
   Badge,
   Button,
   Card,
@@ -23,6 +22,7 @@ import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawerFooter } from '../../../shared/ui/AppDrawer'
+import { SearchableSelect } from '../../../shared/ui/SearchableSelect'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import {
   getAccountingOperationLabel,
@@ -881,7 +881,7 @@ export function OutgoingPaymentGroupForm({
                   value={String(form.searchType)}
                   onChange={handleSearchTypeChanged}
                 />
-                <Autocomplete
+                <SearchableSelect
                   data={counterpartyOptions}
                   disabled={isLoading || isSaving}
                   label={t('Отримувач')}
@@ -988,7 +988,7 @@ export function OutgoingPaymentGroupForm({
           </SimpleGrid>
 
           <Group align="flex-end" gap="sm" grow wrap="nowrap">
-            <Autocomplete
+            <SearchableSelect
               data={movementOptions}
               disabled={isLoading || isSaving}
               label={t('Стаття руху коштів')}

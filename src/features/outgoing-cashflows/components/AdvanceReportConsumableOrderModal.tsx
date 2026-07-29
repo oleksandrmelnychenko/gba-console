@@ -1,7 +1,6 @@
 import {
   ActionIcon,
   Alert,
-  Autocomplete,
   Badge,
   Button,
   Divider,
@@ -23,6 +22,7 @@ import { formatLocalDate, formatLocalInputDateTime } from '../../../shared/date/
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
+import { SearchableSelect } from '../../../shared/ui/SearchableSelect'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { calculateConsumableOrderItemTotals } from '../../consumable-orders/consumableOrderCalculations'
@@ -616,7 +616,7 @@ export function AdvanceReportConsumableOrderModal({
         )}
 
         <SimpleGrid cols={{ base: 1, md: 3 }}>
-          <Autocomplete
+          <SearchableSelect
             data={supplierOptions}
             disabled={isBusy}
             label={t('Постачальник послуг')}
@@ -824,7 +824,7 @@ export function AdvanceReportConsumableOrderModal({
             )}
 
             <SimpleGrid cols={{ base: 1, md: 2 }}>
-              <Autocomplete
+              <SearchableSelect
                 data={productAutocompleteOptions}
                 disabled={isBusy}
                 label={t('Назва товару / послуги')}
@@ -838,7 +838,7 @@ export function AdvanceReportConsumableOrderModal({
                 }}
                 onOptionSubmit={handleProductSubmit}
               />
-              <Autocomplete
+              <SearchableSelect
                 data={productAutocompleteOptions}
                 disabled={isBusy}
                 label={t('Артикул')}
@@ -857,7 +857,7 @@ export function AdvanceReportConsumableOrderModal({
                 label={t('Категорія')}
                 value={itemEditor.item.ConsumableProductCategory?.Name || itemEditor.item.ConsumableProduct?.ConsumableProductCategory?.Name || ''}
               />
-              <Autocomplete
+              <SearchableSelect
                 data={costMovementOptions}
                 disabled={isBusy}
                 label={t('Стаття витрат')}

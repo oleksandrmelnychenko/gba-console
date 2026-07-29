@@ -1,6 +1,5 @@
 import {
   Alert,
-  Autocomplete,
   Badge,
   Button,
   Group,
@@ -16,6 +15,7 @@ import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { SearchableSelect } from '../../../shared/ui/SearchableSelect'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { searchCompanyCars } from '../../company-cars/api/companyCarsApi'
 import { searchPaymentCostMovements } from '../../consumable-orders/api/consumableOrdersApi'
@@ -365,7 +365,7 @@ export function AdvanceReportFuelModal({
 
         <SimpleGrid cols={{ base: 1, md: 2 }}>
           <TextInput disabled label={t('Організація')} value={getEntityLabel(outcomeOrder.Organization)} />
-          <Autocomplete
+          <SearchableSelect
             data={supplierOptions}
             disabled={isLoading}
             label={t('Постачальник послуг')}
@@ -383,7 +383,7 @@ export function AdvanceReportFuelModal({
             value={form.selectedAgreementValue || null}
             onChange={(value) => updateForm({ selectedAgreementValue: value || '' })}
           />
-          <Autocomplete
+          <SearchableSelect
             data={companyCarOptions}
             disabled={isLoading}
             label={t('Автомобіль компанії')}
