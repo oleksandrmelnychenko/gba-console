@@ -1,6 +1,6 @@
 import { Box, Group, Loader, Stack, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
+import { memo, useEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { getProductMainImage, getProductShopImageUrl, splitProductSearchResults } from '../../../products/utils'
 import type { WizardSaleProduct } from './wizardSaleProduct'
@@ -8,7 +8,7 @@ import type { WizardSaleProduct } from './wizardSaleProduct'
 // Keystrokes are settled locally for this long before the value is lifted to the
 // parent step — the step is ~2600 lines, so re-rendering it per keystroke is the
 // single biggest source of typing lag.
-const SEARCH_LIFT_DEBOUNCE_MS = 160
+const SEARCH_LIFT_DEBOUNCE_MS = 260
 
 // Vertical product picker that mirrors the client carousel on step 1: a "wheel" with the
 // products above the focused one on top, the focused product (or the search input) in the
@@ -85,13 +85,17 @@ export function WizardProductCarousel({
     }, SEARCH_LIFT_DEBOUNCE_MS)
   }
 
-  const focused = hasFocus && focusedIndex >= 0 ? products[focusedIndex] ?? null : null
+  const pendingSearchLift = searchMode && text !== searchValue
+  // Hide results belonging to the previous query immediately while the local
+  // debounce settles. This avoids briefly presenting stale products as matches.
+  const visibleProducts = pendingSearchLift ? [] : products
+  const focused = hasFocus && focusedIndex >= 0 ? visibleProducts[focusedIndex] ?? null : null
   // No focused product: mirror the assortment drum («барабанчик» on /products) —
   // the search results split in half around the centered search slot instead of
   // all stacking below it. Shared helper: splitProductSearchResults.
-  const searchSplit = focused ? null : splitProductSearchResults(products)
-  const topProducts = focused ? products.slice(0, focusedIndex) : searchSplit?.topProducts ?? []
-  const bottomProducts = focused ? products.slice(focusedIndex + 1) : searchSplit?.bottomProducts ?? []
+  const searchSplit = focused ? null : splitProductSearchResults(visibleProducts)
+  const topProducts = focused ? visibleProducts.slice(0, focusedIndex) : searchSplit?.topProducts ?? []
+  const bottomProducts = focused ? visibleProducts.slice(focusedIndex + 1) : searchSplit?.bottomProducts ?? []
   const bottomOffset = focused ? focusedIndex + 1 : topProducts.length
   const showInput = searchMode || !focused
 
@@ -112,9 +116,10 @@ export function WizardProductCarousel({
             <ProductViewerRow
               key={getProductKey(product, index)}
               color={getItemColor?.(product)}
+              index={index}
               product={product}
               qty={getItemQty?.(product)}
-              onPick={() => onPick(index)}
+              onPick={onPick}
             />
           ))}
         </Stack>
@@ -125,6 +130,9 @@ export function WizardProductCarousel({
             otherwise arrow-key navigation stops working in selection mode. */}
         <input
           ref={searchInputRef}
+          aria-autocomplete="list"
+          aria-busy={isLoading || pendingSearchLift || undefined}
+          aria-expanded={visibleProducts.length > 0}
           aria-label={t('Пошук товару')}
           autoFocus
           className={`new-sale-product-picker__search ${showInput ? '' : 'is-hidden'}`}
@@ -145,7 +153,7 @@ export function WizardProductCarousel({
       </Box>
 
       <Box className="new-sale-product-picker__lower" style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
-        {isLoading ? (
+        {isLoading || pendingSearchLift ? (
           <Group justify="center" py="sm">
             <Loader size="sm" />
           </Group>
@@ -155,9 +163,10 @@ export function WizardProductCarousel({
               <ProductViewerRow
                 key={getProductKey(product, index)}
                 color={getItemColor?.(product)}
+                index={bottomOffset + index}
                 product={product}
                 qty={getItemQty?.(product)}
-                onPick={() => onPick(bottomOffset + index)}
+                onPick={onPick}
               />
             ))}
           </Stack>
@@ -175,14 +184,16 @@ export function WizardProductCarousel({
   )
 }
 
-function ProductViewerRow({
+const ProductViewerRow = memo(function ProductViewerRow({
   color,
+  index,
   product,
   qty,
   onPick,
 }: {
   color?: string
-  onPick: () => void
+  index: number
+  onPick: (index: number) => void
   product: WizardSaleProduct
   qty?: number
 }) {
@@ -197,7 +208,7 @@ function ProductViewerRow({
         : ''
 
   return (
-    <Box className="new-sale-product-picker-row" onClick={onPick}>
+    <Box component="button" className="new-sale-product-picker-row" type="button" onClick={() => onPick(index)}>
       <Box className="new-sale-product-picker-row__content">
         <Box className="new-sale-product-picker-row__status">
           <Box className={`new-sale-product-picker-row__dot ${colorClassName}`} />
@@ -218,7 +229,7 @@ function ProductViewerRow({
       </Box>
     </Box>
   )
-}
+})
 
 function ProductMiniCard({
   active,
@@ -259,9 +270,12 @@ function ProductMiniCard({
 
   return (
     <Box
+      component="button"
+      aria-label={`${t('Скопіювати код')}: ${code}`}
       className="new-sale-product-picker-card"
       data-active={active ? 'true' : undefined}
       title={t('Скопіювати код')}
+      type="button"
       onClick={copyCode}
     >
       {imageUrl && (

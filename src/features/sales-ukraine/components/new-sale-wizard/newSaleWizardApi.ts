@@ -169,6 +169,7 @@ export type WizardProductSearchOptions = {
   limit?: number
   mode?: string
   offset?: number
+  signal?: AbortSignal
   sortMode?: string
 }
 
@@ -186,14 +187,20 @@ export async function searchSaleProductsWithAvailability(
       sortMode: options?.sortMode ?? '2',
       value: value.trim(),
     },
+    ...(options?.signal ? { signal: options.signal } : {}),
   })
 
   return asArray<WizardSaleProduct>(result)
 }
 
-export async function getProductAnalogues(productNetId: string, clientAgreementNetId: string): Promise<WizardSaleProduct[]> {
+export async function getProductAnalogues(
+  productNetId: string,
+  clientAgreementNetId: string,
+  signal?: AbortSignal,
+): Promise<WizardSaleProduct[]> {
   const result = await apiRequest<unknown>('/products/get/analogues', {
     query: { clientAgreementNetId, productNetId },
+    ...(signal ? { signal } : {}),
   })
 
   return asArray<WizardSaleProduct>(result)
@@ -203,9 +210,11 @@ export async function getAllProductAvailabilities(
   productNetId: string,
   clientAgreementNetId: string,
   saleNetId: string,
+  signal?: AbortSignal,
 ): Promise<WizardTotalProductAvailabilities | null> {
   const result = await apiRequest<unknown>('/products/availabilities/all', {
     query: { clientAgreementNetId, netId: productNetId, saleNetId },
+    ...(signal ? { signal } : {}),
   })
 
   return result && typeof result === 'object' && !Array.isArray(result) ? (result as WizardTotalProductAvailabilities) : null
@@ -377,9 +386,13 @@ export type WizardFutureReservation = {
   RemindDate?: string
 }
 
-export async function getNearestSupplyOrder(productNetId: string): Promise<WizardNearestSupplyOrder | null> {
+export async function getNearestSupplyOrder(
+  productNetId: string,
+  signal?: AbortSignal,
+): Promise<WizardNearestSupplyOrder | null> {
   const result = await apiRequest<unknown>('/supplies/orders/arrival/nearest/get', {
     query: { netId: productNetId },
+    ...(signal ? { signal } : {}),
   })
 
   return result && typeof result === 'object' ? (result as WizardNearestSupplyOrder) : null

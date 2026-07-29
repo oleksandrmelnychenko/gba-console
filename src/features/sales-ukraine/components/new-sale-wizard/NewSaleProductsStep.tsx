@@ -178,6 +178,8 @@ type ProductPricingSnapshot = {
 
 type ProductDetailSnapshot = {
   availabilities: WizardTotalProductAvailabilities | null
+  detailsError: string | null
+  detailsLoaded: boolean
   nearestOrder: WizardNearestSupplyOrder | null
   reservationRows: WizardProductReservation[]
 }
@@ -265,6 +267,8 @@ export function NewSaleProductsStep({
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<WizardSaleProduct[]>([])
   const [isSearching, setSearching] = useState(false)
+  const [searchError, setSearchError] = useState<string | null>(null)
+  const [searchRequestRevision, setSearchRequestRevision] = useState(0)
   const [isLoadingRecommendations, setLoadingRecommendations] = useState(false)
   const [crossSellProduct, setCrossSellProduct] = useState<WizardSaleProduct | null>(null)
   const [mainIndex, setMainIndex] = useState(0)
@@ -305,6 +309,7 @@ export function NewSaleProductsStep({
   const [pendingMutationError, setPendingMutationError] = useState<string | null>(null)
   const [mutationStorageRevision, setMutationStorageRevision] = useState(0)
   const [refreshTick, setRefreshTick] = useState(0)
+  const [productDetailsRevision, setProductDetailsRevision] = useState(0)
 
   const busyRef = useRef(false)
   const mountedRef = useRef(false)
@@ -314,6 +319,10 @@ export function NewSaleProductsStep({
   const reconciliationContextRef = useRef<string | null>(null)
   const pendingMutationRef = useRef<PendingCartMutation | null>(null)
   const forceSearchRef = useRef(false)
+  const searchAbortRef = useRef<AbortController | null>(null)
+  const loadMoreAbortRef = useRef<AbortController | null>(null)
+  const recommendationsAbortRef = useRef<AbortController | null>(null)
+  const searchGenerationRef = useRef(0)
   const virtualLoadingRef = useRef(false)
   const virtualExhaustedRef = useRef(false)
   const searchInputRef = useRef<HTMLInputElement | null>(null)
@@ -590,6 +599,14 @@ export function NewSaleProductsStep({
     const value = query.trim()
 
     if (value.length < PRODUCT_SEARCH_MIN_QUERY_LENGTH || !agreementNetId) {
+      searchGenerationRef.current += 1
+      searchAbortRef.current?.abort()
+      searchAbortRef.current = null
+      loadMoreAbortRef.current?.abort()
+      loadMoreAbortRef.current = null
+      virtualLoadingRef.current = false
+      setSearching(false)
+
       return
     }
 
@@ -601,41 +618,63 @@ export function NewSaleProductsStep({
     }
 
     const searchAgreementNetId = agreementNetId
-    let cancelled = false
-    const handle = setTimeout(async () => {
+    const controller = new AbortController()
+    const generation = ++searchGenerationRef.current
+
+    searchAbortRef.current?.abort()
+    searchAbortRef.current = controller
+    loadMoreAbortRef.current?.abort()
+    loadMoreAbortRef.current = null
+    virtualLoadingRef.current = false
+    virtualExhaustedRef.current = false
+    setSearchError(null)
+
+    void (async () => {
       try {
         const next = await searchSaleProductsWithAvailability(value, searchAgreementNetId, {
           limit: 20,
           mode: searchMode,
           offset: 0,
+          signal: controller.signal,
           sortMode,
         })
 
-        if (cancelled) {
+        if (controller.signal.aborted || generation !== searchGenerationRef.current) {
           return
         }
-
-        virtualExhaustedRef.current = false
 
         setResults(next.length === 1 && next[0] ? [next[0], ...(next[0].NextSearchedProducts ?? [])] : next)
         setMainIndex(0)
         clearActiveProductData()
-      } catch {
-        if (!cancelled) {
+      } catch (loadError) {
+        if (!controller.signal.aborted && generation === searchGenerationRef.current) {
           setResults([])
+          setSearchError(getRequestErrorMessage(loadError, t('Не вдалося виконати пошук товарів')))
         }
       } finally {
-        if (!cancelled) {
+        if (!controller.signal.aborted && generation === searchGenerationRef.current) {
           setSearching(false)
         }
       }
-    }, 360)
+    })()
 
     return () => {
-      cancelled = true
-      clearTimeout(handle)
+      controller.abort()
+
+      if (searchAbortRef.current === controller) {
+        searchAbortRef.current = null
+      }
     }
-  }, [query, agreementNetId, searchMode, sortMode, clearActiveProductData])
+  }, [query, agreementNetId, searchMode, sortMode, searchRequestRevision, clearActiveProductData, t])
+
+  useEffect(() => () => {
+    searchAbortRef.current?.abort()
+    loadMoreAbortRef.current?.abort()
+    recommendationsAbortRef.current?.abort()
+    searchAbortRef.current = null
+    loadMoreAbortRef.current = null
+    recommendationsAbortRef.current = null
+  }, [])
 
   function storePricingSnapshot(
     productNetUid: string,
@@ -680,16 +719,15 @@ export function NewSaleProductsStep({
     const requestAgreementNetId = agreementNetId
     const requestProduct = activeProduct
     const saleNetId = sale?.NetUid || EMPTY_GUID
+    const controller = new AbortController()
     let cancelled = false
     const handle = setTimeout(() => {
       void (async () => {
-        const [pricing, nearest, totals, productReservations, analogues] = await Promise.all([
+        const [pricing, productReservations, analogues] = await Promise.all([
           loadPricingSnapshot(netUid, requestAgreementNetId),
-          getNearestSupplyOrder(netUid).catch(() => null),
-          getAllProductAvailabilities(netUid, requestAgreementNetId, saleNetId).catch(() => null),
           getProductReservationsByAgreement(requestAgreementNetId, netUid).catch(() => [] as WizardProductReservation[]),
           source !== 'analogue' && requestProduct?.HasAnalogue
-            ? getProductAnalogues(netUid, requestAgreementNetId).catch(() => [] as WizardSaleProduct[])
+            ? getProductAnalogues(netUid, requestAgreementNetId, controller.signal).catch(() => [] as WizardSaleProduct[])
             : Promise.resolve<WizardSaleProduct[] | null>(null),
         ])
 
@@ -703,9 +741,12 @@ export function NewSaleProductsStep({
               ? previous.values
               : EMPTY_PRODUCT_DETAILS,
           )
+          const existing = next.get(netUid)
           next.set(netUid, {
-            availabilities: totals,
-            nearestOrder: nearest,
+            availabilities: existing?.availabilities ?? null,
+            detailsError: existing?.detailsError ?? null,
+            detailsLoaded: existing?.detailsLoaded ?? false,
+            nearestOrder: existing?.nearestOrder ?? null,
             reservationRows: productReservations,
           })
 
@@ -733,9 +774,87 @@ export function NewSaleProductsStep({
 
     return () => {
       cancelled = true
+      controller.abort()
       clearTimeout(handle)
     }
   }, [activeProduct, active?.source, agreementNetId, isVatSale, refreshTick, sale?.NetUid])
+
+  const isActiveProductFullDetail =
+    (active?.source === 'main' && kbState === 'FullDetail') ||
+    (active?.source === 'analogue' && kbState === 'AnalogueFullDetail') ||
+    (active?.source === 'component' && kbState === 'ComponentFullDetail')
+
+  useEffect(() => {
+    const netUid = activeProduct?.NetUid
+
+    if (!netUid || !agreementNetId || !isActiveProductFullDetail) {
+      return
+    }
+
+    const requestAgreementNetId = agreementNetId
+    const saleNetId = sale?.NetUid || EMPTY_GUID
+    const controller = new AbortController()
+    let cancelled = false
+
+    setProductDetailState((previous) => {
+      const next = new Map(
+        previous.agreementNetId === requestAgreementNetId && previous.saleNetId === saleNetId
+          ? previous.values
+          : EMPTY_PRODUCT_DETAILS,
+      )
+      const existing = next.get(netUid)
+      next.set(netUid, {
+        availabilities: existing?.availabilities ?? null,
+        detailsError: null,
+        detailsLoaded: false,
+        nearestOrder: existing?.nearestOrder ?? null,
+        reservationRows: existing?.reservationRows ?? [],
+      })
+
+      return { agreementNetId: requestAgreementNetId, saleNetId, values: next }
+    })
+
+    const handle = setTimeout(() => {
+      void Promise.allSettled([
+        getNearestSupplyOrder(netUid, controller.signal),
+        getAllProductAvailabilities(netUid, requestAgreementNetId, saleNetId, controller.signal),
+      ]).then(([nearestResult, totalsResult]) => {
+        if (cancelled) {
+          return
+        }
+
+        const nearest = nearestResult.status === 'fulfilled' ? nearestResult.value : null
+        const totals = totalsResult.status === 'fulfilled' ? totalsResult.value : null
+        const detailsError = totalsResult.status === 'rejected'
+          ? getRequestErrorMessage(totalsResult.reason, t('Не вдалося завантажити деталі залишків'))
+          : null
+
+        setProductDetailState((previous) => {
+          const next = new Map(
+            previous.agreementNetId === requestAgreementNetId && previous.saleNetId === saleNetId
+              ? previous.values
+              : EMPTY_PRODUCT_DETAILS,
+          )
+          const existing = next.get(netUid)
+          next.set(netUid, {
+            availabilities: totals,
+            detailsError,
+            detailsLoaded: true,
+            nearestOrder: nearest,
+            reservationRows: existing?.reservationRows ?? [],
+          })
+
+          return { agreementNetId: requestAgreementNetId, saleNetId, values: next }
+        })
+      })
+    }, 240)
+
+    return () => {
+      cancelled = true
+      controller.abort()
+      clearTimeout(handle)
+    }
+  }, [activeProduct?.NetUid, agreementNetId, isActiveProductFullDetail, productDetailsRevision, refreshTick, sale?.NetUid, t])
 
   const getProductDetailSnapshot = useCallback(
     (product: WizardSaleProduct | null): ProductDetailSnapshot | null => {
@@ -1242,25 +1361,45 @@ export function NewSaleProductsStep({
       return
     }
 
+    const generation = searchGenerationRef.current
+    const requestAgreementNetId = agreementNetId
+    const requestOffset = results.length
+    const controller = new AbortController()
+
     virtualLoadingRef.current = true
+    loadMoreAbortRef.current?.abort()
+    loadMoreAbortRef.current = controller
 
     try {
-      const next = await searchSaleProductsWithAvailability(value, agreementNetId, {
+      const next = await searchSaleProductsWithAvailability(value, requestAgreementNetId, {
         limit: 10,
         mode: searchMode,
-        offset: results.length,
+        offset: requestOffset,
+        signal: controller.signal,
         sortMode,
       })
+
+      if (controller.signal.aborted || generation !== searchGenerationRef.current) {
+        return
+      }
 
       if (next.length === 0) {
         virtualExhaustedRef.current = true
       } else {
         setResults((previous) => [...previous, ...next.filter((item) => !previous.some((existing) => existing.NetUid === item.NetUid))])
       }
-    } catch {
-      virtualExhaustedRef.current = true
+    } catch (loadError) {
+      if (!controller.signal.aborted && generation === searchGenerationRef.current) {
+        notifications.show({
+          color: 'red',
+          message: getRequestErrorMessage(loadError, t('Не вдалося завантажити наступні товари')),
+        })
+      }
     } finally {
-      virtualLoadingRef.current = false
+      if (loadMoreAbortRef.current === controller) {
+        loadMoreAbortRef.current = null
+        virtualLoadingRef.current = false
+      }
     }
   }
 
@@ -1269,18 +1408,41 @@ export function NewSaleProductsStep({
       return
     }
 
+    searchGenerationRef.current += 1
+    searchAbortRef.current?.abort()
+    searchAbortRef.current = null
+    loadMoreAbortRef.current?.abort()
+    loadMoreAbortRef.current = null
+    recommendationsAbortRef.current?.abort()
+    recommendationsAbortRef.current = null
+    virtualLoadingRef.current = false
+    virtualExhaustedRef.current = false
+    setSearchError(null)
+    setLoadingRecommendations(false)
     setQuery(value)
+    setResults([])
+    clearActiveProductData()
 
     if (value.trim().length < PRODUCT_SEARCH_MIN_QUERY_LENGTH) {
-      setResults([])
       setSearching(false)
-      clearActiveProductData()
     } else if (agreementNetId) {
       setSearching(true)
     }
   }
 
   function handleSearchSettingsChange(nextMode: string | null, nextSort: string | null) {
+    searchGenerationRef.current += 1
+    searchAbortRef.current?.abort()
+    searchAbortRef.current = null
+    loadMoreAbortRef.current?.abort()
+    loadMoreAbortRef.current = null
+    recommendationsAbortRef.current?.abort()
+    recommendationsAbortRef.current = null
+    virtualLoadingRef.current = false
+    virtualExhaustedRef.current = false
+    setSearchError(null)
+    setLoadingRecommendations(false)
+
     if (nextMode) {
       setSearchMode(nextMode)
     }
@@ -1295,7 +1457,29 @@ export function NewSaleProductsStep({
     if (query.trim().length >= PRODUCT_SEARCH_MIN_QUERY_LENGTH) {
       forceSearchRef.current = true
       setSearching(true)
+      setSearchRequestRevision((revision) => revision + 1)
     }
+  }
+
+  function retryProductSearch() {
+    if (query.trim().length < PRODUCT_SEARCH_MIN_QUERY_LENGTH || !agreementNetId) {
+      return
+    }
+
+    searchGenerationRef.current += 1
+    searchAbortRef.current?.abort()
+    loadMoreAbortRef.current?.abort()
+    recommendationsAbortRef.current?.abort()
+    searchAbortRef.current = null
+    loadMoreAbortRef.current = null
+    recommendationsAbortRef.current = null
+    virtualLoadingRef.current = false
+    virtualExhaustedRef.current = false
+    forceSearchRef.current = true
+    setSearchError(null)
+    setLoadingRecommendations(false)
+    setSearching(true)
+    setSearchRequestRevision((revision) => revision + 1)
   }
 
   async function loadClientRecommendations() {
@@ -1303,13 +1487,30 @@ export function NewSaleProductsStep({
       return
     }
 
+    const generation = ++searchGenerationRef.current
+    const controller = new AbortController()
+
+    searchAbortRef.current?.abort()
+    loadMoreAbortRef.current?.abort()
+    recommendationsAbortRef.current?.abort()
+    searchAbortRef.current = null
+    loadMoreAbortRef.current = null
+    recommendationsAbortRef.current = controller
+    virtualLoadingRef.current = false
+    virtualExhaustedRef.current = false
+    setSearchError(null)
     setLoadingRecommendations(true)
     setSearching(true)
 
     try {
       const recommended = (await getMostPurchasedProductsByClientId(clientNetId, false, {
         clientAgreementNetId: agreementNetId ?? undefined,
+        signal: controller.signal,
       })) as unknown as WizardSaleProduct[]
+
+      if (controller.signal.aborted || generation !== searchGenerationRef.current) {
+        return
+      }
 
       setQuery('')
       setResults(recommended)
@@ -1322,10 +1523,15 @@ export function NewSaleProductsStep({
         notifications.show({ color: 'orange', message: t('Рекомендацій для клієнта не знайдено') })
       }
     } catch {
-      notifications.show({ color: 'red', message: t('Не вдалося завантажити рекомендації') })
+      if (!controller.signal.aborted && generation === searchGenerationRef.current) {
+        notifications.show({ color: 'red', message: t('Не вдалося завантажити рекомендації') })
+      }
     } finally {
-      setSearching(false)
-      setLoadingRecommendations(false)
+      if (recommendationsAbortRef.current === controller) {
+        recommendationsAbortRef.current = null
+        setSearching(false)
+        setLoadingRecommendations(false)
+      }
     }
   }
 
@@ -1404,7 +1610,20 @@ export function NewSaleProductsStep({
       const hasFollowUps = Boolean(product && (product.HasAnalogue || product.HasComponent))
 
       if (!hasFollowUps) {
+        searchGenerationRef.current += 1
+        searchAbortRef.current?.abort()
+        loadMoreAbortRef.current?.abort()
+        recommendationsAbortRef.current?.abort()
+        searchAbortRef.current = null
+        loadMoreAbortRef.current = null
+        recommendationsAbortRef.current = null
+        virtualLoadingRef.current = false
+        virtualExhaustedRef.current = false
         setQuery('')
+        setResults([])
+        setSearchError(null)
+        setSearching(false)
+        setLoadingRecommendations(false)
         setActive(null)
         resetDetail()
         keyboard.setState('ProductSearch')
@@ -1741,10 +1960,7 @@ export function NewSaleProductsStep({
     const previousState = getPreviousProductKeyboardState()
 
     if (previousState === 'ProductSearch' || previousState === 'ProductSelection') {
-      setQuery('')
-      resetDetail()
-      keyboard.setState('ProductSearch')
-      focusSearchInput()
+      clearSelection()
     } else {
       keyboard.restorePreviousProductState()
     }
@@ -2313,8 +2529,21 @@ export function NewSaleProductsStep({
   }
 
   function clearSelection() {
+    searchGenerationRef.current += 1
+    searchAbortRef.current?.abort()
+    loadMoreAbortRef.current?.abort()
+    recommendationsAbortRef.current?.abort()
+    searchAbortRef.current = null
+    loadMoreAbortRef.current = null
+    recommendationsAbortRef.current = null
+    virtualLoadingRef.current = false
+    virtualExhaustedRef.current = false
     clearActiveProductData()
     setQuery('')
+    setResults([])
+    setSearchError(null)
+    setSearching(false)
+    setLoadingRecommendations(false)
     keyboard.setState('ProductSearch')
     focusSearchInput()
   }
@@ -3117,8 +3346,10 @@ export function NewSaleProductsStep({
         chips={getMainChips(selectedMainSnapshot?.availabilities)}
         descriptionDraft={descriptionDraftSnapshot}
         displayQty={getDisplayedAvailableQty(selectedMainProduct) ?? 0}
+        detailsError={selectedMainSnapshot?.detailsError}
         isFullDetail={isMainFullDetail}
         isEditingDescription={editingDescription && active?.source === 'main'}
+        isLoadingDetails={!selectedMainSnapshot?.detailsLoaded}
         isVatSale={isVatSale}
         localCurrencyCode={localCurrencyCode}
         clientAgreementNetId={agreementNetId}
@@ -3137,6 +3368,7 @@ export function NewSaleProductsStep({
             keyboard.setState('FullDetail')
           }
         }}
+        onRetryDetails={() => setProductDetailsRevision((revision) => revision + 1)}
         onToggleDescription={() => void toggleDescriptionEdit()}
       />
     ) : null
@@ -3182,13 +3414,24 @@ export function NewSaleProductsStep({
 
             <Box className="new-sale-products-step__selected-product-prices">
               <WizardProductPriceStrip dense localCurrency={localCurrencyCode} pricing={pricing} product={selectedMainProduct} />
+              <Button
+                className="new-sale-products-step__selected-product-details"
+                size="compact-xs"
+                variant="subtle"
+                onClick={() => {
+                  openMainFullDetail()
+                  focusSearchInput()
+                }}
+              >
+                {t('Деталі')}
+              </Button>
             </Box>
           </Box>
         )
       })()
     : null
   const isSearchPristine = query.trim().length < PRODUCT_SEARCH_MIN_QUERY_LENGTH
-  const showProductSearchEmpty = !selectedMainProduct && orderItems.length === 0 && !isSearching && results.length === 0
+  const showProductSearchEmpty = !searchError && !selectedMainProduct && orderItems.length === 0 && !isSearching && results.length === 0
   const productSearchEmptyTitle = isSearchPristine ? t('Пошук товару ще не виконаний') : t('Товарів не знайдено')
   const productSearchEmptyDescription = isSearchPristine
     ? t('Введіть мінімум 3 символи у пошуку, щоб побачити доступні товари.')
@@ -3369,7 +3612,7 @@ export function NewSaleProductsStep({
                   keyboard.setState('ProductSelection')
                 }
 
-                // Clicking a row (a plain div) blurs the search input → keyboard events stop
+                // Clicking a result row blurs the search input → keyboard events stop
                 // bubbling to the wizard root, so Enter could no longer add to the cart. Restore it.
                 focusSearchInput()
               }}
@@ -3382,6 +3625,16 @@ export function NewSaleProductsStep({
         {/* RIGHT: detail + analogues + components scroll above a pinned cart grid */}
         <Box className="new-sale-products-step__workspace">
           <Box className="new-sale-products-step__main-column">
+            {searchError && !isSearching && (
+              <Alert color="red" title={t('Не вдалося виконати пошук товарів')} variant="light">
+                <Group align="center" justify="space-between" wrap="nowrap">
+                  <Text size="sm">{searchError}</Text>
+                  <Button color="red" size="xs" variant="light" onClick={retryProductSearch}>
+                    {t('Повторити')}
+                  </Button>
+                </Group>
+              </Alert>
+            )}
             {showProductSearchEmpty ? (
               <Stack align="center" className="new-sale-client-empty new-sale-products-step-empty" gap={10} justify="center">
                 <span className="new-sale-client-empty__icon">
@@ -3413,8 +3666,10 @@ export function NewSaleProductsStep({
                   chips={getMainChips(focusedAnalogueSnapshot?.availabilities)}
                   descriptionDraft={descriptionDraftSnapshot}
                   displayQty={getDisplayedAvailableQty(focusedAnalogue) ?? 0}
+                  detailsError={focusedAnalogueSnapshot?.detailsError}
                   isFullDetail
                   isEditingDescription={editingDescription && active?.source === 'analogue'}
+                  isLoadingDetails={!focusedAnalogueSnapshot?.detailsLoaded}
                   isVatSale={isVatSale}
                   localCurrencyCode={localCurrencyCode}
                   clientAgreementNetId={agreementNetId}
@@ -3426,6 +3681,7 @@ export function NewSaleProductsStep({
                   selectedRowIndex={detail?.rowIndex ?? null}
                   showRowDetails={focusedAnalogueChipIndex === 0}
                   onDescriptionDraftChange={handleDescriptionDraftChange}
+                  onRetryDetails={() => setProductDetailsRevision((revision) => revision + 1)}
                   onSelectChip={(chipIndex) => setDetail({ chipIndex, rowIndex: null })}
                   onToggleDescription={() => void toggleDescriptionEdit()}
                 />
@@ -3437,8 +3693,10 @@ export function NewSaleProductsStep({
                   chips={getMainChips(focusedComponentSnapshot?.availabilities)}
                   descriptionDraft={descriptionDraftSnapshot}
                   displayQty={getDisplayedAvailableQty(focusedComponent) ?? 0}
+                  detailsError={focusedComponentSnapshot?.detailsError}
                   isFullDetail
                   isEditingDescription={editingDescription && active?.source === 'component'}
+                  isLoadingDetails={!focusedComponentSnapshot?.detailsLoaded}
                   isVatSale={isVatSale}
                   localCurrencyCode={localCurrencyCode}
                   clientAgreementNetId={agreementNetId}
@@ -3450,6 +3708,7 @@ export function NewSaleProductsStep({
                   selectedRowIndex={detail?.rowIndex ?? null}
                   showRowDetails={focusedComponentChipIndex === 0}
                   onDescriptionDraftChange={handleDescriptionDraftChange}
+                  onRetryDetails={() => setProductDetailsRevision((revision) => revision + 1)}
                   onSelectChip={(chipIndex) => setDetail({ chipIndex, rowIndex: null })}
                   onToggleDescription={() => void toggleDescriptionEdit()}
                 />

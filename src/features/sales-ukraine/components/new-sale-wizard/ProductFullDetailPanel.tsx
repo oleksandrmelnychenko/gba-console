@@ -1,4 +1,4 @@
-import { ActionIcon, Box, Group, Image, Paper, ScrollArea, Stack, Text, TextInput, Tooltip } from '@mantine/core'
+import { ActionIcon, Box, Button, Group, Image, Loader, Paper, ScrollArea, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import { Barcode, Box as BoxIcon, Check, Image as ImageIcon, Info, Pencil, Ruler, Truck } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { formatLocalDate } from '../../../../shared/date/dateTime'
@@ -31,8 +31,10 @@ export function ProductFullDetailPanel({
   chips,
   clientAgreementNetId,
   descriptionDraft,
+  detailsError,
   isFullDetail,
   isEditingDescription,
+  isLoadingDetails = false,
   isVatSale,
   localCurrencyCode = 'UAH',
   nearestSupplyOrder,
@@ -44,6 +46,7 @@ export function ProductFullDetailPanel({
   showRowDetails,
   displayQty,
   onDescriptionDraftChange,
+  onRetryDetails,
   onSelectChip,
   onToggleDescription,
 }: {
@@ -51,8 +54,10 @@ export function ProductFullDetailPanel({
   chips: WizardDetailChip[]
   clientAgreementNetId?: string | null
   descriptionDraft: string
+  detailsError?: string | null
   isFullDetail: boolean
   isEditingDescription: boolean
+  isLoadingDetails?: boolean
   isVatSale: boolean
   localCurrencyCode?: string
   nearestSupplyOrder?: WizardNearestSupplyOrder | null
@@ -64,6 +69,7 @@ export function ProductFullDetailPanel({
   showRowDetails: boolean
   displayQty?: number
   onDescriptionDraftChange: (value: string) => void
+  onRetryDetails?: () => void
   onSelectChip?: (index: number) => void
   onToggleDescription: () => void
 }) {
@@ -235,31 +241,53 @@ export function ProductFullDetailPanel({
         )}
 
         <Box className="new-sale-product-card__availability">
-          {chips.map((chip, index) => {
-            const selected = index === selectedChipIndex
-            const isEmpty = chip.count <= 0
+          {isLoadingDetails ? (
+            <Group
+              aria-live="polite"
+              className="new-sale-product-card__availability-state"
+              gap={8}
+              justify="center"
+              role="status"
+            >
+              <Loader size="xs" />
+              <Text c="dimmed" size="xs">{t('Завантаження деталей залишків')}</Text>
+            </Group>
+          ) : detailsError ? (
+            <Group className="new-sale-product-card__availability-state" gap={8} justify="space-between" wrap="nowrap">
+              <Text c="red" size="xs">{detailsError}</Text>
+              {onRetryDetails && (
+                <Button color="red" size="compact-xs" variant="light" onClick={onRetryDetails}>
+                  {t('Повторити')}
+                </Button>
+              )}
+            </Group>
+          ) : (
+            chips.map((chip, index) => {
+              const selected = index === selectedChipIndex
+              const isEmpty = chip.count <= 0
 
-            return (
-              <Box
-                key={chip.key}
-                className={cx('new-sale-product-card__chip', selected && 'is-selected', isEmpty && 'is-empty')}
-                role={onSelectChip ? 'button' : undefined}
-                tabIndex={onSelectChip ? 0 : undefined}
-                onClick={() => onSelectChip?.(index)}
-                onKeyDown={(event) => {
-                  if (!onSelectChip || (event.key !== 'Enter' && event.key !== ' ')) {
-                    return
-                  }
+              return (
+                <Box
+                  key={chip.key}
+                  className={cx('new-sale-product-card__chip', selected && 'is-selected', isEmpty && 'is-empty')}
+                  role={onSelectChip ? 'button' : undefined}
+                  tabIndex={onSelectChip ? 0 : undefined}
+                  onClick={() => onSelectChip?.(index)}
+                  onKeyDown={(event) => {
+                    if (!onSelectChip || (event.key !== 'Enter' && event.key !== ' ')) {
+                      return
+                    }
 
-                  event.preventDefault()
-                  onSelectChip(index)
-                }}
-              >
-                <span>{chip.name}</span>
-                <strong>{qtyFormatter.format(chip.count)}</strong>
-              </Box>
-            )
-          })}
+                    event.preventDefault()
+                    onSelectChip(index)
+                  }}
+                >
+                  <span>{chip.name}</span>
+                  <strong>{qtyFormatter.format(chip.count)}</strong>
+                </Box>
+              )
+            })
+          )}
         </Box>
 
         <Group align="stretch" className="new-sale-product-card__bottom" gap={10} wrap="nowrap">
@@ -303,42 +331,42 @@ export function ProductFullDetailPanel({
             )}
           </Box>
 
-          {isFullDetail && (
-          <Box className="new-sale-product-card__rows">
-            <Group gap={6} justify="space-between" wrap="nowrap">
-              <span className="new-sale-product-card__section-title">
-                <BoxIcon size={13} />
-                {t('Деталі')}
-              </span>
-              <span className="new-sale-product-card__rows-count">{rows.length}</span>
-            </Group>
+          {isFullDetail && !isLoadingDetails && !detailsError && (
+            <Box className="new-sale-product-card__rows">
+              <Group gap={6} justify="space-between" wrap="nowrap">
+                <span className="new-sale-product-card__section-title">
+                  <BoxIcon size={13} />
+                  {t('Деталі')}
+                </span>
+                <span className="new-sale-product-card__rows-count">{rows.length}</span>
+              </Group>
 
-            {rows.length > 0 ? (
-              <ScrollArea.Autosize mah={96} type="auto">
-                <Stack gap={5}>
-                  {rows.map((row, index) => (
-                    <Box
-                      key={getDetailRowKey(row)}
-                      className={cx('new-sale-product-card__row', index === selectedRowIndex && 'is-selected')}
-                    >
-                      <Group gap={6} style={{ minWidth: 0 }} wrap="nowrap">
-                        {showRowDetails && row.regionCode && <span className="new-sale-product-card__region">{row.regionCode}</span>}
-                        <Text className="new-sale-product-card__row-name" title={row.name} truncate>
-                          {row.name || ''}
-                        </Text>
-                      </Group>
-                      <Group gap={8} wrap="nowrap">
-                        {showRowDetails && row.analyst && <span className="new-sale-product-card__analyst">{row.analyst}</span>}
-                        <strong>{qtyFormatter.format(row.amount)}</strong>
-                      </Group>
-                    </Box>
-                  ))}
-                </Stack>
-              </ScrollArea.Autosize>
-            ) : (
-              <Box className="new-sale-product-card__empty-row">{t('Немає деталізації')}</Box>
-            )}
-          </Box>
+              {rows.length > 0 ? (
+                <ScrollArea.Autosize mah={96} type="auto">
+                  <Stack gap={5}>
+                    {rows.map((row, index) => (
+                      <Box
+                        key={getDetailRowKey(row)}
+                        className={cx('new-sale-product-card__row', index === selectedRowIndex && 'is-selected')}
+                      >
+                        <Group gap={6} style={{ minWidth: 0 }} wrap="nowrap">
+                          {showRowDetails && row.regionCode && <span className="new-sale-product-card__region">{row.regionCode}</span>}
+                          <Text className="new-sale-product-card__row-name" title={row.name} truncate>
+                            {row.name || ''}
+                          </Text>
+                        </Group>
+                        <Group gap={8} wrap="nowrap">
+                          {showRowDetails && row.analyst && <span className="new-sale-product-card__analyst">{row.analyst}</span>}
+                          <strong>{qtyFormatter.format(row.amount)}</strong>
+                        </Group>
+                      </Box>
+                    ))}
+                  </Stack>
+                </ScrollArea.Autosize>
+              ) : (
+                <Box className="new-sale-product-card__empty-row">{t('Немає деталізації')}</Box>
+              )}
+            </Box>
           )}
         </Group>
       </Box>

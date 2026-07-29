@@ -36,19 +36,20 @@ function ProductCardContent({ productNetId }: { productNetId: string }) {
 
   useEffect(() => {
     let cancelled = false
+    const controller = new AbortController()
 
     async function load() {
       setLoading(true)
       setError(null)
 
       try {
-        const next = await getProductByNetId(productNetId)
+        const next = await getProductByNetId(productNetId, controller.signal)
 
         if (!cancelled) {
           setProduct(next)
         }
       } catch (loadError) {
-        if (!cancelled) {
+        if (!cancelled && !controller.signal.aborted) {
           setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити товар'))
         }
       } finally {
@@ -62,6 +63,7 @@ function ProductCardContent({ productNetId }: { productNetId: string }) {
 
     return () => {
       cancelled = true
+      controller.abort()
     }
   }, [productNetId, t])
 
