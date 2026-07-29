@@ -585,7 +585,7 @@ function CashFlowDetailDrawer({ row, onClose }: { row: AccountingCashFlowHeadIte
     >
       {row && (
         <Stack gap="md">
-          <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }}>
+          <SimpleGrid cols={{ base: 1, sm: 2 }}>
             <DetailItem label={t('Дата')} value={formatDateTime(row.FromDate)} />
             <DetailItem label={t('Тип')} value={getTypeLabel(row.Type)} />
             <DetailItem label={t('Назва')} value={displayValue(row.Name)} />
