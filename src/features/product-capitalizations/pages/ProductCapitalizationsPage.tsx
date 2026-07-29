@@ -559,7 +559,6 @@ function ProductCapitalizationDetailDrawer({
               disabled={!capitalization.NetUid || Boolean(exportingNetId)}
               leftSection={<FileDown size={16} />}
               loading={exportingNetId === capitalization.NetUid}
-              variant="light"
               onClick={() => onExport(capitalization)}
             >
               {t('Друк PDF')}
