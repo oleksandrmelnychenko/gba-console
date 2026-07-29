@@ -7,6 +7,7 @@ import {
   Card,
   Group,
   Menu,
+  SegmentedControl,
   Select,
   Stack,
   Text,
@@ -59,6 +60,7 @@ import {
   SALES_UKRAINE_WILL_NOT_SHIP_PERMISSION,
 } from '../../sales-ukraine/permissions'
 import type { SalesUkraineSale } from '../../sales-ukraine/types'
+import { EcommerceImageSearchPanel } from '../components/EcommerceImageSearchPanel'
 import { getSalesOnlineShop } from '../api/salesOnlineShopApi'
 import type {
   SalesOnlineShopFilters,
@@ -148,6 +150,34 @@ const amountFormatter = new Intl.NumberFormat('uk-UA', {
 })
 
 export function SalesOnlineShopPage() {
+  const { t } = useI18n()
+  const [workspace, setWorkspace] = useState<'orders' | 'image-searches'>('orders')
+
+  return (
+    <Stack className="sales-online-shop-workspace" gap={6}>
+      <Card className="app-filter-card sales-online-shop-workspace-switcher" withBorder radius="md" padding={0}>
+        <div className="app-filter-bar">
+          <div className="app-filter-field">
+            <span className="app-filter-label">{t('Інтернет-магазин')}</span>
+            <SegmentedControl
+              aria-label={t('Режим інтернет-магазину')}
+              data={[
+                { label: t('Замовлення'), value: 'orders' },
+                { label: t('AI-пошук за фото'), value: 'image-searches' },
+              ]}
+              value={workspace}
+              onChange={(value) => setWorkspace(value as 'orders' | 'image-searches')}
+            />
+          </div>
+        </div>
+      </Card>
+
+      {workspace === 'orders' ? <SalesOnlineShopOrdersPage /> : <EcommerceImageSearchPanel />}
+    </Stack>
+  )
+}
+
+function SalesOnlineShopOrdersPage() {
   const { t } = useI18n()
   const { hasPermission, user } = useAuth()
   const runSaleUnlock = usePersistentSaleJsonMutationRunner('sale-unlock')

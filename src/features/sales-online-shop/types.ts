@@ -164,3 +164,86 @@ export type SalesOnlineShopSale = SalesOnlineShopEntity & {
   UpdateUser?: SalesOnlineShopUser
   User?: SalesOnlineShopUser
 }
+
+export type EcommerceImageSearchStatus = 'processing' | 'completed' | 'failed'
+
+export type EcommerceImageSearchAnalysis = {
+  application?: string[]
+  category?: string
+  confidence?: number
+  description?: string
+  dimensions?: string | null
+  material?: string | null
+  name?: string
+  nameEn?: string
+  oem?: string[]
+  searchQueries?: string[]
+  subcategory?: string | null
+  system?: string
+}
+
+export type EcommerceImageSearchRequestMetadata = {
+  ClientIpAddress?: string | null
+  UserAgent?: string | null
+  Referrer?: string | null
+  AcceptLanguage?: string | null
+  CountryCode?: string | null
+  Region?: string | null
+  City?: string | null
+  TimeZone?: string | null
+  Latitude?: string | null
+  Longitude?: string | null
+  RequestHost?: string | null
+  RequestProtocol?: string | null
+  SecChUa?: string | null
+  SecChUaPlatform?: string | null
+  SecChUaMobile?: string | null
+  DeviceType?: 'bot' | 'desktop' | 'mobile' | 'tablet' | 'unknown' | null
+  ProxyRequestId?: string | null
+}
+
+export type EcommerceImageSearchListItem = {
+  NetUid: string
+  CreatedAtUtc: string
+  CompletedAtUtc?: string | null
+  Status: EcommerceImageSearchStatus
+  Locale: string
+  IsAuthenticated: boolean
+  UserNetUid?: string | null
+  OriginalFileName: string
+  ImageContentType: string
+  ImageSizeBytes: number
+  IdentifiedName?: string | null
+  Category?: string | null
+  VehicleSystem?: string | null
+  Confidence?: number | null
+  ProductCount: number
+  AiModel?: string | null
+  ProcessingMilliseconds?: number | null
+  ErrorCode?: string | null
+}
+
+export type EcommerceImageSearchDetail = EcommerceImageSearchListItem & {
+  SourceRequestId: string
+  ImageSha256: string
+  RequestMetadata?: EcommerceImageSearchRequestMetadata | null
+  Analysis?: EcommerceImageSearchAnalysis | null
+  CatalogSearchStatus?: string | null
+  CatalogQueryCount: number
+  CatalogFailedQueryCount: number
+  ErrorMessage?: string | null
+}
+
+export type EcommerceImageSearchListResponse = {
+  Items: EcommerceImageSearchListItem[]
+  Limit: number
+  Offset: number
+  Total: number
+}
+
+export type EcommerceImageSearchFilters = {
+  limit: number
+  offset: number
+  status?: EcommerceImageSearchStatus | 'all'
+  value?: string
+}

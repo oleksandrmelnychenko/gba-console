@@ -1,5 +1,11 @@
-import { apiRequest } from '../../../shared/api/apiClient'
-import type { SalesOnlineShopFilters, SalesOnlineShopSale } from '../types'
+import { apiRequest, apiUrl, getApiLanguage } from '../../../shared/api/apiClient'
+import type {
+  EcommerceImageSearchDetail,
+  EcommerceImageSearchFilters,
+  EcommerceImageSearchListResponse,
+  SalesOnlineShopFilters,
+  SalesOnlineShopSale,
+} from '../types'
 
 export async function getSalesOnlineShop(
   filters: SalesOnlineShopFilters,
@@ -23,6 +29,34 @@ export async function getSalesOnlineShop(
   })
 
   return normalizeSales(result)
+}
+
+export function getEcommerceImageSearches(
+  filters: EcommerceImageSearchFilters,
+  signal?: AbortSignal,
+): Promise<EcommerceImageSearchListResponse> {
+  return apiRequest<EcommerceImageSearchListResponse>('/ecommerce/image-searches', {
+    signal,
+    query: {
+      limit: filters.limit,
+      offset: filters.offset,
+      status: filters.status === 'all' ? undefined : filters.status,
+      value: filters.value?.trim() || undefined,
+    },
+  })
+}
+
+export function getEcommerceImageSearch(
+  netUid: string,
+  signal?: AbortSignal,
+): Promise<EcommerceImageSearchDetail> {
+  return apiRequest<EcommerceImageSearchDetail>(`/ecommerce/image-searches/${netUid}`, {
+    signal,
+  })
+}
+
+export function getEcommerceImageSearchImageUrl(netUid: string): string {
+  return apiUrl(`/ecommerce/image-searches/${netUid}/image`, getApiLanguage())
 }
 
 function normalizeSales(result: unknown): SalesOnlineShopSale[] {
