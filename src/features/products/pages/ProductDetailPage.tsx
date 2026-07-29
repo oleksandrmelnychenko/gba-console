@@ -568,7 +568,6 @@ function ProductActionToolbar({
         leftSection={<Sparkles fill="currentColor" size={16} strokeWidth={0} />}
         px="sm"
         size="xs"
-        variant="light"
         onClick={() => openPanel('analytics')}
       >
         {t('AI-аналітика')}
