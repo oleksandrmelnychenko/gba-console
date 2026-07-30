@@ -46,7 +46,7 @@ export async function getAssortmentHealth(
       limit: params.limit ?? 100,
       stockedOnly: params.stockedOnly ?? true,
       regionId: params.regionId,
-      regionWindowDays: params.regionWindowDays,
+      regionWindowDays: params.regionId == null ? undefined : params.regionWindowDays,
     },
     signal,
   })
