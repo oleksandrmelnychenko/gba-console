@@ -21,6 +21,7 @@ import { addTaskNote, getHeadTasks, regenerateCockpit, setTaskStatus } from '../
 import type { HeadTask, HeadTaskByStatus, HeadTaskManager, HeadTasksResponse } from '../types'
 import { useCockpitRealtimeReload } from '../hooks/useCockpitRealtimeReload'
 import { BoardCancelModal, BoardNoteModal } from './HeadTaskBoardModals'
+import { HeadDismissalsPanel } from './HeadDismissalsPanel'
 import { NewHeadTaskModal } from './NewHeadTaskModal'
 
 const POLL_INTERVAL_MS = 60_000
@@ -404,6 +405,8 @@ export function HeadTaskBoard({
       </div>
 
       <HeadTaskProgressSummary byStatus={data.ByStatus} />
+
+      {status === 'dismissed' && data.IsHead && <HeadDismissalsPanel managerId={managerId} />}
 
       {error && (
         <Alert className="cockpit-board-alert" color="red" icon={<CircleAlert size={18} />} variant="light">

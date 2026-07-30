@@ -26,6 +26,10 @@ import type {
   EscalatedTask,
   HeadClient,
   HeadClientsResponse,
+  HeadDismissalManagerRow,
+  HeadDismissalReason,
+  HeadDismissalsResponse,
+  HeadDismissalTopReason,
   HeadDashboard,
   HeadDashboardTeam,
   HeadPaceStatus,
@@ -138,6 +142,19 @@ export async function getHeadClients(managerId: number): Promise<HeadClientsResp
   })
 
   return normalizeHeadClients(result)
+}
+
+export async function getHeadDismissals(
+  params: { windowDays?: number; managerId?: number } = {},
+): Promise<HeadDismissalsResponse> {
+  const result = await apiRequest<unknown>('/sales/cockpit/head/dismissals', {
+    query: {
+      windowDays: params.windowDays,
+      managerId: params.managerId,
+    },
+  })
+
+  return normalizeHeadDismissals(result)
 }
 
 export async function getCockpitClients(): Promise<CockpitClientsResponse> {
@@ -678,6 +695,61 @@ function normalizeHeadClients(result: unknown): HeadClientsResponse {
     count: typeof payload.count === 'number' ? payload.count : clients.length,
     clients,
   }
+}
+
+function normalizeHeadDismissals(result: unknown): HeadDismissalsResponse {
+  const payload = result && typeof result === 'object' ? (result as Partial<HeadDismissalsResponse>) : {}
+  const managers = Array.isArray(payload.managers)
+    ? payload.managers.reduce<HeadDismissalManagerRow[]>((acc, value) => {
+        const row = value as Partial<HeadDismissalManagerRow> | null
+        if (row && typeof row === 'object' && typeof row.manager_id === 'number') {
+          acc.push({
+            manager_id: row.manager_id,
+            manager_name: typeof row.manager_name === 'string' ? row.manager_name : null,
+            dismissed: toNumber(row.dismissed),
+            manual: toNumber(row.manual),
+            no_reason: toNumber(row.no_reason),
+            reasons: normalizeDismissalReasons(row.reasons),
+          })
+        }
+        return acc
+      }, [])
+    : []
+  const topReasons = Array.isArray(payload.top_reasons)
+    ? payload.top_reasons.reduce<HeadDismissalTopReason[]>((acc, value) => {
+        const row = value as Partial<HeadDismissalTopReason> | null
+        if (row && typeof row === 'object' && typeof row.reason === 'string') {
+          acc.push({
+            reason: row.reason,
+            count: toNumber(row.count),
+            managers: toNumber(row.managers),
+          })
+        }
+        return acc
+      }, [])
+    : []
+
+  return {
+    is_head: payload.is_head === true,
+    window_days: toNumber(payload.window_days),
+    total_dismissed: toNumber(payload.total_dismissed),
+    managers,
+    top_reasons: topReasons,
+  }
+}
+
+function normalizeDismissalReasons(value: unknown): HeadDismissalReason[] {
+  if (!Array.isArray(value)) {
+    return []
+  }
+
+  return value.reduce<HeadDismissalReason[]>((acc, entry) => {
+    const row = entry as Partial<HeadDismissalReason> | null
+    if (row && typeof row === 'object' && typeof row.reason === 'string') {
+      acc.push({ reason: row.reason, count: toNumber(row.count) })
+    }
+    return acc
+  }, [])
 }
 
 function normalizeCockpitClients(result: unknown): CockpitClientsResponse {

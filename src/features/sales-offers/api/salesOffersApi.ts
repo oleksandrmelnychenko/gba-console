@@ -28,11 +28,12 @@ export function getPublicOfferLink(netUid: string): string {
   return `${SHOP_BASE_URL.replace(/\/+$/, '')}/offer/${netUid}`
 }
 
-export async function getOffers(filters: OffersFilters): Promise<ClientShoppingCart[]> {
+export async function getOffers(filters: OffersFilters, onlyMine = false): Promise<ClientShoppingCart[]> {
   const result = await apiRequest<unknown>('/sales/offers/all/filtered', {
     query: {
       from: formatDateForQuery(filters.from),
       to: formatDateForQuery(filters.to),
+      ...(onlyMine ? { onlyMine: true } : {}),
     },
   })
 

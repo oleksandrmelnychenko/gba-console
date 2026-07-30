@@ -19,6 +19,7 @@ import { CockpitToolbar, type CockpitDayFilter } from '../components/CockpitTool
 import { DismissModal } from '../components/DismissModal'
 import { DoneModal } from '../components/DoneModal'
 import { MyClientsPanel } from '../components/MyClientsPanel'
+import { MyOffersPanel } from '../components/MyOffersPanel'
 import { NoteModal } from '../components/NoteModal'
 import { SnoozeModal } from '../components/SnoozeModal'
 import type { CockpitTarget, CockpitTask, CockpitTaskType, CockpitUrgency } from '../types'
@@ -78,7 +79,7 @@ export function SalesCockpitPage() {
   const [snoozeTask, setSnoozeTask] = useState<CockpitTask | null>(null)
   const [doneTask, setDoneTask] = useState<CockpitTask | null>(null)
   const [dismissTask, setDismissTask] = useState<CockpitTask | null>(null)
-  const [view, setView] = useState<'clients' | 'tasks'>('tasks')
+  const [view, setView] = useState<'clients' | 'offers' | 'tasks'>('tasks')
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
 
   const triggerReload = useCallback(() => {
@@ -328,6 +329,7 @@ export function SalesCockpitPage() {
           [
             { label: 'Черга задач', value: 'tasks' },
             { label: 'Мої клієнти', value: 'clients' },
+            { label: 'Мої оферти', value: 'offers' },
           ] as const
         ).map((tab) => (
           <button
@@ -346,6 +348,10 @@ export function SalesCockpitPage() {
       {view === 'clients' ? (
         <div className="cockpit-page-content">
           <MyClientsPanel />
+        </div>
+      ) : view === 'offers' ? (
+        <div className="cockpit-page-content">
+          <MyOffersPanel />
         </div>
       ) : (
         <>

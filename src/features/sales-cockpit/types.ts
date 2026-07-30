@@ -350,6 +350,32 @@ export type HeadClientsResponse = {
   clients: HeadClient[]
 }
 
+export type HeadDismissalReason = {
+  reason: string
+  count: number
+}
+
+export type HeadDismissalTopReason = HeadDismissalReason & {
+  managers: number
+}
+
+export type HeadDismissalManagerRow = {
+  manager_id: number
+  manager_name?: string | null
+  dismissed: number
+  manual: number
+  no_reason: number
+  reasons: HeadDismissalReason[]
+}
+
+export type HeadDismissalsResponse = {
+  is_head: boolean
+  window_days: number
+  total_dismissed: number
+  managers: HeadDismissalManagerRow[]
+  top_reasons: HeadDismissalTopReason[]
+}
+
 export type CockpitClient = {
   client_id: number
   client_net_uid: string

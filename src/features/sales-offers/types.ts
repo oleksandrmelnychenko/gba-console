@@ -68,6 +68,7 @@ export type ClientShoppingCart = OfferEntity & {
   TotalAmount?: number
   TotalLocalAmount?: number
   ValidUntil?: Date | string
+  ViewedAt?: Date | string | null
 }
 
 export type OffersClientOption = OfferEntity & {

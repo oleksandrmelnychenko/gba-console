@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
-import { addTaskNote, createHeadTask, getCockpitClients, getCockpitCount, getCockpitInbox, getCockpitTarget, getDashboard, getEscalated, getHeadClients, getHeadDashboard, getHeadTasks, getHeadTeam, regenerateCockpit, SalesCockpitContractError, setTaskStatus } from './salesCockpitApi'
+import { addTaskNote, createHeadTask, getCockpitClients, getCockpitCount, getCockpitInbox, getCockpitTarget, getDashboard, getEscalated, getHeadClients, getHeadDashboard, getHeadDismissals, getHeadTasks, getHeadTeam, regenerateCockpit, SalesCockpitContractError, setTaskStatus } from './salesCockpitApi'
 import type { CockpitTask } from '../types'
 
 vi.mock('../../../shared/api/apiClient', () => ({
@@ -82,6 +82,46 @@ describe('salesCockpitApi', () => {
     expect(result.clients).toEqual([{ client_id: 10, full_name: 'ТОВ Акме' }])
     expect(apiRequestMock).toHaveBeenCalledWith('/sales/cockpit/head/clients', {
       query: { managerId: 7 },
+    })
+  })
+
+  it('loads dismissal analytics and drops malformed rows', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      is_head: true,
+      window_days: 30,
+      total_dismissed: 3,
+      managers: [
+        {
+          manager_id: 7,
+          manager_name: 'Іван',
+          dismissed: 3,
+          manual: 1,
+          no_reason: 1,
+          reasons: [{ reason: 'Ціна зависока', count: 2 }, { broken: true }, null],
+        },
+        { broken: true },
+        null,
+      ],
+      top_reasons: [{ reason: 'Ціна зависока', count: 2, managers: 1 }, null],
+    })
+
+    const result = await getHeadDismissals({ windowDays: 30, managerId: 7 })
+
+    expect(result.is_head).toBe(true)
+    expect(result.total_dismissed).toBe(3)
+    expect(result.managers).toEqual([
+      {
+        manager_id: 7,
+        manager_name: 'Іван',
+        dismissed: 3,
+        manual: 1,
+        no_reason: 1,
+        reasons: [{ reason: 'Ціна зависока', count: 2 }],
+      },
+    ])
+    expect(result.top_reasons).toEqual([{ reason: 'Ціна зависока', count: 2, managers: 1 }])
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/cockpit/head/dismissals', {
+      query: { windowDays: 30, managerId: 7 },
     })
   })
 
