@@ -193,6 +193,9 @@ export type Agreement = {
   PrePaymentPercentages?: number
   TermsOfPayment?: string
   NumberDaysDebt?: number
+  DebtAgeDays?: number
+  OverdueDays?: number
+  IsOverdue?: boolean
   IsManagementAccounting?: boolean
   IsAccounting?: boolean
   IsPayForDelivery?: boolean
@@ -249,6 +252,9 @@ export type Debt = {
   Id?: number
   NetUid?: string
   Name?: string
+  Days?: number
+  Total?: number
+  EuroTotal?: number
 }
 
 export type ClientInDebt = {
@@ -263,6 +269,40 @@ export type ClientInDebt = {
   SaleId?: number
   ReSaleId?: number
   IsSelected?: boolean
+}
+
+export type ClientLegalPartyCandidate = {
+  ClientId: number
+  ClientNetUid: string
+  FullName?: string | null
+  ClientNumber?: string | null
+  Usreou?: string | null
+  Tin?: string | null
+  IsActive: boolean
+  IsBlocked: boolean
+}
+
+export type ClientLegalPartyOverdueCurrency = {
+  CurrencyId?: number | null
+  CurrencyNetUid?: string | null
+  CurrencyCode?: string | null
+  OverdueAmount: number
+  MaxOverdueDays: number
+  DebtCount: number
+  ClientCount: number
+}
+
+export type ClientLegalPartySalesRiskSummary = {
+  AsOfUtc: string
+  HasLegalIdentity: boolean
+  NormalizedUsreou?: string | null
+  DuplicateClientCount: number
+  HasDuplicates: boolean
+  HasBlockedClient: boolean
+  HasOverdueDebt: boolean
+  MaxOverdueDays: number
+  Clients: ClientLegalPartyCandidate[]
+  OverdueByCurrency: ClientLegalPartyOverdueCurrency[]
 }
 
 export type ServicePayer = {

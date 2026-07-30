@@ -3,6 +3,7 @@ import { apiRequest } from '../../../../shared/api/apiClient'
 import {
   getWizardClientAgreements,
   getWizardClientGroupedDebts,
+  getWizardClientLegalPartyRisk,
   getWizardSalesRegister,
   mapWizardSaleRegisterItems,
   searchWizardClients,
@@ -27,7 +28,7 @@ describe('wizard client step API contracts', () => {
 
     expect(apiRequestMock).toHaveBeenCalledWith('/clients/all/filtered', {
       query: {
-        filterSql: 'RegionCode.Value/Client.FullName',
+        filterSql: 'RegionCode.Value/Client.FullName/Client.USREOU/Client.TIN',
         limit: 10,
         offset: 20,
         value: 'конкорд',
@@ -84,6 +85,21 @@ describe('wizard client step API contracts', () => {
 
     await expect(getWizardClientGroupedDebts('client-1')).resolves.toEqual([{ Id: 1 }])
     expect(apiRequestMock).toHaveBeenCalledWith('/clients/get/debt/grouped', {
+      query: { netId: 'client-1' },
+    })
+  })
+
+  it('requests currency-separated legal-party credit risk by client net id', async () => {
+    const risk = {
+      HasLegalIdentity: true,
+      HasDuplicates: true,
+      HasOverdueDebt: true,
+      OverdueByCurrency: [],
+    }
+    apiRequestMock.mockResolvedValueOnce(risk)
+
+    await expect(getWizardClientLegalPartyRisk('client-1')).resolves.toEqual(risk)
+    expect(apiRequestMock).toHaveBeenCalledWith('/clients/get/debt/legal-party-risk', {
       query: { netId: 'client-1' },
     })
   })

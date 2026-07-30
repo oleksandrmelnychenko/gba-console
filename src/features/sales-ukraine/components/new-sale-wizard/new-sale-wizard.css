@@ -551,6 +551,37 @@
   color: var(--mantine-color-red-6);
 }
 
+.new-sale-client-hero__legal-risk {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  display: inline-flex;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  gap: 4px;
+  line-height: 1.1;
+  padding: 0;
+  white-space: nowrap;
+}
+
+.new-sale-client-hero__legal-risk.is-warning {
+  color: var(--mantine-color-yellow-8);
+}
+
+.new-sale-client-hero__legal-risk.is-critical {
+  color: var(--mantine-color-red-7);
+}
+
+.new-sale-client-hero__legal-code {
+  color: var(--mantine-color-gray-6);
+  font-family: var(--font-mono);
+  grid-column: 1;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
 .new-sale-client-hero__contacts {
   align-items: center;
   grid-column: 2;
@@ -8829,4 +8860,54 @@
   height: 240px;
   object-fit: contain;
   width: 240px;
+}
+
+/* Agreement finance metrics stay explicit: advance, debt and time limits must
+   not collapse into one ambiguous balance value. */
+.new-sale-agreement-card {
+  flex-basis: 460px;
+}
+
+.new-sale-agreement-card__limits,
+.new-sale-hero-agreement__metrics {
+  align-items: stretch;
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.new-sale-agreement-card__metric,
+.new-sale-hero-agreement__metric {
+  align-items: flex-start;
+  background: var(--mantine-color-gray-0);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 3px;
+  justify-content: flex-end;
+  padding: 5px 8px;
+}
+
+.new-sale-agreement-card__metric:first-child,
+.new-sale-agreement-card__metric:last-child,
+.new-sale-hero-agreement__metric:first-child,
+.new-sale-hero-agreement__metric:last-child {
+  border-left: 1px solid var(--mantine-color-gray-2);
+  justify-content: flex-end;
+  padding: 5px 8px;
+}
+
+.new-sale-agreement-card__metric > span,
+.new-sale-hero-agreement__metric > span {
+  line-height: 1.15;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+}
+
+.new-sale-agreement-card__metric strong,
+.new-sale-hero-agreement__metric strong {
+  max-width: 100%;
 }

@@ -1,5 +1,10 @@
 import { apiRequest } from '../../../../shared/api/apiClient'
-import type { Client, ClientAgreement, ClientInDebt } from '../../../clients/types'
+import type {
+  Client,
+  ClientAgreement,
+  ClientInDebt,
+  ClientLegalPartySalesRiskSummary,
+} from '../../../clients/types'
 import { getSaleClientAgreements } from '../../api/salesUkraineApi'
 import type { SalesUkraineSale } from '../../types'
 
@@ -42,7 +47,7 @@ export async function searchWizardClients(
 
   const result = await apiRequest<unknown>('/clients/all/filtered', {
     query: {
-      filterSql: 'RegionCode.Value/Client.FullName',
+      filterSql: 'RegionCode.Value/Client.FullName/Client.USREOU/Client.TIN',
       limit,
       offset,
       value: searchValue,
@@ -87,6 +92,18 @@ export async function getWizardClientGroupedDebts(clientNetId: string): Promise<
   })
 
   return Array.isArray(result) ? (result as ClientInDebt[]) : []
+}
+
+export async function getWizardClientLegalPartyRisk(
+  clientNetId: string,
+): Promise<ClientLegalPartySalesRiskSummary | null> {
+  const result = await apiRequest<unknown>('/clients/get/debt/legal-party-risk', {
+    query: { netId: clientNetId },
+  })
+
+  return result && typeof result === 'object'
+    ? (result as ClientLegalPartySalesRiskSummary)
+    : null
 }
 
 export async function getWizardClientAgreements(clientNetId: string): Promise<ClientAgreement[]> {

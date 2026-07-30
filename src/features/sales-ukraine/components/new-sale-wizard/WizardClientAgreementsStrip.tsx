@@ -2,9 +2,8 @@ import { Box, Group, Text, Tooltip, UnstyledButton } from '@mantine/core'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import type { ClientAgreement } from '../../../clients/types'
 import {
+  getWizardAgreementDebtPresentation,
   getWizardAgreementKey,
-  getWizardAgreementMaxDaysOwed,
-  getWizardAgreementOverdueDebtTotal,
 } from './wizardClientStepModel'
 
 const agreementAmountFormatter = new Intl.NumberFormat('uk-UA', {
@@ -23,9 +22,9 @@ export function WizardClientAgreementsStrip({
 }) {
   return (
     <Box className="new-sale-agreements-strip">
-      {agreements.map((clientAgreement, index) => (
+      {agreements.map((clientAgreement) => (
         <WizardAgreementCard
-          key={getWizardAgreementKey(clientAgreement) || index}
+          key={getWizardAgreementKey(clientAgreement)}
           clientAgreement={clientAgreement}
           isSelected={Boolean(selectedKey) && getWizardAgreementKey(clientAgreement) === selectedKey}
           onSelect={onSelect}
@@ -46,26 +45,27 @@ function WizardAgreementCard({
 }) {
   const { t } = useI18n()
   const agreement = clientAgreement.Agreement
-  const accountBalance = clientAgreement.AccountBalance ?? 0
-  const overdueLimitDays = agreement?.NumberDaysDebt ?? 0
-  const totalAgreementDebt = getWizardAgreementOverdueDebtTotal(agreement)
-  const daysOwed = getWizardAgreementMaxDaysOwed(agreement)
-  const amountLimitExceeded = agreement?.AmountDebt != null && Math.abs(accountBalance) > agreement.AmountDebt
-  const daysLimitExceeded = daysOwed > overdueLimitDays
-  const isOverdue = totalAgreementDebt > 0 || amountLimitExceeded || daysLimitExceeded
+  const debt = getWizardAgreementDebtPresentation(clientAgreement)
+  const amountLimitExceeded = debt.creditLimit !== null && debt.outstandingDebt > debt.creditLimit
+  const hasDebtAlert = debt.isOverdue || amountLimitExceeded
   const agreementName = agreement?.Name || clientAgreement.AgreementName || ''
   const organizationName = agreement?.Organization?.Name || ''
   const currencyCode = agreement?.Currency?.Code || ''
-  const overdueDays = Math.max(daysOwed - overdueLimitDays, 0)
   const isInactive = agreement?.IsActive === false
-  const statusLabel = isOverdue ? t('Прострочено') : isInactive ? t('Неактивний') : t('Активний')
+  const statusLabel = debt.isOverdue
+    ? t('Прострочено')
+    : amountLimitExceeded
+      ? t('Перевищено ліміт')
+      : isInactive
+        ? t('Неактивний')
+        : t('Активний')
 
   return (
     <UnstyledButton
       className={[
         'new-sale-agreement-card',
         isSelected ? 'is-selected' : '',
-        isOverdue ? 'is-overdue' : '',
+        hasDebtAlert ? 'is-overdue' : '',
         isInactive ? 'is-inactive' : '',
       ].filter(Boolean).join(' ')}
       onClick={() => onSelect(clientAgreement)}
@@ -96,18 +96,28 @@ function WizardAgreementCard({
         )}
 
         <Box className="new-sale-agreement-card__limits">
-          <Box className={`new-sale-agreement-card__metric ${totalAgreementDebt > 0 || amountLimitExceeded ? 'is-danger' : ''}`}>
-            <span>{t('Борг')}</span>
-            <strong>{formatAgreementAmount(totalAgreementDebt)}</strong>
+          <Box className="new-sale-agreement-card__metric">
+            <span>{t('Доступний аванс')}</span>
+            <strong>{formatAgreementAmount(debt.availableAdvance)}</strong>
+          </Box>
+          <Box className={`new-sale-agreement-card__metric ${debt.outstandingDebt > 0 ? 'is-danger' : ''}`}>
+            <span>{t('Непогашений борг')}</span>
+            <strong>{formatAgreementAmount(debt.outstandingDebt)}</strong>
+          </Box>
+          <Box className={`new-sale-agreement-card__metric ${debt.overdueDays > 0 ? 'is-danger' : ''}`}>
+            <span>{t('Вік боргу')}</span>
+            <strong>{formatAgreementDays(debt.debtAgeDays)}</strong>
+          </Box>
+          <Box className={`new-sale-agreement-card__metric ${debt.overdueDays > 0 ? 'is-danger' : ''}`}>
+            <span>{t('Днів прострочення')}</span>
+            <strong>{formatAgreementDays(debt.overdueDays)}</strong>
           </Box>
           <Box className={`new-sale-agreement-card__metric ${amountLimitExceeded ? 'is-danger' : ''}`}>
-            <span>{t('Баланс')}</span>
-            <strong>{formatAgreementAmount(accountBalance)}</strong>
-          </Box>
-          <Box className={`new-sale-agreement-card__metric ${daysLimitExceeded ? 'is-danger' : ''}`}>
-            <span>{t('Дні')}</span>
+            <span>{t('Кредитний ліміт')}</span>
             <strong>
-              {overdueDays} / {overdueLimitDays}
+              {debt.creditLimit === null
+                ? t('Ліміт не налаштовано')
+                : formatAgreementAmount(debt.creditLimit)}
             </strong>
           </Box>
         </Box>
@@ -118,4 +128,8 @@ function WizardAgreementCard({
 
 function formatAgreementAmount(value: number): string {
   return agreementAmountFormatter.format(Math.round(value * 100) / 100)
+}
+
+function formatAgreementDays(value: number): string {
+  return `${value} дн.`
 }

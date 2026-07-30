@@ -1,7 +1,7 @@
 import { Box, Group, Text, Tooltip } from '@mantine/core'
 import { CircleHelp } from 'lucide-react'
 import type { ClientAgreement } from '../../../clients/types'
-import { getWizardClientDebtDays, getWizardClientDebtTotal } from './wizardClientStepModel'
+import { getWizardAgreementDebtPresentation } from './wizardClientStepModel'
 
 const agreementAmountFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 2,
@@ -23,25 +23,20 @@ export function WizardAgreementItem({
     return null
   }
 
-  const debts = agreement.ClientInDebts ?? []
-  const overdueLimitDays = agreement.NumberDaysDebt ?? 0
-  const overdueTotal =
-    Math.round(
-      debts
-        .filter((item) => getWizardClientDebtDays(item) - overdueLimitDays > 0)
-        .reduce((sum, item) => sum + getWizardClientDebtTotal(item), 0) * 100,
-    ) / 100
-  const daysOwed = debts.reduce((max, item) => Math.max(max, getWizardClientDebtDays(item)), 0)
-  const accountBalance = clientAgreement.AccountBalance ?? 0
-  const amountLimitExceeded = agreement.AmountDebt != null && Math.abs(accountBalance) > agreement.AmountDebt
-  const daysLimitExceeded = daysOwed > overdueLimitDays
-  const overdueDays = Math.max(0, daysOwed - overdueLimitDays)
-  const isOverdue = overdueTotal > 0 || amountLimitExceeded || daysLimitExceeded
+  const debt = getWizardAgreementDebtPresentation(clientAgreement)
+  const amountLimitExceeded = debt.creditLimit !== null && debt.outstandingDebt > debt.creditLimit
+  const hasDebtAlert = debt.isOverdue || amountLimitExceeded
   const isInactive = agreement.IsActive === false
   const organizationName = agreement.Organization?.Name || ''
   const agreementName = agreement.Name || clientAgreement.AgreementName || ''
   const currencyCode = agreement.Currency?.Code || ''
-  const statusLabel = isOverdue ? 'Прострочено' : isInactive ? 'Неактивний' : 'Активний'
+  const statusLabel = debt.isOverdue
+    ? 'Прострочено'
+    : amountLimitExceeded
+      ? 'Перевищено ліміт'
+      : isInactive
+        ? 'Неактивний'
+        : 'Активний'
 
   return (
     <Box
@@ -49,7 +44,7 @@ export function WizardAgreementItem({
       className={[
         'new-sale-hero-agreement',
         selected ? 'is-active' : '',
-        isOverdue ? 'is-overdue' : '',
+        hasDebtAlert ? 'is-overdue' : '',
         isInactive ? 'is-inactive' : '',
         onSelect ? 'is-clickable' : '',
       ].filter(Boolean).join(' ')}
@@ -77,9 +72,27 @@ export function WizardAgreementItem({
         </Box>
 
         <Box className="new-sale-hero-agreement__metrics">
-          <AgreementOptionMetric danger={overdueTotal > 0 || amountLimitExceeded} label="Борг" value={formatAgreementAmount(overdueTotal)} />
-          <AgreementOptionMetric danger={amountLimitExceeded} label="Баланс" value={formatAgreementAmount(accountBalance)} />
-          <AgreementOptionMetric danger={daysLimitExceeded} label="Дні" value={`${overdueDays} / ${overdueLimitDays}`} />
+          <AgreementOptionMetric label="Доступний аванс" value={formatAgreementAmount(debt.availableAdvance)} />
+          <AgreementOptionMetric
+            danger={debt.outstandingDebt > 0}
+            label="Непогашений борг"
+            value={formatAgreementAmount(debt.outstandingDebt)}
+          />
+          <AgreementOptionMetric
+            danger={debt.overdueDays > 0}
+            label="Вік боргу"
+            value={formatAgreementDays(debt.debtAgeDays)}
+          />
+          <AgreementOptionMetric
+            danger={debt.overdueDays > 0}
+            label="Днів прострочення"
+            value={formatAgreementDays(debt.overdueDays)}
+          />
+          <AgreementOptionMetric
+            danger={amountLimitExceeded}
+            label="Кредитний ліміт"
+            value={debt.creditLimit === null ? 'Ліміт не налаштовано' : formatAgreementAmount(debt.creditLimit)}
+          />
         </Box>
 
         {clientAgreement.OriginalClientName && (
@@ -106,4 +119,8 @@ function AgreementOptionMetric({ danger, label, value }: { danger?: boolean; lab
 
 function formatAgreementAmount(value: number): string {
   return agreementAmountFormatter.format(Math.round(value * 100) / 100)
+}
+
+function formatAgreementDays(value: number): string {
+  return `${value} дн.`
 }

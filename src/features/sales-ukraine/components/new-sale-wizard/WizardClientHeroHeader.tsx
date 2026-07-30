@@ -1,18 +1,25 @@
-import { Box, Group, Popover, Stack, Text } from '@mantine/core'
+import { Box, Group, Text } from '@mantine/core'
 import { Mail, Phone, TriangleAlert } from 'lucide-react'
 import { memo, useEffect, useState, type ReactNode } from 'react'
 import { formatLocalDate } from '../../../../shared/date/dateTime'
 import { useI18n } from '../../../../shared/i18n/useI18n'
-import type { Client, ClientAgreement, ClientInDebt } from '../../../clients/types'
-import { WizardAgreementItem } from './WizardAgreementItem'
+import type {
+  Client,
+  ClientAgreement,
+  ClientInDebt,
+  ClientLegalPartySalesRiskSummary,
+} from '../../../clients/types'
+import { WizardClientAgreementsPopover } from './WizardClientAgreementsPopover'
 import {
   getWizardClientAgreements,
   getWizardClientGroupedDebts,
+  getWizardClientLegalPartyRisk,
   getWizardSalesRegister,
   mapWizardSaleRegisterItems,
   WIZARD_SALE_REGISTER_STATUS_ALL,
 } from './wizardClientStepApi'
 import { getWizardClientDebtTotal } from './wizardClientStepModel'
+import { WizardLegalPartyRiskPopover } from './WizardLegalPartyRiskPopover'
 import { getWizardHeaderClient } from './wizardSaleHeaderApi'
 
 const metricCountFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 0 })
@@ -41,9 +48,36 @@ export const WizardClientHeroHeader = memo(function WizardClientHeroHeader({
   const [loadedAgreements, setLoadedAgreements] = useState<{ key: string; value: ClientAgreement[] } | null>(null)
   const [loadedDebts, setLoadedDebts] = useState<{ key: string; value: ClientInDebt[] } | null>(null)
   const [loadedRegistryCount, setLoadedRegistryCount] = useState<{ key: string; value: number } | null>(null)
+  const [loadedLegalPartyRisk, setLoadedLegalPartyRisk] = useState<{
+    key: string
+    value: ClientLegalPartySalesRiskSummary | null
+  } | null>(null)
 
   const resolvedClient = client ?? (clientNetId && loadedClient?.key === clientNetId ? loadedClient.value : null)
   const resolvedNetId = clientNetId ?? resolvedClient?.NetUid ?? null
+
+  useEffect(() => {
+    if (!resolvedNetId) {
+      return
+    }
+
+    const id = resolvedNetId
+    let cancelled = false
+
+    async function load() {
+      const next = await getWizardClientLegalPartyRisk(id).catch(() => null)
+
+      if (!cancelled) {
+        setLoadedLegalPartyRisk({ key: id, value: next })
+      }
+    }
+
+    void load()
+
+    return () => {
+      cancelled = true
+    }
+  }, [resolvedNetId])
 
   useEffect(() => {
     if (client || !clientNetId) {
@@ -178,15 +212,21 @@ export const WizardClientHeroHeader = memo(function WizardClientHeroHeader({
   const visibleAgreements = agreements ?? (resolvedNetId && loadedAgreements?.key === resolvedNetId ? loadedAgreements.value : [])
   const visibleDebts = debts ?? (resolvedNetId && loadedDebts?.key === resolvedNetId ? loadedDebts.value : [])
   const visibleRegistryCount = registryCount ?? (resolvedNetId && loadedRegistryCount?.key === resolvedNetId ? loadedRegistryCount.value : 0)
+  const legalPartyRisk =
+    resolvedNetId && loadedLegalPartyRisk?.key === resolvedNetId
+      ? loadedLegalPartyRisk.value
+      : null
   const clientTitle = resolvedClient.FullName || resolvedClient.Name || ''
   const clientCode = resolvedClient.RegionCode?.Value || resolvedClient.ClientNumber || resolvedClient.USREOU || ''
   const clientDebtTotal = visibleDebts.reduce((sum, debt) => sum + getWizardClientDebtTotal(debt), 0)
-  const clientContactCandidates: Array<{ icon: ReactNode; value?: string | null }> = [
+  const clientContactCandidates: Array<{ key: string; icon: ReactNode; value?: string | null }> = [
     {
+      key: 'phone',
       icon: <Phone size={13} />,
       value: resolvedClient.MobileNumber || resolvedClient.SMSNumber,
     },
     {
+      key: 'email',
       icon: <Mail size={13} />,
       value: resolvedClient.EmailAddress,
     },
@@ -196,7 +236,7 @@ export const WizardClientHeroHeader = memo(function WizardClientHeroHeader({
     //   value: resolvedClient.RegionCode?.City,
     // },
   ]
-  const clientContacts = clientContactCandidates.filter((item): item is { icon: ReactNode; value: string } =>
+  const clientContacts = clientContactCandidates.filter((item): item is { key: string; icon: ReactNode; value: string } =>
     Boolean(item.value),
   )
   const clientKind = resolvedClient.IsTradePoint
@@ -230,16 +270,25 @@ export const WizardClientHeroHeader = memo(function WizardClientHeroHeader({
                 {t('Є борг')}
               </span>
             )}
+            {legalPartyRisk &&
+              (legalPartyRisk.HasOverdueDebt || legalPartyRisk.HasBlockedClient || legalPartyRisk.HasDuplicates) && (
+                <WizardLegalPartyRiskPopover risk={legalPartyRisk} />
+              )}
           </Group>
           {clientContacts.length > 0 && (
             <Group className="new-sale-client-hero__contacts" gap={8} wrap="nowrap">
-              {clientContacts.map((item, index) => (
-                <span key={`${item.value}-${index}`} title={item.value}>
+              {clientContacts.map((item) => (
+                <span key={item.key} title={item.value}>
                   {item.icon}
                   {item.value}
                 </span>
               ))}
             </Group>
+          )}
+          {resolvedClient.USREOU && clientCode !== resolvedClient.USREOU && (
+            <Text className="new-sale-client-hero__legal-code" size="xs">
+              {t('ЄДРПОУ')} {resolvedClient.USREOU}
+            </Text>
           )}
         </Box>
       </Box>
@@ -247,29 +296,10 @@ export const WizardClientHeroHeader = memo(function WizardClientHeroHeader({
       <Box className="new-sale-client-hero__side">
         <Box className="new-sale-client-hero__metrics">
           {visibleAgreements.length > 0 ? (
-            <Popover position="bottom-end" shadow="md" width={500} withinPortal>
-              <Popover.Target>
-                <Box aria-label={t('Договори')} className="new-sale-client-metric is-clickable" component="button" type="button">
-                  <strong>{metricCountFormatter.format(visibleAgreements.length)}</strong>
-                  <span>{t('Договори')}</span>
-                </Box>
-              </Popover.Target>
-              <Popover.Dropdown className="new-sale-hero-agreements-dropdown">
-                <Group className="new-sale-hero-agreements-dropdown__head" justify="space-between" wrap="nowrap">
-                  <Text className="new-sale-hero-agreements-dropdown__title">{t('Договори')}</Text>
-                  <span>{visibleAgreements.length}</span>
-                </Group>
-                <Stack className="new-sale-hero-agreements-dropdown__list" gap={7}>
-                  {visibleAgreements.map((item, index) => (
-                    <WizardAgreementItem
-                      key={String(item.NetUid || item.Id || index)}
-                      clientAgreement={item}
-                      selected={Boolean(activeAgreementNetId) && getHeroAgreementKey(item) === activeAgreementNetId}
-                    />
-                  ))}
-                </Stack>
-              </Popover.Dropdown>
-            </Popover>
+            <WizardClientAgreementsPopover
+              activeAgreementNetId={activeAgreementNetId}
+              agreements={visibleAgreements}
+            />
           ) : (
             <Box className="new-sale-client-metric">
               <strong>{metricCountFormatter.format(visibleAgreements.length)}</strong>
@@ -286,10 +316,6 @@ export const WizardClientHeroHeader = memo(function WizardClientHeroHeader({
     </Box>
   )
 })
-
-function getHeroAgreementKey(agreement: ClientAgreement): string {
-  return String(agreement.NetUid || agreement.Id || '')
-}
 
 function getDocumentCountLabel(count: number, t: (value: string) => string): string {
   return count === 1 ? t('Документ') : t('Документів')
