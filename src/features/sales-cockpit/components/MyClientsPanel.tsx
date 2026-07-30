@@ -17,13 +17,14 @@ import {
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
-import { ChevronDown, ChevronRight, CircleAlert, Link as LinkIcon, Mail, Phone, RefreshCw, Search, ShoppingCart, X } from 'lucide-react'
+import { ChevronDown, ChevronRight, CircleAlert, Link as LinkIcon, RefreshCw, Search, ShoppingCart } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { useAuth } from '../../auth/useAuth'
 import {
   getMostPurchasedProductsByClientId,
@@ -265,18 +266,22 @@ function ClientRow({
         <Table.Td onClick={(event) => event.stopPropagation()}>
           <Group gap={4} wrap="nowrap">
             {phone && (
-              <Tooltip label={`${t('Подзвонити')}: ${phone}`}>
-                <ActionIcon color="green" component="a" href={`tel:${phone}`} size="sm" variant="light">
-                  <Phone size={14} />
-                </ActionIcon>
-              </Tooltip>
+              <TableRowAction
+                action="call"
+                component="a"
+                href={`tel:${phone}`}
+                label={`${t('Подзвонити')}: ${phone}`}
+                tone="success"
+              />
             )}
             {email && (
-              <Tooltip label={`${t('Написати')}: ${email}`}>
-                <ActionIcon color="blue" component="a" href={`mailto:${email}`} size="sm" variant="light">
-                  <Mail size={14} />
-                </ActionIcon>
-              </Tooltip>
+              <TableRowAction
+                action="email"
+                component="a"
+                href={`mailto:${email}`}
+                label={`${t('Написати')}: ${email}`}
+                tone="brand"
+              />
             )}
           </Group>
         </Table.Td>
@@ -569,17 +574,12 @@ function ClientRecommendationsInline({ client }: { client: CockpitClient }) {
                       )}
                     </Table.Td>
                     <Table.Td w={36}>
-                      <Tooltip label={t('Не пропонувати цей товар клієнту')} withArrow>
-                        <ActionIcon
-                          aria-label={t('Не пропонувати')}
-                          color="gray"
-                          size="sm"
-                          variant="subtle"
-                          onClick={() => handleExcludeProduct(product, index)}
-                        >
-                          <X size={14} />
-                        </ActionIcon>
-                      </Tooltip>
+                      <TableRowAction
+                        action="cancel"
+                        label={t('Не пропонувати цей товар клієнту')}
+                        tone="neutral"
+                        onClick={() => handleExcludeProduct(product, index)}
+                      />
                     </Table.Td>
                   </Table.Tr>
                 )

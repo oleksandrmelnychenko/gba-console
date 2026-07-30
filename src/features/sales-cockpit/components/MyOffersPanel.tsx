@@ -14,14 +14,16 @@ import {
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
-import { CircleAlert, Copy, ExternalLink, RefreshCw, RotateCcw, Search } from 'lucide-react'
+import { CircleAlert, RefreshCw, Search } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { createWizardOperationId } from '../../sales-ukraine/components/new-sale-wizard/wizardMutationOperation'
 import { getOffers, getPublicOfferLink, restartOfferValidity } from '../../sales-offers/api/salesOffersApi'
 import { formatDate, formatDateTime, formatMoney } from '../../sales-offers/components/offerHelpers'
 import type { ClientShoppingCart } from '../../sales-offers/types'
+import { getOfferLifecycle, type OfferLifecycle } from './offerLifecycle'
 
 const PERIOD_OPTIONS = [
   { label: '7 днів', value: '7' },
@@ -29,31 +31,11 @@ const PERIOD_OPTIONS = [
   { label: '90 днів', value: '90' },
 ]
 
-// The offer's life on the client side: created -> viewed (first open of the public link or the
-// account page stamps ViewedAt) -> ordered (IsOfferProcessed) or expired (ValidUntil passed).
-type OfferLifecycle = 'ordered' | 'expired' | 'viewed' | 'sent'
-
 const LIFECYCLE_PRESENTATION: Record<OfferLifecycle, { color: string; label: string }> = {
   ordered: { color: 'green', label: 'Замовлена' },
   viewed: { color: 'blue', label: 'Переглянута' },
   expired: { color: 'red', label: 'Протермінована' },
   sent: { color: 'gray', label: 'Надіслана' },
-}
-
-export function getOfferLifecycle(offer: ClientShoppingCart, now = new Date()): OfferLifecycle {
-  if (offer.IsOfferProcessed) {
-    return 'ordered'
-  }
-
-  const validUntil = offer.ValidUntil ? new Date(offer.ValidUntil) : null
-  const today = new Date(now)
-  today.setHours(0, 0, 0, 0)
-
-  if (validUntil && !Number.isNaN(validUntil.getTime()) && validUntil < today) {
-    return 'expired'
-  }
-
-  return offer.ViewedAt ? 'viewed' : 'sent'
 }
 
 export function MyOffersPanel() {
@@ -281,40 +263,28 @@ export function MyOffersPanel() {
                       <Table.Td>
                         <Group gap={4} justify="flex-end" wrap="nowrap">
                           {lifecycle === 'expired' && (
-                            <Tooltip label={t('Продовжити на 2 дні')}>
-                              <ActionIcon
-                                aria-label={t('Продовжити на 2 дні')}
-                                loading={pendingNetId === offer.NetUid}
-                                variant="light"
-                                onClick={() => void extendValidity(offer)}
-                              >
-                                <RotateCcw size={16} />
-                              </ActionIcon>
-                            </Tooltip>
+                            <TableRowAction
+                              action="restore"
+                              label={t('Продовжити на 2 дні')}
+                              loading={pendingNetId === offer.NetUid}
+                              onClick={() => void extendValidity(offer)}
+                            />
                           )}
                           {(lifecycle === 'sent' || lifecycle === 'viewed') && offer.NetUid && (
                             <>
-                              <Tooltip label={t('Скопіювати посилання')}>
-                                <ActionIcon
-                                  aria-label={t('Скопіювати посилання')}
-                                  variant="light"
-                                  onClick={() => void copyLink(offer)}
-                                >
-                                  <Copy size={16} />
-                                </ActionIcon>
-                              </Tooltip>
-                              <Tooltip label={t('Відкрити')}>
-                                <ActionIcon
-                                  aria-label={t('Відкрити')}
-                                  component="a"
-                                  href={getPublicOfferLink(offer.NetUid)}
-                                  rel="noreferrer"
-                                  target="_blank"
-                                  variant="light"
-                                >
-                                  <ExternalLink size={16} />
-                                </ActionIcon>
-                              </Tooltip>
+                              <TableRowAction
+                                action="copy"
+                                label={t('Скопіювати посилання')}
+                                onClick={() => void copyLink(offer)}
+                              />
+                              <TableRowAction
+                                action="open"
+                                component="a"
+                                href={getPublicOfferLink(offer.NetUid)}
+                                label={t('Відкрити')}
+                                rel="noreferrer"
+                                target="_blank"
+                              />
                             </>
                           )}
                         </Group>

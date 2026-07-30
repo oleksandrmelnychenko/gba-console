@@ -35,10 +35,8 @@ import { getAccountingCashFlowPaymentStatus } from '../accountingCashFlowPayment
 import { getAccountingCashFlowClosingBalance } from '../cashFlowTotals'
 import { getAccountingCashFlowDrilldownRoute } from '../cashFlowDrilldown'
 import { getIncomeCashflowByNetId } from '../../income-cashflows/api/incomeCashflowsApi'
-import {
-  buildIncomeCashflowRow,
-  IncomeCashflowDetailDrawer,
-} from '../../income-cashflows/pages/IncomeCashflowsPage'
+import { buildIncomeCashflowRow } from '../../income-cashflows/incomeCashflowRows'
+import { IncomeCashflowDetailDrawer } from '../../income-cashflows/pages/IncomeCashflowsPage'
 import type { IncomePaymentOrder } from '../../income-cashflows/types'
 import { getSaleById } from '../../sales-ukraine/api/salesUkraineApi'
 import { SaleSummaryDrawer } from '../../sales-ukraine/pages/SalesUkrainePage'

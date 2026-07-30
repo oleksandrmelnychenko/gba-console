@@ -24,9 +24,11 @@ import {
   FileText,
   History,
   ListTree,
+  Mail,
   MapPin,
   Pencil,
   Percent,
+  Phone,
   Plus,
   Printer,
   Receipt,
@@ -65,6 +67,7 @@ export type TableRowActionKind =
   | 'complete'
   | 'confirm'
   | 'copy'
+  | 'call'
   | 'delete'
   | 'delivery'
   | 'details'
@@ -72,6 +75,7 @@ export type TableRowActionKind =
   | 'document'
   | 'download'
   | 'edit'
+  | 'email'
   | 'expand'
   | 'history'
   | 'location'
@@ -143,6 +147,7 @@ const ACTION_ICONS: Record<TableRowActionKind, ComponentType<LucideProps>> = {
   complete: CircleCheck,
   confirm: Check,
   copy: Copy,
+  call: Phone,
   delete: Trash2,
   delivery: Truck,
   details: Eye,
@@ -150,6 +155,7 @@ const ACTION_ICONS: Record<TableRowActionKind, ComponentType<LucideProps>> = {
   document: FileText,
   download: Download,
   edit: Pencil,
+  email: Mail,
   expand: ChevronRight,
   history: History,
   location: MapPin,

@@ -31,7 +31,6 @@ import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { getAccountingCashFlowRecordPaymentStatus } from '../../accounting-cash-flow/accountingCashFlowPaymentStatus'
-import { getAccountingOperationByPayloadType } from '../../accounting/accountingOperationCatalog'
 import { calculateAdvanceReportOrder } from '../../outgoing-cashflows/api/advanceReportApi'
 import {
   cancelIncomeCashflow,
@@ -52,6 +51,7 @@ import {
 } from '../incomeCreateMenu'
 import { createLatestRequestGuard } from '../latestRequestGuard'
 import { createAutocompleteOptionSubmitGuard } from '../autocompleteOptionSubmitGuard'
+import { buildIncomeCashflowRow } from '../incomeCashflowRows'
 import '../../../shared/ui/console-table-page.css'
 import './income-cashflows-page.css'
 import type {
@@ -1783,28 +1783,6 @@ function DetailItem({ label, mono, value }: { label: string; mono?: boolean; val
   )
 }
 
-export function buildIncomeCashflowRow(income: IncomePaymentOrder, index = 0): IncomeCashflowRow {
-  return {
-    amount: income.Amount,
-    comment: income.Comment,
-    currency: income.Currency?.Code || income.Currency?.Name,
-    fromDate: income.FromDate,
-    id: String(income.NetUid || income.Id || index),
-    income,
-    isAccounting: income.IsAccounting,
-    isCanceled: income.IsCanceled,
-    isManagementAccounting: income.IsManagementAccounting,
-    number: income.Number,
-    operationType: getIncomeOperationTypeName(income),
-    organization: getEntityName(income.Organization),
-    payer: getIncomePayerName(income),
-    paymentMovement: income.PaymentMovementOperation?.PaymentMovement?.OperationName,
-    paymentRegister: income.PaymentRegister?.Name,
-    responsible: getEntityName(income.User),
-    rootAssigned: hasIncomeDocumentStructure(income),
-  }
-}
-
 function buildIncomeCashflowRows(incomeOrders: IncomePaymentOrder[]): IncomeCashflowRow[] {
   return incomeOrders
     .toSorted((left, right) => (right.FromDate || '').localeCompare(left.FromDate || ''))
@@ -1821,17 +1799,6 @@ function getIncomePayerName(income: IncomePaymentOrder): string | undefined {
   }
 
   return getEntityName(income.SupplyOrganization)
-}
-
-function getIncomeOperationTypeName(income: IncomePaymentOrder): string {
-  if (income.OperationTypeName?.trim()) {
-    return income.OperationTypeName
-  }
-
-  return getAccountingOperationByPayloadType(
-    'income',
-    Number(income.OperationType),
-  )?.labels.list || 'Невідомий тип операції'
 }
 
 function getIncomeCancelUnavailableReason(income: IncomePaymentOrder, t: (key: string) => string): string | null {
