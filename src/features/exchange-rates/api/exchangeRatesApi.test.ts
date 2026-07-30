@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
-import { updateExchangeRates } from './exchangeRatesApi'
+import { getExchangeRateHistory, updateExchangeRates } from './exchangeRatesApi'
 
 vi.mock('../../../shared/api/apiClient', () => ({
   apiRequest: vi.fn(),
@@ -11,6 +11,35 @@ const apiRequestMock = vi.mocked(apiRequest)
 describe('exchangeRatesApi', () => {
   beforeEach(() => {
     apiRequestMock.mockReset()
+  })
+
+  it('loads history by rate net UID and selected date range', async () => {
+    const from = new Date('2026-06-30T00:00:00')
+    const to = new Date('2026-07-30T23:59:59')
+    const history = [{ Amount: 44.5, Code: 'USD', Created: '2026-07-29T00:00:00' }]
+    apiRequestMock.mockResolvedValueOnce([{ ExchangeRateHistories: history }])
+
+    await expect(
+      getExchangeRateHistory({
+        endpoint: '/exchangerates/history/specific',
+        from,
+        historyKey: 'ExchangeRateHistories',
+        limit: 20,
+        netUid: '10540941-519c-4186-9aa3-c9e969d66431',
+        offset: 0,
+        to,
+      }),
+    ).resolves.toEqual(history)
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/exchangerates/history/specific', {
+      query: {
+        from,
+        limit: 20,
+        netIds: ['10540941-519c-4186-9aa3-c9e969d66431'],
+        offset: 0,
+        to,
+      },
+    })
   })
 
   it('updates UAH government rates as a batch', async () => {

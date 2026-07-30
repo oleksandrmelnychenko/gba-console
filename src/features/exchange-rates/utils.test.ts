@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
-import { buildExchangeRateGroups, getDefaultFormDate } from './utils'
+import { buildExchangeRateGroups, getDefaultFormDate, getDefaultHistoryFromDate } from './utils'
 import type { ExchangeRatesSnapshot } from './types'
 
 describe('exchange rate groups', () => {
-  it('uses a single government update for PLN while keeping UAH batch updates', () => {
+  it('uses batch government updates for both PLN and UAH', () => {
     const data: ExchangeRatesSnapshot = {
       commercial: [],
       commercialCross: [],
@@ -37,5 +37,11 @@ describe('exchange rate groups', () => {
     } finally {
       vi.useRealTimers()
     }
+  })
+
+  it('opens history with a useful 30-day window instead of today only', () => {
+    expect(getDefaultHistoryFromDate(new Date('2026-07-30T18:45:12'))).toEqual(
+      new Date('2026-06-30T00:00:00'),
+    )
   })
 })

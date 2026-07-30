@@ -13,6 +13,7 @@ const historyDateFormatter = new Intl.DateTimeFormat('uk-UA', {
 })
 
 export const HISTORY_PAGE_SIZE = 20
+export const DEFAULT_HISTORY_LOOKBACK_DAYS = 30
 
 export function buildExchangeRateGroups(
   data: ExchangeRatesSnapshot,
@@ -103,9 +104,10 @@ export function formatHistoryDate(value?: string | Date): string {
   return historyDateFormatter.format(date)
 }
 
-export function startOfToday(): Date {
-  const now = new Date()
-  return new Date(now.getFullYear(), now.getMonth(), now.getDate())
+export function getDefaultHistoryFromDate(now = new Date()): Date {
+  const date = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  date.setDate(date.getDate() - DEFAULT_HISTORY_LOOKBACK_DAYS)
+  return date
 }
 
 export function getDefaultFormDate(groupId: string): Date {

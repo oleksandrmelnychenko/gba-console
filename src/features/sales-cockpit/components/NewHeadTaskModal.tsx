@@ -30,7 +30,7 @@ export function NewHeadTaskModal({
   const [managerId, setManagerId] = useValueState<string | null>(null)
   const [clientId, setClientId] = useValueState<string | null>(null)
   const [clients, setClients] = useValueState<HeadClient[]>([])
-  const [clientsLoading, setClientsLoading] = useState(false)
+  const [loadedClientsManagerId, setLoadedClientsManagerId] = useState<string | null>(null)
   const [title, setTitle] = useValueState('')
   const [description, setDescription] = useValueState('')
   const [urgency, setUrgency] = useValueState<CockpitUrgency>('high')
@@ -58,7 +58,6 @@ export function NewHeadTaskModal({
     }
 
     let cancelled = false
-    setClientsLoading(true)
 
     getHeadClients(Number(managerId))
       .then((result) => {
@@ -71,7 +70,7 @@ export function NewHeadTaskModal({
       })
       .finally(() => {
         if (!cancelled) {
-          setClientsLoading(false)
+          setLoadedClientsManagerId(managerId)
         }
       })
 
@@ -100,6 +99,7 @@ export function NewHeadTaskModal({
 
   const trimmedTitle = title.trim()
   const canSubmit = Boolean(managerId && trimmedTitle)
+  const clientsLoading = Boolean(managerId && loadedClientsManagerId !== managerId)
 
   async function handleSubmit() {
     if (!managerId || !trimmedTitle) {

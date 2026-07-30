@@ -55,8 +55,12 @@ export function BoardNoteModal({
             <Text c="dimmed" fw={600} size="xs" tt="uppercase">
               {t('Історія нотаток')}
             </Text>
-            {task?.Notes.map((note, index) => (
-              <Text key={`${note.CreatedAt ?? ''}-${index}`} size="xs" style={{ whiteSpace: 'pre-wrap' }}>
+            {task?.Notes.map((note) => (
+              <Text
+                key={`${note.AuthorId ?? 'system'}-${note.CreatedAt ?? ''}-${note.Text ?? ''}`}
+                size="xs"
+                style={{ whiteSpace: 'pre-wrap' }}
+              >
                 {note.AuthorName ? <strong>{note.AuthorName}: </strong> : null}
                 {note.Text}
               </Text>

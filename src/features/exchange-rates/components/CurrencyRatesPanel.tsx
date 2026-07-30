@@ -15,11 +15,11 @@ import { getExchangeRateHistory, updateExchangeRates } from '../api/exchangeRate
 import type { ExchangeRate, ExchangeRateGroup } from '../types'
 import {
   formatRate,
+  getDefaultHistoryFromDate,
   getDefaultFormDate,
   getRateKey,
   HISTORY_PAGE_SIZE,
   parseDateInputValue,
-  startOfToday,
   toDateInputValue,
 } from '../utils'
 import { CurrencyRatesHistory } from './CurrencyRatesHistory'
@@ -89,7 +89,7 @@ function createInitialPanelState(group: ExchangeRateGroup): PanelState {
   return {
     formDate: getDefaultFormDate(group.id),
     formError: null,
-    fromDate: startOfToday(),
+    fromDate: getDefaultHistoryFromDate(),
     isFormOpen: false,
     isSaving: false,
     rateAmounts: getInitialRateAmounts(group.rates),
@@ -118,7 +118,7 @@ function panelReducer(state: PanelState, action: PanelAction): PanelState {
     case 'filterReset':
       return {
         ...state,
-        fromDate: startOfToday(),
+        fromDate: getDefaultHistoryFromDate(),
         toDate: new Date(),
       }
     case 'formOpened':
