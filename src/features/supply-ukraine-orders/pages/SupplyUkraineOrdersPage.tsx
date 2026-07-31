@@ -79,7 +79,7 @@ import './supply-ukraine-orders.css'
 const DEFAULT_PAGE_SIZE = DEFAULT_PAGINATOR_PAGE_SIZE
 const SUPPLY_ORGANIZATION_SEARCH_DEBOUNCE_MS = 300
 const ORDERS_TABLE_MIN_WIDTH = 1460
-const ORDER_INVOICES_TABLE_MIN_WIDTH = 1080
+const ORDER_INVOICES_TABLE_MIN_WIDTH = 1160
 const ORDERS_TABLE_DEFAULT_LAYOUT: DataTableDefaultLayout = {
   columnOrder: ['order', 'netPrice', 'vatAmount', 'grossPrice', 'qty', 'additionalPercent', 'organization', 'responsible', 'isPlaced', 'kind'],
   columnSizing: {
@@ -103,13 +103,13 @@ const ORDERS_TABLE_DEFAULT_LAYOUT: DataTableDefaultLayout = {
 const ORDER_INVOICES_TABLE_DEFAULT_LAYOUT: DataTableDefaultLayout = {
   columnOrder: ['invoice', 'invoiceDate', 'qty', 'netPrice', 'vatAmount', 'grossPrice', 'isPlaced'],
   columnSizing: {
-    grossPrice: 122,
-    invoice: 320,
-    invoiceDate: 124,
-    isPlaced: 112,
-    netPrice: 122,
-    qty: 86,
-    vatAmount: 112,
+    grossPrice: 132,
+    invoice: 360,
+    invoiceDate: 154,
+    isPlaced: 132,
+    netPrice: 132,
+    qty: 110,
+    vatAmount: 120,
   },
   density: 'normal',
 }
@@ -1048,8 +1048,8 @@ function useSupplyOrderInvoiceColumns(): DataTableColumn<SupplyUkraineOrderRow>[
         fill: true,
         header: t('Інвойс'),
         id: 'invoice',
-        minWidth: 300,
-        width: 320,
+        minWidth: 340,
+        width: 360,
       },
       {
         accessor: (row) => toTimestamp(row.invoiceDate),
@@ -1061,8 +1061,8 @@ function useSupplyOrderInvoiceColumns(): DataTableColumn<SupplyUkraineOrderRow>[
         },
         header: t('Дата'),
         id: 'invoiceDate',
-        minWidth: 112,
-        width: 124,
+        minWidth: 146,
+        width: 154,
       },
       {
         accessor: (row) => row.qty ?? null,
@@ -1070,8 +1070,8 @@ function useSupplyOrderInvoiceColumns(): DataTableColumn<SupplyUkraineOrderRow>[
         cell: (row) => <OrderMetricValue label="#" value={formatAmountCell(row.qty)} />,
         header: t('К-сть'),
         id: 'qty',
-        minWidth: 78,
-        width: 86,
+        minWidth: 104,
+        width: 110,
       },
       {
         accessor: (row) => row.netPrice ?? null,
@@ -1079,8 +1079,8 @@ function useSupplyOrderInvoiceColumns(): DataTableColumn<SupplyUkraineOrderRow>[
         cell: (row) => <OrderMoneyCell currency={row.currency} value={row.netPrice} />,
         header: t('Нетто'),
         id: 'netPrice',
-        minWidth: 108,
-        width: 122,
+        minWidth: 124,
+        width: 132,
       },
       {
         accessor: (row) => row.vatAmount ?? null,
@@ -1088,8 +1088,8 @@ function useSupplyOrderInvoiceColumns(): DataTableColumn<SupplyUkraineOrderRow>[
         cell: (row) => <OrderMoneyCell currency={row.currency} value={row.vatAmount} />,
         header: t('ПДВ'),
         id: 'vatAmount',
-        minWidth: 100,
-        width: 112,
+        minWidth: 112,
+        width: 120,
       },
       {
         accessor: (row) => row.grossPrice ?? null,
@@ -1097,8 +1097,8 @@ function useSupplyOrderInvoiceColumns(): DataTableColumn<SupplyUkraineOrderRow>[
         cell: (row) => <OrderMoneyCell currency={row.currency} value={row.grossPrice} />,
         header: t('З ПДВ'),
         id: 'grossPrice',
-        minWidth: 112,
-        width: 122,
+        minWidth: 124,
+        width: 132,
       },
       {
         accessor: (row) => (row.isPlaced ? 1 : 0),
@@ -1106,8 +1106,8 @@ function useSupplyOrderInvoiceColumns(): DataTableColumn<SupplyUkraineOrderRow>[
         cell: (row) => <OrderPlacedCell value={row.isPlaced} />,
         header: t('Розміщено'),
         id: 'isPlaced',
-        minWidth: 104,
-        width: 112,
+        minWidth: 124,
+        width: 132,
       },
     ],
     [t],
@@ -1213,7 +1213,7 @@ function SupplyOrderInvoicesExpand({ order }: { order: DirectSupplyOrder }) {
         defaultLayout={ORDER_INVOICES_TABLE_DEFAULT_LAYOUT}
         emptyText={t('Інвойсів не знайдено')}
         getRowId={getSupplyOrderRosterRowId}
-        layoutVersion="supply-order-invoices-table-2"
+        layoutVersion="supply-order-invoices-table-3"
         minWidth={ORDER_INVOICES_TABLE_MIN_WIDTH}
         showDensityToggle={false}
         tableId="supply-order-invoices"
