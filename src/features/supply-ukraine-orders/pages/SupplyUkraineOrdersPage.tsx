@@ -78,21 +78,25 @@ import './supply-ukraine-orders.css'
 
 const DEFAULT_PAGE_SIZE = DEFAULT_PAGINATOR_PAGE_SIZE
 const SUPPLY_ORGANIZATION_SEARCH_DEBOUNCE_MS = 300
-const ORDERS_TABLE_MIN_WIDTH = 1520
+const ORDERS_TABLE_MIN_WIDTH = 1460
 const ORDER_INVOICES_TABLE_MIN_WIDTH = 1080
 const ORDERS_TABLE_DEFAULT_LAYOUT: DataTableDefaultLayout = {
   columnOrder: ['order', 'netPrice', 'vatAmount', 'grossPrice', 'qty', 'additionalPercent', 'organization', 'responsible', 'isPlaced', 'kind'],
   columnSizing: {
     additionalPercent: 96,
-    grossPrice: 132,
-    isPlaced: 112,
-    kind: 118,
-    netPrice: 132,
-    order: 420,
+    grossPrice: 126,
+    isPlaced: 96,
+    kind: 112,
+    netPrice: 126,
+    order: 540,
     organization: 260,
-    qty: 104,
+    qty: 86,
     responsible: 158,
-    vatAmount: 118,
+    vatAmount: 110,
+  },
+  columnVisibility: {
+    additionalPercent: false,
+    responsible: false,
   },
   density: 'normal',
 }
@@ -895,8 +899,8 @@ function useSupplyUkraineOrderColumns(): DataTableColumn<SupplyUkraineOrderRow>[
         fill: true,
         header: t('Замовлення / постачальник'),
         id: 'order',
-        minWidth: 360,
-        width: 420,
+        minWidth: 440,
+        width: 540,
       },
       {
         accessor: (row) => row.netPrice ?? null,
@@ -904,8 +908,8 @@ function useSupplyUkraineOrderColumns(): DataTableColumn<SupplyUkraineOrderRow>[
         cell: (row) => <OrderMoneyCell currency={row.currency} value={row.netPrice} />,
         header: t('Нетто'),
         id: 'netPrice',
-        minWidth: 112,
-        width: 132,
+        minWidth: 108,
+        width: 126,
       },
       {
         accessor: (row) => row.vatAmount ?? null,
@@ -913,8 +917,8 @@ function useSupplyUkraineOrderColumns(): DataTableColumn<SupplyUkraineOrderRow>[
         cell: (row) => <OrderMoneyCell currency={row.currency} value={row.vatAmount} />,
         header: t('ПДВ'),
         id: 'vatAmount',
-        minWidth: 104,
-        width: 118,
+        minWidth: 100,
+        width: 110,
       },
       {
         accessor: (row) => row.grossPrice ?? null,
@@ -922,11 +926,12 @@ function useSupplyUkraineOrderColumns(): DataTableColumn<SupplyUkraineOrderRow>[
         cell: (row) => <OrderMoneyCell currency={row.currency} value={row.grossPrice} />,
         header: t('З ПДВ'),
         id: 'grossPrice',
-        minWidth: 112,
-        width: 132,
+        minWidth: 108,
+        width: 126,
       },
       {
         accessor: (row) => row.qty ?? null,
+        align: 'right',
         cell: (row) => (
           <div className="supply-order-metric-cell is-qty">
             <OrderMetricValue label="#" value={formatAmountCell(row.qty)} />
@@ -934,8 +939,8 @@ function useSupplyUkraineOrderColumns(): DataTableColumn<SupplyUkraineOrderRow>[
         ),
         header: t('К-сть'),
         id: 'qty',
-        minWidth: 92,
-        width: 104,
+        minWidth: 78,
+        width: 86,
       },
       {
         accessor: (row) => row.additionalPercent ?? null,
@@ -972,8 +977,8 @@ function useSupplyUkraineOrderColumns(): DataTableColumn<SupplyUkraineOrderRow>[
         cell: (row) => <OrderPlacedCell value={row.isPlaced} />,
         header: t('Розміщено'),
         id: 'isPlaced',
-        minWidth: 104,
-        width: 112,
+        minWidth: 92,
+        width: 96,
       },
       {
         accessor: (row) => row.kind,
@@ -981,8 +986,8 @@ function useSupplyUkraineOrderColumns(): DataTableColumn<SupplyUkraineOrderRow>[
         cell: (row) => <OrderKindCell row={row} />,
         header: t('Тип'),
         id: 'kind',
-        minWidth: 110,
-        width: 118,
+        minWidth: 104,
+        width: 112,
       },
     ],
     [t],
@@ -1019,7 +1024,7 @@ function SupplyUkraineOrdersRoster({
       getRowId={getSupplyOrderRosterRowId}
       height="100%"
       isLoading={isLoading}
-      layoutVersion="supply-ukraine-orders-table-2"
+      layoutVersion="supply-ukraine-orders-table-3"
       loadingText={loadingText}
       minWidth={ORDERS_TABLE_MIN_WIDTH}
       renderExpandedRow={(row) => row.directOrder ? <SupplyOrderInvoicesExpand order={row.directOrder} /> : null}
@@ -1121,7 +1126,7 @@ function OrderMainGridCell({ row }: { row: SupplyUkraineOrderRow }) {
   const orderDate = formatCompactDateTimeCell(row.orderDate)
   const invoiceNumber = displayTableValue(row.invoiceNumber)
   const invoiceDate = formatCompactDateTimeCell(row.invoiceDate)
-  const metaItems: Array<{ label: string; strong?: boolean; value: string }> = []
+  const metaItems: Array<{ label: string; strong?: boolean; tag?: boolean; value: string }> = []
 
   if (orderDate) {
     metaItems.push({ label: t('від'), value: orderDate, strong: true })
@@ -1140,11 +1145,11 @@ function OrderMainGridCell({ row }: { row: SupplyUkraineOrderRow }) {
   }
 
   if (row.source) {
-    metaItems.push({ label: t('джерело'), value: row.source })
+    metaItems.push({ label: t('джерело'), tag: true, value: row.source })
   }
 
   if (row.storage) {
-    metaItems.push({ label: t('склад'), value: row.storage })
+    metaItems.push({ label: t('склад'), tag: true, value: row.storage })
   }
 
   return (
@@ -1172,7 +1177,11 @@ function OrderOrganizationGridCell({ row }: { row: SupplyUkraineOrderRow }) {
   return (
     <span className="supply-order-two-line-cell">
       <span className="supply-order-two-line-primary" title={nativeTitle(organization)}>{organization}</span>
-      <span className="supply-order-two-line-secondary" title={nativeTitle(agreement)}>{agreement}</span>
+      {agreement ? (
+        <span className="app-role-pill is-gray supply-order-agreement-pill" title={nativeTitle(agreement)}>
+          {agreement}
+        </span>
+      ) : null}
     </span>
   )
 }
@@ -1241,10 +1250,23 @@ function InvoiceMainCell({ row }: { row: SupplyUkraineOrderRow }) {
   )
 }
 
-function OrderMetaValue({ label, strong = false, value }: { label: string; strong?: boolean; value: string }) {
+function OrderMetaValue({
+  label,
+  strong = false,
+  tag = false,
+  value,
+}: {
+  label: string
+  strong?: boolean
+  tag?: boolean
+  value: string
+}) {
   return (
-    <span className={`supply-order-meta-value${strong ? ' is-strong' : ''}`}>
-      <span>{label}</span>
+    <span
+      className={`supply-order-meta-value${strong ? ' is-strong' : ''}${tag ? ' is-tag' : ''}`}
+      title={nativeTitle(`${label} ${value}`)}
+    >
+      {tag ? null : <span>{label}</span>}
       <strong>{value}</strong>
     </span>
   )
@@ -1253,14 +1275,14 @@ function OrderMetaValue({ label, strong = false, value }: { label: string; stron
 function OrderMetaLine({
   items,
 }: {
-  items: Array<{ label: string; strong?: boolean; value: string }>
+  items: Array<{ label: string; strong?: boolean; tag?: boolean; value: string }>
 }) {
   return (
     <div className="supply-order-main-meta">
       {items.map((item, index) => (
         <Fragment key={item.label}>
-          {index > 0 ? <OrderMetaSeparator /> : null}
-          <OrderMetaValue label={item.label} strong={item.strong} value={item.value} />
+          {index > 0 && !item.tag ? <OrderMetaSeparator /> : null}
+          <OrderMetaValue label={item.label} strong={item.strong} tag={item.tag} value={item.value} />
         </Fragment>
       ))}
     </div>
