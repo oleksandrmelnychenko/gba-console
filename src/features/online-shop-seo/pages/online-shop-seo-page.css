@@ -219,7 +219,7 @@
   grid-template-columns: 248px minmax(0, 1fr);
   min-height: 0;
   min-width: 0;
-  padding: 10px 8px 8px;
+  padding: 10px;
 }
 
 .seo-page-rail {
@@ -538,11 +538,6 @@
   display: flex;
   justify-content: flex-end;
   min-width: 0;
-}
-
-.seo-page.is-shop-data .seo-page-workspace,
-.seo-page.is-shop-data .seo-page-panel-body {
-  padding-top: 4px;
 }
 
 .seo-shop-data-section-table-toolbar {

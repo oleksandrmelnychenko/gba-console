@@ -1646,7 +1646,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
           <section className="seo-page-panel">
           <Box className="seo-page-panel-body">
             {activeTab === 'pages' && (
-              <Box className="seo-page-table-view" pt="md">
+              <Box className="seo-page-table-view">
               <Stack className="seo-page-table-stack" gap="md">
                 <SeoRosterTable
                   columns={pageColumns}
@@ -1666,7 +1666,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
             )}
 
             {activeTab === 'info-payment' && (
-              <Box className="seo-general-content" pt="md">
+              <Box className="seo-general-content">
                 <div className="seo-matrix">
                   {generalEntries.length ? (
                     <div className="seo-settings-tree">
@@ -1746,7 +1746,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
             )}
 
             {activeTab === 'contacts' && (
-              <Box className="seo-page-table-view" pt="md">
+              <Box className="seo-page-table-view">
               <Stack className="seo-page-table-stack" gap="md">
                 <Group className="seo-page-inline-actions" justify="flex-end">
                   {createContactAction}
@@ -1847,7 +1847,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
             )}
 
             {activeTab === 'shop-clients' && (
-              <Box pt="md">
+              <Box>
               <Stack gap="md">
                 <SeoRosterTable
                   columns={clientColumns}
@@ -1866,7 +1866,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
             )}
 
             {activeTab === 'bank-cards' && (
-              <Box pt="md">
+              <Box>
               <Stack gap="md">
                 <SeoRosterTable
                   columns={paymentRegisterColumns}
@@ -1885,7 +1885,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
             )}
 
             {activeTab === 'warehouses' && (
-              <Box pt="md">
+              <Box>
               <Stack gap="md">
                 <SeoRosterTable
                   columns={ecommerceStorageColumns}
