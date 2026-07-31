@@ -295,7 +295,7 @@ export function TaxFreePackListsPage() {
             layoutVersion="tax-free-pack-lists-table-2"
             loadingText={t('Завантаження пакувальних листів')}
             minWidth={1290}
-            showLayoutControls={false}
+            showLayoutControls
             showDensityToggle={false}
             tableId="tax-free-pack-lists"
             onRowClick={setSelectedPackList}
