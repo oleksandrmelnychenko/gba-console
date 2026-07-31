@@ -1082,6 +1082,27 @@
 }
 
 @media (max-width: 48em) {
+  .console-header-main {
+    --console-header-side-width: 0px;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 8px;
+  }
+
+  .console-header-brand,
+  .console-header-date {
+    grid-column: 1;
+  }
+
+  .console-header-actions,
+  .console-header-user-panel {
+    grid-column: 2;
+  }
+
+  .console-header-top-nav,
+  .console-header-tool-actions {
+    display: none;
+  }
+
   .sync-source-control {
     min-width: 100%;
   }
