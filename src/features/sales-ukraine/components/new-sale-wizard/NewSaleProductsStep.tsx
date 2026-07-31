@@ -102,6 +102,7 @@ import {
   type WizardCarouselEntry,
   type WizardSaleProduct,
 } from './wizardSaleProduct'
+import { findUniqueExactWizardProductSearchMatch } from './wizardProductSearchSelection'
 import {
   addWizardSplitOrderItem,
   clearWizardSplitRestoreTracking,
@@ -643,9 +644,22 @@ export function NewSaleProductsStep({
           return
         }
 
-        setResults(next.length === 1 && next[0] ? [next[0], ...(next[0].NextSearchedProducts ?? [])] : next)
-        setMainIndex(0)
+        const nextResults = next.length === 1 && next[0]
+          ? [next[0], ...(next[0].NextSearchedProducts ?? [])]
+          : next
+        const exactMatch = findUniqueExactWizardProductSearchMatch(value, nextResults)
+
+        setResults(nextResults)
         clearActiveProductData()
+
+        if (exactMatch) {
+          setMainIndex(exactMatch.index)
+          setActive({ product: exactMatch.product, source: 'main' })
+          setComponentParent(exactMatch.product)
+          setWizardKeyboardState('ProductSelection')
+        } else {
+          setMainIndex(0)
+        }
       } catch (loadError) {
         if (!controller.signal.aborted && generation === searchGenerationRef.current) {
           setResults([])

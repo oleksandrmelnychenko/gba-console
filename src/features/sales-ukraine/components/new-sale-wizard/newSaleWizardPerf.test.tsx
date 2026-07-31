@@ -170,6 +170,22 @@ describe('new-sale wizard performance', () => {
     )
   })
 
+  it('automatically selects one exact product-code match', async () => {
+    apiMocks.searchSaleProductsWithAvailability.mockResolvedValueOnce([
+      { NameUA: 'Схожий товар', NetUid: 'similar-product', VendorCode: 'FSF1643-F' },
+      { NameUA: 'Фільтр паливний', NetUid: 'exact-product', VendorCode: 'FSF1643-FL' },
+      { NameUA: 'Інший аналог', NetUid: 'other-product', VendorCode: 'CS1643M-SF' },
+    ])
+    renderProductsStep()
+    const input = screen.getByPlaceholderText(/пошук/i)
+
+    fireEvent.change(input, { target: { value: 'FSF1643-FL' } })
+
+    expect(await screen.findByRole('button', { name: 'Скопіювати код: FSF1643-FL' }, { timeout: 5_000 }))
+      .toBeTruthy()
+    expect(input.classList.contains('is-hidden')).toBe(true)
+  })
+
   it('aborts an obsolete search and ignores its late result', async () => {
     const first = createDeferred<WizardSaleProduct[]>()
     const second = createDeferred<WizardSaleProduct[]>()
