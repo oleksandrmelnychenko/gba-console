@@ -114,7 +114,7 @@ export async function searchPredictionClients(
   signal?: AbortSignal,
 ): Promise<SalesPredictionClientOption[]> {
   const result = await apiRequest<unknown>('/clients/search/all/sales/', {
-    query: { searchValue: searchValue.trim() },
+    query: { limit: 20, offset: 0, searchValue: searchValue.trim() },
     signal,
   })
 

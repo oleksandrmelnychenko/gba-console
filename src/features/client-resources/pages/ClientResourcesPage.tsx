@@ -3861,6 +3861,7 @@ function StoragesPanel({ section }: { section: ClientResourceSection }) {
   )
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function buildSaleOrganizationsByStorageId(
   organizations: ClientResourceOrganization[],
 ): Map<number, string[]> {
