@@ -627,7 +627,7 @@ function TaxFreeDocumentsPageView({ model }: { model: ReturnType<typeof useTaxFr
             layoutVersion="tax-free-documents-table-2"
             loadingText={t('Завантаження Tax Free')}
             minWidth={1540}
-            showLayoutControls={false}
+            showLayoutControls
             showDensityToggle={false}
             tableId="tax-free-documents"
             onRowClick={(row) => openDocument(row.document)}
