@@ -437,7 +437,7 @@ export function AllSadsPage() {
             layoutVersion="sad-all-table-2"
             minWidth={1420}
             showDensityToggle={false}
-            showLayoutControls={false}
+            showLayoutControls
             tableId="sad-all"
             onRowClick={setSelectedSad}
           />
