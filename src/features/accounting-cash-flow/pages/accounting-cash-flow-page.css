@@ -1666,6 +1666,8 @@
   align-items: flex-end;
   display: inline-flex;
   flex-direction: column;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
   gap: 2px;
   line-height: 1.1;
   min-width: 0;
