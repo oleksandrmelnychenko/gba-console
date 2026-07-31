@@ -85,7 +85,7 @@ export function DataTable<TData>({
   maxHeight,
   emptyText,
   labels: labelsOverride,
-  showLayoutControls = false,
+  showLayoutControls = true,
   enablePinning = true,
   showDensityToggle = true,
   density: controlledDensity,

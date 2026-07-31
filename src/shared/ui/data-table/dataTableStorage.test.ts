@@ -55,4 +55,37 @@ describe('readDataTableLayout density compatibility', () => {
       version: 'current-version',
     })
   })
+
+  it('restores every user-controlled column setting after a remount', () => {
+    writeDataTableLayout(TABLE_ID, {
+      columnOrder: ['status', 'name', 'amount'],
+      columnVisibility: { amount: false, name: true },
+      columnPinning: { left: ['status'], right: ['actions'] },
+      columnSizing: { amount: 184, name: 312 },
+      density: 'normal',
+      version: 'current-version',
+    })
+
+    expect(readCompatibleDataTableLayout(TABLE_ID, 'current-version')).toMatchObject({
+      columnOrder: ['status', 'name', 'amount'],
+      columnVisibility: { amount: false, name: true },
+      columnPinning: { left: ['status'], right: ['actions'] },
+      columnSizing: { amount: 184, name: 312 },
+      density: 'normal',
+      version: 'current-version',
+    })
+  })
+
+  it('invalidates column settings only when the table layout version changes', () => {
+    writeDataTableLayout(TABLE_ID, {
+      columnVisibility: { amount: false },
+      columnSizing: { amount: 184 },
+      density: 'compact',
+      version: 'old-version',
+    })
+
+    expect(readCompatibleDataTableLayout(TABLE_ID, 'new-version')).toEqual({
+      density: 'compact',
+    })
+  })
 })
