@@ -1805,7 +1805,7 @@ function ProductOriginalNumbersTab({
           getProductOriginalNumberIdentity(item) === selectedNetUid ? 'is-selected' : undefined
         }
         showDensityToggle={false}
-        showLayoutControls={false}
+        showLayoutControls
         tableId="product-original-numbers"
         onRowClick={selectOriginalNumber}
       />
@@ -2020,7 +2020,7 @@ function ProductRelatedProductsTab({
         maxHeight="calc(100vh - 360px)"
         minWidth={type === 'components' ? 880 : 720}
         showDensityToggle={false}
-        showLayoutControls={false}
+        showLayoutControls
         tableId={`product-related-${type}`}
         onRowClick={(row) => {
           if (row.product.NetUid) {
@@ -3337,7 +3337,7 @@ function ProductIncomeMovementsGrid({
       maxHeight={360}
       minWidth={2500}
       showDensityToggle={false}
-      showLayoutControls={false}
+      showLayoutControls
       tableId="product-income-movements"
     />
   )
@@ -3438,7 +3438,7 @@ function ProductOutcomeMovementsGrid({
       maxHeight={360}
       minWidth={1300}
       showDensityToggle={false}
-      showLayoutControls={false}
+      showLayoutControls
       tableId="product-outcome-movements"
     />
   )

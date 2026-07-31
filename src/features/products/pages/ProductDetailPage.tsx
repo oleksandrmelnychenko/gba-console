@@ -2006,7 +2006,7 @@ function ProductMovementPanel({ product }: { product: Product }) {
           height="calc(100vh - 320px)"
           minWidth={1640}
           showDensityToggle={false}
-          showLayoutControls={false}
+          showLayoutControls
           tableId="product-movement"
         />
       )}
