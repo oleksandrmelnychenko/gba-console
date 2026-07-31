@@ -17,7 +17,7 @@ const SALES_DASHBOARD_TABS: SalesTab[] = [
   { label: 'Рух товару клієнта', value: '/sales/ukraine/client-product-movement' },
   { label: 'Прогноз', value: '/sales/ukraine/prediction' },
   { label: 'Графіки', value: '/sales/charts' },
-  { label: 'Перепродажі', value: '/resales' },
+  { label: 'Resale', value: '/resales' },
 ]
 
 export function SalesDashboardShell({ children }: { children: ReactNode }) {
