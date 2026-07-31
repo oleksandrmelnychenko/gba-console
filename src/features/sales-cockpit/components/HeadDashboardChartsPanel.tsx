@@ -41,11 +41,9 @@ function chartsReducer(state: ChartsState, action: ChartsAction): ChartsState {
 }
 
 export function HeadDashboardChartsPanel({
-  asOfDate,
   reloadKey,
   rows,
 }: {
-  asOfDate?: string
   reloadKey: number
   rows: HeadTeamRow[]
 }) {
@@ -60,7 +58,7 @@ export function HeadDashboardChartsPanel({
       dispatch({ type: 'loading' })
 
       try {
-        const result = await getHeadDashboard(asOfDate)
+        const result = await getHeadDashboard()
 
         if (!cancelled) {
           dispatch({ dashboard: result, type: 'loaded' })
@@ -80,7 +78,7 @@ export function HeadDashboardChartsPanel({
     return () => {
       cancelled = true
     }
-  }, [asOfDate, reloadKey, t])
+  }, [reloadKey, t])
 
   const nameById = useMemo(() => {
     const map = new Map<number, string>()

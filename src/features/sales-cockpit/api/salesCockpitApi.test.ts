@@ -260,7 +260,7 @@ describe('salesCockpitApi', () => {
       },
     })
 
-    await expect(getHeadTeam('2026-06-08')).resolves.toEqual({
+    await expect(getHeadTeam()).resolves.toEqual({
       is_head: true,
       requested_manager_net_uid: '11111111-1111-1111-1111-111111111111',
       as_of: '2026-06-08',
@@ -292,11 +292,7 @@ describe('salesCockpitApi', () => {
         conversion_rate: 0.4,
       },
     })
-    expect(apiRequestMock).toHaveBeenCalledWith('/sales/cockpit/head/team', {
-      query: {
-        asOfDate: '2026-06-08',
-      },
-    })
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/cockpit/head/team')
   })
 
   it('defaults the head team to a non-head empty shape on a non-object response', async () => {
@@ -323,11 +319,7 @@ describe('salesCockpitApi', () => {
         conversion_rate: 0,
       },
     })
-    expect(apiRequestMock).toHaveBeenCalledWith('/sales/cockpit/head/team', {
-      query: {
-        asOfDate: undefined,
-      },
-    })
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/cockpit/head/team')
   })
 
   it('loads head tasks with combined ready statuses and normalizes the live board payload', async () => {
@@ -575,7 +567,7 @@ describe('salesCockpitApi', () => {
       completed_vs_open: [{ status: 'open', count: 4 }, { status: 'done', count: 1 }],
     })
 
-    await expect(getDashboard('2026-06-08')).resolves.toEqual({
+    await expect(getDashboard()).resolves.toEqual({
       manager_id: 7,
       manager_net_uid: '11111111-1111-1111-1111-111111111111',
       as_of: '2026-06-08',
@@ -586,22 +578,14 @@ describe('salesCockpitApi', () => {
       debt_aging: [{ bucket: '0-30', amount_eur: 1000, count: 2 }],
       completed_vs_open: [{ status: 'open', count: 4 }, { status: 'done', count: 1 }],
     })
-    expect(apiRequestMock).toHaveBeenCalledWith('/sales/cockpit/dashboard', {
-      query: {
-        asOfDate: '2026-06-08',
-      },
-    })
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/cockpit/dashboard')
   })
 
   it('fails closed when the manager dashboard omits its history proof', async () => {
     apiRequestMock.mockResolvedValueOnce(null)
 
     await expect(getDashboard()).rejects.toBeInstanceOf(SalesCockpitContractError)
-    expect(apiRequestMock).toHaveBeenCalledWith('/sales/cockpit/dashboard', {
-      query: {
-        asOfDate: undefined,
-      },
-    })
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/cockpit/dashboard')
   })
 
   it('loads the head dashboard and normalizes the team rows', async () => {
@@ -615,7 +599,7 @@ describe('salesCockpitApi', () => {
       total_value_at_risk_eur: 9800.25,
     })
 
-    await expect(getHeadDashboard('2026-06-08')).resolves.toEqual({
+    await expect(getHeadDashboard()).resolves.toEqual({
       is_head: true,
       requested_manager_net_uid: '11111111-1111-1111-1111-111111111111',
       as_of: '2026-06-08',
@@ -624,11 +608,7 @@ describe('salesCockpitApi', () => {
       escalated_count: 2,
       total_value_at_risk_eur: 9800.25,
     })
-    expect(apiRequestMock).toHaveBeenCalledWith('/sales/cockpit/head/dashboard', {
-      query: {
-        asOfDate: '2026-06-08',
-      },
-    })
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/cockpit/head/dashboard')
   })
 
   it('defaults the head dashboard to a non-head empty shape on a non-object response', async () => {
@@ -642,11 +622,7 @@ describe('salesCockpitApi', () => {
       escalated_count: 0,
       total_value_at_risk_eur: 0,
     })
-    expect(apiRequestMock).toHaveBeenCalledWith('/sales/cockpit/head/dashboard', {
-      query: {
-        asOfDate: undefined,
-      },
-    })
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/cockpit/head/dashboard')
   })
 
   it('regenerates the cockpit with the optional as-of date and an empty body', async () => {

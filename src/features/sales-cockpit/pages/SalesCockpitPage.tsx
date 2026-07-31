@@ -417,7 +417,7 @@ export function SalesCockpitPage() {
               onTakeInProgress={handleTakeInProgress}
             />
 
-            <CockpitDashboardPanel asOfDate={asOfDate} reloadKey={reloadKey} />
+            <CockpitDashboardPanel reloadKey={reloadKey} />
           </div>
         </>
       )}

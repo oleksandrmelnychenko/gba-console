@@ -8,7 +8,6 @@ import {
   Progress,
   Stack,
   Text,
-  TextInput,
   Tooltip,
   UnstyledButton,
 } from '@mantine/core'
@@ -94,7 +93,6 @@ export function HeadDashboardPage() {
   const [escalated, setEscalated] = useValueState<EscalatedResponse>(EMPTY_ESCALATED)
   const [selectedManagerId, setSelectedManagerId] = useState<number | null>(null)
   const [error, setError] = useValueState<string | null>(null)
-  const [asOfDate, setAsOfDate] = useValueState<string | undefined>(undefined)
   const [forbidden, setForbidden] = useState(false)
   const [isLoading, setLoading] = useState(true)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
@@ -110,7 +108,7 @@ export function HeadDashboardPage() {
 
     async function loadTeam() {
       try {
-        const [result, escalatedResult] = await Promise.all([getHeadTeam(asOfDate), getEscalated()])
+        const [result, escalatedResult] = await Promise.all([getHeadTeam(), getEscalated()])
 
         if (active) {
           setTeam(result)
@@ -140,34 +138,17 @@ export function HeadDashboardPage() {
       active = false
       window.clearInterval(interval)
     }
-  }, [asOfDate, reloadKey, setError, setEscalated, setTeam, t])
+  }, [reloadKey, setError, setEscalated, setTeam, t])
 
   const rows = useMemo(
     () => team.team.toSorted((left, right) => priorityScore(right) - priorityScore(left)),
     [team.team],
   )
 
-  const handleAsOfDateChange = useCallback(
-    (value: string | undefined) => {
-      setAsOfDate(value)
-      setLoading(true)
-    },
-    [setAsOfDate],
-  )
-
   return (
     <Stack className="cockpit-page cockpit-head-page" gap={6}>
       <Card className="app-filter-card cockpit-toolbar-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar cockpit-command-bar cockpit-head-command-bar">
-          <TextInput
-            className="cockpit-date-filter"
-            label={t('Дата зрізу')}
-            type="date"
-            value={asOfDate ?? ''}
-            w={170}
-            onChange={(event) => handleAsOfDateChange(event.currentTarget.value || undefined)}
-          />
-
           <Group className="cockpit-head-title" gap="xs" wrap="nowrap">
             <AiFeatureBadge size="sm" tooltip={t('AI-сервіс керівника продажів')} />
             <Stack gap={0}>
@@ -177,8 +158,8 @@ export function HeadDashboardPage() {
           </Group>
 
           <Group className="app-filter-actions cockpit-command-actions" gap={10} justify="flex-end">
-            <Badge className={`app-role-pill ${asOfDate ? 'is-gray' : 'is-green'}`} leftSection={<Radio size={12} />} variant="light">
-              {asOfDate ? t('Історичний зріз') : t('Наживо')}
+            <Badge className="app-role-pill is-green" leftSection={<Radio size={12} />} variant="light">
+              {t('Наживо')}
             </Badge>
             <Button
               className="cockpit-toolbar-button"
@@ -264,7 +245,7 @@ export function HeadDashboardPage() {
               </Stack>
             </div>
 
-            <HeadDashboardChartsPanel asOfDate={asOfDate} reloadKey={reloadKey} rows={rows} />
+            <HeadDashboardChartsPanel reloadKey={reloadKey} rows={rows} />
           </>
         )}
       </div>

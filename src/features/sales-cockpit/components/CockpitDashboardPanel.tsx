@@ -58,7 +58,7 @@ function dashboardReducer(state: DashboardState, action: DashboardAction): Dashb
   }
 }
 
-export function CockpitDashboardPanel({ asOfDate, reloadKey }: { asOfDate?: string; reloadKey: number }) {
+export function CockpitDashboardPanel({ reloadKey }: { reloadKey: number }) {
   const { t } = useI18n()
   const [state, dispatch] = useReducer(dashboardReducer, initialState)
   const { dashboard, error, isLoading } = state
@@ -70,7 +70,7 @@ export function CockpitDashboardPanel({ asOfDate, reloadKey }: { asOfDate?: stri
       dispatch({ type: 'loading' })
 
       try {
-        const result = await getDashboard(asOfDate)
+        const result = await getDashboard()
 
         if (!cancelled) {
           dispatch({ dashboard: result, type: 'loaded' })
@@ -90,7 +90,7 @@ export function CockpitDashboardPanel({ asOfDate, reloadKey }: { asOfDate?: stri
     return () => {
       cancelled = true
     }
-  }, [asOfDate, reloadKey, t])
+  }, [reloadKey, t])
 
   const urgencyData = useMemo<UrgencySliceInput[]>(
     () =>

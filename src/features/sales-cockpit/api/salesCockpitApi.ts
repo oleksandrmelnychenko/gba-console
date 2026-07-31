@@ -100,14 +100,10 @@ export async function addTaskNote(taskKey: string, body: CockpitNoteBody): Promi
   return normalizeTask(result)
 }
 
-export async function getHeadTeam(asOfDate?: string): Promise<HeadTeam> {
-  const result = await apiRequest<unknown>('/sales/cockpit/head/team', {
-    query: {
-      asOfDate,
-    },
-  })
+export async function getHeadTeam(): Promise<HeadTeam> {
+  const result = await apiRequest<unknown>('/sales/cockpit/head/team')
 
-  return normalizeHeadTeam(result, asOfDate)
+  return normalizeHeadTeam(result)
 }
 
 export async function getHeadTasks(params: HeadTasksParams = {}): Promise<HeadTasksResponse> {
@@ -163,24 +159,16 @@ export async function getCockpitClients(): Promise<CockpitClientsResponse> {
   return normalizeCockpitClients(result)
 }
 
-export async function getDashboard(asOfDate?: string): Promise<CockpitDashboard> {
-  const result = await apiRequest<unknown>('/sales/cockpit/dashboard', {
-    query: {
-      asOfDate,
-    },
-  })
+export async function getDashboard(): Promise<CockpitDashboard> {
+  const result = await apiRequest<unknown>('/sales/cockpit/dashboard')
 
-  return normalizeDashboard(result, asOfDate)
+  return normalizeDashboard(result)
 }
 
-export async function getHeadDashboard(asOfDate?: string): Promise<HeadDashboard> {
-  const result = await apiRequest<unknown>('/sales/cockpit/head/dashboard', {
-    query: {
-      asOfDate,
-    },
-  })
+export async function getHeadDashboard(): Promise<HeadDashboard> {
+  const result = await apiRequest<unknown>('/sales/cockpit/head/dashboard')
 
-  return normalizeHeadDashboard(result, asOfDate)
+  return normalizeHeadDashboard(result)
 }
 
 export async function getCockpitTarget(asOfDate?: string): Promise<CockpitTarget> {
