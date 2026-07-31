@@ -458,6 +458,51 @@
   font-weight: 600;
 }
 
+.supply-order-meta-value.is-tag-blue {
+  background: var(--mantine-color-blue-0);
+  border-color: var(--mantine-color-blue-3);
+}
+
+.supply-order-meta-value.is-tag-blue strong {
+  color: var(--mantine-color-blue-8);
+}
+
+.supply-order-meta-value.is-tag-green {
+  background: var(--mantine-color-green-0);
+  border-color: var(--mantine-color-green-3);
+}
+
+.supply-order-meta-value.is-tag-green strong {
+  color: var(--mantine-color-green-8);
+}
+
+.supply-order-meta-value.is-tag-yellow {
+  background: var(--mantine-color-yellow-0);
+  border-color: var(--mantine-color-yellow-4);
+}
+
+.supply-order-meta-value.is-tag-yellow strong {
+  color: var(--mantine-color-yellow-9);
+}
+
+.supply-order-meta-value.is-tag-red {
+  background: var(--mantine-color-red-0);
+  border-color: var(--mantine-color-red-3);
+}
+
+.supply-order-meta-value.is-tag-red strong {
+  color: var(--mantine-color-red-8);
+}
+
+.supply-order-meta-value.is-tag-orange {
+  background: rgba(var(--brand-orange-rgb), 0.08);
+  border-color: rgba(var(--brand-orange-rgb), 0.38);
+}
+
+.supply-order-meta-value.is-tag-orange strong {
+  color: var(--mantine-color-orange-9);
+}
+
 .supply-order-meta-separator {
   background: var(--mantine-color-gray-3);
   display: inline-flex;

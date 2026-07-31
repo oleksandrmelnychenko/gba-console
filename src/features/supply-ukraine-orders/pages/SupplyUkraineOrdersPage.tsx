@@ -1126,7 +1126,7 @@ function OrderMainGridCell({ row }: { row: SupplyUkraineOrderRow }) {
   const orderDate = formatCompactDateTimeCell(row.orderDate)
   const invoiceNumber = displayTableValue(row.invoiceNumber)
   const invoiceDate = formatCompactDateTimeCell(row.invoiceDate)
-  const metaItems: Array<{ label: string; strong?: boolean; tag?: boolean; value: string }> = []
+  const metaItems: OrderMetaItem[] = []
 
   if (orderDate) {
     metaItems.push({ label: t('від'), value: orderDate, strong: true })
@@ -1145,11 +1145,16 @@ function OrderMainGridCell({ row }: { row: SupplyUkraineOrderRow }) {
   }
 
   if (row.source) {
-    metaItems.push({ label: t('джерело'), tag: true, value: row.source })
+    metaItems.push({ label: t('джерело'), tag: true, tagTone: 'neutral', value: row.source })
   }
 
   if (row.storage) {
-    metaItems.push({ label: t('склад'), tag: true, value: row.storage })
+    metaItems.push({
+      label: t('склад'),
+      tag: true,
+      tagTone: getStorageTagTone(row.storage),
+      value: row.storage,
+    })
   }
 
   return (
@@ -1250,20 +1255,28 @@ function InvoiceMainCell({ row }: { row: SupplyUkraineOrderRow }) {
   )
 }
 
+type OrderMetaTagTone = 'blue' | 'green' | 'neutral' | 'orange' | 'red' | 'yellow'
+
+type OrderMetaItem = {
+  label: string
+  strong?: boolean
+  tag?: boolean
+  tagTone?: OrderMetaTagTone
+  value: string
+}
+
 function OrderMetaValue({
   label,
   strong = false,
   tag = false,
+  tagTone = 'neutral',
   value,
-}: {
-  label: string
-  strong?: boolean
-  tag?: boolean
-  value: string
-}) {
+}: OrderMetaItem) {
+  const tagToneClass = tag ? ` is-tag-${tagTone}` : ''
+
   return (
     <span
-      className={`supply-order-meta-value${strong ? ' is-strong' : ''}${tag ? ' is-tag' : ''}`}
+      className={`supply-order-meta-value${strong ? ' is-strong' : ''}${tag ? ' is-tag' : ''}${tagToneClass}`}
       title={nativeTitle(`${label} ${value}`)}
     >
       {tag ? null : <span>{label}</span>}
@@ -1275,7 +1288,7 @@ function OrderMetaValue({
 function OrderMetaLine({
   items,
 }: {
-  items: Array<{ label: string; strong?: boolean; tag?: boolean; value: string }>
+  items: OrderMetaItem[]
 }) {
   return (
     <div className="supply-order-main-meta">
@@ -1287,6 +1300,28 @@ function OrderMetaLine({
       ))}
     </div>
   )
+}
+
+function getStorageTagTone(storage: string): OrderMetaTagTone {
+  const normalizedStorage = storage.trim().toLocaleUpperCase('uk-UA')
+
+  if (/БРАК|ДЕФЕКТ/u.test(normalizedStorage)) {
+    return 'red'
+  }
+
+  if (/УЦІН/u.test(normalizedStorage)) {
+    return 'yellow'
+  }
+
+  if (/ВІТРИН/u.test(normalizedStorage)) {
+    return 'blue'
+  }
+
+  if (/ТМЦ|(?:^|[^А-ЯІЇЄA-Z])ОЗ(?:[^А-ЯІЇЄA-Z]|$)/u.test(normalizedStorage)) {
+    return 'orange'
+  }
+
+  return 'green'
 }
 
 function OrderMetaSeparator() {
