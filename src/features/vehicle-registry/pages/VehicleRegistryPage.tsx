@@ -45,6 +45,7 @@ import {
 import type {
   VehicleRegistryDataQualityStatus,
   VehicleRegistryClientMatch,
+  VehicleRegistryClientMatchState,
   VehicleRegistryFilters,
   VehicleRegistryImport,
   VehicleRegistryIssue,
@@ -105,6 +106,7 @@ export function VehicleRegistryPage() {
   const [debouncedSearch] = useDebouncedValue(searchDraft, SEARCH_DEBOUNCE_MS)
   const [brand, setBrand] = useState<string | null>(null)
   const [model, setModel] = useState<string | null>(null)
+  const [clientMatchState, setClientMatchState] = useState<VehicleRegistryClientMatchState | null>(null)
   const [processingState, setProcessingState] = useState<VehicleRegistryProcessingState | null>(null)
   const [workflowStatus, setWorkflowStatus] = useState<VehicleRegistryWorkflowStatus | null>(null)
   const [qualityStatus, setQualityStatus] = useState<VehicleRegistryDataQualityStatus | null>(null)
@@ -123,7 +125,7 @@ export function VehicleRegistryPage() {
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
 
-  const activeFilterCount = [brand, model, processingState, workflowStatus, qualityStatus].filter(Boolean).length
+  const activeFilterCount = [brand, model, clientMatchState, processingState, workflowStatus, qualityStatus].filter(Boolean).length
   const totalPages = Math.max(1, Math.ceil((view === 'vehicles' ? vehicleTotal : importTotal) / PAGE_SIZE))
   const vehicleColumns = useMemo(
     () => createVehicleColumns(t, setSelectedVehicleId),
@@ -166,11 +168,13 @@ export function VehicleRegistryPage() {
           const response = await getVehicleRegistryVehicles(
             {
               brand,
+              clientMatchState,
               dataQualityStatus: qualityStatus,
               limit: PAGE_SIZE,
               model,
               offset: (page - 1) * PAGE_SIZE,
               processingState,
+              prioritizeClientMatches: true,
               search: debouncedSearch.trim(),
               workflowStatus,
             },
@@ -203,6 +207,7 @@ export function VehicleRegistryPage() {
     return () => controller.abort()
   }, [
     brand,
+    clientMatchState,
     debouncedSearch,
     model,
     page,
@@ -225,6 +230,7 @@ export function VehicleRegistryPage() {
     setSearchDraft('')
     setBrand(null)
     setModel(null)
+    setClientMatchState(null)
     setProcessingState(null)
     setWorkflowStatus(null)
     setQualityStatus(null)
@@ -324,6 +330,17 @@ export function VehicleRegistryPage() {
               onChange={(value) => {
                 setPage(1)
                 setModel(value)
+              }}
+            />
+            <Select
+              clearable
+              data={clientMatchOptions(t)}
+              label={t('Клієнт у GBA')}
+              placeholder={t('Усі · збіги зверху')}
+              value={clientMatchState}
+              onChange={(value) => {
+                setPage(1)
+                setClientMatchState(value as VehicleRegistryClientMatchState | null)
               }}
             />
             <Select
@@ -1345,6 +1362,13 @@ function qualityOptions(t: (value: string) => string) {
     { label: t('Попередження'), value: 'warning' },
     { label: t('Помилка'), value: 'invalid' },
     { label: t('Дублікат'), value: 'duplicate' },
+  ]
+}
+
+function clientMatchOptions(t: (value: string) => string) {
+  return [
+    { label: t('Є збіг'), value: 'matched' },
+    { label: t('Без збігу'), value: 'unmatched' },
   ]
 }
 

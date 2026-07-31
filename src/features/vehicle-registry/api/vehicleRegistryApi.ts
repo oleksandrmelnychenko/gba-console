@@ -30,6 +30,7 @@ export function getVehicleRegistryVehicles(query: VehicleRegistryVehicleQuery, s
     query: {
       limit: query.limit,
       offset: query.offset,
+      clientMatchState: query.clientMatchState || '',
       search: query.search || '',
       brand: query.brand || '',
       model: query.model || '',
@@ -37,6 +38,7 @@ export function getVehicleRegistryVehicles(query: VehicleRegistryVehicleQuery, s
       workflowStatus: query.workflowStatus || '',
       dataQualityStatus: query.dataQualityStatus || '',
       processingState: query.processingState || '',
+      prioritizeClientMatches: query.prioritizeClientMatches !== false,
       includeRemoved: query.includeRemoved || false,
     },
     signal,

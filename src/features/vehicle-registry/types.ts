@@ -1,5 +1,7 @@
 export type VehicleRegistryProcessingState = 'pending' | 'processed'
 
+export type VehicleRegistryClientMatchState = 'matched' | 'unmatched'
+
 export type VehicleRegistryWorkflowStatus =
   | 'new'
   | 'in_progress'
@@ -138,6 +140,7 @@ export type VehicleRegistryPagedResponse<T> = {
 export type VehicleRegistryVehicleQuery = {
   limit: number
   offset: number
+  clientMatchState?: VehicleRegistryClientMatchState | null
   search?: string
   brand?: string | null
   model?: string | null
@@ -145,6 +148,7 @@ export type VehicleRegistryVehicleQuery = {
   workflowStatus?: VehicleRegistryWorkflowStatus | null
   dataQualityStatus?: VehicleRegistryDataQualityStatus | null
   processingState?: VehicleRegistryProcessingState | null
+  prioritizeClientMatches?: boolean
   includeRemoved?: boolean
 }
 
