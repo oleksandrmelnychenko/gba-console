@@ -4,18 +4,13 @@
 
 .pricing-page__filter-bar {
   display: grid;
+  gap: 10px;
   grid-template-columns:
     minmax(260px, 1fr)
-    minmax(260px, 1fr)
-    minmax(260px, 1fr);
+    minmax(240px, 0.85fr)
+    minmax(250px, 0.9fr);
   min-width: 0;
   overflow-x: auto;
-}
-
-.pricing-page__title {
-  font-size: 13px;
-  line-height: 1.2;
-  white-space: nowrap;
 }
 
 .pricing-page__filter {
@@ -24,8 +19,11 @@
 
 .pricing-page__content {
   align-content: start;
+  align-items: start;
   display: grid;
-  gap: 10px;
+  gap: 12px;
+  grid-auto-rows: max-content;
+  grid-template-columns: minmax(560px, 1.55fr) minmax(330px, 0.78fr);
   overflow-y: auto;
   padding: 10px 8px 8px;
 }
@@ -35,5 +33,141 @@
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: var(--mantine-radius-md);
   min-width: 0;
+  overflow: hidden;
+}
+
+.pricing-page__section--market {
+  padding: 0;
+}
+
+.pricing-page__recommendation-head {
+  align-items: center;
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  min-height: 51px;
+  padding: 10px 16px;
+}
+
+.pricing-page__recommendation-heading {
+  align-items: center;
+  display: flex;
+  min-width: 0;
+}
+
+.pricing-page__recommendation-icon,
+.pricing-page__recommendation-kicker {
+  display: none;
+}
+
+.pricing-page__title {
+  color: var(--mantine-color-gray-7);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.pricing-page__recommendation-status {
+  background: var(--mantine-color-gray-0);
+  border: 1px solid var(--mantine-color-gray-3);
+  border-radius: 7px;
+  color: var(--mantine-color-gray-7);
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  padding: 4px 6px;
+}
+
+.pricing-page__recommendation-status.is-ready {
+  background: var(--mantine-color-green-0);
+  border-color: var(--mantine-color-green-3);
+  color: var(--mantine-color-green-8);
+}
+
+.pricing-page__recommendation-body {
   padding: 14px 16px;
+}
+
+.pricing-page__recommendation-empty {
+  align-items: flex-start;
+  display: flex;
+  flex-direction: column;
+  min-height: 184px;
+  padding: 18px 0 8px;
+  text-align: left;
+}
+
+.pricing-page__recommendation-spark {
+  display: none;
+}
+
+.pricing-page__recommendation-empty-title {
+  color: var(--mantine-color-gray-8);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.pricing-page__recommendation-empty-copy {
+  color: var(--mantine-color-gray-6);
+  font-size: 11.5px;
+  line-height: 1.55;
+  margin-top: 6px;
+  max-width: 360px;
+}
+
+.pricing-page__recommendation-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 16px;
+}
+
+.pricing-page__recommendation-step {
+  align-items: center;
+  background: var(--mantine-color-gray-0);
+  border: 1px solid var(--mantine-color-gray-3);
+  border-radius: 7px;
+  color: var(--mantine-color-gray-7);
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  gap: 5px;
+  padding: 5px 7px;
+}
+
+.pricing-page__recommendation-step.is-active {
+  background: var(--mantine-color-orange-0);
+  border-color: var(--mantine-color-orange-2);
+  color: var(--mantine-color-orange-8);
+}
+
+@media (max-width: 1180px) {
+  .pricing-page__content {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .pricing-page__recommendation-empty {
+    min-height: 150px;
+  }
+}
+
+@media (max-width: 840px) {
+  .pricing-page__filter-bar {
+    grid-template-columns: repeat(3, minmax(220px, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .pricing-page__content {
+    padding-inline: 6px;
+  }
+
+  .pricing-page__recommendation-status {
+    display: none;
+  }
 }

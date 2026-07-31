@@ -1,5 +1,39 @@
 export type PriceConfidence = 'high' | 'medium' | 'low'
 
+export type CompetitorSourceKey = 'avtopro' | 'google' | 'hotline' | 'prom' | 'rozetka'
+
+export type CompetitorOfferAvailability = 'in_stock' | 'limited' | 'out_of_stock' | 'unknown'
+
+export type CompetitorPriceOffer = {
+  availability: CompetitorOfferAvailability
+  delivery_text: string | null
+  marketplace_name: string
+  original_price_uah: number | null
+  price_uah: number
+  seller_name: string | null
+  similarity_score: number
+  source: CompetitorSourceKey
+  title: string
+  url: string
+}
+
+export type CompetitorPriceSearchResult = {
+  ai_summary: string | null
+  currency: 'UAH'
+  market: 'UA'
+  offers: CompetitorPriceOffer[]
+  query: string
+  searched_at: string
+  sources_scanned: CompetitorSourceKey[]
+}
+
+export type CompetitorPriceSearchRequest = {
+  market: 'UA'
+  product_net_uid: string | null
+  query: string
+  sources: CompetitorSourceKey[]
+}
+
 export type DiscountBand = {
   min_pct: number
   target_pct: number

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
-import { getPriceRecommendation, PricingContractError } from './pricingApi'
+import { getPriceRecommendation, PricingContractError, searchCompetitorPrices } from './pricingApi'
 
 vi.mock('../../../shared/api/apiClient', () => ({
   apiRequest: vi.fn(),
@@ -88,5 +88,51 @@ describe('pricingApi canonical AI contract', () => {
     apiRequestMock.mockResolvedValueOnce(invalidBand)
     await expect(getPriceRecommendation(PRODUCT_NET_ID, AGREEMENT_NET_ID))
       .rejects.toBeInstanceOf(PricingContractError)
+  })
+
+  it('normalizes the Ukrainian competitor scan contract', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      ai_summary: 'Ринкова медіана стабільна.',
+      currency: 'UAH',
+      market: 'UA',
+      offers: [{
+        availability: 'in_stock',
+        delivery_text: '1–2 дні',
+        marketplace_name: 'Prom.ua',
+        original_price_uah: 1500,
+        price_uah: 1399,
+        seller_name: 'Тестовий продавець',
+        similarity_score: 0.96,
+        source: 'prom',
+        title: 'Точний товар',
+        url: 'https://prom.ua/ua/example',
+      }],
+      query: 'OE-123',
+      searched_at: '2026-07-31T11:30:00Z',
+      sources_scanned: ['prom'],
+    })
+
+    const controller = new AbortController()
+    await expect(searchCompetitorPrices({
+      market: 'UA',
+      product_net_uid: PRODUCT_NET_ID,
+      query: '  OE-123  ',
+      sources: ['prom'],
+    }, controller.signal)).resolves.toMatchObject({
+      currency: 'UAH',
+      market: 'UA',
+      offers: [{ price_uah: 1399, similarity_score: 0.96, source: 'prom' }],
+    })
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/pricing/competitors/search', {
+      body: {
+        market: 'UA',
+        product_net_uid: PRODUCT_NET_ID,
+        query: 'OE-123',
+        sources: ['prom'],
+      },
+      method: 'POST',
+      signal: controller.signal,
+    })
   })
 })

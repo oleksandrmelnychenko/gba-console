@@ -1,6 +1,7 @@
 import { Group, Loader, Select, Stack, Text } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { useEffect, useMemo, useState } from 'react'
+import { Check, PackageSearch, UserRound } from 'lucide-react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -297,30 +298,78 @@ export function PricingPage() {
         </div>
 
         <div className="pricing-page__content console-table-body">
-          <section className="pricing-page__section">
-            <Stack gap="sm">
-              <Group align="center" gap="xs" wrap="nowrap">
-                <Text className="app-section-title pricing-page__title" fw={600}>
-                  {t('Рекомендація ціни')}
-                </Text>
-                <AiFeatureBadge size="sm" tooltip={t('AI-сервіс цінової оптимізації')} />
-              </Group>
+          <section className="pricing-page__section pricing-page__section--market">
+            <CompetitorWebSearchPanel product={selectedProduct} />
+          </section>
 
+          <section className="pricing-page__section pricing-page__section--recommendation">
+            <div className="pricing-page__recommendation-head">
+              <div className="pricing-page__recommendation-heading">
+                <div>
+                  <Group align="center" gap="xs" wrap="nowrap">
+                    <Text className="app-section-title pricing-page__title" fw={600}>
+                      {t('Рекомендація ціни')}
+                    </Text>
+                    <AiFeatureBadge size="sm" tooltip={t('AI-сервіс цінової оптимізації')} />
+                  </Group>
+                </div>
+              </div>
+              <span className={`pricing-page__recommendation-status${productNetId && clientAgreementNetId ? ' is-ready' : ''}`}>
+                {productNetId && clientAgreementNetId ? t('готово') : t('очікує дані')}
+              </span>
+            </div>
+
+            <div className="pricing-page__recommendation-body">
               {productNetId && clientAgreementNetId ? (
                 <PriceHintPanel clientAgreementNetId={clientAgreementNetId} productNetId={productNetId} />
               ) : (
-                <Text c="dimmed" size="sm">
-                  {t('Оберіть товар, клієнта та угоду, щоб отримати рекомендацію ціни')}
-                </Text>
+                <div className="pricing-page__recommendation-empty">
+                  <Text className="pricing-page__recommendation-empty-title">
+                    {t('Зберемо персональну ціну за кілька секунд')}
+                  </Text>
+                  <Text className="pricing-page__recommendation-empty-copy">
+                    {t('Врахуємо клієнтську угоду, маржу, історію продажів і позицію на українському ринку.')}
+                  </Text>
+                  <div className="pricing-page__recommendation-steps">
+                    <RecommendationStep
+                      active={Boolean(productNetId)}
+                      icon={<PackageSearch size={15} />}
+                      label={t('Товар')}
+                    />
+                    <RecommendationStep
+                      active={Boolean(selectedClient)}
+                      icon={<UserRound size={15} />}
+                      label={t('Клієнт')}
+                    />
+                    <RecommendationStep
+                      active={Boolean(clientAgreementNetId)}
+                      icon={<Check size={15} />}
+                      label={t('Угода')}
+                    />
+                  </div>
+                </div>
               )}
-            </Stack>
-          </section>
-
-          <section className="pricing-page__section">
-            <CompetitorWebSearchPanel product={selectedProduct} />
+            </div>
           </section>
         </div>
       </div>
     </Stack>
+  )
+}
+
+function RecommendationStep({
+  active,
+  icon,
+  label,
+}: {
+  active: boolean
+  icon: ReactNode
+  label: string
+}) {
+  return (
+    <span className={`pricing-page__recommendation-step${active ? ' is-active' : ''}`}>
+      {icon}
+      {label}
+    </span>
   )
 }

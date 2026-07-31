@@ -1,10 +1,45 @@
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
+import { searchCompetitorPrices } from '../api/pricingApi'
 import { CompetitorWebSearchPanel } from './CompetitorWebSearchPanel'
 
+vi.mock('../api/pricingApi', () => ({
+  searchCompetitorPrices: vi.fn(),
+}))
+
+const searchCompetitorPricesMock = vi.mocked(searchCompetitorPrices)
+
+beforeEach(() => {
+  searchCompetitorPricesMock.mockReset()
+})
+
 describe('CompetitorWebSearchPanel', () => {
+  it('expands and collapses the Anthropic production prompt', () => {
+    render(
+      <MantineProvider>
+        <I18nProvider>
+          <CompetitorWebSearchPanel product={null} />
+        </I18nProvider>
+      </MantineProvider>,
+    )
+
+    const expandButton = screen.getByRole('button', { name: 'Показати промпт Anthropic' })
+    expect(expandButton.getAttribute('aria-expanded')).toBe('false')
+    expect(screen.queryByTestId('competitor-search-prompt')).toBeNull()
+
+    fireEvent.click(expandButton)
+
+    const collapseButton = screen.getByRole('button', { name: 'Згорнути промпт Anthropic' })
+    expect(collapseButton.getAttribute('aria-expanded')).toBe('true')
+    expect(screen.getByTestId('competitor-search-prompt').textContent)
+      .toContain('Ти — GBA Market Radar')
+
+    fireEvent.click(collapseButton)
+    expect(screen.queryByTestId('competitor-search-prompt')).toBeNull()
+  })
+
   it('resets the editable query when the selected product changes', () => {
     const { rerender } = render(
       <MantineProvider>
@@ -34,5 +69,57 @@ describe('CompetitorWebSearchPanel', () => {
 
     expect(screen.getByLabelText<HTMLInputElement>('Пошуковий запит').value)
       .toBe('OE-2 SKU-2 Second product')
+  })
+
+  it('runs the market scan and renders normalized offers', async () => {
+    searchCompetitorPricesMock.mockResolvedValue({
+      ai_summary: 'Більшість точних пропозицій тримається біля 1 350 ₴.',
+      currency: 'UAH',
+      market: 'UA',
+      offers: [
+        {
+          availability: 'in_stock',
+          delivery_text: 'відправка сьогодні',
+          marketplace_name: 'Prom.ua',
+          original_price_uah: 1399,
+          price_uah: 1250,
+          seller_name: 'Авто Світ',
+          similarity_score: 0.97,
+          source: 'prom',
+          title: 'Bosch OE-1 — точний збіг',
+          url: 'https://prom.ua/ua/example',
+        },
+      ],
+      query: 'OE-1 SKU-1 First product',
+      searched_at: '2026-07-31T11:30:00Z',
+      sources_scanned: ['prom'],
+    })
+
+    render(
+      <MantineProvider>
+        <I18nProvider>
+          <CompetitorWebSearchPanel
+            product={{
+              MainOriginalNumber: 'OE-1',
+              Name: 'First product',
+              NetUid: '11111111-1111-1111-1111-111111111111',
+              VendorCode: 'SKU-1',
+            }}
+          />
+        </I18nProvider>
+      </MantineProvider>,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Знайти ціни' }))
+
+    expect(await screen.findByText('Ринок знайдено')).not.toBeNull()
+    expect(screen.getByText('Bosch OE-1 — точний збіг')).not.toBeNull()
+    expect(screen.getAllByText('1 250 ₴').length).toBeGreaterThan(0)
+    expect(searchCompetitorPricesMock).toHaveBeenCalledWith({
+      market: 'UA',
+      product_net_uid: '11111111-1111-1111-1111-111111111111',
+      query: 'OE-1 SKU-1 First product',
+      sources: ['prom', 'rozetka', 'hotline', 'avtopro', 'google'],
+    }, expect.any(AbortSignal))
   })
 })

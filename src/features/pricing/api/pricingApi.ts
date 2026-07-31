@@ -3,10 +3,22 @@ import {
   normalizeAiHistoryLineage,
   requireAiIsoDate,
 } from '../../../shared/ai/aiHistoryLineage'
-import type { DiscountBand, PeerBand, PriceConfidence, PriceRecommendation } from '../pricingTypes'
+import type {
+  CompetitorOfferAvailability,
+  CompetitorPriceOffer,
+  CompetitorPriceSearchRequest,
+  CompetitorPriceSearchResult,
+  CompetitorSourceKey,
+  DiscountBand,
+  PeerBand,
+  PriceConfidence,
+  PriceRecommendation,
+} from '../pricingTypes'
 
 const GUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const PRICE_CONFIDENCES: PriceConfidence[] = ['high', 'medium', 'low']
+const COMPETITOR_SOURCES: CompetitorSourceKey[] = ['avtopro', 'google', 'hotline', 'prom', 'rozetka']
+const COMPETITOR_AVAILABILITIES: CompetitorOfferAvailability[] = ['in_stock', 'limited', 'out_of_stock', 'unknown']
 const CENT_EPSILON = 1e-7
 
 export class PricingContractError extends Error {
@@ -36,6 +48,78 @@ export async function getPriceRecommendation(
   })
 
   return normalizeRecommendation(result, requestedProductNetId, requestedAgreementNetId)
+}
+
+export async function searchCompetitorPrices(
+  request: CompetitorPriceSearchRequest,
+  signal?: AbortSignal,
+): Promise<CompetitorPriceSearchResult> {
+  const query = request.query.trim()
+  if (query.length < 2) {
+    throw new PricingContractError('request.query', 'must contain at least 2 characters')
+  }
+  if (request.sources.length === 0) {
+    throw new PricingContractError('request.sources', 'must contain at least one source')
+  }
+
+  const result = await apiRequest<unknown>('/pricing/competitors/search', {
+    body: {
+      market: request.market,
+      product_net_uid: request.product_net_uid,
+      query,
+      sources: request.sources,
+    },
+    method: 'POST',
+    ...(signal ? { signal } : {}),
+  })
+
+  return normalizeCompetitorSearchResult(result)
+}
+
+function normalizeCompetitorSearchResult(result: unknown): CompetitorPriceSearchResult {
+  const value = requireRecord(result, 'competitor_search')
+  if (value.market !== 'UA') {
+    throw new PricingContractError('competitor_search.market', 'must be UA')
+  }
+  if (value.currency !== 'UAH') {
+    throw new PricingContractError('competitor_search.currency', 'must be UAH')
+  }
+  if (!Array.isArray(value.offers)) {
+    throw new PricingContractError('competitor_search.offers', 'expected an array')
+  }
+  if (!Array.isArray(value.sources_scanned)) {
+    throw new PricingContractError('competitor_search.sources_scanned', 'expected an array')
+  }
+
+  return {
+    ai_summary: requireNullableString(value.ai_summary, 'competitor_search.ai_summary'),
+    currency: 'UAH',
+    market: 'UA',
+    offers: value.offers.map((offer, index) => normalizeCompetitorOffer(offer, index)),
+    query: requireNonEmptyString(value.query, 'competitor_search.query'),
+    searched_at: requireIsoDateTime(value.searched_at, 'competitor_search.searched_at'),
+    sources_scanned: value.sources_scanned.map((source, index) => (
+      requireCompetitorSource(source, `competitor_search.sources_scanned[${index}]`)
+    )),
+  }
+}
+
+function normalizeCompetitorOffer(value: unknown, index: number): CompetitorPriceOffer {
+  const path = `competitor_search.offers[${index}]`
+  const offer = requireRecord(value, path)
+
+  return {
+    availability: requireCompetitorAvailability(offer.availability, `${path}.availability`),
+    delivery_text: requireNullableString(offer.delivery_text, `${path}.delivery_text`),
+    marketplace_name: requireNonEmptyString(offer.marketplace_name, `${path}.marketplace_name`),
+    original_price_uah: requireNullableMoney(offer.original_price_uah, `${path}.original_price_uah`),
+    price_uah: requireMoney(offer.price_uah, `${path}.price_uah`),
+    seller_name: requireNullableString(offer.seller_name, `${path}.seller_name`),
+    similarity_score: requireScore(offer.similarity_score, `${path}.similarity_score`),
+    source: requireCompetitorSource(offer.source, `${path}.source`),
+    title: requireNonEmptyString(offer.title, `${path}.title`),
+    url: requireHttpUrl(offer.url, `${path}.url`),
+  }
 }
 
 function normalizeRecommendation(
@@ -236,8 +320,12 @@ function requireNullableMoney(value: unknown, path: string): number | null {
   if (value === null) {
     return null
   }
+  return requireMoney(value, path)
+}
+
+function requireMoney(value: unknown, path: string): number {
   if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
-    throw new PricingContractError(path, 'must be null or a finite non-negative amount')
+    throw new PricingContractError(path, 'must be a finite non-negative amount')
   }
   if (Math.abs(value * 100 - Math.round(value * 100)) > CENT_EPSILON) {
     throw new PricingContractError(path, 'must be rounded to cents')
@@ -267,4 +355,55 @@ function requireNullablePositiveNumber(value: unknown, path: string): number | n
   }
 
   return value
+}
+
+function requireCompetitorSource(value: unknown, path: string): CompetitorSourceKey {
+  if (typeof value !== 'string' || !COMPETITOR_SOURCES.includes(value as CompetitorSourceKey)) {
+    throw new PricingContractError(path, 'contains an unsupported source')
+  }
+
+  return value as CompetitorSourceKey
+}
+
+function requireCompetitorAvailability(value: unknown, path: string): CompetitorOfferAvailability {
+  if (
+    typeof value !== 'string'
+    || !COMPETITOR_AVAILABILITIES.includes(value as CompetitorOfferAvailability)
+  ) {
+    throw new PricingContractError(path, 'contains an unsupported availability')
+  }
+
+  return value as CompetitorOfferAvailability
+}
+
+function requireScore(value: unknown, path: string): number {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0 || value > 1) {
+    throw new PricingContractError(path, 'must be a number from 0 to 1')
+  }
+
+  return value
+}
+
+function requireHttpUrl(value: unknown, path: string): string {
+  const url = requireNonEmptyString(value, path)
+
+  try {
+    const parsed = new URL(url)
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      throw new Error('unsupported protocol')
+    }
+  } catch {
+    throw new PricingContractError(path, 'must be an absolute HTTP URL')
+  }
+
+  return url
+}
+
+function requireIsoDateTime(value: unknown, path: string): string {
+  const dateTime = requireNonEmptyString(value, path)
+  if (Number.isNaN(Date.parse(dateTime))) {
+    throw new PricingContractError(path, 'must be an ISO date-time')
+  }
+
+  return dateTime
 }
