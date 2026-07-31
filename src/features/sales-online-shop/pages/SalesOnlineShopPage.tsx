@@ -962,7 +962,7 @@ const SalesOnlineShopGridRow = memo(function SalesOnlineShopGridRow({
   const { t } = useI18n()
   const date = getSaleDate(sale)
   const clientName = getSaleClientDisplayName(sale)
-  const retailClientLine = getRetailClientLine(sale)
+  const retailClient = getRetailClientDetails(sale)
   const manager = getSaleUserName(sale)
   const contract = sale.ClientAgreement?.Agreement?.Name
   const transporter = getSaleTransporterName(sale)
@@ -1072,10 +1072,21 @@ const SalesOnlineShopGridRow = memo(function SalesOnlineShopGridRow({
                 <span>{manager}</span>
               </>
             )}
-            {retailClientLine && (
+            {(retailClient.phone || retailClient.name) && (
               <>
                 <span className="sg-meta-sep">·</span>
-                <span>{retailClientLine}</span>
+                <span className="sg-meta-retail-client">
+                  {retailClient.phone && (
+                    <span className="sg-meta-retail-chip is-phone" title={retailClient.phone}>
+                      {retailClient.phone}
+                    </span>
+                  )}
+                  {retailClient.name && (
+                    <span className="sg-meta-retail-chip is-name" title={retailClient.name}>
+                      {retailClient.name}
+                    </span>
+                  )}
+                </span>
               </>
             )}
             {contract && (
@@ -1566,13 +1577,19 @@ function getSaleClientDisplayName(sale: SalesOnlineShopSale): string {
   return [rootName, baseName].filter(Boolean).join(' / ') || baseName
 }
 
-function getRetailClientLine(sale: SalesOnlineShopSale): string {
+function getRetailClientDetails(sale: SalesOnlineShopSale): { name: string; phone: string } {
   const retailClient = sale.RetailClient
-  const phone = retailClient?.PhoneNumber || retailClient?.Phone
+  const phone = (retailClient?.PhoneNumber || retailClient?.Phone || '').trim()
   const name =
     retailClient?.Name
     || retailClient?.FullName
     || [retailClient?.LastName, retailClient?.FirstName].filter(Boolean).join(' ').trim()
+
+  return { name: name.trim(), phone }
+}
+
+function getRetailClientLine(sale: SalesOnlineShopSale): string {
+  const { name, phone } = getRetailClientDetails(sale)
 
   return [phone, name].filter(Boolean).join(' - ')
 }
