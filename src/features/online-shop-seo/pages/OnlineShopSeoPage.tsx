@@ -19,7 +19,7 @@ import {
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
-import { Building, Check, ChevronRight, CircleAlert, CreditCard, FileText, Hash, Image, Link, Pencil, Phone, Plus, RefreshCw, RotateCcw, Save, Search, ShoppingBasket, Trash2, X } from 'lucide-react'
+import { BadgePercent, Building, Check, ChevronRight, CircleAlert, CircleDollarSign, CreditCard, FileText, Hash, Image, Link, Pencil, Phone, Plus, RefreshCw, RotateCcw, Save, Search, ShoppingBasket, Trash2, X } from 'lucide-react'
 import { type CSSProperties, type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useReducer } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -2147,6 +2147,9 @@ function SeoShopClientList({
               const clientName = displayValue(client.FullName || getClientDisplayName(client))
               const agreementName = getOnlineShopClientAgreementName(client)
               const agreementOrganizationName = getOnlineShopClientAgreementOrganizationName(client)
+              const agreementCurrencyCode = getOnlineShopClientAgreementCurrencyCode(client)
+              const agreementPricingName = getOnlineShopClientAgreementPricingName(client)
+              const agreementVatMode = getOnlineShopClientAgreementVatMode(client)
 
               return (
                 <div
@@ -2198,6 +2201,27 @@ function SeoShopClientList({
                             <span>Організація</span>
                           </span>
                           <span className="seo-shop-client-tile-detail-value">{agreementOrganizationName || 'Не вказано'}</span>
+                        </div>
+                        <div className="seo-shop-client-tile-detail">
+                          <span className="seo-shop-client-tile-detail-label">
+                            <CircleDollarSign size={12} />
+                            <span>Валюта</span>
+                          </span>
+                          <span className="seo-shop-client-tile-detail-value">{agreementCurrencyCode || 'Не вказано'}</span>
+                        </div>
+                        <div className="seo-shop-client-tile-detail">
+                          <span className="seo-shop-client-tile-detail-label">
+                            <BadgePercent size={12} />
+                            <span>Тип ціни</span>
+                          </span>
+                          <span className="seo-shop-client-tile-detail-value">{agreementPricingName || 'Не вказано'}</span>
+                        </div>
+                        <div className="seo-shop-client-tile-detail">
+                          <span className="seo-shop-client-tile-detail-label">
+                            <FileText size={12} />
+                            <span>Оподаткування</span>
+                          </span>
+                          <span className="seo-shop-client-tile-detail-value">{agreementVatMode || 'Не вказано'}</span>
                         </div>
                       </div>
                     </div>
@@ -2833,29 +2857,40 @@ function getClientInitials(client: OnlineShopClient) {
 
 function getOnlineShopClientAgreementName(client: OnlineShopClient) {
   return (
-    getOnlineShopClientAgreementCandidateName(client.ClientAgreement) ||
-    client.Agreement?.Name ||
+    getOnlineShopClientAgreementEntity(client)?.Name ||
     client.AgreementName ||
-    (client.ClientAgreements || []).map(getOnlineShopClientAgreementCandidateName).find(Boolean) ||
     ''
   )
 }
 
-function getOnlineShopClientAgreementCandidateName(agreement?: OnlineShopClient['ClientAgreement']) {
-  return agreement?.Agreement?.Name || agreement?.AgreementName || agreement?.Name || ''
+function getOnlineShopClientAgreementEntity(client: OnlineShopClient) {
+  const agreements = [
+    client.ClientAgreement?.Agreement,
+    ...(client.ClientAgreements || []).map((agreement) => agreement.Agreement),
+  ].filter((agreement): agreement is NonNullable<typeof agreement> => Boolean(agreement))
+
+  return client.Agreement || agreements[0]
 }
 
 function getOnlineShopClientAgreementOrganizationName(client: OnlineShopClient) {
-  return (
-    getOnlineShopClientAgreementCandidateOrganizationName(client.ClientAgreement) ||
-    getCompactOrganizationName(client.Agreement?.Organization) ||
-    (client.ClientAgreements || []).map(getOnlineShopClientAgreementCandidateOrganizationName).find(Boolean) ||
-    ''
-  )
+  return getCompactOrganizationName(getOnlineShopClientAgreementEntity(client)?.Organization || null)
 }
 
-function getOnlineShopClientAgreementCandidateOrganizationName(agreement?: OnlineShopClient['ClientAgreement']) {
-  return getCompactOrganizationName(agreement?.Agreement?.Organization || agreement?.Organization || null)
+function getOnlineShopClientAgreementCurrencyCode(client: OnlineShopClient) {
+  return getOnlineShopClientAgreementEntity(client)?.Currency?.Code || ''
+}
+
+function getOnlineShopClientAgreementPricingName(client: OnlineShopClient) {
+  return getOnlineShopClientAgreementEntity(client)?.Pricing?.Name || ''
+}
+
+function getOnlineShopClientAgreementVatMode(client: OnlineShopClient) {
+  const agreement = getOnlineShopClientAgreementEntity(client)
+  if (!agreement) {
+    return ''
+  }
+
+  return agreement.WithVATAccounting ? 'З ПДВ' : 'Без ПДВ'
 }
 
 function filterOnlineShopClients(clients: OnlineShopClient[], searchValue: string) {
@@ -2870,6 +2905,9 @@ function filterOnlineShopClients(clients: OnlineShopClient[], searchValue: strin
       getClientDisplayName(client),
       getOnlineShopClientAgreementName(client),
       getOnlineShopClientAgreementOrganizationName(client),
+      getOnlineShopClientAgreementCurrencyCode(client),
+      getOnlineShopClientAgreementPricingName(client),
+      getOnlineShopClientAgreementVatMode(client),
       getClientPhone(client),
       client.ClientNumber,
       client.EmailAddress,
