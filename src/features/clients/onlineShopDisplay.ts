@@ -1,4 +1,8 @@
 import type { RetailCartItem, RetailProduct } from './onlineShopTypes'
+import { getProductShopImageUrlByCode } from '../products/utils'
+import { toProxiedAssetUrl } from '../../shared/url/proxiedAssetUrl'
+
+export const RETAIL_LOCAL_CURRENCY_CODE = 'UAH'
 
 export function getRetailItemTotal(item: RetailCartItem): number {
   const total = getNumber(item.Total) ?? getNumber(item.Sum) ?? getNumber(item.TotalAmountLocal) ?? getNumber(item.TotalAmount)
@@ -26,7 +30,7 @@ export function getRetailItemUnitPrice(item: RetailCartItem): number {
 }
 
 export function getRetailItemProductName(item: RetailCartItem, product?: RetailProduct): string {
-  return item.ProductName?.trim() || product?.Name?.trim() || ''
+  return item.ProductName?.trim() || product?.NameUA?.trim() || product?.Name?.trim() || ''
 }
 
 export function getRetailItemVendorCode(item: RetailCartItem, product?: RetailProduct): string {
@@ -34,14 +38,55 @@ export function getRetailItemVendorCode(item: RetailCartItem, product?: RetailPr
 }
 
 export function getRetailItemImage(item: RetailCartItem, product?: RetailProduct): string {
-  return (
+  const productImage =
+    product?.ProductImages?.find((image) => !image.Deleted && image.IsMainImage && image.ImageUrl?.trim())?.ImageUrl
+    || product?.ProductImages?.find((image) => !image.Deleted && image.ImageUrl?.trim())?.ImageUrl
+  const directImage =
     item.ProductImage?.trim()
+    || productImage?.trim()
     || product?.Image?.trim()
-    || product?.ProductImages?.[0]?.ImageUrl?.trim()
     || product?.ImageUrl?.trim()
     || product?.ProductImage?.trim()
     || ''
-  )
+
+  return toProxiedAssetUrl(directImage) || getProductShopImageUrlByCode(getRetailItemVendorCode(item, product))
+}
+
+export function getRetailItemLocalCurrencyCode(
+  item: RetailCartItem,
+  fallback = RETAIL_LOCAL_CURRENCY_CODE,
+): string {
+  return (
+    item.LocalCurrencyCode?.trim()
+    || item.LocalCurrency?.Code?.trim()
+    || fallback.trim()
+    || RETAIL_LOCAL_CURRENCY_CODE
+  ).toUpperCase()
+}
+
+export function getRetailItemSourceCurrencyCode(item: RetailCartItem, product?: RetailProduct): string {
+  return (
+    item.CurrencyCode?.trim()
+    || item.Currency?.Code?.trim()
+    || product?.CurrencyCode?.trim()
+    || ''
+  ).toUpperCase()
+}
+
+export function getRetailItemSourceUnitPrice(item: RetailCartItem, product?: RetailProduct): number | null {
+  return getNumber(item.PricePerItem) ?? getNumber(product?.CurrentPrice)
+}
+
+export function getRetailItemMainOriginalNumber(product?: RetailProduct): string {
+  return product?.MainOriginalNumber?.trim() || ''
+}
+
+export function getRetailItemBrand(product?: RetailProduct): string {
+  return product?.Brand?.trim() || product?.DescriptionUA?.trim() || product?.Description?.trim() || ''
+}
+
+export function getRetailItemAvailableQty(product?: RetailProduct): number | null {
+  return getNumber(product?.AvailableQtyUk)
 }
 
 export function getRetailItemKey(item: RetailCartItem, index: number): string {

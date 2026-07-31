@@ -139,6 +139,7 @@ export function OnlineShopSalesPanel({ constrainHeight = true, netUid }: OnlineS
                   </Group>
 
                   <OnlineShopOrderItemsList
+                    currencyCode={getSaleCurrencyCode(sale)}
                     emptyText="У продажі немає товарів"
                     items={sale.Order?.OrderItems || []}
                   />
@@ -162,6 +163,10 @@ function getSaleNumber(sale: RetailSale): string {
 
 function getSaleTotal(sale: RetailSale): number {
   return getNumber(sale.TotalAmountLocal) ?? getNumber(sale.TotalAmount) ?? getNumber(sale.Order?.TotalAmountLocal) ?? getNumber(sale.Order?.TotalAmount) ?? 0
+}
+
+function getSaleCurrencyCode(sale: RetailSale): string {
+  return sale.ClientAgreement?.Agreement?.Currency?.Code?.trim() || 'UAH'
 }
 
 function getStatusName(status: RetailSale['BaseLifeCycleStatus']): string {

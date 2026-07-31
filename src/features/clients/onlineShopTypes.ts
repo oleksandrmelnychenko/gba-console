@@ -1,5 +1,5 @@
 import type { SaleOrderItem } from './salesTypes'
-import type { Client } from './types'
+import type { Client, ClientAgreement, Currency } from './types'
 
 export type RetailClient = {
   [key: string]: unknown
@@ -37,18 +37,27 @@ export type RetailClientRegion = {
 export type RetailProduct = {
   [key: string]: unknown
   Articul?: string
+  AvailableQtyUk?: number
   BarCode?: string
   Brand?: string
+  CurrencyCode?: string
+  CurrentPrice?: number
   CurrentLocalPrice?: number
+  Description?: string
+  DescriptionUA?: string
+  HasImage?: boolean
   Id?: number
   Image?: string
   ImageUrl?: string
   MainOriginalNumber?: string
   Name?: string
+  NameUA?: string
   NetUid?: string
   ProductImage?: string
   ProductImages?: Array<{
+    Deleted?: boolean
     ImageUrl?: string
+    IsMainImage?: boolean
   }>
   VendorCode?: string
 }
@@ -56,7 +65,12 @@ export type RetailProduct = {
 export type RetailCartItem = {
   [key: string]: unknown
   Count?: number
+  Currency?: Currency
+  CurrencyCode?: string
+  ExchangeRateAmount?: number
   Id?: number
+  LocalCurrency?: Currency
+  LocalCurrencyCode?: string
   NetUid?: string
   Price?: number
   PricePerItem?: number
@@ -96,6 +110,7 @@ export type RetailSale = {
   [key: string]: unknown
   BaseLifeCycleStatus?: RetailSaleStatus
   BaseSalePaymentStatus?: RetailSaleStatus
+  ClientAgreement?: ClientAgreement
   Created?: Date | string
   FromDate?: Date | string
   Id?: number

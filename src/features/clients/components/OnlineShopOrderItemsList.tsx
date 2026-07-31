@@ -1,11 +1,18 @@
 import { Badge, Box, Group, Image, Stack, Text, ThemeIcon } from '@mantine/core'
 import { Image as ImageIcon } from 'lucide-react'
+import { useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import {
+  getRetailItemAvailableQty,
+  getRetailItemBrand,
   getRetailItemImage,
   getRetailItemKey,
+  getRetailItemLocalCurrencyCode,
+  getRetailItemMainOriginalNumber,
   getRetailItemProductName,
   getRetailItemQuantity,
+  getRetailItemSourceCurrencyCode,
+  getRetailItemSourceUnitPrice,
   getRetailItemTotal,
   getRetailItemUnitPrice,
   getRetailItemVendorCode,
@@ -16,13 +23,17 @@ const amountFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 2,
   minimumFractionDigits: 2,
 })
+const quantityFormatter = new Intl.NumberFormat('uk-UA', {
+  maximumFractionDigits: 3,
+})
 
 type OnlineShopOrderItemsListProps = {
+  currencyCode?: string
   emptyText: string
   items: RetailCartItem[]
 }
 
-export function OnlineShopOrderItemsList({ emptyText, items }: OnlineShopOrderItemsListProps) {
+export function OnlineShopOrderItemsList({ currencyCode, emptyText, items }: OnlineShopOrderItemsListProps) {
   const { t } = useI18n()
 
   if (items.length === 0) {
@@ -36,54 +47,101 @@ export function OnlineShopOrderItemsList({ emptyText, items }: OnlineShopOrderIt
   return (
     <Stack className="online-shop-order-items-list" gap="sm">
       {items.map((item, index) => (
-        <CartItemRow key={getRetailItemKey(item, index)} item={item} />
+        <CartItemRow key={getRetailItemKey(item, index)} currencyCode={currencyCode} item={item} />
       ))}
     </Stack>
   )
 }
 
-function CartItemRow({ item }: { item: RetailCartItem }) {
+function CartItemRow({ currencyCode, item }: { currencyCode?: string; item: RetailCartItem }) {
   const { t } = useI18n()
   const product = item.Product
   const image = getRetailItemImage(item, product)
+  const productName = displayValue(getRetailItemProductName(item, product))
+  const vendorCode = getRetailItemVendorCode(item, product)
+  const originalNumber = getRetailItemMainOriginalNumber(product)
+  const brand = getRetailItemBrand(product)
+  const availableQty = getRetailItemAvailableQty(product)
   const quantity = getRetailItemQuantity(item)
   const unitPrice = getRetailItemUnitPrice(item)
   const total = getRetailItemTotal(item)
+  const localCurrencyCode = getRetailItemLocalCurrencyCode(item, currencyCode)
+  const sourceCurrencyCode = getRetailItemSourceCurrencyCode(item, product)
+  const sourceUnitPrice = getRetailItemSourceUnitPrice(item, product)
 
   return (
     <Group className="online-shop-order-item-row" align="flex-start" gap="sm" wrap="nowrap">
-      {image ? (
-        <Image className="online-shop-order-item-image" h={56} radius="sm" src={image} w={56} />
-      ) : (
-        <ThemeIcon className="online-shop-order-item-image" color="gray" h={56} radius="sm" variant="light" w={56}>
-          <ImageIcon size={22} />
-        </ThemeIcon>
-      )}
+      <CartItemImage image={image} name={productName} />
       <Box className="online-shop-order-item-copy" flex={1}>
         <Text className="online-shop-order-item-title" fw={600} lineClamp={2} size="sm">
-          {displayValue(getRetailItemProductName(item, product))}
+          {productName}
         </Text>
-        <Text className="online-shop-order-item-code" c="dimmed" size="xs">
-          {displayValue(getRetailItemVendorCode(item, product))}
-        </Text>
+        <div className="online-shop-order-item-identifiers">
+          {vendorCode ? <span>{vendorCode}</span> : null}
+          {originalNumber ? <span>OE {originalNumber}</span> : null}
+        </div>
+        {(brand || availableQty !== null) && (
+          <div className="online-shop-order-item-details">
+            {brand ? <span>{brand}</span> : null}
+            {availableQty !== null ? (
+              <span>{t('В наявності')}: {formatQuantity(availableQty)}</span>
+            ) : null}
+          </div>
+        )}
         <Group className="online-shop-order-item-meta" gap="xs" mt={4}>
           <Badge className="online-shop-order-item-quantity" color="gray" variant="light">
-            {quantity} {t('шт.')}
+            {formatQuantity(quantity)} {t('шт.')}
           </Badge>
           <Text className="online-shop-order-item-unit-price" c="dimmed" size="xs">
-            {formatAmount(unitPrice)}
+            {formatAmount(unitPrice)} <span>{localCurrencyCode}</span> / {t('шт.')}
           </Text>
+          {sourceUnitPrice !== null && sourceCurrencyCode && sourceCurrencyCode !== localCurrencyCode ? (
+            <Text className="online-shop-order-item-source-price" c="dimmed" size="xs">
+              {formatAmount(sourceUnitPrice)} <span>{sourceCurrencyCode}</span>
+            </Text>
+          ) : null}
         </Group>
       </Box>
-      <Text className="online-shop-order-item-total" fw={700} size="sm">
-        {formatAmount(total)}
-      </Text>
+      <div className="online-shop-order-item-total">
+        <strong>{formatAmount(total)}</strong>
+        <span>{localCurrencyCode}</span>
+      </div>
     </Group>
+  )
+}
+
+function CartItemImage({ image, name }: { image: string; name: string }) {
+  const [hasError, setHasError] = useState(false)
+
+  if (!image || hasError) {
+    return (
+      <ThemeIcon className="online-shop-order-item-image" color="gray" h={64} radius="sm" variant="light" w={64}>
+        <ImageIcon size={22} />
+      </ThemeIcon>
+    )
+  }
+
+  return (
+    <Image
+      alt={name}
+      className="online-shop-order-item-image"
+      fit="contain"
+      h={64}
+      loading="lazy"
+      radius="sm"
+      src={image}
+      w={64}
+      onError={() => setHasError(true)}
+    />
   )
 }
 
 function formatAmount(value: number): string {
   return amountFormatter.format(value)
+}
+
+function formatQuantity(value: number): string {
+  return quantityFormatter.format(value)
 }
 
 function displayValue(value?: number | string | null): string {

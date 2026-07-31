@@ -1,6 +1,7 @@
 import {
   ActionIcon,
   Alert,
+  Badge,
   Box,
   Button,
   ScrollArea,
@@ -23,7 +24,7 @@ import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/pagina
 import { getRetailClientCart, getRetailClientsPage, searchRetailClientsPage } from '../api/onlineShopClientsApi'
 import { OnlineShopOrderItemsList } from '../components/OnlineShopOrderItemsList'
 import { OnlineShopSalesPanel } from '../components/OnlineShopSalesPanel'
-import { getRetailItemTotal } from '../onlineShopDisplay'
+import { getRetailItemLocalCurrencyCode, getRetailItemTotal, RETAIL_LOCAL_CURRENCY_CODE } from '../onlineShopDisplay'
 import type { RetailCartItem, RetailClient } from '../onlineShopTypes'
 import '../../../shared/ui/console-table-page.css'
 import './online-shop-clients-page.css'
@@ -66,6 +67,10 @@ export function OnlineShopClientsPage() {
   const offset = (page - 1) * pageSize
   const totalPages = Math.max(1, Math.ceil(totalClients / pageSize))
   const cartTotal = useMemo(() => cartItems.reduce((total, item) => total + getRetailItemTotal(item), 0), [cartItems])
+  const cartCurrencyCode = useMemo(
+    () => cartItems[0] ? getRetailItemLocalCurrencyCode(cartItems[0]) : RETAIL_LOCAL_CURRENCY_CODE,
+    [cartItems],
+  )
   const hasActiveSearch = Boolean(searchValue.trim())
   const visibleFrom = totalClients === 0 ? 0 : offset + 1
   const visibleTo = totalClients === 0 ? 0 : offset + clients.length
@@ -260,9 +265,16 @@ export function OnlineShopClientsPage() {
                     </Text>
                   </div>
                 </div>
-                <span className="online-shop-clients-cart-count">
-                  {cartItems.length}
-                </span>
+                <div className="online-shop-clients-cart-header-meta">
+                  {cartItems.length > 0 ? (
+                    <Badge className="app-role-pill is-gray online-shop-clients-cart-currency" variant="light">
+                      {cartCurrencyCode}
+                    </Badge>
+                  ) : null}
+                  <span className="online-shop-clients-cart-count" title={t('Позицій у кошику')}>
+                    {cartItems.length}
+                  </span>
+                </div>
               </div>
 
               {cartError && (
@@ -289,7 +301,11 @@ export function OnlineShopClientsPage() {
                   {isCartLoading ? (
                     <CartItemsSkeleton />
                   ) : cartItems.length > 0 ? (
-                    <OnlineShopOrderItemsList emptyText={t('Кошик порожній')} items={cartItems} />
+                    <OnlineShopOrderItemsList
+                      currencyCode={cartCurrencyCode}
+                      emptyText={t('Кошик порожній')}
+                      items={cartItems}
+                    />
                   ) : (
                     <div className="online-shop-clients-cart-empty">
                       <ShoppingCart size={22} />
@@ -303,7 +319,10 @@ export function OnlineShopClientsPage() {
 
               <div className="online-shop-clients-cart-total">
                 <Text>{t('Разом')}</Text>
-                <strong>{formatAmount(cartTotal)}</strong>
+                <strong>
+                  <span>{formatAmount(cartTotal)}</span>
+                  {cartItems.length > 0 ? <small>{cartCurrencyCode}</small> : null}
+                </strong>
               </div>
             </section>
           </aside>
