@@ -7,7 +7,6 @@ import {
   SegmentedControl,
   SimpleGrid,
   Stack,
-  Table,
   Text,
   Tooltip,
 } from '@mantine/core'
@@ -15,6 +14,8 @@ import { CircleAlert, RefreshCw } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { getSalesGeography } from '../api/salesGeographyApi'
 import { BubbleLegend } from '../components/BubbleLegend'
 import { UkraineBubbleMap } from '../components/UkraineBubbleMap'
@@ -106,6 +107,48 @@ export function SalesGeographyPage() {
     period === 'all'
       ? t('Весь час')
       : `${period} ${t('міс')}`
+  const ratingColumns = useMemo<DataTableColumn<PlottedRegion>[]>(
+    () => [
+      {
+        id: 'region',
+        header: t('Область'),
+        accessor: (region) => region.name,
+        cell: (region) => (
+          <Group gap={6} wrap="nowrap">
+            <Badge className={METRIC_PILL_CLASS[metric]} size="sm" variant="light">
+              {region.code}
+            </Badge>
+            <Text size="sm">{region.name}</Text>
+          </Group>
+        ),
+        minWidth: 160,
+        fill: true,
+      },
+      {
+        id: 'value',
+        header: metricLabel,
+        accessor: (region) => region.valueEur,
+        cell: (region) => (
+          <span className="sales-geography-money">{formatMoney(region.valueEur)}</span>
+        ),
+        align: 'right',
+        width: 130,
+      },
+      {
+        id: 'clients',
+        header: t('Клієнти'),
+        accessor: (region) => region.clientCount,
+        cell: (region) => (
+          <span className="sales-geography-count">
+            {countFormatter.format(region.clientCount)}
+          </span>
+        ),
+        align: 'right',
+        width: 100,
+      },
+    ],
+    [formatMoney, metric, metricLabel, t],
+  )
 
   return (
     <Stack className="sales-geography-page" gap={6}>
@@ -232,47 +275,15 @@ export function SalesGeographyPage() {
               </Badge>
             </Group>
 
-            {plotted.length === 0 ? (
-              isLoading ? (
-                <GeographyRatingSkeleton label={t('Завантаження рейтингу')} />
-              ) : (
-                <Text c="dimmed" size="sm">
-                  {t('Немає даних для відображення')}
-                </Text>
-              )
-            ) : (
-              <Table.ScrollContainer minWidth={280}>
-                <Table className="sales-geography-rating-table" highlightOnHover verticalSpacing="xs">
-                  <Table.Thead>
-                    <Table.Tr>
-                      <Table.Th>{t('Область')}</Table.Th>
-                      <Table.Th style={{ textAlign: 'right' }}>{metricLabel}</Table.Th>
-                      <Table.Th style={{ textAlign: 'right' }}>{t('Клієнти')}</Table.Th>
-                    </Table.Tr>
-                  </Table.Thead>
-                  <Table.Tbody>
-                    {plotted.map((region) => (
-                      <Table.Tr key={region.code}>
-                        <Table.Td>
-                          <Group gap={6} wrap="nowrap">
-                            <Badge className={METRIC_PILL_CLASS[metric]} size="sm" variant="light">
-                              {region.code}
-                            </Badge>
-                            <Text size="sm">{region.name}</Text>
-                          </Group>
-                        </Table.Td>
-                        <Table.Td style={{ textAlign: 'right' }}>
-                          <span className="sales-geography-money">{formatMoney(region.valueEur)}</span>
-                        </Table.Td>
-                        <Table.Td style={{ textAlign: 'right' }}>
-                          <span className="sales-geography-count">{countFormatter.format(region.clientCount)}</span>
-                        </Table.Td>
-                      </Table.Tr>
-                    ))}
-                  </Table.Tbody>
-                </Table>
-              </Table.ScrollContainer>
-            )}
+            <DataTable
+              columns={ratingColumns}
+              data={plotted}
+              emptyText={t('Немає даних для відображення')}
+              getRowId={(region) => region.code}
+              isLoading={isLoading}
+              minWidth={390}
+              tableId="sales-geography-rating"
+            />
 
             {other.count > 0 && (
               <Text className="sales-geography-other" size="xs">
@@ -332,20 +343,6 @@ function GeographyMapSkeleton({ label }: { label: string }) {
       <span className="sales-geography-map-skeleton-circle is-sm" />
       <span className="sales-geography-skeleton-line" />
       <span className="sales-geography-skeleton-line is-short" />
-    </div>
-  )
-}
-
-function GeographyRatingSkeleton({ label }: { label: string }) {
-  return (
-    <div className="sales-geography-rating-skeleton" aria-busy="true" aria-label={label}>
-      {Array.from({ length: 8 }).map((_, index) => (
-        <div key={index} className="sales-geography-rating-skeleton-row">
-          <span className="sales-geography-skeleton-line is-code" />
-          <span className="sales-geography-skeleton-line" />
-          <span className="sales-geography-skeleton-line is-number" />
-        </div>
-      ))}
     </div>
   )
 }
