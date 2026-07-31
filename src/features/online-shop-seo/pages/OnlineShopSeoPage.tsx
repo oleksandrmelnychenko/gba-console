@@ -19,8 +19,8 @@ import {
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
-import { BadgePercent, Building, Check, ChevronRight, CircleAlert, CircleDollarSign, CreditCard, FileText, Hash, Image, Link, Pencil, Phone, Plus, RefreshCw, RotateCcw, Save, Search, ShoppingBasket, Trash2, X } from 'lucide-react'
-import { type CSSProperties, type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useReducer } from 'react'
+import { ChevronRight, CircleAlert, CreditCard, Hash, Image, Link, Pencil, Phone, Plus, RefreshCw, RotateCcw, Save, Search, Trash2 } from 'lucide-react'
+import { type CSSProperties, type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
@@ -28,6 +28,8 @@ import type { TranslationKey } from '../../../shared/i18n/types'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { usePageBreadcrumb } from '../../../shared/ui/page-header-actions/pageHeaderActionsContext'
+import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import {
   addEcommerceStorage,
@@ -131,6 +133,16 @@ const SEO_SHOP_DATA_SEARCH_PLACEHOLDERS: Record<SeoShopDataSearchTarget, Transla
 
 const DEFAULT_SEO_TAB: SeoTab = 'info-payment'
 const SEO_TAB_VALUES = new Set<SeoTab>(SEO_TABS.map((tab) => tab.value))
+
+const SEO_SHOP_DATA_CLIENTS_TABLE_DEFAULT_LAYOUT = {
+  columnPinning: { right: ['actions'] },
+  density: 'normal',
+} satisfies DataTableDefaultLayout
+
+const SEO_SHOP_DATA_STORAGES_TABLE_DEFAULT_LAYOUT = {
+  columnPinning: { right: ['actions'] },
+  density: 'normal',
+} satisfies DataTableDefaultLayout
 
 const EMPTY_PAGE_FORM_VALUES = pageToFormValues(null)
 const EMPTY_CONTACT_FORM_VALUES = contactToFormValues(null)
@@ -534,6 +546,106 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
       },
   ]
 
+  const shopDataClientColumns: DataTableColumn<OnlineShopClient>[] = [
+    {
+      id: 'client',
+      header: 'Клієнт',
+      width: 168,
+      minWidth: 148,
+      accessor: (client) => getClientDisplayName(client),
+      cell: (client) => (
+        <SeoTablePrimaryCell
+          avatar={(
+            <Avatar className="seo-table-avatar" radius="xl">
+              {getClientInitials(client)}
+            </Avatar>
+          )}
+          title={displayValue(client.FullName || getClientDisplayName(client))}
+        />
+      ),
+    },
+    {
+      id: 'agreement',
+      header: 'Договір / організація',
+      width: 218,
+      minWidth: 190,
+      accessor: (client) => getOnlineShopClientAgreementName(client),
+      cell: (client) => (
+        <SeoTablePrimaryCell
+          subtitle={displayValue(getOnlineShopClientAgreementOrganizationName(client))}
+          title={displayValue(getOnlineShopClientAgreementName(client))}
+        />
+      ),
+    },
+    {
+      id: 'currency',
+      header: 'Валюта',
+      width: 76,
+      minWidth: 68,
+      accessor: (client) => getOnlineShopClientAgreementCurrencyCode(client),
+      cell: (client) => (
+        <SeoTableTag tone="accent">
+          {displayValue(getOnlineShopClientAgreementCurrencyCode(client))}
+        </SeoTableTag>
+      ),
+    },
+    {
+      id: 'pricing',
+      header: 'Тип ціни',
+      width: 110,
+      minWidth: 94,
+      accessor: (client) => getOnlineShopClientAgreementPricingName(client),
+      cell: (client) => (
+        <SeoTableTextCell primary={displayValue(getOnlineShopClientAgreementPricingName(client))} />
+      ),
+    },
+    {
+      id: 'vat',
+      header: 'Оподаткування',
+      width: 116,
+      minWidth: 102,
+      accessor: (client) => getOnlineShopClientAgreementVatMode(client),
+      cell: (client) => <SeoTableTag>{displayValue(getOnlineShopClientAgreementVatMode(client))}</SeoTableTag>,
+    },
+    {
+      id: 'status',
+      header: 'Статус',
+      width: 104,
+      minWidth: 92,
+      accessor: (client) => Boolean(client.IsForRetail),
+      cell: (client) => (
+        <SeoTableStatusPill
+          active={Boolean(client.IsForRetail)}
+          activeLabel="Активний"
+          inactiveLabel="Не активний"
+        />
+      ),
+    },
+    {
+      id: 'actions',
+      header: '',
+      width: 58,
+      minWidth: 58,
+      maxWidth: 58,
+      align: 'center',
+      enableHiding: false,
+      enableReorder: false,
+      enableResizing: false,
+      enableSorting: false,
+      rowActions: true,
+      cell: (client) => (
+        <SeoTableActionCell>
+          <TableRowAction
+            action={client.IsForRetail ? 'cancel' : 'confirm'}
+            disabled={!client.NetUid || isSaving}
+            label={client.IsForRetail ? t('Вимкнути') : t('Увімкнути')}
+            onClick={() => void handleToggleOnlineShopClient(client)}
+          />
+        </SeoTableActionCell>
+      ),
+    },
+  ]
+
   const paymentRegisterColumns: SeoRosterColumn<OnlineShopPaymentRegister>[] = [
       {
         id: 'status',
@@ -620,11 +732,11 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
       },
   ]
 
-  const ecommerceStorageColumns = useMemo<SeoRosterColumn<OnlineShopStorage>[]>(
+  const ecommerceStorageColumns = useMemo<DataTableColumn<OnlineShopStorage>[]>(
     () => [
       {
         id: 'storage',
-        header: '',
+        header: 'Склад',
         width: 420,
         minWidth: 320,
         accessor: (storage) => storage.Name,
@@ -661,6 +773,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         enableReorder: false,
         enableResizing: false,
         enableSorting: false,
+        rowActions: true,
         cell: (storage) => (
           <SeoTableActionCell>
             <TableRowAction
@@ -685,7 +798,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
   const allStorageColumns: SeoRosterColumn<OnlineShopStorage>[] = [
       {
         id: 'storage',
-        header: '',
+        header: 'Склад',
         width: 420,
         minWidth: 320,
         accessor: (storage) => storage.Name,
@@ -1283,7 +1396,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
     isClientsLoading, isContactEditorOpen, isImageUploading, isLoading, isPageEditorOpen, isSaving,
     isStorageDrawerOpen, isStoragesLoading, pageColumns, pageFormValues, pageRows, pageSearchDraft,
     paymentRegisterColumns, priorityStorageTarget, priorityValue, removeContactTarget,
-    shopDataCards, shopDataClients, shopDataSearchDraft, shopDataSearchTarget, shopDataStorages,
+    shopDataCards, shopDataClientColumns, shopDataClients, shopDataSearchDraft, shopDataSearchTarget, shopDataStorages,
     removeStorageTarget, settings, storageSearchDraft, allStorageSearchValue,
     cardSearchValue, clientSearchValue, contactSearchValue, pageSearchValue, storageSearchValue,
     changeAllStorageSearch, changeCardSearch, changeClientSearch, changeContactSearch, changePageSearch,
@@ -1335,7 +1448,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
     isClientsLoading, isContactEditorOpen, isImageUploading, isLoading, isPageEditorOpen, isSaving,
     isStorageDrawerOpen, isStoragesLoading, pageColumns, pageFormValues, pageRows, pageSearchDraft,
     paymentRegisterColumns, priorityStorageTarget, priorityValue, removeContactTarget,
-    shopDataCards, shopDataClients, shopDataSearchDraft, shopDataSearchTarget, shopDataStorages,
+    shopDataCards, shopDataClientColumns, shopDataClients, shopDataSearchDraft, shopDataSearchTarget, shopDataStorages,
     removeStorageTarget, settings, storageSearchDraft, closeContactEditor, closeGeneralLocaleEditor, closePageEditor,
     closePriorityEditor, handleAddStorage, handleContactImageChange, handleRemoveContact, handleRemoveStorage,
     handleSaveContact, handleSaveContactInfo, handleSavePage, handleSavePayment, handleSaveStoragePriority,
@@ -1385,33 +1498,31 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
       description: 'Контактна інформація та дані оплати для інтернет-магазину.',
       title: 'Основні налаштування',
     }
-  const showCommandBar = activeTab !== 'info-payment'
+  const showCommandBar = !SEO_VISIBLE_TABS.some(({ value }) => value === activeTab)
   const isPatternFilterTab = activeTab === 'pages' || activeTab === 'contacts' || activeTab === 'shop-data'
-  const headerAction = activeTab === 'contacts'
-    ? (
-      <Button
-        color={CREATE_ACTION_COLOR}
-        leftSection={<Plus size={14} />}
-        size="sm"
-        type="button"
-        onClick={() => openContactEditor()}
-      >
-        {t('Новий контакт')}
-      </Button>
-    )
-    : activeTab === 'warehouses' || activeTab === 'shop-data'
-      ? (
-        <Button
-          color={CREATE_ACTION_COLOR}
-          leftSection={<Plus size={14} />}
-          size="sm"
-          type="button"
-          onClick={() => setStorageDrawerOpen(true)}
-        >
-          {t('Додати склад')}
-        </Button>
-      )
-      : null
+  const createContactAction = (
+    <Button
+      color={CREATE_ACTION_COLOR}
+      leftSection={<Plus size={14} />}
+      size="sm"
+      type="button"
+      onClick={() => openContactEditor()}
+    >
+      {t('Новий контакт')}
+    </Button>
+  )
+  const addStorageAction = (
+    <Button
+      color={CREATE_ACTION_COLOR}
+      leftSection={<Plus size={14} />}
+      size="sm"
+      type="button"
+      onClick={() => setStorageDrawerOpen(true)}
+    >
+      {t('Додати склад')}
+    </Button>
+  )
+  const headerAction = activeTab === 'warehouses' ? addStorageAction : null
   const generalEntries = getOrderedSeoGeneralEntries(settings)
   const generalEditorEntry = editingGeneralLocale
     ? settings.find((entry) => entry.locale === editingGeneralLocale) || null
@@ -1637,6 +1748,9 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
             {activeTab === 'contacts' && (
               <Box className="seo-page-table-view" pt="md">
               <Stack className="seo-page-table-stack" gap="md">
+                <Group className="seo-page-inline-actions" justify="flex-end">
+                  {createContactAction}
+                </Group>
                 <SeoRosterTable
                   columns={contactColumns}
                   columnsTemplate="minmax(240px, 1fr) 170px 220px 138px 94px"
@@ -1654,7 +1768,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
             )}
 
             {activeTab === 'shop-data' && (
-              <Box pt="md">
+              <Box>
                 <div className="seo-shop-data-grid">
                   <div className="seo-shop-data-column">
                     <SeoShopDataSection
@@ -1663,32 +1777,54 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
                       hideCount
                       title={t('Інтернет клієнти')}
                     >
-                      <SeoShopClientList
-                        clients={shopDataClients}
-                        emptyText={t('Клієнтів не знайдено')}
-                        isLoading={isClientsLoading}
-                        loadingText={t('Завантаження клієнтів')}
-                        onToggleClient={handleToggleOnlineShopClient}
-                      />
+                      {(toolbarPortalTarget) => (
+                        <DataTable
+                          columns={shopDataClientColumns}
+                          data={shopDataClients}
+                          defaultLayout={SEO_SHOP_DATA_CLIENTS_TABLE_DEFAULT_LAYOUT}
+                          distributeAvailableWidth
+                          emptyText={t('Клієнтів не знайдено')}
+                          getRowId={(client, index) => String(client.NetUid || client.Id || index)}
+                          isLoading={isClientsLoading}
+                          labels={{ loadingData: t('Завантаження клієнтів') }}
+                          layoutVersion="online-shop-seo-shop-data-clients-2"
+                          maxHeight={320}
+                          minWidth={780}
+                          rowClassName={() => 'is-hoverable'}
+                          showLayoutControls
+                          tableId="online-shop-seo-shop-data-clients"
+                          toolbarPortalTarget={toolbarPortalTarget}
+                          onRowClick={(client) => void handleToggleOnlineShopClient(client)}
+                        />
+                      )}
                     </SeoShopDataSection>
 
                     <SeoShopDataSection
+                      action={addStorageAction}
                       className="is-storages"
                       count={shopDataStorages.length}
                       hideCount
                       title={t('Склади')}
                     >
-                      <SeoRosterTable
-                        columns={ecommerceStorageColumns}
-                        columnsTemplate="minmax(360px, 1fr) 118px 100px 82px"
-                      data={shopDataStorages}
-                      emptyText={t('Активних складів не знайдено')}
-                      getRowClassName={() => 'is-hoverable'}
-                      getRowId={(storage, index) => String(storage.NetUid || storage.Id || index)}
-                        isLoading={isStoragesLoading}
-                        loadingText={t('Завантаження складів')}
-                        minWidth={660}
-                      />
+                      {(toolbarPortalTarget) => (
+                        <DataTable
+                          columns={ecommerceStorageColumns}
+                          data={shopDataStorages}
+                          defaultLayout={SEO_SHOP_DATA_STORAGES_TABLE_DEFAULT_LAYOUT}
+                          distributeAvailableWidth
+                          emptyText={t('Активних складів не знайдено')}
+                          getRowId={(storage, index) => String(storage.NetUid || storage.Id || index)}
+                          isLoading={isStoragesLoading}
+                          labels={{ loadingData: t('Завантаження складів') }}
+                          layoutVersion="online-shop-seo-shop-data-storages-2"
+                          maxHeight={320}
+                          minWidth={680}
+                          rowClassName={() => 'is-hoverable'}
+                          showLayoutControls
+                          tableId="online-shop-seo-shop-data-storages"
+                          toolbarPortalTarget={toolbarPortalTarget}
+                        />
+                      )}
                     </SeoShopDataSection>
                   </div>
 
@@ -2093,12 +2229,14 @@ function SeoShopDataSection({
   title,
 }: {
   action?: ReactNode
-  children: ReactNode
+  children: ReactNode | ((toolbarPortalTarget: Element | null) => ReactNode)
   className?: string
   count: number
   hideCount?: boolean
   title: ReactNode
 }) {
+  const [toolbarPortalTarget, setToolbarPortalTarget] = useState<HTMLDivElement | null>(null)
+
   return (
     <section className={['seo-shop-data-section', className].filter(Boolean).join(' ')}>
       <div className="seo-shop-data-section-header">
@@ -2110,135 +2248,17 @@ function SeoShopDataSection({
 
         <div className="seo-shop-data-section-meta">
           {!hideCount ? <Text className="seo-shop-data-section-count">{count}</Text> : null}
+          {typeof children === 'function' ? (
+            <div ref={setToolbarPortalTarget} className="seo-shop-data-section-table-toolbar" />
+          ) : null}
           {action ? <div className="seo-shop-data-section-actions">{action}</div> : null}
         </div>
       </div>
 
-      <div className="seo-shop-data-section-body">{children}</div>
+      <div className="seo-shop-data-section-body">
+        {typeof children === 'function' ? children(toolbarPortalTarget) : children}
+      </div>
     </section>
-  )
-}
-
-function SeoShopClientList({
-  clients,
-  emptyText,
-  isLoading,
-  loadingText,
-  maxHeight,
-  onToggleClient,
-}: {
-  clients: OnlineShopClient[]
-  emptyText: ReactNode
-  isLoading?: boolean
-  loadingText: ReactNode
-  maxHeight?: string
-  onToggleClient: (client: OnlineShopClient) => Promise<void>
-}) {
-  return (
-    <div className="seo-shop-data-list">
-      <ScrollArea.Autosize mah={maxHeight} type="auto">
-        <div className="seo-shop-data-list-body is-client-tiles">
-          {isLoading ? (
-            <div className="seo-shop-data-list-empty">{loadingText}</div>
-          ) : clients.length ? (
-            clients.map((client, index) => {
-              const clientKey = String(client.NetUid || client.Id || index)
-              const isForRetail = Boolean(client.IsForRetail)
-              const clientName = displayValue(client.FullName || getClientDisplayName(client))
-              const agreementName = getOnlineShopClientAgreementName(client)
-              const agreementOrganizationName = getOnlineShopClientAgreementOrganizationName(client)
-              const agreementCurrencyCode = getOnlineShopClientAgreementCurrencyCode(client)
-              const agreementPricingName = getOnlineShopClientAgreementPricingName(client)
-              const agreementVatMode = getOnlineShopClientAgreementVatMode(client)
-
-              return (
-                <div
-                  className={`seo-shop-data-list-item is-client${isForRetail ? ' is-active' : ' is-inactive'}`}
-                  key={clientKey}
-                  role="button"
-                  tabIndex={0}
-                  onClick={(event) => {
-                    if (isSeoActionCellEventTarget(event.target)) {
-                      return
-                    }
-
-                    void onToggleClient(client)
-                  }}
-                  onKeyDown={(event) => {
-                    if (isSeoActionCellEventTarget(event.target)) {
-                      return
-                    }
-
-                    if (event.key === 'Enter' || event.key === ' ') {
-                      event.preventDefault()
-                      void onToggleClient(client)
-                    }
-                  }}
-                >
-                  <div className="seo-shop-client-tile-copy">
-                    <div className="seo-shop-client-tile-top">
-                      <span className="seo-shop-client-tile-avatar" aria-hidden>
-                        <ShoppingBasket size={21} />
-                      </span>
-                      <div className="seo-shop-client-tile-heading">
-                        <Text className="seo-shop-client-tile-title">{clientName}</Text>
-                        <SeoTableStatusPill active={isForRetail} activeLabel="Активний" inactiveLabel="Не активний" />
-                      </div>
-                    </div>
-
-                    <div className="seo-shop-client-tile-body">
-                      <div className="seo-shop-client-tile-details">
-                        <div className="seo-shop-client-tile-detail">
-                          <span className="seo-shop-client-tile-detail-label">
-                            <FileText size={12} />
-                            <span>Договір</span>
-                          </span>
-                          <span className="seo-shop-client-tile-detail-value">{agreementName || 'Не вказано'}</span>
-                        </div>
-                        <div className="seo-shop-client-tile-detail">
-                          <span className="seo-shop-client-tile-detail-label">
-                            <Building size={12} />
-                            <span>Організація</span>
-                          </span>
-                          <span className="seo-shop-client-tile-detail-value">{agreementOrganizationName || 'Не вказано'}</span>
-                        </div>
-                        <div className="seo-shop-client-tile-detail">
-                          <span className="seo-shop-client-tile-detail-label">
-                            <CircleDollarSign size={12} />
-                            <span>Валюта</span>
-                          </span>
-                          <span className="seo-shop-client-tile-detail-value">{agreementCurrencyCode || 'Не вказано'}</span>
-                        </div>
-                        <div className="seo-shop-client-tile-detail">
-                          <span className="seo-shop-client-tile-detail-label">
-                            <BadgePercent size={12} />
-                            <span>Тип ціни</span>
-                          </span>
-                          <span className="seo-shop-client-tile-detail-value">{agreementPricingName || 'Не вказано'}</span>
-                        </div>
-                        <div className="seo-shop-client-tile-detail">
-                          <span className="seo-shop-client-tile-detail-label">
-                            <FileText size={12} />
-                            <span>Оподаткування</span>
-                          </span>
-                          <span className="seo-shop-client-tile-detail-value">{agreementVatMode || 'Не вказано'}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <span className={`seo-shop-client-tile-action${isForRetail ? ' is-active' : ' is-inactive'}`} aria-hidden>
-                    {isForRetail ? <Check size={16} /> : <X size={16} />}
-                  </span>
-                </div>
-              )
-            })
-          ) : (
-            <div className="seo-shop-data-list-empty">{emptyText}</div>
-          )}
-        </div>
-      </ScrollArea.Autosize>
-    </div>
   )
 }
 
