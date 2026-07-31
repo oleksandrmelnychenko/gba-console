@@ -16,7 +16,6 @@ import {
 import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import {
-  CarFront,
   CircleAlert,
   History,
   RotateCcw,
@@ -424,9 +423,9 @@ export function VehicleRegistryPage() {
               getRowId={(vehicle) => vehicle.NetUid}
               height="100%"
               isLoading={isLoading}
-              layoutVersion="vehicle-registry-1"
+              layoutVersion="vehicle-registry-2"
               loadingText={t('Завантаження автомобілів')}
-              minWidth={1360}
+              minWidth={1240}
               showLayoutControls
               tableId="vehicle-registry"
               toolbarPortalTarget={tableToolbarSlot}
@@ -479,7 +478,11 @@ function RegistrySummary({ summary }: { summary: VehicleRegistrySummary }) {
       <SummaryMetric label={t('У реєстрі')} value={summary.Total} />
       <SummaryMetric label={t('Очікують обробки')} value={summary.Pending} tone="orange" />
       <SummaryMetric label={t('Оброблено')} value={summary.Processed} tone="green" />
-      <SummaryMetric label={t('Потребують уваги')} value={problemCount} tone={problemCount ? 'red' : undefined} />
+      <SummaryMetric
+        label={t('З попередженнями в даних')}
+        value={problemCount}
+        tone={problemCount ? 'red' : undefined}
+      />
       <SummaryMetric label={t('Марок')} value={summary.Brands} />
       <div className="vehicle-registry-summary__latest">
         <span>{t('Останнє оновлення')}</span>
@@ -840,41 +843,54 @@ function createVehicleColumns(
   return [
     {
       cell: (item) => (
-        <div className="console-table-entity-cell">
-          <span className="console-table-entity-marker"><CarFront size={16} /></span>
-          <span className="console-table-entity-copy">
-            <span className="console-table-entity-title">{[item.Brand, item.Model].filter(Boolean).join(' ') || '—'}</span>
-            <span className="console-table-entity-subtitle vehicle-registry-mono">
-              {[item.PlateNumber, item.Vin].filter(Boolean).join(' · ') || '—'}
-            </span>
-          </span>
+        <div className="vehicle-registry-vehicle-cell">
+          <div className="vehicle-registry-vehicle-main">
+            {item.Brand && <Badge className="app-role-pill" size="xs">{item.Brand}</Badge>}
+            <strong title={item.Model || undefined}>{item.Model || ''}</strong>
+          </div>
+          <div className="vehicle-registry-data-pills">
+            {item.PlateNumber && (
+              <span className="vehicle-registry-data-pill is-plate" title={`${t('Держ. номер')}: ${item.PlateNumber}`}>
+                {item.PlateNumber}
+              </span>
+            )}
+            {item.Vin && (
+              <span className="vehicle-registry-data-pill is-vin" title={`VIN: ${item.Vin}`}>
+                <span>VIN</span>{item.Vin}
+              </span>
+            )}
+          </div>
         </div>
       ),
       fill: true,
       header: t('Автомобіль'),
       id: 'vehicle',
-      minWidth: 280,
-      width: 330,
+      minWidth: 300,
+      width: 360,
     },
     {
       cell: (item) => (
         <span className="vehicle-registry-two-line">
-          <strong>{item.OwnerName || '—'}</strong>
-          <small>{item.Address || '—'}</small>
+          <strong title={item.OwnerName || undefined}>{item.OwnerName || ''}</strong>
+          <small title={item.Address || undefined}>{item.Address || ''}</small>
         </span>
       ),
       fill: true,
       header: t('Власник'),
       id: 'owner',
-      minWidth: 260,
-      width: 340,
+      minWidth: 280,
+      width: 360,
     },
     {
       align: 'right',
       cell: (item) => (
         <span className="vehicle-registry-two-line is-right">
-          <strong className="vehicle-registry-mono">{item.ManufactureYear || '—'}</strong>
-          <small className="vehicle-registry-mono">{formatEngine(item.EngineVolumeCc)}</small>
+          <strong className="vehicle-registry-mono">
+            {item.ManufactureYear ? `${item.ManufactureYear} р.` : ''}
+          </strong>
+          <small className="vehicle-registry-mono">
+            {item.EngineVolumeCc ? formatEngine(item.EngineVolumeCc) : ''}
+          </small>
         </span>
       ),
       header: t('Рік / двигун'),
@@ -882,10 +898,12 @@ function createVehicleColumns(
       width: 120,
     },
     {
-      cell: (item) => item.Region || '—',
+      cell: (item) => item.Region
+        ? <Badge className="app-role-pill is-gray" size="xs">{item.Region}</Badge>
+        : null,
       header: t('Регіон'),
       id: 'region',
-      width: 150,
+      width: 160,
     },
     {
       cell: (item) => <WorkflowBadge status={item.WorkflowStatus} />,
@@ -902,7 +920,7 @@ function createVehicleColumns(
     {
       cell: (item) => (
         <span className="vehicle-registry-two-line">
-          <strong>{item.ImportFileName}</strong>
+          <strong title={item.ImportFileName}>{item.ImportFileName}</strong>
           <small className="vehicle-registry-mono">{formatDate(item.LastSeenAtUtc)}</small>
         </span>
       ),
@@ -968,27 +986,30 @@ function createImportColumns(
     },
     {
       cell: (item) => (
-        <span className="vehicle-registry-two-line">
-          <strong>{t('Коректні')}: {numberFormatter.format(item.ValidRows)}</strong>
-          <small>{t('Попередж.')}: {numberFormatter.format(item.WarningRows)} · {t('Помилки')}: {numberFormatter.format(item.InvalidRows)}</small>
-        </span>
+        <div className="vehicle-registry-stat-pills">
+          <RegistryStatPill label={t('Коректні')} tone="green" value={item.ValidRows} />
+          <RegistryStatPill label={t('Попередж.')} tone="yellow" value={item.WarningRows} />
+          <RegistryStatPill label={t('Помилки')} tone="red" value={item.InvalidRows} />
+        </div>
       ),
       header: t('Якість'),
       id: 'quality',
-      minWidth: 210,
-      width: 240,
+      minWidth: 250,
+      width: 290,
     },
     {
       cell: (item) => (
-        <span className="vehicle-registry-two-line">
-          <strong>{t('Додано')}: {numberFormatter.format(item.AddedVehicles)}</strong>
-          <small>{t('Оновлено')}: {numberFormatter.format(item.UpdatedVehicles)} · {t('Без змін')}: {numberFormatter.format(item.UnchangedVehicles)}</small>
-        </span>
+        <div className="vehicle-registry-stat-pills">
+          <RegistryStatPill label={t('Додано')} tone="green" value={item.AddedVehicles} />
+          <RegistryStatPill label={t('Оновлено')} tone="orange" value={item.UpdatedVehicles} />
+          <RegistryStatPill label={t('Без змін')} tone="gray" value={item.UnchangedVehicles} />
+          <RegistryStatPill label={t('Дублі')} tone="yellow" value={item.DuplicateRows} />
+        </div>
       ),
       header: t('Результат'),
       id: 'changes',
-      minWidth: 210,
-      width: 240,
+      minWidth: 250,
+      width: 290,
     },
     {
       cell: (item) => <span className="vehicle-registry-mono">{formatDate(item.CompletedAtUtc || item.CreatedAtUtc)}</span>,
@@ -1084,7 +1105,7 @@ function QualityBadge({ status }: { status: VehicleRegistryDataQualityStatus }) 
     duplicate: t('Дублікат'),
     invalid: t('Помилка'),
     valid: t('Коректно'),
-    warning: t('Увага'),
+    warning: t('Попередження'),
   }
   const className = status === 'valid'
     ? 'is-green'
@@ -1093,6 +1114,26 @@ function QualityBadge({ status }: { status: VehicleRegistryDataQualityStatus }) 
       : 'is-yellow'
 
   return <Badge className={`app-role-pill ${className}`}>{labels[status] || status}</Badge>
+}
+
+function RegistryStatPill({
+  label,
+  tone,
+  value,
+}: {
+  label: string
+  tone: 'gray' | 'green' | 'orange' | 'red' | 'yellow'
+  value: number
+}) {
+  if (!value) {
+    return null
+  }
+
+  return (
+    <Badge className={`app-role-pill is-${tone}`} size="xs" title={`${label}: ${numberFormatter.format(value)}`}>
+      {label} · {numberFormatter.format(value)}
+    </Badge>
+  )
 }
 
 function ImportStatusBadge({ status }: { status: VehicleRegistryImport['Status'] }) {
@@ -1129,7 +1170,7 @@ function processingOptions(t: (value: string) => string) {
 
 function workflowOptions(t: (value: string) => string) {
   return [
-    { label: t('Новий'), value: 'new' },
+    { label: t('Не оброблено'), value: 'new' },
     { label: t('В роботі'), value: 'in_progress' },
     { label: t('Перевірено'), value: 'verified' },
     { label: t('Клієнта знайдено'), value: 'client_matched' },
