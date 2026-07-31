@@ -3,6 +3,7 @@ import type {
   CurrencyExposure,
   ForwardRisk,
   ForwardRiskStatus,
+  Risk90d,
   SolvencyBatch,
   SolvencyBatchError,
   SolvencyCharts,
@@ -158,6 +159,7 @@ function normalizeScore(value: unknown, expectedNetId: string | null, path: stri
     ? null
     : requireNonEmptyString(score.forward_risk_reason, `${path}.forward_risk_reason`)
   const forwardRisk = normalizeForwardRisk(score.forward_risk, `${path}.forward_risk`)
+  const risk90d = normalizeRisk90d(score.risk_90d, `${path}.risk_90d`)
   if (
     forwardRiskStatus === 'available'
       ? forwardRisk === null || forwardRiskReason !== null
@@ -193,6 +195,7 @@ function normalizeScore(value: unknown, expectedNetId: string | null, path: stri
       || score.rating !== null
       || score.pd !== null
       || score.contributions !== null
+      || risk90d !== null
       || forwardRisk !== null
       || score.currency_breakdown !== null
     )
@@ -205,6 +208,7 @@ function normalizeScore(value: unknown, expectedNetId: string | null, path: stri
     client_id: clientId,
     client_net_uid: clientNetUid,
     currency_breakdown: currencyBreakdown,
+    risk_90d: risk90d,
     forward_risk: forwardRisk,
     forward_risk_status: forwardRiskStatus,
     forward_risk_reason: forwardRiskReason,
@@ -212,6 +216,63 @@ function normalizeScore(value: unknown, expectedNetId: string | null, path: stri
     effective_start: effectiveStart,
     history_complete: score.history_complete,
     as_of_date: asOfDate,
+  }
+}
+
+function normalizeRisk90d(value: unknown, path: string): Risk90d | null {
+  if (value === null || value === undefined) {
+    return null
+  }
+
+  const risk = requireRecord(value, path)
+  if (risk.horizon_days !== 90) {
+    throw new SolvencyContractError(`${path}.horizon_days`, 'must equal 90')
+  }
+  if (risk.threshold_days !== 90) {
+    throw new SolvencyContractError(`${path}.threshold_days`, 'must equal 90')
+  }
+
+  const exposureEur = requireMoney(risk.exposure_eur, `${path}.exposure_eur`)
+  const band = risk.band
+  const reasonCode = risk.reason_code
+  if (band !== 'low' && band !== 'medium' && band !== 'high' && band !== 'critical') {
+    throw new SolvencyContractError(`${path}.band`, 'unknown operational risk band')
+  }
+  if (
+    reasonCode !== 'no_debt'
+    && reasonCode !== 'current_debt'
+    && reasonCode !== 'will_cross_90_days'
+    && reasonCode !== 'already_90_plus'
+  ) {
+    throw new SolvencyContractError(`${path}.reason_code`, 'unknown operational risk reason')
+  }
+  const proofValid =
+    (band === 'low' && reasonCode === 'no_debt' && exposureEur === 0)
+    || (
+      band === 'medium'
+      && reasonCode === 'current_debt'
+      && exposureEur > 0
+    )
+    || (
+      band === 'high'
+      && reasonCode === 'will_cross_90_days'
+      && exposureEur >= 100
+    )
+    || (
+      band === 'critical'
+      && reasonCode === 'already_90_plus'
+      && exposureEur >= 100
+    )
+  if (!proofValid) {
+    throw new SolvencyContractError(path, 'band, reason, and exposure disagree')
+  }
+
+  return {
+    horizon_days: 90,
+    threshold_days: 90,
+    band,
+    exposure_eur: exposureEur,
+    reason_code: reasonCode,
   }
 }
 

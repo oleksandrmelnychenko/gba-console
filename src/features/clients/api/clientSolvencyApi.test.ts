@@ -23,9 +23,16 @@ function score(clientId = 42, clientNetUid: string | null = CLIENT_NET_ID) {
     rating: 'B',
     pd: 0.2,
     contributions: [{ feature: 'turnover_eur_12mo', value: 1234.56, points: -2.4 }],
-    forward_risk: { band: 'low', pd: 0.1 },
-    forward_risk_status: 'available',
-    forward_risk_reason: null,
+    risk_90d: {
+      horizon_days: 90,
+      threshold_days: 90,
+      band: 'medium',
+      exposure_eur: 100.01,
+      reason_code: 'current_debt',
+    },
+    forward_risk: null,
+    forward_risk_status: 'not_applicable',
+    forward_risk_reason: 'replaced_by_operational_90d',
     sub_factors: null,
     caps_applied: [],
     debt_load_source: null,
@@ -167,6 +174,23 @@ describe('clientSolvencyApi canonical AI contract', () => {
       forward_risk: null,
       forward_risk_status: 'model_unavailable',
       forward_risk_reason: null,
+    })
+
+    await expect(getClientSolvencyScore(CLIENT_NET_ID)).rejects.toBeInstanceOf(
+      SolvencyContractError,
+    )
+  })
+
+  it('rejects a 90-day control whose band and monetary proof disagree', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      ...score(),
+      risk_90d: {
+        horizon_days: 90,
+        threshold_days: 90,
+        band: 'high',
+        exposure_eur: 99.99,
+        reason_code: 'will_cross_90_days',
+      },
     })
 
     await expect(getClientSolvencyScore(CLIENT_NET_ID)).rejects.toBeInstanceOf(

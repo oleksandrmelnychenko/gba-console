@@ -32,6 +32,7 @@ const notApplicableScore: SolvencyScore = {
   applicable: false,
   score: null,
   rating: null,
+  risk_90d: null,
   forward_risk_status: 'not_applicable',
   forward_risk_reason: 'client has no buyer role',
   sub_factors: null,
@@ -60,9 +61,16 @@ const v3Score: SolvencyScore = {
     { feature: 'turnover_eur_12mo', value: 90000, points: -2.4 },
     { feature: 'overdue_eur_180plus', value: 0, points: 0 },
   ],
-  forward_risk: { band: 'very_high', pd: 0.997 },
-  forward_risk_status: 'available',
-  forward_risk_reason: null,
+  risk_90d: {
+    horizon_days: 90,
+    threshold_days: 90,
+    band: 'critical',
+    exposure_eur: 12345.67,
+    reason_code: 'already_90_plus',
+  },
+  forward_risk: null,
+  forward_risk_status: 'not_applicable',
+  forward_risk_reason: 'replaced_by_operational_90d',
   sub_factors: null,
   caps_applied: [],
   debt_load_source: null,
@@ -96,7 +104,7 @@ describe('SolvencyPanel', () => {
     expect(getClientSolvencyCharts).not.toHaveBeenCalled()
   })
 
-  it('renders the v3 score, contributions and forward badge when sub_factors is null', async () => {
+  it('renders the v3 score, contributions and exact 90-day debt control', async () => {
     getClientSolvencyScore.mockResolvedValue(v3Score)
     getClientSolvencyCharts.mockRejectedValue(new Error('no charts'))
 
@@ -104,13 +112,15 @@ describe('SolvencyPanel', () => {
 
     // does NOT fall into the not-a-buyer N/A state
     expect(queryByText(/не покупець/i)).toBeNull()
-    // score gauge value, band, a contribution label and the forward-risk badge are present
+    // score gauge value, band, a contribution label and the operational debt control are present
     expect(await findByText('46')).toBeTruthy()
     expect(await findByText(/Відкритих боргових позицій/i)).toBeTruthy()
-    expect(await findByText(/дуже високий/i)).toBeTruthy()
-    // PD shown with one decimal in the headline and on the forward badge
+    expect(await findByText(/критичний/i)).toBeTruthy()
+    expect(await findByText(/Борг уже прострочений понад 90 днів/i)).toBeTruthy()
+    expect(await findByText(/12.*345,67 EUR/i)).toBeTruthy()
+    // Current-state PD remains; the retired forward PD is no longer shown.
     expect(await findByText(/PD 64\.9%/)).toBeTruthy()
-    expect(await findByText(/PD 99\.7%/)).toBeTruthy()
+    expect(queryByText(/99\.7%/)).toBeNull()
   })
 
   it('shows source-bounded insufficient data and does not request charts', async () => {
@@ -120,6 +130,7 @@ describe('SolvencyPanel', () => {
       rating: null,
       pd: null,
       contributions: null,
+      risk_90d: null,
       forward_risk: null,
       forward_risk_status: 'not_applicable',
       forward_risk_reason: 'no available evidence',
@@ -137,18 +148,16 @@ describe('SolvencyPanel', () => {
     expect(getClientSolvencyCharts).not.toHaveBeenCalled()
   })
 
-  it('explains why a null 6-month forecast is not a zero-risk prediction', async () => {
+  it('shows a clear fallback while 90-day control is not calculated', async () => {
     getClientSolvencyScore.mockResolvedValue({
       ...v3Score,
-      forward_risk: null,
-      forward_risk_status: 'model_unavailable',
-      forward_risk_reason: '3 < 30 observations',
+      risk_90d: null,
     })
     getClientSolvencyCharts.mockRejectedValue(new Error('no charts'))
 
     const { findByText } = renderPanel(<SolvencyPanel clientNetId="abc" />)
 
-    expect(await findByText(/модель прогнозу недоступна.*3 < 30 observations/i)).toBeTruthy()
+    expect(await findByText(/контроль ще не розрахований/i)).toBeTruthy()
   })
 
   it('color-codes risk-increasing vs risk-reducing contributions by sign and drops zero-point ones', async () => {

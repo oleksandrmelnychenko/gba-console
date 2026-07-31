@@ -20,8 +20,8 @@ import { getClientSolvencyCharts, getClientSolvencyScore } from '../../api/clien
 import { OrbSplash } from '../../../../shared/ui/orb/Orb'
 import type {
   Contribution,
-  ForwardRisk,
-  ForwardRiskBand,
+  Risk90d,
+  Risk90dBand,
   SolvencyCharts,
   SolvencyRating,
   SolvencyScore,
@@ -45,6 +45,11 @@ type SolvencyAction =
   | { type: 'failed'; error: string }
   | { type: 'loaded'; charts: SolvencyCharts | null; chartsError: string | null; score: SolvencyScore }
   | { type: 'loading' }
+
+const eurFormatter = new Intl.NumberFormat('uk-UA', {
+  maximumFractionDigits: 2,
+  minimumFractionDigits: 2,
+})
 
 const initialSolvencyState: SolvencyState = {
   charts: null,
@@ -211,20 +216,15 @@ export function SolvencyPanel({ clientNetId }: SolvencyPanelProps) {
       <Card className="app-section-card" padding="lg" radius="md" withBorder>
         <Stack gap="lg">
           <ScoreHeader score={score} />
-          <Group gap="xs">
+          <Group align="flex-start" gap="xs" wrap="wrap">
             <Text c="dimmed" fw={600} size="sm">
-              {t('Прогноз ризику (6 міс.)')}:
+              {t('Контроль боргу на 90 днів')}:
             </Text>
-            {score.forward_risk ? (
-              <ForwardRiskBadge forwardRisk={score.forward_risk} />
+            {score.risk_90d ? (
+              <Risk90dSummary risk={score.risk_90d} />
             ) : (
               <Text c="dimmed" size="sm">
-                {t(
-                  score.forward_risk_status === 'not_applicable'
-                    ? 'не застосовується'
-                    : 'модель прогнозу недоступна',
-                )}
-                {score.forward_risk_reason ? ` · ${score.forward_risk_reason}` : ''}
+                {t('контроль ще не розрахований')}
               </Text>
             )}
           </Group>
@@ -250,29 +250,43 @@ export function SolvencyPanel({ clientNetId }: SolvencyPanelProps) {
   )
 }
 
-const FORWARD_RISK_COLOR: Record<ForwardRiskBand, string> = {
+const RISK_90D_COLOR: Record<Risk90dBand, string> = {
+  critical: 'red',
   high: 'orange',
   low: 'green',
   medium: 'yellow',
-  very_high: 'red',
 }
 
-const FORWARD_RISK_LABEL: Record<ForwardRiskBand, string> = {
+const RISK_90D_LABEL: Record<Risk90dBand, string> = {
+  critical: 'критичний',
   high: 'високий',
   low: 'низький',
-  medium: 'середній',
-  very_high: 'дуже високий',
+  medium: 'під наглядом',
 }
 
-function ForwardRiskBadge({ forwardRisk }: { forwardRisk: ForwardRisk }) {
+const RISK_90D_REASON: Record<Risk90d['reason_code'], string> = {
+  already_90_plus: 'Борг уже прострочений понад 90 днів',
+  current_debt: 'Є відкритий борг',
+  no_debt: 'Відкритого боргу немає',
+  will_cross_90_days: 'Якщо не сплатити, борг перейде 90 днів прострочення',
+}
+
+function Risk90dSummary({ risk }: { risk: Risk90d }) {
   const { t } = useI18n()
-  const color = FORWARD_RISK_COLOR[forwardRisk.band] ?? 'gray'
-  const label = FORWARD_RISK_LABEL[forwardRisk.band] ?? forwardRisk.band
+  const color = RISK_90D_COLOR[risk.band] ?? 'gray'
+  const label = RISK_90D_LABEL[risk.band] ?? risk.band
+  const reason = RISK_90D_REASON[risk.reason_code] ?? risk.reason_code
 
   return (
-    <Badge color={color} size="lg" variant="filled">
-      {t(label)} · PD {formatPercent1(forwardRisk.pd)}
-    </Badge>
+    <Group gap="xs" wrap="wrap">
+      <Badge color={color} size="lg" variant="filled">
+        {t(label)}
+      </Badge>
+      <Text size="sm">
+        {t(reason)}
+        {risk.exposure_eur > 0 ? ` · ${formatEur(risk.exposure_eur)}` : ''}
+      </Text>
+    </Group>
   )
 }
 
@@ -654,6 +668,14 @@ function formatNumber(value: number): string {
   }
 
   return value.toFixed(1)
+}
+
+function formatEur(value: number): string {
+  if (!Number.isFinite(value)) {
+    return '-'
+  }
+
+  return `${eurFormatter.format(value)} EUR`
 }
 
 function round2(value: number): number {

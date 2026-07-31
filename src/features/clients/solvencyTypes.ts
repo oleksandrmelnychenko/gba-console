@@ -36,6 +36,21 @@ export type ForwardRisk = {
   pd: number
 }
 
+export type Risk90dBand = 'low' | 'medium' | 'high' | 'critical'
+export type Risk90dReason =
+  | 'no_debt'
+  | 'current_debt'
+  | 'will_cross_90_days'
+  | 'already_90_plus'
+
+export type Risk90d = {
+  horizon_days: 90
+  threshold_days: 90
+  band: Risk90dBand
+  exposure_eur: number
+  reason_code: Risk90dReason
+}
+
 export type SolvencyScore = {
   client_id: number
   client_net_uid: string | null
@@ -44,6 +59,7 @@ export type SolvencyScore = {
   rating: SolvencyRating | null
   pd?: number | null
   contributions?: Contribution[] | null
+  risk_90d?: Risk90d | null
   forward_risk?: ForwardRisk | null
   forward_risk_status: ForwardRiskStatus
   forward_risk_reason: string | null
