@@ -234,7 +234,7 @@ function ResourceDataTable<TData extends ClientResourceEntity>({
       loadingText={translate('Завантаження')}
       maxHeight={shouldFillHeight ? undefined : 'min(56vh, 620px)'}
       minWidth={minWidth}
-      showLayoutControls={usesFilterPattern && showLayoutControls}
+      showLayoutControls={showLayoutControls}
       tableId={`client-resources-${normalizeTableIdPart(tableId)}`}
       toolbarPortalTarget={usesFilterPattern ? tableToolbar?.target : undefined}
     />
@@ -4433,7 +4433,7 @@ function isProtectedTransporter(transporter: ClientResourceTransporter): boolean
 
 function TransporterTable({
   showActions = false,
-  showLayoutControls = false,
+  showLayoutControls = true,
   title,
   transporters,
   onDelete,
