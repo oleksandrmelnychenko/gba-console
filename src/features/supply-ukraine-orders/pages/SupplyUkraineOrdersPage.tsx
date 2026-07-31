@@ -1202,7 +1202,7 @@ function SupplyOrderInvoicesExpand({ order }: { order: DirectSupplyOrder }) {
         layoutVersion="supply-order-invoices-table-2"
         minWidth={ORDER_INVOICES_TABLE_MIN_WIDTH}
         showDensityToggle={false}
-        showLayoutControls={false}
+        showLayoutControls
         tableId="supply-order-invoices"
       />
     </div>
