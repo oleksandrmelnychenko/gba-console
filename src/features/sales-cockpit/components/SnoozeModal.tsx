@@ -53,7 +53,10 @@ export function SnoozeModal({
             loading={saving}
             onClick={() => {
               if (task && snoozeUntil) {
-                onSubmit(task, snoozeUntil)
+                // The datetime-local value is Kyiv wall time with no offset; every hop
+                // downstream (gba-server → gba-nba → Mongo) stores it verbatim as UTC,
+                // so «нагадати о 09:00» used to wake at 12:00. Send a real instant.
+                onSubmit(task, new Date(snoozeUntil).toISOString())
               }
             }}
           >
