@@ -30,6 +30,7 @@ import {
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
@@ -65,7 +66,13 @@ const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
 
 const integerFormatter = new Intl.NumberFormat('uk-UA')
 
-export function EcommerceImageSearchPanel() {
+type EcommerceImageSearchPanelProps = {
+  initialSelectionNetUid?: string | null
+}
+
+export function EcommerceImageSearchPanel({
+  initialSelectionNetUid,
+}: EcommerceImageSearchPanelProps) {
   const { t } = useI18n()
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(DEFAULT_PAGINATOR_PAGE_SIZE)
@@ -77,8 +84,8 @@ export function EcommerceImageSearchPanel() {
   const [isLoading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selected, setSelected] = useState<EcommerceImageSearchDetail | null>(null)
-  const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [detailLoading, setDetailLoading] = useState(false)
+  const [selectedId, setSelectedId] = useState<string | null>(initialSelectionNetUid ?? null)
+  const [detailLoading, setDetailLoading] = useState(Boolean(initialSelectionNetUid))
   const [detailError, setDetailError] = useState<string | null>(null)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
 
@@ -138,20 +145,46 @@ export function EcommerceImageSearchPanel() {
     }
   }, [offset, pageSize, reloadKey, searchValue, status, t])
 
-  const openDetail = useCallback(async (netUid: string) => {
+  const openDetail = useCallback((netUid: string) => {
     setSelectedId(netUid)
     setSelected(null)
     setDetailError(null)
     setDetailLoading(true)
+  }, [])
 
-    try {
-      setSelected(await getEcommerceImageSearch(netUid))
-    } catch (loadError) {
-      setDetailError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити AI-аналіз'))
-    } finally {
-      setDetailLoading(false)
+  useEffect(() => {
+    if (!selectedId) {
+      return
     }
-  }, [t])
+
+    const netUid = selectedId
+    const controller = new AbortController()
+
+    async function loadDetail() {
+      try {
+        const detail = await getEcommerceImageSearch(netUid, controller.signal)
+
+        if (!controller.signal.aborted) {
+          setSelected(detail)
+          setDetailError(null)
+        }
+      } catch (loadError) {
+        if (!controller.signal.aborted) {
+          setDetailError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити AI-аналіз'))
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setDetailLoading(false)
+        }
+      }
+    }
+
+    void loadDetail()
+
+    return () => {
+      controller.abort()
+    }
+  }, [selectedId, t])
 
   const closeDetail = useCallback(() => {
     setSelectedId(null)
@@ -159,6 +192,9 @@ export function EcommerceImageSearchPanel() {
     setDetailError(null)
     setDetailLoading(false)
   }, [])
+
+  useRealtimeEvent(realtimeEvents.ecommerceImageSearchCreated, reload)
+  useRealtimeEvent(realtimeEvents.ecommerceImageSearchUpdated, reload)
 
   const statusOptions = useMemo(
     () => STATUS_OPTIONS.map((option) => ({ ...option, label: t(option.label) })),
@@ -253,7 +289,7 @@ export function EcommerceImageSearchPanel() {
               <ImageSearchAuditRow
                 key={item.NetUid}
                 item={item}
-                onOpen={() => void openDetail(item.NetUid)}
+                onOpen={() => openDetail(item.NetUid)}
               />
             ))}
           </div>

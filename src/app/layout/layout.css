@@ -432,27 +432,100 @@
   flex: 0 0 auto;
 }
 
-.console-bell {
-  position: relative;
-  display: inline-flex;
-  overflow: visible;
-}
-
-.console-bell .mantine-ActionIcon-root,
 .console-header-actions > .mantine-ActionIcon-root {
   overflow: visible;
 }
 
-.console-bell-badge {
+.console-notification-trigger,
+.console-notification-trigger .mantine-Indicator-root {
+  overflow: visible !important;
+}
+
+.console-notification-dropdown {
+  width: min(390px, calc(100vw - 16px));
+  overflow: hidden;
+  border-color: var(--mantine-color-gray-2);
+}
+
+.console-notification-header {
+  min-height: 62px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+  background: var(--mantine-color-gray-0);
+}
+
+.console-notification-empty {
+  min-height: 126px;
+  justify-content: center;
+  color: var(--mantine-color-gray-5);
+}
+
+.console-notification-item {
+  position: relative;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 10px;
+  width: 100%;
+  min-height: 72px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+  background: #ffffff;
+  text-align: left;
+  transition: background-color 120ms ease;
+}
+
+.console-notification-item:last-child {
+  border-bottom: 0;
+}
+
+.console-notification-item:hover {
+  background: var(--mantine-color-gray-0);
+}
+
+.console-notification-item.is-unread {
+  background: var(--mantine-color-orange-0);
+}
+
+.console-notification-item.is-unread::before {
   position: absolute;
-  top: 6px;
-  right: 6px;
-  width: 8px;
-  height: 8px;
-  border: 2px solid #ffffff;
-  border-radius: 50%;
-  background: #ef4444;
-  pointer-events: none;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--brand-orange);
+  content: '';
+}
+
+.console-notification-icon {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 6px;
+  background: var(--mantine-color-orange-1);
+  color: var(--brand-orange);
+}
+
+.console-notification-icon.is-ecommerce-ai-image-search,
+.console-notification-icon.is-ecommerce-interest {
+  background: var(--mantine-color-grape-0);
+  color: var(--mantine-color-grape-7);
+}
+
+.console-notification-copy {
+  min-width: 0;
+}
+
+.console-notification-copy .mantine-Text-root {
+  overflow-wrap: anywhere;
+}
+
+.console-notification-time {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.console-notification-message {
+  margin-top: 3px;
+  line-height: 1.35;
 }
 
 .console-nav-toggle {

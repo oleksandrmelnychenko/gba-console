@@ -1,8 +1,9 @@
 import { ActionIcon, Anchor, Button, Center, Stack, Text, Tooltip } from '@mantine/core'
 import { RefreshCw } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { ProductCardModal } from '../../products/components/ProductCardModal'
@@ -104,10 +105,12 @@ export function PreordersInterestPage() {
     }
   }, [offset, reloadToken, setHasMore, setLoading, setLoadingMore, setPreOrders])
 
-  const refresh = () => {
+  const refresh = useCallback(() => {
     setOffset(0)
     setReloadToken((token) => token + 1)
-  }
+  }, [setOffset, setReloadToken])
+
+  useRealtimeEvent(realtimeEvents.preOrderAdded, refresh)
 
   const loadMore = () => {
     setOffset((current) => current + PREORDERS_PAGE_SIZE)

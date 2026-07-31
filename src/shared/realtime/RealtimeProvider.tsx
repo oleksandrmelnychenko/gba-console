@@ -16,12 +16,19 @@ import {
   realtimeBus,
   realtimeEvents,
   type DataSyncNotification,
+  type EcommerceImageSearchRealtimeNotification,
+  type PreOrderAddedRealtimeNotification,
+  type SaleAddedRealtimeNotification,
   type SupplyOrderNotification,
   type SupplyPaymentTaskNotification,
 } from './events'
 import { getNumberValue, getStringValue, parseRealtimePayload } from './payload'
 import { realtimeUrl } from './realtimeUrl'
 import { applyDataSyncNotification, reconcileDataSyncProgress } from './dataSyncProgressStore'
+import { createEcommerceOrderNotification } from '../notification-center/ecommerceOrderNotification'
+import { createEcommerceInterestNotification } from '../notification-center/ecommerceInterestNotification'
+import { createEcommerceImageSearchNotification } from '../notification-center/ecommerceImageSearchNotification'
+import { addConsoleNotification } from '../notification-center/store'
 
 type DataSyncStatus = {
   IsInProgress?: boolean
@@ -46,8 +53,9 @@ const amountFormatter = new Intl.NumberFormat('uk-UA', {
 })
 
 export function RealtimeProvider({ children }: PropsWithChildren) {
-  const { isAuthenticated, isLoading, user } = useAuth()
+  const { isAuthenticated, isLoading, session, user } = useAuth()
   const { t } = useI18n()
+  const userKey = user?.NetUid || user?.Id?.toString() || session?.userNetUid
 
   useEffect(() => {
     if (!isAuthenticated || isLoading) {
@@ -56,7 +64,7 @@ export function RealtimeProvider({ children }: PropsWithChildren) {
 
     let disposed = false
     const connections = [
-      createProductReservationConnection(),
+      createProductReservationConnection(userKey, t),
       createSupplyOrdersConnection(t),
       createExchangeRatesConnection(),
       createResaleConnection(),
@@ -71,12 +79,15 @@ export function RealtimeProvider({ children }: PropsWithChildren) {
       disposed = true
       stopManagedConnections()
     }
-  }, [isAuthenticated, isLoading, t, user])
+  }, [isAuthenticated, isLoading, t, user, userKey])
 
   return children
 }
 
-function createProductReservationConnection(): HubConnection {
+function createProductReservationConnection(
+  userKey: string | undefined,
+  t: (key: string) => string,
+): HubConnection {
   const connection = createConnection(hubPaths.productReservation)
 
   connection.on('GetProductWithoutReservedCount', (payload: unknown) => {
@@ -84,7 +95,52 @@ function createProductReservationConnection(): HubConnection {
   })
 
   connection.on('NewSaleAdded', (payload: unknown) => {
-    realtimeBus.emit(realtimeEvents.saleAdded, parseRealtimePayload(payload))
+    const saleNotification = parseRealtimePayload<SaleAddedRealtimeNotification>(payload)
+    realtimeBus.emit(realtimeEvents.saleAdded, saleNotification)
+
+    const notification = createEcommerceOrderNotification(saleNotification)
+    if (notification && addConsoleNotification(userKey, notification)) {
+      notifications.show({
+        color: 'orange',
+        message: notification.message || t('Відкрити замовлення'),
+        title: notification.title,
+      })
+    }
+  })
+
+  connection.on('NewPreOrderAdded', (payload: unknown) => {
+    const preOrder = parseRealtimePayload<PreOrderAddedRealtimeNotification>(payload)
+    realtimeBus.emit(realtimeEvents.preOrderAdded, preOrder)
+
+    const notification = createEcommerceInterestNotification(preOrder)
+    if (notification && addConsoleNotification(userKey, notification)) {
+      notifications.show({
+        color: 'grape',
+        message: notification.message || t('Відкрити зацікавленість'),
+        title: notification.title,
+      })
+    }
+  })
+
+  connection.on('EcommerceImageSearchCreated', (payload: unknown) => {
+    const imageSearch = parseRealtimePayload<EcommerceImageSearchRealtimeNotification>(payload)
+    realtimeBus.emit(realtimeEvents.ecommerceImageSearchCreated, imageSearch)
+
+    const notification = createEcommerceImageSearchNotification(imageSearch)
+    if (notification && addConsoleNotification(userKey, notification)) {
+      notifications.show({
+        color: 'grape',
+        message: notification.message || t('Відкрити AI-пошук'),
+        title: notification.title,
+      })
+    }
+  })
+
+  connection.on('EcommerceImageSearchUpdated', (payload: unknown) => {
+    realtimeBus.emit(
+      realtimeEvents.ecommerceImageSearchUpdated,
+      parseRealtimePayload<EcommerceImageSearchRealtimeNotification>(payload),
+    )
   })
 
   connection.on('SaleUpdated', (payload: unknown) => {

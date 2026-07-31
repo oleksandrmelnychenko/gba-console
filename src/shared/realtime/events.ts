@@ -4,9 +4,12 @@ export const realtimeEvents = {
   crossExchangeRateUpdated: 'crossExchangeRateUpdated',
   dataSyncNotification: 'dataSyncNotification',
   exchangeRateUpdated: 'exchangeRateUpdated',
+  ecommerceImageSearchCreated: 'ecommerceImageSearchCreated',
+  ecommerceImageSearchUpdated: 'ecommerceImageSearchUpdated',
   govCrossExchangeRateUpdated: 'govCrossExchangeRateUpdated',
   govExchangeRateUpdated: 'govExchangeRateUpdated',
   productReservationUpdated: 'productReservationUpdated',
+  preOrderAdded: 'preOrderAdded',
   resaleAvailabilitiesUpdated: 'resaleAvailabilitiesUpdated',
   saleAdded: 'saleAdded',
   saleUpdated: 'saleUpdated',
@@ -20,11 +23,14 @@ export type RealtimeEventPayloads = {
   [realtimeEvents.crossExchangeRateUpdated]: unknown
   [realtimeEvents.dataSyncNotification]: DataSyncNotification
   [realtimeEvents.exchangeRateUpdated]: unknown
+  [realtimeEvents.ecommerceImageSearchCreated]: EcommerceImageSearchRealtimeNotification
+  [realtimeEvents.ecommerceImageSearchUpdated]: EcommerceImageSearchRealtimeNotification
   [realtimeEvents.govCrossExchangeRateUpdated]: unknown
   [realtimeEvents.govExchangeRateUpdated]: unknown
   [realtimeEvents.productReservationUpdated]: unknown
+  [realtimeEvents.preOrderAdded]: PreOrderAddedRealtimeNotification
   [realtimeEvents.resaleAvailabilitiesUpdated]: unknown[]
-  [realtimeEvents.saleAdded]: unknown
+  [realtimeEvents.saleAdded]: SaleAddedRealtimeNotification
   [realtimeEvents.saleUpdated]: unknown
   [realtimeEvents.salesCockpitTasksChanged]: SalesCockpitTasksChangedNotification
   [realtimeEvents.supplyOrderAdded]: unknown
@@ -59,6 +65,58 @@ export type SalesCockpitTasksChangedNotification = {
   changedAtUtc?: string
 }
 
+export type SaleAddedRealtimeNotification = {
+  Sale?: {
+    ClientAgreement?: {
+      Agreement?: {
+        Currency?: { Code?: string }
+      }
+      Client?: { FullName?: string }
+    }
+    Created?: string
+    NetUid?: string
+    Order?: {
+      OrderItems?: unknown[]
+      OrderSource?: number | string
+      TotalAmountLocal?: number | string
+    }
+    RetailClient?: {
+      FullName?: string
+      Name?: string
+    }
+    SaleNumber?: { Value?: string }
+    TotalAmountLocal?: number | string
+    TotalPositions?: number | string
+  }
+}
+
+export type PreOrderAddedRealtimeNotification = {
+  Client?: {
+    FullName?: string
+    MobileNumber?: string
+  }
+  Comment?: string
+  Created?: string
+  MobileNumber?: string
+  NetUid?: string
+  Product?: {
+    Name?: string
+    NameUA?: string
+    NetUid?: string
+    VendorCode?: string
+  }
+  Qty?: number | string
+}
+
+export type EcommerceImageSearchRealtimeNotification = {
+  CreatedAtUtc?: string
+  IsAuthenticated?: boolean
+  Locale?: string
+  NetUid?: string
+  OriginalFileName?: string
+  Status?: 'completed' | 'failed' | 'processing' | string
+}
+
 type RealtimeListener<TPayload> = (payload: TPayload) => void
 
 class RealtimeEventBus {
@@ -68,7 +126,7 @@ class RealtimeEventBus {
     this.listeners.get(eventName)?.forEach((listener) => listener(payload))
   }
 
-  on<TEvent extends RealtimeEventName>(
+  subscribe<TEvent extends RealtimeEventName>(
     eventName: TEvent,
     listener: RealtimeListener<RealtimeEventPayloads[TEvent]>,
   ): () => void {
@@ -98,13 +156,10 @@ export function useRealtimeEvent<TEvent extends RealtimeEventName>(
     listenerRef.current = listener
   }, [listener])
 
-  useEffect(() => {
-    const unsubscribe = realtimeBus.on(eventName, (payload) => {
+  useEffect(
+    () => realtimeBus.subscribe(eventName, (payload) => {
       listenerRef.current(payload)
-    })
-
-    return () => {
-      unsubscribe()
-    }
-  }, [eventName])
+    }),
+    [eventName],
+  )
 }

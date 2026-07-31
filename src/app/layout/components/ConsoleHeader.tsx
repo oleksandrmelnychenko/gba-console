@@ -1,11 +1,18 @@
 import { ActionIcon, AppShell, Badge, Box, Group, Title, Text } from '@mantine/core'
-import { Bell, LogOut } from 'lucide-react'
+import { LogOut } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../../features/auth/useAuth'
 import { HeaderActionBar } from '../../../features/header-actions/components/HeaderActionBar'
 import gbaLogo from '../../../assets/brand/gba-logo.svg'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { ConsoleNav } from './ConsoleNav'
+import { NotificationCenter } from './NotificationCenter'
+
+const headerDateFormatter = new Intl.DateTimeFormat('uk-UA', {
+  weekday: 'long',
+  day: '2-digit',
+  month: 'long',
+})
 
 export function ConsoleHeader() {
   const { logout, session, user } = useAuth()
@@ -18,11 +25,7 @@ export function ConsoleHeader() {
     session?.userNetUid ||
     t('Робочий простір')
   const roleName = user?.UserRole?.Name?.trim()
-  const currentDateLabel = new Intl.DateTimeFormat('uk-UA', {
-    weekday: 'long',
-    day: '2-digit',
-    month: 'long',
-  }).format(new Date())
+  const currentDateLabel = headerDateFormatter.format(new Date())
 
   return (
     <AppShell.Header className="console-header">
@@ -45,12 +48,7 @@ export function ConsoleHeader() {
 
         <Group gap="xs" wrap="nowrap" className="console-header-actions">
           <HeaderActionBar />
-          <Box className="console-bell">
-            <ActionIcon variant="subtle" color="gray" size="lg" aria-label={t('Сповіщення')}>
-              <Bell size={24} strokeWidth={1.7} />
-            </ActionIcon>
-            <span className="console-bell-badge tx-spring-pop" aria-hidden="true" />
-          </Box>
+          <NotificationCenter userKey={user?.NetUid || user?.Id?.toString() || session?.userNetUid} />
           <ActionIcon variant="subtle" color="gray" size="lg" aria-label={t('Вийти')} onClick={logout}>
             <LogOut size={24} strokeWidth={1.7} />
           </ActionIcon>

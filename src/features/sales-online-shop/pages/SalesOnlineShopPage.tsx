@@ -30,6 +30,7 @@ import {
   useRef,
   useState,
 } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { translate } from '../../../shared/i18n/translate'
@@ -151,7 +152,22 @@ const amountFormatter = new Intl.NumberFormat('uk-UA', {
 
 export function SalesOnlineShopPage() {
   const { t } = useI18n()
-  const [workspace, setWorkspace] = useState<'orders' | 'image-searches'>('orders')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const workspace = searchParams.get('workspace') === 'image-searches' ? 'image-searches' : 'orders'
+  const selectedImageSearchNetUid = searchParams.get('imageSearch')
+
+  function changeWorkspace(value: string) {
+    const nextParams = new URLSearchParams(searchParams)
+
+    if (value === 'image-searches') {
+      nextParams.set('workspace', 'image-searches')
+    } else {
+      nextParams.delete('workspace')
+      nextParams.delete('imageSearch')
+    }
+
+    setSearchParams(nextParams, { replace: true })
+  }
 
   return (
     <Stack className="sales-online-shop-workspace" gap={6}>
@@ -166,13 +182,20 @@ export function SalesOnlineShopPage() {
                 { label: t('AI-пошук за фото'), value: 'image-searches' },
               ]}
               value={workspace}
-              onChange={(value) => setWorkspace(value as 'orders' | 'image-searches')}
+              onChange={changeWorkspace}
             />
           </div>
         </div>
       </Card>
 
-      {workspace === 'orders' ? <SalesOnlineShopOrdersPage /> : <EcommerceImageSearchPanel />}
+      {workspace === 'orders'
+        ? <SalesOnlineShopOrdersPage />
+        : (
+          <EcommerceImageSearchPanel
+            key={selectedImageSearchNetUid ?? 'image-search-list'}
+            initialSelectionNetUid={selectedImageSearchNetUid}
+          />
+        )}
     </Stack>
   )
 }
