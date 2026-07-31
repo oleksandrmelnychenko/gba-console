@@ -1950,7 +1950,7 @@ function StorageEditorModal({
               data={toEntityOptions(organizations, (organization) =>
                 displayTranslatedEntity(organization.Name, organization.OrganizationTranslations),
               )}
-              label={translate("Організація")}
+              label={translate("Облікова організація")}
               value={values.OrganizationId}
               onChange={(value) => setField('OrganizationId', value || '')}
             />
@@ -1964,7 +1964,7 @@ function StorageEditorModal({
           <Group gap="xl">
             <Checkbox
               checked={values.ForDefective}
-              label={translate("Брак")}
+              label={translate("Не для продажу (брак, вияснення)")}
               onChange={(event) => setField('ForDefective', event.currentTarget.checked)}
             />
             <Checkbox
@@ -2597,8 +2597,8 @@ function OrganizationEditorModal({
             <Select
               clearable
               data={toEntityOptions(storages, (storage) => displayValue(storage.Name))}
-              label={translate("Склад")}
-              placeholder={translate("Оберіть склад")}
+              label={translate("Основний склад продажу")}
+              placeholder={translate("Оберіть основний склад продажу")}
               value={values.StorageId}
               onChange={(value) => setField('StorageId', value || '')}
             />
@@ -3576,6 +3576,10 @@ function StoragesPanel({ section }: { section: ClientResourceSection }) {
   const [deleteTarget, setDeleteTarget] = useValueState<ClientResourceDeleteTarget | null>(null)
   const [formError, setFormError] = useValueState<string | null>(null)
   const [isSaving, setSaving] = useValueState(false)
+  const saleOrganizationsByStorageId = useMemo(
+    () => buildSaleOrganizationsByStorageId(organizationsState.data),
+    [organizationsState.data],
+  )
   const filtered = useMemo(
     () =>
       state.data.filter((storage) =>
@@ -3583,11 +3587,12 @@ function StoragesPanel({ section }: { section: ClientResourceSection }) {
           storage.Name,
           storage.Organization?.Name,
           storage.Organization?.FullName,
+          ...(storage.Id ? saleOrganizationsByStorageId.get(storage.Id) || [] : []),
           storage.Locale,
           storage.NetUid,
         ]),
-    ),
-    [search, state.data],
+      ),
+    [saleOrganizationsByStorageId, search, state.data],
   )
   const pagination = useClientResourcePagination(filtered)
 
@@ -3711,11 +3716,30 @@ function StoragesPanel({ section }: { section: ClientResourceSection }) {
               },
               {
                 id: 'organization',
-                header: 'Організація',
+                header: 'Облікова організація',
                 accessor: (storage) => storage.Organization?.Name,
                 cell: (storage) => <TruncatedCell value={storage.Organization?.Name} />,
                 maxWidth: 190,
                 width: 190,
+              },
+              {
+                id: 'saleOrganizations',
+                header: 'Основний для продажу',
+                accessor: (storage) =>
+                  storage.Id
+                    ? (saleOrganizationsByStorageId.get(storage.Id) || []).join(', ')
+                    : '',
+                cell: (storage) => {
+                  const names = storage.Id
+                    ? saleOrganizationsByStorageId.get(storage.Id) || []
+                    : []
+
+                  return names.length > 0
+                    ? <TruncatedCell value={names.join(', ')} />
+                    : <Text c="dimmed" size="xs">Не основний</Text>
+                },
+                maxWidth: 240,
+                width: 240,
               },
               {
                 id: 'priority',
@@ -3726,7 +3750,7 @@ function StoragesPanel({ section }: { section: ClientResourceSection }) {
               },
               {
                 id: 'defective',
-                header: 'Брак',
+                header: 'Не для продажу',
                 accessor: (storage) => storage.ForDefective,
                 cell: (storage) => <BooleanBadge value={storage.ForDefective} />,
                 maxWidth: 80,
@@ -3799,8 +3823,8 @@ function StoragesPanel({ section }: { section: ClientResourceSection }) {
           ]}
           data={pagination.data}
           emptyText={translate("За цим пошуком немає складів")}
-          layoutVersion="client-resources-storages-table-2"
-          minWidth={1002}
+          layoutVersion="client-resources-storages-table-3"
+          minWidth={1242}
           tableId="storages"
         />
       </Loadable>
@@ -3835,6 +3859,28 @@ function StoragesPanel({ section }: { section: ClientResourceSection }) {
       />
     </ResourcePanel>
   )
+}
+
+export function buildSaleOrganizationsByStorageId(
+  organizations: ClientResourceOrganization[],
+): Map<number, string[]> {
+  const result = new Map<number, string[]>()
+
+  for (const organization of organizations) {
+    if (!organization.StorageId) {
+      continue
+    }
+
+    const names = result.get(organization.StorageId) || []
+    names.push(displayTranslatedEntity(organization.Name, organization.OrganizationTranslations))
+    result.set(organization.StorageId, names)
+  }
+
+  for (const names of result.values()) {
+    names.sort((left, right) => left.localeCompare(right, 'uk'))
+  }
+
+  return result
 }
 
 function MeasureUnitsPanel({ section }: { section: ClientResourceSection }) {
