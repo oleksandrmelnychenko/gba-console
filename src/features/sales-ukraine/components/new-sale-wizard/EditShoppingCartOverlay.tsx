@@ -286,7 +286,7 @@ function CartTable({
           minWidth={CART_EDIT_TABLE_MIN_WIDTH}
           rowClassName={(row) => (rows.indexOf(row) === selectedIndex ? 'is-selected' : undefined)}
           showDensityToggle={false}
-          showLayoutControls={false}
+          showLayoutControls
           tableId={`new-sale-cart-edit-${list}`}
         />
       </Box>

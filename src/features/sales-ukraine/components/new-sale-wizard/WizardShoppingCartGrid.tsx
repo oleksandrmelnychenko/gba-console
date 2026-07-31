@@ -230,7 +230,7 @@ export const WizardShoppingCartGrid = memo(function WizardShoppingCartGrid({
           height="100%"
           minWidth={WIZARD_CART_TABLE_MIN_WIDTH}
           showDensityToggle={false}
-          showLayoutControls={false}
+          showLayoutControls
           tableId="new-sale-wizard-cart"
           onRowClick={onRowClick}
         />
