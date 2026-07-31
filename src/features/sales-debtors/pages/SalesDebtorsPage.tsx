@@ -488,26 +488,18 @@ function SalesDebtorsSummary({ currencyCode, debtors }: { currencyCode: string; 
 
   return (
     <div className="sales-debtors-summary">
-      <span className="sales-debtors-summary-item">
-        <span>{t('Клієнтів')}</span>
-        <strong>{debtors.TotalQtyClients}</strong>
-      </span>
-      <span className={`sales-debtors-summary-item${debtors.TotalMissedDays < 0 ? ' is-danger' : ''}`}>
-        <span>{t('Днів')}</span>
-        <strong>{debtors.TotalMissedDays}</strong>
-      </span>
-      <span className="sales-debtors-summary-item is-money">
-        <span>{t('Залишок')}</span>
-        <strong>
-          {moneyFormatter.format(debtors.TotalRemainderDebtorsValue)} {currencyCode}
-        </strong>
-      </span>
-      <span className={`sales-debtors-summary-item is-money${debtors.TotalOverdueDebtorsValue > 0 ? ' is-danger' : ''}`}>
-        <span>{t('Прострочено')}</span>
-        <strong>
-          {moneyFormatter.format(debtors.TotalOverdueDebtorsValue)} {currencyCode}
-        </strong>
-      </span>
+      <Badge className="app-role-pill is-gray" variant="light">
+        {t('Клієнтів')}: {debtors.TotalQtyClients}
+      </Badge>
+      <Badge className="app-role-pill is-gray" variant="light">
+        {t('Днів')}: {debtors.TotalMissedDays}
+      </Badge>
+      <Badge className="app-role-pill is-gray" variant="light">
+        {t('Залишок')}: {moneyFormatter.format(debtors.TotalRemainderDebtorsValue)} {currencyCode}
+      </Badge>
+      <Badge className="app-role-pill is-gray" variant="light">
+        {t('Прострочено')}: {moneyFormatter.format(debtors.TotalOverdueDebtorsValue)} {currencyCode}
+      </Badge>
     </div>
   )
 }
