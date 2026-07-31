@@ -4,10 +4,8 @@ import {
   Badge,
   Card,
   Group,
-  Loader,
   Select,
   Stack,
-  Table,
   Text,
   TextInput,
   Tooltip,
@@ -18,6 +16,8 @@ import { CircleAlert, RefreshCw, Search } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { createWizardOperationId } from '../../sales-ukraine/components/new-sale-wizard/wizardMutationOperation'
 import { getOffers, getPublicOfferLink, restartOfferValidity } from '../../sales-offers/api/salesOffersApi'
@@ -156,6 +156,127 @@ export function MyOffersPanel() {
     },
     [t],
   )
+  const offerColumns = useMemo<DataTableColumn<ClientShoppingCart>[]>(
+    () => [
+      {
+        id: 'number',
+        header: t('Номер'),
+        accessor: (offer) => offer.Number ?? '',
+        cell: (offer) => (
+          <Text ff="var(--font-mono)" size="sm">
+            {offer.Number ?? '—'}
+          </Text>
+        ),
+        width: 130,
+      },
+      {
+        id: 'client',
+        header: t('Клієнт'),
+        accessor: (offer) => offer.ClientAgreement?.Client?.FullName ?? '',
+        cell: (offer) => offer.ClientAgreement?.Client?.FullName ?? '—',
+        minWidth: 220,
+        fill: true,
+      },
+      {
+        id: 'created',
+        header: t('Створено'),
+        accessor: (offer) => offer.Created,
+        cell: (offer) => formatDateTime(offer.Created),
+        width: 145,
+      },
+      {
+        id: 'valid-until',
+        header: t('Дійсна до'),
+        accessor: (offer) => offer.ValidUntil,
+        cell: (offer) => formatDate(offer.ValidUntil),
+        width: 120,
+      },
+      {
+        id: 'positions',
+        header: t('Позицій'),
+        accessor: (offer) => offer.OrderItems?.length ?? 0,
+        align: 'right',
+        width: 90,
+      },
+      {
+        id: 'total',
+        header: t('Сума'),
+        accessor: (offer) => offer.TotalAmount,
+        cell: (offer) => (
+          <>
+            {formatMoney(offer.TotalAmount)}{' '}
+            {offer.ClientAgreement?.Agreement?.Currency?.Code ?? 'EUR'}
+          </>
+        ),
+        align: 'right',
+        width: 140,
+      },
+      {
+        id: 'status',
+        header: t('Статус'),
+        accessor: (offer) => getOfferLifecycle(offer),
+        cell: (offer) => {
+          const lifecycle = getOfferLifecycle(offer)
+          const presentation = LIFECYCLE_PRESENTATION[lifecycle]
+          const viewedAt = offer.ViewedAt ? formatDateTime(offer.ViewedAt) : null
+
+          return (
+            <Tooltip
+              disabled={!viewedAt}
+              label={viewedAt ? `${t('Переглянута')} ${viewedAt}` : undefined}
+            >
+              <Badge color={presentation.color} variant="light">
+                {t(presentation.label)}
+              </Badge>
+            </Tooltip>
+          )
+        },
+        width: 130,
+      },
+      {
+        id: 'actions',
+        header: '',
+        cell: (offer) => {
+          const lifecycle = getOfferLifecycle(offer)
+
+          return (
+            <Group gap={4} justify="flex-end" wrap="nowrap">
+              {lifecycle === 'expired' && (
+                <TableRowAction
+                  action="restore"
+                  label={t('Продовжити на 2 дні')}
+                  loading={pendingNetId === offer.NetUid}
+                  onClick={() => void extendValidity(offer)}
+                />
+              )}
+              {(lifecycle === 'sent' || lifecycle === 'viewed') && offer.NetUid && (
+                <>
+                  <TableRowAction
+                    action="copy"
+                    label={t('Скопіювати посилання')}
+                    onClick={() => void copyLink(offer)}
+                  />
+                  <TableRowAction
+                    action="open"
+                    component="a"
+                    href={getPublicOfferLink(offer.NetUid)}
+                    label={t('Відкрити')}
+                    rel="noreferrer"
+                    target="_blank"
+                  />
+                </>
+              )}
+            </Group>
+          )
+        },
+        align: 'right',
+        rowActions: true,
+        enableHiding: false,
+        width: 120,
+      },
+    ],
+    [copyLink, extendValidity, pendingNetId, t],
+  )
 
   return (
     <Card className="app-section-card" withBorder padding="md" radius="md">
@@ -206,96 +327,15 @@ export function MyOffersPanel() {
           </Alert>
         )}
 
-        {isLoading ? (
-          <Group justify="center" py="xl">
-            <Loader size="sm" />
-          </Group>
-        ) : visibleOffers.length === 0 ? (
-          <Text c="dimmed" py="md" size="sm" ta="center">
-            {t('За обраний період оферт немає')}
-          </Text>
-        ) : (
-          <Table.ScrollContainer minWidth={860}>
-            <Table highlightOnHover striped verticalSpacing="xs">
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>{t('Номер')}</Table.Th>
-                  <Table.Th>{t('Клієнт')}</Table.Th>
-                  <Table.Th>{t('Створено')}</Table.Th>
-                  <Table.Th>{t('Дійсна до')}</Table.Th>
-                  <Table.Th ta="right">{t('Позицій')}</Table.Th>
-                  <Table.Th ta="right">{t('Сума')}</Table.Th>
-                  <Table.Th>{t('Статус')}</Table.Th>
-                  <Table.Th />
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {visibleOffers.map((offer) => {
-                  const lifecycle = getOfferLifecycle(offer)
-                  const presentation = LIFECYCLE_PRESENTATION[lifecycle]
-                  const currencyCode = offer.ClientAgreement?.Agreement?.Currency?.Code ?? 'EUR'
-                  const viewedAt = offer.ViewedAt ? formatDateTime(offer.ViewedAt) : null
-
-                  return (
-                    <Table.Tr key={offer.NetUid ?? offer.Id}>
-                      <Table.Td>
-                        <Text ff="var(--font-mono)" size="sm">
-                          {offer.Number ?? '—'}
-                        </Text>
-                      </Table.Td>
-                      <Table.Td>{offer.ClientAgreement?.Client?.FullName ?? '—'}</Table.Td>
-                      <Table.Td>{formatDateTime(offer.Created)}</Table.Td>
-                      <Table.Td>{formatDate(offer.ValidUntil)}</Table.Td>
-                      <Table.Td ta="right">{offer.OrderItems?.length ?? 0}</Table.Td>
-                      <Table.Td ta="right">
-                        {formatMoney(offer.TotalAmount)} {currencyCode}
-                      </Table.Td>
-                      <Table.Td>
-                        <Tooltip
-                          disabled={!viewedAt}
-                          label={viewedAt ? `${t('Переглянута')} ${viewedAt}` : undefined}
-                        >
-                          <Badge color={presentation.color} variant="light">
-                            {t(presentation.label)}
-                          </Badge>
-                        </Tooltip>
-                      </Table.Td>
-                      <Table.Td>
-                        <Group gap={4} justify="flex-end" wrap="nowrap">
-                          {lifecycle === 'expired' && (
-                            <TableRowAction
-                              action="restore"
-                              label={t('Продовжити на 2 дні')}
-                              loading={pendingNetId === offer.NetUid}
-                              onClick={() => void extendValidity(offer)}
-                            />
-                          )}
-                          {(lifecycle === 'sent' || lifecycle === 'viewed') && offer.NetUid && (
-                            <>
-                              <TableRowAction
-                                action="copy"
-                                label={t('Скопіювати посилання')}
-                                onClick={() => void copyLink(offer)}
-                              />
-                              <TableRowAction
-                                action="open"
-                                component="a"
-                                href={getPublicOfferLink(offer.NetUid)}
-                                label={t('Відкрити')}
-                                rel="noreferrer"
-                                target="_blank"
-                              />
-                            </>
-                          )}
-                        </Group>
-                      </Table.Td>
-                    </Table.Tr>
-                  )
-                })}
-              </Table.Tbody>
-            </Table>
-          </Table.ScrollContainer>
-        )}
+        <DataTable
+          columns={offerColumns}
+          data={visibleOffers}
+          emptyText={t('За обраний період оферт немає')}
+          getRowId={(offer) => String(offer.NetUid ?? offer.Id)}
+          isLoading={isLoading}
+          minWidth={980}
+          tableId="sales-cockpit-my-offers"
+        />
       </Stack>
     </Card>
   )

@@ -1,10 +1,12 @@
-import { Alert, Badge, Group, Loader, Select, Stack, Table, Text } from '@mantine/core'
+import { Alert, Badge, Group, Loader, Select, Stack, Text } from '@mantine/core'
 import { CircleAlert } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { getHeadDismissals } from '../api/salesCockpitApi'
-import type { HeadDismissalsResponse } from '../types'
+import type { HeadDismissalManagerRow, HeadDismissalsResponse } from '../types'
 
 const WINDOW_OPTIONS = [
   { label: '7 днів', value: '7' },
@@ -22,6 +24,43 @@ export function HeadDismissalsPanel({ managerId }: { managerId: number | null })
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useState(true)
   const [windowDays, setWindowDays] = useValueState('30')
+  const managerColumns = useMemo<DataTableColumn<HeadDismissalManagerRow>[]>(
+    () => [
+      {
+        id: 'manager',
+        header: t('Менеджер'),
+        accessor: (manager) => manager.manager_name ?? manager.manager_id,
+        cell: (manager) => manager.manager_name ?? `#${manager.manager_id}`,
+        minWidth: 160,
+        fill: true,
+      },
+      {
+        id: 'dismissed',
+        header: t('Відхилено'),
+        accessor: (manager) => manager.dismissed,
+        align: 'right',
+        width: 100,
+      },
+      {
+        id: 'no-reason',
+        header: t('Без причини'),
+        accessor: (manager) => manager.no_reason,
+        align: 'right',
+        width: 110,
+      },
+      {
+        id: 'top-reason',
+        header: t('Головна причина'),
+        accessor: (manager) => manager.reasons[0]?.reason ?? '',
+        cell: (manager) =>
+          manager.reasons[0]
+            ? `${manager.reasons[0].reason} (${manager.reasons[0].count})`
+            : '—',
+        minWidth: 170,
+      },
+    ],
+    [t],
+  )
 
   useEffect(() => {
     let cancelled = false
@@ -112,32 +151,13 @@ export function HeadDismissalsPanel({ managerId }: { managerId: number | null })
             )}
 
             {managerId === null && data.managers.length > 0 && (
-              <Table.ScrollContainer minWidth={520}>
-                <Table verticalSpacing={6} withRowBorders={false}>
-                  <Table.Thead>
-                    <Table.Tr>
-                      <Table.Th>{t('Менеджер')}</Table.Th>
-                      <Table.Th ta="right">{t('Відхилено')}</Table.Th>
-                      <Table.Th ta="right">{t('Без причини')}</Table.Th>
-                      <Table.Th>{t('Головна причина')}</Table.Th>
-                    </Table.Tr>
-                  </Table.Thead>
-                  <Table.Tbody>
-                    {data.managers.map((manager) => (
-                      <Table.Tr key={manager.manager_id}>
-                        <Table.Td>{manager.manager_name ?? `#${manager.manager_id}`}</Table.Td>
-                        <Table.Td ta="right">{manager.dismissed}</Table.Td>
-                        <Table.Td ta="right">{manager.no_reason}</Table.Td>
-                        <Table.Td>
-                          {manager.reasons[0]
-                            ? `${manager.reasons[0].reason} (${manager.reasons[0].count})`
-                            : '—'}
-                        </Table.Td>
-                      </Table.Tr>
-                    ))}
-                  </Table.Tbody>
-                </Table>
-              </Table.ScrollContainer>
+              <DataTable
+                columns={managerColumns}
+                data={data.managers}
+                getRowId={(manager) => String(manager.manager_id)}
+                minWidth={540}
+                tableId="sales-cockpit-head-dismissals"
+              />
             )}
           </>
         )}

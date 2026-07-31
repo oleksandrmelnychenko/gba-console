@@ -17,12 +17,14 @@ import {
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
-import { ChevronDown, ChevronRight, CircleAlert, Link as LinkIcon, RefreshCw, Search, ShoppingCart } from 'lucide-react'
+import { CircleAlert, Link as LinkIcon, RefreshCw, Search, ShoppingCart } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { useAuth } from '../../auth/useAuth'
@@ -59,12 +61,12 @@ type ClientRecommendationsState = {
 
 export function MyClientsPanel() {
   const { t } = useI18n()
+  const navigate = useNavigate()
   const [clients, setClients] = useValueState<CockpitClient[]>([])
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useState(true)
   const [search, setSearch] = useValueState('')
   const [debouncedSearch] = useDebouncedValue(search, 400)
-  const [expandedClientId, setExpandedClientId] = useState<number | null>(null)
   const [reloadKey, setReloadKey] = useState(0)
 
   useEffect(() => {
@@ -111,9 +113,116 @@ export function MyClientsPanel() {
     )
   }, [clients, debouncedSearch])
 
-  const toggleExpanded = useCallback((clientId: number) => {
-    setExpandedClientId((current) => (current === clientId ? null : clientId))
-  }, [])
+  const clientColumns = useMemo<DataTableColumn<CockpitClient>[]>(
+    () => [
+      {
+        id: 'client',
+        header: t('Клієнт'),
+        accessor: (client) => client.name || client.full_name || client.client_id,
+        cell: (client) => (
+          <>
+            <Anchor
+              fw={600}
+              size="sm"
+              onClick={() => navigate(`/clients/edit/${client.client_net_uid}`)}
+            >
+              {client.name || client.full_name || `#${client.client_id}`}
+            </Anchor>
+            {client.full_name && client.name && client.full_name !== client.name && (
+              <Text c="dimmed" size="xs">
+                {client.full_name}
+              </Text>
+            )}
+          </>
+        ),
+        minWidth: 240,
+        fill: true,
+      },
+      {
+        id: 'last-order',
+        header: t('Останнє замовлення'),
+        accessor: (client) => client.last_order ?? '',
+        cell: (client) => <Text size="sm">{formatLastOrder(client.last_order) ?? '—'}</Text>,
+        width: 150,
+      },
+      {
+        id: 'orders',
+        header: t('Замовлень (12м)'),
+        accessor: (client) => client.orders_cnt,
+        cell: (client) => <Text size="sm">{client.orders_cnt || '—'}</Text>,
+        align: 'right',
+        width: 125,
+      },
+      {
+        id: 'turnover',
+        header: t('Оборот (12м)'),
+        accessor: (client) => client.turnover_eur,
+        cell: (client) => (
+          <Text className="app-money" size="sm">
+            {client.turnover_eur > 0 ? formatMoney(client.turnover_eur) : '—'}
+          </Text>
+        ),
+        align: 'right',
+        width: 130,
+      },
+      {
+        id: 'overdue',
+        header: t('Прострочений борг'),
+        accessor: (client) => client.overdue_eur,
+        cell: (client) =>
+          client.overdue_eur > 0 ? (
+            <Tooltip
+              label={`${t('Прострочено понад терміни')}: ${client.max_days_past_terms} ${t('дн')}`}
+            >
+              <Text c="red" className="app-money" fw={600} size="sm">
+                {formatMoney(client.overdue_eur)}
+              </Text>
+            </Tooltip>
+          ) : (
+            <Text c="dimmed" size="sm">
+              —
+            </Text>
+          ),
+        align: 'right',
+        width: 150,
+      },
+      {
+        id: 'contacts',
+        header: t('Контакти'),
+        cell: (client) => {
+          const phone = client.phone?.trim()
+          const email = client.email?.trim()
+
+          return (
+            <Group gap={4} justify="flex-end" wrap="nowrap">
+              {phone && (
+                <TableRowAction
+                  action="call"
+                  component="a"
+                  href={`tel:${phone}`}
+                  label={`${t('Подзвонити')}: ${phone}`}
+                  tone="success"
+                />
+              )}
+              {email && (
+                <TableRowAction
+                  action="email"
+                  component="a"
+                  href={`mailto:${email}`}
+                  label={`${t('Написати')}: ${email}`}
+                  tone="brand"
+                />
+              )}
+            </Group>
+          )
+        },
+        align: 'right',
+        rowActions: true,
+        width: 96,
+      },
+    ],
+    [navigate, t],
+  )
 
   return (
     <Card className="app-section-card" withBorder padding="md" radius="md">
@@ -157,144 +266,22 @@ export function MyClientsPanel() {
           </Alert>
         )}
 
-        {isLoading ? (
-          <Group justify="center" p="lg">
-            <Loader size="sm" />
-            <Text c="dimmed" size="sm">
-              {t('Завантаження клієнтів')}
-            </Text>
-          </Group>
-        ) : visibleClients.length === 0 ? (
-          <Text c="dimmed" p="md" size="sm" ta="center">
-            {t('Клієнтів не знайдено')}
-          </Text>
-        ) : (
-          <Table.ScrollContainer minWidth={860}>
-            <Table highlightOnHover verticalSpacing="xs">
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th w={36} />
-                  <Table.Th>{t('Клієнт')}</Table.Th>
-                  <Table.Th>{t('Останнє замовлення')}</Table.Th>
-                  <Table.Th ta="right">{t('Замовлень (12м)')}</Table.Th>
-                  <Table.Th ta="right">{t('Оборот (12м)')}</Table.Th>
-                  <Table.Th ta="right">{t('Прострочений борг')}</Table.Th>
-                  <Table.Th>{t('Контакти')}</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {visibleClients.map((client) => (
-                  <ClientRow
-                    client={client}
-                    expanded={expandedClientId === client.client_id}
-                    key={client.client_id}
-                    onToggle={toggleExpanded}
-                  />
-                ))}
-              </Table.Tbody>
-            </Table>
-          </Table.ScrollContainer>
-        )}
+        <DataTable
+          columns={clientColumns}
+          data={visibleClients}
+          emptyText={t('Клієнтів не знайдено')}
+          expandColumnLabels={{
+            collapseRow: t('Згорнути'),
+            expandRow: t('Розгорнути'),
+          }}
+          getRowId={(client) => String(client.client_id)}
+          isLoading={isLoading}
+          minWidth={940}
+          renderExpandedRow={(client) => <ClientRecommendationsInline client={client} />}
+          tableId="sales-cockpit-my-clients"
+        />
       </Stack>
     </Card>
-  )
-}
-
-function ClientRow({
-  client,
-  expanded,
-  onToggle,
-}: {
-  client: CockpitClient
-  expanded: boolean
-  onToggle: (clientId: number) => void
-}) {
-  const { t } = useI18n()
-  const navigate = useNavigate()
-  const phone = client.phone?.trim()
-  const email = client.email?.trim()
-
-  return (
-    <>
-      <Table.Tr style={{ cursor: 'pointer' }} onClick={() => onToggle(client.client_id)}>
-        <Table.Td>
-          <ActionIcon aria-label={expanded ? t('Згорнути') : t('Розгорнути')} size="sm" variant="subtle">
-            {expanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-          </ActionIcon>
-        </Table.Td>
-        <Table.Td>
-          <Anchor
-            fw={600}
-            size="sm"
-            onClick={(event) => {
-              event.stopPropagation()
-              navigate(`/clients/edit/${client.client_net_uid}`)
-            }}
-          >
-            {client.name || client.full_name || `#${client.client_id}`}
-          </Anchor>
-          {client.full_name && client.name && client.full_name !== client.name && (
-            <Text c="dimmed" size="xs">
-              {client.full_name}
-            </Text>
-          )}
-        </Table.Td>
-        <Table.Td>
-          <Text size="sm">{formatLastOrder(client.last_order) ?? '—'}</Text>
-        </Table.Td>
-        <Table.Td ta="right">
-          <Text size="sm">{client.orders_cnt || '—'}</Text>
-        </Table.Td>
-        <Table.Td ta="right">
-          <Text className="app-money" size="sm">
-            {client.turnover_eur > 0 ? formatMoney(client.turnover_eur) : '—'}
-          </Text>
-        </Table.Td>
-        <Table.Td ta="right">
-          {client.overdue_eur > 0 ? (
-            <Tooltip label={`${t('Прострочено понад терміни')}: ${client.max_days_past_terms} ${t('дн')}`}>
-              <Text c="red" className="app-money" fw={600} size="sm">
-                {formatMoney(client.overdue_eur)}
-              </Text>
-            </Tooltip>
-          ) : (
-            <Text c="dimmed" size="sm">
-              —
-            </Text>
-          )}
-        </Table.Td>
-        <Table.Td onClick={(event) => event.stopPropagation()}>
-          <Group gap={4} wrap="nowrap">
-            {phone && (
-              <TableRowAction
-                action="call"
-                component="a"
-                href={`tel:${phone}`}
-                label={`${t('Подзвонити')}: ${phone}`}
-                tone="success"
-              />
-            )}
-            {email && (
-              <TableRowAction
-                action="email"
-                component="a"
-                href={`mailto:${email}`}
-                label={`${t('Написати')}: ${email}`}
-                tone="brand"
-              />
-            )}
-          </Group>
-        </Table.Td>
-      </Table.Tr>
-
-      {expanded && (
-        <Table.Tr>
-          <Table.Td colSpan={7} p={0}>
-            <ClientRecommendationsInline client={client} />
-          </Table.Td>
-        </Table.Tr>
-      )}
-    </>
   )
 }
 
