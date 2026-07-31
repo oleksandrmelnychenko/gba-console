@@ -34,6 +34,7 @@ import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/Page
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import {
   getVehicleRegistryFilters,
+  getVehicleRegistryImportTotal,
   getVehicleRegistryImportIssues,
   getVehicleRegistryImports,
   getVehicleRegistrySummary,
@@ -115,7 +116,7 @@ export function VehicleRegistryPage() {
   const [vehicles, setVehicles] = useState<VehicleRegistryVehicle[]>([])
   const [vehicleTotal, setVehicleTotal] = useState(0)
   const [imports, setImports] = useState<VehicleRegistryImport[]>([])
-  const [importTotal, setImportTotal] = useState(0)
+  const [importTotal, setImportTotal] = useState<number | null>(null)
   const [page, setPage] = useState(1)
   const [isLoading, setLoading] = useState(true)
   const [isUploading, setUploading] = useState(false)
@@ -126,7 +127,10 @@ export function VehicleRegistryPage() {
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
 
   const activeFilterCount = [brand, model, clientMatchState, processingState, workflowStatus, qualityStatus].filter(Boolean).length
-  const totalPages = Math.max(1, Math.ceil((view === 'vehicles' ? vehicleTotal : importTotal) / PAGE_SIZE))
+  const totalPages = Math.max(
+    1,
+    Math.ceil((view === 'vehicles' ? vehicleTotal : (importTotal ?? 0)) / PAGE_SIZE),
+  )
   const vehicleColumns = useMemo(
     () => createVehicleColumns(t, setSelectedVehicleId),
     [t],
@@ -142,10 +146,15 @@ export function VehicleRegistryPage() {
     Promise.all([
       getVehicleRegistrySummary(controller.signal),
       getVehicleRegistryFilters(brand, controller.signal),
+      getVehicleRegistryImportTotal(controller.signal),
     ])
-      .then(([nextSummary, nextFilters]) => {
+      .then(([nextSummary, nextFilters, nextImportTotal]) => {
+        if (controller.signal.aborted) {
+          return
+        }
         setSummary(nextSummary || EMPTY_SUMMARY)
         setFilters(nextFilters || EMPTY_FILTERS)
+        setImportTotal(nextImportTotal)
       })
       .catch((loadError) => {
         if (!isAbortError(loadError)) {
@@ -288,7 +297,7 @@ export function VehicleRegistryPage() {
             type="button"
             onClick={() => changeView('imports')}
           >
-            {t('Імпорти')} · {numberFormatter.format(importTotal)}
+            {t('Імпорти')} · {importTotal === null ? '…' : numberFormatter.format(importTotal)}
           </button>
         </div>
 

@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
-import { getVehicleRegistryVehicles } from './vehicleRegistryApi'
+import {
+  getVehicleRegistryImportTotal,
+  getVehicleRegistryVehicles,
+} from './vehicleRegistryApi'
 
 vi.mock('../../../shared/api/apiClient', () => ({
   apiRequest: vi.fn(),
@@ -40,5 +43,23 @@ describe('vehicle registry API', () => {
       },
       signal: undefined,
     })
+  })
+
+  it('loads the import total without waiting for the imports tab', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      Items: [],
+      Limit: 1,
+      Offset: 0,
+      Total: 5,
+    })
+
+    await expect(getVehicleRegistryImportTotal()).resolves.toBe(5)
+    expect(apiRequestMock).toHaveBeenCalledWith(
+      '/administration/vehicle-registry/imports',
+      {
+        query: { limit: 1, offset: 0 },
+        signal: undefined,
+      },
+    )
   })
 })

@@ -70,6 +70,11 @@ export function getVehicleRegistryImports(
   })
 }
 
+export async function getVehicleRegistryImportTotal(signal?: AbortSignal) {
+  const response = await getVehicleRegistryImports(1, 0, signal)
+  return response?.Total || 0
+}
+
 export function importVehicleRegistryFile(file: File) {
   const formData = new FormData()
   formData.append('file', file)
