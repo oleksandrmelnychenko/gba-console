@@ -190,7 +190,14 @@ export function SalesGeographyPage() {
           </div>
           <div className="app-filter-actions sales-geography-actions">
             <Tooltip label={t('Оновити')}>
-              <ActionIcon aria-label={t('Оновити')} loading={isLoading} size={34} variant="light" onClick={handleReload}>
+              <ActionIcon
+                aria-label={t('Оновити')}
+                color="gray"
+                loading={isLoading}
+                size={34}
+                variant="light"
+                onClick={handleReload}
+              >
                 <RefreshCw size={18} />
               </ActionIcon>
             </Tooltip>
