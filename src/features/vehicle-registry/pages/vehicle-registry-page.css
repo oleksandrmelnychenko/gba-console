@@ -247,6 +247,34 @@
   text-align: right;
 }
 
+.vehicle-registry-client-cell {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.vehicle-registry-client-cell > strong {
+  color: var(--mantine-color-gray-8);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.15;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vehicle-registry-client-cell > span {
+  align-items: center;
+  display: flex;
+  gap: 5px;
+}
+
+.vehicle-registry-client-cell small {
+  color: var(--mantine-color-gray-6);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+}
+
 .vehicle-registry-drawer-loading {
   align-items: center;
   display: flex;
@@ -273,6 +301,107 @@
 
 .vehicle-registry-workflow .app-detail-section-head {
   grid-column: 1 / -1;
+}
+
+.vehicle-registry-client-matches {
+  border-top: 1px solid var(--mantine-color-gray-2);
+  display: grid;
+  gap: 9px;
+  padding-top: 14px;
+}
+
+.vehicle-registry-client-match-list {
+  display: grid;
+  gap: 8px;
+}
+
+.vehicle-registry-client-match {
+  align-items: center;
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 11px 12px;
+}
+
+.vehicle-registry-client-match.is-selected {
+  background: var(--mantine-color-green-0);
+  border-color: var(--mantine-color-green-4);
+}
+
+.vehicle-registry-client-match__copy {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.vehicle-registry-client-match__title {
+  align-items: center;
+  display: flex;
+  gap: 7px;
+  min-width: 0;
+}
+
+.vehicle-registry-client-match__title > strong {
+  color: var(--mantine-color-gray-9);
+  font-size: 13px;
+  font-weight: 650;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vehicle-registry-client-match__title .app-role-pill {
+  flex: 0 0 auto;
+}
+
+.vehicle-registry-client-match__meta {
+  color: var(--mantine-color-gray-6);
+  display: flex;
+  font-size: 11px;
+  gap: 7px 14px;
+  min-width: 0;
+}
+
+.vehicle-registry-client-match__meta > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vehicle-registry-client-match__reasons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.vehicle-registry-client-match-empty {
+  align-items: center;
+  background: var(--mantine-color-gray-0);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
+  color: var(--mantine-color-gray-5);
+  display: flex;
+  gap: 10px;
+  padding: 12px;
+}
+
+.vehicle-registry-client-match-empty > span {
+  display: grid;
+  gap: 2px;
+}
+
+.vehicle-registry-client-match-empty strong {
+  color: var(--mantine-color-gray-7);
+  font-size: 12px;
+}
+
+.vehicle-registry-client-match-empty small {
+  font-size: 11px;
 }
 
 .vehicle-registry-history {

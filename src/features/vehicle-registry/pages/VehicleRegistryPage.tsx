@@ -18,8 +18,10 @@ import { notifications } from '@mantine/notifications'
 import {
   CircleAlert,
   History,
+  Link2,
   RotateCcw,
   Search,
+  UserRoundSearch,
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -42,6 +44,7 @@ import {
 } from '../api/vehicleRegistryApi'
 import type {
   VehicleRegistryDataQualityStatus,
+  VehicleRegistryClientMatch,
   VehicleRegistryFilters,
   VehicleRegistryImport,
   VehicleRegistryIssue,
@@ -72,7 +75,7 @@ const EMPTY_SUMMARY: VehicleRegistrySummary = {
   WorkflowCounts: {},
 }
 const VEHICLE_TABLE_LAYOUT = {
-  columnOrder: ['vehicle', 'owner', 'year', 'region', 'workflow', 'quality', 'source', 'actions'],
+  columnOrder: ['vehicle', 'owner', 'client', 'year', 'region', 'workflow', 'quality', 'source', 'actions'],
   columnPinning: { left: ['vehicle'], right: ['actions'] },
   density: 'normal',
 } satisfies DataTableDefaultLayout
@@ -423,9 +426,9 @@ export function VehicleRegistryPage() {
               getRowId={(vehicle) => vehicle.NetUid}
               height="100%"
               isLoading={isLoading}
-              layoutVersion="vehicle-registry-2"
+              layoutVersion="vehicle-registry-3"
               loadingText={t('Завантаження автомобілів')}
-              minWidth={1240}
+              minWidth={1500}
               showLayoutControls
               tableId="vehicle-registry"
               toolbarPortalTarget={tableToolbarSlot}
@@ -548,6 +551,7 @@ function VehicleDetailDrawer({
   const { t } = useI18n()
   const [detail, setDetail] = useState<VehicleRegistryVehicleDetail | null>(null)
   const [status, setStatus] = useState<VehicleRegistryWorkflowStatus>('new')
+  const [selectedClientNetUid, setSelectedClientNetUid] = useState<string | null>(null)
   const [note, setNote] = useState('')
   const [isLoading, setLoading] = useState(false)
   const [isSaving, setSaving] = useState(false)
@@ -569,6 +573,7 @@ function VehicleDetailDrawer({
         const nextDetail = await getVehicleRegistryVehicle(netUid!, controller.signal)
         setDetail(nextDetail)
         setStatus(nextDetail.WorkflowStatus)
+        setSelectedClientNetUid(nextDetail.MatchedClientNetUid || null)
         setNote(nextDetail.Note || '')
       } catch (loadError) {
         if (!isAbortError(loadError)) {
@@ -596,7 +601,7 @@ function VehicleDetailDrawer({
     try {
       await updateVehicleRegistryWorkflow(netUid, {
         assignedUserNetUid: detail?.AssignedUserNetUid,
-        matchedClientNetUid: detail?.MatchedClientNetUid,
+        matchedClientNetUid: selectedClientNetUid,
         note,
         status,
       })
@@ -616,7 +621,7 @@ function VehicleDetailDrawer({
           <Group justify="space-between" wrap="nowrap">
             <Button color="gray" variant="subtle" onClick={onClose}>{t('Закрити')}</Button>
             <Button color={CREATE_ACTION_COLOR} loading={isSaving} onClick={() => void saveWorkflow()}>
-              {t('Зберегти статус')}
+              {t('Зберегти')}
             </Button>
           </Group>
         ) : undefined
@@ -676,6 +681,19 @@ function VehicleDetailDrawer({
                 </div>
               </section>
 
+              <ClientMatchSection
+                matches={detail.ClientMatches || []}
+                selectedClientNetUid={selectedClientNetUid}
+                onSelect={(clientNetUid) => {
+                  setSelectedClientNetUid(clientNetUid)
+                  if (clientNetUid) {
+                    setStatus('client_matched')
+                  } else if (status === 'client_matched') {
+                    setStatus('in_progress')
+                  }
+                }}
+              />
+
               <section className="vehicle-registry-workflow">
                 <div className="app-detail-section-head">
                   <Text fw={650}>{t('Обробка')}</Text>
@@ -724,6 +742,93 @@ function VehicleDetailDrawer({
         </Stack>
       )}
     </AppDrawer>
+  )
+}
+
+function ClientMatchSection({
+  matches,
+  onSelect,
+  selectedClientNetUid,
+}: {
+  matches: VehicleRegistryClientMatch[]
+  onSelect: (clientNetUid: string | null) => void
+  selectedClientNetUid: string | null
+}) {
+  const { t } = useI18n()
+
+  return (
+    <section className="vehicle-registry-client-matches">
+      <div className="app-detail-section-head">
+        <Group gap={7}>
+          <UserRoundSearch size={17} />
+          <Text fw={650}>{t('Звірка з клієнтами GBA')}</Text>
+          {matches.length > 0 && (
+            <Badge className="app-role-pill is-gray" size="xs">
+              {t('{count} варіантів').replace('{count}', String(matches.length))}
+            </Badge>
+          )}
+        </Group>
+      </div>
+      <Text c="dimmed" size="xs">
+        {t('Система порівнює ПІБ або назву, адресу та регіон. Підказку потрібно перевірити перед прив’язкою.')}
+      </Text>
+
+      {matches.length ? (
+        <div className="vehicle-registry-client-match-list">
+          {matches.map((match) => {
+            const isSelected = selectedClientNetUid === match.ClientNetUid
+
+            return (
+              <article
+                className={`vehicle-registry-client-match${isSelected ? ' is-selected' : ''}`}
+                key={match.ClientNetUid}
+              >
+                <div className="vehicle-registry-client-match__copy">
+                  <div className="vehicle-registry-client-match__title">
+                    <strong title={match.Name}>{match.Name}</strong>
+                    <ClientMatchBadge match={match} />
+                  </div>
+                  <div className="vehicle-registry-client-match__meta">
+                    {match.ClientNumber && (
+                      <span className="vehicle-registry-mono">
+                        {t('Код клієнта')} · {match.ClientNumber}
+                      </span>
+                    )}
+                    {match.Address && <span title={match.Address}>{match.Address}</span>}
+                  </div>
+                  {match.Reasons.length > 0 && (
+                    <div className="vehicle-registry-client-match__reasons">
+                      {match.Reasons.map((reason) => (
+                        <Badge className="app-role-pill is-gray" key={reason} size="xs">
+                          {reason}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <Button
+                  color={isSelected ? 'green' : CREATE_ACTION_COLOR}
+                  leftSection={<Link2 size={14} />}
+                  size="xs"
+                  variant={isSelected ? 'light' : 'outline'}
+                  onClick={() => onSelect(isSelected ? null : match.ClientNetUid)}
+                >
+                  {isSelected ? t('Вибрано') : t('Прив’язати')}
+                </Button>
+              </article>
+            )
+          })}
+        </div>
+      ) : (
+        <div className="vehicle-registry-client-match-empty">
+          <UserRoundSearch size={20} />
+          <span>
+            <strong>{t('Надійних збігів не знайдено')}</strong>
+            <small>{t('Автомобіль можна обробити без прив’язки до клієнта')}</small>
+          </span>
+        </div>
+      )}
+    </section>
   )
 }
 
@@ -882,6 +987,31 @@ function createVehicleColumns(
       width: 360,
     },
     {
+      cell: (item) => {
+        const match = item.SuggestedClientMatch
+        if (!match) {
+          return null
+        }
+
+        return (
+          <span className="vehicle-registry-client-cell">
+            <strong title={match.Name}>{match.Name}</strong>
+            <span>
+              <ClientMatchBadge match={match} />
+              {item.ClientMatchCount > 1 && (
+                <small>+{item.ClientMatchCount - 1}</small>
+              )}
+            </span>
+          </span>
+        )
+      },
+      fill: true,
+      header: t('Клієнт у GBA'),
+      id: 'client',
+      minWidth: 220,
+      width: 280,
+    },
+    {
       align: 'right',
       cell: (item) => (
         <span className="vehicle-registry-two-line is-right">
@@ -948,6 +1078,36 @@ function createVehicleColumns(
       width: 50,
     },
   ]
+}
+
+function ClientMatchBadge({
+  match,
+}: {
+  match: VehicleRegistryClientMatch
+}) {
+  const { t } = useI18n()
+  const label = match.IsConfirmed || match.Confidence === 'confirmed'
+    ? t('Підтверджено')
+    : match.Confidence === 'exact'
+      ? t('Сильний збіг')
+      : match.Confidence === 'high'
+        ? t('Ймовірний збіг')
+        : t('Можливий збіг')
+  const className = match.IsConfirmed || match.Confidence === 'confirmed'
+    ? 'is-green'
+    : match.Confidence === 'high' || match.Confidence === 'exact'
+      ? 'is-orange'
+      : 'is-yellow'
+
+  return (
+    <Badge
+      className={`app-role-pill ${className}`}
+      size="xs"
+      title={`${label}: ${match.Score}%`}
+    >
+      {label} · {match.Score}%
+    </Badge>
+  )
 }
 
 function createImportColumns(

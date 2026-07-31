@@ -69,6 +69,8 @@ export type VehicleRegistryVehicle = {
   IsProcessed: boolean
   AssignedUserNetUid?: string | null
   MatchedClientNetUid?: string | null
+  ClientMatchCount: number
+  SuggestedClientMatch?: VehicleRegistryClientMatch | null
   UpdatedAtUtc: string
   LastSeenAtUtc: string
   ImportFileName: string
@@ -93,6 +95,24 @@ export type VehicleRegistryVehicleDetail = VehicleRegistryVehicle & {
   SourceSheet: string
   SourceRow: number
   Events: VehicleRegistryWorkflowEvent[]
+  ClientMatches: VehicleRegistryClientMatch[]
+}
+
+export type VehicleRegistryClientMatchConfidence =
+  | 'confirmed'
+  | 'exact'
+  | 'high'
+  | 'possible'
+
+export type VehicleRegistryClientMatch = {
+  ClientNetUid: string
+  Name: string
+  ClientNumber?: string | null
+  Address?: string | null
+  Score: number
+  Confidence: VehicleRegistryClientMatchConfidence
+  IsConfirmed: boolean
+  Reasons: string[]
 }
 
 export type VehicleRegistryIssue = {
