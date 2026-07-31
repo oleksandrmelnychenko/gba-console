@@ -1295,7 +1295,7 @@ function AvailablePaymentTaskList({
         maxHeight="calc(100vh - 160px)"
         minWidth={760}
         showDensityToggle={false}
-        showLayoutControls={false}
+        showLayoutControls
         tableId="available-payments-detail-tasks"
         renderExpandedRow={(taskModel) => (
           <AvailablePaymentTaskDetails
@@ -1769,7 +1769,7 @@ function InvoiceTab({ model }: { model: AvailablePaymentTaskModel }) {
           maxHeight={340}
           minWidth={760}
           showDensityToggle={false}
-          showLayoutControls={false}
+          showLayoutControls
           tableId={`available-payment-invoice-${model.id}`}
         />
       </div>
@@ -1954,7 +1954,7 @@ function CashFlowTab({
           maxHeight={340}
           minWidth={760}
           showDensityToggle={false}
-          showLayoutControls={false}
+          showLayoutControls
           tableId="available-payment-cash-flow"
           footer={state?.data ? <CashFlowTableFooter summary={summary} /> : undefined}
           onRowClick={(item) => onRowClick(item.source)}
