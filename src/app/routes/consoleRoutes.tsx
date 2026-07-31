@@ -128,6 +128,7 @@ import {
   UserNewPage,
   UserRolesPage,
   UsersPage,
+  VehicleRegistryPage,
 } from './lazyConsolePages'
 import { lazyRoute } from './lazyRoute'
 import { ProductCarouselDeepLinkRedirect } from './ProductCarouselDeepLinkRedirect'
@@ -222,6 +223,7 @@ const userMigrationRoutes: ConsoleRoute[] = [
   { path: '/users/new', element: lazyRoute(<UserNewPage />) },
   { path: '/users/edit/:netid', element: lazyRoute(<UserEditPage />) },
   { path: '/users/roles', element: lazyRoute(<UserRolesPage />) },
+  { path: '/administration/vehicle-registry', element: lazyRoute(<VehicleRegistryPage />) },
 ]
 
 const accountingMigrationRoutes: ConsoleRoute[] = [

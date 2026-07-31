@@ -10,6 +10,40 @@ import {
 import type { NavigationModule, NavigationNode } from './types'
 
 describe('normalizeNavigation', () => {
+  it('adds the vehicle registry only to the administration module', () => {
+    const modules: NavigationModule[] = [
+      {
+        Id: 1,
+        Module: 'Адміністрування',
+        Children: [
+          {
+            Id: 11,
+            Module: 'Користувачі',
+            Route: '/users',
+          },
+        ],
+      },
+      {
+        Id: 2,
+        Module: 'Продажі',
+        Children: [
+          {
+            Id: 21,
+            Module: 'Продажі',
+            Route: '/sales/ukraine/all',
+          },
+        ],
+      },
+    ]
+
+    const normalized = normalizeNavigation(modules)
+    const administration = normalized.find((module) => module.Module === 'Адміністрування')
+    const sales = normalized.find((module) => module.Module === 'Продажі')
+
+    expect(administration?.Children.map((node) => node.Route)).toContain('/administration/vehicle-registry')
+    expect(sales?.Children.map((node) => node.Route)).not.toContain('/administration/vehicle-registry')
+  })
+
   it('removes disabled API navigation entries', () => {
     const modules: NavigationModule[] = [
       {

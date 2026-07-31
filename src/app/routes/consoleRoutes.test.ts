@@ -13,6 +13,14 @@ describe('console report routes', () => {
   })
 })
 
+describe('vehicle registry route', () => {
+  it('registers the administration vehicle registry screen', () => {
+    const paths = new Set(consoleRoutes.map((route) => route.path))
+
+    expect(paths.has('/administration/vehicle-registry')).toBe(true)
+  })
+})
+
 describe('legacy client return route', () => {
   it('redirects to the canonical order-item return workflow', () => {
     const route = consoleRoutes.find(

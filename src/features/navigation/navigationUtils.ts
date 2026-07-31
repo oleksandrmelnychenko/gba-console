@@ -8,6 +8,16 @@ const removedNavigationNodeNetUids = new Set(['d27584ab-ac29-4994-b1d1-016af5f07
 const navigationLabelOverrides = new Map<string, string>([
   ['Кокпіт продажів', 'Завдання продажів'],
 ])
+const vehicleRegistryNavigationNode: NavigationNode = {
+  Id: -901,
+  NetUid: '58ac9210-eb44-4202-98ee-d37e0f8d5e5a',
+  Language: 'uk',
+  Module: 'Реєстр автомобілів',
+  Route: '/administration/vehicle-registry',
+  CssClass: 'car',
+  Children: [],
+}
+const administrationModulePattern = /адміністр|administration/i
 const removedNavigationLabelPatterns = [/allegro/i, /poland/i, /польщ/i]
 const removedNavigationRoutePatterns = [
   /^\/?orders\/poland(?:\/|$)/i,
@@ -106,15 +116,20 @@ export function normalizeNavigation(modules: NavigationModule[] | null | undefin
     }
 
     const children = normalizeNavigationNodes(module.Children)
+    const moduleChildren =
+      administrationModulePattern.test(module.Module) &&
+      !children.some((node) => normalizePath(node.Route) === vehicleRegistryNavigationNode.Route)
+        ? [...children, vehicleRegistryNavigationNode]
+        : children
 
-    if (children.length === 0) {
+    if (moduleChildren.length === 0) {
       continue
     }
 
     normalizedModules.push({
       ...module,
       Module: overrideNavigationLabel(module.Module),
-      Children: children,
+      Children: moduleChildren,
     })
   }
 
