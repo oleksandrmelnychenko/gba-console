@@ -91,14 +91,14 @@ export async function updateExchangeRates(updateMode: ExchangeRateUpdateMode, ra
   )
 }
 
+// The government endpoints only accept an ARRAY body (see bug #21) — gov rates go through
+// the batch-government branch above, so there is deliberately no single-government mode here.
 function getSingleUpdateEndpoint(updateMode: ExchangeRateUpdateMode): string {
   switch (updateMode) {
     case 'single-commercial':
       return endpoints.updateCommercial
     case 'single-cross':
       return endpoints.updateCommercialCross
-    case 'single-government':
-      return endpoints.updateGovernment
     case 'single-government-cross':
       return endpoints.updateGovernmentCross
     default:

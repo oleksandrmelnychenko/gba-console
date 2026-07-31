@@ -38,7 +38,6 @@ export type ExchangeRateUpdateMode =
   | 'single-commercial'
   | 'single-cross'
   | 'batch-government'
-  | 'single-government'
   | 'single-government-cross'
 
 export type ExchangeRateGroup = {

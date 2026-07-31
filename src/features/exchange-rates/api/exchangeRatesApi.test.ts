@@ -60,22 +60,22 @@ describe('exchangeRatesApi', () => {
     })
   })
 
-  it('updates PLN government rates one by one through the government endpoint', async () => {
+  it('updates commercial rates one by one through the commercial endpoint', async () => {
     apiRequestMock.mockResolvedValue(null)
 
-    await updateExchangeRates('single-government', [
-      { Amount: 3.82, Code: 'USD', Culture: 'pl', NetUid: 'gov-pln-usd' },
-      { Amount: 4.48, Code: 'EUR', Culture: 'pl', NetUid: 'gov-pln-eur' },
+    await updateExchangeRates('single-commercial', [
+      { Amount: 45.1, Code: 'USD', Culture: 'uk', NetUid: 'uah-usd' },
+      { Amount: 51.4, Code: 'EUR', Culture: 'uk', NetUid: 'uah-eur' },
     ])
 
     expect(apiRequestMock).toHaveBeenCalledTimes(2)
-    expect(apiRequestMock).toHaveBeenNthCalledWith(1, '/exchangerates/gov/update', {
+    expect(apiRequestMock).toHaveBeenNthCalledWith(1, '/exchangerates/update', {
       method: 'POST',
-      body: { Amount: 3.82, Code: 'USD', Culture: 'pl', NetUid: 'gov-pln-usd' },
+      body: { Amount: 45.1, Code: 'USD', Culture: 'uk', NetUid: 'uah-usd' },
     })
-    expect(apiRequestMock).toHaveBeenNthCalledWith(2, '/exchangerates/gov/update', {
+    expect(apiRequestMock).toHaveBeenNthCalledWith(2, '/exchangerates/update', {
       method: 'POST',
-      body: { Amount: 4.48, Code: 'EUR', Culture: 'pl', NetUid: 'gov-pln-eur' },
+      body: { Amount: 51.4, Code: 'EUR', Culture: 'uk', NetUid: 'uah-eur' },
     })
   })
 })
