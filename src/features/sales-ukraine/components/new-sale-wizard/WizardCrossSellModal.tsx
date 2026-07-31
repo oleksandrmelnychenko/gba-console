@@ -1,6 +1,6 @@
 import { Alert, Badge, Box, Button, Group, Progress, Skeleton, Text } from '@mantine/core'
 import { CircleAlert, Package, ShoppingCart, Sparkles } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { memo, useEffect, useMemo, useState } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { AppModal } from '../../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -80,11 +80,19 @@ export function WizardCrossSellModal({
     }
   }, [opened, clientNetId, agreementNetId, seedProduct?.NetUid, t])
 
-  const visibleProducts = products.filter((product) => !product.NetUid || !excludeNetUids.has(product.NetUid))
-  const maximumSellable = Math.max(
-    0,
-    ...visibleProducts.map((product) => getWizardSellableQty(product, isVatSale) ?? 0),
+  const visibleProducts = useMemo(
+    () => products.filter((product) => !product.NetUid || !excludeNetUids.has(product.NetUid)),
+    [excludeNetUids, products],
   )
+  const maximumSellable = useMemo(() => {
+    let maximum = 0
+
+    for (const product of visibleProducts) {
+      maximum = Math.max(maximum, getWizardSellableQty(product, isVatSale) ?? 0)
+    }
+
+    return maximum
+  }, [isVatSale, visibleProducts])
 
   return (
     <AppModal
@@ -209,7 +217,7 @@ function SeedProductCard({
   )
 }
 
-function CrossSellProductCard({
+const CrossSellProductCard = memo(function CrossSellProductCard({
   isVatSale,
   localCurrencyCode,
   maximumSellable,
@@ -241,48 +249,55 @@ function CrossSellProductCard({
 
   return (
     <article className="wizard-cross-sell-card">
-      <span className="wizard-cross-sell-card__rank" aria-label={`${t('Рекомендація')} ${rank}`}>
-        {String(rank).padStart(2, '0')}
-      </span>
-      <ProductArtwork className="wizard-cross-sell-card__image" product={product} />
-      <div className="wizard-cross-sell-card__body">
-        <div className="wizard-cross-sell-card__headline">
-          <span className="wizard-cross-sell-code">{code}</span>
-          {facts.length > 0 && (
-            <span className="wizard-cross-sell-card__facts">
-              {facts.map((fact) => <span key={fact}>{fact}</span>)}
-            </span>
-          )}
-        </div>
-        <strong className="wizard-cross-sell-card__name" title={name}>{name}</strong>
-        <div className="wizard-cross-sell-card__metrics">
-          <ProductMetric label={t('Наявність')} value={`${qtyFormatter.format(sellable)} ${product.MeasureUnit?.Name ?? ''}`} />
-          <ProductMetric label="EUR" value={amountFormatter.format(getWizardProductNumber(product.CurrentPrice) ?? 0)} />
-          <ProductMetric label={localCurrencyCode} value={amountFormatter.format(localPrice)} />
-        </div>
-        <div className="wizard-cross-sell-card__availability">
-          <span>{sellable > 0 ? t('Є в наявності') : t('Немає в наявності')}</span>
-          <Progress
-            aria-label={t('Відносний залишок')}
-            color={sellable > 0 ? 'green' : 'gray'}
-            radius="xl"
-            size={5}
-            value={availabilityPercent}
-          />
-        </div>
-      </div>
-      <Button
-        className="wizard-cross-sell-card__action"
-        color={CREATE_ACTION_COLOR}
-        leftSection={<ShoppingCart size={15} />}
-        size="compact-sm"
-        onClick={() => onPick(product)}
+      <Badge
+        className="app-role-pill is-gray wizard-cross-sell-card__rank"
+        aria-label={`${t('Рекомендація')} ${rank}`}
+        size="xs"
+        variant="light"
       >
-        {t('В кошик')}
-      </Button>
+        {String(rank).padStart(2, '0')}
+      </Badge>
+      <div className="wizard-cross-sell-card__content">
+        <ProductArtwork className="wizard-cross-sell-card__image" product={product} />
+        <div className="wizard-cross-sell-card__body">
+          <div className="wizard-cross-sell-card__headline">
+            <span className="wizard-cross-sell-code">{code}</span>
+            {facts.length > 0 && (
+              <span className="wizard-cross-sell-card__facts">
+                {facts.map((fact) => <span key={fact}>{fact}</span>)}
+              </span>
+            )}
+          </div>
+          <strong className="wizard-cross-sell-card__name" title={name}>{name}</strong>
+          <div className="wizard-cross-sell-card__metrics">
+            <ProductMetric label={t('Наявність')} value={`${qtyFormatter.format(sellable)} ${product.MeasureUnit?.Name ?? ''}`} />
+            <ProductMetric label="EUR" value={amountFormatter.format(getWizardProductNumber(product.CurrentPrice) ?? 0)} />
+            <ProductMetric label={localCurrencyCode} value={amountFormatter.format(localPrice)} />
+          </div>
+          <div className="wizard-cross-sell-card__availability">
+            <span>{sellable > 0 ? t('Є в наявності') : t('Немає в наявності')}</span>
+            <Progress
+              aria-label={t('Відносний залишок')}
+              color={sellable > 0 ? 'green' : 'gray'}
+              radius="xl"
+              size={5}
+              value={availabilityPercent}
+            />
+          </div>
+        </div>
+        <Button
+          className="wizard-cross-sell-card__action"
+          color={CREATE_ACTION_COLOR}
+          leftSection={<ShoppingCart size={15} />}
+          size="compact-sm"
+          onClick={() => onPick(product)}
+        >
+          {t('В кошик')}
+        </Button>
+      </div>
     </article>
   )
-}
+})
 
 function ProductMetric({ label, value }: { label: string; value: string }) {
   return (

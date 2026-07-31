@@ -401,6 +401,17 @@ export function NewSaleProductsStep({
   // returned a fresh array identity every render, invalidating the cart grid's
   // column defs and TanStack row model on every search keystroke.
   const orderItems = useMemo(() => getOrderItemsNewestFirst(sale), [sale])
+  const excludedCrossSellProductNetUids = useMemo(() => {
+    const netUids = new Set<string>()
+
+    for (const item of orderItems) {
+      if (item.Product?.NetUid) {
+        netUids.add(item.Product.NetUid)
+      }
+    }
+
+    return netUids
+  }, [orderItems])
 
   // Stable cart-grid handlers: the grid is React.memo'd, so its callback props
   // must keep identity across renders. onEditOrderItem is a plain body function
@@ -3767,7 +3778,7 @@ export function NewSaleProductsStep({
       <WizardCrossSellModal
         agreementNetId={agreementNetId}
         clientNetId={clientNetId}
-        excludeNetUids={new Set(orderItems.map((item) => item.Product?.NetUid).filter(Boolean) as string[])}
+        excludeNetUids={excludedCrossSellProductNetUids}
         isVatSale={isVatSale}
         localCurrencyCode={localCurrencyCode}
         opened={crossSellProduct !== null}

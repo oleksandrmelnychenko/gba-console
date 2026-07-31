@@ -229,7 +229,7 @@ describe('new-sale wizard performance', () => {
   it('does not append a late page from the previous query', async () => {
     const latePage = createDeferred<WizardSaleProduct[]>()
     apiMocks.searchSaleProductsWithAvailability
-      .mockResolvedValueOnce([{ NameUA: 'Перший результат', NetUid: 'first-product', VendorCode: 'FIRST' }])
+      .mockResolvedValueOnce([{ NameUA: 'Перший результат', NetUid: 'first-product', VendorCode: 'FIRST-CODE' }])
       .mockReturnValueOnce(latePage.promise)
       .mockResolvedValueOnce([{ NameUA: 'Новий результат', NetUid: 'new-product', VendorCode: 'NEW' }])
     renderProductsStep()
@@ -262,7 +262,7 @@ describe('new-sale wizard performance', () => {
 
   it('loads non-price extended data only when product details are opened', async () => {
     apiMocks.searchSaleProductsWithAvailability.mockResolvedValueOnce([
-      { AvailableQtyUk: 4, NameUA: 'Товар з деталями', NetUid: 'detail-product', VendorCode: 'DETAIL' },
+      { AvailableQtyUk: 4, NameUA: 'Товар з деталями', NetUid: 'detail-product', VendorCode: 'DETAIL-CODE' },
     ])
     renderProductsStep()
 

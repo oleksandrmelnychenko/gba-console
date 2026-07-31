@@ -262,6 +262,12 @@ function ProductMiniCard({
       return
     }
 
+    if (!navigator.clipboard?.writeText) {
+      notifications.show({ color: 'red', message: t('Не вдалося скопіювати') })
+
+      return
+    }
+
     void navigator.clipboard.writeText(value).then(
       () => notifications.show({ color: 'green', message: `${value} — ${t('скопійовано')}` }),
       () => notifications.show({ color: 'red', message: t('Не вдалося скопіювати') }),
