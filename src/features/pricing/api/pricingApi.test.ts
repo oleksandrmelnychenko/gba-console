@@ -98,18 +98,18 @@ describe('pricingApi canonical AI contract', () => {
       offers: [{
         availability: 'in_stock',
         delivery_text: '1–2 дні',
-        marketplace_name: 'Prom.ua',
+        marketplace_name: 'STRANS',
         original_price_uah: 1500,
         price_uah: 1399,
         seller_name: 'Тестовий продавець',
         similarity_score: 0.96,
-        source: 'prom',
+        source: 'strans',
         title: 'Точний товар',
-        url: 'https://prom.ua/ua/example',
+        url: 'https://strans-shop.com.ua/shop/product/887756',
       }],
       query: 'OE-123',
       searched_at: '2026-07-31T11:30:00Z',
-      sources_scanned: ['prom'],
+      sources_scanned: ['strans'],
     })
 
     const controller = new AbortController()
@@ -117,11 +117,11 @@ describe('pricingApi canonical AI contract', () => {
       market: 'UA',
       product_net_uid: PRODUCT_NET_ID,
       query: '  OE-123  ',
-      sources: ['prom'],
+      sources: ['strans'],
     }, controller.signal)).resolves.toMatchObject({
       currency: 'UAH',
       market: 'UA',
-      offers: [{ price_uah: 1399, similarity_score: 0.96, source: 'prom' }],
+      offers: [{ price_uah: 1399, similarity_score: 0.96, source: 'strans' }],
     })
 
     expect(apiRequestMock).toHaveBeenCalledWith('/pricing/competitors/search', {
@@ -129,7 +129,7 @@ describe('pricingApi canonical AI contract', () => {
         market: 'UA',
         product_net_uid: PRODUCT_NET_ID,
         query: 'OE-123',
-        sources: ['prom'],
+        sources: ['strans'],
       },
       method: 'POST',
       signal: controller.signal,

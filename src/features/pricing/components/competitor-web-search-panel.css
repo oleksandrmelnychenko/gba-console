@@ -165,7 +165,7 @@
   padding: 0 8px 0 6px;
 }
 
-.competitor-radar__source > span {
+.competitor-radar__source-check {
   align-items: center;
   border: 1px solid var(--mantine-color-gray-4);
   border-radius: 4px;
@@ -173,6 +173,23 @@
   height: 14px;
   justify-content: center;
   width: 14px;
+}
+
+.competitor-radar__source-rank {
+  color: var(--mantine-color-gray-6);
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.competitor-radar__source-access {
+  background: var(--mantine-color-gray-0);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 4px;
+  color: var(--mantine-color-gray-6);
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 1px 3px;
 }
 
 .competitor-radar__source:hover {
@@ -187,10 +204,20 @@
   font-weight: 600;
 }
 
-.competitor-radar__source.is-active > span {
+.competitor-radar__source.is-active .competitor-radar__source-check {
   background: var(--brand-orange);
   border-color: var(--brand-orange);
   color: var(--mantine-color-white);
+}
+
+.competitor-radar__source.is-active .competitor-radar__source-rank {
+  color: var(--mantine-color-orange-7);
+}
+
+.competitor-radar__source.is-active .competitor-radar__source-access {
+  background: var(--mantine-color-white);
+  border-color: var(--mantine-color-orange-2);
+  color: var(--mantine-color-orange-8);
 }
 
 .competitor-radar__prompt {

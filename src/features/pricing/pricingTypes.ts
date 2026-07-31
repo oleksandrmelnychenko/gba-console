@@ -1,6 +1,6 @@
 export type PriceConfidence = 'high' | 'medium' | 'low'
 
-export type CompetitorSourceKey = 'avtopro' | 'google' | 'hotline' | 'prom' | 'rozetka'
+export type CompetitorSourceKey = 'strans' | 'cargo_parts' | 'intercars' | 'omega' | 'tir_market'
 
 export type CompetitorOfferAvailability = 'in_stock' | 'limited' | 'out_of_stock' | 'unknown'
 
