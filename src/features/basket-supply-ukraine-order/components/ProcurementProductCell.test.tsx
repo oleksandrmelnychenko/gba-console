@@ -21,7 +21,9 @@ describe('ProcurementProductCell', () => {
 
     expect(screen.getByText('Гальмівний диск передній')).not.toBeNull()
     expect(screen.getByText('BR-2048')).not.toBeNull()
-    expect(screen.getByText('OE-441')).not.toBeNull()
+    const oeChip = screen.getByTitle('Оригінальний номер: OE-441')
+    expect(oeChip.classList.contains('procure-cockpit-product__oe')).toBe(true)
+    expect(oeChip.textContent).toBe('OEOE-441')
     expect(container.querySelector('img')?.getAttribute('src')).toBe(
       '/Images/products/item.png',
     )

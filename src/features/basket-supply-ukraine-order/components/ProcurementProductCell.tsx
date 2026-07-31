@@ -69,8 +69,8 @@ export function ProcurementProductCell({ row, t }: ProcurementProductCellProps) 
                 className="procure-cockpit-product__oe"
                 title={`${t('Оригінальний номер')}: ${row.oe_number}`}
               >
-                <span>OE</span>
-                {row.oe_number}
+                <span className="procure-cockpit-product__oe-label">OE</span>
+                <span className="procure-cockpit-product__oe-value">{row.oe_number}</span>
               </span>
             )}
           </span>

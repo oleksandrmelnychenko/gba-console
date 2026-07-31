@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { theme } from '../../../shared/theme/theme'
@@ -103,6 +103,22 @@ describe('ProcurementConstructor', () => {
         }) as HTMLButtonElement).disabled,
       ).toBe(true)
     })
+
+    expect(screen.getByText('Кошик замовлень')).not.toBeNull()
+    expect(screen.getByText('Розподілено за виробниками')).not.toBeNull()
+    expect(screen.getByText('Виробників')).not.toBeNull()
+    expect(screen.getByText('Загальна сума')).not.toBeNull()
+    expect(screen.getByText('65,00')).not.toBeNull()
+
+    const basketRail = screen.getByText('Кошик замовлень').closest('aside')
+    expect(basketRail).not.toBeNull()
+    const producerNames = within(basketRail as HTMLElement).getAllByText(/Lemforder|Meyle/)
+    expect(producerNames.map((node) => node.textContent)).toEqual(['Lemforder', 'Meyle'])
+
+    fireEvent.click(screen.getByRole('button', { name: 'Очистити кошик' }))
+    await waitFor(() => {
+      expect(screen.queryByText('Кошик замовлень')).toBeNull()
+    })
   })
 
   it('explains when the current stock does not require replenishment', async () => {
@@ -141,6 +157,36 @@ describe('ProcurementConstructor', () => {
 
     expect(await screen.findByText('Позицій до замовлення немає')).not.toBeNull()
     expect(screen.getByText('Запас покрито')).not.toBeNull()
+  })
+
+  it('marks unpriced lines instead of presenting them as zero-cost purchases', async () => {
+    const basePlan = await vi.mocked(getBudgetCartPlan)({ budgetEur: 0, method: 'greedy' })
+
+    vi.mocked(getBudgetCartPlan).mockResolvedValue({
+      ...basePlan,
+      item_count: 1,
+      items: [suggestion({ line_cost_eur: null, unit_cost_eur: null })],
+      priced_cost_eur: 0,
+      selected_count: 1,
+      total_cost_eur: null,
+      total_item_count: 1,
+      total_suggested_qty: 6,
+      unpriced_item_count: 1,
+    })
+
+    render(
+      <MantineProvider theme={theme}>
+        <I18nProvider>
+          <ProcurementConstructor />
+        </I18nProvider>
+      </MantineProvider>,
+    )
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Термінові в кошик · 1' }))
+
+    expect(await screen.findByText('Без ціни')).not.toBeNull()
+    expect(screen.getAllByText('Сума з ціною')).toHaveLength(2)
+    expect(screen.getByText('1 без ціни')).not.toBeNull()
   })
 })
 

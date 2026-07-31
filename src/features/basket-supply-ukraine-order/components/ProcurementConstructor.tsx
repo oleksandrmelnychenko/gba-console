@@ -460,21 +460,52 @@ export function ProcurementConstructor() {
   )
 
   const basketByProducer = useMemo(() => {
-    const groups = new Map<number, { name: string; lines: BasketLine[]; total: number }>()
+    const groups = new Map<
+      number,
+      { name: string; lines: BasketLine[]; total: number; unpricedCount: number }
+    >()
     basket.forEach((line) => {
       const pid = line.suggestion.producer_id
       const group = groups.get(pid) ?? {
         name: line.suggestion.producer_name || `#${pid}`,
         lines: [],
         total: 0,
+        unpricedCount: 0,
       }
       group.lines.push(line)
-      group.total += (line.suggestion.unit_cost_eur ?? 0) * line.qty
+      if (line.suggestion.unit_cost_eur === null) {
+        group.unpricedCount += 1
+      } else {
+        group.total += line.suggestion.unit_cost_eur * line.qty
+      }
       groups.set(pid, group)
     })
 
-    return [...groups.entries()].map(([producerId, group]) => ({ producerId, ...group }))
+    return [...groups.entries()]
+      .map(([producerId, group]) => ({
+        producerId,
+        ...group,
+        lines: group.lines.toSorted(
+          (a, b) =>
+            URGENCY_META[a.suggestion.urgency].order -
+              URGENCY_META[b.suggestion.urgency].order ||
+            (a.suggestion.product_name || a.suggestion.vendor_code || '').localeCompare(
+              b.suggestion.product_name || b.suggestion.vendor_code || '',
+              'uk-UA',
+            ),
+        ),
+      }))
+      .toSorted((a, b) => a.name.localeCompare(b.name, 'uk-UA'))
   }, [basket])
+
+  const basketTotal = useMemo(
+    () => basketByProducer.reduce((total, group) => total + group.total, 0),
+    [basketByProducer],
+  )
+  const basketUnpricedCount = useMemo(
+    () => basketByProducer.reduce((count, group) => count + group.unpricedCount, 0),
+    [basketByProducer],
+  )
 
   async function createDraft(producerId: number, lines: BasketLine[]) {
     setCreatingProducer(producerId)
@@ -733,77 +764,126 @@ export function ProcurementConstructor() {
           {basketCount > 0 && (
             <aside className="procure-cockpit__basket">
               <div className="procure-cockpit__basket-head">
-                <Text className="app-section-title" fw={600} size="sm">
-                  {t('Замовлення')}
-                </Text>
-                <Badge className="app-role-pill is-orange" variant="light">
-                  {basketCount}
-                </Badge>
+                <div className="procure-cockpit__basket-heading">
+                  <Text className="app-section-title" fw={600} size="sm">
+                    {t('Кошик замовлень')}
+                  </Text>
+                  <Text className="procure-cockpit__basket-caption">
+                    {t('Розподілено за виробниками')}
+                  </Text>
+                </div>
+                <Group gap={6} wrap="nowrap">
+                  <Badge className="app-role-pill is-orange" variant="light">
+                    {basketCount} {t('поз.')}
+                  </Badge>
+                  <Tooltip label={t('Очистити кошик')}>
+                    <ActionIcon
+                      aria-label={t('Очистити кошик')}
+                      color="red"
+                      size={30}
+                      variant="subtle"
+                      onClick={() => setBasket(new Map<string, BasketLine>())}
+                    >
+                      <Trash2 size={15} />
+                    </ActionIcon>
+                  </Tooltip>
+                </Group>
+              </div>
+              <div className="procure-cockpit__basket-summary">
+                <div>
+                  <span>{t('Виробників')}</span>
+                  <strong>{qty.format(basketByProducer.length)}</strong>
+                </div>
+                <div>
+                  <span>{basketUnpricedCount > 0 ? t('Сума з ціною') : t('Загальна сума')}</span>
+                  <strong>{amount.format(basketTotal)} <small>EUR</small></strong>
+                  {basketUnpricedCount > 0 && (
+                    <small className="procure-cockpit__basket-unpriced">
+                      {qty.format(basketUnpricedCount)} {t('без ціни')}
+                    </small>
+                  )}
+                </div>
               </div>
               <div className="procure-cockpit__basket-body">
                 <Stack gap={10}>
                   {basketByProducer.map((group) => (
                     <Box key={group.producerId} className="procure-cockpit__basket-group">
-                      <Group justify="space-between" mb={4} wrap="nowrap">
-                        <Text fw={600} size="xs" title={group.name} truncate>
-                          {group.name}
-                        </Text>
-                        <Text c="dimmed" size="xs">
-                          {amount.format(group.total)} EUR
-                        </Text>
-                      </Group>
-                      <Stack gap={3}>
+                      <div className="procure-cockpit__basket-group-head">
+                        <div className="procure-cockpit__basket-producer">
+                          <span>{t('Виробник')}</span>
+                          <strong title={group.name}>{group.name}</strong>
+                        </div>
+                        <Badge className="app-role-pill is-gray" variant="light">
+                          {qty.format(group.lines.length)} {t('поз.')}
+                        </Badge>
+                      </div>
+                      <Stack className="procure-cockpit__basket-lines" gap={0}>
                         {group.lines.map((line) => {
                           const lineKey = procurementLineKey(line.suggestion)
                           const lineName =
-                            line.suggestion.vendor_code ||
                             line.suggestion.product_name ||
+                            line.suggestion.vendor_code ||
                             `#${line.suggestion.product_id}`
+                          const lineTotal = line.suggestion.unit_cost_eur === null
+                            ? null
+                            : line.suggestion.unit_cost_eur * line.qty
 
                           return (
-                            <Group key={lineKey} gap={4} wrap="nowrap">
-                              <Text
-                                size="xs"
-                                style={{ flex: 1 }}
-                                title={line.suggestion.product_name ?? ''}
-                                truncate
-                              >
-                                {lineName}
-                              </Text>
-                              <NumberInput
-                                aria-label={`${t('Кількість')} ${lineName}`}
-                                hideControls
-                                min={0}
-                                size="xs"
-                                value={line.qty}
-                                w={72}
-                                onChange={(value) =>
-                                  setBasketQty(lineKey, Number(value) || 0)
-                                }
-                              />
-                              <ActionIcon
-                                aria-label={`${t('Видалити')} ${lineName}`}
-                                color="red"
-                                size="sm"
-                                variant="subtle"
-                                onClick={() => setBasketQty(lineKey, 0)}
-                              >
-                                <Trash2 size={14} />
-                              </ActionIcon>
-                            </Group>
+                            <article key={lineKey} className="procure-cockpit__basket-line">
+                              <ProcurementProductCell row={line.suggestion} t={t} />
+                              <div className="procure-cockpit__basket-line-controls">
+                                <div className="procure-cockpit__basket-line-total">
+                                  <span>{t('Сума')}</span>
+                                  {lineTotal === null ? (
+                                    <Badge className="app-role-pill is-orange" variant="light">
+                                      {t('Без ціни')}
+                                    </Badge>
+                                  ) : (
+                                    <strong>{amount.format(lineTotal)} <small>EUR</small></strong>
+                                  )}
+                                </div>
+                                <label className="procure-cockpit__basket-qty">
+                                  <span>{t('К-сть')}</span>
+                                  <NumberInput
+                                    aria-label={`${t('Кількість')} ${lineName}`}
+                                    hideControls
+                                    min={0}
+                                    size="xs"
+                                    value={line.qty}
+                                    w={68}
+                                    onChange={(value) =>
+                                      setBasketQty(lineKey, Number(value) || 0)
+                                    }
+                                  />
+                                </label>
+                                <ActionIcon
+                                  aria-label={`${t('Видалити')} ${lineName}`}
+                                  color="red"
+                                  size="sm"
+                                  variant="subtle"
+                                  onClick={() => setBasketQty(lineKey, 0)}
+                                >
+                                  <Trash2 size={14} />
+                                </ActionIcon>
+                              </div>
+                            </article>
                           )
                         })}
                       </Stack>
-                      <Button
-                        color={CREATE_ACTION_COLOR}
-                        fullWidth
-                        loading={creatingProducer === group.producerId}
-                        mt={6}
-                        size="compact-xs"
-              onClick={() => void createDraft(group.producerId, group.lines)}
-                      >
-                        {t('Створити чернетку')}
-                      </Button>
+                      <div className="procure-cockpit__basket-group-footer">
+                        <div className="procure-cockpit__basket-group-total">
+                          <span>{group.unpricedCount > 0 ? t('Сума з ціною') : t('Разом')}</span>
+                          <strong>{amount.format(group.total)} <small>EUR</small></strong>
+                        </div>
+                        <Button
+                          color={CREATE_ACTION_COLOR}
+                          loading={creatingProducer === group.producerId}
+                          size="compact-sm"
+                          onClick={() => void createDraft(group.producerId, group.lines)}
+                        >
+                          {t('Створити чернетку')}
+                        </Button>
+                      </div>
                     </Box>
                   ))}
                 </Stack>
