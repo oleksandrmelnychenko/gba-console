@@ -19,14 +19,14 @@ import {
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
-import { CircleAlert, LayoutTemplate, Plus, RefreshCw, RotateCcw, Save, Trash2 } from 'lucide-react'
+import { CircleAlert, Download, LayoutTemplate, Pencil, Plus, RefreshCw, RotateCcw, Save, Trash2 } from 'lucide-react'
 import { type FormEvent, useEffect, useMemo, useState } from 'react'
 import { ApiError } from '../../../shared/api/apiClient'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import type { TranslateFunction } from '../../../shared/i18n/types'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
+import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
@@ -755,7 +755,7 @@ function LegacyReportBuilder({
         onClose={closeGroupingPicker}
       />
 
-      <section className="reports-stocks-legacy__selections">
+      <section className="reports-stocks-legacy__selections reports-stocks-panel">
         <ReportSelectionsCard
           description={null}
           filterFieldOptions={filterFieldOptions}
@@ -962,114 +962,239 @@ function ReportSelectionsCard({
   onChange,
 }: ReportSelectionsCardProps) {
   const { t } = useI18n()
+  const [editorIndex, setEditorIndex] = useState<number | null>(null)
+  const [draftSelection, setDraftSelection] = useState<ReportSelection | null>(null)
   const resolvedDescription = description === undefined
     ? t('Необов’язково: звузьте звіт до клієнта, товару, документа або іншої ознаки.')
     : description
+  const editorSelections = draftSelection
+    ? editorIndex === -1
+      ? [...selections, draftSelection]
+      : selections.map((selection, index) => (index === editorIndex ? draftSelection : selection))
+    : selections
+
+  function closeEditor() {
+    setDraftSelection(null)
+    setEditorIndex(null)
+  }
+
+  function openEditor(index: number, selection: ReportSelection) {
+    setEditorIndex(index)
+    setDraftSelection(cloneReportSelection(selection))
+  }
+
+  function saveDraft() {
+    if (!draftSelection || editorIndex === null || !draftSelection.SelectedField.Name || !draftSelection.Values.length) {
+      return
+    }
+
+    const savedSelection = cloneReportSelection(draftSelection)
+    onChange((current) =>
+      editorIndex === -1
+        ? [...current, savedSelection]
+        : current.map((selection, index) => (index === editorIndex ? savedSelection : selection)),
+    )
+    closeEditor()
+  }
 
   return (
-    <Card className="app-section-card reports-stocks-selection-card" withBorder radius="md" padding="md">
-      <Group className="reports-stocks-section-header" justify="space-between" wrap="nowrap">
-        <Box>
-          <Group gap="xs" wrap="nowrap">
-            <Text className="app-section-title" component="h2" fw={600}>
-              {title ?? t('3. Умови відбору')}
-            </Text>
-            <Badge className="app-role-pill is-gray" variant="light">
-              {selections.length}
-            </Badge>
-          </Group>
-          {resolvedDescription ? <Text c="dimmed" size="xs">{resolvedDescription}</Text> : null}
-        </Box>
-        <Button
-          color={CREATE_ACTION_COLOR}
-          leftSection={<Plus size={15} />}
-          size="compact-xs"
-          type="button"
-          onClick={() => onChange((current) => [...current, createEmptySelection()])}
-        >
-          {t('Додати умову')}
-        </Button>
-      </Group>
+    <>
+      <Card className="app-section-card reports-stocks-selection-card" withBorder radius="md" padding="md">
+        <div className="reports-stocks-legacy-panel__header">
+          <div className="reports-stocks-legacy-panel__title">
+            <Group gap="xs" wrap="nowrap">
+              <Text className="reports-stocks-selection-title" component="h2">
+                {title ?? t('3. Умови відбору')}
+              </Text>
+              <Badge className="app-role-pill is-gray" variant="light">{selections.length}</Badge>
+            </Group>
+            {resolvedDescription ? <Text c="dimmed" size="xs">{resolvedDescription}</Text> : null}
+          </div>
+          <Button
+            className="reports-stocks-legacy-panel__add"
+            color={CREATE_ACTION_COLOR}
+            leftSection={<Plus size={14} />}
+            size="xs"
+            type="button"
+            onClick={() => openEditor(-1, createEmptySelection())}
+          >
+            {t('Додати умову')}
+          </Button>
+        </div>
 
-      {selections.length ? (
-        <div className="reports-stocks-selection-list">
-          {selections.map((selection, index) => (
-            <div
-              className={`reports-stocks-selection-row${selection.IsChecked ? ' is-active' : ''}`}
-              key={getSelectionRenderKey(selection, index)}
-            >
-              <Checkbox
-                aria-label={`${t('Умова відбору')} ${index + 1}`}
-                checked={selection.IsChecked}
-                onChange={() => updateSelection(selections, index, onChange, { IsChecked: !selection.IsChecked })}
-              />
+        {selections.length ? (
+          <div className="reports-stocks-selection-list">
+            {selections.map((selection, index) => {
+              const fieldLabel = getSelectionFieldSummary(selection, filterFieldOptions, t)
+
+              return (
+                <div className="reports-stocks-selection-summary" key={getSelectionRenderKey(selection, index)}>
+                  <Checkbox
+                    aria-label={`${t('Умова відбору')} ${index + 1}`}
+                    checked={selection.IsChecked}
+                    onChange={() => updateSelection(selections, index, onChange, { IsChecked: !selection.IsChecked })}
+                  />
+                  <Text className="reports-stocks-selection-summary__copy">
+                    <span className="reports-stocks-selection-summary__field">{fieldLabel}</span>
+                    <span className="reports-stocks-selection-summary__condition">
+                      {selection.FilterCondition.Name}
+                    </span>
+                    <span className="reports-stocks-selection-summary__value">
+                      {getSelectionValuesSummary(selection, t)}
+                    </span>
+                  </Text>
+                  <Group className="reports-stocks-selection-summary__actions" gap={2} wrap="nowrap">
+                    <Tooltip label={t('Редагувати')}>
+                      <ActionIcon
+                        aria-label={t('Редагувати')}
+                        color="gray"
+                        size={30}
+                        type="button"
+                        variant="subtle"
+                        onClick={() => openEditor(index, selection)}
+                      >
+                        <Pencil size={15} />
+                      </ActionIcon>
+                    </Tooltip>
+                    <Tooltip label={t('Видалити')}>
+                      <ActionIcon
+                        aria-label={t('Видалити')}
+                        color="red"
+                        size={30}
+                        type="button"
+                        variant="subtle"
+                        onClick={() => onChange((current) => current.filter((_, itemIndex) => itemIndex !== index))}
+                      >
+                        <Trash2 size={15} />
+                      </ActionIcon>
+                    </Tooltip>
+                  </Group>
+                </div>
+              )
+            })}
+          </div>
+        ) : (
+          <div className="reports-stocks-selection-empty">
+            <Text c="dimmed" size="sm">{t('Звіт охопить усі дані за вибраний період.')}</Text>
+          </div>
+        )}
+      </Card>
+
+      <AppModal
+        centered
+        className="reports-stocks-selection-modal"
+        opened={Boolean(draftSelection)}
+        size="lg"
+        title={editorIndex === -1 ? t('Додати умову відбору') : t('Редагувати умову відбору')}
+        onClose={closeEditor}
+      >
+        {draftSelection ? (
+          <Stack gap="md">
+            <Select
+              data={filterFieldOptions}
+              label={t('Поле')}
+              placeholder={t('Оберіть поле')}
+              searchable
+              value={draftSelection.SelectedField.Name ? String(draftSelection.SelectedField.Type) : null}
+              onChange={(value) => {
+                const option = filterFieldOptions.find((item) => item.value === value)
+                setDraftSelection((current) => current ? {
+                  ...current,
+                  SelectedField: option?.field || { Name: '', Type: 0 },
+                  Values: [],
+                } : current)
+              }}
+            />
+            <div className="reports-stocks-selection-modal__controls">
               <Select
-                data={filterFieldOptions}
-                label={t('Поле')}
-                placeholder={t('Оберіть поле')}
-                searchable
-                value={selection.SelectedField.Name ? String(selection.SelectedField.Type) : null}
-                w={260}
-                onChange={(value) => {
-                  const option = filterFieldOptions.find((item) => item.value === value)
-                  updateSelection(selections, index, onChange, {
-                    SelectedField: option?.field || { Name: '', Type: 0 },
-                    Values: [],
-                  })
-                }}
-              />
-              <Select
+                allowDeselect={false}
                 data={REPORT_FILTER_CONDITIONS.map((condition) => ({
                   label: condition.Name,
                   value: String(condition.Type),
                 }))}
                 label={t('Умова')}
-                value={String(selection.FilterCondition.Type)}
-                w={180}
+                value={String(draftSelection.FilterCondition.Type)}
                 onChange={(value) => {
-                  const condition =
-                    REPORT_FILTER_CONDITIONS.find((item) => String(item.Type) === value) || defaultCondition
-                  const nextValues =
-                    !isMultiValueReportCondition(condition.Type) && selection.Values.length > 1
-                      ? selection.Values.slice(0, 1)
-                      : selection.Values
-                  updateSelection(selections, index, onChange, {
+                  const condition = REPORT_FILTER_CONDITIONS.find((item) => String(item.Type) === value) || defaultCondition
+                  setDraftSelection((current) => current ? {
+                    ...current,
                     FilterCondition: condition,
-                    Values: nextValues,
-                  })
+                    Values: !isMultiValueReportCondition(condition.Type) && current.Values.length > 1
+                      ? current.Values.slice(0, 1)
+                      : current.Values,
+                  } : current)
                 }}
               />
               <SelectionValuePicker
-                error={isIncompleteSelection(selection) ? t('Додайте значення') : undefined}
                 from={from}
                 label={t('Значення')}
-                selection={selection}
-                selections={selections}
+                selection={draftSelection}
+                selections={editorSelections}
                 to={to}
-                onChange={(values) => updateSelection(selections, index, onChange, { Values: values })}
+                width="100%"
+                onChange={(values) => setDraftSelection((current) => current ? { ...current, Values: values } : current)}
               />
-              <Tooltip label={t('Видалити')}>
-                <ActionIcon
-                  aria-label={t('Видалити')}
-                  color="red"
-                  size={34}
-                  type="button"
-                  variant="subtle"
-                  onClick={() => onChange((current) => current.filter((_, itemIndex) => itemIndex !== index))}
-                >
-                  <Trash2 size={17} />
-                </ActionIcon>
-              </Tooltip>
             </div>
-          ))}
-        </div>
-      ) : (
-        <Text className="reports-stocks-selection-empty" c="dimmed" size="sm">
-          {t('Звіт охопить усі дані за вибраний період.')}
-        </Text>
-      )}
-    </Card>
+            <AppModalFooter>
+              <Button color="gray" type="button" variant="light" onClick={closeEditor}>{t('Скасувати')}</Button>
+              <Button
+                color={CREATE_ACTION_COLOR}
+                disabled={!draftSelection.SelectedField.Name || !draftSelection.Values.length}
+                leftSection={<Save size={16} />}
+                type="button"
+                onClick={saveDraft}
+              >
+                {t('Зберегти')}
+              </Button>
+            </AppModalFooter>
+          </Stack>
+        ) : null}
+      </AppModal>
+    </>
   )
+}
+
+function cloneReportSelection(selection: ReportSelection): ReportSelection {
+  return {
+    ...selection,
+    FilterCondition: { ...selection.FilterCondition },
+    SelectedField: { ...selection.SelectedField },
+    Values: selection.Values.map((value) => ({ ...value, Data: { ...value.Data } })),
+  }
+}
+
+function getSelectionValuesSummary(selection: ReportSelection, t: TranslateFunction) {
+  if (!selection.Values.length) {
+    return t('Значення не вибрано')
+  }
+
+  const visibleValues = selection.Values.slice(0, 2).map((value) => value.Name).join(', ')
+  const hiddenCount = selection.Values.length - 2
+
+  return hiddenCount > 0 ? `${visibleValues} · +${hiddenCount}` : visibleValues
+}
+
+function getSelectionFieldSummary(
+  selection: ReportSelection,
+  filterFieldOptions: FilterFieldOption[],
+  t: TranslateFunction,
+) {
+  const label = filterFieldOptions.find((option) => option.value === String(selection.SelectedField.Type))?.label
+
+  if (!label) {
+    return t('Поле не вибрано')
+  }
+
+  const separatorIndex = label.indexOf(':')
+
+  if (separatorIndex === -1) {
+    return label
+  }
+
+  const groupLabel = label.slice(0, separatorIndex).trim()
+  const fieldLabel = label.slice(separatorIndex + 1).trim()
+
+  return groupLabel === fieldLabel ? fieldLabel : label
 }
 
 type ReportTemplatesCardProps = {
@@ -1217,6 +1342,11 @@ function ReportResultSection({
         header: t('Період'),
         minWidth: 180,
         accessor: (row) => `${formatDate(row.from)} – ${formatDate(row.to)}`,
+        cell: (row) => (
+          <span className="reports-stocks-result__period">
+            {formatDate(row.from)} – {formatDate(row.to)}
+          </span>
+        ),
       },
       {
         id: 'measures',
@@ -1231,14 +1361,22 @@ function ReportResultSection({
         header: t('Групування рядків'),
         minWidth: 220,
         accessor: (row) => row.rowGroupings.join(', '),
-        cell: (row) => row.rowGroupings.join(', ') || '—',
+        cell: (row) => (
+          <span className="reports-stocks-result__grouping">
+            {row.rowGroupings.join(', ') || '—'}
+          </span>
+        ),
       },
       {
         id: 'colGroupings',
         header: t('Групування стовпців'),
         minWidth: 220,
         accessor: (row) => row.colGroupings.join(', '),
-        cell: (row) => row.colGroupings.join(', ') || '—',
+        cell: (row) => (
+          <span className="reports-stocks-result__grouping">
+            {row.colGroupings.join(', ') || '—'}
+          </span>
+        ),
       },
       {
         id: 'status',
@@ -1264,8 +1402,8 @@ function ReportResultSection({
           <Button
             color={CREATE_ACTION_COLOR}
             disabled={!row.hasDocument || !hasFiles}
-            leftSection={<ExcelIcon size={15} />}
-            size="compact-sm"
+            leftSection={<Download size={16} />}
+            size="sm"
             type="button"
             onClick={onOpenFiles}
           >
@@ -1278,13 +1416,13 @@ function ReportResultSection({
   )
 
   return (
-    <section className="reports-stocks-result" aria-labelledby="reports-stocks-result-title">
+    <section className="reports-stocks-result reports-stocks-panel" aria-labelledby="reports-stocks-result-title">
       <Group className="reports-stocks-result__header" justify="space-between" wrap="nowrap">
-        <Box>
-          <Text className="app-section-title" component="h2" fw={600} id="reports-stocks-result-title">
+        <Box className="reports-stocks-result__heading">
+          <Text className="reports-stocks-result__title" component="h2" fw={600} id="reports-stocks-result-title">
             {t('Результат')}
           </Text>
-          <Text size="xs" c="dimmed">
+          <Text className="reports-stocks-result__meta" size="xs" c="dimmed">
             {lastRun
               ? `${formatDate(lastRun.from)} – ${formatDate(lastRun.to)} · ${t('Показників')}: ${lastRun.measures.length}`
               : t('Після формування тут з’являться файли Excel і PDF.')}
@@ -1321,10 +1459,11 @@ type SelectionValuePickerProps = {
   selection: ReportSelection
   selections: ReportSelection[]
   to: string
+  width?: number | string
   onChange: (values: ReportSelectedValue[]) => void
 }
 
-function SelectionValuePicker({ error, from, label, selection, selections, to, onChange }: SelectionValuePickerProps) {
+function SelectionValuePicker({ error, from, label, selection, selections, to, width = 320, onChange }: SelectionValuePickerProps) {
   const { t } = useI18n()
   const [search, setSearch] = useValueState('')
   const [manualValue, setManualValue] = useValueState('')
@@ -1517,13 +1656,13 @@ function SelectionValuePicker({ error, from, label, selection, selections, to, o
         label={label}
         placeholder={t('Спочатку оберіть поле')}
         value=""
-        w={320}
+        w={width}
       />
     )
   }
 
   return (
-    <Stack gap={4} w={320}>
+    <Stack gap={4} w={width}>
       {isSaleDocumentFilter ? (
         <Stack gap={6}>
           <Select
