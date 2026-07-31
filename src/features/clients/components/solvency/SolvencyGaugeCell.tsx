@@ -42,12 +42,14 @@ export function SolvencyGaugeCell({ notApplicableLabel, score }: SolvencyGaugeCe
     ? `${score?.score} / 100 · ${score?.rating}`
     : insufficientData
       ? 'Недостатньо даних для оцінки'
-      : notApplicableLabel
+      : notApplicable
+        ? notApplicableLabel
+        : 'Оцінку не обчислено'
   // Keep the Tooltip target a single stable <div> so the cell never swaps its
   // root element type as scores load in (which crashed React's reconciler with
   // a removeChild error in the pinned column).
   return (
-    <Tooltip disabled={!hasScore && !notApplicable && !insufficientData} label={tooltipLabel} openDelay={300} withArrow>
+    <Tooltip label={tooltipLabel} openDelay={300} withArrow>
       <div
         style={{
           alignItems: 'center',
@@ -70,9 +72,18 @@ export function SolvencyGaugeCell({ notApplicableLabel, score }: SolvencyGaugeCe
             thickness={3}
           />
         ) : (
-          <Text c="dimmed" size="xs">
-            {insufficientData ? '?' : '—'}
-          </Text>
+          // Not computed (no data / not applicable / score pending) — the neutral
+          // gray ring keeps the column readable instead of bare dashes.
+          <RingProgress
+            label={
+              <Text c="dimmed" fw={500} fz={10} ta="center">
+                –
+              </Text>
+            }
+            sections={[{ color: 'gray.4', value: 100 }]}
+            size={36}
+            thickness={3}
+          />
         )}
       </div>
     </Tooltip>

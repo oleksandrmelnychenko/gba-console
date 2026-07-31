@@ -36,7 +36,7 @@ function makeScore(overrides: Partial<SolvencyScore>): SolvencyScore {
 const NA_LABEL = 'Оцінка незастосовна — не покупець'
 
 describe('SolvencyGaugeCell', () => {
-  it('renders an em-dash and no gauge when the score is not applicable', () => {
+  it('renders a neutral gray ring when the score is not applicable', () => {
     const score = makeScore({
       applicable: false,
       score: null,
@@ -49,17 +49,17 @@ describe('SolvencyGaugeCell', () => {
       <SolvencyGaugeCell notApplicableLabel={NA_LABEL} score={score} />,
     )
 
-    expect(getByText('—')).toBeTruthy()
-    expect(container.querySelector('svg')).toBeNull()
+    expect(getByText('–')).toBeTruthy()
+    expect(container.querySelector('svg')).toBeTruthy()
   })
 
-  it('renders an em-dash and no gauge when the score is missing', () => {
+  it('renders a neutral gray ring when the score is missing (not computed)', () => {
     const { getByText, container } = renderWithMantine(
       <SolvencyGaugeCell notApplicableLabel={NA_LABEL} score={undefined} />,
     )
 
-    expect(getByText('—')).toBeTruthy()
-    expect(container.querySelector('svg')).toBeNull()
+    expect(getByText('–')).toBeTruthy()
+    expect(container.querySelector('svg')).toBeTruthy()
   })
 
   it('renders a gauge (svg) and the score value when applicable', () => {
