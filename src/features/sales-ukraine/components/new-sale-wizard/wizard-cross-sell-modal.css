@@ -1,0 +1,487 @@
+.wizard-cross-sell-modal .mantine-Modal-body {
+  padding-top: 10px;
+}
+
+.wizard-cross-sell-graph {
+  display: grid;
+  gap: 56px;
+  grid-template-columns: minmax(270px, 320px) minmax(0, 1fr);
+  height: min(680px, calc(100vh - 220px));
+  min-height: 440px;
+  overflow: hidden;
+}
+
+.wizard-cross-sell-seed {
+  align-self: center;
+  background: var(--mantine-color-white);
+  border: 1px solid var(--brand-orange);
+  border-radius: 10px;
+  min-width: 0;
+  padding: 14px;
+  position: relative;
+}
+
+.wizard-cross-sell-seed::before {
+  background: var(--brand-orange);
+  border: 2px solid var(--mantine-color-white);
+  border-radius: 999px;
+  content: '';
+  height: 10px;
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  width: 10px;
+}
+
+.wizard-cross-sell-seed::after {
+  border-top: 1px solid var(--mantine-color-gray-3);
+  content: '';
+  position: absolute;
+  right: -72px;
+  top: 50%;
+  width: 72px;
+}
+
+.wizard-cross-sell-seed__eyebrow,
+.wizard-cross-sell-related__head,
+.wizard-cross-sell-card__headline,
+.wizard-cross-sell-card__availability {
+  align-items: center;
+  display: flex;
+}
+
+.wizard-cross-sell-seed__eyebrow {
+  justify-content: space-between;
+  padding-right: 16px;
+}
+
+.wizard-cross-sell-seed__eyebrow > span {
+  color: var(--mantine-color-gray-6);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.wizard-cross-sell-artwork {
+  align-items: center;
+  background: var(--mantine-color-gray-0);
+  border: 1px solid var(--mantine-color-gray-2);
+  color: var(--mantine-color-gray-4);
+  display: flex;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.wizard-cross-sell-artwork img {
+  height: 100%;
+  object-fit: contain;
+  width: 100%;
+}
+
+.wizard-cross-sell-seed__image {
+  border-radius: 10px;
+  height: 220px;
+  margin-top: 12px;
+  width: 100%;
+}
+
+.wizard-cross-sell-seed__copy {
+  display: grid;
+  gap: 7px;
+  margin-top: 13px;
+  min-width: 0;
+}
+
+.wizard-cross-sell-code {
+  color: var(--brand-orange);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0;
+  line-height: 1.15;
+}
+
+.wizard-cross-sell-seed__copy > strong {
+  color: var(--mantine-color-gray-8);
+  display: -webkit-box;
+  font-size: 15px;
+  font-weight: 600;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-height: 1.25;
+  overflow: hidden;
+}
+
+.wizard-cross-sell-seed__metrics,
+.wizard-cross-sell-card__metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.wizard-cross-sell-seed__metrics {
+  border-block: 1px solid var(--mantine-color-gray-2);
+  margin-top: 14px;
+  padding-block: 11px;
+}
+
+.wizard-cross-sell-metric {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding-inline: 10px;
+}
+
+.wizard-cross-sell-metric:first-child {
+  padding-left: 0;
+}
+
+.wizard-cross-sell-metric + .wizard-cross-sell-metric {
+  border-left: 1px solid var(--mantine-color-gray-2);
+}
+
+.wizard-cross-sell-metric small {
+  color: var(--mantine-color-gray-6);
+  font-size: 9.5px;
+  font-weight: 600;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.wizard-cross-sell-metric strong {
+  color: var(--mantine-color-gray-8);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.15;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wizard-cross-sell-seed__hint {
+  align-items: center;
+  color: var(--mantine-color-gray-6);
+  display: flex;
+  font-size: 11px;
+  gap: 7px;
+  margin-top: 12px;
+}
+
+.wizard-cross-sell-seed__hint svg {
+  color: var(--brand-orange);
+  flex: 0 0 auto;
+}
+
+.wizard-cross-sell-related {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+}
+
+.wizard-cross-sell-related__head {
+  flex: 0 0 auto;
+  justify-content: space-between;
+  min-height: 48px;
+  padding: 0 2px 9px 44px;
+}
+
+.wizard-cross-sell-related__head .app-section-title {
+  font-size: 12.5px;
+}
+
+.wizard-cross-sell-related__head .mantine-Text-root:last-child {
+  margin-top: 3px;
+}
+
+.wizard-cross-sell-related__scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 8px 0 0;
+  scrollbar-gutter: stable;
+}
+
+.wizard-cross-sell-related__list,
+.wizard-cross-sell-loading {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-left: 44px;
+  position: relative;
+}
+
+.wizard-cross-sell-related__list::before,
+.wizard-cross-sell-loading::before {
+  background: var(--mantine-color-gray-3);
+  bottom: 54px;
+  content: '';
+  left: 16px;
+  position: absolute;
+  top: 54px;
+  width: 1px;
+}
+
+.wizard-cross-sell-card,
+.wizard-cross-sell-loading__card {
+  align-items: center;
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 10px;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 76px minmax(0, 1fr) auto;
+  min-height: 118px;
+  padding: 10px 11px;
+  position: relative;
+}
+
+.wizard-cross-sell-card {
+  transition: border-color 140ms ease, transform 140ms ease;
+}
+
+.wizard-cross-sell-card:hover {
+  border-color: var(--mantine-color-gray-3);
+  transform: translateX(3px);
+}
+
+.wizard-cross-sell-card::before,
+.wizard-cross-sell-loading__card::before {
+  border-top: 1px solid var(--mantine-color-gray-3);
+  content: '';
+  left: -28px;
+  position: absolute;
+  top: 50%;
+  width: 28px;
+}
+
+.wizard-cross-sell-card::after,
+.wizard-cross-sell-loading__card::after {
+  background: var(--brand-orange);
+  border: 2px solid var(--mantine-color-white);
+  border-radius: 999px;
+  content: '';
+  height: 9px;
+  left: -33px;
+  position: absolute;
+  top: calc(50% - 4px);
+  width: 9px;
+}
+
+.wizard-cross-sell-card__rank {
+  color: var(--mantine-color-gray-5);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  left: -2px;
+  letter-spacing: 0;
+  position: absolute;
+  top: 5px;
+}
+
+.wizard-cross-sell-card__image {
+  border-radius: 9px;
+  height: 76px;
+  width: 76px;
+}
+
+.wizard-cross-sell-card__body {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.wizard-cross-sell-card__headline {
+  gap: 7px;
+  min-width: 0;
+}
+
+.wizard-cross-sell-card__headline > .wizard-cross-sell-code {
+  flex: 0 0 auto;
+}
+
+.wizard-cross-sell-card__facts {
+  align-items: center;
+  display: flex;
+  gap: 4px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.wizard-cross-sell-card__facts > span {
+  background: var(--mantine-color-gray-0);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 7px;
+  color: var(--mantine-color-gray-6);
+  flex: 0 1 auto;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 1;
+  max-width: 110px;
+  overflow: hidden;
+  padding: 3px 6px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wizard-cross-sell-card__name {
+  color: var(--mantine-color-gray-8);
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wizard-cross-sell-card__metrics {
+  max-width: 440px;
+}
+
+.wizard-cross-sell-card__availability {
+  gap: 8px;
+  max-width: 440px;
+}
+
+.wizard-cross-sell-card__availability > span {
+  color: var(--mantine-color-gray-6);
+  flex: 0 0 112px;
+  font-size: 9.5px;
+  font-weight: 600;
+}
+
+.wizard-cross-sell-card__availability .mantine-Progress-root {
+  background: var(--mantine-color-gray-1);
+  flex: 1 1 auto;
+}
+
+.wizard-cross-sell-card__action {
+  align-self: center;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+.wizard-cross-sell-empty {
+  align-items: center;
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 10px;
+  color: var(--mantine-color-gray-5);
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  justify-content: center;
+  margin-left: 44px;
+  min-height: 220px;
+  padding: 24px;
+  text-align: center;
+}
+
+.wizard-cross-sell-empty strong {
+  color: var(--mantine-color-gray-8);
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.wizard-cross-sell-empty span {
+  font-size: 11px;
+}
+
+.wizard-cross-sell-loading__card::after {
+  background: var(--mantine-color-gray-3);
+}
+
+.wizard-cross-sell-loading__card > div:nth-child(2) {
+  min-width: 0;
+}
+
+@media (max-width: 900px) {
+  .wizard-cross-sell-graph {
+    gap: 14px;
+    grid-template-columns: minmax(0, 1fr);
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .wizard-cross-sell-seed {
+    align-self: stretch;
+    display: grid;
+    gap: 12px;
+    grid-template-columns: 120px minmax(0, 1fr);
+  }
+
+  .wizard-cross-sell-seed::after {
+    display: none;
+  }
+
+  .wizard-cross-sell-seed__eyebrow,
+  .wizard-cross-sell-seed__metrics,
+  .wizard-cross-sell-seed__hint {
+    grid-column: 1 / -1;
+  }
+
+  .wizard-cross-sell-seed__image {
+    height: 120px;
+    margin-top: 0;
+  }
+
+  .wizard-cross-sell-seed__copy {
+    align-self: center;
+    margin-top: 0;
+  }
+
+  .wizard-cross-sell-related__head {
+    padding-left: 0;
+  }
+
+  .wizard-cross-sell-related__scroll {
+    max-height: 520px;
+  }
+}
+
+@media (max-width: 640px) {
+  .wizard-cross-sell-card,
+  .wizard-cross-sell-loading__card {
+    align-items: start;
+    grid-template-columns: 62px minmax(0, 1fr);
+  }
+
+  .wizard-cross-sell-card__image {
+    height: 62px;
+    width: 62px;
+  }
+
+  .wizard-cross-sell-card__action,
+  .wizard-cross-sell-loading__card > :last-child {
+    grid-column: 1 / -1;
+    justify-self: end;
+  }
+
+  .wizard-cross-sell-related__list,
+  .wizard-cross-sell-loading {
+    padding-left: 28px;
+  }
+
+  .wizard-cross-sell-related__list::before,
+  .wizard-cross-sell-loading::before {
+    left: 8px;
+  }
+
+  .wizard-cross-sell-card::before,
+  .wizard-cross-sell-loading__card::before {
+    left: -20px;
+    width: 20px;
+  }
+
+  .wizard-cross-sell-card::after,
+  .wizard-cross-sell-loading__card::after {
+    left: -25px;
+  }
+}
