@@ -442,7 +442,8 @@
 }
 
 .console-notification-dropdown {
-  width: min(390px, calc(100vw - 16px));
+  width: min(390px, calc(100vw - 16px)) !important;
+  max-width: calc(100vw - 16px);
   overflow: hidden;
   border-color: var(--mantine-color-gray-2);
 }
