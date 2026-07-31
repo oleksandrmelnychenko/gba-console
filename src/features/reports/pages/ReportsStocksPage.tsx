@@ -8,9 +8,9 @@ import {
   Checkbox,
   Group,
   Loader,
+  Modal,
   type OptionsFilter,
   Select,
-  SimpleGrid,
   Stack,
   Switch,
   Text,
@@ -19,8 +19,8 @@ import {
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
-import { CircleAlert, Plus, RefreshCw, RotateCcw, Save, Trash2 } from 'lucide-react'
-import { type FormEvent, useEffect, useMemo } from 'react'
+import { CircleAlert, LayoutTemplate, Plus, RefreshCw, RotateCcw, Save, Trash2 } from 'lucide-react'
+import { type FormEvent, useEffect, useMemo, useState } from 'react'
 import { ApiError } from '../../../shared/api/apiClient'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -28,6 +28,8 @@ import type { TranslateFunction } from '../../../shared/i18n/types'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
+import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import {
   createStockReport,
@@ -155,21 +157,17 @@ export function ReportsStocksPage() {
   const [templates, setTemplates] = useValueState<ReportTemplate[]>([])
   const [templateNotice, setTemplateNotice] = useValueState<string | null>(null)
   const groupingOptions = useMemo(() => flattenGroupingOptions(), [])
-  // One dimension can hold one axis position only: repeated in «Рядки» it splits the sheet against itself, and
-  // in both axes at once it asks the engine to lay the same key out horizontally and vertically. Both are two
-  // clicks away, so the taken dimensions leave the picker disabled rather than merely being rejected on submit.
-  const usedGroupingTypes = useMemo(
-    () => new Set([...rowGroups, ...colGroups].map((item) => item.type)),
-    [colGroups, rowGroups],
-  )
   const groupingSelectData = useMemo(
     () =>
       groupingOptions.map((item) => ({
-        disabled: usedGroupingTypes.has(item.type),
+        assignedTo: [
+          ...(rowGroups.some((group) => group.type === item.type) ? ['rows' as const] : []),
+          ...(colGroups.some((group) => group.type === item.type) ? ['columns' as const] : []),
+        ],
         label: `${item.group}: ${getReportFieldLabel(item.key)}`,
         value: String(item.type),
-      })),
-    [groupingOptions, usedGroupingTypes],
+      }) satisfies GroupingOption),
+    [colGroups, groupingOptions, rowGroups],
   )
   const filterFieldOptions = useMemo(
     () =>
@@ -334,10 +332,8 @@ export function ReportsStocksPage() {
     // A template stored before an option was withdrawn would otherwise put a grouping the server projects as NULL
     // (or a condition it drops) straight back into the request.
     const { data, removedCount } = sanitizeReportTemplate(template.Data)
-    // A saved template can still carry the same dimension twice — the axes only started refusing duplicates now,
-    // and remapping a withdrawn grouping onto its equivalent can land on one the other axis already holds.
     const templateRowGroups = dedupeGroupings(data.sorted.Row)
-    const templateColGroups = dedupeGroupings(data.sorted.Col, templateRowGroups)
+    const templateColGroups = dedupeGroupings(data.sorted.Col)
 
     setTemplateName(template.Name)
     setFrom(data.from || today)
@@ -357,7 +353,6 @@ export function ReportsStocksPage() {
     <Stack className="reports-stocks-page" gap={6}>
       <ReportBuilderForm
         canSubmit={canSubmit}
-        checkedMeasurements={checkedMeasurements}
         colGroups={colGroups}
         filterFieldOptions={filterFieldOptions}
         from={from}
@@ -416,7 +411,6 @@ export function ReportsStocksPage() {
 
 type ReportBuilderFormProps = {
   canSubmit: boolean
-  checkedMeasurements: number
   colGroups: ReportGroupingItem[]
   filterFieldOptions: FilterFieldOption[]
   from: string
@@ -458,7 +452,6 @@ type ReportBuilderFormProps = {
 
 function ReportBuilderForm({
   canSubmit,
-  checkedMeasurements,
   colGroups,
   filterFieldOptions,
   from,
@@ -498,6 +491,7 @@ function ReportBuilderForm({
   onUpdateTemplate,
 }: ReportBuilderFormProps) {
   const { t } = useI18n()
+  const [templatesOpened, setTemplatesOpened] = useValueState(false)
 
   return (
     <Card className="reports-stocks-shell" radius="md" padding={0}>
@@ -530,6 +524,14 @@ function ReportBuilderForm({
             </Text>
           </div>
           <div className="app-filter-actions reports-stocks-actions">
+            <Button
+              color={CREATE_ACTION_COLOR}
+              leftSection={<LayoutTemplate size={16} />}
+              type="button"
+              onClick={() => setTemplatesOpened(true)}
+            >
+              {t('Шаблони')}
+            </Button>
             <Tooltip label={t('Скинути')}>
               <ActionIcon aria-label={t('Скинути')} variant="default" size={34} type="button" onClick={onReset}>
                 <RotateCcw size={17} />
@@ -550,78 +552,11 @@ function ReportBuilderForm({
         </div>
 
         <div className="reports-stocks-body">
-          <Stack className="reports-stocks-content" gap={6}>
-            <header className="reports-stocks-intro">
-              <Box>
-                <Text className="app-section-title" component="h1" fw={600}>
-                  {t('Конструктор звітів')}
-                </Text>
-                <Text c="dimmed" size="sm">
-                  {t('Налаштуйте склад і структуру звіту з продажів, потім завантажте готовий Excel або PDF.')}
-                </Text>
-              </Box>
-              <Group className="reports-stocks-summary" gap={6} wrap="wrap">
-                <Badge className="app-role-pill is-gray" variant="light">
-                  {t('Показники')}: {checkedMeasurements}
-                </Badge>
-                <Badge className="app-role-pill is-gray" variant="light">
-                  {t('Рядки')}: {rowGroups.length}
-                </Badge>
-                <Badge className="app-role-pill is-gray" variant="light">
-                  {t('Колонки')}: {colGroups.length}
-                </Badge>
-                <Badge className="app-role-pill is-gray" variant="light">
-                  {t('Умови')}: {selections.length}
-                </Badge>
-              </Group>
-            </header>
-
-            {notices.period || incompleteSelectionMessage ? (
-              <Alert color={notices.period ? 'red' : 'yellow'} icon={<CircleAlert size={18} />}>
-                {notices.period || incompleteSelectionMessage}
-              </Alert>
-            ) : null}
-
-            <div className="reports-stocks-builder-grid">
-              <ReportMeasurementsCard
-                checkedMeasurements={checkedMeasurements}
-                measurements={measurements}
-                onChange={onMeasurementsChange}
-              />
-              <Stack className="reports-stocks-configuration" gap={6}>
-                <ReportStructureCard
-                  colGroups={colGroups}
-                  options={groupingSelectData}
-                  rowGroups={rowGroups}
-                  onAddCol={(item) => onColGroupsChange((current) => addGrouping(current, item, rowGroups))}
-                  onAddRow={(item) => onRowGroupsChange((current) => addGrouping(current, item, colGroups))}
-                  onRemoveCol={(index) =>
-                    onColGroupsChange((current) => current.filter((_, itemIndex) => itemIndex !== index))}
-                  onRemoveRow={(index) =>
-                    onRowGroupsChange((current) => current.filter((_, itemIndex) => itemIndex !== index))}
-                  resolveItem={(value) => groupingOptions.find((item) => String(item.type) === value)}
-                />
-                <ReportSelectionsCard
-                  filterFieldOptions={filterFieldOptions}
-                  from={lookupFrom}
-                  selections={selections}
-                  to={lookupTo}
-                  onChange={onSelectionsChange}
-                />
-                <ReportTemplatesCard
-                  notice={templateNotice}
-                  templateName={templateName}
-                  templates={templates}
-                  onApply={onApplyTemplate}
-                  onDelete={onDeleteTemplate}
-                  onNameChange={onTemplateNameChange}
-                  onRefresh={onRefreshTemplates}
-                  onSave={onSaveTemplate}
-                  onUpdate={onUpdateTemplate}
-                />
-              </Stack>
-            </div>
-          </Stack>
+          {notices.period || incompleteSelectionMessage ? (
+            <Alert className="reports-page-alert" color={notices.period ? 'red' : 'yellow'} icon={<CircleAlert size={18} />}>
+              {notices.period || incompleteSelectionMessage}
+            </Alert>
+          ) : null}
 
           {notices.error ? (
             <Alert className="reports-page-alert" color="red" icon={<CircleAlert size={18} />}>{notices.error}</Alert>
@@ -631,6 +566,21 @@ function ReportBuilderForm({
               {notices.emptyRun}
             </Alert>
           ) : null}
+          <LegacyReportBuilder
+            colGroups={colGroups}
+            filterFieldOptions={filterFieldOptions}
+            groupingOptions={groupingOptions}
+            groupingSelectData={groupingSelectData}
+            lookupFrom={lookupFrom}
+            lookupTo={lookupTo}
+            measurements={measurements}
+            rowGroups={rowGroups}
+            selections={selections}
+            onColGroupsChange={onColGroupsChange}
+            onMeasurementsChange={onMeasurementsChange}
+            onRowGroupsChange={onRowGroupsChange}
+            onSelectionsChange={onSelectionsChange}
+          />
           <ReportResultSection
             hasFiles={resultHasFiles}
             lastRun={lastRun}
@@ -638,157 +588,352 @@ function ReportBuilderForm({
             onOpenFiles={onOpenFiles}
           />
         </div>
+
+        <Modal
+          centered
+          classNames={{ body: 'reports-stocks-template-modal__body', title: 'reports-stocks-modal-title' }}
+          opened={templatesOpened}
+          size="lg"
+          title={t('Шаблони звіту')}
+          onClose={() => setTemplatesOpened(false)}
+        >
+          <ReportTemplatesCard
+            notice={templateNotice}
+            templateName={templateName}
+            templates={templates}
+            onApply={(template) => {
+              onApplyTemplate(template)
+              setTemplatesOpened(false)
+            }}
+            onDelete={onDeleteTemplate}
+            onNameChange={onTemplateNameChange}
+            onRefresh={onRefreshTemplates}
+            onSave={onSaveTemplate}
+            onUpdate={onUpdateTemplate}
+          />
+        </Modal>
       </form>
     </Card>
   )
 }
 
-type ReportMeasurementsCardProps = {
-  checkedMeasurements: number
+type LegacyReportBuilderProps = {
+  colGroups: ReportGroupingItem[]
+  filterFieldOptions: FilterFieldOption[]
+  groupingOptions: ReportGroupingItem[]
+  groupingSelectData: GroupingOption[]
+  lookupFrom: string
+  lookupTo: string
   measurements: ReportMeasurementGroup[]
-  onChange: StateSetter<ReportMeasurementGroup[]>
+  rowGroups: ReportGroupingItem[]
+  selections: ReportSelection[]
+  onColGroupsChange: StateSetter<ReportGroupingItem[]>
+  onMeasurementsChange: StateSetter<ReportMeasurementGroup[]>
+  onRowGroupsChange: StateSetter<ReportGroupingItem[]>
+  onSelectionsChange: StateSetter<ReportSelection[]>
 }
 
-function ReportMeasurementsCard({
-  checkedMeasurements,
+function LegacyReportBuilder({
+  colGroups,
+  filterFieldOptions,
+  groupingOptions,
+  groupingSelectData,
+  lookupFrom,
+  lookupTo,
   measurements,
-  onChange,
-}: ReportMeasurementsCardProps) {
-  const { t } = useI18n()
+  rowGroups,
+  selections,
+  onColGroupsChange,
+  onMeasurementsChange,
+  onRowGroupsChange,
+  onSelectionsChange,
+}: LegacyReportBuilderProps) {
+  const [groupingPickerTarget, setGroupingPickerTarget] = useState<'rows' | 'columns' | null>(null)
+  const checkedMeasurements = flattenCheckedMeasurements(measurements).length
+
+  const closeGroupingPicker = () => setGroupingPickerTarget(null)
+
+  const addGroupingFromPicker = (value: string) => {
+    const item = groupingOptions.find((option) => String(option.type) === value)
+    if (!item || !groupingPickerTarget) return
+
+    if (groupingPickerTarget === 'rows') {
+      onRowGroupsChange((current) => addGrouping(current, item))
+    } else {
+      onColGroupsChange((current) => addGrouping(current, item))
+    }
+
+    closeGroupingPicker()
+  }
 
   return (
-    <Card className="app-section-card reports-stocks-measurements" withBorder radius="md" padding="md">
-      <Group className="reports-stocks-section-header" justify="space-between" wrap="nowrap">
-        <Group gap="xs" wrap="nowrap">
-          <Text className="app-section-title" component="h2" fw={600}>
-            {t('1. Показники')}
-          </Text>
-          <Badge className="app-role-pill is-orange" variant="light">
-            {checkedMeasurements}
+    <section className="reports-stocks-legacy" aria-label="Налаштування звіту">
+      <div className="reports-stocks-legacy__columns">
+        <section className="reports-stocks-legacy-panel reports-stocks-legacy-measurements">
+          <div className="reports-stocks-legacy-panel__header">
+            <Group className="reports-stocks-legacy-panel__title" gap={6} wrap="nowrap">
+              <Text component="h3">Показники</Text>
+              <Badge className="app-role-pill is-orange" variant="light">
+                {checkedMeasurements}
+              </Badge>
+            </Group>
+            <Group gap={4} wrap="nowrap">
+              <Button
+                color={CREATE_ACTION_COLOR}
+                size="compact-xs"
+                type="button"
+                variant="subtle"
+                onClick={() => setAllMeasurements(onMeasurementsChange, true)}
+              >
+                Усі
+              </Button>
+              <Button
+                color="gray"
+                size="compact-xs"
+                type="button"
+                variant="subtle"
+                onClick={() => setAllMeasurements(onMeasurementsChange, false)}
+              >
+                Очистити
+              </Button>
+            </Group>
+          </div>
+          <div className="reports-stocks-legacy-measurements__list">
+            {measurements.map((group, groupIndex) => {
+              const groupLabel = getReportFieldLabel(group.Name)
+              const hasDistinctChildren =
+                group.SubList.length > 1
+                || getReportFieldLabel(group.SubList[0]?.Name ?? '') !== groupLabel
+
+              return (
+                <div className="reports-stocks-legacy-measurement" key={group.Name}>
+                  <Checkbox
+                    checked={group.IsChecked}
+                    label={groupLabel}
+                    onChange={() => toggleMeasurementGroup(measurements, groupIndex, onMeasurementsChange)}
+                  />
+                  {hasDistinctChildren ? (
+                    <div className="reports-stocks-legacy-measurement__children">
+                      {group.SubList.map((item, itemIndex) => (
+                        <Checkbox
+                          checked={item.IsChecked}
+                          key={item.Name}
+                          label={getReportFieldLabel(item.Name)}
+                          size="sm"
+                          onChange={() =>
+                            toggleMeasurementItem(measurements, groupIndex, itemIndex, onMeasurementsChange)}
+                        />
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              )
+            })}
+          </div>
+        </section>
+
+        <LegacyGroupingPanel
+          groups={rowGroups}
+          title="Групування рядків"
+          onOpenPicker={() => setGroupingPickerTarget('rows')}
+          onRemove={(index) => onRowGroupsChange((current) => current.filter((_, itemIndex) => itemIndex !== index))}
+        />
+        <LegacyGroupingPanel
+          groups={colGroups}
+          title="Групування стовпців"
+          onOpenPicker={() => setGroupingPickerTarget('columns')}
+          onRemove={(index) => onColGroupsChange((current) => current.filter((_, itemIndex) => itemIndex !== index))}
+        />
+      </div>
+
+      <LegacyGroupingPickerModal
+        opened={groupingPickerTarget !== null}
+        options={groupingSelectData}
+        target={groupingPickerTarget}
+        title={groupingPickerTarget === 'rows' ? 'Групування рядків' : 'Групування стовпців'}
+        onAdd={addGroupingFromPicker}
+        onClose={closeGroupingPicker}
+      />
+
+      <section className="reports-stocks-legacy__selections">
+        <ReportSelectionsCard
+          description={null}
+          filterFieldOptions={filterFieldOptions}
+          from={lookupFrom}
+          selections={selections}
+          title="Умови відбору"
+          to={lookupTo}
+          onChange={onSelectionsChange}
+        />
+      </section>
+    </section>
+  )
+}
+
+type LegacyGroupingPanelProps = {
+  groups: ReportGroupingItem[]
+  title: string
+  onOpenPicker: () => void
+  onRemove: (index: number) => void
+}
+
+function LegacyGroupingPanel({
+  groups,
+  title,
+  onOpenPicker,
+  onRemove,
+}: LegacyGroupingPanelProps) {
+  return (
+    <section className="reports-stocks-legacy-panel">
+      <div className="reports-stocks-legacy-panel__header">
+        <Group className="reports-stocks-legacy-panel__title" gap={6} wrap="nowrap">
+          <Text component="h3">{title}</Text>
+          <Badge className="app-role-pill is-gray" variant="light">
+            {groups.length}
           </Badge>
         </Group>
-        <Group gap={6} wrap="nowrap">
-          <Button
-            color={CREATE_ACTION_COLOR}
-            size="compact-xs"
-            type="button"
-            variant="outline"
-            onClick={() => setAllMeasurements(onChange, true)}
-          >
-            {t('Усі')}
-          </Button>
-          <Button
-            color="gray"
-            size="compact-xs"
-            type="button"
-            variant="subtle"
-            onClick={() => setAllMeasurements(onChange, false)}
-          >
-            {t('Очистити')}
-          </Button>
-        </Group>
-      </Group>
-      <Text c="dimmed" size="xs">
-        {t('Оберіть числа, які мають бути розраховані у звіті.')}
-      </Text>
-
-      <div className="reports-stocks-measurement-groups">
-        {measurements.map((group, groupIndex) => {
-          const groupLabel = getReportFieldLabel(group.Name)
-          const hasDistinctChildren =
-            group.SubList.length > 1
-            || getReportFieldLabel(group.SubList[0]?.Name ?? '') !== groupLabel
-
-          return (
-            <div className="reports-stocks-measurement-group" key={group.Name}>
-              <Checkbox
-                checked={group.IsChecked}
-                className="reports-stocks-measurement-group__toggle"
-                label={groupLabel}
-                onChange={() => toggleMeasurementGroup(measurements, groupIndex, onChange)}
-              />
-              {hasDistinctChildren ? (
-                <div className="reports-stocks-measurement-items">
-                  {group.SubList.map((item, itemIndex) => (
-                    <Checkbox
-                      key={item.Name}
-                      checked={item.IsChecked}
-                      label={getReportFieldLabel(item.Name)}
-                      size="sm"
-                      onChange={() => toggleMeasurementItem(measurements, groupIndex, itemIndex, onChange)}
-                    />
-                  ))}
-                </div>
-              ) : null}
-            </div>
-          )
-        })}
+        <Button
+          aria-label={`Додати поле: ${title}`}
+          className="reports-stocks-legacy-panel__add"
+          color={CREATE_ACTION_COLOR}
+          leftSection={<Plus size={14} />}
+          size="xs"
+          type="button"
+          onClick={onOpenPicker}
+        >
+          Додати
+        </Button>
       </div>
-    </Card>
+      <div className="reports-stocks-legacy-group-list">
+        {groups.length ? (
+          groups.map((group, index) => (
+            <div className="reports-stocks-legacy-group-row" key={`${group.type}-${index}`}>
+              <Text size="sm">{getReportFieldLabel(group.key)}</Text>
+              <Tooltip label="Видалити">
+                <ActionIcon
+                  aria-label={`Видалити ${getReportFieldLabel(group.key)}`}
+                  color="red"
+                  size={28}
+                  type="button"
+                  variant="subtle"
+                  onClick={() => onRemove(index)}
+                >
+                  <Trash2 size={15} />
+                </ActionIcon>
+              </Tooltip>
+            </div>
+          ))
+        ) : (
+          <div className="reports-stocks-legacy-group-list__empty">
+            <Text c="dimmed" size="sm">Додайте поле групування</Text>
+          </div>
+        )}
+      </div>
+    </section>
+  )
+}
+
+type LegacyGroupingPickerModalProps = {
+  opened: boolean
+  options: GroupingOption[]
+  target: 'rows' | 'columns' | null
+  title: string
+  onAdd: (value: string) => void
+  onClose: () => void
+}
+
+function LegacyGroupingPickerModal({
+  opened,
+  options,
+  target,
+  title,
+  onAdd,
+  onClose,
+}: LegacyGroupingPickerModalProps) {
+  const [pickerQuery, setPickerQuery] = useState('')
+  const normalizedPickerQuery = pickerQuery.trim().toLocaleLowerCase('uk-UA')
+  const visibleOptions = useMemo(
+    () =>
+      normalizedPickerQuery
+        ? options.filter((option) => option.label.toLocaleLowerCase('uk-UA').includes(normalizedPickerQuery))
+        : options,
+    [normalizedPickerQuery, options],
+  )
+
+  const closePicker = () => {
+    setPickerQuery('')
+    onClose()
+  }
+
+  const addOption = (value: string) => {
+    setPickerQuery('')
+    onAdd(value)
+  }
+
+  return (
+    <Modal
+      centered
+      classNames={{ title: 'reports-stocks-modal-title' }}
+      opened={opened}
+      size="lg"
+      title={`Додати поле · ${title}`}
+      onClose={closePicker}
+    >
+      <Stack gap="sm">
+        <TextInput
+          aria-label={`Пошук поля: ${title}`}
+          autoFocus
+          placeholder="Назва поля"
+          value={pickerQuery}
+          onChange={(event) => setPickerQuery(event.currentTarget.value)}
+        />
+        {visibleOptions.length ? (
+          <div className="reports-stocks-group-picker">
+            {visibleOptions.map((option) => {
+              const [groupLabel, ...fieldLabelParts] = option.label.split(': ')
+              const fieldLabel = fieldLabelParts.join(': ') || groupLabel
+              const isAssignedToTarget = target ? option.assignedTo.includes(target) : false
+
+              return (
+                <button
+                  className="reports-stocks-group-picker__option"
+                  disabled={isAssignedToTarget}
+                  key={option.value}
+                  type="button"
+                  onClick={() => addOption(option.value)}
+                >
+                  <span className="reports-stocks-group-picker__copy">
+                    <span className="reports-stocks-group-picker__group">{groupLabel}</span>
+                    <span className="reports-stocks-group-picker__label">{fieldLabel}</span>
+                  </span>
+                  {isAssignedToTarget ? (
+                    <Badge
+                      className="app-role-pill is-orange"
+                      variant="light"
+                    >
+                      {target === 'rows' ? 'У рядках' : 'У колонках'}
+                    </Badge>
+                  ) : (
+                    <Plus aria-hidden="true" size={15} />
+                  )}
+                </button>
+              )
+            })}
+          </div>
+        ) : (
+          <div className="reports-stocks-group-picker__empty">
+            <Text c="dimmed" size="sm">Нічого не знайдено</Text>
+          </div>
+        )}
+      </Stack>
+    </Modal>
   )
 }
 
 type GroupingOption = {
-  disabled?: boolean
+  assignedTo: Array<'rows' | 'columns'>
   label: string
   value: string
-}
-
-type ReportStructureCardProps = {
-  colGroups: ReportGroupingItem[]
-  options: GroupingOption[]
-  rowGroups: ReportGroupingItem[]
-  onAddCol: (item: ReportGroupingItem) => void
-  onAddRow: (item: ReportGroupingItem) => void
-  onRemoveCol: (index: number) => void
-  onRemoveRow: (index: number) => void
-  resolveItem: (value: string) => ReportGroupingItem | undefined
-}
-
-function ReportStructureCard({
-  colGroups,
-  options,
-  rowGroups,
-  onAddCol,
-  onAddRow,
-  onRemoveCol,
-  onRemoveRow,
-  resolveItem,
-}: ReportStructureCardProps) {
-  const { t } = useI18n()
-
-  return (
-    <Card className="app-section-card reports-stocks-structure-card" withBorder radius="md" padding="md">
-      <div className="reports-stocks-card-heading">
-        <Text className="app-section-title" component="h2" fw={600}>
-          {t('2. Структура звіту')}
-        </Text>
-        <Text c="dimmed" size="xs">
-          {t('Рядки визначають основний розріз. Колонки додають порівняння всередині кожного рядка.')}
-        </Text>
-      </div>
-      <SimpleGrid className="reports-stocks-grouping-grid" cols={{ base: 1, sm: 2 }} spacing={6}>
-        <GroupingEditor
-          description={t('Обов’язково: як групувати основні рядки звіту.')}
-          groups={rowGroups}
-          options={options}
-          title={t('Рядки')}
-          onAdd={onAddRow}
-          onRemove={onRemoveRow}
-          resolveItem={resolveItem}
-        />
-        <GroupingEditor
-          description={t('Необов’язково: як розкласти результат по колонках.')}
-          groups={colGroups}
-          options={options}
-          title={t('Колонки')}
-          onAdd={onAddCol}
-          onRemove={onRemoveCol}
-          resolveItem={resolveItem}
-        />
-      </SimpleGrid>
-    </Card>
-  )
 }
 
 type FilterFieldOption = {
@@ -798,21 +943,28 @@ type FilterFieldOption = {
 }
 
 type ReportSelectionsCardProps = {
+  description?: string | null
   filterFieldOptions: FilterFieldOption[]
   from: string
   selections: ReportSelection[]
+  title?: string
   to: string
   onChange: StateSetter<ReportSelection[]>
 }
 
 function ReportSelectionsCard({
+  description,
   filterFieldOptions,
   from,
   selections,
+  title,
   to,
   onChange,
 }: ReportSelectionsCardProps) {
   const { t } = useI18n()
+  const resolvedDescription = description === undefined
+    ? t('Необов’язково: звузьте звіт до клієнта, товару, документа або іншої ознаки.')
+    : description
 
   return (
     <Card className="app-section-card reports-stocks-selection-card" withBorder radius="md" padding="md">
@@ -820,15 +972,13 @@ function ReportSelectionsCard({
         <Box>
           <Group gap="xs" wrap="nowrap">
             <Text className="app-section-title" component="h2" fw={600}>
-              {t('3. Умови відбору')}
+              {title ?? t('3. Умови відбору')}
             </Text>
             <Badge className="app-role-pill is-gray" variant="light">
               {selections.length}
             </Badge>
           </Group>
-          <Text c="dimmed" size="xs">
-            {t('Необов’язково: звузьте звіт до клієнта, товару, документа або іншої ознаки.')}
-          </Text>
+          {resolvedDescription ? <Text c="dimmed" size="xs">{resolvedDescription}</Text> : null}
         </Box>
         <Button
           color={CREATE_ACTION_COLOR}
@@ -844,7 +994,10 @@ function ReportSelectionsCard({
       {selections.length ? (
         <div className="reports-stocks-selection-list">
           {selections.map((selection, index) => (
-            <div className="reports-stocks-selection-row" key={getSelectionRenderKey(selection, index)}>
+            <div
+              className={`reports-stocks-selection-row${selection.IsChecked ? ' is-active' : ''}`}
+              key={getSelectionRenderKey(selection, index)}
+            >
               <Checkbox
                 aria-label={`${t('Умова відбору')} ${index + 1}`}
                 checked={selection.IsChecked}
@@ -945,84 +1098,100 @@ function ReportTemplatesCard({
   const { t } = useI18n()
 
   return (
-    <Card className="app-section-card reports-stocks-template-card" withBorder radius="md" padding="md">
-      <div className="reports-stocks-card-heading">
-        <Text className="app-section-title" component="h2" fw={600}>
-          {t('4. Шаблони')}
-        </Text>
-        <Text c="dimmed" size="xs">
-          {t('Необов’язково: збережіть поточне налаштування для наступних запусків.')}
-        </Text>
-      </div>
-      <Group align="end" className="reports-stocks-template-form" gap={10} wrap="nowrap">
-        <TextInput
-          label={t('Назва шаблону')}
-          placeholder={t('Наприклад, продажі за регіонами')}
-          value={templateName}
-          onChange={(event) => onNameChange(event.currentTarget.value)}
-        />
-        <Button
-          color={CREATE_ACTION_COLOR}
-          disabled={!templateName.trim()}
-          type="button"
-          onClick={onSave}
-        >
-          {t('Зберегти')}
-        </Button>
-        <Button
-          color="gray"
-          leftSection={<RefreshCw size={16} />}
-          type="button"
-          variant="default"
-          onClick={onRefresh}
-        >
-          {t('Оновити список')}
-        </Button>
-      </Group>
+    <div className="reports-stocks-template-card">
+      <section className="reports-stocks-template-create">
+        <Group align="end" className="reports-stocks-template-form" gap={10} wrap="nowrap">
+          <TextInput
+            className="reports-stocks-template-name"
+            label={t('Назва шаблону')}
+            placeholder={t('Наприклад, продажі за регіонами')}
+            value={templateName}
+            onChange={(event) => onNameChange(event.currentTarget.value)}
+          />
+          <Button
+            color={CREATE_ACTION_COLOR}
+            disabled={!templateName.trim()}
+            leftSection={<Save size={16} />}
+            type="button"
+            onClick={onSave}
+          >
+            {t('Зберегти')}
+          </Button>
+        </Group>
+      </section>
       {notice ? <Alert color="yellow" icon={<CircleAlert size={18} />}>{notice}</Alert> : null}
-      {templates.length ? (
-        <div className="reports-stocks-template-list">
-          {templates.map((template) => (
-            <Group className="reports-stocks-template-item" key={template.Name} gap={6} wrap="nowrap">
+      <section className="reports-stocks-template-saved">
+        <Group justify="space-between" wrap="nowrap">
+          <Group gap="xs" wrap="nowrap">
+            <Text className="reports-stocks-template-section-title" fw={600}>
+              {t('Збережені шаблони')}
+            </Text>
+            <Badge className="app-role-pill is-gray" variant="light">
+              {templates.length}
+            </Badge>
+          </Group>
+          <Tooltip label={t('Оновити список')}>
+            <ActionIcon aria-label={t('Оновити список')} size={32} type="button" variant="default" onClick={onRefresh}>
+              <RefreshCw size={16} />
+            </ActionIcon>
+          </Tooltip>
+        </Group>
+        {templates.length ? (
+          <div className="reports-stocks-template-list">
+            {templates.map((template) => (
+              <div className="reports-stocks-template-item" key={template.Name}>
               <Button
                 className="reports-stocks-template-open"
                 leftSection={<RotateCcw size={15} />}
-                size="compact-sm"
+                justify="flex-start"
                 type="button"
-                variant="default"
+                variant="subtle"
                 onClick={() => onApply(template)}
               >
-                {template.Name} · {formatDate(template.Data.from)}–{formatDate(template.Data.to)}
+                <span className="reports-stocks-template-open__content">
+                  <span className="reports-stocks-template-open__name">{template.Name}</span>
+                  <span className="reports-stocks-template-open__period">
+                    {formatDate(template.Data.from)}–{formatDate(template.Data.to)}
+                  </span>
+                </span>
               </Button>
-              <Tooltip label={t('Оновити')}>
-                <ActionIcon
-                  aria-label={t('Оновити')}
-                  color={CREATE_ACTION_COLOR}
-                  size={28}
-                  type="button"
-                  variant="subtle"
-                  onClick={() => onUpdate(template.Name)}
-                >
-                  <Save size={15} />
-                </ActionIcon>
-              </Tooltip>
-              <Tooltip label={t('Видалити')}>
-                <ActionIcon
-                  aria-label={t('Видалити')}
-                  color="red"
-                  size={28}
-                  type="button"
-                  variant="subtle"
-                  onClick={() => onDelete(template.Name)}
-                >
-                  <Trash2 size={15} />
-                </ActionIcon>
-              </Tooltip>
-            </Group>
-          ))}
-        </div>
-      ) : null}
-    </Card>
+                <Group className="reports-stocks-template-item__actions" gap={2} wrap="nowrap">
+                  <Tooltip label={t('Оновити шаблон')}>
+                    <ActionIcon
+                      aria-label={t('Оновити шаблон')}
+                      color={CREATE_ACTION_COLOR}
+                      size={30}
+                      type="button"
+                      variant="subtle"
+                      onClick={() => onUpdate(template.Name)}
+                    >
+                      <Save size={15} />
+                    </ActionIcon>
+                  </Tooltip>
+                  <Tooltip label={t('Видалити')}>
+                    <ActionIcon
+                      aria-label={t('Видалити')}
+                      color="red"
+                      size={30}
+                      type="button"
+                      variant="subtle"
+                      onClick={() => onDelete(template.Name)}
+                    >
+                      <Trash2 size={15} />
+                    </ActionIcon>
+                  </Tooltip>
+                </Group>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="reports-stocks-template-empty">
+            <LayoutTemplate size={20} />
+            <Text c="dimmed" size="sm">{t('Збережених шаблонів ще немає')}</Text>
+          </div>
+        )}
+      </section>
+    </div>
   )
 }
 
@@ -1040,13 +1209,80 @@ function ReportResultSection({
   onOpenFiles,
 }: ReportResultSectionProps) {
   const { t } = useI18n()
+  const resultRows = useMemo(() => (lastRun ? [lastRun] : []), [lastRun])
+  const resultColumns = useMemo<DataTableColumn<ReportRunOutcome>[]>(
+    () => [
+      {
+        id: 'period',
+        header: t('Період'),
+        minWidth: 180,
+        accessor: (row) => `${formatDate(row.from)} – ${formatDate(row.to)}`,
+      },
+      {
+        id: 'measures',
+        header: t('Показники'),
+        minWidth: 260,
+        fill: true,
+        accessor: (row) => row.measures.join(', '),
+        cell: (row) => row.measures.join(', ') || '—',
+      },
+      {
+        id: 'rowGroupings',
+        header: t('Групування рядків'),
+        minWidth: 220,
+        accessor: (row) => row.rowGroupings.join(', '),
+        cell: (row) => row.rowGroupings.join(', ') || '—',
+      },
+      {
+        id: 'colGroupings',
+        header: t('Групування стовпців'),
+        minWidth: 220,
+        accessor: (row) => row.colGroupings.join(', '),
+        cell: (row) => row.colGroupings.join(', ') || '—',
+      },
+      {
+        id: 'status',
+        header: t('Статус'),
+        minWidth: 150,
+        align: 'center',
+        accessor: (row) => row.hasDocument,
+        cell: (row) => (
+          <Badge color={row.hasDocument ? 'green' : 'orange'} variant="light">
+            {row.hasDocument ? t('Готово') : t('Файл не сформовано')}
+          </Badge>
+        ),
+      },
+      {
+        id: 'actions',
+        header: '',
+        width: 170,
+        rowActions: true,
+        enableHiding: false,
+        enableReorder: false,
+        enableResizing: false,
+        cell: (row) => (
+          <Button
+            color={CREATE_ACTION_COLOR}
+            disabled={!row.hasDocument || !hasFiles}
+            leftSection={<ExcelIcon size={15} />}
+            size="compact-sm"
+            type="button"
+            onClick={onOpenFiles}
+          >
+            {t('Завантажити')}
+          </Button>
+        ),
+      },
+    ],
+    [hasFiles, onOpenFiles, t],
+  )
 
   return (
-    <section className="app-section-card reports-stocks-result">
-      <Group className="reports-stocks-result-header" justify="space-between" wrap="nowrap">
+    <section className="reports-stocks-result" aria-labelledby="reports-stocks-result-title">
+      <Group className="reports-stocks-result__header" justify="space-between" wrap="nowrap">
         <Box>
-          <Text className="app-section-title" component="h2" fw={600}>
-            {t('5. Результат')}
+          <Text className="app-section-title" component="h2" fw={600} id="reports-stocks-result-title">
+            {t('Результат')}
           </Text>
           <Text size="xs" c="dimmed">
             {lastRun
@@ -1054,29 +1290,26 @@ function ReportResultSection({
               : t('Після формування тут з’являться файли Excel і PDF.')}
           </Text>
         </Box>
-        <Button
-          disabled={!hasFiles}
-          leftSection={<ExcelIcon size={15} />}
-          size="compact-sm"
-          type="button"
-          variant="default"
-          onClick={onOpenFiles}
-        >
-          {t('Завантажити файли')}
-        </Button>
       </Group>
-
-      {/* The report endpoint returns file links but no rows, so the generated workbook/PDF is the result. */}
-      <div className="reports-stocks-empty-state" role="status">
-        <Box>
-          <Text className="reports-stocks-empty-title" fw={600}>
-            {placeholder.title}
-          </Text>
-          <Text c="dimmed" size="sm">
-            {placeholder.description}
-          </Text>
-        </Box>
-      </div>
+      <DataTable
+        columns={resultColumns}
+        data={resultRows}
+        density="normal"
+        distributeAvailableWidth
+        emptyText={(
+          <Box className="reports-stocks-result__empty" role="status">
+            <Text fw={600}>{placeholder.title}</Text>
+            <Text c="dimmed" size="sm">{placeholder.description}</Text>
+          </Box>
+        )}
+        getRowId={(row) => `${row.from}-${row.to}`}
+        height={156}
+        layoutVersion="reports-stocks-result-v1"
+        minWidth={1080}
+        showDensityToggle={false}
+        showLayoutControls={false}
+        tableId="reports-stocks-result"
+      />
     </section>
   )
 }
@@ -1392,74 +1625,6 @@ function SelectionValuePicker({ error, from, label, selection, selections, to, o
   )
 }
 
-type GroupingEditorProps = {
-  description: string
-  groups: ReportGroupingItem[]
-  options: Array<{ disabled?: boolean; label: string; value: string }>
-  title: string
-  onAdd: (item: ReportGroupingItem) => void
-  onRemove: (index: number) => void
-  resolveItem: (value: string) => ReportGroupingItem | undefined
-}
-
-function GroupingEditor({ description, groups, options, title, onAdd, onRemove, resolveItem }: GroupingEditorProps) {
-  const { t } = useI18n()
-
-  return (
-    <section className="reports-stocks-grouping-panel">
-      <Stack gap={10}>
-        <Group className="reports-stocks-section-header" align="flex-start" justify="space-between" wrap="nowrap">
-          <Box>
-            <Text className="reports-stocks-subsection-title" component="h3" fw={600}>
-              {title}
-            </Text>
-            <Text c="dimmed" size="xs">{description}</Text>
-          </Box>
-          <Badge className="app-role-pill is-gray" variant="light">
-            {groups.length}
-          </Badge>
-        </Group>
-        <Select
-          clearable
-          data={options}
-          placeholder={t('Додати групування')}
-          searchable
-          value={null}
-          onChange={(value) => {
-            const item = value ? resolveItem(value) : undefined
-
-            if (item) {
-              onAdd(item)
-            }
-          }}
-        />
-        <div className="reports-stocks-group-list">
-          {groups.map((group, index) => (
-            <div className="reports-stocks-group-item" key={`${group.type}-${group.key}`}>
-              <Text size="sm">{getReportFieldLabel(group.key)}</Text>
-              <ActionIcon
-                aria-label={t('Видалити')}
-                color="red"
-                size={28}
-                type="button"
-                variant="subtle"
-                onClick={() => onRemove(index)}
-              >
-                <Trash2 size={15} />
-              </ActionIcon>
-            </div>
-          ))}
-          {!groups.length ? (
-            <Text className="reports-stocks-group-empty" size="xs" c="dimmed">
-              {t('Групування не додано')}
-            </Text>
-          ) : null}
-        </div>
-      </Stack>
-    </section>
-  )
-}
-
 function getPeriodError(from: string, to: string, maxDate: string, t: TranslateFunction): string | null {
   if (!from || !to) {
     return t('Оберіть період')
@@ -1484,18 +1649,14 @@ function isIncompleteSelection(selection: ReportSelection): boolean {
   return selection.IsChecked && Boolean(selection.SelectedField.Name) && selection.Values.length === 0
 }
 
-function addGrouping(
-  current: ReportGroupingItem[],
-  item: ReportGroupingItem,
-  otherAxis: ReportGroupingItem[],
-): ReportGroupingItem[] {
-  const isTaken = [...current, ...otherAxis].some((group) => group.type === item.type)
+function addGrouping(current: ReportGroupingItem[], item: ReportGroupingItem): ReportGroupingItem[] {
+  const isTaken = current.some((group) => group.type === item.type)
 
   return isTaken ? current : [...current, item]
 }
 
-function dedupeGroupings(items: ReportGroupingItem[], taken: ReportGroupingItem[] = []): ReportGroupingItem[] {
-  const seenTypes = new Set(taken.map((item) => item.type))
+function dedupeGroupings(items: ReportGroupingItem[]): ReportGroupingItem[] {
+  const seenTypes = new Set<number>()
   const result: ReportGroupingItem[] = []
 
   for (const item of items) {
