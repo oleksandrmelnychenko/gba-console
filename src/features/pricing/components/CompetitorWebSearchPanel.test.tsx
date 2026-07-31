@@ -80,19 +80,19 @@ describe('CompetitorWebSearchPanel', () => {
         {
           availability: 'in_stock',
           delivery_text: 'відправка сьогодні',
-          marketplace_name: 'Prom.ua',
+          marketplace_name: 'STRANS',
           original_price_uah: 1399,
           price_uah: 1250,
           seller_name: 'Авто Світ',
           similarity_score: 0.97,
-          source: 'prom',
+          source: 'strans',
           title: 'Bosch OE-1 — точний збіг',
-          url: 'https://prom.ua/ua/example',
+          url: 'https://strans-shop.com.ua/shop/product/887756',
         },
       ],
       query: 'OE-1 SKU-1 First product',
       searched_at: '2026-07-31T11:30:00Z',
-      sources_scanned: ['prom'],
+      sources_scanned: ['strans'],
     })
 
     render(
@@ -119,7 +119,7 @@ describe('CompetitorWebSearchPanel', () => {
       market: 'UA',
       product_net_uid: '11111111-1111-1111-1111-111111111111',
       query: 'OE-1 SKU-1 First product',
-      sources: ['prom', 'rozetka', 'hotline', 'avtopro', 'google'],
+      sources: ['strans', 'cargo_parts', 'intercars', 'omega', 'tir_market'],
     }, expect.any(AbortSignal))
   })
 })

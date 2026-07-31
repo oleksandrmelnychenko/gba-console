@@ -39,6 +39,9 @@ type CompetitorSource = {
   key: CompetitorSourceKey
   label: string
   shortLabel: string
+  priority: number
+  accessLabel: string | null
+  accessHint: string
   buildUrl: (query: string) => string
 }
 
@@ -46,34 +49,49 @@ type SearchStatus = 'idle' | 'loading' | 'success' | 'error' | 'unavailable'
 
 const COMPETITOR_SOURCES: CompetitorSource[] = [
   {
-    key: 'prom',
-    label: 'Prom.ua',
-    shortLabel: 'PROM',
-    buildUrl: (query) => `https://prom.ua/ua/search?search_term=${encodeURIComponent(query)}`,
+    key: 'strans',
+    label: 'STRANS',
+    shortLabel: 'STR',
+    priority: 1,
+    accessLabel: 'ГОЛОВНИЙ',
+    accessHint: 'Головний конкурент: публічні ціни, наявність і мережа складів',
+    buildUrl: (query) => `https://strans-shop.com.ua/search/product/${encodeURIComponent(query)}`,
   },
   {
-    key: 'rozetka',
-    label: 'Rozetka',
-    shortLabel: 'RZTK',
-    buildUrl: (query) => `https://rozetka.com.ua/ua/search/?text=${encodeURIComponent(query)}`,
+    key: 'cargo_parts',
+    label: 'Cargo Parts',
+    shortLabel: 'CRGO',
+    priority: 2,
+    accessLabel: 'B2B',
+    accessHint: 'Ціна доступна лише після входу в B2B',
+    buildUrl: () => 'https://www.cargo-parts.ua/b2b/login',
   },
   {
-    key: 'hotline',
-    label: 'Hotline',
-    shortLabel: 'HOT',
-    buildUrl: (query) => buildSiteSearchUrl('hotline.ua', query),
+    key: 'intercars',
+    label: 'Inter Cars',
+    shortLabel: 'IC',
+    priority: 3,
+    accessLabel: null,
+    accessHint: 'Inter Cars Ukraine; сайт може виконувати перевірку браузера',
+    buildUrl: (query) => buildSiteSearchUrl('webshop-ua.intercars.eu', query),
   },
   {
-    key: 'avtopro',
-    label: 'Avto.pro',
-    shortLabel: 'AVTO',
-    buildUrl: (query) => buildSiteSearchUrl('avto.pro', query),
+    key: 'omega',
+    label: 'Омега',
+    shortLabel: 'OMG',
+    priority: 4,
+    accessLabel: 'B2B',
+    accessHint: 'Асортимент публічний, ціна доступна після входу для партнерів',
+    buildUrl: () => 'https://omega.page/spare',
   },
   {
-    key: 'google',
-    label: 'Весь веб',
-    shortLabel: 'WEB',
-    buildUrl: (query) => `https://www.google.com/search?tbm=shop&q=${encodeURIComponent(query)}`,
+    key: 'tir_market',
+    label: 'TIR Market',
+    shortLabel: 'TIR',
+    priority: 5,
+    accessLabel: 'ВОЛИНЬ',
+    accessHint: 'Партнер-конкурент із власним імпортом і сильним покриттям Волині',
+    buildUrl: (query) => `https://tirmarket.com.ua/?s=${encodeURIComponent(query)}`,
   },
 ]
 
@@ -200,7 +218,7 @@ function CompetitorWebSearchPanelContent({
         </div>
 
         <Text className="competitor-radar__lead">
-          {t('AI збере пропозиції українських магазинів, відсіє неточні збіги та покаже ціновий коридор.')}
+          {t('AI перевірить 5 ключових конкурентів у заданому пріоритеті, відсіє неточні збіги та покаже ціновий коридор.')}
         </Text>
 
         <div className="competitor-radar__search-row">
@@ -239,10 +257,17 @@ function CompetitorWebSearchPanelContent({
                 key={source.key}
                 onClick={() => toggleSource(source.key)}
                 role="checkbox"
+                title={t(source.accessHint)}
                 type="button"
               >
-                <span>{active && <Check size={11} strokeWidth={3} />}</span>
+                <span className="competitor-radar__source-check">
+                  {active && <Check size={11} strokeWidth={3} />}
+                </span>
+                <span className="competitor-radar__source-rank">{source.priority}</span>
                 {source.label}
+                {source.accessLabel && (
+                  <span className="competitor-radar__source-access">{t(source.accessLabel)}</span>
+                )}
               </button>
             )
           })}
@@ -300,7 +325,7 @@ function PromptDisclosure() {
           <span className="competitor-radar__prompt-kicker">SYSTEM PROMPT · READ ONLY</span>
           <span className="competitor-radar__prompt-title">{t('Як Anthropic шукає та перевіряє ціни')}</span>
         </span>
-        <span className="competitor-radar__prompt-metric">11 {t('правил доказовості')}</span>
+        <span className="competitor-radar__prompt-metric">13 {t('правил доказовості')}</span>
         <span className="competitor-radar__prompt-action">
           {expanded ? t('Згорнути') : t('Розгорнути')}
           <ChevronDown size={15} aria-hidden="true" />

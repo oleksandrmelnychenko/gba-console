@@ -17,7 +17,13 @@ import type {
 
 const GUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const PRICE_CONFIDENCES: PriceConfidence[] = ['high', 'medium', 'low']
-const COMPETITOR_SOURCES: CompetitorSourceKey[] = ['avtopro', 'google', 'hotline', 'prom', 'rozetka']
+const COMPETITOR_SOURCES: CompetitorSourceKey[] = [
+  'strans',
+  'cargo_parts',
+  'intercars',
+  'omega',
+  'tir_market',
+]
 const COMPETITOR_AVAILABILITIES: CompetitorOfferAvailability[] = ['in_stock', 'limited', 'out_of_stock', 'unknown']
 const CENT_EPSILON = 1e-7
 
