@@ -6,14 +6,14 @@ import { useI18n } from '../../../../shared/i18n/useI18n'
 import type {
   Client,
   ClientAgreement,
+  ClientIdentityAttentionSummary,
   ClientInDebt,
-  ClientLegalPartySalesRiskSummary,
 } from '../../../clients/types'
 import { WizardClientAgreementsPopover } from './WizardClientAgreementsPopover'
 import {
   getWizardClientAgreements,
   getWizardClientGroupedDebts,
-  getWizardClientLegalPartyRisk,
+  getWizardClientIdentityAttention,
   getWizardSalesRegister,
   mapWizardSaleRegisterItems,
   WIZARD_SALE_REGISTER_STATUS_ALL,
@@ -48,9 +48,9 @@ export const WizardClientHeroHeader = memo(function WizardClientHeroHeader({
   const [loadedAgreements, setLoadedAgreements] = useState<{ key: string; value: ClientAgreement[] } | null>(null)
   const [loadedDebts, setLoadedDebts] = useState<{ key: string; value: ClientInDebt[] } | null>(null)
   const [loadedRegistryCount, setLoadedRegistryCount] = useState<{ key: string; value: number } | null>(null)
-  const [loadedLegalPartyRisk, setLoadedLegalPartyRisk] = useState<{
+  const [loadedIdentityAttention, setLoadedIdentityAttention] = useState<{
     key: string
-    value: ClientLegalPartySalesRiskSummary | null
+    value: ClientIdentityAttentionSummary | null
   } | null>(null)
 
   const resolvedClient = client ?? (clientNetId && loadedClient?.key === clientNetId ? loadedClient.value : null)
@@ -65,10 +65,10 @@ export const WizardClientHeroHeader = memo(function WizardClientHeroHeader({
     let cancelled = false
 
     async function load() {
-      const next = await getWizardClientLegalPartyRisk(id).catch(() => null)
+      const next = await getWizardClientIdentityAttention(id).catch(() => null)
 
       if (!cancelled) {
-        setLoadedLegalPartyRisk({ key: id, value: next })
+        setLoadedIdentityAttention({ key: id, value: next })
       }
     }
 
@@ -212,9 +212,9 @@ export const WizardClientHeroHeader = memo(function WizardClientHeroHeader({
   const visibleAgreements = agreements ?? (resolvedNetId && loadedAgreements?.key === resolvedNetId ? loadedAgreements.value : [])
   const visibleDebts = debts ?? (resolvedNetId && loadedDebts?.key === resolvedNetId ? loadedDebts.value : [])
   const visibleRegistryCount = registryCount ?? (resolvedNetId && loadedRegistryCount?.key === resolvedNetId ? loadedRegistryCount.value : 0)
-  const legalPartyRisk =
-    resolvedNetId && loadedLegalPartyRisk?.key === resolvedNetId
-      ? loadedLegalPartyRisk.value
+  const identityAttention =
+    resolvedNetId && loadedIdentityAttention?.key === resolvedNetId
+      ? loadedIdentityAttention.value
       : null
   const clientTitle = resolvedClient.FullName || resolvedClient.Name || ''
   const clientCode = resolvedClient.RegionCode?.Value || resolvedClient.ClientNumber || resolvedClient.USREOU || ''
@@ -270,9 +270,8 @@ export const WizardClientHeroHeader = memo(function WizardClientHeroHeader({
                 {t('Є борг')}
               </span>
             )}
-            {legalPartyRisk &&
-              (legalPartyRisk.HasOverdueDebt || legalPartyRisk.HasBlockedClient || legalPartyRisk.HasDuplicates) && (
-                <WizardLegalPartyRiskPopover risk={legalPartyRisk} />
+            {identityAttention && identityAttention.AttentionLevel !== 'none' && (
+                <WizardLegalPartyRiskPopover risk={identityAttention} />
               )}
           </Group>
           {clientContacts.length > 0 && (

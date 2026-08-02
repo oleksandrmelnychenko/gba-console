@@ -1,5 +1,6 @@
 import { apiRequest } from '../../../shared/api/apiClient'
 import {
+  executeAccountingMutation,
   getAccountingMutationHeaders,
   type AccountingMutationOperationOptions,
 } from '../../../shared/api/accountingMutationOperation'
@@ -167,14 +168,36 @@ export async function getAvailablePaymentTaskByNetId(netId: string): Promise<Sup
 export async function setAvailablePaymentTaskToActive(
   task: SupplyPaymentTask,
   documents: File[],
+  operation?: AccountingMutationOperationOptions,
 ): Promise<SupplyPaymentTask | null> {
-  const formData = new FormData()
-  formData.append('task', JSON.stringify(toPersistedPaymentTaskPayload(task)))
-  documents.forEach((document) => formData.append('documents', document))
+  const taskPayload = toPersistedPaymentTaskPayload(task)
+  const uploads = documents.map((document) => ({
+    lastModified: document.lastModified,
+    name: document.name,
+    size: document.size,
+    type: document.type,
+  }))
+  const result = await executeAccountingMutation({
+    identity: task,
+    kind: 'supply-payment-task:set-available',
+    operation,
+    payload: {
+      task: taskPayload,
+      uploads,
+    },
+    request: (payload, context) => {
+      const formData = new FormData()
+      formData.append('task', JSON.stringify(payload.task))
+      documents.forEach((document) => formData.append('documents', document))
 
-  const result = await apiRequest<unknown>('/payments/tasks/available/set', {
-    body: formData,
-    method: 'POST',
+      return apiRequest<unknown>('/payments/tasks/available/set', {
+        body: formData,
+        dedupe: false,
+        headers: context.headers,
+        method: 'POST',
+        ...(context.signal ? { signal: context.signal } : {}),
+      })
+    },
   })
 
   return result && typeof result === 'object' ? (result as SupplyPaymentTask) : null

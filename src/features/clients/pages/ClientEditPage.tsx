@@ -24,6 +24,7 @@ import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useAuth } from '../../auth/useAuth'
 import { deleteClient, getClientById, updateClient } from '../api/clientFormApi'
+import { getClientIdentityAttention } from '../api/clientsApi'
 import { uploadClientContract } from '../api/clientCabinetApi'
 import {
   createCountry,
@@ -53,7 +54,15 @@ import {
   EDIT_CLIENT_PRICING_PERMISSION,
   EDIT_CLIENT_TYPE_PERMISSION,
 } from '../permissions'
-import type { Client, ClientContractDocument, ClientType, ClientTypeRole, Currency, Region } from '../types'
+import type {
+  Client,
+  ClientContractDocument,
+  ClientIdentityAttentionSummary,
+  ClientType,
+  ClientTypeRole,
+  Currency,
+  Region,
+} from '../types'
 import './client-edit-page.css'
 
 // Per-step icon for the edit-sheet side nav (Roles-style numbered list).
@@ -131,6 +140,7 @@ export function ClientEditPage() {
   const navigate = useNavigate()
   const { hasPermission } = useAuth()
   const [client, setClient] = useValueState<Client | null>(null)
+  const [identityAttention, setIdentityAttention] = useValueState<ClientIdentityAttentionSummary | null>(null)
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
   const [isSaving, setSaving] = useValueState(false)
@@ -199,6 +209,37 @@ export function ClientEditPage() {
       cancelled = true
     }
   }, [netid, setClient, setError, setLoading, t])
+
+  useEffect(() => {
+    if (!netid) {
+      setIdentityAttention(null)
+      return
+    }
+
+    const clientNetId = netid
+    const controller = new AbortController()
+    let cancelled = false
+
+    async function loadIdentityAttention() {
+      try {
+        const attention = await getClientIdentityAttention(clientNetId, controller.signal)
+        if (!cancelled) {
+          setIdentityAttention(attention)
+        }
+      } catch {
+        if (!cancelled) {
+          setIdentityAttention(null)
+        }
+      }
+    }
+
+    void loadIdentityAttention()
+
+    return () => {
+      cancelled = true
+      controller.abort()
+    }
+  }, [netid, setIdentityAttention])
 
   const steps = useMemo(() => buildEditSteps(client, hasPermission), [client, hasPermission])
   const activeStep = steps.find((item) => item.value === step)
@@ -642,6 +683,10 @@ export function ClientEditPage() {
         </Alert>
       )}
 
+      {identityAttention && identityAttention.AttentionLevel !== 'none' ? (
+        <ClientIdentityAttentionBanner attention={identityAttention} />
+      ) : null}
+
       <ClientEditBody
         client={client}
         errors={formErrors}
@@ -694,6 +739,36 @@ export function ClientEditPage() {
       />
     </Stack>
     </AppDrawer>
+  )
+}
+
+function ClientIdentityAttentionBanner({
+  attention,
+}: {
+  attention: ClientIdentityAttentionSummary
+}) {
+  const { t } = useI18n()
+  const color = attention.AttentionLevel === 'critical' ? 'red' : 'orange'
+  const title = attention.HasRelatedOverdueDebt
+    ? `${t('Прострочення в іншій картці')} · ${attention.MaxOverdueDays} ${t('дн.')}`
+    : attention.HasOwnOverdueDebt
+      ? `${t('Є прострочений борг')} · ${attention.MaxOverdueDays} ${t('дн.')}`
+      : attention.IsTargetBlocked
+        ? t('Картку клієнта заблоковано')
+        : attention.RequiresReview
+          ? t('Потрібно перевірити зв’язок карток')
+          : attention.LegalCodeQuality === 'invalid'
+            ? t('ЄДРПОУ / ІПН заповнений некоректно')
+            : t('Дані клієнта потребують уваги')
+
+  return (
+    <Alert color={color} icon={<CircleAlert size={18} />} title={title} variant="light">
+      <Text size="sm">
+        {attention.Candidates.length > 1
+          ? `${t('Знайдено карток')}: ${attention.Candidates.length}. ${t('Перевірте ролі, контакти та фінансові дані перед зміною клієнта.')}`
+          : t('Перевірте ЄДРПОУ / ІПН та реквізити клієнта.')}
+      </Text>
+    </Alert>
   )
 }
 

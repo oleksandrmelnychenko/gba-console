@@ -16,6 +16,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
+import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, Clock, ExternalLink, Network, Plus, RotateCcw, Search, ToggleLeft, ToggleRight, Wallet } from 'lucide-react'
@@ -43,12 +44,19 @@ import {
   exportClientsDocument,
   getClientCount,
   getClientFilterItems,
+  getClientIdentityAttentionBatch,
   getClients,
   getClientTypes,
   switchClientActiveState,
   updateClientOrderExpireDays,
 } from '../api/clientsApi'
-import type { Client, ClientFilterItem, ClientPrintDocument, ClientType } from '../types'
+import type {
+  Client,
+  ClientFilterItem,
+  ClientIdentityAttentionSummary,
+  ClientPrintDocument,
+  ClientType,
+} from '../types'
 import { getClientSolvencyScoresBatch } from '../api/clientSolvencyApi'
 import { SolvencyGaugeCell } from '../components/solvency/SolvencyGaugeCell'
 import type { SolvencyScore } from '../solvencyTypes'
@@ -62,6 +70,10 @@ const CLIENT_VIEW_PERMISSION = 'View_row_clientModal_clientsAll_PKEY'
 
 type ActiveFilter = 'all' | 'active' | 'inactive'
 type ClientAction = 'active' | 'reserve' | 'export' | null
+type ClientAttentionSelection = {
+  client: Client
+  attention: ClientIdentityAttentionSummary
+}
 
 const DEFAULT_SEARCH_FIELD_OPTIONS = [
   { value: CLIENT_SEARCH_SQL, label: 'Код, назва або ЄДРПОУ' },
@@ -110,6 +122,10 @@ const CLIENT_CODE_SUBTEXT_STYLE = {
 const CLIENT_TABLE_PAGE_SIZE_STORAGE_KEY = 'gba-data-table:clients:page-size'
 const DEFAULT_CLIENT_TABLE_PAGE_SIZE = DEFAULT_PAGINATOR_PAGE_SIZE
 const CLIENT_SEARCH_DEBOUNCE_MS = 350
+const ATTENTION_MONEY_FORMATTER = new Intl.NumberFormat('uk-UA', {
+  maximumFractionDigits: 2,
+  minimumFractionDigits: 0,
+})
 const CLIENT_TABLE_CELL_STYLE = {
   display: 'block',
   lineHeight: '18px',
@@ -130,6 +146,11 @@ function useClientsPageModel() {
   const [clients, setClients] = useValueState<Client[]>([])
   const [solvencyScores, setSolvencyScores] = useValueState<Map<number, SolvencyScore>>(() => new Map())
   const [solvencyScoresError, setSolvencyScoresError] = useValueState<string | null>(null)
+  const [identityAttention, setIdentityAttention] = useValueState<Map<string, ClientIdentityAttentionSummary>>(
+    () => new Map(),
+  )
+  const [identityAttentionError, setIdentityAttentionError] = useValueState<string | null>(null)
+  const [attentionSelection, setAttentionSelection] = useValueState<ClientAttentionSelection | null>(null)
   const [clientTypes, setClientTypes] = useValueState<ClientType[]>([])
   const [clientFilterItems, setClientFilterItems] = useValueState<ClientFilterItem[]>([])
   const [totalCount, setTotalCount] = useValueState<number | null>(null)
@@ -202,12 +223,27 @@ function useClientsPageModel() {
     [active, normalizedSearchValue, offset, pageSize, searchField, selectedFilterItem, typeRoleFilter],
   )
   const openClientActions = useCallback((client: Client) => setSelectedClient(client), [setSelectedClient])
-  const clientColumns = useClientColumns(openClientActions, solvencyScores)
+  const openIdentityAttention = useCallback((client: Client, attention: ClientIdentityAttentionSummary) => {
+    setAttentionSelection({ client, attention })
+  }, [setAttentionSelection])
+  const clientColumns = useClientColumns(
+    openClientActions,
+    solvencyScores,
+    identityAttention,
+    openIdentityAttention,
+  )
   const solvencyClientIds = useMemo(
     () => clients.map((client) => client.Id).filter((id): id is number => typeof id === 'number'),
     [clients],
   )
   const solvencyClientIdsKey = solvencyClientIds.join(',')
+  const identityClientNetIdsKey = useMemo(
+    () => clients
+      .map((client) => client.NetUid)
+      .filter((netId): netId is string => Boolean(netId))
+      .join(','),
+    [clients],
+  )
   const changePageSize = useCallback((value: string | null) => {
     const nextPageSize = normalizeClientTablePageSize(value)
 
@@ -279,6 +315,45 @@ function useClientsPageModel() {
       controller.abort()
     }
   }, [setSolvencyScores, setSolvencyScoresError, solvencyClientIdsKey, t])
+  useEffect(() => {
+    if (!identityClientNetIdsKey) {
+      setIdentityAttention(new Map())
+      setIdentityAttentionError(null)
+      return
+    }
+
+    const controller = new AbortController()
+    let cancelled = false
+
+    async function loadIdentityAttention() {
+      try {
+        const items = await getClientIdentityAttentionBatch(
+          identityClientNetIdsKey.split(','),
+          controller.signal,
+        )
+        if (cancelled) {
+          return
+        }
+
+        setIdentityAttention(new Map(items.map((item) => [item.ClientNetUid, item])))
+        setIdentityAttentionError(null)
+      } catch (loadError) {
+        if (!cancelled) {
+          setIdentityAttention(new Map())
+          setIdentityAttentionError(
+            loadError instanceof Error ? loadError.message : t('Маркери якості даних недоступні'),
+          )
+        }
+      }
+    }
+
+    void loadIdentityAttention()
+
+    return () => {
+      cancelled = true
+      controller.abort()
+    }
+  }, [identityClientNetIdsKey, setIdentityAttention, setIdentityAttentionError, t])
   useEffect(() => {
     const controller = new AbortController()
     let cancelled = false
@@ -533,6 +608,7 @@ function useClientsPageModel() {
 
   return {
     activeFilter,
+    attentionSelection,
     canCreateClient,
     canOpenCashFlow,
     canViewClient,
@@ -543,6 +619,7 @@ function useClientsPageModel() {
     downloadDocument,
     downloadModalOpened,
     error,
+    identityAttentionError,
     isLoading,
     isTableBusy,
     page,
@@ -571,6 +648,7 @@ function useClientsPageModel() {
     openReserveDays,
     resetSearch,
     setActiveFilter: setActiveFilterInUrl,
+    setAttentionSelection,
     setDownloadModalOpened,
     setPage,
     setReserveClient,
@@ -595,6 +673,7 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const {
     activeFilter,
+    attentionSelection,
     canCreateClient,
     canOpenCashFlow,
     canViewClient,
@@ -605,6 +684,7 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
     downloadDocument,
     downloadModalOpened,
     error,
+    identityAttentionError,
     isLoading,
     isTableBusy,
     page,
@@ -633,6 +713,7 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
     openReserveDays,
     resetSearch,
     setActiveFilter,
+    setAttentionSelection,
     setDownloadModalOpened,
     setPage,
     setReserveClient,
@@ -703,6 +784,11 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
             {solvencyScoresError}
           </Alert>
         )}
+        {identityAttentionError && (
+          <Alert className="clients-page__alert" color="orange" icon={<CircleAlert size={18} />} variant="light">
+            {identityAttentionError}
+          </Alert>
+        )}
 
         <div className="clients-page__table">
           <DataTable
@@ -765,6 +851,11 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
           setStructureClient(null)
           openClient(subClient)
         }}
+      />
+
+      <ClientIdentityAttentionDrawer
+        selection={attentionSelection}
+        onClose={() => setAttentionSelection(null)}
       />
     </Stack>
   )
@@ -1134,9 +1225,9 @@ function ClientStructureModal({
     >
       <Stack gap="sm">
         {subClients.length > 0 ? (
-          subClients.map((subClient, index) => (
+          subClients.map((subClient) => (
             <Button
-              key={subClient.NetUid || subClient.Id || index}
+              key={subClient.NetUid || subClient.Id || `${subClient.ClientNumber || ''}:${subClient.FullName || ''}`}
               fullWidth
               justify="flex-start"
               leftSection={<ExternalLink size={16} />}
@@ -1166,6 +1257,8 @@ function ClientStructureModal({
 function useClientColumns(
   onOpenActions: (client: Client) => void,
   solvencyScores: Map<number, SolvencyScore>,
+  identityAttention: Map<string, ClientIdentityAttentionSummary>,
+  onOpenIdentityAttention: (client: Client, attention: ClientIdentityAttentionSummary) => void,
 ) {
   const { t } = useI18n()
 
@@ -1194,7 +1287,16 @@ function useClientColumns(
         minWidth: 220,
         fill: true,
         accessor: getClientDisplayName,
-        cell: (client) => <ClientNameCell client={client} />,
+        cell: (client) => {
+          const attention = client.NetUid ? identityAttention.get(client.NetUid) : undefined
+          return (
+            <ClientNameCell
+              attention={attention}
+              client={client}
+              onOpenIdentityAttention={onOpenIdentityAttention}
+            />
+          )
+        },
       },
       {
         id: 'solvency',
@@ -1318,7 +1420,7 @@ function useClientColumns(
         ),
       },
     ],
-    [onOpenActions, solvencyScores, t],
+    [identityAttention, onOpenActions, onOpenIdentityAttention, solvencyScores, t],
   )
 }
 
@@ -1334,7 +1436,15 @@ function ClientTableValue({ fw, value }: { fw?: number; value: string }) {
 
 /* Client column cell: name with the region code as a second, dimmed line
    (the standalone «Код» column was folded in here). */
-function ClientNameCell({ client }: { client: Client }) {
+function ClientNameCell({
+  attention,
+  client,
+  onOpenIdentityAttention,
+}: {
+  attention?: ClientIdentityAttentionSummary
+  client: Client
+  onOpenIdentityAttention: (client: Client, attention: ClientIdentityAttentionSummary) => void
+}) {
   const name = getClientDisplayName(client)
   const code = displayValue(client.RegionCode?.Value)
 
@@ -1348,8 +1458,279 @@ function ClientNameCell({ client }: { client: Client }) {
           {code}
         </Text>
       ) : null}
+      {attention && attention.AttentionLevel !== 'none' ? (
+        <ClientIdentityAttentionBadge
+          attention={attention}
+          onClick={() => onOpenIdentityAttention(client, attention)}
+        />
+      ) : null}
     </span>
   )
+}
+
+function ClientIdentityAttentionBadge({
+  attention,
+  onClick,
+}: {
+  attention: ClientIdentityAttentionSummary
+  onClick: () => void
+}) {
+  const { t } = useI18n()
+  const color = attention.AttentionLevel === 'critical' ? 'red' : attention.AttentionLevel === 'warning' ? 'orange' : 'blue'
+  const label = getIdentityAttentionLabel(attention, t)
+
+  return (
+    <Badge
+      aria-label={label}
+      className="client-identity-attention-badge"
+      color={color}
+      component="button"
+      leftSection={<CircleAlert size={11} />}
+      size="xs"
+      title={label}
+      type="button"
+      variant="light"
+      onClick={(event) => {
+        event.stopPropagation()
+        onClick()
+      }}
+    >
+      {label}
+    </Badge>
+  )
+}
+
+function ClientIdentityAttentionDrawer({
+  selection,
+  onClose,
+}: {
+  selection: ClientAttentionSelection | null
+  onClose: () => void
+}) {
+  const { t } = useI18n()
+  const attention = selection?.attention
+  const client = selection?.client
+  const color = attention?.AttentionLevel === 'critical'
+    ? 'red'
+    : attention?.AttentionLevel === 'warning'
+      ? 'orange'
+      : 'blue'
+
+  return (
+    <AppDrawer
+      opened={Boolean(selection)}
+      position="right"
+      size="compact"
+      title={t('Дані клієнта потребують уваги')}
+      onClose={onClose}
+    >
+      {attention && client ? (
+        <Stack gap="md">
+          <Box>
+            <Text fw={700}>{getClientDisplayName(client)}</Text>
+            <Text c="dimmed" size="sm">
+              {attention.NormalizedLegalCode
+                ? `${t('ЄДРПОУ / ІПН')}: ${attention.NormalizedLegalCode}`
+                : getLegalCodeQualityLabel(attention.LegalCodeQuality, t)}
+            </Text>
+          </Box>
+
+          <Alert color={color} icon={<CircleAlert size={18} />} variant="light">
+            <Text fw={700} size="sm">
+              {getIdentityAttentionLabel(attention, t)}
+            </Text>
+            <Text mt={4} size="xs">
+              {attention.BlocksSale
+                ? t('Сервер повторно перевіряє цей ризик перед передачею продажу на пакування.')
+                : t('Маркер не об’єднує картки автоматично — він показує дані, які потрібно перевірити.')}
+            </Text>
+          </Alert>
+
+          {attention.AttentionReasons.length > 0 ? (
+            <Stack gap={6}>
+              <Text fw={700} size="sm">{t('Причини')}</Text>
+              {attention.AttentionReasons.map((reason) => (
+                <Group align="flex-start" gap={8} key={reason} wrap="nowrap">
+                  <CircleAlert color={`var(--mantine-color-${color}-6)`} size={14} />
+                  <Text size="sm">{getIdentityReasonLabel(reason, t)}</Text>
+                </Group>
+              ))}
+            </Stack>
+          ) : null}
+
+          {attention.OverdueByCurrency.length > 0 ? (
+            <Stack gap={6}>
+              <Text fw={700} size="sm">{t('Прострочений борг')}</Text>
+              {attention.OverdueByCurrency.map((currency) => (
+                <Group
+                  justify="space-between"
+                  key={`${currency.CurrencyNetUid || currency.CurrencyId || 'none'}:${currency.CurrencyCode || 'unknown'}`}
+                >
+                  <Text size="sm">
+                    {currency.MaxOverdueDays} {t('дн.')} · {currency.DebtCount} {t('позицій')}
+                  </Text>
+                  <Text fw={700} size="sm">
+                    {formatAttentionMoney(currency.OverdueAmount)} {currency.CurrencyCode || '—'}
+                  </Text>
+                </Group>
+              ))}
+            </Stack>
+          ) : null}
+
+          <Divider />
+
+          <Stack gap="xs">
+            <Text fw={700} size="sm">
+              {t('Картки та докази')} · {attention.Candidates.length}
+            </Text>
+            {attention.Candidates.map((candidate) => (
+              <Card key={candidate.ClientNetUid} padding="sm" radius="md" withBorder>
+                <Stack gap={6}>
+                  <Group justify="space-between" wrap="nowrap">
+                    <Box style={{ minWidth: 0 }}>
+                      <Text fw={candidate.IsTarget ? 700 : 600} size="sm" truncate>
+                        {candidate.FullName || candidate.ClientNumber || candidate.ClientNetUid}
+                      </Text>
+                      <Text c="dimmed" size="xs">
+                        {[candidate.RoleName, candidate.SourceSystems.join(' + ')].filter(Boolean).join(' · ') || '—'}
+                      </Text>
+                    </Box>
+                    <Badge color={getIdentityStateColor(candidate.IdentityState)} size="xs" variant="light">
+                      {getIdentityStateLabel(candidate.IdentityState, t)}
+                    </Badge>
+                  </Group>
+
+                  <Group gap={6}>
+                    {candidate.IsTarget ? <Badge size="xs" variant="outline">{t('Поточна картка')}</Badge> : null}
+                    {candidate.HasOwnOverdueDebt ? <Badge color="red" size="xs">{t('Є прострочення')}</Badge> : null}
+                    {candidate.IsBlocked ? <Badge color="red" size="xs" variant="outline">{t('Заблоковано')}</Badge> : null}
+                    {candidate.IncludedInCreditControl ? (
+                      <Badge color="orange" size="xs" variant="outline">{t('Враховується у контролі')}</Badge>
+                    ) : null}
+                  </Group>
+
+                  {candidate.MatchReasons.length > 0 ? (
+                    <Text c="dimmed" size="xs">
+                      {candidate.MatchReasons.map((reason) => getIdentityMatchReasonLabel(reason, t)).join(' · ')}
+                    </Text>
+                  ) : null}
+
+                  <Text c="dimmed" size="xs">
+                    {t('Договорів')}: {candidate.AgreementCount} · {t('Продажів')}: {candidate.SaleCount}
+                  </Text>
+                </Stack>
+              </Card>
+            ))}
+          </Stack>
+        </Stack>
+      ) : null}
+    </AppDrawer>
+  )
+}
+
+function getIdentityAttentionLabel(
+  attention: ClientIdentityAttentionSummary,
+  t: (value: string) => string,
+): string {
+  if (attention.HasRelatedOverdueDebt) {
+    return `${t('Прострочення в іншій картці')} · ${attention.MaxOverdueDays} ${t('дн.')}`
+  }
+  if (attention.HasOwnOverdueDebt) {
+    return `${t('Є прострочений борг')} · ${attention.MaxOverdueDays} ${t('дн.')}`
+  }
+  if (attention.IsTargetBlocked) {
+    return t('Картку клієнта заблоковано')
+  }
+  if (attention.HasRelatedBlockedCard) {
+    return t('Заблоковано іншу пов’язану картку')
+  }
+  if (attention.RequiresReview) {
+    return t('Потрібна перевірка карток')
+  }
+  if (attention.LegalCodeQuality === 'invalid') {
+    return t('Некоректні дані')
+  }
+  if (attention.LegalCodeQuality === 'missing') {
+    return t('Неповні дані')
+  }
+
+  return t('Пов’язані картки')
+}
+
+function getLegalCodeQualityLabel(
+  quality: ClientIdentityAttentionSummary['LegalCodeQuality'],
+  t: (value: string) => string,
+): string {
+  const labels = {
+    invalid: 'ЄДРПОУ / ІПН заповнений некоректно',
+    missing: 'ЄДРПОУ / ІПН не заповнений',
+    plausible: 'ЄДРПОУ / ІПН має допустимий формат',
+    suspicious_shared: 'ЄДРПОУ / ІПН використовується підозріло часто',
+  }
+
+  return t(labels[quality])
+}
+
+function getIdentityReasonLabel(reason: string, t: (value: string) => string): string {
+  const labels: Record<string, string> = {
+    invalid_legal_code: 'ЄДРПОУ / ІПН має некоректний формат',
+    missing_legal_code: 'В активного покупця не заповнений ЄДРПОУ / ІПН',
+    missing_manager: 'Не визначено відповідального менеджера з даних 1С',
+    multiple_buyer_cards: 'Знайдено кілька карток покупця',
+    own_blocked_card: 'Поточна картка клієнта заблокована',
+    own_overdue_debt: 'У поточній картці є прострочений борг',
+    related_blocked_card: 'Одна з пов’язаних карток заблокована',
+    related_overdue_debt: 'У пов’язаних картках є прострочений борг',
+    suspicious_shared_code: 'Код використовується у підозріло великій кількості карток',
+  }
+
+  return t(labels[reason] || reason)
+}
+
+function getIdentityMatchReasonLabel(reason: string, t: (value: string) => string): string {
+  const labels: Record<string, string> = {
+    different_role: 'інша роль',
+    explicit_hierarchy: 'явна структура клієнта',
+    same_email: 'збігається email',
+    same_iban: 'збігається IBAN',
+    same_legal_code: 'збігається ЄДРПОУ / ІПН',
+    same_phone: 'збігається телефон',
+    same_source_identity: 'однаковий source-ID',
+    similar_name: 'схожа назва',
+    suspicious_shared_code: 'підозріло спільний код',
+  }
+
+  return t(labels[reason] || reason)
+}
+
+function getIdentityStateLabel(state: string, t: (value: string) => string): string {
+  const labels: Record<string, string> = {
+    confirmed: 'Підтверджений зв’язок',
+    probable: 'Імовірний зв’язок',
+    related_role: 'Інша роль',
+    review_required: 'Потрібна перевірка',
+    self: 'Поточна',
+  }
+
+  return t(labels[state] || state)
+}
+
+function getIdentityStateColor(state: string): string {
+  if (state === 'confirmed' || state === 'self') {
+    return 'green'
+  }
+  if (state === 'review_required') {
+    return 'orange'
+  }
+  if (state === 'probable') {
+    return 'yellow'
+  }
+
+  return 'blue'
+}
+
+function formatAttentionMoney(value: number): string {
+  return ATTENTION_MONEY_FORMATTER.format(value)
 }
 
 const BUYERS_UKRAINE_ROLE_NAME = 'Покупці Україна'

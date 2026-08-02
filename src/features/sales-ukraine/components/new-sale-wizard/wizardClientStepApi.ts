@@ -2,9 +2,10 @@ import { apiRequest } from '../../../../shared/api/apiClient'
 import type {
   Client,
   ClientAgreement,
+  ClientIdentityAttentionSummary,
   ClientInDebt,
-  ClientLegalPartySalesRiskSummary,
 } from '../../../clients/types'
+import { getClientIdentityAttention } from '../../../clients/api/clientsApi'
 import { getSaleClientAgreements } from '../../api/salesUkraineApi'
 import type { SalesUkraineSale } from '../../types'
 
@@ -94,16 +95,10 @@ export async function getWizardClientGroupedDebts(clientNetId: string): Promise<
   return Array.isArray(result) ? (result as ClientInDebt[]) : []
 }
 
-export async function getWizardClientLegalPartyRisk(
+export async function getWizardClientIdentityAttention(
   clientNetId: string,
-): Promise<ClientLegalPartySalesRiskSummary | null> {
-  const result = await apiRequest<unknown>('/clients/get/debt/legal-party-risk', {
-    query: { netId: clientNetId },
-  })
-
-  return result && typeof result === 'object'
-    ? (result as ClientLegalPartySalesRiskSummary)
-    : null
+): Promise<ClientIdentityAttentionSummary | null> {
+  return getClientIdentityAttention(clientNetId)
 }
 
 export async function getWizardClientAgreements(clientNetId: string): Promise<ClientAgreement[]> {

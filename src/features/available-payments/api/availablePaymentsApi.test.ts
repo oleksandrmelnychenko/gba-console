@@ -166,7 +166,16 @@ describe('availablePaymentsApi', () => {
   })
 
   it('keeps the exact persisted task identity and excludes deleted documents when setting a task available', async () => {
-    const task = createPersistedTask()
+    const task = createPersistedTask({
+      SupplyPaymentTaskDocuments: [
+        ...(createPersistedTask().SupplyPaymentTaskDocuments || []),
+        {
+          FileName: 'proof.pdf',
+          Id: 0,
+          NetUid: '00000000-0000-0000-0000-000000000000',
+        },
+      ],
+    })
     const upload = new File(['proof'], 'proof.pdf', { type: 'application/pdf' })
     apiRequestMock.mockResolvedValueOnce(task)
 
@@ -183,10 +192,24 @@ describe('availablePaymentsApi', () => {
           Id: 10,
           NetUid: '7be42a1c-b2a6-4137-8548-2033ce5cb85d',
         },
+        {
+          FileName: 'proof.pdf',
+          Id: 0,
+          NetUid: '00000000-0000-0000-0000-000000000000',
+        },
       ],
     })
-    expect(payload.SupplyPaymentTaskDocuments).toHaveLength(1)
+    expect(payload.SupplyPaymentTaskDocuments).toHaveLength(2)
     expect(body.getAll('documents')).toEqual([upload])
+    expect(apiRequestMock.mock.calls[0]?.[1]).toMatchObject({
+      dedupe: false,
+      headers: {
+        'Idempotency-Key': expect.stringMatching(
+          /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+        ),
+      },
+      method: 'POST',
+    })
   })
 
   it('sends identity-only merge references for persisted tasks', async () => {

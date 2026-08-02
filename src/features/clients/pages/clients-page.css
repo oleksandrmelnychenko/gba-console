@@ -95,6 +95,20 @@
   white-space: nowrap;
 }
 
+.client-identity-attention-badge {
+  cursor: pointer;
+  display: flex;
+  font-family: var(--font-mono);
+  margin-top: 3px;
+  max-width: 100%;
+  text-transform: none;
+}
+
+.client-identity-attention-badge .mantine-Badge-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* Table typography/zebra/kebab/icons intentionally have NO page overrides:
    the pattern table styles are the shared defaults in data-table.css
    (docs/ui-patterns.md — the table is identical on every screen). */

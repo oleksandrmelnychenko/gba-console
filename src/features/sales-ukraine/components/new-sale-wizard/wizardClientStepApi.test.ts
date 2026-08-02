@@ -3,7 +3,7 @@ import { apiRequest } from '../../../../shared/api/apiClient'
 import {
   getWizardClientAgreements,
   getWizardClientGroupedDebts,
-  getWizardClientLegalPartyRisk,
+  getWizardClientIdentityAttention,
   getWizardSalesRegister,
   mapWizardSaleRegisterItems,
   searchWizardClients,
@@ -89,17 +89,31 @@ describe('wizard client step API contracts', () => {
     })
   })
 
-  it('requests currency-separated legal-party credit risk by client net id', async () => {
-    const risk = {
-      HasLegalIdentity: true,
-      HasDuplicates: true,
+  it('requests explainable identity attention by client net id', async () => {
+    const attention = {
+      ClientNetUid: 'client-1',
+      AsOfUtc: '2026-08-02T10:00:00Z',
+      AttentionLevel: 'critical',
+      LegalCodeQuality: 'plausible',
+      NormalizedLegalCode: '01268489',
+      RequiresReview: true,
+      BlocksSale: true,
       HasOverdueDebt: true,
+      HasOwnOverdueDebt: false,
+      HasRelatedOverdueDebt: true,
+      IsTargetBlocked: false,
+      HasRelatedBlockedCard: false,
+      MaxOverdueDays: 1519,
+      RelatedCardCount: 1,
+      BuyerCardCount: 2,
+      AttentionReasons: ['related_overdue_debt'],
+      Candidates: [],
       OverdueByCurrency: [],
     }
-    apiRequestMock.mockResolvedValueOnce(risk)
+    apiRequestMock.mockResolvedValueOnce(attention)
 
-    await expect(getWizardClientLegalPartyRisk('client-1')).resolves.toEqual(risk)
-    expect(apiRequestMock).toHaveBeenCalledWith('/clients/get/debt/legal-party-risk', {
+    await expect(getWizardClientIdentityAttention('client-1')).resolves.toEqual(attention)
+    expect(apiRequestMock).toHaveBeenCalledWith('/clients/get/identity-attention', {
       query: { netId: 'client-1' },
     })
   })

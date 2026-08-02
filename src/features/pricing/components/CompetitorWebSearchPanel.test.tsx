@@ -18,7 +18,7 @@ beforeEach(() => {
 describe('CompetitorWebSearchPanel', () => {
   it('expands and collapses the Anthropic production prompt', () => {
     render(
-      <MantineProvider>
+      <MantineProvider env="test">
         <I18nProvider>
           <CompetitorWebSearchPanel product={null} />
         </I18nProvider>
@@ -42,7 +42,7 @@ describe('CompetitorWebSearchPanel', () => {
 
   it('resets the editable query when the selected product changes', () => {
     const { rerender } = render(
-      <MantineProvider>
+      <MantineProvider env="test">
         <I18nProvider>
           <CompetitorWebSearchPanel
             product={{ MainOriginalNumber: 'OE-1', Name: 'First product', VendorCode: 'SKU-1' }}
@@ -58,7 +58,7 @@ describe('CompetitorWebSearchPanel', () => {
     expect(input.value).toBe('custom query')
 
     rerender(
-      <MantineProvider>
+      <MantineProvider env="test">
         <I18nProvider>
           <CompetitorWebSearchPanel
             product={{ MainOriginalNumber: 'OE-2', Name: 'Second product', VendorCode: 'SKU-2' }}

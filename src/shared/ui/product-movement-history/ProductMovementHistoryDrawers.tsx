@@ -22,6 +22,12 @@ import { useI18n } from '../../i18n/useI18n'
 import { AppDrawer } from '../AppDrawer'
 import { DataTable } from '../data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../data-table/types'
+import {
+  buildProductIncomeMovementTree,
+  formatProductIncomeMovementDateTime,
+  hasCrossSourceStockCollision,
+  type ProductIncomeMovementTreeRow,
+} from './productIncomeMovementTree'
 import './product-movement-history-drawers.css'
 
 export type MovementHistoryProduct = {
@@ -71,17 +77,21 @@ type ProductIncomeMovement = EntityFields & {
   FromInvoiceDate?: Date | string
   FromInvoiceNumber?: string | number
   GrossPrice?: number
+  ImportedForAmg?: boolean | null
   IncomeInvoiceDate?: Date | string
   IncomeInvoiceNumber?: string | number
   IncomeQty?: number
   IncomeToStorageDate?: Date | string
   IncomeToStorageNumber?: string | number
+  IsHide?: boolean
   ManagementEurUnitPrice?: number
   NetPrice?: number
   OrganizationName?: string
   PriceDifference?: number
   RemainingQty?: number
   ReturnPrice?: number
+  SourceDocumentId?: string | null
+  SourceDocumentType?: number | null
   StorageName?: string
   SupplierName?: string
   TotalNetPrice?: number
@@ -770,6 +780,7 @@ function ProductMovementPanel({ active, product }: { active: boolean; product: M
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const exportRequestRef = useRef(0)
   const columns = useProductMovementColumns()
+  const selectedTypeSet = useMemo(() => new Set(selectedTypes), [selectedTypes])
   const filterError = getDateRangeError(dateFrom, dateTo, t)
   const missingNetUidError = productNetUid ? null : t('У товару немає NetUid для завантаження руху товару')
   const typesError = selectedTypes.length === 0 ? t('Оберіть хоча б один тип руху') : null
@@ -913,7 +924,7 @@ function ProductMovementPanel({ active, product }: { active: boolean; product: M
         {movementItemTypeOptions.map((option) => (
           <Checkbox
             key={option.value}
-            checked={selectedTypes.includes(option.value)}
+            checked={selectedTypeSet.has(option.value)}
             label={t(option.label)}
             size="xs"
             onChange={() => toggleMovementItemType(option.value)}
@@ -973,6 +984,8 @@ function ProductIncomeMovementPanel({ active, product }: { active: boolean; prod
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const exportRequestRef = useRef(0)
   const columns = useProductIncomeMovementColumns()
+  const treeRows = useMemo(() => buildProductIncomeMovementTree(rows), [rows])
+  const hasDoubleStockSource = useMemo(() => hasCrossSourceStockCollision(rows), [rows])
   const filterError = getDateRangeError(dateFrom, dateTo, t)
   const missingNetUidError = productNetUid ? null : t('У товару немає NetUid для завантаження приходу')
   const activeError = filterError || missingNetUidError || error
@@ -1078,17 +1091,26 @@ function ProductIncomeMovementPanel({ active, product }: { active: boolean; prod
           {activeError}
         </Alert>
       ) : null}
+      {!activeError && hasDoubleStockSource ? (
+        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
+          {t('Знайдено дві активні складські гілки одного приходу з AMG і Fenix. Записи показано окремо, оскільки обидва впливають на залишок.')}
+        </Alert>
+      ) : null}
       <DataTable
         columns={columns}
-        data={activeError ? [] : rows}
+        data={activeError ? [] : treeRows}
         defaultLayout={INCOME_TABLE_DEFAULT_LAYOUT}
         emptyText={t('Прихід товару не знайдено')}
-        getRowId={(row, index) => String(row.NetUid || row.Id || `${row.IncomeToStorageNumber || 'income'}-${row.IncomeInvoiceNumber || 'invoice'}-${index}`)}
+        getRowCanExpand={(row) => row.Branches.length > 1}
+        getRowId={(row) => row.TreeKey}
         isLoading={isLoading}
-        layoutVersion="product-income-movement-history-shared-1"
+        layoutVersion="product-income-movement-history-shared-2"
         loadingText={t('Завантаження приходу товару')}
         maxHeight="calc(100vh - 320px)"
         minWidth={1780}
+        renderExpandedRow={(row) => (
+          <ProductIncomeMovementBranches columns={columns} row={row} />
+        )}
         tableId="product-income-movement-history"
       />
       <ProductDocumentDownloadModal
@@ -1097,6 +1119,46 @@ function ProductIncomeMovementPanel({ active, product }: { active: boolean; prod
         onClose={() => dispatchExportModalState({ type: 'close-document' })}
       />
       </Stack>
+    </Stack>
+  )
+}
+
+function ProductIncomeMovementBranches({
+  columns,
+  row,
+}: {
+  columns: DataTableColumn<ProductIncomeMovement>[]
+  row: ProductIncomeMovementTreeRow<ProductIncomeMovement>
+}) {
+  const { t } = useI18n()
+
+  return (
+    <Stack className="product-income-movement-branches" gap="xs">
+      <Group gap="xs" justify="space-between">
+        <Text className="app-section-title" fw={600}>
+          {t('Пов’язані записи приходу')}
+        </Text>
+        <Text className="product-income-movement-branches__count">
+          {t('Гілок')}: {row.Branches.length}
+        </Text>
+      </Group>
+      <DataTable
+        columns={columns}
+        data={row.Branches}
+        defaultLayout={INCOME_TABLE_DEFAULT_LAYOUT}
+        enablePinning={false}
+        getRowId={(branch, index) => [
+          row.TreeKey,
+          branch.ImportedForAmg === true ? 'amg' : branch.ImportedForAmg === false ? 'fenix' : 'unknown',
+          branch.SourceDocumentType ?? 'unknown',
+          branch.SourceDocumentId?.trim() || branch.Id || branch.NetUid || index,
+        ].join(':')}
+        layoutVersion="product-income-movement-branches-1"
+        maxHeight={320}
+        minWidth={1740}
+        showLayoutControls={false}
+        tableId="product-income-movement-branches"
+      />
     </Stack>
   )
 }
@@ -1377,6 +1439,19 @@ function useProductMovementColumns(): DataTableColumn<ProductMovement>[] {
         cell: (row) => displayValue(row.OrganizationName),
       },
       {
+        id: 'sourceProjection',
+        header: t('Джерело / запис'),
+        width: 150,
+        minWidth: 132,
+        accessor: (row) => `${getIncomeSourceLabel(row, t)} ${getIncomeProjectionLabel(row, t)}`,
+        cell: (row) => (
+          <Stack gap={0}>
+            <Text size="sm">{getIncomeSourceLabel(row, t)}</Text>
+            <Text c="dimmed" size="xs">{getIncomeProjectionLabel(row, t)}</Text>
+          </Stack>
+        ),
+      },
+      {
         id: 'responsible',
         header: t('Відповідальний'),
         width: 160,
@@ -1477,7 +1552,7 @@ function useProductIncomeMovementColumns(): DataTableColumn<ProductIncomeMovemen
         width: 150,
         minWidth: 130,
         accessor: (row) => row.IncomeToStorageDate,
-        cell: (row) => formatDateTime(row.IncomeToStorageDate),
+        cell: (row) => formatProductIncomeMovementDateTime(row.IncomeToStorageDate),
       },
       {
         id: 'incomeToStorageNumber',
@@ -1647,6 +1722,36 @@ function useProductIncomeMovementColumns(): DataTableColumn<ProductIncomeMovemen
     ],
     [t],
   )
+}
+
+function getIncomeSourceLabel(
+  row: ProductIncomeMovement,
+  t: (value: string) => string,
+): string {
+  if (row.ImportedForAmg === true) {
+    return 'AMG'
+  }
+
+  if (row.ImportedForAmg === false) {
+    return 'Fenix'
+  }
+
+  return t('Локальний запис')
+}
+
+function getIncomeProjectionLabel(
+  row: ProductIncomeMovement,
+  t: (value: string) => string,
+): string {
+  if (row.IsHide === true) {
+    return t('Впливає на склад')
+  }
+
+  if (row.IsHide === false) {
+    return t('Історія документа')
+  }
+
+  return t('Тип не визначено')
 }
 
 function useProductOutcomeMovementColumns(): DataTableColumn<ProductOutcomeMovement>[] {

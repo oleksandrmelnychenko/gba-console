@@ -305,6 +305,61 @@ export type ClientLegalPartySalesRiskSummary = {
   OverdueByCurrency: ClientLegalPartyOverdueCurrency[]
 }
 
+export type ClientIdentityAttentionLevel = 'none' | 'info' | 'warning' | 'critical'
+
+export type ClientIdentityState =
+  | 'self'
+  | 'confirmed'
+  | 'probable'
+  | 'review_required'
+  | 'related_role'
+
+export type ClientIdentityAttentionCandidate = {
+  ClientId: number
+  ClientNetUid: string
+  FullName?: string | null
+  ClientNumber?: string | null
+  Usreou?: string | null
+  Tin?: string | null
+  IsActive: boolean
+  IsBlocked: boolean
+  IsIndividual: boolean
+  RoleType?: number | null
+  RoleName?: string | null
+  MainClientId?: number | null
+  MainManagerId?: number | null
+  AgreementCount: number
+  ActiveAgreementCount: number
+  SaleCount: number
+  IsTarget: boolean
+  HasOwnOverdueDebt: boolean
+  IdentityState: ClientIdentityState
+  IncludedInCreditControl: boolean
+  MatchReasons: string[]
+  SourceSystems: string[]
+}
+
+export type ClientIdentityAttentionSummary = {
+  ClientNetUid: string
+  AsOfUtc: string
+  AttentionLevel: ClientIdentityAttentionLevel
+  LegalCodeQuality: 'missing' | 'invalid' | 'plausible' | 'suspicious_shared'
+  NormalizedLegalCode?: string | null
+  RequiresReview: boolean
+  BlocksSale: boolean
+  HasOverdueDebt: boolean
+  HasOwnOverdueDebt: boolean
+  HasRelatedOverdueDebt: boolean
+  IsTargetBlocked: boolean
+  HasRelatedBlockedCard: boolean
+  MaxOverdueDays: number
+  RelatedCardCount: number
+  BuyerCardCount: number
+  AttentionReasons: string[]
+  Candidates: ClientIdentityAttentionCandidate[]
+  OverdueByCurrency: ClientLegalPartyOverdueCurrency[]
+}
+
 export type ServicePayer = {
   Id?: number
   NetUid?: string

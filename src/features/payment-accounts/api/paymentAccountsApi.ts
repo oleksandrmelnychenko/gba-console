@@ -184,12 +184,24 @@ export async function createPaymentAccountTransfer(
 
 export async function cancelPaymentAccountTransfer(
   netId: string,
+  operation?: AccountingMutationOperationOptions,
 ): Promise<PaymentAccountMutationResult<PaymentRegisterTransfer> | null> {
-  const result = await apiRequest<unknown>('/payments/registers/transfers/cancel', {
-    method: 'PUT',
-    query: {
-      netId,
-    },
+  const payload = { netId }
+  const result = await executeAccountingMutation({
+    identity: payload,
+    kind: 'payment-register:transfer-cancel',
+    operation,
+    payload,
+    request: (requestPayload, context) => apiRequest<unknown>('/payments/registers/transfers/cancel', {
+      dedupe: false,
+      headers: context.headers,
+      method: 'PUT',
+      query: {
+        netId: requestPayload.netId,
+        operationNetUid: context.operationId,
+      },
+      ...(context.signal ? { signal: context.signal } : {}),
+    }),
   })
 
   return result && typeof result === 'object'
@@ -223,12 +235,24 @@ export async function createPaymentAccountExchange(
 
 export async function cancelPaymentAccountExchange(
   netId: string,
+  operation?: AccountingMutationOperationOptions,
 ): Promise<PaymentAccountMutationResult<PaymentRegisterCurrencyExchange> | null> {
-  const result = await apiRequest<unknown>('/payments/registers/exchanges/cancel', {
-    method: 'PUT',
-    query: {
-      netId,
-    },
+  const payload = { netId }
+  const result = await executeAccountingMutation({
+    identity: payload,
+    kind: 'payment-register:currency-exchange-cancel',
+    operation,
+    payload,
+    request: (requestPayload, context) => apiRequest<unknown>('/payments/registers/exchanges/cancel', {
+      dedupe: false,
+      headers: context.headers,
+      method: 'PUT',
+      query: {
+        netId: requestPayload.netId,
+        operationNetUid: context.operationId,
+      },
+      ...(context.signal ? { signal: context.signal } : {}),
+    }),
   })
 
   return result && typeof result === 'object'

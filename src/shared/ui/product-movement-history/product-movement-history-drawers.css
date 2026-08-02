@@ -77,3 +77,18 @@
   min-width: 0;
   padding: 10px 8px 8px;
 }
+
+.product-income-movement-branches {
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
+  min-width: 0;
+  overflow: hidden;
+  padding: 10px;
+}
+
+.product-income-movement-branches__count {
+  color: var(--mantine-color-gray-6);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+}

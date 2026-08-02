@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import {
   calculatePaymentAccountExchange,
+  cancelPaymentAccountExchange,
+  cancelPaymentAccountTransfer,
   createPaymentAccount,
   createPaymentAccountExchange,
   createPaymentAccountTransfer,
@@ -189,4 +191,40 @@ describe('paymentAccountsApi', () => {
       },
     )
   })
+
+  it.each([
+    [
+      'transfer',
+      cancelPaymentAccountTransfer,
+      '/payments/registers/transfers/cancel',
+      '55555555-5555-4555-8555-555555555555',
+    ],
+    [
+      'currency exchange',
+      cancelPaymentAccountExchange,
+      '/payments/registers/exchanges/cancel',
+      '66666666-6666-4666-8666-666666666666',
+    ],
+  ] as const)(
+    'sends one durable operation key for %s cancellation',
+    async (_name, cancel, path, operationId) => {
+      const netId = '77777777-7777-4777-8777-777777777777'
+      apiRequestMock.mockResolvedValueOnce({
+        Entity: { NetUid: netId },
+        IsSuccess: true,
+      })
+
+      await cancel(netId, { operationId })
+
+      expect(apiRequestMock).toHaveBeenCalledWith(path, {
+        dedupe: false,
+        headers: { 'Idempotency-Key': operationId },
+        method: 'PUT',
+        query: {
+          netId,
+          operationNetUid: operationId,
+        },
+      })
+    },
+  )
 })

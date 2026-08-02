@@ -7,6 +7,8 @@ import {
   exportSuppliersDocument,
   getClientCount,
   getClientFilterItems,
+  getClientIdentityAttention,
+  getClientIdentityAttentionBatch,
   getClients,
   getSupplierCount,
   getSupplierFilterItems,
@@ -344,6 +346,29 @@ describe('clients API query contracts', () => {
     })
   })
 
+  it('loads one client identity attention marker', async () => {
+    const attention = createIdentityAttention('client-1')
+    apiRequestMock.mockResolvedValueOnce(attention)
+
+    await expect(getClientIdentityAttention('client-1')).resolves.toEqual(attention)
+    expect(apiRequestMock).toHaveBeenCalledWith('/clients/get/identity-attention', {
+      query: { netId: 'client-1' },
+    })
+  })
+
+  it('loads identity attention for a visible client page in one request', async () => {
+    const attention = createIdentityAttention('client-1')
+    apiRequestMock.mockResolvedValueOnce([attention])
+
+    await expect(
+      getClientIdentityAttentionBatch(['client-1', 'client-1']),
+    ).resolves.toEqual([attention])
+    expect(apiRequestMock).toHaveBeenCalledWith('/clients/get/identity-attention/batch', {
+      method: 'POST',
+      body: ['client-1'],
+    })
+  })
+
   it('loads dynamic supplier filter items through the source endpoint', async () => {
     const filterItems = [{ SQL: 'Client.FullName', Name: 'Постачальник' }]
 
@@ -395,3 +420,26 @@ describe('clients API query contracts', () => {
     })
   })
 })
+
+function createIdentityAttention(clientNetUid: string) {
+  return {
+    ClientNetUid: clientNetUid,
+    AsOfUtc: '2026-08-02T10:00:00Z',
+    AttentionLevel: 'warning',
+    LegalCodeQuality: 'invalid',
+    NormalizedLegalCode: null,
+    RequiresReview: true,
+    BlocksSale: false,
+    HasOverdueDebt: false,
+    HasOwnOverdueDebt: false,
+    HasRelatedOverdueDebt: false,
+    IsTargetBlocked: false,
+    HasRelatedBlockedCard: false,
+    MaxOverdueDays: 0,
+    RelatedCardCount: 1,
+    BuyerCardCount: 2,
+    AttentionReasons: ['invalid_legal_code'],
+    Candidates: [],
+    OverdueByCurrency: [],
+  }
+}

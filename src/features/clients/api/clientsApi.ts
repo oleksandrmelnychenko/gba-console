@@ -1,7 +1,14 @@
 import { apiRequest } from '../../../shared/api/apiClient'
 import type { ServerBooleanFilter } from '../../../shared/api/searchQuery'
 import { buildServerSearchFilter } from '../../../shared/api/searchQuery'
-import type { Client, ClientFilterItem, ClientPrintDocument, ClientSearchParams, ClientType } from '../types'
+import type {
+  Client,
+  ClientFilterItem,
+  ClientIdentityAttentionSummary,
+  ClientPrintDocument,
+  ClientSearchParams,
+  ClientType,
+} from '../types'
 
 const CLIENT_SEARCH_SQL = 'RegionCode.Value/Client.FullName/Client.USREOU'
 const SUPPLIER_SEARCH_SQL = 'RegionCode.Value/Client.FullName'
@@ -69,6 +76,40 @@ export async function getClientTypes(): Promise<ClientType[]> {
   const result = await apiRequest<unknown>('/clients/types/all')
 
   return Array.isArray(result) ? (result as ClientType[]) : []
+}
+
+export async function getClientIdentityAttention(
+  clientNetId: string,
+  signal?: AbortSignal,
+): Promise<ClientIdentityAttentionSummary | null> {
+  const result = await apiRequest<unknown>('/clients/get/identity-attention', {
+    query: { netId: clientNetId },
+    ...(signal ? { signal } : {}),
+  })
+
+  return isIdentityAttentionSummary(result)
+    ? result
+    : null
+}
+
+export async function getClientIdentityAttentionBatch(
+  clientNetIds: string[],
+  signal?: AbortSignal,
+): Promise<ClientIdentityAttentionSummary[]> {
+  const normalizedIds = [...new Set(clientNetIds.filter(Boolean))].slice(0, 100)
+  if (normalizedIds.length === 0) {
+    return []
+  }
+
+  const result = await apiRequest<unknown>('/clients/get/identity-attention/batch', {
+    method: 'POST',
+    body: normalizedIds,
+    ...(signal ? { signal } : {}),
+  })
+
+  return Array.isArray(result)
+    ? result.filter(isIdentityAttentionSummary)
+    : []
 }
 
 export async function getClientFilterItems(): Promise<ClientFilterItem[]> {
@@ -212,6 +253,28 @@ function normalizeCount(result: unknown): number {
   }
 
   return 0
+}
+
+function isIdentityAttentionSummary(
+  value: unknown,
+): value is ClientIdentityAttentionSummary {
+  if (!value || typeof value !== 'object') {
+    return false
+  }
+
+  const summary = value as Partial<ClientIdentityAttentionSummary>
+  return typeof summary.ClientNetUid === 'string'
+    && typeof summary.AsOfUtc === 'string'
+    && ['none', 'info', 'warning', 'critical'].includes(String(summary.AttentionLevel))
+    && typeof summary.RequiresReview === 'boolean'
+    && typeof summary.BlocksSale === 'boolean'
+    && typeof summary.HasOwnOverdueDebt === 'boolean'
+    && typeof summary.HasRelatedOverdueDebt === 'boolean'
+    && typeof summary.IsTargetBlocked === 'boolean'
+    && typeof summary.HasRelatedBlockedCard === 'boolean'
+    && Array.isArray(summary.AttentionReasons)
+    && Array.isArray(summary.Candidates)
+    && Array.isArray(summary.OverdueByCurrency)
 }
 
 function parseCount(count: unknown): number {
