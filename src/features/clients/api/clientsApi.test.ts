@@ -429,7 +429,7 @@ function createIdentityAttention(clientNetUid: string) {
     LegalCodeQuality: 'invalid',
     NormalizedLegalCode: null,
     RequiresReview: true,
-    BlocksSale: false,
+    HasCreditRiskSignal: false,
     HasOverdueDebt: false,
     HasOwnOverdueDebt: false,
     HasRelatedOverdueDebt: false,

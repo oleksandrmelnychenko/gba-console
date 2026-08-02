@@ -97,7 +97,7 @@ describe('wizard client step API contracts', () => {
       LegalCodeQuality: 'plausible',
       NormalizedLegalCode: '01268489',
       RequiresReview: true,
-      BlocksSale: true,
+      HasCreditRiskSignal: true,
       HasOverdueDebt: true,
       HasOwnOverdueDebt: false,
       HasRelatedOverdueDebt: true,

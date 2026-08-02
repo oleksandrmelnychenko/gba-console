@@ -14,7 +14,7 @@ function createRisk(
     LegalCodeQuality: 'plausible',
     NormalizedLegalCode: '01268489',
     RequiresReview: true,
-    BlocksSale: false,
+    HasCreditRiskSignal: false,
     HasOverdueDebt: false,
     HasOwnOverdueDebt: false,
     HasRelatedOverdueDebt: false,

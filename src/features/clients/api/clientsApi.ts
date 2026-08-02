@@ -267,7 +267,7 @@ function isIdentityAttentionSummary(
     && typeof summary.AsOfUtc === 'string'
     && ['none', 'info', 'warning', 'critical'].includes(String(summary.AttentionLevel))
     && typeof summary.RequiresReview === 'boolean'
-    && typeof summary.BlocksSale === 'boolean'
+    && typeof summary.HasCreditRiskSignal === 'boolean'
     && typeof summary.HasOwnOverdueDebt === 'boolean'
     && typeof summary.HasRelatedOverdueDebt === 'boolean'
     && typeof summary.IsTargetBlocked === 'boolean'

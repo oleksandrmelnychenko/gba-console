@@ -346,7 +346,7 @@ export type ClientIdentityAttentionSummary = {
   LegalCodeQuality: 'missing' | 'invalid' | 'plausible' | 'suspicious_shared'
   NormalizedLegalCode?: string | null
   RequiresReview: boolean
-  BlocksSale: boolean
+  HasCreditRiskSignal: boolean
   HasOverdueDebt: boolean
   HasOwnOverdueDebt: boolean
   HasRelatedOverdueDebt: boolean

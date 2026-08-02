@@ -1540,8 +1540,8 @@ function ClientIdentityAttentionDrawer({
               {getIdentityAttentionLabel(attention, t)}
             </Text>
             <Text mt={4} size="xs">
-              {attention.BlocksSale
-                ? t('Сервер повторно перевіряє цей ризик перед передачею продажу на пакування.')
+              {attention.HasCreditRiskSignal
+                ? t('Це не рішення про блокування: сервер окремо перевірить ризик за умовами вибраного договору перед пакуванням.')
                 : t('Маркер не об’єднує картки автоматично — він показує дані, які потрібно перевірити.')}
             </Text>
           </Alert>
