@@ -96,7 +96,7 @@ describe('CompetitorWebSearchPanel', () => {
     })
 
     render(
-      <MantineProvider>
+      <MantineProvider env="test">
         <I18nProvider>
           <CompetitorWebSearchPanel
             product={{
