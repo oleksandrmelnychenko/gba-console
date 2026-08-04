@@ -107,6 +107,8 @@ import type {
   ClientResourceVatRate,
 } from '../types'
 import { CLIENT_RESOURCE_STEPS } from '../types'
+import { canMutatePricing, isBusinessOrganizationVisible } from '../clientResourcePolicies'
+import { buildSaleOrganizationsByStorageId } from '../clientResourceStorageOrganizations'
 import '../../../shared/ui/console-table-page.css'
 import './clientResources.css'
 
@@ -865,18 +867,11 @@ function RegionsPanelView({ model }: { model: ReturnType<typeof useRegionsPanelM
                   const isActive = getEntityKey(selectedRegion) === key
 
                   return (
-                    <div
-                      role="button"
-                      tabIndex={0}
+                    <button
+                      type="button"
                       className={`client-resources-region-row${isActive ? ' is-active' : ''}`}
                       key={key}
                       onClick={() => setSelectedRegionId(key)}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter' || event.key === ' ') {
-                          event.preventDefault()
-                          setSelectedRegionId(key)
-                        }
-                      }}
                     >
                       <span>
                         <Text fw={600}>{displayValue(region.Name)}</Text>
@@ -918,7 +913,7 @@ function RegionsPanelView({ model }: { model: ReturnType<typeof useRegionsPanelM
                           />
                         </PermissionGate>
                       </Group>
-                    </div>
+                    </button>
                   )
                 })}
               </Stack>
@@ -2217,7 +2212,7 @@ function OrganizationsPanel({ section }: { section: ClientResourceSection }) {
   const filtered = useMemo(
     () =>
       state.data.filter((organization) =>
-        matchesSearch(search, [
+        isBusinessOrganizationVisible(organization) && matchesSearch(search, [
           organization.Name,
           organization.FullName,
           organization.Code,
@@ -3034,11 +3029,27 @@ function PricingPanel({ section }: { section: ClientResourceSection }) {
   }
 
   function openEditPricing(pricing: ClientResourcePricing) {
+    if (!canMutatePricing(pricing)) {
+      notifications.show({
+        color: 'yellow',
+        message: translate('Націнка керується синхронізацією з 1С'),
+      })
+      return
+    }
+
     setFormError(null)
     setEditor({ mode: 'edit', pricing })
   }
 
   function requestDeletePricing(pricing: ClientResourcePricing) {
+    if (!canMutatePricing(pricing)) {
+      notifications.show({
+        color: 'yellow',
+        message: translate('Цінове правило керується синхронізацією з 1С'),
+      })
+      return
+    }
+
     setFormError(null)
     setDeleteTarget({ type: 'pricing', pricing })
   }
@@ -3263,9 +3274,16 @@ function PricingResourceTable({
         id: 'markup',
         header: 'Націнка',
         accessor: (pricing) => pricing.ExtraCharge,
-        cell: (pricing) => formatPercent(pricing.ExtraCharge),
-        maxWidth: 100,
-        width: 100,
+        cell: (pricing) => (
+          <Group gap={6} wrap="nowrap">
+            <Text size="sm">{formatPercent(pricing.ExtraCharge)}</Text>
+            {pricing.IsSourceManaged ? (
+              <Badge color="blue" size="xs" variant="light">1С</Badge>
+            ) : null}
+          </Group>
+        ),
+        maxWidth: 130,
+        width: 130,
       },
       {
         id: 'currency',
@@ -3333,15 +3351,20 @@ function PricingResourceTable({
             <PermissionGate permissionKey={PRICING_EDIT_PERMISSION}>
               <TableRowAction
                 action="edit"
-                label={translate("Редагувати правило")}
+                disabled={!canMutatePricing(pricing)}
+                label={pricing.IsSourceManaged
+                  ? translate('Керується синхронізацією з 1С')
+                  : translate('Редагувати правило')}
                 onClick={() => onEdit(pricing)}
               />
             </PermissionGate>
             <PermissionGate permissionKey={PRICING_DELETE_PERMISSION}>
               <TableRowAction
                 action="delete"
-                disabled={!pricing.NetUid}
-                label={translate("Видалити правило")}
+                disabled={!pricing.NetUid || !canMutatePricing(pricing)}
+                label={pricing.IsSourceManaged
+                  ? translate('Керується синхронізацією з 1С')
+                  : translate('Видалити правило')}
                 onClick={() => onDelete(pricing)}
               />
             </PermissionGate>
@@ -3859,29 +3882,6 @@ function StoragesPanel({ section }: { section: ClientResourceSection }) {
       />
     </ResourcePanel>
   )
-}
-
-// eslint-disable-next-line react-refresh/only-export-components
-export function buildSaleOrganizationsByStorageId(
-  organizations: ClientResourceOrganization[],
-): Map<number, string[]> {
-  const result = new Map<number, string[]>()
-
-  for (const organization of organizations) {
-    if (!organization.StorageId) {
-      continue
-    }
-
-    const names = result.get(organization.StorageId) || []
-    names.push(displayTranslatedEntity(organization.Name, organization.OrganizationTranslations))
-    result.set(organization.StorageId, names)
-  }
-
-  for (const names of result.values()) {
-    names.sort((left, right) => left.localeCompare(right, 'uk'))
-  }
-
-  return result
 }
 
 function MeasureUnitsPanel({ section }: { section: ClientResourceSection }) {
@@ -4591,11 +4591,15 @@ function ResourcePanel({
   section: ClientResourceSection
 }) {
   const [tableToolbarTarget, setTableToolbarTarget] = useState<HTMLDivElement | null>(null)
+  const tableToolbarContext = useMemo(
+    () => ({ setTarget: setTableToolbarTarget, target: tableToolbarTarget }),
+    [tableToolbarTarget],
+  )
 
   return (
     <ClientResourcesFilterPatternContext.Provider value>
       <ClientResourcesTableToolbarContext.Provider
-        value={{ setTarget: setTableToolbarTarget, target: tableToolbarTarget }}
+        value={tableToolbarContext}
       >
         <ClientResourcesPanelActionContext.Provider value={action}>
           <section className="client-resources-panel console-table-shell is-filtered">

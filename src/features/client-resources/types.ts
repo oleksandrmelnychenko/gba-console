@@ -100,6 +100,7 @@ export type ClientResourcePricing = ClientResourceEntity & {
   CurrencyId?: number
   ExtraCharge?: number
   ForVat?: boolean
+  IsSourceManaged?: boolean
   Name?: string
   PriceType?: ClientResourcePricingType
   PriceTypeId?: number

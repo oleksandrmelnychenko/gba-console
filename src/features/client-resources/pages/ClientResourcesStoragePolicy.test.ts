@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ClientResourceOrganization } from '../types'
-import { buildSaleOrganizationsByStorageId } from './ClientResourcesPage'
+import { buildSaleOrganizationsByStorageId } from '../clientResourceStorageOrganizations'
 
 describe('client resources canonical sale storage', () => {
   it('shows every organization that shares a canonical storage', () => {
