@@ -1,4 +1,4 @@
-import { Alert, Button, FileInput, Group, NumberInput, SimpleGrid, Stack } from '@mantine/core'
+import { Alert, Button, FileInput, Group, NumberInput, SimpleGrid, Stack, TextInput } from '@mantine/core'
 import { CircleAlert, FileSpreadsheet, Upload } from 'lucide-react'
 import { useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -9,7 +9,11 @@ type UploadProductSpecificationModalProps = {
   isLoading: boolean
   opened: boolean
   onClose: () => void
-  onSubmit: (parseConfiguration: ProductSpecificationParseConfiguration, file: File) => void
+  onSubmit: (
+    parseConfiguration: ProductSpecificationParseConfiguration,
+    dateCustomDeclaration: string,
+    file: File,
+  ) => void
 }
 
 type FormDraft = {
@@ -44,6 +48,7 @@ export function UploadProductSpecificationModal({
 }: UploadProductSpecificationModalProps) {
   const { t } = useI18n()
   const [form, setForm] = useState<FormDraft>(EMPTY_FORM)
+  const [dateCustomDeclaration, setDateCustomDeclaration] = useState('')
   const [file, setFile] = useState<File | null>(null)
   const [validationError, setValidationError] = useState<string | null>(null)
 
@@ -61,6 +66,7 @@ export function UploadProductSpecificationModal({
     }
 
     setForm(EMPTY_FORM)
+    setDateCustomDeclaration('')
     setFile(null)
     setValidationError(null)
     onClose()
@@ -73,14 +79,14 @@ export function UploadProductSpecificationModal({
 
     const parseConfiguration = toParseConfiguration(form)
 
-    if (!file || !parseConfiguration) {
-      setValidationError(t('Заповніть файл і колонки імпорту'))
+    if (!file || !parseConfiguration || !isIsoDate(dateCustomDeclaration)) {
+      setValidationError(t('Заповніть файл, дату митної декларації і колонки імпорту'))
 
       return
     }
 
     setValidationError(null)
-    onSubmit(parseConfiguration, file)
+    onSubmit(parseConfiguration, dateCustomDeclaration, file)
   }
 
   return (
@@ -100,6 +106,15 @@ export function UploadProductSpecificationModal({
         )}
 
         <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+          <TextInput
+            aria-required="true"
+            disabled={isLoading}
+            label={t('Дата митної декларації')}
+            type="date"
+            value={dateCustomDeclaration}
+            withAsterisk
+            onChange={(event) => setDateCustomDeclaration(event.currentTarget.value)}
+          />
           <NumberInput
             allowDecimal={false}
             disabled={isLoading}
@@ -230,4 +245,19 @@ function toPositiveNumber(value: number | string): number | '' {
   const numberValue = typeof value === 'number' ? value : Number(value)
 
   return Number.isFinite(numberValue) && numberValue > 0 ? numberValue : ''
+}
+
+function isIsoDate(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return false
+  }
+
+  const [year, month, day] = value.split('-').map(Number)
+  const date = new Date(Date.UTC(year, month - 1, day))
+
+  return (
+    date.getUTCFullYear() === year
+    && date.getUTCMonth() === month - 1
+    && date.getUTCDate() === day
+  )
 }

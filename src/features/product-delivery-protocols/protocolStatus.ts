@@ -9,17 +9,25 @@ export function getProtocolStatusLabel(
   }
 
   if (protocol.IsShipped) {
-    return t('Прибув')
+    return t('В дорозі')
   }
 
-  return t('В дорозі')
+  return t('Створено')
 }
 
 export function getProtocolStatusActionLabel(
   protocol: Pick<ProtocolDetail, 'IsCompleted' | 'IsShipped'>,
   t: (value: string) => string,
 ): string {
-  return getProtocolStatusLabel(protocol, t)
+  if (protocol.IsCompleted) {
+    return t('Завершено')
+  }
+
+  if (protocol.IsShipped) {
+    return t('Прибув')
+  }
+
+  return t('В дорозі')
 }
 
 export function getProtocolPlacementStatusLabel(

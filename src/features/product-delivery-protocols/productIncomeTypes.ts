@@ -107,6 +107,13 @@ export type IncomePackingList = EntityFields & {
   TotalNetWeight?: number
   TotalGrossWeight?: number
   PackingListPackageOrderItems: PackingListPackageOrderItem[]
+  PackingListBoxes?: Array<EntityFields & {
+    PackingListPackageOrderItems?: PackingListPackageOrderItem[]
+  }>
+  PackingListPallets?: Array<EntityFields & {
+    PackingListPackageOrderItems?: PackingListPackageOrderItem[]
+  }>
+  InvoiceDocuments?: EntityFields[]
   DynamicProductPlacementColumns: DynamicProductPlacementColumn[]
 }
 

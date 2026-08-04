@@ -61,6 +61,7 @@ import type {
 } from '../productIncomeTypes'
 import {
   createIncomeDynamicPlacementColumn,
+  createPackingListPlacementMutationPayload,
   getPlacementRowCapacity,
   getProductIncomePlacementState,
   isInvoiceAllNotPlaced,
@@ -640,15 +641,10 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
         // returns the FULL invoice — its packing list keeps PackingListPackageOrderItems —
         // so the grid is not wiped. (The placement-info endpoint returned a lean list and
         // cleared the grid on «Додати»/«Зберегти».)
-        const hasMatchingPackList = invoice.PackingLists.some((list) => list.NetUid === nextPackingList.NetUid)
-        const invoicePayload: IncomeSupplyInvoice = {
-          ...invoice,
-          PackingLists: hasMatchingPackList
-            ? invoice.PackingLists.map((list) =>
-                list.NetUid === nextPackingList.NetUid ? nextPackingList : list,
-              )
-            : [...invoice.PackingLists, nextPackingList],
-        }
+        const invoicePayload = createPackingListPlacementMutationPayload(
+          invoice,
+          nextPackingList,
+        )
 
         await updatePackingListInInvoice(invoicePayload)
 

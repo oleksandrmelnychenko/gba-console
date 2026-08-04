@@ -445,7 +445,11 @@ function useSpecificationModel(netId: string | undefined) {
     return isCurrent() ? protocolResult : null
   }
 
-  async function submitUpload(parseConfiguration: ProductSpecificationParseConfiguration, file: File) {
+  async function submitUpload(
+    parseConfiguration: ProductSpecificationParseConfiguration,
+    dateCustomDeclaration: string,
+    file: File,
+  ) {
     const invoiceNetUid = selectedInvoice?.NetUid || null
     const packListNetUid = selectedPackListNetId
 
@@ -460,7 +464,12 @@ function useSpecificationModel(netId: string | undefined) {
     setUploading(true)
 
     try {
-      const result = await uploadProductSpecificationForInvoice(invoiceNetUid, parseConfiguration, file)
+      const result = await uploadProductSpecificationForInvoice(
+        invoiceNetUid,
+        parseConfiguration,
+        dateCustomDeclaration,
+        file,
+      )
 
       if (isCurrentUpload()) {
         setUploadOpen(false)

@@ -353,7 +353,11 @@ function useSupplyUkraineDirectOrderSpecificationsPageModel() {
     setDocumentAgreementNetId(organization?.SupplyOrganizationAgreements?.[0]?.NetUid || null)
   }
 
-  async function submitUpload(parseConfiguration: ProductSpecificationParseConfiguration, file: File) {
+  async function submitUpload(
+    parseConfiguration: ProductSpecificationParseConfiguration,
+    dateCustomDeclaration: string,
+    file: File,
+  ) {
     const invoiceNetId = selectedInvoice?.NetUid
     const packListNetId = selectedPackListNetId
 
@@ -368,7 +372,12 @@ function useSupplyUkraineDirectOrderSpecificationsPageModel() {
     setUploading(true)
 
     try {
-      const result = await uploadProductSpecificationForInvoice(invoiceNetId, parseConfiguration, file)
+      const result = await uploadProductSpecificationForInvoice(
+        invoiceNetId,
+        parseConfiguration,
+        dateCustomDeclaration,
+        file,
+      )
 
       if (isCurrentUpload()) {
         setUploadOpen(false)

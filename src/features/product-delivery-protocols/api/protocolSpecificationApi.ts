@@ -49,10 +49,12 @@ export async function getSpecificationDownloadUrls(packListNetId: string): Promi
 export async function uploadProductSpecificationForInvoice(
   invoiceNetId: string,
   parseConfiguration: ProductSpecificationParseConfiguration,
+  dateCustomDeclaration: string,
   file: File,
 ): Promise<UploadProductSpecificationResult | null> {
   const formData = new FormData()
   formData.append('parseConfiguration', JSON.stringify(parseConfiguration))
+  formData.append('dateCustomDeclaration', dateCustomDeclaration)
   formData.append('file', file)
 
   const result = await apiRequest<unknown>('/supplies/invoices/specification/upload', {

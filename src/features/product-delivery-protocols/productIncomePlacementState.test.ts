@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   createIncomeDynamicPlacementColumn,
+  createPackingListPlacementMutationPayload,
   getPlacementRowCapacity,
   getProductIncomePlacementState,
   isInvoiceAllNotPlaced,
@@ -51,6 +52,41 @@ describe('product income placement state', () => {
       PackingListPackageOrderItem: list.PackingListPackageOrderItems[1],
       DynamicProductPlacements: [],
     })
+  })
+
+  it('preserves the canonical package graph when a placement column is added', () => {
+    const canonicalList = {
+      Id: 42,
+      NetUid: 'fda4df3e-d952-42ff-9844-590442373f65',
+      DynamicProductPlacementColumns: [],
+      PackingListPackageOrderItems: [],
+      PackingListBoxes: [{ Id: 70, PackingListPackageOrderItems: [{ Id: 7 }] }],
+      InvoiceDocuments: [{ Id: 90 }],
+    }
+    const sourceInvoice: IncomeSupplyInvoice = {
+      Id: 12,
+      NetUid: '885b3a13-9cd9-4c89-ad49-703fa18fbac5',
+      PackingLists: [canonicalList],
+    }
+    const editedList: IncomePackingList = {
+      Id: 42,
+      NetUid: canonicalList.NetUid,
+      PackingListPackageOrderItems: [{ Id: 7 }],
+      DynamicProductPlacementColumns: [
+        {
+          FromDate: '2026-08-04T00:00:00',
+          DynamicProductPlacementRows: [],
+        },
+      ],
+    }
+
+    const payload = createPackingListPlacementMutationPayload(sourceInvoice, editedList)
+    const submittedList = payload.PackingLists[0]
+
+    expect(submittedList?.DynamicProductPlacementColumns).toBe(editedList.DynamicProductPlacementColumns)
+    expect(submittedList?.PackingListPackageOrderItems).toBe(canonicalList.PackingListPackageOrderItems)
+    expect(submittedList?.PackingListBoxes).toBe(canonicalList.PackingListBoxes)
+    expect(submittedList?.InvoiceDocuments).toBe(canonicalList.InvoiceDocuments)
   })
 
   it('allows income date editing while every invoice item is not placed', () => {

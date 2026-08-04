@@ -8,12 +8,12 @@ import {
 const t = (value: string) => value
 
 describe('protocol status labels', () => {
-  it('shows in-transit status before shipment', () => {
-    expect(getProtocolStatusLabel({ IsCompleted: false, IsShipped: false }, t)).toBe('В дорозі')
+  it('shows created status before the protocol is sent in transit', () => {
+    expect(getProtocolStatusLabel({ IsCompleted: false, IsShipped: false }, t)).toBe('Створено')
   })
 
-  it('shows arrived status after shipment', () => {
-    expect(getProtocolStatusLabel({ IsCompleted: false, IsShipped: true }, t)).toBe('Прибув')
+  it('keeps the current status in transit until arrival is confirmed', () => {
+    expect(getProtocolStatusLabel({ IsCompleted: false, IsShipped: true }, t)).toBe('В дорозі')
   })
 
   it('shows final state for completed protocols', () => {
@@ -24,8 +24,12 @@ describe('protocol status labels', () => {
     expect(getProtocolStatusLabel({ IsCompleted: true }, t)).toBe('Завершено')
   })
 
-  it('keeps a separate action label helper for the status button', () => {
+  it('shows arrival as the next action after transit starts', () => {
     expect(getProtocolStatusActionLabel({ IsCompleted: false, IsShipped: true }, t)).toBe('Прибув')
+  })
+
+  it('shows transit as the first status action', () => {
+    expect(getProtocolStatusActionLabel({ IsCompleted: false, IsShipped: false }, t)).toBe('В дорозі')
   })
 })
 

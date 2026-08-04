@@ -74,6 +74,41 @@ export function createIncomeDynamicPlacementColumn(
   }
 }
 
+/**
+ * The specification view is intentionally flat and does not carry boxes,
+ * pallets, documents, or other canonical packing-list children. Keep the
+ * server-loaded aggregate intact and replace only the placement columns that
+ * this screen owns.
+ */
+export function createPackingListPlacementMutationPayload(
+  invoice: IncomeSupplyInvoice,
+  editedPackingList: IncomePackingList,
+): IncomeSupplyInvoice {
+  const editedNetUid = editedPackingList.NetUid
+  const editedId = editedPackingList.Id
+  const matches = (candidate: IncomePackingList) =>
+    Boolean(
+      (editedNetUid && candidate.NetUid === editedNetUid)
+      || (editedId && candidate.Id === editedId),
+    )
+
+  if (!invoice.PackingLists.some(matches)) {
+    throw new Error('The edited packing list does not belong to the selected invoice')
+  }
+
+  return {
+    ...invoice,
+    PackingLists: invoice.PackingLists.map((candidate) =>
+      matches(candidate)
+        ? {
+            ...candidate,
+            DynamicProductPlacementColumns: editedPackingList.DynamicProductPlacementColumns,
+          }
+        : candidate,
+    ),
+  }
+}
+
 export function isInvoiceAllNotPlaced(
   invoice: IncomeSupplyInvoice | null,
   selectedPackingList?: IncomePackingList | null,
