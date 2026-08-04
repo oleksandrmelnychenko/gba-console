@@ -88,7 +88,10 @@ HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect() {
 
 if (!window.matchMedia) {
   window.matchMedia = vi.fn().mockImplementation((query: string) => ({
-    matches: false,
+    // Test runs do not need animation frames. Advertising reduced motion keeps
+    // Mantine transitions synchronous and prevents their timeout callbacks from
+    // firing after jsdom has already torn the window down.
+    matches: query.includes('prefers-reduced-motion'),
     media: query,
     onchange: null,
     addEventListener: () => {},
