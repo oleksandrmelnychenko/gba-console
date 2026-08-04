@@ -36,6 +36,7 @@ export const SALES_PENDING_MUTATION_KINDS = [
   'sale-shift-current',
   'sale-switch',
   'sale-unlock',
+  'sale-accept-for-packing',
   'sale-update',
   'sale-update-file',
   'sale-vat-document',

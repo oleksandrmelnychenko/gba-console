@@ -1,7 +1,11 @@
 import { classifySalesMutationFailure } from '../../salesMutationOperation'
 import type { SalesUkraineOrderItem, SalesUkraineSale } from '../../types'
 
-export type WizardMutationCommitState = 'committed' | 'not-committed' | 'unknown'
+export type WizardMutationCommitState =
+  | 'committed'
+  | 'expected-state-without-marker'
+  | 'not-committed'
+  | 'unknown'
 
 export type WizardCartMutationExpectation =
   | {
@@ -70,6 +74,16 @@ export async function retryWizardMutation<TSnapshot>(
 
     if (commitState === 'committed') {
       return { snapshot, status: 'committed-after-reconcile' }
+    }
+
+    // The cart projection can omit OperationNetUid even though it already shows
+    // the exact requested effect (notably a deleted row is omitted entirely).
+    // Do not call that committed: a concurrent edit could look identical. The
+    // explicit retry is nevertheless safe because mutate() reuses the frozen
+    // request and the same server idempotency key. A committed operation replays
+    // its result; an uncommitted operation applies the already-matching effect.
+    if (commitState === 'expected-state-without-marker') {
+      return await attemptWizardMutation(operation, reconcile)
     }
 
     if (commitState === 'unknown') {
@@ -157,7 +171,7 @@ export function inspectWizardCartMutation(
 
   if (expectation.kind === 'row-deleted') {
     if (!row || row.Deleted) {
-      return 'unknown'
+      return 'expected-state-without-marker'
     }
 
     return sameQty(row, expectation.beforeQty) ? 'not-committed' : 'unknown'
@@ -168,7 +182,7 @@ export function inspectWizardCartMutation(
   }
 
   if (sameQty(row, expectation.afterQty)) {
-    return 'unknown'
+    return 'expected-state-without-marker'
   }
 
   return sameQty(row, expectation.beforeQty) ? 'not-committed' : 'unknown'

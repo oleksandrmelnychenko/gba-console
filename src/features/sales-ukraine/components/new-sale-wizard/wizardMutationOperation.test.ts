@@ -209,7 +209,7 @@ describe('wizard mutation idempotency and reconciliation', () => {
         kind: 'row-quantity',
         rowNetUid: 'row-a',
       }),
-    ).toBe('unknown')
+    ).toBe('expected-state-without-marker')
     expect(
       inspectWizardCartMutation(snapshot, operationId, {
         afterQty: 9,
@@ -230,7 +230,7 @@ describe('wizard mutation idempotency and reconciliation', () => {
       beforeQty: 3,
       kind: 'row-quantity',
       rowNetUid: 'row-a',
-    })).toBe('unknown')
+    })).toBe('expected-state-without-marker')
 
     expect(inspectWizardCartMutation(sale([{
       NetUid: 'row-a',
@@ -251,7 +251,7 @@ describe('wizard mutation idempotency and reconciliation', () => {
       beforeQty: 3,
       kind: 'row-deleted',
       rowNetUid: 'row-a',
-    })).toBe('unknown')
+    })).toBe('expected-state-without-marker')
   })
 
   it('uses an exact sale marker to prove deletion when the deleted row is absent', () => {
@@ -266,6 +266,24 @@ describe('wizard mutation idempotency and reconciliation', () => {
       kind: 'row-deleted',
       rowNetUid: 'row-a',
     })).toBe('committed')
+  })
+
+  it('replays the frozen request when the cart has the expected state but omitted its marker', async () => {
+    const mutate = vi.fn<(id: string) => Promise<void>>().mockResolvedValue(undefined)
+    const operation: WizardMutationOperation<SalesUkraineSale> = {
+      context: 'agreement-1:sale-1',
+      inspect: (snapshot) => inspectWizardCartMutation(snapshot, operationId, {
+        beforeQty: 3,
+        kind: 'row-deleted',
+        rowNetUid: 'row-a',
+      }),
+      mutate,
+      operationId,
+    }
+
+    await expect(retryWizardMutation(operation, async () => sale([])))
+      .resolves.toEqual({ status: 'acknowledged' })
+    expect(mutate).toHaveBeenCalledExactlyOnceWith(operationId)
   })
 
   it('does not treat an operation marker on a soft-deleted restored row as committed', () => {

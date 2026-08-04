@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import {
+  acceptSaleForPacking,
   addOrderItem,
   convertVatSaleAndGetPaymentDocument,
   deleteOrderItem,
@@ -35,6 +36,20 @@ const paymentDocumentOperation = {
 describe('sales Ukraine document request contracts', () => {
   beforeEach(() => {
     apiRequestMock.mockReset()
+  })
+
+  it('accepts an invoiced sale for packing through the dedicated idempotent endpoint', async () => {
+    apiRequestMock.mockResolvedValueOnce({})
+    const saleNetId = 'dc8d6ccc-e2f3-4011-a73f-9be8a570b2ae'
+
+    await acceptSaleForPacking(saleNetId, paymentDocumentOperation)
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/accept-for-packing', {
+      headers: { 'Idempotency-Key': paymentDocumentOperation.operationId },
+      method: 'PATCH',
+      query: { netId: saleNetId },
+      signal: undefined,
+    })
   })
 
   it.each([

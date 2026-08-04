@@ -47,7 +47,7 @@ import { UserRoleType } from '../../../shared/auth/types'
 import '../../sales-ukraine/pages/sales-grid.css'
 import '../../sales-ukraine/pages/sale-detail-sheet.css'
 import { useAuth } from '../../auth/useAuth'
-import { getSaleById, unlockSale, updateSale } from '../../sales-ukraine/api/salesUkraineApi'
+import { acceptSaleForPacking, getSaleById, unlockSale } from '../../sales-ukraine/api/salesUkraineApi'
 import { ConsignmentNoteSettingsDrawer } from '../../sales-ukraine/components/ConsignmentNoteSettingsDrawer'
 import { SaleDetailsDrawer } from '../../sales-ukraine/components/SaleDetailsDrawer'
 import { SaleDiscountModal } from '../../sales-ukraine/components/SaleDiscountModal'
@@ -204,7 +204,7 @@ function SalesOnlineShopOrdersPage() {
   const { t } = useI18n()
   const { hasPermission, user } = useAuth()
   const runSaleUnlock = usePersistentSaleJsonMutationRunner('sale-unlock')
-  const runSaleUpdate = usePersistentSaleJsonMutationRunner('sale-update')
+  const runSaleAcceptForPacking = usePersistentSaleJsonMutationRunner('sale-accept-for-packing')
   const isAdmin =
     user?.UserRole?.UserRoleType === UserRoleType.Administrator || user?.UserRole?.UserRoleType === UserRoleType.GBA
   const canEditSale = hasPermission(SALES_UKRAINE_EDIT_PERMISSION)
@@ -437,19 +437,13 @@ function SalesOnlineShopOrdersPage() {
 
       setConfirmState({
         confirmLabel: t('Підтвердити'),
-        message: t('Позначити, що замовлення не буде відвантажено?'),
-        title: t('Не буде відвантажено'),
+        message: t('Розблокувати продаж для відвантаження?'),
+        title: t('Підтвердження відвантаження'),
         onConfirm: async () => {
-          const hydrated = await getSaleById(netId)
-
-          if (!hydrated) {
-            throw new Error(t('Не вдалося завантажити продаж'))
-          }
-
-          const attempt = await runSaleUpdate(
-            `sale-update:packing-acceptance:${netId}`,
-            { ...hydrated, IsAcceptedToPacking: true },
-            updateSale,
+          const attempt = await runSaleAcceptForPacking(
+            `sale-accept-for-packing:${netId.toLowerCase()}`,
+            { NetUid: netId },
+            (_payload, operation) => acceptSaleForPacking(netId, operation),
           )
 
           if (!attempt.completed) {
@@ -460,7 +454,7 @@ function SalesOnlineShopOrdersPage() {
         },
       })
     },
-    [runSaleUpdate, setConfirmState, t],
+    [runSaleAcceptForPacking, setConfirmState, t],
   )
 
   const statusSelectData = useMemo(() => STATUS_OPTIONS.map((option) => ({ ...option, label: t(option.label) })), [t])
@@ -940,7 +934,7 @@ type SalesOnlineShopGridRowProps = {
 // Memoized: the page owns ALL grid state (filters, expand, drawers), so without
 // memo every keystroke/drawer/expand re-rendered all 20-100 dense rows. All
 // callback props are identity-stable (ref-routed in the page).
-const SalesOnlineShopGridRow = memo(function SalesOnlineShopGridRow({
+export const SalesOnlineShopGridRow = memo(function SalesOnlineShopGridRow({
   sale,
   saleKey,
   canEditSale,
@@ -1009,11 +1003,11 @@ const SalesOnlineShopGridRow = memo(function SalesOnlineShopGridRow({
             bangClickable ? (
               <TableRowAction
                 action="will-not-ship"
-                label={t('Замовлення не буде відвантажено')}
+                label={t('Розблокувати для відвантаження')}
                 onClick={() => onWillNotShip(sale)}
               />
             ) : (
-              <Tooltip label={t('Замовлення не буде відвантажено')}>
+              <Tooltip label={t('Розблокувати для відвантаження')}>
                 <span className="sg-bang" style={{ opacity: sale.ChangedToInvoice ? 1 : 0.4 }}>
                   !
                 </span>
@@ -1176,7 +1170,7 @@ const SalesOnlineShopGridRow = memo(function SalesOnlineShopGridRow({
                 leftSection={<TriangleAlert size={16} />}
                 onClick={() => onWillNotShip(sale)}
               >
-                {t('Не буде відвантажено')}
+                {t('Розблокувати для відвантаження')}
               </Menu.Item>
             )}
             {showUnlock && (

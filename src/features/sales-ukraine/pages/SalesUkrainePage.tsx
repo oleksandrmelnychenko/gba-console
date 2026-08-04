@@ -50,11 +50,11 @@ import './sale-detail-sheet.css'
 import { useAuth } from '../../auth/useAuth'
 import { UserRoleType } from '../../../shared/auth/types'
 import {
+  acceptSaleForPacking,
   getSaleById,
   getSalesUkraine,
   getSalesUkraineOrganizations,
   unlockSale,
-  updateSale,
 } from '../api/salesUkraineApi'
 import {
   getAverageBaseDiscount,
@@ -254,7 +254,7 @@ export function SalesUkrainePage() {
   const focusedSaleNetId = searchParams.get('saleNetId') || ''
   const { hasPermission, user } = useAuth()
   const runSaleUnlock = usePersistentSaleJsonMutationRunner('sale-unlock')
-  const runSaleUpdate = usePersistentSaleJsonMutationRunner('sale-update')
+  const runSaleAcceptForPacking = usePersistentSaleJsonMutationRunner('sale-accept-for-packing')
   const isAdmin =
     user?.UserRole?.UserRoleType === UserRoleType.Administrator || user?.UserRole?.UserRoleType === UserRoleType.GBA
   const canEditSale = hasPermission(SALES_UKRAINE_EDIT_PERMISSION)
@@ -570,7 +570,9 @@ export function SalesUkrainePage() {
 
   const requestWillNotShip = useCallback(
     (sale: SalesUkraineSale) => {
-      if (!sale.NetUid) {
+      const netId = sale.NetUid
+
+      if (!netId) {
         return
       }
 
@@ -579,16 +581,10 @@ export function SalesUkrainePage() {
         message: t('Розблокувати продаж для відвантаження?'),
         title: t('Підтвердження відвантаження'),
         onConfirm: async () => {
-          const next = await ensureSaleDetails(sale, { force: true })
-
-          if (!next) {
-            throw new Error(t('Не вдалося завантажити продаж'))
-          }
-
-          const attempt = await runSaleUpdate(
-            `sale-update:packing-acceptance:${sale.NetUid}`,
-            { ...next, IsAcceptedToPacking: true },
-            updateSale,
+          const attempt = await runSaleAcceptForPacking(
+            `sale-accept-for-packing:${netId.toLowerCase()}`,
+            { NetUid: netId },
+            (_payload, operation) => acceptSaleForPacking(netId, operation),
           )
 
           if (!attempt.completed) {
@@ -599,7 +595,7 @@ export function SalesUkrainePage() {
         },
       })
     },
-    [ensureSaleDetails, runSaleUpdate, setConfirmState, t],
+    [runSaleAcceptForPacking, setConfirmState, t],
   )
 
   // Identity-stable row handlers: SaleGridRow is React.memo'd, so its callback

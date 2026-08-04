@@ -17,6 +17,7 @@ export type SaleJsonMutationKind =
   | 'sale-shift-current'
   | 'sale-switch'
   | 'sale-unlock'
+  | 'sale-accept-for-packing'
   | 'sale-update'
   | 'protocol-carrier-edit'
   | 'protocol-invoice-edit'
@@ -73,6 +74,7 @@ export function isSaleJsonMutationSubmission<TPayload extends object = SalesUkra
       candidate.kind === 'sale-shift-current' ||
       candidate.kind === 'sale-switch' ||
       candidate.kind === 'sale-unlock' ||
+      candidate.kind === 'sale-accept-for-packing' ||
       candidate.kind === 'sale-update' ||
       candidate.kind === 'protocol-carrier-edit' ||
       candidate.kind === 'protocol-invoice-edit' ||

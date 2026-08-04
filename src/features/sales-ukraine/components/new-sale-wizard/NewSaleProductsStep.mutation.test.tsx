@@ -284,6 +284,33 @@ describe('NewSaleProductsStep persistent cart mutations', () => {
     expect(onBusyChange).toHaveBeenLastCalledWith(false)
   })
 
+  it('recovers a deleted row when reconciliation omits both the row and operation marker', async () => {
+    apiMocks.deleteOrderItem
+      .mockRejectedValueOnce(new ApiError('response lost after commit', 503, null))
+      .mockResolvedValueOnce(null)
+    const onBusyChange = vi.fn()
+    const reconciledSale = createSale()
+    reconciledSale.Order = { ...reconciledSale.Order, OrderItems: [] }
+    const onCartChanged = vi.fn(async () => reconciledSale)
+    renderStep({ onBusyChange, onCartChanged })
+
+    fireEvent.click(screen.getByRole('button', { name: 'remove row' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'confirm mutation' }))
+
+    const retry = await screen.findByRole('button', { name: 'Перевірити та повторити' })
+    const firstOperationId = apiMocks.deleteOrderItem.mock.calls[0]?.[1]?.operationId
+
+    expect(loadSalesPendingMutation(scope)?.phase).toBe('unknown')
+    expect(onBusyChange).toHaveBeenLastCalledWith(true)
+
+    fireEvent.click(retry)
+
+    await waitFor(() => expect(apiMocks.deleteOrderItem).toHaveBeenCalledTimes(2))
+    await waitFor(() => expect(loadSalesPendingMutation(scope)).toBe(null))
+    expect(apiMocks.deleteOrderItem.mock.calls[1]?.[1]?.operationId).toBe(firstOperationId)
+    expect(onBusyChange).toHaveBeenLastCalledWith(false)
+  })
+
   it('clears the final pending operation after restored split reconciliation succeeds', async () => {
     const sale = createSale()
     const source = sale.Order?.OrderItems?.[0] as SalesUkraineOrderItem & { Product: WizardSaleProduct }
