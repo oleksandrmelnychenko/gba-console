@@ -93,7 +93,7 @@ export async function getIncompleteSales(params: IncompleteSalesSearchParams = {
     query: {
       number: params.number?.trim() || undefined,
       from: params.from,
-      to: toEndOfDay(params.to),
+      to: params.to,
       isAccepted: params.isAccepted,
     },
   })
@@ -126,14 +126,6 @@ export async function updateIncompleteSale(
   })
 
   return normalizeCollection<IncompleteSale>(result)
-}
-
-function toEndOfDay(value?: string): string | undefined {
-  if (!value) {
-    return value
-  }
-
-  return value.includes('T') ? value : `${value}T23:59:59`
 }
 
 function normalizeCollection<T>(result: unknown): T[] {
