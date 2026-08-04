@@ -81,6 +81,27 @@ type DraftUpdate = <K extends keyof EditDraft>(key: K, value: EditDraft[K]) => v
 type UserDraftKey = 'accountingTaskUser' | 'supplyInformationTaskUser' | 'taskUser'
 type SelectOption = { label: string; value: string }
 type DeletedDocumentsSetter = (value: (current: Record<string, boolean>) => Record<string, boolean>) => void
+type EditFieldErrors = Partial<Record<
+  | 'accountingGrossPrice'
+  | 'accountingTaskPayToDate'
+  | 'accountingTaskUser'
+  | 'agreement'
+  | 'consumableProduct'
+  | 'fromDate'
+  | 'grossPrice'
+  | 'invoiceNumber'
+  | 'supplyInformationTaskPayToDate'
+  | 'supplyInformationTaskUser'
+  | 'supplyOrganization'
+  | 'taskPayToDate'
+  | 'taskUser',
+  string
+>>
+
+type EditValidation = {
+  fieldErrors: EditFieldErrors
+  summary: string | null
+}
 
 function toDraft(service: MergedService): EditDraft {
   const supplyInformationTask = service.SupplyInformationTask
@@ -148,6 +169,7 @@ export function MergedServiceEditCard({
     SUPPLY_ORGANIZATION_SEARCH_DEBOUNCE_MS,
   )
   const [validationError, setValidationError] = useValueState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useValueState<EditFieldErrors>({})
   const [prevOpened, setPrevOpened] = useValueState(opened)
   const { loadError, organizations, products, users } = useMergedServiceLookups(opened, t, debouncedOrganizationSearch)
 
@@ -168,6 +190,7 @@ export function MergedServiceEditCard({
       setDeletedAccountingTaskDocuments({})
       setOrganizationSearch('')
       setValidationError(null)
+      setFieldErrors({})
     }
   }
 
@@ -245,6 +268,7 @@ export function MergedServiceEditCard({
     }
 
     setDraft((current) => ({ ...current, [key]: value }))
+    setFieldErrors({})
   }
 
   function selectOrganization(netUid: string | null) {
@@ -254,6 +278,7 @@ export function MergedServiceEditCard({
 
     const organization = organizations.find((item) => item.NetUid === netUid) || draft.supplyOrganization
     setDraft((current) => ({ ...current, supplyOrganization: organization || null, agreement: null }))
+    setFieldErrors({})
   }
 
   function selectAgreement(netUid: string | null) {
@@ -291,14 +316,16 @@ export function MergedServiceEditCard({
       return
     }
 
-    const nextValidationError = getMergedServiceValidationError(draft, service, t)
+    const validation = getMergedServiceValidation(draft, service, t)
 
-    if (nextValidationError) {
-      setValidationError(nextValidationError)
+    if (validation.summary) {
+      setValidationError(validation.summary)
+      setFieldErrors(validation.fieldErrors)
       return
     }
 
     setValidationError(null)
+    setFieldErrors({})
 
     const updatedService = buildMergedServiceSavePayload({
       actDocuments,
@@ -338,6 +365,7 @@ export function MergedServiceEditCard({
         <MergedServicePrimaryFields
           agreementOptions={agreementOptions}
           draft={draft}
+          fieldErrors={fieldErrors}
           isSaving={isSaving}
           organizationSearch={organizationSearch}
           organizationOptions={organizationOptions}
@@ -375,6 +403,7 @@ export function MergedServiceEditCard({
           deletedAccountingTaskDocuments={deletedAccountingTaskDocuments}
           deletedTaskDocuments={deletedTaskDocuments}
           draft={draft}
+          fieldErrors={fieldErrors}
           isSaving={isSaving}
           service={service}
           taskDocuments={taskDocuments}
@@ -564,6 +593,7 @@ function MergedServiceTaskSections({
   deletedAccountingTaskDocuments,
   deletedTaskDocuments,
   draft,
+  fieldErrors,
   isSaving,
   service,
   taskDocuments,
@@ -579,6 +609,7 @@ function MergedServiceTaskSections({
   deletedAccountingTaskDocuments: Record<string, boolean>
   deletedTaskDocuments: Record<string, boolean>
   draft: EditDraft
+  fieldErrors: EditFieldErrors
   isSaving: boolean
   service: MergedService
   selectUser: (key: UserDraftKey, netUid: string | null) => void
@@ -611,6 +642,9 @@ function MergedServiceTaskSections({
         hasTask={Boolean(service.SupplyPaymentTask || draft.createTask)}
         label={t('Документи платіжної задачі')}
         taskDate={draft.taskPayToDate}
+        taskDateError={fieldErrors.taskPayToDate}
+        taskUserError={fieldErrors.taskUser}
+        taskUserRequired={Number(draft.grossPrice) > 0}
         taskUserValue={draft.taskUser?.NetUid || null}
         userOptions={userOptions}
         onChangeComment={(value) => update('taskComment', value)}
@@ -637,6 +671,9 @@ function MergedServiceTaskSections({
         hasTask={Boolean(service.AccountingPaymentTask || draft.createAccountingTask)}
         label={`${t('Документи платіжної задачі')} (${t('Бух.')})`}
         taskDate={draft.accountingTaskPayToDate}
+        taskDateError={fieldErrors.accountingTaskPayToDate}
+        taskUserError={fieldErrors.accountingTaskUser}
+        taskUserRequired={Number(draft.accountingGrossPrice) > 0}
         taskUserValue={draft.accountingTaskUser?.NetUid || null}
         userOptions={userOptions}
         onChangeComment={(value) => update('accountingTaskComment', value)}
@@ -649,44 +686,71 @@ function MergedServiceTaskSections({
   )
 }
 
-function getMergedServiceValidationError(
+function getMergedServiceValidation(
   draft: EditDraft,
   service: MergedService,
   t: (value: string) => string,
-): string | null {
-  if (!draft.supplyOrganization || !draft.agreement || !draft.consumableProduct || !draft.invoiceNumber) {
-    return t('Заповніть обовʼязкові поля')
+): EditValidation {
+  const fieldErrors: EditFieldErrors = {}
+
+  if (!draft.supplyOrganization) {
+    fieldErrors.supplyOrganization = t('Оберіть постачальника послуг')
+  }
+  if (!draft.agreement) {
+    fieldErrors.agreement = t('Оберіть договір')
+  }
+  if (!draft.consumableProduct) {
+    fieldErrors.consumableProduct = t('Оберіть тип')
+  }
+  if (!draft.invoiceNumber) {
+    fieldErrors.invoiceNumber = t('Вкажіть номер інвойса')
+  }
+  if (Object.keys(fieldErrors).length > 0) {
+    return { fieldErrors, summary: t('Заповніть обовʼязкові поля') }
   }
 
   if (!draft.grossPrice && !draft.accountingGrossPrice) {
-    return t('Заповніть управлінські або бухгалтерські витрати')
+    const grossPriceError = t('Заповніть управлінську або бухгалтерську вартість')
+    fieldErrors.grossPrice = grossPriceError
+    fieldErrors.accountingGrossPrice = grossPriceError
+    return { fieldErrors, summary: t('Заповніть управлінські або бухгалтерські витрати') }
   }
 
   const grossPrice = Number(draft.grossPrice) || 0
   const accountingGrossPrice = Number(draft.accountingGrossPrice) || 0
 
   if (draft.createInformationTask && !draft.supplyInformationTaskUser) {
-    return t('Вкажіть відповідального за оплату в межах країни')
+    fieldErrors.supplyInformationTaskUser = t('Вкажіть відповідального за оплату в межах країни')
+    return { fieldErrors, summary: fieldErrors.supplyInformationTaskUser }
   }
 
   if ((service.SupplyPaymentTask || draft.createTask) && grossPrice > 0 && !draft.taskUser) {
-    return t('Вкажіть відповідального за платіжну задачу')
+    fieldErrors.taskUser = t('Вкажіть відповідального за платіжну задачу')
+    return { fieldErrors, summary: fieldErrors.taskUser }
   }
 
   if ((service.AccountingPaymentTask || draft.createAccountingTask) && accountingGrossPrice > 0 && !draft.accountingTaskUser) {
-    return t('Вкажіть відповідального за бухгалтерську платіжну задачу')
+    fieldErrors.accountingTaskUser = t('Вкажіть відповідального за бухгалтерську платіжну задачу')
+    return { fieldErrors, summary: fieldErrors.accountingTaskUser }
   }
 
-  if (!areDateInputsValid([
-    draft.fromDate,
-    draft.supplyInformationTaskPayToDate,
-    draft.taskPayToDate,
-    draft.accountingTaskPayToDate,
-  ])) {
-    return t('Вкажіть коректну дату')
+  const dateFields = [
+    ['fromDate', draft.fromDate],
+    ['supplyInformationTaskPayToDate', draft.supplyInformationTaskPayToDate],
+    ['taskPayToDate', draft.taskPayToDate],
+    ['accountingTaskPayToDate', draft.accountingTaskPayToDate],
+  ] as const
+
+  for (const [key, value] of dateFields) {
+    if (value && !isValidDateInputValue(value)) {
+      fieldErrors[key] = t('Вкажіть коректну дату')
+    }
+  }
+  if (Object.keys(fieldErrors).length > 0) {
+    return { fieldErrors, summary: t('Вкажіть коректну дату') }
   }
 
-  return null
+  return { fieldErrors, summary: null }
 }
 
 function buildMergedServiceSavePayload({
@@ -798,6 +862,7 @@ function buildMergedServiceSavePayload({
 function MergedServicePrimaryFields({
   agreementOptions,
   draft,
+  fieldErrors,
   isSaving,
   organizationSearch,
   organizationOptions,
@@ -812,6 +877,7 @@ function MergedServicePrimaryFields({
 }: {
   agreementOptions: SelectOption[]
   draft: EditDraft
+  fieldErrors: EditFieldErrors
   isSaving: boolean
   organizationSearch: string
   organizationOptions: SelectOption[]
@@ -829,13 +895,17 @@ function MergedServicePrimaryFields({
   return (
     <>
       <Select
+        aria-invalid={Boolean(fieldErrors.supplyOrganization)}
+        aria-required="true"
         data={organizationOptions}
         disabled={isSaving}
+        error={fieldErrors.supplyOrganization}
         label={t('Постачальник послуг')}
         nothingFoundMessage={t('Нічого не знайдено')}
         searchable
         searchValue={organizationSearch}
         value={draft.supplyOrganization?.NetUid || null}
+        withAsterisk
         onChange={(value) => {
           selectOrganization(value)
           setOrganizationSearch('')
@@ -843,25 +913,37 @@ function MergedServicePrimaryFields({
         onSearchChange={setOrganizationSearch}
       />
       <Select
+        aria-invalid={Boolean(fieldErrors.agreement)}
+        aria-required="true"
         data={agreementOptions}
         disabled={isSaving}
+        error={fieldErrors.agreement}
         label={t('Договір')}
         searchable
         value={draft.agreement?.NetUid || null}
+        withAsterisk
         onChange={selectAgreement}
       />
       <Select
+        aria-invalid={Boolean(fieldErrors.consumableProduct)}
+        aria-required="true"
         data={productOptions}
         disabled={isSaving}
+        error={fieldErrors.consumableProduct}
         label={t('Тип')}
         searchable
         value={draft.consumableProduct?.NetUid || null}
+        withAsterisk
         onChange={selectProduct}
       />
       <TextInput
+        aria-invalid={Boolean(fieldErrors.invoiceNumber)}
+        aria-required="true"
         disabled={isSaving}
+        error={fieldErrors.invoiceNumber}
         label={t('Номер інвойса')}
         value={draft.invoiceNumber}
+        withAsterisk
         onChange={(event) => update('invoiceNumber', event.currentTarget.value)}
       />
       <TextInput
@@ -873,7 +955,10 @@ function MergedServicePrimaryFields({
 
       <Group grow>
         <TextInput
+          aria-invalid={Boolean(fieldErrors.grossPrice)}
+          description={t('Заповніть хоча б одну вартість: управлінську або бухгалтерську')}
           disabled={isSaving}
+          error={fieldErrors.grossPrice}
           label={t('Вартість Брутто')}
           type="number"
           value={draft.grossPrice}
@@ -890,7 +975,9 @@ function MergedServicePrimaryFields({
 
       <Group grow>
         <TextInput
+          aria-invalid={Boolean(fieldErrors.accountingGrossPrice)}
           disabled={isSaving}
+          error={fieldErrors.accountingGrossPrice}
           label={t('Вартість Брутто (Бух.)')}
           type="number"
           value={draft.accountingGrossPrice}
@@ -930,7 +1017,9 @@ function MergedServicePrimaryFields({
       />
 
       <TextInput
+        aria-invalid={Boolean(fieldErrors.fromDate)}
         disabled={isSaving}
+        error={fieldErrors.fromDate}
         label={t('Від якої дати')}
         type="datetime-local"
         value={draft.fromDate}
@@ -953,18 +1042,24 @@ function MergedServicePrimaryFields({
             onChange={(value) => update('supplyInformationTaskGrossPrice', String(value))}
           />
           <TextInput
+            aria-invalid={Boolean(fieldErrors.supplyInformationTaskPayToDate)}
             disabled={isSaving}
+            error={fieldErrors.supplyInformationTaskPayToDate}
             label={t('Сплатити до')}
             type="datetime-local"
             value={draft.supplyInformationTaskPayToDate}
             onChange={(event) => update('supplyInformationTaskPayToDate', event.currentTarget.value)}
           />
           <Select
+            aria-invalid={Boolean(fieldErrors.supplyInformationTaskUser)}
+            aria-required="true"
             data={userOptions}
             disabled={isSaving}
+            error={fieldErrors.supplyInformationTaskUser}
             label={t('Відповідальний за оплату в межах країни')}
             searchable
             value={draft.supplyInformationTaskUser?.NetUid || null}
+            withAsterisk
             onChange={(netUid) => selectUser('supplyInformationTaskUser', netUid)}
           />
           <Textarea
@@ -1037,6 +1132,9 @@ function TaskDocumentsEditor({
   hasTask,
   label,
   taskDate,
+  taskDateError,
+  taskUserError,
+  taskUserRequired,
   taskUserValue,
   userOptions,
   onChangeComment,
@@ -1058,6 +1156,9 @@ function TaskDocumentsEditor({
   onChangeTaskUser: (value: string | null) => void
   onToggleDeleted: (document: SupplyDocument, index: number) => void
   taskDate: string
+  taskDateError?: string
+  taskUserError?: string
+  taskUserRequired: boolean
   taskUserValue: string | null
   userOptions: Array<{ label: string; value: string }>
 }) {
@@ -1074,18 +1175,24 @@ function TaskDocumentsEditor({
       </Text>
       <Group grow>
         <TextInput
+          aria-invalid={Boolean(taskDateError)}
           disabled={disabled}
+          error={taskDateError}
           label={t('Сплатити до')}
           type="datetime-local"
           value={taskDate}
           onChange={(event) => onChangeTaskDate(event.currentTarget.value)}
         />
         <Select
+          aria-invalid={Boolean(taskUserError)}
+          aria-required={taskUserRequired}
           data={userOptions}
           disabled={disabled}
+          error={taskUserError}
           label={t('Відповідальний')}
           searchable
           value={taskUserValue}
+          withAsterisk={taskUserRequired}
           onChange={onChangeTaskUser}
         />
       </Group>
@@ -1292,10 +1399,6 @@ function createActProvidingService(): ActProvidingService {
 
 function hasActiveActDocument(document: SupplyDocument | null | undefined, newDocuments: File[]): boolean {
   return Boolean(newDocuments.length > 0 || (document && !document.Deleted))
-}
-
-function areDateInputsValid(values: string[]): boolean {
-  return values.every((value) => !value || isValidDateInputValue(value))
 }
 
 function isValidDateInputValue(value: string): boolean {

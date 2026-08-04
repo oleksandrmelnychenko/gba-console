@@ -38,6 +38,27 @@ type SelectOption = {
 
 const SUPPLY_ORGANIZATION_SEARCH_DEBOUNCE_MS = 300
 
+type NewMergedServiceFieldErrors = Partial<Record<
+  | 'accountingExchangeRate'
+  | 'agreement'
+  | 'exchangeRate'
+  | 'grossPrice'
+  | 'grossPriceAccounting'
+  | 'invoiceNumber'
+  | 'name'
+  | 'payToDate'
+  | 'percent'
+  | 'percentAccounting'
+  | 'responsibleForPayment'
+  | 'supplyOrganization',
+  string
+>>
+
+type NewMergedServiceValidation = {
+  fieldErrors: NewMergedServiceFieldErrors
+  summary: string | null
+}
+
 function createInitialValues(): NewMergedServiceFormValues {
   return {
     accountDocuments: [],
@@ -89,6 +110,7 @@ export function NewMergedServiceForm({
   const [users, setUsers] = useValueState<ProtocolUser[]>([])
   const [loadError, setLoadError] = useValueState<string | null>(null)
   const [validationError, setValidationError] = useValueState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useValueState<NewMergedServiceFieldErrors>({})
   const [prevOpened, setPrevOpened] = useValueState(opened)
 
   if (opened !== prevOpened) {
@@ -99,6 +121,7 @@ export function NewMergedServiceForm({
       setOrganizations([])
       setOrganizationSearch('')
       setValidationError(null)
+      setFieldErrors({})
     }
   }
 
@@ -191,14 +214,17 @@ export function NewMergedServiceForm({
     () => toProtocolUserOptions(users),
     [users],
   )
+  const willCreatePaymentTask = Number(values.grossPrice) > 0 || Number(values.grossPriceAccounting) > 0
 
   function update<K extends keyof NewMergedServiceFormValues>(key: K, value: NewMergedServiceFormValues[K]) {
     setValues((current) => ({ ...current, [key]: value }))
+    setFieldErrors({})
   }
 
   function selectOrganization(netUid: string | null) {
     const organization = organizations.find((item) => item.NetUid === netUid) || null
     setValues((current) => ({ ...current, agreement: null, supplyOrganization: organization }))
+    setFieldErrors({})
   }
 
   function selectAgreement(netUid: string | null) {
@@ -209,42 +235,17 @@ export function NewMergedServiceForm({
   }
 
   async function handleSubmit() {
-    if (!values.supplyOrganization || !values.agreement || !values.name.trim() || !values.invoiceNumber.trim()) {
-      setValidationError(t('Заповніть обовʼязкові поля'))
+    const validation = validateNewMergedService(values, t)
 
-      return
-    }
-
-    if (!values.grossPrice && !values.grossPriceAccounting) {
-      setValidationError(t('Заповніть управлінські або бухгалтерські витрати'))
-
-      return
-    }
-
-    const willCreatePaymentTask = Number(values.grossPrice) > 0 || Number(values.grossPriceAccounting) > 0
-
-    if (willCreatePaymentTask && (!values.responsibleForPayment || !values.payToDate)) {
-      setValidationError(t('Заповніть обовʼязкові поля'))
-
-      return
-    }
-
-    const numericValues = [
-      values.grossPrice,
-      values.grossPriceAccounting,
-      values.percent,
-      values.percentAccounting,
-      values.exchangeRate,
-      values.accountingExchangeRate,
-    ]
-
-    if (numericValues.some((value) => value !== '' && Number(value) < 0)) {
-      setValidationError(t('Значення не можуть бути відʼємними'))
+    if (validation.summary) {
+      setValidationError(validation.summary)
+      setFieldErrors(validation.fieldErrors)
 
       return
     }
 
     setValidationError(null)
+    setFieldErrors({})
     await onSubmit(values)
   }
 
@@ -273,12 +274,16 @@ export function NewMergedServiceForm({
         )}
 
         <Select
+          aria-invalid={Boolean(fieldErrors.supplyOrganization)}
+          aria-required="true"
           data={organizationOptions}
+          error={fieldErrors.supplyOrganization}
           label={t('Постачальник послуг')}
           nothingFoundMessage={t('Нічого не знайдено')}
           searchable
           searchValue={organizationSearch}
           value={values.supplyOrganization?.NetUid || null}
+          withAsterisk
           onChange={(value) => {
             selectOrganization(value)
             setOrganizationSearch('')
@@ -286,11 +291,15 @@ export function NewMergedServiceForm({
           onSearchChange={setOrganizationSearch}
         />
         <Select
+          aria-invalid={Boolean(fieldErrors.agreement)}
+          aria-required="true"
           data={agreementOptions}
           disabled={!values.supplyOrganization}
+          error={fieldErrors.agreement}
           label={t('Договір')}
           searchable
           value={values.agreement?.NetUid || null}
+          withAsterisk
           onChange={selectAgreement}
         />
         <Select
@@ -302,24 +311,37 @@ export function NewMergedServiceForm({
           onChange={(netUid) => update('consumableProduct', products.find((item) => item.NetUid === netUid) || null)}
         />
         <TextInput
+          aria-invalid={Boolean(fieldErrors.name)}
+          aria-required="true"
+          error={fieldErrors.name}
           label={t('Назва')}
           value={values.name}
+          withAsterisk
           onChange={(event) => update('name', event.currentTarget.value)}
         />
         <TextInput
+          aria-invalid={Boolean(fieldErrors.invoiceNumber)}
+          aria-required="true"
+          error={fieldErrors.invoiceNumber}
           label={t('Номер інвойса')}
           value={values.invoiceNumber}
+          withAsterisk
           onChange={(event) => update('invoiceNumber', event.currentTarget.value)}
         />
 
         <Group grow>
           <TextInput
+            aria-invalid={Boolean(fieldErrors.grossPrice)}
+            description={t('Заповніть хоча б одну вартість: управлінську або бухгалтерську')}
+            error={fieldErrors.grossPrice}
             label={t('Вартість Брутто')}
             type="number"
             value={values.grossPrice}
             onChange={(event) => update('grossPrice', event.currentTarget.value)}
           />
           <TextInput
+            aria-invalid={Boolean(fieldErrors.percent)}
+            error={fieldErrors.percent}
             label={t('ПДВ %')}
             type="number"
             value={values.percent}
@@ -329,12 +351,16 @@ export function NewMergedServiceForm({
 
         <Group grow>
           <TextInput
+            aria-invalid={Boolean(fieldErrors.grossPriceAccounting)}
+            error={fieldErrors.grossPriceAccounting}
             label={`${t('Вартість Брутто')} (${t('Бух.')})`}
             type="number"
             value={values.grossPriceAccounting}
             onChange={(event) => update('grossPriceAccounting', event.currentTarget.value)}
           />
           <TextInput
+            aria-invalid={Boolean(fieldErrors.percentAccounting)}
+            error={fieldErrors.percentAccounting}
             label={`${t('ПДВ %')} (${t('Бух.')})`}
             type="number"
             value={values.percentAccounting}
@@ -344,12 +370,16 @@ export function NewMergedServiceForm({
 
         <Group grow>
           <TextInput
+            aria-invalid={Boolean(fieldErrors.exchangeRate)}
+            error={fieldErrors.exchangeRate}
             label={t('Курс валют')}
             type="number"
             value={values.exchangeRate}
             onChange={(event) => update('exchangeRate', event.currentTarget.value)}
           />
           <TextInput
+            aria-invalid={Boolean(fieldErrors.accountingExchangeRate)}
+            error={fieldErrors.accountingExchangeRate}
             label={`${t('Курс валют')} (${t('Бух.')})`}
             type="number"
             value={values.accountingExchangeRate}
@@ -400,17 +430,25 @@ export function NewMergedServiceForm({
         />
 
         <TextInput
+          aria-invalid={Boolean(fieldErrors.payToDate)}
+          aria-required={willCreatePaymentTask}
+          error={fieldErrors.payToDate}
           label={t('Сплатити до')}
           type="date"
           value={toDateInput(values.payToDate)}
+          withAsterisk={willCreatePaymentTask}
           onChange={(event) => update('payToDate', fromDateInput(event.currentTarget.value))}
         />
         <Select
+          aria-invalid={Boolean(fieldErrors.responsibleForPayment)}
+          aria-required={willCreatePaymentTask}
           clearable
           data={userOptions}
+          error={fieldErrors.responsibleForPayment}
           label={t('Відповідальний за оплату')}
           searchable
           value={values.responsibleForPayment?.NetUid || null}
+          withAsterisk={willCreatePaymentTask}
           onChange={(netUid) => update('responsibleForPayment', users.find((item) => item.NetUid === netUid) || null)}
         />
         <Textarea
@@ -422,6 +460,68 @@ export function NewMergedServiceForm({
       </Stack>
     </AppDrawer>
   )
+}
+
+function validateNewMergedService(
+  values: NewMergedServiceFormValues,
+  t: (value: string) => string,
+): NewMergedServiceValidation {
+  const fieldErrors: NewMergedServiceFieldErrors = {}
+
+  if (!values.supplyOrganization) {
+    fieldErrors.supplyOrganization = t('Оберіть постачальника послуг')
+  }
+  if (!values.agreement) {
+    fieldErrors.agreement = t('Оберіть договір')
+  }
+  if (!values.name.trim()) {
+    fieldErrors.name = t('Вкажіть назву')
+  }
+  if (!values.invoiceNumber.trim()) {
+    fieldErrors.invoiceNumber = t('Вкажіть номер інвойса')
+  }
+  if (Object.keys(fieldErrors).length > 0) {
+    return { fieldErrors, summary: t('Заповніть обовʼязкові поля') }
+  }
+
+  if (!values.grossPrice && !values.grossPriceAccounting) {
+    const grossPriceError = t('Заповніть управлінську або бухгалтерську вартість')
+    fieldErrors.grossPrice = grossPriceError
+    fieldErrors.grossPriceAccounting = grossPriceError
+    return { fieldErrors, summary: t('Заповніть управлінські або бухгалтерські витрати') }
+  }
+
+  const willCreatePaymentTask = Number(values.grossPrice) > 0 || Number(values.grossPriceAccounting) > 0
+
+  if (willCreatePaymentTask && !values.responsibleForPayment) {
+    fieldErrors.responsibleForPayment = t('Вкажіть відповідального за оплату')
+  }
+  if (willCreatePaymentTask && !values.payToDate) {
+    fieldErrors.payToDate = t('Вкажіть дату оплати')
+  }
+  if (Object.keys(fieldErrors).length > 0) {
+    return { fieldErrors, summary: t('Заповніть обовʼязкові поля') }
+  }
+
+  const numericFields = [
+    ['grossPrice', values.grossPrice],
+    ['grossPriceAccounting', values.grossPriceAccounting],
+    ['percent', values.percent],
+    ['percentAccounting', values.percentAccounting],
+    ['exchangeRate', values.exchangeRate],
+    ['accountingExchangeRate', values.accountingExchangeRate],
+  ] as const
+
+  for (const [key, value] of numericFields) {
+    if (value !== '' && Number(value) < 0) {
+      fieldErrors[key] = t('Значення не може бути відʼємним')
+    }
+  }
+  if (Object.keys(fieldErrors).length > 0) {
+    return { fieldErrors, summary: t('Значення не можуть бути відʼємними') }
+  }
+
+  return { fieldErrors, summary: null }
 }
 
 function toSupplyOrganizationOptions(organizations: SupplyOrganization[]): SelectOption[] {
