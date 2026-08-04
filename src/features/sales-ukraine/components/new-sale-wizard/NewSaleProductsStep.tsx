@@ -245,6 +245,7 @@ export function NewSaleProductsStep({
   sale,
   onBusyChange,
   onCartChanged,
+  onPendingMutationChange,
   onRequestClose,
   onRestoreSplitItems,
 }: {
@@ -255,6 +256,7 @@ export function NewSaleProductsStep({
   headerTools?: ReactNode
   onBusyChange?: (busy: boolean) => void
   onCartChanged: () => SalesUkraineSale | null | void | Promise<SalesUkraineSale | null | void>
+  onPendingMutationChange?: (pending: boolean) => void
   onRequestClose?: () => void
   onRestoreSplitItems?: () => Promise<boolean>
   sale: SalesUkraineSale | null
@@ -464,8 +466,9 @@ export function NewSaleProductsStep({
     return () => {
       mountedRef.current = false
       onBusyChange?.(false)
+      onPendingMutationChange?.(false)
     }
-  }, [onBusyChange])
+  }, [onBusyChange, onPendingMutationChange])
 
   useEffect(() => subscribeSalesPendingMutations(({ external }) => {
     if (external) {
@@ -510,7 +513,8 @@ export function NewSaleProductsStep({
           persistSplitItems(localCommit.failureSplitItems, localCommit.agreementNetId)
         }
 
-        onBusyChange?.(true)
+        onBusyChange?.(false)
+        onPendingMutationChange?.(true)
         queueMicrotask(() => {
           if (!cancelled && mountedRef.current && mutationContextRef.current === mutationContextKey) {
             setPendingMutationError(t('Операція не була підтверджена. Перевірте результат і повторіть з тим самим ключем'))
@@ -523,7 +527,8 @@ export function NewSaleProductsStep({
       }
     } catch (storageError) {
       pendingMutationRef.current = null
-      onBusyChange?.(true)
+      onBusyChange?.(false)
+      onPendingMutationChange?.(true)
       queueMicrotask(() => {
         if (!cancelled && mountedRef.current && mutationContextRef.current === mutationContextKey) {
           setPendingMutationError(getRequestErrorMessage(
@@ -541,6 +546,7 @@ export function NewSaleProductsStep({
     pendingMutationRef.current = null
 
     onBusyChange?.(false)
+    onPendingMutationChange?.(false)
     queueMicrotask(() => {
       if (!cancelled && mountedRef.current && mutationContextRef.current === mutationContextKey) {
         setPendingMutationError(null)
@@ -550,7 +556,7 @@ export function NewSaleProductsStep({
     return () => {
       cancelled = true
     }
-  }, [getPendingCartMutationScope, mutationContextKey, mutationStorageRevision, onBusyChange, pendingMutationUserKey, persistSplitItems, t])
+  }, [getPendingCartMutationScope, mutationContextKey, mutationStorageRevision, onBusyChange, onPendingMutationChange, pendingMutationUserKey, persistSplitItems, t])
 
   useEffect(() => {
     setWizardKeyboardState('ProductSearch')
@@ -982,7 +988,7 @@ export function NewSaleProductsStep({
       setBusy(false)
     }
 
-    onBusyChange?.(pendingMutationRef.current?.context === context)
+    onBusyChange?.(false)
   }
 
   function isCurrentMutationContext(context: string): boolean {
@@ -1097,6 +1103,7 @@ export function NewSaleProductsStep({
 
     if (mountedRef.current) {
       setPendingMutationError(null)
+      onPendingMutationChange?.(false)
     }
   }
 
@@ -1114,7 +1121,7 @@ export function NewSaleProductsStep({
         ? `${mutationMessage}. ${t('Перевірка кошика')}: ${reconciliationMessage}`
         : mutationMessage,
     )
-    onBusyChange?.(true)
+    onPendingMutationChange?.(true)
   }
 
   async function handleCartMutationResult(
@@ -1133,7 +1140,7 @@ export function NewSaleProductsStep({
         } else {
           pendingMutationRef.current = operation
           setPendingMutationError(getRequestErrorMessage(result.mutationError, operation.fallbackMessage))
-          onBusyChange?.(true)
+          onPendingMutationChange?.(true)
         }
       }
 

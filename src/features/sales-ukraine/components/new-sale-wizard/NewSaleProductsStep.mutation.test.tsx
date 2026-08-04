@@ -8,6 +8,7 @@ import { theme } from '../../../../shared/theme/theme'
 import {
   clearAllSalesPendingMutations,
   loadSalesPendingMutation,
+  saveSalesPendingMutation,
   type SalesPendingMutationScope,
 } from '../../pendingSalesMutationRegistry'
 import type { SalesUkraineOrderItem, SalesUkraineProduct, SalesUkraineSale } from '../../types'
@@ -133,6 +134,7 @@ import {
 } from './newSaleWizardState'
 import { createWizardSplitOrderItem } from './wizardSplitSale'
 import type { WizardSaleProduct } from './wizardSaleProduct'
+import { createPersistedWizardCartMutation } from './wizardCartMutation'
 
 const agreementNetId = 'agreement-1'
 const scope: SalesPendingMutationScope = {
@@ -168,10 +170,12 @@ function createSale(qty: number = 2): SalesUkraineSale {
 function renderStep({
   onBusyChange = vi.fn(),
   onCartChanged = vi.fn(async () => createSale()),
+  onPendingMutationChange = vi.fn(),
   sale = createSale(),
 }: {
   onBusyChange?: (busy: boolean) => void
   onCartChanged?: () => SalesUkraineSale | Promise<SalesUkraineSale>
+  onPendingMutationChange?: (pending: boolean) => void
   sale?: SalesUkraineSale
 } = {}) {
   return render(
@@ -185,6 +189,7 @@ function renderStep({
           sale={sale}
           onBusyChange={onBusyChange}
           onCartChanged={onCartChanged}
+          onPendingMutationChange={onPendingMutationChange}
         />
       </I18nProvider>
     </MantineProvider>,
@@ -211,6 +216,35 @@ afterEach(() => {
 })
 
 describe('NewSaleProductsStep persistent cart mutations', () => {
+  it('unblocks a completed add whose cart projection has no operation marker', async () => {
+    const operationId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+    const sale = createSale()
+    const persisted = createPersistedWizardCartMutation({
+      context: scope.context,
+      expectation: { kind: 'operation-marker' },
+      fallbackMessage: 'Не вдалося додати товар',
+      localCommit: { kind: 'none' },
+      operationId,
+      request: {
+        clientAgreementNetId: agreementNetId,
+        kind: 'add',
+        orderItem: sale.Order?.OrderItems?.[0] as SalesUkraineOrderItem,
+        saleNetId: sale.NetUid as string,
+      },
+    })
+    saveSalesPendingMutation(scope, operationId, persisted)
+    const onPendingMutationChange = vi.fn()
+
+    renderStep({ onPendingMutationChange, sale })
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Перевірити та повторити' }))
+
+    await waitFor(() => expect(apiMocks.addOrderItem).toHaveBeenCalledOnce())
+    await waitFor(() => expect(loadSalesPendingMutation(scope)).toBe(null))
+    expect(apiMocks.addOrderItem.mock.calls[0]?.[3]?.operationId).toBe(operationId)
+    expect(onPendingMutationChange).toHaveBeenLastCalledWith(false)
+  })
+
   it('adds quantity atomically instead of overwriting an existing row with an absolute quantity', async () => {
     const onCartChanged = vi.fn(async () => createSale(5))
     renderStep({ onCartChanged })
@@ -235,8 +269,8 @@ describe('NewSaleProductsStep persistent cart mutations', () => {
     apiMocks.deleteOrderItem
       .mockRejectedValueOnce(new ApiError('row conflict', 400, null))
       .mockResolvedValueOnce(null)
-    const onBusyChange = vi.fn()
-    renderStep({ onBusyChange })
+    const onPendingMutationChange = vi.fn()
+    renderStep({ onPendingMutationChange })
 
     fireEvent.click(screen.getByRole('button', { name: 'remove row' }))
     fireEvent.click(await screen.findByRole('button', { name: 'confirm mutation' }))
@@ -247,23 +281,23 @@ describe('NewSaleProductsStep persistent cart mutations', () => {
     const firstOperationId = apiMocks.deleteOrderItem.mock.calls[0]?.[1]?.operationId
 
     expect(pending).toMatchObject({ operationId: firstOperationId, phase: 'unknown' })
-    expect(onBusyChange).toHaveBeenLastCalledWith(true)
+    expect(onPendingMutationChange).toHaveBeenLastCalledWith(true)
 
     fireEvent.click(retry)
 
     await waitFor(() => expect(apiMocks.deleteOrderItem).toHaveBeenCalledTimes(2))
     await waitFor(() => expect(loadSalesPendingMutation(scope)).toBe(null))
     expect(apiMocks.deleteOrderItem.mock.calls[1]?.[1]?.operationId).toBe(firstOperationId)
-    expect(onBusyChange).toHaveBeenLastCalledWith(false)
+    expect(onPendingMutationChange).toHaveBeenLastCalledWith(false)
   })
 
   it('keeps an initial 5xx retryable and reuses the persisted operation key', async () => {
     apiMocks.deleteOrderItem
       .mockRejectedValueOnce(new ApiError('response lost', 503, null))
       .mockResolvedValueOnce(null)
-    const onBusyChange = vi.fn()
+    const onPendingMutationChange = vi.fn()
     const onCartChanged = vi.fn(async () => createSale())
-    renderStep({ onBusyChange, onCartChanged })
+    renderStep({ onCartChanged, onPendingMutationChange })
 
     fireEvent.click(screen.getByRole('button', { name: 'remove row' }))
     fireEvent.click(await screen.findByRole('button', { name: 'confirm mutation' }))
@@ -273,7 +307,7 @@ describe('NewSaleProductsStep persistent cart mutations', () => {
     const firstOperationId = apiMocks.deleteOrderItem.mock.calls[0]?.[1]?.operationId
 
     expect(pending?.operationId).toBe(firstOperationId)
-    expect(onBusyChange).toHaveBeenLastCalledWith(true)
+    expect(onPendingMutationChange).toHaveBeenLastCalledWith(true)
 
     fireEvent.click(retry)
 
@@ -281,18 +315,18 @@ describe('NewSaleProductsStep persistent cart mutations', () => {
     await waitFor(() => expect(loadSalesPendingMutation(scope)).toBe(null))
 
     expect(apiMocks.deleteOrderItem.mock.calls[1]?.[1]?.operationId).toBe(firstOperationId)
-    expect(onBusyChange).toHaveBeenLastCalledWith(false)
+    expect(onPendingMutationChange).toHaveBeenLastCalledWith(false)
   })
 
   it('recovers a deleted row when reconciliation omits both the row and operation marker', async () => {
     apiMocks.deleteOrderItem
       .mockRejectedValueOnce(new ApiError('response lost after commit', 503, null))
       .mockResolvedValueOnce(null)
-    const onBusyChange = vi.fn()
+    const onPendingMutationChange = vi.fn()
     const reconciledSale = createSale()
     reconciledSale.Order = { ...reconciledSale.Order, OrderItems: [] }
     const onCartChanged = vi.fn(async () => reconciledSale)
-    renderStep({ onBusyChange, onCartChanged })
+    renderStep({ onCartChanged, onPendingMutationChange })
 
     fireEvent.click(screen.getByRole('button', { name: 'remove row' }))
     fireEvent.click(await screen.findByRole('button', { name: 'confirm mutation' }))
@@ -301,14 +335,14 @@ describe('NewSaleProductsStep persistent cart mutations', () => {
     const firstOperationId = apiMocks.deleteOrderItem.mock.calls[0]?.[1]?.operationId
 
     expect(loadSalesPendingMutation(scope)?.phase).toBe('unknown')
-    expect(onBusyChange).toHaveBeenLastCalledWith(true)
+    expect(onPendingMutationChange).toHaveBeenLastCalledWith(true)
 
     fireEvent.click(retry)
 
     await waitFor(() => expect(apiMocks.deleteOrderItem).toHaveBeenCalledTimes(2))
     await waitFor(() => expect(loadSalesPendingMutation(scope)).toBe(null))
     expect(apiMocks.deleteOrderItem.mock.calls[1]?.[1]?.operationId).toBe(firstOperationId)
-    expect(onBusyChange).toHaveBeenLastCalledWith(false)
+    expect(onPendingMutationChange).toHaveBeenLastCalledWith(false)
   })
 
   it('clears the final pending operation after restored split reconciliation succeeds', async () => {

@@ -180,8 +180,8 @@ describe('wizard mutation idempotency and reconciliation', () => {
     expect(mutate).toHaveBeenCalledExactlyOnceWith(operationId)
   })
 
-  it('does not endlessly resend when the server omitted operation markers from its projection', async () => {
-    const mutate = vi.fn<(id: string) => Promise<void>>()
+  it('replays once through the server idempotency ledger when the cart projection omits operation markers', async () => {
+    const mutate = vi.fn<(id: string) => Promise<void>>().mockResolvedValue(undefined)
     const operation: WizardMutationOperation<SalesUkraineSale> = {
       context: 'agreement-1:sale-1',
       inspect: (snapshot) => inspectWizardCartMutation(snapshot, operationId, { kind: 'operation-marker' }),
@@ -192,8 +192,8 @@ describe('wizard mutation idempotency and reconciliation', () => {
     await expect(retryWizardMutation(
       operation,
       async () => ({ NetUid: 'sale-1', Order: { OrderItems: [] } }),
-    )).resolves.toMatchObject({ status: 'pending-retry' })
-    expect(mutate).not.toHaveBeenCalled()
+    )).resolves.toEqual({ status: 'acknowledged' })
+    expect(mutate).toHaveBeenCalledExactlyOnceWith(operationId)
   })
 
   it('does not infer a committed quantity change from row identity and quantity alone', () => {

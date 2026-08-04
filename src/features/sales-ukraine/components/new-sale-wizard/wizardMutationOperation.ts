@@ -4,6 +4,7 @@ import type { SalesUkraineOrderItem, SalesUkraineSale } from '../../types'
 export type WizardMutationCommitState =
   | 'committed'
   | 'expected-state-without-marker'
+  | 'operation-marker-unavailable'
   | 'not-committed'
   | 'unknown'
 
@@ -82,7 +83,10 @@ export async function retryWizardMutation<TSnapshot>(
     // explicit retry is nevertheless safe because mutate() reuses the frozen
     // request and the same server idempotency key. A committed operation replays
     // its result; an uncommitted operation applies the already-matching effect.
-    if (commitState === 'expected-state-without-marker') {
+    if (
+      commitState === 'expected-state-without-marker' ||
+      commitState === 'operation-marker-unavailable'
+    ) {
       return await attemptWizardMutation(operation, reconcile)
     }
 
@@ -134,7 +138,9 @@ export function inspectWizardCartMutation(
       return 'committed'
     }
 
-    return markerProjectionIsAuthoritative ? 'not-committed' : 'unknown'
+    return markerProjectionIsAuthoritative
+      ? 'not-committed'
+      : 'operation-marker-unavailable'
   }
 
   const rowNetUid = normalizeIdentity(expectation.rowNetUid)

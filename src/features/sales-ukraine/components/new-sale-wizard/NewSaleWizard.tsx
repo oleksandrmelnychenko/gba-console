@@ -447,7 +447,9 @@ function NewSaleWizardContent({
   const [busy, setBusy] = useState(false)
   const [reviewBusy, setReviewBusy] = useState(false)
   const [productsBusy, setProductsBusy] = useState(false)
+  const [productsPending, setProductsPending] = useState(false)
   const productsBusyRef = useRef(false)
+  const productsPendingRef = useRef(false)
   const stateRef = useRef(state)
   const [reloadGuard] = useState(createWizardAsyncGenerationGuard)
   const [navigationGuard] = useState(createWizardAsyncGenerationGuard)
@@ -472,8 +474,17 @@ function NewSaleWizardContent({
     [onBusyChange],
   )
 
+  const handleProductsPendingChange = useCallback((next: boolean) => {
+    productsPendingRef.current = next
+    setProductsPending(next)
+  }, [])
+
   function isShellBusyNow(): boolean {
     return isWizardShellBusy(busy, productsBusyRef.current, reviewBusy)
+  }
+
+  function isNavigationBlockedNow(): boolean {
+    return isShellBusyNow() || productsPendingRef.current
   }
 
   const restoreSplitBeforeAbandonment = useCallback(async (): Promise<boolean> => {
@@ -1005,7 +1016,7 @@ function NewSaleWizardContent({
   }
 
   function onStepClick(index: number) {
-    if (isShellBusyNow()) {
+    if (isNavigationBlockedNow()) {
       return
     }
 
@@ -1028,7 +1039,7 @@ function NewSaleWizardContent({
   }
 
   const nextDisabled =
-    shellBusy ||
+    shellBusy || productsPending ||
     (active === 0 && !canAdvanceToProducts(state)) ||
     (active === 1 && getCartItemCount(state.sale) === 0)
   const nextLabel = active === 2 ? t('Створити продаж') : t('Далі')
@@ -1150,7 +1161,7 @@ function NewSaleWizardContent({
           clientNetId={state.clientNetId}
           hideAgreementsAction
           mode="inline"
-          reassignDisabled={shellBusy || productsBusy || splitItems.length > 0 || Boolean(getWizardSplitRecovery())}
+          reassignDisabled={shellBusy || productsPending || splitItems.length > 0 || Boolean(getWizardSplitRecovery())}
           sale={state.sale}
           withVatAccounting={withVatAccounting}
           onReassignOpenChange={setReassignOpen}
@@ -1158,7 +1169,7 @@ function NewSaleWizardContent({
         />
       </Group>
     ),
-    [onSaleReassigned, productsBusy, shellBusy, splitItems.length, state.clientNetId, state.sale, withVatAccounting],
+    [onSaleReassigned, productsPending, shellBusy, splitItems.length, state.clientNetId, state.sale, withVatAccounting],
   )
 
   return (
@@ -1224,6 +1235,7 @@ function NewSaleWizardContent({
             sale={productsCart}
             onBusyChange={handleProductsBusyChange}
             onCartChanged={reloadCart}
+            onPendingMutationChange={handleProductsPendingChange}
             onRequestClose={requestExit}
             onRestoreSplitItems={restoreSplitBeforeAbandonment}
           />
@@ -1276,7 +1288,7 @@ function NewSaleWizardContent({
             <Button
               className="new-sale-wizard-footer__button"
               color="gray"
-              disabled={shellBusy}
+              disabled={shellBusy || productsPending}
               variant="default"
               onClick={active === 0 ? requestExit : active === 1 ? () => void goToClients() : () => setActive(1)}
             >
