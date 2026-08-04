@@ -2,9 +2,10 @@ import { MantineProvider } from '@mantine/core'
 import { cleanup, render } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { theme } from '../../../shared/theme/theme'
-import type { SalesUkraineUpdateDataCarrier } from '../types'
+import type { SalesUkraineSale, SalesUkraineUpdateDataCarrier } from '../types'
 import { CARRIER_HISTORY_CHANGED_FIELD, hasCarrierHistoryField } from './carrierHistoryFields'
 import { CarrierHistory } from './SaleDetailsDrawer'
+import { applySaleTransporterIdentity } from './saleTransporterPayload'
 
 vi.mock('../../../shared/i18n/useI18n', () => ({
   useI18n: () => ({ t: (key: string) => key }),
@@ -114,5 +115,32 @@ describe('CarrierHistory', () => {
     expect(hasCarrierHistoryField(value, CARRIER_HISTORY_CHANGED_FIELD.transporter)).toBe(true)
     expect(hasCarrierHistoryField(value, CARRIER_HISTORY_CHANGED_FIELD.city)).toBe(true)
     expect(hasCarrierHistoryField(value, CARRIER_HISTORY_CHANGED_FIELD.mobilePhone)).toBe(false)
+  })
+})
+
+describe('sale transporter payload', () => {
+  it('updates the denormalized transporter id together with an A to B selection', () => {
+    const sale = {
+      Transporter: { Id: 11, Name: 'Carrier A' },
+      TransporterId: 11,
+    } as SalesUkraineSale
+    const transporterB = { Id: 22, Name: 'Carrier B' }
+
+    expect(applySaleTransporterIdentity(sale, transporterB)).toMatchObject({
+      Transporter: transporterB,
+      TransporterId: 22,
+    })
+  })
+
+  it('does not retain a stale transporter id when no transporter is selected', () => {
+    const sale = {
+      Transporter: { Id: 11, Name: 'Carrier A' },
+      TransporterId: 11,
+    } as SalesUkraineSale
+
+    expect(applySaleTransporterIdentity(sale, null)).toMatchObject({
+      Transporter: undefined,
+      TransporterId: undefined,
+    })
   })
 })

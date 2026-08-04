@@ -69,6 +69,7 @@ import {
   getStatusTypeKey,
   isDiscountEditableSaleLifecycle,
   isDiscountPercentageEditableSaleLifecycle,
+  isPackingAcceptanceSaleLifecycle,
   isStatusType,
 } from '../saleStatus'
 import { useGridColumnResize } from './useGridColumnResize'
@@ -1338,17 +1339,20 @@ const SaleGridRow = memo(function SaleGridRow({
   const paymentColor = getPaymentStatusColor(sale)
 
   const lifecycleStatusKey = getSaleStatusKey(sale)
+  const packingAcceptanceLifecycleEligible = isPackingAcceptanceSaleLifecycle(
+    sale.BaseLifeCycleStatus?.SaleLifeCycleType ?? sale.BaseLifeCycleStatus?.Name,
+  )
   const isPackaging = lifecycleStatusKey === 'Packaging' || lifecycleStatusKey === 'Packaged'
   // Legacy hides the edit-act / print / audit / delivery actions for a Received-and-unpaid sale
   // (a strictly NotPaid sale that has already been received). PartialPaid stays visible.
   const hideEditActActions = lifecycleStatusKey === 'Received' && unpaid
   const hidePrintBlock = Boolean(sale.IsVatSale) && !sale.IsAcceptedToPacking && !isAdmin
   const showTtn = Boolean(sale.TransporterId) && isPackaging && !hidePrintBlock
-  const showWillNotShip = canWillNotShip && Boolean(sale.IsVatSale) && !sale.IsAcceptedToPacking
+  const showWillNotShip = packingAcceptanceLifecycleEligible && canWillNotShip && Boolean(sale.IsVatSale) && !sale.IsAcceptedToPacking
   const showUnlock = canUnlock && Boolean(sale.IsLocked)
   const showEdit = canEditSale && (sale.InputSaleMerges?.length ?? 0) === 0
   const showEditShift = showEdit && positions > 0 && !hideEditActActions
-  const showBang = Boolean(sale.IsVatSale) && !sale.IsAcceptedToPacking
+  const showBang = packingAcceptanceLifecycleEligible && Boolean(sale.IsVatSale) && !sale.IsAcceptedToPacking
   const bangClickable = Boolean(sale.ChangedToInvoice) && canWillNotShip
   const discountEditable = isNewOrPackagingStatus(sale) && positions > 0
   const discountPercentageEditable =

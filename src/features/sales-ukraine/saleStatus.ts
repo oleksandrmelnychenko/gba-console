@@ -67,11 +67,19 @@ export function getSaleLifecycleTypeKey(value: number | string | null | undefine
 }
 
 export function isDiscountEditableSaleLifecycle(value: number | string | null | undefined): boolean {
-  const key = getSaleLifecycleTypeKey(value)
+  return isNewOrPackagingSaleLifecycle(value)
+}
 
-  return key === '0' || key === '1'
+export function isPackingAcceptanceSaleLifecycle(value: number | string | null | undefined): boolean {
+  return isNewOrPackagingSaleLifecycle(value)
 }
 
 export function isDiscountPercentageEditableSaleLifecycle(value: number | string | null | undefined): boolean {
   return getSaleLifecycleTypeKey(value) === '0'
+}
+
+function isNewOrPackagingSaleLifecycle(value: number | string | null | undefined): boolean {
+  const key = getSaleLifecycleTypeKey(value)
+
+  return key === '0' || key === '1'
 }

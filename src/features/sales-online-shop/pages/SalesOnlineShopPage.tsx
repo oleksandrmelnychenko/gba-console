@@ -54,6 +54,7 @@ import { SaleDiscountModal } from '../../sales-ukraine/components/SaleDiscountMo
 import { SaleDocumentsMenu } from '../../sales-ukraine/components/SaleDocumentsMenu'
 import { SaleEditorDrawer } from '../../sales-ukraine/components/SaleEditorDrawer'
 import { SaleExpandContent } from '../../sales-ukraine/components/SaleExpandContent'
+import { isPackingAcceptanceSaleLifecycle } from '../../sales-ukraine/saleStatus'
 import { usePersistentSaleJsonMutationRunner } from '../../sales-ukraine/usePersistentSaleJsonMutation'
 import {
   SALES_UKRAINE_EDIT_PERMISSION,
@@ -965,13 +966,16 @@ export const SalesOnlineShopGridRow = memo(function SalesOnlineShopGridRow({
   const positions = getOrderItemCount(sale)
   const paymentColor = getPaymentStatusColor(sale)
   const lifecycleStatusKey = getSaleStatusKey(sale)
+  const packingAcceptanceLifecycleEligible = isPackingAcceptanceSaleLifecycle(
+    sale.BaseLifeCycleStatus?.SaleLifeCycleType ?? sale.BaseLifeCycleStatus?.Name,
+  )
   const isPackaging = lifecycleStatusKey === 'Packaging' || lifecycleStatusKey === 'Packaged'
   const hidePrintBlock = Boolean(sale.IsVatSale) && !sale.IsAcceptedToPacking && !isAdmin
   const showTtn = Boolean(sale.TransporterId) && isPackaging && !hidePrintBlock
-  const showWillNotShip = canWillNotShip && Boolean(sale.IsVatSale) && !sale.IsAcceptedToPacking
+  const showWillNotShip = packingAcceptanceLifecycleEligible && canWillNotShip && Boolean(sale.IsVatSale) && !sale.IsAcceptedToPacking
   const showUnlock = canUnlock && Boolean(sale.IsLocked)
   const showEdit = canEditSale && (sale.InputSaleMerges?.length ?? 0) === 0
-  const showBang = Boolean(sale.IsVatSale) && !sale.IsAcceptedToPacking
+  const showBang = packingAcceptanceLifecycleEligible && Boolean(sale.IsVatSale) && !sale.IsAcceptedToPacking
   const bangClickable = Boolean(sale.ChangedToInvoice) && canWillNotShip
   const discountEditable = isNewOrPackagingStatus(sale) && positions > 0
   const openSale = () => onOpenSale(sale)

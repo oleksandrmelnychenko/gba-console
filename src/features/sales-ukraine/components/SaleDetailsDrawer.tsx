@@ -43,6 +43,7 @@ import {
   hasCarrierHistoryMask,
   type CarrierHistoryChangedField,
 } from './carrierHistoryFields'
+import { applySaleTransporterIdentity } from './saleTransporterPayload'
 import './sales-drawers.css'
 
 const SALE_DETAILS_FORM_ID = 'sale-details-carrier-form'
@@ -231,7 +232,10 @@ function SaleDetailsContent({
   }
 
   function createPayload(baseSale: SalesUkraineSale): SalesUkraineSale {
-    const payload: SalesUkraineSale = { ...baseSale, HasDetails: true }
+    const payload = applySaleTransporterIdentity(
+      { ...baseSale, HasDetails: true },
+      selectedTransporter,
+    )
 
     if (baseSale.IsPrinted) {
       payload.TTN = ttn
@@ -241,7 +245,6 @@ function SaleDetailsContent({
       payload.CustomersOwnTtnId = 0
     }
 
-    payload.Transporter = selectedTransporter
     payload.Comment = comment
     payload.IsCashOnDelivery = isCashOnDelivery
     payload.CashOnDeliveryAmount = isCashOnDelivery ? Number(cashOnDeliveryAmount) || 0 : 0

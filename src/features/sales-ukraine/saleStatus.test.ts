@@ -4,6 +4,7 @@ import {
   getStatusTypeKey,
   isDiscountEditableSaleLifecycle,
   isDiscountPercentageEditableSaleLifecycle,
+  isPackingAcceptanceSaleLifecycle,
   isStatusType,
 } from './saleStatus'
 
@@ -54,5 +55,17 @@ describe('sale status helpers', () => {
     expect(isDiscountPercentageEditableSaleLifecycle('Packaging')).toBe(false)
     expect(isDiscountPercentageEditableSaleLifecycle('Packaged')).toBe(false)
     expect(isDiscountPercentageEditableSaleLifecycle(undefined)).toBe(false)
+  })
+
+  it('matches the server packing-acceptance lifecycle contract (New, Packaging)', () => {
+    expect(isPackingAcceptanceSaleLifecycle(0)).toBe(true)
+    expect(isPackingAcceptanceSaleLifecycle('New')).toBe(true)
+    expect(isPackingAcceptanceSaleLifecycle(1)).toBe(true)
+    expect(isPackingAcceptanceSaleLifecycle('SaleLifeCyclePackaging')).toBe(true)
+    expect(isPackingAcceptanceSaleLifecycle(2)).toBe(false)
+    expect(isPackingAcceptanceSaleLifecycle('Packaged')).toBe(false)
+    expect(isPackingAcceptanceSaleLifecycle(3)).toBe(false)
+    expect(isPackingAcceptanceSaleLifecycle('Received')).toBe(false)
+    expect(isPackingAcceptanceSaleLifecycle(undefined)).toBe(false)
   })
 })
