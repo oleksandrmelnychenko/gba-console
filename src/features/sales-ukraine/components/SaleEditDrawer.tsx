@@ -11,7 +11,7 @@ import {
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { ArrowLeftRight, CircleAlert, Package, Receipt, Warehouse } from 'lucide-react'
-import { useEffect, useReducer, useState } from 'react'
+import { useEffect, useReducer, useRef, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -212,6 +212,7 @@ function SaleEditContent({
     `sale-shift-current:${String(initialSale.NetUid || initialSale.Id || '')}`,
     'sale-shift-current',
   )
+  const recoveryAttemptedRef = useRef(false)
 
   useEffect(() => {
     const netId = initialSale.NetUid
@@ -312,6 +313,48 @@ function SaleEditContent({
       dispatch({ type: 'savingFinished' })
     }
   }
+
+  useEffect(() => {
+    if (
+      isLoading ||
+      error ||
+      !shiftMutation.hasPending ||
+      recoveryAttemptedRef.current
+    ) {
+      return
+    }
+
+    recoveryAttemptedRef.current = true
+    let cancelled = false
+    dispatch({ type: 'savingStarted' })
+
+    void shiftMutation.resume(shiftOrderItemsCurrent)
+      .then((result) => {
+        if (!cancelled && result.completed) {
+          notifications.show({ color: 'green', message: t('Попередню операцію підтверджено') })
+          onSaved()
+        }
+      })
+      .catch((recoveryError) => {
+        if (!cancelled) {
+          notifications.show({
+            color: 'red',
+            message: recoveryError instanceof Error && recoveryError.message.trim()
+              ? recoveryError.message
+              : t('Не вдалося перевірити попередню операцію'),
+          })
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          dispatch({ type: 'savingFinished' })
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [error, isLoading, onSaved, shiftMutation.hasPending, shiftMutation.resume, t])
 
   function doShift() {
     return submitShift(buildShiftPayload(sale, draft))

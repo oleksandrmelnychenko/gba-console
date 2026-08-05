@@ -289,9 +289,21 @@ export function usePersistentSaleJsonMutation<TPayload extends object = SalesUkr
     })
   }, [context, guard, kind, scope])
 
+  const resume = useCallback(async <TResult>(
+    request: SaleJsonMutationRequest<TPayload, TResult>,
+  ): Promise<PersistentSaleJsonMutationResult<TResult>> => {
+    const pending = pendingRef.current
+
+    if (!pending) {
+      throw new Error('Збережених даних незавершеної операції не знайдено')
+    }
+
+    return run(pending.payload, request)
+  }, [run])
+
   const hasPendingOperation = useCallback(() => pendingRef.current !== null, [])
 
-  return { hasPending, hasPendingOperation, pendingError, run }
+  return { hasPending, hasPendingOperation, pendingError, resume, run }
 }
 
 function toMessage(error: unknown, fallback: string): string {

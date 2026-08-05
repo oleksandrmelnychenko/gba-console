@@ -176,6 +176,51 @@ describe('usePersistentSaleJsonMutation', () => {
     expect(secondMount.result.current.hasPending).toBe(false)
   })
 
+  it('resumes a restored operation with its frozen payload and idempotency key', async () => {
+    const firstKeys: string[] = []
+    const firstRequest = vi.fn(async (_payload, operation) => {
+      firstKeys.push(operation.operationId)
+      throw new ApiError('timeout', 503, null)
+    })
+    const firstMount = renderHook(() => (
+      usePersistentSaleJsonMutation('sale-shift-current:sale-2', 'sale-shift-current')
+    ))
+
+    await act(async () => {
+      await firstMount.result.current.run(
+        { Comment: 'frozen', NetUid: 'sale-2' },
+        firstRequest,
+      )
+    })
+    firstMount.unmount()
+
+    const resumedBodies: string[] = []
+    const resumedKeys: string[] = []
+    const resumedRequest = vi.fn(async (payload, operation) => {
+      resumedBodies.push(JSON.stringify(payload))
+      resumedKeys.push(operation.operationId)
+
+      return { NetUid: 'sale-2' }
+    })
+    const secondMount = renderHook(() => (
+      usePersistentSaleJsonMutation('sale-shift-current:sale-2', 'sale-shift-current')
+    ))
+
+    await waitFor(() => expect(secondMount.result.current.hasPending).toBe(true))
+
+    await act(async () => {
+      await expect(secondMount.result.current.resume(resumedRequest)).resolves.toMatchObject({
+        completed: true,
+        result: { NetUid: 'sale-2' },
+      })
+    })
+
+    expect(resumedRequest).toHaveBeenCalledTimes(1)
+    expect(resumedBodies[0]).toContain('frozen')
+    expect(resumedKeys[0]).toBe(firstKeys[0])
+    expect(secondMount.result.current.hasPending).toBe(false)
+  })
+
   it('settles a marked pre-ledger journal and permits a corrected request with a new key', async () => {
     const context = 'sale-comment:sale-4'
     const scope: SalesPendingMutationScope = {
