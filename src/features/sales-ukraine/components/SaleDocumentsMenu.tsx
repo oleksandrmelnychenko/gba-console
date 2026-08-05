@@ -247,10 +247,12 @@ function buildDocumentActions(sale: SalesUkraineSale, apiLanguage: string, t: (k
   const lifecycleStatusKey = getSaleLifecycleStatusKey(sale.BaseLifeCycleStatus?.SaleLifeCycleType ?? sale.BaseLifeCycleStatus?.Name)
   const isPackaging = lifecycleStatusKey === 'Packaging' || lifecycleStatusKey === 'Packaged'
   const isInvoiceStatus = lifecycleStatusKey === 'Packaging'
+  const isPaymentBillStatus = lifecycleStatusKey === 'New'
   const isPolishRegion = apiLanguage.toLowerCase() === 'pl'
   const hasTransporter = Boolean(sale.TransporterId)
   const isVat = Boolean(sale.IsVatSale)
   const withVatAccounting = Boolean(sale.ClientAgreement?.Agreement?.WithVATAccounting)
+  const hasPrintedPaymentInvoice = Boolean(sale.IsPrintedPaymentInvoice)
   const history = Array.isArray(sale.HistoryInvoiceEdit) ? sale.HistoryInvoiceEdit : []
   const hasHistory = history.length > 0
   const actions: DocumentAction[] = []
@@ -298,7 +300,7 @@ function buildDocumentActions(sale: SalesUkraineSale, apiLanguage: string, t: (k
     actions.push({ key: `revision-${revision}`, label: revisionDocumentsLabel(revision, isLast, t), parts })
   })
 
-  if (isVat && withVatAccounting) {
+  if (isPaymentBillStatus || hasPrintedPaymentInvoice || (isVat && withVatAccounting)) {
     actions.push({
       bundlesInvoice: true,
       fetch: (operation) => getSalePaymentDocument(netId, operation),

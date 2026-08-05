@@ -158,6 +158,23 @@ describe('SaleDocumentsMenu legacy document semantics', () => {
     expect(Boolean(paymentAction)).toBe(isVisible)
   })
 
+  it('allows printing a payment invoice before the consignment note exists', async () => {
+    renderMenu(
+      createSale({
+        BaseLifeCycleStatus: { SaleLifeCycleType: 'New' },
+        IsVatSale: false,
+        TransporterId: undefined,
+      }),
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Документи' }))
+    const paymentAction = await screen.findByText('Рахунок на оплату')
+
+    fireEvent.click(paymentAction)
+
+    await waitFor(() => expect(mocks.getSalePaymentDocument).toHaveBeenCalledWith('sale-net-id', expect.any(Object)))
+  })
+
   it('surfaces the API message when document generation fails', async () => {
     mocks.getSaleInvoiceDocument.mockRejectedValueOnce(new Error('Document generation rejected by server'))
 
