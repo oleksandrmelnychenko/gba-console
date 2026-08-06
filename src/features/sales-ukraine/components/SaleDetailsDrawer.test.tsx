@@ -124,6 +124,26 @@ describe('CarrierHistory', () => {
     expect(hasCarrierHistoryField(value, CARRIER_HISTORY_CHANGED_FIELD.city)).toBe(true)
     expect(hasCarrierHistoryField(value, CARRIER_HISTORY_CHANGED_FIELD.mobilePhone)).toBe(false)
   })
+
+  it('renders shipment dates without timezone-derived time values', () => {
+    const entries = [
+      entry('event', '2026-08-06T15:57:35Z', CARRIER_HISTORY_CHANGED_FIELD.shipmentDate, {
+        ShipmentDate: '2026-08-28T00:00:00',
+      }),
+    ]
+    const current: SalesUkraineUpdateDataCarrier = {
+      ShipmentDate: '2026-08-28T03:00:00',
+    }
+
+    const { container } = render(
+      <MantineProvider theme={theme}>
+        <CarrierHistory current={current} entries={entries} />
+      </MantineProvider>,
+    )
+
+    expect(historyCell(container, 'shipmentDate', 'history-event').textContent).toBe('28.08.2026')
+    expect(historyCell(container, 'shipmentDate', 'current').textContent).toBe('28.08.2026')
+  })
 })
 
 describe('sale transporter payload', () => {

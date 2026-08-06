@@ -578,7 +578,7 @@ function DetailsView({ sale }: { sale: SalesUkraineSale }) {
         <div className="sale-carrier-rows">
           <Row changed={changed(CARRIER_HISTORY_CHANGED_FIELD.city, sale.DeliveryRecipientAddress?.City, last?.City)} label={t('Місто')} value={sale.DeliveryRecipientAddress?.City} />
           <Row changed={changed(CARRIER_HISTORY_CHANGED_FIELD.department, sale.DeliveryRecipientAddress?.Department, last?.Department)} label={t('Відділення')} value={sale.DeliveryRecipientAddress?.Department} />
-          <Row changed={changed(CARRIER_HISTORY_CHANGED_FIELD.shipmentDate, formatDateTime(sale.ShipmentDate), formatDateTime(last?.ShipmentDate))} label={t('Дата відгрузки')} mono value={formatDateTime(sale.ShipmentDate)} />
+          <Row changed={changed(CARRIER_HISTORY_CHANGED_FIELD.shipmentDate, formatDate(sale.ShipmentDate), formatDate(last?.ShipmentDate))} label={t('Дата відгрузки')} mono value={formatDate(sale.ShipmentDate)} />
           {sale.IsPrinted && <Row changed={changed(CARRIER_HISTORY_CHANGED_FIELD.ttn, sale.TTN, last?.TTN)} label={t('Номер декларації')} mono value={sale.TTN} />}
           <Row changed={changed(CARRIER_HISTORY_CHANGED_FIELD.fullName, sale.DeliveryRecipient?.FullName, last?.FullName)} label={t('Отримувач товару')} value={sale.DeliveryRecipient?.FullName} />
           <Row changed={changed(CARRIER_HISTORY_CHANGED_FIELD.mobilePhone, sale.DeliveryRecipient?.MobilePhone, last?.MobilePhone)} label={t('Мобільний телефон')} mono value={sale.DeliveryRecipient?.MobilePhone} />
@@ -670,7 +670,7 @@ export function CarrierHistory({ current, entries }: { current: SalesUkraineUpda
     },
     { compare: (entry) => entry.City ?? null, field: CARRIER_HISTORY_CHANGED_FIELD.city, key: 'city', label: t('Місто'), render: (entry) => entry.City || '' },
     { compare: (entry) => entry.Department ?? null, field: CARRIER_HISTORY_CHANGED_FIELD.department, key: 'department', label: t('Відділення'), render: (entry) => entry.Department || '' },
-    { field: CARRIER_HISTORY_CHANGED_FIELD.shipmentDate, key: 'shipmentDate', label: t('Дата відгрузки'), render: (entry) => formatDateTime(entry.ShipmentDate) },
+    { field: CARRIER_HISTORY_CHANGED_FIELD.shipmentDate, key: 'shipmentDate', label: t('Дата відгрузки'), render: (entry) => formatDate(entry.ShipmentDate) },
     { compare: (entry) => entry.TTN ?? null, field: CARRIER_HISTORY_CHANGED_FIELD.ttn, key: 'ttn', label: t('Номер декларації'), render: (entry) => entry.TTN || '' },
     { compare: (entry) => entry.FullName ?? null, field: CARRIER_HISTORY_CHANGED_FIELD.fullName, key: 'fullName', label: t('Отримувач товару'), render: (entry) => entry.FullName || '' },
     { compare: (entry) => entry.MobilePhone ?? null, field: CARRIER_HISTORY_CHANGED_FIELD.mobilePhone, key: 'mobilePhone', label: t('Мобільний телефон'), render: (entry) => entry.MobilePhone || '' },
