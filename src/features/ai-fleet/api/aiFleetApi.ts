@@ -125,7 +125,9 @@ export async function getAiFleetServiceStatus(
 }
 
 export async function triggerAiFleetWarmup(): Promise<void> {
-  await apiRequest<unknown>('/tasks/scheduler/ai/warmup')
+  await apiRequest<unknown>('/tasks/scheduler/ai/warmup', {
+    method: 'POST',
+  })
 }
 
 async function getAiFleetWarmupSnapshot(signal?: AbortSignal): Promise<{

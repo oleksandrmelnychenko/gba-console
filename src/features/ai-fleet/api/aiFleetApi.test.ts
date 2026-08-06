@@ -137,6 +137,8 @@ describe('aiFleetApi', () => {
     apiRequestMock.mockResolvedValueOnce(null)
 
     await expect(triggerAiFleetWarmup()).resolves.toBeUndefined()
-    expect(apiRequestMock).toHaveBeenCalledWith('/tasks/scheduler/ai/warmup')
+    expect(apiRequestMock).toHaveBeenCalledWith('/tasks/scheduler/ai/warmup', {
+      method: 'POST',
+    })
   })
 })
