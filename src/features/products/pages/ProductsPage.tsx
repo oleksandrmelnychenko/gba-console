@@ -25,9 +25,9 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { ArrowLeftRight, Box as BoxIcon, ChevronDown, CircleAlert, ClipboardList, FileDown, FileText, History, Image as ImageIcon, Package, Plus, RefreshCw, RotateCcw, Save, Settings, Sparkles, SquarePen, Trash2, Upload } from 'lucide-react'
+import { ArrowLeftRight, Box as BoxIcon, ChevronDown, CircleAlert, ClipboardList, FileDown, FileText, History, Image as ImageIcon, Package, Plus, RefreshCw, RotateCcw, Save, Settings, Sparkles, SquarePen, Trash2, TriangleAlert, Upload } from 'lucide-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
-import { type KeyboardEvent, type ReactNode, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import { lazy, Suspense, type KeyboardEvent, type ReactNode, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
@@ -63,6 +63,7 @@ import {
   uploadProductRelatedDocument,
 } from '../api/productsApi'
 import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
+import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { toProxiedAssetUrl } from '../../../shared/url/proxiedAssetUrl'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { PermissionGate } from '../../auth/components/PermissionGate'
@@ -124,6 +125,12 @@ import {
   type ProductDetailPanel,
 } from './ProductDetailPage'
 import './products.css'
+
+const InformationalMovementPanel = lazy(() =>
+  import('../../../shared/ui/product-movement-history/ProductMovementHistoryDrawers').then((module) => ({
+    default: module.InformationalMovementPanel,
+  })),
+)
 
 const PAGE_SIZE = 20
 const VIRTUAL_PAGE_SIZE = 10
@@ -287,6 +294,7 @@ export function ProductsPage() {
   const [searchMode, setSearchMode] = useValueState<ProductSearchMode>(DEFAULT_SEARCH_MODE)
   const [sortMode, setSortMode] = useValueState<ProductSortMode>(DEFAULT_SORT_MODE)
   const [activePanel, setActivePanel] = useValueState<ProductDetailPanel | null>(null)
+  const [informationalDataOpened, setInformationalDataOpened] = useState(false)
   const [detailState, dispatchDetail] = useReducer(inlineDetailReducer, {
     error: null,
     isLoading: false,
@@ -887,6 +895,7 @@ export function ProductsPage() {
           sortMode={sortMode}
           onRefresh={commitSearch}
           onReset={resetSearch}
+          onOpenInformationalData={() => setInformationalDataOpened(true)}
           onSearchModeChange={setSearchMode}
           onSortModeChange={setSortMode}
         />
@@ -928,12 +937,26 @@ export function ProductsPage() {
           onReload={reloadProductDetail}
         />
       )}
+      <AppDrawer
+        opened={informationalDataOpened}
+        position="right"
+        size="min(1480px, 98vw)"
+        title={t('Неповні дані 1С')}
+        onClose={() => setInformationalDataOpened(false)}
+      >
+        {informationalDataOpened ? (
+          <Suspense fallback={<Loader size="sm" />}>
+            <InformationalMovementPanel active />
+          </Suspense>
+        ) : null}
+      </AppDrawer>
     </Stack>
   )
 }
 
 function ProductAssortmentFilterBar({
   isLoading,
+  onOpenInformationalData,
   onRefresh,
   onReset,
   onSearchModeChange,
@@ -942,6 +965,7 @@ function ProductAssortmentFilterBar({
   sortMode,
 }: {
   isLoading: boolean
+  onOpenInformationalData: () => void
   onRefresh: () => void
   onReset: () => void
   onSearchModeChange: (mode: ProductSearchMode) => void
@@ -975,6 +999,17 @@ function ProductAssortmentFilterBar({
           onChange={(value) => onSortModeChange((value as ProductSortMode) || DEFAULT_SORT_MODE)}
         />
         <div className="app-filter-actions">
+          <Tooltip label={t('Неповні дані 1С')}>
+            <ActionIcon
+              aria-label={t('Неповні дані 1С')}
+              color="yellow"
+              size={34}
+              variant="light"
+              onClick={onOpenInformationalData}
+            >
+              <TriangleAlert size={17} />
+            </ActionIcon>
+          </Tooltip>
           <Tooltip label={t('Скинути')}>
             <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={onReset}>
               <RotateCcw size={17} />

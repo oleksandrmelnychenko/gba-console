@@ -13,7 +13,7 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
-import { Archive, ChevronLeft, ChevronRight, CircleAlert, Download, LockKeyhole, Minus, Plus, RefreshCw } from 'lucide-react'
+import { Archive, ChevronLeft, ChevronRight, CircleAlert, Download, LockKeyhole, Minus, Plus, RefreshCw, TriangleAlert } from 'lucide-react'
 import { DocumentExportModal } from '../document-export-modal/DocumentExportModal'
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { apiRequest } from '../../api/apiClient'
@@ -35,6 +35,10 @@ import {
   type HistoricalSourceAnchor,
   type HistoricalSourceMovement,
 } from './historicalSourceAnchors'
+import {
+  isSafeInformationalMovement,
+  type InformationalMovement,
+} from './informationalMovements'
 import './product-movement-history-drawers.css'
 
 export type MovementHistoryProduct = {
@@ -44,7 +48,7 @@ export type MovementHistoryProduct = {
   VendorCode?: string
 }
 
-export type ProductMovementHistoryTab = 'movement' | 'income' | 'outcome' | 'historical-source'
+export type ProductMovementHistoryTab = 'movement' | 'income' | 'outcome' | 'historical-source' | 'informational'
 
 type EntityFields = {
   Created?: Date | string
@@ -153,6 +157,14 @@ type ProductMovementParams = {
 type ProductIncomeOutcomeMovementParams = {
   from: string
   productNetId: string
+  to: string
+}
+
+type InformationalMovementParams = {
+  from: string
+  limit: number
+  offset: number
+  productNetId?: string
   to: string
 }
 
@@ -282,6 +294,7 @@ const movementTypeOptions = [
   { label: 'Управлінський рух', value: '2' },
 ]
 const pageSizeOptions = ['20', '40', '60', '100']
+const INFORMATIONAL_PAGE_SIZE = 200
 
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
   day: '2-digit',
@@ -582,6 +595,9 @@ function ProductMovementHistoryDrawerContent({
             <Tabs.Tab leftSection={<Archive size={15} />} value="historical-source">
               {t('Архівні партії 1С')}
             </Tabs.Tab>
+            <Tabs.Tab leftSection={<TriangleAlert size={15} />} value="informational">
+              {t('Неповні дані 1С')}
+            </Tabs.Tab>
           </Tabs.List>
 
           <Tabs.Panel value="movement" pt={0}>
@@ -595,6 +611,9 @@ function ProductMovementHistoryDrawerContent({
           </Tabs.Panel>
           <Tabs.Panel value="historical-source" pt={0}>
             <HistoricalSourceMovementPanel active={opened && activeTab === 'historical-source'} product={product} />
+          </Tabs.Panel>
+          <Tabs.Panel value="informational" pt={0}>
+            <InformationalMovementPanel active={opened && activeTab === 'informational'} product={product} />
           </Tabs.Panel>
         </Tabs>
         </Card>
@@ -1101,6 +1120,173 @@ export function HistoricalSourceMovementPanel({
   )
 }
 
+export function InformationalMovementPanel({
+  active,
+  product,
+}: {
+  active: boolean
+  product?: MovementHistoryProduct
+}) {
+  const { t } = useI18n()
+  const productNetUid = product?.NetUid?.trim() || ''
+  const [dateFrom, setDateFrom] = useState(() => getDateYearsAgo(20))
+  const [dateTo, setDateTo] = useState(getTodayDate)
+  const [page, setPage] = useState(1)
+  const [rowsState, dispatchRowsState] = useReducer(
+    movementRowsReducer<InformationalMovement>,
+    undefined,
+    createMovementRowsState<InformationalMovement>,
+  )
+  const { error, isLoading, rows } = rowsState
+  const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  const filterError = getDateRangeError(dateFrom, dateTo, t)
+  const missingNetUidError = product && !productNetUid
+    ? t('У товару немає NetUid для завантаження неповних даних 1С')
+    : null
+  const unsafeRows = useMemo(() => rows.filter((row) => !isSafeInformationalMovement(row)), [rows])
+  const safeRows = useMemo(() => rows.filter(isSafeInformationalMovement), [rows])
+  const columns = useInformationalMovementColumns()
+  const activeError = filterError || missingNetUidError || error
+  const totalRows = safeRows[0]?.TotalRows || 0
+  const canMoveBack = page > 1
+  const canMoveForward = page * INFORMATIONAL_PAGE_SIZE < totalRows
+
+  useEffect(() => {
+    if (!active || filterError || missingNetUidError) {
+      return
+    }
+
+    let cancelled = false
+
+    async function loadRows() {
+      dispatchRowsState({ type: 'load-started' })
+
+      try {
+        const nextRows = await getInformationalMovements({
+          from: dateFrom,
+          limit: INFORMATIONAL_PAGE_SIZE,
+          offset: (page - 1) * INFORMATIONAL_PAGE_SIZE,
+          productNetId: productNetUid || undefined,
+          to: dateTo,
+        })
+
+        if (!cancelled) {
+          dispatchRowsState({ rows: nextRows, type: 'load-succeeded' })
+        }
+      } catch (loadError) {
+        if (!cancelled) {
+          dispatchRowsState({
+            error: loadError instanceof Error
+              ? loadError.message
+              : t('Не вдалося завантажити неповні дані 1С'),
+            type: 'load-failed',
+          })
+        }
+      }
+    }
+
+    void loadRows()
+
+    return () => {
+      cancelled = true
+    }
+  }, [active, dateFrom, dateTo, filterError, missingNetUidError, page, productNetUid, reloadKey, t])
+
+  return (
+    <Stack className="product-movement-history-panel" gap={0}>
+      <div className="app-filter-bar product-movement-history-panel__filters">
+        <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
+          <TextInput
+            label={t('З')}
+            type="date"
+            value={dateFrom}
+            w={150}
+            onChange={(event) => {
+              setPage(1)
+              setDateFrom(event.currentTarget.value)
+            }}
+          />
+          <TextInput
+            label={t('По')}
+            type="date"
+            value={dateTo}
+            w={150}
+            onChange={(event) => {
+              setPage(1)
+              setDateTo(event.currentTarget.value)
+            }}
+          />
+          <div className="app-filter-actions">
+            <Button
+              disabled={Boolean(filterError || missingNetUidError)}
+              leftSection={<RefreshCw size={18} />}
+              loading={isLoading}
+              variant="outline"
+              onClick={() => reload()}
+            >
+              {t('Оновити')}
+            </Button>
+            <ActionIcon
+              aria-label={t('Попередня сторінка')}
+              color="gray"
+              disabled={!canMoveBack || isLoading || Boolean(activeError)}
+              variant="light"
+              onClick={() => setPage((currentPage) => Math.max(1, currentPage - 1))}
+            >
+              <ChevronLeft size={18} />
+            </ActionIcon>
+            <ActionIcon
+              aria-label={t('Наступна сторінка')}
+              color="gray"
+              disabled={!canMoveForward || isLoading || Boolean(activeError)}
+              variant="light"
+              onClick={() => setPage((currentPage) => currentPage + 1)}
+            >
+              <ChevronRight size={18} />
+            </ActionIcon>
+          </div>
+        </Group>
+      </div>
+      <Stack className="product-movement-history-panel__body" gap="md">
+        <Alert color="yellow" icon={<TriangleAlert size={18} />} variant="light">
+          {t('Це неповні або службові записи джерела. Вони показані для діагностики, але не є рухом товару, не змінюють наявність і недоступні для редагування.')}
+        </Alert>
+        {activeError ? (
+          <Alert color={filterError || missingNetUidError ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">
+            {activeError}
+          </Alert>
+        ) : null}
+        {unsafeRows.length > 0 ? (
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
+            {t('Частину рядків приховано: сервер не підтвердив безпечний інформаційний стан.')} ({unsafeRows.length})
+          </Alert>
+        ) : null}
+        {!activeError ? (
+          <DataTable
+            columns={columns}
+            data={safeRows}
+            defaultLayout={{ columnPinning: { left: ['state', 'product'] }, density: 'normal' }}
+            emptyText={t('Неповних даних 1С у вибраному періоді не знайдено')}
+            getRowId={(row) => row.InfoKey}
+            isLoading={isLoading}
+            layoutVersion="informational-movement-1"
+            loadingText={t('Завантаження неповних даних 1С')}
+            maxHeight="calc(100vh - 390px)"
+            minWidth={1480}
+            rowClassName={() => 'informational-movement-row'}
+            tableId="informational-movement"
+          />
+        ) : null}
+        {!activeError && totalRows > 0 ? (
+          <Text c="dimmed" size="xs">
+            {t('Показано')}: {(page - 1) * INFORMATIONAL_PAGE_SIZE + 1}–{Math.min(page * INFORMATIONAL_PAGE_SIZE, totalRows)} / {totalRows}
+          </Text>
+        ) : null}
+      </Stack>
+    </Stack>
+  )
+}
+
 function HistoricalSourceDocuments({
   columns,
   row,
@@ -1130,6 +1316,141 @@ function HistoricalSourceDocuments({
       />
     </Stack>
   )
+}
+
+function useInformationalMovementColumns(): DataTableColumn<InformationalMovement>[] {
+  const { t } = useI18n()
+
+  return useMemo<DataTableColumn<InformationalMovement>[]>(() => [
+    {
+      id: 'state',
+      header: t('Стан'),
+      width: 165,
+      minWidth: 150,
+      accessor: (row) => row.StateCode,
+      cell: (row) => (
+        <Badge color={row.IsKnownFixture ? 'blue' : 'yellow'} variant="light">
+          <Group gap={4} wrap="nowrap">
+            <LockKeyhole size={12} />
+            {row.IsKnownFixture ? t('Тестовий запис') : t('Не є рухом')}
+          </Group>
+        </Badge>
+      ),
+    },
+    {
+      id: 'product',
+      header: t('Товар'),
+      width: 230,
+      minWidth: 190,
+      accessor: (row) => `${row.VendorCode || ''} ${row.ProductName || ''}`,
+      cell: (row) => (
+        <Stack gap={0}>
+          <Text fw={600} size="sm">{displayValue(row.VendorCode)}</Text>
+          <Text c="dimmed" lineClamp={1} size="xs">{displayValue(row.ProductName)}</Text>
+        </Stack>
+      ),
+    },
+    {
+      id: 'reason',
+      header: t('Чому неповний'),
+      width: 245,
+      minWidth: 205,
+      accessor: (row) => getInformationalReasonLabel(row.ReasonCode, t),
+      cell: (row) => getInformationalReasonLabel(row.ReasonCode, t),
+    },
+    {
+      id: 'documentType',
+      header: t('Джерело'),
+      width: 250,
+      minWidth: 210,
+      accessor: (row) => row.DocumentType,
+      cell: (row) => displayValue(row.DocumentType),
+    },
+    {
+      id: 'documentNumber',
+      header: t('Документ'),
+      width: 165,
+      minWidth: 140,
+      accessor: (row) => row.DocumentNumber,
+      cell: (row) => displayValue(row.DocumentNumber),
+    },
+    {
+      id: 'documentDate',
+      header: t('Дата'),
+      width: 150,
+      minWidth: 130,
+      accessor: (row) => row.DocumentDate,
+      cell: (row) => row.DocumentDate ? formatDateTime(row.DocumentDate) : '—',
+    },
+    {
+      id: 'qty',
+      header: t('Кількість джерела'),
+      width: 135,
+      minWidth: 118,
+      align: 'right',
+      accessor: (row) => row.Qty,
+      cell: (row) => formatAmount(row.Qty),
+    },
+    {
+      id: 'missingEvidence',
+      header: t('Чого бракує'),
+      width: 235,
+      minWidth: 195,
+      accessor: (row) => getMissingEvidenceLabel(row.MissingEvidenceCode, t),
+      cell: (row) => getMissingEvidenceLabel(row.MissingEvidenceCode, t),
+    },
+    {
+      id: 'comment',
+      header: t('Коментар'),
+      width: 240,
+      minWidth: 180,
+      accessor: (row) => row.Comment,
+      cell: (row) => displayValue(row.Comment),
+    },
+    {
+      id: 'sourceId',
+      header: 'Source ID',
+      width: 110,
+      minWidth: 96,
+      align: 'right',
+      accessor: (row) => row.SourceItemId,
+      cell: (row) => String(row.SourceItemId),
+    },
+  ], [t])
+}
+
+function getInformationalReasonLabel(reasonCode: string, t: (key: string) => string): string {
+  switch (reasonCode) {
+    case 'AcceptanceTestFixture':
+      return t('Службовий acceptance-тест')
+    case 'NoPhysicalSource':
+      return t('Немає фізичної партії або локації')
+    case 'PendingReconciliation':
+      return t('Різницю ще не застосовано дією')
+    case 'ZeroQuantity':
+      return t('Нульова кількість джерела')
+    case 'ZeroStockSyncShell':
+      return t('Sync-shell без активного залишку')
+    default:
+      return reasonCode
+  }
+}
+
+function getMissingEvidenceLabel(evidenceCode: string, t: (key: string) => string): string {
+  switch (evidenceCode) {
+    case 'ActiveLocalLotOrIncomeMovement':
+      return t('Активна локальна партія або прихідний рух')
+    case 'ConcreteInventoryAction':
+      return t('Конкретна складська дія')
+    case 'ConsignmentItemOrReservedLot':
+      return t('Партія або резерв фізичної партії')
+    case 'LotReservationOrLocation':
+      return t('Партія, резерв або складська локація')
+    case 'PositiveQuantity':
+      return t('Додатна кількість')
+    default:
+      return evidenceCode
+  }
 }
 
 function useHistoricalSourceAnchorColumns(): DataTableColumn<HistoricalSourceAnchor>[] {
@@ -2246,6 +2567,26 @@ async function getHistoricalSourceMovements(
   })
 
   return normalizeArray(result) as HistoricalSourceMovement[]
+}
+
+async function getInformationalMovements(
+  params: InformationalMovementParams,
+): Promise<InformationalMovement[]> {
+  const result = await apiRequest<unknown>('/consignments/info/movement/informational/filtered', {
+    query: {
+      from: params.from,
+      limit: params.limit,
+      offset: params.offset,
+      ...(params.productNetId ? { productNetId: params.productNetId } : {}),
+      to: params.to,
+    },
+    errorMessages: {
+      default: 'Не вдалося завантажити неповні дані 1С',
+      network: 'Сервер неповних даних 1С недоступний',
+    },
+  })
+
+  return normalizeArray(result) as InformationalMovement[]
 }
 
 async function getProductIncomeMovements(
