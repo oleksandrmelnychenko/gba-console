@@ -23,7 +23,7 @@ function invoice(packingLists: IncomePackingList[]): IncomeSupplyInvoice {
 }
 
 describe('product income placement state', () => {
-  it('creates new income dynamic columns with item-bound zero rows', () => {
+  it('creates a new income dynamic column without provisional item rows', () => {
     const list: IncomePackingList = {
       Id: 42,
       DynamicProductPlacementColumns: [],
@@ -39,19 +39,7 @@ describe('product income placement state', () => {
       FromDate: '2026-07-06T00:00:00',
       PackingListId: 42,
     })
-    expect(column.DynamicProductPlacementRows).toHaveLength(2)
-    expect(column.DynamicProductPlacementRows[0]).toMatchObject({
-      Qty: 0,
-      PackingListPackageOrderItemId: 7,
-      PackingListPackageOrderItem: list.PackingListPackageOrderItems[0],
-      DynamicProductPlacements: [],
-    })
-    expect(column.DynamicProductPlacementRows[1]).toMatchObject({
-      Qty: 0,
-      PackingListPackageOrderItemId: 8,
-      PackingListPackageOrderItem: list.PackingListPackageOrderItems[1],
-      DynamicProductPlacements: [],
-    })
+    expect(column.DynamicProductPlacementRows).toEqual([])
   })
 
   it('preserves the canonical package graph when a placement column is added', () => {
@@ -72,13 +60,11 @@ describe('product income placement state', () => {
       Id: 42,
       NetUid: canonicalList.NetUid,
       PackingListPackageOrderItems: [{ Id: 7 }],
-      DynamicProductPlacementColumns: [
-        {
-          FromDate: '2026-08-04T00:00:00',
-          DynamicProductPlacementRows: [],
-        },
-      ],
+      DynamicProductPlacementColumns: [],
     }
+    editedList.DynamicProductPlacementColumns = [
+      createIncomeDynamicPlacementColumn(editedList, '2026-08-04T00:00:00'),
+    ]
 
     const payload = createPackingListPlacementMutationPayload(sourceInvoice, editedList)
     const submittedList = payload.PackingLists[0]
