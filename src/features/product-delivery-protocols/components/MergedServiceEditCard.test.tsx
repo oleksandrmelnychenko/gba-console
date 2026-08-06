@@ -81,5 +81,10 @@ describe('MergedServiceEditCard validation', () => {
     expect(onSave).not.toHaveBeenCalled()
     expect(responsible.getAttribute('aria-invalid')).toBe('true')
     expect(screen.getAllByText('Вкажіть відповідального за платіжну задачу')).toHaveLength(2)
+
+    fireEvent.change(getInput('Назва'), { target: { value: 'Оновлена назва' } })
+
+    expect(responsible.getAttribute('aria-invalid')).toBe('true')
+    expect(screen.getByText('Вкажіть відповідального за платіжну задачу')).toBeTruthy()
   })
 })
