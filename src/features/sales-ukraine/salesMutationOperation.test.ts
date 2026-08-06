@@ -38,6 +38,14 @@ describe('sales mutation failure classification', () => {
     expect(classifySalesMutationFailure(error)).toBe('definitive-failure')
   })
 
+  it('settles a forbidden request when the server proves it missed the ledger', () => {
+    const error = new ApiError('forbidden', 403, null, {
+      [SALES_MUTATION_LEDGER_STATE_HEADER]: SALES_MUTATION_LEDGER_NOT_ENTERED,
+    })
+
+    expect(classifySalesMutationFailure(error)).toBe('definitive-failure')
+  })
+
   it.each([500, 503, 504])(
     'keeps a marked HTTP %s pending because commit outcome is uncertain',
     (status) => {

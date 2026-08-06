@@ -11,7 +11,7 @@ import {
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { ArrowLeftRight, CircleAlert, Package, Receipt, Warehouse } from 'lucide-react'
-import { useEffect, useReducer, useRef, useState } from 'react'
+import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -70,6 +70,7 @@ type SaleEditState = {
   sale: SalesUkraineSale
 }
 type SaleEditFooterState = {
+  hasPending: boolean
   isSaving: boolean
   saleKey: string
   visible: boolean
@@ -84,6 +85,7 @@ type SaleEditAction =
   | { type: 'savingStarted' }
 
 const HIDDEN_SALE_EDIT_FOOTER: SaleEditFooterState = {
+  hasPending: false,
   isSaving: false,
   saleKey: '',
   visible: false,
@@ -116,6 +118,7 @@ export function SaleEditDrawer({
             </Button>
             <Button
               color={CREATE_ACTION_COLOR}
+              disabled={activeFooterState.hasPending}
               form={SALE_EDIT_FORM_ID}
               leftSection={<ArrowLeftRight size={16} />}
               loading={activeFooterState.isSaving}
@@ -212,6 +215,7 @@ function SaleEditContent({
     `sale-shift-current:${String(initialSale.NetUid || initialSale.Id || '')}`,
     'sale-shift-current',
   )
+  const resumeShiftMutation = shiftMutation.resume
   const recoveryAttemptedRef = useRef(false)
 
   useEffect(() => {
@@ -314,6 +318,32 @@ function SaleEditContent({
     }
   }
 
+  const recoverPendingShift = useCallback(async (isCancelled: () => boolean = () => false) => {
+    dispatch({ type: 'savingStarted' })
+
+    try {
+      const result = await resumeShiftMutation(shiftOrderItemsCurrent)
+
+      if (!isCancelled() && result.completed) {
+        notifications.show({ color: 'green', message: t('Попередню операцію підтверджено') })
+        onSaved()
+      }
+    } catch (recoveryError) {
+      if (!isCancelled()) {
+        notifications.show({
+          color: 'red',
+          message: recoveryError instanceof Error && recoveryError.message.trim()
+            ? recoveryError.message
+            : t('Не вдалося перевірити попередню операцію'),
+        })
+      }
+    } finally {
+      if (!isCancelled()) {
+        dispatch({ type: 'savingFinished' })
+      }
+    }
+  }, [onSaved, resumeShiftMutation, t])
+
   useEffect(() => {
     if (
       isLoading ||
@@ -326,35 +356,13 @@ function SaleEditContent({
 
     recoveryAttemptedRef.current = true
     let cancelled = false
-    dispatch({ type: 'savingStarted' })
 
-    void shiftMutation.resume(shiftOrderItemsCurrent)
-      .then((result) => {
-        if (!cancelled && result.completed) {
-          notifications.show({ color: 'green', message: t('Попередню операцію підтверджено') })
-          onSaved()
-        }
-      })
-      .catch((recoveryError) => {
-        if (!cancelled) {
-          notifications.show({
-            color: 'red',
-            message: recoveryError instanceof Error && recoveryError.message.trim()
-              ? recoveryError.message
-              : t('Не вдалося перевірити попередню операцію'),
-          })
-        }
-      })
-      .finally(() => {
-        if (!cancelled) {
-          dispatch({ type: 'savingFinished' })
-        }
-      })
+    void recoverPendingShift(() => cancelled)
 
     return () => {
       cancelled = true
     }
-  }, [error, isLoading, onSaved, shiftMutation.hasPending, shiftMutation.resume, t])
+  }, [error, isLoading, recoverPendingShift, shiftMutation.hasPending])
 
   function doShift() {
     return submitShift(buildShiftPayload(sale, draft))
@@ -364,11 +372,12 @@ function SaleEditContent({
 
   useEffect(() => {
     onFooterStateChange({
+      hasPending: shiftMutation.hasPending,
       isSaving,
       saleKey,
       visible: showFooter,
     })
-  }, [isSaving, onFooterStateChange, saleKey, showFooter])
+  }, [isSaving, onFooterStateChange, saleKey, shiftMutation.hasPending, showFooter])
 
   if (isLoading) {
     return <SaleEditSkeleton />
@@ -399,7 +408,7 @@ function SaleEditContent({
       onSubmit={(event) => {
         event.preventDefault()
 
-        if (!isSaving) {
+        if (!isMutationLocked) {
           void doShift()
         }
       }}
@@ -427,7 +436,19 @@ function SaleEditContent({
 
       {shiftMutation.pendingError && (
         <Alert color="orange" icon={<CircleAlert size={18} />} m="md" variant="light">
-          {shiftMutation.pendingError}
+          <Stack gap="xs">
+            <Text size="sm">{shiftMutation.pendingError}</Text>
+            {shiftMutation.hasPending && (
+              <Button
+                loading={isSaving}
+                size="xs"
+                variant="light"
+                onClick={() => void recoverPendingShift()}
+              >
+                {t('Перевірити та повторити')}
+              </Button>
+            )}
+          </Stack>
         </Alert>
       )}
 
