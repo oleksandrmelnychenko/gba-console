@@ -27,6 +27,7 @@ import {
   type SalesUkraineOrderItemShiftStatus,
   type SalesUkraineSale,
 } from '../types'
+import { buildBulkShiftPayload, hasShiftableQuantity } from './saleEditShiftPayload'
 import './sales-drawers.css'
 
 const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
@@ -254,6 +255,7 @@ function SaleEditContent({
   }, [initialSale.NetUid, t])
 
   const orderItems = getOrderItems(sale)
+  const hasShiftableItems = orderItems.some(hasShiftableQuantity)
   const isNew = isNewSale(sale)
   const totalAmount = orderItems.reduce((sum, item) => sum + (getNumber(item.TotalAmount) ?? 0), 0)
   const totalQty = orderItems.reduce((sum, item) => sum + (getNumber(item.Qty) ?? 0), 0)
@@ -360,7 +362,7 @@ function SaleEditContent({
     return submitShift(buildShiftPayload(sale, draft))
   }
 
-  const showFooter = !isLoading && !error && orderItems.length > 0
+  const showFooter = !isLoading && !error && hasShiftableItems
 
   useEffect(() => {
     onFooterStateChange({
@@ -448,7 +450,7 @@ function SaleEditContent({
           {!isNew && (
             <Button
               className="sale-edit-bulk-action"
-              disabled={isMutationLocked}
+              disabled={isMutationLocked || !hasShiftableItems}
               leftSection={<Receipt size={16} />}
               variant="outline"
               onClick={allToBill}
@@ -458,7 +460,7 @@ function SaleEditContent({
           )}
           <Button
             className="sale-edit-bulk-action"
-            disabled={isMutationLocked}
+            disabled={isMutationLocked || !hasShiftableItems}
             leftSection={<Warehouse size={16} />}
             variant="outline"
             onClick={allToStore}
@@ -676,7 +678,7 @@ function sumShiftQty(
 }
 
 function buildShiftPayload(sale: SalesUkraineSale, draft: ShiftDraft): SalesUkraineSale {
-  const orderItems = getOrderItems(sale)
+  const orderItems = getOrderItems(sale).filter(hasShiftableQuantity)
 
   const nextItems = orderItems.map((item, index) => {
     const key = itemKey(item, index)
@@ -710,30 +712,6 @@ function buildShiftPayload(sale: SalesUkraineSale, draft: ShiftDraft): SalesUkra
     Order: {
       ...sale.Order,
       OrderItems: nextItems,
-    },
-  }
-}
-
-function buildBulkShiftPayload(sale: SalesUkraineSale, target: 'bill' | 'store'): SalesUkraineSale {
-  const shiftStatus = target === 'bill' ? OrderItemShiftStatusType.Bill : OrderItemShiftStatusType.Store
-
-  return {
-    ...sale,
-    Order: {
-      ...sale.Order,
-      OrderItems: getOrderItems(sale).map((item) => ({
-        ...item,
-        ShiftStatuses: [
-          {
-            Id: 0,
-            NetUid: EMPTY_GUID,
-            Deleted: false,
-            ShiftStatus: shiftStatus as SalesUkraineOrderItemShiftStatus['ShiftStatus'],
-            Qty: getNumber(item.Qty) ?? 0,
-            OrderItemId: item.Id,
-          },
-        ],
-      })),
     },
   }
 }
