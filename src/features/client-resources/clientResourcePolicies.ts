@@ -20,6 +20,6 @@ export function isBusinessOrganizationVisible(organization: ClientResourceOrgani
     .some((name) => TECHNICAL_SOURCE_ORGANIZATION_NAMES.has(name))
 }
 
-export function canMutatePricing(pricing: ClientResourcePricing): boolean {
+export function canDeletePricing(pricing: ClientResourcePricing): boolean {
   return pricing.IsSourceManaged !== true
 }

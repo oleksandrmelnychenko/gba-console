@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { canMutatePricing, isBusinessOrganizationVisible } from './clientResourcePolicies'
+import { canDeletePricing, isBusinessOrganizationVisible } from './clientResourcePolicies'
 
 describe('client resource business policies', () => {
   it('keeps the five operational organizations and hides source-only stock references', () => {
@@ -28,9 +28,9 @@ describe('client resource business policies', () => {
     expect(isBusinessOrganizationVisible({ Name: 'Нова локальна організація' })).toBe(true)
   })
 
-  it('allows local pricing mutations and blocks source-managed pricing mutations', () => {
-    expect(canMutatePricing({ IsSourceManaged: false })).toBe(true)
-    expect(canMutatePricing({})).toBe(true)
-    expect(canMutatePricing({ IsSourceManaged: true })).toBe(false)
+  it('allows local pricing deletion and protects source-managed pricing from deletion', () => {
+    expect(canDeletePricing({ IsSourceManaged: false })).toBe(true)
+    expect(canDeletePricing({})).toBe(true)
+    expect(canDeletePricing({ IsSourceManaged: true })).toBe(false)
   })
 })

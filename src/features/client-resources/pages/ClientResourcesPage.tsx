@@ -107,7 +107,7 @@ import type {
   ClientResourceVatRate,
 } from '../types'
 import { CLIENT_RESOURCE_STEPS } from '../types'
-import { canMutatePricing, isBusinessOrganizationVisible } from '../clientResourcePolicies'
+import { canDeletePricing, isBusinessOrganizationVisible } from '../clientResourcePolicies'
 import { buildSaleOrganizationsByStorageId } from '../clientResourceStorageOrganizations'
 import '../../../shared/ui/console-table-page.css'
 import './clientResources.css'
@@ -1730,6 +1730,7 @@ function PricingEditorModal({
   )
   const selectedPriceType = findEntityById(priceTypes, values.PriceTypeId) || pricing?.PriceType
   const showCalculatedPriceOptions = shouldShowCalculatedPriceOptions(selectedPriceType, pricing)
+  const isSourceManaged = pricing?.IsSourceManaged === true
 
   function setField<K extends keyof PricingFormValues>(key: K, value: PricingFormValues[K]) {
     setValues((currentValues) => ({
@@ -1752,15 +1753,22 @@ function PricingEditorModal({
               {error}
             </Alert>
           ) : null}
+          {isSourceManaged ? (
+            <Alert color="blue" icon={<CircleAlert size={18} strokeWidth={1.8} />} variant="light">
+              {translate('Правило синхронізується з 1С. Можна змінити націнку; інші параметри оновлюються синхронізацією.')}
+            </Alert>
+          ) : null}
           <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
             <TextInput
               autoFocus
+              disabled={isSourceManaged}
               label={translate("Назва")}
               required
               value={values.Name}
               onChange={(event) => setField('Name', event.currentTarget.value)}
             />
             <TextInput
+              disabled={isSourceManaged}
               label={translate("Коментар")}
               value={values.Comment}
               onChange={(event) => setField('Comment', event.currentTarget.value)}
@@ -1768,6 +1776,7 @@ function PricingEditorModal({
             <Select
               allowDeselect={false}
               data={toEntityOptions(currencies, (currency) => displayCurrency(currency))}
+              disabled={isSourceManaged}
               label={translate("Валюта")}
               value={values.CurrencyId}
               onChange={(value) => setField('CurrencyId', value || toOptionalEntityId(currencies[0]?.Id))}
@@ -1775,6 +1784,7 @@ function PricingEditorModal({
             <Select
               allowDeselect={false}
               data={toEntityOptions(priceTypes, (priceType) => displayValue(priceType.Name))}
+              disabled={isSourceManaged}
               label={translate("Тип ціни")}
               value={values.PriceTypeId}
               onChange={(value) => {
@@ -1798,6 +1808,7 @@ function PricingEditorModal({
                   data={toEntityOptions(basePricings, (basePricing) =>
                     displayTranslatedEntity(basePricing.Name, basePricing.PricingTranslations),
                   )}
+                  disabled={isSourceManaged}
                   label={translate("Базова ціна")}
                   value={values.BasePricingId}
                   onChange={(value) => setField('BasePricingId', value || toOptionalEntityId(basePricings[0]?.Id))}
@@ -1813,6 +1824,7 @@ function PricingEditorModal({
           </SimpleGrid>
           <Checkbox
             checked={values.ForVat}
+            disabled={isSourceManaged}
             label={translate("Для ПДВ")}
             onChange={(event) => setField('ForVat', event.currentTarget.checked)}
           />
@@ -3029,20 +3041,12 @@ function PricingPanel({ section }: { section: ClientResourceSection }) {
   }
 
   function openEditPricing(pricing: ClientResourcePricing) {
-    if (!canMutatePricing(pricing)) {
-      notifications.show({
-        color: 'yellow',
-        message: translate('Націнка керується синхронізацією з 1С'),
-      })
-      return
-    }
-
     setFormError(null)
     setEditor({ mode: 'edit', pricing })
   }
 
   function requestDeletePricing(pricing: ClientResourcePricing) {
-    if (!canMutatePricing(pricing)) {
+    if (!canDeletePricing(pricing)) {
       notifications.show({
         color: 'yellow',
         message: translate('Цінове правило керується синхронізацією з 1С'),
@@ -3209,7 +3213,9 @@ function PricingPanel({ section }: { section: ClientResourceSection }) {
         opened={Boolean(editor)}
         priceTypes={priceTypesState.data}
         pricing={editor?.pricing}
-        title={editor?.mode === 'edit' ? translate('Редагувати правило') : translate('Нове правило')}
+        title={editor?.mode === 'edit'
+          ? translate(editor.pricing?.IsSourceManaged ? 'Редагувати націнку' : 'Редагувати правило')
+          : translate('Нове правило')}
         onClose={() => {
           if (!isSaving) {
             setEditor(null)
@@ -3351,9 +3357,9 @@ function PricingResourceTable({
             <PermissionGate permissionKey={PRICING_EDIT_PERMISSION}>
               <TableRowAction
                 action="edit"
-                disabled={!canMutatePricing(pricing)}
+                disabled={!pricing.NetUid || isSaving}
                 label={pricing.IsSourceManaged
-                  ? translate('Керується синхронізацією з 1С')
+                  ? translate('Редагувати націнку')
                   : translate('Редагувати правило')}
                 onClick={() => onEdit(pricing)}
               />
@@ -3361,7 +3367,7 @@ function PricingResourceTable({
             <PermissionGate permissionKey={PRICING_DELETE_PERMISSION}>
               <TableRowAction
                 action="delete"
-                disabled={!pricing.NetUid || !canMutatePricing(pricing)}
+                disabled={!pricing.NetUid || !canDeletePricing(pricing)}
                 label={pricing.IsSourceManaged
                   ? translate('Керується синхронізацією з 1С')
                   : translate('Видалити правило')}
