@@ -107,7 +107,7 @@ import type {
   ClientResourceVatRate,
 } from '../types'
 import { CLIENT_RESOURCE_STEPS } from '../types'
-import { canDeletePricing, isBusinessOrganizationVisible } from '../clientResourcePolicies'
+import { canDeletePricing, canEditPricing, isBusinessOrganizationVisible } from '../clientResourcePolicies'
 import { buildSaleOrganizationsByStorageId } from '../clientResourceStorageOrganizations'
 import '../../../shared/ui/console-table-page.css'
 import './clientResources.css'
@@ -3041,6 +3041,14 @@ function PricingPanel({ section }: { section: ClientResourceSection }) {
   }
 
   function openEditPricing(pricing: ClientResourcePricing) {
+    if (!canEditPricing(pricing)) {
+      notifications.show({
+        color: 'yellow',
+        message: translate('Для синхронізованого правила можна редагувати лише розрахункову націнку'),
+      })
+      return
+    }
+
     setFormError(null)
     setEditor({ mode: 'edit', pricing })
   }
@@ -3357,9 +3365,9 @@ function PricingResourceTable({
             <PermissionGate permissionKey={PRICING_EDIT_PERMISSION}>
               <TableRowAction
                 action="edit"
-                disabled={!pricing.NetUid || isSaving}
+                disabled={!pricing.NetUid || !canEditPricing(pricing) || isSaving}
                 label={pricing.IsSourceManaged
-                  ? translate('Редагувати націнку')
+                  ? translate(canEditPricing(pricing) ? 'Редагувати націнку' : 'Керується синхронізацією з 1С')
                   : translate('Редагувати правило')}
                 onClick={() => onEdit(pricing)}
               />

@@ -23,3 +23,11 @@ export function isBusinessOrganizationVisible(organization: ClientResourceOrgani
 export function canDeletePricing(pricing: ClientResourcePricing): boolean {
   return pricing.IsSourceManaged !== true
 }
+
+export function canEditPricing(pricing: ClientResourcePricing): boolean {
+  if (pricing.IsSourceManaged !== true) {
+    return true
+  }
+
+  return Boolean(pricing.BasePricingId || pricing.BasePricing || pricing.ExtraCharge)
+}

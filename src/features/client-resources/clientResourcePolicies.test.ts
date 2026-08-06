@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { canDeletePricing, isBusinessOrganizationVisible } from './clientResourcePolicies'
+import { canDeletePricing, canEditPricing, isBusinessOrganizationVisible } from './clientResourcePolicies'
 
 describe('client resource business policies', () => {
   it('keeps the five operational organizations and hides source-only stock references', () => {
@@ -32,5 +32,12 @@ describe('client resource business policies', () => {
     expect(canDeletePricing({ IsSourceManaged: false })).toBe(true)
     expect(canDeletePricing({})).toBe(true)
     expect(canDeletePricing({ IsSourceManaged: true })).toBe(false)
+  })
+
+  it('allows markup edits only for calculated source-managed pricing', () => {
+    expect(canEditPricing({ IsSourceManaged: false })).toBe(true)
+    expect(canEditPricing({ BasePricingId: 849, IsSourceManaged: true })).toBe(true)
+    expect(canEditPricing({ ExtraCharge: 30, IsSourceManaged: true })).toBe(true)
+    expect(canEditPricing({ ExtraCharge: 0, IsSourceManaged: true })).toBe(false)
   })
 })
