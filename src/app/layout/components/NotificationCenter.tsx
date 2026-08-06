@@ -1,5 +1,6 @@
 import {
   ActionIcon,
+  Badge,
   Box,
   Group,
   Indicator,
@@ -10,7 +11,7 @@ import {
   Tooltip,
   UnstyledButton,
 } from '@mantine/core'
-import { Bell, CheckCheck, Heart, ShoppingCart, Sparkles, Trash2 } from 'lucide-react'
+import { Bell, CheckCheck, ChevronRight, Heart, ShoppingCart, Sparkles, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -52,8 +53,9 @@ export function NotificationCenter({ userKey }: NotificationCenterProps) {
       opened={opened}
       onChange={setOpened}
       position="bottom-end"
-      shadow="md"
-      width={390}
+      offset={10}
+      shadow="sm"
+      width={420}
       withinPortal
     >
       <Popover.Target>
@@ -61,13 +63,14 @@ export function NotificationCenter({ userKey }: NotificationCenterProps) {
           aria-label={bellLabel}
           className="console-header-action console-notification-trigger"
           color="gray"
+          data-opened={opened || undefined}
           size="lg"
           title={t('Сповіщення')}
           variant="subtle"
           onClick={() => setOpened((current) => !current)}
         >
           <Indicator
-            color="red"
+            color="orange"
             disabled={unreadCount === 0}
             label={unreadLabel}
             offset={3}
@@ -80,21 +83,30 @@ export function NotificationCenter({ userKey }: NotificationCenterProps) {
 
       <Popover.Dropdown className="console-notification-dropdown" p={0}>
         <Group className="console-notification-header" justify="space-between" wrap="nowrap">
-          <Box>
-            <Text fw={700} size="sm">{t('Сповіщення')}</Text>
-            <Text c="dimmed" size="xs">
-              {unreadCount > 0 ? `${unreadCount} ${t('непрочитаних')}` : t('Усе переглянуто')}
-            </Text>
-          </Box>
+          <Group className="console-notification-heading" gap={10} wrap="nowrap">
+            <Box className="console-notification-header-icon" aria-hidden="true">
+              <Bell size={17} strokeWidth={1.7} />
+            </Box>
+            <Box className="console-notification-heading-copy">
+              <Text className="console-notification-title">{t('Сповіщення')}</Text>
+              {unreadCount > 0 ? (
+                <Badge className="console-notification-unread-badge" color="orange" size="xs" variant="light">
+                  {unreadCount} {t('непрочитаних')}
+                </Badge>
+              ) : (
+                <Text className="console-notification-subtitle">{t('Усе переглянуто')}</Text>
+              )}
+            </Box>
+          </Group>
 
-          <Group gap={4} wrap="nowrap">
+          <Group className="console-notification-header-actions" gap={6} wrap="nowrap">
             <Tooltip label={t('Позначити все прочитаним')}>
               <ActionIcon
                 aria-label={t('Позначити все прочитаним')}
-                color="gray"
+                className="console-notification-header-action"
                 disabled={unreadCount === 0}
-                size="sm"
-                variant="subtle"
+                size={30}
+                variant="default"
                 onClick={markAllRead}
               >
                 <CheckCheck size={16} />
@@ -103,10 +115,10 @@ export function NotificationCenter({ userKey }: NotificationCenterProps) {
             <Tooltip label={t('Очистити сповіщення')}>
               <ActionIcon
                 aria-label={t('Очистити сповіщення')}
-                color="gray"
+                className="console-notification-header-action"
                 disabled={items.length === 0}
-                size="sm"
-                variant="subtle"
+                size={30}
+                variant="default"
                 onClick={clear}
               >
                 <Trash2 size={15} />
@@ -117,7 +129,9 @@ export function NotificationCenter({ userKey }: NotificationCenterProps) {
 
         {items.length === 0 ? (
           <Stack align="center" className="console-notification-empty" gap={6}>
-            <Bell aria-hidden="true" size={22} strokeWidth={1.5} />
+            <Box className="console-notification-empty-icon" aria-hidden="true">
+              <Bell size={20} strokeWidth={1.6} />
+            </Box>
             <Text c="dimmed" size="sm">{t('Нових сповіщень немає')}</Text>
           </Stack>
         ) : (
@@ -136,20 +150,26 @@ export function NotificationCenter({ userKey }: NotificationCenterProps) {
                     {getNotificationIcon(notification.kind)}
                   </Box>
                   <Box className="console-notification-copy">
-                    <Group gap="xs" justify="space-between" wrap="nowrap">
-                      <Text fw={notification.readAt ? 600 : 700} size="sm">
+                    <Group className="console-notification-item-heading" gap={8} justify="space-between" wrap="nowrap">
+                      <Text className="console-notification-item-title" lineClamp={1}>
                         {notification.title}
                       </Text>
-                      <Text c="dimmed" className="console-notification-time" size="xs">
+                      <Text className="console-notification-time">
                         {formatNotificationTime(notification.createdAt)}
                       </Text>
                     </Group>
                     {notification.message ? (
-                      <Text c="dimmed" className="console-notification-message" size="xs">
+                      <Text c="dimmed" className="console-notification-message" lineClamp={2} size="xs">
                         {notification.message}
                       </Text>
                     ) : null}
                   </Box>
+                  <ChevronRight
+                    aria-hidden="true"
+                    className="console-notification-chevron"
+                    size={16}
+                    strokeWidth={1.7}
+                  />
                 </UnstyledButton>
               ))}
             </Stack>
@@ -167,12 +187,12 @@ function formatNotificationTime(value: string): string {
 
 function getNotificationIcon(kind: ConsoleNotification['kind']) {
   if (kind === 'ecommerce-ai-image-search') {
-    return <Sparkles size={17} strokeWidth={1.8} />
+    return <Sparkles size={15} strokeWidth={1.8} />
   }
 
   if (kind === 'ecommerce-interest') {
-    return <Heart size={17} strokeWidth={1.8} />
+    return <Heart size={15} strokeWidth={1.8} />
   }
 
-  return <ShoppingCart size={17} strokeWidth={1.8} />
+  return <ShoppingCart size={15} strokeWidth={1.8} />
 }

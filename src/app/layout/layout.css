@@ -441,38 +441,124 @@
   overflow: visible !important;
 }
 
+.console-notification-trigger[data-opened='true'] {
+  background: var(--mantine-color-orange-0);
+  color: var(--brand-orange);
+}
+
 .console-notification-dropdown {
-  width: min(390px, calc(100vw - 16px)) !important;
+  width: min(420px, calc(100vw - 16px)) !important;
   max-width: calc(100vw - 16px);
   overflow: hidden;
+  border-radius: 10px;
   border-color: var(--mantine-color-gray-2);
+  box-shadow: 0 10px 24px rgba(33, 37, 41, 0.11);
 }
 
 .console-notification-header {
-  min-height: 62px;
+  min-height: 66px;
   padding: 10px 12px;
   border-bottom: 1px solid var(--mantine-color-gray-2);
+  background: #ffffff;
+}
+
+.console-notification-heading {
+  min-width: 0;
+}
+
+.console-notification-header-icon {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  place-items: center;
+  border: 1px solid var(--mantine-color-orange-3);
+  border-radius: 8px;
+  background: var(--mantine-color-orange-0);
+  color: var(--brand-orange);
+}
+
+.console-notification-heading-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.console-notification-empty-icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 8px;
+}
+
+.console-notification-title {
+  color: var(--mantine-color-gray-8);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.console-notification-unread-badge {
+  height: 18px;
+  padding-inline: 7px;
+  border: 1px solid var(--mantine-color-orange-2);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.console-notification-subtitle {
+  color: var(--mantine-color-gray-5);
+  font-size: 10.5px;
+  line-height: 1.2;
+}
+
+.console-notification-header-action {
+  width: 28px;
+  height: 28px;
+  border-color: var(--mantine-color-gray-2);
   background: var(--mantine-color-gray-0);
+  color: var(--mantine-color-gray-7);
+}
+
+.console-notification-header-action:not(:disabled):hover {
+  border-color: var(--mantine-color-orange-3);
+  background: var(--mantine-color-orange-0);
+  color: var(--brand-orange);
 }
 
 .console-notification-empty {
-  min-height: 126px;
+  min-height: 156px;
   justify-content: center;
   color: var(--mantine-color-gray-5);
 }
 
-.console-notification-item {
+.console-notification-empty-icon {
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--mantine-color-gray-2);
+  border-color: var(--mantine-color-gray-2);
+  background: var(--mantine-color-gray-0);
+  color: var(--mantine-color-gray-5);
+}
+
+.console-notification-dropdown .console-notification-item {
   position: relative;
   display: grid;
-  grid-template-columns: 34px minmax(0, 1fr);
+  grid-template-columns: 30px minmax(0, 1fr) 14px;
+  align-items: start;
   gap: 10px;
   width: 100%;
-  min-height: 72px;
-  padding: 10px 12px;
+  min-height: 78px;
+  padding: 11px 13px 11px 16px !important;
   border-bottom: 1px solid var(--mantine-color-gray-2);
   background: #ffffff;
   text-align: left;
-  transition: background-color 120ms ease;
+  transition: background-color 120ms ease, box-shadow 120ms ease;
 }
 
 .console-notification-item:last-child {
@@ -484,31 +570,30 @@
 }
 
 .console-notification-item.is-unread {
-  background: var(--mantine-color-orange-0);
-}
-
-.console-notification-item.is-unread::before {
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 3px;
-  background: var(--brand-orange);
-  content: '';
+  background: #ffffff;
+  box-shadow: inset 3px 0 0 var(--brand-orange);
 }
 
 .console-notification-icon {
   display: grid;
-  width: 34px;
-  height: 34px;
+  width: 30px;
+  height: 30px;
+  margin-top: 3px;
   place-items: center;
-  border-radius: 6px;
-  background: var(--mantine-color-orange-1);
+  border: 0;
+  border-radius: 7px;
+  background: var(--mantine-color-orange-0);
   color: var(--brand-orange);
 }
 
-.console-notification-icon.is-ecommerce-ai-image-search,
+.console-notification-icon.is-ecommerce-ai-image-search {
+  background: var(--mantine-color-blue-0);
+  color: var(--mantine-color-blue-7);
+}
+
 .console-notification-icon.is-ecommerce-interest {
-  background: var(--mantine-color-grape-0);
-  color: var(--mantine-color-grape-7);
+  background: var(--mantine-color-red-0);
+  color: var(--mantine-color-red-7);
 }
 
 .console-notification-copy {
@@ -519,14 +604,47 @@
   overflow-wrap: anywhere;
 }
 
-.console-notification-time {
-  flex: 0 0 auto;
-  white-space: nowrap;
+.console-notification-item-heading {
+  min-width: 0;
+  padding-right: 70px;
+}
+
+.console-notification-item-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--mantine-color-gray-8);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
 }
 
 .console-notification-message {
-  margin-top: 3px;
-  line-height: 1.35;
+  margin-top: 4px;
+  color: var(--mantine-color-gray-6);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.console-notification-copy .console-notification-time {
+  position: absolute;
+  top: 7px;
+  right: 14px;
+  color: #000;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.console-notification-chevron {
+  align-self: center;
+  color: var(--mantine-color-gray-5);
+  transition: color 120ms ease, transform 120ms ease;
+}
+
+.console-notification-item:hover .console-notification-chevron {
+  color: var(--brand-orange);
+  transform: translateX(2px);
 }
 
 .console-nav-toggle {
