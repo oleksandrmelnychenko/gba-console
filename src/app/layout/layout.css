@@ -1344,15 +1344,76 @@
   min-width: 0;
 }
 
-.console-footer-build {
+.qa-build-ticker {
   flex: 0 0 auto;
+  min-height: 30px;
+  padding: 5px 9px;
   display: inline-flex;
   align-items: center;
+  gap: 8px;
+  color: #d5d7da;
+  background: #181d27;
+  border: 1px solid #252b37;
+  border-radius: 7px;
+  box-shadow: 0 2px 5px rgba(10, 13, 18, 0.16);
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 10px;
+  line-height: 16px;
+  letter-spacing: 0.04em;
   white-space: nowrap;
+}
+
+.qa-build-ticker:hover {
+  background: #252b37;
+  border-color: #414651;
+}
+
+.qa-build-ticker strong {
+  color: #fff;
   font-size: 12px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
-  color: var(--mantine-color-orange-7);
+  letter-spacing: 0;
+}
+
+.qa-build-ticker svg {
+  transition: transform 160ms ease;
+}
+
+.qa-build-ticker svg.is-open {
+  transform: rotate(180deg);
+}
+
+.qa-build-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #17b26a;
+  box-shadow: 0 0 0 3px rgba(23, 178, 106, 0.16);
+}
+
+.qa-build-dot.is-stale {
+  animation: qa-build-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes qa-build-pulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(23, 178, 106, 0.16); }
+  50% { box-shadow: 0 0 0 6px rgba(23, 178, 106, 0.32); }
+}
+
+.qa-build-label {
+  color: #94979c;
+}
+
+.qa-build-count {
+  padding: 1px 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #75e0a7;
+  background: rgba(23, 178, 106, 0.12);
+  border-radius: 4px;
+  letter-spacing: 0;
 }
 
 .qa-build-bug {
@@ -1363,8 +1424,8 @@
 }
 
 .qa-build-bug:hover {
-  background: var(--mantine-color-orange-0);
-  border-color: var(--mantine-color-orange-3);
+  background: var(--mantine-color-teal-0);
+  border-color: var(--mantine-color-teal-3);
 }
 
 .data-sync-progress {
