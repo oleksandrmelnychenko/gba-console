@@ -170,7 +170,7 @@
 .outgoing-detail-section__subtitle,
 .outgoing-detail-row__label,
 .outgoing-detail-metric span {
-  color: var(--mantine-color-gray-6);
+  color: var(--mantine-color-gray-7);
   font-family: var(--font-mono);
   font-size: 11px;
   font-weight: 600;
