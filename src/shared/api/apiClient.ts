@@ -270,7 +270,7 @@ async function sendApiRequest<T>(path: string, options: ApiRequestOptions, allow
   const payload = await readPayload(response)
 
   if (!response.ok) {
-    if (response.status === 401 || response.status === 403) {
+    if (response.status === 401) {
       clearSession()
       notifyUnauthorized()
     }
@@ -462,8 +462,12 @@ function getErrorMessage(payload: unknown, status: number, errorMessages?: ApiEr
     }
   }
 
-  if (status === 401 || status === 403) {
+  if (status === 401) {
     return translate('Сесію завершено. Увійдіть повторно.')
+  }
+
+  if (status === 403) {
+    return translate('Недостатньо прав для цієї дії.')
   }
 
   return errorMessages?.default || translate('Не вдалося виконати запит')
