@@ -628,10 +628,12 @@ export function CarrierHistory({ current, entries }: { current: SalesUkraineUpda
   }
 
   const sortedEntries = sortCarrierHistoryEntries(entries)
+  const baseline = buildCarrierHistoryBaseline(sortedEntries[0])
   // Oldest change first ... newest change ... ActualData (current) last.
   // History cells show the fields changed by that history step. The current column repeats only the
   // latest step's changed fields, so it does not light up unrelated current values.
   const columns: Array<{ entry: SalesUkraineUpdateDataCarrier; header: string; isCurrent?: boolean; key: string }> = [
+    ...(baseline ? [{ entry: baseline, header: t('Початкові дані'), key: 'baseline' }] : []),
     ...sortedEntries.map((entry, index) => ({
       entry,
       header: formatHistoryHeader(entry, index, t),
@@ -875,6 +877,43 @@ function getHistoryColumnKey(entry: SalesUkraineUpdateDataCarrier): string {
   }
 
   return `history-${getHistoryTime(entry.Created)}`
+}
+
+function buildCarrierHistoryBaseline(
+  firstEntry: SalesUkraineUpdateDataCarrier | undefined,
+): SalesUkraineUpdateDataCarrier | null {
+  const snapshot = firstEntry?.BaselineSnapshot
+
+  if (!snapshot) {
+    return null
+  }
+
+  const transporter = snapshot.TransporterId != null
+    ? {
+        CssClass: snapshot.TransporterCssClass ?? undefined,
+        Id: snapshot.TransporterId,
+        ImageUrl: snapshot.TransporterImageUrl ?? undefined,
+        Name: snapshot.TransporterName ?? undefined,
+        NetUid: snapshot.TransporterNetUid ?? undefined,
+        TransporterTypeId: snapshot.TransporterTypeId ?? undefined,
+      }
+    : undefined
+
+  return {
+    CashOnDeliveryAmount: snapshot.CashOnDeliveryAmount,
+    City: snapshot.City ?? undefined,
+    Comment: snapshot.Comment ?? undefined,
+    Department: snapshot.Department ?? undefined,
+    FullName: snapshot.FullName ?? undefined,
+    HasDocument: snapshot.HasDocument,
+    IsCashOnDelivery: snapshot.IsCashOnDelivery,
+    MobilePhone: snapshot.MobilePhone ?? undefined,
+    Number: snapshot.OwnTtnNumber ?? undefined,
+    ShipmentDate: snapshot.ShipmentDate ?? undefined,
+    Transporter: transporter,
+    TTN: snapshot.Ttn ?? undefined,
+    TtnPDFPath: snapshot.TtnDocumentPath ?? undefined,
+  }
 }
 
 function getTransporterValue(transporter?: SalesUkraineTransporter | null): string {

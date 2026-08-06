@@ -970,8 +970,9 @@ export const SalesOnlineShopGridRow = memo(function SalesOnlineShopGridRow({
     sale.BaseLifeCycleStatus?.SaleLifeCycleType ?? sale.BaseLifeCycleStatus?.Name,
   )
   const isPackaging = lifecycleStatusKey === 'Packaging' || lifecycleStatusKey === 'Packaged'
-  const hidePrintBlock = Boolean(sale.IsVatSale) && !sale.IsAcceptedToPacking && !isAdmin
-  const showTtn = Boolean(sale.TransporterId) && isPackaging && !hidePrintBlock
+  const packingDocumentsRestricted = Boolean(sale.IsVatSale) && !sale.IsAcceptedToPacking && !isAdmin
+  const showDocuments = lifecycleStatusKey === 'New' || !packingDocumentsRestricted
+  const showTtn = Boolean(sale.TransporterId) && isPackaging && !packingDocumentsRestricted
   const showWillNotShip = packingAcceptanceLifecycleEligible && canWillNotShip && Boolean(sale.IsVatSale) && !sale.IsAcceptedToPacking
   const showUnlock = canUnlock && Boolean(sale.IsLocked)
   const showEdit = canEditSale && (sale.InputSaleMerges?.length ?? 0) === 0
@@ -1148,7 +1149,7 @@ export const SalesOnlineShopGridRow = memo(function SalesOnlineShopGridRow({
 
       <div className="sg-doc-actions" data-row-stop="true">
         <TableRowAction action="details" label={t('Деталі')} onClick={() => onOpenSale(sale)} />
-        {!hidePrintBlock && <SaleDocumentsMenu sale={asUkraineSale(sale)} />}
+        {showDocuments && <SaleDocumentsMenu sale={asUkraineSale(sale)} />}
         <Menu position="bottom-end" shadow="md" withinPortal>
           <Menu.Target>
             <TableRowAction action="more" label={t('Дії')} />

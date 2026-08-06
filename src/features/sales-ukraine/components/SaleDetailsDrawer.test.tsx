@@ -52,6 +52,11 @@ describe('CarrierHistory', () => {
         '2026-07-11T19:02:45+03:00',
         CARRIER_HISTORY_CHANGED_FIELD.transporter | CARRIER_HISTORY_CHANGED_FIELD.mobilePhone,
         {
+          BaselineSnapshot: {
+            MobilePhone: null,
+            TransporterId: 57,
+            TransporterName: 'Самовивіз',
+          },
           MobilePhone: '455645454545',
           Transporter: { Id: 5, Name: 'Гюнсел' },
           User: { FirstName: 'First', LastName: 'User' },
@@ -86,6 +91,9 @@ describe('CarrierHistory', () => {
       </MantineProvider>,
     )
 
+    expect(historyCell(container, 'transporter', 'baseline').textContent).toContain('Самовивіз')
+    expect(historyCell(container, 'mobilePhone', 'baseline').textContent).toBe('')
+    expect(historyCell(container, 'transporter', 'baseline').classList).not.toContain('is-changed')
     expect(historyCell(container, 'transporter', 'history-event-1').textContent).toContain('Гюнсел')
     expect(historyCell(container, 'mobilePhone', 'history-event-1').textContent).toContain('455645454545')
     expect(historyCell(container, 'transporter', 'history-event-1').classList).toContain('is-changed')

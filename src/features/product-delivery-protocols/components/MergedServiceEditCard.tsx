@@ -268,7 +268,28 @@ export function MergedServiceEditCard({
     }
 
     setDraft((current) => ({ ...current, [key]: value }))
-    setFieldErrors({})
+    setValidationError(null)
+    clearFieldErrors(
+      key as keyof EditFieldErrors,
+      ...(key === 'grossPrice' || key === 'accountingGrossPrice'
+        ? (['grossPrice', 'accountingGrossPrice'] as const)
+        : []),
+      ...(key === 'createInformationTask' ? (['supplyInformationTaskUser'] as const) : []),
+      ...(key === 'createTask' ? (['taskUser'] as const) : []),
+      ...(key === 'createAccountingTask' ? (['accountingTaskUser'] as const) : []),
+    )
+  }
+
+  function clearFieldErrors(...keys: Array<keyof EditFieldErrors>) {
+    setFieldErrors((current) => {
+      const next = { ...current }
+
+      for (const key of keys) {
+        delete next[key]
+      }
+
+      return next
+    })
   }
 
   function selectOrganization(netUid: string | null) {
@@ -278,7 +299,8 @@ export function MergedServiceEditCard({
 
     const organization = organizations.find((item) => item.NetUid === netUid) || draft.supplyOrganization
     setDraft((current) => ({ ...current, supplyOrganization: organization || null, agreement: null }))
-    setFieldErrors({})
+    setValidationError(null)
+    clearFieldErrors('supplyOrganization')
   }
 
   function selectAgreement(netUid: string | null) {
@@ -702,7 +724,7 @@ function getMergedServiceValidation(
   if (!draft.consumableProduct) {
     fieldErrors.consumableProduct = t('Оберіть тип')
   }
-  if (!draft.invoiceNumber) {
+  if (!draft.invoiceNumber.trim()) {
     fieldErrors.invoiceNumber = t('Вкажіть номер інвойса')
   }
   if (Object.keys(fieldErrors).length > 0) {

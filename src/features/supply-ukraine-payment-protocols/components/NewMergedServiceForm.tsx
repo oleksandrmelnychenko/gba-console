@@ -218,13 +218,32 @@ export function NewMergedServiceForm({
 
   function update<K extends keyof NewMergedServiceFormValues>(key: K, value: NewMergedServiceFormValues[K]) {
     setValues((current) => ({ ...current, [key]: value }))
-    setFieldErrors({})
+    setValidationError(null)
+    clearFieldErrors(
+      key as keyof NewMergedServiceFieldErrors,
+      ...(key === 'grossPrice' || key === 'grossPriceAccounting'
+        ? (['grossPrice', 'grossPriceAccounting'] as const)
+        : []),
+    )
+  }
+
+  function clearFieldErrors(...keys: Array<keyof NewMergedServiceFieldErrors>) {
+    setFieldErrors((current) => {
+      const next = { ...current }
+
+      for (const key of keys) {
+        delete next[key]
+      }
+
+      return next
+    })
   }
 
   function selectOrganization(netUid: string | null) {
     const organization = organizations.find((item) => item.NetUid === netUid) || null
     setValues((current) => ({ ...current, agreement: null, supplyOrganization: organization }))
-    setFieldErrors({})
+    setValidationError(null)
+    clearFieldErrors('supplyOrganization')
   }
 
   function selectAgreement(netUid: string | null) {

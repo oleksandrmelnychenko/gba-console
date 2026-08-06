@@ -133,7 +133,29 @@ export type SalesUkraineCustomersOwnTtn = SalesUkraineEntity & {
   TtnPDFPath?: string
 }
 
+export type SalesUkraineCarrierHistorySnapshot = {
+  CashOnDeliveryAmount?: number
+  City?: string | null
+  Comment?: string | null
+  Department?: string | null
+  FullName?: string | null
+  HasDocument?: boolean
+  IsCashOnDelivery?: boolean
+  MobilePhone?: string | null
+  OwnTtnNumber?: string | null
+  ShipmentDate?: Date | string | null
+  TransporterCssClass?: string | null
+  TransporterId?: number | null
+  TransporterImageUrl?: string | null
+  TransporterName?: string | null
+  TransporterNetUid?: string | null
+  TransporterTypeId?: number | null
+  Ttn?: string | null
+  TtnDocumentPath?: string | null
+}
+
 export type SalesUkraineUpdateDataCarrier = SalesUkraineEntity & {
+  BaselineSnapshot?: SalesUkraineCarrierHistorySnapshot | null
   CashOnDeliveryAmount?: number
   ChangedFields?: number | null
   City?: string

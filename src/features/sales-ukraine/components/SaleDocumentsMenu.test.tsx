@@ -158,11 +158,11 @@ describe('SaleDocumentsMenu legacy document semantics', () => {
     expect(Boolean(paymentAction)).toBe(isVisible)
   })
 
-  it('allows printing a payment invoice before the consignment note exists', async () => {
+  it.each([false, true])('allows printing a payment invoice before the consignment note exists (VAT=%s)', async (isVatSale) => {
     renderMenu(
       createSale({
         BaseLifeCycleStatus: { SaleLifeCycleType: 'New' },
-        IsVatSale: false,
+        IsVatSale: isVatSale,
         TransporterId: undefined,
       }),
     )

@@ -6,6 +6,10 @@ import { theme } from '../../../shared/theme/theme'
 import type { SalesOnlineShopSale } from '../types'
 import { SalesOnlineShopGridRow } from './SalesOnlineShopPage'
 
+vi.mock('../../sales-ukraine/components/SaleDocumentsMenu', () => ({
+  SaleDocumentsMenu: () => <button type="button">Документи</button>,
+}))
+
 describe('SalesOnlineShopGridRow shipment acceptance', () => {
   it('labels the action according to IsAcceptedToPacking=true semantics', () => {
     const sale = {
@@ -50,6 +54,48 @@ describe('SalesOnlineShopGridRow shipment acceptance', () => {
       name: 'Розблокувати для відвантаження',
     })).toBeTruthy()
     expect(screen.queryByText(/не буде відвантажено/i)).toBeNull()
+    expect(screen.getByRole('button', { name: 'Документи' })).toBeTruthy()
+  })
+
+  it('keeps the payment document available before a VAT sale becomes a consignment note', () => {
+    const sale: SalesOnlineShopSale = {
+      BaseLifeCycleStatus: { Name: 'New', SaleLifeCycleType: 0 },
+      ClientAgreement: { Agreement: { Name: 'Договір' }, Client: { FullName: 'Клієнт' } },
+      IsAcceptedToPacking: false,
+      IsVatSale: true,
+      NetUid: 'dc8d6ccc-e2f3-4011-a73f-9be8a570b2ae',
+      Order: { OrderItems: [] },
+      SaleNumber: { Value: 'КАв00002566' },
+    }
+    const noop = vi.fn()
+
+    render(
+      <MantineProvider theme={theme}>
+        <I18nProvider>
+          <SalesOnlineShopGridRow
+            canEditSale={false}
+            canExpand={false}
+            canUnlock={false}
+            canWillNotShip={false}
+            isAdmin={false}
+            isExpanded={false}
+            sale={sale}
+            saleKey="sale-1"
+            onOpenAudit={noop}
+            onOpenConsignment={noop}
+            onOpenDetails={noop}
+            onOpenDiscount={noop}
+            onOpenEditor={noop}
+            onOpenSale={noop}
+            onToggleExpand={noop}
+            onUnlock={noop}
+            onWillNotShip={noop}
+          />
+        </I18nProvider>
+      </MantineProvider>,
+    )
+
+    expect(screen.getByRole('button', { name: 'Документи' })).toBeTruthy()
   })
 
   it.each([

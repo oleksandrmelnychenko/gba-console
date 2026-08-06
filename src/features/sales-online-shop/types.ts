@@ -144,6 +144,7 @@ export type SalesOnlineShopSale = SalesOnlineShopEntity & {
   IsInvoice?: boolean
   IsLocked?: boolean
   IsPrinted?: boolean
+  IsPrintedPaymentInvoice?: boolean
   IsSent?: boolean
   IsVatSale?: boolean
   MisplacedSaleId?: string

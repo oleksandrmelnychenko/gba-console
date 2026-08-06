@@ -81,6 +81,25 @@ describe('supply-ukraine NewMergedServiceForm validation', () => {
     expect(screen.getByText('Вкажіть номер інвойса')).toBeTruthy()
   })
 
+  it('keeps errors beside other invalid fields while one field is corrected', () => {
+    renderForm()
+    const supplier = getInput('Постачальник послуг')
+    const invoice = getInput('Номер інвойса')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Зберегти' }))
+    fireEvent.change(invoice, { target: { value: 'INV-1' } })
+
+    expect(invoice.getAttribute('aria-invalid')).not.toBe('true')
+    expect(supplier.getAttribute('aria-invalid')).toBe('true')
+    expect(screen.getByText('Оберіть постачальника послуг')).toBeTruthy()
+
+    fireEvent.change(invoice, { target: { value: '   ' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Зберегти' }))
+
+    expect(invoice.getAttribute('aria-invalid')).toBe('true')
+    expect(screen.getByText('Вкажіть номер інвойса')).toBeTruthy()
+  })
+
   it('marks payment fields as required only when a positive gross cost will create a task', () => {
     renderForm()
     const grossPrice = getInput('Вартість Брутто')
