@@ -1,0 +1,129 @@
+import { MantineProvider } from '@mantine/core'
+import { Notifications } from '@mantine/notifications'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { MemoryRouter } from 'react-router-dom'
+import { I18nProvider } from '../../../shared/i18n/I18nProvider'
+import { theme } from '../../../shared/theme/theme'
+import type { SalesUkraineSale } from '../types'
+
+const mocks = vi.hoisted(() => ({
+  getSaleById: vi.fn(),
+  getSalesUkraine: vi.fn(),
+  getSalesUkraineOrganizations: vi.fn(),
+  unlockSale: vi.fn(),
+}))
+
+vi.mock('../api/salesUkraineApi', async (importOriginal) => ({
+  ...await importOriginal<typeof import('../api/salesUkraineApi')>(),
+  getSaleById: mocks.getSaleById,
+  getSalesUkraine: mocks.getSalesUkraine,
+  getSalesUkraineOrganizations: mocks.getSalesUkraineOrganizations,
+  unlockSale: mocks.unlockSale,
+}))
+
+vi.mock('../../auth/useAuth', () => ({
+  useAuth: () => ({
+    hasPermission: () => true,
+    session: { userNetUid: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' },
+    user: { FirstName: 'Тест', LastName: 'Користувач', NetUid: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' },
+  }),
+}))
+
+vi.mock('../../../shared/realtime/events', async (importOriginal) => ({
+  ...await importOriginal<typeof import('../../../shared/realtime/events')>(),
+  useRealtimeEvent: () => {},
+}))
+
+vi.mock('../usePersistentSaleJsonMutation', () => ({
+  usePersistentSaleJsonMutationRunner: () => async (
+    _context: string,
+    payload: object,
+    request: (payload: object, operation: { operationId: string }) => Promise<unknown>,
+  ) => {
+    try {
+      const result = await request(payload, { operationId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb' })
+
+      return { completed: true, result }
+    } catch (error) {
+      return { completed: false, error }
+    }
+  },
+}))
+
+import { SalesUkrainePage } from './SalesUkrainePage'
+
+const saleNetUid = 'dc8d6ccc-e2f3-4011-a73f-9be8a570b2ae'
+
+function createSale(isLocked: boolean): SalesUkraineSale {
+  return {
+    BaseLifeCycleStatus: { Name: 'Received', SaleLifeCycleType: 4 },
+    BaseSalePaymentStatus: { Name: 'Paid' },
+    ClientAgreement: {
+      Agreement: { Currency: { Code: 'EUR' }, Name: 'Тестовий договір' },
+      Client: { FullName: 'Тестовий клієнт', RegionCode: { Value: 'КИЇ001' } },
+    },
+    Created: '2026-08-06T10:00:00Z',
+    HasDetails: false,
+    Id: 1016,
+    IsAcceptedToPacking: isLocked ? false : true,
+    IsLocked: isLocked,
+    IsVatSale: false,
+    NetUid: saleNetUid,
+    Order: { OrderItems: [] },
+    SaleNumber: { Value: 'КИЛ001016' },
+    TotalAmount: 100,
+    TotalAmountLocal: 100,
+    TotalPositions: 0,
+    TotalRowsQty: 1,
+  }
+}
+
+describe('SalesUkrainePage unlock state', () => {
+  beforeEach(() => {
+    mocks.getSaleById.mockReset()
+    mocks.getSalesUkraine.mockReset()
+    mocks.getSalesUkraineOrganizations.mockReset().mockResolvedValue([])
+    mocks.unlockSale.mockReset()
+  })
+
+  it('removes the locked icon from the row as soon as the unlock response is acknowledged', async () => {
+    const lockedSale = createSale(true)
+    const unlockedSale = createSale(false)
+    let resolveReload: ((sales: SalesUkraineSale[]) => void) | undefined
+
+    mocks.getSalesUkraine
+      .mockResolvedValueOnce([lockedSale])
+      .mockImplementationOnce(() => new Promise<SalesUkraineSale[]>((resolve) => {
+        resolveReload = resolve
+      }))
+    mocks.unlockSale.mockResolvedValueOnce(unlockedSale)
+
+    const { container } = render(
+      <MantineProvider theme={theme}>
+        <Notifications />
+        <I18nProvider>
+          <MemoryRouter>
+            <SalesUkrainePage />
+          </MemoryRouter>
+        </I18nProvider>
+      </MantineProvider>,
+    )
+
+    await screen.findByText('Тестовий клієнт')
+    expect(container.querySelector('svg.lucide-lock')).not.toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Дії' }))
+    fireEvent.click(await screen.findByText('Розблокувати'))
+    await screen.findByText('Розблокувати рахунок?')
+    fireEvent.click(screen.getByRole('button', { name: 'Розблокувати' }))
+
+    await waitFor(() => expect(mocks.unlockSale).toHaveBeenCalledTimes(1))
+    await waitFor(() => expect(mocks.getSalesUkraine).toHaveBeenCalledTimes(2))
+    await waitFor(() => expect(container.querySelector('svg.lucide-lock')).toBeNull())
+
+    await act(async () => {
+      resolveReload?.([unlockedSale])
+    })
+  })
+})
