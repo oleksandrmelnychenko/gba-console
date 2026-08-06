@@ -65,12 +65,10 @@ export function createIncomeDynamicPlacementColumn(
   return {
     FromDate: fromDate,
     PackingListId: packingList.Id,
-    DynamicProductPlacementRows: packingList.PackingListPackageOrderItems.map((item) => ({
-      Qty: 0,
-      PackingListPackageOrderItemId: item.Id,
-      PackingListPackageOrderItem: item,
-      DynamicProductPlacements: [],
-    })),
+    // A column is persisted independently from its rows. Keep the add-column
+    // mutation small and canonical; the grid supplies an empty row for display
+    // and the dedicated row endpoint creates it when a placement is entered.
+    DynamicProductPlacementRows: [],
   }
 }
 
