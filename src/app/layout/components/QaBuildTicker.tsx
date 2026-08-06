@@ -9,6 +9,7 @@ interface BuildBug {
   id: string
   title: string
   area: string
+  status: string
   source: 'codex' | 'manual'
   statusAtProcessing: string
 }
@@ -16,15 +17,46 @@ interface BuildBug {
 interface BuildInfo {
   number: string
   bugs: BuildBug[]
+  pending: BuildBug[]
 }
 
-const statusLabels: Record<string, string> = {
-  new: 'Нова',
-  in_progress: 'В роботі',
-  ready_for_retest: 'На перевірці',
-  review_again: 'На повторному ревʼю',
-  done: 'Готово',
-  blocked: 'Заблоковано',
+const statusMeta: Record<string, { label: string; short: string }> = {
+  new: { label: 'Новий', short: 'Новий' },
+  in_progress: { label: 'У роботі', short: 'В роботі' },
+  ready_for_retest: { label: 'Готовий до ретесту', short: 'Ретест' },
+  review_again: { label: 'Передивись ще раз', short: 'Ще раз' },
+  done: { label: 'Закрито', short: 'Готово' },
+  blocked: { label: 'Заблоковано', short: 'Блок' },
+}
+
+function BugRow({
+  bug,
+  pending = false,
+  onOpen,
+}: {
+  bug: BuildBug
+  pending?: boolean
+  onOpen: (taskId: string) => void
+}) {
+  const meta = statusMeta[bug.status] ?? { label: bug.status, short: bug.status }
+  const processed = statusMeta[bug.statusAtProcessing]?.label ?? bug.statusAtProcessing
+
+  return (
+    <UnstyledButton
+      className={`qa-build-bug${pending ? ' is-pending' : ''}`}
+      onClick={() => onOpen(bug.id)}
+    >
+      <Text size="xs" fw={700} c="teal.7">{bug.id}</Text>
+      <Text size="xs" lineClamp={1}>{bug.title}</Text>
+      <Text size="xs" c="dimmed">
+        {bug.area}
+        <span className={`qa-build-status status-${bug.status}`} title={`У момент випуску: ${processed}`}>
+          {meta.short}
+        </span>
+        <span className="qa-build-origin">{bug.source === 'codex' ? 'AI' : 'QA'}</span>
+      </Text>
+    </UnstyledButton>
+  )
 }
 
 export function QaBuildTicker() {
@@ -119,16 +151,18 @@ export function QaBuildTicker() {
           ) : build?.bugs.length ? (
             <ScrollArea.Autosize mah={320}>
               <Stack gap={4}>
-                {build.bugs.map((bug) => (
-                  <UnstyledButton key={bug.id} className="qa-build-bug" onClick={() => openTask(bug.id)}>
-                    <Text size="xs" fw={700} c="teal.7">{bug.id}</Text>
-                    <Text size="xs" lineClamp={1}>{bug.title}</Text>
-                    <Text size="xs" c="dimmed">
-                      {bug.area} · {statusLabels[bug.statusAtProcessing] ?? bug.statusAtProcessing}
-                      {' · '}{bug.source === 'codex' ? 'AI' : 'QA'}
+                {build.bugs.map((bug) => <BugRow key={bug.id} bug={bug} onOpen={openTask} />)}
+
+                {(build.pending?.length ?? 0) > 0 && (
+                  <>
+                    <Text size="10px" c="dimmed" fw={700} tt="uppercase" mt={4}>
+                      Чекають на наступний деплой · {build.pending.length}
                     </Text>
-                  </UnstyledButton>
-                ))}
+                    {build.pending.map((bug) => (
+                      <BugRow key={`pending-${bug.id}`} bug={bug} pending onOpen={openTask} />
+                    ))}
+                  </>
+                )}
               </Stack>
             </ScrollArea.Autosize>
           ) : (

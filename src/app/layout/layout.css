@@ -1417,6 +1417,40 @@
   letter-spacing: 0;
 }
 
+.qa-build-status {
+  margin-left: 6px;
+  padding: 1px 7px;
+  display: inline-block;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 9px;
+  line-height: 14px;
+  font-weight: 600;
+}
+
+.qa-build-status.status-new { color: #175cd3; background: #eff8ff; border-color: #b2ddff; }
+.qa-build-status.status-in_progress { color: #6941c6; background: #f4f3ff; border-color: #d9d6fe; }
+.qa-build-status.status-ready_for_retest { color: #b54708; background: #fffaeb; border-color: #fedf89; }
+.qa-build-status.status-review_again { color: #6941c6; background: #f4f3ff; border-color: #d9d6fe; }
+.qa-build-status.status-done { color: #067647; background: #ecfdf3; border-color: #abefc6; }
+.qa-build-status.status-blocked { color: #b42318; background: #fef3f2; border-color: #fecdca; }
+
+.qa-build-origin {
+  margin-left: 6px;
+  padding: 1px 5px;
+  display: inline-block;
+  color: var(--mantine-color-gray-6);
+  background: var(--mantine-color-gray-1);
+  border-radius: 4px;
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.qa-build-bug.is-pending {
+  border-style: dashed;
+}
+
 .qa-build-bug.qa-build-bug {
   display: block;
   padding: 6px 8px;
