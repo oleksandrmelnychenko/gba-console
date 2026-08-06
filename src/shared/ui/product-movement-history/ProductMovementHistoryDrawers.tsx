@@ -1,6 +1,7 @@
 import {
   ActionIcon,
   Alert,
+  Badge,
   Button,
   Card,
   Checkbox,
@@ -12,7 +13,7 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
-import { ChevronLeft, ChevronRight, CircleAlert, Download, Minus, Plus, RefreshCw } from 'lucide-react'
+import { Archive, ChevronLeft, ChevronRight, CircleAlert, Download, LockKeyhole, Minus, Plus, RefreshCw } from 'lucide-react'
 import { DocumentExportModal } from '../document-export-modal/DocumentExportModal'
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { apiRequest } from '../../api/apiClient'
@@ -28,6 +29,12 @@ import {
   hasCrossSourceStockCollision,
   type ProductIncomeMovementTreeRow,
 } from './productIncomeMovementTree'
+import {
+  buildHistoricalSourceAnchors,
+  isSafeHistoricalSourceMovement,
+  type HistoricalSourceAnchor,
+  type HistoricalSourceMovement,
+} from './historicalSourceAnchors'
 import './product-movement-history-drawers.css'
 
 export type MovementHistoryProduct = {
@@ -37,7 +44,7 @@ export type MovementHistoryProduct = {
   VendorCode?: string
 }
 
-export type ProductMovementHistoryTab = 'movement' | 'income' | 'outcome'
+export type ProductMovementHistoryTab = 'movement' | 'income' | 'outcome' | 'historical-source'
 
 type EntityFields = {
   Created?: Date | string
@@ -572,6 +579,9 @@ function ProductMovementHistoryDrawerContent({
             <Tabs.Tab value="movement">{t('Рух')}</Tabs.Tab>
             <Tabs.Tab value="income">{t('Прихід')}</Tabs.Tab>
             <Tabs.Tab value="outcome">{t('Вихід')}</Tabs.Tab>
+            <Tabs.Tab leftSection={<Archive size={15} />} value="historical-source">
+              {t('Архівні партії 1С')}
+            </Tabs.Tab>
           </Tabs.List>
 
           <Tabs.Panel value="movement" pt={0}>
@@ -582,6 +592,9 @@ function ProductMovementHistoryDrawerContent({
           </Tabs.Panel>
           <Tabs.Panel value="outcome" pt={0}>
             <ProductOutcomeMovementPanel active={opened && activeTab === 'outcome'} product={product} />
+          </Tabs.Panel>
+          <Tabs.Panel value="historical-source" pt={0}>
+            <HistoricalSourceMovementPanel active={opened && activeTab === 'historical-source'} product={product} />
           </Tabs.Panel>
         </Tabs>
         </Card>
@@ -962,6 +975,285 @@ function ProductMovementPanel({ active, product }: { active: boolean; product: M
       </Stack>
     </Stack>
   )
+}
+
+export function HistoricalSourceMovementPanel({
+  active,
+  initialDateFrom,
+  product,
+}: {
+  active: boolean
+  initialDateFrom?: string
+  product: MovementHistoryProduct
+}) {
+  const { t } = useI18n()
+  const productNetUid = product.NetUid?.trim() || ''
+  const [dateFrom, setDateFrom] = useState(() => initialDateFrom || getDateYearsAgo(3))
+  const [dateTo, setDateTo] = useState(getTodayDate)
+  const [rowsState, dispatchRowsState] = useReducer(
+    movementRowsReducer<HistoricalSourceMovement>,
+    undefined,
+    createMovementRowsState<HistoricalSourceMovement>,
+  )
+  const { error, isLoading, rows } = rowsState
+  const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  const filterError = getDateRangeError(dateFrom, dateTo, t)
+  const missingNetUidError = productNetUid ? null : t('У товару немає NetUid для завантаження архівних партій 1С')
+  const unsafeRows = useMemo(() => rows.filter((row) => !isSafeHistoricalSourceMovement(row)), [rows])
+  const safeRows = useMemo(() => rows.filter(isSafeHistoricalSourceMovement), [rows])
+  const anchors = useMemo(() => buildHistoricalSourceAnchors(safeRows), [safeRows])
+  const columns = useHistoricalSourceAnchorColumns()
+  const documentColumns = useHistoricalSourceDocumentColumns()
+  const activeError = filterError || missingNetUidError || error
+
+  useEffect(() => {
+    if (!active || filterError || !productNetUid) {
+      return
+    }
+
+    let cancelled = false
+
+    async function loadRows() {
+      dispatchRowsState({ type: 'load-started' })
+
+      try {
+        const nextRows = await getHistoricalSourceMovements({
+          from: dateFrom,
+          productNetId: productNetUid,
+          to: dateTo,
+        })
+
+        if (!cancelled) {
+          dispatchRowsState({ rows: nextRows, type: 'load-succeeded' })
+        }
+      } catch (loadError) {
+        if (!cancelled) {
+          dispatchRowsState({
+            error: loadError instanceof Error
+              ? loadError.message
+              : t('Не вдалося завантажити архівні партії 1С'),
+            type: 'load-failed',
+          })
+        }
+      }
+    }
+
+    void loadRows()
+
+    return () => {
+      cancelled = true
+    }
+  }, [active, dateFrom, dateTo, filterError, productNetUid, reloadKey, t])
+
+  return (
+    <Stack className="product-movement-history-panel" gap={0}>
+      <div className="app-filter-bar product-movement-history-filter-bar">
+        <Group align="end" gap={10} wrap="nowrap" className="product-movement-history-filter-row">
+          <TextInput label={t('З')} type="date" value={dateFrom} w={150} onChange={(event) => setDateFrom(event.currentTarget.value)} />
+          <TextInput label={t('По')} type="date" value={dateTo} w={150} onChange={(event) => setDateTo(event.currentTarget.value)} />
+          <div className="app-filter-actions">
+            <Button
+              disabled={Boolean(filterError || missingNetUidError)}
+              leftSection={<RefreshCw size={18} />}
+              loading={isLoading}
+              variant="outline"
+              onClick={() => reload()}
+            >
+              {t('Оновити')}
+            </Button>
+          </div>
+        </Group>
+      </div>
+      <Stack className="product-movement-history-panel__body" gap="md">
+        <Alert color="gray" icon={<LockKeyhole size={18} />} variant="light">
+          {t('Історичні партії з 1С без активної локальної партії. Вони доступні лише для перегляду, не змінюють складську наявність і недоступні для складських операцій.')}
+        </Alert>
+        {activeError ? (
+          <Alert color={filterError || missingNetUidError ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">
+            {activeError}
+          </Alert>
+        ) : null}
+        {unsafeRows.length > 0 ? (
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
+            {t('Частину рядків приховано: сервер не підтвердив read-only стан або відсутність впливу на наявність.')} ({unsafeRows.length})
+          </Alert>
+        ) : null}
+        <DataTable
+          columns={columns}
+          data={activeError ? [] : anchors}
+          defaultLayout={{ columnPinning: { left: ['state', 'batchNumber'] }, density: 'normal' }}
+          emptyText={t('Архівних партій 1С у вибраному періоді не знайдено')}
+          getRowCanExpand={(row) => row.Documents.length > 0}
+          getRowId={(row) => row.AnchorKey}
+          isLoading={isLoading}
+          layoutVersion="historical-source-movement-1"
+          loadingText={t('Завантаження архівних партій 1С')}
+          maxHeight="calc(100vh - 360px)"
+          minWidth={1420}
+          renderExpandedRow={(row) => (
+            <HistoricalSourceDocuments columns={documentColumns} row={row} />
+          )}
+          rowClassName={() => 'historical-source-anchor-row'}
+          tableId="historical-source-movement"
+        />
+      </Stack>
+    </Stack>
+  )
+}
+
+function HistoricalSourceDocuments({
+  columns,
+  row,
+}: {
+  columns: DataTableColumn<HistoricalSourceMovement>[]
+  row: HistoricalSourceAnchor
+}) {
+  const { t } = useI18n()
+
+  return (
+    <Stack className="historical-source-documents" gap="xs">
+      <Group gap="xs" justify="space-between">
+        <Text className="app-section-title" fw={600}>{t('Прив’язані документи продажу 1С')}</Text>
+        <Text c="dimmed" size="xs">{t('Рядків')}: {row.Documents.length}</Text>
+      </Group>
+      <DataTable
+        columns={columns}
+        data={row.Documents}
+        enablePinning={false}
+        getRowId={(document) => String(document.AllocationId)}
+        layoutVersion="historical-source-documents-1"
+        maxHeight={360}
+        minWidth={1500}
+        rowClassName={() => 'historical-source-document-row'}
+        showLayoutControls={false}
+        tableId="historical-source-documents"
+      />
+    </Stack>
+  )
+}
+
+function useHistoricalSourceAnchorColumns(): DataTableColumn<HistoricalSourceAnchor>[] {
+  const { t } = useI18n()
+
+  return useMemo<DataTableColumn<HistoricalSourceAnchor>[]>(() => [
+    {
+      id: 'state',
+      header: t('Стан'),
+      width: 150,
+      minWidth: 140,
+      accessor: (row) => row.StateCode,
+      cell: () => (
+        <Badge color="gray" variant="light">
+          <Group gap={4} wrap="nowrap"><LockKeyhole size={12} />{t('Лише історія')}</Group>
+        </Badge>
+      ),
+    },
+    {
+      id: 'source',
+      header: t('Контур 1С'),
+      width: 100,
+      minWidth: 90,
+      accessor: (row) => row.ImportedForAmg ? 'AMG' : 'Fenix',
+      cell: (row) => <Badge color={row.ImportedForAmg ? 'orange' : 'blue'} variant="light">{row.ImportedForAmg ? 'AMG' : 'Fenix'}</Badge>,
+    },
+    {
+      id: 'batchNumber',
+      header: t('Документ партії'),
+      width: 190,
+      minWidth: 160,
+      accessor: (row) => row.SourceBatchDocumentNumber,
+      cell: (row) => (
+        <Stack gap={0}>
+          <Text size="sm">{displayValue(row.SourceBatchDocumentNumber)}</Text>
+          <Text c="dimmed" size="xs">{t('Тип')}: {row.SourceBatchDocumentType}</Text>
+        </Stack>
+      ),
+    },
+    {
+      id: 'batchDate',
+      header: t('Дата партії'),
+      width: 150,
+      minWidth: 130,
+      accessor: (row) => row.SourceBatchDocumentDate,
+      cell: (row) => formatDateTime(row.SourceBatchDocumentDate),
+    },
+    {
+      id: 'storage',
+      header: t('Склад 1С'),
+      width: 210,
+      minWidth: 170,
+      accessor: (row) => row.SourceStorageName,
+      cell: (row) => displayValue(row.SourceStorageName),
+    },
+    {
+      id: 'organization',
+      header: t('Організація'),
+      width: 230,
+      minWidth: 180,
+      accessor: (row) => row.SourceOrganizationName,
+      cell: (row) => displayValue(row.SourceOrganizationName),
+    },
+    {
+      id: 'qty',
+      header: t('Історична к-сть'),
+      width: 130,
+      minWidth: 112,
+      align: 'right',
+      accessor: (row) => row.TotalQty,
+      cell: (row) => formatAmount(row.TotalQty),
+    },
+    {
+      id: 'documents',
+      header: t('Рядків продажу'),
+      width: 120,
+      minWidth: 108,
+      align: 'right',
+      accessor: (row) => row.Documents.length,
+      cell: (row) => formatAmount(row.Documents.length),
+    },
+    {
+      id: 'saleRange',
+      header: t('Дати продажів'),
+      width: 220,
+      minWidth: 180,
+      accessor: (row) => `${row.FirstSaleDocumentDate} ${row.LastSaleDocumentDate}`,
+      cell: (row) => formatHistoricalDateRange(row.FirstSaleDocumentDate, row.LastSaleDocumentDate),
+    },
+    {
+      id: 'cost',
+      header: t('Source cost EUR'),
+      width: 130,
+      minWidth: 112,
+      align: 'right',
+      accessor: (row) => row.TotalSourceCostEur,
+      cell: (row) => formatMoney(row.TotalSourceCostEur),
+    },
+  ], [t])
+}
+
+function useHistoricalSourceDocumentColumns(): DataTableColumn<HistoricalSourceMovement>[] {
+  const { t } = useI18n()
+
+  return useMemo<DataTableColumn<HistoricalSourceMovement>[]>(() => [
+    { id: 'allocation', header: 'Allocation ID', width: 110, minWidth: 96, accessor: (row) => row.AllocationId, cell: (row) => String(row.AllocationId) },
+    { id: 'saleNumber', header: t('Продаж 1С'), width: 160, minWidth: 135, accessor: (row) => row.SourceSaleNumber || row.SourceOrderNumber, cell: (row) => displayValue(row.SourceSaleNumber || row.SourceOrderNumber) },
+    { id: 'saleDate', header: t('Дата продажу'), width: 150, minWidth: 130, accessor: (row) => row.SaleDocumentDate, cell: (row) => formatDateTime(row.SaleDocumentDate) },
+    { id: 'orderNumber', header: t('Замовлення 1С'), width: 160, minWidth: 135, accessor: (row) => row.SourceOrderNumber, cell: (row) => displayValue(row.SourceOrderNumber) },
+    { id: 'client', header: t('Клієнт'), width: 220, minWidth: 170, accessor: (row) => row.ClientName, cell: (row) => displayValue(row.ClientName) },
+    { id: 'qty', header: t('Кількість'), width: 110, minWidth: 96, align: 'right', accessor: (row) => row.Qty, cell: (row) => formatAmount(row.Qty) },
+    { id: 'amount', header: t('Сума EUR'), width: 120, minWidth: 104, align: 'right', accessor: (row) => row.SourceAmountEur, cell: (row) => formatMoney(row.SourceAmountEur) },
+    { id: 'vat', header: t('ПДВ EUR'), width: 110, minWidth: 96, align: 'right', accessor: (row) => row.SourceVatEur, cell: (row) => formatMoney(row.SourceVatEur) },
+    { id: 'cost', header: t('Cost EUR'), width: 110, minWidth: 96, align: 'right', accessor: (row) => row.SourceCostEur, cell: (row) => formatMoney(row.SourceCostEur) },
+    { id: 'responsible', header: t('Відповідальний'), width: 170, minWidth: 140, accessor: (row) => row.Responsible, cell: (row) => displayValue(row.Responsible) },
+    { id: 'comment', header: t('Коментар'), width: 240, minWidth: 180, accessor: (row) => row.Comment, cell: (row) => displayValue(row.Comment) },
+  ], [t])
+}
+
+function formatHistoricalDateRange(from: Date | string, to: Date | string): string {
+  const formattedFrom = formatDateTime(from)
+  const formattedTo = formatDateTime(to)
+
+  return formattedFrom === formattedTo ? formattedFrom : `${formattedFrom} — ${formattedTo}`
 }
 
 function ProductIncomeMovementPanel({ active, product }: { active: boolean; product: MovementHistoryProduct }) {
@@ -1938,6 +2230,24 @@ async function getProductMovements(params: ProductMovementParams): Promise<Produ
   return normalizeArray(result) as ProductMovement[]
 }
 
+async function getHistoricalSourceMovements(
+  params: ProductIncomeOutcomeMovementParams,
+): Promise<HistoricalSourceMovement[]> {
+  const result = await apiRequest<unknown>('/consignments/info/movement/historical-source/filtered', {
+    query: {
+      from: params.from,
+      productNetId: params.productNetId,
+      to: params.to,
+    },
+    errorMessages: {
+      default: 'Не вдалося завантажити архівні партії 1С',
+      network: 'Сервер архівних партій 1С недоступний',
+    },
+  })
+
+  return normalizeArray(result) as HistoricalSourceMovement[]
+}
+
 async function getProductIncomeMovements(
   params: ProductIncomeOutcomeMovementParams,
 ): Promise<ProductIncomeMovement[]> {
@@ -2083,6 +2393,12 @@ function getProductTitle(product: MovementHistoryProduct): string {
 
 function getTodayDate(): string {
   return formatLocalDate(new Date())
+}
+
+function getDateYearsAgo(years: number): string {
+  const date = new Date()
+  date.setFullYear(date.getFullYear() - years)
+  return formatLocalDate(date)
 }
 
 function getDateRangeError(dateFrom: string, dateTo: string, t: (key: string) => string): string | null {

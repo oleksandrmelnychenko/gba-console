@@ -20,6 +20,7 @@ import {
   Stack,
   Switch,
   Table,
+  Tabs,
   Text,
   Textarea,
   TextInput,
@@ -33,7 +34,7 @@ import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableD
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { notifications } from '@mantine/notifications'
-import { ArrowLeft, ArrowLeftRight, Check, ChevronLeft, ChevronRight, CircleAlert, ClipboardList, FileDown, FileText, History, Image as ImageIcon, Package, Plus, RefreshCw, Save, Sparkles, SquarePen, Trash2 } from 'lucide-react'
+import { Archive, ArrowLeft, ArrowLeftRight, Check, ChevronLeft, ChevronRight, CircleAlert, ClipboardList, FileDown, FileText, History, Image as ImageIcon, Package, Plus, RefreshCw, Save, Sparkles, SquarePen, Trash2 } from 'lucide-react'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
@@ -101,6 +102,7 @@ import {
 } from '../utils'
 import { getProductPriceBreakdown } from '../productPricing'
 import { getProductAnalyticsId, ProductAnalyticsPanel } from '../components/ProductAnalyticsPanel'
+import { HistoricalSourceMovementPanel } from '../../../shared/ui/product-movement-history/ProductMovementHistoryDrawers'
 
 export type ProductDetailPanel =
   | 'analytics'
@@ -1835,6 +1837,35 @@ const PRODUCT_MOVEMENT_DEFAULT_LAYOUT = {
 } satisfies DataTableDefaultLayout
 
 function ProductMovementPanel({ product }: { product: Product }) {
+  const { t } = useI18n()
+  const [activeTab, setActiveTab] = useState<'movement' | 'historical-source'>('movement')
+
+  return (
+    <Tabs
+      className="product-movement-history-tabs-root"
+      value={activeTab}
+      onChange={(value) => setActiveTab(value === 'historical-source' ? 'historical-source' : 'movement')}
+    >
+      <Tabs.List className="pill-tabs product-movement-history-tabs">
+        <Tabs.Tab value="movement">{t('Рух')}</Tabs.Tab>
+        <Tabs.Tab leftSection={<Archive size={15} />} value="historical-source">
+          {t('Архівні партії 1С')}
+        </Tabs.Tab>
+      </Tabs.List>
+      <Tabs.Panel value="movement" pt="md">
+        <CurrentProductMovementPanel product={product} />
+      </Tabs.Panel>
+      <Tabs.Panel value="historical-source" pt={0}>
+        <HistoricalSourceMovementPanel
+          active={activeTab === 'historical-source'}
+          product={product}
+        />
+      </Tabs.Panel>
+    </Tabs>
+  )
+}
+
+function CurrentProductMovementPanel({ product }: { product: Product }) {
   const { t } = useI18n()
   const productNetUid = product.NetUid?.trim()
   const [dateFrom, setDateFrom] = useState(() => getDateDaysAgo(PRODUCT_INCOME_DEFAULT_LOOKBACK_DAYS))
