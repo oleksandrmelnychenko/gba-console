@@ -1346,11 +1346,25 @@
 
 .console-footer-build {
   flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
   white-space: nowrap;
   font-size: 12px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   color: var(--mantine-color-orange-7);
+}
+
+.qa-build-bug {
+  display: block;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--mantine-color-gray-3);
+}
+
+.qa-build-bug:hover {
+  background: var(--mantine-color-orange-0);
+  border-color: var(--mantine-color-orange-3);
 }
 
 .data-sync-progress {

@@ -1,6 +1,7 @@
 import { AppShell, Group, ScrollArea } from '@mantine/core'
 import { CurrencyRatesTicker } from '../../../features/exchange-rates/components/CurrencyRatesTicker'
 import { DataSyncProgressIndicator } from './DataSyncProgressIndicator'
+import { QaBuildTicker } from './QaBuildTicker'
 
 export function ConsoleFooter() {
   return (
@@ -10,9 +11,7 @@ export function ConsoleFooter() {
         <ScrollArea type="never" scrollbarSize={0} className="console-footer-scroll">
           <CurrencyRatesTicker />
         </ScrollArea>
-        <span className="console-footer-build" title="Поточний build консолі">
-          build {__BUILD_NUMBER__}
-        </span>
+        <QaBuildTicker />
       </Group>
     </AppShell.Footer>
   )

@@ -24,6 +24,19 @@ function stripSignalRPureAnnotations() {
   }
 }
 
+function emitBuildInfo(buildNumber: string) {
+  return {
+    name: 'emit-build-info',
+    generateBundle() {
+      this.emitFile({
+        type: 'asset' as const,
+        fileName: 'build.json',
+        source: JSON.stringify({ build: buildNumber }),
+      })
+    },
+  }
+}
+
 function resolveBuildNumber() {
   if (process.env.VITE_BUILD_NUMBER) return process.env.VITE_BUILD_NUMBER
   const now = new Date()
@@ -32,11 +45,13 @@ function resolveBuildNumber() {
 }
 
 // https://vite.dev/config/
+const buildNumber = resolveBuildNumber()
+
 export default defineConfig({
   define: {
-    __BUILD_NUMBER__: JSON.stringify(resolveBuildNumber()),
+    __BUILD_NUMBER__: JSON.stringify(buildNumber),
   },
-  plugins: [stripSignalRPureAnnotations(), react()],
+  plugins: [stripSignalRPureAnnotations(), emitBuildInfo(buildNumber), react()],
   build: {
     rolldownOptions: {
       output: {
