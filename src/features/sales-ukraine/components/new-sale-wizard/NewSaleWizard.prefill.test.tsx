@@ -3,9 +3,13 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../../shared/i18n/I18nProvider'
 import { theme } from '../../../../shared/theme/theme'
-import { addOrderItem, getCurrentSaleCart } from '../../api/salesUkraineApi'
+import { addOrderItem, getCurrentSaleCart, getSaleById } from '../../api/salesUkraineApi'
 import type { SalesUkraineProduct, SalesUkraineSale } from '../../types'
 import { NewSaleWizard } from './NewSaleWizard'
+
+const wizardMocks = vi.hoisted(() => ({
+  reloadCart: null as null | (() => Promise<SalesUkraineSale | null>),
+}))
 
 vi.mock('../../../auth/useAuth', () => ({
   useAuth: () => ({
@@ -21,6 +25,7 @@ vi.mock('../../api/salesUkraineApi', async (importOriginal) => {
     ...original,
     addOrderItem: vi.fn(),
     getCurrentSaleCart: vi.fn(),
+    getSaleById: vi.fn(),
   }
 })
 
@@ -32,21 +37,27 @@ vi.mock('./NewSaleProductsStep', () => ({
   NewSaleProductsStep: ({
     agreementNetId,
     clientNetId,
+    onCartChanged,
     onPendingMutationChange,
     sale,
   }: {
     agreementNetId: string | null
     clientNetId: string | null
+    onCartChanged: () => Promise<SalesUkraineSale | null>
     onPendingMutationChange?: (pending: boolean) => void
     sale: SalesUkraineSale | null
-  }) => (
-    <div data-testid="products-step">
-      <span>{clientNetId}</span>
-      <span>{agreementNetId}</span>
-      {(sale?.Order?.OrderItems ?? []).map((item) => <span key={item.Product?.NetUid}>{item.Product?.VendorCode}</span>)}
-      <button type="button" onClick={() => onPendingMutationChange?.(true)}>mark cart pending</button>
-    </div>
-  ),
+  }) => {
+    wizardMocks.reloadCart = onCartChanged
+
+    return (
+      <div data-testid="products-step">
+        <span>{clientNetId}</span>
+        <span>{agreementNetId}</span>
+        {(sale?.Order?.OrderItems ?? []).map((item) => <span key={item.Product?.NetUid}>{item.Product?.VendorCode}</span>)}
+        <button type="button" onClick={() => onPendingMutationChange?.(true)}>mark cart pending</button>
+      </div>
+    )
+  },
 }))
 
 vi.mock('./NewSaleReviewStep', () => ({
@@ -71,6 +82,7 @@ describe('new sale wizard recommendation prefill', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     localStorage.clear()
+    wizardMocks.reloadCart = null
   })
 
   it('adds selected recommendations and opens the products step with the client selected', async () => {
@@ -188,5 +200,73 @@ describe('new sale wizard recommendation prefill', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Так' }))
 
     await waitFor(() => expect(onClose).toHaveBeenCalledOnce())
+  })
+
+  it('shares a cart refresh triggered concurrently by mutation acknowledgement and realtime', async () => {
+    const agreement = {
+      Client: { Id: 7, NetUid: 'client-1' },
+      NetUid: 'agreement-1',
+    }
+    const sale: SalesUkraineSale = {
+      ClientAgreement: agreement,
+      NetUid: 'sale-1',
+      Order: { OrderItems: [] },
+    }
+    const refreshedSale: SalesUkraineSale = {
+      ...sale,
+      Order: {
+        OrderItems: [{
+          Id: 1,
+          NetUid: 'item-1',
+          Product: products[0],
+          Qty: 1,
+        }],
+      },
+    }
+    let resolveRefresh: ((value: SalesUkraineSale) => void) | undefined
+    const refresh = new Promise<SalesUkraineSale>((resolve) => {
+      resolveRefresh = resolve
+    })
+
+    vi.mocked(getCurrentSaleCart)
+      .mockResolvedValueOnce(sale)
+      .mockResolvedValueOnce(sale)
+    vi.mocked(addOrderItem).mockResolvedValue(null)
+    vi.mocked(getSaleById).mockReturnValue(refresh)
+
+    render(
+      <MantineProvider theme={theme}>
+        <I18nProvider>
+          <NewSaleWizard
+            opened
+            prefill={{
+              agreement,
+              agreementNetId: 'agreement-1',
+              client: { Id: 7, NetUid: 'client-1' },
+              clientNetId: 'client-1',
+              products: [products[0]],
+            }}
+            onClose={() => {}}
+            onCreated={() => {}}
+          />
+        </I18nProvider>
+      </MantineProvider>,
+    )
+
+    await screen.findByTestId('products-step')
+    const reloadCart = wizardMocks.reloadCart
+
+    expect(reloadCart).not.toBeNull()
+
+    const mutationRefresh = reloadCart?.()
+    const realtimeRefresh = reloadCart?.()
+
+    expect(getSaleById).toHaveBeenCalledOnce()
+
+    resolveRefresh?.(refreshedSale)
+
+    await expect(mutationRefresh).resolves.toBe(refreshedSale)
+    await expect(realtimeRefresh).resolves.toBe(refreshedSale)
+    await waitFor(() => expect(screen.getByTestId('products-step').textContent).toContain('SEM9401'))
   })
 })

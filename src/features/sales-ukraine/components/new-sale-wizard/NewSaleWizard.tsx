@@ -77,6 +77,38 @@ function requireHydratedWizardSale(sale: SalesUkraineSale | null): SalesUkraineS
   return { ...sale, HasDetails: true }
 }
 
+function createWizardCartReloadCoordinator() {
+  let pending: {
+    context: string
+    promise: Promise<SalesUkraineSale | null>
+  } | null = null
+
+  return {
+    invalidate() {
+      pending = null
+    },
+    run(
+      context: string,
+      load: () => Promise<SalesUkraineSale | null>,
+    ): Promise<SalesUkraineSale | null> {
+      if (pending?.context === context) {
+        return pending.promise
+      }
+
+      const request = load()
+      const shared = request.finally(() => {
+        if (pending?.promise === shared) {
+          pending = null
+        }
+      })
+
+      pending = { context, promise: shared }
+
+      return shared
+    },
+  }
+}
+
 export type NewSaleWizardPrefill = {
   agreement?: SalesUkraineClientAgreement | null
   agreementNetId?: string | null
@@ -451,6 +483,7 @@ function NewSaleWizardContent({
   const productsBusyRef = useRef(false)
   const productsPendingRef = useRef(false)
   const stateRef = useRef(state)
+  const [cartReloadCoordinator] = useState(createWizardCartReloadCoordinator)
   const [reloadGuard] = useState(createWizardAsyncGenerationGuard)
   const [navigationGuard] = useState(createWizardAsyncGenerationGuard)
   const [reassignOpen, setReassignOpen] = useState(false)
@@ -531,6 +564,7 @@ function NewSaleWizardContent({
   }, [onBusyChange, onRestoreSplit, t])
 
   function invalidateCartReloads() {
+    cartReloadCoordinator.invalidate()
     reloadGuard.invalidate()
     navigationGuard.invalidate()
   }
@@ -710,44 +744,67 @@ function NewSaleWizardContent({
     const netId = requestState.sale?.NetUid
     const agreementNetId = requestState.agreementNetId
     const context = getWizardMutationContextKey(agreementNetId, netId)
-    const token = reloadGuard.begin(context)
-    let next: SalesUkraineSale | null
 
-    try {
-      next = netId
-        ? await getSaleById(netId, token.signal)
-        : agreementNetId
-          ? await getCurrentSaleCart(agreementNetId, token.signal)
-          : null
-    } catch (loadError) {
-      if (token.signal.aborted) {
+    return cartReloadCoordinator.run(context, async () => {
+      const token = reloadGuard.begin(context)
+      let next: SalesUkraineSale | null
+
+      try {
+        next = netId
+          ? await getSaleById(netId, token.signal)
+          : agreementNetId
+            ? await getCurrentSaleCart(agreementNetId, token.signal)
+            : null
+      } catch (loadError) {
+        if (token.signal.aborted) {
+          return null
+        }
+
+        throw loadError
+      }
+
+      const currentContext = getWizardMutationContextKey(
+        stateRef.current.agreementNetId,
+        stateRef.current.sale?.NetUid,
+      )
+
+      if (!reloadGuard.isCurrent(token, currentContext)) {
         return null
       }
 
-      throw loadError
-    }
+      if (netId) {
+        if (next) {
+          const merged = getWizardMergedSale()
 
-    const currentContext = getWizardMutationContextKey(
-      stateRef.current.agreementNetId,
-      stateRef.current.sale?.NetUid,
-    )
+          if (merged?.netUid === netId) {
+            replaceWizardMergedOrderItems(netId, next.Order?.OrderItems ?? [])
+          }
 
-    if (!reloadGuard.isCurrent(token, currentContext)) {
-      return null
-    }
+          const current = stateRef.current
+          const updateContext = getWizardMutationContextKey(current.agreementNetId, current.sale?.NetUid)
 
-    if (netId) {
-      if (next) {
-        const merged = getWizardMergedSale()
+          if (!reloadGuard.isCurrent(token, updateContext) || current.sale?.NetUid !== netId) {
+            return null
+          }
 
-        if (merged?.netUid === netId) {
-          replaceWizardMergedOrderItems(netId, next.Order?.OrderItems ?? [])
+          const updated = { ...current, sale: next }
+          stateRef.current = updated
+          setState(updated)
+          bumpWizardDebtRefresh()
         }
 
+        return next
+      }
+
+      if (!agreementNetId) {
+        return null
+      }
+
+      if (next?.NetUid) {
         const current = stateRef.current
         const updateContext = getWizardMutationContextKey(current.agreementNetId, current.sale?.NetUid)
 
-        if (!reloadGuard.isCurrent(token, updateContext) || current.sale?.NetUid !== netId) {
+        if (!reloadGuard.isCurrent(token, updateContext) || current.agreementNetId !== agreementNetId) {
           return null
         }
 
@@ -758,27 +815,7 @@ function NewSaleWizardContent({
       }
 
       return next
-    }
-
-    if (!agreementNetId) {
-      return null
-    }
-
-    if (next?.NetUid) {
-      const current = stateRef.current
-      const updateContext = getWizardMutationContextKey(current.agreementNetId, current.sale?.NetUid)
-
-      if (!reloadGuard.isCurrent(token, updateContext) || current.agreementNetId !== agreementNetId) {
-        return null
-      }
-
-      const updated = { ...current, sale: next }
-      stateRef.current = updated
-      setState(updated)
-      bumpWizardDebtRefresh()
-    }
-
-    return next
+    })
   }
 
   async function goToProducts() {
