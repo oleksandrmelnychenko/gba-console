@@ -1344,33 +1344,33 @@
   min-width: 0;
 }
 
-.qa-build-ticker {
+.qa-build-ticker.qa-build-ticker {
   flex: 0 0 auto;
-  min-height: 30px;
-  padding: 5px 9px;
+  min-height: 24px;
+  padding: 3px 7px;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   color: #d5d7da;
   background: #181d27;
   border: 1px solid #252b37;
   border-radius: 7px;
   box-shadow: 0 2px 5px rgba(10, 13, 18, 0.16);
   font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
-  font-size: 10px;
-  line-height: 16px;
+  font-size: 9px;
+  line-height: 14px;
   letter-spacing: 0.04em;
   white-space: nowrap;
 }
 
-.qa-build-ticker:hover {
+.qa-build-ticker.qa-build-ticker:hover {
   background: #252b37;
   border-color: #414651;
 }
 
 .qa-build-ticker strong {
   color: #fff;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0;
@@ -1385,11 +1385,12 @@
 }
 
 .qa-build-dot {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
+  flex: 0 0 auto;
   border-radius: 50%;
   background: #17b26a;
-  box-shadow: 0 0 0 3px rgba(23, 178, 106, 0.16);
+  box-shadow: 0 0 0 2px rgba(23, 178, 106, 0.16);
 }
 
 .qa-build-dot.is-stale {
@@ -1397,8 +1398,8 @@
 }
 
 @keyframes qa-build-pulse {
-  0%, 100% { box-shadow: 0 0 0 3px rgba(23, 178, 106, 0.16); }
-  50% { box-shadow: 0 0 0 6px rgba(23, 178, 106, 0.32); }
+  0%, 100% { box-shadow: 0 0 0 2px rgba(23, 178, 106, 0.16); }
+  50% { box-shadow: 0 0 0 5px rgba(23, 178, 106, 0.32); }
 }
 
 .qa-build-label {
@@ -1406,7 +1407,7 @@
 }
 
 .qa-build-count {
-  padding: 1px 6px;
+  padding: 0 5px;
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -1416,14 +1417,14 @@
   letter-spacing: 0;
 }
 
-.qa-build-bug {
+.qa-build-bug.qa-build-bug {
   display: block;
   padding: 6px 8px;
   border-radius: 6px;
   border: 1px solid var(--mantine-color-gray-3);
 }
 
-.qa-build-bug:hover {
+.qa-build-bug.qa-build-bug:hover {
   background: var(--mantine-color-teal-0);
   border-color: var(--mantine-color-teal-3);
 }

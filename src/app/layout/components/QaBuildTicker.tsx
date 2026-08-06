@@ -88,8 +88,8 @@ export function QaBuildTicker() {
           <span className={`qa-build-dot${stale ? ' is-stale' : ''}`} aria-hidden="true" />
           <span className="qa-build-label">BUILD</span>
           <strong>{number}</strong>
-          <span className="qa-build-count"><Bug size={11} /> {build?.bugs.length ?? 0}</span>
-          <ChevronUp className={opened ? 'is-open' : ''} size={14} />
+          <span className="qa-build-count"><Bug size={10} /> {build?.bugs.length ?? 0}</span>
+          <ChevronUp className={opened ? 'is-open' : ''} size={12} />
         </UnstyledButton>
       </Popover.Target>
 
