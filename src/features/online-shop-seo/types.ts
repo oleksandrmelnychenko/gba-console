@@ -110,9 +110,11 @@ export type OnlineShopPricing = EntityFields & {
 
 export type OnlineShopAgreement = EntityFields & {
   Currency?: OnlineShopCurrency | null
+  IsActive?: boolean
   IsSelected?: boolean
   Name?: string
   Organization?: OnlineShopOrganization | null
+  OrganizationId?: number
   Pricing?: OnlineShopPricing | null
   WithVATAccounting?: boolean
 }

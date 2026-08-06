@@ -82,6 +82,7 @@ import {
   validateContact,
   validatePage,
 } from '../utils'
+import { hasCompatibleEcommerceStorage, hasValidRetailConfiguration } from '../retailConfiguration'
 import './online-shop-seo-page.css'
 import '../../../shared/ui/console-table-page.css'
 
@@ -290,6 +291,10 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
     () => (shopDataSearchTarget === 'storages' ? filterStorages(ecommerceStorages, shopDataSearchValue) : ecommerceStorages),
     [ecommerceStorages, shopDataSearchTarget, shopDataSearchValue],
   )
+  const retailConfigurationValid = useMemo(
+    () => hasValidRetailConfiguration(onlineShopClients, ecommerceStorages),
+    [ecommerceStorages, onlineShopClients],
+  )
   const openPageEditor = useCallback((row: SeoPageRow) => {
     setSelectedPageRow(row)
     setPageFormValues(pageToFormValues(row.page))
@@ -471,7 +476,16 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         width: 132,
         minWidth: 118,
         accessor: (client) => Boolean(client.IsForRetail),
-        cell: (client) => <SeoTableStatusPill active={Boolean(client.IsForRetail)} activeLabel="Активний" inactiveLabel="Не активний" />,
+        cell: (client) => {
+          const compatible = hasCompatibleEcommerceStorage(client, ecommerceStorages)
+          return (
+            <SeoTableStatusPill
+              active={Boolean(client.IsForRetail && compatible)}
+              activeLabel="Активний"
+              inactiveLabel={client.IsForRetail ? 'Немає сумісного складу' : 'Не активний'}
+            />
+          )
+        },
       },
       {
         id: 'client',
@@ -615,9 +629,9 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
       accessor: (client) => Boolean(client.IsForRetail),
       cell: (client) => (
         <SeoTableStatusPill
-          active={Boolean(client.IsForRetail)}
+          active={Boolean(client.IsForRetail && hasCompatibleEcommerceStorage(client, ecommerceStorages))}
           activeLabel="Активний"
-          inactiveLabel="Не активний"
+          inactiveLabel={client.IsForRetail ? 'Немає сумісного складу' : 'Не активний'}
         />
       ),
     },
@@ -1275,6 +1289,11 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
       return
     }
 
+    if (!client.IsForRetail && !hasCompatibleEcommerceStorage(client, ecommerceStorages)) {
+      setError(t('Клієнта не можна увімкнути: жоден активний договір не збігається з e-commerce складом за організацією та режимом ПДВ.'))
+      return
+    }
+
     setSaving(true)
     setError(null)
 
@@ -1396,7 +1415,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
     isClientsLoading, isContactEditorOpen, isImageUploading, isLoading, isPageEditorOpen, isSaving,
     isStorageDrawerOpen, isStoragesLoading, pageColumns, pageFormValues, pageRows, pageSearchDraft,
     paymentRegisterColumns, priorityStorageTarget, priorityValue, removeContactTarget,
-    shopDataCards, shopDataClientColumns, shopDataClients, shopDataSearchDraft, shopDataSearchTarget, shopDataStorages,
+    retailConfigurationValid, shopDataCards, shopDataClientColumns, shopDataClients, shopDataSearchDraft, shopDataSearchTarget, shopDataStorages,
     removeStorageTarget, settings, storageSearchDraft, allStorageSearchValue,
     cardSearchValue, clientSearchValue, contactSearchValue, pageSearchValue, storageSearchValue,
     changeAllStorageSearch, changeCardSearch, changeClientSearch, changeContactSearch, changePageSearch,
@@ -1448,7 +1467,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
     isClientsLoading, isContactEditorOpen, isImageUploading, isLoading, isPageEditorOpen, isSaving,
     isStorageDrawerOpen, isStoragesLoading, pageColumns, pageFormValues, pageRows, pageSearchDraft,
     paymentRegisterColumns, priorityStorageTarget, priorityValue, removeContactTarget,
-    shopDataCards, shopDataClientColumns, shopDataClients, shopDataSearchDraft, shopDataSearchTarget, shopDataStorages,
+    retailConfigurationValid, shopDataCards, shopDataClientColumns, shopDataClients, shopDataSearchDraft, shopDataSearchTarget, shopDataStorages,
     removeStorageTarget, settings, storageSearchDraft, closeContactEditor, closeGeneralLocaleEditor, closePageEditor,
     closePriorityEditor, handleAddStorage, handleContactImageChange, handleRemoveContact, handleRemoveStorage,
     handleSaveContact, handleSaveContactInfo, handleSavePage, handleSavePayment, handleSaveStoragePriority,
@@ -1769,6 +1788,11 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
 
             {activeTab === 'shop-data' && (
               <Box>
+                {!isClientsLoading && !isStoragesLoading && !retailConfigurationValid && (
+                  <Alert color="red" icon={<CircleAlert size={18} />} mb="md" variant="light">
+                    {t('Конфігурація магазину невалідна: виберіть інтернет-клієнта, активний договір якого збігається зі складом за організацією та режимом ПДВ. Інакше магазин не має складу для показу залишків та оформлення замовлення.')}
+                  </Alert>
+                )}
                 <div className="seo-shop-data-grid">
                   <div className="seo-shop-data-column">
                     <SeoShopDataSection
