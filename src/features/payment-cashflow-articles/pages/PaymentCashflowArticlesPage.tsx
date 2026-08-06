@@ -16,8 +16,6 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
-import { ConsoleTableEntityCell } from '../../../shared/ui/console-table-cells'
-import { createConsoleTableMarker } from '../../../shared/ui/console-table-utils'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import '../../../shared/ui/console-table-page.css'
 import { useAuth } from '../../auth/useAuth'
@@ -83,12 +81,7 @@ export function PaymentCashflowArticlesPage({ inSharedShell = false }: PaymentCa
         fill: true,
         minWidth: 260,
         accessor: (article) => article.OperationName,
-        cell: (article) => (
-          <ConsoleTableEntityCell
-            marker={createConsoleTableMarker(article.OperationName || '')}
-            title={displayValue(article.OperationName)}
-          />
-        ),
+        cell: (article) => displayValue(article.OperationName),
       },
       {
         id: 'actions',
@@ -151,10 +144,11 @@ export function PaymentCashflowArticlesPage({ inSharedShell = false }: PaymentCa
       <div className="app-filter-bar payment-cashflow-articles-filter-bar">
         <Group align="end" gap={10} wrap="nowrap" className="payment-cashflow-articles-filter-row">
           <TextInput
+            className="console-table-search-input"
             size="sm"
             leftSection={<Search size={16} />}
             label={t('Пошук')}
-            placeholder={t('Пошук')}
+            placeholder={t('Введіть назву статті')}
             value={searchValue}
             onChange={(event) => setSearchValue(event.currentTarget.value)}
             style={{ flex: '1 1 auto', minWidth: 180 }}

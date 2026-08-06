@@ -15,8 +15,6 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
-import { ConsoleTableEntityCell } from '../../../shared/ui/console-table-cells'
-import { createConsoleTableMarker } from '../../../shared/ui/console-table-utils'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { useAuth } from '../../auth/useAuth'
 import { getPaymentExpenseArticles, searchPaymentExpenseArticles } from '../api/paymentExpenseArticlesApi'
@@ -82,12 +80,7 @@ export function PaymentExpenseArticlesPage({ inSharedShell = false }: PaymentExp
         fill: true,
         minWidth: 260,
         accessor: (article) => article.OperationName,
-        cell: (article) => (
-          <ConsoleTableEntityCell
-            marker={createConsoleTableMarker(article.OperationName)}
-            title={displayValue(article.OperationName)}
-          />
-        ),
+        cell: (article) => displayValue(article.OperationName),
       },
       {
         id: 'actions',
@@ -152,7 +145,7 @@ export function PaymentExpenseArticlesPage({ inSharedShell = false }: PaymentExp
           className="console-table-search-input"
           leftSection={<Search size={16} />}
           label={t('Пошук')}
-          placeholder={t('Назва або NetUid')}
+          placeholder={t('Введіть назву статті')}
           value={searchValue}
           onChange={(event) => setSearchValue(event.currentTarget.value)}
         />
