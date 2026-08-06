@@ -18,6 +18,7 @@ import {
   searchSalesUkraineClients,
   shiftOrderItemsCurrent,
   switchSale,
+  unlockSale,
   updateMergedSale,
   updateOrderItem,
   updateSale,
@@ -45,6 +46,21 @@ describe('sales Ukraine document request contracts', () => {
     await acceptSaleForPacking(saleNetId, paymentDocumentOperation)
 
     expect(apiRequestMock).toHaveBeenCalledWith('/sales/accept-for-packing', {
+      headers: { 'Idempotency-Key': paymentDocumentOperation.operationId },
+      method: 'PATCH',
+      query: { netId: saleNetId },
+      signal: undefined,
+    })
+  })
+
+  it('returns the unlocked sale supplied by the mutation response', async () => {
+    const saleNetId = 'dc8d6ccc-e2f3-4011-a73f-9be8a570b2ae'
+    const unlockedSale = { IsAcceptedToPacking: true, IsLocked: false, NetUid: saleNetId }
+
+    apiRequestMock.mockResolvedValueOnce(unlockedSale)
+
+    await expect(unlockSale(saleNetId, paymentDocumentOperation)).resolves.toEqual(unlockedSale)
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/unlock', {
       headers: { 'Idempotency-Key': paymentDocumentOperation.operationId },
       method: 'PATCH',
       query: { netId: saleNetId },

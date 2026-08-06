@@ -562,11 +562,21 @@ export function SalesUkrainePage() {
             throw attempt.error
           }
 
+          if (attempt.result) {
+            const unlockedSale = attempt.result
+
+            setSales((current) => current.map((currentSale) => (
+              isSameSale(currentSale, unlockedSale)
+                ? { ...currentSale, ...unlockedSale, TotalRowsQty: currentSale.TotalRowsQty }
+                : currentSale
+            )))
+          }
+
           notifications.show({ color: 'green', message: t('Продаж розблоковано') })
         },
       })
     },
-    [runSaleUnlock, setConfirmState, t],
+    [runSaleUnlock, setConfirmState, setSales, t],
   )
 
   const requestWillNotShip = useCallback(

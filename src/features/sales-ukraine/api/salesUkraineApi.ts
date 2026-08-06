@@ -90,18 +90,20 @@ export async function searchSalesUkraineClients(
 export async function unlockSale(
   netId: string,
   operation: SalesMutationOperationOptions,
-): Promise<void> {
+): Promise<SalesUkraineSale | null> {
   const saleNetUid = requirePersistedGuid(
     netId,
     'Не вдалося визначити продаж для розблокування',
   )
 
-  await apiRequest<unknown>('/sales/unlock', {
+  const result = await apiRequest<unknown>('/sales/unlock', {
     headers: getSalesMutationOperationHeaders(operation.operationId),
     method: 'PATCH',
     query: { netId: saleNetUid },
     signal: operation.signal,
   })
+
+  return normalizeSale(result)
 }
 
 export async function acceptSaleForPacking(
