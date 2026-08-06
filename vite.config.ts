@@ -1,4 +1,4 @@
-import { defineConfig, type ProxyOptions } from 'vite'
+import { defineConfig, type Plugin, type ProxyOptions } from 'vite'
 import react from '@vitejs/plugin-react'
 
 const apiProxyTarget = process.env.VITE_DEV_API_PROXY_TARGET || 'https://gba-api-dev.85.17.167.167.nip.io'
@@ -24,12 +24,12 @@ function stripSignalRPureAnnotations() {
   }
 }
 
-function emitBuildInfo(buildNumber: string) {
+function emitBuildInfo(buildNumber: string): Plugin {
   return {
     name: 'emit-build-info',
     generateBundle() {
       this.emitFile({
-        type: 'asset' as const,
+        type: 'asset',
         fileName: 'build.json',
         source: JSON.stringify({ build: buildNumber }),
       })
