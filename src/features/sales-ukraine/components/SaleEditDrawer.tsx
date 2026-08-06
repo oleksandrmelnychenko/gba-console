@@ -11,7 +11,7 @@ import {
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { ArrowLeftRight, CircleAlert, Package, Receipt, Warehouse } from 'lucide-react'
-import { useEffect, useReducer, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -273,12 +273,14 @@ function SaleEditContent({
       storeNum: entry.storeTouched ? toNumber(entry.store) : getExistingShiftQty(item, OrderItemShiftStatusType.Store),
     }
   })
-  const isMutationLocked = isSaving || shiftMutation.hasPending
-  const tableColumns = createSaleEditColumns({ isNew, isSaving: isMutationLocked, t, updateEntry })
-
-  function updateEntry(key: string, patch: Partial<ShiftDraftEntry>) {
+  const updateEntry = useCallback((key: string, patch: Partial<ShiftDraftEntry>) => {
     dispatch({ key, patch, type: 'draftEntryChanged' })
-  }
+  }, [])
+  const isMutationLocked = isSaving || shiftMutation.hasPending
+  const tableColumns = useMemo(
+    () => createSaleEditColumns({ isNew, isSaving: isMutationLocked, t, updateEntry }),
+    [isMutationLocked, isNew, t, updateEntry],
+  )
 
   function allToBill() {
     dispatch({ draft: buildBulkDraft(orderItems, 'bill'), type: 'draftReplaced' })
