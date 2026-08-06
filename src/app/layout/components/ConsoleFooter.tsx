@@ -10,6 +10,9 @@ export function ConsoleFooter() {
         <ScrollArea type="never" scrollbarSize={0} className="console-footer-scroll">
           <CurrencyRatesTicker />
         </ScrollArea>
+        <span className="console-footer-build" title="Поточний build консолі">
+          build {__BUILD_NUMBER__}
+        </span>
       </Group>
     </AppShell.Footer>
   )

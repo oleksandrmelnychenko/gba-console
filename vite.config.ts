@@ -24,8 +24,18 @@ function stripSignalRPureAnnotations() {
   }
 }
 
+function resolveBuildNumber() {
+  if (process.env.VITE_BUILD_NUMBER) return process.env.VITE_BUILD_NUMBER
+  const now = new Date()
+  const pad = (value: number) => String(value).padStart(2, '0')
+  return `${now.getFullYear()}.${pad(now.getMonth() + 1)}.${pad(now.getDate())}.${pad(now.getHours())}${pad(now.getMinutes())}`
+}
+
 // https://vite.dev/config/
 export default defineConfig({
+  define: {
+    __BUILD_NUMBER__: JSON.stringify(resolveBuildNumber()),
+  },
   plugins: [stripSignalRPureAnnotations(), react()],
   build: {
     rolldownOptions: {
