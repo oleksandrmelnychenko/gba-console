@@ -602,11 +602,21 @@ export function SalesUkrainePage() {
             throw attempt.error
           }
 
+          if (attempt.result) {
+            const acceptedSale = attempt.result
+
+            setSales((current) => current.map((currentSale) => (
+              isSameSale(currentSale, acceptedSale)
+                ? { ...currentSale, ...acceptedSale, TotalRowsQty: currentSale.TotalRowsQty }
+                : currentSale
+            )))
+          }
+
           notifications.show({ color: 'green', message: t('Збережено') })
         },
       })
     },
-    [runSaleAcceptForPacking, setConfirmState, t],
+    [runSaleAcceptForPacking, setConfirmState, setSales, t],
   )
 
   // Identity-stable row handlers: SaleGridRow is React.memo'd, so its callback
@@ -866,7 +876,6 @@ export function SalesUkrainePage() {
     try {
       await confirmState.onConfirm()
       setConfirmState(null)
-      reload()
     } catch (error) {
       notifications.show({ color: 'red', message: error instanceof Error ? error.message : t('Не вдалося виконати дію') })
     } finally {
