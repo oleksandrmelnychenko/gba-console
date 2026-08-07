@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { NewMergedServiceForm } from './NewMergedServiceForm'
@@ -76,6 +76,30 @@ describe('product-delivery NewMergedServiceForm validation', () => {
     expect(screen.getByText('Оберіть договір')).toBeTruthy()
     expect(screen.queryByText('Оберіть тип')).toBeNull()
     expect(screen.getByText('Вкажіть номер інвойса')).toBeTruthy()
+  })
+
+  it('loads the initial supplier list and allows selecting a supplier and its agreement', async () => {
+    mocks.searchSupplyOrganizations.mockResolvedValueOnce([{
+      Name: 'LMAX ATL SP.',
+      NetUid: 'supplier-1',
+      SupplyOrganizationAgreements: [
+        { Currency: { Code: 'EUR' }, Name: 'Main agreement', NetUid: 'agreement-1' },
+      ],
+    }])
+    renderForm()
+
+    await waitFor(() => expect(mocks.searchSupplyOrganizations).toHaveBeenCalledWith(''))
+
+    const supplier = getInput('Постачальник послуг')
+    fireEvent.click(supplier)
+    fireEvent.click(await screen.findByText('LMAX ATL SP.'))
+
+    expect(supplier.value).toBe('LMAX ATL SP.')
+
+    const agreement = getInput('Договір')
+    expect(agreement.disabled).toBe(false)
+    fireEvent.click(agreement)
+    expect(await screen.findByText('Main agreement (EUR)')).toBeTruthy()
   })
 
   it('keeps errors beside other invalid fields while one field is corrected', () => {

@@ -1,7 +1,7 @@
 import { Button, Loader, Popover, ScrollArea, Stack, Text, UnstyledButton } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { Bug, ChevronUp, RefreshCw } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 const deskUrl = (import.meta.env.VITE_QA_DESK_URL ?? 'https://gba-qa-desk.85.17.167.167.nip.io').replace(/\/$/, '')
 
@@ -59,6 +59,10 @@ function BugRow({
   )
 }
 
+function openTask(taskId: string) {
+  window.open(`${deskUrl}/?task=${encodeURIComponent(taskId)}`, '_blank', 'noopener,noreferrer')
+}
+
 export function QaBuildTicker() {
   const [opened, setOpened] = useState(false)
   const [build, setBuild] = useState<BuildInfo | null>(null)
@@ -66,7 +70,7 @@ export function QaBuildTicker() {
   const [failed, setFailed] = useState(false)
   const announcedRef = useRef('')
 
-  const loadBuild = async () => {
+  const loadBuild = useCallback(async () => {
     setLoading(true)
     try {
       const response = await fetch('/qa-desk/api/builds/current')
@@ -91,17 +95,17 @@ export function QaBuildTicker() {
     } finally {
       setLoading(false)
     }
-  }
-
-  useEffect(() => {
-    void loadBuild()
-    const timer = window.setInterval(() => void loadBuild(), 60_000)
-    return () => window.clearInterval(timer)
   }, [])
 
-  const openTask = (taskId: string) => {
-    window.open(`${deskUrl}/?task=${encodeURIComponent(taskId)}`, '_blank', 'noopener,noreferrer')
-  }
+  useEffect(() => {
+    const initialTimer = window.setTimeout(() => void loadBuild(), 0)
+    const refreshTimer = window.setInterval(() => void loadBuild(), 60_000)
+
+    return () => {
+      window.clearTimeout(initialTimer)
+      window.clearInterval(refreshTimer)
+    }
+  }, [loadBuild])
 
   const number = build?.number ?? __BUILD_NUMBER__
   const stale = Boolean(build && build.number !== __BUILD_NUMBER__)

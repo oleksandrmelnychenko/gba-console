@@ -21,6 +21,7 @@ export async function getWarehouseUkraineOrders(
       nonPlaced: params.placed !== true,
       offset: params.offset,
       placed: params.placed,
+      supplierName: '',
     },
   })
 

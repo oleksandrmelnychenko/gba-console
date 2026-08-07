@@ -197,16 +197,13 @@ export async function removeMergedService(serviceNetId: string): Promise<Protoco
 
 export async function searchSupplyOrganizations(value: string): Promise<SupplyOrganization[]> {
   const searchValue = value.trim()
-
-  if (!searchValue) {
-    return []
-  }
-
-  const result = await apiRequest<unknown>('/supplies/organizations/all/search', {
+  const result = await apiRequest<unknown>(searchValue
+    ? '/supplies/organizations/all/search'
+    : '/supplies/organizations/all', {
     query: {
       limit: SUPPLY_ORGANIZATION_LOOKUP_LIMIT,
       offset: 0,
-      value: searchValue,
+      ...(searchValue ? { value: searchValue } : {}),
     },
   })
 

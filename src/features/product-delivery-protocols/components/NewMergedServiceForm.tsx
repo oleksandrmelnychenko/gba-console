@@ -183,11 +183,6 @@ export function NewMergedServiceForm({
 
     const value = debouncedOrganizationSearch.trim()
 
-    if (!value) {
-      setOrganizations([])
-      return
-    }
-
     let cancelled = false
 
     async function loadOrganizations() {
@@ -212,15 +207,22 @@ export function NewMergedServiceForm({
   }, [debouncedOrganizationSearch, opened, setOrganizations])
 
   const organizationOptions = useMemo(
-    () =>
-      organizations.reduce<Array<{ label: string; value: string }>>((options, organization) => {
+    () => {
+      const list = [...organizations]
+
+      if (values.supplyOrganization && !list.some((item) => item.NetUid === values.supplyOrganization?.NetUid)) {
+        list.push(values.supplyOrganization)
+      }
+
+      return list.reduce<Array<{ label: string; value: string }>>((options, organization) => {
         if (organization.NetUid && organization.Name) {
           options.push({ label: organization.Name, value: organization.NetUid })
         }
 
         return options
-      }, []),
-    [organizations],
+      }, [])
+    },
+    [organizations, values.supplyOrganization],
   )
 
   const agreementOptions = useMemo(() => {

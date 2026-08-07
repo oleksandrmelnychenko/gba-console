@@ -1133,36 +1133,47 @@ export function IncomeCashflowDetailDrawer({
             </div>
           </section>
 
-          <div className="income-cashflow-detail__sections">
-            <IncomeDetailSection title={t('Платіж')}>
-              <DetailItem label={t('Тип операції')} value={displayValue(row.operationType)} />
-              <DetailItem label={t('Стаття руху')} value={displayValue(row.paymentMovement)} />
-              <DetailItem label={t('Рахунок')} value={displayValue(row.paymentRegister)} />
-              <DetailItem label={t('Призначення платежу')} value={displayValue(income.PaymentPurpose)} />
-              <DetailItem label={t('Вхідний номер')} mono value={displayValue(income.ArrivalNumber)} />
-            </IncomeDetailSection>
+          <div className="income-cashflow-detail__tree">
+            <section className="income-cashflow-detail__tree-section">
+              <div className="income-cashflow-detail__tree-head">
+                <span className="income-cashflow-detail__tree-title">{t('Деталі ордера')}</span>
+                <span className="income-cashflow-detail__tree-subtitle">{displayValue(income.Number)}</span>
+              </div>
 
-            <IncomeDetailSection title={t('Облік')}>
-              <DetailItem label={t('Організація')} value={displayValue(row.organization)} />
-              <DetailItem label={t('Відповідальний')} value={displayValue(row.responsible)} />
-              <DetailItem label={t('Договір')} value={displayValue(getIncomeAgreementName(income))} />
-              <DetailItem label={t('Курс')} mono value={displayValue(income.ExchangeRate)} />
-              <DetailItem
-                label={t('Сума у валюті договору')}
-                mono
-                value={hasNumber(income.AgreementExchangedAmount) ? formatMoney(income.AgreementExchangedAmount) : displayValue(undefined)}
-              />
-            </IncomeDetailSection>
-          </div>
+              <div className="income-cashflow-detail__sections">
+                <IncomeDetailSection title={t('Платіж')}>
+                  <DetailItem label={t('Тип операції')} value={displayValue(row.operationType)} />
+                  <DetailItem label={t('Стаття руху')} value={displayValue(row.paymentMovement)} />
+                  <DetailItem label={t('Рахунок')} value={displayValue(row.paymentRegister)} />
+                  <DetailItem label={t('Призначення платежу')} value={displayValue(income.PaymentPurpose)} />
+                  <DetailItem label={t('Вхідний номер')} mono value={displayValue(income.ArrivalNumber)} />
+                </IncomeDetailSection>
 
-          {income.Comment ? (
-            <section className="income-cashflow-detail__comment">
-              <Text className="income-cashflow-detail__section-title" fw={600}>
-                {t('Коментар')}
-              </Text>
-              <Text size="sm">{income.Comment}</Text>
+                <IncomeDetailSection title={t('Облік')}>
+                  <DetailItem label={t('Організація')} value={displayValue(row.organization)} />
+                  <DetailItem label={t('Відповідальний')} value={displayValue(row.responsible)} />
+                  <DetailItem label={t('Договір')} value={displayValue(getIncomeAgreementName(income))} />
+                  <DetailItem label={t('Курс')} mono value={displayValue(income.ExchangeRate)} />
+                  <DetailItem
+                    label={t('Сума у валюті договору')}
+                    mono
+                    value={hasNumber(income.AgreementExchangedAmount) ? formatMoney(income.AgreementExchangedAmount) : displayValue(undefined)}
+                  />
+                </IncomeDetailSection>
+              </div>
             </section>
-          ) : null}
+
+            {income.Comment ? (
+              <section className="income-cashflow-detail__tree-section">
+                <div className="income-cashflow-detail__tree-head">
+                  <span className="income-cashflow-detail__tree-title">{t('Коментар')}</span>
+                </div>
+                <div className="income-cashflow-detail__comment">
+                  <Text size="sm">{income.Comment}</Text>
+                </div>
+              </section>
+            ) : null}
+          </div>
 
           {orderSales.length > 0 && (
             <>

@@ -103,27 +103,40 @@
 
 .income-cashflow-detail {
   --income-detail-border: var(--mantine-color-gray-2);
-  --income-detail-muted: var(--mantine-color-gray-6);
+  --income-detail-muted: var(--mantine-color-gray-7);
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(0, 1fr);
+  justify-content: stretch;
+  padding: 2px 2px 10px;
+  width: 100%;
 }
 
 .income-cashflow-detail__actions {
-  margin-bottom: -4px;
-}
-
-.income-cashflow-detail__hero,
-.income-cashflow-detail__section,
-.income-cashflow-detail__comment {
-  background: var(--mantine-color-white);
-  border: 1px solid var(--income-detail-border);
-  border-radius: 10px;
+  margin-bottom: -6px;
 }
 
 .income-cashflow-detail__hero {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--income-detail-border);
+  border-radius: 10px;
   align-items: stretch;
   display: grid;
-  gap: 18px;
+  gap: 12px;
   grid-template-columns: minmax(0, 1fr) auto;
-  padding: 14px 16px;
+  overflow: hidden;
+  padding: 14px;
+  position: relative;
+}
+
+.income-cashflow-detail__hero::before {
+  background: linear-gradient(180deg, var(--mantine-color-orange-5), transparent);
+  bottom: 14px;
+  content: '';
+  left: 0;
+  position: absolute;
+  top: 14px;
+  width: 3px;
 }
 
 .income-cashflow-detail__identity {
@@ -131,42 +144,48 @@
   flex-direction: column;
   justify-content: center;
   min-width: 0;
+  padding-left: 8px;
 }
 
-.income-cashflow-detail__eyebrow {
+.income-cashflow-detail__eyebrow,
+.income-cashflow-detail__tree-subtitle,
+.income-cashflow-detail__metric > span,
+.income-cashflow-detail__metric > small {
   color: var(--income-detail-muted);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  letter-spacing: 0;
+  line-height: 1.2;
 }
 
 .income-cashflow-detail__number {
-  color: var(--mantine-color-dark-8);
+  color: var(--mantine-color-gray-9);
   font-family: var(--font-mono);
-  font-size: 20px;
-  line-height: 1.2;
-  margin-top: 2px;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.25;
+  margin-top: 4px;
 }
 
 .income-cashflow-detail__date {
   color: var(--income-detail-muted);
-  font-family: var(--font-mono);
-  font-size: 11px;
-  margin-top: 2px;
+  font-size: 12px;
+  margin-top: 3px;
 }
 
 .income-cashflow-detail__payer {
   align-items: center;
   display: flex;
-  gap: 10px;
-  margin-top: 9px;
+  gap: 8px;
+  margin-top: 8px;
   min-width: 0;
 }
 
 .income-cashflow-detail__payer > strong {
-  font-size: 14px;
+  color: var(--mantine-color-gray-9);
+  font-size: 13px;
+  font-weight: 600;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -183,45 +202,119 @@
 .income-cashflow-detail__summary {
   display: grid;
   gap: 8px;
-  grid-template-columns: repeat(3, minmax(110px, 1fr));
+  grid-template-columns: repeat(3, minmax(112px, auto));
 }
 
 .income-cashflow-detail__metric {
-  align-items: flex-end;
-  background: var(--mantine-color-gray-0);
   border: 1px solid var(--income-detail-border);
   border-radius: 8px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  min-height: 76px;
-  padding: 10px 12px;
-  text-align: right;
+  display: grid;
+  gap: 3px;
+  min-width: 112px;
+  padding: 8px 10px;
 }
 
 .income-cashflow-detail__metric.is-accent {
-  background: var(--mantine-color-orange-0);
   border-color: var(--mantine-color-orange-2);
 }
 
-.income-cashflow-detail__metric > span,
 .income-cashflow-detail__metric > small {
-  color: var(--income-detail-muted);
-  font-family: var(--font-mono);
-  font-size: 9px;
-  font-weight: 600;
-  text-transform: uppercase;
+  font-size: 10px;
 }
 
 .income-cashflow-detail__metric > strong {
-  color: var(--mantine-color-dark-8);
+  color: var(--mantine-color-gray-9);
   font-family: var(--font-mono);
-  font-size: 17px;
-  line-height: 1.2;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.15;
 }
 
 .income-cashflow-detail__metric.is-accent > strong {
   color: var(--mantine-color-orange-8);
+}
+
+.income-cashflow-detail__tree {
+  --income-detail-line: var(--mantine-color-gray-2);
+  display: grid;
+  gap: 18px;
+  padding-left: 26px;
+  padding-right: 4px;
+  position: relative;
+}
+
+.income-cashflow-detail__tree::before {
+  background: var(--income-detail-line);
+  bottom: 20px;
+  content: '';
+  left: 10px;
+  position: absolute;
+  top: 20px;
+  width: 1px;
+}
+
+.income-cashflow-detail__tree-section {
+  position: relative;
+}
+
+.income-cashflow-detail__tree-section::before {
+  background:
+    radial-gradient(circle, var(--mantine-color-orange-5) 0 2px, transparent 2.5px),
+    var(--mantine-color-white);
+  border: 1px solid var(--income-detail-border);
+  border-radius: 999px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+  content: '';
+  height: 11px;
+  left: -21px;
+  position: absolute;
+  top: 16px;
+  width: 11px;
+  z-index: 1;
+}
+
+.income-cashflow-detail__tree-section + .income-cashflow-detail__tree-section .income-cashflow-detail__tree-head::before {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--mantine-color-gray-1) 10%,
+    var(--mantine-color-gray-3) 50%,
+    var(--mantine-color-gray-1) 90%,
+    transparent
+  );
+  content: '';
+  height: 1px;
+  left: 8px;
+  position: absolute;
+  right: 8px;
+  top: -10px;
+}
+
+.income-cashflow-detail__tree-head {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  min-height: 42px;
+  padding: 6px 0;
+  position: relative;
+}
+
+.income-cashflow-detail__tree-title {
+  color: var(--mantine-color-gray-9);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.income-cashflow-detail__tree-subtitle {
+  max-width: 48%;
+  min-width: 0;
+  overflow: hidden;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .income-cashflow-detail__sections {
@@ -232,26 +325,21 @@
 
 .income-cashflow-detail__section,
 .income-cashflow-detail__comment {
-  padding: 12px 16px 14px;
+  background: transparent;
+  border: 1px solid var(--income-detail-border);
+  border-radius: 8px;
+  padding: 10px 14px 12px;
 }
 
 .income-cashflow-detail__section-title {
   align-items: center;
-  color: var(--mantine-color-gray-7);
+  color: var(--mantine-color-gray-9);
   display: flex;
   font-family: var(--font-mono);
-  font-size: 12px;
-  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.2;
   margin-bottom: 8px;
-}
-
-.income-cashflow-detail__section-title::before {
-  background: var(--mantine-color-orange-6);
-  border-radius: 50%;
-  content: '';
-  flex: 0 0 6px;
-  height: 6px;
-  width: 6px;
 }
 
 .income-cashflow-detail__field-list {
@@ -260,22 +348,44 @@
 }
 
 .income-cashflow-detail__field-list .app-detail-field {
-  min-height: 34px;
+  align-items: center;
+  min-height: 36px;
+  padding: 7px 0;
+}
+
+.income-cashflow-detail__field-list .app-detail-field::before {
+  background:
+    radial-gradient(circle at 4px center, var(--mantine-color-white) 0 2px, var(--mantine-color-gray-3) 2.5px 3.5px, transparent 4px),
+    radial-gradient(circle at calc(100% - 4px) center, var(--mantine-color-white) 0 2px, var(--mantine-color-gray-3) 2.5px 3.5px, transparent 4px),
+    linear-gradient(var(--mantine-color-gray-3), var(--mantine-color-gray-3)) center / calc(100% - 8px) 1px no-repeat;
+  border: 0;
+  height: 7px;
+  min-width: 24px;
+  transform: none;
 }
 
 .income-cashflow-detail__field-list .app-detail-field > span {
+  color: var(--mantine-color-gray-7);
   flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.2;
 }
 
 .income-cashflow-detail__field-list .app-detail-field > strong {
-  max-width: 72%;
+  color: var(--mantine-color-gray-9);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.25;
+  max-width: 62%;
   text-align: right;
 }
 
-.income-cashflow-detail__comment .mantine-Text-root:last-child {
+.income-cashflow-detail__comment .mantine-Text-root {
   color: var(--mantine-color-gray-8);
   line-height: 1.5;
-  padding-left: 14px;
 }
 
 @media (max-width: 900px) {
@@ -303,8 +413,6 @@
   }
 
   .income-cashflow-detail__metric {
-    align-items: flex-start;
     min-height: 58px;
-    text-align: left;
   }
 }

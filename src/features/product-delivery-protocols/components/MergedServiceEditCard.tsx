@@ -488,11 +488,6 @@ function useMergedServiceLookups(opened: boolean, t: (value: string) => string, 
 
     const value = organizationSearch.trim()
 
-    if (!value) {
-      setOrganizations([])
-      return
-    }
-
     let cancelled = false
 
     async function loadOrganizations() {
