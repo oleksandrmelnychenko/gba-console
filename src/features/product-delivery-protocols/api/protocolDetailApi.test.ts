@@ -53,9 +53,16 @@ describe('product delivery protocol detail API contracts', () => {
     })
   })
 
-  it('does not search supply organizations for blank lookup values', async () => {
-    await expect(searchSupplyOrganizations('   ')).resolves.toEqual([])
+  it('loads a bounded initial supply organization list for blank lookup values', async () => {
+    apiRequestMock.mockResolvedValueOnce([{ NetUid: 'organization-1' }])
 
-    expect(apiRequestMock).not.toHaveBeenCalled()
+    await expect(searchSupplyOrganizations('   ')).resolves.toEqual([{ NetUid: 'organization-1' }])
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/organizations/all', {
+      query: {
+        limit: 20,
+        offset: 0,
+      },
+    })
   })
 })
