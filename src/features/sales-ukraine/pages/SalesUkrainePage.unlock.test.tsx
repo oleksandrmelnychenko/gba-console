@@ -90,12 +90,11 @@ describe('SalesUkrainePage unlock state', () => {
     mocks.unlockSale.mockReset()
   })
 
-  it('removes the locked icon from the row as soon as the unlock response is acknowledged', async () => {
+  it('removes the locked icon when unlock is acknowledged without a sale payload', async () => {
     const lockedSale = createSale(true)
-    const unlockedSale = createSale(false)
 
     mocks.getSalesUkraine.mockResolvedValueOnce([lockedSale])
-    mocks.unlockSale.mockResolvedValueOnce(unlockedSale)
+    mocks.unlockSale.mockResolvedValueOnce(null)
 
     const { container } = render(
       <MantineProvider theme={theme}>
@@ -121,7 +120,7 @@ describe('SalesUkrainePage unlock state', () => {
     expect(mocks.getSalesUkraine).toHaveBeenCalledTimes(1)
   })
 
-  it('removes the shipment-blocked icon as soon as packing acceptance is acknowledged', async () => {
+  it('removes the shipment-blocked icon when packing acceptance is acknowledged without a sale payload', async () => {
     const blockedSale = {
       ...createSale(false),
       BaseLifeCycleStatus: { Name: 'New', SaleLifeCycleType: 0 },
@@ -129,10 +128,8 @@ describe('SalesUkrainePage unlock state', () => {
       IsAcceptedToPacking: false,
       IsVatSale: true,
     }
-    const acceptedSale = { ...blockedSale, IsAcceptedToPacking: true }
-
     mocks.getSalesUkraine.mockResolvedValueOnce([blockedSale])
-    mocks.acceptSaleForPacking.mockResolvedValueOnce(acceptedSale)
+    mocks.acceptSaleForPacking.mockResolvedValueOnce(null)
 
     render(
       <MantineProvider theme={theme}>

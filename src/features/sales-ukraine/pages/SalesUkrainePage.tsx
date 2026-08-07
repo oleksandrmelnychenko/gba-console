@@ -562,15 +562,23 @@ export function SalesUkrainePage() {
             throw attempt.error
           }
 
-          if (attempt.result) {
-            const unlockedSale = attempt.result
+          setSales((current) => current.map((currentSale) => {
+            if (!isSameSale(currentSale, sale)) {
+              return currentSale
+            }
 
-            setSales((current) => current.map((currentSale) => (
-              isSameSale(currentSale, unlockedSale)
-                ? { ...currentSale, ...unlockedSale, TotalRowsQty: currentSale.TotalRowsQty }
-                : currentSale
-            )))
-          }
+            const unlockedSale = attempt.result && isSameSale(sale, attempt.result)
+              ? attempt.result
+              : null
+
+            return {
+              ...currentSale,
+              ...(unlockedSale ?? {}),
+              IsAcceptedToPacking: true,
+              IsLocked: false,
+              TotalRowsQty: currentSale.TotalRowsQty,
+            }
+          }))
 
           notifications.show({ color: 'green', message: t('Продаж розблоковано') })
         },
@@ -602,15 +610,22 @@ export function SalesUkrainePage() {
             throw attempt.error
           }
 
-          if (attempt.result) {
-            const acceptedSale = attempt.result
+          setSales((current) => current.map((currentSale) => {
+            if (!isSameSale(currentSale, sale)) {
+              return currentSale
+            }
 
-            setSales((current) => current.map((currentSale) => (
-              isSameSale(currentSale, acceptedSale)
-                ? { ...currentSale, ...acceptedSale, TotalRowsQty: currentSale.TotalRowsQty }
-                : currentSale
-            )))
-          }
+            const acceptedSale = attempt.result && isSameSale(sale, attempt.result)
+              ? attempt.result
+              : null
+
+            return {
+              ...currentSale,
+              ...(acceptedSale ?? {}),
+              IsAcceptedToPacking: true,
+              TotalRowsQty: currentSale.TotalRowsQty,
+            }
+          }))
 
           notifications.show({ color: 'green', message: t('Збережено') })
         },
