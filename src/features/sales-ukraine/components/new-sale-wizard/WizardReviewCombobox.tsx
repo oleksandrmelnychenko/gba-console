@@ -10,7 +10,9 @@ export type WizardReviewComboboxOption<T> = {
 export function WizardReviewCombobox<T>({
   allowFreeForm = false,
   classNames,
+  draftValue,
   label,
+  onDraftChange,
   onFreeText,
   onSelect,
   options,
@@ -23,7 +25,9 @@ export function WizardReviewCombobox<T>({
     label?: string
     root?: string
   }
+  draftValue?: string
   label: string
+  onDraftChange?: (input: string) => void
   onFreeText?: (input: string) => void
   onSelect: (entity: T) => void
   options: WizardReviewComboboxOption<T>[]
@@ -77,7 +81,7 @@ export function WizardReviewCombobox<T>({
           rightSection={<Combobox.Chevron />}
           rightSectionPointerEvents="none"
           tabIndex={tabIndex}
-          value={search ?? selectedLabel}
+          value={search ?? (draftValue || selectedLabel)}
           onBlur={() => {
             combobox.closeDropdown()
 
@@ -88,7 +92,10 @@ export function WizardReviewCombobox<T>({
             }
           }}
           onChange={(event) => {
-            setSearch(event.currentTarget.value)
+            const input = event.currentTarget.value
+
+            setSearch(input)
+            onDraftChange?.(input)
             combobox.openDropdown()
             combobox.updateSelectedOptionIndex()
           }}
@@ -98,6 +105,7 @@ export function WizardReviewCombobox<T>({
               event.preventDefault()
               event.stopPropagation()
               setSearch(null)
+              onDraftChange?.('')
               combobox.closeDropdown()
 
               return
