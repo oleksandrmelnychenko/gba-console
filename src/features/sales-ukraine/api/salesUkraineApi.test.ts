@@ -40,10 +40,12 @@ describe('sales Ukraine document request contracts', () => {
   })
 
   it('accepts an invoiced sale for packing through the dedicated idempotent endpoint', async () => {
-    apiRequestMock.mockResolvedValueOnce({})
     const saleNetId = 'dc8d6ccc-e2f3-4011-a73f-9be8a570b2ae'
+    const acceptedSale = { IsAcceptedToPacking: true, NetUid: saleNetId }
 
-    await acceptSaleForPacking(saleNetId, paymentDocumentOperation)
+    apiRequestMock.mockResolvedValueOnce(acceptedSale)
+
+    await expect(acceptSaleForPacking(saleNetId, paymentDocumentOperation)).resolves.toEqual(acceptedSale)
 
     expect(apiRequestMock).toHaveBeenCalledWith('/sales/accept-for-packing', {
       headers: { 'Idempotency-Key': paymentDocumentOperation.operationId },

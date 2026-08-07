@@ -1,6 +1,6 @@
 import { MantineProvider } from '@mantine/core'
 import { Notifications } from '@mantine/notifications'
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
@@ -8,6 +8,7 @@ import { theme } from '../../../shared/theme/theme'
 import type { SalesUkraineSale } from '../types'
 
 const mocks = vi.hoisted(() => ({
+  acceptSaleForPacking: vi.fn(),
   getSaleById: vi.fn(),
   getSalesUkraine: vi.fn(),
   getSalesUkraineOrganizations: vi.fn(),
@@ -16,6 +17,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('../api/salesUkraineApi', async (importOriginal) => ({
   ...await importOriginal<typeof import('../api/salesUkraineApi')>(),
+  acceptSaleForPacking: mocks.acceptSaleForPacking,
   getSaleById: mocks.getSaleById,
   getSalesUkraine: mocks.getSalesUkraine,
   getSalesUkraineOrganizations: mocks.getSalesUkraineOrganizations,
@@ -81,6 +83,7 @@ function createSale(isLocked: boolean): SalesUkraineSale {
 
 describe('SalesUkrainePage unlock state', () => {
   beforeEach(() => {
+    mocks.acceptSaleForPacking.mockReset()
     mocks.getSaleById.mockReset()
     mocks.getSalesUkraine.mockReset()
     mocks.getSalesUkraineOrganizations.mockReset().mockResolvedValue([])
@@ -90,13 +93,8 @@ describe('SalesUkrainePage unlock state', () => {
   it('removes the locked icon from the row as soon as the unlock response is acknowledged', async () => {
     const lockedSale = createSale(true)
     const unlockedSale = createSale(false)
-    let resolveReload: ((sales: SalesUkraineSale[]) => void) | undefined
 
-    mocks.getSalesUkraine
-      .mockResolvedValueOnce([lockedSale])
-      .mockImplementationOnce(() => new Promise<SalesUkraineSale[]>((resolve) => {
-        resolveReload = resolve
-      }))
+    mocks.getSalesUkraine.mockResolvedValueOnce([lockedSale])
     mocks.unlockSale.mockResolvedValueOnce(unlockedSale)
 
     const { container } = render(
@@ -119,11 +117,43 @@ describe('SalesUkrainePage unlock state', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Розблокувати' }))
 
     await waitFor(() => expect(mocks.unlockSale).toHaveBeenCalledTimes(1))
-    await waitFor(() => expect(mocks.getSalesUkraine).toHaveBeenCalledTimes(2))
     await waitFor(() => expect(container.querySelector('svg.lucide-lock')).toBeNull())
+    expect(mocks.getSalesUkraine).toHaveBeenCalledTimes(1)
+  })
 
-    await act(async () => {
-      resolveReload?.([unlockedSale])
-    })
+  it('removes the shipment-blocked icon as soon as packing acceptance is acknowledged', async () => {
+    const blockedSale = {
+      ...createSale(false),
+      BaseLifeCycleStatus: { Name: 'New', SaleLifeCycleType: 0 },
+      ChangedToInvoice: '2026-08-06T11:00:00Z',
+      IsAcceptedToPacking: false,
+      IsVatSale: true,
+    }
+    const acceptedSale = { ...blockedSale, IsAcceptedToPacking: true }
+
+    mocks.getSalesUkraine.mockResolvedValueOnce([blockedSale])
+    mocks.acceptSaleForPacking.mockResolvedValueOnce(acceptedSale)
+
+    render(
+      <MantineProvider theme={theme}>
+        <Notifications />
+        <I18nProvider>
+          <MemoryRouter>
+            <SalesUkrainePage />
+          </MemoryRouter>
+        </I18nProvider>
+      </MantineProvider>,
+    )
+
+    await screen.findByText('Тестовий клієнт')
+    fireEvent.click(screen.getByRole('button', { name: 'Розблокувати для відвантаження' }))
+    await screen.findByText('Розблокувати продаж для відвантаження?')
+    fireEvent.click(screen.getByRole('button', { name: 'Підтвердити' }))
+
+    await waitFor(() => expect(mocks.acceptSaleForPacking).toHaveBeenCalledTimes(1))
+    await waitFor(() => expect(screen.queryByRole('button', {
+      name: 'Розблокувати для відвантаження',
+    })).toBeNull())
+    expect(mocks.getSalesUkraine).toHaveBeenCalledTimes(1)
   })
 })

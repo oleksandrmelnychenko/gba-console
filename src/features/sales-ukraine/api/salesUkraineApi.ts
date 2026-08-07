@@ -109,18 +109,20 @@ export async function unlockSale(
 export async function acceptSaleForPacking(
   netId: string,
   operation: SalesMutationOperationOptions,
-): Promise<void> {
+): Promise<SalesUkraineSale | null> {
   const saleNetUid = requirePersistedGuid(
     netId,
     'Не вдалося визначити продаж для відвантаження',
   )
 
-  await apiRequest<unknown>('/sales/accept-for-packing', {
+  const result = await apiRequest<unknown>('/sales/accept-for-packing', {
     headers: getSalesMutationOperationHeaders(operation.operationId),
     method: 'PATCH',
     query: { netId: saleNetUid },
     signal: operation.signal,
   })
+
+  return normalizeSale(result)
 }
 
 export async function getSaleById(netId: string, signal?: AbortSignal): Promise<SalesUkraineSale | null> {
