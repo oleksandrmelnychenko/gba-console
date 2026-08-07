@@ -142,7 +142,7 @@ export function PaymentDeliveryProtocolsSection({
       setPrevOpened(isFormOpen)
 
     if (isFormOpen) {
-      const initialValues = getInitialProtocolValues(protocols, totalGrossPriceLocal)
+      const initialValues = getInitialProtocolValues(protocols, totalGrossPriceLocal, false)
 
       setValue(initialValues.value)
       setDiscount(initialValues.discount)
@@ -160,9 +160,21 @@ export function PaymentDeliveryProtocolsSection({
   const userOptions = toProtocolUserOptions(users)
   const currentValue = readPositiveNumber(value)
   const currentDiscount = readPositiveNumber(discount)
-  const existingValue = sumProtocolValues(visibleProtocols, 'Value')
-  const existingDiscount = sumProtocolValues(visibleProtocols, 'Discount')
+  const applicableProtocols = visibleProtocols.filter(
+    (protocol) => Boolean(protocol.IsAccounting) === isAccounting,
+  )
+  const existingValue = sumProtocolValues(applicableProtocols, 'Value')
+  const existingDiscount = sumProtocolValues(applicableProtocols, 'Discount')
   const hasKnownTotal = totalGrossPriceLocal > 0
+
+  function updateAccounting(nextIsAccounting: boolean) {
+    const initialValues = getInitialProtocolValues(protocols, totalGrossPriceLocal, nextIsAccounting)
+
+    setAccounting(nextIsAccounting)
+    setValue(initialValues.value)
+    setDiscount(initialValues.discount)
+    setValidationError(null)
+  }
 
   function updateDiscount(nextValue: string) {
     const numericDiscount = clampNumber(readNumberInput(nextValue) || 0, 0, PERCENT_MAX)
@@ -316,7 +328,7 @@ export function PaymentDeliveryProtocolsSection({
           <Checkbox
             checked={isAccounting}
             label={t('Бух. витрата')}
-            onChange={(event) => setAccounting(event.currentTarget.checked)}
+            onChange={(event) => updateAccounting(event.currentTarget.checked)}
           />
 
           <TextInput
@@ -396,6 +408,7 @@ function toProtocolUserOptions(users: ProtocolUser[]): SelectOption[] {
 function getInitialProtocolValues(
   protocols: SupplyOrderUkrainePaymentDeliveryProtocol[],
   totalGrossPriceLocal: number,
+  isAccounting: boolean,
 ): { discount: string; value: string } {
   if (totalGrossPriceLocal <= 0) {
     return {
@@ -404,7 +417,9 @@ function getInitialProtocolValues(
     }
   }
 
-  const visibleProtocols = protocols.filter((protocol) => !protocol.Deleted)
+  const visibleProtocols = protocols.filter(
+    (protocol) => !protocol.Deleted && Boolean(protocol.IsAccounting) === isAccounting,
+  )
   const existingDiscount = sumProtocolValues(visibleProtocols, 'Discount')
   const existingValue = sumProtocolValues(visibleProtocols, 'Value')
   const remainingDiscount = clampNumber(roundNumber(PERCENT_MAX - existingDiscount), 0, PERCENT_MAX)
