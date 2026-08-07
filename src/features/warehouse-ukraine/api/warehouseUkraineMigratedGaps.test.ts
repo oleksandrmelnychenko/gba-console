@@ -35,6 +35,7 @@ describe('warehouse Ukraine migrated gap request contracts', () => {
         nonPlaced: false,
         offset: 0,
         placed: true,
+        supplierName: '',
       },
     })
   })
@@ -58,6 +59,7 @@ describe('warehouse Ukraine migrated gap request contracts', () => {
         nonPlaced: true,
         offset: 0,
         placed: false,
+        supplierName: '',
       },
     })
   })
