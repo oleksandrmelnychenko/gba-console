@@ -39,7 +39,6 @@ const SUPPLY_ORGANIZATION_SEARCH_DEBOUNCE_MS = 300
 type NewMergedServiceFieldErrors = Partial<Record<
   | 'accountingTaskUser'
   | 'agreement'
-  | 'consumableProduct'
   | 'grossPrice'
   | 'grossPriceAccounting'
   | 'invoiceNumber'
@@ -410,16 +409,13 @@ export function NewMergedServiceForm({
               onChange={selectAgreement}
             />
             <Select
-              aria-invalid={Boolean(fieldErrors.consumableProduct)}
-              aria-required="true"
               className="new-merged-service-control"
+              clearable
               data={productOptions}
               disabled={isSaving}
-              error={fieldErrors.consumableProduct}
               label={t('Тип')}
               searchable
               value={values.consumableProduct?.NetUid || null}
-              withAsterisk
               onChange={selectProduct}
             />
             <TextInput
@@ -737,9 +733,6 @@ function validateNewMergedService(
   }
   if (!values.agreement) {
     fieldErrors.agreement = t('Оберіть договір')
-  }
-  if (!values.consumableProduct) {
-    fieldErrors.consumableProduct = t('Оберіть тип')
   }
   if (!values.invoiceNumber.trim()) {
     fieldErrors.invoiceNumber = t('Вкажіть номер інвойса')

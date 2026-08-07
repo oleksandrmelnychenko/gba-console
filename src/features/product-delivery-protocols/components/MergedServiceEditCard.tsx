@@ -86,7 +86,6 @@ type EditFieldErrors = Partial<Record<
   | 'accountingTaskPayToDate'
   | 'accountingTaskUser'
   | 'agreement'
-  | 'consumableProduct'
   | 'fromDate'
   | 'grossPrice'
   | 'invoiceNumber'
@@ -319,7 +318,7 @@ export function MergedServiceEditCard({
       return
     }
 
-    update('consumableProduct', products.find((item) => item.NetUid === netUid) || draft.consumableProduct)
+    update('consumableProduct', products.find((item) => item.NetUid === netUid) || null)
   }
 
   function selectUser(
@@ -721,9 +720,6 @@ function getMergedServiceValidation(
   if (!draft.agreement) {
     fieldErrors.agreement = t('Оберіть договір')
   }
-  if (!draft.consumableProduct) {
-    fieldErrors.consumableProduct = t('Оберіть тип')
-  }
   if (!draft.invoiceNumber.trim()) {
     fieldErrors.invoiceNumber = t('Вкажіть номер інвойса')
   }
@@ -947,15 +943,12 @@ function MergedServicePrimaryFields({
         onChange={selectAgreement}
       />
       <Select
-        aria-invalid={Boolean(fieldErrors.consumableProduct)}
-        aria-required="true"
+        clearable
         data={productOptions}
         disabled={isSaving}
-        error={fieldErrors.consumableProduct}
         label={t('Тип')}
         searchable
         value={draft.consumableProduct?.NetUid || null}
-        withAsterisk
         onChange={selectProduct}
       />
       <TextInput

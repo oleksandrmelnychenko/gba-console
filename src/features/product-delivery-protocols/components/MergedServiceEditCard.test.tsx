@@ -87,4 +87,28 @@ describe('MergedServiceEditCard validation', () => {
     expect(responsible.getAttribute('aria-invalid')).toBe('true')
     expect(screen.getByText('Вкажіть відповідального за платіжну задачу')).toBeTruthy()
   })
+
+  it('allows saving without a type', () => {
+    const onSave = vi.fn()
+    render(
+      <MantineProvider>
+        <MergedServiceEditCard
+          isSaving={false}
+          opened
+          service={{ ...service, ConsumableProduct: null, SupplyPaymentTask: null }}
+          onClose={vi.fn()}
+          onSave={onSave}
+        />
+      </MantineProvider>,
+    )
+
+    const type = getInput('Тип')
+    expect(type.getAttribute('aria-required')).not.toBe('true')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Зберегти' }))
+
+    expect(onSave).toHaveBeenCalledOnce()
+    expect(onSave.mock.calls[0][0].ConsumableProduct).toBeNull()
+    expect(screen.queryByText('Оберіть тип')).toBeNull()
+  })
 })

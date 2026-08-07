@@ -59,20 +59,22 @@ describe('product-delivery NewMergedServiceForm validation', () => {
     const type = getInput('Тип')
     const invoice = getInput('Номер інвойса')
 
-    for (const field of [supplier, agreement, type, invoice]) {
+    for (const field of [supplier, agreement, invoice]) {
       expect(field.getAttribute('aria-required')).toBe('true')
     }
+    expect(type.getAttribute('aria-required')).not.toBe('true')
     expect(screen.getByText('Заповніть хоча б одну вартість: управлінську або бухгалтерську')).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: 'Зберегти' }))
 
     expect(onSubmit).not.toHaveBeenCalled()
-    for (const field of [supplier, agreement, type, invoice]) {
+    for (const field of [supplier, agreement, invoice]) {
       expect(field.getAttribute('aria-invalid')).toBe('true')
     }
+    expect(type.getAttribute('aria-invalid')).not.toBe('true')
     expect(screen.getByText('Оберіть постачальника послуг')).toBeTruthy()
     expect(screen.getByText('Оберіть договір')).toBeTruthy()
-    expect(screen.getByText('Оберіть тип')).toBeTruthy()
+    expect(screen.queryByText('Оберіть тип')).toBeNull()
     expect(screen.getByText('Вкажіть номер інвойса')).toBeTruthy()
   })
 
