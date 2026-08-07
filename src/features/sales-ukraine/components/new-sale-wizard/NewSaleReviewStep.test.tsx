@@ -44,6 +44,11 @@ const mocks = vi.hoisted(() => ({
   newDeliveryRecipient: vi.fn(),
   newDeliveryRecipientAddress: vi.fn(),
   notificationsShow: vi.fn(),
+  reviewComboboxProps: {} as Record<string, {
+    draftValue?: string
+    onDraftChange?: (input: string) => void
+    onFreeText?: (input: string) => void
+  }>,
   splitItems: [] as ReturnType<typeof createWizardSplitOrderItem>[],
   splitRecovery: null as { agreementNetId: string } | null,
   rejectWizardSplitFinalMutation: vi.fn(),
@@ -104,7 +109,16 @@ vi.mock('./wizardKeyboard', () => ({
 }))
 
 vi.mock('./WizardReviewCombobox', () => ({
-  WizardReviewCombobox: ({ label }: { label: string }) => <div>{label}</div>,
+  WizardReviewCombobox: (props: {
+    draftValue?: string
+    label: string
+    onDraftChange?: (input: string) => void
+    onFreeText?: (input: string) => void
+  }) => {
+    mocks.reviewComboboxProps[props.label] = props
+
+    return <div>{props.label}</div>
+  },
 }))
 
 vi.mock('./WizardReviewConfirmModal', () => ({
@@ -226,6 +240,7 @@ describe('NewSaleReviewStep persistent file reconciliation', () => {
     vi.clearAllMocks()
     mocks.keyHandler = null
     mocks.mergedSale = null
+    mocks.reviewComboboxProps = {}
     mocks.splitItems = []
     mocks.splitRecovery = null
     mocks.getClientDeliveryRecipients.mockResolvedValue([])
@@ -234,6 +249,31 @@ describe('NewSaleReviewStep persistent file reconciliation', () => {
     mocks.getSaleTransportersByType.mockResolvedValue([])
     mocks.confirmWizardSplitFinalMutationCommitted.mockReturnValue(true)
     mocks.rejectWizardSplitFinalMutation.mockReturnValue(true)
+  })
+
+  it('preserves an address draft and creates a three-character address on blur', async () => {
+    const createdAddress = { Id: 2, Value: '222' }
+    mocks.newDeliveryRecipientAddress.mockResolvedValue(createdAddress)
+    const { onChange } = renderStep()
+    const addressCombobox = mocks.reviewComboboxProps['Адреса']
+
+    expect(addressCombobox?.draftValue).toBe('')
+
+    act(() => addressCombobox?.onDraftChange?.('222'))
+    expect(onChange).toHaveBeenCalledWith({ addressValue: '222' })
+
+    act(() => addressCombobox?.onFreeText?.('222'))
+
+    await waitFor(() => expect(mocks.newDeliveryRecipientAddress).toHaveBeenCalledWith({
+      DeliveryRecipient: { Id: 1 },
+      DeliveryRecipientId: 1,
+      Value: '222',
+    }))
+    expect(onChange).toHaveBeenCalledWith({
+      address: createdAddress,
+      addressValue: '',
+      recipient: { DeliveryRecipientAddresses: [createdAddress], Id: 1 },
+    })
   })
 
   it('reconciles a legacy explicit file-backed save with the frozen body and key', async () => {

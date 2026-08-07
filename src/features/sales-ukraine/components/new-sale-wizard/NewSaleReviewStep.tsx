@@ -738,15 +738,20 @@ export function NewSaleReviewStep({
   async function createAddress(input: string) {
     const recipient = value.recipient
     const recipientId = recipient?.Id
+    const normalizedInput = input.trim()
 
-    if (!recipient || !recipientId || recipientId <= 0) {
+    if (!recipient || !recipientId || recipientId <= 0 || !normalizedInput) {
       return
     }
 
     const addresses = recipient.DeliveryRecipientAddresses ?? []
-    const duplicate = addresses.some((item) => (item.Value ?? '').toLowerCase() === input.toLowerCase())
+    const duplicate = addresses.find(
+      (item) => (item.Value ?? '').trim().toLowerCase() === normalizedInput.toLowerCase(),
+    )
 
-    if (duplicate || input.length <= 3) {
+    if (duplicate) {
+      selectAddress(duplicate)
+
       return
     }
 
@@ -754,7 +759,7 @@ export function NewSaleReviewStep({
       const created = await newDeliveryRecipientAddress({
         DeliveryRecipient: recipient,
         DeliveryRecipientId: recipientId,
-        Value: input,
+        Value: normalizedInput,
       })
 
       if (created && (created.Id ?? 0) > 0) {
@@ -1655,9 +1660,11 @@ export function NewSaleReviewStep({
                             <WizardReviewCombobox
                               allowFreeForm
                               classNames={reviewFieldClassNames}
+                              draftValue={value.addressValue}
                               label={t('Адреса')}
                               options={addressOptions}
                               selectedKey={addressKey}
+                              onDraftChange={(addressValue) => onChange({ addressValue })}
                               onFreeText={(input) => void createAddress(input)}
                               onSelect={selectAddress}
                             />
