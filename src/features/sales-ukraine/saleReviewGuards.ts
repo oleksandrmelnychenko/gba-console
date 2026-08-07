@@ -21,7 +21,10 @@ export function getSaleReviewIssues(sale: SalesUkraineSale, context: SaleReviewC
   const issues: SaleReviewIssueCode[] = []
   const transporter = sale.Transporter
 
-  if (!hasEntityIdentity(transporter)) {
+  // Storefront payloads can persist the carrier as the scalar FK without
+  // returning the expanded navigation. The update endpoint canonicalizes that
+  // FK before saving, so it is a valid carrier identity for this preflight too.
+  if (!hasEntityIdentity(transporter) && !hasPositiveId(sale.TransporterId)) {
     issues.push('transporter')
   }
 
@@ -73,6 +76,20 @@ function hasEntityIdentity(entity: { Id?: number; NetUid?: string } | null | und
   }
 
   return hasText(entity.NetUid) && entity.NetUid !== EMPTY_GUID
+}
+
+function hasPositiveId(value: number | string | null | undefined): boolean {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) && value > 0
+  }
+
+  if (typeof value !== 'string' || !value.trim()) {
+    return false
+  }
+
+  const parsed = Number(value)
+
+  return Number.isFinite(parsed) && parsed > 0
 }
 
 function hasText(value: string | undefined): boolean {

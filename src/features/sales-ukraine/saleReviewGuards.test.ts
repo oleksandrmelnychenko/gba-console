@@ -22,6 +22,15 @@ describe('getSaleReviewIssues', () => {
     ])
   })
 
+  it('accepts a storefront carrier returned as a scalar foreign key', () => {
+    expect(
+      getSaleReviewIssues({
+        DeliveryRecipient: { FullName: 'Buyer', MobilePhone: '+380501112233' },
+        TransporterId: 2,
+      }),
+    ).toEqual([])
+  })
+
   it('does not require recipient delivery fields for self-checkout transporter', () => {
     expect(getSaleReviewIssues({ Transporter: { CssClass: 'self_checkout_item_class', Id: 3 } })).toEqual([])
   })
