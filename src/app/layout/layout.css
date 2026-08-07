@@ -481,7 +481,7 @@
   border-radius: 8px;
 }
 
-.console-notification-title {
+.console-notification-dropdown .console-notification-title {
   color: var(--mantine-color-gray-8);
   font-family: var(--font-mono);
   font-size: 14px;
@@ -499,7 +499,7 @@
   letter-spacing: 0;
 }
 
-.console-notification-subtitle {
+.console-notification-dropdown .console-notification-subtitle {
   color: var(--mantine-color-gray-5);
   font-size: 10.5px;
   line-height: 1.2;
@@ -520,9 +520,14 @@
 }
 
 .console-notification-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   min-height: 156px;
   justify-content: center;
+  gap: 8px;
   color: var(--mantine-color-gray-5);
+  text-align: center;
 }
 
 .console-notification-empty-icon {

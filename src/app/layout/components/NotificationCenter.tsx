@@ -129,12 +129,12 @@ export function NotificationCenter({ userKey }: NotificationCenterProps) {
         </Group>
 
         {items.length === 0 ? (
-          <Stack align="center" className="console-notification-empty" gap={6}>
+          <Box className="console-notification-empty">
             <Box className="console-notification-empty-icon" aria-hidden="true">
               <Bell size={20} strokeWidth={1.6} />
             </Box>
             <Text c="dimmed" size="sm">{t('Нових сповіщень немає')}</Text>
-          </Stack>
+          </Box>
         ) : (
           <ScrollArea.Autosize mah={420} type="auto">
             <Stack gap={0}>
