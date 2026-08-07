@@ -447,7 +447,7 @@
 }
 
 .console-notification-dropdown {
-  width: min(420px, calc(100vw - 16px)) !important;
+  width: min(520px, calc(100vw - 16px)) !important;
   max-width: calc(100vw - 16px);
   overflow: hidden;
   border-radius: 10px;
@@ -464,18 +464,6 @@
 
 .console-notification-heading {
   min-width: 0;
-}
-
-.console-notification-header-icon {
-  display: grid;
-  width: 34px;
-  height: 34px;
-  flex: 0 0 34px;
-  place-items: center;
-  border: 1px solid var(--mantine-color-orange-3);
-  border-radius: 8px;
-  background: var(--mantine-color-orange-0);
-  color: var(--brand-orange);
 }
 
 .console-notification-heading-copy {
@@ -549,11 +537,10 @@
 .console-notification-dropdown .console-notification-item {
   position: relative;
   display: grid;
-  grid-template-columns: 30px minmax(0, 1fr) 14px;
+  grid-template-columns: 26px minmax(0, 1fr) 14px;
   align-items: start;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
-  min-height: 78px;
   padding: 11px 13px 11px 16px !important;
   border-bottom: 1px solid var(--mantine-color-gray-2);
   background: #ffffff;
@@ -576,23 +563,23 @@
 
 .console-notification-icon {
   display: grid;
-  width: 30px;
-  height: 30px;
-  margin-top: 3px;
+  width: 22px;
+  height: 22px;
+  margin-top: 4px;
   place-items: center;
-  border: 0;
-  border-radius: 7px;
-  background: var(--mantine-color-orange-0);
+  border: 1px solid color-mix(in srgb, var(--brand-orange) 45%, transparent);
+  border-radius: 6px;
+  background: transparent;
   color: var(--brand-orange);
 }
 
 .console-notification-icon.is-ecommerce-ai-image-search {
-  background: var(--mantine-color-blue-0);
+  background: transparent;
   color: var(--mantine-color-blue-7);
 }
 
 .console-notification-icon.is-ecommerce-interest {
-  background: var(--mantine-color-red-0);
+  background: transparent;
   color: var(--mantine-color-red-7);
 }
 
@@ -606,32 +593,65 @@
 
 .console-notification-item-heading {
   min-width: 0;
-  padding-right: 70px;
 }
 
-.console-notification-item-title {
+.console-notification-dropdown .console-notification-item-title {
   flex: 1 1 auto;
   min-width: 0;
   color: var(--mantine-color-gray-8);
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1.3;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  line-height: 1.2;
 }
 
 .console-notification-message {
   margin-top: 4px;
   color: var(--mantine-color-gray-6);
-  font-size: 11px;
-  line-height: 1.4;
+  font-size: 11.5px !important;
+  line-height: 1.2;
+}
+
+.console-notification-message-emphasis {
+  color: var(--mantine-color-black);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.console-notification-order-number-tag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 18px;
+  padding: 1px 6px;
+  border: 1px solid var(--mantine-color-gray-3);
+  border-radius: 6px;
+  background: var(--mantine-color-gray-0);
+  color: var(--mantine-color-gray-8);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1.2;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.console-notification-message-strong {
+  color: var(--mantine-color-gray-8);
+  font-weight: 500;
+}
+
+.console-notification-message-separator {
+  color: var(--mantine-color-gray-5);
+  font-family: var(--font-sans);
+  font-weight: 400;
 }
 
 .console-notification-copy .console-notification-time {
-  position: absolute;
-  top: 7px;
-  right: 14px;
   color: #000;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11.5px;
+  font-weight: 500;
   line-height: 1.25;
   white-space: nowrap;
 }

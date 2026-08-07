@@ -22,7 +22,7 @@ describe('NotificationCenter', () => {
       createdAt: '2026-07-31T08:15:00.000Z',
       id: 'ecommerce-order:sale-1',
       kind: 'ecommerce-order',
-      message: 'Ін00001234 · Shop Client · 9 090,00 UAH',
+      message: 'Ін00001234 · Shop Client · 9 090,00 UAH · 3 поз.',
       route: '/sales-online-shop',
       title: 'Нове замовлення з інтернет-магазину',
     })
@@ -42,7 +42,14 @@ describe('NotificationCenter', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Сповіщення: 1 непрочитаних/ }))
     const notificationTitle = await screen.findByText('Нове замовлення з інтернет-магазину')
-    expect(screen.getByText('Ін00001234 · Shop Client · 9 090,00 UAH')).not.toBeNull()
+    expect(screen.getByText((_, element) => (
+      element?.classList.contains('console-notification-message') === true
+      && element.textContent?.includes('Ін00001234 · Shop Client · 9 090,00 UAH · 3 поз.') === true
+    ))).not.toBeNull()
+    expect(screen.getByText('Ін00001234').classList.contains('console-notification-order-number-tag')).toBe(true)
+    expect(screen.getByText('Shop Client').classList.contains('console-notification-message-strong')).toBe(true)
+    expect(screen.getByText('3 поз.').classList.contains('console-notification-message-strong')).toBe(true)
+    expect(document.querySelector('.console-notification-time')?.textContent).toMatch(/^\d{2}\.\d{2}\s\d{2}:\d{2}$/)
 
     fireEvent.click(notificationTitle)
 

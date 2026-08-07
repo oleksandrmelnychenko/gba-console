@@ -22,11 +22,14 @@ type NotificationCenterProps = {
   userKey?: string
 }
 
-const notificationTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
+const notificationDateFormatter = new Intl.DateTimeFormat('uk-UA', {
   day: '2-digit',
+  month: '2-digit',
+})
+
+const notificationClockFormatter = new Intl.DateTimeFormat('uk-UA', {
   hour: '2-digit',
   minute: '2-digit',
-  month: '2-digit',
 })
 
 export function NotificationCenter({ userKey }: NotificationCenterProps) {
@@ -34,6 +37,7 @@ export function NotificationCenter({ userKey }: NotificationCenterProps) {
   const navigate = useNavigate()
   const { t } = useI18n()
   const { clear, items, markAllRead, markRead, unreadCount } = useConsoleNotificationCenter(userKey)
+
   const unreadLabel = unreadCount > 99 ? '99+' : String(unreadCount)
   const bellLabel = unreadCount > 0
     ? `${t('Сповіщення')}: ${unreadCount} ${t('непрочитаних')}`
@@ -83,10 +87,7 @@ export function NotificationCenter({ userKey }: NotificationCenterProps) {
 
       <Popover.Dropdown className="console-notification-dropdown" p={0}>
         <Group className="console-notification-header" justify="space-between" wrap="nowrap">
-          <Group className="console-notification-heading" gap={10} wrap="nowrap">
-            <Box className="console-notification-header-icon" aria-hidden="true">
-              <Bell size={17} strokeWidth={1.7} />
-            </Box>
+          <Group className="console-notification-heading" wrap="nowrap">
             <Box className="console-notification-heading-copy">
               <Text className="console-notification-title">{t('Сповіщення')}</Text>
               {unreadCount > 0 ? (
@@ -154,15 +155,18 @@ export function NotificationCenter({ userKey }: NotificationCenterProps) {
                       <Text className="console-notification-item-title" lineClamp={1}>
                         {notification.title}
                       </Text>
-                      <Text className="console-notification-time">
+                    </Group>
+                    <Text className="console-notification-message" component="div" lineClamp={2}>
+                      <Text className="console-notification-time" component="span">
                         {formatNotificationTime(notification.createdAt)}
                       </Text>
-                    </Group>
-                    {notification.message ? (
-                      <Text c="dimmed" className="console-notification-message" lineClamp={2} size="xs">
-                        {notification.message}
-                      </Text>
-                    ) : null}
+                      {notification.message ? (
+                        <>
+                          <span className="console-notification-message-separator"> · </span>
+                          {renderNotificationMessage(notification)}
+                        </>
+                      ) : null}
+                    </Text>
                   </Box>
                   <ChevronRight
                     aria-hidden="true"
@@ -182,7 +186,35 @@ export function NotificationCenter({ userKey }: NotificationCenterProps) {
 
 function formatNotificationTime(value: string): string {
   const date = new Date(value)
-  return Number.isNaN(date.getTime()) ? '' : notificationTimeFormatter.format(date)
+  return Number.isNaN(date.getTime())
+    ? ''
+    : `${notificationDateFormatter.format(date)} ${notificationClockFormatter.format(date)}`
+}
+
+function renderNotificationMessage(notification: ConsoleNotification) {
+  const parts = notification.message.split(' · ')
+
+  return parts.map((part, index) => {
+    const isOrderNumber = notification.kind === 'ecommerce-order' && index === 0
+    const isClient = notification.kind === 'ecommerce-order' && index === 1
+    const isAmount = notification.kind === 'ecommerce-order' && /\d[\d\s.,]*\s[A-Z]{3}$/.test(part)
+    const isPositions = notification.kind === 'ecommerce-order' && /^\d+\s+поз\.?$/i.test(part.trim())
+    const className = [
+      isOrderNumber ? 'console-notification-order-number-tag' : null,
+      isAmount ? 'console-notification-message-emphasis' : null,
+      isClient || isPositions ? 'console-notification-message-strong' : null,
+    ].filter(Boolean).join(' ') || undefined
+
+    return (
+      <span
+        key={`${notification.id}-message-${index}`}
+        className={className}
+      >
+        {index > 0 ? <span className="console-notification-message-separator"> · </span> : null}
+        {part}
+      </span>
+    )
+  })
 }
 
 function getNotificationIcon(kind: ConsoleNotification['kind']) {
