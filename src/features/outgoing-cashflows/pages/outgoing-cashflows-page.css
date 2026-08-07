@@ -339,7 +339,7 @@
 
 .outgoing-detail-row.is-wide {
   grid-column: 1 / -1;
-  grid-template-columns: max-content minmax(42px, 1fr) minmax(0, 62%);
+  grid-template-columns: max-content minmax(42px, 1fr) fit-content(62%);
 }
 
 .outgoing-detail-row__label {
