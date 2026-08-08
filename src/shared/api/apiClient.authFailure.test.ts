@@ -46,6 +46,19 @@ describe('apiRequest auth failure handling', () => {
     expect(unauthorizedEvents).toBe(0)
   })
 
+  it('localizes a known server validation message', async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(400, {
+        Message: 'Region identity is required and child codes must be updated separately.',
+      }),
+    )
+
+    await expect(apiRequest('/regions/update', { method: 'PUT', body: {} })).rejects.toMatchObject({
+      message: 'Необхідно вказати ідентифікатор регіону, а дочірні коди потрібно оновлювати окремо.',
+      status: 400,
+    })
+  })
+
   it('clears the session on 401 after a failed refresh', async () => {
     fetchMock
       .mockResolvedValueOnce(jsonResponse(401, {}))

@@ -31,7 +31,11 @@ export function createEcommerceOrderNotification(
   )?.trim()
   const currencyCode = sale.ClientAgreement?.Agreement?.Currency?.Code?.trim()
   const amount = getFiniteNumber(sale.TotalAmountLocal ?? sale.Order?.TotalAmountLocal)
-  const positions = getFiniteNumber(sale.TotalPositions ?? sale.Order?.OrderItems?.length)
+  const reportedPositions = getFiniteNumber(sale.TotalPositions)
+  const orderItemPositions = sale.Order?.OrderItems?.length
+  const positions = reportedPositions !== undefined && reportedPositions > 0
+    ? reportedPositions
+    : orderItemPositions ?? reportedPositions
   const details = [
     saleNumber,
     clientName,

@@ -86,11 +86,14 @@ HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect() {
   } as DOMRect
 }
 
-if (!window.matchMedia) {
-  window.matchMedia = vi.fn().mockImplementation((query: string) => ({
-    // Test runs do not need animation frames. Advertising reduced motion keeps
-    // Mantine transitions synchronous and prevents their timeout callbacks from
-    // firing after jsdom has already torn the window down.
+// Test runs do not need animation frames. Always replace jsdom's matchMedia:
+// newer jsdom releases expose it, but do not advertise reduced motion. Mantine
+// then leaves transition timers alive after cleanup and React dispatches into a
+// torn-down window during the full test suite.
+Object.defineProperty(window, 'matchMedia', {
+  configurable: true,
+  writable: true,
+  value: vi.fn().mockImplementation((query: string) => ({
     matches: query.includes('prefers-reduced-motion'),
     media: query,
     onchange: null,
@@ -99,8 +102,8 @@ if (!window.matchMedia) {
     addListener: () => {},
     removeListener: () => {},
     dispatchEvent: () => false,
-  }))
-}
+  })),
+})
 
 Object.defineProperty(HTMLElement.prototype, 'offsetWidth', { configurable: true, value: 640 })
 Object.defineProperty(HTMLElement.prototype, 'offsetHeight', { configurable: true, value: 320 })
