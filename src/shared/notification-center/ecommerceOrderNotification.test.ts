@@ -40,6 +40,21 @@ describe('createEcommerceOrderNotification', () => {
     })).toBeNull()
   })
 
+  it('falls back to hydrated order items when the ignored server total is zero', () => {
+    const notification = createEcommerceOrderNotification({
+      Sale: {
+        NetUid: 'sale-1',
+        Order: {
+          OrderItems: [{}, {}],
+          OrderSource: 0,
+        },
+        TotalPositions: 0,
+      },
+    })
+
+    expect(notification?.message).toBe('2 поз.')
+  })
+
   it('ignores malformed ecommerce events without a sale identifier', () => {
     expect(createEcommerceOrderNotification({
       Sale: { Order: { OrderSource: 'Shop' } },

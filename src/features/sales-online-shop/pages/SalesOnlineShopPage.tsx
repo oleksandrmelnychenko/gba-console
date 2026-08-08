@@ -1205,7 +1205,7 @@ export const SalesOnlineShopGridRow = memo(function SalesOnlineShopGridRow({
   )
 })
 
-function SaleDetail({ sale }: { sale: SalesOnlineShopSale }) {
+export function SaleDetail({ sale }: { sale: SalesOnlineShopSale }) {
   const { t } = useI18n()
   const orderItems = Array.isArray(sale.Order?.OrderItems) ? sale.Order.OrderItems : []
   const date = getSaleDate(sale)
@@ -1479,9 +1479,9 @@ function SaleDetailSection({
       <div className="sale-detail-rows">
         {rows.map(([label, value]) => (
           <div key={label} className="sale-detail-row">
-            <span>{label}</span>
+            <span className="sale-detail-row-label">{label}</span>
             {isValidElement(value) ? (
-              value
+              <div className="sale-detail-row-value">{value}</div>
             ) : (
               <OverflowTooltipText strong>{displayValue(value)}</OverflowTooltipText>
             )}
