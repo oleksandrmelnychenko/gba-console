@@ -108,6 +108,19 @@ describe('clientSolvencyApi canonical AI contract', () => {
     await expect(getClientSolvencyScoresBatch([42])).rejects.toBeInstanceOf(SolvencyContractError)
   })
 
+  it('accepts the canonical client NetUID in a batch score', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      results: [score()],
+      errors: [],
+      count: 1,
+      failed: 0,
+    })
+
+    await expect(getClientSolvencyScoresBatch([42])).resolves.toMatchObject({
+      results: [{ client_id: 42, client_net_uid: CLIENT_NET_ID }],
+    })
+  })
+
   it('keeps chart money at cents and proves both turnover timelines are identical', async () => {
     apiRequestMock.mockResolvedValueOnce({
       client_id: 42,

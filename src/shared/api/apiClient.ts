@@ -458,7 +458,7 @@ function getErrorMessage(payload: unknown, status: number, errorMessages?: ApiEr
     const envelope = payload as ApiEnvelope<unknown>
 
     if (typeof envelope.Message === 'string' && envelope.Message) {
-      return envelope.Message
+      return translate(envelope.Message)
     }
   }
 
