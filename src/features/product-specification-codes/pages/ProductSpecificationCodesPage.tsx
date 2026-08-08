@@ -25,6 +25,7 @@ import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE, PAGINATOR_PAGE_SIZE_OPTIONS } from '../../../shared/ui/paginator/paginatorPageSize'
 import { getProductSpecifications, uploadSpecificationCodesFile } from '../api/productSpecificationCodesApi'
 import { ChangeProductSpecificationPanel } from '../components/ChangeProductSpecificationPanel'
+import { getProductSpecificationDisplayName } from '../productSpecificationDisplay'
 import type { ProductSpecification, SpecificationCodeUploadResult } from '../types'
 import './product-specification-codes-page.css'
 
@@ -368,10 +369,10 @@ function useProductSpecificationColumns(
         header: 'Назва товару',
         width: 320,
         minWidth: 220,
-        accessor: (specification) => specification.Name,
+        accessor: getProductSpecificationDisplayName,
         cell: (specification) => (
           <Text className="product-specification-name-cell" lineClamp={2}>
-            {displayValue(specification.Name)}
+            {displayValue(getProductSpecificationDisplayName(specification))}
           </Text>
         ),
       },
