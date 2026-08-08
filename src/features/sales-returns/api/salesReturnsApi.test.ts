@@ -4,6 +4,7 @@ import {
   cancelSaleReturn,
   createDirectSaleReturn,
   createSaleReturn,
+  getSalesForReturn,
   getReturnStorages,
   searchReturnProducts,
 } from './salesReturnsApi'
@@ -57,6 +58,55 @@ describe('sales returns API', () => {
         orderItemNetId: 'order-item-1',
         organizationNetId: 'organization-1',
         status: 6,
+      },
+    })
+  })
+
+  it('bounds the detailed sales search used by the return drawer', async () => {
+    const sales = [{ NetUid: 'sale-1' }]
+
+    apiRequestMock.mockResolvedValueOnce({ Items: sales })
+
+    await expect(
+      getSalesForReturn({
+        clientNetId: 'client-1',
+        from: '2021-08-08',
+        organizationNetId: 'organization-1',
+        to: '2026-08-08',
+        value: ' 6015-01 ',
+      }),
+    ).resolves.toEqual(sales)
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/all/returns/search', {
+      query: {
+        from: '2021-08-08',
+        limit: 50,
+        netId: 'client-1',
+        organizationNetId: 'organization-1',
+        to: '2026-08-08',
+        value: '6015-01',
+      },
+    })
+  })
+
+  it('keeps the automatic unfiltered return search small', async () => {
+    apiRequestMock.mockResolvedValueOnce({ Items: [] })
+
+    await expect(
+      getSalesForReturn({
+        from: '2021-08-08',
+        to: '2026-08-08',
+      }),
+    ).resolves.toEqual([])
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/all/returns/search', {
+      query: {
+        from: '2021-08-08',
+        limit: 10,
+        netId: '',
+        organizationNetId: '',
+        to: '2026-08-08',
+        value: '',
       },
     })
   })
