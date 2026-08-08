@@ -97,9 +97,11 @@ describe('client form API contracts', () => {
       IsSelected: true,
       ClientAgreements: [
         {
+          Id: 10,
           NetUid: 'client-agreement-1',
           Client: { NetUid: 'nested-client', SubClients: [{ NetUid: 'nested-sub-link' }] },
           Agreement: {
+            Id: 11,
             NetUid: 'agreement-1',
             Name: 'Agreement',
             ClientAgreements: [{ NetUid: 'recursive-client-agreement' }],
@@ -183,12 +185,51 @@ describe('client form API contracts', () => {
     expect(savedClientAgreement?.Agreement?.Pricing?.BasePricing).not.toHaveProperty('BasePricing')
   })
 
+  it('does not send temporary NetUids for newly added agreement rows', async () => {
+    const temporaryNetUid = '33333333-3333-4333-8333-333333333333'
+    const client: Client = {
+      Id: 1,
+      NetUid: 'client-net-id',
+      ClientAgreements: [
+        {
+          Id: 10,
+          NetUid: 'client-agreement-1',
+          Agreement: { Id: 11, NetUid: 'agreement-1', Name: 'Persisted agreement' },
+        },
+        {
+          NetUid: temporaryNetUid,
+          Agreement: {
+            Name: 'New agreement',
+            NetUid: temporaryNetUid,
+            TempId: 1,
+          },
+        },
+      ],
+    }
+    apiRequestMock.mockResolvedValueOnce(client)
+
+    await updateClient(client)
+
+    const body = apiRequestMock.mock.calls[0]?.[1]?.body as Client
+    expect(body.ClientAgreements?.[0]).toMatchObject({ Id: 10, NetUid: 'client-agreement-1' })
+    expect(body.ClientAgreements?.[0]?.Agreement).toMatchObject({ Id: 11, NetUid: 'agreement-1' })
+    expect(body.ClientAgreements?.[1]).toEqual({
+      Agreement: { Name: 'New agreement' },
+    })
+    expect(client.ClientAgreements?.[1]).toMatchObject({
+      NetUid: temporaryNetUid,
+      Agreement: { NetUid: temporaryNetUid, TempId: 1 },
+    })
+  })
+
   it('strips unchanged product group discounts from client save payloads', async () => {
     const client: Client = {
       NetUid: 'client-net-id',
       ClientAgreements: [
         {
-          Agreement: { NetUid: 'agreement-1' },
+          Id: 10,
+          NetUid: 'client-agreement-1',
+          Agreement: { Id: 11, NetUid: 'agreement-1' },
           ProductGroupDiscounts: [
             {
               DiscountRate: 5,
@@ -214,7 +255,13 @@ describe('client form API contracts', () => {
       method: 'POST',
       body: {
         NetUid: 'client-net-id',
-        ClientAgreements: [{ Agreement: { NetUid: 'agreement-1' } }],
+        ClientAgreements: [
+          {
+            Id: 10,
+            NetUid: 'client-agreement-1',
+            Agreement: { Id: 11, NetUid: 'agreement-1' },
+          },
+        ],
       },
       dedupe: false,
       headers: clientUpdateHeaders,
@@ -226,7 +273,9 @@ describe('client form API contracts', () => {
       NetUid: 'client-net-id',
       ClientAgreements: [
         {
-          Agreement: { NetUid: 'agreement-1' },
+          Id: 10,
+          NetUid: 'client-agreement-1',
+          Agreement: { Id: 11, NetUid: 'agreement-1' },
           ProductGroupDiscounts: [
             {
               DiscountRate: 12,
@@ -251,7 +300,9 @@ describe('client form API contracts', () => {
         NetUid: 'client-net-id',
         ClientAgreements: [
           {
-            Agreement: { NetUid: 'agreement-1' },
+            Id: 10,
+            NetUid: 'client-agreement-1',
+            Agreement: { Id: 11, NetUid: 'agreement-1' },
             ProductGroupDiscounts: [
               {
                 DiscountRate: 12,
