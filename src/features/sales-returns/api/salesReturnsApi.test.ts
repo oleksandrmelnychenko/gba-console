@@ -89,6 +89,28 @@ describe('sales returns API', () => {
     })
   })
 
+  it('keeps the automatic unfiltered return search small', async () => {
+    apiRequestMock.mockResolvedValueOnce({ Items: [] })
+
+    await expect(
+      getSalesForReturn({
+        from: '2021-08-08',
+        to: '2026-08-08',
+      }),
+    ).resolves.toEqual([])
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/all/returns/search', {
+      query: {
+        from: '2021-08-08',
+        limit: 10,
+        netId: '',
+        organizationNetId: '',
+        to: '2026-08-08',
+        value: '',
+      },
+    })
+  })
+
   it('sends the durable operation key when creating a sale return', async () => {
     const payload = {
       Client: { Id: 10 },
