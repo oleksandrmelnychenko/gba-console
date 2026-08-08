@@ -4,6 +4,7 @@ import { readSession } from '../../../shared/auth/session'
 import {
   addResale,
   exportResaleAvailabilities,
+  getResaleByNetId,
   getResaleAvailabilityFilterOptions,
   getResaleClientAgreements,
   updateResale,
@@ -95,6 +96,49 @@ describe('resales API contracts', () => {
       },
       randomUUID: randomUUIDMock,
     } as unknown as Crypto)
+  })
+
+  it('sends an explicit empty JSON model when opening a resale', async () => {
+    const netId = '41bb91ef-9828-420e-940c-aa25a5009b10'
+    const detail = {
+      ReSale: {
+        NetUid: netId,
+      },
+      ReSaleItemModels: [],
+    }
+
+    apiRequestMock.mockResolvedValueOnce(detail)
+
+    await expect(getResaleByNetId(netId)).resolves.toEqual({ data: detail })
+    expect(apiRequestMock).toHaveBeenCalledWith('/resales/updated/get', {
+      body: {},
+      method: 'POST',
+      query: {
+        netId,
+      },
+    })
+  })
+
+  it('preserves the populated model when recalculating resale details', async () => {
+    const netId = '41bb91ef-9828-420e-940c-aa25a5009b10'
+    const detail = {
+      ReSale: {
+        Comment: 'Updated comment',
+        NetUid: netId,
+      },
+      ReSaleItemModels: [],
+    }
+
+    apiRequestMock.mockResolvedValueOnce(detail)
+
+    await expect(getResaleByNetId(netId, detail)).resolves.toEqual({ data: detail })
+    expect(apiRequestMock).toHaveBeenCalledWith('/resales/updated/get', {
+      body: detail,
+      method: 'POST',
+      query: {
+        netId,
+      },
+    })
   })
 
   it('exports resale availability documents with PDF-first aliases preserved', async () => {

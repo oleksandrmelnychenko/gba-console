@@ -71,7 +71,7 @@ export async function getResaleByNetId(
   updatedReSaleModel?: UpdatedResaleModel,
 ): Promise<ResaleActionResult<UpdatedResaleModel>> {
   const result = await apiRequest<unknown>('/resales/updated/get', {
-    ...(updatedReSaleModel ? { body: updatedReSaleModel } : {}),
+    body: updatedReSaleModel ?? {},
     method: 'POST',
     query: {
       netId,
