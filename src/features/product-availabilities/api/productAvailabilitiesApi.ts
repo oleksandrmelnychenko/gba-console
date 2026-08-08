@@ -12,11 +12,11 @@ export async function getProductAvailabilities(
 ): Promise<ProductAvailabilitiesResponse> {
   const result = await apiRequest<unknown>('/consignments/info/availability/filtered', {
     query: {
-      from: params.from,
+      from: params.from?.trim() || undefined,
       limit: params.limit,
       offset: params.offset,
       storageNetId: params.storageNetId,
-      to: params.to,
+      to: params.to?.trim() || undefined,
       vendorCode: params.vendorCode?.trim() || '',
     },
   })
@@ -35,9 +35,9 @@ export async function exportProductAvailabilities(
 ): Promise<ProductAvailabilityExportDocument> {
   const result = await apiRequest<unknown>('/consignments/info/availability/filtered/export', {
     query: {
-      from: params.from,
+      from: params.from?.trim() || undefined,
       storageNetId: params.storageNetId,
-      to: params.to,
+      to: params.to?.trim() || undefined,
       vendorCode: params.vendorCode?.trim() || '',
     },
   })

@@ -51,11 +51,11 @@ export type ConsignmentAvailabilityItem = EntityFields & {
 }
 
 export type ProductAvailabilitiesSearchParams = {
-  from: string
+  from?: string
   limit: number
   offset: number
   storageNetId: string
-  to: string
+  to?: string
   vendorCode?: string
 }
 

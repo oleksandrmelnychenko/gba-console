@@ -60,8 +60,8 @@ function useProductAvailabilitiesPageModel() {
   const [availabilities, setAvailabilities] = useValueState<ConsignmentAvailabilityItem[]>([])
   const [storages, setStorages] = useValueState<Storage[]>([])
   const [selectedStorageNetId, setSelectedStorageNetId] = useValueState('')
-  const [dateFrom, setDateFrom] = useValueState(getDefaultDateFrom)
-  const [dateTo, setDateTo] = useValueState(getDefaultDateTo)
+  const [dateFrom, setDateFrom] = useValueState('')
+  const [dateTo, setDateTo] = useValueState('')
   const [searchDraft, setSearchDraft] = useValueState('')
   const [searchValue, setSearchValue] = useValueState('')
   const [debouncedSearch] = useDebouncedValue(searchDraft, 400)
@@ -156,11 +156,11 @@ function useProductAvailabilitiesPageModel() {
 
       try {
         const response = await getProductAvailabilities({
-          from: toDateFromBound(dateFrom),
+          from: dateFrom || undefined,
           limit: pageSize,
           offset,
           storageNetId: selectedStorageNetId,
-          to: toDateToBound(dateTo),
+          to: dateTo || undefined,
           vendorCode: searchValue,
         })
 
@@ -216,8 +216,8 @@ function useProductAvailabilitiesPageModel() {
 
   function resetFilters() {
     setPage(1)
-    setDateFrom(getDefaultDateFrom())
-    setDateTo(getDefaultDateTo())
+    setDateFrom('')
+    setDateTo('')
     setSearchDraft('')
     setSearchValue('')
     setSelectedStorageNetId(storageOptions[0]?.value || '')
@@ -235,9 +235,9 @@ function useProductAvailabilitiesPageModel() {
 
     try {
       const document = await exportProductAvailabilities({
-        from: toDateFromBound(dateFrom),
+        from: dateFrom || undefined,
         storageNetId: selectedStorageNetId,
-        to: toDateToBound(dateTo),
+        to: dateTo || undefined,
         vendorCode: searchValue,
       })
 
@@ -601,38 +601,11 @@ function normalizeProductAvailabilityTablePageSize(value?: string | null) {
     : DEFAULT_PAGINATOR_PAGE_SIZE
 }
 
-function getDefaultDateFrom(): string {
-  const date = new Date()
-  date.setDate(date.getDate() - 7)
-
-  return formatDateInputValue(date)
-}
-
-function getDefaultDateTo(): string {
-  return formatDateInputValue(new Date())
-}
-
-function formatDateInputValue(date: Date): string {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-
-  return `${year}-${month}-${day}`
-}
-
-function toDateFromBound(value: string): string {
-  const date = new Date(`${value}T00:00:00.000`)
-
-  return date.toISOString()
-}
-
-function toDateToBound(value: string): string {
-  const date = new Date(`${value}T23:59:59.999`)
-
-  return date.toISOString()
-}
-
 function getFilterError(dateFrom: string, dateTo: string): string | null {
+  if (!dateFrom && !dateTo) {
+    return null
+  }
+
   if (!dateFrom || !dateTo) {
     return translate('Вкажіть дату початку та дату завершення')
   }
