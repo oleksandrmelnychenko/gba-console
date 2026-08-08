@@ -4,11 +4,9 @@ import {
   Box,
   Button,
   Card,
-  Divider,
   Group,
   MultiSelect,
   Select,
-  SimpleGrid,
   Stack,
   Text,
   TextInput,
@@ -1346,42 +1344,78 @@ function BatchDetails({
   }, [batch, dateFrom, dateTo, storageNetIds, supplierNetId, t])
 
   return (
-    <Stack gap="md">
-      <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+    <Stack className="product-remains-detail" gap="md">
+      <div className="app-detail-hero">
+        <div>
+          <span className="app-detail-eyebrow">{t('Деталі партії')}</span>
+          <div className="app-detail-title">
+            <strong>{displayValue(visibleBatch.ProductIncomeNumber)}</strong>
+            <span>
+              {[formatDate(visibleBatch.FromDate), visibleBatch.SupplierName, visibleBatch.OrganizationName]
+                .filter(Boolean)
+                .join(' · ')}
+            </span>
+          </div>
+        </div>
+        <div className="app-detail-hero__side">
+          <div className="app-detail-metrics">
+            <div className="app-detail-metric">
+              <span>{t('Сума gross')}</span>
+              <strong>{formatMoney(visibleBatch.TotalGrossPrice)}</strong>
+            </div>
+            <div className="app-detail-metric">
+              <span>{t('Облік gross')}</span>
+              <strong>{formatMoney(visibleBatch.AccountingTotalGrossPrice)}</strong>
+            </div>
+            <div className="app-detail-metric">
+              <span>{t('Вага')}</span>
+              <strong>{formatAmount(visibleBatch.TotalWeight)}</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="app-detail-grid">
         <DetailItem label="Дата" value={formatDate(visibleBatch.FromDate)} />
         <DetailItem label="Постачальник" value={displayValue(visibleBatch.SupplierName)} />
         <DetailItem label="Номер приходу" value={displayValue(visibleBatch.ProductIncomeNumber)} />
         <DetailItem label="Інвойс" value={displayValue(visibleBatch.InvoiceNumber)} />
         <DetailItem label="Організація" value={displayValue(visibleBatch.OrganizationName)} />
-        <DetailItem label="Сума gross" value={formatMoney(visibleBatch.TotalGrossPrice)} />
-        <DetailItem label="Облік gross" value={formatMoney(visibleBatch.AccountingTotalGrossPrice)} />
-        <DetailItem label="Вага" value={formatAmount(visibleBatch.TotalWeight)} />
-      </SimpleGrid>
-      <Divider />
+      </div>
       {error && (
         <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {error}
         </Alert>
       )}
-      {items.length || isLoading ? (
-        <DataTable
-          columns={columns}
-          data={items}
-          defaultLayout={BATCH_DETAILS_TABLE_DEFAULT_LAYOUT}
-          emptyText={t('Позицій партії не знайдено')}
-          getRowId={(item, index) => String(item.NetUid || item.Id || `${getVendorCode(item.Product)}-${index}`)}
-          isLoading={isLoading}
-          layoutVersion="product-remains-batch-details-table-1"
-          loadingText={t('Завантаження позицій партії')}
-          maxHeight="calc(100vh - 320px)"
-          minWidth={1080}
-          tableId="product-remains-batch-details"
-        />
-      ) : (
-        <Text c="dimmed" size="sm">
-          {t('У відповіді немає позицій партії')}
-        </Text>
-      )}
+      <Stack className="product-remains-detail__table-section" gap="xs">
+        <div className="app-detail-section-head">
+          <Text className="app-section-title" fw={600} size="sm">
+            {t('Позиції')}
+          </Text>
+          <span className="app-role-pill is-gray">{items.length}</span>
+        </div>
+        {items.length || isLoading ? (
+          <DataTable
+            columns={columns}
+            data={items}
+            defaultLayout={BATCH_DETAILS_TABLE_DEFAULT_LAYOUT}
+            emptyText={t('Позицій партії не знайдено')}
+            fillAvailableWidth
+            getRowId={(item, index) => String(item.NetUid || item.Id || `${getVendorCode(item.Product)}-${index}`)}
+            isLoading={isLoading}
+            layoutVersion="product-remains-batch-details-table-2"
+            loadingText={t('Завантаження позицій партії')}
+            maxHeight="calc(100vh - 390px)"
+            minWidth={1080}
+            showLayoutControls
+            tableId="product-remains-batch-details"
+          />
+        ) : (
+          <Text c="dimmed" size="sm">
+            {t('У відповіді немає позицій партії')}
+          </Text>
+        )}
+      </Stack>
     </Stack>
   )
 }
@@ -1438,6 +1472,7 @@ type ProductRemainMovementsAction =
 function ProductRemainMovementsPanel({ row }: { row: RemainingConsignment }) {
   const { t } = useI18n()
   const consignmentItemNetId = row.ConsignmentItemNetId?.trim()
+  const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const [state, dispatch] = useReducer(
     productRemainMovementsReducer,
     Boolean(consignmentItemNetId),
@@ -1488,59 +1523,82 @@ function ProductRemainMovementsPanel({ row }: { row: RemainingConsignment }) {
   }, [consignmentItemNetId, dateFrom, dateTo, filterError, reloadKey, t])
 
   return (
-    <Stack gap="md">
-      <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
-        <DetailItem label="Код товару" value={getVendorCode(row.Product)} />
-        <DetailItem label="Товар" value={getProductName(row.Product)} />
-        <DetailItem label="Номер приходу" value={displayValue(row.ProductIncomeNumber)} />
-        <DetailItem label="Склад" value={displayValue(row.StorageName)} />
-      </SimpleGrid>
-      <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
-        <TextInput
-          label={t('Від')}
-          type="date"
-          value={dateFrom}
-          w={150}
-          onChange={(event) => dispatch({ type: 'dateFromChanged', value: event.currentTarget.value })}
-        />
-        <TextInput
-          label={t('До')}
-          type="date"
-          value={dateTo}
-          w={150}
-          onChange={(event) => dispatch({ type: 'dateToChanged', value: event.currentTarget.value })}
-        />
-        <Button
-          color="gray"
-          disabled={Boolean(missingNetIdError || filterError)}
-          leftSection={<RefreshCw size={18} />}
-          loading={isLoading}
-          variant="light"
-          onClick={() => dispatch({ type: 'reloadRequested' })}
-        >
-          {t('Оновити')}
-        </Button>
-      </Group>
-      {activeError && (
-        <Alert color={missingNetIdError || filterError ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">
-          {activeError}
-        </Alert>
-      )}
-      {!activeError && (
-        <DataTable
-          columns={columns}
-          data={rows}
-          defaultLayout={PRODUCT_REMAIN_MOVEMENTS_TABLE_DEFAULT_LAYOUT}
-          emptyText={t('Руху товару не знайдено')}
-          getRowId={getMovementRowId}
-          isLoading={isLoading}
-          layoutVersion="product-remain-movements-table-1"
-          loadingText={t('Завантаження руху товару')}
-          maxHeight="calc(100vh - 360px)"
-          minWidth={1620}
-          tableId="product-remain-movements"
-        />
-      )}
+    <Stack className="product-remains-detail" gap="md">
+      <div className="product-remains-detail__tree">
+        <section className="product-remains-detail__section">
+          <div className="product-remains-detail__section-head">
+            <Text>{t('Дані товару')}</Text>
+          </div>
+          <div className="app-detail-grid product-remains-detail__meta-grid">
+            <DetailItem label="Код товару" value={displayValue(getVendorCode(row.Product))} />
+            <DetailItem label="Товар" value={displayValue(getProductName(row.Product))} />
+            <DetailItem label="Номер приходу" value={displayValue(row.ProductIncomeNumber)} />
+            <DetailItem label="Склад" value={displayValue(row.StorageName)} />
+          </div>
+        </section>
+
+        <section className="product-remains-detail__section">
+          <div className="product-remains-detail__section-head">
+            <Text>{t('Рух товару')}</Text>
+          </div>
+          <Stack className="product-remains-detail__section-body" gap="sm">
+            <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row product-remains-detail__filter-row">
+              <TextInput
+                label={t('Від')}
+                type="date"
+                value={dateFrom}
+                w={150}
+                onChange={(event) => dispatch({ type: 'dateFromChanged', value: event.currentTarget.value })}
+              />
+              <TextInput
+                label={t('До')}
+                type="date"
+                value={dateTo}
+                w={150}
+                onChange={(event) => dispatch({ type: 'dateToChanged', value: event.currentTarget.value })}
+              />
+              <Button
+                color="gray"
+                disabled={Boolean(missingNetIdError || filterError)}
+                leftSection={<RefreshCw size={18} />}
+                loading={isLoading}
+                variant="light"
+                onClick={() => dispatch({ type: 'reloadRequested' })}
+              >
+                {t('Оновити')}
+              </Button>
+              <div ref={setTableToolbarSlot} className="app-filter-table-toolbar-slot" />
+            </Group>
+            {activeError && (
+              <Alert
+                color={missingNetIdError || filterError ? 'yellow' : 'red'}
+                icon={<CircleAlert size={18} />}
+                variant="light"
+              >
+                {activeError}
+              </Alert>
+            )}
+            {!activeError && (
+              <DataTable
+                columns={columns}
+                data={rows}
+                defaultLayout={PRODUCT_REMAIN_MOVEMENTS_TABLE_DEFAULT_LAYOUT}
+                emptyText={t('Руху товару не знайдено')}
+                fillAvailableWidth
+                getRowId={getMovementRowId}
+                isLoading={isLoading}
+                layoutVersion="product-remain-movements-table-2"
+                loadingText={t('Завантаження руху товару')}
+                maxHeight="calc(100vh - 420px)"
+                minWidth={1620}
+                showLayoutControls
+                tableId="product-remain-movements"
+                toolbarPortalTarget={tableToolbarSlot}
+              />
+            )}
+          </Stack>
+        </section>
+      </div>
     </Stack>
   )
 }
