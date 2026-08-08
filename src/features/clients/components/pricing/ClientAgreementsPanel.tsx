@@ -250,7 +250,13 @@ export function ClientAgreementsPanel({
               return null
             }
 
-            const key = String(agreement.NetUid || agreement.Id || clientAgreement.NetUid || index)
+            const key = String(
+              agreement.NetUid
+              || agreement.Id
+              || agreement.TempId
+              || clientAgreement.NetUid
+              || index,
+            )
             const isHighlighted = Boolean(
               selectedAgreementNetId && agreement.NetUid === selectedAgreementNetId,
             )

@@ -25,6 +25,7 @@ import {
 import { exportAgreementDocument, exportAgreementWarrantyConditions } from '../../api/clientAgreementsApi'
 import { uploadClientContract } from '../../api/clientCabinetApi'
 import { ClientAgreementsPanel } from './ClientAgreementsPanel'
+import { appendNewClientAgreementDraft } from './clientAgreementDraft'
 import { DiscountsTree, type DiscountsTreeDraft } from './DiscountsTree'
 import { ManagerPicker } from './ManagerPicker'
 import { applyPendingDiscountDraft } from './pendingDiscountDraft'
@@ -85,27 +86,6 @@ function isSameAgreement(left?: Agreement, right?: Agreement): boolean {
   }
 
   return left === right
-}
-
-function createNetUid(): string {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return crypto.randomUUID()
-  }
-
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (character) => {
-    const random = (Math.random() * 16) | 0
-    const value = character === 'x' ? random : (random & 0x3) | 0x8
-
-    return value.toString(16)
-  })
-}
-
-function nextTempId(clientAgreements: ClientAgreement[]): number {
-  const used = clientAgreements
-    .map((clientAgreement) => clientAgreement.Agreement?.TempId)
-    .filter((value): value is number => typeof value === 'number')
-
-  return (used.length ? Math.max(...used) : 0) + 1
 }
 
 const RETAIL_CLIENT_TYPE_ROLE_ID = 6
@@ -266,19 +246,9 @@ export function PricingPanel({
           : clientAgreement,
       )
     } else {
-      const generatedNetUid = agreement.NetUid || createNetUid()
-      savedAgreement = {
-        ...agreement,
-        TempId: nextTempId(existing),
-        NetUid: generatedNetUid,
-      }
-      nextAgreements = [
-        ...existing,
-        {
-          NetUid: generatedNetUid,
-          Agreement: savedAgreement,
-        },
-      ]
+      const draft = appendNewClientAgreementDraft(existing, agreement)
+      savedAgreement = draft.agreement
+      nextAgreements = draft.clientAgreements
     }
 
     if (savedAgreement.IsActive) {
