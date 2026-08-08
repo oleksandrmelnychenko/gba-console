@@ -25,7 +25,9 @@ const CLIENT_SEARCH_LIMIT = 20
 const CLIENT_SEARCH_SQL = 'RegionCode.Value/Client.FullName/Client.USREOU'
 const PRODUCT_RETURN_SEARCH_MODE = 5
 const PRODUCT_RETURN_SORT_MODE = 2
-const SALES_FOR_RETURN_LIMIT = 50
+const FILTERED_SALES_FOR_RETURN_LIMIT = 50
+const SCOPED_SALES_FOR_RETURN_LIMIT = 20
+const UNFILTERED_SALES_FOR_RETURN_LIMIT = 10
 
 export async function getSaleReturns(params: SalesReturnsSearchParams): Promise<SalesReturn[]> {
   const result = await apiRequest<unknown>('/sales/returns/all/filtered', {
@@ -112,14 +114,21 @@ export async function createDirectSaleReturn(
 }
 
 export async function getSalesForReturn(params: SalesForReturnSearchParams): Promise<SalesReturnSale[]> {
+  const value = params.value?.trim() || ''
+  const limit = value
+    ? FILTERED_SALES_FOR_RETURN_LIMIT
+    : params.clientNetId || params.organizationNetId
+      ? SCOPED_SALES_FOR_RETURN_LIMIT
+      : UNFILTERED_SALES_FOR_RETURN_LIMIT
+
   const result = await apiRequest<unknown>('/sales/all/returns/search', {
     query: {
       from: params.from,
-      limit: SALES_FOR_RETURN_LIMIT,
+      limit,
       netId: params.clientNetId || '',
       organizationNetId: params.organizationNetId || '',
       to: params.to,
-      value: params.value?.trim() || '',
+      value,
     },
   })
 
