@@ -2890,7 +2890,7 @@ function ResaleProcessDrawer({
   )
 }
 
-function ResaleClientSelect({
+export function ResaleClientSelect({
   disabled,
   label,
   selectedClient,
@@ -2910,6 +2910,7 @@ function ResaleClientSelect({
 
   useEffect(() => {
     const controller = new AbortController()
+    let cancelled = false
 
     async function loadClients() {
       setLoading(true)
@@ -2917,19 +2918,24 @@ function ResaleClientSelect({
       try {
         const nextClients = await searchResaleClients(search, controller.signal)
 
-        setClients((currentClients) => mergeClients(selectedClient ? [selectedClient, ...nextClients] : nextClients, currentClients))
+        if (!cancelled) {
+          setClients(mergeClients(selectedClient ? [selectedClient, ...nextClients] : nextClients))
+        }
       } catch (error) {
-        if (!(error instanceof DOMException && error.name === 'AbortError')) {
+        if (!cancelled && !(error instanceof DOMException && error.name === 'AbortError')) {
           setClients(selectedClient ? [selectedClient] : [])
         }
       } finally {
-        setLoading(false)
+        if (!cancelled) {
+          setLoading(false)
+        }
       }
     }
 
     void loadClients()
 
     return () => {
+      cancelled = true
       controller.abort()
     }
   }, [search, selectedClient, setClients, setLoading])
@@ -2940,6 +2946,7 @@ function ResaleClientSelect({
       clearable
       data={clientOptions}
       disabled={disabled}
+      filter={({ options }) => options}
       label={label}
       limit={20}
       nothingFoundMessage={t('Клієнтів не знайдено')}
@@ -3576,11 +3583,10 @@ function buildClientOptions(clients: ResaleClient[]): { label: string; value: st
   }, [])
 }
 
-function mergeClients(nextClients: ResaleClient[], currentClients: ResaleClient[]): ResaleClient[] {
-  const merged = [...nextClients, ...currentClients]
+function mergeClients(clients: ResaleClient[]): ResaleClient[] {
   const seen = new Set<string>()
 
-  return merged.filter((client) => {
+  return clients.filter((client) => {
     const key = client.NetUid || String(client.Id || '')
 
     if (!key || seen.has(key)) {
