@@ -47,4 +47,20 @@ describe('ResaleClientSelect', () => {
     expect(await screen.findByText('Клієнт Альфа')).not.toBeNull()
     expect(screen.queryByText('Клієнтів не знайдено')).toBeNull()
   })
+
+  it('does not retain clients from an older search when the server returns no matches', async () => {
+    renderClientSelect()
+
+    const clientSelect = screen.getByRole('combobox', { name: 'Клієнт' })
+    fireEvent.change(clientSelect, { target: { value: '7' } })
+    expect(await screen.findByText('Клієнт Альфа')).not.toBeNull()
+
+    fireEvent.change(clientSelect, { target: { value: 'missing' } })
+
+    await waitFor(() => {
+      expect(searchResaleClientsMock).toHaveBeenCalledWith('missing', expect.any(AbortSignal))
+      expect(screen.queryByText('Клієнт Альфа')).toBeNull()
+    })
+    expect(await screen.findByText('Клієнтів не знайдено')).not.toBeNull()
+  })
 })
