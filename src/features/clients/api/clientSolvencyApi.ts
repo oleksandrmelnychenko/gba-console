@@ -127,9 +127,6 @@ function normalizeScore(value: unknown, expectedNetId: string | null, path: stri
   if (expectedNetId !== null && clientNetUid !== expectedNetId) {
     throw new SolvencyContractError(`${path}.client_net_uid`, 'does not echo the requested client')
   }
-  if (expectedNetId === null && clientNetUid !== null) {
-    throw new SolvencyContractError(`${path}.client_net_uid`, 'batch score must not claim a NetUID')
-  }
 
   const currencyBreakdown = score.currency_breakdown === null
     ? null

@@ -26,7 +26,7 @@ const CLIENT_SAVE_OMIT_KEYS = [
 ]
 
 const CLIENT_AGREEMENT_SAVE_OMIT_KEYS = ['Client']
-const AGREEMENT_SAVE_OMIT_KEYS = ['ClientAgreements', 'ClientInDebts', 'IsSelected']
+const AGREEMENT_SAVE_OMIT_KEYS = ['ClientAgreements', 'ClientInDebts', 'IsSelected', 'TempId']
 
 export async function getClientById(netId: string): Promise<Client | null> {
   const result = await apiRequest<unknown>('/clients/get', {
@@ -100,7 +100,7 @@ export function prepareClientSavePayload(client: Client): Client {
 }
 
 function prepareClientAgreementSavePayload(clientAgreement: ClientAgreement): ClientAgreement {
-  const basePayload = omitKeys(clientAgreement, CLIENT_AGREEMENT_SAVE_OMIT_KEYS)
+  const basePayload = omitNewEntityNetUid(clientAgreement, CLIENT_AGREEMENT_SAVE_OMIT_KEYS)
   const {
     Agreement: agreement,
     __ProductGroupDiscountsChanged: discountsChanged,
@@ -124,7 +124,7 @@ function prepareClientAgreementSavePayload(clientAgreement: ClientAgreement): Cl
 }
 
 function prepareAgreementSavePayload(agreement: Agreement): Agreement {
-  const payload = omitKeys(agreement, AGREEMENT_SAVE_OMIT_KEYS)
+  const payload = omitNewEntityNetUid(agreement, AGREEMENT_SAVE_OMIT_KEYS)
 
   return {
     ...payload,
@@ -227,4 +227,8 @@ function omitKeys<T extends object>(value: T, keys: readonly string[]): T {
   })
 
   return payload as T
+}
+
+function omitNewEntityNetUid<T extends { Id?: number }>(value: T, keys: readonly string[]): T {
+  return omitKeys(value, typeof value.Id === 'number' && value.Id > 0 ? keys : [...keys, 'NetUid'])
 }
