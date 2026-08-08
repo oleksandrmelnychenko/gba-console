@@ -324,7 +324,7 @@
   min-width: 24px;
 }
 
-.sale-detail-row span {
+.sale-detail-row-label {
   color: var(--mantine-color-gray-8);
   font-size: 12px;
   font-weight: 500;
@@ -334,7 +334,7 @@
   min-width: 0;
 }
 
-.sale-detail-row strong {
+.sale-detail-row > strong {
   color: var(--mantine-color-gray-9);
   font-size: 12px;
   font-weight: 600;
@@ -346,6 +346,25 @@
   text-align: right;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.sale-detail-row-value {
+  align-items: center;
+  color: var(--mantine-color-gray-9);
+  display: flex;
+  font-size: 12px;
+  font-weight: 600;
+  grid-column: 3;
+  grid-row: 1;
+  justify-content: flex-end;
+  line-height: 1.25;
+  min-width: 0;
+  overflow: hidden;
+  text-align: right;
+}
+
+.sale-detail-row-value > * {
+  max-width: 100%;
 }
 
 .sale-detail-comment {

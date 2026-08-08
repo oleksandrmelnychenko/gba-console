@@ -4,11 +4,42 @@ import { describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { theme } from '../../../shared/theme/theme'
 import type { SalesOnlineShopSale } from '../types'
-import { SalesOnlineShopGridRow } from './SalesOnlineShopPage'
+import { SaleDetail, SalesOnlineShopGridRow } from './SalesOnlineShopPage'
 
 vi.mock('../../sales-ukraine/components/SaleDocumentsMenu', () => ({
   SaleDocumentsMenu: () => <button type="button">Документи</button>,
 }))
+
+describe('SaleDetail', () => {
+  it('places the transporter icon and name in the value column', () => {
+    const sale = {
+      ClientAgreement: { Agreement: { Name: 'Договір' }, Client: { FullName: 'Клієнт' } },
+      NetUid: 'dc8d6ccc-e2f3-4011-a73f-9be8a570b2ae',
+      Order: { OrderItems: [] },
+      SaleNumber: { Value: 'КАв00002566' },
+      Transporter: { Name: 'Нова пошта' },
+    } as unknown as SalesOnlineShopSale
+
+    render(
+      <MantineProvider theme={theme}>
+        <I18nProvider>
+          <SaleDetail sale={sale} />
+        </I18nProvider>
+      </MantineProvider>,
+    )
+
+    const label = screen.getByText('Перевізник')
+    const row = label.closest('.sale-detail-row')
+    const value = row?.querySelector('.sale-detail-row-value')
+    const icon = screen.getByRole('img', { name: 'Нова пошта' })
+
+    expect(value).toBeTruthy()
+    expect(label.classList.contains('sale-detail-row-label')).toBe(true)
+    expect(value?.textContent).toBe('Нова пошта')
+    expect(value?.contains(icon)).toBe(true)
+    expect(label.parentElement).toBe(row)
+  })
+})
 
 describe('SalesOnlineShopGridRow shipment acceptance', () => {
   it('labels the action according to IsAcceptedToPacking=true semantics', () => {
