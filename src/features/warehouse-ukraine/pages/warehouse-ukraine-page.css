@@ -353,7 +353,7 @@
   justify-content: center;
 }
 
-.warehouse-shipment-inline-number .mantine-Input-input {
+.warehouse-shipment-inline-money .mantine-Input-input {
   font-family: var(--font-mono);
   font-weight: 600;
   letter-spacing: 0;

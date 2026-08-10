@@ -2250,7 +2250,7 @@ function useAllShipmentColumns(indexMap: Map<ShipmentList, number>): DataTableCo
         align: 'right',
         accessor: (item) => sumQtyPlaces(item.ShipmentListItems),
         cell: (item) => (
-          <Text className="warehouse-shipment-cell-mono" ta="right">
+          <Text ta="right">
             {displayValue(sumQtyPlaces(item.ShipmentListItems))}
           </Text>
         ),
@@ -2625,7 +2625,7 @@ function useEditShipmentColumns(model: EditShipmentColumnsModel): DataTableColum
         accessor: (item) => item.Sale.ShippingAmount,
         cell: (item) => (
           <TextInput
-            className="warehouse-shipment-inline-number"
+            className="warehouse-shipment-inline-money"
             size="xs"
             disabled={!model.canEdit}
             type="number"
