@@ -299,7 +299,7 @@ export function PaymentAccountsPage() {
 
           <Group className="payment-accounts-total-footer" gap="xs" justify="flex-end" wrap="nowrap">
             <Badge className="app-role-pill is-gray" variant="light">
-              {t('Всього в EUR')}: {formatMoney(totalEuroAmount)}
+              {t('Всього в')} <span className="app-money">EUR</span>: <span className="app-money">{formatMoney(totalEuroAmount)}</span>
             </Badge>
           </Group>
         </Stack>

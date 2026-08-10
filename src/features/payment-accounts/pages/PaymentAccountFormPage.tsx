@@ -1827,7 +1827,7 @@ export function PaymentAccountExchangeModal({
                 }))
               }}
             />
-            <InfoCell label={t('Сума після конвертації')} value={convertedAmountLabel} />
+            <InfoCell label={t('Сума після конвертації')} mono value={convertedAmountLabel} />
             <TextInput
               disabled={isSubmitting}
               label={t('Вхідний номер')}
@@ -2749,13 +2749,13 @@ function openRegisterScopedPage(
   navigate(`${path}?${params.toString()}`)
 }
 
-function InfoCell({ label, value }: { label: string; value: ReactNode }) {
+function InfoCell({ label, mono = false, value }: { label: string; mono?: boolean; value: ReactNode }) {
   return (
     <Stack gap={2}>
       <Text c="dimmed" size="xs">
         {label}
       </Text>
-      <Text fw={600}>{value || '—'}</Text>
+      <Text className={mono ? 'app-money' : undefined} fw={600}>{value || '—'}</Text>
     </Stack>
   )
 }
