@@ -537,8 +537,8 @@ function RecommendationsList({
               <Table.Td>
                 <RecommendationSourceBadge product={product} />
               </Table.Td>
-              <Table.Td>{formatPrice(product)}</Table.Td>
-              <Table.Td>{formatAvailability(product, isVatSale)}</Table.Td>
+              <Table.Td className="app-table-number">{formatPrice(product)}</Table.Td>
+              <Table.Td className="app-table-number">{formatAvailability(product, isVatSale)}</Table.Td>
               <Table.Td>{displayValue(product.Description)}</Table.Td>
               {onExclude && (
                 <Table.Td>
