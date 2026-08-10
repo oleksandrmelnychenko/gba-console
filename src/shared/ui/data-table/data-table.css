@@ -274,6 +274,15 @@
   vertical-align: middle;
 }
 
+/* Prices, monetary totals and quantities share the project's tabular number
+   treatment. The class is assigned from column metadata by DataTable, so it
+   follows reordered/hidden columns and never depends on nth-child selectors. */
+.data-table-numeric-cell,
+.data-table-numeric-cell :where(*) {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
 .data-table-density-compact .data-table-cell {
   font-size: 12px;
   line-height: 1.2;

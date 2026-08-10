@@ -73,7 +73,7 @@ function DataTableBodyRowInner<TData>({
     return (
       <Table.Td
         key={cell.id}
-        className={`data-table-cell ${meta?.className ?? ''}`}
+        className={createDataCellClassName(meta)}
         style={{
           ...getPinnedStyle(cell.column, 1, pinnedLeftOffset),
           width: columnWidth,
@@ -200,7 +200,7 @@ export function DataTableBody<TData>({
               return (
                 <Table.Td
                   key={column.id}
-                  className={`data-table-cell data-table-skeleton-cell data-table-skeleton-cell-align-${align} ${meta?.className ?? ''}`}
+                  className={`${createDataCellClassName(meta)} data-table-skeleton-cell data-table-skeleton-cell-align-${align}`}
                   style={{
                     ...getPinnedStyle(column, 1, pinnedLeftOffset),
                     width: columnWidth,
@@ -234,7 +234,7 @@ export function DataTableBody<TData>({
               return (
                 <Table.Td
                   key={column.id}
-                  className={`data-table-cell data-table-skeleton-cell data-table-skeleton-cell-align-${align} ${meta?.className ?? ''}`}
+                  className={`${createDataCellClassName(meta)} data-table-skeleton-cell data-table-skeleton-cell-align-${align}`}
                   style={{
                     ...getPinnedStyle(column, 1, pinnedLeftOffset),
                     width: columnWidth,
@@ -279,6 +279,16 @@ export function DataTableBody<TData>({
       ))}
     </Table.Tbody>
   )
+}
+
+function createDataCellClassName(meta?: DataTableColumnMeta): string {
+  return [
+    'data-table-cell',
+    meta?.numeric ? 'data-table-numeric-cell' : '',
+    meta?.className ?? '',
+  ]
+    .filter(Boolean)
+    .join(' ')
 }
 
 function splitRightPinnedCells<TData>(cells: Cell<TData, unknown>[]) {

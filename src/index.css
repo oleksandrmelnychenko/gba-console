@@ -239,6 +239,14 @@ select {
   color: var(--mantine-color-gray-8) !important;
 }
 
+/* Numeric values inside non-DataTable grids. Keep business numbers aligned
+   without changing table labels, descriptions, statuses, or currencies. */
+.app-table-number,
+.app-table-number :where(*) {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
 .app-money-meta {
   color: var(--mantine-color-gray-6) !important;
 }

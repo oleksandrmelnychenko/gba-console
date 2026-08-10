@@ -52,6 +52,7 @@ import {
   preserveRenderedColumnResize,
 } from './dataTableSizing'
 import { DataTableToolbar } from './DataTableToolbar'
+import { isDataTableNumericColumn } from './dataTableNumeric'
 import { createPortal } from 'react-dom'
 import { useElementClientWidth } from './useElementClientWidth'
 import { useI18n } from '../../i18n/useI18n'
@@ -219,6 +220,7 @@ export function DataTable<TData>({
         className: column.className,
         enableReorder: column.enableReorder !== false,
         fill: column.fill,
+        numeric: isDataTableNumericColumn(column),
       }
 
       return {
