@@ -579,6 +579,7 @@ function usePaymentShopColumns(onOpenDetail: (item: PaymentShopItem) => void, on
         header: t('Оплачено'),
         width: 160,
         minWidth: 130,
+        numeric: true,
         accessor: (item) => sumImageAmounts(item),
         cell: (item) => (
           <Text size="sm">

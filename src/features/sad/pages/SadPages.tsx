@@ -1892,6 +1892,7 @@ export function SadSpecificationsPage() {
         accessor: (item) => getLastSpecification(getItemProduct(item))?.Duty,
         cell: (item) => formatNumber(getLastSpecification(getItemProduct(item))?.Duty),
         align: 'right',
+        numeric: true,
         width: 120,
       },
       {

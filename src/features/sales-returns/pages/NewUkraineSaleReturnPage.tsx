@@ -1465,7 +1465,8 @@ function useSaleItemColumns({
 
           return draft ? (
             <Badge className="app-role-pill" variant="light">
-              {formatAmount(draft.qty)} · {getStatusLabel(draft.status, t)}
+              <span className="app-table-number">{formatAmount(draft.qty)}</span> ·{' '}
+              {getStatusLabel(draft.status, t)}
             </Badge>
           ) : ''
         },
