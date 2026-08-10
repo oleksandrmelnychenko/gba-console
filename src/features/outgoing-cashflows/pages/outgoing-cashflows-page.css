@@ -487,6 +487,8 @@
 .outgoing-detail-row.is-wide {
   grid-column: 1 / -1;
   grid-template-columns: max-content minmax(42px, 1fr) fit-content(62%);
+  justify-self: stretch;
+  width: 100%;
 }
 
 .outgoing-detail-row__label {
