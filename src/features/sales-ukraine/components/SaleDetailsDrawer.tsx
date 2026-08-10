@@ -713,7 +713,11 @@ export function CarrierHistory({ current, entries }: { current: SalesUkraineUpda
                   const isChanged = hasPersistedMask
                     ? row.field != null && hasCarrierHistoryField(changeSource, row.field)
                     : !col.isCurrent && index > 0 && historyValueChanged(currentRaw, previousRaw)
-                  const cellClass = [col.isCurrent ? 'is-current-col' : '', isChanged ? 'is-changed' : ''].filter(Boolean).join(' ')
+                  const cellClass = [
+                    col.isCurrent ? 'is-current-col' : '',
+                    isChanged ? 'is-changed' : '',
+                    row.key === 'cashOnDeliveryAmount' ? 'app-table-number' : '',
+                  ].filter(Boolean).join(' ')
 
                   return (
                     <Table.Td
