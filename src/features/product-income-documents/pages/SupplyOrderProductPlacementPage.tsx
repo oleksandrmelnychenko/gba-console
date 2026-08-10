@@ -358,6 +358,7 @@ function usePlacementColumns(
       },
       {
         id: 'customsValue',
+        numeric: true,
         header: t('Митна вартість'),
         width: 132,
         minWidth: 116,

@@ -1755,6 +1755,7 @@ function useResalesColumns({
       },
       {
         id: 'amount',
+        numeric: true,
         header: t('Сума'),
         width: 120,
         minWidth: 104,
@@ -1764,6 +1765,7 @@ function useResalesColumns({
       },
       {
         id: 'currency',
+        numeric: true,
         header: t('Валюта'),
         width: 94,
         minWidth: 82,
@@ -1772,6 +1774,7 @@ function useResalesColumns({
       },
       {
         id: 'amountLocal',
+        numeric: true,
         header: t('Сума, грн'),
         width: 120,
         minWidth: 104,
@@ -2010,6 +2013,7 @@ function useResaleAvailabilityColumns({
       },
       {
         id: 'price',
+        numeric: true,
         header: t('Собівартість'),
         width: 128,
         minWidth: 110,
@@ -2019,6 +2023,7 @@ function useResaleAvailabilityColumns({
       },
       {
         id: 'salePrice',
+        numeric: true,
         header: t('Ціна продажу'),
         width: 128,
         minWidth: 110,
@@ -2028,6 +2033,7 @@ function useResaleAvailabilityColumns({
       },
       {
         id: 'totalCost',
+        numeric: true,
         header: t('Сума собівартості'),
         width: 144,
         minWidth: 124,
@@ -2037,6 +2043,7 @@ function useResaleAvailabilityColumns({
       },
       {
         id: 'totalSale',
+        numeric: true,
         header: t('Сума продажу'),
         width: 136,
         minWidth: 118,
@@ -2142,6 +2149,7 @@ function useProcessColumns({
       },
       {
         id: 'price',
+        numeric: true,
         header: t('Собівартість'),
         width: 128,
         align: 'right',
@@ -2163,6 +2171,7 @@ function useProcessColumns({
       },
       {
         id: 'salePrice',
+        numeric: true,
         header: t('Ціна продажу'),
         width: 140,
         accessor: (row) => row.SalePrice,
@@ -2176,6 +2185,7 @@ function useProcessColumns({
       },
       {
         id: 'vat',
+        numeric: true,
         header: t('ПДВ'),
         width: 116,
         align: 'right',
@@ -2184,6 +2194,7 @@ function useProcessColumns({
       },
       {
         id: 'amount',
+        numeric: true,
         header: t('Сума'),
         width: 140,
         accessor: (row) => row.Amount,
@@ -2197,6 +2208,7 @@ function useProcessColumns({
       },
       {
         id: 'profit',
+        numeric: true,
         header: t('Прибуток'),
         width: 120,
         align: 'right',
@@ -2345,6 +2357,7 @@ function useResaleDetailColumns({
       },
       {
         id: 'price',
+        numeric: true,
         header: t('Собівартість'),
         width: 128,
         align: 'right',
@@ -2362,6 +2375,7 @@ function useResaleDetailColumns({
       },
       {
         id: 'salePrice',
+        numeric: true,
         header: t('Ціна продажу'),
         width: 140,
         accessor: (row) => row.SalePrice,
@@ -2371,6 +2385,7 @@ function useResaleDetailColumns({
       },
       {
         id: 'vat',
+        numeric: true,
         header: t('ПДВ'),
         width: 104,
         align: 'right',
@@ -2379,6 +2394,7 @@ function useResaleDetailColumns({
       },
       {
         id: 'amount',
+        numeric: true,
         header: t('Сума'),
         width: 140,
         accessor: (row) => row.Amount,
@@ -2388,6 +2404,7 @@ function useResaleDetailColumns({
       },
       {
         id: 'profit',
+        numeric: true,
         header: t('Прибуток'),
         width: 120,
         align: 'right',
@@ -2517,6 +2534,7 @@ function ProcessSelectionConfirmDrawer({
       },
       {
         id: 'salePrice',
+        numeric: true,
         header: t('Ціна продажу'),
         width: 130,
         minWidth: 112,
@@ -2526,6 +2544,7 @@ function ProcessSelectionConfirmDrawer({
       },
       {
         id: 'totalSale',
+        numeric: true,
         header: t('Сума продажу'),
         width: 136,
         minWidth: 118,
