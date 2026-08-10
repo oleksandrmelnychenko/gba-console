@@ -1,18 +1,17 @@
 import {
+  ActionIcon,
   Alert,
-  Badge,
   Button,
   Checkbox,
-  Divider,
   Group,
   NumberInput,
   Select,
   SimpleGrid,
   Stack,
-  Table,
   Text,
   TextInput,
   Textarea,
+  Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, Plus, Save } from 'lucide-react'
@@ -20,6 +19,8 @@ import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { SearchableSelect } from '../../../shared/ui/SearchableSelect'
+import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -65,6 +66,7 @@ import {
 } from '../incomeCashflowFormValidation'
 import { createLatestRequestGuard } from '../latestRequestGuard'
 import { createAutocompleteOptionSubmitGuard } from '../autocompleteOptionSubmitGuard'
+import './income-cashflows-page.css'
 
 type FormState = {
   amount: number
@@ -103,6 +105,9 @@ type ApplyRetailAgreementsParams = {
 
 const INCOME_CASHFLOWS_PATH = '/accounting/income-cashflows'
 const SEARCH_DEBOUNCE_MS = 300
+const SHOP_DEBTS_TABLE_DEFAULT_LAYOUT = {
+  density: 'normal',
+} satisfies DataTableDefaultLayout
 
 const moneyFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 2,
@@ -201,18 +206,6 @@ export function IncomeCashflowShopFormPage() {
   const agreementOptions = useMemo(() => toClientAgreementOptions(organizationAgreements), [organizationAgreements])
   const movementOptions = useMemo(() => toUniqueLabels(paymentMovements), [paymentMovements])
   const retailClientOptions = useMemo(() => toRetailClientLabels(retailClients), [retailClients])
-  const selectedDebts = useMemo(
-    () =>
-      selectIncomeCashflowDebtTargets(
-        visibleDebts,
-        form.selectedDebtValues,
-      ),
-    [form.selectedDebtValues, visibleDebts],
-  )
-  const selectedDebtValueSet = useMemo(
-    () => new Set(form.selectedDebtValues),
-    [form.selectedDebtValues],
-  )
   const debtTotal = useMemo(() => visibleDebts.reduce((sum, debt) => sum + readDebtTotal(debt), 0), [visibleDebts])
   const exchangeCalculationKey = createExchangeCalculationKey({
     amount: form.amount,
@@ -662,6 +655,8 @@ export function IncomeCashflowShopFormPage() {
       {
         amount: form.amount,
         comment: form.comment,
+        date: form.date,
+        time: form.time,
       },
       t,
     ) || validateDebtSelection({
@@ -707,10 +702,11 @@ export function IncomeCashflowShopFormPage() {
 
   return (
     <AppDrawer
+      className="income-cashflow-shop-form-drawer"
       opened
       position="right"
       size="wide"
-      title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Магазин')}</span>}
+      title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Оплата retail-клієнта')}</span>}
       onClose={() => navigate(INCOME_CASHFLOWS_PATH)}
       footer={
         <Button
@@ -725,19 +721,18 @@ export function IncomeCashflowShopFormPage() {
         </Button>
       }
     >
-      <form id="income-cashflow-shop-form" onSubmit={handleSubmit}>
+      <form className="income-cashflow-shop-form" id="income-cashflow-shop-form" onSubmit={handleSubmit}>
         <Stack gap="md">
-          <Text c="dimmed" size="sm">
-            {selectedPaymentClient ? getEntityName(selectedPaymentClient) : t('Оплата retail-клієнта')}
-          </Text>
-
           {error && (
             <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
             </Alert>
           )}
 
-          <Stack gap="xs">
+          <Stack gap="sm">
+            <Text className="app-section-title" fw={600} size="sm">
+              {t('Клієнт магазину')}
+            </Text>
             <SearchableSelect
               data={retailClientOptions}
               disabled={isLoading || isResolvingClient || isSaving}
@@ -747,14 +742,18 @@ export function IncomeCashflowShopFormPage() {
               onChange={handleRetailClientSearchChanged}
               onOptionSubmit={handleRetailClientSubmit}
             />
-
-            <Divider />
           </Stack>
 
-          <SimpleGrid cols={{ base: 1, md: 3 }}>
+          <Stack gap="sm">
+            <Text className="app-section-title" fw={600} size="sm">
+              {t('Реквізити оплати')}
+            </Text>
+
+            <SimpleGrid cols={{ base: 1, md: 3 }} style={{ alignItems: 'end' }}>
             <TextInput
               disabled={isLoading || isSaving}
               label={t('Дата')}
+              required
               type="date"
               value={form.date}
               onChange={(event) => updateForm({ date: event.currentTarget.value })}
@@ -762,6 +761,7 @@ export function IncomeCashflowShopFormPage() {
             <TextInput
               disabled={isLoading || isSaving}
               label={t('Час')}
+              required
               type="time"
               value={form.time}
               onChange={(event) => updateForm({ time: event.currentTarget.value })}
@@ -770,6 +770,7 @@ export function IncomeCashflowShopFormPage() {
               data={organizationOptions}
               disabled={!organizationOptions.length || isLoading || isSaving}
               label={t('Організація')}
+              required
               searchable
               value={form.organizationValue || null}
               onChange={handleOrganizationChanged}
@@ -778,6 +779,7 @@ export function IncomeCashflowShopFormPage() {
               data={registerOptions}
               disabled={!selectedOrganization || isLoading || isSaving}
               label={t('Каса / рахунок')}
+              required
               searchable
               value={form.paymentRegisterValue || null}
               onChange={handleRegisterChanged}
@@ -786,6 +788,7 @@ export function IncomeCashflowShopFormPage() {
               data={currencyOptions}
               disabled={!selectedRegister || isLoading || isSaving}
               label={t('Валюта')}
+              required
               searchable
               value={form.selectedCurrencyValue || null}
               onChange={(value) => updateForm({ selectedCurrencyValue: value || '' })}
@@ -794,6 +797,7 @@ export function IncomeCashflowShopFormPage() {
               data={agreementOptions}
               disabled={!agreementOptions.length || isLoading || isSaving}
               label={t('Договір')}
+              required
               searchable
               value={form.selectedAgreementValue || null}
               onChange={handleAgreementChanged}
@@ -804,6 +808,7 @@ export function IncomeCashflowShopFormPage() {
               disabled={isLoading || isSaving}
               label={t('Сума')}
               min={0}
+              required
               value={form.amount}
               onChange={handleAmountChanged}
             />
@@ -816,26 +821,33 @@ export function IncomeCashflowShopFormPage() {
               value={form.exchangeRate}
               onChange={(value) => updateForm({ exchangeRate: toNumber(value) })}
             />
-            <SearchableSelect
-              data={movementOptions}
-              disabled={isLoading || isSaving}
-              label={t('Стаття руху коштів')}
-              maxLength={INCOME_CASHFLOW_TEXT_LIMITS.movementName}
-              value={form.movementSearch}
-              onChange={handleMovementSearchChanged}
-              onOptionSubmit={handleMovementSubmit}
-            />
-            <Button
-              disabled={Boolean(activeMovement) || !form.movementSearch.trim() || isLoading}
-              leftSection={<Plus size={16} />}
-              mt={24}
-              type="button"
-              variant="default"
-              onClick={() => void handleCreateMovement()}
-            >
-              {t('Створити статтю')}
-            </Button>
-          </SimpleGrid>
+              <Group align="flex-end" gap="xs" wrap="nowrap">
+                <SearchableSelect
+                  data={movementOptions}
+                  disabled={isLoading || isSaving}
+                  label={t('Стаття руху коштів')}
+                  maxLength={INCOME_CASHFLOW_TEXT_LIMITS.movementName}
+                  style={{ flex: 1 }}
+                  value={form.movementSearch}
+                  onChange={handleMovementSearchChanged}
+                  onOptionSubmit={handleMovementSubmit}
+                />
+                <Tooltip label={t('Створити статтю')} withArrow>
+                  <ActionIcon
+                    aria-label={t('Створити статтю')}
+                    color={CREATE_ACTION_COLOR}
+                    disabled={Boolean(activeMovement) || !form.movementSearch.trim() || isLoading || isSaving}
+                    size={36}
+                    type="button"
+                    variant="outline"
+                    onClick={() => void handleCreateMovement()}
+                  >
+                    <Plus size={17} />
+                  </ActionIcon>
+                </Tooltip>
+              </Group>
+            </SimpleGrid>
+          </Stack>
 
           {selectedCurrency && selectedAgreementCurrency && getEntityValue(selectedCurrency) !== getEntityValue(selectedAgreementCurrency) && (
             <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
@@ -844,113 +856,95 @@ export function IncomeCashflowShopFormPage() {
           )}
 
           {form.amount > 0 && selectedAgreementCurrency && selectedCurrency && (
-            <Group gap="xs">
-              <Badge color="blue" variant="light">
-                {t('Зарахування')}: {formatMoney(calculatedValue || form.amount)} {selectedAgreementCurrency.Code || selectedAgreementCurrency.Name}
-              </Badge>
-              <Badge color="gray" variant="light">
+            <div className="income-cashflow-client-form__exchange-summary">
+              <span>{t('До зарахування')}</span>
+              <strong>
+                {formatMoney(calculatedValue || form.amount)} {selectedAgreementCurrency.Code || selectedAgreementCurrency.Name}
+              </strong>
+              <small>
                 {selectedCurrency.Code || selectedCurrency.Name} → {selectedAgreementCurrency.Code || selectedAgreementCurrency.Name}
-              </Badge>
-            </Group>
+              </small>
+            </div>
           )}
 
-          <Textarea
-            disabled={isLoading || isSaving}
-            label={t('Коментар')}
-            maxLength={INCOME_CASHFLOW_TEXT_LIMITS.comment}
-            minRows={2}
-            value={form.comment}
-            onChange={(event) => updateForm({ comment: event.currentTarget.value })}
-          />
+          <Stack gap="sm">
+            <Text className="app-section-title" fw={600} size="sm">
+              {t('Деталі та облік')}
+            </Text>
+            <Textarea
+              autosize
+              disabled={isLoading || isSaving}
+              label={t('Коментар')}
+              maxLength={INCOME_CASHFLOW_TEXT_LIMITS.comment}
+              maxRows={4}
+              minRows={1}
+              value={form.comment}
+              onChange={(event) => updateForm({ comment: event.currentTarget.value })}
+            />
 
-          <Group gap="lg">
-            <Checkbox
-              checked={form.isManagementAccounting}
-              disabled={isLoading || isSaving}
-              label={t('Управлінський облік')}
-              onChange={(event) => updateForm({ isManagementAccounting: event.currentTarget.checked })}
-            />
-            <Checkbox
-              checked={form.isAccounting}
-              disabled={isLoading || isSaving}
-              label={t('Бухгалтерський облік')}
-              onChange={(event) => updateForm({ isAccounting: event.currentTarget.checked })}
-            />
-          </Group>
+            <Group className="income-cashflow-client-form__accounting-flags" gap="lg">
+              <Checkbox
+                checked={form.isManagementAccounting}
+                disabled={isLoading || isSaving}
+                label={t('Управлінський облік')}
+                onChange={(event) => updateForm({ isManagementAccounting: event.currentTarget.checked })}
+              />
+              <Checkbox
+                checked={form.isAccounting}
+                disabled={isLoading || isSaving}
+                label={t('Бухгалтерський облік')}
+                onChange={(event) => updateForm({ isAccounting: event.currentTarget.checked })}
+              />
+            </Group>
+          </Stack>
 
           {selectedPaymentClient && (
-            <Stack gap="sm">
-              <Divider />
-
-              <Group justify="space-between" wrap="wrap">
-                <div>
-                  <Text className="app-section-title" fw={600} size="sm">{t('Рахунки клієнта')}</Text>
-                  <Text c="dimmed" size="sm">
-                    {getEntityName(selectedPaymentClient)}
-                  </Text>
-                </div>
-                <Group gap="xs">
-                  <Badge className="app-role-pill" variant="light">
-                    {t('Поточний договір')}: {formatMoney(selectedAgreement?.CurrentAmount)}
-                  </Badge>
-                  <Badge color="gray" variant="light">
-                    {t('Борги по договору')}: {formatMoney(debtTotal)}
-                  </Badge>
-                </Group>
+            <Stack className="income-cashflow-client-form__debts" gap="sm">
+              <Group className="income-cashflow-client-form__debts-header" justify="space-between" wrap="wrap">
+                <Text className="app-section-title" fw={600} size="sm">
+                  {t('Рахунки клієнта')}
+                </Text>
+                {(Boolean(selectedAgreement?.CurrentAmount) || debtTotal > 0) && (
+                  <div className="income-cashflow-client-form__debt-metrics">
+                    {selectedAgreement?.CurrentAmount ? (
+                      <div className="income-cashflow-client-form__debt-metric">
+                        <span>{t('Баланс договору')}</span>
+                        <strong>
+                          {formatMoney(selectedAgreement.CurrentAmount)} {selectedAgreementCurrency?.Code || ''}
+                        </strong>
+                      </div>
+                    ) : null}
+                    {debtTotal > 0 && (
+                      <div className="income-cashflow-client-form__debt-metric is-accent">
+                        <span>{t('Борг за договором')}</span>
+                        <strong>{formatMoney(debtTotal)} {selectedAgreementCurrency?.Code || ''}</strong>
+                      </div>
+                    )}
+                  </div>
+                )}
               </Group>
 
               {visibleDebts.length > 0 ? (
                 <>
                   <Checkbox
+                    className="income-cashflow-client-form__auto-allocate"
                     checked={form.autoAllocate}
                     disabled={isSaving}
                     label={t('Автоматично рознести оплату по боргах')}
                     onChange={(event) => updateForm({ autoAllocate: event.currentTarget.checked })}
                   />
-                  <Table.ScrollContainer minWidth={720}>
-                    <Table highlightOnHover verticalSpacing="xs">
-                      <Table.Thead>
-                        <Table.Tr>
-                          <Table.Th w={58}>{t('Вибір')}</Table.Th>
-                          <Table.Th>{t('Рахунок')}</Table.Th>
-                          <Table.Th>{t('Дата')}</Table.Th>
-                          <Table.Th>{t('Днів')}</Table.Th>
-                          <Table.Th>{t('Борг')}</Table.Th>
-                        </Table.Tr>
-                      </Table.Thead>
-                      <Table.Tbody>
-                        {visibleDebts.map((debt) => {
-                          const debtValue = getIncomeCashflowDebtTargetValue(debt)
-                          const checked = selectedDebtValueSet.has(debtValue)
-
-                          return (
-                            <Table.Tr key={debtValue}>
-                              <Table.Td>
-                                <Checkbox
-                                  aria-label={t('Вибрати рахунок')}
-                                  checked={checked}
-                                  disabled={isSaving}
-                                  onChange={(event) => handleDebtChecked(debt, event.currentTarget.checked)}
-                                />
-                              </Table.Td>
-                              <Table.Td>{getDebtDocumentNumber(debt)}</Table.Td>
-                              <Table.Td>{formatDate(getDebtDate(debt))}</Table.Td>
-                              <Table.Td className="app-table-number">{debt.Debt?.Days || 0}</Table.Td>
-                              <Table.Td className="app-table-number">{formatMoney(readDebtTotal(debt))}</Table.Td>
-                            </Table.Tr>
-                          )
-                        })}
-                      </Table.Tbody>
-                    </Table>
-                  </Table.ScrollContainer>
-                  {selectedDebts.length > 0 && (
-                    <Text c="dimmed" size="sm">
-                      {t('Вибрано рахунків')}: {selectedDebts.length}
-                    </Text>
-                  )}
+                  <div className="income-cashflow-client-form__debts-table-shell">
+                    <IncomeCashflowShopDebtTable
+                      currencyCode={selectedAgreementCurrency?.Code || ''}
+                      debts={visibleDebts}
+                      disabled={isSaving}
+                      selectedDebtValues={form.selectedDebtValues}
+                      onChecked={handleDebtChecked}
+                    />
+                  </div>
                 </>
               ) : (
-                <Text c="dimmed" size="sm">
+                <Text className="income-cashflow-client-form__debts-empty" size="sm">
                   {t('По вибраному договору рахунків немає')}
                 </Text>
               )}
@@ -959,6 +953,115 @@ export function IncomeCashflowShopFormPage() {
         </Stack>
       </form>
     </AppDrawer>
+  )
+}
+
+function IncomeCashflowShopDebtTable({
+  currencyCode,
+  debts,
+  disabled,
+  selectedDebtValues,
+  onChecked,
+}: {
+  currencyCode: string
+  debts: ClientInDebt[]
+  disabled: boolean
+  selectedDebtValues: string[]
+  onChecked: (debt: ClientInDebt, checked: boolean) => void
+}) {
+  const { t } = useI18n()
+  const selectedValues = useMemo(
+    () => new Set(selectedDebtValues),
+    [selectedDebtValues],
+  )
+  const columns = useMemo<DataTableColumn<ClientInDebt>[]>(
+    () => [
+      {
+        id: 'selected',
+        header: t('Сплатити'),
+        width: 76,
+        minWidth: 76,
+        maxWidth: 76,
+        align: 'center',
+        enableHiding: false,
+        enablePinning: false,
+        enableReorder: false,
+        enableResizing: false,
+        enableSorting: false,
+        cell: (debt) => {
+          const debtValue = getIncomeCashflowDebtTargetValue(debt)
+
+          return (
+            <Checkbox
+              aria-label={t('Вибрати рахунок')}
+              checked={selectedValues.has(debtValue)}
+              disabled={disabled}
+              onChange={(event) => onChecked(debt, event.currentTarget.checked)}
+            />
+          )
+        },
+      },
+      {
+        id: 'document',
+        header: t('Рахунок'),
+        width: 280,
+        minWidth: 200,
+        fill: true,
+        numeric: true,
+        accessor: getDebtDocumentNumber,
+        cell: getDebtDocumentNumber,
+      },
+      {
+        id: 'date',
+        header: t('Дата'),
+        width: 180,
+        minWidth: 160,
+        numeric: true,
+        accessor: getDebtDate,
+        cell: (debt) => formatDate(getDebtDate(debt)),
+      },
+      {
+        id: 'days',
+        header: t('Днів'),
+        width: 110,
+        minWidth: 96,
+        align: 'right',
+        numeric: true,
+        accessor: (debt) => debt.Debt?.Days,
+        cell: (debt) => debt.Debt?.Days || '',
+      },
+      {
+        id: 'debt',
+        header: currencyCode ? `${t('Борг')} (${currencyCode})` : t('Борг'),
+        width: 170,
+        minWidth: 140,
+        align: 'right',
+        numeric: true,
+        accessor: readDebtTotal,
+        cell: (debt) => {
+          const value = readDebtTotal(debt)
+
+          return value ? formatMoney(value) : ''
+        },
+      },
+    ],
+    [currencyCode, disabled, onChecked, selectedValues, t],
+  )
+
+  return (
+    <DataTable
+      columns={columns}
+      data={debts}
+      defaultLayout={SHOP_DEBTS_TABLE_DEFAULT_LAYOUT}
+      emptyText={t('По вибраному договору рахунків немає')}
+      enablePinning={false}
+      getRowId={(debt, index) => getIncomeCashflowDebtTargetValue(debt) || String(index)}
+      layoutVersion="income-cashflow-shop-debts-1"
+      minWidth={720}
+      showDensityToggle={false}
+      showLayoutControls={false}
+      tableId="income-cashflow-shop-debts"
+    />
   )
 }
 

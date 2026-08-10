@@ -8,6 +8,49 @@ import {
 const t = (value: string) => value
 
 describe('income cash-flow form validation', () => {
+  it('requires a finite positive amount', () => {
+    expect(validateIncomeCashflowContract({ amount: 0 }, t)).toBe(
+      'Сума має бути більшою за нуль',
+    )
+    expect(validateIncomeCashflowContract({ amount: Number.POSITIVE_INFINITY }, t)).toBe(
+      'Сума має бути більшою за нуль',
+    )
+  })
+
+  it('accepts a valid local date and time', () => {
+    expect(
+      validateIncomeCashflowContract(
+        {
+          amount: 100,
+          date: '2026-08-10',
+          time: '17:45',
+        },
+        t,
+      ),
+    ).toBeNull()
+  })
+
+  it('rejects missing or impossible local dates and times', () => {
+    expect(
+      validateIncomeCashflowContract(
+        { amount: 100, date: '', time: '17:45' },
+        t,
+      ),
+    ).toBe('Вкажіть коректну дату')
+    expect(
+      validateIncomeCashflowContract(
+        { amount: 100, date: '2026-02-30', time: '17:45' },
+        t,
+      ),
+    ).toBe('Вкажіть коректну дату')
+    expect(
+      validateIncomeCashflowContract(
+        { amount: 100, date: '2026-08-10', time: '24:00' },
+        t,
+      ),
+    ).toBe('Вкажіть коректний час')
+  })
+
   it('accepts VAT at the inclusive server boundaries', () => {
     expect(
       validateIncomeCashflowContract(

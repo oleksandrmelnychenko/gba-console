@@ -129,6 +129,153 @@
   padding-right: 10px;
 }
 
+/* Create flows share one restrained form language inside the drawer. */
+.outgoing-cashflow-create-form {
+  width: 100%;
+}
+
+.outgoing-cashflow-create-form__accounting-flags {
+  align-items: center;
+  min-height: 36px;
+}
+
+.outgoing-cashflow-create-form__accounting-flags .mantine-Checkbox-body {
+  align-items: center;
+}
+
+.outgoing-cashflow-create-form__tabs-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  padding-bottom: 1px;
+}
+
+.outgoing-cashflow-create-form__tabs.mantine-SegmentedControl-root {
+  align-self: flex-end;
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 9px;
+  max-width: 100%;
+  min-width: max-content;
+  padding: 3px;
+  width: fit-content;
+}
+
+.outgoing-cashflow-create-form__tabs .mantine-SegmentedControl-control {
+  flex: 0 0 auto;
+}
+
+.outgoing-cashflow-create-form__tabs .mantine-SegmentedControl-indicator {
+  background: var(--brand-orange);
+  border-radius: 6px;
+  box-shadow: none;
+}
+
+.outgoing-cashflow-create-form__tabs .mantine-SegmentedControl-label {
+  align-items: center;
+  color: var(--mantine-color-gray-7);
+  display: flex;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-weight: 600;
+  height: 30px;
+  justify-content: center;
+  line-height: 1;
+  padding: 0 14px;
+  white-space: nowrap;
+}
+
+.outgoing-cashflow-create-form__tabs .mantine-SegmentedControl-control[data-active] .mantine-SegmentedControl-label,
+.outgoing-cashflow-create-form__tabs .mantine-SegmentedControl-label[data-active='true'],
+.outgoing-cashflow-create-form__tabs .mantine-SegmentedControl-control[data-active] .mantine-SegmentedControl-innerLabel {
+  color: var(--mantine-color-white) !important;
+  font-weight: 700;
+}
+
+.outgoing-cashflow-create-form__tabs:not([data-disabled]) .mantine-SegmentedControl-control:not([data-active]) .mantine-SegmentedControl-label:hover {
+  background: var(--mantine-color-gray-0);
+  color: var(--mantine-color-gray-9);
+}
+
+.outgoing-cashflow-create-drawer .mantine-Input-input:disabled,
+.outgoing-cashflow-create-drawer .mantine-Input-input[data-disabled] {
+  background: var(--mantine-color-gray-0);
+  border-color: var(--mantine-color-gray-3);
+  color: var(--mantine-color-gray-9);
+  font-weight: 500;
+  opacity: 1;
+  -webkit-text-fill-color: var(--mantine-color-gray-9);
+}
+
+.outgoing-cashflow-create-drawer .mantine-Input-input:disabled::placeholder,
+.outgoing-cashflow-create-drawer .mantine-Input-input[data-disabled]::placeholder {
+  color: var(--mantine-color-gray-6);
+  opacity: 1;
+  -webkit-text-fill-color: var(--mantine-color-gray-6);
+}
+
+.outgoing-create-selector {
+  padding: 2px 0 8px;
+}
+
+.outgoing-create-selector__section + .outgoing-create-selector__section {
+  border-top: 1px solid var(--mantine-color-gray-2);
+  padding-top: 14px;
+}
+
+.outgoing-create-selector__item {
+  background: transparent;
+  border-radius: 8px;
+  color: var(--mantine-color-gray-7);
+  min-height: 38px;
+  padding: 7px 8px 7px 18px;
+  position: relative;
+  transition: color 120ms ease, transform 120ms ease;
+}
+
+.outgoing-create-selector__item::before {
+  background: var(--brand-orange);
+  border-radius: 50%;
+  content: '';
+  height: 6px;
+  left: 8px;
+  opacity: 0;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+}
+
+.outgoing-create-selector__label {
+  color: inherit;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.outgoing-create-selector__chevron {
+  color: var(--mantine-color-gray-5);
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.outgoing-create-selector__item:hover {
+  color: var(--brand-orange);
+  transform: translateX(3px);
+}
+
+.outgoing-create-selector__item:hover::before,
+.outgoing-create-selector__item:hover .outgoing-create-selector__chevron {
+  opacity: 1;
+}
+
+@media (max-width: 680px) {
+  .outgoing-cashflow-create-form__accounting-flags {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+  }
+}
+
 .outgoing-cashflows-card .data-table-th.outgoing-cashflows-actions-column .data-table-header-inner {
   padding-right: 10px;
 }

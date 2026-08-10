@@ -1,6 +1,5 @@
-import { Divider, Group, Stack, Text, UnstyledButton } from '@mantine/core'
-import { Banknote, ChevronRight, Landmark } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { Group, Stack, Text, UnstyledButton } from '@mantine/core'
+import { ChevronRight } from 'lucide-react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { PaymentRegisterType } from '../../income-cashflows/types'
 import {
@@ -16,22 +15,13 @@ export function OutgoingCreateModeSelector({ onNavigate }: OutgoingCreateModeSel
   const { t } = useI18n()
 
   return (
-    <Stack gap="md">
-      <Text fw={700} size="xl">
-        {t('Створення видаткової статті бюджету')}
-      </Text>
-
+    <Stack className="outgoing-create-selector" gap="md">
       <SelectorSection
-        icon={<Landmark size={18} />}
         items={buildOutgoingRegisterItems(t, PaymentRegisterType.Bank)}
         title={t('Банківські операції')}
         onNavigate={onNavigate}
       />
-
-      <Divider />
-
       <SelectorSection
-        icon={<Banknote size={18} />}
         items={buildOutgoingRegisterItems(t, PaymentRegisterType.Cash)}
         title={t('Касові операції')}
         onNavigate={onNavigate}
@@ -41,35 +31,27 @@ export function OutgoingCreateModeSelector({ onNavigate }: OutgoingCreateModeSel
 }
 
 function SelectorSection({
-  icon,
   items,
   title,
   onNavigate,
 }: {
-  icon: ReactNode
   items: OutgoingCreateMenuItem[]
   title: string
   onNavigate: (path: string) => void
 }) {
   return (
-    <Stack gap={6}>
-      <Group gap="xs">
-        {icon}
-        <Text fw={600}>{title}</Text>
-      </Group>
-      <Stack gap={4}>
+    <Stack className="outgoing-create-selector__section" gap={6}>
+      <Text className="app-section-title" fw={600} size="sm">{title}</Text>
+      <Stack className="outgoing-create-selector__list" gap={2}>
         {items.map((item) => (
-          <UnstyledButton key={item.path} onClick={() => onNavigate(item.path)}>
+          <UnstyledButton className="outgoing-create-selector__item" key={item.path} onClick={() => onNavigate(item.path)}>
             <Group
               gap="sm"
               justify="space-between"
-              px="sm"
-              py={6}
-              style={{ border: '1px solid var(--mantine-color-default-border)', borderRadius: 8 }}
               wrap="nowrap"
             >
-              <Text size="sm">{item.label}</Text>
-              <ChevronRight size={16} />
+              <Text className="outgoing-create-selector__label" size="sm">{item.label}</Text>
+              <ChevronRight className="outgoing-create-selector__chevron" size={15} />
             </Group>
           </UnstyledButton>
         ))}

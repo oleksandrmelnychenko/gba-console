@@ -21,6 +21,7 @@ import {
   parseOutgoingPaymentOperationType,
   parseOutgoingPaymentRegisterType,
 } from '../outgoingPaymentGroupTitle'
+import './outgoing-cashflows-page.css'
 
 const OUTGOING_CASHFLOWS_PATH = '/accounting/outgoing-cashflow'
 const OUTGOING_CASHFLOW_NEW_PATH = `${OUTGOING_CASHFLOWS_PATH}/new`
@@ -108,10 +109,11 @@ export function OutgoingCashflowCreatePage() {
 
   return (
     <AppDrawer
+      className="outgoing-cashflow-create-drawer"
       opened
       position="right"
       size="standard"
-      title={drawerTitle}
+      title={<span style={{ fontFamily: 'var(--font-mono)' }}>{drawerTitle}</span>}
       onClose={() => navigate(OUTGOING_CASHFLOWS_PATH)}
     >
       <Stack gap="md">

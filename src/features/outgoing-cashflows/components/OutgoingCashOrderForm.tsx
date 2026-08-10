@@ -1,14 +1,17 @@
 import {
+  ActionIcon,
   Alert,
   Button,
-  Card,
   Checkbox,
   Group,
   NumberInput,
   Select,
   SimpleGrid,
   Stack,
+  Text,
   TextInput,
+  Textarea,
+  Tooltip,
 } from '@mantine/core'
 import { ArrowLeft, CircleAlert, Plus, Save } from 'lucide-react'
 import { type FormEvent, useEffect, useMemo, useState } from 'react'
@@ -20,6 +23,11 @@ import { AppDrawerFooter } from '../../../shared/ui/AppDrawer'
 import { SearchableSelect } from '../../../shared/ui/SearchableSelect'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { createAutocompleteOptionSubmitGuard } from '../../income-cashflows/autocompleteOptionSubmitGuard'
+import {
+  INCOME_CASHFLOW_TEXT_LIMITS,
+  validateIncomeCashflowContract,
+  validateIncomeCashflowMovementName,
+} from '../../income-cashflows/incomeCashflowFormValidation'
 import {
   createOutgoingCashflowOrder,
   createOutgoingCreatePaymentMovement,
@@ -299,6 +307,13 @@ export function OutgoingCashOrderForm({ onCancel, onCreated }: OutgoingCashOrder
       return
     }
 
+    const validationError = validateIncomeCashflowMovementName(operationName, t)
+
+    if (validationError) {
+      setError(validationError)
+      return
+    }
+
     setSaving(true)
     setError(null)
 
@@ -336,7 +351,17 @@ export function OutgoingCashOrderForm({ onCancel, onCreated }: OutgoingCashOrder
       selectedOrganization,
       selectedRegister,
       t,
-    })
+    }) || validateIncomeCashflowContract(
+      {
+        amount: form.amount,
+        arrivalNumber: form.invoiceNumber,
+        comment: form.comment,
+        date: form.date,
+        paymentPurpose: form.paymentPurpose,
+        time: form.time,
+      },
+      t,
+    )
 
     if (validationError) {
       setError(validationError)
@@ -372,138 +397,167 @@ export function OutgoingCashOrderForm({ onCancel, onCreated }: OutgoingCashOrder
 
   return (
     <>
-      <Card withBorder radius="md" shadow="sm">
-        <form id={FORM_ID} onSubmit={handleSubmit}>
-          <Stack gap="md">
+      <form className="outgoing-cashflow-create-form" id={FORM_ID} onSubmit={handleSubmit}>
+        <Stack gap="md">
           {error && (
             <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
             </Alert>
           )}
 
-          <SimpleGrid cols={{ base: 1, md: 3 }}>
-            <TextInput
-              disabled={isLoading || isSaving}
-              label={t('Від якої дати')}
-              type="date"
-              value={form.date}
-              onChange={(event) => updateForm({ date: event.currentTarget.value })}
-            />
-            <TextInput
-              disabled={isLoading || isSaving}
-              label={t('Час')}
-              type="time"
-              value={form.time}
-              onChange={(event) => updateForm({ time: event.currentTarget.value })}
-            />
-            <TextInput
-              disabled={isLoading || isSaving}
-              label={t('Вхідний номер')}
-              value={form.invoiceNumber}
-              onChange={(event) => updateForm({ invoiceNumber: event.currentTarget.value })}
-            />
-          </SimpleGrid>
-
-          <Group gap="lg">
-            <Checkbox
-              checked={form.isManagementAccounting}
-              disabled={isLoading || isSaving}
-              label={t('Управлінський облік')}
-              onChange={(event) => updateForm({ isManagementAccounting: event.currentTarget.checked })}
-            />
-            <Checkbox
-              checked={form.isAccounting}
-              disabled={isLoading || isSaving}
-              label={t('Бухгалтерський облік')}
-              onChange={(event) => updateForm({ isAccounting: event.currentTarget.checked })}
-            />
-          </Group>
-
-          <SimpleGrid cols={{ base: 1, md: 3 }}>
-            <Select
-              data={organizationOptions}
-              disabled={isLoading || isSaving}
-              label={t('Організація')}
-              searchable
-              value={form.organizationValue || null}
-              onChange={handleOrganizationChanged}
-            />
-            <Select
-              data={registerOptions}
-              disabled={!selectedOrganization || isLoading || isSaving}
-              label={t('Грошові рахунки')}
-              searchable
-              value={form.paymentRegisterValue || null}
-              onChange={handleRegisterChanged}
-            />
-            <Select
-              className="app-input-description-below"
-              data={currencyOptions}
-              description={balanceLabel || undefined}
-              disabled={!selectedRegister || isLoading || isSaving}
-              label={t('Валюта')}
-              searchable
-              value={form.selectedCurrencyRegisterValue || null}
-              onChange={(value) => updateForm({ selectedCurrencyRegisterValue: value || '' })}
-            />
-          </SimpleGrid>
-
-          <SimpleGrid cols={{ base: 1, md: 3 }}>
-            <NumberInput
-              allowNegative={false}
-              decimalScale={2}
-              disabled={isLoading || isSaving}
-              label={t('Сума')}
-              min={0}
-              value={form.amount}
-              onChange={(value) => updateForm({ amount: toNumber(value) })}
-            />
-            <SearchableSelect
-              data={userOptions}
-              disabled={isLoading || isSaving}
-              label={t('Кому видано')}
-              value={form.userSearch}
-              onChange={handleUserSearchChanged}
-              onOptionSubmit={handleUserSubmit}
-            />
-            <TextInput
-              disabled={isLoading || isSaving}
-              label={t('Призначення платежу')}
-              value={form.paymentPurpose}
-              onChange={(event) => updateForm({ paymentPurpose: event.currentTarget.value })}
-            />
-          </SimpleGrid>
-
-          <Group align="flex-end" gap="sm" grow wrap="nowrap">
-            <SearchableSelect
-              data={movementOptions}
-              disabled={isLoading || isSaving}
-              label={t('Статті руху грошових коштів')}
-              value={form.movementSearch}
-              onChange={handleMovementSearchChanged}
-              onOptionSubmit={handleMovementSubmit}
-            />
-            <Button
-              disabled={Boolean(selectedMovement) || !form.movementSearch.trim() || isLoading || isSaving}
-              leftSection={<Plus size={16} />}
-              maw={220}
-              type="button"
-              variant="outline"
-              onClick={() => void handleCreateMovement()}
-            >
-              {t('Зберегти')}
-            </Button>
-          </Group>
-
-          <TextInput
-            disabled={isLoading || isSaving}
-            label={t('Коментар')}
-            value={form.comment}
-            onChange={(event) => updateForm({ comment: event.currentTarget.value })}
-          />
+          <Stack gap="sm">
+            <Text className="app-section-title" fw={600} size="sm">
+              {t('Дані видаткового ордера')}
+            </Text>
+            <SimpleGrid cols={{ base: 1, md: 3 }} style={{ alignItems: 'end' }}>
+              <TextInput
+                disabled={isLoading || isSaving}
+                label={t('Дата')}
+                required
+                type="date"
+                value={form.date}
+                onChange={(event) => updateForm({ date: event.currentTarget.value })}
+              />
+              <TextInput
+                disabled={isLoading || isSaving}
+                label={t('Час')}
+                required
+                type="time"
+                value={form.time}
+                onChange={(event) => updateForm({ time: event.currentTarget.value })}
+              />
+              <TextInput
+                disabled={isLoading || isSaving}
+                label={t('Вхідний номер')}
+                maxLength={INCOME_CASHFLOW_TEXT_LIMITS.arrivalNumber}
+                value={form.invoiceNumber}
+                onChange={(event) => updateForm({ invoiceNumber: event.currentTarget.value })}
+              />
+            </SimpleGrid>
           </Stack>
-        </form>
-      </Card>
+
+          <Stack gap="sm">
+            <Text className="app-section-title" fw={600} size="sm">
+              {t('Реквізити виплати')}
+            </Text>
+            <SimpleGrid cols={{ base: 1, md: 3 }} style={{ alignItems: 'end' }}>
+              <Select
+                data={organizationOptions}
+                disabled={isLoading || isSaving}
+                label={t('Організація')}
+                required
+                searchable
+                value={form.organizationValue || null}
+                onChange={handleOrganizationChanged}
+              />
+              <Select
+                data={registerOptions}
+                disabled={!selectedOrganization || isLoading || isSaving}
+                label={t('Каса / рахунок')}
+                required
+                searchable
+                value={form.paymentRegisterValue || null}
+                onChange={handleRegisterChanged}
+              />
+              <Select
+                className="app-input-description-below"
+                data={currencyOptions}
+                description={balanceLabel || undefined}
+                disabled={!selectedRegister || isLoading || isSaving}
+                label={t('Валюта')}
+                required
+                searchable
+                value={form.selectedCurrencyRegisterValue || null}
+                onChange={(value) => updateForm({ selectedCurrencyRegisterValue: value || '' })}
+              />
+              <NumberInput
+                allowNegative={false}
+                decimalScale={2}
+                disabled={isLoading || isSaving}
+                label={t('Сума')}
+                min={0}
+                required
+                value={form.amount}
+                onChange={(value) => updateForm({ amount: toNumber(value) })}
+              />
+              <SearchableSelect
+                data={userOptions}
+                disabled={isLoading || isSaving}
+                label={t('Кому видано')}
+                required
+                value={form.userSearch}
+                onChange={handleUserSearchChanged}
+                onOptionSubmit={handleUserSubmit}
+              />
+              <Group align="flex-end" gap="xs" wrap="nowrap">
+                <SearchableSelect
+                  data={movementOptions}
+                  disabled={isLoading || isSaving}
+                  label={t('Стаття руху коштів')}
+                  maxLength={INCOME_CASHFLOW_TEXT_LIMITS.movementName}
+                  required
+                  style={{ flex: 1 }}
+                  value={form.movementSearch}
+                  onChange={handleMovementSearchChanged}
+                  onOptionSubmit={handleMovementSubmit}
+                />
+                <Tooltip label={t('Створити статтю')} withArrow>
+                  <ActionIcon
+                    aria-label={t('Створити статтю')}
+                    color={CREATE_ACTION_COLOR}
+                    disabled={Boolean(selectedMovement) || !form.movementSearch.trim() || isLoading || isSaving}
+                    size={36}
+                    type="button"
+                    variant="outline"
+                    onClick={() => void handleCreateMovement()}
+                  >
+                    <Plus size={17} />
+                  </ActionIcon>
+                </Tooltip>
+              </Group>
+            </SimpleGrid>
+          </Stack>
+
+          <Stack gap="sm">
+            <Text className="app-section-title" fw={600} size="sm">
+              {t('Деталі та облік')}
+            </Text>
+            <SimpleGrid cols={{ base: 1, md: 2 }} style={{ alignItems: 'start' }}>
+              <TextInput
+                disabled={isLoading || isSaving}
+                label={t('Призначення платежу')}
+                maxLength={INCOME_CASHFLOW_TEXT_LIMITS.paymentPurpose}
+                value={form.paymentPurpose}
+                onChange={(event) => updateForm({ paymentPurpose: event.currentTarget.value })}
+              />
+              <Textarea
+                autosize
+                disabled={isLoading || isSaving}
+                label={t('Коментар')}
+                maxLength={INCOME_CASHFLOW_TEXT_LIMITS.comment}
+                maxRows={4}
+                minRows={1}
+                value={form.comment}
+                onChange={(event) => updateForm({ comment: event.currentTarget.value })}
+              />
+            </SimpleGrid>
+            <Group className="outgoing-cashflow-create-form__accounting-flags" gap="lg">
+              <Checkbox
+                checked={form.isManagementAccounting}
+                disabled={isLoading || isSaving}
+                label={t('Управлінський облік')}
+                onChange={(event) => updateForm({ isManagementAccounting: event.currentTarget.checked })}
+              />
+              <Checkbox
+                checked={form.isAccounting}
+                disabled={isLoading || isSaving}
+                label={t('Бухгалтерський облік')}
+                onChange={(event) => updateForm({ isAccounting: event.currentTarget.checked })}
+              />
+            </Group>
+          </Stack>
+        </Stack>
+      </form>
       <AppDrawerFooter>
         <Group gap="xs" justify="flex-end">
           <Button

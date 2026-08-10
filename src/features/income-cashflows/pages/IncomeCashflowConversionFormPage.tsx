@@ -1,9 +1,8 @@
 import {
+  ActionIcon,
   Alert,
-  Badge,
   Button,
   Checkbox,
-  Divider,
   Group,
   NumberInput,
   SegmentedControl,
@@ -13,6 +12,7 @@ import {
   Text,
   TextInput,
   Textarea,
+  Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, Plus, Save } from 'lucide-react'
@@ -53,6 +53,7 @@ import {
   validateIncomeCashflowMovementName,
 } from '../incomeCashflowFormValidation'
 import { createAutocompleteOptionSubmitGuard } from '../autocompleteOptionSubmitGuard'
+import './income-cashflows-page.css'
 
 type FormState = {
   amount: number
@@ -421,7 +422,9 @@ export function IncomeCashflowConversionFormPage() {
         amount: form.amount,
         arrivalNumber: form.entranceNumber,
         comment: form.comment,
+        date: form.date,
         paymentPurpose: form.paymentPurpose,
+        time: form.time,
         vatAmount: form.vatAmount,
         vatRate: form.vatRate,
       },
@@ -462,10 +465,27 @@ export function IncomeCashflowConversionFormPage() {
 
   return (
     <AppDrawer
+      className="income-cashflow-conversion-form-drawer"
       opened
       position="right"
       size="standard"
-      title={<span style={{ fontFamily: 'var(--font-mono)' }}>{title}</span>}
+      title={(
+        <Group className="income-cashflow-client-form__titlebar" gap="sm" justify="space-between" wrap="nowrap">
+          <span className="income-cashflow-client-form__title" style={{ fontFamily: 'var(--font-mono)' }}>{title}</span>
+          <div className="income-cashflow-client-form__tabs-scroll">
+            <SegmentedControl
+              className="income-cashflow-client-form__tabs"
+              data={[
+                { label: t('Каса'), value: String(PaymentRegisterType.Cash) },
+                { label: t('Банк'), value: String(PaymentRegisterType.Bank) },
+              ]}
+              disabled={isLoading || isSaving}
+              value={String(registerType)}
+              onChange={handleModeChanged}
+            />
+          </div>
+        </Group>
+      )}
       onClose={() => navigate(INCOME_CASHFLOWS_PATH)}
       footer={
         <Button
@@ -480,29 +500,8 @@ export function IncomeCashflowConversionFormPage() {
         </Button>
       }
     >
-      <form id="income-cashflow-conversion-form" onSubmit={handleSubmit}>
+      <form className="income-cashflow-conversion-form" id="income-cashflow-conversion-form" onSubmit={handleSubmit}>
         <Stack gap="md">
-          <Group align="flex-end" justify="space-between" gap="sm" wrap="wrap">
-            <Group gap="xs">
-              <Badge color={isBankIncome ? 'indigo' : 'green'} variant="light">
-                {isBankIncome ? t('Банк') : t('Каса')}
-              </Badge>
-              <Text c="dimmed" size="sm">
-                {t('Новий прибутковий ордер')}
-              </Text>
-            </Group>
-
-            <SegmentedControl
-              data={[
-                { label: t('Каса'), value: String(PaymentRegisterType.Cash) },
-                { label: t('Банк'), value: String(PaymentRegisterType.Bank) },
-              ]}
-              disabled={isLoading || isSaving}
-              value={String(registerType)}
-              onChange={handleModeChanged}
-            />
-          </Group>
-
           {error && (
             <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
@@ -510,9 +509,13 @@ export function IncomeCashflowConversionFormPage() {
           )}
 
           {isBankIncome && (
-            <Stack gap="xs">
-              <SimpleGrid cols={{ base: 1, md: 2 }}>
+            <Stack gap="sm">
+              <Text className="app-section-title" fw={600} size="sm">
+                {t('Платник')}
+              </Text>
+              <SimpleGrid cols={{ base: 1, md: 2 }} style={{ alignItems: 'end' }}>
                 <SegmentedControl
+                  className="income-cashflow-client-form__tabs"
                   data={[
                     { label: t('Клієнти'), value: String(IncomeCounterpartySearchType.Client) },
                     { label: t('Постачальники'), value: String(IncomeCounterpartySearchType.Supplier) },
@@ -533,14 +536,18 @@ export function IncomeCashflowConversionFormPage() {
                   onOptionSubmit={handleCounterpartySubmit}
                 />
               </SimpleGrid>
-              <Divider />
             </Stack>
           )}
 
-          <SimpleGrid cols={{ base: 1, md: 3 }}>
+          <Stack gap="sm">
+            <Text className="app-section-title" fw={600} size="sm">
+              {t('Реквізити надходження')}
+            </Text>
+            <SimpleGrid cols={{ base: 1, md: 3 }} style={{ alignItems: 'end' }}>
             <TextInput
               disabled={isLoading || isSaving}
               label={t('Дата')}
+              required
               type="date"
               value={form.date}
               onChange={(event) => updateForm({ date: event.currentTarget.value })}
@@ -548,6 +555,7 @@ export function IncomeCashflowConversionFormPage() {
             <TextInput
               disabled={isLoading || isSaving}
               label={t('Час')}
+              required
               type="time"
               value={form.time}
               onChange={(event) => updateForm({ time: event.currentTarget.value })}
@@ -563,6 +571,7 @@ export function IncomeCashflowConversionFormPage() {
               data={organizationOptions}
               disabled={isLoading || isSaving}
               label={t('Організація')}
+              required
               searchable
               value={form.organizationValue || null}
               onChange={handleOrganizationChanged}
@@ -571,6 +580,7 @@ export function IncomeCashflowConversionFormPage() {
               data={registerOptions}
               disabled={!selectedOrganization || isLoading || isSaving}
               label={t('Каса / рахунок')}
+              required
               searchable
               value={form.paymentRegisterValue || null}
               onChange={handleRegisterChanged}
@@ -579,6 +589,7 @@ export function IncomeCashflowConversionFormPage() {
               data={currencyOptions}
               disabled={!selectedRegister || isLoading || isSaving}
               label={t('Валюта')}
+              required
               searchable
               value={form.selectedCurrencyValue || null}
               onChange={(value) => updateForm({ selectedCurrencyValue: value || '' })}
@@ -589,6 +600,7 @@ export function IncomeCashflowConversionFormPage() {
               disabled={isLoading || isSaving}
               label={t('Сума')}
               min={0}
+              required
               value={form.amount}
               onChange={handleAmountChanged}
             />
@@ -612,25 +624,32 @@ export function IncomeCashflowConversionFormPage() {
               value={form.vatAmount}
               onChange={(value) => updateForm({ vatAmount: toNumber(value) })}
             />
-            <SearchableSelect
-              data={movementOptions}
-              disabled={isLoading || isSaving}
-              label={t('Стаття руху коштів')}
-              maxLength={INCOME_CASHFLOW_TEXT_LIMITS.movementName}
-              value={form.movementSearch}
-              onChange={handleMovementSearchChanged}
-              onOptionSubmit={handleMovementSubmit}
-            />
-            <Button
-              disabled={Boolean(activeMovement) || !form.movementSearch.trim() || isLoading}
-              leftSection={<Plus size={16} />}
-              mt={24}
-              type="button"
-              variant="default"
-              onClick={() => void handleCreateMovement()}
-            >
-              {t('Створити статтю')}
-            </Button>
+              <Group align="flex-end" gap="xs" wrap="nowrap">
+                <SearchableSelect
+                  data={movementOptions}
+                  disabled={isLoading || isSaving}
+                  label={t('Стаття руху коштів')}
+                  maxLength={INCOME_CASHFLOW_TEXT_LIMITS.movementName}
+                  required
+                  style={{ flex: 1 }}
+                  value={form.movementSearch}
+                  onChange={handleMovementSearchChanged}
+                  onOptionSubmit={handleMovementSubmit}
+                />
+                <Tooltip label={t('Створити статтю')} withArrow>
+                  <ActionIcon
+                    aria-label={t('Створити статтю')}
+                    color={CREATE_ACTION_COLOR}
+                    disabled={Boolean(activeMovement) || !form.movementSearch.trim() || isLoading || isSaving}
+                    size={36}
+                    type="button"
+                    variant="outline"
+                    onClick={() => void handleCreateMovement()}
+                  >
+                    <Plus size={17} />
+                  </ActionIcon>
+                </Tooltip>
+              </Group>
             <TextInput
               disabled={isLoading || isSaving}
               label={t('Призначення платежу')}
@@ -638,31 +657,38 @@ export function IncomeCashflowConversionFormPage() {
               value={form.paymentPurpose}
               onChange={(event) => updateForm({ paymentPurpose: event.currentTarget.value })}
             />
-          </SimpleGrid>
+            </SimpleGrid>
+          </Stack>
 
-          <Group gap="lg">
-            <Checkbox
-              checked={form.isManagementAccounting}
+          <Stack gap="sm">
+            <Text className="app-section-title" fw={600} size="sm">
+              {t('Деталі та облік')}
+            </Text>
+            <Textarea
+              autosize
               disabled={isLoading || isSaving}
-              label={t('Управлінський облік')}
-              onChange={(event) => updateForm({ isManagementAccounting: event.currentTarget.checked })}
+              label={t('Коментар')}
+              maxLength={INCOME_CASHFLOW_TEXT_LIMITS.comment}
+              maxRows={4}
+              minRows={1}
+              value={form.comment}
+              onChange={(event) => updateForm({ comment: event.currentTarget.value })}
             />
-            <Checkbox
-              checked={form.isAccounting}
-              disabled={isLoading || isSaving}
-              label={t('Бухгалтерський облік')}
-              onChange={(event) => updateForm({ isAccounting: event.currentTarget.checked })}
-            />
-          </Group>
-
-          <Textarea
-            disabled={isLoading || isSaving}
-            label={t('Коментар')}
-            maxLength={INCOME_CASHFLOW_TEXT_LIMITS.comment}
-            minRows={3}
-            value={form.comment}
-            onChange={(event) => updateForm({ comment: event.currentTarget.value })}
-          />
+            <Group className="income-cashflow-client-form__accounting-flags" gap="lg">
+              <Checkbox
+                checked={form.isManagementAccounting}
+                disabled={isLoading || isSaving}
+                label={t('Управлінський облік')}
+                onChange={(event) => updateForm({ isManagementAccounting: event.currentTarget.checked })}
+              />
+              <Checkbox
+                checked={form.isAccounting}
+                disabled={isLoading || isSaving}
+                label={t('Бухгалтерський облік')}
+                onChange={(event) => updateForm({ isAccounting: event.currentTarget.checked })}
+              />
+            </Group>
+          </Stack>
         </Stack>
       </form>
     </AppDrawer>

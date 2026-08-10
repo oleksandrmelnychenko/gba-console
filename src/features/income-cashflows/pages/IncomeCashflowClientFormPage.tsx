@@ -1,19 +1,18 @@
 import {
+  ActionIcon,
   Alert,
-  Badge,
   Button,
   Checkbox,
-  Divider,
   Group,
   NumberInput,
   SegmentedControl,
   Select,
   SimpleGrid,
   Stack,
-  Table,
   Text,
   TextInput,
   Textarea,
+  Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, Plus, Save } from 'lucide-react'
@@ -21,6 +20,8 @@ import { type FormEvent, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { SearchableSelect } from '../../../shared/ui/SearchableSelect'
+import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -92,6 +93,7 @@ import {
 } from '../incomeCashflowFormValidation'
 import { createLatestRequestGuard } from '../latestRequestGuard'
 import { createAutocompleteOptionSubmitGuard } from '../autocompleteOptionSubmitGuard'
+import './income-cashflows-page.css'
 
 type FormState = {
   amount: number
@@ -133,6 +135,9 @@ type AgreementsLoadState = 'idle' | 'loading' | 'loaded' | 'failed'
 
 const INCOME_CASHFLOWS_PATH = '/accounting/income-cashflows'
 const SEARCH_DEBOUNCE_MS = 300
+const CLIENT_DEBTS_TABLE_DEFAULT_LAYOUT = {
+  density: 'normal',
+} satisfies DataTableDefaultLayout
 
 const moneyFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 2,
@@ -231,7 +236,6 @@ export function IncomeCashflowClientFormPage() {
     return filterClientDebts(selectedClient.ClientInDebts || [], selectedOrganization, selectedClientAgreement)
   }, [selectedClient, selectedClientAgreement, selectedOrganization])
   const debtSummary = useMemo(() => summarizeClientDebts(visibleDebts), [visibleDebts])
-  const selectedDebtValueSet = useMemo(() => new Set(form.selectedDebtValues), [form.selectedDebtValues])
   const totalDebt = debtSummary.totalDebt
   const maxOverdueDays = debtSummary.maxOverdueDays
   const title = getTitle(operationType, registerType, t)
@@ -874,7 +878,9 @@ export function IncomeCashflowClientFormPage() {
         amount: form.amount,
         arrivalNumber: form.entranceNumber,
         comment: form.comment,
+        date: form.date,
         paymentPurpose: form.paymentPurpose,
+        time: form.time,
         vatAmount: form.vatAmount,
         vatRate: form.vatRate,
       },
@@ -932,10 +938,26 @@ export function IncomeCashflowClientFormPage() {
 
   return (
     <AppDrawer
+      className="income-cashflow-client-form-drawer"
       opened
       position="right"
       size="wide"
-      title={<span style={{ fontFamily: 'var(--font-mono)' }}>{title}</span>}
+      title={
+        <Group className="income-cashflow-client-form__titlebar" gap="sm" wrap="nowrap">
+          <span className="income-cashflow-client-form__title">{title}</span>
+          <SegmentedControl
+            aria-label={t('Тип рахунку')}
+            className="income-cashflow-client-form__tabs income-cashflow-client-form__register-tabs"
+            data={[
+              { label: t('Каса'), value: String(PaymentRegisterType.Cash) },
+              { label: t('Банк'), value: String(PaymentRegisterType.Bank) },
+            ]}
+            disabled={isLoading || isSaving}
+            value={String(registerType)}
+            onChange={handleRegisterTypeChanged}
+          />
+        </Group>
+      }
       onClose={() => navigate(INCOME_CASHFLOWS_PATH)}
       footer={
         <Button
@@ -950,30 +972,23 @@ export function IncomeCashflowClientFormPage() {
         </Button>
       }
     >
-      <form id="income-cashflow-client-form" onSubmit={handleSubmit}>
+      <form className="income-cashflow-client-form" id="income-cashflow-client-form" onSubmit={handleSubmit}>
         <Stack gap="md">
-          <Group align="flex-end" justify="space-between" gap="sm" wrap="wrap">
-            <Group gap="xs">
-              <Badge color={registerType === PaymentRegisterType.Bank ? 'indigo' : 'green'} variant="light">
-                {registerType === PaymentRegisterType.Bank ? t('Банк') : t('Каса')}
-              </Badge>
-              <Text c="dimmed" size="sm">
-                {t('Новий прибутковий ордер по контрагенту')}
-              </Text>
-            </Group>
-
-            <SegmentedControl
-              data={[
-                { label: t('Каса'), value: String(PaymentRegisterType.Cash) },
-                { label: t('Банк'), value: String(PaymentRegisterType.Bank) },
-              ]}
-              disabled={isLoading || isSaving}
-              value={String(registerType)}
-              onChange={handleRegisterTypeChanged}
-            />
-          </Group>
-
-          <SegmentedControl data={operationOptions} disabled={isLoading || isSaving} value={String(operationType)} onChange={handleOperationChanged} />
+          <Stack gap={6}>
+            <Text className="app-section-title" fw={600} size="sm">
+              {t('Тип надходження')}
+            </Text>
+            <div className="income-cashflow-client-form__tabs-scroll">
+              <SegmentedControl
+                aria-label={t('Тип надходження')}
+                className="income-cashflow-client-form__tabs income-cashflow-client-form__operation-tabs"
+                data={operationOptions}
+                disabled={isLoading || isSaving}
+                value={String(operationType)}
+                onChange={handleOperationChanged}
+              />
+            </div>
+          </Stack>
 
           {error && (
             <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
@@ -981,279 +996,302 @@ export function IncomeCashflowClientFormPage() {
             </Alert>
           )}
 
-          {operationType === IncomePaymentOperationType.ClientPayment && (
-            <SearchableSelect
-              data={payerOptions}
-              disabled={isLoading || isSaving}
-              label={t('Пошук за платниками')}
-              placeholder={t('Почніть вводити платника')}
-              value={form.payerSearch}
-              onChange={handlePayerSearchChanged}
-              onOptionSubmit={handleCounterpartySubmit}
-            />
-          )}
+          <Stack gap="sm">
+            <Text className="app-section-title" fw={600} size="sm">
+              {t('Контрагент')}
+            </Text>
 
-          <Stack gap="xs">
-            <SimpleGrid cols={{ base: 1, md: 2 }}>
-              <SegmentedControl
-                data={searchTypeOptions}
+            {operationType === IncomePaymentOperationType.ClientPayment && (
+              <SearchableSelect
+                data={payerOptions}
                 disabled={isLoading || isSaving}
-                style={{ alignSelf: 'end' }}
-                value={String(form.searchType)}
-                onChange={handleSearchTypeChanged}
+                label={t('Пошук за платниками')}
+                placeholder={t('Почніть вводити платника')}
+                value={form.payerSearch}
+                onChange={handlePayerSearchChanged}
+                onOptionSubmit={handleCounterpartySubmit}
               />
+            )}
+
+            <SimpleGrid cols={{ base: 1, md: 2 }} style={{ alignItems: 'end' }}>
+              <Stack gap={6}>
+                <Text className="income-cashflow-client-form__field-label" size="sm">
+                  {t('Тип контрагента')}
+                </Text>
+                <div className="income-cashflow-client-form__tabs-scroll">
+                  <SegmentedControl
+                    aria-label={t('Тип контрагента')}
+                    className="income-cashflow-client-form__tabs income-cashflow-client-form__counterparty-tabs"
+                    data={searchTypeOptions}
+                    disabled={isLoading || isSaving}
+                    value={String(form.searchType)}
+                    onChange={handleSearchTypeChanged}
+                  />
+                </div>
+              </Stack>
               <SearchableSelect
                 data={counterpartyOptions}
                 disabled={isLoading || isSaving}
                 label={t('Контрагент')}
                 placeholder={t('Почніть вводити назву')}
+                required
                 value={form.counterpartySearch}
                 onChange={handleCounterpartySearchChanged}
                 onOptionSubmit={handleCounterpartySubmit}
               />
             </SimpleGrid>
-
-            <Divider />
           </Stack>
 
-          <SimpleGrid cols={{ base: 1, md: 3 }}>
-            <TextInput
-              disabled={isLoading || isSaving}
-              label={t('Вхідний номер')}
-              maxLength={INCOME_CASHFLOW_TEXT_LIMITS.arrivalNumber}
-              value={form.entranceNumber}
-              onChange={(event) => updateForm({ entranceNumber: event.currentTarget.value })}
-            />
-            <TextInput
-              disabled={isLoading || isSaving}
-              label={t('Дата')}
-              type="date"
-              value={form.date}
-              onChange={(event) => updateForm({ date: event.currentTarget.value })}
-            />
-            <TextInput
-              disabled={isLoading || isSaving}
-              label={t('Час')}
-              type="time"
-              value={form.time}
-              onChange={(event) => updateForm({ time: event.currentTarget.value })}
-            />
-            <Select
-              data={organizationOptions}
-              disabled={!organizationOptions.length || isLoading || isSaving}
-              label={t('Організація')}
-              searchable
-              value={form.organizationValue || null}
-              onChange={handleOrganizationChanged}
-            />
-            <Select
-              data={registerOptions}
-              disabled={!selectedOrganization || isLoading || isSaving}
-              label={t('Каса / рахунок')}
-              searchable
-              value={form.paymentRegisterValue || null}
-              onChange={handleRegisterChanged}
-            />
-            <Select
-              data={currencyOptions}
-              disabled={!selectedRegister || isLoading || isSaving}
-              label={t('Валюта')}
-              searchable
-              value={form.selectedCurrencyValue || null}
-              onChange={(value) => updateForm({ selectedCurrencyValue: value || '' })}
-            />
-            <Select
-              data={agreementOptions}
-              disabled={!agreementOptions.length || isLoading || isSaving}
-              label={t('Договір')}
-              searchable
-              value={form.selectedAgreementValue || null}
-              onChange={handleAgreementChanged}
-            />
-            <NumberInput
-              allowNegative={false}
-              decimalScale={2}
-              disabled={isLoading || isSaving}
-              label={t('Сума')}
-              min={0}
-              value={form.amount}
-              onChange={handleAmountChanged}
-            />
-            <NumberInput
-              allowNegative={false}
-              decimalScale={6}
-              disabled={isLoading || isSaving}
-              label={t('Курс')}
-              min={0}
-              value={form.exchangeRate}
-              onChange={(value) => updateForm({ exchangeRate: toNumber(value) })}
-            />
-            <NumberInput
-              allowNegative={false}
-              decimalScale={2}
-              disabled={isLoading || isSaving}
-              label={t('Ставка ПДВ')}
-              max={100}
-              min={0}
-              value={form.vatRate}
-              onChange={handleVatRateChanged}
-            />
-            <NumberInput
-              allowNegative={false}
-              decimalScale={2}
-              disabled={isLoading || isSaving}
-              label={t('Сума ПДВ')}
-              max={form.amount}
-              min={0}
-              value={form.vatAmount}
-              onChange={(value) => updateForm({ vatAmount: toNumber(value) })}
-            />
-            <SearchableSelect
-              data={movementOptions}
-              disabled={isLoading || isSaving}
-              label={t('Стаття руху коштів')}
-              maxLength={INCOME_CASHFLOW_TEXT_LIMITS.movementName}
-              value={form.movementSearch}
-              onChange={handleMovementSearchChanged}
-              onOptionSubmit={handleMovementSubmit}
-            />
-            <Button
-              disabled={Boolean(activeMovement) || !form.movementSearch.trim() || isLoading}
-              leftSection={<Plus size={16} />}
-              mt={24}
-              type="button"
-              variant="default"
-              onClick={() => void handleCreateMovement()}
-            >
-              {t('Створити статтю')}
-            </Button>
-          </SimpleGrid>
+          <Stack gap="sm">
+            <Text className="app-section-title" fw={600} size="sm">
+              {t('Реквізити надходження')}
+            </Text>
+
+            <SimpleGrid cols={{ base: 1, md: 3 }} style={{ alignItems: 'end' }}>
+              <TextInput
+                disabled={isLoading || isSaving}
+                label={t('Вхідний номер')}
+                maxLength={INCOME_CASHFLOW_TEXT_LIMITS.arrivalNumber}
+                value={form.entranceNumber}
+                onChange={(event) => updateForm({ entranceNumber: event.currentTarget.value })}
+              />
+              <TextInput
+                disabled={isLoading || isSaving}
+                label={t('Дата')}
+                required
+                type="date"
+                value={form.date}
+                onChange={(event) => updateForm({ date: event.currentTarget.value })}
+              />
+              <TextInput
+                disabled={isLoading || isSaving}
+                label={t('Час')}
+                required
+                type="time"
+                value={form.time}
+                onChange={(event) => updateForm({ time: event.currentTarget.value })}
+              />
+              <Select
+                data={organizationOptions}
+                disabled={!organizationOptions.length || isLoading || isSaving}
+                label={t('Організація')}
+                required
+                searchable
+                value={form.organizationValue || null}
+                onChange={handleOrganizationChanged}
+              />
+              <Select
+                data={registerOptions}
+                disabled={!selectedOrganization || isLoading || isSaving}
+                label={t('Каса / рахунок')}
+                required
+                searchable
+                value={form.paymentRegisterValue || null}
+                onChange={handleRegisterChanged}
+              />
+              <Select
+                data={currencyOptions}
+                disabled={!selectedRegister || isLoading || isSaving}
+                label={t('Валюта')}
+                required
+                searchable
+                value={form.selectedCurrencyValue || null}
+                onChange={(value) => updateForm({ selectedCurrencyValue: value || '' })}
+              />
+              <Select
+                data={agreementOptions}
+                disabled={!agreementOptions.length || isLoading || isSaving}
+                label={t('Договір')}
+                required
+                searchable
+                value={form.selectedAgreementValue || null}
+                onChange={handleAgreementChanged}
+              />
+              <NumberInput
+                allowNegative={false}
+                decimalScale={2}
+                disabled={isLoading || isSaving}
+                label={t('Сума')}
+                min={0}
+                required
+                value={form.amount}
+                onChange={handleAmountChanged}
+              />
+              <NumberInput
+                allowNegative={false}
+                decimalScale={6}
+                disabled={isLoading || isSaving}
+                label={t('Курс')}
+                min={0}
+                value={form.exchangeRate}
+                onChange={(value) => updateForm({ exchangeRate: toNumber(value) })}
+              />
+              <NumberInput
+                allowNegative={false}
+                decimalScale={2}
+                disabled={isLoading || isSaving}
+                label={t('Ставка ПДВ')}
+                max={100}
+                min={0}
+                value={form.vatRate}
+                onChange={handleVatRateChanged}
+              />
+              <NumberInput
+                allowNegative={false}
+                decimalScale={2}
+                disabled={isLoading || isSaving}
+                label={t('Сума ПДВ')}
+                max={form.amount}
+                min={0}
+                value={form.vatAmount}
+                onChange={(value) => updateForm({ vatAmount: toNumber(value) })}
+              />
+              <Group align="flex-end" gap="xs" wrap="nowrap">
+                <SearchableSelect
+                  data={movementOptions}
+                  disabled={isLoading || isSaving}
+                  label={t('Стаття руху коштів')}
+                  maxLength={INCOME_CASHFLOW_TEXT_LIMITS.movementName}
+                  required
+                  style={{ flex: 1 }}
+                  value={form.movementSearch}
+                  onChange={handleMovementSearchChanged}
+                  onOptionSubmit={handleMovementSubmit}
+                />
+                <Tooltip label={t('Створити статтю')} withArrow>
+                  <ActionIcon
+                    aria-label={t('Створити статтю')}
+                    color={CREATE_ACTION_COLOR}
+                    disabled={Boolean(activeMovement) || !form.movementSearch.trim() || isLoading || isSaving}
+                    size={36}
+                    type="button"
+                    variant="outline"
+                    onClick={() => void handleCreateMovement()}
+                  >
+                    <Plus size={17} />
+                  </ActionIcon>
+                </Tooltip>
+              </Group>
+            </SimpleGrid>
+          </Stack>
 
           {form.amount > 0 && agreementCurrency && selectedCurrency && (
-            <Group gap="xs">
-              <Badge className="app-role-pill" variant="light">
-                {t('Зарахування')}: {formatMoney(form.calculatedValue || form.amount)} {agreementCurrency.Code || agreementCurrency.Name}
-              </Badge>
-              <Badge color="gray" variant="light">
+            <div className="income-cashflow-client-form__exchange-summary">
+              <span>{t('До зарахування')}</span>
+              <strong>
+                {formatMoney(form.calculatedValue || form.amount)} {agreementCurrency.Code || agreementCurrency.Name}
+              </strong>
+              <small>
                 {selectedCurrency.Code || selectedCurrency.Name} → {agreementCurrency.Code || agreementCurrency.Name}
-              </Badge>
-            </Group>
+              </small>
+            </div>
           )}
 
-          <SimpleGrid cols={{ base: 1, md: 2 }}>
-            <PaymentPurposeAutocomplete
-              {...paymentPurposeSuggestionScope}
-              disabled={isLoading || isResolvingCounterparty || isSaving}
-              label={t('Призначення платежу')}
-              value={form.paymentPurpose}
-              onChange={(value) => updateForm({ paymentPurpose: value })}
-            />
-            <Textarea
-              disabled={isLoading || isSaving}
-              label={t('Коментар')}
-              maxLength={INCOME_CASHFLOW_TEXT_LIMITS.comment}
-              minRows={2}
-              value={form.comment}
-              onChange={(event) => updateForm({ comment: event.currentTarget.value })}
-            />
-          </SimpleGrid>
+          <Stack gap="sm">
+            <Text className="app-section-title" fw={600} size="sm">
+              {t('Деталі та облік')}
+            </Text>
 
-          <Group gap="lg">
-            <Checkbox
-              checked={form.isManagementAccounting}
-              disabled={isLoading || isSaving}
-              label={t('Управлінський облік')}
-              onChange={(event) => updateForm({ isManagementAccounting: event.currentTarget.checked })}
-            />
-            <Checkbox
-              checked={form.isAccounting}
-              disabled={isLoading || isSaving}
-              label={t('Бухгалтерський облік')}
-              onChange={(event) => updateForm({ isAccounting: event.currentTarget.checked })}
-            />
-          </Group>
+            <SimpleGrid cols={{ base: 1, md: 2 }} style={{ alignItems: 'start' }}>
+              <PaymentPurposeAutocomplete
+                {...paymentPurposeSuggestionScope}
+                disabled={isLoading || isResolvingCounterparty || isSaving}
+                label={t('Призначення платежу')}
+                value={form.paymentPurpose}
+                onChange={(value) => updateForm({ paymentPurpose: value })}
+              />
+              <Textarea
+                autosize
+                disabled={isLoading || isSaving}
+                label={t('Коментар')}
+                maxLength={INCOME_CASHFLOW_TEXT_LIMITS.comment}
+                maxRows={4}
+                minRows={1}
+                value={form.comment}
+                onChange={(event) => updateForm({ comment: event.currentTarget.value })}
+              />
+            </SimpleGrid>
+
+            <Group className="income-cashflow-client-form__accounting-flags" gap="lg">
+              <Checkbox
+                checked={form.isManagementAccounting}
+                disabled={isLoading || isSaving}
+                label={t('Управлінський облік')}
+                onChange={(event) => updateForm({ isManagementAccounting: event.currentTarget.checked })}
+              />
+              <Checkbox
+                checked={form.isAccounting}
+                disabled={isLoading || isSaving}
+                label={t('Бухгалтерський облік')}
+                onChange={(event) => updateForm({ isAccounting: event.currentTarget.checked })}
+              />
+            </Group>
+          </Stack>
 
           {!isSupplierSearch && selectedClient && (
-            <Stack gap="sm">
-              <Group justify="space-between" wrap="wrap">
-                <div>
+            <Stack className="income-cashflow-client-form__debts" gap="sm">
+              <Group align="flex-start" className="income-cashflow-client-form__debts-header" justify="space-between" wrap="wrap">
+                <div className="income-cashflow-client-form__debts-identity">
                   <Text className="app-section-title" fw={600} size="sm">{t('Борги та рахунки клієнта')}</Text>
-                  <Text c="dimmed" size="sm">
-                    {getEntityName(selectedClient)}
-                  </Text>
                 </div>
-                <Group gap="xs">
+
+                <div className="income-cashflow-client-form__debt-metrics">
                   {maxOverdueDays > 0 && (
-                    <Badge color="red" variant="light">
-                      {t('Прострочено')}: {maxOverdueDays} {t('днів')}
-                    </Badge>
+                    <div className="income-cashflow-client-form__debt-metric is-danger">
+                      <span>{t('Прострочено')}</span>
+                      <strong>{maxOverdueDays} {t('днів')}</strong>
+                    </div>
                   )}
                   {clientDebtTotal?.TotalEuro ? (
-                    <Badge color="gray" variant="light">
-                      {t('Борг EUR')}: {formatMoney(clientDebtTotal.TotalEuro)}
-                    </Badge>
+                    <div className="income-cashflow-client-form__debt-metric">
+                      <span>{t('Загальний борг')}</span>
+                      <strong>{formatMoney(clientDebtTotal.TotalEuro)} EUR</strong>
+                    </div>
                   ) : null}
                   {clientDebtTotal?.TotalLocal ? (
-                    <Badge color="gray" variant="light">
-                      {t('Борг UAH')}: {formatMoney(clientDebtTotal.TotalLocal)}
-                    </Badge>
+                    <div className="income-cashflow-client-form__debt-metric">
+                      <span>{t('Загальний борг')}</span>
+                      <strong>{formatMoney(clientDebtTotal.TotalLocal)} UAH</strong>
+                    </div>
                   ) : null}
-                  <Badge className="app-role-pill" variant="light">
-                    {t('Поточний договір')}: {formatMoney(selectedClientAgreement?.CurrentAmount)}
-                  </Badge>
-                  <Badge className="app-role-pill" variant="light">
-                    {t('Борги по договору')}: {formatMoney(totalDebt)}
-                  </Badge>
-                </Group>
+                  {selectedClientAgreement?.CurrentAmount ? (
+                    <div className="income-cashflow-client-form__debt-metric">
+                      <span>{t('Баланс договору')}</span>
+                      <strong>
+                        {formatMoney(selectedClientAgreement.CurrentAmount)} {agreementCurrency?.Code || ''}
+                      </strong>
+                    </div>
+                  ) : null}
+                  {totalDebt > 0 && (
+                    <div className="income-cashflow-client-form__debt-metric is-accent">
+                      <span>{t('Борг за договором')}</span>
+                      <strong>{formatMoney(totalDebt)} {agreementCurrency?.Code || ''}</strong>
+                    </div>
+                  )}
+                </div>
               </Group>
 
               {visibleDebts.length > 0 ? (
                 <>
                   <Checkbox
+                    className="income-cashflow-client-form__auto-allocate"
                     checked={form.autoAllocate}
                     disabled={isSaving}
                     label={t('Автоматично рознести оплату по боргах')}
                     onChange={(event) => updateForm({ autoAllocate: event.currentTarget.checked })}
                   />
-                  <Table.ScrollContainer minWidth={720}>
-                    <Table highlightOnHover verticalSpacing="xs">
-                      <Table.Thead>
-                        <Table.Tr>
-                          <Table.Th w={58}>{t('Вибір')}</Table.Th>
-                          <Table.Th>{t('Рахунок')}</Table.Th>
-                          <Table.Th>{t('Дата')}</Table.Th>
-                          <Table.Th>{t('Днів')}</Table.Th>
-                          <Table.Th>{t('Борг')}</Table.Th>
-                        </Table.Tr>
-                      </Table.Thead>
-                      <Table.Tbody>
-                        {visibleDebts.map((debt) => {
-                          const debtValue = getIncomeCashflowDebtTargetValue(debt)
-                          const checked = selectedDebtValueSet.has(debtValue)
-
-                          return (
-                            <Table.Tr key={debtValue}>
-                              <Table.Td>
-                                <Checkbox
-                                  aria-label={t('Вибрати борг')}
-                                  checked={checked}
-                                  disabled={isSaving}
-                                  onChange={(event) => handleDebtChecked(debt, event.currentTarget.checked)}
-                                />
-                              </Table.Td>
-                              <Table.Td>{getDebtDocumentNumber(debt)}</Table.Td>
-                              <Table.Td>{formatDate(getDebtDate(debt))}</Table.Td>
-                              <Table.Td className="app-table-number">{debt.Debt?.Days || 0}</Table.Td>
-                              <Table.Td className="app-table-number">{formatMoney(readDebtTotal(debt))}</Table.Td>
-                            </Table.Tr>
-                          )
-                        })}
-                      </Table.Tbody>
-                    </Table>
-                  </Table.ScrollContainer>
+                  <div className="income-cashflow-client-form__debts-table-shell">
+                    <IncomeCashflowDebtTable
+                      currencyCode={agreementCurrency?.Code || ''}
+                      debts={visibleDebts}
+                      disabled={isSaving}
+                      selectedDebtValues={form.selectedDebtValues}
+                      onChecked={handleDebtChecked}
+                    />
+                  </div>
                 </>
               ) : (
-                <Text c="dimmed" size="sm">
+                <Text className="income-cashflow-client-form__debts-empty" size="sm">
                   {t('По вибраному договору боргів немає')}
                 </Text>
               )}
@@ -1262,6 +1300,115 @@ export function IncomeCashflowClientFormPage() {
         </Stack>
       </form>
     </AppDrawer>
+  )
+}
+
+function IncomeCashflowDebtTable({
+  currencyCode,
+  debts,
+  disabled,
+  selectedDebtValues,
+  onChecked,
+}: {
+  currencyCode: string
+  debts: ClientInDebt[]
+  disabled: boolean
+  selectedDebtValues: string[]
+  onChecked: (debt: ClientInDebt, checked: boolean) => void
+}) {
+  const { t } = useI18n()
+  const selectedValues = useMemo(
+    () => new Set(selectedDebtValues),
+    [selectedDebtValues],
+  )
+  const columns = useMemo<DataTableColumn<ClientInDebt>[]>(
+    () => [
+      {
+        id: 'selected',
+        header: t('Сплатити'),
+        width: 76,
+        minWidth: 76,
+        maxWidth: 76,
+        align: 'center',
+        enableHiding: false,
+        enablePinning: false,
+        enableReorder: false,
+        enableResizing: false,
+        enableSorting: false,
+        cell: (debt) => {
+          const debtValue = getIncomeCashflowDebtTargetValue(debt)
+
+          return (
+            <Checkbox
+              aria-label={t('Вибрати борг')}
+              checked={selectedValues.has(debtValue)}
+              disabled={disabled}
+              onChange={(event) => onChecked(debt, event.currentTarget.checked)}
+            />
+          )
+        },
+      },
+      {
+        id: 'document',
+        header: t('Рахунок'),
+        width: 280,
+        minWidth: 200,
+        fill: true,
+        numeric: true,
+        accessor: getDebtDocumentNumber,
+        cell: getDebtDocumentNumber,
+      },
+      {
+        id: 'date',
+        header: t('Дата'),
+        width: 180,
+        minWidth: 160,
+        numeric: true,
+        accessor: getDebtDate,
+        cell: (debt) => formatDate(getDebtDate(debt)),
+      },
+      {
+        id: 'days',
+        header: t('Днів'),
+        width: 110,
+        minWidth: 96,
+        align: 'right',
+        numeric: true,
+        accessor: (debt) => debt.Debt?.Days,
+        cell: (debt) => debt.Debt?.Days || '',
+      },
+      {
+        id: 'debt',
+        header: currencyCode ? `${t('Борг')} (${currencyCode})` : t('Борг'),
+        width: 170,
+        minWidth: 140,
+        align: 'right',
+        numeric: true,
+        accessor: readDebtTotal,
+        cell: (debt) => {
+          const value = readDebtTotal(debt)
+
+          return value ? formatMoney(value) : ''
+        },
+      },
+    ],
+    [currencyCode, disabled, onChecked, selectedValues, t],
+  )
+
+  return (
+    <DataTable
+      columns={columns}
+      data={debts}
+      defaultLayout={CLIENT_DEBTS_TABLE_DEFAULT_LAYOUT}
+      emptyText={t('По вибраному договору боргів немає')}
+      enablePinning={false}
+      getRowId={(debt, index) => getIncomeCashflowDebtTargetValue(debt) || String(index)}
+      layoutVersion="income-cashflow-client-debts-1"
+      minWidth={720}
+      showDensityToggle={false}
+      showLayoutControls={false}
+      tableId="income-cashflow-client-debts"
+    />
   )
 }
 
@@ -1806,7 +1953,7 @@ function joinTruthyParts(parts: Array<string | null | undefined>, separator = ' 
 }
 
 function getDebtDocumentNumber(debt: ClientInDebt): string {
-  return debt.Sale?.SaleNumber?.Value || debt.ReSale?.SaleNumber?.Value || debt.Sale?.NetUid || debt.ReSale?.NetUid || '—'
+  return debt.Sale?.SaleNumber?.Value || debt.ReSale?.SaleNumber?.Value || debt.Sale?.NetUid || debt.ReSale?.NetUid || ''
 }
 
 function getDebtDate(debt: ClientInDebt): string | undefined {
@@ -1850,13 +1997,13 @@ function formatMoney(value?: number): string {
 
 function formatDate(value?: string): string {
   if (!value) {
-    return '—'
+    return ''
   }
 
   const date = new Date(value)
 
   if (Number.isNaN(date.getTime())) {
-    return value
+    return ''
   }
 
   return dateTimeFormatter.format(date)

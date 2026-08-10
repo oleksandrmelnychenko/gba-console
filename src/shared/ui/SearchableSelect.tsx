@@ -40,6 +40,7 @@ export function SearchableSelect({
   onDropdownClose,
   onDropdownOpen,
   onOptionSubmit,
+  required,
   renderOption,
   rightSection,
   selectionPlaceholder = 'Оберіть значення',
@@ -69,6 +70,7 @@ export function SearchableSelect({
       maxLength={maxLength}
       nothingFoundMessage={nothingFoundMessage}
       placeholder={selectionPlaceholder}
+      required={required}
       renderOption={renderOption}
       rightSection={rightSection}
       searchable
