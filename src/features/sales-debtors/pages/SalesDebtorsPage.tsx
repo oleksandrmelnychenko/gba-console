@@ -355,7 +355,7 @@ function useDebtorColumns(currencyCode: string, days: number) {
         width: 96,
         minWidth: 80,
         accessor: (row) => row.RegionCode || '',
-        cell: (row) => <DebtorRegionCell value={displayValue(row.RegionCode)} />,
+        cell: (row) => <DebtorRegionCell value={row.RegionCode?.trim() || ''} />,
       },
       {
         id: 'client',
@@ -372,7 +372,7 @@ function useDebtorColumns(currencyCode: string, days: number) {
         width: 180,
         minWidth: 150,
         accessor: (row) => row.UserName || '',
-        cell: (row) => <DebtorManagerCell value={displayValue(row.UserName)} />,
+        cell: (row) => <DebtorManagerCell value={row.UserName?.trim() || ''} />,
       },
       {
         id: 'totalDebtInDays',
@@ -430,28 +430,29 @@ function DebtorRegionCell({ value }: { value: string }) {
 }
 
 function DebtorClientCell({ debtor }: { debtor: ClientInDebt }) {
-  const title = displayValue(debtor.ClientName)
-  const subtitle = debtor.CreatedDebt ? formatDateTime(debtor.CreatedDebt) : displayValue(debtor.ClientNetId)
+  const title = debtor.ClientName?.trim() || ''
+  const subtitle = debtor.CreatedDebt ? formatDateTime(debtor.CreatedDebt) : ''
 
   return (
     <div className="console-table-entity-cell sales-debtors-client-cell">
       <span className="console-table-entity-copy">
         <span className="console-table-entity-title" title={title}>{title}</span>
-        <span className="console-table-entity-subtitle" title={subtitle}>{subtitle}</span>
+        {subtitle ? (
+          <span className="console-table-entity-subtitle sales-debtors-client-meta" title={subtitle}>{subtitle}</span>
+        ) : null}
       </span>
     </div>
   )
 }
 
 function DebtorManagerCell({ value }: { value: string }) {
-  const [lastName, givenName] = splitProfileName(value)
-
   return (
     <div className="sales-debtors-manager-cell">
-      <div className="sales-debtors-manager-copy" title={value}>
-        <Text className="sales-debtors-manager-last-name">{lastName}</Text>
-        <Text className="sales-debtors-manager-first-name">{givenName}</Text>
-      </div>
+      {value ? (
+        <span className="app-role-pill is-yellow sales-debtors-manager-pill" title={value}>
+          {value}
+        </span>
+      ) : null}
     </div>
   )
 }
@@ -478,7 +479,9 @@ function DebtorAmountCell({
 function DebtorDaysCell({ value }: { value: number }) {
   return (
     <span className={`sales-debtors-days-cell${value < 0 ? ' is-danger' : value > 0 ? ' is-warning' : ''}`}>
-      <strong>{value}</strong>
+      <strong className={`app-role-pill sales-debtors-days-pill${value < 0 ? ' is-red' : value > 0 ? ' is-orange' : ' is-gray'}`}>
+        {value}
+      </strong>
     </span>
   )
 }
@@ -725,18 +728,6 @@ function formatDateTime(value?: string | null): string {
   const date = new Date(value)
 
   return Number.isNaN(date.getTime()) ? '' : dateTimeFormatter.format(date)
-}
-
-function splitProfileName(value: string): [string, string] {
-  const normalized = value.trim()
-
-  if (!normalized) {
-    return ['', '']
-  }
-
-  const [firstPart, ...rest] = normalized.split(/\s+/)
-
-  return [firstPart || normalized, rest.join(' ')]
 }
 
 function getDebtDocumentNumber(item: DebtorDebtItem, sale: DebtorDebtSale | null): string {

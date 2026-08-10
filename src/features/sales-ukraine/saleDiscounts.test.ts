@@ -4,6 +4,7 @@ import {
   getOrderItemBaseDiscountSuppressionReason,
   getPartialAverageBaseDiscount,
   getPartialUniformBaseDiscount,
+  getSaleDiscountSummary,
   getUniformBaseDiscount,
   getVisibleOrderItemBaseDiscount,
 } from './saleDiscounts'
@@ -37,5 +38,20 @@ describe('sale discount helpers', () => {
   it('returns partial base discount when only some positions have a contract discount', () => {
     expect(getPartialUniformBaseDiscount([{ Discount: 20 }, { Discount: 0 }, { Discount: null }] as SalesUkraineOrderItem[])).toBe(20)
     expect(getPartialAverageBaseDiscount([{ Discount: 10 }, { Discount: 20 }, { Discount: 0 }] as SalesUkraineOrderItem[])).toBe(15)
+  })
+
+  it('derives all grid discount variants in a single summary', () => {
+    expect(getSaleDiscountSummary([
+      { Discount: 10, OneTimeDiscount: 5 },
+      { Discount: 20, OneTimeDiscount: 5 },
+      { Discount: 0, OneTimeDiscount: 5 },
+    ] as SalesUkraineOrderItem[])).toEqual({
+      averageBaseDiscount: null,
+      averageOneTimeDiscount: 5,
+      partialAverageBaseDiscount: 15,
+      partialUniformBaseDiscount: null,
+      uniformBaseDiscount: null,
+      uniformOneTimeDiscount: 5,
+    })
   })
 })

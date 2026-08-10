@@ -51,6 +51,11 @@ type DocumentResultState = {
   label: string
 }
 
+export type SaleDocumentsMenuAnchor = {
+  left: number
+  top: number
+}
+
 const INVOICE_BUNDLE_ROLES: ReadonlyArray<UserRoleType> = [
   UserRoleType.Administrator,
   UserRoleType.GBA,
@@ -58,7 +63,17 @@ const INVOICE_BUNDLE_ROLES: ReadonlyArray<UserRoleType> = [
   UserRoleType.Accountant,
 ]
 
-export function SaleDocumentsMenu({ sale }: { sale: SalesUkraineSale }) {
+export function SaleDocumentsMenu({
+  anchor,
+  opened,
+  sale,
+  onMenuClose,
+}: {
+  anchor?: SaleDocumentsMenuAnchor | null
+  opened?: boolean
+  sale: SalesUkraineSale | null
+  onMenuClose?: () => void
+}) {
   const { t } = useI18n()
   const { user } = useAuth()
   const [resultState, setResultState] = useValueState<DocumentResultState | null>(null)
@@ -72,10 +87,13 @@ export function SaleDocumentsMenu({ sale }: { sale: SalesUkraineSale }) {
   }, [user])
 
   const apiLanguage = getApiLanguage()
-  const actions = useMemo(() => buildDocumentActions(sale, apiLanguage, t), [apiLanguage, sale, t])
+  const actions = useMemo(() => (sale ? buildDocumentActions(sale, apiLanguage, t) : []), [apiLanguage, sale, t])
+  const isControlled = typeof opened === 'boolean'
 
   async function runAction(action: DocumentAction) {
-    if (runningActionRef.current) {
+    const currentSale = sale
+
+    if (!currentSale || runningActionRef.current) {
       return
     }
 
@@ -109,7 +127,7 @@ export function SaleDocumentsMenu({ sale }: { sale: SalesUkraineSale }) {
         }
       } else if (action.fetch) {
         const result = action.requiresOperationId
-          ? await runPaymentDocumentAction(sale, action, runPaymentDocumentMutation)
+          ? await runPaymentDocumentAction(currentSale, action, runPaymentDocumentMutation)
           : await action.fetch()
         documents = buildDocumentFiles(action, result, isAbleToInvoiceDocument, t)
       } else {
@@ -135,9 +153,33 @@ export function SaleDocumentsMenu({ sale }: { sale: SalesUkraineSale }) {
 
   return (
     <>
-      <Menu position="bottom-end" shadow="md" withinPortal>
+      <Menu
+        opened={isControlled ? opened : undefined}
+        position="bottom-end"
+        shadow="md"
+        withinPortal
+        onChange={(nextOpened) => {
+          if (isControlled && !nextOpened) {
+            onMenuClose?.()
+          }
+        }}
+      >
         <Menu.Target>
-          <TableRowAction action="document" label={t('Документи')} />
+          {isControlled ? (
+            <span
+              aria-hidden="true"
+              style={{
+                height: 1,
+                left: anchor?.left ?? -10_000,
+                pointerEvents: 'none',
+                position: 'fixed',
+                top: anchor?.top ?? -10_000,
+                width: 1,
+              }}
+            />
+          ) : (
+            <TableRowAction action="document" label={t('Документи')} />
+          )}
         </Menu.Target>
         <Menu.Dropdown>
           {actions.length ? (

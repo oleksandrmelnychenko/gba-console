@@ -1201,26 +1201,43 @@ function ReturnDocumentCell({ saleReturn }: { saleReturn: SalesReturn }) {
 }
 
 function ReturnClientCell({ saleReturn }: { saleReturn: SalesReturn }) {
-  const client = displayValue(saleReturn.Client?.FullName || saleReturn.Client?.Name)
-  const agreement = displayValue(saleReturn.ClientAgreement?.Agreement?.Name)
-  const region = displayValue(saleReturn.Client?.RegionCode?.Value)
+  const client = (saleReturn.Client?.FullName || saleReturn.Client?.Name || '').trim()
+  const agreement = saleReturn.ClientAgreement?.Agreement?.Name?.trim() || ''
+  const region = saleReturn.Client?.RegionCode?.Value?.trim() || ''
 
   return (
     <div className="new-sale-return-client-cell">
-      <span className="app-role-pill is-gray new-sale-return-region-tag">{region}</span>
+      {region ? <span className="app-role-pill is-gray new-sale-return-region-tag">{region}</span> : null}
       <span className="new-sale-return-two-line">
         <span className="new-sale-return-main-line" title={client}>{client}</span>
-        <span className="new-sale-return-muted-line" title={agreement}>{agreement}</span>
+        {agreement ? (
+          <span className="new-sale-return-client-meta">
+            <span className="app-role-pill is-gray new-sale-return-agreement-pill" title={agreement}>
+              {agreement}
+            </span>
+          </span>
+        ) : null}
       </span>
     </div>
   )
 }
 
 function ReturnOrganizationCell({ saleReturn }: { saleReturn: SalesReturn }) {
-  const organization = displayValue(saleReturn.ClientAgreement?.Agreement?.Organization?.Name)
-  const storage = displayValue(saleReturn.Storage?.Name)
+  const organization = saleReturn.ClientAgreement?.Agreement?.Organization?.Name?.trim() || ''
+  const storage = saleReturn.Storage?.Name?.trim() || ''
 
-  return <ReturnTwoLineValue primary={organization} secondary={storage} />
+  return (
+    <span className="new-sale-return-two-line">
+      <span className="new-sale-return-main-line" title={organization}>{organization}</span>
+      {storage ? (
+        <span className="new-sale-return-organization-meta">
+          <span className="app-role-pill is-gray new-sale-return-storage-pill" title={storage}>
+            {storage}
+          </span>
+        </span>
+      ) : null}
+    </span>
+  )
 }
 
 function ReturnSalesCell({ saleReturn }: { saleReturn: SalesReturn }) {
@@ -1245,15 +1262,19 @@ function ReturnSalesCell({ saleReturn }: { saleReturn: SalesReturn }) {
 }
 
 function ReturnResponsibleCell({ saleReturn }: { saleReturn: SalesReturn }) {
+  const { t } = useI18n()
   const userName = getReturnUserName(saleReturn.CreatedBy)
-  const [lastName, givenName] = splitReturnProfileName(userName)
 
   return (
     <div className="new-sale-return-responsible-cell">
-      <span className="new-sale-return-two-line">
-        <span className="new-sale-return-main-line" title={userName}>{lastName}</span>
-        <span className="new-sale-return-muted-line" title={userName}>{givenName}</span>
-      </span>
+      {userName ? (
+        <span
+          className="app-role-pill is-yellow new-sale-return-responsible-pill"
+          title={`${t('Відповідальний')}: ${userName}`}
+        >
+          {userName}
+        </span>
+      ) : null}
     </div>
   )
 }
@@ -1265,15 +1286,6 @@ function ReturnAmountCell({ saleReturn }: { saleReturn: SalesReturn }) {
     <span className="new-sale-return-amount-cell">
       <strong className="app-money">{formatMoney(saleReturn.TotalAmountLocal)}</strong>
       <small className="app-money-meta">{currency}</small>
-    </span>
-  )
-}
-
-function ReturnTwoLineValue({ primary, secondary }: { primary: string; secondary: string }) {
-  return (
-    <span className="new-sale-return-two-line">
-      <span className="new-sale-return-main-line" title={primary}>{primary}</span>
-      <span className="new-sale-return-muted-line" title={secondary}>{secondary}</span>
     </span>
   )
 }
@@ -1306,18 +1318,6 @@ function filterReturns(rows: SalesReturn[], value: string): SalesReturn[] {
 
 function getReturnUserName(user?: SalesReturn['CreatedBy']): string {
   return user?.FullName?.trim() || [user?.LastName, user?.Name].filter(Boolean).join(' ').trim()
-}
-
-function splitReturnProfileName(value: string): [string, string] {
-  const normalized = value.trim()
-
-  if (!normalized) {
-    return ['', '']
-  }
-
-  const [firstPart, ...rest] = normalized.split(/\s+/)
-
-  return [firstPart || normalized, rest.join(' ')]
 }
 
 function useSaleItemColumns({

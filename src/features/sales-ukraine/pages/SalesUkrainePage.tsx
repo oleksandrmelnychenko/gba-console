@@ -19,7 +19,9 @@ import { ArrowLeftRight, Check, ChevronDown, CircleAlert, ClipboardList, FileTex
 import {
   Fragment,
   isValidElement,
+  lazy,
   memo,
+  Suspense,
   type ReactNode,
   useCallback,
   useEffect,
@@ -42,7 +44,6 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
-import { SaleAuditDetail } from '../../../shared/sale-audit/SaleAuditDetail'
 import { getSaleStatisticBySaleId } from '../../../shared/sale-audit/saleAuditApi'
 import type { SaleAuditStatistic } from '../../../shared/sale-audit/saleAuditTypes'
 import './sales-grid.css'
@@ -56,14 +57,7 @@ import {
   getSalesUkraineOrganizations,
   unlockSale,
 } from '../api/salesUkraineApi'
-import {
-  getAverageBaseDiscount,
-  getAverageOneTimeDiscount,
-  getPartialAverageBaseDiscount,
-  getPartialUniformBaseDiscount,
-  getUniformBaseDiscount,
-  getUniformOneTimeDiscount,
-} from '../saleDiscounts'
+import { getSaleDiscountSummary } from '../saleDiscounts'
 import {
   getSaleLifecycleStatusKey,
   getStatusTypeKey,
@@ -74,14 +68,7 @@ import {
 } from '../saleStatus'
 import { useGridColumnResize } from './useGridColumnResize'
 import type { CSSProperties } from 'react'
-import { ConsignmentNoteSettingsDrawer } from '../components/ConsignmentNoteSettingsDrawer'
-import { NewSaleWizard } from '../components/new-sale-wizard/NewSaleWizard'
-import { SaleEditDrawer } from '../components/SaleEditDrawer'
-import { SaleDetailsDrawer } from '../components/SaleDetailsDrawer'
-import { SaleDiscountModal } from '../components/SaleDiscountModal'
 import { findSaleOrderItemByIdentity } from '../components/saleDiscountPayload'
-import { SaleExpandContent } from '../components/SaleExpandContent'
-import { SaleDocumentsMenu } from '../components/SaleDocumentsMenu'
 import { SalesClientSearch } from '../components/SalesClientSearch'
 import { usePersistentSaleJsonMutationRunner } from '../usePersistentSaleJsonMutation'
 import {
@@ -97,6 +84,31 @@ import type {
   SalesUkraineStatusFilter,
   SalesUkraineUserFilter,
 } from '../types'
+
+const LazyConsignmentNoteSettingsDrawer = lazy(() =>
+  import('../components/ConsignmentNoteSettingsDrawer').then((module) => ({ default: module.ConsignmentNoteSettingsDrawer })),
+)
+const LazyNewSaleWizard = lazy(() =>
+  import('../components/new-sale-wizard/NewSaleWizard').then((module) => ({ default: module.NewSaleWizard })),
+)
+const LazySaleAuditDetail = lazy(() =>
+  import('../../../shared/sale-audit/SaleAuditDetail').then((module) => ({ default: module.SaleAuditDetail })),
+)
+const LazySaleDetailsDrawer = lazy(() =>
+  import('../components/SaleDetailsDrawer').then((module) => ({ default: module.SaleDetailsDrawer })),
+)
+const LazySaleDiscountModal = lazy(() =>
+  import('../components/SaleDiscountModal').then((module) => ({ default: module.SaleDiscountModal })),
+)
+const LazySaleDocumentsMenu = lazy(() =>
+  import('../components/SaleDocumentsMenu').then((module) => ({ default: module.SaleDocumentsMenu })),
+)
+const LazySaleEditDrawer = lazy(() =>
+  import('../components/SaleEditDrawer').then((module) => ({ default: module.SaleEditDrawer })),
+)
+const LazySaleExpandContent = lazy(() =>
+  import('../components/SaleExpandContent').then((module) => ({ default: module.SaleExpandContent })),
+)
 
 // Column order matches the `.sales-grid-head` / `.sales-grid-row` cells 1:1.
 // Fluid by default (minmax + fr) so the grid fills the width; each column can be
@@ -126,6 +138,24 @@ const SALES_GRID_HEAD_LABELS = [
   'Документи',
   'Статус',
 ]
+
+const SALES_PAGE_SIZE_OPTIONS = ['20', '40', '60', '100']
+
+type FloatingMenuAnchor = {
+  left: number
+  top: number
+}
+
+type SaleDocumentsMenuState = {
+  anchor: FloatingMenuAnchor
+  opened: boolean
+  sale: SalesUkraineSale
+}
+
+type SaleRowActionsMenuState = {
+  anchor: FloatingMenuAnchor
+  sale: SalesUkraineSale
+}
 
 type FilterDraft = {
   clientId: string
@@ -317,6 +347,8 @@ export function SalesUkrainePage() {
   const dismissedFocusedSaleNetIdRef = useRef('')
   const [isNewSaleOpen, setNewSaleOpen] = useValueState(false)
   const [expandedKeys, setExpandedKeys] = useValueState<Set<string>>(() => new Set())
+  const [documentsMenuState, setDocumentsMenuState] = useState<SaleDocumentsMenuState | null>(null)
+  const [rowActionsMenuState, setRowActionsMenuState] = useState<SaleRowActionsMenuState | null>(null)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
 
   const offset = (page - 1) * pageSize
@@ -634,6 +666,26 @@ export function SalesUkrainePage() {
     [runSaleAcceptForPacking, setConfirmState, setSales, t],
   )
 
+  const handleRowOpenDocuments = useCallback((sale: SalesUkraineSale, target: HTMLElement) => {
+    setDocumentsMenuState({
+      anchor: getFloatingMenuAnchor(target),
+      opened: true,
+      sale,
+    })
+  }, [])
+
+  const handleDocumentsMenuClose = useCallback(() => {
+    setDocumentsMenuState((current) => (current ? { ...current, opened: false } : null))
+  }, [])
+
+  const handleRowOpenActions = useCallback((sale: SalesUkraineSale, target: HTMLElement) => {
+    setRowActionsMenuState({ anchor: getFloatingMenuAnchor(target), sale })
+  }, [])
+
+  const handleRowActionsMenuClose = useCallback(() => {
+    setRowActionsMenuState(null)
+  }, [])
+
   // Identity-stable row handlers: SaleGridRow is React.memo'd, so its callback
   // props must never change identity. The real handlers capture fresh state each
   // render — route the calls through a ref.
@@ -932,6 +984,7 @@ export function SalesUkrainePage() {
         isLoading={isLoading}
         page={page}
         pageSize={pageSize}
+        pageSizeOptions={SALES_PAGE_SIZE_OPTIONS}
         totalPages={totalPages}
         onPageChange={setPage}
         onPageSizeChange={(nextPageSize) => {
@@ -1120,7 +1173,7 @@ export function SalesUkrainePage() {
 
           <div
             aria-busy={isLoading || undefined}
-            className={`sales-grid${isLoading && sales.length > 0 ? ' is-reloading' : ''}`}
+            className={`sales-grid sales-ukraine-grid${isLoading && sales.length > 0 ? ' is-reloading' : ''}`}
             style={{ '--sales-grid-columns': gridColumnsTemplate } as CSSProperties}
           >
             {/* Skeleton only while there is nothing to show — reloads keep the
@@ -1172,7 +1225,6 @@ export function SalesUkrainePage() {
                         sale={sale}
                         saleKey={key}
                         canEditSale={canEditSale}
-                        canUnlock={canUnlock}
                         canWillNotShip={canWillNotShip}
                         isAdmin={isAdmin}
                         canExpand={canExpand}
@@ -1180,17 +1232,23 @@ export function SalesUkrainePage() {
                         onToggleExpand={handleRowToggleExpand}
                         onOpenSale={handleRowOpenSale}
                         onOpenEditor={setWizardEditSale}
-                        onOpenEditShift={setEditShiftSale}
                         onOpenDetails={handleRowOpenDetails}
-                        onOpenConsignment={setConsignmentSale}
-                        onOpenAudit={handleRowOpenAudit}
-                        onUnlock={handleRowUnlock}
+                        onOpenDocuments={handleRowOpenDocuments}
+                        onOpenActions={handleRowOpenActions}
                         onWillNotShip={handleRowWillNotShip}
                         onOpenDiscount={handleRowOpenDiscount}
                       />
                       {isExpanded && (
                         <div className="sales-grid-expand">
-                          <SaleExpandContent sale={sale} onOpenItemDiscount={handleRowItemDiscount} />
+                          <Suspense
+                            fallback={(
+                              <div className="sale-expand-content is-empty">
+                                <Text c="dimmed" size="sm">{t('Завантаження')}</Text>
+                              </div>
+                            )}
+                          >
+                            <LazySaleExpandContent sale={sale} onOpenItemDiscount={handleRowItemDiscount} />
+                          </Suspense>
                         </div>
                       )}
                     </Fragment>
@@ -1202,90 +1260,143 @@ export function SalesUkrainePage() {
         </Stack>
       </div>
 
+      {documentsMenuState ? (
+        <Suspense fallback={null}>
+          <LazySaleDocumentsMenu
+            anchor={documentsMenuState.anchor}
+            opened={documentsMenuState.opened}
+            sale={documentsMenuState.sale}
+            onMenuClose={handleDocumentsMenuClose}
+          />
+        </Suspense>
+      ) : null}
+
+      {rowActionsMenuState ? (
+        <SaleRowActionsMenu
+          canEditSale={canEditSale}
+          canUnlock={canUnlock}
+          canWillNotShip={canWillNotShip}
+          isAdmin={isAdmin}
+          state={rowActionsMenuState}
+          onClose={handleRowActionsMenuClose}
+          onOpenAudit={handleRowOpenAudit}
+          onOpenConsignment={setConsignmentSale}
+          onOpenDetails={handleRowOpenDetails}
+          onOpenEditor={setWizardEditSale}
+          onOpenEditShift={setEditShiftSale}
+          onUnlock={handleRowUnlock}
+          onWillNotShip={handleRowWillNotShip}
+        />
+      ) : null}
+
       <SaleSummaryDrawer
         opened={Boolean(selectedSale)}
         sale={selectedSale}
         onClose={closeSelectedSale}
       />
 
-      <SaleDiscountModal
-        orderItem={discountTarget?.orderItem}
-        sale={discountTarget?.sale ?? null}
-        onClose={() => setDiscountTarget(null)}
-        onSaved={(updatedSale) => {
-          if (updatedSale) {
-            setSales((current) => replaceSaleInList(current, updatedSale))
+      {discountTarget ? (
+        <Suspense fallback={null}>
+          <LazySaleDiscountModal
+            orderItem={discountTarget.orderItem}
+            sale={discountTarget.sale}
+            onClose={() => setDiscountTarget(null)}
+            onSaved={(updatedSale) => {
+              if (updatedSale) {
+                setSales((current) => replaceSaleInList(current, updatedSale))
 
-            if (selectedSale && isSameSale(selectedSale, updatedSale)) {
-              setSelectedSale(updatedSale)
-            }
+                if (selectedSale && isSameSale(selectedSale, updatedSale)) {
+                  setSelectedSale(updatedSale)
+                }
 
-            if (detailsSale && isSameSale(detailsSale, updatedSale)) {
-              setDetailsSale(updatedSale)
-            }
-          }
+                if (detailsSale && isSameSale(detailsSale, updatedSale)) {
+                  setDetailsSale(updatedSale)
+                }
+              }
 
-          setDiscountTarget(null)
-          reload()
-        }}
-      />
+              setDiscountTarget(null)
+              reload()
+            }}
+          />
+        </Suspense>
+      ) : null}
 
-      <SaleDetailsDrawer
-        sale={detailsSale}
-        onClose={() => setDetailsSale(null)}
-        onSaved={() => {
-          setDetailsSale(null)
-          reload()
-        }}
-      />
+      {detailsSale ? (
+        <Suspense fallback={null}>
+          <LazySaleDetailsDrawer
+            sale={detailsSale}
+            onClose={() => setDetailsSale(null)}
+            onSaved={() => {
+              setDetailsSale(null)
+              reload()
+            }}
+          />
+        </Suspense>
+      ) : null}
 
-      <ConsignmentNoteSettingsDrawer
-        opened={Boolean(consignmentSale)}
-        sale={consignmentSale}
-        onClose={() => setConsignmentSale(null)}
-      />
+      {consignmentSale ? (
+        <Suspense fallback={null}>
+          <LazyConsignmentNoteSettingsDrawer
+            opened
+            sale={consignmentSale}
+            onClose={() => setConsignmentSale(null)}
+          />
+        </Suspense>
+      ) : null}
 
-      <SaleEditDrawer
-        sale={editShiftSale}
-        onClose={() => setEditShiftSale(null)}
-        onSaved={() => {
-          setEditShiftSale(null)
-          reload()
-        }}
-      />
+      {editShiftSale ? (
+        <Suspense fallback={null}>
+          <LazySaleEditDrawer
+            sale={editShiftSale}
+            onClose={() => setEditShiftSale(null)}
+            onSaved={() => {
+              setEditShiftSale(null)
+              reload()
+            }}
+          />
+        </Suspense>
+      ) : null}
 
-      <AppDrawer
-        opened={Boolean(auditSale)}
-        position="right"
-        size="min(720px, 100vw)"
-        title={t('Історія редагувань')}
-        onClose={closeAudit}
-      >
-        <SaleAuditDetail
-          error={auditError}
-          isLoading={auditLoading}
-          statistic={auditStatistic}
-          onConfirmed={() => {
-            closeAudit()
-            reload()
-          }}
-        />
-      </AppDrawer>
+      {auditSale ? (
+        <AppDrawer
+          opened
+          position="right"
+          size="min(720px, 100vw)"
+          title={t('Історія редагувань')}
+          onClose={closeAudit}
+        >
+          <Suspense fallback={null}>
+            <LazySaleAuditDetail
+              error={auditError}
+              isLoading={auditLoading}
+              statistic={auditStatistic}
+              onConfirmed={() => {
+                closeAudit()
+                reload()
+              }}
+            />
+          </Suspense>
+        </AppDrawer>
+      ) : null}
 
-      <NewSaleWizard
-        editSale={wizardEditSale}
-        opened={(canCreateSale && isNewSaleOpen) || Boolean(wizardEditSale)}
-        onClose={() => {
-          setNewSaleOpen(false)
-          setWizardEditSale(null)
-          reload()
-        }}
-        onCreated={() => {
-          setNewSaleOpen(false)
-          setWizardEditSale(null)
-          reload()
-        }}
-      />
+      {(canCreateSale && isNewSaleOpen) || wizardEditSale ? (
+        <Suspense fallback={null}>
+          <LazyNewSaleWizard
+            editSale={wizardEditSale}
+            opened
+            onClose={() => {
+              setNewSaleOpen(false)
+              setWizardEditSale(null)
+              reload()
+            }}
+            onCreated={() => {
+              setNewSaleOpen(false)
+              setWizardEditSale(null)
+              reload()
+            }}
+          />
+        </Suspense>
+      ) : null}
 
       <AppModal
         centered
@@ -1316,7 +1427,6 @@ type SaleGridRowProps = {
   sale: SalesUkraineSale
   saleKey: string
   canEditSale: boolean
-  canUnlock: boolean
   canWillNotShip: boolean
   isAdmin: boolean
   canExpand: boolean
@@ -1324,11 +1434,9 @@ type SaleGridRowProps = {
   onToggleExpand: (key: string, sale: SalesUkraineSale) => void
   onOpenSale: (sale: SalesUkraineSale) => void
   onOpenEditor: (sale: SalesUkraineSale) => void
-  onOpenEditShift: (sale: SalesUkraineSale) => void
   onOpenDetails: (sale: SalesUkraineSale) => void
-  onOpenConsignment: (sale: SalesUkraineSale) => void
-  onOpenAudit: (sale: SalesUkraineSale) => void
-  onUnlock: (sale: SalesUkraineSale) => void
+  onOpenDocuments: (sale: SalesUkraineSale, target: HTMLElement) => void
+  onOpenActions: (sale: SalesUkraineSale, target: HTMLElement) => void
   onWillNotShip: (sale: SalesUkraineSale) => void
   onOpenDiscount: (sale: SalesUkraineSale) => void
 }
@@ -1340,7 +1448,6 @@ const SaleGridRow = memo(function SaleGridRow({
   sale,
   saleKey,
   canEditSale,
-  canUnlock,
   canWillNotShip,
   isAdmin,
   canExpand,
@@ -1348,11 +1455,9 @@ const SaleGridRow = memo(function SaleGridRow({
   onToggleExpand,
   onOpenSale,
   onOpenEditor,
-  onOpenEditShift,
   onOpenDetails,
-  onOpenConsignment,
-  onOpenAudit,
-  onUnlock,
+  onOpenDocuments,
+  onOpenActions,
   onWillNotShip,
   onOpenDiscount,
 }: SaleGridRowProps) {
@@ -1366,62 +1471,57 @@ const SaleGridRow = memo(function SaleGridRow({
   const manager = getSaleUserName(sale)
   const contract = sale.ClientAgreement?.Agreement?.Name
   const transporter = getSaleTransporterName(sale)
-  const unpaid = isUnpaidSale(sale)
   const localAmount = getNumber(sale.TotalAmountLocal) ?? getNumber(sale.TotalAmount)
   const vat = sale.IsVatSale ? getNumber(sale.Order?.TotalVat) : null
-  const positions = getOrderItemCount(sale)
   const paymentColor = getPaymentStatusColor(sale)
-
-  const lifecycleStatusKey = getSaleStatusKey(sale)
-  const packingAcceptanceLifecycleEligible = isPackingAcceptanceSaleLifecycle(
-    sale.BaseLifeCycleStatus?.SaleLifeCycleType ?? sale.BaseLifeCycleStatus?.Name,
-  )
-  const isPackaging = lifecycleStatusKey === 'Packaging' || lifecycleStatusKey === 'Packaged'
-  // Legacy hides the edit-act / print / audit / delivery actions for a Received-and-unpaid sale
-  // (a strictly NotPaid sale that has already been received). PartialPaid stays visible.
-  const hideEditActActions = lifecycleStatusKey === 'Received' && unpaid
-  const hidePrintBlock = Boolean(sale.IsVatSale) && !sale.IsAcceptedToPacking && !isAdmin
-  const showTtn = Boolean(sale.TransporterId) && isPackaging && !hidePrintBlock
-  const showWillNotShip = packingAcceptanceLifecycleEligible && canWillNotShip && Boolean(sale.IsVatSale) && !sale.IsAcceptedToPacking
-  const showUnlock = canUnlock && Boolean(sale.IsLocked)
-  const showEdit = canEditSale && (sale.InputSaleMerges?.length ?? 0) === 0
-  const showEditShift = showEdit && positions > 0 && !hideEditActActions
-  const showBang = packingAcceptanceLifecycleEligible && Boolean(sale.IsVatSale) && !sale.IsAcceptedToPacking
-  const bangClickable = Boolean(sale.ChangedToInvoice) && canWillNotShip
+  const {
+    bangClickable,
+    hideEditActActions,
+    hidePrintBlock,
+    positions,
+    showBang,
+    showEdit,
+    unpaid,
+  } = getSaleActionAvailability(sale, { canEditSale, canUnlock: false, canWillNotShip, isAdmin })
   const discountEditable = isNewOrPackagingStatus(sale) && positions > 0
   const discountPercentageEditable =
     isDiscountPercentageEditableSaleLifecycle(
       sale.BaseLifeCycleStatus?.SaleLifeCycleType ?? sale.BaseLifeCycleStatus?.Name,
     ) && positions > 0
   const rowOrderItems = Array.isArray(sale.Order?.OrderItems) ? sale.Order.OrderItems : []
-  const uniformOneTimeDiscount = rowOrderItems.length ? getUniformOneTimeDiscount(rowOrderItems) : getNumber(sale.OneTimeDiscountUniform)
+  const discountSummary = rowOrderItems.length ? getSaleDiscountSummary(rowOrderItems) : null
+  const uniformOneTimeDiscount = rowOrderItems.length
+    ? discountSummary?.uniformOneTimeDiscount ?? null
+    : getNumber(sale.OneTimeDiscountUniform)
   const averageOneTimeDiscount =
     uniformOneTimeDiscount == null
       ? rowOrderItems.length
-        ? getAverageOneTimeDiscount(rowOrderItems)
+        ? discountSummary?.averageOneTimeDiscount ?? null
         : getNumber(sale.OneTimeDiscountAverage)
       : null
   const oneTimeDiscountBadge =
     uniformOneTimeDiscount != null || averageOneTimeDiscount != null
       ? formatCompactPercent(uniformOneTimeDiscount ?? averageOneTimeDiscount ?? 0)
       : null
-  const uniformBaseDiscount = rowOrderItems.length ? getUniformBaseDiscount(rowOrderItems) : getNumber(sale.BaseDiscountUniform)
+  const uniformBaseDiscount = rowOrderItems.length
+    ? discountSummary?.uniformBaseDiscount ?? null
+    : getNumber(sale.BaseDiscountUniform)
   const averageBaseDiscount =
     uniformBaseDiscount == null
       ? rowOrderItems.length
-        ? getAverageBaseDiscount(rowOrderItems)
+        ? discountSummary?.averageBaseDiscount ?? null
         : getNumber(sale.BaseDiscountAverage)
       : null
   const partialUniformBaseDiscount =
     uniformBaseDiscount == null && averageBaseDiscount == null
       ? rowOrderItems.length
-        ? getPartialUniformBaseDiscount(rowOrderItems)
+        ? discountSummary?.partialUniformBaseDiscount ?? null
         : getNumber(sale.BaseDiscountPartialUniform)
       : null
   const partialAverageBaseDiscount =
     uniformBaseDiscount == null && averageBaseDiscount == null && partialUniformBaseDiscount == null
       ? rowOrderItems.length
-        ? getPartialAverageBaseDiscount(rowOrderItems)
+        ? discountSummary?.partialAverageBaseDiscount ?? null
         : getNumber(sale.BaseDiscountPartialAverage)
       : null
   const baseDiscountBadge =
@@ -1482,6 +1582,17 @@ const SaleGridRow = memo(function SaleGridRow({
           ) : (
             <span className="sg-action-slot is-empty" aria-hidden="true" />
           )}
+          {canExpand ? (
+            <span className="sg-action-slot">
+              <TableRowAction
+                action={isExpanded ? 'collapse' : 'expand'}
+                label={isExpanded ? t('Згорнути') : t('Розгорнути')}
+                onClick={() => onToggleExpand(saleKey, sale)}
+              />
+            </span>
+          ) : (
+            <span className="sg-action-slot is-empty" aria-hidden="true" />
+          )}
           {showBang ? (
             <span className="sg-action-slot is-bang">
               {bangClickable ? (
@@ -1502,17 +1613,6 @@ const SaleGridRow = memo(function SaleGridRow({
             <span className="sg-action-slot is-bang" aria-hidden="true">
               <span className="sg-bang sg-bang-placeholder"><TriangleAlert size={14} /></span>
             </span>
-          )}
-          {canExpand ? (
-            <span className="sg-action-slot">
-              <TableRowAction
-                action={isExpanded ? 'collapse' : 'expand'}
-                label={isExpanded ? t('Згорнути') : t('Розгорнути')}
-                onClick={() => onToggleExpand(saleKey, sale)}
-              />
-            </span>
-          ) : (
-            <span className="sg-action-slot is-empty" aria-hidden="true" />
           )}
         </div>
 
@@ -1558,7 +1658,12 @@ const SaleGridRow = memo(function SaleGridRow({
             {manager && (
               <>
                 <span className="sg-meta-sep">·</span>
-                <span>{manager}</span>
+                <span
+                  className="app-role-pill is-yellow sg-manager-pill"
+                  title={`${t('Відповідальний')}: ${manager}`}
+                >
+                  {manager}
+                </span>
               </>
             )}
             {contract && <span className="sg-meta-contract">{contract}</span>}
@@ -1630,7 +1735,11 @@ const SaleGridRow = memo(function SaleGridRow({
           />
         ) : sale.IsLocked ? (
           <Tooltip label={t('Заблоковано')}>
-            <Lock size={14} style={{ color: 'var(--mantine-color-gray-5)' }} />
+            <Lock
+              className="sg-discount-lock"
+              size={14}
+              style={{ color: 'var(--mantine-color-gray-5)' }}
+            />
           </Tooltip>
         ) : null}
       </div>
@@ -1646,54 +1755,20 @@ const SaleGridRow = memo(function SaleGridRow({
       </div>
 
       <div className="sg-doc-actions" data-row-stop="true">
-        {!hidePrintBlock && !hideEditActActions && <SaleDocumentsMenu sale={sale} />}
-        <Menu position="bottom-end" shadow="md" withinPortal>
-          <Menu.Target>
-            <TableRowAction action="more" label={t('Дії')} />
-          </Menu.Target>
-          <Menu.Dropdown>
-            {showEdit && (
-              <Menu.Item leftSection={<Pencil size={16} />} onClick={() => onOpenEditor(sale)}>
-                {t('Редагування')}
-              </Menu.Item>
-            )}
-            {showEditShift && (
-              <Menu.Item leftSection={<ArrowLeftRight size={16} />} onClick={() => onOpenEditShift(sale)}>
-                {lifecycleStatusKey === 'New' ? t('Акт редагування рахунку') : t('Акт редагування накладної')}
-              </Menu.Item>
-            )}
-            {!hideEditActActions && (
-              <Menu.Item leftSection={<Truck size={16} />} onClick={() => onOpenDetails(sale)}>
-                {t('Дані доставки')}
-              </Menu.Item>
-            )}
-            {showTtn && (
-              <Menu.Item leftSection={<Receipt size={16} />} onClick={() => onOpenConsignment(sale)}>
-                {t('Друк ТТН')}
-              </Menu.Item>
-            )}
-            {showWillNotShip && (
-              <Menu.Item
-                color="orange"
-                disabled={!sale.ChangedToInvoice}
-                leftSection={<TriangleAlert size={16} />}
-                onClick={() => onWillNotShip(sale)}
-              >
-                {t('Розблокувати для відвантаження')}
-              </Menu.Item>
-            )}
-            {showUnlock && (
-              <Menu.Item color="red" leftSection={<LockOpen size={16} />} onClick={() => onUnlock(sale)}>
-                {t('Розблокувати')}
-              </Menu.Item>
-            )}
-            {!hideEditActActions && (
-              <Menu.Item leftSection={<History size={16} />} onClick={() => onOpenAudit(sale)}>
-                {t('Історія редагувань')}
-              </Menu.Item>
-            )}
-          </Menu.Dropdown>
-        </Menu>
+        {!hidePrintBlock && !hideEditActActions && (
+          <TableRowAction
+            action="document"
+            aria-haspopup="menu"
+            label={t('Документи')}
+            onClick={(event) => onOpenDocuments(sale, event.currentTarget)}
+          />
+        )}
+        <TableRowAction
+          action="more"
+          aria-haspopup="menu"
+          label={t('Дії')}
+          onClick={(event) => onOpenActions(sale, event.currentTarget)}
+        />
       </div>
 
       <div className="sg-status">
@@ -1710,6 +1785,186 @@ const SaleGridRow = memo(function SaleGridRow({
     </div>
   )
 })
+
+function SaleRowActionsMenu({
+  canEditSale,
+  canUnlock,
+  canWillNotShip,
+  isAdmin,
+  state,
+  onClose,
+  onOpenAudit,
+  onOpenConsignment,
+  onOpenDetails,
+  onOpenEditor,
+  onOpenEditShift,
+  onUnlock,
+  onWillNotShip,
+}: {
+  canEditSale: boolean
+  canUnlock: boolean
+  canWillNotShip: boolean
+  isAdmin: boolean
+  state: SaleRowActionsMenuState
+  onClose: () => void
+  onOpenAudit: (sale: SalesUkraineSale) => void
+  onOpenConsignment: (sale: SalesUkraineSale) => void
+  onOpenDetails: (sale: SalesUkraineSale) => void
+  onOpenEditor: (sale: SalesUkraineSale) => void
+  onOpenEditShift: (sale: SalesUkraineSale) => void
+  onUnlock: (sale: SalesUkraineSale) => void
+  onWillNotShip: (sale: SalesUkraineSale) => void
+}) {
+  const { t } = useI18n()
+  const sale = state.sale
+  const {
+    hideEditActActions,
+    lifecycleStatusKey,
+    showEdit,
+    showEditShift,
+    showTtn,
+    showUnlock,
+    showWillNotShip,
+  } = getSaleActionAvailability(sale, { canEditSale, canUnlock, canWillNotShip, isAdmin })
+  const hasActions = showEdit
+    || showEditShift
+    || !hideEditActActions
+    || showTtn
+    || showWillNotShip
+    || showUnlock
+
+  function runAction(action: (selectedSale: SalesUkraineSale) => void) {
+    onClose()
+    action(sale)
+  }
+
+  return (
+    <Menu
+      opened
+      position="bottom-end"
+      shadow="md"
+      withinPortal
+      onChange={(opened) => {
+        if (!opened) {
+          onClose()
+        }
+      }}
+    >
+      <Menu.Target>
+        <span
+          aria-hidden="true"
+          style={{
+            height: 1,
+            left: state.anchor.left,
+            pointerEvents: 'none',
+            position: 'fixed',
+            top: state.anchor.top,
+            width: 1,
+          }}
+        />
+      </Menu.Target>
+      <Menu.Dropdown>
+        {showEdit ? (
+          <Menu.Item leftSection={<Pencil size={16} />} onClick={() => runAction(onOpenEditor)}>
+            {t('Редагування')}
+          </Menu.Item>
+        ) : null}
+        {showEditShift ? (
+          <Menu.Item leftSection={<ArrowLeftRight size={16} />} onClick={() => runAction(onOpenEditShift)}>
+            {lifecycleStatusKey === 'New' ? t('Акт редагування рахунку') : t('Акт редагування накладної')}
+          </Menu.Item>
+        ) : null}
+        {!hideEditActActions ? (
+          <Menu.Item leftSection={<Truck size={16} />} onClick={() => runAction(onOpenDetails)}>
+            {t('Дані доставки')}
+          </Menu.Item>
+        ) : null}
+        {showTtn ? (
+          <Menu.Item leftSection={<Receipt size={16} />} onClick={() => runAction(onOpenConsignment)}>
+            {t('Друк ТТН')}
+          </Menu.Item>
+        ) : null}
+        {showWillNotShip ? (
+          <Menu.Item
+            color="orange"
+            disabled={!sale.ChangedToInvoice}
+            leftSection={<TriangleAlert size={16} />}
+            onClick={() => runAction(onWillNotShip)}
+          >
+            {t('Розблокувати для відвантаження')}
+          </Menu.Item>
+        ) : null}
+        {showUnlock ? (
+          <Menu.Item color="red" leftSection={<LockOpen size={16} />} onClick={() => runAction(onUnlock)}>
+            {t('Розблокувати')}
+          </Menu.Item>
+        ) : null}
+        {!hideEditActActions ? (
+          <Menu.Item leftSection={<History size={16} />} onClick={() => runAction(onOpenAudit)}>
+            {t('Історія редагувань')}
+          </Menu.Item>
+        ) : null}
+        {!hasActions ? <Menu.Item disabled>{t('Дії недоступні')}</Menu.Item> : null}
+      </Menu.Dropdown>
+    </Menu>
+  )
+}
+
+function getSaleActionAvailability(
+  sale: SalesUkraineSale,
+  {
+    canEditSale,
+    canUnlock,
+    canWillNotShip,
+    isAdmin,
+  }: {
+    canEditSale: boolean
+    canUnlock: boolean
+    canWillNotShip: boolean
+    isAdmin: boolean
+  },
+) {
+  const positions = getOrderItemCount(sale)
+  const lifecycleStatusKey = getSaleStatusKey(sale)
+  const unpaid = isUnpaidSale(sale)
+  const packingAcceptanceLifecycleEligible = isPackingAcceptanceSaleLifecycle(
+    sale.BaseLifeCycleStatus?.SaleLifeCycleType ?? sale.BaseLifeCycleStatus?.Name,
+  )
+  const isPackaging = lifecycleStatusKey === 'Packaging' || lifecycleStatusKey === 'Packaged'
+  // A strictly NotPaid sale that has already been received hides edit-act,
+  // print, audit, and delivery actions. PartialPaid stays available.
+  const hideEditActActions = lifecycleStatusKey === 'Received' && unpaid
+  const hidePrintBlock = Boolean(sale.IsVatSale) && !sale.IsAcceptedToPacking && !isAdmin
+  const showEdit = canEditSale && (sale.InputSaleMerges?.length ?? 0) === 0
+
+  return {
+    bangClickable: Boolean(sale.ChangedToInvoice) && canWillNotShip,
+    hideEditActActions,
+    hidePrintBlock,
+    lifecycleStatusKey,
+    positions,
+    showBang: packingAcceptanceLifecycleEligible && Boolean(sale.IsVatSale) && !sale.IsAcceptedToPacking,
+    showEdit,
+    showEditShift: showEdit && positions > 0 && !hideEditActActions,
+    showTtn: Boolean(sale.TransporterId) && isPackaging && !hidePrintBlock,
+    showUnlock: canUnlock && Boolean(sale.IsLocked),
+    showWillNotShip:
+      packingAcceptanceLifecycleEligible
+      && canWillNotShip
+      && Boolean(sale.IsVatSale)
+      && !sale.IsAcceptedToPacking,
+    unpaid,
+  }
+}
+
+function getFloatingMenuAnchor(target: HTMLElement): FloatingMenuAnchor {
+  const rect = target.getBoundingClientRect()
+
+  return {
+    left: rect.right,
+    top: rect.bottom + 2,
+  }
+}
 
 function SaleDetail({ sale }: { sale: SalesUkraineSale }) {
   const { t } = useI18n()
