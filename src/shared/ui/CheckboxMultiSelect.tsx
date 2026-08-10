@@ -108,7 +108,7 @@ export function CheckboxMultiSelect({
         )}
         <Combobox.Options>
           <ScrollArea.Autosize mah={maxDropdownHeight} type="scroll">
-            {!search.trim() && (
+            {!search.trim() && allValues.length > 1 && (
               <Combobox.Option value="__all__" active={allSelected}>
                 <Group gap="sm" wrap="nowrap">
                   <Checkbox checked={allSelected} readOnly size="xs" tabIndex={-1} aria-hidden />
