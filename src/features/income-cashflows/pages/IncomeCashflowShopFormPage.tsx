@@ -858,7 +858,7 @@ export function IncomeCashflowShopFormPage() {
           {form.amount > 0 && selectedAgreementCurrency && selectedCurrency && (
             <div className="income-cashflow-client-form__exchange-summary">
               <span>{t('До зарахування')}</span>
-              <strong>
+              <strong className="app-money">
                 {formatMoney(calculatedValue || form.amount)} {selectedAgreementCurrency.Code || selectedAgreementCurrency.Name}
               </strong>
               <small>
@@ -909,7 +909,7 @@ export function IncomeCashflowShopFormPage() {
                     {selectedAgreement?.CurrentAmount ? (
                       <div className="income-cashflow-client-form__debt-metric">
                         <span>{t('Баланс договору')}</span>
-                        <strong>
+                        <strong className="app-money">
                           {formatMoney(selectedAgreement.CurrentAmount)} {selectedAgreementCurrency?.Code || ''}
                         </strong>
                       </div>
@@ -917,7 +917,7 @@ export function IncomeCashflowShopFormPage() {
                     {debtTotal > 0 && (
                       <div className="income-cashflow-client-form__debt-metric is-accent">
                         <span>{t('Борг за договором')}</span>
-                        <strong>{formatMoney(debtTotal)} {selectedAgreementCurrency?.Code || ''}</strong>
+                        <strong className="app-money">{formatMoney(debtTotal)} {selectedAgreementCurrency?.Code || ''}</strong>
                       </div>
                     )}
                   </div>

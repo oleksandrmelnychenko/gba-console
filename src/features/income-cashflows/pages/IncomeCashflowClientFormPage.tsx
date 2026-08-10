@@ -1178,7 +1178,7 @@ export function IncomeCashflowClientFormPage() {
           {form.amount > 0 && agreementCurrency && selectedCurrency && (
             <div className="income-cashflow-client-form__exchange-summary">
               <span>{t('До зарахування')}</span>
-              <strong>
+              <strong className="app-money">
                 {formatMoney(form.calculatedValue || form.amount)} {agreementCurrency.Code || agreementCurrency.Name}
               </strong>
               <small>
@@ -1245,19 +1245,19 @@ export function IncomeCashflowClientFormPage() {
                   {clientDebtTotal?.TotalEuro ? (
                     <div className="income-cashflow-client-form__debt-metric">
                       <span>{t('Загальний борг')}</span>
-                      <strong>{formatMoney(clientDebtTotal.TotalEuro)} EUR</strong>
+                      <strong className="app-money">{formatMoney(clientDebtTotal.TotalEuro)} EUR</strong>
                     </div>
                   ) : null}
                   {clientDebtTotal?.TotalLocal ? (
                     <div className="income-cashflow-client-form__debt-metric">
                       <span>{t('Загальний борг')}</span>
-                      <strong>{formatMoney(clientDebtTotal.TotalLocal)} UAH</strong>
+                      <strong className="app-money">{formatMoney(clientDebtTotal.TotalLocal)} UAH</strong>
                     </div>
                   ) : null}
                   {selectedClientAgreement?.CurrentAmount ? (
                     <div className="income-cashflow-client-form__debt-metric">
                       <span>{t('Баланс договору')}</span>
-                      <strong>
+                      <strong className="app-money">
                         {formatMoney(selectedClientAgreement.CurrentAmount)} {agreementCurrency?.Code || ''}
                       </strong>
                     </div>
@@ -1265,7 +1265,7 @@ export function IncomeCashflowClientFormPage() {
                   {totalDebt > 0 && (
                     <div className="income-cashflow-client-form__debt-metric is-accent">
                       <span>{t('Борг за договором')}</span>
-                      <strong>{formatMoney(totalDebt)} {agreementCurrency?.Code || ''}</strong>
+                      <strong className="app-money">{formatMoney(totalDebt)} {agreementCurrency?.Code || ''}</strong>
                     </div>
                   )}
                 </div>

@@ -1376,9 +1376,10 @@ function IncomeDocumentStructure({
       <SimpleGrid cols={{ base: 1, sm: 2 }}>
         <DetailItem label={t('Прибутковий ордер')} value={displayValue(income.Number)} />
         <DetailItem label={t('Дата')} mono value={formatDateTime(income.FromDate)} />
-        <DetailItem label={t('Сума')} value={formatMoneyWithCurrency(income.Amount, income.Currency?.Code || income.Currency?.Name)} />
+        <DetailItem label={t('Сума')} mono value={formatMoneyWithCurrency(income.Amount, income.Currency?.Code || income.Currency?.Name)} />
         <DetailItem
           label={t('Перерахована сума')}
+          mono
           value={hasNumber(calculatedTotal) ? formatMoneyWithCurrency(calculatedTotal, getOutcomeCurrency(outcomeToCalculate)) : displayValue(undefined)}
         />
         <DetailItem label={t('Платник')} value={displayValue(getIncomePayerName(income))} />
@@ -1427,9 +1428,10 @@ function IncomeAssignedPaymentOrderBlock({
       <Text fw={600} size="sm">{title}</Text>
       <SimpleGrid cols={{ base: 1, sm: 2 }}>
         <DetailItem label={t('Номер зв’язки')} value={displayValue(assignedOrder.Number)} />
-        <DetailItem label={t('Сума зв’язки')} value={formatMoney(assignedOrder.Amount)} />
+        <DetailItem label={t('Сума зв’язки')} mono value={formatMoney(assignedOrder.Amount)} />
         <DetailItem
           label={t('Сума авансового звіту')}
+          mono
           value={hasNumber(calculatedTotal) ? formatMoneyWithCurrency(calculatedTotal, getOutcomeCurrency(outcome)) : displayValue(undefined)}
         />
       </SimpleGrid>
@@ -1454,7 +1456,7 @@ function IncomeAssignedOutcomeOrderView({ order }: { order: OutcomePaymentOrder 
       <DetailItem label={t('Номер')} value={displayValue(order.Number || order.CustomNumber || order.AdvanceNumber)} />
       <DetailItem label={t('Авансовий звіт')} value={displayValue(order.AdvanceNumber)} />
       <DetailItem label={t('Дата')} value={formatDateTime(order.FromDate)} />
-      <DetailItem label={t('Сума')} value={formatMoneyWithCurrency(order.Amount, getOutcomeCurrency(order))} />
+      <DetailItem label={t('Сума')} mono value={formatMoneyWithCurrency(order.Amount, getOutcomeCurrency(order))} />
       <DetailItem label={t('Отримувач')} value={displayValue(getOutcomePayedTo(order))} />
     </SimpleGrid>
   )
