@@ -289,7 +289,7 @@ export function PlacementEditDrawer({
                 <Table.Td>{placement.StorageNumber}</Table.Td>
                 <Table.Td>{placement.RowNumber}</Table.Td>
                 <Table.Td>{placement.CellNumber}</Table.Td>
-                <Table.Td>{placement.Qty}</Table.Td>
+                <Table.Td className="app-table-number">{placement.Qty}</Table.Td>
                 <Table.Td>
                   {!placement.IsApplied && (
                     <TableRowAction
