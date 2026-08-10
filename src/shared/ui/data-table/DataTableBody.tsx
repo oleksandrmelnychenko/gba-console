@@ -3,6 +3,7 @@ import { ActionIcon, Table } from '@mantine/core'
 import { ChevronRight } from 'lucide-react'
 import { flexRender, type Cell, type Column, type Row, type Table as TableInstance } from '@tanstack/react-table'
 import { getPinnedStyle } from './dataTablePinning'
+import { hasTextSelectionWithin } from './dataTableRowInteraction'
 import type { DataTableColumnMeta } from './types'
 
 const SKELETON_ROW_COUNT = 9
@@ -90,7 +91,13 @@ function DataTableBodyRowInner<TData>({
     <Fragment>
       <Table.Tr
         className={`data-table-row ${rowClassName?.(row.original) ?? ''}`}
-        onClick={onRowClick ? () => onRowClick(row.original) : undefined}
+        onClick={onRowClick
+          ? (event) => {
+              if (!hasTextSelectionWithin(event.currentTarget)) {
+                onRowClick(row.original)
+              }
+            }
+          : undefined}
       >
         {expand ? (
           <Table.Td
