@@ -2564,10 +2564,10 @@ function ProcessSelectionConfirmDrawer({
             {t('Кількість')}: {formatAmount(totals.qty)}
           </Badge>
           <Badge color="teal" variant="light">
-            {t('Сума продажу')}: {formatMoney(totals.sale)}
+            {t('Сума продажу')}: <span className="app-money">{formatMoney(totals.sale)}</span>
           </Badge>
           <Badge color="gray" variant="light">
-            {t('Собівартість')}: {formatMoney(totals.cost)}
+            {t('Собівартість')}: <span className="app-money">{formatMoney(totals.cost)}</span>
           </Badge>
         </Group>
 
