@@ -458,7 +458,7 @@ function NewOfferForm({
                     <Text className="offers-modal-product-name">{getProductLabel(line.product)}</Text>
                   )}
                 </Table.Td>
-                <Table.Td>
+                <Table.Td className="app-table-number">
                   <NumberInput
                     hideControls
                     min={1}
