@@ -88,8 +88,7 @@
 .cart-reserve-code-link,
 .cart-reserve-mono-cell,
 .cart-reserve-date-cell,
-.cart-reserve-time-cell,
-.cart-reserve-number-cell {
+.cart-reserve-time-cell {
   font-family: var(--font-mono);
   letter-spacing: 0;
 }
