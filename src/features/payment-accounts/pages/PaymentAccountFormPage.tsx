@@ -4,7 +4,6 @@ import {
   Button,
   Card,
   Checkbox,
-  Divider,
   Group,
   Select,
   SegmentedControl,
@@ -15,7 +14,18 @@ import {
   TextInput,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { ArrowLeft, ArrowLeftRight, CircleAlert, Pencil, RefreshCw, Save, X } from 'lucide-react'
+import {
+  ArrowDownLeft,
+  ArrowLeft,
+  ArrowLeftRight,
+  ArrowUpRight,
+  CircleAlert,
+  Pencil,
+  RefreshCw,
+  Repeat2,
+  Save,
+  X,
+} from 'lucide-react'
 import { type FormEvent, type ReactNode, useEffect, useMemo, useReducer, useRef } from 'react'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
@@ -473,6 +483,7 @@ export function PaymentAccountFormPage() {
 
   return (
     <AppDrawer
+      className="payment-account-form-drawer"
       opened
       position="right"
       size="wide"
@@ -720,6 +731,8 @@ function PaymentAccountFormCard({
         )}
 
         <SegmentedControl
+          aria-label={t('Тип')}
+          className="payment-account-type-tabs"
           data={[
             { label: t('Каса'), value: String(PaymentRegisterType.Cash) },
             { label: t('Банківська картка'), value: String(PaymentRegisterType.Card) },
@@ -768,7 +781,6 @@ function PaymentAccountFormCard({
           />
         )}
 
-        <Divider />
         <div className={isEditMode ? 'payment-account-overview' : undefined}>
           <CurrencySelector
             drafts={currencyDrafts}
@@ -780,7 +792,10 @@ function PaymentAccountFormCard({
           />
           {isEditMode && (
             <SimpleGrid className="payment-account-overview__meta" cols={{ base: 1, sm: 3 }}>
-              <InfoCell label={t('Всього в EUR')} value={formatMoney(account.TotalEuroAmount)} />
+              <InfoCell
+                label={t('Всього в EUR')}
+                value={<span className="app-money app-table-number">{formatMoney(account.TotalEuroAmount)}</span>}
+              />
               <InfoCell label={t('Тип')} value={getPaymentRegisterTypeLabel(form.type, t)} />
               <InfoCell label={t('Статус')} value={form.isActive ? t('Основний') : t('Звичайний')} />
             </SimpleGrid>
@@ -888,10 +903,10 @@ function BankFields({
       <TextInput disabled={disabled} label={t('Swift')} value={form.swiftCode} onChange={(event) => onChange({ swiftCode: event.currentTarget.value })} />
       <TextInput disabled={disabled} label={t('Місто')} value={form.city} onChange={(event) => onChange({ city: event.currentTarget.value })} />
       <Checkbox
+        className="payment-account-form-checkbox"
         checked={form.isActive}
         disabled={disabled}
         label={t('Основний')}
-        mt="lg"
         onChange={(event) => onChange({ isActive: event.currentTarget.checked })}
       />
     </SimpleGrid>
@@ -939,10 +954,10 @@ function CardFields({
         onChange={(event) => onChange({ fromDate: event.currentTarget.value })}
       />
       <Checkbox
+        className="payment-account-form-checkbox"
         checked={form.isForRetail}
         disabled={disabled}
         label={t('Для інтернет-магазину')}
-        mt="lg"
         onChange={(event) => onChange({ isForRetail: event.currentTarget.checked })}
       />
     </SimpleGrid>
@@ -969,8 +984,8 @@ function CurrencySelector({
 
   return (
     <Stack className={isEditMode ? 'payment-account-currency-selector is-summary' : 'payment-account-currency-selector'} gap="sm">
-      <Group gap="xs">
-        <Text fw={700}>{t('Валюти')}</Text>
+      <Group className="payment-account-section-heading" gap="xs">
+        <Text className="app-section-title" fw={600}>{t('Валюти')}</Text>
         {isSingle && (
           <Badge color="gray" variant="light">
             {t('Одна валюта')}
@@ -998,7 +1013,7 @@ function CurrencySelector({
               >
                 <Group justify="space-between" gap="md" wrap="nowrap">
                   <Stack gap={2}>
-                    <Text fw={600} size="sm">
+                    <Text className="payment-account-currency-summary__code" fw={600} size="sm">
                       {label}
                     </Text>
                     <Text c="dimmed" size="xs">
@@ -1146,23 +1161,23 @@ function PaymentAccountActivityPanel({
     <>
       <Card className="app-section-card payment-account-activity" withBorder radius="md">
         <Stack gap="md">
-          <Group gap="xs">
-            <Text fw={700}>{t('Операції')}</Text>
+          <Group className="payment-account-section-heading" gap="xs">
+            <Text className="app-section-title" fw={600}>{t('Операції')}</Text>
             <Badge color="gray" variant="light">
               {formatDate(from)} - {formatDate(to)}
             </Badge>
           </Group>
 
           <Group align="end" className="payment-account-activity__toolbar" justify="space-between" wrap="wrap">
-            <Group align="end" gap="sm" wrap="wrap">
+            <Group align="end" className="payment-account-activity__dates" gap="sm" wrap="nowrap">
               <TextInput label={t('З')} type="date" value={from} w={150} onChange={(event) => onFromChange(event.currentTarget.value)} />
               <TextInput label={t('По')} type="date" value={to} w={150} onChange={(event) => onToChange(event.currentTarget.value)} />
             </Group>
             <Group className="payment-account-activity__actions" gap="xs">
-              <Button color="green" disabled={!account.NetUid} size="xs" variant="outline" onClick={onOpenIncome}>
+              <Button disabled={!account.NetUid} leftSection={<ArrowDownLeft size={16} />} size="xs" variant="default" onClick={onOpenIncome}>
                 {t('Прихід')}
               </Button>
-              <Button color="red" disabled={!account.NetUid} size="xs" variant="light" onClick={onOpenOutgoing}>
+              <Button disabled={!account.NetUid} leftSection={<ArrowUpRight size={16} />} size="xs" variant="default" onClick={onOpenOutgoing}>
                 {t('Розхід')}
               </Button>
               <Button
@@ -1170,7 +1185,7 @@ function PaymentAccountActivityPanel({
                 leftSection={<ArrowLeftRight size={16} />}
                 size="xs"
                 type="button"
-                variant="outline"
+                variant="default"
                 onClick={() => {
                   setTransferModalOpened(true)
                   onActiveTabChange('transfers')
@@ -1180,10 +1195,10 @@ function PaymentAccountActivityPanel({
               </Button>
               <Button
                 disabled={!account.NetUid || isLoadingAccount}
-                leftSection={<ArrowLeftRight size={16} />}
+                leftSection={<Repeat2 size={16} />}
                 size="xs"
                 type="button"
-                variant="outline"
+                variant="default"
                 onClick={() => {
                   setExchangeModalOpened(true)
                   onActiveTabChange('exchanges')
@@ -1192,13 +1207,12 @@ function PaymentAccountActivityPanel({
                 {t('Обмін')}
               </Button>
               <Button
-                color="gray"
                 disabled={isLoadingAccount}
                 leftSection={<RefreshCw size={16} />}
                 loading={state.isLoading}
                 size="xs"
                 type="button"
-                variant="light"
+                variant="default"
                 onClick={onRefresh}
               >
                 {t('Оновити')}
@@ -1225,12 +1239,7 @@ function PaymentAccountActivityPanel({
             </Tabs.List>
 
             <Tabs.Panel value="balances" pt="md">
-              <PaymentAccountBalancesView
-                account={account}
-                selectedCurrencyRegister={selectedCurrencyRegister}
-                onSelectedCurrencyChange={onSelectedCurrencyChange}
-                onShowCurrency={() => onActiveTabChange('currency')}
-              />
+              <PaymentAccountBalancesView account={account} />
             </Tabs.Panel>
 
             <Tabs.Panel value="transfers" pt="md">
@@ -1916,17 +1925,7 @@ function CancelActivityModal({
   )
 }
 
-function PaymentAccountBalancesView({
-  account,
-  selectedCurrencyRegister,
-  onSelectedCurrencyChange,
-  onShowCurrency,
-}: {
-  account: PaymentAccount
-  selectedCurrencyRegister: PaymentCurrencyRegister | null
-  onSelectedCurrencyChange: (value: string) => void
-  onShowCurrency: () => void
-}) {
+function PaymentAccountBalancesView({ account }: { account: PaymentAccount }) {
   const { t } = useI18n()
   const registers = (account.PaymentCurrencyRegisters || []).filter((register) => !hasSkippedCurrencyCode(register))
 
@@ -1939,7 +1938,7 @@ function PaymentAccountBalancesView({
             header: t('Валюта'),
             fill: true,
             minWidth: 180,
-            cell: (register) => displayValue(getCurrencyLabel(register)),
+            cell: (register) => renderCurrencyValue(getCurrencyLabel(register)),
           },
           {
             key: 'amount',
@@ -1948,27 +1947,6 @@ function PaymentAccountBalancesView({
             width: 180,
             minWidth: 140,
             cell: (register) => formatMoney(register.Amount),
-          },
-          {
-            key: 'selected',
-            header: '',
-            align: 'right',
-            rowActions: true,
-            width: 104,
-            minWidth: 104,
-            cell: (register) => (
-              <Button
-                disabled={!register.NetUid}
-                size="xs"
-                variant={selectedCurrencyRegister?.NetUid === register.NetUid ? 'filled' : 'light'}
-                onClick={() => {
-                  onSelectedCurrencyChange(getEntityValue(register))
-                  onShowCurrency()
-                }}
-              >
-                {t('Рух')}
-              </Button>
-            ),
           },
         ]}
         emptyText={t('Валюти відсутні')}
@@ -2107,6 +2085,7 @@ function ActivityTable<T>({
         layoutVersion="payment-account-edit-activity-2"
         maxHeight={360}
         minWidth={minWidth}
+        showLayoutControls={false}
         showDensityToggle={false}
         tableId={tableId}
       />
@@ -2129,7 +2108,6 @@ function getActivityColumnWidth(key: string): number {
     case 'amount':
       return 116
     case 'actions':
-    case 'selected':
       return 104
     case 'comment':
       return 170
@@ -2176,7 +2154,7 @@ function getTransferColumns(
     { key: 'to', header: t('На рахунок'), cell: (transfer) => displayValue(transfer.ToPaymentCurrencyRegister?.PaymentRegister?.Name) },
     { key: 'type', header: t('Тип операції'), cell: (transfer) => getTransferOperationLabel(transfer, account, t) },
     { key: 'amount', header: t('Сума'), align: 'right', cell: (transfer) => formatMoney(transfer.Amount) },
-    { key: 'currency', header: t('Валюта'), cell: (transfer) => displayValue(transfer.FromPaymentCurrencyRegister?.Currency?.Code) },
+    { key: 'currency', header: t('Валюта'), cell: (transfer) => renderCurrencyValue(transfer.FromPaymentCurrencyRegister?.Currency?.Code) },
     { key: 'movement', header: t('Стаття руху'), cell: (transfer) => displayValue(getPaymentMovementName(transfer.PaymentMovementOperation)) },
     { key: 'user', header: t('Відповідальний'), cell: (transfer) => displayValue(getPersonName(transfer.User)) },
     { key: 'comment', header: t('Коментар'), cell: (transfer) => displayValue(transfer.Comment) },
@@ -2223,7 +2201,7 @@ function getExchangeColumns(
     { key: 'from', header: t('З рахунку'), cell: (exchange) => displayValue(exchange.FromPaymentCurrencyRegister?.PaymentRegister?.Name) },
     { key: 'to', header: t('На рахунок'), cell: (exchange) => displayValue(exchange.ToPaymentCurrencyRegister?.PaymentRegister?.Name) },
     { key: 'amount', header: t('Сума'), align: 'right', cell: (exchange) => formatExchangeAmount(exchange, account) },
-    { key: 'currency', header: t('Валюта'), cell: (exchange) => displayValue(getExchangeCurrencyCode(exchange, account)) },
+    { key: 'currency', header: t('Валюта'), cell: (exchange) => renderCurrencyValue(getExchangeCurrencyCode(exchange, account)) },
     { key: 'rate', header: t('Курс'), align: 'right', cell: (exchange) => displayValue(exchange.ExchangeRate) },
     { key: 'user', header: t('Відповідальний'), cell: (exchange) => displayValue(getPersonName(exchange.User)) },
     { key: 'comment', header: t('Коментар'), cell: (exchange) => displayValue(exchange.Comment) },
@@ -2263,7 +2241,7 @@ function getIncomeColumns(t: (value: string) => string): ActivityColumn<PaymentA
     { key: 'status', header: t('Статус'), cell: (income) => <CanceledBadge canceled={Boolean(income.IsCanceled)} /> },
     { key: 'payer', header: t('Платник'), cell: (income) => displayValue(getIncomePayerName(income)) },
     { key: 'amount', header: t('Сума'), align: 'right', cell: (income) => formatMoney(income.Amount) },
-    { key: 'currency', header: t('Валюта'), cell: (income) => displayValue(income.Currency?.Code) },
+    { key: 'currency', header: t('Валюта'), cell: (income) => renderCurrencyValue(income.Currency?.Code) },
     { key: 'movement', header: t('Стаття руху'), cell: (income) => displayValue(getPaymentMovementName(income.PaymentMovementOperation)) },
     { key: 'organization', header: t('Організація'), cell: (income) => displayValue(income.Organization?.Name) },
     { key: 'user', header: t('Відповідальний'), cell: (income) => displayValue(getPersonName(income.User)) },
@@ -2278,7 +2256,7 @@ function getOutcomeColumns(t: (value: string) => string): ActivityColumn<Payment
     { key: 'status', header: t('Статус'), cell: (outcome) => <CanceledBadge canceled={Boolean(outcome.IsCanceled)} /> },
     { key: 'payee', header: t('Одержувач'), cell: (outcome) => displayValue(getOutcomePayeeName(outcome)) },
     { key: 'amount', header: t('Сума'), align: 'right', cell: (outcome) => formatMoney(outcome.Amount) },
-    { key: 'currency', header: t('Валюта'), cell: (outcome) => displayValue(outcome.PaymentCurrencyRegister?.Currency?.Code) },
+    { key: 'currency', header: t('Валюта'), cell: (outcome) => renderCurrencyValue(outcome.PaymentCurrencyRegister?.Currency?.Code) },
     { key: 'movement', header: t('Стаття руху'), cell: (outcome) => displayValue(getPaymentMovementName(outcome.PaymentMovementOperation)) },
     { key: 'organization', header: t('Організація'), cell: (outcome) => displayValue(outcome.Organization?.Name) },
     { key: 'user', header: t('Відповідальний'), cell: (outcome) => displayValue(getPersonName(outcome.User)) },
@@ -3072,6 +3050,10 @@ function displayValue(value?: ReactNode): ReactNode {
   }
 
   return value
+}
+
+function renderCurrencyValue(value?: ReactNode): ReactNode {
+  return <span className="payment-account-currency-value">{displayValue(value)}</span>
 }
 
 function getDateShiftedByDays(days: number): string {

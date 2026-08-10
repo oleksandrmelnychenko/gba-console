@@ -35,6 +35,161 @@
   flex: 0 0 auto;
 }
 
+.payment-accounts-type-filter .mantine-SegmentedControl-root {
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 9px;
+  background: var(--mantine-color-white);
+  padding: 3px;
+}
+
+.payment-accounts-type-filter .mantine-SegmentedControl-indicator {
+  border-radius: 6px;
+  background: var(--brand-orange);
+  box-shadow: none;
+}
+
+.payment-accounts-type-filter .mantine-SegmentedControl-label {
+  border-radius: 6px;
+  color: var(--mantine-color-gray-7);
+  font-weight: 600;
+  min-height: 28px;
+  padding-inline: 14px;
+  transition:
+    background-color 140ms var(--tx-ease-spring),
+    color 140ms var(--tx-ease-spring);
+}
+
+.payment-accounts-type-filter .mantine-SegmentedControl-control:not([data-active]) .mantine-SegmentedControl-label:hover {
+  background: var(--mantine-color-white);
+  color: var(--mantine-color-gray-9);
+}
+
+.payment-accounts-type-filter .mantine-SegmentedControl-label[data-active='true'] {
+  color: var(--mantine-color-white);
+  font-weight: 700;
+}
+
+.payment-accounts-type-filter .mantine-SegmentedControl-control:focus-within {
+  border-radius: 6px;
+  outline: 2px solid rgba(var(--brand-orange-rgb), 0.18);
+  outline-offset: -1px;
+}
+
+/* Account type is a compact read-only selector in edit mode. Keep the active
+   value prominent instead of fading the whole segmented control. */
+.payment-account-type-tabs.mantine-SegmentedControl-root {
+  align-self: flex-start;
+  max-width: 100%;
+  width: fit-content;
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 9px;
+  background: var(--mantine-color-white);
+  opacity: 1;
+  padding: 3px;
+}
+
+.payment-account-type-tabs .mantine-SegmentedControl-control {
+  flex: 0 0 auto;
+}
+
+.payment-account-type-tabs .mantine-SegmentedControl-indicator {
+  border-radius: 6px;
+  background: var(--brand-orange);
+  box-shadow: none;
+}
+
+.payment-account-type-tabs .mantine-SegmentedControl-label {
+  align-items: center;
+  border-radius: 6px;
+  color: var(--mantine-color-gray-7);
+  display: flex;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-weight: 600;
+  height: 30px;
+  justify-content: center;
+  letter-spacing: 0;
+  line-height: 1;
+  padding: 0 16px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.payment-account-type-tabs .mantine-SegmentedControl-innerLabel {
+  align-items: center;
+  display: flex;
+  height: 100%;
+  justify-content: center;
+  width: 100%;
+}
+
+.payment-account-type-tabs:not([data-disabled]) .mantine-SegmentedControl-control:not([data-active]) .mantine-SegmentedControl-label:hover {
+  background: var(--mantine-color-gray-0);
+  color: var(--mantine-color-gray-9);
+}
+
+.payment-account-type-tabs[data-disabled] .mantine-SegmentedControl-label {
+  color: var(--mantine-color-gray-7);
+  cursor: default;
+  opacity: 1;
+}
+
+.payment-account-type-tabs .mantine-SegmentedControl-control[data-active] .mantine-SegmentedControl-label,
+.payment-account-type-tabs .mantine-SegmentedControl-label[data-active='true'] {
+  color: var(--mantine-color-white) !important;
+  font-weight: 700;
+}
+
+.payment-account-type-tabs .mantine-SegmentedControl-control[data-active] .mantine-SegmentedControl-innerLabel {
+  color: var(--mantine-color-white) !important;
+}
+
+/* Read-only is a state, not missing data: disabled controls keep full text
+   contrast while their gray surface still communicates non-editability. */
+.payment-account-form-drawer .mantine-Input-input:disabled,
+.payment-account-form-drawer .mantine-Input-input[data-disabled] {
+  border-color: var(--mantine-color-gray-3);
+  background: var(--mantine-color-gray-0);
+  color: var(--mantine-color-gray-9);
+  font-weight: 500;
+  opacity: 1;
+  -webkit-text-fill-color: var(--mantine-color-gray-9);
+}
+
+.payment-account-form-drawer .mantine-Input-input:disabled::placeholder,
+.payment-account-form-drawer .mantine-Input-input[data-disabled]::placeholder {
+  color: var(--mantine-color-gray-6);
+  opacity: 1;
+  -webkit-text-fill-color: var(--mantine-color-gray-6);
+}
+
+.payment-account-form-drawer .mantine-Checkbox-input:disabled {
+  border-color: var(--mantine-color-gray-4);
+  background: var(--mantine-color-white);
+  opacity: 1;
+}
+
+.payment-account-form-drawer .mantine-Checkbox-input:checked:disabled {
+  border-color: var(--brand-orange);
+  background: var(--brand-orange);
+}
+
+.payment-account-form-drawer .mantine-Checkbox-label[data-disabled] {
+  color: var(--mantine-color-gray-8);
+  opacity: 1;
+}
+
+.payment-account-form-checkbox.mantine-Checkbox-root {
+  align-items: center;
+  align-self: end;
+  display: flex;
+  min-height: 36px;
+}
+
+.payment-account-form-checkbox .mantine-Checkbox-body {
+  align-items: center;
+}
+
 /* Body stays flush so the first table column shares the filter bar's 8px axis. */
 .payment-accounts-card__body {
   display: flex;
@@ -189,6 +344,14 @@
   white-space: nowrap;
 }
 
+.payment-account-currency-summary__code,
+.payment-account-currency-value {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
 .payment-account-currency-summary__action {
   flex: 0 0 auto;
 }
@@ -211,11 +374,55 @@
 }
 
 .payment-account-activity__toolbar {
-  gap: 12px;
+  align-items: end;
+  gap: 12px 18px;
 }
 
 .payment-account-activity__actions {
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
   margin-left: auto;
+}
+
+.payment-account-activity__actions .mantine-Button-root {
+  border-color: var(--mantine-color-gray-3);
+  background: var(--mantine-color-white);
+  color: var(--mantine-color-gray-8);
+  font-weight: 600;
+  min-height: 36px;
+  padding-inline: 13px;
+}
+
+.payment-account-activity__actions .mantine-Button-root:not(:disabled):hover {
+  border-color: rgba(var(--brand-orange-rgb), 0.38);
+  background: rgba(var(--brand-orange-rgb), 0.05);
+  color: var(--brand-orange);
+}
+
+.payment-account-activity__actions .mantine-Button-section {
+  color: var(--mantine-color-gray-6);
+  margin-inline-end: 7px;
+}
+
+.payment-account-activity__actions .mantine-Button-root:not(:disabled):hover .mantine-Button-section {
+  color: var(--brand-orange);
+}
+
+.payment-account-section-heading {
+  align-items: center;
+  min-height: 24px;
+}
+
+.payment-account-section-heading .mantine-Badge-root {
+  border: 1px solid var(--mantine-color-gray-2);
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+
+.payment-account-activity__dates {
+  flex: 0 0 auto;
 }
 
 .payment-account-activity-table {
