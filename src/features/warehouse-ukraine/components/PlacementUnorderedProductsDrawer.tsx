@@ -127,9 +127,9 @@ function PlacementUnorderedProductsContent({
                   <Table.Td>{index + 1}</Table.Td>
                   <Table.Td>{displayValue(item.Product?.VendorCode)}</Table.Td>
                   <Table.Td>{displayValue(item.Product?.NameUA || item.Product?.Name)}</Table.Td>
-                  <Table.Td ta="right">{formatNumber(item.Qty)}</Table.Td>
-                  <Table.Td ta="right">{formatNumber(item.UnitPrice)}</Table.Td>
-                  <Table.Td ta="right">{formatNumber(item.NetWeight)}</Table.Td>
+                  <Table.Td className="app-table-number" ta="right">{formatNumber(item.Qty)}</Table.Td>
+                  <Table.Td className="app-table-number" ta="right">{formatNumber(item.UnitPrice)}</Table.Td>
+                  <Table.Td className="app-table-number" ta="right">{formatNumber(item.NetWeight)}</Table.Td>
                   <Table.Td>
                     <TableRowAction
                       action="delete"
