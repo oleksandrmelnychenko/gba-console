@@ -2401,7 +2401,7 @@ function ProductPlacementStorageUploadModal({
                       <Table.Td>
                         <TextInput size="xs" value={row.Placement || ''} onChange={(event) => updateNotPassedRow(index, 'Placement', event.currentTarget.value)} />
                       </Table.Td>
-                      <Table.Td>
+                      <Table.Td className="app-table-number">
                         <NumberInput hideControls size="xs" min={0} value={row.Qty || 0} onChange={(value) => updateNotPassedRow(index, 'Qty', String(value ?? 0))} />
                       </Table.Td>
                       <Table.Td><Text c="red.7" size="xs">{displayValue(row.ErrorMessage)}</Text></Table.Td>
