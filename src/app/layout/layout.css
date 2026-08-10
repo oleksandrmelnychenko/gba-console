@@ -305,10 +305,11 @@
 }
 
 .console-header-top-nav > .console-subnav-mode-modules .console-subnav-row {
-  align-items: stretch;
+  align-items: center;
+  gap: 7px;
   height: 100%;
   justify-content: safe center;
-  padding: 0 8px;
+  padding: 8px;
 }
 
 .console-header-top-nav > .console-subnav-mode-modules .console-subnav-modules {
@@ -317,7 +318,7 @@
 }
 
 .console-header-top-nav > .console-subnav-mode-modules .console-subnav-pill {
-  height: 100%;
+  height: 36px;
 }
 
 .console-header-bottom-nav > .console-subnav-mode-items {
@@ -333,14 +334,15 @@
 }
 
 .console-header-bottom-nav > .console-subnav-mode-items .console-subnav-row {
-  align-items: stretch;
+  align-items: center;
+  gap: 6px;
   height: 100%;
-  padding: 0 12px;
+  padding: 6px 12px;
   width: 100%;
 }
 
 .console-header-bottom-nav > .console-subnav-mode-items .console-subnav-pill {
-  height: 100%;
+  height: 32px;
 }
 
 .console-header-title {
@@ -2017,25 +2019,34 @@
   gap: 6px;
   height: 30px;
   padding: 0 12px;
-  border: 0;
-  border-radius: 999px;
-  background: transparent;
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 9px;
+  background: var(--mantine-color-gray-0);
   color: var(--mantine-color-gray-7);
   cursor: pointer;
   font: inherit;
   font-family: var(--font-mono);
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: 600;
   letter-spacing: 0;
   position: relative;
   white-space: nowrap;
   transition:
+    border-color 140ms var(--tx-ease-spring),
     background-color 140ms var(--tx-ease-spring),
     color 140ms var(--tx-ease-spring);
 }
 
 .console-subnav-pill:hover {
-  color: var(--mantine-color-orange-light-color);
+  border-color: rgba(var(--brand-orange-rgb), 0.3);
+  background: rgba(var(--brand-orange-rgb), 0.05);
+  color: var(--brand-orange);
+}
+
+.console-subnav-pill:focus-visible {
+  border-color: var(--brand-orange);
+  outline: 2px solid rgba(var(--brand-orange-rgb), 0.16);
+  outline-offset: 1px;
 }
 
 /* AI marker as a superscript hugging the text's top-right corner. */
@@ -2047,26 +2058,20 @@
 }
 
 .console-subnav-item:hover {
-  color: var(--mantine-color-orange-light-color);
+  color: var(--brand-orange);
 }
 
 .console-subnav-module.is-active,
 .console-subnav-module.is-active:hover {
-  background: transparent;
-  color: var(--mantine-color-orange-light-color);
+  border-color: rgba(var(--brand-orange-rgb), 0.46);
+  background: rgba(var(--brand-orange-rgb), 0.11);
+  color: var(--brand-orange);
 }
 
-/* Active indicator sits on the row's bottom border (a line under the pill) */
+/* The active tab is a complete surface; no second underline is needed. */
 .console-subnav-module.is-active::after,
 .console-subnav-item.is-active::after {
-  content: '';
-  position: absolute;
-  left: 12px;
-  right: 12px;
-  bottom: 0;
-  height: 2px;
-  border-radius: 2px;
-  background: currentColor;
+  content: none;
 }
 
 .console-subnav-item-icon {
@@ -2083,8 +2088,9 @@
 
 .console-subnav-item.is-active,
 .console-subnav-item.is-active:hover {
-  background: transparent;
-  color: var(--mantine-color-orange-light-color);
+  border-color: rgba(var(--brand-orange-rgb), 0.38);
+  background: rgba(var(--brand-orange-rgb), 0.08);
+  color: var(--brand-orange);
 }
 
 .console-subnav-state {

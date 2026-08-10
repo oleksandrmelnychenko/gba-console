@@ -146,11 +146,58 @@
 .app-filter-bar .app-filter-field > .mantine-SegmentedControl-root,
 .sales-filter-bar .app-filter-field > .mantine-SegmentedControl-root,
 .console-table-command-bar .app-filter-field > .mantine-SegmentedControl-root {
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 9px;
+  background: var(--mantine-color-gray-0);
   font-family: var(--font-mono);
   font-size: 12.5px;
   height: var(--app-filter-control-height, 36px);
   letter-spacing: 0;
   min-height: var(--app-filter-control-height, 36px);
+  padding: 3px;
+}
+
+.app-filter-bar .app-filter-field > .mantine-SegmentedControl-root .mantine-SegmentedControl-indicator,
+.sales-filter-bar .app-filter-field > .mantine-SegmentedControl-root .mantine-SegmentedControl-indicator,
+.console-table-command-bar .app-filter-field > .mantine-SegmentedControl-root .mantine-SegmentedControl-indicator {
+  border: 1px solid rgba(var(--brand-orange-rgb), 0.4);
+  border-radius: 7px;
+  background: rgba(var(--brand-orange-rgb), 0.1);
+  box-shadow: none;
+}
+
+.app-filter-bar .app-filter-field > .mantine-SegmentedControl-root .mantine-SegmentedControl-label,
+.sales-filter-bar .app-filter-field > .mantine-SegmentedControl-root .mantine-SegmentedControl-label,
+.console-table-command-bar .app-filter-field > .mantine-SegmentedControl-root .mantine-SegmentedControl-label {
+  border-radius: 7px;
+  color: var(--mantine-color-gray-7);
+  font-weight: 600;
+  transition:
+    background-color 140ms var(--tx-ease-spring),
+    color 140ms var(--tx-ease-spring);
+}
+
+.app-filter-bar .app-filter-field > .mantine-SegmentedControl-root .mantine-SegmentedControl-label:hover,
+.sales-filter-bar .app-filter-field > .mantine-SegmentedControl-root .mantine-SegmentedControl-label:hover,
+.console-table-command-bar .app-filter-field > .mantine-SegmentedControl-root .mantine-SegmentedControl-label:hover {
+  background: rgba(var(--brand-orange-rgb), 0.05);
+  color: var(--brand-orange);
+}
+
+.app-filter-bar .app-filter-field > .mantine-SegmentedControl-root .mantine-SegmentedControl-label[data-active='true'],
+.sales-filter-bar .app-filter-field > .mantine-SegmentedControl-root .mantine-SegmentedControl-label[data-active='true'],
+.console-table-command-bar .app-filter-field > .mantine-SegmentedControl-root .mantine-SegmentedControl-label[data-active='true'] {
+  background: transparent;
+  color: var(--brand-orange);
+  font-weight: 700;
+}
+
+.app-filter-bar .app-filter-field > .mantine-SegmentedControl-root .mantine-SegmentedControl-control:focus-within,
+.sales-filter-bar .app-filter-field > .mantine-SegmentedControl-root .mantine-SegmentedControl-control:focus-within,
+.console-table-command-bar .app-filter-field > .mantine-SegmentedControl-root .mantine-SegmentedControl-control:focus-within {
+  border-radius: 7px;
+  outline: 2px solid rgba(var(--brand-orange-rgb), 0.16);
+  outline-offset: -1px;
 }
 
 /* ---- Compact labels (12px caption, near-black gray-9 per the pattern) ---- */
