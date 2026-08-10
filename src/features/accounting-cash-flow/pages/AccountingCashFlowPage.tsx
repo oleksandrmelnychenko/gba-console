@@ -1040,7 +1040,10 @@ function CashFlowStatementHero({
           {currency ? <em>{currency}</em> : null}
         </strong>
         <small className={periodDelta < 0 ? 'is-negative' : 'is-positive'}>
-          {periodDelta >= 0 ? '+' : ''}{formatMoney(periodDelta)} {t('за період')}
+          <span className="app-money">
+            {periodDelta >= 0 ? '+' : ''}{formatMoney(periodDelta)}
+          </span>{' '}
+          {t('за період')}
         </small>
       </div>
 
@@ -1060,9 +1063,9 @@ function CashFlowStatementHero({
       </div>
 
       <div className="accounting-cash-flow-statement-hero__chips">
-        <span>{t('Вхідний баланс')}: {formatMoney(openingBalance)}</span>
-        <span>{t('Вхідний дебет')}: {formatMoney(summary.beforeInAmount)}</span>
-        <span>{t('Вхідний кредит')}: {formatMoney(summary.beforeOutAmount)}</span>
+        <span>{t('Вхідний баланс')}: <span className="app-money">{formatMoney(openingBalance)}</span></span>
+        <span>{t('Вхідний дебет')}: <span className="app-money">{formatMoney(summary.beforeInAmount)}</span></span>
+        <span>{t('Вхідний кредит')}: <span className="app-money">{formatMoney(summary.beforeOutAmount)}</span></span>
       </div>
     </div>
   )
