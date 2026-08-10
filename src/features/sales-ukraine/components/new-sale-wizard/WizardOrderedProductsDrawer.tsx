@@ -102,7 +102,7 @@ function WizardOrderedProductsContent({ clientNetId }: { clientNetId: string }) 
           <Table.Tr key={`${product.ProductVendorCode || ''}-${index}`}>
             <Table.Td>{product.ProductVendorCode}</Table.Td>
             <Table.Td>{product.ProductName}</Table.Td>
-            <Table.Td ta="right">{product.Qty ?? 0}</Table.Td>
+            <Table.Td className="app-table-number" ta="right">{product.Qty ?? 0}</Table.Td>
           </Table.Tr>
         ))}
       </Table.Tbody>
