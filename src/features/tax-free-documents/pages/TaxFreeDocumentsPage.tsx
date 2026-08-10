@@ -1496,8 +1496,8 @@ function TaxFreePrintPreviewModal({
                 {(document.TaxFreeItems || []).map((item, index) => (
                   <Table.Tr key={item.NetUid || item.Id || index}>
                     <Table.Td>{getTaxFreeItemProduct(item)?.NamePL || getTaxFreeItemProduct(item)?.Name || ''}</Table.Td>
-                    <Table.Td ta="right">{formatAmount(item.Qty)}</Table.Td>
-                    <Table.Td ta="right">{formatMoney(item.UnitPriceWithVat)}</Table.Td>
+                    <Table.Td className="app-table-number" ta="right">{formatAmount(item.Qty)}</Table.Td>
+                    <Table.Td className="app-table-number" ta="right">{formatMoney(item.UnitPriceWithVat)}</Table.Td>
                   </Table.Tr>
                 ))}
               </Table.Tbody>
