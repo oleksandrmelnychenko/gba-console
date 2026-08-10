@@ -948,7 +948,7 @@ function ProductIncomeDocumentDrawer({
             <DetailValue label={t('Відповідальний')} value={getEntityName(document.User)} />
             <DetailValue label={t('Кількість')} mono value={formatAmount(row.qty)} />
             <DetailValue label={t('Сума')} mono value={formatMoney(row.amount)} />
-            <DetailValue label={t('Валюта')} value={row.currency} />
+            <DetailValue label={t('Валюта')} mono value={row.currency} />
             <DetailValue label={t('Стан')} value={row.docState} />
             <DetailValue label={t('Номер інвойсу')} mono value={row.invNumber} />
             <DetailValue label={t('Дата інвойсу')} mono value={formatDateTime(row.invDate)} />
@@ -1200,7 +1200,7 @@ function SaleReturnOverview({ document }: { document: ProductIncomeDocument }) {
 
         <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={28} verticalSpacing={12}>
           <DetailValue label={t('Угода')} value={agreement?.Name} />
-          <DetailValue label={t('Валюта')} value={currencyCode} />
+          <DetailValue label={t('Валюта')} mono value={currencyCode} />
           <DetailValue label={t('Дата інвойсу')} mono value={formatDateTime(firstItem?.SaleReturn?.FromDate)} />
           <DetailValue label={t('Коментар')} value={firstItem?.Comment || document.Comment} />
         </SimpleGrid>
@@ -1422,7 +1422,7 @@ function ActReconciliationOverview({
           <DetailValue label={t('Всього товарів')} value={rows.length} />
           <DetailValue label={t('Вся кількість')} mono value={formatAmount(document.TotalQty)} />
           <DetailValue label={t('Вага нетто')} value={formatAmount(document.TotalNetWeight || sumRows(rows, (row) => row.netWeight))} />
-          <DetailValue label={t('Сума')} value={formatMoney(document.TotalNetPrice)} />
+          <DetailValue label={t('Сума')} mono value={formatMoney(document.TotalNetPrice)} />
         </SimpleGrid>
       </Stack>
     </Card>
