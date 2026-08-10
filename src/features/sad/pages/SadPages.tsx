@@ -1901,6 +1901,7 @@ export function SadSpecificationsPage() {
         accessor: (item) => getLastSpecification(getItemProduct(item))?.VATValue,
         cell: (item) => formatNumber(getLastSpecification(getItemProduct(item))?.VATValue),
         align: 'right',
+        numeric: true,
         width: 120,
       },
       {
