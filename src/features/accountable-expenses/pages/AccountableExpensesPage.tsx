@@ -718,7 +718,7 @@ function ExpenseDetailDrawer({ row, onClose }: { row: AccountableExpenseRow | nu
               <div className="accountable-expense-detail-grid">
                 <DetailItem label={t('Видатковий ордер')} value={displayValue(outcome.Number || outcome.CustomNumber)} />
                 <DetailItem label={t('Дата')} value={formatDateTime(outcome.FromDate)} />
-                <DetailItem label={t('Сума')} value={formatMoney(outcome.Amount)} />
+                <DetailItem label={t('Сума')} mono value={formatMoney(outcome.Amount)} />
                 <DetailItem label={t('Валюта')} mono value={displayValue(outcome.PaymentCurrencyRegister?.Currency?.Code || outcome.PaymentCurrencyRegister?.Currency?.Name)} />
                 <DetailItem label={t('Рахунок')} value={displayValue(outcome.PaymentCurrencyRegister?.PaymentRegister?.Name)} />
                 <DetailItem label={t('Стаття руху')} value={displayValue(outcome.PaymentMovementOperation?.PaymentMovement?.OperationName)} />
@@ -760,7 +760,7 @@ function ExpenseDetailDrawer({ row, onClose }: { row: AccountableExpenseRow | nu
                         <DetailItem label={t('Авансовий звіт')} mono value={displayValue(itemOutcome?.AdvanceNumber)} />
                         <DetailItem label={t('Видатковий ордер')} value={displayValue(itemOutcome?.Number || itemOutcome?.CustomNumber)} />
                         <DetailItem label={t('Дата')} value={formatDateTime(itemOutcome?.FromDate)} />
-                        <DetailItem label={t('Сума')} value={formatMoney(itemOutcome?.Amount)} />
+                        <DetailItem label={t('Сума')} mono value={formatMoney(itemOutcome?.Amount)} />
                         <DetailItem label={t('Валюта')} mono value={displayValue(itemOutcome?.PaymentCurrencyRegister?.Currency?.Code || itemOutcome?.PaymentCurrencyRegister?.Currency?.Name)} />
                         <DetailItem label={t('Закрито')} value={itemOutcome?.IsUnderReportDone ? t('Так') : t('Ні')} />
                       </div>
