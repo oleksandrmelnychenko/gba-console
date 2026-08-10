@@ -2,6 +2,15 @@
   min-width: 0;
 }
 
+.available-payment-task-list .data-table-expanded-cell {
+  background: var(--mantine-color-white);
+  padding: 0 !important;
+}
+
+.available-payment-task-list .data-table-expand-cell {
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+}
+
 .available-payment-task-list__selection {
   background: #f8f9fa;
   border: 1px solid var(--mantine-color-gray-2);
@@ -29,15 +38,10 @@
   min-width: 0;
 }
 
-.available-payment-task-list__identity-main {
+.available-payment-task-list__badge-row {
   align-items: center;
   display: flex;
-  gap: 8px;
-  min-width: 0;
-}
-
-.available-payment-task-list__identity-main .mantine-Badge-root {
-  flex: 0 0 auto;
+  min-height: 18px;
 }
 
 .available-payment-task-list__name {
@@ -45,16 +49,6 @@
   font-size: 13px;
   font-weight: 600;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.available-payment-task-list__meta {
-  color: var(--mantine-color-gray-6);
-  font-size: 11px;
-  font-weight: 500;
-  line-height: 1.2;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -85,9 +79,19 @@
   background: var(--mantine-color-white);
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 8px;
-  margin: 8px 12px 12px 40px;
+  margin: 8px 0 12px;
   min-width: 0;
   overflow: hidden;
+}
+
+.available-payment-task-list__product {
+  justify-self: start;
+  max-width: 100%;
+}
+
+.available-payment-task-list__product .mantine-Badge-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .available-payment-task-details__content {
@@ -108,6 +112,11 @@
   min-width: 0;
   overflow: hidden;
   width: 100%;
+}
+
+.available-payment-invoice-total-value {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
 }
 
 .available-payment-cash-flow-table {
@@ -174,11 +183,4 @@
 
 .available-payment-cash-flow-table__summary-value.is-negative {
   color: var(--mantine-color-red-6);
-}
-
-@media (max-width: 720px) {
-  .available-payment-task-details {
-    margin-left: 8px;
-    margin-right: 8px;
-  }
 }

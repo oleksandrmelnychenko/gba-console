@@ -977,7 +977,7 @@ function AvailablePaymentsDetailDrawerView({ model }: { model: AvailablePayments
     <AppDrawer
       opened={Boolean(group) || outcomeModels.length > 0}
       position="right"
-      size="standard"
+      size="full"
       title={title}
       onClose={requestDrawerClose}
       footer={
@@ -1170,31 +1170,55 @@ function AvailablePaymentTaskList({
         },
       },
       {
-        id: 'counterparty',
+        id: 'name',
         header: t('Контрагент'),
         accessor: (taskModel) => taskModel.organizationName,
-        minWidth: 360,
-        fill: true,
+        minWidth: 320,
         cell: (taskModel) => (
           <div className="available-payment-task-list__identity">
-            <div className="available-payment-task-list__identity-main">
-              <TaskStatusBadge task={taskModel.task} />
-              <span
-                className="available-payment-task-list__name"
-                title={taskModel.organizationName || t('Контрагент')}
-              >
-                {taskModel.organizationName || t('Контрагент')}
-              </span>
-            </div>
             <span
-              className="available-payment-task-list__meta"
-              title={`${taskModel.serviceName}${taskModel.serviceNumber ? ` #${taskModel.serviceNumber}` : ''}`}
+              className="available-payment-task-list__name"
+              title={taskModel.organizationName || t('Назва')}
             >
-              {taskModel.serviceName}
-              {taskModel.serviceNumber ? ` #${taskModel.serviceNumber}` : ''}
+              {taskModel.organizationName || t('Назва')}
             </span>
+            <div className="available-payment-task-list__badge-row">
+              <TaskStatusBadge task={taskModel.task} />
+            </div>
           </div>
         ),
+      },
+      {
+        id: 'text',
+        header: t('Документ / товар'),
+        accessor: (taskModel) => taskModel.serviceName,
+        minWidth: 420,
+        fill: true,
+        cell: (taskModel) => {
+          const serviceNumber = taskModel.serviceNumber ? displayValue(taskModel.serviceNumber) : ''
+          const taskText = taskModel.serviceName
+
+          return (
+            <div className="available-payment-task-list__identity">
+              <span
+                className="available-payment-task-list__name"
+                title={taskText}
+              >
+                {taskText}
+              </span>
+              {serviceNumber && (
+                <Badge
+                  className="app-role-pill is-gray available-payment-task-list__product"
+                  size="xs"
+                  title={serviceNumber}
+                  variant="light"
+                >
+                  {serviceNumber}
+                </Badge>
+              )}
+            </div>
+          )
+        },
       },
       {
         id: 'amount',
@@ -1295,7 +1319,7 @@ function AvailablePaymentTaskList({
         maxHeight="calc(100vh - 160px)"
         minWidth={760}
         showDensityToggle={false}
-        showLayoutControls
+        showLayoutControls={false}
         tableId="available-payments-detail-tasks"
         renderExpandedRow={(taskModel) => (
           <AvailablePaymentTaskDetails
@@ -1769,7 +1793,7 @@ function InvoiceTab({ model }: { model: AvailablePaymentTaskModel }) {
           maxHeight={340}
           minWidth={760}
           showDensityToggle={false}
-          showLayoutControls
+          showLayoutControls={false}
           tableId={`available-payment-invoice-${model.id}`}
         />
       </div>
@@ -1788,7 +1812,7 @@ function InvoicePaymentSummary({ model }: { model: AvailablePaymentTaskModel }) 
         {isDone ? t('Оплачено') : t('До оплати')}
       </Text>
       {!isDone && (
-        <Text fw={700} size="sm">
+        <Text className="available-payment-invoice-total-value" fw={700} size="sm">
           {formatAmount(getModelPaymentAmount(model))} {model.currencyCode}
         </Text>
       )}
@@ -1954,7 +1978,7 @@ function CashFlowTab({
           maxHeight={340}
           minWidth={760}
           showDensityToggle={false}
-          showLayoutControls
+          showLayoutControls={false}
           tableId="available-payment-cash-flow"
           footer={state?.data ? <CashFlowTableFooter summary={summary} /> : undefined}
           onRowClick={(item) => onRowClick(item.source)}
@@ -2351,9 +2375,9 @@ function DocumentsList({
 
   if (documents.length === 0) {
     return (
-      <Text c="dimmed" size="sm">
+      <Badge className="app-role-pill is-gray" size="xs" variant="light">
         {t('Документи відсутні')}
-      </Text>
+      </Badge>
     )
   }
 

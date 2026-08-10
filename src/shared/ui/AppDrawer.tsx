@@ -36,7 +36,7 @@ const SHEET_WIDTHS = {
   compact: 'min(560px, 100vw)',
   standard: 'min(1200px, 100vw)',
   wide: 'min(1240px, 100vw)',
-  full: '90vw',
+  full: 'calc(100vw - 16px)',
 } as const
 
 type SheetTier = keyof typeof SHEET_WIDTHS
@@ -128,7 +128,7 @@ function resolveSheetWidth(size: DrawerProps['size']): string {
 /**
  * Shared right-side sheet. Enforces a consistent position, width tier and
  * inner padding across the whole app. Pass size as 'compact' | 'standard' |
- * 'wide' (legacy size values are normalized to the nearest tier).
+ * 'wide' | 'full' (legacy size values are normalized to the nearest tier).
  */
 /* A click aimed at a field while the sheet is still sliding in can land on the
    overlay and instantly close the drawer (for routed sheets it also navigates
