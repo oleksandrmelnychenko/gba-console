@@ -917,7 +917,7 @@ function ProductPlacementEditor({
                         onChange={(event) => updatePlacementDraft(index, 'CellNumber', event.currentTarget.value)}
                       />
                     </Table.Td>
-                    <Table.Td>
+                    <Table.Td className="app-table-number">
                       <NumberInput
                         className="product-placement-editor__field product-placement-editor__field--qty"
                         hideControls
@@ -968,8 +968,8 @@ function ProductPlacementEditor({
               {groupedPlacements.map((placementGroup) => (
                 <Table.Tr key={placementGroup.key}>
                   <Table.Td>{placementGroup.label}</Table.Td>
-                  <Table.Td ta="right">{formatAmount(placementGroup.qty)}</Table.Td>
-                  <Table.Td ta="right">{placementGroup.count}</Table.Td>
+                  <Table.Td className="app-table-number" ta="right">{formatAmount(placementGroup.qty)}</Table.Td>
+                  <Table.Td className="app-table-number" ta="right">{placementGroup.count}</Table.Td>
                 </Table.Tr>
               ))}
             </Table.Tbody>
