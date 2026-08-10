@@ -175,7 +175,7 @@ function PriceHintCard({ recommendation }: { recommendation: PriceRecommendation
         )}
         {recommendation.price_floor !== null && (
           <Badge color="gray" size="sm" variant="light">
-            {t('мін. ціна')}: {formatMoney(recommendation.price_floor, currency)}
+            {t('мін. ціна')}: <span className="app-money">{formatMoney(recommendation.price_floor, currency)}</span>
           </Badge>
         )}
         {recommendation.suggested_discount_pct !== null && (
