@@ -1444,7 +1444,7 @@ function AvailablePaymentTaskListFooter({ models }: { models: AvailablePaymentTa
       </Badge>
       {totals.map(([currency, amount]) => (
         <Badge key={currency || 'total'} className="app-role-pill is-gray" size="xs" variant="light">
-          {formatAmount(amount)} {currency}
+          <span className="app-money">{formatAmount(amount)} {currency}</span>
         </Badge>
       ))}
     </Group>
@@ -1554,6 +1554,7 @@ function AvailablePaymentOutcomeForm({
               <InfoCell label={t('Отримувач')} value={displayValue(recipientName)} />
               <InfoCell
                 label={t('Сума до оплати')}
+                mono
                 value={`${formatAmount(baseOutcomeAmount)} ${taskCurrencyCode}`.trim()}
               />
             </SimpleGrid>
@@ -1636,7 +1637,10 @@ function AvailablePaymentOutcomeForm({
                 />
                 {selectedCurrencyRegister && (
                   <Text c="dimmed" size="xs">
-                    {`${t('Залишки')}: ${formatAmount(selectedCurrencyRegister.Amount)} ${selectedCurrencyRegister.Currency?.Code || ''}`.trim()}
+                    {t('Залишки')}: {' '}
+                    <span className="app-money">
+                      {`${formatAmount(selectedCurrencyRegister.Amount)} ${selectedCurrencyRegister.Currency?.Code || ''}`.trim()}
+                    </span>
                   </Text>
                 )}
               </Stack>
@@ -2285,6 +2289,7 @@ function TransferTab({ model }: { model: AvailablePaymentTaskModel }) {
           <InfoCell label={t('Дата')} value={formatDateTime(order.FromDate)} />
           <InfoCell
             label={t('Сума')}
+            mono
             value={`${formatAmount(order.Amount)} ${order.PaymentCurrencyRegister?.Currency?.Code || ''}`}
           />
           <InfoCell label={t('Рахунок')} value={displayValue(order.PaymentCurrencyRegister?.PaymentRegister?.Name)} />
@@ -2320,13 +2325,13 @@ function getTransferOrderTypeLabel(order: AvailablePaymentOrderSummary, t: (key:
   return t('Видатковий картковий ордер')
 }
 
-function InfoCell({ label, value }: { label: string; value: string }) {
+function InfoCell({ label, mono = false, value }: { label: string; mono?: boolean; value: string }) {
   return (
     <Stack gap={2}>
       <Text c="dimmed" size="xs">
         {label}
       </Text>
-      <Text fw={600}>{value}</Text>
+      <Text className={mono ? 'app-money' : undefined} fw={600}>{value}</Text>
     </Stack>
   )
 }
