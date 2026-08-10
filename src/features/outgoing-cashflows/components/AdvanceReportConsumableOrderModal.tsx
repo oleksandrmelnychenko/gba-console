@@ -744,14 +744,14 @@ export function AdvanceReportConsumableOrderModal({
                     <Table.Td>
                       {displayValue(item.ConsumableProductCategory?.Name || item.ConsumableProduct?.ConsumableProductCategory?.Name)}
                     </Table.Td>
-                    <Table.Td>
+                    <Table.Td className="app-table-number">
                       {formatAmount(item.Qty)} {item.ConsumableProduct?.MeasureUnit?.Name || ''}
                     </Table.Td>
-                    <Table.Td>{formatMoney(item.PricePerItem)}</Table.Td>
-                    <Table.Td>{formatMoney(item.TotalPrice)}</Table.Td>
-                    <Table.Td>{formatAmount(item.VatPercent)}</Table.Td>
-                    <Table.Td>{formatMoney(item.VAT)}</Table.Td>
-                    <Table.Td>{formatMoney(item.TotalPriceWithVAT)}</Table.Td>
+                    <Table.Td className="app-table-number">{formatMoney(item.PricePerItem)}</Table.Td>
+                    <Table.Td className="app-table-number">{formatMoney(item.TotalPrice)}</Table.Td>
+                    <Table.Td className="app-table-number">{formatAmount(item.VatPercent)}</Table.Td>
+                    <Table.Td className="app-table-number">{formatMoney(item.VAT)}</Table.Td>
+                    <Table.Td className="app-table-number">{formatMoney(item.TotalPriceWithVAT)}</Table.Td>
                     <Table.Td>
                       <Group gap={4} justify="flex-end" wrap="nowrap">
                         <TableRowAction
