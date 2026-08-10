@@ -786,13 +786,13 @@ export function AdvanceReportConsumableOrderModal({
         <AppModalFooter>
           <Group gap="xs">
             <Badge className="app-role-pill is-gray" variant="light">
-              {t('Сума')}: {formatMoney(order.TotalAmountWithoutVAT ?? totals.totalWithoutVat)}
+              {t('Сума')}: <span className="app-money">{formatMoney(order.TotalAmountWithoutVAT ?? totals.totalWithoutVat)}</span>
             </Badge>
             <Badge className="app-role-pill is-gray" variant="light">
-              {t('ПДВ')}: {formatMoney(totals.vat)}
+              {t('ПДВ')}: <span className="app-money">{formatMoney(totals.vat)}</span>
             </Badge>
             <Badge className="app-role-pill" variant="light">
-              {t('Разом')}: {formatMoney(order.TotalAmount ?? totals.totalWithVat)}
+              {t('Разом')}: <span className="app-money">{formatMoney(order.TotalAmount ?? totals.totalWithVat)}</span>
             </Badge>
           </Group>
           <Group justify="flex-end">

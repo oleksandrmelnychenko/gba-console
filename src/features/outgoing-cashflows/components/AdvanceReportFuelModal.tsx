@@ -453,13 +453,13 @@ export function AdvanceReportFuelModal({
 
         <Group gap="xs">
           <Badge className="app-role-pill is-gray" variant="light">
-            {t('Сума')}: {formatMoney(previewFueling.TotalPrice)}
+            {t('Сума')}: <span className="app-money">{formatMoney(previewFueling.TotalPrice)}</span>
           </Badge>
           <Badge className="app-role-pill is-gray" variant="light">
-            {t('ПДВ')}: {formatMoney(previewFueling.VatAmount)}
+            {t('ПДВ')}: <span className="app-money">{formatMoney(previewFueling.VatAmount)}</span>
           </Badge>
           <Badge className="app-role-pill" variant="light">
-            {t('Разом')}: {formatMoney(previewFueling.TotalPriceWithVat)}
+            {t('Разом')}: <span className="app-money">{formatMoney(previewFueling.TotalPriceWithVat)}</span>
           </Badge>
         </Group>
 

@@ -793,7 +793,7 @@ function DifferenceMessage({ model }: { model: ReturnType<typeof useAdvanceRepor
     return (
       <Group align="center" gap="sm" wrap="wrap">
         <Badge color="red" variant="light">
-          {t('Борг колеги')}: {formatMoney(difference)}
+          {t('Борг колеги')}: <span className="app-money">{formatMoney(difference)}</span>
         </Badge>
         <Button
           color="green"
@@ -822,7 +822,7 @@ function DifferenceMessage({ model }: { model: ReturnType<typeof useAdvanceRepor
   return (
     <Group align="center" gap="sm" wrap="wrap">
       <Badge color="green" variant="light">
-        {t('Винні колезі')}: {formatMoney(difference)}
+        {t('Винні колезі')}: <span className="app-money">{formatMoney(difference)}</span>
       </Badge>
       <Button
         color={CREATE_ACTION_COLOR}
