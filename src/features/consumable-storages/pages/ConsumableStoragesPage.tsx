@@ -1391,9 +1391,9 @@ function ConsumablesOrderItemsPicker({
                     {displayValue(product?.Name)}
                   </Text>
                 </Table.Td>
-                <Table.Td>{formatAmount(item.Qty)}</Table.Td>
-                <Table.Td>{formatMoney(item.PricePerItem)}</Table.Td>
-                <Table.Td>{formatMoney(item.TotalPrice)}</Table.Td>
+                <Table.Td className="app-table-number">{formatAmount(item.Qty)}</Table.Td>
+                <Table.Td className="app-table-number">{formatMoney(item.PricePerItem)}</Table.Td>
+                <Table.Td className="app-table-number">{formatMoney(item.TotalPrice)}</Table.Td>
                 <Table.Td>{displayValue(getConsumablesOrderItemCurrency(item, order)?.Name || getConsumablesOrderItemCurrency(item, order)?.Code)}</Table.Td>
                 <Table.Td>
                   <Button
@@ -1471,8 +1471,8 @@ function DeprecatedConsumableOrderItemsTable({
                     {displayValue(product?.Name)}
                   </Text>
                 </Table.Td>
-                <Table.Td>{formatAmount(getDeprecatedItemAvailableQty(item))}</Table.Td>
-                <Table.Td>
+                <Table.Td className="app-table-number">{formatAmount(getDeprecatedItemAvailableQty(item))}</Table.Td>
+                <Table.Td className="app-table-number">
                   <NumberInput
                     allowNegative={false}
                     decimalScale={3}
@@ -1483,8 +1483,8 @@ function DeprecatedConsumableOrderItemsTable({
                     onChange={(value) => onUpdate(index, { Qty: toNumber(value) })}
                   />
                 </Table.Td>
-                <Table.Td>{formatMoney(getDeprecatedItemPrice(item))}</Table.Td>
-                <Table.Td>{formatMoney(getDeprecatedItemTotal(item))}</Table.Td>
+                <Table.Td className="app-table-number">{formatMoney(getDeprecatedItemPrice(item))}</Table.Td>
+                <Table.Td className="app-table-number">{formatMoney(getDeprecatedItemTotal(item))}</Table.Td>
                 <Table.Td>{displayValue(getDeprecatedItemCurrency(item)?.Name || getDeprecatedItemCurrency(item)?.Code)}</Table.Td>
                 <Table.Td>
                   <Select
