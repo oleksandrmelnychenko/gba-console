@@ -450,4 +450,41 @@ describe('sales Ukraine document request contracts', () => {
     expect(serializedSale.OperationNetUid).toBe(operationId)
     expect(new Headers(request?.headers).get('Idempotency-Key')).toBe(operationId)
   })
+
+  it('polls the durable operation instead of submitting the finalized sale twice', async () => {
+    vi.useFakeTimers()
+    const operationId = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee'
+    apiRequestMock
+      .mockResolvedValueOnce({
+        IsCompleted: false,
+        OperationNetUid: operationId,
+        Status: 'processing',
+      })
+      .mockResolvedValueOnce({
+        InvoiceDocumentURL: 'https://example.test/invoice.xlsx',
+        PdfInvoiceDocumentURL: 'https://example.test/invoice.pdf',
+        Status: 'completed',
+      })
+
+    try {
+      const resultPromise = convertVatSaleAndGetPaymentDocument(
+        { NetUid: 'sale-1' },
+        null,
+        { operationId },
+      )
+      await vi.advanceTimersByTimeAsync(1_000)
+
+      await expect(resultPromise).resolves.toMatchObject({
+        invoiceExcelUrl: 'https://example.test/invoice.xlsx',
+        invoicePdfUrl: 'https://example.test/invoice.pdf',
+      })
+      expect(apiRequestMock).toHaveBeenCalledTimes(2)
+      expect(apiRequestMock.mock.calls[1]).toEqual([
+        '/sales/update/get/payment/document',
+        { query: { operationNetUid: operationId } },
+      ])
+    } finally {
+      vi.useRealTimers()
+    }
+  })
 })

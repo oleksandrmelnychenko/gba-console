@@ -674,7 +674,9 @@ export function NewSaleReviewStep({
   const documentTitle = sale
     ? `${withVatAccounting ? `(${t('ПДВ')}) ` : ''}${getSaleLifeCycleStatusName(sale)} ${sale.SaleNumber?.Value ?? ''}`.trim()
     : ''
-  const primaryLabel = finalSubmitOutcomePending
+  const primaryLabel = submitting && withVatAccounting
+    ? t('Продаж збережено · формуємо документи…')
+    : finalSubmitOutcomePending
     ? t('Перевірити результат')
     : isMergedMode
       ? t('Створити накладну')

@@ -34,6 +34,8 @@ import type {
 } from '../types'
 
 const CONSIGNMENT_QUERY = { forReSale: false }
+const PAYMENT_DOCUMENT_POLL_INTERVAL_MS = 1_000
+const PAYMENT_DOCUMENT_POLL_TIMEOUT_MS = 6 * 60 * 1_000
 
 export async function getSalesUkraine(filters: SalesUkraineFilters, signal?: AbortSignal): Promise<SalesUkraineSale[]> {
   const result = await apiRequest<unknown>('/sales/all/filtered', {
@@ -423,14 +425,97 @@ export async function convertVatSaleAndGetPaymentDocument(
   operation: SalesMutationOperationOptions,
 ): Promise<SaleDocumentResult> {
   const requiredOperation = requirePaymentDocumentOperation(operation)
-  const result = await apiRequest<unknown>('/sales/update/get/payment/document', {
+  const submission = await apiRequest<unknown>('/sales/update/get/payment/document', {
     body: buildSaleFormData(sale, file, requiredOperation.operationId),
     headers: getSalesMutationOperationHeaders(requiredOperation.operationId),
     method: 'POST',
     ...(requiredOperation.signal ? { signal: requiredOperation.signal } : {}),
   })
 
+  const result = isPaymentDocumentProcessing(submission)
+    ? await waitForPaymentDocument(
+        requiredOperation.operationId,
+        requiredOperation.signal,
+      )
+    : submission
+
   return extractDocumentResult(result)
+}
+
+async function waitForPaymentDocument(
+  operationNetUid: string,
+  signal?: AbortSignal,
+): Promise<unknown> {
+  const deadline = Date.now() + PAYMENT_DOCUMENT_POLL_TIMEOUT_MS
+
+  while (Date.now() < deadline) {
+    await waitForPaymentDocumentPoll(signal)
+    const status = await apiRequest<unknown>(
+      '/sales/update/get/payment/document',
+      {
+        ...(signal ? { signal } : {}),
+        query: { operationNetUid },
+      },
+    )
+
+    if (!isPaymentDocumentProcessing(status)) {
+      return status
+    }
+  }
+
+  throw new ApiError(
+    translate(
+      'Продаж збережено, документи ще формуються. Повторіть перевірку результату.',
+    ),
+    504,
+    { OperationNetUid: operationNetUid, Status: 'processing' },
+  )
+}
+
+function isPaymentDocumentProcessing(result: unknown): boolean {
+  if (!result || typeof result !== 'object') {
+    return false
+  }
+
+  const record = result as Record<string, unknown>
+  const status = record.Status ?? record.status
+  return (
+    record.IsCompleted === false ||
+    record.isCompleted === false ||
+    (typeof status === 'string' && status.toLowerCase() === 'processing')
+  )
+}
+
+function waitForPaymentDocumentPoll(signal?: AbortSignal): Promise<void> {
+  if (signal?.aborted) {
+    return Promise.reject(
+      signal.reason instanceof Error
+        ? signal.reason
+        : new DOMException('The operation was aborted.', 'AbortError'),
+    )
+  }
+
+  return new Promise((resolve, reject) => {
+    const complete = () => {
+      signal?.removeEventListener('abort', abort)
+      resolve()
+    }
+    const timer = setTimeout(
+      complete,
+      PAYMENT_DOCUMENT_POLL_INTERVAL_MS,
+    )
+    const abort = () => {
+      clearTimeout(timer)
+      signal?.removeEventListener('abort', abort)
+      reject(
+        signal?.reason instanceof Error
+          ? signal.reason
+          : new DOMException('The operation was aborted.', 'AbortError'),
+      )
+    }
+
+    signal?.addEventListener('abort', abort, { once: true })
+  })
 }
 
 export function buildSaleFormData(sale: SalesUkraineSale, file: File | null, operationId: string): FormData {
