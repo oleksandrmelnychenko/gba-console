@@ -189,7 +189,7 @@ function ProductSpecificationEditDrawerContent({
                   {history.map((specification, index) => (
                     <Table.Tr key={specification.NetUid || specification.Id || index}>
                       <Table.Td>{specification.SpecificationCode || '-'}</Table.Td>
-                      <Table.Td>{specification.DutyPercent ?? 0}</Table.Td>
+                      <Table.Td className="app-table-number">{specification.DutyPercent ?? 0}</Table.Td>
                       <Table.Td>{getUserName(specification)}</Table.Td>
                       <Table.Td>{formatDate(specification.Created)}</Table.Td>
                     </Table.Tr>
