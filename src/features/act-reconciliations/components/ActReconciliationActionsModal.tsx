@@ -382,12 +382,12 @@ function ActionQuantityPreview({
                       {displayValue(item.Product?.NameUA || item.Product?.Name)}
                     </Text>
                   </Table.Td>
-                  <Table.Td ta="right">
+                  <Table.Td className="app-table-number" ta="right">
                     <Text c={item.NegativeDifference ? 'red' : 'teal'} fw={600} size="sm">
                       {item.NegativeDifference ? '-' : '+'} {displayValue(limit)}
                     </Text>
                   </Table.Td>
-                  <Table.Td>
+                  <Table.Td className="app-table-number">
                     <NumberInput
                       allowNegative={false}
                       clampBehavior="none"
