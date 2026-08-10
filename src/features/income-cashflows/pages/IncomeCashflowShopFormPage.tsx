@@ -935,8 +935,8 @@ export function IncomeCashflowShopFormPage() {
                               </Table.Td>
                               <Table.Td>{getDebtDocumentNumber(debt)}</Table.Td>
                               <Table.Td>{formatDate(getDebtDate(debt))}</Table.Td>
-                              <Table.Td>{debt.Debt?.Days || 0}</Table.Td>
-                              <Table.Td>{formatMoney(readDebtTotal(debt))}</Table.Td>
+                              <Table.Td className="app-table-number">{debt.Debt?.Days || 0}</Table.Td>
+                              <Table.Td className="app-table-number">{formatMoney(readDebtTotal(debt))}</Table.Td>
                             </Table.Tr>
                           )
                         })}
