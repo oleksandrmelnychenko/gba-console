@@ -278,7 +278,9 @@ function DepartmentMetric({
       </Group>
       <div className="cockpit-head-kpi__value">{formatMoney(value)}</div>
       <Group gap="xs" justify="space-between" wrap="nowrap">
-        <span className="cockpit-head-kpi__sub">{t('План')}: {formatMoney(target)}</span>
+        <span className="cockpit-head-kpi__sub">
+          {t('План')}: <span className="app-money">{formatMoney(target)}</span>
+        </span>
         <strong className="cockpit-head-kpi__percent">{target > 0 ? `${percent}%` : '—'}</strong>
       </Group>
       <Progress color={progressColor} radius="xl" size={6} value={Math.min(percent, 100)} />
