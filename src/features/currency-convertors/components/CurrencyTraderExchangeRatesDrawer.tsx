@@ -174,7 +174,7 @@ export function CurrencyTraderExchangeRatesDrawer({
                         {rate.CurrencyName || '-'}
                       </Badge>
                     </Table.Td>
-                    <Table.Td>
+                    <Table.Td className="app-table-number">
                       {isEditing ? (
                         <TextInput
                           inputMode="decimal"
