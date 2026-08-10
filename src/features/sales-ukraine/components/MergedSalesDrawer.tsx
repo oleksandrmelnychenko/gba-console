@@ -647,7 +647,7 @@ function MergedSaleCard({
                   </Table.Td>
                   <Table.Td>{displayValue(item.Product?.VendorCode || item.Product?.MainOriginalNumber)}</Table.Td>
                   <Table.Td>{displayValue(item.Product?.NameUA || item.Product?.Name)}</Table.Td>
-                  <Table.Td ta="right">
+                  <Table.Td className="app-table-number" ta="right">
                     <NumberInput
                       allowNegative={false}
                       clampBehavior="strict"
@@ -662,7 +662,7 @@ function MergedSaleCard({
                       onChange={(value) => onItemQtyChange(sale, index, key, value)}
                     />
                   </Table.Td>
-                  <Table.Td ta="right">
+                  <Table.Td className="app-table-number" ta="right">
                     {formatAmount(getNumber(item.TotalAmountLocal) ?? getNumber(item.TotalAmount), qty, getNumber(item.Qty))}{' '}
                     {currency}
                   </Table.Td>
