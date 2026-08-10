@@ -47,16 +47,16 @@ export function PaymentShopOrderItemsTable({
           <Table.Tbody>
             <Table.Tr>
               <Table.Td style={{ minWidth: 240 }} />
-              <Table.Td style={{ minWidth: 120 }}>
+              <Table.Td className="app-table-number" style={{ minWidth: 120 }}>
                 <Text fw={700}>{formatPrice(totals.totalAmount)}</Text>
               </Table.Td>
-              <Table.Td style={{ minWidth: 120 }}>
+              <Table.Td className="app-table-number" style={{ minWidth: 120 }}>
                 <Text fw={700}>{formatPrice(totals.totalAmountLocal)}</Text>
               </Table.Td>
-              <Table.Td style={{ minWidth: 110 }}>
+              <Table.Td className="app-table-number" style={{ minWidth: 110 }}>
                 <Text fw={700}>{totals.totalVat > 0 ? formatPrice(totals.totalVat) : ''}</Text>
               </Table.Td>
-              <Table.Td style={{ minWidth: 90 }}>
+              <Table.Td className="app-table-number" style={{ minWidth: 90 }}>
                 <Text fw={700}>{totals.totalQty}</Text>
               </Table.Td>
             </Table.Tr>
