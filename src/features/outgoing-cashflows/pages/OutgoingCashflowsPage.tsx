@@ -769,10 +769,10 @@ function OutgoingCashflowsContent({ model }: { model: OutgoingCashflowsPageModel
                   {t('Рядків')}: {rows.length}
                 </Badge>
                 <Badge className="app-role-pill is-green" variant="light">
-                  {t('Кредиторська заборгованість')}: {formatMoney(cashflows.PositiveDifferenceAmount)}
+                  {t('Кредиторська заборгованість')}: <span className="app-money">{formatMoney(cashflows.PositiveDifferenceAmount)}</span>
                 </Badge>
                 <Badge className="app-role-pill is-red" variant="light">
-                  {t('Дебіторська заборгованість')}: {formatMoney(cashflows.NegativeDifferenceAmount)}
+                  {t('Дебіторська заборгованість')}: <span className="app-money">{formatMoney(cashflows.NegativeDifferenceAmount)}</span>
                 </Badge>
               </Group>
             }
@@ -1083,7 +1083,7 @@ function OutgoingCashflowDetailDrawer({ row, onClose }: { row: OutgoingCashflowR
               <OutgoingDetailRow label={t('Організація')} value={displayValue(row.organization)} wide />
               <OutgoingDetailRow label={t('Рахунок')} value={displayValue(row.paymentRegister)} wide />
               <OutgoingDetailRow label={t('Стаття руху')} value={displayValue(row.paymentMovement)} wide />
-              <OutgoingDetailRow label={t('Відповідальний')} value={displayValue(row.responsible)} />
+              <OutgoingDetailRow label={t('Відповідальний')} value={displayValue(row.responsible)} wide />
               <OutgoingDetailRow label={t('Клієнт')} value={displayValue(getEntityName(row.order.ClientAgreement?.Client) || getEntityName(row.order.Client))} wide />
             </OutgoingDetailSection>
 
@@ -1233,16 +1233,17 @@ function OutgoingCashflowDocumentStructureDrawer({
           <SimpleGrid cols={{ base: 1, sm: 2 }}>
             <DetailItem label={t('Видатковий ордер')} value={displayValue(row.number)} />
             <DetailItem label={t('Дата')} value={formatDateTime(row.fromDate)} />
-            <DetailItem label={t('Сума')} value={formatMoney(row.amount)} />
+            <DetailItem label={t('Сума')} mono value={formatMoney(row.amount)} />
             <DetailItem
               label={t('Перерахована сума')}
+              mono
               value={hasNumber(calculatedTotal) ? formatMoneyWithCurrency(calculatedTotal, row.currency) : displayValue(undefined)}
             />
-            <DetailItem label={t('Валюта')} value={displayValue(row.currency)} />
+            <DetailItem label={t('Валюта')} mono value={displayValue(row.currency)} />
             <DetailItem label={t('Курс')} value={displayValue(row.order.ExchangeRate)} />
-            <DetailItem label={t('Сума в EUR')} value={formatMoneyOptional(row.order.EuroAmount ?? row.order.AfterExchangeAmount)} />
+            <DetailItem label={t('Сума в EUR')} mono value={formatMoneyOptional(row.order.EuroAmount ?? row.order.AfterExchangeAmount)} />
             <DetailItem label={t('ПДВ %')} value={hasNumber(row.order.VatPercent) ? displayValue(row.order.VatPercent) : displayValue(undefined)} />
-            <DetailItem label={t('ПДВ')} value={formatMoneyOptional(row.order.VAT)} />
+            <DetailItem label={t('ПДВ')} mono value={formatMoneyOptional(row.order.VAT)} />
             <DetailItem label={t('Кому видано')} value={displayValue(row.payedTo)} />
             <DetailItem label={t('Організація')} value={displayValue(row.organization)} />
             <DetailItem label={t('Рахунок')} value={displayValue(row.paymentRegister)} />
@@ -1344,8 +1345,8 @@ function AdvanceReportStructureSummary({
     <SimpleGrid cols={{ base: 1, sm: 2 }}>
       <DetailItem label={t('Авансовий звіт')} value={displayValue(parentOrder.AdvanceNumber)} />
       <DetailItem label={t('Дата авансового звіту')} value={formatDateTime(assignedOutcome?.Created || assignedOutcome?.FromDate || parentOrder.FromDate)} />
-      <DetailItem label={t('Сума авансового звіту')} value={formatMoneyWithCurrency(advanceReportTotal, currency)} />
-      <DetailItem label={t('Сума зв’язки')} value={formatMoneyWithCurrency(assignedPaymentOrder.Amount, currency)} />
+      <DetailItem label={t('Сума авансового звіту')} mono value={formatMoneyWithCurrency(advanceReportTotal, currency)} />
+      <DetailItem label={t('Сума зв’язки')} mono value={formatMoneyWithCurrency(assignedPaymentOrder.Amount, currency)} />
     </SimpleGrid>
   )
 }
@@ -1358,8 +1359,8 @@ function AssignedOutcomeOrderView({ order }: { order: OutcomePaymentOrder }) {
       <DetailItem label={t('Документ')} value={getOutcomePaymentOrderTypeLabel(order, t)} />
       <DetailItem label={t('Номер')} value={displayValue(order.Number || order.CustomNumber)} />
       <DetailItem label={t('Дата')} value={formatDateTime(order.FromDate)} />
-      <DetailItem label={t('Сума')} value={formatMoney(order.Amount)} />
-      <DetailItem label={t('Валюта')} value={displayValue(order.PaymentCurrencyRegister?.Currency?.Code || order.PaymentCurrencyRegister?.Currency?.Name)} />
+      <DetailItem label={t('Сума')} mono value={formatMoney(order.Amount)} />
+      <DetailItem label={t('Валюта')} mono value={displayValue(order.PaymentCurrencyRegister?.Currency?.Code || order.PaymentCurrencyRegister?.Currency?.Name)} />
       <DetailItem label={t('Отримувач')} value={displayValue(getPayedTo(order))} />
     </SimpleGrid>
   )
@@ -1373,8 +1374,8 @@ function AssignedIncomeOrderView({ order }: { order: AssignedIncomePaymentOrder 
       <DetailItem label={t('Документ')} value={getIncomePaymentOrderTypeLabel(order, t)} />
       <DetailItem label={t('Номер')} value={displayValue(order.Number)} />
       <DetailItem label={t('Дата')} value={formatDateTime(order.FromDate)} />
-      <DetailItem label={t('Сума')} value={formatMoney(order.Amount)} />
-      <DetailItem label={t('Валюта')} value={displayValue(order.Currency?.Code || order.Currency?.Name)} />
+      <DetailItem label={t('Сума')} mono value={formatMoney(order.Amount)} />
+      <DetailItem label={t('Валюта')} mono value={displayValue(order.Currency?.Code || order.Currency?.Name)} />
       <DetailItem label={t('Колега')} value={displayValue(getColleagueFullName(order.Colleague))} />
     </SimpleGrid>
   )
@@ -1419,9 +1420,9 @@ function CancelOutgoingCashflowModal({
   )
 }
 
-function DetailItem({ label, value }: { label: string; value: string }) {
+function DetailItem({ label, mono = false, value }: { label: string; mono?: boolean; value: string }) {
   return (
-    <div className="app-detail-field">
+    <div className={`app-detail-field${mono ? ' is-mono' : ''}`}>
       <span>{label}</span>
       <strong>{value}</strong>
     </div>
