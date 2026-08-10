@@ -296,7 +296,7 @@ function ProtocolIncomePlacementDrawerContent({
                 <Table.Td>{placement.StorageNumber}</Table.Td>
                 <Table.Td>{placement.RowNumber}</Table.Td>
                 <Table.Td>{placement.CellNumber}</Table.Td>
-                <Table.Td className="protocol-income-placement-qty-cell">{placement.Qty ?? 0}</Table.Td>
+                <Table.Td className="protocol-income-placement-qty-cell app-table-number">{placement.Qty ?? 0}</Table.Td>
                 <Table.Td className="protocol-income-placement-action-cell">
                   {!placement.IsApplied && (
                     <TableRowAction action="delete" label={t('Видалити')} onClick={() => removePlacement(placement)} />
