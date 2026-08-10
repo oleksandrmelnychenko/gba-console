@@ -546,7 +546,7 @@ function ClientRecommendationsInline({ client }: { client: CockpitClient }) {
                         {typeof product.CurrentPrice === 'number' ? `€${product.CurrentPrice.toFixed(2)}` : '—'}
                       </Text>
                     </Table.Td>
-                    <Table.Td ta="right" w={110}>
+                    <Table.Td className="app-table-number" ta="right" w={110}>
                       <Text c={availableQty > 0 ? undefined : 'dimmed'} size="xs">
                         {hasAvailability ? `${t('Наявність')}: ${availableQty}` : '—'}
                       </Text>
