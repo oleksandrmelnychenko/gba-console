@@ -8,6 +8,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { CircleAlert, FileDown, RefreshCw } from 'lucide-react'
+import type { ReactNode } from 'react'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { exportAccountingCashFlowDocument } from '../../accounting-cash-flow/api/accountingCashFlowApi'
@@ -478,18 +479,35 @@ function SupplierCashFlowOverview({
       </div>
       <SupplierCashFlowMetric
         label={t('Вхідний баланс')}
-        meta={`${t('Дебет')}: ${formatMoney(summary.beforeInAmount)} · ${t('Кредит')}: ${formatMoney(summary.beforeOutAmount)}`}
+        meta={(
+          <>
+            {t('Дебет')}: <span className="app-money">{formatMoney(summary.beforeInAmount)}</span>
+            {' · '}
+            {t('Кредит')}: <span className="app-money">{formatMoney(summary.beforeOutAmount)}</span>
+          </>
+        )}
         value={summary.beforeBalance}
       />
       <SupplierCashFlowMetric
         label={t('Рух за період')}
-        meta={`${t('Дебет')}: ${formatMoney(summary.afterInAmount)} · ${t('Кредит')}: ${formatMoney(summary.afterOutAmount)}`}
+        meta={(
+          <>
+            {t('Дебет')}: <span className="app-money">{formatMoney(summary.afterInAmount)}</span>
+            {' · '}
+            {t('Кредит')}: <span className="app-money">{formatMoney(summary.afterOutAmount)}</span>
+          </>
+        )}
         value={periodDifference}
       />
       <SupplierCashFlowMetric
         emphasized
         label={t('Кінцевий баланс')}
-        meta={`${periodDifference >= 0 ? '+' : ''}${formatMoney(periodDifference)} ${t('за період')}`}
+        meta={(
+          <>
+            <span className="app-money">{periodDifference >= 0 ? '+' : ''}{formatMoney(periodDifference)}</span>
+            {' '}{t('за період')}
+          </>
+        )}
         value={summary.closingBalance}
       />
     </section>
@@ -504,7 +522,7 @@ function SupplierCashFlowMetric({
 }: {
   emphasized?: boolean
   label: string
-  meta: string
+  meta: ReactNode
   value?: number
 }) {
   const tone =
@@ -562,10 +580,10 @@ function SupplierCashFlowFooter({
   return (
     <div className="supplier-cash-flow-footer">
       <span>{t('Рядків')}: <strong>{rows}</strong></span>
-      <span>{t('Дебет')}: <strong>{formatMoney(debit)}</strong></span>
-      <span>{t('Кредит')}: <strong>{formatMoney(credit)}</strong></span>
+      <span>{t('Дебет')}: <strong className="supplier-cash-flow-footer__money">{formatMoney(debit)}</strong></span>
+      <span>{t('Кредит')}: <strong className="supplier-cash-flow-footer__money">{formatMoney(credit)}</strong></span>
       <span className={typeof balance === 'number' && balance < 0 ? 'is-negative' : 'is-positive'}>
-        {t('Баланс')}: <strong>{formatMoney(balance)}</strong>
+        {t('Баланс')}: <strong className="supplier-cash-flow-footer__money">{formatMoney(balance)}</strong>
       </span>
     </div>
   )
@@ -591,8 +609,8 @@ function CashFlowDetailDrawer({ row, onClose }: { row: AccountingCashFlowHeadIte
             <DetailItem label={t('Назва')} value={displayValue(row.Name)} />
             <DetailItem label={t('Номер')} value={displayValue(row.Number)} />
             <DetailItem label={t('Організація')} value={displayValue(row.OrganizationName)} />
-            <DetailItem label={t('Сума')} value={formatMoney(row.CurrentValue)} />
-            <DetailItem label={t('Сальдо')} value={formatMoney(row.CurrentBalance)} />
+            <DetailItem label={t('Сума')} mono value={formatMoney(row.CurrentValue)} />
+            <DetailItem label={t('Сальдо')} mono value={formatMoney(row.CurrentBalance)} />
           </SimpleGrid>
           <CashFlowDetailContent item={row} />
         </Stack>
@@ -601,9 +619,9 @@ function CashFlowDetailDrawer({ row, onClose }: { row: AccountingCashFlowHeadIte
   )
 }
 
-function DetailItem({ label, value }: { label: string; value: string }) {
+function DetailItem({ label, mono = false, value }: { label: string; mono?: boolean; value: string }) {
   return (
-    <div className="app-detail-field">
+    <div className={`app-detail-field${mono ? ' is-mono' : ''}`}>
       <span>{label}</span>
       <strong>{value}</strong>
     </div>

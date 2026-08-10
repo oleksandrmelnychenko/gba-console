@@ -154,6 +154,11 @@
   padding: 5px 9px;
 }
 
+.supplier-cash-flow-footer__money {
+  font-family: var(--font-mono);
+  letter-spacing: 0;
+}
+
 .supplier-cash-flow-footer strong {
   color: currentColor;
 }
