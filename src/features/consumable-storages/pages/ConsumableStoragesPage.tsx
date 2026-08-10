@@ -565,9 +565,9 @@ function StorageRemnantsPanel({ products, totals }: { products: ConsumableProduc
           <Text fw={700}>{t('Підсумки')}</Text>
           {totals.map((total) => (
             <SimpleGrid key={getPriceTotalKey(total)} cols={{ base: 1, sm: 3 }}>
-              <DetailItem label={t('Валюта')} value={displayValue(total.Currency?.Code || total.Currency?.Name)} />
+              <DetailItem label={t('Валюта')} mono value={displayValue(total.Currency?.Code || total.Currency?.Name)} />
               <DetailItem label={t('Кількість')} value={formatAmount(total.Qty)} />
-              <DetailItem label={t('Сума')} value={formatMoney(total.TotalPrice ?? total.Amount)} />
+              <DetailItem label={t('Сума')} mono value={formatMoney(total.TotalPrice ?? total.Amount)} />
             </SimpleGrid>
           ))}
         </Stack>
@@ -1575,9 +1575,9 @@ function DeleteStorageModal({
   )
 }
 
-function DetailItem({ label, value }: { label: string; value: string }) {
+function DetailItem({ label, mono = false, value }: { label: string; mono?: boolean; value: string }) {
   return (
-    <div className="app-detail-field">
+    <div className={`app-detail-field${mono ? ' is-mono' : ''}`}>
       <span>{label}</span>
       <strong>{value}</strong>
     </div>
