@@ -19,8 +19,14 @@ describe('isDataTableNumericColumn', () => {
     ['Вага', 'weight'],
     ['ПДВ %', 'vatRate'],
     ['Баланс', 'balance'],
-    ['Знижка', 'discountPercent'],
+    ['Знижка, %', 'discountPercent'],
     ['Разом', 'grandTotal'],
+    ['Валюта', 'currency'],
+    ['Мито', 'customsDuty'],
+    ['Оплачено', 'paidAmount'],
+    ['ПДВ', 'vatAmount'],
+    ['Знижка', 'discountAmount'],
+    ['Маржа', 'marginAmount'],
     ['EUR', 'eur'],
   ])('recognizes numeric column %s', (header, id) => {
     expect(isDataTableNumericColumn(createColumn(header, id))).toBe(true)
@@ -30,7 +36,8 @@ describe('isDataTableNumericColumn', () => {
     ['Тип ціни', 'priceType'],
     ['Статус оплати', 'paymentStatus'],
     ['Облік ПДВ', 'vatAccounting'],
-    ['Валюта', 'currency'],
+    ['Пробіг', 'mileage'],
+    ['Пакування', 'packing'],
     ['Назва складу', 'stockName'],
     ['Значення', 'value'],
   ])('does not treat categorical column %s as numeric', (header, id) => {

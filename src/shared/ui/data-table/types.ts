@@ -29,9 +29,9 @@ export type DataTableColumn<TData> = {
   className?: string
   /**
    * Uses the shared tabular mono font for the cell value. When omitted,
-   * DataTable infers numeric columns from their header and id.
-   * Set to false for categorical columns whose names contain numeric terms
-   * (for example, "Тип ціни" or "Облік ПДВ").
+   * DataTable infers monetary and currency columns from their header and id.
+   * Set to false for categorical columns whose names contain monetary terms
+   * (for example, "Тип ціни" or "Статус оплати").
    */
   numeric?: boolean
   /** Preferred stretch target when DataTable is allowed to grow a data column. */

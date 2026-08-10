@@ -1,11 +1,12 @@
 import type { DataTableColumn } from './types'
 
 const NUMERIC_TOKENS = new Set([
-  // Ukrainian labels.
+  // Ukrainian monetary and numeric labels.
   'баланс',
   'борг',
   'брутто',
   'вага',
+  'валюта',
   'вартість',
   'відсоток',
   'всього',
@@ -18,8 +19,10 @@ const NUMERIC_TOKENS = new Set([
   'кредит',
   'курс',
   'маржа',
+  'мито',
   'націнка',
   'нетто',
+  'оплачено',
   'пдв',
   'позицій',
   'позиції',
@@ -30,16 +33,18 @@ const NUMERIC_TOKENS = new Set([
   'сальдо',
   'сума',
   'ціна',
-  // English ids and labels used by API-backed grids.
+  // English monetary and numeric ids and labels used by API-backed grids.
   'amount',
   'balance',
   'cost',
   'count',
   'credit',
+  'currency',
   'days',
   'debit',
   'debt',
   'discount',
+  'duty',
   'eur',
   'expense',
   'gbp',
@@ -47,6 +52,7 @@ const NUMERIC_TOKENS = new Set([
   'margin',
   'markup',
   'net',
+  'paid',
   'percent',
   'percentage',
   'pln',
@@ -72,14 +78,15 @@ const NUMERIC_TOKENS = new Set([
 
 const NUMERIC_PHRASES = [
   'до оплати',
+  'грошові кошти',
   'к сть',
   'к ть',
   'кільк ть',
+  'митна вартість',
   'прострочено',
 ] as const
 
 const CATEGORICAL_HEADER_PHRASES = [
-  'валюта',
   'облік пдв',
   'платник пдв',
   'статус оплати',
@@ -124,6 +131,7 @@ function normalizeColumnText(value: string): string {
   return value
     .replace(/([\p{Ll}\d])(\p{Lu})/gu, '$1 $2')
     .toLocaleLowerCase('uk-UA')
+    .replace(/%/g, ' percent ')
     .replace(/[^\p{L}\p{N}]+/gu, ' ')
     .trim()
 }

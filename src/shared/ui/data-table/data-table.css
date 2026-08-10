@@ -274,9 +274,9 @@
   vertical-align: middle;
 }
 
-/* Prices, monetary totals and quantities share the project's tabular number
-   treatment. The class is assigned from column metadata by DataTable, so it
-   follows reordered/hidden columns and never depends on nth-child selectors. */
+/* Prices, monetary totals and currencies share the project's tabular number
+   treatment. Quantities and other operational metrics intentionally keep the
+   regular UI font. The class follows column metadata instead of nth-child. */
 .data-table-numeric-cell,
 .data-table-numeric-cell :where(*) {
   font-family: var(--font-mono);
