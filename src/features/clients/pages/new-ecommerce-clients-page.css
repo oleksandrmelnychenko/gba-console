@@ -1,23 +1,13 @@
-.new-ecommerce-clients-page {
-  box-sizing: border-box;
-  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px);
-  min-height: 0;
-  overflow: hidden;
-  padding: 6px 4px 0;
-}
-
 .new-ecommerce-clients-filter-bar {
-  align-items: center;
   display: flex;
   flex: 0 0 auto;
-  gap: 10px;
-  justify-content: flex-end;
   overflow-x: auto;
 }
 
 .new-ecommerce-clients-search {
-  flex: 0 0 340px;
-  width: 340px;
+  flex: 1 1 420px;
+  max-width: 600px;
+  min-width: 320px;
 }
 
 .new-ecommerce-clients-table-toolbar-slot {
@@ -48,8 +38,66 @@
 
 .new-ecommerce-clients-table-value {
   display: block;
-  line-height: 18px;
+  color: var(--mantine-color-gray-8);
+  line-height: 16px;
   max-width: 100%;
-  overflow-wrap: anywhere;
-  white-space: normal;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.new-ecommerce-clients-table-value.is-mono {
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+
+.new-ecommerce-clients-created,
+.new-ecommerce-clients-entity,
+.new-ecommerce-clients-contact {
+  display: block;
+  min-width: 0;
+}
+
+.new-ecommerce-clients-created__date,
+.new-ecommerce-clients-created__time,
+.new-ecommerce-clients-entity__title,
+.new-ecommerce-clients-entity__meta,
+.new-ecommerce-clients-contact__phone,
+.new-ecommerce-clients-contact__email {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.new-ecommerce-clients-created__date,
+.new-ecommerce-clients-contact__phone {
+  color: var(--mantine-color-gray-8);
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 15px;
+}
+
+.new-ecommerce-clients-created__time,
+.new-ecommerce-clients-entity__meta,
+.new-ecommerce-clients-contact__email {
+  color: var(--mantine-color-gray-6);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 13px;
+  margin-top: 2px;
+}
+
+.new-ecommerce-clients-created__time,
+.new-ecommerce-clients-contact__email {
+  font-family: var(--font-mono);
+}
+
+.new-ecommerce-clients-entity__title {
+  color: var(--mantine-color-gray-8);
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 15px;
 }

@@ -20,9 +20,28 @@ const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
   year: 'numeric',
 })
 const NEW_ECOMMERCE_CLIENTS_TABLE_DEFAULT_LAYOUT = {
+  columnOrder: [
+    'created',
+    'client',
+    'status',
+    'contact',
+    'role',
+    'fullName',
+    'lastName',
+    'firstName',
+    'phone',
+    'email',
+  ],
   columnPinning: {
     left: [],
     right: [],
+  },
+  columnVisibility: {
+    fullName: false,
+    lastName: false,
+    firstName: false,
+    phone: false,
+    email: false,
   },
   density: 'normal',
 } satisfies DataTableDefaultLayout
@@ -91,22 +110,38 @@ export function NewEcommerceClientsPage() {
       {
         id: 'created',
         header: 'Дата створення',
-        width: 160,
-        minWidth: 140,
+        width: 150,
+        minWidth: 130,
         accessor: (client) => getDateTime(client.Created),
-        cell: (client) => <NewEcommerceClientTableValue value={displayValue(formatDateTime(client.Created))} />,
+        cell: (client) => <NewEcommerceClientCreatedCell value={client.Created} />,
+      },
+      {
+        id: 'client',
+        header: 'Клієнт',
+        width: 360,
+        minWidth: 280,
+        accessor: getClientDisplayName,
+        cell: (client) => <NewEcommerceClientIdentityCell client={client} />,
       },
       {
         id: 'status',
         header: 'Статус',
-        width: 140,
-        minWidth: 120,
+        width: 160,
+        minWidth: 140,
         accessor: (client) => (client.IsIndividual ? t('Фізична особа') : t('Юридична особа')),
         cell: (client) => (
-          <Badge color={client.IsIndividual ? 'teal' : 'indigo'} variant="light">
+          <Badge className={`app-role-pill${client.IsIndividual ? ' is-green' : ''}`} size="sm" variant="light">
             {client.IsIndividual ? t('Фізична особа') : t('Юридична особа')}
           </Badge>
         ),
+      },
+      {
+        id: 'contact',
+        header: 'Контакти',
+        width: 320,
+        minWidth: 240,
+        accessor: (client) => `${getClientPhone(client)} ${client.EmailAddress || ''}`,
+        cell: (client) => <NewEcommerceClientContactCell client={client} />,
       },
       {
         id: 'fullName',
@@ -138,7 +173,7 @@ export function NewEcommerceClientsPage() {
         width: 150,
         minWidth: 130,
         accessor: getClientPhone,
-        cell: (client) => <NewEcommerceClientTableValue value={displayValue(getClientPhone(client))} />,
+        cell: (client) => <NewEcommerceClientTableValue mono value={displayValue(getClientPhone(client))} />,
       },
       {
         id: 'email',
@@ -146,7 +181,7 @@ export function NewEcommerceClientsPage() {
         width: 220,
         minWidth: 160,
         accessor: (client) => client.EmailAddress,
-        cell: (client) => <NewEcommerceClientTableValue value={displayValue(client.EmailAddress)} />,
+        cell: (client) => <NewEcommerceClientTableValue mono value={displayValue(client.EmailAddress)} />,
       },
       {
         id: 'role',
@@ -154,7 +189,11 @@ export function NewEcommerceClientsPage() {
         width: 180,
         minWidth: 140,
         accessor: (client) => client.ClientInRole?.ClientTypeRole?.Name,
-        cell: (client) => <NewEcommerceClientTableValue value={displayValue(client.ClientInRole?.ClientTypeRole?.Name || t('Новий клієнт'))} />,
+        cell: (client) => (
+          <Badge className="app-role-pill is-gray" size="sm" variant="light">
+            {client.ClientInRole?.ClientTypeRole?.Name || t('Новий клієнт')}
+          </Badge>
+        ),
       },
     ],
     [t],
@@ -239,7 +278,7 @@ export function NewEcommerceClientsPage() {
 
         <div className="new-ecommerce-clients-page__table console-table-body">
           <DataTable
-            key="new-ecommerce-clients-table-default-freeze-4"
+            key="new-ecommerce-clients-table-default-freeze-5"
             columns={columns}
             data={visibleClients}
             defaultLayout={NEW_ECOMMERCE_CLIENTS_TABLE_DEFAULT_LAYOUT}
@@ -248,9 +287,9 @@ export function NewEcommerceClientsPage() {
             getRowId={(client, index) => String(client.NetUid || client.Id || index)}
             height="100%"
             isLoading={isLoading}
-            layoutVersion="new-ecommerce-clients-table-default-freeze-4"
+            layoutVersion="new-ecommerce-clients-table-default-freeze-5"
             loadingText={t('Завантаження клієнтів')}
-            minWidth={1280}
+            minWidth={1040}
             showLayoutControls
             tableId="new-ecommerce-clients"
             toolbarPortalTarget={tableToolbarSlot}
@@ -262,9 +301,51 @@ export function NewEcommerceClientsPage() {
   )
 }
 
-function NewEcommerceClientTableValue({ fw, value }: { fw?: number; value: string }) {
+function NewEcommerceClientCreatedCell({ value }: { value?: Date | string }) {
+  const formatted = formatDateTimeParts(value)
+
   return (
-    <Text className="new-ecommerce-clients-table-value" component="span" fw={fw} title={value}>
+    <span className="new-ecommerce-clients-created" title={formatted.full}>
+      <span className="new-ecommerce-clients-created__date">{formatted.date}</span>
+      {formatted.time ? <span className="new-ecommerce-clients-created__time">{formatted.time}</span> : null}
+    </span>
+  )
+}
+
+function NewEcommerceClientIdentityCell({ client }: { client: Client }) {
+  const name = getClientDisplayName(client)
+  const personalName = [client.LastName, client.FirstName, client.MiddleName].filter(Boolean).join(' ').trim()
+  const showPersonalName = personalName && getNormalizedNameTokenKey(personalName) !== getNormalizedNameTokenKey(name)
+
+  return (
+    <span className="new-ecommerce-clients-entity" title={showPersonalName ? `${name} · ${personalName}` : name}>
+      <span className="new-ecommerce-clients-entity__title">{name}</span>
+      {showPersonalName ? <span className="new-ecommerce-clients-entity__meta">{personalName}</span> : null}
+    </span>
+  )
+}
+
+function NewEcommerceClientContactCell({ client }: { client: Client }) {
+  const phone = getClientPhone(client)
+  const email = client.EmailAddress?.trim() || ''
+  const title = [phone, email].filter(Boolean).join(' · ')
+
+  return (
+    <span className="new-ecommerce-clients-contact" title={title}>
+      {phone ? <span className="new-ecommerce-clients-contact__phone">{phone}</span> : null}
+      {email ? <span className="new-ecommerce-clients-contact__email">{email}</span> : null}
+    </span>
+  )
+}
+
+function NewEcommerceClientTableValue({ fw, mono, value }: { fw?: number; mono?: boolean; value: string }) {
+  return (
+    <Text
+      className={`new-ecommerce-clients-table-value${mono ? ' is-mono' : ''}`}
+      component="span"
+      fw={fw}
+      title={value}
+    >
       {value}
     </Text>
   )
@@ -278,6 +359,13 @@ function formatDateTime(value?: Date | string): string {
   }
 
   return dateTimeFormatter.format(new Date(time))
+}
+
+function formatDateTimeParts(value?: Date | string): { date: string; full: string; time: string } {
+  const formatted = formatDateTime(value)
+  const [date = '', time = ''] = formatted.split(',').map((part) => part.trim())
+
+  return { date, full: formatted, time }
 }
 
 function getDateTime(value?: Date | string): number | null {
@@ -325,11 +413,15 @@ function normalizeSearchValue(value: string): string {
   return value.trim().toLocaleLowerCase('uk-UA')
 }
 
+function getNormalizedNameTokenKey(value: string): string {
+  return normalizeSearchValue(value).split(/\s+/).filter(Boolean).sort().join(' ')
+}
+
 function displayValue(value?: number | string | null): string {
   if (typeof value === 'number') {
     return String(value)
   }
 
   const normalized = value?.trim()
-  return normalized || '-'
+  return normalized || ''
 }
